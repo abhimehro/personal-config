@@ -1,6 +1,6 @@
 # Personal System Configuration
 
-A repository for personal system configurations, scripts, and documentation to make my MacOS setup reproducible and backed up.
+A repository for personal system configurations, scripts, and documentation to make my macOS setup reproducible and backed up.
 
 ## Overview
 
