@@ -18,7 +18,6 @@ This repository contains configuration files, shell scripts, and documentation f
 personal-config/
 ├── docs/               # Documentation and guides
 │   └── vpn_switching_guide.md  # VPN switching workflow documentation
-├── scripts/            # Shell scripts and utilities
 ├── configs/            # Configuration files (dotfiles)
 └── README.md           # This file
 ```
