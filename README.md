@@ -50,6 +50,14 @@ git clone https://github.com/yourusername/personal-config.git
 # or symbolic link them from your home directory
 ```
 
+## Tests
+
+To verify that the Fish shell configuration is valid, run:
+
+```bash
+./tests/test_config_fish.sh
+```
+
 ## License
 
 These configurations and scripts are for personal use, but feel free to use or adapt them if you find them helpful.
