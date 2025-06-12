@@ -28,6 +28,10 @@ personal-config/
 
 The [VPN Switching Guide](docs/vpn_switching_guide.md) documents the workflow for switching between Cloudflare WARP+Control D DNS and ProtonVPN configurations for different use cases. It includes step-by-step instructions, troubleshooting steps, and technical details.
 
+### MacOS Resource Monitor MCP Server
+
+The [MacOS Resource Monitor guide](docs/mac_resource_monitor_mcp.md) explains how to run the lightweight MCP server that exposes CPU, memory, and network usage on macOS. It covers installation, usage, integration with LLM clients, and troubleshooting tips.
+
 ## Future Additions
 
 This repository will grow to include:
