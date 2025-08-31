@@ -12,7 +12,7 @@ export LANG=en_US.UTF-8 2>/dev/null || export LANG=C
 # Script metadata
 readonly SCRIPT_NAME="gaming-mode"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly CONFIG_FILE="${SCRIPT_DIR}/../config.env"
+readonly CONFIG_FILE="/Users/abhimehrotra/Documents/dev/personal-config/dns-setup/config.env"
 
 # Default configuration
 LOG_DIR="$HOME/Library/Logs/dns-mode"
