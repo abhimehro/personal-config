@@ -1,9 +1,17 @@
 #!/bin/bash
 # Control D DNS Maintenance Suite
-# Created: $(date)
+# Created: 2025-08-30
 # Purpose: Regular maintenance, monitoring, and optimization
 
-set -e
+set -euo pipefail
+
+require_cmd() {
+    local cmd="$1"
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "Required command not found: $cmd" >&2
+        return 1
+    fi
+}
 
 # Colors for output
 RED='\033[0;31m'
@@ -18,8 +26,17 @@ CTRLD_BACKUP_DIR="/etc/controld/backups"
 LOG_FILE="/var/log/controld-maintenance.log"
 PERFORMANCE_LOG="/var/log/controld-performance.log"
 
-# Ensure backup directory exists
-sudo mkdir -p "$CTRLD_BACKUP_DIR"
+# Ensure backup directory exists (with permission check)
+if [ "$EUID" -ne 0 ]; then
+    if sudo -n true 2>/dev/null; then
+        sudo mkdir -p "$CTRLD_BACKUP_DIR"
+    else
+        echo "This script needs sudo privileges to create $CTRLD_BACKUP_DIR" >&2
+        exit 1
+    fi
+else
+    mkdir -p "$CTRLD_BACKUP_DIR"
+fi
 
 log() {
     echo -e "$1" | tee -a "$LOG_FILE"
@@ -70,10 +87,16 @@ performance_check() {
     # DNS query speed test
     echo "$(date): DNS Performance Test" >> "$PERFORMANCE_LOG"
     
+    # Helper for monotonic time in ns
+    time_ns() { (gdate +%s%N 2>/dev/null) || python3 - <<'PY'
+import time; print(int(time.time() * 1_000_000_000))
+PY
+    }
+
     for domain in google.com cloudflare.com github.com; do
-        local start_time=$(gdate +%s%N 2>/dev/null || python3 -c 'import time; print(int(time.time() * 1000000000))')
+        local start_time=$(time_ns)
         local result=$(dig +short "$domain" @127.0.0.1 >/dev/null 2>&1; echo $?)
-        local end_time=$(gdate +%s%N 2>/dev/null || python3 -c 'import time; print(int(time.time() * 1000000000))')
+        local end_time=$(time_ns)
         
         if [[ "$result" == "0" ]]; then
             local duration=$((($end_time - $start_time) / 1000000))
@@ -108,7 +131,9 @@ backup_config() {
 update_check() {
     log "${BLUE}=== Update Check ===${NC}"
     
-    local current_version=$(ctrld --version | grep -o 'v[0-9.]*')
+    require_cmd curl || true
+    require_cmd ctrld || true
+    local current_version=$(ctrld --version 2>/dev/null | grep -o 'v[0-9.]*' || echo "unknown")
     log "   Current version: $current_version"
     
     # Download latest version info (safely)
@@ -127,6 +152,8 @@ network_diagnostics() {
     log "${BLUE}=== Network Diagnostics ===${NC}"
     
     # Check DNS leak
+    require_cmd dig || true
+    require_cmd ping || true
     local leak_test=$(dig +short whoami.akamai.net @127.0.0.1 2>/dev/null | head -1)
     if [[ -n "$leak_test" ]]; then
         log "   External IP via DNS: $leak_test"
@@ -141,7 +168,9 @@ network_diagnostics() {
     
     # Check for DNS over port 53 leakage
     log "   Checking for DNS leakage..."
-    timeout 5s sudo tcpdump -c 5 -i any port 53 and not host 127.0.0.1 >/dev/null 2>&1
+    require_cmd timeout || true
+    require_cmd tcpdump || true
+    timeout 5s sudo tcpdump -c 5 -i any port 53 and not host 127.0.0.1 >/dev/null 2>&1 || true
     if [[ $? -eq 124 ]]; then
         log "${GREEN}✅ No DNS leakage detected${NC}"
     else

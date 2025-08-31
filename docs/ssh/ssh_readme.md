@@ -42,10 +42,10 @@ ssh/
 
 | Command | Target | Best For |
 |---------|--------|----------|
-| `ssh cursor-mdns` | `Abhis-MacBook-Air.local` | **Primary** - Any network |
-| `ssh cursor-local` | `abhis-macbook-air` | Local network only |
+| `ssh cursor-mdns` | `<mdns-hostname>.local` | **Primary** - Any network |
+| `ssh cursor-local` | `<local-hostname>` | Local network only |
 | `ssh cursor-auto` | Auto-detection | Cursor IDE backup |
-| `ssh cursor-vpn` | `100.105.30.135` | VPN connections |
+| `ssh cursor-vpn` | `<vpn-ip-address>` | VPN connections |
 
 ## 🎨 IDE Usage
 
@@ -89,5 +89,5 @@ ssh/
 
 ---
 
-**Created:** August 4, 2025  
+**Created:** 2025-08-04  
 **Status:** ✅ Production Ready
