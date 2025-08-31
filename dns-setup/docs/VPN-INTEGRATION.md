@@ -257,7 +257,7 @@ done
 | Windscribe Port | Connection Port | 443 | Firewall compatibility |
 | Windscribe Split | Exclude DNS utilities | Yes | Maintain local resolution |
 | Windscribe Proxy | HTTP Proxy | Disabled | Avoid conflicts |
-| System DNS | Primary | ********* | Force through Control D |
+| System DNS | Primary | 127.0.0.1 | Force through Control D |
 | ctrld Protocol | Upstream | DoH3 | Maximum encryption |
 
 ### Privacy Verification
