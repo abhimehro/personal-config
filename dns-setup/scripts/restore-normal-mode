@@ -331,7 +331,7 @@ health_check() {
     info "Testing DNS resolution..."
     if command -v host >/dev/null 2>&1; then
         local test_result
-        test_result=$(timeout 10s host google.com 2>/dev/null | head -1 || echo "failed")
+        test_result=$(host google.com 2>/dev/null | head -1 || echo "failed")
         if echo "$test_result" | grep -q "has address"; then
             success "DNS resolution working: $test_result"
         else
@@ -340,7 +340,7 @@ health_check() {
         fi
     elif command -v dig >/dev/null 2>&1; then
         local test_result
-        test_result=$(timeout 10s dig +short google.com 2>/dev/null | head -1 || echo "failed")
+        test_result=$(dig +short google.com 2>/dev/null | head -1 || echo "failed")
         if [[ -n "$test_result" && "$test_result" != "failed" ]]; then
             success "DNS resolution working: google.com -> $test_result"
         else
