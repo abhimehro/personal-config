@@ -93,11 +93,17 @@ chmod 600 ~/.ssh/config ~/.ssh/agent.toml
 ### General Usage
 ```bash
 # Clone the repository
-git clone https://github.com/abhimehro/personal-config.git
+git clone https://github.com/REPO_OWNER/REPO_NAME.git
 
 # Copy configuration files to appropriate locations
 # or symbolic link them from your home directory
 ```
+
+## Security & Configuration
+
+- Use 1Password or environment variables for any secrets; do not commit credentials.
+- Create a `.env.example` with non-sensitive placeholders and keep real values in `.env`.
+- Set `CTRLD_PROFILE_ID` in your environment for DNS configs.
 
 ## Testing
 

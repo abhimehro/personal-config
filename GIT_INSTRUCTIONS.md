@@ -135,6 +135,26 @@ After pushing, verify on GitHub:
 3. Test the documentation renders correctly
 4. Confirm the README updates are visible
 
+## 🔐 Sensitive Data Hygiene
+
+Before pushing, ensure no secrets or PII are present:
+
+```bash
+# 1) Scan for common secrets and emails
+git grep -I -nE '(oauth|client_secret|api[_-]?key|token|bearer\s+[A-Za-z0-9._-]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})' || true
+
+# 2) Replace any findings with environment variables or placeholders
+
+# 3) If anything sensitive was ever committed, rewrite history:
+pipx install git-filter-repo || python3 -m pip install --user git-filter-repo
+python3 -m git_filter_repo --invert-paths --paths-from-file .sensitive-paths.txt || true
+
+# 4) Force-push sanitized history (coordinate with collaborators!)
+git push --force --tags origin main
+```
+
+Rotate any exposed credentials immediately in their respective providers.
+
 ## 📊 Repository Statistics
 
 This addition includes:

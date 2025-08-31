@@ -28,7 +28,7 @@ All your SSH configuration has been organized and documented for your personal-c
 
 ## 🚀 Ready to Add to GitHub
 
-**Location:** `/Users/abhimehrotra/.ssh/personal-config-backup/`
+**Location:** `~/.ssh/personal-config-backup/`
 
 **Next Steps:**
 1. Copy contents to your personal-config repository

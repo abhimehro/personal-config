@@ -14,6 +14,6 @@ end
 
 
 # Added by LM Studio CLI (lms)
-set -gx PATH $PATH /Users/abhimehrotra/.cache/lm-studio/bin
+set -gx PATH $PATH $HOME/.cache/lm-studio/bin
 
 export PATH="$PATH:$HOME/.local/bin"
