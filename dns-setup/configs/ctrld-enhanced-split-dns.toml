@@ -1,6 +1,6 @@
 # Enhanced Control D Configuration with Split-DNS
 # DoH3 (HTTP/3 over QUIC) with intelligent local domain routing
-# Profile: 2eoeqoo9ib9
+# Profile: ${CTRLD_PROFILE_ID}
 # Created: 2025-08-30
 
 [listener]
@@ -42,7 +42,7 @@
         { 'wifi.united.com' = []},
         { 'etihadwi-fly.com' = []},
         { 'inflight-wifi.com' = []},
-        { 'southwestwifi.com' = []},
+        # Duplicate removed: southwestwifi.com
         { 'wifi.cathaypacific.com' = []},
         { 'timhortonswifi.com' = []},
         { 'detectportal.firefox.com' = []},
@@ -79,7 +79,7 @@
 [upstream]
   [upstream.0]
     type = 'doh3'  # HTTP/3 over QUIC for maximum performance
-    endpoint = 'https://dns.controld.com/2eoeqoo9ib9'
+    endpoint = 'https://dns.controld.com/${CTRLD_PROFILE_ID}'
     bootstrap_ip = '76.76.19.19'
     timeout = 5000
     

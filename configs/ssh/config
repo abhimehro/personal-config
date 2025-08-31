@@ -6,8 +6,8 @@ Include ~/.ssh/1Password/config
 
 # VPN ON: Use Tailscale/VPN IP
 Host cursor-vpn
-    HostName 100.105.30.135
-    User abhimehrotra
+    HostName <vpn-ip-address>
+    User __USERNAME__
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -23,8 +23,8 @@ Host cursor-vpn
 
 # VPN OFF: Use local hostname
 Host cursor-local
-    HostName abhis-macbook-air
-    User abhimehrotra
+    HostName <local-hostname>
+    User __USERNAME__
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -39,8 +39,8 @@ Host cursor-local
     
 # FALLBACK: Use .local domain (mDNS/Bonjour)
 Host cursor-mdns
-    HostName Abhis-MacBook-Air.local
-    User abhimehrotra
+    HostName <mdns-hostname>.local
+    User __USERNAME__
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -53,8 +53,8 @@ Host cursor-mdns
 
 # SMART ALIAS: Auto-detect which connection to use
 Host cursor-auto
-    HostName Abhis-MacBook-Air.local
-    User abhimehrotra
+    HostName <mdns-hostname>.local
+    User __USERNAME__
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 30
@@ -69,6 +69,9 @@ Host cursor-auto
 # ─ global defaults for all hosts ─────────────────────
 Host *
   IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+
+    # Ensure compatibility with non-macOS OpenSSH
+    IgnoreUnknown UseKeychain
 
     # Key management
     AddKeysToAgent yes
@@ -108,4 +111,5 @@ Host *
     # Preferred key types (modern, secure)
     PubkeyAcceptedKeyTypes ssh-ed25519,ecdsa-sha2-nistp256,ssh-rsa
     HostkeyAlgorithms +ssh-ed25519,ecdsa-sha2-nistp256,ssh-rsa
-    KexAlgorithms +diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha256,curve25519-sha256,
+    # Note: Removed trailing comma from KexAlgorithms for valid syntax
+    KexAlgorithms +diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha256,curve25519-sha256

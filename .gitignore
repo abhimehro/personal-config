@@ -1,3 +1,10 @@
+configs/.gemini/
+# Environment files
+.env
+.env.local
+.env.*.local
+.secrets/
+.sensitive-paths.txt
 # macOS system files
 .DS_Store
 .AppleDouble
