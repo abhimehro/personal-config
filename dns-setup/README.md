@@ -117,7 +117,7 @@ dig +short whoami.akamai.net @127.0.0.1
 **Optimal Settings:**
 - **DNS Setting**: "Local DNS" ✅
 - **App Internal DNS**: "Control D" ✅
-- **Split Tunneling**: Exclude local network (192.168.4.0/24)
+- **Split Tunneling**: Exclude local network 
 - **Proxy Configuration**: Not needed ❌
 
 ## 📊 Performance Metrics
