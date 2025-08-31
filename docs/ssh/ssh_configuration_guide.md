@@ -19,10 +19,10 @@ This SSH configuration provides seamless integration between Cursor IDE, 1Passwo
 
 | Host | Target | Use Case | Network |
 |------|--------|----------|---------|
-| `cursor-mdns` | `Abhis-MacBook-Air.local` | **Primary** - Most reliable | Any |
-| `cursor-local` | `abhis-macbook-air` | Local network only | Local |
-| `cursor-vpn` | `100.105.30.135` | VPN connections | VPN |
-| `cursor-auto` | `Abhis-MacBook-Air.local` | Smart detection | Any |
+| `cursor-mdns` | `<mdns-hostname>.local` | **Primary** - Most reliable | Any |
+| `cursor-local` | `<local-hostname>` | Local network only | Local |
+| `cursor-vpn` | `<vpn-ip-address>` | VPN connections | VPN |
+| `cursor-auto` | `<mdns-hostname>.local` | Smart detection | Any |
 
 ### Connection Priority
 
@@ -36,7 +36,7 @@ This SSH configuration provides seamless integration between Cursor IDE, 1Passwo
 
 ```bash
 # Clone your personal-config repository
-git clone https://github.com/abhimehro/personal-config.git
+git clone https://github.com/REPO_OWNER/REPO_NAME.git
 cd personal-config
 
 # Run installation script
@@ -151,7 +151,7 @@ Main SSH configuration with host definitions, 1Password integration, and optimiz
 ~/.ssh/check_connections.sh
 
 # Test specific method
-ping Abhis-MacBook-Air.local
+ping <mdns-hostname>.local
 ```
 
 **1Password authentication fails:**
