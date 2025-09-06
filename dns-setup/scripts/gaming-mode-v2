@@ -12,11 +12,11 @@ export LANG=en_US.UTF-8 2>/dev/null || export LANG=C
 # Script metadata
 readonly SCRIPT_NAME="gaming-mode-v2"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly CONFIG_FILE="/Users/abhimehrotra/Documents/dev/personal-config/dns-setup/config.env"
+readonly CONFIG_FILE="$HOME/Documents/dev/personal-config/dns-setup/config.env"
 
 # Default configuration
 LOG_DIR="$HOME/Library/Logs/dns-mode"
-BACKUP_DIR="/Users/abhimehrotra/Documents/dev/personal-config/dns-setup/backups"
+BACKUP_DIR="$HOME/Documents/dev/personal-config/dns-setup/backups"
 CONTROLD_LABELS="ctrld com.controld.maintenance"
 FORCE_SERVICES=""
 CONTROL_D_NORMAL_DNS="127.0.0.1"
