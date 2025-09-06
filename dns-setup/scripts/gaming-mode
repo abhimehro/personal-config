@@ -1,0 +1,373 @@
+#!/bin/bash
+# Gaming Mode Script - Optimized for Proton VPN + GeForce NOW  
+# Temporarily bypasses Control D for maximum gaming performance
+
+set -Eeuo pipefail
+IFS=$' \n\t'
+
+# Ensure UTF-8 output for emojis/checkmarks
+export LC_ALL=en_US.UTF-8 2>/dev/null || export LC_ALL=C
+export LANG=en_US.UTF-8 2>/dev/null || export LANG=C
+
+# Script metadata
+readonly SCRIPT_NAME="gaming-mode"
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly CONFIG_FILE="${CONFIG_FILE:-$HOME/Documents/dev/personal-config/dns-setup/config.env}"
+
+# Default configuration
+LOG_DIR="$HOME/Library/Logs/dns-mode"
+BACKUP_DIR="${BACKUP_DIR:-$HOME/Documents/dev/personal-config/dns-setup/backups}"
+CONTROLD_LABELS="ctrld com.controld.maintenance"
+CONTROLD_PLISTS="/Library/LaunchDaemons/ctrld.plist /Library/LaunchDaemons/com.controld.maintenance.plist"
+FORCE_SERVICES=""
+
+# Command line options
+DRY_RUN=false
+VERBOSE=false
+
+# Load configuration if available
+load_config() {
+    [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
+}
+
+# Ensure running as root
+ensure_root() {
+    if [[ $EUID -ne 0 ]]; then
+        exec sudo -E "$0" "$@"
+    fi
+}
+
+# Logging functions with UTF-8 safe emojis
+setup_logging() {
+    mkdir -p "$LOG_DIR"
+    readonly LOG_FILE="$LOG_DIR/${SCRIPT_NAME}-$(date +%F).log"
+    exec > >(tee -a "$LOG_FILE") 2>&1
+}
+
+success() { 
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        printf "✅ %s\n" "$*" 
+    else
+        printf "[OK] %s\n" "$*"
+    fi
+}
+
+info() { 
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        printf "ℹ️  %s\n" "$*"
+    else
+        printf "[INFO] %s\n" "$*"
+    fi
+}
+
+warn() { 
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        printf "⚠️  %s\n" "$*" >&2
+    else
+        printf "[WARN] %s\n" "$*" >&2
+    fi
+}
+
+error() { 
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        printf "❌ %s\n" "$*" >&2
+    else
+        printf "[ERROR] %s\n" "$*" >&2
+    fi
+}
+
+die() {
+    error "$@"
+    exit 1
+}
+
+# Get active network services
+get_network_services() {
+    local services=()
+    
+    # Use forced services if configured
+    if [[ -n "$FORCE_SERVICES" ]]; then
+        read -ra services <<< "$FORCE_SERVICES"
+        printf '%s\n' "${services[@]}"
+        return
+    fi
+    
+    # Auto-detect active network services
+    while IFS= read -r service; do
+        [[ "$service" =~ ^\*.*|^An\ asterisk ]] && continue  # Skip disabled services
+        [[ -z "$service" ]] && continue
+        
+        # Check if service is active (has an assigned IP)
+        local info
+        info=$(networksetup -getinfo "$service" 2>/dev/null || true)
+        if echo "$info" | grep -q "IP address:" && ! echo "$info" | grep -q "IP address: none"; then
+            services+=("$service")
+        fi
+    done < <(networksetup -listallnetworkservices 2>/dev/null | tail -n +2)
+    
+    # If no active services found, fall back to common names
+    if [[ ${#services[@]} -eq 0 ]]; then
+        for common in "Wi-Fi" "Ethernet" "USB 10/100/1000 LAN"; do
+            if networksetup -getinfo "$common" >/dev/null 2>&1; then
+                services+=("$common")
+            fi
+        done
+    fi
+    
+    printf '%s\n' "${services[@]}"
+}
+
+# Discover Control D services
+discover_controld_services() {
+    local labels=()
+    
+    # Use configured labels if set, otherwise discover
+    if [[ -n "$CONTROLD_LABELS" ]]; then
+        read -ra labels <<< "$CONTROLD_LABELS"
+    else
+        # Auto-discover running Control D services
+        while IFS= read -r label; do
+            [[ -n "$label" ]] && labels+=("$label")
+        done < <(launchctl list 2>/dev/null | awk '{print $3}' | grep -Ei 'control.?d|ctrld|controldns' || true)
+    fi
+    
+    printf '%s\n' "${labels[@]}"
+}
+
+# Stop Control D services  
+stop_controld() {
+    local stopped=false
+    
+    info "Stopping Control D services..."
+    
+    # Discover and stop services
+    while IFS= read -r label; do
+        [[ -z "$label" ]] && continue
+        
+        if [[ "$DRY_RUN" == true ]]; then
+            info "Would stop service: $label"
+            continue
+        fi
+        
+        # Try system domain first
+        if launchctl bootout "system/$label" 2>/dev/null; then
+            success "Stopped system service: $label"
+            stopped=true
+        else
+            [[ "$VERBOSE" == true ]] && warn "Could not stop system/$label (may not exist)"
+        fi
+        
+        # Try user domain
+        if launchctl bootout "gui/$(id -u)/$label" 2>/dev/null; then
+            success "Stopped user service: $label"  
+            stopped=true
+        else
+            [[ "$VERBOSE" == true ]] && warn "Could not stop gui/$(id -u)/$label (may not exist)"
+        fi
+    done < <(discover_controld_services)
+    
+    # Fallback: kill any remaining Control D processes
+    if pgrep -f "ctrld|control.?d" >/dev/null 2>&1; then
+        if [[ "$DRY_RUN" == false ]]; then
+            pkill -f "ctrld|control.?d" 2>/dev/null || true
+            sleep 1
+        fi
+        if ! pgrep -f "ctrld|control.?d" >/dev/null 2>&1; then
+            success "Killed remaining Control D processes"
+            stopped=true
+        fi
+    fi
+    
+    if [[ "$stopped" == true ]]; then
+        success "Control D services stopped"
+    else
+        warn "No Control D services found to stop"
+    fi
+}
+
+# Create backup of current DNS settings
+create_backup() {
+    local backup_id
+    backup_id=$(date +%Y%m%d-%H%M%S)
+    readonly BACKUP_ROOT="$BACKUP_DIR/$backup_id"
+    
+    info "Creating DNS configuration backup..."
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        info "Would create backup at: $BACKUP_ROOT"
+        return
+    fi
+    
+    mkdir -p "$BACKUP_ROOT/services"
+    
+    # Backup each network service DNS settings
+    while IFS= read -r service; do
+        [[ -z "$service" ]] && continue
+        local safe_name
+        safe_name=$(printf %q "$service" | tr ' /' '__')
+        
+        networksetup -getdnsservers "$service" > "$BACKUP_ROOT/services/${safe_name}.dns" 2>/dev/null || {
+            warn "Could not backup DNS for service: $service"
+            continue
+        }
+        [[ "$VERBOSE" == true ]] && info "Backed up DNS config for: $service"
+    done < <(get_network_services)
+    
+    # Backup system configuration files
+    for file in "/Library/Preferences/SystemConfiguration/preferences.plist" \
+                "/Library/Preferences/SystemConfiguration/NetworkInterfaces.plist" \
+                "/Library/Preferences/SystemConfiguration/com.apple.airport.preferences.plist"; do
+        if [[ -f "$file" ]]; then
+            cp -a "$file" "$BACKUP_ROOT/" 2>/dev/null || true
+        fi
+    done
+    
+    # Create convenience symlink  
+    ln -sfn "$BACKUP_ROOT" "$BACKUP_DIR/latest"
+    
+    success "Backup created: $backup_id"
+}
+
+# Set DNS to automatic for all network services
+set_dns_automatic() {
+    info "Setting DNS to automatic (for Proton VPN optimization)..."
+    
+    local changed=false
+    while IFS= read -r service; do
+        [[ -z "$service" ]] && continue
+        
+        if [[ "$DRY_RUN" == true ]]; then
+            info "Would set DNS to automatic for: $service"
+            continue
+        fi
+        
+        # Set DNS to automatic (Empty)
+        if networksetup -setdnsservers "$service" "Empty" 2>/dev/null; then
+            # Verify the change
+            local dns_result
+            dns_result=$(networksetup -getdnsservers "$service" 2>/dev/null || echo "unknown")
+            if echo "$dns_result" | grep -q "There aren't any DNS Servers set"; then
+                success "DNS set to automatic for: $service"
+                changed=true
+            else
+                warn "DNS change verification failed for: $service"
+            fi
+        else
+            warn "Could not set DNS for service: $service"
+        fi
+    done < <(get_network_services)
+    
+    if [[ "$changed" == true ]]; then
+        success "DNS set to automatic (will use Proton VPN DNS)"
+    else
+        warn "No DNS settings were changed"
+    fi
+}
+
+# Flush DNS caches
+flush_dns_cache() {
+    info "Clearing DNS cache..."
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        info "Would flush DNS caches"
+        return
+    fi
+    
+    # Multiple cache clearing methods for macOS
+    dscacheutil -flushcache 2>/dev/null || true
+    sudo killall -HUP mDNSResponder 2>/dev/null || true  
+    sudo killall mDNSResponderHelper 2>/dev/null || true
+    
+    success "DNS cache cleared"
+}
+
+# Display usage information
+usage() {
+    cat << EOF
+Gaming Mode Script - Optimized for Proton VPN + GeForce NOW
+Temporarily bypasses Control D for maximum gaming performance
+
+Usage: $0 [options]
+
+Options:
+    -h, --help      Show this help message
+    -n, --dry-run   Show what would be done without making changes  
+    -v, --verbose   Enable verbose logging
+    
+This script must be run with sudo privileges or will self-elevate.
+
+Process:
+  1. Stop Control D services (eliminates DNS processing overhead)
+  2. Backup current DNS settings  
+  3. Set all network services to automatic DNS (uses Proton VPN's gaming DNS)
+  4. Clear DNS cache (fresh start for optimal performance)
+
+To restore normal mode: sudo restore-normal-mode
+EOF
+}
+
+# Parse command line arguments
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            -n|--dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            -v|--verbose)
+                VERBOSE=true
+                shift
+                ;;
+            *)
+                die "Unknown option: $1. Use -h for help."
+                ;;
+        esac
+    done
+}
+
+# Main execution
+main() {
+    parse_args "$@"
+    load_config
+    ensure_root "$@"
+    setup_logging
+    
+    # Print header
+    echo ""
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        echo "🎮 GAMING MODE ACTIVE"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    else
+        echo "GAMING MODE ACTIVE"
+        echo "========================================"
+    fi
+    
+    if [[ "$DRY_RUN" == true ]]; then
+        info "DRY RUN MODE - No changes will be made"
+        echo ""
+    fi
+    
+    # Execute main steps
+    stop_controld
+    create_backup  
+    set_dns_automatic
+    flush_dns_cache
+    
+    echo ""
+    success "Gaming mode enabled successfully!"
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    else
+        echo "========================================"
+    fi
+    info "Now connect to Proton VPN for optimized gaming performance"
+    info "To restore normal mode: sudo restore-normal-mode"
+    echo ""
+}
+
+# Run main function with all arguments
+main "$@"
