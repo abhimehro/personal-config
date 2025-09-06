@@ -1,0 +1,377 @@
+#!/bin/bash
+# Restore Normal Mode Script V2 - Enhanced for Proton VPN + Custom DNS Gaming Setup
+# Supports both new approach (Proton VPN custom DNS) and legacy restore
+
+set -Eeuo pipefail
+IFS=$' \n\t'
+
+# Ensure UTF-8 output for emojis/checkmarks
+export LC_ALL=en_US.UTF-8 2>/dev/null || export LC_ALL=C
+export LANG=en_US.UTF-8 2>/dev/null || export LANG=C
+
+# Script metadata
+readonly SCRIPT_NAME="restore-normal-mode-v2"
+readonly CONFIG_FILE="/Users/abhimehrotra/Documents/dev/personal-config/dns-setup/config.env"
+
+# Default configuration
+LOG_DIR="$HOME/Library/Logs/dns-mode"
+CONTROL_D_NORMAL_DNS="127.0.0.1"
+CONTROL_D_GAMING_DNS=""
+GAMING_MODE_TYPE="proton-custom"
+
+# Command line options
+VERBOSE=false
+
+# Load configuration if available
+load_config() {
+    [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
+}
+
+# Logging functions with UTF-8 safe emojis
+setup_logging() {
+    mkdir -p "$LOG_DIR"
+    readonly LOG_FILE="$LOG_DIR/${SCRIPT_NAME}-$(date +%F).log"
+    exec > >(tee -a "$LOG_FILE") 2>&1
+}
+
+success() { 
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        printf "✅ %s\n" "$*" 
+    else
+        printf "[OK] %s\n" "$*"
+    fi
+}
+
+info() { 
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        printf "ℹ️  %s\n" "$*"
+    else
+        printf "[INFO] %s\n" "$*"
+    fi
+}
+
+warn() { 
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        printf "⚠️  %s\n" "$*" >&2
+    else
+        printf "[WARN] %s\n" "$*" >&2
+    fi
+}
+
+error() { 
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        printf "❌ %s\n" "$*" >&2
+    else
+        printf "[ERROR] %s\n" "$*" >&2
+    fi
+}
+
+# Check current DNS and gaming status
+check_current_status() {
+    info "Checking current DNS and gaming status..."
+    echo ""
+    
+    # Check system DNS
+    local current_dns
+    current_dns=$(networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "unknown")
+    
+    if [[ "$current_dns" == "$CONTROL_D_NORMAL_DNS" ]]; then
+        success "System DNS: Using Control D local instance (normal mode)"
+        local already_normal=true
+    elif [[ "$current_dns" == "There aren't any DNS Servers set"* ]]; then
+        info "System DNS: Set to automatic (may be using Proton VPN or other DNS)"
+        local already_normal=false
+    else
+        info "System DNS: $current_dns"
+        local already_normal=false
+    fi
+    
+    # Check Control D service status
+    if pgrep -f "ctrld" >/dev/null 2>&1; then
+        local pid
+        pid=$(pgrep -f "ctrld" | head -1)
+        success "Control D service: Running (PID: $pid)"
+        local controld_running=true
+    else
+        warn "Control D service: Not running"
+        local controld_running=false
+    fi
+    
+    # Check if using Proton VPN custom DNS approach
+    if [[ "$GAMING_MODE_TYPE" == "proton-custom" ]]; then
+        info "Gaming approach: Proton VPN Custom DNS (recommended)"
+        echo ""
+        if [[ "$already_normal" == true && "$controld_running" == true ]]; then
+            success "System is already in normal browsing mode"
+            info "If you're using Proton VPN, simply disconnect or disable Custom DNS"
+            echo ""
+            return 0
+        fi
+    fi
+    
+    echo ""
+    return 1
+}
+
+# Restore normal DNS configuration
+restore_normal_dns() {
+    info "Restoring normal DNS configuration..."
+    
+    # Set system DNS back to Control D local instance
+    if networksetup -setdnsservers "Wi-Fi" "$CONTROL_D_NORMAL_DNS" 2>/dev/null; then
+        success "Set Wi-Fi DNS to Control D local instance: $CONTROL_D_NORMAL_DNS"
+    else
+        warn "Could not set Wi-Fi DNS"
+    fi
+    
+    # Check other active network services
+    while IFS= read -r service; do
+        [[ "$service" =~ ^\*.*|^An\ asterisk ]] && continue  # Skip disabled services
+        [[ -z "$service" ]] && continue
+        [[ "$service" == "Wi-Fi" ]] && continue  # Already handled
+        
+        # Check if service is active
+        local info_output
+        info_output=$(networksetup -getinfo "$service" 2>/dev/null || true)
+        if echo "$info_output" | grep -q "IP address:" && ! echo "$info_output" | grep -q "IP address: none"; then
+            if networksetup -setdnsservers "$service" "$CONTROL_D_NORMAL_DNS" 2>/dev/null; then
+                success "Set $service DNS to Control D local instance"
+            else
+                warn "Could not set DNS for $service"
+            fi
+        fi
+    done < <(networksetup -listallnetworkservices 2>/dev/null | tail -n +2)
+}
+
+# Ensure Control D is running
+ensure_controld_running() {
+    info "Ensuring Control D service is running..."
+    
+    if pgrep -f "ctrld" >/dev/null 2>&1; then
+        success "Control D is already running"
+        return 0
+    fi
+    
+    # Try to start Control D service
+    local started=false
+    
+    # Try known plist files
+    for plist in "/Library/LaunchDaemons/ctrld.plist" "/Library/LaunchDaemons/com.controld.maintenance.plist"; do
+        if [[ -f "$plist" ]]; then
+            local label
+            label=$(basename "$plist" .plist)
+            
+            if sudo launchctl bootstrap system "$plist" 2>/dev/null; then
+                success "Bootstrapped system service: $label"
+            fi
+            
+            if sudo launchctl kickstart -k "system/$label" 2>/dev/null; then
+                success "Started system service: $label"
+                started=true
+            fi
+        fi
+    done
+    
+    # Check if it's running now
+    sleep 2
+    if pgrep -f "ctrld" >/dev/null 2>&1; then
+        success "Control D service is now running"
+        return 0
+    else
+        warn "Could not start Control D service automatically"
+        warn "You may need to start it manually or check your Control D installation"
+        return 1
+    fi
+}
+
+# Flush DNS caches
+flush_dns_cache() {
+    info "Clearing DNS cache..."
+    
+    # Multiple cache clearing methods for macOS
+    dscacheutil -flushcache 2>/dev/null || true
+    sudo killall -HUP mDNSResponder 2>/dev/null || true  
+    sudo killall mDNSResponderHelper 2>/dev/null || true
+    
+    success "DNS cache cleared"
+}
+
+# Perform health checks
+health_check() {
+    info "Performing health checks..."
+    
+    local healthy=true
+    
+    # Check if Control D processes are running
+    if pgrep -f "ctrld" >/dev/null 2>&1; then
+        local pid
+        pid=$(pgrep -f "ctrld" | head -1)
+        success "Control D process running (PID: $pid)"
+    else
+        warn "Control D process not detected"
+        healthy=false
+    fi
+    
+    # Test DNS resolution
+    if command -v host >/dev/null 2>&1; then
+        local test_result
+        test_result=$(host google.com 2>/dev/null | head -1 || echo "failed")
+        if echo "$test_result" | grep -q "has address"; then
+            success "DNS resolution working: $test_result"
+        else
+            warn "DNS resolution test failed"
+            healthy=false
+        fi
+    elif command -v dig >/dev/null 2>&1; then
+        local test_result
+        test_result=$(dig +short google.com 2>/dev/null | head -1 || echo "failed")
+        if [[ -n "$test_result" && "$test_result" != "failed" ]]; then
+            success "DNS resolution working: google.com -> $test_result"
+        else
+            warn "DNS resolution test failed"
+            healthy=false
+        fi
+    fi
+    
+    # Check DNS configuration
+    local dns_info
+    dns_info=$(scutil --dns 2>/dev/null | grep -A 2 "resolver #1" | grep nameserver || echo "unknown")
+    if [[ -n "$dns_info" && "$dns_info" != "unknown" ]]; then
+        success "Primary DNS configuration verified"
+        [[ "$VERBOSE" == true ]] && info "DNS details: $dns_info"
+    fi
+    
+    echo ""
+    if [[ "$healthy" == true ]]; then
+        success "All health checks passed"
+        return 0
+    else
+        warn "Some health checks failed - please review the warnings above"
+        return 1
+    fi
+}
+
+# Show Proton VPN guidance
+show_proton_guidance() {
+    if [[ "$GAMING_MODE_TYPE" == "proton-custom" ]]; then
+        echo ""
+        if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+            echo "🔄 PROTON VPN USERS:"
+        else
+            echo "PROTON VPN USERS:"
+        fi
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        info "Normal browsing mode is now active"
+        info "If you're still connected to Proton VPN:"
+        info "• Disable Custom DNS in Proton VPN settings, OR"
+        info "• Disconnect from Proton VPN to use local Control D"
+        echo ""
+        info "For gaming: Use 'gaming-mode-v2' for setup instructions"
+    fi
+}
+
+# Display usage information
+usage() {
+    cat << EOF
+Restore Normal Mode Script V2 - Enhanced for Proton VPN + Custom DNS Gaming Setup
+Returns from gaming mode to normal browsing with Control D protection
+
+Usage: $0 [options]
+
+Options:
+    -h, --help      Show this help message
+    -v, --verbose   Enable verbose logging
+    
+WHAT THIS SCRIPT DOES:
+  • Ensures Control D service is running
+  • Sets system DNS back to Control D local instance (127.0.0.1)
+  • Clears DNS cache for fresh start
+  • Performs health checks to verify everything works
+  • Provides guidance for Proton VPN users
+
+FOR PROTON VPN CUSTOM DNS USERS:
+  • System will be set to normal browsing mode
+  • Disable Custom DNS in Proton VPN or disconnect to use local Control D
+  • Your gaming-optimized profile remains available in Proton VPN settings
+
+Configuration file: $CONFIG_FILE
+EOF
+}
+
+# Parse command line arguments
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            -v|--verbose)
+                VERBOSE=true
+                shift
+                ;;
+            *)
+                error "Unknown option: $1. Use -h for help."
+                exit 1
+                ;;
+        esac
+    done
+}
+
+# Main execution
+main() {
+    parse_args "$@"
+    load_config
+    setup_logging
+    
+    # Print header
+    echo ""
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        echo "🛡️  NORMAL MODE RESTORE"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    else
+        echo "NORMAL MODE RESTORE"
+        echo "======================================"
+    fi
+    echo ""
+    
+    # Check current status first
+    if check_current_status; then
+        # Already in normal mode
+        show_proton_guidance
+        return 0
+    fi
+    
+    # Restore normal configuration
+    restore_normal_dns
+    echo ""
+    
+    # Ensure Control D is running
+    ensure_controld_running
+    echo ""
+    
+    # Flush DNS cache
+    flush_dns_cache
+    echo ""
+    
+    # Health check
+    if health_check; then
+        echo ""
+        success "Normal mode restored successfully!"
+        if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        else
+            echo "======================================"
+        fi
+        info "Control D DNS filtering and protection are now active"
+        show_proton_guidance
+    else
+        echo ""
+        warn "Normal mode restored with some issues - please review warnings above"
+        show_proton_guidance
+        exit 1
+    fi
+}
+
+# Run main function with all arguments
+main "$@"
