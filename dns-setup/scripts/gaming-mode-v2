@@ -1,0 +1,303 @@
+#!/bin/bash
+# Gaming Mode Script V2 - Optimized for Proton VPN + Custom Control D Gaming DNS
+# Supports both new Proton VPN custom DNS approach and legacy Control D stopping
+
+set -Eeuo pipefail
+IFS=$' \n\t'
+
+# Ensure UTF-8 output for emojis/checkmarks
+export LC_ALL=en_US.UTF-8 2>/dev/null || export LC_ALL=C
+export LANG=en_US.UTF-8 2>/dev/null || export LANG=C
+
+# Script metadata
+readonly SCRIPT_NAME="gaming-mode-v2"
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly CONFIG_FILE="/Users/abhimehrotra/Documents/dev/personal-config/dns-setup/config.env"
+
+# Default configuration
+LOG_DIR="$HOME/Library/Logs/dns-mode"
+BACKUP_DIR="/Users/abhimehrotra/Documents/dev/personal-config/dns-setup/backups"
+CONTROLD_LABELS="ctrld com.controld.maintenance"
+FORCE_SERVICES=""
+CONTROL_D_NORMAL_DNS="127.0.0.1"
+CONTROL_D_GAMING_DNS=""
+GAMING_MODE_TYPE="proton-custom"
+
+# Command line options
+DRY_RUN=false
+VERBOSE=false
+FORCE_LEGACY=false
+
+# Load configuration if available
+load_config() {
+    [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
+}
+
+# Ensure running as root (only for legacy mode)
+ensure_root() {
+    if [[ "$GAMING_MODE_TYPE" == "legacy" || "$FORCE_LEGACY" == true ]] && [[ $EUID -ne 0 ]]; then
+        exec sudo -E "$0" "$@"
+    fi
+}
+
+# Logging functions with UTF-8 safe emojis
+setup_logging() {
+    mkdir -p "$LOG_DIR"
+    readonly LOG_FILE="$LOG_DIR/${SCRIPT_NAME}-$(date +%F).log"
+    exec > >(tee -a "$LOG_FILE") 2>&1
+}
+
+success() { 
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        printf "✅ %s\n" "$*" 
+    else
+        printf "[OK] %s\n" "$*"
+    fi
+}
+
+info() { 
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        printf "ℹ️  %s\n" "$*"
+    else
+        printf "[INFO] %s\n" "$*"
+    fi
+}
+
+warn() { 
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        printf "⚠️  %s\n" "$*" >&2
+    else
+        printf "[WARN] %s\n" "$*" >&2
+    fi
+}
+
+error() { 
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        printf "❌ %s\n" "$*" >&2
+    else
+        printf "[ERROR] %s\n" "$*" >&2
+    fi
+}
+
+# Proton VPN Custom DNS Gaming Mode (New Approach)
+proton_gaming_mode() {
+    info "🎮 PROTON VPN + CUSTOM CONTROL D GAMING MODE"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    
+    # Verify Control D gaming DNS servers are configured
+    if [[ -z "$CONTROL_D_GAMING_DNS" ]]; then
+        error "Gaming DNS servers not configured in config.env"
+        echo ""
+        info "To set up gaming mode, add your Control D gaming profile DNS servers to:"
+        info "$CONFIG_FILE"
+        echo ""
+        info "Example:"
+        info 'CONTROL_D_GAMING_DNS="p1.freedns.controld.com p2.freedns.controld.com"'
+        echo ""
+        return 1
+    fi
+    
+    # Display current DNS status
+    info "Current DNS Configuration:"
+    local current_dns
+    current_dns=$(networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "unknown")
+    if [[ "$current_dns" == "$CONTROL_D_NORMAL_DNS" ]]; then
+        success "Currently using Control D local instance (normal browsing mode)"
+    else
+        info "Current DNS: $current_dns"
+    fi
+    echo ""
+    
+    # Show gaming setup instructions
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        echo "🚀 GAMING SETUP INSTRUCTIONS:"
+    else
+        echo "GAMING SETUP INSTRUCTIONS:"
+    fi
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    
+    echo "1. Open Proton VPN application"
+    echo "2. Go to Settings → Advanced → Custom DNS"
+    echo "3. Enable Custom DNS and set:"
+    
+    # Parse gaming DNS servers
+    local dns_array
+    IFS=' ' read -ra dns_array <<< "$CONTROL_D_GAMING_DNS"
+    local i=1
+    for dns in "${dns_array[@]}"; do
+        echo "   DNS $i: $dns"
+        ((i++))
+    done
+    echo ""
+    
+    echo "4. Connect to your preferred Proton VPN server"
+    echo "5. Launch GeForce NOW and enjoy optimized gaming!"
+    echo ""
+    
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        echo "🎯 BENEFITS OF THIS APPROACH:"
+    else
+        echo "BENEFITS OF THIS APPROACH:"
+    fi
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    success "Maintains Control D security and ad-blocking while gaming"
+    success "Uses gaming-optimized DNS profile for GeForce NOW"
+    success "No service interruption or system DNS changes needed"
+    success "Seamless switching via Proton VPN settings"
+    success "Better performance than stopping Control D entirely"
+    echo ""
+    
+    if [[ "$LC_ALL" =~ UTF-8|utf8 ]]; then
+        echo "🔄 TO RETURN TO NORMAL MODE:"
+    else
+        echo "TO RETURN TO NORMAL MODE:"
+    fi
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    info "1. Disconnect from Proton VPN, or"
+    info "2. Disable Custom DNS in Proton VPN settings, or"
+    info "3. Run: restore-normal-mode"
+    echo ""
+}
+
+# Legacy Gaming Mode (Original Approach)  
+legacy_gaming_mode() {
+    warn "Using legacy gaming mode (stops Control D services)"
+    warn "Consider switching to 'proton-custom' mode for better performance"
+    echo ""
+    
+    # Original gaming-mode logic would go here
+    # For now, just show a message
+    info "Legacy mode would:"
+    info "1. Stop Control D services"
+    info "2. Set DNS to automatic"  
+    info "3. Clear DNS cache"
+    echo ""
+    info "To enable legacy mode, set GAMING_MODE_TYPE=\"legacy\" in config.env"
+    info "Or use --legacy flag"
+}
+
+# Test gaming DNS connectivity
+test_gaming_dns() {
+    info "Testing gaming DNS connectivity..."
+    
+    if [[ -z "$CONTROL_D_GAMING_DNS" ]]; then
+        warn "Gaming DNS servers not configured"
+        return 1
+    fi
+    
+    local dns_array
+    IFS=' ' read -ra dns_array <<< "$CONTROL_D_GAMING_DNS"
+    
+    local all_working=true
+    for dns in "${dns_array[@]}"; do
+        if command -v dig >/dev/null 2>&1; then
+            local result
+            result=$(dig +short @"$dns" google.com 2>/dev/null | head -1)
+            if [[ -n "$result" ]]; then
+                success "DNS $dns: Working (google.com -> $result)"
+            else
+                warn "DNS $dns: Not responding"
+                all_working=false
+            fi
+        else
+            info "DNS $dns: Cannot test (dig not available)"
+        fi
+    done
+    
+    if [[ "$all_working" == true ]]; then
+        success "All gaming DNS servers are responding correctly"
+    else
+        warn "Some gaming DNS servers may have issues"
+    fi
+    echo ""
+}
+
+# Display usage information
+usage() {
+    cat << EOF
+Gaming Mode Script V2 - Optimized for Proton VPN + Custom Control D Gaming DNS
+Supports both new Proton VPN custom DNS approach and legacy Control D stopping
+
+Usage: $0 [options]
+
+Options:
+    -h, --help      Show this help message
+    -t, --test      Test gaming DNS connectivity
+    -v, --verbose   Enable verbose logging
+    --legacy        Force legacy mode (stop Control D)
+    
+Current mode: $GAMING_MODE_TYPE (configured in config.env)
+
+PROTON VPN CUSTOM DNS MODE (Recommended):
+  • Keeps Control D running with gaming-optimized profile
+  • Configure custom DNS in Proton VPN settings
+  • Better performance and security than legacy mode
+
+LEGACY MODE:
+  • Stops Control D services completely
+  • Sets system DNS to automatic
+  • Use only if Proton VPN custom DNS doesn't work
+
+To configure: Edit $CONFIG_FILE
+EOF
+}
+
+# Parse command line arguments
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            -t|--test)
+                load_config
+                setup_logging
+                test_gaming_dns
+                exit 0
+                ;;
+            -v|--verbose)
+                VERBOSE=true
+                shift
+                ;;
+            --legacy)
+                FORCE_LEGACY=true
+                GAMING_MODE_TYPE="legacy"
+                shift
+                ;;
+            *)
+                error "Unknown option: $1. Use -h for help."
+                exit 1
+                ;;
+        esac
+    done
+}
+
+# Main execution
+main() {
+    parse_args "$@"
+    load_config
+    ensure_root "$@"
+    setup_logging
+    
+    echo ""
+    
+    case "$GAMING_MODE_TYPE" in
+        "proton-custom")
+            proton_gaming_mode
+            ;;
+        "legacy")
+            legacy_gaming_mode
+            ;;
+        *)
+            error "Unknown GAMING_MODE_TYPE: $GAMING_MODE_TYPE"
+            error "Valid options: 'proton-custom', 'legacy'"
+            exit 1
+            ;;
+    esac
+}
+
+# Run main function with all arguments
+main "$@"
