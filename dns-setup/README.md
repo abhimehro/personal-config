@@ -10,7 +10,7 @@
 
 This is a comprehensive, enterprise-grade DNS solution featuring:
 
-- **Control D DNS Filtering** (Profile: 2eoeqoo9ib9) - Ad blocking, content filtering, and custom DNS routing
+- **Control D DNS Filtering** (Profile: ${CTRLD_PROFILE_ID}) - Ad blocking, content filtering, and custom DNS routing
 - **DoH3 Protocol** - HTTP/3 over QUIC for maximum performance and privacy
 - **Split-DNS Intelligence** - Local domains routed locally, internet domains filtered through Control D
 - **Windscribe VPN Integration** - Perfect compatibility with VPN tunneling
@@ -82,6 +82,15 @@ sudo controld-maintenance full
 - **Emergency Restore**: `sudo controld-maintenance emergency`
 - **Manual Backup**: `sudo controld-maintenance backup`
 
+### Installation
+```bash
+# Set your Control D profile ID
+export CTRLD_PROFILE_ID=xxxxxxxxxx
+
+# Install config to /etc/controld/ctrld.toml
+bash dns-setup/scripts/install_ctrld_config.sh
+```
+
 ## 🔍 System Verification
 
 To verify your system is working correctly:
@@ -108,7 +117,7 @@ dig +short whoami.akamai.net @127.0.0.1
 **Optimal Settings:**
 - **DNS Setting**: "Local DNS" ✅
 - **App Internal DNS**: "Control D" ✅
-- **Split Tunneling**: Exclude local network (192.168.4.0/24)
+- **Split Tunneling**: Exclude local network 
 - **Proxy Configuration**: Not needed ❌
 
 ## 📊 Performance Metrics
