@@ -275,8 +275,8 @@ flush_dns_cache() {
     
     # Multiple cache clearing methods for macOS
     dscacheutil -flushcache 2>/dev/null || true
-    killall -HUP mDNSResponder 2>/dev/null || true  
-    killall mDNSResponderHelper 2>/dev/null || true
+    sudo killall -HUP mDNSResponder 2>/dev/null || true  
+    sudo killall mDNSResponderHelper 2>/dev/null || true
     
     success "DNS cache cleared"
 }
