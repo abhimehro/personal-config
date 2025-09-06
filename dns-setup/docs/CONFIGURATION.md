@@ -17,6 +17,8 @@ Dev Queries     → ctrld (127.0.0.1:53) → Localhost → 127.0.0.1
 **Location**: `/etc/controld/ctrld.toml`  
 **Backup**: `dns-setup/configs/ctrld-enhanced-split-dns.toml`
 
+> Tip: Set your Control D profile ID in environment: `export CTRLD_PROFILE_ID=xxxxxxxxxx` and reference it in configs.
+
 Key sections:
 
 #### Listener Configuration
@@ -44,7 +46,7 @@ Key sections:
 ```toml
 [upstream.0]
 type = 'doh3'                                    # HTTP/3 over QUIC
-endpoint = 'https://dns.controld.com/2eoeqoo9ib9'  # Your Control D profile
+endpoint = 'https://dns.controld.com/${CTRLD_PROFILE_ID}'  # Your Control D profile
 bootstrap_ip = '76.76.19.19'                    # Pre-resolved Control D IP
 timeout = 5000                                   # 5 second timeout
 

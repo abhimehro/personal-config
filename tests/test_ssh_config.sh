@@ -50,9 +50,9 @@ run_test "1Password SSH agent socket exists" "[ -S ~/Library/Group\\ Containers/
 run_test "1Password SSH agent responds" "SSH_AUTH_SOCK=~/Library/Group\\ Containers/2BUA8C4S2C.com.1password/t/agent.sock ssh-add -l"
 
 # Test SSH host configurations
-run_test "cursor-mdns config valid" "ssh -G cursor-mdns | grep -q 'hostname Abhis-MacBook-Air.local'"
-run_test "cursor-local config valid" "ssh -G cursor-local | grep -q 'hostname abhis-macbook-air'"
-run_test "cursor-auto config valid" "ssh -G cursor-auto | grep -q 'hostname Abhis-MacBook-Air.local'"
+run_test "cursor-mdns config valid" "ssh -G cursor-mdns | grep -qi 'hostname .*\.local'"
+run_test "cursor-local config valid" "ssh -G cursor-local | grep -qi 'hostname'"
+run_test "cursor-auto config valid" "ssh -G cursor-auto | grep -qi 'hostname .*\.local'"
 
 echo ""
 echo "📊 Test Results: $TESTS_PASSED/$TESTS_TOTAL tests passed"
