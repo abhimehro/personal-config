@@ -1,0 +1,4 @@
+# DNS Setup - Exclude runtime artifacts from git
+backups/
+logs/
+*.log
