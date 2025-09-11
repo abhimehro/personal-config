@@ -1,0 +1,21 @@
+{
+    "powershell.buttons.showPanelMovementButtons": true,
+    "powershell.sideBar.CommandExplorerVisibility": true,
+    "powershell.suppressAdditionalExeNotFoundWarning": true,
+    "powershell.codeFormatting.autoCorrectAliases": true,
+    "powershell.codeFormatting.avoidSemicolonsAsLineTerminators": true,
+    "powershell.codeFormatting.trimWhitespaceAroundPipe": true,
+    "powershell.codeFormatting.useCorrectCasing": true,
+    "powershell.codeFormatting.useConstantStrings": true,
+    "powershell.codeFormatting.whitespaceBetweenParameters": true,
+    "powershell.analyzeOpenDocumentsOnly": true,
+    "powershell.debugging.createTemporaryIntegratedConsole": false,
+    "powershell.cwd": "${workspaceFolder}",
+    "powershell.pester.debugOutputVerbosity": "Normal",
+    "powershell.integratedConsole.forceClearScrollbackBuffer": true,
+    "powershell.integratedConsole.startInBackground": true,
+    "powershell.integratedConsole.suppressStartupBanner": true,
+    "powershell.integratedConsole.useLegacyReadLine": true,
+    "powershell.developer.editorServicesWaitForDebugger": true,
+    "powershell.developer.traceDap": true
+}
