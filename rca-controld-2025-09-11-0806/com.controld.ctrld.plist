@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Service Identity -->
+    <key>Label</key>
+    <string>com.controld.ctrld</string>
+    
+    <key>UserName</key>
+    <string>root</string>
+    
+    <key>GroupName</key>
+    <string>wheel</string>
+    
+    <!-- Program Configuration -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/ctrld</string>
+        <string>run</string>
+        <string>--config</string>
+        <string>/usr/local/etc/ctrld/ctrld.yaml</string>
+        <string>--cd</string>
+        <string>privacy</string>
+    </array>
+    
+    <key>WorkingDirectory</key>
+    <string>/usr/local/etc/ctrld</string>
+    
+    <!-- Service Management -->
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+        <key>Crashed</key>
+        <true/>
+        <key>NetworkState</key>
+        <true/>
+    </dict>
+    
+    <!-- Restart policies -->
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+    
+    <!-- Logging -->
+    <key>StandardOutPath</key>
+    <string>/var/log/ctrld.out.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/var/log/ctrld.err.log</string>
+    
+    <!-- Resource limits -->
+    <key>SoftResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>4096</integer>
+        <key>NumberOfProcesses</key>
+        <integer>256</integer>
+    </dict>
+    
+    <!-- Process priority -->
+    <key>Nice</key>
+    <integer>-5</integer>
+    
+    <!-- Environment -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>CTRLD_CONFIG_PATH</key>
+        <string>/usr/local/etc/ctrld/ctrld.yaml</string>
+        <key>CTRLD_LOG_LEVEL</key>
+        <string>info</string>
+    </dict>
+    
+    <!-- Security -->
+    <key>ProcessType</key>
+    <string>Background</string>
+    
+    <!-- Network socket ownership (optional - launchd manages port 53) -->
+    <key>Sockets</key>
+    <dict>
+        <key>DNSSocket</key>
+        <dict>
+            <key>SockNodeName</key>
+            <string>127.0.0.1</string>
+            <key>SockServiceName</key>
+            <string>53</string>
+            <key>SockType</key>
+            <string>dgram</string>
+            <key>SockFamily</key>
+            <string>IPv4</string>
+        </dict>
+    </dict>
+    
+    <!-- Launch conditions -->
+    <key>LaunchOnlyOnce</key>
+    <false/>
+    
+    <!-- Disable in safe mode -->
+    <key>Disabled</key>
+    <false/>
+    
+    <!-- Exit timeout -->
+    <key>ExitTimeOut</key>
+    <integer>30</integer>
+</dict>
+</plist>
