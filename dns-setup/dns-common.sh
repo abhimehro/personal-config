@@ -150,7 +150,7 @@ validate_dns_resolution() {
 get_primary_network_service() {
     local services primary_service
     
-    services=$(networksetup -listallnetworkservices 2>/dev/null | tail -n +2 | grep -v "^*" | head -5)
+    services=$(networksetup -listallnetworkservices 2>/dev/null | tail -n +2 | grep -v "^*")
     
     # Prefer Wi-Fi, then Ethernet variants
     while IFS= read -r service; do
