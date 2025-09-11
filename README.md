@@ -271,7 +271,7 @@ sudo lsof -nP -iTCP:53 -sTCP:LISTEN -iUDP:53
 
 # Reset DNS to defaults
 for s in $(networksetup -listallnetworkservices | tail -n +2 | sed 's/^\*//'); do
-  sudo networksetup -setdnsservers "$s" empty
+  sudo networksetup -setdnsservers "$s" empty || true
 done
 ```
 
