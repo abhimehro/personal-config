@@ -10,7 +10,7 @@
     "powershell.codeFormatting.whitespaceBetweenParameters": true,
     "powershell.analyzeOpenDocumentsOnly": true,
     "powershell.debugging.createTemporaryIntegratedConsole": false,
-    "powershell.cwd": "~/Applications/Cursor.app/Contents/Resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration.ps1",
+    "powershell.cwd": "${workspaceFolder}",
     "powershell.pester.debugOutputVerbosity": "Normal",
     "powershell.integratedConsole.forceClearScrollbackBuffer": true,
     "powershell.integratedConsole.startInBackground": true,
