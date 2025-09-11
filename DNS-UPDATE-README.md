@@ -26,8 +26,8 @@ sudo ./dns-setup/install-controld-solution.sh
 
 ### Complete Documentation
 - **[DNS Solution v2.0 Guide](dns-setup/docs/DNS-SOLUTION-v2.md)** - Complete usage guide
-- **[Implementation Details](dns-setup/rca-controld-2025-09-11-0806/SOLUTION-SUMMARY.md)** - Technical documentation
-- **[Root Cause Analysis](dns-setup/rca-controld-2025-09-11-0806/RCA-initial-analysis.md)** - Problem analysis
+- **[Implementation Details](dns-setup/SOLUTION-SUMMARY.md)** - Technical documentation
+- **[Root Cause Analysis](dns-setup/RCA-initial-analysis.md)** - Problem analysis
 
 ---
 
