@@ -20,8 +20,8 @@ sudo dns-gaming-vpn   # VPN gaming mode (conflict-free)
 
 ### Installation
 ```bash
-cd ~/Documents/dev/personal-config/dns-setup/rca-controld-2025-09-11-0806
-sudo ./install-controld-solution.sh
+cd /path/to/your/cloned/repository
+sudo ./dns-setup/install-controld-solution.sh
 ```
 
 ### Complete Documentation
