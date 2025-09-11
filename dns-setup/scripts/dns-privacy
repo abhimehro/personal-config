@@ -63,7 +63,7 @@ start_ctrld() {
   touch "$LOG_FILE"; chmod 640 "$LOG_FILE"
   
   # Use Control D with profile-specific DoH endpoint
-  local cmd=( "$CTRLD_BIN" run --cd "$PROFILE_ID" --listen "127.0.0.1:53" --primary_upstream "https://dns.controld.com/2eoeqoo9ib9" )
+  local cmd=( "$CTRLD_BIN" run --cd "$PROFILE_ID" --listen "127.0.0.1:53" --primary_upstream "https://dns.controld.com/$PROFILE_ID" )
   
   nohup "${cmd[@]}" >> "$LOG_FILE" 2>&1 &
   echo $! > "$PID_FILE"
