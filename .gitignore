@@ -1,32 +1,11 @@
-configs/.gemini/
-# Environment files
-.env
-.env.local
-.env.*.local
-.secrets/
-.sensitive-paths.txt
-# macOS system files
-.DS_Store
-.AppleDouble
-.LSOverride
-Icon
-._*
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
+# Personal Configuration Repository - .gitignore
+# Comprehensive ignore patterns for secure personal configuration management
 
-# macOS directories
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
+# =============================================================================
+# SECURITY - Never commit these
+# =============================================================================
 
-# Personal sensitive files
+# SSH Keys and sensitive authentication
 *.key
 *.pem
 *_rsa
@@ -37,25 +16,93 @@ Temporary Items
 .ssh/known_hosts
 .ssh/authorized_keys
 
-# Configuration with potential secrets
+# Environment files and secrets
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+.secrets/
+.sensitive-paths.txt
+config.json
 *.conf
 *.ini
-config.json
 
-# Exceptions to allow specific configs
-!configs/*.example.conf
-!configs/*.example.ini
-!configs/*.example.json
+# VPN configuration files
+*.ovpn
+*.vpn
+vpn.conf
+
+# DNS configuration with potential IPs/domains
+ctrld.toml
+*.dns
+
+# =============================================================================
+# SYSTEM FILES
+# =============================================================================
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# =============================================================================
+# DEVELOPMENT
+# =============================================================================
+
+# Editor directories and files
+.idea/
+.vscode/settings.json
+.vscode/launch.json
+*.sublime-workspace
+*.sublime-project
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+package-lock.json
+yarn.lock
+
+# Ruby
+.bundle/
+vendor/bundle
+Gemfile.lock
+
+# =============================================================================
+# LOGS & TEMPORARY FILES
+# =============================================================================
 
 # Log files
 *.log
 log/
 logs/
+**/var/log/
 
 # Cache directories
 .cache/
@@ -67,34 +114,72 @@ cache/
 *.swp
 *.swo
 *~
-
-# VPN configuration files that might contain sensitive data
-*.ovpn
-*.vpn
-vpn.conf
+.backup
+.orig
 
 # History files
 .bash_history
 .zsh_history
+.fish_history
 
-# Python cache files
-__pycache__/
-*.py[cod]
-*$py.class
-.ipynb_checkpoints
+# =============================================================================
+# PROJECT SPECIFIC
+# =============================================================================
 
-# Node.js
-node_modules/
-npm-debug.log
-yarn-error.log
+# Backup configurations (keep structure, ignore content)
+dns-setup/backups/*/
+!dns-setup/backups/.gitkeep
 
-# Ruby
-.bundle/
-vendor/bundle
+# Local development overrides
+configs/local/
+*.local
 
-# Editor directories and files
-.idea/
-.vscode/
-*.sublime-workspace
-*.sublime-project
+# Testing artifacts
+test-results/
+coverage/
+.coverage
+
+# =============================================================================
+# EXCEPTIONS - Allow these specific files
+# =============================================================================
+
+# Allow example configurations
+!configs/*.example.conf
+!configs/*.example.ini
+!configs/*.example.json
+!.env.example
+
+# Allow public SSH configs (no keys)
+!configs/ssh/config
+!configs/ssh/agent.toml
+
+# Allow versioned documentation
+!docs/
+!*.md
+!*.txt
+
+# Allow scripts (but not sensitive ones)
+!scripts/
+!*.sh
+
+# Allow test files
+!tests/
+
+# =============================================================================
+# SPECIAL PATTERNS
+# =============================================================================
+
+# Ignore any file with 'secret', 'private', or 'sensitive' in the name
+*secret*
+*private*
+*sensitive*
+*credentials*
+*password*
+*token*
+*_key
+
+# But allow documentation about these topics
+!*secret*.md
+!*private*.md
+!*sensitive*.md
 

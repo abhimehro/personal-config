@@ -1,85 +1,156 @@
 # Personal System Configuration
 
-A repository for personal system configurations, scripts, and documentation to make my macOS setup reproducible and backed up.
+A comprehensive repository for personal system configurations, scripts, and documentation to make my macOS development and gaming setup reproducible and backed up.
 
 ## Overview
 
-This repository contains configuration files, shell scripts, and documentation for my personal computing environment. By keeping these files in a Git repository, I can:
-- Back up important configurations and documentation
-- Track changes to my system setup over time
-- Easily reproduce my environment on a new machine
-- Share specific configurations or scripts with others when needed
-- Document solutions to problems I've solved
+This repository contains configuration files, automation scripts, and detailed documentation for my personal computing environment. Key features:
 
-## Repository Structure
+- **🔐 Secure SSH Configuration** - 1Password integration with dynamic network support
+- **🌐 Dynamic DNS Management** - Control D profile switching for privacy & gaming
+- **⚙️ Development Tools** - Optimized configurations for Cursor IDE and terminal workflows
+- **🎮 Gaming Optimization** - Specialized DNS profiles for gaming performance
+- **📱 Network Automation** - VPN-aware configurations with automatic failover
+
+By keeping these configurations in version control, I can:
+- Back up critical system configurations
+- Track changes over time with full history
+- Reproduce my environment on any new machine
+- Document solutions to complex networking challenges
+- Share working configurations with the community
+
+## 🎯 Quick Start
+
+### SSH Configuration
+```bash
+# Install SSH configuration with 1Password integration
+./scripts/install_ssh_config.sh
+
+# Test your setup
+./tests/test_ssh_config.sh
+
+# Connect to development machine
+ssh cursor-mdns  # Works anywhere (VPN on/off)
+```
+
+### DNS Management
+```bash
+# Switch to privacy mode (browsing, AI apps)
+sudo dns-privacy
+
+# Switch to gaming mode (gaming, minimal filtering)
+sudo dns-gaming
+
+# Deploy/update DNS scripts from backup
+./dns-setup/scripts/deploy.sh
+```
+
+## 📁 Repository Structure
 
 ```
 personal-config/
-├── docs/                   # Documentation and guides
-│   ├── ssh/               # SSH configuration documentation
-│   │   ├── ssh_configuration_guide.md    # Complete SSH setup guide
-│   │   ├── iTerm2_setup_guide.md         # iTerm2 integration
-│   │   └── README.md                     # SSH documentation index
-│   └── vpn_switching_guide.md            # VPN switching workflow
-├── configs/                # Configuration files (dotfiles)
-│   └── ssh/               # SSH configuration files
-│       ├── config         # Main SSH configuration
-│       └── agent.toml     # 1Password SSH agent settings
-├── scripts/                # Automation scripts
-│   ├── ssh/               # SSH-related scripts
-│   │   ├── smart_connect.sh        # Intelligent SSH connection
-│   │   ├── check_connections.sh    # Connection testing
-│   │   ├── setup_verification.sh   # Setup validation
-│   │   ├── diagnose_vpn.sh         # VPN troubleshooting
-│   │   └── setup_aliases.sh        # Shell aliases
-│   └── install_ssh_config.sh       # SSH configuration installer
-├── tests/                  # Testing scripts
-│   ├── test_ssh_config.sh  # SSH configuration validation
-│   └── test_config_fish.sh # Fish shell configuration test
-└── README.md               # This file
+├── 🌐 dns-setup/              # Dynamic DNS Management System
+│   ├── scripts/               # DNS switching automation
+│   │   ├── dns-privacy        # Privacy profile switcher
+│   │   ├── dns-gaming         # Gaming profile switcher
+│   │   ├── deploy.sh          # Script deployment tool
+│   │   └── README.md          # Comprehensive DNS guide
+│   ├── DEPLOYMENT_SUMMARY.md  # Complete setup documentation
+│   └── backups/               # Network configuration backups
+├── 🔐 configs/                # System Configuration Files
+│   ├── ssh/                   # SSH configuration
+│   │   ├── config             # Main SSH configuration
+│   │   └── agent.toml         # 1Password SSH agent settings
+│   ├── fish/                  # Fish shell configuration
+│   └── .vscode-R/             # R development settings
+├── 📜 scripts/                # Automation Scripts
+│   ├── ssh/                   # SSH automation
+│   │   ├── smart_connect.sh   # Intelligent connection
+│   │   ├── check_connections.sh # Connection testing
+│   │   └── diagnose_vpn.sh    # VPN troubleshooting
+│   └── install_ssh_config.sh  # SSH setup automation
+├── 🧪 tests/                  # Validation & Testing
+│   ├── test_ssh_config.sh     # SSH configuration tests
+│   └── test_config_fish.sh    # Fish shell tests
+├── 📚 docs/                   # Documentation
+│   └── ssh/                   # SSH setup guides
+└── 🎨 cursor/                 # Cursor IDE themes
 ```
 
-## 🔐 SSH Configuration (New!)
+## ✨ Key Features
 
-Complete SSH setup optimized for Cursor IDE development with 1Password integration and dynamic VPN/local network support.
+### 🌐 Dynamic DNS Management (New!)
 
-### Quick Start
+Intelligent DNS switching system with Control D integration:
+
+**Privacy Mode (`dns-privacy`)**
+- Enhanced security filtering
+- Malware & tracking protection
+- Optimized for browsing and AI applications
+- Profile ID: `2eoeqoo9ib9`
+
+**Gaming Mode (`dns-gaming`)**
+- Minimal filtering for maximum performance
+- Gaming service optimizations (Battle.net, GeForce Now, Overwatch 2)
+- Ultra-low latency DNS resolution
+- Profile ID: `1igcvpwtsfg`
+
+**Features:**
+- ✅ **Windscribe VPN Integration** - Seamless VPN compatibility
+- ✅ **Profile-Specific DoH Endpoints** - Optimized upstream resolvers
+- ✅ **Automatic Network Detection** - Skips VPN interfaces intelligently
+- ✅ **DNS Leak Protection** - Built-in firewall integration
+- ✅ **Smart Verification** - Real-time DNS resolution testing
+- ✅ **One-Command Switching** - Simple `sudo dns-*` commands
+
+### 🔐 SSH Configuration
+
+Professional SSH setup optimized for development:
+
+**Features:**
+- **🔐 1Password SSH Agent** - Secure key management without local storage
+- **🌐 Dynamic Network Support** - VPN-aware connection methods
+- **🎨 Cursor IDE Optimized** - Perfect remote development setup
+- **📱 mDNS/Bonjour Support** - Reliable local machine discovery
+- **🔧 Multiple Fallback Options** - Connection reliability guaranteed
+- **📊 Comprehensive Diagnostics** - Built-in testing and troubleshooting
+
+**Connection Methods:**
 ```bash
+ssh cursor-mdns    # Primary (works with/without VPN)
+ssh cursor-local   # Local network only
+ssh cursor-auto    # Auto-detection fallback
+```
+
+## 🚀 Installation
+
+### Complete Setup
+```bash
+# Clone the repository
+git clone <your-repo-url> ~/personal-config
+cd ~/personal-config
+
 # Install SSH configuration
 ./scripts/install_ssh_config.sh
 
-# Test setup
-./tests/test_ssh_config.sh
+# Deploy DNS management scripts
+./dns-setup/scripts/deploy.sh
 
-# Connect to your machine
-ssh cursor-mdns  # Primary method (works anywhere)
+# Test everything
+./tests/test_ssh_config.sh
 ```
 
-### Features
-- **🔐 1Password SSH Agent** - Secure key management without local storage
-- **🌐 Dynamic Network Support** - Automatically handles VPN on/off scenarios
-- **🎨 Cursor IDE Optimized** - Perfect for remote development workflows
-- **📱 mDNS/Bonjour Support** - Reliable local machine connections
-- **🔧 Multiple Connection Methods** - Fallback options for reliability
-- **📊 Comprehensive Diagnostics** - Built-in troubleshooting and testing
+### DNS Management Only
+```bash
+# Deploy DNS scripts to ~/bin
+./dns-setup/scripts/deploy.sh
 
-### Documentation
-- **[Complete SSH Guide](docs/ssh/ssh_configuration_guide.md)** - Comprehensive setup and usage
-- **[iTerm2 Integration](docs/ssh/iTerm2_setup_guide.md)** - Terminal setup guide
+# Switch profiles
+sudo dns-privacy  # Enhanced privacy filtering
+sudo dns-gaming   # Gaming optimization
+```
 
-## Documentation
-
-### VPN Switching Guide
-
-The VPN Switching Guide documents the workflow for switching between Cloudflare WARP+Control D DNS and ProtonVPN configurations for different use cases. It includes step-by-step instructions, troubleshooting steps, and technical details.
-
-### MacOS Resource Monitor MCP Server
-
-The MacOS Resource Monitor guide explains how to run the lightweight MCP server that exposes CPU, memory, and network usage on macOS. It covers installation, usage, integration with LLM clients, and troubleshooting tips.
-
-## Installation
-
-### SSH Configuration
+### SSH Configuration Only
 ```bash
 # Quick install
 ./scripts/install_ssh_config.sh
@@ -90,74 +161,158 @@ cp configs/ssh/agent.toml ~/.ssh/agent.toml
 chmod 600 ~/.ssh/config ~/.ssh/agent.toml
 ```
 
-### General Usage
-```bash
-# Clone the repository
-git clone https://github.com/REPO_OWNER/REPO_NAME.git
+## 🔧 Configuration
 
-# Copy configuration files to appropriate locations
-# or symbolic link them from your home directory
+### Environment Setup
+```bash
+# Add required environment variables
+export PATH="$HOME/bin:$PATH"  # For DNS scripts
+
+# Optional: Set Control D profile IDs
+export CTRLD_PRIVACY_PROFILE="2eoeqoo9ib9"
+export CTRLD_GAMING_PROFILE="1igcvpwtsfg"
 ```
 
-## Security & Configuration
+### VPN Integration
 
-- Use 1Password or environment variables for any secrets; do not commit credentials.
-- Create a `.env.example` with non-sensitive placeholders and keep real values in `.env`.
-- Set `CTRLD_PROFILE_ID` in your environment for DNS configs.
+**Windscribe Configuration:**
+- **VPN Tunnel DNS**: Leave default (inherits Control D)
+- **App Internal DNS**: Set to "OS Default"
+- **Firewall**: Enable for DNS leak protection
 
-## Testing
+**ProtonVPN Alternative:**
+- Use Control D custom DNS when needed
+- Gaming: `https://dns.controld.com/1igcvpwtsfg`
+- Privacy: `https://dns.controld.com/2eoeqoo9ib9`
+
+## 🧪 Testing & Verification
+
+### DNS System
+```bash
+# Test current DNS resolution
+dig +short google.com @127.0.0.1
+
+# Check active profile
+dig +short txt test.controld.com @127.0.0.1
+
+# Verify system DNS configuration
+scutil --dns | head -20
+```
 
 ### SSH Configuration
 ```bash
 # Comprehensive SSH tests
 ./tests/test_ssh_config.sh
 
-# Manual verification
+# Test all connection methods
+./scripts/ssh/check_connections.sh
+
+# Manual connection verification
 ./scripts/ssh/setup_verification.sh
 ```
 
-### Fish Shell Configuration
+## 📊 Monitoring & Maintenance
+
+### DNS Logs
 ```bash
-# Verify Fish shell configuration
-./tests/test_config_fish.sh
+# View DNS switching logs
+sudo tail -f /var/log/ctrld-privacy.log
+sudo tail -f /var/log/ctrld-gaming.log
+
+# Check daemon status
+sudo lsof -nP -iTCP:53 -sTCP:LISTEN -iUDP:53
 ```
 
-## Usage Examples
-
-### SSH Connections
+### System Health
 ```bash
-# Smart auto-connect (detects network and connects optimally)
-./scripts/ssh/smart_connect.sh
+# Network diagnostics
+./scripts/ssh/diagnose_vpn.sh
 
-# Direct connections
-ssh cursor-mdns     # Primary - works with/without VPN
-ssh cursor-local    # Local network only
-ssh cursor-auto     # Auto-detection backup
+# DNS resolution testing
+for server in 127.0.0.1 8.8.8.8 1.1.1.1; do
+  echo "Testing $server:"
+  dig +short google.com @$server
+done
+```
 
-# Check all connection methods
+## 🎮 Use Cases
+
+### Development Workflow
+1. **Connect**: `ssh cursor-mdns`
+2. **Privacy Mode**: `sudo dns-privacy`
+3. **Code with enhanced security filtering**
+
+### Gaming Session
+1. **Gaming Mode**: `sudo dns-gaming`
+2. **Minimal filtering for maximum performance**
+3. **Optimized for Battle.net, GeForce Now, Overwatch 2**
+
+### VPN Switching
+1. **Windscribe**: Default setup with Control D integration
+2. **ProtonVPN**: When port forwarding or different geo-location needed
+3. **DNS profiles work seamlessly with both**
+
+## 🔒 Security & Privacy
+
+- **🔐 Secrets Management**: Uses 1Password for SSH keys, environment variables for configs
+- **🌐 DNS Leak Protection**: Built-in firewall integration prevents leaks
+- **🛡️ Profile Isolation**: Separate DNS policies for different use cases
+- **📊 Verification**: Real-time testing ensures configuration integrity
+- **🔄 Version Control**: All changes tracked with full history
+
+## 🛠️ Troubleshooting
+
+### Common Issues
+
+**DNS switching problems:**
+```bash
+# Check what's using port 53
+sudo lsof -nP -iTCP:53 -sTCP:LISTEN -iUDP:53
+
+# Reset DNS to defaults
+for s in $(networksetup -listallnetworkservices | tail -n +2 | sed 's/^\*//'); do
+  sudo networksetup -setdnsservers "$s" empty || true
+done
+```
+
+**SSH connection issues:**
+```bash
+# Comprehensive diagnostics
+./scripts/ssh/diagnose_vpn.sh
+
+# Test individual connection methods
 ./scripts/ssh/check_connections.sh
 ```
 
-### Cursor IDE
-1. Install Remote-SSH extension
-2. Connect to host: `cursor-mdns` (recommended)
-3. Enjoy seamless development with 1Password authentication
+### Support Resources
 
-## Future Additions
+- **[DNS Setup Guide](dns-setup/scripts/README.md)** - Complete DNS documentation
+- **[SSH Configuration Guide](docs/ssh/ssh_configuration_guide.md)** - SSH setup instructions
+- **[Deployment Summary](dns-setup/DEPLOYMENT_SUMMARY.md)** - Technical implementation details
 
-This repository will continue to grow to include:
-- ✅ SSH configuration for development (COMPLETE)
-- Shell scripts for automation of routine tasks
-- Dotfiles (.bashrc, .bash_profile, etc.)
-- Application-specific configuration files
-- System setup documentation for new machines
-- Additional guides for software configuration
+## 🚧 Future Enhancements
 
-## License
+- [ ] **Automated VPN Detection** - Dynamic VPN provider switching
+- [ ] **Profile Scheduling** - Time-based DNS profile switching
+- [ ] **Network Location Awareness** - Location-based configuration switching
+- [ ] **Performance Monitoring** - DNS resolution latency tracking
+- [ ] **Mobile Device Integration** - iOS/Android configuration sync
+- [ ] **Backup Automation** - Scheduled configuration backups
 
-These configurations and scripts are for personal use, but feel free to use or adapt them if you find them helpful.
+## 📈 Version History
+
+- **v3.0** (September 2024) - Dynamic DNS Management System
+- **v2.0** (August 2024) - SSH Configuration with 1Password
+- **v1.0** (April 2024) - Initial repository structure
+
+## 📄 License
+
+Personal use configurations. Feel free to adapt and use any parts that are helpful for your own setup.
 
 ---
 
-_Created: April 11, 2025_  
-_SSH Configuration Added: August 4, 2025_
+**🎉 Your complete development and gaming network is now perfectly automated!**
+
+_Last Updated: September 11, 2024_  
+_DNS Management System: v1.0_  
+_SSH Configuration: v2.0_
