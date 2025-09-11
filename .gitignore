@@ -176,9 +176,10 @@ coverage/
 *credentials*
 *password*
 *token*
-*key*
+*_key
 
 # But allow documentation about these topics
 !*secret*.md
 !*private*.md
 !*sensitive*.md
+
