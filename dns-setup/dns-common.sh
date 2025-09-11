@@ -135,11 +135,11 @@ validate_dns_resolution() {
         timeout_cmd=""
     fi
     
-    if result=$($timeout_cmd dig +short +tries=1 +time=${DNS_TIMEOUT} "$test_domain" @"$server" 2>/dev/null); then
-        if [[ -n "$result" && "$result" != *"connection timed out"* ]]; then
-            log "✅ DNS resolution working via $server (got: $(echo "$result" | head -1))"
-            return 0
-        fi
+    local output
+    output=$($timeout_cmd dig +short +tries=1 +time=${DNS_TIMEOUT} "$test_domain" @"$server" 2>/dev/null)
+    if [[ $? -eq 0 && -n "$output" ]]; then
+        log "✅ DNS resolution working via $server (got: $(echo "$output" | head -1))"
+        return 0
     fi
     
     error "❌ DNS resolution failed via $server"
