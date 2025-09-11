@@ -59,7 +59,7 @@ check_port_53() {
     local pids listening_procs
     
     # Check UDP port 53
-    pids=$(lsof -nP -iUDP:53 -sTCP:LISTEN -t 2>/dev/null || true)
+    pids=$(lsof -nP -iUDP:53 -t 2>/dev/null || true)
     if [[ -n "$pids" ]]; then
         listening_procs=$(ps -o pid,comm,args -p $pids 2>/dev/null || true)
         
