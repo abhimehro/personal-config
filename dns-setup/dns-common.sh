@@ -279,8 +279,7 @@ switch_ctrld_profile() {
     # Update profile in config
     config_temp=$(mktemp)
     if sed "s/current_profile: \"[^\"]*\"/current_profile: \"$profile\"/" "$CTRLD_CONFIG" > "$config_temp"; then
-        sudo cp "$config_temp" "$CTRLD_CONFIG"
-        rm -f "$config_temp"
+        sudo mv "$config_temp" "$CTRLD_CONFIG"
     else
         rm -f "$config_temp"
         error "Failed to update configuration"
