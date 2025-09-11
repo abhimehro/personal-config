@@ -1,0 +1,75 @@
+# Control D Configuration - Option A Architecture
+# Persistent DNS resolver on 127.0.0.1:53 with profile switching
+# Generated: 2025-09-11
+
+# Service Configuration
+service:
+  log_level: "info"
+  log_path: "/var/log/ctrld.log"
+  
+# Network Configuration - STABLE: Always listen on 127.0.0.1:53
+listener:
+  - name: "main"
+    ip: "127.0.0.1"
+    port: 53
+    
+# Default upstream resolvers (fallback)
+upstream:
+  - name: "cloudflare"
+    type: "dot"
+    endpoint: "cloudflare-dns.com"
+    bootstrap_ip: "1.1.1.1"
+  - name: "quad9"
+    type: "dot" 
+    endpoint: "dns.quad9.net"
+    bootstrap_ip: "9.9.9.9"
+
+# Control D Profiles
+cd:
+  orgs:
+    - name: "personal"
+      cid: "2eoeqoo9ib9"  # Privacy profile
+      profiles:
+        - name: "privacy"
+          upstream: "https://dns.controld.com/2eoeqoo9ib9"
+          bootstrap_ip: "76.76.19.19"
+          
+    - name: "gaming" 
+      cid: "1igcvpwtsfg"  # Gaming profile
+      profiles:
+        - name: "gaming"
+          upstream: "https://dns.controld.com/1igcvpwtsfg"
+          bootstrap_ip: "76.76.2.2"
+
+# Network policies
+network:
+  0:
+    name: "default"
+    resolver: "privacy"  # Default to privacy profile
+    
+# Advanced settings
+advanced:
+  # Cache settings
+  cache_ttl_override: 300
+  cache_size: 4096
+  
+  # Security
+  block_unencrypted_dns: false  # Allow fallback during emergencies
+  
+  # Performance
+  concurrent_queries: 16
+  query_timeout: 5000  # 5 second timeout
+  
+  # Health checks
+  upstream_health_check: true
+  health_check_interval: 30
+  
+  # Logging
+  log_queries: false  # Disable for privacy
+  
+# Runtime profile (will be updated by switching scripts)
+# This section is dynamically managed - do not edit manually
+runtime:
+  current_profile: "privacy"
+  last_updated: "2025-09-11T13:23:40Z"
+  managed_by: "dns-privacy"
