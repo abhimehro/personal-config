@@ -4,7 +4,7 @@ set -Eeuo pipefail
 source /usr/local/bin/dns-common.sh
 
 CHECK_INTERVAL=60
-FAIL_THRESHOLD=2
+FAIL_THRESHOLD=1
 
 main() {
   local failures=0
