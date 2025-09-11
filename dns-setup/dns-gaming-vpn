@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+source /usr/local/bin/dns-common.sh
+
+PROFILE="gaming-vpn"
+
+main() {
+  log "🎮 Switching to gaming mode with VPN DNS bypass"
+  
+  run_preflight_checks "$PROFILE" "true" || { emergency_rollback "Preflight checks failed"; exit 1; }
+
+  # Stop ctrld service to free up port 53 for VPN
+  if is_service_running; then
+    log "🛑 Stopping ctrld service for VPN mode"
+    launchctl bootout "system/$CTRLD_SERVICE" 2>/dev/null || true
+    sleep 2
+  fi
+
+  # Set system DNS to automatic (allows VPN to manage DNS)
+  if ! reset_system_dns; then
+    emergency_rollback "Failed to reset system DNS to automatic"
+    exit 1
+  fi
+
+  flush_dns_cache
+
+  # Wait for VPN to potentially establish DNS scoping
+  sleep 3
+
+  # Verify DNS is working through system/VPN resolvers
+  local test_servers=("8.8.8.8" "1.1.1.1")
+  local dns_working=false
+  
+  for server in "${test_servers[@]}"; do
+    if validate_dns_resolution "$server"; then
+      dns_working=true
+      break
+    fi
+  done
+
+  if [[ "$dns_working" != "true" ]]; then
+    emergency_rollback "DNS not working after VPN mode switch"
+    exit 1
+  fi
+
+  # Check if VPN has established scoped DNS
+  if detect_active_vpn; then
+    log "✅ VPN detected and managing DNS - gaming mode ready"
+  else
+    log "⚠️  No VPN detected - using system DNS resolvers"
+    log "    Consider enabling Proton VPN or Windscribe for optimal gaming"
+  fi
+
+  log "✅ Gaming VPN mode active - DNS managed by VPN/system"
+  log "Done."
+}
+
+main "$@"
