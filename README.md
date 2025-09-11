@@ -245,11 +245,11 @@ done
 ### Gaming Session
 1. **Gaming Mode**: `sudo dns-gaming`
 2. **Minimal filtering for maximum performance**
-3. **Optimized for Battle.net, GeForce Now, Overwatch 2**
+3. **Optimized for Battle.net, Steam, Nvidia GeForce Now, Overwatch 2**
 
 ### VPN Switching
-1. **Windscribe**: Default setup with Control D integration
-2. **ProtonVPN**: When port forwarding or different geo-location needed
+1. **Windscribe VPN**: Default setup with Control D integration
+2. **Proton VPN**: When port forwarding or different geo-location needed
 3. **DNS profiles work seamlessly with both**
 
 ## 🔒 Security & Privacy
@@ -301,9 +301,9 @@ done
 
 ## 📈 Version History
 
-- **v3.0** (September 2024) - Dynamic DNS Management System
-- **v2.0** (August 2024) - SSH Configuration with 1Password
-- **v1.0** (April 2024) - Initial repository structure
+- **v3.0** (September 2025) - Dynamic DNS Management System
+- **v2.0** (August 2025) - SSH Configuration with 1Password
+- **v1.0** (April 2025) - Initial repository structure
 
 ## 📄 License
 
@@ -313,6 +313,6 @@ Personal use configurations. Feel free to adapt and use any parts that are helpf
 
 **🎉 Your complete development and gaming network is now perfectly automated!**
 
-_Last Updated: September 11, 2024_  
+_Last Updated: September 11, 2025_  
 _DNS Management System: v1.0_  
 _SSH Configuration: v2.0_
