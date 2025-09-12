@@ -1,0 +1,168 @@
+#!/usr/bin/env bash
+# Simple Control D DNS Profile Switcher - Bypass complex network detection
+set -euo pipefail
+
+CTRLD_SERVICE="com.controld.ctrld"
+CTRLD_PLIST="/Library/LaunchDaemons/${CTRLD_SERVICE}.plist"
+STATUS_FILE="/var/run/ctrld-switcher/status.json"
+LOG_DIR="/var/log/ctrld-switcher"
+
+# Profile configurations
+PRIVACY_PROFILE="2eoeqoo9ib9"
+GAMING_PROFILE="1igcvpwtsfg"
+PRIVACY_ENDPOINT="https://dns.controld.com/2eoeqoo9ib9"
+GAMING_ENDPOINT="https://dns.controld.com/1igcvpwtsfg"
+LOCAL_RESOLVER="*********"
+
+log_info() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] INFO: $1" | tee -a "${LOG_DIR}/switcher.log" 2>/dev/null || echo "[$(date '+%Y-%m-%d %H:%M:%S')] INFO: $1"
+}
+
+get_profile_config() {
+    local profile="$1"
+    local field="$2"
+    
+    case "$profile" in
+        "privacy")
+            case "$field" in
+                "id") echo "$PRIVACY_PROFILE" ;;
+                "endpoint") echo "$PRIVACY_ENDPOINT" ;;
+            esac
+            ;;
+        "gaming")
+            case "$field" in
+                "id") echo "$GAMING_PROFILE" ;;
+                "endpoint") echo "$GAMING_ENDPOINT" ;;
+            esac
+            ;;
+    esac
+}
+
+create_launchdaemon() {
+    local profile="$1"
+    local profile_id=$(get_profile_config "$profile" "id")
+    local endpoint=$(get_profile_config "$profile" "endpoint")
+    
+    log_info "Creating LaunchDaemon for profile: $profile"
+    
+    cat > "$CTRLD_PLIST" << PLIST_EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>$CTRLD_SERVICE</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/ctrld</string>
+        <string>run</string>
+        <string>--cd</string>
+        <string>$profile_id</string>
+        <string>--listen</string>
+        <string>${LOCAL_RESOLVER}:53</string>
+        <string>--primary_upstream</string>
+        <string>$endpoint</string>
+        <string>--log</string>
+        <string>${LOG_DIR}/ctrld.log</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>${LOG_DIR}/ctrld.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>${LOG_DIR}/ctrld.err.log</string>
+</dict>
+</plist>
+PLIST_EOF
+    
+    chmod 644 "$CTRLD_PLIST"
+    chown root:wheel "$CTRLD_PLIST"
+}
+
+update_status() {
+    local profile="$1"
+    local status="$2"
+    local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    
+    mkdir -p "$(dirname "$STATUS_FILE")" 2>/dev/null || true
+    
+    cat > "$STATUS_FILE" << JSON_EOF
+{
+    "profile": "$profile",
+    "status": "$status", 
+    "timestamp": "$timestamp",
+    "version": "3.0.0-simple",
+    "resolver": "${LOCAL_RESOLVER}:53"
+}
+JSON_EOF
+}
+
+switch_profile() {
+    local profile="$1"
+    log_info "Switching to $profile profile..."
+    
+    # Stop current service
+    launchctl bootout "system/$CTRLD_SERVICE" 2>/dev/null || true
+    sleep 2
+    
+    # Kill any remaining processes
+    pkill -f '[c]trld' 2>/dev/null || true
+    sleep 1
+    
+    # Create new configuration
+    create_launchdaemon "$profile"
+    
+    # Start new service
+    if launchctl bootstrap system "$CTRLD_PLIST" 2>/dev/null; then
+        sleep 3
+        
+        # Test if service is running
+        if lsof -nP -iUDP:53 2>/dev/null | grep -q ctrld; then
+            update_status "$profile" "active"
+            log_info "Successfully switched to $profile profile"
+            
+            # Show notification
+            osascript -e "display notification \"Switched to $profile profile\" with title \"DNS Profile Switch\" sound name \"Glass\"" 2>/dev/null || true
+            return 0
+        else
+            log_info "Service failed to start properly"
+            return 1
+        fi
+    else
+        log_info "Failed to bootstrap LaunchDaemon"
+        return 1
+    fi
+}
+
+show_status() {
+    if [[ -f "$STATUS_FILE" ]]; then
+        cat "$STATUS_FILE"
+    else
+        echo '{"error": "No status file found"}'
+    fi
+}
+
+# Main script logic
+case "${1:-help}" in
+    "privacy"|"gaming")
+        if [[ $EUID -ne 0 ]]; then
+            echo "Error: This command requires root privileges"
+            echo "Please run: sudo $0 $1"
+            exit 1
+        fi
+        switch_profile "$1"
+        ;;
+    "status")
+        show_status
+        ;;
+    *)
+        echo "Usage: $0 {privacy|gaming|status}"
+        echo ""
+        echo "Commands:"
+        echo "  privacy   - Switch to privacy profile"
+        echo "  gaming    - Switch to gaming profile"  
+        echo "  status    - Show current status"
+        ;;
+esac
