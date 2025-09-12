@@ -11,30 +11,21 @@
 
 ## 🚀 **Quick Start**
 
-> ⚠️ **IMPORTANT**: If experiencing issues with the original v3.0.0 script hanging during profile switches, use the **fixed version** with the installation script below.
+> ✅ **CURRENT STATUS**: All hanging issues have been resolved as of September 12, 2025. The fixed version is now the default and fully operational.
 
 ### **Installation** ⚡
 
-**For Fixed/Working Version (Recommended):**
+**Installation (Recommended):**
 ```bash
 # Clone the repository (if needed)
 git clone <repository-url>
 cd controld-dns-switcher
 
-# Run FIXED installation script
+# Run installation script (uses fixed version)
 sudo ./scripts/install-fixed-switcher.sh
 
 # Verify installation
 sudo quick-dns-switch gaming && quick-dns-switch status
-```
-
-**Original Installation (May have issues):**
-```bash
-# Run original installation (use only if fixed version unavailable)
-sudo ./scripts/install.sh
-
-# Verify installation
-quick-dns-switch status
 ```
 
 ### **Basic Usage** 🎯
@@ -386,9 +377,15 @@ sudo ./scripts/emergency-recovery.sh
 
 ## 🌟 **Status**
 
-**Current Version**: v3.0.0  
+**Current Version**: v3.0.0-fixed  
 **Development Status**: ✅ **Production Ready**  
-**All Development Phases**: ✅ **Complete**  
+**Bug Fix Status**: ✅ **All Issues Resolved (September 12, 2025)**  
+
+### Recent Fixes Applied:
+- ✅ **Hanging Issue Resolved**: Fixed pkill command pattern that was causing infinite hangs
+- ✅ **Bootstrap Issue Fixed**: Replaced hanging `launchctl bootstrap` with working `load/unload` commands
+- ✅ **Filesystem Error Fixed**: Added proper WorkingDirectory to resolve read-only filesystem errors
+- ✅ **Port Validation Fixed**: Simplified validation logic to prevent hanging on lsof commands
 
 This project successfully transformed from a basic utility into a comprehensive network intelligence platform that rivals commercial enterprise DNS solutions. With zero DNS outages, comprehensive network awareness, and professional-grade observability, it represents a complete solution for intelligent DNS management on macOS.
 
@@ -396,6 +393,6 @@ This project successfully transformed from a basic utility into a comprehensive 
 
 ---
 
-*Last Updated: December 17, 2024*  
-*Version: v3.0.0*  
-*Platform: Network Intelligence Platform* 🌟
+*Last Updated: September 12, 2025*  
+*Version: v3.0.0-fixed*  
+*Platform: Network Intelligence Platform - All Issues Resolved* 🌟
