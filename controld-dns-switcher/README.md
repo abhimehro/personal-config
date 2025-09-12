@@ -11,13 +11,26 @@
 
 ## 🚀 **Quick Start**
 
+> ⚠️ **IMPORTANT**: If experiencing issues with the original v3.0.0 script hanging during profile switches, use the **fixed version** with the installation script below.
+
 ### **Installation** ⚡
+
+**For Fixed/Working Version (Recommended):**
 ```bash
 # Clone the repository (if needed)
 git clone <repository-url>
 cd controld-dns-switcher
 
-# Run automated installation
+# Run FIXED installation script
+sudo ./scripts/install-fixed-switcher.sh
+
+# Verify installation
+sudo quick-dns-switch gaming && quick-dns-switch status
+```
+
+**Original Installation (May have issues):**
+```bash
+# Run original installation (use only if fixed version unavailable)
 sudo ./scripts/install.sh
 
 # Verify installation
