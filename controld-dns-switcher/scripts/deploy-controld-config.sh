@@ -146,8 +146,8 @@ fi
 # 9. Final status check
 log "Performing final status check..."
 if controld-switcher status > /dev/null 2>&1; then
-    CURRENT_PROFILE=$(controld-switcher status 2>/dev/null | grep -o '"profile": "[^"]*"' | cut -d'"' -f4)
-    CURRENT_STATUS=$(controld-switcher status 2>/dev/null | grep -o '"status": "[^"]*"' | cut -d'"' -f4)
+    CURRENT_PROFILE=$(controld-switcher status 2>/dev/null | python3 -c "import json, sys; print(json.load(sys.stdin).get('profile', 'unknown'))")
+    CURRENT_STATUS=$(controld-switcher status 2>/dev/null | python3 -c "import json, sys; print(json.load(sys.stdin).get('status', 'unknown'))")
     
     if [[ "$CURRENT_STATUS" == "active" ]]; then
         success "Control D is active with profile: $CURRENT_PROFILE"
