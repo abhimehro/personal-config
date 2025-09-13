@@ -1,0 +1,70 @@
+{
+  "last_verified": "2025-09-13T14:10:35Z",
+  "status": "fully_operational",
+  "system": {
+    "os": "macOS 26.0",
+    "build": "25A5351b",
+    "architecture": "arm64",
+    "shell": "bash 3.2.57(1)-release"
+  },
+  "network": {
+    "primary_interface": "en5",
+    "primary_service": "USB 10/100/1000 LAN",
+    "dns_servers": [
+      "127.0.0.1"
+    ],
+    "backup_services": [
+      {
+        "name": "Wi-Fi",
+        "dns_servers": ["127.0.0.1"]
+      }
+    ]
+  },
+  "controld": {
+    "daemon": {
+      "status": "running",
+      "pid": 51893,
+      "listener": "127.0.0.1:53",
+      "launchdaemon": "com.controld.ctrld",
+      "config_path": "/usr/local/var/ctrld/ctrld.toml"
+    },
+    "profiles": {
+      "current": "privacy",
+      "available": ["privacy", "gaming"],
+      "switching_method": "quick-dns-switch"
+    },
+    "scripts": {
+      "controld-switcher": "/usr/local/bin/controld-switcher",
+      "quick-dns-switch": "/usr/local/bin/quick-dns-switch"
+    },
+    "logs": {
+      "main": "/var/log/ctrld-switcher/ctrld.log",
+      "switcher": "/var/log/ctrld-switcher/switcher.log",
+      "structured": "/var/log/ctrld-switcher/structured.jsonl"
+    },
+    "status_files": {
+      "status": "/var/run/ctrld-switcher/status.json",
+      "network_state": "/var/run/ctrld-switcher/network_state.json"
+    }
+  },
+  "raycast": {
+    "status": "connected",
+    "path_configuration": {
+      "symlinks": {
+        "/opt/homebrew/bin/controld-switcher": "/usr/local/bin/controld-switcher",
+        "/opt/homebrew/bin/quick-dns-switch": "/usr/local/bin/quick-dns-switch"
+      },
+      "shell_path": "export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\""
+    }
+  },
+  "performance": {
+    "dns_resolution": "working",
+    "query_logging": "active",
+    "profile_switching": "operational",
+    "latency": "optimized_for_gaming"
+  },
+  "removed_components": {
+    "default_launch_daemons": "removed_for_performance",
+    "reason": "eliminated_conflicts_and_reduced_latency"
+  }
+}
