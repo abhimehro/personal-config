@@ -299,10 +299,23 @@ determine_optimal_profile() {
     log_debug "Determining optimal profile for request: $requested_profile"
     
     # Extract network information
-    local vpn_detected=$(echo "$network_state_json" | python3 -c "import json,sys; print(json.load(sys.stdin)['vpn']['detected'])" 2>/dev/null || echo "false")
-    local vpn_provider=$(echo "$network_state_json" | python3 -c "import json,sys; print(json.load(sys.stdin)['vpn']['provider'])" 2>/dev/null || echo "")
-    local captive_portal=$(echo "$network_state_json" | python3 -c "import json,sys; print(json.load(sys.stdin)['connectivity']['captive_portal'])" 2>/dev/null || echo "false")
-    local ssid=$(echo "$network_state_json" | python3 -c "import json,sys; print(json.load(sys.stdin)['primary']['ssid'])" 2>/dev/null || echo "")
+    # Parse all required fields from JSON in a single python3 call
+    read -r vpn_detected vpn_provider captive_portal ssid < <(
+        echo "$network_state_json" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    print(data.get('vpn', {}).get('detected', 'false'))
+    print(data.get('vpn', {}).get('provider', ''))
+    print(data.get('connectivity', {}).get('captive_portal', 'false'))
+    print(data.get('primary', {}).get('ssid', ''))
+except Exception:
+    print('false')
+    print('')
+    print('false')
+    print('')
+"
+    )
     
     # VPN-aware profile logic
     if [[ "$vpn_detected" == "true" ]]; then
