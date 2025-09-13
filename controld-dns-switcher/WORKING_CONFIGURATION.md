@@ -59,7 +59,7 @@ networksetup -setdnsservers "Wi-Fi" 127.0.0.1
 - **Status**: `/var/run/ctrld-switcher/status.json`
   ```json
   {
-    "profile": "privacy|gaming",
+    "profile": "privacy",
     "status": "active",
     "timestamp": "2025-09-13T14:01:50Z",
     "version": "3.0.0-simple",
