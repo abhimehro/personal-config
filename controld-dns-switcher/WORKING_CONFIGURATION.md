@@ -126,7 +126,9 @@ For proper Raycast detection, ensure binary is available in standard paths:
 sudo ln -sf /usr/local/bin/controld-switcher /opt/homebrew/bin/controld-switcher
 
 # Update PATH in shell profile
-echo 'export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"' >> ~/.bash_profile
+if ! grep -q '/opt/homebrew/bin:/usr/local/bin' "$HOME/.bash_profile"; then
+  echo 'export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"' >> "$HOME/.bash_profile"
+fi
 ```
 
 ### Extension Status Detection
