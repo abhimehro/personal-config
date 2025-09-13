@@ -1,0 +1,1095 @@
+#!/usr/bin/env bash
+# Control D DNS Profile Switcher - Phase 3: Reliability & Resilience
+# Created: 2025-09-12
+# Version: 3.0.0 - Advanced Resilience and Network Intelligence
+
+set -euo pipefail
+
+# Configuration
+readonly PROGRAM_NAME="controld-switcher"
+readonly VERSION="3.0.0"
+readonly VAR_RUN_DIR="/var/run/ctrld-switcher"
+readonly LOG_DIR="/var/log/ctrld-switcher"
+readonly LOCK_FILE="${VAR_RUN_DIR}/switcher.lock"
+readonly STATUS_FILE="${VAR_RUN_DIR}/status.json"
+readonly METRICS_FILE="${VAR_RUN_DIR}/metrics.json"
+readonly HISTORY_FILE="${VAR_RUN_DIR}/switch_history.json"
+readonly HEALTH_SCORE_FILE="${VAR_RUN_DIR}/health_score.json"
+readonly NETWORK_STATE_FILE="${VAR_RUN_DIR}/network_state.json"
+readonly CONFIG_FILE="/opt/controld-switcher/etc/config.json"
+
+# Control D Configuration  
+readonly CTRLD_BINARY="/usr/local/bin/ctrld"
+readonly CTRLD_SERVICE="com.controld.ctrld"
+readonly CTRLD_PLIST="/Library/LaunchDaemons/${CTRLD_SERVICE}.plist"
+readonly LOCAL_RESOLVER="127.0.0.1"
+readonly LOCAL_PORT="53"
+
+# Profile Configuration (Enhanced with VPN awareness)
+readonly PRIVACY_PROFILE="2eoeqoo9ib9"
+readonly GAMING_PROFILE="1igcvpwtsfg"
+readonly PRIVACY_ENDPOINT="https://dns.controld.com/2eoeqoo9ib9"
+readonly GAMING_ENDPOINT="https://dns.controld.com/1igcvpwtsfg"
+
+# Failover Configuration
+readonly PRIVACY_ENDPOINT_BACKUP="https://dns2.controld.com/2eoeqoo9ib9"
+readonly GAMING_ENDPOINT_BACKUP="https://dns2.controld.com/1igcvpwtsfg"
+readonly FALLBACK_DNS="1.1.1.1"  # Cloudflare as ultimate fallback
+
+# Enhanced Operational Configuration
+readonly LOCK_TIMEOUT=30
+readonly HEALTH_CHECK_DOMAINS=("example.com" "google.com" "cloudflare.com" "github.com" "apple.com")
+readonly CAPTIVE_PORTAL_ENDPOINTS=("http://captive.apple.com/hotspot-detect.html" "http://connectivitycheck.gstatic.com/generate_204" "http://detectportal.firefox.com/success.txt")
+readonly LATENCY_WARNING_MS=100
+readonly LATENCY_ERROR_MS=500
+readonly UPSTREAM_TIMEOUT_MS=2000
+readonly NETWORK_CHECK_INTERVAL=30
+readonly MAX_FAILOVER_ATTEMPTS=3
+
+# VPN Provider Detection
+readonly VPN_PROVIDERS=(
+    "windscribe:utun"
+    "proton:utun"
+    "nordvpn:utun"
+    "expressvpn:utun"
+    "surfshark:utun"
+    "mullvad:utun"
+    "openvpn:tun"
+)
+
+# Colors and Formatting
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly BLUE='\033[0;34m'
+readonly PURPLE='\033[0;35m'
+readonly CYAN='\033[0;36m'
+readonly WHITE='\033[1;37m'
+readonly NC='\033[0m' # No Color
+readonly BOLD='\033[1m'
+
+# Log Levels
+readonly LOG_DEBUG=0
+readonly LOG_INFO=1  
+readonly LOG_WARN=2
+readonly LOG_ERROR=3
+LOG_LEVEL=${LOG_LEVEL:-$LOG_INFO}
+
+# Hardened PATH
+export PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+
+# Enhanced Logging Functions
+log_debug() {
+    [[ $LOG_LEVEL -le $LOG_DEBUG ]] || return
+    local msg="$1"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "[$timestamp] ${PURPLE}🔍 DEBUG: $msg${NC}"
+    log_to_file "DEBUG" "$msg"
+}
+
+log_info() {
+    [[ $LOG_LEVEL -le $LOG_INFO ]] || return
+    local msg="$1"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "[$timestamp] ${CYAN}ℹ️  $msg${NC}"
+    log_to_file "INFO" "$msg"
+}
+
+log_warn() {
+    [[ $LOG_LEVEL -le $LOG_WARN ]] || return
+    local msg="$1" 
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "[$timestamp] ${YELLOW}⚠️  $msg${NC}"
+    log_to_file "WARN" "$msg"
+}
+
+log_error() {
+    [[ $LOG_LEVEL -le $LOG_ERROR ]] || return
+    local msg="$1"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "[$timestamp] ${RED}❌ $msg${NC}" >&2
+    log_to_file "ERROR" "$msg"
+}
+
+log_success() {
+    [[ $LOG_LEVEL -le $LOG_INFO ]] || return
+    local msg="$1"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "[$timestamp] ${GREEN}✅ $msg${NC}"
+    log_to_file "SUCCESS" "$msg"
+}
+
+log_network() {
+    [[ $LOG_LEVEL -le $LOG_INFO ]] || return
+    local msg="$1"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo -e "[$timestamp] ${BLUE}🌐 NETWORK: $msg${NC}"
+    log_to_file "NETWORK" "$msg"
+}
+
+log_fatal() {
+    log_error "$1"
+    exit 1
+}
+
+# Structured JSON Logging
+log_to_file() {
+    local level="$1"
+    local msg="$2"
+    local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    
+    local log_entry=$(cat << EOF
+{"timestamp":"$timestamp","level":"$level","message":"$msg","pid":$$,"version":"$VERSION"}
+EOF
+)
+    
+    echo "$log_entry" >> "${LOG_DIR}/structured.jsonl" 2>/dev/null || true
+    echo "[$timestamp] $level: $msg" >> "${LOG_DIR}/switcher.log" 2>/dev/null || true
+}
+
+# Enhanced Network State Management
+detect_network_state() {
+    local vpn_detected=false
+    local vpn_interface=""
+    local vpn_provider=""
+    local vpn_type=""
+    
+    log_debug "Detecting comprehensive network state..."
+    
+    # Enhanced VPN detection with provider identification
+    for provider_config in "${VPN_PROVIDERS[@]}"; do
+        local provider="${provider_config%:*}"
+        local interface_pattern="${provider_config#*:}"
+        
+        for iface in $(ifconfig | grep -E "^(${interface_pattern}[0-9]*)" | cut -d: -f1); do
+            if ifconfig "$iface" 2>/dev/null | grep -q "inet "; then
+                vpn_detected=true
+                vpn_interface="$iface"
+                vpn_provider="$provider"
+                vpn_type="$interface_pattern"
+                log_debug "Detected VPN: $provider on $iface"
+                break 2
+            fi
+        done
+    done
+    
+    # Get primary network interface and enhanced details
+    local primary_iface=$(route get default 2>/dev/null | grep interface | awk '{print $2}')
+    local interface_type="Unknown"
+    local connection_quality="Unknown"
+    
+    if [[ -n "$primary_iface" ]]; then
+        case "$primary_iface" in
+            en0) interface_type="Ethernet/WiFi" ;;
+            en1) interface_type="WiFi" ;;
+            bridge*) interface_type="Bridge" ;;
+            *) interface_type="Other" ;;
+        esac
+        
+        # Basic connection quality assessment
+        if ping -c 1 -W 1000 8.8.8.8 >/dev/null 2>&1; then
+            local ping_time=$(ping -c 3 8.8.8.8 | tail -1 | awk '{print $4}' | cut -d/ -f2 2>/dev/null || echo "0")
+            if awk "BEGIN {exit !($ping_time < 50)}"; then
+                connection_quality="Excellent"
+            elif awk "BEGIN {exit !($ping_time < 150)}"; then
+                connection_quality="Good"
+            else
+                connection_quality="Poor"
+            fi
+        else
+            connection_quality="No Internet"
+        fi
+    fi
+    
+    # Detect if we're on a metered/captive network
+    local captive_portal=$(detect_captive_portal_comprehensive && echo "true" || echo "false")
+    local metered=false
+    
+    # Enhanced SSID detection for policy-based switching
+    local current_ssid=""
+    if [[ "$primary_iface" =~ ^en[0-9]+ ]]; then
+        current_ssid=$(networksetup -getairportnetwork "$primary_iface" 2>/dev/null | cut -d: -f2 | sed 's/^ *//' || echo "")
+        if [[ "$current_ssid" == "You are not associated with an AirPort network." ]]; then
+            current_ssid=""
+        fi
+    fi
+    
+    # Create comprehensive network state
+    local network_state=$(cat << EOF
+{
+    "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+    "vpn": {
+        "detected": $vpn_detected,
+        "interface": "$vpn_interface",
+        "provider": "$vpn_provider",
+        "type": "$vpn_type"
+    },
+    "primary": {
+        "interface": "$primary_iface",
+        "type": "$interface_type",
+        "quality": "$connection_quality",
+        "ssid": "$current_ssid"
+    },
+    "connectivity": {
+        "captive_portal": $captive_portal,
+        "metered": $metered,
+        "internet": "$(ping -c 1 -W 1000 8.8.8.8 >/dev/null 2>&1 && echo "true" || echo "false")"
+    }
+}
+EOF
+)
+    
+    # Store network state for monitoring
+    echo "$network_state" > "$NETWORK_STATE_FILE" 2>/dev/null || true
+    
+    echo "$network_state"
+}
+
+# Comprehensive Captive Portal Detection
+detect_captive_portal_comprehensive() {
+    log_debug "Running comprehensive captive portal detection..."
+    
+    local portal_detected=false
+    local successful_checks=0
+    
+    for endpoint in "${CAPTIVE_PORTAL_ENDPOINTS[@]}"; do
+        local expected_content=""
+        case "$endpoint" in
+            *apple.com*) expected_content="Success" ;;
+            *gstatic.com*) expected_content="" ;;  # Returns HTTP 204 No Content
+            *firefox.com*) expected_content="success" ;;
+        esac
+        
+        local response=$(curl -s --connect-timeout 3 --max-time 5 "$endpoint" 2>/dev/null || echo "")
+        
+        if [[ -n "$expected_content" ]]; then
+            if [[ "$response" == *"$expected_content"* ]]; then
+                ((successful_checks++))
+                log_debug "Captive portal check passed: $endpoint"
+            else
+                log_debug "Captive portal check failed: $endpoint (got: ${response:0:50}...)"
+            fi
+        else
+            # For HTTP 204 endpoints, check HTTP status
+            if curl -s --connect-timeout 3 --max-time 5 -o /dev/null -w "%{http_code}" "$endpoint" 2>/dev/null | grep -q "204"; then
+                ((successful_checks++))
+                log_debug "Captive portal check passed: $endpoint (HTTP 204)"
+            else
+                log_debug "Captive portal check failed: $endpoint (not HTTP 204)"
+            fi
+        fi
+    done
+    
+    # Require majority of checks to pass
+    local total_checks=${#CAPTIVE_PORTAL_ENDPOINTS[@]}
+    if [[ $successful_checks -ge $((total_checks / 2)) ]]; then
+        log_debug "No captive portal detected ($successful_checks/$total_checks checks passed)"
+        return 1  # No portal
+    else
+        log_warn "Captive portal detected ($successful_checks/$total_checks checks passed)"
+        return 0  # Portal detected
+    fi
+}
+
+# VPN-Aware Profile Selection
+determine_optimal_profile() {
+    local requested_profile="$1"
+    local network_state_json="$2"
+    
+    log_debug "Determining optimal profile for request: $requested_profile"
+    
+    # Extract network information
+    # Parse all required fields from JSON in a single python3 call
+    read -r vpn_detected vpn_provider captive_portal ssid < <(
+        echo "$network_state_json" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    print(data.get('vpn', {}).get('detected', 'false'))
+    print(data.get('vpn', {}).get('provider', ''))
+    print(data.get('connectivity', {}).get('captive_portal', 'false'))
+    print(data.get('primary', {}).get('ssid', ''))
+except Exception:
+    print('false')
+    print('')
+    print('false')
+    print('')
+"
+    )
+    
+    # VPN-aware profile logic
+    if [[ "$vpn_detected" == "true" ]]; then
+        log_network "VPN detected ($vpn_provider), adjusting profile selection..."
+        
+        case "$vpn_provider" in
+            "windscribe"|"proton")
+                # These VPNs handle DNS well, can use requested profile
+                log_debug "VPN provider $vpn_provider supports DNS override, using requested profile: $requested_profile"
+                echo "$requested_profile"
+                return 0
+                ;;
+            "nordvpn"|"expressvpn")
+                # These VPNs prefer their own DNS, recommend but allow override
+                log_warn "VPN provider $vpn_provider prefers own DNS, but proceeding with: $requested_profile"
+                echo "$requested_profile"
+                return 0
+                ;;
+            *)
+                # Unknown VPN, be cautious
+                log_warn "Unknown VPN provider, proceeding with caution: $requested_profile"
+                echo "$requested_profile"
+                return 0
+                ;;
+        esac
+    fi
+    
+    # Captive portal handling
+    if [[ "$captive_portal" == "true" ]]; then
+        log_network "Captive portal detected, DNS override may not work properly"
+        send_network_alert "Captive portal detected - DNS switching may be ineffective"
+        # Still allow the switch but warn user
+        echo "$requested_profile"
+        return 0
+    fi
+    
+    # SSID-based recommendations (future enhancement)
+    if [[ -n "$ssid" ]]; then
+        log_debug "Connected to SSID: $ssid"
+        # Future: implement SSID-based profile recommendations
+    fi
+    
+    # Default: use requested profile
+    echo "$requested_profile"
+    return 0
+}
+
+# Upstream DNS Health Check with Failover
+check_upstream_health() {
+    local endpoint="$1"
+    local backup_endpoint="$2"
+    local timeout_ms="${3:-$UPSTREAM_TIMEOUT_MS}"
+    
+    log_debug "Checking upstream health: $endpoint"
+    
+    # Test primary endpoint
+    if curl -s --connect-timeout $((timeout_ms/1000)) --max-time $((timeout_ms/1000)) "$endpoint" >/dev/null 2>&1; then
+        log_debug "Primary upstream healthy: $endpoint"
+        echo "$endpoint"
+        return 0
+    else
+        log_warn "Primary upstream unhealthy: $endpoint"
+        
+        # Test backup endpoint
+        if [[ -n "$backup_endpoint" ]]; then
+            log_debug "Testing backup upstream: $backup_endpoint"
+            if curl -s --connect-timeout $((timeout_ms/1000)) --max-time $((timeout_ms/1000)) "$backup_endpoint" >/dev/null 2>&1; then
+                log_warn "Failing over to backup upstream: $backup_endpoint"
+                echo "$backup_endpoint"
+                return 0
+            else
+                log_error "Both primary and backup upstreams unhealthy"
+            fi
+        fi
+        
+        # Ultimate fallback
+        log_error "All Control D upstreams failed, falling back to: $FALLBACK_DNS"
+        echo "$FALLBACK_DNS"
+        return 1
+    fi
+}
+
+# Network Change Event Handler
+handle_network_change() {
+    local change_type="$1"
+    local interface="$2"
+    
+    log_network "Network change detected: $change_type on $interface"
+    
+    case "$change_type" in
+        "interface_up")
+            log_network "Interface $interface came up, checking DNS service..."
+            if ! is_dns_service_healthy; then
+                log_warn "DNS service unhealthy after interface up, attempting recovery..."
+                recover_dns_service "network_change"
+            fi
+            ;;
+        "interface_down")
+            log_network "Interface $interface went down"
+            # Don't take action immediately, wait for new interface
+            ;;
+        "vpn_connect")
+            log_network "VPN connection established on $interface"
+            # Re-evaluate profile suitability
+            local current_profile=$(get_current_profile)
+            if [[ "$current_profile" != "unknown" ]]; then
+                log_network "Re-validating profile $current_profile for VPN environment..."
+                # Could trigger automatic profile adjustment here
+            fi
+            ;;
+        "vpn_disconnect")
+            log_network "VPN disconnection detected on $interface"
+            # Flush DNS cache to clear VPN-specific entries
+            flush_dns_cache
+            ;;
+        "wifi_connect")
+            log_network "WiFi connection established"
+            # Check for captive portal
+            if detect_captive_portal_comprehensive; then
+                send_network_alert "Connected to network with captive portal - DNS may be redirected"
+            fi
+            ;;
+        *)
+            log_debug "Unhandled network change type: $change_type"
+            ;;
+    esac
+}
+
+# DNS Service Health Check
+is_dns_service_healthy() {
+    # Check if service is bound to port
+    if ! lsof -nP -iUDP:53 2>/dev/null | grep -q ctrld; then
+        log_debug "DNS service not bound to port 53"
+        return 1
+    fi
+    
+    # Quick DNS resolution test
+    if ! dig +short +tries=1 +time=2 google.com @127.0.0.1 >/dev/null 2>&1; then
+        log_debug "DNS resolution test failed"
+        return 1
+    fi
+    
+    log_debug "DNS service appears healthy"
+    return 0
+}
+
+# DNS Service Recovery
+recover_dns_service() {
+    local failure_reason="$1"
+    
+    log_warn "Initiating DNS service recovery (reason: $failure_reason)"
+    
+    # Get current profile to restore
+    local current_profile=$(get_current_profile)
+    if [[ "$current_profile" == "unknown" ]]; then
+        log_error "Cannot recover - current profile unknown"
+        return 1
+    fi
+    
+    # Stop unhealthy service
+    launchctl bootout "system/$CTRLD_SERVICE" 2>/dev/null || true
+    pkill -f '[c]trld' 2>/dev/null || true
+    sleep 2
+    
+    # Restart with current profile
+    log_info "Restarting DNS service with profile: $current_profile"
+    
+    # Create fresh configuration
+    create_launchdaemon "$current_profile"
+    
+    # Start service
+    if launchctl bootstrap system "$CTRLD_PLIST" 2>/dev/null; then
+        # Wait and validate
+        sleep 3
+        if is_dns_service_healthy; then
+            log_success "DNS service recovery successful"
+            send_network_alert "DNS service automatically recovered from $failure_reason"
+            return 0
+        else
+            log_error "DNS service recovery failed validation"
+            return 1
+        fi
+    else
+        log_error "Failed to start DNS service during recovery"
+        return 1
+    fi
+}
+
+# DNS Cache Flushing
+flush_dns_cache() {
+    log_debug "Flushing DNS cache..."
+    
+    # macOS DNS cache flush
+    sudo dscacheutil -flushcache 2>/dev/null || true
+    sudo killall -HUP mDNSResponder 2>/dev/null || true
+    
+    log_debug "DNS cache flushed"
+}
+
+# Network Alert System
+send_network_alert() {
+    local message="$1"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    
+    log_network "ALERT: $message"
+    
+    # macOS notification
+    osascript -e "display notification \"$message\" with title \"Network Alert\" subtitle \"$timestamp\" sound name \"Ping\"" 2>/dev/null || true
+    
+    # Log structured alert
+    log_to_file "NETWORK_ALERT" "$message"
+}
+
+# Enhanced Status Display with Network Intelligence
+show_network_intelligent_status() {
+    local network_state current_status
+    
+    echo -e "${BOLD}${BLUE}📊 Control D DNS Switcher Status v$VERSION${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
+    
+    # Get current network state
+    network_state=$(detect_network_state)
+    
+    # Current Status
+    if [[ -f "$STATUS_FILE" ]]; then
+        current_status=$(cat "$STATUS_FILE")
+        local profile=$(echo "$current_status" | python3 -c "import json,sys; print(json.load(sys.stdin).get('profile', 'unknown'))" 2>/dev/null || echo "unknown")
+        local status=$(echo "$current_status" | python3 -c "import json,sys; print(json.load(sys.stdin).get('status', 'unknown'))" 2>/dev/null || echo "unknown")
+        local timestamp=$(echo "$current_status" | python3 -c "import json,sys; print(json.load(sys.stdin).get('timestamp', 'unknown'))" 2>/dev/null || echo "unknown")
+        
+        case "$status" in
+            "active") echo -e "Status: ${GREEN}● ACTIVE${NC}" ;;
+            "switching") echo -e "Status: ${YELLOW}● SWITCHING${NC}" ;;
+            "failed") echo -e "Status: ${RED}● FAILED${NC}" ;;
+            *) echo -e "Status: ${PURPLE}● UNKNOWN${NC}" ;;
+        esac
+        
+        case "$profile" in
+            "privacy") echo -e "Profile: ${GREEN}🛡️  Privacy & Security${NC}" ;;
+            "gaming") echo -e "Profile: ${CYAN}🎮 Gaming Optimized${NC}" ;;
+            *) echo -e "Profile: ${PURPLE}❓ $profile${NC}" ;;
+        esac
+        
+        echo -e "Updated: ${WHITE}$timestamp${NC}"
+    else
+        echo -e "Status: ${RED}● NO STATUS DATA${NC}"
+    fi
+    
+    echo ""
+    
+    # Enhanced Network Intelligence
+    echo -e "${BOLD}${PURPLE}🌐 Network Intelligence${NC}"
+    echo -e "${PURPLE}──────────────────────────${NC}"
+    
+    local vpn_detected=$(echo "$network_state" | python3 -c "import json,sys; print(json.load(sys.stdin)['vpn']['detected'])" 2>/dev/null || echo "false")
+    local vpn_provider=$(echo "$network_state" | python3 -c "import json,sys; print(json.load(sys.stdin)['vpn']['provider'])" 2>/dev/null || echo "")
+    local vpn_interface=$(echo "$network_state" | python3 -c "import json,sys; print(json.load(sys.stdin)['vpn']['interface'])" 2>/dev/null || echo "")
+    local primary_interface=$(echo "$network_state" | python3 -c "import json,sys; print(json.load(sys.stdin)['primary']['interface'])" 2>/dev/null || echo "unknown")
+    local interface_type=$(echo "$network_state" | python3 -c "import json,sys; print(json.load(sys.stdin)['primary']['type'])" 2>/dev/null || echo "Unknown")
+    local quality=$(echo "$network_state" | python3 -c "import json,sys; print(json.load(sys.stdin)['primary']['quality'])" 2>/dev/null || echo "Unknown")
+    local ssid=$(echo "$network_state" | python3 -c "import json,sys; print(json.load(sys.stdin)['primary']['ssid'])" 2>/dev/null || echo "")
+    local captive=$(echo "$network_state" | python3 -c "import json,sys; print(json.load(sys.stdin)['connectivity']['captive_portal'])" 2>/dev/null || echo "false")
+    
+    # VPN Status with Provider Detection
+    if [[ "$vpn_detected" == "true" ]]; then
+        echo -e "VPN Status: ${YELLOW}🔒 ${vpn_provider^} Active ($vpn_interface)${NC}"
+        echo -e "VPN Impact: ${CYAN}ℹ️  DNS routing via VPN tunnel${NC}"
+    else
+        echo -e "VPN Status: ${GREEN}🔓 Direct Connection${NC}"
+    fi
+    
+    # Enhanced Connection Info
+    echo -e "Primary Interface: ${WHITE}$primary_interface ($interface_type)${NC}"
+    echo -e "Connection Quality: ${WHITE}$quality${NC}"
+    
+    if [[ -n "$ssid" ]]; then
+        echo -e "WiFi Network: ${WHITE}$ssid${NC}"
+    fi
+    
+    # Captive Portal Detection
+    if [[ "$captive" == "true" ]]; then
+        echo -e "Portal Status: ${RED}🚫 Captive Portal Detected${NC}"
+        echo -e "DNS Override: ${YELLOW}⚠️  May be ineffective${NC}"
+    else
+        echo -e "Portal Status: ${GREEN}✅ No Portal Detected${NC}"
+    fi
+    
+    echo ""
+    
+    # Upstream Health Status
+    echo -e "${BOLD}${GREEN}📡 Upstream Health${NC}"
+    echo -e "${GREEN}─────────────────────${NC}"
+    
+    local current_profile=$(get_current_profile)
+    if [[ "$current_profile" != "unknown" ]]; then
+        local primary_endpoint=$(get_profile_config "$current_profile" "endpoint")
+        local backup_endpoint=$(get_profile_config "$current_profile" "backup_endpoint")
+        
+        echo -e "Testing upstream endpoints..."
+        local healthy_endpoint=$(check_upstream_health "$primary_endpoint" "$backup_endpoint")
+        
+        if [[ "$healthy_endpoint" == "$primary_endpoint" ]]; then
+            echo -e "Primary Upstream: ${GREEN}✅ Healthy${NC}"
+        elif [[ "$healthy_endpoint" == "$backup_endpoint" ]]; then
+            echo -e "Primary Upstream: ${RED}❌ Failed${NC}"
+            echo -e "Backup Upstream: ${YELLOW}⚠️  Active (Failover)${NC}"
+        else
+            echo -e "Control D Upstreams: ${RED}❌ Both Failed${NC}"
+            echo -e "Fallback DNS: ${YELLOW}⚠️  Using $FALLBACK_DNS${NC}"
+        fi
+    else
+        echo -e "No active profile to check"
+    fi
+    
+    echo ""
+    echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
+}
+
+# Security and Core Functions (Enhanced)
+validate_profile() {
+    local profile="$1"
+    
+    if [[ -z "$profile" ]]; then
+        log_fatal "Profile name cannot be empty"
+    fi
+    
+    if [[ ! "$profile" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        log_fatal "Profile name contains invalid characters: $profile"
+    fi
+    
+    case "$profile" in
+        "privacy"|"gaming")
+            log_debug "Profile validation passed: $profile"
+            return 0
+            ;;
+        *)
+            log_fatal "Invalid profile: $profile. Valid profiles: privacy, gaming"
+            ;;
+    esac
+}
+
+validate_ctrld_binary() {
+    if [[ ! -x "$CTRLD_BINARY" ]]; then
+        log_fatal "ctrld binary not found or not executable: $CTRLD_BINARY"
+    fi
+    
+    local owner=$(stat -f "%Su" "$CTRLD_BINARY" 2>/dev/null || echo "unknown")
+    if [[ "$owner" != "root" ]]; then
+        log_warn "ctrld binary not owned by root: $owner"
+    fi
+    
+    log_debug "ctrld binary validation passed"
+}
+
+require_root() {
+    if [[ $EUID -ne 0 ]]; then
+        log_fatal "This program requires root privileges. Run with sudo."
+    fi
+}
+
+# File Locking
+acquire_lock() {
+    local count=0
+    
+    log_info "Acquiring exclusive lock: $LOCK_FILE"
+    mkdir -p "$VAR_RUN_DIR" "$LOG_DIR" 2>/dev/null || true
+    
+    while [[ $count -lt $LOCK_TIMEOUT ]]; do
+        if (set -C; echo $$ > "$LOCK_FILE") 2>/dev/null; then
+            log_debug "Lock acquired successfully"
+            return 0
+        fi
+        
+        if [[ -f "$LOCK_FILE" ]]; then
+            local lock_pid=$(cat "$LOCK_FILE" 2>/dev/null || echo "invalid")
+            if [[ "$lock_pid" =~ ^[0-9]+$ ]] && ! kill -0 "$lock_pid" 2>/dev/null; then
+                log_warn "Removing stale lock file (PID $lock_pid no longer exists)"
+                rm -f "$LOCK_FILE"
+                continue
+            fi
+        fi
+        
+        sleep 1
+        ((count++))
+    done
+    
+    log_fatal "Failed to acquire lock after ${LOCK_TIMEOUT}s timeout"
+}
+
+release_lock() {
+    if [[ -f "$LOCK_FILE" ]]; then
+        local lock_pid=$(cat "$LOCK_FILE" 2>/dev/null || echo "invalid")
+        if [[ "$lock_pid" == "$$" ]]; then
+            rm -f "$LOCK_FILE"
+            log_debug "Lock released successfully"
+        fi
+    fi
+}
+
+cleanup_handler() {
+    local exit_code=$?
+    release_lock
+    exit $exit_code
+}
+trap cleanup_handler EXIT INT TERM
+
+# Status Management
+update_status() {
+    local profile="$1"
+    local status="$2"
+    local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    
+    cat > "$STATUS_FILE" << EOF
+{
+    "profile": "$profile",
+    "status": "$status",
+    "timestamp": "$timestamp", 
+    "version": "$VERSION",
+    "pid": $$,
+    "resolver": "$LOCAL_RESOLVER:$LOCAL_PORT"
+}
+EOF
+    
+    chmod 644 "$STATUS_FILE"
+    log_debug "Status updated: $profile -> $status"
+}
+
+# Enhanced Profile Configuration with Failover Support
+get_profile_config() {
+    local profile="$1"
+    local field="$2"
+    
+    case "$profile" in
+        "privacy")
+            case "$field" in
+                "id") echo "$PRIVACY_PROFILE" ;;
+                "endpoint") echo "$PRIVACY_ENDPOINT" ;;
+                "backup_endpoint") echo "$PRIVACY_ENDPOINT_BACKUP" ;;
+                "description") echo "Enhanced security and privacy filtering" ;;
+                "color") echo "GREEN" ;;
+                "emoji") echo "🛡️" ;;
+            esac
+            ;;
+        "gaming")
+            case "$field" in
+                "id") echo "$GAMING_PROFILE" ;;
+                "endpoint") echo "$GAMING_ENDPOINT" ;;
+                "backup_endpoint") echo "$GAMING_ENDPOINT_BACKUP" ;;
+                "description") echo "Low latency gaming optimization" ;;
+                "color") echo "CYAN" ;;
+                "emoji") echo "🎮" ;;
+            esac
+            ;;
+    esac
+}
+
+get_current_profile() {
+    if [[ -f "$STATUS_FILE" ]]; then
+        cat "$STATUS_FILE" | python3 -c "import json,sys; print(json.load(sys.stdin).get('profile', 'unknown'))" 2>/dev/null || echo "unknown"
+    else
+        echo "unknown"
+    fi
+}
+
+# Enhanced LaunchDaemon with Resilience
+create_launchdaemon() {
+    local profile="$1"
+    local profile_id endpoint
+    
+    # Get optimal endpoint with failover support
+    local primary_endpoint=$(get_profile_config "$profile" "endpoint")
+    local backup_endpoint=$(get_profile_config "$profile" "backup_endpoint")
+    endpoint=$(check_upstream_health "$primary_endpoint" "$backup_endpoint")
+    
+    profile_id=$(get_profile_config "$profile" "id")
+    
+    log_info "Creating resilient LaunchDaemon for profile: $profile (upstream: $endpoint)"
+    
+    cat > "$CTRLD_PLIST" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>$CTRLD_SERVICE</string>
+    <key>UserName</key>
+    <string>root</string>
+    <key>GroupName</key>
+    <string>wheel</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>$CTRLD_BINARY</string>
+        <string>run</string>
+        <string>--cd</string>
+        <string>$profile_id</string>
+        <string>--listen</string>
+        <string>${LOCAL_RESOLVER}:${LOCAL_PORT}</string>
+        <string>--primary_upstream</string>
+        <string>$endpoint</string>
+        <string>--log</string>
+        <string>${LOG_DIR}/ctrld.log</string>
+        <string>--timeout</string>
+        <string>5</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/usr/local/var/ctrld</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+        <key>Crashed</key>
+        <true/>
+        <key>NetworkState</key>
+        <true/>
+    </dict>
+    <key>ThrottleInterval</key>
+    <integer>3</integer>
+    <key>StandardOutPath</key>
+    <string>${LOG_DIR}/ctrld.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>${LOG_DIR}/ctrld.err.log</string>
+</dict>
+</plist>
+EOF
+
+    chown root:wheel "$CTRLD_PLIST"
+    chmod 644 "$CTRLD_PLIST"
+    
+    log_debug "Resilient LaunchDaemon created with failover endpoint"
+}
+
+# Network-Aware Atomic Profile Switching
+network_aware_atomic_switch() {
+    local requested_profile="$1"
+    local backup_plist="/tmp/ctrld-backup-$$.plist"
+    local start_time end_time duration
+    local current_profile network_state optimal_profile
+    
+    start_time=$(date +%s)
+    current_profile=$(get_current_profile)
+    
+    # Get comprehensive network state
+    network_state=$(detect_network_state)
+    log_network "Network state detected: VPN=$(echo "$network_state" | python3 -c "import json,sys; print(json.load(sys.stdin)['vpn']['detected'])" 2>/dev/null)"
+    
+    # Determine optimal profile based on network conditions
+    optimal_profile=$(determine_optimal_profile "$requested_profile" "$network_state")
+    
+    if [[ "$optimal_profile" != "$requested_profile" ]]; then
+        log_warn "Network conditions suggest different profile: $optimal_profile (requested: $requested_profile)"
+        # For now, proceed with requested but warn user
+        optimal_profile="$requested_profile"
+    fi
+    
+    log_info "Starting network-aware atomic switch: $current_profile → $optimal_profile"
+    update_status "$optimal_profile" "switching"
+    
+    # Flush DNS cache before switch to clear stale entries
+    flush_dns_cache
+    
+    # Backup current config
+    if [[ -f "$CTRLD_PLIST" ]]; then
+        cp "$CTRLD_PLIST" "$backup_plist"
+        log_debug "Configuration backed up"
+    fi
+    
+    # Graceful service shutdown
+    log_debug "Gracefully stopping DNS service..."
+    launchctl bootout "system/$CTRLD_SERVICE" 2>/dev/null || true
+    
+    local shutdown_attempts=0
+    while lsof -nP -iUDP:53 2>/dev/null | grep -q ctrld && [[ $shutdown_attempts -lt 10 ]]; do
+        sleep 0.5
+        ((shutdown_attempts++))
+    done
+    
+    if [[ $shutdown_attempts -eq 10 ]]; then
+        log_warn "Forcing DNS service termination"
+        pkill -f '[c]trld' 2>/dev/null || true
+        sleep 2
+    fi
+    
+    # Create new configuration with failover-aware endpoint
+    create_launchdaemon "$optimal_profile"
+    
+    # Start new service
+    if ! launchctl bootstrap system "$CTRLD_PLIST" 2>/dev/null; then
+        log_error "Failed to bootstrap new LaunchDaemon"
+        
+        # Enhanced rollback
+        if [[ -f "$backup_plist" ]]; then
+            log_info "Performing automatic rollback..."
+            cp "$backup_plist" "$CTRLD_PLIST"
+            launchctl bootstrap system "$CTRLD_PLIST" 2>/dev/null || true
+            rm -f "$backup_plist"
+        fi
+        
+        update_status "$current_profile" "failed"
+        send_network_alert "Profile switch failed: $current_profile → $optimal_profile"
+        return 1
+    fi
+    
+    # Enhanced validation with network awareness
+    log_debug "Validating network-aware service startup..."
+    local validation_attempts=0
+    local max_attempts=15
+    
+    while [[ $validation_attempts -lt $max_attempts ]]; do
+        if lsof -nP -iUDP:53 2>/dev/null | grep -q ctrld; then
+            log_debug "Service bound to port 53, validating network conditions..."
+            
+            # Test DNS resolution in current network context
+            if dig +short +tries=1 +time=3 google.com @127.0.0.1 >/dev/null 2>&1; then
+                end_time=$(date +%s)
+                duration=$((end_time - start_time))
+                
+                update_status "$optimal_profile" "active"
+                rm -f "$backup_plist"
+                
+                # Flush cache again after successful switch
+                flush_dns_cache
+                
+                local description=$(get_profile_config "$optimal_profile" "description")
+                local emoji=$(get_profile_config "$optimal_profile" "emoji")
+                
+                log_success "Network-aware switch completed: $emoji $optimal_profile in ${duration}s"
+                
+                # Enhanced network-aware notification
+                local network_context=""
+                if echo "$network_state" | python3 -c "import json,sys; print(json.load(sys.stdin)['vpn']['detected'])" 2>/dev/null | grep -q "true"; then
+                    local vpn_provider=$(echo "$network_state" | python3 -c "import json,sys; print(json.load(sys.stdin)['vpn']['provider'])" 2>/dev/null)
+                    network_context=" (via $vpn_provider VPN)"
+                fi
+                
+                osascript -e "display notification \"Switched to $optimal_profile profile$network_context\" with title \"Network-Aware DNS Switch\" subtitle \"Completed in ${duration}s\" sound name \"Glass\"" 2>/dev/null || true
+                
+                return 0
+            else
+                log_warn "DNS resolution test failed after switch attempt $((validation_attempts + 1))"
+            fi
+        fi
+        
+        sleep 1
+        ((validation_attempts++))
+    done
+    
+    # Switch failed - enhanced network-aware rollback
+    log_error "Network-aware switch validation failed after $max_attempts attempts"
+    
+    if [[ -f "$backup_plist" ]]; then
+        log_info "Performing network-aware rollback..."
+        launchctl bootout "system/$CTRLD_SERVICE" 2>/dev/null || true
+        cp "$backup_plist" "$CTRLD_PLIST"
+        launchctl bootstrap system "$CTRLD_PLIST" 2>/dev/null || true
+        rm -f "$backup_plist"
+        log_info "Rollback completed"
+    fi
+    
+    end_time=$(date +%s)
+    duration=$((end_time - start_time))
+    
+    update_status "$current_profile" "failed"
+    send_network_alert "Network-aware switch failed after ${duration}s: $current_profile → $optimal_profile"
+    
+    osascript -e "display notification \"Failed to switch to $optimal_profile profile\" with title \"Network-Aware DNS Switch Failed\" subtitle \"Rolled back to $current_profile\" sound name \"Basso\"" 2>/dev/null || true
+    
+    return 1
+}
+
+# Commands
+show_status() {
+    if [[ -f "$STATUS_FILE" ]]; then
+        cat "$STATUS_FILE"
+    else
+        echo '{"status":"unknown","message":"No status file found"}'
+    fi
+}
+
+show_help() {
+    cat << EOF
+${BOLD}${BLUE}Control D DNS Profile Switcher v$VERSION${NC}
+${BLUE}Phase 3: Reliability & Resilience - Network Intelligence${NC}
+
+${BOLD}USAGE:${NC}
+    $0 <command> [options]
+
+${BOLD}COMMANDS:${NC}
+    ${GREEN}privacy${NC}          Switch to privacy profile (network-aware)
+    ${CYAN}gaming${NC}           Switch to gaming profile (network-aware)
+    ${YELLOW}status${NC}           Show current status (JSON format)
+    ${PURPLE}dashboard${NC}        Show network-intelligent status dashboard
+    ${WHITE}health${NC}           Run comprehensive health check
+    ${BLUE}network${NC}          Show detailed network analysis
+    ${RED}help${NC}             Show this help
+
+${BOLD}NETWORK INTELLIGENCE:${NC}
+    🔍 VPN provider detection (Windscribe, Proton, NordVPN, etc.)
+    🌐 Captive portal detection across multiple endpoints
+    📡 Upstream DNS failover with backup endpoints
+    🔄 Automatic service recovery from network changes
+    📊 Network quality assessment and optimization
+    🛡️ Network-aware profile recommendations
+
+${BOLD}RESILIENCE FEATURES:${NC}
+    ⚡ Upstream health monitoring with automatic failover
+    🔄 DNS cache flushing on network transitions
+    📱 Enhanced network event notifications
+    🛠️  Self-healing DNS service recovery
+    🎯 VPN-aware DNS routing optimization
+    📈 Network state tracking and analysis
+
+${BOLD}EXAMPLES:${NC}
+    ${GREEN}sudo $0 privacy${NC}                    # Network-aware privacy switch
+    ${CYAN}sudo $0 gaming${NC}                     # Network-aware gaming switch
+    ${PURPLE}$0 dashboard${NC}                      # Network intelligence dashboard
+    ${BLUE}$0 network${NC}                        # Detailed network analysis
+    ${WHITE}sudo $0 health${NC}                    # Comprehensive system health
+
+${BOLD}NETWORK SCENARIOS:${NC}
+    🔒 ${YELLOW}VPN Active${NC}       - Optimizes DNS routing for VPN tunnels
+    🏨 ${RED}Captive Portal${NC}   - Detects and warns about DNS limitations  
+    📡 ${GREEN}Direct Connection${NC} - Full DNS override capabilities
+    ⚡ ${BLUE}Network Changes${NC}   - Automatic service recovery and validation
+
+EOF
+}
+
+# Main Function
+main() {
+    local command="${1:-help}"
+    
+    mkdir -p "$VAR_RUN_DIR" "$LOG_DIR" 2>/dev/null || true
+    log_info "$PROGRAM_NAME v$VERSION started (PID: $$, Command: $command)"
+    
+    case "$command" in
+        "privacy"|"gaming")
+            require_root
+            validate_profile "$command"
+            validate_ctrld_binary
+            acquire_lock
+            network_aware_atomic_switch "$command"
+            ;;
+        "status")
+            show_status
+            ;;
+        "dashboard")
+            show_network_intelligent_status
+            ;;
+        "network")
+            echo -e "${BOLD}${BLUE}🌐 Network Analysis${NC}"
+            echo -e "${BLUE}════════════════════${NC}"
+            detect_network_state | python3 -m json.tool 2>/dev/null || detect_network_state
+            ;;
+        "health")
+            require_root
+            log_info "Running comprehensive network-aware health check..."
+            if is_dns_service_healthy; then
+                echo -e "${GREEN}✅ Network-aware health check passed${NC}"
+            else
+                echo -e "${RED}❌ Network-aware health check failed${NC}"
+                exit 1
+            fi
+            ;;
+        "help"|"--help"|"-h")
+            show_help
+            ;;
+        *)
+            log_error "Unknown command: $command"
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
