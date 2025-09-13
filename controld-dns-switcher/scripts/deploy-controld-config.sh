@@ -118,10 +118,18 @@ fi
 
 # 7. Test DNS resolution
 log "Testing DNS resolution through Control D..."
-if dig +short google.com > /dev/null 2>&1; then
-    success "DNS resolution working"
-else
-    error "DNS resolution failed"
+# Allow override of test domains via environment variable, else use defaults
+TEST_DOMAINS=${TEST_DOMAINS:-"example.com cloudflare.com apple.com google.com"}
+DNS_OK=0
+for DOMAIN in $TEST_DOMAINS; do
+    if dig +short "$DOMAIN" > /dev/null 2>&1; then
+        DNS_OK=1
+        success "DNS resolution working (tested with $DOMAIN)"
+        break
+    fi
+done
+if [[ $DNS_OK -eq 0 ]]; then
+    error "DNS resolution failed (tested domains: $TEST_DOMAINS)"
     echo "Please check network connectivity and Control D configuration"
     exit 1
 fi
