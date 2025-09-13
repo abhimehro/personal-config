@@ -7,21 +7,38 @@
 
 **Enterprise-grade DNS management platform with network intelligence, VPN awareness, and self-healing capabilities.**
 
+## ✅ **FULLY OPERATIONAL STATUS** - September 13, 2025
+
+🎉 **All issues resolved and system verified working!**
+
+- ✅ **DNS Processing**: Control D actively processing all DNS queries
+- ✅ **Profile Switching**: Privacy ↔ Gaming profiles switching correctly  
+- ✅ **Raycast Integration**: Extension showing "Connected" status
+- ✅ **Performance Optimized**: Default launch daemons removed for better latency
+- ✅ **Network Configuration**: All interfaces properly configured
+- ✅ **Documentation**: Complete troubleshooting guide available
+
+**Quick Verification**: `sudo quick-dns-switch gaming && sudo controld-switcher status`
+
 ---
 
 ## 🚀 **Quick Start**
 
+> ✅ **CURRENT STATUS**: All hanging issues have been resolved as of September 12, 2025. The fixed version is now the default and fully operational.
+
 ### **Installation** ⚡
+
+**Installation (Recommended):**
 ```bash
 # Clone the repository (if needed)
 git clone <repository-url>
 cd controld-dns-switcher
 
-# Run automated installation
-sudo ./scripts/install.sh
+# Run installation script (uses fixed version)
+sudo ./scripts/install-fixed-switcher.sh
 
 # Verify installation
-quick-dns-switch status
+sudo quick-dns-switch gaming && quick-dns-switch status
 ```
 
 ### **Basic Usage** 🎯
@@ -373,9 +390,15 @@ sudo ./scripts/emergency-recovery.sh
 
 ## 🌟 **Status**
 
-**Current Version**: v3.0.0  
+**Current Version**: v3.0.0-fixed  
 **Development Status**: ✅ **Production Ready**  
-**All Development Phases**: ✅ **Complete**  
+**Bug Fix Status**: ✅ **All Issues Resolved (September 12, 2025)**  
+
+### Recent Fixes Applied:
+- ✅ **Hanging Issue Resolved**: Fixed pkill command pattern that was causing infinite hangs
+- ✅ **Bootstrap Issue Fixed**: Replaced hanging `launchctl bootstrap` with working `load/unload` commands
+- ✅ **Filesystem Error Fixed**: Added proper WorkingDirectory to resolve read-only filesystem errors
+- ✅ **Port Validation Fixed**: Simplified validation logic to prevent hanging on lsof commands
 
 This project successfully transformed from a basic utility into a comprehensive network intelligence platform that rivals commercial enterprise DNS solutions. With zero DNS outages, comprehensive network awareness, and professional-grade observability, it represents a complete solution for intelligent DNS management on macOS.
 
@@ -383,6 +406,6 @@ This project successfully transformed from a basic utility into a comprehensive 
 
 ---
 
-*Last Updated: December 17, 2024*  
-*Version: v3.0.0*  
-*Platform: Network Intelligence Platform* 🌟
+*Last Updated: September 12, 2025*  
+*Version: v3.0.0-fixed*  
+*Platform: Network Intelligence Platform - All Issues Resolved* 🌟
