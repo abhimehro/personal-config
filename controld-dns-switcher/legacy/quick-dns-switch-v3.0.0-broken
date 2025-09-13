@@ -189,9 +189,9 @@ detect_network_state() {
         # Basic connection quality assessment
         if ping -c 1 -W 1000 8.8.8.8 >/dev/null 2>&1; then
             local ping_time=$(ping -c 3 8.8.8.8 | tail -1 | awk '{print $4}' | cut -d/ -f2 2>/dev/null || echo "0")
-            if (( $(echo "$ping_time < 50" | bc -l 2>/dev/null || echo "0") )); then
+            if awk "BEGIN {exit !($ping_time < 50)}"; then
                 connection_quality="Excellent"
-            elif (( $(echo "$ping_time < 150" | bc -l 2>/dev/null || echo "0") )); then
+            elif awk "BEGIN {exit !($ping_time < 150)}"; then
                 connection_quality="Good"
             else
                 connection_quality="Poor"
