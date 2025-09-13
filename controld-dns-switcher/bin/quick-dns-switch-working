@@ -12,7 +12,7 @@ PRIVACY_PROFILE="2eoeqoo9ib9"
 GAMING_PROFILE="1igcvpwtsfg"
 PRIVACY_ENDPOINT="https://dns.controld.com/2eoeqoo9ib9"
 GAMING_ENDPOINT="https://dns.controld.com/1igcvpwtsfg"
-LOCAL_RESOLVER="*********"
+LOCAL_RESOLVER="127.0.0.1"
 
 log_info() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] INFO: $1" | tee -a "${LOG_DIR}/switcher.log" 2>/dev/null || echo "[$(date '+%Y-%m-%d %H:%M:%S')] INFO: $1"
