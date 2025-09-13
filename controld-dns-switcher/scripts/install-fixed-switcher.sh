@@ -7,7 +7,15 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -z "$SCRIPT_DIR" || ! -d "$SCRIPT_DIR" ]]; then
+    echo "❌ Error: Failed to resolve script directory."
+    exit 1
+fi
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+if [[ -z "$REPO_ROOT" || ! -d "$REPO_ROOT" ]]; then
+    echo "❌ Error: Failed to resolve repository root directory."
+    exit 1
+fi
 
 echo "🔧 Installing fixed DNS switcher..."
 
