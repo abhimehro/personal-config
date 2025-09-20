@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-BIN=$(command -v ctrld || echo /usr/local/bin/ctrld)
-$BIN status || true
-echo "--- DNS summary (top entries) ---"
-scutil --dns | sed -n '1,40p' || true

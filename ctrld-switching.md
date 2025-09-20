@@ -1,14 +1,61 @@
-Control D switching
-- Privacy: privacy-dns
-- Gaming:  gaming-dns
-- Status:  dns-status
+# Control D DNS Profile Switching Guide
 
-Verification:
-- dns-status
-- nslookup example.com 127.0.0.1
-- nslookup ad.doubleclick.net 127.0.0.1
+## Overview
+Advanced DNS management system using Control D with automated profile switching, performance monitoring, and failover protection.
 
-Notes:
-- If VPN overrides DNS, disable its "use VPN DNS" feature to let 127.0.0.1 (ctrld) handle resolution.
-- After macOS updates/reboots, run dns-status to confirm ctrld is active.
-- I also have a repository called personal_config for these types of configurations and scripts if you can ensure everything gets properly backed up, then pushed. The folder is located at ~/Users/abhimehrotra/Documents/dev/personal-config
+## Quick Commands
+
+```bash
+# Switch to privacy profile (maximum protection)
+sudo ~/bin/ctrld-switcher.sh privacy
+
+# Switch to gaming profile (low latency)
+sudo ~/bin/ctrld-switcher.sh gaming
+
+# Check current status
+~/bin/ctrld-switcher.sh status
+
+# Stop Control D completely
+sudo ~/bin/ctrld-switcher.sh stop
+
+# Restart current profile
+sudo ~/bin/ctrld-switcher.sh restart
+
+# Start performance monitoring
+~/bin/dns-monitor.sh &
+```
+
+## Profile Details
+
+### Privacy Profile
+- **Profile ID**: `6m971e9jaf`
+- **Primary DNS**: `76.76.2.182`
+- **Secondary DNS**: `76.76.10.182`
+- **Use Case**: Browsing, AI applications, maximum privacy protection
+- **Features**: Enhanced filtering, malware protection, tracking prevention
+
+### Gaming Profile
+- **Profile ID**: `1xfy57w34t7`
+- **Primary DNS**: `76.76.2.184`
+- **Secondary DNS**: `76.76.10.184`
+- **Use Case**: Gaming, low-latency applications
+- **Features**: Minimal filtering, optimized for gaming services (Battle.net, Steam, GeForce Now)
+
+## Verification
+
+### DNS Resolution Test
+```bash
+# Test current DNS resolution
+dig @127.0.0.1 google.com +short
+
+# Check active profile
+dig @127.0.0.1 txt test.controld.com
+```
+
+### System DNS Configuration
+```bash
+# Check network interfaces
+networksetup -listallnetworkservices
+
+# View DNS settings for specific interface
+networksetup -getdnsservers 

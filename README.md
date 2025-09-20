@@ -36,27 +36,29 @@ ssh cursor-mdns  # Works anywhere (VPN on/off)
 ### DNS Management
 ```bash
 # Switch to privacy mode (browsing, AI apps)
-sudo dns-privacy
+sudo ~/bin/ctrld-switcher.sh privacy
 
 # Switch to gaming mode (gaming, minimal filtering)
-sudo dns-gaming
+sudo ~/bin/ctrld-switcher.sh gaming
+
+# Check current status
+~/bin/ctrld-switcher.sh status
+
+# Start performance monitoring
+~/bin/dns-monitor.sh &
 
 # Deploy/update DNS scripts from backup
-./dns-setup/scripts/deploy.sh
+cp ~/Documents/dev/personal-config/scripts/ctrld/* ~/bin/
+chmod +x ~/bin/ctrld-switcher.sh ~/bin/dns-monitor.sh
 ```
 
 ## 📁 Repository Structure
 
 ```
 personal-config/
-├── 🌐 dns-setup/              # Dynamic DNS Management System
-│   ├── scripts/               # DNS switching automation
-│   │   ├── dns-privacy        # Privacy profile switcher
-│   │   ├── dns-gaming         # Gaming profile switcher
-│   │   ├── deploy.sh          # Script deployment tool
-│   │   └── README.md          # Comprehensive DNS guide
-│   ├── DEPLOYMENT_SUMMARY.md  # Complete setup documentation
-│   └── backups/               # Network configuration backups
+├── 🌐 scripts/ctrld/          # Dynamic DNS Management System
+│   ├── ctrld-switcher.sh     # Profile switching automation
+│   └── dns-monitor.sh        # Performance monitoring and failover
 ├── 🔐 configs/                # System Configuration Files
 │   ├── ssh/                   # SSH configuration
 │   │   ├── config             # Main SSH configuration
@@ -79,21 +81,23 @@ personal-config/
 
 ## ✨ Key Features
 
-### 🌐 Dynamic DNS Management (New!)
+### 🌐 Dynamic DNS Management (Updated!)
 
 Intelligent DNS switching system with Control D integration:
 
-**Privacy Mode (`dns-privacy`)**
+**Privacy Mode (`sudo ~/bin/ctrld-switcher.sh privacy`)**
 - Enhanced security filtering
 - Malware & tracking protection
 - Optimized for browsing and AI applications
-- Profile ID: `2eoeqoo9ib9`
+- Profile ID: `6m971e9jaf`
+- DNS: 76.76.2.182, 76.76.10.182
 
-**Gaming Mode (`dns-gaming`)**
+**Gaming Mode (`sudo ~/bin/ctrld-switcher.sh gaming`)**
 - Minimal filtering for maximum performance
 - Gaming service optimizations (Battle.net, GeForce Now, Overwatch 2)
 - Ultra-low latency DNS resolution
-- Profile ID: `1igcvpwtsfg`
+- Profile ID: `1xfy57w34t7`
+- DNS: 76.76.2.184, 76.76.10.184
 
 **Features:**
 - ✅ **Windscribe VPN Integration** - Seamless VPN compatibility
@@ -101,7 +105,8 @@ Intelligent DNS switching system with Control D integration:
 - ✅ **Automatic Network Detection** - Skips VPN interfaces intelligently
 - ✅ **DNS Leak Protection** - Built-in firewall integration
 - ✅ **Smart Verification** - Real-time DNS resolution testing
-- ✅ **One-Command Switching** - Simple `sudo dns-*` commands
+- ✅ **Performance Monitoring** - Continuous health checks with failover
+- ✅ **One-Command Switching** - Simple `sudo ctrld-switcher.sh [profile]` commands
 
 ### 🔐 SSH Configuration
 
@@ -142,12 +147,16 @@ cd ~/personal-config
 
 ### DNS Management Only
 ```bash
-# Deploy DNS scripts to ~/bin
-./dns-setup/scripts/deploy.sh
+# Copy scripts to ~/bin
+cp ~/Documents/dev/personal-config/scripts/ctrld/* ~/bin/
+chmod +x ~/bin/ctrld-switcher.sh ~/bin/dns-monitor.sh
 
 # Switch profiles
-sudo dns-privacy  # Enhanced privacy filtering
-sudo dns-gaming   # Gaming optimization
+sudo ~/bin/ctrld-switcher.sh privacy  # Enhanced privacy filtering
+sudo ~/bin/ctrld-switcher.sh gaming   # Gaming optimization
+
+# Start monitoring
+~/bin/dns-monitor.sh &
 ```
 
 ### SSH Configuration Only
@@ -197,6 +206,12 @@ dig +short txt test.controld.com @127.0.0.1
 
 # Verify system DNS configuration
 scutil --dns | head -20
+
+# Check Control D status
+~/bin/ctrld-switcher.sh status
+
+# Monitor performance
+~/bin/dns-monitor.sh
 ```
 
 ### SSH Configuration
@@ -216,11 +231,13 @@ scutil --dns | head -20
 ### DNS Logs
 ```bash
 # View DNS switching logs
-sudo tail -f /var/log/ctrld-privacy.log
-sudo tail -f /var/log/ctrld-gaming.log
+sudo tail -f ~/Library/Logs/ctrld/ctrld-switcher.log
 
 # Check daemon status
 sudo lsof -nP -iTCP:53 -sTCP:LISTEN -iUDP:53
+
+# Monitor DNS performance
+~/bin/dns-monitor.sh
 ```
 
 ### System Health
@@ -239,11 +256,11 @@ done
 
 ### Development Workflow
 1. **Connect**: `ssh cursor-mdns`
-2. **Privacy Mode**: `sudo dns-privacy`
+2. **Privacy Mode**: `sudo ~/bin/ctrld-switcher.sh privacy`
 3. **Code with enhanced security filtering**
 
 ### Gaming Session
-1. **Gaming Mode**: `sudo dns-gaming`
+1. **Gaming Mode**: `sudo ~/bin/ctrld-switcher.sh gaming`
 2. **Minimal filtering for maximum performance**
 3. **Optimized for Battle.net, Steam, Nvidia GeForce Now, Overwatch 2**
 
@@ -273,6 +290,12 @@ sudo lsof -nP -iTCP:53 -sTCP:LISTEN -iUDP:53
 for s in $(networksetup -listallnetworkservices | tail -n +2 | sed 's/^\*//'); do
   sudo networksetup -setdnsservers "$s" empty || true
 done
+
+# Check Control D status
+~/bin/ctrld-switcher.sh status
+
+# Restart Control D
+sudo ~/bin/ctrld-switcher.sh restart
 ```
 
 **SSH connection issues:**
@@ -286,7 +309,7 @@ done
 
 ### Support Resources
 
-- **[DNS Setup Guide](dns-setup/scripts/README.md)** - Complete DNS documentation
+- **[DNS Setup Guide](ctrld-switching.md)** - Complete DNS documentation
 - **[SSH Configuration Guide](docs/ssh/ssh_configuration_guide.md)** - SSH setup instructions
 - **[Deployment Summary](dns-setup/DEPLOYMENT_SUMMARY.md)** - Technical implementation details
 
@@ -301,6 +324,7 @@ done
 
 ## 📈 Version History
 
+- **v4.0** (September 2025) - Advanced Control D DNS Management with Performance Monitoring
 - **v3.0** (September 2025) - Dynamic DNS Management System
 - **v2.0** (August 2025) - SSH Configuration with 1Password
 - **v1.0** (April 2025) - Initial repository structure
@@ -313,6 +337,6 @@ Personal use configurations. Feel free to adapt and use any parts that are helpf
 
 **🎉 Your complete development and gaming network is now perfectly automated!**
 
-_Last Updated: September 11, 2025_  
-_DNS Management System: v1.0_  
+_Last Updated: September 20, 2025_  
+_DNS Management System: v4.0_  
 _SSH Configuration: v2.0_
