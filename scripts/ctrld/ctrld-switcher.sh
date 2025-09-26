@@ -14,7 +14,6 @@ BLUE='\033[0;34m'
 NC='\033[0m'  # No Color
 
 # Configuration
-CTRLD_PATH="/usr/local/bin/ctrld"
 LOG_DIR="$HOME/Library/Logs/ctrld"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
 CONFIG_FILE="/etc/controld/ctrld.toml"
