@@ -7,13 +7,13 @@
 set -e
 
 # Color codes for output
-RED='\033[0;31m'
-CTRLD_PATH="/usr/local/bin/ctrld"
+GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'  # No Color
 
 # Configuration
+CTRLD_PATH="/usr/local/bin/ctrld"
 LOG_DIR="$HOME/Library/Logs/ctrld"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
 CONFIG_FILE="/etc/controld/ctrld.toml"
@@ -155,9 +155,9 @@ reset_dns() {
     log "INFO" "Resetting DNS configuration..."
     
     # Get active network interfaces
-local interfaces=$(networksetup -listallnetworkservices | grep -v "^\\*")
+    local interfaces=$(networksetup -listallnetworkservices | tail -n +2 | grep -v '^\*')
     
->    while IFS= read -r interface; do
+    while IFS= read -r interface; do
         log "INFO" "Clearing DNS for $interface..."
         sudo networksetup -setdnsservers "$interface" "Empty" 2>/dev/null || true
         
@@ -305,9 +305,9 @@ configure_dns_for_profile() {
     log "INFO" "Configuring DNS for $profile profile..."
     
     # Set DNS for all active interfaces
-local interfaces=$(networksetup -listallnetworkservices | grep -v "^\\*")
+    local interfaces=$(networksetup -listallnetworkservices | tail -n +2 | grep -v '^\*')
     
->    while IFS= read -r interface; do
+    while IFS= read -r interface; do
         # Check if interface is active
         if networksetup -getinfo "$interface" 2>/dev/null | grep -q "IP address"; then
             log "INFO" "Setting DNS for $interface..."
