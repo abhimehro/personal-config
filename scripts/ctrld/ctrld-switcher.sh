@@ -8,14 +8,15 @@ set -e
 
 # Color codes for output
 RED='\033[0;31m'
-GREEN='\033[0;32m'
+CTRLD_PATH="/usr/local/bin/ctrld"
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'  # No Color
 
 # Configuration
-CTRLD_PATH="/Users/abhimehrotra/Library/Application Support/ControlD/Control D Utility App/ctrld"
+CTRLD_PATH="/usr/local/bin/ctrld"
 LOG_DIR="$HOME/Library/Logs/ctrld"
+mkdir -p "$LOG_DIR" 2>/dev/null || true
 CONFIG_FILE="/etc/controld/ctrld.toml"
 CONTROL_SOCK="/var/run/ctrld_control.sock"
 
@@ -116,6 +117,14 @@ stop_launch_daemons() {
 free_port_53() {
     log "INFO" "Freeing up port 53..."
     
+    # Check if mDNSResponder is using port 53
+    if sudo lsof -i :53 -sTCP:LISTEN -sTCP:ESTABLISHED 2>/dev/null | grep -q "mDNSResponder"; then
+        log "WARNING" "mDNSResponder is using port 53, temporarily unloading..."
+        sudo launchctl unload /System/Library/LaunchDaemons/com.apple.mDNSResponder.plist 2>/dev/null || true
+        sleep 2
+        echo "mdns_unloaded" > /tmp/ctrld_mdns_status
+    fi
+    
     # Find processes using port 53
     local processes=$(sudo lsof -i :53 -t 2>/dev/null || true)
     
@@ -123,7 +132,7 @@ free_port_53() {
         for pid in $processes; do
             local proc_name=$(ps -p $pid -o comm= 2>/dev/null || echo "unknown")
             
-            # Don't kill system DNS resolver
+            # Don't kill system DNS resolver (already handled above)
             if [[ "$proc_name" != "mDNSResponder" ]]; then
                 log "WARNING" "Killing process $proc_name (PID: $pid) using port 53..."
                 sudo kill -9 $pid 2>/dev/null || true
@@ -147,11 +156,17 @@ reset_dns() {
     log "INFO" "Resetting DNS configuration..."
     
     # Get active network interfaces
-    local interfaces=$(networksetup -listallnetworkservices | grep -v "asterisk" | sed '/^\*/d')
+local interfaces=$(networksetup -listallnetworkservices | grep -v "^\\*")
     
-    while IFS= read -r interface; do
+>    while IFS= read -r interface; do
         log "INFO" "Clearing DNS for $interface..."
         sudo networksetup -setdnsservers "$interface" "Empty" 2>/dev/null || true
+        
+        # Disable proxies
+        log "INFO" "Disabling proxy for $interface..."
+        sudo networksetup -setwebproxystate "$interface" off 2>/dev/null || true
+        sudo networksetup -setsecurewebproxystate "$interface" off 2>/dev/null || true
+        sudo networksetup -setsocksfirewallproxystate "$interface" off 2>/dev/null || true
     done <<< "$interfaces"
     
     # Flush DNS cache multiple times to ensure it's clear
@@ -237,6 +252,7 @@ start_controld() {
     local cmd="'$CTRLD_PATH' run"
     cmd="$cmd --cd='${profile_id}/${device_name}'"
     cmd="$cmd --proto=doh3"
+    cmd="$cmd --proxy"
     cmd="$cmd --log='${LOG_DIR}/ctrld.log'"
     cmd="$cmd --iface=auto"
     cmd="$cmd --homedir=/etc/controld"
@@ -267,6 +283,13 @@ start_controld() {
         # Re-enable AdGuard with new DNS
         manage_adguard "start"
         
+        # Re-enable mDNSResponder if it was unloaded
+        if [[ -f /tmp/ctrld_mdns_status ]]; then
+            log "INFO" "Reloading mDNSResponder..."
+            sudo launchctl load /System/Library/LaunchDaemons/com.apple.mDNSResponder.plist 2>/dev/null || true
+            rm -f /tmp/ctrld_mdns_status
+        fi
+        
         return 0
     else
         log "ERROR" "Failed to start Control D"
@@ -283,13 +306,19 @@ configure_dns_for_profile() {
     log "INFO" "Configuring DNS for $profile profile..."
     
     # Set DNS for all active interfaces
-    local interfaces=$(networksetup -listallnetworkservices | grep -v "asterisk" | sed '/^\*/d')
+local interfaces=$(networksetup -listallnetworkservices | grep -v "^\\*")
     
-    while IFS= read -r interface; do
+>    while IFS= read -r interface; do
         # Check if interface is active
         if networksetup -getinfo "$interface" 2>/dev/null | grep -q "IP address"; then
             log "INFO" "Setting DNS for $interface..."
             sudo networksetup -setdnsservers "$interface" 127.0.0.1 "$primary_dns" "$secondary_dns" 2>/dev/null || true
+            
+            # Set proxy for full routing
+            log "INFO" "Setting proxy for $interface..."
+            sudo networksetup -setwebproxy "$interface" 127.0.0.1 8080 2>/dev/null || true
+            sudo networksetup -setsecurewebproxy "$interface" 127.0.0.1 8080 2>/dev/null || true
+            sudo networksetup -setsocksfirewallproxy "$interface" 127.0.0.1 1080 2>/dev/null || true
         fi
     done <<< "$interfaces"
 }

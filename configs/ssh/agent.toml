@@ -10,11 +10,7 @@
 
 # Enable SSH keys from your Personal vault first (for cursor-local)
 [[ssh-keys]]
-item = "Personal SSH Key"
-vault = "Personal"
-
-[[ssh-keys]]
-item = "Private SSH Key"
+item = "Abhi Mehrotra's MacBook Pro - SSH Key"
 vault = "Personal"
 
 # Enable all SSH keys from Private vault as fallback
