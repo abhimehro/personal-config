@@ -1,3 +1,0 @@
-An asterisk (*) denotes that a network service is disabled.
-USB 10/100/1000 LAN
-Wi-Fi

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.abhimehrotra.maintenance.systemcleanup</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>MAINTENANCE_HOME</key>
+        <string>$HOME/Documents/dev/personal-config/maintenance</string>
+    </dict>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-lc</string>
+        <string>$HOME/Documents/dev/personal-config/maintenance/bin/system_cleanup.sh</string>
+    </array>
+    
+    <key>StandardOutPath</key>
+    <string>$HOME/Library/Logs/maintenance/system_cleanup.out</string>
+    
+    <key>StandardErrorPath</key>
+    <string>$HOME/Library/Logs/maintenance/system_cleanup.err</string>
+    
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    
+    <key>RunAtLoad</key>
+    <false/>
+    
+    <key>KeepAlive</key>
+    <false/>
+</dict>
+</plist>
