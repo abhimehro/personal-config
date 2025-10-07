@@ -1,0 +1,137 @@
+{
+  "group": {
+    "group": "LG webOS Tracker",
+    "action": {
+      "do": 0,
+      "status": 1
+    }
+  },
+  "rules": [
+    {
+      "PK": "ad.lgsmartad.com",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "aic.ads.lgtvcommon.com",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "alphonso.tv",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "cdpbeacon.lgtvcommon.com",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "eic.ads.lgtvcommon.com",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "eic-ngfts.lge.com",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "eic-ngfts.lge.com.edgekey.net",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "h4g3z1-native.lgwebos.web.app",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "homeprv.lgtvcommon.com",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "lgads.tv",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "nudge.lgtvcommon.com",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "qt2-ngfts.lge.com",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "qt2-ngfts.lge.com.edgekey.net",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "rdl.lgtvcommon.com",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "us-ad-lgsmartad-com.aws-prd.net",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "us-info-lgsmartad-com.aws-prd.net",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "us.lgsmartad.com",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    },
+    {
+      "PK": "wiseconfig.lgtvcommon.com",
+      "action": {
+        "do": 0,
+        "status": 1
+      }
+    }
+  ]
+}
