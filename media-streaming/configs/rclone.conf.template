@@ -1,0 +1,37 @@
+# rclone Configuration Template
+# Copy to ~/.config/rclone/rclone.conf and update with your credentials
+
+[alldebrid]
+type = webdav
+url = https://webdav.debrid.it/
+vendor = other
+user = YOUR_ALLDEBRID_WEBDAV_USERNAME
+pass = YOUR_OBSCURED_PASSWORD  # Use: rclone obscure "your_password"
+
+[gdrive]
+type = drive
+client_id = 
+client_secret = 
+scope = drive
+root_folder_id = 
+service_account_file = 
+token = {"access_token":"","token_type":"","refresh_token":"","expiry":""}
+team_drive = 
+
+[onedrive]
+type = onedrive
+token = {"access_token":"","token_type":"","refresh_token":"","expiry":""}
+drive_id = YOUR_DRIVE_ID
+drive_type = personal
+
+[media]
+type = union
+upstreams = gdrive:Media onedrive:Media
+action_policy = epall
+create_policy = epmfs
+search_policy = ff
+
+# Union Policies Explained:
+# action_policy = epall (existing path, all)
+# create_policy = epmfs (existing path, most free space)  
+# search_policy = ff (first found)
