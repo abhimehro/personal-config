@@ -4,3 +4,4 @@
 - Tue Oct  7 18:44:46 CDT 2025: Updated configs - 3e8e13c Clean up repository - remove all old DNS configurations
 - Tue Oct  7 18:46:04 CDT 2025: Updated configs - be4530b Update CHANGELOG.md and add missing validation script
 - Tue Oct  7 19:06:44 CDT 2025: Updated configs - 88061a8 Update CHANGELOG.md with recent repository cleanup changes
+- Tue Oct  7 18:44:46 CDT 2025: Updated configs - 3e8e13c Further clean up repository - remove DNS config references from documentation
