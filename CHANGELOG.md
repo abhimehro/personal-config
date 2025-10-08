@@ -7,3 +7,8 @@
 - Tue Oct  7 19:06:44 CDT 2025: Updated configs - 88061a8 Update CHANGELOG.md with recent repository cleanup changes
 - Tue Oct  7 19:10:01 CDT 2025: Updated configs - 2d321ed Update CHANGELOG.md with recent repository cleanup changes
 - Tue Oct  7 19:19:50 CDT 2025: Updated configs - 984a4d7 Update CHANGELOG.md with latest commit entry
+- Tue Oct  7 19:21:14 CDT 2025: Updated configs - a84c407 Merge branch 'update-changelog' into main
+
+Resolve conflicts in CHANGELOG.md and scripts/validate-configs.sh:
+- Combined all CHANGELOG entries in chronological order
+- Merged validation script with both set -euo pipefail and comments
