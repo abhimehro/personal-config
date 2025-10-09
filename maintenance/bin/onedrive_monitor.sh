@@ -1,166 +1,109 @@
 #!/usr/bin/env bash
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/common.sh"
-with_lock "onedrive_monitor"
+
+# Self-contained OneDrive monitoring script
+set -eo pipefail
+
+# Configuration
+LOG_DIR="$HOME/Library/Logs/maintenance"
+mkdir -p "$LOG_DIR"
+
+# Basic logging
+log_info() {
+    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    echo "$ts [INFO] [onedrive_monitor] $*" | tee -a "$LOG_DIR/onedrive_monitor.log"
+}
+
+log_warn() {
+    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    echo "$ts [WARNING] [onedrive_monitor] $*" | tee -a "$LOG_DIR/onedrive_monitor.log"
+}
+
+# Load config
+CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
+if [[ -f "$CONFIG_FILE" ]]; then
+    source "$CONFIG_FILE" 2>/dev/null || true
+fi
 
 log_info "OneDrive monitoring started"
 
-# Detect OneDrive root directory
-ONEDRIVE_ROOT=$(ls -d "$HOME/Library/CloudStorage/OneDrive"* 2>/dev/null | head -1)
+# Check if OneDrive is running
+ONEDRIVE_STATUS="Not detected"
+SYNC_STATUS="Unknown"
 
-if [[ -z "$ONEDRIVE_ROOT" ]]; then
-    log_warn "OneDrive directory not found in CloudStorage"
-    notify "OneDrive Monitor" "⚠️ OneDrive directory not found"
-    exit 1
-fi
-
-log_info "OneDrive root: $ONEDRIVE_ROOT"
-
-# Check if OneDrive process is running
-ONEDRIVE_PID=$(pgrep -f "/OneDrive$" 2>/dev/null)
-if [[ -n "$ONEDRIVE_PID" ]]; then
-    log_info "OneDrive process running (PID: $ONEDRIVE_PID)"
-    process_running=true
-else
-    log_warn "OneDrive process not running"
-    process_running=false
-fi
-
-# Check recent sync activity
-log_info "Checking recent sync activity..."
-recent_files=$(find "$ONEDRIVE_ROOT" -type f -mtime -1 -print -quit 2>/dev/null)
-if [[ -n "$recent_files" ]]; then
-    log_info "Recent sync activity detected (files modified in last 24h)"
-    recent_activity=true
-else
-    log_warn "No recent sync activity detected (no files modified in last 24h)"
-    recent_activity=false
-fi
-
-# Check OneDrive logs for issues
-ONEDRIVE_LOGS="$HOME/Library/Containers/com.microsoft.OneDrive/Data/Library/Logs/OneDrive"
-log_issues=""
-
-if [[ -d "$ONEDRIVE_LOGS" ]]; then
-    log_info "Checking OneDrive logs for issues..."
+# Check for OneDrive process
+if pgrep -f "OneDrive" >/dev/null 2>&1; then
+    ONEDRIVE_STATUS="Running"
+    log_info "OneDrive process is running"
     
-    # Look for recent error/warning patterns
-    if latest_log=$(find "$ONEDRIVE_LOGS" -name "OneDrive*.log" -type f -mtime -7 | head -1); then
-        log_issues=$(tail -n 200 "$latest_log" 2>/dev/null | grep -E "error|warning|throttl|auth|offline" -i | tail -5 || true)
+    # Check OneDrive directory
+    ONEDRIVE_DIR="$HOME/OneDrive"
+    if [[ -d "$ONEDRIVE_DIR" ]]; then
+        log_info "OneDrive directory found: $ONEDRIVE_DIR"
         
-        if [[ -n "$log_issues" ]]; then
-            log_warn "Found recent issues in OneDrive logs:"
-            echo "$log_issues" | while IFS= read -r line; do
-                log_warn "  $line"
-            done
+        # Check recent sync activity (files modified in last 48 hours)
+        SYNC_CHECK_HOURS="${ONEDRIVE_SYNC_CHECK_HOURS:-48}"
+        RECENT_FILES=$(find "$ONEDRIVE_DIR" -type f -mtime -2 2>/dev/null | wc -l | tr -d ' ')
+        
+        if [[ $RECENT_FILES -gt 0 ]]; then
+            SYNC_STATUS="Active (${RECENT_FILES} files modified in last ${SYNC_CHECK_HOURS}h)"
+            log_info "OneDrive sync appears active: ${RECENT_FILES} files modified recently"
         else
-            log_info "No error/warning patterns found in recent logs"
-        fi
-    else
-        log_warn "No recent OneDrive log files found"
-    fi
-else
-    log_warn "OneDrive logs directory not found: $ONEDRIVE_LOGS"
-fi
-
-# Network connectivity check for OneDrive
-log_info "Checking OneDrive connectivity..."
-if ping -c 1 oneclient.sfx.ms >/dev/null 2>&1; then
-    log_info "OneDrive network connectivity: OK"
-    network_ok=true
-else
-    log_warn "OneDrive network connectivity: ISSUES DETECTED"
-    network_ok=false
-fi
-
-# Determine overall status
-issues=0
-status_messages=()
-
-if [[ "$process_running" == "false" ]]; then
-    ((issues++))
-    status_messages+=("Process not running")
-fi
-
-if [[ "$recent_activity" == "false" ]]; then
-    ((issues++))
-    status_messages+=("No recent sync activity")
-fi
-
-if [[ -n "$log_issues" ]]; then
-    ((issues++))
-    status_messages+=("Log issues detected")
-fi
-
-if [[ "$network_ok" == "false" ]]; then
-    ((issues++))
-    status_messages+=("Network issues")
-fi
-
-# Self-healing actions
-needs_restart=false
-
-if [[ "$process_running" == "false" ]] || [[ "$recent_activity" == "false" && "$network_ok" == "true" ]]; then
-    if [[ "${DRY_RUN:-0}" == "0" ]]; then
-        log_info "Attempting OneDrive self-healing..."
-        
-        # Kill any existing OneDrive processes
-        if [[ -n "$ONEDRIVE_PID" ]]; then
-            log_info "Stopping existing OneDrive process..."
-            killall OneDrive 2>/dev/null || true
-            sleep 3
+            SYNC_STATUS="No recent activity"
+            log_warn "No OneDrive file activity detected in last ${SYNC_CHECK_HOURS} hours"
         fi
         
-        # Start OneDrive
-        log_info "Starting OneDrive application..."
-        if open -a "OneDrive" 2>/dev/null; then
-            log_info "OneDrive restart initiated"
-            needs_restart=true
-            sleep 5
-            
-            # Verify process started
-            if pgrep -f "/OneDrive$" >/dev/null 2>&1; then
-                log_info "OneDrive process started successfully"
-                process_running=true
-                ((issues--)) # Reduce issue count since we fixed process
-            else
-                log_warn "OneDrive process failed to start"
-            fi
-        else
-            log_error "Failed to start OneDrive application"
-        fi
+        # Check OneDrive directory size
+        ONEDRIVE_SIZE=$(du -sh "$ONEDRIVE_DIR" 2>/dev/null | cut -f1 || echo "unknown")
+        log_info "OneDrive directory size: $ONEDRIVE_SIZE"
+        
     else
-        log_info "[DRY RUN] Would restart OneDrive application"
-        needs_restart=true
+        log_warn "OneDrive directory not found at $ONEDRIVE_DIR"
+        SYNC_STATUS="Directory not found"
     fi
-fi
-
-# Get OneDrive status via command line (if available)
-if command -v "/Applications/OneDrive.app/Contents/MacOS/OneDrive" >/dev/null 2>&1; then
-    onedrive_status=$("/Applications/OneDrive.app/Contents/MacOS/OneDrive" /status 2>/dev/null || true)
-    if [[ -n "$onedrive_status" ]]; then
-        log_info "OneDrive status: $onedrive_status"
-    fi
-fi
-
-# Final status summary
-if [[ $issues -eq 0 ]]; then
-    status="✅ OneDrive healthy"
-    log_info "$status"
+    
 else
-    status="⚠️ OneDrive issues (${issues}): ${status_messages[*]}"
-    log_warn "$status"
+    log_warn "OneDrive process not found"
+    ONEDRIVE_STATUS="Not running"
 fi
 
-# Send notification
-if [[ $issues -gt 0 ]]; then
-    if [[ "$needs_restart" == "true" ]]; then
-        notify "OneDrive Monitor" "$status - Restart attempted"
-    else
-        notify "OneDrive Monitor" "$status"
-    fi
+# Check for OneDrive in Applications
+ONEDRIVE_APP="/Applications/Microsoft OneDrive.app"
+if [[ -d "$ONEDRIVE_APP" ]]; then
+    ONEDRIVE_VERSION=$(defaults read "$ONEDRIVE_APP/Contents/Info.plist" CFBundleShortVersionString 2>/dev/null || echo "unknown")
+    log_info "OneDrive app version: $ONEDRIVE_VERSION"
 else
-    log_info "OneDrive monitoring complete - no notification needed for healthy status"
+    log_warn "OneDrive app not found in Applications"
 fi
 
-log_info "OneDrive monitoring complete"
-after_success
+# Check system login items for OneDrive
+if osascript -e 'tell application "System Events" to get the name of every login item' 2>/dev/null | grep -qi onedrive; then
+    log_info "OneDrive is in login items (will start automatically)"
+else
+    log_warn "OneDrive not found in login items"
+fi
+
+# Simple connectivity test
+log_info "Testing internet connectivity for OneDrive sync..."
+if ping -c 1 graph.microsoft.com >/dev/null 2>&1; then
+    log_info "Microsoft Graph connectivity: OK"
+elif ping -c 1 1.1.1.1 >/dev/null 2>&1; then
+    log_info "Internet connectivity: OK (but Microsoft Graph unreachable)"
+else
+    log_warn "Internet connectivity: Issues detected"
+fi
+
+# Summary status
+STATUS_MSG="OneDrive: $ONEDRIVE_STATUS | Sync: $SYNC_STATUS"
+
+# Notification if there are issues
+if [[ "$ONEDRIVE_STATUS" != "Running" ]] || [[ "$SYNC_STATUS" == *"No recent activity"* ]]; then
+    if command -v osascript >/dev/null 2>&1; then
+        osascript -e "display notification \"$STATUS_MSG\" with title \"OneDrive Monitor - Issues Detected\"" 2>/dev/null || true
+    fi
+    log_warn "OneDrive monitoring detected potential issues"
+else
+    log_info "OneDrive appears to be working normally"
+fi
+
+log_info "OneDrive monitoring complete: $STATUS_MSG"
+echo "OneDrive monitoring completed successfully!"
