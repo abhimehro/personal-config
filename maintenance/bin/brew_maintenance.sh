@@ -1,54 +1,175 @@
 #!/usr/bin/env bash
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")"/../lib && pwd)/common.sh"
-with_lock "brew_maintenance"
 
-# Only run on Sundays (day 7 of week)
-if [[ "$(date +%u)" -ne 7 ]]; then
-    log_info "Brew maintenance skipped - only runs on Sundays (today is $(date +%A))"
+# Self-contained Homebrew maintenance script with comprehensive cask updates
+set -eo pipefail
+
+# Configuration
+LOG_DIR="$HOME/Library/Logs/maintenance"
+mkdir -p "$LOG_DIR"
+
+# Basic logging
+log_info() {
+    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    echo "$ts [INFO] [brew_maintenance] $*" | tee -a "$LOG_DIR/brew_maintenance.log"
+}
+
+log_warn() {
+    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    echo "$ts [WARNING] [brew_maintenance] $*" | tee -a "$LOG_DIR/brew_maintenance.log"
+}
+
+# Load config
+CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
+if [[ -f "$CONFIG_FILE" ]]; then
+    source "$CONFIG_FILE" 2>/dev/null || true
+fi
+
+log_info "Homebrew maintenance started"
+
+# Check if Homebrew is installed
+if ! command -v brew >/dev/null 2>&1; then
+    log_warn "Homebrew not found, skipping maintenance"
     exit 0
 fi
 
-log_info "Brew maintenance started"
-require_cmd brew
+UPDATED_PACKAGES=0
+UPDATED_CASKS=0
 
-# Update Homebrew and check for issues
-with_retry 3 5 brew update
-BREW_DOCTOR_OUTPUT=$(brew doctor 2>&1 || true)
-if ! echo "${BREW_DOCTOR_OUTPUT}" | grep -q "Your system is ready to brew"; then
-  log_warn "brew doctor reported issues:"
-  log_warn "${BREW_DOCTOR_OUTPUT}"
+# Update Homebrew
+log_info "Updating Homebrew..."
+if brew update 2>&1 | tee -a "$LOG_DIR/brew_maintenance.log"; then
+    log_info "Homebrew updated successfully"
+else
+    log_warn "Homebrew update had issues, continuing anyway"
 fi
 
-# Check what's outdated
+# Check system health
+log_info "Running brew doctor..."
+BREW_DOCTOR_OUTPUT=$(brew doctor 2>&1 || true)
+if echo "${BREW_DOCTOR_OUTPUT}" | grep -q "Your system is ready to brew"; then
+    log_info "brew doctor: System ready to brew"
+else
+    log_warn "brew doctor reported issues:"
+    log_warn "${BREW_DOCTOR_OUTPUT}"
+fi
+
+# Check what's outdated (packages)
 log_info "Checking for outdated packages..."
-brew outdated || true
-brew outdated --cask --greedy || true
+OUTDATED_PACKAGES=$(brew outdated 2>/dev/null | wc -l | tr -d ' ')
+if (( OUTDATED_PACKAGES > 0 )); then
+    log_info "Found ${OUTDATED_PACKAGES} outdated packages"
+    brew outdated | tee -a "$LOG_DIR/brew_maintenance.log"
+    
+    # Upgrade packages
+    log_info "Upgrading packages..."
+    if brew upgrade 2>&1 | tee -a "$LOG_DIR/brew_maintenance.log"; then
+        UPDATED_PACKAGES=$OUTDATED_PACKAGES
+        log_info "Successfully upgraded ${UPDATED_PACKAGES} packages"
+    else
+        log_warn "Package upgrade encountered issues"
+    fi
+else
+    log_info "All packages are up to date"
+fi
 
-# Upgrade formulae and casks
-log_info "Upgrading formulae..."
-with_retry 3 5 brew upgrade || log_warn "brew upgrade had issues"
+# Check what's outdated (casks) - including auto-updating apps
+log_info "Checking for outdated casks (including auto-updating apps)..."
+OUTDATED_CASKS=$(brew outdated --cask --greedy 2>/dev/null | wc -l | tr -d ' ')
+if (( OUTDATED_CASKS > 0 )); then
+    log_info "Found ${OUTDATED_CASKS} outdated casks"
+    brew outdated --cask --greedy | tee -a "$LOG_DIR/brew_maintenance.log"
+    
+    # Upgrade casks with comprehensive flags
+    log_info "Upgrading casks (including auto-updating apps)..."
+    
+    # First, try upgrading with --greedy-auto-updates (like you used manually)
+    if brew upgrade --cask --greedy-auto-updates 2>&1 | tee -a "$LOG_DIR/brew_maintenance.log"; then
+        log_info "Successfully upgraded casks with auto-updates"
+        UPDATED_CASKS=$OUTDATED_CASKS
+    else
+        log_warn "Cask upgrade with --greedy-auto-updates had issues, trying basic --greedy"
+        
+        # Fallback to basic greedy upgrade
+        if brew upgrade --cask --greedy 2>&1 | tee -a "$LOG_DIR/brew_maintenance.log"; then
+            log_info "Successfully upgraded casks with basic --greedy"
+            UPDATED_CASKS=$OUTDATED_CASKS
+        else
+            log_warn "Cask upgrade encountered issues"
+        fi
+    fi
+else
+    log_info "All casks are up to date"
+fi
 
-log_info "Upgrading casks (including auto-updating)..."
-with_retry 3 5 brew upgrade --cask --greedy || log_warn "cask upgrade had issues"
+# Check for casks that need --greedy-latest flag
+log_info "Checking for casks with version :latest..."
+LATEST_CASKS=$(brew outdated --cask --greedy-latest 2>/dev/null | wc -l | tr -d ' ')
+if (( LATEST_CASKS > 0 )); then
+    log_info "Found ${LATEST_CASKS} casks with version :latest that can be upgraded"
+    brew outdated --cask --greedy-latest | tee -a "$LOG_DIR/brew_maintenance.log"
+    
+    # Optionally upgrade these (they may be more frequent updates)
+    if [[ "${UPDATE_GREEDY_LATEST:-0}" == "1" ]]; then
+        log_info "Upgrading casks with version :latest..."
+        if brew upgrade --cask --greedy-latest 2>&1 | tee -a "$LOG_DIR/brew_maintenance.log"; then
+            log_info "Successfully upgraded casks with version :latest"
+            UPDATED_CASKS=$((UPDATED_CASKS + LATEST_CASKS))
+        else
+            log_warn "Greedy-latest cask upgrade had issues"
+        fi
+    else
+        log_info "Skipping :latest casks (set UPDATE_GREEDY_LATEST=1 to enable)"
+    fi
+fi
 
 # Cleanup
-log_info "Cleaning up..."
-with_retry 3 5 brew autoremove || true
-with_retry 3 5 brew cleanup --prune=${BREW_CLEAN_PRUNE_DAYS:-30} || true
-
-# Check for failed brew services and restart them
-if command -v brew >/dev/null 2>&1; then
-  FAILED_SERVICES=$(brew services list 2>/dev/null | awk 'NR>1 && $2!="started" && $2!="none" {print $1" "$2}' || true)
-  if [[ -n "${FAILED_SERVICES}" ]]; then
-    log_warn "Found failed brew services: ${FAILED_SERVICES}"
-    while IFS= read -r line; do
-      svc_name=$(echo "$line" | awk '{print $1}')
-      log_info "Attempting to restart service: $svc_name"
-      brew services restart "$svc_name" || log_warn "Failed to restart $svc_name"
-    done <<< "${FAILED_SERVICES}"
-  fi
+log_info "Cleaning up Homebrew cache and old versions..."
+if brew autoremove 2>&1 | tee -a "$LOG_DIR/brew_maintenance.log"; then
+    log_info "Successfully removed unused dependencies"
+else
+    log_warn "Autoremove had issues"
 fi
 
-prune_logs
-log_info "Brew maintenance complete"
-notify "Brew Maintenance" "Completed successfully"
+if brew cleanup --prune=${BREW_CLEAN_PRUNE_DAYS:-30} 2>&1 | tee -a "$LOG_DIR/brew_maintenance.log"; then
+    log_info "Successfully cleaned up old versions (older than ${BREW_CLEAN_PRUNE_DAYS:-30} days)"
+else
+    log_warn "Cleanup had issues"
+fi
+
+# Check for failed brew services and restart them
+log_info "Checking Homebrew services..."
+if brew services list >/dev/null 2>&1; then
+    FAILED_SERVICES=$(brew services list 2>/dev/null | awk 'NR>1 && $2!="started" && $2!="none" {print $1" "$2}' || true)
+    if [[ -n "${FAILED_SERVICES}" ]]; then
+        log_warn "Found failed brew services:"
+        echo "${FAILED_SERVICES}" | tee -a "$LOG_DIR/brew_maintenance.log"
+        
+        echo "${FAILED_SERVICES}" | while IFS= read -r line; do
+            svc_name=$(echo "$line" | awk '{print $1}')
+            log_info "Attempting to restart service: $svc_name"
+            if brew services restart "$svc_name" 2>&1 | tee -a "$LOG_DIR/brew_maintenance.log"; then
+                log_info "Successfully restarted $svc_name"
+            else
+                log_warn "Failed to restart $svc_name"
+            fi
+        done
+    else
+        log_info "All Homebrew services are running normally"
+    fi
+fi
+
+# Final status
+TOTAL_UPDATES=$((UPDATED_PACKAGES + UPDATED_CASKS))
+if (( TOTAL_UPDATES > 0 )); then
+    STATUS_MSG="Updated ${UPDATED_PACKAGES} packages, ${UPDATED_CASKS} casks"
+else
+    STATUS_MSG="All packages and casks up to date"
+fi
+
+# Notification
+if command -v osascript >/dev/null 2>&1; then
+    osascript -e "display notification \"${STATUS_MSG}\" with title \"Homebrew Maintenance\"" 2>/dev/null || true
+fi
+
+log_info "Homebrew maintenance complete: ${STATUS_MSG}"
+echo "Homebrew maintenance completed successfully!"
