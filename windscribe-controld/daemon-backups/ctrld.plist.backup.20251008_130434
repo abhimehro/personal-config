@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN"
+"http://www.apple.com/DTDs/PropertyList-1.0.dtd" >
+<plist version='1.0'>
+  <dict>
+    <key>Label</key>
+    <string>ctrld</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/usr/local/bin/ctrld</string>
+    
+      <string>run</string>
+    
+      <string>--config=/etc/controld/ctrld.toml</string>
+    
+      <string>--skip_self_checks</string>
+    
+      <string>--iface=auto</string>
+    
+      <string>--homedir=/etc/controld</string>
+    
+    </array>
+    
+    
+    <key>WorkingDirectory</key>
+    <string>/etc/controld</string>
+    <key>SessionCreate</key>
+    <false/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>Disabled</key>
+    <false/>
+    
+    <key>StandardOutPath</key>
+    <string>/usr/local/var/log/ctrld.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/usr/local/var/log/ctrld.err.log</string>
+  
+  </dict>
+</plist>

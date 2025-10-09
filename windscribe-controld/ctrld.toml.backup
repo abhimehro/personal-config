@@ -1,0 +1,31 @@
+# Control D Privacy Profile Configuration - BACKUP
+# Enhanced privacy and ad-blocking
+
+[listener]
+  [listener.0]
+    ip = '127.0.0.1'
+    port = 53
+
+    [listener.0.policy]
+      name = 'Privacy Policy - Enhanced Blocking'
+      rules = [
+        # Essential bypasses only
+        {        'captive.apple.com' = []},
+        {        'detectportal.firefox.com' = []},
+        {        'neverssl.com' = []},
+        {        'p.controld.com' = []},
+        {        'local.adguard.org' = []}
+      ]
+
+[network]
+  [network.0]
+    name = 'Privacy Network'
+    cidrs = ['0.0.0.0/0']
+
+[upstream]
+  [upstream.0]
+    name = 'Control D Privacy Profile'
+    type = 'doh'
+    endpoint = 'https://dns.controld.com/6m971e9jaf'
+    bootstrap_ip = '76.76.2.0' 
+    timeout = 3000

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.controld.dns</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/ctrld</string>
+        <string>start</string>
+        <string>--config</string>
+        <string>/etc/controld/ctrld.toml</string>
+        <string>--skip_self_checks</string>
+    </array>
+    
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    
+    <key>StandardOutPath</key>
+    <string>/var/log/ctrld.out.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/var/log/ctrld.err.log</string>
+    
+    <key>WorkingDirectory</key>
+    <string>/etc/controld</string>
+    
+    <key>UserName</key>
+    <string>root</string>
+    
+    <key>GroupName</key>
+    <string>wheel</string>
+    
+    <key>ProcessType</key>
+    <string>Background</string>
+    
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+</dict>
+</plist>

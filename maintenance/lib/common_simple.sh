@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Working maintenance common library
+# Simplified and robust common.sh library for maintenance scripts
 
+# Use less strict error handling to avoid exit on minor issues
 set -eo pipefail
 
 # Architecture and OS detection
@@ -114,7 +115,7 @@ retry() {
     done
 }
 
-# Legacy compatibility functions
+# Legacy compatibility
 require_cmd() {
     local cmd="$1"
     if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -128,31 +129,6 @@ script_basename() {
 }
 
 acquire_lock() { with_lock "$@"; }
-
-log_file_init() {
-    local base="${1:-$(script_basename)}"
-    LOG_FILE="$LOG_DIR/${base}-$(date +%Y%m%d).log"
-    touch "$LOG_FILE" || true
-}
-
-with_retry() {
-    local attempts="$1"; shift
-    local delay="$1"; shift
-    retry "$*" "$attempts" "$delay"
-}
-
-after_success() {
-    local hook="$REPO_ROOT/.cursor/scripts/backup-configs.sh"
-    if [[ -x "$hook" ]]; then
-        "$hook" --reason "$(basename "$0")" 2>/dev/null || true
-    fi
-}
-
-cleanup_and_exit() {
-    local exit_code="${1:-0}"
-    prune_logs
-    exit "$exit_code"
-}
 
 # Log successful load
 log_debug "Common library loaded - Arch: $ARCH, macOS: $OS_VER"
