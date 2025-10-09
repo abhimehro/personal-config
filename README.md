@@ -7,7 +7,9 @@ A comprehensive repository for personal system configurations, scripts, and docu
 This repository contains configuration files, automation scripts, and detailed documentation for my personal computing environment. Key features:
 
 - **🔐 Secure SSH Configuration** - 1Password integration with dynamic network support
-- **🌐 Dynamic DNS Management** - Control D profile switching for privacy & gaming
+- **🌐 Enhanced VPN + DNS Integration** - Windscribe VPN with Control D privacy filtering
+- **🛡️ Dual Protection System** - VPN encryption + DNS privacy filtering with real-time logging
+- **🛠️ Automated Maintenance System** - Comprehensive system health monitoring and cleanup (NEW!)
 - **⚙️ Development Tools** - Optimized configurations for Cursor IDE and terminal workflows
 - **🎮 Gaming Optimization** - Specialized DNS profiles for gaming performance
 - **📱 Network Automation** - VPN-aware configurations with automatic failover
@@ -21,6 +23,36 @@ By keeping these configurations in version control, I can:
 
 ## 🎯 Quick Start
 
+### Automated Maintenance System (NEW!)
+```bash
+# Check system health
+~/Documents/dev/personal-config/maintenance/bin/run_all_maintenance.sh health
+
+# Quick system cleanup
+~/Documents/dev/personal-config/maintenance/bin/run_all_maintenance.sh quick
+
+# View automation status
+launchctl list | grep maintenance
+
+# View latest health report
+ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
+```
+
+### Enhanced VPN + DNS Integration
+```bash
+# Verify complete Windscribe + Control D setup
+bash windscribe-controld/windscribe-controld-setup.sh
+
+# Switch Control D profiles through VPN
+sudo controld-manager switch privacy doh    # Enhanced privacy filtering
+sudo controld-manager switch gaming doh     # Gaming optimization
+sudo controld-manager status                # Check current status
+
+# Test DNS filtering through VPN
+dig doubleclick.net +short                  # Should return ********* (blocked)
+dig google.com +short                       # Should resolve normally
+```
+
 ### SSH Configuration
 ```bash
 # Install SSH configuration with 1Password integration
@@ -33,22 +65,29 @@ By keeping these configurations in version control, I can:
 ssh cursor-mdns  # Works anywhere (VPN on/off)
 ```
 
-### DNS Management
+### Legacy DNS Management
 ```bash
-# Switch to privacy mode (browsing, AI apps)
-sudo dns-privacy
-
-# Switch to gaming mode (gaming, minimal filtering)
-sudo dns-gaming
-
-# Deploy/update DNS scripts from backup
-./dns-setup/scripts/deploy.sh
+# Alternative direct DNS switching (without VPN)
+sudo dns-privacy     # Privacy mode
+sudo dns-gaming      # Gaming mode
 ```
 
 ## 📁 Repository Structure
 
 ```
 personal-config/
+├── 🛠️ maintenance/            # Automated Maintenance System (NEW!)
+│   ├── bin/                   # Executable maintenance scripts
+│   │   ├── run_all_maintenance.sh  # Master orchestration script
+│   │   ├── health_check.sh    # System health monitoring
+│   │   └── quick_cleanup.sh   # Quick system cleanup
+│   ├── conf/                  # Configuration files
+│   ├── lib/                   # Shared libraries
+│   └── README.md              # Maintenance system guide
+├── 🌐 windscribe-controld/     # Enhanced VPN + DNS Integration
+│   ├── windscribe-controld-setup.sh  # Automated setup & verification
+│   ├── setup-guide.md         # Complete integration guide
+│   └── ctrld.toml.backup      # Configuration backup
 ├── 🌐 dns-setup/              # Dynamic DNS Management System
 │   ├── scripts/               # DNS switching automation
 │   │   ├── dns-privacy        # Privacy profile switcher
@@ -301,6 +340,7 @@ done
 
 ## 📈 Version History
 
+- **v4.0** (October 2025) - Enhanced VPN + DNS Integration with Windscribe + Control D
 - **v3.0** (September 2025) - Dynamic DNS Management System
 - **v2.0** (August 2025) - SSH Configuration with 1Password
 - **v1.0** (April 2025) - Initial repository structure
@@ -313,6 +353,7 @@ Personal use configurations. Feel free to adapt and use any parts that are helpf
 
 **🎉 Your complete development and gaming network is now perfectly automated!**
 
-_Last Updated: September 11, 2025_  
-_DNS Management System: v1.0_  
+_Last Updated: October 8, 2025_  
+_VPN + DNS Integration: v4.0_  
+_DNS Management System: v3.0_  
 _SSH Configuration: v2.0_
