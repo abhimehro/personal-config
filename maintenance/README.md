@@ -14,7 +14,7 @@ A comprehensive automated maintenance system for macOS that keeps your system cl
 
 ### 🔄 Automated Schedules
 - **Daily Health Check**: 8:30 AM - System health monitoring
-- **Daily Brew Maintenance**: 10:00 AM - Homebrew updates  
+- **Daily Brew Maintenance**: 10:00 AM - Homebrew packages + comprehensive cask updates  
 - **Daily System Cleanup**: 9:00 AM - System maintenance
 - **Weekly Maintenance**: Monday 9:00 AM - Comprehensive weekly tasks
 - **Monthly Maintenance**: 1st of month 6:00 AM - Deep system maintenance
@@ -37,6 +37,13 @@ A comprehensive automated maintenance system for macOS that keeps your system cl
 - **Browser Caches**: Clean browser cache files safely
 - **Package Caches**: Clean Homebrew, npm, and other package caches
 - **Log Rotation**: Manage and rotate system logs
+
+### 📦 Comprehensive Package Management
+- **Homebrew Packages**: Regular formula updates with health checks
+- **Homebrew Casks**: Auto-updating app support with `--greedy-auto-updates`
+- **Version :latest Casks**: Optional updates for apps with frequent releases
+- **Service Management**: Automatic restart of failed Homebrew services
+- **Cache Cleanup**: Automatic pruning of old versions and cache files
 
 ## 🚀 Quick Start
 
@@ -127,7 +134,7 @@ UPDATE_MAS_APPS=1          # Auto-update Mac App Store apps
 2. **Daily Brew Maintenance** (`com.abhimehrotra.maintenance.brew`)
    - Time: 10:00 AM daily  
    - Script: `brew_maintenance.sh`
-   - Purpose: Homebrew updates
+   - Purpose: Homebrew packages + comprehensive cask updates (including auto-updating apps)
 
 3. **Daily System Cleanup** (`com.abhimehrotra.maintenance.systemcleanup`)
    - Time: 9:00 AM daily
