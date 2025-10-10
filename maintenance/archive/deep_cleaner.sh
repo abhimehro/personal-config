@@ -1,51 +1,13 @@
 #!/usr/bin/env bash
-
-# Self-contained deep system cleaner - MONTHLY VERSION
-set -eo pipefail
-
-# Configuration
-LOG_DIR="$HOME/Library/Logs/maintenance"
-mkdir -p "$LOG_DIR"
-
-# Only run on the 1st of the month or if FORCE_RUN is set
-DAY_OF_MONTH=$(date +%-d)  # %-d removes leading zero
-if [[ "$DAY_OF_MONTH" -ne 1 ]] && [[ "${FORCE_RUN:-0}" != "1" ]]; then
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] [deep_cleaner] Monthly deep cleaning skipped - only runs on 1st of month (today is $(date +%B) $(date +%d))"
-    exit 0
-fi
-
-# Basic logging
-log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
-    echo "$ts [INFO] [deep_cleaner] $*" | tee -a "$LOG_DIR/deep_cleaner.log"
-}
-
-log_warn() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
-    echo "$ts [WARNING] [deep_cleaner] $*" | tee -a "$LOG_DIR/deep_cleaner.log"
-}
-
-# Load config
-CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
-if [[ -f "$CONFIG_FILE" ]]; then
-    source "$CONFIG_FILE" 2>/dev/null || true
-fi
-
-# Get disk usage percentage
-percent_used() {
-    local path="${1:-/}"
-    df -P "$path" | awk 'NR==2 {print $5}' | tr -d '%'
-}
+source "${HOME}/Scripts/maintenance/common.sh"
+log_file_init "deep_cleaner"
+acquire_lock "deep_cleaner"
 
 log_info "Deep system cleaning started"
 
 REPORT_FILE="${LOG_DIR}/deep_clean_report-$(date +%Y%m%d-%H%M).txt"
 REPORT=""
-append() { 
-    REPORT+="$1"$'\n'
-    log_info "$1"
-    echo "$1"
-}
+append() { REPORT+="$1"$'\n'; log_info "$1"; echo "$1"; }
 
 append "=== DEEP SYSTEM CLEANING REPORT ==="
 append "Generated: $(date)"
@@ -59,18 +21,16 @@ append ""
 append "=== LARGEST FILES AND DIRECTORIES ==="
 log_info "Scanning for large files (this may take a moment)..."
 append "Top 20 largest files over 100MB:"
-
-# Use timeout to prevent hanging
-timeout 300 find "$HOME" -type f -size +100M 2>/dev/null | head -20 | while read -r file; do
+find / -type f -size +100M 2>/dev/null | head -20 | while read -r file; do
     size=$(du -h "$file" 2>/dev/null | cut -f1)
     append "  $size - $file"
-done 2>/dev/null || log_warn "Large file scan timed out or had errors"
+done
 
 append ""
-append "Top 10 largest directories in home:"
-timeout 120 du -h "$HOME" 2>/dev/null | sort -hr | head -10 | while read -r line; do
+append "Top 10 largest directories:"
+du -h / 2>/dev/null | sort -hr | head -10 | while read -r line; do
     append "  $line"
-done 2>/dev/null || log_warn "Directory size scan timed out or had errors"
+done
 append ""
 
 # 2) Application remnants that CleanMyMac might miss
@@ -89,7 +49,7 @@ if [[ -d "${APP_SUPPORT_DIR}" ]]; then
             size=$(du -sh "$app_dir" 2>/dev/null | cut -f1)
             ORPHANED_APP_SUPPORT+="  $size - $app_dir"$'\n'
         fi
-    done < <(timeout 60 find "${APP_SUPPORT_DIR}" -maxdepth 1 -type d -not -name ".*" -print0 2>/dev/null || true)
+    done < <(find "${APP_SUPPORT_DIR}" -maxdepth 1 -type d -not -name ".*" -print0 2>/dev/null)
 fi
 
 if [[ -n "${ORPHANED_APP_SUPPORT}" ]]; then
@@ -114,7 +74,7 @@ if [[ -d "${PREFS_DIR}" ]]; then
             size=$(du -sh "$pref_file" 2>/dev/null | cut -f1)
             ORPHANED_PREFS+="  $size - $pref_file"$'\n'
         fi
-    done < <(timeout 30 find "${PREFS_DIR}" -name "*.plist" -print0 2>/dev/null || true)
+    done < <(find "${PREFS_DIR}" -name "*.plist" -print0 2>/dev/null)
 fi
 
 if [[ -n "${ORPHANED_PREFS}" ]]; then
@@ -145,7 +105,7 @@ append ""
 # 4) Language files and unused localizations
 append "=== LOCALIZATION FILES ==="
 log_info "Scanning for unused language files..."
-LANG_FILES=$(timeout 60 find /Applications -name "*.lproj" 2>/dev/null | grep -E "(Japanese|Korean|Chinese|French|German|Spanish|Italian)" | wc -l | tr -d ' ' || echo "0")
+LANG_FILES=$(find /Applications -name "*.lproj" 2>/dev/null | grep -E "(Japanese|Korean|Chinese|French|German|Spanish|Italian)" | wc -l | tr -d ' ')
 append "Non-English localization directories found: ${LANG_FILES}"
 append "Consider using tools like Monolingual to remove unused languages"
 append ""
@@ -162,7 +122,7 @@ COMMON_DUPE_DIRS=(
 
 for dir in "${COMMON_DUPE_DIRS[@]}"; do
     if [[ -d "$dir" ]]; then
-        dupes=$(timeout 30 find "$dir" -type f \( -name "*copy*" -o -name "*duplicate*" -o -name "*(1)*" \) 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+        dupes=$(find "$dir" -type f -name "*copy*" -o -name "*duplicate*" -o -name "*(1)*" 2>/dev/null | wc -l | tr -d ' ')
         if (( dupes > 0 )); then
             append "Potential duplicates in $dir: $dupes files"
         fi
@@ -253,7 +213,7 @@ LOG_DIRS=(
 for log_dir in "${LOG_DIRS[@]}"; do
     if [[ -d "$log_dir" ]] && [[ -r "$log_dir" ]]; then
         log_size=$(du -sh "$log_dir" 2>/dev/null | cut -f1)
-        old_logs=$(timeout 30 find "$log_dir" -name "*.log" -mtime +30 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+        old_logs=$(find "$log_dir" -name "*.log" -mtime +30 2>/dev/null | wc -l | tr -d ' ')
         append "$log_dir: $log_size ($old_logs files older than 30 days)"
     fi
 done
@@ -313,11 +273,7 @@ append ""
 append "📊 Report saved to: ${REPORT_FILE}"
 
 log_info "Deep cleaning analysis complete"
-
-# Notification
-if command -v osascript >/dev/null 2>&1; then
-    osascript -e "display notification \"Analysis complete. Check report for cleanup recommendations.\" with title \"Deep Cleaner\"" 2>/dev/null || true
-fi
+notify "Deep Cleaner" "Analysis complete. Check report for cleanup recommendations."
 
 echo ""
 echo "🎯 Next Steps:"
@@ -328,6 +284,3 @@ echo "4. Consider tools like:"
 echo "   - Monolingual (for language files)"
 echo "   - DupeGuru (for duplicate files)"
 echo "   - Disk Utility First Aid (for filesystem issues)"
-
-log_info "Deep system cleaning completed successfully"
-echo "Deep cleaning analysis completed successfully!"

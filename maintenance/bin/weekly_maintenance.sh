@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+# Weekly maintenance orchestrator script
+# Note: Not using -e flag to allow individual tasks to fail without stopping the whole process
+set -o pipefail
+
+# Configuration
+LOG_DIR="$HOME/Library/Logs/maintenance"
+mkdir -p "$LOG_DIR"
+
+# Only run on Mondays or if FORCE_RUN is set
+DAY_OF_WEEK=$(date +%u)  # 1 = Monday
+if [[ "$DAY_OF_WEEK" -ne 1 ]] && [[ "${FORCE_RUN:-0}" != "1" ]]; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] [weekly_maintenance] Weekly maintenance skipped - only runs on Mondays (today is $(date +%A))"
+    exit 0
+fi
+
+# Basic logging
+log_info() {
+    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    echo "$ts [INFO] [weekly_maintenance] $*" | tee -a "$LOG_DIR/weekly_maintenance.log"
+}
+
+log_warn() {
+    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    echo "$ts [WARNING] [weekly_maintenance] $*" | tee -a "$LOG_DIR/weekly_maintenance.log"
+}
+
+# Script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+log_info "Weekly maintenance started for $(date +%A), $(date +%B) $(date +%d), $(date +%Y)"
+
+TASKS_COMPLETED=0
+TASKS_FAILED=0
+
+# Function to run a maintenance script
+run_task() {
+    local script_name="$1"
+    local script_path="$SCRIPT_DIR/$script_name"
+    
+    if [[ ! -f "$script_path" ]]; then
+        log_warn "Script not found: $script_path"
+        ((TASKS_FAILED++))
+        return 1
+    fi
+    
+    if [[ ! -x "$script_path" ]]; then
+        log_warn "Script not executable: $script_path"
+        ((TASKS_FAILED++))
+        return 1
+    fi
+    
+    log_info "Running weekly task: $script_name"
+    
+    # Set AUTOMATED_RUN and run the script
+    if AUTOMATED_RUN=1 "$script_path" 2>&1 | tee -a "$LOG_DIR/weekly_maintenance.log"; then
+        log_info "Weekly task completed successfully: $script_name"
+        ((TASKS_COMPLETED++))
+        return 0
+    else
+        log_warn "Weekly task failed: $script_name"
+        ((TASKS_FAILED++))
+        return 1
+    fi
+}
+
+# Run weekly maintenance tasks
+log_info "=== WEEKLY MAINTENANCE TASKS ==="
+
+# 1) Quick system cleanup (lighter weekly version)
+run_task "quick_cleanup_working.sh"
+
+# 2) Node.js maintenance (weekly is appropriate for node modules)
+run_task "node_maintenance_working.sh"
+
+# 3) OneDrive monitoring and cleanup
+run_task "onedrive_monitor_working.sh"
+
+# Summary
+log_info "=== WEEKLY MAINTENANCE SUMMARY ==="
+log_info "Tasks completed: $TASKS_COMPLETED"
+log_info "Tasks failed: $TASKS_FAILED"
+
+TOTAL_TASKS=$((TASKS_COMPLETED + TASKS_FAILED))
+if [[ $TASKS_FAILED -eq 0 ]]; then
+    STATUS="✅ All weekly tasks completed successfully ($TASKS_COMPLETED/$TOTAL_TASKS)"
+    log_info "Weekly maintenance completed successfully"
+else
+    STATUS="⚠️ Weekly maintenance completed with ${TASKS_FAILED} failures ($TASKS_COMPLETED/$TOTAL_TASKS)"
+    log_warn "Weekly maintenance had $TASKS_FAILED failures"
+fi
+
+# Notification
+if command -v osascript >/dev/null 2>&1; then
+    osascript -e "display notification \"$STATUS\" with title \"Weekly Maintenance\"" 2>/dev/null || true
+fi
+
+log_info "Weekly maintenance finished: $STATUS"
+echo "Weekly maintenance completed!"
+
+# Exit with error code if any tasks failed
+exit $TASKS_FAILED

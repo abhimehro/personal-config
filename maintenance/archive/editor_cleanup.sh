@@ -1,35 +1,6 @@
 #!/usr/bin/env bash
-
-# Self-contained editor cache cleanup script - MONTHLY VERSION
-set -eo pipefail
-
-# Configuration
-LOG_DIR="$HOME/Library/Logs/maintenance"
-mkdir -p "$LOG_DIR"
-
-# Only run on the 1st of the month or if FORCE_RUN is set
-DAY_OF_MONTH=$(date +%-d)  # %-d removes leading zero
-if [[ "$DAY_OF_MONTH" -ne 1 ]] && [[ "${FORCE_RUN:-0}" != "1" ]]; then
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] [editor_cleanup] Monthly editor cleanup skipped - only runs on 1st of month (today is $(date +%B) $(date +%d))"
-    exit 0
-fi
-
-# Basic logging
-log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
-    echo "$ts [INFO] [editor_cleanup] $*" | tee -a "$LOG_DIR/editor_cleanup.log"
-}
-
-log_warn() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
-    echo "$ts [WARNING] [editor_cleanup] $*" | tee -a "$LOG_DIR/editor_cleanup.log"
-}
-
-# Load config
-CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
-if [[ -f "$CONFIG_FILE" ]]; then
-    source "$CONFIG_FILE" 2>/dev/null || true
-fi
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/common.sh"
+with_lock "editor_cleanup"
 
 log_info "Editor cache cleanup started"
 
@@ -148,17 +119,13 @@ fi
 
 # Summary
 total_freed_mb=$((total_freed / 1024))
-
-# Notification
-if command -v osascript >/dev/null 2>&1; then
-    if [[ $total_freed_mb -gt 0 ]]; then
-        osascript -e "display notification \"Completed - Freed ${total_freed_mb}MB\" with title \"Editor Cleanup\"" 2>/dev/null || true
-        log_info "Editor cache cleanup freed ${total_freed_mb}MB total"
-    else
-        osascript -e "display notification \"Completed - Caches already clean\" with title \"Editor Cleanup\"" 2>/dev/null || true
-        log_info "Editor caches were already clean"
-    fi
+if [[ $total_freed_mb -gt 0 ]]; then
+    log_info "Editor cache cleanup freed ${total_freed_mb}MB total"
+    notify "Editor Cleanup" "Completed - Freed ${total_freed_mb}MB"
+else
+    log_info "Editor caches were already clean"
+    notify "Editor Cleanup" "Completed - Caches already clean"
 fi
 
 log_info "Editor cache cleanup complete"
-echo "Editor cache cleanup completed successfully!"
+after_success
