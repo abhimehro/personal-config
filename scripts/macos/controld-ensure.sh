@@ -49,10 +49,25 @@ configure_dns() {
 # Set network service order
 set_service_order() {
     log "🔧 Setting network service priority order..."
-    if networksetup -ordernetworkservices "USB 10/100/1000 LAN" "Wi-Fi" "Thunderbolt Bridge" "Bluetooth PAN" 2>/dev/null; then
-        log "✅ Network service order configured"
+    
+    # Get actual available services (excluding disabled ones)
+    local available_services=()
+    while IFS= read -r service; do
+        # Skip header line and disabled services (marked with *)
+        if [[ "$service" != "An asterisk"* && "$service" != *"*"* && -n "$service" ]]; then
+            available_services+=("$service")
+        fi
+    done < <(networksetup -listallnetworkservices)
+    
+    # Only set order if we have multiple services
+    if [[ ${#available_services[@]} -gt 1 ]]; then
+        if networksetup -ordernetworkservices "${available_services[@]}" 2>/dev/null; then
+            log "✅ Network service order configured: ${available_services[*]}"
+        else
+            log "ℹ️  Network service order unchanged (current order is fine)"
+        fi
     else
-        log "⚠️  Could not set network service order (some services may not exist)"
+        log "ℹ️  Only one network service available, order setting not needed"
     fi
 }
 
