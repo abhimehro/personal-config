@@ -86,16 +86,22 @@ if command -v brew >/dev/null 2>&1; then
   append "Outdated Homebrew packages: ${BREW_OUTDATED}"
 fi
 
-# 7) Software updates check
-SWU=$(/usr/sbin/softwareupdate -l 2>&1 || true)
-if echo "$SWU" | grep -qi "No new software available"; then
-  append "Software updates: None available"
-elif echo "$SWU" | grep -qi "restart.*required\|reboot.*required"; then
-  append "Software updates: RESTART REQUIRED"
-  log_warn "Software updates require restart"
+# 7) Software updates check (skip if running automated to avoid password prompts)
+if [[ "${AUTOMATED_RUN:-0}" == "1" ]] || [[ -n "${SUDO_USER}" ]] || [[ "$EUID" -ne 0 ]]; then
+  # Skip software update check during automated runs to avoid password prompts
+  append "Software updates: Skipped (automated run)"
+  log_info "Software update check skipped to avoid password prompts"
 else
-  UPDATE_COUNT=$(echo "$SWU" | grep -c "recommended" || echo "0")
-  append "Software updates: ${UPDATE_COUNT} available"
+  SWU=$(/usr/sbin/softwareupdate -l 2>&1 || true)
+  if echo "$SWU" | grep -qi "No new software available"; then
+    append "Software updates: None available"
+  elif echo "$SWU" | grep -qi "restart.*required\|reboot.*required"; then
+    append "Software updates: RESTART REQUIRED"
+    log_warn "Software updates require restart"
+  else
+    UPDATE_COUNT=$(echo "$SWU" | grep -c "recommended" || echo "0")
+    append "Software updates: ${UPDATE_COUNT} available"
+  fi
 fi
 
 # 8) Network connectivity check
