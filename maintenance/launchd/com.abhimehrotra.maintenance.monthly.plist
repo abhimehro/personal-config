@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maintenance.systemcleanup</string>
+    <string>com.abhimehrotra.maintenance.monthly</string>
     
     <key>EnvironmentVariables</key>
     <dict>
@@ -19,17 +19,19 @@
     <array>
         <string>/bin/bash</string>
         <string>-lc</string>
-        <string>$HOME/Documents/dev/personal-config/maintenance/bin/system_cleanup.sh</string>
+        <string>$HOME/Documents/dev/personal-config/maintenance/bin/monthly_maintenance.sh</string>
     </array>
     
     <key>StandardOutPath</key>
-    <string>$HOME/Library/Logs/maintenance/system_cleanup.out</string>
+    <string>$HOME/Library/Logs/maintenance/monthly_maintenance.out</string>
     
     <key>StandardErrorPath</key>
-    <string>$HOME/Library/Logs/maintenance/system_cleanup.err</string>
+    <string>$HOME/Library/Logs/maintenance/monthly_maintenance.err</string>
     
     <key>StartCalendarInterval</key>
     <dict>
+        <key>Day</key>
+        <integer>1</integer>
         <key>Hour</key>
         <integer>9</integer>
         <key>Minute</key>

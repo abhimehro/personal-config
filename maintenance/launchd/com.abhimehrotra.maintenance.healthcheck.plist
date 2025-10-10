@@ -11,6 +11,8 @@
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
         <key>MAINTENANCE_HOME</key>
         <string>$HOME/Documents/dev/personal-config/maintenance</string>
+        <key>AUTOMATED_RUN</key>
+        <string>1</string>
     </dict>
     
     <key>ProgramArguments</key>
