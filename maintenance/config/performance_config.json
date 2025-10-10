@@ -1,0 +1,31 @@
+{
+    "cpu_optimization": {
+        "enabled": true,
+        "max_background_processes": 50,
+        "nice_level": 10,
+        "cpu_threshold": 80
+    },
+    "memory_optimization": {
+        "enabled": true,
+        "swap_usage_threshold": 50,
+        "memory_pressure_threshold": 75,
+        "purge_inactive_memory": true
+    },
+    "disk_optimization": {
+        "enabled": true,
+        "trim_ssd": true,
+        "spotlight_optimization": true,
+        "cache_cleanup": true
+    },
+    "network_optimization": {
+        "enabled": true,
+        "dns_cache_flush": true,
+        "tcp_optimization": true
+    },
+    "application_optimization": {
+        "enabled": true,
+        "kill_zombie_processes": true,
+        "optimize_launch_agents": true,
+        "cleanup_temp_files": true
+    }
+}
