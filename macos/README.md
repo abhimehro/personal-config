@@ -24,7 +24,7 @@ This directory contains configuration files and documentation for macOS 26.0.1 (
 - Cannot be truly disabled (system-level limitation)
 - Barbee icon positioned over mic indicator with 200px spacers
 - Orange color peeks through as intentional design accent
-- Backup configuration included: [`barbee-config/Default.bbp/`](./barbee-config/Default.bbp/)
+- Backup configuration included: [`barbee-config/Backup/`](./barbee-config/Backup/)
 
 ## Key Differences
 
@@ -52,8 +52,8 @@ cat /private/tmp/screencapture-nag-remover-wrapper.log
 
 ### Barbee Restoration
 ```bash
-# Restore Barbee configuration
-cp -R ~/Documents/dev/personal-config/macos/barbee-config/Default.bbp \
+# Restore Barbee configuration (adjust date folder as needed)
+cp -R ~/Documents/dev/personal-config/macos/barbee-config/Backup/Barbee_Profile_2025_10_17_17_11_05/Default.bbp \
       "$HOME/Library/Application Support/Barbee/Profiles/"
       
 # Relaunch Barbee
@@ -63,13 +63,15 @@ killall "Barbee" && open -a "Barbee"
 ### Update Backups
 ```bash
 # Update Barbee backup after changes
-cp -R "~/Library/Mobile Documents/iCloud~hyperartflow~barbee/Documents/Backups/Default.bbp" \
-      ~/Documents/dev/personal-config/macos/barbee-config/
+DATE_FOLDER="Barbee_Profile_$(date +%Y_%m_%d_%H_%M_%S)"
+mkdir -p ~/Documents/dev/personal-config/macos/barbee-config/Backup/$DATE_FOLDER
+cp -R "$HOME/Library/Mobile Documents/iCloud~hyperartflow~barbee/Documents/Backups/Default.bbp" \
+      ~/Documents/dev/personal-config/macos/barbee-config/Backup/$DATE_FOLDER/
 
 # Commit changes
 cd ~/Documents/dev/personal-config
 git add macos/barbee-config/
-git commit -m "Update Barbee configuration"
+git commit -m "Update Barbee configuration - $DATE_FOLDER"
 git push origin main
 ```
 
@@ -122,6 +124,6 @@ Watch for these potential improvements in future macOS updates:
 
 ---
 
-**Last Updated**: October 11, 2025  
+**Last Updated**: October 17, 2025  
 **macOS Version**: 26.0.1 (25A362)  
 **Status**: Both solutions working as designed
