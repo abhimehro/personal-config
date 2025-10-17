@@ -117,15 +117,15 @@ New apps automatically appear here:
 
 Spacers create the visual separation and ensure hidden apps expand correctly:
 
-**Top Row (Above Barbee)**
-- Spacer 1: 50 pixels width
-- Spacer 2: 50 pixels width
+**Always Visible Section (Top Row)**
+- Spacer 1: 75 pixels width
+- Spacer 2: 75 pixels width
+- Spacer 3: 200 pixels width
 
-**Middle Row (Around Barbee)**
-- Spacer 3: 200 pixels width (left of Barbee)
-- Spacer 4: 200 pixels width (right of Barbee)
+**Hidden Section (Middle Row)**
+- Spacer 4: 200 pixels width
 
-**Bottom Row (Below hidden section)**
+**Always Hidden Section (Bottom Row)**
 - Spacer 5: 50 pixels width
 
 ### Positioning Logic
@@ -145,7 +145,7 @@ The key insight: The 200-pixel spacers on either side of Barbee create a "zone" 
 
 ### Backup Location
 The complete Barbee configuration is backed up at:
-- **Repository**: `~/Documents/dev/personal-config/macos/barbee-config/Default.bbp`
+- **Repository**: `~/Documents/dev/personal-config/macos/barbee-config/Backup/Barbee_Profile_2025_10_17_17_11_05/Default.bbp`
 - **iCloud**: `~/Library/Mobile Documents/iCloud~hyperartflow~barbee/Documents/Backups/Default.bbp`
 
 ### Backup Contents
@@ -165,7 +165,7 @@ Default.bbp/
 1. Open Barbee preferences
 2. Go to Profile tab
 3. Click "Import Profile"
-4. Navigate to: `~/Documents/dev/personal-config/macos/barbee-config/Default.bbp`
+4. Navigate to: `~/Documents/dev/personal-config/macos/barbee-config/Backup/Barbee_Profile_2025_10_17_17_11_05/Default.bbp`
 5. Click Import
 6. Restart Barbee (quit and relaunch)
 
@@ -179,7 +179,7 @@ cp -R "$HOME/Library/Application Support/Barbee/Profiles/Default.bbp" \
       "$HOME/Library/Application Support/Barbee/Profiles/Default.bbp.backup.$(date +%Y%m%d)"
 
 # Restore from personal-config
-cp -R "$HOME/Documents/dev/personal-config/macos/barbee-config/Default.bbp" \
+cp -R "$HOME/Documents/dev/personal-config/macos/barbee-config/Backup/Barbee_Profile_2025_10_17_17_11_05/Default.bbp" \
       "$HOME/Library/Application Support/Barbee/Profiles/"
 
 # Relaunch Barbee
@@ -192,13 +192,16 @@ When you make changes to your Barbee configuration and want to save them:
 
 ```bash
 # Export from Barbee app settings, then:
-cp -R "/Users/abhimehrotra/Library/Mobile Documents/iCloud~hyperartflow~barbee/Documents/Backups/Default.bbp" \
-      "$HOME/Documents/dev/personal-config/macos/barbee-config/"
+# Create a new dated backup folder
+DATE_FOLDER="Barbee_Profile_$(date +%Y_%m_%d_%H_%M_%S)"
+mkdir -p "$HOME/Documents/dev/personal-config/macos/barbee-config/Backup/$DATE_FOLDER"
+cp -R "$HOME/Library/Mobile Documents/iCloud~hyperartflow~barbee/Documents/Backups/Default.bbp" \
+      "$HOME/Documents/dev/personal-config/macos/barbee-config/Backup/$DATE_FOLDER/"
 
 # Commit to git
 cd ~/Documents/dev/personal-config
 git add macos/barbee-config/
-git commit -m "Update Barbee menu bar configuration"
+git commit -m "Update Barbee menu bar configuration - $DATE_FOLDER"
 git push origin main
 ```
 
@@ -328,6 +331,15 @@ The key insight: **When you can't remove a problem, redesign around it.**
 
 ## Version History
 
+- **2025-10-17**: Configuration update
+  - Reorganized menu bar layout
+  - Updated spacer configuration:
+    - Always Visible: 75px, 75px, 200px
+    - Hidden: 200px
+    - Always Hidden: 50px
+  - Refined aesthetic appearance
+  - Exported updated configuration backup
+
 - **2025-10-11**: Initial documentation
   - macOS 26.0.1 (25A362)
   - Barbee configuration with 200px spacers
@@ -336,7 +348,7 @@ The key insight: **When you can't remove a problem, redesign around it.**
 
 ---
 
-**Last Updated**: October 11, 2025  
+**Last Updated**: October 17, 2025  
 **macOS Version**: 26.0.1 (25A362)  
 **Barbee Version**: Latest supporting macOS 26  
 **Status**: ✅ Working perfectly
