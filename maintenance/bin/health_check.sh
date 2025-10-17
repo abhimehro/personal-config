@@ -112,14 +112,41 @@ else
   log_warn "Network connectivity problems detected"
 fi
 
-# 9) Check for crash logs
+# 9) Check for crash logs and diagnostic reports
 CRASH_LOGS=$(find "${HOME}/Library/Logs/DiagnosticReports" -name "*.crash" -mtime -1 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+DIAGNOSTIC_REPORTS=$(find "${HOME}/Library/Logs/DiagnosticReports" -name "*.ips" -mtime -1 2>/dev/null | wc -l | tr -d ' ' || echo "0")
 append "Recent crash logs (last 24h): ${CRASH_LOGS}"
+append "Recent diagnostic reports (last 24h): ${DIAGNOSTIC_REPORTS}"
 if (( CRASH_LOGS > 0 )); then
   log_warn "Found ${CRASH_LOGS} recent crash logs"
 fi
+if (( DIAGNOSTIC_REPORTS > 5 )); then
+  log_warn "Found ${DIAGNOSTIC_REPORTS} recent diagnostic reports (threshold: 5)"
+fi
 
-# 10) Battery status (for MacBooks)
+# 10) Background service monitoring
+WIDGET_COUNT=$(ps aux | grep -E "\.appex/Contents/MacOS" | grep -v grep | wc -l | tr -d ' ' || echo "0")
+append "Widget extensions running: ${WIDGET_COUNT}"
+if (( WIDGET_COUNT > 60 )); then
+  log_warn "High widget count: ${WIDGET_COUNT} (threshold: 60)"
+fi
+
+# Check disabled services are still disabled
+DISABLED_SERVICES_OK=1
+for svc in "com.apple.chronod" "com.apple.duetexpertd" "com.apple.ReportCrash.Root"; do
+  if ! sudo launchctl print-disabled system 2>/dev/null | grep -q "\"$svc\" => disabled"; then
+    log_warn "Service $svc is not disabled (should be)"
+    DISABLED_SERVICES_OK=0
+  fi
+done
+
+if (( DISABLED_SERVICES_OK == 1 )); then
+  append "Background services: Disabled services OK"
+else
+  append "Background services: WARNING - Some disabled services re-enabled"
+fi
+
+# 11) Battery status (for MacBooks)
 if command -v pmset >/dev/null 2>&1; then
   BATTERY_INFO=$(pmset -g batt 2>/dev/null | grep -v "Battery Power" | tail -1 || true)
   if [[ -n "${BATTERY_INFO}" ]]; then
@@ -137,7 +164,10 @@ HEALTH_ISSUES=0
 [[ "${ROOT_USE:-0}" -ge "${DISK_WARN_PCT:-80}" ]] && ((HEALTH_ISSUES++))
 [[ "${KPANIC:-0}" -gt 0 ]] && ((HEALTH_ISSUES++))
 [[ "${CRASH_LOGS:-0}" -gt 0 ]] && ((HEALTH_ISSUES++))
+[[ "${DIAGNOSTIC_REPORTS:-0}" -gt 5 ]] && ((HEALTH_ISSUES++))
 [[ -n "${FAILED_JOBS}" ]] && ((HEALTH_ISSUES++))
+[[ "${WIDGET_COUNT:-0}" -gt 60 ]] && ((HEALTH_ISSUES++))
+[[ "${DISABLED_SERVICES_OK:-1}" -eq 0 ]] && ((HEALTH_ISSUES++))
 
 if (( HEALTH_ISSUES > 0 )); then
   HEALTH_STATUS="⚠️ Issues detected (${HEALTH_ISSUES})"
