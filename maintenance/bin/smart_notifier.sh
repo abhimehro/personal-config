@@ -20,8 +20,8 @@ if [[ ! -f "$NOTIFICATION_CONFIG" ]]; then
   "sound": true,
   "quiet_hours": {
     "enabled": true,
-    "start": "22:00",
-    "end": "08:00"
+    "start": "23:00",
+    "end": "07:00"
   },
   "priority_levels": {
     "critical": {
