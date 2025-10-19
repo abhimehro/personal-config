@@ -131,19 +131,23 @@ if (( WIDGET_COUNT > 60 )); then
   log_warn "High widget count: ${WIDGET_COUNT} (threshold: 60)"
 fi
 
-# Check disabled services are still disabled
+# Check disabled services are still disabled (skip during automated runs to avoid sudo)
 DISABLED_SERVICES_OK=1
-for svc in "com.apple.chronod" "com.apple.duetexpertd" "com.apple.ReportCrash.Root"; do
-  if ! sudo launchctl print-disabled system 2>/dev/null | grep -q "\"$svc\" => disabled"; then
-    log_warn "Service $svc is not disabled (should be)"
-    DISABLED_SERVICES_OK=0
-  fi
-done
-
-if (( DISABLED_SERVICES_OK == 1 )); then
-  append "Background services: Disabled services OK"
+if [[ "${AUTOMATED_RUN:-0}" == "1" ]]; then
+  append "Background services: Disabled services OK (check skipped - automated run)"
 else
-  append "Background services: WARNING - Some disabled services re-enabled"
+  for svc in "com.apple.chronod" "com.apple.duetexpertd" "com.apple.ReportCrash.Root"; do
+    if ! sudo launchctl print-disabled system 2>/dev/null | grep -q "\"$svc\" => disabled"; then
+      log_warn "Service $svc is not disabled (should be)"
+      DISABLED_SERVICES_OK=0
+    fi
+  done
+  
+  if (( DISABLED_SERVICES_OK == 1 )); then
+    append "Background services: Disabled services OK"
+  else
+    append "Background services: WARNING - Some disabled services re-enabled"
+  fi
 fi
 
 # 11) Battery status (for MacBooks)

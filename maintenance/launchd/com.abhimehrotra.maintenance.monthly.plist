@@ -10,7 +10,7 @@
         <key>PATH</key>
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
         <key>MAINTENANCE_HOME</key>
-        <string>$HOME/Documents/dev/personal-config/maintenance</string>
+        <string>/Users/abhimehrotra/Library/Maintenance</string>
         <key>AUTOMATED_RUN</key>
         <string>1</string>
     </dict>
@@ -18,22 +18,21 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>-lc</string>
-        <string>$HOME/Documents/dev/personal-config/maintenance/bin/monthly_maintenance.sh</string>
+        <string>/Users/abhimehrotra/Library/Maintenance/bin/monthly_maintenance.sh</string>
     </array>
     
     <key>StandardOutPath</key>
-    <string>$HOME/Library/Logs/maintenance/monthly_maintenance.out</string>
+    <string>/Users/abhimehrotra/Library/Logs/maintenance/maintenance_monthly.out</string>
     
     <key>StandardErrorPath</key>
-    <string>$HOME/Library/Logs/maintenance/monthly_maintenance.err</string>
+    <string>/Users/abhimehrotra/Library/Logs/maintenance/maintenance_monthly.err</string>
     
     <key>StartCalendarInterval</key>
     <dict>
         <key>Day</key>
         <integer>1</integer>
         <key>Hour</key>
-        <integer>9</integer>
+        <integer>6</integer>
         <key>Minute</key>
         <integer>0</integer>
     </dict>
