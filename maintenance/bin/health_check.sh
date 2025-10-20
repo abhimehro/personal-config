@@ -56,10 +56,23 @@ fi
 LOAD_AVG=$(uptime | awk -F'load averages:' '{print $2}' | tr -d ' ' || echo "unknown")
 append "System load averages: ${LOAD_AVG}"
 
-# 4) Recent kernel panics
+# 4) Recent kernel panics (more accurate detection)
 HOURS="${HEALTH_LOG_LOOKBACK_HOURS:-24}"
-KPANIC=$(log show --predicate 'eventMessage CONTAINS[c] "panic"' --last "${HOURS}h" 2>/dev/null | wc -l | tr -d ' ' || echo "0")
-append "Kernel panic-like log entries in last ${HOURS}h: ${KPANIC}"
+# Check for actual panic reports first
+PANIC_REPORTS=$(find /Library/Logs/DiagnosticReports -name "*panic*" -mtime -1 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+if (( PANIC_REPORTS > 0 )); then
+  append "Actual kernel panic reports in last ${HOURS}h: ${PANIC_REPORTS}"
+  log_warn "Found ${PANIC_REPORTS} kernel panic reports!"
+else
+  # Look for genuine kernel panic messages (more specific)
+  REAL_KPANIC=$(log show --predicate 'eventMessage CONTAINS "kernel panic" OR eventMessage CONTAINS "panic(cpu"' --last "${HOURS}h" 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+  if (( REAL_KPANIC > 0 )); then
+    append "Potential kernel panics in last ${HOURS}h: ${REAL_KPANIC}"
+    log_warn "Found ${REAL_KPANIC} potential kernel panic messages"
+  else
+    append "Kernel panics in last ${HOURS}h: 0 (system stable)"
+  fi
+fi
 
 # 5) Check for failed launch agents
 FAILED_JOBS=$(launchctl list 2>/dev/null | awk '$3 ~ /^[1-9][0-9]*$/ {print $3":"$1}' || true)
@@ -166,7 +179,8 @@ log_info "Health report saved to ${REPORT_FILE}"
 # Determine overall health status
 HEALTH_ISSUES=0
 [[ "${ROOT_USE:-0}" -ge "${DISK_WARN_PCT:-80}" ]] && ((HEALTH_ISSUES++))
-[[ "${KPANIC:-0}" -gt 0 ]] && ((HEALTH_ISSUES++))
+[[ "${PANIC_REPORTS:-0}" -gt 0 ]] && ((HEALTH_ISSUES++))
+[[ "${REAL_KPANIC:-0}" -gt 0 ]] && ((HEALTH_ISSUES++))
 [[ "${CRASH_LOGS:-0}" -gt 0 ]] && ((HEALTH_ISSUES++))
 [[ "${DIAGNOSTIC_REPORTS:-0}" -gt 5 ]] && ((HEALTH_ISSUES++))
 [[ -n "${FAILED_JOBS}" ]] && ((HEALTH_ISSUES++))
@@ -182,7 +196,8 @@ fi
 
 # Notification
 if command -v osascript >/dev/null 2>&1; then
-  osascript -e "display notification \"${HEALTH_STATUS} | Disk: ${ROOT_USE:-?}% | Panics: ${KPANIC:-0}\" with title \"Health Check\"" 2>/dev/null || true
+  PANIC_COUNT=$((${PANIC_REPORTS:-0} + ${REAL_KPANIC:-0}))
+  osascript -e "display notification \"${HEALTH_STATUS} | Disk: ${ROOT_USE:-?}% | Panics: ${PANIC_COUNT}\" with title \"Health Check\"" 2>/dev/null || true
 fi
 
 log_info "Health check complete: ${HEALTH_STATUS}"
