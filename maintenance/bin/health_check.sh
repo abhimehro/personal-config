@@ -7,6 +7,10 @@ set -eo pipefail
 LOG_DIR="$HOME/Library/Logs/maintenance"
 mkdir -p "$LOG_DIR"
 
+# Helper functions to sanitize counts for arithmetic
+count_clean() { awk '{print $1}' | tr -d '\n'; }
+to_int() { printf '%d' "${1:-0}" 2>/dev/null || echo 0; }
+
 # Basic logging
 log_info() {
     local ts="$(date '+%Y-%m-%d %H:%M:%S')"
@@ -59,13 +63,15 @@ append "System load averages: ${LOAD_AVG}"
 # 4) Recent kernel panics (more accurate detection)
 HOURS="${HEALTH_LOG_LOOKBACK_HOURS:-24}"
 # Check for actual panic reports first
-PANIC_REPORTS=$(find /Library/Logs/DiagnosticReports -name "*panic*" -mtime -1 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+PANIC_REPORTS=$(find /Library/Logs/DiagnosticReports -name "*panic*" -mtime -1 2>/dev/null | wc -l | count_clean || echo "0")
+PANIC_REPORTS=$(to_int "$PANIC_REPORTS")
 if (( PANIC_REPORTS > 0 )); then
   append "Actual kernel panic reports in last ${HOURS}h: ${PANIC_REPORTS}"
   log_warn "Found ${PANIC_REPORTS} kernel panic reports!"
 else
   # Look for genuine kernel panic messages (more specific)
-  REAL_KPANIC=$(log show --predicate 'eventMessage CONTAINS "kernel panic" OR eventMessage CONTAINS "panic(cpu"' --last "${HOURS}h" 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+  REAL_KPANIC=$(log show --predicate 'eventMessage CONTAINS "kernel panic" OR eventMessage CONTAINS "panic(cpu"' --last "${HOURS}h" 2>/dev/null | wc -l | count_clean || echo "0")
+  REAL_KPANIC=$(to_int "$REAL_KPANIC")
   if (( REAL_KPANIC > 0 )); then
     append "Potential kernel panics in last ${HOURS}h: ${REAL_KPANIC}"
     log_warn "Found ${REAL_KPANIC} potential kernel panic messages"
@@ -94,9 +100,6 @@ if command -v brew >/dev/null 2>&1; then
     append "brew doctor: System ready to brew"
   fi
   
-  # Check for outdated packages
-  BREW_OUTDATED=$(brew outdated 2>/dev/null | wc -l | tr -d ' ')
-  append "Outdated Homebrew packages: ${BREW_OUTDATED}"
 fi
 
 # 7) Software updates check (skip if running automated to avoid password prompts)
@@ -126,8 +129,10 @@ else
 fi
 
 # 9) Check for crash logs and diagnostic reports
-CRASH_LOGS=$(find "${HOME}/Library/Logs/DiagnosticReports" -name "*.crash" -mtime -1 2>/dev/null | wc -l | tr -d ' ' || echo "0")
-DIAGNOSTIC_REPORTS=$(find "${HOME}/Library/Logs/DiagnosticReports" -name "*.ips" -mtime -1 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+CRASH_LOGS=$(find "${HOME}/Library/Logs/DiagnosticReports" -name "*.crash" -mtime -1 2>/dev/null | wc -l | count_clean || echo "0")
+CRASH_LOGS=$(to_int "$CRASH_LOGS")
+DIAGNOSTIC_REPORTS=$(find "${HOME}/Library/Logs/DiagnosticReports" -name "*.ips" -mtime -1 2>/dev/null | wc -l | count_clean || echo "0")
+DIAGNOSTIC_REPORTS=$(to_int "$DIAGNOSTIC_REPORTS")
 append "Recent crash logs (last 24h): ${CRASH_LOGS}"
 append "Recent diagnostic reports (last 24h): ${DIAGNOSTIC_REPORTS}"
 if (( CRASH_LOGS > 0 )); then
@@ -138,7 +143,8 @@ if (( DIAGNOSTIC_REPORTS > 5 )); then
 fi
 
 # 10) Background service monitoring
-WIDGET_COUNT=$(ps aux | grep -E "\.appex/Contents/MacOS" | grep -v grep | wc -l | tr -d ' ' || echo "0")
+WIDGET_COUNT=$(ps aux | grep -E "\.appex/Contents/MacOS" | grep -v grep | wc -l | count_clean || echo "0")
+WIDGET_COUNT=$(to_int "$WIDGET_COUNT")
 append "Widget extensions running: ${WIDGET_COUNT}"
 if (( WIDGET_COUNT > 60 )); then
   log_warn "High widget count: ${WIDGET_COUNT} (threshold: 60)"
@@ -195,8 +201,24 @@ else
 fi
 
 # Notification
-if command -v osascript >/dev/null 2>&1; then
-  PANIC_COUNT=$((${PANIC_REPORTS:-0} + ${REAL_KPANIC:-0}))
+PANIC_COUNT=$((${PANIC_REPORTS:-0} + ${REAL_KPANIC:-0}))
+if command -v terminal-notifier >/dev/null 2>&1; then
+  if (( HEALTH_ISSUES > 0 )); then
+    # Issues detected - provide actionable notification
+    terminal-notifier -title "Health Check" \
+      -subtitle "${HEALTH_ISSUES} issue(s) detected" \
+      -message "Disk: ${ROOT_USE:-?}% | Panics: ${PANIC_COUNT} | Click for details" \
+      -group "maintenance" \
+      -execute "/Users/abhimehrotra/Library/Maintenance/bin/view_logs.sh health_check" 2>/dev/null || true
+  else
+    # Success - simple notification with optional log access
+    terminal-notifier -title "Health Check" \
+      -subtitle "System healthy" \
+      -message "Disk: ${ROOT_USE:-?}%" \
+      -group "maintenance" 2>/dev/null || true
+  fi
+elif command -v osascript >/dev/null 2>&1; then
+  # Fallback to osascript
   osascript -e "display notification \"${HEALTH_STATUS} | Disk: ${ROOT_USE:-?}% | Panics: ${PANIC_COUNT}\" with title \"Health Check\"" 2>/dev/null || true
 fi
 
