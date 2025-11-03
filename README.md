@@ -357,3 +357,25 @@ _Last Updated: October 8, 2025_
 _VPN + DNS Integration: v4.0_  
 _DNS Management System: v3.0_  
 _SSH Configuration: v2.0_
+
+## SSH configuration (1Password-managed)
+
+- Single source of truth for SSH config and agent settings lives in this repo:
+  - configs/ssh/config
+  - configs/ssh/agent.toml
+- Local symlinks:
+  - ~/.ssh/config -> ~/Documents/dev/personal-config/configs/ssh/config
+  - ~/.ssh/agent.toml -> ~/Documents/dev/personal-config/configs/ssh/agent.toml
+- 1Password integration:
+  - Include ~/.ssh/1Password/config
+  - IdentityAgent: ~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock
+- Multiplexing control dir:
+  - ~/.ssh/control (700)
+
+Maintenance:
+- Verify: scripts/verify_ssh_config.sh
+- Sync: scripts/sync_ssh_config.sh
+
+Notes:
+- Keep 1Password unlocked with SSH agent integration enabled.
+- No private keys are stored in ~/.ssh; all keys are 1Password-managed.
