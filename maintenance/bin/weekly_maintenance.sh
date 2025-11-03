@@ -5,8 +5,34 @@
 set -o pipefail
 
 # Configuration
+export RUN_START=$(date +%s)
 LOG_DIR="$HOME/Library/Logs/maintenance"
+LOCK_DIR="/tmp/weekly_maintenance.lock"
+LOCK_CONTEXT_LOG="$LOG_DIR/lock_context_$(date +%Y%m%d-%H%M%S).log"
 mkdir -p "$LOG_DIR"
+
+# Simple locking to prevent concurrent runs with stale lock detection
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+    # Check if lock is stale (older than 2 hours)
+    if [[ -d "$LOCK_DIR" ]]; then
+        LOCK_AGE=$(($(date +%s) - $(stat -f %m "$LOCK_DIR" 2>/dev/null || date +%s)))
+        if [[ $LOCK_AGE -gt 7200 ]]; then
+            LOCK_MSG="$(date '+%Y-%m-%d %H:%M:%S') [WARNING] Removing stale lock (age: $((LOCK_AGE/60)) minutes)"
+            echo "$LOCK_MSG"
+            echo "$LOCK_MSG [RUN_START: $RUN_START] [LOCK_DIR: $LOCK_DIR]" >> "$LOCK_CONTEXT_LOG"
+            rm -rf "$LOCK_DIR" 2>/dev/null || true
+            # Try to acquire lock again
+            if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+                echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] Failed to acquire lock after stale removal"
+                exit 0
+            fi
+        else
+            echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] Another instance is already running (lock: $LOCK_DIR, age: $((LOCK_AGE/60)) min)"
+            exit 0
+        fi
+    fi
+fi
+trap 'rm -rf "$LOCK_DIR" 2>/dev/null || true' EXIT INT TERM
 
 # Only run on Mondays or if FORCE_RUN is set
 DAY_OF_WEEK=$(date +%u)  # 1 = Monday
@@ -69,13 +95,13 @@ run_task() {
 log_info "=== WEEKLY MAINTENANCE TASKS ==="
 
 # 1) Quick system cleanup (lighter weekly version)
-run_task "quick_cleanup_working.sh"
+run_task "quick_cleanup.sh"
 
 # 2) Node.js maintenance (weekly is appropriate for node modules)
-run_task "node_maintenance_working.sh"
+run_task "node_maintenance.sh"
 
 # 3) OneDrive monitoring and cleanup
-run_task "onedrive_monitor_working.sh"
+run_task "onedrive_monitor.sh"
 
 # Summary
 log_info "=== WEEKLY MAINTENANCE SUMMARY ==="
@@ -97,6 +123,34 @@ if command -v osascript >/dev/null 2>&1; then
 fi
 
 log_info "Weekly maintenance finished: $STATUS"
+
+# Generate error summary
+if [[ -x "$SCRIPT_DIR/generate_error_summary.sh" ]]; then
+    SUMMARY_FILE=$("$SCRIPT_DIR/generate_error_summary.sh" 2>/dev/null || echo "")
+    if [[ -n "$SUMMARY_FILE" ]] && [[ -f "$SUMMARY_FILE" ]]; then
+        log_info "Error summary generated: $SUMMARY_FILE"
+    fi
+fi
+
+# Enhanced notification with terminal-notifier (actionable)
+if command -v terminal-notifier >/dev/null 2>&1; then
+    if [[ $TASKS_FAILED -gt 0 ]]; then
+  terminal-notifier -title "Weekly Maintenance" \
+    -subtitle "Completed with $EXIT_CODE task error(s)" \
+    -message "Click for details" \
+    -group "maintenance" \
+    -execute "/Users/abhimehrotra/Library/Maintenance/bin/view_logs.sh weekly" 2>/dev/null || true
+    else
+        terminal-notifier -title "Weekly Maintenance" \
+            -subtitle "All tasks completed successfully" \
+            -message "$TASKS_COMPLETED/$TASKS_COMPLETED tasks passed" \
+            -group "maintenance" 2>/dev/null || true
+    fi
+elif command -v osascript >/dev/null 2>&1; then
+    # Fallback to osascript
+    osascript -e "display notification \"$STATUS\" with title \"Weekly Maintenance\"" 2>/dev/null || true
+fi
+
 echo "Weekly maintenance completed!"
 
 # Exit with error code if any tasks failed

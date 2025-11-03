@@ -5,10 +5,10 @@ A comprehensive automated maintenance system for macOS that keeps your system cl
 ## 📊 System Status
 
 **Current Status**: ✅ **Fully Operational**
-- **Scripts**: All working and tested
-- **Automation**: 5 launch agents active (exit code 0)
-- **Last Update**: October 2025
-- **Dependencies**: Self-contained, no external library issues
+- **Scripts**: All working and tested with actionable notifications
+- **Automation**: 6 launch agents active (exit code 0)
+- **Last Update**: November 2025
+- **Dependencies**: terminal-notifier (for interactive notifications)
 
 ## ✨ Features
 
@@ -20,7 +20,7 @@ A comprehensive automated maintenance system for macOS that keeps your system cl
 - **Monthly Maintenance**: 1st of month 6:00 AM - Deep system maintenance
 
 ### 🏥 Health Monitoring
-- **Disk Usage**: Monitor and alert on disk space (currently 15%)
+- **Disk Usage**: Monitor and alert on disk space
 - **Memory Status**: Track free memory and pressure
 - **System Load**: Monitor system performance
 - **Launch Agents**: Check for failed services
@@ -29,6 +29,8 @@ A comprehensive automated maintenance system for macOS that keeps your system cl
 - **Software Updates**: Check for available updates
 - **Crash Detection**: Monitor for recent system crashes
 - **Homebrew Health**: Validate package manager status
+- **Interactive Notifications**: Click-to-view-logs for all tasks
+- **Error Summaries**: Consolidated error reports with context
 
 ### 🧹 System Cleaning
 - **Cache Management**: Clean application and system caches
@@ -47,19 +49,30 @@ A comprehensive automated maintenance system for macOS that keeps your system cl
 
 ## 🚀 Quick Start
 
+### Prerequisites
+```bash
+# Install terminal-notifier for interactive notifications
+brew install terminal-notifier
+```
+
 ### Manual Commands
 ```bash
 # Run health check
-~/Documents/dev/personal-config/maintenance/bin/run_all_maintenance.sh health
+~/Library/Maintenance/bin/health_check.sh
 
 # Run quick cleanup
-~/Documents/dev/personal-config/maintenance/bin/run_all_maintenance.sh quick
+~/Library/Maintenance/bin/quick_cleanup.sh
 
 # Run weekly maintenance
-~/Documents/dev/personal-config/maintenance/bin/run_all_maintenance.sh weekly
+~/Library/Maintenance/bin/weekly_maintenance.sh
 
 # Run monthly maintenance (comprehensive)
-~/Documents/dev/personal-config/maintenance/bin/run_all_maintenance.sh monthly
+~/Library/Maintenance/bin/monthly_maintenance.sh
+
+# View logs interactively
+~/Library/Maintenance/bin/view_logs.sh health_check  # View health check logs
+~/Library/Maintenance/bin/view_logs.sh summary       # View error summary
+~/Library/Maintenance/bin/view_logs.sh weekly        # View weekly logs
 ```
 
 ### Check Automation Status
@@ -72,6 +85,12 @@ ls ~/Library/Logs/maintenance/
 
 # View recent health report
 ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
+
+# View latest error summary
+~/Library/Maintenance/bin/view_logs.sh summary
+
+# View specific task logs
+~/Library/Maintenance/bin/view_logs.sh quick_cleanup
 ```
 
 ## 📁 Directory Structure
@@ -80,17 +99,18 @@ ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
 maintenance/
 ├── bin/                          # Executable Scripts
 │   ├── run_all_maintenance.sh    # Master orchestration script
+│   ├── weekly_maintenance.sh     # Weekly orchestrator
+│   ├── monthly_maintenance.sh    # Monthly orchestrator
 │   ├── health_check.sh           # System health monitoring
 │   ├── quick_cleanup.sh          # Quick system cleanup
 │   ├── brew_maintenance.sh       # Homebrew maintenance
 │   ├── node_maintenance.sh       # Node.js maintenance
 │   ├── onedrive_monitor.sh       # OneDrive monitoring
 │   ├── system_cleanup.sh         # System cleanup
-│   ├── editor_cleanup.sh         # Editor cache cleanup
-│   ├── deep_cleaner.sh          # Deep system cleaning
-│   ├── panic_analyzer.sh        # Kernel panic analysis
-│   ├── execute_cleanup.sh       # Execution cleanup
-│   └── archive/                 # Archived/broken scripts
+│   ├── view_logs.sh              # Interactive log viewer (NEW)
+│   ├── generate_error_summary.sh # Error consolidation tool (NEW)
+│   ├── smart_scheduler.sh        # Intelligent scheduling
+│   └── archive/                  # Archived/broken scripts
 ├── conf/                        # Configuration Files
 │   └── config.env              # Main configuration
 ├── lib/                         # Library Files
@@ -130,33 +150,45 @@ UPDATE_MAS_APPS=1          # Auto-update Mac App Store apps
    - Time: 8:30 AM daily
    - Script: `health_check.sh`
    - Purpose: System health monitoring
+   - Notifications: ✅ Click to view logs
 
 2. **Daily Brew Maintenance** (`com.abhimehrotra.maintenance.brew`)
    - Time: 10:00 AM daily  
    - Script: `brew_maintenance.sh`
-   - Purpose: Homebrew packages + comprehensive cask updates (including auto-updating apps)
+   - Purpose: Homebrew packages + comprehensive cask updates
+   - Notifications: ✅ Click to view logs
 
 3. **Daily System Cleanup** (`com.abhimehrotra.maintenance.systemcleanup`)
-   - Time: 9:00 AM daily
+   - Time: 9:00 AM daily (9:30 AM on Mondays to avoid collision)
    - Script: `system_cleanup.sh`
    - Purpose: System maintenance
 
 4. **Weekly Maintenance** (`com.user.maintenance.weekly`)
    - Time: Monday 9:00 AM
-   - Script: `run_all_maintenance.sh weekly`
+   - Script: `weekly_maintenance.sh`
    - Purpose: Comprehensive weekly tasks
+   - Notifications: ✅ Click to view error summary
 
 5. **Monthly Maintenance** (`com.abhimehrotra.maintenance.monthly`)
    - Time: 1st of month 6:00 AM
-   - Script: `run_all_maintenance.sh monthly`
+   - Script: `monthly_maintenance.sh`
    - Purpose: Deep system maintenance
+   - Notifications: ✅ Click to view error summary
 
 ## 📊 Monitoring & Logs
 
+### Interactive Notifications
+All maintenance tasks send **interactive notifications** via terminal-notifier:
+- **Click any notification** to open relevant logs in TextEdit
+- **Error summaries** consolidate issues across all tasks
+- **Lock context** shows concurrent execution handling
+- **Actionable alerts** link directly to problem areas
+
 ### Log Locations
 - **Script Logs**: `~/Library/Logs/maintenance/`
+- **Error Summaries**: `~/Library/Logs/maintenance/error_summary-*.txt`
+- **Lock Context**: `~/Library/Logs/maintenance/lock_context.log`
 - **Health Reports**: `~/Library/Logs/maintenance/health_report-*.txt`
-- **Master Logs**: `~/Documents/dev/personal-config/maintenance/tmp/`
 
 ### Health Report Contents
 ```
@@ -189,14 +221,23 @@ ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
 
 ### Common Issues
 
+**Notifications Not Working**
+```bash
+# Install terminal-notifier if missing
+brew install terminal-notifier
+
+# Test notification system
+terminal-notifier -title "Test" -message "Click me" \
+  -execute "~/Library/Maintenance/bin/view_logs.sh summary"
+```
+
 **Launch Agent Not Running**
 ```bash
 # Check status
 launchctl list | grep maintenance
 
 # Reload if needed
-launchctl unload ~/Library/LaunchAgents/com.abhimehrotra.maintenance.healthcheck.plist
-launchctl load ~/Library/LaunchAgents/com.abhimehrotra.maintenance.healthcheck.plist
+launchctl kickstart -k gui/$(id -u)/com.abhimehrotra.maintenance.healthcheck
 ```
 
 **Script Permissions**

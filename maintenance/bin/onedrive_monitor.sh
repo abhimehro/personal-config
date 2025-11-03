@@ -95,14 +95,32 @@ fi
 # Summary status
 STATUS_MSG="OneDrive: $ONEDRIVE_STATUS | Sync: $SYNC_STATUS"
 
-# Notification if there are issues
-if [[ "$ONEDRIVE_STATUS" != "Running" ]] || [[ "$SYNC_STATUS" == *"No recent activity"* ]]; then
-    if command -v osascript >/dev/null 2>&1; then
-        osascript -e "display notification \"$STATUS_MSG\" with title \"OneDrive Monitor - Issues Detected\"" 2>/dev/null || true
+# Notification
+if command -v terminal-notifier >/dev/null 2>&1; then
+    if [[ "$ONEDRIVE_STATUS" != "Running" ]] || [[ "$SYNC_STATUS" == *"No recent activity"* ]]; then
+        # Issues detected - provide actionable notification
+        terminal-notifier -title "OneDrive Monitor" \
+          -subtitle "Issues detected" \
+          -message "Status: $ONEDRIVE_STATUS | Sync: $SYNC_STATUS | Click for details" \
+          -group "maintenance" \
+          -execute "/Users/abhimehrotra/Library/Maintenance/bin/view_logs.sh onedrive_monitor" 2>/dev/null || true
+        log_warn "OneDrive monitoring detected potential issues"
+    else
+        # Normal operation - simple notification
+        terminal-notifier -title "OneDrive Monitor" \
+          -subtitle "Working normally" \
+          -message "$STATUS_MSG" \
+          -group "maintenance" 2>/dev/null || true
+        log_info "OneDrive appears to be working normally"
     fi
-    log_warn "OneDrive monitoring detected potential issues"
-else
-    log_info "OneDrive appears to be working normally"
+elif command -v osascript >/dev/null 2>&1; then
+    # Fallback to osascript
+    if [[ "$ONEDRIVE_STATUS" != "Running" ]] || [[ "$SYNC_STATUS" == *"No recent activity"* ]]; then
+        osascript -e "display notification \"$STATUS_MSG\" with title \"OneDrive Monitor - Issues Detected\"" 2>/dev/null || true
+        log_warn "OneDrive monitoring detected potential issues"
+    else
+        log_info "OneDrive appears to be working normally"
+    fi
 fi
 
 log_info "OneDrive monitoring complete: $STATUS_MSG"
