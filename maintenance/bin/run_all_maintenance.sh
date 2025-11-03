@@ -7,13 +7,39 @@
 set -euo pipefail
 
 # Configuration
+export RUN_START=$(date +%s)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$HOME/Documents/dev/personal-config/maintenance/tmp"
+LOCK_DIR="/tmp/run_all_maintenance.lock"
+LOCK_CONTEXT_LOG="$LOG_DIR/lock_context_$(date +%Y%m%d-%H%M%S).log"
 TIMESTAMP=$(date "+%Y%m%d_%H%M%S")
 MASTER_LOG="$LOG_DIR/maintenance_master_$TIMESTAMP.log"
 
 # Ensure log directory exists
 mkdir -p "$LOG_DIR"
+
+# Simple locking to prevent concurrent runs with stale lock detection
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+    # Check if lock is stale (older than 2 hours)
+    if [[ -d "$LOCK_DIR" ]]; then
+        LOCK_AGE=$(($(date +%s) - $(stat -f %m "$LOCK_DIR" 2>/dev/null || date +%s)))
+        if [[ $LOCK_AGE -gt 7200 ]]; then
+            LOCK_MSG="WARNING: Removing stale lock (age: $((LOCK_AGE/60)) minutes)"
+            echo "$LOCK_MSG"
+            echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] $LOCK_MSG [RUN_START: $RUN_START] [LOCK_DIR: $LOCK_DIR]" >> "$LOCK_CONTEXT_LOG"
+            rm -rf "$LOCK_DIR" 2>/dev/null || true
+            # Try to acquire lock again
+            if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+                echo "ERROR: Failed to acquire lock after stale removal"
+                exit 0
+            fi
+        else
+            echo "Another instance is already running (lock: $LOCK_DIR, age: $((LOCK_AGE/60)) min)"
+            exit 0
+        fi
+    fi
+fi
+trap 'rm -rf "$LOCK_DIR" 2>/dev/null || true' EXIT INT TERM
 
 # Initialize master log
 echo "=== Master Maintenance Run Started: $(date) ===" | tee "$MASTER_LOG"
@@ -138,6 +164,14 @@ if [[ $# -eq 1 ]]; then
 else
     # Default to weekly maintenance
     run_weekly_maintenance
+fi
+
+# Generate error summary
+if [[ -x "$SCRIPT_DIR/generate_error_summary.sh" ]]; then
+    SUMMARY_FILE=$("$SCRIPT_DIR/generate_error_summary.sh" 2>/dev/null || echo "")
+    if [[ -n "$SUMMARY_FILE" ]] && [[ -f "$SUMMARY_FILE" ]]; then
+        echo "Error summary generated: $SUMMARY_FILE" | tee -a "$MASTER_LOG"
+    fi
 fi
 
 # Summary

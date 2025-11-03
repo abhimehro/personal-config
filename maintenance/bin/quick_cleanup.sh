@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 # Self-contained quick cleanup script
-set -eo pipefail
+# Note: Using -o pipefail but NOT -e to allow graceful permission handling
+set -o pipefail
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"
@@ -39,10 +40,13 @@ if [[ -d "$HOME/Library/Caches" ]]; then
                 com.apple.*|CloudKit|CrashReporter|SkyLight) continue ;;
             esac
             
-            # Clean cache if older than configured days
-            if find "$cache_dir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -print -quit | grep -q .; then
-                find "$cache_dir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -delete 2>/dev/null || true
-                ((CLEANED++))
+            # Clean cache if older than configured days (with permission handling)
+            if find "$cache_dir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -print -quit 2>/dev/null | grep -q .; then
+                if find "$cache_dir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -delete 2>/dev/null; then
+                    ((CLEANED++))
+                else
+                    log_warn "Could not clean some files in $(basename "$cache_dir") (permission denied)"
+                fi
             fi
         fi
     done
@@ -51,12 +55,22 @@ fi
 # 2) Clean Downloads folder (old files)
 log_info "Cleaning old downloads..."
 if [[ -d "$HOME/Downloads" ]]; then
-    BEFORE_COUNT=$(find "$HOME/Downloads" -type f | wc -l)
-    find "$HOME/Downloads" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -delete 2>/dev/null || true
-    AFTER_COUNT=$(find "$HOME/Downloads" -type f | wc -l)
-    if (( BEFORE_COUNT > AFTER_COUNT )); then
-        log_info "Cleaned $((BEFORE_COUNT - AFTER_COUNT)) old files from Downloads"
+    # Count files before cleanup (handle permission errors)
+    BEFORE_COUNT=$(find "$HOME/Downloads" -type f 2>/dev/null | wc -l | tr -d ' \n' || echo 0)
+    
+    # Attempt cleanup with explicit error tracking
+    if ! find "$HOME/Downloads" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -delete 2>/dev/null; then
+        log_warn "Some Downloads files could not be cleaned (permission denied)"
+    fi
+    
+    AFTER_COUNT=$(find "$HOME/Downloads" -type f 2>/dev/null | wc -l | tr -d ' \n' || echo 0)
+    CLEANED_FILES=$((BEFORE_COUNT - AFTER_COUNT))
+    
+    if (( CLEANED_FILES > 0 )); then
+        log_info "Cleaned $CLEANED_FILES old files from Downloads"
         ((CLEANED++))
+    elif (( BEFORE_COUNT > 0 )); then
+        log_info "No old files to clean in Downloads (or all protected)"
     fi
 fi
 
@@ -64,8 +78,12 @@ fi
 log_info "Cleaning temporary directories..."
 for tmp_dir in "/tmp" "$HOME/.tmp" "/var/tmp"; do
     if [[ -d "$tmp_dir" ]]; then
-        find "$tmp_dir" -user "$(whoami)" -type f -mtime +${TMP_CLEAN_DAYS:-7} -delete 2>/dev/null || true
-        ((CLEANED++))
+        # Only clean files owned by current user to avoid permission issues
+        if find "$tmp_dir" -user "$(whoami)" -type f -mtime +${TMP_CLEAN_DAYS:-7} -delete 2>/dev/null; then
+            ((CLEANED++))
+        else
+            log_warn "Could not clean some files in $tmp_dir (permission denied or not found)"
+        fi
     fi
 done
 
@@ -84,8 +102,12 @@ for browser_cache in \
     "$HOME/Library/Caches/com.apple.Safari"; do
     
     if [[ -d "$browser_cache" ]]; then
-        find "$browser_cache" -type f -mtime +7 -delete 2>/dev/null || true
-        ((CLEANED++))
+        CACHE_NAME=$(basename "$(dirname "$browser_cache")")
+        if find "$browser_cache" -type f -mtime +7 -delete 2>/dev/null; then
+            ((CLEANED++))
+        else
+            log_warn "Could not clean $CACHE_NAME cache (permission denied or browser running)"
+        fi
     fi
 done
 
@@ -113,7 +135,15 @@ if command -v npm >/dev/null 2>&1; then
 fi
 
 # Notification
-if command -v osascript >/dev/null 2>&1; then
+if command -v terminal-notifier >/dev/null 2>&1; then
+    # Always provide actionable notification to view cleanup logs
+  terminal-notifier -title "Quick Cleanup" \
+    -subtitle "${CLEANED_COUNT} items cleaned" \
+    -message "Click for details" \
+    -group "maintenance" \
+    -execute "/Users/abhimehrotra/Library/Maintenance/bin/view_logs.sh quick_cleanup" 2>/dev/null || true
+elif command -v osascript >/dev/null 2>&1; then
+    # Fallback to osascript
     osascript -e "display notification \"Cleaned ${CLEANED} items | Disk: ${DISK_USE}%\" with title \"Quick Cleanup\"" 2>/dev/null || true
 fi
 

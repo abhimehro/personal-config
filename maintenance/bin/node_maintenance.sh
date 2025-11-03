@@ -198,7 +198,23 @@ else
 fi
 
 # Notification
-if command -v osascript >/dev/null 2>&1; then
+if command -v terminal-notifier >/dev/null 2>&1; then
+    if [[ $UPDATES_MADE -gt 0 ]]; then
+        # Updates applied - provide actionable notification
+        terminal-notifier -title "Node.js Maintenance" \
+          -subtitle "$UPDATES_MADE update(s) applied" \
+          -message "Node: $NODE_VERSION | Click for details" \
+          -group "maintenance" \
+          -execute "/Users/abhimehrotra/Library/Maintenance/bin/view_logs.sh node_maintenance" 2>/dev/null || true
+    else
+        # No updates - simple notification
+        terminal-notifier -title "Node.js Maintenance" \
+          -subtitle "All up to date" \
+          -message "Node: $NODE_VERSION" \
+          -group "maintenance" 2>/dev/null || true
+    fi
+elif command -v osascript >/dev/null 2>&1; then
+    # Fallback to osascript
     osascript -e "display notification \"$STATUS_MSG\" with title \"Node.js Maintenance\"" 2>/dev/null || true
 fi
 

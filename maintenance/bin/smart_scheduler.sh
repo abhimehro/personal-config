@@ -67,6 +67,8 @@ get_disk_io_load() {
 # Usage pattern analysis
 analyze_usage_patterns() {
     local hour=$(date +%H)
+    # Remove leading zero to avoid octal interpretation
+    hour=$((10#$hour))
     local day=$(date +%u)  # 1=Monday, 7=Sunday
     
     # Define usage patterns based on typical work schedule
@@ -157,6 +159,10 @@ smart_delay() {
     
     local optimal_delay
     optimal_delay=$(calculate_optimal_delay "$task_type")
+    
+    # Sanitize optimal_delay - remove any whitespace/newlines and validate it's numeric
+    optimal_delay=$(printf '%s' "$optimal_delay" | tr -d '[:space:]')
+    [[ "$optimal_delay" =~ ^[0-9]+$ ]] || optimal_delay=0
     
     if [[ -n "$optimal_delay" ]] && [[ "$optimal_delay" != "0" ]] && (( optimal_delay > 0 )); then
         log_info "Optimal delay calculated: ${optimal_delay} seconds for $task_name"
