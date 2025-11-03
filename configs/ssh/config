@@ -1,6 +1,13 @@
 # ─ include the 1Password‑managed keys ───────────────
 Include ~/.ssh/1Password/config
 
+# ─ GitHub configuration ──────────────────────────────
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/github_ed25519
+    IdentitiesOnly yes
+
 # ─ Dynamic configuration for MacBook Air M2 (Cursor IDE) ────────
 # This configuration automatically adapts to VPN on/off scenarios
 
