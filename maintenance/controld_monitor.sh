@@ -1,0 +1,217 @@
+#!/bin/bash
+
+# Control D Service Monitor
+# Designed to integrate with existing maintenance system
+# Performs lightweight health check and logs results
+
+set -e
+
+# Configuration
+LOG_DIR="${HOME}/Public/Scripts"
+LOG_FILE="${LOG_DIR}/controld_monitor.log"
+ERROR_LOG="${LOG_DIR}/controld_monitor_error.log"
+MAX_LOG_SIZE=1048576  # 1MB
+
+# Source common functions if available
+if [ -f "${HOME}/Public/Scripts/maintenance/common.sh" ]; then
+    source "${HOME}/Public/Scripts/maintenance/common.sh"
+fi
+
+# Logging function
+log() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+log_error() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: $1" | tee -a "$ERROR_LOG"
+}
+
+# Rotate logs if too large
+rotate_log() {
+    local file="$1"
+    if [ -f "$file" ] && [ $(stat -f%z "$file") -gt $MAX_LOG_SIZE ]; then
+        mv "$file" "${file}.old"
+        touch "$file"
+    fi
+}
+
+# Check 1: Service status
+check_service() {
+    if sudo ctrld service status &>/dev/null; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Check 2: DNS resolution
+check_dns() {
+    if dig @127.0.0.1 example.com +short +timeout=5 &>/dev/null; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Check 3: Upstream connectivity (check for "marked as down" in recent logs)
+check_upstream() {
+    if sudo tail -30 /var/log/ctrld.log 2>/dev/null | grep -q "marked as down"; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+# Check 4: Detect split-horizon DNS (multiple active resolvers)
+check_split_dns() {
+    # Get unique DNS servers from system config
+    local dns_count=$(scutil --dns 2>/dev/null | grep "nameserver\[0\]" | awk '{print $3}' | sort -u | wc -l | tr -d ' ')
+    
+    # If more than 2 unique DNS servers and Control D is running, might be split-horizon
+    # (Allow 2: one for Control D 127.0.0.1, one fallback)
+    if [ "$dns_count" -gt 2 ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+# Check 5: Verify Control D is the primary resolver
+check_primary_resolver() {
+    # Check if 127.0.0.1 appears as a nameserver OR if DNS resolution works locally
+    if scutil --dns 2>/dev/null | grep -q "nameserver.*127\.0\.0\.1"; then
+        return 0
+    # If Control D isn't in scutil (macOS caching issue), but DNS works, that's OK
+    elif dig @127.0.0.1 example.com +short +timeout=2 &>/dev/null; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Check 6: Detect stale mDNSResponder cache
+check_mdns_cache() {
+    # Test with a timestamp-based query to ensure fresh resolution
+    local test_domain="test-$(date +%s).example.com"
+    
+    # This should fail fast (NXDOMAIN) if cache is healthy
+    # If it hangs, cache might be stuck
+    if timeout 3 dig @127.0.0.1 "$test_domain" +short &>/dev/null; then
+        return 0
+    else
+        # Timeout or error - might indicate cache issues
+        return 1
+    fi
+}
+
+# Main monitoring function
+monitor_controld() {
+    rotate_log "$LOG_FILE"
+    rotate_log "$ERROR_LOG"
+    
+    log "=== Control D Health Monitor ==="
+    
+    local all_checks_passed=true
+    
+    # Service status check
+    if check_service; then
+        log "✓ Service is running"
+    else
+        log_error "Service is not running"
+        log_error "Attempting automatic restart..."
+        
+        if sudo ctrld service start --config ~/.config/controld/ctrld.toml --skip_self_checks &>/dev/null; then
+            log "✓ Service restarted successfully"
+        else
+            log_error "Failed to restart service - manual intervention required"
+            all_checks_passed=false
+        fi
+    fi
+    
+    # DNS resolution check
+    if check_dns; then
+        log "✓ DNS resolution working"
+    else
+        log_error "DNS resolution failed"
+        all_checks_passed=false
+    fi
+    
+    # Upstream connectivity check
+    if check_upstream; then
+        log "✓ Upstream connectivity healthy"
+    else
+        log_error "Upstream marked as down - may recover automatically"
+        # Don't mark as failed - upstreams can recover
+    fi
+    
+    # Network transition checks (only if service is running)
+    local service_running=false
+    if check_service; then
+        service_running=true
+    fi
+    
+    if [ "$service_running" = true ]; then
+        # Check for split-horizon DNS
+        if check_split_dns; then
+            log "✓ No split-horizon DNS detected"
+        else
+            log_error "Multiple DNS resolvers detected (split-horizon)"
+            log_error "Flushing DNS cache to recover..."
+            sudo dscacheutil -flushcache 2>/dev/null
+            sudo killall -HUP mDNSResponder 2>/dev/null
+            sleep 2
+            # Recheck
+            if check_split_dns; then
+                log "✓ Split-horizon resolved after cache flush"
+            else
+                log_error "Split-horizon persists - manual intervention may be needed"
+                all_checks_passed=false
+            fi
+        fi
+        
+        # Check Control D is primary resolver
+        if check_primary_resolver; then
+            log "✓ Control D is primary resolver"
+        else
+            log_error "Control D not found as primary resolver"
+            log_error "System may be using fallback DNS"
+            all_checks_passed=false
+        fi
+        
+        # Check mDNS cache health
+        if check_mdns_cache; then
+            log "✓ mDNS cache responding normally"
+        else
+            log_error "mDNS cache may be stale or hung"
+            log_error "Flushing DNS cache..."
+            sudo dscacheutil -flushcache 2>/dev/null
+            sudo killall -HUP mDNSResponder 2>/dev/null
+            log "✓ Cache flushed"
+        fi
+    fi
+    
+    # Summary
+    if [ "$all_checks_passed" = true ]; then
+        log "Status: HEALTHY"
+        return 0
+    else
+        log_error "Status: UNHEALTHY - check error log for details"
+        return 1
+    fi
+}
+
+# Run monitoring
+monitor_controld
+exit_code=$?
+
+# If monitoring failed, output instructions
+if [ $exit_code -ne 0 ]; then
+    log ""
+    log "Troubleshooting steps:"
+    log "1. Check service: sudo ctrld service status"
+    log "2. Check logs: sudo tail -20 /var/log/ctrld.log"
+    log "3. Run full health check: ~/.config/controld/health-check.sh"
+    log "4. See break-glass guide: ~/.config/controld/README.md"
+fi
+
+exit $exit_code
