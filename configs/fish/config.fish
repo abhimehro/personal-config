@@ -1,19 +1,7 @@
+# Add Homebrew and user bin to PATH
+fish_add_path /opt/homebrew/bin
+fish_add_path ~/bin
 
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-if test -f /opt/anaconda3/bin/conda
-    eval /opt/anaconda3/bin/conda "shell.fish" "hook" $argv | source
-else
-    if test -f "/opt/anaconda3/etc/fish/conf.d/conda.fish"
-        . "/opt/anaconda3/etc/fish/conf.d/conda.fish"
-    else
-        set -x PATH "/opt/anaconda3/bin" $PATH
-    end
+if status is-interactive
+    # Commands to run in interactive sessions can go here
 end
-# <<< conda initialize <<<
-
-
-# Added by LM Studio CLI (lms)
-set -gx PATH $PATH $HOME/.cache/lm-studio/bin
-
-export PATH="$PATH:$HOME/.local/bin"
