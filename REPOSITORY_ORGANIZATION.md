@@ -11,6 +11,10 @@ This document summarizes the organization and cleanup of the personal-config rep
   - `setup-guide.md` - Comprehensive technical documentation  
   - `ctrld.toml.backup` - Configuration backup
   - `README.md` - Integration documentation
+- **`scripts/network-mode-*.sh`** - Network mode orchestration layer (v4.x)
+  - `network-mode-manager.sh` - Switches between Control D DNS mode and Windscribe VPN mode
+  - `network-mode-verify.sh` - Tight verification for each mode
+  - `network-mode-regression.sh` - Full timed regression (Control D → Windscribe)
 
 ### ✨ Enhanced  
 - **Main README.md** - Updated to highlight enhanced VPN + DNS integration
@@ -25,7 +29,7 @@ This document summarizes the organization and cleanup of the personal-config rep
    - Dual protection: VPN encryption + DNS privacy filtering
    - Real-time DNS logging with DOH encryption
    - Geographic routing through Miami proxy
-   - Profile switching (privacy/gaming)
+   - Profile switching (privacy/browsing/gaming) via `network-mode-manager` + `controld-manager`
 
 2. **SSH Configuration** (v2.0)
    - 1Password SSH agent integration

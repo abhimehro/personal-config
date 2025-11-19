@@ -2,6 +2,10 @@
 
 ## Quick Status Check
 
+> **Note (v4.x):** The preferred way to validate modes end-to-end is via
+> `./scripts/network-mode-regression.sh <profile>`. The commands in this file
+> remain useful for deeper troubleshooting of the VPN + DNS integration.
+
 Run the verification script:
 ```bash
 bash ~/Documents/dev/personal-config/windscribe-controld/verify-integration.sh

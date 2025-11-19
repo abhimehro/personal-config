@@ -100,7 +100,10 @@ sudo ctrld service stop
 ./scripts/network-mode-regression.sh browsing
 ```
 
-> The network-mode-manager script (with network-mode-verify and network-mode-regression) replaces the older `controld-manager` and Windscribe integration scripts for day-to-day use.
+> The network-mode-manager script (with network-mode-verify and network-mode-regression)
+> is the recommended entrypoint for day-to-day use. It uses the underlying
+> `controld-manager` script to apply Control D profiles while managing IPv6 and
+> DNS routing on your behalf.
 
 ## Files to Backup
 

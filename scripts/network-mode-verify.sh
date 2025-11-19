@@ -63,28 +63,41 @@ check_controld_active() {
     ok=1
   fi
 
-  # 3) whoami.control-d.net resolution
+  # 3) Basic DNS & Control D connectivity via LISTENER_IP
+  if dig @"$LISTENER_IP" example.com +short +time=5 >/dev/null 2>&1; then
+    pass "Basic DNS resolution via Control D (example.com) is working."
+  else
+    fail "Basic DNS resolution via Control D (example.com) failed."
+    ok=1
+  fi
+
+  if dig @"$LISTENER_IP" p.controld.com +short +time=5 >/dev/null 2>&1; then
+    pass "Control D connectivity confirmed via p.controld.com."
+  else
+    fail "Control D connectivity check (p.controld.com) failed."
+    ok=1
+  fi
+
+  # 4) whoami.control-d.net resolution (soft check)
   local who
-  who=$(dig +short whoami.control-d.net 2>/dev/null | head -n1 || true)
+  who=$(dig @"$LISTENER_IP" +short whoami.control-d.net 2>/dev/null | head -n1 || true)
   if [[ -n "$who" ]]; then
     pass "whoami.control-d.net resolved to '$who'."
   else
-    fail "whoami.control-d.net did not resolve (or timed out)."
-    ok=1
+    warn "whoami.control-d.net did not resolve (or timed out). This does not block CONTROL D ACTIVE but indicates a potential dashboard/config issue."
   fi
 
-  # 4) IPv6 AAAA query (sanity that IPv6 is usable)
+  # 5) IPv6 AAAA query (soft check – IPv6 optional)
   local aaaa
-  aaaa=$(dig +short AAAA example.com 2>/dev/null | head -n1 || true)
+  aaaa=$(dig @"$LISTENER_IP" +short AAAA example.com 2>/dev/null | head -n1 || true)
   if [[ -n "$aaaa" ]]; then
     pass "IPv6 AAAA lookup for example.com returned '$aaaa'."
   else
-    fail "IPv6 AAAA lookup for example.com returned no result. IPv6 path may be misconfigured."
-    ok=1
+    warn "IPv6 AAAA lookup for example.com returned no result. IPv6 path may be disabled or unavailable; this is treated as a warning."
   fi
 
-  # 5) DoH3 profile enforcement (cannot be fully verified locally)
-  warn "DoH3 enforcement is managed in the Control D dashboard; verify each profile is set to DoH3 there."
+  # 6) DoH3 profile enforcement (cannot be fully verified locally)
+  warn "DoH3 enforcement is managed in the Control D dashboard; verify each profile is set to the intended protocol there."
 
   local result
   if [[ $ok -eq 0 ]]; then
@@ -162,6 +175,12 @@ main() {
   ensure_prereqs_verify
 
   local mode="${1:-}"
+  local profile_hint="${2:-}"
+
+  if [[ -n "$profile_hint" ]]; then
+    log "Profile hint for verification: $profile_hint"
+  fi
+
   case "$mode" in
     controld)
       check_controld_active
@@ -170,7 +189,7 @@ main() {
       check_windscribe_ready
       ;;
     *)
-      echo "Usage: $0 {controld|windscribe}" >&2
+      echo "Usage: $0 {controld|windscribe} [profile]" >&2
       exit 1
       ;;
   esac

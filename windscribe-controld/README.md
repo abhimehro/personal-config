@@ -17,6 +17,11 @@ This directory contains the complete setup and configuration for integrating Win
 
 ## 🚀 Quick Usage
 
+> **Note (v4.x):** For day-to-day switching between Control D DNS mode and
+> Windscribe VPN mode, use `scripts/network-mode-manager.sh`. The commands in
+> this document remain accurate for understanding and manually testing the
+> integration, but `network-mode-manager.sh` is the primary entrypoint.
+
 ### Setup Verification
 ```bash
 # Run complete system verification

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Quick Windscribe + Control D Integration Test
+# LEGACY: older test harness; for reference only.
 # Tests VPN connection and DNS privacy filtering
 
 echo "🧪 Testing Windscribe + Control D Integration"

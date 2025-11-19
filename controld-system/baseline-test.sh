@@ -17,10 +17,14 @@ echo "Running CONTROL D ACTIVE verification..."
 
 if "$VERIFY_SCRIPT" controld; then
   echo "Result: ALL TESTS PASSED ✓"
+  ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  echo "SUMMARY TS=${ts} MODE=baseline-test RESULT=PASS"
   exit 0
 else
   echo "Result: Baseline verification FAILED ✗"
   echo "See details above from network-mode-verify.sh."
+  ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  echo "SUMMARY TS=${ts} MODE=baseline-test RESULT=FAIL"
   exit 1
 fi
 echo -n "2. DNS resolution... "
