@@ -19,6 +19,7 @@ get_profile_id() {
     case "$1" in
         "privacy") echo "6m971e9jaf" ;;
         "gaming") echo "1xfy57w34t7" ;;
+        "browsing") echo "rcnz7qgvwg" ;;
         *) echo "" ;;
     esac
 }
@@ -27,12 +28,13 @@ get_profile_protocol() {
     case "$1" in
         "privacy") echo "doh3" ;;    # Privacy can use DOH3
         "gaming") echo "doh3" ;;     # Gaming can also use DOH3
+        "browsing") echo "doh3" ;;   # Browsing can use DOH3
         *) echo "doh" ;;            # Fallback to DOH
     esac
 }
 
 get_all_profiles() {
-    echo "privacy gaming"
+    echo "privacy gaming browsing"
 }
 
 # Color codes
@@ -171,8 +173,8 @@ generate_profile_config() {
         # Copy and customize the generated config
         cp "$TEMP_CONFIG" "$config_file"
         
-        # Ensure localhost binding for security
-        sed -i '' "s/ip = '0.0.0.0'/ip = '127.0.0.1'/g" "$config_file" 2>/dev/null || true
+        # Ensure binding to all interfaces for Windscribe integration
+        sed -i '' "s/ip = '127.0.0.1'/ip = '0.0.0.0'/g" "$config_file" 2>/dev/null || true
         
         # Optimize timeout
         sed -i '' "s/timeout = 5000/timeout = 3000/g" "$config_file"
@@ -269,12 +271,16 @@ test_connection() {
         return 1
     fi
     
-    # Test filtering (different for gaming vs privacy)
-    local block_test=$(dig @127.0.0.1 doubleclick.net +short 2>/dev/null | wc -l)
+    # Test filtering (different for gaming vs privacy vs browsing)
+    local block_test=$(dig @********* doubleclick.net +short 2>/dev/null | wc -l)
     if [[ "$block_test" -eq 0 ]]; then
-        log_success "Privacy filtering is working (ads blocked)"
+        log_success "Filtering is working (ads blocked)"
     elif [[ "$block_test" -gt 0 ]]; then
-        log_success "Gaming filtering is working (ads allowed for gaming compatibility)"
+        if [[ "$profile_name" == "gaming" ]]; then
+            log_success "Gaming filtering is working (ads allowed for gaming compatibility)"
+        else
+            log_warning "Ads are not being blocked - this may be intended for this profile"
+        fi
     fi
     
     return 0
