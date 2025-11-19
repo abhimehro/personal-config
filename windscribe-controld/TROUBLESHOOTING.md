@@ -132,16 +132,16 @@ sudo launchctl load /Library/LaunchDaemons/ctrld.plist
 2. **IPv6 Leak:** Control D might be advertising IPv6 support (`::/0`) or AAAA records, which Windscribe (IPv4-only tunnel) drops, causing connection timeouts for apps preferring IPv6.
 
 **Fix:**
-The `controld-manager` script has been patched to:
-1. Use correct IPs (`0.0.0.0` and `127.0.0.1`)
-2. Explicitly remove IPv6 CIDRs (`::/0`) from the generated configuration
-3. Force IPv4-only listeners
+The `controld-manager` script has been patched to use correct IPs.
+Additionally, IPv6 has been disabled system-wide using `ipv6-manager.sh` which now uses `sysctl` to ignore Router Advertisements, preventing VPNs from assigning IPv6 addresses.
 
 **Action Required:**
-Run the profile switch command to regenerate the configuration:
-```bash
-sudo bash ~/Documents/dev/personal-config/controld-system/scripts/controld-manager switch privacy
-```
+1. Apply the IPv6 fix:
+   ```bash
+   sudo ~/Documents/dev/personal-config/scripts/macos/ipv6-manager.sh disable
+   ```
+2. **Reconnect Windscribe** (required to drop any existing IPv6 addresses).
+3. Verify Raycast updates work.
 
 ## Configuration Reference
 

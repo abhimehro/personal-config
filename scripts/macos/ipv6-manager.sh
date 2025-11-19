@@ -13,12 +13,17 @@ get_network_services() {
 disable_ipv6() {
     echo "Disabling IPv6 on all network interfaces..."
     
+    # 1. Standard networksetup method
     while IFS= read -r service; do
         if [[ -n "$service" ]]; then
             echo "  Disabling IPv6 on: $service"
             sudo networksetup -setv6off "$service" 2>/dev/null || echo "    (skipped: $service)"
         fi
     done < <(get_network_services)
+
+    # 2. Sysctl method (Disable Router Advertisements globally)
+    echo "  Disabling IPv6 Router Advertisements (sysctl)..."
+    sudo sysctl -w net.inet6.ip6.accept_rtadv=0 2>/dev/null || true
     
     echo "✓ IPv6 disabled on all interfaces"
     echo ""
@@ -30,12 +35,17 @@ disable_ipv6() {
 enable_ipv6() {
     echo "Enabling IPv6 on all network interfaces..."
     
+    # 1. Standard networksetup method
     while IFS= read -r service; do
         if [[ -n "$service" ]]; then
             echo "  Enabling IPv6 on: $service"
             sudo networksetup -setv6automatic "$service" 2>/dev/null || echo "    (skipped: $service)"
         fi
     done < <(get_network_services)
+
+    # 2. Sysctl method (Re-enable Router Advertisements)
+    echo "  Enabling IPv6 Router Advertisements (sysctl)..."
+    sudo sysctl -w net.inet6.ip6.accept_rtadv=1 2>/dev/null || true
     
     echo "✓ IPv6 enabled on all interfaces"
     echo ""
