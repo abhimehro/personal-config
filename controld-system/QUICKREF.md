@@ -80,6 +80,28 @@ sudo ctrld service stop
 # System DNS will fall back to default (DHCP-provided)
 ```
 
+## Network Mode Management
+
+```bash
+# Switch to Control D DNS mode (browsing profile)
+./scripts/network-mode-manager.sh controld browsing
+
+# Switch to Control D DNS mode (privacy or gaming profile)
+./scripts/network-mode-manager.sh controld privacy
+./scripts/network-mode-manager.sh controld gaming
+
+# Switch to Windscribe VPN mode (Control D off, IPv6 off, DNS reset)
+./scripts/network-mode-manager.sh windscribe
+
+# Show current status
+./scripts/network-mode-manager.sh status
+
+# Run full end-to-end regression (Control D -> Windscribe)
+./scripts/network-mode-regression.sh browsing
+```
+
+> The network-mode-manager script (with network-mode-verify and network-mode-regression) replaces the older `controld-manager` and Windscribe integration scripts for day-to-day use.
+
 ## Files to Backup
 
 ```bash

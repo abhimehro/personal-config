@@ -1,9 +1,11 @@
 #!/bin/bash
 
 # Control D Health Check Script
-# Verifies that ctrld service is running and DNS resolution is working
+# Verifies that Control D DNS mode is healthy using the network-mode-verify
+# checklist. This script is Separation-Strategy aware and no longer assumes
+# a specific local ctrld.toml file.
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -11,12 +13,27 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+VERIFY_SCRIPT="$(cd "$(dirname "$0")/.." && pwd)/scripts/network-mode-verify.sh"
+
+if [[ ! -x "$VERIFY_SCRIPT" ]]; then
+  echo -e "${RED}[ERR]${NC} network-mode-verify.sh not found or not executable at $VERIFY_SCRIPT" >&2
+  exit 1
+fi
+
 echo "==================================="
-echo "Control D Health Check"
+echo "Control D Health Check (Separation Strategy)"
 echo "==================================="
 echo ""
 
-# Check 1: Service Status
+# Delegate to the unified verification checklist for CONTROL D ACTIVE state
+
+if "$VERIFY_SCRIPT" controld; then
+  echo -e "${GREEN}Overall Status: HEALTHY ✓${NC}"
+  exit 0
+else
+  echo -e "${RED}Overall Status: UNHEALTHY ✗${NC}"
+  exit 1
+fi
 echo -n "1. Checking if ctrld service is running... "
 if sudo ctrld service status &>/dev/null; then
     echo -e "${GREEN}✓ PASS${NC}"
