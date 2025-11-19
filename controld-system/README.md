@@ -346,6 +346,37 @@ git push
 - Need maximum compatibility
 - **Best for non-VPN usage**
 
+## Network Mode Management (v4.0 Separation Strategy)
+
+We have consolidated network state management into a single script to reliably switch between "DNS Mode" (Control D) and "VPN Mode" (Windscribe). This aligns with the Infrastructure-as-Code model: the Control D dashboard is the source of truth for resolver behavior, while this script manages macOS network state.
+
+**Location:** `scripts/network-mode-manager.sh`
+
+### Usage
+
+- **Enable Control D DNS mode**
+  ```bash
+  ./scripts/network-mode-manager.sh controld browsing
+  # or: controld privacy | controld gaming
+  ```
+
+- **Enable Windscribe VPN mode**
+  ```bash
+  ./scripts/network-mode-manager.sh windscribe
+  ```
+
+- **Show current status**
+  ```bash
+  ./scripts/network-mode-manager.sh status
+  ```
+
+- **Run full end-to-end regression (Control D → Windscribe)**
+  ```bash
+  ./scripts/network-mode-regression.sh browsing
+  ```
+
+> **Note:** This script replaces the legacy `controld-manager` and `windscribe-controld` flows. Avoid using those older scripts or calling `ctrld service` directly unless you are doing low-level debugging, as they can disrupt the managed state.
+
 ## Teaching Moments
 
 ### Pattern: Configuration as Code

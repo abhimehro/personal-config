@@ -1,23 +1,28 @@
 #!/bin/bash
+# Control D Baseline Tests (Separation Strategy aware)
+# Quick wrapper around network-mode-verify for CONTROL D ACTIVE.
 
-# Control D Baseline Tests
-# Quick validation suite for post-change verification
+set -euo pipefail
 
-echo "=== Control D Baseline Tests ==="
-echo ""
+VERIFY_SCRIPT="$(cd "$(dirname "$0")/.." && pwd)/scripts/network-mode-verify.sh"
 
-failed=0
-
-# Test 1: Service running
-echo -n "1. Service status... "
-if sudo ctrld service status &>/dev/null; then
-    echo "✓ PASS"
-else
-    echo "✗ FAIL"
-    failed=$((failed + 1))
+if [[ ! -x "$VERIFY_SCRIPT" ]]; then
+  echo "network-mode-verify.sh not found or not executable at $VERIFY_SCRIPT" >&2
+  exit 1
 fi
 
-# Test 2: DNS resolution
+echo "=== Control D Baseline Tests (Separation Strategy) ==="
+
+echo "Running CONTROL D ACTIVE verification..."
+
+if "$VERIFY_SCRIPT" controld; then
+  echo "Result: ALL TESTS PASSED ✓"
+  exit 0
+else
+  echo "Result: Baseline verification FAILED ✗"
+  echo "See details above from network-mode-verify.sh."
+  exit 1
+fi
 echo -n "2. DNS resolution... "
 if dig @127.0.0.1 example.com +short +timeout=5 | grep -q "^[0-9]"; then
     echo "✓ PASS"
