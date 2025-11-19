@@ -67,6 +67,19 @@ sudo tail -f /var/log/ctrld.log
 sudo ctrld service restart
 ```
 
+### IPv6 Management (for Windscribe VPN)
+
+```bash
+# Disable IPv6 (required for Windscribe compatibility)
+sudo ~/Documents/dev/personal-config/scripts/macos/ipv6-manager.sh disable
+
+# Check IPv6 status
+~/Documents/dev/personal-config/scripts/macos/ipv6-manager.sh status
+
+# Re-enable IPv6 (if needed)
+sudo ~/Documents/dev/personal-config/scripts/macos/ipv6-manager.sh enable
+```
+
 ### Service Optimization
 
 ```bash
