@@ -57,6 +57,7 @@ sudo ctrld service status
 
 # Switch profiles (privacy / browsing / gaming)
 ~/bin/ctrld-switch gaming
+~/bin/ctrld-switch browsing
 ~/bin/ctrld-switch privacy
 
 # View real-time DNS logs
