@@ -46,6 +46,13 @@ Control D DNS and Windscribe VPN are currently intertwined through custom script
         * Guidance to set Windscribe DNS to "Local" or custom Control D IPs, and scripts that reconfigure system DNS after VPN connection.
     * Multiple helper scripts in `windscribe-controld/` and `controld-system/` encode assumptions about dual operation and contain Windscribe-specific hacks (binding IP changes, IPv6 stripping, explicit handling of utun interfaces, etc.).
 # Target Architecture
+
+> **Current Implementation Note (v4.x):** The idealized target below describes a
+> fully standalone Control D service using `~/.config/controld/ctrld.toml` and
+> pure DoH3 upstreams. The current v4.x implementation still uses
+> `/etc/controld` + `controld-system/scripts/controld-manager` as the engine
+> for Control D profiles, with `scripts/network-mode-manager.sh` orchestrating
+> mode switches between Control D and Windscribe.
 * Clear separation of modes
     * Control D Mode (default):
         * `ctrld` runs as the only DNS controller on the system, binding port 53 on localhost.

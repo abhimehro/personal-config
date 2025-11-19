@@ -2,6 +2,11 @@
 
 ## 🎯 Daily Commands
 
+> **Note (v4.x):** For everyday switching between Control D DNS mode and
+> Windscribe VPN mode, prefer `./scripts/network-mode-manager.sh`. The
+> `controld-manager` commands below are still valid for direct profile control
+> and low-level debugging.
+
 ### Profile Switching
 ```bash
 # Privacy Profile (enhanced filtering)

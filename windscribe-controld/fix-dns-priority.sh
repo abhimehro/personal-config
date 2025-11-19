@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # DNS Priority Fix for Windscribe + Control D
+# LEGACY: experimental DNS override; superseded by the v4.x separation model.
 # Ensures Control D DNS filtering takes precedence over VPN DNS
 
 RED='\033[0;31m'

@@ -40,18 +40,17 @@ ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
 
 ### Enhanced VPN + DNS Integration
 ```bash
-# Verify complete Windscribe + Control D setup
-bash windscribe-controld/windscribe-controld-setup.sh
+# Preferred: use the unified network mode manager
+./scripts/network-mode-manager.sh controld browsing   # Enable Control D DNS mode
+./scripts/network-mode-manager.sh windscribe          # Enable Windscribe VPN mode
 
-# Switch Control D profiles through VPN
-sudo controld-manager switch privacy doh    # Enhanced privacy filtering
-sudo controld-manager switch gaming doh     # Gaming optimization
-sudo controld-manager status                # Check current status
-
-# Test DNS filtering through VPN
-dig doubleclick.net +short                  # Should return ********* (blocked)
-dig google.com +short                       # Should resolve normally
+# Full end-to-end regression (Control D → Windscribe)
+./scripts/network-mode-regression.sh browsing
 ```
+
+Under the hood, `controld-system/scripts/controld-manager` remains the engine that
+starts `ctrld` and applies the correct Control D profile; `network-mode-manager.sh`
+wraps this with IPv6 management, DNS routing, and verification.
 
 ### SSH Configuration
 ```bash
@@ -65,9 +64,10 @@ dig google.com +short                       # Should resolve normally
 ssh cursor-mdns  # Works anywhere (VPN on/off)
 ```
 
-### Legacy DNS Management
+### Legacy DNS Management (v3.x)
 ```bash
 # Alternative direct DNS switching (without VPN)
+# Kept for fallback and historical reference; v4.x prefers network-mode-manager.
 sudo dns-privacy     # Privacy mode
 sudo dns-gaming      # Gaming mode
 ```
@@ -340,6 +340,7 @@ done
 
 ## 📈 Version History
 
+- **v4.1** (November 2025) - Network mode manager + regression harness; refined verification & docs; archived legacy Windscribe glue.
 - **v4.0** (October 2025) - Enhanced VPN + DNS Integration with Windscribe + Control D
 - **v3.0** (September 2025) - Dynamic DNS Management System
 - **v2.0** (August 2025) - SSH Configuration with 1Password
@@ -353,8 +354,8 @@ Personal use configurations. Feel free to adapt and use any parts that are helpf
 
 **🎉 Your complete development and gaming network is now perfectly automated!**
 
-_Last Updated: October 8, 2025_  
-_VPN + DNS Integration: v4.0_  
+_Last Updated: November 19, 2025_  
+_VPN + DNS Integration: v4.1_  
 _DNS Management System: v3.0_  
 _SSH Configuration: v2.0_
 

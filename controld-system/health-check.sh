@@ -26,12 +26,15 @@ echo "==================================="
 echo ""
 
 # Delegate to the unified verification checklist for CONTROL D ACTIVE state
-
 if "$VERIFY_SCRIPT" controld; then
   echo -e "${GREEN}Overall Status: HEALTHY ✓${NC}"
+  ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  echo "SUMMARY TS=${ts} MODE=health-check RESULT=PASS"
   exit 0
 else
   echo -e "${RED}Overall Status: UNHEALTHY ✗${NC}"
+  ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  echo "SUMMARY TS=${ts} MODE=health-check RESULT=FAIL"
   exit 1
 fi
 echo -n "1. Checking if ctrld service is running... "
