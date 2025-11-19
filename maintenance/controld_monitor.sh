@@ -104,6 +104,15 @@ check_mdns_cache() {
     fi
 }
 
+# Check 7: Verify listener configuration (must be * or 0.0.0.0 for VPN)
+check_listener() {
+    if sudo lsof -nP -iTCP:53 2>/dev/null | grep ctrld | grep -qE "\*:53|0\.0\.0\.0:53"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Main monitoring function
 monitor_controld() {
     rotate_log "$LOG_FILE"
@@ -120,7 +129,7 @@ monitor_controld() {
         log_error "Service is not running"
         log_error "Attempting automatic restart..."
         
-        if sudo ctrld service start --config ~/.config/controld/ctrld.toml --skip_self_checks &>/dev/null; then
+        if sudo ctrld service start --config /etc/controld/ctrld.toml --skip_self_checks &>/dev/null; then
             log "✓ Service restarted successfully"
         else
             log_error "Failed to restart service - manual intervention required"
@@ -128,6 +137,15 @@ monitor_controld() {
         fi
     fi
     
+    # Listener check
+    if check_listener; then
+        log "✓ Listener configured correctly (all interfaces)"
+    else
+        log_error "Listener not binding to all interfaces - VPN integration may be broken"
+        log_error "Run: sudo ~/Documents/dev/personal-config/windscribe-controld/fix-controld-config.sh"
+        all_checks_passed=false
+    fi
+
     # DNS resolution check
     if check_dns; then
         log "✓ DNS resolution working"
@@ -210,8 +228,8 @@ if [ $exit_code -ne 0 ]; then
     log "Troubleshooting steps:"
     log "1. Check service: sudo ctrld service status"
     log "2. Check logs: sudo tail -20 /var/log/ctrld.log"
-    log "3. Run full health check: ~/.config/controld/health-check.sh"
-    log "4. See break-glass guide: ~/.config/controld/README.md"
+    log "3. Run full health check: ~/Documents/dev/personal-config/maintenance/bin/health_check.sh"
+    log "4. See break-glass guide: ~/Documents/dev/personal-config/windscribe-controld/TROUBLESHOOTING.md"
 fi
 
 exit $exit_code
