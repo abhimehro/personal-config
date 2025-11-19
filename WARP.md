@@ -4,13 +4,13 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Repository Purpose
 
-This is a personal system configuration repository for a macOS environment. It contains:
-- **VPN + DNS Integration**: Windscribe VPN with Control D privacy filtering (primary system)
-- **SSH Configuration**: 1Password-managed SSH with dynamic network support for Cursor IDE
-- **Automated Maintenance**: Scheduled system health checks, cleanup, and package management
-- **Shell Configurations**: Fish shell configs with bash/zsh backups
-
-**Key Principle**: All configurations are version-controlled for reproducibility and backup. This repo serves as the single source of truth for system configs.
+This is a personal system configuration repository for a macOS environment. It acts as the **single source of truth** for:
+- **VPN + DNS Integration**: Windscribe VPN combined with Control D (`ctrld`) for privacy and ad-blocking.
+- **Media Streaming**: A 3TB+ unified media library (Google Drive + OneDrive + Alldebrid) serving Infuse via WebDAV.
+- **Service Optimization**: Automated management of background services and widgets to maximize performance.
+- **SSH Configuration**: 1Password-managed SSH with dynamic network support.
+- **Automated Maintenance**: Scheduled health checks, cleanup, and package management.
+- **Shell Configurations**: Fish shell configs (primary) with bash/zsh backups.
 
 ## Common Development Commands
 
@@ -23,282 +23,163 @@ This is a personal system configuration repository for a macOS environment. It c
 # Test Fish shell config syntax
 ./tests/test_config_fish.sh
 
+# Validate all configuration files
+./scripts/validate-configs.sh
+
 # Verify complete VPN + DNS setup
 bash windscribe-controld/windscribe-controld-setup.sh
 
-# Validate all configuration files
-./scripts/validate-configs.sh
+# Run system health check
+~/Documents/dev/personal-config/maintenance/bin/health_check.sh
 ```
 
-### SSH Configuration Management
+### Media Streaming Management
 
 ```bash
-# Install SSH configuration (creates symlinks to this repo)
+# Start the unified WebDAV server (Google Drive + OneDrive)
+~/Documents/dev/personal-config/media-streaming/scripts/start-media-server.sh
+
+# Restart media services
+pkill -f "rclone serve" && ~/Documents/dev/personal-config/media-streaming/scripts/start-media-server.sh
+
+# Fix Google Drive authentication
+~/Documents/dev/personal-config/media-streaming/scripts/fix-gdrive.sh
+
+# Check remote status
+rclone listremotes
+```
+
+### Control D (DNS) Management
+
+```bash
+# Check service status
+sudo ctrld service status
+
+# Switch profiles (privacy / browsing / gaming)
+~/bin/ctrld-switch gaming
+~/bin/ctrld-switch privacy
+
+# View real-time DNS logs
+sudo tail -f /var/log/ctrld.log
+
+# Restart service (required after config changes)
+sudo ctrld service restart
+```
+
+### Service Optimization
+
+```bash
+# Run service monitor manually (checks disabled services & widgets)
+~/Documents/dev/personal-config/maintenance/bin/service_monitor.sh
+
+# View service monitor logs
+tail -f ~/Library/Logs/maintenance/service_monitor.log
+
+# Kill respawning widgets manually
+pkill -9 CalendarWidgetExtension
+```
+
+### SSH Configuration
+
+```bash
+# Install/Symlink SSH configuration
 ./scripts/install_ssh_config.sh
 
-# Verify SSH setup
-./scripts/verify_ssh_config.sh
-
-# Sync SSH config if it drifts from repo
+# Sync SSH config if it drifts
 ./scripts/sync_ssh_config.sh
-
-# Test connection methods
-ssh cursor-mdns    # Primary (VPN-aware via mDNS)
-ssh cursor-local   # Local network only
-ssh cursor-auto    # Auto-detection fallback
-```
-
-### VPN + DNS System
-
-```bash
-# Switch Control D profiles
-sudo controld-manager switch privacy doh    # Enhanced privacy filtering
-sudo controld-manager switch gaming doh     # Gaming optimization with minimal filtering
-sudo controld-manager status                # Check current profile
-
-# Test DNS filtering
-dig doubleclick.net +short                  # Should return 0.0.0.0 (blocked)
-dig google.com +short                       # Should resolve normally
-
-# Verify Windscribe + Control D integration
-bash windscribe-controld/windscribe-controld-setup.sh
-```
-
-### Maintenance System
-
-```bash
-# Run health check (includes disk, memory, system load, network, battery)
-~/Documents/dev/personal-config/maintenance/bin/health_check.sh
-
-# Run quick system cleanup
-~/Documents/dev/personal-config/maintenance/bin/quick_cleanup.sh
-
-# View latest health report
-ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
-
-# Check automation status
-launchctl list | grep maintenance
-
-# View logs interactively
-~/Documents/dev/personal-config/maintenance/bin/view_logs.sh summary
-~/Documents/dev/personal-config/maintenance/bin/view_logs.sh health_check
-```
-
-### Git Workflow
-
-```bash
-# Standard workflow - always work on main branch
-git add <files>
-git commit -m "Brief description"
-git push origin main
-
-# Before pushing, check for sensitive data
-git grep -I -nE '(oauth|client_secret|api[_-]?key|token|bearer\s+[A-Za-z0-9._-]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})' || true
 ```
 
 ## Architecture & Structure
 
 ### System Integration Pattern
-
-This repository follows a **symlink-based configuration management** pattern:
-- **Source of Truth**: All configs live in `~/Documents/dev/personal-config/`
-- **Active Configs**: Symlinked from home directory to this repo
-- **Benefits**: Version control + atomic updates + easy rollback
-
-Example: `~/.ssh/config` → `~/Documents/dev/personal-config/configs/ssh/config`
+This repository uses a **symlink-based configuration** model.
+- **Source**: `~/Documents/dev/personal-config/`
+- **Destination**: System locations (e.g., `~/.ssh/`, `~/.config/`)
+- **Execution**: Scripts run from the repo path to maintain relative path integrity.
 
 ### Key Systems
 
-#### 1. VPN + DNS Integration (Primary Network Stack)
-- **Location**: `windscribe-controld/`
-- **Purpose**: Dual protection with VPN encryption + DNS privacy filtering
-- **Architecture**: 
-  - Windscribe VPN provides encrypted tunnel
-  - Control D DNS runs inside VPN tunnel for privacy filtering
-  - Two profiles: "privacy" (aggressive filtering) and "gaming" (minimal latency)
-  - Real-time DNS logging with DOH (DNS-over-HTTPS)
-- **Critical Files**:
-  - `windscribe-controld-setup.sh`: Automated verification script
-  - `setup-guide.md`: Complete technical documentation
-  - `ctrld.toml.backup`: Configuration backup
+#### 1. VPN + DNS Stack (`windscribe-controld/`, `controld-system/`)
+- **Components**: Windscribe VPN (encryption) + Control D `ctrld` daemon (DNS filtering).
+- **Configuration**: `~/.config/controld/ctrld.toml` (symlinked/managed).
+- **Features**:
+  - **Fail-Operational**: `ctrld` configured with `--skip_self_checks` to avoid boot-time firewall race conditions.
+  - **Profiles**: Switchable profiles for Privacy, Browsing, and Gaming.
+  - **Integration**: Scripts in `windscribe-controld/` ensure the VPN and DNS play nicely together.
 
-#### 2. SSH Configuration (Development Workflow)
-- **Location**: `configs/ssh/`, `scripts/ssh/`
-- **Purpose**: Secure SSH with 1Password key management for remote development
-- **Architecture**:
-  - 1Password SSH agent manages keys (no local private keys stored)
-  - Dynamic network detection: tries mDNS (.local), then IP fallbacks
-  - Connection multiplexing for performance
-  - VPN-aware: adapts connection method based on network state
-- **Critical Files**:
-  - `configs/ssh/config`: Main SSH configuration
-  - `configs/ssh/agent.toml`: 1Password SSH agent settings
-  - `scripts/install_ssh_config.sh`: Setup script that creates symlinks
+#### 2. Media Streaming System (`media-streaming/`)
+- **Purpose**: Serves media to Infuse on iOS/tvOS/macOS.
+- **Components**:
+  - **rclone**: Mounts Google Drive and OneDrive.
+  - **Union Remote**: Merges cloud drives into a single `media:` remote.
+  - **WebDAV Server**: Serves content on port `8088` (local only).
+  - **Alldebrid**: Integrated for direct stream caching.
+- **Key Files**: `start-media-server.sh`, `setup-media-library.sh`.
 
-#### 3. Automated Maintenance System
-- **Location**: `maintenance/`
-- **Purpose**: Scheduled system health monitoring, cleanup, and package updates
-- **Architecture**:
-  - Launch agents run scheduled tasks (daily/weekly/monthly)
-  - Uses `terminal-notifier` for interactive notifications with click-to-view logs
-  - Centralized logging in `~/Library/Logs/maintenance/`
-  - Modular scripts in `maintenance/bin/` with shared library in `maintenance/lib/`
-- **Key Scripts**:
-  - `health_check.sh`: System health monitoring (disk, memory, services, network, battery)
-  - `quick_cleanup.sh`: Cache and temp file cleanup
-  - `brew_maintenance.sh`: Homebrew packages + cask updates with service management
-  - `weekly_maintenance.sh`: Orchestrator for comprehensive weekly tasks
-  - `monthly_maintenance.sh`: Deep system maintenance
+#### 3. Service Optimization (`maintenance/`, root docs)
+- **Purpose**: Reduces system overhead by disabling unused Apple services.
+- **Mechanism**:
+  - **Disabling**: `launchctl disable` for ~14 services (e.g., `ReportCrash`, `chronod`).
+  - **Monitoring**: `service_monitor.sh` runs daily to kill respawned widgets and enforce state.
+  - **Docs**: `macos-disabled-services.md`, `SERVICE_OPTIMIZATION_SUMMARY.md`.
 
-### Configuration Hierarchy
+#### 4. Automated Maintenance (`maintenance/`)
+- **Architecture**: Modular scripts invoked by `launchd` agents.
+- **Logging**: Centralized in `~/Library/Logs/maintenance/`.
+- **Notification**: Uses `terminal-notifier` for interactive alerts.
+- **Core Scripts**: `health_check.sh`, `quick_cleanup.sh`, `brew_maintenance.sh`.
 
-1. **Primary**: Active daily-use systems (VPN+DNS, SSH, Maintenance)
-2. **Secondary**: Fallback/diagnostic tools (legacy DNS scripts, diagnostics)
-3. **Archive**: Historical reference (old AdGuard configs, migration docs)
-
-### Security Model
-
-- **SSH Keys**: Managed by 1Password SSH agent, never stored locally
-- **Secrets**: Environment variables or 1Password references only
-- **Git Hygiene**: Pre-push secret scanning required (see Git workflow above)
-- **DNS Leak Protection**: Windscribe firewall + Control D verification
-- **Zero-Trust**: Assume all inputs malicious, validate everything
+#### 5. AdGuard Utilities (`adguard/`)
+- **Purpose**: Generates and consolidates blocklists/allowlists.
+- **Script**: `consolidate_adblock_lists.py` merges tracker lists and Control D bypass rules into format-compliant files for AdGuard/other blockers.
 
 ## Important Patterns
 
-### Script Execution Context
-Scripts in this repo run from **their original location** in `~/Documents/dev/personal-config/`, not from symlinked locations. This ensures relative paths work correctly.
+### Fail-Operational Design
+The Control D service uses `--skip_self_checks` at startup.
+- **Why**: macOS firewall blocks `ctrld`'s initial connectivity checks.
+- **Trade-off**: We prioritize service availability over pre-start validation. The service starts immediately and establishes connections asynchronously.
 
-### Launch Agent Pattern
-Maintenance scripts are invoked by macOS launch agents:
-- Defined in `~/Library/LaunchAgents/com.abhimehrotra.maintenance.*.plist`
-- Run as user (not root) for safety
-- Standard output/error logged to `~/Library/Logs/maintenance/`
-- Use `launchctl` to manage (load/unload/kickstart)
+### Read-Only Media Server
+The WebDAV server runs with `--read-only` flag.
+- **Security**: Prevents accidental deletion of cloud assets from client apps (Infuse).
+- **Performance**: Uses `--dir-cache-time 30m` to minimize API calls.
 
-### Notification Pattern
-Interactive notifications via `terminal-notifier`:
-- Click notification → opens relevant log in TextEdit
-- Error summaries consolidate issues across all tasks
-- Requires `terminal-notifier` installed via Homebrew
-
-### Testing Philosophy
-Every major system has a test script in `tests/`:
-- Exit code 0 = success, non-zero = failure
-- Use verbose output with emojis (✅/❌) for human readability
-- Prefer `set -e` for fail-fast behavior
+### Maintenance "Launch Agent" Pattern
+Scripts are not cron jobs; they are **Launch Agents**.
+- Run as user (non-root).
+- Defined in `~/Library/LaunchAgents/com.abhimehrotra.maintenance.*.plist`.
+- Managed via `launchctl`.
 
 ## Dependencies
 
 ### Required
-- **Homebrew**: Package manager for macOS (`/opt/homebrew/bin/brew`)
-- **1Password**: SSH agent for key management
-- **Windscribe**: VPN client
-- **Control D**: DNS privacy filtering (`controld` daemon)
-- **terminal-notifier**: Interactive notifications for maintenance system
+- **Homebrew**: `/opt/homebrew/bin/brew`
+- **1Password**: SSH agent.
+- **Windscribe**: VPN client.
+- **ctrld**: Control D CLI/Daemon (`brew install ctrld`).
+- **rclone**: Cloud storage mounter (`brew install rclone`).
+- **terminal-notifier**: Notifications (`brew install terminal-notifier`).
 
-### Development Tools
-- **Fish Shell**: Primary shell (with bash/zsh as backups)
-- **Git**: Version control (`nano` as default editor)
-- **Python 3**: Located at `/opt/homebrew/bin/python3`
-- **Node.js & npm**: Located at `/opt/homebrew/bin/`
-
-### Not Installed
-- `cargo` (Rust toolchain)
-- `docker-compose` (Docker not used)
-
-## Working with This Repository
-
-### Making Changes to Configs
-
-1. **Edit in repo**: Always edit files in `~/Documents/dev/personal-config/configs/`
-2. **Sync if needed**: For SSH, run `./scripts/sync_ssh_config.sh` if changes don't take effect
-3. **Test**: Run relevant test script from `tests/`
-4. **Commit**: Follow Git workflow above
-5. **Push**: After verifying no secrets exposed
-
-### Adding New Configurations
-
-When adding new system configurations:
-1. Create directory in `configs/` or new top-level directory if it's a system
-2. Write installation script in `scripts/` that creates symlinks
-3. Write test script in `tests/` to validate setup
-4. Document in README.md with Quick Start commands
-5. Add to this WARP.md in the Architecture section
-
-### Modifying Maintenance Scripts
-
-Maintenance scripts follow a pattern:
-1. Source `maintenance/lib/common.sh` for shared functions
-2. Load config from `maintenance/conf/config.env`
-3. Log to `~/Library/Logs/maintenance/`
-4. Send notification with terminal-notifier on completion
-5. Test manually before updating launch agent schedule
-
-## Documentation Strategy
-
-- **README.md**: User-facing, focused on "how to use"
-- **WARP.md** (this file): Developer-facing, focused on "how it works"
-- **Component READMEs**: Deep dives on specific systems (e.g., `maintenance/README.md`)
-- **Setup Guides**: Step-by-step technical setup (e.g., `windscribe-controld/setup-guide.md`)
-- **Inline Comments**: Explain "why" not "what" in scripts
-
-Keep documentation consistent with Cursor rules:
-- Verify all docs reflect latest changes
-- Check for broken links and outdated references
-- Maintain clear, concise writing style
-
-## Troubleshooting Common Issues
-
-### SSH Connection Failures
-1. Run `./tests/test_ssh_config.sh` to diagnose
-2. Check 1Password SSH agent is enabled and unlocked
-3. Verify network connectivity: `./scripts/ssh/diagnose_vpn.sh`
-4. Test each connection method individually
-
-### DNS Not Filtering
-1. Verify Windscribe is connected
-2. Run `bash windscribe-controld/windscribe-controld-setup.sh`
-3. Check if system is using Control D: `scutil --dns | grep 100.79.16.10`
-4. Ensure Windscribe is set to "Custom DNS: 100.79.16.10"
-
-### Maintenance Scripts Not Running
-1. Check launch agents: `launchctl list | grep maintenance`
-2. Verify script permissions: `chmod +x maintenance/bin/*.sh`
-3. Check logs: `ls ~/Library/Logs/maintenance/ | tail -10`
-4. Reload agent: `launchctl kickstart -k gui/$(id -u)/com.abhimehrotra.maintenance.<name>`
-
-### Fish Shell Issues
-1. Test config syntax: `./tests/test_config_fish.sh`
-2. Fall back to bash/zsh if needed (configs exist as backups)
-3. Previous issues with Fish + Warp have been resolved, but backups remain
+### Development
+- **Fish Shell**: Primary shell.
+- **Python 3**: `/opt/homebrew/bin/python3` (Used for AdGuard scripts, Alldebrid server).
+- **Node.js**: Installed but less used in this repo's context.
 
 ## Security Guidelines
 
-Following user's security-first development philosophy:
-
-### Code Review Mindset
-- Treat every input as malicious until validated
-- Explain security measures in terms of real-world attacks they prevent
-- Flag code that could become a vulnerability if misused
-- When in doubt, choose the more secure option
-
-### Secrets Management
-- **Never** commit secrets, API keys, or tokens to Git
-- Use environment variables or 1Password references
-- Run secret scan before every push (see Git workflow)
-- If secret is exposed, rotate immediately and rewrite Git history
-
-### Script Safety
-- Use `set -e` to fail fast on errors
-- Quote all variables to prevent injection
-- Validate user input before use
-- Run potentially destructive operations with confirmation
-- Test in non-destructive mode first when possible
+- **Media Server**: Bind to local IP/LAN only. Use read-only mode for cloud mounts.
+- **Secrets**:
+  - Never commit `rclone.conf` or `ctrld.toml` containing tokens.
+  - Use `*.backup` files for templates, stripping actual secrets.
+  - **Pre-push check**: `git grep` for tokens before pushing.
+- **Input Validation**: Assume all script inputs are malicious.
+- **SSH**: Private keys live in 1Password, never on disk.
 
 ## Version History
 
-- **v4.0** (October 2025): Enhanced VPN + DNS Integration with Windscribe + Control D
-- **v3.0** (September 2025): Dynamic DNS Management System
-- **v2.0** (August 2025): SSH Configuration with 1Password
-- **v1.0** (April 2025): Initial repository structure
+- **v4.1** (Oct 2025): Service Optimization & Media Streaming System.
+- **v4.0** (Oct 2025): Enhanced VPN + DNS Integration (Windscribe + Control D).
+- **v3.0** (Sep 2025): Dynamic DNS Management System.
+- **v2.0** (Aug 2025): SSH Configuration with 1Password.
+- **v1.0** (Apr 2025): Initial repository structure.
