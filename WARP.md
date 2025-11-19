@@ -106,6 +106,7 @@ This repository uses a **symlink-based configuration** model.
   - **Fail-Operational**: `ctrld` configured with `--skip_self_checks` to avoid boot-time firewall race conditions.
   - **Profiles**: Switchable profiles for Privacy, Browsing, and Gaming.
   - **Integration**: Scripts in `windscribe-controld/` ensure the VPN and DNS play nicely together.
+  - **No Interference**: Profile switching avoids modifying system network settings (`networksetup`), preventing "Network Settings Interference" errors in Windscribe.
 
 #### 2. Media Streaming System (`media-streaming/`)
 - **Purpose**: Serves media to Infuse on iOS/tvOS/macOS.
