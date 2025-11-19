@@ -105,7 +105,7 @@ This repository uses a **symlink-based configuration** model.
 - **Configuration**: `~/.config/controld/ctrld.toml` (symlinked/managed).
 - **Features**:
   - **Fail-Operational**: `ctrld` configured with `--skip_self_checks` to avoid boot-time firewall race conditions.
-  - **Profiles**: Switchable profiles for Privacy, Browsing, and Gaming.
+  - **Profiles**: Switchable profiles for Privacy, Browsing (DOH/TCP), and Gaming (DOH3/QUIC).
   - **Integration**: Scripts in `windscribe-controld/` ensure the VPN and DNS play nicely together.
   - **No Interference**: Profile switching avoids modifying system network settings (`networksetup`), preventing "Network Settings Interference" errors in Windscribe.
 
