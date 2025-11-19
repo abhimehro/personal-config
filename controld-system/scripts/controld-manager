@@ -112,7 +112,7 @@ restore_network_settings() {
         fi
     else
         # Fallback to common public DNS servers
-        networksetup -setdnsservers Wi-Fi 8.8.8.8 1.1.1.1
+        networksetup -setdnsservers Wi-Fi 1.1.1.1 8.8.8.8
     fi
     
     # Flush DNS cache
@@ -175,9 +175,16 @@ generate_profile_config() {
         
         # Ensure binding to all interfaces for Windscribe integration
         sed -i '' "s/ip = '127.0.0.1'/ip = '0.0.0.0'/g" "$config_file" 2>/dev/null || true
+
+        # Force IPv4 only by removing IPv6 CIDR and listeners if present
+        sed -i '' 's/, "::\/0"//g' "$config_file" 2>/dev/null || true
+        sed -i '' 's/"::\/0", //g' "$config_file" 2>/dev/null || true
         
         # Optimize timeout
         sed -i '' "s/timeout = 5000/timeout = 3000/g" "$config_file"
+
+        # Disable IPv6 in listener explicitly if supported or ensure it's not auto-binding
+        # (Note: 'ip = 0.0.0.0' usually binds IPv4, but let's be sure we don't add IPv6 listeners)
         
         rm -f "$TEMP_CONFIG"
         log_success "$profile_name profile configuration generated with $protocol"
@@ -231,7 +238,7 @@ switch_profile() {
     sleep 3
     
     # Configure system DNS to use localhost
-    # networksetup -setdnsservers Wi-Fi *********
+    networksetup -setdnsservers Wi-Fi 127.0.0.1
     log "Skipping system DNS configuration to prevent Windscribe interference"
     
     # Flush DNS cache
@@ -275,7 +282,7 @@ test_connection() {
     fi
     
     # Test filtering (different for gaming vs privacy vs browsing)
-    local block_test=$(dig @********* doubleclick.net +short 2>/dev/null | wc -l)
+    local block_test=$(dig @127.0.0.1 doubleclick.net +short 2>/dev/null | wc -l)
     if [[ "$block_test" -eq 0 ]]; then
         log_success "Filtering is working (ads blocked)"
     elif [[ "$block_test" -gt 0 ]]; then

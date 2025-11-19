@@ -126,7 +126,7 @@ get_active_profile() {
 check_filtering() {
     local profile=$(get_active_profile)
     # Check for blocking (expecting NXDOMAIN/empty result for blocked domains)
-    local block_test=$(dig @********* doubleclick.net +short 2>/dev/null | wc -l)
+    local block_test=$(dig @127.0.0.1 doubleclick.net +short 2>/dev/null | wc -l)
     
     # If we can't determine profile, skip strict validation but log it
     if [ "$profile" == "unknown" ]; then
