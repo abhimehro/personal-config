@@ -203,8 +203,10 @@ switch_profile() {
     
     log "Switching to $profile_name profile with $protocol protocol..."
     
-    # Safe stop current service
-    safe_stop
+    # Stop current service efficiently without touching network settings (avoids Windscribe interference)
+    log "Stopping Control D service..."
+    ctrld stop 2>/dev/null || true
+    pkill -f ctrld 2>/dev/null || true
     
     # Wait for network to stabilize
     sleep 3
@@ -229,7 +231,8 @@ switch_profile() {
     sleep 3
     
     # Configure system DNS to use localhost
-    networksetup -setdnsservers Wi-Fi 127.0.0.1
+    # networksetup -setdnsservers Wi-Fi *********
+    log "Skipping system DNS configuration to prevent Windscribe interference"
     
     # Flush DNS cache
     dscacheutil -flushcache

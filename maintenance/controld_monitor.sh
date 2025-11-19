@@ -113,6 +113,40 @@ check_listener() {
     fi
 }
 
+# Check 8: Verify filtering based on active profile
+get_active_profile() {
+    if sudo test -L "/etc/controld/ctrld.toml"; then
+        local link_target=$(sudo readlink "/etc/controld/ctrld.toml")
+        basename "$link_target" | sed 's/ctrld\.\(.*\)\.toml/\1/'
+    else
+        echo "unknown"
+    fi
+}
+
+check_filtering() {
+    local profile=$(get_active_profile)
+    # Check for blocking (expecting NXDOMAIN/empty result for blocked domains)
+    local block_test=$(dig @********* doubleclick.net +short 2>/dev/null | wc -l)
+    
+    # If we can't determine profile, skip strict validation but log it
+    if [ "$profile" == "unknown" ]; then
+        return 0
+    fi
+    
+    if [ "$profile" == "gaming" ]; then
+        # Gaming profile: Ads might NOT be blocked (latency priority)
+        return 0
+    else
+        # Privacy/Browsing profiles: Ads SHOULD be blocked (NXDOMAIN or 0.0.0.0)
+        # If wc -l > 0, it means we got a result (IP), so blocking failed
+        if [ "$block_test" -gt 0 ]; then
+            return 1
+        else
+            return 0
+        fi
+    fi
+}
+
 # Main monitoring function
 monitor_controld() {
     rotate_log "$LOG_FILE"
@@ -160,6 +194,15 @@ monitor_controld() {
     else
         log_error "Upstream marked as down - may recover automatically"
         # Don't mark as failed - upstreams can recover
+    fi
+
+    # Filtering check
+    if check_filtering; then
+        log "✓ Filtering active for profile: $(get_active_profile)"
+    else
+        log_error "Filtering check failed for profile: $(get_active_profile)"
+        log_error "Ads are resolving when they should be blocked"
+        all_checks_passed=false
     fi
     
     # Network transition checks (only if service is running)
