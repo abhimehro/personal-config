@@ -120,6 +120,29 @@ sudo launchctl unload /Library/LaunchDaemons/ctrld.plist
 sudo launchctl load /Library/LaunchDaemons/ctrld.plist
 ```
 
+### Issue 5: Raycast/Apps Failing with "Network Settings Interference" or IPv6 Leaks
+
+**Symptoms:**
+- Raycast updates fail or extensions won't install
+- IP location checks show inconsistent results (e.g., only IP, no location data)
+- "Network Settings Interference" error from Windscribe
+
+**Root Cause:**
+1. **Corrupted Script:** The `controld-manager` script contained masked IP placeholders (`*********`) instead of real IPs, causing configuration generation to fail.
+2. **IPv6 Leak:** Control D might be advertising IPv6 support (`::/0`) or AAAA records, which Windscribe (IPv4-only tunnel) drops, causing connection timeouts for apps preferring IPv6.
+
+**Fix:**
+The `controld-manager` script has been patched to:
+1. Use correct IPs (`0.0.0.0` and `127.0.0.1`)
+2. Explicitly remove IPv6 CIDRs (`::/0`) from the generated configuration
+3. Force IPv4-only listeners
+
+**Action Required:**
+Run the profile switch command to regenerate the configuration:
+```bash
+sudo bash ~/Documents/dev/personal-config/controld-system/scripts/controld-manager switch privacy
+```
+
 ## Configuration Reference
 
 ### Correct Windscribe Settings
