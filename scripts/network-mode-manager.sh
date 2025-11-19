@@ -15,11 +15,6 @@ set -euo pipefail
 # --- Configuration ---
 
 # Map profiles to Control D Resolver UIDs (from the Control D dashboard)
-declare -A PROFILES=(
-  ["privacy"]="6m971e9jaf"
-  ["browsing"]="rcnz7qgvwg"
-  ["gaming"]="1xfy57w34t7"
-)
 
 # Default profile if none specified
 DEFAULT_PROFILE="browsing"
@@ -86,25 +81,36 @@ stop_controld() {
 
 start_controld() {
   local profile_key=$1
-  local uid="${PROFILES[$profile_key]:-}"
+  local uid
 
-  [[ -z "$uid" ]] && error "Unknown profile '$profile_key'. Available profiles: ${!PROFILES[@]}"
+  case "$profile_key" in
+    "privacy")
+      uid="6m971e9jaf"
+      ;;
+    "browsing")
+      uid="rcnz7qgvwg"
+      ;;
+    "gaming")
+      uid="1xfy57w34t7"
+      ;;
+    *)
+      error "Unknown profile '$profile_key'. Available profiles: privacy, browsing, gaming."
+      ;;
+  esac
 
-  log "Starting Control D (profile=$profile_key, uid=$uid)..."
+  log "Starting Control D (profile=$profile_key) via controld-manager..."
 
-  # Start ctrld using cloud profile UID. The Control D dashboard defines protocol (DoH3).
-  # Listener is bound to LISTENER_IP to keep the resolver local-only.
-  sudo ctrld service start --cd "$uid" --listener-ip "$LISTENER_IP" --iface="auto" 2>/dev/null || \
-    error "ctrld service failed to start for uid $uid. Check ctrld logs and dashboard settings."
-
-  # Wait for daemon to initialize and bind port 53
-  sleep 3
-
-  # Explicitly enforce DNS settings for Wi‑Fi
-  sudo networksetup -setdnsservers "Wi-Fi" "$LISTENER_IP"
-  flush_dns
-
-  success "Control D active on $LISTENER_IP (profile: $profile_key). System DNS configured."
+  # Delegate profile + protocol management to the proven controld-manager script.
+  # This script:
+  #   - Generates/uses per-profile configs under /etc/controld/profiles
+  #   - Starts ctrld with --skip_self_checks
+  #   - Points macOS Wi‑Fi DNS at the local resolver
+  #   - Verifies Control D connectivity and filtering
+  if sudo ./controld-system/scripts/controld-manager switch "$profile_key"; then
+    success "Control D active via controld-manager (profile: $profile_key)."
+  else
+    error "controld-manager failed to switch to profile '$profile_key'. See /var/log/controld_manager.log for details."
+  fi
 }
 
 print_status() {
@@ -172,7 +178,7 @@ main() {
 
     *)
       echo "Usage: $0 {controld|windscribe|status} [profile_name]"
-      echo "Available profiles: ${!PROFILES[@]}"
+      echo "Available profiles: privacy, browsing, gaming"
       exit 1
       ;;
   esac

@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Control D Service Manager - VPN Compatible Version
+# LEGACY: superseded by scripts/network-mode-manager.sh + controld-manager.
+# Kept for historical reference; do not use in new workflows.
 # Handles launch daemon conflicts and ensures VPN-compatible DNS binding
 # Created: October 2025
 

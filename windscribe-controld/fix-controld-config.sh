@@ -1,10 +1,12 @@
 #!/bin/bash
 #
 # Fix Control D Configuration for Windscribe Integration
-# This script reconfigures Control D to listen on all interfaces (0.0.0.0:53)
+# LEGACY: superseded by scripts/network-mode-manager.sh + controld-manager.
+# Kept for historical reference; avoid using alongside network-mode-manager.
+# This script reconfigures Control D to listen on all interfaces (*******:53)
 # so Windscribe VPN can use it with "Local DNS" mode
 #
-# Security Note: Listening on 0.0.0.0 is required for VPN integration.
+# Security Note: Listening on ******* is required for VPN integration.
 # The DNS resolver is still only accessible from VPN tunnel, not external networks.
 
 set -e

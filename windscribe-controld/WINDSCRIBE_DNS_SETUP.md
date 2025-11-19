@@ -1,5 +1,10 @@
 # Windscribe DNS Configuration for Control D Integration
 
+> **Note (v4.x):** This document captures earlier experiments and tuning around
+> Windscribe DNS behavior. The current separation strategy relies on
+> `scripts/network-mode-manager.sh` + `controld-manager`; treat this file as
+> historical/advanced reference rather than the main setup path.
+
 ## Current Status
 ✅ **Control D Service**: Running with VPN-compatible binding (`*:53`)  
 ✅ **Windscribe VPN**: Connected (Dallas, US)  

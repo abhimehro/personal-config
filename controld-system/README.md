@@ -375,7 +375,11 @@ We have consolidated network state management into a single script to reliably s
   ./scripts/network-mode-regression.sh browsing
   ```
 
-> **Note:** This script replaces the legacy `controld-manager` and `windscribe-controld` flows. Avoid using those older scripts or calling `ctrld service` directly unless you are doing low-level debugging, as they can disrupt the managed state.
+> **Note:** For day-to-day use, prefer `scripts/network-mode-manager.sh`, which orchestrates
+> Control D and Windscribe modes and internally delegates Control D activation to
+> `controld-system/scripts/controld-manager switch <profile>`. You can still call
+> `controld-manager` directly for low-level debugging, but avoid mixing manual
+> calls with `network-mode-manager` in the same session.
 
 ## Teaching Moments
 

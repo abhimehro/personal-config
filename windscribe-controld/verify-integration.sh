@@ -1,6 +1,8 @@
 #!/bin/bash
 #
 # Verify Control D + Windscribe VPN Integration
+# LEGACY: superseded by scripts/network-mode-verify.sh and
+# scripts/network-mode-regression.sh; kept for deep-dive debugging.
 # Tests DNS filtering, VPN protection, and proper configuration
 
 # Color codes
