@@ -328,20 +328,23 @@ git push
 
 ## Profile Recommendations
 
-**Privacy Enhanced** - Use when:
+**Privacy Enhanced** (Protocol: DoH/TCP) - Use when:
 - Banking, sensitive work
 - Maximum security needed
 - Don't mind some sites potentially blocked
+- **Recommended when using VPN**
 
-**Browsing Privacy** - Use when:
+**Browsing Privacy** (Protocol: DoH/TCP) - Use when:
 - General web browsing
 - Social media, shopping
 - Want balance of security and compatibility
+- **Recommended when using VPN**
 
-**Gaming Optimized** - Use when:
+**Gaming Optimized** (Protocol: DoH3/QUIC) - Use when:
 - Online gaming (reduces latency)
 - Streaming services
 - Need maximum compatibility
+- **Best for non-VPN usage**
 
 ## Teaching Moments
 

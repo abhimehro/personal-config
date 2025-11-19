@@ -26,10 +26,10 @@ get_profile_id() {
 
 get_profile_protocol() {
     case "$1" in
-        "privacy") echo "doh3" ;;    # Privacy can use DOH3
-        "gaming") echo "doh3" ;;     # Gaming can also use DOH3
-        "browsing") echo "doh3" ;;   # Browsing can use DOH3
-        *) echo "doh" ;;            # Fallback to DOH
+        "gaming") echo "doh3" ;;     # Gaming: Use DOH3 (QUIC) for low latency
+        "privacy") echo "doh" ;;     # Privacy: Use DOH (TCP) for VPN compatibility
+        "browsing") echo "doh" ;;    # Browsing: Use DOH (TCP) for VPN compatibility
+        *) echo "doh" ;;             # Default to DOH
     esac
 }
 
