@@ -166,9 +166,9 @@ main() {
       start_controld "$profile"
       success "System is now protected by Control D (profile: $profile). Ensure Windscribe is disconnected."
       print_status
-      # Run tight verification for Control D active state
+      # Run tight verification for Control D active state (profile-aware)
       if [[ -x ./scripts/network-mode-verify.sh ]]; then
-        ./scripts/network-mode-verify.sh controld || echo -e "${RED}[WARN] Control D verification reported issues${NC}"
+        ./scripts/network-mode-verify.sh controld "$profile" || echo -e "${RED}[WARN] Control D verification reported issues${NC}"
       fi
       ;;
 

@@ -34,6 +34,7 @@ ensure_prereqs_verify() {
 }
 
 check_controld_active() {
+  local expected_profile="${1:-}"
   local ok=0
 
   echo -e "${BLUE}=== Verifying CONTROL D ACTIVE state ===${NC}"
@@ -96,7 +97,28 @@ check_controld_active() {
     warn "IPv6 AAAA lookup for example.com returned no result. IPv6 path may be disabled or unavailable; this is treated as a warning."
   fi
 
-  # 6) DoH3 profile enforcement (cannot be fully verified locally)
+  # 6) DoH3/profile checks (cannot fully enforce locally)
+  if [[ -n "$expected_profile" ]]; then
+    # Try to infer active profile from /etc/controld/ctrld.toml symlink
+    local active_profile=""
+    if [[ -L "/etc/controld/ctrld.toml" ]]; then
+      local target
+      target=$(readlink "/etc/controld/ctrld.toml" 2>/dev/null || true)
+      active_profile=$(basename "$target" | sed "s/^ctrld\.//; s/\.toml$//")
+    fi
+
+    if [[ -z "$active_profile" ]]; then
+      warn "Unable to determine active Control D profile from /etc/controld/ctrld.toml; profile-aware validation is partial."
+    elif [[ "$active_profile" == "$expected_profile" ]]; then
+      pass "Active Control D profile matches expected: $expected_profile."
+    else
+      fail "Active Control D profile is '$active_profile', expected '$expected_profile'."
+      ok=1
+    fi
+  else
+    warn "No profile hint provided; skipping profile-specific validation."
+  fi
+
   warn "DoH3 enforcement is managed in the Control D dashboard; verify each profile is set to the intended protocol there."
 
   local result
@@ -183,7 +205,7 @@ main() {
 
   case "$mode" in
     controld)
-      check_controld_active
+      check_controld_active "$profile_hint"
       ;;
     windscribe)
       check_windscribe_ready

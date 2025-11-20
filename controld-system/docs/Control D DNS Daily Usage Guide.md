@@ -1,5 +1,26 @@
 # Control D DNS Daily Usage Guide
 
+## TL;DR – 3 Commands You Need Most
+
+```bash
+# 1) Use Control D DNS (browsing profile)
+./scripts/network-mode-manager.sh controld browsing
+
+# 2) Prepare system for Windscribe VPN
+./scripts/network-mode-manager.sh windscribe
+
+# 3) Full regression (Control D → Windscribe)
+./scripts/network-mode-regression.sh browsing
+```
+
+If you’re not sure what state you’re in, run:
+
+```bash
+./scripts/network-mode-manager.sh status
+```
+
+---
+
 This guide summarizes the day-to-day workflows for using the Control D + Windscribe "Separation Strategy" on macOS. It assumes the Phase 1 implementation is in place, including:
 
 - `scripts/network-mode-manager.sh`
