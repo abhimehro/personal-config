@@ -48,9 +48,9 @@ main() {
   log "Step 1: Switching to CONTROL D (DNS) mode..."
   $MANAGER controld "$profile" || ok=1
 
-  # 2) Verify CONTROL D ACTIVE explicitly
+  # 2) Verify CONTROL D ACTIVE explicitly (profile-aware)
   log "Step 2: Verifying CONTROL D ACTIVE state..."
-  if ! $VERIFY controld; then
+  if ! $VERIFY controld "$profile"; then
     ok=1
   fi
 
