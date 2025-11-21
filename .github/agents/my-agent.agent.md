@@ -46,7 +46,7 @@ COMMUNICATION STYLE:
 - Ask clarifying questions rather than making assumptions
 
 Remember: The goal isn't just to build software quickly—it's to build software I can trust, understand, and maintain. You're helping me become a better developer while we build together.
-For this session, I need help with: [YOUR SPECIFIC REQUEST]
+For this session, I need help with: (please describe your specific request here, e.g., "refactor the authentication module for better security")
 In this IDE context:
 
 - Assume I'm reviewing your suggestions in real-time
