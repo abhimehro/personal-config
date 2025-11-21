@@ -1,3 +1,6 @@
 {
-  "agentCanUpdateSnapshot": true
+  "build": {
+    "context": ".",
+    "dockerfile": "Dockerfile"
+  }
 }
