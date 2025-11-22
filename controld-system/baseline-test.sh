@@ -13,18 +13,19 @@ fi
 
 echo "=== Control D Baseline Tests (Separation Strategy) ==="
 
-echo "Running CONTROL D ACTIVE verification..."
+echo "Running CONTROL D ACTIVE verification (browsing profile)..."
 
-if "$VERIFY_SCRIPT" controld; then
+# Use browsing as the default profile so DoH3/profile checks are exercised.
+if "$VERIFY_SCRIPT" controld browsing; then
   echo "Result: ALL TESTS PASSED ✓"
   ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-  echo "SUMMARY TS=${ts} MODE=baseline-test RESULT=PASS"
+  echo "SUMMARY TS=${ts} MODE=baseline-test RESULT=PASS PROFILE=browsing"
   exit 0
 else
   echo "Result: Baseline verification FAILED ✗"
   echo "See details above from network-mode-verify.sh."
   ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-  echo "SUMMARY TS=${ts} MODE=baseline-test RESULT=FAIL"
+  echo "SUMMARY TS=${ts} MODE=baseline-test RESULT=FAIL PROFILE=browsing"
   exit 1
 fi
 echo -n "2. DNS resolution... "

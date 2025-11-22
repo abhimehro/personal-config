@@ -4,6 +4,15 @@
 **System**: macOS  
 **ctrld Version**: v1.4.7
 
+> **Current Implementation Note (v4.1+):** This file describes the
+> original standalone `~/.config/controld` setup using DoH/TCP. The
+> production system now uses DoH3 by default via
+> `/etc/controld` + `controld-manager`, with mode switching handled by
+> `scripts/network-mode-manager.sh`. The data-flow diagrams and
+> reasoning below still apply conceptually; treat specific protocol and
+> path references as historical where they differ from the v4.1+
+> architecture.
+
 ## At a Glance: Data Flow
 
 ### Without VPN
