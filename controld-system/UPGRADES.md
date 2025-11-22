@@ -1,5 +1,14 @@
 # Control D Upgrade and Maintenance Guide
 
+> **Current Implementation Note (v4.1+):** The active system now uses the
+> `/etc/controld` + `controld-manager` engine with DoH3 defaults and is
+> orchestrated via `scripts/network-mode-manager.sh`. This guide documents
+> the earlier `~/.config/controld`-centric setup and remains accurate for
+> managing that config, but when in doubt prefer the newer
+> `controld-manager` + network-mode scripts described in
+> `controld-system/README.md` and
+> `controld-system/docs/Control D DNS Daily Usage Guide.md`.
+
 ## Upgrading ctrld Binary
 
 ### Via Homebrew (Recommended)

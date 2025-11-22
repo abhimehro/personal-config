@@ -25,16 +25,17 @@ echo "Control D Health Check (Separation Strategy)"
 echo "==================================="
 echo ""
 
-# Delegate to the unified verification checklist for CONTROL D ACTIVE state
-if "$VERIFY_SCRIPT" controld; then
+# Delegate to the unified verification checklist for CONTROL D ACTIVE state.
+# We pass the default browsing profile so profile-aware and DoH3 checks run.
+if "$VERIFY_SCRIPT" controld browsing; then
   echo -e "${GREEN}Overall Status: HEALTHY ✓${NC}"
   ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-  echo "SUMMARY TS=${ts} MODE=health-check RESULT=PASS"
+  echo "SUMMARY TS=${ts} MODE=health-check RESULT=PASS PROFILE=browsing"
   exit 0
 else
   echo -e "${RED}Overall Status: UNHEALTHY ✗${NC}"
   ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-  echo "SUMMARY TS=${ts} MODE=health-check RESULT=FAIL"
+  echo "SUMMARY TS=${ts} MODE=health-check RESULT=FAIL PROFILE=browsing"
   exit 1
 fi
 echo -n "1. Checking if ctrld service is running... "

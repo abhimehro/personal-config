@@ -50,9 +50,13 @@ Control D DNS and Windscribe VPN are currently intertwined through custom script
 > **Current Implementation Note (v4.x):** The idealized target below describes a
 > fully standalone Control D service using `~/.config/controld/ctrld.toml` and
 > pure DoH3 upstreams. The current v4.x implementation still uses
-> `/etc/controld` + `controld-system/scripts/controld-manager` as the engine
+>`/etc/controld` + `controld-system/scripts/controld-manager` as the engine
 > for Control D profiles, with `scripts/network-mode-manager.sh` orchestrating
-> mode switches between Control D and Windscribe.
+> mode switches between Control D and Windscribe. As of v4.1, all three
+> profiles (privacy, browsing, gaming) are configured as DoH3 by default in
+> the active `/etc/controld/profiles/ctrld.<profile>.toml` configs; this
+> document's "Current State" section reflects the pre-v4.1 snapshot where
+> privacy/browsing still used DoH/TCP.
 * Clear separation of modes
     * Control D Mode (default):
         * `ctrld` runs as the only DNS controller on the system, binding port 53 on localhost.

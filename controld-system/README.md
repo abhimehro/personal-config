@@ -328,23 +328,29 @@ git push
 
 ## Profile Recommendations
 
-**Privacy Enhanced** (Protocol: DoH/TCP) - Use when:
+All three profiles now default to **DoH3/QUIC** when managed via
+`controld-system/scripts/controld-manager` or `scripts/network-mode-manager.sh`.
+You can still temporarily force a profile to DoH/TCP (for debugging or
+compatibility) by passing `doh` as an explicit protocol override, e.g.
+`sudo controld-manager switch privacy doh`.
+
+**Privacy Enhanced** (Default Protocol: DoH3/QUIC) - Use when:
 - Banking, sensitive work
 - Maximum security needed
 - Don't mind some sites potentially blocked
-- **Recommended when using VPN**
+- Works well with or without VPN; prefer this for high-sensitivity tasks
 
-**Browsing Privacy** (Protocol: DoH/TCP) - Use when:
+**Browsing Privacy** (Default Protocol: DoH3/QUIC) - Use when:
 - General web browsing
 - Social media, shopping
 - Want balance of security and compatibility
-- **Recommended when using VPN**
+- Recommended everyday profile
 
-**Gaming Optimized** (Protocol: DoH3/QUIC) - Use when:
+**Gaming Optimized** (Default Protocol: DoH3/QUIC) - Use when:
 - Online gaming (reduces latency)
 - Streaming services
 - Need maximum compatibility
-- **Best for non-VPN usage**
+- Slightly lighter filtering, tuned for latency-sensitive traffic
 
 ## Network Mode Management (v4.0 Separation Strategy)
 

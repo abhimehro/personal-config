@@ -15,6 +15,10 @@ BACKUP_DIR="$CONTROLD_DIR/backup"
 LOG_FILE="/var/log/controld_manager.log"
 
 # Profile configurations with protocol preferences
+#
+# All profiles now default to DoH3 (QUIC) for consistency and performance.
+# You can still force a fallback to DoH/TCP for debugging by passing an
+# explicit protocol override (e.g., `controld-manager switch privacy doh`).
 get_profile_id() {
     case "$1" in
         "privacy") echo "6m971e9jaf" ;;
@@ -26,10 +30,10 @@ get_profile_id() {
 
 get_profile_protocol() {
     case "$1" in
-        "gaming") echo "doh3" ;;     # Gaming: Use DOH3 (QUIC) for low latency
-        "privacy") echo "doh" ;;     # Privacy: Use DOH (TCP) for VPN compatibility
-        "browsing") echo "doh" ;;    # Browsing: Use DOH (TCP) for VPN compatibility
-        *) echo "doh" ;;             # Default to DOH
+        "gaming") echo "doh3" ;;
+        "privacy") echo "doh3" ;;
+        "browsing") echo "doh3" ;;
+        *) echo "doh3" ;;
     esac
 }
 

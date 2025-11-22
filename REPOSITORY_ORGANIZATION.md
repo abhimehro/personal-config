@@ -99,9 +99,9 @@ personal-config/
 # Verify complete setup
 bash windscribe-controld/windscribe-controld-setup.sh
 
-# Switch profiles
-sudo controld-manager switch privacy doh    # Enhanced filtering
-sudo controld-manager switch gaming doh     # Gaming optimization
+# Switch profiles (defaults to DoH3/QUIC for all profiles)
+sudo controld-manager switch privacy        # Enhanced filtering (DoH3)
+sudo controld-manager switch gaming         # Gaming optimization (DoH3)
 sudo controld-manager status                # Check status
 
 # Test functionality
