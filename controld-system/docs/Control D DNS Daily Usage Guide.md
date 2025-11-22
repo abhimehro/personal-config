@@ -83,11 +83,17 @@ This is the primary entry point for switching modes.
 
 - Enables IPv6 (via `scripts/macos/ipv6-manager.sh enable`).
 - Stops any existing `ctrld` instance and resets Wi-Fi DNS to `Empty`.
-- Starts `ctrld` in service mode with `--cd <UID>`, letting the Control D cloud dashboard drive protocol and filtering.
-- Binds the listener to `127.0.0.1` and sets Wi-Fi DNS to `127.0.0.1`.
+- Delegates to `controld-system/scripts/controld-manager switch <profile>`,
+  which:
+  - Generates/uses per-profile configs under `/etc/controld/profiles`.
+  - Enforces **DoH3/QUIC** as the default protocol for all profiles
+    (with an optional DoH/TCP fallback when explicitly requested).
+  - Leaves filtering logic and categories under Control D dashboard control.
+- Binds the listener to `*********` and sets Wi-Fi DNS to `*********`.
 - Flushes DNS caches.
 - Prints a one-shot status snapshot.
-- Automatically runs `scripts/network-mode-verify.sh controld` to validate the "Control D Active" checklist.
+- Automatically runs `scripts/network-mode-verify.sh controld <profile>` to
+  validate the "Control D Active" checklist, including DoH3 config checks.
 
 #### What happens in `windscribe` mode
 

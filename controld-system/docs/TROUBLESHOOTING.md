@@ -2,6 +2,14 @@
 
 This guide covers troubleshooting for the **verified working** Control D configuration.
 
+> **Current Implementation Note (v4.1+):** The active system now uses
+> DoH3, a LaunchDaemon, and the enhanced maintenance monitor via
+> `controld-manager` + `scripts/network-mode-manager.sh`. This document
+> describes the earlier standalone setup and remains useful for
+> low-level debugging, but any references below that say "avoid DoH3",
+> "avoid LaunchDaemons", or prefer `type = 'doh'` should be read as
+> historical context, not current best practice.
+
 ## 🎯 **Quick Validation Checklist**
 
 Run these commands to verify system is working:
@@ -143,12 +151,23 @@ ping 8.8.8.8
 sudo ifconfig en0 down && sudo ifconfig en0 up
 ```
 
-## ⚠️ **AVOID These Broken Approaches**
+## ⚠️ **Legacy Pitfalls (Historical)**
 
-❌ **Don't use DOH3**: Causes silent failures and false positives
-❌ **Don't use LaunchDaemon**: Creates conflicts with working system  
-❌ **Don't manually edit TOML files**: Breaks Control D authentication
-❌ **Don't use complex monitoring**: Adds unnecessary failure points
+The bullets in this section captured an earlier, broken design where
+DoH3, a misconfigured LaunchDaemon, and ad-hoc monitoring produced
+unreliable behavior. The current v4.1+ setup has fixed these issues and
+**does** use DoH3, a LaunchDaemon, and the consolidated
+`controld_monitor.sh` checks. Keep these notes as guardrails against
+reintroducing the *old* failure modes:
+
+❌ Avoid rolling your own unvalidated DoH3 configs outside the
+   `controld-manager` + `network-mode-manager.sh` path.
+❌ Avoid creating additional LaunchDaemons for `ctrld` beyond the one
+   installed by `ctrld service`.
+❌ Don't hand-edit live TOML files on disk without backups and tests;
+   prefer regeneration via `controld-manager`.
+❌ Don't bolt on extra monitoring scripts that duplicate what
+   `maintenance/controld_monitor.sh` already checks.
 
 ## ✅ **Verification Commands**
 
@@ -170,7 +189,7 @@ networksetup -getdnsservers Wi-Fi
 # Service process (should be running)
 ps aux | grep ctrld | grep -v grep
 
-# Protocol verification (should be doh, not doh3)
+# Protocol verification (v4.1+ should be doh3 for active profiles)
 sudo grep "type = " /etc/controld/ctrld.toml
 ```
 

@@ -9,11 +9,15 @@
 
 ### Profile Switching
 ```bash
-# Privacy Profile (enhanced filtering)
-sudo controld-manager switch privacy doh
+# Privacy Profile (enhanced filtering, DoH3 by default)
+sudo controld-manager switch privacy
 
-# Gaming Profile (optimized performance)
-sudo controld-manager switch gaming doh
+# Gaming Profile (optimized performance, DoH3 by default)
+sudo controld-manager switch gaming
+
+# (Optional) Force legacy DoH/TCP for compatibility/debugging
+# sudo controld-manager switch privacy doh
+# sudo controld-manager switch gaming doh
 
 # Check current status
 sudo controld-manager status

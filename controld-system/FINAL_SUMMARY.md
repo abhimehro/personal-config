@@ -3,6 +3,15 @@
 **Date**: November 18, 2025  
 **Configuration Status**: Production-Ready ✓
 
+> **Current Implementation Note (v4.1+):** This summary reflects the
+> original DoH/TCP-only configuration built around
+> `~/.config/controld`. Since v4.1, the live system runs via
+> `/etc/controld` + `controld-manager` with DoH3 defaults and the
+> separation strategy implemented in `scripts/network-mode-manager.sh`.
+> Use this document for historical context and operational patterns; for
+> current wiring, see `controld-system/README.md` and the v4.x
+> Separation Strategy docs.
+
 ---
 
 ## What You Have Now

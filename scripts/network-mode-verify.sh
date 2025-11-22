@@ -97,13 +97,15 @@ check_controld_active() {
     warn "IPv6 AAAA lookup for example.com returned no result. IPv6 path may be disabled or unavailable; this is treated as a warning."
   fi
 
-  # 6) DoH3/profile checks (cannot fully enforce locally)
+  # 6) Profile & DoH3 checks
   if [[ -n "$expected_profile" ]]; then
     # Try to infer active profile from /etc/controld/ctrld.toml symlink
     local active_profile=""
+    local active_config=""
     if [[ -L "/etc/controld/ctrld.toml" ]]; then
       local target
       target=$(readlink "/etc/controld/ctrld.toml" 2>/dev/null || true)
+      active_config="$target"
       active_profile=$(basename "$target" | sed "s/^ctrld\.//; s/\.toml$//")
     fi
 
@@ -115,11 +117,26 @@ check_controld_active() {
       fail "Active Control D profile is '$active_profile', expected '$expected_profile'."
       ok=1
     fi
-  else
-    warn "No profile hint provided; skipping profile-specific validation."
-  fi
 
-  warn "DoH3 enforcement is managed in the Control D dashboard; verify each profile is set to the intended protocol there."
+    # Enforce DoH3 at config level when we have a readable config file.
+    if [[ -n "$active_config" && -f "$active_config" ]]; then
+      # Look for any upstream "type" definitions and ensure they are all doh3.
+      local doh_types
+      doh_types=$(grep -E "^\s*type = 'doh" "$active_config" 2>/dev/null || true)
+      if [[ -z "$doh_types" ]]; then
+        warn "Could not find any upstream type=""doh*" entries in $active_config; DoH3 validation is partial."
+      elif echo "$doh_types" | grep -q "type = 'doh'"; then
+        fail "Active profile config ($active_config) contains non-DoH3 upstreams; expected only type = 'doh3'."
+        ok=1
+      else
+        pass "Active profile config ($active_config) uses DoH3-only upstreams."
+      fi
+    else
+      warn "Active Control D config file could not be read; skipping DoH3 validation."
+    fi
+  else
+    warn "No profile hint provided; skipping profile-specific and DoH3 validation."
+  fi
 
   local result
   if [[ $ok -eq 0 ]]; then

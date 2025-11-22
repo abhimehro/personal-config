@@ -32,11 +32,15 @@ bash windscribe-controld-setup.sh
 
 ### Profile Switching
 ```bash
-# Switch to privacy profile (enhanced filtering)
-sudo controld-manager switch privacy doh
+# Switch to privacy profile (enhanced filtering, DoH3 by default)
+sudo controld-manager switch privacy
 
-# Switch to gaming profile (minimal filtering)  
-sudo controld-manager switch gaming doh
+# Switch to gaming profile (minimal filtering, DoH3 by default)
+sudo controld-manager switch gaming
+
+# (Optional) Force legacy DoH/TCP for debugging only
+# sudo controld-manager switch privacy doh
+# sudo controld-manager switch gaming doh
 
 # Check current status
 sudo controld-manager status
