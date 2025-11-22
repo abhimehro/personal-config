@@ -18,10 +18,10 @@ NC='\033[0m'
 
 LISTENER_IP="127.0.0.1"  # must match LISTENER_IP in network-mode-manager.sh
 
-log()   { echo -e "${BLUE}[INFO]${NC} $*"; }
-warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
-pass()  { echo -e "${GREEN}[PASS]${NC} $*"; }
-fail()  { echo -e "${RED}[FAIL]${NC} $*"; }
+log()   { echo -e "${BLUE}[INFO]${NC} $@"; }
+warn()  { echo -e "${YELLOW}[WARN]${NC} $@"; }
+pass()  { echo -e "${GREEN}[PASS]${NC} $@"; }
+fail()  { echo -e "${RED}[FAIL]${NC} $@"; }
 
 ensure_prereqs_verify() {
   if [[ $EUID -eq 0 ]]; then
@@ -124,7 +124,7 @@ check_controld_active() {
       local doh_types
       doh_types=$(grep -E "^\s*type = 'doh" "$active_config" 2>/dev/null || true)
       if [[ -z "$doh_types" ]]; then
-        warn "Could not find any upstream type=""doh*" entries in $active_config; DoH3 validation is partial."
+        warn "Could not find any upstream type=\"doh*\" entries in $active_config; DoH3 validation is partial."
       elif echo "$doh_types" | grep -q "type = 'doh'"; then
         fail "Active profile config ($active_config) contains non-DoH3 upstreams; expected only type = 'doh3'."
         ok=1
