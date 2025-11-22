@@ -21,9 +21,9 @@ NC='\033[0m'
 MANAGER="./scripts/network-mode-manager.sh"
 VERIFY="./scripts/network-mode-verify.sh"
 
-log()  { echo -e "${BLUE}[INFO]${NC} $*"; }
-fail() { echo -e "${RED}[FAIL]${NC} $*"; }
-pass() { echo -e "${GREEN}[PASS]${NC} $*"; }
+log()  { echo -e "${BLUE}[INFO]${NC} $@"; }
+fail() { echo -e "${RED}[FAIL]${NC} $@"; }
+pass() { echo -e "${GREEN}[PASS]${NC} $@"; }
 
 ensure_prereqs_regression() {
   if [[ $EUID -eq 0 ]]; then

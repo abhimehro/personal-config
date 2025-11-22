@@ -34,9 +34,9 @@ NC='\033[0m'
 
 # --- Helpers ---
 
-log()      { echo -e "${BLUE}[INFO]${NC} $*"; }
-success()  { echo -e "${GREEN}[OK]${NC} $*"; }
-error()    { echo -e "${RED}[ERR]${NC} $*" >&2; exit 1; }
+log()      { echo -e "${BLUE}[INFO]${NC} $@"; }
+success()  { echo -e "${GREEN}[OK]${NC} $@"; }
+error()    { echo -e "${RED}[ERR]${NC} $@" >&2; exit 1; }
 
 ensure_prereqs() {
   # Least privilege: refuse to run as root
