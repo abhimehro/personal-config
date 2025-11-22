@@ -17,7 +17,7 @@ MANAGER_SCRIPT="$(cd "$(dirname "$0")/../.." && pwd)/scripts/network-mode-manage
 VERIFY_SCRIPT="$(cd "$(dirname "$0")/../.." && pwd)/scripts/network-mode-verify.sh"
 
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $@" | tee -a "$LOG_FILE"
 }
 
 main() {
@@ -57,106 +57,4 @@ main() {
     fi
 }
 
-main "$@"
-    log "🔧 Setting network service priority order..."
-    
-    # Get actual available services (excluding disabled ones)
-    local available_services=()
-    while IFS= read -r service; do
-        # Skip header line and disabled services (marked with *)
-        if [[ "$service" != "An asterisk"* && "$service" != *"*"* && -n "$service" ]]; then
-            available_services+=("$service")
-        fi
-    done < <(networksetup -listallnetworkservices)
-    
-    # Only set order if we have multiple services
-    if [[ ${#available_services[@]} -gt 1 ]]; then
-        if networksetup -ordernetworkservices "${available_services[@]}" 2>/dev/null; then
-            log "✅ Network service order configured: ${available_services[*]}"
-        else
-            log "ℹ️  Network service order unchanged (current order is fine)"
-        fi
-    else
-        log "ℹ️  Only one network service available, order setting not needed"
-    fi
-}
-
-# Flush DNS caches
-flush_dns() {
-    log "🔄 Flushing DNS caches..."
-    if sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder 2>/dev/null; then
-        log "✅ DNS caches flushed"
-    else
-        log "⚠️  DNS cache flush may have failed"
-    fi
-}
-
-# Validate DNS configuration
-validate_dns() {
-    log "🧪 Validating DNS configuration..."
-    
-    # Test Control D DNS resolution
-    if dig +timeout=3 +tries=1 +short verify.controld.com @"$CONTROL_D_DNS" >/dev/null 2>&1; then
-        log "✅ Control D DNS resolution working"
-    else
-        log "❌ Control D DNS resolution failed"
-        return 1
-    fi
-    
-    # Test system DNS resolution
-    if dig +timeout=3 +tries=1 +short google.com >/dev/null 2>&1; then
-        log "✅ System DNS resolution working"
-    else
-        log "❌ System DNS resolution failed"
-        return 1
-    fi
-    
-    return 0
-}
-
-# Main execution
-main() {
-    log "🚀 Starting Control D DNS configuration enforcement..."
-    
-    # Check if running with appropriate permissions
-    if [[ $EUID -eq 0 ]]; then
-        log "❌ Do not run this script as root. It will prompt for sudo when needed."
-        exit 1
-    fi
-    
-    # Wait a moment for system to stabilize (useful at login)
-    sleep 2
-    
-    # Check if Control D is running
-    if ! check_controld_status; then
-        log "⚠️  Control D not detected. Configuration will be applied anyway."
-        log "💡 Make sure Control D app is running and configured for DoH protocol."
-    fi
-    
-    # Configure DNS settings
-    configure_dns
-    
-    # Set service order
-    set_service_order
-    
-    # Flush DNS caches
-    flush_dns
-    
-    # Wait for changes to take effect
-    sleep 3
-    
-    # Validate configuration
-    if validate_dns; then
-        log "🎉 Control D DNS configuration successful!"
-        log "📊 Verify at: https://verify.controld.com"
-    else
-        log "❌ DNS configuration validation failed"
-        log "🔧 Manual troubleshooting may be required"
-        exit 1
-    fi
-    
-    log "✅ Control D DNS enforcement completed successfully"
-}
-
-# Run main function
 main "$@"
