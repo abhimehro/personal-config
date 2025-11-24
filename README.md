@@ -39,6 +39,20 @@ ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
 ```
 
 ### Enhanced VPN + DNS Integration
+
+**Using Fish Shell Functions (Recommended):**
+```bash
+# After installing configs and reloading fish shell (exec fish)
+nm-status          # Check current network status
+nm-browse          # Switch to Control D browsing mode
+nm-privacy         # Switch to Control D privacy mode
+nm-gaming          # Switch to Control D gaming mode
+nm-vpn             # Switch to Windscribe VPN mode
+nm-regress         # Run full regression test
+nm-cd-status       # Check Control D daemon status
+```
+
+**Using Scripts Directly:**
 ```bash
 # Preferred: use the unified network mode manager
 ./scripts/network-mode-manager.sh controld browsing   # Enable Control D DNS mode
@@ -163,20 +177,64 @@ ssh cursor-auto    # Auto-detection fallback
 
 ## 🚀 Installation
 
-### Complete Setup
+### Complete Setup (Recommended)
 ```bash
 # Clone the repository
-git clone <your-repo-url> ~/personal-config
-cd ~/personal-config
+git clone <your-repo-url> ~/Documents/dev/personal-config
+cd ~/Documents/dev/personal-config
 
-# Install SSH configuration
+# Install all configuration files (symlinks to home directory)
+./scripts/install_all_configs.sh
+
+# This will:
+# - Create symlinks for SSH, Fish shell, Cursor, VS Code configs
+# - Backup any existing configuration files
+# - Verify all symlinks are correctly established
+# - Set up Control D fish functions
+
+# Reload fish shell to use new functions
+exec fish
+
+# Test Control D functions
+nm-status          # Check network status
+```
+
+### Configuration Management (Symlink-Based)
+
+This repository uses a **symlink-based configuration** model where repository files are linked to your home directory. This ensures:
+- ✅ Repository updates automatically reflect in your home directory
+- ✅ Single source of truth for all configurations
+- ✅ Easy backup and restore via git
+
+**Symlinked Configurations:**
+- `~/.ssh/config` → `configs/ssh/config`
+- `~/.ssh/agent.toml` → `configs/ssh/agent.toml`
+- `~/.config/fish/` → `configs/.config/fish/`
+- `~/.cursor/` → `.cursor/`
+- `~/.vscode/` → `.vscode/`
+
+**Management Commands:**
+```bash
+# Sync all configs (create/update symlinks)
+./scripts/sync_all_configs.sh
+
+# Verify all symlinks are correct
+./scripts/verify_all_configs.sh
+
+# Complete installation (sync + verify)
+./scripts/install_all_configs.sh
+```
+
+### Individual Component Setup
+
+#### SSH Configuration Only
+```bash
+# Quick install
 ./scripts/install_ssh_config.sh
 
-# Deploy DNS management scripts
-./dns-setup/scripts/deploy.sh
-
-# Test everything
-./tests/test_ssh_config.sh
+# Or use the sync script
+./scripts/sync_ssh_config.sh
+./scripts/verify_ssh_config.sh
 ```
 
 ### DNS Management Only
@@ -354,29 +412,55 @@ Personal use configurations. Feel free to adapt and use any parts that are helpf
 
 **🎉 Your complete development and gaming network is now perfectly automated!**
 
-_Last Updated: November 19, 2025_  
-_VPN + DNS Integration: v4.1_  
-_DNS Management System: v3.0_  
+_Last Updated: November 19, 2025_
+_VPN + DNS Integration: v4.1_
+_DNS Management System: v3.0_
 _SSH Configuration: v2.0_
 
-## SSH configuration (1Password-managed)
+## 🔧 Configuration Details
+
+### SSH Configuration (1Password-managed)
 
 - Single source of truth for SSH config and agent settings lives in this repo:
-  - configs/ssh/config
-  - configs/ssh/agent.toml
+  - `configs/ssh/config`
+  - `configs/ssh/agent.toml`
 - Local symlinks:
-  - ~/.ssh/config -> ~/Documents/dev/personal-config/configs/ssh/config
-  - ~/.ssh/agent.toml -> ~/Documents/dev/personal-config/configs/ssh/agent.toml
+  - `~/.ssh/config` → `~/Documents/dev/personal-config/configs/ssh/config`
+  - `~/.ssh/agent.toml` → `~/Documents/dev/personal-config/configs/ssh/agent.toml`
 - 1Password integration:
-  - Include ~/.ssh/1Password/config
-  - IdentityAgent: ~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock
+  - Include `~/.ssh/1Password/config`
+  - IdentityAgent: `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`
 - Multiplexing control dir:
-  - ~/.ssh/control (700)
+  - `~/.ssh/control` (700)
 
-Maintenance:
-- Verify: scripts/verify_ssh_config.sh
-- Sync: scripts/sync_ssh_config.sh
+**Maintenance:**
+- Verify: `scripts/verify_ssh_config.sh`
+- Sync: `scripts/sync_ssh_config.sh`
 
-Notes:
+**Notes:**
 - Keep 1Password unlocked with SSH agent integration enabled.
-- No private keys are stored in ~/.ssh; all keys are 1Password-managed.
+- No private keys are stored in `~/.ssh`; all keys are 1Password-managed.
+
+### Fish Shell Configuration
+
+**Control D Network Mode Functions:**
+
+After installing configs and reloading fish shell (`exec fish`), you'll have access to these convenient functions:
+
+| Function | Description |
+|----------|-------------|
+| `nm-status` | Check current network status (Control D vs Windscribe) |
+| `nm-browse` | Switch to Control D browsing mode (balanced privacy) |
+| `nm-privacy` | Switch to Control D privacy mode (maximum security) |
+| `nm-gaming` | Switch to Control D gaming mode (minimal filtering) |
+| `nm-vpn` | Switch to Windscribe VPN mode (disables Control D) |
+| `nm-regress` | Run full regression test (Control D → Windscribe) |
+| `nm-cd-status` | Check Control D daemon status |
+
+**Environment Variable:**
+- `NM_ROOT` is automatically set to `$HOME/Documents/dev/personal-config`
+
+**Configuration Location:**
+- `~/.config/fish/` → `configs/.config/fish/` (symlinked)
+- Functions: `~/.config/fish/functions/nm-*.fish`
+- Config: `~/.config/fish/config.fish`
