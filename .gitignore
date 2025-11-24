@@ -163,6 +163,10 @@ coverage/
 !*.md
 !*.txt
 
+# BUT exclude terminal history files (they may contain secrets)
+.cursor/projects/**/terminals/*.txt
+.cursor/**/terminals/*.txt
+
 # Allow scripts (but not sensitive ones)
 !scripts/
 !*.sh

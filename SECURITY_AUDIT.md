@@ -29,10 +29,12 @@ Comprehensive security sweep completed. No credentials, secrets, or sensitive in
   - No actual credentials
 
 ### ✅ Terminal History Files
-- **.cursor/projects/.../terminals/*.txt**: ✅ Now excluded via `.gitignore`
-  - Added exclusion pattern: `.cursor/projects/**/terminals/*.txt`
-  - No secrets found in content review
-  - Files will not be committed
+- **.cursor/projects/.../terminals/*.txt**: ✅ Removed from git tracking
+  - Files contained OAuth tokens (Google and Microsoft)
+  - Removed from git: `git rm --cached`
+  - Local files deleted
+  - Updated `.gitignore` to exclude: `.cursor/**/terminals/*.txt`
+  - **Action Required**: Revoke exposed OAuth tokens (see SECURITY_INCIDENT_RESPONSE.md)
 
 ## Security Patterns Verified
 
