@@ -13,8 +13,8 @@ Host github.com
 
 # VPN ON: Use Tailscale/VPN IP
 Host cursor-vpn
-    HostName <vpn-ip-address>
-    User __USERNAME__
+    HostName <vpn-ip-address>  # Replace with your VPN IP when needed
+    User abhimehrotra
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -28,10 +28,10 @@ Host cursor-vpn
     TCPKeepAlive yes
     ServerAliveCountMax 5
 
-# VPN OFF: Use local hostname
+# VPN OFF: Use local hostname (mDNS)
 Host cursor-local
-    HostName <local-hostname>
-    User __USERNAME__
+    HostName abhis-macbook-air.local
+    User abhimehrotra
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -43,11 +43,11 @@ Host cursor-local
     StrictHostKeyChecking accept-new
     # Local network optimizations
     Compression no
-    
+
 # FALLBACK: Use .local domain (mDNS/Bonjour)
 Host cursor-mdns
-    HostName <mdns-hostname>.local
-    User __USERNAME__
+    HostName abhis-macbook-air.local
+    User abhimehrotra
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -60,8 +60,8 @@ Host cursor-mdns
 
 # SMART ALIAS: Auto-detect which connection to use
 Host cursor-auto
-    HostName <mdns-hostname>.local
-    User __USERNAME__
+    HostName abhis-macbook-air.local
+    User abhimehrotra
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 30

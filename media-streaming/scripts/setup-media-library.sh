@@ -39,12 +39,12 @@ setup_gdrive() {
             fi
         fi
     fi
-    
+
     echo
     echo "🔐 You'll need to authorize Google Drive in your browser"
     echo "Instructions:"
     echo "1. Type 'n' for new remote"
-    echo "2. Name: gdrive" 
+    echo "2. Name: gdrive"
     echo "3. Storage: choose 'drive' (Google Drive)"
     echo "4. Leave client_id/client_secret blank (just press Enter)"
     echo "5. Scope: choose '1' (full access)"
@@ -56,18 +56,18 @@ setup_gdrive() {
     echo "11. Save with 'y'"
     echo
     read -p "Press Enter to start Google Drive setup..."
-    
+
     rclone config
 }
 
-# Function to setup OneDrive  
+# Function to setup OneDrive
 setup_onedrive() {
     echo "📁 Setting up OneDrive..."
     if check_remote "onedrive"; then
         echo "✅ OneDrive remote already exists"
         return 0
     fi
-    
+
     echo
     echo "🔐 You'll need to authorize OneDrive in your browser"
     echo "Instructions:"
@@ -81,14 +81,14 @@ setup_onedrive() {
     echo "8. Save with 'y'"
     echo
     read -p "Press Enter to start OneDrive setup..."
-    
+
     rclone config
 }
 
 # Function to create folder structure
 create_folders() {
     echo "📂 Creating media folder structure..."
-    
+
     for remote in gdrive onedrive; do
         if check_remote "$remote"; then
             echo "Creating folders on $remote..."
@@ -107,31 +107,71 @@ create_folders() {
 # Function to create union remote
 create_union() {
     echo "🔗 Creating unified media remote..."
-    
+
     # Check if both remotes exist
     if ! check_remote "gdrive" || ! check_remote "onedrive"; then
         echo "❌ Both Google Drive and OneDrive remotes needed for union"
         return 1
     fi
-    
+
+    # Verify Media folders exist
+    echo "Checking Media folders..."
+    if ! rclone lsd gdrive:Media &>/dev/null; then
+        warn "gdrive:Media folder not found, creating..."
+        rclone mkdir gdrive:Media
+    fi
+
+    if ! rclone lsd onedrive:Media &>/dev/null; then
+        warn "onedrive:Media folder not found, creating..."
+        rclone mkdir onedrive:Media
+    fi
+
     if check_remote "media"; then
         echo "✅ Media union remote already exists"
-        return 0
+        echo "Testing union remote..."
+        if rclone lsd media: &>/dev/null; then
+            echo "✅ Union remote is working"
+            return 0
+        else
+            warn "Union remote exists but not working, will recreate..."
+            rclone config delete media
+        fi
     fi
-    
+
     echo
     echo "Creating union remote that combines Google Drive and OneDrive..."
+    echo ""
+    echo "CRITICAL: Make sure folder structures match!"
+    echo "  Both gdrive:Media and onedrive:Media should have identical structure"
+    echo ""
     echo "Instructions:"
     echo "1. Type 'n' for new remote"
     echo "2. Name: media"
     echo "3. Storage: choose 'union'"
     echo "4. Upstreams: gdrive:Media onedrive:Media"
-    echo "5. Accept defaults for policies"
-    echo "6. Save with 'y'"
+    echo "5. Action policy: epall (or press Enter for default)"
+    echo "6. Create policy: epmfs (or press Enter for default)"
+    echo "7. Search policy: ff (or press Enter for default)"
+    echo "8. Save with 'y'"
     echo
     read -p "Press Enter to create union remote..."
-    
+
     rclone config
+
+    # Verify union was created correctly
+    if check_remote "media"; then
+        echo ""
+        echo "Testing union remote..."
+        if rclone lsd media: &>/dev/null; then
+            success "Union remote created and working!"
+            echo "Available folders:"
+            rclone lsd media: | head -10
+        else
+            error "Union remote created but not working"
+            echo "Check configuration: rclone config show media"
+            echo "Verify folders exist: rclone lsd gdrive:Media && rclone lsd onedrive:Media"
+        fi
+    fi
 }
 
 # Function to get local IP
@@ -146,9 +186,9 @@ get_local_ip() {
 # Function to create WebDAV server script
 create_webdav_server() {
     echo "🌐 Creating WebDAV server setup..."
-    
+
     local ip=$(get_local_ip)
-    
+
     cat > ~/start-media-server.sh << 'EOF'
 #!/bin/bash
 echo "🚀 Starting Unified Media WebDAV Server..."
@@ -181,10 +221,10 @@ rclone serve webdav media: \
 EOF
 
     chmod +x ~/start-media-server.sh
-    
+
     # Replace HOST_IP in the file
     sed -i "" "s/HOST_IP/$ip/g" ~/start-media-server.sh
-    
+
     echo "✅ Created ~/start-media-server.sh"
 }
 
@@ -193,7 +233,7 @@ echo "Let's set up your ultimate media library!"
 echo
 echo "This will:"
 echo "• Set up Google Drive remote"
-echo "• Set up OneDrive remote"  
+echo "• Set up OneDrive remote"
 echo "• Create organized folder structure"
 echo "• Create a unified 'media' remote"
 echo "• Set up WebDAV server for Infuse"

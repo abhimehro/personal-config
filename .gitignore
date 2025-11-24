@@ -143,6 +143,11 @@ coverage/
 # EXCEPTIONS - Allow these specific files
 # =============================================================================
 
+# Exclude terminal history files FIRST (before !*.txt exception)
+# These may contain command history and should not be committed
+.cursor/projects/**/terminals/*.txt
+.cursor/**/terminals/*.txt
+
 # Allow example configurations
 !configs/*.example.conf
 !configs/*.example.ini
@@ -182,4 +187,3 @@ coverage/
 !*secret*.md
 !*private*.md
 !*sensitive*.md
-
