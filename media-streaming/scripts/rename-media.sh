@@ -15,7 +15,11 @@ STAGING_DIR="$HOME/CloudMedia/staging"
 PROCESSED_DIR="$HOME/CloudMedia/processed"
 FAILED_DIR="$HOME/CloudMedia/failed"
 LOG_FILE="$HOME/Library/Logs/media-renamer.log"
-CLOUD_DEST="gdrive:Media/Movies"  # Change to onedrive:Media/Movies if preferred
+
+# Local Google Drive path (synced by Google Drive desktop app)
+GDRIVE_LOCAL="$HOME/Library/CloudStorage/GoogleDrive-abhimhrtr@gmail.com/My Drive/Media"
+GDRIVE_MOVIES="$GDRIVE_LOCAL/Movies"
+GDRIVE_TV="$GDRIVE_LOCAL/TV Shows"
 
 # FileBot settings
 FILEBOT_DB="TheMovieDB"  # or TheTVDB for TV shows
@@ -47,52 +51,50 @@ rename_file() {
         return 0
     fi
     
-    # Create temp directory for FileBot output
-    local temp_dir=$(mktemp -d)
+    # Ensure Google Drive directories exist
+    mkdir -p "$GDRIVE_MOVIES" "$GDRIVE_TV"
     
-    # Try FileBot rename (in-place with --action move)
-    local original_dir=$(dirname "$file")
-    
-    if filebot -rename "$file" \
+    # FileBot renames AND moves directly to processed folder
+    local fb_output
+    fb_output=$(filebot -rename "$file" \
         --db "$FILEBOT_DB" \
-        --format "$FILEBOT_FORMAT" \
+        --format "$PROCESSED_DIR/$FILEBOT_FORMAT" \
         -non-strict \
         --action move \
-        --log fine 2>&1 | tee -a "$LOG_FILE"; then
+        --log fine 2>&1) || true
+    
+    echo "$fb_output" | tee -a "$LOG_FILE"
+    
+    # Parse FileBot output to get the actual renamed file path
+    # FileBot outputs: [MOVE] from [...] to [/path/to/new/file.mp4]
+    local renamed_file
+    renamed_file=$(echo "$fb_output" | grep -oE '\[MOVE\] from .* to \[.*\]' | sed 's/.*to \[\(.*\)\]/\1/' | head -1)
+    
+    # Handle "Skipped" case (file already correctly named)
+    if [[ -z "$renamed_file" ]] && echo "$fb_output" | grep -q "Skipped"; then
+        log "File already correctly named, moving directly..."
+        renamed_file="$file"
+    fi
+    
+    # Process the renamed file
+    if [[ -n "$renamed_file" && -f "$renamed_file" ]]; then
+        local new_name=$(basename "$renamed_file")
+        log "✓ Renamed to: $new_name"
         
-        # Find the renamed file (FileBot renames in-place)
-        local renamed_file=$(find "$original_dir" -maxdepth 1 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.m4v" \) -newer "$LOG_FILE" 2>/dev/null | head -1)
-        
-        # If not found by timestamp, look for any movie-named file
-        if [[ -z "$renamed_file" ]]; then
-            renamed_file=$(find "$original_dir" -maxdepth 1 -type f -name "* (*).mp4" -o -name "* (*).mkv" -o -name "* (*).m4v" 2>/dev/null | head -1)
-        fi
-        
-        if [[ -n "$renamed_file" && -f "$renamed_file" ]]; then
-            local new_name=$(basename "$renamed_file")
-            log "✓ Renamed to: $new_name"
-            
-            # Upload to cloud
-            log "Uploading to $CLOUD_DEST..."
-            if rclone copy "$renamed_file" "$CLOUD_DEST" --progress 2>&1 | tee -a "$LOG_FILE"; then
-                log "✓ Uploaded successfully"
-                
-                # Move renamed file to processed
-                mv "$renamed_file" "$PROCESSED_DIR/"
-                notify "Media Processed" "$new_name uploaded to cloud"
-            else
-                log "✗ Upload failed"
-                mv "$renamed_file" "$FAILED_DIR/"
-            fi
+        # Move to local Google Drive folder (native sync handles upload)
+        log "Moving to Google Drive (sync will handle upload)..."
+        if mv "$renamed_file" "$GDRIVE_MOVIES/"; then
+            log "✓ Moved to Google Drive: $GDRIVE_MOVIES/$new_name"
+            notify "Media Queued" "$new_name → Google Drive sync"
         else
-            log "✗ FileBot couldn't identify: $filename"
-            # Move to failed for manual handling
-            [[ -f "$file" ]] && mv "$file" "$FAILED_DIR/"
-            notify "Media Failed" "Couldn't identify: $filename"
+            log "✗ Failed to move to Google Drive"
+            notify "Media Warning" "$new_name in processed (GDrive move failed)"
         fi
     else
-        log "✗ FileBot error for: $filename"
+        log "✗ FileBot couldn't identify: $filename"
+        # Move original to failed for manual handling
         [[ -f "$file" ]] && mv "$file" "$FAILED_DIR/"
+        notify "Media Failed" "Couldn't identify: $filename"
     fi
 }
 
