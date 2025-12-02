@@ -50,6 +50,7 @@ echo
 echo "Press Ctrl+C to stop server"
 echo
 
+# Bind to 0.0.0.0 for access from all devices (macOS, iOS, tvOS)
 rclone serve webdav media: \
     --addr 0.0.0.0:8088 \
     --user "$MEDIA_WEBDAV_USER" \
