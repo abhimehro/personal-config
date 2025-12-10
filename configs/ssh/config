@@ -11,9 +11,10 @@ Host github.com
 # ─ Dynamic configuration for MacBook Air M2 (Cursor IDE) ────────
 # This configuration automatically adapts to VPN on/off scenarios
 
-# VPN ON: Use Tailscale/VPN IP
+# VPN ON: Windscribe/Tailscale/static IP (set locally; keep placeholders in repo)
 Host cursor-vpn
-    HostName <vpn-ip-address>  # Replace with your VPN IP when needed
+    HostName <vpn-ip-address>      # set locally, e.g. Windscribe static IP
+    Port <vpn-forwarded-port>      # set locally, e.g. 13161 -> sshd :22
     User abhimehrotra
     IdentitiesOnly yes
     RequestTTY yes

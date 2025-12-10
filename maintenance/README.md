@@ -10,11 +10,32 @@ A comprehensive automated maintenance system for macOS that keeps your system cl
 - **Last Update**: November 2025
 - **Dependencies**: terminal-notifier (for interactive notifications)
 
+## ⚡ Raycast Quick Actions
+
+Use these Raycast scripts (installed under `~/Library/Maintenance/bin/`) to trigger maintenance from the launcher:
+
+- `raycast-brew-maintenance.sh` — Homebrew maintenance (update/upgrade/cleanup)
+- `raycast-system-cleanup.sh` — System cleanup
+- `raycast-document-backup.sh` — Backup Documents/Desktop/Scripts + configs
+- `raycast-package-updates.sh` — Package managers (npm/pip/gem/cargo/mas)
+- `raycast-dev-maintenance.sh` — Dev toolchains + cache cleanup + health check
+
+Setup in Raycast:
+1. Add a “Script Command” and point to the desired `~/Library/Maintenance/bin/raycast-*.sh`.
+2. Optional env overrides per action:
+   - `TARGET_BREW_SCRIPT` to point at a custom brew maintenance path.
+   - `TARGET_CLEANUP_SCRIPT`, `TARGET_DOC_BACKUP_SCRIPT`, `TARGET_PACKAGE_UPDATES_SCRIPT`, `TARGET_DEV_MAINT_SCRIPT` similarly.
+3. Keep scripts executable: `chmod +x ~/Library/Maintenance/bin/raycast-*.sh`.
+
+Notes:
+- These wrappers call the unified maintenance scripts shipped by personal-config; no dependency on the old `~/Scripts` location.
+- Outputs are shown inline in Raycast; full logs remain under `~/Library/Logs/maintenance/` via the underlying tasks.
+
 ## ✨ Features
 
 ### 🔄 Automated Schedules
 - **Daily Health Check**: 8:30 AM - System health monitoring
-- **Daily Brew Maintenance**: 10:00 AM - Homebrew packages + comprehensive cask updates  
+- **Daily Brew Maintenance**: 10:00 AM - Homebrew packages + comprehensive cask updates
 - **Daily System Cleanup**: 9:00 AM - System maintenance
 - **Weekly Maintenance**: Monday 9:00 AM - Comprehensive weekly tasks
 - **Monthly Maintenance**: 1st of month 6:00 AM - Deep system maintenance
@@ -153,7 +174,7 @@ UPDATE_MAS_APPS=1          # Auto-update Mac App Store apps
    - Notifications: ✅ Click to view logs
 
 2. **Daily Brew Maintenance** (`com.abhimehrotra.maintenance.brew`)
-   - Time: 10:00 AM daily  
+   - Time: 10:00 AM daily
    - Script: `brew_maintenance.sh`
    - Purpose: Homebrew packages + comprehensive cask updates
    - Notifications: ✅ Click to view logs
@@ -271,13 +292,13 @@ This maintenance system is self-maintaining, but you can:
 
 ## 🎯 Benefits
 
-✅ **Automated System Health Monitoring**  
-✅ **Proactive Issue Detection**  
-✅ **Automatic Package Updates**  
-✅ **System Cleanup & Optimization**  
-✅ **Detailed Logging & Reporting**  
-✅ **Zero Manual Intervention Required**  
-✅ **Customizable Schedules & Settings**  
+✅ **Automated System Health Monitoring**
+✅ **Proactive Issue Detection**
+✅ **Automatic Package Updates**
+✅ **System Cleanup & Optimization**
+✅ **Detailed Logging & Reporting**
+✅ **Zero Manual Intervention Required**
+✅ **Customizable Schedules & Settings**
 
 ---
 

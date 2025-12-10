@@ -116,6 +116,10 @@ cache/
 *~
 .backup
 .orig
+*mcp-config*.local.json
+mcp-configs/*.local.json
+mcp-configs/servers.local.json
+.mcp-config.local.json
 
 # History files
 .bash_history

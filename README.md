@@ -23,6 +23,19 @@ By keeping these configurations in version control, I can:
 
 ## 🎯 Quick Start
 
+### Bootstrap this Mac (idempotent)
+```bash
+cd ~/Documents/dev/personal-config
+./setup.sh
+# Requires: macOS, Homebrew, 1Password CLI (`op`), rclone installed via brew
+# Does:
+#  - Links dotfiles (SSH, fish, Cursor/VSCode) with backup/verify
+#  - Installs maintenance launchd agents
+#  - Prepares Control D / Windscribe helpers
+#  - Seeds rclone config from template (fill secrets via 1Password)
+#  - Stages media services + LaunchAgents (WebDAV + Alldebrid)
+```
+
 ### Automated Maintenance System (NEW!)
 ```bash
 # Check system health
@@ -269,6 +282,21 @@ export PATH="$HOME/bin:$PATH"  # For DNS scripts
 export CTRLD_PRIVACY_PROFILE="2eoeqoo9ib9"
 export CTRLD_GAMING_PROFILE="1igcvpwtsfg"
 ```
+
+### Media automation (Infuse + Alldebrid + cloud union)
+- **Data roots**: iCloud Desktop/Documents (`~/Library/Mobile Documents/com~apple~CloudDocs/Media`) via rclone union of `gdrive:Media` + `onedrive:Media` (no local duplication).
+- **WebDAV server**: LaunchAgent `com.abhimehrotra.media.webdav` runs `/Users/abhimehrotra/Library/Media/bin/start-media-server.sh` on port **8088** (read-only).
+- **Alldebrid helper**: LaunchAgent `com.abhimehrotra.media.alldebrid` mounts to `/Users/abhimehrotra/mnt/alldebrid` and serves on **8080**.
+- **Secrets**:
+  - `~/.config/rclone/rclone.conf` (seed from `media-streaming/configs/rclone.conf.template`, fill via `op inject`).
+  - `~/.config/media-server/credentials` (untracked; copy `media-streaming/configs/media-credentials.example` and inject creds with 1Password).
+- **Cache & logs**: `~/Library/Application Support/MediaCache` (kept out of iCloud) and `~/Library/Logs/media/*.out|*.err`.
+- **Control**: `launchctl list | grep media` to verify; manual start: `~/Library/Media/bin/start-media-server.sh`.
+
+### MCP tooling
+- Templates live in `mcp-configs/README.md` and `mcp-configs/mcp-servers.template.json`.
+- Copy the template to a local `servers.local.json`, fill keys from 1Password, and keep it gitignored (patterns already in `.gitignore`).
+- When running commands that need secrets resolved from 1Password, use `op run -- <command>` (e.g., `op run -- uv run python main.py --dry-run --profiles dummy`).
 
 ### VPN Integration
 

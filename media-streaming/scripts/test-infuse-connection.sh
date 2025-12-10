@@ -9,6 +9,16 @@ LOCAL_IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/n
 echo "📡 Your Mac's IP Address: $LOCAL_IP"
 echo
 
+# Load credentials shared with start-media-server.sh
+MEDIA_WEBDAV_USER="${MEDIA_WEBDAV_USER:-infuse}"
+MEDIA_WEBDAV_PASS="${MEDIA_WEBDAV_PASS:-}"
+CREDS_FILE="${MEDIA_CREDENTIALS_FILE:-$HOME/.config/media-server/credentials}"
+
+if [[ -z "$MEDIA_WEBDAV_PASS" && -f "$CREDS_FILE" ]]; then
+    # shellcheck disable=SC1090
+    source "$CREDS_FILE"
+fi
+
 # Test server status
 echo "🖥️  Server Status:"
 if lsof -nP -i:8088 | grep -q rclone; then
@@ -22,7 +32,7 @@ echo
 
 # Test local connection
 echo "🔗 Testing Local Connection:"
-if curl -s -u infuse:mediaserver123 http://localhost:8088/ | grep -q "<!DOCTYPE html>"; then
+if curl -s -u "${MEDIA_WEBDAV_USER}:${MEDIA_WEBDAV_PASS}" http://localhost:8088/ | grep -q "<!DOCTYPE html>"; then
     echo "✅ Local connection works (http://localhost:8088)"
 else
     echo "❌ Local connection failed"
@@ -31,7 +41,7 @@ fi
 # Test network connection
 echo
 echo "🌐 Testing Network Connection:"
-if curl -s -u infuse:mediaserver123 http://$LOCAL_IP:8088/ | grep -q "<!DOCTYPE html>"; then
+if curl -s -u "${MEDIA_WEBDAV_USER}:${MEDIA_WEBDAV_PASS}" http://$LOCAL_IP:8088/ | grep -q "<!DOCTYPE html>"; then
     echo "✅ Network connection works (http://$LOCAL_IP:8088)"
 else
     echo "❌ Network connection failed - likely firewall issue"
@@ -63,13 +73,13 @@ echo
 echo "🧪 Testing Different Connection Methods:"
 
 echo "Method 1: localhost:8088"
-curl -s -u infuse:mediaserver123 http://localhost:8088/ -o /dev/null && echo "✅ Works" || echo "❌ Failed"
+curl -s -u "${MEDIA_WEBDAV_USER}:${MEDIA_WEBDAV_PASS}" http://localhost:8088/ -o /dev/null && echo "✅ Works" || echo "❌ Failed"
 
-echo "Method 2: $LOCAL_IP:8088"  
-curl -s -u infuse:mediaserver123 http://$LOCAL_IP:8088/ -o /dev/null && echo "✅ Works" || echo "❌ Failed"
+echo "Method 2: $LOCAL_IP:8088"
+curl -s -u "${MEDIA_WEBDAV_USER}:${MEDIA_WEBDAV_PASS}" http://$LOCAL_IP:8088/ -o /dev/null && echo "✅ Works" || echo "❌ Failed"
 
 echo "Method 3: 127.0.0.1:8088"
-curl -s -u infuse:mediaserver123 http://127.0.0.1:8088/ -o /dev/null && echo "✅ Works" || echo "❌ Failed"
+curl -s -u "${MEDIA_WEBDAV_USER}:${MEDIA_WEBDAV_PASS}" http://127.0.0.1:8088/ -o /dev/null && echo "✅ Works" || echo "❌ Failed"
 
 echo
 echo "🎬 INFUSE CONFIGURATION:"
@@ -77,8 +87,8 @@ echo "========================"
 echo "Protocol: WebDAV"
 echo "Address: $LOCAL_IP"
 echo "Port: 8088"
-echo "Username: infuse"
-echo "Password: mediaserver123"
+echo "Username: ${MEDIA_WEBDAV_USER}"
+echo "Password: ${MEDIA_WEBDAV_PASS:-<set in ~/.config/media-server/credentials>}"
 echo "Path: /"
 echo
 echo "💡 TROUBLESHOOTING TIPS:"
@@ -91,5 +101,5 @@ echo
 # Alternative port suggestion
 echo "🔄 ALTERNATIVE: Try different port (8089):"
 echo "pkill -f 'rclone serve'"
-echo "rclone serve webdav media: --addr 0.0.0.0:8089 --user infuse --pass mediaserver123 --read-only &"
+echo "rclone serve webdav media: --addr 0.0.0.0:8089 --user ${MEDIA_WEBDAV_USER} --pass ${MEDIA_WEBDAV_PASS} --read-only &"
 echo
