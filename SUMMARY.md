@@ -34,6 +34,13 @@ Your personal-config repository now contains a comprehensive, tested, and docume
 - **Automated Testing** - Validation scripts for all configurations
 - **Deployment Scripts** - One-command setup automation
 
+### 🎥 Media Streaming (Infuse + Alldebrid + Cloud union)
+- **Unified library**: rclone union of `gdrive:Media` + `onedrive:Media` (no local duplication; iCloud Desktop/Documents hosts structure).
+- **WebDAV service**: LaunchAgent `com.abhimehrotra.media.webdav` → port 8088, read-only.
+- **Alldebrid helper**: LaunchAgent `com.abhimehrotra.media.alldebrid` → mount `/Users/abhimehrotra/mnt/alldebrid`, serve 8080.
+- **Secrets**: `~/.config/rclone/rclone.conf` (seed from template, fill via 1Password) and `~/.config/media-server/credentials` (untracked).
+- **Cache/logs**: `~/Library/Application Support/MediaCache`, `~/Library/Logs/media`.
+
 ## ✨ Key Achievements
 
 ### 🎯 DNS Management Excellence
@@ -91,6 +98,12 @@ personal-config/
 3. Automatic network detection and adaptation
 
 ## 🔧 Maintenance & Updates
+
+### Bootstrap (idempotent)
+```bash
+cd ~/Documents/dev/personal-config
+./setup.sh   # macOS + Homebrew + 1Password CLI required
+```
 
 ### Easy Updates
 ```bash
@@ -161,6 +174,6 @@ Your personal-config repository is now a **comprehensive, production-ready syste
 
 ---
 
-_Repository Status: Production Ready_  
-_Last Updated: September 11, 2024_  
+_Repository Status: Production Ready_
+_Last Updated: September 11, 2024_
 _Total Components: DNS Management + SSH Configuration + Development Environment_

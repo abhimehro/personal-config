@@ -4,10 +4,12 @@ import socketserver
 import os
 import sys
 
+MOUNT_DIR = os.environ.get("ALD_MOUNT_DIR", os.path.expanduser("~/mnt/alldebrid"))
+
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory="/Users/abhimehrotra/mnt/alldebrid", **kwargs)
-    
+        super().__init__(*args, directory=MOUNT_DIR, **kwargs)
+
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
@@ -15,18 +17,18 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
 def start_server(port=8080):
-    mount_dir = "/Users/abhimehrotra/mnt/alldebrid"
-    
+    mount_dir = MOUNT_DIR
+
     if not os.path.exists(mount_dir):
         print(f"❌ Mount directory {mount_dir} doesn't exist!")
         print("Please mount your rclone first:")
         print("rclone mount alldebrid:links ~/mnt/alldebrid --dir-cache-time 10s --multi-thread-streams=0 --cutoff-mode=cautious --vfs-cache-mode minimal --buffer-size=0 --read-only --daemon")
         sys.exit(1)
-    
+
     if not os.listdir(mount_dir):
         print(f"⚠️  Warning: Mount directory {mount_dir} is empty!")
         print("Make sure rclone is properly mounted and there's content in your links folder.")
-    
+
     with socketserver.TCPServer(("", port), CustomHTTPRequestHandler) as httpd:
         print(f"🚀 Serving Alldebrid content on http://localhost:{port}")
         print(f"📁 Directory: {mount_dir}")

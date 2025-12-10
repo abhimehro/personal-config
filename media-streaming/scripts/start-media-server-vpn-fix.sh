@@ -38,13 +38,35 @@ if ! rclone listremotes | grep -q "^media:$"; then
     exit 1
 fi
 
+# Load credentials consistently with main server
+MEDIA_WEBDAV_USER="${MEDIA_WEBDAV_USER:-infuse}"
+MEDIA_WEBDAV_PASS="${MEDIA_WEBDAV_PASS:-}"
+CREDS_FILE="${MEDIA_CREDENTIALS_FILE:-$HOME/.config/media-server/credentials}"
+
+if [[ -z "$MEDIA_WEBDAV_PASS" ]]; then
+  if [[ -f "$CREDS_FILE" ]]; then
+    # shellcheck disable=SC1090
+    source "$CREDS_FILE"
+  else
+    echo "⚠️  No password configured. Creating credentials file..."
+    mkdir -p "$(dirname "$CREDS_FILE")"
+    MEDIA_WEBDAV_PASS=$(openssl rand -base64 12 | tr -dc 'a-zA-Z0-9')
+    {
+      echo "MEDIA_WEBDAV_USER='${MEDIA_WEBDAV_USER}'"
+      echo "MEDIA_WEBDAV_PASS='${MEDIA_WEBDAV_PASS}'"
+    } > "$CREDS_FILE"
+    chmod 600 "$CREDS_FILE"
+    echo "✓ Generated password saved to $CREDS_FILE"
+  fi
+fi
+
 echo "🌐 Starting WebDAV server..."
 echo "📱 Add this to Infuse:"
 echo "   Protocol: WebDAV"
 echo "   Address: $BIND_IP"
 echo "   Port: 8088"
-echo "   Username: infuse"
-echo "   Password: mediaserver123"
+echo "   Username: ${MEDIA_WEBDAV_USER}"
+echo "   Password: ${MEDIA_WEBDAV_PASS:-<set in ~/.config/media-server/credentials>}"
 echo "   Path: /"
 echo
 
@@ -62,8 +84,8 @@ echo "Starting server on $BIND_IP:8088..."
 # Start server bound to specific interface (not 0.0.0.0)
 exec rclone serve webdav media: \
     --addr "$BIND_IP:8088" \
-    --user infuse \
-    --pass mediaserver123 \
+    --user "${MEDIA_WEBDAV_USER}" \
+    --pass "${MEDIA_WEBDAV_PASS}" \
     --dir-cache-time 30m \
     --read-only \
     --log-level INFO

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.abhimehrotra.media.webdav</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>/Users/abhimehrotra/Library/Media/bin/start-media-server.sh</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>RCLONE_CONFIG</key>
+    <string>/Users/abhimehrotra/.config/rclone/rclone.conf</string>
+    <key>MEDIA_CACHE_DIR</key>
+    <string>/Users/abhimehrotra/Library/Application Support/MediaCache</string>
+    <key>MEDIA_CREDENTIALS_FILE</key>
+    <string>/Users/abhimehrotra/.config/media-server/credentials</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/abhimehrotra/Library/Logs/media/webdav.out</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/abhimehrotra/Library/Logs/media/webdav.err</string>
+</dict>
+</plist>

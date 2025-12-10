@@ -45,7 +45,7 @@ ssh/
 | `ssh cursor-mdns` | `<mdns-hostname>.local` | **Primary** - Any network |
 | `ssh cursor-local` | `<local-hostname>` | Local network only |
 | `ssh cursor-auto` | Auto-detection | Cursor IDE backup |
-| `ssh cursor-vpn` | `<vpn-ip-address>` | VPN connections |
+| `ssh cursor-vpn` | `<vpn-ip-address>` | VPN connections (set HostName/Port locally; keep placeholders in git) |
 
 ## 🎨 IDE Usage
 
@@ -89,5 +89,5 @@ ssh/
 
 ---
 
-**Created:** 2025-08-04  
+**Created:** 2025-08-04
 **Status:** ✅ Production Ready
