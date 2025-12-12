@@ -38,7 +38,7 @@ It includes greetings: "Hello!", "Namaste!", "Howdy!", "Hey there!", "Welcome ba
 
 To customize, edit the function file:
 ```bash
-nano ~/.config/fish/functions/fish_greeting.fish
+cursor --wait ~/.config/fish/functions/fish_greeting.fish
 ```
 
 ## Other Customizations

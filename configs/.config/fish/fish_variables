@@ -1,6 +1,6 @@
 # This file contains fish universal variable definitions.
 # VERSION: 3.0
-SETUVAR --export EDITOR:nano
+SETUVAR --export EDITOR:cursor\x20\x2d\x2dwait
 SETUVAR ZO_CMD:zo
 SETUVAR Z_CMD:z
 SETUVAR Z_DATA:/Users/abhimehrotra/\x2elocal/share/z/data
