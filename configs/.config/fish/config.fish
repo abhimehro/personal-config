@@ -124,9 +124,6 @@ alias fishedit='$EDITOR ~/.config/fish/config.fish'
 # Reload fish config
 alias reload='source ~/.config/fish/config.fish'
 
-# Show PATH in readable format
-alias path='echo $PATH | tr \" \" \"\n\"'
-
 # ============================================
 # Hydro Prompt Customization
 # ============================================
@@ -157,6 +154,11 @@ set -g fish_history_limit 10000
 # Create a directory and cd into it
 function mkcd
     mkdir -p $argv[1]; and cd $argv[1]
+end
+
+# Show PATH in readable format
+function path
+    echo $PATH | string split ' '
 end
 
 # Extract various archive formats
