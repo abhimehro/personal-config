@@ -39,13 +39,8 @@ set -gx PATH $PATH $HOME/.local/bin
 # Network Mode Manager - Control D and Windscribe integration
 set -gx NM_ROOT $HOME/Documents/dev/personal-config
 
-# Set default editor - Cursor IDE (block until closed)
-# Note: You need to install the Cursor CLI first:
-#   1. Open Cursor
-#   2. Press Cmd+Shift+P
-#   3. Type \"Shell Command: Install 'cursor' command in PATH\"
-# Why --wait: required for tools like `git commit` that expect the editor to block.
-set -Ux EDITOR "cursor --wait"
+# Set default editor - using nano as fallback (change to: vim, code, cursor, etc.)
+set -Ux EDITOR nano
 
 # ============================================
 # Modern CLI Tool Aliases
@@ -123,13 +118,8 @@ alias diff='diff --color=auto'
 # Utility Aliases
 # ============================================
 # Quick file editing
-function __run_editor --description 'Run $EDITOR (supports args like "cursor --wait")'
-    set -l editor (string split ' ' -- $EDITOR)
-    command $editor $argv
-end
-
-alias fishconfig='__run_editor ~/.config/fish/config.fish'
-alias fishedit='__run_editor ~/.config/fish/config.fish'
+alias fishconfig='$EDITOR ~/.config/fish/config.fish'
+alias fishedit='$EDITOR ~/.config/fish/config.fish'
 
 # Reload fish config
 alias reload='source ~/.config/fish/config.fish'
