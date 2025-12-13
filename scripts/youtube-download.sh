@@ -10,8 +10,9 @@ if [[ -z "$URL" ]]; then
   exit 1
 fi
 
-if [[ ! "$URL" =~ ^https?:// ]]; then
-  echo "Error: Invalid URL. Must start with http:// or https://"
+# Improved URL validation: require protocol, domain, and anchor pattern
+if [[ ! "$URL" =~ ^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}([:/?#][^\s]*)?$ ]]; then
+  echo "Error: Invalid URL. Must be a valid http(s) URL with a domain."
   exit 1
 fi
 
