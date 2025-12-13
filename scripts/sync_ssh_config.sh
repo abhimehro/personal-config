@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-expected_config="$HOME/Documents/dev/personal-config/configs/ssh/config"
-expected_agent="$HOME/Documents/dev/personal-config/configs/ssh/agent.toml"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+expected_config="$REPO_ROOT/configs/ssh/config"
+expected_agent="$REPO_ROOT/configs/ssh/agent.toml"
 control_dir="$HOME/.ssh/control"
-verify="$HOME/Documents/dev/personal-config/scripts/verify_ssh_config.sh"
+verify="$REPO_ROOT/scripts/verify_ssh_config.sh"
 
 ensure_link () {
   local link="$1" target="$2" name="$3"
