@@ -196,5 +196,31 @@ coverage/
 !*private*.md
 !*sensitive*.md
 
-# Cursor editor
-.cursor/
+# Cursor editor (keep repo-managed config; ignore machine-local state)
+.cursor/ide_state.json
+.cursor/argv.json
+.cursor/ai-tracking/
+.cursor/extensions/
+.cursor/projects/
+
+# =============================================================================
+# FISH (Option A: track source config + plugin list; ignore Fisher-managed files)
+# =============================================================================
+# Fish universal variables are machine-local and frequently updated (e.g., Hydro’s per-session vars).
+configs/.config/fish/fish_variables
+
+# Local/backup files
+configs/.config/fish/config.fish.bak
+
+# Fisher-installed plugin files (generated on each machine via `fisher update`)
+configs/.config/fish/conf.d/*
+configs/.config/fish/completions/*
+configs/.config/fish/functions/*
+
+# Keep repo-managed Fish sources
+!configs/.config/fish/config.fish
+!configs/.config/fish/fish_plugins
+!configs/.config/fish/RESTORE_CUSTOMIZATIONS.md
+!configs/.config/fish/functions/nm-*.fish
+!configs/.config/fish/functions/fish_greeting.fish
+!configs/.config/fish/functions/*.backup
