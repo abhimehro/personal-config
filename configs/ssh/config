@@ -14,7 +14,7 @@ Host github.com
 # VPN ON: Windscribe/Tailscale/static IP (set locally; keep placeholders in repo)
 Host cursor-vpn
     HostName <vpn-ip-address>      # set locally, e.g. Windscribe static IP
-    Port <vpn-forwarded-port>      # set locally, e.g. 13161 -> sshd :22
+    Port 22                        # set locally if needed (e.g. 13161 -> sshd :22)
     User abhimehrotra
     IdentitiesOnly yes
     RequestTTY yes
