@@ -4,6 +4,8 @@
 
 set -e
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 echo "🔧 Installing SSH Configuration for Cursor IDE + 1Password..."
 echo ""
 
@@ -26,8 +28,8 @@ chmod 700 ~/.ssh
 
 # Copy configuration files
 echo "📁 Installing SSH configuration files..."
-cp configs/ssh/config ~/.ssh/config
-cp configs/ssh/agent.toml ~/.ssh/agent.toml
+cp "$REPO_ROOT/configs/ssh/config" ~/.ssh/config
+cp "$REPO_ROOT/configs/ssh/agent.toml" ~/.ssh/agent.toml
 
 # Set proper permissions
 chmod 600 ~/.ssh/config
@@ -40,7 +42,7 @@ chmod 700 ~/.ssh/control
 # Copy and make scripts executable
 echo "📜 Installing SSH scripts..."
 mkdir -p ~/.ssh/scripts
-cp scripts/ssh/*.sh ~/.ssh/scripts/
+cp "$REPO_ROOT/scripts/ssh"/*.sh ~/.ssh/scripts/
 chmod +x ~/.ssh/scripts/*.sh
 
 # Create symlinks for easy access

@@ -9,7 +9,7 @@ set -euo pipefail
 # Configuration
 export RUN_START=$(date +%s)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_DIR="$HOME/Documents/dev/personal-config/maintenance/tmp"
+LOG_DIR="$SCRIPT_DIR/../tmp"
 LOCK_DIR="/tmp/run_all_maintenance.lock"
 LOCK_CONTEXT_LOG="$LOG_DIR/lock_context_$(date +%Y%m%d-%H%M%S).log"
 TIMESTAMP=$(date "+%Y%m%d_%H%M%S")

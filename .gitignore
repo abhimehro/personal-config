@@ -224,3 +224,8 @@ configs/.config/fish/functions/*
 !configs/.config/fish/functions/nm-*.fish
 !configs/.config/fish/functions/fish_greeting.fish
 !configs/.config/fish/functions/*.backup
+
+# Local-only / machine-generated files
+configs/fish/fish_variables
+* (1)
+* (1).*
