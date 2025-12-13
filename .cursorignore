@@ -1,1 +1,8 @@
-# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+# Cursor internal state / downloads (huge + not useful for indexing)
+.cursor/extensions/
+.cursor/projects/
+.cursor/ai-tracking/
+
+# Cursor ephemeral state
+.cursor/ide_state.json
+.cursor/argv.json
