@@ -19,10 +19,10 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Helper functions
-log()      { echo -e "${BLUE}[INFO]${NC} $@"; }
-success()  { echo -e "${GREEN}[OK]${NC} $@"; }
-warn()     { echo -e "${YELLOW}[WARN]${NC} $@"; }
-error()    { echo -e "${RED}[ERROR]${NC} $@" >&2; }
+log()      { printf '%b\n' "${BLUE}[INFO]${NC} $*"; }
+success()  { printf '%b\n' "${GREEN}[OK]${NC} $*"; }
+warn()     { printf '%b\n' "${YELLOW}[WARN]${NC} $*"; }
+error()    { printf '%b\n' "${RED}[ERROR]${NC} $*" >&2; }
 
 # Ensure we're in the repo root
 if [[ ! -d "$REPO_ROOT" ]]; then
@@ -53,7 +53,8 @@ ensure_file_link() {
 
     # Backup existing file/directory if it exists and is not a symlink
     if [[ -e "$link" ]] && [[ ! -L "$link" ]]; then
-        local backup="${link}.backup.$(date +%Y%m%d_%H%M%S)"
+        local backup
+        backup="${link}.backup.$(date +%Y%m%d_%H%M%S)"
         log "Backing up existing $name to $backup"
         mv -v "$link" "$backup"
     fi
@@ -102,7 +103,8 @@ ensure_dir_link() {
 
     # Backup existing directory if it exists and is not a symlink
     if [[ -e "$link" ]] && [[ ! -L "$link" ]]; then
-        local backup="${link}.backup.$(date +%Y%m%d_%H%M%S)"
+        local backup
+        backup="${link}.backup.$(date +%Y%m%d_%H%M%S)"
         log "Backing up existing $name directory to $backup"
         mv -v "$link" "$backup"
     fi
@@ -139,25 +141,25 @@ chmod 700 "$HOME/.ssh/control" 2>/dev/null || true
 chmod 600 "$REPO_ROOT/configs/ssh/config" 2>/dev/null || true
 chmod 600 "$REPO_ROOT/configs/ssh/agent.toml" 2>/dev/null || true
 
-ensure_file_link "$HOME/.ssh/config" "$REPO_ROOT/configs/ssh/config" "~/.ssh/config" "600"
-ensure_file_link "$HOME/.ssh/agent.toml" "$REPO_ROOT/configs/ssh/agent.toml" "~/.ssh/agent.toml" "600"
+ensure_file_link "$HOME/.ssh/config" "$REPO_ROOT/configs/ssh/config" "$HOME/.ssh/config" "600"
+ensure_file_link "$HOME/.ssh/agent.toml" "$REPO_ROOT/configs/ssh/agent.toml" "$HOME/.ssh/agent.toml" "600"
 
 # 2. Fish Shell Configuration (directory)
 log "Setting up Fish shell configuration..."
-ensure_dir_link "$HOME/.config/fish" "$REPO_ROOT/configs/.config/fish" "~/.config/fish"
+ensure_dir_link "$HOME/.config/fish" "$REPO_ROOT/configs/.config/fish" "$HOME/.config/fish"
 
 # 3. Cursor Configuration (directory)
 log "Setting up Cursor IDE configuration..."
-ensure_dir_link "$HOME/.cursor" "$REPO_ROOT/.cursor" "~/.cursor"
+ensure_dir_link "$HOME/.cursor" "$REPO_ROOT/.cursor" "$HOME/.cursor"
 
 # 4. VS Code Configuration (directory)
 log "Setting up VS Code configuration..."
-ensure_dir_link "$HOME/.vscode" "$REPO_ROOT/.vscode" "~/.vscode"
+ensure_dir_link "$HOME/.vscode" "$REPO_ROOT/.vscode" "$HOME/.vscode"
 
 # 5. Git Configuration (file, if exists)
 if [[ -f "$REPO_ROOT/configs/.gitconfig" ]]; then
     log "Setting up Git configuration..."
-    ensure_file_link "$HOME/.gitconfig" "$REPO_ROOT/configs/.gitconfig" "~/.gitconfig"
+    ensure_file_link "$HOME/.gitconfig" "$REPO_ROOT/configs/.gitconfig" "$HOME/.gitconfig"
 else
     warn "No .gitconfig found in repo (skipping)"
 fi
@@ -165,7 +167,7 @@ fi
 # 6. Local Configuration (directory, if exists)
 if [[ -d "$REPO_ROOT/configs/.local" ]]; then
     log "Setting up local configuration..."
-    ensure_dir_link "$HOME/.local" "$REPO_ROOT/configs/.local" "~/.local"
+    ensure_dir_link "$HOME/.local" "$REPO_ROOT/configs/.local" "$HOME/.local"
 else
     warn "No .local directory found in repo (skipping)"
 fi
@@ -188,5 +190,7 @@ echo ""
 echo "Next steps:"
 echo "1. Verify symlinks: ./scripts/verify_all_configs.sh"
 echo "2. Reload fish shell: exec fish"
-echo "3. Test Control D functions: nm-status"
+echo "3. Install/update Fish plugins (Hydro, etc): ./scripts/bootstrap_fish_plugins.sh"
+echo "   (fallback if Fisher already installed: fish -lc 'fisher update')"
+echo "4. Test Control D functions: nm-status"
 echo ""

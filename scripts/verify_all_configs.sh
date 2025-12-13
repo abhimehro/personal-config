@@ -18,10 +18,10 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Helper functions
-log()      { echo -e "${BLUE}[INFO]${NC} $@"; }
-success()  { echo -e "${GREEN}[OK]${NC} $@"; }
-warn()     { echo -e "${YELLOW}[WARN]${NC} $@"; }
-error()    { echo -e "${RED}[ERROR]${NC} $@" >&2; }
+log()      { printf '%b\n' "${BLUE}[INFO]${NC} $*"; }
+success()  { printf '%b\n' "${GREEN}[OK]${NC} $*"; }
+warn()     { printf '%b\n' "${YELLOW}[WARN]${NC} $*"; }
+error()    { printf '%b\n' "${RED}[ERROR]${NC} $*" >&2; }
 
 fail=0
 
@@ -43,7 +43,8 @@ verify_file_link() {
         return 1
     fi
 
-    local actual_target=$(readlink "$link")
+    local actual_target
+    actual_target="$(readlink "$link")"
     if [[ "$actual_target" != "$expected_target" ]]; then
         error "$name points to wrong location:"
         error "  Expected: $expected_target"
@@ -71,6 +72,7 @@ verify_file_link() {
             warn "$name target file permissions are $actual_perms (expected $expected_perms)"
             # Try to fix permissions
             log "Attempting to fix permissions on target file..."
+            # shellcheck disable=SC2015
             chmod "$expected_perms" "$expected_target" 2>/dev/null && success "Fixed permissions" || warn "Could not fix permissions (may need manual intervention)"
         else
             success "$name permissions are correct ($expected_perms)"
@@ -98,7 +100,8 @@ verify_dir_link() {
         return 1
     fi
 
-    local actual_target=$(readlink "$link")
+    local actual_target
+    actual_target="$(readlink "$link")"
     if [[ "$actual_target" != "$expected_target" ]]; then
         error "$name points to wrong location:"
         error "  Expected: $expected_target"
@@ -124,26 +127,26 @@ echo ""
 
 # 1. SSH Configuration
 echo "== SSH Configuration =="
-verify_file_link "$HOME/.ssh/config" "$REPO_ROOT/configs/ssh/config" "~/.ssh/config" "600"
-verify_file_link "$HOME/.ssh/agent.toml" "$REPO_ROOT/configs/ssh/agent.toml" "~/.ssh/agent.toml" "600"
+verify_file_link "$HOME/.ssh/config" "$REPO_ROOT/configs/ssh/config" "$HOME/.ssh/config" "600"
+verify_file_link "$HOME/.ssh/agent.toml" "$REPO_ROOT/configs/ssh/agent.toml" "$HOME/.ssh/agent.toml" "600"
 
 # Check SSH control directory
 if [[ -d "$HOME/.ssh/control" ]]; then
     perms=$(stat -f %Mp%Lp "$HOME/.ssh/control" 2>/dev/null || stat -c %a "$HOME/.ssh/control" 2>/dev/null || echo "")
     perms_normalized=$((10#$perms))
     if [[ "$perms_normalized" -eq 700 ]]; then
-        success "~/.ssh/control exists with correct permissions (700)"
+        success "$HOME/.ssh/control exists with correct permissions (700)"
     else
-        warn "~/.ssh/control permissions are $perms (expected 700)"
+        warn "$HOME/.ssh/control permissions are $perms (expected 700)"
     fi
 else
-    warn "~/.ssh/control directory does not exist"
+    warn "$HOME/.ssh/control directory does not exist"
 fi
 
 # 2. Fish Shell Configuration
 echo ""
 echo "== Fish Shell Configuration =="
-verify_dir_link "$HOME/.config/fish" "$REPO_ROOT/configs/.config/fish" "~/.config/fish"
+verify_dir_link "$HOME/.config/fish" "$REPO_ROOT/configs/.config/fish" "$HOME/.config/fish"
 
 # Check if NM_ROOT is set in fish config
 if [[ -f "$HOME/.config/fish/config.fish" ]]; then
@@ -174,23 +177,55 @@ if [[ -d "$HOME/.config/fish/functions" ]]; then
     else
         log "No custom greeting function (using default)"
     fi
+
+    # Check Hydro prompt is listed (installed/updated via Fisher using fish_plugins)
+    hydro_listed=0
+    if [[ -f "$HOME/.config/fish/fish_plugins" ]]; then
+        if grep -q "^jorgebucaran/hydro$" "$HOME/.config/fish/fish_plugins" 2>/dev/null; then
+            success "Hydro prompt listed in fish_plugins"
+            hydro_listed=1
+        else
+            warn "Hydro prompt not listed in fish_plugins (expected jorgebucaran/hydro)"
+        fi
+    fi
+
+    # Prompt conflict checks:
+    # - Hydro installs its own `fish_prompt.fish`, so the file existing is expected when Hydro is installed.
+    # - We only warn if `fish_prompt.fish` exists and does NOT look like Hydro's implementation.
+    if [[ -f "$HOME/.config/fish/functions/fish_prompt.fish" ]]; then
+        if grep -Eq '^[[:space:]]*function[[:space:]]+fish_prompt([[:space:]]|$).*--description[[:space:]]+Hydro([[:space:]]|$)' \
+            "$HOME/.config/fish/functions/fish_prompt.fish" 2>/dev/null; then
+            success "Hydro fish_prompt.fish detected"
+        else
+            warn "Non-Hydro fish_prompt.fish detected (will override Hydro). Consider renaming to fish_prompt.fish.backup"
+        fi
+    else
+        if [[ "$hydro_listed" -eq 1 ]]; then
+            warn "Hydro is listed but not installed yet. Run: ./scripts/bootstrap_fish_plugins.sh (or: fish -lc 'fisher update')"
+        fi
+    fi
+
+    # Hydro doesn't ship a right prompt file by default; a `fish_right_prompt.fish` is likely user-defined.
+    if [[ -f "$HOME/.config/fish/functions/fish_right_prompt.fish" ]]; then
+        log "Custom fish_right_prompt.fish detected (right-side prompt). If undesired, consider renaming to fish_right_prompt.fish.backup"
+    fi
 fi
 
 # 3. Cursor Configuration
 echo ""
 echo "== Cursor IDE Configuration =="
-verify_dir_link "$HOME/.cursor" "$REPO_ROOT/.cursor" "~/.cursor"
+verify_dir_link "$HOME/.cursor" "$REPO_ROOT/.cursor" "$HOME/.cursor"
 
 # 4. VS Code Configuration
 echo ""
 echo "== VS Code Configuration =="
-verify_dir_link "$HOME/.vscode" "$REPO_ROOT/.vscode" "~/.vscode"
+verify_dir_link "$HOME/.vscode" "$REPO_ROOT/.vscode" "$HOME/.vscode"
 
 # 5. Git Configuration (if exists)
 echo ""
 echo "== Git Configuration =="
 if [[ -f "$REPO_ROOT/configs/.gitconfig" ]]; then
-    verify_file_link "$HOME/.gitconfig" "$REPO_ROOT/configs/.gitconfig" "~/.gitconfig"
+    verify_file_link "$HOME/.gitconfig" "$REPO_ROOT/configs/.gitconfig" "$HOME/.gitconfig"
 else
     log "No .gitconfig in repository (skipping)"
 fi
@@ -199,7 +234,7 @@ fi
 echo ""
 echo "== Local Configuration =="
 if [[ -d "$REPO_ROOT/configs/.local" ]]; then
-    verify_dir_link "$HOME/.local" "$REPO_ROOT/configs/.local" "~/.local"
+    verify_dir_link "$HOME/.local" "$REPO_ROOT/configs/.local" "$HOME/.local"
 else
     log "No .local directory in repository (skipping)"
 fi
