@@ -11,11 +11,13 @@
 | **9:00 AM** | 🧹 System Cleanup | Daily | `system_cleanup.sh` | Cache cleanup, temp files, logs |
 | **9:00 AM** | 📅 Weekly Maintenance | Monday | `weekly_maintenance.sh` | Node modules, OneDrive monitoring |
 | **9:00 AM** | 📆 Monthly Maintenance | 1st of month | `monthly_maintenance.sh` | Editor cleanup, deep analysis |
+| **3:15 AM** | ☁️ ProtonDrive Backup | Daily | `protondrive_backup.sh` | One-way home backup to ProtonDrive |
 | **10:00 AM** | 🍺 Homebrew Maintenance | Daily | `brew_maintenance.sh` | Package updates, cask maintenance |
 
 ## 🔗 Launch Agent Mapping
 
 ### Daily Agents
+- `com.abhimehrotra.maintenance.protondrivebackup.plist` → **3:15 AM daily**
 - `com.abhimehrotra.maintenance.healthcheck.plist` → **8:30 AM daily**
 - `com.abhimehrotra.maintenance.systemcleanup.plist` → **9:00 AM daily**  
 - `com.abhimehrotra.maintenance.brew.plist` → **10:00 AM daily**

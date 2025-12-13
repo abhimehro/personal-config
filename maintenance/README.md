@@ -6,7 +6,7 @@ A comprehensive automated maintenance system for macOS that keeps your system cl
 
 **Current Status**: ✅ **Fully Operational**
 - **Scripts**: All working and tested with actionable notifications
-- **Automation**: 6 launch agents active (exit code 0)
+- **Automation**: 7 launch agents active (exit code 0)
 - **Last Update**: November 2025
 - **Dependencies**: terminal-notifier (for interactive notifications)
 
@@ -39,6 +39,7 @@ Notes:
 - **Daily System Cleanup**: 9:00 AM - System maintenance
 - **Weekly Maintenance**: Monday 9:00 AM - Comprehensive weekly tasks
 - **Monthly Maintenance**: 1st of month 6:00 AM - Deep system maintenance
+- **ProtonDrive Backup**: 3:15 AM - One-way home backup to ProtonDrive
 
 ### 🏥 Health Monitoring
 - **Disk Usage**: Monitor and alert on disk space
@@ -195,6 +196,11 @@ UPDATE_MAS_APPS=1          # Auto-update Mac App Store apps
    - Script: `monthly_maintenance.sh`
    - Purpose: Deep system maintenance
    - Notifications: ✅ Click to view error summary
+
+6. **ProtonDrive Backup** (`com.abhimehrotra.maintenance.protondrivebackup`)
+   - Time: 3:15 AM daily
+   - Script: `protondrive_backup.sh`
+   - Purpose: One-way home backup to ProtonDrive
 
 ## 📊 Monitoring & Logs
 
