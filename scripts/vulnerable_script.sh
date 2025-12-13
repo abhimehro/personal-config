@@ -2,7 +2,7 @@
 # YouTube downloader script for SearchJumper integration
 # Downloads videos to ~/Downloads with best quality
 
-/opt/homebrew/bin/yt-dlp -o "$HOME/Downloads/%(title)s.%(ext)s" -- "$1"
+./mock_yt_dlp.sh -o "$HOME/Downloads/%(title)s.%(ext)s" "$1"
 
 # Optional: Show notification when complete (requires terminal-notifier)
 # brew install terminal-notifier
