@@ -1,68 +1,77 @@
-# Restoring Fish Shell Customizations
+# Fish Shell Customizations (Hydro + Dracula)
 
-This document helps restore customizations that may have been lost during migration.
+This document captures the current “known good” Fish setup in this repo and how to restore/adjust it.
 
-## Theme: ayu-mirage
+## Prompt: Hydro (via Fisher)
 
-The ayu-mirage theme can be restored using one of these methods:
+This repo tracks your Fisher plugin list in `~/.config/fish/fish_plugins`.
 
-### Method 1: Using fish_config (GUI)
+To install/update plugins (including Hydro):
+
 ```bash
-fish_config theme choose "ayu Mirage"
+fisher update
 ```
 
-### Method 2: Using fisher plugin manager
-```bash
-# Install ayu theme plugin
-fisher install ayu-theme/fish-ayu
+Repo shortcut (recommended):
 
-# Set the theme
-set -U fish_theme ayu-mirage
+```bash
+./scripts/bootstrap_fish_plugins.sh
 ```
 
-### Method 3: Manual installation
-```bash
-# Clone the theme repository
-git clone https://github.com/ayu-theme/fish-ayu.git ~/.config/fish/themes/ayu
+If `fisher` is not installed yet (fresh machine / disaster recovery), bootstrap it first:
 
-# Set the theme
-set -U fish_theme ayu-mirage
+```bash
+curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source
+fisher install jorgebucaran/fisher
+fisher update
+```
+
+Or install Hydro explicitly:
+
+```bash
+fisher install jorgebucaran/hydro
+```
+
+### Prompt conflict notes
+
+Hydro defines `fish_prompt` and (depending on your configuration) may also define `fish_right_prompt`.
+To avoid conflicts, any prior custom prompt implementations are kept as backups:
+
+- `~/.config/fish/functions/fish_prompt.fish.backup`
+- `~/.config/fish/functions/fish_right_prompt.fish.backup`
+
+If you want to restore your old prompt temporarily, rename the backups back to `fish_prompt.fish` / `fish_right_prompt.fish`
+and reload your shell.
+
+**Note on `$$var` in Fish**: Hydro’s `fish_prompt.fish` uses `$$var` for *indirect expansion* (it dereferences a variable whose name is stored in another variable). In Fish, the shell PID is exposed as `$fish_pid` (not `$$`).
+
+## Theme: Dracula (cohesive dark theme)
+
+- **Fish syntax highlighting**: set in `~/.config/fish/config.fish` using a Dracula palette (we intentionally do **not** track `fish_variables` to avoid noisy diffs).
+- **fzf**: `FZF_DEFAULT_OPTS` gets a Dracula-style color scheme by default (only if you haven’t set it already).
+- **bat**: `BAT_THEME` defaults to `Dracula` (only if you haven’t set it already).
+
+To preview/change Fish themes interactively:
+
+```bash
+fish_config theme
 ```
 
 ## Greeting Function
 
-A rotating greeting function has been created at:
+A rotating greeting function lives at:
 `~/.config/fish/functions/fish_greeting.fish`
 
-It includes greetings: "Hello!", "Namaste!", "Howdy!", "Hey there!", "Welcome back!"
+To customize:
 
-To customize, edit the function file:
 ```bash
-nano ~/.config/fish/functions/fish_greeting.fish
+cursor --wait ~/.config/fish/functions/fish_greeting.fish
 ```
-
-## Other Customizations
-
-If you had other customizations that aren't showing up:
-
-1. **Check fish_variables**: Universal variables are stored in `~/.config/fish/fish_variables`
-   - These are automatically synced via the symlink
-   - Run `fish -c "set -U --show"` to see all universal variables
-
-2. **Check conf.d files**: Configuration snippets in `~/.config/fish/conf.d/`
-   - These are automatically synced via the symlink
-
-3. **Check functions**: Custom functions in `~/.config/fish/functions/`
-   - These are automatically synced via the symlink
-
-4. **Check completions**: Custom completions in `~/.config/fish/completions/`
-   - These are automatically synced via the symlink
 
 ## Verifying Configuration
 
-After making changes, reload fish shell:
+After making changes, reload Fish:
+
 ```bash
 exec fish
 ```
-
-Or restart your terminal.
