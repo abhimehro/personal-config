@@ -23,6 +23,16 @@ By keeping these configurations in version control, I can:
 
 ## 🎯 Quick Start
 
+### ProtonDrive one-way home backup
+```bash
+# Safe preview (no changes)
+./scripts/protondrive_backup.sh --dry-run --no-delete
+
+# Live mirror into ProtonDrive (uses --delete-delay unless you pass --no-delete)
+./scripts/protondrive_backup.sh --run
+```
+Edit `./scripts/protondrive_backup.exclude` to tune exclusions (git repos, build artifacts, caches, etc.).
+
 ### Bootstrap this Mac (idempotent)
 ```bash
 cd ~/Documents/dev/personal-config
