@@ -9,7 +9,12 @@ if ! command -v fish >/dev/null; then
 fi
 # Determine repository root and config path (support both repo and configs path)
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CONFIG_FILE="$REPO_ROOT/configs/fish/config.fish"
+CONFIG_FILE="$REPO_ROOT/configs/.config/fish/config.fish"
+
+# Backward-compat fallback (older layout)
+if [ ! -f "$CONFIG_FILE" ]; then
+  CONFIG_FILE="$REPO_ROOT/configs/fish/config.fish"
+fi
 
 if [ ! -f "$CONFIG_FILE" ]; then
   echo "Config file not found: $CONFIG_FILE" >&2
