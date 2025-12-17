@@ -36,6 +36,31 @@ This directory contains configuration files and documentation for macOS 26.0.1 (
 | **Requirements** | Full Disk Access | Barbee app + configuration |
 | **Effectiveness** | 100% suppression | ~95% visual hiding |
 
+## ProtonDrive one-way home backup
+
+This repo includes a one-way rsync-based backup into ProtonDrive (preferred over symlinking macOS special folders).
+
+```bash
+# Safe preview (no changes)
+~/Documents/dev/personal-config/scripts/protondrive_backup.sh --dry-run --no-delete
+
+# Live run
+~/Documents/dev/personal-config/scripts/protondrive_backup.sh --run
+```
+
+### Optional: schedule via launchd
+```bash
+mkdir -p ~/Library/LaunchAgents
+cp ~/Documents/dev/personal-config/macos/com.abhimehrotra.protondrive-backup.plist \
+  ~/Library/LaunchAgents/
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.abhimehrotra.protondrive-backup.plist
+launchctl enable gui/$(id -u)/com.abhimehrotra.protondrive-backup
+launchctl kickstart -k gui/$(id -u)/com.abhimehrotra.protondrive-backup
+
+# Logs
+tail -n 200 ~/Library/Logs/protondrive-backup.log
+```
+
 ## Quick Links
 
 ### Screen Capture Setup
