@@ -31,12 +31,24 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
+BOLD='\033[1m'
+
+# Emojis 🎨
+E_PASS="✅"
+E_FAIL="❌"
+E_WARN="⚠️"
+E_INFO="ℹ️"
+E_PRIVACY="🛡️"
+E_GAMING="🎮"
+E_BROWSING="🌐"
+E_VPN="🔐"
+E_NETWORK="🛜"
 
 # --- Helpers ---
 
-log()      { echo -e "${BLUE}[INFO]${NC} $@"; }
-success()  { echo -e "${GREEN}[OK]${NC} $@"; }
-error()    { echo -e "${RED}[ERR]${NC} $@" >&2; exit 1; }
+log()      { echo -e "${BLUE}${E_INFO} [INFO]${NC} $@"; }
+success()  { echo -e "${GREEN}${E_PASS} [OK]${NC} $@"; }
+error()    { echo -e "${RED}${E_FAIL} [ERR]${NC} $@" >&2; exit 1; }
 
 ensure_prereqs() {
   # Least privilege: refuse to run as root
@@ -86,12 +98,15 @@ start_controld() {
   case "$profile_key" in
     "privacy")
       uid="6m971e9jaf"
+      log "Selecting ${E_PRIVACY} PRIVACY profile..."
       ;;
     "browsing")
       uid="rcnz7qgvwg"
+      log "Selecting ${E_BROWSING} BROWSING profile..."
       ;;
     "gaming")
       uid="1xfy57w34t7"
+      log "Selecting ${E_GAMING} GAMING profile..."
       ;;
     *)
       error "Unknown profile '$profile_key'. Available profiles: privacy, browsing, gaming."
@@ -114,28 +129,34 @@ start_controld() {
 }
 
 print_status() {
-  echo -e "${BLUE}=== Network Status ===${NC}"
+  echo -e "\n${BOLD}${BLUE}=== ${E_NETWORK} Network Status ===${NC}"
 
-  echo -n "Control D process: "
+  # Control D Status
   if pgrep -x "ctrld" >/dev/null 2>&1; then
-    echo -e "${GREEN}RUNNING${NC}"
-    # Best-effort resolver ID extraction (may not be supported on all ctrld versions)
     local running_uid
     running_uid=$(sudo ctrld status 2>/dev/null | grep 'Resolver ID' | awk '{print $NF}' 2>/dev/null || echo "N/A")
-    echo -e "  Resolver ID: ${GREEN}$running_uid${NC}"
+    echo -e "  ${E_PASS} Control D:      ${GREEN}RUNNING${NC} (Resolver: ${BOLD}$running_uid${NC})"
   else
-    echo -e "${RED}STOPPED${NC}"
+    echo -e "  ${E_FAIL} Control D:      ${RED}STOPPED${NC}"
   fi
 
-  echo -n "System DNS (Wi‑Fi): "
-  networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown"
+  # System DNS Status
+  local dns_servers
+  dns_servers=$(networksetup -getdnsservers "Wi-Fi" 2>/dev/null)
+  if [[ "$dns_servers" == *"There aren't any DNS"* ]] || [[ -z "$dns_servers" ]]; then
+     dns_servers="${RED}Empty / DHCP${NC}"
+  else
+     dns_servers="${GREEN}${dns_servers//$'\n'/, }${NC}"
+  fi
+  echo -e "  ${E_BROWSING} System DNS:     $dns_servers"
 
-  echo -n "IPv6 Status (Wi‑Fi): "
+  # IPv6 Status
   if networksetup -getinfo "Wi-Fi" 2>/dev/null | grep -q "IPv6: Automatic"; then
-    echo -e "${GREEN}ENABLED (Automatic)${NC}"
+    echo -e "  ${E_BROWSING} IPv6 Status:    ${GREEN}ENABLED (Automatic)${NC}"
   else
-    echo -e "${RED}DISABLED/Manual${NC}"
+    echo -e "  ${E_FAIL} IPv6 Status:    ${RED}DISABLED/Manual${NC}"
   fi
+  echo ""
 }
 
 # --- Main Dispatcher ---
@@ -148,10 +169,10 @@ main() {
 
   case "$mode" in
     windscribe)
-      echo -e "${BLUE}>>> Switching to WINDSCRIBE (VPN) MODE${NC}"
+      echo -e "${BLUE}>>> ${E_VPN} Switching to WINDSCRIBE (VPN) MODE${NC}"
       stop_controld
       set_ipv6 "disable"
-      success "System is now configured for Windscribe VPN (IPv6 disabled, DNS reset)."
+      success "System is now configured for ${E_VPN} Windscribe VPN (IPv6 disabled, DNS reset)."
       print_status
       # Run tight verification for Windscribe-ready state
       if [[ -x ./scripts/network-mode-verify.sh ]]; then
@@ -160,7 +181,7 @@ main() {
       ;;
 
     controld)
-      echo -e "${BLUE}>>> Switching to CONTROL D (DNS) MODE${NC}"
+      echo -e "${BLUE}>>> ${E_BROWSING} Switching to CONTROL D (DNS) MODE${NC}"
       set_ipv6 "enable"
       stop_controld
       start_controld "$profile"
@@ -177,8 +198,18 @@ main() {
       ;;
 
     *)
-      echo "Usage: $0 {controld|windscribe|status} [profile_name]"
-      echo "Available profiles: privacy, browsing, gaming"
+      echo -e "${BOLD}Network Mode Manager${NC}"
+      echo -e "Usage: $0 {controld|windscribe|status} [profile_name]"
+      echo ""
+      echo -e "Commands:"
+      echo -e "  ${E_BROWSING} controld [profile]  Enable Control D DNS (Profiles: ${BOLD}privacy${NC}, ${BOLD}browsing${NC}, ${BOLD}gaming${NC})"
+      echo -e "  ${E_VPN} windscribe          Enable Windscribe VPN mode (Disables Control D, IPv6)"
+      echo -e "  ${E_INFO} status              Show current network configuration"
+      echo ""
+      echo -e "Profiles:"
+      echo -e "  ${E_PRIVACY} privacy   Maximal blocking (Ads, Tracking, Social)"
+      echo -e "  ${E_BROWSING} browsing  Balanced protection (Ads, Malware)"
+      echo -e "  ${E_GAMING} gaming    Minimal latency, gaming optimizations"
       exit 1
       ;;
   esac
