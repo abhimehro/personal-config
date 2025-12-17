@@ -63,8 +63,14 @@ verify_file_link() {
     # For symlinks, check the target file permissions (what actually matters)
     if [[ -n "$expected_perms" ]]; then
         # Check target file permissions (not symlink permissions)
-        actual_perms=$(stat -f %Mp%Lp "$expected_target" 2>/dev/null || stat -c %a "$expected_target" 2>/dev/null || echo "")
+        # Try GNU stat (Linux) first, then BSD stat (macOS)
+        actual_perms=$(stat -c %a "$expected_target" 2>/dev/null || stat -f %Mp%Lp "$expected_target" 2>/dev/null || echo "")
+
         # Normalize permissions (remove leading zeros for comparison)
+        # Handle empty output case to prevent arithmetic error
+        if [[ -z "$actual_perms" ]]; then
+            actual_perms="0"
+        fi
         actual_perms_normalized=$((10#$actual_perms))
         expected_perms_normalized=$((10#$expected_perms))
 
@@ -132,7 +138,8 @@ verify_file_link "$HOME/.ssh/agent.toml" "$REPO_ROOT/configs/ssh/agent.toml" "$H
 
 # Check SSH control directory
 if [[ -d "$HOME/.ssh/control" ]]; then
-    perms=$(stat -f %Mp%Lp "$HOME/.ssh/control" 2>/dev/null || stat -c %a "$HOME/.ssh/control" 2>/dev/null || echo "")
+    perms=$(stat -c %a "$HOME/.ssh/control" 2>/dev/null || stat -f %Mp%Lp "$HOME/.ssh/control" 2>/dev/null || echo "")
+    if [[ -z "$perms" ]]; then perms="0"; fi
     perms_normalized=$((10#$perms))
     if [[ "$perms_normalized" -eq 700 ]]; then
         success "$HOME/.ssh/control exists with correct permissions (700)"
