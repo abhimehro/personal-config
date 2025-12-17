@@ -173,7 +173,21 @@ generate_profile_config() {
     else
         ctrld start --cd "$profile_id" --config="$TEMP_CONFIG" --skip_self_checks 2>/dev/null || true
     fi
-    sleep 2
+
+    # Wait for config file to be created (optimized)
+    local max_retries=50
+    local count=0
+    while [[ ! -f "$TEMP_CONFIG" ]] && [[ $count -lt $max_retries ]]; do
+        sleep 0.1
+        ((count++))
+    done
+
+    # Ensure file has content
+    if [[ -f "$TEMP_CONFIG" ]]; then
+        # Tiny buffer to ensure write flush
+        sleep 0.1
+    fi
+
     ctrld stop 2>/dev/null || true
     
     if [[ -f "$TEMP_CONFIG" ]]; then
@@ -181,15 +195,12 @@ generate_profile_config() {
         cp "$TEMP_CONFIG" "$config_file"
         rm -f "$TEMP_CONFIG"
         
-        # Ensure binding to all interfaces for Windscribe integration
-        sed -i '' "s/ip = '127.0.0.1'/ip = '0.0.0.0'/g" "$config_file" 2>/dev/null || true
-
-        # Force IPv4 only by removing IPv6 CIDR and listeners if present
-        sed -i '' 's/, "::\/0"//g' "$config_file" 2>/dev/null || true
-        sed -i '' 's/"::\/0", //g' "$config_file" 2>/dev/null || true
-        
-        # Optimize timeout
-        sed -i '' "s/timeout = 5000/timeout = 3000/g" "$config_file"
+        # Optimize config (combined sed for performance)
+        sed -i '' -e "s/ip = '127.0.0.1'/ip = '0.0.0.0'/g" \
+                  -e 's/, "::\/0"//g' \
+                  -e 's/"::\/0", //g' \
+                  -e "s/timeout = 5000/timeout = 3000/g" \
+                  "$config_file" 2>/dev/null || true
 
         # Disable IPv6 in listener explicitly if supported or ensure it's not auto-binding
         # (Note: 'ip = 0.0.0.0' usually binds IPv4, but let's be sure we don't add IPv6 listeners)
@@ -225,8 +236,12 @@ switch_profile() {
     ctrld stop 2>/dev/null || true
     pkill -f ctrld 2>/dev/null || true
     
-    # Wait for network to stabilize
-    sleep 3
+    # Wait for process to terminate (optimized)
+    local retry=0
+    while pgrep -x "ctrld" >/dev/null && [[ $retry -lt 30 ]]; do
+        sleep 0.1
+        ((retry++))
+    done
     
     # Generate profile config if it doesn't exist or if protocol changed
     if [[ ! -f "$config_file" ]] || ! grep -q "type = '$protocol'" "$config_file" 2>/dev/null; then
@@ -244,8 +259,12 @@ switch_profile() {
         ctrld start --config="$CONTROLD_DIR/ctrld.toml" --skip_self_checks
     fi
     
-    # Wait for service to initialize
-    sleep 3
+    # Wait for service to initialize (optimized)
+    local retry=0
+    while ! dig @127.0.0.1 google.com +short +time=1 >/dev/null 2>&1 && [[ $retry -lt 30 ]]; do
+        sleep 0.1
+        ((retry++))
+    done
     
     # Configure system DNS to use localhost
     networksetup -setdnsservers Wi-Fi 127.0.0.1
