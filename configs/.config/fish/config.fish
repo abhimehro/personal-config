@@ -34,6 +34,26 @@ if status is-interactive
 end
 
 # ============================================
+# Ruby Version Manager (chruby-fish)
+# ============================================
+# Ported from Zsh: provides automatic Ruby version switching
+# Install: brew install chruby-fish
+if status is-interactive
+    if test -f /opt/homebrew/opt/chruby-fish/share/chruby/chruby.fish
+        source /opt/homebrew/opt/chruby-fish/share/chruby/chruby.fish
+    end
+
+    if test -f /opt/homebrew/opt/chruby-fish/share/chruby/auto.fish
+        source /opt/homebrew/opt/chruby-fish/share/chruby/auto.fish
+    end
+
+    # Set default Ruby version (if chruby is available and ruby exists)
+    if type -q chruby; and test -d ~/.rubies/ruby-3.4.7
+        chruby ruby-3.4.7
+    end
+end
+
+# ============================================
 # Environment Variables
 # ============================================
 # Network Mode Manager - Control D and Windscribe integration
