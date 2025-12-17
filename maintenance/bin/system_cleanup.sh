@@ -79,7 +79,14 @@ done
 DDIR="${HOME}/Library/Developer/Xcode/DerivedData"
 if [[ -d "${DDIR}" ]]; then
     log_info "Pruning Xcode DerivedData older than ${XCODE_DERIVEDDATA_KEEP_DAYS:-30} days"
-    XCODE_CLEANED=$(find "${DDIR}" -mindepth 1 -maxdepth 1 -mtime +${XCODE_DERIVEDDATA_KEEP_DAYS:-30} -print -exec rm -rf {} \; 2>/dev/null | wc -l | tr -d ' ')
+    # Note: -delete implies -depth, but for directories we often need rm -rf if they are not empty.
+    # standard find -delete works on directories only if they are empty.
+    # So we keep the double find here for safety with rm -rf, or we can use -exec rm -rf {} +
+    # Let's keep it safe for directories unless we are sure they are empty.
+    # Actually, we can just list them and then xargs rm -rf.
+    # But let's stick to the double find for directories requiring recursive delete to avoid complexity and risks,
+    # focusing optimization on file deletion which is high volume.
+    XCODE_CLEANED=$(find "${DDIR}" -mindepth 1 -maxdepth 1 -mtime +${XCODE_DERIVEDDATA_KEEP_DAYS:-30} -print 2>/dev/null | wc -l | tr -d ' ')
     if [[ $XCODE_CLEANED -gt 0 ]]; then
         log_info "Cleaned $XCODE_CLEANED Xcode DerivedData directories"
         CLEANED_ITEMS=$((CLEANED_ITEMS + XCODE_CLEANED))
