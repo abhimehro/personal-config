@@ -467,3 +467,4 @@ nm-status  # Fish function
 **Document Version**: 1.0  
 **Created**: December 2025  
 **Repository**: [personal-config](https://github.com/abhimehro/personal-config)
+
