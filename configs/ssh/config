@@ -6,7 +6,8 @@ Include ~/.ssh/1Password/config
 Host github.com
     HostName github.com
     User git
-    # Keys provided by 1Password agent (no local IdentityFile needed)
+    IdentitiesOnly no
+    # Keys provided by 1Password agent (overrides global IdentitiesOnly yes)
 
 # ─ Dynamic configuration for MacBook Air M2 (Cursor IDE) ────────
 # This configuration automatically adapts to VPN on/off scenarios
