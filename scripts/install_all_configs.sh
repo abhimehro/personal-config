@@ -8,7 +8,7 @@
 set -Eeuo pipefail
 
 # Repository root (absolute path)
-REPO_ROOT="$HOME/Documents/dev/personal-config"
+REPO_ROOT="${REPO_ROOT:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -17,11 +17,13 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Helper functions
-log()      { echo -e "${BLUE}[INFO]${NC} $@"; }
-success()  { echo -e "${GREEN}[OK]${NC} $@"; }
-warn()     { echo -e "${YELLOW}[WARN]${NC} $@"; }
-error()    { echo -e "${RED}[ERROR]${NC} $@" >&2; }
+# Helper functions (Palette 🎨 UX enhanced)
+log()      { echo -e "${BLUE}ℹ️  [INFO]${NC}  $*"; }
+success()  { echo -e "${GREEN}✅ [OK]${NC}    $*"; }
+warn()     { echo -e "${YELLOW}⚠️  [WARN]${NC}  $*"; }
+error()    { echo -e "${RED}❌ [ERROR]${NC} $*" >&2; }
+step()     { echo -e "${BLUE}==>${NC} ${1}"; }
+substep()  { echo -e "  ${BLUE}->${NC} ${1}"; }
 
 # Ensure we're in the repo root
 if [[ ! -d "$REPO_ROOT" ]]; then
@@ -36,15 +38,17 @@ SYNC_SCRIPT="$REPO_ROOT/scripts/sync_all_configs.sh"
 VERIFY_SCRIPT="$REPO_ROOT/scripts/verify_all_configs.sh"
 
 echo "=========================================="
-echo "Installing All Configuration Files"
+echo -e "${BLUE}🎨 Personal Config Installer${NC}"
 echo "=========================================="
 echo ""
-echo "This will:"
-echo "  1. Create symlinks from repository to home directory"
-echo "  2. Backup any existing configuration files"
-echo "  3. Verify all symlinks are correctly established"
+step "Plan of Action:"
+substep "Link SSH Configs    (${YELLOW}~/.ssh/config${NC})"
+substep "Link Fish Configs   (${YELLOW}~/.config/fish${NC})"
+substep "Link Editor Configs (${YELLOW}~/.cursor, ~/.vscode${NC})"
+substep "Backup existing files automatically"
+substep "Verify all symlinks"
 echo ""
-read -p "Continue? (y/N) " -n 1 -r
+read -p "Ready to proceed? (y/N) " -n 1 -r
 echo ""
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     log "Installation cancelled"
@@ -59,7 +63,7 @@ if [[ ! -x "$SYNC_SCRIPT" ]]; then
     exit 1
 fi
 
-log "Step 1: Creating symlinks..."
+step "Creating symlinks..."
 "$SYNC_SCRIPT"
 sync_exit=$?
 
@@ -76,45 +80,30 @@ if [[ ! -x "$VERIFY_SCRIPT" ]]; then
     exit 1
 fi
 
-log "Step 2: Verifying installation..."
+step "Verifying installation..."
 "$VERIFY_SCRIPT"
 verify_exit=$?
 
 echo ""
 
 # Summary
-echo "=========================================="
 if [[ $sync_exit -eq 0 ]] && [[ $verify_exit -eq 0 ]]; then
-    success "Installation completed successfully!"
+    echo -e "${GREEN}✨ Installation completed successfully!${NC}"
     echo "=========================================="
     echo ""
-    echo "Next steps:"
-    echo ""
-    echo "1. Reload your fish shell to use new functions:"
-    echo "   exec fish"
-    echo ""
-    echo "2. Test Control D functions:"
-    echo "   nm-status          # Check network status"
-    echo "   nm-browse          # Switch to browsing mode"
-    echo "   nm-privacy         # Switch to privacy mode"
-    echo "   nm-gaming          # Switch to gaming mode"
-    echo "   nm-vpn             # Switch to Windscribe VPN mode"
-    echo ""
-    echo "3. Verify SSH configuration:"
-    echo "   ./scripts/verify_ssh_config.sh"
-    echo ""
-    echo "4. Documentation:"
-    echo "   - Control D usage: controld-system/docs/Control D DNS Daily Usage Guide.md"
-    echo "   - Network modes: scripts/network-mode-manager.sh --help"
+    step "Next steps:"
+    substep "Reload shell: ${YELLOW}exec fish${NC}"
+    substep "Test Network: ${YELLOW}nm-status${NC}"
+    substep "Verify SSH:   ${YELLOW}./scripts/verify_ssh_config.sh${NC}"
     echo ""
     exit 0
 else
     error "Installation completed with errors"
     echo "=========================================="
     echo ""
-    echo "Please review the errors above and run:"
-    echo "  ./scripts/sync_all_configs.sh"
-    echo "  ./scripts/verify_all_configs.sh"
+    step "Troubleshooting:"
+    substep "Run sync manually:   ${YELLOW}./scripts/sync_all_configs.sh${NC}"
+    substep "Run verify manually: ${YELLOW}./scripts/verify_all_configs.sh${NC}"
     echo ""
     exit 1
 fi

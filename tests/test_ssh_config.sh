@@ -1,6 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # SSH Configuration Test Script
-# Validates the SSH configuration for Cursor IDE setup
+# Validates repo-managed SSH config and helper scripts.
+
+set -Eeuo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "🧪 Testing SSH Configuration..."
 echo ""
@@ -27,21 +31,20 @@ run_test() {
 }
 
 # Test SSH config syntax
-run_test "SSH config syntax" "ssh -G cursor-mdns"
+run_test "SSH config syntax" "ssh -F \"$REPO_ROOT/configs/ssh/config\" -G cursor-mdns"
 
 # Test SSH config file exists
-run_test "SSH config file exists" "[ -f ~/.ssh/config ]"
+run_test "SSH config file exists" "[ -f \"$REPO_ROOT/configs/ssh/config\" ]"
 
 # Test 1Password agent config exists
-run_test "1Password agent config exists" "[ -f ~/.ssh/agent.toml ]"
+run_test "1Password agent config exists" "[ -f \"$REPO_ROOT/configs/ssh/agent.toml\" ]"
 
-# Test control directory exists
-run_test "SSH control directory exists" "[ -d ~/.ssh/control ]"
-
-# Test scripts exist and are executable
-run_test "Smart connect script exists" "[ -x ~/.ssh/smart_connect.sh ]"
-run_test "Check connections script exists" "[ -x ~/.ssh/check_connections.sh ]"
-run_test "Setup verification script exists" "[ -x ~/.ssh/setup_verification.sh ]"
+# Test repo helper scripts exist and are executable
+run_test "smart_connect.sh exists" "[ -x \"$REPO_ROOT/scripts/ssh/smart_connect.sh\" ]"
+run_test "check_connections.sh exists" "[ -x \"$REPO_ROOT/scripts/ssh/check_connections.sh\" ]"
+run_test "setup_verification.sh exists" "[ -x \"$REPO_ROOT/scripts/ssh/setup_verification.sh\" ]"
+run_test "diagnose_vpn.sh exists" "[ -x \"$REPO_ROOT/scripts/ssh/diagnose_vpn.sh\" ]"
+run_test "setup_aliases.sh exists" "[ -x \"$REPO_ROOT/scripts/ssh/setup_aliases.sh\" ]"
 
 # Test 1Password SSH agent socket
 run_test "1Password SSH agent socket exists" "[ -S ~/Library/Group\\ Containers/2BUA8C4S2C.com.1password/t/agent.sock ]"
@@ -50,9 +53,9 @@ run_test "1Password SSH agent socket exists" "[ -S ~/Library/Group\\ Containers/
 run_test "1Password SSH agent responds" "SSH_AUTH_SOCK=~/Library/Group\\ Containers/2BUA8C4S2C.com.1password/t/agent.sock ssh-add -l"
 
 # Test SSH host configurations
-run_test "cursor-mdns config valid" "ssh -G cursor-mdns | grep -qi 'hostname .*\.local'"
-run_test "cursor-local config valid" "ssh -G cursor-local | grep -qi 'hostname'"
-run_test "cursor-auto config valid" "ssh -G cursor-auto | grep -qi 'hostname .*\.local'"
+run_test "cursor-mdns config valid" "ssh -F \"$REPO_ROOT/configs/ssh/config\" -G cursor-mdns | grep -qi 'hostname .*\\.local'"
+run_test "cursor-local config valid" "ssh -F \"$REPO_ROOT/configs/ssh/config\" -G cursor-local | grep -qi 'hostname'"
+run_test "cursor-auto config valid" "ssh -F \"$REPO_ROOT/configs/ssh/config\" -G cursor-auto | grep -qi 'hostname .*\\.local'"
 
 echo ""
 echo "📊 Test Results: $TESTS_PASSED/$TESTS_TOTAL tests passed"
