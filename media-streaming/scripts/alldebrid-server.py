@@ -29,7 +29,8 @@ def start_server(port=8080):
         print(f"⚠️  Warning: Mount directory {mount_dir} is empty!")
         print("Make sure rclone is properly mounted and there's content in your links folder.")
 
-    with socketserver.TCPServer(("", port), CustomHTTPRequestHandler) as httpd:
+    # ⚡ Performance: Use ThreadingTCPServer to handle concurrent requests
+    with socketserver.ThreadingTCPServer(("", port), CustomHTTPRequestHandler) as httpd:
         print(f"🚀 Serving Alldebrid content on http://localhost:{port}")
         print(f"📁 Directory: {mount_dir}")
         print("Press Ctrl+C to stop")
