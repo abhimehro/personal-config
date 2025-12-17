@@ -1,3 +1,6 @@
+## 2024-05-23 - CLI UX Enhancement
+**Learning:** Even without a graphical UI, "micro-UX" matters significantly in CLI tools. Adding visual hierarchy (indentation, spacing), semantic colors (Green/Active, Red/Stopped), and relatable symbols (🤖, 📡) reduces cognitive load when checking system status.
+**Action:** When designing CLI output, treat it like a UI: group related information, use whitespace for breathing room, and map technical values (IPs, UIDs) to human-readable concepts (Localhost, Profile Names).
 ## 2024-05-23 - CLI Feedback Consistency
 **Learning:** Users judge the quality of a CLI tool by its visual polish and consistency. The current installer uses plain text while the bootstrap script uses emojis. This inconsistency breaks the "professional" feel.
 **Action:** Unify CLI logging helpers across scripts to use consistent emoji prefixes (ℹ️, ✅, ⚠️, ❌) and structured "Plan of Action" summaries. This establishes a stronger brand identity for the toolset.

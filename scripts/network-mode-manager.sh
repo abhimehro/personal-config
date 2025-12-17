@@ -29,7 +29,9 @@ IPV6_MANAGER="./scripts/macos/ipv6-manager.sh"
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
+BOLD='\033[1m'
 NC='\033[0m'
 BOLD='\033[1m'
 
@@ -129,34 +131,73 @@ start_controld() {
 }
 
 print_status() {
-  echo -e "\n${BOLD}${BLUE}=== ${E_NETWORK} Network Status ===${NC}"
+  echo -e "\n${BOLD}${BLUE}=== 🌐 Network Status ===${NC}"
 
-  # Control D Status
+  # --- Control D Status ---
+  echo -e -n "  🤖 Control D:    "
   if pgrep -x "ctrld" >/dev/null 2>&1; then
+    echo -e "${GREEN}● ACTIVE${NC}"
+    # Best-effort resolver ID extraction
     local running_uid
     running_uid=$(sudo ctrld status 2>/dev/null | grep 'Resolver ID' | awk '{print $NF}' 2>/dev/null || echo "N/A")
-    echo -e "  ${E_PASS} Control D:      ${GREEN}RUNNING${NC} (Resolver: ${BOLD}$running_uid${NC})"
+
+    # Map UID to profile name if possible
+    local profile_name="Unknown"
+    case "$running_uid" in
+      "6m971e9jaf")  profile_name="Privacy" ;;
+      "rcnz7qgvwg")  profile_name="Browsing" ;;
+      "1xfy57w34t7") profile_name="Gaming" ;;
+    esac
+
+    echo -e "     └─ Profile:   ${YELLOW}$profile_name${NC} (UID: $running_uid)"
   else
-    echo -e "  ${E_FAIL} Control D:      ${RED}STOPPED${NC}"
+    echo -e "${RED}○ STOPPED${NC}"
   fi
 
-  # System DNS Status
-  local dns_servers
-  dns_servers=$(networksetup -getdnsservers "Wi-Fi" 2>/dev/null)
-  if [[ "$dns_servers" == *"There aren't any DNS"* ]] || [[ -z "$dns_servers" ]]; then
-     dns_servers="${RED}Empty / DHCP${NC}"
-  else
-     dns_servers="${GREEN}${dns_servers//$'\n'/, }${NC}"
-  fi
-  echo -e "  ${E_BROWSING} System DNS:     $dns_servers"
-
-  # IPv6 Status
-  if networksetup -getinfo "Wi-Fi" 2>/dev/null | grep -q "IPv6: Automatic"; then
-    echo -e "  ${E_BROWSING} IPv6 Status:    ${GREEN}ENABLED (Automatic)${NC}"
-  else
-    echo -e "  ${E_FAIL} IPv6 Status:    ${RED}DISABLED/Manual${NC}"
-  fi
   echo ""
+
+  # --- System DNS Status ---
+  echo -e -n "  📡 System DNS:   "
+  local dns_servers
+  dns_servers=$(networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown")
+
+  if echo "$dns_servers" | grep -q "There aren't any DNS Servers"; then
+    echo -e "${YELLOW}DHCP (ISP/Router)${NC}"
+  elif echo "$dns_servers" | grep -q "127.0.0.1"; then
+    echo -e "${GREEN}127.0.0.1 (Localhost)${NC}"
+  else
+    # Replace newlines with comma space for cleaner output
+    local cleaner_dns
+    cleaner_dns=$(echo "$dns_servers" | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')
+    echo -e "${RED}$cleaner_dns${NC}"
+  fi
+
+  # --- IPv6 Status ---
+  echo -e -n "  🌐 IPv6 Mode:    "
+  if networksetup -getinfo "Wi-Fi" 2>/dev/null | grep -q "IPv6: Automatic"; then
+    echo -e "${GREEN}ENABLED${NC} (Automatic)"
+  else
+    echo -e "${RED}DISABLED${NC} (Manual/Off)"
+  fi
+
+  echo -e "\n"
+}
+
+print_help() {
+  echo -e "${BOLD}${BLUE}Network Mode Manager${NC}"
+  echo -e "Usage: $0 {controld|windscribe|status} [profile_name]"
+  echo -e ""
+  echo -e "${BOLD}Commands:${NC}"
+  echo -e "  ${GREEN}controld${NC}    Enable Control D (DNS) mode"
+  echo -e "              Arguments: [privacy|browsing|gaming]"
+  echo -e "  ${GREEN}windscribe${NC}  Enable Windscribe (VPN) mode"
+  echo -e "  ${GREEN}status${NC}      Show current network status"
+  echo -e ""
+  echo -e "${BOLD}Profiles:${NC}"
+  echo -e "  ${YELLOW}privacy${NC}     Maximum security"
+  echo -e "  ${YELLOW}browsing${NC}    Balanced (Default)"
+  echo -e "  ${YELLOW}gaming${NC}      Low latency"
+  echo -e ""
 }
 
 # --- Main Dispatcher ---
@@ -198,18 +239,7 @@ main() {
       ;;
 
     *)
-      echo -e "${BOLD}Network Mode Manager${NC}"
-      echo -e "Usage: $0 {controld|windscribe|status} [profile_name]"
-      echo ""
-      echo -e "Commands:"
-      echo -e "  ${E_BROWSING} controld [profile]  Enable Control D DNS (Profiles: ${BOLD}privacy${NC}, ${BOLD}browsing${NC}, ${BOLD}gaming${NC})"
-      echo -e "  ${E_VPN} windscribe          Enable Windscribe VPN mode (Disables Control D, IPv6)"
-      echo -e "  ${E_INFO} status              Show current network configuration"
-      echo ""
-      echo -e "Profiles:"
-      echo -e "  ${E_PRIVACY} privacy   Maximal blocking (Ads, Tracking, Social)"
-      echo -e "  ${E_BROWSING} browsing  Balanced protection (Ads, Malware)"
-      echo -e "  ${E_GAMING} gaming    Minimal latency, gaming optimizations"
+      print_help
       exit 1
       ;;
   esac
