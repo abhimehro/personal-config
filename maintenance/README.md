@@ -5,6 +5,7 @@ A comprehensive automated maintenance system for macOS that keeps your system cl
 ## 📊 System Status
 
 **Current Status**: ✅ **Fully Operational**
+
 - **Scripts**: All working and tested with actionable notifications
 - **Automation**: 7 launch agents active (exit code 0)
 - **Last Update**: November 2025
@@ -21,6 +22,7 @@ Use these Raycast scripts (installed under `~/Library/Maintenance/bin/`) to trig
 - `raycast-dev-maintenance.sh` — Dev toolchains + cache cleanup + health check
 
 Setup in Raycast:
+
 1. Add a “Script Command” and point to the desired `~/Library/Maintenance/bin/raycast-*.sh`.
 2. Optional env overrides per action:
    - `TARGET_BREW_SCRIPT` to point at a custom brew maintenance path.
@@ -28,12 +30,14 @@ Setup in Raycast:
 3. Keep scripts executable: `chmod +x ~/Library/Maintenance/bin/raycast-*.sh`.
 
 Notes:
+
 - These wrappers call the unified maintenance scripts shipped by personal-config; no dependency on the old `~/Scripts` location.
 - Outputs are shown inline in Raycast; full logs remain under `~/Library/Logs/maintenance/` via the underlying tasks.
 
 ## ✨ Features
 
 ### 🔄 Automated Schedules
+
 - **Daily Health Check**: 8:30 AM - System health monitoring
 - **Daily Brew Maintenance**: 10:00 AM - Homebrew packages + comprehensive cask updates
 - **Daily System Cleanup**: 9:00 AM - System maintenance
@@ -42,6 +46,7 @@ Notes:
 - **ProtonDrive Backup**: 3:15 AM - One-way home backup to ProtonDrive
 
 ### 🏥 Health Monitoring
+
 - **Disk Usage**: Monitor and alert on disk space
 - **Memory Status**: Track free memory and pressure
 - **System Load**: Monitor system performance
@@ -55,6 +60,7 @@ Notes:
 - **Error Summaries**: Consolidated error reports with context
 
 ### 🧹 System Cleaning
+
 - **Cache Management**: Clean application and system caches
 - **Downloads**: Clean old files from Downloads folder
 - **Temporary Files**: Remove old temporary files
@@ -63,6 +69,7 @@ Notes:
 - **Log Rotation**: Manage and rotate system logs
 
 ### 📦 Comprehensive Package Management
+
 - **Homebrew Packages**: Regular formula updates with health checks
 - **Homebrew Casks**: Auto-updating app support with `--greedy-auto-updates`
 - **Version :latest Casks**: Optional updates for apps with frequent releases
@@ -72,12 +79,14 @@ Notes:
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 ```bash
 # Install terminal-notifier for interactive notifications
 brew install terminal-notifier
 ```
 
 ### Manual Commands
+
 ```bash
 # Run health check
 ~/Library/Maintenance/bin/health_check.sh
@@ -98,6 +107,7 @@ brew install terminal-notifier
 ```
 
 ### Check Automation Status
+
 ```bash
 # View all maintenance launch agents
 launchctl list | grep maintenance
@@ -168,6 +178,7 @@ UPDATE_MAS_APPS=1          # Auto-update Mac App Store apps
 ## 📋 Launch Agent Schedules
 
 ### Active Schedules
+
 1. **Daily Health Check** (`com.abhimehrotra.maintenance.healthcheck`)
    - Time: 8:30 AM daily
    - Script: `health_check.sh`
@@ -205,19 +216,23 @@ UPDATE_MAS_APPS=1          # Auto-update Mac App Store apps
 ## 📊 Monitoring & Logs
 
 ### Interactive Notifications
+
 All maintenance tasks send **interactive notifications** via terminal-notifier:
+
 - **Click any notification** to open relevant logs in TextEdit
 - **Error summaries** consolidate issues across all tasks
 - **Lock context** shows concurrent execution handling
 - **Actionable alerts** link directly to problem areas
 
 ### Log Locations
+
 - **Script Logs**: `~/Library/Logs/maintenance/`
 - **Error Summaries**: `~/Library/Logs/maintenance/error_summary-*.txt`
 - **Lock Context**: `~/Library/Logs/maintenance/lock_context.log`
 - **Health Reports**: `~/Library/Logs/maintenance/health_report-*.txt`
 
 ### Health Report Contents
+
 ```
 Disk usage for /: 15%
 Free memory: 58 MB
@@ -233,6 +248,7 @@ Battery status: 87%; charging
 ```
 
 ### Checking System Status
+
 ```bash
 # View launch agent status
 launchctl list | grep -E "(maintenance|cleanup)"
@@ -249,6 +265,7 @@ ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
 ### Common Issues
 
 **Notifications Not Working**
+
 ```bash
 # Install terminal-notifier if missing
 brew install terminal-notifier
@@ -259,6 +276,7 @@ terminal-notifier -title "Test" -message "Click me" \
 ```
 
 **Launch Agent Not Running**
+
 ```bash
 # Check status
 launchctl list | grep maintenance
@@ -268,12 +286,14 @@ launchctl kickstart -k gui/$(id -u)/com.abhimehrotra.maintenance.healthcheck
 ```
 
 **Script Permissions**
+
 ```bash
 # Fix permissions
 chmod +x ~/Documents/dev/personal-config/maintenance/bin/*.sh
 ```
 
 **Log Directory Missing**
+
 ```bash
 # Create log directories
 mkdir -p ~/Library/Logs/maintenance

@@ -76,6 +76,7 @@ cd personal-config && git pull origin main
 ```
 
 **Expected Output:**
+
 - Fish config comparison (symlink status)
 - Zsh config comparison (if exists)
 - Portable patterns for cross-shell porting
@@ -94,6 +95,7 @@ cd ~/Documents/dev/personal-config
 ```
 
 **This script performs:**
+
 1. **Config Symlinks**: SSH, Fish, Cursor, VS Code
 2. **Maintenance System**: 7 LaunchD agents installed
 3. **Network Tools**: Control D and Windscribe helpers
