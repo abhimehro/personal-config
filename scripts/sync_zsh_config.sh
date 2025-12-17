@@ -116,15 +116,14 @@ fi
 # Step 2: Copy local .zshrc to repository
 # =============================================================================
 if [[ $EXTRACT_ONLY -eq 0 ]] && [[ $ALREADY_SYNCED -eq 0 ]]; then
-    # Get the actual content (follow symlink if needed)
+    # Copy local .zshrc to repository (use -L to follow symlinks on macOS)
     if [[ -L "$LOCAL_ZSHRC" ]]; then
-        actual_source=$(readlink -f "$LOCAL_ZSHRC")
-        log "Following symlink to: $actual_source"
-        cp "$actual_source" "$REPO_ZSHRC"
+        log "Following symlink and copying content to repository"
     else
         log "Copying local .zshrc to repository"
-        cp "$LOCAL_ZSHRC" "$REPO_ZSHRC"
     fi
+    # -L dereferences symlinks (portable across BSD/GNU)
+    cp -L "$LOCAL_ZSHRC" "$REPO_ZSHRC"
     success "Copied to: $REPO_ZSHRC"
 fi
 
