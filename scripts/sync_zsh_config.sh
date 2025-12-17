@@ -87,10 +87,12 @@ if [[ ! -f "$LOCAL_ZSHRC" ]] && [[ ! -L "$LOCAL_ZSHRC" ]]; then
 fi
 
 # If it's already a symlink to repo, check if it's correct
+ALREADY_SYNCED=0
 if [[ -L "$LOCAL_ZSHRC" ]]; then
     link_target=$(readlink "$LOCAL_ZSHRC")
     if [[ "$link_target" == "$REPO_ZSHRC" ]]; then
         success "Local .zshrc is already symlinked to repository"
+        ALREADY_SYNCED=1
         if [[ $EXTRACT_ONLY -eq 0 ]]; then
             log "Nothing to do - configs are in sync"
         fi
@@ -103,7 +105,7 @@ fi
 # =============================================================================
 # Step 1: Backup existing repo .zshrc (if exists)
 # =============================================================================
-if [[ -f "$REPO_ZSHRC" ]] && [[ $EXTRACT_ONLY -eq 0 ]]; then
+if [[ -f "$REPO_ZSHRC" ]] && [[ $EXTRACT_ONLY -eq 0 ]] && [[ $ALREADY_SYNCED -eq 0 ]]; then
     backup_path="${REPO_ZSHRC}.backup.$(date +%Y%m%d_%H%M%S)"
     log "Backing up existing repo .zshrc to: $backup_path"
     cp "$REPO_ZSHRC" "$backup_path"
@@ -113,7 +115,7 @@ fi
 # =============================================================================
 # Step 2: Copy local .zshrc to repository
 # =============================================================================
-if [[ $EXTRACT_ONLY -eq 0 ]]; then
+if [[ $EXTRACT_ONLY -eq 0 ]] && [[ $ALREADY_SYNCED -eq 0 ]]; then
     # Get the actual content (follow symlink if needed)
     if [[ -L "$LOCAL_ZSHRC" ]]; then
         actual_source=$(readlink -f "$LOCAL_ZSHRC")
@@ -129,7 +131,7 @@ fi
 # =============================================================================
 # Step 3: Create symlink (unless --no-symlink or --extract-only)
 # =============================================================================
-if [[ $CREATE_SYMLINK -eq 1 ]] && [[ $EXTRACT_ONLY -eq 0 ]]; then
+if [[ $CREATE_SYMLINK -eq 1 ]] && [[ $EXTRACT_ONLY -eq 0 ]] && [[ $ALREADY_SYNCED -eq 0 ]]; then
     # Remove existing file/symlink
     if [[ -e "$LOCAL_ZSHRC" ]] || [[ -L "$LOCAL_ZSHRC" ]]; then
         # Only backup if it's a regular file (not already a symlink)
@@ -299,6 +301,8 @@ echo ""
 
 if [[ $EXTRACT_ONLY -eq 1 ]]; then
     log "Extraction complete (no files modified)"
+elif [[ $ALREADY_SYNCED -eq 1 ]]; then
+    success "Zsh configuration already in sync (no changes needed)"
 else
     success "Zsh configuration synced to repository"
     if [[ $CREATE_SYMLINK -eq 1 ]]; then
