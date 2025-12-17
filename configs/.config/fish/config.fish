@@ -54,6 +54,14 @@ if status is-interactive
 end
 
 # ============================================
+# Zoxide (smarter cd)
+# ============================================
+# Better alternative to z/autojump - installed via brew install zoxide
+if type -q zoxide
+    zoxide init fish | source
+end
+
+# ============================================
 # Environment Variables
 # ============================================
 # Network Mode Manager - Control D and Windscribe integration
