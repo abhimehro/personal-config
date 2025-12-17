@@ -19,6 +19,11 @@ fi
 
 # Use -- to prevent argument injection
 /opt/homebrew/bin/yt-dlp -o "$HOME/Downloads/%(title)s.%(ext)s" -- "$URL"
+YTDLP_EXIT_CODE=$?
+if [[ $YTDLP_EXIT_CODE -ne 0 ]]; then
+  echo "Error: yt-dlp failed to download the video (exit code $YTDLP_EXIT_CODE). Please check the URL, your network connection, and that yt-dlp is installed."
+  exit $YTDLP_EXIT_CODE
+fi
 
 # Optional: Show notification when complete (requires terminal-notifier)
 # brew install terminal-notifier
