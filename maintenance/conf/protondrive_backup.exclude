@@ -38,6 +38,7 @@ Caches/
 .bash_history
 .lesshst
 .zsh_history
+.fish_history
 
 # Cargo registries (huge) – keep config, drop caches
 .cargo/registry/
