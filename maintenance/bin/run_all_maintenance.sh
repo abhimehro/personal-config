@@ -9,7 +9,7 @@ set -euo pipefail
 # Configuration
 export RUN_START=$(date +%s)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_DIR="$HOME/Documents/dev/personal-config/maintenance/tmp"
+LOG_DIR="$SCRIPT_DIR/../tmp"
 LOCK_DIR="/tmp/run_all_maintenance.lock"
 LOCK_CONTEXT_LOG="$LOG_DIR/lock_context_$(date +%Y%m%d-%H%M%S).log"
 TIMESTAMP=$(date "+%Y%m%d_%H%M%S")
@@ -103,6 +103,9 @@ run_weekly_maintenance() {
     
     # OneDrive monitoring
     run_script "onedrive_monitor.sh" "maintenance"
+
+    # Service optimization (disable unwanted services)
+    run_script "service_optimizer.sh" "optimization"
     
     # Performance optimization (run optimize command)
     echo "Running performance optimization..." | tee -a "$MASTER_LOG"

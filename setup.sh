@@ -16,15 +16,23 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-info()  { echo -e "${BLUE}[INFO]${NC} $*"; }
-ok()    { echo -e "${GREEN}[OK]${NC}  $*"; }
-warn()  { echo -e "${YELLOW}[WARN]${NC} $*"; }
-err()   { echo -e "${RED}[ERR]${NC}  $*" >&2; }
+info()  { echo -e "${BLUE}ℹ️  [INFO]${NC}  $*"; }
+ok()    { echo -e "${GREEN}✅ [OK]${NC}    $*"; }
+warn()  { echo -e "${YELLOW}⚠️  [WARN]${NC}  $*"; }
+err()   { echo -e "${RED}❌ [ERR]${NC}   $*" >&2; }
 
 require_cmd() {
   local cmd="$1"
+  local install_hint="${2:-}"  # Optional: defaults to empty string
   if ! command -v "$cmd" >/dev/null 2>&1; then
     err "Missing required command: $cmd"
+    if [[ -n "$install_hint" ]]; then
+      info "To install: $install_hint"
+    elif [[ "$cmd" == "brew" ]]; then
+      info "To install: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+    elif [[ "$cmd" == "op" ]]; then
+      info "To install: brew install --cask 1password/tap/1password-cli"
+    fi
     return 1
   fi
 }
