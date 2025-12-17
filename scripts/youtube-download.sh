@@ -6,7 +6,8 @@ URL="$1"
 
 # Security: Validate input
 if [[ -z "$URL" ]]; then
-  echo "Error: No URL provided"
+  echo "Error: No URL provided."
+  echo "Usage: youtube-download.sh <url>"
   exit 1
 fi
 
