@@ -277,18 +277,68 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.monthly.plist" <<EOF
 </plist>
 EOF
 
+# ProtonDrive Home Backup (Daily at 3:15 AM)
+cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.protondrivebackup.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.abhimehrotra.maintenance.protondrivebackup</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>MAINTENANCE_HOME</key>
+        <string>$INSTALL_DIR</string>
+        <key>AUTOMATED_RUN</key>
+        <string>1</string>
+    </dict>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>$INSTALL_DIR/bin/protondrive_backup.sh</string>
+        <string>--run</string>
+        <string>--no-delete</string>
+    </array>
+
+    <key>StandardOutPath</key>
+    <string>$LOG_DIR/protondrive_backup.out</string>
+
+    <key>StandardErrorPath</key>
+    <string>$LOG_DIR/protondrive_backup.err</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>15</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>KeepAlive</key>
+    <false/>
+</dict>
+</plist>
+EOF
+
 # Unload old agents (ignore errors)
 echo "🔄 Unloading old agents..."
-for plist in com.abhimehrotra.maintenance.* com.user.maintenance.*; do
-    launchctl unload "$LAUNCHAGENTS_DIR/$plist" 2>/dev/null || true
+for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maintenance.*.plist "$LAUNCHAGENTS_DIR"/com.user.maintenance.*.plist; do
+    [ -f "$plist" ] || continue
+    launchctl unload "$plist" 2>/dev/null || true
 done
 
 # Load new agents
 echo "✅ Loading new agents..."
-for plist in com.abhimehrotra.maintenance.*.plist; do
-    if [ -f "$LAUNCHAGENTS_DIR/$plist" ]; then
-        launchctl load "$LAUNCHAGENTS_DIR/$plist" 2>&1 || echo "⚠️  Warning: Failed to load $plist"
-    fi
+for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maintenance.*.plist; do
+    [ -f "$plist" ] || continue
+    launchctl load "$plist" 2>&1 || echo "⚠️  Warning: Failed to load $(basename "$plist")"
 done
 
 echo ""
@@ -301,6 +351,7 @@ echo "Scheduled maintenance tasks:"
 echo "  • Health Check: Daily at 8:30 AM"
 echo "  • System Cleanup: Daily at 9:00 AM"
 echo "  • Brew Maintenance: Daily at 10:00 AM"
+echo "  • ProtonDrive Backup: Daily at 3:15 AM"
 echo "  • Weekly Maintenance: Mondays at 9:00 AM"
 echo "  • Monthly Maintenance: 1st of month at 6:00 AM"
 echo ""
