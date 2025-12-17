@@ -33,12 +33,24 @@ YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m'
+BOLD='\033[1m'
+
+# Emojis 🎨
+E_PASS="✅"
+E_FAIL="❌"
+E_WARN="⚠️"
+E_INFO="ℹ️"
+E_PRIVACY="🛡️"
+E_GAMING="🎮"
+E_BROWSING="🌐"
+E_VPN="🔐"
+E_NETWORK="🛜"
 
 # --- Helpers ---
 
-log()      { echo -e "${BLUE}[INFO]${NC} $@"; }
-success()  { echo -e "${GREEN}[OK]${NC} $@"; }
-error()    { echo -e "${RED}[ERR]${NC} $@" >&2; exit 1; }
+log()      { echo -e "${BLUE}${E_INFO} [INFO]${NC} $@"; }
+success()  { echo -e "${GREEN}${E_PASS} [OK]${NC} $@"; }
+error()    { echo -e "${RED}${E_FAIL} [ERR]${NC} $@" >&2; exit 1; }
 
 ensure_prereqs() {
   # Least privilege: refuse to run as root
@@ -88,12 +100,15 @@ start_controld() {
   case "$profile_key" in
     "privacy")
       uid="6m971e9jaf"
+      log "Selecting ${E_PRIVACY} PRIVACY profile..."
       ;;
     "browsing")
       uid="rcnz7qgvwg"
+      log "Selecting ${E_BROWSING} BROWSING profile..."
       ;;
     "gaming")
       uid="1xfy57w34t7"
+      log "Selecting ${E_GAMING} GAMING profile..."
       ;;
     *)
       error "Unknown profile '$profile_key'. Available profiles: privacy, browsing, gaming."
@@ -195,10 +210,10 @@ main() {
 
   case "$mode" in
     windscribe)
-      echo -e "${BLUE}>>> Switching to WINDSCRIBE (VPN) MODE${NC}"
+      echo -e "${BLUE}>>> ${E_VPN} Switching to WINDSCRIBE (VPN) MODE${NC}"
       stop_controld
       set_ipv6 "disable"
-      success "System is now configured for Windscribe VPN (IPv6 disabled, DNS reset)."
+      success "System is now configured for ${E_VPN} Windscribe VPN (IPv6 disabled, DNS reset)."
       print_status
       # Run tight verification for Windscribe-ready state
       if [[ -x ./scripts/network-mode-verify.sh ]]; then
@@ -207,7 +222,7 @@ main() {
       ;;
 
     controld)
-      echo -e "${BLUE}>>> Switching to CONTROL D (DNS) MODE${NC}"
+      echo -e "${BLUE}>>> ${E_BROWSING} Switching to CONTROL D (DNS) MODE${NC}"
       set_ipv6 "enable"
       stop_controld
       start_controld "$profile"

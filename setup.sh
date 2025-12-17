@@ -23,7 +23,7 @@ err()   { echo -e "${RED}❌ [ERR]${NC}   $*" >&2; }
 
 require_cmd() {
   local cmd="$1"
-  local install_hint="$2"
+  local install_hint="${2:-}"  # Optional: defaults to empty string
   if ! command -v "$cmd" >/dev/null 2>&1; then
     err "Missing required command: $cmd"
     if [[ -n "$install_hint" ]]; then
