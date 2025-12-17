@@ -88,7 +88,6 @@ if [[ -d "${DDIR}" ]]; then
     # focusing optimization on file deletion which is high volume.
     XCODE_CLEANED=$(find "${DDIR}" -mindepth 1 -maxdepth 1 -mtime +${XCODE_DERIVEDDATA_KEEP_DAYS:-30} -print 2>/dev/null | wc -l | tr -d ' ')
     if [[ $XCODE_CLEANED -gt 0 ]]; then
-        find "${DDIR}" -mindepth 1 -maxdepth 1 -mtime +${XCODE_DERIVEDDATA_KEEP_DAYS:-30} -exec rm -rf {} \; 2>/dev/null || true
         log_info "Cleaned $XCODE_CLEANED Xcode DerivedData directories"
         CLEANED_ITEMS=$((CLEANED_ITEMS + XCODE_CLEANED))
     fi
