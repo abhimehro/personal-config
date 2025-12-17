@@ -10,6 +10,7 @@
     <string>/bin/bash</string>
     <string>/Users/abhimehrotra/Documents/dev/personal-config/scripts/protondrive_backup.sh</string>
     <string>--run</string>
+    <string>--no-delete</string>
   </array>
 
   <key>StartCalendarInterval</key>
@@ -26,6 +27,6 @@
   <string>/Users/abhimehrotra/Library/Logs/protondrive-backup.log</string>
 
   <key>RunAtLoad</key>
-  <true/>
+  <false/>
 </dict>
 </plist>
