@@ -81,7 +81,7 @@ setup_directories() {
     log "Setting up directory structure..."
     mkdir -p "$PROFILES_DIR" "$BACKUP_DIR"
     touch "$LOG_FILE" 2>/dev/null || true
-    chmod 666 "$LOG_FILE" 2>/dev/null || true
+    chmod 644 "$LOG_FILE" 2>/dev/null || true
 }
 
 # Backup current network settings
@@ -161,8 +161,11 @@ generate_profile_config() {
     
     log "Generating $profile_name profile configuration with $protocol protocol..."
     
+    # Ensure destination directory exists
+    mkdir -p "$PROFILES_DIR"
+    
     # Generate configuration using ctrld
-    TEMP_CONFIG="/tmp/ctrld_temp.toml"
+    TEMP_CONFIG=$(mktemp /tmp/ctrld_temp.toml.XXXXXX)
     
     # Start service temporarily to generate config
     if [[ "$protocol" == "doh3" ]]; then
@@ -190,6 +193,7 @@ generate_profile_config() {
     if [[ -f "$TEMP_CONFIG" ]]; then
         # Copy and customize the generated config
         cp "$TEMP_CONFIG" "$config_file"
+        rm -f "$TEMP_CONFIG"
         
         # Optimize config (combined sed for performance)
         sed -i '' -e "s/ip = '127.0.0.1'/ip = '0.0.0.0'/g" \
@@ -201,7 +205,6 @@ generate_profile_config() {
         # Disable IPv6 in listener explicitly if supported or ensure it's not auto-binding
         # (Note: 'ip = 0.0.0.0' usually binds IPv4, but let's be sure we don't add IPv6 listeners)
         
-        rm -f "$TEMP_CONFIG"
         log_success "$profile_name profile configuration generated with $protocol"
     else
         log_error "Failed to generate $profile_name profile configuration"
@@ -224,6 +227,9 @@ switch_profile() {
     fi
     
     log "Switching to $profile_name profile with $protocol protocol..."
+    
+    # Ensure directories exist before generating configs
+    setup_directories
     
     # Stop current service efficiently without touching network settings (avoids Windscribe interference)
     log "Stopping Control D service..."
