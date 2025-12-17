@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-expected_config="$HOME/Documents/dev/personal-config/configs/ssh/config"
-expected_agent="$HOME/Documents/dev/personal-config/configs/ssh/agent.toml"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+expected_config="$REPO_ROOT/configs/ssh/config"
+expected_agent="$REPO_ROOT/configs/ssh/agent.toml"
 control_dir="$HOME/.ssh/control"
 op_sock="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 

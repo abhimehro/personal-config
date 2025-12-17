@@ -9,7 +9,7 @@
 set -Eeuo pipefail
 
 # Repository root (absolute path)
-REPO_ROOT="$HOME/Documents/dev/personal-config"
+REPO_ROOT="${REPO_ROOT:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"}"
 
 # Colors for output
 RED='\033[0;31m'
