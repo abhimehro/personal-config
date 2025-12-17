@@ -49,9 +49,8 @@ if [[ -d "${CACHE_DIR}" ]]; then
                 # Skip critical system caches
                 com.apple.*|CloudKit|CrashReporter|SkyLight) continue ;;
                 *)
-                    FILES_CLEANED=$(find "$cache_subdir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -print 2>/dev/null | wc -l | tr -d ' ')
+                    FILES_CLEANED=$(find "$cache_subdir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -print -delete 2>/dev/null | wc -l | tr -d ' ')
                     if [[ $FILES_CLEANED -gt 0 ]]; then
-                        find "$cache_subdir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -delete 2>/dev/null || true
                         log_info "Cleaned $FILES_CLEANED cache files from $(basename "$cache_subdir")"
                         CLEANED_ITEMS=$((CLEANED_ITEMS + FILES_CLEANED))
                     fi
@@ -68,9 +67,8 @@ fi
 for TDIR in "${TMPDIR:-/tmp}" "/tmp"; do
     if [[ -d "$TDIR" ]]; then
         log_info "Cleaning temporary files older than ${TMP_CLEAN_DAYS:-7} days in $TDIR"
-        TEMP_FILES_CLEANED=$(find "$TDIR" -type f -mtime +${TMP_CLEAN_DAYS:-7} -user "${USER}" -print 2>/dev/null | wc -l | tr -d ' ')
+        TEMP_FILES_CLEANED=$(find "$TDIR" -type f -mtime +${TMP_CLEAN_DAYS:-7} -user "${USER}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
         if [[ $TEMP_FILES_CLEANED -gt 0 ]]; then
-            find "$TDIR" -type f -mtime +${TMP_CLEAN_DAYS:-7} -user "${USER}" -delete 2>/dev/null || true
             log_info "Cleaned $TEMP_FILES_CLEANED temporary files from $TDIR"
             CLEANED_ITEMS=$((CLEANED_ITEMS + TEMP_FILES_CLEANED))
         fi
@@ -81,9 +79,8 @@ done
 DDIR="${HOME}/Library/Developer/Xcode/DerivedData"
 if [[ -d "${DDIR}" ]]; then
     log_info "Pruning Xcode DerivedData older than ${XCODE_DERIVEDDATA_KEEP_DAYS:-30} days"
-    XCODE_CLEANED=$(find "${DDIR}" -mindepth 1 -maxdepth 1 -mtime +${XCODE_DERIVEDDATA_KEEP_DAYS:-30} -print 2>/dev/null | wc -l | tr -d ' ')
+    XCODE_CLEANED=$(find "${DDIR}" -mindepth 1 -maxdepth 1 -mtime +${XCODE_DERIVEDDATA_KEEP_DAYS:-30} -print -exec rm -rf {} \; 2>/dev/null | wc -l | tr -d ' ')
     if [[ $XCODE_CLEANED -gt 0 ]]; then
-        find "${DDIR}" -mindepth 1 -maxdepth 1 -mtime +${XCODE_DERIVEDDATA_KEEP_DAYS:-30} -exec rm -rf {} \; 2>/dev/null || true
         log_info "Cleaned $XCODE_CLEANED Xcode DerivedData directories"
         CLEANED_ITEMS=$((CLEANED_ITEMS + XCODE_CLEANED))
     fi
@@ -93,9 +90,8 @@ fi
 IOS_SIM_DIR="${HOME}/Library/Developer/CoreSimulator/Caches/dyld"
 if [[ -d "${IOS_SIM_DIR}" ]]; then
     log_info "Cleaning iOS Simulator caches"
-    IOS_FILES_CLEANED=$(find "${IOS_SIM_DIR}" -type f -mtime +7 -print 2>/dev/null | wc -l | tr -d ' ')
+    IOS_FILES_CLEANED=$(find "${IOS_SIM_DIR}" -type f -mtime +7 -print -delete 2>/dev/null | wc -l | tr -d ' ')
     if [[ $IOS_FILES_CLEANED -gt 0 ]]; then
-        find "${IOS_SIM_DIR}" -type f -mtime +7 -delete 2>/dev/null || true
         log_info "Cleaned $IOS_FILES_CLEANED iOS Simulator cache files"
         CLEANED_ITEMS=$((CLEANED_ITEMS + IOS_FILES_CLEANED))
     fi
@@ -144,9 +140,8 @@ log_info "Cleaning system logs and temporary files"
 # Clean user logs older than 30 days
 USER_LOGS_DIR="${HOME}/Library/Logs"
 if [[ -d "${USER_LOGS_DIR}" ]]; then
-    LOG_FILES_CLEANED=$(find "${USER_LOGS_DIR}" -name "*.log" -mtime +30 -print 2>/dev/null | wc -l | tr -d ' ')
+    LOG_FILES_CLEANED=$(find "${USER_LOGS_DIR}" -name "*.log" -mtime +30 -print -delete 2>/dev/null | wc -l | tr -d ' ')
     if [[ $LOG_FILES_CLEANED -gt 0 ]]; then
-        find "${USER_LOGS_DIR}" -name "*.log" -mtime +30 -delete 2>/dev/null || true
         log_info "Cleaned $LOG_FILES_CLEANED old log files"
         CLEANED_ITEMS=$((CLEANED_ITEMS + LOG_FILES_CLEANED))
     fi
@@ -156,9 +151,8 @@ fi
 DOWNLOADS_DIR="${HOME}/Downloads"
 if [[ -d "${DOWNLOADS_DIR}" ]]; then
     log_info "Cleaning old downloads (90+ days)"
-    OLD_DOWNLOADS=$(find "${DOWNLOADS_DIR}" -type f -mtime +90 -print 2>/dev/null | wc -l | tr -d ' ')
+    OLD_DOWNLOADS=$(find "${DOWNLOADS_DIR}" -type f -mtime +90 -print -delete 2>/dev/null | wc -l | tr -d ' ')
     if [[ $OLD_DOWNLOADS -gt 0 ]]; then
-        find "${DOWNLOADS_DIR}" -type f -mtime +90 -delete 2>/dev/null || true
         log_info "Cleaned $OLD_DOWNLOADS old download files"
         CLEANED_ITEMS=$((CLEANED_ITEMS + OLD_DOWNLOADS))
     fi
@@ -173,9 +167,8 @@ for browser_cache in \
     if [[ -d "$browser_cache" ]]; then
         BROWSER_NAME=$(basename "$browser_cache" | sed 's/com\..*\.//')
         log_info "Cleaning old browser cache: $BROWSER_NAME"
-        BROWSER_FILES_CLEANED=$(find "$browser_cache" -type f -mtime +14 -print 2>/dev/null | wc -l | tr -d ' ')
+        BROWSER_FILES_CLEANED=$(find "$browser_cache" -type f -mtime +14 -print -delete 2>/dev/null | wc -l | tr -d ' ')
         if [[ $BROWSER_FILES_CLEANED -gt 0 ]]; then
-            find "$browser_cache" -type f -mtime +14 -delete 2>/dev/null || true
             log_info "Cleaned $BROWSER_FILES_CLEANED cache files from $BROWSER_NAME"
             CLEANED_ITEMS=$((CLEANED_ITEMS + BROWSER_FILES_CLEANED))
         fi
@@ -183,9 +176,8 @@ for browser_cache in \
 done
 
 # 9) Clean old maintenance logs
-MAINT_LOGS_CLEANED=$(find "$LOG_DIR" -type f -name "*.log" -mtime +${LOG_RETENTION_DAYS:-60} -print 2>/dev/null | wc -l | tr -d ' ')
+MAINT_LOGS_CLEANED=$(find "$LOG_DIR" -type f -name "*.log" -mtime +${LOG_RETENTION_DAYS:-60} -print -delete 2>/dev/null | wc -l | tr -d ' ')
 if [[ $MAINT_LOGS_CLEANED -gt 0 ]]; then
-    find "$LOG_DIR" -type f -name "*.log" -mtime +${LOG_RETENTION_DAYS:-60} -delete 2>/dev/null || true
     log_info "Cleaned $MAINT_LOGS_CLEANED old maintenance logs"
     CLEANED_ITEMS=$((CLEANED_ITEMS + MAINT_LOGS_CLEANED))
 fi
