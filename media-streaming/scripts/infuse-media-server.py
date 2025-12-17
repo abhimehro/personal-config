@@ -59,7 +59,8 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
             
             # Stream the file
             while True:
-                chunk = process.stdout.read(8192)
+                # ⚡ Performance: Read 64KB chunks (up from 8KB) for better throughput
+                chunk = process.stdout.read(65536)
                 if not chunk:
                     break
                 self.wfile.write(chunk)
@@ -141,7 +142,8 @@ def main():
     print()
     
     try:
-        with socketserver.TCPServer(("", port), MediaServerHandler) as httpd:
+        # ⚡ Performance: Use ThreadingTCPServer to handle concurrent requests (e.g. streaming + browsing)
+        with socketserver.ThreadingTCPServer(("", port), MediaServerHandler) as httpd:
             print(f"✅ Server running at http://192.168.0.199:{port}")
             print("Press Ctrl+C to stop")
             httpd.serve_forever()
