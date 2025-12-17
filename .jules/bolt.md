@@ -1,8 +1,8 @@
-# Bolt's Journal
+# Bolt's Journal ⚡
 
-## 2024-05-23 - Initial Setup
-**Learning:** This journal tracks critical performance learnings.
-**Action:** Review this file before starting performance tasks.
+## 2024-05-23 - [Initial Setup]
+**Learning:** This journal tracks critical performance learnings to avoid repeating mistakes.
+**Action:** Always check this file before starting optimization work.
 
 ## 2025-10-26 - Shell Script Polling Optimization
 **Learning:** Replaced arbitrary `sleep` calls (2-3s) with polling loops (checking process/file status) in CLI tools.
