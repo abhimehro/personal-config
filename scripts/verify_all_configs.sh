@@ -8,7 +8,7 @@
 set -Eeuo pipefail
 
 # Repository root (absolute path)
-REPO_ROOT="$HOME/Documents/dev/personal-config"
+REPO_ROOT="${REPO_ROOT:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -24,6 +24,20 @@ warn()     { printf '%b\n' "${YELLOW}[WARN]${NC} $*"; }
 error()    { printf '%b\n' "${RED}[ERROR]${NC} $*" >&2; }
 
 fail=0
+
+# Performance Optimization: Detect stat command format once
+# Avoids forking a failing process on every check for cross-platform support
+if stat -f %Mp%Lp . >/dev/null 2>&1; then
+    # BSD/macOS stat
+    get_perms() {
+        stat -f %Mp%Lp "$1" 2>/dev/null || echo ""
+    }
+else
+    # GNU/Linux stat
+    get_perms() {
+        stat -c %a "$1" 2>/dev/null || echo ""
+    }
+fi
 
 # Verify a file symlink
 verify_file_link() {
@@ -63,8 +77,19 @@ verify_file_link() {
     # For symlinks, check the target file permissions (what actually matters)
     if [[ -n "$expected_perms" ]]; then
         # Check target file permissions (not symlink permissions)
-        actual_perms=$(stat -f %Mp%Lp "$expected_target" 2>/dev/null || stat -c %a "$expected_target" 2>/dev/null || echo "")
+        actual_perms=$(get_perms "$expected_target")
+
+        # Optimize: Handle empty/missing permissions safely
+        if [[ -z "$actual_perms" ]]; then
+             warn "$name target file permissions could not be determined"
+             return 0
+        fi
+
         # Normalize permissions (remove leading zeros for comparison)
+        # Handle empty output case to prevent arithmetic error
+        if [[ -z "$actual_perms" ]]; then
+            actual_perms="0"
+        fi
         actual_perms_normalized=$((10#$actual_perms))
         expected_perms_normalized=$((10#$expected_perms))
 
@@ -132,12 +157,17 @@ verify_file_link "$HOME/.ssh/agent.toml" "$REPO_ROOT/configs/ssh/agent.toml" "$H
 
 # Check SSH control directory
 if [[ -d "$HOME/.ssh/control" ]]; then
-    perms=$(stat -f %Mp%Lp "$HOME/.ssh/control" 2>/dev/null || stat -c %a "$HOME/.ssh/control" 2>/dev/null || echo "")
-    perms_normalized=$((10#$perms))
-    if [[ "$perms_normalized" -eq 700 ]]; then
-        success "$HOME/.ssh/control exists with correct permissions (700)"
+    perms=$(get_perms "$HOME/.ssh/control")
+
+    if [[ -n "$perms" ]]; then
+        perms_normalized=$((10#$perms))
+        if [[ "$perms_normalized" -eq 700 ]]; then
+            success "$HOME/.ssh/control exists with correct permissions (700)"
+        else
+            warn "$HOME/.ssh/control permissions are $perms (expected 700)"
+        fi
     else
-        warn "$HOME/.ssh/control permissions are $perms (expected 700)"
+        warn "$HOME/.ssh/control permissions could not be determined"
     fi
 else
     warn "$HOME/.ssh/control directory does not exist"
