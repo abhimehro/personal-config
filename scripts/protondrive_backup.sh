@@ -126,7 +126,17 @@ run_rsync_relative() {
     return 0
   fi
 
+  set +e
   "${RSYNC[@]}" --relative "${existing[@]}" "$DEST/"
+  local rc=$?
+  set -e
+
+  # rsync 24 = "Partial transfer due to vanished source files" (common on macOS)
+  if [[ $rc -ne 0 && $rc -ne 24 ]]; then
+    return $rc
+  fi
+
+  return 0
 }
 
 run_rsync_relative "core directories" "${CORE[@]}"
