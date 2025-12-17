@@ -205,24 +205,41 @@ smart_notify() {
         sound="$sound_override"
     fi
     
-    # Build notification command
-    local notify_cmd="osascript -e \"display notification \\\"$message\\\" with title \\\"$title\\\" subtitle \\\"$subtitle\\\""
+    # Escape quotes and backslashes for AppleScript
+    # Escape backslashes first, then double quotes
+    local safe_message="${message//\\/\\\\}"
+    safe_message="${safe_message//\"/\\\"}"
+
+    local safe_title="${title//\\/\\\\}"
+    safe_title="${safe_title//\"/\\\"}"
+
+    local safe_subtitle="${subtitle//\\/\\\\}"
+    safe_subtitle="${safe_subtitle//\"/\\\"}"
+
+    local safe_sound="${sound//\\/\\\\}"
+    safe_sound="${safe_sound//\"/\\\"}"
+
+    local safe_action="${action//\\/\\\\}"
+    safe_action="${safe_action//\"/\\\"}"
+
+    # Build AppleScript command safely
+    local applescript="display notification \"$safe_message\" with title \"$safe_title\" subtitle \"$safe_subtitle\""
     
     # Add sound if not 'none'
     if [[ "$sound" != "none" ]]; then
-        notify_cmd+=" sound name \\\"$sound\\\""
+        applescript+=" sound name \"$safe_sound\""
     fi
     
     # Add action button if specified
     if [[ -n "$action" ]]; then
-        notify_cmd+=" buttons {\\\"$action\\\", \\\"OK\\\"} default button \\\"OK\\\""
+        applescript+=" buttons {\"$safe_action\", \"OK\"} default button \"OK\""
     fi
-    
-    notify_cmd+="\""
     
     # Send notification
     if command -v osascript >/dev/null 2>&1; then
-        eval "$notify_cmd" 2>/dev/null || notify_log "Failed to send notification: $title"
+        # Use simple command substitution or just run it.
+        # Using variables in arguments avoids shell injection as long as we don't eval.
+        osascript -e "$applescript" 2>/dev/null || notify_log "Failed to send notification: $title"
         notify_log "Sent notification [$priority]: $title - $message"
     else
         notify_log "osascript not available - notification: $title - $message"

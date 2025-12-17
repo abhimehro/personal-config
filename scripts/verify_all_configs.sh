@@ -86,6 +86,10 @@ verify_file_link() {
         fi
 
         # Normalize permissions (remove leading zeros for comparison)
+        # Handle empty output case to prevent arithmetic error
+        if [[ -z "$actual_perms" ]]; then
+            actual_perms="0"
+        fi
         actual_perms_normalized=$((10#$actual_perms))
         expected_perms_normalized=$((10#$expected_perms))
 
