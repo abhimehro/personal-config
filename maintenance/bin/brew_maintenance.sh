@@ -54,11 +54,18 @@ else
 fi
 
 # Check what's outdated (packages)
+# Optimization: Capture output once to avoid double execution of slow 'brew outdated'
 log_info "Checking for outdated packages..."
-OUTDATED_PACKAGES=$(brew outdated 2>/dev/null | wc -l | tr -d ' ')
+OUTDATED_PACKAGES_LIST=$(brew outdated 2>/dev/null || true)
+if [[ -n "$OUTDATED_PACKAGES_LIST" ]]; then
+    OUTDATED_PACKAGES=$(echo "$OUTDATED_PACKAGES_LIST" | wc -l | tr -d ' ')
+else
+    OUTDATED_PACKAGES=0
+fi
+
 if (( OUTDATED_PACKAGES > 0 )); then
     log_info "Found ${OUTDATED_PACKAGES} outdated packages"
-    brew outdated | tee -a "$LOG_DIR/brew_maintenance.log"
+    echo "$OUTDATED_PACKAGES_LIST" | tee -a "$LOG_DIR/brew_maintenance.log"
     
     # Upgrade packages
     log_info "Upgrading packages..."
@@ -74,10 +81,16 @@ fi
 
 # Check what's outdated (casks) - including auto-updating apps
 log_info "Checking for outdated casks (including auto-updating apps)..."
-OUTDATED_CASKS=$(brew outdated --cask --greedy 2>/dev/null | wc -l | tr -d ' ')
+OUTDATED_CASKS_LIST=$(brew outdated --cask --greedy 2>/dev/null || true)
+if [[ -n "$OUTDATED_CASKS_LIST" ]]; then
+    OUTDATED_CASKS=$(echo "$OUTDATED_CASKS_LIST" | wc -l | tr -d ' ')
+else
+    OUTDATED_CASKS=0
+fi
+
 if (( OUTDATED_CASKS > 0 )); then
     log_info "Found ${OUTDATED_CASKS} outdated casks"
-    brew outdated --cask --greedy | tee -a "$LOG_DIR/brew_maintenance.log"
+    echo "$OUTDATED_CASKS_LIST" | tee -a "$LOG_DIR/brew_maintenance.log"
     
     # Upgrade casks with comprehensive flags
     log_info "Upgrading casks (including auto-updating apps)..."
@@ -103,10 +116,16 @@ fi
 
 # Check for casks that need --greedy-latest flag
 log_info "Checking for casks with version :latest..."
-LATEST_CASKS=$(brew outdated --cask --greedy-latest 2>/dev/null | wc -l | tr -d ' ')
+LATEST_CASKS_LIST=$(brew outdated --cask --greedy-latest 2>/dev/null || true)
+if [[ -n "$LATEST_CASKS_LIST" ]]; then
+    LATEST_CASKS=$(echo "$LATEST_CASKS_LIST" | wc -l | tr -d ' ')
+else
+    LATEST_CASKS=0
+fi
+
 if (( LATEST_CASKS > 0 )); then
     log_info "Found ${LATEST_CASKS} casks with version :latest that can be upgraded"
-    brew outdated --cask --greedy-latest | tee -a "$LOG_DIR/brew_maintenance.log"
+    echo "$LATEST_CASKS_LIST" | tee -a "$LOG_DIR/brew_maintenance.log"
     
     # Optionally upgrade these (they may be more frequent updates)
     if [[ "${UPDATE_GREEDY_LATEST:-0}" == "1" ]]; then
