@@ -103,6 +103,9 @@ run_weekly_maintenance() {
     
     # OneDrive monitoring
     run_script "onedrive_monitor.sh" "maintenance"
+
+    # Service optimization (disable unwanted services)
+    run_script "service_optimizer.sh" "optimization"
     
     # Performance optimization (run optimize command)
     echo "Running performance optimization..." | tee -a "$MASTER_LOG"
