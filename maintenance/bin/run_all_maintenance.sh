@@ -15,6 +15,9 @@ LOCK_CONTEXT_LOG="$LOG_DIR/lock_context_$(date +%Y%m%d-%H%M%S).log"
 TIMESTAMP=$(date "+%Y%m%d_%H%M%S")
 MASTER_LOG="$LOG_DIR/maintenance_master_$TIMESTAMP.log"
 
+# Global array to store results for summary
+declare -a SUMMARY_RESULTS=()
+
 # Ensure log directory exists
 mkdir -p "$LOG_DIR"
 
@@ -63,6 +66,7 @@ run_script() {
         # Execute the actual script
         if "$script_path" > "$log_file" 2>&1; then
             echo "✅ $script_name completed successfully" | tee -a "$MASTER_LOG"
+            SUMMARY_RESULTS+=("${script_name%.sh}|✅ Success")
             
             # Send success notification if notifier is available
             local notifier="$SCRIPT_DIR/smart_notifier.sh"
@@ -72,6 +76,7 @@ run_script() {
             fi
         else
             echo "❌ $script_name failed (check $log_file)" | tee -a "$MASTER_LOG"
+            SUMMARY_RESULTS+=("${script_name%.sh}|❌ Failed")
             
             # Send error notification if notifier is available
             local notifier="$SCRIPT_DIR/smart_notifier.sh"
@@ -82,6 +87,7 @@ run_script() {
         fi
     else
         echo "⚠️  $script_name not found or not executable" | tee -a "$MASTER_LOG"
+        SUMMARY_RESULTS+=("${script_name%.sh}|⚠️  Missing")
     fi
 }
 
@@ -114,11 +120,14 @@ run_weekly_maintenance() {
         local perf_log="$LOG_DIR/performance_optimizer_$TIMESTAMP.log"
         if "$perf_optimizer" optimize > "$perf_log" 2>&1; then
             echo "✅ Performance optimization completed successfully" | tee -a "$MASTER_LOG"
+            SUMMARY_RESULTS+=("performance_optimizer|✅ Success")
         else
             echo "❌ Performance optimization failed (check $perf_log)" | tee -a "$MASTER_LOG"
+            SUMMARY_RESULTS+=("performance_optimizer|❌ Failed")
         fi
     else
         echo "⚠️  performance_optimizer.sh not found or not executable" | tee -a "$MASTER_LOG"
+        SUMMARY_RESULTS+=("performance_optimizer|⚠️  Missing")
     fi
 }
 
@@ -138,6 +147,39 @@ run_monthly_maintenance() {
     # Deep cleaner (be careful with this one)
     echo "Running deep cleaner with caution..." | tee -a "$MASTER_LOG"
     run_script "deep_cleaner.sh" "cleanup"
+}
+
+# Function to print summary table
+print_summary() {
+    echo "" | tee -a "$MASTER_LOG"
+    echo "┌────────────────────────────────────────────────────────┐" | tee -a "$MASTER_LOG"
+    echo "│               MAINTENANCE RUN SUMMARY                  │" | tee -a "$MASTER_LOG"
+    echo "├────────────────────────────────────────────────────────┤" | tee -a "$MASTER_LOG"
+
+    if [[ ${#SUMMARY_RESULTS[@]} -eq 0 ]]; then
+        echo "│ No tasks executed.                                     │" | tee -a "$MASTER_LOG"
+    else
+        for entry in "${SUMMARY_RESULTS[@]}"; do
+            IFS="|" read -r name status <<< "$entry"
+
+            # Manual padding for status to align vertically
+            local status_pad=""
+            if [[ "$status" == *"Success"* ]]; then
+                 status_pad="✅ Success  "
+            elif [[ "$status" == *"Failed"* ]]; then
+                 status_pad="❌ Failed   "
+            elif [[ "$status" == *"Skipped"* ]]; then
+                 status_pad="⏭️  Skipped  "
+            else
+                 status_pad="$(printf "%-12s" "$status")"
+            fi
+
+            # Print row: Status : Name
+            printf "│ %s : %-37s │\n" "$status_pad" "$name" | tee -a "$MASTER_LOG"
+        done
+    fi
+
+    echo "└────────────────────────────────────────────────────────┘" | tee -a "$MASTER_LOG"
 }
 
 # Determine what to run based on argument or day of month
@@ -177,7 +219,10 @@ if [[ -x "$SCRIPT_DIR/generate_error_summary.sh" ]]; then
     fi
 fi
 
-# Summary
+# Print the visual summary
+print_summary
+
+# Summary footer
 echo "=== Master Maintenance Run Completed: $(date) ===" | tee -a "$MASTER_LOG"
 echo "Logs saved to: $LOG_DIR" | tee -a "$MASTER_LOG"
 
