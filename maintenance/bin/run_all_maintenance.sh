@@ -39,30 +39,41 @@ if ! mkdir "$LOCK_DIR" 2>/dev/null; then
         fi
     fi
 fi
-trap 'rm -rf "$LOCK_DIR" 2>/dev/null || true' EXIT INT TERM
+trap 'rm -rf "$LOCK_DIR" "$LOG_DIR"/status_*_"$TIMESTAMP".log 2>/dev/null || true' EXIT INT TERM
 
 # Initialize master log
 echo "=== Master Maintenance Run Started: $(date) ===" | tee "$MASTER_LOG"
 
 # Function to run a script with smart scheduling and logging
+# Usage: run_script script_name task_type [log_target]
 run_script() {
     local script_name="$1"
     local task_type="${2:-maintenance}"  # Default to maintenance type
+    local log_target="${3:-$MASTER_LOG}" # Where to write status output (default: MASTER_LOG)
     local script_path="$SCRIPT_DIR/$script_name"
     local log_file="$LOG_DIR/${script_name%.sh}_$TIMESTAMP.log"
     local smart_scheduler="$SCRIPT_DIR/smart_scheduler.sh"
     
+    # Helper to log to target (file or stdout)
+    log_status() {
+        if [[ "$log_target" == "/dev/stdout" ]]; then
+            echo "$@"
+        else
+            echo "$@" | tee -a "$log_target"
+        fi
+    }
+
     if [[ -f "$script_path" && -x "$script_path" ]]; then
-        echo "Running $script_name with smart scheduling..." | tee -a "$MASTER_LOG"
+        log_status "Running $script_name with smart scheduling..."
         
         # Apply smart delay if scheduler is available
         if [[ -f "$smart_scheduler" && -x "$smart_scheduler" ]]; then
-            "$smart_scheduler" delay "${script_name%.sh}" "$task_type" 2>&1 | tee -a "$MASTER_LOG"
+            "$smart_scheduler" delay "${script_name%.sh}" "$task_type" 2>&1 | tee -a "$log_target"
         fi
         
         # Execute the actual script
         if "$script_path" > "$log_file" 2>&1; then
-            echo "✅ $script_name completed successfully" | tee -a "$MASTER_LOG"
+            log_status "✅ $script_name completed successfully"
             
             # Send success notification if notifier is available
             local notifier="$SCRIPT_DIR/smart_notifier.sh"
@@ -71,7 +82,7 @@ run_script() {
                 smart_notify "success" "Maintenance Task Completed" "${script_name%.sh} finished successfully" 2>/dev/null || true
             fi
         else
-            echo "❌ $script_name failed (check $log_file)" | tee -a "$MASTER_LOG"
+            log_status "❌ $script_name failed (check $log_file)"
             
             # Send error notification if notifier is available
             local notifier="$SCRIPT_DIR/smart_notifier.sh"
@@ -81,7 +92,7 @@ run_script() {
             fi
         fi
     else
-        echo "⚠️  $script_name not found or not executable" | tee -a "$MASTER_LOG"
+        log_status "⚠️  $script_name not found or not executable"
     fi
 }
 
@@ -95,17 +106,43 @@ run_weekly_maintenance() {
     # Quick cleanup
     run_script "quick_cleanup.sh" "cleanup"
     
-    # Homebrew maintenance
-    run_script "brew_maintenance.sh" "maintenance"
-    
-    # Node.js maintenance
-    run_script "node_maintenance.sh" "maintenance"
-    
-    # OneDrive monitoring
-    run_script "onedrive_monitor.sh" "maintenance"
+    echo "Starting parallel maintenance tasks..." | tee -a "$MASTER_LOG"
+    # Parallel execution of independent tasks to speed up maintenance
+    # Capture status output to separate files to avoid interleaved logs
 
-    # Service optimization (disable unwanted services)
-    run_script "service_optimizer.sh" "optimization"
+    local brew_status="$LOG_DIR/status_brew_$TIMESTAMP.log"
+    local node_status="$LOG_DIR/status_node_$TIMESTAMP.log"
+    local onedrive_status="$LOG_DIR/status_onedrive_$TIMESTAMP.log"
+    local service_status="$LOG_DIR/status_service_$TIMESTAMP.log"
+
+    pids=""
+    
+    # Homebrew maintenance (heavy I/O + network)
+    (run_script "brew_maintenance.sh" "maintenance" "$brew_status") &
+    pids="$pids $!"
+    
+    # Node.js maintenance (heavy I/O + network)
+    (run_script "node_maintenance.sh" "maintenance" "$node_status") &
+    pids="$pids $!"
+
+    # OneDrive monitoring (light)
+    (run_script "onedrive_monitor.sh" "maintenance" "$onedrive_status") &
+    pids="$pids $!"
+
+    # Service optimization (light)
+    (run_script "service_optimizer.sh" "optimization" "$service_status") &
+    pids="$pids $!"
+
+    # Wait for all parallel tasks to complete
+    for pid in $pids; do
+        wait $pid
+    done
+
+    # Aggregate status logs to master log
+    cat "$brew_status" "$node_status" "$onedrive_status" "$service_status" >> "$MASTER_LOG"
+    rm -f "$brew_status" "$node_status" "$onedrive_status" "$service_status"
+
+    echo "Parallel maintenance tasks completed." | tee -a "$MASTER_LOG"
     
     # Performance optimization (run optimize command)
     echo "Running performance optimization..." | tee -a "$MASTER_LOG"
