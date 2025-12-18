@@ -37,6 +37,18 @@ echo "   Server: http://$(ipconfig getifaddr en0):8080"
 echo "   (or http://localhost:8080 for local testing)"
 echo ""
 echo "Note: Basic Authentication is now enabled. Check the output for credentials."
+echo "Note: Default binding is now localhost. Use --public for LAN access."
 echo ""
-# Use --public to allow LAN access for Infuse
-python3 "$SCRIPT_DIR/alldebrid-server.py" 8080 --public
+
+# By default, run securely on localhost.
+# Users should uncomment the --public line or pass it manually if they need LAN access for Infuse.
+# Or, check if an environment variable is set to enable public access.
+if [ "$ENABLE_PUBLIC_ACCESS" = "true" ]; then
+    echo "⚠️  Public access enabled (LAN)."
+    python3 "$SCRIPT_DIR/alldebrid-server.py" 8080 --public
+else
+    echo "🔒 Running on localhost only. To enable LAN access for Infuse, run:"
+    echo "   ENABLE_PUBLIC_ACCESS=true ./start-alldebrid.sh"
+    echo "   OR edit this script to add --public"
+    python3 "$SCRIPT_DIR/alldebrid-server.py" 8080
+fi
