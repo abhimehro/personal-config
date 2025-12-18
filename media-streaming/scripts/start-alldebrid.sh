@@ -36,4 +36,7 @@ echo "🎬 Once started, add this to Infuse:"
 echo "   Server: http://$(ipconfig getifaddr en0):8080"
 echo "   (or http://localhost:8080 for local testing)"
 echo ""
-python3 "$SCRIPT_DIR/alldebrid-server.py" 8080
+echo "Note: Basic Authentication is now enabled. Check the output for credentials."
+echo ""
+# Use --public to allow LAN access for Infuse
+python3 "$SCRIPT_DIR/alldebrid-server.py" 8080 --public
