@@ -7,6 +7,7 @@ import argparse
 import base64
 import secrets
 import string
+import time
 
 MOUNT_DIR = os.environ.get("ALD_MOUNT_DIR", os.path.expanduser("~/mnt/alldebrid"))
 
@@ -33,7 +34,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # If no auth configured (shouldn't happen with new logic), allow
         if not AUTH_USER or not AUTH_PASS:
-             return True
+            return True
 
         auth_header = self.headers.get('Authorization')
         if not auth_header:
@@ -49,12 +50,18 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             decoded = base64.b64decode(auth_data).decode('utf-8')
             username, password = decoded.split(':', 1)
 
-            # Use constant time comparison if possible, but for this level checks are fine
-            if username == AUTH_USER and password == AUTH_PASS:
+            # Use constant time comparison to prevent timing attacks
+            user_match = secrets.compare_digest(username, AUTH_USER)
+            pass_match = secrets.compare_digest(password, AUTH_PASS)
+
+            if user_match and pass_match:
                 return True
         except Exception:
+            # Malformed header or decoding error
             pass
 
+        # Simple delay to mitigate brute force attacks
+        time.sleep(1)
         self.send_auth_request()
         return False
 
@@ -65,7 +72,23 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(b'Authentication required')
 
     def end_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
+        # Handle CORS
+        # If auth is enabled, strictly control CORS
+        if AUTH_USER and AUTH_PASS:
+            origin = self.headers.get('Origin')
+            allowed_origins_env = os.environ.get('ALD_ALLOWED_ORIGINS')
+
+            if allowed_origins_env and origin:
+                allowed_origins = {o.strip() for o in allowed_origins_env.split(',') if o.strip()}
+                if origin in allowed_origins:
+                    self.send_header('Access-Control-Allow-Origin', origin)
+                    self.send_header('Vary', 'Origin')
+            # If no allowed origins configured, do not send Access-Control-Allow-Origin
+            # This effectively blocks browser fetch/XHR from other origins
+        else:
+            # No auth, allow all (legacy behavior)
+            self.send_header('Access-Control-Allow-Origin', '*')
+
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         super().end_headers()
@@ -104,8 +127,16 @@ if __name__ == "__main__":
 
     host = "0.0.0.0" if args.public else args.host
 
-    AUTH_USER = args.user or os.environ.get("AUTH_USER") or "admin"
+    # Generate secure defaults
+    AUTH_USER = args.user or os.environ.get("AUTH_USER")
     AUTH_PASS = args.password or os.environ.get("AUTH_PASS")
+
+    generated_user = False
+    if not AUTH_USER:
+        # Generate a random username to avoid "admin" default
+        user_alphabet = string.ascii_lowercase + string.digits
+        AUTH_USER = "user_" + "".join(secrets.choice(user_alphabet) for _ in range(8))
+        generated_user = True
 
     if not AUTH_PASS:
         alphabet = string.ascii_letters + string.digits
@@ -113,6 +144,8 @@ if __name__ == "__main__":
         print("\n🔒 Security: Authentication Enabled")
         print(f"   User: {AUTH_USER}")
         print(f"   Pass: {AUTH_PASS}")
+        if generated_user:
+             print("   (Random username generated. Set custom user via --user)")
         print("   (Use these credentials to access the server)\n")
     else:
         print("\n🔒 Security: Authentication Enabled (using configured credentials)\n")
