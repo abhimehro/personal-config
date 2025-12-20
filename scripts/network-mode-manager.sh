@@ -131,12 +131,16 @@ start_controld() {
 }
 
 print_status() {
-  echo -e "\n${BOLD}${BLUE}=== 🌐 Network Status ===${NC}"
+  # Header
+  echo -e "\n${BOLD}${BLUE}   NETWORK STATUS${NC}"
+  echo -e "${BLUE}   ──────────────${NC}"
 
   # --- Control D Status ---
-  echo -e -n "  🤖 Control D:    "
+  local cd_status
+  local cd_display
+
   if pgrep -x "ctrld" >/dev/null 2>&1; then
-    echo -e "${GREEN}● ACTIVE${NC}"
+    cd_status="${GREEN}● ACTIVE${NC}"
     # Best-effort resolver ID extraction
     local running_uid
     running_uid=$(sudo ctrld status 2>/dev/null | grep 'Resolver ID' | awk '{print $NF}' 2>/dev/null || echo "N/A")
@@ -149,36 +153,40 @@ print_status() {
       "1xfy57w34t7") profile_name="Gaming" ;;
     esac
 
-    echo -e "     └─ Profile:   ${YELLOW}$profile_name${NC} (UID: $running_uid)"
+    cd_display="$cd_status (${YELLOW}$profile_name${NC})"
   else
-    echo -e "${RED}○ STOPPED${NC}"
+    cd_display="${RED}○ STOPPED${NC}"
   fi
 
-  echo ""
+  printf "   %s  %-13s %b\n" "🤖" "Control D" "$cd_display"
 
   # --- System DNS Status ---
-  echo -e -n "  📡 System DNS:   "
   local dns_servers
+  local dns_status
   dns_servers=$(networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown")
 
   if echo "$dns_servers" | grep -q "There aren't any DNS Servers"; then
-    echo -e "${YELLOW}DHCP (ISP/Router)${NC}"
+    dns_status="${YELLOW}DHCP (ISP/Router)${NC}"
   elif echo "$dns_servers" | grep -q "127.0.0.1"; then
-    echo -e "${GREEN}127.0.0.1 (Localhost)${NC}"
+    dns_status="${GREEN}127.0.0.1 (Localhost)${NC}"
   else
     # Replace newlines with comma space for cleaner output
     local cleaner_dns
     cleaner_dns=$(echo "$dns_servers" | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')
-    echo -e "${RED}$cleaner_dns${NC}"
+    dns_status="${RED}$cleaner_dns${NC}"
   fi
 
+  printf "   %s  %-13s %b\n" "📡" "System DNS" "$dns_status"
+
   # --- IPv6 Status ---
-  echo -e -n "  🌐 IPv6 Mode:    "
+  local ipv6_status
   if networksetup -getinfo "Wi-Fi" 2>/dev/null | grep -q "IPv6: Automatic"; then
-    echo -e "${GREEN}ENABLED${NC} (Automatic)"
+    ipv6_status="${GREEN}ENABLED${NC} (Automatic)"
   else
-    echo -e "${RED}DISABLED${NC} (Manual/Off)"
+    ipv6_status="${RED}DISABLED${NC} (Manual/Off)"
   fi
+
+  printf "   %s  %-13s %b\n" "🌐" "IPv6 Mode" "$ipv6_status"
 
   echo -e "\n"
 }
