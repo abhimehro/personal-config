@@ -22,7 +22,7 @@ fi
 EXTERNAL_DOWNLOADER_ARGS=()
 if command -v aria2c >/dev/null 2>&1; then
   # -x8: 8 connections per server
-  # -s8: 8 connections max
+  # -s8: 8 splits/sources per download
   # -k1M: 1MB split size
   echo "⚡ Speed boost: using aria2c for multi-connection download"
   EXTERNAL_DOWNLOADER_ARGS=(--downloader aria2c --downloader-args "aria2c:-c -x8 -s8 -k1M")
