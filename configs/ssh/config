@@ -17,7 +17,7 @@ Host github.com
 Host cursor-vpn
     HostName 82.21.151.194         # Windscribe Atlanta static IP
     Port 36555                     # External port (Windscribe forwards to :22)
-    User abhimehrotra
+    User speedybee
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -34,7 +34,7 @@ Host cursor-vpn
 # VPN OFF: Use local hostname (mDNS)
 Host cursor-local
     HostName abhis-macbook-air.local
-    User abhimehrotra
+    User speedybee
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -50,7 +50,7 @@ Host cursor-local
 # FALLBACK: Use .local domain (mDNS/Bonjour)
 Host cursor-mdns
     HostName abhis-macbook-air.local
-    User abhimehrotra
+    User speedybee
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -64,7 +64,7 @@ Host cursor-mdns
 # SMART ALIAS: Auto-detect which connection to use
 Host cursor-auto
     HostName abhis-macbook-air.local
-    User abhimehrotra
+    User speedybee
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 30
