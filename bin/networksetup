@@ -1,7 +1,0 @@
-#!/bin/bash
-if [[ "$1" == "-getdnsservers" ]]; then
-  echo "1.1.1.1"
-  echo "8.8.8.8"
-elif [[ "$1" == "-getinfo" ]]; then
-  echo "IPv6: Automatic"
-fi
