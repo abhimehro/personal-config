@@ -228,3 +228,5 @@ configs/.config/fish/functions/*
 # Local-only / machine-generated files
 * (1)
 * (1).*
+media-streaming/backup/*.backup
+media-streaming/backup/rclone.conf.backup
