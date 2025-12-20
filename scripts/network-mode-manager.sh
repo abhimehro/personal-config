@@ -137,7 +137,7 @@ print_status() {
 
   # --- Control D Status ---
   local cd_status
-  local cd_extra=""
+  local cd_display
 
   if pgrep -x "ctrld" >/dev/null 2>&1; then
     cd_status="${GREEN}● ACTIVE${NC}"
@@ -153,12 +153,12 @@ print_status() {
       "1xfy57w34t7") profile_name="Gaming" ;;
     esac
 
-    cd_extra="(${YELLOW}$profile_name${NC})"
+    cd_display="$cd_status (${YELLOW}$profile_name${NC})"
   else
-    cd_status="${RED}○ STOPPED${NC}"
+    cd_display="${RED}○ STOPPED${NC}"
   fi
 
-  printf "   %-17s %b %b\n" "🤖 Control D" "$cd_status" "$cd_extra"
+  printf "   %s  %-13s %b\n" "🤖" "Control D" "$cd_display"
 
   # --- System DNS Status ---
   local dns_servers
@@ -176,7 +176,7 @@ print_status() {
     dns_status="${RED}$cleaner_dns${NC}"
   fi
 
-  printf "   %-17s %b\n" "📡 System DNS" "$dns_status"
+  printf "   %s  %-13s %b\n" "📡" "System DNS" "$dns_status"
 
   # --- IPv6 Status ---
   local ipv6_status
@@ -186,7 +186,7 @@ print_status() {
     ipv6_status="${RED}DISABLED${NC} (Manual/Off)"
   fi
 
-  printf "   %-17s %b\n" "🌐 IPv6 Mode" "$ipv6_status"
+  printf "   %s  %-13s %b\n" "🌐" "IPv6 Mode" "$ipv6_status"
 
   echo -e "\n"
 }
