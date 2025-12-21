@@ -1,0 +1,47 @@
+<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+    <key>Label</key>
+    <string>com.abhimehrotra.maintenance.backupdiscovery</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>MAINTENANCE_HOME</key>
+        <string>/Users/abhimehrotra/Library/Maintenance</string>
+        <key>AUTOMATED_RUN</key>
+        <string>1</string>
+    </dict>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/abhimehrotra/Library/Maintenance/bin/protondrive_backup_discover.sh</string>
+        <string>--scan</string>
+    </array>
+    
+    <key>StandardOutPath</key>
+    <string>/Users/abhimehrotra/Library/Logs/maintenance/backup_discovery.out</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/Users/abhimehrotra/Library/Logs/maintenance/backup_discovery.err</string>
+    
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>15</integer>
+    </dict>
+    
+    <key>RunAtLoad</key>
+    <false/>
+    
+    <key>Nice</key>
+    <integer>10</integer>
+</dict>
+</plist>
