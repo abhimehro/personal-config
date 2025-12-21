@@ -212,9 +212,16 @@ The `protondrive_backup_discover.sh` script helps automatically identify new fil
 
 ### Automated Weekly Scan
 
-Add to your weekly maintenance:
+✅ **Automatically Enabled**: Discovery scans run weekly as part of the automated maintenance schedule.
+
+The backup discovery script runs every Monday at 9:00 AM as part of the weekly maintenance workflow. Discovery results are logged to:
+```
+~/Library/Logs/maintenance/backup_discovery_YYYYMMDD_HHMMSS.log
+```
+
+To review recent discovery reports:
 ```bash
-echo \"~/Documents/dev/personal-config/maintenance/bin/protondrive_backup_discover.sh --scan\" >> ~/Documents/dev/personal-config/maintenance/bin/weekly_maintenance.sh
+ls -lt ~/Library/Logs/maintenance/backup_discovery_*.log | head -5
 ```
 
 ---
