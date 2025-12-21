@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.speedybee.media.webdav.highperformance</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/rclone</string>
+        <string>serve</string>
+        <string>webdav</string>
+        <string>media:</string>
+        <string>--addr</string>
+        <string>0.0.0.0:8088</string>
+        <string>--user</string>
+        <string>infuse</string>
+        <string>--pass</string>
+        <string>EY5KcsRetjCzapA</string>
+        <string>--dir-cache-time</string>
+        <string>2h</string>
+        <string>--poll-interval</string>
+        <string>10m</string>
+        <string>--vfs-cache-mode</string>
+        <string>writes</string>
+        <string>--vfs-cache-max-age</string>
+        <string>24h</string>
+        <string>--vfs-cache-poll-interval</string>
+        <string>5m</string>
+        <string>--buffer-size</string>
+        <string>128M</string>
+        <string>--read-only</string>
+        <string>--log-level</string>
+        <string>INFO</string>
+    </array>
+    
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    
+    <key>StandardOutPath</key>
+    <string>/Users/speedybee/Library/Logs/media/webdav-fast.out</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/Users/speedybee/Library/Logs/media/webdav-fast.err</string>
+    
+    <key>WorkingDirectory</key>
+    <string>/Users/speedybee</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string>
+        <key>HOME</key>
+        <string>/Users/speedybee</string>
+    </dict>
+    
+    <key>ProcessType</key>
+    <string>Background</string>
+    
+    <key>Nice</key>
+    <integer>-5</integer>
+</dict>
+</plist>
