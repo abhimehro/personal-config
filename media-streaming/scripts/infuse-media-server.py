@@ -65,12 +65,45 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b'Authentication required')
 
+    def validate_path(self, path):
+        """
+        Validates the path to prevent directory traversal and argument injection.
+        Returns the validated path or raises ValueError.
+        """
+        # Decode URL encoding (already done by caller, but good to be safe if moved)
+        # unquote(path) is called before passing here in do_GET
+
+        # Remove leading slash to ensure relative path
+        clean_path = path.lstrip('/')
+
+        # 1. Prevent Directory Traversal
+        # Check for '..' components
+        parts = clean_path.split('/')
+        if '..' in parts:
+            raise ValueError("Invalid path: Directory traversal attempt detected")
+
+        # 2. Prevent Argument Injection (for rclone)
+        # Check if path starts with '-'
+        if clean_path.startswith('-'):
+            raise ValueError("Invalid path: Argument injection attempt detected")
+
+        # 3. Prevent Null Byte Injection
+        if '\0' in clean_path:
+            raise ValueError("Invalid path: Null byte detected")
+
+        return clean_path
+
     def do_GET(self):
         """Handle GET requests by proxying to rclone"""
         if not self.check_auth():
             return
 
-        path = unquote(self.path.lstrip('/'))
+        try:
+            raw_path = unquote(self.path.lstrip('/'))
+            path = self.validate_path(raw_path)
+        except ValueError as e:
+            self.send_error(403, str(e))
+            return
         
         try:
             if path == '' or path == '/':
