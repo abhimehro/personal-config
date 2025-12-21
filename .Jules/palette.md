@@ -10,3 +10,6 @@
 ## 2025-11-20 - CLI Output Enhancement
 **Learning:** Adding emojis and structured formatting (tables, indentation) to shell script output significantly improves readability and user delight, even in a text-based interface. Mocks are essential for verifying visual changes in scripts that rely on system commands (like `networksetup`) unavailable in the dev environment.
 **Action:** When working on CLI tools, always check if the output can be "humanized" with emojis and better spacing. Use temporary mocks to verify visual formatting when system commands are missing.
+## 2025-11-20 - Consistency as UX
+**Learning:** Improving legacy scripts (`youtube-download.sh`) to match the visual style (colors, emojis, helper functions) of modern scripts (`network-mode-manager.sh`) reduces cognitive dissonance and makes the toolset feel like a cohesive product rather than a bag of scripts.
+**Action:** When touching a legacy script, refactor its output to match the established "design system" (Color codes, Emojis, Helper names).
