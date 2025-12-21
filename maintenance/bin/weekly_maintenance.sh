@@ -103,9 +103,6 @@ run_task "node_maintenance.sh"
 # 3) OneDrive monitoring and cleanup
 run_task "onedrive_monitor.sh"
 
-# 4) ProtonDrive backup discovery (scan for new files/directories)
-run_task "protondrive_backup_discover.sh"
-
 # Summary
 log_info "=== WEEKLY MAINTENANCE SUMMARY ==="
 log_info "Tasks completed: $TASKS_COMPLETED"

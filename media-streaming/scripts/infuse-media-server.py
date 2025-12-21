@@ -99,14 +99,15 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         try:
-            raw_path = unquote(self.path.lstrip('/'))
+            # unquote first, then validate (which does lstrip)
+            raw_path = unquote(self.path)
             path = self.validate_path(raw_path)
         except ValueError as e:
             self.send_error(403, str(e))
             return
         
         try:
-            if path == '' or path == '/':
+            if path == '':
                 # List root directory
                 result = subprocess.run(['rclone', 'lsf', self.rclone_remote], 
                                       capture_output=True, text=True)
