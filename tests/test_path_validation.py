@@ -1,7 +1,6 @@
 import unittest
 import sys
 import os
-from unittest.mock import MagicMock
 
 # Add the script directory to path to import the module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../media-streaming/scripts')))
@@ -23,7 +22,6 @@ class TestPathValidation(unittest.TestCase):
         self.handler = infuse_media_server.MediaServerHandler
         # Since validate_path is an instance method but doesn't use self, we can call it unbound or bind it to a dummy.
         # Or better, just instantiate a dummy.
-        pass
 
     def validate_path(self, path):
         # Helper to call the method on the class with a dummy self (or just use the class if it was static, but it's not decorated)
