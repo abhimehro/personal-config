@@ -28,9 +28,10 @@ check_requirements() {
   # to maintain compatibility with stock macOS bash.
 
   info "Checking prerequisites..."
+  echo ""
 
-  # Define requirements
-  local reqs="brew op git rclone"
+  # Define requirements (git is not required as repo is already cloned)
+  local reqs="brew op rclone"
 
   for cmd in $reqs; do
     if command -v "$cmd" >/dev/null 2>&1; then
@@ -50,17 +51,33 @@ check_requirements() {
     done
 
     echo ""
-    info "Installation instructions:"
+    info "Installation instructions (install Homebrew first):"
+
+    # Sort missing so brew appears first if present
+    local sorted_missing=()
     for cmd in "${missing[@]}"; do
+      if [[ "$cmd" == "brew" ]]; then
+        sorted_missing=("brew" "${sorted_missing[@]}")
+      else
+        sorted_missing+=("$cmd")
+      fi
+    done
+
+    for cmd in "${sorted_missing[@]}"; do
       local hint=""
       case "$cmd" in
         "brew") hint='/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"' ;;
         "op")   hint='brew install --cask 1password/tap/1password-cli' ;;
-        "git")  hint='brew install git' ;;
         "rclone") hint='brew install rclone' ;;
         *)      hint="brew install $cmd" ;;
       esac
-      echo "   👉 To install $cmd: $hint"
+
+      if [[ "$cmd" == "brew" ]]; then
+        echo "   👉 1. Install Homebrew (Required for others):"
+        echo "         $hint"
+      else
+        echo "   👉 To install $cmd: $hint"
+      fi
     done
     echo ""
     exit 1
