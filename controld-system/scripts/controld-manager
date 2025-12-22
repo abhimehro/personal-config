@@ -228,6 +228,25 @@ switch_profile() {
     
     log "Switching to $profile_name profile with $protocol protocol..."
     
+    # Optimization: Early exit if already running the desired profile/protocol
+    if pgrep -x "ctrld" >/dev/null && [[ -L "$CONTROLD_DIR/ctrld.toml" ]]; then
+        local current_config
+        current_config=$(readlink "$CONTROLD_DIR/ctrld.toml")
+
+        # Verify the symlink points to the correct profile config file
+        if [[ "$current_config" == "$config_file" ]]; then
+            # Verify the protocol inside the config matches
+            if grep -q "type = '$protocol'" "$config_file" 2>/dev/null; then
+                # Quick health check (fast path) to ensure it's actually working
+                if dig @127.0.0.1 google.com +short +time=1 >/dev/null 2>&1; then
+                    log_success "Already running $profile_name profile with $protocol. No change needed."
+                    return 0
+                fi
+                log_warning "Profile matches but health check failed. Restarting service..."
+            fi
+        fi
+    fi
+
     # Ensure directories exist before generating configs
     setup_directories
     
