@@ -22,3 +22,7 @@
 **Vulnerability:** Timing attacks in password comparison and permissive CORS configurations.
 **Learning:** `==` comparison is vulnerable to timing attacks. Wildcard CORS (`*`) combined with Basic Auth allows authenticated requests from malicious origins.
 **Prevention:** Use `secrets.compare_digest()` for constant-time comparison. Remove wildcard CORS when auth is enabled or implement strict origin allowlisting.
+## 2025-12-24 - Path Traversal in Custom Rclone Wrapper
+**Vulnerability:** `infuse-media-server.py` passed unvalidated URL paths directly to `rclone` via `subprocess`, allowing directory traversal via `../`.
+**Learning:** Custom HTTP handlers that map URLs to command-line arguments must explicitly validate paths, as they bypass standard static file server protections.
+**Prevention:** Normalize and validate all user-supplied paths before passing them to subprocesses or file APIs.
