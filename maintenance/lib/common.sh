@@ -31,11 +31,31 @@ fi
 # LOGGING FUNCTIONS
 # =============================================================================
 
+# Fast timestamp generation
+if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+    get_timestamp() {
+        printf -v "$1" "%(%Y-%m-%d %H:%M:%S)T" -1
+    }
+else
+    get_timestamp() {
+        local val
+        val="$(date '+%Y-%m-%d %H:%M:%S')"
+        eval "$1='$val'"
+    }
+fi
+
 log() {
     local level="${1:-INFO}"
     shift
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
-    local script_name="$(basename "${BASH_SOURCE[2]:-${BASH_SOURCE[1]:-common}}" .sh)"
+
+    local ts
+    get_timestamp ts
+
+    # Avoid basename subshell
+    local source="${BASH_SOURCE[2]:-${BASH_SOURCE[1]:-common}}"
+    local script_name="${source##*/}"
+    script_name="${script_name%.sh}"
+
     local line="$ts [$level] [$script_name] $*"
     
     echo "$line" | tee -a "$LOG_DIR/${script_name}.log" 2>/dev/null || echo "$line"
@@ -52,7 +72,9 @@ log_error() { log "ERROR" "$@"; }
 
 # Simple locking using mkdir
 with_lock() {
-    local name="${1:-$(basename "${BASH_SOURCE[1]}" .sh)}"
+    local source="${BASH_SOURCE[1]}"
+    local name_base="${source##*/}"
+    local name="${1:-${name_base%.sh}}"
     local lock_dir="$MNT_ROOT/tmp/${name}.lock"
     
     if mkdir "$lock_dir" 2>/dev/null; then
@@ -124,14 +146,23 @@ require_cmd() {
 }
 
 script_basename() { 
-    basename "${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}" .sh
+    local source="${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
+    local name="${source##*/}"
+    echo "${name%.sh}"
 }
 
 acquire_lock() { with_lock "$@"; }
 
 log_file_init() {
     local base="${1:-$(script_basename)}"
-    LOG_FILE="$LOG_DIR/${base}-$(date +%Y%m%d).log"
+    local ts
+    # If we are in bash 4+, use printf, otherwise date
+    if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+        printf -v ts "%(%Y%m%d)T" -1
+    else
+        ts="$(date +%Y%m%d)"
+    fi
+    LOG_FILE="$LOG_DIR/${base}-${ts}.log"
     touch "$LOG_FILE" || true
 }
 
