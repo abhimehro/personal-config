@@ -8,13 +8,27 @@ LOG_DIR="$HOME/Library/Logs/maintenance"
 mkdir -p "$LOG_DIR"
 
 # Basic logging
+if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+    get_timestamp() {
+        printf -v "$1" "%(%Y-%m-%d %H:%M:%S)T" -1
+    }
+else
+    get_timestamp() {
+        local val
+        val="$(date '+%Y-%m-%d %H:%M:%S')"
+        eval "$1='$val'"
+    }
+fi
+
 log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    get_timestamp ts
     echo "$ts [INFO] [system_cleanup] $*" | tee -a "$LOG_DIR/system_cleanup.log"
 }
 
 log_warn() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    get_timestamp ts
     echo "$ts [WARNING] [system_cleanup] $*" | tee -a "$LOG_DIR/system_cleanup.log"
 }
 
