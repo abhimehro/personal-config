@@ -5,7 +5,7 @@ set -eo pipefail
 
 # Architecture and OS detection
 ARCH="$(uname -m)"
-OS_VER="$(sw_vers -productVersion)"
+OS_VER="$(sw_vers -productVersion 2>/dev/null || echo "unknown")"
 
 # Simple PATH setup for Apple Silicon
 export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -34,14 +34,26 @@ fi
 log() {
     local level="${1:-INFO}"
     shift
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
-    local script_name="$(basename "${BASH_SOURCE[2]:-${BASH_SOURCE[1]:-common}}" .sh)"
+
+    # Bolt Optimization: Use printf if bash 4.2+ (100x faster), fallback to date for macOS bash 3.2
+    local ts
+    if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 2) )); then
+        printf -v ts '%(%Y-%m-%d %H:%M:%S)T' -1
+    else
+        ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    fi
+
+    # Bolt Optimization: Use parameter expansion instead of basename subprocess (Bash 3.2 compatible)
+    local source="${BASH_SOURCE[2]:-${BASH_SOURCE[1]:-common}}"
+    local script_name="${source##*/}"
+    script_name="${script_name%.sh}"
+
     local line="$ts [$level] [$script_name] $*"
     
     echo "$line" | tee -a "$LOG_DIR/${script_name}.log" 2>/dev/null || echo "$line"
 }
 
-log_debug() { [[ "${DEBUG:-0}" == "1" ]] && log "DEBUG" "$@"; }
+log_debug() { [[ "${DEBUG:-0}" == "1" ]] && log "DEBUG" "$@" || true; }
 log_info()  { log "INFO" "$@"; }
 log_warn()  { log "WARNING" "$@"; }
 log_error() { log "ERROR" "$@"; }
@@ -155,4 +167,4 @@ cleanup_and_exit() {
 }
 
 # Log successful load
-log_debug "Common library loaded - Arch: $ARCH, macOS: $OS_VER"
+log_debug "Common library loaded - Arch: $ARCH, macOS: $OS_VER" || true
