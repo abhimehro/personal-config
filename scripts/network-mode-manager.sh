@@ -232,7 +232,8 @@ main() {
     controld)
       echo -e "${BLUE}>>> ${E_BROWSING} Switching to CONTROL D (DNS) MODE${NC}"
       set_ipv6 "enable"
-      stop_controld
+      # ⚡ Bolt Optimization: Skip redundant stop_controld to prevent DNS flap (Empty -> 127.0.0.1)
+      # start_controld delegates to controld-manager which safely handles cleanup and handover.
       start_controld "$profile"
       success "System is now protected by Control D (profile: $profile). Ensure Windscribe is disconnected."
       print_status
