@@ -180,8 +180,35 @@ run_monthly_maintenance() {
     
     run_weekly_maintenance
     
-    run_script "system_cleanup.sh" "cleanup"
-    run_script "editor_cleanup.sh" "cleanup"
+    echo "Starting monthly parallel cleanup tasks..." | tee -a "$MASTER_LOG"
+
+    local system_cleanup_status="$LOG_DIR/status_system_cleanup_$TIMESTAMP.log"
+    local editor_cleanup_status="$LOG_DIR/status_editor_cleanup_$TIMESTAMP.log"
+
+    pids=""
+
+    (run_script "system_cleanup.sh" "cleanup" "$system_cleanup_status" "true") &
+    pids="$pids $!"
+
+    (run_script "editor_cleanup.sh" "cleanup" "$editor_cleanup_status" "true") &
+    pids="$pids $!"
+
+    # Wait for all
+    for pid in $pids; do
+        wait "$pid"
+    done
+
+    # Consolidate logs
+    cat "$system_cleanup_status" "$editor_cleanup_status" >> "$MASTER_LOG"
+
+    # Consolidate Results from temp file
+    if [[ -f "$PARALLEL_RESULTS_LOG" ]]; then
+        while IFS= read -r line; do
+            SUMMARY_RESULTS+=("$line")
+        done < "$PARALLEL_RESULTS_LOG"
+    fi
+
+    echo "Monthly parallel tasks completed." | tee -a "$MASTER_LOG"
     
     echo "Running deep cleaner with caution..." | tee -a "$MASTER_LOG"
     run_script "deep_cleaner.sh" "cleanup"
