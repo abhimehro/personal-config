@@ -16,9 +16,9 @@
 **Prevention:** Use a wrapper class to enforce authentication. Use `secrets` module for secure password generation. Bind to `127.0.0.1` by default and require explicit flags for public binding.
 ## 2025-12-18 - Python Security Best Practices
 **Vulnerability:** Timing attacks in password comparison and permissive CORS configurations.
-**Learning:**  comparison is vulnerable to timing attacks. Wildcard CORS () combined with Basic Auth allows authenticated requests from malicious origins.
-**Prevention:** Use  for constant-time comparison. Remove wildcard CORS when auth is enabled or implement strict origin allowlisting.
-## 2025-12-18 - Python Security Best Practices
-**Vulnerability:** Timing attacks in password comparison and permissive CORS configurations.
 **Learning:** `==` comparison is vulnerable to timing attacks. Wildcard CORS (`*`) combined with Basic Auth allows authenticated requests from malicious origins.
 **Prevention:** Use `secrets.compare_digest()` for constant-time comparison. Remove wildcard CORS when auth is enabled or implement strict origin allowlisting.
+## 2025-12-23 - Custom Path Traversal Vulnerability
+**Vulnerability:** Path traversal in `media-streaming/scripts/infuse-media-server.py` via unsanitized `..` in URL paths passed to `rclone`.
+**Learning:** Custom HTTP request handlers that interface with command-line tools (like `rclone`) must manually sanitize paths, as they bypass standard server directory protections.
+**Prevention:** Always implement an `is_safe_path()` check that validates `..` and other traversal characters are not present in user inputs before using them in file system or shell operations.
