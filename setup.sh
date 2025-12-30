@@ -10,16 +10,21 @@ set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+BOLD='\033[1m'
 BLUE='\033[0;34m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
-info()  { echo -e "${BLUE}ℹ️  [INFO]${NC}  $*"; }
-ok()    { echo -e "${GREEN}✅ [OK]${NC}    $*"; }
-warn()  { echo -e "${YELLOW}⚠️  [WARN]${NC}  $*"; }
-err()   { echo -e "${RED}❌ [ERR]${NC}   $*" >&2; }
+info()   { echo -e "${BLUE}ℹ️  [INFO]${NC}  $*"; }
+ok()     { echo -e "${GREEN}✅ [OK]${NC}    $*"; }
+warn()   { echo -e "${YELLOW}⚠️  [WARN]${NC}  $*"; }
+err()    { echo -e "${RED}❌ [ERR]${NC}   $*" >&2; }
+
+hr()     { echo -e "${BLUE}────────────────────────────────────────────────────────────${NC}"; }
+header() { echo; echo -e "${BOLD}${BLUE}🔷 $*${NC}"; hr; }
 
 require_cmd() {
   local cmd="$1"
@@ -38,13 +43,16 @@ require_cmd() {
 }
 
 ensure_macos() {
+  header "Environment Check"
   if [[ "$(uname -s)" != "Darwin" ]]; then
     err "This bootstrap is macOS-only."
     exit 1
   fi
+  info "Running on macOS $(sw_vers -productVersion)"
 }
 
 sync_configs() {
+  header "Configuration Sync"
   info "Syncing configuration symlinks..."
   bash "$REPO_ROOT/scripts/sync_all_configs.sh"
   bash "$REPO_ROOT/scripts/verify_all_configs.sh"
@@ -52,6 +60,7 @@ sync_configs() {
 }
 
 install_maintenance() {
+  header "System Maintenance"
   info "Installing maintenance system (launchd agents + scripts)..."
   bash "$REPO_ROOT/maintenance/install.sh"
   ok "Maintenance system installed."
@@ -68,6 +77,7 @@ remove_legacy_agents() {
 }
 
 prepare_network_tools() {
+  header "Network Tools"
   info "Ensuring network helpers are executable..."
   chmod +x "$REPO_ROOT/scripts/network-mode-manager.sh" \
             "$REPO_ROOT/scripts/network-mode-verify.sh" \
@@ -77,6 +87,7 @@ prepare_network_tools() {
 }
 
 stage_rclone_config() {
+  header "Media Services"
   local rclone_dir="$HOME/.config/rclone"
   local rclone_cfg="$rclone_dir/rclone.conf"
   local template="$REPO_ROOT/media-streaming/configs/rclone.conf.template"
@@ -139,9 +150,11 @@ install_media_launchd() {
 }
 
 main() {
-  ensure_macos
-  info "Starting bootstrap from $REPO_ROOT"
+  # Welcome Banner
+  echo -e "${BOLD}🎨 Personal Config Bootstrap${NC}"
+  echo -e "   Repository: $REPO_ROOT"
 
+  ensure_macos
   require_cmd brew
   require_cmd op
 
@@ -153,24 +166,26 @@ main() {
   stage_media_scripts
   install_media_launchd
 
-  cat <<'SUMMARY'
-
-Bootstrap complete ✅
-- Dotfiles linked and verified
-- Maintenance launchd installed
-- Network helpers prepared
-- rclone config seeded (fill secrets via 1Password)
-- Media scripts staged and launchd agents (if present) loaded
-
-Next steps:
-1) Populate ~/.config/rclone/rclone.conf with real credentials (use `op inject`).
-2) If needed, set MEDIA_WEBDAV_USER/PASS in ~/.config/media-server/credentials (untracked).
-3) Verify services:
-   - launchctl list | grep maintenance
-   - launchctl list | grep media
-   - rclone listremotes
-4) Run ./scripts/network-mode-verify.sh controld browsing
-SUMMARY
+  echo
+  echo -e "${GREEN}🎉 Bootstrap Complete!${NC}"
+  hr
+  echo -e "${BOLD}Summary of Actions:${NC}"
+  echo -e "  ✅ Dotfiles linked and verified"
+  echo -e "  ✅ Maintenance launchd installed"
+  echo -e "  ✅ Network helpers prepared"
+  echo -e "  ✅ Media scripts staged and launchd agents loaded"
+  hr
+  echo
+  echo -e "${BOLD}👉 Next Steps:${NC}"
+  echo -e "  1. Populate ${BOLD}~/.config/rclone/rclone.conf${NC} with real credentials"
+  echo -e "     (use ${CYAN}op inject${NC} if available)"
+  echo -e "  2. If needed, set credentials in ${BOLD}~/.config/media-server/credentials${NC}"
+  echo -e "  3. Verify services:"
+  echo -e "     ${CYAN}launchctl list | grep maintenance${NC}"
+  echo -e "     ${CYAN}launchctl list | grep media${NC}"
+  echo -e "  4. Run network verification:"
+  echo -e "     ${CYAN}./scripts/network-mode-verify.sh controld browsing${NC}"
+  echo
 }
 
 main "$@"
