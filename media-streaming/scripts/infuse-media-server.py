@@ -65,6 +65,14 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b'Authentication required')
 
+    def is_safe_path(self, path):
+        """Check for path traversal attempts"""
+        # Split by forward slash (URL path separator)
+        parts = path.split('/')
+        if '..' in parts:
+            return False
+        return True
+
     def do_GET(self):
         """Handle GET requests by proxying to rclone"""
         if not self.check_auth():
@@ -72,6 +80,10 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
 
         path = unquote(self.path.lstrip('/'))
         
+        if not self.is_safe_path(path):
+            self.send_error(403, "Forbidden: Path traversal detected")
+            return
+
         try:
             if path == '' or path == '/':
                 # List root directory
