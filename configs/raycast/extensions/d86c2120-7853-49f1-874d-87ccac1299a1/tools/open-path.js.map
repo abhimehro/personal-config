@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/tools/open-path.ts"],
+  "sourcesContent": ["import { open } from \"@raycast/api\";\n\ntype Input = {\n  /**\n   * The path which either points to a directory, Xcode Project, Swift Package (Package.swift), Xcode Workspace, Swift Playground or a file.\n   */\n  path: string;\n};\n\n/**\n * Opens a path which either points to a directory, Xcode Project, Swift Package (Package.swift), Xcode Workspace, Swift Playground or a file.\n * @param input The input.\n */\nexport default (input: Input) => open(input.path);\n"],
+  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAqB,wBAadF,EAASG,MAAiB,QAAKA,EAAM,IAAI",
+  "names": ["open_path_exports", "__export", "open_path_default", "__toCommonJS", "import_api", "input"]
+}
