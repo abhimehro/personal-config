@@ -52,7 +52,7 @@
     "graphql-request": "^4.0.0",
     "graphql-tag": "^2.12.6",
     "javascript-time-ago": "^2.3.9",
-    "octokit": "^2.0.4"
+    "octokit": "^5.0.5"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^4.0.1",
