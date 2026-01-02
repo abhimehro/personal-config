@@ -30,7 +30,8 @@ def extract_domains_from_file(filepath, action_filter=None):
     return domains
 
 def main():
-    base_dir = Path("/Users/abhimehrotra/Downloads")
+    # Allow overriding base directory for testing/portability
+    base_dir = Path(os.environ.get("ADGUARD_LISTS_DIR", "/Users/abhimehrotra/Downloads"))
     
     print("🔍 Consolidating Ad-Blocking Lists...")
     print("=" * 50)
@@ -91,6 +92,10 @@ def main():
     
     print(f"\n✅ Allowlist total domains: {len(allowlist_domains)}")
     
+    # ⚡ Bolt Optimization: Sort once, reuse everywhere (O(N log N))
+    sorted_denylist = sorted(denylist_domains)
+    sorted_allowlist = sorted(allowlist_domains)
+
     # 3. CREATE CONSOLIDATED TEXT FILES
     print("\n💾 Creating consolidated text files...")
     
@@ -101,7 +106,7 @@ def main():
         f.write("# This file contains all domains from various tracker lists that should be blocked\n")
         f.write("# Generated from: Microsoft, No SafeSearch, OPPO/Realme, Roku, Samsung, TikTok, Vivo, Xiaomi, Amazon, Apple, Badware Hoster, LG webOS, Huawei Trackers\n")
         f.write(f"# Total domains: {len(denylist_domains):,}\n\n")
-        for domain in sorted(denylist_domains):
+        for domain in sorted_denylist:
             f.write(f"{domain}\n")
     
     # Create Allowlist text file (AdGuard allowlist syntax with @@ prefix)
@@ -111,7 +116,7 @@ def main():
         f.write("# This file contains domains that should NOT be blocked\n")
         f.write("# Generated from: CD-Control-D-Bypass and legitimate entries from CD-Most-Abused-TLDs\n")
         f.write(f"# Total domains: {len(allowlist_domains):,}\n\n")
-        for domain in sorted(allowlist_domains):
+        for domain in sorted_allowlist:
             f.write(f"@@{domain}\n")  # AdGuard allowlist syntax
     
     print(f"✅ Created: {denylist_txt_path}")
@@ -137,7 +142,7 @@ def main():
                     "status": 1
                 }
             }
-            for domain in sorted(denylist_domains)
+            for domain in sorted_denylist
         ]
     }
     
@@ -158,7 +163,7 @@ def main():
                     "status": 1
                 }
             }
-            for domain in sorted(allowlist_domains)
+            for domain in sorted_allowlist
         ]
     }
     
@@ -166,11 +171,12 @@ def main():
     denylist_json_path = base_dir / "Consolidated-Denylist.json"
     allowlist_json_path = base_dir / "Consolidated-Allowlist.json"
     
+    # ⚡ Bolt Optimization: Minified JSON (no indent) reduces file size and write time
     with open(denylist_json_path, 'w', encoding='utf-8') as f:
-        json.dump(denylist_json, f, indent=2, ensure_ascii=False)
+        json.dump(denylist_json, f, separators=(',', ':'), ensure_ascii=False)
     
     with open(allowlist_json_path, 'w', encoding='utf-8') as f:
-        json.dump(allowlist_json, f, indent=2, ensure_ascii=False)
+        json.dump(allowlist_json, f, separators=(',', ':'), ensure_ascii=False)
     
     print(f"✅ Created: {denylist_json_path}")
     print(f"✅ Created: {allowlist_json_path}")
