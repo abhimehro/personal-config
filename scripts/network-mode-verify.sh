@@ -39,7 +39,26 @@ check_controld_active() {
 
   echo -e "${BLUE}=== Verifying CONTROL D ACTIVE state ===${NC}"
 
-  # 1) LaunchDaemon / process
+  # Start network checks in background (Parallelization)
+  local tmp_who tmp_aaaa
+  tmp_who=$(mktemp)
+  tmp_aaaa=$(mktemp)
+
+  # 3) Basic DNS & 4) Connectivity checks (Background)
+  dig @"$LISTENER_IP" example.com +short +time=5 >/dev/null 2>&1 &
+  local pid_dns=$!
+
+  dig @"$LISTENER_IP" p.controld.com +short +time=5 >/dev/null 2>&1 &
+  local pid_conn=$!
+
+  # 4) whoami & 5) IPv6 checks (Background)
+  (dig @"$LISTENER_IP" +short whoami.control-d.net 2>/dev/null | head -n1 || true) > "$tmp_who" &
+  local pid_who=$!
+
+  (dig @"$LISTENER_IP" +short AAAA example.com 2>/dev/null | head -n1 || true) > "$tmp_aaaa" &
+  local pid_aaaa=$!
+
+  # 1) LaunchDaemon / process (Local Check)
   if sudo launchctl list | grep -q "ctrld"; then
     pass "ctrld LaunchDaemon is loaded (launchctl list | grep ctrld)."
   else
@@ -54,7 +73,7 @@ check_controld_active() {
     ok=1
   fi
 
-  # 2) DNS points at local listener
+  # 2) DNS points at local listener (Local Check)
   local ns
   ns=$(scutil --dns | awk '/^resolver #1/{f=1} f && /nameserver\[0\]/{print $3; exit}' || true)
   if [[ "$ns" == "$LISTENER_IP" ]]; then
@@ -64,15 +83,18 @@ check_controld_active() {
     ok=1
   fi
 
-  # 3) Basic DNS & Control D connectivity via LISTENER_IP
-  if dig @"$LISTENER_IP" example.com +short +time=5 >/dev/null 2>&1; then
+  # Collect Background Results
+
+  # 3) Basic DNS
+  if wait "$pid_dns"; then
     pass "Basic DNS resolution via Control D (example.com) is working."
   else
     fail "Basic DNS resolution via Control D (example.com) failed."
     ok=1
   fi
 
-  if dig @"$LISTENER_IP" p.controld.com +short +time=5 >/dev/null 2>&1; then
+  # Connectivity
+  if wait "$pid_conn"; then
     pass "Control D connectivity confirmed via p.controld.com."
   else
     fail "Control D connectivity check (p.controld.com) failed."
@@ -80,8 +102,10 @@ check_controld_active() {
   fi
 
   # 4) whoami.control-d.net resolution (soft check)
+  wait "$pid_who"
   local who
-  who=$(dig @"$LISTENER_IP" +short whoami.control-d.net 2>/dev/null | head -n1 || true)
+  who=$(cat "$tmp_who")
+  rm -f "$tmp_who"
   if [[ -n "$who" ]]; then
     pass "whoami.control-d.net resolved to '$who'."
   else
@@ -89,8 +113,10 @@ check_controld_active() {
   fi
 
   # 5) IPv6 AAAA query (soft check – IPv6 optional)
+  wait "$pid_aaaa"
   local aaaa
-  aaaa=$(dig @"$LISTENER_IP" +short AAAA example.com 2>/dev/null | head -n1 || true)
+  aaaa=$(cat "$tmp_aaaa")
+  rm -f "$tmp_aaaa"
   if [[ -n "$aaaa" ]]; then
     pass "IPv6 AAAA lookup for example.com returned '$aaaa'."
   else
