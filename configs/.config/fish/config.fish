@@ -324,3 +324,6 @@ end
 # if status is-interactive
 #     echo \"🐟 Fish shell loaded! Type 'fishconfig' to edit config.\"
 # end
+
+# Added by Antigravity
+fish_add_path /Users/speedybee/.antigravity/antigravity/bin
