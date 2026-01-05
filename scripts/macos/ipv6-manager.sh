@@ -16,8 +16,14 @@ disable_ipv6() {
     # 1. Standard networksetup method
     while IFS= read -r service; do
         if [[ -n "$service" ]]; then
-            echo "  Disabling IPv6 on: $service"
-            sudo networksetup -setv6off "$service" 2>/dev/null || echo "    (skipped: $service)"
+            # ⚡ Bolt Optimization: Check state first to avoid expensive write operations
+            # Writing system config is slow; reading is fast. Only write if needed.
+            if networksetup -getinfo "$service" 2>/dev/null | grep -q "IPv6: Off"; then
+                echo "    (already disabled: $service)"
+            else
+                echo "  Disabling IPv6 on: $service"
+                sudo networksetup -setv6off "$service" 2>/dev/null || echo "    (skipped: $service)"
+            fi
         fi
     done < <(get_network_services)
 
@@ -38,8 +44,13 @@ enable_ipv6() {
     # 1. Standard networksetup method
     while IFS= read -r service; do
         if [[ -n "$service" ]]; then
-            echo "  Enabling IPv6 on: $service"
-            sudo networksetup -setv6automatic "$service" 2>/dev/null || echo "    (skipped: $service)"
+            # ⚡ Bolt Optimization: Check state first to avoid expensive write operations
+            if networksetup -getinfo "$service" 2>/dev/null | grep -q "IPv6: Automatic"; then
+                 echo "    (already enabled: $service)"
+            else
+                echo "  Enabling IPv6 on: $service"
+                sudo networksetup -setv6automatic "$service" 2>/dev/null || echo "    (skipped: $service)"
+            fi
         fi
     done < <(get_network_services)
 
