@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/tools/paste-latest-download.ts"],
+  "sourcesContent": ["import { Clipboard } from \"@raycast/api\";\n\ntype Input = {\n  /**\n   * the path of the latest download, retrieved from the \"get-latest-download\" tool\n   */\n  latestDownloadPath: string;\n};\n\nexport default async function tool(input: Input) {\n  try {\n    await Clipboard.paste({ file: input.latestDownloadPath });\n    return \"Pasted latest download\";\n  } catch {\n    throw new Error(\"Pasting Latest Download Failed\");\n  }\n}\n"],
+  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAA0B,wBAS1B,eAAOF,EAA4BG,EAAc,CAC/C,GAAI,CACF,aAAM,YAAU,MAAM,CAAE,KAAMA,EAAM,kBAAmB,CAAC,EACjD,wBACT,MAAQ,CACN,MAAM,IAAI,MAAM,gCAAgC,CAClD,CACF",
+  "names": ["paste_latest_download_exports", "__export", "tool", "__toCommonJS", "import_api", "input"]
+}
