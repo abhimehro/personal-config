@@ -170,12 +170,12 @@ if [ "$VERIFY_STATUS" -eq 0 ] && [ "$SERVICE_RUNNING" = true ] && [ "$DNS_WORKIN
     elif [ -f "$HOME/.config/controld/ctrld.toml" ]; then
       echo "Active configuration: $HOME/.config/controld/ctrld.toml"
     fi
-    echo "SUMMARY TS=${ts} MODE=health-check RESULT=PASS PROFILE=browsing"
+    echo "SUMMARY TS=${ts} MODE=health-check RESULT=PASS PROFILE=${DETECTED_PROFILE}"
     exit 0
 else
     echo -e "${RED}Overall Status: UNHEALTHY ✗${NC}"
     echo ""
     echo "Please address the issues highlighted above."
-    echo "SUMMARY TS=${ts} MODE=health-check RESULT=FAIL PROFILE=browsing"
+    echo "SUMMARY TS=${ts} MODE=health-check RESULT=FAIL PROFILE=${DETECTED_PROFILE}"
     exit 1
 fi
