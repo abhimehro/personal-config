@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/tools/open-latest-download.ts"],
+  "sourcesContent": ["import { open } from \"@raycast/api\";\n\ntype Input = {\n  /**\n   * the path of the latest download, retrieved from the \"get-latest-download\" tool\n   */\n  latestDownloadPath: string;\n};\n\nexport default async function tool(input: Input) {\n  await open(input.latestDownloadPath);\n  return \"Opened latest download\";\n}\n"],
+  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAqB,wBASrB,eAAOF,EAA4BG,EAAc,CAC/C,eAAM,QAAKA,EAAM,kBAAkB,EAC5B,wBACT",
+  "names": ["open_latest_download_exports", "__export", "tool", "__toCommonJS", "import_api", "input"]
+}

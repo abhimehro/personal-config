@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/pick-character.ts"],
+  "sourcesContent": ["import { showHUD, Clipboard } from \"@raycast/api\";\n\nexport default async function PickCharacter() {\n  const characters = \"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\";\n  const char = characters[Math.floor(Math.random() * characters.length)];\n\n  await Clipboard.copy(char);\n  await showHUD(`Copied ${char} to clipboard`);\n}\n"],
+  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAmC,wBAEnC,eAAOF,GAAuC,CAC5C,IAAMG,EAAa,iEACbC,EAAOD,EAAW,KAAK,MAAM,KAAK,OAAO,EAAIA,EAAW,MAAM,GAEpE,MAAM,YAAU,KAAKC,CAAI,EACzB,QAAM,WAAQ,UAAUA,gBAAmB,CAC7C",
+  "names": ["pick_character_exports", "__export", "PickCharacter", "__toCommonJS", "import_api", "characters", "char"]
+}
