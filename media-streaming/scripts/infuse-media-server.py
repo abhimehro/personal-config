@@ -70,7 +70,15 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         if not self.check_auth():
             return
 
-        path = unquote(self.path.lstrip('/'))
+        # Sanitize path to prevent traversal
+        raw_path = unquote(self.path.lstrip('/'))
+        # Simple but effective check for .. components
+        path_parts = [p for p in raw_path.split('/') if p and p != '.']
+        if '..' in path_parts:
+             self.send_error(400, "Invalid path: Path traversal detected")
+             return
+             
+        path = '/'.join(path_parts)
         
         try:
             if path == '' or path == '/':
