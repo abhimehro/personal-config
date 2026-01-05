@@ -98,7 +98,7 @@ check_controld_active() {
     ok=1
   fi
 
-  # Connectivity
+  # 4) Connectivity
   if wait "$pid_conn"; then
     pass "Control D connectivity confirmed via p.controld.com."
   else
@@ -110,7 +110,7 @@ check_controld_active() {
   wait "$pid_who" || true
   local who
   who=$(cat "$tmp_who")
-  rm -f "$tmp_who"
+  # File cleanup handled by trap
   if [[ -n "$who" ]]; then
     pass "whoami.control-d.net resolved to '$who'."
   else
@@ -121,14 +121,14 @@ check_controld_active() {
   wait "$pid_aaaa" || true
   local aaaa
   aaaa=$(cat "$tmp_aaaa")
-  rm -f "$tmp_aaaa"
+  # File cleanup handled by trap
   if [[ -n "$aaaa" ]]; then
     pass "IPv6 AAAA lookup for example.com returned '$aaaa'."
   else
     warn "IPv6 AAAA lookup for example.com returned no result. IPv6 path may be disabled or unavailable; this is treated as a warning."
   fi
 
-  # 6) Profile & DoH3 checks
+  # 7) Profile & DoH3 checks
   if [[ -n "$expected_profile" ]]; then
     # Try to infer active profile from /etc/controld/ctrld.toml symlink
     local active_profile=""
