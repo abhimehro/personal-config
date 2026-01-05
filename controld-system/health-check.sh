@@ -122,11 +122,16 @@ echo ""
 
 # Check 5: Configuration file
 echo -n "5. Verifying configuration file exists... "
+CONFIG_FOUND=false
 if [ -f "$HOME/.config/controld/ctrld.toml" ]; then
-    echo -e "${GREEN}✓ PASS${NC}"
+    echo -e "${GREEN}✓ PASS${NC} (Local config found)"
+    CONFIG_FOUND=true
+elif sudo test -f "/etc/controld/ctrld.toml"; then
+    echo -e "${GREEN}✓ PASS${NC} (System config found via Separation Strategy)"
+    CONFIG_FOUND=true
 else
     echo -e "${RED}✗ FAIL${NC}"
-    echo "   Config file not found at ~/.config/controld/ctrld.toml"
+    echo "   Config file not found at ~/.config/controld/ctrld.toml or /etc/controld/ctrld.toml"
 fi
 
 echo ""
@@ -148,12 +153,14 @@ echo "=================================================="
 # Considers both the deep verification (network state) and local diagnostics (service health)
 ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-if [ "$VERIFY_STATUS" -eq 0 ] && [ "$SERVICE_RUNNING" = true ] && [ "$DNS_WORKING" = true ]; then
+if [ "$VERIFY_STATUS" -eq 0 ] && [ "$SERVICE_RUNNING" = true ] && [ "$DNS_WORKING" = true ] && [ "$CONFIG_FOUND" = true ]; then
     echo -e "${GREEN}Overall Status: HEALTHY ✓${NC}"
     echo ""
-    if [ -f "$HOME/.config/controld/ctrld.toml" ]; then
-      echo "Active profile:"
-      grep "upstream = " "$HOME/.config/controld/ctrld.toml" | head -1 || echo "Unknown"
+    # Try to show active profile
+    if sudo test -f "/etc/controld/ctrld.toml"; then
+      echo "Active configuration: /etc/controld/ctrld.toml"
+    elif [ -f "$HOME/.config/controld/ctrld.toml" ]; then
+      echo "Active configuration: $HOME/.config/controld/ctrld.toml"
     fi
     echo "SUMMARY TS=${ts} MODE=health-check RESULT=PASS PROFILE=browsing"
     exit 0
