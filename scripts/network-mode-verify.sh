@@ -43,20 +43,25 @@ check_controld_active() {
   local tmp_who tmp_aaaa
   tmp_who=$(mktemp)
   tmp_aaaa=$(mktemp)
+  trap 'rm -f "$tmp_who" "$tmp_aaaa"' RETURN
 
-  # 3) Basic DNS & 4) Connectivity checks (Background)
+  # 3) Basic DNS checks (Background)
   dig @"$LISTENER_IP" example.com +short +time=5 >/dev/null 2>&1 &
   local pid_dns=$!
 
+  # 4) Connectivity checks (Background)
   dig @"$LISTENER_IP" p.controld.com +short +time=5 >/dev/null 2>&1 &
   local pid_conn=$!
 
-  # 4) whoami & 5) IPv6 checks (Background)
-  (dig @"$LISTENER_IP" +short whoami.control-d.net 2>/dev/null | head -n1 || true) > "$tmp_who" &
+  # 5) whoami checks (Background)
+  (dig @"$LISTENER_IP" +short +time=5 whoami.control-d.net 2>/dev/null | head -n1 || true) > "$tmp_who" &
   local pid_who=$!
 
-  (dig @"$LISTENER_IP" +short AAAA example.com 2>/dev/null | head -n1 || true) > "$tmp_aaaa" &
+  # 6) IPv6 checks (Background)
+  (dig @"$LISTENER_IP" +short +time=5 AAAA example.com 2>/dev/null | head -n1 || true) > "$tmp_aaaa" &
   local pid_aaaa=$!
+
+  trap 'kill $pid_dns $pid_conn $pid_who $pid_aaaa 2>/dev/null || true; rm -f "$tmp_who" "$tmp_aaaa"' RETURN
 
   # 1) LaunchDaemon / process (Local Check)
   if sudo launchctl list | grep -q "ctrld"; then
@@ -102,7 +107,7 @@ check_controld_active() {
   fi
 
   # 4) whoami.control-d.net resolution (soft check)
-  wait "$pid_who"
+  wait "$pid_who" || true
   local who
   who=$(cat "$tmp_who")
   rm -f "$tmp_who"
@@ -113,7 +118,7 @@ check_controld_active() {
   fi
 
   # 5) IPv6 AAAA query (soft check – IPv6 optional)
-  wait "$pid_aaaa"
+  wait "$pid_aaaa" || true
   local aaaa
   aaaa=$(cat "$tmp_aaaa")
   rm -f "$tmp_aaaa"
