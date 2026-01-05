@@ -134,16 +134,22 @@ safe_stop() {
     ctrld stop 2>/dev/null || true
     
     # Kill any remaining processes
-    pkill -f ctrld 2>/dev/null || true
+    pkill -x ctrld 2>/dev/null || true
     
-    # Wait for processes to fully terminate
-    sleep 2
+    # Wait for processes to fully terminate (optimized with polling)
+    local retry=0
+    # Poll for up to 2 seconds (20 * 0.1s)
+    while pgrep -x "ctrld" >/dev/null && [ $retry -lt 20 ]; do
+        sleep 0.1
+        retry=$((retry + 1))
+    done
     
     # Verify no ctrld processes are running
-    if pgrep -f ctrld >/dev/null; then
+    if pgrep -x "ctrld" >/dev/null; then
         log_warning "Force killing remaining ctrld processes..."
-        pkill -9 -f ctrld 2>/dev/null || true
-        sleep 1
+        pkill -9 -x ctrld 2>/dev/null || true
+        # Quick check if it's gone
+        sleep 0.1
     fi
     
     # Reset DNS to prevent network hijacking
