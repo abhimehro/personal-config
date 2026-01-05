@@ -1,0 +1,47 @@
+# Mole Purge Paths - Auto-discovered project directories
+# Edit this file to customize, or run: mo purge --paths
+# Add one path per line (supports ~ for home directory)
+
+
+# Development environments & dependencies
+~/.cache/lm-studio
+~/.cache/Playwright
+~/.cache/huggingface
+~/.m2
+~/.gradle
+~/.cargo
+~/.rustup
+~/.npm
+~/Library/Caches/Homebrew
+
+# Version control
+~/.git-templates
+
+# Python environments
+~/.pyenv
+~/.conda
+~/.virtualenvs
+
+# Ruby environments
+~/.rubies
+~/.gem
+
+# Node.js
+~/.nvm
+~/.yarn
+
+# Important caches for active projects
+~/Documents/dev
+
+# Cloud Storage (important!)
+~/Library/CloudStorage/ProtonDrive-*
+~/Library/CloudStorage/GoogleDrive-*
+
+# Fish shell
+~/.local/share/fish
+
+# NeoVim
+~/.local/share/nvim
+~/.local/state/nvim
+~/.cache/nvim
+

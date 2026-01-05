@@ -53,10 +53,41 @@ else
     log_warn "${BREW_DOCTOR_OUTPUT}"
 fi
 
+# Optimization: Pre-fetch all outdated info if jq is available
+# This consolidates 3 slow calls (outdated, outdated --greedy, outdated --greedy-latest) into 1
+OPTI_FETCH_DONE=0
+OUTDATED_PACKAGES_LIST=""
+OUTDATED_CASKS_LIST=""
+LATEST_CASKS_LIST=""
+
+if command -v jq >/dev/null 2>&1; then
+    log_info "Checking for outdated packages and casks (optimized)..."
+    # --greedy includes both auto_updates and latest casks
+    ALL_OUTDATED_JSON=$(brew outdated --json=v2 --greedy 2>/dev/null || true)
+
+    if [[ -n "$ALL_OUTDATED_JSON" ]]; then
+        # Parse formulae (packages)
+        OUTDATED_PACKAGES_LIST=$(echo "$ALL_OUTDATED_JSON" | jq -r '.formulae[].name' 2>/dev/null || true)
+
+        # Parse all outdated casks (equivalent to --greedy)
+        OUTDATED_CASKS_LIST=$(echo "$ALL_OUTDATED_JSON" | jq -r '.casks[].name' 2>/dev/null || true)
+
+        # Parse casks that are outdated because they are :latest version
+        # We assume they have current_version == "latest"
+        LATEST_CASKS_LIST=$(echo "$ALL_OUTDATED_JSON" | jq -r '.casks[] | select(.current_version == "latest") | .name' 2>/dev/null || true)
+
+        OPTI_FETCH_DONE=1
+        log_info "Optimized fetch complete."
+    fi
+fi
+
 # Check what's outdated (packages)
 # Optimization: Capture output once to avoid double execution of slow 'brew outdated'
-log_info "Checking for outdated packages..."
-OUTDATED_PACKAGES_LIST=$(brew outdated 2>/dev/null || true)
+if [[ "$OPTI_FETCH_DONE" -eq 0 ]]; then
+    log_info "Checking for outdated packages..."
+    OUTDATED_PACKAGES_LIST=$(brew outdated 2>/dev/null || true)
+fi
+
 if [[ -n "$OUTDATED_PACKAGES_LIST" ]]; then
     OUTDATED_PACKAGES=$(echo "$OUTDATED_PACKAGES_LIST" | wc -l | tr -d ' ')
 else
@@ -80,8 +111,11 @@ else
 fi
 
 # Check what's outdated (casks) - including auto-updating apps
-log_info "Checking for outdated casks (including auto-updating apps)..."
-OUTDATED_CASKS_LIST=$(brew outdated --cask --greedy 2>/dev/null || true)
+if [[ "$OPTI_FETCH_DONE" -eq 0 ]]; then
+    log_info "Checking for outdated casks (including auto-updating apps)..."
+    OUTDATED_CASKS_LIST=$(brew outdated --cask --greedy 2>/dev/null || true)
+fi
+
 if [[ -n "$OUTDATED_CASKS_LIST" ]]; then
     OUTDATED_CASKS=$(echo "$OUTDATED_CASKS_LIST" | wc -l | tr -d ' ')
 else
@@ -106,6 +140,8 @@ if (( OUTDATED_CASKS > 0 )); then
         if brew upgrade --cask --greedy 2>&1 | tee -a "$LOG_DIR/brew_maintenance.log"; then
             log_info "Successfully upgraded casks with basic --greedy"
             UPDATED_CASKS=$OUTDATED_CASKS
+            # FLAG: We used full greedy, so no need to check latest again.
+            FULL_GREEDY_USED=1
         else
             log_warn "Cask upgrade encountered issues"
         fi
@@ -115,12 +151,26 @@ else
 fi
 
 # Check for casks that need --greedy-latest flag
-log_info "Checking for casks with version :latest..."
-LATEST_CASKS_LIST=$(brew outdated --cask --greedy-latest 2>/dev/null || true)
-if [[ -n "$LATEST_CASKS_LIST" ]]; then
-    LATEST_CASKS=$(echo "$LATEST_CASKS_LIST" | wc -l | tr -d ' ')
-else
+# Performance Optimization: Skip this check if:
+# 1. No casks were outdated even with --greedy (superset of --greedy-latest)
+# 2. We already performed a full --greedy upgrade (which includes :latest)
+if (( OUTDATED_CASKS == 0 )); then
+    log_info "Skipping :latest check (no outdated casks found with --greedy)"
     LATEST_CASKS=0
+elif [[ "${FULL_GREEDY_USED:-0}" == "1" ]]; then
+    log_info "Skipping :latest check (already upgraded via full --greedy)"
+    LATEST_CASKS=0
+else
+    if [[ "$OPTI_FETCH_DONE" -eq 0 ]]; then
+        log_info "Checking for casks with version :latest..."
+        LATEST_CASKS_LIST=$(brew outdated --cask --greedy-latest 2>/dev/null || true)
+    fi
+
+    if [[ -n "$LATEST_CASKS_LIST" ]]; then
+        LATEST_CASKS=$(echo "$LATEST_CASKS_LIST" | wc -l | tr -d ' ')
+    else
+        LATEST_CASKS=0
+    fi
 fi
 
 if (( LATEST_CASKS > 0 )); then
