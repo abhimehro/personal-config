@@ -28,13 +28,21 @@ echo ""
 
 # 1. DEEP VERIFICATION
 # Delegate to the unified verification checklist for CONTROL D ACTIVE state.
-# We pass the default browsing profile so profile-aware and DoH3 checks run.
 
-echo -e "${BLUE}Running deep verification...${NC}"
+# Detect active profile from system symlink (Separation Strategy)
+DETECTED_PROFILE="browsing" # Default fallback
+if sudo test -L "/etc/controld/ctrld.toml"; then
+    TARGET=$(sudo readlink "/etc/controld/ctrld.toml")
+    # Extract profile name from filename (e.g., ctrld.privacy.toml -> privacy)
+    FILENAME=$(basename "$TARGET")
+    DETECTED_PROFILE=$(echo "$FILENAME" | sed -E 's/^ctrld\.(.*)\.toml$/\1/')
+fi
+
+echo -e "${BLUE}Running deep verification for profile: ${DETECTED_PROFILE}...${NC}"
 echo ""
 
 VERIFY_STATUS=0
-if "$VERIFY_SCRIPT" controld browsing; then
+if "$VERIFY_SCRIPT" controld "$DETECTED_PROFILE"; then
   VERIFY_STATUS=0
 else
   VERIFY_STATUS=1
