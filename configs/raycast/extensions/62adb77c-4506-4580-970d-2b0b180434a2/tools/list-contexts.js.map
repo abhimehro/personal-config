@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/tools/list-contexts.ts"],
+  "sourcesContent": ["import fs from \"fs\";\nimport path from \"path\";\nimport os from \"os\";\n\n/**\n * Lists all available context files.\n * Returns the names of the contexts without the .txt extension.\n */\nexport default async function () {\n  const contextsDir = path.join(os.homedir(), \"Library/Application Support/ContextManager\");\n\n  try {\n    if (!fs.existsSync(contextsDir)) {\n      return \"No contexts directory found\";\n    }\n    const files = fs\n      .readdirSync(contextsDir)\n      .filter((file) => file.endsWith(\".txt\"))\n      .map((file) => file.replace(\".txt\", \"\"));\n\n    return files.length > 0 ? files : \"No contexts available\";\n  } catch (error) {\n    return `Error listing contexts: ${String(error)}`;\n  }\n}\n"],
+  "mappings": "0jBAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAe,iBACfC,EAAiB,mBACjBC,EAAe,iBAMf,eAAOJ,GAA0B,CAC/B,IAAMK,EAAc,EAAAC,QAAK,KAAK,EAAAC,QAAG,QAAQ,EAAG,4CAA4C,EAExF,GAAI,CACF,GAAI,CAAC,EAAAC,QAAG,WAAWH,CAAW,EAC5B,MAAO,8BAET,IAAMI,EAAQ,EAAAD,QACX,YAAYH,CAAW,EACvB,OAAQK,GAASA,EAAK,SAAS,MAAM,CAAC,EACtC,IAAKA,GAASA,EAAK,QAAQ,OAAQ,EAAE,CAAC,EAEzC,OAAOD,EAAM,OAAS,EAAIA,EAAQ,uBACpC,OAASE,EAAO,CACd,MAAO,2BAA2B,OAAOA,CAAK,CAAC,EACjD,CACF",
+  "names": ["list_contexts_exports", "__export", "list_contexts_default", "__toCommonJS", "import_fs", "import_path", "import_os", "contextsDir", "path", "os", "fs", "files", "file", "error"]
+}

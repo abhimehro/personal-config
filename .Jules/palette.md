@@ -10,3 +10,11 @@
 ## 2025-11-20 - CLI Output Enhancement
 **Learning:** Adding emojis and structured formatting (tables, indentation) to shell script output significantly improves readability and user delight, even in a text-based interface. Mocks are essential for verifying visual changes in scripts that rely on system commands (like `networksetup`) unavailable in the dev environment.
 **Action:** When working on CLI tools, always check if the output can be "humanized" with emojis and better spacing. Use temporary mocks to verify visual formatting when system commands are missing.
+## 2025-11-21 - [Consolidated CLI Pre-flight]
+**Learning:** Users find "fail-fix-retry" loops frustrating in setup scripts. Aggregating all missing dependencies into a single "Pre-flight Check" report respects the user's time and feels more professional than failing on the first error.
+**Action:** Implement `check_requirements` functions that collect *all* errors before exiting, providing a complete "shopping list" of fixes in one go.
+# Palette's Journal 🎨
+
+## 2025-05-22 - Adding Delight to Maintenance Scripts
+**Learning:** CLI tools often lack visual feedback for long-running operations, leaving users unsure if the process is hung.
+**Action:** Implement a spinner for serial operations in shell scripts, ensuring it only displays on TTY and doesn't pollute log files.

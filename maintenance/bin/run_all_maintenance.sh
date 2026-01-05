@@ -69,6 +69,43 @@ log_status() {
     fi
 }
 
+# Progress spinner for long-running tasks
+# Usage: spinner PID
+spinner() {
+    local pid=$1
+    local delay=0.1
+    local spinstr='|/-\'
+
+    # Only show spinner if running interactively (TTY) and not redirecting to file only
+    if [ -t 1 ]; then
+        # Hide cursor
+        tput civis 2>/dev/null || true
+
+        # Trap to restore cursor if interrupted
+        trap 'tput cnorm 2>/dev/null || true; exit' INT TERM
+
+        while kill -0 "$pid" 2>/dev/null; do
+            local temp=${spinstr#?}
+            printf " [%c]  " "$spinstr"
+            local spinstr=$temp${spinstr%"$temp"}
+            sleep $delay
+            printf "\b\b\b\b\b\b"
+        done
+
+        # Restore cursor
+        tput cnorm 2>/dev/null || true
+
+        # Clear spinner residue
+        printf "       \b\b\b\b\b\b\b"
+
+        # Remove trap
+        trap - INT TERM
+    else
+        # If not interactive, just wait
+        wait "$pid"
+    fi
+}
+
 # Add result to summary (handles writing to file if in subshell)
 # Usage: register_result "Script Name" "Status" "Is_Parallel_Subshell"
 register_result() {
@@ -105,14 +142,36 @@ run_script() {
         fi
 
         # Execute script
-        if "$script_path" > "$log_file" 2>&1; then
-            log_status "✅ $script_name completed" "$log_target"
-            register_result "$clean_name" "✅ Success" "$is_parallel"
-            return 0
+        if [[ "$is_parallel" == "true" ]]; then
+            # Run directly for parallel (background) tasks
+            if "$script_path" > "$log_file" 2>&1; then
+                log_status "✅ $script_name completed" "$log_target"
+                register_result "$clean_name" "✅ Success" "$is_parallel"
+                return 0
+            else
+                log_status "❌ $script_name failed (see $log_file)" "$log_target"
+                register_result "$clean_name" "❌ Failed" "$is_parallel"
+                return 1
+            fi
         else
-            log_status "❌ $script_name failed (see $log_file)" "$log_target"
-            register_result "$clean_name" "❌ Failed" "$is_parallel"
-            return 1
+            # Run with spinner for serial tasks
+            "$script_path" > "$log_file" 2>&1 &
+            local pid=$!
+
+            spinner $pid
+
+            wait $pid
+            local exit_code=$?
+
+            if [[ $exit_code -eq 0 ]]; then
+                log_status "✅ $script_name completed" "$log_target"
+                register_result "$clean_name" "✅ Success" "$is_parallel"
+                return 0
+            else
+                log_status "❌ $script_name failed (see $log_file)" "$log_target"
+                register_result "$clean_name" "❌ Failed" "$is_parallel"
+                return 1
+            fi
         fi
     else
         log_status "⚠️  $script_name not found/executable" "$log_target"
