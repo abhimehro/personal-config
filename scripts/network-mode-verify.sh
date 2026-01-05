@@ -44,24 +44,24 @@ check_controld_active() {
   tmp_who=$(mktemp)
   tmp_aaaa=$(mktemp)
 
-  # Ensure cleanup on exit or error
-  trap 'kill $pid_dns $pid_conn $pid_who $pid_aaaa 2>/dev/null || true; rm -f "$tmp_who" "$tmp_aaaa"' RETURN
-
-  # 3) Basic DNS check (Background)
+  # 3) Basic DNS checks (Background)
   dig @"$LISTENER_IP" example.com +short +time=5 >/dev/null 2>&1 &
   local pid_dns=$!
 
-  # 4) Connectivity check (Background)
+  # 4) Connectivity checks (Background)
   dig @"$LISTENER_IP" p.controld.com +short +time=5 >/dev/null 2>&1 &
   local pid_conn=$!
 
-  # 5) whoami check (Background)
+  # 5) whoami checks (Background)
   (dig @"$LISTENER_IP" +short +time=5 whoami.control-d.net 2>/dev/null | head -n1 || true) > "$tmp_who" &
   local pid_who=$!
 
-  # 6) IPv6 check (Background)
+  # 6) IPv6 checks (Background)
   (dig @"$LISTENER_IP" +short +time=5 AAAA example.com 2>/dev/null | head -n1 || true) > "$tmp_aaaa" &
   local pid_aaaa=$!
+
+  # Set up cleanup trap for both background processes and temporary files
+  trap 'kill $pid_dns $pid_conn $pid_who $pid_aaaa 2>/dev/null || true; rm -f "$tmp_who" "$tmp_aaaa"' RETURN
 
   # 1) LaunchDaemon / process (Local Check)
   if sudo launchctl list | grep -q "ctrld"; then
@@ -106,7 +106,7 @@ check_controld_active() {
     ok=1
   fi
 
-  # 5) whoami.control-d.net resolution (soft check)
+  # 4) whoami.control-d.net resolution (soft check)
   wait "$pid_who" || true
   local who
   who=$(cat "$tmp_who")
@@ -117,7 +117,7 @@ check_controld_active() {
     warn "whoami.control-d.net did not resolve (or timed out). This does not block CONTROL D ACTIVE but indicates a potential dashboard/config issue."
   fi
 
-  # 6) IPv6 AAAA query (soft check – IPv6 optional)
+  # 5) IPv6 AAAA query (soft check – IPv6 optional)
   wait "$pid_aaaa" || true
   local aaaa
   aaaa=$(cat "$tmp_aaaa")
