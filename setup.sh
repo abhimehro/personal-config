@@ -21,19 +21,66 @@ ok()    { echo -e "${GREEN}✅ [OK]${NC}    $*"; }
 warn()  { echo -e "${YELLOW}⚠️  [WARN]${NC}  $*"; }
 err()   { echo -e "${RED}❌ [ERR]${NC}   $*" >&2; }
 
-require_cmd() {
-  local cmd="$1"
-  local install_hint="${2:-}"  # Optional: defaults to empty string
-  if ! command -v "$cmd" >/dev/null 2>&1; then
-    err "Missing required command: $cmd"
-    if [[ -n "$install_hint" ]]; then
-      info "To install: $install_hint"
-    elif [[ "$cmd" == "brew" ]]; then
-      info "To install: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
-    elif [[ "$cmd" == "op" ]]; then
-      info "To install: brew install --cask 1password/tap/1password-cli"
+check_requirements() {
+  local missing=()
+  # Shellcheck-safe associative array requires declare -A (bash 4+),
+  # but macOS ships bash 3.2 by default. using simple if/elif logic for hints
+  # to maintain compatibility with stock macOS bash.
+
+  info "Checking prerequisites..."
+  echo ""
+
+  # Define requirements (git is not required as repo is already cloned)
+  local reqs="brew op rclone"
+
+  for cmd in $reqs; do
+    if command -v "$cmd" >/dev/null 2>&1; then
+      ok "Found $cmd"
+    else
+      missing+=("$cmd")
+      # Don't print error yet, collect all missing
     fi
-    return 1
+  done
+
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo ""
+    err "Missing ${#missing[@]} required tool(s):"
+
+    for cmd in "${missing[@]}"; do
+      echo "   - $cmd"
+    done
+
+    echo ""
+    info "Installation instructions (install Homebrew first):"
+
+    # Sort missing so brew appears first if present
+    local sorted_missing=()
+    for cmd in "${missing[@]}"; do
+      if [[ "$cmd" == "brew" ]]; then
+        sorted_missing=("brew" "${sorted_missing[@]}")
+      else
+        sorted_missing+=("$cmd")
+      fi
+    done
+
+    for cmd in "${sorted_missing[@]}"; do
+      local hint=""
+      case "$cmd" in
+        "brew") hint='/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"' ;;
+        "op")   hint='brew install --cask 1password/tap/1password-cli' ;;
+        "rclone") hint='brew install rclone' ;;
+        *)      hint="brew install $cmd" ;;
+      esac
+
+      if [[ "$cmd" == "brew" ]]; then
+        echo "   👉 1. Install Homebrew (Required for others):"
+        echo "         $hint"
+      else
+        echo "   👉 To install $cmd: $hint"
+      fi
+    done
+    echo ""
+    exit 1
   fi
 }
 
@@ -142,8 +189,7 @@ main() {
   ensure_macos
   info "Starting bootstrap from $REPO_ROOT"
 
-  require_cmd brew
-  require_cmd op
+  check_requirements
 
   sync_configs
   install_maintenance
