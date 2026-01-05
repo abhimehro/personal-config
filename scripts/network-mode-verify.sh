@@ -44,18 +44,23 @@ check_controld_active() {
   tmp_who=$(mktemp)
   tmp_aaaa=$(mktemp)
 
-  # 3) Basic DNS & 4) Connectivity checks (Background)
+  # Ensure cleanup on exit or error
+  trap 'kill $pid_dns $pid_conn $pid_who $pid_aaaa 2>/dev/null || true; rm -f "$tmp_who" "$tmp_aaaa"' RETURN
+
+  # 3) Basic DNS check (Background)
   dig @"$LISTENER_IP" example.com +short +time=5 >/dev/null 2>&1 &
   local pid_dns=$!
 
+  # 4) Connectivity check (Background)
   dig @"$LISTENER_IP" p.controld.com +short +time=5 >/dev/null 2>&1 &
   local pid_conn=$!
 
-  # 4) whoami & 5) IPv6 checks (Background)
-  (dig @"$LISTENER_IP" +short whoami.control-d.net 2>/dev/null | head -n1 || true) > "$tmp_who" &
+  # 5) whoami check (Background)
+  (dig @"$LISTENER_IP" +short +time=5 whoami.control-d.net 2>/dev/null | head -n1 || true) > "$tmp_who" &
   local pid_who=$!
 
-  (dig @"$LISTENER_IP" +short AAAA example.com 2>/dev/null | head -n1 || true) > "$tmp_aaaa" &
+  # 6) IPv6 check (Background)
+  (dig @"$LISTENER_IP" +short +time=5 AAAA example.com 2>/dev/null | head -n1 || true) > "$tmp_aaaa" &
   local pid_aaaa=$!
 
   # 1) LaunchDaemon / process (Local Check)
@@ -93,7 +98,7 @@ check_controld_active() {
     ok=1
   fi
 
-  # Connectivity
+  # 4) Connectivity
   if wait "$pid_conn"; then
     pass "Control D connectivity confirmed via p.controld.com."
   else
@@ -101,29 +106,29 @@ check_controld_active() {
     ok=1
   fi
 
-  # 4) whoami.control-d.net resolution (soft check)
-  wait "$pid_who"
+  # 5) whoami.control-d.net resolution (soft check)
+  wait "$pid_who" || true
   local who
   who=$(cat "$tmp_who")
-  rm -f "$tmp_who"
+  # File cleanup handled by trap
   if [[ -n "$who" ]]; then
     pass "whoami.control-d.net resolved to '$who'."
   else
     warn "whoami.control-d.net did not resolve (or timed out). This does not block CONTROL D ACTIVE but indicates a potential dashboard/config issue."
   fi
 
-  # 5) IPv6 AAAA query (soft check – IPv6 optional)
-  wait "$pid_aaaa"
+  # 6) IPv6 AAAA query (soft check – IPv6 optional)
+  wait "$pid_aaaa" || true
   local aaaa
   aaaa=$(cat "$tmp_aaaa")
-  rm -f "$tmp_aaaa"
+  # File cleanup handled by trap
   if [[ -n "$aaaa" ]]; then
     pass "IPv6 AAAA lookup for example.com returned '$aaaa'."
   else
     warn "IPv6 AAAA lookup for example.com returned no result. IPv6 path may be disabled or unavailable; this is treated as a warning."
   fi
 
-  # 6) Profile & DoH3 checks
+  # 7) Profile & DoH3 checks
   if [[ -n "$expected_profile" ]]; then
     # Try to infer active profile from /etc/controld/ctrld.toml symlink
     local active_profile=""
