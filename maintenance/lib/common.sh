@@ -48,7 +48,7 @@ log() {
     local script_name="${source_path##*/}"
     script_name="${script_name%.sh}"
 
-    local line="$ts [$level] [$script_name] $*"
+    local line="$ts [$level] [$script_name] $@"
     
     echo "$line" | tee -a "$LOG_DIR/${script_name}.log" 2>/dev/null || echo "$line"
 }
@@ -67,7 +67,8 @@ with_lock() {
     local name="${1:-$(basename "${BASH_SOURCE[1]}" .sh)}"
     local lock_dir="$MNT_ROOT/tmp/${name}.lock"
     
-    if mkdir "$lock_dir" 2>/dev/null; then
+    if mkdir "$lock_dir" 2>/dev/null;
+    then
         trap "rm -rf '$lock_dir' 2>/dev/null || true" EXIT INT TERM
         log_debug "Lock acquired: $lock_dir"
     else
