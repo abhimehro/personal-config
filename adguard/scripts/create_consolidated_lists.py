@@ -14,7 +14,8 @@ import os
 from pathlib import Path
 
 def extract_domains_from_file(filepath, action_filter=None):
-    """Yield domains from a JSON file with optional action filtering."""
+    """Extract domains from a JSON file with optional action filtering."""
+    domains = []
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -23,9 +24,10 @@ def extract_domains_from_file(filepath, action_filter=None):
                     if 'PK' in rule:
                         # If action_filter is specified, only include matching actions
                         if action_filter is None or rule.get('action', {}).get('do') == action_filter:
-                            yield rule['PK']
+                            domains.append(rule['PK'])
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
+    return domains
 
 def main():
     base_dir = Path("/Users/abhimehrotra/Downloads")
@@ -58,13 +60,10 @@ def main():
         filepath = base_dir / filename
         if filepath.exists():
             print(f"  Processing: {filename}")
-            # Optimize: Use generator to reduce memory usage (avoid intermediate list)
-            count = 0
-            for domain in extract_domains_from_file(filepath, action_filter=0):  # Only blocking rules
-                denylist_domains.add(domain)
-                count += 1
-            total_tracker_domains += count
-            print(f"    Added {count} blocking domains")
+            domains = extract_domains_from_file(filepath, action_filter=0)  # Only blocking rules
+            denylist_domains.update(domains)
+            total_tracker_domains += len(domains)
+            print(f"    Added {len(domains)} blocking domains")
         else:
             print(f"  ⚠️  File not found: {filename}")
     
@@ -78,21 +77,17 @@ def main():
     bypass_file = base_dir / "CD-Control-D-Bypass.json"
     if bypass_file.exists():
         print("  Processing: CD-Control-D-Bypass.json")
-        count = 0
-        for domain in extract_domains_from_file(bypass_file, action_filter=1):  # Only allow rules
-            allowlist_domains.add(domain)
-            count += 1
-        print(f"    Added {count} bypass domains")
+        domains = extract_domains_from_file(bypass_file, action_filter=1)  # Only allow rules
+        allowlist_domains.update(domains)
+        print(f"    Added {len(domains)} bypass domains")
     
     # Add legitimate TLDs from Most Abused TLDs (do: 1 = allow)
     tlds_file = base_dir / "CD-Most-Abused-TLDs.json"
     if tlds_file.exists():
         print("  Processing: CD-Most-Abused-TLDs.json")
-        count = 0
-        for domain in extract_domains_from_file(tlds_file, action_filter=1):  # Only allow rules
-            allowlist_domains.add(domain)
-            count += 1
-        print(f"    Added {count} legitimate TLD domains")
+        domains = extract_domains_from_file(tlds_file, action_filter=1)  # Only allow rules
+        allowlist_domains.update(domains)
+        print(f"    Added {len(domains)} legitimate TLD domains")
     
     print(f"\n✅ Allowlist total domains: {len(allowlist_domains)}")
     
