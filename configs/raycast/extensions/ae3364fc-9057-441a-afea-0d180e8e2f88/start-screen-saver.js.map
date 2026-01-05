@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/start-screen-saver.tsx", "../src/utils/applescript-utils.ts"],
+  "sourcesContent": ["import { closeMainWindow, showToast, Toast } from \"@raycast/api\";\nimport { activateScreenSaver } from \"./utils/applescript-utils\";\n\nexport default async () => {\n  await closeMainWindow();\n  const result = await activateScreenSaver();\n  if (!result.success) {\n    await showToast({ title: result.message, style: Toast.Style.Failure });\n  }\n};\n", "import { spawnSync } from \"child_process\";\n\nexport const activateScreenSaver = async () => {\n  try {\n    spawnSync(\"open -a ScreenSaverEngine\", { shell: true });\n    return { success: true, message: \"Screen Saver Activated\" };\n  } catch (e) {\n    console.error(String(e));\n    return { success: false, message: String(e) };\n  }\n};\n"],
+  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAkD,wBCAlD,IAAAC,EAA0B,yBAEbC,EAAsB,SAAY,CAC7C,GAAI,CACF,sBAAU,4BAA6B,CAAE,MAAO,EAAK,CAAC,EAC/C,CAAE,QAAS,GAAM,QAAS,wBAAyB,CAC5D,OAAS,EAAG,CACV,eAAQ,MAAM,OAAO,CAAC,CAAC,EAChB,CAAE,QAAS,GAAO,QAAS,OAAO,CAAC,CAAE,CAC9C,CACF,EDPA,IAAOC,EAAQ,SAAY,CACzB,QAAM,mBAAgB,EACtB,IAAMC,EAAS,MAAMC,EAAoB,EACpCD,EAAO,SACV,QAAM,aAAU,CAAE,MAAOA,EAAO,QAAS,MAAO,QAAM,MAAM,OAAQ,CAAC,CAEzE",
+  "names": ["start_screen_saver_exports", "__export", "start_screen_saver_default", "__toCommonJS", "import_api", "import_child_process", "activateScreenSaver", "start_screen_saver_default", "result", "activateScreenSaver"]
+}
