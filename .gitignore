@@ -230,6 +230,3 @@ configs/.config/fish/functions/*
 * (1).*
 media-streaming/backup/*.backup
 media-streaming/backup/rclone.conf.backup
-
-.gemini/
-gha-creds-*.json
