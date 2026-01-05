@@ -171,12 +171,12 @@ def main():
     denylist_json_path = base_dir / "Consolidated-Denylist.json"
     allowlist_json_path = base_dir / "Consolidated-Allowlist.json"
     
-    # ⚡ Bolt Optimization: Minified JSON (no indent) reduces file size and write time
+    # Use indented JSON for human readability (these are reference files for debugging)
     with open(denylist_json_path, 'w', encoding='utf-8') as f:
-        json.dump(denylist_json, f, separators=(',', ':'), ensure_ascii=False)
+        json.dump(denylist_json, f, indent=2, ensure_ascii=False)
     
     with open(allowlist_json_path, 'w', encoding='utf-8') as f:
-        json.dump(allowlist_json, f, separators=(',', ':'), ensure_ascii=False)
+        json.dump(allowlist_json, f, indent=2, ensure_ascii=False)
     
     print(f"✅ Created: {denylist_json_path}")
     print(f"✅ Created: {allowlist_json_path}")
