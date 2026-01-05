@@ -13,3 +13,8 @@
 ## 2025-11-21 - [Consolidated CLI Pre-flight]
 **Learning:** Users find "fail-fix-retry" loops frustrating in setup scripts. Aggregating all missing dependencies into a single "Pre-flight Check" report respects the user's time and feels more professional than failing on the first error.
 **Action:** Implement `check_requirements` functions that collect *all* errors before exiting, providing a complete "shopping list" of fixes in one go.
+# Palette's Journal 🎨
+
+## 2025-05-22 - Adding Delight to Maintenance Scripts
+**Learning:** CLI tools often lack visual feedback for long-running operations, leaving users unsure if the process is hung.
+**Action:** Implement a spinner for serial operations in shell scripts, ensuring it only displays on TTY and doesn't pollute log files.
