@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/capture-screen.ts"],
+  "sourcesContent": ["import { closeMainWindow } from \"@raycast/api\";\nimport { exec } from \"child_process\";\n\nexport default async () => {\n  exec(\"/usr/sbin/screencapture -p\");\n  await closeMainWindow();\n};\n"],
+  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAgC,wBAChCC,EAAqB,yBAEdH,EAAQ,SAAY,IACzB,QAAK,4BAA4B,EACjC,QAAM,mBAAgB,CACxB",
+  "names": ["capture_screen_exports", "__export", "capture_screen_default", "__toCommonJS", "import_api", "import_child_process"]
+}
