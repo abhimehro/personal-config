@@ -8,13 +8,27 @@ LOG_DIR="$HOME/Library/Logs/maintenance"
 mkdir -p "$LOG_DIR"
 
 # Basic logging
+if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+    get_timestamp() {
+        printf -v "$1" "%(%Y-%m-%d %H:%M:%S)T" -1
+    }
+else
+    get_timestamp() {
+        local val
+        val="$(date '+%Y-%m-%d %H:%M:%S')"
+        eval "$1='$val'"
+    }
+fi
+
 log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    get_timestamp ts
     echo "$ts [INFO] [system_cleanup] $*" | tee -a "$LOG_DIR/system_cleanup.log"
 }
 
 log_warn() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    get_timestamp ts
     echo "$ts [WARNING] [system_cleanup] $*" | tee -a "$LOG_DIR/system_cleanup.log"
 }
 
@@ -46,8 +60,8 @@ if [[ -d "${CACHE_DIR}" ]]; then
     for cache_subdir in "${CACHE_DIR}"/*; do
         if [[ -d "$cache_subdir" ]]; then
             case "$(basename "$cache_subdir")" in
-                # Skip critical system caches
-                com.apple.*|CloudKit|CrashReporter|SkyLight) continue ;;
+                # Skip critical system caches and editor caches handled by editor_cleanup.sh
+                com.apple.*|CloudKit|CrashReporter|SkyLight|Cursor|dev.zed.Zed|com.microsoft.VSCode) continue ;;
                 *)
                     FILES_CLEANED=$(find "$cache_subdir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -print -delete 2>/dev/null | wc -l | tr -d ' ')
                     if [[ $FILES_CLEANED -gt 0 ]]; then
