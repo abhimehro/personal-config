@@ -46,8 +46,8 @@ if [[ -d "${CACHE_DIR}" ]]; then
     for cache_subdir in "${CACHE_DIR}"/*; do
         if [[ -d "$cache_subdir" ]]; then
             case "$(basename "$cache_subdir")" in
-                # Skip critical system caches
-                com.apple.*|CloudKit|CrashReporter|SkyLight) continue ;;
+                # Skip critical system caches and editor caches handled by editor_cleanup.sh
+                com.apple.*|CloudKit|CrashReporter|SkyLight|Cursor|dev.zed.Zed|com.microsoft.VSCode) continue ;;
                 *)
                     FILES_CLEANED=$(find "$cache_subdir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -print -delete 2>/dev/null | wc -l | tr -d ' ')
                     if [[ $FILES_CLEANED -gt 0 ]]; then
