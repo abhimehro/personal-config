@@ -5,7 +5,7 @@ set -eo pipefail
 
 # Architecture and OS detection
 ARCH="$(uname -m)"
-OS_VER="$(sw_vers -productVersion)"
+OS_VER="$(sw_vers -productVersion 2>/dev/null || echo "unknown")"
 
 # Simple PATH setup for Apple Silicon
 export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -31,37 +31,29 @@ fi
 # LOGGING FUNCTIONS
 # =============================================================================
 
-# Fast timestamp generation
-if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
-    get_timestamp() {
-        printf -v "$1" "%(%Y-%m-%d %H:%M:%S)T" -1
-    }
-else
-    get_timestamp() {
-        local val
-        val="$(date '+%Y-%m-%d %H:%M:%S')"
-        eval "$1='$val'"
-    }
-fi
-
 log() {
     local level="${1:-INFO}"
     shift
 
+    # Optimize date call using printf (Bash 4.2+)
     local ts
-    get_timestamp ts
+    if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 2) )); then
+        printf -v ts '%(%Y-%m-%d %H:%M:%S)T' -1
+    else
+        ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    fi
 
-    # Avoid basename subshell
-    local source="${BASH_SOURCE[2]:-${BASH_SOURCE[1]:-common}}"
-    local script_name="${source##*/}"
+    # Optimize basename using parameter expansion
+    local source_path="${BASH_SOURCE[2]:-${BASH_SOURCE[1]:-common}}"
+    local script_name="${source_path##*/}"
     script_name="${script_name%.sh}"
 
-    local line="$ts [$level] [$script_name] $*"
+    local line="$ts [$level] [$script_name] $@"
     
     echo "$line" | tee -a "$LOG_DIR/${script_name}.log" 2>/dev/null || echo "$line"
 }
 
-log_debug() { [[ "${DEBUG:-0}" == "1" ]] && log "DEBUG" "$@"; }
+log_debug() { [[ "${DEBUG:-0}" == "1" ]] && log "DEBUG" "$@" || true; }
 log_info()  { log "INFO" "$@"; }
 log_warn()  { log "WARNING" "$@"; }
 log_error() { log "ERROR" "$@"; }
@@ -72,12 +64,11 @@ log_error() { log "ERROR" "$@"; }
 
 # Simple locking using mkdir
 with_lock() {
-    local source="${BASH_SOURCE[1]}"
-    local name_base="${source##*/}"
-    local name="${1:-${name_base%.sh}}"
+    local name="${1:-$(basename "${BASH_SOURCE[1]}" .sh)}"
     local lock_dir="$MNT_ROOT/tmp/${name}.lock"
     
-    if mkdir "$lock_dir" 2>/dev/null; then
+    if mkdir "$lock_dir" 2>/dev/null;
+    then
         trap "rm -rf '$lock_dir' 2>/dev/null || true" EXIT INT TERM
         log_debug "Lock acquired: $lock_dir"
     else
@@ -89,7 +80,8 @@ with_lock() {
 # Get disk usage percentage
 percent_used() {
     local path="${1:-/}"
-    df -P "$path" | awk 'NR==2 {print $5}' | tr -d '%'
+    # Optimize: Combine awk and tr, avoid extra pipe and process
+    df -P "$path" | awk 'NR==2 {sub(/%/, "", $5); print $5}'
 }
 
 # Check if auto-remediation is enabled
@@ -103,7 +95,8 @@ notify() {
     local message="${2:-Completed}"
     
     # macOS notification
-    if command -v osascript >/dev/null 2>&1; then
+    if command -v osascript >/dev/null 2>&1;
+    then
         osascript -e "display notification \"$message\" with title \"$title\"" 2>/dev/null || true
     fi
 }
@@ -145,9 +138,9 @@ require_cmd() {
     fi
 }
 
-script_basename() { 
-    local source="${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
-    local name="${source##*/}"
+script_basename() {
+    local source_path="${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
+    local name="${source_path##*/}"
     echo "${name%.sh}"
 }
 
@@ -155,14 +148,7 @@ acquire_lock() { with_lock "$@"; }
 
 log_file_init() {
     local base="${1:-$(script_basename)}"
-    local ts
-    # If we are in bash 4+, use printf, otherwise date
-    if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
-        printf -v ts "%(%Y%m%d)T" -1
-    else
-        ts="$(date +%Y%m%d)"
-    fi
-    LOG_FILE="$LOG_DIR/${base}-${ts}.log"
+    LOG_FILE="$LOG_DIR/${base}-$(date +%Y%m%d).log"
     touch "$LOG_FILE" || true
 }
 
@@ -186,4 +172,4 @@ cleanup_and_exit() {
 }
 
 # Log successful load
-log_debug "Common library loaded - Arch: $ARCH, macOS: $OS_VER"
+log_debug "Common library loaded - Arch: $ARCH, macOS: $OS_VER" || true
