@@ -22,58 +22,10 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         self.rclone_remote = "media:"
         super().__init__(*args, **kwargs)
     
-    def validate_path(self, path):
-        """
-        Security: Validate path to prevent directory traversal
-        Returns True if path is safe, False otherwise
-        """
-        # Decode first (handled by caller usually, but good to be sure)
-        # Check for traversal attempts
-        parts = path.split('/')
-        if '..' in parts:
-            return False
-
-        # Basic character blocklist for extra safety
-        # rclone usually handles weird chars, but we want to avoid shell oddities if they slip through
-        # (though we use list args for subprocess, so shell injection is unlikely)
-        return True
-
     def do_HEAD(self):
-        """
-        Handle HEAD requests.
-        SECURITY: Override SimpleHTTPRequestHandler.do_HEAD to prevent serving local files.
-        """
         if not self.check_auth():
             return
-
-        path = unquote(self.path.lstrip('/'))
-
-        if not self.validate_path(path):
-            self.send_error(403, "Forbidden: Invalid path")
-            return
-
-        try:
-            # Check if root
-            if path == '' or path == '/':
-                self.send_response(200)
-                self.send_header('Content-Type', 'text/html; charset=utf-8')
-                self.end_headers()
-                return
-
-            # Check existence via rclone
-            # rclone lsf returns exit code 0 even if file not found sometimes, relies on stdout
-            result = subprocess.run(['rclone', 'lsf', f"{self.rclone_remote}{path}"],
-                                  capture_output=True, text=True)
-
-            if result.returncode == 0 and result.stdout.strip():
-                self.send_response(200)
-                self.send_header('Content-Type', self.guess_type(path))
-                self.end_headers()
-            else:
-                self.send_error(404, "File not found")
-        except Exception as e:
-            print(f"HEAD Error: {e}")
-            self.send_error(500, "Internal Server Error")
+        super().do_HEAD()
 
     def check_auth(self):
         global AUTH_USER, AUTH_PASS
@@ -152,12 +104,6 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
             path = self.validate_path(raw_path)
         except ValueError as e:
             self.send_error(403, str(e))
-            return
-        
-        # Security check
-        if not self.validate_path(path):
-            print(f"⚠️  Blocked traversal attempt: {path}")
-            self.send_error(403, "Forbidden: Directory traversal detected")
             return
 
         try:
