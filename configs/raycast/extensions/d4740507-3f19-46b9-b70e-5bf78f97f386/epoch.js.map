@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/epoch.tsx"],
+  "sourcesContent": ["import { Clipboard, Alert, confirmAlert, showToast, Toast } from \"@raycast/api\";\n\nexport default async function Command() {\n  const epoch = Number(await Clipboard.readText());\n  if (Number.isNaN(epoch)) {\n    showToast({\n      style: Toast.Style.Failure,\n      title: \"No number in the clipboard.\",\n    });\n    return;\n  }\n  let date: Date;\n  if (epoch >= 2 ** 31) {\n    date = new Date(epoch);\n  } else {\n    date = new Date(epoch * 1000);\n  }\n  const options: Alert.Options = {\n    title: date.toString(),\n    primaryAction: {\n      title: \"Copy to clipboard\",\n      onAction: () => {\n        Clipboard.copy(date.toString());\n      },\n    },\n  };\n  await confirmAlert(options);\n}\n"],
+  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAiE,wBAEjE,eAAOF,GAAiC,CACtC,IAAMG,EAAQ,OAAO,MAAM,YAAU,SAAS,CAAC,EAC/C,GAAI,OAAO,MAAMA,CAAK,EAAG,IACvB,aAAU,CACR,MAAO,QAAM,MAAM,QACnB,MAAO,6BACT,CAAC,EACD,MACF,CACA,IAAIC,EACAD,GAAS,GAAK,GAChBC,EAAO,IAAI,KAAKD,CAAK,EAErBC,EAAO,IAAI,KAAKD,EAAQ,GAAI,EAE9B,IAAME,EAAyB,CAC7B,MAAOD,EAAK,SAAS,EACrB,cAAe,CACb,MAAO,oBACP,SAAU,IAAM,CACd,YAAU,KAAKA,EAAK,SAAS,CAAC,CAChC,CACF,CACF,EACA,QAAM,gBAAaC,CAAO,CAC5B",
+  "names": ["epoch_exports", "__export", "Command", "__toCommonJS", "import_api", "epoch", "date", "options"]
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/openTransmissionWebInterface.ts"],
+  "sourcesContent": ["import { open, getPreferenceValues } from \"@raycast/api\";\n\nexport default async () => {\n  const { host, port, ssl } = getPreferenceValues();\n  await open(`${ssl ? \"https\" : \"http\"}://${host}:${port}/transmission/web/`);\n};\n"],
+  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAA0C,wBAEnCF,EAAQ,SAAY,CACzB,GAAM,CAAE,KAAAG,EAAM,KAAAC,EAAM,IAAAC,CAAI,KAAI,uBAAoB,EAChD,QAAM,QAAK,GAAGA,EAAM,QAAU,MAAM,MAAMF,CAAI,IAAIC,CAAI,oBAAoB,CAC5E",
+  "names": ["openTransmissionWebInterface_exports", "__export", "openTransmissionWebInterface_default", "__toCommonJS", "import_api", "host", "port", "ssl"]
+}

@@ -7,31 +7,8 @@
     
     <key>ProgramArguments</key>
     <array>
-        <string>/opt/homebrew/bin/rclone</string>
-        <string>serve</string>
-        <string>webdav</string>
-        <string>media:</string>
-        <string>--addr</string>
-        <string>0.0.0.0:8088</string>
-        <string>--user</string>
-        <string>infuse</string>
-        <string>--pass</string>
-        <string>EY5KcsRetjCzapA</string>
-        <string>--dir-cache-time</string>
-        <string>2h</string>
-        <string>--poll-interval</string>
-        <string>10m</string>
-        <string>--vfs-cache-mode</string>
-        <string>writes</string>
-        <string>--vfs-cache-max-age</string>
-        <string>24h</string>
-        <string>--vfs-cache-poll-interval</string>
-        <string>5m</string>
-        <string>--buffer-size</string>
-        <string>128M</string>
-        <string>--read-only</string>
-        <string>--log-level</string>
-        <string>INFO</string>
+        <string>/bin/bash</string>
+        <string>/Users/speedybee/Documents/dev/personal-config/media-streaming/scripts/start-media-server-fast.sh</string>
     </array>
     
     <key>RunAtLoad</key>
@@ -56,8 +33,6 @@
     <dict>
         <key>PATH</key>
         <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string>
-        <key>HOME</key>
-        <string>/Users/speedybee</string>
     </dict>
     
     <key>ProcessType</key>

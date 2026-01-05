@@ -35,7 +35,7 @@ log() {
     local level="${1:-INFO}"
     shift
 
-    # Bolt Optimization: Use printf if bash 4.2+ (100x faster), fallback to date for macOS bash 3.2
+    # Optimize date call using printf (Bash 4.2+)
     local ts
     if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 2) )); then
         printf -v ts '%(%Y-%m-%d %H:%M:%S)T' -1
@@ -43,9 +43,9 @@ log() {
         ts="$(date '+%Y-%m-%d %H:%M:%S')"
     fi
 
-    # Bolt Optimization: Use parameter expansion instead of basename subprocess (Bash 3.2 compatible)
-    local source="${BASH_SOURCE[2]:-${BASH_SOURCE[1]:-common}}"
-    local script_name="${source##*/}"
+    # Optimize basename using parameter expansion
+    local source_path="${BASH_SOURCE[2]:-${BASH_SOURCE[1]:-common}}"
+    local script_name="${source_path##*/}"
     script_name="${script_name%.sh}"
 
     local line="$ts [$level] [$script_name] $*"
@@ -79,7 +79,8 @@ with_lock() {
 # Get disk usage percentage
 percent_used() {
     local path="${1:-/}"
-    df -P "$path" | awk 'NR==2 {print $5}' | tr -d '%'
+    # Optimize: Combine awk and tr, avoid extra pipe and process
+    df -P "$path" | awk 'NR==2 {sub(/%/, "", $5); print $5}'
 }
 
 # Check if auto-remediation is enabled
@@ -93,7 +94,8 @@ notify() {
     local message="${2:-Completed}"
     
     # macOS notification
-    if command -v osascript >/dev/null 2>&1; then
+    if command -v osascript >/dev/null 2>&1;
+    then
         osascript -e "display notification \"$message\" with title \"$title\"" 2>/dev/null || true
     fi
 }
@@ -135,8 +137,10 @@ require_cmd() {
     fi
 }
 
-script_basename() { 
-    basename "${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}" .sh
+script_basename() {
+    local source_path="${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
+    local name="${source_path##*/}"
+    echo "${name%.sh}"
 }
 
 acquire_lock() { with_lock "$@"; }
