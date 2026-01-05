@@ -1,0 +1,10 @@
+[user]
+	name = Abhi Mehrotra
+	email = abhimehro@pm.me
+	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJoWdkOM4r8DcuM2m0Q5bCYamjwJHVw7gm98v5liGpvr
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+[commit]
+	gpgsign = true

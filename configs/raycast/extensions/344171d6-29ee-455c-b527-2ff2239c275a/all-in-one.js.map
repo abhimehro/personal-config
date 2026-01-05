@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/all-in-one.ts"],
+  "sourcesContent": ["import { closeMainWindow } from \"@raycast/api\";\nimport { exec } from \"child_process\";\n\nexport default async () => {\n  exec(\"/System/Applications/Utilities/Screenshot.app/Contents/MacOS/Screenshot\");\n  await closeMainWindow();\n};\n"],
+  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAgC,wBAChCC,EAAqB,yBAEdH,EAAQ,SAAY,IACzB,QAAK,yEAAyE,EAC9E,QAAM,mBAAgB,CACxB",
+  "names": ["all_in_one_exports", "__export", "all_in_one_default", "__toCommonJS", "import_api", "import_child_process"]
+}
