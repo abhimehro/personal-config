@@ -1,0 +1,77 @@
+# Mole Whitelist - Protected paths won't be deleted
+# Default protections: Playwright browsers, HuggingFace models, Maven repo, Ollama models, Surge Mac, R renv, Finder metadata
+# Add one pattern per line to keep items safe.
+
+~/Library/Caches/com.apple.mail/*
+~/.gradle/caches/*
+~/.gradle/daemon/*
+~/Library/Developer/Xcode/DerivedData/*
+~/Library/Caches/com.apple.dt.Xcode/*
+~/Library/Developer/Xcode/iOS DeviceSupport/*/Symbols/System/Library/Caches/*
+~/.m2/repository/*
+~/Library/Caches/JetBrains/*
+~/Library/Caches/Google/AndroidStudio*/*
+~/.android/build-cache/*
+~/Library/Application Support/Code/Cache/*
+~/Library/Application Support/Code/CachedData/*
+~/Library/Caches/com.microsoft.VSCode/*
+~/Library/Caches/com.todesktop.230313mzl4w4u92/*
+~/.cache/bazel/*
+~/Library/Caches/go-build/*
+~/go/pkg/mod/cache/*
+~/.cargo/registry/cache/*
+~/.rustup/toolchains/*/share/doc/*
+~/.rustup/downloads/*
+~/.ccache/*
+~/.cache/sccache/*
+~/.sbt/*
+~/.ivy2/cache/*
+~/.turbo/*
+~/.next/*
+~/.vite/*
+~/.parcel-cache/*
+~/.cache/pre-commit/*
+~/.cache/ruff/*
+~/.cache/mypy/*
+~/.pytest_cache/*
+~/.cache/flutter/*
+~/.cache/swift-package-manager/*
+~/.cache/zig/*
+~/Library/Caches/deno/*
+~/Library/Caches/CocoaPods/*
+~/.npm/_cacache/*
+~/.cache/pip/*
+~/.cache/uv/*
+~/Library/Caches/org.R-project.R/R/renv/*
+~/Library/Caches/Homebrew/*
+~/.cache/yarn/*
+~/.pnpm-store/*
+~/.composer/cache/*
+~/.gem/cache/*
+~/.conda/pkgs/*
+~/anaconda3/pkgs/*
+~/.cache/torch/*
+~/.cache/tensorflow/*
+~/.cache/huggingface/*
+~/Library/Caches/ms-playwright*
+~/.cache/selenium/*
+~/.ollama/models/*
+~/.cache/wandb/*
+~/Library/Caches/com.apple.Safari/*
+~/Library/Caches/Google/Chrome/*
+~/Library/Caches/Firefox/*
+~/Library/Caches/BraveSoftware/Brave-Browser/*
+~/Library/Caches/com.nssurge.surge-mac/*
+~/Library/Application Support/com.nssurge.surge-mac/*
+~/Library/Containers/com.docker.docker/Data/*
+~/.local/share/containers/cache/*
+~/Library/Caches/com.apple.FontRegistry/*
+~/Library/Caches/com.apple.spotlight/*
+~/Library/Caches/CloudKit/*
+FINDER_METADATA
+~/Library/Developer/Xcode/Archives/*
+~/.Trash
+/Users/speedybee/.cache/huggingface*
+/Users/speedybee/Library/Caches/JetBrains*
+/Users/speedybee/Library/Caches/com.jetbrains.toolbox*
+/Users/speedybee/Library/Caches/com.apple.finder

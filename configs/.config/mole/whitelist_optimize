@@ -1,0 +1,14 @@
+# Mole Optimization Whitelist - These checks will be skipped during optimization
+
+firewall
+gatekeeper
+check_macos_updates
+check_brew_health
+check_sip
+check_filevault
+check_touchid
+check_rosetta
+check_git_config
+check_login_items
+check_mole_update
+check_brew_updates
