@@ -18,7 +18,7 @@ log_status() {
 spinner() {
     local pid=$1
     local delay=0.1
-    local spinstr='|/-\'
+    local spinstr='|/-\\'
 
     # Check if stdout is a TTY
     if [ -t 1 ]; then
