@@ -43,7 +43,6 @@ check_controld_active() {
   local tmp_who tmp_aaaa
   tmp_who=$(mktemp)
   tmp_aaaa=$(mktemp)
-  trap 'rm -f "$tmp_who" "$tmp_aaaa"' RETURN
 
   # 3) Basic DNS checks (Background)
   dig @"$LISTENER_IP" example.com +short +time=5 >/dev/null 2>&1 &
@@ -61,6 +60,7 @@ check_controld_active() {
   (dig @"$LISTENER_IP" +short +time=5 AAAA example.com 2>/dev/null | head -n1 || true) > "$tmp_aaaa" &
   local pid_aaaa=$!
 
+  # Set up cleanup trap for both background processes and temporary files
   trap 'kill $pid_dns $pid_conn $pid_who $pid_aaaa 2>/dev/null || true; rm -f "$tmp_who" "$tmp_aaaa"' RETURN
 
   # 1) LaunchDaemon / process (Local Check)
