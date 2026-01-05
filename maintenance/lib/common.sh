@@ -5,7 +5,7 @@ set -eo pipefail
 
 # Architecture and OS detection
 ARCH="$(uname -m)"
-OS_VER="$(sw_vers -productVersion)"
+OS_VER="$(sw_vers -productVersion 2>/dev/null || echo "unknown")"
 
 # Simple PATH setup for Apple Silicon
 export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -34,14 +34,21 @@ fi
 log() {
     local level="${1:-INFO}"
     shift
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
-    local script_name="$(basename "${BASH_SOURCE[2]:-${BASH_SOURCE[1]:-common}}" .sh)"
+    # Optimize date call using printf (Bash 4.2+)
+    local ts
+    printf -v ts '%(%Y-%m-%d %H:%M:%S)T' -1 2>/dev/null || ts="$(date '+%Y-%m-%d %H:%M:%S')"
+
+    # Optimize basename using parameter expansion
+    local source_path="${BASH_SOURCE[2]:-${BASH_SOURCE[1]:-common}}"
+    local script_name="${source_path##*/}"
+    script_name="${script_name%.sh}"
+
     local line="$ts [$level] [$script_name] $*"
     
     echo "$line" | tee -a "$LOG_DIR/${script_name}.log" 2>/dev/null || echo "$line"
 }
 
-log_debug() { [[ "${DEBUG:-0}" == "1" ]] && log "DEBUG" "$@"; }
+log_debug() { [[ "${DEBUG:-0}" == "1" ]] && log "DEBUG" "$@" || true; }
 log_info()  { log "INFO" "$@"; }
 log_warn()  { log "WARNING" "$@"; }
 log_error() { log "ERROR" "$@"; }
@@ -67,7 +74,8 @@ with_lock() {
 # Get disk usage percentage
 percent_used() {
     local path="${1:-/}"
-    df -P "$path" | awk 'NR==2 {print $5}' | tr -d '%'
+    # Optimize: Combine awk and tr, avoid extra pipe and process
+    df -P "$path" | awk 'NR==2 {sub(/%/, "", $5); print $5}'
 }
 
 # Check if auto-remediation is enabled
