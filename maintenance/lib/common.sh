@@ -34,9 +34,14 @@ fi
 log() {
     local level="${1:-INFO}"
     shift
+
     # Optimize date call using printf (Bash 4.2+)
     local ts
-    printf -v ts '%(%Y-%m-%d %H:%M:%S)T' -1 2>/dev/null || ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 2) )); then
+        printf -v ts '%(%Y-%m-%d %H:%M:%S)T' -1
+    else
+        ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    fi
 
     # Optimize basename using parameter expansion
     local source_path="${BASH_SOURCE[2]:-${BASH_SOURCE[1]:-common}}"
@@ -89,7 +94,8 @@ notify() {
     local message="${2:-Completed}"
     
     # macOS notification
-    if command -v osascript >/dev/null 2>&1; then
+    if command -v osascript >/dev/null 2>&1;
+    then
         osascript -e "display notification \"$message\" with title \"$title\"" 2>/dev/null || true
     fi
 }
@@ -131,8 +137,10 @@ require_cmd() {
     fi
 }
 
-script_basename() { 
-    basename "${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}" .sh
+script_basename() {
+    local source_path="${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}"
+    local name="${source_path##*/}"
+    echo "${name%.sh}"
 }
 
 acquire_lock() { with_lock "$@"; }
@@ -163,4 +171,4 @@ cleanup_and_exit() {
 }
 
 # Log successful load
-log_debug "Common library loaded - Arch: $ARCH, macOS: $OS_VER"
+log_debug "Common library loaded - Arch: $ARCH, macOS: $OS_VER" || true
