@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/open-subscriptions.ts"],
+  "sourcesContent": ["import { open } from \"@raycast/api\";\n\nexport default async function main() {\n  open(\"https://www.youtube.com/feed/subscriptions\");\n}\n"],
+  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAqB,wBAErB,eAAOF,GAA8B,IACnC,QAAK,4CAA4C,CACnD",
+  "names": ["open_subscriptions_exports", "__export", "main", "__toCommonJS", "import_api"]
+}

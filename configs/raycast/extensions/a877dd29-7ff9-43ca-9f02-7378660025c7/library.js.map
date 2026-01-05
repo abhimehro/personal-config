@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/library.ts"],
+  "sourcesContent": ["import { open } from \"@raycast/api\";\n\nexport default async function main() {\n  await open(\"https://readwise.io/everything\");\n}\n"],
+  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAqB,wBAErB,eAAOF,GAA8B,CACnC,QAAM,QAAK,gCAAgC,CAC7C",
+  "names": ["library_exports", "__export", "main", "__toCommonJS", "import_api"]
+}
