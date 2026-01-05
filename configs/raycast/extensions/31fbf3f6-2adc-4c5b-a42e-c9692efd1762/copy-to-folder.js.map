@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/copy-to-folder.tsx"],
+  "sourcesContent": ["import { launchCommand, LaunchType, showToast, Toast } from \"@raycast/api\";\nimport { useEffect } from \"react\";\n\nexport default function Command() {\n  useEffect(() => {\n    // Launch the move-to-folder command with copy mode\n    try {\n      launchCommand({\n        name: \"move-to-folder\",\n        type: LaunchType.UserInitiated,\n        arguments: {\n          mode: \"copy\",\n        },\n      });\n    } catch (error) {\n      showToast({\n        style: Toast.Style.Failure,\n        title: \"Failed to launch command\",\n        message: String(error),\n      });\n    }\n  }, []);\n\n  // Return null as we're just redirecting\n  return null;\n}\n"],
+  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAA4D,wBAC5DC,EAA0B,iBAEX,SAARH,GAA2B,CAChC,sBAAU,IAAM,CAEd,GAAI,IACF,iBAAc,CACZ,KAAM,iBACN,KAAM,aAAW,cACjB,UAAW,CACT,KAAM,MACR,CACF,CAAC,CACH,OAASI,EAAO,IACd,aAAU,CACR,MAAO,QAAM,MAAM,QACnB,MAAO,2BACP,QAAS,OAAOA,CAAK,CACvB,CAAC,CACH,CACF,EAAG,CAAC,CAAC,EAGE,IACT",
+  "names": ["copy_to_folder_exports", "__export", "Command", "__toCommonJS", "import_api", "import_react", "error"]
+}

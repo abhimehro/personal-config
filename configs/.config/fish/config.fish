@@ -67,15 +67,11 @@ end
 # Network Mode Manager - Control D and Windscribe integration
 set -gx NM_ROOT $HOME/Documents/dev/personal-config
 
-# Set default editor - Cursor IDE (block until closed)
-# Note: You need to install the Cursor CLI first:
-#   1. Open Cursor
-#   2. Press Cmd+Shift+P
-#   3. Type \"Shell Command: Install 'cursor' command in PATH\"
-# Why --wait: required for tools like `git commit` that expect the editor to block.
+# Set default editor - NeoVim
+# Note: NeoVim blocks by default when used as EDITOR, perfect for tools like `git commit`.
 # Avoid setting universal variables on every startup; keep this as a safe fallback.
 if not set -q EDITOR
-    set -gx EDITOR "cursor --wait"
+    set -gx EDITOR "nvim"
 end
 
 # ============================================
@@ -159,7 +155,7 @@ end
 # Utility Aliases
 # ============================================
 # Quick file editing
-function __run_editor --description 'Run $EDITOR (supports args like "cursor --wait")'
+function __run_editor --description 'Run $EDITOR (supports args like "nvim" or "code --wait")'
     set -l editor (string split ' ' -- $EDITOR)
     command $editor $argv
 end

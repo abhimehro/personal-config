@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/run-shell-command.js"],
+  "sourcesContent": ["import { exec } from \"child_process\";\nimport { showToast, Toast } from \"@raycast/api\";\n\nexport default async function main(props) {\n  let { command } = props.arguments;\n  return new Promise((resolve, reject) => {\n    exec(`${command.replace(/\"/g, '\\\\\"')}`, async (error, stdout, stderr) => {\n      if (error) {\n        reject(`Error: ${stderr}`);\n        await showToast({\n          style: Toast.Style.Failure,\n          title: \"Failed to Execute\",\n          message: stderr.trim(),\n        });\n      } else {\n        resolve(stdout.trim());\n        await showToast({\n          style: Toast.Style.Success,\n          title: \"Ran Shell Command\",\n          message: stdout.trim(),\n        });\n      }\n    });\n  });\n}\n"],
+  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAqB,yBACrBC,EAAiC,wBAEjC,eAAOH,EAA4BI,EAAO,CACxC,GAAI,CAAE,QAAAC,CAAQ,EAAID,EAAM,UACxB,OAAO,IAAI,QAAQ,CAACE,EAASC,IAAW,IACtC,QAAK,GAAGF,EAAQ,QAAQ,KAAM,KAAK,CAAC,GAAI,MAAOG,EAAOC,EAAQC,IAAW,CACnEF,GACFD,EAAO,UAAUG,CAAM,EAAE,EACzB,QAAM,aAAU,CACd,MAAO,QAAM,MAAM,QACnB,MAAO,oBACP,QAASA,EAAO,KAAK,CACvB,CAAC,IAEDJ,EAAQG,EAAO,KAAK,CAAC,EACrB,QAAM,aAAU,CACd,MAAO,QAAM,MAAM,QACnB,MAAO,oBACP,QAASA,EAAO,KAAK,CACvB,CAAC,EAEL,CAAC,CACH,CAAC,CACH",
+  "names": ["run_shell_command_exports", "__export", "main", "__toCommonJS", "import_child_process", "import_api", "props", "command", "resolve", "reject", "error", "stdout", "stderr"]
+}
