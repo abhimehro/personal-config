@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/capture-timer.ts"],
+  "sourcesContent": ["import { closeMainWindow } from \"@raycast/api\";\nimport { Form, LaunchProps } from \"@raycast/api\";\n\nimport { exec } from \"child_process\";\n\ninterface Args {\n  time?: string;\n}\n\nexport default async (props: LaunchProps<{ arguments: Args }>) => {\n  if (props.arguments.time) {\n    exec(`/usr/sbin/screencapture -i -p -T ${props.arguments.time}`);\n  } else {\n    exec(\"/usr/sbin/screencapture -i -p -T 5\");\n  }\n  await closeMainWindow();\n};\n"],
+  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAgC,wBAGhCC,EAAqB,yBAMdH,EAAQ,MAAOI,GAA4C,CAC5DA,EAAM,UAAU,QAClB,QAAK,oCAAoCA,EAAM,UAAU,IAAI,EAAE,KAE/D,QAAK,oCAAoC,EAE3C,QAAM,mBAAgB,CACxB",
+  "names": ["capture_timer_exports", "__export", "capture_timer_default", "__toCommonJS", "import_api", "import_child_process", "props"]
+}

@@ -134,16 +134,22 @@ safe_stop() {
     ctrld stop 2>/dev/null || true
     
     # Kill any remaining processes
-    pkill -f ctrld 2>/dev/null || true
+    pkill -x ctrld 2>/dev/null || true
     
-    # Wait for processes to fully terminate
-    sleep 2
+    # Wait for processes to fully terminate (optimized with polling)
+    local retry=0
+    # Poll for up to 2 seconds (20 * 0.1s)
+    while pgrep -x "ctrld" >/dev/null && [ $retry -lt 20 ]; do
+        sleep 0.1
+        retry=$((retry + 1))
+    done
     
     # Verify no ctrld processes are running
-    if pgrep -f ctrld >/dev/null; then
+    if pgrep -x "ctrld" >/dev/null; then
         log_warning "Force killing remaining ctrld processes..."
-        pkill -9 -f ctrld 2>/dev/null || true
-        sleep 1
+        pkill -9 -x ctrld 2>/dev/null || true
+        # Quick check if it's gone
+        sleep 0.1
     fi
     
     # Reset DNS to prevent network hijacking
@@ -228,6 +234,25 @@ switch_profile() {
     
     log "Switching to $profile_name profile with $protocol protocol..."
     
+    # Optimization: Early exit if already running the desired profile/protocol
+    if pgrep -x "ctrld" >/dev/null && [[ -L "$CONTROLD_DIR/ctrld.toml" ]]; then
+        local current_config
+        current_config=$(readlink "$CONTROLD_DIR/ctrld.toml")
+
+        # Verify the symlink points to the correct profile config file
+        if [[ "$current_config" == "$config_file" ]]; then
+            # Verify the protocol inside the config matches
+            if grep -q "type = '$protocol'" "$config_file" 2>/dev/null; then
+                # Quick health check (fast path) to ensure it's actually working
+                if dig @127.0.0.1 google.com +short +time=1 >/dev/null 2>&1; then
+                    log_success "Already running $profile_name profile with $protocol. No change needed."
+                    return 0
+                fi
+                log_warning "Profile matches but health check failed. Restarting service..."
+            fi
+        fi
+    fi
+
     # Ensure directories exist before generating configs
     setup_directories
     

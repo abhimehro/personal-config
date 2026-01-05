@@ -20,6 +20,7 @@
 .env
 .env.*
 .secrets/
+configs/.gemini/oauth_creds.json
 .sensitive-paths.txt
 config.json
 *.conf
