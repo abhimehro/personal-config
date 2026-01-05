@@ -12,12 +12,11 @@ Host github.com
 # ─ Dynamic configuration for MacBook Air M2 (Cursor IDE) ────────
 # This configuration automatically adapts to VPN on/off scenarios
 
-# VPN ON: Windscribe Static IP with Port Forwarding
-# Port Forward: 36555 (external) → 22 (internal SSH)
+# VPN ON: Windscribe/Tailscale/static IP (set locally; keep placeholders in repo)
 Host cursor-vpn
-    HostName 82.21.151.194         # Windscribe Atlanta static IP
-    Port 36555                     # External port (Windscribe forwards to :22)
-    User speedybee
+    HostName <vpn-ip-address>      # set locally, e.g. Windscribe static IP
+    Port 22                        # set locally if needed (e.g. 13161 -> sshd :22)
+    User abhimehrotra
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -34,7 +33,7 @@ Host cursor-vpn
 # VPN OFF: Use local hostname (mDNS)
 Host cursor-local
     HostName abhis-macbook-air.local
-    User speedybee
+    User abhimehrotra
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -50,7 +49,7 @@ Host cursor-local
 # FALLBACK: Use .local domain (mDNS/Bonjour)
 Host cursor-mdns
     HostName abhis-macbook-air.local
-    User speedybee
+    User abhimehrotra
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -64,7 +63,7 @@ Host cursor-mdns
 # SMART ALIAS: Auto-detect which connection to use
 Host cursor-auto
     HostName abhis-macbook-air.local
-    User speedybee
+    User abhimehrotra
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 30
@@ -99,8 +98,27 @@ Host *
     ControlPersist 10m
 
     # Security settings
+    StrictHostKeyChecking ask
     HashKnownHosts yes
-    StrictHostKeyChecking accept-new
-    
-    # Performance optimizations
+    UserKnownHostsFile ~/.ssh/known_hosts
+
+    # Performance and features
     Compression yes
+    ForwardAgent yes
+    ForwardX11 yes
+    ForwardX11Trusted yes
+
+    # Environment
+    SendEnv LANG LC_*
+
+    # Timeout settings
+    ConnectTimeout 30
+
+    # Prevent hanging connections
+    ExitOnForwardFailure yes
+
+    # Preferred key types (modern, secure)
+    PubkeyAcceptedKeyTypes ssh-ed25519,ecdsa-sha2-nistp256,ssh-rsa
+    HostkeyAlgorithms +ssh-ed25519,ecdsa-sha2-nistp256,ssh-rsa
+    # Note: Removed trailing comma from KexAlgorithms for valid syntax
+    KexAlgorithms +diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha256,curve25519-sha256

@@ -1,0 +1,9 @@
+#!/bin/sh
+if [[ "$1" == "ddcctl" ]]; then
+    shift 1
+    "/Applications/Lunar.app/Contents/Resources/ddcctl" "$@"
+elif [[ "$1" == "launch" ]]; then
+    "/Applications/Lunar.app/Contents/MacOS/Lunar"
+else
+    "/Applications/Lunar.app/Contents/MacOS/Lunar" @ "$@"
+fi

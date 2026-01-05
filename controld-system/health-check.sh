@@ -11,6 +11,7 @@ set -euo pipefail
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 VERIFY_SCRIPT="$(cd "$(dirname "$0")/.." && pwd)/scripts/network-mode-verify.sh"
@@ -20,24 +21,36 @@ if [[ ! -x "$VERIFY_SCRIPT" ]]; then
   exit 1
 fi
 
-echo "==================================="
-echo "Control D Health Check (Separation Strategy)"
-echo "==================================="
+echo "=================================================="
+echo "   Control D Health Check (Separation Strategy)   "
+echo "=================================================="
 echo ""
 
+# 1. DEEP VERIFICATION
 # Delegate to the unified verification checklist for CONTROL D ACTIVE state.
 # We pass the default browsing profile so profile-aware and DoH3 checks run.
+
+echo -e "${BLUE}Running deep verification...${NC}"
+echo ""
+
+VERIFY_STATUS=0
 if "$VERIFY_SCRIPT" controld browsing; then
-  echo -e "${GREEN}Overall Status: HEALTHY ✓${NC}"
-  ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-  echo "SUMMARY TS=${ts} MODE=health-check RESULT=PASS PROFILE=browsing"
-  exit 0
+  VERIFY_STATUS=0
 else
-  echo -e "${RED}Overall Status: UNHEALTHY ✗${NC}"
-  ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-  echo "SUMMARY TS=${ts} MODE=health-check RESULT=FAIL PROFILE=browsing"
-  exit 1
+  VERIFY_STATUS=1
 fi
+
+echo ""
+echo "=================================================="
+echo "             System Diagnostics                   "
+echo "=================================================="
+echo ""
+
+# 2. SYSTEM DIAGNOSTICS
+# These checks help pinpoint specific issues if the deep verification fails,
+# or provide reassurance if it passes.
+
+# Check 1: Service Status
 echo -n "1. Checking if ctrld service is running... "
 if sudo ctrld service status &>/dev/null; then
     echo -e "${GREEN}✓ PASS${NC}"
@@ -45,7 +58,7 @@ if sudo ctrld service status &>/dev/null; then
 else
     echo -e "${RED}✗ FAIL${NC}"
     echo "   Service is not running. Start it with:"
-    echo "   sudo ctrld service start --config ~/.config/controld/ctrld.toml --skip_self_checks"
+    echo -e "   ${YELLOW}sudo ctrld service start --config ~/.config/controld/ctrld.toml --skip_self_checks${NC}"
     SERVICE_RUNNING=false
 fi
 
@@ -59,7 +72,7 @@ if [ "$SERVICE_RUNNING" = true ]; then
         DNS_WORKING=true
     else
         echo -e "${RED}✗ FAIL${NC}"
-        echo "   DNS queries are not being resolved"
+        echo "   DNS queries are not being resolved via localhost."
         DNS_WORKING=false
     fi
 else
@@ -71,6 +84,7 @@ echo ""
 
 # Check 3: Log file errors
 echo -n "3. Checking for recent errors in logs... "
+# Use a mockable path for logs if needed, but for now standard path
 ERROR_COUNT=$(sudo tail -20 /var/log/ctrld.log 2>/dev/null | grep -c "\"level\":\"error\"" || true)
 if [ -z "$ERROR_COUNT" ]; then
     ERROR_COUNT=0
@@ -80,7 +94,7 @@ if [ "$ERROR_COUNT" -eq 0 ]; then
     echo -e "${GREEN}✓ PASS${NC} (no errors in last 20 log lines)"
 elif [ "$ERROR_COUNT" -lt 5 ]; then
     echo -e "${YELLOW}⚠ WARNING${NC} (${ERROR_COUNT} errors found)"
-    echo "   This may be normal if you just restarted the service"
+    echo "   This may be normal if you just restarted the service."
 else
     echo -e "${RED}✗ FAIL${NC} (${ERROR_COUNT} errors found)"
     echo "   Run: sudo tail -20 /var/log/ctrld.log | grep error"
@@ -123,23 +137,30 @@ if sudo /usr/libexec/ApplicationFirewall/socketfilterfw --listapps 2>/dev/null |
     echo -e "${GREEN}✓ PASS${NC}"
 else
     echo -e "${YELLOW}⚠ WARNING${NC}"
-    echo "   ctrld not found in firewall allowlist"
+    echo "   ctrld not found in firewall allowlist."
     echo "   Add with: sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /opt/homebrew/bin/ctrld"
 fi
 
 echo ""
-echo "==================================="
+echo "=================================================="
 
-# Summary
-if [ "$SERVICE_RUNNING" = true ] && [ "$DNS_WORKING" = true ]; then
+# Final Summary
+# Considers both the deep verification (network state) and local diagnostics (service health)
+ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+if [ "$VERIFY_STATUS" -eq 0 ] && [ "$SERVICE_RUNNING" = true ] && [ "$DNS_WORKING" = true ]; then
     echo -e "${GREEN}Overall Status: HEALTHY ✓${NC}"
     echo ""
-    echo "Active profile:"
-    grep "upstream = " "$HOME/.config/controld/ctrld.toml" | head -1
+    if [ -f "$HOME/.config/controld/ctrld.toml" ]; then
+      echo "Active profile:"
+      grep "upstream = " "$HOME/.config/controld/ctrld.toml" | head -1 || echo "Unknown"
+    fi
+    echo "SUMMARY TS=${ts} MODE=health-check RESULT=PASS PROFILE=browsing"
     exit 0
 else
     echo -e "${RED}Overall Status: UNHEALTHY ✗${NC}"
     echo ""
-    echo "Please address the issues above"
+    echo "Please address the issues highlighted above."
+    echo "SUMMARY TS=${ts} MODE=health-check RESULT=FAIL PROFILE=browsing"
     exit 1
 fi
