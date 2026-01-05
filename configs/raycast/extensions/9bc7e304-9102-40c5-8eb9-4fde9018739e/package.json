@@ -1,0 +1,603 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "granola",
+  "title": "Granola",
+  "description": "Create, manage, and review notes in Granola",
+  "icon": "extension-icon.png",
+  "author": "Rob",
+  "contributors": [
+    "jlokos"
+  ],
+  "categories": [
+    "Productivity",
+    "Documentation",
+    "Communication"
+  ],
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "search-notes",
+      "title": "Search Notes",
+      "description": "Search all notes from Granola",
+      "mode": "view"
+    },
+    {
+      "name": "create-note",
+      "title": "Create Note",
+      "description": "Create a new note in Granola",
+      "mode": "no-view"
+    },
+    {
+      "name": "export-transcripts",
+      "title": "Export Transcripts",
+      "description": "Select multiple notes and export their transcripts",
+      "mode": "view"
+    },
+    {
+      "name": "export-notes",
+      "title": "Export Notes",
+      "description": "Select multiple notes and export them",
+      "mode": "view"
+    },
+    {
+      "name": "create-note-from-transcript",
+      "title": "Create Note from Transcript",
+      "description": "Create a new note in Granola from a transcript",
+      "mode": "view"
+    },
+    {
+      "name": "search-people",
+      "title": "Search People",
+      "description": "Search people from your Granola meetings",
+      "mode": "view"
+    },
+    {
+      "name": "search-companies",
+      "title": "Search Companies",
+      "description": "Search companies from your Granola meetings",
+      "mode": "view"
+    }
+  ],
+  "tools": [
+    {
+      "name": "ai-notes",
+      "title": "AI Notes",
+      "description": "Ask AI about your notes, meetings, and transcripts from Granola",
+      "instructions": "Returns a list of notes from Granola that match the provided filters,\nor folder information when listFolders is true.\n\nThis tool supports three primary functions:\n1. Note retrieval and filtering with optional transcript inclusion\n2. Folder listing and organization features\n3. Metadata-only queries (with excludeContent=true) to avoid message size limits\n\nFor note queries, it can filter by title, content, date, or folder.\nFor folder queries, it returns folder metadata including note counts.\n\nCRITICAL PATTERN for task extraction queries (e.g., \"what are the tasks from my latest meeting?\"):\n1. First call list-meetings with { \"date\": \"latest\", \"limit\": 1 } to get the meeting ID\n2. Then call THIS tool with { \"noteId\": \"<id-from-step-1>\", \"includeTranscript\": false }\nDO NOT use contentFilter or excludeContent for task extraction - use noteId instead.\n\nIMPORTANT: When dealing with queries that might return many notes (e.g., \"all meetings\",\n\"tasks from meetings\"), consider using:\n- The list-meetings tool for just metadata\n- This tool with excludeContent=true for filtered results without content\n- This tool with specific noteId to get full content for individual notes",
+      "input": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Optional filter for note title"
+          },
+          "date": {
+            "type": "string",
+            "description": "Optional date filter for notes to look for\nSupports:\n- ISO 8601 format (e.g., \"2025-03-07\")\n- Relative dates: \"today\", \"yesterday\"\n- Time ranges: \"last week\", \"last month\"\nIf the message contains \"most recent\", or anything similar, the date should be empty. Use all time using the user's local machine time."
+          },
+          "contentFilter": {
+            "type": "string",
+            "description": "Optional content filter"
+          },
+          "includeTranscript": {
+            "type": "boolean",
+            "description": "Whether to include the full transcript for each note\nSet to true when user asks for specific quotes, meeting details, or conversation transcripts"
+          },
+          "noteId": {
+            "type": "string",
+            "description": "Optional specific note ID to fetch transcript for\nUse when a user refers to a specific note they want to examine in detail\nCRITICAL: For task extraction queries like \"what are the tasks from my latest meeting?\",\nyou MUST use this parameter with the ID obtained from list-meetings tool.\nPattern: First call list-meetings with date:\"latest\" limit:1, then use the returned ID here."
+          },
+          "listFolders": {
+            "type": "boolean",
+            "description": "Whether to list folders instead of notes\nSet to true when user asks about folders or wants to see folder organization"
+          },
+          "folderId": {
+            "type": "string",
+            "description": "Optional folder ID to fetch notes from a specific folder\nUse when a user asks about notes in a specific folder"
+          },
+          "contentType": {
+            "type": "string",
+            "description": "Optional content type to return\n- \"enhanced\": AI-enhanced notes from panels (default)\n- \"original\": User's original notes/content\n- \"auto\": Automatically choose best available content\nUse \"original\" when user specifically asks for \"my notes\", \"what I wrote\", \"original content\"\nUse \"enhanced\" when user asks for \"AI notes\", \"enhanced\", \"processed notes\"",
+            "enum": [
+              "enhanced",
+              "original",
+              "auto"
+            ]
+          },
+          "excludeContent": {
+            "type": "boolean",
+            "description": "Whether to exclude content from the response\nSet to true when you only need metadata (title, date, ID) without the actual note content\nThis is useful to prevent message size limits when dealing with multiple notes\nDefault: false"
+          }
+        },
+        "required": []
+      },
+      "confirmation": false
+    },
+    {
+      "name": "list-meetings",
+      "title": "List Meetings",
+      "description": "List meetings with basic metadata (title, date, folders) without content",
+      "instructions": "Returns a list of meetings with basic metadata (title, date, ID) without content.\nThis is useful for quickly browsing meetings or finding specific meetings without\nloading full content, which can exceed message size limits.\n\nUse this tool when:\n- User asks for a list of meetings\n- User asks about their latest/most recent meeting(s)\n- User wants to see meetings from a specific time period\n- You need to get meeting IDs before fetching full content\n\nCRITICAL: For task extraction queries like \"what are the tasks from my latest meeting?\":\n1. Call THIS tool with { \"date\": \"latest\", \"limit\": 1 } to get the meeting ID\n2. Then call ai-notes with { \"noteId\": \"<id-from-step-1>\", \"includeTranscript\": false }\nDO NOT skip step 2 - you MUST call ai-notes with the specific noteId to get content.\n\nAfter getting the meeting list, use the ai-notes tool with specific noteId\nto retrieve full content for individual meetings.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Optional filter for meeting title"
+          },
+          "date": {
+            "type": "string",
+            "description": "Optional date filter for meetings\nSupports:\n- ISO 8601 format (e.g., \"2025-03-07\")\n- Relative dates: \"today\", \"yesterday\"\n- Time ranges: \"last week\", \"last month\"\n- \"latest\" or \"most recent\" to get the most recent meeting"
+          },
+          "folderId": {
+            "type": "string",
+            "description": "Optional folder ID to list meetings from a specific folder"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Maximum number of meetings to return\nDefault: 10 for general queries, 1 for \"latest\" queries"
+          }
+        },
+        "required": []
+      },
+      "confirmation": false
+    },
+    {
+      "name": "get-transcript",
+      "title": "Get Transcript",
+      "description": "Retrieve the full transcript for a specific note",
+      "instructions": "Retrieves the full transcript for a specific note by ID.\nUse this when the user specifically asks for transcript content, conversation details, or what was said in a meeting.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "noteId": {
+            "type": "string",
+            "description": "The ID of the note to get the transcript for"
+          }
+        },
+        "required": [
+          "noteId"
+        ]
+      },
+      "confirmation": false
+    },
+    {
+      "name": "save-to-notion",
+      "title": "Save to Notion",
+      "description": "Save one or more notes to Notion",
+      "instructions": "Saves one or more notes to Notion.\nReturns the Notion page URLs for successfully saved notes.\nUse this when the user wants to export or share their notes to Notion.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "noteIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of note IDs to save to Notion"
+          }
+        },
+        "required": [
+          "noteIds"
+        ]
+      },
+      "confirmation": false
+    },
+    {
+      "name": "recipes",
+      "title": "Recipes",
+      "description": "List and search Granola recipes",
+      "input": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "list",
+              "get",
+              "search"
+            ]
+          },
+          "slug": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": []
+      },
+      "confirmation": false
+    }
+  ],
+  "dependencies": {
+    "@danielxceron/youtube-transcript": "^1.2.3",
+    "@raycast/api": "^1.93.1",
+    "@raycast/utils": "^1.19.1",
+    "@types/turndown": "^5.0.5",
+    "archiver": "^7.0.1",
+    "turndown": "^7.2.0"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^1.0.11",
+    "@types/archiver": "^6.0.2",
+    "@types/node": "^20.8.10",
+    "@types/react": "18.3.3",
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.4.5"
+  },
+  "scripts": {
+    "build": "ray build",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the \\`prepublishOnly\\` script and rerun \\`npm publish\\` again.\\nIf you wanted to publish it to the Raycast Store instead, use \\`npm run publish\\` instead.\\n\\n\" && exit 1",
+    "publish": "npx @raycast/api@latest publish"
+  },
+  "platforms": [
+    "macOS",
+    "Windows"
+  ],
+  "ai": {
+    "instructions": "You are an AI assistant for Granola. When you answer, follow these core rules:\n\n- CRITICAL: every `ai-notes` call must include the `includeTranscript` flag. Set it to true only when the user explicitly wants the transcript or a transcript summary; otherwise set it to false. Skip the flag only when you use `listFolders: true`. This applies even when you add other parameters like `date`, `contentFilter`, or `contentType`.\n- For task or action-item requests about the \"latest\" meeting (e.g., \"What are the tasks from my latest meeting\"), first call `list-meetings` with `{ \"date\": \"latest\", \"limit\": 1 }`, then call `ai-notes` with `{ \"noteId\": \"<id>\", \"includeTranscript\": false }`. Do not add `contentFilter` or `excludeContent` in that flow.\n- Use `list-meetings` only when the user wants a meeting list, when you need IDs before another tool (such as saving to Notion), or when you must disambiguate multiple candidates. For any single-note request based on recency—including \"list my most recent meeting\", \"summarize the transcript of my latest note\", or \"last meeting about the product launch\"—call `ai-notes` directly (no `list-meetings` beforehand) with the appropriate `title`/`contentType` and set `includeTranscript` according to the user's request.\n- Use the `title` parameter for topical queries (\"meeting about the product launch\"). Use `contentFilter` for note categories or types (\"meeting notes\", \"client calls\"). If the user only specifies time (\"latest meeting\"), avoid `contentFilter`. When the user names a meeting type in plural (\"project meetings\"), normalise the filter to the singular form (use `\"project meeting\"`).\n- When the user wants meeting notes exported (e.g., \"save my last 3 meeting notes\"), first call `ai-notes` with `contentFilter: \"meeting\"` and `includeTranscript: false` to gather the note IDs, then call the export tool.\n- Respect content-type preferences: set `contentType: \"original\"` for requests like \"my notes\" or \"original\"; set `contentType: \"enhanced\"` for \"AI/enhanced\" requests; otherwise omit it.\n- Turn on `includeTranscript` when the user asks for the transcript, what was said, or to summarise a transcript; keep it false for summaries such as TL;DR requests unless the transcript is mentioned.\n- Use `ai-notes` to retrieve transcripts and transcript summaries. Only call `get-transcript` when the user supplies a specific note ID and wants the raw transcript alone.\n- For folder questions, call `ai-notes` with `listFolders: true`. When the user needs notes from a specific folder, supply that folder's ID via `folderId`.\n- Always call the `recipes` tool (action `\"get\"`) before any other tool when the user invokes `/slug` or explicitly requests a recipe; the recipes call must be the very first tool call for that query (e.g., `/tldr` → `recipes({ \"action\": \"get\", \"slug\": \"tldr\" })`). After fetching the recipe, continue with the necessary note tools.\n- After you have the right note IDs, call `save-to-notion` if the user wants to export notes to Notion.\n",
+    "evals": [
+      {
+        "input": "@granola Please summarize my last note",
+        "mocks": {
+          "ai-notes": [
+            {
+              "content": "### Meeting Context\n\n*   Testing session for Granola application's transcription capabilities\n*   Two participants simulating back-and-forth conversation...",
+              "date": "2025-03-06T16:15:20.057Z",
+              "title": "Summary",
+              "id": "sample-id-123"
+            }
+          ]
+        },
+        "expected": [
+          {
+            "callsTool": {
+              "name": "ai-notes",
+              "arguments": {}
+            }
+          }
+        ]
+      },
+      {
+        "input": "@granola Show me the transcript of my last meeting about the product launch",
+        "mocks": {
+          "list-meetings": [
+            {
+              "id": "sample-id-456",
+              "title": "Product Launch",
+              "date": "2025-03-06T16:15:20.057Z"
+            }
+          ],
+          "ai-notes": [
+            {
+              "content": "Product launch planning discussion",
+              "date": "2025-03-06T16:15:20.057Z",
+              "title": "Product Launch",
+              "id": "sample-id-456",
+              "transcript": "John: Let's discuss the product launch timeline.\nSarah: I think we should aim for next quarter.\nJohn: That makes sense, we still need to finalize the marketing materials."
+            }
+          ]
+        },
+        "expected": [
+          {
+            "callsTool": {
+              "name": "ai-notes",
+              "arguments": {
+                "title": "product launch",
+                "includeTranscript": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "input": "@granola summarize the transcript of my latest note",
+        "mocks": {
+          "ai-notes": [
+            {
+              "content": "Weekly team sync discussion",
+              "date": "2025-04-10T14:30:00.000Z",
+              "title": "Team Sync",
+              "id": "sample-id-789",
+              "transcript": "**Me:** Let's review our progress for this sprint.\n\n**Sarah:** We've completed the new dashboard feature.\n\n**John:** QA found two minor bugs we need to fix before release."
+            }
+          ]
+        },
+        "expected": [
+          {
+            "callsTool": {
+              "name": "ai-notes",
+              "arguments": {
+                "includeTranscript": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "input": "@granola what folders do I have",
+        "mocks": {
+          "ai-notes": [
+            {
+              "id": "folder-123",
+              "name": "Work Projects",
+              "description": "Notes related to ongoing work projects",
+              "noteCount": 15,
+              "createdAt": "2025-03-06T16:15:20.057Z",
+              "noteIds": [
+                "note-1",
+                "note-2"
+              ]
+            },
+            {
+              "id": "folder-456",
+              "name": "Personal",
+              "noteCount": 8,
+              "createdAt": "2025-03-10T14:30:00.000Z",
+              "noteIds": [
+                "note-3",
+                "note-4"
+              ]
+            }
+          ]
+        },
+        "expected": [
+          {
+            "callsTool": {
+              "name": "ai-notes",
+              "arguments": {
+                "listFolders": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "input": "@granola save my last 3 meeting notes to Notion",
+        "mocks": {
+          "list-meetings": [
+            {
+              "id": "note-1",
+              "title": "Team Sync",
+              "date": "2025-03-15T14:00:00.000Z"
+            },
+            {
+              "id": "note-2",
+              "title": "Client Call",
+              "date": "2025-03-14T16:30:00.000Z"
+            },
+            {
+              "id": "note-3",
+              "title": "Planning Session",
+              "date": "2025-03-13T11:00:00.000Z"
+            }
+          ],
+          "ai-notes": [
+            {
+              "id": "note-1",
+              "title": "Team Sync",
+              "date": "2025-03-15T14:00:00.000Z"
+            },
+            {
+              "id": "note-2",
+              "title": "Client Call",
+              "date": "2025-03-14T16:30:00.000Z"
+            },
+            {
+              "id": "note-3",
+              "title": "Planning Session",
+              "date": "2025-03-13T11:00:00.000Z"
+            }
+          ],
+          "save-to-notion": {
+            "results": [
+              {
+                "noteId": "note-1",
+                "title": "Team Sync",
+                "status": "success",
+                "pageUrl": "https://www.notion.so/team-sync-123"
+              },
+              {
+                "noteId": "note-2",
+                "title": "Client Call",
+                "status": "success",
+                "pageUrl": "https://www.notion.so/client-call-456"
+              },
+              {
+                "noteId": "note-3",
+                "title": "Planning Session",
+                "status": "success",
+                "pageUrl": "https://www.notion.so/planning-789"
+              }
+            ]
+          }
+        },
+        "expected": [
+          {
+            "callsTool": {
+              "name": "ai-notes",
+              "arguments": {
+                "contentFilter": "meeting"
+              }
+            }
+          },
+          {
+            "callsTool": "save-to-notion"
+          }
+        ]
+      },
+      {
+        "input": "@granola list my most recent meeting",
+        "mocks": {
+          "ai-notes": [
+            {
+              "content": "Product roadmap discussion with engineering team",
+              "date": "2025-03-16T10:00:00.000Z",
+              "title": "Engineering Sync",
+              "id": "latest-meeting-123"
+            }
+          ]
+        },
+        "expected": [
+          {
+            "callsTool": {
+              "name": "ai-notes",
+              "arguments": {
+                "includeTranscript": false
+              }
+            }
+          }
+        ]
+      },
+      {
+        "input": "@granola show me my original notes from yesterday",
+        "mocks": {
+          "ai-notes": [
+            {
+              "content": "Raw user-written content about the meeting",
+              "date": "2025-03-15T14:00:00.000Z",
+              "title": "User Notes",
+              "id": "original-notes-123"
+            }
+          ]
+        },
+        "expected": [
+          {
+            "callsTool": {
+              "name": "ai-notes",
+              "arguments": {
+                "contentType": "original",
+                "date": "yesterday",
+                "includeTranscript": false
+              }
+            }
+          }
+        ]
+      },
+      {
+        "input": "@granola get the enhanced AI notes for my project meetings",
+        "mocks": {
+          "ai-notes": [
+            {
+              "content": "AI-enhanced structured notes with key insights",
+              "date": "2025-03-16T09:00:00.000Z",
+              "title": "Project Meeting",
+              "id": "enhanced-notes-456"
+            }
+          ]
+        },
+        "expected": [
+          {
+            "callsTool": {
+              "name": "ai-notes",
+              "arguments": {
+                "contentType": "enhanced",
+                "contentFilter": "project meeting",
+                "includeTranscript": false
+              }
+            }
+          }
+        ]
+      },
+      {
+        "input": "@granola what are the tasks from my latest meeting?",
+        "mocks": {
+          "list-meetings": [
+            {
+              "id": "latest-meeting-123",
+              "title": "Product Launch Planning",
+              "date": "2025-03-16T14:00:00.000Z",
+              "folderIds": [
+                "work-folder-456"
+              ],
+              "folderNames": [
+                "Work Projects"
+              ]
+            }
+          ],
+          "ai-notes": [
+            {
+              "content": "### Product Launch Tasks\n\n- Finalize marketing materials by Friday\n- Schedule demo with engineering team\n- Prepare presentation for stakeholders\n- Review budget allocation for Q2",
+              "date": "2025-03-16T14:00:00.000Z",
+              "title": "Product Launch Planning",
+              "id": "latest-meeting-123"
+            }
+          ]
+        },
+        "expected": [
+          {
+            "callsTool": {
+              "name": "list-meetings",
+              "arguments": {
+                "date": "latest",
+                "limit": 1
+              }
+            }
+          },
+          {
+            "callsTool": {
+              "name": "ai-notes",
+              "arguments": {
+                "noteId": "latest-meeting-123",
+                "includeTranscript": false
+              }
+            }
+          }
+        ]
+      },
+      {
+        "input": "@granola /tldr my latest meeting",
+        "mocks": {
+          "recipes": [
+            {
+              "slug": "tldr",
+              "id": "r-101",
+              "config": {
+                "instructions": "Provide a concise TL;DR"
+              }
+            }
+          ],
+          "list-meetings": [
+            {
+              "id": "latest-meeting-123",
+              "title": "Engineering Sync",
+              "date": "2025-03-16T10:00:00.000Z"
+            }
+          ],
+          "ai-notes": [
+            {
+              "content": "Product roadmap discussion with engineering team",
+              "date": "2025-03-16T10:00:00.000Z",
+              "title": "Engineering Sync",
+              "id": "latest-meeting-123"
+            }
+          ]
+        },
+        "expected": [
+          {
+            "callsTool": {
+              "name": "recipes",
+              "arguments": {
+                "action": "get",
+                "slug": "tldr"
+              }
+            }
+          },
+          {
+            "callsTool": {
+              "name": "ai-notes",
+              "arguments": {
+                "includeTranscript": false
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
