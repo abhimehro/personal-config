@@ -173,7 +173,7 @@ main() {
   echo -e "  ✅ Dotfiles linked and verified"
   echo -e "  ✅ Maintenance launchd installed"
   echo -e "  ✅ Network helpers prepared"
-  echo -e "  ✅ Media scripts staged and launchd agents loaded"
+  echo -e "  ✅ Media scripts prepared and launchd agents configured (if applicable)"
   hr
   echo
   echo -e "${BOLD}👉 Next Steps:${NC}"
