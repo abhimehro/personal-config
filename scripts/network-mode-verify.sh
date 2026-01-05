@@ -64,7 +64,7 @@ check_controld_active() {
   pid_aaaa=$!
 
   # Set up cleanup trap for both background processes and temporary files
-  trap 'kill $pid_dns $pid_conn $pid_who $pid_aaaa 2>/dev/null || true; rm -f "$tmp_who" "$tmp_aaaa"' RETURN
+  trap 'kill ${pid_dns:-} ${pid_conn:-} ${pid_who:-} ${pid_aaaa:-} 2>/dev/null || true; rm -f "$tmp_who" "$tmp_aaaa"' RETURN
 
   # 1) LaunchDaemon / process (Local Check)
   if sudo launchctl list | grep -q "ctrld"; then
