@@ -140,6 +140,8 @@ if (( OUTDATED_CASKS > 0 )); then
         if brew upgrade --cask --greedy 2>&1 | tee -a "$LOG_DIR/brew_maintenance.log"; then
             log_info "Successfully upgraded casks with basic --greedy"
             UPDATED_CASKS=$OUTDATED_CASKS
+            # FLAG: We used full greedy, so no need to check latest again.
+            FULL_GREEDY_USED=1
         else
             log_warn "Cask upgrade encountered issues"
         fi
@@ -149,15 +151,26 @@ else
 fi
 
 # Check for casks that need --greedy-latest flag
-if [[ "$OPTI_FETCH_DONE" -eq 0 ]]; then
-    log_info "Checking for casks with version :latest..."
-    LATEST_CASKS_LIST=$(brew outdated --cask --greedy-latest 2>/dev/null || true)
-fi
-
-if [[ -n "$LATEST_CASKS_LIST" ]]; then
-    LATEST_CASKS=$(echo "$LATEST_CASKS_LIST" | wc -l | tr -d ' ')
-else
+# Performance Optimization: Skip this check if:
+# 1. No casks were outdated even with --greedy (superset of --greedy-latest)
+# 2. We already performed a full --greedy upgrade (which includes :latest)
+if (( OUTDATED_CASKS == 0 )); then
+    log_info "Skipping :latest check (no outdated casks found with --greedy)"
     LATEST_CASKS=0
+elif [[ "${FULL_GREEDY_USED:-0}" == "1" ]]; then
+    log_info "Skipping :latest check (already upgraded via full --greedy)"
+    LATEST_CASKS=0
+else
+    if [[ "$OPTI_FETCH_DONE" -eq 0 ]]; then
+        log_info "Checking for casks with version :latest..."
+        LATEST_CASKS_LIST=$(brew outdated --cask --greedy-latest 2>/dev/null || true)
+    fi
+
+    if [[ -n "$LATEST_CASKS_LIST" ]]; then
+        LATEST_CASKS=$(echo "$LATEST_CASKS_LIST" | wc -l | tr -d ' ')
+    else
+        LATEST_CASKS=0
+    fi
 fi
 
 if (( LATEST_CASKS > 0 )); then
