@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Self-contained health check script with inline functions
+# Self-contained health check script with enhanced panic diagnostics
+# Added timeouts to prevent hanging on slow log commands
 set -eo pipefail
 
 # Configuration
@@ -26,6 +27,37 @@ log_warn() {
 percent_used() {
     local path="${1:-/}"
     df -P "$path" | awk 'NR==2 {print $5}' | tr -d '%'
+}
+
+# Timeout wrapper for commands that might hang
+run_with_timeout() {
+    local timeout_seconds="$1"
+    shift
+    local cmd="$@"
+    
+    # Use timeout if available (installed via homebrew coreutils)
+    if command -v gtimeout >/dev/null 2>&1; then
+        gtimeout "$timeout_seconds" bash -c "$cmd" 2>/dev/null || echo ""
+    else
+        # Fallback: use background process with kill
+        local output_file=$(mktemp)
+        bash -c "$cmd" > "$output_file" 2>/dev/null &
+        local pid=$!
+        local count=0
+        while kill -0 $pid 2>/dev/null && [ $count -lt $timeout_seconds ]; do
+            sleep 1
+            ((count++))
+        done
+        if kill -0 $pid 2>/dev/null; then
+            kill -9 $pid 2>/dev/null || true
+            wait $pid 2>/dev/null || true
+            echo ""
+        else
+            wait $pid 2>/dev/null || true
+            cat "$output_file" 2>/dev/null || echo ""
+        fi
+        rm -f "$output_file"
+    fi
 }
 
 # Load config
@@ -54,31 +86,92 @@ if command -v vm_stat >/dev/null 2>&1; then
   PAGE_SIZE=$(vm_stat | awk '/page size of/ {print $8}' || echo "4096")
   FREE_MB=$(( (FREE_PAGES * PAGE_SIZE) / 1024 / 1024 ))
   append "Free memory: ${FREE_MB} MB"
+  
+  # Warn if very low memory
+  if (( FREE_MB < 100 )); then
+    log_warn "Very low free memory: ${FREE_MB} MB"
+  fi
 fi
 
 # 3) System load
 LOAD_AVG=$(uptime | awk -F'load averages:' '{print $2}' | tr -d ' ' || echo "unknown")
 append "System load averages: ${LOAD_AVG}"
 
-# 4) Recent kernel panics (more accurate detection)
-HOURS="${HEALTH_LOG_LOOKBACK_HOURS:-24}"
-# Check for actual panic reports first
-PANIC_REPORTS=$(find /Library/Logs/DiagnosticReports -name "*panic*" -mtime -1 2>/dev/null | wc -l | count_clean || echo "0")
-PANIC_REPORTS=$(to_int "$PANIC_REPORTS")
-if (( PANIC_REPORTS > 0 )); then
-  append "Actual kernel panic reports in last ${HOURS}h: ${PANIC_REPORTS}"
-  log_warn "Found ${PANIC_REPORTS} kernel panic reports!"
-else
-  # Look for genuine kernel panic messages (more specific)
-  REAL_KPANIC=$(log show --predicate 'eventMessage CONTAINS "kernel panic" OR eventMessage CONTAINS "panic(cpu"' --last "${HOURS}h" 2>/dev/null | wc -l | count_clean || echo "0")
-  REAL_KPANIC=$(to_int "$REAL_KPANIC")
-  if (( REAL_KPANIC > 0 )); then
-    append "Potential kernel panics in last ${HOURS}h: ${REAL_KPANIC}"
-    log_warn "Found ${REAL_KPANIC} potential kernel panic messages"
-  else
-    append "Kernel panics in last ${HOURS}h: 0 (system stable)"
+# Extract 1-minute load for comparison
+LOAD_1MIN=$(echo "$LOAD_AVG" | awk '{print $1}' || echo "0")
+CPU_COUNT=$(sysctl -n hw.ncpu 2>/dev/null || echo "1")
+
+# Warn if load is very high (more than 2x CPU count)
+if command -v bc >/dev/null 2>&1; then
+  HIGH_LOAD_THRESHOLD=$(echo "$CPU_COUNT * 2" | bc)
+  if (( $(echo "$LOAD_1MIN > $HIGH_LOAD_THRESHOLD" | bc -l) )); then
+    log_warn "High system load: ${LOAD_1MIN} (CPUs: ${CPU_COUNT})"
   fi
 fi
+
+# 4) Enhanced kernel panic detection with TIMEOUT to prevent hanging
+HOURS="${HEALTH_LOG_LOOKBACK_HOURS:-24}"
+PANIC_DETAILS=""
+PANIC_FILES=""
+MOST_RECENT_PANIC=""
+
+log_info "Checking for kernel panics (with 10s timeout)..."
+
+# Check for actual panic reports first (fast - just file search)
+PANIC_DIR="/Library/Logs/DiagnosticReports"
+if [[ -d "$PANIC_DIR" ]]; then
+  PANIC_REPORTS=$(find "$PANIC_DIR" -name "*panic*" -mtime -1 2>/dev/null | wc -l | count_clean || echo "0")
+  PANIC_REPORTS=$(to_int "$PANIC_REPORTS")
+  
+  if (( PANIC_REPORTS > 0 )); then
+    # Get most recent panic file for detailed info
+    MOST_RECENT_PANIC=$(find "$PANIC_DIR" -name "*panic*" -mtime -1 2>/dev/null | head -1)
+    if [[ -n "$MOST_RECENT_PANIC" ]]; then
+      PANIC_TIMESTAMP=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$MOST_RECENT_PANIC" 2>/dev/null || echo "unknown")
+      PANIC_DETAILS="Most recent panic: $(basename "$MOST_RECENT_PANIC") at $PANIC_TIMESTAMP"
+      PANIC_FILES="$MOST_RECENT_PANIC"
+      log_warn "Found panic report: $MOST_RECENT_PANIC"
+    fi
+    
+    append "⚠️ Actual kernel panic reports in last ${HOURS}h: ${PANIC_REPORTS}"
+    append "$PANIC_DETAILS"
+    log_warn "Found ${PANIC_REPORTS} kernel panic reports!"
+  else
+    # Look for genuine kernel panic messages in system logs
+    # IMPORTANT: Use timeout to prevent hanging
+    log_info "Searching system logs for panic messages (this may take up to 10 seconds)..."
+    
+    PANIC_SEARCH_CMD='log show --predicate '"'"'eventMessage CONTAINS "kernel panic" OR eventMessage CONTAINS "panic(cpu"'"'"' --last "'"${HOURS}"'h" 2>/dev/null | wc -l'
+    REAL_KPANIC=$(run_with_timeout 10 "$PANIC_SEARCH_CMD" | count_clean || echo "0")
+    REAL_KPANIC=$(to_int "$REAL_KPANIC")
+    
+    if [[ -z "$REAL_KPANIC" ]] || [[ "$REAL_KPANIC" == "0" ]]; then
+      log_info "Log search completed (or timed out) - no panic messages found"
+      REAL_KPANIC=0
+    fi
+    
+    if (( REAL_KPANIC > 0 )); then
+      # Try to get panic details with timeout
+      PANIC_LOG_CMD='log show --predicate '"'"'eventMessage CONTAINS "kernel panic"'"'"' --last "'"${HOURS}"'h" --style compact 2>/dev/null | head -5'
+      PANIC_LOG_SAMPLE=$(run_with_timeout 5 "$PANIC_LOG_CMD" || echo "")
+      
+      if [[ -n "$PANIC_LOG_SAMPLE" ]]; then
+        PANIC_TIMESTAMP=$(echo "$PANIC_LOG_SAMPLE" | head -1 | awk '{print $1, $2}' || echo "unknown")
+        PANIC_DETAILS="Panic messages in logs (timestamp: $PANIC_TIMESTAMP)"
+      fi
+      
+      append "⚠️ Potential kernel panics in last ${HOURS}h: ${REAL_KPANIC}"
+      append "$PANIC_DETAILS"
+      log_warn "Found ${REAL_KPANIC} potential kernel panic messages"
+    else
+      append "Kernel panics in last ${HOURS}h: 0 (system stable)"
+    fi
+  fi
+else
+  append "Kernel panic directory not accessible: $PANIC_DIR"
+fi
+
+log_info "Panic detection completed"
 
 # 5) Check for failed launch agents
 FAILED_JOBS=$(launchctl list 2>/dev/null | awk '$3 ~ /^[1-9][0-9]*$/ {print $3":"$1}' || true)
@@ -135,6 +228,7 @@ DIAGNOSTIC_REPORTS=$(find "${HOME}/Library/Logs/DiagnosticReports" -name "*.ips"
 DIAGNOSTIC_REPORTS=$(to_int "$DIAGNOSTIC_REPORTS")
 append "Recent crash logs (last 24h): ${CRASH_LOGS}"
 append "Recent diagnostic reports (last 24h): ${DIAGNOSTIC_REPORTS}"
+
 if (( CRASH_LOGS > 0 )); then
   log_warn "Found ${CRASH_LOGS} recent crash logs"
 fi
@@ -150,30 +244,17 @@ if (( WIDGET_COUNT > 60 )); then
   log_warn "High widget count: ${WIDGET_COUNT} (threshold: 60)"
 fi
 
-# Check disabled services are still disabled (skip during automated runs to avoid sudo)
-DISABLED_SERVICES_OK=1
-if [[ "${AUTOMATED_RUN:-0}" == "1" ]]; then
-  append "Background services: Disabled services OK (check skipped - automated run)"
-else
-  for svc in "com.apple.chronod" "com.apple.duetexpertd" "com.apple.ReportCrash.Root"; do
-    if ! sudo launchctl print-disabled system 2>/dev/null | grep -q "\"$svc\" => disabled"; then
-      log_warn "Service $svc is not disabled (should be)"
-      DISABLED_SERVICES_OK=0
-    fi
-  done
-  
-  if (( DISABLED_SERVICES_OK == 1 )); then
-    append "Background services: Disabled services OK"
-  else
-    append "Background services: WARNING - Some disabled services re-enabled"
-  fi
-fi
-
 # 11) Battery status (for MacBooks)
 if command -v pmset >/dev/null 2>&1; then
   BATTERY_INFO=$(pmset -g batt 2>/dev/null | grep -v "Battery Power" | tail -1 || true)
   if [[ -n "${BATTERY_INFO}" ]]; then
     append "Battery status: ${BATTERY_INFO}"
+    
+    # Extract battery percentage
+    BATTERY_PCT=$(echo "$BATTERY_INFO" | grep -o '[0-9]*%' | tr -d '%' || echo "100")
+    if (( BATTERY_PCT < 10 )); then
+      log_warn "Low battery: ${BATTERY_PCT}%"
+    fi
   fi
 fi
 
@@ -191,7 +272,10 @@ HEALTH_ISSUES=0
 [[ "${DIAGNOSTIC_REPORTS:-0}" -gt 5 ]] && ((HEALTH_ISSUES++))
 [[ -n "${FAILED_JOBS}" ]] && ((HEALTH_ISSUES++))
 [[ "${WIDGET_COUNT:-0}" -gt 60 ]] && ((HEALTH_ISSUES++))
-[[ "${DISABLED_SERVICES_OK:-1}" -eq 0 ]] && ((HEALTH_ISSUES++))
+
+# Note: Removed overly aggressive "disabled services" check
+# These services (chronod, duetexpertd, ReportCrash) are normal macOS services
+# and don't need to be disabled for optimal performance
 
 if (( HEALTH_ISSUES > 0 )); then
   HEALTH_STATUS="⚠️ Issues detected (${HEALTH_ISSUES})"
@@ -200,26 +284,55 @@ else
   HEALTH_STATUS="✅ System healthy"
 fi
 
-# Notification
+# Enhanced notification with panic details
 PANIC_COUNT=$((${PANIC_REPORTS:-0} + ${REAL_KPANIC:-0}))
+
 if command -v terminal-notifier >/dev/null 2>&1; then
   if (( HEALTH_ISSUES > 0 )); then
-    # Issues detected - provide actionable notification
-    terminal-notifier -title "Health Check" \
-      -subtitle "${HEALTH_ISSUES} issue(s) detected" \
-      -message "Disk: ${ROOT_USE:-?}% | Panics: ${PANIC_COUNT} | Click for details" \
-      -group "maintenance" \
-      -execute "/Users/abhimehrotra/Library/Maintenance/bin/view_logs.sh health_check" 2>/dev/null || true
+    # Build detailed notification message
+    NOTIFICATION_MSG="Disk: ${ROOT_USE:-?}% | Issues: ${HEALTH_ISSUES}"
+    
+    if (( PANIC_COUNT > 0 )); then
+      NOTIFICATION_MSG+="\nPanics: ${PANIC_COUNT}"
+      if [[ -n "$PANIC_DETAILS" ]]; then
+        NOTIFICATION_MSG+="\n${PANIC_DETAILS}"
+      fi
+      
+      # Create panic analysis script wrapper for terminal-notifier
+      PANIC_ANALYSIS_CMD="/Users/speedybee/Documents/dev/personal-config/maintenance/bin/panic_analyzer.sh"
+      
+      # Issues detected with panics - provide panic analysis action
+      terminal-notifier -title "Health Check" \
+        -subtitle "${HEALTH_ISSUES} issue(s) detected" \
+        -message "$NOTIFICATION_MSG" \
+        -group "maintenance" \
+        -actions "View Panic Analysis,View Logs" \
+        -execute "$PANIC_ANALYSIS_CMD" 2>/dev/null || true
+    else
+      # Issues but no panics
+      terminal-notifier -title "Health Check" \
+        -subtitle "${HEALTH_ISSUES} issue(s) detected" \
+        -message "$NOTIFICATION_MSG" \
+        -group "maintenance" \
+        -execute "/Users/speedybee/Library/Maintenance/bin/view_logs.sh health_check" 2>/dev/null || true
+    fi
   else
     # Success - simple notification with optional log access
     terminal-notifier -title "Health Check" \
       -subtitle "System healthy" \
-      -message "Disk: ${ROOT_USE:-?}%" \
+      -message "Disk: ${ROOT_USE:-?}% | No issues detected" \
       -group "maintenance" 2>/dev/null || true
   fi
 elif command -v osascript >/dev/null 2>&1; then
   # Fallback to osascript
-  osascript -e "display notification \"${HEALTH_STATUS} | Disk: ${ROOT_USE:-?}% | Panics: ${PANIC_COUNT}\" with title \"Health Check\"" 2>/dev/null || true
+  NOTIFICATION_TEXT="${HEALTH_STATUS} | Disk: ${ROOT_USE:-?}%"
+  if (( PANIC_COUNT > 0 )); then
+    NOTIFICATION_TEXT+="\nPanics: ${PANIC_COUNT}"
+    if [[ -n "$PANIC_DETAILS" ]]; then
+      NOTIFICATION_TEXT+="\n${PANIC_DETAILS}"
+    fi
+  fi
+  osascript -e "display notification \"${NOTIFICATION_TEXT}\" with title \"Health Check\"" 2>/dev/null || true
 fi
 
 log_info "Health check complete: ${HEALTH_STATUS}"
