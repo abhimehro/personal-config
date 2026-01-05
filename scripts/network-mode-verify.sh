@@ -39,6 +39,9 @@ check_controld_active() {
 
   echo -e "${BLUE}=== Verifying CONTROL D ACTIVE state ===${NC}"
 
+  # Initialize PIDs to prevent unbound variable errors on cleanup
+  local pid_dns="" pid_conn="" pid_who="" pid_aaaa=""
+
   # Start network checks in background (Parallelization)
   local tmp_who tmp_aaaa
   tmp_who=$(mktemp)
@@ -46,19 +49,19 @@ check_controld_active() {
 
   # 3) Basic DNS checks (Background)
   dig @"$LISTENER_IP" example.com +short +time=5 >/dev/null 2>&1 &
-  local pid_dns=$!
+  pid_dns=$!
 
   # 4) Connectivity checks (Background)
   dig @"$LISTENER_IP" p.controld.com +short +time=5 >/dev/null 2>&1 &
-  local pid_conn=$!
+  pid_conn=$!
 
   # 5) whoami checks (Background)
   (dig @"$LISTENER_IP" +short +time=5 whoami.control-d.net 2>/dev/null | head -n1 || true) > "$tmp_who" &
-  local pid_who=$!
+  pid_who=$!
 
   # 6) IPv6 checks (Background)
   (dig @"$LISTENER_IP" +short +time=5 AAAA example.com 2>/dev/null | head -n1 || true) > "$tmp_aaaa" &
-  local pid_aaaa=$!
+  pid_aaaa=$!
 
   # Set up cleanup trap for both background processes and temporary files
   trap 'kill $pid_dns $pid_conn $pid_who $pid_aaaa 2>/dev/null || true; rm -f "$tmp_who" "$tmp_aaaa"' RETURN
