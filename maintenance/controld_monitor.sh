@@ -18,12 +18,13 @@ if [ -f "${HOME}/Public/Scripts/maintenance/common.sh" ]; then
 fi
 
 # Logging function
+# Optimization: Use printf built-in for timestamp to avoid subshell overhead of $(date)
 log() {
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+    printf "[%(%Y-%m-%d %H:%M:%S)T] %s\n" -1 "$1" | tee -a "$LOG_FILE"
 }
 
 log_error() {
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: $1" | tee -a "$ERROR_LOG"
+    printf "[%(%Y-%m-%d %H:%M:%S)T] ERROR: %s\n" -1 "$1" | tee -a "$ERROR_LOG"
 }
 
 # Rotate logs if too large
