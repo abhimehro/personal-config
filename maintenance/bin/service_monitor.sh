@@ -14,17 +14,32 @@ USER_ID=$(id -u)
 
 # Basic logging
 log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 2) )); then
+        printf -v ts '%(%Y-%m-%d %H:%M:%S)T' -1
+    else
+        ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    fi
     echo "$ts [INFO] [service_monitor] $*" | tee -a "$LOG_FILE"
 }
 
 log_warn() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 2) )); then
+        printf -v ts '%(%Y-%m-%d %H:%M:%S)T' -1
+    else
+        ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    fi
     echo "$ts [WARNING] [service_monitor] $*" | tee -a "$LOG_FILE"
 }
 
 log_error() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 2) )); then
+        printf -v ts '%(%Y-%m-%d %H:%M:%S)T' -1
+    else
+        ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    fi
     echo "$ts [ERROR] [service_monitor] $*" | tee -a "$LOG_FILE"
 }
 
@@ -70,14 +85,34 @@ PROBLEM_PROCESSES=(
 # Monitoring Functions
 # =============================================================================
 
+# Cache disabled status to avoid repeated expensive launchctl calls
+SYSTEM_DISABLED_STATUS=""
+USER_DISABLED_STATUS=""
+
+init_disabled_status_cache() {
+    log_info "Initializing service status cache..."
+    SYSTEM_DISABLED_STATUS=$(sudo launchctl print-disabled system 2>/dev/null || true)
+    USER_DISABLED_STATUS=$(sudo launchctl print-disabled "gui/$USER_ID" 2>/dev/null || true)
+}
+
 check_disabled_status() {
     local domain=$1
     local service=$2
     
     if [[ "$domain" == "system" ]]; then
-        sudo launchctl print-disabled system 2>/dev/null | grep -q "\"$service\" => disabled"
+        if [[ -z "$SYSTEM_DISABLED_STATUS" ]]; then
+            # Fallback if cache empty (though it shouldn't be if init called)
+            sudo launchctl print-disabled system 2>/dev/null | grep -q "\"$service\" => disabled"
+            return $?
+        fi
+        echo "$SYSTEM_DISABLED_STATUS" | grep -q "\"$service\" => disabled"
     else
-        sudo launchctl print-disabled "gui/$USER_ID" 2>/dev/null | grep -q "\"$service\" => disabled"
+        if [[ -z "$USER_DISABLED_STATUS" ]]; then
+            # Fallback
+            sudo launchctl print-disabled "gui/$USER_ID" 2>/dev/null | grep -q "\"$service\" => disabled"
+            return $?
+        fi
+        echo "$USER_DISABLED_STATUS" | grep -q "\"$service\" => disabled"
     fi
 }
 
@@ -112,6 +147,9 @@ ACTIONS_TAKEN=0
 
 append() { REPORT+="$1"$'\n'; }
 
+# Initialize cache
+init_disabled_status_cache
+
 append "========================================="
 append "Service Monitor Report - $(date)"
 append "========================================="
@@ -130,6 +168,9 @@ for service in "${SYSTEM_SERVICES[@]}"; do
         if sudo launchctl disable "system/$service" 2>/dev/null; then
             append "   ↳ Successfully re-disabled"
             ((ACTIONS_TAKEN++))
+            # Invalidate cache for this domain since we changed state
+            # Though strictly we only need to if we re-check, but good practice
+            SYSTEM_DISABLED_STATUS=""
         else
             append "   ↳ Failed to re-disable"
             ((ISSUES++))
@@ -151,6 +192,7 @@ for service in "${USER_SERVICES[@]}"; do
         if sudo launchctl disable "gui/$USER_ID/$service" 2>/dev/null; then
             append "   ↳ Successfully re-disabled"
             ((ACTIONS_TAKEN++))
+            USER_DISABLED_STATUS=""
         else
             append "   ↳ Failed to re-disable"
             ((ISSUES++))
