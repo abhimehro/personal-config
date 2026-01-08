@@ -9,15 +9,16 @@
 |------|-------|-----------|---------|-------------|
 | **8:30 AM** | 🏥 System Health Check | Daily | `health_check.sh` | System monitoring, disk space, memory, crash logs |
 | **9:00 AM** | 🧹 System Cleanup | Daily | `system_cleanup.sh` | Cache cleanup, temp files, logs |
-| **9:00 AM** | 📅 Weekly Maintenance | Monday | `weekly_maintenance.sh` | Node modules, OneDrive monitoring |
+| **9:00 AM** | 📅 Weekly Maintenance | Monday | `weekly_maintenance.sh` | Node modules, Google Drive monitoring |
 | **9:00 AM** | 📆 Monthly Maintenance | 1st of month | `monthly_maintenance.sh` | Editor cleanup, deep analysis |
-| **3:15 AM** | ☁️ ProtonDrive Backup | Daily | `protondrive_backup.sh` | One-way home backup to ProtonDrive |
+| **3:15 AM** | Google Drive Backup (Archives) | Daily | `google_drive_backup_archive.sh` (light) | Daily light archive to Google Drive (My Drive) |
+| **3:30 AM** | Google Drive Backup (Full Archives) | Monday | `google_drive_backup_archive.sh` (full) | Weekly full archive to Google Drive (My Drive) |
 | **10:00 AM** | 🍺 Homebrew Maintenance | Daily | `brew_maintenance.sh` | Package updates, cask maintenance |
 
 ## 🔗 Launch Agent Mapping
 
 ### Daily Agents
-- `com.abhimehrotra.maintenance.protondrivebackup.plist` → **3:15 AM daily**
+- `com.speedybee.maintenance.gdrivebackup.plist (daily) and com.speedybee.maintenance.gdrivebackup.full.plist (weekly)` → **3:15 AM daily**
 - `com.abhimehrotra.maintenance.healthcheck.plist` → **8:30 AM daily**
 - `com.abhimehrotra.maintenance.systemcleanup.plist` → **9:00 AM daily**  
 - `com.abhimehrotra.maintenance.brew.plist` → **10:00 AM daily**
@@ -61,7 +62,7 @@
 ### 📅 Weekly Maintenance (Monday 9:00 AM)
 - ✅ Quick system cleanup (lighter version)
 - ✅ Node.js module maintenance and verification
-- ✅ OneDrive monitoring and optimization
+- ✅ Google Drive monitoring and optimization
 - ✅ Comprehensive system status checks
 
 ### 📆 Monthly Deep Maintenance (1st of month 9:00 AM)
