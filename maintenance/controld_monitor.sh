@@ -32,15 +32,13 @@ fi
 
 # Helper function to get formatted timestamp
 get_timestamp() {
-    local timestamp
     if [ "$USE_PRINTF_TIME" = true ]; then
         # Bash 4.2+: Use printf built-in for ~56x speedup
-        printf -v timestamp '%(%Y-%m-%d %H:%M:%S)T' -1
+        printf '%(%Y-%m-%d %H:%M:%S)T' -1
     else
         # Bash 3.x: Use date command for compatibility
-        timestamp=$(date +'%Y-%m-%d %H:%M:%S')
+        date +'%Y-%m-%d %H:%M:%S'
     fi
-    printf '%s' "$timestamp"
 }
 
 # Logging function with bash version compatibility
