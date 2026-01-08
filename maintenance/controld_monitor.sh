@@ -23,32 +23,31 @@ BASH_MAJOR=${BASH_VERSINFO[0]:-3}
 BASH_MINOR=${BASH_VERSINFO[1]:-0}
 
 # Check if bash supports printf %(...)T (requires bash 4.2+)
-if [ "$BASH_MAJOR" -gt 4 ] || [ "$BASH_MAJOR" -eq 4 -a "$BASH_MINOR" -ge 2 ]; then
+if [ "$BASH_MAJOR" -gt 4 ] || ([ "$BASH_MAJOR" -eq 4 ] && [ "$BASH_MINOR" -ge 2 ]); then
     USE_PRINTF_TIME=true
 else
     USE_PRINTF_TIME=false
 fi
 
-# Logging function with bash version compatibility
-# Use optimized printf built-in for bash 4.2+, fall back to date command for older versions
-log() {
+# Helper function to get formatted timestamp
+get_timestamp() {
     if [ "$USE_PRINTF_TIME" = true ]; then
         # Bash 4.2+: Use printf built-in for ~56x speedup
-        printf "[%(%Y-%m-%d %H:%M:%S)T] %s\n" -1 "$1" | tee -a "$LOG_FILE"
+        printf "%(%Y-%m-%d %H:%M:%S)T" -1
     else
         # Bash 3.x: Use date command for compatibility
-        printf "[%s] %s\n" "$(date +'%Y-%m-%d %H:%M:%S')" "$1" | tee -a "$LOG_FILE"
+        date +'%Y-%m-%d %H:%M:%S'
     fi
 }
 
+# Logging function with bash version compatibility
+# Use optimized printf built-in for bash 4.2+, fall back to date command for older versions
+log() {
+    printf "[%s] %s\n" "$(get_timestamp)" "$1" | tee -a "$LOG_FILE"
+}
+
 log_error() {
-    if [ "$USE_PRINTF_TIME" = true ]; then
-        # Bash 4.2+: Use printf built-in for ~56x speedup
-        printf "[%(%Y-%m-%d %H:%M:%S)T] ERROR: %s\n" -1 "$1" | tee -a "$ERROR_LOG"
-    else
-        # Bash 3.x: Use date command for compatibility
-        printf "[%s] ERROR: %s\n" "$(date +'%Y-%m-%d %H:%M:%S')" "$1" | tee -a "$ERROR_LOG"
-    fi
+    printf "[%s] ERROR: %s\n" "$(get_timestamp)" "$1" | tee -a "$ERROR_LOG"
 }
 
 # Rotate logs if too large
