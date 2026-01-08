@@ -87,28 +87,25 @@ if command -v vm_stat >/dev/null 2>&1; then
   FREE_MB=$(( (FREE_PAGES * PAGE_SIZE) / 1024 / 1024 ))
   append "Free memory: ${FREE_MB} MB"
   
-  # Note: macOS uses memory aggressively for caching, so low "free" memory is normal
-  # Only warn if truly critical (< 10 MB means system is thrashing)
-  if (( FREE_MB < 10 )); then
-    log_warn "Critically low free memory: ${FREE_MB} MB (system may be thrashing)"
+  # Warn if very low memory
+  if (( FREE_MB < 100 )); then
+    log_warn "Very low free memory: ${FREE_MB} MB"
   fi
 fi
 
 # 3) System load
-# Keep spaces in load average for proper parsing
-LOAD_AVG_RAW=$(uptime | awk -F'load averages:' '{print $2}' | sed 's/^[[:space:]]*//' || echo "unknown")
-append "System load averages: ${LOAD_AVG_RAW}"
+LOAD_AVG=$(uptime | awk -F'load averages:' '{print $2}' | tr -d ' ' || echo "unknown")
+append "System load averages: ${LOAD_AVG}"
 
-# Extract 1-minute load for comparison (first field)
-LOAD_1MIN=$(echo "$LOAD_AVG_RAW" | awk '{print $1}' || echo "0")
+# Extract 1-minute load for comparison
+LOAD_1MIN=$(echo "$LOAD_AVG" | awk '{print $1}' || echo "0")
 CPU_COUNT=$(sysctl -n hw.ncpu 2>/dev/null || echo "1")
 
 # Warn if load is very high (more than 2x CPU count)
-# Only check if we have valid numeric values
-if [[ "$LOAD_1MIN" =~ ^[0-9]+\.?[0-9]*$ ]] && command -v bc >/dev/null 2>&1; then
+if command -v bc >/dev/null 2>&1; then
   HIGH_LOAD_THRESHOLD=$(echo "$CPU_COUNT * 2" | bc)
-  if (( $(echo "$LOAD_1MIN > $HIGH_LOAD_THRESHOLD" | bc -l 2>/dev/null || echo 0) )); then
-    log_warn "High system load: ${LOAD_1MIN} (CPUs: ${CPU_COUNT}, threshold: ${HIGH_LOAD_THRESHOLD})"
+  if (( $(echo "$LOAD_1MIN > $HIGH_LOAD_THRESHOLD" | bc -l) )); then
+    log_warn "High system load: ${LOAD_1MIN} (CPUs: ${CPU_COUNT})"
   fi
 fi
 
@@ -275,7 +272,6 @@ HEALTH_ISSUES=0
 [[ "${DIAGNOSTIC_REPORTS:-0}" -gt 5 ]] && ((HEALTH_ISSUES++))
 [[ -n "${FAILED_JOBS}" ]] && ((HEALTH_ISSUES++))
 [[ "${WIDGET_COUNT:-0}" -gt 60 ]] && ((HEALTH_ISSUES++))
-[[ "${FREE_MB:-100}" -lt 10 ]] && ((HEALTH_ISSUES++))
 
 # Note: Removed overly aggressive "disabled services" check
 # These services (chronod, duetexpertd, ReportCrash) are normal macOS services
