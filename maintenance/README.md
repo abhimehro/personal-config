@@ -43,8 +43,7 @@ Notes:
 - **Daily System Cleanup**: 9:00 AM - System maintenance
 - **Weekly Maintenance**: Monday 9:00 AM - Comprehensive weekly tasks
 - **Monthly Maintenance**: 1st of month 6:00 AM - Deep system maintenance
-- **Google Drive Backup (Archives)**: 3:15 AM - Daily light archive to Google Drive (My Drive)
-**Google Drive Backup (Full Archives)**: 3:30 AM Monday - Weekly full archive to Google Drive (My Drive)
+- **ProtonDrive Backup**: 3:15 AM - One-way home backup to ProtonDrive
 
 ### 🏥 Health Monitoring
 
@@ -138,7 +137,7 @@ maintenance/
 │   ├── quick_cleanup.sh          # Quick system cleanup
 │   ├── brew_maintenance.sh       # Homebrew maintenance
 │   ├── node_maintenance.sh       # Node.js maintenance
-│   ├── google_drive_monitor.sh       # OneDrive monitoring
+│   ├── onedrive_monitor.sh       # OneDrive monitoring
 │   ├── system_cleanup.sh         # System cleanup
 │   ├── view_logs.sh              # Interactive log viewer (NEW)
 │   ├── generate_error_summary.sh # Error consolidation tool (NEW)
@@ -209,15 +208,10 @@ UPDATE_MAS_APPS=1          # Auto-update Mac App Store apps
    - Purpose: Deep system maintenance
    - Notifications: ✅ Click to view error summary
 
-6. **Google Drive Backup (Daily Light Archives)** (`com.speedybee.maintenance.gdrivebackup`)
+6. **ProtonDrive Backup** (`com.abhimehrotra.maintenance.protondrivebackup`)
    - Time: 3:15 AM daily
-   - Script: `google_drive_backup_archive.sh` (profile: light)
-   - Purpose: Daily archive backup to Google Drive (My Drive)
-
-7. **Google Drive Backup (Weekly Full Archives)** (`com.speedybee.maintenance.gdrivebackup.full`)
-   - Time: Monday 3:30 AM
-   - Script: `google_drive_backup_archive.sh` (profile: full)
-   - Purpose: Weekly full archive backup to Google Drive (My Drive)
+   - Script: `protondrive_backup.sh`
+   - Purpose: One-way home backup to ProtonDrive
 
 ## 📊 Monitoring & Logs
 

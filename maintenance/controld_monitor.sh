@@ -18,13 +18,24 @@ if [ -f "${HOME}/Public/Scripts/maintenance/common.sh" ]; then
 fi
 
 # Logging function
-log() {
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
-}
+# Optimization: Use printf built-in for timestamp if Bash 4.2+ (faster), fall back to date (compatible)
+if [ "${BASH_VERSINFO[0]}" -gt 4 ] || ([ "${BASH_VERSINFO[0]}" -eq 4 ] && [ "${BASH_VERSINFO[1]}" -ge 2 ]); then
+    log() {
+        printf "[%(%Y-%m-%d %H:%M:%S)T] %s\n" -1 "$1" | tee -a "$LOG_FILE"
+    }
 
-log_error() {
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: $1" | tee -a "$ERROR_LOG"
-}
+    log_error() {
+        printf "[%(%Y-%m-%d %H:%M:%S)T] ERROR: %s\n" -1 "$1" | tee -a "$ERROR_LOG"
+    }
+else
+    log() {
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+    }
+
+    log_error() {
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: $1" | tee -a "$ERROR_LOG"
+    }
+fi
 
 # Rotate logs if too large
 rotate_log() {
