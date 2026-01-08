@@ -19,11 +19,12 @@ fi
 
 # Detect bash version for timestamp optimization
 # macOS ships with bash 3.2 at /bin/bash, but printf %(...)T requires bash 4.2+
+# Default to 3.0 if BASH_VERSINFO is unavailable (for maximum compatibility)
 BASH_MAJOR=${BASH_VERSINFO[0]:-3}
 BASH_MINOR=${BASH_VERSINFO[1]:-0}
 
 # Check if bash supports printf %(...)T (requires bash 4.2+)
-if [ "$BASH_MAJOR" -gt 4 ] || ([ "$BASH_MAJOR" -eq 4 ] && [ "$BASH_MINOR" -ge 2 ]); then
+if [ "$BASH_MAJOR" -gt 4 ] || [ "$BASH_MAJOR" -eq 4 ] && [ "$BASH_MINOR" -ge 2 ]; then
     USE_PRINTF_TIME=true
 else
     USE_PRINTF_TIME=false
