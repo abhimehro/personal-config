@@ -194,7 +194,7 @@ run_weekly_maintenance() {
 
     local brew_status="$LOG_DIR/status_brew_$TIMESTAMP.log"
     local node_status="$LOG_DIR/status_node_$TIMESTAMP.log"
-    local onedrive_status="$LOG_DIR/status_onedrive_$TIMESTAMP.log"
+    local google_drive_status="$LOG_DIR/status_google_drive_$TIMESTAMP.log"
     local service_status="$LOG_DIR/status_service_$TIMESTAMP.log"
 
     pids=""
@@ -206,7 +206,7 @@ run_weekly_maintenance() {
     (run_script "node_maintenance.sh" "maintenance" "$node_status" "true") &
     pids="$pids $!"
 
-    (run_script "onedrive_monitor.sh" "maintenance" "$onedrive_status" "true") &
+    (run_script "google_drive_monitor.sh" "maintenance" "$google_drive_status" "true") &
     pids="$pids $!"
 
     (run_script "service_optimizer.sh" "optimization" "$service_status" "true") &
@@ -218,7 +218,7 @@ run_weekly_maintenance() {
     done
 
     # Consolidate logs
-    cat "$brew_status" "$node_status" "$onedrive_status" "$service_status" >> "$MASTER_LOG"
+    cat "$brew_status" "$node_status" "$google_drive_status" "$service_status" >> "$MASTER_LOG"
     
     # Consolidate Results from temp file
     if [[ -f "$PARALLEL_RESULTS_LOG" ]]; then
