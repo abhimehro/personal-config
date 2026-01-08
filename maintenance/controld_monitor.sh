@@ -24,7 +24,7 @@ BASH_MAJOR=${BASH_VERSINFO[0]:-3}
 BASH_MINOR=${BASH_VERSINFO[1]:-0}
 
 # Check if bash supports printf %(...)T (requires bash 4.2+)
-if [ "$BASH_MAJOR" -gt 4 ] || [ "$BASH_MAJOR" -eq 4 ] && [ "$BASH_MINOR" -ge 2 ]; then
+if [ "$BASH_MAJOR" -gt 4 ] || ([ "$BASH_MAJOR" -eq 4 ] && [ "$BASH_MINOR" -ge 2 ]); then
     USE_PRINTF_TIME=true
 else
     USE_PRINTF_TIME=false
