@@ -3,14 +3,12 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maintenance.protondrivebackup</string>
+    <string>com.speedybee.maintenance.gdrivebackup.full</string>
 
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
-        <key>MAINTENANCE_HOME</key>
-        <string>/Users/speedybee/Library/Maintenance</string>
         <key>AUTOMATED_RUN</key>
         <string>1</string>
     </dict>
@@ -18,23 +16,28 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/speedybee/Library/Maintenance/bin/protondrive_backup.sh</string>
+        <string>/Users/speedybee/Library/Maintenance/bin/google_drive_backup_archive.sh</string>
         <string>--run</string>
-        <string>--no-delete</string>
+        <string>--profile</string>
+        <string>full</string>
+        <string>--retention</string>
+        <string>8</string>
     </array>
 
     <key>StandardOutPath</key>
-    <string>/Users/speedybee/Library/Logs/maintenance/protondrive_backup.out</string>
+    <string>/Users/speedybee/Library/Logs/maintenance/gdrive_backup_full.out</string>
 
     <key>StandardErrorPath</key>
-    <string>/Users/speedybee/Library/Logs/maintenance/protondrive_backup.err</string>
+    <string>/Users/speedybee/Library/Logs/maintenance/gdrive_backup_full.err</string>
 
     <key>StartCalendarInterval</key>
     <dict>
+        <key>Weekday</key>
+        <integer>1</integer>
         <key>Hour</key>
         <integer>3</integer>
         <key>Minute</key>
-        <integer>15</integer>
+        <integer>30</integer>
     </dict>
 
     <key>RunAtLoad</key>

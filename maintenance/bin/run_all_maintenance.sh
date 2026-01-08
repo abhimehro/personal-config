@@ -69,6 +69,43 @@ log_status() {
     fi
 }
 
+# Progress spinner for long-running tasks
+# Usage: spinner PID
+spinner() {
+    local pid=$1
+    local delay=0.1
+    local spinstr='|/-\'
+
+    # Only show spinner if running interactively (TTY) and not redirecting to file only
+    if [ -t 1 ]; then
+        # Hide cursor
+        tput civis 2>/dev/null || true
+
+        # Trap to restore cursor if interrupted
+        trap 'tput cnorm 2>/dev/null || true; exit' INT TERM
+
+        while kill -0 "$pid" 2>/dev/null; do
+            local temp=${spinstr#?}
+            printf " [%c]  " "$spinstr"
+            local spinstr=$temp${spinstr%"$temp"}
+            sleep $delay
+            printf "\b\b\b\b\b\b"
+        done
+
+        # Restore cursor
+        tput cnorm 2>/dev/null || true
+
+        # Clear spinner residue
+        printf "       \b\b\b\b\b\b\b"
+
+        # Remove trap
+        trap - INT TERM
+    else
+        # If not interactive, just wait
+        wait "$pid"
+    fi
+}
+
 # Add result to summary (handles writing to file if in subshell)
 # Usage: register_result "Script Name" "Status" "Is_Parallel_Subshell"
 register_result() {
@@ -105,14 +142,36 @@ run_script() {
         fi
 
         # Execute script
-        if "$script_path" > "$log_file" 2>&1; then
-            log_status "✅ $script_name completed" "$log_target"
-            register_result "$clean_name" "✅ Success" "$is_parallel"
-            return 0
+        if [[ "$is_parallel" == "true" ]]; then
+            # Run directly for parallel (background) tasks
+            if "$script_path" > "$log_file" 2>&1; then
+                log_status "✅ $script_name completed" "$log_target"
+                register_result "$clean_name" "✅ Success" "$is_parallel"
+                return 0
+            else
+                log_status "❌ $script_name failed (see $log_file)" "$log_target"
+                register_result "$clean_name" "❌ Failed" "$is_parallel"
+                return 1
+            fi
         else
-            log_status "❌ $script_name failed (see $log_file)" "$log_target"
-            register_result "$clean_name" "❌ Failed" "$is_parallel"
-            return 1
+            # Run with spinner for serial tasks
+            "$script_path" > "$log_file" 2>&1 &
+            local pid=$!
+
+            spinner $pid
+
+            wait $pid
+            local exit_code=$?
+
+            if [[ $exit_code -eq 0 ]]; then
+                log_status "✅ $script_name completed" "$log_target"
+                register_result "$clean_name" "✅ Success" "$is_parallel"
+                return 0
+            else
+                log_status "❌ $script_name failed (see $log_file)" "$log_target"
+                register_result "$clean_name" "❌ Failed" "$is_parallel"
+                return 1
+            fi
         fi
     else
         log_status "⚠️  $script_name not found/executable" "$log_target"
@@ -135,7 +194,7 @@ run_weekly_maintenance() {
 
     local brew_status="$LOG_DIR/status_brew_$TIMESTAMP.log"
     local node_status="$LOG_DIR/status_node_$TIMESTAMP.log"
-    local onedrive_status="$LOG_DIR/status_onedrive_$TIMESTAMP.log"
+    local google_drive_status="$LOG_DIR/status_google_drive_$TIMESTAMP.log"
     local service_status="$LOG_DIR/status_service_$TIMESTAMP.log"
 
     pids=""
@@ -147,7 +206,7 @@ run_weekly_maintenance() {
     (run_script "node_maintenance.sh" "maintenance" "$node_status" "true") &
     pids="$pids $!"
 
-    (run_script "onedrive_monitor.sh" "maintenance" "$onedrive_status" "true") &
+    (run_script "google_drive_monitor.sh" "maintenance" "$google_drive_status" "true") &
     pids="$pids $!"
 
     (run_script "service_optimizer.sh" "optimization" "$service_status" "true") &
@@ -159,7 +218,7 @@ run_weekly_maintenance() {
     done
 
     # Consolidate logs
-    cat "$brew_status" "$node_status" "$onedrive_status" "$service_status" >> "$MASTER_LOG"
+    cat "$brew_status" "$node_status" "$google_drive_status" "$service_status" >> "$MASTER_LOG"
     
     # Consolidate Results from temp file
     if [[ -f "$PARALLEL_RESULTS_LOG" ]]; then
@@ -180,8 +239,35 @@ run_monthly_maintenance() {
     
     run_weekly_maintenance
     
-    run_script "system_cleanup.sh" "cleanup"
-    run_script "editor_cleanup.sh" "cleanup"
+    echo "Starting monthly parallel cleanup tasks..." | tee -a "$MASTER_LOG"
+
+    local system_cleanup_status="$LOG_DIR/status_system_cleanup_$TIMESTAMP.log"
+    local editor_cleanup_status="$LOG_DIR/status_editor_cleanup_$TIMESTAMP.log"
+
+    pids=""
+
+    (run_script "system_cleanup.sh" "cleanup" "$system_cleanup_status" "true") &
+    pids="$pids $!"
+
+    (run_script "editor_cleanup.sh" "cleanup" "$editor_cleanup_status" "true") &
+    pids="$pids $!"
+
+    # Wait for all
+    for pid in $pids; do
+        wait "$pid"
+    done
+
+    # Consolidate logs
+    cat "$system_cleanup_status" "$editor_cleanup_status" >> "$MASTER_LOG"
+
+    # Consolidate Results from temp file
+    if [[ -f "$PARALLEL_RESULTS_LOG" ]]; then
+        while IFS= read -r line; do
+            SUMMARY_RESULTS+=("$line")
+        done < "$PARALLEL_RESULTS_LOG"
+    fi
+
+    echo "Monthly parallel tasks completed." | tee -a "$MASTER_LOG"
     
     echo "Running deep cleaner with caution..." | tee -a "$MASTER_LOG"
     run_script "deep_cleaner.sh" "cleanup"

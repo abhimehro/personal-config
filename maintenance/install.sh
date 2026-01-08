@@ -327,16 +327,123 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.protondrivebackup.plist" <
 </plist>
 EOF
 
+# Google Drive Archive Backup (Daily light at 3:15 AM)
+cat > "$LAUNCHAGENTS_DIR/com.speedybee.maintenance.gdrivebackup.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.speedybee.maintenance.gdrivebackup</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>MAINTENANCE_HOME</key>
+        <string>$INSTALL_DIR</string>
+        <key>AUTOMATED_RUN</key>
+        <string>1</string>
+    </dict>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>$INSTALL_DIR/bin/google_drive_backup_archive.sh</string>
+        <string>--run</string>
+        <string>--retention</string>
+        <string>21</string>
+    </array>
+
+    <key>StandardOutPath</key>
+    <string>$LOG_DIR/gdrive_backup.out</string>
+
+    <key>StandardErrorPath</key>
+    <string>$LOG_DIR/gdrive_backup.err</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>15</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>KeepAlive</key>
+    <false/>
+</dict>
+</plist>
+EOF
+
+# Google Drive Archive Backup (Weekly full at Monday 3:30 AM)
+cat > "$LAUNCHAGENTS_DIR/com.speedybee.maintenance.gdrivebackup.full.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.speedybee.maintenance.gdrivebackup.full</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>MAINTENANCE_HOME</key>
+        <string>$INSTALL_DIR</string>
+        <key>AUTOMATED_RUN</key>
+        <string>1</string>
+    </dict>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>$INSTALL_DIR/bin/google_drive_backup_archive.sh</string>
+        <string>--run</string>
+        <string>--profile</string>
+        <string>full</string>
+        <string>--retention</string>
+        <string>8</string>
+    </array>
+
+    <key>StandardOutPath</key>
+    <string>$LOG_DIR/gdrive_backup_full.out</string>
+
+    <key>StandardErrorPath</key>
+    <string>$LOG_DIR/gdrive_backup_full.err</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>KeepAlive</key>
+    <false/>
+</dict>
+</plist>
+EOF
+
+
 # Unload old agents (ignore errors)
 echo "🔄 Unloading old agents..."
-for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maintenance.*.plist "$LAUNCHAGENTS_DIR"/com.user.maintenance.*.plist; do
+for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maintenance.*.plist "$LAUNCHAGENTS_DIR"/com.user.maintenance.*.plist "$LAUNCHAGENTS_DIR"/com.speedybee.maintenance.*.plist; do
     [ -f "$plist" ] || continue
     launchctl unload "$plist" 2>/dev/null || true
 done
 
 # Load new agents
 echo "✅ Loading new agents..."
-for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maintenance.*.plist; do
+for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maintenance.*.plist "$LAUNCHAGENTS_DIR"/com.speedybee.maintenance.*.plist; do
     [ -f "$plist" ] || continue
     launchctl load "$plist" 2>&1 || echo "⚠️  Warning: Failed to load $(basename "$plist")"
 done
@@ -352,7 +459,7 @@ echo "  • Health Check: Daily at 8:30 AM"
 echo "  • System Cleanup: Daily at 9:00 AM"
 echo "  • Brew Maintenance: Daily at 10:00 AM"
 echo "  • ProtonDrive Backup: Daily at 3:15 AM"
-echo "  • Weekly Maintenance: Mondays at 9:00 AM (includes backup discovery)"
+echo "  • Weekly Maintenance: Mondays at 9:00 AM"
 echo "  • Monthly Maintenance: 1st of month at 6:00 AM"
 echo ""
 echo "To test a script manually:"

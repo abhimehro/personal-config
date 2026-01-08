@@ -19,9 +19,19 @@ Usage:
   protondrive_backup.sh [--run] [--dry-run] [--no-delete] [--dest PATH] [--proton-root PATH] [--excludes FILE]
 
 Notes:
-  - Default mode is --dry-run.
-  - --run performs the actual sync.
+  - Default mode is --dry-run (shows what WOULD be backed up).
+  - --run performs the actual sync (USE WITH CAUTION).
   - --no-delete disables mirror deletions (safer, but destination can accumulate).
+  
+Examples:
+  # Preview what will be backed up (safe)
+  ./protondrive_backup.sh
+  
+  # Actually perform the backup
+  ./protondrive_backup.sh --run
+  
+  # Backup without deleting files from destination
+  ./protondrive_backup.sh --run --no-delete
 EOF
 }
 
@@ -40,32 +50,52 @@ while [[ $# -gt 0 ]]; do
     --dest) DEST="$2"; shift 2 ;;
     --excludes) EXCLUDES_FILE="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "Unknown arg: $1"; usage; exit 2 ;;
+    *) echo "Unknown arg: $1" >&2; usage; exit 2 ;;
   esac
 done
 
 if [[ ! -d "$PROTON_ROOT" ]]; then
-  echo "ProtonDrive root not found: $PROTON_ROOT" >&2
+  echo "ERROR: ProtonDrive root not found: $PROTON_ROOT" >&2
+  echo "Make sure Proton Drive is mounted and syncing." >&2
   exit 1
 fi
 
 if [[ ! -f "$EXCLUDES_FILE" ]]; then
-  echo "Excludes file not found: $EXCLUDES_FILE" >&2
-  exit 1
+  echo "WARNING: Excludes file not found: $EXCLUDES_FILE" >&2
+  echo "Proceeding without exclusions (not recommended)." >&2
+  echo "Consider creating an exclude file to skip cache/tmp directories." >&2
 fi
 
 mkdir -p "$DEST"
 
 # macOS ships an older rsync, so stick to widely supported flags.
-RSYNC=(/usr/bin/rsync -aE --human-readable --stats)
-RSYNC+=(--exclude-from="$EXCLUDES_FILE")
+# -a: archive mode (recursive, preserve permissions, times, etc.)
+# -E: preserve extended attributes (important for macOS)
+# --delete-after: delete extraneous files from dest dirs AFTER transfer
+# --ignore-errors: keep going even if some files fail
+# --partial: keep partially transferred files
+# --human-readable: output numbers in human-readable format
+# --stats: print transfer statistics
+RSYNC=(/usr/bin/rsync -aE --ignore-errors --partial --human-readable --stats)
 
-if [[ $DELETE -eq 1 ]]; then
-  RSYNC+=(--delete-delay)
+# Add exclude file if it exists
+if [[ -f "$EXCLUDES_FILE" ]]; then
+  RSYNC+=(--exclude-from="$EXCLUDES_FILE")
 fi
 
+# Add delete option if enabled
+if [[ $DELETE -eq 1 ]]; then
+  RSYNC+=(--delete-after)
+fi
+
+# Add dry-run if enabled
 if [[ $DRY_RUN -eq 1 ]]; then
   RSYNC+=(--dry-run)
+  echo "=========================================="
+  echo "DRY RUN MODE - No changes will be made"
+  echo "Run with --run to actually perform backup"
+  echo "=========================================="
+  echo ""
 fi
 
 require_path() {
@@ -109,7 +139,9 @@ run_rsync_relative() {
   local label="$1"; shift
   local -a items=("$@")
 
+  echo ""
   echo "==> Backing up: $label"
+  echo ""
 
   local -a existing=()
   for p in "${items[@]}"; do
@@ -123,23 +155,58 @@ run_rsync_relative() {
     return 0
   fi
 
+  # Run rsync and capture exit code
   set +e
   "${RSYNC[@]}" --relative "${existing[@]}" "$DEST/"
   local rc=$?
   set -e
 
-  # rsync 24 = "Partial transfer due to vanished source files" (common on macOS)
-  if [[ $rc -ne 0 && $rc -ne 24 ]]; then
+  # rsync exit codes:
+  # 0 = success
+  # 23 = "Partial transfer due to error" (common with ._* files)
+  # 24 = "Partial transfer due to vanished source files" (common on macOS)
+  if [[ $rc -eq 0 ]]; then
+    echo "✅ $label backup completed successfully"
+  elif [[ $rc -eq 23 ]]; then
+    echo "⚠️  $label backup completed with some file errors (exit code 23)"
+    echo "This is usually caused by macOS resource fork (._*) files and can be safely ignored."
+  elif [[ $rc -eq 24 ]]; then
+    echo "⚠️  $label backup completed with some vanished files (exit code 24)"
+    echo "This is normal - some files were deleted/moved during backup."
+  else
+    echo "❌ $label backup failed with exit code: $rc" >&2
     return $rc
   fi
 
   return 0
 }
 
-run_rsync_relative "core directories" "${CORE[@]}"
-run_rsync_relative "dotfiles/config" "${DOTFILES[@]}"
+# Track overall success
+BACKUP_ERRORS=0
 
-echo "Done. Destination: $DEST"
+# Run backups
+run_rsync_relative "core directories" "${CORE[@]}" || ((BACKUP_ERRORS++))
+run_rsync_relative "dotfiles/config" "${DOTFILES[@]}" || ((BACKUP_ERRORS++))
+
+echo ""
+echo "=========================================="
+echo "Backup Summary"
+echo "=========================================="
+echo "Destination: $DEST"
+echo "Delete enabled: $([[ $DELETE -eq 1 ]] && echo "Yes" || echo "No")"
+
 if [[ $DRY_RUN -eq 1 ]]; then
-  echo "(dry-run) No changes were made. Re-run with --run to apply."
+  echo ""
+  echo "⚠️  DRY RUN MODE - No changes were made"
+  echo "Re-run with --run to actually perform backup:"
+  echo "  $0 --run"
+else
+  echo ""
+  if [[ $BACKUP_ERRORS -eq 0 ]]; then
+    echo "✅ Backup completed successfully!"
+  else
+    echo "⚠️  Backup completed with $BACKUP_ERRORS errors"
+    echo "Check the output above for details."
+  fi
 fi
+echo "=========================================="
