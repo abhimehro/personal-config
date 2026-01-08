@@ -100,8 +100,8 @@ run_task "quick_cleanup.sh"
 # 2) Node.js maintenance (weekly is appropriate for node modules)
 run_task "node_maintenance.sh"
 
-# 3) OneDrive monitoring and cleanup
-run_task "onedrive_monitor.sh"
+# 3) Google Drive monitoring and health check (UPDATED)
+run_task "google_drive_monitor.sh"
 
 # Summary
 log_info "=== WEEKLY MAINTENANCE SUMMARY ==="
@@ -136,10 +136,10 @@ fi
 if command -v terminal-notifier >/dev/null 2>&1; then
     if [[ $TASKS_FAILED -gt 0 ]]; then
   terminal-notifier -title "Weekly Maintenance" \
-    -subtitle "Completed with $EXIT_CODE task error(s)" \
+    -subtitle "Completed with $TASKS_FAILED task error(s)" \
     -message "Click for details" \
     -group "maintenance" \
-    -execute "/Users/abhimehrotra/Library/Maintenance/bin/view_logs.sh weekly" 2>/dev/null || true
+    -execute "/Users/speedybee/Library/Maintenance/bin/view_logs.sh weekly" 2>/dev/null || true
     else
         terminal-notifier -title "Weekly Maintenance" \
             -subtitle "All tasks completed successfully" \
