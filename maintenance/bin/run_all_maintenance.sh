@@ -97,15 +97,21 @@ spinner() {
         # Trap to restore cursor if interrupted
         trap 'tput cnorm 2>/dev/null || true; exit' INT TERM
 
-        SECONDS=0
+        local elapsed=0
+        local update_counter=0
         while kill -0 "$pid" 2>/dev/null; do
-            local elapsed=$SECONDS
+            # Update elapsed time only every 10 iterations (every second)
+            if (( update_counter % 10 == 0 )); then
+                local current_time=$(date +%s)
+                elapsed=$((current_time - start_time))
+            fi
 
             # Print spinner and elapsed time
             # \r moves to start, \033[K (optional) or spaces to clear
             printf "\r %s  Running... (%ds)   " "${spin_chars[i]}" "$elapsed"
 
             i=$(( (i + 1) % num_chars ))
+            update_counter=$((update_counter + 1))
             sleep $delay
         done
 
