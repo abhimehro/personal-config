@@ -116,8 +116,16 @@ check_listener() {
 # Check 8: Verify filtering based on active profile
 get_active_profile() {
     if sudo test -L "/etc/controld/ctrld.toml"; then
-        local link_target=$(sudo readlink "/etc/controld/ctrld.toml")
-        basename "$link_target" | sed 's/ctrld\.\(.*\)\.toml/\1/'
+        local link_target
+        link_target=$(sudo readlink "/etc/controld/ctrld.toml")
+        # Bolt optimization: Use parameter expansion instead of basename|sed pipeline
+        local filename="${link_target##*/}"
+        if [[ "$filename" =~ ^ctrld\..*\.toml$ ]]; then
+            local profile="${filename#ctrld.}"
+            echo "${profile%.toml}"
+        else
+            echo "$filename"
+        fi
     else
         echo "unknown"
     fi
