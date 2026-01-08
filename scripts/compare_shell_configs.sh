@@ -196,8 +196,7 @@ echo ""
 if [[ $EXTRACT_ENHANCEMENTS -eq 1 ]]; then
     header "Portable Enhancement Extraction"
     
-    # Securely create temporary file
-    ENHANCEMENTS_FILE=$(mktemp "${TMPDIR:-/tmp}/shell-enhancements.XXXXXX")
+    ENHANCEMENTS_FILE="/tmp/shell-enhancements-$(date +%Y%m%d_%H%M%S).txt"
     
     log "Extracting portable patterns from local shell configs..."
     echo ""

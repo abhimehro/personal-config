@@ -22,7 +22,6 @@ spinner() {
     local spin_chars_ascii=('|' '/' '-' '\\')
     local spin_chars
     local i=0
-    local start_time=$(date +%s)
 
     # Detect UTF-8 support
     if [[ "${LC_CTYPE:-}" == *"UTF-8"* ]] || [[ "${LC_ALL:-}" == *"UTF-8"* ]] || [[ "${LANG:-}" == *"UTF-8"* ]]; then
