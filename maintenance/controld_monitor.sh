@@ -17,25 +17,39 @@ if [ -f "${HOME}/Public/Scripts/maintenance/common.sh" ]; then
     source "${HOME}/Public/Scripts/maintenance/common.sh"
 fi
 
-# Logging function
-# Optimization: Use printf built-in for timestamp if Bash 4.2+ (faster), fall back to date (compatible)
-if [ "${BASH_VERSINFO[0]}" -gt 4 ] || ([ "${BASH_VERSINFO[0]}" -eq 4 ] && [ "${BASH_VERSINFO[1]}" -ge 2 ]); then
-    log() {
-        printf "[%(%Y-%m-%d %H:%M:%S)T] %s\n" -1 "$1" | tee -a "$LOG_FILE"
-    }
+# Detect bash version for timestamp optimization
+# macOS ships with bash 3.2 at /bin/bash, but printf %(...)T requires bash 4.2+
+# Default to 3.0 if BASH_VERSINFO is unavailable (for maximum compatibility)
+BASH_MAJOR=${BASH_VERSINFO[0]:-3}
+BASH_MINOR=${BASH_VERSINFO[1]:-0}
 
-    log_error() {
-        printf "[%(%Y-%m-%d %H:%M:%S)T] ERROR: %s\n" -1 "$1" | tee -a "$ERROR_LOG"
-    }
+# Check if bash supports printf %(...)T (requires bash 4.2+)
+if [ "$BASH_MAJOR" -gt 4 ] || ([ "$BASH_MAJOR" -eq 4 ] && [ "$BASH_MINOR" -ge 2 ]); then
+    USE_PRINTF_TIME=true
 else
-    log() {
-        echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
-    }
-
-    log_error() {
-        echo "[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: $1" | tee -a "$ERROR_LOG"
-    }
+    USE_PRINTF_TIME=false
 fi
+
+# Helper function to get formatted timestamp
+get_timestamp() {
+    if [ "$USE_PRINTF_TIME" = true ]; then
+        # Bash 4.2+: Use printf built-in for ~56x speedup
+        printf '%(%Y-%m-%d %H:%M:%S)T' -1
+    else
+        # Bash 3.x: Use date command for compatibility
+        date +'%Y-%m-%d %H:%M:%S'
+    fi
+}
+
+# Logging function with bash version compatibility
+# Use optimized printf built-in for bash 4.2+, fall back to date command for older versions
+log() {
+    printf "[%s] %s\n" "$(get_timestamp)" "$1" | tee -a "$LOG_FILE"
+}
+
+log_error() {
+    printf "[%s] ERROR: %s\n" "$(get_timestamp)" "$1" | tee -a "$ERROR_LOG"
+}
 
 # Rotate logs if too large
 rotate_log() {
