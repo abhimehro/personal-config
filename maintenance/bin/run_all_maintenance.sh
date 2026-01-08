@@ -74,10 +74,24 @@ log_status() {
 spinner() {
     local pid=$1
     local delay=0.1
-    local spinstr='|/-\'
+    local spin_chars_unicode=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
+    local spin_chars_ascii=('|' '/' '-' '\')
+    local spin_chars
+    local i=0
+    local start_time=$(date +%s)
+
+    # Detect UTF-8 support
+    if [[ "${LANG:-}" == *"UTF-8"* ]] || [[ "${LC_ALL:-}" == *"UTF-8"* ]]; then
+        spin_chars=("${spin_chars_unicode[@]}")
+    else
+        spin_chars=("${spin_chars_ascii[@]}")
+    fi
+
+    local num_chars=${#spin_chars[@]}
 
     # Only show spinner if running interactively (TTY) and not redirecting to file only
-    if [ -t 1 ]; then
+    # Also disable in CI environments to prevent log clutter
+    if [ -t 1 ] && [ -z "${CI:-}" ]; then
         # Hide cursor
         tput civis 2>/dev/null || true
 
@@ -85,23 +99,27 @@ spinner() {
         trap 'tput cnorm 2>/dev/null || true; exit' INT TERM
 
         while kill -0 "$pid" 2>/dev/null; do
-            local temp=${spinstr#?}
-            printf " [%c]  " "$spinstr"
-            local spinstr=$temp${spinstr%"$temp"}
+            local current_time=$(date +%s)
+            local elapsed=$((current_time - start_time))
+
+            # Print spinner and elapsed time
+            # \r moves to start, \033[K (optional) or spaces to clear
+            printf "\r %s  Running... (%ds)   " "${spin_chars[i]}" "$elapsed"
+
+            i=$(( (i + 1) % num_chars ))
             sleep $delay
-            printf "\b\b\b\b\b\b"
         done
 
         # Restore cursor
         tput cnorm 2>/dev/null || true
 
-        # Clear spinner residue
-        printf "       \b\b\b\b\b\b\b"
+        # Clear spinner line completely
+        printf "\r\033[K"
 
         # Remove trap
         trap - INT TERM
     else
-        # If not interactive, just wait
+        # If not interactive or in CI, just wait
         wait "$pid"
     fi
 }

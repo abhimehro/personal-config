@@ -18,23 +18,46 @@ log_status() {
 spinner() {
     local pid=$1
     local delay=0.1
-    local spinstr='|/-\\'
+    local spin_chars_unicode=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
+    local spin_chars_ascii=('|' '/' '-' '\')
+    local spin_chars
+    local i=0
+    local start_time=$(date +%s)
 
-    # Check if stdout is a TTY
-    if [ -t 1 ]; then
+    # Detect UTF-8 support
+    if [[ "${LANG:-}" == *"UTF-8"* ]] || [[ "${LC_ALL:-}" == *"UTF-8"* ]]; then
+        spin_chars=("${spin_chars_unicode[@]}")
+    else
+        spin_chars=("${spin_chars_ascii[@]}")
+    fi
+
+    local num_chars=${#spin_chars[@]}
+
+    # Check if stdout is a TTY and not in CI
+    if [ -t 1 ] && [ -z "${CI:-}" ]; then
         # Hide cursor
-        tput civis
+        tput civis 2>/dev/null || true
+
+        trap 'tput cnorm 2>/dev/null || true; exit' INT TERM
+
         while kill -0 "$pid" 2>/dev/null; do
-            local temp=${spinstr#?}
-            printf " [%c]  " "$spinstr"
-            local spinstr=$temp${spinstr%"$temp"}
+            local current_time=$(date +%s)
+            local elapsed=$((current_time - start_time))
+
+            # Print spinner and elapsed time
+            printf "\r %s  Running... (%ds)   " "${spin_chars[i]}" "$elapsed"
+
+            i=$(( (i + 1) % num_chars ))
             sleep $delay
-            printf "\b\b\b\b\b\b"
         done
+
         # Restore cursor
-        tput cnorm
-        # Clear spinner
-        printf "       \b\b\b\b\b\b\b"
+        tput cnorm 2>/dev/null || true
+
+        # Clear the spinner line
+        printf "\r\033[K"
+
+        trap - INT TERM
     else
         wait "$pid"
     fi
