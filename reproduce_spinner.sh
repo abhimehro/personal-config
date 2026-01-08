@@ -19,13 +19,12 @@ spinner() {
     local pid=$1
     local delay=0.1
     local spin_chars_unicode=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
-    local spin_chars_ascii=('|' '/' '-' '\')
+    local spin_chars_ascii=('|' '/' '-' '\\')
     local spin_chars
     local i=0
-    local start_time=$(date +%s)
 
     # Detect UTF-8 support
-    if [[ "${LANG:-}" == *"UTF-8"* ]] || [[ "${LC_ALL:-}" == *"UTF-8"* ]]; then
+    if [[ "${LC_CTYPE:-}" == *"UTF-8"* ]] || [[ "${LC_ALL:-}" == *"UTF-8"* ]] || [[ "${LANG:-}" == *"UTF-8"* ]]; then
         spin_chars=("${spin_chars_unicode[@]}")
     else
         spin_chars=("${spin_chars_ascii[@]}")
@@ -40,9 +39,9 @@ spinner() {
 
         trap 'tput cnorm 2>/dev/null || true; exit' INT TERM
 
+        SECONDS=0
         while kill -0 "$pid" 2>/dev/null; do
-            local current_time=$(date +%s)
-            local elapsed=$((current_time - start_time))
+            local elapsed=$SECONDS
 
             # Print spinner and elapsed time
             printf "\r %s  Running... (%ds)   " "${spin_chars[i]}" "$elapsed"
