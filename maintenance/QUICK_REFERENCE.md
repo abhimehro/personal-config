@@ -35,8 +35,10 @@ ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
 ```
 
 ### Current Automation Schedule
+- **3:15 AM Daily**: Google Drive Backup (Light Archives)
+- **3:30 AM Monday**: Google Drive Backup (Full Archives)
 - **8:30 AM Daily**: Health Check
-- **9:00 AM Daily**: System Cleanup  
+- **9:00 AM Daily**: System Cleanup
 - **10:00 AM Daily**: Homebrew Updates
 - **Monday 9:00 AM**: Weekly Maintenance
 - **1st of Month 6:00 AM**: Monthly Deep Clean
