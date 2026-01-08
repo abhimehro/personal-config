@@ -1,93 +1,52 @@
-# Proton Drive Backup Exclusions
-# Excludes cache, temp, and unnecessary files from sync
+# ProtonDrive backup exclusions (rsync)
 
-# === System & Cache Files ===
+# Common noise
 .DS_Store
-.localized
-*.tmp
-*.temp
-*.cache
-.Trash/
-.Spotlight-V100/
-.TemporaryItems/
+**/.DS_Store
 
-# === Development Caches ===
+# AppleDouble resource forks
+._*
+**/._*
+
+# VCS
+.git/
+**/.git/
+
+# Common build artifacts
 node_modules/
-.npm/
-.yarn/
-.pnpm-store/
-__pycache__/
-*.pyc
-.pytest_cache/
-.tox/
-.mypy_cache/
-.ruff_cache/
-.cargo/cache/
-.cargo/registry/
-target/debug/
-target/release/
-.gradle/
-.maven/
-build/
+**/node_modules/
 dist/
+**/dist/
+build/
+**/build/
 
-# === Git Internal Files (not needed in backup) ===
-.git/objects/
-.git/logs/
-.git/refs/remotes/
-.git/index.lock
-.git/*.lock
+# Python
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
 
-# === Editor & IDE Caches ===
-.vscode/extensions/
-.vscode-R/
-.cursor/
-.idea/
-*.swp
-*.swo
-*~
-.netrwhist
+# macOS user Library (huge, volatile, and often breaks permissions)
+Library/
 
-# === Browser Caches ===
-Library/Caches/
+# Caches (prefer reproducible rebuilds)
+.cache/
+**/.cache/
 Caches/
-Cache/
-CachedData/
-Service Worker/
-GPUCache/
 
-# === Language-Specific Caches ===
-.gem/cache/
-.rbenv/versions/*/cache/
-.bundle/cache/
-Pods/
-DerivedData/
+# Home history files can contain secrets/tokens
+.bash_history
+.lesshst
+.zsh_history
+.fish_history
 
-# === Log Files ===
-*.log
-*.log.*
-logs/
-*.log[0-9]*
+# Cargo registries (huge) – keep config, drop caches
+.cargo/registry/
+.cargo/git/
 
-# === Temporary Files ===
-*.sync
-*.crdownload
-*.part
-*.filepart
-*.download
+# AWS: keep config but exclude cached/credential artifacts (adjust if you need these)
+.aws/cli/cache/
+.aws/sso/cache/
 
-# === Large Media Processing ===
-*.tmp.mp4
-*.tmp.mkv
-*.processing
-
-# === Package Manager Caches ===
-Library/Caches/Homebrew/
-Library/Caches/pip/
-Library/Caches/yarn/
-Library/Caches/npm/
-
-# === System Application Caches ===
-Library/Application Support/*/Cache/
-Library/Application Support/*/Caches/
-Library/Application Support/Google/DriveFS/Logs/
+# Avoid recursive backup of ProtonDrive itself if any includes overlap
+Library/CloudStorage/
