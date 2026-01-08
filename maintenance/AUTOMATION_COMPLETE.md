@@ -20,7 +20,7 @@
 - ✅ **Daily:** Health check (8:30 AM) - no password prompts
 - ✅ **Daily:** System cleanup (9:00 AM) - cache and temp file cleanup
 - ✅ **Daily:** Homebrew maintenance (10:00 AM) - package updates and maintenance
-- ✅ **Weekly:** Comprehensive maintenance (9:00 AM Monday) - node modules, OneDrive monitoring
+- ✅ **Weekly:** Comprehensive maintenance (9:00 AM Monday) - node modules, Google Drive monitoring
 - ✅ **Monthly:** Deep cleaning tasks (9:00 AM, 1st of month) - editor cleanup, system analysis
 
 ### 4. Repository Organization
@@ -56,7 +56,7 @@
 ### ✅ WORKING - Weekly Automation (NEW)
 - **Monday 9:00 AM:** Comprehensive weekly maintenance
 - Node.js modules cleanup and verification  
-- OneDrive monitoring and optimization
+- Google Drive monitoring and optimization
 - Quick system cleanup tasks
 
 ### ✅ WORKING - Monthly Automation
