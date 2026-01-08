@@ -75,13 +75,13 @@ spinner() {
     local pid=$1
     local delay=0.1
     local spin_chars_unicode=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
-    local spin_chars_ascii=('|' '/' '-' '\')
+    local spin_chars_ascii=('|' '/' '-' '\\')
     local spin_chars
     local i=0
     local start_time=$(date +%s)
 
     # Detect UTF-8 support
-    if [[ "${LANG:-}" == *"UTF-8"* ]] || [[ "${LC_ALL:-}" == *"UTF-8"* ]]; then
+    if [[ "${LC_CTYPE:-}" == *"UTF-8"* ]] || [[ "${LC_ALL:-}" == *"UTF-8"* ]] || [[ "${LANG:-}" == *"UTF-8"* ]]; then
         spin_chars=("${spin_chars_unicode[@]}")
     else
         spin_chars=("${spin_chars_ascii[@]}")
@@ -98,15 +98,21 @@ spinner() {
         # Trap to restore cursor if interrupted
         trap 'tput cnorm 2>/dev/null || true; exit' INT TERM
 
+        local elapsed=0
+        local update_counter=0
         while kill -0 "$pid" 2>/dev/null; do
-            local current_time=$(date +%s)
-            local elapsed=$((current_time - start_time))
+            # Update elapsed time only every 10 iterations (every second)
+            if (( update_counter % 10 == 0 )); then
+                local current_time=$(date +%s)
+                elapsed=$((current_time - start_time))
+            fi
 
             # Print spinner and elapsed time
             # \r moves to start, \033[K (optional) or spaces to clear
             printf "\r %s  Running... (%ds)   " "${spin_chars[i]}" "$elapsed"
 
             i=$(( (i + 1) % num_chars ))
+            update_counter=$((update_counter + 1))
             sleep $delay
         done
 
