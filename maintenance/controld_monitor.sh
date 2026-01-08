@@ -17,14 +17,35 @@ if [ -f "${HOME}/Public/Scripts/maintenance/common.sh" ]; then
     source "${HOME}/Public/Scripts/maintenance/common.sh"
 fi
 
-# Logging function
-# Optimization: Use printf built-in for timestamp to avoid subshell overhead of $(date)
+# Detect bash version for timestamp optimization
+# macOS ships with bash 3.2 at /bin/bash, but printf %(...)T requires bash 4.2+
+BASH_MAJOR=${BASH_VERSINFO[0]:-3}
+BASH_MINOR=${BASH_VERSINFO[1]:-0}
+
+# Logging function with bash version compatibility
+# Use optimized printf built-in for bash 4.2+, fall back to date command for older versions
 log() {
-    printf "[%(%Y-%m-%d %H:%M:%S)T] %s\n" -1 "$1" | tee -a "$LOG_FILE"
+    local timestamp
+    if [ "$BASH_MAJOR" -gt 4 ] || [ "$BASH_MAJOR" -eq 4 -a "$BASH_MINOR" -ge 2 ]; then
+        # Bash 4.2+: Use printf built-in for ~56x speedup
+        printf "[%(%Y-%m-%d %H:%M:%S)T] %s\n" -1 "$1" | tee -a "$LOG_FILE"
+    else
+        # Bash 3.x: Use date command for compatibility
+        timestamp=$(date +'%Y-%m-%d %H:%M:%S')
+        printf "[%s] %s\n" "$timestamp" "$1" | tee -a "$LOG_FILE"
+    fi
 }
 
 log_error() {
-    printf "[%(%Y-%m-%d %H:%M:%S)T] ERROR: %s\n" -1 "$1" | tee -a "$ERROR_LOG"
+    local timestamp
+    if [ "$BASH_MAJOR" -gt 4 ] || [ "$BASH_MAJOR" -eq 4 -a "$BASH_MINOR" -ge 2 ]; then
+        # Bash 4.2+: Use printf built-in for ~56x speedup
+        printf "[%(%Y-%m-%d %H:%M:%S)T] ERROR: %s\n" -1 "$1" | tee -a "$ERROR_LOG"
+    else
+        # Bash 3.x: Use date command for compatibility
+        timestamp=$(date +'%Y-%m-%d %H:%M:%S')
+        printf "[%s] ERROR: %s\n" "$timestamp" "$1" | tee -a "$ERROR_LOG"
+    fi
 }
 
 # Rotate logs if too large
