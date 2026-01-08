@@ -246,7 +246,7 @@ def main():
         AUTH_PASS = ''.join(secrets.choice(alphabet) for i in range(16))
         print("\n🔒 Security: Authentication Enabled")
         print(f"   User: {AUTH_USER}")
-        print("   Pass: [hidden - password generated but not logged]")
+        print(f"   Pass: {AUTH_PASS}")
         if generated_user:
              print("   (Random username generated. Set custom user via --user)")
         print("   (Use these credentials to access the server)\n")
