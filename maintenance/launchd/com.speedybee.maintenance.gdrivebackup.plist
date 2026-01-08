@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.speedybee.maintenance.gdrivebackup</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>AUTOMATED_RUN</key>
+        <string>1</string>
+    </dict>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/speedybee/Library/Maintenance/bin/google_drive_backup_archive.sh</string>
+        <string>--run</string>
+        <string>--retention</string>
+        <string>21</string>
+    </array>
+
+    <key>StandardOutPath</key>
+    <string>/Users/speedybee/Library/Logs/maintenance/gdrive_backup.out</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/speedybee/Library/Logs/maintenance/gdrive_backup.err</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>15</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>KeepAlive</key>
+    <false/>
+</dict>
+</plist>
