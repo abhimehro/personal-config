@@ -11,7 +11,7 @@
 		<string>/bin/bash</string>
 		<string>-l</string>
 		<string>-c</string>
-		<string>/Users/abhimehrotra/Library/Maintenance/bin/run_all_maintenance.sh weekly</string>
+		<string>/Users/speedybee/Library/Maintenance/bin/run_all_maintenance.sh weekly</string>
 	</array>
 	<key>StartCalendarInterval</key>
 	<dict>
@@ -23,9 +23,9 @@
 		<integer>0</integer>
 	</dict>
 	<key>StandardOutPath</key>
-	<string>/Users/abhimehrotra/Library/Logs/maintenance/maintenance_weekly.out</string>
+	<string>/Users/speedybee/Library/Logs/maintenance/maintenance_weekly.out</string>
 	<key>StandardErrorPath</key>
-	<string>/Users/abhimehrotra/Library/Logs/maintenance/maintenance_weekly.err</string>
+	<string>/Users/speedybee/Library/Logs/maintenance/maintenance_weekly.err</string>
 	<key>RunAtLoad</key>
 	<false/>
 	<key>EnvironmentVariables</key>

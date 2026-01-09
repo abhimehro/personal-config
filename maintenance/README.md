@@ -137,7 +137,7 @@ maintenance/
 │   ├── quick_cleanup.sh          # Quick system cleanup
 │   ├── brew_maintenance.sh       # Homebrew maintenance
 │   ├── node_maintenance.sh       # Node.js maintenance
-│   ├── onedrive_monitor.sh       # OneDrive monitoring
+│   ├── google_drive_monitor.sh       # Google Drive monitoring
 │   ├── system_cleanup.sh         # System cleanup
 │   ├── view_logs.sh              # Interactive log viewer (NEW)
 │   ├── generate_error_summary.sh # Error consolidation tool (NEW)

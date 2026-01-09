@@ -9,7 +9,7 @@
 |------|-------|-----------|---------|-------------|
 | **8:30 AM** | 🏥 System Health Check | Daily | `health_check.sh` | System monitoring, disk space, memory, crash logs |
 | **9:00 AM** | 🧹 System Cleanup | Daily | `system_cleanup.sh` | Cache cleanup, temp files, logs |
-| **9:00 AM** | 📅 Weekly Maintenance | Monday | `weekly_maintenance.sh` | Node modules, OneDrive monitoring |
+| **9:00 AM** | 📅 Weekly Maintenance | Monday | `weekly_maintenance.sh` | Node modules, Google Drive monitoring |
 | **9:00 AM** | 📆 Monthly Maintenance | 1st of month | `monthly_maintenance.sh` | Editor cleanup, deep analysis |
 | **3:15 AM** | ☁️ ProtonDrive Backup | Daily | `protondrive_backup.sh` | One-way home backup to ProtonDrive |
 | **10:00 AM** | 🍺 Homebrew Maintenance | Daily | `brew_maintenance.sh` | Package updates, cask maintenance |
@@ -61,7 +61,7 @@
 ### 📅 Weekly Maintenance (Monday 9:00 AM)
 - ✅ Quick system cleanup (lighter version)
 - ✅ Node.js module maintenance and verification
-- ✅ OneDrive monitoring and optimization
+- ✅ Google Drive monitoring and optimization
 - ✅ Comprehensive system status checks
 
 ### 📆 Monthly Deep Maintenance (1st of month 9:00 AM)

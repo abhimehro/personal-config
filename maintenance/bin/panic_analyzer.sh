@@ -1,148 +1,142 @@
 #!/usr/bin/env bash
-source "${HOME}/Scripts/maintenance/common.sh"
-log_file_init "panic_analyzer"
 
-log_info "Kernel panic analysis started"
+# Self-contained kernel panic analysis report.
+# Safe to run non-interactively; avoids hanging by using short timeouts where possible.
 
-REPORT_FILE="${LOG_DIR}/panic_analysis-$(date +%Y%m%d-%H%M).txt"
-REPORT=""
-append() { REPORT+="$1"$'\n'; echo "$1"; }
+set -eo pipefail
 
-append "=== KERNEL PANIC ANALYSIS REPORT ==="
-append "Generated: $(date)"
-append ""
+LOG_DIR="$HOME/Library/Logs/maintenance"
+mkdir -p "$LOG_DIR"
 
-# 1) Recent panic logs with details
-append "=== RECENT PANIC ENTRIES (Last 24h) ==="
-PANIC_ENTRIES=$(log show --predicate 'eventMessage CONTAINS[c] "panic"' --last "24h" --style compact 2>/dev/null || echo "Unable to retrieve panic logs")
-if [[ -n "${PANIC_ENTRIES}" ]]; then
-    append "${PANIC_ENTRIES}"
-else
-    append "No panic entries found or unable to access logs"
-fi
-append ""
+log_info() {
+    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    echo "$ts [INFO] [panic_analyzer] $*" | tee -a "$LOG_DIR/panic_analyzer.log"
+}
 
-# 2) System shutdown/restart causes
-append "=== SHUTDOWN/RESTART CAUSES (Last 48h) ==="
-SHUTDOWN_LOGS=$(log show --predicate 'eventMessage CONTAINS[c] "shutdown cause" OR eventMessage CONTAINS[c] "Previous shutdown"' --last "48h" --style compact 2>/dev/null || echo "Unable to retrieve shutdown logs")
-if [[ -n "${SHUTDOWN_LOGS}" ]]; then
-    append "${SHUTDOWN_LOGS}"
-else
-    append "No shutdown cause entries found"
-fi
-append ""
+log_warn() {
+    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    echo "$ts [WARNING] [panic_analyzer] $*" | tee -a "$LOG_DIR/panic_analyzer.log"
+}
 
-# 3) Check for kernel extensions
-append "=== LOADED KERNEL EXTENSIONS ==="
-KEXTS=$(kextstat 2>/dev/null | grep -v "com.apple" | head -20 || echo "Unable to list kernel extensions")
-append "Non-Apple kernel extensions:"
-append "${KEXTS}"
-append ""
+# Prefer gtimeout (coreutils) if available, else use a simple kill-based timeout.
+run_with_timeout() {
+    local timeout_seconds="$1"; shift
+    local cmd="$@"
 
-# 4) Hardware-related logs
-append "=== HARDWARE ISSUES (Last 24h) ==="
-HW_LOGS=$(log show --predicate 'eventMessage CONTAINS[c] "thermal" OR eventMessage CONTAINS[c] "overheat" OR eventMessage CONTAINS[c] "temperature" OR eventMessage CONTAINS[c] "hardware error"' --last "24h" 2>/dev/null | head -50 || echo "No hardware issues found")
-append "${HW_LOGS}"
-append ""
-
-# 5) Memory pressure events
-append "=== MEMORY PRESSURE EVENTS (Last 24h) ==="
-MEM_LOGS=$(log show --predicate 'eventMessage CONTAINS[c] "memory pressure" OR eventMessage CONTAINS[c] "low memory"' --last "24h" 2>/dev/null | head -20 || echo "No memory pressure events found")
-append "${MEM_LOGS}"
-append ""
-
-# 6) Check crash reports directory
-append "=== RECENT CRASH REPORTS ==="
-CRASH_DIR="${HOME}/Library/Logs/DiagnosticReports"
-if [[ -d "${CRASH_DIR}" ]]; then
-    RECENT_CRASHES=$(find "${CRASH_DIR}" -name "*.crash" -o -name "*.panic" -mtime -7 2>/dev/null | head -10)
-    if [[ -n "${RECENT_CRASHES}" ]]; then
-        append "Recent crash/panic files (last 7 days):"
-        append "${RECENT_CRASHES}"
-        
-        # Show summary of most recent crash
-        LATEST_CRASH=$(find "${CRASH_DIR}" -name "*.crash" -mtime -1 2>/dev/null | head -1)
-        if [[ -n "${LATEST_CRASH}" ]]; then
-            append ""
-            append "=== LATEST CRASH SUMMARY ==="
-            append "File: ${LATEST_CRASH}"
-            head -30 "${LATEST_CRASH}" 2>/dev/null | while read -r line; do
-                append "$line"
-            done
-        fi
-    else
-        append "No recent crash reports found"
+    if command -v gtimeout >/dev/null 2>&1; then
+        gtimeout "$timeout_seconds" bash -c "$cmd" 2>/dev/null || true
+        return 0
     fi
-else
-    append "Crash reports directory not accessible"
+
+    local output_file
+    output_file=$(mktemp)
+    bash -c "$cmd" >"$output_file" 2>/dev/null &
+    local pid=$!
+
+    local count=0
+    while kill -0 "$pid" 2>/dev/null && [[ $count -lt $timeout_seconds ]]; do
+        sleep 1
+        count=$((count + 1))
+    done
+
+    if kill -0 "$pid" 2>/dev/null; then
+        kill -9 "$pid" 2>/dev/null || true
+        wait "$pid" 2>/dev/null || true
+        rm -f "$output_file"
+        return 0
+    fi
+
+    wait "$pid" 2>/dev/null || true
+    cat "$output_file" 2>/dev/null || true
+    rm -f "$output_file"
+    return 0
+}
+
+REPORT_FILE="$LOG_DIR/panic_analysis-$(date +%Y%m%d-%H%M).txt"
+
+{
+    echo "=== KERNEL PANIC ANALYSIS REPORT ==="
+    echo "Generated: $(date)"
+    echo
+
+    echo "=== PANIC REPORT FILES (Last 7 days) ==="
+    PANIC_DIR="/Library/Logs/DiagnosticReports"
+    if [[ -d "$PANIC_DIR" ]]; then
+        find "$PANIC_DIR" -maxdepth 1 -type f -iname "*panic*" -mtime -7 2>/dev/null | sed -n '1,50p'
+    else
+        echo "Panic directory not accessible: $PANIC_DIR"
+    fi
+    echo
+
+    echo "=== PANIC-LIKE LOG ENTRIES (Last 24h, sample) ==="
+    if command -v log >/dev/null 2>&1; then
+        run_with_timeout 8 "log show --predicate 'eventMessage CONTAINS[c] \"kernel panic\" OR eventMessage CONTAINS[c] \"panic(cpu\"' --last 24h --style compact | head -50"
+    else
+        echo "log command not available"
+    fi
+    echo
+
+    echo "=== SHUTDOWN/RESTART CAUSES (Last 48h, sample) ==="
+    if command -v log >/dev/null 2>&1; then
+        run_with_timeout 8 "log show --predicate 'eventMessage CONTAINS[c] \"shutdown cause\" OR eventMessage CONTAINS[c] \"Previous shutdown\"' --last 48h --style compact | head -80"
+    else
+        echo "log command not available"
+    fi
+    echo
+
+    echo "=== NON-APPLE KERNEL EXTENSIONS (if any) ==="
+    if command -v kextstat >/dev/null 2>&1; then
+        kextstat 2>/dev/null | grep -v "com.apple" | sed -n '1,60p' || true
+    else
+        echo "kextstat not available (expected on Apple Silicon / newer macOS)"
+    fi
+    echo
+
+    echo "=== RECENT DIAGNOSTIC REPORTS (Last 7 days) ==="
+    USER_DIAG="$HOME/Library/Logs/DiagnosticReports"
+    if [[ -d "$USER_DIAG" ]]; then
+        find "$USER_DIAG" -maxdepth 1 -type f \( -name "*.panic" -o -name "*.ips" -o -name "*.crash" \) -mtime -7 2>/dev/null | sed -n '1,50p'
+    else
+        echo "User diagnostic dir not accessible: $USER_DIAG"
+    fi
+    echo
+
+    echo "=== LATEST PANIC FILE (head) ==="
+    if [[ -d "$PANIC_DIR" ]]; then
+        LATEST=$(ls -t "$PANIC_DIR"/*panic* 2>/dev/null | head -1 || true)
+        if [[ -n "$LATEST" ]] && [[ -f "$LATEST" ]]; then
+            echo "File: $LATEST"
+            echo
+            head -120 "$LATEST" 2>/dev/null || true
+        else
+            echo "No panic files found in $PANIC_DIR"
+        fi
+    fi
+    echo
+
+    echo "=== SYSTEM CONTEXT ==="
+    echo "macOS: $(sw_vers -productVersion 2>/dev/null || true) ($(sw_vers -buildVersion 2>/dev/null || true))"
+    echo "Uptime: $(uptime 2>/dev/null || true)"
+    echo "Hardware:"
+    system_profiler SPHardwareDataType 2>/dev/null | grep -E "Model Name|Model Identifier|Chip|Processor|Memory" || true
+    echo
+
+    echo "=== CURRENT TOP PROCESSES (CPU/mem, sample) ==="
+    top -l 1 -n 10 -stats pid,cpu,rsize,command 2>/dev/null | sed -n '1,35p' || true
+    echo
+
+    echo "=== RECOMMENDATIONS ==="
+    echo "* If panics are frequent, check the LATEST PANIC FILE section for implicated kexts/drivers or subsystems."
+    echo "* Disconnect recently-added USB/Thunderbolt devices and observe if panics stop."
+    echo "* If you use third-party kernel/system extensions (VPNs, AV, drivers), update or uninstall to test."
+    echo "* Run Apple Diagnostics (hold D at boot) if panics persist."
+} | tee "$REPORT_FILE" >/dev/null
+
+log_info "Panic analysis saved to: $REPORT_FILE"
+
+# Open the report when run interactively.
+if [[ -t 1 ]] && command -v open >/dev/null 2>&1; then
+    open -a TextEdit "$REPORT_FILE" 2>/dev/null || true
 fi
-append ""
 
-# 7) System configuration that might cause issues
-append "=== SYSTEM CONFIGURATION ==="
-append "macOS Version: $(sw_vers -productVersion)"
-append "Build: $(sw_vers -buildVersion)"
-append "Hardware: $(system_profiler SPHardwareDataType | grep -E "(Model Name|Model Identifier|Processor|Memory)" 2>/dev/null || echo "Hardware info unavailable")"
-append ""
-
-# 8) Check for problematic processes
-append "=== PROCESSES WITH HIGH CPU/MEMORY (Current) ==="
-TOP_PROCESSES=$(top -l 1 -n 10 -stats pid,cpu,rsize,command | tail -n +13 || echo "Unable to get process info")
-append "${TOP_PROCESSES}"
-append ""
-
-# 9) Disk and filesystem status
-append "=== DISK STATUS ==="
-DISK_STATUS=$(diskutil list 2>/dev/null || echo "Unable to get disk status")
-append "${DISK_STATUS}"
-append ""
-
-# 10) USB/Thunderbolt devices (potential sources of kernel panics)
-append "=== CONNECTED DEVICES ==="
-USB_DEVICES=$(system_profiler SPUSBDataType 2>/dev/null | grep -E "(Product ID|Vendor ID|Serial Number)" | head -20 || echo "Unable to get USB device info")
-append "USB Devices:"
-append "${USB_DEVICES}"
-append ""
-
-# 11) Look for specific panic patterns
-append "=== PANIC PATTERN ANALYSIS ==="
-if command -v log >/dev/null 2>&1; then
-    # Common panic causes
-    WATCHDOG_PANICS=$(log show --predicate 'eventMessage CONTAINS[c] "watchdog timeout"' --last "7d" 2>/dev/null | wc -l | tr -d ' ')
-    GPU_PANICS=$(log show --predicate 'eventMessage CONTAINS[c] "GPU" AND eventMessage CONTAINS[c] "panic"' --last "7d" 2>/dev/null | wc -l | tr -d ' ')
-    DRIVER_PANICS=$(log show --predicate 'eventMessage CONTAINS[c] "driver" AND eventMessage CONTAINS[c] "panic"' --last "7d" 2>/dev/null | wc -l | tr -d ' ')
-    
-    append "Panic pattern counts (last 7 days):"
-    append "- Watchdog timeouts: ${WATCHDOG_PANICS}"
-    append "- GPU-related panics: ${GPU_PANICS}"
-    append "- Driver-related panics: ${DRIVER_PANICS}"
-fi
-
-append ""
-append "=== RECOMMENDATIONS ==="
-if (( ${KEXTS} > 5 )); then
-    append "⚠️  High number of non-Apple kernel extensions detected. Consider:"
-    append "   - Uninstalling unnecessary drivers/extensions"
-    append "   - Checking if extensions are compatible with your macOS version"
-fi
-
-append "📋 Next steps for diagnosis:"
-append "1. Review crash reports in ~/Library/Logs/DiagnosticReports/"
-append "2. Check Console.app for detailed system logs"
-append "3. Run Apple Diagnostics: Hold D while starting up"
-append "4. Consider safe mode boot to isolate third-party software"
-append "5. If using beta macOS, file feedback with Apple"
-
-# Save comprehensive report
-printf "%s\n" "${REPORT}" > "${REPORT_FILE}"
-log_info "Panic analysis saved to ${REPORT_FILE}"
-
-echo ""
-echo "🔍 Panic analysis complete! Report saved to:"
-echo "   ${REPORT_FILE}"
-echo ""
-echo "📋 Quick Actions:"
-echo "   • Review the report above for patterns"
-echo "   • Check ${HOME}/Library/Logs/DiagnosticReports/ for detailed crash logs"
-echo "   • Run: sudo dmesg | grep -i panic (for recent kernel messages)"
-echo "   • Consider: Apple Menu > About This Mac > System Report for hardware details"
+echo "$REPORT_FILE"

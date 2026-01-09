@@ -4,8 +4,15 @@ set -euo pipefail
 # One-way incremental backup from $HOME into ProtonDrive using rsync.
 # Defaults to --dry-run for safety.
 
-PROTON_ROOT_DEFAULT="$HOME/Library/CloudStorage/ProtonDrive-abhimehro@pm.me-folder"
-DEST_DEFAULT="$PROTON_ROOT_DEFAULT/HomeBackup"
+PROTON_ROOT_DEFAULT="${PROTONDRIVE_ROOT:-$HOME/Library/CloudStorage/ProtonDrive-abhimehro@pm.me-folder}"
+DEST_DEFAULT="${PROTON_BACKUP_DEST:-$PROTON_ROOT_DEFAULT/HomeBackup}"
+
+# Load config
+CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
+if [[ -f "$CONFIG_FILE" ]]; then
+  # shellcheck disable=SC1090
+  source "$CONFIG_FILE" 2>/dev/null || true
+fi
 
 if [[ -n "${MAINTENANCE_HOME:-}" ]]; then
   EXCLUDES_FILE_DEFAULT="$MAINTENANCE_HOME/conf/protondrive_backup.exclude"
