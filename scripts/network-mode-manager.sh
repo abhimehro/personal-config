@@ -123,7 +123,17 @@ start_controld() {
   #   - Starts ctrld with --skip_self_checks
   #   - Points macOS Wi‑Fi DNS at the local resolver
   #   - Verifies Control D connectivity and filtering
-  if sudo ./controld-system/scripts/controld-manager switch "$profile_key"; then
+  
+  # Find the script location regardless of current working directory
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  local controld_manager="$script_dir/../controld-system/scripts/controld-manager"
+  
+  if [[ ! -x "$controld_manager" ]]; then
+    error "controld-manager script not found or not executable at $controld_manager"
+  fi
+  
+  if sudo "$controld_manager" switch "$profile_key"; then
     success "Control D active via controld-manager (profile: $profile_key)."
   else
     error "controld-manager failed to switch to profile '$profile_key'. See /var/log/controld_manager.log for details."
