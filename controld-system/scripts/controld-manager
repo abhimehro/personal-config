@@ -202,14 +202,14 @@ generate_profile_config() {
         rm -f "$TEMP_CONFIG"
         
         # Optimize config (combined sed for performance)
-        sed -i '' -e "s/ip = '127.0.0.1'/ip = '0.0.0.0'/g" \
-                  -e 's/, "::\/0"//g' \
+        # Note: We specifically KEEP 'ip = 127.0.0.1' to ensure we only listen on localhost
+        # Binding to 0.0.0.0 would expose the DNS resolver to the network (Security Risk)
+        sed -i '' -e 's/, "::\/0"//g' \
                   -e 's/"::\/0", //g' \
                   -e "s/timeout = 5000/timeout = 3000/g" \
                   "$config_file" 2>/dev/null || true
 
         # Disable IPv6 in listener explicitly if supported or ensure it's not auto-binding
-        # (Note: 'ip = 0.0.0.0' usually binds IPv4, but let's be sure we don't add IPv6 listeners)
         
         log_success "$profile_name profile configuration generated with $protocol"
     else
