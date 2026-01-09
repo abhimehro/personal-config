@@ -13,6 +13,7 @@ CONTROLD_DIR="/etc/controld"
 PROFILES_DIR="$CONTROLD_DIR/profiles"
 BACKUP_DIR="$CONTROLD_DIR/backup"
 LOG_FILE="/var/log/controld_manager.log"
+LISTENER_IP="127.0.0.1"  # localhost - where ctrld listens for DNS queries
 
 # Profile configurations with protocol preferences
 #
@@ -291,9 +292,22 @@ switch_profile() {
         ((retry++))
     done
     
-    # Configure system DNS to use localhost
+    # Configure system DNS to use localhost resolver
+    log "Configuring system DNS to use Control D resolver at $LISTENER_IP..."
     networksetup -setdnsservers Wi-Fi 127.0.0.1
-    log "Skipping system DNS configuration to prevent Windscribe interference"
+    
+    # Validate DNS configuration was applied
+    sleep 0.2
+    local configured_dns
+    configured_dns=$(networksetup -getdnsservers Wi-Fi 2>/dev/null || echo "")
+    if echo "$configured_dns" | grep -q "$LISTENER_IP"; then
+      log_success "System DNS configured to use Control D at $LISTENER_IP"
+    else
+      log_warning "DNS configuration may not have applied correctly. Retrying..."
+      # Force retry once
+      sleep 0.5
+      networksetup -setdnsservers Wi-Fi 127.0.0.1
+    fi
     
     # Flush DNS cache
     dscacheutil -flushcache
