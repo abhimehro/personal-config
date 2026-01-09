@@ -10,7 +10,7 @@
         <key>PATH</key>
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
         <key>MAINTENANCE_HOME</key>
-        <string>/Users/abhimehrotra/Library/Maintenance</string>
+        <string>/Users/speedybee/Library/Maintenance</string>
         <key>HOMEBREW_NO_ENV_HINTS</key>
         <string>1</string>
         <key>AUTOMATED_RUN</key>
@@ -20,14 +20,14 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/abhimehrotra/Library/Maintenance/bin/brew_maintenance.sh</string>
+        <string>/Users/speedybee/Library/Maintenance/bin/brew_maintenance.sh</string>
     </array>
     
     <key>StandardOutPath</key>
-    <string>/Users/abhimehrotra/Library/Logs/maintenance/brew_maintenance.out</string>
+    <string>/Users/speedybee/Library/Logs/maintenance/brew_maintenance.out</string>
     
     <key>StandardErrorPath</key>
-    <string>/Users/abhimehrotra/Library/Logs/maintenance/brew_maintenance.err</string>
+    <string>/Users/speedybee/Library/Logs/maintenance/brew_maintenance.err</string>
     
     <key>StartCalendarInterval</key>
     <dict>

@@ -139,7 +139,7 @@ if command -v terminal-notifier >/dev/null 2>&1; then
     -subtitle "Completed with $TASKS_FAILED task error(s)" \
     -message "Click for details" \
     -group "maintenance" \
-    -execute "/Users/speedybee/Library/Maintenance/bin/view_logs.sh weekly" 2>/dev/null || true
+    -execute "$HOME/Library/Maintenance/bin/view_logs.sh weekly" 2>/dev/null || true
     else
         terminal-notifier -title "Weekly Maintenance" \
             -subtitle "All tasks completed successfully" \

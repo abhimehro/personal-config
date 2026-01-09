@@ -6,7 +6,8 @@ set -eo pipefail
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"
-mkdir -p "$LOG_DIR"
+# Script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Helper functions to sanitize counts for arithmetic
 count_clean() { awk '{print $1}' | tr -d '\n'; }
@@ -94,17 +95,18 @@ if command -v vm_stat >/dev/null 2>&1; then
 fi
 
 # 3) System load
-LOAD_AVG=$(uptime | awk -F'load averages:' '{print $2}' | tr -d ' ' || echo "unknown")
+LOAD_AVG=$(uptime | awk -F'load averages:' '{print $2}' | sed -E 's/^[[:space:]]+//' | sed -E 's/[[:space:]]+/ /g' | tr -d "
+" || echo "unknown")
 append "System load averages: ${LOAD_AVG}"
 
 # Extract 1-minute load for comparison
-LOAD_1MIN=$(echo "$LOAD_AVG" | awk '{print $1}' || echo "0")
+LOAD_1MIN=$(echo "$LOAD_AVG" | awk '{print $1}' | tr -d "," || echo "0")
 CPU_COUNT=$(sysctl -n hw.ncpu 2>/dev/null || echo "1")
 
 # Warn if load is very high (more than 2x CPU count)
 if command -v bc >/dev/null 2>&1; then
-  HIGH_LOAD_THRESHOLD=$(echo "$CPU_COUNT * 2" | bc)
-  if (( $(echo "$LOAD_1MIN > $HIGH_LOAD_THRESHOLD" | bc -l) )); then
+  HIGH_LOAD_THRESHOLD=$(echo "$CPU_COUNT * 2" | bc 2>/dev/null || echo "9999")
+  if (( $(echo "$LOAD_1MIN > $HIGH_LOAD_THRESHOLD" | bc -l 2>/dev/null || echo 0) )); then
     log_warn "High system load: ${LOAD_1MIN} (CPUs: ${CPU_COUNT})"
   fi
 fi
@@ -265,17 +267,41 @@ log_info "Health report saved to ${REPORT_FILE}"
 
 # Determine overall health status
 HEALTH_ISSUES=0
-[[ "${ROOT_USE:-0}" -ge "${DISK_WARN_PCT:-80}" ]] && ((HEALTH_ISSUES++))
-[[ "${PANIC_REPORTS:-0}" -gt 0 ]] && ((HEALTH_ISSUES++))
-[[ "${REAL_KPANIC:-0}" -gt 0 ]] && ((HEALTH_ISSUES++))
-[[ "${CRASH_LOGS:-0}" -gt 0 ]] && ((HEALTH_ISSUES++))
-[[ "${DIAGNOSTIC_REPORTS:-0}" -gt 5 ]] && ((HEALTH_ISSUES++))
-[[ -n "${FAILED_JOBS}" ]] && ((HEALTH_ISSUES++))
-[[ "${WIDGET_COUNT:-0}" -gt 60 ]] && ((HEALTH_ISSUES++))
+ISSUE_REASONS=()
 
-# Note: Removed overly aggressive "disabled services" check
-# These services (chronod, duetexpertd, ReportCrash) are normal macOS services
-# and don't need to be disabled for optimal performance
+if [[ "${ROOT_USE:-0}" -ge "${DISK_WARN_PCT:-80}" ]]; then
+  ((HEALTH_ISSUES++))
+  ISSUE_REASONS+=("Disk ${ROOT_USE:-?}%")
+fi
+
+PANIC_REPORTS_INT=${PANIC_REPORTS:-0}
+REAL_KPANIC_INT=${REAL_KPANIC:-0}
+PANIC_COUNT=$((PANIC_REPORTS_INT + REAL_KPANIC_INT))
+
+if (( PANIC_COUNT > 0 )); then
+  ((HEALTH_ISSUES++))
+  ISSUE_REASONS+=("Panics ${PANIC_COUNT}")
+fi
+
+if [[ "${CRASH_LOGS:-0}" -gt 0 ]]; then
+  ((HEALTH_ISSUES++))
+  ISSUE_REASONS+=("Crash logs ${CRASH_LOGS}")
+fi
+
+if [[ "${DIAGNOSTIC_REPORTS:-0}" -gt 5 ]]; then
+  ((HEALTH_ISSUES++))
+  ISSUE_REASONS+=("Diagnostic reports ${DIAGNOSTIC_REPORTS}")
+fi
+
+if [[ -n "${FAILED_JOBS}" ]]; then
+  ((HEALTH_ISSUES++))
+  ISSUE_REASONS+=("Launch agents failed")
+fi
+
+if [[ "${WIDGET_COUNT:-0}" -gt 60 ]]; then
+  ((HEALTH_ISSUES++))
+  ISSUE_REASONS+=("Widgets ${WIDGET_COUNT}")
+fi
 
 if (( HEALTH_ISSUES > 0 )); then
   HEALTH_STATUS="⚠️ Issues detected (${HEALTH_ISSUES})"
@@ -284,53 +310,50 @@ else
   HEALTH_STATUS="✅ System healthy"
 fi
 
-# Enhanced notification with panic details
-PANIC_COUNT=$((${PANIC_REPORTS:-0} + ${REAL_KPANIC:-0}))
+# Build a concise reasons string
+REASONS_STR=""
+if [[ ${#ISSUE_REASONS[@]} -gt 0 ]]; then
+  REASONS_STR=$(IFS=", "; echo "${ISSUE_REASONS[*]}")
+fi
 
+# Enhanced notification with panic details
 if command -v terminal-notifier >/dev/null 2>&1; then
   if (( HEALTH_ISSUES > 0 )); then
     # Build detailed notification message
-    NOTIFICATION_MSG="Disk: ${ROOT_USE:-?}% | Issues: ${HEALTH_ISSUES}"
-    
+    NOTIFICATION_MSG="Disk: ${ROOT_USE:-?}% | ${REASONS_STR}"
+
     if (( PANIC_COUNT > 0 )); then
-      NOTIFICATION_MSG+="\nPanics: ${PANIC_COUNT}"
+      # Add best available detail line (panic file or timestamp)
       if [[ -n "$PANIC_DETAILS" ]]; then
         NOTIFICATION_MSG+="\n${PANIC_DETAILS}"
       fi
-      
-      # Create panic analysis script wrapper for terminal-notifier
-      PANIC_ANALYSIS_CMD="/Users/speedybee/Documents/dev/personal-config/maintenance/bin/panic_analyzer.sh"
-      
-      # Issues detected with panics - provide panic analysis action
+
+      # Provide actionable report (panic analyzer writes a report + opens when interactive)
       terminal-notifier -title "Health Check" \
-        -subtitle "${HEALTH_ISSUES} issue(s) detected" \
+        -subtitle "${HEALTH_ISSUES} issue(s): ${REASONS_STR}" \
         -message "$NOTIFICATION_MSG" \
         -group "maintenance" \
-        -actions "View Panic Analysis,View Logs" \
-        -execute "$PANIC_ANALYSIS_CMD" 2>/dev/null || true
+        -execute "$SCRIPT_DIR/panic_analyzer.sh" 2>/dev/null || true
     else
-      # Issues but no panics
       terminal-notifier -title "Health Check" \
-        -subtitle "${HEALTH_ISSUES} issue(s) detected" \
+        -subtitle "${HEALTH_ISSUES} issue(s): ${REASONS_STR}" \
         -message "$NOTIFICATION_MSG" \
         -group "maintenance" \
-        -execute "/Users/speedybee/Library/Maintenance/bin/view_logs.sh health_check" 2>/dev/null || true
+        -execute "$HOME/Library/Maintenance/bin/view_logs.sh health_check" 2>/dev/null || true
     fi
   else
-    # Success - simple notification with optional log access
     terminal-notifier -title "Health Check" \
       -subtitle "System healthy" \
       -message "Disk: ${ROOT_USE:-?}% | No issues detected" \
       -group "maintenance" 2>/dev/null || true
   fi
 elif command -v osascript >/dev/null 2>&1; then
-  # Fallback to osascript
   NOTIFICATION_TEXT="${HEALTH_STATUS} | Disk: ${ROOT_USE:-?}%"
-  if (( PANIC_COUNT > 0 )); then
-    NOTIFICATION_TEXT+="\nPanics: ${PANIC_COUNT}"
-    if [[ -n "$PANIC_DETAILS" ]]; then
-      NOTIFICATION_TEXT+="\n${PANIC_DETAILS}"
-    fi
+  if [[ -n "$REASONS_STR" ]]; then
+    NOTIFICATION_TEXT+="\n${REASONS_STR}"
+  fi
+  if (( PANIC_COUNT > 0 )) && [[ -n "$PANIC_DETAILS" ]]; then
+    NOTIFICATION_TEXT+="\n${PANIC_DETAILS}"
   fi
   osascript -e "display notification \"${NOTIFICATION_TEXT}\" with title \"Health Check\"" 2>/dev/null || true
 fi
