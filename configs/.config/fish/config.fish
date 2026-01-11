@@ -16,22 +16,10 @@ fish_add_path --global --prepend $HOME/.local/bin
 fish_add_path --global --append $HOME/.cache/lm-studio/bin
 
 # ============================================
-# Conda Initialize (interactive-only for faster non-interactive shells)
+# Conda Initialize
 # ============================================
-if status is-interactive
-    # >>> conda initialize >>>
-    # !! Contents within this block are managed by 'conda init' !!
-    if test -f /opt/anaconda3/bin/conda
-        eval /opt/anaconda3/bin/conda \"shell.fish\" \"hook\" $argv | source
-    else
-        if test -f \"/opt/anaconda3/etc/fish/conf.d/conda.fish\"
-            . \"/opt/anaconda3/etc/fish/conf.d/conda.fish\"
-        else
-            set -x PATH \"/opt/anaconda3/bin\" $PATH
-        end
-    end
-    # <<< conda initialize <<<
-end
+# Moved to `init_conda` function (lazy-loaded).
+# Run `init_conda` to activate conda environment.
 
 # ============================================
 # Ruby Version Manager (chruby-fish)
@@ -50,6 +38,15 @@ if status is-interactive
     # Set default Ruby version (if chruby is available and ruby exists)
     if type -q chruby; and test -d ~/.rubies/ruby-3.4.7
         chruby ruby-3.4.7
+    end
+end
+
+# ============================================
+# Node Version Manager (fnm)
+# ============================================
+if status is-interactive
+    if type -q fnm
+        fnm env --use-on-cd | source
     end
 end
 
@@ -79,9 +76,9 @@ end
 # ============================================
 # Better ls with eza
 if type -q eza
-    alias ls='eza --icons'
-    alias ll='eza -lah --icons'
-    alias la='eza -a --icons'
+    alias ls='eza --icons --group-directories-first'
+    alias ll='eza -lah --icons --group-directories-first'
+    alias la='eza -a --icons --group-directories-first'
     alias tree='eza --tree --icons'
 end
 
@@ -119,19 +116,27 @@ alias downloads='cd ~/Downloads'
 alias desktop='cd ~/Desktop'
 
 # ============================================
-# Git Shortcuts
+# Abbreviations (expand in place)
 # ============================================
-alias gs='git status'
-alias ga='git add'
-alias gaa='git add --all'
-alias gc='git commit'
-alias gcm='git commit -m'
-alias gp='git push'
-alias gpl='git pull'
-alias gl='git log --oneline --graph'
-alias gd='git diff'
-alias gb='git branch'
-alias gco='git checkout'
+
+# Git
+abbr --add gs  git status
+abbr --add ga  git add
+abbr --add gaa git add --all
+abbr --add gc  git commit
+abbr --add gcm git commit -m
+abbr --add gp  git push
+abbr --add gpl git pull
+abbr --add gl  git log --oneline --graph
+abbr --add gd  git diff
+abbr --add gb  git branch
+abbr --add gco git checkout
+
+# SSH Abbreviations (Cursor IDE)
+abbr --add scv ssh cursor-vpn
+abbr --add scl ssh cursor-local
+abbr --add scm ssh cursor-mdns
+abbr --add sca ssh cursor-auto
 
 # ============================================
 # Safe Operations
@@ -232,91 +237,11 @@ end
 # ============================================
 # Custom Functions
 # ============================================
-# Create a directory and cd into it
-function mkcd
-    if test (count $argv) -lt 1
-        echo "Usage: mkcd <dir>" >&2
-        return 2
-    end
-
-    mkdir -p -- $argv[1]; and cd -- $argv[1]
-end
-
-# Show PATH in readable format
-function path
-    # $PATH is a list in fish; print one per line for readability.
-    printf '%s\n' $PATH
-end
-
-# Extract various archive formats
-function extract
-    if test (count $argv) -lt 1
-        echo "Usage: extract <archive>" >&2
-        return 2
-    end
-
-    set -l file_raw $argv[1]
-    if not test -f "$file_raw"
-        echo "'$file_raw' is not a valid file" >&2
-        return 1
-    end
-
-    # Prevent option-injection when files start with '-' by forcing a path.
-    # This guards against treating a user-supplied filename as flags.
-    set -l file $file_raw
-    if string match -qr '^-' -- $file_raw
-        set file "./$file_raw"
-    end
-
-    switch $file_raw
-        case '*.tar.bz2' '*.tbz2'
-            command tar xjf $file
-        case '*.tar.gz' '*.tgz'
-            command tar xzf $file
-        case '*.tar'
-            command tar xf $file
-        case '*.bz2'
-            command bunzip2 $file
-        case '*.gz'
-            command gunzip $file
-        case '*.rar'
-            command unrar x $file
-        case '*.zip'
-            command unzip $file
-        case '*.Z'
-            command uncompress $file
-        case '*.7z'
-            command 7z x $file
-        case '*'
-            echo "'$file_raw' cannot be extracted via extract()" >&2
-            return 3
-    end
-end
-
-# Quick backup function
-function backup
-    if test (count $argv) -lt 1
-        echo "Usage: backup <file>" >&2
-        return 2
-    end
-
-    set -l src_raw $argv[1]
-    if not test -e "$src_raw"
-        echo "'$src_raw' does not exist" >&2
-        return 1
-    end
-
-    set -l src $src_raw
-    set -l dst "$src_raw".backup.(date +%Y%m%d_%H%M%S)
-
-    # Prevent option-injection when filenames start with '-'.
-    if string match -qr '^-' -- $src_raw
-        set src "./$src_raw"
-        set dst "./$dst"
-    end
-
-    command cp -p $src $dst
-end
+# Functions have been moved to ~/.config/fish/functions/ for lazy-loading:
+# - mkcd
+# - showpath
+# - extract (supports .xz now)
+# - backup
 
 # ============================================
 # Welcome Message (optional - comment out if you don't want it)
@@ -324,3 +249,4 @@ end
 # if status is-interactive
 #     echo \"🐟 Fish shell loaded! Type 'fishconfig' to edit config.\"
 # end
+

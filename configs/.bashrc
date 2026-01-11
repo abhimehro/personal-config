@@ -260,3 +260,13 @@ set -o emacs
 
 # Optional: Uncomment for Vi key bindings
 # set -o vi
+
+# ============================================
+# FNM (Fast Node Manager)
+# ============================================
+if command -v fnm &> /dev/null; then
+    eval "$(fnm env --use-on-cd)"
+fi
+
+# Warpify Subshells
+printf '\eP$f{"hook": "SourcedRcFileForWarp", "value": { "shell": "bash"}}\x9c'
