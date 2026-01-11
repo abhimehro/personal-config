@@ -30,25 +30,34 @@ else
     USE_PRINTF_TIME=false
 fi
 
-# Helper function to get formatted timestamp
-get_timestamp() {
+# Logging function with bash version compatibility
+# Optimized to avoid subshells and tee command for better performance
+log() {
+    local timestamp
     if [ "$USE_PRINTF_TIME" = true ]; then
         # Bash 4.2+: Use printf built-in for ~56x speedup
-        printf '%(%Y-%m-%d %H:%M:%S)T' -1
+        printf -v timestamp '%(%Y-%m-%d %H:%M:%S)T' -1
     else
         # Bash 3.x: Use date command for compatibility
-        date +'%Y-%m-%d %H:%M:%S'
+        timestamp=$(date +'%Y-%m-%d %H:%M:%S')
     fi
-}
 
-# Logging function with bash version compatibility
-# Use optimized printf built-in for bash 4.2+, fall back to date command for older versions
-log() {
-    printf "[%s] %s\n" "$(get_timestamp)" "$1" | tee -a "$LOG_FILE"
+    local msg="[$timestamp] $1"
+    printf "%s\n" "$msg" >> "$LOG_FILE"
+    printf "%s\n" "$msg"
 }
 
 log_error() {
-    printf "[%s] ERROR: %s\n" "$(get_timestamp)" "$1" | tee -a "$ERROR_LOG"
+    local timestamp
+    if [ "$USE_PRINTF_TIME" = true ]; then
+        printf -v timestamp '%(%Y-%m-%d %H:%M:%S)T' -1
+    else
+        timestamp=$(date +'%Y-%m-%d %H:%M:%S')
+    fi
+
+    local msg="[$timestamp] ERROR: $1"
+    printf "%s\n" "$msg" >> "$ERROR_LOG"
+    printf "%s\n" "$msg"
 }
 
 # Rotate logs if too large
@@ -90,7 +99,8 @@ check_upstream() {
 # Check 4: Detect split-horizon DNS (multiple active resolvers)
 check_split_dns() {
     # Get unique DNS servers from system config
-    local dns_count=$(scutil --dns 2>/dev/null | grep "nameserver\[0\]" | awk '{print $3}' | sort -u | wc -l | tr -d ' ')
+    # Optimization: Use single awk command instead of grep|awk|sort|wc|tr pipeline
+    local dns_count=$(scutil --dns 2>/dev/null | awk '/nameserver\[0\]/ && !seen[$3]++ {count++} END {print count+0}')
     
     # If more than 2 unique DNS servers and Control D is running, might be split-horizon
     # (Allow 2: one for Control D 127.0.0.1, one fallback)
