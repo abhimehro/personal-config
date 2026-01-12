@@ -153,7 +153,7 @@ print_status() {
     cd_status="${GREEN}● ACTIVE${NC}"
     # Best-effort resolver ID extraction
     local running_uid
-    running_uid=$(sudo ctrld status 2>/dev/null | grep 'Resolver ID' | awk '{print $NF}' 2>/dev/null || echo "N/A")
+    running_uid=$(sudo ctrld status 2>/dev/null | awk '/Resolver ID/ {print $NF}' || echo "N/A")
 
     # Map UID to profile name if possible
     local profile_name="Unknown"
@@ -175,14 +175,15 @@ print_status() {
   local dns_status
   dns_servers=$(networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown")
 
-  if echo "$dns_servers" | grep -q "There aren't any DNS Servers"; then
+  if [[ "$dns_servers" == *"There aren't any DNS Servers"* ]]; then
     dns_status="${YELLOW}DHCP (ISP/Router)${NC}"
-  elif echo "$dns_servers" | grep -q "127.0.0.1"; then
+  elif [[ "$dns_servers" == *"127.0.0.1"* ]]; then
     dns_status="${GREEN}127.0.0.1 (Localhost)${NC}"
   else
     # Replace newlines with comma space for cleaner output
-    local cleaner_dns
-    cleaner_dns=$(echo "$dns_servers" | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')
+    # ⚡ Bolt Optimization: Use bash built-ins instead of tr/sed pipeline
+    local cleaner_dns="${dns_servers//$'\n'/, }"
+    cleaner_dns="${cleaner_dns%, }"
     dns_status="${RED}$cleaner_dns${NC}"
   fi
 
