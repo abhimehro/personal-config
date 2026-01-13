@@ -203,8 +203,7 @@ generate_profile_config() {
         rm -f "$TEMP_CONFIG"
         
         # Optimize config (combined sed for performance)
-        sed -i '' -e "s/ip = '127.0.0.1'/ip = '0.0.0.0'/g" \
-                  -e 's/, "::\/0"//g' \
+        sed -i '' -e 's/, "::\/0"//g' \
                   -e 's/"::\/0", //g' \
                   -e "s/timeout = 5000/timeout = 3000/g" \
                   "$config_file" 2>/dev/null || true
