@@ -7,6 +7,7 @@
 # ============================================
 # For Apple Silicon (M1/M2/M3)
 fish_add_path --global --prepend /opt/homebrew/bin
+fish_add_path --global --prepend /opt/homebrew/sbin
 
 # User/local bins (kept global to avoid rewriting universal vars on every shell)
 fish_add_path --global --prepend $HOME/bin
@@ -137,6 +138,15 @@ abbr --add scv ssh cursor-vpn
 abbr --add scl ssh cursor-local
 abbr --add scm ssh cursor-mdns
 abbr --add sca ssh cursor-auto
+
+# Network Mode Abbreviations (Control D + Windscribe)
+abbr --add nms nm-status
+abbr --add nmb nm-browse
+abbr --add nmp nm-privacy
+abbr --add nmg nm-gaming
+abbr --add nmv nm-vpn
+abbr --add nmr nm-regress
+abbr --add nmcs nm-cd-status
 
 # ============================================
 # Safe Operations
