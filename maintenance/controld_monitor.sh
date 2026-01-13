@@ -89,8 +89,14 @@ check_upstream() {
 
 # Check 4: Detect split-horizon DNS (multiple active resolvers)
 check_split_dns() {
+    local dns_output="$1"
+    if [ -z "$dns_output" ]; then
+         dns_output=$(scutil --dns 2>/dev/null)
+    fi
+
     # Get unique DNS servers from system config
-    local dns_count=$(scutil --dns 2>/dev/null | grep "nameserver\[0\]" | awk '{print $3}' | sort -u | wc -l | tr -d ' ')
+    # Bolt Optimization: Replaced grep|awk|sort|wc|tr pipeline (6 procs) with single awk
+    local dns_count=$(awk '/nameserver\[0\]/ { if (!seen[$3]++) count++ } END { print count+0 }' <<< "$dns_output")
     
     # If more than 2 unique DNS servers and Control D is running, might be split-horizon
     # (Allow 2: one for Control D 127.0.0.1, one fallback)
@@ -103,8 +109,13 @@ check_split_dns() {
 
 # Check 5: Verify Control D is the primary resolver
 check_primary_resolver() {
+    local dns_output="$1"
+    if [ -z "$dns_output" ]; then
+         dns_output=$(scutil --dns 2>/dev/null)
+    fi
+
     # Check if 127.0.0.1 appears as a nameserver OR if DNS resolution works locally
-    if scutil --dns 2>/dev/null | grep -q "nameserver.*127\.0\.0\.1"; then
+    if echo "$dns_output" | grep -q "nameserver.*127\.0\.0\.1"; then
         return 0
     # If Control D isn't in scutil (macOS caching issue), but DNS works, that's OK
     elif dig @127.0.0.1 example.com +short +timeout=2 &>/dev/null; then
@@ -274,8 +285,12 @@ monitor_controld() {
     fi
     
     if [ "$service_running" = true ]; then
+        # Capture DNS state once to avoid repeated scutil calls
+        local dns_state
+        dns_state=$(scutil --dns 2>/dev/null)
+
         # Check for split-horizon DNS
-        if check_split_dns; then
+        if check_split_dns "$dns_state"; then
             log "✓ No split-horizon DNS detected"
         else
             log_error "Multiple DNS resolvers detected (split-horizon)"
@@ -283,7 +298,7 @@ monitor_controld() {
             sudo dscacheutil -flushcache 2>/dev/null
             sudo killall -HUP mDNSResponder 2>/dev/null
             sleep 2
-            # Recheck
+            # Recheck (fetch fresh state implicitly by passing no arg)
             if check_split_dns; then
                 log "✓ Split-horizon resolved after cache flush"
             else
@@ -293,7 +308,7 @@ monitor_controld() {
         fi
         
         # Check Control D is primary resolver
-        if check_primary_resolver; then
+        if check_primary_resolver "$dns_state"; then
             log "✓ Control D is primary resolver"
         else
             log_error "Control D not found as primary resolver"
