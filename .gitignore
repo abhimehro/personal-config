@@ -231,3 +231,4 @@ configs/.config/fish/functions/*
 * (1).*
 media-streaming/backup/*.backup
 media-streaming/backup/rclone.conf.backup
+!media-streaming/configs/media-credentials.example
