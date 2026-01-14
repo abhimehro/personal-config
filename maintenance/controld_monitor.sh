@@ -30,25 +30,33 @@ else
     USE_PRINTF_TIME=false
 fi
 
-# Helper function to get formatted timestamp
-get_timestamp() {
-    if [ "$USE_PRINTF_TIME" = true ]; then
-        # Bash 4.2+: Use printf built-in for ~56x speedup
-        printf '%(%Y-%m-%d %H:%M:%S)T' -1
-    else
-        # Bash 3.x: Use date command for compatibility
-        date +'%Y-%m-%d %H:%M:%S'
-    fi
-}
 
 # Logging function with bash version compatibility
 # Use optimized printf built-in for bash 4.2+, fall back to date command for older versions
 log() {
-    printf "[%s] %s\n" "$(get_timestamp)" "$1" | tee -a "$LOG_FILE"
+    local timestamp
+    if [ "$USE_PRINTF_TIME" = true ]; then
+        printf -v timestamp '%(%Y-%m-%d %H:%M:%S)T' -1
+    else
+        timestamp="$(date +'%Y-%m-%d %H:%M:%S')"
+    fi
+
+    # Write to file and stdout (avoiding tee pipe overhead)
+    printf "[%s] %s\n" "$timestamp" "$1" >> "$LOG_FILE"
+    printf "[%s] %s\n" "$timestamp" "$1"
 }
 
 log_error() {
-    printf "[%s] ERROR: %s\n" "$(get_timestamp)" "$1" | tee -a "$ERROR_LOG"
+    local timestamp
+    if [ "$USE_PRINTF_TIME" = true ]; then
+        printf -v timestamp '%(%Y-%m-%d %H:%M:%S)T' -1
+    else
+        timestamp="$(date +'%Y-%m-%d %H:%M:%S')"
+    fi
+
+    # Write to file and stdout (avoiding tee pipe overhead)
+    printf "[%s] ERROR: %s\n" "$timestamp" "$1" >> "$ERROR_LOG"
+    printf "[%s] ERROR: %s\n" "$timestamp" "$1"
 }
 
 # Rotate logs if too large
