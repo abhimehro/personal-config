@@ -141,61 +141,89 @@ start_controld() {
 }
 
 print_status() {
-  # Header
-  echo -e "\n${BOLD}${BLUE}   NETWORK STATUS${NC}"
-  echo -e "${BLUE}   ──────────────${NC}"
+  # 1. Gather Data
+  local cd_active=false
+  local dns_is_localhost=false
+  local ipv6_enabled=false
+  local profile_name="Unknown"
 
-  # --- Control D Status ---
-  local cd_status
-  local cd_display
-
+  # Check Control D
+  local running_uid=""
   if pgrep -x "ctrld" >/dev/null 2>&1; then
-    cd_status="${GREEN}● ACTIVE${NC}"
-    # Best-effort resolver ID extraction
-    local running_uid
+    cd_active=true
     running_uid=$(sudo ctrld status 2>/dev/null | grep 'Resolver ID' | awk '{print $NF}' 2>/dev/null || echo "N/A")
-
-    # Map UID to profile name if possible
-    local profile_name="Unknown"
     case "$running_uid" in
       "6m971e9jaf")  profile_name="Privacy" ;;
       "rcnz7qgvwg")  profile_name="Browsing" ;;
       "1xfy57w34t7") profile_name="Gaming" ;;
     esac
+  fi
 
-    cd_display="$cd_status (${YELLOW}$profile_name${NC})"
+  # Check System DNS
+  local dns_servers
+  dns_servers=$(networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown")
+  if echo "$dns_servers" | grep -q "127.0.0.1"; then
+    dns_is_localhost=true
+  fi
+
+  # Check IPv6
+  if networksetup -getinfo "Wi-Fi" 2>/dev/null | grep -q "IPv6: Automatic"; then
+    ipv6_enabled=true
+  fi
+
+  # 2. Determine Effective Mode
+  local header_text="UNKNOWN / MIXED STATE"
+  local header_color="$YELLOW"
+  local header_icon="$E_WARN"
+
+  if $cd_active && $dns_is_localhost; then
+    header_text="CONTROL D ACTIVE"
+    header_color="$GREEN"
+    header_icon="$E_PRIVACY" # Default icon, can refine based on profile
+    if [[ "$profile_name" == "Gaming" ]]; then header_icon="$E_GAMING"; fi
+    if [[ "$profile_name" == "Browsing" ]]; then header_icon="$E_BROWSING"; fi
+  elif ! $cd_active && ! $dns_is_localhost && ! $ipv6_enabled; then
+    # Assuming Windscribe mode if Control D is off, DNS is not localhost (likely DHCP/Empty), and IPv6 is off
+    header_text="WINDSCRIBE VPN READY"
+    header_color="$BLUE"
+    header_icon="$E_VPN"
+  fi
+
+  # 3. Print Header
+  echo -e "\n${BOLD}${header_color}   ${header_icon}  ${header_text}${NC}"
+  echo -e "${header_color}   ────────────────────────────────${NC}"
+
+  # 4. Print Details
+
+  # Control D Detail
+  local cd_display
+  if $cd_active; then
+    cd_display="${GREEN}● ACTIVE${NC} (${YELLOW}$profile_name${NC})"
   else
     cd_display="${RED}○ STOPPED${NC}"
   fi
-
   printf "   %s  %-13s %b\n" "🤖" "Control D" "$cd_display"
 
-  # --- System DNS Status ---
-  local dns_servers
+  # DNS Detail
   local dns_status
-  dns_servers=$(networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown")
-
   if echo "$dns_servers" | grep -q "There aren't any DNS Servers"; then
     dns_status="${YELLOW}DHCP (ISP/Router)${NC}"
-  elif echo "$dns_servers" | grep -q "127.0.0.1"; then
+  elif $dns_is_localhost; then
     dns_status="${GREEN}127.0.0.1 (Localhost)${NC}"
   else
-    # Replace newlines with comma space for cleaner output
     local cleaner_dns
     cleaner_dns=$(echo "$dns_servers" | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')
     dns_status="${RED}$cleaner_dns${NC}"
   fi
-
   printf "   %s  %-13s %b\n" "📡" "System DNS" "$dns_status"
 
-  # --- IPv6 Status ---
+  # IPv6 Detail
   local ipv6_status
-  if networksetup -getinfo "Wi-Fi" 2>/dev/null | grep -q "IPv6: Automatic"; then
+  if $ipv6_enabled; then
     ipv6_status="${GREEN}ENABLED${NC} (Automatic)"
   else
     ipv6_status="${RED}DISABLED${NC} (Manual/Off)"
   fi
-
   printf "   %s  %-13s %b\n" "🌐" "IPv6 Mode" "$ipv6_status"
 
   echo -e "\n"
