@@ -109,19 +109,20 @@ with_lock() {
 
 # Retry function with exponential backoff
 retry() {
-    local cmd="$1"
-    local max_attempts="${2:-3}"
-    local delay="${3:-5}"
+    local max_attempts="${1:-3}"
+    local delay="${2:-5}"
+    shift 2
+    local cmd=("${@}")
     local attempt=1
     
-    until eval "$cmd"; do
+    until "${cmd[@]}"; do
         local rc=$?
         if [[ $attempt -ge $max_attempts ]]; then
-            log_error "Command failed after $max_attempts attempts: $cmd (exit code: $rc)"
+            log_error "Command failed after $max_attempts attempts: ${cmd[*]} (exit code: $rc)"
             return $rc
         fi
         
-        log_warn "Attempt $attempt/$max_attempts failed (exit code: $rc); retrying in ${delay}s: $cmd"
+        log_warn "Attempt $attempt/$max_attempts failed (exit code: $rc); retrying in ${delay}s: ${cmd[*]}"
         sleep "$delay"
         ((attempt++))
         delay=$((delay * 2))  # Exponential backoff
@@ -208,7 +209,7 @@ acquire_lock() {
 with_retry() {
     local attempts="$1"; shift
     local delay="$1"; shift
-    retry "$*" "$attempts" "$delay"
+    retry "$attempts" "$delay" "$@"
 }
 
 # =============================================================================
