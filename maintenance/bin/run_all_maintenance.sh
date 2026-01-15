@@ -57,12 +57,16 @@ echo "=== Master Maintenance Run Started: $(date) ===" | tee "$MASTER_LOG"
 # --- Global Helper Functions ---
 
 # Helper to log to target (file or stdout)
-# Usage: log_status "Message" [log_file]
+# Usage: log_status "Message" [log_file] [mode]
+# mode: both (default), file_only, stdout_only
 log_status() {
     local msg="$1"
     local target="${2:-$MASTER_LOG}"
+    local mode="${3:-both}"
     
-    if [[ "$target" == "/dev/stdout" ]]; then
+    if [[ "$mode" == "file_only" ]]; then
+        echo -e "$msg" >> "$target"
+    elif [[ "$target" == "/dev/stdout" ]] || [[ "$mode" == "stdout_only" ]]; then
         echo -e "$msg"
     else
         echo -e "$msg" | tee -a "$target"
@@ -70,9 +74,10 @@ log_status() {
 }
 
 # Progress spinner for long-running tasks
-# Usage: spinner PID
+# Usage: spinner PID [message]
 spinner() {
     local pid=$1
+    local message="${2:-Running...}"
     local delay=0.1
     local spin_chars_unicode=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
     local spin_chars_ascii=('|' '/' '-' '\\')
@@ -97,6 +102,7 @@ spinner() {
         # Trap to restore cursor if interrupted
         trap 'tput cnorm 2>/dev/null || true; exit' INT TERM
 
+        local start_time=$(date +%s)
         local elapsed=0
         local update_counter=0
         while kill -0 "$pid" 2>/dev/null; do
@@ -108,7 +114,7 @@ spinner() {
 
             # Print spinner and elapsed time
             # \r moves to start, \033[K (optional) or spaces to clear
-            printf "\r %s  Running... (%ds)   " "${spin_chars[i]}" "$elapsed"
+            printf "\r %s  %s (%ds)   " "${spin_chars[i]}" "$message" "$elapsed"
 
             i=$(( (i + 1) % num_chars ))
             update_counter=$((update_counter + 1))
@@ -157,15 +163,17 @@ run_script() {
     local clean_name="${script_name%.sh}"
 
     if [[ -f "$script_path" && -x "$script_path" ]]; then
-        log_status "Running $script_name..." "$log_target"
 
         # Apply smart delay if scheduler is available
         if [[ -f "$smart_scheduler" && -x "$smart_scheduler" ]]; then
+            # We log this before the main running message
             "$smart_scheduler" delay "$clean_name" "$task_type" 2>&1 | tee -a "$log_target"
         fi
 
         # Execute script
         if [[ "$is_parallel" == "true" ]]; then
+            log_status "Running $script_name..." "$log_target"
+
             # Run directly for parallel (background) tasks
             if "$script_path" > "$log_file" 2>&1; then
                 log_status "✅ $script_name completed" "$log_target"
@@ -177,11 +185,20 @@ run_script() {
                 return 1
             fi
         else
+            # Serial execution
+
+            # Log to file ONLY if interactive (spinner handles stdout), otherwise standard
+            if [ -t 1 ] && [ -z "${CI:-}" ]; then
+                log_status "Running $script_name..." "$log_target" "file_only"
+            else
+                log_status "Running $script_name..." "$log_target"
+            fi
+
             # Run with spinner for serial tasks
             "$script_path" > "$log_file" 2>&1 &
             local pid=$!
 
-            spinner $pid
+            spinner $pid "Running $clean_name..."
 
             wait $pid
             local exit_code=$?
