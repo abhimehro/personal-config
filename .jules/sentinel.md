@@ -26,3 +26,7 @@
 **Vulnerability:** Path Traversal (CWE-22) in `media-streaming/scripts/infuse-media-server.py`. The script constructed file paths for `subprocess` calls by unquoting user input and appending it to a root, without validating for `..` sequences.
 **Learning:** When implementing custom request handlers (overriding `do_GET`), automatic protections provided by frameworks (like `SimpleHTTPRequestHandler.translate_path`) are bypassed. Explicit validation is required when mapping URLs to filesystem or external command paths.
 **Prevention:** Always validate user-supplied paths before use. Check for `..` components after decoding. Ideally, use `os.path.abspath` and verify the path starts with the expected root directory, or reject paths containing `..` if simple validation suffices.
+## 2025-10-24 - Hardcoded Credentials in Media Server
+**Vulnerability:** Hardcoded password `mediaserver123` found in `media-streaming/scripts/start-media-server.sh` and its generator script. The script also bound to `0.0.0.0` by default.
+**Learning:** Convenience scripts often sacrifice security. Hardcoding credentials in "setup" scripts propagates vulnerabilities to user environments.
+**Prevention:** Never hardcode passwords. Use secure random generation (e.g., `openssl rand`) during setup or first run, and store them in a protected configuration file (e.g., `~/.config/...` with `chmod 600`).
