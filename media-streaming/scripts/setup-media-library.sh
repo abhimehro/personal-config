@@ -187,8 +187,6 @@ get_local_ip() {
 create_webdav_server() {
     echo "🌐 Creating WebDAV server setup..."
 
-    local ip=$(get_local_ip)
-
     cat > ~/start-media-server.sh << 'EOF'
 #!/bin/bash
 echo "🚀 Starting Unified Media WebDAV Server..."
@@ -200,32 +198,58 @@ if ! rclone listremotes | grep -q "^media:$"; then
     exit 1
 fi
 
+# Load or Generate Credentials
+CREDS_FILE="$HOME/.config/media-server/credentials"
+MEDIA_WEBDAV_USER="infuse"
+MEDIA_WEBDAV_PASS=""
+
+if [[ -f "$CREDS_FILE" ]]; then
+    source "$CREDS_FILE"
+fi
+
+if [[ -z "$MEDIA_WEBDAV_PASS" ]]; then
+    echo "⚙️  Generating secure credentials..."
+    mkdir -p "$(dirname "$CREDS_FILE")"
+
+    # Generate random password
+    if command -v openssl &> /dev/null; then
+        MEDIA_WEBDAV_PASS=$(openssl rand -base64 12 | tr -dc 'a-zA-Z0-9')
+    else
+        MEDIA_WEBDAV_PASS=$(head -c 12 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9')
+    fi
+
+    echo "MEDIA_WEBDAV_USER='$MEDIA_WEBDAV_USER'" > "$CREDS_FILE"
+    echo "MEDIA_WEBDAV_PASS='$MEDIA_WEBDAV_PASS'" >> "$CREDS_FILE"
+    chmod 600 "$CREDS_FILE"
+    echo "✅ Credentials saved to $CREDS_FILE"
+fi
+
+# Get Local IP
+HOST_IP=$(ipconfig getifaddr en0 2>/dev/null || ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' || echo "HOST_IP")
+
 echo "📡 Starting WebDAV server on port 8088..."
 echo "🎬 Add this to Infuse:"
 echo "   Protocol: WebDAV"
-echo "   Address: http://HOST_IP:8088"
-echo "   Username: infuse"
-echo "   Password: mediaserver123"
+echo "   Address: http://$HOST_IP:8088"
+echo "   Username: $MEDIA_WEBDAV_USER"
+echo "   Password: $MEDIA_WEBDAV_PASS"
 echo "   Path: /"
 echo
 echo "Press Ctrl+C to stop server"
 echo
 
+# Bind to 0.0.0.0 for LAN access, protected by strong password
 rclone serve webdav media: \
     --addr 0.0.0.0:8088 \
-    --user infuse \
-    --pass mediaserver123 \
+    --user "$MEDIA_WEBDAV_USER" \
+    --pass "$MEDIA_WEBDAV_PASS" \
     --dir-cache-time 30m \
     --read-only \
     --verbose
 EOF
 
     chmod +x ~/start-media-server.sh
-
-    # Replace HOST_IP in the file
-    sed -i "" "s/HOST_IP/$ip/g" ~/start-media-server.sh
-
-    echo "✅ Created ~/start-media-server.sh"
+    echo "✅ Created ~/start-media-server.sh (Secure)"
 }
 
 # Main execution
@@ -269,5 +293,5 @@ echo
 echo "🎬 Then add to Infuse:"
 echo "   Address: http://$(get_local_ip):8088"
 echo "   Username: infuse"
-echo "   Password: mediaserver123"
+echo "   Password: (check output of start-media-server.sh)"
 echo
