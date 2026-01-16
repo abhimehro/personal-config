@@ -1,3 +1,4 @@
-## 2026-01-08 - Terminal Spinner UX
-**Learning:** Standard ASCII spinners (`|/-\`) feel dated and don't provide context. Using Braille characters (`⠋⠙...`) creates a smoother animation, and adding an elapsed timer `(3s)` gives users helpful feedback on long-running tasks.
-**Action:** When implementing CLI spinners, prefer Braille/Unicode (with ASCII fallback) and include status text/timer to reassure the user the process is alive.
+
+## 2024-05-23 - Interactive Safety for Setup Scripts
+**Learning:**  Users often run `setup` scripts without knowing exactly what they will do. A "Plan of Execution" followed by a confirmation prompt (defaulting to No) builds trust and prevents accidental system modifications.
+**Action:**  Always add a summary and confirmation step to destructive or complex setup scripts.
