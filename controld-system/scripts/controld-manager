@@ -175,16 +175,25 @@ generate_profile_config() {
     TEMP_CONFIG=$(mktemp /tmp/ctrld_temp.toml.XXXXXX)
     
     # Start service temporarily to generate config
+    # ⚡ Bolt Optimization: Use 'run' in background instead of 'start' to avoid
+    # service registration overhead and unnecessary DNS flapping.
+    local ctrld_pid
     if [[ "$protocol" == "doh3" ]]; then
-        ctrld start --cd "$profile_id" --proto doh3 --config="$TEMP_CONFIG" --skip_self_checks 2>/dev/null || true
+        ctrld run --cd "$profile_id" --proto doh3 --config="$TEMP_CONFIG" --skip_self_checks >/dev/null 2>&1 &
+        ctrld_pid=$!
     else
-        ctrld start --cd "$profile_id" --config="$TEMP_CONFIG" --skip_self_checks 2>/dev/null || true
+        ctrld run --cd "$profile_id" --config="$TEMP_CONFIG" --skip_self_checks >/dev/null 2>&1 &
+        ctrld_pid=$!
     fi
 
     # Wait for config file to be created (optimized)
     local max_retries=50
     local count=0
     while [[ ! -f "$TEMP_CONFIG" ]] && [[ $count -lt $max_retries ]]; do
+        # If process died prematurely, stop waiting
+        if ! kill -0 "$ctrld_pid" 2>/dev/null; then
+            break
+        fi
         sleep 0.1
         ((count++))
     done
@@ -195,7 +204,9 @@ generate_profile_config() {
         sleep 0.1
     fi
 
-    ctrld stop 2>/dev/null || true
+    # Cleanup background process
+    kill "$ctrld_pid" 2>/dev/null || true
+    wait "$ctrld_pid" 2>/dev/null || true
     
     if [[ -f "$TEMP_CONFIG" ]]; then
         # Copy and customize the generated config
