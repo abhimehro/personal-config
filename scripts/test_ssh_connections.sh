@@ -46,8 +46,9 @@ for host in "${hosts[@]}"; do
         fi
 
         # Test SSH connection (dry run)
-        if ssh -o ConnectTimeout=3 -o BatchMode=yes -o StrictHostKeyChecking=no "$host" exit 2>&1 | grep -q "Host key verification failed\|Permission denied\|Connection refused\|Connection timed out"; then
-            result=$(ssh -o ConnectTimeout=3 -o BatchMode=yes -o StrictHostKeyChecking=no "$host" exit 2>&1)
+        # Security: Do not use StrictHostKeyChecking=no, as it masks MITM attacks
+        if ssh -o ConnectTimeout=3 -o BatchMode=yes "$host" exit 2>&1 | grep -q "Host key verification failed\|Permission denied\|Connection refused\|Connection timed out"; then
+            result=$(ssh -o ConnectTimeout=3 -o BatchMode=yes "$host" exit 2>&1)
             if echo "$result" | grep -q "Host key verification failed"; then
                 warn "  SSH: Host key needs to be accepted (run: ssh $host)"
             elif echo "$result" | grep -q "Permission denied"; then
@@ -79,5 +80,5 @@ echo "  ssh cursor-local    # Local network"
 echo "  ssh cursor-auto     # Auto-detection"
 echo ""
 echo "Note: First connection will prompt to accept host key."
-echo "      Use 'ssh -o StrictHostKeyChecking=no' to skip prompt (less secure)."
+echo "      Always verify the host key fingerprint."
 echo ""

@@ -26,3 +26,7 @@
 **Vulnerability:** Path Traversal (CWE-22) in `media-streaming/scripts/infuse-media-server.py`. The script constructed file paths for `subprocess` calls by unquoting user input and appending it to a root, without validating for `..` sequences.
 **Learning:** When implementing custom request handlers (overriding `do_GET`), automatic protections provided by frameworks (like `SimpleHTTPRequestHandler.translate_path`) are bypassed. Explicit validation is required when mapping URLs to filesystem or external command paths.
 **Prevention:** Always validate user-supplied paths before use. Check for `..` components after decoding. Ideally, use `os.path.abspath` and verify the path starts with the expected root directory, or reject paths containing `..` if simple validation suffices.
+## 2025-10-24 - SSH Host Key Verification Bypass
+**Vulnerability:** `scripts/test_ssh_connections.sh` used `ssh -o StrictHostKeyChecking=no` to automatically accept host keys.
+**Learning:** Disabling strict host key checking in automation scripts masks Man-in-the-Middle (MITM) risks and trains users to ignore host verification failures.
+**Prevention:** Remove `StrictHostKeyChecking=no`. Allow `BatchMode=yes` to fail on unknown hosts, and catch the "Host key verification failed" error to prompt the user to manually verify and accept the key.
