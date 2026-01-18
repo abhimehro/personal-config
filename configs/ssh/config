@@ -104,9 +104,10 @@ Host *
 
     # Performance and features
     Compression yes
-    ForwardAgent yes
-    ForwardX11 yes
-    ForwardX11Trusted yes
+    # SECURITY: Disable forwarding by default to prevent agent hijacking and X11 attacks
+    ForwardAgent no
+    ForwardX11 no
+    ForwardX11Trusted no
 
     # Environment
     SendEnv LANG LC_*
