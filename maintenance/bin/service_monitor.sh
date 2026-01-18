@@ -77,8 +77,9 @@ USER_SERVICES=(
 
 # Problem services that should not be running (or should be killed if found)
 PROBLEM_PROCESSES=(
-    "CalendarWidgetExtension"
-    "PodcastsWidget"
+    # Disabled to prevent kill-restart loops
+    # "CalendarWidgetExtension"
+    # "PodcastsWidget"
 )
 
 # =============================================================================
