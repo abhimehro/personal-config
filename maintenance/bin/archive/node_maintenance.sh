@@ -17,7 +17,7 @@ log_info "npm version: $NPM_VERSION"
 # Update npm itself first
 if [[ "${UPDATE_NODE_GLOBAL:-1}" == "1" ]]; then
     log_info "Updating npm to latest version..."
-    retry "npm install -g npm@latest" 3 10 || log_warn "npm self-update failed"
+    retry 3 10 npm install -g npm@latest || log_warn "npm self-update failed"
 fi
 
 # Check for outdated global packages
@@ -28,7 +28,7 @@ if OUTDATED=$(npm -g outdated 2>/dev/null) && [[ -n "$OUTDATED" ]]; then
     
     if [[ "${UPDATE_NODE_GLOBAL:-1}" == "1" ]]; then
         log_info "Updating global packages..."
-        retry "npm -g update" 3 15 || log_warn "Global package update failed"
+        retry 3 15 npm -g update || log_warn "Global package update failed"
     fi
 else
     log_info "All global packages are up to date"

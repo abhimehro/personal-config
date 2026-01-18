@@ -26,7 +26,3 @@
 **Vulnerability:** Path Traversal (CWE-22) in `media-streaming/scripts/infuse-media-server.py`. The script constructed file paths for `subprocess` calls by unquoting user input and appending it to a root, without validating for `..` sequences.
 **Learning:** When implementing custom request handlers (overriding `do_GET`), automatic protections provided by frameworks (like `SimpleHTTPRequestHandler.translate_path`) are bypassed. Explicit validation is required when mapping URLs to filesystem or external command paths.
 **Prevention:** Always validate user-supplied paths before use. Check for `..` components after decoding. Ideally, use `os.path.abspath` and verify the path starts with the expected root directory, or reject paths containing `..` if simple validation suffices.
-## 2025-10-27 - Hardcoded Credentials in Shell Scripts
-**Vulnerability:** Hardcoded credentials (CWE-798) found in `media-streaming/scripts/start-media-server.sh`. The script embedded username and password directly in the `rclone` command.
-**Learning:** Shell scripts are often treated as "configuration" or "glue code" where security practices are lax. Developers may hardcode secrets for convenience, especially when the script is intended for personal use, forgetting that the repo might be shared or exposed.
-**Prevention:** Never hardcode secrets. Use environment variables or read from a secured, gitignored configuration file. Implement logic to check for the presence of these secrets and fail securely if missing.

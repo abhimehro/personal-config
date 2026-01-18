@@ -18,10 +18,10 @@ RED='\033[0;31m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-info()   { echo -e "${BLUE}ℹ️  [INFO]${NC}  $*"; }
-ok()     { echo -e "${GREEN}✅ [OK]${NC}    $*"; }
-warn()   { echo -e "${YELLOW}⚠️  [WARN]${NC}  $*"; }
-err()    { echo -e "${RED}❌ [ERR]${NC}   $*" >&2; }
+log_info()   { echo -e "${BLUE}ℹ️  [INFO]${NC}  $*"; }
+log_ok()     { echo -e "${GREEN}✅ [OK]${NC}    $*"; }
+log_warn()   { echo -e "${YELLOW}⚠️  [WARN]${NC}  $*"; }
+log_err()    { echo -e "${RED}❌ [ERR]${NC}   $*" >&2; }
 
 hr()     { echo -e "${BLUE}────────────────────────────────────────────────────────────${NC}"; }
 header() { echo; echo -e "${BOLD}${BLUE}🔷 $*${NC}"; hr; }
@@ -30,13 +30,13 @@ require_cmd() {
   local cmd="$1"
   local install_hint="${2:-}"  # Optional: defaults to empty string
   if ! command -v "$cmd" >/dev/null 2>&1; then
-    err "Missing required command: $cmd"
+    log_err "Missing required command: $cmd"
     if [[ -n "$install_hint" ]]; then
-      info "To install: $install_hint"
+      log_info "To install: $install_hint"
     elif [[ "$cmd" == "brew" ]]; then
-      info "To install: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+      log_info "To install: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
     elif [[ "$cmd" == "op" ]]; then
-      info "To install: brew install --cask 1password/tap/1password-cli"
+      log_info "To install: brew install --cask 1password/tap/1password-cli"
     fi
     return 1
   fi
@@ -44,10 +44,10 @@ require_cmd() {
 
 ensure_macos() {
   if [[ "$(uname -s)" != "Darwin" ]]; then
-    err "This bootstrap is macOS-only."
+    log_err "This bootstrap is macOS-only."
     exit 1
   fi
-  info "Running on macOS $(sw_vers -productVersion)"
+  log_info "Running on macOS $(sw_vers -productVersion)"
 }
 
 check_requirements() {
@@ -59,37 +59,37 @@ check_requirements() {
 
 sync_configs() {
   header "Configuration Sync"
-  info "Syncing configuration symlinks..."
+  log_info "Syncing configuration symlinks..."
   bash "$REPO_ROOT/scripts/sync_all_configs.sh"
   bash "$REPO_ROOT/scripts/verify_all_configs.sh"
-  ok "Dotfiles linked and verified."
+  log_ok "Dotfiles linked and verified."
 }
 
 install_maintenance() {
   header "System Maintenance"
-  info "Installing maintenance system (launchd agents + scripts)..."
+  log_info "Installing maintenance system (launchd agents + scripts)..."
   bash "$REPO_ROOT/maintenance/install.sh"
-  ok "Maintenance system installed."
+  log_ok "Maintenance system installed."
 }
 
 remove_legacy_agents() {
   local legacy="$HOME/Library/LaunchAgents/com.user.maintenance.weekly.plist"
   if [[ -f "$legacy" ]]; then
-    info "Removing legacy maintenance LaunchAgent (com.user.maintenance.weekly)..."
+    log_info "Removing legacy maintenance LaunchAgent (com.user.maintenance.weekly)..."
     launchctl bootout "gui/$(id -u)" "$legacy" 2>/dev/null || true
     rm -f "$legacy"
-    ok "Legacy LaunchAgent removed."
+    log_ok "Legacy LaunchAgent removed."
   fi
 }
 
 prepare_network_tools() {
   header "Network Tools"
-  info "Ensuring network helpers are executable..."
+  log_info "Ensuring network helpers are executable..."
   chmod +x "$REPO_ROOT/scripts/network-mode-manager.sh" \
             "$REPO_ROOT/scripts/network-mode-verify.sh" \
             "$REPO_ROOT/scripts/network-mode-regression.sh" \
             "$REPO_ROOT/scripts/macos/ipv6-manager.sh" || true
-  ok "Network scripts ready."
+  log_ok "Network scripts ready."
 }
 
 stage_rclone_config() {
@@ -101,24 +101,24 @@ stage_rclone_config() {
   mkdir -p "$rclone_dir"
 
   if [[ -f "$rclone_cfg" ]]; then
-    ok "rclone config already present at $rclone_cfg (left untouched)."
+    log_ok "rclone config already present at $rclone_cfg (left untouched)."
     return
   fi
 
   if [[ -f "$template" ]]; then
-    info "Seeding rclone config from template (remember to inject secrets via 1Password)..."
+    log_info "Seeding rclone config from template (remember to inject secrets via 1Password)..."
     cp "$template" "$rclone_cfg"
     chmod 600 "$rclone_cfg"
-    warn "Edit or replace $rclone_cfg with 'op inject' before starting media services."
+    log_warn "Edit or replace $rclone_cfg with 'op inject' before starting media services."
   else
-    warn "No rclone template found; create $rclone_cfg manually."
+    log_warn "No rclone template found; create $rclone_cfg manually."
   fi
 }
 
 stage_media_scripts() {
   local media_bin="$HOME/Library/Media/bin"
   mkdir -p "$media_bin"
-  info "Linking media helper scripts to $media_bin..."
+  log_info "Linking media helper scripts to $media_bin..."
 
   for s in start-media-server.sh start-media-server-vpn-fix.sh start-alldebrid.sh stop-alldebrid.sh test-infuse-connection.sh; do
     local src="$REPO_ROOT/media-streaming/scripts/$s"
@@ -126,12 +126,12 @@ stage_media_scripts() {
       ln -sf "$src" "$media_bin/$s"
       chmod +x "$src"
     else
-      warn "Missing media script: $src"
+      log_warn "Missing media script: $src"
     fi
   done
 
   mkdir -p "$HOME/.config/media-server" "$HOME/Library/Application Support/MediaCache" "$HOME/Library/Logs/media"
-  ok "Media scripts staged."
+  log_ok "Media scripts staged."
 }
 
 install_media_launchd() {
@@ -140,18 +140,18 @@ install_media_launchd() {
   mkdir -p "$launch_dst"
 
   if [[ ! -d "$launch_src" ]]; then
-    warn "No media launchd definitions found at $launch_src; skipping."
+    log_warn "No media launchd definitions found at $launch_src; skipping."
     return
   fi
 
-  info "Installing media LaunchAgents..."
+  log_info "Installing media LaunchAgents..."
   for plist in "$launch_src"/*.plist; do
     [[ -e "$plist" ]] || continue
     local base
     base="$(basename "$plist")"
     cp "$plist" "$launch_dst/$base"
     launchctl bootout "gui/$(id -u)" "$launch_dst/$base" 2>/dev/null || true
-    launchctl bootstrap "gui/$(id -u)" "$launch_dst/$base" 2>/dev/null && ok "Loaded $base" || warn "Failed to load $base (check logs)."
+    launchctl bootstrap "gui/$(id -u)" "$launch_dst/$base" 2>/dev/null && log_ok "Loaded $base" || log_warn "Failed to load $base (check logs)."
   done
 }
 
@@ -159,6 +159,36 @@ main() {
   # Welcome Banner
   echo -e "${BOLD}🎨 Personal Config Bootstrap${NC}"
   echo -e "   Repository: $REPO_ROOT"
+
+  # Check for non-interactive mode or flag
+  local interactive=true
+  if [[ "${1:-}" == "-y" ]] || [[ "${1:-}" == "--yes" ]]; then
+    interactive=false
+  elif [[ ! -t 0 ]]; then
+    interactive=false
+    log_warn "Non-interactive shell detected. Proceeding automatically."
+  fi
+
+  # Interactive Confirmation
+  if [[ "$interactive" == "true" ]]; then
+    echo
+    echo -e "${BOLD}Plan of Execution:${NC}"
+    echo -e "  1. Check macOS environment and requirements (brew, op)"
+    echo -e "  2. Sync and verify configuration symlinks"
+    echo -e "  3. Install system maintenance agents"
+    echo -e "  4. Setup network tools and media services"
+    echo
+    echo -e "${YELLOW}⚠️  This will modify configuration files in your home directory.${NC}"
+    echo
+    read -p "Ready to proceed? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      log_info "Bootstrap cancelled by user."
+      exit 0
+    fi
+  else
+    echo -e "${BOLD}Running in non-interactive mode.${NC}"
+  fi
 
   check_requirements
   sync_configs
