@@ -123,16 +123,16 @@ start_controld() {
   #   - Starts ctrld with --skip_self_checks
   #   - Points macOS Wi‑Fi DNS at the local resolver
   #   - Verifies Control D connectivity and filtering
-  
+
   # Find the script location regardless of current working directory
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   local controld_manager="$script_dir/../controld-system/scripts/controld-manager"
-  
+
   if [[ ! -x "$controld_manager" ]]; then
     error "controld-manager script not found or not executable at $controld_manager"
   fi
-  
+
   if sudo "$controld_manager" switch "$profile_key"; then
     success "Control D active via controld-manager (profile: $profile_key)."
   else
@@ -141,37 +141,62 @@ start_controld() {
 }
 
 print_status() {
-  # 1. Gather Data
+  # 1. Gather Data (Parallelized from Bolt)
+  # ⚡ Bolt Optimization: Run networksetup commands in parallel to reduce wait time
+  local dns_temp
+  dns_temp=$(mktemp)
+  local info_temp
+  info_temp=$(mktemp)
   local cd_active=false
-  local dns_is_localhost=false
-  local ipv6_enabled=false
   local profile_name="Unknown"
 
   # Check Control D
-  local running_uid=""
   if pgrep -x "ctrld" >/dev/null 2>&1; then
     cd_active=true
-    running_uid=$(sudo ctrld status 2>/dev/null | grep 'Resolver ID' | awk '{print $NF}' 2>/dev/null || echo "N/A")
-    case "$running_uid" in
-      "6m971e9jaf")  profile_name="Privacy" ;;
-      "rcnz7qgvwg")  profile_name="Browsing" ;;
-      "1xfy57w34t7") profile_name="Gaming" ;;
-    esac
+    # ⚡ Bolt Optimization: Read config symlink instead of expensive 'sudo ctrld status'
+    local config_link="/etc/controld/ctrld.toml"
+    if [[ -L "$config_link" ]]; then
+      local target
+      target=$(readlink "$config_link" || echo "")
+      local extracted_name
+      extracted_name=$(basename "$target")
+      extracted_name="${extracted_name#ctrld.}"
+      extracted_name="${extracted_name%.toml}"
+      case "$extracted_name" in
+        "privacy")  profile_name="Privacy" ;;
+        "browsing") profile_name="Browsing" ;;
+        "gaming")   profile_name="Gaming" ;;
+        *)          profile_name="$extracted_name" ;;
+      esac
+    fi
   fi
 
-  # Check System DNS
+  (networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown") > "$dns_temp" &
+  local pid1=$!
+  (networksetup -getinfo "Wi-Fi" 2>/dev/null || echo "") > "$info_temp" &
+  local pid2=$!
+  wait $pid1 $pid2
+
   local dns_servers
-  dns_servers=$(networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown")
-  if echo "$dns_servers" | grep -q "127.0.0.1"; then
+  dns_servers=$(cat "$dns_temp")
+  local wifi_info
+  wifi_info=$(cat "$info_temp")
+  rm -f "$dns_temp" "$info_temp"
+
+  local dns_is_localhost=false
+  local ipv6_enabled=false
+
+  # Check System DNS
+  if [[ "$dns_servers" == *"127.0.0.1"* ]]; then
     dns_is_localhost=true
   fi
 
   # Check IPv6
-  if networksetup -getinfo "Wi-Fi" 2>/dev/null | grep -q "IPv6: Automatic"; then
+  if [[ "$wifi_info" == *"IPv6: Automatic"* ]]; then
     ipv6_enabled=true
   fi
 
-  # 2. Determine Effective Mode
+  # 2. Determine Effective Mode (from Glanceable Header PR)
   local header_text="UNKNOWN / MIXED STATE"
   local header_color="$YELLOW"
   local header_icon="$E_WARN"
@@ -179,7 +204,7 @@ print_status() {
   if $cd_active && $dns_is_localhost; then
     header_text="CONTROL D ACTIVE"
     header_color="$GREEN"
-    header_icon="$E_PRIVACY" # Default icon, can refine based on profile
+    header_icon="$E_PRIVACY" # Default icon
     if [[ "$profile_name" == "Gaming" ]]; then header_icon="$E_GAMING"; fi
     if [[ "$profile_name" == "Browsing" ]]; then header_icon="$E_BROWSING"; fi
   elif ! $cd_active && ! $dns_is_localhost && ! $ipv6_enabled; then
@@ -204,22 +229,24 @@ print_status() {
   fi
   printf "   %s  %-13s %b\n" "🤖" "Control D" "$cd_display"
 
-  # DNS Detail
+  # System DNS Status
   local dns_status
-  if echo "$dns_servers" | grep -q "There aren't any DNS Servers"; then
+  # ⚡ Bolt Optimization: Use Bash string matching
+  if [[ "$dns_servers" == *"There aren't any DNS Servers"* ]]; then
     dns_status="${YELLOW}DHCP (ISP/Router)${NC}"
-  elif $dns_is_localhost; then
+  elif [[ "$dns_servers" == *"127.0.0.1"* ]]; then
     dns_status="${GREEN}127.0.0.1 (Localhost)${NC}"
   else
-    local cleaner_dns
-    cleaner_dns=$(echo "$dns_servers" | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')
+    # ⚡ Bolt Optimization: Use Bash parameter expansion
+    local cleaner_dns="${dns_servers//$'\n'/, }" # Replace newlines with ", "
+    cleaner_dns="${cleaner_dns%, }"             # Remove trailing ", "
     dns_status="${RED}$cleaner_dns${NC}"
   fi
   printf "   %s  %-13s %b\n" "📡" "System DNS" "$dns_status"
 
   # IPv6 Detail
   local ipv6_status
-  if $ipv6_enabled; then
+  if [[ "$wifi_info" == *"IPv6: Automatic"* ]]; then
     ipv6_status="${GREEN}ENABLED${NC} (Automatic)"
   else
     ipv6_status="${RED}DISABLED${NC} (Manual/Off)"
