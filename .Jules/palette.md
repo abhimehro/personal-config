@@ -5,3 +5,7 @@
 ## 2024-05-23 - Interactive Safety for Setup Scripts
 **Learning:**  Users often run `setup` scripts without knowing exactly what they will do. A "Plan of Execution" followed by a confirmation prompt (defaulting to No) builds trust and prevents accidental system modifications.
 **Action:**  Always add a summary and confirmation step to destructive or complex setup scripts.
+
+## 2025-05-24 - Consistent Visual Language in CLI Tools
+**Learning:**  Users perceive a collection of scripts as a cohesive "suite" when they share visual patterns (colors, emojis, log formats). Inconsistent output styles make tools feel disjointed and harder to scan.
+**Action:**  When modifying a script in a suite (like `scripts/`), audit sibling scripts to copy their logging helpers and color definitions for a unified experience.
