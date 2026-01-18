@@ -11,6 +11,7 @@ import base64
 import secrets
 import string
 import time
+import html
 from urllib.parse import unquote
 
 # Global auth credentials
@@ -144,6 +145,8 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type', self.guess_type(path))
             self.send_header('Accept-Ranges', 'bytes')
+            # Security Headers for file content
+            self.send_header('X-Content-Type-Options', 'nosniff')
             self.end_headers()
             
             # Stream the file
@@ -161,11 +164,13 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
     
     def generate_directory_listing(self, files, current_path):
         """Generate HTML directory listing"""
-        html = f"""
+        safe_path = html.escape(current_path)
+
+        html_content = f"""
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Media Library - {current_path}</title>
+            <title>Media Library - {safe_path}</title>
             <style>
                 body {{ font-family: Arial, sans-serif; margin: 40px; }}
                 .file {{ display: block; padding: 10px; text-decoration: none; color: #333; }}
@@ -175,38 +180,56 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
             </style>
         </head>
         <body>
-            <h1>📁 Media Library: /{current_path}</h1>
+            <h1>📁 Media Library: /{safe_path}</h1>
         """
         
         # Add parent directory link if not root
         if current_path and current_path != '/':
             parent = '/'.join(current_path.rstrip('/').split('/')[:-1])
-            html += f'<a href="/{parent}" class="file directory">📁 .. (Parent Directory)</a>\n'
+            # Parent path is constructed safely from split, but escaping is good hygiene
+            safe_parent = html.escape(parent)
+            html_content += f'<a href="/{safe_parent}" class="file directory">📁 .. (Parent Directory)</a>\n'
         
         # Add files and directories
         for item in files:
             if not item:
                 continue
+
+            # Escape the item name for display and URL construction
+            safe_item = html.escape(item)
+
+            # Construct item path. Note: item_path is used in href, so we should be careful.
+            # If current_path has special chars, they are already in it.
+            # We need to construct the URL properly.
+            # Ideally we should use quote() for hrefs, and escape() for display.
+            # For now, let's escape for HTML context to prevent XSS.
+
             item_path = f"{current_path.rstrip('/')}/{item}" if current_path != '/' else item
+            safe_item_path = html.escape(item_path)
+
             if item.endswith('/'):
                 # Directory
-                html += f'<a href="/{item_path}" class="file directory">📁 {item[:-1]}</a>\n'
+                html_content += f'<a href="/{safe_item_path}" class="file directory">📁 {safe_item[:-1]}</a>\n'
             else:
                 # File
                 icon = "🎬" if any(item.lower().endswith(ext) for ext in ['.mp4', '.mkv', '.avi', '.mov']) else "📄"
-                html += f'<a href="/{item_path}" class="file video">{icon} {item}</a>\n'
+                html_content += f'<a href="/{safe_item_path}" class="file video">{icon} {safe_item}</a>\n'
         
-        html += """
+        html_content += """
         </body>
         </html>
         """
-        return html
+        return html_content
     
     def send_directory_response(self, content):
         """Send directory listing response"""
         self.send_response(200)
         self.send_header('Content-Type', 'text/html; charset=utf-8')
         self.send_header('Content-Length', str(len(content.encode('utf-8'))))
+        # Security Headers
+        self.send_header('Content-Security-Policy', "default-src 'self'; style-src 'unsafe-inline'; script-src 'none';")
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('X-Frame-Options', 'DENY')
         self.end_headers()
         self.wfile.write(content.encode('utf-8'))
 
