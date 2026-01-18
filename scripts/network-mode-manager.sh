@@ -181,10 +181,30 @@ print_status() {
 
   printf "   %s  %-13s %b\n" "🤖" "Control D" "$cd_display"
 
-  # --- System DNS Status ---
+  # --- Fetch Network Info (Parallelized) ---
+  # ⚡ Bolt Optimization: Run networksetup commands in parallel to reduce wait time
+  local dns_temp
+  dns_temp=$(mktemp)
+  local info_temp
+  info_temp=$(mktemp)
+
+  (networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown") > "$dns_temp" &
+  local pid1=$!
+
+  (networksetup -getinfo "Wi-Fi" 2>/dev/null || echo "") > "$info_temp" &
+  local pid2=$!
+
+  wait $pid1 $pid2
+
   local dns_servers
+  dns_servers=$(cat "$dns_temp")
+  local wifi_info
+  wifi_info=$(cat "$info_temp")
+
+  rm -f "$dns_temp" "$info_temp"
+
+  # --- System DNS Status ---
   local dns_status
-  dns_servers=$(networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown")
 
   # ⚡ Bolt Optimization: Use Bash string matching instead of 'grep' pipelines
   if [[ "$dns_servers" == *"There aren't any DNS Servers"* ]]; then
@@ -202,9 +222,7 @@ print_status() {
 
   # --- IPv6 Status ---
   local ipv6_status
-  # ⚡ Bolt Optimization: Capture output and use string match to avoid grep
-  local wifi_info
-  wifi_info=$(networksetup -getinfo "Wi-Fi" 2>/dev/null || echo "")
+  # ⚡ Bolt Optimization: Captured output via parallel execution above
   if [[ "$wifi_info" == *"IPv6: Automatic"* ]]; then
     ipv6_status="${GREEN}ENABLED${NC} (Automatic)"
   else
