@@ -132,8 +132,9 @@ optimize_memory_usage() {
         log_info "Low memory detected, performing memory cleanup"
         
         # Purge inactive memory
-        sudo purge >/dev/null 2>&1 || true
-        log_info "Purged inactive memory"
+        # SAFETY: Disabled to prevent system thrashing under high load
+        # sudo purge >/dev/null 2>&1 || true
+        log_info "Skipping memory purge (safety override)"
         
         # Clear various caches
         sudo dscacheutil -flushcache >/dev/null 2>&1 || true
@@ -174,7 +175,8 @@ optimize_disk_usage() {
         log_info "High disk usage detected, performing optimization"
         
         # Run first aid on disk
-        diskutil verifyVolume / >/dev/null 2>&1 || true
+        # SAFETY: Disabled to prevent filesystem locking
+        # diskutil verifyVolume / >/dev/null 2>&1 || true
         
         # Clean up system caches
         local cache_dirs=(
@@ -248,8 +250,8 @@ optimize_network() {
         
         # Reset network interfaces if latency is very high
         if [[ $ping_result -gt 500 ]]; then
-            log_info "Attempting network interface reset"
-            sudo ifconfig en0 down && sudo ifconfig en0 up >/dev/null 2>&1 || true
+            log_info "High latency detected but skipping interface reset (safety override)"
+            # sudo ifconfig en0 down && sudo ifconfig en0 up >/dev/null 2>&1 || true
         fi
     else
         log_info "Network latency: ${ping_result}ms (good)"

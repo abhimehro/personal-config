@@ -97,15 +97,16 @@ prune_logs() {
 
 # Retry function
 retry() {
-    local cmd="$1"
-    local max_attempts="${2:-3}"
-    local delay="${3:-5}"
+    local max_attempts="${1:-3}"
+    local delay="${2:-5}"
+    shift 2
+    local cmd=("${@}")
     local attempt=1
     
-    until eval "$cmd"; do
+    until "${cmd[@]}"; do
         local rc=$?
         if [[ $attempt -ge $max_attempts ]]; then
-            log_error "Command failed after $max_attempts attempts: $cmd"
+            log_error "Command failed after $max_attempts attempts: ${cmd[*]}"
             return $rc
         fi
         

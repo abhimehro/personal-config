@@ -151,17 +151,28 @@ print_status() {
 
   if pgrep -x "ctrld" >/dev/null 2>&1; then
     cd_status="${GREEN}● ACTIVE${NC}"
-    # Best-effort resolver ID extraction
-    local running_uid
-    running_uid=$(sudo ctrld status 2>/dev/null | grep 'Resolver ID' | awk '{print $NF}' 2>/dev/null || echo "N/A")
 
-    # Map UID to profile name if possible
+    # ⚡ Bolt Optimization: Read config symlink instead of expensive 'sudo ctrld status'
+    # This avoids spawning a process and potential sudo prompt.
+    local config_link="/etc/controld/ctrld.toml"
     local profile_name="Unknown"
-    case "$running_uid" in
-      "6m971e9jaf")  profile_name="Privacy" ;;
-      "rcnz7qgvwg")  profile_name="Browsing" ;;
-      "1xfy57w34t7") profile_name="Gaming" ;;
-    esac
+
+    if [[ -L "$config_link" ]]; then
+      local target
+      target=$(readlink "$config_link" || echo "")
+      # Extract profile name from filename (e.g., ctrld.privacy.toml -> privacy)
+      local extracted_name
+      extracted_name=$(basename "$target")
+      extracted_name="${extracted_name#ctrld.}"
+      extracted_name="${extracted_name%.toml}"
+
+      case "$extracted_name" in
+        "privacy")  profile_name="Privacy" ;;
+        "browsing") profile_name="Browsing" ;;
+        "gaming")   profile_name="Gaming" ;;
+        *)          profile_name="$extracted_name" ;;
+      esac
+    fi
 
     cd_display="$cd_status (${YELLOW}$profile_name${NC})"
   else
@@ -170,19 +181,40 @@ print_status() {
 
   printf "   %s  %-13s %b\n" "🤖" "Control D" "$cd_display"
 
-  # --- System DNS Status ---
-  local dns_servers
-  local dns_status
-  dns_servers=$(networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown")
+  # --- Fetch Network Info (Parallelized) ---
+  # ⚡ Bolt Optimization: Run networksetup commands in parallel to reduce wait time
+  local dns_temp
+  dns_temp=$(mktemp)
+  local info_temp
+  info_temp=$(mktemp)
 
-  if echo "$dns_servers" | grep -q "There aren't any DNS Servers"; then
+  (networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown") > "$dns_temp" &
+  local pid1=$!
+
+  (networksetup -getinfo "Wi-Fi" 2>/dev/null || echo "") > "$info_temp" &
+  local pid2=$!
+
+  wait $pid1 $pid2
+
+  local dns_servers
+  dns_servers=$(cat "$dns_temp")
+  local wifi_info
+  wifi_info=$(cat "$info_temp")
+
+  rm -f "$dns_temp" "$info_temp"
+
+  # --- System DNS Status ---
+  local dns_status
+
+  # ⚡ Bolt Optimization: Use Bash string matching instead of 'grep' pipelines
+  if [[ "$dns_servers" == *"There aren't any DNS Servers"* ]]; then
     dns_status="${YELLOW}DHCP (ISP/Router)${NC}"
-  elif echo "$dns_servers" | grep -q "127.0.0.1"; then
+  elif [[ "$dns_servers" == *"127.0.0.1"* ]]; then
     dns_status="${GREEN}127.0.0.1 (Localhost)${NC}"
   else
-    # Replace newlines with comma space for cleaner output
-    local cleaner_dns
-    cleaner_dns=$(echo "$dns_servers" | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')
+    # ⚡ Bolt Optimization: Use Bash parameter expansion instead of 'tr | sed' pipeline
+    local cleaner_dns="${dns_servers//$'\n'/, }" # Replace newlines with ", "
+    cleaner_dns="${cleaner_dns%, }"             # Remove trailing ", "
     dns_status="${RED}$cleaner_dns${NC}"
   fi
 
@@ -190,7 +222,8 @@ print_status() {
 
   # --- IPv6 Status ---
   local ipv6_status
-  if networksetup -getinfo "Wi-Fi" 2>/dev/null | grep -q "IPv6: Automatic"; then
+  # ⚡ Bolt Optimization: Captured output via parallel execution above
+  if [[ "$wifi_info" == *"IPv6: Automatic"* ]]; then
     ipv6_status="${GREEN}ENABLED${NC} (Automatic)"
   else
     ipv6_status="${RED}DISABLED${NC} (Manual/Off)"

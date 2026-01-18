@@ -8,6 +8,7 @@
 # Homebrew PATH (Apple Silicon)
 # ============================================
 export PATH="/opt/homebrew/bin:$PATH"
+export PATH="/opt/homebrew/sbin:$PATH"
 export PATH="$HOME/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.cache/lm-studio/bin:$PATH"
@@ -240,6 +241,11 @@ if [[ -o interactive ]]; then
     if command -v zoxide &> /dev/null; then
         eval "$(zoxide init zsh)"
     fi
+
+    # FNM (Fast Node Manager)
+    if command -v fnm &> /dev/null; then
+        eval "$(fnm env --use-on-cd)"
+    fi
 fi
 
 # ============================================
@@ -257,3 +263,6 @@ bindkey -e
 
 # Optional: Uncomment for Vi key bindings
 # bindkey -v
+
+# Auto-Warpify
+[[ "$-" == *i* ]] && printf 'P$f{"hook": "SourcedRcFileForWarp", "value": { "shell": "zsh", "uname": "Darwin" }}œ' 

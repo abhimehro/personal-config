@@ -11,6 +11,7 @@
 # Homebrew PATH (Apple Silicon)
 # ============================================
 export PATH="/opt/homebrew/bin:$PATH"
+export PATH="/opt/homebrew/sbin:$PATH"
 export PATH="$HOME/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.cache/lm-studio/bin:$PATH"
@@ -260,3 +261,13 @@ set -o emacs
 
 # Optional: Uncomment for Vi key bindings
 # set -o vi
+
+# ============================================
+# FNM (Fast Node Manager)
+# ============================================
+if command -v fnm &> /dev/null; then
+    eval "$(fnm env --use-on-cd)"
+fi
+
+# Warpify Subshells
+printf '\eP$f{"hook": "SourcedRcFileForWarp", "value": { "shell": "bash"}}\x9c'
