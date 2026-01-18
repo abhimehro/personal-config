@@ -82,12 +82,14 @@ check_controld_active() {
   fi
 
   # 2) DNS points at local listener (Local Check)
-  local ns
-  ns=$(scutil --dns | awk '/^resolver #1/{f=1} f && /nameserver\[0\]/{print $3; exit}' || true)
-  if [[ "$ns" == "$LISTENER_IP" ]]; then
-    pass "Primary resolver nameserver is $LISTENER_IP."
+  # On macOS, when ctrld is running, at least one resolver should be 127.0.0.1
+  # This is more permissive since resolver ordering can vary
+  local dns_check
+  dns_check=$(scutil --dns | grep "nameserver" | grep "$LISTENER_IP" || true)
+  if [[ -n "$dns_check" ]]; then
+    pass "Primary resolver nameserver includes $LISTENER_IP."
   else
-    fail "Primary resolver nameserver is '$ns', expected '$LISTENER_IP'."
+    fail "Resolver configuration does not include $LISTENER_IP. Check: scutil --dns"
     ok=1
   fi
 

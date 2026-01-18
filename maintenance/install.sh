@@ -277,14 +277,107 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.monthly.plist" <<EOF
 </plist>
 EOF
 
-# ProtonDrive Home Backup (Daily at 3:15 AM)
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.protondrivebackup.plist" <<EOF
+# Service Monitor (Daily at 8:35 AM)
+cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.servicemonitor.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maintenance.protondrivebackup</string>
+    <string>com.abhimehrotra.maintenance.servicemonitor</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>MAINTENANCE_HOME</key>
+        <string>$INSTALL_DIR</string>
+        <key>AUTOMATED_RUN</key>
+        <string>1</string>
+    </dict>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>$INSTALL_DIR/bin/service_monitor.sh</string>
+    </array>
+    
+    <key>StandardOutPath</key>
+    <string>$LOG_DIR/servicemonitor-stdout.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>$LOG_DIR/servicemonitor-stderr.log</string>
+    
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>8</integer>
+        <key>Minute</key>
+        <integer>35</integer>
+    </dict>
+    
+    <key>RunAtLoad</key>
+    <false/>
+    
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>
+EOF
+
+# Screen Capture Nag Remover (Daily at 10:00 AM)
+# Note: Requires Full Disk Access for /bin/bash to modify TCC database
+cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.screencapture-nag-remover.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.abhimehrotra.maintenance.screencapture-nag-remover</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>MAINTENANCE_HOME</key>
+        <string>$INSTALL_DIR</string>
+    </dict>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>$INSTALL_DIR/bin/screencapture_nag_remover.sh</string>
+    </array>
+    
+    <key>StandardOutPath</key>
+    <string>$LOG_DIR/screencapture_nag_remover.out</string>
+    
+    <key>StandardErrorPath</key>
+    <string>$LOG_DIR/screencapture_nag_remover.err</string>
+    
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>10</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
+EOF
+
+# Google Drive Home Backup (Daily at 3:15 AM - Light Mode)
+# Skips weekends automatically via script logic to avoid gaming interference
+cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.googledrivebackup.light.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.abhimehrotra.maintenance.googledrivebackup.light</string>
 
     <key>EnvironmentVariables</key>
     <dict>
@@ -299,16 +392,17 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.protondrivebackup.plist" <
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>$INSTALL_DIR/bin/protondrive_backup.sh</string>
+        <string>$INSTALL_DIR/bin/google_drive_backup.sh</string>
         <string>--run</string>
+        <string>--light</string>
         <string>--no-delete</string>
     </array>
 
     <key>StandardOutPath</key>
-    <string>$LOG_DIR/protondrive_backup.out</string>
+    <string>$LOG_DIR/googledrive_backup_light.out</string>
 
     <key>StandardErrorPath</key>
-    <string>$LOG_DIR/protondrive_backup.err</string>
+    <string>$LOG_DIR/googledrive_backup_light.err</string>
 
     <key>StartCalendarInterval</key>
     <dict>
@@ -316,6 +410,62 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.protondrivebackup.plist" <
         <integer>3</integer>
         <key>Minute</key>
         <integer>15</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>KeepAlive</key>
+    <false/>
+</dict>
+</plist>
+EOF
+
+# Google Drive Full Backup (Weekly - Monday at 4:00 AM)
+# Runs full backup once a week
+cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.googledrivebackup.full.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.abhimehrotra.maintenance.googledrivebackup.full</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>MAINTENANCE_HOME</key>
+        <string>$INSTALL_DIR</string>
+        <key>AUTOMATED_RUN</key>
+        <string>1</string>
+        <key>FORCE_RUN</key>
+        <string>1</string>
+    </dict>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>$INSTALL_DIR/bin/google_drive_backup.sh</string>
+        <string>--run</string>
+        <string>--full</string>
+        <string>--no-delete</string>
+    </array>
+
+    <key>StandardOutPath</key>
+    <string>$LOG_DIR/googledrive_backup_full.out</string>
+
+    <key>StandardErrorPath</key>
+    <string>$LOG_DIR/googledrive_backup_full.err</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>4</integer>
+        <key>Minute</key>
+        <integer>0</integer>
     </dict>
 
     <key>RunAtLoad</key>
@@ -351,7 +501,9 @@ echo "Scheduled maintenance tasks:"
 echo "  • Health Check: Daily at 8:30 AM"
 echo "  • System Cleanup: Daily at 9:00 AM"
 echo "  • Brew Maintenance: Daily at 10:00 AM"
-echo "  • ProtonDrive Backup: Daily at 3:15 AM"
+echo "  • Screen Capture Nag Remover: Daily at 10:00 AM"
+echo "  • Google Drive Backup (Light): Daily at 3:15 AM (Tue-Sun)"
+echo "  • Google Drive Backup (Full): Monday at 4:00 AM"
 echo "  • Weekly Maintenance: Mondays at 9:00 AM"
 echo "  • Monthly Maintenance: 1st of month at 6:00 AM"
 echo ""

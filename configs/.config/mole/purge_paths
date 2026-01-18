@@ -13,6 +13,14 @@
 ~/.rustup
 ~/.npm
 ~/Library/Caches/Homebrew
+~/.cache
+~/.config
+~/.nori
+~/.jules
+~/.ssh
+~/.vscode
+~/.vscode-R
+~/.warp
 
 # Version control
 ~/.git-templates
@@ -39,6 +47,15 @@
 
 # Fish shell
 ~/.local/share/fish
+
+# .local
+~/.local/share/atuin
+~/.local/share/z
+~/.local/share/nvm
+~/.local/share/fnm
+~/.local/state/fnm_multishells
+~/.local/state/nvim
+~/.local/state/gh
 
 # NeoVim
 ~/.local/share/nvim

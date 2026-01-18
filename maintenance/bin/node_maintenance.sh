@@ -205,7 +205,7 @@ if command -v terminal-notifier >/dev/null 2>&1; then
           -subtitle "$UPDATES_MADE update(s) applied" \
           -message "Node: $NODE_VERSION | Click for details" \
           -group "maintenance" \
-          -execute "/Users/abhimehrotra/Library/Maintenance/bin/view_logs.sh node_maintenance" 2>/dev/null || true
+          -execute "$HOME/Library/Maintenance/bin/view_logs.sh node_maintenance" 2>/dev/null || true
     else
         # No updates - simple notification
         terminal-notifier -title "Node.js Maintenance" \
