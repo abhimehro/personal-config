@@ -421,7 +421,7 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.googledrivebackup.light.pl
 </plist>
 EOF
 
-# Google Drive Full Backup (Weekly - Saturday at 4:00 AM)
+# Google Drive Full Backup (Weekly - Monday at 4:00 AM)
 # Runs full backup once a week
 cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.googledrivebackup.full.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -461,7 +461,7 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.googledrivebackup.full.pli
     <key>StartCalendarInterval</key>
     <dict>
         <key>Weekday</key>
-        <integer>6</integer>
+        <integer>1</integer>
         <key>Hour</key>
         <integer>4</integer>
         <key>Minute</key>
@@ -502,8 +502,8 @@ echo "  • Health Check: Daily at 8:30 AM"
 echo "  • System Cleanup: Daily at 9:00 AM"
 echo "  • Brew Maintenance: Daily at 10:00 AM"
 echo "  • Screen Capture Nag Remover: Daily at 10:00 AM"
-echo "  • Google Drive Backup (Light): Daily at 3:15 AM (Weekdays)"
-echo "  • Google Drive Backup (Full): Saturday at 4:00 AM"
+echo "  • Google Drive Backup (Light): Daily at 3:15 AM (Tue-Sun)"
+echo "  • Google Drive Backup (Full): Monday at 4:00 AM"
 echo "  • Weekly Maintenance: Mondays at 9:00 AM"
 echo "  • Monthly Maintenance: 1st of month at 6:00 AM"
 echo ""

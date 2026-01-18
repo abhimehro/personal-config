@@ -7,6 +7,12 @@ set -eo pipefail
 LOG_DIR="$HOME/Library/Logs/maintenance"
 mkdir -p "$LOG_DIR"
 
+# Skip on Mondays if automated (Weekly Maintenance runs then)
+if [[ "${AUTOMATED_RUN:-0}" == "1" ]] && [[ "$(date +%u)" -eq 1 ]]; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] [system_cleanup] Skipping execution on Monday (Weekly Maintenance handles cleanup today)." | tee -a "$LOG_DIR/system_cleanup.log"
+    exit 0
+fi
+
 # Basic logging
 if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
     get_timestamp() {
