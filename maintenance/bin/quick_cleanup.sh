@@ -141,7 +141,7 @@ if command -v terminal-notifier >/dev/null 2>&1; then
     -subtitle "${CLEANED_COUNT} items cleaned" \
     -message "Click for details" \
     -group "maintenance" \
-    -execute "/Users/abhimehrotra/Library/Maintenance/bin/view_logs.sh quick_cleanup" 2>/dev/null || true
+    -execute "$HOME/Library/Maintenance/bin/view_logs.sh quick_cleanup" 2>/dev/null || true
 elif command -v osascript >/dev/null 2>&1; then
     # Fallback to osascript
     osascript -e "display notification \"Cleaned ${CLEANED} items | Disk: ${DISK_USE}%\" with title \"Quick Cleanup\"" 2>/dev/null || true

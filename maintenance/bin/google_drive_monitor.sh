@@ -36,7 +36,11 @@ if pgrep -f "Google Drive" >/dev/null 2>&1; then
     log_info "Google Drive process is running"
     
     # Check Google Drive directory
-    GDRIVE_DIR="$HOME/Library/CloudStorage/GoogleDrive-abhimhrtr@gmail.com"
+    GDRIVE_DIR="${GDRIVE_ROOT:-$HOME/Library/CloudStorage}"
+    # If GDRIVE_ROOT is a parent directory, try to find GoogleDrive-* subdir
+    if [[ -d "$GDRIVE_DIR" ]] && [[ "$GDRIVE_DIR" == *"/CloudStorage" ]]; then
+        GDRIVE_DIR=$(ls -1d "$HOME/Library/CloudStorage/GoogleDrive-"* 2>/dev/null | head -1 || true)
+    fi
     if [[ -d "$GDRIVE_DIR" ]]; then
         log_info "Google Drive directory found: $GDRIVE_DIR"
         
@@ -62,7 +66,9 @@ if pgrep -f "Google Drive" >/dev/null 2>&1; then
             # Look for error patterns in recent logs
             RECENT_LOGS=$(find "$HOME/Library/Application Support/Google/DriveFS/Logs" -name "*.log" -mtime -1 2>/dev/null)
             if [[ -n "$RECENT_LOGS" ]]; then
-                SYNC_ERRORS=$(grep -i "error\|failed\|cannot sync" $RECENT_LOGS 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+                SYNC_ERRORS=$(grep -i "error\|failed\|cannot sync" $RECENT_LOGS 2>/dev/null | wc -l | tr -d "[:space:]" || echo "0")
+                SYNC_ERRORS=$(printf "%s" "${SYNC_ERRORS}" | tr -cd "0-9")
+                SYNC_ERRORS=${SYNC_ERRORS:-0}
                 if [[ $SYNC_ERRORS -gt 5 ]]; then
                     log_warn "Google Drive sync errors detected: ${SYNC_ERRORS} error messages in recent logs"
                     SYNC_STATUS="${SYNC_STATUS} (${SYNC_ERRORS} errors)"
@@ -98,7 +104,9 @@ fi
 
 # Check disk space for Google Drive location
 if [[ -d "$GDRIVE_DIR" ]]; then
-    GDRIVE_DISK_USAGE=$(df -h "$GDRIVE_DIR" 2>/dev/null | awk 'NR==2 {print $5}' | tr -d '%' || echo "0")
+    GDRIVE_DISK_USAGE=$(df -h "$GDRIVE_DIR" 2>/dev/null | awk 'NR==2 {print $5}' | tr -d '%' | tr -d "[:space:]" || echo "0")
+    GDRIVE_DISK_USAGE=$(printf "%s" "${GDRIVE_DISK_USAGE}" | tr -cd "0-9")
+    GDRIVE_DISK_USAGE=${GDRIVE_DISK_USAGE:-0}
     if [[ $GDRIVE_DISK_USAGE -gt 85 ]]; then
         log_warn "Google Drive storage location is ${GDRIVE_DISK_USAGE}% full"
     else
@@ -120,19 +128,53 @@ fi
 
 # Check Proton Drive backup status (companion check)
 PROTON_STATUS="Unknown"
-PROTON_DIR="$HOME/Library/CloudStorage/ProtonDrive-abhimehro@pm.me-folder/HomeBackup"
-if [[ -d "$PROTON_DIR" ]]; then
-    LAST_BACKUP=$(find "$PROTON_DIR" -type f -mtime -1 2>/dev/null | wc -l | tr -d ' ')
+
+find_proton_homebackup_dir() {
+    # 1) Explicit override
+    if [[ -n "${PROTON_BACKUP_DEST:-}" ]] && [[ -d "${PROTON_BACKUP_DEST}" ]]; then
+        printf '%s
+' "${PROTON_BACKUP_DEST}"
+        return 0
+    fi
+
+    # 2) Probe common CloudStorage location
+    local -a candidates=()
+    while IFS= read -r d; do
+        [[ -n "$d" ]] && candidates+=("$d")
+    done < <(find "$HOME/Library/CloudStorage" -maxdepth 2 -type d -name "HomeBackup" 2>/dev/null)
+
+    if [[ ${#candidates[@]} -gt 0 ]]; then
+        printf '%s
+' "${candidates[0]}"
+        return 0
+    fi
+
+    # 3) Fallback shallow search under $HOME (rare)
+    while IFS= read -r d; do
+        [[ -n "$d" ]] && { printf '%s
+' "$d"; return 0; }
+    done < <(find "$HOME" -maxdepth 4 -type d -name "HomeBackup" 2>/dev/null | head -20)
+
+    return 1
+}
+
+PROTON_DIR=$(find_proton_homebackup_dir 2>/dev/null || true)
+if [[ -n "$PROTON_DIR" ]] && [[ -d "$PROTON_DIR" ]]; then
+    EXPECT_DAYS="${PROTON_BACKUP_EXPECT_DAYS:-7}"
+    LAST_BACKUP=$(find "$PROTON_DIR" -type f -mtime -"$EXPECT_DAYS" 2>/dev/null | wc -l | tr -d '[:space:]')
+    LAST_BACKUP=$(printf "%s" "${LAST_BACKUP}" | tr -cd '0-9')
+    LAST_BACKUP=${LAST_BACKUP:-0}
+
     if [[ $LAST_BACKUP -gt 0 ]]; then
-        PROTON_STATUS="Recent backup detected"
+        PROTON_STATUS="Recent backup detected (last ${EXPECT_DAYS}d)"
         log_info "Proton Drive: Recent backup activity found"
     else
-        PROTON_STATUS="No recent backup"
-        log_warn "Proton Drive: No recent backup detected (check protondrive_backup.sh)"
+        PROTON_STATUS="No recent backup in last ${EXPECT_DAYS}d"
+        log_warn "Proton Drive: No recent backup detected in last ${EXPECT_DAYS} days (check protondrive_backup.sh)"
     fi
 else
     PROTON_STATUS="Backup directory not found"
-    log_warn "Proton Drive backup directory not found: $PROTON_DIR"
+    log_warn "Proton Drive backup directory not found"
 fi
 
 # Summary status
@@ -147,7 +189,7 @@ if command -v terminal-notifier >/dev/null 2>&1; then
           -subtitle "Issues detected" \
           -message "$STATUS_MSG\n$BACKUP_MSG\nClick for details" \
           -group "maintenance" \
-          -execute "/Users/speedybee/Library/Maintenance/bin/view_logs.sh google_drive_monitor" 2>/dev/null || true
+          -execute "$HOME/Library/Maintenance/bin/view_logs.sh google_drive_monitor" 2>/dev/null || true
         log_warn "Google Drive monitoring detected potential issues"
     else
         # Normal operation - simple notification

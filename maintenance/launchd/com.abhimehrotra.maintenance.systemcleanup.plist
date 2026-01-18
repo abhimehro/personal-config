@@ -10,7 +10,7 @@
         <key>PATH</key>
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
         <key>MAINTENANCE_HOME</key>
-        <string>/Users/abhimehrotra/Library/Maintenance</string>
+        <string>/Users/speedybee/Library/Maintenance</string>
         <key>AUTOMATED_RUN</key>
         <string>1</string>
     </dict>
@@ -18,14 +18,14 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/abhimehrotra/Library/Maintenance/bin/system_cleanup.sh</string>
+        <string>/Users/speedybee/Library/Maintenance/bin/system_cleanup.sh</string>
     </array>
     
     <key>StandardOutPath</key>
-    <string>/Users/abhimehrotra/Library/Logs/maintenance/system_cleanup.out</string>
+    <string>/Users/speedybee/Library/Logs/maintenance/system_cleanup.out</string>
     
     <key>StandardErrorPath</key>
-    <string>/Users/abhimehrotra/Library/Logs/maintenance/system_cleanup.err</string>
+    <string>/Users/speedybee/Library/Logs/maintenance/system_cleanup.err</string>
     
     <key>StartCalendarInterval</key>
     <dict>

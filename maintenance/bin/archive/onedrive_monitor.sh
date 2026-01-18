@@ -103,7 +103,7 @@ if command -v terminal-notifier >/dev/null 2>&1; then
           -subtitle "Issues detected" \
           -message "Status: $ONEDRIVE_STATUS | Sync: $SYNC_STATUS | Click for details" \
           -group "maintenance" \
-          -execute "/Users/abhimehrotra/Library/Maintenance/bin/view_logs.sh onedrive_monitor" 2>/dev/null || true
+          -execute "/Users/speedybee/Library/Maintenance/bin/view_logs.sh onedrive_monitor" 2>/dev/null || true
         log_warn "OneDrive monitoring detected potential issues"
     else
         # Normal operation - simple notification

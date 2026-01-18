@@ -52,13 +52,22 @@ rclone listremotes
 ### Control D (DNS) Management
 
 ```bash
-# Check service status
-sudo ctrld service status
+# Switch network modes (recommended - unified interface)
+nm-browse        # Control D browsing profile (balanced privacy/speed)
+nm-privacy       # Control D privacy profile (maximum filtering)
+nm-gaming        # Control D gaming profile (low latency)
+nm-vpn           # Windscribe VPN mode (IPv6 disabled, Control D stopped)
+nm-status        # Show current network mode status
+nm-regress       # Run full regression test (Control D → Windscribe → Control D)
 
-# Switch profiles (privacy / browsing / gaming)
-~/bin/ctrld-switch gaming
-~/bin/ctrld-switch browsing
-~/bin/ctrld-switch privacy
+# Legacy commands (direct script invocation)
+./scripts/network-mode-manager.sh controld browsing
+./scripts/network-mode-manager.sh windscribe
+./scripts/network-mode-manager.sh status
+
+# Low-level service commands
+sudo ctrld service status
+~/bin/ctrld-switch gaming      # Old method - use nm-gaming instead
 
 # View real-time DNS logs
 sudo tail -f /var/log/ctrld.log
@@ -113,16 +122,28 @@ This repository uses a **symlink-based configuration** model.
 
 ### Key Systems
 
-#### 1. VPN + DNS Stack (`windscribe-controld/`, `controld-system/`)
-- **Components**: Windscribe VPN (encryption) + Control D `ctrld` daemon (DNS filtering).
-- **Configuration**: `~/.config/controld/ctrld.toml` (symlinked/managed).
-- **Features**:
-  - **Fail-Operational**: `ctrld` configured with `--skip_self_checks` to avoid boot-time firewall race conditions.
-  - **Profiles**: Switchable profiles for Privacy, Browsing (DOH/TCP), and Gaming (DOH3/QUIC).
-  - **Integration**: Scripts in `windscribe-controld/` ensure the VPN and DNS play nicely together.
-  - **No Interference**: Profile switching avoids modifying system network settings (`networksetup`), preventing "Network Settings Interference" errors in Windscribe.
+#### 1. Network Mode Manager (`scripts/network-mode-manager.sh`, `scripts/network-mode-verify.sh`)
+- **Purpose**: Unified interface for switching between Control D DNS mode and Windscribe VPN mode.
+- **Operation**:
+  - **Control D Mode**: Enables Control D, configures system DNS to `127.0.0.1`, enables IPv6.
+  - **Windscribe Mode**: Stops Control D, resets DNS to DHCP, disables IPv6 (prevents leaks).
+  - **Profiles**: All three profiles (privacy, browsing, gaming) use DoH3 protocol.
+- **Key Files**:
+  - `scripts/network-mode-manager.sh` - Main orchestrator for mode switching.
+  - `scripts/network-mode-verify.sh` - Tight verification for each mode (DNS, service, IPv6 state).
+  - `scripts/network-mode-regression.sh` - Full end-to-end test suite.
+  - `controld-system/scripts/controld-manager` - Profile management and DNS configuration.
 
-#### 2. Media Streaming System (`media-streaming/`)
+#### 2. VPN + DNS Integration (`windscribe-controld/`, `controld-system/`)
+- **Components**: Windscribe VPN (encryption) + Control D `ctrld` daemon (DNS filtering).
+- **Configuration**: Profile configs stored under `/etc/controld/profiles/` (managed by controld-manager).
+- **Features**:
+  - **Separation Strategy**: Control D and Windscribe are now mutually exclusive modes, not concurrent.
+  - **Fail-Operational**: `ctrld` configured with `--skip_self_checks` to avoid boot-time firewall race conditions.
+  - **DoH3 Protocol**: All profiles default to DoH3 (QUIC) for security and performance.
+  - **IPv6 Management**: Automatic IPv6 enable/disable based on active mode.
+
+#### 3. Media Streaming System (`media-streaming/`)
 - **Purpose**: Serves media to Infuse on iOS/tvOS/macOS.
 - **Components**:
   - **rclone**: Mounts Google Drive and OneDrive.
@@ -131,20 +152,20 @@ This repository uses a **symlink-based configuration** model.
   - **Alldebrid**: Integrated for direct stream caching.
 - **Key Files**: `start-media-server.sh`, `setup-media-library.sh`.
 
-#### 3. Service Optimization (`maintenance/`, root docs)
+#### 4. Service Optimization (`maintenance/`, root docs)
 - **Purpose**: Reduces system overhead by disabling unused Apple services.
 - **Mechanism**:
   - **Disabling**: `launchctl disable` for ~14 services (e.g., `ReportCrash`, `chronod`).
   - **Monitoring**: `service_monitor.sh` runs daily to kill respawned widgets and enforce state.
   - **Docs**: `macos-disabled-services.md`, `SERVICE_OPTIMIZATION_SUMMARY.md`.
 
-#### 4. Automated Maintenance (`maintenance/`)
+#### 5. Automated Maintenance (`maintenance/`)
 - **Architecture**: Modular scripts invoked by `launchd` agents.
 - **Logging**: Centralized in `~/Library/Logs/maintenance/`.
 - **Notification**: Uses `terminal-notifier` for interactive alerts.
 - **Core Scripts**: `health_check.sh`, `quick_cleanup.sh`, `brew_maintenance.sh`.
 
-#### 5. AdGuard Utilities (`adguard/`)
+#### 6. AdGuard Utilities (`adguard/`)
 - **Purpose**: Generates and consolidates blocklists/allowlists.
 - **Script**: `consolidate_adblock_lists.py` merges tracker lists and Control D bypass rules into format-compliant files for AdGuard/other blockers.
 

@@ -7,8 +7,8 @@ A comprehensive automated maintenance system for macOS that keeps your system cl
 **Current Status**: ✅ **Fully Operational**
 
 - **Scripts**: All working and tested with actionable notifications
-- **Automation**: 7 launch agents active (exit code 0)
-- **Last Update**: November 2025
+- **Automation**: 9 launch agents active (exit code 0)
+- **Last Update**: January 2026
 - **Dependencies**: terminal-notifier (for interactive notifications)
 
 ## ⚡ Raycast Quick Actions
@@ -38,12 +38,14 @@ Notes:
 
 ### 🔄 Automated Schedules
 
-- **Daily Health Check**: 8:30 AM - System health monitoring
-- **Daily Brew Maintenance**: 10:00 AM - Homebrew packages + comprehensive cask updates
-- **Daily System Cleanup**: 9:00 AM - System maintenance
-- **Weekly Maintenance**: Monday 9:00 AM - Comprehensive weekly tasks
-- **Monthly Maintenance**: 1st of month 6:00 AM - Deep system maintenance
-- **ProtonDrive Backup**: 3:15 AM - One-way home backup to ProtonDrive
+- Daily Health Check: 8:30 AM - System health monitoring
+- Daily Service Monitor: 8:35 AM - Optimizes background services (safe mode)
+- Daily System Cleanup: 9:00 AM - System maintenance
+- Daily Brew Maintenance: 10:00 AM - Homebrew packages + comprehensive cask updates
+- Daily Nag Remover: 10:00 AM - Suppresses persistent screen capture alerts
+- Weekly Maintenance: Monday 9:00 AM - Comprehensive weekly tasks
+- Monthly Maintenance: 1st of month 6:00 AM - Deep system maintenance
+- ProtonDrive Backup: 3:15 AM - One-way home backup to ProtonDrive
 
 ### 🏥 Health Monitoring
 
@@ -137,7 +139,7 @@ maintenance/
 │   ├── quick_cleanup.sh          # Quick system cleanup
 │   ├── brew_maintenance.sh       # Homebrew maintenance
 │   ├── node_maintenance.sh       # Node.js maintenance
-│   ├── onedrive_monitor.sh       # OneDrive monitoring
+│   ├── google_drive_monitor.sh       # Google Drive monitoring
 │   ├── system_cleanup.sh         # System cleanup
 │   ├── view_logs.sh              # Interactive log viewer (NEW)
 │   ├── generate_error_summary.sh # Error consolidation tool (NEW)
@@ -191,7 +193,18 @@ UPDATE_MAS_APPS=1          # Auto-update Mac App Store apps
    - Purpose: Homebrew packages + comprehensive cask updates
    - Notifications: ✅ Click to view logs
 
-3. **Daily System Cleanup** (`com.abhimehrotra.maintenance.systemcleanup`)
+3. **Daily Nag Remover** (`com.abhimehrotra.maintenance.screencapture-nag-remover`)
+   - Time: 10:00 AM daily
+   - Script: `screencapture_nag_remover.sh`
+   - Purpose: Suppresses persistent macOS screen capture alerts
+   - Note: Requires Full Disk Access for `/bin/bash`
+
+4. **Daily Service Monitor** (`com.abhimehrotra.maintenance.servicemonitor`)
+   - Time: 8:35 AM daily
+   - Script: `service_monitor.sh`
+   - Purpose: Disables unused background services (without killing widgets)
+
+5. **Daily System Cleanup** (`com.abhimehrotra.maintenance.systemcleanup`)
    - Time: 9:00 AM daily (9:30 AM on Mondays to avoid collision)
    - Script: `system_cleanup.sh`
    - Purpose: System maintenance
@@ -328,4 +341,4 @@ This maintenance system is self-maintaining, but you can:
 
 ---
 
-*Last Updated: October 2025 - System Status: Fully Operational*
+*Last Updated: January 2026 - System Status: Fully Operational*
