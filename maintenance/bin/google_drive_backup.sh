@@ -76,13 +76,17 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Check Weekend Pause for Light Mode
-DAY_OF_WEEK=$(date +%u) # 6=Sat, 7=Sun
+# Check Schedule Conflicts for Light Mode
+DAY_OF_WEEK=$(date +%u) # 1=Mon, 6=Sat, 7=Sun
+
 if [[ "$MODE" == "light" ]]; then
-    if [[ "$DAY_OF_WEEK" -ge 6 ]] && [[ "${FORCE_RUN:-0}" != "1" ]]; then
-        echo "Example: Weekend detected (Day $DAY_OF_WEEK). Pausing light backup to avoid gaming interference."
+    # Skip on Mondays (Day 1) because Full Backup runs then
+    if [[ "$DAY_OF_WEEK" -eq 1 ]] && [[ "${FORCE_RUN:-0}" != "1" ]]; then
+        echo "Skipping Light Backup on Monday (Full Backup scheduled for 4:00 AM)."
         exit 0
     fi
+    
+    # Note: Weekend pause removed per user request (Tue-Sun schedule active)
 fi
 
 if [[ ! -d "$DEST" ]]; then
