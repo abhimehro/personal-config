@@ -88,20 +88,20 @@ setup_directories() {
 # Backup current network settings
 backup_network_settings() {
     log "Backing up current network settings..."
-    
+
     # Backup current DNS servers
     networksetup -getdnsservers Wi-Fi > "$BACKUP_DIR/original_dns.txt" 2>/dev/null || echo "No DNS servers" > "$BACKUP_DIR/original_dns.txt"
-    
+
     # Backup current network configuration
     scutil --dns > "$BACKUP_DIR/dns_config.txt" 2>/dev/null || true
-    
+
     log_success "Network settings backed up"
 }
 
 # Restore network settings (emergency recovery)
 restore_network_settings() {
     log_warning "Restoring original network settings..."
-    
+
     if [[ -f "$BACKUP_DIR/original_dns.txt" ]]; then
         local original_dns=$(cat "$BACKUP_DIR/original_dns.txt")
         if [[ "$original_dns" == "No DNS servers" ]] || [[ "$original_dns" == "There aren't any DNS Servers set on Wi-Fi." ]]; then
@@ -119,24 +119,24 @@ restore_network_settings() {
         # Fallback to common public DNS servers
         networksetup -setdnsservers Wi-Fi 1.1.1.1 8.8.8.8
     fi
-    
+
     # Flush DNS cache
     dscacheutil -flushcache
     sudo killall -HUP mDNSResponder 2>/dev/null || true
-    
+
     log_success "Network settings restored"
 }
 
 # Safe service stop with cleanup
 safe_stop() {
     log "Safely stopping Control D service..."
-    
+
     # Stop ctrld service
     ctrld stop 2>/dev/null || true
-    
+
     # Kill any remaining processes
     pkill -x ctrld 2>/dev/null || true
-    
+
     # Wait for processes to fully terminate (optimized with polling)
     local retry=0
     # Poll for up to 2 seconds (20 * 0.1s)
@@ -144,7 +144,7 @@ safe_stop() {
         sleep 0.1
         retry=$((retry + 1))
     done
-    
+
     # Verify no ctrld processes are running
     if pgrep -x "ctrld" >/dev/null; then
         log_warning "Force killing remaining ctrld processes..."
@@ -152,10 +152,10 @@ safe_stop() {
         # Quick check if it's gone
         sleep 0.1
     fi
-    
+
     # Reset DNS to prevent network hijacking
     restore_network_settings
-    
+
     log_success "Service safely stopped and network restored"
 }
 
@@ -165,26 +165,35 @@ generate_profile_config() {
     local profile_id="$2"
     local protocol="$3"
     local config_file="$PROFILES_DIR/ctrld.$profile_name.toml"
-    
+
     log "Generating $profile_name profile configuration with $protocol protocol..."
-    
+
     # Ensure destination directory exists
     mkdir -p "$PROFILES_DIR"
-    
+
     # Generate configuration using ctrld
     TEMP_CONFIG=$(mktemp /tmp/ctrld_temp.toml.XXXXXX)
-    
+
     # Start service temporarily to generate config
+    # ⚡ Bolt Optimization: Use 'run' in background instead of 'start' to avoid
+    # service registration overhead and unnecessary DNS flapping.
+    local ctrld_pid
     if [[ "$protocol" == "doh3" ]]; then
-        ctrld start --cd "$profile_id" --proto doh3 --config="$TEMP_CONFIG" --skip_self_checks 2>/dev/null || true
+        ctrld run --cd "$profile_id" --proto doh3 --config="$TEMP_CONFIG" --skip_self_checks >/dev/null 2>&1 &
+        ctrld_pid=$!
     else
-        ctrld start --cd "$profile_id" --config="$TEMP_CONFIG" --skip_self_checks 2>/dev/null || true
+        ctrld run --cd "$profile_id" --config="$TEMP_CONFIG" --skip_self_checks >/dev/null 2>&1 &
+        ctrld_pid=$!
     fi
 
     # Wait for config file to be created (optimized)
     local max_retries=50
     local count=0
     while [[ ! -f "$TEMP_CONFIG" ]] && [[ $count -lt $max_retries ]]; do
+        # If process died prematurely, stop waiting
+        if ! kill -0 "$ctrld_pid" 2>/dev/null; then
+            break
+        fi
         sleep 0.1
         ((count++))
     done
@@ -195,23 +204,25 @@ generate_profile_config() {
         sleep 0.1
     fi
 
-    ctrld stop 2>/dev/null || true
-    
+    # Cleanup background process
+    kill "$ctrld_pid" 2>/dev/null || true
+    wait "$ctrld_pid" 2>/dev/null || true
+
     if [[ -f "$TEMP_CONFIG" ]]; then
         # Copy and customize the generated config
         cp "$TEMP_CONFIG" "$config_file"
         rm -f "$TEMP_CONFIG"
-        
+
         # Optimize config (combined sed for performance)
-        sed -i '' -e "s/ip = '127.0.0.1'/ip = '0.0.0.0'/g" \
-                  -e 's/, "::\/0"//g' \
+        # Note: We specifically KEEP 'ip = 127.0.0.1' to ensure we only listen on localhost
+        # Binding to 0.0.0.0 would expose the DNS resolver to the network (Security Risk)
+        sed -i '' -e 's/, "::\/0"//g' \
                   -e 's/"::\/0", //g' \
                   -e "s/timeout = 5000/timeout = 3000/g" \
                   "$config_file" 2>/dev/null || true
 
         # Disable IPv6 in listener explicitly if supported or ensure it's not auto-binding
-        # (Note: 'ip = 0.0.0.0' usually binds IPv4, but let's be sure we don't add IPv6 listeners)
-        
+
         log_success "$profile_name profile configuration generated with $protocol"
     else
         log_error "Failed to generate $profile_name profile configuration"
@@ -226,15 +237,15 @@ switch_profile() {
     local profile_id=$(get_profile_id "$profile_name")
     local protocol=${force_protocol:-$(get_profile_protocol "$profile_name")}
     local config_file="$PROFILES_DIR/ctrld.$profile_name.toml"
-    
+
     if [[ -z "$profile_id" ]]; then
         log_error "Unknown profile: $profile_name"
         echo "Available profiles: $(get_all_profiles)"
         return 1
     fi
-    
+
     log "Switching to $profile_name profile with $protocol protocol..."
-    
+
     # Optimization: Early exit if already running the desired profile/protocol
     if pgrep -x "ctrld" >/dev/null && [[ -L "$CONTROLD_DIR/ctrld.toml" ]]; then
         local current_config
@@ -256,27 +267,27 @@ switch_profile() {
 
     # Ensure directories exist before generating configs
     setup_directories
-    
+
     # Stop current service efficiently without touching network settings (avoids Windscribe interference)
     log "Stopping Control D service..."
     ctrld stop 2>/dev/null || true
     pkill -f ctrld 2>/dev/null || true
-    
+
     # Wait for process to terminate (optimized)
     local retry=0
     while pgrep -x "ctrld" >/dev/null && [[ $retry -lt 30 ]]; do
         sleep 0.1
         ((retry++))
     done
-    
+
     # Generate profile config if it doesn't exist or if protocol changed
     if [[ ! -f "$config_file" ]] || ! grep -q "type = '$protocol'" "$config_file" 2>/dev/null; then
         generate_profile_config "$profile_name" "$profile_id" "$protocol"
     fi
-    
+
     # Create symlink to active configuration
     ln -sf "$config_file" "$CONTROLD_DIR/ctrld.toml"
-    
+
     # Start service with the new profile
     log "Starting Control D with $profile_name profile ($protocol)..."
     if [[ "$protocol" == "doh3" ]]; then
@@ -284,18 +295,18 @@ switch_profile() {
     else
         ctrld start --config="$CONTROLD_DIR/ctrld.toml" --skip_self_checks
     fi
-    
+
     # Wait for service to initialize (optimized)
     local retry=0
     while ! dig @127.0.0.1 google.com +short +time=1 >/dev/null 2>&1 && [[ $retry -lt 30 ]]; do
         sleep 0.1
         ((retry++))
     done
-    
+
     # Configure system DNS to use localhost resolver
     log "Configuring system DNS to use Control D resolver at $LISTENER_IP..."
     networksetup -setdnsservers Wi-Fi 127.0.0.1
-    
+
     # Validate DNS configuration was applied
     sleep 0.2
     local configured_dns
@@ -308,11 +319,11 @@ switch_profile() {
       sleep 0.5
       networksetup -setdnsservers Wi-Fi 127.0.0.1
     fi
-    
+
     # Flush DNS cache
     dscacheutil -flushcache
     sudo killall -HUP mDNSResponder 2>/dev/null || true
-    
+
     # Test the connection
     if test_connection; then
         log_success "Successfully switched to $profile_name profile ($protocol)"
@@ -332,7 +343,7 @@ switch_profile() {
 # Test DNS connection
 test_connection() {
     log "Testing DNS connection..."
-    
+
     # Test basic resolution
     if dig @127.0.0.1 google.com +short +time=5 >/dev/null 2>&1; then
         log_success "Basic DNS resolution working"
@@ -340,7 +351,7 @@ test_connection() {
         log_error "Basic DNS resolution failed"
         return 1
     fi
-    
+
     # Test Control D connectivity
     if dig @127.0.0.1 p.controld.com +short +time=5 >/dev/null 2>&1; then
         log_success "Control D connectivity confirmed"
@@ -348,7 +359,7 @@ test_connection() {
         log_error "Control D connectivity failed"
         return 1
     fi
-    
+
     # Test filtering (different for gaming vs privacy vs browsing)
     local block_test=$(dig @127.0.0.1 doubleclick.net +short 2>/dev/null | wc -l)
     if [[ "$block_test" -eq 0 ]]; then
@@ -360,7 +371,7 @@ test_connection() {
             log_warning "Ads are not being blocked - this may be intended for this profile"
         fi
     fi
-    
+
     return 0
 }
 
@@ -368,11 +379,11 @@ test_connection() {
 show_status() {
     echo "=== Control D Profile Manager Status ==="
     echo
-    
+
     # Check if service is running
     if pgrep -f ctrld >/dev/null; then
         echo "Service Status: ✅ Running"
-        
+
         # Determine current profile and protocol
         if [[ -L "$CONTROLD_DIR/ctrld.toml" ]]; then
             local current_config=$(readlink "$CONTROLD_DIR/ctrld.toml")
@@ -384,11 +395,11 @@ show_status() {
         else
             echo "Active Profile: Unknown (direct configuration)"
         fi
-        
+
         # Show DNS configuration
         local dns_servers=$(networksetup -getdnsservers Wi-Fi)
         echo "System DNS: $dns_servers"
-        
+
         # Test connection
         if test_connection >/dev/null 2>&1; then
             echo "Connection: ✅ Working"
@@ -398,14 +409,14 @@ show_status() {
     else
         echo "Service Status: ❌ Stopped"
     fi
-    
+
     echo
     echo "Available Profiles:"
     for profile in $(get_all_profiles); do
         local default_protocol=$(get_profile_protocol "$profile")
         echo "  - $profile ($(get_profile_id "$profile")) - Default: $default_protocol"
     done
-    
+
     echo
     echo "Protocols:"
     echo "  - doh3: DNS-over-HTTPS/3 (QUIC) - Faster, more secure"
@@ -415,20 +426,20 @@ show_status() {
 # Emergency recovery
 emergency_recovery() {
     log_warning "Performing emergency recovery..."
-    
+
     # Force stop all ctrld processes
     pkill -9 -f ctrld 2>/dev/null || true
-    
+
     # Remove any configurations that might cause issues
     rm -f "$CONTROLD_DIR/ctrld.toml"
-    
+
     # Restore network settings
     restore_network_settings
-    
+
     # Clear any stuck network states
     sudo dscacheutil -flushcache
     sudo killall -HUP mDNSResponder 2>/dev/null || true
-    
+
     # Test network connectivity
     if ping -c 1 8.8.8.8 >/dev/null 2>&1; then
         log_success "Network connectivity restored"
@@ -443,17 +454,17 @@ emergency_recovery() {
 # Initialize the system
 initialize() {
     log "Initializing Control D Profile Manager..."
-    
+
     setup_directories
     backup_network_settings
-    
+
     # Generate configurations for all profiles with their preferred protocols
     for profile in $(get_all_profiles); do
         local profile_id=$(get_profile_id "$profile")
         local protocol=$(get_profile_protocol "$profile")
         generate_profile_config "$profile" "$profile_id" "$protocol"
     done
-    
+
     log_success "Initialization completed"
 }
 

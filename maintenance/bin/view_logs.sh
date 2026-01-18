@@ -6,57 +6,59 @@
 set -eo pipefail
 
 LOG_DIR="$HOME/Library/Logs/maintenance"
-TASK="${1:-summary}"
+TASK="$1"
 
-# Function to open files
+# Colors for UX
+BOLD=$(tput bold 2>/dev/null || echo "")
+CYAN=$(tput setaf 6 2>/dev/null || echo "")
+GREEN=$(tput setaf 2 2>/dev/null || echo "")
+RED=$(tput setaf 1 2>/dev/null || echo "")
+RESET=$(tput sgr0 2>/dev/null || echo "")
+
 open_files() {
     local files=("$@")
-    
     if [[ ${#files[@]} -eq 0 ]]; then
-        echo "No log files found for: $TASK"
+        echo "${RED}No log files found for: ${TASK:-selection}${RESET}"
         return 1
     fi
+    echo "${GREEN}Opening ${#files[@]} file(s)...${RESET}"
     
-    # Try to open in GUI editor (macOS - use TextEdit explicitly for reliability)
     if command -v open >/dev/null 2>&1; then
-        for file in "${files[@]}"; do
-            open -a TextEdit "$file" 2>/dev/null || open "$file"
-        done
-    # Fallback to less for terminal viewing
+        for file in "${files[@]}"; do open -a TextEdit "$file" 2>/dev/null || open "$file"; done
     elif command -v less >/dev/null 2>&1; then
-        less "${files[@]}"
+        less -R "${files[@]}"
     else
-        # Last resort: cat
         cat "${files[@]}"
     fi
 }
 
-# Handle summary request
-if [[ "$TASK" == "summary" ]] || [[ -z "$TASK" ]]; then
-    # Find the latest error summary (suppress errors from ls to avoid set -e exit)
-    SUMMARY_FILE=$(ls -t "$LOG_DIR"/error_summary_*.txt 2>/dev/null | head -1 || true)
+# Interactive Mode (No args)
+if [[ -z "$TASK" ]]; then
+    echo "${BOLD}${CYAN}Maintenance Log Viewer${RESET}"
+    mapfile -t LOGS < <(find "$LOG_DIR" -maxdepth 1 -type f \( -name "*.log" -o -name "*.txt" \) 2>/dev/null | sort -r | head -10)
     
-    if [[ -n "$SUMMARY_FILE" ]] && [[ -f "$SUMMARY_FILE" ]]; then
-        echo "Opening latest error summary: $SUMMARY_FILE"
-        open_files "$SUMMARY_FILE"
-    else
-        echo "No error summary found. Run a maintenance task first."
-        exit 1
+    if [[ ${#LOGS[@]} -eq 0 ]]; then
+        echo "${RED}No logs found in $LOG_DIR${RESET}"
+        exit 0
     fi
+
+    PS3="${BOLD}Select a log to view (1-${#LOGS[@]}): ${RESET}"
+    select opt in "${LOGS[@]##*/}" "Quit"; do
+        if [[ -n "$opt" && "$opt" != "Quit" ]]; then
+            open_files "$LOG_DIR/$opt"
+            break
+        elif [[ "$opt" == "Quit" ]]; then
+            break
+        fi
+    done
+    exit 0
+fi
+
+# Argument Mode
+if [[ "$TASK" == "summary" ]]; then
+    FILE=$(ls -t "$LOG_DIR"/error_summary_*.txt 2>/dev/null | head -1 || true)
+    [[ -n "$FILE" ]] && open_files "$FILE" || echo "${RED}No error summary found.${RESET}"
 else
-    # Find log files matching the task name (case-insensitive)
-    mapfile -t LOG_FILES < <(find "$LOG_DIR" -type f -iname "*${TASK}*.log" 2>/dev/null | sort -r | head -5)
-    
-    if [[ ${#LOG_FILES[@]} -gt 0 ]]; then
-        echo "Opening ${#LOG_FILES[@]} log file(s) for: $TASK"
-        for log in "${LOG_FILES[@]}"; do
-            echo "  - $(basename "$log")"
-        done
-        open_files "${LOG_FILES[@]}"
-    else
-        echo "No log files found matching: $TASK"
-        echo "Available logs in $LOG_DIR:"
-        ls -1t "$LOG_DIR"/*.log 2>/dev/null | head -10 | xargs -n1 basename || echo "  (no logs found)"
-        exit 1
-    fi
+    mapfile -t FILES < <(find "$LOG_DIR" -type f -iname "*${TASK}*.log" 2>/dev/null | sort -r | head -5)
+    open_files "${FILES[@]}"
 fi
