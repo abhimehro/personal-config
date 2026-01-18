@@ -21,3 +21,7 @@
 ## 2025-12-29 - Service Config Generation vs Execution
 **Learning:** Some service managers (like `ctrld`) have distinct `start` (daemonize + system config) and `run` (foreground) modes. Using `start` just to generate a configuration file triggers unnecessary system-wide changes (like DNS resets) and overhead.
 **Action:** Use `run` in the background (with proper cleanup) when you only need the service to perform an initialization task (like config generation) without fully activating its system integration.
+
+## 2025-12-30 - Parallel Hardware Queries
+**Learning:** macOS tools like `networksetup` are often blocking and slow (several hundred milliseconds). When multiple independent properties (e.g., DNS and IPv6 status) need to be queried from the same or different hardware interfaces, executing them in parallel subshells significantly improves responsiveness.
+**Action:** Group independent blocking hardware queries and run them in parallel using `command &` and `wait`, capturing output to temporary files if necessary.
