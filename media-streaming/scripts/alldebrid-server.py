@@ -80,8 +80,9 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             if allowed_origins_env and origin:
                 allowed_origins = {o.strip() for o in allowed_origins_env.split(',') if o.strip()}
-                if origin in allowed_origins:
-                    self.send_header('Access-Control-Allow-Origin', origin)
+                safe_origin = origin.replace("\r", "").replace("\n", "")
+                if safe_origin in allowed_origins:
+                    self.send_header('Access-Control-Allow-Origin', safe_origin)
                     self.send_header('Vary', 'Origin')
             # If no allowed origins configured, do not send Access-Control-Allow-Origin
             # This effectively blocks browser fetch/XHR from other origins
