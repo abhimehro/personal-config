@@ -250,10 +250,14 @@ print_status() {
 
   # IPv6 Detail
   local ipv6_status
-  if [[ "$wifi_info" == *"IPv6: Automatic"* ]]; then
+  if [[ "$wifi_info" == *"IPv6: Off"* ]]; then
+    ipv6_status="${RED}DISABLED${NC} (Off)"
+  elif [[ "$wifi_info" == *"IPv6: Manual"* ]]; then
+    ipv6_status="${GREEN}ENABLED${NC} (Manual)"
+  elif [[ "$wifi_info" == *"IPv6: Automatic"* ]]; then
     ipv6_status="${GREEN}ENABLED${NC} (Automatic)"
   else
-    ipv6_status="${RED}DISABLED${NC} (Manual/Off)"
+    ipv6_status="${YELLOW}UNKNOWN${NC} (Check Network prefs)"
   fi
   printf "   %s  %-13s %b\n" "🌐" "IPv6 Mode" "$ipv6_status"
 
