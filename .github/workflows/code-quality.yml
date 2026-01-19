@@ -137,9 +137,12 @@ jobs:
                   for item in items:
                       if item.get('complexity', 0) > 10:
                           print(f"{item['type']} '{item['name']}' has complexity {item['complexity']} (line {item['lineno']})")
-          except Exception:
-              # Silently handle JSON parsing or data structure errors
-              pass
+          except json.JSONDecodeError as e:
+              # Log JSON parsing errors for easier troubleshooting
+              sys.stderr.write(f"Failed to parse radon JSON output: {e}\n")
+          except (TypeError, ValueError) as e:
+              # Log data structure issues without failing the workflow
+              sys.stderr.write(f"Invalid data structure in radon output: {e}\n")
           PYEOF
           
           # Check cyclomatic complexity (CC)
