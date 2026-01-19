@@ -102,7 +102,9 @@ check_ipv6_status() {
             elif [[ "$ipv6_config" == *"IPv6: Off"* ]]; then
                  printf "   %-25s %b\n" "$service" "${RED}○ DISABLED${NC} (Off)"
             else
-                 printf "   %-25s %b\n" "$service" "${YELLOW}UNKNOWN${NC} ($ipv6_config)"
+                 # Extract status value after "IPv6: " prefix
+                 local status_value="${ipv6_config#*IPv6: }"
+                 printf "   %-25s %b\n" "$service" "${YELLOW}UNKNOWN${NC} ($status_value)"
             fi
         fi
     done < <(get_network_services)
