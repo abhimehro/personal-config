@@ -9,6 +9,7 @@ This repository uses several GitHub Actions workflows for automation and code qu
 - **stale.yml** - Manages stale issues and pull requests
 - **summary.yml** - Generates PR summaries
 - **crda.yml** - Security scanning for dependencies
+- **code-quality.yml** - Code quality and complexity checks for shell scripts and Python files
 
 ### Gemini AI Workflows (Optional)
 
@@ -103,3 +104,106 @@ Check that:
 - [Gemini API Documentation](https://ai.google.dev/docs)
 - [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 - [Workload Identity Federation](https://cloud.google.com/iam/docs/workload-identity-federation)
+
+## Code Quality Workflow
+
+The **code-quality.yml** workflow performs automated code quality and complexity checks to prevent overly complex methods and scripts. This workflow was added to prevent issues similar to those found by CodeFactor in other repositories.
+
+### What It Checks
+
+#### Shell Scripts (`.sh`, `.bash`)
+1. **ShellCheck Analysis** - Runs ShellCheck on all shell scripts to find bugs and potential issues
+2. **Script Length** - Warns when scripts exceed 200 lines
+3. **Complexity** - Encourages refactoring large scripts into smaller, more maintainable functions
+
+#### Python Files (`.py`)
+1. **Cyclomatic Complexity** - Measures code complexity using Radon
+   - Threshold: Warns when function complexity > 10
+   - Scale: 1-5 (simple), 6-10 (moderate), 11-20 (complex), 21+ (very complex)
+2. **Maintainability Index** - Calculates how easy code is to maintain
+   - Threshold: Warns when MI < 20
+   - Scale: ≥20 (maintainable), 10-19 (moderate), <10 (difficult)
+3. **File Length** - Warns when files exceed 300 lines
+4. **Trunk Check** - Runs configured linters (ruff, bandit, black, isort)
+
+### When It Runs
+
+- **Pull Requests** - Automatically on PRs that modify `.sh`, `.py`, or files in `scripts/`, `tests/`, `controld-system/`, `windscribe-controld/`
+- **Push to main** - On commits to main/master branch
+- **Manual** - Can be triggered manually via workflow_dispatch
+
+### Understanding Results
+
+The workflow provides **warnings**, not errors. These are suggestions to improve code quality:
+
+- **Green checkmark (✅)** - No issues found or only minor warnings
+- **Warnings** - Code that exceeds thresholds but doesn't fail the build
+- **Summary** - Each run provides a summary of all checks performed
+
+### How to Fix Complexity Issues
+
+#### For Shell Scripts:
+```bash
+# Before: Large monolithic script (300+ lines)
+# After: Refactor into functions
+
+# Extract reusable logic into functions
+validate_input() {
+    # Validation logic here
+}
+
+process_data() {
+    # Processing logic here
+}
+
+# Main script just orchestrates
+main() {
+    validate_input
+    process_data
+}
+
+main "$@"
+```
+
+#### For Python:
+```python
+# Before: Complex function (CC > 10)
+def complex_function(data):
+    if condition1:
+        if condition2:
+            if condition3:
+                # Deep nesting...
+                pass
+
+# After: Extract and simplify
+def validate_data(data):
+    return condition1 and condition2 and condition3
+
+def complex_function(data):
+    if not validate_data(data):
+        return
+    # Simplified logic
+```
+
+### Thresholds
+
+| Check | Threshold | Severity |
+|-------|-----------|----------|
+| Shell script length | >200 lines | Warning |
+| Python cyclomatic complexity | >10 | Warning |
+| Python maintainability index | <20 | Warning |
+| Python file length | >300 lines | Warning |
+
+These thresholds are based on industry best practices and can be adjusted in `.github/workflows/code-quality.yml`.
+
+### Related Tools
+
+- **Radon** - Python complexity analysis ([documentation](https://radon.readthedocs.io/))
+- **ShellCheck** - Shell script static analysis ([documentation](https://www.shellcheck.net/))
+- **Trunk** - Unified linter runner ([documentation](https://docs.trunk.io/))
+
+### References
+
+This workflow was added to prevent complex method issues similar to those found in CodeFactor analysis of related repositories. For more information, see:
+- [CodeFactor Complex Method Detection](https://www.codefactor.io/docs/issues/complexity)
+- [Cyclomatic Complexity Explanation](https://en.wikipedia.org/wiki/Cyclomatic_complexity)

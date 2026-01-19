@@ -1,0 +1,243 @@
+name: Code Quality & Complexity Checks
+
+on:
+  pull_request:
+    paths:
+      - '**.sh'
+      - '**.py'
+      - '**.bash'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'controld-system/**'
+      - 'windscribe-controld/**'
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+# Cancel in-progress runs for the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shellcheck-complexity:
+    name: Shell Script Complexity Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Find shell scripts
+        id: find-scripts
+        run: |
+          # Find all shell scripts (excluding archive and hidden directories)
+          find . -type f \( -name "*.sh" -o -name "*.bash" \) \
+            ! -path "./.git/*" \
+            ! -path "./node_modules/*" \
+            ! -path "./.local/*" \
+            ! -path "./archive/*" \
+            ! -path "./.Jules/*" \
+            ! -path "./.cursor/*" \
+            > /tmp/shell_files.txt
+          
+          echo "Found $(wc -l < /tmp/shell_files.txt) shell scripts"
+          cat /tmp/shell_files.txt
+
+      - name: Run ShellCheck
+        run: |
+          echo "Running ShellCheck on all shell scripts..."
+          
+          # ShellCheck all files
+          while IFS= read -r file; do
+            echo "Checking: $file"
+            shellcheck -S warning "$file" || echo "::warning file=$file::ShellCheck found issues"
+          done < /tmp/shell_files.txt
+          
+          echo "ShellCheck completed"
+
+      - name: Check script complexity
+        run: |
+          echo "Checking for overly complex shell scripts..."
+          echo "Scripts with >200 lines should be reviewed for refactoring opportunities:"
+          echo ""
+          
+          while IFS= read -r file; do
+            lines=$(wc -l < "$file")
+            if [ "$lines" -gt 200 ]; then
+              echo "::warning file=$file::Script has $lines lines (>200 line threshold). Consider refactoring into smaller functions or modules."
+            fi
+          done < /tmp/shell_files.txt
+          
+          echo ""
+          echo "Complexity check completed"
+
+  python-complexity:
+    name: Python Code Complexity Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install complexity analysis tools
+        run: |
+          pip install radon pylint
+
+      - name: Find Python files
+        id: find-python
+        run: |
+          # Find all Python files (excluding archive and hidden directories)
+          find . -type f -name "*.py" \
+            ! -path "./.git/*" \
+            ! -path "./node_modules/*" \
+            ! -path "./.local/*" \
+            ! -path "./archive/*" \
+            ! -path "./.venv/*" \
+            ! -path "./venv/*" \
+            > /tmp/python_files.txt
+          
+          echo "Found $(wc -l < /tmp/python_files.txt) Python files"
+          cat /tmp/python_files.txt
+
+      - name: Check cyclomatic complexity
+        run: |
+          echo "Checking cyclomatic complexity..."
+          echo ""
+          
+          if [ ! -s /tmp/python_files.txt ]; then
+            echo "No Python files found to check"
+            exit 0
+          fi
+          
+          # Check cyclomatic complexity (CC)
+          # Thresholds: A=1-5 (simple), B=6-10 (moderate), C=11-20 (complex), D=21-50 (very complex), F=>50 (extremely complex)
+          while IFS= read -r file; do
+            echo "Analyzing: $file"
+            
+            # Get complexity report
+            radon cc "$file" -s -n C || true
+            
+            # Check for functions/methods with complexity > 10 (above moderate)
+            high_complexity=$(radon cc "$file" --json | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    for file, items in data.items():
+        for item in items:
+            if item.get('complexity', 0) > 10:
+                print(f\"{item['type']} '{item['name']}' has complexity {item['complexity']} (line {item['lineno']})\")
+except:
+    pass
+" || echo "")
+            
+            if [ -n "$high_complexity" ]; then
+              echo "::warning file=$file::$high_complexity - Consider refactoring to reduce complexity"
+            fi
+          done < /tmp/python_files.txt
+          
+          echo ""
+          echo "Cyclomatic complexity check completed"
+
+      - name: Check maintainability index
+        run: |
+          echo "Checking maintainability index..."
+          echo ""
+          
+          if [ ! -s /tmp/python_files.txt ]; then
+            echo "No Python files found to check"
+            exit 0
+          fi
+          
+          # Check maintainability index (MI)
+          # MI >= 20: Maintainable, 10-19: Moderate, <10: Difficult to maintain
+          while IFS= read -r file; do
+            mi=$(radon mi "$file" -s -j | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    for file, mi_data in data.items():
+        if mi_data['mi'] < 20:
+            print(f\"{mi_data['mi']:.1f}\")
+except:
+    pass
+" || echo "")
+            
+            if [ -n "$mi" ] && [ "$(echo "$mi < 20" | bc -l)" -eq 1 ]; then
+              echo "::warning file=$file::Maintainability index is $mi (<20). Consider refactoring to improve maintainability."
+            fi
+          done < /tmp/python_files.txt
+          
+          echo ""
+          echo "Maintainability index check completed"
+
+      - name: Check file length
+        run: |
+          echo "Checking for overly long Python files..."
+          echo ""
+          
+          if [ ! -s /tmp/python_files.txt ]; then
+            echo "No Python files found to check"
+            exit 0
+          fi
+          
+          while IFS= read -r file; do
+            lines=$(wc -l < "$file")
+            if [ "$lines" -gt 300 ]; then
+              echo "::warning file=$file::File has $lines lines (>300 line threshold). Consider splitting into smaller modules."
+            fi
+          done < /tmp/python_files.txt
+          
+          echo ""
+          echo "File length check completed"
+
+  trunk-check:
+    name: Trunk Check (Existing Linters)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Trunk
+        run: |
+          curl -fsSL https://get.trunk.io | bash -s -- -y
+
+      - name: Run Trunk Check
+        run: |
+          # Run trunk check on changed files
+          ~/.trunk/bin/trunk check --all --upstream origin/main || true
+          
+          echo ""
+          echo "Trunk check completed"
+
+  summary:
+    name: Code Quality Summary
+    runs-on: ubuntu-latest
+    needs: [shellcheck-complexity, python-complexity, trunk-check]
+    if: always()
+    steps:
+      - name: Summary
+        run: |
+          echo "## Code Quality Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Shell script complexity check: ${{ needs.shellcheck-complexity.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Python complexity check: ${{ needs.python-complexity.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Trunk linter check: ${{ needs.trunk-check.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Complexity Thresholds" >> $GITHUB_STEP_SUMMARY
+          echo "- **Shell scripts**: >200 lines triggers warning" >> $GITHUB_STEP_SUMMARY
+          echo "- **Python cyclomatic complexity**: >10 triggers warning" >> $GITHUB_STEP_SUMMARY
+          echo "- **Python maintainability index**: <20 triggers warning" >> $GITHUB_STEP_SUMMARY
+          echo "- **Python file length**: >300 lines triggers warning" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "These are **warnings** to encourage better code organization, not blocking errors." >> $GITHUB_STEP_SUMMARY
