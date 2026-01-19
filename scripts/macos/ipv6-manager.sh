@@ -102,7 +102,9 @@ check_ipv6_status() {
             elif [[ "$ipv6_config" == *"IPv6: Off"* ]]; then
                  printf "   %-25s %b\n" "$service" "${RED}○ DISABLED${NC} (Off)"
             else
-                 printf "   %-25s %b\n" "$service" "${YELLOW}UNKNOWN${NC} ($ipv6_config)"
+                 # Extract status value (remove "IPv6: " prefix)
+                 local status_val="${ipv6_config#IPv6: }"
+                 printf "   %-25s %b\n" "$service" "${YELLOW}UNKNOWN${NC} ($status_val)"
             fi
         fi
     done < <(get_network_services)
@@ -114,7 +116,7 @@ check_ipv6_status() {
     if [[ -z "$ipv6_addrs" ]]; then
         echo -e "   ${YELLOW}No global IPv6 addresses found${NC}"
     else
-        echo "$ipv6_addrs" | sed 's/^/   /'
+        echo "$ipv6_addrs"
     fi
     echo ""
 }
