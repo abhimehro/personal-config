@@ -265,16 +265,16 @@ def main():
         generated_user = True
 
     if not AUTH_PASS:
-        # If output is a TTY, generate and print password for interactive use.
+        # If output is a TTY, generate a password for interactive use without logging it.
         if sys.stdout.isatty():
             alphabet = string.ascii_letters + string.digits
             AUTH_PASS = ''.join(secrets.choice(alphabet) for i in range(16))
             print("\n🔒 Security: Authentication Enabled")
             print(f"   User: {AUTH_USER}")
-            print(f"   Pass: {AUTH_PASS}")
+            print("   Pass: [auto-generated and not shown for security]")
             if generated_user:
                 print("   (Random username generated. Set custom user via --user)")
-            print("   (Use these credentials to access the server; store the password securely)\n")
+            print("   (Optionally set a custom password via --password or AUTH_PASS to avoid random rotation)\n")
         # Otherwise, fail and require user to set a password to avoid logging it.
         else:
             print("\n❌ Error: Auto-generating a password is not supported when output is not a TTY.", file=sys.stderr)
