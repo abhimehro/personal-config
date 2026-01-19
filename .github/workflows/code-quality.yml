@@ -92,7 +92,7 @@ jobs:
 
       - name: Install complexity analysis tools
         run: |
-          pip install radon pylint
+          pip install radon
 
       - name: Find Python files
         id: find-python
@@ -131,7 +131,8 @@ jobs:
                   for item in items:
                       if item.get('complexity', 0) > 10:
                           print(f"{item['type']} '{item['name']}' has complexity {item['complexity']} (line {item['lineno']})")
-          except:
+          except Exception:
+              # Silently handle JSON parsing or data structure errors
               pass
           PYEOF
           
@@ -174,7 +175,8 @@ jobs:
               for file_path, mi_data in data.items():
                   if mi_data['mi'] < 20:
                       print(f"{mi_data['mi']:.1f}")
-          except:
+          except Exception:
+              # Silently handle JSON parsing or data structure errors
               pass
           PYEOF
           
@@ -225,7 +227,14 @@ jobs:
       - name: Run Trunk Check
         run: |
           # Run trunk check on changed files
-          ~/.trunk/bin/trunk check --all --upstream origin/main || true
+          # Try with main first, fall back to master if it doesn't exist
+          if git rev-parse --verify origin/main >/dev/null 2>&1; then
+            ~/.trunk/bin/trunk check --all --upstream origin/main || true
+          elif git rev-parse --verify origin/master >/dev/null 2>&1; then
+            ~/.trunk/bin/trunk check --all --upstream origin/master || true
+          else
+            ~/.trunk/bin/trunk check --all || true
+          fi
           
           echo ""
           echo "Trunk check completed"
