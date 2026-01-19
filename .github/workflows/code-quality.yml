@@ -120,6 +120,21 @@ jobs:
             exit 0
           fi
           
+          # Create Python helper script
+          cat > /tmp/check_complexity.py << 'PYEOF'
+          import sys
+          import json
+          
+          try:
+              data = json.load(sys.stdin)
+              for file_path, items in data.items():
+                  for item in items:
+                      if item.get('complexity', 0) > 10:
+                          print(f"{item['type']} '{item['name']}' has complexity {item['complexity']} (line {item['lineno']})")
+          except:
+              pass
+          PYEOF
+          
           # Check cyclomatic complexity (CC)
           # Thresholds: A=1-5 (simple), B=6-10 (moderate), C=11-20 (complex), D=21-50 (very complex), F=>50 (extremely complex)
           while IFS= read -r file; do
@@ -129,17 +144,7 @@ jobs:
             radon cc "$file" -s -n C || true
             
             # Check for functions/methods with complexity > 10 (above moderate)
-            high_complexity=$(radon cc "$file" --json | python3 -c "
-import sys, json
-try:
-    data = json.load(sys.stdin)
-    for file, items in data.items():
-        for item in items:
-            if item.get('complexity', 0) > 10:
-                print(f\"{item['type']} '{item['name']}' has complexity {item['complexity']} (line {item['lineno']})\")
-except:
-    pass
-" || echo "")
+            high_complexity=$(radon cc "$file" --json | python3 /tmp/check_complexity.py || echo "")
             
             if [ -n "$high_complexity" ]; then
               echo "::warning file=$file::$high_complexity - Consider refactoring to reduce complexity"
@@ -159,21 +164,26 @@ except:
             exit 0
           fi
           
+          # Create Python helper script
+          cat > /tmp/check_mi.py << 'PYEOF'
+          import sys
+          import json
+          
+          try:
+              data = json.load(sys.stdin)
+              for file_path, mi_data in data.items():
+                  if mi_data['mi'] < 20:
+                      print(f"{mi_data['mi']:.1f}")
+          except:
+              pass
+          PYEOF
+          
           # Check maintainability index (MI)
           # MI >= 20: Maintainable, 10-19: Moderate, <10: Difficult to maintain
           while IFS= read -r file; do
-            mi=$(radon mi "$file" -s -j | python3 -c "
-import sys, json
-try:
-    data = json.load(sys.stdin)
-    for file, mi_data in data.items():
-        if mi_data['mi'] < 20:
-            print(f\"{mi_data['mi']:.1f}\")
-except:
-    pass
-" || echo "")
+            mi=$(radon mi "$file" -s -j | python3 /tmp/check_mi.py || echo "")
             
-            if [ -n "$mi" ] && [ "$(echo "$mi < 20" | bc -l)" -eq 1 ]; then
+            if [ -n "$mi" ]; then
               echo "::warning file=$file::Maintainability index is $mi (<20). Consider refactoring to improve maintainability."
             fi
           done < /tmp/python_files.txt
