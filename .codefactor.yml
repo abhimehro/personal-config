@@ -1,0 +1,108 @@
+# CodeFactor Configuration
+# This file configures CodeFactor to check code quality and complexity
+# Learn more: https://support.codefactor.io/
+
+languages:
+  python:
+    # Enable Python checks
+    enabled: true
+    
+    # Complexity thresholds for Python
+    # These match our GitHub Actions workflow thresholds
+    complexity:
+      # Cyclomatic complexity threshold
+      # Default is 15, we set to 10 to match our workflow
+      threshold: 10
+    
+    # Line length
+    line-length:
+      # Maximum line length for Python files
+      threshold: 120
+    
+    # Tools configuration
+    tools:
+      radon:
+        # Radon complexity analyzer
+        enabled: true
+        # Minimum maintainability index (we warn at <20)
+        mi-threshold: 20
+      
+      pylint:
+        # PyLint static analyzer
+        enabled: true
+  
+  shell:
+    # Enable shell script checks
+    enabled: true
+    
+    # ShellCheck configuration
+    tools:
+      shellcheck:
+        enabled: true
+        # Show warnings and errors
+        severity: warning
+
+# File exclusions
+exclude:
+  # Version control
+  - .git/**
+  
+  # Dependencies
+  - node_modules/**
+  - .local/**
+  - venv/**
+  - .venv/**
+  
+  # Build artifacts
+  - dist/**
+  - build/**
+  
+  # Archive/backup directories
+  - archive/**
+  - .Jules/**
+  - .cursor/**
+  
+  # IDE configurations (not code)
+  - .vscode/**
+  - .idea/**
+  
+  # Specific large/generated files
+  - configs/raycast/extensions/**/assets/scripts/fileicon.sh
+
+# Ignore patterns
+ignore:
+  # Ignore certain complexity warnings for specific use cases
+  - "**/*test*.py"  # Test files may be complex
+  - "**/*_test.py"
+  - "**/test_*.py"
+  
+  # Ignore archived scripts (not actively maintained)
+  - "**/archive/**"
+  - "**/maintenance/archive/**"
+
+# Enable auto-fix suggestions where possible
+autofixes:
+  enabled: true
+
+# File size limits
+limits:
+  # Warn for files larger than 300 lines
+  file-length:
+    python: 300
+    shell: 200
+
+# Branch configuration
+branches:
+  # Check all branches, not just main
+  - "*"
+
+# Pull request comments
+pr-comments:
+  # Comment on PRs with quality issues
+  enabled: true
+  
+  # Only comment on new issues, not existing ones
+  only-new-issues: true
+  
+  # Maximum number of comments per PR
+  max-comments: 10
