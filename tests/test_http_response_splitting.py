@@ -152,8 +152,9 @@ class TestHTTPResponseSplitting(unittest.TestCase):
             handler.end_headers()
         
         cors_headers = [h for h in sent_headers if h[0] == 'Access-Control-Allow-Origin']
-        # Should sanitize to 'http://example.comSet-Cookie: malicious=true'
-        # but this won't match allowed origin 'http://example.com', so no CORS header should be sent
+        # After sanitization: 'http://example.com\r\n\r\nSet-Cookie: malicious=true' 
+        # becomes 'http://example.comSet-Cookie: malicious=true' (concatenated without separator)
+        # This won't match allowed origin 'http://example.com', so no CORS header should be sent
         self.assertEqual(len(cors_headers), 0, 
                         "Malicious origin should not match after sanitization")
     
