@@ -109,6 +109,8 @@ jobs:
             ! -path "./.git/*" \
             ! -path "./node_modules/*" \
             ! -path "./.local/*" \
+            ! -path "./.jules/*" \
+            ! -path "./.Jules/*" \
             ! -path "./archive/*" \
             ! -path "./.venv/*" \
             ! -path "./venv/*" \
