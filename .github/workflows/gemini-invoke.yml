@@ -18,6 +18,9 @@ defaults:
 
 jobs:
   invoke:
+    # Only run if at least one authentication method is configured
+    if: |-
+      ${{ secrets.GEMINI_API_KEY != '' || secrets.GOOGLE_API_KEY != '' || vars.GCP_WIF_PROVIDER != '' }}
     runs-on: 'ubuntu-latest'
     permissions:
       contents: 'read'
