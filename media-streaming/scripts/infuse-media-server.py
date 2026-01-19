@@ -271,7 +271,6 @@ def main():
             AUTH_PASS = ''.join(secrets.choice(alphabet) for i in range(16))
             print("\n🔒 Security: Authentication Enabled")
             print(f"   User: {AUTH_USER}")
-            print(f"   Pass: {AUTH_PASS}")
             if generated_user:
                 print("   (Random username generated. Set custom user via --user)")
             print("   (Set a custom password via --password or AUTH_PASS before connecting, since the auto-generated password is not shown)\n")
