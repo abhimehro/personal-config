@@ -114,7 +114,7 @@ check_ipv6_status() {
     if [[ -z "$ipv6_addrs" ]]; then
         echo -e "   ${YELLOW}No global IPv6 addresses found${NC}"
     else
-        echo "$ipv6_addrs"
+        echo "$ipv6_addrs" | sed 's/^/   /'
     fi
     echo ""
 }
