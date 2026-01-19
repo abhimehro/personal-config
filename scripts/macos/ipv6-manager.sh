@@ -34,23 +34,66 @@ get_network_services() {
     networksetup -listallnetworkservices | grep -v "^An asterisk"
 }
 
+# ⚡ Bolt Optimization: Parallel fetcher for service info
+# Fetches info for all services in parallel background jobs to save time.
+# Then iterates results sequentially to perform logic safely.
+process_services_parallel() {
+    local callback_func="$1"
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+
+    # Cleanup temp dir on return
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    local pids=()
+    local services=()
+    local i=0
+
+    # 1. Launch background jobs for all services
+    local all_services=()
+    while IFS= read -r service; do
+        [[ -n "$service" ]] && all_services+=("$service")
+    done < <(get_network_services)
+
+    for service in "${all_services[@]}"; do
+        services+=("$service")
+
+        # Use index for filename to avoid collision and overhead
+        (networksetup -getinfo "$service" 2>/dev/null > "$tmp_dir/$i") &
+        pids+=($!)
+        ((i+=1))
+    done
+
+    # 2. Wait for all fetches to complete
+    wait "${pids[@]}" 2>/dev/null || true
+
+    # 3. Process results sequentially
+    i=0
+    for service in "${services[@]}"; do
+        local info_file="$tmp_dir/$i"
+
+        # Invoke callback with service name and path to info file
+        "$callback_func" "$service" "$info_file"
+        ((i+=1))
+    done
+}
+
 # Disable IPv6 on all interfaces
 disable_ipv6() {
     header "${E_IPV6} Disabling IPv6 on all network interfaces..."
     
-    # 1. Standard networksetup method
-    while IFS= read -r service; do
-        if [[ -n "$service" ]]; then
-            # ⚡ Bolt Optimization: Check state first to avoid expensive write operations
-            # Writing system config is slow; reading is fast. Only write if needed.
-            if networksetup -getinfo "$service" 2>/dev/null | grep -q "IPv6: Off"; then
-                echo -e "   ${YELLOW}•${NC} $service: already disabled"
-            else
-                echo -e "   ${RED}↓${NC} Disabling IPv6 on: $service"
-                sudo networksetup -setv6off "$service" 2>/dev/null || warn "   (skipped: $service)"
-            fi
+    # 1. Standard networksetup method (Parallel Read / Sequential Write)
+    _disable_callback() {
+        local service="$1"
+        local info_file="$2"
+        if grep -q "IPv6: Off" "$info_file"; then
+            echo -e "   ${YELLOW}•${NC} $service: already disabled"
+        else
+            echo -e "   ${RED}↓${NC} Disabling IPv6 on: $service"
+            sudo networksetup -setv6off "$service" 2>/dev/null || warn "   (skipped: $service)"
         fi
-    done < <(get_network_services)
+    }
+    process_services_parallel _disable_callback
 
     # 2. Sysctl method (Disable Router Advertisements globally)
     echo -e "   ${RED}↓${NC} Disabling IPv6 Router Advertisements (sysctl)..."
@@ -64,18 +107,18 @@ disable_ipv6() {
 enable_ipv6() {
     header "${E_IPV6} Enabling IPv6 on all network interfaces..."
     
-    # 1. Standard networksetup method
-    while IFS= read -r service; do
-        if [[ -n "$service" ]]; then
-            # ⚡ Bolt Optimization: Check state first to avoid expensive write operations
-            if networksetup -getinfo "$service" 2>/dev/null | grep -q "IPv6: Automatic"; then
-                 echo -e "   ${GREEN}•${NC} $service: already enabled"
-            else
-                echo -e "   ${GREEN}↑${NC} Enabling IPv6 on: $service"
-                sudo networksetup -setv6automatic "$service" 2>/dev/null || warn "   (skipped: $service)"
-            fi
+    # 1. Standard networksetup method (Parallel Read / Sequential Write)
+    _enable_callback() {
+        local service="$1"
+        local info_file="$2"
+        if grep -q "IPv6: Automatic" "$info_file"; then
+             echo -e "   ${GREEN}•${NC} $service: already enabled"
+        else
+            echo -e "   ${GREEN}↑${NC} Enabling IPv6 on: $service"
+            sudo networksetup -setv6automatic "$service" 2>/dev/null || warn "   (skipped: $service)"
         fi
-    done < <(get_network_services)
+    }
+    process_services_parallel _enable_callback
 
     # 2. Sysctl method (Re-enable Router Advertisements)
     echo -e "   ${GREEN}↑${NC} Enabling IPv6 Router Advertisements (sysctl)..."
@@ -89,25 +132,24 @@ enable_ipv6() {
 check_ipv6_status() {
     header "Current IPv6 configuration:"
     
-    while IFS= read -r service; do
-        if [[ -n "$service" ]]; then
-            local raw_info
-            raw_info=$(networksetup -getinfo "$service" 2>/dev/null || echo "")
-            local ipv6_config
-            ipv6_config=$(echo "$raw_info" | grep "IPv6:" || echo "IPv6: Unknown")
+    _status_callback() {
+        local service="$1"
+        local info_file="$2"
+        local ipv6_config
+        ipv6_config=$(grep "IPv6:" "$info_file" || echo "IPv6: Unknown")
 
-            # Formatting status
-            if [[ "$ipv6_config" == *"IPv6: Automatic"* ]]; then
-                 printf "   %-25s %b\n" "$service" "${GREEN}● ENABLED${NC} (Automatic)"
-            elif [[ "$ipv6_config" == *"IPv6: Off"* ]]; then
-                 printf "   %-25s %b\n" "$service" "${RED}○ DISABLED${NC} (Off)"
-            else
-                 # Extract status value after "IPv6: " prefix
-                 local status_value="${ipv6_config#*IPv6: }"
-                 printf "   %-25s %b\n" "$service" "${YELLOW}UNKNOWN${NC} ($status_value)"
-            fi
+        # Formatting status
+        if [[ "$ipv6_config" == *"IPv6: Automatic"* ]]; then
+             printf "   %-25s %b\n" "$service" "${GREEN}● ENABLED${NC} (Automatic)"
+        elif [[ "$ipv6_config" == *"IPv6: Off"* ]]; then
+             printf "   %-25s %b\n" "$service" "${RED}○ DISABLED${NC} (Off)"
+        else
+             # Extract status value after "IPv6: " prefix
+             local status_value="${ipv6_config#*IPv6: }"
+             printf "   %-25s %b\n" "$service" "${YELLOW}UNKNOWN${NC} ($status_value)"
         fi
-    done < <(get_network_services)
+    }
+    process_services_parallel _status_callback
     
     header "Active IPv6 addresses:"
     local ipv6_addrs
