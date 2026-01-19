@@ -254,10 +254,16 @@ print_help() {
 # --- Main Dispatcher ---
 
 main() {
-  ensure_prereqs
-
   local mode="${1:-}"
   local profile="${2:-$DEFAULT_PROFILE}"
+
+  # UX: Check for help flags before prereqs so help is always accessible
+  if [[ -z "$mode" || "$mode" == "-h" || "$mode" == "--help" || "$mode" == "help" ]]; then
+    print_help
+    exit 0
+  fi
+
+  ensure_prereqs
 
   case "$mode" in
     windscribe)
