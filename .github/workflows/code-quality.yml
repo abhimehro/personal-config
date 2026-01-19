@@ -60,9 +60,10 @@ jobs:
         run: |
           echo "Running ShellCheck on all shell scripts..."
           
-          # ShellCheck all files
+          # ShellCheck all files (non-fatal: emit GitHub warnings but do not fail the job)
           while IFS= read -r file; do
             echo "Checking: $file"
+            # The '|| echo' fallback is intentional so ShellCheck findings are reported as warnings only.
             shellcheck -S warning "$file" || echo "::warning file=$file::ShellCheck found issues"
           done < /tmp/shell_files.txt
           
