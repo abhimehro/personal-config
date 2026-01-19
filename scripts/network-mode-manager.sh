@@ -207,6 +207,7 @@ print_status() {
     header_icon="$E_PRIVACY" # Default icon
     if [[ "$profile_name" == "Gaming" ]]; then header_icon="$E_GAMING"; fi
     if [[ "$profile_name" == "Browsing" ]]; then header_icon="$E_BROWSING"; fi
+    if [[ "$profile_name" == "Privacy" ]]; then header_icon="$E_PRIVACY"; fi
   elif ! $cd_active && ! $dns_is_localhost && ! $ipv6_enabled; then
     # Assuming Windscribe mode if Control D is off, DNS is not localhost (likely DHCP/Empty), and IPv6 is off
     header_text="WINDSCRIBE VPN READY"
