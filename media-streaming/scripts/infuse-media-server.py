@@ -274,10 +274,11 @@ def main():
             print(f"   Pass: {AUTH_PASS}")
             if generated_user:
                 print("   (Random username generated. Set custom user via --user)")
-            print("   (Use these credentials to access the server)\n")
+            print("   (Use these credentials to access the server; store the password securely)\n")
         # Otherwise, fail and require user to set a password to avoid logging it.
         else:
             print("\n❌ Error: Auto-generating a password is not supported when output is not a TTY.", file=sys.stderr)
+            print("   (e.g., when output is redirected to a file or running in automation/CI)", file=sys.stderr)
             print("Please provide a password using the --password argument or the AUTH_PASS environment variable.", file=sys.stderr)
             sys.exit(1)
     else:
