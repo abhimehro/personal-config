@@ -209,7 +209,10 @@ print_status() {
     if [[ "$profile_name" == "Browsing" ]]; then header_icon="$E_BROWSING"; fi
     if [[ "$profile_name" == "Privacy" ]]; then header_icon="$E_PRIVACY"; fi
   elif ! $cd_active && ! $dns_is_localhost && ! $ipv6_enabled; then
-    # Assuming Windscribe mode if Control D is off, DNS is not localhost (likely DHCP/Empty), and IPv6 is off
+    # Heuristic: treat as "Windscribe VPN Ready" when Control D is off, DNS is not localhost, and IPv6 is off.
+    # Note: !dns_is_localhost also matches arbitrary non-localhost DNS (e.g. 8.8.8.8), not just DHCP/Empty.
+    # More precise Windscribe detection (e.g. via network-mode-verify.sh:check_windscribe_ready) should be used
+    # when strict verification is required.
     header_text="WINDSCRIBE VPN READY"
     header_color="$BLUE"
     header_icon="$E_VPN"
