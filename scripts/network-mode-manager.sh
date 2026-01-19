@@ -175,7 +175,7 @@ print_status() {
   local pid1=$!
   (networksetup -getinfo "Wi-Fi" 2>/dev/null || echo "") > "$info_temp" &
   local pid2=$!
-  wait $pid1 $pid2
+  wait "$pid1" "$pid2" 2>/dev/null || true
 
   local dns_servers
   dns_servers=$(cat "$dns_temp")
