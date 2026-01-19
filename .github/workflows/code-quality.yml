@@ -48,6 +48,7 @@ jobs:
             ! -path "./.local/*" \
             ! -path "./archive/*" \
             ! -path "./.Jules/*" \
+            ! -path "./.jules/*" \
             ! -path "./.cursor/*" \
             > /tmp/shell_files.txt
           
