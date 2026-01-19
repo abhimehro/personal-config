@@ -1,0 +1,11 @@
+{
+  "agents": {
+    "cursor-agent": {
+      "profile": {
+        "baseProfile": "onboarding-wizard-questionnaire"
+      }
+    }
+  },
+  "version": "19.1.5",
+  "installDir": "/Users/speedybee/Documents/dev/personal-config"
+}
