@@ -146,16 +146,28 @@ jobs:
               sys.stderr.write(f"Invalid data structure in radon output: {e}\n")
           PYEOF
           
+          # Ensure radon is available before running checks
+          if ! command -v radon >/dev/null 2>&1; then
+            echo "::error::radon is not installed or not found in PATH; skipping cyclomatic complexity checks"
+            exit 1
+          fi
+          
           # Check cyclomatic complexity (CC)
           # Thresholds: A=1-5 (simple), B=6-10 (moderate), C=11-20 (complex), D=21-50 (very complex), F=>50 (extremely complex)
           while IFS= read -r file; do
             echo "Analyzing: $file"
             
             # Get complexity report
-            radon cc "$file" -s -n C || true
+            if ! radon cc "$file" -s -n C; then
+              echo "::error file=$file::radon cc summary analysis failed for $file"
+              continue
+            fi
             
             # Check for functions/methods with complexity > 10 (above moderate)
-            high_complexity=$(radon cc "$file" --json | python3 /tmp/check_complexity.py || echo "")
+            if ! high_complexity=$(radon cc "$file" --json | python3 /tmp/check_complexity.py); then
+              echo "::error file=$file::radon cc JSON analysis failed for $file"
+              continue
+            fi
             
             if [ -n "$high_complexity" ]; then
               echo "::warning file=$file::$high_complexity - Consider refactoring to reduce complexity"
