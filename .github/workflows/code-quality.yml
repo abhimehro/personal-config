@@ -179,9 +179,10 @@ jobs:
               for file_path, mi_data in data.items():
                   if mi_data['mi'] < 20:
                       print(f"{mi_data['mi']:.1f}")
-          except Exception:
-              # Silently handle JSON parsing or data structure errors
-              pass
+          except json.JSONDecodeError as exc:
+              print(f"Failed to parse JSON input for maintainability index check: {exc}", file=sys.stderr)
+          except (KeyError, TypeError, ValueError) as exc:
+              print(f"Invalid data format in maintainability index result: {exc}", file=sys.stderr)
           PYEOF
           
           # Check maintainability index (MI)
