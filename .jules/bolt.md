@@ -25,3 +25,11 @@
 ## 2025-12-30 - Parallel Hardware Queries
 **Learning:** macOS tools like `networksetup` are often blocking and slow (several hundred milliseconds). When multiple independent properties (e.g., DNS and IPv6 status) need to be queried from the same or different hardware interfaces, executing them in parallel subshells significantly improves responsiveness.
 **Action:** Group independent blocking hardware queries and run them in parallel using `command &` and `wait`, capturing output to temporary files if necessary.
+
+## 2026-01-19 - Arithmetic Evaluation in set -e Scripts
+**Learning:** In scripts with `set -e`, using `((i++))` where `i` starts at 0 causes the script to exit immediately because the arithmetic evaluation result is 0 (which Bash treats as a "false" exit code 1), even though the increment happens.
+**Action:** Use `((i+=1))` or `i=$((i+1))` instead of `((i++))` when the variable might be zero, or append `|| true` to the arithmetic command.
+
+## 2026-01-19 - Safe Parallel Loop Execution
+**Learning:** When using `while read ... done < <(...)` to feed a loop that spawns background jobs, blindly trusting the loop's stdin/stdout context can lead to race conditions or "hanging" behavior if the background jobs inherit the file descriptors.
+**Action:** Read the input into an array first (synchronously), then iterate over the array to spawn background jobs. This isolates the data collection from the parallel execution context.
