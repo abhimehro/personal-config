@@ -18,6 +18,9 @@ defaults:
 
 jobs:
   triage:
+    # Only run if at least one authentication method is configured
+    if: |-
+      ${{ secrets.GEMINI_API_KEY != '' || secrets.GOOGLE_API_KEY != '' || vars.GCP_WIF_PROVIDER != '' }}
     runs-on: 'ubuntu-latest'
     timeout-minutes: 7
     outputs:
