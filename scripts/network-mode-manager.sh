@@ -33,6 +33,7 @@ YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m'
+BOLD='\033[1m'
 
 # Emojis 🎨
 E_PASS="✅"
@@ -140,30 +141,22 @@ start_controld() {
 }
 
 print_status() {
-  # 1. Gather Data (Parallelized from Bolt)
-  # ⚡ Bolt Optimization: Run networksetup commands in parallel to reduce wait time
-  local dns_temp
-  dns_temp=$(mktemp)
-  local info_temp
-  info_temp=$(mktemp)
+  # Header
+  echo -e "\n${BOLD}${BLUE}   NETWORK STATUS${NC}"
+  echo -e "${BLUE}   ──────────────${NC}"
 
-  # Start async network checks
-  (networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown") > "$dns_temp" &
-  local pid1=$!
-  (networksetup -getinfo "Wi-Fi" 2>/dev/null || echo "") > "$info_temp" &
-  local pid2=$!
-
-  # While network checks run, check Control D process (CPU bound)
-  local cd_active=false
-  local profile_name="Unknown"
-  local cd_display=""
+  # --- Control D Status ---
+  local cd_status
+  local cd_display
 
   if pgrep -x "ctrld" >/dev/null 2>&1; then
-    cd_active=true
-    local cd_status="${GREEN}● ACTIVE${NC}"
+    cd_status="${GREEN}● ACTIVE${NC}"
 
     # ⚡ Bolt Optimization: Read config symlink instead of expensive 'sudo ctrld status'
+    # This avoids spawning a process and potential sudo prompt.
     local config_link="/etc/controld/ctrld.toml"
+    local profile_name="Unknown"
+
     if [[ -L "$config_link" ]]; then
       local target
       target=$(readlink "$config_link" || echo "")
@@ -180,83 +173,62 @@ print_status() {
         *)          profile_name="$extracted_name" ;;
       esac
     fi
+
     cd_display="$cd_status (${YELLOW}$profile_name${NC})"
   else
     cd_display="${RED}○ STOPPED${NC}"
   fi
 
-  # Wait for network checks to finish
-  wait "$pid1" "$pid2" 2>/dev/null || true
+  printf "   %s  %-13s %b\n" "🤖" "Control D" "$cd_display"
+
+  # --- Fetch Network Info (Parallelized) ---
+  # ⚡ Bolt Optimization: Run networksetup commands in parallel to reduce wait time
+  local dns_temp
+  dns_temp=$(mktemp)
+  local info_temp
+  info_temp=$(mktemp)
+
+  (networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown") > "$dns_temp" &
+  local pid1=$!
+
+  (networksetup -getinfo "Wi-Fi" 2>/dev/null || echo "") > "$info_temp" &
+  local pid2=$!
+
+  wait $pid1 $pid2
 
   local dns_servers
   dns_servers=$(cat "$dns_temp")
   local wifi_info
   wifi_info=$(cat "$info_temp")
+
   rm -f "$dns_temp" "$info_temp"
 
-  # 2. Analyze State for Header
-  local dns_is_localhost=false
-  local ipv6_enabled=false
-
-  if [[ "$dns_servers" == *"127.0.0.1"* ]]; then
-    dns_is_localhost=true
-  fi
-
-  if [[ "$wifi_info" == *"IPv6: Automatic"* ]]; then
-    ipv6_enabled=true
-  fi
-
-  # 3. Determine Effective Mode (Jules UX)
-  local header_text="UNKNOWN / MIXED STATE"
-  local header_color="$YELLOW"
-  local header_icon="$E_WARN"
-
-  if $cd_active && $dns_is_localhost; then
-    header_text="CONTROL D ACTIVE"
-    header_color="$GREEN"
-    header_icon="$E_PRIVACY" # Default icon
-    if [[ "$profile_name" == "Gaming" ]]; then header_icon="$E_GAMING"; fi
-    if [[ "$profile_name" == "Browsing" ]]; then header_icon="$E_BROWSING"; fi
-    if [[ "$profile_name" == "Privacy" ]]; then header_icon="$E_PRIVACY"; fi
-  elif ! $cd_active && ! $dns_is_localhost && ! $ipv6_enabled; then
-    # Heuristic: treat as "Windscribe VPN Ready" when Control D is off, DNS is not localhost, and IPv6 is off.
-    header_text="WINDSCRIBE VPN READY"
-    header_color="$BLUE"
-    header_icon="$E_VPN"
-  fi
-
-  # 4. Print Header & Details
-  echo -e "\n${BOLD}${header_color}   ${header_icon}  ${header_text}${NC}"
-  echo -e "${header_color}   ────────────────────────────────${NC}"
-
-  # Control D Detail
-  printf "   %s  %-13s %b\n" "🤖" "Control D" "$cd_display"
-
-  # System DNS Status (Bolt Optimized)
+  # --- System DNS Status ---
   local dns_status
+
+  # ⚡ Bolt Optimization: Use Bash string matching instead of 'grep' pipelines
   if [[ "$dns_servers" == *"There aren't any DNS Servers"* ]]; then
     dns_status="${YELLOW}DHCP (ISP/Router)${NC}"
   elif [[ "$dns_servers" == *"127.0.0.1"* ]]; then
     dns_status="${GREEN}127.0.0.1 (Localhost)${NC}"
   else
-    # ⚡ Bolt Optimization: Bash parameter expansion
+    # ⚡ Bolt Optimization: Use Bash parameter expansion instead of 'tr | sed' pipeline
     local cleaner_dns="${dns_servers//$'\n'/, }" # Replace newlines with ", "
     cleaner_dns="${cleaner_dns%, }"             # Remove trailing ", "
     dns_status="${RED}$cleaner_dns${NC}"
   fi
+
   printf "   %s  %-13s %b\n" "📡" "System DNS" "$dns_status"
 
-  # IPv6 Detail (Jules UX + Parallel Data)
+  # --- IPv6 Status ---
   local ipv6_status
-  if [[ "$wifi_info" == *"IPv6: Off"* ]]; then
-    ipv6_status="${RED}DISABLED${NC} (Off)"
-  elif [[ "$wifi_info" == *"IPv6: Manual"* ]]; then
-    ipv6_status="${GREEN}ENABLED${NC} (Manual)"
-  elif [[ "$wifi_info" == *"IPv6: Automatic"* ]]; then
+  # ⚡ Bolt Optimization: Captured output via parallel execution above
+  if [[ "$wifi_info" == *"IPv6: Automatic"* ]]; then
     ipv6_status="${GREEN}ENABLED${NC} (Automatic)"
   else
-    ipv6_status="${YELLOW}UNKNOWN${NC} (Check Network prefs)"
+    ipv6_status="${RED}DISABLED${NC} (Manual/Off)"
   fi
+
   printf "   %s  %-13s %b\n" "🌐" "IPv6 Mode" "$ipv6_status"
 
   echo -e "\n"
@@ -267,15 +239,15 @@ print_help() {
   echo -e "Usage: $0 {controld|windscribe|status} [profile_name]"
   echo -e ""
   echo -e "${BOLD}Commands:${NC}"
-  echo -e "   ${GREEN}controld${NC}    Enable Control D (DNS) mode"
+  echo -e "  ${GREEN}controld${NC}    Enable Control D (DNS) mode"
   echo -e "              Arguments: [privacy|browsing|gaming]"
-  echo -e "   ${GREEN}windscribe${NC}  Enable Windscribe (VPN) mode"
-  echo -e "   ${GREEN}status${NC}      Show current network status"
+  echo -e "  ${GREEN}windscribe${NC}  Enable Windscribe (VPN) mode"
+  echo -e "  ${GREEN}status${NC}      Show current network status"
   echo -e ""
   echo -e "${BOLD}Profiles:${NC}"
-  echo -e "   ${YELLOW}privacy${NC}     Maximum security"
-  echo -e "   ${YELLOW}browsing${NC}    Balanced (Default)"
-  echo -e "   ${YELLOW}gaming${NC}      Low latency"
+  echo -e "  ${YELLOW}privacy${NC}     Maximum security"
+  echo -e "  ${YELLOW}browsing${NC}    Balanced (Default)"
+  echo -e "  ${YELLOW}gaming${NC}      Low latency"
   echo -e ""
 }
 
