@@ -273,7 +273,7 @@ def main():
             print(f"   User: {AUTH_USER}")
             if generated_user:
                 print("   (Random username generated. Set custom user via --user)")
-            print("   (Set a custom password via --password or AUTH_PASS before connecting, since the auto-generated password is not shown)\n")
+            print("   (A random password has been generated and shown above. Store it securely, and consider setting a custom password via --password or AUTH_PASS.)\n")
         # Otherwise, fail and require user to set a password to avoid logging it.
         else:
             print("\n❌ Error: Auto-generating a password is not supported when output is not a TTY.", file=sys.stderr)
