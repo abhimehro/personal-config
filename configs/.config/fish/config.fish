@@ -3,260 +3,267 @@
 # ============================================
 
 # ============================================
-# Homebrew PATH
+# Path Management
 # ============================================
-# For Apple Silicon (M1/M2/M3)
-fish_add_path --global --prepend /opt/homebrew/bin
-fish_add_path --global --prepend /opt/homebrew/sbin
+# Homebrew (Apple Silicon)
+fish_add_path --global --prepend /opt/homebrew/bin /opt/homebrew/sbin
 
-# User/local bins (kept global to avoid rewriting universal vars on every shell)
-fish_add_path --global --prepend $HOME/bin
-fish_add_path --global --prepend $HOME/.local/bin
+# User binaries (Prepend to prioritize local overrides)
+fish_add_path --global --prepend $HOME/bin $HOME/.local/bin
 
-# LM Studio CLI (append to avoid shadowing system tools)
+# Tool-specific bins (Append to avoid shadowing system tools)
 fish_add_path --global --append $HOME/.cache/lm-studio/bin
 
 # ============================================
-# Conda Initialize
+# Tool Initialization
 # ============================================
-# Moved to `init_conda` function (lazy-loaded).
-# Run `init_conda` to activate conda environment.
 
-# ============================================
-# Ruby Version Manager (chruby-fish)
-# ============================================
-# Ported from Zsh: provides automatic Ruby version switching
-# Install: brew install chruby-fish
+# Interactive-only initializations
 if status is-interactive
-    if test -f /opt/homebrew/opt/chruby-fish/share/chruby/chruby.fish
+
+    # --- Ruby (chruby-fish) ---
+    if test -d /opt/homebrew/opt/chruby-fish/share/chruby
         source /opt/homebrew/opt/chruby-fish/share/chruby/chruby.fish
-    end
-
-    if test -f /opt/homebrew/opt/chruby-fish/share/chruby/auto.fish
         source /opt/homebrew/opt/chruby-fish/share/chruby/auto.fish
+        
+        # Default Ruby fallback
+        if type -q chruby; and test -d ~/.rubies/ruby-3.4.7
+            chruby ruby-3.4.7
+        end
     end
 
-    # Set default Ruby version (if chruby is available and ruby exists)
-    if type -q chruby; and test -d ~/.rubies/ruby-3.4.7
-        chruby ruby-3.4.7
-    end
-end
-
-# ============================================
-# Node Version Manager (fnm)
-# ============================================
-if status is-interactive
+    # --- Node (fnm) ---
     if type -q fnm
         fnm env --use-on-cd | source
     end
+
+    # --- Zoxide (Navigation) ---
+    if type -q zoxide
+        zoxide init fish | source
+    end
+
+    # --- Mole (Tunneling) ---
+    if type -q mole
+        mole completion fish 2>/dev/null | source
+    end
+
 end
 
-# ============================================
-# Zoxide (smarter cd)
-# ============================================
-# Better alternative to z/autojump - installed via brew install zoxide
-if type -q zoxide
-    zoxide init fish | source
-end
+# Note: Conda is initialized via 'init_conda' (lazy-loaded function).
 
 # ============================================
 # Environment Variables
 # ============================================
-# Network Mode Manager - Control D and Windscribe integration
 set -gx NM_ROOT $HOME/Documents/dev/personal-config
 
-# Set default editor - NeoVim
-# Note: NeoVim blocks by default when used as EDITOR, perfect for tools like `git commit`.
-# Avoid setting universal variables on every startup; keep this as a safe fallback.
+# Default Editor (NeoVim)
+# Kept as a safe fallback; avoid universal variable persistence issues.
 if not set -q EDITOR
-    set -gx EDITOR "nvim"
+    set -gx EDITOR nvim
 end
 
-# ============================================
-# Modern CLI Tool Aliases
-# ============================================
-# Better ls with eza
-if type -q eza
-    alias ls='eza --icons --group-directories-first'
-    alias ll='eza -lah --icons --group-directories-first'
-    alias la='eza -a --icons --group-directories-first'
-    alias tree='eza --tree --icons'
-end
-
-# Better cat with bat
-if type -q bat
-    alias cat='bat --style=plain'
-    alias bathelp='bat --style=full'
-end
-
-# Better find with fd
-if type -q fd
-    alias find='fd'
-end
-
-# Better grep with ripgrep
-if type -q rg
-    alias grep='rg'
-end
-
-# Note: tlrc package provides 'tldr' command (not 'tlrc')
-# The command is already available as 'tldr'
-
-# ============================================
-# Quick Navigation Aliases
-# ============================================
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
-alias .....='cd ../../../..'
-
-# Quick access to common directories
-alias dev='cd ~/Documents/dev'
-alias config='cd ~/Documents/dev/personal-config'
-alias downloads='cd ~/Downloads'
-alias desktop='cd ~/Desktop'
-
-# ============================================
-# Abbreviations (expand in place)
-# ============================================
-
-# Git
-abbr --add gs  git status
-abbr --add ga  git add
-abbr --add gaa git add --all
-abbr --add gc  git commit
-abbr --add gcm git commit -m
-abbr --add gp  git push
-abbr --add gpl git pull
-abbr --add gl  git log --oneline --graph
-abbr --add gd  git diff
-abbr --add gb  git branch
-abbr --add gco git checkout
-
-# SSH Abbreviations (Cursor IDE)
-abbr --add scv ssh cursor-vpn
-abbr --add scl ssh cursor-local
-abbr --add scm ssh cursor-mdns
-abbr --add sca ssh cursor-auto
-
-# Network Mode Abbreviations (Control D + Windscribe)
-abbr --add nms nm-status
-abbr --add nmb nm-browse
-abbr --add nmp nm-privacy
-abbr --add nmg nm-gaming
-abbr --add nmv nm-vpn
-abbr --add nmr nm-regress
-abbr --add nmcs nm-cd-status
-
-# ============================================
-# Safe Operations
-# ============================================
-alias rm='rm -i'
-alias cp='cp -i'
-alias mv='mv -i'
-
-# ============================================
-# Colorize Commands
-# ============================================
-# macOS ships BSD grep/diff; Homebrew installs GNU variants as ggrep/gdiff.
-if not type -q rg; and type -q ggrep
-    alias grep='ggrep --color=auto'
-end
-if type -q gdiff
-    alias diff='gdiff --color=auto'
-end
-
-# ============================================
-# Utility Aliases
-# ============================================
-# Quick file editing
-function __run_editor --description 'Run $EDITOR (supports args like "nvim" or "code --wait")'
-    set -l editor (string split ' ' -- $EDITOR)
-    command $editor $argv
-end
-
-alias fishconfig='__run_editor ~/.config/fish/config.fish'
-alias fishedit='__run_editor ~/.config/fish/config.fish'
-
-# Reload fish config
-alias reload='source ~/.config/fish/config.fish'
-
-# ============================================
-# Hydro Prompt Customization
-# ============================================
-# Hydro provides fish_prompt / fish_right_prompt (installed via Fisher: `jorgebucaran/hydro`).
-# Keep any custom prompts renamed (see `fish_prompt.fish.backup` / `fish_right_prompt.fish.backup`)
-# so Hydro can take precedence.
-set -g hydro_color_pwd bd93f9
-set -g hydro_color_git f1fa8c
-set -g hydro_color_error ff5555
-set -g hydro_color_prompt 50fa7b
-set -g hydro_color_duration 6272a4
-
-# ============================================
-# History Configuration
-# ============================================
-set -g fish_history_limit 10000
-
-# ============================================
-# Theme (Dracula)
-# ============================================
-# Option A: keep the repo clean by NOT tracking `fish_variables` (it is machine-local and changes often).
-# Instead, we set a stable Dracula palette here so a fresh restore looks the same.
-if status is-interactive
-    # Fish syntax highlighting (Dracula)
-    set -g fish_color_normal f8f8f2
-    set -g fish_color_command 8be9fd
-    set -g fish_color_param bd93f9
-    set -g fish_color_quote f1fa8c
-    set -g fish_color_redirection f8f8f2
-    set -g fish_color_end ffb86c
-    set -g fish_color_error ff5555
-    set -g fish_color_comment 6272a4
-    set -g fish_color_operator 50fa7b
-    set -g fish_color_escape ff79c6
-    set -g fish_color_autosuggestion 6272a4
-    set -g fish_color_host bd93f9
-    set -g fish_color_host_remote bd93f9
-    set -g fish_color_user 8be9fd
-    set -g fish_color_cancel ff5555 --reverse
-    set -g fish_color_search_match --bold --background=44475a
-    set -g fish_color_selection --bold --background=44475a
-    set -g fish_color_valid_path --underline=single
-
-    # Pager (Dracula-ish)
-    set -g fish_pager_color_completion f8f8f2
-    set -g fish_pager_color_description 6272a4
-    set -g fish_pager_color_prefix 8be9fd
-    set -g fish_pager_color_progress 6272a4
-    set -g fish_pager_color_selected_background --background=44475a
-    set -g fish_pager_color_selected_completion f8f8f2
-    set -g fish_pager_color_selected_description 6272a4
-    set -g fish_pager_color_selected_prefix 8be9fd
-end
-
-# Tool theming defaults (only if you haven’t set them already)
+# Tool Theming Defaults
 if not set -q BAT_THEME
-    set -gx BAT_THEME "Dracula"
+    set -gx BAT_THEME Dracula
 end
 
 if not set -q FZF_DEFAULT_OPTS
+    # Dracula FZF colors
     set -gx FZF_DEFAULT_OPTS "--color=bg+:#44475a,bg:#282a36,spinner:#f8f8f2,hl:#6272a4,fg:#f8f8f2,header:#6272a4,info:#bd93f9,pointer:#ff79c6,marker:#ff79c6,fg+:#f8f8f2,prompt:#bd93f9,hl+:#ff79c6"
 end
 
 # ============================================
-# Custom Functions
+# Aliases
 # ============================================
-# Functions have been moved to ~/.config/fish/functions/ for lazy-loading:
-# - mkcd
-# - showpath
-# - extract (supports .xz now)
-# - backup
+
+# Navigation
+alias ..    'cd ..'
+alias ...   'cd ../..'
+alias ....  'cd ../../..'
+alias ..... 'cd ../../../..'
+
+alias dev       'cd ~/Documents/dev'
+alias config    'cd ~/Documents/dev/personal-config'
+alias downloads 'cd ~/Downloads'
+alias desktop   'cd ~/Desktop'
+
+# Modern Replacements
+if type -q eza
+    alias ls    'eza --icons --group-directories-first'
+    alias ll    'eza -lah --icons --group-directories-first'
+    alias la    'eza -a --icons --group-directories-first'
+    alias tree  'eza --tree --icons'
+end
+
+if type -q bat
+    alias cat       'bat --style=plain'
+    alias bathelp   'bat --style=full'
+end
+
+type -q fd; and alias find 'fd'
+type -q rg; and alias grep 'rg'
+
+# Safety
+alias rm 'rm -i'
+alias cp 'cp -i'
+alias mv 'mv -i'
+
+# Color Support Fallbacks (BSD vs GNU)
+if not type -q rg; and type -q ggrep
+    alias grep 'ggrep --color=auto'
+end
+if type -q gdiff
+    alias diff 'gdiff --color=auto'
+end
+
+# Config Management
+function __run_editor --description 'Run $EDITOR handling definition splitting'
+    set -l editor (string split ' ' -- $EDITOR)
+    command $editor $argv
+end
+
+alias fishconfig '__run_editor ~/.config/fish/config.fish'
+alias fishedit   '__run_editor ~/.config/fish/config.fish'
+alias reload     'source ~/.config/fish/config.fish'
 
 # ============================================
-# Welcome Message (optional - comment out if you don't want it)
+# Abbreviations
 # ============================================
-# if status is-interactive
-#     echo \"🐟 Fish shell loaded! Type 'fishconfig' to edit config.\"
-# end
 
+# Git
+abbr -a gs  git status
+abbr -a ga  git add
+abbr -a gaa git add --all
+abbr -a gc  git commit
+abbr -a gcm git commit -m
+abbr -a gp  git push
+abbr -a gpl git pull
+abbr -a gl  git log --oneline --graph
+abbr -a gd  git diff
+abbr -a gb  git branch
+abbr -a gco git checkout
+
+# Cursor IDE (SSH)
+abbr -a scv ssh cursor-vpn
+abbr -a scl ssh cursor-local
+abbr -a scm ssh cursor-mdns
+abbr -a sca ssh cursor-auto
+
+# Network Mode Manager
+abbr -a nms  nm-status
+abbr -a nmb  nm-browse
+abbr -a nmp  nm-privacy
+abbr -a nmg  nm-gaming
+abbr -a nmv  nm-vpn
+abbr -a nmr  nm-regress
+abbr -a nmcs nm-cd-status
+
+# ============================================
+# Visual Styling (Interactive)
+# ============================================
+if status is-interactive
+    # Hydro Prompt Configuration
+    set -g hydro_color_pwd      bd93f9
+    set -g hydro_color_git      f1fa8c
+    set -g hydro_color_error    ff5555
+    set -g hydro_color_prompt   50fa7b
+    set -g hydro_color_duration 6272a4
+
+    # Fish Syntax Highlighting (Dracula)
+    # Manual setting to ensure portability without relying on fish_variables
+    set -g fish_color_normal            f8f8f2
+    set -g fish_color_command           8be9fd
+    set -g fish_color_param             bd93f9
+    set -g fish_color_quote             f1fa8c
+    set -g fish_color_redirection       f8f8f2
+    set -g fish_color_end               ffb86c
+    set -g fish_color_error             ff5555
+    set -g fish_color_comment           6272a4
+    set -g fish_color_operator          50fa7b
+    set -g fish_color_escape            ff79c6
+    set -g fish_color_autosuggestion    6272a4
+    set -g fish_color_host              bd93f9
+    set -g fish_color_host_remote       bd93f9
+    set -g fish_color_user              8be9fd
+    set -g fish_color_cancel            ff5555 --reverse
+    set -g fish_color_search_match      --bold --background=44475a
+    set -g fish_color_selection         --bold --background=44475a
+    set -g fish_color_valid_path        --underline=single
+
+    # Pager Colors
+    set -g fish_pager_color_completion           f8f8f2
+    set -g fish_pager_color_description          6272a4
+    set -g fish_pager_color_prefix               8be9fd
+    set -g fish_pager_color_progress             6272a4
+    set -g fish_pager_color_selected_background  --background=44475a
+    set -g fish_pager_color_selected_completion  f8f8f2
+    set -g fish_pager_color_selected_description 6272a4
+    set -g fish_pager_color_selected_prefix      8be9fd
+end
+
+# ============================================
+# Greeting System (Time-Based)
+# ============================================
+if status is-interactive
+    function fish_greeting
+        # Get current hour (0-23)
+        set -l hour (date +%H)
+        
+        # Morning greetings (5am - 12pm)
+        set -l morning_greetings \
+            "Namaste, bhai! Chal, aaj kuch solid code karte hain. ☀️" \
+            "Greetings, fellow unit! Ready to convert caffeine into code? ☕" \
+            "Good morning! Ready to debug the universe (or just our app) today? 🌌" \
+            "Suprabhat, dost! Let's make today productive! 💻" \
+            "Rise and shine! Ready to compile greatness? 🌅" \
+            "Morning! Let's turn that coffee into commits. ☕→💻" \
+            "Arre! Subah subah coding karne ka maza hi alag hai! 🚀" \
+            "Hello World! Fresh start, fresh code. Let's do this! 🌍" \
+            "Good morning! Time to make the magic happen. ✨"
+        
+        # Afternoon greetings (12pm - 6pm)
+        set -l afternoon_greetings \
+            "Arre, mere dost! Code karne ke liye taiyaar ho? 🚀" \
+            "Kya haal hai, dost? Chalo, bug-fixing shuru karein! 🐛" \
+            "SYN! Ready to ACK our way through some logic? 🧠" \
+            "Hey! Ready to script a future where everything compiles on the first try? 🖖🏽" \
+            "Handshake initiated. 👋 Ready to make the magic happen?" \
+            "What's kickin', chicken? Ready to squash some bugs? 🐔" \
+            "Afternoon, warrior! Let's ship some features. ⚓" \
+            "Ready to ship it? 🛶 No looking back until the PR is merged!" \
+            "Holla! 👋 Let's make this script look absolutely on fleek today." \
+            "Greetings! Ready to do some adulting today? Let's crush these commits. ☕"
+        
+        # Evening/Night greetings (6pm - 5am)
+        set -l evening_greetings \
+            "Oye! Taiyaar ho world badalne ke liye? 💻🌙" \
+            "Salutations! Shall we initiate a session of bug-free productivity? 👾" \
+            "Yo! Ready to overclock our brains and ship some features? ⚓" \
+            "01001000 01101001! Ready to push some commits? ⋈" \
+            "Ahoy, matey! Ready to navigate the sea of syntax? 🦜" \
+            "Let's compile 2026—one line at a time. 🔮 You in?" \
+            "Ready to turn that software into hardware? Let's get to it! 🔩" \
+            "Wassup, dawg? Ready to ship some code that's totally da bomb? 💣" \
+            "Yo! Ready to get crunk on some logic? It's gonna be sick! 🤘" \
+            "Cool beans! 🆒 Time to sit down and write some awesomesauce code." \
+            "Late night grind! The best code happens after dark. 🌃" \
+            "Evening vibes activated. Let's make some nocturnal magic. 🦇"
+        
+        # Select appropriate greeting set based on time
+        set -l greetings  # Declare variable first
+        if test $hour -ge 5 -a $hour -lt 12
+            set greetings $morning_greetings
+        else if test $hour -ge 12 -a $hour -lt 18
+            set greetings $afternoon_greetings
+        else
+            set greetings $evening_greetings
+        end
+        
+        # Pick random greeting from time-appropriate set
+        set -l random_index (random 1 (count $greetings))
+        echo -e "\n  $greetings[$random_index]\n"
+    end
+end
+
+# History Setup
+set -g fish_history_limit 10000
