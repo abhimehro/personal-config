@@ -153,12 +153,21 @@ fi
 echo ""
 echo "== Checking WebDAV server =="
 
+CREDS_FILE="$HOME/.config/media-server/credentials"
+MEDIA_WEBDAV_USER="infuse"
+MEDIA_WEBDAV_PASS=""
+
+if [[ -f "$CREDS_FILE" ]]; then
+    # shellcheck disable=SC1090
+    source "$CREDS_FILE"
+fi
+
 if lsof -nP -i:8088 2>/dev/null | grep -q rclone; then
     success "WebDAV server is running on port 8088"
     echo "  Process: $(lsof -nP -i:8088 | grep rclone | head -1)"
 
     # Test local connection
-    if curl -s -u infuse:mediaserver123 http://localhost:8088/ &>/dev/null; then
+    if curl -s -u "${MEDIA_WEBDAV_USER}:${MEDIA_WEBDAV_PASS}" http://localhost:8088/ &>/dev/null; then
         success "Local WebDAV connection: Working"
     else
         warn "Local WebDAV connection: Failed"
@@ -167,10 +176,10 @@ else
     error "WebDAV server is NOT running on port 8088"
     echo ""
     echo "To start the server:"
-    echo "  ./scripts/start-media-server.sh"
+    echo "  ./scripts/start-media-server-fast.sh"
     echo ""
     echo "Or manually:"
-    echo "  rclone serve webdav media: --addr 0.0.0.0:8088 --user infuse --pass mediaserver123 --read-only"
+    echo "  rclone serve webdav media: --addr 0.0.0.0:8088 --user $MEDIA_WEBDAV_USER --pass \"$MEDIA_WEBDAV_PASS\" --read-only"
 fi
 
 # Network information
@@ -182,8 +191,8 @@ echo ""
 echo "Infuse Configuration:"
 echo "  Protocol: WebDAV"
 echo "  Address: http://$LOCAL_IP:8088"
-echo "  Username: infuse"
-echo "  Password: mediaserver123"
+echo "  Username: $MEDIA_WEBDAV_USER"
+echo "  Password: ${MEDIA_WEBDAV_PASS:-<set in ~/.config/media-server/credentials>}"
 echo "  Path: /"
 
 # Summary
@@ -231,7 +240,7 @@ else
     echo "     - Setting up OneDrive remote"
     echo "     - Creating folder structure"
     echo "     - Creating unified media remote"
-    echo "  3. Then start the server: ./scripts/start-media-server.sh"
+    echo "  3. Then start the server: ./scripts/start-media-server-fast.sh"
 fi
 
 echo ""

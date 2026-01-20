@@ -22,13 +22,29 @@ echo ""
 # Stop existing servers
 pkill -f "rclone serve webdav" 2>/dev/null || true
 
-# Load credentials
+# Load or generate credentials
 CREDS_FILE="$HOME/.config/media-server/credentials"
+MEDIA_WEBDAV_USER="infuse"
+MEDIA_WEBDAV_PASS=""
+
 if [[ -f "$CREDS_FILE" ]]; then
     source "$CREDS_FILE"
-else
-    echo "❌ Credentials not found!"
-    exit 1
+fi
+
+if [[ -z "$MEDIA_WEBDAV_PASS" ]]; then
+    echo "⚙️  Generating secure credentials..."
+    mkdir -p "$(dirname "$CREDS_FILE")"
+
+    if command -v openssl &>/dev/null; then
+        MEDIA_WEBDAV_PASS=$(openssl rand -base64 12 | tr -dc 'a-zA-Z0-9')
+    else
+        MEDIA_WEBDAV_PASS=$(head -c 12 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9')
+    fi
+
+    echo "MEDIA_WEBDAV_USER='$MEDIA_WEBDAV_USER'" >"$CREDS_FILE"
+    echo "MEDIA_WEBDAV_PASS='$MEDIA_WEBDAV_PASS'" >>"$CREDS_FILE"
+    chmod 600 "$CREDS_FILE"
+    echo "✅ Credentials saved to $CREDS_FILE"
 fi
 
 WIFI_IP=$(ipconfig getifaddr en0 2>/dev/null || echo "127.0.0.1")

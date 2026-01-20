@@ -41,7 +41,7 @@ Media/
 ## 🔧 **Available Scripts**
 
 ### **Primary Scripts**
-- `start-media-server.sh` - **Start unified WebDAV server** (port 8088)
+- `start-media-server-fast.sh` - **Primary unified WebDAV server** (port 8088, high-performance, LaunchAgent)
 - `setup-media-library.sh` - **Full setup/reinstall** (Google Drive + OneDrive + Union)
 - `fix-gdrive.sh` - **Repair Google Drive authentication**
 
@@ -71,15 +71,16 @@ Path: /links/
 #### 2. Unified Cloud Library
 ```bash
 # Start the server
-~/start-media-server.sh
+~/start-media-server-fast.sh
 ```
 ```
-Protocol: WebDAV  
+Protocol: WebDAV
 Address: http://YOUR_LOCAL_IP:8088
 Username: infuse
-Password: mediaserver123
+Password: (from ~/.config/media-server/credentials)
 Path: /
 ```
+
 
 ## 📊 **Current Status**
 
@@ -115,7 +116,7 @@ rclone config reconnect onedrive:
 pkill -f "rclone serve"
 
 # Start unified server
-~/start-media-server.sh
+~/start-media-server-fast.sh
 ```
 
 ### **Check Remote Status:**
@@ -140,7 +141,7 @@ rclone lsd media:
 ### **WebDAV Server Won't Start:**
 - Check port availability: `lsof -nP -i:8088`
 - Kill existing servers: `pkill -f "rclone serve"`
-- Restart: `~/start-media-server.sh`
+- Restart: `~/start-media-server-fast.sh`
 
 ## 🔐 **Security & Credentials**
 
@@ -152,15 +153,19 @@ rclone lsd media:
 ### **WebDAV Server Security:**
 - **Local network only** (0.0.0.0:8088)
 - **Username**: `infuse` 
-- **Password**: `mediaserver123`
+- **Password**: stored in `~/.config/media-server/credentials` (auto-generated if missing)
 - **Read-only access** to prevent accidental changes
 
 ## 🏆 **Performance Optimization**
 
 ### **rclone Flags Used:**
-- `--dir-cache-time 30m` - Cache directory listings
-- `--read-only` - Prevent accidental modifications  
-- `--verbose` - Detailed logging
+- `--dir-cache-time 2h` - Cache directory listings
+- `--poll-interval 10m` - Refresh upstreams
+- `--vfs-cache-mode writes` - Improve read performance
+- `--vfs-cache-max-age 24h` - Retain cached entries
+- `--vfs-cache-poll-interval 5m` - Poll cache state
+- `--buffer-size 128M` - Smoother playback on LAN
+- `--read-only` - Prevent accidental modifications
 
 ### **Infuse Settings (Recommended):**
 - ✅ **Pre-Cache Details** 

@@ -120,7 +120,7 @@ stage_media_scripts() {
   mkdir -p "$media_bin"
   log_info "Linking media helper scripts to $media_bin..."
 
-  for s in start-media-server.sh start-media-server-vpn-fix.sh start-alldebrid.sh stop-alldebrid.sh test-infuse-connection.sh; do
+  for s in start-media-server-fast.sh start-media-server-vpn-fix.sh start-alldebrid.sh stop-alldebrid.sh test-infuse-connection.sh sync-alldebrid.sh; do
     local src="$REPO_ROOT/media-streaming/scripts/$s"
     if [[ -f "$src" ]]; then
       ln -sf "$src" "$media_bin/$s"

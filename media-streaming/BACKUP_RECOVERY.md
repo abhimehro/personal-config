@@ -89,7 +89,7 @@ rclone lsd media:
 
 ```bash
 # Start WebDAV server
-~/Documents/dev/personal-config/media-streaming/scripts/start-media-server.sh
+~/Documents/dev/personal-config/media-streaming/scripts/start-media-server-fast.sh
 
 # Verify server is running
 lsof -nP -i:8088 | grep rclone
@@ -129,7 +129,7 @@ op document get "Rclone Config Backup" --vault Personal --output ~/.config/rclon
 chmod 600 ~/.config/rclone/rclone.conf && \
 op document get "Media Server WebDAV Credentials" --vault Personal --output ~/.config/media-server/credentials && \
 chmod 600 ~/.config/media-server/credentials && \
-~/Documents/dev/personal-config/media-streaming/scripts/start-media-server.sh
+~/Documents/dev/personal-config/media-streaming/scripts/start-media-server-fast.sh
 ```
 
 ---
@@ -178,7 +178,7 @@ pkill -9 rclone
 lsof -nP -i:8088
 
 # Restart server
-~/Documents/dev/personal-config/media-streaming/scripts/start-media-server.sh
+~/Documents/dev/personal-config/media-streaming/scripts/start-media-server-fast.sh
 ```
 
 ---
