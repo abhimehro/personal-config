@@ -9,7 +9,7 @@
   <array>
     <string>/bin/bash</string>
     <string>-lc</string>
-    <string>/Users/abhimehrotra/Library/Media/bin/start-media-server.sh</string>
+    <string>/Users/abhimehrotra/Library/Media/bin/start-media-server-fast.sh</string>
   </array>
 
   <key>EnvironmentVariables</key>

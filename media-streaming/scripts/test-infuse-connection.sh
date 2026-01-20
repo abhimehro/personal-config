@@ -9,7 +9,7 @@ LOCAL_IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/n
 echo "📡 Your Mac's IP Address: $LOCAL_IP"
 echo
 
-# Load credentials shared with start-media-server.sh
+# Load credentials shared with start-media-server-fast.sh
 MEDIA_WEBDAV_USER="${MEDIA_WEBDAV_USER:-infuse}"
 MEDIA_WEBDAV_PASS="${MEDIA_WEBDAV_PASS:-}"
 CREDS_FILE="${MEDIA_CREDENTIALS_FILE:-$HOME/.config/media-server/credentials}"
@@ -19,13 +19,19 @@ if [[ -z "$MEDIA_WEBDAV_PASS" && -f "$CREDS_FILE" ]]; then
     source "$CREDS_FILE"
 fi
 
+if [[ -z "$MEDIA_WEBDAV_PASS" ]]; then
+    echo "❌ WebDAV credentials missing."
+    echo "   Run: ~/start-media-server-fast.sh to auto-generate credentials."
+    exit 1
+fi
+
 # Test server status
 echo "🖥️  Server Status:"
 if lsof -nP -i:8088 | grep -q rclone; then
     echo "✅ rclone server is running on port 8088"
 else
     echo "❌ rclone server is NOT running on port 8088"
-    echo "   Run: ~/start-media-server.sh"
+    echo "   Run: ~/start-media-server-fast.sh"
     exit 1
 fi
 echo

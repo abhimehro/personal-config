@@ -69,7 +69,7 @@ rclone config reconnect onedrive:
 
 ### **Unified Cloud Server:**
 ```bash
-~/start-media-server.sh
+~/start-media-server-fast.sh
 ```
 
 ## 🏥 **Emergency Recovery**
@@ -130,7 +130,7 @@ pkill -f "rclone serve"
 ### **Server Logs:**
 ```bash
 # Monitor server output
-~/start-media-server.sh  # Shows live logs
+~/start-media-server-fast.sh  # Shows live logs
 ```
 
 ## 🎯 **Infuse Configuration**
@@ -149,7 +149,7 @@ Path: /links/
 ### **Add Source - Unified Cloud:**
 ```bash
 # First, start the server
-~/start-media-server.sh
+~/start-media-server-fast.sh
 
 # Get your local IP
 ipconfig getifaddr en0
@@ -158,7 +158,7 @@ ipconfig getifaddr en0
 Protocol: WebDAV
 Address: http://YOUR_LOCAL_IP:8088
 Username: infuse
-Password: mediaserver123  
+Password: [from ~/.config/media-server/credentials]
 Path: /
 ```
 
@@ -188,7 +188,7 @@ rclone lsd media:
 rclone ls media: | head -10
 
 # Verify server is running
-curl -u infuse:mediaserver123 http://localhost:8088/
+curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" http://localhost:8088/
 ```
 
 ---

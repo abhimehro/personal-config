@@ -14,26 +14,18 @@
 ### **Infuse Connection (CONFIRMED WORKING)**
 ```
 ✅ WORKING METHOD - WebDAV:
-Protocol: WebDAV  
+Protocol: WebDAV
 Address: [Your en5 IP Address]
 Port: 8088
 Username: infuse
-Password: mediaserver123
-Path: /
-
-✅ ALTERNATIVE METHOD - HTTP:
-Protocol: WebDAV
-Address: [Your en5 IP Address] 
-Port: 8081
-Username: (blank)
-Password: (blank)
+Password: [from ~/.config/media-server/credentials]
 Path: /
 ```
 
 ### **Server Command (WORKING)**
 ```bash
 # Primary server (what's currently running)
-~/start-media-server.sh
+~/start-media-server-fast.sh
 
 # Diagnostic/troubleshooting server  
 ~/final-media-server.sh
@@ -86,13 +78,13 @@ Perfect Infuse-compatible folder structure
 ### **Starting Services:**
 ```bash
 # Quick start (recommended)
-~/start-media-server.sh
+~/start-media-server-fast.sh
 
 # Full diagnostic start
 ~/final-media-server.sh
 
 # Manual start
-rclone serve webdav media: --addr "0.0.0.0:8088" --user infuse --pass mediaserver123 --read-only
+rclone serve webdav media: --addr "0.0.0.0:8088" --user infuse --pass "$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" --read-only
 ```
 
 ### **Server Status Check:**
@@ -104,7 +96,7 @@ lsof -nP -i:8088
 tail -f ~/media-server.log
 
 # Test connectivity  
-curl -u infuse:mediaserver123 http://localhost:8088/
+curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" http://localhost:8088/
 ```
 
 ### **Stopping Services:**
@@ -167,7 +159,7 @@ kill [PID from lsof]
 
 # Full restart  
 pkill -f "rclone serve"
-~/start-media-server.sh
+~/start-media-server-fast.sh
 
 # Complete rebuild
 ~/setup-media-library.sh
