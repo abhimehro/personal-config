@@ -33,3 +33,7 @@
 ## 2026-01-19 - Safe Parallel Loop Execution
 **Learning:** When using `while read ... done < <(...)` to feed a loop that spawns background jobs, blindly trusting the loop's stdin/stdout context can lead to race conditions or "hanging" behavior if the background jobs inherit the file descriptors.
 **Action:** Read the input into an array first (synchronously), then iterate over the array to spawn background jobs. This isolates the data collection from the parallel execution context.
+
+## 2026-01-20 - Shell Script Error Checking Fragility
+**Learning:** Relying on `grep` to match specific error strings in a pipeline (e.g., `cmd | grep "fail"`) creates a "success by default" trap. If `cmd` fails with an unexpected error message that isn't in the grep list, the check fails (grep returns 1), leading the script to assume success.
+**Action:** Always check the command's exit code first. Only parse the output for specific reasons if the exit code indicates failure, and ensure there is a catch-all `else` block for unexpected errors.
