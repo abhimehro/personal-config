@@ -158,10 +158,10 @@ check_controld_active() {
     if [[ -n "$active_config" && -f "$active_config" ]]; then
       # ⚡ Bolt Optimization: Use single-pass grep with precise regex to avoid
       # reading file into memory and spawning subshells/pipes.
-      if grep -Eq "^\s*type = 'doh[^3]" "$active_config"; then
+      if grep -Eq "^\s*type = 'doh[^3]" "$active_config" 2>/dev/null; then
         fail "Active profile config ($active_config) contains non-DoH3 upstreams (found type='doh' without '3')."
         ok=1
-      elif grep -Eq "^\s*type = 'doh3'" "$active_config"; then
+      elif grep -Eq "^\s*type = 'doh3'" "$active_config" 2>/dev/null; then
         pass "Active profile config ($active_config) uses DoH3-only upstreams."
       else
         warn "Could not find any upstream type=\"doh*\" entries in $active_config; DoH3 validation is partial."
