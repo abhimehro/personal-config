@@ -156,16 +156,15 @@ check_controld_active() {
 
     # Enforce DoH3 at config level when we have a readable config file.
     if [[ -n "$active_config" && -f "$active_config" ]]; then
-      # Look for any upstream "type" definitions and ensure they are all doh3.
-      local doh_types
-      doh_types=$(grep -E "^\s*type = 'doh" "$active_config" 2>/dev/null || true)
-      if [[ -z "$doh_types" ]]; then
-        warn "Could not find any upstream type=\"doh*\" entries in $active_config; DoH3 validation is partial."
-      elif echo "$doh_types" | grep -q "type = 'doh'"; then
-        fail "Active profile config ($active_config) contains non-DoH3 upstreams; expected only type = 'doh3'."
+      # ⚡ Bolt Optimization: Use single-pass grep with precise regex to avoid
+      # reading file into memory and spawning subshells/pipes.
+      if grep -Eq "^\s*type = 'doh[^3]" "$active_config"; then
+        fail "Active profile config ($active_config) contains non-DoH3 upstreams (found type='doh' without '3')."
         ok=1
-      else
+      elif grep -Eq "^\s*type = 'doh3'" "$active_config"; then
         pass "Active profile config ($active_config) uses DoH3-only upstreams."
+      else
+        warn "Could not find any upstream type=\"doh*\" entries in $active_config; DoH3 validation is partial."
       fi
     else
       warn "Active Control D config file could not be read; skipping DoH3 validation."
