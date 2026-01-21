@@ -183,8 +183,16 @@ print_status() {
 
   # --- VPN Status ---
   local vpn_status
-  # Check for utun interface with an IP address (standard for VPNs on macOS)
-  if ifconfig | grep -A5 "utun" | grep "inet " | grep -v "127.0.0.1" >/dev/null 2>&1; then
+  # Check for utun interface with a non-loopback IPv4 address (standard for VPNs on macOS)
+  if ifconfig | awk '
+    # Start of a utun interface block (e.g., "utun2: flags=...")
+    /^[[:alnum:]]/ && $1 ~ /^utun[0-9]*:/ { in_utun=1; next }
+    # Start of a new non-utun interface block; leave utun section
+    /^[[:alnum:]]/ && $1 !~ /^utun[0-9]*:/ { in_utun=0 }
+    # Within a utun block, look for inet lines with non-loopback IPv4
+    in_utun && $1 == "inet" && $2 != "127.0.0.1" { found=1; exit }
+    END { exit !found }
+  ' >/dev/null 2>&1; then
     vpn_status="${GREEN}CONNECTED${NC}"
   else
     vpn_status="${RED}DISCONNECTED${NC}"
