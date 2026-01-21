@@ -33,3 +33,7 @@
 ## 2026-01-19 - Safe Parallel Loop Execution
 **Learning:** When using `while read ... done < <(...)` to feed a loop that spawns background jobs, blindly trusting the loop's stdin/stdout context can lead to race conditions or "hanging" behavior if the background jobs inherit the file descriptors.
 **Action:** Read the input into an array first (synchronously), then iterate over the array to spawn background jobs. This isolates the data collection from the parallel execution context.
+
+## 2026-02-15 - Grep Memory Optimization and Regex Precision
+**Learning:** Reading a file into a variable (`$(grep ...)`) just to pipe it into another `grep` is inefficient (memory usage, subshell overhead) and error-prone with regex. A single `grep` with a precise Extended Regex (e.g., `type = 'doh[^3]`) is faster and safer.
+**Action:** Replace `var=$(grep ...); if echo "$var" | grep ...` patterns with direct `if grep -E "pattern" file; then ...`.
