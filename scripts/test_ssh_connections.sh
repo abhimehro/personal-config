@@ -48,7 +48,7 @@ for host in "${hosts[@]}"; do
 
         # Test SSH connection (dry run)
         # ⚡ Bolt Optimization: Capture output once to avoid double execution on failure
-        if result=$(ssh -o ConnectTimeout=3 -o BatchMode=yes -o StrictHostKeyChecking=no "$host" exit 2>&1); then
+        if result=$(ssh -o ConnectTimeout=3 -o BatchMode=yes "$host" exit 2>&1); then
             success "  SSH: Connection successful!"
         else
             # SSH failed. Analyze output.
