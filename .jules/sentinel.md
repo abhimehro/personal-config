@@ -31,3 +31,8 @@
 **Vulnerability:** Service bound to 0.0.0.0 exposed to LAN.
 **Learning:** Default configurations or "optimizations" can inadvertently expose services to untrusted networks.
 **Prevention:** Explicitly bind local-only services to 127.0.0.1.
+
+## 2025-10-24 - Insecure Configuration Generation
+**Vulnerability:** The `controld-manager` script attempted to secure the DNS listener by removing specific IPv6 wildcards but failed to explicitly enforce localhost binding, potentially leaving the service exposed if defaults changed.
+**Learning:** Reliance on removing *known bad* values (denylist) is less secure than enforcing *known good* values (allowlist/enforcement) in configuration generation.
+**Prevention:** When generating security-critical configurations, explicitly set the desired secure values rather than trying to sanitize the output of a tool. Verify the final configuration file content before starting the service.
