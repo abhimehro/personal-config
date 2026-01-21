@@ -159,7 +159,7 @@ check_controld_active() {
       # ⚡ Bolt Optimization: Use single-pass grep with precise regex to avoid
       # reading file into memory and spawning subshells/pipes.
       # Regex matches lines like "type = 'doh'" but NOT "type = 'doh3'"
-      if grep -Eq '^[[:space:]]*type = '\''doh[^3]' "$active_config" 2>/dev/null; then
+      if grep -Eq '^[[:space:]]*type = '\''doh'\''[[:space:]]*$' "$active_config" 2>/dev/null; then
         fail "Active profile config ($active_config) contains non-DoH3 upstreams (found type='doh' without '3')."
         ok=1
       elif grep -Eq '^[[:space:]]*type = '\''doh3'\''' "$active_config" 2>/dev/null; then
