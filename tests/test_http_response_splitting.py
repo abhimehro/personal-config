@@ -56,6 +56,39 @@ class TestHTTPResponseSplitting(unittest.TestCase):
         alldebrid_server.AUTH_USER = self.original_module_auth_user
         alldebrid_server.AUTH_PASS = self.original_module_auth_pass
     
+    def _test_origin_rejection(self, origin_value, error_message):
+        """Helper method to test that a given origin is rejected.
+        
+        Args:
+            origin_value: The Origin header value to test
+            error_message: Error message for assertion failures
+        """
+        os.environ['ALD_AUTH_USER'] = 'testuser'
+        os.environ['ALD_AUTH_PASS'] = 'testpass'
+        os.environ['ALD_ALLOWED_ORIGINS'] = 'http://example.com'
+        
+        # Set module-level auth variables
+        alldebrid_server.AUTH_USER = 'testuser'
+        alldebrid_server.AUTH_PASS = 'testpass'
+        
+        handler = alldebrid_server.CustomHTTPRequestHandler(
+            self.mock_request, self.client_address, self.mock_server
+        )
+        
+        handler.headers = MagicMock()
+        handler.headers.get.return_value = origin_value
+        
+        sent_headers = []
+        def track_headers(key, value):
+            sent_headers.append((key, value))
+        handler.send_header = track_headers
+        
+        with patch.object(alldebrid_server.http.server.SimpleHTTPRequestHandler, 'end_headers'):
+            handler.end_headers()
+        
+        cors_headers = [h for h in sent_headers if h[0] == 'Access-Control-Allow-Origin']
+        self.assertEqual(len(cors_headers), 0, error_message)
+    
     def test_origin_with_newline_sanitized(self):
         """Test that origin headers with newlines are sanitized before being reflected."""
         # Set up auth and allowed origins
@@ -219,93 +252,24 @@ class TestHTTPResponseSplitting(unittest.TestCase):
     
     def test_subdomain_bypass_attempt_blocked(self):
         """Test that subdomain attacks are blocked (e.g., example.com.evil.com)."""
-        os.environ['ALD_AUTH_USER'] = 'testuser'
-        os.environ['ALD_AUTH_PASS'] = 'testpass'
-        os.environ['ALD_ALLOWED_ORIGINS'] = 'http://example.com'
-        
-        # Set module-level auth variables
-        alldebrid_server.AUTH_USER = 'testuser'
-        alldebrid_server.AUTH_PASS = 'testpass'
-        
-        handler = alldebrid_server.CustomHTTPRequestHandler(
-            self.mock_request, self.client_address, self.mock_server
+        self._test_origin_rejection(
+            'http://example.com.evil.com',
+            "Subdomain bypass attempt should be blocked"
         )
-        
-        handler.headers = MagicMock()
-        # Attacker tries to bypass by appending allowed domain as subdomain prefix
-        handler.headers.get.return_value = 'http://example.com.evil.com'
-        
-        sent_headers = []
-        def track_headers(key, value):
-            sent_headers.append((key, value))
-        handler.send_header = track_headers
-        
-        with patch.object(alldebrid_server.http.server.SimpleHTTPRequestHandler, 'end_headers'):
-            handler.end_headers()
-        
-        cors_headers = [h for h in sent_headers if h[0] == 'Access-Control-Allow-Origin']
-        self.assertEqual(len(cors_headers), 0, 
-                        "Subdomain bypass attempt should be blocked")
     
     def test_path_based_bypass_attempt_blocked(self):
         """Test that path-based attacks are blocked (e.g., evil.com/example.com)."""
-        os.environ['ALD_AUTH_USER'] = 'testuser'
-        os.environ['ALD_AUTH_PASS'] = 'testpass'
-        os.environ['ALD_ALLOWED_ORIGINS'] = 'http://example.com'
-        
-        # Set module-level auth variables
-        alldebrid_server.AUTH_USER = 'testuser'
-        alldebrid_server.AUTH_PASS = 'testpass'
-        
-        handler = alldebrid_server.CustomHTTPRequestHandler(
-            self.mock_request, self.client_address, self.mock_server
+        self._test_origin_rejection(
+            'http://evil.com/http://example.com',
+            "Path-based bypass attempt should be blocked"
         )
-        
-        handler.headers = MagicMock()
-        # Attacker tries to bypass by including allowed domain in path
-        handler.headers.get.return_value = 'http://evil.com/http://example.com'
-        
-        sent_headers = []
-        def track_headers(key, value):
-            sent_headers.append((key, value))
-        handler.send_header = track_headers
-        
-        with patch.object(alldebrid_server.http.server.SimpleHTTPRequestHandler, 'end_headers'):
-            handler.end_headers()
-        
-        cors_headers = [h for h in sent_headers if h[0] == 'Access-Control-Allow-Origin']
-        self.assertEqual(len(cors_headers), 0, 
-                        "Path-based bypass attempt should be blocked")
     
     def test_query_string_bypass_attempt_blocked(self):
         """Test that query string attacks are blocked (e.g., evil.com?ref=example.com)."""
-        os.environ['ALD_AUTH_USER'] = 'testuser'
-        os.environ['ALD_AUTH_PASS'] = 'testpass'
-        os.environ['ALD_ALLOWED_ORIGINS'] = 'http://example.com'
-        
-        # Set module-level auth variables
-        alldebrid_server.AUTH_USER = 'testuser'
-        alldebrid_server.AUTH_PASS = 'testpass'
-        
-        handler = alldebrid_server.CustomHTTPRequestHandler(
-            self.mock_request, self.client_address, self.mock_server
+        self._test_origin_rejection(
+            'http://evil.com?ref=http://example.com',
+            "Query string bypass attempt should be blocked"
         )
-        
-        handler.headers = MagicMock()
-        # Attacker tries to bypass by including allowed domain in query string
-        handler.headers.get.return_value = 'http://evil.com?ref=http://example.com'
-        
-        sent_headers = []
-        def track_headers(key, value):
-            sent_headers.append((key, value))
-        handler.send_header = track_headers
-        
-        with patch.object(alldebrid_server.http.server.SimpleHTTPRequestHandler, 'end_headers'):
-            handler.end_headers()
-        
-        cors_headers = [h for h in sent_headers if h[0] == 'Access-Control-Allow-Origin']
-        self.assertEqual(len(cors_headers), 0, 
-                        "Query string bypass attempt should be blocked")
     
     def test_no_auth_allows_all_origins(self):
         """Test that when auth is disabled, all origins are allowed (legacy behavior)."""
