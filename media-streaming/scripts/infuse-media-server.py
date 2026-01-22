@@ -254,6 +254,7 @@ def setup_authentication(args):
             password = ''.join(secrets.choice(alphabet) for i in range(16))
             print("\n🔒 Security: Authentication Enabled")
             print(f"   User: {user}")
+            print(f"   Password: {password}")
             if generated_user:
                 print("   (Random username generated. Set custom user via --user)")
             print("   (A random password has been generated and shown above. Store it securely, and consider setting a custom password via --password or AUTH_PASS.)\n")
