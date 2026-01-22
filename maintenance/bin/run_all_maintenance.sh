@@ -10,7 +10,8 @@ set -euo pipefail
 export RUN_START=$(date +%s)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$SCRIPT_DIR/../tmp"
-LOCK_DIR="/tmp/run_all_maintenance.lock"
+# Security: Use lock file in user-controlled directory to prevent DoS via /tmp
+LOCK_DIR="$LOG_DIR/run_all_maintenance.lock"
 LOCK_CONTEXT_LOG="$LOG_DIR/lock_context_$(date +%Y%m%d-%H%M%S).log"
 TIMESTAMP=$(date "+%Y%m%d_%H%M%S")
 MASTER_LOG="$LOG_DIR/maintenance_master_$TIMESTAMP.log"

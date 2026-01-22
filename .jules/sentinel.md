@@ -31,3 +31,8 @@
 **Vulnerability:** Service bound to 0.0.0.0 exposed to LAN.
 **Learning:** Default configurations or "optimizations" can inadvertently expose services to untrusted networks.
 **Prevention:** Explicitly bind local-only services to 127.0.0.1.
+
+## 2026-01-22 - Predictable Lock File in Shared Directory
+**Vulnerability:** Denial of Service (DoS) vulnerability via predictable lock file in `/tmp`. The maintenance script used a fixed path `/tmp/run_all_maintenance.lock`.
+**Learning:** Shared directories like `/tmp` are writable by all users. A malicious user can pre-create a directory with the same name, preventing legitimate users or scripts from acquiring the lock (creating the directory), even with sticky bits (owner mismatch).
+**Prevention:** Place lock files in user-controlled directories (e.g., `~/.config`, `~/.cache`, or a repo-local tmp dir) instead of shared system locations.
