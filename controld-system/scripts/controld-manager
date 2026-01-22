@@ -241,9 +241,9 @@ generate_profile_config() {
         # 🛡️ Sentinel: Verification
         # Ensure no wildcard bindings remain in the config
         if grep -qE "ip = ['\"]?0\.0\.0\.0['\"]?|ip = ['\"]?::['\"]?" "$config_file"; then
-            log_error "Security Check Failed: Config still contains wildcard binding! Aborting."
-            rm -f "$config_file"
-            return 1
+             log_error "Security Check Failed: Config still contains wildcard binding! Aborting."
+             rm -f "$config_file"
+             return 1
         fi
 
         log_success "$profile_name profile configuration generated with $protocol"

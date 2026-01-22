@@ -296,7 +296,7 @@
     "@raycast/api": "^1.94.0",
     "@raycast/utils": "^1.19.1",
     "javascript-time-ago": "^2.3.9",
-    "nanoid": "^5.1.6",
+    "nanoid": "^4.0.0",
     "node-fetch": "^3.0.0",
     "node-html-markdown": "^1.2.0",
     "rss-parser": "^3.12.0"
