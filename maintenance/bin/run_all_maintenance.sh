@@ -70,9 +70,10 @@ log_status() {
 }
 
 # Progress spinner for long-running tasks
-# Usage: spinner PID
+# Usage: spinner PID [Label]
 spinner() {
     local pid=$1
+    local label="${2:-Running...}"
     local delay=0.1
     local spin_chars_unicode=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
     local spin_chars_ascii=('|' '/' '-' '\\')
@@ -97,6 +98,7 @@ spinner() {
         # Trap to restore cursor if interrupted
         trap 'tput cnorm 2>/dev/null || true; exit' INT TERM
 
+        local start_time=$(date +%s)
         local elapsed=0
         local update_counter=0
         while kill -0 "$pid" 2>/dev/null; do
@@ -108,7 +110,7 @@ spinner() {
 
             # Print spinner and elapsed time
             # \r moves to start, \033[K (optional) or spaces to clear
-            printf "\r %s  Running... (%ds)   " "${spin_chars[i]}" "$elapsed"
+            printf "\r %s  %s (%ds)   " "${spin_chars[i]}" "$label" "$elapsed"
 
             i=$(( (i + 1) % num_chars ))
             update_counter=$((update_counter + 1))
@@ -181,7 +183,7 @@ run_script() {
             "$script_path" > "$log_file" 2>&1 &
             local pid=$!
 
-            spinner $pid
+            spinner $pid "Running $clean_name..."
 
             wait $pid
             local exit_code=$?
