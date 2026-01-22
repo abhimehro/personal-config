@@ -63,11 +63,9 @@ class TestHTTPResponseSplitting(unittest.TestCase):
             origin_value: The Origin header value to test
             error_message: Error message for assertion failures
         """
-        os.environ['ALD_AUTH_USER'] = 'testuser'
-        os.environ['ALD_AUTH_PASS'] = 'testpass'
         os.environ['ALD_ALLOWED_ORIGINS'] = 'http://example.com'
         
-        # Set module-level auth variables
+        # Set module-level auth variables (auth is required for origin validation)
         alldebrid_server.AUTH_USER = 'testuser'
         alldebrid_server.AUTH_PASS = 'testpass'
         
