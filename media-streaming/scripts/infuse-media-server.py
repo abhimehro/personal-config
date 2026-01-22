@@ -233,7 +233,56 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(content.encode('utf-8'))
 
+def setup_authentication(args):
+    """Set up authentication credentials with secure defaults.
+    
+    Returns: tuple (AUTH_USER, AUTH_PASS) or exits if password cannot be generated.
+    """
+    user = args.user or os.environ.get("AUTH_USER")
+    password = args.password or os.environ.get("AUTH_PASS")
+    
+    generated_user = False
+    if not user:
+        user_alphabet = string.ascii_lowercase + string.digits
+        user = "user_" + "".join(secrets.choice(user_alphabet) for _ in range(8))
+        generated_user = True
+    
+    if not password:
+        # If output is a TTY, generate a password for interactive use
+        if sys.stdout.isatty():
+            alphabet = string.ascii_letters + string.digits
+            password = ''.join(secrets.choice(alphabet) for i in range(16))
+            print("\n🔒 Security: Authentication Enabled")
+            print(f"   User: {user}")
+            print(f"   Password: {password}")
+            if generated_user:
+                print("   (Random username generated. Set custom user via --user)")
+            print("   (A random password has been generated and shown above. Store it securely, and consider setting a custom password via --password or AUTH_PASS.)\n")
+        else:
+            # Fail and require user to set a password to avoid logging it
+            print("\n❌ Error: Auto-generating a password is not supported when output is not a TTY.", file=sys.stderr)
+            print("   (e.g., when output is redirected to a file or running in automation/CI)", file=sys.stderr)
+            print("Please provide a password using the --password argument or the AUTH_PASS environment variable.", file=sys.stderr)
+            sys.exit(1)
+    else:
+        print("\n🔒 Security: Authentication Enabled (using configured credentials; password is hidden)\n")
+    
+    return user, password
+
+def verify_rclone_remote():
+    """Verify that rclone media remote exists.
+    
+    Exits if the remote is not found.
+    """
+    result = subprocess.run(['rclone', 'listremotes'], capture_output=True, text=True)
+    if 'media:' not in result.stdout:
+        print("❌ Error: 'media:' remote not found in rclone")
+        print("Available remotes:")
+        print(result.stdout)
+        sys.exit(1)
+
 def main():
+    """Start the Infuse-compatible media server."""
     parser = argparse.ArgumentParser(description="Infuse Media Server")
     parser.add_argument("port", type=int, nargs="?", default=8080, help="Port to serve on")
     parser.add_argument("--host", default="127.0.0.1", help="Host interface to bind to")
@@ -244,44 +293,14 @@ def main():
 
     global AUTH_USER, AUTH_PASS
     
-    # Check if rclone media remote exists
-    result = subprocess.run(['rclone', 'listremotes'], capture_output=True, text=True)
-    if 'media:' not in result.stdout:
-        print("❌ Error: 'media:' remote not found in rclone")
-        print("Available remotes:")
-        print(result.stdout)
-        sys.exit(1)
+    # Verify rclone setup
+    verify_rclone_remote()
     
+    # Configure authentication
+    AUTH_USER, AUTH_PASS = setup_authentication(args)
+    
+    # Configure host
     host = "0.0.0.0" if args.public else args.host
-
-    # Generate secure defaults
-    AUTH_USER = args.user or os.environ.get("AUTH_USER")
-    AUTH_PASS = args.password or os.environ.get("AUTH_PASS")
-
-    generated_user = False
-    if not AUTH_USER:
-        user_alphabet = string.ascii_lowercase + string.digits
-        AUTH_USER = "user_" + "".join(secrets.choice(user_alphabet) for _ in range(8))
-        generated_user = True
-
-    if not AUTH_PASS:
-        # If output is a TTY, generate a password for interactive use and display it.
-        if sys.stdout.isatty():
-            alphabet = string.ascii_letters + string.digits
-            AUTH_PASS = ''.join(secrets.choice(alphabet) for i in range(16))
-            print("\n🔒 Security: Authentication Enabled")
-            print(f"   User: {AUTH_USER}")
-            if generated_user:
-                print("   (Random username generated. Set custom user via --user)")
-            print("   (A random password has been generated and shown above. Store it securely, and consider setting a custom password via --password or AUTH_PASS.)\n")
-        # Otherwise, fail and require user to set a password to avoid logging it.
-        else:
-            print("\n❌ Error: Auto-generating a password is not supported when output is not a TTY.", file=sys.stderr)
-            print("   (e.g., when output is redirected to a file or running in automation/CI)", file=sys.stderr)
-            print("Please provide a password using the --password argument or the AUTH_PASS environment variable.", file=sys.stderr)
-            sys.exit(1)
-    else:
-        print("\n🔒 Security: Authentication Enabled (using configured credentials; password is hidden)\n")
 
     print(f"🚀 Starting Infuse-Compatible Media Server on http://{host}:{args.port}")
     if args.public:

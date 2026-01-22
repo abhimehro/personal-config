@@ -11,10 +11,80 @@ Usage: python3 test-adguard-import.py
 import os
 from pathlib import Path
 
-def verify_file_format(filepath, file_type):
-    """Verify that a file is properly formatted for AdGuard import."""
+def validate_line(line, line_num, file_type):
+    """Validate a single line based on file type.
+    
+    Returns: (is_valid, issue_message)
+    """
+    line = line.strip()
+    
+    if not line:  # Empty line
+        return True, None
+    elif line.startswith('#'):  # Comment line
+        return True, None
+    elif file_type == 'denylist':
+        # Denylist: just domain names
+        if '.' in line and not line.startswith('@@'):
+            return True, None
+        else:
+            return False, f"Line {line_num}: Invalid domain format - '{line}'"
+    elif file_type == 'allowlist':
+        # Allowlist: domains with @@ prefix
+        if line.startswith('@@') and '.' in line[2:]:
+            return True, None
+        else:
+            return False, f"Line {line_num}: Invalid allowlist format - '{line}'"
+    
+    return False, f"Line {line_num}: Unknown format - '{line}'"
+
+def count_line_types(lines, file_type):
+    """Count and categorize lines, collecting validation issues."""
+    stats = {
+        'total': len(lines),
+        'comments': 0,
+        'empty': 0,
+        'valid': 0,
+        'invalid': 0
+    }
     issues = []
     
+    for i, line in enumerate(lines, 1):
+        stripped = line.strip()
+        
+        if not stripped:
+            stats['empty'] += 1
+        elif stripped.startswith('#'):
+            stats['comments'] += 1
+        else:
+            is_valid, issue_msg = validate_line(line, i, file_type)
+            if is_valid:
+                stats['valid'] += 1
+            else:
+                stats['invalid'] += 1
+                issues.append(issue_msg)
+    
+    return stats, issues
+
+def print_file_analysis(file_type, stats, issues):
+    """Print analysis results for a file."""
+    print(f"\n📊 {file_type.upper()} ANALYSIS:")
+    print(f"  Total lines: {stats['total']:,}")
+    print(f"  Comment lines: {stats['comments']:,}")
+    print(f"  Empty lines: {stats['empty']:,}")
+    print(f"  Valid domains: {stats['valid']:,}")
+    print(f"  Invalid lines: {stats['invalid']:,}")
+    
+    if stats['invalid'] > 0:
+        print(f"  ⚠️  Issues found: {len(issues)}")
+        for issue in issues[:5]:  # Show first 5 issues
+            print(f"    {issue}")
+        if len(issues) > 5:
+            print(f"    ... and {len(issues) - 5} more issues")
+    else:
+        print(f"  ✅ All lines are properly formatted!")
+
+def verify_file_format(filepath, file_type):
+    """Verify that a file is properly formatted for AdGuard import."""
     if not os.path.exists(filepath):
         return [f"❌ File not found: {filepath}"]
     
@@ -22,50 +92,8 @@ def verify_file_format(filepath, file_type):
         with open(filepath, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         
-        total_lines = len(lines)
-        comment_lines = 0
-        empty_lines = 0
-        valid_domains = 0
-        invalid_lines = 0
-        
-        for i, line in enumerate(lines, 1):
-            line = line.strip()
-            
-            if not line:  # Empty line
-                empty_lines += 1
-            elif line.startswith('#'):  # Comment line
-                comment_lines += 1
-            elif file_type == 'denylist':
-                # Denylist: just domain names
-                if '.' in line and not line.startswith('@@'):
-                    valid_domains += 1
-                else:
-                    invalid_lines += 1
-                    issues.append(f"Line {i}: Invalid domain format - '{line}'")
-            elif file_type == 'allowlist':
-                # Allowlist: domains with @@ prefix
-                if line.startswith('@@') and '.' in line[2:]:
-                    valid_domains += 1
-                else:
-                    invalid_lines += 1
-                    issues.append(f"Line {i}: Invalid allowlist format - '{line}'")
-        
-        # Summary
-        print(f"\n📊 {file_type.upper()} ANALYSIS:")
-        print(f"  Total lines: {total_lines:,}")
-        print(f"  Comment lines: {comment_lines:,}")
-        print(f"  Empty lines: {empty_lines:,}")
-        print(f"  Valid domains: {valid_domains:,}")
-        print(f"  Invalid lines: {invalid_lines:,}")
-        
-        if invalid_lines > 0:
-            print(f"  ⚠️  Issues found: {len(issues)}")
-            for issue in issues[:5]:  # Show first 5 issues
-                print(f"    {issue}")
-            if len(issues) > 5:
-                print(f"    ... and {len(issues) - 5} more issues")
-        else:
-            print(f"  ✅ All lines are properly formatted!")
+        stats, issues = count_line_types(lines, file_type)
+        print_file_analysis(file_type, stats, issues)
         
         return issues
         
