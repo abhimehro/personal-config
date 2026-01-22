@@ -35,7 +35,7 @@ Add the PR #144 entry AFTER the main branch entry:
 **Action:** Always check the command's exit code first. Only parse the output for specific reasons if the exit code indicates failure, and ensure there is a catch-all `else` block for unexpected errors.
 
 ## 2026-02-15 - Grep Memory Optimization and Regex Precision
-**Learning:** Reading a file into a variable (`$(grep ...)`) just to pipe it into another `grep` is inefficient (memory usage, subshell overhead) and error-prone with regex. A single `grep` with a precise Extended Regex (e.g., `type = 'doh[^3]'`) is faster and safer.
+**Learning:** Reading a file into a variable (`$(grep ...)`) just to pipe it into another `grep` is inefficient (memory usage, subshell overhead) and error-prone with regex. A single `grep` with a precise Extended Regex (e.g., `type = '(doh'|doh[^3])'`) is faster and safer.
 **Action:** Replace `var=$(grep ...); if echo "$var" | grep ...` patterns with direct `if grep -E "pattern" file; then ...`.
 ```
 
@@ -47,10 +47,10 @@ Replace lines 157-172 with the optimized version:
     if [[ -n "$active_config" && -f "$active_config" ]]; then
       # ⚡ Bolt Optimization: Use single-pass grep with precise regex to avoid
       # reading file into memory and spawning subshells/pipes.
-      # Regex matches lines where type is 'doh' followed by a non-'3' character (e.g., "type = 'doh2'", "type = 'doha'"),
-      # while excluding "type = 'doh3'".
-      if grep -Eq '^[[:space:]]*type = '\''doh[^3]'\''' "$active_config" 2>/dev/null; then
-        fail "Active profile config ($active_config) contains non-DoH3 DoH upstreams (e.g., entries matching \"type = 'doh[^3]'\")."
+      # Regex matches lines where type is bare 'doh' or 'doh' followed by a non-'3' character
+      # (e.g., "type = 'doh'", "type = 'doh2'", "type = 'doha'"), while excluding "type = 'doh3'".
+      if grep -Eq '^[[:space:]]*type = '\''(doh'\''|doh[^3])' "$active_config" 2>/dev/null; then
+        fail "Active profile config ($active_config) contains non-DoH3 DoH upstreams (legacy 'doh' or variants like 'doh2')."
         ok=1
       elif grep -Eq '^[[:space:]]*type = '\''doh3'\''' "$active_config" 2>/dev/null; then
         pass "Active profile config ($active_config) uses DoH3-only upstreams."
@@ -101,12 +101,13 @@ The grep optimization has been validated with comprehensive unit tests:
 
 ## Security Considerations
 
-The regex pattern `^[[:space:]]*type = '\''doh[^3]'` is carefully crafted to:
-- Match only 'doh' followed by a non-'3' character
+The regex pattern `^[[:space:]]*type = '\''(doh'\''|doh[^3])'` is carefully crafted to:
+- Match bare 'doh' (legacy, insecure) via `doh'`
+- Match 'doh' followed by any non-'3' character via `doh[^3]`
 - Avoid false positives from 'doh3' entries
 - Use proper POSIX character classes for whitespace
 
-This prevents bypass attacks where someone could use 'doh2' or legacy 'doh' to circumvent DoH3 enforcement.
+This prevents bypass attacks where someone could use legacy 'doh', 'doh2', or other non-standard variants to circumvent DoH3 enforcement.
 
 ## Alternative: Rebase Approach
 

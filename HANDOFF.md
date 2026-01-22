@@ -32,7 +32,7 @@ All merge conflicts blocking PR #144 have been resolved. This branch contains th
 
 ### `scripts/network-mode-verify.sh`
 Already contains the optimized grep logic from PR #144:
-- Single-pass Extended Regex: `^[[:space:]]*type = '\''doh[^3]'\'''`
+- Single-pass Extended Regex: `^[[:space:]]*type = '\''(doh'\''|doh[^3])'`
 - Replaces double-grep pipeline
 - 50% fewer process forks
 - Better memory usage
@@ -52,7 +52,7 @@ if echo "$doh_types" | grep -q "type = 'doh'"; then  # Fork 2: subshell, Fork 3:
 
 **After (with PR #144 optimization):**
 ```bash
-if grep -Eq '^[[:space:]]*type = '\''doh[^3]' "$config"; then
+if grep -Eq '^[[:space:]]*type = '\''(doh'\''|doh[^3])' "$config"; then
 ```
 - 1-2 process forks
 - Streams through file
@@ -64,18 +64,18 @@ if grep -Eq '^[[:space:]]*type = '\''doh[^3]' "$config"; then
 
 ### The Regex Pattern
 ```regex
-^[[:space:]]*type = '\''doh[^3]'\'''
+^[[:space:]]*type = '\''(doh'\''|doh[^3])'
 ```
 
 **What it does:**
 - `^[[:space:]]*` - Start of line, optional whitespace
 - `type = '\''` - Literal string "type = '"
-- `doh` - Literal "doh"
-- `[^3]` - Any character EXCEPT '3'
-- `'\'''` - Closing quote
+- `(doh'\''|doh[^3])` - Either:
+  - `doh'` - Bare 'doh' followed immediately by closing quote (legacy)
+  - `doh[^3]` - 'doh' followed by any character EXCEPT '3' (variants)
 
 **Security properties:**
-- ✅ Matches 'doh' (legacy, insecure)
+- ✅ Matches bare 'doh' (legacy, insecure)
 - ✅ Matches 'doh2' (non-standard)
 - ✅ Does NOT match 'doh3' (secure, desired)
 - ✅ Prevents downgrade attacks
@@ -83,10 +83,10 @@ if grep -Eq '^[[:space:]]*type = '\''doh[^3]' "$config"; then
 
 ### Threat Model
 **Attack vector:** Someone tries to bypass DoH3 enforcement by using:
-- Legacy 'doh' protocol
+- Bare legacy 'doh' protocol (without version suffix)
 - Non-standard variants ('doh2', 'doha', etc.)
 
-**Defense:** Regex explicitly detects ANY 'doh' variant except 'doh3', failing validation immediately.
+**Defense:** Regex explicitly detects bare 'doh' (via `doh'`) AND any 'doh' variant except 'doh3' (via `doh[^3]`), failing validation immediately.
 
 ## 📚 Documentation Created
 

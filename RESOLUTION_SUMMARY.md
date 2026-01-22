@@ -96,11 +96,12 @@ Created `/tmp/test_doh3_validation.sh` with comprehensive tests:
 
 ## Security Considerations
 
-The regex pattern `^[[:space:]]*type = '\''doh[^3]'\'''` is secure:
-- ✅ Only matches 'doh' followed by non-'3' characters
+The regex pattern `^[[:space:]]*type = '\''(doh'\''|doh[^3])'` is secure:
+- ✅ Matches bare 'doh' (legacy) via `doh'`
+- ✅ Matches 'doh2', 'doha', etc. via `doh[^3]`
 - ✅ Excludes 'doh3' (the secure version)
 - ✅ Uses POSIX character classes (portable)
-- ✅ Prevents bypass via 'doh2', 'doha', etc.
+- ✅ Prevents bypass via bare legacy 'doh' or variants
 
 ## Performance Impact
 
