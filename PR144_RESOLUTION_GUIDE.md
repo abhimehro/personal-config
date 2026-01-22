@@ -95,7 +95,7 @@ git push origin bolt-optimize-grep-validation-9679837601280637187
 The grep optimization has been validated with comprehensive unit tests:
 - ✅ Correctly identifies doh3-only configs
 - ✅ Detects legacy 'doh' entries
-- ✅ Detects other non-doh3 variants (doh2, doha, etc.)
+- ✅ Detects other non-DoH3 variants (doh2, doha, etc.)
 - ✅ Handles configs with no doh entries
 - ✅ Correctly identifies mixed configs
 
