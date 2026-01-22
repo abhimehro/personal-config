@@ -306,7 +306,7 @@ def main():
         print(f"⚠️  Public Access Enabled (0.0.0.0). Ensure your network is trusted.")
     
     try:
-        # ⚡ Performance: Use ThreadingTCPServer to handle concurrent requests
+        # ⚡ Performance: Use ThreadingTCPServer to handle concurrent requests (e.g. streaming + browsing)
         with socketserver.ThreadingTCPServer((host, args.port), MediaServerHandler) as httpd:
             print("Press Ctrl+C to stop")
             httpd.serve_forever()
