@@ -181,6 +181,17 @@ print_status() {
 
   printf "   %s  %-13s %b\n" "🤖" "Control D" "$cd_display"
 
+  # --- VPN Status ---
+  local vpn_status
+  # Check for utun interface with an IP address (standard for VPNs on macOS)
+  if ifconfig | grep -A5 "utun" | grep "inet " | grep -v "127.0.0.1" >/dev/null 2>&1; then
+    vpn_status="${GREEN}CONNECTED${NC}"
+  else
+    vpn_status="${RED}DISCONNECTED${NC}"
+  fi
+
+  printf "   %s  %-13s %b\n" "🔐" "VPN Tunnel" "$vpn_status"
+
   # --- Fetch Network Info (Parallelized) ---
   # ⚡ Bolt Optimization: Run networksetup commands in parallel to reduce wait time
   local dns_temp
