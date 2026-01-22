@@ -35,7 +35,7 @@ Add the PR #144 entry AFTER the main branch entry:
 **Action:** Always check the command's exit code first. Only parse the output for specific reasons if the exit code indicates failure, and ensure there is a catch-all `else` block for unexpected errors.
 
 ## 2026-02-15 - Grep Memory Optimization and Regex Precision
-**Learning:** Reading a file into a variable (`$(grep ...)`) just to pipe it into another `grep` is inefficient (memory usage, subshell overhead) and error-prone with regex. A single `grep` with a precise Extended Regex (e.g., `type = 'doh[^3]`) is faster and safer.
+**Learning:** Reading a file into a variable (`$(grep ...)`) just to pipe it into another `grep` is inefficient (memory usage, subshell overhead) and error-prone with regex. A single `grep` with a precise Extended Regex (e.g., `type = 'doh[^3]'`) is faster and safer.
 **Action:** Replace `var=$(grep ...); if echo "$var" | grep ...` patterns with direct `if grep -E "pattern" file; then ...`.
 ```
 
@@ -49,7 +49,7 @@ Replace lines 157-172 with the optimized version:
       # reading file into memory and spawning subshells/pipes.
       # Regex matches lines where type is 'doh' followed by a non-'3' character (e.g., "type = 'doh2'", "type = 'doha'"),
       # while excluding "type = 'doh3'".
-      if grep -Eq '^[[:space:]]*type = '\''doh[^3]' "$active_config" 2>/dev/null; then
+      if grep -Eq '^[[:space:]]*type = '\''doh[^3]'\''' "$active_config" 2>/dev/null; then
         fail "Active profile config ($active_config) contains non-DoH3 DoH upstreams (e.g., entries matching \"type = 'doh[^3]'\")."
         ok=1
       elif grep -Eq '^[[:space:]]*type = '\''doh3'\''' "$active_config" 2>/dev/null; then
