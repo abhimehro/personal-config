@@ -60,7 +60,7 @@ def extract_allowlist_from_file(filepath, description):
             for rule in data['rules']:
                 if 'PK' in rule and rule.get('action', {}).get('do') == 1:
                     domains.add(rule['PK'])
-            count = len([r for r in data['rules'] if r.get('action', {}).get('do') == 1])
+            count = len(domains)
             print(f"    Added {count} {description}")
     return domains
 
