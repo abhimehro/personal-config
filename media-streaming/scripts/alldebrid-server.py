@@ -81,7 +81,9 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             if allowed_origins_env and origin:
                 allowed_origins = {o.strip() for o in allowed_origins_env.split(',') if o.strip()}
                 safe_origin = origin.replace("\r", "").replace("\n", "")
-                if safe_origin in allowed_origins:
+                # Security: Use exact match, not substring check, to prevent bypass attacks
+                # (e.g., "http://example.com" should not match "http://example.com.evil.com")
+                if safe_origin in allowed_origins:  # This 'in' checks set membership (exact match), not substring
                     self.send_header('Access-Control-Allow-Origin', safe_origin)
                     self.send_header('Vary', 'Origin')
             # If no allowed origins configured, do not send Access-Control-Allow-Origin
