@@ -251,21 +251,21 @@ class TestHTTPResponseSplitting(unittest.TestCase):
         self.assertEqual(len(cors_headers), 0, "Invalid origin should be rejected")
     
     def test_subdomain_bypass_attempt_blocked(self):
-        """Test that subdomain attacks are blocked (e.g., example.com.evil.com)."""
+        """Test that subdomain attacks are blocked (e.g., http://example.com.evil.com)."""
         self._test_origin_rejection(
             'http://example.com.evil.com',
             "Subdomain bypass attempt should be blocked"
         )
     
     def test_path_based_bypass_attempt_blocked(self):
-        """Test that path-based attacks are blocked (e.g., evil.com/example.com)."""
+        """Test that path-based attacks are blocked (e.g., http://evil.com/http://example.com)."""
         self._test_origin_rejection(
             'http://evil.com/http://example.com',
             "Path-based bypass attempt should be blocked"
         )
     
     def test_query_string_bypass_attempt_blocked(self):
-        """Test that query string attacks are blocked (e.g., evil.com?ref=example.com)."""
+        """Test that query string attacks are blocked (e.g., http://evil.com?ref=http://example.com)."""
         self._test_origin_rejection(
             'http://evil.com?ref=http://example.com',
             "Query string bypass attempt should be blocked"
