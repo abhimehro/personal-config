@@ -30,31 +30,8 @@ def extract_domains_from_rules(rules):
             domains.append(rule['PK'])
     return domains
 
-def main():
-    # Define the base directory
-    base_dir = Path("/Users/abhimehrotra/Downloads")
-    
-    # Define tracker files for denylist (all should block with do: 0)
-    tracker_files = [
-        "CD-Microsoft-Tracker.json",
-        "CD-No-Safesearch-Support.json", 
-        "CD-OPPO_Realme-Tracker.json",
-        "CD-Roku-Tracker.json",
-        "CD-Samsung-Tracker.json",
-        "CD-Tiktok-Tracker---aggressive.json",
-        "CD-Vivo-Tracker.json",
-        "CD-Xiaomi-Tracker.json",
-        "CD-Amazon-Tracker.json",
-        "CD-Apple-Tracker.json",
-        "CD-Badware-Hoster.json",
-        "CD-LG-webOS-Tracker.json",
-        "CD-Huawei-Tracker.json"  # Adding this as it's also a tracker
-    ]
-    
-    print("🔍 Consolidating Ad-Blocking Lists...")
-    print("=" * 50)
-    
-    # 1. CREATE DENYLIST (All tracker blocking rules)
+def process_tracker_files(base_dir, tracker_files):
+    """Process tracker files to create denylist domains."""
     print("\n📋 Creating Denylist...")
     denylist_domains = set()
     
@@ -71,83 +48,67 @@ def main():
             print(f"  ⚠️  File not found: {filename}")
     
     print(f"\n✅ Denylist total domains: {len(denylist_domains)}")
-    
-    # 2. CREATE ALLOWLIST (Control D Bypass + legitimate TLDs)
+    return denylist_domains
+
+def extract_allowlist_from_file(filepath, description):
+    """Extract allowlist domains from a file with do: 1 rules."""
+    domains = set()
+    if filepath.exists():
+        print(f"  Processing: {filepath.name}")
+        data = load_json_file(filepath)
+        if data and 'rules' in data:
+            for rule in data['rules']:
+                if 'PK' in rule and rule.get('action', {}).get('do') == 1:
+                    domains.add(rule['PK'])
+            count = len([r for r in data['rules'] if r.get('action', {}).get('do') == 1])
+            print(f"    Added {count} {description}")
+    return domains
+
+def process_allowlist_files(base_dir):
+    """Process allowlist files (Control D Bypass + legitimate TLDs)."""
     print("\n📋 Creating Allowlist...")
     allowlist_domains = set()
     
-    # Add Control D Bypass rules (do: 1 = allow)
+    # Add Control D Bypass rules
     bypass_file = base_dir / "CD-Control-D-Bypass.json"
-    if bypass_file.exists():
-        print("  Processing: CD-Control-D-Bypass.json")
-        data = load_json_file(bypass_file)
-        if data and 'rules' in data:
-            # Only include rules with do: 1 (allow)
-            for rule in data['rules']:
-                if 'PK' in rule and rule.get('action', {}).get('do') == 1:
-                    allowlist_domains.add(rule['PK'])
-            print(f"    Added {len([r for r in data['rules'] if r.get('action', {}).get('do') == 1])} bypass domains")
+    allowlist_domains.update(extract_allowlist_from_file(bypass_file, "bypass domains"))
     
-    # Add legitimate TLDs from Most Abused TLDs (do: 1 = allow)
+    # Add legitimate TLDs
     tlds_file = base_dir / "CD-Most-Abused-TLDs.json"
-    if tlds_file.exists():
-        print("  Processing: CD-Most-Abused-TLDs.json")
-        data = load_json_file(tlds_file)
-        if data and 'rules' in data:
-            # Only include rules with do: 1 (allow legitimate domains)
-            for rule in data['rules']:
-                if 'PK' in rule and rule.get('action', {}).get('do') == 1:
-                    allowlist_domains.add(rule['PK'])
-            print(f"    Added {len([r for r in data['rules'] if r.get('action', {}).get('do') == 1])} legitimate TLD domains")
+    allowlist_domains.update(extract_allowlist_from_file(tlds_file, "legitimate TLD domains"))
     
     print(f"\n✅ Allowlist total domains: {len(allowlist_domains)}")
-    
-    # 3. CREATE CONSOLIDATED FILES
+    return allowlist_domains
+
+def create_json_structure(domains, group_name, action_do):
+    """Create JSON structure for domain lists."""
+    return {
+        "group": {
+            "group": group_name,
+            "action": {
+                "do": action_do,
+                "status": 1
+            }
+        },
+        "rules": [
+            {
+                "PK": domain,
+                "action": {
+                    "do": action_do,
+                    "status": 1
+                }
+            }
+            for domain in sorted(domains)
+        ]
+    }
+
+def write_json_files(base_dir, denylist_domains, allowlist_domains):
+    """Write JSON formatted list files."""
     print("\n💾 Creating consolidated files...")
     
-    # Create Denylist JSON
-    denylist_json = {
-        "group": {
-            "group": "Comprehensive Tracker Denylist",
-            "action": {
-                "do": 0,
-                "status": 1
-            }
-        },
-        "rules": [
-            {
-                "PK": domain,
-                "action": {
-                    "do": 0,
-                    "status": 1
-                }
-            }
-            for domain in sorted(denylist_domains)
-        ]
-    }
+    denylist_json = create_json_structure(denylist_domains, "Comprehensive Tracker Denylist", 0)
+    allowlist_json = create_json_structure(allowlist_domains, "Comprehensive Allowlist", 1)
     
-    # Create Allowlist JSON
-    allowlist_json = {
-        "group": {
-            "group": "Comprehensive Allowlist",
-            "action": {
-                "do": 1,
-                "status": 1
-            }
-        },
-        "rules": [
-            {
-                "PK": domain,
-                "action": {
-                    "do": 1,
-                    "status": 1
-                }
-            }
-            for domain in sorted(allowlist_domains)
-        ]
-    }
-    
-    # Write files
     denylist_path = base_dir / "Consolidated-Denylist.json"
     allowlist_path = base_dir / "Consolidated-Allowlist.json"
     
@@ -159,26 +120,28 @@ def main():
     
     print(f"✅ Created: {denylist_path}")
     print(f"✅ Created: {allowlist_path}")
-    
-    # 4. CREATE SIMPLE TEXT VERSIONS (for AdGuard import)
+    return denylist_path, allowlist_path
+
+def write_text_files(base_dir, denylist_domains, allowlist_domains):
+    """Write text formatted list files for AdGuard."""
     print("\n📄 Creating simple text versions for AdGuard...")
     
-    # Denylist text file (one domain per line)
     denylist_txt_path = base_dir / "Consolidated-Denylist.txt"
     with open(denylist_txt_path, 'w', encoding='utf-8') as f:
         for domain in sorted(denylist_domains):
             f.write(f"{domain}\n")
     
-    # Allowlist text file (one domain per line)
     allowlist_txt_path = base_dir / "Consolidated-Allowlist.txt"
     with open(allowlist_txt_path, 'w', encoding='utf-8') as f:
         for domain in sorted(allowlist_domains):
-            f.write(f"@@{domain}\n")  # AdGuard allowlist syntax
+            f.write(f"@@{domain}\n")
     
     print(f"✅ Created: {denylist_txt_path}")
     print(f"✅ Created: {allowlist_txt_path}")
-    
-    # 5. SUMMARY
+    return denylist_txt_path, allowlist_txt_path
+
+def print_summary(denylist_domains, allowlist_domains):
+    """Print consolidation summary."""
     print("\n" + "=" * 50)
     print("🎉 CONSOLIDATION COMPLETE!")
     print("=" * 50)
@@ -196,6 +159,40 @@ def main():
     print("  1. Import Consolidated-Denylist.txt into AdGuard as your denylist")
     print("  2. Import Consolidated-Allowlist.txt into AdGuard as your allowlist")
     print("  3. Test your configuration to ensure proper functionality")
+
+def main():
+    """Main consolidation workflow."""
+    base_dir = Path("/Users/abhimehrotra/Downloads")
+    
+    tracker_files = [
+        "CD-Microsoft-Tracker.json",
+        "CD-No-Safesearch-Support.json", 
+        "CD-OPPO_Realme-Tracker.json",
+        "CD-Roku-Tracker.json",
+        "CD-Samsung-Tracker.json",
+        "CD-Tiktok-Tracker---aggressive.json",
+        "CD-Vivo-Tracker.json",
+        "CD-Xiaomi-Tracker.json",
+        "CD-Amazon-Tracker.json",
+        "CD-Apple-Tracker.json",
+        "CD-Badware-Hoster.json",
+        "CD-LG-webOS-Tracker.json",
+        "CD-Huawei-Tracker.json"
+    ]
+    
+    print("🔍 Consolidating Ad-Blocking Lists...")
+    print("=" * 50)
+    
+    # Process files
+    denylist_domains = process_tracker_files(base_dir, tracker_files)
+    allowlist_domains = process_allowlist_files(base_dir)
+    
+    # Write output files
+    write_json_files(base_dir, denylist_domains, allowlist_domains)
+    write_text_files(base_dir, denylist_domains, allowlist_domains)
+    
+    # Print summary
+    print_summary(denylist_domains, allowlist_domains)
 
 if __name__ == "__main__":
     main()
