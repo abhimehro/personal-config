@@ -1,3 +1,3 @@
 function nm-browse
-    cd $NM_ROOT; ./scripts/network-mode-manager.sh controld browsing
+    cd $NM_ROOT; ./scripts/network-mode-manager.sh controld browsing $argv
 end
