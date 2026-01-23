@@ -212,6 +212,9 @@ mkdir -p "$STAGING_DIR" "$FAILED_DIR" "$(dirname "$LOG_FILE")"
 
 case "${1:-}" in
     --watch)
+        # 🛡️ Fix: Process any files already in staging before starting the watch loop
+        log "Checking for existing files in staging..."
+        process_staging
         watch_mode
         ;;
     "")
