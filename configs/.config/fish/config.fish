@@ -324,3 +324,6 @@ end
 # if status is-interactive
 #     echo \"🐟 Fish shell loaded! Type 'fishconfig' to edit config.\"
 # end
+
+# Mole shell completion
+set -l output (mole completion fish 2>/dev/null); and echo "$output" | source
