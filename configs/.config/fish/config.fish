@@ -25,7 +25,7 @@ if status is-interactive
     if test -d /opt/homebrew/opt/chruby-fish/share/chruby
         source /opt/homebrew/opt/chruby-fish/share/chruby/chruby.fish
         source /opt/homebrew/opt/chruby-fish/share/chruby/auto.fish
-        
+
         # Default Ruby fallback
         if type -q chruby; and test -d ~/.rubies/ruby-3.4.7
             chruby ruby-3.4.7
@@ -204,11 +204,12 @@ end
 # ============================================
 # Greeting System (Time-Based)
 # ============================================
+<<<<<<< HEAD
 if status is-interactive
     function fish_greeting
         # Get current hour (0-23)
         set -l hour (date +%H)
-        
+
         # Morning greetings (5am - 12pm)
         set -l morning_greetings \
             "Namaste, bhai! Chal, aaj kuch solid code karte hain. ☀️" \
@@ -220,7 +221,7 @@ if status is-interactive
             "Arre! Subah subah coding karne ka maza hi alag hai! 🚀" \
             "Hello World! Fresh start, fresh code. Let's do this! 🌍" \
             "Good morning! Time to make the magic happen. ✨"
-        
+
         # Afternoon greetings (12pm - 6pm)
         set -l afternoon_greetings \
             "Arre, mere dost! Code karne ke liye taiyaar ho? 🚀" \
@@ -233,7 +234,7 @@ if status is-interactive
             "Ready to ship it? 🛶 No looking back until the PR is merged!" \
             "Holla! 👋 Let's make this script look absolutely on fleek today." \
             "Greetings! Ready to do some adulting today? Let's crush these commits. ☕"
-        
+
         # Evening/Night greetings (6pm - 5am)
         set -l evening_greetings \
             "Oye! Taiyaar ho world badalne ke liye? 💻🌙" \
@@ -248,7 +249,7 @@ if status is-interactive
             "Cool beans! 🆒 Time to sit down and write some awesomesauce code." \
             "Late night grind! The best code happens after dark. 🌃" \
             "Evening vibes activated. Let's make some nocturnal magic. 🦇"
-        
+
         # Select appropriate greeting set based on time
         set -l greetings  # Declare variable first
         if test $hour -ge 5 -a $hour -lt 12
@@ -258,7 +259,7 @@ if status is-interactive
         else
             set greetings $evening_greetings
         end
-        
+
         # Pick random greeting from time-appropriate set
         set -l random_index (random 1 (count $greetings))
         echo -e "\n  $greetings[$random_index]\n"
