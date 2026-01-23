@@ -262,6 +262,31 @@ print_help() {
   echo -e ""
 }
 
+interactive_menu() {
+  echo -e "\n${BOLD}${BLUE}🎨 Network Mode Manager${NC}"
+  echo -e "${BLUE}   Select a mode to apply:${NC}\n"
+
+  echo -e "   1) ${E_PRIVACY} Control D (Privacy)"
+  echo -e "   2) ${E_BROWSING} Control D (Browsing) ${YELLOW}[Default]${NC}"
+  echo -e "   3) ${E_GAMING} Control D (Gaming)"
+  echo -e "   4) ${E_VPN} Windscribe (VPN)"
+  echo -e "   5) ${E_INFO} Show Status"
+  echo -e "   0) 🚪 Exit"
+
+  echo -ne "\n${BOLD}Select an option [1-5]: ${NC}"
+  read -r choice
+
+  case "$choice" in
+    1)    main "controld" "privacy" ;;
+    2|"") main "controld" "browsing" ;;
+    3)    main "controld" "gaming" ;;
+    4)    main "windscribe" ;;
+    5)    main "status" ;;
+    0)    echo -e "${BLUE}Exiting...${NC}"; exit 0 ;;
+    *)    error "Invalid option" ;;
+  esac
+}
+
 # --- Main Dispatcher ---
 
 main() {
@@ -269,8 +294,14 @@ main() {
   local profile="${2:-$DEFAULT_PROFILE}"
 
   # UX: Check for help flags before prereqs so help is always accessible
-  if [[ -z "$mode" || "$mode" == "-h" || "$mode" == "--help" || "$mode" == "help" ]]; then
+  if [[ "$mode" == "-h" || "$mode" == "--help" || "$mode" == "help" ]]; then
     print_help
+    exit 0
+  fi
+
+  # Interactive Menu if no arguments
+  if [[ -z "$mode" ]]; then
+    interactive_menu
     exit 0
   fi
 
