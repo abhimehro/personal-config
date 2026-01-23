@@ -128,10 +128,20 @@ start_controld() {
   # Find the script location regardless of current working directory
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  local controld_manager="$script_dir/../controld-system/scripts/controld-manager"
+
+  # 🛡️ Sentinel: Prefer installed, root-owned binary if available (Defense in Depth)
+  local controld_manager="/usr/local/bin/controld-manager"
 
   if [[ ! -x "$controld_manager" ]]; then
-    error "controld-manager script not found or not executable at $controld_manager"
+    # Fallback to local script (Dev mode / Pre-install)
+    controld_manager="$script_dir/../controld-system/scripts/controld-manager"
+    if [[ ! -x "$controld_manager" ]]; then
+      error "controld-manager script not found in /usr/local/bin or at $controld_manager"
+    fi
+    log "Using local controld-manager: $controld_manager"
+  else
+    # Verify we are using the secure installed version
+    log "Using system controld-manager: $controld_manager"
   fi
 
   # Call switch with profile and optional protocol override

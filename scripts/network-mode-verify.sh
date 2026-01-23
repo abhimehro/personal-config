@@ -44,8 +44,9 @@ check_controld_active() {
 
   # Start network checks in background (Parallelization)
   local tmp_who tmp_aaaa
-  tmp_who=$(mktemp)
-  tmp_aaaa=$(mktemp)
+  # 🛡️ Sentinel: Use -t template for macOS compatibility
+  tmp_who=$(mktemp -t nmv_who.XXXXXX)
+  tmp_aaaa=$(mktemp -t nmv_aaaa.XXXXXX)
 
   # 3) Basic DNS checks (Background)
   dig @"$LISTENER_IP" example.com +short +time=5 >/dev/null 2>&1 &
