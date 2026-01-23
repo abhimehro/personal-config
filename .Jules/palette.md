@@ -13,3 +13,7 @@
 ## 2024-05-23 - Interactive Safety for Setup Scripts
 **Learning:**  Users often run `setup` scripts without knowing exactly what they will do. A "Plan of Execution" followed by a confirmation prompt (defaulting to No) builds trust and prevents accidental system modifications.
 **Action:**  Always add a summary and confirmation step to destructive or complex setup scripts.
+
+## 2026-01-21 - Conversational CLI Readability
+**Learning:** In chat-based CLI tools, raw text streams make it difficult to distinguish between user input and system response. Simple color coding (e.g., Cyan for user, Green for system) dramatically reduces cognitive load.
+**Action:** Always implement distinct visual styles for "You" and "Assistant" prompts in conversational interfaces to create a clear dialogue structure.
