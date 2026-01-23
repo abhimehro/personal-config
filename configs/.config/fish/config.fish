@@ -204,7 +204,6 @@ end
 # ============================================
 # Greeting System (Time-Based)
 # ============================================
-<<<<<<< HEAD
 if status is-interactive
     function fish_greeting
         # Get current hour (0-23)
