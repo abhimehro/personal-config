@@ -23,9 +23,12 @@ DOWNLOAD_DIR="$HOME/CloudMedia/downloads"
 
 # Alldebrid-optimized rclone flags
 # --ignore-existing ensures we don't re-download if the file is still sitting in downloads
-RCLONE_FLAGS="--multi-thread-streams=0 --buffer-size=0 --ignore-existing"
+RCLONE_FLAGS="--multi-thread-streams=4 --buffer-size=32M --ignore-existing"
 
 DRY_RUN=false
+LOCK_FILE="$HOME/.media_upload.lock"
+MIN_SPACE_GB=20
+TEMP_DOWNLOAD_DIR="${DOWNLOAD_DIR}/.downloading"
 
 for arg in "$@"; do
     case $arg in
@@ -46,8 +49,26 @@ notify() {
     fi
 }
 
+check_lock() {
+    if [[ -f "$LOCK_FILE" ]]; then
+        log "⏸️  Upload in progress (Lock file found). Pausing downloads..."
+        return 0 # True, lock exists
+    fi
+    return 1 # False, no lock
+}
+
+check_disk_space() {
+    local free_space
+    free_space=$(df -g / | awk 'NR==2 {print $4}') # Available in GB
+    if (( free_space < MIN_SPACE_GB )); then
+        log "⚠️  Low Disk Space: ${free_space}GB free (Min: ${MIN_SPACE_GB}GB). Stopping downloads."
+        notify "Download Paused" "Low disk space (${free_space}GB)"
+        exit 0
+    fi
+}
+
 # === Main ===
-mkdir -p "$DOWNLOAD_DIR" "$(dirname "$LOG_FILE")"
+mkdir -p "$DOWNLOAD_DIR" "$TEMP_DOWNLOAD_DIR" "$(dirname "$LOG_FILE")"
 
 log "=== Alldebrid Sync Started ==="
 log "Source: $ALLDEBRID_REMOTE"
@@ -93,8 +114,25 @@ echo "$files_list" | while read -r file; do
     # or we could keep a history file.
     # For now, 'copy --ignore-existing' lets it sit there until the user removes it from Alldebrid.
 
-    if rclone copy "$ALLDEBRID_REMOTE/$file" "$DOWNLOAD_DIR/" $RCLONE_FLAGS --progress 2>&1 | tee -a "$LOG_FILE"; then
-        log "✓ Downloaded to pipeline: $file"
+    # Check constraints before EACH file
+    check_disk_space
+
+    while check_lock; do
+        sleep 60
+    done
+
+    # Atomic Download Strategy:
+    # 1. Download to .downloading/filename
+    # 2. Move to downloads/filename
+    # This prevents Permute from picking up partial files.
+
+    if rclone copy "$ALLDEBRID_REMOTE/$file" "$TEMP_DOWNLOAD_DIR/" $RCLONE_FLAGS --progress 2>&1 | tee -a "$LOG_FILE"; then
+        log "✓ Downloaded to temp: $file"
+
+        # Atomic move to Watch Folder
+        mv "$TEMP_DOWNLOAD_DIR/$file" "$DOWNLOAD_DIR/"
+
+        log "➜ Moved to Watch Folder: $file"
         notify "Media Downloaded" "$file sent to Permute pipeline"
         ((success_count++)) || true
 
