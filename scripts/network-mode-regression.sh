@@ -54,13 +54,23 @@ main() {
     ok=1
   fi
 
-  # 3) Switch to Windscribe VPN mode
-  log "Step 3: Switching to WINDSCRIBE (VPN) mode..."
+  # 3) Switch to Windscribe VPN mode (Standalone)
+  log "Step 3: Switching to STANDALONE WINDSCRIBE (VPN) mode..."
   $MANAGER windscribe || ok=1
 
   # 4) Verify WINDSCRIBE READY explicitly
   log "Step 4: Verifying WINDSCRIBE READY state..."
   if ! $VERIFY windscribe; then
+    ok=1
+  fi
+
+  # 5) Switch to Combined Mode (VPN + Control D)
+  log "Step 5: Switching to COMBINED MODE (Windscribe + Privacy)..."
+  $MANAGER windscribe privacy || ok=1
+
+  # 6) Verify COMBINED state (using profile-aware controld verify)
+  log "Step 6: Verifying COMBINED state (VPN active + Control D)..."
+  if ! $VERIFY controld privacy; then
     ok=1
   fi
 

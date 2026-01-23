@@ -155,6 +155,9 @@ abbr -a nmb  nm-browse
 abbr -a nmp  nm-privacy
 abbr -a nmg  nm-gaming
 abbr -a nmv  nm-vpn
+abbr -a nmvp nm-vpn privacy
+abbr -a nmvg nm-vpn gaming
+abbr -a nmvb nm-vpn browsing
 abbr -a nmr  nm-regress
 abbr -a nmcs nm-cd-status
 

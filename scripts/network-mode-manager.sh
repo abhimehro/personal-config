@@ -95,6 +95,7 @@ stop_controld() {
 
 start_controld() {
   local profile_key=$1
+  local force_proto=$2
   local uid
 
   case "$profile_key" in
@@ -133,8 +134,9 @@ start_controld() {
     error "controld-manager script not found or not executable at $controld_manager"
   fi
 
-  if sudo "$controld_manager" switch "$profile_key"; then
-    success "Control D active via controld-manager (profile: $profile_key)."
+  # Call switch with profile and optional protocol override
+  if sudo "$controld_manager" switch "$profile_key" "$force_proto"; then
+    success "Control D active via controld-manager (profile: $profile_key, protocol: ${force_proto:-default})."
   else
     error "controld-manager failed to switch to profile '$profile_key'. See /var/log/controld_manager.log for details."
   fi
@@ -157,9 +159,9 @@ print_status() {
     local config_link="/etc/controld/ctrld.toml"
     local profile_name="Unknown"
 
-    if [[ -L "$config_link" ]]; then
+    if sudo test -L "$config_link"; then
       local target
-      target=$(readlink "$config_link" || echo "")
+      target=$(sudo readlink "$config_link" || echo "")
       # Extract profile name from filename (e.g., ctrld.privacy.toml -> privacy)
       local extracted_name
       extracted_name=$(basename "$target")
@@ -309,24 +311,39 @@ main() {
 
   case "$mode" in
     windscribe)
-      echo -e "${BLUE}>>> ${E_VPN} Switching to WINDSCRIBE (VPN) MODE${NC}"
-      stop_controld
+      local profile="${2:-}"
+      if [[ -n "$profile" ]]; then
+        echo -e "${BLUE}>>> ${E_VPN} Switching to WINDSCRIBE + CONTROL D ($profile) MODE${NC}"
+        # We force 'doh' (TCP) for VPN mode to prevent connection failures
+        # caused by DoH3/QUIC inside the encrypted tunnel.
+        start_controld "$profile" "doh"
+        success "System is now configured for ${E_VPN} Windscribe VPN with local Control D ($profile, DoH)."
+      else
+        echo -e "${BLUE}>>> ${E_VPN} Switching to STANDALONE WINDSCRIBE (VPN) MODE${NC}"
+        stop_controld
+        success "System is now configured for ${E_VPN} Windscribe VPN (IPv6 disabled, DNS reset)."
+      fi
       set_ipv6 "disable"
-      success "System is now configured for ${E_VPN} Windscribe VPN (IPv6 disabled, DNS reset)."
       print_status
       # Run tight verification for Windscribe-ready state
       if [[ -x ./scripts/network-mode-verify.sh ]]; then
-        ./scripts/network-mode-verify.sh windscribe || echo -e "${RED}[WARN] Windscribe-ready verification reported issues${NC}"
+        # If profile provided, use controld verify instead of windscribe verify
+        if [[ -n "$profile" ]]; then
+          ./scripts/network-mode-verify.sh controld "$profile" || echo -e "${RED}[WARN] Control D verification reported issues${NC}"
+        else
+          ./scripts/network-mode-verify.sh windscribe || echo -e "${RED}[WARN] Windscribe-ready verification reported issues${NC}"
+        fi
       fi
       ;;
 
     controld)
+      local proto="${3:-}"
       echo -e "${BLUE}>>> ${E_BROWSING} Switching to CONTROL D (DNS) MODE${NC}"
       set_ipv6 "enable"
       # ⚡ Bolt Optimization: Skip redundant stop_controld to prevent DNS flap (Empty -> 127.0.0.1)
       # start_controld delegates to controld-manager which safely handles cleanup and handover.
-      start_controld "$profile"
-      success "System is now protected by Control D (profile: $profile). Ensure Windscribe is disconnected."
+      start_controld "$profile" "$proto"
+      success "System is now protected by Control D (profile: $profile, protocol: ${proto:-default}). Ensure Windscribe is disconnected."
       print_status
       # Run tight verification for Control D active state (profile-aware)
       if [[ -x ./scripts/network-mode-verify.sh ]]; then
