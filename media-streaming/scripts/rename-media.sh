@@ -14,8 +14,10 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 # === Configuration ===
 STAGING_DIR="$HOME/CloudMedia/staging"
+PROCESSED_DIR="$HOME/CloudMedia/processed"
 FAILED_DIR="$HOME/CloudMedia/failed"
 LOG_FILE="$HOME/Library/Logs/media-renamer.log"
+LOCK_FILE="$HOME/.media_upload.lock"
 
 # Cloud Destination (Union Remote)
 CLOUD_REMOTE="media"
@@ -162,14 +164,20 @@ process_file() {
         local cloud_path="$CLOUD_REMOTE:$dest_subfolder"
 
         log "🚀 Uploading to Cloud ($cloud_path)..."
+
+        # Set Lock
+        touch "$LOCK_FILE"
+
         # We use 'move' to upload and delete local copy
         if rclone move "$renamed_file" "$cloud_path" --transfers=4 --checkers=8 >> "$LOG_FILE" 2>&1; then
             log "✅ Upload Successful!"
             notify "Media Added" "$new_name added to Library"
+            rm "$LOCK_FILE" || true
         else
             log "❌ Upload Failed"
             mv "$renamed_file" "$FAILED_DIR/"
             notify "Upload Failed" "$new_name"
+            rm "$LOCK_FILE" || true
         fi
 
         # Cleanup empty dirs in temp_stage
@@ -184,25 +192,40 @@ process_file() {
 
 
 process_staging() {
-    # Find video files
+    # 1. Move files from Processed -> Staging
+    mkdir -p "$PROCESSED_DIR"
+    find "$PROCESSED_DIR" -maxdepth 1 -type f ! -name ".*" -print0 | while IFS= read -r -d '' file; do
+        log "🔄 Moving from Processed to Staging: $(basename "$file")"
+        mv "$file" "$STAGING_DIR/"
+    done
+
+    # 2. Process Staging
     find "$STAGING_DIR" -maxdepth 1 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.m4v" -o -name "*.avi" \) -print0 | while IFS= read -r -d '' file; do
         process_file "$file"
     done
 }
 
 watch_mode() {
-    log "=== Watch Mode Active ($STAGING_DIR) ==="
+    log "=== Watch Mode Active ($STAGING_DIR & $PROCESSED_DIR) ==="
+    mkdir -p "$PROCESSED_DIR"
 
     if ! command -v fswatch &>/dev/null; then
         log "Installing fswatch..."
         brew install fswatch
     fi
 
-    fswatch -0 --event Created --event MovedTo "$STAGING_DIR" | while IFS= read -r -d '' file; do
+    fswatch -0 --event Created --event MovedTo "$STAGING_DIR" "$PROCESSED_DIR" | while IFS= read -r -d '' file; do
         if [[ -f "$file" ]]; then
             # Small delay to ensure write is done
             sleep 2
-            process_file "$file"
+
+            # Check if file is in Processed
+            if [[ "$file" == "$PROCESSED_DIR"* ]]; then
+                 log "Detected file in processed: $(basename "$file")"
+                 mv "$file" "$STAGING_DIR/"
+            elif [[ "$file" == "$STAGING_DIR"* ]]; then
+                 process_file "$file"
+            fi
         fi
     done
 }
