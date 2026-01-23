@@ -1,37 +1,35 @@
 #!/bin/bash
 #
-# Alldebrid → Cloud Unified Library Sync
-# Downloads from Alldebrid, renames with FileBot, uploads to Google Drive
+# Alldebrid → CloudMedia Integration
+# Downloads links from Alldebrid to the Downie/Permute watch folder.
+# This integrates Alldebrid downloads into the main media processing pipeline:
+# Download -> Convert (Permute) -> Stage -> Rename (Filebot) -> Upload
 #
 # Usage:
 #   ./sync-alldebrid.sh              # Sync all files from alldebrid:links
 #   ./sync-alldebrid.sh --dry-run    # Preview only
-#   ./sync-alldebrid.sh --recent     # Only files from last 24 hours
 #
 set -euo pipefail
 
+# Set PATH to include Homebrew/local binaries for launchd compatibility
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+# Log file location
+LOG_FILE="${HOME}/Library/Logs/alldebrid-sync.log"
+
 # === Configuration ===
 ALLDEBRID_REMOTE="alldebrid:links"
-WORK_DIR="$HOME/CloudMedia/alldebrid-sync"
-PROCESSED_DIR="$HOME/CloudMedia/processed"
-FAILED_DIR="$HOME/CloudMedia/failed"
-LOG_FILE="$HOME/Library/Logs/alldebrid-sync.log"
-CLOUD_DEST="gdrive:Media/Movies"
+DOWNLOAD_DIR="$HOME/CloudMedia/downloads"
 
-# Alldebrid-optimized rclone flags (for copy/sync operations)
-RCLONE_FLAGS="--multi-thread-streams=0 --buffer-size=0"
-
-# FileBot settings
-FILEBOT_DB="TheMovieDB"
-FILEBOT_FORMAT="{n} ({y})"
+# Alldebrid-optimized rclone flags
+# --ignore-existing ensures we don't re-download if the file is still sitting in downloads
+RCLONE_FLAGS="--multi-thread-streams=0 --buffer-size=0 --ignore-existing"
 
 DRY_RUN=false
-RECENT_ONLY=false
 
 for arg in "$@"; do
     case $arg in
         --dry-run) DRY_RUN=true ;;
-        --recent) RECENT_ONLY=true ;;
     esac
 done
 
@@ -48,38 +46,23 @@ notify() {
     fi
 }
 
-cleanup() {
-    log "Cleaning up work directory..."
-    rm -rf "$WORK_DIR"/*
-}
-
 # === Main ===
-mkdir -p "$WORK_DIR" "$PROCESSED_DIR" "$FAILED_DIR" "$(dirname "$LOG_FILE")"
+mkdir -p "$DOWNLOAD_DIR" "$(dirname "$LOG_FILE")"
 
 log "=== Alldebrid Sync Started ==="
 log "Source: $ALLDEBRID_REMOTE"
-log "Destination: $CLOUD_DEST"
+log "Destination: $DOWNLOAD_DIR (Permute Watch Folder)"
 log "Dry run: $DRY_RUN"
 
 # Check if alldebrid remote exists
 if ! rclone listremotes | grep -q "^alldebrid:$"; then
     log "ERROR: 'alldebrid' remote not configured"
-    echo ""
-    echo "Please configure Alldebrid first:"
-    echo "  rclone config create alldebrid webdav \\"
-    echo "      url=\"https://webdav.debrid.it\" \\"
-    echo "      vendor=\"other\" \\"
-    echo "      user=\"YOUR_APIKEY\" \\"
-    echo "      pass=\"eeeee\""
     exit 1
 fi
 
-# List files from Alldebrid
+# List files
 log "Scanning Alldebrid for video files..."
-echo ""
-
-# Get list of video files
-files_list=$(rclone lsf "$ALLDEBRID_REMOTE" $RCLONE_FLAGS --files-only 2>/dev/null | grep -iE '\.(mp4|mkv|avi|m4v)$' || true)
+files_list=$(rclone lsf "$ALLDEBRID_REMOTE" $RCLONE_FLAGS --files-only 2>/dev/null | grep -iE '\.(mp4|mkv|avi|m4v|mov)$' || true)
 
 if [[ -z "$files_list" ]]; then
     log "No video files found in Alldebrid"
@@ -88,116 +71,41 @@ fi
 
 file_count=$(echo "$files_list" | wc -l | tr -d ' ')
 log "Found $file_count video file(s)"
-echo ""
-
-echo "$files_list" | while read -r file; do
-    echo "  📁 $file"
-done
-
-echo ""
 
 if [[ "$DRY_RUN" == "true" ]]; then
-    echo "Dry run complete. Run without --dry-run to process files."
+    echo "$files_list"
+    echo "Dry run complete."
     exit 0
 fi
 
-read -p "Do you want to sync these files? (y/N) " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    log "User cancelled"
-    exit 0
-fi
-
-# Process each file
+# Download Process
 success_count=0
 fail_count=0
 
 echo "$files_list" | while read -r file; do
     log "----------------------------------------"
-    log "Processing: $file"
-    
-    # Download from Alldebrid
-    log "Downloading from Alldebrid..."
-    if ! rclone copy "$ALLDEBRID_REMOTE/$file" "$WORK_DIR/" $RCLONE_FLAGS --progress 2>&1 | tee -a "$LOG_FILE"; then
-        log "✗ Download failed: $file"
-        ((fail_count++)) || true
-        continue
-    fi
-    
-    local_file="$WORK_DIR/$file"
-    
-    if [[ ! -f "$local_file" ]]; then
-        log "✗ File not found after download: $file"
-        ((fail_count++)) || true
-        continue
-    fi
-    
-    # Rename with FileBot
-    log "Identifying with FileBot..."
-    if filebot -rename "$local_file" \
-        --db "$FILEBOT_DB" \
-        --format "$FILEBOT_FORMAT" \
-        -non-strict \
-        --action move \
-        --log fine 2>&1 | tee -a "$LOG_FILE"; then
-        
-        # Find the renamed file
-        renamed_file=$(find "$WORK_DIR" -maxdepth 1 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.m4v" \) | head -1)
-        
-        if [[ -n "$renamed_file" && -f "$renamed_file" ]]; then
-            new_name=$(basename "$renamed_file")
-            log "✓ Identified as: $new_name"
-            
-            # Check if already exists in cloud
-            if rclone lsf "$CLOUD_DEST/$new_name" $RCLONE_FLAGS 2>/dev/null | grep -q .; then
-                log "⚠ Already exists in cloud, skipping upload"
-                rm -f "$renamed_file"
-                ((success_count++)) || true
-                continue
-            fi
-            
-            # Upload to cloud
-            log "Uploading to $CLOUD_DEST..."
-            if rclone copy "$renamed_file" "$CLOUD_DEST/" --progress 2>&1 | tee -a "$LOG_FILE"; then
-                log "✓ Uploaded successfully: $new_name"
-                mv "$renamed_file" "$PROCESSED_DIR/"
-                notify "Alldebrid Sync" "$new_name synced to cloud"
-                ((success_count++)) || true
-            else
-                log "✗ Upload failed"
-                mv "$renamed_file" "$FAILED_DIR/"
-                ((fail_count++)) || true
-            fi
-        else
-            log "✗ FileBot couldn't identify: $file"
-            # Keep original name but still upload
-            log "Uploading with original name..."
-            if rclone copy "$local_file" "$CLOUD_DEST/" --progress 2>&1 | tee -a "$LOG_FILE"; then
-                log "✓ Uploaded (unidentified): $file"
-                mv "$local_file" "$PROCESSED_DIR/"
-                ((success_count++)) || true
-            else
-                mv "$local_file" "$FAILED_DIR/"
-                ((fail_count++)) || true
-            fi
-        fi
+    log "Downloading: $file"
+
+    # We use 'move' locally to simulate consuming the link, OR 'copy' if we want to keep it on cloud.
+    # Given the workflow "Download -> ...", usually we want to bring it local.
+    # However, 'rclone move' on some remotes might be slow or unsupported.
+    # We'll use 'copy' here. To prevent infinite re-downloads, users usually clear their debrid links manually
+    # or we could keep a history file.
+    # For now, 'copy --ignore-existing' lets it sit there until the user removes it from Alldebrid.
+
+    if rclone copy "$ALLDEBRID_REMOTE/$file" "$DOWNLOAD_DIR/" $RCLONE_FLAGS --progress 2>&1 | tee -a "$LOG_FILE"; then
+        log "✓ Downloaded to pipeline: $file"
+        notify "Media Downloaded" "$file sent to Permute pipeline"
+        ((success_count++)) || true
+
+        # Optional: Delete from remote after successful download?
+        # rclone delete "$ALLDEBRID_REMOTE/$file"
     else
-        log "✗ FileBot error for: $file"
-        mv "$local_file" "$FAILED_DIR/"
+        log "✗ Download failed: $file"
         ((fail_count++)) || true
     fi
 done
 
-# Cleanup
-cleanup
-
 log "=== Alldebrid Sync Complete ==="
 log "Success: $success_count, Failed: $fail_count"
-echo ""
-echo "✅ Sync complete!"
-echo "   Success: $success_count files"
-echo "   Failed: $fail_count files"
-echo ""
-echo "💡 Check logs at: $LOG_FILE"
-
-notify "Alldebrid Sync Complete" "$success_count synced, $fail_count failed"
+notify "Alldebrid Sync Complete" "$success_count files queued for processing"
