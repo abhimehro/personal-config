@@ -69,14 +69,20 @@ fi
 echo "🚀 Starting Rclone WebDAV Server..."
 echo "   Command: rclone serve webdav media: --addr 0.0.0.0:$AVAILABLE_PORT --user <hidden> --pass <hidden>"
 
-# Start Rclone WebDAV
-# --addr 0.0.0.0:$PORT binds to ALL interfaces (VPN, LAN, Localhost)
-# --vfs-cache-mode full is CRITICAL for streaming reliability with Infuse
+# Start Rclone WebDAV (Performance Tuned)
+# --addr 0.0.0.0:$PORT binds to ALL interfaces
+# --vfs-cache-mode full : Required for reliable seeking/streaming
+# --vfs-read-chunk-size : Start small for fast seek, then grow usually good for sequential
+# --transfers / --checkers : Increased for concurrency
 nohup rclone serve webdav "media:" \
     --addr "0.0.0.0:$AVAILABLE_PORT" \
     --user "$WEB_USER" \
     --pass "$WEB_PASS" \
     --vfs-cache-mode full \
+    --vfs-read-chunk-size 32M \
+    --vfs-read-chunk-size-limit 2G \
+    --transfers 8 \
+    --checkers 16 \
     --read-only \
     --no-modtime \
     > ~/Library/Logs/media-server.log 2>&1 &
