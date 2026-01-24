@@ -13,6 +13,7 @@ CONTROLD_DIR="/etc/controld"
 PROFILES_DIR="$CONTROLD_DIR/profiles"
 BACKUP_DIR="$CONTROLD_DIR/backup"
 LOG_FILE="/var/log/controld_manager.log"
+CONFIG_FILE="$CONTROLD_DIR/profiles.env"
 LISTENER_IP="127.0.0.1"  # localhost - where ctrld listens for DNS queries
 
 # Profile configurations with protocol preferences
@@ -20,6 +21,25 @@ LISTENER_IP="127.0.0.1"  # localhost - where ctrld listens for DNS queries
 # All profiles now default to DoH3 (QUIC) for consistency and performance.
 # You can still force a fallback to DoH/TCP for debugging by passing an
 # explicit protocol override (e.g., `controld-manager switch privacy doh`).
+
+# Load configuration
+load_config() {
+    if [[ -f "$CONFIG_FILE" ]]; then
+        source "$CONFIG_FILE"
+        # Validate that secrets have been updated
+        if [[ "$CONTROLD_PROFILE_PRIVACY" == "YOUR_"* ]] || \
+           [[ "$CONTROLD_PROFILE_GAMING" == "YOUR_"* ]] || \
+           [[ "$CONTROLD_PROFILE_BROWSING" == "YOUR_"* ]]; then
+            log_error "Configuration file contains default placeholders."
+            log_error "Please edit $CONFIG_FILE and add your Control D Profile IDs."
+            exit 1
+        fi
+    else
+        log_error "Configuration file not found at $CONFIG_FILE"
+        log_error "Please verify installation or run emergency recovery."
+        exit 1
+    fi
+}
 
 # Validation helper
 validate_protocol() {
@@ -32,9 +52,9 @@ validate_protocol() {
 
 get_profile_id() {
     case "$1" in
-        "privacy") echo "6m971e9jaf" ;;
-        "gaming") echo "1xfy57w34t7" ;;
-        "browsing") echo "rcnz7qgvwg" ;;
+        "privacy") echo "$CONTROLD_PROFILE_PRIVACY" ;;
+        "gaming") echo "$CONTROLD_PROFILE_GAMING" ;;
+        "browsing") echo "$CONTROLD_PROFILE_BROWSING" ;;
         *) echo "" ;;
     esac
 }
@@ -501,6 +521,11 @@ initialize() {
 
 # Main function
 main() {
+    # Load configuration for commands that require it
+    if [[ "${1:-}" == "switch" ]] || [[ "${1:-}" == "init" ]] || [[ "${1:-}" == "initialize" ]] || [[ "${1:-}" == "status" ]]; then
+        load_config
+    fi
+
     case "${1:-""}" in
         "init"|"initialize")
             check_root

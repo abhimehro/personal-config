@@ -37,11 +37,19 @@ install_system() {
     
     # Install profile configurations
     sudo mkdir -p /etc/controld/profiles
-    if [[ -d "configs/profiles" ]]; then
-        sudo cp configs/profiles/* /etc/controld/profiles/
-        print_success "Installed profile configurations"
+
+    # Install configuration file
+    if [[ -f "config/profiles.env.example" ]]; then
+        if [[ ! -f "/etc/controld/profiles.env" ]]; then
+            sudo cp config/profiles.env.example /etc/controld/profiles.env
+            sudo chmod 600 /etc/controld/profiles.env
+            sudo chown root:wheel /etc/controld/profiles.env
+            print_success "Installed profile configuration file"
+        else
+            print_status "Profile configuration already exists (skipping)"
+        fi
     else
-        print_error "Profile configurations not found"
+        print_error "Profile configuration template not found"
         exit 1
     fi
     

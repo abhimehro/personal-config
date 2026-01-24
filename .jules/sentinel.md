@@ -36,3 +36,8 @@
 **Vulnerability:** The `controld-manager` script attempted to secure the DNS listener by removing specific IPv6 wildcards but failed to explicitly enforce localhost binding, potentially leaving the service exposed if defaults changed.
 **Learning:** Reliance on removing *known bad* values (denylist) is less secure than enforcing *known good* values (allowlist/enforcement) in configuration generation.
 **Prevention:** When generating security-critical configurations, explicitly set the desired secure values rather than trying to sanitize the output of a tool. Verify the final configuration file content before starting the service.
+
+## 2025-10-27 - Hardcoded Secrets in Scripts
+**Vulnerability:** Hardcoded Control D Profile IDs were scattered across multiple scripts (`controld-manager`, `network-mode-manager.sh`).
+**Learning:** Shell scripts often accumulate secrets when they are developed as "personal dotfiles" and then shared. Variables might be duplicated (dead code) across scripts.
+**Prevention:** Always use external configuration files (`.env`) for identifiers that act as secrets, even if they seem like harmless IDs. Use `bash -n` and grep to find dead code copies of secrets.

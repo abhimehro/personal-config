@@ -10,6 +10,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONTROLD_MANAGER_SRC="$REPO_ROOT/controld-system/scripts/controld-manager"
 CONTROLD_MANAGER_DEST="/usr/local/bin/controld-manager"
+CONTROLD_CONFIG_SRC="$REPO_ROOT/controld-system/config/profiles.env.example"
+CONTROLD_CONFIG_DEST="/etc/controld/profiles.env"
 
 # Colors
 RED='\033[0;31m'
@@ -54,6 +56,18 @@ else
     sudo chmod +x "$CONTROLD_MANAGER_DEST"
     sudo chown root:wheel "$CONTROLD_MANAGER_DEST"
     success "controld-manager installed"
+fi
+
+# Install configuration
+log "Installing Control D configuration..."
+if [[ ! -f "$CONTROLD_CONFIG_DEST" ]]; then
+    sudo mkdir -p "$(dirname "$CONTROLD_CONFIG_DEST")"
+    sudo cp "$CONTROLD_CONFIG_SRC" "$CONTROLD_CONFIG_DEST"
+    sudo chmod 600 "$CONTROLD_CONFIG_DEST"
+    sudo chown root:wheel "$CONTROLD_CONFIG_DEST"
+    success "Configuration installed to $CONTROLD_CONFIG_DEST"
+else
+    warn "Configuration already exists at $CONTROLD_CONFIG_DEST (skipping)"
 fi
 
 # Verify installation
