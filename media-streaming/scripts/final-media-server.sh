@@ -97,7 +97,7 @@ fi
 echo
 echo "🎬 INFUSE CONFIGURATION:"
 echo "========================"
-echo "Protocol: WebDAV (HTTPS/HTTP)"
+echo "Protocol: WebDAV (HTTP)  <-- IMPORTANT: NOT HTTPS"
 echo "Username: $WEB_USER"
 echo "Password: (As set in 1Password)"
 echo
