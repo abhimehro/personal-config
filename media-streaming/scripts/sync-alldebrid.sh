@@ -51,7 +51,22 @@ notify() {
 
 check_lock() {
     if [[ -f "$LOCK_FILE" ]]; then
-        log "⏸️  Upload in progress (Lock file found). Pausing downloads..."
+        # Check if lock is stale (older than 120 mins)
+        if [[ "$(uname)" == "Darwin" ]]; then
+            # macOS stat
+            local lock_age_secs=$(($(date +%s) - $(stat -f %m "$LOCK_FILE")))
+        else
+            # Linux stat
+            local lock_age_secs=$(($(date +%s) - $(stat -c %Y "$LOCK_FILE")))
+        fi
+
+        if (( lock_age_secs > 7200 )); then
+            log "⚠️  Stale lock detected (${lock_age_secs}s old). Removing..."
+            rm -f "$LOCK_FILE"
+            return 1 # Lock removed, proceed
+        fi
+
+        log "⏸️  Upload in progress (Lock active for ${lock_age_secs}s). Pausing downloads..."
         return 0 # True, lock exists
     fi
     return 1 # False, no lock
