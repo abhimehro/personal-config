@@ -16,13 +16,16 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 STAGING_DIR="$HOME/CloudMedia/staging"
 PROCESSED_DIR="$HOME/CloudMedia/processed"
 FAILED_DIR="$HOME/CloudMedia/failed"
-LOG_FILE="$HOME/Library/Logs/media-renamer.log"
+TV_DEST="TV Shows"
 LOCK_FILE="$HOME/.media_upload.lock"
 
-# Cloud Destination (Union Remote)
-CLOUD_REMOTE="media"
-MOVIE_DEST="Movies"
-TV_DEST="TV Shows"
+# Ensure cleanup on exit
+cleanup() {
+    if [[ -f "$LOCK_FILE" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+}
+trap cleanup EXIT INT TERM
 
 # FileBot Hardcoded Formats (Source of Truth)
 FILEBOT_DB="TheMovieDB"
