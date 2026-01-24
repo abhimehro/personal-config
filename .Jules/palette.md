@@ -13,3 +13,7 @@
 ## 2024-05-23 - Interactive Safety for Setup Scripts
 **Learning:**  Users often run `setup` scripts without knowing exactly what they will do. A "Plan of Execution" followed by a confirmation prompt (defaulting to No) builds trust and prevents accidental system modifications.
 **Action:**  Always add a summary and confirmation step to destructive or complex setup scripts.
+
+## 2024-05-24 - CLI Output Scanability
+**Learning:** For long-running maintenance scripts, users scan summary tables for failures and outliers (long durations). Standardizing column widths and using semantic colors (Red/Green) significantly reduces cognitive load.
+**Action:** Implement fixed-width summary tables with ANSI colors and duration tracking for all batch processing scripts.

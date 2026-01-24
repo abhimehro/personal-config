@@ -54,6 +54,14 @@ trap 'rm -rf "$LOCK_DIR" "$LOG_DIR"/status_*_"$TIMESTAMP".log "$PARALLEL_RESULTS
 # Initialize master log
 echo "=== Master Maintenance Run Started: $(date) ===" | tee "$MASTER_LOG"
 
+# --- Colors ---
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'
+
 # --- Global Helper Functions ---
 
 # Helper to log to target (file or stdout)
@@ -132,16 +140,17 @@ spinner() {
 }
 
 # Add result to summary (handles writing to file if in subshell)
-# Usage: register_result "Script Name" "Status" "Is_Parallel_Subshell"
+# Usage: register_result "Script Name" "Status" "Is_Parallel_Subshell" "Duration"
 register_result() {
     local name="$1"
     local status="$2"
     local is_subshell="${3:-false}"
+    local duration="${4:-0s}"
 
     if [[ "$is_subshell" == "true" ]]; then
-        echo "${name}|${status}" >> "$PARALLEL_RESULTS_LOG"
+        echo "${name}|${status}|${duration}" >> "$PARALLEL_RESULTS_LOG"
     else
-        SUMMARY_RESULTS+=("${name}|${status}")
+        SUMMARY_RESULTS+=("${name}|${status}|${duration}")
     fi
 }
 
@@ -158,6 +167,11 @@ run_script() {
     local smart_scheduler="$SCRIPT_DIR/smart_scheduler.sh"
     local clean_name="${script_name%.sh}"
 
+    local start_time
+    local end_time
+    local duration_sec
+    local duration_fmt
+
     if [[ -f "$script_path" && -x "$script_path" ]]; then
         log_status "Running $script_name..." "$log_target"
 
@@ -166,16 +180,26 @@ run_script() {
             "$smart_scheduler" delay "$clean_name" "$task_type" 2>&1 | tee -a "$log_target"
         fi
 
+        start_time=$(date +%s)
+
         # Execute script
         if [[ "$is_parallel" == "true" ]]; then
             # Run directly for parallel (background) tasks
             if "$script_path" > "$log_file" 2>&1; then
-                log_status "✅ $script_name completed" "$log_target"
-                register_result "$clean_name" "✅ Success" "$is_parallel"
+                end_time=$(date +%s)
+                duration_sec=$((end_time - start_time))
+                duration_fmt="${duration_sec}s"
+
+                log_status "✅ $script_name completed in $duration_fmt" "$log_target"
+                register_result "$clean_name" "✅ Success" "$is_parallel" "$duration_fmt"
                 return 0
             else
+                end_time=$(date +%s)
+                duration_sec=$((end_time - start_time))
+                duration_fmt="${duration_sec}s"
+
                 log_status "❌ $script_name failed (see $log_file)" "$log_target"
-                register_result "$clean_name" "❌ Failed" "$is_parallel"
+                register_result "$clean_name" "❌ Failed" "$is_parallel" "$duration_fmt"
                 return 1
             fi
         else
@@ -188,19 +212,23 @@ run_script() {
             wait $pid
             local exit_code=$?
 
+            end_time=$(date +%s)
+            duration_sec=$((end_time - start_time))
+            duration_fmt="${duration_sec}s"
+
             if [[ $exit_code -eq 0 ]]; then
-                log_status "✅ $script_name completed" "$log_target"
-                register_result "$clean_name" "✅ Success" "$is_parallel"
+                log_status "✅ $script_name completed in $duration_fmt" "$log_target"
+                register_result "$clean_name" "✅ Success" "$is_parallel" "$duration_fmt"
                 return 0
             else
                 log_status "❌ $script_name failed (see $log_file)" "$log_target"
-                register_result "$clean_name" "❌ Failed" "$is_parallel"
+                register_result "$clean_name" "❌ Failed" "$is_parallel" "$duration_fmt"
                 return 1
             fi
         fi
     else
         log_status "⚠️  $script_name not found/executable" "$log_target"
-        register_result "$clean_name" "⚠️  Missing" "$is_parallel"
+        register_result "$clean_name" "⚠️  Missing" "$is_parallel" "0s"
         return 1
     fi
 }
@@ -301,34 +329,49 @@ run_monthly_maintenance() {
 # Function to print summary table
 print_summary() {
     echo "" | tee -a "$MASTER_LOG"
-    echo "┌────────────────────────────────────────────────────────┐" | tee -a "$MASTER_LOG"
-    echo "│               MAINTENANCE RUN SUMMARY                  │" | tee -a "$MASTER_LOG"
-    echo "├────────────────────────────────────────────────────────┤" | tee -a "$MASTER_LOG"
+    echo "┌────────────────────────────────────────────────────────────────────────┐" | tee -a "$MASTER_LOG"
+    echo "│                        MAINTENANCE RUN SUMMARY                         │" | tee -a "$MASTER_LOG"
+    echo "├────────────────────────────────────────────────────────────────────────┤" | tee -a "$MASTER_LOG"
+
+    # Header row
+    printf "│ %-12s │ %-40s │ %-10s │\n" "STATUS" "TASK" "DURATION" | tee -a "$MASTER_LOG"
+    echo "├──────────────┼──────────────────────────────────────────┼────────────┤" | tee -a "$MASTER_LOG"
 
     if [[ ${#SUMMARY_RESULTS[@]} -eq 0 ]]; then
-        echo "│ No tasks recorded.                                     │" | tee -a "$MASTER_LOG"
+        echo "│ No tasks recorded.                                                     │" | tee -a "$MASTER_LOG"
     else
         for entry in "${SUMMARY_RESULTS[@]}"; do
-            IFS="|" read -r name status <<< "$entry"
+            IFS="|" read -r name status duration <<< "$entry"
 
-            # Manual padding
-            local status_pad=""
+            # Prepare padded string and color
+            local status_text=""
+            local color=""
+
             if [[ "$status" == *"Success"* ]]; then
-                 status_pad="✅ Success  "
+                 status_text="✅ Success  "
+                 color="$GREEN"
             elif [[ "$status" == *"Failed"* ]]; then
-                 status_pad="❌ Failed   "
+                 status_text="❌ Failed   "
+                 color="$RED"
             elif [[ "$status" == *"Missing"* ]]; then
-                 status_pad="⚠️  Missing  "
+                 status_text="⚠️  Missing  "
+                 color="$YELLOW"
             else
-                 status_pad="$(printf "%-12s" "$status")"
+                 status_text="$(printf "%-12s" "$status")"
+                 color=""
             fi
 
-            printf "│ %s : %-37s │
-" "$status_pad" "$name" | tee -a "$MASTER_LOG"
+            # Truncate name if too long
+            if [[ ${#name} -gt 40 ]]; then
+                name="${name:0:37}..."
+            fi
+
+            # Print row with colors (ANSI codes)
+            printf "│ ${color}%s${NC} │ %-40s │ %-10s │\n" "$status_text" "$name" "$duration" | tee -a "$MASTER_LOG"
         done
     fi
 
-    echo "└────────────────────────────────────────────────────────┘" | tee -a "$MASTER_LOG"
+    echo "└────────────────────────────────────────────────────────────────────────┘" | tee -a "$MASTER_LOG"
 }
 
 # --- Execution Entry Point ---
