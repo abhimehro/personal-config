@@ -1,6 +1,13 @@
 import { CopilotClient, defineTool, SessionEvent } from "@github/copilot-sdk";
 import * as readline from "readline";
 
+const Colors = {
+  Reset: "\x1b[0m",
+  Cyan: "\x1b[36m",
+  Green: "\x1b[32m",
+  Dim: "\x1b[2m",
+};
+
 const getWeather = defineTool("get_weather", {
   description: "Get the current weather for a city",
   parameters: {
@@ -58,17 +65,19 @@ const rl = readline.createInterface({
 });
 
 console.log("🌤️  Weather Assistant (type 'exit' to quit)");
-console.log("   Try: 'What's the weather in Paris?'\n");
+console.log(
+  `   ${Colors.Dim}Try: 'What's the weather in Paris?'${Colors.Reset}\n`,
+);
 
 const prompt = () => {
-  rl.question("You: ", async (input) => {
+  rl.question(`${Colors.Green}You:${Colors.Reset} `, async (input) => {
     if (input.toLowerCase() === "exit") {
       await client.stop();
       rl.close();
       process.exit(0);
     }
 
-    process.stdout.write("Assistant: ");
+    process.stdout.write(`${Colors.Cyan}Assistant:${Colors.Reset} `);
     await session.sendAndWait({ prompt: input });
     console.log("\n");
     prompt();

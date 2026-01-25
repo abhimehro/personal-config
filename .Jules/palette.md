@@ -13,3 +13,7 @@
 ## 2024-05-23 - Interactive Safety for Setup Scripts
 **Learning:**  Users often run `setup` scripts without knowing exactly what they will do. A "Plan of Execution" followed by a confirmation prompt (defaulting to No) builds trust and prevents accidental system modifications.
 **Action:**  Always add a summary and confirmation step to destructive or complex setup scripts.
+
+## 2026-01-26 - Visual Hierarchy in Conversational CLI
+**Learning:** In text-based conversation interfaces (like LLM chats), plain text streams make it hard to distinguish speakers. Simple color coding (e.g., Green for User, Cyan for Assistant) dramatically improves readability and scanability without complex UI libraries.
+**Action:** Always implement distinct colors or visual prefixes for different speakers in CLI chat applications.
