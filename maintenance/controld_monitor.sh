@@ -61,7 +61,9 @@ rotate_log() {
 
 # Check 1: Service status
 check_service() {
-    if sudo ctrld service status &>/dev/null; then
+    # ⚡ Bolt Optimization: Use pgrep to check process existence
+    # Avoids expensive 'sudo ctrld service status' call
+    if pgrep -x "ctrld" >/dev/null 2>&1; then
         return 0
     else
         return 1
@@ -141,17 +143,26 @@ check_listener() {
 # Check 8: Verify filtering based on active profile
 get_active_profile() {
     if sudo test -L "/etc/controld/ctrld.toml"; then
-        local link_target=$(sudo readlink "/etc/controld/ctrld.toml")
-        basename "$link_target" | sed 's/ctrld\.\(.*\)\.toml/\1/'
+        local link_target
+        link_target=$(sudo readlink "/etc/controld/ctrld.toml")
+
+        # ⚡ Bolt Optimization: Bash parameter expansion instead of basename|sed pipeline
+        local filename="${link_target##*/}"
+        local profile="${filename#ctrld.}"
+        profile="${profile%.toml}"
+        echo "$profile"
     else
         echo "unknown"
     fi
 }
 
 check_filtering() {
-    local profile=$(get_active_profile)
+    local profile
+    profile=$(get_active_profile)
     # Check for blocking (expecting NXDOMAIN/empty result for blocked domains)
-    local block_test=$(dig @********* doubleclick.net +short 2>/dev/null | wc -l)
+    # ⚡ Bolt Optimization: Capture output directly, avoid pipe to 'wc -l'
+    local block_result
+    block_result=$(dig @********* doubleclick.net +short 2>/dev/null)
     
     # If we can't determine profile, skip strict validation but log it
     if [ "$profile" == "unknown" ]; then
@@ -163,8 +174,8 @@ check_filtering() {
         return 0
     else
         # Privacy/Browsing profiles: Ads SHOULD be blocked (NXDOMAIN or *******)
-        # If wc -l > 0, it means we got a result (IP), so blocking failed
-        if [ "$block_test" -gt 0 ]; then
+        # If block_result is non-empty, it means we got a result (IP), so blocking failed
+        if [[ -n "$block_result" ]]; then
             return 1
         else
             return 0
