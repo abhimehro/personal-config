@@ -10,6 +10,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONTROLD_MANAGER_SRC="$REPO_ROOT/controld-system/scripts/controld-manager"
 CONTROLD_MANAGER_DEST="/usr/local/bin/controld-manager"
+ENV_EXAMPLE_SRC="$REPO_ROOT/controld-system/controld.env.example"
+ENV_DEST="/etc/controld/controld.env"
 
 # Colors
 RED='\033[0;31m'
@@ -59,6 +61,27 @@ fi
 # Verify installation
 if ! command -v controld-manager >/dev/null 2>&1; then
     error "controld-manager installation failed"
+fi
+
+# Setup Environment File
+log "Setting up configuration file..."
+# Ensure /etc/controld exists (controld-manager creates it usually, but we should ensure it here for the config)
+if [[ ! -d "/etc/controld" ]]; then
+    sudo mkdir -p "/etc/controld"
+fi
+
+if [[ ! -f "$ENV_DEST" ]]; then
+    if [[ -f "$ENV_EXAMPLE_SRC" ]]; then
+        sudo cp "$ENV_EXAMPLE_SRC" "$ENV_DEST"
+        sudo chown root:wheel "$ENV_DEST"
+        sudo chmod 600 "$ENV_DEST"
+        log "Created $ENV_DEST"
+        warn "You must edit $ENV_DEST and add your Control D Profile IDs!"
+    else
+        warn "Example config not found at $ENV_EXAMPLE_SRC"
+    fi
+else
+    log "Configuration file already exists at $ENV_DEST"
 fi
 
 success "Setup complete!"
