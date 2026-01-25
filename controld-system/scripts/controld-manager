@@ -13,7 +13,14 @@ CONTROLD_DIR="/etc/controld"
 PROFILES_DIR="$CONTROLD_DIR/profiles"
 BACKUP_DIR="$CONTROLD_DIR/backup"
 LOG_FILE="/var/log/controld_manager.log"
+ENV_FILE="$CONTROLD_DIR/controld.env"
 LISTENER_IP="127.0.0.1"  # localhost - where ctrld listens for DNS queries
+
+# Load environment variables if present
+if [[ -f "$ENV_FILE" ]]; then
+    # shellcheck source=/dev/null
+    source "$ENV_FILE"
+fi
 
 # Profile configurations with protocol preferences
 #
@@ -32,9 +39,9 @@ validate_protocol() {
 
 get_profile_id() {
     case "$1" in
-        "privacy") echo "6m971e9jaf" ;;
-        "gaming") echo "1xfy57w34t7" ;;
-        "browsing") echo "rcnz7qgvwg" ;;
+        "privacy") echo "${CTR_PROFILE_PRIVACY_ID:-}" ;;
+        "gaming") echo "${CTR_PROFILE_GAMING_ID:-}" ;;
+        "browsing") echo "${CTR_PROFILE_BROWSING_ID:-}" ;;
         *) echo "" ;;
     esac
 }
@@ -270,7 +277,10 @@ switch_profile() {
     local config_file="$PROFILES_DIR/ctrld.$profile_name.toml"
 
     if [[ -z "$profile_id" ]]; then
-        log_error "Unknown profile: $profile_name"
+        if [[ -z "${CTR_PROFILE_PRIVACY_ID:-}" ]] && [[ -z "${CTR_PROFILE_GAMING_ID:-}" ]] && [[ -z "${CTR_PROFILE_BROWSING_ID:-}" ]]; then
+             log_error "Profile IDs not configured. Please populate $ENV_FILE"
+        fi
+        log_error "Unknown profile or missing ID for: $profile_name"
         echo "Available profiles: $(get_all_profiles)"
         return 1
     fi
