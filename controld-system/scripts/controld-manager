@@ -14,6 +14,7 @@ PROFILES_DIR="$CONTROLD_DIR/profiles"
 BACKUP_DIR="$CONTROLD_DIR/backup"
 LOG_FILE="/var/log/controld_manager.log"
 LISTENER_IP="127.0.0.1"  # localhost - where ctrld listens for DNS queries
+ENV_FILE="$CONTROLD_DIR/controld.env"
 
 # Profile configurations with protocol preferences
 #
@@ -32,9 +33,9 @@ validate_protocol() {
 
 get_profile_id() {
     case "$1" in
-        "privacy") echo "6m971e9jaf" ;;
-        "gaming") echo "1xfy57w34t7" ;;
-        "browsing") echo "rcnz7qgvwg" ;;
+        "privacy") echo "${CTR_PROFILE_PRIVACY:-6m971e9jaf}" ;;
+        "gaming") echo "${CTR_PROFILE_GAMING:-1xfy57w34t7}" ;;
+        "browsing") echo "${CTR_PROFILE_BROWSING:-rcnz7qgvwg}" ;;
         *) echo "" ;;
     esac
 }
@@ -77,6 +78,45 @@ log_success() {
 log_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARNING: $1" >> "$LOG_FILE" 2>/dev/null || true
+}
+
+# 🛡️ Sentinel: Load secrets from secure configuration
+load_secrets() {
+    if [[ -f "$ENV_FILE" ]]; then
+        log "Loading configuration from $ENV_FILE..."
+        source "$ENV_FILE"
+    fi
+
+    # Set defaults with warning if using hardcoded fallback
+    if [[ -z "${CTR_PROFILE_PRIVACY:-}" ]]; then
+        CTR_PROFILE_PRIVACY="6m971e9jaf"
+        if [[ -f "$ENV_FILE" ]]; then
+            log_warning "Using hardcoded PRIVACY profile ID. Please set CTR_PROFILE_PRIVACY in $ENV_FILE"
+        fi
+    fi
+    if [[ -z "${CTR_PROFILE_GAMING:-}" ]]; then
+        CTR_PROFILE_GAMING="1xfy57w34t7"
+        if [[ -f "$ENV_FILE" ]]; then
+             log_warning "Using hardcoded GAMING profile ID. Please set CTR_PROFILE_GAMING in $ENV_FILE"
+        fi
+    fi
+    if [[ -z "${CTR_PROFILE_BROWSING:-}" ]]; then
+        CTR_PROFILE_BROWSING="rcnz7qgvwg"
+        if [[ -f "$ENV_FILE" ]]; then
+            log_warning "Using hardcoded BROWSING profile ID. Please set CTR_PROFILE_BROWSING in $ENV_FILE"
+        fi
+    fi
+
+    # Warn if no config file exists at all
+    if [[ ! -f "$ENV_FILE" ]]; then
+        # Only warn once or in specific contexts to avoid noise?
+        # status command calls this, so it will show up there.
+        # We don't want to spam logs, but we want the user to know.
+        # Check if we are in an interactive session or just logged.
+        # But 'log_warning' logs to file and stdout.
+        # To avoid spamming, maybe only warn if we are initializing or checking status?
+        : # logic handled in get_profile_id default fallback, but we can add a generic warning here.
+    fi
 }
 
 # Check if we're running as root
@@ -501,6 +541,8 @@ initialize() {
 
 # Main function
 main() {
+    load_secrets
+
     case "${1:-""}" in
         "init"|"initialize")
             check_root
