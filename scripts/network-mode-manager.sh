@@ -83,12 +83,16 @@ set_ipv6() {
 
 stop_controld() {
   log "Stopping Control D service and cleaning up DNS configuration..."
+
+  # ⚡ Bolt Optimization: Reset DNS first to restore internet immediately via router,
+  # minimizing downtime while the service stops (which can take seconds).
+  sudo networksetup -setdnsservers "Wi-Fi" "Empty" 2>/dev/null || true
+
   # Graceful stop
   sudo ctrld service stop 2>/dev/null || true
   # Kill any lingering processes
   sudo pkill -f "ctrld" 2>/dev/null || true
-  # Reset Wi‑Fi DNS to DHCP/router (Empty)
-  sudo networksetup -setdnsservers "Wi-Fi" "Empty" 2>/dev/null || true
+
   flush_dns
   success "Control D stopped and system DNS reset to DHCP."
 }
