@@ -14,8 +14,6 @@ set -euo pipefail
 
 # --- Configuration ---
 
-# Map profiles to Control D Resolver UIDs (from the Control D dashboard)
-
 # Default profile if none specified
 DEFAULT_PROFILE="browsing"
 
@@ -96,19 +94,15 @@ stop_controld() {
 start_controld() {
   local profile_key=$1
   local force_proto=$2
-  local uid
 
   case "$profile_key" in
     "privacy")
-      uid="6m971e9jaf"
       log "Selecting ${E_PRIVACY} PRIVACY profile..."
       ;;
     "browsing")
-      uid="rcnz7qgvwg"
       log "Selecting ${E_BROWSING} BROWSING profile..."
       ;;
     "gaming")
-      uid="1xfy57w34t7"
       log "Selecting ${E_GAMING} GAMING profile..."
       ;;
     *)
