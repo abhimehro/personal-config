@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../src/pick-figure.ts"],
-  "sourcesContent": ["import { showHUD, Clipboard } from \"@raycast/api\";\n\ninterface PickFigureArguments {\n  min?: string;\n  max?: string;\n}\n\nexport default async function PickFigure(props: { arguments: PickFigureArguments }) {\n  const { min = \"0\", max = \"9\" } = props.arguments;\n  const minNumber = Number(min || \"0\");\n  const maxNumber = Number(max || \"9\");\n  if (isNaN(minNumber) || isNaN(maxNumber)) {\n    await showHUD(\"\u274C Invalid arguments\");\n    return;\n  }\n\n  const random = Math.floor(Math.random() * (maxNumber - minNumber + 1)) + minNumber;\n  const result = String(random);\n  await Clipboard.copy(result);\n  await showHUD(`Copied ${result} to clipboard`);\n}\n"],
-  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAmC,wBAOnC,eAAOF,EAAkCG,EAA2C,CAClF,GAAM,CAAE,IAAAC,EAAM,IAAK,IAAAC,EAAM,GAAI,EAAIF,EAAM,UACjCG,EAAY,OAAOF,GAAO,GAAG,EAC7BG,EAAY,OAAOF,GAAO,GAAG,EACnC,GAAI,MAAMC,CAAS,GAAK,MAAMC,CAAS,EAAG,CACxC,QAAM,WAAQ,0BAAqB,EACnC,MACF,CAEA,IAAMC,EAAS,KAAK,MAAM,KAAK,OAAO,GAAKD,EAAYD,EAAY,EAAE,EAAIA,EACnEG,EAAS,OAAOD,CAAM,EAC5B,MAAM,YAAU,KAAKC,CAAM,EAC3B,QAAM,WAAQ,UAAUA,gBAAqB,CAC/C",
-  "names": ["pick_figure_exports", "__export", "PickFigure", "__toCommonJS", "import_api", "props", "min", "max", "minNumber", "maxNumber", "random", "result"]
-}

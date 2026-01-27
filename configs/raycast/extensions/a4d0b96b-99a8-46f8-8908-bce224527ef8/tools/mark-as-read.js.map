@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../src/tools/mark-as-read.ts"],
-  "sourcesContent": ["import { LocalStorage } from \"@raycast/api\";\n\ntype Input = {\n  /**\n   * The GUID or unique identifier of the story to mark as read.\n   */\n  storyGuid: string;\n};\n\n/**\n * Mark an RSS story as read.\n * Updates the read status of a specific story.\n */\nexport default async function (input: Input) {\n  const { storyGuid } = input;\n\n  const storyLastReadString = await LocalStorage.getItem<string>(\"storyLastRead\");\n  const storyLastRead: Record<string, number> = JSON.parse(storyLastReadString ?? \"{}\");\n\n  const lastRead = new Date().valueOf();\n  storyLastRead[storyGuid] = lastRead;\n\n  await LocalStorage.setItem(\"storyLastRead\", JSON.stringify(storyLastRead));\n\n  return {\n    storyGuid,\n    lastRead: new Date(lastRead).toISOString(),\n  };\n}\n"],
-  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAA6B,wBAa7B,eAAOF,EAAwBG,EAAc,CAC3C,GAAM,CAAE,UAAAC,CAAU,EAAID,EAEhBE,EAAsB,MAAM,eAAa,QAAgB,eAAe,EACxEC,EAAwC,KAAK,MAAMD,GAAuB,IAAI,EAE9EE,EAAW,IAAI,KAAK,EAAE,QAAQ,EACpC,OAAAD,EAAcF,CAAS,EAAIG,EAE3B,MAAM,eAAa,QAAQ,gBAAiB,KAAK,UAAUD,CAAa,CAAC,EAElE,CACL,UAAAF,EACA,SAAU,IAAI,KAAKG,CAAQ,EAAE,YAAY,CAC3C,CACF",
-  "names": ["mark_as_read_exports", "__export", "mark_as_read_default", "__toCommonJS", "import_api", "input", "storyGuid", "storyLastReadString", "storyLastRead", "lastRead"]
-}

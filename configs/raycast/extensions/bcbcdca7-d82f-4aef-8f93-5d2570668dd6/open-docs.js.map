@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../src/open-docs.tsx"],
-  "sourcesContent": ["import { open } from \"@raycast/api\";\n\nexport default function OpenDocs() {\n  return open(\"https://github.com/catppuccin/catppuccin/tree/main/docs\");\n}\n"],
-  "mappings": "4ZAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAqB,wBAEN,SAARF,GAA4B,CACjC,SAAO,QAAK,yDAAyD,CACvE",
-  "names": ["open_docs_exports", "__export", "OpenDocs", "__toCommonJS", "import_api"]
-}

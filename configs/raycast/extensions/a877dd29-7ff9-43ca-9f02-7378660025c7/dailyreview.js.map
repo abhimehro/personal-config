@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../src/dailyreview.ts"],
-  "sourcesContent": ["import { open } from \"@raycast/api\";\n\nexport default async function main() {\n  await open(\"https://readwise.io/dailyreview\");\n}\n"],
-  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAqB,wBAErB,eAAOF,GAA8B,CACnC,QAAM,QAAK,iCAAiC,CAC9C",
-  "names": ["dailyreview_exports", "__export", "main", "__toCommonJS", "import_api"]
-}

@@ -36,3 +36,8 @@
 **Vulnerability:** The `controld-manager` script attempted to secure the DNS listener by removing specific IPv6 wildcards but failed to explicitly enforce localhost binding, potentially leaving the service exposed if defaults changed.
 **Learning:** Reliance on removing *known bad* values (denylist) is less secure than enforcing *known good* values (allowlist/enforcement) in configuration generation.
 **Prevention:** When generating security-critical configurations, explicitly set the desired secure values rather than trying to sanitize the output of a tool. Verify the final configuration file content before starting the service.
+
+## 2026-01-23 - Privilege Escalation in Helper Scripts
+**Vulnerability:** `scripts/network-mode-manager.sh` (which requests `sudo`) executed a script from the local repository path relative to itself, rather than the installed system binary.
+**Learning:** If a script prompts for `sudo` to run another script, using a relative path to a user-writable file (like a local repo clone) creates a privilege escalation path. A malicious actor (or the user themselves) could modify the target script and then run the wrapper, unknowingly executing the modified code as root.
+**Prevention:** Helper scripts that escalate privileges should prefer executing installed, root-owned binaries (e.g., in `/usr/local/bin`) over local/relative paths.

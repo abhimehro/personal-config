@@ -46,14 +46,37 @@ print_usage() {
 
 URL="${1:-}"
 
-if [[ -z "$URL" ]] || [[ "$URL" == "-h" ]] || [[ "$URL" == "--help" ]]; then
+if [[ "$URL" == "-h" ]] || [[ "$URL" == "--help" ]]; then
   print_usage
-  # Exit successfully if help was explicitly requested
-  if [[ "$URL" == "-h" ]] || [[ "$URL" == "--help" ]]; then
-    exit 0
-  else
-    exit 1
+  exit 0
+fi
+
+# Interactive mode if no URL provided and running in terminal
+if [[ -z "$URL" ]] && [[ -t 0 ]]; then
+  # Try to detect from clipboard (macOS)
+  if command -v pbpaste >/dev/null 2>&1; then
+    CLIP_CONTENT=$(pbpaste)
+    # Simple heuristic for YouTube URLs
+    if [[ "$CLIP_CONTENT" =~ ^https?://(www\.)?(youtube\.com|youtu\.be)/ ]]; then
+      echo -e "${YELLOW}${E_SEARCH} Found in clipboard: ${BOLD}$CLIP_CONTENT${NC}"
+      read -p "Use this URL? [Y/n] " -n 1 -r REPLY
+      echo "" # Newline
+      if [[ -z "$REPLY" ]] || [[ "$REPLY" =~ ^[Yy]$ ]]; then
+        URL="$CLIP_CONTENT"
+      fi
+    fi
   fi
+
+  # Prompt if still empty
+  if [[ -z "$URL" ]]; then
+    echo -e "${BLUE}${E_SEARCH} Please enter the YouTube URL:${NC}"
+    read -r URL
+  fi
+fi
+
+if [[ -z "$URL" ]]; then
+  print_usage
+  exit 1
 fi
 
 header "${E_VIDEO} YouTube Downloader"

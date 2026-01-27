@@ -14,8 +14,6 @@ set -euo pipefail
 
 # --- Configuration ---
 
-# Map profiles to Control D Resolver UIDs (from the Control D dashboard)
-
 # Default profile if none specified
 DEFAULT_PROFILE="browsing"
 
@@ -83,12 +81,16 @@ set_ipv6() {
 
 stop_controld() {
   log "Stopping Control D service and cleaning up DNS configuration..."
+
+  # ⚡ Bolt Optimization: Reset DNS first to restore internet immediately via router,
+  # minimizing downtime while the service stops (which can take seconds).
+  sudo networksetup -setdnsservers "Wi-Fi" "Empty" 2>/dev/null || true
+
   # Graceful stop
   sudo ctrld service stop 2>/dev/null || true
   # Kill any lingering processes
   sudo pkill -f "ctrld" 2>/dev/null || true
-  # Reset Wi‑Fi DNS to DHCP/router (Empty)
-  sudo networksetup -setdnsservers "Wi-Fi" "Empty" 2>/dev/null || true
+
   flush_dns
   success "Control D stopped and system DNS reset to DHCP."
 }
@@ -96,7 +98,6 @@ stop_controld() {
 start_controld() {
   local profile_key=$1
   local force_proto=$2
-  local uid
 
   case "$profile_key" in
     "privacy")
@@ -125,10 +126,20 @@ start_controld() {
   # Find the script location regardless of current working directory
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  local controld_manager="$script_dir/../controld-system/scripts/controld-manager"
+
+  # 🛡️ Sentinel: Prefer installed, root-owned binary if available (Defense in Depth)
+  local controld_manager="/usr/local/bin/controld-manager"
 
   if [[ ! -x "$controld_manager" ]]; then
-    error "controld-manager script not found or not executable at $controld_manager"
+    # Fallback to local script (Dev mode / Pre-install)
+    controld_manager="$script_dir/../controld-system/scripts/controld-manager"
+    if [[ ! -x "$controld_manager" ]]; then
+      error "controld-manager script not found in /usr/local/bin or at $controld_manager"
+    fi
+    log "Using local controld-manager: $controld_manager"
+  else
+    # Verify we are using the secure installed version
+    log "Using system controld-manager: $controld_manager"
   fi
 
   # Call switch with profile and optional protocol override
