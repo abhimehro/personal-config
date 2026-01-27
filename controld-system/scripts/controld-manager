@@ -37,7 +37,7 @@ validate_protocol() {
     esac
 }
 
-# Validate profile ID format
+# Validate profile ID format (pure predicate - no logging)
 validate_profile_id() {
     local profile_id="$1"
     # Profile IDs should be alphanumeric (lowercase letters and numbers), typically 10 chars
@@ -46,7 +46,6 @@ validate_profile_id() {
         return 1
     fi
     if [[ ! "$profile_id" =~ ^[a-z0-9]+$ ]]; then
-        log_error "Invalid profile ID format"
         return 1
     fi
     return 0
@@ -60,8 +59,8 @@ redact_profile_id() {
         return
     fi
     local len=${#profile_id}
-    if [[ $len -lt 5 ]]; then
-        # For very short IDs, show consistent format
+    if [[ $len -le 5 ]]; then
+        # For short IDs (5 chars or less), mask completely to avoid revealing all chars
         echo "***...**"
     else
         echo "${profile_id:0:3}...${profile_id: -2}"
