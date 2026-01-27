@@ -61,7 +61,8 @@ rotate_log() {
 
 # Check 1: Service status
 check_service() {
-    # ⚡ Bolt Optimization: Use pgrep to avoid sudo/daemon overhead
+    # ⚡ Bolt Optimization: Use pgrep to avoid sudo/daemon overhead instead of
+    # calling 'sudo ctrld service status', which is much heavier.
     if pgrep -x "ctrld" >/dev/null 2>&1; then
         return 0
     else
@@ -155,7 +156,8 @@ get_active_profile() {
 }
 
 check_filtering() {
-    local profile=$(get_active_profile)
+    local profile
+    profile=$(get_active_profile)
     # Check for blocking (expecting NXDOMAIN/empty result for blocked domains)
     # ⚡ Bolt Optimization: Check output variable directly instead of pipe to wc -l
     local dig_out
