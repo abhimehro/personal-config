@@ -232,3 +232,6 @@ configs/.config/fish/functions/*
 media-streaming/backup/*.backup
 media-streaming/backup/rclone.conf.backup
 !media-streaming/configs/media-credentials.example
+
+# Secrets
+controld-system/profiles.env
