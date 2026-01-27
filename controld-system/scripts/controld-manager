@@ -84,7 +84,7 @@ get_profile_id() {
         if ! validate_profile_id "$profile_id"; then
             log_error "Profile validation failed"
             echo ""
-            return 1
+            return 0
         fi
     fi
     
