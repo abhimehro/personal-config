@@ -100,15 +100,12 @@ start_controld() {
 
   case "$profile_key" in
     "privacy")
-      uid="6m971e9jaf"
       log "Selecting ${E_PRIVACY} PRIVACY profile..."
       ;;
     "browsing")
-      uid="rcnz7qgvwg"
       log "Selecting ${E_BROWSING} BROWSING profile..."
       ;;
     "gaming")
-      uid="1xfy57w34t7"
       log "Selecting ${E_GAMING} GAMING profile..."
       ;;
     *)
@@ -135,7 +132,10 @@ start_controld() {
   fi
 
   # Call switch with profile and optional protocol override
-  if sudo "$controld_manager" switch "$profile_key" "$force_proto"; then
+  if sudo CTRLD_PRIVACY_PROFILE="${CTRLD_PRIVACY_PROFILE:-}" \
+          CTRLD_GAMING_PROFILE="${CTRLD_GAMING_PROFILE:-}" \
+          CTRLD_BROWSING_PROFILE="${CTRLD_BROWSING_PROFILE:-}" \
+          "$controld_manager" switch "$profile_key" "$force_proto"; then
     success "Control D active via controld-manager (profile: $profile_key, protocol: ${force_proto:-default})."
   else
     error "controld-manager failed to switch to profile '$profile_key'. See /var/log/controld_manager.log for details."

@@ -32,9 +32,9 @@ validate_protocol() {
 
 get_profile_id() {
     case "$1" in
-        "privacy") echo "6m971e9jaf" ;;
-        "gaming") echo "1xfy57w34t7" ;;
-        "browsing") echo "rcnz7qgvwg" ;;
+        "privacy") echo "${CTRLD_PRIVACY_PROFILE:-6m971e9jaf}" ;;
+        "gaming") echo "${CTRLD_GAMING_PROFILE:-1xfy57w34t7}" ;;
+        "browsing") echo "${CTRLD_BROWSING_PROFILE:-rcnz7qgvwg}" ;;
         *) echo "" ;;
     esac
 }
