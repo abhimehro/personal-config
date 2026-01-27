@@ -1,3 +1,7 @@
+## 2026-02-18 - Smart Defaults in CLI Tools
+**Learning:** Users often run task-based scripts (like downloaders) with the intent already in their clipboard. Detecting this intent reduces friction.
+**Action:** When creating CLI tools that take a single primary input, check if the input can be safely inferred from the clipboard (e.g. `pbpaste`) when running interactively.
+
 ## 2026-01-20 - Visibility of Invisible States
 **Learning:** Users managing network privacy tools (VPN, DNS) need explicit confirmation of connection states. Assuming "configuration applied" equals "connected" leads to false security.
 **Action:** When reporting status for connectivity tools, always verify the actual interface state (e.g., `utun` existence) rather than just the configuration intent.
