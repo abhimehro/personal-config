@@ -17,3 +17,7 @@
 ## 2026-01-21 - Conversational CLI Readability
 **Learning:** In chat-based CLI tools, raw text streams make it difficult to distinguish between user input and system response. Simple color coding (e.g., Cyan for user, Green for system) dramatically reduces cognitive load.
 **Action:** Always implement distinct visual styles for "You" and "Assistant" prompts in conversational interfaces to create a clear dialogue structure.
+
+## 2024-05-24 - CLI Output Scanability
+**Learning:** For long-running maintenance scripts, users scan summary tables for failures and outliers (long durations). Standardizing column widths and using semantic colors (Red/Green) significantly reduces cognitive load.
+**Action:** Implement fixed-width summary tables with ANSI colors and duration tracking for all batch processing scripts.
