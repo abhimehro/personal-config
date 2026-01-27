@@ -46,7 +46,7 @@ validate_profile_id() {
         return 1
     fi
     if [[ ! "$profile_id" =~ ^[a-z0-9]+$ ]]; then
-        log_error "Invalid profile ID format: contains non-alphanumeric characters"
+        log_error "Invalid profile ID format"
         return 1
     fi
     return 0
@@ -60,8 +60,9 @@ redact_profile_id() {
         return
     fi
     local len=${#profile_id}
-    if [[ $len -le 5 ]]; then
-        echo "***"
+    if [[ $len -lt 5 ]]; then
+        # For very short IDs, show consistent format
+        echo "***...**"
     else
         echo "${profile_id:0:3}...${profile_id: -2}"
     fi
@@ -75,19 +76,20 @@ get_profile_id() {
         "privacy") profile_id="${CTR_PROFILE_PRIVACY_ID:-}" ;;
         "gaming") profile_id="${CTR_PROFILE_GAMING_ID:-}" ;;
         "browsing") profile_id="${CTR_PROFILE_BROWSING_ID:-}" ;;
-        *) echo ""; return ;;
+        *) echo ""; return 0 ;;
     esac
     
     # Validate the resolved profile ID
     if [[ -n "$profile_id" ]]; then
         if ! validate_profile_id "$profile_id"; then
-            log_error "Profile ID for '$profile_name' failed validation (whitespace/typos/invalid characters)"
+            log_error "Profile ID for '$profile_name' failed validation"
             echo ""
             return 1
         fi
     fi
     
     echo "$profile_id"
+    return 0
 }
 
 get_profile_protocol() {
