@@ -143,9 +143,12 @@ start_controld() {
   fi
 
   # Call switch with profile and optional protocol override
-  if sudo CTRLD_PRIVACY_PROFILE="${CTRLD_PRIVACY_PROFILE:-}" \
+  if sudo env CTRLD_PRIVACY_PROFILE="${CTRLD_PRIVACY_PROFILE:-}" \
           CTRLD_GAMING_PROFILE="${CTRLD_GAMING_PROFILE:-}" \
           CTRLD_BROWSING_PROFILE="${CTRLD_BROWSING_PROFILE:-}" \
+          CTR_PROFILE_PRIVACY_ID="${CTR_PROFILE_PRIVACY_ID:-${CTRLD_PRIVACY_PROFILE:-}}" \
+          CTR_PROFILE_GAMING_ID="${CTR_PROFILE_GAMING_ID:-${CTRLD_GAMING_PROFILE:-}}" \
+          CTR_PROFILE_BROWSING_ID="${CTR_PROFILE_BROWSING_ID:-${CTRLD_BROWSING_PROFILE:-}}" \
           "$controld_manager" switch "$profile_key" "$force_proto"; then
     success "Control D active via controld-manager (profile: $profile_key, protocol: ${force_proto:-default})."
   else
