@@ -1,3 +1,7 @@
+## 2026-01-27 - Compact UX Boilerplate
+**Learning:** When retrofitting existing scripts with UX improvements (colors, logging), verbose boilerplate can obscure the original logic and exceed code review limits.
+**Action:** Use compact, one-line definitions for colors and helper functions to maintain readability and focus on the script's core purpose.
+
 ## 2026-02-18 - Smart Defaults in CLI Tools
 **Learning:** Users often run task-based scripts (like downloaders) with the intent already in their clipboard. Detecting this intent reduces friction.
 **Action:** When creating CLI tools that take a single primary input, check if the input can be safely inferred from the clipboard (e.g. `pbpaste`) when running interactively.
