@@ -37,3 +37,7 @@
 ## 2026-01-20 - Shell Script Error Checking Fragility
 **Learning:** Relying on `grep` to match specific error strings in a pipeline (e.g., `cmd | grep "fail"`) creates a "success by default" trap. If `cmd` fails with an unexpected error message that isn't in the grep list, the check fails (grep returns 1), leading the script to assume success.
 **Action:** Always check the command's exit code first. Only parse the output for specific reasons if the exit code indicates failure, and ensure there is a catch-all `else` block for unexpected errors.
+
+## 2026-01-24 - Bash Built-ins vs External Commands
+**Learning:** In frequently executed monitoring scripts, replacing external command pipelines (like `basename | sed` or `cmd | wc -l`) with Bash parameter expansion and built-in tests (e.g., `${var##*/}`, `[[ -n $var ]]`) significantly reduces process forking overhead.
+**Action:** Always prefer Bash built-ins for string manipulation and emptiness checks over piping to external utilities like `sed`, `awk`, or `wc`.
