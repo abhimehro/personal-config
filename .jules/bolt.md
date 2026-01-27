@@ -41,3 +41,7 @@
 ## 2026-01-24 - Bash Built-ins vs External Commands
 **Learning:** In frequently executed monitoring scripts, replacing external command pipelines (like `basename | sed` or `cmd | wc -l`) with Bash parameter expansion and built-in tests (e.g., `${var##*/}`, `[[ -n $var ]]`) significantly reduces process forking overhead.
 **Action:** Always prefer Bash built-ins for string manipulation and emptiness checks over piping to external utilities like `sed`, `awk`, or `wc`.
+
+## 2026-02-15 - Minimizing Service Downtime during Handover
+**Learning:** When stopping a critical network service (like a DNS proxy) that the OS depends on, the order of operations matters significantly for perceived downtime. Stopping the service first leaves the OS querying a dead port until the fallback configuration is applied.
+**Action:** Always restore the fallback network configuration (e.g., reset DNS to DHCP) *before* stopping the service that was handling the traffic. This ensures continuity of service during the shutdown process.
