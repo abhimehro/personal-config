@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../src/summarizeVideo.tsx"],
-  "sourcesContent": ["import { Detail } from \"@raycast/api\";\n\nconst markdown = `\n# The Extension has changed\n\nWe introduced new commands to summarize YouTube videos with AI. The one you used to use is now deprecated and split into three. You can choose one of the following commands:\n\n- Summarize with Raycast: \\`summarizeVideoWithRaycastAI\\`\n- Summarize with OpenAI: \\`summarizeVideoWithOpenAI\\`\n- Summarize with Anthropic: \\`summarizeVideoWithAnthropic\\`\n- Summarize with Ollama: \\`summarizeVideoWithOllama\\`\n\nYou have to migrate your settings to the new commands. Open the extensions preferences and update the command accordingly. You can find your old settings in the deprecated command.\n\nIf you only use one command you can also disbale the others in the preferences.\n`;\n\nexport default function DeprecationNote() {\n  return <Detail markdown={markdown} navigationTitle=\"The Extension has changed\" />;\n}\n"],
-  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAuB,wBAkBdC,EAAA,6BAhBHC,EAAW;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA,EAeF,SAARJ,GAAmC,CACxC,SAAO,OAAC,UAAO,SAAUI,EAAU,gBAAgB,4BAA4B,CACjF",
-  "names": ["summarizeVideo_exports", "__export", "DeprecationNote", "__toCommonJS", "import_api", "import_jsx_runtime", "markdown"]
-}

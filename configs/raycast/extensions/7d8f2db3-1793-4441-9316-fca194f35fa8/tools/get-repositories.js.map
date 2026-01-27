@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../src/tools/get-repositories.ts"],
-  "sourcesContent": ["import { Cache } from \"@raycast/api\";\n\n/**\n * Returns all available repositories that the user has configured in Cursor Agents.\n * This can be used to determine which repository the user might be referring to.\n */\nexport default async function tool() {\n  const cache = new Cache();\n  const repositoriesData = cache.get(\"repositories\");\n\n  if (!repositoriesData) {\n    return \"No repositories have been configured yet. User needs to add repositories first through the Cursor Agents extension.\";\n  }\n\n  return JSON.parse(repositoriesData);\n}\n"],
-  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAsB,wBAMtB,eAAOF,GAA8B,CAEnC,IAAMG,EADQ,IAAI,QAAM,EACO,IAAI,cAAc,EAEjD,OAAKA,EAIE,KAAK,MAAMA,CAAgB,EAHzB,qHAIX",
-  "names": ["get_repositories_exports", "__export", "tool", "__toCommonJS", "import_api", "repositoriesData"]
-}

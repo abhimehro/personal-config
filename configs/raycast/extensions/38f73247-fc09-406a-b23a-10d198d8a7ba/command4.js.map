@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../src/command4.ts"],
-  "sourcesContent": ["import { Clipboard, getPreferenceValues, openCommandPreferences, showHUD, updateCommandMetadata } from \"@raycast/api\";\nexport default async function main() {\n  const values = getPreferenceValues();\n  const value = values[\"typercommand4\"];\n  if (value) {\n    await updateCommandMetadata({ subtitle: `Pasting: ${value}` });\n\n    return Clipboard.paste(value);\n  }\n\n  await openCommandPreferences();\n  return await showHUD(\"\u274C Please set a text to paste\");\n}\n"],
-  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAuG,wBACvG,eAAOF,GAA8B,CAEnC,IAAMG,KADS,uBAAoB,EACd,cACrB,OAAIA,GACF,QAAM,yBAAsB,CAAE,SAAU,YAAYA,GAAQ,CAAC,EAEtD,YAAU,MAAMA,CAAK,IAG9B,QAAM,0BAAuB,EACtB,QAAM,WAAQ,mCAA8B,EACrD",
-  "names": ["command4_exports", "__export", "main", "__toCommonJS", "import_api", "value"]
-}

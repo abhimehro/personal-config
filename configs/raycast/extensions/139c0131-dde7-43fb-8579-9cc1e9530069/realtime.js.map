@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../src/realtime.ts"],
-  "sourcesContent": ["export interface Realtime {\n  featuredStoryIds: unknown[];\n  trendingStoryIds: string[];\n  storySummaries: StorySummaries;\n  date: string;\n  hideAllImages: boolean;\n}\n\nexport interface StorySummaries {\n  featuredStories: unknown[];\n  trendingStories: TrendingStory[];\n}\n\nexport interface TrendingStory {\n  image: Image;\n  shareUrl: string;\n  articles: Article[];\n  idsForDedup: string[];\n  id: string;\n  title: string;\n  entityNames: string[];\n}\n\nexport interface Article {\n  articleTitle: string;\n  url: string;\n  source: string;\n  time: string;\n  snippet: string;\n}\n\nexport interface Image {\n  newsUrl: string;\n  source: string;\n  imgUrl: string;\n}\n"],
-  "mappings": "+WAAA,IAAAA,EAAA,kBAAAC,EAAAD",
-  "names": ["realtime_exports", "__toCommonJS"]
-}

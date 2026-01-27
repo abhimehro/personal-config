@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../src/create-new-context.ts"],
-  "sourcesContent": ["import { showHUD } from \"@raycast/api\";\nimport fs from \"fs\";\nimport path from \"path\";\nimport os from \"os\";\n\ninterface Arguments {\n  name: string;\n}\n\nexport default async function Command(props: { arguments: Arguments }) {\n  // Create contexts directory if it doesn't exist\n  const contextsDir = path.join(os.homedir(), \"Library/Application Support/ContextManager\");\n  if (!fs.existsSync(contextsDir)) {\n    fs.mkdirSync(contextsDir, { recursive: true });\n  }\n\n  // Create empty context file with provided name\n  const filePath = path.join(contextsDir, `${props.arguments.name}.txt`);\n  fs.writeFileSync(filePath, \"\", \"utf-8\");\n\n  console.log(`Created new context file at: ${filePath}`);\n\n  await showHUD(`Created new context: ${props.arguments.name}`);\n}\n"],
-  "mappings": "0jBAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,aAAAE,IAAA,eAAAC,EAAAH,GAAA,IAAAI,EAAwB,wBACxBC,EAAe,iBACfC,EAAiB,mBACjBC,EAAe,iBAMf,eAAOL,EAA+BM,EAAiC,CAErE,IAAMC,EAAc,EAAAC,QAAK,KAAK,EAAAC,QAAG,QAAQ,EAAG,4CAA4C,EACnF,EAAAC,QAAG,WAAWH,CAAW,GAC5B,EAAAG,QAAG,UAAUH,EAAa,CAAE,UAAW,EAAK,CAAC,EAI/C,IAAMI,EAAW,EAAAH,QAAK,KAAKD,EAAa,GAAGD,EAAM,UAAU,IAAI,MAAM,EACrE,EAAAI,QAAG,cAAcC,EAAU,GAAI,OAAO,EAEtC,QAAQ,IAAI,gCAAgCA,CAAQ,EAAE,EAEtD,QAAM,WAAQ,wBAAwBL,EAAM,UAAU,IAAI,EAAE,CAC9D",
-  "names": ["create_new_context_exports", "__export", "Command", "__toCommonJS", "import_api", "import_fs", "import_path", "import_os", "props", "contextsDir", "path", "os", "fs", "filePath"]
-}

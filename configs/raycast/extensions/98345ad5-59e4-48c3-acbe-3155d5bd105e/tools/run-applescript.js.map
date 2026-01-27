@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../src/tools/run-applescript.ts"],
-  "sourcesContent": ["import { exec } from \"child_process\";\nimport { Tool } from \"@raycast/api\";\n\ntype Input = {\n  /**\n   * The AppleScript code to solve the user's request.\n   */\n  code: string;\n};\n\n/**\n * Write code in AppleScript to achieve the user's request.\n */\nexport default async function (input: Input) {\n  return new Promise((resolve, reject) => {\n    exec(`osascript -e '${input.code}'`, (error, stdout, stderr) => {\n      if (error) {\n        reject(`Error: ${stderr}`);\n      } else {\n        resolve(stdout.trim());\n      }\n    });\n  });\n}\n\nexport const confirmation: Tool.Confirmation<Input> = async (input: Input) => {\n  return {\n    message: \"Allow this AppleScript code to run?\\n```\\n\" + input.code + \"\\n```\",\n  };\n};\n"],
-  "mappings": "yaAAA,IAAAA,EAAA,GAAAC,EAAAD,EAAA,kBAAAE,EAAA,YAAAC,IAAA,eAAAC,EAAAJ,GAAA,IAAAK,EAAqB,yBAarB,eAAOF,EAAwBG,EAAc,CAC3C,OAAO,IAAI,QAAQ,CAACC,EAASC,IAAW,IACtC,QAAK,iBAAiBF,EAAM,IAAI,IAAK,CAACG,EAAOC,EAAQC,IAAW,CAC1DF,EACFD,EAAO,UAAUG,CAAM,EAAE,EAEzBJ,EAAQG,EAAO,KAAK,CAAC,CAEzB,CAAC,CACH,CAAC,CACH,CAEO,IAAMR,EAAyC,MAAOI,IACpD,CACL,QAAS,6CAA+CA,EAAM,KAAO,OACvE",
-  "names": ["run_applescript_exports", "__export", "confirmation", "run_applescript_default", "__toCommonJS", "import_child_process", "input", "resolve", "reject", "error", "stdout", "stderr"]
-}

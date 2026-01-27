@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../src/daily.ts"],
-  "sourcesContent": ["export interface Daily {\n  default: Default;\n}\n\nexport interface Default {\n  trendingSearchesDays: TrendingSearchesDay[];\n  endDateForNextRequest: string;\n  rssFeedPageUrl: string;\n}\n\nexport interface TrendingSearchesDay {\n  date: string;\n  formattedDate: string;\n  trendingSearches: TrendingSearch[];\n}\n\nexport interface TrendingSearch {\n  title: Title;\n  formattedTraffic: string;\n  relatedQueries: Title[];\n  image: Image;\n  articles: Article[];\n  shareUrl: string;\n}\n\nexport interface Article {\n  title: string;\n  timeAgo: string;\n  source: string;\n  image?: Image;\n  url: string;\n  snippet: string;\n}\n\nexport interface Image {\n  newsUrl: string;\n  source: string;\n  imageUrl: string;\n}\n\nexport interface Title {\n  query: string;\n  exploreLink: string;\n}\n"],
-  "mappings": "+WAAA,IAAAA,EAAA,kBAAAC,EAAAD",
-  "names": ["daily_exports", "__toCommonJS"]
-}
