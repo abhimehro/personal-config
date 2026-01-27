@@ -82,7 +82,7 @@ get_profile_id() {
     # Validate the resolved profile ID
     if [[ -n "$profile_id" ]]; then
         if ! validate_profile_id "$profile_id"; then
-            log_error "Profile ID for '$profile_name' failed validation"
+            log_error "Profile validation failed"
             echo ""
             return 1
         fi
@@ -229,6 +229,12 @@ generate_profile_config() {
     local profile_id="$2"
     local protocol="$3"
     local config_file="$PROFILES_DIR/ctrld.$profile_name.toml"
+
+    # 🛡️ Defense in depth: Validate profile_id even though callers should validate
+    if ! validate_profile_id "$profile_id"; then
+        log_error "Invalid profile ID provided to generate_profile_config"
+        return 1
+    fi
 
     log "Generating $profile_name profile configuration with $protocol protocol..."
 
