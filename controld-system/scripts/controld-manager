@@ -37,13 +37,57 @@ validate_protocol() {
     esac
 }
 
+# Validate profile ID format
+validate_profile_id() {
+    local profile_id="$1"
+    # Profile IDs should be alphanumeric (lowercase letters and numbers), typically 10 chars
+    # Reject IDs containing whitespace, newlines, or non-alphanumeric characters
+    if [[ -z "$profile_id" ]]; then
+        return 1
+    fi
+    if [[ ! "$profile_id" =~ ^[a-z0-9]+$ ]]; then
+        log_error "Invalid profile ID format: contains non-alphanumeric characters"
+        return 1
+    fi
+    return 0
+}
+
+# Redact profile ID for safe logging (show first 3 and last 2 chars)
+redact_profile_id() {
+    local profile_id="$1"
+    if [[ -z "$profile_id" ]]; then
+        echo "(empty)"
+        return
+    fi
+    local len=${#profile_id}
+    if [[ $len -le 5 ]]; then
+        echo "***"
+    else
+        echo "${profile_id:0:3}...${profile_id: -2}"
+    fi
+}
+
 get_profile_id() {
-    case "$1" in
-        "privacy") echo "${CTR_PROFILE_PRIVACY_ID:-}" ;;
-        "gaming") echo "${CTR_PROFILE_GAMING_ID:-}" ;;
-        "browsing") echo "${CTR_PROFILE_BROWSING_ID:-}" ;;
-        *) echo "" ;;
+    local profile_name="$1"
+    local profile_id=""
+    
+    case "$profile_name" in
+        "privacy") profile_id="${CTR_PROFILE_PRIVACY_ID:-}" ;;
+        "gaming") profile_id="${CTR_PROFILE_GAMING_ID:-}" ;;
+        "browsing") profile_id="${CTR_PROFILE_BROWSING_ID:-}" ;;
+        *) echo ""; return ;;
     esac
+    
+    # Validate the resolved profile ID
+    if [[ -n "$profile_id" ]]; then
+        if ! validate_profile_id "$profile_id"; then
+            log_error "Profile ID for '$profile_name' failed validation (whitespace/typos/invalid characters)"
+            echo ""
+            return 1
+        fi
+    fi
+    
+    echo "$profile_id"
 }
 
 get_profile_protocol() {
@@ -99,7 +143,8 @@ setup_directories() {
     log "Setting up directory structure..."
     mkdir -p "$PROFILES_DIR" "$BACKUP_DIR"
     touch "$LOG_FILE" 2>/dev/null || true
-    chmod 644 "$LOG_FILE" 2>/dev/null || true
+    # Restrict log file to root-only (600) to protect sensitive profile IDs
+    chmod 600 "$LOG_FILE" 2>/dev/null || true
 }
 
 # Backup current network settings
@@ -370,7 +415,7 @@ switch_profile() {
         log_success "Successfully switched to $profile_name profile ($protocol)"
         echo
         echo "Profile: $profile_name"
-        echo "ID: $profile_id"
+        echo "ID: $(redact_profile_id "$profile_id")"
         echo "Protocol: $protocol"
         echo "Status: Active"
         return 0
@@ -430,8 +475,9 @@ show_status() {
             local current_config=$(readlink "$CONTROLD_DIR/ctrld.toml")
             local profile_name=$(basename "$current_config" | sed 's/ctrld\.\(.*\)\.toml/\1/')
             local protocol=$(grep "type = " "$current_config" 2>/dev/null | sed "s/.*type = '\(.*\)'.*/\1/" || echo "unknown")
+            local profile_id=$(get_profile_id "$profile_name")
             echo "Active Profile: $profile_name"
-            echo "Profile ID: $(get_profile_id "$profile_name")"
+            echo "Profile ID: $(redact_profile_id "$profile_id")"
             echo "Protocol: $protocol"
         else
             echo "Active Profile: Unknown (direct configuration)"
@@ -455,7 +501,8 @@ show_status() {
     echo "Available Profiles:"
     for profile in $(get_all_profiles); do
         local default_protocol=$(get_profile_protocol "$profile")
-        echo "  - $profile ($(get_profile_id "$profile")) - Default: $default_protocol"
+        local profile_id=$(get_profile_id "$profile")
+        echo "  - $profile ($(redact_profile_id "$profile_id")) - Default: $default_protocol"
     done
 
     echo

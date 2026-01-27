@@ -143,7 +143,7 @@ start_controld() {
   fi
 
   # Call switch with profile and optional protocol override
-  if sudo CTRLD_PRIVACY_PROFILE="${CTRLD_PRIVACY_PROFILE:-}" \
+  if sudo env CTRLD_PRIVACY_PROFILE="${CTRLD_PRIVACY_PROFILE:-}" \
           CTRLD_GAMING_PROFILE="${CTRLD_GAMING_PROFILE:-}" \
           CTRLD_BROWSING_PROFILE="${CTRLD_BROWSING_PROFILE:-}" \
           "$controld_manager" switch "$profile_key" "$force_proto"; then
