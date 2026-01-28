@@ -143,6 +143,9 @@ check_root() {
 setup_directories() {
     log "Setting up directory structure..."
     mkdir -p "$PROFILES_DIR" "$BACKUP_DIR"
+    # 🛡️ Sentinel: Enforce strict permissions on directories containing sensitive configs
+    chmod 700 "$PROFILES_DIR" "$BACKUP_DIR" 2>/dev/null || true
+
     touch "$LOG_FILE" 2>/dev/null || true
     # Restrict log file to root-only (600) to protect sensitive profile IDs
     chmod 600 "$LOG_FILE" 2>/dev/null || true
@@ -283,6 +286,10 @@ generate_profile_config() {
     if [[ -f "$TEMP_CONFIG" ]]; then
         # Copy and customize the generated config
         cp "$TEMP_CONFIG" "$config_file"
+
+        # 🛡️ Sentinel: Enforce strict permissions on the config file (contains Profile ID)
+        chmod 600 "$config_file"
+
         # Cleanup handled by trap, but explicit remove doesn't hurt
         rm -f "$TEMP_CONFIG"
 
