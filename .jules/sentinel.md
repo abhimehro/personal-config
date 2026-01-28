@@ -41,3 +41,8 @@
 **Vulnerability:** `scripts/network-mode-manager.sh` (which requests `sudo`) executed a script from the local repository path relative to itself, rather than the installed system binary.
 **Learning:** If a script prompts for `sudo` to run another script, using a relative path to a user-writable file (like a local repo clone) creates a privilege escalation path. A malicious actor (or the user themselves) could modify the target script and then run the wrapper, unknowingly executing the modified code as root.
 **Prevention:** Helper scripts that escalate privileges should prefer executing installed, root-owned binaries (e.g., in `/usr/local/bin`) over local/relative paths.
+
+## 2026-01-28 - Insecure File Permissions on Generated Configs
+**Vulnerability:** Information Disclosure (CWE-276) in `controld-manager`. The script generated configuration files containing sensitive Profile IDs in a directory created with default permissions (likely world-readable), and did not restrict the file permissions.
+**Learning:** `mkdir -p` and `cp` typically respect the umask or default to 755/644, which leaves files readable by all users on the system. Security-critical files must have explicit permission hardening.
+**Prevention:** Explicitly use `chmod 700` on directories and `chmod 600` on files containing sensitive information immediately after creation.
