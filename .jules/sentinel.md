@@ -41,3 +41,8 @@
 **Vulnerability:** `scripts/network-mode-manager.sh` (which requests `sudo`) executed a script from the local repository path relative to itself, rather than the installed system binary.
 **Learning:** If a script prompts for `sudo` to run another script, using a relative path to a user-writable file (like a local repo clone) creates a privilege escalation path. A malicious actor (or the user themselves) could modify the target script and then run the wrapper, unknowingly executing the modified code as root.
 **Prevention:** Helper scripts that escalate privileges should prefer executing installed, root-owned binaries (e.g., in `/usr/local/bin`) over local/relative paths.
+
+## 2026-01-23 - Hardcoded PII and Absolute Paths
+**Vulnerability:** Hardcoded absolute paths containing usernames (PII) in Python utility scripts (`adguard/scripts/*.py`).
+**Learning:** Developer convenience (copy-pasting working paths) often leads to non-portable and privacy-leaking code. Scripts intended for personal use often end up in shared repos without cleanup.
+**Prevention:** Use `Path.home()` (pathlib) or `os.path.expanduser("~")` to reference user directories dynamically. This ensures portability and protects developer identity.

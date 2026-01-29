@@ -30,7 +30,7 @@ def extract_allowlist_domains_from_file(filepath):
     return domains
 
 # Base directory
-base_dir = "/Users/abhimehrotra/Downloads"
+base_dir = os.path.join(os.path.expanduser("~"), "Downloads")
 
 # Tracker files for denylist
 tracker_files = [

@@ -162,7 +162,7 @@ def print_summary(denylist_domains, allowlist_domains):
 
 def main():
     """Main consolidation workflow."""
-    base_dir = Path("/Users/abhimehrotra/Downloads")
+    base_dir = Path.home() / "Downloads"
     
     tracker_files = [
         "CD-Microsoft-Tracker.json",
