@@ -31,6 +31,9 @@ ensure_prereqs_verify() {
   command -v networksetup >/dev/null 2>&1 || { echo "networksetup not found" >&2; exit 1; }
   command -v scutil >/dev/null 2>&1 || { echo "scutil not found" >&2; exit 1; }
   command -v dig >/dev/null 2>&1 || { echo "dig not found" >&2; exit 1; }
+
+  # Prime sudo cache to prevent password prompts in background jobs or late in the script
+  sudo -v
 }
 
 check_controld_active() {
@@ -40,13 +43,14 @@ check_controld_active() {
   echo -e "${BLUE}=== Verifying CONTROL D ACTIVE state ===${NC}"
 
   # Initialize PIDs to prevent unbound variable errors on cleanup
-  local pid_dns="" pid_conn="" pid_who="" pid_aaaa=""
+  local pid_dns="" pid_conn="" pid_who="" pid_aaaa="" pid_scutil=""
 
   # Start network checks in background (Parallelization)
-  local tmp_who tmp_aaaa
+  local tmp_who tmp_aaaa tmp_scutil
   # 🛡️ Sentinel: Use -t template for macOS compatibility
   tmp_who=$(mktemp -t nmv_who.XXXXXX)
   tmp_aaaa=$(mktemp -t nmv_aaaa.XXXXXX)
+  tmp_scutil=$(mktemp -t nmv_scutil.XXXXXX)
 
   # 3) Basic DNS checks (Background)
   dig @"$LISTENER_IP" example.com +short +time=5 >/dev/null 2>&1 &
@@ -64,14 +68,19 @@ check_controld_active() {
   (dig @"$LISTENER_IP" +short +time=5 AAAA example.com 2>/dev/null | head -n1 || true) > "$tmp_aaaa" &
   pid_aaaa=$!
 
-  # Set up cleanup trap for both background processes and temporary files
-  trap 'kill ${pid_dns:-} ${pid_conn:-} ${pid_who:-} ${pid_aaaa:-} 2>/dev/null || true; rm -f "${tmp_who:-}" "${tmp_aaaa:-}"' RETURN
+  # 2) DNS points at local listener (Background)
+  (scutil --dns | grep "nameserver" | grep "$LISTENER_IP" || true) > "$tmp_scutil" &
+  pid_scutil=$!
 
-  # 1) LaunchDaemon / process (Local Check)
-  if sudo launchctl list | grep -q "ctrld"; then
-    pass "ctrld LaunchDaemon is loaded (launchctl list | grep ctrld)."
+  # Set up cleanup trap for both background processes and temporary files
+  trap 'kill ${pid_dns:-} ${pid_conn:-} ${pid_who:-} ${pid_aaaa:-} ${pid_scutil:-} 2>/dev/null || true; rm -f "${tmp_who:-}" "${tmp_aaaa:-}" "${tmp_scutil:-}"' RETURN
+
+  # 1) Process Check (Local Check)
+  # ⚡ Bolt Optimization: Use pgrep -x instead of 'launchctl list | grep'
+  if pgrep -x "ctrld" >/dev/null 2>&1; then
+    pass "ctrld process is running."
   else
-    fail "ctrld LaunchDaemon is NOT loaded."
+    fail "ctrld process is NOT running."
     ok=1
   fi
 
@@ -82,15 +91,18 @@ check_controld_active() {
     ok=1
   fi
 
-  # 2) DNS points at local listener (Local Check)
-  # On macOS, when ctrld is running, at least one resolver should be 127.0.0.1
-  # This is more permissive since resolver ordering can vary
-  local dns_check
-  dns_check=$(scutil --dns | grep "nameserver" | grep "$LISTENER_IP" || true)
-  if [[ -n "$dns_check" ]]; then
-    pass "Primary resolver nameserver includes $LISTENER_IP."
+  # 2) DNS points at local listener (Result)
+  if wait "$pid_scutil"; then
+    local dns_check
+    dns_check=$(cat "$tmp_scutil")
+    if [[ -n "$dns_check" ]]; then
+      pass "Primary resolver nameserver includes $LISTENER_IP."
+    else
+      fail "Resolver configuration does not include $LISTENER_IP. Check: scutil --dns"
+      ok=1
+    fi
   else
-    fail "Resolver configuration does not include $LISTENER_IP. Check: scutil --dns"
+    fail "Failed to check DNS configuration (scutil)."
     ok=1
   fi
 
@@ -196,12 +208,32 @@ check_windscribe_ready() {
 
   echo -e "${BLUE}=== Verifying WINDSCRIBE READY state ===${NC}"
 
-  # 1) No ctrld LaunchDaemon / process
-  if sudo launchctl list | grep -q "ctrld"; then
-    fail "ctrld LaunchDaemon is still loaded (launchctl list | grep ctrld)."
+  # Initialize PIDs
+  local pid_ns="" pid_ipv6=""
+
+  # Start network checks in background (Parallelization)
+  local tmp_ns tmp_ipv6
+  tmp_ns=$(mktemp -t nmv_ns.XXXXXX)
+  tmp_ipv6=$(mktemp -t nmv_ipv6.XXXXXX)
+
+  # 2) DNS Check (Background)
+  (scutil --dns | awk '/^resolver #1/{f=1} f && /nameserver\[0\]/{print $3; exit}' || true) > "$tmp_ns" &
+  pid_ns=$!
+
+  # 3) IPv6 Check (Background)
+  (networksetup -getinfo "Wi-Fi" 2>/dev/null | grep "IPv6:" || true) > "$tmp_ipv6" &
+  pid_ipv6=$!
+
+  # Trap cleanup
+  trap 'kill ${pid_ns:-} ${pid_ipv6:-} 2>/dev/null || true; rm -f "${tmp_ns:-}" "${tmp_ipv6:-}"' RETURN
+
+  # 1) No ctrld Process (Local Check)
+  # ⚡ Bolt Optimization: Use pgrep -x instead of 'launchctl list | grep'
+  if pgrep -x "ctrld" >/dev/null 2>&1; then
+    fail "ctrld process is still running."
     ok=1
   else
-    pass "No ctrld LaunchDaemon loaded."
+    pass "No ctrld process running."
   fi
 
   if sudo lsof -nPi :53 2>/dev/null | grep -q "ctrld"; then
@@ -211,23 +243,33 @@ check_windscribe_ready() {
     pass "No ctrld listener on port 53 (port is free)."
   fi
 
-  # 2) DNS no longer points to local listener
-  local ns
-  ns=$(scutil --dns | awk '/^resolver #1/{f=1} f && /nameserver\[0\]/{print $3; exit}' || true)
-  if [[ "$ns" == "$LISTENER_IP" ]]; then
-    fail "Primary resolver nameserver is still $LISTENER_IP; expected DHCP/VPN-provided DNS."
-    ok=1
+  # 2) DNS Check Result
+  if wait "$pid_ns"; then
+    local ns
+    ns=$(cat "$tmp_ns")
+    if [[ "$ns" == "$LISTENER_IP" ]]; then
+      fail "Primary resolver nameserver is still $LISTENER_IP; expected DHCP/VPN-provided DNS."
+      ok=1
+    else
+      pass "Primary resolver nameserver is '$ns' (not $LISTENER_IP)."
+    fi
   else
-    pass "Primary resolver nameserver is '$ns' (not $LISTENER_IP)."
+    fail "Failed to check DNS configuration (scutil)."
+    ok=1
   fi
 
-  # 3) IPv6 should be disabled for Wi‑Fi
-  local ipv6_line
-  ipv6_line=$(networksetup -getinfo "Wi-Fi" 2>/dev/null | grep "IPv6:" || true)
-  if echo "$ipv6_line" | grep -q "Off"; then
-    pass "IPv6 reported as Off for Wi‑Fi ($ipv6_line)."
+  # 3) IPv6 Check Result
+  if wait "$pid_ipv6"; then
+    local ipv6_line
+    ipv6_line=$(cat "$tmp_ipv6")
+    if echo "$ipv6_line" | grep -q "Off"; then
+      pass "IPv6 reported as Off for Wi‑Fi ($ipv6_line)."
+    else
+      fail "IPv6 does not appear to be Off for Wi‑Fi (line: '$ipv6_line')."
+      ok=1
+    fi
   else
-    fail "IPv6 does not appear to be Off for Wi‑Fi (line: '$ipv6_line')."
+    fail "Failed to check IPv6 configuration (networksetup)."
     ok=1
   fi
 
