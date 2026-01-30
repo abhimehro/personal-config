@@ -1,26 +1,50 @@
 #!/bin/bash
+#
+# Media Server - Local & Remote WebDAV (Windscribe Static IP Ready)
+# Auto-starts on login, 1Password integrated
+#
+# Usage:
+#   ./final-media-server.sh              # Start with auto-detected mode
+#   ./final-media-server.sh --local      # Force LAN-only mode
+#   ./final-media-server.sh --external   # Force external/VPN mode
+#
+set -euo pipefail
 
-echo "🔧 Final Media Server - Rclone WebDAV (1Password Integrated)"
-echo "============================================================"
+echo "🔧 Media Server - Rclone WebDAV (1Password Integrated)"
+echo "=========================================================="
 echo
+
+# Determine mode
+MODE="${1:-auto}"
 
 # Kill any existing servers
 echo "🧹 Cleaning up existing servers..."
-pkill -f "rclone serve" 2>/dev/null
-pkill -f "infuse-media-server.py" 2>/dev/null
-pkill -f "python.*media.*server" 2>/dev/null
+pkill -f "rclone serve" 2>/dev/null || true
 sleep 2
 
 # Network discovery
 echo "🔍 Network Discovery:"
-DEFAULT_INTERFACE=$(route get default | grep interface | awk '{print $2}')
+DEFAULT_INTERFACE=$(route get default 2>/dev/null | grep interface | awk '{print $2}' || echo "en0")
 echo "   Default Interface: $DEFAULT_INTERFACE"
 
-PRIMARY_IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo "127.0.0.1")
-echo "   🎯 Using IP: $PRIMARY_IP"
+PRIMARY_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
+echo "   🎯 Local IP: $PRIMARY_IP"
+
+# Check if connected via VPN (Windscribe)
+PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me 2>/dev/null || echo "unknown")
+echo "   🌐 Public IP: $PUBLIC_IP"
+
+VPN_CONNECTED=false
+if [[ "$PUBLIC_IP" == "82.21.151.194" ]]; then
+    VPN_CONNECTED=true
+    echo "   ✅ Windscribe VPN: CONNECTED"
+else
+    echo "   ⚠️  Windscribe VPN: NOT CONNECTED (Public IP: $PUBLIC_IP)"
+fi
+
 echo
 
-# Find port
+# Find available port
 echo "🔌 Finding available port..."
 AVAILABLE_PORT=8080
 for port in 8080 8081 8082 8083; do
@@ -47,35 +71,54 @@ if ! command -v op &>/dev/null; then
     exit 1
 fi
 
-# Attempt to fetch credentials.
+# Attempt to fetch credentials from 1Password
 echo "   Reading credentials from 1Password (Item: 'MediaServer')..."
-# Try to read 'username' and 'password' from item 'MediaServer' in 'Personal' vault
 WEB_USER=$(op read "op://Personal/MediaServer/username" 2>/dev/null) || WEB_USER=""
 WEB_PASS=$(op read "op://Personal/MediaServer/password" 2>/dev/null) || WEB_PASS=""
 
 if [[ -z "$WEB_USER" || -z "$WEB_PASS" ]]; then
-    echo "   ⚠️  Could not retrieve 'MediaServer' credentials from 1Password."
-    echo "   ⚠️  Falling back to generated credentials for this session."
-    echo "   Action: Create an item 'MediaServer' in your 'Private' vault with 'username' and 'password' fields."
-
-    WEB_USER="admin"
-    WEB_PASS=$(openssl rand -base64 12)
-    echo "   👤 Temp User: $WEB_USER"
-    echo "   🔑 Temp Pass: $WEB_PASS"
+    echo "   ❌ ERROR: Could not retrieve 'MediaServer' credentials from 1Password."
+    echo "   Please ensure:"
+    echo "     1. You're signed into 1Password CLI (run: op signin)"
+    echo "     2. Item 'MediaServer' exists in 'Personal' vault"
+    echo "     3. Item has 'username' and 'password' fields"
+    exit 1
 else
     echo "   ✅ Credentials loaded from 1Password"
 fi
 
+echo
+
+# Determine bind address based on mode and VPN status
+BIND_ADDR="0.0.0.0"
+INFO_MESSAGE=""
+
+case "$MODE" in
+    --local)
+        BIND_ADDR="$PRIMARY_IP"
+        INFO_MESSAGE="LAN-ONLY Mode: Server bound to $PRIMARY_IP"
+        ;;
+    --external)
+        if [[ "$VPN_CONNECTED" == false ]]; then
+            echo "⚠️  WARNING: External mode requested but Windscribe VPN not detected!"
+            echo "   Continuing anyway, but external access may not work."
+        fi
+        BIND_ADDR="0.0.0.0"
+        INFO_MESSAGE="EXTERNAL Mode: Server listening on all interfaces (VPN: $VPN_CONNECTED)"
+        ;;
+    *)
+        BIND_ADDR="0.0.0.0"
+        INFO_MESSAGE="AUTO Mode: Server listening on all interfaces"
+        ;;
+esac
+
 echo "🚀 Starting Rclone WebDAV Server..."
-echo "   Command: rclone serve webdav media: --addr 0.0.0.0:$AVAILABLE_PORT --user <hidden> --pass <hidden>"
+echo "   Mode: $INFO_MESSAGE"
+echo "   Bind Address: $BIND_ADDR:$AVAILABLE_PORT"
 
 # Start Rclone WebDAV (Performance Tuned)
-# --addr 0.0.0.0:$PORT binds to ALL interfaces
-# --vfs-cache-mode full : Required for reliable seeking/streaming
-# --vfs-read-chunk-size : Start small for fast seek, then grow usually good for sequential
-# --transfers / --checkers : Increased for concurrency
 nohup rclone serve webdav "media:" \
-    --addr "0.0.0.0:$AVAILABLE_PORT" \
+    --addr "$BIND_ADDR:$AVAILABLE_PORT" \
     --user "$WEB_USER" \
     --pass "$WEB_PASS" \
     --vfs-cache-mode full \
@@ -96,28 +139,51 @@ if ps -p $SERVER_PID > /dev/null; then
     echo "   ✅ Server is RUNNING"
 else
     echo "   ❌ Server FAILED to start. Check logs:"
-    cat ~/Library/Logs/media-server.log
+    tail -20 ~/Library/Logs/media-server.log
     exit 1
 fi
 
 echo
-echo "🎬 INFUSE CONFIGURATION:"
-echo "========================"
-echo "Protocol: WebDAV (HTTP)  <-- IMPORTANT: NOT HTTPS"
-echo "Username: $WEB_USER"
-echo "Password: (As set in 1Password)"
+echo "════════════════════════════════════════════════════════════════"
+echo "🎬 INFUSE CONFIGURATION"
+echo "════════════════════════════════════════════════════════════════"
 echo
-echo "--- OPTION 1: LAN / Home (Best Performance) ---"
-echo "Address:  $PRIMARY_IP"
-echo "Port:     $AVAILABLE_PORT"
+echo "📱 PRIMARY (LAN/Home Network) - Best Performance"
+echo "─────────────────────────────────────────────────────────────"
+echo "   Protocol:  WebDAV (HTTP)"
+echo "   Address:   $PRIMARY_IP"
+echo "   Port:      $AVAILABLE_PORT"
+echo "   Username:  $WEB_USER"
+echo "   Password:  (from 1Password MediaServer)"
 echo
-echo "--- OPTION 2: External / VPN (Universal) ---"
-echo "Address:  82.21.151.194"
-echo "Port:     22650  (Forwards to local $AVAILABLE_PORT)"
-echo "Note: Ensure your router/VPN forwards 22650 -> $PRIMARY_IP:$AVAILABLE_PORT"
+
+if [[ "$VPN_CONNECTED" == true ]]; then
+    echo "🌐 SECONDARY (External/VPN) - Remote Access"
+    echo "─────────────────────────────────────────────────────────────"
+    echo "   Protocol:  WebDAV (HTTP)"
+    echo "   Address:   82.21.151.194"
+    echo "   Port:      22650  (⚠️ PORT FORWARD MAY NEED CONFIGURATION)"
+    echo "   Username:  $WEB_USER"
+    echo "   Password:  (from 1Password MediaServer)"
+    echo
+    echo "⚠️  WINDSCRIBE PORT FORWARD STATUS: UNKNOWN"
+    echo "   The external connection requires Windscribe Static IP"
+    echo "   port forwarding to be configured:"
+    echo "     External: 82.21.151.194:22650 → Internal: $PRIMARY_IP:$AVAILABLE_PORT"
+    echo
+    echo "   If external access fails, check Windscribe settings."
+else
+    echo "ℹ️  External/VPN Access: NOT AVAILABLE"
+    echo "   Connect to Windscribe VPN with static IP to enable remote access"
+fi
+
 echo
-echo "📱 Recommendation: Create ONE entry using the LAN address if possible (better speed)."
-echo "   If you travel, create a second entry using the External address."
+echo "════════════════════════════════════════════════════════════════"
+echo "📝 Server Information"
+echo "════════════════════════════════════════════════════════════════"
+echo "   PID:           $SERVER_PID"
+echo "   Log File:      ~/Library/Logs/media-server.log"
+echo "   Kill Command:  pkill -f 'rclone serve'"
 echo
 echo "This server is now running in the background."
-echo "Logs: ~/Library/Logs/media-server.log"
+echo "════════════════════════════════════════════════════════════════"
