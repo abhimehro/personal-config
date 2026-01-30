@@ -68,10 +68,14 @@ if [[ -z "$URL" ]] && [[ -t 0 ]]; then
   fi
 
   # Prompt if still empty
-  if [[ -z "$URL" ]]; then
-    echo -e "${BLUE}${E_SEARCH} Please enter the YouTube URL:${NC}"
+  while [[ -z "$URL" ]]; do
+    echo -e "${BLUE}${E_SEARCH} Please enter the YouTube URL (or 'q' to quit):${NC}"
     read -r URL
-  fi
+    if [[ "$URL" == "q" ]]; then
+      echo "Exiting."
+      exit 0
+    fi
+  done
 fi
 
 if [[ -z "$URL" ]]; then
@@ -124,8 +128,14 @@ header "${E_DOWN} Starting Download"
 info "Target: $URL"
 info "Output: ~/Downloads"
 
+# 🎨 Palette: Reveal in Finder (macOS)
+REVEAL_ARGS=()
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  REVEAL_ARGS=(--exec "open -R {}")
+fi
+
 # Use -- to prevent argument injection
-"$YTDLP_CMD" "${EXTERNAL_DOWNLOADER_ARGS[@]}" -o "$HOME/Downloads/%(title)s.%(ext)s" -- "$URL"
+"$YTDLP_CMD" "${EXTERNAL_DOWNLOADER_ARGS[@]}" "${REVEAL_ARGS[@]}" -o "$HOME/Downloads/%(title)s.%(ext)s" -- "$URL"
 YTDLP_EXIT_CODE=$?
 
 if [[ $YTDLP_EXIT_CODE -ne 0 ]]; then
@@ -141,4 +151,9 @@ info "Video saved to ~/Downloads"
 # Optional: Notification
 if command -v terminal-notifier >/dev/null 2>&1; then
   terminal-notifier -title "Download Complete" -message "Video saved to Downloads"
+fi
+
+# 🎨 Palette: Audio feedback
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  afplay /System/Library/Sounds/Glass.aiff >/dev/null 2>&1 &
 fi
