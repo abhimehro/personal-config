@@ -25,3 +25,7 @@
 ## 2024-05-24 - CLI Output Scanability
 **Learning:** For long-running maintenance scripts, users scan summary tables for failures and outliers (long durations). Standardizing column widths and using semantic colors (Red/Green) significantly reduces cognitive load.
 **Action:** Implement fixed-width summary tables with ANSI colors and duration tracking for all batch processing scripts.
+
+## 2026-02-26 - Post-Task Delight in CLI Tools
+**Learning:** Users feel a sense of completion and reduced friction when CLI tools automate the "next step" (e.g., revealing a downloaded file) or provide subtle confirmation (e.g., sound) for long-running tasks.
+**Action:** For file-producing CLI tools, add an option or default behavior to reveal the output location (e.g., `open -R`) and consider non-blocking audio cues for success.
