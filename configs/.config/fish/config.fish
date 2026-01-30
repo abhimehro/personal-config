@@ -57,7 +57,6 @@ end
 set -gx NM_ROOT $HOME/Documents/dev/personal-config
 
 # Default Editor (NeoVim)
-# Kept as a safe fallback; avoid universal variable persistence issues.
 if not set -q EDITOR
     set -gx EDITOR nvim
 end
@@ -173,7 +172,6 @@ if status is-interactive
     set -g hydro_color_duration 6272a4
 
     # Fish Syntax Highlighting (Dracula)
-    # Manual setting to ensure portability without relying on fish_variables
     set -g fish_color_normal            f8f8f2
     set -g fish_color_command           8be9fd
     set -g fish_color_param             bd93f9
@@ -194,14 +192,22 @@ if status is-interactive
     set -g fish_color_valid_path        --underline=single
 
     # Pager Colors
-    set -g fish_pager_color_completion           f8f8f2
-    set -g fish_pager_color_description          6272a4
-    set -g fish_pager_color_prefix               8be9fd
-    set -g fish_pager_color_progress             6272a4
-    set -g fish_pager_color_selected_background  --background=44475a
-    set -g fish_pager_color_selected_completion  f8f8f2
-    set -g fish_pager_color_selected_description 6272a4
-    set -g fish_pager_color_selected_prefix      8be9fd
+    set -g fish_pager_color_completion            f8f8f2
+    set -g fish_pager_color_description           6272a4
+    set -g fish_pager_color_prefix                8be9fd
+    set -g fish_pager_color_progress              6272a4
+    set -g fish_pager_color_selected_background   --background=44475a
+    set -g fish_pager_color_selected_completion   f8f8f2
+    set -g fish_pager_color_selected_description  6272a4
+    set -g fish_pager_color_selected_prefix       8be9fd
+end
+
+# ============================================
+# JankyBorders Vibe Switcher
+# ============================================
+function vibe
+    ~/.local/bin/auto_vibe.sh $argv[1]
+    echo "✨ Vibe switched to: $argv[1]"
 end
 
 # ============================================

@@ -17,6 +17,9 @@ STAGING_DIR="$HOME/CloudMedia/staging"
 PROCESSED_DIR="$HOME/CloudMedia/processed"
 FAILED_DIR="$HOME/CloudMedia/failed"
 TV_DEST="TV Shows"
+MOVIE_DEST="Movies"
+CLOUD_REMOTE="media"
+LOG_FILE="${HOME}/Library/Logs/media-rename.log"
 LOCK_FILE="$HOME/.media_upload.lock"
 
 # Ensure cleanup on exit
