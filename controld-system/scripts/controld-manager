@@ -243,7 +243,7 @@ generate_profile_config() {
     # Generate configuration using ctrld
     # 🛡️ Sentinel: Use local variable and ensure cleanup
     local TEMP_CONFIG
-    TEMP_CONFIG=$(mktemp /tmp/ctrld_temp.toml.XXXXXX)
+    TEMP_CONFIG=$(mktemp)
     trap 'rm -f "$TEMP_CONFIG"' RETURN
 
     # Start service temporarily to generate config
@@ -290,12 +290,15 @@ generate_profile_config() {
         # 1. Strictly enforce localhost binding to prevent Open Resolver vulnerability
         # 2. Remove IPv6 wildcards
         # 3. Optimize timeout
-        sed -i '' -e "s/ip = ['\"]0.0.0.0['\"]/ip = \"127.0.0.1\"/g" \
+        # Note: Using -i.bak for cross-platform compatibility (macOS/Linux)
+        sed -i.bak -e "s/ip = ['\"]0.0.0.0['\"]/ip = \"127.0.0.1\"/g" \
                   -e "s/ip = ['\"]::['\"]/ip = \"127.0.0.1\"/g" \
                   -e 's/, "::\/0"//g' \
                   -e 's/"::\/0", //g' \
                   -e "s/timeout = 5000/timeout = 3000/g" \
                   "$config_file" 2>/dev/null || true
+        # Remove backup file
+        rm -f "$config_file.bak" 2>/dev/null || true
 
         # 🛡️ Sentinel: Verification
         # Ensure no wildcard bindings remain in the config
