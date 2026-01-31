@@ -41,3 +41,8 @@
 **Vulnerability:** `scripts/network-mode-manager.sh` (which requests `sudo`) executed a script from the local repository path relative to itself, rather than the installed system binary.
 **Learning:** If a script prompts for `sudo` to run another script, using a relative path to a user-writable file (like a local repo clone) creates a privilege escalation path. A malicious actor (or the user themselves) could modify the target script and then run the wrapper, unknowingly executing the modified code as root.
 **Prevention:** Helper scripts that escalate privileges should prefer executing installed, root-owned binaries (e.g., in `/usr/local/bin`) over local/relative paths.
+
+## 2026-01-24 - Credentials in Process List
+**Vulnerability:** Information Disclosure (CWE-214) in `media-streaming/scripts/final-media-server.sh`. The script passed sensitive credentials (`--user`, `--pass`) as command-line arguments to `rclone serve webdav`, exposing them to any local user via `ps`.
+**Learning:** Command-line arguments are visible to all users on the system via the process table.
+**Prevention:** Use environment variables (e.g., `RCLONE_USER`, `RCLONE_PASS`) or file-based configuration to pass secrets to subprocesses.
