@@ -289,8 +289,9 @@ interactive_menu() {
   echo -e "   5) ${E_INFO} Show Status"
   echo -e "   0) 🚪 Exit"
 
-  echo -ne "\n${BOLD}Select an option [1-5]: ${NC}"
-  read -r choice
+  echo -ne "\n${BOLD}Select an option [1-5, 0]: ${NC}"
+  read -n 1 -r choice
+  echo "" # Newline
 
   case "$choice" in
     1)    main "controld" "privacy" ;;
