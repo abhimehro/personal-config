@@ -45,3 +45,7 @@
 ## 2026-02-15 - Minimizing Service Downtime during Handover
 **Learning:** When stopping a critical network service (like a DNS proxy) that the OS depends on, the order of operations matters significantly for perceived downtime. Stopping the service first leaves the OS querying a dead port until the fallback configuration is applied.
 **Action:** Always restore the fallback network configuration (e.g., reset DNS to DHCP) *before* stopping the service that was handling the traffic. This ensures continuity of service during the shutdown process.
+
+## 2026-03-05 - Efficient Interface Enumeration
+**Learning:** Parsing full `ifconfig` output is inefficient and brittle. `ifconfig -l` provides a list of interface names instantly, allowing for targeted queries on specific interfaces (e.g., VPN tunnels) which is orders of magnitude faster and less error-prone than grepping massive text blobs.
+**Action:** Use `ifconfig -l` to iterate over interfaces when checking status, instead of piping full `ifconfig` output.
