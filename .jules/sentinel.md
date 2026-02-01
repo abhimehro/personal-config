@@ -41,3 +41,8 @@
 **Vulnerability:** `scripts/network-mode-manager.sh` (which requests `sudo`) executed a script from the local repository path relative to itself, rather than the installed system binary.
 **Learning:** If a script prompts for `sudo` to run another script, using a relative path to a user-writable file (like a local repo clone) creates a privilege escalation path. A malicious actor (or the user themselves) could modify the target script and then run the wrapper, unknowingly executing the modified code as root.
 **Prevention:** Helper scripts that escalate privileges should prefer executing installed, root-owned binaries (e.g., in `/usr/local/bin`) over local/relative paths.
+
+## 2026-05-22 - Daemon Scripts Bypassing Secure Defaults
+**Vulnerability:** `media-server-daemon.sh` was hardcoded to bind to `0.0.0.0`, bypassing the secure options available in the interactive `final-media-server.sh`.
+**Learning:** Background/Daemon scripts often get less security scrutiny than interactive ones and may hardcode insecure conveniences.
+**Prevention:** Ensure daemon/service scripts inherit or duplicate the secure defaults of their interactive counterparts.

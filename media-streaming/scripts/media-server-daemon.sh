@@ -21,6 +21,10 @@ sleep 2
 
 # Get network info
 PRIMARY_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
+if [[ -z "$PRIMARY_IP" ]]; then
+    PRIMARY_IP="127.0.0.1"
+    log "WARNING: Could not detect LAN IP, defaulting to 127.0.0.1"
+fi
 PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me 2>/dev/null || echo "unknown")
 
 log "Network: LAN=$PRIMARY_IP, Public=$PUBLIC_IP"
@@ -60,14 +64,14 @@ if [[ -z "$WEB_USER" || -z "$WEB_PASS" ]]; then
 fi
 
 log "✅ Credentials loaded"
-log "🚀 Starting rclone WebDAV server on 0.0.0.0:$AVAILABLE_PORT"
+log "🚀 Starting rclone WebDAV server on $PRIMARY_IP:$AVAILABLE_PORT"
 log "   User: $WEB_USER"
 log "   LAN Address: $PRIMARY_IP:$AVAILABLE_PORT"
 
 # Start rclone in FOREGROUND (no nohup, no &)
 # This keeps the script running so LaunchAgent can monitor it
 exec rclone serve webdav "media:" \
-    --addr "0.0.0.0:$AVAILABLE_PORT" \
+    --addr "$PRIMARY_IP:$AVAILABLE_PORT" \
     --user "$WEB_USER" \
     --pass "$WEB_PASS" \
     --vfs-cache-mode full \
