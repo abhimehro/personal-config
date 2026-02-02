@@ -291,10 +291,11 @@ interactive_menu() {
 
   echo -ne "\n${BOLD}Select an option [0-5] (Enter for Default): ${NC}"
   read -r choice
+  choice="${choice:-2}"
 
   case "$choice" in
     1)    main "controld" "privacy" ;;
-    2|"") main "controld" "browsing" ;;
+    2)    main "controld" "browsing" ;;
     3)    main "controld" "gaming" ;;
     4)    main "windscribe" ;;
     5)    main "status" ;;

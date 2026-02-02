@@ -29,7 +29,7 @@ permissions:
 jobs:
   shellcheck-complexity:
     name: Shell Script Complexity Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
 
   python-complexity:
     name: Python Code Complexity Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -240,7 +240,7 @@ PYEOF
 
   trunk-check:
     name: Trunk Check (Existing Linters)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -266,7 +266,7 @@ PYEOF
 
   summary:
     name: Code Quality Summary
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [shellcheck-complexity, python-complexity, trunk-check]
     if: always()
     steps:
