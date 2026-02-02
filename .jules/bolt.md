@@ -45,3 +45,7 @@
 ## 2026-02-15 - Minimizing Service Downtime during Handover
 **Learning:** When stopping a critical network service (like a DNS proxy) that the OS depends on, the order of operations matters significantly for perceived downtime. Stopping the service first leaves the OS querying a dead port until the fallback configuration is applied.
 **Action:** Always restore the fallback network configuration (e.g., reset DNS to DHCP) *before* stopping the service that was handling the traffic. This ensures continuity of service during the shutdown process.
+
+## 2026-02-18 - Small File Parsing with Bash vs Grep
+**Learning:** For small configuration files (like TOML/INI), a pure Bash `while read` loop with regex matching is faster than `grep | sed` pipelines because it avoids forking external processes. It also allows for more flexible parsing logic (e.g. handling mixed quote styles) without complex sed expressions.
+**Action:** Parse small, structured files using Bash loops and regex/parameter expansion instead of external tools when performance is a concern.
