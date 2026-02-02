@@ -289,7 +289,7 @@ interactive_menu() {
   echo -e "   5) ${E_INFO} Show Status"
   echo -e "   0) 🚪 Exit"
 
-  echo -ne "\n${BOLD}Select an option [1-5]: ${NC}"
+  echo -ne "\n${BOLD}Select an option [0-5] (Enter for Default): ${NC}"
   read -r choice
 
   case "$choice" in
