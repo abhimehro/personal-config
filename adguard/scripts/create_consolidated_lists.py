@@ -31,7 +31,7 @@ def extract_domains_from_file(filepath, action_filter=None):
 
 def main():
     # Allow overriding base directory for testing/portability
-    base_dir = Path(os.environ.get("ADGUARD_LISTS_DIR", "/Users/abhimehrotra/Downloads"))
+    base_dir = Path(os.environ.get("ADGUARD_LISTS_DIR", os.path.expanduser("~/Downloads")))
     
     print("🔍 Consolidating Ad-Blocking Lists...")
     print("=" * 50)
