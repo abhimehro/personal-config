@@ -374,6 +374,31 @@ print_summary() {
     echo "└────────────────────────────────────────────────────────────────────────┘" | tee -a "$MASTER_LOG"
 }
 
+# --- Interactive Menu ---
+
+interactive_menu() {
+    echo -e "\n${BOLD}${CYAN}🛠️  Maintenance System Control${NC}"
+    echo -e "${CYAN}   Select a maintenance task to run:${NC}\n"
+
+    echo -e "   1) ${GREEN}Weekly Maintenance${NC} (Health + Cleanup + Updates)"
+    echo -e "   2) ${YELLOW}Monthly Maintenance${NC} (Weekly + Deep Analysis)"
+    echo -e "   3) ${CYAN}Health Check Only${NC}"
+    echo -e "   4) ${CYAN}Quick Cleanup Only${NC}"
+    echo -e "   0) 🚪 Exit"
+
+    echo -ne "\n${BOLD}Select an option [1-4]: ${NC}"
+    read -r choice
+
+    case "$choice" in
+        1) run_weekly_maintenance ;;
+        2) export FORCE_RUN=1; run_monthly_maintenance ;;
+        3) run_script "health_check.sh" "critical" ;;
+        4) run_script "quick_cleanup.sh" "cleanup" ;;
+        0) echo "Exiting..."; exit 0 ;;
+        *) echo -e "${RED}Invalid option.${NC}"; exit 1 ;;
+    esac
+}
+
 # --- Execution Entry Point ---
 
 if [[ $# -eq 1 ]]; then
@@ -388,8 +413,13 @@ if [[ $# -eq 1 ]]; then
             ;;
     esac
 else
-    # Default
-    run_weekly_maintenance
+    # Interactive Menu if running in a terminal
+    if [[ -t 0 ]]; then
+        interactive_menu
+    else
+        # Default for non-interactive (cron/scripts)
+        run_weekly_maintenance
+    fi
 fi
 
 # Generate error summary if script exists

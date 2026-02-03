@@ -25,3 +25,7 @@
 ## 2024-05-24 - CLI Output Scanability
 **Learning:** For long-running maintenance scripts, users scan summary tables for failures and outliers (long durations). Standardizing column widths and using semantic colors (Red/Green) significantly reduces cognitive load.
 **Action:** Implement fixed-width summary tables with ANSI colors and duration tracking for all batch processing scripts.
+
+## 2026-02-18 - Interactive Dashboards for Maintenance Scripts
+**Learning:** For complex maintenance scripts with multiple modes (weekly, monthly, specific tasks), users often forget the specific CLI arguments. An interactive dashboard (menu) when no arguments are provided reduces cognitive load and makes the tool more discoverable.
+**Action:** When no arguments are provided to a multi-mode script, present an interactive menu (using `read` and `case`) instead of showing an error or a silent default, unless running in a non-interactive environment (check `[[ -t 0 ]]`).
