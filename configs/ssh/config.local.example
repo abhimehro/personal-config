@@ -1,0 +1,67 @@
+# Local-only SSH host configuration for this machine.
+#
+# Copy this file to ~/.ssh/config.local and customize values per machine.
+# This file SHOULD NOT be committed to git; ~/.ssh is outside the repo.
+#
+# Example dev host definitions:
+
+# VPN ON: static IP / VPN / remote port forward
+Host dev-vpn
+    HostName VPN-IP-OR-REMOTE-HOST      # e.g. 203.0.113.10 or vpn.example.com
+    Port 22                             # or forwarded port, e.g. 13161
+    User YOUR-USERNAME                  # local account on the remote host
+    IdentitiesOnly yes
+    RequestTTY yes
+    ServerAliveInterval 60
+    Compression yes
+    ControlMaster auto
+    ControlPath ~/.ssh/control/%r@%h:%p
+    ControlPersist 30m
+    PubkeyAcceptedKeyTypes +ssh-ed25519
+    StrictHostKeyChecking accept-new
+    TCPKeepAlive yes
+    ServerAliveCountMax 5
+
+# VPN OFF: Use local hostname (mDNS)
+Host dev-local
+    HostName YOUR-LAPTOP.local          # e.g. my-laptop.local
+    User YOUR-USERNAME
+    IdentitiesOnly yes
+    RequestTTY yes
+    ServerAliveInterval 60
+    Compression yes
+    ControlMaster auto
+    ControlPath ~/.ssh/control/%r@%h:%p
+    ControlPersist 30m
+    PubkeyAcceptedKeyTypes +ssh-ed25519
+    StrictHostKeyChecking accept-new
+    Compression no
+
+# FALLBACK: mDNS/Bonjour
+Host dev-mdns
+    HostName YOUR-LAPTOP.local
+    User YOUR-USERNAME
+    IdentitiesOnly yes
+    RequestTTY yes
+    ServerAliveInterval 60
+    Compression yes
+    ControlMaster auto
+    ControlPath ~/.ssh/control/%r@%h:%p
+    ControlPersist 30m
+    PubkeyAcceptedKeyTypes +ssh-ed25519
+    StrictHostKeyChecking accept-new
+
+# SMART ALIAS: Auto-detect which connection to use
+Host dev-auto
+    HostName YOUR-LAPTOP.local
+    User YOUR-USERNAME
+    IdentitiesOnly yes
+    RequestTTY yes
+    ServerAliveInterval 30
+    ConnectTimeout 5
+    ConnectionAttempts 1
+    ControlMaster auto
+    ControlPath ~/.ssh/control/%r@%h:%p
+    ControlPersist 30m
+    PubkeyAcceptedKeyTypes +ssh-ed25519
+    StrictHostKeyChecking accept-new

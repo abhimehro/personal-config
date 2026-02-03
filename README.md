@@ -104,6 +104,10 @@ ssh dev-mdns   # Primary (works with/without VPN)
 ssh dev-auto   # Smart alias / fallback
 ```
 
+> Note: SSH dev hosts (`dev-mdns`, `dev-local`, `dev-auto`) are defined locally
+> in `~/.ssh/config.local`. See the **Troubleshooting** section below if
+> connections fail.
+
 ### Legacy DNS Management (v3.x)
 ```bash
 # Alternative direct DNS switching (without VPN)

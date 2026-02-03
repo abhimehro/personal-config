@@ -1,7 +1,9 @@
 # ─ include the 1Password‑managed keys ───────────────
 Include ~/.ssh/1Password/config
+# Optional local overrides (not tracked in git)
+Include ~/.ssh/config.local
 
-#  GitHub configuration 
+# ─ GitHub configuration
 # Uses 1Password SSH agent for key management
 Host github.com
     HostName github.com
@@ -30,72 +32,10 @@ Host proton-*
     IdentityAgent "~/.ssh/proton-pass-agent.sock"
 
 # ─ Dynamic configuration for primary development laptop ────────
-# This configuration automatically adapts to VPN on/off scenarios.
-# Hostnames and usernames are intentionally generic so this file can
-# be reused across machines.
-
-# VPN ON: static IP / VPN / remote port forward
-Host dev-vpn
-    HostName <vpn-ip-address>          # set locally, e.g. VPN static IP
-    Port 22                            # set locally if needed (e.g. 13161 -> sshd :22)
-    User <dev-username>                # set per-machine username
-    IdentitiesOnly yes
-    RequestTTY yes
-    ServerAliveInterval 60
-    Compression yes
-    ControlMaster auto
-    ControlPath ~/.ssh/control/%r@%h:%p
-    ControlPersist 30m
-    PubkeyAcceptedKeyTypes +ssh-ed25519
-    StrictHostKeyChecking accept-new
-    # VPN-specific optimizations
-    TCPKeepAlive yes
-    ServerAliveCountMax 5
-
-# VPN OFF: Use local hostname (mDNS)
-Host dev-local
-    HostName <dev-hostname-local>      # e.g. my-laptop.local
-    User <dev-username>
-    IdentitiesOnly yes
-    RequestTTY yes
-    ServerAliveInterval 60
-    Compression yes
-    ControlMaster auto
-    ControlPath ~/.ssh/control/%r@%h:%p
-    ControlPersist 30m
-    PubkeyAcceptedKeyTypes +ssh-ed25519
-    StrictHostKeyChecking accept-new
-    # Local network optimizations
-    Compression no
-
-# FALLBACK: Use .local domain (mDNS/Bonjour)
-Host dev-mdns
-    HostName <dev-hostname-local>
-    User <dev-username>
-    IdentitiesOnly yes
-    RequestTTY yes
-    ServerAliveInterval 60
-    Compression yes
-    ControlMaster auto
-    ControlPath ~/.ssh/control/%r@%h:%p
-    ControlPersist 30m
-    PubkeyAcceptedKeyTypes +ssh-ed25519
-    StrictHostKeyChecking accept-new
-
-# SMART ALIAS: Auto-detect which connection to use
-Host dev-auto
-    HostName <dev-hostname-local>
-    User <dev-username>
-    IdentitiesOnly yes
-    RequestTTY yes
-    ServerAliveInterval 30
-    ConnectTimeout 5
-    ConnectionAttempts 1
-    ControlMaster auto
-    ControlPath ~/.ssh/control/%r@%h:%p
-    ControlPersist 30m
-    PubkeyAcceptedKeyTypes +ssh-ed25519
-    StrictHostKeyChecking accept-new
+# NOTE: Host definitions for dev-vpn/dev-local/dev-mdns/dev-auto live in
+#       ~/.ssh/config.local (not tracked in git).
+# See:  configs/ssh/config.local.example for a template you can copy and
+#       customize on each machine.
 
 # ─ global defaults for all hosts ─────────────────────
 Host *
