@@ -1,7 +1,7 @@
 # ─ include the 1Password‑managed keys ───────────────
 Include ~/.ssh/1Password/config
 
-# ─ GitHub configuration ──────────────────────────────
+#  GitHub configuration 
 # Uses 1Password SSH agent for key management
 Host github.com
     HostName github.com
@@ -9,14 +9,36 @@ Host github.com
     IdentitiesOnly no
     # Keys provided by 1Password agent (overrides global IdentitiesOnly yes)
 
-# ─ Dynamic configuration for MacBook Air M2 (Cursor IDE) ────────
-# This configuration automatically adapts to VPN on/off scenarios
+#  Proton Pass SSH agent: GitHub alias 
+# Use Proton Pass SSH agent for GitHub under alias "github-proton".
+# Requires Proton's ssh-agent running (see pp_ssh_agent_start) OR
+# at least ~/.ssh/proton-pass-agent.sock pointing at a valid agent.
+Host github-proton
+    HostName github.com
+    User git
+    IdentitiesOnly yes
+    IdentityAgent "~/.ssh/proton-pass-agent.sock"
 
-# VPN ON: Windscribe/Tailscale/static IP (set locally; keep placeholders in repo)
-Host cursor-vpn
-    HostName <vpn-ip-address>      # set locally, e.g. Windscribe static IP
-    Port 22                        # set locally if needed (e.g. 13161 -> sshd :22)
-    User abhimehrotra
+#  Generic Proton-host pattern (optional) 
+# Any host whose name matches "proton-*" will prefer Proton's agent.
+# Example usage:
+#   Host proton-example
+#       HostName example.com
+#       User myuser
+Host proton-*
+    IdentitiesOnly yes
+    IdentityAgent "~/.ssh/proton-pass-agent.sock"
+
+# ─ Dynamic configuration for primary development laptop ────────
+# This configuration automatically adapts to VPN on/off scenarios.
+# Hostnames and usernames are intentionally generic so this file can
+# be reused across machines.
+
+# VPN ON: static IP / VPN / remote port forward
+Host dev-vpn
+    HostName <vpn-ip-address>          # set locally, e.g. VPN static IP
+    Port 22                            # set locally if needed (e.g. 13161 -> sshd :22)
+    User <dev-username>                # set per-machine username
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -31,9 +53,9 @@ Host cursor-vpn
     ServerAliveCountMax 5
 
 # VPN OFF: Use local hostname (mDNS)
-Host cursor-local
-    HostName abhis-macbook-air.local
-    User abhimehrotra
+Host dev-local
+    HostName <dev-hostname-local>      # e.g. my-laptop.local
+    User <dev-username>
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -47,9 +69,9 @@ Host cursor-local
     Compression no
 
 # FALLBACK: Use .local domain (mDNS/Bonjour)
-Host cursor-mdns
-    HostName abhis-macbook-air.local
-    User abhimehrotra
+Host dev-mdns
+    HostName <dev-hostname-local>
+    User <dev-username>
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 60
@@ -61,9 +83,9 @@ Host cursor-mdns
     StrictHostKeyChecking accept-new
 
 # SMART ALIAS: Auto-detect which connection to use
-Host cursor-auto
-    HostName abhis-macbook-air.local
-    User abhimehrotra
+Host dev-auto
+    HostName <dev-hostname-local>
+    User <dev-username>
     IdentitiesOnly yes
     RequestTTY yes
     ServerAliveInterval 30

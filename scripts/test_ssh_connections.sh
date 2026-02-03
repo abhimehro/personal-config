@@ -24,8 +24,8 @@ echo "Testing SSH Connection Methods"
 echo "=========================================="
 echo ""
 
-# Test hosts
-hosts=("cursor-mdns" "cursor-local" "cursor-auto")
+# Test hosts (generic hostnames)
+hosts=("dev-mdns" "dev-local" "dev-auto")
 
 for host in "${hosts[@]}"; do
     echo "Testing: $host"
@@ -77,9 +77,9 @@ echo "Connection Test Summary"
 echo "=========================================="
 echo ""
 echo "To accept host keys and test connections:"
-echo "  ssh cursor-mdns    # Recommended (mDNS/Bonjour)"
-echo "  ssh cursor-local    # Local network"
-echo "  ssh cursor-auto     # Auto-detection"
+echo "  ssh dev-mdns    # Recommended (mDNS/Bonjour)"
+echo "  ssh dev-local   # Local network"
+echo "  ssh dev-auto    # Auto-detection"
 echo ""
 echo "Note: First connection will prompt to accept host key."
 echo "      Use 'ssh -o StrictHostKeyChecking=no' to skip prompt (less secure)."

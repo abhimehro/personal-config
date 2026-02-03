@@ -1,3 +1,7 @@
+> **NOTE (2026):** This fix summary documents an earlier Cursor/1Password-only
+> configuration. Hostnames have since been generalized to `dev-*` and Proton
+> Pass is supported as a second SSH agent (see `README.md`).
+
 # SSH Configuration Fix Summary
 
 ## Issues Found and Fixed
