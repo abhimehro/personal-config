@@ -276,10 +276,10 @@ EOF
         echo "$ssh_perms" >> "$security_report"
         
         # Check for overly permissive SSH files
-        find "$HOME/.ssh" -type f \( -perm -044 -o -perm -004 \) 2>/dev/null | while read -r file; do
+        while read -r file; do
             echo "⚠️  SSH file has overly permissive permissions: $file" >> "$security_report"
             ((security_issues++))
-        done
+        done < <(find "$HOME/.ssh" -type f \( -perm -044 -o -perm -004 \) 2>/dev/null)
     fi
     echo "" >> "$security_report"
     
@@ -410,12 +410,12 @@ cleanup_old_backups() {
     
     if [[ -d "$BACKUP_DIR" ]]; then
         # Find and delete old backups
-        find "$BACKUP_DIR" -name "config_backup_*.tar.gz" -type f -mtime +$retention_days | while read -r old_backup; do
+        while read -r old_backup; do
             local backup_name=$(basename "$old_backup")
             log_security "INFO" "Deleting old backup: $backup_name"
             rm -f "$old_backup"
             ((deleted_count++))
-        done
+        done < <(find "$BACKUP_DIR" -name "config_backup_*.tar.gz" -type f -mtime +$retention_days)
         
         if [[ $deleted_count -gt 0 ]]; then
             log_security "INFO" "Deleted $deleted_count old backups"

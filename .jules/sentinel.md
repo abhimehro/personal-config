@@ -41,3 +41,8 @@
 **Vulnerability:** `scripts/network-mode-manager.sh` (which requests `sudo`) executed a script from the local repository path relative to itself, rather than the installed system binary.
 **Learning:** If a script prompts for `sudo` to run another script, using a relative path to a user-writable file (like a local repo clone) creates a privilege escalation path. A malicious actor (or the user themselves) could modify the target script and then run the wrapper, unknowingly executing the modified code as root.
 **Prevention:** Helper scripts that escalate privileges should prefer executing installed, root-owned binaries (e.g., in `/usr/local/bin`) over local/relative paths.
+
+## 2026-02-03 - Variable Scope in Bash Loops
+**Vulnerability:** Inaccurate reporting in `maintenance/bin/security_manager.sh`. The script used a pipe (`find ... | while ...`) to iterate over files and increment a counter variable. In Bash, the pipe runs the loop in a subshell, so the counter updates were lost when the loop finished.
+**Learning:** Logic bugs in security tools can mask the very vulnerabilities they are meant to detect. Modifying variables inside a piped loop is a common pitfall that leads to silent failures.
+**Prevention:** Use process substitution (`while ... done < <(command)`) instead of pipes when you need to modify variables in the parent shell scope from within a loop.
