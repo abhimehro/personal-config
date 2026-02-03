@@ -1,3 +1,8 @@
+> **NOTE (2026):** This document describes the original 1Password-only SSH setup
+> with `cursor-*` hostnames. Current generic hostnames (`dev-*`) and Proton Pass
+> workflows are documented in the main `README.md` under *SSH Configuration* and
+> *Proton Pass SSH*.
+
 # SSH Configuration
 
 ## 🔐 1Password + Cursor IDE SSH Setup

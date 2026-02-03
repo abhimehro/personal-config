@@ -99,8 +99,9 @@ wraps this with IPv6 management, DNS routing, and verification.
 # Test your setup
 ./tests/test_ssh_config.sh
 
-# Connect to development machine
-ssh cursor-mdns  # Works anywhere (VPN on/off)
+# Connect to development machine (generic hostnames)
+ssh dev-mdns   # Primary (works with/without VPN)
+ssh dev-auto   # Smart alias / fallback
 ```
 
 ### Legacy DNS Management (v3.x)
@@ -193,11 +194,11 @@ Professional SSH setup optimized for development:
 - **🔧 Multiple Fallback Options** - Connection reliability guaranteed
 - **📊 Comprehensive Diagnostics** - Built-in testing and troubleshooting
 
-**Connection Methods:**
+**Connection Methods (generic hostnames):**
 ```bash
-ssh cursor-mdns    # Primary (works with/without VPN)
-ssh cursor-local   # Local network only
-ssh cursor-auto    # Auto-detection fallback
+ssh dev-mdns    # Primary (works with/without VPN)
+ssh dev-local   # Local network only
+ssh dev-auto    # Auto-detection fallback
 ```
 
 ## 🚀 Installation
@@ -375,9 +376,9 @@ done
 ## 🎮 Use Cases
 
 ### Development Workflow
-1. **Connect**: `ssh cursor-mdns`
+1. **Connect**: `ssh dev-mdns`
 2. **Privacy Mode**: `sudo dns-privacy`
-3. **Code with enhanced security filtering**
+3. **Code with enhanced security filtering`
 
 ### Gaming Session
 1. **Gaming Mode**: `sudo dns-gaming`
@@ -480,6 +481,40 @@ _SSH Configuration: v2.0_
 **Notes:**
 - Keep 1Password unlocked with SSH agent integration enabled.
 - No private keys are stored in `~/.ssh`; all keys are 1Password-managed.
+
+### Proton Pass SSH (optional second agent)
+
+- Proton vaults:
+  - `Personal` (general items)
+  - `SSH Keys` (dedicated vault for SSH keys)
+- Helper scripts (all under `scripts/ssh/`):
+  - `op_to_proton_import.sh` – paste a private key from 1Password → import into Proton (`SSH Keys` vault) with a secure temp file workflow.
+  - `proton_ssh_helpers.sh` – wrapper for:
+    - `start-agent` – `pass-cli ssh-agent start --vault-name "SSH Keys"`
+    - `load-into-agent` – `pass-cli ssh-agent load --vault-name "SSH Keys"`
+    - `import-key` – calls `op_to_proton_import.sh`.
+- Fish functions (auto-loaded from `~/.config/fish/conf.d/proton_pass_ssh.fish`):
+  - `pp_ssh_agent_start` – start Proton SSH agent for `SSH Keys` vault.
+  - `pp_use_proton_agent` – point current shell at Proton’s agent socket.
+  - `pp_load_proton_into_agent` – load Proton keys into whatever agent `SSH_AUTH_SOCK` points at.
+  - `pp_which_agent` – show active agent + listed keys.
+  - Abbreviations: `pp-start`, `pp-load`, `pp-import` (wrappers around the above).
+- SSH host aliases (in `configs/ssh/config`):
+  - `github-proton` – same as `github.com` but bound to Proton’s `IdentityAgent`.
+  - `proton-*` – any host matching this pattern prefers Proton’s agent.
+
+**Usage examples:**
+```bash
+# Import a key from 1Password into Proton (SSH Keys vault)
+./scripts/ssh/op_to_proton_import.sh "GitHub main SSH key"
+
+# Start Proton SSH agent (dedicated tab)
+./scripts/ssh/proton_ssh_helpers.sh start-agent
+
+# In a different shell, point SSH to Proton agent
+pp-start         # or: pp_ssh_agent_start in one tab
+pp-use-proton    # then: ssh -T git@github-proton
+```
 
 ### Fish Shell Configuration
 

@@ -1,0 +1,94 @@
+# Ghostty Configuration with chromadrift Ultra-Hypno-Premium Shader
+# Backed up previous config directory to ~/.config/ghostty/config.backup.d
+
+# ═══════════════════════════════════════════════════════════════
+# SHADER CONFIGURATION
+# ═══════════════════════════════════════════════════════════════
+# chromadrift: Digital lifestyle entanglement system
+# Features: 360° gradient rotation, aurora ripples, breathing luminance,
+# temperature drift, and 4-layer dithering system
+# Alternate chromadrift variants you can try:
+#   ~/.config/ghostty/shaders/chromadrift/chromadrift360-ultra-hypno-premium.glsl  # full intensity
+#   ~/.config/ghostty/shaders/chromadrift/mutations/chromadrift360-ultra-hypno-k7.glsl  # refined, darker
+#   ~/.config/ghostty/shaders/chromadrift/mutations/chromadrift360-ultra.glsl  # no hypno dithering
+#   ~/.config/ghostty/shaders/chromadrift/mutations/chromadrift360.glsl  # base gradient only
+custom-shader = ~/.config/ghostty/shaders/chromadrift/mutations/chromadrift360-ultra-hypno-k7.glsl
+custom-shader-animation = always
+
+# ═══════════════════════════════════════════════════════════════
+# DRACULA COLOR SCHEME (from your existing config)
+# ═══════════════════════════════════════════════════════════════
+palette = 0=#21222c
+palette = 1=#ff5555
+palette = 2=#50fa7b
+palette = 3=#f1fa8c
+palette = 4=#bd93f9
+palette = 5=#ff79c6
+palette = 6=#8be9fd
+palette = 7=#f8f8f2
+palette = 8=#6272a4
+palette = 9=#ff6e6e
+palette = 10=#69ff94
+palette = 11=#ffffa5
+palette = 12=#d6acff
+palette = 13=#ff92df
+palette = 14=#a4ffff
+palette = 15=#ffffff
+
+background = 282a36
+foreground = f8f8f2
+cursor-color = f8f8f2
+selection-background = 44475a
+selection-foreground = f8f8f2
+
+# ═══════════════════════════════════════════════════════════════
+# TERMINAL APPEARANCE
+# ═══════════════════════════════════════════════════════════════
+# Font configuration
+font-family = Menlo
+font-size = 12
+
+# Cursor style
+cursor-style = block
+cursor-opacity = 0.7
+
+# Padding around terminal text (allows shader to show behind text)
+window-padding-x = 12
+window-padding-y = 12
+
+# Window decorations
+window-decoration = true
+
+# ═══════════════════════════════════════════════════════════════
+# TERMINAL BEHAVIOR
+# ═══════════════════════════════════════════════════════════════
+# Shell integration (improves command awareness)
+shell-integration = detect
+shell-integration-features = sudo,title
+
+# Confirm before closing terminal with running processes
+confirm-close-surface = true
+
+# Copy to clipboard on selection
+copy-on-select = false
+
+# Scrollback buffer
+scrollback-limit = 10000000
+
+# ═══════════════════════════════════════════════════════════════
+# MACOS SPECIFIC
+# ═══════════════════════════════════════════════════════════════
+macos-titlebar-style = tabs
+macos-option-as-alt = true
+
+# ═══════════════════════════════════════════════════════════════
+# KEYBINDINGS (Optional - customize as needed)
+# ═══════════════════════════════════════════════════════════════
+# Create new window: Super+N
+keybind = super+n=new_window
+
+# Create new tab: Super+T
+keybind = super+t=new_tab
+
+# Reload config: Cmd+Shift+, (macOS default)
+# Built-in on macOS; no bind needed
