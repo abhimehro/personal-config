@@ -45,3 +45,7 @@
 ## 2026-02-15 - Minimizing Service Downtime during Handover
 **Learning:** When stopping a critical network service (like a DNS proxy) that the OS depends on, the order of operations matters significantly for perceived downtime. Stopping the service first leaves the OS querying a dead port until the fallback configuration is applied.
 **Action:** Always restore the fallback network configuration (e.g., reset DNS to DHCP) *before* stopping the service that was handling the traffic. This ensures continuity of service during the shutdown process.
+
+## 2026-02-03 - Service Startup Polling Latency
+**Learning:** Polling a service startup using `dig` (or application-level tools) creates significant latency because the tool waits for a timeout (often 1s+) if the port is closed. Using a fast TCP port check (e.g., `/dev/tcp` or `nc -z`) allows catching the "port open" event immediately, reducing wait times significantly (e.g., from ~6s to ~2s).
+**Action:** Always wait for the TCP port to be open using a low-timeout check loop before verifying the application-level protocol (HTTP/DNS).

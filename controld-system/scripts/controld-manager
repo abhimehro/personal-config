@@ -390,7 +390,16 @@ switch_profile() {
     fi
 
     # Wait for service to initialize (optimized)
+    # ⚡ Bolt Optimization: Wait for TCP port 53 to open first using Bash built-ins.
+    # This avoids 'dig' blocking for 1s on timeout if the service hasn't bound the port yet.
     local retry=0
+    while ! (timeout 0.2 bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/53') 2>/dev/null && [[ $retry -lt 30 ]]; do
+        sleep 0.1
+        ((retry++))
+    done
+
+    # Now that port is open, verify DNS resolution (which might still take a moment to initialize upstream)
+    retry=0
     while ! dig @127.0.0.1 google.com +short +time=1 >/dev/null 2>&1 && [[ $retry -lt 30 ]]; do
         sleep 0.1
         ((retry++))
