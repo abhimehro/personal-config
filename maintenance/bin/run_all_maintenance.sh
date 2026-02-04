@@ -51,22 +51,28 @@ fi
 # Cleanup trap
 trap 'rm -rf "$LOCK_DIR" "$LOG_DIR"/status_*_"$TIMESTAMP".log "$PARALLEL_RESULTS_LOG" 2>/dev/null || true' EXIT INT TERM
 
-# Initialize master log
-echo "=== Master Maintenance Run Started: $(date) ===" | tee "$MASTER_LOG"
-
 # --- Colors ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-# --- Global Helper Functions ---
+# --- Visual Helpers ---
+
+hr() { echo -e "${BLUE}────────────────────────────────────────────────────────────${NC}" | tee -a "$MASTER_LOG"; }
+
+header() {
+    echo "" | tee -a "$MASTER_LOG"
+    echo -e "${BOLD}${BLUE}🔷 $*${NC}" | tee -a "$MASTER_LOG"
+    hr
+}
 
 # Helper to log to target (file or stdout)
-# Usage: log_status "Message" [log_file]
-log_status() {
+# Usage: log_to_target "Formatted Message" [log_file]
+log_to_target() {
     local msg="$1"
     local target="${2:-$MASTER_LOG}"
     
@@ -75,6 +81,27 @@ log_status() {
     else
         echo -e "$msg" | tee -a "$target"
     fi
+}
+
+log_info() {
+    log_to_target "${BLUE}ℹ️  [INFO]${NC}  $1" "${2:-$MASTER_LOG}"
+}
+
+log_ok() {
+    log_to_target "${GREEN}✅ [OK]${NC}    $1" "${2:-$MASTER_LOG}"
+}
+
+log_warn() {
+    log_to_target "${YELLOW}⚠️  [WARN]${NC}  $1" "${2:-$MASTER_LOG}"
+}
+
+log_err() {
+    log_to_target "${RED}❌ [ERR]${NC}   $1" "${2:-$MASTER_LOG}"
+}
+
+# Legacy helper (deprecated)
+log_status() {
+    log_to_target "$1" "$2"
 }
 
 # Progress spinner for long-running tasks
@@ -118,7 +145,7 @@ spinner() {
 
             # Print spinner and elapsed time
             # \r moves to start, \033[K (optional) or spaces to clear
-            printf "\r %s  %s (%ds)   " "${spin_chars[i]}" "$label" "$elapsed"
+            printf "\r ${CYAN}%s${NC}  %s (${BOLD}%ds${NC})   " "${spin_chars[i]}" "$label" "$elapsed"
 
             i=$(( (i + 1) % num_chars ))
             update_counter=$((update_counter + 1))
@@ -173,7 +200,7 @@ run_script() {
     local duration_fmt
 
     if [[ -f "$script_path" && -x "$script_path" ]]; then
-        log_status "Running $script_name..." "$log_target"
+        log_info "Running $script_name..." "$log_target"
 
         # Apply smart delay if scheduler is available
         if [[ -f "$smart_scheduler" && -x "$smart_scheduler" ]]; then
@@ -190,7 +217,7 @@ run_script() {
                 duration_sec=$((end_time - start_time))
                 duration_fmt="${duration_sec}s"
 
-                log_status "✅ $script_name completed in $duration_fmt" "$log_target"
+                log_ok "$script_name completed in $duration_fmt" "$log_target"
                 register_result "$clean_name" "✅ Success" "$is_parallel" "$duration_fmt"
                 return 0
             else
@@ -198,7 +225,7 @@ run_script() {
                 duration_sec=$((end_time - start_time))
                 duration_fmt="${duration_sec}s"
 
-                log_status "❌ $script_name failed (see $log_file)" "$log_target"
+                log_err "$script_name failed (see $log_file)" "$log_target"
                 register_result "$clean_name" "❌ Failed" "$is_parallel" "$duration_fmt"
                 return 1
             fi
@@ -217,33 +244,36 @@ run_script() {
             duration_fmt="${duration_sec}s"
 
             if [[ $exit_code -eq 0 ]]; then
-                log_status "✅ $script_name completed in $duration_fmt" "$log_target"
+                log_ok "$script_name completed in $duration_fmt" "$log_target"
                 register_result "$clean_name" "✅ Success" "$is_parallel" "$duration_fmt"
                 return 0
             else
-                log_status "❌ $script_name failed (see $log_file)" "$log_target"
+                log_err "$script_name failed (see $log_file)" "$log_target"
                 register_result "$clean_name" "❌ Failed" "$is_parallel" "$duration_fmt"
                 return 1
             fi
         fi
     else
-        log_status "⚠️  $script_name not found/executable" "$log_target"
+        log_warn "$script_name not found/executable" "$log_target"
         register_result "$clean_name" "⚠️  Missing" "$is_parallel" "0s"
         return 1
     fi
 }
 
+# Initialize master log
+header "Master Maintenance Run Started: $(date)"
+
 # --- Task Groups ---
 
 # Function to run lightweight scripts (weekly)
 run_weekly_maintenance() {
-    echo "=== Weekly Maintenance Tasks ===" | tee -a "$MASTER_LOG"
+    header "Weekly Maintenance Tasks"
     
     # Serial tasks
     run_script "health_check.sh" "critical"
     run_script "quick_cleanup.sh" "cleanup"
     
-    echo "Starting parallel maintenance tasks..." | tee -a "$MASTER_LOG"
+    log_info "Starting parallel maintenance tasks..."
 
     local brew_status="$LOG_DIR/status_brew_$TIMESTAMP.log"
     local node_status="$LOG_DIR/status_node_$TIMESTAMP.log"
@@ -280,7 +310,7 @@ run_weekly_maintenance() {
         done < "$PARALLEL_RESULTS_LOG"
     fi
 
-    echo "Parallel tasks completed." | tee -a "$MASTER_LOG"
+    log_info "Parallel tasks completed."
     
     # Performance optimizer (Serial)
     run_script "performance_optimizer.sh" "optimization"
@@ -288,11 +318,11 @@ run_weekly_maintenance() {
 
 # Function to run comprehensive scripts (monthly)
 run_monthly_maintenance() {
-    echo "=== Monthly Maintenance Tasks ===" | tee -a "$MASTER_LOG"
+    header "Monthly Maintenance Tasks"
     
     run_weekly_maintenance
     
-    echo "Starting monthly parallel cleanup tasks..." | tee -a "$MASTER_LOG"
+    log_info "Starting monthly parallel cleanup tasks..."
 
     local system_cleanup_status="$LOG_DIR/status_system_cleanup_$TIMESTAMP.log"
     local editor_cleanup_status="$LOG_DIR/status_editor_cleanup_$TIMESTAMP.log"
@@ -320,25 +350,25 @@ run_monthly_maintenance() {
         done < "$PARALLEL_RESULTS_LOG"
     fi
 
-    echo "Monthly parallel tasks completed." | tee -a "$MASTER_LOG"
+    log_info "Monthly parallel tasks completed."
     
-    echo "Running deep cleaner with caution..." | tee -a "$MASTER_LOG"
+    log_info "Running deep cleaner with caution..."
     run_script "deep_cleaner.sh" "cleanup"
 }
 
 # Function to print summary table
 print_summary() {
     echo "" | tee -a "$MASTER_LOG"
-    echo "┌────────────────────────────────────────────────────────────────────────┐" | tee -a "$MASTER_LOG"
-    echo "│                        MAINTENANCE RUN SUMMARY                         │" | tee -a "$MASTER_LOG"
-    echo "├────────────────────────────────────────────────────────────────────────┤" | tee -a "$MASTER_LOG"
+    echo -e "${BLUE}┌────────────────────────────────────────────────────────────────────────┐${NC}" | tee -a "$MASTER_LOG"
+    echo -e "${BLUE}│${NC}${BOLD}                        MAINTENANCE RUN SUMMARY                         ${NC}${BLUE}│${NC}" | tee -a "$MASTER_LOG"
+    echo -e "${BLUE}├────────────────────────────────────────────────────────────────────────┤${NC}" | tee -a "$MASTER_LOG"
 
     # Header row
-    printf "│ %-12s │ %-40s │ %-10s │\n" "STATUS" "TASK" "DURATION" | tee -a "$MASTER_LOG"
-    echo "├──────────────┼──────────────────────────────────────────┼────────────┤" | tee -a "$MASTER_LOG"
+    printf "${BLUE}│${NC} %-12s ${BLUE}│${NC} %-40s ${BLUE}│${NC} %-10s ${BLUE}│${NC}\n" "STATUS" "TASK" "DURATION" | tee -a "$MASTER_LOG"
+    echo -e "${BLUE}├──────────────┼──────────────────────────────────────────┼────────────┤${NC}" | tee -a "$MASTER_LOG"
 
     if [[ ${#SUMMARY_RESULTS[@]} -eq 0 ]]; then
-        echo "│ No tasks recorded.                                                     │" | tee -a "$MASTER_LOG"
+        echo -e "${BLUE}│${NC} No tasks recorded.                                                     ${BLUE}│${NC}" | tee -a "$MASTER_LOG"
     else
         for entry in "${SUMMARY_RESULTS[@]}"; do
             IFS="|" read -r name status duration <<< "$entry"
@@ -367,11 +397,11 @@ print_summary() {
             fi
 
             # Print row with colors (ANSI codes)
-            printf "│ ${color}%s${NC} │ %-40s │ %-10s │\n" "$status_text" "$name" "$duration" | tee -a "$MASTER_LOG"
+            printf "${BLUE}│${NC} ${color}%s${NC} ${BLUE}│${NC} %-40s ${BLUE}│${NC} %-10s ${BLUE}│${NC}\n" "$status_text" "$name" "$duration" | tee -a "$MASTER_LOG"
         done
     fi
 
-    echo "└────────────────────────────────────────────────────────────────────────┘" | tee -a "$MASTER_LOG"
+    echo -e "${BLUE}└────────────────────────────────────────────────────────────────────────┘${NC}" | tee -a "$MASTER_LOG"
 }
 
 # --- Execution Entry Point ---
@@ -396,15 +426,15 @@ fi
 if [[ -x "$SCRIPT_DIR/generate_error_summary.sh" ]]; then
     SUMMARY_FILE=$("$SCRIPT_DIR/generate_error_summary.sh" 2>/dev/null || echo "")
     if [[ -n "$SUMMARY_FILE" && -f "$SUMMARY_FILE" ]]; then
-        echo "Error summary generated: $SUMMARY_FILE" | tee -a "$MASTER_LOG"
+        log_info "Error summary generated: $SUMMARY_FILE"
     fi
 fi
 
 print_summary
 
 # Footer
-echo "=== Master Maintenance Run Completed: $(date) ===" | tee -a "$MASTER_LOG"
-echo "Logs saved to: $LOG_DIR" | tee -a "$MASTER_LOG"
+header "Master Maintenance Run Completed: $(date)"
+log_info "Logs saved to: $LOG_DIR"
 
 # Clean up old logs (Keep 10)
 find "$LOG_DIR" -name "maintenance_master_*.log" -type f | sort -r | tail -n +11 | xargs rm -f 2>/dev/null || true
