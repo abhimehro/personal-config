@@ -178,7 +178,8 @@ print_status() {
       target=$(sudo readlink "$config_link" || echo "")
       # Extract profile name from filename (e.g., ctrld.privacy.toml -> privacy)
       local extracted_name
-      extracted_name=$(basename "$target")
+      # Optimization: Use Bash parameter expansion to avoid basename overhead
+      extracted_name="${target##*/}"
       extracted_name="${extracted_name#ctrld.}"
       extracted_name="${extracted_name%.toml}"
 
