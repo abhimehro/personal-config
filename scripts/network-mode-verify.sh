@@ -143,7 +143,10 @@ check_controld_active() {
       local target
       target=$(readlink "/etc/controld/ctrld.toml" 2>/dev/null || true)
       active_config="$target"
-      active_profile=$(basename "$target" | sed "s/^ctrld\.//; s/\.toml$//")
+      # Optimization: Use Bash parameter expansion to avoid basename/sed overhead
+      active_profile="${target##*/}"
+      active_profile="${active_profile#ctrld.}"
+      active_profile="${active_profile%.toml}"
     fi
 
     if [[ -z "$active_profile" ]]; then
@@ -224,7 +227,8 @@ check_windscribe_ready() {
   # 3) IPv6 should be disabled for Wi‑Fi
   local ipv6_line
   ipv6_line=$(networksetup -getinfo "Wi-Fi" 2>/dev/null | grep "IPv6:" || true)
-  if echo "$ipv6_line" | grep -q "Off"; then
+  # Optimization: Use Bash built-in pattern matching to avoid grep pipe overhead
+  if [[ "$ipv6_line" == *"Off"* ]]; then
     pass "IPv6 reported as Off for Wi‑Fi ($ipv6_line)."
   else
     fail "IPv6 does not appear to be Off for Wi‑Fi (line: '$ipv6_line')."
