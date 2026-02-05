@@ -1,3 +1,7 @@
+## 2026-02-19 - Instant Menus in CLI
+**Learning:** Removing the need to press "Enter" for single-digit menu selections makes CLI tools feel significantly more responsive and modern.
+**Action:** Use `read -n 1` for numbered menus where choices are single digits.
+
 ## 2026-02-18 - Smart Defaults in CLI Tools
 **Learning:** Users often run task-based scripts (like downloaders) with the intent already in their clipboard. Detecting this intent reduces friction.
 **Action:** When creating CLI tools that take a single primary input, check if the input can be safely inferred from the clipboard (e.g. `pbpaste`) when running interactively.
