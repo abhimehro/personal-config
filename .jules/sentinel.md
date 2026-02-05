@@ -41,3 +41,8 @@
 **Vulnerability:** `scripts/network-mode-manager.sh` (which requests `sudo`) executed a script from the local repository path relative to itself, rather than the installed system binary.
 **Learning:** If a script prompts for `sudo` to run another script, using a relative path to a user-writable file (like a local repo clone) creates a privilege escalation path. A malicious actor (or the user themselves) could modify the target script and then run the wrapper, unknowingly executing the modified code as root.
 **Prevention:** Helper scripts that escalate privileges should prefer executing installed, root-owned binaries (e.g., in `/usr/local/bin`) over local/relative paths.
+
+## 2026-01-23 - Insecure File Creation in Root Scripts
+**Vulnerability:** Insecure file creation (CWE-732/CWE-59) in `controld-system/scripts/controld-manager`. The script used `touch` followed by `chmod 600` on a log file in `/var/log`.
+**Learning:** Checking existence and setting permissions in two steps creates a race condition. If the target is a symlink (CWE-59), `chmod` follows it and changes permissions of the target file. While `/var/log` is usually root-owned on macOS, this pattern is dangerous in any shared or user-writable directory.
+**Prevention:** Use `umask` in a subshell (e.g., `(umask 077 && touch file)`) to create files with secure permissions atomically. Verify files are not symlinks (`-L`) before performing operations that follow them.
