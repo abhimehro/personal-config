@@ -198,13 +198,25 @@ print_status() {
   printf "   %s  %-13s %b\n" "🤖" "Control D" "$cd_display"
 
   # --- VPN Status ---
-  local vpn_status
-  # Check for utun interface with an IP address (standard for VPNs on macOS)
-  if ifconfig | grep -A5 "utun" | grep "inet " | grep -v "127.0.0.1" >/dev/null 2>&1; then
-    vpn_status="${GREEN}CONNECTED${NC}"
-  else
-    vpn_status="${RED}DISCONNECTED${NC}"
-  fi
+  local vpn_status="${RED}DISCONNECTED${NC}"
+
+  # ⚡ Bolt Optimization: Iterate over interfaces (built-in loop) instead of dumping
+  # all ifconfig data and forking multiple greps.
+  for iface in $(ifconfig -l 2>/dev/null); do
+    if [[ "$iface" == utun* ]]; then
+      # Check this specific interface for an IPv4 address
+      local iface_info
+      iface_info=$(ifconfig "$iface" 2>/dev/null || true)
+
+      # Check if it contains an inet address that is NOT 127.0.0.1
+      # We strip "inet 127.0.0.1" and check if "inet " still remains
+      local clean_info=${iface_info//"inet 127.0.0.1"/}
+      if [[ "$clean_info" == *"inet "* ]]; then
+        vpn_status="${GREEN}CONNECTED${NC}"
+        break
+      fi
+    fi
+  done
 
   printf "   %s  %-13s %b\n" "🔐" "VPN Tunnel" "$vpn_status"
 
