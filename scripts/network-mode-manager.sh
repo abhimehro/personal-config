@@ -200,7 +200,8 @@ print_status() {
   # --- VPN Status ---
   local vpn_status
   # Check for utun interface with an IP address (standard for VPNs on macOS)
-  if ifconfig | grep -A5 "utun" | grep "inet " | grep -v "127.0.0.1" >/dev/null 2>&1; then
+  # ⚡ Bolt Optimization: Use single-pass awk to parse ifconfig instead of multiple grep pipes.
+  if ifconfig | awk '/^utun/ {s=1; next} s && /inet / && !/127\.0\.0\.1/ {f=1; exit} s && /^[a-z]/ {s=0} END {exit !f}' >/dev/null 2>&1; then
     vpn_status="${GREEN}CONNECTED${NC}"
   else
     vpn_status="${RED}DISCONNECTED${NC}"
