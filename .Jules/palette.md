@@ -25,3 +25,7 @@
 ## 2024-05-24 - CLI Output Scanability
 **Learning:** For long-running maintenance scripts, users scan summary tables for failures and outliers (long durations). Standardizing column widths and using semantic colors (Red/Green) significantly reduces cognitive load.
 **Action:** Implement fixed-width summary tables with ANSI colors and duration tracking for all batch processing scripts.
+
+## 2026-02-19 - Active State Indicators in Menus
+**Learning:** Users often forget the current system state when opening a configuration menu. Displaying the active state directly alongside menu options eliminates the need to run a separate "status" command.
+**Action:** In interactive selection menus, always highlight the currently active option (e.g., with a checkmark or "Active" label).
