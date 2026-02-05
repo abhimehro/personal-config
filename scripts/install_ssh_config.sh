@@ -1,74 +1,47 @@
 #!/bin/bash
-# SSH Configuration Installation Script
-# This script installs the SSH configuration for Cursor IDE and 1Password integration
-
+# SSH Configuration Installation Script for Cursor IDE + 1Password
 set -e
-
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-echo "🔧 Installing SSH Configuration for Cursor IDE + 1Password..."
-echo ""
+# UX Helpers
+RED='\033[0;31m' GREEN='\033[0;32m' YELLOW='\033[1;33m' BLUE='\033[0;34m' BOLD='\033[1m' NC='\033[0m'
+log() { echo -e "${BLUE}ℹ️  [INFO]${NC} $*"; }
+success() { echo -e "${GREEN}✅ [OK]${NC}   $*"; }
+error() { echo -e "${RED}❌ [ERR]${NC}  $*" >&2; exit 1; }
 
-# Check if we're on macOS
-if [[ "$OSTYPE" != "darwin"* ]]; then
-    echo "❌ This configuration is designed for macOS"
-    exit 1
-fi
+echo -e "\n${BOLD}${BLUE}🔧 SSH Configuration Setup${NC}\n"
 
-# Backup existing SSH config
+[[ "$OSTYPE" != "darwin"* ]] && error "This configuration is designed for macOS only."
+
+# Plan & Confirmation
+echo -e "${BOLD}Actions:${NC}"
+echo -e "  1. ${YELLOW}OVERWRITE${NC} ~/.ssh/config & agent.toml"
+echo -e "  2. ${YELLOW}CREATE${NC}    ~/.ssh/control/ & scripts/"
+read -p "Proceed? [y/N] " -n 1 -r REPLY; echo ""
+[[ ! $REPLY =~ ^[Yy]$ ]] && { log "Cancelled."; exit 0; }
+
+# Backup
 if [ -f ~/.ssh/config ]; then
-    echo "📦 Backing up existing SSH config..."
-    cp ~/.ssh/config ~/.ssh/config.backup.$(date +%Y%m%d_%H%M%S)
-    echo "✅ Backup created"
+    TS=$(date +%Y%m%d_%H%M%S)
+    cp ~/.ssh/config "${HOME}/.ssh/config.backup.$TS"
+    success "Backup: ~/.ssh/config.backup.$TS"
 fi
 
-# Create SSH directory if it doesn't exist
-mkdir -p ~/.ssh
-chmod 700 ~/.ssh
-
-# Copy configuration files
-echo "📁 Installing SSH configuration files..."
+mkdir -p ~/.ssh/{control,scripts} && chmod 700 ~/.ssh ~/.ssh/control
+log "Installing config files..."
 cp "$REPO_ROOT/configs/ssh/config" ~/.ssh/config
 cp "$REPO_ROOT/configs/ssh/agent.toml" ~/.ssh/agent.toml
+chmod 600 ~/.ssh/config ~/.ssh/agent.toml
 
-# Set proper permissions
-chmod 600 ~/.ssh/config
-chmod 600 ~/.ssh/agent.toml
-
-# Create control directory
-mkdir -p ~/.ssh/control
-chmod 700 ~/.ssh/control
-
-# Copy and make scripts executable
-echo "📜 Installing SSH scripts..."
-mkdir -p ~/.ssh/scripts
+log "Installing scripts..."
 cp "$REPO_ROOT/scripts/ssh"/*.sh ~/.ssh/scripts/
 chmod +x ~/.ssh/scripts/*.sh
 
-# Create symlinks for easy access
-ln -sf ~/.ssh/scripts/smart_connect.sh ~/.ssh/smart_connect.sh
-ln -sf ~/.ssh/scripts/check_connections.sh ~/.ssh/check_connections.sh
-ln -sf ~/.ssh/scripts/setup_verification.sh ~/.ssh/setup_verification.sh
-ln -sf ~/.ssh/scripts/diagnose_vpn.sh ~/.ssh/diagnose_vpn.sh
-ln -sf ~/.ssh/scripts/setup_aliases.sh ~/.ssh/setup_aliases.sh
-
+# Symlinks
+for script in smart_connect check_connections setup_verification diagnose_vpn setup_aliases; do
+    ln -sf ~/.ssh/scripts/$script.sh ~/.ssh/$script.sh
+done
 chmod +x ~/.ssh/*.sh
 
-echo ""
-echo "✅ SSH Configuration installed successfully!"
-echo ""
-echo "📋 Next steps:"
-echo "1. Make sure 1Password SSH agent is enabled:"
-echo "   - Open 1Password → Settings → Developer → SSH Agent → Enable"
-echo "2. Verify your setup:"
-echo "   ~/.ssh/setup_verification.sh"
-echo "3. Test connection:"
-echo "   ~/.ssh/smart_connect.sh"
-echo ""
-echo "🎯 For Cursor IDE:"
-echo "   - Use host: cursor-mdns (recommended)"
-echo "   - Alternative: cursor-local or cursor-auto"
-echo ""
-echo "📚 Documentation available in:"
-echo "   - docs/ssh/README.md"
-echo "   - docs/ssh/iTerm2_setup_guide.md"
+echo -e "\n${GREEN}✅ Installation Complete!${NC}"
+echo -e "${BOLD}Next:${NC} Enable 1Password SSH Agent -> Verify with ${BOLD}~/.ssh/setup_verification.sh${NC}"
