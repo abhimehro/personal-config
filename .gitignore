@@ -126,6 +126,8 @@ mcp-configs/servers.local.json
 .bash_history
 .zsh_history
 .fish_history
+.local/share/fish/fish_history
+**/.local/share/fish/fish_history
 
 # =============================================================================
 # PROJECT SPECIFIC
