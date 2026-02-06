@@ -41,3 +41,8 @@
 **Vulnerability:** `scripts/network-mode-manager.sh` (which requests `sudo`) executed a script from the local repository path relative to itself, rather than the installed system binary.
 **Learning:** If a script prompts for `sudo` to run another script, using a relative path to a user-writable file (like a local repo clone) creates a privilege escalation path. A malicious actor (or the user themselves) could modify the target script and then run the wrapper, unknowingly executing the modified code as root.
 **Prevention:** Helper scripts that escalate privileges should prefer executing installed, root-owned binaries (e.g., in `/usr/local/bin`) over local/relative paths.
+
+## 2026-02-21 - Tracked Shell History Leak
+**Vulnerability:** Shell history file (`.local/share/fish/fish_history`) containing command logs was committed to the git repository.
+**Learning:** Dotfiles repositories often inadvertently include sensitive history files if they are located within the tracked directory structure (e.g., XDG data dirs). Standard gitignores (like matching `.fish_history`) may miss newer XDG paths.
+**Prevention:** Explicitly ignore known history paths (`.local/share/fish/fish_history`) in `.gitignore` and audit repository for sensitive files using tools like `trufflehog` or manual review of hidden directories.
