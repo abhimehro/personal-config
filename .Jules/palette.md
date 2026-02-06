@@ -25,3 +25,7 @@
 ## 2024-05-24 - CLI Output Scanability
 **Learning:** For long-running maintenance scripts, users scan summary tables for failures and outliers (long durations). Standardizing column widths and using semantic colors (Red/Green) significantly reduces cognitive load.
 **Action:** Implement fixed-width summary tables with ANSI colors and duration tracking for all batch processing scripts.
+
+## 2026-02-18 - Complexity vs Value in CLI UX
+**Learning:** Over-engineering visual delight (like spinners) in simple linear scripts can introduce security risks (eval) and maintenance burden without proportional value.
+**Action:** Prefer static, well-formatted log messages (emojis, colors, alignment) over complex interactive elements for standard maintenance scripts.
