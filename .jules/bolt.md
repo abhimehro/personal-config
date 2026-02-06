@@ -45,3 +45,7 @@
 ## 2026-02-15 - Minimizing Service Downtime during Handover
 **Learning:** When stopping a critical network service (like a DNS proxy) that the OS depends on, the order of operations matters significantly for perceived downtime. Stopping the service first leaves the OS querying a dead port until the fallback configuration is applied.
 **Action:** Always restore the fallback network configuration (e.g., reset DNS to DHCP) *before* stopping the service that was handling the traffic. This ensures continuity of service during the shutdown process.
+
+## 2026-05-23 - Service Verification Performance Trade-offs
+**Learning:** `lsof` on macOS is extremely slow (seconds) for checking port bindings. For high-frequency verification scripts, combining `pgrep` (process exists) with functional tests (e.g., `dig`) is a valid performance optimization, even if it theoretically sacrifices the strict "process owns port" check.
+**Action:** When optimizing service verifiers, replace `lsof` with `pgrep` + functional checks, documenting the "hijack" risk trade-off.
