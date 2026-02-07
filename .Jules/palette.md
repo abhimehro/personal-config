@@ -1,3 +1,7 @@
+## 2026-02-18 - Discoverability of Hybrid Modes
+**Learning:**  Users often miss powerful "hybrid" configurations (like VPN + DNS) when they are only documented as CLI arguments. Exposing these combinations in the interactive menu significantly improves feature adoption.
+**Action:**  When designing interactive menus, group related options (e.g., "VPN Only" vs "Hybrid Mode") to guide users toward advanced configurations without overwhelming them.
+
 ## 2026-02-18 - Smart Defaults in CLI Tools
 **Learning:** Users often run task-based scripts (like downloaders) with the intent already in their clipboard. Detecting this intent reduces friction.
 **Action:** When creating CLI tools that take a single primary input, check if the input can be safely inferred from the clipboard (e.g. `pbpaste`) when running interactively.

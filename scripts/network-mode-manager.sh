@@ -279,27 +279,53 @@ print_help() {
 }
 
 interactive_menu() {
-  echo -e "\n${BOLD}${BLUE}🎨 Network Mode Manager${NC}"
+  # Ensure we are in a terminal (unless testing)
+  if [[ ! -t 0 && -z "$TEST_MODE" ]]; then
+    error "Interactive mode requires a terminal."
+  fi
+
+  clear
+  echo -e "${BOLD}${BLUE}🎨 Network Mode Manager${NC}"
   echo -e "${BLUE}   Select a mode to apply:${NC}\n"
 
-  echo -e "   1) ${E_PRIVACY} Control D (Privacy)"
-  echo -e "   2) ${E_BROWSING} Control D (Browsing) ${YELLOW}[Default]${NC}"
-  echo -e "   3) ${E_GAMING} Control D (Gaming)"
-  echo -e "   4) ${E_VPN} Windscribe (VPN)"
-  echo -e "   5) ${E_INFO} Show Status"
+  echo -e "   ${BOLD}Control D (DNS Only)${NC}"
+  echo -e "   1) ${E_PRIVACY} Privacy"
+  echo -e "   2) ${E_BROWSING} Browsing"
+  echo -e "   3) ${E_GAMING} Gaming"
+  echo -e ""
+  echo -e "   ${BOLD}Windscribe (VPN Only)${NC}"
+  echo -e "   4) ${E_VPN} Standalone"
+  echo -e ""
+  echo -e "   ${BOLD}Windscribe + Control D (Hybrid)${NC}"
+  echo -e "   5) ${E_VPN} + ${E_PRIVACY} Privacy"
+  echo -e "   6) ${E_VPN} + ${E_BROWSING} Browsing"
+  echo -e "   7) ${E_VPN} + ${E_GAMING} Gaming"
+  echo -e ""
+  echo -e "   ${BOLD}Other${NC}"
+  echo -e "   8) ${E_INFO} Show Status"
   echo -e "   0) 🚪 Exit"
 
-  echo -ne "\n${BOLD}Select an option [1-5]: ${NC}"
-  read -r choice
+  echo -ne "\n${BOLD}Select an option [0-8]: ${NC}"
+
+  # Read one character, silent (-s)
+  read -n 1 -s -r choice
+  echo "$choice" # Echo the choice so user sees what they typed
 
   case "$choice" in
     1)    main "controld" "privacy" ;;
-    2|"") main "controld" "browsing" ;;
+    2)    main "controld" "browsing" ;;
     3)    main "controld" "gaming" ;;
     4)    main "windscribe" ;;
-    5)    main "status" ;;
+    5)    main "windscribe" "privacy" ;;
+    6)    main "windscribe" "browsing" ;;
+    7)    main "windscribe" "gaming" ;;
+    8)    main "status" ;;
     0)    echo -e "${BLUE}Exiting...${NC}"; exit 0 ;;
-    *)    error "Invalid option" ;;
+    *)
+          echo -e "\n${RED}Invalid option '${choice}'${NC}"
+          sleep 1
+          interactive_menu
+          ;;
   esac
 }
 
@@ -376,4 +402,6 @@ main() {
   esac
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi
