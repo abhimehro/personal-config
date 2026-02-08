@@ -147,6 +147,22 @@ EOF
     fi
 }
 
+# Security check for backup contents
+check_backup_safety() {
+    local backup_file="$1"
+
+    log_security "INFO" "Verifying backup safety: $backup_file"
+
+    # Check for absolute paths or directory traversal
+    if tar -tf "$backup_file" 2>/dev/null | grep -qE '(^|/)\.\.(/|$)|^/'; then
+        log_security "ERROR" "Security check failed: Backup contains unsafe paths (absolute or relative path traversal)"
+        return 1
+    fi
+
+    log_security "INFO" "Backup safety check passed"
+    return 0
+}
+
 # Restore configuration from backup
 restore_config() {
     local backup_file="$1"
@@ -162,6 +178,13 @@ restore_config() {
     local temp_dir=$(mktemp -d)
     local backup_name=$(basename "$backup_file" .tar.gz)
     
+    # Verify backup safety before extraction
+    if ! check_backup_safety "$backup_file"; then
+        log_security "ERROR" "Backup verification failed - aborting restore"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
     # Extract backup
     cd "$temp_dir" && tar -xzf "$backup_file" 2>/dev/null
     
@@ -276,10 +299,10 @@ EOF
         echo "$ssh_perms" >> "$security_report"
         
         # Check for overly permissive SSH files
-        find "$HOME/.ssh" -type f \( -perm -044 -o -perm -004 \) 2>/dev/null | while read -r file; do
+        while read -r file; do
             echo "⚠️  SSH file has overly permissive permissions: $file" >> "$security_report"
             ((security_issues++))
-        done
+        done < <(find "$HOME/.ssh" -type f \( -perm -044 -o -perm -004 \) 2>/dev/null)
     fi
     echo "" >> "$security_report"
     
@@ -410,12 +433,12 @@ cleanup_old_backups() {
     
     if [[ -d "$BACKUP_DIR" ]]; then
         # Find and delete old backups
-        find "$BACKUP_DIR" -name "config_backup_*.tar.gz" -type f -mtime +$retention_days | while read -r old_backup; do
+        while read -r old_backup; do
             local backup_name=$(basename "$old_backup")
             log_security "INFO" "Deleting old backup: $backup_name"
             rm -f "$old_backup"
             ((deleted_count++))
-        done
+        done < <(find "$BACKUP_DIR" -name "config_backup_*.tar.gz" -type f -mtime +$retention_days)
         
         if [[ $deleted_count -gt 0 ]]; then
             log_security "INFO" "Deleted $deleted_count old backups"
@@ -448,8 +471,12 @@ verify_recovery_readiness() {
     # Check backup integrity
     if [[ -n "$recent_backup" ]]; then
         if tar -tzf "$recent_backup" >/dev/null 2>&1; then
-            echo "✅ Recent backup integrity verified"
-            readiness_score=$((readiness_score + 20))
+            if check_backup_safety "$recent_backup" >/dev/null 2>&1; then
+                echo "✅ Recent backup integrity and safety verified"
+                readiness_score=$((readiness_score + 20))
+            else
+                echo "❌ Recent backup contains unsafe paths"
+            fi
         else
             echo "❌ Recent backup appears corrupted"
         fi

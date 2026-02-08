@@ -66,9 +66,16 @@ fi
 # Setup Environment File
 log "Setting up configuration file..."
 # Ensure /etc/controld exists (controld-manager creates it usually, but we should ensure it here for the config)
+if [[ -e "/etc/controld" && ! -d "/etc/controld" ]]; then
+    error "/etc/controld exists but is not a directory. Please fix this and rerun the script."
+fi
+
 if [[ ! -d "/etc/controld" ]]; then
     sudo mkdir -p "/etc/controld"
 fi
+# 🛡️ Sentinel: Restrict permissions and ownership to root-only
+sudo chmod 700 "/etc/controld"
+sudo chown root:wheel "/etc/controld"
 
 if [[ ! -f "$ENV_DEST" ]]; then
     if [[ -f "$ENV_EXAMPLE_SRC" ]]; then
