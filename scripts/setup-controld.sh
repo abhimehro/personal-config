@@ -68,6 +68,8 @@ log "Setting up configuration file..."
 # Ensure /etc/controld exists (controld-manager creates it usually, but we should ensure it here for the config)
 if [[ ! -d "/etc/controld" ]]; then
     sudo mkdir -p "/etc/controld"
+    # 🛡️ Sentinel: Restrict permissions to root-only
+    sudo chmod 700 "/etc/controld"
 fi
 
 if [[ ! -f "$ENV_DEST" ]]; then
