@@ -71,7 +71,7 @@ if [[ -z "$URL" ]] && [[ -t 0 ]]; then
   while [[ -z "$URL" ]]; do
     echo -e "${BLUE}${E_SEARCH} Please enter the YouTube URL (or 'q' to quit):${NC}"
     read -r URL
-    if [[ "$URL" == "q" ]]; then
+    if [[ "$URL" =~ ^[Qq]$ ]]; then
       echo "Exiting."
       exit 0
     fi

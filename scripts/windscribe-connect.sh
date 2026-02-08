@@ -92,7 +92,7 @@ else
   sudo dscacheutil -flushcache
 
   sleep 1
-  CURRENT_DNS=$(networksetup -getdnsservers Wi-Fi 2</dev/null || echo "")
+  CURRENT_DNS=$(networksetup -getdnsservers Wi-Fi 2>/dev/null || echo "")
   if echo "$CURRENT_DNS" | grep -q "127.0.0.1"; then
     ok "Recovery successful: DNS now locked to 127.0.0.1"
   else

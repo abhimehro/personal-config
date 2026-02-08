@@ -306,7 +306,7 @@ detect_active_state() {
 
     if [[ -n "$target" ]]; then
       local extracted_name
-      extracted_name=$(basename "$target")
+      extracted_name="${target##*/}"
       extracted_name="${extracted_name#ctrld.}"
       extracted_name="${extracted_name%.toml}"
       CTRLD_PROFILE="$extracted_name"
