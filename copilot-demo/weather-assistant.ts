@@ -8,6 +8,34 @@ const COLORS = {
   Dim: "\x1b[2m",
 };
 
+class Spinner {
+  private timer: NodeJS.Timeout | null = null;
+  private frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+  private currentFrame = 0;
+
+  start(text: string = "Thinking...") {
+    if (this.timer) return;
+    process.stdout.write("\x1B[?25l"); // Hide cursor
+    this.timer = setInterval(() => {
+      process.stdout.write(`\r${COLORS.Cyan}${this.frames[this.currentFrame]} ${text}${COLORS.Reset}`);
+      this.currentFrame = (this.currentFrame + 1) % this.frames.length;
+    }, 80);
+  }
+
+  stop() {
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+      process.stdout.write("\r\x1B[K"); // Clear line
+      process.stdout.write("\x1B[?25h"); // Show cursor
+    }
+  }
+
+  isSpinning() {
+    return this.timer !== null;
+  }
+}
+
 const getWeather = defineTool("get_weather", {
   description: "Get the current weather for a city",
   parameters: {
@@ -53,8 +81,14 @@ const session = await client.createSession({
   tools: [getWeather, getCurrentTime],
 });
 
+const spinner = new Spinner();
+
 session.on((event: SessionEvent) => {
   if (event.type === "assistant.message_delta") {
+    if (spinner.isSpinning()) {
+      spinner.stop();
+      process.stdout.write(`${COLORS.Green}Assistant:${COLORS.Reset} `);
+    }
     process.stdout.write(event.data.deltaContent);
   }
 });
@@ -83,8 +117,17 @@ const prompt = () => {
       process.exit(0);
     }
 
-    process.stdout.write(`${COLORS.Green}Assistant:${COLORS.Reset} `);
-    await session.sendAndWait({ prompt: input });
+    try {
+      spinner.start();
+      await session.sendAndWait({ prompt: input });
+    } catch (error) {
+      // Error handling is managed by the session mostly, but good to catch unexpected errors
+      spinner.stop();
+      console.error(`\n${COLORS.Dim}Error: ${error}${COLORS.Reset}`);
+    } finally {
+      spinner.stop();
+    }
+
     console.log("\n");
     prompt();
   });
