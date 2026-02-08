@@ -41,3 +41,8 @@
 **Vulnerability:** `scripts/network-mode-manager.sh` (which requests `sudo`) executed a script from the local repository path relative to itself, rather than the installed system binary.
 **Learning:** If a script prompts for `sudo` to run another script, using a relative path to a user-writable file (like a local repo clone) creates a privilege escalation path. A malicious actor (or the user themselves) could modify the target script and then run the wrapper, unknowingly executing the modified code as root.
 **Prevention:** Helper scripts that escalate privileges should prefer executing installed, root-owned binaries (e.g., in `/usr/local/bin`) over local/relative paths.
+
+## 2026-05-22 - Logic Flaw in Lock File Mechanism
+**Vulnerability:** A logic flaw in `maintenance/bin/run_all_maintenance.sh` where the script checked if a directory existed but failed to handle the case where a file existed at the lock path, allowing bypass of the locking mechanism.
+**Learning:** Checking for directory existence (`[[ -d ... ]]`) after `mkdir` failure is insufficient if `mkdir` fails due to a file blocking the path. The script proceeded execution, defeating the lock.
+**Prevention:** Always handle the failure case explicitly. If a resource creation fails, verify *why* or exit securely. Use `mkdir` atomic creation as the primary check and ensure failure paths are handled securely (exit by default).
