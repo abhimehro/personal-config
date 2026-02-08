@@ -200,7 +200,9 @@ print_status() {
   # --- VPN Status ---
   local vpn_status
   # Check for utun interface with an IP address (standard for VPNs on macOS)
-  if ifconfig | grep -A5 "utun" | grep "inet " | grep -v "127.0.0.1" >/dev/null 2>&1; then
+  # ⚡ Bolt Optimization: Use single-pass awk to parse ifconfig instead of multiple grep pipes.
+  # Uses /^[^ \t]/ to detect new interface blocks (handles any non-indented line).
+  if ifconfig | awk '/^utun/ {s=1; next} s && /inet / && !/127\.0\.0\.1/ {f=1; exit} s && /^[^ \t]/ {s=0} END {exit !f}' >/dev/null 2>&1; then
     vpn_status="${GREEN}CONNECTED${NC}"
   else
     vpn_status="${RED}DISCONNECTED${NC}"
@@ -289,12 +291,13 @@ interactive_menu() {
   echo -e "   5) ${E_INFO} Show Status"
   echo -e "   0) 🚪 Exit"
 
-  echo -ne "\n${BOLD}Select an option [1-5]: ${NC}"
+  echo -ne "\n${BOLD}Select an option [0-5] (Enter for Default): ${NC}"
   read -r choice
+  choice="${choice:-2}"
 
   case "$choice" in
     1)    main "controld" "privacy" ;;
-    2|"") main "controld" "browsing" ;;
+    2)    main "controld" "browsing" ;;
     3)    main "controld" "gaming" ;;
     4)    main "windscribe" ;;
     5)    main "status" ;;

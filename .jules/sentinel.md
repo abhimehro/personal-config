@@ -41,3 +41,33 @@
 **Vulnerability:** `scripts/network-mode-manager.sh` (which requests `sudo`) executed a script from the local repository path relative to itself, rather than the installed system binary.
 **Learning:** If a script prompts for `sudo` to run another script, using a relative path to a user-writable file (like a local repo clone) creates a privilege escalation path. A malicious actor (or the user themselves) could modify the target script and then run the wrapper, unknowingly executing the modified code as root.
 **Prevention:** Helper scripts that escalate privileges should prefer executing installed, root-owned binaries (e.g., in `/usr/local/bin`) over local/relative paths.
+
+## 2026-02-08 - Insecure File Creation in Root Scripts
+**Vulnerability:** Insecure file creation (CWE-732/CWE-59) in `controld-system/scripts/controld-manager`. The script used `touch` followed by `chmod 600` on a log file.
+**Learning:** Checking existence and setting permissions in two steps creates a race condition. If the target is a symlink (CWE-59), `chmod` follows it and changes permissions of the target file.
+**Prevention:** Use `umask` in a subshell (e.g., `(umask 077 && touch file)`) to create files with secure permissions atomically. Verify files are not symlinks (`-L`) before performing operations that follow them.
+
+## 2026-02-08 - Insecure Permissions on Configuration Files
+**Vulnerability:** World-readable configuration files in `/etc/controld/profiles/` containing sensitive Profile IDs.
+**Learning:** Sensitive identifiers should be treated as secrets on disk to prevent unauthorized access by other local users. Inconsistency between log redaction and file permissions weakens defense in depth.
+**Prevention:** Explicitly set `chmod 600` on generated configuration files and `chmod 700` on their directories immediately after creation.
+
+## 2026-02-08 - Logic Flaw in Lock File Mechanism
+**Vulnerability:** A logic flaw in `maintenance/bin/run_all_maintenance.sh` where the script checked if a directory existed but failed to handle the case where a file existed at the lock path, allowing bypass of the locking mechanism.
+**Learning:** Checking for directory existence (`[[ -d ... ]]`) after `mkdir` failure is insufficient if `mkdir` fails due to a file blocking the path. The script proceeded execution, defeating the lock.
+**Prevention:** Always handle the failure case explicitly. If a resource creation fails, verify *why* or exit securely. Use `mkdir` atomic creation as the primary check and ensure failure paths are handled securely (exit by default).
+
+## 2026-02-08 - Variable Scope in Bash Loops
+**Vulnerability:** Inaccurate reporting in `maintenance/bin/security_manager.sh`. The script used a pipe (`find ... | while ...`) to iterate over files and increment a counter variable. In Bash, the pipe runs the loop in a subshell, so the counter updates were lost when the loop finished.
+**Learning:** Logic bugs in security tools can mask the very vulnerabilities they are meant to detect. Modifying variables inside a piped loop is a common pitfall that leads to silent failures.
+**Prevention:** Use process substitution (`while ... done < <(command)`) instead of pipes when you need to modify variables in the parent shell scope from within a loop.
+
+## 2026-02-08 - Tracked Shell History Leak
+**Vulnerability:** Shell history file (`.local/share/fish/fish_history`) containing command logs was committed to the git repository.
+**Learning:** Dotfiles repositories often inadvertently include sensitive history files if they are located within the tracked directory structure (e.g., XDG data dirs). Standard gitignores may miss newer XDG paths.
+**Prevention:** Explicitly ignore known history paths (`.local/share/fish/fish_history`) in `.gitignore` and audit repository for sensitive files.
+
+## 2026-02-08 - Path Traversal in Backup Restoration
+**Vulnerability:** Potential path traversal (CWE-22) in `maintenance/bin/security_manager.sh`. The `restore_config` function extracted tar archives without checking for directory traversal (`../`) or absolute paths in the archive entries.
+**Learning:** Tar archives can contain entries with `../` or absolute paths that write files outside the intended extraction directory, potentially overwriting critical system files.
+**Prevention:** Always validate tar archive contents before extraction using `tar -tf` and checking for `../` or leading `/` patterns. Reject archives with unsafe paths.

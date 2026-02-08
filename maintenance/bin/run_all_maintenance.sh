@@ -10,7 +10,6 @@ set -euo pipefail
 export RUN_START=$(date +%s)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$SCRIPT_DIR/../tmp"
-LOCK_DIR="/tmp/run_all_maintenance.lock"
 LOCK_CONTEXT_LOG="$LOG_DIR/lock_context_$(date +%Y%m%d-%H%M%S).log"
 TIMESTAMP=$(date "+%Y%m%d_%H%M%S")
 MASTER_LOG="$LOG_DIR/maintenance_master_$TIMESTAMP.log"
@@ -21,6 +20,9 @@ declare -a SUMMARY_RESULTS=()
 
 # Ensure log directory exists
 mkdir -p "$LOG_DIR"
+
+# Lock file location (inside LOG_DIR to avoid /tmp vulnerabilities)
+LOCK_DIR="$LOG_DIR/run_all_maintenance.lock"
 
 # --- Locking Mechanism ---
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
@@ -46,6 +48,10 @@ if ! mkdir "$LOCK_DIR" 2>/dev/null; then
             echo "Another instance is already running (age: $((LOCK_AGE/60)) min)"
             exit 0
         fi
+    else
+        # 🛡️ Sentinel: Fix logic flaw where script continued if LOCK_DIR existed but wasn't a directory
+        echo "ERROR: Failed to acquire lock (path exists but is not a directory or permission denied): $LOCK_DIR"
+        exit 1
     fi
 fi
 # Cleanup trap
