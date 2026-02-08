@@ -1,3 +1,7 @@
+## 2026-02-08 - Explicit Defaults in Interactive CLIs
+**Learning:** When offering a default option in a CLI prompt (e.g., "Enter for Default"), explicitly setting the default value in code (var=${var:-default}) is safer and more robust than relying on empty string matching.
+**Action:** Use parameter expansion to set defaults before processing switch logic to prevent "false affordances" where the UI promises a default but the code doesn't strictly enforce it.
+
 ## 2026-02-18 - Smart Defaults in CLI Tools
 **Learning:** Users often run task-based scripts (like downloaders) with the intent already in their clipboard. Detecting this intent reduces friction.
 **Action:** When creating CLI tools that take a single primary input, check if the input can be safely inferred from the clipboard (e.g. `pbpaste`) when running interactively.

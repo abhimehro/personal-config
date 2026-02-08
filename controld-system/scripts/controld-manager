@@ -143,9 +143,21 @@ check_root() {
 setup_directories() {
     log "Setting up directory structure..."
     mkdir -p "$PROFILES_DIR" "$BACKUP_DIR"
-    touch "$LOG_FILE" 2>/dev/null || true
+    # 🛡️ Sentinel: Restrict permissions to root-only
+    chmod 700 "$PROFILES_DIR" "$BACKUP_DIR"
+
+    # Securely create log file if it doesn't exist (with 600 permissions)
+    if [[ ! -e "$LOG_FILE" ]]; then
+        (umask 077 && touch "$LOG_FILE") 2>/dev/null || true
+    fi
+
     # Restrict log file to root-only (600) to protect sensitive profile IDs
-    chmod 600 "$LOG_FILE" 2>/dev/null || true
+    # 🛡️ Sentinel: Check for symlinks to prevent permission hijacking
+    if [[ -L "$LOG_FILE" ]]; then
+        log_warning "Log file $LOG_FILE is a symlink. Skipping permission change to prevent symlink attack."
+    elif [[ -f "$LOG_FILE" ]]; then
+        chmod 600 "$LOG_FILE" 2>/dev/null || true
+    fi
 }
 
 # Backup current network settings
@@ -283,6 +295,8 @@ generate_profile_config() {
     if [[ -f "$TEMP_CONFIG" ]]; then
         # Copy and customize the generated config
         cp "$TEMP_CONFIG" "$config_file"
+        # 🛡️ Sentinel: Restrict permissions to root-only
+        chmod 600 "$config_file"
         # Cleanup handled by trap, but explicit remove doesn't hurt
         rm -f "$TEMP_CONFIG"
 

@@ -45,3 +45,7 @@
 ## 2026-02-15 - Minimizing Service Downtime during Handover
 **Learning:** When stopping a critical network service (like a DNS proxy) that the OS depends on, the order of operations matters significantly for perceived downtime. Stopping the service first leaves the OS querying a dead port until the fallback configuration is applied.
 **Action:** Always restore the fallback network configuration (e.g., reset DNS to DHCP) *before* stopping the service that was handling the traffic. This ensures continuity of service during the shutdown process.
+
+## 2026-02-08 - Robust parsing of network interface blocks
+**Learning:** Using `grep -A` to parse network interface blocks (like `ifconfig`) is fragile because the number of lines per interface varies. It can also lead to false positives if it bleeds into the next interface definition.
+**Action:** Use state-machine logic in `awk` (e.g. `/^iface/ {s=1} s && /prop/ {match} /^[^ \t]/ {s=0}`) to reliably parse blocks and avoid process overhead from multiple pipes.
