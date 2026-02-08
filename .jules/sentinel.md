@@ -71,3 +71,23 @@
 **Vulnerability:** Potential path traversal (CWE-22) in `maintenance/bin/security_manager.sh`. The `restore_config` function extracted tar archives without checking for directory traversal (`../`) or absolute paths in the archive entries.
 **Learning:** Tar archives can contain entries with `../` or absolute paths that write files outside the intended extraction directory, potentially overwriting critical system files.
 **Prevention:** Always validate tar archive contents before extraction using `tar -tf` and checking for `../` or leading `/` patterns. Reject archives with unsafe paths.
+
+## 2026-01-23 - Hardcoded PII and Absolute Paths
+**Vulnerability:** Hardcoded absolute paths containing usernames (PII) in Python utility scripts (`adguard/scripts/*.py`).
+**Learning:** Developer convenience (copy-pasting working paths) often leads to non-portable and privacy-leaking code. Scripts intended for personal use often end up in shared repos without cleanup.
+**Prevention:** Use `Path.home()` (pathlib) or `os.path.expanduser("~")` to reference user directories dynamically. This ensures portability and protects developer identity.
+
+## 2026-01-24 - Credentials in Process List
+**Vulnerability:** Information Disclosure (CWE-214) in `media-streaming/scripts/final-media-server.sh`. The script passed sensitive credentials (`--user`, `--pass`) as command-line arguments to `rclone serve webdav`, exposing them to any local user via `ps`.
+**Learning:** Command-line arguments are visible to all users on the system via the process table.
+**Prevention:** Use environment variables (e.g., `RCLONE_USER`, `RCLONE_PASS`) or file-based configuration to pass secrets to subprocesses.
+
+## 2026-02-05 - Silent Failure of Security Hardening
+**Vulnerability:** The security hardening logic in `controld-manager` relied on non-portable `sed -i ''` syntax, which would fail silently on Linux systems, leaving the configuration insecure (Open Resolver vulnerability).
+**Learning:** Shell commands like `sed` and `mktemp` have platform-specific variants. Security logic that depends on these must handle portability to ensure the hardening actually executes.
+**Prevention:** Use portable syntax (e.g., `sed -i.bak` followed by `rm`) or explicit OS detection when writing shell scripts that modify security configurations.
+
+## 2026-05-22 - Daemon Scripts Bypassing Secure Defaults
+**Vulnerability:** `media-server-daemon.sh` was hardcoded to bind to `0.0.0.0`, bypassing the secure options available in the interactive `final-media-server.sh`.
+**Learning:** Background/Daemon scripts often get less security scrutiny than interactive ones and may hardcode insecure conveniences.
+**Prevention:** Ensure daemon/service scripts inherit or duplicate the secure defaults of their interactive counterparts.
