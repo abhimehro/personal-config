@@ -43,7 +43,7 @@
 **Prevention:** Helper scripts that escalate privileges should prefer executing installed, root-owned binaries (e.g., in `/usr/local/bin`) over local/relative paths.
 
 ## 2026-02-08 - Insecure File Creation in Root Scripts
-**Vulnerability:** Insecure file creation (CWE-732/CWE-59) in `controld-system/scripts/controld-manager`. The script used `touch` followed by `chmod 600` on a log file in `/var/log`.
+**Vulnerability:** Insecure file creation (CWE-732/CWE-59) in `controld-system/scripts/controld-manager`. The script used `touch` followed by `chmod 600` on a log file.
 **Learning:** Checking existence and setting permissions in two steps creates a race condition. If the target is a symlink (CWE-59), `chmod` follows it and changes permissions of the target file.
 **Prevention:** Use `umask` in a subshell (e.g., `(umask 077 && touch file)`) to create files with secure permissions atomically. Verify files are not symlinks (`-L`) before performing operations that follow them.
 
