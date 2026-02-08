@@ -70,10 +70,10 @@ log "   LAN Address: $PRIMARY_IP:$AVAILABLE_PORT"
 
 # Start rclone in FOREGROUND (no nohup, no &)
 # This keeps the script running so LaunchAgent can monitor it
+# 🛡️ Sentinel: Pass credentials via env vars scoped to rclone process only (CWE-214)
+RCLONE_USER="$WEB_USER" RCLONE_PASS="$WEB_PASS" \
 exec rclone serve webdav "media:" \
     --addr "$PRIMARY_IP:$AVAILABLE_PORT" \
-    --user "$WEB_USER" \
-    --pass "$WEB_PASS" \
     --vfs-cache-mode full \
     --vfs-read-chunk-size 32M \
     --vfs-read-chunk-size-limit 2G \
