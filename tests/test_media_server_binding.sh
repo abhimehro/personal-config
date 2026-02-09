@@ -71,12 +71,30 @@ fi
 
 # Test final-media-server.sh (Auto mode)
 echo "Testing final-media-server.sh (Auto)..."
+LOG_FILE="$HOME/Library/Logs/media-server.log"
+
+# Ensure we are not reading stale log content from a previous run
+rm -f "$LOG_FILE"
+
 # Reduce sleep in script to speed up test? The script sleeps 5.
 # We can just run it. The mock sleeps 2. script sleeps 5. process will be dead by check.
 # But we care about the LOG content.
 bash media-streaming/scripts/final-media-server.sh >/dev/null 2>&1
+FINAL_EXIT_CODE=$?
 
-LOG_CONTENT=$(cat "$HOME/Library/Logs/media-server.log")
+# Fail fast if the script itself failed; otherwise, later checks could be misleading
+if [[ $FINAL_EXIT_CODE -ne 0 ]]; then
+    echo "FAIL: final-media-server.sh (Auto) exited with status $FINAL_EXIT_CODE"
+    exit 1
+fi
+
+# Ensure the log file was actually produced by this run
+if [[ ! -f "$LOG_FILE" ]]; then
+    echo "FAIL: final-media-server.sh (Auto) did not create log file at $LOG_FILE"
+    exit 1
+fi
+
+LOG_CONTENT=$(cat "$LOG_FILE")
 echo "LOG CONTENT:"
 echo "$LOG_CONTENT"
 
