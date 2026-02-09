@@ -50,6 +50,17 @@ log()      { echo -e "${BLUE}${E_INFO} [INFO]${NC} $@"; }
 success()  { echo -e "${GREEN}${E_PASS} [OK]${NC} $@"; }
 error()    { echo -e "${RED}${E_FAIL} [ERR]${NC} $@" >&2; exit 1; }
 
+validate_protocol() {
+  local proto="$1"
+  if [[ -z "$proto" ]]; then
+    return 0
+  fi
+  case "$proto" in
+    doh|doh3) return 0 ;;
+    *) error "Invalid protocol: '$proto'. Must be 'doh' or 'doh3'." ;;
+  esac
+}
+
 ensure_prereqs() {
   # Least privilege: refuse to run as root
   if [[ $EUID -eq 0 ]]; then
@@ -355,6 +366,7 @@ main() {
 
     controld)
       local proto="${3:-}"
+      validate_protocol "$proto"
       echo -e "${BLUE}>>> ${E_BROWSING} Switching to CONTROL D (DNS) MODE${NC}"
       set_ipv6 "enable"
       # ⚡ Bolt Optimization: Skip redundant stop_controld to prevent DNS flap (Empty -> 127.0.0.1)
