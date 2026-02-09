@@ -80,8 +80,8 @@ check_controld_active() {
   # On macOS, when ctrld is running, at least one resolver should be 127.0.0.1
   # This is more permissive since resolver ordering can vary
   local dns_check
-  # ⚡ Bolt Optimization: Single grep call
-  dns_check=$(scutil --dns | grep "nameserver.*$LISTENER_IP" || true)
+  # ⚡ Bolt Optimization: Use awk for exact IP match on nameserver lines (avoid regex pitfalls)
+  dns_check=$(scutil --dns | awk -v ip="$LISTENER_IP" '$1 == "nameserver" && $2 == ip')
   if [[ -n "$dns_check" ]]; then
     pass "Primary resolver nameserver includes $LISTENER_IP."
   else
