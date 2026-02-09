@@ -60,16 +60,22 @@ if [[ -z "$WEB_USER" || -z "$WEB_PASS" ]]; then
 fi
 
 log "✅ Credentials loaded"
-log "🚀 Starting rclone WebDAV server on 0.0.0.0:$AVAILABLE_PORT"
+
+# 🛡️ Sentinel: Security-first binding - default to LAN IP, not all interfaces
+BIND_ADDR="$PRIMARY_IP"
+
+log "🚀 Starting rclone WebDAV server on $BIND_ADDR:$AVAILABLE_PORT"
 log "   User: $WEB_USER"
 log "   LAN Address: $PRIMARY_IP:$AVAILABLE_PORT"
+
+# 🛡️ Sentinel: Pass credentials via env vars to prevent leak in process list (CWE-214)
+export RCLONE_USER="$WEB_USER"
+export RCLONE_PASS="$WEB_PASS"
 
 # Start rclone in FOREGROUND (no nohup, no &)
 # This keeps the script running so LaunchAgent can monitor it
 exec rclone serve webdav "media:" \
-    --addr "0.0.0.0:$AVAILABLE_PORT" \
-    --user "$WEB_USER" \
-    --pass "$WEB_PASS" \
+    --addr "$BIND_ADDR:$AVAILABLE_PORT" \
     --vfs-cache-mode full \
     --vfs-read-chunk-size 32M \
     --vfs-read-chunk-size-limit 2G \

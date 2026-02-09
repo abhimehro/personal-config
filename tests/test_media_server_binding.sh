@@ -27,8 +27,8 @@ fi
 if [[ "$1" == "serve" ]]; then
     # Print arguments for verification
     echo "MOCK_RCLONE_CMD: $@"
-    # Sleep to simulate running server
-    sleep 2
+    # Sleep long enough for the health check (script waits 5s, we sleep 10s)
+    sleep 10
     exit 0
 fi
 EOF
@@ -55,7 +55,7 @@ EOF
 cat > "$MOCK_BIN/ifconfig" << 'EOF'
 #!/bin/bash
 # Mock ifconfig: accepts optional interface argument, returns a LAN address
-echo "	inet 192.168.1.42 netmask 0xffffff00 broadcast 192.168.1.255"
+echo "inet 192.168.1.42 netmask 0xffffff00 broadcast 192.168.1.255"
 EOF
 
 cat > "$MOCK_BIN/curl" << 'EOF'

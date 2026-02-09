@@ -28,6 +28,10 @@ DEFAULT_INTERFACE=$(route get default 2>/dev/null | grep interface | awk '{print
 echo "   Default Interface: $DEFAULT_INTERFACE"
 
 PRIMARY_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
+if [[ -z "$PRIMARY_IP" ]]; then
+    PRIMARY_IP="127.0.0.1"
+    echo "   ⚠️  Could not detect LAN IP, defaulting to 127.0.0.1"
+fi
 echo "   🎯 Local IP: $PRIMARY_IP"
 
 # Check if connected via VPN (Windscribe)
