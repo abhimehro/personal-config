@@ -12,9 +12,11 @@ class Spinner {
   private timer: NodeJS.Timeout | null = null;
   private frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
   private currentFrame = 0;
+  private isTTY = process.stdout.isTTY ?? false;
 
   start(text: string = "Thinking...") {
     if (this.timer) return;
+    if (!this.isTTY) return;
     process.stdout.write("\x1B[?25l"); // Hide cursor
     this.timer = setInterval(() => {
       process.stdout.write(`\r${COLORS.Cyan}${this.frames[this.currentFrame]} ${text}${COLORS.Reset}`);
@@ -27,6 +29,10 @@ class Spinner {
       clearInterval(this.timer);
       this.timer = null;
       process.stdout.write("\r\x1B[K"); // Clear line
+    }
+    // Always restore cursor visibility when stopping, even if timer was already null,
+    // to handle shutdown paths where the cursor may have been hidden.
+    if (this.isTTY) {
       process.stdout.write("\x1B[?25h"); // Show cursor
     }
   }
@@ -83,6 +89,12 @@ const session = await client.createSession({
 
 const spinner = new Spinner();
 
+// Restore terminal cursor if process exits while spinner is active
+const restoreCursor = () => spinner.stop();
+process.on("SIGINT", () => { restoreCursor(); process.exit(130); });
+process.on("SIGTERM", () => { restoreCursor(); process.exit(143); });
+process.on("exit", restoreCursor);
+
 session.on((event: SessionEvent) => {
   if (event.type === "assistant.message_delta") {
     if (spinner.isSpinning()) {
@@ -122,7 +134,6 @@ const prompt = () => {
       await session.sendAndWait({ prompt: input });
     } catch (error) {
       // Error handling is managed by the session mostly, but good to catch unexpected errors
-      spinner.stop();
       const errorMessage =
         error instanceof Error ? error.stack ?? error.message : String(error);
       console.error(`\n${COLORS.Dim}Error: ${errorMessage}${COLORS.Reset}`);
