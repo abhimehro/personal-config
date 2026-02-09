@@ -123,7 +123,9 @@ const prompt = () => {
     } catch (error) {
       // Error handling is managed by the session mostly, but good to catch unexpected errors
       spinner.stop();
-      console.error(`\n${COLORS.Dim}Error: ${error}${COLORS.Reset}`);
+      const errorMessage =
+        error instanceof Error ? error.stack ?? error.message : String(error);
+      console.error(`\n${COLORS.Dim}Error: ${errorMessage}${COLORS.Reset}`);
     } finally {
       spinner.stop();
     }
