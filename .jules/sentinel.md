@@ -1,5 +1,5 @@
 ## 2024-05-22 - Argument Injection in Shell Wrappers
-**Vulnerability:** Argument Injection (CWE-88) in `scripts/youtube-download.sh`. The script passed user input `$1` directly to `yt-dlp` without the `--` delimiter.
+**Vulnerability:** Argument Injection ([CWE-88][]) in `scripts/youtube-download.sh`. The script passed user input `$1` directly to `yt-dlp` without the `--` delimiter.
 **Learning:** Even simple wrapper scripts can be vulnerable to RCE if they pass untrusted input to tools that accept flags (like `--exec`). The shell expands variables, but the called program parses flags.
 **Prevention:** Always use `--` to separate options from positional arguments when calling CLI tools with untrusted input in shell scripts. Example: `command -opt -- "$user_input"`.
 ## 2025-10-21 - Command Injection in Notification System
@@ -19,11 +19,11 @@
 **Learning:** `==` comparison is vulnerable to timing attacks. Wildcard CORS (`*`) combined with Basic Auth allows authenticated requests from malicious origins.
 **Prevention:** Use `secrets.compare_digest()` for constant-time comparison. Remove wildcard CORS when auth is enabled or implement strict origin allowlisting.
 ## 2025-12-20 - Path Traversal in Media Server
-**Vulnerability:** Path traversal (CWE-22) and argument injection in `infuse-media-server.py` where untrusted path input was concatenated directly into rclone commands.
+**Vulnerability:** Path traversal ([CWE-22][]) and argument injection in `infuse-media-server.py` where untrusted path input was concatenated directly into rclone commands.
 **Learning:** Even when using `subprocess.run` (avoiding shell injection), concatenated arguments can still lead to argument injection (starting with `-`) or path traversal (`..`) if the called tool respects them.
 **Prevention:** Implement strict path validation: decode, remove leading slashes, split by separator to check for `..`, and block arguments starting with `-`.
 ## 2025-12-23 - Path Traversal in Custom HTTP Handlers
-**Vulnerability:** Path Traversal (CWE-22) in `media-streaming/scripts/infuse-media-server.py`. The script constructed file paths for `subprocess` calls by unquoting user input and appending it to a root, without validating for `..` sequences.
+**Vulnerability:** Path Traversal ([CWE-22][]) in `media-streaming/scripts/infuse-media-server.py`. The script constructed file paths for `subprocess` calls by unquoting user input and appending it to a root, without validating for `..` sequences.
 **Learning:** When implementing custom request handlers (overriding `do_GET`), automatic protections provided by frameworks (like `SimpleHTTPRequestHandler.translate_path`) are bypassed. Explicit validation is required when mapping URLs to filesystem or external command paths.
 **Prevention:** Always validate user-supplied paths before use. Check for `..` components after decoding. Ideally, use `os.path.abspath` and verify the path starts with the expected root directory, or reject paths containing `..` if simple validation suffices.
 
@@ -43,8 +43,8 @@
 **Prevention:** Helper scripts that escalate privileges should prefer executing installed, root-owned binaries (e.g., in `/usr/local/bin`) over local/relative paths.
 
 ## 2026-02-08 - Insecure File Creation in Root Scripts
-**Vulnerability:** Insecure file creation (CWE-732/CWE-59) in `controld-system/scripts/controld-manager`. The script used `touch` followed by `chmod 600` on a log file.
-**Learning:** Checking existence and setting permissions in two steps creates a race condition. If the target is a symlink (CWE-59), `chmod` follows it and changes permissions of the target file.
+**Vulnerability:** Insecure file creation ([CWE-732][] and [CWE-59][]) in `controld-system/scripts/controld-manager`. The script used `touch` followed by `chmod 600` on a log file.
+**Learning:** Checking existence and setting permissions in two steps creates a race condition. If the target is a symlink ([CWE-59][]), `chmod` follows it and changes permissions of the target file.
 **Prevention:** Use `umask` in a subshell (e.g., `(umask 077 && touch file)`) to create files with secure permissions atomically. Verify files are not symlinks (`-L`) before performing operations that follow them.
 
 ## 2026-02-08 - Insecure Permissions on Configuration Files
@@ -68,6 +68,11 @@
 **Prevention:** Explicitly ignore known history paths (`.local/share/fish/fish_history`) in `.gitignore` and audit repository for sensitive files.
 
 ## 2026-02-08 - Path Traversal in Backup Restoration
-**Vulnerability:** Potential path traversal (CWE-22) in `maintenance/bin/security_manager.sh`. The `restore_config` function extracted tar archives without checking for directory traversal (`../`) or absolute paths in the archive entries.
+**Vulnerability:** Potential path traversal ([CWE-22][]) in `maintenance/bin/security_manager.sh`. The `restore_config` function extracted tar archives without checking for directory traversal (`../`) or absolute paths in the archive entries.
 **Learning:** Tar archives can contain entries with `../` or absolute paths that write files outside the intended extraction directory, potentially overwriting critical system files.
 **Prevention:** Always validate tar archive contents before extraction using `tar -tf` and checking for `../` or leading `/` patterns. Reject archives with unsafe paths.
+
+[CWE-22]: https://cwe.mitre.org/data/definitions/22.html
+[CWE-59]: https://cwe.mitre.org/data/definitions/59.html
+[CWE-88]: https://cwe.mitre.org/data/definitions/88.html
+[CWE-732]: https://cwe.mitre.org/data/definitions/732.html
