@@ -19,8 +19,13 @@ log "🔧 Media Server - Starting..."
 pkill -f "rclone serve" 2>/dev/null || true
 sleep 2
 
-# Get network info
-PRIMARY_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
+# Get network info — derive LAN IP from the default route interface to avoid VPN/utun addresses
+DEFAULT_INTERFACE=$(route get default 2>/dev/null | awk '/interface:/{print $2}' || echo "en0")
+PRIMARY_IP=$(ifconfig "$DEFAULT_INTERFACE" 2>/dev/null | awk '/inet / && !/127.0.0.1/ {print $2; exit}')
+if [[ -z "$PRIMARY_IP" ]]; then
+    PRIMARY_IP="127.0.0.1"
+    log "WARNING: Could not detect LAN IP on $DEFAULT_INTERFACE, defaulting to 127.0.0.1"
+fi
 PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me 2>/dev/null || echo "unknown")
 
 log "Network: LAN=$PRIMARY_IP, Public=$PUBLIC_IP"
@@ -60,16 +65,16 @@ if [[ -z "$WEB_USER" || -z "$WEB_PASS" ]]; then
 fi
 
 log "✅ Credentials loaded"
-log "🚀 Starting rclone WebDAV server on 0.0.0.0:$AVAILABLE_PORT"
+log "🚀 Starting rclone WebDAV server on $PRIMARY_IP:$AVAILABLE_PORT"
 log "   User: $WEB_USER"
 log "   LAN Address: $PRIMARY_IP:$AVAILABLE_PORT"
 
 # Start rclone in FOREGROUND (no nohup, no &)
 # This keeps the script running so LaunchAgent can monitor it
+# 🛡️ Sentinel: Pass credentials via env vars scoped to rclone process only (CWE-214)
+RCLONE_USER="$WEB_USER" RCLONE_PASS="$WEB_PASS" \
 exec rclone serve webdav "media:" \
-    --addr "0.0.0.0:$AVAILABLE_PORT" \
-    --user "$WEB_USER" \
-    --pass "$WEB_PASS" \
+    --addr "$PRIMARY_IP:$AVAILABLE_PORT" \
     --vfs-cache-mode full \
     --vfs-read-chunk-size 32M \
     --vfs-read-chunk-size-limit 2G \

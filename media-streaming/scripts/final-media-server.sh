@@ -27,7 +27,12 @@ echo "🔍 Network Discovery:"
 DEFAULT_INTERFACE=$(route get default 2>/dev/null | grep interface | awk '{print $2}' || echo "en0")
 echo "   Default Interface: $DEFAULT_INTERFACE"
 
-PRIMARY_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
+# Derive LAN IP from the default route interface to avoid picking a VPN/utun address
+PRIMARY_IP=$(ifconfig "$DEFAULT_INTERFACE" 2>/dev/null | awk '/inet / && !/127.0.0.1/ {print $2; exit}')
+if [[ -z "$PRIMARY_IP" ]]; then
+    PRIMARY_IP="127.0.0.1"
+    echo "   ⚠️  Could not detect LAN IP on $DEFAULT_INTERFACE, defaulting to 127.0.0.1"
+fi
 echo "   🎯 Local IP: $PRIMARY_IP"
 
 # Check if connected via VPN (Windscribe)
@@ -107,8 +112,8 @@ case "$MODE" in
         INFO_MESSAGE="EXTERNAL Mode: Server listening on all interfaces (VPN: $VPN_CONNECTED)"
         ;;
     *)
-        BIND_ADDR="0.0.0.0"
-        INFO_MESSAGE="AUTO Mode: Server listening on all interfaces"
+        BIND_ADDR="$PRIMARY_IP"
+        INFO_MESSAGE="AUTO Mode: Server bound to $PRIMARY_IP"
         ;;
 esac
 
@@ -117,10 +122,10 @@ echo "   Mode: $INFO_MESSAGE"
 echo "   Bind Address: $BIND_ADDR:$AVAILABLE_PORT"
 
 # Start Rclone WebDAV (Performance Tuned)
+# 🛡️ Sentinel: Pass credentials via env vars scoped to rclone process only (CWE-214)
+RCLONE_USER="$WEB_USER" RCLONE_PASS="$WEB_PASS" \
 nohup rclone serve webdav "media:" \
     --addr "$BIND_ADDR:$AVAILABLE_PORT" \
-    --user "$WEB_USER" \
-    --pass "$WEB_PASS" \
     --vfs-cache-mode full \
     --vfs-read-chunk-size 32M \
     --vfs-read-chunk-size-limit 2G \

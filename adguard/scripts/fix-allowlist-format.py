@@ -27,7 +27,7 @@ def extract_allowlist_domains_from_file(filepath):
     return domains
 
 def main():
-    base_dir = Path("/Users/abhimehrotra/Downloads")
+    base_dir = Path.home() / "Downloads"
     
     print("🔧 Fixing Allowlist Format for AdGuard")
     print("=" * 50)

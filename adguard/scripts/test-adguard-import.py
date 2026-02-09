@@ -112,7 +112,7 @@ def check_file_encoding(filepath):
         return False, f"❌ Encoding check failed: {e}"
 
 def main():
-    base_dir = Path("/Users/abhimehrotra/Downloads")
+    base_dir = Path.home() / "Downloads"
     
     print("🔍 AdGuard Import Verification")
     print("=" * 50)

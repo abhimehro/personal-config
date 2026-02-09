@@ -255,7 +255,8 @@ generate_profile_config() {
     # Generate configuration using ctrld
     # 🛡️ Sentinel: Use local variable and ensure cleanup
     local TEMP_CONFIG
-    TEMP_CONFIG=$(mktemp /tmp/ctrld_temp.toml.XXXXXX)
+    # Use a portable mktemp invocation: -t prefix.XXXXXX works on macOS and Linux.
+    TEMP_CONFIG=$(mktemp -t "controld_config.XXXXXX")
     trap 'rm -f "$TEMP_CONFIG"' RETURN
 
     # Start service temporarily to generate config
@@ -304,12 +305,15 @@ generate_profile_config() {
         # 1. Strictly enforce localhost binding to prevent Open Resolver vulnerability
         # 2. Remove IPv6 wildcards
         # 3. Optimize timeout
-        sed -i '' -e "s/ip = ['\"]0.0.0.0['\"]/ip = \"127.0.0.1\"/g" \
+        # Note: Using -i.bak for cross-platform compatibility (macOS/Linux)
+        sed -i.bak -e "s/ip = ['\"]0.0.0.0['\"]/ip = \"127.0.0.1\"/g" \
                   -e "s/ip = ['\"]::['\"]/ip = \"127.0.0.1\"/g" \
                   -e 's/, "::\/0"//g' \
                   -e 's/"::\/0", //g' \
                   -e "s/timeout = 5000/timeout = 3000/g" \
                   "$config_file" 2>/dev/null || true
+        # Remove backup file
+        rm -f "$config_file.bak" 2>/dev/null || true
 
         # 🛡️ Sentinel: Verification
         # Ensure no wildcard bindings remain in the config
@@ -404,10 +408,19 @@ switch_profile() {
     fi
 
     # Wait for service to initialize (optimized)
+    # Use a portable TCP port check with nc instead of timeout + /dev/tcp, which is not
+    # available on all platforms (e.g., macOS doesn't ship `timeout` by default).
     local retry=0
+    while ! nc -z -w 1 127.0.0.1 53 >/dev/null 2>&1 && [[ $retry -lt 30 ]]; do
+        sleep 0.1
+        ((++retry))  # Use pre-increment so status is always 0 and won't trip `set -e`
+    done
+
+    # Now that port is open, verify DNS resolution (which might still take a moment to initialize upstream)
+    retry=0
     while ! dig @127.0.0.1 google.com +short +time=1 >/dev/null 2>&1 && [[ $retry -lt 30 ]]; do
         sleep 0.1
-        ((retry++))
+        ((++retry))  # Same here: avoid a 0-evaluating arithmetic result under `set -e`
     done
 
     # Configure system DNS to use localhost resolver
@@ -494,8 +507,23 @@ show_status() {
         # Determine current profile and protocol
         if [[ -L "$CONTROLD_DIR/ctrld.toml" ]]; then
             local current_config=$(readlink "$CONTROLD_DIR/ctrld.toml")
-            local profile_name=$(basename "$current_config" | sed 's/ctrld\.\(.*\)\.toml/\1/')
-            local protocol=$(grep "type = " "$current_config" 2>/dev/null | sed "s/.*type = '\(.*\)'.*/\1/" || echo "unknown")
+
+            # ⚡ Bolt Optimization: Use Bash parameter expansion instead of sed
+            local profile_name=$(basename "$current_config")
+            profile_name="${profile_name#ctrld.}"
+            profile_name="${profile_name%.toml}"
+
+            # ⚡ Bolt Optimization: Use Bash built-in read loop instead of grep | sed pipeline
+            local protocol="unknown"
+            if [[ -f "$current_config" ]]; then
+                while IFS= read -r line; do
+                    if [[ "$line" =~ type\ =\ [\'\"](.*)[\'\"] ]]; then
+                        protocol="${BASH_REMATCH[1]}"
+                        break
+                    fi
+                done < "$current_config"
+            fi
+
             local profile_id=$(get_profile_id "$profile_name")
             echo "Active Profile: $profile_name"
             echo "Profile ID: $(redact_profile_id "$profile_id")"
