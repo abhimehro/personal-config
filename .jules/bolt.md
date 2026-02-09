@@ -45,3 +45,19 @@
 ## 2026-02-15 - Minimizing Service Downtime during Handover
 **Learning:** When stopping a critical network service (like a DNS proxy) that the OS depends on, the order of operations matters significantly for perceived downtime. Stopping the service first leaves the OS querying a dead port until the fallback configuration is applied.
 **Action:** Always restore the fallback network configuration (e.g., reset DNS to DHCP) *before* stopping the service that was handling the traffic. This ensures continuity of service during the shutdown process.
+
+## 2026-02-08 - Robust parsing of network interface blocks
+**Learning:** Using `grep -A` to parse network interface blocks (like `ifconfig`) is fragile because the number of lines per interface varies. It can also lead to false positives if it bleeds into the next interface definition.
+**Action:** Use state-machine logic in `awk` (e.g. `/^iface/ {s=1} s && /prop/ {match} /^[^ \t]/ {s=0}`) to reliably parse blocks and avoid process overhead from multiple pipes.
+
+## 2026-02-18 - Small File Parsing with Bash vs Grep
+**Learning:** For small configuration files (like TOML/INI), a pure Bash `while read` loop with regex matching is faster than `grep | sed` pipelines because it avoids forking external processes. It also allows for more flexible parsing logic (e.g. handling mixed quote styles) without complex sed expressions.
+**Action:** Parse small, structured files using Bash loops and regex/parameter expansion instead of external tools when performance is a concern.
+
+## 2026-02-03 - Service Startup Polling Latency
+**Learning:** Polling a service startup using `dig` (or application-level tools) creates significant latency because the tool waits for a timeout (often 1s+) if the port is closed. Using a fast TCP port check (e.g., `/dev/tcp` or `nc -z`) allows catching the "port open" event immediately, reducing wait times significantly (e.g., from ~6s to ~2s).
+**Action:** Always wait for the TCP port to be open using a low-timeout check loop before verifying the application-level protocol (HTTP/DNS).
+
+## 2026-05-23 - Service Verification Performance Trade-offs
+**Learning:** `lsof` on macOS is extremely slow (seconds) for checking port bindings. For high-frequency verification scripts, combining `pgrep` (process exists) with functional tests (e.g., `dig`) is a valid performance optimization, even if it theoretically sacrifices the strict "process owns port" check.
+**Action:** When optimizing service verifiers, replace `lsof` with `pgrep` + functional checks, documenting the "hijack" risk trade-off.

@@ -10,7 +10,6 @@ set -euo pipefail
 export RUN_START=$(date +%s)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$SCRIPT_DIR/../tmp"
-LOCK_DIR="/tmp/run_all_maintenance.lock"
 LOCK_CONTEXT_LOG="$LOG_DIR/lock_context_$(date +%Y%m%d-%H%M%S).log"
 TIMESTAMP=$(date "+%Y%m%d_%H%M%S")
 MASTER_LOG="$LOG_DIR/maintenance_master_$TIMESTAMP.log"
@@ -21,6 +20,9 @@ declare -a SUMMARY_RESULTS=()
 
 # Ensure log directory exists
 mkdir -p "$LOG_DIR"
+
+# Lock file location (inside LOG_DIR to avoid /tmp vulnerabilities)
+LOCK_DIR="$LOG_DIR/run_all_maintenance.lock"
 
 # --- Locking Mechanism ---
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
@@ -46,6 +48,10 @@ if ! mkdir "$LOCK_DIR" 2>/dev/null; then
             echo "Another instance is already running (age: $((LOCK_AGE/60)) min)"
             exit 0
         fi
+    else
+        # 🛡️ Sentinel: Fix logic flaw where script continued if LOCK_DIR existed but wasn't a directory
+        echo "ERROR: Failed to acquire lock (path exists but is not a directory or permission denied): $LOCK_DIR"
+        exit 1
     fi
 fi
 # Cleanup trap
@@ -374,6 +380,31 @@ print_summary() {
     echo "└────────────────────────────────────────────────────────────────────────┘" | tee -a "$MASTER_LOG"
 }
 
+# --- Interactive Menu ---
+
+interactive_menu() {
+    echo -e "\n${BOLD}${CYAN}🛠️  Maintenance System Control${NC}"
+    echo -e "${CYAN}   Select a maintenance task to run:${NC}\n"
+
+    echo -e "   1) ${GREEN}Weekly Maintenance${NC} (Health + Cleanup + Updates)"
+    echo -e "   2) ${YELLOW}Monthly Maintenance${NC} (Weekly + Deep Analysis)"
+    echo -e "   3) ${CYAN}Health Check Only${NC}"
+    echo -e "   4) ${CYAN}Quick Cleanup Only${NC}"
+    echo -e "   0) 🚪 Exit"
+
+    echo -ne "\n${BOLD}Select an option [1-4]: ${NC}"
+    read -r choice
+
+    case "$choice" in
+        1) run_weekly_maintenance ;;
+        2) export FORCE_RUN=1; run_monthly_maintenance ;;
+        3) run_script "health_check.sh" "critical" ;;
+        4) run_script "quick_cleanup.sh" "cleanup" ;;
+        0) echo "Exiting..."; exit 0 ;;
+        *) echo -e "${RED}Invalid option.${NC}"; exit 1 ;;
+    esac
+}
+
 # --- Execution Entry Point ---
 
 if [[ $# -eq 1 ]]; then
@@ -388,8 +419,13 @@ if [[ $# -eq 1 ]]; then
             ;;
     esac
 else
-    # Default
-    run_weekly_maintenance
+    # Interactive Menu if running in a terminal
+    if [[ -t 0 ]]; then
+        interactive_menu
+    else
+        # Default for non-interactive (cron/scripts)
+        run_weekly_maintenance
+    fi
 fi
 
 # Generate error summary if script exists

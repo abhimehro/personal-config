@@ -68,10 +68,14 @@ if [[ -z "$URL" ]] && [[ -t 0 ]]; then
   fi
 
   # Prompt if still empty
-  if [[ -z "$URL" ]]; then
-    echo -e "${BLUE}${E_SEARCH} Please enter the YouTube URL:${NC}"
+  while [[ -z "$URL" ]]; do
+    echo -e "${BLUE}${E_SEARCH} Please enter the YouTube URL (or 'q' to quit):${NC}"
     read -r URL
-  fi
+    if [[ "$URL" =~ ^[Qq]$ ]]; then
+      echo "Exiting."
+      exit 0
+    fi
+  done
 fi
 
 if [[ -z "$URL" ]]; then
@@ -124,8 +128,12 @@ header "${E_DOWN} Starting Download"
 info "Target: $URL"
 info "Output: ~/Downloads"
 
-# Use -- to prevent argument injection
-"$YTDLP_CMD" "${EXTERNAL_DOWNLOADER_ARGS[@]}" -o "$HOME/Downloads/%(title)s.%(ext)s" -- "$URL"
+# Use a temp file to capture the resolved filepath safely (avoids --exec shell injection)
+FILEPATH_LOG=$(mktemp -t ytdl_path.XXXXXX)
+trap 'rm -f "$FILEPATH_LOG"' EXIT
+
+# Use -- to prevent argument injection; --print-to-file captures the actual output path
+"$YTDLP_CMD" "${EXTERNAL_DOWNLOADER_ARGS[@]}" --print-to-file after_move:filepath "$FILEPATH_LOG" -o "$HOME/Downloads/%(title)s.%(ext)s" -- "$URL"
 YTDLP_EXIT_CODE=$?
 
 if [[ $YTDLP_EXIT_CODE -ne 0 ]]; then
@@ -138,7 +146,20 @@ fi
 header "${E_OK} Download Complete"
 info "Video saved to ~/Downloads"
 
+# 🎨 Palette: Reveal in Finder (macOS) — read the captured filepath to avoid shell injection
+if [[ "$OSTYPE" == "darwin"* && -s "$FILEPATH_LOG" ]]; then
+  DOWNLOADED_FILE=$(head -1 "$FILEPATH_LOG")
+  if [[ -n "$DOWNLOADED_FILE" && -f "$DOWNLOADED_FILE" ]]; then
+    open -R -- "$DOWNLOADED_FILE"
+  fi
+fi
+
 # Optional: Notification
 if command -v terminal-notifier >/dev/null 2>&1; then
   terminal-notifier -title "Download Complete" -message "Video saved to Downloads"
+fi
+
+# 🎨 Palette: Audio feedback
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  afplay /System/Library/Sounds/Glass.aiff >/dev/null 2>&1 &
 fi

@@ -1,3 +1,7 @@
+## 2026-02-08 - Explicit Defaults in Interactive CLIs
+**Learning:** When offering a default option in a CLI prompt (e.g., "Enter for Default"), explicitly setting the default value in code (var=${var:-default}) is safer and more robust than relying on empty string matching.
+**Action:** Use parameter expansion to set defaults before processing switch logic to prevent "false affordances" where the UI promises a default but the code doesn't strictly enforce it.
+
 ## 2026-02-18 - Smart Defaults in CLI Tools
 **Learning:** Users often run task-based scripts (like downloaders) with the intent already in their clipboard. Detecting this intent reduces friction.
 **Action:** When creating CLI tools that take a single primary input, check if the input can be safely inferred from the clipboard (e.g. `pbpaste`) when running interactively.
@@ -25,3 +29,23 @@
 ## 2024-05-24 - CLI Output Scanability
 **Learning:** For long-running maintenance scripts, users scan summary tables for failures and outliers (long durations). Standardizing column widths and using semantic colors (Red/Green) significantly reduces cognitive load.
 **Action:** Implement fixed-width summary tables with ANSI colors and duration tracking for all batch processing scripts.
+
+## 2026-02-18 - Nested Script Visuals
+**Learning:** When scripts call other scripts (e.g. `install_all` calls `verify`), consistent visual formatting in the child script preserves the "suite" feel of the parent script. Plain text output from a child script breaks the immersion of a polished parent script.
+**Action:** Ensure helper scripts share the same visual language as their parent orchestrators.
+
+## 2026-02-26 - Post-Task Delight in CLI Tools
+**Learning:** Users feel a sense of completion and reduced friction when CLI tools automate the "next step" (e.g., revealing a downloaded file) or provide subtle confirmation (e.g., sound) for long-running tasks.
+**Action:** For file-producing CLI tools, add an option or default behavior to reveal the output location (e.g., `open -R`) and consider non-blocking audio cues for success.
+
+## 2026-02-18 - Interactive Dashboards for Maintenance Scripts
+**Learning:** For complex maintenance scripts with multiple modes (weekly, monthly, specific tasks), users often forget the specific CLI arguments. An interactive dashboard (menu) when no arguments are provided reduces cognitive load and makes the tool more discoverable.
+**Action:** When no arguments are provided to a multi-mode script, present an interactive menu (using `read` and `case`) instead of showing an error or a silent default, unless running in a non-interactive environment (check `[[ -t 0 ]]`).
+
+## 2026-02-19 - Active State Indicators in Menus
+**Learning:** Users often forget the current system state when opening a configuration menu. Displaying the active state directly alongside menu options eliminates the need to run a separate "status" command.
+**Action:** In interactive selection menus, always highlight the currently active option (e.g., with a checkmark or "Active" label).
+
+## 2026-02-18 - Complexity vs Value in CLI UX
+**Learning:** Over-engineering visual delight (like spinners) in simple linear scripts can introduce security risks (eval) and maintenance burden without proportional value.
+**Action:** Prefer static, well-formatted log messages (emojis, colors, alignment) over complex interactive elements for standard maintenance scripts.

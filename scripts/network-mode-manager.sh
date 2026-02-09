@@ -178,7 +178,8 @@ print_status() {
       target=$(sudo readlink "$config_link" || echo "")
       # Extract profile name from filename (e.g., ctrld.privacy.toml -> privacy)
       local extracted_name
-      extracted_name=$(basename "$target")
+      # Optimization: Use Bash parameter expansion to avoid basename overhead
+      extracted_name="${target##*/}"
       extracted_name="${extracted_name#ctrld.}"
       extracted_name="${extracted_name%.toml}"
 
@@ -200,7 +201,9 @@ print_status() {
   # --- VPN Status ---
   local vpn_status
   # Check for utun interface with an IP address (standard for VPNs on macOS)
-  if ifconfig | grep -A5 "utun" | grep "inet " | grep -v "127.0.0.1" >/dev/null 2>&1; then
+  # ⚡ Bolt Optimization: Use single-pass awk to parse ifconfig instead of multiple grep pipes.
+  # Uses /^[^ \t]/ to detect new interface blocks (handles any non-indented line).
+  if ifconfig | awk '/^utun/ {s=1; next} s && /inet / && !/127\.0\.0\.1/ {f=1; exit} s && /^[^ \t]/ {s=0} END {exit !f}' >/dev/null 2>&1; then
     vpn_status="${GREEN}CONNECTED${NC}"
   else
     vpn_status="${RED}DISCONNECTED${NC}"
@@ -278,23 +281,74 @@ print_help() {
   echo -e ""
 }
 
+detect_active_state() {
+  IS_VPN_ACTIVE=false
+  IS_CTRLD_ACTIVE=false
+  CTRLD_PROFILE=""
+
+  # Check Windscribe (VPN)
+  # Look for utun interface excluding localhost
+  if ifconfig | grep -A5 "utun" | grep "inet " | grep -v "127.0.0.1" >/dev/null 2>&1; then
+    IS_VPN_ACTIVE=true
+  fi
+
+  # Check Control D
+  if pgrep -x "ctrld" >/dev/null 2>&1; then
+    IS_CTRLD_ACTIVE=true
+
+    # Try to detect profile (best effort without sudo)
+    local config_link="/etc/controld/ctrld.toml"
+    local target=""
+
+    if [[ -L "$config_link" ]]; then
+       target=$(readlink "$config_link" 2>/dev/null || echo "")
+    fi
+
+    if [[ -n "$target" ]]; then
+      local extracted_name
+      extracted_name="${target##*/}"
+      extracted_name="${extracted_name#ctrld.}"
+      extracted_name="${extracted_name%.toml}"
+      CTRLD_PROFILE="$extracted_name"
+    fi
+  fi
+}
+
 interactive_menu() {
+  detect_active_state
+
+  local M_PRIV=""
+  local M_BROW=""
+  local M_GAME=""
+  local M_WIND=""
+
+  if $IS_CTRLD_ACTIVE; then
+    if [[ "$CTRLD_PROFILE" == "privacy" ]]; then M_PRIV=" ${GREEN}● (Active)${NC}"; fi
+    if [[ "$CTRLD_PROFILE" == "browsing" ]]; then M_BROW=" ${GREEN}● (Active)${NC}"; fi
+    if [[ "$CTRLD_PROFILE" == "gaming" ]]; then M_GAME=" ${GREEN}● (Active)${NC}"; fi
+  fi
+
+  if $IS_VPN_ACTIVE; then
+    M_WIND=" ${GREEN}● (Active)${NC}"
+  fi
+
   echo -e "\n${BOLD}${BLUE}🎨 Network Mode Manager${NC}"
   echo -e "${BLUE}   Select a mode to apply:${NC}\n"
 
-  echo -e "   1) ${E_PRIVACY} Control D (Privacy)"
-  echo -e "   2) ${E_BROWSING} Control D (Browsing) ${YELLOW}[Default]${NC}"
-  echo -e "   3) ${E_GAMING} Control D (Gaming)"
-  echo -e "   4) ${E_VPN} Windscribe (VPN)"
+  echo -e "   1) ${E_PRIVACY} Control D (Privacy)${M_PRIV}"
+  echo -e "   2) ${E_BROWSING} Control D (Browsing) ${YELLOW}[Default]${NC}${M_BROW}"
+  echo -e "   3) ${E_GAMING} Control D (Gaming)${M_GAME}"
+  echo -e "   4) ${E_VPN} Windscribe (VPN)${M_WIND}"
   echo -e "   5) ${E_INFO} Show Status"
   echo -e "   0) 🚪 Exit"
 
-  echo -ne "\n${BOLD}Select an option [1-5]: ${NC}"
+  echo -ne "\n${BOLD}Select an option [0-5] (Enter for Default): ${NC}"
   read -r choice
+  choice="${choice:-2}"
 
   case "$choice" in
     1)    main "controld" "privacy" ;;
-    2|"") main "controld" "browsing" ;;
+    2)    main "controld" "browsing" ;;
     3)    main "controld" "gaming" ;;
     4)    main "windscribe" ;;
     5)    main "status" ;;

@@ -10,7 +10,6 @@ LOG_DIR="$HOME/Library/Logs/maintenance"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Helper functions to sanitize counts for arithmetic
-count_clean() { awk '{print $1}' | tr -d '\n'; }
 to_int() { printf '%d' "${1:-0}" 2>/dev/null || echo 0; }
 
 # Basic logging
@@ -27,7 +26,8 @@ log_warn() {
 # Basic utility functions
 percent_used() {
     local path="${1:-/}"
-    df -P "$path" | awk 'NR==2 {print $5}' | tr -d '%'
+    # ⚡ Bolt Optimization: Use awk arithmetic to strip % instead of spawning 'tr'
+    df -P "$path" | awk 'NR==2 {print $5+0}'
 }
 
 # Timeout wrapper for commands that might hang
@@ -95,8 +95,8 @@ if command -v vm_stat >/dev/null 2>&1; then
 fi
 
 # 3) System load
-LOAD_AVG=$(uptime | awk -F'load averages:' '{print $2}' | sed -E 's/^[[:space:]]+//' | sed -E 's/[[:space:]]+/ /g' | tr -d "
-" || echo "unknown")
+# ⚡ Bolt Optimization: Simplified pipeline, handles both macOS "load averages:" and Linux "load average:"
+LOAD_AVG=$(uptime | awk -F'load averages?: ' '{print $2}' | xargs || echo "unknown")
 append "System load averages: ${LOAD_AVG}"
 
 # Extract 1-minute load for comparison
@@ -122,7 +122,9 @@ log_info "Checking for kernel panics (with 10s timeout)..."
 # Check for actual panic reports first (fast - just file search)
 PANIC_DIR="/Library/Logs/DiagnosticReports"
 if [[ -d "$PANIC_DIR" ]]; then
-  PANIC_REPORTS=$(find "$PANIC_DIR" -name "*panic*" -mtime -1 2>/dev/null | wc -l | count_clean || echo "0")
+  # ⚡ Bolt Optimization: Use bash expansion instead of pipe to count_clean (awk|tr)
+  PANIC_REPORTS=$(find "$PANIC_DIR" -name "*panic*" -mtime -1 2>/dev/null | wc -l || echo "0")
+  PANIC_REPORTS=${PANIC_REPORTS// /}
   PANIC_REPORTS=$(to_int "$PANIC_REPORTS")
   
   if (( PANIC_REPORTS > 0 )); then
@@ -144,7 +146,8 @@ if [[ -d "$PANIC_DIR" ]]; then
     log_info "Searching system logs for panic messages (this may take up to 10 seconds)..."
     
     PANIC_SEARCH_CMD='log show --predicate '"'"'eventMessage CONTAINS "kernel panic" OR eventMessage CONTAINS "panic(cpu"'"'"' --last "'"${HOURS}"'h" 2>/dev/null | wc -l'
-    REAL_KPANIC=$(run_with_timeout 10 "$PANIC_SEARCH_CMD" | count_clean || echo "0")
+    REAL_KPANIC=$(run_with_timeout 10 "$PANIC_SEARCH_CMD" || echo "0")
+    REAL_KPANIC=${REAL_KPANIC// /}
     REAL_KPANIC=$(to_int "$REAL_KPANIC")
     
     if [[ -z "$REAL_KPANIC" ]] || [[ "$REAL_KPANIC" == "0" ]]; then
@@ -224,9 +227,11 @@ else
 fi
 
 # 9) Check for crash logs and diagnostic reports
-CRASH_LOGS=$(find "${HOME}/Library/Logs/DiagnosticReports" -name "*.crash" -mtime -1 2>/dev/null | wc -l | count_clean || echo "0")
+CRASH_LOGS=$(find "${HOME}/Library/Logs/DiagnosticReports" -name "*.crash" -mtime -1 2>/dev/null | wc -l || echo "0")
+CRASH_LOGS=${CRASH_LOGS// /}
 CRASH_LOGS=$(to_int "$CRASH_LOGS")
-DIAGNOSTIC_REPORTS=$(find "${HOME}/Library/Logs/DiagnosticReports" -name "*.ips" -mtime -1 2>/dev/null | wc -l | count_clean || echo "0")
+DIAGNOSTIC_REPORTS=$(find "${HOME}/Library/Logs/DiagnosticReports" -name "*.ips" -mtime -1 2>/dev/null | wc -l || echo "0")
+DIAGNOSTIC_REPORTS=${DIAGNOSTIC_REPORTS// /}
 DIAGNOSTIC_REPORTS=$(to_int "$DIAGNOSTIC_REPORTS")
 append "Recent crash logs (last 24h): ${CRASH_LOGS}"
 append "Recent diagnostic reports (last 24h): ${DIAGNOSTIC_REPORTS}"
@@ -239,7 +244,8 @@ if (( DIAGNOSTIC_REPORTS > 5 )); then
 fi
 
 # 10) Background service monitoring
-WIDGET_COUNT=$(ps aux | grep -E "\.appex/Contents/MacOS" | grep -v grep | wc -l | count_clean || echo "0")
+WIDGET_COUNT=$(ps aux | grep -E "\.appex/Contents/MacOS" | grep -v grep | wc -l || echo "0")
+WIDGET_COUNT=${WIDGET_COUNT// /}
 WIDGET_COUNT=$(to_int "$WIDGET_COUNT")
 append "Widget extensions running: ${WIDGET_COUNT}"
 if (( WIDGET_COUNT > 60 )); then
