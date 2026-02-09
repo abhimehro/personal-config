@@ -14,7 +14,7 @@ on:
     types: [opened, labeled]
 
 jobs:
-  development-partner:
+  copilot-setup-steps:
     runs-on: ubuntu-latest
     permissions:
       contents: read
