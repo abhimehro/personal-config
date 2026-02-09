@@ -50,6 +50,16 @@ log()      { echo -e "${BLUE}${E_INFO} [INFO]${NC} $@"; }
 success()  { echo -e "${GREEN}${E_PASS} [OK]${NC} $@"; }
 error()    { echo -e "${RED}${E_FAIL} [ERR]${NC} $@" >&2; exit 1; }
 
+# Validate the protocol parameter.
+# An empty value is allowed and means "use the default protocol" as defined elsewhere.
+# Explicitly supported protocols are 'doh' and 'doh3'.
+validate_protocol() {
+  case "$1" in
+    ""|doh|doh3) return 0 ;;
+    *) error "Invalid protocol: '$1'. Must be empty (default) or 'doh' or 'doh3'." ;;
+  esac
+}
+
 ensure_prereqs() {
   # Least privilege: refuse to run as root
   if [[ $EUID -eq 0 ]]; then
@@ -355,6 +365,7 @@ main() {
 
     controld)
       local proto="${3:-}"
+      validate_protocol "$proto"
       echo -e "${BLUE}>>> ${E_BROWSING} Switching to CONTROL D (DNS) MODE${NC}"
       set_ipv6 "enable"
       # ⚡ Bolt Optimization: Skip redundant stop_controld to prevent DNS flap (Empty -> 127.0.0.1)
