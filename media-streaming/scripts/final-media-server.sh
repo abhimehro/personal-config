@@ -107,8 +107,8 @@ case "$MODE" in
         INFO_MESSAGE="EXTERNAL Mode: Server listening on all interfaces (VPN: $VPN_CONNECTED)"
         ;;
     *)
-        BIND_ADDR="0.0.0.0"
-        INFO_MESSAGE="AUTO Mode: Server listening on all interfaces"
+        BIND_ADDR="$PRIMARY_IP"
+        INFO_MESSAGE="AUTO Mode: Server bound to $PRIMARY_IP"
         ;;
 esac
 
