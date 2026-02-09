@@ -122,8 +122,10 @@ echo "   Mode: $INFO_MESSAGE"
 echo "   Bind Address: $BIND_ADDR:$AVAILABLE_PORT"
 
 # Start Rclone WebDAV (Performance Tuned)
-# 🛡️ Sentinel: Pass credentials via env vars scoped to rclone process only (CWE-214)
-RCLONE_USER="$WEB_USER" RCLONE_PASS="$WEB_PASS" \
+# 🛡️ Sentinel: Pass credentials via env vars to prevent leak in process list (CWE-214)
+export RCLONE_USER="$WEB_USER"
+export RCLONE_PASS="$WEB_PASS"
+
 nohup rclone serve webdav "media:" \
     --addr "$BIND_ADDR:$AVAILABLE_PORT" \
     --vfs-cache-mode full \
