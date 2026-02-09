@@ -50,10 +50,13 @@ log()      { echo -e "${BLUE}${E_INFO} [INFO]${NC} $@"; }
 success()  { echo -e "${GREEN}${E_PASS} [OK]${NC} $@"; }
 error()    { echo -e "${RED}${E_FAIL} [ERR]${NC} $@" >&2; exit 1; }
 
+# Validate the protocol parameter.
+# An empty value is allowed and means "use the default protocol" as defined elsewhere.
+# Explicitly supported protocols are 'doh' and 'doh3'.
 validate_protocol() {
   case "$1" in
     ""|doh|doh3) return 0 ;;
-    *) error "Invalid protocol: '$1'. Must be 'doh' or 'doh3'." ;;
+    *) error "Invalid protocol: '$1'. Must be empty (default) or 'doh' or 'doh3'." ;;
   esac
 }
 
