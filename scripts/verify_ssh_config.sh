@@ -15,7 +15,6 @@ NC='\033[0m'
 E_OK="✅"
 E_ERR="❌"
 E_WARN="⚠️"
-E_INFO="ℹ️"
 
 header() { echo -e "\n${BOLD}${BLUE}=== $* ===${NC}"; }
 ok()     { echo -e "${GREEN}${E_OK} [OK]${NC}    $*"; }
