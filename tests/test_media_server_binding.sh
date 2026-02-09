@@ -49,7 +49,13 @@ EOF
 
 cat > "$MOCK_BIN/route" << 'EOF'
 #!/bin/bash
-echo "interface: en0"
+if [[ "$*" == *"get default"* ]]; then
+    echo "   route to: default"
+    echo "destination: default"
+    echo "       mask: default"
+    echo "  interface: en0"
+    echo "      flags: <UP,GATEWAY,DONE,STATIC,PRCLONING>"
+fi
 EOF
 
 cat > "$MOCK_BIN/ifconfig" << 'EOF'
