@@ -255,7 +255,8 @@ generate_profile_config() {
     # Generate configuration using ctrld
     # 🛡️ Sentinel: Use local variable and ensure cleanup
     local TEMP_CONFIG
-    TEMP_CONFIG=$(mktemp)
+    # Use a portable mktemp invocation: -t prefix.XXXXXX works on macOS and Linux.
+    TEMP_CONFIG=$(mktemp -t "controld_config.XXXXXX")
     trap 'rm -f "$TEMP_CONFIG"' RETURN
 
     # Start service temporarily to generate config
