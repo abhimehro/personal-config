@@ -51,13 +51,9 @@ success()  { echo -e "${GREEN}${E_PASS} [OK]${NC} $@"; }
 error()    { echo -e "${RED}${E_FAIL} [ERR]${NC} $@" >&2; exit 1; }
 
 validate_protocol() {
-  local proto="$1"
-  if [[ -z "$proto" ]]; then
-    return 0
-  fi
-  case "$proto" in
-    doh|doh3) return 0 ;;
-    *) error "Invalid protocol: '$proto'. Must be 'doh' or 'doh3'." ;;
+  case "$1" in
+    ""|doh|doh3) return 0 ;;
+    *) error "Invalid protocol: '$1'. Must be 'doh' or 'doh3'." ;;
   esac
 }
 
