@@ -128,14 +128,8 @@ header "${E_DOWN} Starting Download"
 info "Target: $URL"
 info "Output: ~/Downloads"
 
-# 🎨 Palette: Reveal in Finder (macOS)
-REVEAL_ARGS=()
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  REVEAL_ARGS=(--exec "open -R {}")
-fi
-
 # Use -- to prevent argument injection
-"$YTDLP_CMD" "${EXTERNAL_DOWNLOADER_ARGS[@]}" "${REVEAL_ARGS[@]}" -o "$HOME/Downloads/%(title)s.%(ext)s" -- "$URL"
+"$YTDLP_CMD" "${EXTERNAL_DOWNLOADER_ARGS[@]}" -o "$HOME/Downloads/%(title)s.%(ext)s" -- "$URL"
 YTDLP_EXIT_CODE=$?
 
 if [[ $YTDLP_EXIT_CODE -ne 0 ]]; then
@@ -147,6 +141,14 @@ fi
 # 4. Summary
 header "${E_OK} Download Complete"
 info "Video saved to ~/Downloads"
+
+# 🎨 Palette: Reveal in Finder (macOS) — resolve filepath via --print to avoid shell injection
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  DOWNLOADED_FILE=$("$YTDLP_CMD" --print after_move:filepath -o "$HOME/Downloads/%(title)s.%(ext)s" --no-download -- "$URL" 2>/dev/null || true)
+  if [[ -n "$DOWNLOADED_FILE" && -f "$DOWNLOADED_FILE" ]]; then
+    open -R -- "$DOWNLOADED_FILE"
+  fi
+fi
 
 # Optional: Notification
 if command -v terminal-notifier >/dev/null 2>&1; then

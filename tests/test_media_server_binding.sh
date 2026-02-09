@@ -1,11 +1,21 @@
 #!/bin/bash
 
+# Use a temporary HOME to avoid writing artifacts into the real user directory
+ORIG_HOME="$HOME"
+TEST_HOME=$(mktemp -d)
+export HOME="$TEST_HOME"
+mkdir -p "$HOME/Library/Logs"
+
 # Setup Mock Bin
 MOCK_BIN=$(mktemp -d)
 export PATH="$MOCK_BIN:$PATH"
 
-# Setup Logs directory
-mkdir -p "$HOME/Library/Logs"
+# Cleanup trap — always remove temp dirs even on early failure
+cleanup() {
+    rm -rf "$MOCK_BIN" "$TEST_HOME"
+    export HOME="$ORIG_HOME"
+}
+trap cleanup EXIT
 
 # Mock utilities
 cat > "$MOCK_BIN/rclone" << 'EOF'
@@ -40,6 +50,12 @@ EOF
 cat > "$MOCK_BIN/route" << 'EOF'
 #!/bin/bash
 echo "interface: en0"
+EOF
+
+cat > "$MOCK_BIN/ifconfig" << 'EOF'
+#!/bin/bash
+# Return a mock LAN address for whichever interface is requested
+echo "	inet 192.168.1.42 netmask 0xffffff00 broadcast 192.168.1.255"
 EOF
 
 cat > "$MOCK_BIN/curl" << 'EOF'
@@ -108,8 +124,6 @@ else
      exit 1
 fi
 
-# Clean up
-rm -rf "$MOCK_BIN"
-rm -f "$HOME/Library/Logs/media-server.log"
+# Cleanup handled by EXIT trap
 echo "All tests passed."
 exit 0
