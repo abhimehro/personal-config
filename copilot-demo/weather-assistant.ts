@@ -17,7 +17,9 @@ class Spinner {
     if (this.timer) return;
     process.stdout.write("\x1B[?25l"); // Hide cursor
     this.timer = setInterval(() => {
-      process.stdout.write(`\r${COLORS.Cyan}${this.frames[this.currentFrame]} ${text}${COLORS.Reset}`);
+      process.stdout.write(
+        `\r${COLORS.Cyan}${this.frames[this.currentFrame]} ${text}${COLORS.Reset}`,
+      );
       this.currentFrame = (this.currentFrame + 1) % this.frames.length;
     }, 80);
   }
@@ -98,6 +100,14 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
+rl.on("SIGINT", () => {
+  if (spinner.isSpinning()) {
+    spinner.stop();
+  }
+  process.stdout.write("\n");
+  process.exit(0);
+});
+
 console.log("🌤️  Weather Assistant (type 'exit' to quit)");
 console.log(
   `${COLORS.Dim}   Try: 'What's the weather in Paris?'${COLORS.Reset}\n`,
@@ -123,9 +133,7 @@ const prompt = () => {
     } catch (error) {
       // Error handling is managed by the session mostly, but good to catch unexpected errors
       spinner.stop();
-      const errorMessage =
-        error instanceof Error ? error.stack ?? error.message : String(error);
-      console.error(`\n${COLORS.Dim}Error: ${errorMessage}${COLORS.Reset}`);
+      console.error(`\n${COLORS.Dim}Error: ${error}${COLORS.Reset}`);
     } finally {
       spinner.stop();
     }
