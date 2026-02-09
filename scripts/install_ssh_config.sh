@@ -53,12 +53,30 @@ echo -e "  3. ${E_WARN} ${RED}Overwrite${NC} ${BOLD}~/.ssh/agent.toml${NC} with 
 echo -e "  4. ${E_FILE} Create/Update ${BOLD}~/.ssh/scripts/${NC} and ${BOLD}~/.ssh/control/${NC}"
 echo -e "  5. ${E_LINK} Install helper aliases (smart_connect, etc.)"
 
-echo ""
-read -p "Are you sure you want to proceed? [y/N] " -n 1 -r REPLY
-echo ""
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    log "Operation cancelled by user."
-    exit 0
+# Check for non-interactive mode
+FORCE=false
+if [[ "${CI:-}" == "true" ]]; then
+  FORCE=true
+fi
+
+for arg in "$@"; do
+  case $arg in
+    -f|--force|--yes|-y)
+      FORCE=true
+      ;;
+  esac
+done
+
+if [[ "$FORCE" == "true" ]]; then
+    warn "Non-interactive mode detected. Proceeding automatically..."
+else
+    echo ""
+    read -p "Are you sure you want to proceed? [y/N] " -n 1 -r REPLY
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        log "Operation cancelled by user."
+        exit 0
+    fi
 fi
 
 # --- Execution ---
