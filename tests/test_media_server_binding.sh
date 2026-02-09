@@ -54,7 +54,7 @@ EOF
 
 cat > "$MOCK_BIN/ifconfig" << 'EOF'
 #!/bin/bash
-# Return a mock LAN address for whichever interface is requested
+# Mock ifconfig: accepts optional interface argument, returns a LAN address
 echo "	inet 192.168.1.42 netmask 0xffffff00 broadcast 192.168.1.255"
 EOF
 
