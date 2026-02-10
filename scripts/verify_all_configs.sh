@@ -11,17 +11,21 @@ set -Eeuo pipefail
 REPO_ROOT="${REPO_ROOT:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"}"
 
 # Colors for output
+BOLD='\033[1m'
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Helper functions
-log()      { printf '%b\n' "${BLUE}[INFO]${NC} $*"; }
-success()  { printf '%b\n' "${GREEN}[OK]${NC} $*"; }
-warn()     { printf '%b\n' "${YELLOW}[WARN]${NC} $*"; }
-error()    { printf '%b\n' "${RED}[ERROR]${NC} $*" >&2; }
+log()      { printf '%b\n' "${BLUE}ℹ️  [INFO]${NC}  $*"; }
+success()  { printf '%b\n' "${GREEN}✅ [OK]${NC}    $*"; }
+warn()     { printf '%b\n' "${YELLOW}⚠️  [WARN]${NC}  $*"; }
+error()    { printf '%b\n' "${RED}❌ [ERR]${NC}   $*" >&2; }
+hr()       { printf '%b\n' "${BLUE}────────────────────────────────────────────────────────────${NC}"; }
+header()   { printf '\n%b\n' "${BOLD}${BLUE}🔷 $*${NC}"; hr; }
 
 fail=0
 
@@ -145,13 +149,10 @@ verify_dir_link() {
     return 0
 }
 
-echo "=========================================="
-echo "Verifying Configuration Symlinks"
-echo "=========================================="
-echo ""
+header "Verifying Configuration Symlinks"
 
 # 1. SSH Configuration
-echo "== SSH Configuration =="
+header "SSH Configuration"
 verify_file_link "$HOME/.ssh/config" "$REPO_ROOT/configs/ssh/config" "$HOME/.ssh/config" "600"
 verify_file_link "$HOME/.ssh/agent.toml" "$REPO_ROOT/configs/ssh/agent.toml" "$HOME/.ssh/agent.toml" "600"
 
@@ -174,8 +175,7 @@ else
 fi
 
 # 2. Fish Shell Configuration
-echo ""
-echo "== Fish Shell Configuration =="
+header "Fish Shell Configuration"
 verify_dir_link "$HOME/.config/fish" "$REPO_ROOT/configs/.config/fish" "$HOME/.config/fish"
 
 # Check if NM_ROOT is set in fish config
@@ -242,18 +242,15 @@ if [[ -d "$HOME/.config/fish/functions" ]]; then
 fi
 
 # 3. Cursor Configuration
-echo ""
-echo "== Cursor IDE Configuration =="
+header "Cursor IDE Configuration"
 verify_dir_link "$HOME/.cursor" "$REPO_ROOT/.cursor" "$HOME/.cursor"
 
 # 4. VS Code Configuration
-echo ""
-echo "== VS Code Configuration =="
+header "VS Code Configuration"
 verify_dir_link "$HOME/.vscode" "$REPO_ROOT/.vscode" "$HOME/.vscode"
 
 # 5. Git Configuration (if exists)
-echo ""
-echo "== Git Configuration =="
+header "Git Configuration"
 if [[ -f "$REPO_ROOT/configs/.gitconfig" ]]; then
     verify_file_link "$HOME/.gitconfig" "$REPO_ROOT/configs/.gitconfig" "$HOME/.gitconfig"
 else
@@ -261,24 +258,22 @@ else
 fi
 
 # 6. Local Configuration (if exists)
-echo ""
-echo "== Local Configuration =="
+header "Local Configuration"
 if [[ -d "$REPO_ROOT/configs/.local" ]]; then
     verify_dir_link "$HOME/.local" "$REPO_ROOT/configs/.local" "$HOME/.local"
 else
     log "No .local directory in repository (skipping)"
 fi
 
-echo ""
-echo "=========================================="
+echo
 if [[ $fail -eq 0 ]]; then
     success "All configuration symlinks verified successfully!"
-    echo "=========================================="
+    hr
     exit 0
 else
     error "Some configuration symlinks failed verification"
-    echo "=========================================="
-    echo ""
-    echo "To fix issues, run: ./scripts/sync_all_configs.sh"
+    hr
+    printf '\n%b\n' "${BOLD}👉 To fix issues, run:${NC}"
+    printf '%b\n' "   ${CYAN}./scripts/sync_all_configs.sh${NC}"
     exit 1
 fi

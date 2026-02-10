@@ -12,17 +12,21 @@ set -Eeuo pipefail
 REPO_ROOT="${REPO_ROOT:-"$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"}"
 
 # Colors for output
+BOLD='\033[1m'
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Helper functions
-log()      { printf '%b\n' "${BLUE}[INFO]${NC} $*"; }
-success()  { printf '%b\n' "${GREEN}[OK]${NC} $*"; }
-warn()     { printf '%b\n' "${YELLOW}[WARN]${NC} $*"; }
-error()    { printf '%b\n' "${RED}[ERROR]${NC} $*" >&2; }
+log()      { printf '%b\n' "${BLUE}ℹ️  [INFO]${NC}  $*"; }
+success()  { printf '%b\n' "${GREEN}✅ [OK]${NC}    $*"; }
+warn()     { printf '%b\n' "${YELLOW}⚠️  [WARN]${NC}  $*"; }
+error()    { printf '%b\n' "${RED}❌ [ERR]${NC}   $*" >&2; }
+hr()       { printf '%b\n' "${BLUE}────────────────────────────────────────────────────────────${NC}"; }
+header()   { printf '\n%b\n' "${BOLD}${BLUE}🔷 $*${NC}"; hr; }
 
 # Ensure we're in the repo root
 if [[ ! -d "$REPO_ROOT" ]]; then
@@ -124,10 +128,7 @@ ensure_dir_link() {
     success "Created $name directory symlink"
 }
 
-echo "=========================================="
-echo "Syncing Configuration Files to Home Directory"
-echo "=========================================="
-echo ""
+header "Syncing Configuration Files to Home Directory"
 
 # 1. SSH Configuration (files)
 log "Setting up SSH configuration..."
@@ -182,15 +183,13 @@ if [[ -d "$REPO_ROOT/.github" ]]; then
     log "Skipping ~/.github (typically not needed in home directory)"
 fi
 
-echo ""
-echo "=========================================="
+echo
 success "Configuration sync completed!"
-echo "=========================================="
-echo ""
-echo "Next steps:"
-echo "1. Verify symlinks: ./scripts/verify_all_configs.sh"
-echo "2. Reload fish shell: exec fish"
-echo "3. Install/update Fish plugins (Hydro, etc): ./scripts/bootstrap_fish_plugins.sh"
-echo "   (fallback if Fisher already installed: fish -lc 'fisher update')"
-echo "4. Test Control D functions: nm-status"
-echo ""
+hr
+printf '\n%b\n' "${BOLD}👉 Next Steps:${NC}"
+printf '%b\n' "  1. Verify symlinks: ${CYAN}./scripts/verify_all_configs.sh${NC}"
+printf '%b\n' "  2. Reload fish shell: ${CYAN}exec fish${NC}"
+printf '%b\n' "  3. Install/update Fish plugins (Hydro, etc): ${CYAN}./scripts/bootstrap_fish_plugins.sh${NC}"
+printf '%b\n' "     (fallback if Fisher already installed: ${CYAN}fish -lc 'fisher update'${NC})"
+printf '%b\n' "  4. Test Control D functions: ${CYAN}nm-status${NC}"
+echo

@@ -1,3 +1,7 @@
+## 2026-06-25 - Unified Visual Language across Script Suites
+**Learning:** When a user runs a sequence of scripts (setup -> sync -> verify), inconsistent visual styles (colors, emojis, log formats) create a disjointed experience and reduce trust. Aligning the visual language across related scripts makes the process feel like a cohesive application.
+**Action:** Audit and align logging helpers and color definitions across all scripts that are part of a workflow.
+
 ## 2026-02-08 - Explicit Defaults in Interactive CLIs
 **Learning:** When offering a default option in a CLI prompt (e.g., "Enter for Default"), explicitly setting the default value in code (var=${var:-default}) is safer and more robust than relying on empty string matching.
 **Action:** Use parameter expansion to set defaults before processing switch logic to prevent "false affordances" where the UI promises a default but the code doesn't strictly enforce it.
