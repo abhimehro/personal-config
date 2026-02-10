@@ -3,7 +3,8 @@
 # Add one path per line (supports ~ for home directory)
 
 
-# Development environments & dependencies
+# --- SAFE MOLE CONFIG ---
+# Development caches (Keep these)
 ~/.cache/lm-studio
 ~/.cache/Playwright
 ~/.cache/huggingface
@@ -14,51 +15,27 @@
 ~/.npm
 ~/Library/Caches/Homebrew
 ~/.cache
-~/.config
-~/.nori
-~/.jules
-~/.ssh
-~/.vscode
-~/.vscode-R
-~/.warp
+# REMOVED: ~/.config (Contains your actual config files!)
+# REMOVED: ~/.ssh (NEVER purge this!)
+# REMOVED: ~/.vscode, ~/.warp (Contains preferences)
 
 # Version control
 ~/.git-templates
 
-# Python environments
+# Python environments (Only keep if you want these WIPED globally)
+# If you manage these manually, REMOVE them.
 ~/.pyenv
 ~/.conda
 ~/.virtualenvs
 
-# Ruby environments
-~/.rubies
+# Ruby/Node (Caches are fine)
 ~/.gem
-
-# Node.js
-~/.nvm
 ~/.yarn
 
-# Important caches for active projects
-~/Documents/dev
+# REMOVED: ~/Documents/dev (This was the killer. Never list your source root here.)
 
-# Cloud Storage (important!)
-~/Library/CloudStorage/ProtonDrive-*
-~/Library/CloudStorage/GoogleDrive-*
+# REMOVED: ~/Library/CloudStorage (Dangerous to automate deletion here)
 
-# Fish shell
-~/.local/share/fish
-
-# .local
-~/.local/share/atuin
-~/.local/share/z
-~/.local/share/nvm
-~/.local/share/fnm
-~/.local/state/fnm_multishells
-~/.local/state/nvim
-~/.local/state/gh
-
-# NeoVim
-~/.local/share/nvim
-~/.local/state/nvim
-~/.cache/nvim
+# REMOVED: ~/.local/share/fish (Deletes shell history)
+# REMOVED: ~/.local/share/nvim (Deletes plugins/state)
 
