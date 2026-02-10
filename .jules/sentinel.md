@@ -76,3 +76,9 @@
 [CWE-59]: https://cwe.mitre.org/data/definitions/59.html
 [CWE-88]: https://cwe.mitre.org/data/definitions/88.html
 [CWE-732]: https://cwe.mitre.org/data/definitions/732.html
+
+## 2026-02-10 - Command Injection in Health Check
+**Vulnerability:** Command Injection ([CWE-78][]) in `maintenance/bin/health_check.sh`. The script interpolated the `HEALTH_LOG_LOOKBACK_HOURS` variable directly into a command string passed to `bash -c`, allowing arbitrary code execution if the variable contained malicious input.
+**Learning:** Shell scripts that construct commands from variables are inherently risky. Sourcing configuration files (`source config.env`) without validation assumes the file is trustworthy, but environment variables can override defaults or be set maliciously if the config is missing.
+**Prevention:** Always sanitize variables used in command construction. Ensure numeric values are actually integers using regex validation (`[[ "$VAR" =~ ^[0-9]+$ ]]`) before using them.
+[CWE-78]: https://cwe.mitre.org/data/definitions/78.html
