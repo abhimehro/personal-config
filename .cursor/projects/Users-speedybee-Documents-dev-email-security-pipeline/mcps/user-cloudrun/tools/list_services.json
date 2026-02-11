@@ -1,0 +1,18 @@
+{
+  "name": "list_services",
+  "description": "Lists all Cloud Run services in a given project.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "project": {
+        "type": "string",
+        "description": "Google Cloud project ID"
+      }
+    },
+    "required": [
+      "project"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

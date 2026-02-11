@@ -1,0 +1,33 @@
+{
+  "name": "move_file",
+  "description": "Move or rename files and directories. Can move files between directories and rename them in a single operation. If the destination exists, the operation will fail. Works across different directories and can be used for simple renaming within the same directory. Both source and destination must be within allowed directories.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "source": {
+        "type": "string"
+      },
+      "destination": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "source",
+      "destination"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "content": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "content"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+  }
+}

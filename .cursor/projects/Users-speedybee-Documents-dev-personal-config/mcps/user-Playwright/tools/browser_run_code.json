@@ -1,0 +1,18 @@
+{
+  "name": "browser_run_code",
+  "description": "Run Playwright code snippet",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string",
+        "description": "A JavaScript function containing Playwright code to execute. It will be invoked with a single argument, page, which you can use for any page interaction. For example: `async (page) => { await page.getByRole('button', { name: 'Submit' }).click(); return await page.title(); }`"
+      }
+    },
+    "required": [
+      "code"
+    ],
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false
+  }
+}

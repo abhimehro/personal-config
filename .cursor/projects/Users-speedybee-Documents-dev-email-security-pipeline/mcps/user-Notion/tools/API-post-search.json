@@ -1,0 +1,275 @@
+{
+  "name": "API-post-search",
+  "description": "Notion | Search by title\nError Responses:\n400: Bad request",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "Notion-Version": {
+        "type": "string",
+        "default": "2025-09-03",
+        "description": "The Notion API version"
+      },
+      "query": {
+        "type": "string",
+        "description": "The text that the API compares page and database titles against."
+      },
+      "sort": {
+        "type": "object",
+        "description": "A set of criteria, `direction` and `timestamp` keys, that orders the results. The **only** supported timestamp value is `\"last_edited_time\"`. Supported `direction` values are `\"ascending\"` and `\"descending\"`. If `sort` is not provided, then the most recently edited results are returned first.",
+        "properties": {
+          "direction": {
+            "type": "string",
+            "description": "The direction to sort. Possible values include `ascending` and `descending`."
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "The name of the timestamp to sort against. Possible values include `last_edited_time`."
+          }
+        },
+        "additionalProperties": true
+      },
+      "filter": {
+        "type": "object",
+        "description": "A set of criteria, `value` and `property` keys, that limits the results to either only pages or only data sources. Possible `value` values are `\"page\"` or `\"data_source\"`. The only supported `property` value is `\"object\"`.",
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "The value of the property to filter the results by.  Possible values for object type include `page` or `data_source`.  **Limitation**: Currently the only filter allowed is `object` which will filter by type of object (either `page` or `data_source`)",
+            "enum": [
+              "page",
+              "data_source"
+            ]
+          },
+          "property": {
+            "type": "string",
+            "description": "The name of the property to filter by. Currently the only property you can filter by is the object type.  Possible values include `object`.   Limitation: Currently the only filter allowed is `object` which will filter by type of object (either `page` or `data_source`)"
+          }
+        },
+        "additionalProperties": true
+      },
+      "start_cursor": {
+        "type": "string",
+        "description": "A `cursor` value returned in a previous response that If supplied, limits the response to results starting after the `cursor`. If not supplied, then the first page of results is returned. Refer to [pagination](https://developers.notion.com/reference/intro#pagination) for more details."
+      },
+      "page_size": {
+        "type": "integer",
+        "format": "int32",
+        "description": "The number of items from the full list to include in the response. Maximum: `100`.",
+        "default": 100
+      }
+    },
+    "required": [],
+    "$defs": {
+      "richTextRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "string"
+              },
+              "link": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "content"
+            ],
+            "additionalProperties": false
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text"
+            ]
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "pageIdParentRequest": {
+        "type": "object",
+        "properties": {
+          "page_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "page_id"
+        ],
+        "additionalProperties": true
+      },
+      "dataSourceIdParentRequest": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "database_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "database_id"
+        ],
+        "additionalProperties": true
+      },
+      "parentRequest": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/pageIdParentRequest"
+          },
+          {
+            "$ref": "#/$defs/dataSourceIdParentRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {}
+            },
+            "required": [
+              "type"
+            ],
+            "additionalProperties": true
+          }
+        ]
+      },
+      "movePageParentRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {},
+              "page_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "type",
+              "page_id"
+            ],
+            "additionalProperties": true
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {},
+              "database_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "type",
+              "database_id"
+            ],
+            "additionalProperties": true
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {}
+            },
+            "required": [
+              "type"
+            ],
+            "additionalProperties": true
+          }
+        ]
+      },
+      "sortObject": {
+        "type": "object",
+        "properties": {
+          "property": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "ascending",
+              "descending"
+            ]
+          }
+        },
+        "required": [
+          "property",
+          "direction"
+        ],
+        "additionalProperties": true
+      },
+      "paragraphBlockRequest": {
+        "type": "object",
+        "properties": {
+          "paragraph": {
+            "type": "object",
+            "properties": {
+              "rich_text": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/richTextRequest"
+                }
+              }
+            },
+            "required": [
+              "rich_text"
+            ],
+            "additionalProperties": false
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "paragraph"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "bulletedListItemBlockRequest": {
+        "type": "object",
+        "properties": {
+          "bulleted_list_item": {
+            "type": "object",
+            "properties": {
+              "rich_text": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/richTextRequest"
+                }
+              }
+            },
+            "required": [
+              "rich_text"
+            ],
+            "additionalProperties": false
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "bulleted_list_item"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "blockObjectRequest": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/paragraphBlockRequest"
+          },
+          {
+            "$ref": "#/$defs/bulletedListItemBlockRequest"
+          }
+        ]
+      }
+    }
+  }
+}

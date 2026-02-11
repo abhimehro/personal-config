@@ -1,0 +1,26 @@
+{
+  "name": "create_comment",
+  "description": "Create a comment on a specific Linear issue",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "issueId": {
+        "type": "string",
+        "description": "Issue ID"
+      },
+      "parentId": {
+        "description": "Parent comment ID (for replies)",
+        "type": "string"
+      },
+      "body": {
+        "type": "string",
+        "description": "Content as Markdown"
+      }
+    },
+    "required": [
+      "issueId",
+      "body"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

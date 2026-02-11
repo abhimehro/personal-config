@@ -1,0 +1,26 @@
+{
+  "name": "tavily_research",
+  "description": "Perform comprehensive research on a given topic or question. Use this tool when you need to gather information from multiple sources to answer a question or complete a task. Returns a detailed response based on the research findings.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "A comprehensive description of the research task"
+      },
+      "model": {
+        "type": "string",
+        "enum": [
+          "mini",
+          "pro",
+          "auto"
+        ],
+        "description": "Defines the degree of depth of the research. 'mini' is good for narrow tasks with few subtopics. 'pro' is good for broad tasks with many subtopics. 'auto' automatically selects the best model.",
+        "default": "auto"
+      }
+    },
+    "required": [
+      "input"
+    ]
+  }
+}

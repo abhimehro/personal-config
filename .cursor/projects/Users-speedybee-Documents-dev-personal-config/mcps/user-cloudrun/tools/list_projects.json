@@ -1,0 +1,8 @@
+{
+  "name": "list_projects",
+  "description": "Lists available GCP projects",
+  "arguments": {
+    "type": "object",
+    "properties": {}
+  }
+}

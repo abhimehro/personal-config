@@ -1,0 +1,15 @@
+{
+  "name": "browser_snapshot",
+  "description": "Capture accessibility snapshot of the current page, this is better than screenshot",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "filename": {
+        "description": "Save snapshot to markdown file instead of returning it in the response.",
+        "type": "string"
+      }
+    },
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false
+  }
+}

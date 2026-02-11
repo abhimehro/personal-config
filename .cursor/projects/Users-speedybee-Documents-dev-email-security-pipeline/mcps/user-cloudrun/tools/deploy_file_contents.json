@@ -1,0 +1,49 @@
+{
+  "name": "deploy_file_contents",
+  "description": "Deploy files to Cloud Run by providing their contents directly. Takes an array of file objects containing filename and content. Use this tool if the files only exist in the current chat context.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "project": {
+        "type": "string",
+        "description": "Google Cloud project ID. Leave unset for the app to be deployed in a new project. If provided, make sure the user confirms the project ID they want to deploy to."
+      },
+      "region": {
+        "type": "string",
+        "default": "europe-west1",
+        "description": "Region to deploy the service to"
+      },
+      "service": {
+        "type": "string",
+        "description": "Name of the Cloud Run service to deploy to"
+      },
+      "files": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "filename": {
+              "type": "string",
+              "description": "Name and path of the file (e.g. \"src/index.js\" or \"data/config.json\")"
+            },
+            "content": {
+              "type": "string",
+              "description": "Text content of the file"
+            }
+          },
+          "required": [
+            "filename"
+          ],
+          "additionalProperties": false
+        },
+        "description": "Array of file objects containing filename and content"
+      }
+    },
+    "required": [
+      "project",
+      "files"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

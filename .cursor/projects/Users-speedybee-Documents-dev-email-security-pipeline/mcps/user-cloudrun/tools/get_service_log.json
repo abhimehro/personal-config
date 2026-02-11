@@ -1,0 +1,28 @@
+{
+  "name": "get_service_log",
+  "description": "Gets Logs and Error Messages for a specific Cloud Run service.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "project": {
+        "type": "string",
+        "description": "Google Cloud project ID containing the service"
+      },
+      "region": {
+        "type": "string",
+        "description": "Region where the service is located",
+        "default": "europe-west1"
+      },
+      "service": {
+        "type": "string",
+        "description": "Name of the Cloud Run service"
+      }
+    },
+    "required": [
+      "project",
+      "service"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

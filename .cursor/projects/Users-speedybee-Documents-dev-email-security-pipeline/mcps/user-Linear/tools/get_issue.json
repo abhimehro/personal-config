@@ -1,0 +1,22 @@
+{
+  "name": "get_issue",
+  "description": "Retrieve detailed information about an issue by ID, including attachments and git branch name",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Issue ID"
+      },
+      "includeRelations": {
+        "default": false,
+        "description": "Include blocking/related/duplicate relations",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "id"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

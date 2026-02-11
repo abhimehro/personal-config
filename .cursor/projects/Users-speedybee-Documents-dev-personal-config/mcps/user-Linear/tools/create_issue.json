@@ -1,0 +1,119 @@
+{
+  "name": "create_issue",
+  "description": "Create a new Linear issue",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "description": "Issue title"
+      },
+      "description": {
+        "description": "Content as Markdown",
+        "type": "string"
+      },
+      "team": {
+        "type": "string",
+        "description": "Team name or ID"
+      },
+      "cycle": {
+        "description": "Cycle name, number, or ID",
+        "type": "string"
+      },
+      "milestone": {
+        "description": "Milestone name or ID",
+        "type": "string"
+      },
+      "priority": {
+        "description": "0=None, 1=Urgent, 2=High, 3=Normal, 4=Low",
+        "type": "number"
+      },
+      "project": {
+        "description": "Project name or ID",
+        "type": "string"
+      },
+      "state": {
+        "description": "State type, name, or ID",
+        "type": "string"
+      },
+      "assignee": {
+        "description": "User ID, name, email, or \"me\"",
+        "type": "string"
+      },
+      "delegate": {
+        "description": "Agent name or ID",
+        "type": "string"
+      },
+      "labels": {
+        "description": "Label names or IDs",
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "dueDate": {
+        "description": "Due date (ISO format)",
+        "type": "string"
+      },
+      "parentId": {
+        "description": "Parent issue ID",
+        "type": "string"
+      },
+      "estimate": {
+        "description": "Issue estimate value",
+        "type": "number"
+      },
+      "links": {
+        "description": "Link attachments [{url, title}]",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "url",
+            "title"
+          ]
+        }
+      },
+      "blocks": {
+        "description": "Issue IDs/identifiers this blocks",
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "blockedBy": {
+        "description": "Issue IDs/identifiers blocking this",
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "relatedTo": {
+        "description": "Related issue IDs/identifiers",
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "duplicateOf": {
+        "description": "Duplicate of issue ID/identifier",
+        "type": "string"
+      }
+    },
+    "required": [
+      "title",
+      "team"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}
