@@ -1,0 +1,1298 @@
+user:
+<manually_attached_skills>
+The user has manually attached the following skills to their message.
+These skills contain specific instructions or workflows that the user wants you to follow for this request.
+You should read and follow the instructions in these skills carefully.
+
+Skill Name: create-skill
+Path: /Users/speedybee/.cursor/skills-cursor/create-skill/SKILL.md
+SKILL.md content:
+# Creating Skills in Cursor
+
+This skill guides you through creating effective Agent Skills for Cursor. Skills are markdown files that teach the agent how to perform specific tasks: reviewing PRs using team standards, generating commit messages in a preferred format, querying database schemas, or any specialized workflow.
+
+## Before You Begin: Gather Requirements
+
+Before creating a skill, gather essential information from the user about:
+
+1. **Purpose and scope**: What specific task or workflow should this skill help with?
+2. **Target location**: Should this be a personal skill (~/.cursor/skills/) or project skill (.cursor/skills/)?
+3. **Trigger scenarios**: When should the agent automatically apply this skill?
+4. **Key domain knowledge**: What specialized information does the agent need that it wouldn't already know?
+5. **Output format preferences**: Are there specific templates, formats, or styles required?
+6. **Existing patterns**: Are there existing examples or conventions to follow?
+
+### Inferring from Context
+
+If you have previous conversation context, infer the skill from what was discussed. You can create skills based on workflows, patterns, or domain knowledge that emerged in the conversation.
+
+### Gathering Additional Information
+
+If you need clarification, use the AskQuestion tool when available:
+
+```
+Example AskQuestion usage:
+- "Where should this skill be stored?" with options like ["Personal (~/.cursor/skills/)", "Project (.cursor/skills/)"]
+- "Should this skill include executable scripts?" with options like ["Yes", "No"]
+```
+
+If the AskQuestion tool is not available, ask these questions conversationally.
+
+---
+
+## Skill File Structure
+
+### Directory Layout
+
+Skills are stored as directories containing a `SKILL.md` file:
+
+```
+skill-name/
+├── SKILL.md              # Required - main instructions
+├── reference.md          # Optional - detailed documentation
+├── examples.md           # Optional - usage examples
+└── scripts/              # Optional - utility scripts
+    ├── validate.py
+    └── helper.sh
+```
+
+### Storage Locations
+
+| Type | Path | Scope |
+|------|------|-------|
+| Personal | ~/.cursor/skills/skill-name/ | Available across all your projects |
+| Project | .cursor/skills/skill-name/ | Shared with anyone using the repository |
+
+**IMPORTANT**: Never create skills in `~/.cursor/skills-cursor/`. This directory is reserved for Cursor's internal built-in skills and is managed automatically by the system.
+
+### SKILL.md Structure
+
+Every skill requires a `SKILL.md` file with YAML frontmatter and markdown body:
+
+```markdown
+---
+name: your-skill-name
+description: Brief description of what this skill does and when to use it
+---
+
+# Your Skill Name
+
+## Instructions
+Clear, step-by-step guidance for the agent.
+
+## Examples
+Concrete examples of using this skill.
+```
+
+### Required Metadata Fields
+
+| Field | Requirements | Purpose |
+|-------|--------------|---------|
+| `name` | Max 64 chars, lowercase letters/numbers/hyphens only | Unique identifier for the skill |
+| `description` | Max 1024 chars, non-empty | Helps agent decide when to apply the skill |
+
+---
+
+## Writing Effective Descriptions
+
+The description is **critical** for skill discovery. The agent uses it to decide when to apply your skill.
+
+### Description Best Practices
+
+1. **Write in third person** (the description is injected into the system prompt):
+   - ✅ Good: "Processes Excel files and generates reports"
+   - ❌ Avoid: "I can help you process Excel files"
+   - ❌ Avoid: "You can use this to process Excel files"
+
+2. **Be specific and include trigger terms**:
+   - ✅ Good: "Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDF files or when the user mentions PDFs, forms, or document extraction."
+   - ❌ Vague: "Helps with documents"
+
+3. **Include both WHAT and WHEN**:
+   - WHAT: What the skill does (specific capabilities)
+   - WHEN: When the agent should use it (trigger scenarios)
+
+### Description Examples
+
+```yaml
+# PDF Processing
+description: Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDF files or when the user mentions PDFs, forms, or document extraction.
+
+# Excel Analysis
+description: Analyze Excel spreadsheets, create pivot tables, generate charts. Use when analyzing Excel files, spreadsheets, tabular data, or .xlsx files.
+
+# Git Commit Helper
+description: Generate descriptive commit messages by analyzing git diffs. Use when the user asks for help writing commit messages or reviewing staged changes.
+
+# Code Review
+description: Review code for quality, security, and best practices following team standards. Use when reviewing pull requests, code changes, or when the user asks for a code review.
+```
+
+---
+
+## Core Authoring Principles
+
+### 1. Concise is Key
+
+The context window is shared with conversation history, other skills, and requests. Every token competes for space.
+
+**Default assumption**: The agent is already very smart. Only add context it doesn't already have.
+
+Challenge each piece of information:
+- "Does the agent really need this explanation?"
+- "Can I assume the agent knows this?"
+- "Does this paragraph justify its token cost?"
+
+**Good (concise)**:
+```markdown
+## Extract PDF text
+
+Use pdfplumber for text extraction:
+
+\`\`\`python
+import pdfplumber
+
+with pdfplumber.open("file.pdf") as pdf:
+    text = pdf.pages[0].extract_text()
+\`\`\`
+```
+
+**Bad (verbose)**:
+```markdown
+## Extract PDF text
+
+PDF (Portable Document Format) files are a common file format that contains
+text, images, and other content. To extract text from a PDF, you'll need to
+use a library. There are many libraries available for PDF processing, but we
+recommend pdfplumber because it's easy to use and handles most cases well...
+```
+
+### 2. Keep SKILL.md Under 500 Lines
+
+For optimal performance, the main SKILL.md file should be concise. Use progressive disclosure for detailed content.
+
+### 3. Progressive Disclosure
+
+Put essential information in SKILL.md; detailed reference material in separate files that the agent reads only when needed.
+
+```markdown
+# PDF Processing
+
+## Quick start
+[Essential instructions here]
+
+## Additional resources
+- For complete API details, see [reference.md](reference.md)
+- For usage examples, see [examples.md](examples.md)
+```
+
+**Keep references one level deep** - link directly from SKILL.md to reference files. Deeply nested references may result in partial reads.
+
+### 4. Set Appropriate Degrees of Freedom
+
+Match specificity to the task's fragility:
+
+| Freedom Level | When to Use | Example |
+|---------------|-------------|---------|
+| **High** (text instructions) | Multiple valid approaches, context-dependent | Code review guidelines |
+| **Medium** (pseudocode/templates) | Preferred pattern with acceptable variation | Report generation |
+| **Low** (specific scripts) | Fragile operations, consistency critical | Database migrations |
+
+---
+
+## Common Patterns
+
+### Template Pattern
+
+Provide output format templates:
+
+```markdown
+## Report structure
+
+Use this template:
+
+\`\`\`markdown
+# [Analysis Title]
+
+## Executive summary
+[One-paragraph overview of key findings]
+
+## Key findings
+- Finding 1 with supporting data
+- Finding 2 with supporting data
+
+## Recommendations
+1. Specific actionable recommendation
+2. Specific actionable recommendation
+\`\`\`
+```
+
+### Examples Pattern
+
+For skills where output quality depends on seeing examples:
+
+```markdown
+## Commit message format
+
+**Example 1:**
+Input: Added user authentication with JWT tokens
+Output:
+\`\`\`
+feat(auth): implement JWT-based authentication
+
+Add login endpoint and token validation middleware
+\`\`\`
+
+**Example 2:**
+Input: Fixed bug where dates displayed incorrectly
+Output:
+\`\`\`
+fix(reports): correct date formatting in timezone conversion
+
+Use UTC timestamps consistently across report generation
+\`\`\`
+```
+
+### Workflow Pattern
+
+Break complex operations into clear steps with checklists:
+
+```markdown
+## Form filling workflow
+
+Copy this checklist and track progress:
+
+\`\`\`
+Task Progress:
+- [ ] Step 1: Analyze the form
+- [ ] Step 2: Create field mapping
+- [ ] Step 3: Validate mapping
+- [ ] Step 4: Fill the form
+- [ ] Step 5: Verify output
+\`\`\`
+
+**Step 1: Analyze the form**
+Run: \`python scripts/analyze_form.py input.pdf\`
+...
+```
+
+### Conditional Workflow Pattern
+
+Guide through decision points:
+
+```markdown
+## Document modification workflow
+
+1. Determine the modification type:
+
+   **Creating new content?** → Follow "Creation workflow" below
+   **Editing existing content?** → Follow "Editing workflow" below
+
+2. Creation workflow:
+   - Use docx-js library
+   - Build document from scratch
+   ...
+```
+
+### Feedback Loop Pattern
+
+For quality-critical tasks, implement validation loops:
+
+```markdown
+## Document editing process
+
+1. Make your edits
+2. **Validate immediately**: \`python scripts/validate.py output/\`
+3. If validation fails:
+   - Review the error message
+   - Fix the issues
+   - Run validation again
+4. **Only proceed when validation passes**
+```
+
+---
+
+## Utility Scripts
+
+Pre-made scripts offer advantages over generated code:
+- More reliable than generated code
+- Save tokens (no code in context)
+- Save time (no code generation)
+- Ensure consistency across uses
+
+```markdown
+## Utility scripts
+
+**analyze_form.py**: Extract all form fields from PDF
+\`\`\`bash
+python scripts/analyze_form.py input.pdf > fields.json
+\`\`\`
+
+**validate.py**: Check for errors
+\`\`\`bash
+python scripts/validate.py fields.json
+# Returns: "OK" or lists conflicts
+\`\`\`
+```
+
+Make clear whether the agent should **execute** the script (most common) or **read** it as reference.
+
+---
+
+## Anti-Patterns to Avoid
+
+### 1. Windows-Style Paths
+- ✅ Use: `scripts/helper.py`
+- ❌ Avoid: `scripts\helper.py`
+
+### 2. Too Many Options
+```markdown
+# Bad - confusing
+"You can use pypdf, or pdfplumber, or PyMuPDF, or..."
+
+# Good - provide a default with escape hatch
+"Use pdfplumber for text extraction.
+For scanned PDFs requiring OCR, use pdf2image with pytesseract instead."
+```
+
+### 3. Time-Sensitive Information
+```markdown
+# Bad - will become outdated
+"If you're doing this before August 2025, use the old API."
+
+# Good - use an "old patterns" section
+## Current method
+Use the v2 API endpoint.
+
+## Old patterns (deprecated)
+<details>
+<summary>Legacy v1 API</summary>
+...
+</details>
+```
+
+### 4. Inconsistent Terminology
+Choose one term and use it throughout:
+- ✅ Always "API endpoint" (not mixing "URL", "route", "path")
+- ✅ Always "field" (not mixing "box", "element", "control")
+
+### 5. Vague Skill Names
+- ✅ Good: `processing-pdfs`, `analyzing-spreadsheets`
+- ❌ Avoid: `helper`, `utils`, `tools`
+
+---
+
+## Skill Creation Workflow
+
+When helping a user create a skill, follow this process:
+
+### Phase 1: Discovery
+
+Gather information about:
+1. The skill's purpose and primary use case
+2. Storage location (personal vs project)
+3. Trigger scenarios
+4. Any specific requirements or constraints
+5. Existing examples or patterns to follow
+
+If you have access to the AskQuestion tool, use it for efficient structured gathering. Otherwise, ask conversationally.
+
+### Phase 2: Design
+
+1. Draft the skill name (lowercase, hyphens, max 64 chars)
+2. Write a specific, third-person description
+3. Outline the main sections needed
+4. Identify if supporting files or scripts are needed
+
+### Phase 3: Implementation
+
+1. Create the directory structure
+2. Write the SKILL.md file with frontmatter
+3. Create any supporting reference files
+4. Create any utility scripts if needed
+
+### Phase 4: Verification
+
+1. Verify the SKILL.md is under 500 lines
+2. Check that the description is specific and includes trigger terms
+3. Ensure consistent terminology throughout
+4. Verify all file references are one level deep
+5. Test that the skill can be discovered and applied
+
+---
+
+## Complete Example
+
+Here's a complete example of a well-structured skill:
+
+**Directory structure:**
+```
+code-review/
+├── SKILL.md
+├── STANDARDS.md
+└── examples.md
+```
+
+**SKILL.md:**
+```markdown
+---
+name: code-review
+description: Review code for quality, security, and maintainability following team standards. Use when reviewing pull requests, examining code changes, or when the user asks for a code review.
+---
+
+# Code Review
+
+## Quick Start
+
+When reviewing code:
+
+1. Check for correctness and potential bugs
+2. Verify security best practices
+3. Assess code readability and maintainability
+4. Ensure tests are adequate
+
+## Review Checklist
+
+- [ ] Logic is correct and handles edge cases
+- [ ] No security vulnerabilities (SQL injection, XSS, etc.)
+- [ ] Code follows project style conventions
+- [ ] Functions are appropriately sized and focused
+- [ ] Error handling is comprehensive
+- [ ] Tests cover the changes
+
+## Providing Feedback
+
+Format feedback as:
+- 🔴 **Critical**: Must fix before merge
+- 🟡 **Suggestion**: Consider improving
+- 🟢 **Nice to have**: Optional enhancement
+
+## Additional Resources
+
+- For detailed coding standards, see [STANDARDS.md](STANDARDS.md)
+- For example reviews, see [examples.md](examples.md)
+```
+
+---
+
+## Summary Checklist
+
+Before finalizing a skill, verify:
+
+### Core Quality
+- [ ] Description is specific and includes key terms
+- [ ] Description includes both WHAT and WHEN
+- [ ] Written in third person
+- [ ] SKILL.md body is under 500 lines
+- [ ] Consistent terminology throughout
+- [ ] Examples are concrete, not abstract
+
+### Structure
+- [ ] File references are one level deep
+- [ ] Progressive disclosure used appropriately
+- [ ] Workflows have clear steps
+- [ ] No time-sensitive information
+
+### If Including Scripts
+- [ ] Scripts solve problems rather than punt
+- [ ] Required packages are documented
+- [ ] Error handling is explicit and helpful
+- [ ] No Windows-style paths
+</manually_attached_skills>
+<user_query>
+/create-skill  Help me create this skill for Cursor: 
+</user_query>
+
+assistant:
+[Thinking] **Gathering skill requirements**
+
+The user needs help creating a skill. I see they've attached a create-skill request, but I need more details like the skill's purpose, location, and triggers. They haven't shared what the skill will do, only that they want my assistance. To clarify this, I should use discovery questions. I can utilize the AskQuestion tool to gather this information efficiently, keeping it concise as they require.
+[Tool call] AskQuestion
+  title: Designing Your New Cursor Skill
+  questions: [{"id":"purpose","prompt":"What is the main purpose of this new skill?","options":[{"id":"code-review","label":"Code review / PR review"},{"id":"commit-messages","label":"Generate commit messages"},{"id":"project-specific-workflow","label":"Automate a project-specific workflow (e.g., network tests, DNS setup)"},{"id":"security-checks","label":"Security checks / threat modeling"},{"id":"other","label":"Something else (I’ll describe it)"}]},{"id":"scope","prompt":"Where should this skill live?","options":[{"id":"personal","label":"Personal skill (~/.cursor/skills/) — available in all projects"},{"id":"project","label":"Project skill (.cursor/skills/) — only for this repo"},{"id":"unsure","label":"Not sure yet"}]},{"id":"triggers","prompt":"When should Cursor automatically consider using this skill?","options":[{"id":"on-command","label":"When I type a specific command like /network-regress or /review-configs"},{"id":"keywords","label":"When I mention specific keywords in chat"},{"id":"both","label":"Both a slash command and keywords"},{"id":"manual","label":"Only when I explicitly open the skill file or ask for it"}]},{"id":"output","prompt":"Do you want the skill to enforce any specific output format?","options":[{"id":"checklist","label":"Checklist / step list"},{"id":"template","label":"Fixed template (sections, headings, etc.)"},{"id":"freeform","label":"Free-form but guided"},{"id":"unsure","label":"Not sure yet"}]}]
+
+[Tool result] AskQuestion
+
+assistant:
+[Thinking] 
+I'll create a personal `code-review` skill tailored for your security-first workflow and Jules' categorized PRs, then wire it into `~/.cursor/skills/` with a checklist-style output template. I’ll first inspect existing config/skills layout, then add a new skill directory and `SKILL.md` with category-specific review checklists (security, performance, aesthetics) and ELIR-friendly guidance.
+[Tool call] user-Filesystem-read_text_file
+  path: /Users/speedybee/Documents/dev/personal-config/AGENTS.md
+  head: 40
+[Tool call] user-Filesystem-list_allowed_directories
+
+[Tool result] user-Filesystem-read_text_file
+
+[Tool result] user-Filesystem-list_allowed_directories
+
+assistant:
+I’ll create a project-local skill under `.cursor/skills` that encodes your security-first review workflow and Jules’ three PR categories, with a checklist-style output template. Then I’ll show you the SKILL contents so you can tweak wording or criteria before relying on it.
+[Tool call] user-Filesystem-create_directory
+  path: /Users/speedybee/Documents/dev/personal-config/.cursor/skills/code-review-security-first
+
+[Tool result] user-Filesystem-create_directory
+
+assistant:
+[Tool call] user-Filesystem-create_directory
+  path: /Users/speedybee/Documents/dev/personal-config/.cursor/skills
+
+[Tool result] user-Filesystem-create_directory
+
+assistant:
+[Tool call] user-Filesystem-create_directory
+  path: /Users/speedybee/Documents/dev/personal-config/.cursor/skills/code-review-security-first
+
+[Tool result] user-Filesystem-create_directory
+
+assistant:
+[Tool call] user-Filesystem-write_file
+  path: /Users/speedybee/Documents/dev/personal-config/.cursor/skills/code-review-security-first/SKILL.md
+  content: ---
+name: code-review-security-first
+description: Perform security-first code review of pull requests, especially AI-generated PRs from Jules, using category-specific checklists for security improvements, performance enhancements, and aesthetics. Use when the user asks to review a PR, evaluate changes, or examine diffs in personal-config, email-security-pipeline, or ctrld-sync.
+---
+
+# Security-First Code Review
+
+## Purpose
+
+This skill guides the agent through a **security-first, checklist-driven** review of pull requests, with special handling for AI-generated PRs from **Jules** in these repos:
+- `personal-config`
+- `email-security-pipeline`
+- `ctrld-sync`
+
+It aligns with your repository rules and ELIR protocol so reviews are consistent and auditable.
+
+## When to Use
+
+Use this skill when:
+- The user asks to **review a PR** or **review a diff**
+- The PR is labeled or described as coming from **Jules**
+- The PR is categorized as **security improvements**, **performance enhancements**, or **aesthetics/UI**
+- The user asks "is this safe?" about a change in one of the core repos above
+
+## Review Modes
+
+The agent should pick the dominant mode based on the PR description or labels. If multiple apply, run them in this order: **security → performance → aesthetics**.
+
+- **Security Mode**: For PRs tagged as security improvements, auth, secrets, validation, or anything touching trust boundaries.
+- **Performance Mode**: For PRs tagged as performance enhancements, refactors impacting runtime, I/O, or network behavior.
+- **Aesthetics Mode**: For PRs tagged as UI/UX, comments, documentation, naming, or style-only changes.
+
+The agent should always surface **security concerns first**, even in non-security modes.
+
+## Output Format
+
+Always respond using this **checklist-oriented template**:
+
+```markdown
+Route: T2+S+H
+
+## Summary
+- **Scope**: [1–2 sentences describing what the PR changes]
+- **Primary mode**: [Security | Performance | Aesthetics]
+
+## Checklist
+
+- [ ] **Correctness**: [Does the code do what it claims?]
+- [ ] **Security**: [Security-relevant findings, or "No obvious issues found"]
+- [ ] **Performance**: [Performance implications, or "Not applicable"]
+- [ ] **Maintainability**: [Readability, complexity, naming, tests]
+- [ ] **Testing**: [Existing tests, suggested new tests]
+
+## Findings
+
+- **Critical issues (must fix before merge)**
+  - [List 0–N issues, each with a short explanation and file/line reference]
+
+- **Suggestions (nice to have / improvement)**
+  - [List 0–N suggestions, or state "None"]
+
+## ELIR
+
+- **PURPOSE**: [What this PR is trying to accomplish]
+- **SECURITY**: [Key protections, assumptions, and attack surfaces touched]
+- **FAILURE MODES**: [What could break, consequence, and mitigation]
+- **VERIFY**: [What the human reviewer should double-check]
+- **MAINTAIN**: [What future-you needs to remember about this change]
+```
+
+The agent should **fill every section**, even if to say "None" or "Not applicable".
+
+## General Review Workflow
+
+1. **Identify context**
+   - Determine whether the PR is from **Jules** and note this in the Summary.
+   - Identify the primary category (security, performance, aesthetics) from labels, title, or description.
+   - Note the repository: `personal-config`, `email-security-pipeline`, or `ctrld-sync`.
+
+2. **Scan diffs at high level**
+   - Look for files that touch **auth**, **secrets**, **network**, **filesystem**, or **shell commands**.
+   - Note any new dependencies or changes to existing ones.
+   - Flag any modifications that alter **trust boundaries** (e.g., broader input, looser validation).
+
+3. **Apply the relevant mode-specific checklist** (next sections).
+
+4. **Record findings in the template**
+   - Put **critical issues** under "Critical issues" and be explicit.
+   - Use file + function names so the user can quickly locate the issues.
+
+5. **Close with ELIR**
+   - Summarize intent, security posture, and what the human should verify.
+
+---
+
+## Security Mode Checklist
+
+Use this when the PR claims to improve security, touches auth, secrets, validation, or network access.
+
+### Questions to Answer
+
+- **Threat model**: What new inputs, data flows, or trust boundaries does this change introduce or modify?
+- **Validation**: Are all external inputs validated before use (type, range, structure, allowlists)?
+- **Secrets**: Are any secrets added, logged, or exposed? Are secrets kept out of VCS?
+- **Dependencies**: Are new dependencies introduced? Are they justified and pinned appropriately?
+- **Error handling**: Do errors leak sensitive information (paths, internals, stack traces)?
+
+### Concrete Checks
+
+For all repos:
+
+- [ ] **No secrets in code**: No API keys, tokens, or credentials are committed.
+- [ ] **Strict input validation**: External input is validated and rejected on failure.
+- [ ] **Least privilege**: New code runs with minimal permissions, scopes, and access.
+- [ ] **Safe logging**: Logs avoid including secrets, tokens, or sensitive payloads.
+- [ ] **No weakened controls**: No existing security checks are removed or relaxed without comment.
+- [ ] **Dependencies documented**: Any new dependency includes a short rationale.
+
+For `personal-config`:
+
+- [ ] **Shell safety**: Shell scripts avoid destructive commands without confirmation; proper quoting and `set -euo pipefail` are used where appropriate.
+- [ ] **Network tooling**: Changes to VPN/DNS scripts preserve privacy and do not leak IP/DNS accidentally.
+
+For `email-security-pipeline`:
+
+- [ ] **Parsing safety**: Email parsing and decoding avoid injection, path traversal, or command execution.
+- [ ] **Rule logic**: Detection rules and filters default to fail-secure behavior when in doubt.
+
+For `ctrld-sync`:
+
+- [ ] **Config safety**: Control D configuration updates do not widen access accidentally.
+- [ ] **Sync integrity**: Network or DNS changes are validated before applying.
+
+When in doubt, the agent should mark items as **"Needs human review"** rather than guessing.
+
+---
+
+## Performance Mode Checklist
+
+Use this when the PR claims to improve performance or significantly changes loops, I/O, or network behavior.
+
+- [ ] **Complexity**: Is algorithmic complexity improved or at least not worse in the common case?
+- [ ] **Hot paths**: Are optimizations applied where they actually matter (measured or clearly hot paths)?
+- [ ] **I/O and network**: Are network calls batched, cached, or minimized without changing semantics?
+- [ ] **Resource usage**: Memory and file handles are managed; no obvious leaks or unbounded growth.
+- [ ] **Correctness preserved**: Optimizations preserve behavior; edge cases are still handled.
+- [ ] **Tests**: Performance-sensitive paths have at least basic tests or benchmarks where feasible.
+
+The agent should call out any optimization that **trades safety for speed** and recommend keeping safety.
+
+---
+
+## Aesthetics Mode Checklist
+
+Use this for style-only, comments, naming, or documentation changes.
+
+- [ ] **Clarity**: Comments and names improve clarity and match actual behavior.
+- [ ] **Consistency**: Changes follow existing style and naming conventions.
+- [ ] **Noise**: No large mechanical changes (e.g., reformatting) without clear value.
+- [ ] **Docs alignment**: Documentation matches current behavior and security guarantees.
+
+If the PR is **truly cosmetic**, the agent should confirm that:
+- There are **no functional changes**.
+- There is **no impact on security**.
+
+---
+
+## Handling Jules’ PRs
+
+When the PR is authored by **Jules** (your automated agent):
+
+- Treat it as **untrusted code** that requires full human review.
+- Be explicit in the Summary: "This PR is authored by Jules (AI agent); treat findings as recommendations to verify."
+- Pay special attention to:
+  - Silent behavior changes
+  - Overconfident comments or docstrings that don’t match code
+  - Subtle relaxations of security checks or validation
+
+The agent should never say that a Jules PR is "safe"—only that **no obvious issues** were found and that a human must still verify.
+
+---
+
+## Examples
+
+### Example 1: Security PR from Jules
+
+**Input context**: "Review this Jules PR that tightens SSH config and DNS rules in personal-config."
+
+The agent should:
+- Select **Security Mode**.
+- Focus on SSH, DNS, and network-mode scripts.
+- Use the output template to produce a checklist with security findings first.
+
+### Example 2: Performance PR in email-security-pipeline
+
+**Input context**: "Jules optimized the email parsing loop to be faster."
+
+The agent should:
+- Select **Performance Mode**.
+- Verify that parsing correctness is preserved and edge cases are covered.
+- Call out any trade-offs that could hurt detection accuracy or security.
+
+### Example 3: Aesthetic cleanup in ctrld-sync
+
+**Input context**: "This PR only updates comments and renames a few variables in ctrld-sync."
+
+The agent should:
+- Select **Aesthetics Mode**.
+- Confirm there are no functional changes.
+- Ensure comments and names remain accurate and helpful.
+
+
+[Tool result] user-Filesystem-write_file
+
+assistant:
+T1+S+H
+
+### Skill created
+
+I’ve created a **project-local skill** at `.cursor/skills/code-review-security-first/SKILL.md` that:
+
+- **Scope & triggers**: Targets PR/code review in `personal-config`, `email-security-pipeline`, and `ctrld-sync`, with explicit handling for **Jules-authored PRs** and their three categories (security, performance, aesthetics).  
+- **Behavior**: Instructs the agent to run a **security-first, checklist-driven review**, select a primary mode (security → performance → aesthetics), and always surface security concerns first.  
+- **Output**: Enforces a **checklist template** with `Route: T2+S+H`, a structured **Summary**, a **Checklist** section, categorized **Findings**, and an **ELIR block** that matches your repo’s ELIR protocol.  
+
+If you’d like, I can now refine any of the checklists (e.g., add more repo-specific checks) or add an `examples.md` alongside this skill with concrete, copy-pastable “good review” samples.
+
+user:
+<user_query>
+Thanks so much! I’ve also made a few updates to the skill and the Network-Debugger agent.
+
+Could you help me with a few additional refinements—especially around the trailers and hooks? I’ll share the updated context below.
+
+I really appreciate it!
+
+---
+
+### Recommended way to implement trailers consistently (and where they should live)
+
+Use **three layers** (lightweight, durable, and hard to drift):
+
+#### Layer 1 (behavioral): Add it to `pr-autofix.md` (done above)
+This ensures “when the agent is doing autofix work, it always uses the pattern.”
+
+#### Layer 2 (policy): Add a short line to `.cursorrules` under Git & Code Review
+Add a single bullet like:
+
+* “Autofix commits must follow `autofix(<category>): PR #N (cycle K) — …` and include trailers when practical.”
+
+This makes it universal, not just skill-specific.
+
+#### Layer 3 (mechanical): Add a commit template file and (optionally) set git config
+Create a repo file like:
+
+* `.gitmessage` (at repo root), or `docs/commit-template.txt`
+
+Example `.gitmessage`:
+
+```text
+<subject>
+
+Context:
+-   PR: #
+-   Category:
+-   Inputs:
+
+Changes:
+-   
+
+Verification:
+-   
+
+Notes:
+-   
+
+Autofix-PR: #
+Autofix-Cycle:
+Review-Inputs:
+Mode: T2+S+H
+ 
+Configure git:
+• Global (applies everywhere):
+	▪⁠ git config --global commit.template ~/.config/git/commit-template.txt
+
+Keep personal-config as the “source of truth,” put the template there and symlink it into the other repos. .cursorrules file and skills folder have already been symlinked to email-security-pipeline and ctrld-sync repos while keeping personal-config the "source of truth."
+
+Optional (strong enforcement, with caveats): commit hooks
+A ⁠prepare-commit-msg or ⁠commit-msg hook can auto-append trailers if missing, but:
+• hooks don’t always run in every GUI workflow, and 	
+• want to keep it simple to avoid annoying me during normal commits.
+
+Hook-based enforcement, prefer:
+• “gentle” (warn only), instead of “strict” (block commit if missing required trailers for autofix commits)
+
+- A tiny hook that only triggers when the subject starts with ⁠autofix:
+A one-page “PR Autofix Operator Cheat Sheet” (commands + decision gates) to reduce the cognitive load when  triaging 20+ PRs/day.
+</user_query>
+
+assistant:
+[Thinking] **Implementing commit message hooks**
+
+I'm working on a system where the hook reads the commit message file's first line. If it starts with "autofix(" and is missing trailers, I’ll append a blank line and stub trailers, or at least warn the user and leave it unchanged. They'll likely prefer a "warn-only" approach. I plan to document the process in a cheat sheet and clarify the steps for using the commit template and hook. I also need to make actual changes to the code as part of this implementation.
+**Using Glob for file matching**
+
+I’m planning to use Glob to call files in the `.cursor` directory, specifically targeting those that match the pattern `.cursor/agents/*.md` and files in `.cursor/skills`. This approach should help me efficiently manage and access the necessary files. Getting this right will streamline the process and make it much easier to pull together the information I need from those directories. I just need to ensure that I'm correctly specifying the patterns for my search.
+I’ll wire trailers into your global workflow: update `.cursorrules`, add a reusable commit template, create a gentle autofix-aware hook, and draft a short PR Autofix Operator Cheat Sheet. Let me inspect the current agents and rules so the refinements fit what you already have.
+[Tool call] Read
+  path: /Users/speedybee/Documents/dev/personal-config/.cursorrules
+[Tool call] Glob
+  target_directory: /Users/speedybee/Documents/dev/personal-config/.cursor
+  glob_pattern: *.md
+[Tool call] Glob
+  target_directory: /Users/speedybee/Documents/dev/personal-config/.cursor/agents
+  glob_pattern: *.md
+[Tool call] Read
+  path: /Users/speedybee/Documents/dev/personal-config/.cursor/agents/network-debugger.md
+[Tool call] Read
+  path: /Users/speedybee/Documents/dev/personal-config/.cursor/skills/code-review-security-first/SKILL.md
+
+[Tool result] Read
+
+[Tool result] Glob
+
+[Tool result] Glob
+
+[Tool result] Read
+
+[Tool result] Read
+
+assistant:
+[Thinking] 
+[Tool call] Read
+  path: /Users/speedybee/Documents/dev/personal-config/.cursor/skills/pr-autofix/SKILL.md
+
+[Tool result] Read
+
+assistant:
+[Thinking] **Updating commit guidelines**
+
+The user wants to enhance the trailers section in pr-autofix to include three layers, starting with the existing L1 behavioral format. They’re focusing on refining trailers and hooks and integrating policy in .cursorrules, along with a mechanical template and cheat sheet. I need to amend the Git & Code Review section, adding a bullet point about autofix commits/trailers after the bullet list near line 159-163. Also, the user suggested referencing .gitmessage or docs/commit-template.txt for the commit structure, so I'll look for existing documentation too.
+[Tool call] Glob
+  target_directory: /Users/speedybee/Documents/dev/personal-config
+  glob_pattern: docs/**
+
+[Tool result] Glob
+
+assistant:
+[Thinking] **Implementing commit message hooks**
+
+I want to set up a neutral template with placeholders and trailers, considering the mode T2+S+H. For security, the implementation seems harmless, and I’ll place the hook in `scripts/git-hooks/commit-msg-autofix-trailers.sh`. While AGENTS.md mentions `scripts/` for general scripts, there's no hook information, but that’s okay. I’ll create a small, gentle hook that warns the user without blocking the commit if certain lines are missing, aligning with their preference for a non-intrusive approach.
+**Implementing warn-only commit trailers**
+
+I should also suggest that users can run `git commit --amend` to add trailers. The plan is to implement a warn-only hook in Bash. The hook will check if the commit subject matches a specific pattern and whether required trailers are present. If they’re missing, it will print a warning suggesting what to add. Additionally, I need to ensure the regex is portable and document the process in a cheat sheet that covers all key patterns and steps concisely.
+**Refining pr-autofix skill**
+
+I need to update the pr-autofix skill to better emphasize the trailers. Currently, it's labeled as "Optional trailers," but I might keep that and add a note clarifying that they are recommended, referencing the hook and template. The user mentioned wanting to strengthen the policy around trailers in autofix, so updating the heading to "Optional trailers (strongly recommended for autofix)" could be useful. Lastly, I’ll add a bullet under Git & Code Review to specify that autofix commits should follow a certain format and include specific trailers when practical.
+**Patching files sequentially**
+
+I need to patch the files one by one, starting with .cursorrules. I'm using ApplyPatch at a verbose level of 1, but I still want to provide a brief explanation. I’ll focus on the Git & Code Review section, which spans lines 159-163, and maybe add a bullet point at line 165. To ensure clarity, I'll include some context while applying the patch and read the relevant lines to fully understand what needs to be modified.
+[Tool call] ApplyPatch*** Begin Patch
+*** Update File: /Users/speedybee/Documents/dev/personal-config/.cursorrules
+@@
+ ### Git & Code Review
+ - Commit messages reference security decisions when relevant
+ - Security-sensitive changes get separate commits for audit trail
+ - Review diffs for accidentally committed secrets before suggesting push
+ - Suggest branch protection for security-critical paths
++- Autofix commits must follow `autofix(<category>): PR #N (cycle K) -- …` and should include `Autofix-PR`, `Autofix-Cycle`, `Review-Inputs`, and `Mode` trailers when practical
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: /Users/speedybee/Documents/dev/personal-config/.gitmessage
++<subject>
++
++Context:
++- PR: #
++- Category: <Sentinel|Bolt|Palette>
++- Inputs: <Copilot,Gemini,Human>
++
++Changes:
++- 
++
++Verification:
++- 
++
++Notes:
++- 
++
++Autofix-PR: #
++Autofix-Cycle: 
++Review-Inputs: Copilot,Gemini,Human
++Mode: T2+S+H
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+I’ve updated `.cursorrules` with the autofix commit/trailer policy and added a reusable `.gitmessage` template at repo root. Next I’ll add a gentle autofix-aware commit hook and a short PR Autofix Operator Cheat Sheet wired to these conventions.
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: /Users/speedybee/Documents/dev/personal-config/scripts/git-hooks/autofix-trailers-commit-msg.sh
++#!/usr/bin/env bash
++#
++# Gentle commit-msg hook for autofix commits.
++# - Triggers only when the subject starts with "autofix(".
++# - Warns (does NOT block) if Autofix trailers are missing.
++#
++# Recommended trailers:
++#   Autofix-PR: #<n>
++#   Autofix-Cycle: <k>
++#   Review-Inputs: Copilot,Gemini,Human
++#   Mode: T2+S+H
++#
++# Installation (from repo root):
++#   mkdir -p .git/hooks
++#   ln -sf ../../scripts/git-hooks/autofix-trailers-commit-msg.sh .git/hooks/commit-msg
++#
++
++set -euo pipefail
++
++MSG_FILE="${1:-}"
++
++if [[ -z "${MSG_FILE}" || ! -f "${MSG_FILE}" ]]; then
++  # No message file; nothing to do.
++  exit 0
++fi
++
++# Read the first line (subject), trimming leading whitespace.
++subject="$(sed -n '1s/^[[:space:]]*//p' "${MSG_FILE}")"
++
++# Only care about autofix commits.
++if [[ ! "${subject}" =~ ^autofix\(.+\): ]]; then
++  exit 0
++fi
++
++# If at least one Autofix trailer is already present, do nothing.
++if grep -qiE '^[[:space:]]*Autofix-PR:' "${MSG_FILE}"; then
++  exit 0
++fi
++
++cat >&2 <<'EOF'
++[autofix trailers] Commit subject starts with "autofix(" but no Autofix-PR/Autofix-Cycle trailers were found.
++Recommended to add (manually or via your commit template):
++  Autofix-PR: #<n>
++  Autofix-Cycle: <k>
++  Review-Inputs: Copilot,Gemini,Human
++  Mode: T2+S+H
++
++This is a gentle reminder only; the commit is not blocked.
++EOF
++
++exit 0
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Add File: /Users/speedybee/Documents/dev/personal-config/docs/pr-autofix-operator-cheatsheet.md
++# PR Autofix Operator Cheat Sheet
++
++This cheat sheet keeps PR Autofix runs consistent across:
++
++- `personal-config`
++- `email-security-pipeline`
++- `ctrld-sync`
++
++It assumes:
++
++- You are using the `pr-autofix` skill.
++- You want `autofix(<category>): PR #N (cycle K) -- …` subjects with trailers.
++
++---
++
++## 1. Commit message shape
++
++**Subject:**
++
++```text
++autofix(<category>): PR #<n> (cycle <k>) -- <short outcome>
++```
++
++Examples:
++
++- `autofix(Sentinel): PR #42 (cycle 1) -- tighten SSH config`
++- `autofix(Bolt): PR #17 (cycle 2) -- reduce IMAP scans`
++
++**Body (template):**
++
++```text
++Context:
++- PR: #<n>
++- Category: <Sentinel|Bolt|Palette>
++- Inputs: <Copilot,Gemini,Human>
++
++Changes:
++- <what changed + where>
++
++Verification:
++- <what you ran / what to expect>
++
++Notes:
++- <needs human decision / trade-offs>
++
++Autofix-PR: #<n>
++Autofix-Cycle: <k>
++Review-Inputs: Copilot,Gemini,Human
++Mode: T2+S+H
++```
++
++`.gitmessage` at repo root contains this layout and can be used as your commit template.
++
++---
++
++## 2. Optional: use the commit template
++
++From this repo:
++
++```bash
++# One-time setup (example; adjust path as you prefer)
++mkdir -p ~/.config/git
++ln -sf "$(pwd)/.gitmessage" ~/.config/git/commit-template.personal-config.txt
++git config --global commit.template ~/.config/git/commit-template.personal-config.txt
++```
++
++You can symlink the same `.gitmessage` into other repos if you want a single source of truth.
++
++---
++
++## 3. Optional: gentle hook for Autofix trailers
++
++A **non-blocking** `commit-msg` hook is provided at:
++
++- `scripts/git-hooks/autofix-trailers-commit-msg.sh`
++
++Install it in this repo with:
++
++```bash
++mkdir -p .git/hooks
++ln -sf ../../scripts/git-hooks/autofix-trailers-commit-msg.sh .git/hooks/commit-msg
++chmod +x scripts/git-hooks/autofix-trailers-commit-msg.sh
++```
++
++Behavior:
++
++- Only runs special logic when the subject starts with `autofix(`.
++- If no `Autofix-PR:` trailer is found:
++  - Prints a reminder to stderr with the recommended trailers.
++  - **Does not** block the commit.
++
++---
++
++## 4. Decision gates for PR Autofix cycles
++
++Use this as a quick mental checklist before committing/pushing:
++
++```text
++- [ ] Have I coalesced all Critical/Should-fix review items into a single plan?
++- [ ] Is this clearly Cycle 1 or Cycle 2 for this PR?
++- [ ] Did I run the right repo-specific checks (e.g., nm-regress, tests, linters)?
++- [ ] Does the commit message match: "autofix(<category>): PR #N (cycle K) -- …"?
++- [ ] Did I fill in Autofix-PR / Autofix-Cycle / Review-Inputs / Mode trailers?
++- [ ] Am I keeping to one push per cycle (barring critical hotfixes)?
++```
++
++If any of these are “no,” pause and fix that first—then run Autofix.
++
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+[Tool call] ApplyPatch*** Begin Patch
+*** Update File: /Users/speedybee/Documents/dev/personal-config/.cursor/skills/pr-autofix/SKILL.md
+@@
+-## Required commit message format (autofix cycles)
++## Required commit message format (autofix cycles)
+@@
+-**Optional trailers**
++**Optional trailers (strongly recommended)**
+ ```
+ Autofix-PR: #<n>
+ Autofix-Cycle: <k>
+ Review-Inputs: Copilot,Gemini,Human
+ Mode: T2+S+H
+ ```
++
++Use the repo’s `.gitmessage` and the optional `scripts/git-hooks/autofix-trailers-commit-msg.sh` hook to keep trailers consistent without blocking normal commits.
+*** End Patch
+
+[Tool result] ApplyPatch
+
+assistant:
+T2+S+H
+
+### What I implemented
+
+- **Policy layer**: Updated `.cursorrules` under **Git & Code Review** to state that autofix commits must follow `autofix(<category>): PR #N (cycle K) -- …` and should include the `Autofix-PR`, `Autofix-Cycle`, `Review-Inputs`, and `Mode` trailers when practical.  
+- **Mechanical layer – template**: Added a repo-root `.gitmessage` that encodes your autofix subject line, body sections, and trailers so you can wire it into `git config commit.template` (and symlink to other repos).  
+- **Mechanical layer – hook**: Added a gentle, **non-blocking** `commit-msg` helper at `scripts/git-hooks/autofix-trailers-commit-msg.sh` which only fires for subjects starting with `autofix(` and warns (does not block) when `Autofix-PR`/`Autofix-Cycle` trailers are missing.  
+- **Operator ergonomics**: Created `docs/pr-autofix-operator-cheatsheet.md` with the autofix message shape, template usage, hook install instructions, and a short decision checklist; and nudged the `pr-autofix` skill to call trailers “strongly recommended” and reference the template + hook so everything stays aligned.
+
+user:
+<user_query>
+Thanks again. Quick check: I want to make sure I set this up correctly.
+
+I wasn’t sure whether I needed to do anything beyond the message itself, so I:
+
+- created a folder called `commit.template` inside the `.git` directory of this repo, and  
+- symlinked the commit message template you created into that folder,  
+- then repeated the same setup in my other repositories.
+
+Is that the right approach? When you mentioned “wiring it into git config,” I wasn’t sure if there were additional steps I should be taking, so I went ahead and did this—but I want to confirm I’m not missing anything.
+</user_query>
+
+assistant:
+[Thinking] **Explaining Git Commit Template Setup**
+
+I need to give a concise answer about setting a git commit template. The command `git config commit.template` should point to a file path, and placing it under `.git/commit.template/` works, but I must configure it either per-repo or globally. I should clarify that creating a folder isn’t necessary since it usually involves just a single file, which is harmless. To check the configuration, I can use `git config --show-origin commit.template`. If it’s empty, I should set it with `git config commit.template .gitmessage`. Symlinks are also worth mentioning; having one real file with others symlinked is better. The extra folder doesn’t break anything, but it won't activate automatically. I'll provide minimal commands.
+T5
+
+### Short answer
+
+What you did (making a `commit.template` folder and symlinking into it) is **not harmful**, but it **doesn’t actually activate the template** by itself. Git doesn’t look in that folder automatically – it only uses whatever file path `commit.template` is set to in your git config.
+
+### What you actually need
+
+For each place you want the template used, you need a git config entry pointing at the **file** (or its symlink), e.g. from the repo root:
+
+```bash
+# Per-repo (recommended if you’re symlinking .gitmessage across repos)
+git config commit.template .gitmessage
+```
+
+Or, if you want it global and are happy with one shared template:
+
+```bash
+# Example global setup using the personal-config template
+mkdir -p ~/.config/git
+ln -sf "$(pwd)/.gitmessage" ~/.config/git/commit-template.personal-config.txt
+git config --global commit.template ~/.config/git/commit-template.personal-config.txt
+```
+
+### How to check you’re wired correctly
+
+In any repo where you expect it to work:
+
+```bash
+git config --show-origin commit.template
+```
+
+- If you see a path (global or local), that’s the file Git will use.
+- If you see nothing, Git isn’t using any template yet and you should run one of the `git config` commands above.
+
+You can keep or delete the `.git/commit.template/` folders; they’re just regular directories, not special to Git. The critical piece is the `commit.template` config pointing to your chosen template file.
+
+user:
+<user_query>
+Thanks for clarifying that! I decided to make it global because I’m satisfied with having a single shared template. I believe this will make it easier, cleaner, and more organized. Could you please double-check the output to ensure everything is functioning correctly? However, based on the output, it appears that everything is set up properly:
+
+Last login: Wed Feb 11 12:52:48 on ttys000
+
+  Hey! Ready to script a future where everything compiles on the first try? 🖖🏽
+
+/ ❱ ~/Documents/dev/personal-config/
+~/D/d/personal-config main• ❱ git config --show-origin commit.template                     main ✖ ✱
+file:/Users/speedybee/.gitconfig        /Users/speedybee/.config/git/commit-template.personal-config.txt
+~/D/d/personal-config main• ❱ ~/Documents/dev/ctrld-sync/                                  main ✖ ✱
+~/D/d/ctrld-sync main• ❱ git config --show-origin commit.template                main 1d413db:merge
+file:/Users/speedybee/.gitconfig        /Users/speedybee/.config/git/commit-template.personal-config.txt
+~/D/d/ctrld-sync main• ❱ ~/Documents/dev/email-security-pipeline/                main 1d413db:merge
+~/D/d/email-security-pipeline main• ❱ git config --show-origin commit.template                 main
+file:/Users/speedybee/.gitconfig        /Users/speedybee/.config/git/commit-template.personal-config.txt
+~/D/d/email-security-pipeline main• ❱ 
+</user_query>
+
+assistant:
+[Thinking] **Confirming Git Commit Behavior**
+
+The user wants confirmation that the information provided is correct, and I think I can do this without needing any tools. I'll keep it concise and suggest a quick manual test, like using `git commit` with the `--dry-run` option or just starting the commit to see the template. It's important to mention that the global settings are fine, and repositories will inherit those settings.
+T5
+
+### Answer
+
+**Yes, this is set up correctly.**  
+
+All three repos are reading `commit.template` from:
+
+- `file:/Users/speedybee/.gitconfig        /Users/speedybee/.config/git/commit-template.personal-config.txt`
+
+That means:
+
+- The template is configured **globally**.
+- Each repo you showed will use the **same shared template**, exactly as you intended.
+
+### Optional quick sanity check
+
+If you want to see it in action once:
+
+```bash
+cd ~/Documents/dev/personal-config
+git commit --allow-empty
+```
+
+Git should drop you into your editor with the body pre-populated by the contents of your template (subject line blank at the top, then the sections we defined). You can abort the commit afterward.
+
+user:
+<user_query>
+Sounds good! I attempted the sanity check, but got the following output for some reason:
+
+~/D/d/personal-config main• | 128 ❱ cd ~/Documents/dev/personal-config               ✘ 128 main ✖ ✱
+                                    git commit --allow-empty
+fatal: could not read '/Users/speedybee/.config/git/commit-template.personal-config.txt': No such file or directory
+</user_query>
+
+assistant:
+[Thinking] 
+T5
+
+You’re wired correctly in git config; the failure is only because the **target file doesn’t exist yet**:
+
+`/Users/speedybee/.config/git/commit-template.personal-config.txt`
+
+Git is looking there (per your global config), but that file hasn’t been created or symlinked.
+
+### Fix
+
+From **any shell**:
+
+```bash
+mkdir -p ~/.config/git
+
+# Point the global template at your personal-config .gitmessage
+ln -sf ~/Documents/dev/personal-config/.gitmessage \
+      ~/.config/git/commit-template.personal-config.txt
+```
+
+Then re-run the sanity check:
+
+```bash
+cd ~/Documents/dev/personal-config
+git commit --allow-empty
+```
+
+You should now see your template content (sections + trailers) in the commit message buffer.

@@ -1,0 +1,29 @@
+{
+  "name": "git_log_or_diff",
+  "description": "Show commit logs or changes between commits (git log --oneline or git diff).",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "description": "The action to perform: 'log' for commit logs or 'diff' for changes",
+        "enum": [
+          "log",
+          "diff"
+        ],
+        "type": "string"
+      },
+      "commit": {
+        "description": "Optional commit to compare against HEAD for 'diff', defaults to HEAD",
+        "type": "string"
+      },
+      "directory": {
+        "description": "The directory to run the command in",
+        "type": "string"
+      }
+    },
+    "required": [
+      "directory",
+      "action"
+    ]
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "name": "read_graph",
+  "description": "Read the entire knowledge graph",
+  "arguments": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "entities": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The name of the entity"
+            },
+            "entityType": {
+              "type": "string",
+              "description": "The type of the entity"
+            },
+            "observations": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "An array of observation contents associated with the entity"
+            }
+          },
+          "required": [
+            "name",
+            "entityType",
+            "observations"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "relations": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "description": "The name of the entity where the relation starts"
+            },
+            "to": {
+              "type": "string",
+              "description": "The name of the entity where the relation ends"
+            },
+            "relationType": {
+              "type": "string",
+              "description": "The type of the relation"
+            }
+          },
+          "required": [
+            "from",
+            "to",
+            "relationType"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "entities",
+      "relations"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "additionalProperties": false
+  }
+}

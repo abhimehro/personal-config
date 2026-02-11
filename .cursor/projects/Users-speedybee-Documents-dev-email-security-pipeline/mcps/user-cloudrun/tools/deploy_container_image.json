@@ -1,0 +1,32 @@
+{
+  "name": "deploy_container_image",
+  "description": "Deploys a container image to Cloud Run. Use this tool if the user provides a container image URL.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "project": {
+        "type": "string",
+        "description": "Google Cloud project ID. Do not select it yourself, make sure the user provides or confirms the project ID."
+      },
+      "region": {
+        "type": "string",
+        "default": "europe-west1",
+        "description": "Region to deploy the service to"
+      },
+      "service": {
+        "type": "string",
+        "description": "Name of the Cloud Run service to deploy to"
+      },
+      "imageUrl": {
+        "type": "string",
+        "description": "The URL of the container image to deploy (e.g. \"gcr.io/cloudrun/hello\")"
+      }
+    },
+    "required": [
+      "project",
+      "imageUrl"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

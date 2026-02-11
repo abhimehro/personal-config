@@ -1,0 +1,17 @@
+{
+  "name": "list_comments",
+  "description": "List comments for a specific Linear issue",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "issueId": {
+        "type": "string",
+        "description": "Issue ID"
+      }
+    },
+    "required": [
+      "issueId"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

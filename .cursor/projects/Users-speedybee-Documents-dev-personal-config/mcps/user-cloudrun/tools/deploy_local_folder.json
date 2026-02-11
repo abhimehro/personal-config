@@ -1,0 +1,32 @@
+{
+  "name": "deploy_local_folder",
+  "description": "Deploy a local folder to Cloud Run. Takes an absolute folder path from the local filesystem that will be deployed. Use this tool if the entire folder content needs to be deployed.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "project": {
+        "type": "string",
+        "description": "Google Cloud project ID. Do not select it yourself, make sure the user provides or confirms the project ID."
+      },
+      "region": {
+        "type": "string",
+        "default": "europe-west1",
+        "description": "Region to deploy the service to"
+      },
+      "service": {
+        "type": "string",
+        "description": "Name of the Cloud Run service to deploy to"
+      },
+      "folderPath": {
+        "type": "string",
+        "description": "Absolute path to the folder to deploy (e.g. \"/home/user/project/src\")"
+      }
+    },
+    "required": [
+      "project",
+      "folderPath"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

@@ -1,0 +1,23 @@
+---
+description: Conduct regular security reviews of Python and JavaScript code to identify vulnerabilities.
+globs: ["**/*.py", "**/*.js"]
+alwaysApply: false
+---
+
+# Security Review Guidelines
+- Review code for common security vulnerabilities such as SQL injection and XSS.
+- Ensure proper handling of sensitive data and credentials.
+- Validate user inputs to prevent security breaches.
+- Keep dependencies updated to mitigate known security issues.
+
+# Security Review Checklist
+- [ ] Review code for common security vulnerabilities
+- [ ] Ensure proper handling of sensitive data and credentials
+- [ ] Validate user inputs to prevent security breaches
+- [ ] Keep dependencies updated to mitigate known security issues
+
+# Security Review Tools
+- [Bandit](https://github.com/PyCQA/bandit) - Python security linter
+- [eslint](https://eslint.org/) - JavaScript linter
+- [OWASP Dependency Check](https://jeremylong.github.io/DependencyCheck/) - Dependency checker
+- [OWASP ZAP](https://www.zaproxy.org/) - Web application security scanner
