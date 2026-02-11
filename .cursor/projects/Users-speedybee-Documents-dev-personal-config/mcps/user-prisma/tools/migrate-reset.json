@@ -1,0 +1,17 @@
+{
+  "name": "migrate-reset",
+  "description": "Prisma Migrate Reset --force is used to reset the database and migration history if drift is detected. Only run this command on a development database - never on production databases! If in doubt, ask the user to confirm.\n\n                The migrate reset command performs these steps:\n\n                1. Drops the database/schema if possible, or performs a soft reset if the environment does not allow deleting databases/schemas\n                2. Creates a new database/schema with the same name if the database/schema was dropped\n                3. Applies all migrations\n                4. Runs seed scripts",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "projectCWD": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "projectCWD"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

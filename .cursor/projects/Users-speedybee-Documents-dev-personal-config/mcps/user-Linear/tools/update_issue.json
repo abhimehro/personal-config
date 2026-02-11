@@ -70,8 +70,15 @@
         }
       },
       "parentId": {
-        "description": "Parent issue ID",
-        "type": "string"
+        "description": "Parent issue ID. Null to remove",
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "dueDate": {
         "description": "Due date (ISO format)",
