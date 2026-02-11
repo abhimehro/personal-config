@@ -7,58 +7,10 @@
 set -euo pipefail
 
 # Configuration
-export RUN_START=$(date +%s)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_DIR="$SCRIPT_DIR/../tmp"
-LOCK_CONTEXT_LOG="$LOG_DIR/lock_context_$(date +%Y%m%d-%H%M%S).log"
-TIMESTAMP=$(date "+%Y%m%d_%H%M%S")
-MASTER_LOG="$LOG_DIR/maintenance_master_$TIMESTAMP.log"
-PARALLEL_RESULTS_LOG="$LOG_DIR/parallel_results_$TIMESTAMP.tmp"
 
 # Global array to store results for summary
 declare -a SUMMARY_RESULTS=()
-
-# Ensure log directory exists
-mkdir -p "$LOG_DIR"
-
-# Lock file location (inside LOG_DIR to avoid /tmp vulnerabilities)
-LOCK_DIR="$LOG_DIR/run_all_maintenance.lock"
-
-# --- Locking Mechanism ---
-if ! mkdir "$LOCK_DIR" 2>/dev/null; then
-    if [[ -d "$LOCK_DIR" ]]; then
-        # Cross-platform stat check (macOS vs Linux)
-        if stat -f %m "$LOCK_DIR" >/dev/null 2>&1; then
-            LOCK_TIME=$(stat -f %m "$LOCK_DIR") # macOS
-        else
-             LOCK_TIME=$(stat -c %Y "$LOCK_DIR" 2>/dev/null || date +%s) # Linux
-        fi
-        
-        LOCK_AGE=$(($(date +%s) - LOCK_TIME))
-        if [[ $LOCK_AGE -gt 7200 ]]; then
-            LOCK_MSG="WARNING: Removing stale lock (age: $((LOCK_AGE/60)) minutes)"
-            echo "$LOCK_MSG"
-            echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] $LOCK_MSG" >> "$LOCK_CONTEXT_LOG"
-            rm -rf "$LOCK_DIR" 2>/dev/null || true
-            if ! mkdir "$LOCK_DIR" 2>/dev/null; then
-                echo "ERROR: Failed to acquire lock after stale removal"
-                exit 1
-            fi
-        else
-            echo "Another instance is already running (age: $((LOCK_AGE/60)) min)"
-            exit 0
-        fi
-    else
-        # 🛡️ Sentinel: Fix logic flaw where script continued if LOCK_DIR existed but wasn't a directory
-        echo "ERROR: Failed to acquire lock (path exists but is not a directory or permission denied): $LOCK_DIR"
-        exit 1
-    fi
-fi
-# Cleanup trap
-trap 'rm -rf "$LOCK_DIR" "$LOG_DIR"/status_*_"$TIMESTAMP".log "$PARALLEL_RESULTS_LOG" 2>/dev/null || true' EXIT INT TERM
-
-# Initialize master log
-echo "=== Master Maintenance Run Started: $(date) ===" | tee "$MASTER_LOG"
 
 # --- Colors ---
 RED='\033[0;31m'
@@ -332,8 +284,37 @@ run_monthly_maintenance() {
     run_script "deep_cleaner.sh" "cleanup"
 }
 
+# Function to print help message
+print_help() {
+    echo -e "${BOLD}${CYAN}🛠️  Master Maintenance Script${NC}"
+    echo -e "Orchestrates system maintenance, cleanup, and optimization tasks.\n"
+
+    echo -e "${BOLD}Usage:${NC} $0 [command]\n"
+
+    echo -e "${BOLD}Commands:${NC}"
+    echo -e "  ${GREEN}weekly${NC}   Run weekly maintenance tasks (Health check, updates, service optimization)"
+    echo -e "  ${GREEN}monthly${NC}  Run monthly deep cleanup (System logs, editor caches, deep cleaning)"
+    echo -e "  ${GREEN}health${NC}   Run system health check only"
+    echo -e "  ${GREEN}quick${NC}    Run quick cleanup tasks"
+    echo -e "  ${GREEN}help${NC}     Show this help message\n"
+
+    echo -e "${BOLD}Examples:${NC}"
+    echo -e "  $0 weekly    # Routine maintenance"
+    echo -e "  $0 monthly   # Deep cleaning"
+}
+
 # Function to print summary table
 print_summary() {
+    # Calculate duration
+    local end_time=$(date +%s)
+    local total_duration=$((end_time - RUN_START))
+    local total_duration_fmt="${total_duration}s"
+    if [[ $total_duration -gt 60 ]]; then
+        local min=$((total_duration / 60))
+        local sec=$((total_duration % 60))
+        total_duration_fmt="${min}m ${sec}s"
+    fi
+
     echo "" | tee -a "$MASTER_LOG"
     echo "┌────────────────────────────────────────────────────────────────────────┐" | tee -a "$MASTER_LOG"
     echo "│                        MAINTENANCE RUN SUMMARY                         │" | tee -a "$MASTER_LOG"
@@ -344,7 +325,7 @@ print_summary() {
     echo "├──────────────┼──────────────────────────────────────────┼────────────┤" | tee -a "$MASTER_LOG"
 
     if [[ ${#SUMMARY_RESULTS[@]} -eq 0 ]]; then
-        echo "│ No tasks recorded.                                                     │" | tee -a "$MASTER_LOG"
+        printf "│ %-68s │\n" "✨ No tasks were run." | tee -a "$MASTER_LOG"
     else
         for entry in "${SUMMARY_RESULTS[@]}"; do
             IFS="|" read -r name status duration <<< "$entry"
@@ -377,40 +358,105 @@ print_summary() {
         done
     fi
 
-    echo "└────────────────────────────────────────────────────────────────────────┘" | tee -a "$MASTER_LOG"
+    echo "├──────────────┴──────────────────────────────────────────┼────────────┤" | tee -a "$MASTER_LOG"
+    printf "│ %55s │ %-10s │\n" "TOTAL DURATION" "$total_duration_fmt" | tee -a "$MASTER_LOG"
+    echo "└─────────────────────────────────────────────────────────┴────────────┘" | tee -a "$MASTER_LOG"
 }
 
-# --- Execution Entry Point ---
-
-if [[ $# -eq 1 ]]; then
-    case "$1" in
-        "weekly")  run_weekly_maintenance ;;
-        "monthly") run_monthly_maintenance ;;
-        "health")  run_script "health_check.sh" "critical" ;;
-        "quick")   run_script "quick_cleanup.sh" "cleanup" ;;
-        *)
-            echo "Usage: $0 [weekly|monthly|health|quick]"
-            exit 1
-            ;;
-    esac
-else
-    # Default
-    run_weekly_maintenance
-fi
-
-# Generate error summary if script exists
-if [[ -x "$SCRIPT_DIR/generate_error_summary.sh" ]]; then
-    SUMMARY_FILE=$("$SCRIPT_DIR/generate_error_summary.sh" 2>/dev/null || echo "")
-    if [[ -n "$SUMMARY_FILE" && -f "$SUMMARY_FILE" ]]; then
-        echo "Error summary generated: $SUMMARY_FILE" | tee -a "$MASTER_LOG"
+main() {
+    # Check for help immediately
+    if [[ "${1:-}" == "help" || "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+        print_help
+        exit 0
     fi
+
+    # Configuration
+    export RUN_START=$(date +%s)
+    LOG_DIR="$SCRIPT_DIR/../tmp"
+    LOCK_CONTEXT_LOG="$LOG_DIR/lock_context_$(date +%Y%m%d-%H%M%S).log"
+    TIMESTAMP=$(date "+%Y%m%d_%H%M%S")
+    MASTER_LOG="$LOG_DIR/maintenance_master_$TIMESTAMP.log"
+    PARALLEL_RESULTS_LOG="$LOG_DIR/parallel_results_$TIMESTAMP.tmp"
+
+    # Ensure log directory exists
+    mkdir -p "$LOG_DIR"
+
+    # Lock file location (inside LOG_DIR to avoid /tmp vulnerabilities)
+    LOCK_DIR="$LOG_DIR/run_all_maintenance.lock"
+
+    # --- Locking Mechanism ---
+    if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+        if [[ -d "$LOCK_DIR" ]]; then
+            # Cross-platform stat check (macOS vs Linux)
+            if stat -f %m "$LOCK_DIR" >/dev/null 2>&1; then
+                LOCK_TIME=$(stat -f %m "$LOCK_DIR") # macOS
+            else
+                 LOCK_TIME=$(stat -c %Y "$LOCK_DIR" 2>/dev/null || date +%s) # Linux
+            fi
+
+            LOCK_AGE=$(($(date +%s) - LOCK_TIME))
+            if [[ $LOCK_AGE -gt 7200 ]]; then
+                LOCK_MSG="WARNING: Removing stale lock (age: $((LOCK_AGE/60)) minutes)"
+                echo "$LOCK_MSG"
+                echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] $LOCK_MSG" >> "$LOCK_CONTEXT_LOG"
+                rm -rf "$LOCK_DIR" 2>/dev/null || true
+                if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+                    echo "ERROR: Failed to acquire lock after stale removal"
+                    exit 1
+                fi
+            else
+                echo "Another instance is already running (age: $((LOCK_AGE/60)) min)"
+                exit 0
+            fi
+        else
+            # 🛡️ Sentinel: Fix logic flaw where script continued if LOCK_DIR existed but wasn't a directory
+            echo "ERROR: Failed to acquire lock (path exists but is not a directory or permission denied): $LOCK_DIR"
+            exit 1
+        fi
+    fi
+    # Cleanup trap
+    trap 'rm -rf "$LOCK_DIR" "$LOG_DIR"/status_*_"$TIMESTAMP".log "$PARALLEL_RESULTS_LOG" 2>/dev/null || true' EXIT INT TERM
+
+    # Initialize master log
+    echo "=== Master Maintenance Run Started: $(date) ===" | tee "$MASTER_LOG"
+
+    # --- Execution Entry Point ---
+
+    if [[ $# -eq 1 ]]; then
+        case "$1" in
+            "weekly")  run_weekly_maintenance ;;
+            "monthly") run_monthly_maintenance ;;
+            "health")  run_script "health_check.sh" "critical" ;;
+            "quick")   run_script "quick_cleanup.sh" "cleanup" ;;
+            *)
+                echo "Usage: $0 [weekly|monthly|health|quick]"
+                echo "Try '$0 help' for more information."
+                exit 1
+                ;;
+        esac
+    else
+        # Default
+        run_weekly_maintenance
+    fi
+
+    # Generate error summary if script exists
+    if [[ -x "$SCRIPT_DIR/generate_error_summary.sh" ]]; then
+        SUMMARY_FILE=$("$SCRIPT_DIR/generate_error_summary.sh" 2>/dev/null || echo "")
+        if [[ -n "$SUMMARY_FILE" && -f "$SUMMARY_FILE" ]]; then
+            echo "Error summary generated: $SUMMARY_FILE" | tee -a "$MASTER_LOG"
+        fi
+    fi
+
+    print_summary
+
+    # Footer
+    echo "=== Master Maintenance Run Completed: $(date) ===" | tee -a "$MASTER_LOG"
+    echo "Logs saved to: $LOG_DIR" | tee -a "$MASTER_LOG"
+
+    # Clean up old logs (Keep 10)
+    find "$LOG_DIR" -name "maintenance_master_*.log" -type f | sort -r | tail -n +11 | xargs rm -f 2>/dev/null || true
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
 fi
-
-print_summary
-
-# Footer
-echo "=== Master Maintenance Run Completed: $(date) ===" | tee -a "$MASTER_LOG"
-echo "Logs saved to: $LOG_DIR" | tee -a "$MASTER_LOG"
-
-# Clean up old logs (Keep 10)
-find "$LOG_DIR" -name "maintenance_master_*.log" -type f | sort -r | tail -n +11 | xargs rm -f 2>/dev/null || true

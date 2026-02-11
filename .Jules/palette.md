@@ -29,3 +29,7 @@
 ## 2024-05-24 - CLI Output Scanability
 **Learning:** For long-running maintenance scripts, users scan summary tables for failures and outliers (long durations). Standardizing column widths and using semantic colors (Red/Green) significantly reduces cognitive load.
 **Action:** Implement fixed-width summary tables with ANSI colors and duration tracking for all batch processing scripts.
+
+## 2026-02-12 - Help as a Feature
+**Learning:** Users often explore CLI tools by running `--help` before reading documentation. A comprehensive, colorful help message builds confidence and discoverability.
+**Action:** Always implement a robust `print_help` function for scripts with multiple subcommands, using colors and examples to guide usage.
