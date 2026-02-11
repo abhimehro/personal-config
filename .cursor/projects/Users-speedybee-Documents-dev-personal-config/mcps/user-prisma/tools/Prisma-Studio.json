@@ -1,0 +1,17 @@
+{
+  "name": "Prisma-Studio",
+  "description": "Open Prisma Studio to view data in your database in a pleasing visual ui.\n      Provide the current working directory of the users project. This should be the top level directory of the project.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "projectCWD": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "projectCWD"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

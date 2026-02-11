@@ -1,0 +1,158 @@
+{
+  "name": "generate_pdf",
+  "description": "Generate a professional PDF document from markdown content using Gen-PDF. Supports advanced formatting, code highlighting, math expressions, tables, and customizable styling options including dark mode.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "markdownDocument": {
+        "description": "Markdown content to convert to PDF.\n          \n## MARKDOWN ELEMENTS AND FEATURES\n\n### 1. Headings\nUse hash symbols followed by space and text. Number of hashes = heading level (1-6).\n# Heading 1\n\n### 2. Bold\nWrap text with ** or __.\n**bold text**\n\n### 3. Italic\nWrap text with * or _.\n*italic text*\n\n### 4. Inline Code\nWrap text with backticks.\n`code`\n\n### 5. Strikethrough\nWrap text with ~~.\n~~strikethrough~~\n\n### 6. Subscript\nWrap text with ~.\nH~2~O\n\n### 7. Superscript\nWrap text with ^.\nE = mc^2^\n\n### 8. Links\nUse [text](url) format.\n[Link text](https://example.com)\n\n### 9. Blockquotes\nStart lines with >. Use >> for nested quotes.\n> This is a quote\n>> Nested quote\n\n### 10. Ordered Lists\nStart with number + period. Supports: 1., a., A., i., I.\n1. First item\n2. Second item\n\n### 11. Unordered Lists\nStart with - or *.\n- Item one\n- Item two\n\n### 12. Task Lists\nUse - [ ] for unchecked, - [x] for checked.\n- [ ] Unchecked task\n- [x] Checked task\n\n### 13. Alerts\nUse blockquote with [!TYPE] on first line. TYPE can be NOTE, TIP, IMPORTANT, WARNING, CAUTION.\n> [!NOTE]\n> This is a note\n\n> [!TIP]\n> This is a tip\n\n> [!IMPORTANT]\n> This is important\n\n> [!WARNING]\n> This is a warning\n\n> [!CAUTION]\n> This is a caution\n\n### 14. Code Blocks\nWrap with triple backticks and language name.\n\n### 15. Inline Math\nWrap with single $.\n$E = mc^2$\n\n### 16. Block Math\nWrap with double $$.\n$$\n\\sum_{i=1}^{n} x_i\n$$\n\n### 17. Mermaid Diagrams\nUse code block with mermaid language.\n### 18. Tables\nUse pipes | to separate columns, hyphens for header separator.\n| Header 1 | Header 2 |\n|----------|----------|\n| Cell 1   | Cell 2   |\n\n### 19. Table Alignment\nUse colons in separator row.\n| Left | Center | Right |\n|:-----|:------:|------:|\n| A    | B      | C     |\n\n### 20. Table Colspan\nUse multiple consecutive pipe characters (|||) to span columns.\n| Spans 3 columns |||\n\n### 21. Table Rowspan\nUse ^ in cell below to merge with cell above.\n| Cell spans |\n| two rows ^ |\n\n### 22. Table Footer\nAdd separator row with |---|.\n| Data  |\n|-------|\n| Value |\n|-------|\n| Total |\n\n### 23. Footnotes\nReference with [^id], define with [^id]: text.\nText with footnote[^1]\n\n[^1]: Footnote definition\n\n### 24. Citations\nYou can reference sources with their key in square brackets [key].\nThe key should point to a source in the .bib text file that you provide alongside the markdown document.\nThis bib should be formatted in the correct .bib format.\n\nAccording to research [smith2023]\n\n// Bibtex example\n@article{smith2023,\nauthor = {Smith, John and Carter, Emily},\ntitle = {The Importance of Sleep for Cognitive Function},\njournal = {Journal of Sleep Research},\nyear = {2023},\nvolume = {12},\nnumber = {3},\npages = {100-115},\ndoi = {10.1111/jsr.2023.12001}\n}\n\n### 25. Description Lists\nUse : term : definition format.\n: Term 1 : Definition 1\n: Term 2 : Definition 2\n\n## 26. Landscape\nYou can use the landscape element to add some content on a new landscape page.\nThis is useful when you want to add a large table that won't fit on a portrait page.\n[landscape]\nThis content will be displayed on a new landscape page.\n[/landscape]\n\n## 27. Blocks\nYou can use the block element to add a block page to the document with the following syntax:\nBlocks are useful when you want to position content on a specific side of the document, like tucking an address or sigtaylor-and-francis-chicago-author-date on the right or left side.\nBlocks can have the following options:\n- pos: left, right, center\n- width: a number expressing percentage of the page width\n- textalign: left, center, right, justify\n- spacey: a number in em expressing the space before and after the block\n[block pos=right width=30% textalign=right spacey=10em]\nThis block will be positioned on the right side of the page and will have a width of 30% of the page width.\n[/block]\n\n## 28. Abstract\nYou can use the abstract element to add an abstract to the document with the following syntax:\nAbstracts are useful when you want to add a summary of the document to the beginning of the document.\nAbstracts can have the following options:\n- title: the title of the abstract\n- textalign: left, center, right, justify\n- spacey: a number in em expressing the space before and after the abstract\n[abstract title=\"Abstract\" textalign=justify spacey=10em]\nThis abstract will have a width of 80% of the page width.\n[/abstract]\n\n## 29. Bibliography\nYou can use the bibliography element to add a bibliography to the document with the following syntax:\nBibliography can have the following options:\n- title: the title of the bibliography \n- style: the style of the bibliography can be one of the supported bibliography styles\nthe tag does not need to be closed it is self closing.\n[bibliography title=\"Bibliography\" style=\"taylor-and-francis-chicago-author-date\"]\n\n## 30 TOC\nYou can use the toc element to add a table of contents to the document with the following syntax:\nToc can have the following options:\n- title: the title of the toc\n- depth: the depth of the toc\n- indent: the indent of the toc\nthe tag does not need to be closed it is self closing.\n[toc title=\"Table of Contents\" depth=2 indent=10pt]",
+        "type": "string"
+      },
+      "title": {
+        "description": "Title for the PDF document",
+        "type": "string"
+      },
+      "enablePageNumbering": {
+        "default": true,
+        "description": "Enable page numbering",
+        "type": "boolean"
+      },
+      "darkMode": {
+        "default": false,
+        "description": "Enable dark theme for the document",
+        "type": "boolean"
+      },
+      "bibliographyStyle": {
+        "default": "taylor-and-francis-chicago-author-date",
+        "description": "Style of the bibliography",
+        "type": "string",
+        "enum": [
+          "alphanumeric",
+          "american-anthropological-association",
+          "american-chemical-society",
+          "american-geophysical-union",
+          "american-institute-of-aeronautics-and-astronautics",
+          "american-institute-of-physics",
+          "american-medical-association",
+          "american-meteorological-society",
+          "american-physics-society",
+          "american-physiological-society",
+          "american-political-science-association",
+          "american-psychological-association",
+          "american-society-for-microbiology",
+          "american-society-of-civil-engineers",
+          "american-society-of-mechanical-engineers",
+          "american-sociological-association",
+          "angewandte-chemie",
+          "annual-reviews",
+          "annual-reviews-author-date",
+          "associacao-brasileira-de-normas-tecnicas",
+          "association-for-computing-machinery",
+          "biomed-central",
+          "bristol-university-press",
+          "british-medical-journal",
+          "cell",
+          "chicago-author-date",
+          "chicago-fullnotes",
+          "chicago-notes",
+          "copernicus",
+          "council-of-science-editors",
+          "council-of-science-editors-author-date",
+          "current-opinion",
+          "deutsche-gesellschaft-für-psychologie",
+          "deutsche-sprache",
+          "elsevier-harvard",
+          "elsevier-vancouver",
+          "elsevier-with-titles",
+          "frontiers",
+          "future-medicine",
+          "future-science",
+          "gb-7714-2005-numeric",
+          "gb-7714-2015-author-date",
+          "gb-7714-2015-note",
+          "gb-7714-2015-numeric",
+          "gost-r-705-2008-numeric",
+          "harvard-cite-them-right",
+          "institute-of-electrical-and-electronics-engineers",
+          "institute-of-physics-numeric",
+          "iso-690-author-date",
+          "iso-690-numeric",
+          "karger",
+          "mary-ann-liebert-vancouver",
+          "modern-humanities-research-association",
+          "modern-language-association",
+          "modern-language-association-8",
+          "multidisciplinary-digital-publishing-institute",
+          "nature",
+          "pensoft",
+          "public-library-of-science",
+          "royal-society-of-chemistry",
+          "sage-vancouver",
+          "sist02",
+          "spie",
+          "springer-basic",
+          "springer-basic-author-date",
+          "springer-fachzeitschriften-medizin-psychologie",
+          "springer-humanities-author-date",
+          "springer-lecture-notes-in-computer-science",
+          "springer-mathphys",
+          "springer-socpsych-author-date",
+          "springer-vancouver",
+          "taylor-and-francis-chicago-author-date",
+          "taylor-and-francis-national-library-of-medicine",
+          "the-institution-of-engineering-and-technology",
+          "the-lancet",
+          "thieme",
+          "trends",
+          "turabian-author-date",
+          "turabian-fullnote-8",
+          "vancouver",
+          "vancouver-superscript"
+        ]
+      },
+      "bibliography": {
+        "description": "Bibliography text file in .bib format that will be used to reference sources in the document.",
+        "type": "string"
+      },
+      "pageMargin": {
+        "default": "large",
+        "description": "Page margins",
+        "type": "string",
+        "enum": [
+          "small",
+          "medium",
+          "large"
+        ]
+      },
+      "toc": {
+        "default": false,
+        "description": "Use this setting to add a table of contents to the PDF document at the beginning of the document. \nYou may want to add it if the document is long and you want to be able to navigate through it easily.",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "markdownDocument",
+      "title",
+      "enablePageNumbering",
+      "darkMode",
+      "bibliographyStyle",
+      "pageMargin",
+      "toc"
+    ],
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "message"
+    ],
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false
+  }
+}
