@@ -142,6 +142,14 @@ check_root() {
 # Create directory structure
 setup_directories() {
     log "Setting up directory structure..."
+
+    # 🛡️ Sentinel: Security Hardening against Symlink Attacks
+    # Ensure PROFILES_DIR is not a symlink before creating/using it
+    if [[ -L "$PROFILES_DIR" ]]; then
+        log_error "Security Alert: $PROFILES_DIR is a symlink! Aborting to prevent hijack."
+        exit 1
+    fi
+
     mkdir -p "$PROFILES_DIR" "$BACKUP_DIR"
     # 🛡️ Sentinel: Restrict permissions to root-only
     chmod 700 "$PROFILES_DIR" "$BACKUP_DIR"
@@ -294,6 +302,9 @@ generate_profile_config() {
 
     if [[ -f "$TEMP_CONFIG" ]]; then
         # Copy and customize the generated config
+        # 🛡️ Sentinel: Security Hardening against Symlink Attacks
+        # Remove destination first to break any existing symlinks
+        rm -f "$config_file"
         cp "$TEMP_CONFIG" "$config_file"
         # 🛡️ Sentinel: Restrict permissions to root-only
         chmod 600 "$config_file"
