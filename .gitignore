@@ -237,3 +237,5 @@ media-streaming/backup/rclone.conf.backup
 
 # Secrets
 controld-system/profiles.env
+".cursor"
+".cursor"

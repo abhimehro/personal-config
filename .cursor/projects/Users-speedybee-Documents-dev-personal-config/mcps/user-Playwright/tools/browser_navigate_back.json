@@ -1,8 +1,0 @@
-{
-  "name": "browser_navigate_back",
-  "description": "Go back to the previous page in the history",
-  "arguments": {
-    "type": "object",
-    "properties": {}
-  }
-}
