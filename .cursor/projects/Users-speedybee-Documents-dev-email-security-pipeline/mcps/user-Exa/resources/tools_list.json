@@ -1,6 +1,0 @@
-{
-  "uri": "exa://tools/list",
-  "name": "tools_list",
-  "description": "List of available Exa tools and their descriptions",
-  "mimeType": "application/json"
-}
