@@ -166,7 +166,7 @@ if [[ -f "$REPO_ROOT/configs/.gitconfig" ]]; then
 	# as the commit.template location (expanded to $HOME/.config/git/commit-template.personal-config.txt).
 	# This prevents "could not read template" errors on fresh installs.
 	log "Ensuring Git commit template is configured..."
-	mkdir -p "${HOME/.config/git"
+	mkdir -p "${HOME}/.config/git"
 	ensure_file_link \
 		"$HOME/.config/git/commit-template.personal-config.txt" \
 		"$REPO_ROOT/.gitmessage" \
