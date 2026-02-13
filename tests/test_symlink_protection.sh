@@ -10,8 +10,10 @@ echo "Testing Symlink Protection in controld-manager"
 echo "=========================================="
 
 # Setup test environment
-TEST_DIR="/tmp/controld-symlink-test-$$"
-mkdir -p "$TEST_DIR"
+# Use mktemp -d to create a unique, secure temporary directory for tests.
+# This avoids predictable /tmp paths that could be exploited via symlinks,
+# especially when tests are run with elevated privileges.
+TEST_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t 'controld-symlink-test')"
 
 # Cleanup function
 cleanup() {
