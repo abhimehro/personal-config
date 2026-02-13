@@ -232,7 +232,7 @@ wait_for_pids() {
         done
     else
         for pid in $pids_list; do
-            wait "$pid"
+            wait "$pid" || true
         done
     fi
 }
