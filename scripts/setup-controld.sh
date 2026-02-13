@@ -87,6 +87,10 @@ fi
 # 🛡️ Sentinel: Restrict permissions and ownership to root-only
 sudo chmod 700 "/etc/controld"
 sudo chown root:wheel "/etc/controld"
+# 🛡️ Sentinel: Post-creation verification to catch TOCTOU symlink swaps
+if [[ -L "/etc/controld" ]]; then
+    error "Security Alert: /etc/controld became a symlink after creation. Aborting to prevent hijack."
+fi
 
 # 🛡️ Sentinel: Prevent Symlink Hijacking for Config File
 if [[ -L "$ENV_DEST" ]]; then
