@@ -77,18 +77,18 @@
 **Learning:** Hardcoded paths in scripts often contain sensitive information (usernames, project structures) and break portability. They also encourage bad security practices by relying on specific environments rather than robust configuration.
 **Prevention:** Use `argparse` or environment variables to inject paths. Validate that input directories exist. Default to relative paths (like `.`) for better portability.
 
-[CWE-22]: https://cwe.mitre.org/data/definitions/22.html
-[CWE-59]: https://cwe.mitre.org/data/definitions/59.html
-[CWE-78]: https://cwe.mitre.org/data/definitions/78.html
-[CWE-88]: https://cwe.mitre.org/data/definitions/88.html
-[CWE-732]: https://cwe.mitre.org/data/definitions/732.html
-
 ## 2026-02-10 - Command Injection in Health Check
 **Vulnerability:** Command Injection ([CWE-78][]) in `maintenance/bin/health_check.sh`. The script interpolated the `HEALTH_LOG_LOOKBACK_HOURS` variable directly into a command string passed to `bash -c`, allowing arbitrary code execution if the variable contained malicious input.
 **Learning:** Shell scripts that construct commands from variables are inherently risky. Sourcing configuration files (`source config.env`) without validation assumes the file is trustworthy, but environment variables can override defaults or be set maliciously if the config is missing.
 **Prevention:** Always sanitize variables used in command construction. Ensure numeric values are actually integers using regex validation (`[[ "$VAR" =~ ^[0-9]+$ ]]`) before using them.
 
 ## 2026-02-12 - Symlink Attack in Config Generation
-**Vulnerability:** Symlink following ([CWE-59][]) in `controld-system/scripts/controld-manager`. The script used `cp` to overwrite a configuration file without checking if the destination was a symlink.
-**Learning:** `cp` follows symlinks by default when the destination exists. If an attacker can create a symlink at the destination path, running `cp` as root will overwrite the symlink's target.
-**Prevention:** Remove the destination file (`rm -f`) before copying to ensure any existing symlinks are broken. Also, verify critical directories are not symlinks before use.
+**Vulnerability:** Symlink following ([CWE-59][]) in `controld-system/scripts/controld-manager`. The script used `cp` to overwrite configuration files and `mkdir`+`chmod` for directory creation without adequate symlink protection, creating TOCTOU race conditions.
+**Learning:** Operations like `cp`, `chmod`, and `mkdir` can be exploited through symlinks. Multi-step operations (mkdir+chmod or rm+cp+chmod) create TOCTOU windows where an attacker can inject symlinks between steps. Even single checks before operations are vulnerable if the check and operation aren't atomic.
+**Prevention:** Use atomic operations: `install -d -m 700` for directories (creates with permissions in one step) and `install -m 600` for files (copies and sets permissions atomically). Add both pre-flight symlink checks AND post-creation verification to minimize TOCTOU windows. Protect ALL sensitive paths (directories, files, and their parents), not just the final destination.
+
+[CWE-22]: https://cwe.mitre.org/data/definitions/22.html
+[CWE-59]: https://cwe.mitre.org/data/definitions/59.html
+[CWE-78]: https://cwe.mitre.org/data/definitions/78.html
+[CWE-88]: https://cwe.mitre.org/data/definitions/88.html
+[CWE-732]: https://cwe.mitre.org/data/definitions/732.html
