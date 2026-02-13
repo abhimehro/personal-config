@@ -75,9 +75,23 @@ append() { REPORT+="$1"$'\n'; log_info "$1"; }
 # 1) Disk space check
 ROOT_USE=$(percent_used "/")
 append "Disk usage for /: ${ROOT_USE}%"
-if (( ROOT_USE >= ${DISK_CRIT_PCT:-90} )); then
+
+# 🛡️ Sentinel: Sanitize threshold inputs
+DISK_CRIT_VAL="${DISK_CRIT_PCT:-90}"
+if ! [[ "$DISK_CRIT_VAL" =~ ^[0-9]+$ ]]; then
+    log_warn "Invalid DISK_CRIT_PCT: '$DISK_CRIT_VAL'. Using default 90."
+    DISK_CRIT_VAL=90
+fi
+
+DISK_WARN_VAL="${DISK_WARN_PCT:-80}"
+if ! [[ "$DISK_WARN_VAL" =~ ^[0-9]+$ ]]; then
+    log_warn "Invalid DISK_WARN_PCT: '$DISK_WARN_VAL'. Using default 80."
+    DISK_WARN_VAL=80
+fi
+
+if (( ROOT_USE >= DISK_CRIT_VAL )); then
   log_warn "Critical disk usage: ${ROOT_USE}%"
-elif (( ROOT_USE >= ${DISK_WARN_PCT:-80} )); then
+elif (( ROOT_USE >= DISK_WARN_VAL )); then
   log_warn "High disk usage: ${ROOT_USE}%"
 fi
 
@@ -113,6 +127,13 @@ fi
 
 # 4) Enhanced kernel panic detection with TIMEOUT to prevent hanging
 HOURS="${HEALTH_LOG_LOOKBACK_HOURS:-24}"
+
+# 🛡️ Sentinel: Sanitize input to prevent command injection
+if ! [[ "$HOURS" =~ ^[0-9]+$ ]]; then
+    log_warn "Invalid HEALTH_LOG_LOOKBACK_HOURS value: '$HOURS'. Using default 24."
+    HOURS=24
+fi
+
 PANIC_DETAILS=""
 PANIC_FILES=""
 MOST_RECENT_PANIC=""
@@ -269,7 +290,7 @@ log_info "Health report saved to ${REPORT_FILE}"
 HEALTH_ISSUES=0
 ISSUE_REASONS=()
 
-if [[ "${ROOT_USE:-0}" -ge "${DISK_WARN_PCT:-80}" ]]; then
+if [[ "${ROOT_USE:-0}" -ge "${DISK_WARN_VAL:-80}" ]]; then
   ((HEALTH_ISSUES++))
   ISSUE_REASONS+=("Disk ${ROOT_USE:-?}%")
 fi

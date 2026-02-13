@@ -291,13 +291,37 @@ print_help() {
 }
 
 interactive_menu() {
+  # Determine active state for UI feedback
+  local active_mode="none"
+
+  if pgrep -x "ctrld" >/dev/null 2>&1; then
+    local config_link="/etc/controld/ctrld.toml"
+    if sudo test -L "$config_link"; then
+      local target
+      target=$(sudo readlink "$config_link" || echo "")
+      if [[ "$target" == *"privacy"* ]]; then active_mode="privacy"; fi
+      if [[ "$target" == *"browsing"* ]]; then active_mode="browsing"; fi
+      if [[ "$target" == *"gaming"* ]]; then active_mode="gaming"; fi
+    fi
+  elif ifconfig | awk '/^utun/ {s=1; next} s && /inet / && !/127\.0\.0\.1/ {f=1; exit} s && /^[^ \t]/ {s=0} END {exit !f}' >/dev/null 2>&1; then
+    active_mode="vpn"
+  fi
+
+  local m_priv="  " m_brow="  " m_game="  " m_vpn="  "
+  case "$active_mode" in
+    privacy)  m_priv="${GREEN}✅${NC}" ;;
+    browsing) m_brow="${GREEN}✅${NC}" ;;
+    gaming)   m_game="${GREEN}✅${NC}" ;;
+    vpn)      m_vpn="${GREEN}✅${NC}" ;;
+  esac
+
   echo -e "\n${BOLD}${BLUE}🎨 Network Mode Manager${NC}"
   echo -e "${BLUE}   Select a mode to apply:${NC}\n"
 
-  echo -e "   1) ${E_PRIVACY} Control D (Privacy)"
-  echo -e "   2) ${E_BROWSING} Control D (Browsing) ${YELLOW}[Default]${NC}"
-  echo -e "   3) ${E_GAMING} Control D (Gaming)"
-  echo -e "   4) ${E_VPN} Windscribe (VPN)"
+  echo -e "   1) ${E_PRIVACY} Control D (Privacy)          $m_priv"
+  echo -e "   2) ${E_BROWSING} Control D (Browsing)         $m_brow ${YELLOW}[Default]${NC}"
+  echo -e "   3) ${E_GAMING} Control D (Gaming)           $m_game"
+  echo -e "   4) ${E_VPN} Windscribe (VPN)             $m_vpn"
   echo -e "   5) ${E_INFO} Show Status"
   echo -e "   0) 🚪 Exit"
 
