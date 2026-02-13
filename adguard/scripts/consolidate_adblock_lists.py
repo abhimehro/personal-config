@@ -6,11 +6,13 @@ This script consolidates various ad-blocking lists into two comprehensive sets:
 1. Denylist - All tracker blocking rules
 2. Allowlist - Essential bypass rules and legitimate TLDs
 
-Usage: python3 consolidate_adblock_lists.py
+Usage: python3 consolidate_adblock_lists.py --input-dir <input_dir> --output-dir <output_dir>
 """
 
 import json
 import os
+import argparse
+import sys
 from pathlib import Path
 
 def load_json_file(filepath):
@@ -102,15 +104,15 @@ def create_json_structure(domains, group_name, action_do):
         ]
     }
 
-def write_json_files(base_dir, denylist_domains, allowlist_domains):
+def write_json_files(output_dir, denylist_domains, allowlist_domains):
     """Write JSON formatted list files."""
     print("\n💾 Creating consolidated files...")
     
     denylist_json = create_json_structure(denylist_domains, "Comprehensive Tracker Denylist", 0)
     allowlist_json = create_json_structure(allowlist_domains, "Comprehensive Allowlist", 1)
     
-    denylist_path = base_dir / "Consolidated-Denylist.json"
-    allowlist_path = base_dir / "Consolidated-Allowlist.json"
+    denylist_path = output_dir / "Consolidated-Denylist.json"
+    allowlist_path = output_dir / "Consolidated-Allowlist.json"
     
     with open(denylist_path, 'w', encoding='utf-8') as f:
         json.dump(denylist_json, f, indent=2, ensure_ascii=False)
@@ -122,16 +124,16 @@ def write_json_files(base_dir, denylist_domains, allowlist_domains):
     print(f"✅ Created: {allowlist_path}")
     return denylist_path, allowlist_path
 
-def write_text_files(base_dir, denylist_domains, allowlist_domains):
+def write_text_files(output_dir, denylist_domains, allowlist_domains):
     """Write text formatted list files for AdGuard."""
     print("\n📄 Creating simple text versions for AdGuard...")
     
-    denylist_txt_path = base_dir / "Consolidated-Denylist.txt"
+    denylist_txt_path = output_dir / "Consolidated-Denylist.txt"
     with open(denylist_txt_path, 'w', encoding='utf-8') as f:
         for domain in sorted(denylist_domains):
             f.write(f"{domain}\n")
     
-    allowlist_txt_path = base_dir / "Consolidated-Allowlist.txt"
+    allowlist_txt_path = output_dir / "Consolidated-Allowlist.txt"
     with open(allowlist_txt_path, 'w', encoding='utf-8') as f:
         for domain in sorted(allowlist_domains):
             f.write(f"@@{domain}\n")
@@ -140,7 +142,7 @@ def write_text_files(base_dir, denylist_domains, allowlist_domains):
     print(f"✅ Created: {allowlist_txt_path}")
     return denylist_txt_path, allowlist_txt_path
 
-def print_summary(denylist_domains, allowlist_domains):
+def print_summary(denylist_domains, allowlist_domains, output_dir):
     """Print consolidation summary."""
     print("\n" + "=" * 50)
     print("🎉 CONSOLIDATION COMPLETE!")
@@ -149,7 +151,7 @@ def print_summary(denylist_domains, allowlist_domains):
     print(f"📊 Allowlist: {len(allowlist_domains):,} domains")
     print(f"📊 Total processed: {len(denylist_domains) + len(allowlist_domains):,} domains")
     
-    print("\n📁 Files created:")
+    print("\n📁 Files created in {}:".format(output_dir))
     print(f"  • Consolidated-Denylist.json (JSON format)")
     print(f"  • Consolidated-Allowlist.json (JSON format)")
     print(f"  • Consolidated-Denylist.txt (Text format)")
@@ -162,7 +164,25 @@ def print_summary(denylist_domains, allowlist_domains):
 
 def main():
     """Main consolidation workflow."""
-    base_dir = Path("/Users/abhimehrotra/Downloads")
+    parser = argparse.ArgumentParser(description="Consolidate AdGuard blocklists.")
+    parser.add_argument("--input-dir", type=Path, default=Path("."), help="Directory containing input JSON files (default: current directory)")
+    parser.add_argument("--output-dir", type=Path, default=Path("."), help="Directory to write output files (default: current directory)")
+
+    args = parser.parse_args()
+
+    input_dir = args.input_dir.resolve()
+    output_dir = args.output_dir.resolve()
+
+    if not input_dir.exists() or not input_dir.is_dir():
+        print(f"Error: Input directory '{input_dir}' does not exist or is not a directory.")
+        sys.exit(1)
+
+    if not output_dir.exists():
+        try:
+            output_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            print(f"Error: Could not create output directory '{output_dir}': {e}")
+            sys.exit(1)
     
     tracker_files = [
         "CD-Microsoft-Tracker.json",
@@ -181,18 +201,20 @@ def main():
     ]
     
     print("🔍 Consolidating Ad-Blocking Lists...")
+    print(f"Input Directory: {input_dir}")
+    print(f"Output Directory: {output_dir}")
     print("=" * 50)
     
     # Process files
-    denylist_domains = process_tracker_files(base_dir, tracker_files)
-    allowlist_domains = process_allowlist_files(base_dir)
+    denylist_domains = process_tracker_files(input_dir, tracker_files)
+    allowlist_domains = process_allowlist_files(input_dir)
     
     # Write output files
-    write_json_files(base_dir, denylist_domains, allowlist_domains)
-    write_text_files(base_dir, denylist_domains, allowlist_domains)
+    write_json_files(output_dir, denylist_domains, allowlist_domains)
+    write_text_files(output_dir, denylist_domains, allowlist_domains)
     
     # Print summary
-    print_summary(denylist_domains, allowlist_domains)
+    print_summary(denylist_domains, allowlist_domains, output_dir)
 
 if __name__ == "__main__":
     main()
