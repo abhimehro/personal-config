@@ -183,7 +183,7 @@ wait_for_pids() {
 
     if [ -t 1 ] && [ -z "${CI:-}" ]; then
         tput civis 2>/dev/null || true
-        trap 'tput cnorm 2>/dev/null || true; exit' INT TERM
+        trap 'tput cnorm 2>/dev/null || true; trap - INT TERM; kill -s INT $$' INT TERM
 
         local start_time=$(date +%s)
         local elapsed=0
