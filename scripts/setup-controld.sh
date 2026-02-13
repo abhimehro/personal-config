@@ -39,6 +39,11 @@ if [[ ! -f "$CONTROLD_MANAGER_SRC" ]]; then
     error "controld-manager source not found at: $CONTROLD_MANAGER_SRC"
 fi
 
+# 🛡️ Sentinel: Prevent Symlink Hijacking
+if [[ -L "$CONTROLD_MANAGER_DEST" ]]; then
+    error "Security Alert: $CONTROLD_MANAGER_DEST is a symbolic link. Aborting to prevent hijack."
+fi
+
 if [[ -f "$CONTROLD_MANAGER_DEST" ]]; then
     warn "controld-manager already installed at $CONTROLD_MANAGER_DEST"
     read -p "Overwrite? (y/N): " -n 1 -r
@@ -65,6 +70,12 @@ fi
 
 # Setup Environment File
 log "Setting up configuration file..."
+
+# 🛡️ Sentinel: Prevent Symlink Hijacking
+if [[ -L "/etc/controld" ]]; then
+    error "Security Alert: /etc/controld is a symbolic link. Aborting to prevent permission hijacking."
+fi
+
 # Ensure /etc/controld exists (controld-manager creates it usually, but we should ensure it here for the config)
 if [[ -e "/etc/controld" && ! -d "/etc/controld" ]]; then
     error "/etc/controld exists but is not a directory. Please fix this and rerun the script."
@@ -76,6 +87,11 @@ fi
 # 🛡️ Sentinel: Restrict permissions and ownership to root-only
 sudo chmod 700 "/etc/controld"
 sudo chown root:wheel "/etc/controld"
+
+# 🛡️ Sentinel: Prevent Symlink Hijacking for Config File
+if [[ -L "$ENV_DEST" ]]; then
+    error "Security Alert: $ENV_DEST is a symbolic link. Aborting to prevent hijack."
+fi
 
 if [[ ! -f "$ENV_DEST" ]]; then
     if [[ -f "$ENV_EXAMPLE_SRC" ]]; then
