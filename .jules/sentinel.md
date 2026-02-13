@@ -94,6 +94,6 @@
 [CWE-732]: https://cwe.mitre.org/data/definitions/732.html
 
 ## 2026-02-13 - Symlink Hijacking in Setup Script
-**Vulnerability:** Symlink following ([CWE-59][]) in `scripts/setup-controld.sh`. The script performed `sudo chmod`, `sudo chown`, and `sudo cp` on paths `/etc/controld` and `/usr/local/bin/controld-manager` without checking if they were symbolic links.
+**Vulnerability:** Symlink following ([CWE-59](https://cwe.mitre.org/data/definitions/59.html)) in `scripts/setup-controld.sh`. The script performed `sudo chmod`, `sudo chown`, and `sudo cp` on paths `/etc/controld` and `/usr/local/bin/controld-manager` without checking if they were symbolic links.
 **Learning:** Setup scripts running with elevated privileges (sudo) are prime targets for symlink attacks. If a user-writable path (or a path that could be created by a user) is a symlink, operations on it affect the target, potentially corrupting system files (e.g., changing `/etc` permissions).
 **Prevention:** Always verify that a path is not a symbolic link (`[[ -L ... ]]`) before performing sensitive operations like `chmod`, `chown`, or `cp` on it, especially when running as root.
