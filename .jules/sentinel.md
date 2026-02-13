@@ -72,6 +72,11 @@
 **Learning:** Tar archives can contain entries with `../` or absolute paths that write files outside the intended extraction directory, potentially overwriting critical system files.
 **Prevention:** Always validate tar archive contents before extraction using `tar -tf` and checking for `../` or leading `/` patterns. Reject archives with unsafe paths.
 
+## 2026-02-09 - Information Disclosure via Hardcoded Paths
+**Vulnerability:** Information Disclosure (Username) and Path Traversal in `adguard/scripts/consolidate_adblock_lists.py`. The script contained a hardcoded absolute path (`/Users/abhimehrotra/Downloads`), revealing the developer's username and making the script non-portable.
+**Learning:** Hardcoded paths in scripts often contain sensitive information (usernames, project structures) and break portability. They also encourage bad security practices by relying on specific environments rather than robust configuration.
+**Prevention:** Use `argparse` or environment variables to inject paths. Validate that input directories exist. Default to relative paths (like `.`) for better portability.
+
 [CWE-22]: https://cwe.mitre.org/data/definitions/22.html
 [CWE-59]: https://cwe.mitre.org/data/definitions/59.html
 [CWE-88]: https://cwe.mitre.org/data/definitions/88.html
