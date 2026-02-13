@@ -141,6 +141,22 @@ check_root() {
 
 # Create directory structure
 setup_directories() {
+    # 🛡️ Pre-flight hardening for log file to prevent symlink-based log hijacking
+    # We must validate LOG_FILE *before* using any log functions because they append
+    # to LOG_FILE unconditionally. If an attacker pre-created LOG_FILE as a symlink
+    # to a sensitive file (e.g., /etc/shadow), using log/log_error/log_warning here
+    # would write to that target. So we:
+    #   - Refuse to run if LOG_FILE is a symlink
+    #   - Refuse to run if LOG_FILE exists but is not a regular file
+    # We intentionally avoid calling log_error here to not depend on LOG_FILE safety.
+    if [[ -L "$LOG_FILE" ]]; then
+        echo "Security Alert: $LOG_FILE is a symlink! Aborting to prevent log hijack." >&2
+        exit 1
+    fi
+    if [[ -e "$LOG_FILE" && ! -f "$LOG_FILE" ]]; then
+        echo "Security Alert: $LOG_FILE is not a regular file! Aborting." >&2
+        exit 1
+    fi
     log "Setting up directory structure..."
 
     # 🛡️ Sentinel: Security Hardening against Symlink Attacks (Pre-flight checks)
