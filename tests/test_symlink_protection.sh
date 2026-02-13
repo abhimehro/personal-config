@@ -37,7 +37,7 @@ echo "Running: install -d -m 700 $TEST1_DIR"
 if install -d -m 700 "$TEST1_DIR" 2>/dev/null; then
     # Check if it's still a symlink (bad) or now a directory (good)
     if [[ -L "$TEST1_DIR" ]]; then
-        echo "❌ CONCERN: install -d followed the symlink"
+        echo "❌ BAD: install -d followed the symlink"
         echo "   This means pre-flight checks are essential"
     else
         echo "✅ GOOD: install -d created a real directory (removed symlink)"

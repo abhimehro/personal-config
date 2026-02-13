@@ -146,10 +146,17 @@ setup_directories() {
     # 🛡️ Sentinel: Security Hardening against Symlink Attacks (Pre-flight checks)
     # Verify critical directories are not symlinks before creating/using them
     # This prevents hijacking attacks where symlinks redirect to privileged paths
-    if [[ -L "$CONTROLD_DIR" ]]; then
+    
+    # First, ensure parent directory exists and is not a symlink
+    if [[ ! -d "$CONTROLD_DIR" ]]; then
+        # Create parent directory with secure permissions
+        install -d -m 700 "$CONTROLD_DIR"
+    elif [[ -L "$CONTROLD_DIR" ]]; then
         log_error "Security Alert: $CONTROLD_DIR is a symlink! Aborting to prevent hijack."
         exit 1
     fi
+    
+    # Check subdirectories are not symlinks (before creation)
     if [[ -L "$PROFILES_DIR" ]]; then
         log_error "Security Alert: $PROFILES_DIR is a symlink! Aborting to prevent hijack."
         exit 1
@@ -182,10 +189,12 @@ setup_directories() {
     fi
 
     # 🛡️ Sentinel: Securely create log file (protect against symlink attacks)
-    # Remove any existing symlink before creating the log file
+    # Always remove any existing symlink before creating the log file
     # This prevents an attacker from redirecting log writes to arbitrary files
+    # Note: rm -f must be outside the -e check because -e returns false for
+    # symlinks pointing to non-existent targets, leaving the symlink in place
+    rm -f "$LOG_FILE"
     if [[ ! -e "$LOG_FILE" ]]; then
-        rm -f "$LOG_FILE"
         (umask 077 && touch "$LOG_FILE") 2>/dev/null || true
     fi
 
