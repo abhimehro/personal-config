@@ -147,13 +147,19 @@ setup_directories() {
     # Verify critical directories are not symlinks before creating/using them
     # This prevents hijacking attacks where symlinks redirect to privileged paths
     
-    # First, ensure parent directory exists and is not a symlink
-    if [[ ! -d "$CONTROLD_DIR" ]]; then
-        # Create parent directory with secure permissions
-        install -d -m 700 "$CONTROLD_DIR"
-    elif [[ -L "$CONTROLD_DIR" ]]; then
+    # First, ensure parent directory path is safe before creating/using it
+    # Check for symlink *before* any -d checks so symlink-to-directory cannot bypass this
+    if [[ -L "$CONTROLD_DIR" ]]; then
         log_error "Security Alert: $CONTROLD_DIR is a symlink! Aborting to prevent hijack."
         exit 1
+    # If something exists at this path but is not a directory, abort as well
+    elif [[ -e "$CONTROLD_DIR" && ! -d "$CONTROLD_DIR" ]]; then
+        log_error "Security Alert: $CONTROLD_DIR exists but is not a directory. Aborting to prevent hijack."
+        exit 1
+    # Safe to create the directory if it does not yet exist as a directory
+    elif [[ ! -d "$CONTROLD_DIR" ]]; then
+        # Create parent directory with secure permissions
+        install -d -m 700 "$CONTROLD_DIR"
     fi
     
     # Check subdirectories are not symlinks (before creation)
