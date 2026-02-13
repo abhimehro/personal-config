@@ -213,9 +213,11 @@ setup_directories() {
     # 🛡️ Sentinel: Securely create log file (protect against symlink attacks)
     # Always remove any existing symlink before creating the log file
     # This prevents an attacker from redirecting log writes to arbitrary files
-    # Note: rm -f must be outside the -e check because -e returns false for
-    # symlinks pointing to non-existent targets, leaving the symlink in place
-    rm -f "$LOG_FILE"
+    # Note: the removal is gated on -L so we only delete when the path is a symlink.
+    # -L is true even for broken symlinks, ensuring they are cleaned up safely.
+    if [[ -L "$LOG_FILE" ]]; then
+        rm -f "$LOG_FILE"
+    fi
     if [[ ! -e "$LOG_FILE" ]]; then
         (umask 077 && touch "$LOG_FILE") 2>/dev/null || true
     fi
