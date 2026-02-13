@@ -72,7 +72,23 @@
 **Learning:** Tar archives can contain entries with `../` or absolute paths that write files outside the intended extraction directory, potentially overwriting critical system files.
 **Prevention:** Always validate tar archive contents before extraction using `tar -tf` and checking for `../` or leading `/` patterns. Reject archives with unsafe paths.
 
+## 2026-02-09 - Information Disclosure via Hardcoded Paths
+**Vulnerability:** Information Disclosure (Username) and Path Traversal in `adguard/scripts/consolidate_adblock_lists.py`. The script contained a hardcoded absolute path (`/Users/abhimehrotra/Downloads`), revealing the developer's username and making the script non-portable.
+**Learning:** Hardcoded paths in scripts often contain sensitive information (usernames, project structures) and break portability. They also encourage bad security practices by relying on specific environments rather than robust configuration.
+**Prevention:** Use `argparse` or environment variables to inject paths. Validate that input directories exist. Default to relative paths (like `.`) for better portability.
+
+## 2026-02-10 - Command Injection in Health Check
+**Vulnerability:** Command Injection ([CWE-78][]) in `maintenance/bin/health_check.sh`. The script interpolated the `HEALTH_LOG_LOOKBACK_HOURS` variable directly into a command string passed to `bash -c`, allowing arbitrary code execution if the variable contained malicious input.
+**Learning:** Shell scripts that construct commands from variables are inherently risky. Sourcing configuration files (`source config.env`) without validation assumes the file is trustworthy, but environment variables can override defaults or be set maliciously if the config is missing.
+**Prevention:** Always sanitize variables used in command construction. Ensure numeric values are actually integers using regex validation (`[[ "$VAR" =~ ^[0-9]+$ ]]`) before using them.
+
+## 2026-02-12 - Symlink Attack in Config Generation
+**Vulnerability:** Symlink following ([CWE-59][]) in `controld-system/scripts/controld-manager`. The script used `cp` to overwrite configuration files and `mkdir`+`chmod` for directory creation without adequate symlink protection, creating TOCTOU race conditions.
+**Learning:** Operations like `cp`, `chmod`, and `mkdir` can be exploited through symlinks. Multi-step operations (mkdir+chmod or rm+cp+chmod) create TOCTOU windows where an attacker can inject symlinks between steps. Even single checks before operations are vulnerable if the check and operation aren't atomic.
+**Prevention:** Use atomic operations: `install -d -m 700` for directories (creates with permissions in one step) and `install -m 600` for files (copies and sets permissions atomically). Add both pre-flight symlink checks AND post-creation verification to minimize TOCTOU windows. Protect ALL sensitive paths (directories, files, and their parents), not just the final destination.
+
 [CWE-22]: https://cwe.mitre.org/data/definitions/22.html
 [CWE-59]: https://cwe.mitre.org/data/definitions/59.html
+[CWE-78]: https://cwe.mitre.org/data/definitions/78.html
 [CWE-88]: https://cwe.mitre.org/data/definitions/88.html
 [CWE-732]: https://cwe.mitre.org/data/definitions/732.html

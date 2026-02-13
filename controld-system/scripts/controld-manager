@@ -141,12 +141,83 @@ check_root() {
 
 # Create directory structure
 setup_directories() {
+    # 🛡️ Pre-flight hardening for log file to prevent symlink-based log hijacking
+    # We must validate LOG_FILE *before* using any log functions because they append
+    # to LOG_FILE unconditionally. If an attacker pre-created LOG_FILE as a symlink
+    # to a sensitive file (e.g., /etc/shadow), using log/log_error/log_warning here
+    # would write to that target. So we:
+    #   - Refuse to run if LOG_FILE is a symlink
+    #   - Refuse to run if LOG_FILE exists but is not a regular file
+    # We intentionally avoid calling log_error here to not depend on LOG_FILE safety.
+    if [[ -L "$LOG_FILE" ]]; then
+        echo "Security Alert: $LOG_FILE is a symlink! Aborting to prevent log hijack." >&2
+        exit 1
+    fi
+    if [[ -e "$LOG_FILE" && ! -f "$LOG_FILE" ]]; then
+        echo "Security Alert: $LOG_FILE is not a regular file! Aborting." >&2
+        exit 1
+    fi
     log "Setting up directory structure..."
-    mkdir -p "$PROFILES_DIR" "$BACKUP_DIR"
-    # 🛡️ Sentinel: Restrict permissions to root-only
-    chmod 700 "$PROFILES_DIR" "$BACKUP_DIR"
 
-    # Securely create log file if it doesn't exist (with 600 permissions)
+    # 🛡️ Sentinel: Security Hardening against Symlink Attacks (Pre-flight checks)
+    # Verify critical directories are not symlinks before creating/using them
+    # This prevents hijacking attacks where symlinks redirect to privileged paths
+    
+    # First, ensure parent directory path is safe before creating/using it
+    # Check for symlink *before* any -d checks so symlink-to-directory cannot bypass this
+    if [[ -L "$CONTROLD_DIR" ]]; then
+        log_error "Security Alert: $CONTROLD_DIR is a symlink! Aborting to prevent hijack."
+        exit 1
+    # If something exists at this path but is not a directory, abort as well
+    elif [[ -e "$CONTROLD_DIR" && ! -d "$CONTROLD_DIR" ]]; then
+        log_error "Security Alert: $CONTROLD_DIR exists but is not a directory. Aborting to prevent hijack."
+        exit 1
+    # Safe to create the directory if it does not yet exist as a directory
+    elif [[ ! -d "$CONTROLD_DIR" ]]; then
+        # Create parent directory with secure permissions
+        install -d -m 700 "$CONTROLD_DIR"
+    fi
+    
+    # Check subdirectories are not symlinks (before creation)
+    if [[ -L "$PROFILES_DIR" ]]; then
+        log_error "Security Alert: $PROFILES_DIR is a symlink! Aborting to prevent hijack."
+        exit 1
+    fi
+    if [[ -L "$BACKUP_DIR" ]]; then
+        log_error "Security Alert: $BACKUP_DIR is a symlink! Aborting to prevent hijack."
+        exit 1
+    fi
+
+    # 🛡️ Sentinel: Use atomic 'install -d' to create directories with permissions
+    # This is safer than 'mkdir -p' followed by 'chmod' as it avoids TOCTOU races
+    # where an attacker could insert a symlink between directory creation and permission change
+    install -d -m 700 "$PROFILES_DIR" "$BACKUP_DIR"
+
+    # 🛡️ Sentinel: Post-creation verification to reduce TOCTOU window
+    # Re-check that directories remain non-symlinks after creation
+    if [[ -L "$CONTROLD_DIR" ]] || [[ -L "$PROFILES_DIR" ]] || [[ -L "$BACKUP_DIR" ]]; then
+        log_error "Security Alert: A ControlD directory became a symlink after creation. Aborting to prevent hijack."
+        exit 1
+    fi
+
+    # Additional paranoid check: verify they are actual directories
+    if [[ ! -d "$PROFILES_DIR" ]]; then
+        log_error "Expected directory $PROFILES_DIR is missing or not a directory. Aborting."
+        exit 1
+    fi
+    if [[ ! -d "$BACKUP_DIR" ]]; then
+        log_error "Expected directory $BACKUP_DIR is missing or not a directory. Aborting."
+        exit 1
+    fi
+
+    # 🛡️ Sentinel: Securely create log file (protect against symlink attacks)
+    # Always remove any existing symlink before creating the log file
+    # This prevents an attacker from redirecting log writes to arbitrary files
+    # Note: the removal is gated on -L so we only delete when the path is a symlink.
+    # -L is true even for broken symlinks, ensuring they are cleaned up safely.
+    if [[ -L "$LOG_FILE" ]]; then
+        rm -f "$LOG_FILE"
+    fi
     if [[ ! -e "$LOG_FILE" ]]; then
         (umask 077 && touch "$LOG_FILE") 2>/dev/null || true
     fi
@@ -293,10 +364,12 @@ generate_profile_config() {
     wait "$ctrld_pid" 2>/dev/null || true
 
     if [[ -f "$TEMP_CONFIG" ]]; then
-        # Copy and customize the generated config
-        cp "$TEMP_CONFIG" "$config_file"
-        # 🛡️ Sentinel: Restrict permissions to root-only
-        chmod 600 "$config_file"
+        # 🛡️ Sentinel: Security Hardening against Symlink Attacks
+        # Use 'install -m 600' for atomic copy+permission setting
+        # This is safer than 'rm -f' + 'cp' + 'chmod' as it's a single atomic operation
+        # that won't follow symlinks and avoids TOCTOU races where an attacker could
+        # create a symlink between the rm and cp operations
+        install -m 600 "$TEMP_CONFIG" "$config_file"
         # Cleanup handled by trap, but explicit remove doesn't hurt
         rm -f "$TEMP_CONFIG"
 

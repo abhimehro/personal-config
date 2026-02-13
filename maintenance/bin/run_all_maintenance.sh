@@ -6,10 +6,47 @@
 
 set -euo pipefail
 
+# --- Colors (Defined early for help message) ---
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'
+
 # Configuration
 export RUN_START=$(date +%s)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$SCRIPT_DIR/../tmp"
+
+print_help() {
+    echo -e "${BOLD}${BLUE}🛠️  Master Maintenance Script${NC}"
+    echo -e "Orchestrates system maintenance tasks with logging, locking, and summaries."
+    echo -e ""
+    echo -e "${BOLD}Usage:${NC} $(basename "$0") [command]"
+    echo -e ""
+    echo -e "${BOLD}Commands:${NC}"
+    echo -e "  ${GREEN}weekly${NC}   Run weekly maintenance tasks (Health, Brew, Node, Services)"
+    echo -e "           ${YELLOW}(Default if no argument provided)${NC}"
+    echo -e "  ${GREEN}monthly${NC}  Run comprehensive monthly maintenance (Weekly + System/Editor cleanup)"
+    echo -e "  ${GREEN}health${NC}   Run system health check only"
+    echo -e "  ${GREEN}quick${NC}    Run quick system cleanup"
+    echo -e "  ${GREEN}help${NC}     Show this help message"
+    echo -e ""
+    echo -e "${BOLD}Features:${NC}"
+    echo -e "  • 🔒 Prevents concurrent runs"
+    echo -e "  • 📝 Logs to $LOG_DIR"
+    echo -e "  • 📊 Generates summary report"
+    echo -e ""
+}
+
+# Check for help argument before acquiring lock or creating logs
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" || "${1:-}" == "help" ]]; then
+    print_help
+    exit 0
+fi
+
 LOCK_CONTEXT_LOG="$LOG_DIR/lock_context_$(date +%Y%m%d-%H%M%S).log"
 TIMESTAMP=$(date "+%Y%m%d_%H%M%S")
 MASTER_LOG="$LOG_DIR/maintenance_master_$TIMESTAMP.log"
@@ -59,14 +96,6 @@ trap 'rm -rf "$LOCK_DIR" "$LOG_DIR"/status_*_"$TIMESTAMP".log "$PARALLEL_RESULTS
 
 # Initialize master log
 echo "=== Master Maintenance Run Started: $(date) ===" | tee "$MASTER_LOG"
-
-# --- Colors ---
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-CYAN='\033[0;36m'
-BOLD='\033[1m'
-NC='\033[0m'
 
 # --- Global Helper Functions ---
 
@@ -334,6 +363,16 @@ run_monthly_maintenance() {
 
 # Function to print summary table
 print_summary() {
+    # Calculate total duration
+    local current_time=$(date +%s)
+    local total_duration=$((current_time - RUN_START))
+    local total_fmt
+    if (( total_duration > 60 )); then
+        total_fmt="$((total_duration / 60))m $((total_duration % 60))s"
+    else
+        total_fmt="${total_duration}s"
+    fi
+
     echo "" | tee -a "$MASTER_LOG"
     echo "┌────────────────────────────────────────────────────────────────────────┐" | tee -a "$MASTER_LOG"
     echo "│                        MAINTENANCE RUN SUMMARY                         │" | tee -a "$MASTER_LOG"
@@ -377,7 +416,10 @@ print_summary() {
         done
     fi
 
-    echo "└────────────────────────────────────────────────────────────────────────┘" | tee -a "$MASTER_LOG"
+    # Footer with Total Duration
+    echo "├──────────────┴──────────────────────────────────────────┼────────────┤" | tee -a "$MASTER_LOG"
+    printf "│ %55s │ %-10s │\n" "TOTAL DURATION" "$total_fmt" | tee -a "$MASTER_LOG"
+    echo "└─────────────────────────────────────────────────────────┴────────────┘" | tee -a "$MASTER_LOG"
 }
 
 # --- Execution Entry Point ---
@@ -389,7 +431,7 @@ if [[ $# -eq 1 ]]; then
         "health")  run_script "health_check.sh" "critical" ;;
         "quick")   run_script "quick_cleanup.sh" "cleanup" ;;
         *)
-            echo "Usage: $0 [weekly|monthly|health|quick]"
+            print_help
             exit 1
             ;;
     esac
