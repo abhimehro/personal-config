@@ -15,6 +15,15 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+# --- Spinner Characters (Global) ---
+SPIN_CHARS_UNICODE=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
+SPIN_CHARS_ASCII=('|' '/' '-' '\\')
+if [[ "${LC_CTYPE:-}" == *"UTF-8"* ]] || [[ "${LC_ALL:-}" == *"UTF-8"* ]] || [[ "${LANG:-}" == *"UTF-8"* ]]; then
+    SPIN_CHARS=("${SPIN_CHARS_UNICODE[@]}")
+else
+    SPIN_CHARS=("${SPIN_CHARS_ASCII[@]}")
+fi
+
 # Configuration
 export RUN_START=$(date +%s)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -118,19 +127,8 @@ spinner() {
     local pid=$1
     local label="${2:-Running...}"
     local delay=0.1
-    local spin_chars_unicode=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
-    local spin_chars_ascii=('|' '/' '-' '\\')
-    local spin_chars
     local i=0
-
-    # Detect UTF-8 support
-    if [[ "${LC_CTYPE:-}" == *"UTF-8"* ]] || [[ "${LC_ALL:-}" == *"UTF-8"* ]] || [[ "${LANG:-}" == *"UTF-8"* ]]; then
-        spin_chars=("${spin_chars_unicode[@]}")
-    else
-        spin_chars=("${spin_chars_ascii[@]}")
-    fi
-
-    local num_chars=${#spin_chars[@]}
+    local num_chars=${#SPIN_CHARS[@]}
 
     # Only show spinner if running interactively (TTY) and not redirecting to file only
     # Also disable in CI environments to prevent log clutter
@@ -153,7 +151,7 @@ spinner() {
 
             # Print spinner and elapsed time
             # \r moves to start, \033[K (optional) or spaces to clear
-            printf "\r %s  %s (%ds)   " "${spin_chars[i]}" "$label" "$elapsed"
+            printf "\r %s  %s (%ds)   " "${SPIN_CHARS[i]}" "$label" "$elapsed"
 
             i=$(( (i + 1) % num_chars ))
             update_counter=$((update_counter + 1))
@@ -171,6 +169,71 @@ spinner() {
     else
         # If not interactive or in CI, just wait
         wait "$pid"
+    fi
+}
+
+# Wait for multiple PIDs with spinner
+# Usage: wait_for_pids "pid1 pid2 ..." [Label]
+wait_for_pids() {
+    local pids_list="$1"
+    local label="${2:-Running parallel tasks...}"
+    local delay=0.1
+    local i=0
+    local num_chars=${#SPIN_CHARS[@]}
+
+    if [ -t 1 ] && [ -z "${CI:-}" ]; then
+        tput civis 2>/dev/null || true
+        trap 'tput cnorm 2>/dev/null || true; trap - INT TERM; kill -s INT $$' INT TERM
+
+        local start_time=$(date +%s)
+        local elapsed=0
+        local update_counter=0
+
+        while true; do
+            local running_count=0
+            local any_running=false
+
+            for pid in $pids_list; do
+                if kill -0 "$pid" 2>/dev/null; then
+                    any_running=true
+                    running_count=$((running_count + 1))
+                fi
+            done
+
+            if [[ "$any_running" == "false" ]]; then
+                break
+            fi
+
+            if (( update_counter % 10 == 0 )); then
+                local current_time=$(date +%s)
+                elapsed=$((current_time - start_time))
+            fi
+
+            # Update label with count if multiple tasks were running
+            local status_label="$label"
+            if [[ $running_count -gt 1 ]]; then
+                status_label="$label ($running_count active)"
+            fi
+
+            printf "\r %s  %s (%ds)   " "${SPIN_CHARS[i]}" "$status_label" "$elapsed"
+
+            i=$(( (i + 1) % num_chars ))
+            update_counter=$((update_counter + 1))
+            sleep $delay
+        done
+
+        tput cnorm 2>/dev/null || true
+        printf "\r\033[K"
+        trap - INT TERM
+
+        # Ensure we reap exit codes, though we don't use them here directly
+        for pid in $pids_list; do
+            wait "$pid" 2>/dev/null || true
+        done
+    else
+        for pid in $pids_list; do
+            wait "$pid" || true
+        done
     fi
 }
 
@@ -301,9 +364,7 @@ run_weekly_maintenance() {
     pids="$pids $!"
 
     # Wait for all
-    for pid in $pids; do
-        wait "$pid"
-    done
+    wait_for_pids "$pids" "Running parallel tasks..."
 
     # Consolidate logs
     cat "$brew_status" "$node_status" "$gdrive_status" "$service_status" >> "$MASTER_LOG"
@@ -341,9 +402,7 @@ run_monthly_maintenance() {
     pids="$pids $!"
 
     # Wait for all
-    for pid in $pids; do
-        wait "$pid"
-    done
+    wait_for_pids "$pids" "Running cleanup tasks..."
 
     # Consolidate logs
     cat "$system_cleanup_status" "$editor_cleanup_status" >> "$MASTER_LOG"
