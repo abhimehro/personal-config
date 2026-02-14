@@ -1,4 +1,4 @@
-#!/Users/speedybee/Documents/dev/Scripts/raycast/venv/bin/python
+#!/usr/bin/env python3
 
 # Required parameters:
 # @raycast.schemaVersion 1
@@ -17,9 +17,14 @@ import datetime
 import feedparser
 import concurrent.futures
 import time
+import os
+import sys
 
 # --- CONFIGURATION ---
-READWISE_TOKEN = "j7Rkp2B5TTOEAK0FN3yDeMFKrsrOjXMvH9mKC1ahYlG8it086R"
+READWISE_TOKEN = os.getenv("READWISE_TOKEN")
+if not READWISE_TOKEN:
+    print("Error: READWISE_TOKEN environment variable is not set.", file=sys.stderr)
+    sys.exit(1)
 
 # Location: Baton Rouge
 LAT = 30.4515
