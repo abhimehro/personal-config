@@ -167,8 +167,8 @@ spinner() {
         # Remove trap
         trap - INT TERM
     else
-        # If not interactive or in CI, just wait
-        wait "$pid"
+        # If not interactive or in CI, do nothing (caller handles wait)
+        :
     fi
 }
 
@@ -275,7 +275,7 @@ run_script() {
 
         # Apply smart delay if scheduler is available
         if [[ -f "$smart_scheduler" && -x "$smart_scheduler" ]]; then
-            "$smart_scheduler" delay "$clean_name" "$task_type" 2>&1 | tee -a "$log_target"
+            "$smart_scheduler" delay "$clean_name" "$task_type" 2>&1 | tee -a "$log_target" || true
         fi
 
         start_time=$(date +%s)
@@ -320,6 +320,9 @@ run_script() {
                 return 0
             else
                 log_status "❌ $script_name failed (see $log_file)" "$log_target"
+                if [[ -f "$log_file" ]]; then
+                     log_status "$(grep -v "^$" "$log_file" | tail -n 3 | sed 's/^/   /')" "$log_target"
+                fi
                 register_result "$clean_name" "❌ Failed" "$is_parallel" "$duration_fmt"
                 return 1
             fi
@@ -479,6 +482,37 @@ print_summary() {
     echo "├──────────────┴──────────────────────────────────────────┼────────────┤" | tee -a "$MASTER_LOG"
     printf "│ %55s │ %-10s │\n" "TOTAL DURATION" "$total_fmt" | tee -a "$MASTER_LOG"
     echo "└─────────────────────────────────────────────────────────┴────────────┘" | tee -a "$MASTER_LOG"
+
+    # Check overall status
+    local any_failed=false
+    local any_missing=false
+
+    for entry in "${SUMMARY_RESULTS[@]}"; do
+        if [[ "$entry" == *"Failed"* ]]; then
+            any_failed=true
+        elif [[ "$entry" == *"Missing"* ]]; then
+            any_missing=true
+        fi
+    done
+
+    echo "" | tee -a "$MASTER_LOG"
+    if [[ "$any_failed" == "true" ]]; then
+        echo -e "${RED}${BOLD}⚠️  MAINTENANCE COMPLETED WITH ERRORS${NC}" | tee -a "$MASTER_LOG"
+        echo -e "Please review the logs for details." | tee -a "$MASTER_LOG"
+    elif [[ "$any_missing" == "true" ]]; then
+        echo -e "${YELLOW}${BOLD}⚠️  MAINTENANCE COMPLETED WITH WARNINGS (Missing Scripts)${NC}" | tee -a "$MASTER_LOG"
+    else
+        echo -e "${GREEN}${BOLD}✨ MAINTENANCE COMPLETED SUCCESSFULLY ✨${NC}" | tee -a "$MASTER_LOG"
+        echo -e "System is clean and optimized." | tee -a "$MASTER_LOG"
+    fi
+
+    # Link to log directory
+    if [[ "${TERM_PROGRAM:-}" == "iTerm.app" || "${TERM_PROGRAM:-}" == "vscode" || "${TERM_PROGRAM:-}" == "Apple_Terminal" ]]; then
+         # OSC 8 hyperlink sequence
+         echo -e "Logs: \033]8;;file://${LOG_DIR}\033\\${LOG_DIR}\033]8;;\033\\" | tee -a "$MASTER_LOG"
+    else
+         echo "Logs saved to: $LOG_DIR" | tee -a "$MASTER_LOG"
+    fi
 }
 
 # --- Execution Entry Point ---
@@ -511,7 +545,6 @@ print_summary
 
 # Footer
 echo "=== Master Maintenance Run Completed: $(date) ===" | tee -a "$MASTER_LOG"
-echo "Logs saved to: $LOG_DIR" | tee -a "$MASTER_LOG"
 
 # Clean up old logs (Keep 10)
 find "$LOG_DIR" -name "maintenance_master_*.log" -type f | sort -r | tail -n +11 | xargs rm -f 2>/dev/null || true
