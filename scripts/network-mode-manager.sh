@@ -19,7 +19,7 @@ DEFAULT_PROFILE="browsing"
 
 # IP where ctrld listens. Recommended: 127.0.0.1 (localhost)
 # CRITICAL: This MUST match the IP that macOS DNS points to.
-LISTENER_IP="127.0.0.1"
+# Note: Currently unused in this script, but kept for documentation purposes
 
 # Path to existing macOS-specific IPv6 manager (relative to repo root)
 IPV6_MANAGER="./scripts/macos/ipv6-manager.sh"
@@ -36,19 +36,17 @@ BOLD='\033[1m'
 # Emojis 🎨
 E_PASS="✅"
 E_FAIL="❌"
-E_WARN="⚠️"
 E_INFO="ℹ️"
 E_PRIVACY="🛡️"
 E_GAMING="🎮"
 E_BROWSING="🌐"
 E_VPN="🔐"
-E_NETWORK="🛜"
 
 # --- Helpers ---
 
-log()      { echo -e "${BLUE}${E_INFO} [INFO]${NC} $@"; }
-success()  { echo -e "${GREEN}${E_PASS} [OK]${NC} $@"; }
-error()    { echo -e "${RED}${E_FAIL} [ERR]${NC} $@" >&2; exit 1; }
+log()      { echo -e "${BLUE}${E_INFO} [INFO]${NC}" "$@"; }
+success()  { echo -e "${GREEN}${E_PASS} [OK]${NC}" "$@"; }
+error()    { echo -e "${RED}${E_FAIL} [ERR]${NC}" "$@" >&2; exit 1; }
 
 # Validate the protocol parameter.
 # An empty value is allowed and means "use the default protocol" as defined elsewhere.

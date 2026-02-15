@@ -28,7 +28,7 @@ trap 'tput cnorm 2>/dev/null || true' EXIT INT TERM
 spinner() {
     local message="$1"
     shift
-    local cmd="$@"
+    local cmd="$*"
 
     # If not running in a TTY, just run the command without spinner
     if [ ! -t 1 ]; then
@@ -40,7 +40,8 @@ spinner() {
     local pid
     local delay=0.1
     local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
-    local start_time=$(date +%s)
+    local start_time
+    start_time=$(date +%s)
     local temp_log
 
     temp_log=$(mktemp)
@@ -54,7 +55,8 @@ spinner() {
 
     local elapsed=0
     while kill -0 $pid 2>/dev/null; do
-        local current_time=$(date +%s)
+        local current_time
+        current_time=$(date +%s)
         elapsed=$((current_time - start_time))
         local temp=${spinstr#?}
         printf "\r${BLUE}%c${NC} %s (${elapsed}s)..." "$spinstr" "$message"
