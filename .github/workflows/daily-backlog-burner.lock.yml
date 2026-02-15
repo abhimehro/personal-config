@@ -28,7 +28,7 @@
 #
 # Source: githubnext/agentics/workflows/daily-backlog-burner.md@69b5e3ae5fa7f35fa555b0a22aee14c36ab57ebb
 #
-# frontmatter-hash: 9becc1a4c411033dfdf7c4efc161a1961c694ca4b171d3af0e777ea3972f281e
+# frontmatter-hash: f08f32be114d67f440fbd57a241d05c2187e7830a491be5f5f870055079ff307
 
 name: "Daily Backlog Burner"
 "on":

@@ -20,7 +20,6 @@ safe-outputs:
     title-prefix: "${{ github.workflow }}"
     category: "q-a"
   add-comment:
-    discussion: true
     target: "*" # all issues and PRs
     max: 5
   create-pull-request:
