@@ -16,7 +16,7 @@ imports:
 - github/gh-aw/.github/workflows/shared/reporting.md@94662b1dee8ce96c876ba9f33b3ab8be32de82a4
 safe-outputs:
   add-comment:
-    max: 3
+    max: 3  # Maximum comments to post per run
   create-issue:
     expires: 1d
     group: true
@@ -25,7 +25,7 @@ safe-outputs:
     - automation
     - task-mining
     - cookie
-    max: 5
+    max: 5  # Maximum issues to create per run
     title-prefix: "[Code Quality] "
   messages:
     footer: "> 🔍 *Task mining by [{workflow_name}]({run_url})*"
