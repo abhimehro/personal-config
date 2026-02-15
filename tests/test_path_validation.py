@@ -3,12 +3,12 @@ import sys
 import os
 
 # Add the script directory to path to import the module
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../media-streaming/scripts')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../media-streaming/archive/scripts')))
 
 # Import the module
 import importlib.util
 spec = importlib.util.spec_from_file_location("infuse_media_server",
-    os.path.abspath(os.path.join(os.path.dirname(__file__), '../media-streaming/scripts/infuse-media-server.py')))
+    os.path.abspath(os.path.join(os.path.dirname(__file__), '../media-streaming/archive/scripts/infuse-media-server.py')))
 infuse_media_server = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(infuse_media_server)
 
