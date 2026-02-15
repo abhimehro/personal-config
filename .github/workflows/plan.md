@@ -23,7 +23,6 @@ safe-outputs:
     group: true
   close-discussion:
     required-category: "Ideas"
-    max: 1
 timeout-minutes: 10
 source: github/gh-aw/.github/workflows/plan.md@94662b1dee8ce96c876ba9f33b3ab8be32de82a4
 ---
@@ -85,7 +84,7 @@ Order the tasks logically:
 Each task should:
 - Be completable in a single PR
 - Not be too large (avoid epic-sized tasks)
-- With a single focus or goal. Keep them extremely small and focused even if it means more tasks.
+- With a single focus or goal. Keep them extremely small and focused even it means more tasks.
 - Have clear acceptance criteria
 
 ### 4. SWE Agent Formulation
