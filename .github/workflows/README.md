@@ -8,7 +8,6 @@ This repository uses several GitHub Actions workflows for automation and code qu
 - **label.yml** - Automatically labels pull requests based on changed files
 - **stale.yml** - Manages stale issues and pull requests
 - **summary.yml** - Generates PR summaries
-- **crda.yml** - Security scanning for dependencies
 - **code-quality.yml** - Code quality and complexity checks for shell scripts and Python files
 - **copilot-setup-steps.yml** - Adds Development Partner workflow for PRs and issues. This workflow sets up a Development Partner protocol that triggers on pull requests and issues, allowing for specific requests and automatic comments on PRs
 
