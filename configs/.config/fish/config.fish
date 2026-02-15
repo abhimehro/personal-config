@@ -42,13 +42,18 @@ if status is-interactive
         zoxide init fish | source
     end
 
+    # --- GitHub Agentic Workflows (gh aw) Completions ---
+    if type -q gh
+        gh aw completion fish | source
+    end
+
     # --- Mole (Tunneling) ---
     if type -q mole
+        # Mole shell completion (Moved inside interactive block)
+        mole completion fish 2>/dev/null | source
     end
 
 end
-
-# Note: Conda is initialized via 'init_conda' (lazy-loaded function).
 
 # ============================================
 # Environment Variables
@@ -68,6 +73,53 @@ end
 if not set -q FZF_DEFAULT_OPTS
     # Dracula FZF colors
     set -gx FZF_DEFAULT_OPTS "--color=bg+:#44475a,bg:#282a36,spinner:#f8f8f2,hl:#6272a4,fg:#f8f8f2,header:#6272a4,info:#bd93f9,pointer:#ff79c6,marker:#ff79c6,fg+:#f8f8f2,prompt:#bd93f9,hl+:#ff79c6"
+end
+
+# ============================================
+# Functions
+# ============================================
+
+# --- Git Mirror Clean ---
+# Cleans local repo to perfectly match the remote origin/main
+function git-mirror-clean --description 'Switch to main, prune remotes, and delete all other local branches'
+    # 1. Ensure we are on main
+    git checkout main
+    or return 1
+
+    # 2. Sync with remote and prune stale tracking refs
+    echo "Pruning remote branches..."
+    git fetch --prune
+
+    # 3. Delete all local branches except main
+    # Using 'string trim' to handle fish whitespace and 'grep -v' to protect main
+    set -l branches (git branch | string trim | grep -v '^*' | grep -v '^main$')
+    if test -n "$branches"
+        echo "Deleting local branches: $branches"
+        echo $branches | xargs git branch -D
+    else
+        echo "No extra local branches to delete."
+    end
+
+    # 4. Hard reset main to match origin exactly
+    echo "Resetting main to origin/main..."
+    git reset --hard origin/main
+
+    # 5. Fix the remote HEAD pointer
+    git remote set-head origin -a
+
+    echo "✨ Repository is now a perfect mirror of origin/main"
+end
+
+# Config Management helper
+function __run_editor --description 'Run $EDITOR handling definition splitting'
+    set -l editor (string split ' ' -- $EDITOR)
+    command $editor $argv
+end
+
+# Vibe Switcher
+function vibe
+    ~/.local/bin/auto_vibe.sh $argv[1]
+    echo "✨ Vibe switched to: $argv[1]"
 end
 
 # ============================================
@@ -114,12 +166,6 @@ if type -q gdiff
     alias diff 'gdiff --color=auto'
 end
 
-# Config Management
-function __run_editor --description 'Run $EDITOR handling definition splitting'
-    set -l editor (string split ' ' -- $EDITOR)
-    command $editor $argv
-end
-
 alias fishconfig '__run_editor ~/.config/fish/config.fish'
 alias fishedit   '__run_editor ~/.config/fish/config.fish'
 alias reload     'source ~/.config/fish/config.fish'
@@ -140,6 +186,7 @@ abbr -a gl  git log --oneline --graph
 abbr -a gd  git diff
 abbr -a gb  git branch
 abbr -a gco git checkout
+abbr -a gmc git-mirror-clean  # Added abbreviation for your new function
 
 # Cursor IDE (SSH)
 abbr -a scv ssh cursor-vpn
@@ -202,14 +249,6 @@ if status is-interactive
 end
 
 # ============================================
-# JankyBorders Vibe Switcher
-# ============================================
-function vibe
-    ~/.local/bin/auto_vibe.sh $argv[1]
-    echo "✨ Vibe switched to: $argv[1]"
-end
-
-# ============================================
 # Greeting System (Time-Based)
 # ============================================
 if status is-interactive
@@ -255,10 +294,10 @@ if status is-interactive
             "Yo! Ready to get crunk on some logic? It's gonna be sick! 🤘" \
             "Cool beans! 🆒 Time to sit down and write some awesomesauce code." \
             "Late night grind! The best code happens after dark. 🌃" \
-            "Evening vibes activated. Let's make some nocturnal magic. 🦇"
+            "Evening vibes activated. Let's make some nocturnal magic. 蝙"
 
         # Select appropriate greeting set based on time
-        set -l greetings  # Declare variable first
+        set -l greetings  
         if test $hour -ge 5 -a $hour -lt 12
             set greetings $morning_greetings
         else if test $hour -ge 12 -a $hour -lt 18
@@ -276,5 +315,3 @@ end
 # History Setup
 set -g fish_history_limit 10000
 
-# Mole shell completion
-set -l output (mole completion fish 2>/dev/null); and echo "$output" | source
