@@ -19,7 +19,8 @@ DEFAULT_PROFILE="browsing"
 
 # IP where ctrld listens. Recommended: 127.0.0.1 (localhost)
 # CRITICAL: This MUST match the IP that macOS DNS points to.
-# Note: Currently unused in this script, but kept for documentation purposes
+# Note: LISTENER_IP="127.0.0.1" was defined here but is currently unused in this script.
+# The actual listener configuration is managed by controld-manager.
 
 # Path to existing macOS-specific IPv6 manager (relative to repo root)
 IPV6_MANAGER="./scripts/macos/ipv6-manager.sh"
