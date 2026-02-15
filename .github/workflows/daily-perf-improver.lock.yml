@@ -29,7 +29,7 @@
 #
 # Source: githubnext/agentics/workflows/daily-perf-improver.md@69b5e3ae5fa7f35fa555b0a22aee14c36ab57ebb
 #
-# frontmatter-hash: 7360b31a090e773ffd75e153b40986103dd9b9cbbe8ba727d57e441157709be3
+# frontmatter-hash: 2998362df156bd4a28f598e410d99434a9f16bf96b9cb259e65b17dae3405020
 
 name: "Daily Perf Improver"
 "on":

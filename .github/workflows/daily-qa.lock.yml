@@ -28,7 +28,7 @@
 #
 # Source: githubnext/agentics/workflows/daily-qa.md@69b5e3ae5fa7f35fa555b0a22aee14c36ab57ebb
 #
-# frontmatter-hash: 6a40308f8d230eb2798450852a83c0652a8ed3089d93eee4122ba690377c0177
+# frontmatter-hash: 0b32e1430f4a0652cd39bc23aa8df6ac442f350da2299739fd722ea824dbada5
 
 name: "Daily QA"
 "on":
