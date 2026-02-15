@@ -18,7 +18,7 @@ fi
 # Backup existing SSH config
 if [ -f ~/.ssh/config ]; then
     echo "📦 Backing up existing SSH config..."
-    cp ~/.ssh/config ~/.ssh/config.backup.$(date +%Y%m%d_%H%M%S)
+    cp ~/.ssh/config ~/.ssh/config.backup."$(date +%Y%m%d_%H%M%S)"
     echo "✅ Backup created"
 fi
 
