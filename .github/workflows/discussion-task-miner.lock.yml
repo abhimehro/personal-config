@@ -30,7 +30,7 @@
 #     - github/gh-aw/.github/workflows/shared/jqschema.md@94662b1dee8ce96c876ba9f33b3ab8be32de82a4
 #     - github/gh-aw/.github/workflows/shared/reporting.md@94662b1dee8ce96c876ba9f33b3ab8be32de82a4
 #
-# frontmatter-hash: bcbe62b309c1270d3dfc59df885e6cd18f907b407621e9d071427b1cd9e5a7e1
+# frontmatter-hash: d5e5a8f860c575d3ca4c1adfac5724a400e2ad851e59447990b7279aa56fc7df
 
 name: "Discussion Task Miner - Code Quality Improvement Agent"
 "on":
