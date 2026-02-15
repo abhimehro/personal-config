@@ -28,6 +28,8 @@ trap 'tput cnorm 2>/dev/null || true' EXIT INT TERM
 spinner() {
     local message="$1"
     shift
+    # Join remaining arguments into a single command string for eval
+    # Using $* instead of $@ because eval needs a single string
     local cmd="$*"
 
     # If not running in a TTY, just run the command without spinner
