@@ -97,3 +97,8 @@
 **Vulnerability:** Symlink following ([CWE-59](https://cwe.mitre.org/data/definitions/59.html)) in `scripts/setup-controld.sh`. The script performed `sudo chmod`, `sudo chown`, and `sudo cp` on paths `/etc/controld` and `/usr/local/bin/controld-manager` without checking if they were symbolic links.
 **Learning:** Setup scripts running with elevated privileges (sudo) are prime targets for symlink attacks. If a user-writable path (or a path that could be created by a user) is a symlink, operations on it affect the target, potentially corrupting system files (e.g., changing `/etc` permissions).
 **Prevention:** Always verify that a path is not a symbolic link (`[[ -L ... ]]`) before performing sensitive operations like `chmod`, `chown`, or `cp` on it, especially when running as root.
+
+## 2026-02-15 - Backup Integrity Verification
+**Vulnerability:** Lack of integrity checks for backup archives in `maintenance/bin/security_manager.sh`. The script restored backups without verifying they hadn't been tampered with or corrupted.
+**Learning:** Backup systems that rely solely on file existence or basic path checks are vulnerable to restoring compromised or corrupted states. A malicious actor with filesystem access could modify a backup archive to inject malicious configurations or scripts, which would then be restored with high privileges.
+**Prevention:** Implement cryptographic checksums (e.g., SHA256) for all backup archives upon creation. Verify these checksums before restoration. This ensures integrity and authenticity (if checksums are stored securely) of the backup data.
