@@ -5,12 +5,12 @@ from io import BytesIO
 from unittest.mock import Mock, patch, MagicMock
 
 # Add the script directory to path to import the module
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../media-streaming/scripts')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../media-streaming/archive/scripts')))
 
 # Import the module
 import importlib.util
 spec = importlib.util.spec_from_file_location("alldebrid_server",
-    os.path.abspath(os.path.join(os.path.dirname(__file__), '../media-streaming/scripts/alldebrid-server.py')))
+    os.path.abspath(os.path.join(os.path.dirname(__file__), '../media-streaming/archive/scripts/alldebrid-server.py')))
 alldebrid_server = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(alldebrid_server)
 
