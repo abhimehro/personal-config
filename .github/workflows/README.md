@@ -11,6 +11,37 @@ This repository uses several GitHub Actions workflows for automation and code qu
 - **code-quality.yml** - Code quality and complexity checks for shell scripts and Python files
 - **copilot-setup-steps.yml** - Adds Development Partner workflow for PRs and issues. This workflow sets up a Development Partner protocol that triggers on pull requests and issues, allowing for specific requests and automatic comments on PRs
 
+### GitHub Agentic Workflows
+
+These workflows are powered by [GitHub Agentic Workflows (gh-aw)](https://github.com/github/gh-aw), which allows defining AI-powered automation workflows in natural language using markdown files. Each workflow is defined in a `.md` file and compiled to a `.lock.yml` file that runs in GitHub Actions.
+
+#### Scheduled Workflows
+
+- **daily-backlog-burner.md** - Performs systematic backlog management by working through issues and pull requests. Operates in two phases: research entire backlog to categorize and prioritize items, then systematically close, resolve, or advance selected items. Creates discussions to track progress and gather maintainer feedback, helping reduce technical debt. Runs daily.
+
+- **daily-perf-improver.md** - Makes performance optimizations by identifying and improving application bottlenecks. Builds the project and analyzes performance metrics to find optimization opportunities. Operates in three phases: research performance landscape and create plan, infer build steps and create performance engineering guides, then implement optimizations and measure impact. Creates discussions to coordinate and draft PRs with improvements. Runs daily.
+
+- **daily-qa.md** - Performs adhoc quality assurance by validating project health daily. Checks that code builds and runs, tests pass, documentation is clear, and code is well-structured. Creates discussions for findings and can submit draft PRs with improvements. Provides continuous quality monitoring throughout development. Runs daily.
+
+- **daily-repo-status.md** - Creates daily repository status reports. Gathers recent repository activity (issues, PRs, discussions, releases, code changes) and generates engaging GitHub issues with productivity insights, community highlights, and project recommendations. Runs daily.
+
+- **daily-workflow-updater.md** - Automatically updates GitHub Actions versions and creates a PR if changes are detected. Keeps workflow dependencies up to date. Runs daily.
+
+- **discussion-task-miner.md** - Scans AI-generated discussions to extract actionable code quality improvement tasks. Mines recent discussions (last 7 days) from AI agents to identify concrete, actionable code quality improvements and converts them into trackable GitHub issues with appropriate labels. Creates parent issues to group related tasks (max 64 per parent). Focuses on refactoring, testing, documentation, performance, security, maintainability, technical debt, and tooling improvements. Runs every 4 hours.
+
+#### On-Demand Workflows
+
+- **plan.md** - Generates project plans and task breakdowns when invoked with `/plan` command in issues or PRs. Analyzes an issue or discussion and breaks it down into a sequence of actionable work items that can be assigned to GitHub Copilot agents. Creates sub-issues grouped under a parent issue.
+
+- **pr-fix.md** - Makes fixes to pull requests on-demand via the `/pr-fix` command. Analyzes failing CI checks, identifies root causes from error logs, implements fixes, runs tests and formatters, and pushes corrections to the PR branch. Provides detailed comments explaining changes made. Helps rapidly resolve PR blockers and keep development flowing.
+
+#### Understanding Agentic Workflows
+
+- **Source Files**: `.md` files in `.github/workflows/` define workflows in natural language
+- **Compiled Files**: `.lock.yml` files are auto-generated and should not be edited manually
+- **Compilation**: Run `gh aw compile` to regenerate lock files after editing `.md` files
+- **Documentation**: See [gh-aw documentation](https://github.com/github/gh-aw) for more details
+
 ### Gemini AI Workflows (Optional)
 
 The following workflows use Google's Gemini AI for automated code review, issue triage, and general assistance. These workflows are **optional** and will only run if authentication is properly configured.
