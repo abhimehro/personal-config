@@ -23,6 +23,7 @@ safe-outputs:
     group: true
   close-discussion:
     required-category: "Ideas"
+    max: 1
 timeout-minutes: 10
 source: github/gh-aw/.github/workflows/plan.md@94662b1dee8ce96c876ba9f33b3ab8be32de82a4
 ---
