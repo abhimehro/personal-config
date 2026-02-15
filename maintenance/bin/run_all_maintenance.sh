@@ -321,7 +321,7 @@ run_script() {
             else
                 log_status "❌ $script_name failed (see $log_file)" "$log_target"
                 if [[ -f "$log_file" ]]; then
-                     log_status "$(grep -v "^$" "$log_file" | tail -n 3 | sed 's/^/   /')" "$log_target"
+log_status "$(grep -v "^$" "$log_file" | tail -n 3 | sed 's/^/   /' || true)" "$log_target"
                 fi
                 register_result "$clean_name" "❌ Failed" "$is_parallel" "$duration_fmt"
                 return 1
@@ -490,6 +490,7 @@ print_summary() {
     for entry in "${SUMMARY_RESULTS[@]}"; do
         if [[ "$entry" == *"Failed"* ]]; then
             any_failed=true
+            break
         elif [[ "$entry" == *"Missing"* ]]; then
             any_missing=true
         fi
