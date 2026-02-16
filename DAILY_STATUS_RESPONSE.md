@@ -25,7 +25,7 @@ Available targets:
 **Implementation Details**:
 - Self-documenting help target using grep pattern for `##` comments
 - Follows standard Makefile conventions
-- Help is the default target
+- Running plain `make` currently invokes `help` because it is the first target in the Makefile
 - All existing targets properly documented
 
 **Recommendation**: Issue #261 should be closed with reference to PR #256.
