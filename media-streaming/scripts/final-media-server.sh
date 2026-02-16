@@ -116,11 +116,13 @@ echo "🚀 Starting Rclone WebDAV Server..."
 echo "   Mode: $INFO_MESSAGE"
 echo "   Bind Address: $BIND_ADDR:$AVAILABLE_PORT"
 
+# 🛡️ Sentinel: Use env vars for credentials to hide them from process list (ps aux)
+export RCLONE_USER="$WEB_USER"
+export RCLONE_PASS="$WEB_PASS"
+
 # Start Rclone WebDAV (Performance Tuned)
 nohup rclone serve webdav "media:" \
     --addr "$BIND_ADDR:$AVAILABLE_PORT" \
-    --user "$WEB_USER" \
-    --pass "$WEB_PASS" \
     --vfs-cache-mode full \
     --vfs-read-chunk-size 32M \
     --vfs-read-chunk-size-limit 2G \
