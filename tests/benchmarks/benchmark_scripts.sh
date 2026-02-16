@@ -19,10 +19,10 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-log() { echo -e "${BLUE}[INFO]${NC} $*"; }
-success() { echo -e "${GREEN}[PASS]${NC} $*"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
-error() { echo -e "${RED}[FAIL]${NC} $*"; }
+log() { echo -e "${BLUE}[INFO]${NC}" "$@"; }
+success() { echo -e "${GREEN}[PASS]${NC}" "$@"; }
+warn() { echo -e "${YELLOW}[WARN]${NC}" "$@"; }
+error() { echo -e "${RED}[FAIL]${NC}" "$@"; }
 
 # Check for hyperfine
 if ! command -v hyperfine >/dev/null 2>&1; then
@@ -42,8 +42,8 @@ benchmark_cmd() {
     log "Benchmarking: $name ($cmd)"
     
     # Run benchmark
-    hyperfine --warmup "$WARMUP_RUNS" --runs "$BENCHMARK_RUNS" 
-        --export-json "$baseline_file" 
+    hyperfine --warmup "$WARMUP_RUNS" --runs "$BENCHMARK_RUNS" \
+        --export-json "$baseline_file" \
         "$cmd"
 
     success "Benchmark completed. Results saved to $baseline_file"
