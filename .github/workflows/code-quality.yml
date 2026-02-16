@@ -58,15 +58,15 @@ jobs:
         id: find-scripts
         run: |
           # Find all shell scripts (excluding archive and hidden directories)
-          find . -type f \( -name "*.sh" -o -name "*.bash" \) 
-            ! -path "./.git/*" 
-            ! -path "./node_modules/*" 
-            ! -path "./.local/*" 
-            ! -path "./archive/*" 
-            ! -path "./.Jules/*" 
-            ! -path "./.jules/*" 
-            ! -path "./.cursor/*" 
-            ! -path "./docs/archive/*" 
+          find . -type f \( -name "*.sh" -o -name "*.bash" \) \
+            ! -path "./.git/*" \
+            ! -path "./node_modules/*" \
+            ! -path "./.local/*" \
+            ! -path "./archive/*" \
+            ! -path "./.Jules/*" \
+            ! -path "./.jules/*" \
+            ! -path "./.cursor/*" \
+            ! -path "./docs/archive/*" \
             > /tmp/shell_files.txt
           
           echo "Found $(wc -l < /tmp/shell_files.txt) shell scripts"
