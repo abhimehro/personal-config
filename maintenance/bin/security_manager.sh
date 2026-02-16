@@ -130,14 +130,18 @@ EOF
     
     if [[ $? -eq 0 ]]; then
         rm -rf "$backup_path"
-        
-        # 🛡️ Sentinel: Generate SHA256 checksum for integrity verification
+
+        # Generate SHA256 checksum for integrity verification
         if command -v shasum >/dev/null 2>&1; then
-            cd "$BACKUP_DIR" && shasum -a 256 "${backup_name}.tar.gz" > "${backup_name}.tar.gz.sha256"
+            shasum -a 256 "$archive_path" > "${archive_path}.sha256"
+            log_security "INFO" "Generated SHA256 checksum for backup integrity"
         elif command -v sha256sum >/dev/null 2>&1; then
-            cd "$BACKUP_DIR" && sha256sum "${backup_name}.tar.gz" > "${backup_name}.tar.gz.sha256"
+            sha256sum "$archive_path" > "${archive_path}.sha256"
+            log_security "INFO" "Generated SHA256 checksum for backup integrity"
+        else
+            log_security "WARN" "Checksum utility not found - skipping integrity hash generation"
         fi
-        
+
         log_security "INFO" "Backup completed successfully: $archive_path"
         
         # Calculate backup size
@@ -162,31 +166,34 @@ check_backup_safety() {
 
     log_security "INFO" "Verifying backup safety: $backup_file"
 
-    # 🛡️ Sentinel: Verify SHA256 checksum if available
+    # 1. Check integrity (Checksum)
+    local checksum_file="${backup_file}.sha256"
     if [[ -f "$checksum_file" ]]; then
-        log_security "INFO" "Verifying SHA256 checksum..."
-        local verify_ok=0
+        log_security "INFO" "Verifying backup integrity using SHA256 checksum..."
         if command -v shasum >/dev/null 2>&1; then
-            if cd "$(dirname "$backup_file")" && shasum -a 256 -c "$(basename "$checksum_file")" >/dev/null 2>&1; then
-                verify_ok=1
+        if command -v shasum >/dev/null 2>&1; then
+            local expected_hash=$(awk '{print $1}' "$checksum_file")
+            if ! echo "$expected_hash  $backup_file" | shasum -a 256 -c - >/dev/null 2>&1; then
+                log_security "ERROR" "SECURITY ALERT: Backup checksum verification failed! File may be corrupted or tampered with."
+                return 1
             fi
+            log_security "INFO" "Integrity check passed (shasum)"
         elif command -v sha256sum >/dev/null 2>&1; then
-            if cd "$(dirname "$backup_file")" && sha256sum -c "$(basename "$checksum_file")" >/dev/null 2>&1; then
-                verify_ok=1
+            local expected_hash=$(awk '{print $1}' "$checksum_file")
+            if ! echo "$expected_hash  $backup_file" | sha256sum -c - >/dev/null 2>&1; then
+                log_security "ERROR" "SECURITY ALERT: Backup checksum verification failed! File may be corrupted or tampered with."
+                return 1
             fi
-        fi
-
-        if [[ "$verify_ok" -eq 1 ]]; then
-            log_security "INFO" "Checksum verification PASSED"
+            log_security "INFO" "Integrity check passed (sha256sum)"
         else
-            log_security "ERROR" "SECURITY ALERT: Checksum verification FAILED for $backup_file! The file may be corrupted or tampered with."
-            return 1
+            log_security "WARN" "Checksum file exists but verification tool missing."
         fi
     else
-        log_security "WARN" "No checksum file found for $backup_file. Integrity cannot be fully guaranteed."
+        log_security "ERROR" "SECURITY ALERT: No checksum file found - aborting for safety."
+        return 1
     fi
 
-    # Check for absolute paths or directory traversal
+    # 2. Check for unsafe paths (Directory Traversal)
     if tar -tf "$backup_file" 2>/dev/null | grep -qE '(^|/)\.\.(/|$)|^/'; then
         log_security "ERROR" "Security check failed: Backup contains unsafe paths (absolute or relative path traversal)"
         return 1
@@ -507,14 +514,16 @@ verify_recovery_readiness() {
             if check_backup_safety "$recent_backup" >/dev/null 2>&1; then
                 echo "✅ Recent backup integrity and safety verified"
                 readiness_score=$((readiness_score + 20))
-                
-                # 🛡️ Sentinel: Additional points for checksum existence
+
+                # Bonus for checksum
                 if [[ -f "${recent_backup}.sha256" ]]; then
-                    echo "✅ Backup checksum file exists (+5 points)"
+                    echo "✅ Backup checksum verified"
                     readiness_score=$((readiness_score + 5))
+                else
+                    echo "⚠️  Backup lacks checksum file"
                 fi
             else
-                echo "❌ Recent backup failed safety/integrity checks"
+                echo "❌ Recent backup failed safety check"
             fi
         else
             echo "❌ Recent backup appears corrupted"
