@@ -8,6 +8,30 @@ const COLORS = {
   Dim: "\x1b[2m",
 };
 
+const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+let spinnerInterval: NodeJS.Timeout | undefined;
+
+const startSpinner = () => {
+  let i = 0;
+  process.stdout.write("\x1B[?25l"); // Hide cursor
+  spinnerInterval = setInterval(() => {
+    process.stdout.write(
+      `\r${COLORS.Green}Assistant:${COLORS.Reset} ${spinnerFrames[i]} `,
+    );
+    i = (i + 1) % spinnerFrames.length;
+  }, 80);
+};
+
+const stopSpinner = () => {
+  if (spinnerInterval) {
+    clearInterval(spinnerInterval);
+    spinnerInterval = undefined;
+    process.stdout.write("\x1B[?25h"); // Show cursor
+    process.stdout.write(`\r${COLORS.Green}Assistant:${COLORS.Reset} `);
+    process.stdout.write("\x1B[K"); // Clear rest of line
+  }
+};
+
 const getWeather = defineTool("get_weather", {
   description: "Get the current weather for a city",
   parameters: {
@@ -55,6 +79,7 @@ const session = await client.createSession({
 
 session.on((event: SessionEvent) => {
   if (event.type === "assistant.message_delta") {
+    stopSpinner();
     process.stdout.write(event.data.deltaContent);
   }
 });
@@ -83,8 +108,12 @@ const prompt = () => {
       process.exit(0);
     }
 
-    process.stdout.write(`${COLORS.Green}Assistant:${COLORS.Reset} `);
-    await session.sendAndWait({ prompt: input });
+    startSpinner();
+    try {
+      await session.sendAndWait({ prompt: input });
+    } finally {
+      stopSpinner();
+    }
     console.log("\n");
     prompt();
   });
