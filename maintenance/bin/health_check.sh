@@ -208,7 +208,20 @@ fi
 # 6) Homebrew check
 if command -v brew >/dev/null 2>&1; then
   BREW_DOC=$(brew doctor 2>&1 | head -10 || true)
-  if echo "${BREW_DOC}" | grep -v "Your system is ready to brew" >/dev/null; then
+  
+  # Use rg if available for faster searching
+  HAS_ISSUES=0
+  if command -v rg >/dev/null 2>&1; then
+    if ! echo "${BREW_DOC}" | rg -q "Your system is ready to brew"; then
+      HAS_ISSUES=1
+    fi
+  else
+    if ! echo "${BREW_DOC}" | grep -q "Your system is ready to brew"; then
+      HAS_ISSUES=1
+    fi
+  fi
+
+  if [[ "$HAS_ISSUES" -eq 1 ]]; then
     append "brew doctor issues detected:"
     append "${BREW_DOC}"
     log_warn "Homebrew doctor found issues"

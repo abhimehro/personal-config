@@ -1,4 +1,6 @@
-.PHONY: help control-d-regression
+.DEFAULT_GOAL := help
+
+.PHONY: help control-d-regression benchmark
 
 help:  ## Show this help message
 	@echo "Available targets:"
@@ -6,3 +8,6 @@ help:  ## Show this help message
 
 control-d-regression:  ## Run full Control D regression test suite
 	./scripts/network-mode-regression.sh browsing
+
+benchmark:  ## Run performance benchmarks for core scripts (requires hyperfine)
+	./tests/benchmarks/benchmark_scripts.sh all

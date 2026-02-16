@@ -45,7 +45,7 @@ FAIL=0
 
 # Case 1: Missing credentials
 echo "Test 1: Missing credentials"
-if ./media-streaming/scripts/start-media-server.sh >/dev/null 2>&1; then
+if ./media-streaming/archive/scripts/start-media-server.sh >/dev/null 2>&1; then
     echo "FAIL: Should have failed with missing credentials"
     FAIL=1
 else
@@ -57,7 +57,7 @@ echo "MEDIA_USER=testuser" > "$HOME/.config/media-server/credentials"
 echo "MEDIA_PASS=testpass" >> "$HOME/.config/media-server/credentials"
 
 echo "Test 2: Credentials in file"
-OUTPUT=$(./media-streaming/scripts/start-media-server.sh)
+OUTPUT=$(./media-streaming/archive/scripts/start-media-server.sh)
 if echo "$OUTPUT" | grep -q "USER=testuser" && echo "$OUTPUT" | grep -q "PASS=testpass"; then
     echo "PASS: Credentials loaded correctly"
 else
