@@ -181,5 +181,5 @@ else
     echo "PASS: final-media-server.sh no args"
 fi
 
-rm -rf "$MOCK_BIN"
+rm -rf "$MOCK_BIN" "$HOME"
 echo "ALL TESTS PASSED"
