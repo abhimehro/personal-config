@@ -52,6 +52,60 @@ load_env() {
 load_env
 
 # =============================================================================
+# MODERN TOOLING WRAPPERS
+# Provides graceful fallbacks for ripgrep (rg), fd, and bat
+# =============================================================================
+
+# ripgrep (rg) -> grep
+# Usage: smart_grep [options] pattern [path]
+smart_grep() {
+    if command -v rg >/dev/null 2>&1; then
+        rg "$@"
+    else
+        # Basic grep fallback (most common flags handled by grep)
+        grep "$@"
+    fi
+}
+
+# fd -> find
+# Usage: smart_find pattern [path]
+smart_find() {
+    # Define a stable interface: first arg = pattern, second arg (optional) = path.
+    # We avoid blindly forwarding "$@" so that fd and find behavior stays consistent.
+    if [[ $# -lt 1 ]]; then
+        printf 'smart_find: missing required pattern argument\n' >&2
+        return 1
+    fi
+
+    local pattern path
+    pattern=$1
+    path=${2:-.}
+
+    if command -v fd >/dev/null 2>&1; then
+        # Use the same (pattern, path) semantics for fd as for find.
+        # If the caller only provided a pattern, fd will search from the current directory.
+        if [[ $# -ge 2 ]]; then
+            fd "$pattern" "$path"
+        else
+            fd "$pattern"
+        fi
+    else
+        # find fallback (basic name search) with stable (pattern, path) semantics
+        find "$path" -name "$pattern"
+    fi
+}
+
+# bat -> cat
+# Usage: smart_cat [file]
+smart_cat() {
+    if command -v bat >/dev/null 2>&1; then
+        bat --style=plain --paging=never "$@"
+    else
+        cat "$@"
+    fi
+}
+
+# =============================================================================
 # LOGGING FUNCTIONS
 # =============================================================================
 

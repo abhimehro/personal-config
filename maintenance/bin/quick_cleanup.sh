@@ -41,11 +41,30 @@ if [[ -d "$HOME/Library/Caches" ]]; then
             esac
             
             # Clean cache if older than configured days (with permission handling)
-            if find "$cache_dir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -print -quit 2>/dev/null | grep -q .; then
-                if find "$cache_dir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -delete 2>/dev/null; then
-                    ((CLEANED++))
+            local has_old_files=0
+            if command -v fd >/dev/null 2>&1; then
+                if fd . "$cache_dir" --type f --changed-before "${CLEANUP_CACHE_DAYS:-30}d" --max-results 1 &>/dev/null; then
+                    has_old_files=1
+                fi
+            else
+                if find "$cache_dir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -print -quit 2>/dev/null | grep -q .; then
+                    has_old_files=1
+                fi
+            fi
+
+            if [[ "$has_old_files" -eq 1 ]]; then
+                if command -v fd >/dev/null 2>&1; then
+                    if fd . "$cache_dir" --type f --changed-before "${CLEANUP_CACHE_DAYS:-30}d" -x rm 2>/dev/null; then
+                        ((CLEANED++))
+                    else
+                        log_warn "Could not clean some files in $(basename "$cache_dir") (permission denied)"
+                    fi
                 else
-                    log_warn "Could not clean some files in $(basename "$cache_dir") (permission denied)"
+                    if find "$cache_dir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -delete 2>/dev/null; then
+                        ((CLEANED++))
+                    else
+                        log_warn "Could not clean some files in $(basename "$cache_dir") (permission denied)"
+                    fi
                 fi
             fi
         fi
