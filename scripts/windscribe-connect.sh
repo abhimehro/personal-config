@@ -18,10 +18,10 @@ NC='\033[0m'
 PROFILE="${1:-browsing}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-log() { echo -e "${BLUE}[INFO]${NC} $@"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $@"; }
-error() { echo -e "${RED}[ERROR]${NC} $@" >&2; }
-success() { echo -e "${GREEN}[OK]${NC} $@"; }
+log() { echo -e "${BLUE}[INFO]${NC} $*"; }
+warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
+error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+success() { echo -e "${GREEN}[OK]${NC} $*"; }
 
 # Pre-flight checks
 if [[ ! -x "$REPO_ROOT/scripts/network-mode-manager.sh" ]]; then

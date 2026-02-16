@@ -17,7 +17,7 @@ MANAGER_SCRIPT="$(cd "$(dirname "$0")/../.." && pwd)/scripts/network-mode-manage
 VERIFY_SCRIPT="$(cd "$(dirname "$0")/../.." && pwd)/scripts/network-mode-verify.sh"
 
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $@" | tee -a "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
 }
 
 main() {

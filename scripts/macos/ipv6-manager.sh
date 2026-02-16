@@ -21,11 +21,11 @@ E_INFO="ℹ️"
 E_IPV6="🌐"
 
 # Helpers
-log()      { echo -e "${BLUE}${E_INFO} [INFO]${NC} $@"; }
-success()  { echo -e "${GREEN}${E_PASS} [OK]${NC} $@"; }
-error()    { echo -e "${RED}${E_FAIL} [ERR]${NC} $@" >&2; exit 1; }
-warn()     { echo -e "${YELLOW}${E_WARN} [WARN]${NC} $@"; }
-header()   { echo -e "\n${BOLD}${BLUE}$@${NC}"; }
+log()      { echo -e "${BLUE}${E_INFO} [INFO]${NC} $*"; }
+success()  { echo -e "${GREEN}${E_PASS} [OK]${NC} $*"; }
+error()    { echo -e "${RED}${E_FAIL} [ERR]${NC} $*" >&2; exit 1; }
+warn()     { echo -e "${YELLOW}${E_WARN} [WARN]${NC} $*"; }
+header()   { echo -e "\n${BOLD}${BLUE}$*${NC}"; }
 
 # --- Core Logic ---
 
