@@ -21,7 +21,7 @@ These workflows are powered by [GitHub Agentic Workflows (gh-aw)](https://github
 
 - **daily-perf-improver.md** - Makes performance optimizations by identifying and improving application bottlenecks. Builds the project and analyzes performance metrics to find optimization opportunities. Operates in three phases: research performance landscape and create plan, infer build steps and create performance engineering guides, then implement optimizations and measure impact. Creates discussions to coordinate and draft PRs with improvements. Runs daily.
 
-- **daily-qa.md** - Performs adhoc quality assurance by validating project health daily. Checks that code builds and runs, tests pass, documentation is clear, and code is well-structured. Creates discussions for findings and can submit draft PRs with improvements. Provides continuous quality monitoring throughout development. Runs daily.
+- **daily-qa.md** - Performs ad hoc quality assurance by validating project health daily. Checks that code builds and runs, tests pass, documentation is clear, and code is well-structured. Creates discussions for findings and can submit draft PRs with improvements. Provides continuous quality monitoring throughout development. Runs daily.
 
 - **daily-repo-status.md** - Creates daily repository status reports. Gathers recent repository activity (issues, PRs, discussions, releases, code changes) and generates engaging GitHub issues with productivity insights, community highlights, and project recommendations. Runs daily.
 
