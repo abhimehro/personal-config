@@ -1,5 +1,5 @@
 #!/bin/bash
-set -u
+set -euo pipefail
 
 # Setup Mock Environment
 export HOME=$(mktemp -d)
