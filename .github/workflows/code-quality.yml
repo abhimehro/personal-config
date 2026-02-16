@@ -160,12 +160,10 @@ try:
                 print(f"{item['type']} '{item['name']}' has complexity {item['complexity']} (line {item['lineno']})")
 except json.JSONDecodeError as e:
     # Log JSON parsing errors for easier troubleshooting
-    sys.stderr.write(f"Failed to parse radon JSON output: {e}
-")
+    sys.stderr.write(f"Failed to parse radon JSON output: {e}\n")
 except (TypeError, ValueError) as e:
     # Log data structure issues without failing the workflow
-    sys.stderr.write(f"Invalid data structure in radon output: {e}
-")
+    sys.stderr.write(f"Invalid data structure in radon output: {e}\n")
 PYEOF
           
           # Ensure radon is available before running checks
