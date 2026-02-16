@@ -130,6 +130,18 @@ EOF
     
     if [[ $? -eq 0 ]]; then
         rm -rf "$backup_path"
+
+        # Generate SHA256 checksum for integrity verification
+        if command -v shasum >/dev/null 2>&1; then
+            shasum -a 256 "$archive_path" > "${archive_path}.sha256"
+            log_security "INFO" "Generated SHA256 checksum for backup integrity"
+        elif command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "$archive_path" > "${archive_path}.sha256"
+            log_security "INFO" "Generated SHA256 checksum for backup integrity"
+        else
+            log_security "WARN" "Checksum utility not found - skipping integrity hash generation"
+        fi
+
         log_security "INFO" "Backup completed successfully: $archive_path"
         
         # Calculate backup size
@@ -153,7 +165,34 @@ check_backup_safety() {
 
     log_security "INFO" "Verifying backup safety: $backup_file"
 
-    # Check for absolute paths or directory traversal
+    # 1. Check integrity (Checksum)
+    local checksum_file="${backup_file}.sha256"
+    if [[ -f "$checksum_file" ]]; then
+        log_security "INFO" "Verifying backup integrity using SHA256 checksum..."
+        if command -v shasum >/dev/null 2>&1; then
+        if command -v shasum >/dev/null 2>&1; then
+            local expected_hash=$(awk '{print $1}' "$checksum_file")
+            if ! echo "$expected_hash  $backup_file" | shasum -a 256 -c - >/dev/null 2>&1; then
+                log_security "ERROR" "SECURITY ALERT: Backup checksum verification failed! File may be corrupted or tampered with."
+                return 1
+            fi
+            log_security "INFO" "Integrity check passed (shasum)"
+        elif command -v sha256sum >/dev/null 2>&1; then
+            local expected_hash=$(awk '{print $1}' "$checksum_file")
+            if ! echo "$expected_hash  $backup_file" | sha256sum -c - >/dev/null 2>&1; then
+                log_security "ERROR" "SECURITY ALERT: Backup checksum verification failed! File may be corrupted or tampered with."
+                return 1
+            fi
+            log_security "INFO" "Integrity check passed (sha256sum)"
+        else
+            log_security "WARN" "Checksum file exists but verification tool missing."
+        fi
+    else
+        log_security "ERROR" "SECURITY ALERT: No checksum file found - aborting for safety."
+        return 1
+    fi
+
+    # 2. Check for unsafe paths (Directory Traversal)
     if tar -tf "$backup_file" 2>/dev/null | grep -qE '(^|/)\.\.(/|$)|^/'; then
         log_security "ERROR" "Security check failed: Backup contains unsafe paths (absolute or relative path traversal)"
         return 1
@@ -474,8 +513,16 @@ verify_recovery_readiness() {
             if check_backup_safety "$recent_backup" >/dev/null 2>&1; then
                 echo "✅ Recent backup integrity and safety verified"
                 readiness_score=$((readiness_score + 20))
+
+                # Bonus for checksum
+                if [[ -f "${recent_backup}.sha256" ]]; then
+                    echo "✅ Backup checksum verified"
+                    readiness_score=$((readiness_score + 5))
+                else
+                    echo "⚠️  Backup lacks checksum file"
+                fi
             else
-                echo "❌ Recent backup contains unsafe paths"
+                echo "❌ Recent backup failed safety check"
             fi
         else
             echo "❌ Recent backup appears corrupted"
