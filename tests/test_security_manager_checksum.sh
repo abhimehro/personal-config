@@ -31,7 +31,8 @@ SECURITY_LOG="$LOG_DIR/security.log"
 echo "Creating backup..."
 # backup_config returns the path to stdout, but also logs to stdout.
 # We take the last line as the path.
-BACKUP_FILE=$(backup_config full | tail -n 1)
+BACKUP_OUTPUT=$(backup_config full)
+BACKUP_FILE=$(echo "$BACKUP_OUTPUT" | tail -n 1)
 echo "Backup created at: $BACKUP_FILE"
 
 # Verify checksum file exists
@@ -39,7 +40,7 @@ CHECKSUM_FILE="${BACKUP_FILE}.sha256"
 if [[ ! -f "$CHECKSUM_FILE" ]]; then
     echo "❌ Checksum file not created: $CHECKSUM_FILE"
     echo "Backup output:"
-    backup_config full
+    echo "$BACKUP_OUTPUT"
     exit 1
 fi
 echo "✅ Checksum file created."
