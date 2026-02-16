@@ -238,17 +238,18 @@ wait_for_pids() {
 }
 
 # Add result to summary (handles writing to file if in subshell)
-# Usage: register_result "Script Name" "Status" "Is_Parallel_Subshell" "Duration"
+# Usage: register_result "Script Name" "Status" "Is_Parallel_Subshell" "Duration" "Task Type"
 register_result() {
     local name="$1"
     local status="$2"
     local is_subshell="${3:-false}"
     local duration="${4:-0s}"
+    local type="${5:-maintenance}"
 
     if [[ "$is_subshell" == "true" ]]; then
-        echo "${name}|${status}|${duration}" >> "$PARALLEL_RESULTS_LOG"
+        echo "${name}|${status}|${duration}|${type}" >> "$PARALLEL_RESULTS_LOG"
     else
-        SUMMARY_RESULTS+=("${name}|${status}|${duration}")
+        SUMMARY_RESULTS+=("${name}|${status}|${duration}|${type}")
     fi
 }
 
@@ -289,7 +290,7 @@ run_script() {
                 duration_fmt="${duration_sec}s"
 
                 log_status "✅ $script_name completed in $duration_fmt" "$log_target"
-                register_result "$clean_name" "✅ Success" "$is_parallel" "$duration_fmt"
+                register_result "$clean_name" "✅ Success" "$is_parallel" "$duration_fmt" "$task_type"
                 return 0
             else
                 end_time=$(date +%s)
@@ -297,7 +298,7 @@ run_script() {
                 duration_fmt="${duration_sec}s"
 
                 log_status "❌ $script_name failed (see $log_file)" "$log_target"
-                register_result "$clean_name" "❌ Failed" "$is_parallel" "$duration_fmt"
+                register_result "$clean_name" "❌ Failed" "$is_parallel" "$duration_fmt" "$task_type"
                 return 1
             fi
         else
@@ -316,20 +317,20 @@ run_script() {
 
             if [[ $exit_code -eq 0 ]]; then
                 log_status "✅ $script_name completed in $duration_fmt" "$log_target"
-                register_result "$clean_name" "✅ Success" "$is_parallel" "$duration_fmt"
+                register_result "$clean_name" "✅ Success" "$is_parallel" "$duration_fmt" "$task_type"
                 return 0
             else
                 log_status "❌ $script_name failed (see $log_file)" "$log_target"
                 if [[ -f "$log_file" ]]; then
 log_status "$(grep -v "^$" "$log_file" | tail -n 3 | sed 's/^/   /' || true)" "$log_target"
                 fi
-                register_result "$clean_name" "❌ Failed" "$is_parallel" "$duration_fmt"
+                register_result "$clean_name" "❌ Failed" "$is_parallel" "$duration_fmt" "$task_type"
                 return 1
             fi
         fi
     else
         log_status "⚠️  $script_name not found/executable" "$log_target"
-        register_result "$clean_name" "⚠️  Missing" "$is_parallel" "0s"
+        register_result "$clean_name" "⚠️  Missing" "$is_parallel" "0s" "$task_type"
         return 1
     fi
 }
@@ -448,7 +449,7 @@ print_summary() {
         echo "│ No tasks recorded.                                                     │" | tee -a "$MASTER_LOG"
     else
         for entry in "${SUMMARY_RESULTS[@]}"; do
-            IFS="|" read -r name status duration <<< "$entry"
+            IFS="|" read -r name status duration type <<< "$entry"
 
             # Prepare padded string and color
             local status_text=""
@@ -468,13 +469,25 @@ print_summary() {
                  color=""
             fi
 
+            # Select icon based on type
+            local icon="📋"
+            case "$type" in
+                "critical") icon="🚑" ;;
+                "cleanup") icon="🧹" ;;
+                "maintenance") icon="🔧" ;;
+                "optimization") icon="⚡" ;;
+            esac
+
+            # Add icon to name
+            name="$icon $name"
+
             # Truncate name if too long
-            if [[ ${#name} -gt 40 ]]; then
-                name="${name:0:37}..."
+            if [[ ${#name} -gt 39 ]]; then
+                name="${name:0:36}..."
             fi
 
             # Print row with colors (ANSI codes)
-            printf "│ ${color}%s${NC} │ %-40s │ %-10s │\n" "$status_text" "$name" "$duration" | tee -a "$MASTER_LOG"
+            printf "│ ${color}%s${NC} │ %-39s │ %-10s │\n" "$status_text" "$name" "$duration" | tee -a "$MASTER_LOG"
         done
     fi
 
