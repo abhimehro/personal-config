@@ -122,16 +122,16 @@ jobs:
         id: find-python
         run: |
           # Find all Python files (excluding archive and hidden directories)
-          find . -type f -name "*.py" 
-            ! -path "./.git/*" 
-            ! -path "./node_modules/*" 
-            ! -path "./.local/*" 
-            ! -path "./.jules/*" 
-            ! -path "./.Jules/*" 
-            ! -path "./archive/*" 
-            ! -path "./docs/archive/*" 
-            ! -path "./.venv/*" 
-            ! -path "./venv/*" 
+          find . -type f -name "*.py" \
+            ! -path "./.git/*" \
+            ! -path "./node_modules/*" \
+            ! -path "./.local/*" \
+            ! -path "./.jules/*" \
+            ! -path "./.Jules/*" \
+            ! -path "./archive/*" \
+            ! -path "./docs/archive/*" \
+            ! -path "./.venv/*" \
+            ! -path "./venv/*" \
             > /tmp/python_files.txt
           
           echo "Found $(wc -l < /tmp/python_files.txt) Python files"
