@@ -170,13 +170,16 @@ check_backup_safety() {
     if [[ -f "$checksum_file" ]]; then
         log_security "INFO" "Verifying backup integrity using SHA256 checksum..."
         if command -v shasum >/dev/null 2>&1; then
-            if ! shasum -a 256 -c "$checksum_file" >/dev/null 2>&1; then
+        if command -v shasum >/dev/null 2>&1; then
+            local expected_hash=$(awk '{print $1}' "$checksum_file")
+            if ! echo "$expected_hash  $backup_file" | shasum -a 256 -c - >/dev/null 2>&1; then
                 log_security "ERROR" "SECURITY ALERT: Backup checksum verification failed! File may be corrupted or tampered with."
                 return 1
             fi
             log_security "INFO" "Integrity check passed (shasum)"
         elif command -v sha256sum >/dev/null 2>&1; then
-            if ! sha256sum -c "$checksum_file" >/dev/null 2>&1; then
+            local expected_hash=$(awk '{print $1}' "$checksum_file")
+            if ! echo "$expected_hash  $backup_file" | sha256sum -c - >/dev/null 2>&1; then
                 log_security "ERROR" "SECURITY ALERT: Backup checksum verification failed! File may be corrupted or tampered with."
                 return 1
             fi
