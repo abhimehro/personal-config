@@ -68,13 +68,30 @@ smart_grep() {
 }
 
 # fd -> find
-# Usage: smart_find [pattern]
+# Usage: smart_find pattern [path]
 smart_find() {
+    # Define a stable interface: first arg = pattern, second arg (optional) = path.
+    # We avoid blindly forwarding "$@" so that fd and find behavior stays consistent.
+    if [[ $# -lt 1 ]]; then
+        printf 'smart_find: missing required pattern argument\n' >&2
+        return 1
+    fi
+
+    local pattern path
+    pattern=$1
+    path=${2:-.}
+
     if command -v fd >/dev/null 2>&1; then
-        fd "$@"
+        # Use the same (pattern, path) semantics for fd as for find.
+        # If the caller only provided a pattern, fd will search from the current directory.
+        if [[ $# -ge 2 ]]; then
+            fd "$pattern" "$path"
+        else
+            fd "$pattern"
+        fi
     else
-        # find fallback (basic name search)
-        find . -name "$1"
+        # find fallback (basic name search) with stable (pattern, path) semantics
+        find "$path" -name "$pattern"
     fi
 }
 
