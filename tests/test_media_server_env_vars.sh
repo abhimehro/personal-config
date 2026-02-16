@@ -1,8 +1,17 @@
 #!/bin/bash
 set -u
 
-# Setup Mock Bin
+# Setup Mock Environment
+export HOME=$(mktemp -d)
 MOCK_BIN=$(mktemp -d)
+mkdir -p "$HOME/Library/Logs"
+
+# Mock pkill to prevent killing real processes
+cat > "$MOCK_BIN/pkill" << 'EOF'
+#!/bin/bash
+exit 0
+EOF
+chmod +x "$MOCK_BIN/pkill"
 # Create a mock rclone that prints env vars and args
 cat > "$MOCK_BIN/rclone" << 'EOF'
 #!/bin/bash
