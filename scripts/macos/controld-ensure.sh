@@ -29,12 +29,12 @@ main() {
     fi
 
     if [[ ! -x "$MANAGER_SCRIPT" ]]; then
-        log "❌ network-mode-manager.sh not found or not executable at $MANAGER_SCRIPT"
+        log "❌ network-mode-manager.sh not found or not executable at \"$MANAGER_SCRIPT\""
         exit 1
     fi
 
     if [[ ! -x "$VERIFY_SCRIPT" ]]; then
-        log "❌ network-mode-verify.sh not found or not executable at $VERIFY_SCRIPT"
+        log "❌ network-mode-verify.sh not found or not executable at \"$VERIFY_SCRIPT\""
         exit 1
     fi
 

@@ -162,6 +162,7 @@ EOF
 # Security check for backup contents
 check_backup_safety() {
     local backup_file="$1"
+    local checksum_file="${backup_file}.sha256"
 
     log_security "INFO" "Verifying backup safety: $backup_file"
 

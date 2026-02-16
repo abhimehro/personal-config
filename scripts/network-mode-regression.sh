@@ -46,31 +46,31 @@ main() {
 
   # 1) Switch to Control D DNS mode
   log "Step 1: Switching to CONTROL D (DNS) mode..."
-  $MANAGER controld "$profile" || ok=1
+  "$MANAGER" controld "$profile" || ok=1
 
   # 2) Verify CONTROL D ACTIVE explicitly (profile-aware)
   log "Step 2: Verifying CONTROL D ACTIVE state..."
-  if ! $VERIFY controld "$profile"; then
+  if ! "$VERIFY" controld "$profile"; then
     ok=1
   fi
 
   # 3) Switch to Windscribe VPN mode (Standalone)
   log "Step 3: Switching to STANDALONE WINDSCRIBE (VPN) mode..."
-  $MANAGER windscribe || ok=1
+  "$MANAGER" windscribe || ok=1
 
   # 4) Verify WINDSCRIBE READY explicitly
   log "Step 4: Verifying WINDSCRIBE READY state..."
-  if ! $VERIFY windscribe; then
+  if ! "$VERIFY" windscribe; then
     ok=1
   fi
 
   # 5) Switch to Combined Mode (VPN + Control D)
   log "Step 5: Switching to COMBINED MODE (Windscribe + Privacy)..."
-  $MANAGER windscribe privacy || ok=1
+  "$MANAGER" windscribe privacy || ok=1
 
   # 6) Verify COMBINED state (using profile-aware controld verify)
   log "Step 6: Verifying COMBINED state (VPN active + Control D)..."
-  if ! $VERIFY controld privacy; then
+  if ! "$VERIFY" controld privacy; then
     ok=1
   fi
 
