@@ -85,6 +85,23 @@ echo "1.2.3.4"
 EOF
 chmod +x "$MOCK_BIN/curl"
 
+# Create mock pkill to avoid killing real processes during tests
+cat > "$MOCK_BIN/pkill" << 'EOF'
+#!/bin/bash
+# This mock intentionally does nothing and always succeeds.
+# It prevents tests from terminating real processes on the host.
+exit 0
+EOF
+chmod +x "$MOCK_BIN/pkill"
+
+# Create mock ps to avoid depending on the host process table
+cat > "$MOCK_BIN/ps" << 'EOF'
+#!/bin/bash
+# Minimal mock of ps: prints no processes and exits successfully.
+# Adjust as needed if tests rely on specific ps output.
+exit 0
+EOF
+chmod +x "$MOCK_BIN/ps"
 export PATH="$MOCK_BIN:$PATH"
 
 # Setup dummy LOGS
