@@ -177,9 +177,20 @@ chmod +x "$MOCK_BIN/rclone"
 # Log file location might vary because $HOME is not mocked fully (only for .config if I set it)
 # But in my script I used $HOME/Library/Logs
 # But final-media-server.sh uses ~/Library/Logs which expands to $HOME/Library/Logs.
+LOG_FILE="$HOME/Library/Logs/media-server.log"
 
-LOG_CONTENT=$(cat "$HOME/Library/Logs/media-server.log")
+# Fail fast with a clear message if the log file was not created
+if [[ ! -f "$LOG_FILE" ]]; then
+    echo "FAIL: expected log file not found: $LOG_FILE"
+    echo "Hint: final-media-server.sh may have failed before writing the log."
+    exit 1
+fi
 
+# Read log content; if this fails (e.g., permissions), report clearly
+if ! LOG_CONTENT=$(<"$LOG_FILE"); then
+    echo "FAIL: unable to read log file: $LOG_FILE"
+    exit 1
+fi
 if echo "$LOG_CONTENT" | grep -q "ENV_RCLONE_USER=mockuser" && \
    echo "$LOG_CONTENT" | grep -q "ENV_RCLONE_PASS=mockpass"; then
     echo "PASS: final-media-server.sh exports env vars"
