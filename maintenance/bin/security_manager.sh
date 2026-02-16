@@ -188,7 +188,8 @@ check_backup_safety() {
             log_security "WARN" "Checksum file exists but verification tool missing."
         fi
     else
-        log_security "WARN" "No checksum file found - skipping integrity verification."
+        log_security "ERROR" "SECURITY ALERT: No checksum file found - aborting for safety."
+        return 1
     fi
 
     # 2. Check for unsafe paths (Directory Traversal)
