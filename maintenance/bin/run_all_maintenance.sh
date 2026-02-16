@@ -81,7 +81,7 @@ if ! mkdir "$LOCK_DIR" 2>/dev/null; then
         fi
         
         LOCK_AGE=$(($(date +%s) - LOCK_TIME))
-        if [[ $LOCK_AGE -gt 7200 ]]; then
+        if [[ "${LOCK_AGE}" -gt 7200 ]]; then
             LOCK_MSG="WARNING: Removing stale lock (age: $((LOCK_AGE/60)) minutes)"
             echo "$LOCK_MSG"
             echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] $LOCK_MSG" >> "$LOCK_CONTEXT_LOG"
