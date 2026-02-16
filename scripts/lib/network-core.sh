@@ -47,7 +47,7 @@ smart_find() {
     if command -v fd >/dev/null 2>&1; then
         fd "$@"
     else
-        find . -name "$@"
+        find . -name "$1"
     fi
 }
 
