@@ -74,7 +74,7 @@ smart_find() {
         fd "$@"
     else
         # find fallback (basic name search)
-        find . -name "$@"
+        find . -name "$1"
     fi
 }
 
