@@ -12,6 +12,9 @@ const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "
 let spinnerInterval: NodeJS.Timeout | undefined;
 
 const startSpinner = () => {
+  // Guard against starting multiple spinners concurrently
+  stopSpinner();
+  
   let i = 0;
   process.stdout.write("\x1B[?25l"); // Hide cursor
   spinnerInterval = setInterval(() => {
@@ -31,6 +34,20 @@ const stopSpinner = () => {
     process.stdout.write("\x1B[K"); // Clear rest of line
   }
 };
+
+// Ensure cursor is restored on exit or interrupt
+process.on("SIGINT", () => {
+  stopSpinner();
+  process.stdout.write("\n");
+  process.exit(0);
+});
+
+process.on("exit", () => {
+  if (spinnerInterval) {
+    clearInterval(spinnerInterval);
+    process.stdout.write("\x1B[?25h"); // Show cursor
+  }
+});
 
 const getWeather = defineTool("get_weather", {
   description: "Get the current weather for a city",
