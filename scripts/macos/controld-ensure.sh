@@ -17,7 +17,26 @@ MANAGER_SCRIPT="$(cd "$(dirname "$0")/../.." && pwd)/scripts/network-mode-manage
 VERIFY_SCRIPT="$(cd "$(dirname "$0")/../.." && pwd)/scripts/network-mode-verify.sh"
 
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+    # Capture timestamp once so each log entry is consistent
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
+
+    {
+        # Print timestamp prefix
+        printf '[%s] ' "$ts"
+
+        # Safely print all arguments on a single line, preserving boundaries.
+        # We avoid `$*` because it joins arguments using IFS and can mangle
+        # arguments with spaces or empty strings.
+        if [ "$#" -gt 0 ]; then
+            printf '%s' "$1"
+            shift
+            for arg in "$@"; do
+                printf ' %s' "$arg"
+            done
+        fi
+        printf '\n'
+    } | tee -a "$LOG_FILE"
 }
 
 main() {
