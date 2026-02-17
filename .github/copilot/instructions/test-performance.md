@@ -69,24 +69,38 @@ pytest -n 4 tests/
 ### 3. Repeated Setup/Teardown
 **Problem:** Each test creates/deletes same fixtures
 
-**Solution:** Use pytest fixtures with appropriate scope
+**Solution:** Use shared setup with unittest setUpClass/tearDownClass (or equivalent)
 ```python
-import pytest
+import unittest
 import tempfile
+import shutil
+import os
 
-@pytest.fixture(scope="session")  # Only once per test session
-def temp_config_dir():
-    tmpdir = tempfile.mkdtemp()
-    yield tmpdir
-    shutil.rmtree(tmpdir)
 
-def test_one(temp_config_dir):
-    # Uses same dir
-    pass
+class TestWithSharedTempDir(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Create a temporary directory once per test class instead of per test
+        cls.temp_config_dir = tempfile.mkdtemp()
 
-def test_two(temp_config_dir):
-    # Reuses same dir
-    pass
+    @classmethod
+    def tearDownClass(cls):
+        # Clean up the shared directory after all tests in this class have run
+        shutil.rmtree(cls.temp_config_dir)
+
+    def test_one(self):
+        # Uses the same directory created in setUpClass
+        path = os.path.join(self.temp_config_dir, "file1.txt")
+        with open(path, "w") as f:
+            f.write("data")
+        self.assertTrue(os.path.exists(path))
+
+    def test_two(self):
+        # Reuses the same directory, avoiding repeated expensive setup
+        path = os.path.join(self.temp_config_dir, "file2.txt")
+        with open(path, "w") as f:
+            f.write("more data")
+        self.assertTrue(os.path.exists(path))
 ```
 
 ### 4. Testing Against Real Filesystem
