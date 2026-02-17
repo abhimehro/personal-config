@@ -56,7 +56,7 @@ export -f networksetup
 ```bash
 # Run all Python test files in parallel
 for test_file in tests/test_*.py; do
-  python -m unittest "$(basename "$test_file" .py)" &
+  python -m unittest tests."$(basename "$test_file" .py)" &
 done
 wait
 
@@ -141,11 +141,8 @@ hyperfine --warmup 1 --runs 3 'make test'
 # Time individual test files
 time python -m unittest tests.test_path_validation
 
-# Time with more detail using Python's time module
-python -m timeit -n 1 -r 1 "import unittest; \
-  loader = unittest.TestLoader(); \
-  suite = loader.discover('tests'); \
-  unittest.TextTestRunner().run(suite)"
+# Time entire test suite
+time python -m unittest discover tests/
 
 # Shell test with timing
 time bash tests/test_network_mode_manager.sh
@@ -161,7 +158,7 @@ python -c "import pstats; p = pstats.Stats('profile.stats'); \
 # Or time each test file individually
 for test in tests/test_*.py; do
   echo "Testing $test..."
-  time python -m unittest "$(basename "$test" .py)" 2>&1 | head -1
+  time python -m unittest tests."$(basename "$test" .py)" 2>&1 | head -1
 done
 ```
 
@@ -373,7 +370,7 @@ time python -m unittest discover tests/
 
 # Individual test file timing
 for test in tests/test_*.py; do
-  time python -m unittest "$(basename "$test" .py)"
+  time python -m unittest tests."$(basename "$test" .py)"
 done
 
 # Cache effectiveness (how often mocks used)
