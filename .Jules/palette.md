@@ -37,3 +37,7 @@
 ## 2026-03-01 - Visual Feedback for Async Operations
 **Learning:** In conversational CLIs, the gap between user input and assistant response can feel like a freeze. A simple loading spinner reassures the user that the system is working, especially during network calls.
 **Action:** Implement a lightweight, text-based spinner for any CLI operation that involves variable latency (e.g., API calls).
+
+## 2025-02-17 - Delightful Data Visualization in CLI
+**Learning:** In text-based interfaces, mapping abstract data (like weather conditions or time) to relevant emojis provides immediate visual recognition and delight, acting as a "micro-UX" improvement.
+**Action:** When displaying categorical data in CLI tools, consider using emoji mappings to enhance scanability and user experience.
