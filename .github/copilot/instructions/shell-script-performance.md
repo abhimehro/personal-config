@@ -23,9 +23,9 @@ hyperfine --warmup 2 --runs 5 \
 ```
 
 ### Profiling Shell Execution
-Use `bash -x` to see every command executed:
+Use `bash -x` to see every command executed, and prepend timestamps with built-in tools:
 ```bash
-bash -x ./script.sh 2>&1 | ts '[%H:%M:%.S]' > profile.log
+bash -x ./script.sh 2>&1 | awk '{ print strftime("[%H:%M:%S]"), $0 }' > profile.log
 ```
 
 ## Common Performance Bottlenecks in This Repo
