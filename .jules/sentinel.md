@@ -102,3 +102,10 @@
 **Vulnerability:** Lack of integrity checks for backup archives in `maintenance/bin/security_manager.sh`. The script restored backups without verifying they hadn't been tampered with or corrupted.
 **Learning:** Backup systems that rely solely on file existence or basic path checks are vulnerable to restoring compromised or corrupted states. A malicious actor with filesystem access could modify a backup archive to inject malicious configurations or scripts, which would then be restored with high privileges.
 **Prevention:** Implement cryptographic checksums (e.g., SHA256) for all backup archives upon creation and verify these checksums before restoration. This primarily detects corruption or tampering. Strong authenticity guarantees are only provided if the checksum data itself is protected separately (for example, stored off-host, in an append-only log, or signed), rather than being just another writable file alongside the backups.
+
+## 2026-02-16 - Credentials in Process List
+**Vulnerability:** Information Disclosure ([CWE-214][]) in `media-streaming/scripts/media-server-daemon.sh` and `media-streaming/scripts/final-media-server.sh`. The scripts passed sensitive credentials (passwords) as command-line arguments (`--user`, `--pass`) to `rclone`.
+**Learning:** Command-line arguments are visible to all users on the system via process listing tools like `ps aux`. This exposes secrets to any user or process with read access to process information.
+**Prevention:** Use environment variables (e.g., `RCLONE_PASS`) to pass secrets to CLI tools, as environment variables are typically only visible to the process owner and root.
+
+[CWE-214]: https://cwe.mitre.org/data/definitions/214.html
