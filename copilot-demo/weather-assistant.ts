@@ -8,15 +8,29 @@ const COLORS = {
   Dim: "\x1b[2m",
 };
 
+const ANSI = {
+  HideCursor: "\x1B[?25l",
+  ShowCursor: "\x1B[?25h",
+  ClearLine: "\x1B[K",
+};
+
 const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 let spinnerInterval: NodeJS.Timeout | undefined;
 
+const stopSpinner = () => {
+  if (spinnerInterval) {
+    clearInterval(spinnerInterval);
+    spinnerInterval = undefined;
+    process.stdout.write(ANSI.ShowCursor);
+    process.stdout.write(`\r${COLORS.Green}Assistant:${COLORS.Reset} `);
+    process.stdout.write(ANSI.ClearLine);
+  }
+};
+
 const startSpinner = () => {
-  // Guard against starting multiple spinners concurrently
-  stopSpinner();
-  
+  if (spinnerInterval) return; // Prevent multiple spinners
   let i = 0;
-  process.stdout.write("\x1B[?25l"); // Hide cursor
+  process.stdout.write(ANSI.HideCursor);
   spinnerInterval = setInterval(() => {
     process.stdout.write(
       `\r${COLORS.Green}Assistant:${COLORS.Reset} ${spinnerFrames[i]} `,
@@ -25,15 +39,10 @@ const startSpinner = () => {
   }, 80);
 };
 
-const stopSpinner = () => {
-  if (spinnerInterval) {
-    clearInterval(spinnerInterval);
-    spinnerInterval = undefined;
-    process.stdout.write("\x1B[?25h"); // Show cursor
-    process.stdout.write(`\r${COLORS.Green}Assistant:${COLORS.Reset} `);
-    process.stdout.write("\x1B[K"); // Clear rest of line
-  }
-};
+// Ensure cursor is restored on exit
+process.on("exit", () => {
+  process.stdout.write(ANSI.ShowCursor);
+});
 
 // Ensure cursor is restored on exit or interrupt
 process.on("SIGINT", () => {
