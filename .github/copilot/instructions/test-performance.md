@@ -152,7 +152,7 @@ hyperfine --warmup 1 --runs 3 'make test'
 time python -m unittest tests.test_path_validation
 
 # Time entire test suite
-time python -m unittest discover tests/
+time python -m unittest discover -s tests
 
 # Shell test with timing
 time bash tests/test_network_mode_manager.sh
@@ -161,7 +161,7 @@ time bash tests/test_network_mode_manager.sh
 ### Identify Slow Tests
 ```bash
 # Profile unittest tests with cProfile
-python -m cProfile -o profile.stats -m unittest discover tests/
+python -m cProfile -o profile.stats -m unittest discover -s tests
 python -c "import pstats; p = pstats.Stats('profile.stats'); \
   p.sort_stats('cumulative'); p.print_stats(20)"
 
@@ -283,7 +283,7 @@ assert status == "active"
 
 **After:** 8 seconds (5.6x faster)
 1. Mocked `networksetup` and `dig` (saved 7s)
-2. Parallel test execution with pytest-xdist (saved 22s)
+2. Parallel test execution with shell background jobs (saved 22s)
 3. In-memory temp files (saved 8s)
 
 **Implementation:**
@@ -350,7 +350,7 @@ jobs:
     if: github.event_name == 'push'
     steps:
       - name: Run all tests
-        run: python -m unittest discover tests/
+        run: python -m unittest discover -s tests
 ```
 
 **Strategy:** Fast unit tests block PR, full integration tests run after merge.
