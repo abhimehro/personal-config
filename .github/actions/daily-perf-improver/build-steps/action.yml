@@ -101,6 +101,7 @@ runs:
           ! -path "./archive/*" \
           ! -path "./.Jules/*" \
           ! -path "./.jules/*" \
+          ! -path "./.cursor/*" \
           ! -path "./docs/archive/*" \
           > /tmp/shell_files.txt
         
