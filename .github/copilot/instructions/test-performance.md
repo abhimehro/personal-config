@@ -324,8 +324,8 @@ jobs:
 
 **Measure these regularly:**
 ```bash
-# Total test time
-time make test
+# Total test/benchmark time
+time make benchmark
 
 # Per-test timing
 pytest --durations=10 tests/
