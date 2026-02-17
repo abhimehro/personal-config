@@ -110,12 +110,18 @@ class TestWithSharedTempDir(unittest.TestCase):
 ```python
 from io import StringIO
 import sys
+import unittest
+from unittest.mock import patch
 
-# Mock file operations
-def test_config_parsing(monkeypatch):
-    fake_file = StringIO("config=value\n")
-    monkeypatch.setattr('sys.stdin', fake_file)
-    # Test runs in memory
+
+class TestConfigParsing(unittest.TestCase):
+    # Mock file operations
+    def test_config_parsing(self):
+        fake_file = StringIO("config=value\n")
+        # Use unittest.mock.patch to replace sys.stdin with an in-memory file
+        with patch.object(sys, "stdin", fake_file):
+            # Test runs in memory
+            pass
 ```
 
 ## Performance Measurement
