@@ -56,13 +56,14 @@ export -f networksetup
 ```bash
 # Run all Python test files in parallel
 for test_file in tests/test_*.py; do
-  python -m unittest tests."$(basename "$test_file" .py)" &
+  python -m unittest tests.$(basename "$test_file" .py) &
 done
 wait
 
-# Or use GNU parallel for more control
-find tests -name 'test_*.py' -print0 | \
-  parallel -0 -j4 python -m unittest {}
+# Or use GNU parallel for more control (converts path to module notation)
+find tests -name 'test_*.py' | \
+  sed 's|/|.|g; s|\.py$||' | \
+  parallel -j4 python -m unittest {}
 ```
 
 **Impact:** Significant speedup if tests are independent. Note: unittest doesn't have built-in parallel execution like pytest-xdist, so shell-level parallelization is used.
@@ -158,7 +159,7 @@ python -c "import pstats; p = pstats.Stats('profile.stats'); \
 # Or time each test file individually
 for test in tests/test_*.py; do
   echo "Testing $test..."
-  time python -m unittest tests."$(basename "$test" .py)" 2>&1 | head -1
+  time python -m unittest tests.$(basename "$test" .py) 2>&1 | head -1
 done
 ```
 
@@ -370,7 +371,7 @@ time python -m unittest discover tests/
 
 # Individual test file timing
 for test in tests/test_*.py; do
-  time python -m unittest tests."$(basename "$test" .py)"
+  time python -m unittest tests.$(basename "$test" .py)
 done
 
 # Cache effectiveness (how often mocks used)
