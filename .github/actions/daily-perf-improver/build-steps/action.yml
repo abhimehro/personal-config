@@ -33,21 +33,21 @@ runs:
         
         # Install hyperfine (for benchmarking) - optional
         if ! command -v hyperfine &> /dev/null; then
-          echo "Installing hyperfine (optional)..." | tee -a build-steps.log
-          if wget -q https://github.com/sharkdp/hyperfine/releases/download/v1.18.0/hyperfine-v1.18.0-x86_64-unknown-linux-gnu.tar.gz 2>/dev/null; then
-            tar xzf hyperfine-v1.18.0-x86_64-unknown-linux-gnu.tar.gz 2>/dev/null || true
-            if [ -f hyperfine-v1.18.0-x86_64-unknown-linux-gnu/hyperfine ]; then
-              mv hyperfine-v1.18.0-x86_64-unknown-linux-gnu/hyperfine ~/.local/bin/
-              chmod +x ~/.local/bin/hyperfine
-              echo "hyperfine installed" | tee -a build-steps.log
+          echo "Installing hyperfine (optional) via system package manager..." | tee -a build-steps.log
+          if command -v apt-get &> /dev/null; then
+            # Prefer using the system package manager instead of downloading binaries directly
+            if sudo apt-get update -qq && sudo apt-get install -y -qq hyperfine; then
+              echo "hyperfine installed via apt-get" | tee -a build-steps.log
+            else
+              echo "Failed to install hyperfine via apt-get; will use 'time' command instead" | tee -a build-steps.log
             fi
-            rm -rf hyperfine-v1.18.0* 2>/dev/null || true
           else
-            echo "Could not install hyperfine - will use 'time' command instead" | tee -a build-steps.log
+            echo "No supported package manager found for hyperfine installation; will use 'time' command instead" | tee -a build-steps.log
           fi
         else
           echo "hyperfine already available" | tee -a build-steps.log
         fi
+        
         
         echo "" | tee -a build-steps.log
         
