@@ -55,11 +55,20 @@ export -f networksetup
 **Solution:** Run test files in parallel using shell job control
 ```bash
 # Run all Python test files in parallel
+pids=()
 for test_file in tests/test_*.py; do
-  python -m unittest tests.$(basename "$test_file" .py) &
+  python -m unittest tests."$(basename "$test_file" .py)" &
+  pids+=($!)  # Capture PID of background job so we can wait on each one
 done
-wait
 
+exit_code=0
+for pid in "${pids[@]}"; do
+  if ! wait "$pid"; then
+    exit_code=1  # Record that at least one test process failed
+  fi
+done
+
+exit "$exit_code"
 # Or use GNU parallel for more control (converts path to module notation)
 find tests -name 'test_*.py' | \
   sed 's|/|.|g; s|\.py$||' | \
