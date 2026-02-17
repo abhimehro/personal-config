@@ -159,7 +159,7 @@ python -c "import pstats; p = pstats.Stats('profile.stats'); \
 # Or time each test file individually
 for test in tests/test_*.py; do
   echo "Testing $test..."
-  time python -m unittest tests.$(basename "$test" .py) 2>&1 | head -1
+  { time python -m unittest tests.$(basename "$test" .py); } 2>&1 | head -1
 done
 ```
 
