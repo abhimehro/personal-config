@@ -48,7 +48,7 @@ process.on("exit", () => {
 process.on("SIGINT", () => {
   stopSpinner();
   process.stdout.write("\n");
-  process.exit(0);
+  process.exitCode = 130; // Use standard interrupt exit code so callers can detect cancellation
 });
 
 // Safety net: restore cursor on any exit (e.g., uncaught exceptions)
