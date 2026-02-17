@@ -367,7 +367,7 @@ jobs:
 time make benchmark
 
 # Per-test timing
-time python -m unittest discover tests/
+time python -m unittest discover -s tests
 
 # Individual test file timing
 for test in tests/test_*.py; do
