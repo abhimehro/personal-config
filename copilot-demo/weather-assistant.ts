@@ -42,6 +42,9 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
+// Safety net: restore cursor on any exit (e.g., uncaught exceptions)
+// Note: spinnerInterval will be undefined if stopSpinner() was already called,
+// so this only acts when the process exits abnormally without cleanup
 process.on("exit", () => {
   if (spinnerInterval) {
     clearInterval(spinnerInterval);
