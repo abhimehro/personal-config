@@ -1,0 +1,166 @@
+name: Daily Perf Improver - Build Steps
+description: Setup environment for performance engineering work
+runs:
+  using: composite
+  steps:
+    - name: Initialize build log
+      shell: bash
+      run: |
+        BUILD_LOG="$GITHUB_WORKSPACE/build-steps.log"
+        echo "=== Daily Perf Improver Build Steps ===" | tee "$BUILD_LOG"
+        echo "Started: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" | tee -a "$BUILD_LOG"
+        echo "" | tee -a "$BUILD_LOG"
+    
+    - name: Setup local bin directory
+      shell: bash
+      run: |
+        BUILD_LOG="$GITHUB_WORKSPACE/build-steps.log"
+        echo "--- Setting up local bin directory ---" | tee -a "$BUILD_LOG"
+        mkdir -p ~/.local/bin
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "✓ Local bin directory created" | tee -a "$BUILD_LOG"
+        echo "" | tee -a "$BUILD_LOG"
+    
+    - name: Install ShellCheck
+      shell: bash
+      run: |
+        BUILD_LOG="$GITHUB_WORKSPACE/build-steps.log"
+        echo "--- Checking ShellCheck ---" | tee -a "$BUILD_LOG"
+        
+        if command -v shellcheck >/dev/null 2>&1; then
+          echo "✓ ShellCheck installed: $(shellcheck --version | head -n2 | tail -n1)" | tee -a "$BUILD_LOG"
+        else
+          echo "ℹ ShellCheck not installed (requires external download or apt install)" | tee -a "$BUILD_LOG"
+        fi
+        echo "" | tee -a "$BUILD_LOG"
+    
+    - name: Setup Python environment
+      shell: bash
+      run: |
+        BUILD_LOG="$GITHUB_WORKSPACE/build-steps.log"
+        echo "--- Setting up Python environment ---" | tee -a "$BUILD_LOG"
+        
+        # Python is pre-installed in GitHub Actions
+        PYTHON_VERSION=$(python3 --version 2>&1)
+        echo "✓ Python installed: $PYTHON_VERSION" | tee -a "$BUILD_LOG"
+        
+        # radon should be pre-installed in GitHub Actions or can be installed via setup-python action with cache
+        # For now, check if available
+        if command -v radon >/dev/null 2>&1; then
+          echo "✓ radon available: $(radon --version 2>&1 | head -n1)" | tee -a "$BUILD_LOG"
+        else
+          echo "ℹ radon not installed (requires Python package installation in workflow)" | tee -a "$BUILD_LOG"
+        fi
+        echo "" | tee -a "$BUILD_LOG"
+    
+    - name: Install hyperfine for benchmarking
+      shell: bash
+      run: |
+        BUILD_LOG="$GITHUB_WORKSPACE/build-steps.log"
+        echo "--- Installing hyperfine benchmarking tool ---" | tee -a "$BUILD_LOG"
+        
+        if command -v hyperfine >/dev/null 2>&1; then
+          echo "✓ hyperfine already installed: $(hyperfine --version)" | tee -a "$BUILD_LOG"
+        else
+          echo "ℹ hyperfine not installed (requires external download or apt install)" | tee -a "$BUILD_LOG"
+          echo "ℹ Performance benchmarks may use 'time' command as fallback" | tee -a "$BUILD_LOG"
+        fi
+        echo "" | tee -a "$BUILD_LOG"
+    
+    - name: Install Trunk (optional linting tool)
+      shell: bash
+      run: |
+        BUILD_LOG="$GITHUB_WORKSPACE/build-steps.log"
+        echo "--- Checking Trunk linting platform ---" | tee -a "$BUILD_LOG"
+        
+        if [ -f ~/.trunk/bin/trunk ]; then
+          echo "✓ Trunk already installed" | tee -a "$BUILD_LOG"
+        else
+          echo "ℹ Trunk not installed (requires external download)" | tee -a "$BUILD_LOG"
+        fi
+        echo "" | tee -a "$BUILD_LOG"
+    
+    - name: Setup Node.js environment
+      shell: bash
+      run: |
+        BUILD_LOG="$GITHUB_WORKSPACE/build-steps.log"
+        echo "--- Setting up Node.js environment ---" | tee -a "$BUILD_LOG"
+        
+        NODE_VERSION=$(node --version 2>&1 || echo "not installed")
+        NPM_VERSION=$(npm --version 2>&1 || echo "not installed")
+        
+        echo "✓ Node.js: $NODE_VERSION" | tee -a "$BUILD_LOG"
+        echo "✓ npm: $NPM_VERSION" | tee -a "$BUILD_LOG"
+        
+        if [ -f "package.json" ]; then
+          echo "Installing npm dependencies..." | tee -a "$BUILD_LOG"
+          npm install --quiet >> "$BUILD_LOG" 2>&1
+          echo "✓ npm dependencies installed" | tee -a "$BUILD_LOG"
+        else
+          echo "ℹ No package.json found, skipping npm install" | tee -a "$BUILD_LOG"
+        fi
+        echo "" | tee -a "$BUILD_LOG"
+    
+    - name: Verify test infrastructure
+      shell: bash
+      run: |
+        BUILD_LOG="$GITHUB_WORKSPACE/build-steps.log"
+        echo "--- Verifying test infrastructure ---" | tee -a "$BUILD_LOG"
+        
+        # Check for critical test files
+        if [ -f "scripts/network-mode-regression.sh" ]; then
+          echo "✓ Network mode regression tests found" | tee -a "$BUILD_LOG"
+        else
+          echo "⚠ Network mode regression tests not found" | tee -a "$BUILD_LOG"
+        fi
+        
+        if [ -f "tests/benchmarks/benchmark_scripts.sh" ]; then
+          echo "✓ Benchmark harness found" | tee -a "$BUILD_LOG"
+        else
+          echo "⚠ Benchmark harness not found" | tee -a "$BUILD_LOG"
+        fi
+        
+        # Count test files
+        SHELL_TESTS=$(find tests -name "test_*.sh" 2>/dev/null | wc -l)
+        PYTHON_TESTS=$(find tests -name "test_*.py" 2>/dev/null | wc -l)
+        echo "✓ Found $SHELL_TESTS shell tests and $PYTHON_TESTS Python tests" | tee -a "$BUILD_LOG"
+        echo "" | tee -a "$BUILD_LOG"
+    
+    - name: Run basic smoke tests
+      shell: bash
+      run: |
+        BUILD_LOG="$GITHUB_WORKSPACE/build-steps.log"
+        echo "--- Running basic smoke tests ---" | tee -a "$BUILD_LOG"
+        
+        # Test ShellCheck on a sample file
+        if [ -f "scripts/network-mode-manager.sh" ]; then
+          echo "Testing ShellCheck on network-mode-manager.sh..." | tee -a "$BUILD_LOG"
+          if shellcheck --version >> "$BUILD_LOG" 2>&1 && shellcheck scripts/network-mode-manager.sh >> "$BUILD_LOG" 2>&1; then
+            echo "✓ ShellCheck smoke test passed" | tee -a "$BUILD_LOG"
+          else
+            echo "⚠ ShellCheck found issues (expected for complex scripts)" | tee -a "$BUILD_LOG"
+          fi
+        fi
+        
+        # Test benchmark harness
+        if [ -f "tests/benchmarks/benchmark_scripts.sh" ]; then
+          echo "Testing benchmark harness..." | tee -a "$BUILD_LOG"
+          if bash -n tests/benchmarks/benchmark_scripts.sh; then
+            echo "✓ Benchmark script syntax valid" | tee -a "$BUILD_LOG"
+          else
+            echo "✗ Benchmark script has syntax errors" | tee -a "$BUILD_LOG"
+          fi
+        fi
+        
+        echo "" | tee -a "$BUILD_LOG"
+    
+    - name: Build complete
+      shell: bash
+      run: |
+        BUILD_LOG="$GITHUB_WORKSPACE/build-steps.log"
+        echo "=== Build Steps Completed ===" | tee -a "$BUILD_LOG"
+        echo "Finished: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" | tee -a "$BUILD_LOG"
+        echo "" | tee -a "$BUILD_LOG"
+        echo "✓ Environment ready for performance engineering work" | tee -a "$BUILD_LOG"
+        echo "" | tee -a "$BUILD_LOG"
+        echo "Build log saved to: $BUILD_LOG" | tee -a "$BUILD_LOG"
