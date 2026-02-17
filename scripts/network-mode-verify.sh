@@ -18,10 +18,10 @@ NC='\033[0m'
 
 LISTENER_IP="127.0.0.1"  # must match LISTENER_IP in network-mode-manager.sh
 
-log()   { echo -e "${BLUE}[INFO]${NC} $@"; }
-warn()  { echo -e "${YELLOW}[WARN]${NC} $@"; }
-pass()  { echo -e "${GREEN}[PASS]${NC} $@"; }
-fail()  { echo -e "${RED}[FAIL]${NC} $@"; }
+log()   { echo -e "${BLUE}[INFO]${NC}" "$@"; }
+warn()  { echo -e "${YELLOW}[WARN]${NC}" "$@"; }
+pass()  { echo -e "${GREEN}[PASS]${NC}" "$@"; }
+fail()  { echo -e "${RED}[FAIL]${NC}" "$@"; }
 
 ensure_prereqs_verify() {
   if [[ $EUID -eq 0 ]]; then
