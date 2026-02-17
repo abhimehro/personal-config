@@ -188,16 +188,23 @@ Run independent shell tests in parallel:
 
 ```bash
 # tests/run_all_tests.sh
+pids=()
+
+# Start all tests in the background and record their PIDs
 for test in tests/test_*.sh; do
-  bash "$test" &  # Run in background
+  bash "$test" &          # Run in background
+  pids+=("$!")            # Record PID of last background job
 done
 
-wait  # Wait for all to complete
-
-# Check exit codes
-for job in $(jobs -p); do
-  wait $job || exit 1
+# Wait for each test and track failures
+exit_code=0
+for pid in "${pids[@]}"; do
+  if ! wait "$pid"; then
+    exit_code=1           # Remember that at least one test failed
+  fi
 done
+
+exit "$exit_code"
 ```
 
 ### Strategy 4: Efficient Assertions
