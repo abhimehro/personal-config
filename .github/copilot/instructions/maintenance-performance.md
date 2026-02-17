@@ -35,11 +35,28 @@ CACHE_AGE_LIMIT=300  # 5 minutes
 
 mkdir -p "$CACHE_DIR"
 
-if [ -f "$CACHE_FILE" ] && [ $(($(date +%s) - $(stat -f %m "$CACHE_FILE"))) -lt $CACHE_AGE_LIMIT ]; then
-  # Use cached results
-  cat "$CACHE_FILE"
+if [ -f "$CACHE_FILE" ]; then
+  # Cross-platform stat:
+  # - GNU coreutils (Linux / GitHub Actions):   stat -c %Y
+  # - BSD/macOS:                               stat -f %m
+  if stat --version >/dev/null 2>&1; then
+    # GNU stat detected
+    cache_mtime=$(stat -c %Y "$CACHE_FILE")
+  else
+    # Fallback for BSD/macOS stat
+    cache_mtime=$(stat -f %m "$CACHE_FILE")
+  fi
+
+  if [ $(( $(date +%s) - cache_mtime )) -lt $CACHE_AGE_LIMIT ]; then
+    # Use cached results
+    cat "$CACHE_FILE"
+  else
+    # Cache too old - rebuild
+    find ~/Library/Logs -type f -mtime +30 > "$CACHE_FILE"
+    cat "$CACHE_FILE"
+  fi
 else
-  # Rebuild cache
+  # No cache yet - build it
   find ~/Library/Logs -type f -mtime +30 > "$CACHE_FILE"
   cat "$CACHE_FILE"
 fi
