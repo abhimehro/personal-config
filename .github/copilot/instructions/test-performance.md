@@ -1,7 +1,7 @@
 # Test Suite Performance Engineering Guide
 
 ## Overview
-Fast tests enable rapid development cycles. This repo has shell-based tests, Python tests (pytest), and performance benchmarks. Target: full test suite under 30 seconds.
+Fast tests enable rapid development cycles. This repo has shell-based tests, Python tests (unittest), and performance benchmarks. Target: full test suite under 30 seconds.
 
 ## Current Test Structure
 
@@ -10,7 +10,7 @@ tests/
 ├── benchmarks/
 │   └── benchmark_scripts.sh          # Performance regression tests
 ├── test_*.sh                          # Shell script tests
-├── test_*.py                          # Python tests (pytest)
+├── test_*.py                          # Python tests (unittest)
 └── test_network_mode_manager.sh       # Integration tests
 ```
 
@@ -52,19 +52,20 @@ export -f networksetup
 ### 2. Sequential Test Execution
 **Problem:** Tests run one by one, wasting CPU cores
 
-**Solution:** Parallel execution with pytest-xdist
+**Solution:** Run test files in parallel using shell job control
 ```bash
-# Install pytest-xdist
-pip install pytest-xdist
+# Run all Python test files in parallel
+for test_file in tests/test_*.py; do
+  python -m unittest "$(basename "$test_file" .py)" &
+done
+wait
 
-# Run tests in parallel (auto-detect cores)
-pytest -n auto tests/
-
-# Or specify number of workers
-pytest -n 4 tests/
+# Or use GNU parallel for more control
+find tests -name 'test_*.py' -print0 | \
+  parallel -0 -j4 python -m unittest {}
 ```
 
-**Impact:** 4x speedup on 4-core machine if tests are independent
+**Impact:** Significant speedup if tests are independent. Note: unittest doesn't have built-in parallel execution like pytest-xdist, so shell-level parallelization is used.
 
 ### 3. Repeated Setup/Teardown
 **Problem:** Each test creates/deletes same fixtures
@@ -137,8 +138,14 @@ hyperfine --warmup 1 --runs 3 'make test'
 
 ### Profile Individual Tests
 ```bash
-# Pytest with duration report
-pytest --durations=10 tests/
+# Time individual test files
+time python -m unittest tests.test_path_validation
+
+# Time with more detail using Python's time module
+python -m timeit -n 1 -r 1 "import unittest; \
+  loader = unittest.TestLoader(); \
+  suite = loader.discover('tests'); \
+  unittest.TextTestRunner().run(suite)"
 
 # Shell test with timing
 time bash tests/test_network_mode_manager.sh
@@ -146,11 +153,19 @@ time bash tests/test_network_mode_manager.sh
 
 ### Identify Slow Tests
 ```bash
-# pytest profiling
-pytest --durations=0 tests/ | sort -k2 -hr | head -20
+# Profile unittest tests with cProfile
+python -m cProfile -o profile.stats -m unittest discover tests/
+python -c "import pstats; p = pstats.Stats('profile.stats'); \
+  p.sort_stats('cumulative'); p.print_stats(20)"
+
+# Or time each test file individually
+for test in tests/test_*.py; do
+  echo "Testing $test..."
+  time python -m unittest "$(basename "$test" .py)" 2>&1 | head -1
+done
 ```
 
-Output shows slowest tests first.
+Output shows execution times for tests.
 
 ## Optimization Strategies
 
@@ -175,33 +190,39 @@ done
 **Impact:** 90% faster for single-file changes
 
 ### Strategy 2: Test Categorization
-Separate fast and slow tests:
+Separate fast and slow tests using file naming or test discovery patterns:
 
 ```bash
-# Fast unit tests (mocked)
-pytest -m "unit" tests/
+# Fast unit tests (mocked) - use naming convention
+python -m unittest discover -s tests -p 'test_unit_*.py'
 
 # Slow integration tests (real system)
-pytest -m "integration" tests/
+python -m unittest discover -s tests -p 'test_integration_*.py'
 
 # Run only unit tests in CI for PRs
 # Run full suite before merge
 ```
 
-Mark tests in Python:
+Organize tests by file naming:
 ```python
-import pytest
+# tests/test_unit_config.py
+import unittest
 
-@pytest.mark.unit
-def test_parse_config():
-    # Fast, no I/O
-    pass
+class TestConfigParsing(unittest.TestCase):
+    def test_parse_config(self):
+        # Fast, no I/O
+        pass
 
-@pytest.mark.integration
-def test_network_switch():
-    # Slow, real network calls
-    pass
+# tests/test_integration_network.py
+import unittest
+
+class TestNetworkSwitch(unittest.TestCase):
+    def test_network_switch(self):
+        # Slow, real network calls
+        pass
 ```
+
+**Alternative:** Use test suite filtering with custom test runners if needed.
 
 ### Strategy 3: Parallel Shell Tests
 Run independent shell tests in parallel:
@@ -314,7 +335,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run unit tests only
-        run: pytest -m "unit" tests/
+        run: python -m unittest discover -s tests -p 'test_unit_*.py'
         
   full-tests:
     runs-on: ubuntu-latest
@@ -322,7 +343,7 @@ jobs:
     if: github.event_name == 'push'
     steps:
       - name: Run all tests
-        run: pytest tests/
+        run: python -m unittest discover tests/
 ```
 
 **Strategy:** Fast unit tests block PR, full integration tests run after merge.
@@ -348,7 +369,12 @@ jobs:
 time make benchmark
 
 # Per-test timing
-pytest --durations=10 tests/
+time python -m unittest discover tests/
+
+# Individual test file timing
+for test in tests/test_*.py; do
+  time python -m unittest "$(basename "$test" .py)"
+done
 
 # Cache effectiveness (how often mocks used)
 grep "mock" tests/*.py | wc -l
