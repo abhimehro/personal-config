@@ -3,6 +3,21 @@ set -e
 
 # Setup mock environment
 TEST_DIR=$(mktemp -d)
+
+# Ensure temporary test directory is always removed, even on unexpected exit.
+# This is important because the test handles sensitive backup data and uses `set -e`,
+# which can cause early termination before manual cleanup runs.
+cleanup() {
+    # Only remove TEST_DIR if it is non-empty and actually exists as a directory.
+    # This defensive check helps avoid accidental deletion if TEST_DIR were ever unset
+    # or modified unexpectedly.
+    if [[ -n "$TEST_DIR" && -d "$TEST_DIR" ]]; then
+        rm -rf "$TEST_DIR"
+    fi
+}
+
+# Run cleanup on any script exit (normal completion or error-induced exit).
+trap cleanup EXIT
 MOCK_HOME="$TEST_DIR/home"
 MOCK_LOGS="$MOCK_HOME/Library/Logs/maintenance"
 mkdir -p "$MOCK_LOGS/backups"
