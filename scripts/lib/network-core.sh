@@ -43,30 +43,38 @@ smart_grep() {
     fi
 }
 
+# fd -> find
+# Usage: smart_find pattern [path]
 smart_find() {
-    if command -v fd >/dev/null 2>&1; then
-        # When fd is available, defer completely to it so that callers can
-        # use the full fd CLI (flags, multiple args, etc.).
-        fd "$@"
-    else
-        # Fallback interface: smart_find <pattern> [path]
-        #   - pattern: required for name matching
-        #   - path:    optional, defaults to current directory
-        #
-        # We intentionally interpret only the first two positional arguments
-        # here to avoid trying to emulate all fd flags with find.
-        local pattern path
-        pattern="$1"
-        path="${2:-.}"
+    # Define a stable interface: first arg = pattern, second arg (optional) = path.
+    # We avoid blindly forwarding "$@" so that fd and find behavior stays consistent.
+    if [[ $# -lt 1 ]]; then
+        printf 'smart_find: missing required pattern argument\n' >&2
+        return 1
+    fi
 
-        if [[ -z "$pattern" ]]; then
-            # If no pattern is provided, approximate `fd`'s "list everything"
-            # behavior by running a plain find on the target path.
-            find "$path"
+    local pattern path
+    pattern=$1
+    path="${2:-.}"
+
+    # 🛡️ Sentinel: Sanitize path to prevent argument injection
+    # If path starts with '-', prepend './' so it's treated as a path, not an option
+    if [[ "$path" == -* ]]; then
+        path="./$path"
+    fi
+
+    if command -v fd >/dev/null 2>&1; then
+        # Use the same (pattern, path) semantics for fd as for find.
+        # If the caller only provided a pattern, fd will search from the current directory.
+        # 🛡️ Sentinel: Use '--' to stop option parsing for fd
+        if [[ $# -ge 2 ]]; then
+            fd -- "$pattern" "$path"
         else
-            # Normal case: search under "$path" for entries matching "$pattern".
-            find "$path" -name "$pattern"
+            fd -- "$pattern"
         fi
+    else
+        # find fallback (basic name search) with stable (pattern, path) semantics
+        find "$path" -name "$pattern"
     fi
 }
 
