@@ -1,0 +1,266 @@
+name: 'Daily Perf Improver Build Steps'
+description: 'Setup development environment and run build/test/lint commands for performance engineering'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup environment
+      shell: bash
+      run: |
+        set -euo pipefail
+        exec > >(tee -a build-steps.log) 2>&1
+        
+        echo "=== Daily Perf Improver Build Steps ==="
+        echo "Started at: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+        echo ""
+        
+    - name: Verify repository structure
+      shell: bash
+      run: |
+        exec >> build-steps.log 2>&1
+        
+        echo "=== Verifying Repository Structure ==="
+        if [ ! -f "Makefile" ]; then
+          echo "ERROR: Makefile not found"
+          exit 1
+        fi
+        
+        if [ ! -d "scripts" ]; then
+          echo "ERROR: scripts/ directory not found"
+          exit 1
+        fi
+        
+        if [ ! -d "tests" ]; then
+          echo "ERROR: tests/ directory not found"
+          exit 1
+        fi
+        
+        echo "✓ Repository structure verified"
+        echo ""
+        
+    - name: Install ShellCheck
+      shell: bash
+      run: |
+        exec >> build-steps.log 2>&1
+        
+        echo "=== Installing ShellCheck ==="
+        mkdir -p ~/.local/bin
+        
+        if command -v shellcheck >/dev/null 2>&1; then
+          echo "✓ ShellCheck already installed: $(shellcheck --version | head -2 | tail -1)"
+        else
+          scversion="v0.10.0"
+          wget -q "https://github.com/koalaman/shellcheck/releases/download/${scversion}/shellcheck-${scversion}.linux.x86_64.tar.xz"
+          tar -xf "shellcheck-${scversion}.linux.x86_64.tar.xz"
+          mv "shellcheck-${scversion}/shellcheck" ~/.local/bin/
+          chmod +x ~/.local/bin/shellcheck
+          rm -rf "shellcheck-${scversion}" "shellcheck-${scversion}.linux.x86_64.tar.xz"
+          export PATH="$HOME/.local/bin:$PATH"
+          echo "✓ ShellCheck installed: $(shellcheck --version | head -2 | tail -1)"
+        fi
+        echo ""
+        
+    - name: Setup Python environment
+      shell: bash
+      run: |
+        exec >> build-steps.log 2>&1
+        
+        echo "=== Setting Up Python Environment ==="
+        python3 --version
+        
+        # Install radon for complexity analysis
+        if ! python3 -c "import radon" 2>/dev/null; then
+          echo "Installing radon..."
+          pip install -q radon
+          echo "✓ radon installed"
+        else
+          echo "✓ radon already installed"
+        fi
+        echo ""
+        
+    - name: Install Node.js dependencies
+      shell: bash
+      run: |
+        exec >> build-steps.log 2>&1
+        
+        echo "=== Installing Node.js Dependencies ==="
+        if [ -f "package.json" ]; then
+          if [ ! -d "node_modules" ]; then
+            npm install --silent
+            echo "✓ npm dependencies installed"
+          else
+            echo "✓ node_modules already exists"
+          fi
+        else
+          echo "⊘ No package.json found, skipping npm install"
+        fi
+        echo ""
+        
+    - name: Install hyperfine (benchmarking tool)
+      shell: bash
+      run: |
+        exec >> build-steps.log 2>&1
+        
+        echo "=== Installing hyperfine (optional) ==="
+        if command -v hyperfine >/dev/null 2>&1; then
+          echo "✓ hyperfine already installed: $(hyperfine --version)"
+        else
+          # Try to install via wget (GitHub releases)
+          if wget -q --spider "https://github.com/sharkdp/hyperfine/releases/download/v1.18.0/hyperfine-v1.18.0-x86_64-unknown-linux-musl.tar.gz"; then
+            wget -q "https://github.com/sharkdp/hyperfine/releases/download/v1.18.0/hyperfine-v1.18.0-x86_64-unknown-linux-musl.tar.gz"
+            tar -xzf hyperfine-v1.18.0-x86_64-unknown-linux-musl.tar.gz
+            mv hyperfine-v1.18.0-x86_64-unknown-linux-musl/hyperfine ~/.local/bin/
+            rm -rf hyperfine-v1.18.0-x86_64-unknown-linux-musl*
+            chmod +x ~/.local/bin/hyperfine
+            export PATH="$HOME/.local/bin:$PATH"
+            echo "✓ hyperfine installed: $(hyperfine --version)"
+          else
+            echo "⚠ hyperfine installation failed (optional tool, continuing)"
+          fi
+        fi
+        echo ""
+        
+    - name: Run ShellCheck linting
+      shell: bash
+      run: |
+        exec >> build-steps.log 2>&1
+        
+        echo "=== Running ShellCheck Linting ==="
+        export PATH="$HOME/.local/bin:$PATH"
+        
+        # Find shell scripts
+        find . -type f \( -name "*.sh" -o -name "*.bash" \) \
+          ! -path "./.git/*" \
+          ! -path "./node_modules/*" \
+          ! -path "./.local/*" \
+          ! -path "./archive/*" \
+          ! -path "./.Jules/*" \
+          ! -path "./.jules/*" \
+          ! -path "./.cursor/*" \
+          ! -path "./docs/archive/*" \
+          > /tmp/shell_files.txt
+        
+        echo "Found $(wc -l < /tmp/shell_files.txt) shell scripts to check"
+        
+        # Run ShellCheck (non-fatal, just warnings)
+        failed=0
+        while IFS= read -r file; do
+          if ! shellcheck -S warning "$file"; then
+            echo "⚠ ShellCheck found issues in: $file"
+            failed=$((failed + 1))
+          fi
+        done < /tmp/shell_files.txt
+        
+        if [ $failed -eq 0 ]; then
+          echo "✓ ShellCheck passed for all scripts"
+        else
+          echo "⚠ ShellCheck found issues in $failed files (warnings only)"
+        fi
+        echo ""
+        
+    - name: Run Python complexity checks
+      shell: bash
+      run: |
+        exec >> build-steps.log 2>&1
+        
+        echo "=== Running Python Complexity Checks ==="
+        
+        # Find Python files
+        find . -type f -name "*.py" \
+          ! -path "./.git/*" \
+          ! -path "./node_modules/*" \
+          ! -path "./.local/*" \
+          ! -path "./.jules/*" \
+          ! -path "./.Jules/*" \
+          ! -path "./archive/*" \
+          ! -path "./docs/archive/*" \
+          ! -path "./.venv/*" \
+          ! -path "./venv/*" \
+          > /tmp/python_files.txt
+        
+        file_count=$(wc -l < /tmp/python_files.txt)
+        echo "Found $file_count Python files to check"
+        
+        if [ "$file_count" -eq 0 ]; then
+          echo "⊘ No Python files found, skipping"
+          echo ""
+          exit 0
+        fi
+        
+        # Check cyclomatic complexity (warn on C or higher: >10)
+        complex_count=0
+        while IFS= read -r file; do
+          if radon cc "$file" -s -n C 2>/dev/null | grep -q "^"; then
+            complex_count=$((complex_count + 1))
+          fi
+        done < /tmp/python_files.txt
+        
+        if [ $complex_count -eq 0 ]; then
+          echo "✓ Python complexity check passed"
+        else
+          echo "⚠ Found $complex_count Python files with high complexity (warnings only)"
+        fi
+        echo ""
+        
+    - name: Run tests
+      shell: bash
+      run: |
+        exec >> build-steps.log 2>&1
+        
+        echo "=== Running Tests ==="
+        
+        # Run Python tests
+        echo "Running Python unit tests..."
+        if ! python3 -m unittest discover -s tests 2>&1; then
+          echo "⚠ Some Python tests failed or no tests found"
+        else
+          echo "✓ Python tests passed"
+        fi
+        
+        # Run shell regression tests if available
+        if [ -f "scripts/network-mode-regression.sh" ]; then
+          echo "Running network mode regression tests..."
+          if ! make control-d-regression 2>&1; then
+            echo "⚠ Network regression tests failed (may require specific environment)"
+          else
+            echo "✓ Network regression tests passed"
+          fi
+        fi
+        
+        echo ""
+        
+    - name: Run benchmarks (optional)
+      shell: bash
+      run: |
+        exec >> build-steps.log 2>&1
+        
+        echo "=== Running Benchmarks (Optional) ==="
+        export PATH="$HOME/.local/bin:$PATH"
+        
+        if command -v hyperfine >/dev/null 2>&1; then
+          if [ -f "tests/benchmarks/benchmark_scripts.sh" ]; then
+            echo "Running performance benchmarks..."
+            if ! bash tests/benchmarks/benchmark_scripts.sh all 2>&1; then
+              echo "⚠ Benchmarks failed (may require specific environment)"
+            else
+              echo "✓ Benchmarks completed"
+            fi
+          else
+            echo "⊘ No benchmark script found"
+          fi
+        else
+          echo "⊘ hyperfine not available, skipping benchmarks"
+        fi
+        echo ""
+        
+    - name: Build summary
+      shell: bash
+      run: |
+        exec >> build-steps.log 2>&1
+        
+        echo "=== Build Steps Summary ==="
+        echo "Completed at: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+        echo ""
+        echo "Environment ready for performance engineering work!"
+        echo "Log file: build-steps.log"
+        echo ""
