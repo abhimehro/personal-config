@@ -27,10 +27,10 @@ chmod +x "$TEST_DIR/security_manager.sh"
 # Override CONFIG_DIR and BACKUP_DIR for testing to point to our mock
 # We can't easily source it because it sets constants at top level.
 # So we modify the script to inject our paths.
-sed -i "s|LOG_DIR=\"\$HOME/Library/Logs/maintenance\"|LOG_DIR=\"$MOCK_LOGS\"|g" "$TEST_DIR/security_manager.sh"
-sed -i "s|BACKUP_DIR=\"\$HOME/Library/Logs/maintenance/backups\"|BACKUP_DIR=\"$MOCK_LOGS/backups\"|g" "$TEST_DIR/security_manager.sh"
+sed -i '' "s|LOG_DIR=\"\$HOME/Library/Logs/maintenance\"|LOG_DIR=\"$MOCK_LOGS\"|g" "$TEST_DIR/security_manager.sh"
+sed -i '' "s|BACKUP_DIR=\"\$HOME/Library/Logs/maintenance/backups\"|BACKUP_DIR=\"$MOCK_LOGS/backups\"|g" "$TEST_DIR/security_manager.sh"
 # Allow CONFIG_DIR override
-sed -i 's|CONFIG_DIR="$(cd "$(dirname "${BASH_SOURCE\[0\]}")/../" && pwd)"|CONFIG_DIR="${CONFIG_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../" && pwd)}"|' "$TEST_DIR/security_manager.sh"
+sed -i '' 's|CONFIG_DIR="$(cd "$(dirname "${BASH_SOURCE\\[0\\]}")/../" && pwd)"|CONFIG_DIR="${CONFIG_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../" && pwd)}"|' "$TEST_DIR/security_manager.sh"
 
 # Create a wrapper script to export internal functions and set CONFIG_DIR
 WRAPPER="$TEST_DIR/wrapper.sh"
