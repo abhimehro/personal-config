@@ -18,13 +18,13 @@ sed 's|LOG_FILE="/var/log/controld_manager.log"|LOG_FILE="/tmp/controld_manager.
 mkdir -p /tmp/controld/profiles /tmp/controld/backup
 
 # Mock external commands
-ctrld() { echo "ctrld called with $@"; }
-networksetup() { echo "networksetup called with $@"; }
-scutil() { echo "scutil called with $@"; }
-dscacheutil() { echo "dscacheutil called with $@"; }
-killall() { echo "killall called with $@"; }
-pkill() { echo "pkill called with $@"; }
-dig() { echo "dig called with $@"; }
+ctrld() { echo "ctrld called with $*"; }
+networksetup() { echo "networksetup called with $*"; }
+scutil() { echo "scutil called with $*"; }
+dscacheutil() { echo "dscacheutil called with $*"; }
+killall() { echo "killall called with $*"; }
+pkill() { echo "pkill called with $*"; }
+dig() { echo "dig called with $*"; }
 sudo() { "$@"; } # Mock sudo by just running the command
 
 # Source the library
