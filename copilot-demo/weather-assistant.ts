@@ -149,7 +149,7 @@ console.log(`${COLORS.Cyan}
 ║           🌤️  Weather Assistant CLI          ║
 ╚══════════════════════════════════════════════╝${COLORS.Reset}`);
 console.log(
-  `${COLORS.Dim}   Try: 'What's the weather in Paris?'${COLORS.Reset}\n`,
+  `${COLORS.Dim}   Try: 'What's the weather in Paris?' (or type 'help')${COLORS.Reset}\n`,
 );
 
 // Graceful shutdown on Ctrl+C
@@ -178,6 +178,25 @@ const prompt = () => {
       await client.stop();
       rl.close();
       process.exit(0);
+    }
+
+    if (input.trim().toLowerCase() === "help") {
+      console.log(`
+${COLORS.Cyan}🤖 Capabilities:${COLORS.Reset}
+  • 🌤️  Get current weather for any city
+  • 🕒 Get current local time
+
+${COLORS.Cyan}💡 Examples:${COLORS.Reset}
+  • "What's the weather in Tokyo?"
+  • "Is it raining in London?"
+  • "What time is it?"
+
+${COLORS.Cyan}Commands:${COLORS.Reset}
+  • help - Show this message
+  • exit - Quit the application
+`);
+      prompt();
+      return;
     }
 
     startSpinner();
