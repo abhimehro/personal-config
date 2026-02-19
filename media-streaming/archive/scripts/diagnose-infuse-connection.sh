@@ -14,10 +14,10 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-log()      { echo -e "${BLUE}[INFO]${NC} $@"; }
-success()  { echo -e "${GREEN}[OK]${NC} $@"; }
-warn()     { echo -e "${YELLOW}[WARN]${NC} $@"; }
-error()    { echo -e "${RED}[ERROR]${NC} $@" >&2; }
+log()      { echo -e "${BLUE}[INFO]${NC} $*"; }
+success()  { echo -e "${GREEN}[OK]${NC} $*"; }
+warn()     { echo -e "${YELLOW}[WARN]${NC} $*"; }
+error()    { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 
 echo "=========================================="
 echo "Infuse Connection Diagnostic"
