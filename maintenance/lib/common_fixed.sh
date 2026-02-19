@@ -35,6 +35,7 @@ mkdir -p "$LOG_DIR"
 # Legacy config support
 CONFIG_DIR="${HOME}/.config/maintenance"
 CONFIG_FILE="${CONFIG_DIR}/config.env"
+# shellcheck disable=SC1090
 [[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
 
 # Load environment configuration
@@ -152,7 +153,8 @@ with_lock() {
     
     # Try to create lock directory atomically
     if mkdir "$lock_dir" 2>/dev/null; then
-        # Ensure cleanup on exit
+        # Ensure cleanup on exit; intentional early expansion to capture current $lock_dir value
+        # shellcheck disable=SC2064
         trap "rm -rf '$lock_dir' 2>/dev/null || true" EXIT INT TERM
         log_debug "Lock acquired: $lock_dir"
     else
