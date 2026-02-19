@@ -1,4 +1,6 @@
-## 2025-10-27 - [Unsafe DNS Listener Binding]
-**Vulnerability:** The `controld-manager` script was configured to bind the DNS listener to `0.0.0.0` (all interfaces) instead of `127.0.0.1` (localhost).
-**Learning:** Hardcoding `0.0.0.0` as a "fix" for connectivity issues blindly exposes services to the entire local network (and potentially the internet), increasing the attack surface (DNS amplification, snooping). Local services should strictly bind to localhost unless explicitly designed for serving the network.
-**Prevention:** Always default to binding to `127.0.0.1` for local system services. If a service needs to be accessible from other devices, use a specific LAN IP or require an explicit configuration flag/confirmation.
+## 2026-02-17 - TOCTOU in Backup Restoration
+**Vulnerability:** Time-of-Check Time-of-Use (TOCTOU) vulnerability ([CWE-367][]) in `maintenance/bin/security_manager.sh`. The `restore_config` function verified the integrity of a backup file and then extracted it, allowing a window where the file could be modified between the check and the use.
+**Learning:** File verification checks are only effective if they guarantee the file being checked is the same file being used. Operating directly on a mutable file path allows race conditions.
+**Prevention:** Copy the file to a secure, private location (like a directory created with `mktemp -d`) before verification. Perform all checks and subsequent operations on this private copy to ensure atomicity.
+
+[CWE-367]: https://cwe.mitre.org/data/definitions/367.html
