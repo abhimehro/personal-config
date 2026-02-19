@@ -44,22 +44,46 @@ process.on("exit", () => {
   process.stdout.write(ANSI.ShowCursor);
 });
 
-// Ensure cursor is restored on exit or interrupt
-process.on("SIGINT", () => {
-  stopSpinner();
-  process.stdout.write("\n");
-  process.exitCode = 130; // Use standard interrupt exit code so callers can detect cancellation
-});
+// Helper functions for emojis
+const getWeatherEmoji = (condition: string): string => {
+  const normalized = condition.toLowerCase();
+  if (normalized.includes("sunny") || normalized.includes("clear")) return "☀️";
+  if (normalized.includes("partly cloudy")) return "⛅";
+  if (normalized.includes("cloudy") || normalized.includes("overcast"))
+    return "☁️";
+  if (
+    normalized.includes("rain") ||
+    normalized.includes("drizzle") ||
+    normalized.includes("shower")
+  )
+    return "🌧️";
+  if (normalized.includes("thunder")) return "⛈️";
+  if (normalized.includes("snow") || normalized.includes("blizzard"))
+    return "❄️";
+  if (normalized.includes("fog") || normalized.includes("mist")) return "🌫️";
+  return "🌡️";
+};
 
-// Safety net: restore cursor on any exit (e.g., uncaught exceptions)
-// Note: spinnerInterval will be undefined if stopSpinner() was already called,
-// so this only acts when the process exits abnormally without cleanup
-process.on("exit", () => {
-  if (spinnerInterval) {
-    clearInterval(spinnerInterval);
-    process.stdout.write("\x1B[?25h"); // Show cursor
-  }
-});
+const getTimeEmoji = (date: Date): string => {
+  const hour = date.getHours();
+  // Map 0-11 and 12-23 to 0-11 index
+  const clockIndex = hour % 12;
+  const clocks = [
+    "🕛",
+    "🕐",
+    "🕑",
+    "🕒",
+    "🕓",
+    "🕔",
+    "🕕",
+    "🕖",
+    "🕗",
+    "🕘",
+    "🕙",
+    "🕚",
+  ];
+  return clocks[clockIndex];
+};
 
 const getWeather = defineTool("get_weather", {
   description: "Get the current weather for a city",
@@ -78,10 +102,11 @@ const getWeather = defineTool("get_weather", {
       );
       const data = await response.json();
       const current = data.current_condition[0];
+      const condition = current.weatherDesc[0].value;
       return {
         city,
         temperature: `${current.temp_F}°F (${current.temp_C}°C)`,
-        condition: current.weatherDesc[0].value,
+        condition: `${condition} ${getWeatherEmoji(condition)}`,
         humidity: `${current.humidity}%`,
         wind: `${current.windspeedMiles}mph`,
       };
@@ -95,7 +120,8 @@ const getCurrentTime = defineTool("get_current_time", {
   description: "Get the current local system time",
   parameters: { type: "object", properties: {} },
   handler: async () => {
-    return { time: new Date().toLocaleString() };
+    const now = new Date();
+    return { time: `${getTimeEmoji(now)} ${now.toLocaleString()}` };
   },
 });
 
