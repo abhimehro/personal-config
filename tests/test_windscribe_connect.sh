@@ -103,11 +103,19 @@ chmod +x "$TEST_DIR/check_windscribe.sh"
 
 # Test without windscribe in PATH
 ORIGINAL_PATH="$PATH"
-export PATH="/usr/bin:/bin"  # Minimal PATH without windscribe
-if bash "$TEST_DIR/check_windscribe.sh" 2>&1 | grep -q "ERROR: Windscribe CLI not found"; then
-    echo "✅ PASS: Correctly detects missing windscribe CLI"
+export PATH="/usr/bin:/bin"  # Minimal PATH; may or may not contain windscribe on this system
+
+# If windscribe is already available in this restricted PATH, we cannot meaningfully
+# test "missing dependency" behavior, so we skip instead of reporting a false PASS.
+if command -v windscribe >/dev/null 2>&1; then
+    echo "SKIP: windscribe CLI already available, cannot test detection of missing dependency"
 else
-    echo "✅ PASS: windscribe CLI is actually available on the system"
+    if bash "$TEST_DIR/check_windscribe.sh" 2>&1 | grep -q "ERROR: Windscribe CLI not found"; then
+        echo "✅ PASS: Correctly detects missing windscribe CLI"
+    else
+        echo "FAIL: Did not detect missing windscribe CLI as expected"
+        exit 1
+    fi
 fi
 export PATH="$ORIGINAL_PATH"
 
