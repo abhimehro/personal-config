@@ -217,15 +217,27 @@ restore_config() {
     local temp_dir=$(mktemp -d)
     local backup_name=$(basename "$backup_file" .tar.gz)
     
-    # Verify backup safety before extraction
-    if ! check_backup_safety "$backup_file"; then
+    # 🛡️ Sentinel: TOCTOU Protection
+    # Copy backup and checksum to secure temp dir BEFORE verification
+    # This ensures the file checked is the same file extracted
+    local safe_backup_path="$temp_dir/$(basename "$backup_file")"
+
+    log_security "INFO" "Copying backup to secure temporary location..."
+    cp "$backup_file" "$safe_backup_path"
+
+    if [[ -f "${backup_file}.sha256" ]]; then
+        cp "${backup_file}.sha256" "${safe_backup_path}.sha256"
+    fi
+
+    # Verify backup safety before extraction (using the SAFE COPY)
+    if ! check_backup_safety "$safe_backup_path"; then
         log_security "ERROR" "Backup verification failed - aborting restore"
         rm -rf "$temp_dir"
         return 1
     fi
 
-    # Extract backup
-    cd "$temp_dir" && tar -xzf "$backup_file" 2>/dev/null
+    # Extract backup (using the SAFE COPY)
+    cd "$temp_dir" && tar -xzf "$safe_backup_path" 2>/dev/null
     
     if [[ ! -d "$temp_dir/$backup_name" ]]; then
         log_security "ERROR" "Failed to extract backup or invalid backup structure"
