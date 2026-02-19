@@ -37,3 +37,7 @@
 ## 2026-03-01 - Visual Feedback for Async Operations
 **Learning:** In conversational CLIs, the gap between user input and assistant response can feel like a freeze. A simple loading spinner reassures the user that the system is working, especially during network calls.
 **Action:** Implement a lightweight, text-based spinner for any CLI operation that involves variable latency (e.g., API calls).
+
+## 2025-05-15 - CLI Micro-Interactions
+**Learning:** Even simple CLI tools benefit significantly from "web-like" UX patterns: clear headers, explicit loading states ("Thinking..."), and graceful exit handling (Ctrl+C). Users expect feedback for every action, including empty input.
+**Action:** Always add a SIGINT handler to CLI tools to restore cursor state and say goodbye. Use box-drawing characters for CLI headers to frame the experience.
