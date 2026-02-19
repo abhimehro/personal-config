@@ -33,3 +33,7 @@
 ## 2026-02-18 - Contextual Menus in CLI
 **Learning:** Static menus force users to remember their current state. Dynamic menus that highlight the active configuration (e.g., via checkmarks) transform a tool from a "switcher" to a "dashboard".
 **Action:** When building selection menus for toggleable states, always compute and display the current active state inline.
+
+## 2026-03-01 - Visual Feedback for Async Operations
+**Learning:** In conversational CLIs, the gap between user input and assistant response can feel like a freeze. A simple loading spinner reassures the user that the system is working, especially during network calls.
+**Action:** Implement a lightweight, text-based spinner for any CLI operation that involves variable latency (e.g., API calls).
