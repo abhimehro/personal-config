@@ -65,13 +65,7 @@ smart_find() {
 
     if command -v fd >/dev/null 2>&1; then
         # Use the same (pattern, path) semantics for fd as for find.
-        # If the caller only provided a pattern, fd will search from the current directory.
-        # 🛡️ Sentinel: Use '--' to stop option parsing for fd
-        if [[ $# -ge 2 ]]; then
-            fd -- "$pattern" "$path"
-        else
-            fd -- "$pattern"
-        fi
+        fd -- "$pattern" "$path"
     else
         # find fallback (basic name search) with stable (pattern, path) semantics
         # 🛡️ Sentinel: Sanitize pattern to prevent argument injection
