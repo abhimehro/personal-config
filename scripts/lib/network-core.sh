@@ -28,6 +28,10 @@ E_GAMING="🎮"
 E_BROWSING="🌐"
 E_VPN="🔐"
 
+# Export for use in scripts that source this library
+export RED GREEN YELLOW BLUE BOLD NC
+export E_PASS E_FAIL E_INFO E_PRIVACY E_GAMING E_BROWSING E_VPN
+
 # --- Logging ---
 log()      { echo -e "${BLUE}${E_INFO} [INFO]${NC}" "$@"; }
 success()  { echo -e "${GREEN}${E_PASS} [OK]${NC}" "$@"; }

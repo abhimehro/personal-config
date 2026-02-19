@@ -107,7 +107,8 @@ print_status() {
     if sudo test -L "$config_link"; then
       local target
       target=$(sudo readlink "$config_link" || echo "")
-      local extracted_name=$(basename "$target")
+      local extracted_name
+      extracted_name=$(basename "$target")
       extracted_name="${extracted_name#ctrld.}"
       extracted_name="${extracted_name%.toml}"
       case "$extracted_name" in
@@ -131,16 +132,20 @@ print_status() {
   printf "   %s  %-13s %b\n" "🔐" "VPN Tunnel" "$vpn_status"
 
   # Network Info (Parallel)
-  local dns_temp=$(mktemp)
-  local info_temp=$(mktemp)
+  local dns_temp
+  dns_temp=$(mktemp)
+  local info_temp
+  info_temp=$(mktemp)
   (networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown") > "$dns_temp" &
   local pid1=$!
   (networksetup -getinfo "Wi-Fi" 2>/dev/null || echo "") > "$info_temp" &
   local pid2=$!
   wait $pid1 $pid2
 
-  local dns_servers=$(cat "$dns_temp")
-  local wifi_info=$(cat "$info_temp")
+  local dns_servers
+  dns_servers=$(cat "$dns_temp")
+  local wifi_info
+  wifi_info=$(cat "$info_temp")
   rm -f "$dns_temp" "$info_temp"
 
   # DNS Status
@@ -169,7 +174,8 @@ interactive_menu() {
   if pgrep -x "ctrld" >/dev/null 2>&1; then
     local config_link="/etc/controld/ctrld.toml"
     if sudo test -L "$config_link"; then
-      local target=$(sudo readlink "$config_link" || echo "")
+      local target
+      target=$(sudo readlink "$config_link" || echo "")
       if [[ "$target" == *"privacy"* ]]; then active_mode="privacy"; fi
       if [[ "$target" == *"browsing"* ]]; then active_mode="browsing"; fi
       if [[ "$target" == *"gaming"* ]]; then active_mode="gaming"; fi

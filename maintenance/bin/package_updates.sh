@@ -9,7 +9,8 @@ command_exists() { command -v "$1" >/dev/null 2>&1; }
 safe_run() {
     local cmd="$1"
     local description="$2"
-    if [[ "$cmd" =~ [;&|`$] ]]; then
+    local forbidden_chars='[;&|`$]'
+    if [[ "$cmd" =~ $forbidden_chars ]]; then
         echo "   ❌ Invalid command detected, skipping"
         return 1
     fi
