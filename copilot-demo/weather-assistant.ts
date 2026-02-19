@@ -33,7 +33,7 @@ const startSpinner = () => {
   process.stdout.write(ANSI.HideCursor);
   spinnerInterval = setInterval(() => {
     process.stdout.write(
-      `\r${COLORS.Green}Assistant:${COLORS.Reset} ${spinnerFrames[i]} `,
+      `\r${COLORS.Green}Assistant:${COLORS.Reset} ${spinnerFrames[i]} ${COLORS.Dim}(Thinking...)${COLORS.Reset}`,
     );
     i = (i + 1) % spinnerFrames.length;
   }, 80);
@@ -43,6 +43,47 @@ const startSpinner = () => {
 process.on("exit", () => {
   process.stdout.write(ANSI.ShowCursor);
 });
+
+// Helper functions for emojis
+const getWeatherEmoji = (condition: string): string => {
+  const normalized = condition.toLowerCase();
+  if (normalized.includes("sunny") || normalized.includes("clear")) return "☀️";
+  if (normalized.includes("partly cloudy")) return "⛅";
+  if (normalized.includes("cloudy") || normalized.includes("overcast"))
+    return "☁️";
+  if (
+    normalized.includes("rain") ||
+    normalized.includes("drizzle") ||
+    normalized.includes("shower")
+  )
+    return "🌧️";
+  if (normalized.includes("thunder")) return "⛈️";
+  if (normalized.includes("snow") || normalized.includes("blizzard"))
+    return "❄️";
+  if (normalized.includes("fog") || normalized.includes("mist")) return "🌫️";
+  return "🌡️";
+};
+
+const getTimeEmoji = (date: Date): string => {
+  const hour = date.getHours();
+  // Map 0-11 and 12-23 to 0-11 index
+  const clockIndex = hour % 12;
+  const clocks = [
+    "🕛",
+    "🕐",
+    "🕑",
+    "🕒",
+    "🕓",
+    "🕔",
+    "🕕",
+    "🕖",
+    "🕗",
+    "🕘",
+    "🕙",
+    "🕚",
+  ];
+  return clocks[clockIndex];
+};
 
 const getWeather = defineTool("get_weather", {
   description: "Get the current weather for a city",
@@ -61,10 +102,11 @@ const getWeather = defineTool("get_weather", {
       );
       const data = await response.json();
       const current = data.current_condition[0];
+      const condition = current.weatherDesc[0].value;
       return {
         city,
         temperature: `${current.temp_F}°F (${current.temp_C}°C)`,
-        condition: current.weatherDesc[0].value,
+        condition: `${condition} ${getWeatherEmoji(condition)}`,
         humidity: `${current.humidity}%`,
         wind: `${current.windspeedMiles}mph`,
       };
@@ -78,7 +120,8 @@ const getCurrentTime = defineTool("get_current_time", {
   description: "Get the current local system time",
   parameters: { type: "object", properties: {} },
   handler: async () => {
-    return { time: new Date().toLocaleString() };
+    const now = new Date();
+    return { time: `${getTimeEmoji(now)} ${now.toLocaleString()}` };
   },
 });
 
@@ -101,14 +144,31 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-console.log("🌤️  Weather Assistant (type 'exit' to quit)");
+console.log(`${COLORS.Cyan}
+╔══════════════════════════════════════════════╗
+║           🌤️  Weather Assistant CLI          ║
+╚══════════════════════════════════════════════╝${COLORS.Reset}`);
 console.log(
   `${COLORS.Dim}   Try: 'What's the weather in Paris?'${COLORS.Reset}\n`,
 );
 
+// Graceful shutdown on Ctrl+C
+rl.on('SIGINT', async () => {
+  stopSpinner();
+  console.log(`\n${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
+  try {
+    await client.stop();
+  } catch (e) {
+    // Ignore error on stop if not started properly or already stopped
+  }
+  rl.close();
+  process.exit(0);
+});
+
 const prompt = () => {
   rl.question(`${COLORS.Cyan}You:${COLORS.Reset} `, async (input) => {
     if (input.trim() === "") {
+      console.log(`${COLORS.Dim}Tip: Try asking "What's the weather in Tokyo?"${COLORS.Reset}`);
       prompt();
       return;
     }
