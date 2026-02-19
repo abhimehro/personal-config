@@ -196,7 +196,12 @@ echo ""
 if [[ $EXTRACT_ENHANCEMENTS -eq 1 ]]; then
     header "Portable Enhancement Extraction"
     
-    ENHANCEMENTS_FILE="/tmp/shell-enhancements-$(date +%Y%m%d_%H%M%S).txt"
+    # Use mktemp for secure file creation (0600 permissions) to prevent race conditions
+    ENHANCEMENTS_FILE=$(mktemp "${TMPDIR:-/tmp}/shell-enhancements-$(date +%Y%m%d_%H%M%S).txt.XXXXXX") || \
+        { error "Failed to create temporary file"; exit 1; }
+
+    # Cleanup on exit
+    trap 'rm -f "$ENHANCEMENTS_FILE"' EXIT
     
     log "Extracting portable patterns from local shell configs..."
     echo ""
@@ -270,7 +275,7 @@ if [[ $EXTRACT_ENHANCEMENTS -eq 1 ]]; then
         
     } > "$ENHANCEMENTS_FILE"
     
-    success "Enhancements extracted to: $ENHANCEMENTS_FILE"
+    success "Enhancements generated."
     echo ""
     log "Contents:"
     echo ""
