@@ -1,0 +1,232 @@
+name: 'Daily Perf Improver Build Steps'
+description: 'Setup environment and validate build for performance improvements'
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup environment
+      shell: bash
+      run: |
+        echo "=== Daily Perf Improver Build Steps ===" | tee -a build-steps.log
+        echo "Starting at: $(date)" | tee -a build-steps.log
+        echo "" | tee -a build-steps.log
+        
+    - name: Install system dependencies
+      shell: bash
+      run: |
+        echo ">> Installing system dependencies..." | tee -a build-steps.log
+        
+        # Create local bin directory
+        mkdir -p ~/.local/bin
+        export PATH="$HOME/.local/bin:$PATH"
+        
+        # Install ShellCheck (for linting)
+        if ! command -v shellcheck &> /dev/null; then
+          echo "Installing ShellCheck..." | tee -a build-steps.log
+          scversion="v0.10.0"
+          wget -qO- "https://github.com/koalaman/shellcheck/releases/download/${scversion}/shellcheck-${scversion}.linux.x86_64.tar.xz" | tar -xJv
+          mv "shellcheck-${scversion}/shellcheck" ~/.local/bin/
+          chmod +x ~/.local/bin/shellcheck
+          echo "ShellCheck installed" | tee -a build-steps.log
+        else
+          echo "ShellCheck already available" | tee -a build-steps.log
+        fi
+        
+        # Install hyperfine (for benchmarking) - optional
+        if ! command -v hyperfine &> /dev/null; then
+          echo "Installing hyperfine (optional) via system package manager..." | tee -a build-steps.log
+          if command -v apt-get &> /dev/null; then
+            # Prefer using the system package manager instead of downloading binaries directly
+            if sudo apt-get update -qq && sudo apt-get install -y -qq hyperfine; then
+              echo "hyperfine installed via apt-get" | tee -a build-steps.log
+            else
+              echo "Failed to install hyperfine via apt-get; will use 'time' command instead" | tee -a build-steps.log
+            fi
+          else
+            echo "No supported package manager found for hyperfine installation; will use 'time' command instead" | tee -a build-steps.log
+          fi
+        else
+          echo "hyperfine already available" | tee -a build-steps.log
+        fi
+        
+        
+        echo "" | tee -a build-steps.log
+        
+    - name: Setup Python environment
+      shell: bash
+      run: |
+        echo ">> Setting up Python environment..." | tee -a build-steps.log
+        
+        # Install Python dependencies for testing and complexity analysis
+        if [ -f requirements.txt ]; then
+          echo "Installing Python dependencies from requirements.txt..." | tee -a build-steps.log
+          pip install -q -r requirements.txt 2>&1 | tee -a build-steps.log
+        fi
+        
+        # Install radon for complexity analysis
+        echo "Installing radon for complexity analysis..." | tee -a build-steps.log
+        pip install -q radon 2>&1 | tee -a build-steps.log
+        
+        # Verify Python tools
+        python3 --version | tee -a build-steps.log
+        echo "radon version: $(radon --version)" | tee -a build-steps.log
+        echo "" | tee -a build-steps.log
+        
+    - name: Setup Node.js environment
+      shell: bash
+      run: |
+        echo ">> Setting up Node.js environment..." | tee -a build-steps.log
+        
+        if [ -f package.json ]; then
+          echo "Installing Node.js dependencies..." | tee -a build-steps.log
+          npm install 2>&1 | tee -a build-steps.log
+        else
+          echo "No package.json found, skipping Node.js setup" | tee -a build-steps.log
+        fi
+        
+        node --version | tee -a build-steps.log
+        npm --version | tee -a build-steps.log
+        echo "" | tee -a build-steps.log
+        
+    - name: Validate shell scripts
+      shell: bash
+      run: |
+        echo ">> Validating shell scripts..." | tee -a build-steps.log
+        export PATH="$HOME/.local/bin:$PATH"
+        
+        # Find all shell scripts (excluding archived/hidden)
+        find . -type f \( -name "*.sh" -o -name "*.bash" \) \
+          ! -path "./.git/*" \
+          ! -path "./node_modules/*" \
+          ! -path "./.local/*" \
+          ! -path "./archive/*" \
+          ! -path "./.Jules/*" \
+          ! -path "./.jules/*" \
+          ! -path "./.cursor/*" \
+          ! -path "./docs/archive/*" \
+          > /tmp/shell_files.txt
+        
+        echo "Found $(wc -l < /tmp/shell_files.txt) shell scripts to validate" | tee -a build-steps.log
+        
+        # Run ShellCheck on all scripts (non-fatal)
+        failed=0
+        while IFS= read -r file; do
+          if ! shellcheck -S warning "$file" >> build-steps.log 2>&1; then
+            echo "  ⚠️  ShellCheck warnings in: $file" | tee -a build-steps.log
+            failed=$((failed + 1))
+          fi
+        done < /tmp/shell_files.txt
+        
+        if [ $failed -gt 0 ]; then
+          echo "  ShellCheck found warnings in $failed scripts" | tee -a build-steps.log
+        else
+          echo "  ✓ All shell scripts passed ShellCheck" | tee -a build-steps.log
+        fi
+        echo "" | tee -a build-steps.log
+        
+    - name: Validate Python scripts
+      shell: bash
+      run: |
+        echo ">> Validating Python scripts..." | tee -a build-steps.log
+        
+        # Find all Python files
+        find . -type f -name "*.py" \
+          ! -path "./.git/*" \
+          ! -path "./node_modules/*" \
+          ! -path "./.local/*" \
+          ! -path "./.jules/*" \
+          ! -path "./.Jules/*" \
+          ! -path "./archive/*" \
+          ! -path "./docs/archive/*" \
+          ! -path "./.venv/*" \
+          ! -path "./venv/*" \
+          > /tmp/python_files.txt
+        
+        if [ -s /tmp/python_files.txt ]; then
+          echo "Found $(wc -l < /tmp/python_files.txt) Python files to validate" | tee -a build-steps.log
+          
+          # Syntax check all Python files
+          failed=0
+          while IFS= read -r file; do
+            if ! python3 -m py_compile "$file" >> build-steps.log 2>&1; then
+              echo "  ⚠️  Syntax error in: $file" | tee -a build-steps.log
+              failed=$((failed + 1))
+            fi
+          done < /tmp/python_files.txt
+          
+          if [ $failed -gt 0 ]; then
+            echo "  Python syntax errors found in $failed files" | tee -a build-steps.log
+          else
+            echo "  ✓ All Python files have valid syntax" | tee -a build-steps.log
+          fi
+        else
+          echo "No Python files found" | tee -a build-steps.log
+        fi
+        echo "" | tee -a build-steps.log
+        
+    - name: Run existing tests
+      shell: bash
+      run: |
+        echo ">> Running existing test suite..." | tee -a build-steps.log
+        
+        # Run tests that don't require special setup
+        test_count=0
+        failed_tests=0
+        
+        for test_file in tests/test_*.sh; do
+          if [ -f "$test_file" ] && [ -x "$test_file" ]; then
+            test_count=$((test_count + 1))
+            echo "  Running: $test_file" | tee -a build-steps.log
+            if ! bash "$test_file" >> build-steps.log 2>&1; then
+              echo "    ⚠️  Test failed: $test_file" | tee -a build-steps.log
+              failed_tests=$((failed_tests + 1))
+            fi
+          fi
+        done
+        
+        # Run Python tests if pytest is available
+        if command -v pytest &> /dev/null && [ -f tests/test_path_validation.py ]; then
+          echo "  Running Python tests with pytest..." | tee -a build-steps.log
+          if pytest tests/ >> build-steps.log 2>&1; then
+            echo "    ✓ Python tests passed" | tee -a build-steps.log
+          else
+            echo "    ⚠️  Some Python tests failed" | tee -a build-steps.log
+            failed_tests=$((failed_tests + 1))
+          fi
+        fi
+        
+        if [ $test_count -eq 0 ]; then
+          echo "  No executable tests found" | tee -a build-steps.log
+        elif [ $failed_tests -gt 0 ]; then
+          echo "  $failed_tests/$test_count test(s) failed" | tee -a build-steps.log
+        else
+          echo "  ✓ All $test_count test(s) passed" | tee -a build-steps.log
+        fi
+        echo "" | tee -a build-steps.log
+        
+    - name: Verify benchmarking tools
+      shell: bash
+      run: |
+        echo ">> Verifying benchmarking tools..." | tee -a build-steps.log
+        export PATH="$HOME/.local/bin:$PATH"
+        
+        if command -v hyperfine &> /dev/null; then
+          echo "  ✓ hyperfine is available for performance benchmarking" | tee -a build-steps.log
+          hyperfine --version | tee -a build-steps.log
+        else
+          echo "  ⚠️  hyperfine not found - install for accurate benchmarks" | tee -a build-steps.log
+        fi
+        
+        if [ -f tests/benchmarks/benchmark_scripts.sh ]; then
+          echo "  ✓ Benchmark script available: tests/benchmarks/benchmark_scripts.sh" | tee -a build-steps.log
+        fi
+        echo "" | tee -a build-steps.log
+        
+    - name: Build summary
+      shell: bash
+      run: |
+        echo "=== Build Steps Complete ===" | tee -a build-steps.log
+        echo "Finished at: $(date)" | tee -a build-steps.log
+        echo "" | tee -a build-steps.log
+        echo "Environment is ready for performance improvement work!" | tee -a build-steps.log
+        echo "" | tee -a build-steps.log
+        echo "Log file: build-steps.log" | tee -a build-steps.log

@@ -14,7 +14,8 @@ mkdir -p "$BACKUP_DIR"
 
 # Basic logging
 log_security() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     local level="${1:-INFO}"
     shift
     echo "$ts [SECURITY] [$level] $*" | tee -a "$SECURITY_LOG"
@@ -31,7 +32,8 @@ log_security "INFO" "Security manager initialized"
 # Configuration backup functions
 backup_config() {
     local backup_type="${1:-incremental}"  # full, incremental
-    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local timestamp
+    timestamp=$(date +%Y%m%d_%H%M%S)
     
     log_security "INFO" "Starting $backup_type configuration backup"
     
@@ -145,7 +147,8 @@ EOF
         log_security "INFO" "Backup completed successfully: $archive_path"
         
         # Calculate backup size
-        local backup_size=$(du -h "$archive_path" | cut -f1)
+        local backup_size
+        backup_size=$(du -h "$archive_path" | cut -f1)
         
         # Send notification
         if command -v smart_notify >/dev/null 2>&1; then
@@ -178,7 +181,8 @@ check_backup_safety() {
             fi
             log_security "INFO" "Integrity check passed (shasum)"
         elif command -v sha256sum >/dev/null 2>&1; then
-            local expected_hash=$(awk '{print $1}' "$checksum_file")
+            local expected_hash
+            expected_hash=$(awk '{print $1}' "$checksum_file")
             if ! echo "$expected_hash  $backup_file" | sha256sum -c - >/dev/null 2>&1; then
                 log_security "ERROR" "SECURITY ALERT: Backup checksum verification failed! File may be corrupted or tampered with."
                 return 1
@@ -214,18 +218,32 @@ restore_config() {
     
     log_security "INFO" "Starting configuration restore from $backup_file (mode: $restore_mode)"
     
-    local temp_dir=$(mktemp -d)
-    local backup_name=$(basename "$backup_file" .tar.gz)
+    local temp_dir
+    temp_dir=$(mktemp -d)
+    local backup_name
+    backup_name=$(basename "$backup_file" .tar.gz)
     
-    # Verify backup safety before extraction
-    if ! check_backup_safety "$backup_file"; then
+    # 🛡️ Sentinel: TOCTOU Protection
+    # Copy backup and checksum to secure temp dir BEFORE verification
+    # This ensures the file checked is the same file extracted
+    local safe_backup_path="$temp_dir/$(basename "$backup_file")"
+
+    log_security "INFO" "Copying backup to secure temporary location..."
+    cp "$backup_file" "$safe_backup_path"
+
+    if [[ -f "${backup_file}.sha256" ]]; then
+        cp "${backup_file}.sha256" "${safe_backup_path}.sha256"
+    fi
+
+    # Verify backup safety before extraction (using the SAFE COPY)
+    if ! check_backup_safety "$safe_backup_path"; then
         log_security "ERROR" "Backup verification failed - aborting restore"
         rm -rf "$temp_dir"
         return 1
     fi
 
-    # Extract backup
-    cd "$temp_dir" && tar -xzf "$backup_file" 2>/dev/null
+    # Extract backup (using the SAFE COPY)
+    cd "$temp_dir" && tar -xzf "$safe_backup_path" 2>/dev/null
     
     if [[ ! -d "$temp_dir/$backup_name" ]]; then
         log_security "ERROR" "Failed to extract backup or invalid backup structure"
@@ -317,7 +335,8 @@ check_security_status() {
     log_security "INFO" "Starting security status check"
     
     local security_issues=0
-    local security_report="$LOG_DIR/security_report_$(date +%Y%m%d).txt"
+    local security_report
+    security_report="$LOG_DIR/security_report_$(date +%Y%m%d).txt"
     
     cat > "$security_report" << EOF
 Security Status Report
@@ -333,7 +352,8 @@ EOF
     
     # Check SSH directory permissions
     if [[ -d "$HOME/.ssh" ]]; then
-        local ssh_perms=$(ls -la "$HOME/.ssh" | awk 'NR>1 {print $1, $9}')
+        local ssh_perms
+        ssh_perms=$(ls -la "$HOME/.ssh" | awk 'NR>1 {print $1, $9}')
         echo "SSH Directory Contents:" >> "$security_report"
         echo "$ssh_perms" >> "$security_report"
         
@@ -350,7 +370,8 @@ EOF
     echo "==========================" >> "$security_report"
     echo "" >> "$security_report"
     
-    local world_writable=$(find "$CONFIG_DIR" -type f -perm -002 2>/dev/null)
+    local world_writable
+    world_writable=$(find "$CONFIG_DIR" -type f -perm -002 2>/dev/null)
     if [[ -n "$world_writable" ]]; then
         echo "⚠️  World-writable files found:" >> "$security_report"
         echo "$world_writable" >> "$security_report"
@@ -366,7 +387,8 @@ EOF
     echo "" >> "$security_report"
     
     # Look for unusual high-CPU processes
-    local high_cpu_procs=$(ps aux | awk '$3 > 80.0 {print $2, $3, $11}' | head -5)
+    local high_cpu_procs
+    high_cpu_procs=$(ps aux | awk '$3 > 80.0 {print $2, $3, $11}' | head -5)
     if [[ -n "$high_cpu_procs" ]]; then
         echo "High CPU processes detected:" >> "$security_report"
         echo "$high_cpu_procs" >> "$security_report"
@@ -380,7 +402,8 @@ EOF
     echo "===================" >> "$security_report"
     echo "" >> "$security_report"
     
-    local suspicious_connections=$(netstat -an 2>/dev/null | grep ESTABLISHED | head -10)
+    local suspicious_connections
+    suspicious_connections=$(netstat -an 2>/dev/null | grep ESTABLISHED | head -10)
     if [[ -n "$suspicious_connections" ]]; then
         echo "Active network connections:" >> "$security_report"
         echo "$suspicious_connections" >> "$security_report"
@@ -393,7 +416,8 @@ EOF
     echo "" >> "$security_report"
     
     # Check if maintenance scripts have been modified recently
-    local recent_modifications=$(find "$CONFIG_DIR/bin" -name "*.sh" -mtime -1 2>/dev/null)
+    local recent_modifications
+    recent_modifications=$(find "$CONFIG_DIR/bin" -name "*.sh" -mtime -1 2>/dev/null)
     if [[ -n "$recent_modifications" ]]; then
         echo "Recently modified scripts (within 24 hours):" >> "$security_report"
         echo "$recent_modifications" >> "$security_report"
@@ -407,7 +431,8 @@ EOF
     echo "===============" >> "$security_report"
     echo "" >> "$security_report"
     
-    local failed_logins=$(log show --predicate 'eventMessage CONTAINS "authentication failure"' --last 24h 2>/dev/null | wc -l | tr -d ' ')
+    local failed_logins
+    failed_logins=$(log show --predicate 'eventMessage CONTAINS "authentication failure"' --last 24h 2>/dev/null | wc -l | tr -d ' ')
     if [[ ${failed_logins:-0} -gt 5 ]]; then
         echo "⚠️  Multiple failed login attempts detected: $failed_logins" >> "$security_report"
         ((security_issues++))
@@ -448,9 +473,12 @@ list_backups() {
     
     if [[ -d "$BACKUP_DIR" ]]; then
         find "$BACKUP_DIR" -name "config_backup_*.tar.gz" -type f | sort -r | while read -r backup; do
-            local backup_name=$(basename "$backup")
-            local backup_size=$(du -h "$backup" | cut -f1)
-            local backup_date=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$backup" 2>/dev/null || stat -c "%y" "$backup" 2>/dev/null | cut -d. -f1)
+            local backup_name
+            backup_name=$(basename "$backup")
+            local backup_size
+            backup_size=$(du -h "$backup" | cut -f1)
+            local backup_date
+            backup_date=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$backup" 2>/dev/null || stat -c "%y" "$backup" 2>/dev/null | cut -d. -f1)
             
             echo "📦 $backup_name"
             echo "   Size: $backup_size"
@@ -473,7 +501,8 @@ cleanup_old_backups() {
     if [[ -d "$BACKUP_DIR" ]]; then
         # Find and delete old backups
         while read -r old_backup; do
-            local backup_name=$(basename "$old_backup")
+            local backup_name
+            backup_name=$(basename "$old_backup")
             log_security "INFO" "Deleting old backup: $backup_name"
             rm -f "$old_backup"
             ((deleted_count++))
@@ -499,7 +528,8 @@ verify_recovery_readiness() {
     echo ""
     
     # Check for recent backups
-    local recent_backup=$(find "$BACKUP_DIR" -name "config_backup_*.tar.gz" -type f -mtime -7 | head -1)
+    local recent_backup
+    recent_backup=$(find "$BACKUP_DIR" -name "config_backup_*.tar.gz" -type f -mtime -7 | head -1)
     if [[ -n "$recent_backup" ]]; then
         echo "✅ Recent backup available (within 7 days)"
         readiness_score=$((readiness_score + 30))
@@ -552,7 +582,8 @@ verify_recovery_readiness() {
     
     # Check system health
     if [[ -f "$SCRIPT_DIR/system_metrics.sh" ]]; then
-        local health_score=$("$SCRIPT_DIR/analytics_dashboard.sh" health 2>/dev/null || echo "0")
+        local health_score
+        health_score=$("$SCRIPT_DIR/analytics_dashboard.sh" health 2>/dev/null || echo "0")
         if [[ ${health_score:-0} -gt 70 ]]; then
             echo "✅ System health is good (${health_score}/100)"
             readiness_score=$((readiness_score + 10))
@@ -622,7 +653,8 @@ main() {
             echo ""
             
             # Quick security check
-            local security_report=$(check_security_status)
+            local security_report
+            security_report=$(check_security_status)
             echo "Security Report: $security_report"
             echo ""
             
