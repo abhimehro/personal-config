@@ -21,11 +21,12 @@ export HOME="$MOCK_HOME"
 source maintenance/bin/security_manager.sh
 
 # Override CONFIG_DIR and BACKUP_DIR for testing to point to our mock
-# Note: We must override these AFTER sourcing
+# Note: We must override these AFTER sourcing; export so sourced functions see them
 CONFIG_DIR="$MOCK_HOME"
 BACKUP_DIR="$MOCK_LOGS/backups"
 LOG_DIR="$MOCK_LOGS"
 SECURITY_LOG="$LOG_DIR/security.log"
+export CONFIG_DIR BACKUP_DIR LOG_DIR SECURITY_LOG
 
 # 1. Create Backup
 echo "Creating backup..."
