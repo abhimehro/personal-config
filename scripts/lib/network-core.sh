@@ -74,6 +74,10 @@ smart_find() {
         fi
     else
         # find fallback (basic name search) with stable (pattern, path) semantics
+        # 🛡️ Sentinel: Sanitize pattern to prevent argument injection
+        if [[ "$pattern" == -* ]]; then
+            pattern="./$pattern"
+        fi
         find "$path" -name "$pattern"
     fi
 }
