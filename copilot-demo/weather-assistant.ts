@@ -33,7 +33,7 @@ const startSpinner = () => {
   process.stdout.write(ANSI.HideCursor);
   spinnerInterval = setInterval(() => {
     process.stdout.write(
-      `\r${COLORS.Green}Assistant:${COLORS.Reset} ${spinnerFrames[i]} `,
+      `\r${COLORS.Green}Assistant:${COLORS.Reset} ${spinnerFrames[i]} ${COLORS.Dim}(Thinking...)${COLORS.Reset}`,
     );
     i = (i + 1) % spinnerFrames.length;
   }, 80);
@@ -42,6 +42,23 @@ const startSpinner = () => {
 // Ensure cursor is restored on exit
 process.on("exit", () => {
   process.stdout.write(ANSI.ShowCursor);
+});
+
+// Ensure cursor is restored on exit or interrupt
+process.on("SIGINT", () => {
+  stopSpinner();
+  process.stdout.write("\n");
+  process.exitCode = 130; // Use standard interrupt exit code so callers can detect cancellation
+});
+
+// Safety net: restore cursor on any exit (e.g., uncaught exceptions)
+// Note: spinnerInterval will be undefined if stopSpinner() was already called,
+// so this only acts when the process exits abnormally without cleanup
+process.on("exit", () => {
+  if (spinnerInterval) {
+    clearInterval(spinnerInterval);
+    process.stdout.write("\x1B[?25h"); // Show cursor
+  }
 });
 
 const getWeather = defineTool("get_weather", {
@@ -101,14 +118,31 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-console.log("🌤️  Weather Assistant (type 'exit' to quit)");
+console.log(`${COLORS.Cyan}
+╔══════════════════════════════════════════════╗
+║           🌤️  Weather Assistant CLI          ║
+╚══════════════════════════════════════════════╝${COLORS.Reset}`);
 console.log(
   `${COLORS.Dim}   Try: 'What's the weather in Paris?'${COLORS.Reset}\n`,
 );
 
+// Graceful shutdown on Ctrl+C
+rl.on('SIGINT', async () => {
+  stopSpinner();
+  console.log(`\n${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
+  try {
+    await client.stop();
+  } catch (e) {
+    // Ignore error on stop if not started properly or already stopped
+  }
+  rl.close();
+  process.exit(0);
+});
+
 const prompt = () => {
   rl.question(`${COLORS.Cyan}You:${COLORS.Reset} `, async (input) => {
     if (input.trim() === "") {
+      console.log(`${COLORS.Dim}Tip: Try asking "What's the weather in Tokyo?"${COLORS.Reset}`);
       prompt();
       return;
     }
