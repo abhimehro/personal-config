@@ -21,6 +21,15 @@ else
     exit 1
 fi
 
+# Source optional shared libraries
+for _lib in "$SCRIPT_DIR/lib/network-utils.sh" "$SCRIPT_DIR/lib/dns-utils.sh"; do
+    if [[ -f "$_lib" ]]; then
+        # shellcheck source=/dev/null
+        source "$_lib"
+    fi
+done
+unset _lib
+
 # --- Configuration ---
 DEFAULT_PROFILE="browsing"
 IPV6_MANAGER="$SCRIPT_DIR/macos/ipv6-manager.sh"

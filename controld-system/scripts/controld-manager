@@ -8,6 +8,20 @@
 
 set -e
 
+# Determine script location to optionally load shared libraries
+_CTRLD_MGR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_CTRLD_REPO_ROOT="$(cd "$_CTRLD_MGR_DIR/../.." && pwd)"
+_CTRLD_SCRIPTS_LIB="$_CTRLD_REPO_ROOT/scripts/lib"
+
+# Source shared libraries when available (not present in standalone installs)
+for _lib in "$_CTRLD_SCRIPTS_LIB/common.sh" "$_CTRLD_SCRIPTS_LIB/dns-utils.sh"; do
+    if [[ -f "$_lib" ]]; then
+        # shellcheck source=/dev/null
+        source "$_lib"
+    fi
+done
+unset _lib _CTRLD_SCRIPTS_LIB _CTRLD_REPO_ROOT _CTRLD_MGR_DIR
+
 # Configuration
 CONTROLD_DIR="/etc/controld"
 PROFILES_DIR="$CONTROLD_DIR/profiles"
@@ -102,6 +116,23 @@ get_profile_protocol() {
 
 get_all_profiles() {
     echo "privacy gaming browsing"
+}
+
+# Wait for a named process to stop, polling every 0.1 s for up to max_retries attempts.
+# Falls back to the wait_for_process_stop helper from common.sh when available.
+# Usage: _wait_for_process_stop <process_name> [max_retries]
+_wait_for_process_stop() {
+    if command -v wait_for_process_stop >/dev/null 2>&1; then
+        wait_for_process_stop "$@"
+        return
+    fi
+    local process_name="$1"
+    local max_retries="${2:-20}"
+    local retry=0
+    while pgrep -x "$process_name" >/dev/null 2>&1 && [[ $retry -lt $max_retries ]]; do
+        sleep 0.1
+        retry=$((retry + 1))
+    done
 }
 
 # Color codes
@@ -284,12 +315,7 @@ safe_stop() {
     pkill -x ctrld 2>/dev/null || true
 
     # Wait for processes to fully terminate (optimized with polling)
-    local retry=0
-    # Poll for up to 2 seconds (20 * 0.1s)
-    while pgrep -x "ctrld" >/dev/null && [ $retry -lt 20 ]; do
-        sleep 0.1
-        retry=$((retry + 1))
-    done
+    _wait_for_process_stop "ctrld" 20
 
     # Verify no ctrld processes are running
     if pgrep -x "ctrld" >/dev/null; then
@@ -454,11 +480,7 @@ switch_profile() {
     pkill -f ctrld 2>/dev/null || true
 
     # Wait for process to terminate (optimized)
-    local retry=0
-    while pgrep -x "ctrld" >/dev/null && [[ $retry -lt 30 ]]; do
-        sleep 0.1
-        ((retry++))
-    done
+    _wait_for_process_stop "ctrld" 30
 
     # Generate profile config if it doesn't exist or if protocol changed
     if [[ ! -f "$config_file" ]] || ! grep -q "type = '$protocol'" "$config_file" 2>/dev/null; then
@@ -524,28 +546,44 @@ switch_profile() {
 test_connection() {
     log "Testing DNS connection..."
 
-    # Test basic resolution
-    if dig @127.0.0.1 google.com +short +time=5 >/dev/null 2>&1; then
+    # Use dns_health_check from dns-utils.sh if available, otherwise fall back to dig
+    local _resolver="127.0.0.1"
+    if command -v dns_health_check >/dev/null 2>&1; then
+        if ! dns_health_check "$_resolver" "google.com"; then
+            log_error "Basic DNS resolution failed"
+            return 1
+        fi
         log_success "Basic DNS resolution working"
-    else
-        log_error "Basic DNS resolution failed"
-        return 1
-    fi
 
-    # Test Control D connectivity
-    if dig @127.0.0.1 p.controld.com +short +time=5 >/dev/null 2>&1; then
+        if ! dns_health_check "$_resolver" "p.controld.com"; then
+            log_error "Control D connectivity failed"
+            return 1
+        fi
         log_success "Control D connectivity confirmed"
     else
-        log_error "Control D connectivity failed"
-        return 1
+        # Fallback: direct dig invocation
+        if dig @"$_resolver" google.com +short +time=5 >/dev/null 2>&1; then
+            log_success "Basic DNS resolution working"
+        else
+            log_error "Basic DNS resolution failed"
+            return 1
+        fi
+
+        if dig @"$_resolver" p.controld.com +short +time=5 >/dev/null 2>&1; then
+            log_success "Control D connectivity confirmed"
+        else
+            log_error "Control D connectivity failed"
+            return 1
+        fi
     fi
 
     # Test filtering (different for gaming vs privacy vs browsing)
-    local block_test=$(dig @127.0.0.1 doubleclick.net +short 2>/dev/null | wc -l)
+    local block_test
+    block_test=$(dig @"$_resolver" doubleclick.net +short 2>/dev/null | wc -l)
     if [[ "$block_test" -eq 0 ]]; then
         log_success "Filtering is working (ads blocked)"
     elif [[ "$block_test" -gt 0 ]]; then
-        if [[ "$profile_name" == "gaming" ]]; then
+        if [[ "${profile_name:-}" == "gaming" ]]; then
             log_success "Gaming filtering is working (ads allowed for gaming compatibility)"
         else
             log_warning "Ads are not being blocked - this may be intended for this profile"
