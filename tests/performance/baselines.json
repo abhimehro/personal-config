@@ -1,0 +1,71 @@
+{
+  "_meta": {
+    "description": "Performance baselines for critical shell scripts",
+    "regression_threshold_pct": 5,
+    "units": "seconds",
+    "established": "2026-02-20",
+    "runs_used_for_baseline": 10
+  },
+  "operations": {
+    "network_mode_status": {
+      "mean": 0.08,
+      "stddev": 0.02,
+      "description": "scripts/network-mode-manager.sh status"
+    },
+    "sync_all_configs": {
+      "mean": 0.50,
+      "stddev": 0.10,
+      "description": "scripts/sync_all_configs.sh (dry-run / sourcing overhead)"
+    },
+    "verify_all_configs": {
+      "mean": 0.40,
+      "stddev": 0.08,
+      "description": "scripts/verify_all_configs.sh"
+    },
+    "lib_common_source": {
+      "mean": 0.03,
+      "stddev": 0.01,
+      "description": "source scripts/lib/common.sh"
+    },
+    "lib_network_core_source": {
+      "mean": 0.04,
+      "stddev": 0.01,
+      "description": "source scripts/lib/network-core.sh"
+    },
+    "install_all_configs": {
+      "mean": 0.60,
+      "stddev": 0.12,
+      "description": "scripts/install_all_configs.sh (dry-run)"
+    },
+    "validate_configs": {
+      "mean": 0.20,
+      "stddev": 0.05,
+      "description": "scripts/validate-configs.sh"
+    },
+    "test_lib_common": {
+      "mean": 1.00,
+      "stddev": 0.20,
+      "description": "tests/test_lib_common.sh"
+    },
+    "test_network_mode_manager": {
+      "mean": 2.00,
+      "stddev": 0.40,
+      "description": "tests/test_network_mode_manager.sh"
+    },
+    "test_lib_dns_utils": {
+      "mean": 1.50,
+      "stddev": 0.30,
+      "description": "tests/test_lib_dns_utils.sh"
+    },
+    "maintenance_health_check": {
+      "mean": 0.30,
+      "stddev": 0.06,
+      "description": "maintenance/bin/health_check.sh"
+    },
+    "maintenance_quick_cleanup": {
+      "mean": 0.25,
+      "stddev": 0.05,
+      "description": "maintenance/bin/quick_cleanup.sh --dry-run"
+    }
+  }
+}
