@@ -196,7 +196,22 @@ echo ""
 if [[ $EXTRACT_ENHANCEMENTS -eq 1 ]]; then
     header "Portable Enhancement Extraction"
     
-    ENHANCEMENTS_FILE="/tmp/shell-enhancements-$(date +%Y%m%d_%H%M%S).txt"
+    # Determine a safe temporary directory:
+    # - Start from TMPDIR if set, otherwise /tmp
+    # - If it starts with '-' (could be parsed as an option) or is not a directory,
+    #   fall back to /tmp to avoid mktemp option-injection issues.
+    safe_tmpdir="${TMPDIR:-/tmp}"
+    if [[ "${safe_tmpdir}" == -* || ! -d "${safe_tmpdir}" ]]; then
+        safe_tmpdir="/tmp"
+    fi
+
+    # Use mktemp for secure file creation (0600 permissions) to prevent race conditions
+    # Strip any trailing slash from safe_tmpdir when constructing the template path.
+    ENHANCEMENTS_FILE=$(mktemp "${safe_tmpdir%/}/shell-enhancements-$(date +%Y%m%d_%H%M%S).txt.XXXXXX") || \
+        { error "Failed to create temporary file"; exit 1; }
+
+    # Cleanup on exit
+    trap 'rm -f "$ENHANCEMENTS_FILE"' EXIT
     
     log "Extracting portable patterns from local shell configs..."
     echo ""
@@ -270,7 +285,7 @@ if [[ $EXTRACT_ENHANCEMENTS -eq 1 ]]; then
         
     } > "$ENHANCEMENTS_FILE"
     
-    success "Enhancements extracted to: $ENHANCEMENTS_FILE"
+    success "Enhancements generated."
     echo ""
     log "Contents:"
     echo ""

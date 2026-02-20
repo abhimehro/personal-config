@@ -109,3 +109,10 @@
 **Prevention:** Use environment variables (e.g., `RCLONE_PASS`) to pass secrets to CLI tools, as environment variables are typically only visible to the process owner and root.
 
 [CWE-214]: https://cwe.mitre.org/data/definitions/214.html
+
+## 2026-02-19 - Insecure Temporary File Creation
+**Vulnerability:** Insecure Temporary File Creation ([CWE-377][]) in `scripts/compare_shell_configs.sh`. The script created a predictable temporary file in `/tmp` using a timestamp, allowing a race condition where an attacker could pre-create the file (potentially as a symlink) to overwrite arbitrary files or read sensitive data.
+**Learning:** Using predictable filenames in shared directories like `/tmp` is insecure. The `> file` redirection follows symlinks if the file exists, and files created via shell redirection typically end up with permissions 0644 under a default umask of 022, which might expose sensitive data.
+**Prevention:** Always use `mktemp` to create temporary files. It generates a unique filename and sets restrictive permissions (0600) atomically. Use `trap` to ensure cleanup.
+
+[CWE-377]: https://cwe.mitre.org/data/definitions/377.html
