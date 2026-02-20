@@ -231,7 +231,7 @@ setup_directories() {
         log_error "Security Alert: A ControlD directory became a symlink after creation. Aborting."
         exit 1
     fi
-    if [[ ! -d "$PROFILES_DIR" ]] || [[ ! -d "$BACKUP_DIR" ]]; then
+    if [[ ! -d "$CONTROLD_DIR" ]] || [[ ! -d "$PROFILES_DIR" ]] || [[ ! -d "$BACKUP_DIR" ]]; then
         log_error "Expected directories are missing after creation. Aborting."
         exit 1
     fi

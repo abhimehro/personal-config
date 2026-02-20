@@ -104,6 +104,7 @@ check_false "rejects id with newline"          validate_profile_id $'abc\n123'
 echo ""
 echo "-- redact_profile_id --"
 check_output "redacts long id (shows 3+2)"  "abc...56"    "$(redact_profile_id "abcde56")"
+check_output "redacts 10-char id (typical)" "a1b...e5"    "$(redact_profile_id "a1b2c3d4e5")"
 check_output "redacts short id (<= 5)"      "***...**"    "$(redact_profile_id "abc12")"
 check_output "redacts empty id"             "(empty)"     "$(redact_profile_id "")"
 # Exactly 6 chars: shows first 3 + last 2

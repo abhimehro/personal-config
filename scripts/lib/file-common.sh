@@ -85,10 +85,16 @@ secure_mkdir() {
 atomic_write() {
     local dest="$1"
     local content="$2"
+    # 🛡️ Sentinel: Refuse to write if dest is already a symlink to prevent
+    # an attacker from redirecting the write to an arbitrary location.
+    if [[ -L "$dest" ]]; then
+        echo "Security Alert: $dest is a symlink! Refusing atomic_write." >&2
+        return 1
+    fi
     local dir
     dir=$(dirname "$dest")
     local tmp
-    # 🛡️ Sentinel: write to a sibling temp file then atomically rename
+    # Write to a sibling temp file then rename atomically
     tmp=$(mktemp "$dir/.atomic_write.XXXXXX")
     printf '%s' "$content" > "$tmp"
     mv "$tmp" "$dest"

@@ -89,7 +89,7 @@ restore_dns_settings() {
     if [[ -f "$backup_dir/original_dns.txt" ]]; then
         local original_dns
         original_dns=$(cat "$backup_dir/original_dns.txt")
-        if [[ "$original_dns" == "No DNS servers" ]] \
+        if [[ "$original_dns" == *"No DNS servers"* ]] \
             || [[ "$original_dns" == *"There aren't any DNS Servers"* ]]; then
             networksetup -setdnsservers Wi-Fi "Empty"
         else
