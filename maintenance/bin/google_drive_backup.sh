@@ -105,7 +105,28 @@ fi
 RSYNC=(/usr/bin/rsync -aE --ignore-errors --partial --human-readable --stats)
 
 if [[ -f "$EXCLUDES_FILE" ]]; then
+  echo "Using exclusions from: $EXCLUDES_FILE"
   RSYNC+=(--exclude-from="$EXCLUDES_FILE")
+else
+  echo "⚠️  WARNING: Excludes file not found at $EXCLUDES_FILE"
+  echo "🔒 Applying DEFAULT SECURITY EXCLUSIONS to protect sensitive data..."
+
+  # Critical security exclusions (fallback)
+  RSYNC+=(
+    --exclude='.ssh/id_*'
+    --exclude='.ssh/*.pem'
+    --exclude='.ssh/authorized_keys'
+    --exclude='.aws/credentials'
+    --exclude='.netrc'
+    --exclude='.gemini/'
+    --exclude='.env'
+    --exclude='.bash_history'
+    --exclude='.zsh_history'
+    --exclude='.fish_history'
+    --exclude='node_modules/'
+    --exclude='.git/'
+    --exclude='.DS_Store'
+  )
 fi
 
 if [[ $DELETE -eq 1 ]]; then
