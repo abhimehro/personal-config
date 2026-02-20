@@ -1,0 +1,57 @@
+name: Performance Regression Check
+
+on:
+  pull_request:
+    paths:
+      - '**.sh'
+      - '**.py'
+      - '**.bash'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'controld-system/**'
+      - 'windscribe-controld/**'
+      - '.github/workflows/**'
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  performance-regression:
+    name: Performance Regression Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install hyperfine
+        run: |
+          # Install hyperfine from GitHub releases (latest stable)
+          HF_VERSION="1.18.0"
+          wget -qO /tmp/hyperfine.tar.gz \
+            "https://github.com/sharkdp/hyperfine/releases/download/v${HF_VERSION}/hyperfine-v${HF_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+          tar -xzf /tmp/hyperfine.tar.gz -C /tmp
+          sudo mv "/tmp/hyperfine-v${HF_VERSION}-x86_64-unknown-linux-gnu/hyperfine" /usr/local/bin/hyperfine
+          hyperfine --version
+
+      - name: Run performance benchmarks
+        run: |
+          chmod +x tests/test_performance.sh
+          # Run in CI mode: exits non-zero only on regression
+          bash tests/test_performance.sh --ci
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: tests/performance/baselines.json
+          retention-days: 30

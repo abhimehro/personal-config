@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help control-d-regression benchmark
+.PHONY: help control-d-regression benchmark perf-check
 
 help:  ## Show this help message
 	@echo "Available targets:"
@@ -11,3 +11,6 @@ control-d-regression:  ## Run full Control D regression test suite
 
 benchmark:  ## Run performance benchmarks for core scripts (requires hyperfine)
 	./tests/benchmarks/benchmark_scripts.sh all
+
+perf-check:  ## Run performance regression checks against baselines (requires hyperfine)
+	./tests/test_performance.sh
