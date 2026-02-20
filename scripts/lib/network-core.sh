@@ -11,6 +11,13 @@ if [[ "${_NETWORK_CORE_SH_:-}" == "true" ]]; then
 fi
 _NETWORK_CORE_SH_="true"
 
+# Source Common Library (optional – not present in standalone installs)
+_NETWORK_CORE_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$_NETWORK_CORE_LIB_DIR/common.sh" ]]; then
+    # shellcheck source=scripts/lib/common.sh
+    source "$_NETWORK_CORE_LIB_DIR/common.sh"
+fi
+
 # --- Colors ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
