@@ -353,6 +353,61 @@ scutil --dns | head -20
 ./scripts/ssh/setup_verification.sh
 ```
 
+## ⚡ Performance Benchmarking
+
+This repository includes a performance benchmarking infrastructure for tracking script execution speed and detecting performance regressions.
+
+### Quick Start
+
+```bash
+# Install hyperfine (required dependency)
+brew install hyperfine
+
+# Run all benchmarks
+make benchmark
+
+# Run specific benchmark
+./tests/benchmarks/benchmark_scripts.sh nm-status
+```
+
+### Available Benchmark Targets
+
+| Target | Script | Description |
+|--------|--------|-------------|
+| `nm-status` | `network-mode-manager.sh status` | Network mode status check |
+| `sync-all` | `sync_all_configs.sh` | Configuration sync operations |
+| `verify-all` | `verify_all_configs.sh` | Configuration verification |
+| `all` | All scripts above | Run all benchmarks (default) |
+
+### Benchmark Configuration
+
+- **Warmup Runs**: 2 iterations to prime caches
+- **Benchmark Runs**: 5 iterations for statistical accuracy
+- **Baseline Storage**: `tests/benchmarks/baselines/*.json`
+
+### Usage Examples
+
+```bash
+# Benchmark network mode status check
+./tests/benchmarks/benchmark_scripts.sh nm-status
+
+# Benchmark config sync performance
+./tests/benchmarks/benchmark_scripts.sh sync-all
+
+# Benchmark verification speed
+./tests/benchmarks/benchmark_scripts.sh verify-all
+
+# Run all benchmarks via Makefile
+make benchmark
+```
+
+### Baseline Results
+
+Results are saved as JSON files in `tests/benchmarks/baselines/` for:
+- Performance regression tracking
+- Before/after optimization comparisons
+- CI/CD integration potential
+
 ## 📊 Monitoring & Maintenance
 
 ### DNS Logs
