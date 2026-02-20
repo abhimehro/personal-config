@@ -179,49 +179,57 @@ print_status() {
 }
 
 interactive_menu() {
-  local active_mode="none"
-  if pgrep -x "ctrld" >/dev/null 2>&1; then
-    local config_link="/etc/controld/ctrld.toml"
-    if sudo test -L "$config_link"; then
-      local target
-      target=$(sudo readlink "$config_link" || echo "")
-      if [[ "$target" == *"privacy"* ]]; then active_mode="privacy"; fi
-      if [[ "$target" == *"browsing"* ]]; then active_mode="browsing"; fi
-      if [[ "$target" == *"gaming"* ]]; then active_mode="gaming"; fi
+  while true; do
+    clear
+
+    local active_mode="none"
+    if pgrep -x "ctrld" >/dev/null 2>&1; then
+      local config_link="/etc/controld/ctrld.toml"
+      if sudo test -L "$config_link"; then
+        local target
+        target=$(sudo readlink "$config_link" || echo "")
+        if [[ "$target" == *"privacy"* ]]; then active_mode="privacy"; fi
+        if [[ "$target" == *"browsing"* ]]; then active_mode="browsing"; fi
+        if [[ "$target" == *"gaming"* ]]; then active_mode="gaming"; fi
+      fi
+    elif is_vpn_connected; then
+      active_mode="vpn"
     fi
-  elif is_vpn_connected; then
-    active_mode="vpn"
-  fi
 
-  local m_priv="  " m_brow="  " m_game="  " m_vpn="  "
-  case "$active_mode" in
-    privacy)  m_priv="${GREEN}✅${NC}" ;;
-    browsing) m_brow="${GREEN}✅${NC}" ;;
-    gaming)   m_game="${GREEN}✅${NC}" ;;
-    vpn)      m_vpn="${GREEN}✅${NC}" ;;
-  esac
+    local m_priv="  " m_brow="  " m_game="  " m_vpn="  "
+    case "$active_mode" in
+      privacy)  m_priv="${GREEN}✅${NC}" ;;
+      browsing) m_brow="${GREEN}✅${NC}" ;;
+      gaming)   m_game="${GREEN}✅${NC}" ;;
+      vpn)      m_vpn="${GREEN}✅${NC}" ;;
+    esac
 
-  echo -e "\n${BOLD}${BLUE}🎨 Network Mode Manager${NC}"
-  echo -e "   1) ${E_PRIVACY} Control D (Privacy)          $m_priv"
-  echo -e "   2) ${E_BROWSING} Control D (Browsing)         $m_brow ${YELLOW}[Default]${NC}"
-  echo -e "   3) ${E_GAMING} Control D (Gaming)           $m_game"
-  echo -e "   4) ${E_VPN} Windscribe (VPN)             $m_vpn"
-  echo -e "   5) ${E_INFO} Show Status"
-  echo -e "   0) 🚪 Exit"
+    echo -e "\n${BOLD}${BLUE}🎨 Network Mode Manager${NC}"
+    echo -e "${BLUE}   ────────────────────${NC}"
+    echo -e "   1) ${E_PRIVACY} Control D (Privacy)          $m_priv"
+    echo -e "   2) ${E_BROWSING} Control D (Browsing)         $m_brow"
+    echo -e "   3) ${E_GAMING} Control D (Gaming)           $m_game"
+    echo -e "   4) ${E_VPN} Windscribe (VPN)             $m_vpn"
+    echo -e "   5) ${E_INFO} Show Status                  ${YELLOW}[Default]${NC}"
+    echo -e "   0) 🚪 Exit"
 
-  echo -ne "\n${BOLD}Select option [0-5]: ${NC}"
-  read -r choice
-  choice="${choice:-2}"
+    echo -ne "\n${BOLD}Select option [0-5]: ${NC}"
+    read -r choice
+    choice="${choice:-5}"
 
-  case "$choice" in
-    1) main "controld" "privacy" ;;
-    2) main "controld" "browsing" ;;
-    3) main "controld" "gaming" ;;
-    4) main "windscribe" ;;
-    5) main "status" ;;
-    0) exit 0 ;;
-    *) error "Invalid option" ;;
-  esac
+    case "$choice" in
+      1) (main "controld" "privacy") ;;
+      2) (main "controld" "browsing") ;;
+      3) (main "controld" "gaming") ;;
+      4) (main "windscribe") ;;
+      5) (main "status") ;;
+      0) echo "Goodbye!"; exit 0 ;;
+      *) echo -e "${RED}Invalid option${NC}" ;;
+    esac
+
+    echo -e "\n${BOLD}Press any key to continue...${NC}"
+    read -n 1 -s -r
+  done
 }
 
 main() {
@@ -271,4 +279,6 @@ main() {
   esac
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi
