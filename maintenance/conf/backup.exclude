@@ -1,0 +1,41 @@
+# Google Drive Backup Exclusions (rsync)
+# Security & Privacy - CRITICAL EXCLUSIONS
+.ssh/id_*
+.ssh/*.pem
+.ssh/authorized_keys
+.gnupg/
+.aws/credentials
+.netrc
+.npmrc
+.gemini/
+.config/rclone/rclone.conf
+.config/gh/hosts.yml
+.env
+.env.*
+.secrets/
+
+# Shell History (often contains sensitive commands/tokens)
+.bash_history
+.zsh_history
+.fish_history
+.lesshst
+.python_history
+.mysql_history
+.node_repl_history
+
+# System & Build Artifacts (Reduce noise/size)
+.DS_Store
+.AppleDouble
+.Trash/
+.Trashes/
+node_modules/
+dist/
+build/
+coverage/
+.cache/
+__pycache__/
+*.pyc
+.venv/
+.idea/
+.vscode/
+.git/
