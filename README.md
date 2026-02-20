@@ -1,7 +1,5 @@
 # Personal System Configuration
 
-[![Code Quality](https://github.com/abhimehro/personal-config/actions/workflows/code-quality.yml/badge.svg)](https://github.com/abhimehro/personal-config/actions/workflows/code-quality.yml)
-
 A comprehensive repository for personal system configurations, scripts, and documentation to make my macOS development and gaming setup reproducible and backed up.
 
 ## Overview
