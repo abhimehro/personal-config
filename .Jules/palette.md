@@ -44,3 +44,7 @@
 ## 2025-05-15 - CLI Micro-Interactions
 **Learning:** Even simple CLI tools benefit significantly from "web-like" UX patterns: clear headers, explicit loading states ("Thinking..."), and graceful exit handling (Ctrl+C). Users expect feedback for every action, including empty input.
 **Action:** Always add a SIGINT handler to CLI tools to restore cursor state and say goodbye. Use box-drawing characters for CLI headers to frame the experience.
+
+## 2026-02-21 - Persistent Interactive Menus
+**Learning:** Single-shot CLI menus force users to restart the script repeatedly for tasks like "check status -> change setting -> check status". A persistent loop transforms the tool into a dashboard.
+**Action:** When implementing an interactive menu for a state-management script, wrap the logic in a `while true` loop, clear the screen on each iteration, and provide a "Press any key to continue" pause after actions.
