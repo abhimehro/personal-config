@@ -40,10 +40,10 @@ export RED GREEN YELLOW BLUE BOLD NC
 export E_PASS E_FAIL E_INFO E_PRIVACY E_GAMING E_BROWSING E_VPN
 
 # --- Logging ---
-log()      { echo -e "${BLUE}${E_INFO} [INFO]${NC}" "$@"; }
-success()  { echo -e "${GREEN}${E_PASS} [OK]${NC}" "$@"; }
-warn()     { echo -e "${YELLOW}⚠️ [WARN]${NC}" "$@"; }
-error()    { echo -e "${RED}${E_FAIL} [ERR]${NC}" "$@" >&2; exit 1; }
+log()      { echo -ne "${BLUE}${E_INFO} [INFO]${NC} "; printf "%s\n" "$*"; }
+success()  { echo -ne "${GREEN}${E_PASS} [OK]${NC} "; printf "%s\n" "$*"; }
+warn()     { echo -ne "${YELLOW}⚠️ [WARN]${NC} "; printf "%s\n" "$*"; }
+error()    { echo -ne "${RED}${E_FAIL} [ERR]${NC} "; printf "%s\n" "$*" >&2; exit 1; }
 
 # --- Modern Tooling Wrappers ---
 smart_grep() {
