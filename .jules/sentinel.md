@@ -116,3 +116,10 @@
 **Prevention:** Always use `mktemp` to create temporary files. It generates a unique filename and sets restrictive permissions (0600) atomically. Use `trap` to ensure cleanup.
 
 [CWE-377]: https://cwe.mitre.org/data/definitions/377.html
+
+## 2026-05-22 - Terminal Injection in Logging Functions
+**Vulnerability:** Terminal Injection ([CWE-150][]) in `scripts/youtube-download.sh` and `scripts/lib/network-core.sh`. The scripts used `echo -e` to print user input (clipboard content or function arguments), allowing an attacker to inject escape sequences to manipulate the terminal output or spoof log entries.
+**Learning:** `echo -e` interprets backslash escapes in all arguments. Even if the intent is to print a variable, `echo -e` treats it as a format string of sorts. This is dangerous when handling untrusted input like clipboard content or filenames.
+**Prevention:** Use `printf "%s\n" "$VAR"` to print untrusted strings. This treats the content literally. If color codes are needed, print them separately with `echo -ne` or `printf` and then print the variable content safely.
+
+[CWE-150]: https://cwe.mitre.org/data/definitions/150.html
