@@ -2,6 +2,10 @@
 # Security & Privacy - CRITICAL EXCLUSIONS
 .ssh/id_*
 .ssh/*.pem
+.ssh/*_rsa
+.ssh/*_dsa
+.ssh/*_ed25519
+.ssh/*_ecdsa
 .ssh/authorized_keys
 .gnupg/
 .aws/
