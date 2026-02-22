@@ -7,7 +7,6 @@
 .aws/
 .netrc
 .npmrc
-.gemini/
 .config/rclone/rclone.conf
 .config/gh/hosts.yml
 .env
