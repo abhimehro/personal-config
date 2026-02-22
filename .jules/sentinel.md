@@ -120,4 +120,4 @@
 ## 2026-02-22 - Prevent Symlink Hijacking with Atomic Install
 **Vulnerability:** `scripts/setup-controld.sh` used `cp` followed by `chmod` and `chown`, creating a TOCTOU race condition where a malicious user could replace the target with a symlink between operations.
 **Learning:** Multi-step file creation and permission setting is vulnerable to race conditions.
-**Prevention:** Use atomic `install` command (`install -m 755 -o root -g wheel src dest`) which handles copy, permissions, and ownership in a single operation.
+**Prevention:** Prefer the `install` command for files (for example, `install -m 755 -o root -g wheel src dest`) so copy, permissions, and ownership are applied in a single step, and combine this with pre-flight checks (for symlinks/parent directories) and post-install verification; `install -d` in particular can follow symlinks, so directory creation still needs careful validation.
