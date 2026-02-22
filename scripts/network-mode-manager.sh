@@ -213,7 +213,12 @@ interactive_menu() {
     echo -e "   0) 🚪 Exit"
 
     echo -ne "\n${BOLD}Select option [0-5]: ${NC}"
-    read -r choice
+    if ! read -r choice; then
+      # Treat EOF / read failure like selecting "Exit":
+      # break out of the menu loop cleanly instead of letting `set -e` kill the script
+      echo ""
+      break
+    fi
     choice="${choice:-2}"
 
     case "$choice" in
