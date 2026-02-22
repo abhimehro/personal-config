@@ -27,7 +27,7 @@ E_SEARCH="🔍"
 info()  { echo -ne "${BLUE}${E_INFO}  [INFO]${NC}  "; printf "%s\n" "$*"; }
 ok()    { echo -ne "${GREEN}${E_OK} [OK]${NC}    "; printf "%s\n" "$*"; }
 warn()  { echo -ne "${YELLOW}${E_WARN}  [WARN]${NC}  "; printf "%s\n" "$*"; }
-err()   { echo -ne "${RED}${E_ERR} [ERR]${NC}   "; printf "%s\n" "$*" >&2; }
+err()   { echo -ne "${RED}${E_ERR} [ERR]${NC}   " >&2; printf "%s\n" "$*" >&2; }
 header() { echo -ne "\n${BOLD}${BLUE}"; printf "%s" "$*"; echo -e "${NC}\n"; }
 
 # --- Usage ---
