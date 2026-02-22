@@ -218,11 +218,11 @@ interactive_menu() {
     choice="${choice:-5}"
 
     case "$choice" in
-      1) (main "controld" "privacy") ;;
-      2) (main "controld" "browsing") ;;
-      3) (main "controld" "gaming") ;;
-      4) (main "windscribe") ;;
-      5) (main "status") ;;
+      1) (main "controld" "privacy") || true ;;
+      2) (main "controld" "browsing") || true ;;
+      3) (main "controld" "gaming") || true ;;
+      4) (main "windscribe") || true ;;
+      5) (main "status") || true ;;
       0) echo "Goodbye!"; exit 0 ;;
       *) echo -e "${RED}Invalid option${NC}" ;;
     esac
