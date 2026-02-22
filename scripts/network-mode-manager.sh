@@ -234,7 +234,14 @@ interactive_menu() {
     esac
 
     echo -e "\n${BOLD}Press any key to continue...${NC}"
-    read -n 1 -s -r
+    if [[ -t 0 ]]; then
+      # Only wait for a keypress when stdin is a terminal to avoid blocking in non-interactive contexts
+      read -n 1 -s -r
+    else
+      # In non-interactive environments, don't hang: exit the menu loop gracefully
+      echo -e "\n${YELLOW}Non-interactive environment detected; exiting menu.${NC}" >&2
+      break
+    fi
   done
 }
 
