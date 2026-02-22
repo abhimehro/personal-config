@@ -179,6 +179,12 @@ print_status() {
 }
 
 interactive_menu() {
+  # Ensure we only run the interactive menu when both stdin and stdout are TTYs.
+  # This prevents issues when invoked from non-interactive contexts (cron, systemd, redirection).
+  if [[ ! -t 0 || ! -t 1 ]]; then
+    echo "Error: interactive menu requires an interactive terminal (TTY)." >&2
+    return 1
+  fi
   while true; do
     clear
 
