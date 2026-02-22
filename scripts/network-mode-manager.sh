@@ -194,9 +194,13 @@ interactive_menu() {
       if sudo test -L "$config_link"; then
         local target
         target=$(sudo readlink "$config_link" || echo "")
-        if [[ "$target" == *"privacy"* ]]; then active_mode="privacy"; fi
-        if [[ "$target" == *"browsing"* ]]; then active_mode="browsing"; fi
-        if [[ "$target" == *"gaming"* ]]; then active_mode="gaming"; fi
+        local profile_name
+        profile_name=$(basename "$target")
+        profile_name="${profile_name#ctrld.}"
+        profile_name="${profile_name%.toml}"
+        case "$profile_name" in
+          privacy|browsing|gaming) active_mode="$profile_name" ;;
+        esac
       fi
     elif is_vpn_connected; then
       active_mode="vpn"
