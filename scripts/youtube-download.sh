@@ -58,7 +58,7 @@ if [[ -z "$URL" ]] && [[ -t 0 ]]; then
     CLIP_CONTENT=$(pbpaste)
     # Simple heuristic for YouTube URLs
     if [[ "$CLIP_CONTENT" =~ ^https?://(www\.)?(youtube\.com|youtu\.be)/ ]]; then
-      echo -ne "${YELLOW}${E_SEARCH} Found in clipboard: ${BOLD}"; printf "%s" "$CLIP_CONTENT"; echo -e "${NC}"
+      printf "${YELLOW}${E_SEARCH} Found in clipboard: ${BOLD}%s${NC}" "$CLIP_CONTENT"
       read -p "Use this URL? [Y/n] " -n 1 -r REPLY
       echo "" # Newline
       if [[ -z "$REPLY" ]] || [[ "$REPLY" =~ ^[Yy]$ ]]; then
