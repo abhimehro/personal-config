@@ -48,3 +48,11 @@
 ## 2026-02-21 - Persistent Interactive Menus
 **Learning:** Single-shot CLI menus force users to restart the script repeatedly for tasks like "check status -> change setting -> check status". A persistent loop transforms the tool into a dashboard.
 **Action:** When implementing an interactive menu for a state-management script, wrap the logic in a `while true` loop, clear the screen on each iteration, and provide a "Press any key to continue" pause after actions.
+
+## 2026-02-22 - Graceful CLI Exit
+**Learning:** In interactive CLI loops,  can cause immediate crashes when  encounters EOF (e.g., in CI or pipe usage).
+**Action:** Always wrap  commands in  blocks or  to handle non-interactive streams gracefully.
+
+## 2026-03-01 - Graceful CLI Exit
+**Learning:** In interactive CLI loops, `set -e` can cause immediate crashes when `read` encounters EOF (e.g., in CI or pipe usage).
+**Action:** Always wrap `read` commands in `if` blocks or `|| break` to handle non-interactive streams gracefully.

@@ -180,12 +180,8 @@ print_status() {
 
 interactive_menu() {
   while true; do
-    # Use `clear` only when stdout is a TTY, and make failures non-fatal.
-    # This prevents `set -e` from terminating the menu when TERM is unset
-    # or `clear` is not available, while keeping strict error handling
-    # for the rest of the script.
-    if [ -t 1 ]; then
-      clear || true
+    if command -v clear >/dev/null 2>&1; then
+      clear
     fi
 
     local active_mode="none"
@@ -194,13 +190,9 @@ interactive_menu() {
       if sudo test -L "$config_link"; then
         local target
         target=$(sudo readlink "$config_link" || echo "")
-        local profile_name
-        profile_name=$(basename "$target")
-        profile_name="${profile_name#ctrld.}"
-        profile_name="${profile_name%.toml}"
-        case "$profile_name" in
-          privacy|browsing|gaming) active_mode="$profile_name" ;;
-        esac
+        if [[ "$target" == *"privacy"* ]]; then active_mode="privacy"; fi
+        if [[ "$target" == *"browsing"* ]]; then active_mode="browsing"; fi
+        if [[ "$target" == *"gaming"* ]]; then active_mode="gaming"; fi
       fi
     elif is_vpn_connected; then
       active_mode="vpn"
@@ -223,10 +215,8 @@ interactive_menu() {
     echo -e "   0) 🚪 Exit"
 
     echo -ne "\n${BOLD}Select option [0-5]: ${NC}"
+    # Use simple 'read' to handle EOF gracefully
     if ! read -r choice; then
-      # Treat EOF / read failure like selecting "Exit":
-      # break out of the menu loop cleanly instead of letting `set -e` kill the script
-      echo ""
       break
     fi
     choice="${choice:-2}"
@@ -242,7 +232,10 @@ interactive_menu() {
     esac
 
     echo ""
-    read -n 1 -s -r -p "Press any key to continue..."
+    # Use read -n 1 but handle failure (EOF)
+    if ! read -n 1 -s -r -p "Press any key to continue..." 2>/dev/null; then
+      break
+    fi
   done
 }
 
