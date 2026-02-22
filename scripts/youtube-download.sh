@@ -24,11 +24,11 @@ E_VIDEO="🎬"
 E_DOWN="⬇️"
 E_SEARCH="🔍"
 
-info()  { echo -ne "${BLUE}${E_INFO}  [INFO]${NC}  "; printf "%s\n" "$*"; }
-ok()    { echo -ne "${GREEN}${E_OK} [OK]${NC}    "; printf "%s\n" "$*"; }
-warn()  { echo -ne "${YELLOW}${E_WARN}  [WARN]${NC}  "; printf "%s\n" "$*"; }
-err()   { echo -ne "${RED}${E_ERR} [ERR]${NC}   " >&2; printf "%s\n" "$*" >&2; }
-header() { echo -ne "\n${BOLD}${BLUE}"; printf "%s" "$*"; echo -e "${NC}\n"; }
+info()  { printf "${BLUE}${E_INFO}  [INFO]${NC}  %s\n" "$*"; }
+ok()    { printf "${GREEN}${E_OK} [OK]${NC}    %s\n" "$*"; }
+warn()  { printf "${YELLOW}${E_WARN}  [WARN]${NC}  %s\n" "$*"; }
+err()   { printf "${RED}${E_ERR} [ERR]${NC}   %s\n" "$*" >&2; }
+header() { printf "\n${BOLD}${BLUE}%s${NC}\n" "$*"; }
 
 # --- Usage ---
 
