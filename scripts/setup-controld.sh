@@ -102,6 +102,15 @@ if [[ ! -f "$ENV_DEST" ]]; then
     if [[ -f "$ENV_EXAMPLE_SRC" ]]; then
         # 🛡️ Sentinel: Use atomic install to prevent TOCTOU race conditions
         sudo install -m 600 -o root -g wheel "$ENV_EXAMPLE_SRC" "$ENV_DEST"
+
+        # 🛡️ Sentinel: Post-install verification to catch TOCTOU symlink swaps on config file
+        if [[ ! -f "$ENV_DEST" ]]; then
+            error "Post-install verification failed: $ENV_DEST was not created as a regular file. Aborting."
+        fi
+
+        if [[ -L "$ENV_DEST" ]]; then
+            error "Security Alert: $ENV_DEST became a symbolic link after creation. Aborting to prevent hijack."
+        fi
         log "Created $ENV_DEST"
         warn "You must edit $ENV_DEST and add your Control D Profile IDs!"
     else
