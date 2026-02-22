@@ -51,15 +51,13 @@ if [[ -f "$CONTROLD_MANAGER_DEST" ]]; then
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         log "Skipping controld-manager installation"
     else
-        sudo cp "$CONTROLD_MANAGER_SRC" "$CONTROLD_MANAGER_DEST"
-        sudo chmod +x "$CONTROLD_MANAGER_DEST"
-        sudo chown root:wheel "$CONTROLD_MANAGER_DEST"
+        # 🛡️ Sentinel: Use atomic install to prevent TOCTOU race conditions
+        sudo install -m 755 -o root -g wheel "$CONTROLD_MANAGER_SRC" "$CONTROLD_MANAGER_DEST"
         success "controld-manager installed"
     fi
 else
-    sudo cp "$CONTROLD_MANAGER_SRC" "$CONTROLD_MANAGER_DEST"
-    sudo chmod +x "$CONTROLD_MANAGER_DEST"
-    sudo chown root:wheel "$CONTROLD_MANAGER_DEST"
+    # 🛡️ Sentinel: Use atomic install to prevent TOCTOU race conditions
+    sudo install -m 755 -o root -g wheel "$CONTROLD_MANAGER_SRC" "$CONTROLD_MANAGER_DEST"
     success "controld-manager installed"
 fi
 
@@ -81,12 +79,15 @@ if [[ -e "/etc/controld" && ! -d "/etc/controld" ]]; then
     error "/etc/controld exists but is not a directory. Please fix this and rerun the script."
 fi
 
+# 🛡️ Sentinel: Use atomic install to create directory with correct permissions
 if [[ ! -d "/etc/controld" ]]; then
-    sudo mkdir -p "/etc/controld"
+    sudo install -d -m 700 -o root -g wheel "/etc/controld"
+else
+    # Ensure permissions are correct if it already exists
+    sudo chmod 700 "/etc/controld"
+    sudo chown root:wheel "/etc/controld"
 fi
-# 🛡️ Sentinel: Restrict permissions and ownership to root-only
-sudo chmod 700 "/etc/controld"
-sudo chown root:wheel "/etc/controld"
+
 # 🛡️ Sentinel: Post-creation verification to catch TOCTOU symlink swaps
 if [[ -L "/etc/controld" ]]; then
     error "Security Alert: /etc/controld became a symlink after creation. Aborting to prevent hijack."
@@ -99,9 +100,8 @@ fi
 
 if [[ ! -f "$ENV_DEST" ]]; then
     if [[ -f "$ENV_EXAMPLE_SRC" ]]; then
-        sudo cp "$ENV_EXAMPLE_SRC" "$ENV_DEST"
-        sudo chown root:wheel "$ENV_DEST"
-        sudo chmod 600 "$ENV_DEST"
+        # 🛡️ Sentinel: Use atomic install to prevent TOCTOU race conditions
+        sudo install -m 600 -o root -g wheel "$ENV_EXAMPLE_SRC" "$ENV_DEST"
         log "Created $ENV_DEST"
         warn "You must edit $ENV_DEST and add your Control D Profile IDs!"
     else

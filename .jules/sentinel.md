@@ -116,3 +116,8 @@
 **Prevention:** Always use `mktemp` to create temporary files. It generates a unique filename and sets restrictive permissions (0600) atomically. Use `trap` to ensure cleanup.
 
 [CWE-377]: https://cwe.mitre.org/data/definitions/377.html
+
+## 2026-02-22 - Prevent Symlink Hijacking with Atomic Install
+**Vulnerability:** `scripts/setup-controld.sh` used `cp` followed by `chmod` and `chown`, creating a TOCTOU race condition where a malicious user could replace the target with a symlink between operations.
+**Learning:** Multi-step file creation and permission setting is vulnerable to race conditions.
+**Prevention:** Use atomic `install` command (`install -m 755 -o root -g wheel src dest`) which handles copy, permissions, and ownership in a single operation.
