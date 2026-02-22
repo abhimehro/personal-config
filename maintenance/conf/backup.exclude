@@ -7,6 +7,7 @@
 .ssh/*_ed25519
 .ssh/*_ecdsa
 .ssh/authorized_keys
+.ssh/known_hosts
 .gnupg/
 .aws/
 .netrc
