@@ -180,7 +180,13 @@ print_status() {
 
 interactive_menu() {
   while true; do
-    clear
+    # Use `clear` only when stdout is a TTY, and make failures non-fatal.
+    # This prevents `set -e` from terminating the menu when TERM is unset
+    # or `clear` is not available, while keeping strict error handling
+    # for the rest of the script.
+    if [ -t 1 ]; then
+      clear || true
+    fi
 
     local active_mode="none"
     if pgrep -x "ctrld" >/dev/null 2>&1; then
