@@ -17,6 +17,9 @@
 .env
 .env.*
 .secrets/
+*.ovpn
+*.vpn
+vpn.conf
 
 # Shell History (often contains sensitive commands/tokens)
 .bash_history
