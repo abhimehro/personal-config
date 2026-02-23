@@ -8,13 +8,21 @@
 # More examples can be found here:
 #  https://developer.1password.com/docs/ssh/agent/config
 
-# Enable SSH keys from your Personal vault first (for cursor-local)
+# Enable SSH keys from your Personal vault first (for dev-local)
 [[ssh-keys]]
 item = "Personal SSH Key"
 vault = "Personal"
 
 [[ssh-keys]]
-item = "Private SSH Key"
+item = “GitHub SSH Key"
+vault = "Personal"
+
+[[ssh-keys]]
+item = “Ollama SSH Key"
+vault = "Personal"
+
+[[ssh-keys]]
+item = “Render Deploy Key"
 vault = "Personal"
 
 # Enable all SSH keys from Private vault as fallback
