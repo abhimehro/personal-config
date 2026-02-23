@@ -44,3 +44,7 @@
 ## 2025-05-15 - CLI Micro-Interactions
 **Learning:** Even simple CLI tools benefit significantly from "web-like" UX patterns: clear headers, explicit loading states ("Thinking..."), and graceful exit handling (Ctrl+C). Users expect feedback for every action, including empty input.
 **Action:** Always add a SIGINT handler to CLI tools to restore cursor state and say goodbye. Use box-drawing characters for CLI headers to frame the experience.
+
+## 2026-02-23 - Contextual Delight in CLI
+**Learning:** Adding variable feedback (e.g., random loading messages) and contextual greetings transforms a utilitarian tool into a delightful experience, reducing perceived latency.
+**Action:** When implementing loading states or startup banners, consider using dynamic text based on time or random selection to add personality.

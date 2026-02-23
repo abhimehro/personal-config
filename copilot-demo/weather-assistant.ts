@@ -17,6 +17,15 @@ const ANSI = {
 const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 let spinnerInterval: NodeJS.Timeout | undefined;
 
+const thinkingMessages = [
+  "Consulting the clouds...",
+  "Checking satellite data...",
+  "Asking the wind...",
+  "Reading the barometer...",
+  "Forecasting...",
+  "Looking at the sky...",
+];
+
 const stopSpinner = () => {
   if (spinnerInterval) {
     clearInterval(spinnerInterval);
@@ -30,10 +39,11 @@ const stopSpinner = () => {
 const startSpinner = () => {
   if (spinnerInterval) return; // Prevent multiple spinners
   let i = 0;
+  const msg = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
   process.stdout.write(ANSI.HideCursor);
   spinnerInterval = setInterval(() => {
     process.stdout.write(
-      `\r${COLORS.Green}Assistant:${COLORS.Reset} ${spinnerFrames[i]} ${COLORS.Dim}(Thinking...)${COLORS.Reset}`,
+      `\r${COLORS.Green}Assistant:${COLORS.Reset} ${spinnerFrames[i]} ${COLORS.Dim}(${msg})${COLORS.Reset}`,
     );
     i = (i + 1) % spinnerFrames.length;
   }, 80);
@@ -100,6 +110,9 @@ const getWeather = defineTool("get_weather", {
       const response = await fetch(
         `https://wttr.in/${encodeURIComponent(city)}?format=j1`,
       );
+      if (!response.ok) {
+        return { error: `Weather data not found for ${city}` };
+      }
       const data = await response.json();
       const current = data.current_condition[0];
       const condition = current.weatherDesc[0].value;
@@ -144,12 +157,20 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 5) return "Burning the midnight oil? 🦉";
+  if (hour < 12) return "Good morning! 🌅";
+  if (hour < 18) return "Good afternoon! ☀️";
+  return "Good evening! 🌙";
+};
+
 console.log(`${COLORS.Cyan}
 ╔══════════════════════════════════════════════╗
 ║           🌤️  Weather Assistant CLI          ║
 ╚══════════════════════════════════════════════╝${COLORS.Reset}`);
 console.log(
-  `${COLORS.Dim}   Try: 'What's the weather in Paris?' (or type 'help')${COLORS.Reset}\n`,
+  `${COLORS.Dim}   ${getGreeting()} Try: 'What's the weather in Paris?'${COLORS.Reset}\n`,
 );
 
 // Graceful shutdown on Ctrl+C
@@ -173,6 +194,12 @@ const prompt = () => {
       return;
     }
 
+    if (input.trim().toLowerCase() === "clear") {
+      console.clear();
+      prompt();
+      return;
+    }
+
     if (input.toLowerCase() === "exit") {
       console.log(`${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
       await client.stop();
@@ -192,6 +219,7 @@ ${COLORS.Cyan}💡 Examples:${COLORS.Reset}
   • "What time is it?"
 
 ${COLORS.Cyan}Commands:${COLORS.Reset}
+  • clear - Clear the screen
   • help - Show this message
   • exit - Quit the application
 `);
