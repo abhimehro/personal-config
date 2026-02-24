@@ -177,3 +177,24 @@ If you are operating as an agent in this repo, align with:
 - `docs/archive/AGENTS.md` and `docs/archive/WARP.md` contain older guidance. Consider either:
   - deleting them to avoid drift, or
   - replacing them with a short pointer to this root `AGENTS.md`.
+
+## Cursor Cloud specific instructions
+
+This is a macOS-focused dotfiles/IaC repo. There are no web services or databases to start. The dev workflow is: edit scripts, lint, and run tests.
+
+### Key services and how to run them
+
+| What | Command | Notes |
+|---|---|---|
+| Python tests | `python3 -m unittest discover -s tests -p 'test_*.py'` | stdlib only, no pip deps |
+| Shell tests | `for f in tests/test_*.sh; do bash "$f"; done` | 4 tests require macOS (fish, 1Password, macOS sed, media auth) — these are expected failures on Linux |
+| Lint (all) | `trunk check --all` | Trunk downloads its own tool versions on first run |
+| Format | `trunk fmt` | Auto-fixes where supported |
+
+### Non-obvious caveats
+
+- **Trunk first-run latency**: The first `trunk check` or `trunk fmt` invocation downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`. Subsequent runs are fast. The update script installs the Trunk launcher, but tool downloads happen lazily.
+- **No `requirements.txt`**: Python tests and scripts use only the standard library. No `pip install` is needed for the test suite.
+- **`package.json` is empty**: The root `package.json` is `{}` — it exists as a Trunk runtime anchor for Node-based linters (prettier, markdownlint). Do not run `npm install`.
+- **macOS-specific test failures on Linux**: `test_config_fish.sh` (needs fish), `test_ssh_config.sh` (needs 1Password agent socket), `test_security_manager_restore.sh` (BSD sed syntax), and `test_media_server_auth.sh` (credential flow assertion) fail on Linux. These are not bugs.
+- **`setup.sh` is macOS-only**: Do not run `./setup.sh` on Linux — it calls `launchctl`, Homebrew, and macOS system utilities.
