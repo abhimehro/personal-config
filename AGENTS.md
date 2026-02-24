@@ -187,7 +187,7 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 | What | Command | Notes |
 |---|---|---|
 | Python tests | `python3 -m unittest discover -s tests -p 'test_*.py'` | stdlib only, no pip deps |
-| Shell tests | `for f in tests/test_*.sh; do bash "$f"; done` | 4 tests require macOS (fish, 1Password, macOS sed, media auth) — these are expected failures on Linux |
+| Shell tests | `for f in tests/test_*.sh; do bash "$f"; done` | Some tests are expected to fail on Linux; see caveats below. |
 | Lint (all) | `trunk check --all` | Trunk downloads its own tool versions on first run |
 | Format | `trunk fmt` | Auto-fixes where supported |
 
