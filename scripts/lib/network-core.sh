@@ -24,6 +24,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 BOLD='\033[1m'
+GRAY='\033[0;90m'
 NC='\033[0m'
 
 # --- Emojis ---
@@ -36,7 +37,7 @@ E_BROWSING="🌐"
 E_VPN="🔐"
 
 # Export for use in scripts that source this library
-export RED GREEN YELLOW BLUE BOLD NC
+export RED GREEN YELLOW BLUE BOLD GRAY NC
 export E_PASS E_FAIL E_INFO E_PRIVACY E_GAMING E_BROWSING E_VPN
 
 # --- Logging ---

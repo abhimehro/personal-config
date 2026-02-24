@@ -201,11 +201,30 @@ interactive_menu() {
     vpn)      m_vpn="${GREEN}✅${NC}" ;;
   esac
 
+  local display_mode="None"
+  case "$active_mode" in
+    privacy)  display_mode="Privacy" ;;
+    browsing) display_mode="Browsing" ;;
+    gaming)   display_mode="Gaming" ;;
+    vpn)      display_mode="VPN" ;;
+  esac
+
   echo -e "\n${BOLD}${BLUE}🎨 Network Mode Manager${NC}"
+  echo -e "   ${BOLD}Current Mode:${NC} ${GREEN}${display_mode}${NC}"
+  echo -e "${BLUE}   ─────────────────────${NC}"
+
   echo -e "   1) ${E_PRIVACY} Control D (Privacy)          $m_priv"
+  echo -e "      ${GRAY}Malware & tracking protection${NC}"
+
   echo -e "   2) ${E_BROWSING} Control D (Browsing)         $m_brow ${YELLOW}[Default]${NC}"
+  echo -e "      ${GRAY}Balanced protection${NC}"
+
   echo -e "   3) ${E_GAMING} Control D (Gaming)           $m_game"
+  echo -e "      ${GRAY}Max performance, min filtering${NC}"
+
   echo -e "   4) ${E_VPN} Windscribe (VPN)             $m_vpn"
+  echo -e "      ${GRAY}Full traffic encryption${NC}"
+
   echo -e "   5) ${E_INFO} Show Status"
   echo -e "   0) 🚪 Exit"
 
