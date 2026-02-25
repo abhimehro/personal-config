@@ -83,11 +83,7 @@ start_controld() {
 
   local controld_manager="/usr/local/bin/controld-manager"
   if [[ ! -x "$controld_manager" ]]; then
-    controld_manager="$REPO_ROOT/controld-system/scripts/controld-manager"
-    if [[ ! -x "$controld_manager" ]]; then
-      error "controld-manager script not found in /usr/local/bin or at $controld_manager"
-    fi
-    log "Using local controld-manager: $controld_manager"
+    error "controld-manager script not found in /usr/local/bin. Please run 'scripts/setup-controld.sh' to install it securely."
   fi
 
   # Call switch with profile and optional protocol override
