@@ -202,11 +202,12 @@ interactive_menu() {
   esac
 
   echo -e "\n${BOLD}${BLUE}🎨 Network Mode Manager${NC}"
-  echo -e "   1) ${E_PRIVACY} Control D (Privacy)          $m_priv"
-  echo -e "   2) ${E_BROWSING} Control D (Browsing)         $m_brow ${YELLOW}[Default]${NC}"
-  echo -e "   3) ${E_GAMING} Control D (Gaming)           $m_game"
-  echo -e "   4) ${E_VPN} Windscribe (VPN)             $m_vpn"
-  echo -e "   5) ${E_INFO} Show Status"
+  echo -e "   1) ${E_PRIVACY} Privacy     (Enhanced security & tracking protection)   $m_priv"
+  echo -e "   2) ${E_BROWSING} Browsing    (Balanced protection for daily use)         $m_brow ${YELLOW}[Default]${NC}"
+  echo -e "   3) ${E_GAMING} Gaming      (Low latency & performance focused)         $m_game"
+  echo -e "   4) ${E_VPN} VPN         (Full encryption via Windscribe)            $m_vpn"
+  echo -e "   5) ${E_INFO} Status      (Check active network configuration)"
+  echo -e ""
   echo -e "   0) 🚪 Exit"
 
   echo -ne "\n${BOLD}Select option [0-5]: ${NC}"

@@ -44,3 +44,7 @@
 ## 2025-05-15 - CLI Micro-Interactions
 **Learning:** Even simple CLI tools benefit significantly from "web-like" UX patterns: clear headers, explicit loading states ("Thinking..."), and graceful exit handling (Ctrl+C). Users expect feedback for every action, including empty input.
 **Action:** Always add a SIGINT handler to CLI tools to restore cursor state and say goodbye. Use box-drawing characters for CLI headers to frame the experience.
+
+## 2026-03-05 - Descriptive Menus in CLI
+**Learning:** Users hesitate when choosing between abstract options (e.g., "Privacy" vs "Browsing"). Adding short, parenthetical descriptions to menu items reduces cognitive load and prevents "fear of missing out" on the right choice.
+**Action:** In interactive menus, align options and append brief, lighter-colored (or parenthetical) descriptions to clarify the intent of each choice without cluttering the primary label.
