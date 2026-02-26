@@ -48,7 +48,7 @@ log() {
     local script_name="${source_path##*/}"
     script_name="${script_name%.sh}"
 
-    local line="$ts [$level] [$script_name] $@"
+    local line="$ts [$level] [$script_name] $*"
     
     echo "$line" | tee -a "$LOG_DIR/${script_name}.log" 2>/dev/null || echo "$line"
 }

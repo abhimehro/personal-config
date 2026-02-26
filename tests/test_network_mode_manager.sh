@@ -17,13 +17,13 @@ export PATH="$MOCK_BIN:$PATH"
 # Create mocks
 cat > "$MOCK_BIN/ctrld" << 'EOF'
 #!/bin/bash
-echo "MOCK CTRLD CALLED: $@"
+echo "MOCK CTRLD CALLED: $*"
 EOF
 chmod +x "$MOCK_BIN/ctrld"
 
 cat > "$MOCK_BIN/networksetup" << 'EOF'
 #!/bin/bash
-echo "MOCK NETWORKSETUP CALLED: $@"
+echo "MOCK NETWORKSETUP CALLED: $*"
 EOF
 chmod +x "$MOCK_BIN/networksetup"
 
@@ -38,14 +38,14 @@ chmod +x "$MOCK_BIN/scutil"
 # Mock IPv6 Manager
 MOCK_IPV6="$TEST_DIR/ipv6-manager.sh"
 echo '#!/bin/bash' > "$MOCK_IPV6"
-echo 'echo "MOCK IPV6 CALLED: $@"' >> "$MOCK_IPV6"
+echo 'echo "MOCK IPV6 CALLED: $*"' >> "$MOCK_IPV6"
 chmod +x "$MOCK_IPV6"
 
 # Mock controld-manager
 MOCK_CD_MGR="$TEST_DIR/controld-manager"
 cat > "$MOCK_CD_MGR" << 'EOF'
 #!/bin/bash
-echo "MOCK CONTROLD-MANAGER CALLED: $@"
+echo "MOCK CONTROLD-MANAGER CALLED: $*"
 EOF
 chmod +x "$MOCK_CD_MGR"
 
