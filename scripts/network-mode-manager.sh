@@ -209,19 +209,21 @@ interactive_menu() {
   echo -e "   5) ${E_INFO} Show Status"
   echo -e "   0) 🚪 Exit"
 
-  echo -ne "\n${BOLD}Select option [0-5]: ${NC}"
-  read -r choice
-  choice="${choice:-2}"
+  while true; do
+    echo -ne "\n${BOLD}Select option [0-5] (Enter for Default): ${NC}"
+    read -r choice
+    choice="${choice:-2}"
 
-  case "$choice" in
-    1) main "controld" "privacy" ;;
-    2) main "controld" "browsing" ;;
-    3) main "controld" "gaming" ;;
-    4) main "windscribe" ;;
-    5) main "status" ;;
-    0) exit 0 ;;
-    *) error "Invalid option" ;;
-  esac
+    case "$choice" in
+      1) main "controld" "privacy"; return ;;
+      2) main "controld" "browsing"; return ;;
+      3) main "controld" "gaming"; return ;;
+      4) main "windscribe"; return ;;
+      5) main "status"; return ;;
+      0) exit 0 ;;
+      *) echo -e "${RED}Invalid option, please try again.${NC}" ;;
+    esac
+  done
 }
 
 main() {
