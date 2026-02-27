@@ -122,6 +122,7 @@ check "is_wifi_connected returns true when SSID is set" is_wifi_connected
 echo ""
 echo "-- source guard --"
 # Re-sourcing should be a no-op (guard prevents re-execution)
+OLD_PASS=$PASS
 source "$REPO_ROOT/scripts/lib/network-utils.sh"
 check "source guard prevents duplicate initialisation" test "$_NETWORK_UTILS_SH_" = "true"
 

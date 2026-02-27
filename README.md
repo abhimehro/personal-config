@@ -106,20 +106,6 @@ ssh dev-auto   # Smart alias / fallback
 > in `~/.ssh/config.local`. See the **Troubleshooting** section below if
 > connections fail.
 
-### Run Performance Benchmarks
-```bash
-# Install hyperfine (one-time setup — required)
-brew install hyperfine
-
-# Benchmark all critical scripts
-make benchmark
-
-# Benchmark a specific script
-./tests/benchmarks/benchmark_scripts.sh nm-status
-
-# Available targets: nm-status, sync-all, verify-all, all
-```
-
 ### Legacy DNS Management (v3.x)
 ```bash
 # Alternative direct DNS switching (without VPN)

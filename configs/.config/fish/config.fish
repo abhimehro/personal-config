@@ -313,3 +313,7 @@ end
 
 # History Setup
 set -g fish_history_limit 10000
+
+
+# Mole shell completion
+set -l output (mole completion fish 2>/dev/null); and echo "$output" | source

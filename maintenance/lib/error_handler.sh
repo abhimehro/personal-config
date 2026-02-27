@@ -106,6 +106,7 @@ circuit_breaker_check() {
     local failure_threshold="${2:-5}"
     local recovery_timeout="${3:-300}" # 5 minutes default
     
+    local state_key="circuit_breaker_${service_name}"
     local current_time=$(date +%s)
     
     # Get current state

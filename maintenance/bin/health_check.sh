@@ -34,7 +34,7 @@ percent_used() {
 run_with_timeout() {
     local timeout_seconds="$1"
     shift
-    local cmd="$*"
+    local cmd="$@"
     
     # Use timeout if available (installed via homebrew coreutils)
     if command -v gtimeout >/dev/null 2>&1; then
@@ -135,6 +135,7 @@ if ! [[ "$HOURS" =~ ^[0-9]+$ ]]; then
 fi
 
 PANIC_DETAILS=""
+PANIC_FILES=""
 MOST_RECENT_PANIC=""
 
 log_info "Checking for kernel panics (with 10s timeout)..."
@@ -151,6 +152,7 @@ if [[ -d "$PANIC_DIR" ]]; then
     if [[ -n "$MOST_RECENT_PANIC" ]]; then
       PANIC_TIMESTAMP=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$MOST_RECENT_PANIC" 2>/dev/null || echo "unknown")
       PANIC_DETAILS="Most recent panic: $(basename "$MOST_RECENT_PANIC") at $PANIC_TIMESTAMP"
+      PANIC_FILES="$MOST_RECENT_PANIC"
       log_warn "Found panic report: $MOST_RECENT_PANIC"
     fi
     

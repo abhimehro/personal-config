@@ -21,7 +21,7 @@ log_warn() {
 # Prefer gtimeout (coreutils) if available, else use a simple kill-based timeout.
 run_with_timeout() {
     local timeout_seconds="$1"; shift
-    local cmd="$*"
+    local cmd="$@"
 
     if command -v gtimeout >/dev/null 2>&1; then
         gtimeout "$timeout_seconds" bash -c "$cmd" 2>/dev/null || true

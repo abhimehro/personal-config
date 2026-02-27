@@ -185,6 +185,7 @@ append ""
 
 # 7) Docker and VM images
 append "=== DOCKER AND VIRTUAL MACHINE FILES ==="
+DOCKER_DIR="${HOME}/Library/Containers/com.docker.docker/Data"
 VM_DIRS=(
     "${HOME}/Virtual Machines.localized"
     "${HOME}/Documents/Virtual Machines"

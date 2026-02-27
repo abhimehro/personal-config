@@ -28,8 +28,8 @@ log_error() { log_message "ERROR" "$@"; }
 
 # System load assessment
 get_system_load() {
-    local load_1min cpu_count
-    read -r load_1min _ _ < <(uptime | awk '{print $(NF-2), $(NF-1), $NF}' | tr ',' ' ')
+    local load_1min load_5min load_15min cpu_count
+    read -r load_1min load_5min load_15min < <(uptime | awk '{print $(NF-2), $(NF-1), $NF}' | tr ',' ' ')
     cpu_count=$(sysctl -n hw.ncpu)
     
     # Calculate load percentage (1min load / cpu_count * 100)
@@ -48,6 +48,7 @@ get_memory_usage() {
 
 # Disk I/O assessment
 get_disk_io_load() {
+    local io_load
     # Simple disk I/O test - time a small write operation
     local start_time end_time duration
     start_time=$(gdate +%s.%3N 2>/dev/null || date +%s)
@@ -183,6 +184,8 @@ smart_delay() {
 # Adaptive rescheduling
 adaptive_reschedule() {
     local task_name="$1"
+    local current_time="$2"
+    local max_reschedule_hours="${3:-4}"
     
     log_info "Attempting adaptive reschedule for $task_name"
     
@@ -223,6 +226,7 @@ analyze_schedule_performance() {
     
     # Analyze timing patterns
     local optimal_hours=()
+    local current_hour
     
     for hour in {0..23}; do
         local hour_load=0

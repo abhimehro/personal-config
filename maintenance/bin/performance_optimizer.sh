@@ -362,6 +362,8 @@ run_benchmark() {
     
     # Memory benchmark
     log_info "Running memory benchmark..."
+    local mem_start mem_end mem_time
+    mem_start=$(date +%s.%3N)
     # Simple memory allocation test
     python3 -c "
 import time
