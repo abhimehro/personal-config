@@ -22,22 +22,16 @@ if [ -f ~/.ssh/config ]; then
     echo "✅ Backup created"
 fi
 
-# Create SSH directory if it doesn't exist
-mkdir -p ~/.ssh
-chmod 700 ~/.ssh
+# Create SSH directory if it doesn't exist securely (avoids TOCTOU)
+install -d -m 700 ~/.ssh
 
-# Copy configuration files
+# Copy configuration files atomically with secure permissions
 echo "📁 Installing SSH configuration files..."
-cp "$REPO_ROOT/configs/ssh/config" ~/.ssh/config
-cp "$REPO_ROOT/configs/ssh/agent.toml" ~/.ssh/agent.toml
+install -m 600 "$REPO_ROOT/configs/ssh/config" ~/.ssh/config
+install -m 600 "$REPO_ROOT/configs/ssh/agent.toml" ~/.ssh/agent.toml
 
-# Set proper permissions
-chmod 600 ~/.ssh/config
-chmod 600 ~/.ssh/agent.toml
-
-# Create control directory
-mkdir -p ~/.ssh/control
-chmod 700 ~/.ssh/control
+# Create control directory securely (avoids TOCTOU)
+install -d -m 700 ~/.ssh/control
 
 # Copy and make scripts executable
 echo "📜 Installing SSH scripts..."
