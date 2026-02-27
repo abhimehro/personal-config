@@ -83,11 +83,9 @@ start_controld() {
 
   local controld_manager="/usr/local/bin/controld-manager"
   if [[ ! -x "$controld_manager" ]]; then
-    controld_manager="$REPO_ROOT/controld-system/scripts/controld-manager"
-    if [[ ! -x "$controld_manager" ]]; then
-      error "controld-manager script not found in /usr/local/bin or at $controld_manager"
-    fi
-    log "Using local controld-manager: $controld_manager"
+    # SECURITY: Do NOT fall back to local script. Privileged execution must be from a trusted system path.
+    # See .jules/sentinel.md (2026-01-23 - Privilege Escalation in Helper Scripts)
+    error "controld-manager script not found at $controld_manager. Please install it first (see setup.sh)."
   fi
 
   # Call switch with profile and optional protocol override

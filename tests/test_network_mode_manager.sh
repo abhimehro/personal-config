@@ -41,8 +41,12 @@ echo '#!/bin/bash' > "$MOCK_IPV6"
 echo 'echo "MOCK IPV6 CALLED: $*"' >> "$MOCK_IPV6"
 chmod +x "$MOCK_IPV6"
 
-# Mock controld-manager
-MOCK_CD_MGR="$TEST_DIR/controld-manager"
+# Mock controld-manager in /usr/local/bin
+# We need to simulate the installed location for the secure path check
+MOCK_USR_LOCAL_BIN="$TEST_DIR/usr/local/bin"
+mkdir -p "$MOCK_USR_LOCAL_BIN"
+MOCK_CD_MGR="$MOCK_USR_LOCAL_BIN/controld-manager"
+
 cat > "$MOCK_CD_MGR" << 'EOF'
 #!/bin/bash
 echo "MOCK CONTROLD-MANAGER CALLED: $*"
@@ -64,10 +68,11 @@ cp scripts/lib/network-core.sh "$TEST_DIR/lib/"
 # Use portable sed syntax (works on both macOS and Linux)
 if [[ "$(uname -s)" == "Darwin" ]]; then
     sed -i '' "s|IPV6_MANAGER=\".*\"|IPV6_MANAGER=\"$MOCK_IPV6\"|" "$TEST_MANAGER"
-    sed -i '' "s|local controld_manager=\".*\"|local controld_manager=\"$MOCK_CD_MGR\"|" "$TEST_MANAGER"
+    # Update the hardcoded path check to point to our mock "usr/local/bin"
+    sed -i '' "s|/usr/local/bin/controld-manager|$MOCK_CD_MGR|" "$TEST_MANAGER"
 else
     sed -i "s|IPV6_MANAGER=\".*\"|IPV6_MANAGER=\"$MOCK_IPV6\"|" "$TEST_MANAGER"
-    sed -i "s|local controld_manager=\".*\"|local controld_manager=\"$MOCK_CD_MGR\"|" "$TEST_MANAGER"
+    sed -i "s|/usr/local/bin/controld-manager|$MOCK_CD_MGR|" "$TEST_MANAGER"
 fi
 
 # Helper to run test
