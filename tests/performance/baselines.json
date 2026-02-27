@@ -12,11 +12,6 @@
       "stddev": 0.02,
       "description": "scripts/network-mode-manager.sh status"
     },
-    "sync_all_configs": {
-      "mean": 0.50,
-      "stddev": 0.10,
-      "description": "scripts/sync_all_configs.sh"
-    },
     "verify_all_configs": {
       "mean": 0.40,
       "stddev": 0.08,
