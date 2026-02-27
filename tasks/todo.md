@@ -16,4 +16,4 @@
 - [x] Draft a reusable GitHub App permission checklist for multi-repo PR automation.
 - [x] Implement a fail-fast preflight script that validates auth, repo access, PR visibility, and effective action capabilities before triage starts.
 - [x] Run the preflight script against current repos in read-only mode and capture example output.
-- [ ] Commit and push the new checklist + script + plan updates.
+- [x] Commit and push the new checklist + script + plan updates.
