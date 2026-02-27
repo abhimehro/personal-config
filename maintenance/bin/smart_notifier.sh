@@ -303,23 +303,19 @@ task_completion_notification() {
     
     local priority="success"
     local title="✅ $task_name Completed"
-    local emoji="✅"
     
     case "$status" in
         "failed")
             priority="warning"
             title="❌ $task_name Failed"
-            emoji="❌"
             ;;
         "partial")
             priority="warning"
             title="⚠️ $task_name Completed with Issues"
-            emoji="⚠️"
             ;;
         "completed")
             priority="success"
             title="✅ $task_name Completed"
-            emoji="✅"
             ;;
     esac
     
@@ -458,16 +454,13 @@ batch_summary_notification() {
     
     local priority="info"
     local title="📋 ${period^} Summary"
-    local emoji="📋"
     
     if [[ ${failed_tasks:-0} -gt 0 ]]; then
         priority="warning"
         title="⚠️ ${period^} Summary (Issues Detected)"
-        emoji="⚠️"
     else
         priority="success"
         title="✅ ${period^} Summary"
-        emoji="✅"
     fi
     
     local success_rate=0
