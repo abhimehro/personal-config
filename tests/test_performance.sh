@@ -89,7 +89,8 @@ run_bench() {
     local warmup="${2:-$WARMUP_RUNS}"
     local runs="${3:-$BENCHMARK_RUNS}"
     local tmp
-    tmp=$(mktemp /tmp/perf_bench.XXXXXX.json)
+    # Use TMPDIR when set, falling back to /tmp, to respect environment isolation
+    tmp="$(mktemp "${TMPDIR:-/tmp}/perf_bench.XXXXXX.json")"
 
     # hyperfine writes JSON result; --shell=none avoids extra shell overhead
     hyperfine \
