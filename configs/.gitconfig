@@ -2,8 +2,6 @@
 	name = Abhi Mehrotra
 	email = abhimehro@pm.me
 	signingkey = key::ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJoWdkOM4r8DcuM2m0Q5bCYamjwJHVw7gm98v5liGpvr GitHub SSH Key
-[gpg]
-	format = ssh
 [gpg "ssh"]
 	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
 [commit]
@@ -13,3 +11,5 @@
 	excludesfile = /Users/speedybee/.gitignore_global
 [mergetool]
 	keepBackup = true
+[gpg]
+	format = ssh
