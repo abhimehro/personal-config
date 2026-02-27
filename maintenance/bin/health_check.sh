@@ -34,7 +34,7 @@ percent_used() {
 run_with_timeout() {
     local timeout_seconds="$1"
     shift
-    local cmd="$@"
+    local cmd="$*"
     
     # Use timeout if available (installed via homebrew coreutils)
     if command -v gtimeout >/dev/null 2>&1; then
