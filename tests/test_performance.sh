@@ -186,20 +186,64 @@ bench_and_check() {
     printf "  mean: %.3fs\n" "$mean"
 
     if [[ "$UPDATE_BASELINES" == true ]]; then
-        # Write/update the baseline entry for this key
-        python3 - "$BASELINES_FILE" "$key" "$mean" "$cmd" <<'PYEOF'
-import sys, json
-baselines_path = sys.argv[1]
-key            = sys.argv[2]
-mean           = float(sys.argv[3])
-description    = sys.argv[4]
+        # Write/update the baseline entry for this key.
+        # We pass the previously measured mean as a fallback, along with
+        # warmup/run counts so Python can re-run hyperfine and read its JSON.
+        python3 - "$BASELINES_FILE" "$key" "$mean" "$cmd" "$WARMUP_RUNS" "$BENCHMARK_RUNS" <<'PYEOF'
+import sys, json, subprocess
+
+baselines_path  = sys.argv[1]
+key             = sys.argv[2]
+fallback_mean   = float(sys.argv[3])
+description     = sys.argv[4]
+warmup_runs     = int(sys.argv[5])
+benchmark_runs  = int(sys.argv[6])
+
+# Attempt to obtain both mean and stddev directly from hyperfine's JSON
+# output. This ensures baselines reflect the true variance of the benchmark
+# rather than a fixed-percentage heuristic. We keep a conservative fallback
+# to avoid breaking the harness if hyperfine is unavailable or fails.
+try:
+    proc = subprocess.run(
+        [
+            "hyperfine",
+            "--warmup",
+            str(warmup_runs),
+            "--runs",
+            str(benchmark_runs),
+            "--export-json",
+            "/dev/stdout",
+            description,
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    hf_data = json.loads(proc.stdout)
+    results = hf_data.get("results", [])
+    if not results:
+        raise RuntimeError("hyperfine JSON contained no results")
+    result = results[0]
+    mean = float(result.get("mean", fallback_mean))
+    stddev = float(result.get("stddev", mean * 0.20))
+except Exception as e:
+    # Fallback: use the previously measured mean and a conservative 20 %
+    # stddev estimate. This preserves prior behavior while surfacing a
+    # warning so regressions in our benchmarking harness are visible.
+    print(
+        f"WARNING: Failed to obtain mean/stddev from hyperfine JSON for "
+        f"key '{key}': {e}. Falling back to conservative estimate.",
+        file=sys.stderr,
+    )
+    mean = fallback_mean
+    stddev = fallback_mean * 0.20
 
 with open(baselines_path) as f:
     data = json.load(f)
 
 data.setdefault("operations", {})[key] = {
     "mean":        round(mean, 4),
-    "stddev":      round(mean * 0.20, 4),   # conservative 20 % estimate
+    "stddev":      round(stddev, 4),
     "description": description
 }
 
