@@ -55,7 +55,7 @@
     "maintenance_quick_cleanup": {
       "mean": 0.25,
       "stddev": 0.05,
-      "description": "maintenance/bin/quick_cleanup.sh --dry-run"
+      "description": "maintenance/bin/quick_cleanup.sh"
     }
   }
 }
