@@ -201,27 +201,29 @@ interactive_menu() {
     vpn)      m_vpn="${GREEN}✅${NC}" ;;
   esac
 
-  echo -e "\n${BOLD}${BLUE}🎨 Network Mode Manager${NC}"
-  echo -e "   1) ${E_PRIVACY} Control D (Privacy)          $m_priv"
-  echo -e "   2) ${E_BROWSING} Control D (Browsing)         $m_brow ${YELLOW}[Default]${NC}"
-  echo -e "   3) ${E_GAMING} Control D (Gaming)           $m_game"
-  echo -e "   4) ${E_VPN} Windscribe (VPN)             $m_vpn"
-  echo -e "   5) ${E_INFO} Show Status"
-  echo -e "   0) 🚪 Exit"
+  while true; do
+    echo -e "\n${BOLD}${BLUE}🎨 Network Mode Manager${NC}"
+    echo -e "   1) ${E_PRIVACY} Control D (Privacy)          $m_priv"
+    echo -e "   2) ${E_BROWSING} Control D (Browsing)         $m_brow ${YELLOW}[Default]${NC}"
+    echo -e "   3) ${E_GAMING} Control D (Gaming)           $m_game"
+    echo -e "   4) ${E_VPN} Windscribe (VPN)             $m_vpn"
+    echo -e "   5) ${E_INFO} Show Status"
+    echo -e "   0) 🚪 Exit"
 
-  echo -ne "\n${BOLD}Select option [0-5]: ${NC}"
-  read -r choice
-  choice="${choice:-2}"
+    echo -ne "\n${BOLD}Select option [0-5]: ${NC}"
+    read -r choice
+    choice="${choice:-2}"
 
-  case "$choice" in
-    1) main "controld" "privacy" ;;
-    2) main "controld" "browsing" ;;
-    3) main "controld" "gaming" ;;
-    4) main "windscribe" ;;
-    5) main "status" ;;
-    0) exit 0 ;;
-    *) error "Invalid option" ;;
-  esac
+    case "$choice" in
+      1) main "controld" "privacy"; exit 0 ;;
+      2) main "controld" "browsing"; exit 0 ;;
+      3) main "controld" "gaming"; exit 0 ;;
+      4) main "windscribe"; exit 0 ;;
+      5) main "status"; exit 0 ;;
+      0) exit 0 ;;
+      *) echo -e "${YELLOW}⚠️ [WARN]${NC} Invalid option. Please try again." ;;
+    esac
+  done
 }
 
 main() {

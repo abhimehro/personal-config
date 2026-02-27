@@ -44,3 +44,7 @@
 ## 2025-05-15 - CLI Micro-Interactions
 **Learning:** Even simple CLI tools benefit significantly from "web-like" UX patterns: clear headers, explicit loading states ("Thinking..."), and graceful exit handling (Ctrl+C). Users expect feedback for every action, including empty input.
 **Action:** Always add a SIGINT handler to CLI tools to restore cursor state and say goodbye. Use box-drawing characters for CLI headers to frame the experience.
+
+## 2026-03-05 - Forgiving Interactive CLI Menus
+**Learning:** Hard-exiting an interactive CLI menu when a user makes a typo or enters an invalid option creates a frustrating, unforgiving experience. Users expect a chance to correct their mistake without restarting the command.
+**Action:** Always wrap interactive menu inputs in a loop (`while true; do ... done`) and gracefully handle invalid inputs with a warning message, allowing the user to try again instead of forcefully exiting the script.
