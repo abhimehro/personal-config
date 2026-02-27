@@ -14,7 +14,11 @@ _CTRLD_REPO_ROOT="$(cd "$_CTRLD_MGR_DIR/../.." && pwd)"
 _CTRLD_SCRIPTS_LIB="$_CTRLD_REPO_ROOT/scripts/lib"
 
 # Source shared libraries when available (not present in standalone installs)
-for _lib in "$_CTRLD_SCRIPTS_LIB/common.sh" "$_CTRLD_SCRIPTS_LIB/dns-utils.sh"; do
+for _lib in \
+    "$_CTRLD_SCRIPTS_LIB/common.sh" \
+    "$_CTRLD_SCRIPTS_LIB/dns-utils.sh" \
+    "$_CTRLD_SCRIPTS_LIB/network-common.sh" \
+    "$_CTRLD_SCRIPTS_LIB/file-common.sh"; do
     if [[ -f "$_lib" ]]; then
         # shellcheck source=/dev/null
         source "$_lib"
@@ -43,15 +47,23 @@ fi
 # explicit protocol override (e.g., `controld-manager switch privacy doh`).
 
 # Validation helper
+# Delegates to validate_dns_protocol from network-common.sh when available,
+# otherwise falls back to the inline implementation.
 validate_protocol() {
     local proto="$1"
+    if command -v validate_dns_protocol >/dev/null 2>&1; then
+        validate_dns_protocol "$proto"
+        return
+    fi
     case "$proto" in
         doh|doh3) return 0 ;;
         *) return 1 ;;
     esac
 }
 
-# Validate profile ID format (pure predicate - no logging)
+# validate_profile_id – provided by network-common.sh when available.
+# Inline fallback for standalone installs.
+if ! command -v validate_profile_id >/dev/null 2>&1; then
 validate_profile_id() {
     local profile_id="$1"
     # Profile IDs should be alphanumeric (lowercase letters and numbers), typically 10 chars
@@ -64,8 +76,11 @@ validate_profile_id() {
     fi
     return 0
 }
+fi
 
-# Redact profile ID for safe logging (show first 3 and last 2 chars)
+# redact_profile_id – provided by network-common.sh when available.
+# Inline fallback for standalone installs.
+if ! command -v redact_profile_id >/dev/null 2>&1; then
 redact_profile_id() {
     local profile_id="$1"
     if [[ -z "$profile_id" ]]; then
@@ -80,6 +95,7 @@ redact_profile_id() {
         echo "${profile_id:0:3}...${profile_id: -2}"
     fi
 }
+fi
 
 get_profile_id() {
     local profile_name="$1"
@@ -119,7 +135,7 @@ get_all_profiles() {
 }
 
 # Wait for a named process to stop, polling every 0.1 s for up to max_retries attempts.
-# Falls back to the wait_for_process_stop helper from common.sh when available.
+# Delegates to wait_for_process_stop from common.sh when available.
 # Usage: _wait_for_process_stop <process_name> [max_retries]
 _wait_for_process_stop() {
     if command -v wait_for_process_stop >/dev/null 2>&1; then
@@ -173,13 +189,7 @@ check_root() {
 # Create directory structure
 setup_directories() {
     # 🛡️ Pre-flight hardening for log file to prevent symlink-based log hijacking
-    # We must validate LOG_FILE *before* using any log functions because they append
-    # to LOG_FILE unconditionally. If an attacker pre-created LOG_FILE as a symlink
-    # to a sensitive file (e.g., /etc/shadow), using log/log_error/log_warning here
-    # would write to that target. So we:
-    #   - Refuse to run if LOG_FILE is a symlink
-    #   - Refuse to run if LOG_FILE exists but is not a regular file
-    # We intentionally avoid calling log_error here to not depend on LOG_FILE safety.
+    # Must validate LOG_FILE *before* calling any log function that appends to it.
     if [[ -L "$LOG_FILE" ]]; then
         echo "Security Alert: $LOG_FILE is a symlink! Aborting to prevent log hijack." >&2
         exit 1
@@ -190,62 +200,43 @@ setup_directories() {
     fi
     log "Setting up directory structure..."
 
-    # 🛡️ Sentinel: Security Hardening against Symlink Attacks (Pre-flight checks)
-    # Verify critical directories are not symlinks before creating/using them
-    # This prevents hijacking attacks where symlinks redirect to privileged paths
-    
-    # First, ensure parent directory path is safe before creating/using it
-    # Check for symlink *before* any -d checks so symlink-to-directory cannot bypass this
-    if [[ -L "$CONTROLD_DIR" ]]; then
-        log_error "Security Alert: $CONTROLD_DIR is a symlink! Aborting to prevent hijack."
-        exit 1
-    # If something exists at this path but is not a directory, abort as well
-    elif [[ -e "$CONTROLD_DIR" && ! -d "$CONTROLD_DIR" ]]; then
-        log_error "Security Alert: $CONTROLD_DIR exists but is not a directory. Aborting to prevent hijack."
-        exit 1
-    # Safe to create the directory if it does not yet exist as a directory
-    elif [[ ! -d "$CONTROLD_DIR" ]]; then
-        # Create parent directory with secure permissions
-        install -d -m 700 "$CONTROLD_DIR"
-    fi
-    
-    # Check subdirectories are not symlinks (before creation)
-    if [[ -L "$PROFILES_DIR" ]]; then
-        log_error "Security Alert: $PROFILES_DIR is a symlink! Aborting to prevent hijack."
-        exit 1
-    fi
-    if [[ -L "$BACKUP_DIR" ]]; then
-        log_error "Security Alert: $BACKUP_DIR is a symlink! Aborting to prevent hijack."
-        exit 1
-    fi
+    # 🛡️ Sentinel: Verify all critical paths are not symlinks before creation
+    # Uses assert_not_symlink from file-common.sh when available, inline otherwise.
+    _check_not_symlink() {
+        local path="$1" label="${2:-$1}"
+        if command -v assert_not_symlink >/dev/null 2>&1; then
+            assert_not_symlink "$path" "$label" || { log_error "Security Alert: $label is a symlink! Aborting."; exit 1; }
+        elif [[ -L "$path" ]]; then
+            log_error "Security Alert: $label is a symlink! Aborting to prevent hijack."
+            exit 1
+        fi
+    }
+    _check_not_symlink "$CONTROLD_DIR"  "CONTROLD_DIR"
+    _check_not_symlink "$PROFILES_DIR"  "PROFILES_DIR"
+    _check_not_symlink "$BACKUP_DIR"    "BACKUP_DIR"
 
-    # 🛡️ Sentinel: Use atomic 'install -d' to create directories with permissions
-    # This is safer than 'mkdir -p' followed by 'chmod' as it avoids TOCTOU races
-    # where an attacker could insert a symlink between directory creation and permission change
-    install -d -m 700 "$PROFILES_DIR" "$BACKUP_DIR"
+    # 🛡️ Sentinel: Use secure_mkdir (file-common.sh) or atomic 'install -d' fallback
+    # to create directories with the correct permissions in a single atomic operation.
+    if command -v secure_mkdir >/dev/null 2>&1; then
+        secure_mkdir "$CONTROLD_DIR" 700 || exit 1
+        secure_mkdir "$PROFILES_DIR" 700 || exit 1
+        secure_mkdir "$BACKUP_DIR"   700 || exit 1
+    else
+        [[ -e "$CONTROLD_DIR" && ! -d "$CONTROLD_DIR" ]] && { log_error "Security Alert: $CONTROLD_DIR is not a directory."; exit 1; }
+        install -d -m 700 "$CONTROLD_DIR" "$PROFILES_DIR" "$BACKUP_DIR"
+    fi
 
     # 🛡️ Sentinel: Post-creation verification to reduce TOCTOU window
-    # Re-check that directories remain non-symlinks after creation
     if [[ -L "$CONTROLD_DIR" ]] || [[ -L "$PROFILES_DIR" ]] || [[ -L "$BACKUP_DIR" ]]; then
-        log_error "Security Alert: A ControlD directory became a symlink after creation. Aborting to prevent hijack."
+        log_error "Security Alert: A ControlD directory became a symlink after creation. Aborting."
         exit 1
     fi
-
-    # Additional paranoid check: verify they are actual directories
-    if [[ ! -d "$PROFILES_DIR" ]]; then
-        log_error "Expected directory $PROFILES_DIR is missing or not a directory. Aborting."
-        exit 1
-    fi
-    if [[ ! -d "$BACKUP_DIR" ]]; then
-        log_error "Expected directory $BACKUP_DIR is missing or not a directory. Aborting."
+    if [[ ! -d "$CONTROLD_DIR" ]] || [[ ! -d "$PROFILES_DIR" ]] || [[ ! -d "$BACKUP_DIR" ]]; then
+        log_error "Expected directories are missing after creation. Aborting."
         exit 1
     fi
 
     # 🛡️ Sentinel: Securely create log file (protect against symlink attacks)
-    # Always remove any existing symlink before creating the log file
-    # This prevents an attacker from redirecting log writes to arbitrary files
-    # Note: the removal is gated on -L so we only delete when the path is a symlink.
-    # -L is true even for broken symlinks, ensuring they are cleaned up safely.
     if [[ -L "$LOG_FILE" ]]; then
         rm -f "$LOG_FILE"
     fi
@@ -254,7 +245,6 @@ setup_directories() {
     fi
 
     # Restrict log file to root-only (600) to protect sensitive profile IDs
-    # 🛡️ Sentinel: Check for symlinks to prevent permission hijacking
     if [[ -L "$LOG_FILE" ]]; then
         log_warning "Log file $LOG_FILE is a symlink. Skipping permission change to prevent symlink attack."
     elif [[ -f "$LOG_FILE" ]]; then
@@ -266,8 +256,13 @@ setup_directories() {
 backup_network_settings() {
     log "Backing up current network settings..."
 
-    # Backup current DNS servers
-    networksetup -getdnsservers Wi-Fi > "$BACKUP_DIR/original_dns.txt" 2>/dev/null || echo "No DNS servers" > "$BACKUP_DIR/original_dns.txt"
+    # Delegate DNS backup to the shared helper (network-common.sh)
+    if command -v backup_dns_settings >/dev/null 2>&1; then
+        backup_dns_settings "$BACKUP_DIR"
+    else
+        networksetup -getdnsservers Wi-Fi > "$BACKUP_DIR/original_dns.txt" 2>/dev/null \
+            || echo "No DNS servers" > "$BACKUP_DIR/original_dns.txt"
+    fi
 
     # Backup current network configuration
     scutil --dns > "$BACKUP_DIR/dns_config.txt" 2>/dev/null || true
@@ -279,22 +274,26 @@ backup_network_settings() {
 restore_network_settings() {
     log_warning "Restoring original network settings..."
 
-    if [[ -f "$BACKUP_DIR/original_dns.txt" ]]; then
-        local original_dns=$(cat "$BACKUP_DIR/original_dns.txt")
-        if [[ "$original_dns" == "No DNS servers" ]] || [[ "$original_dns" == "There aren't any DNS Servers set on Wi-Fi." ]]; then
-            networksetup -setdnsservers Wi-Fi "Empty"
-        else
-            # Restore original DNS servers
-            while IFS= read -r dns_server; do
-                if [[ -n "$dns_server" ]]; then
-                    networksetup -setdnsservers Wi-Fi "$dns_server"
-                    break
-                fi
-            done < "$BACKUP_DIR/original_dns.txt"
-        fi
+    # Delegate DNS restore to the shared helper (network-common.sh)
+    if command -v restore_dns_settings >/dev/null 2>&1; then
+        restore_dns_settings "$BACKUP_DIR"
     else
-        # Fallback to common public DNS servers
-        networksetup -setdnsservers Wi-Fi 1.1.1.1 8.8.8.8
+        if [[ -f "$BACKUP_DIR/original_dns.txt" ]]; then
+            local original_dns
+            original_dns=$(cat "$BACKUP_DIR/original_dns.txt")
+            if [[ "$original_dns" == "No DNS servers" ]] || [[ "$original_dns" == "There aren't any DNS Servers set on Wi-Fi." ]]; then
+                networksetup -setdnsservers Wi-Fi "Empty"
+            else
+                while IFS= read -r dns_server; do
+                    if [[ -n "$dns_server" ]]; then
+                        networksetup -setdnsservers Wi-Fi "$dns_server"
+                        break
+                    fi
+                done < "$BACKUP_DIR/original_dns.txt"
+            fi
+        else
+            networksetup -setdnsservers Wi-Fi 1.1.1.1 8.8.8.8
+        fi
     fi
 
     # Flush DNS cache
