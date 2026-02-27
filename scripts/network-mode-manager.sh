@@ -215,14 +215,18 @@ interactive_menu() {
     choice="${choice:-2}"
 
     case "$choice" in
-      1) main "controld" "privacy"; return ;;
-      2) main "controld" "browsing"; return ;;
-      3) main "controld" "gaming"; return ;;
-      4) main "windscribe"; return ;;
-      5) main "status"; return ;;
+      1) main "controld" "privacy" ;;
+      2) main "controld" "browsing" ;;
+      3) main "controld" "gaming" ;;
+      4) main "windscribe" ;;
+      5) main "status" ;;
       0) exit 0 ;;
-      *) echo -e "${RED}Invalid option, please try again.${NC}" ;;
+      *)
+        echo -e "${RED}Invalid option, please try again.${NC}"
+        continue
+        ;;
     esac
+    break
   done
 }
 
