@@ -9,3 +9,11 @@
 - [x] Execute safe GitHub actions on in-scope bot PRs (comments, closes, merges where gates pass). *(partial: close/comment/review blocked by integration permissions)*
 - [x] Produce session report in `tasks/pr-review-2026-02-26.md`.
 - [x] Update `tasks/lessons.md` with recurring bot patterns and process improvements.
+
+## Follow-up Plan (2026-02-26)
+
+- [x] Confirm and document exact permission blockers encountered per repository.
+- [x] Draft a reusable GitHub App permission checklist for multi-repo PR automation.
+- [x] Implement a fail-fast preflight script that validates auth, repo access, PR visibility, and effective action capabilities before triage starts.
+- [x] Run the preflight script against current repos in read-only mode and capture example output.
+- [ ] Commit and push the new checklist + script + plan updates.
