@@ -32,11 +32,6 @@
       "stddev": 0.01,
       "description": "source scripts/lib/network-core.sh"
     },
-    "install_all_configs": {
-      "mean": 0.60,
-      "stddev": 0.12,
-      "description": "scripts/install_all_configs.sh (dry-run)"
-    },
     "validate_configs": {
       "mean": 0.20,
       "stddev": 0.05,
