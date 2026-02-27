@@ -15,7 +15,7 @@
     "sync_all_configs": {
       "mean": 0.50,
       "stddev": 0.10,
-      "description": "scripts/sync_all_configs.sh (dry-run / sourcing overhead)"
+      "description": "scripts/sync_all_configs.sh"
     },
     "verify_all_configs": {
       "mean": 0.40,
