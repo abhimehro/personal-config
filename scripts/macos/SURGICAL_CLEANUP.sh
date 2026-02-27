@@ -112,7 +112,6 @@ show_cleanup_preview() {
     echo
     echo -e "${BLUE}=== JUNK TO BE REMOVED ===${NC}"
     
-    local total_size=0
     local count=0
     
     for pattern in "${REMOVE_PATTERNS[@]}"; do
