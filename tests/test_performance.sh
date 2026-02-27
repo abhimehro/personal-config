@@ -28,6 +28,8 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BASELINES_FILE="$REPO_ROOT/tests/performance/baselines.json"
+# Ensure the baselines directory exists before we attempt to read/write the file.
+mkdir -p "$(dirname "$BASELINES_FILE")"
 WARMUP_RUNS=2
 BENCHMARK_RUNS=5
 # Regression threshold – percentage by which actual mean may exceed baseline
