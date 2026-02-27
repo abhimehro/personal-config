@@ -270,12 +270,6 @@ if [[ -f "$REPO_ROOT/maintenance/bin/health_check.sh" ]]; then
         "bash '$REPO_ROOT/maintenance/bin/health_check.sh'"
 fi
 
-# 10. Maintenance – quick cleanup (dry-run flag)
-if [[ -f "$REPO_ROOT/maintenance/bin/quick_cleanup.sh" ]]; then
-    bench_and_check "maintenance_quick_cleanup" \
-        "bash '$REPO_ROOT/maintenance/bin/quick_cleanup.sh' --dry-run"
-fi
-
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
