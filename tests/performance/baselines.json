@@ -3,7 +3,7 @@
     "description": "Performance baselines for critical shell scripts",
     "regression_threshold_pct": 5,
     "units": "seconds",
-    "established": "2026-02-20",
+    "established": "2026-02-22",
     "runs_used_for_baseline": 10
   },
   "operations": {
