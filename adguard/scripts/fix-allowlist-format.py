@@ -22,7 +22,7 @@ def extract_allowlist_domains_from_file(filepath):
                 return [
                     rule['PK']
                     for rule in data['rules']
-                    if 'PK' in rule and 'action' in rule and rule['action'].get('do') == 1
+                    if 'PK' in rule and 'action' in rule and isinstance(rule['action'], dict) and rule['action'].get('do') == 1
                 ]
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
