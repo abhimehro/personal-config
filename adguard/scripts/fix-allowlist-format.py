@@ -14,17 +14,19 @@ from pathlib import Path
 
 def extract_allowlist_domains_from_file(filepath):
     """Extract allowlist domains (do: 1) from a JSON file."""
-    domains = []
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             data = json.load(f)
             if 'rules' in data:
-                for rule in data['rules']:
-                    if 'PK' in rule and rule.get('action', {}).get('do') == 1:
-                        domains.append(rule['PK'])
+                # ⚡ Bolt Optimization: Use list comprehension with explicit dictionary checks
+                return [
+                    rule['PK']
+                    for rule in data['rules']
+                    if 'PK' in rule and 'action' in rule and isinstance(rule['action'], dict) and rule['action'].get('do') == 1
+                ]
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
-    return domains
+    return []
 
 def main():
     base_dir = Path("/Users/abhimehrotra/Downloads")

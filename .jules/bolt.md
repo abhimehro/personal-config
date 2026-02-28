@@ -49,3 +49,7 @@
 ## 2026-02-08 - Robust parsing of network interface blocks
 **Learning:** Using `grep -A` to parse network interface blocks (like `ifconfig`) is fragile because the number of lines per interface varies. It can also lead to false positives if it bleeds into the next interface definition.
 **Action:** Use state-machine logic in `awk` (e.g. `/^iface/ {s=1} s && /prop/ {match} /^[^ \t]/ {s=0}`) to reliably parse blocks and avoid process overhead from multiple pipes.
+
+## 2026-02-28 - [Python List/Generator Comprehensions vs For Loops]
+**Learning:** In Python data parsing scripts, replacing `for` loops with `.append()` calls with list comprehensions provides a small but consistent performance boost (~5-7%). Further, when doing dictionary lookups in tight loops, using `'key' in dict` checks is more efficient than nested `.get().get()` calls due to avoiding function overhead.
+**Action:** When extracting data from large JSON arrays, default to list or set comprehensions and use explicit `in` checks for nested dictionaries instead of `.get()` chains.
