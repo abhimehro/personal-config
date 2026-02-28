@@ -26,7 +26,7 @@ def extract_domains_from_file(filepath, action_filter=None):
                     return [
                         rule['PK']
                         for rule in data['rules']
-                        if 'PK' in rule and 'action' in rule and rule['action'].get('do') == action_filter
+                        if 'PK' in rule and 'action' in rule and isinstance(rule['action'], dict) and rule['action'].get('do') == action_filter
                     ]
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
