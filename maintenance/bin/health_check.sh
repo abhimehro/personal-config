@@ -9,6 +9,15 @@ LOG_DIR="$HOME/Library/Logs/maintenance"
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# --- Colors (Defined for interactive dashboard) ---
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'
+
 # Helper functions to sanitize counts for arithmetic
 count_clean() { awk '{print $1}' | tr -d '\n'; }
 to_int() { printf '%d' "${1:-0}" 2>/dev/null || echo 0; }
@@ -392,3 +401,58 @@ fi
 
 log_info "Health check complete: ${HEALTH_STATUS}"
 echo "Health check completed successfully!"
+
+# Interactive Dashboard
+if [ -t 1 ]; then
+    print_dashboard() {
+        echo ""
+        # 70 chars wide
+        local border="────────────────────────────────────────────────────────────────────"
+        echo -e "${BOLD}${BLUE}┌─ SYSTEM HEALTH DASHBOARD ${border:0:42}┐${NC}"
+
+        # Row 1
+        local disk_color=$GREEN
+        if (( ${ROOT_USE:-0} >= ${DISK_WARN_VAL:-80} )); then disk_color=$YELLOW; fi
+        if (( ${ROOT_USE:-0} >= ${DISK_CRIT_VAL:-90} )); then disk_color=$RED; fi
+
+        local mem_color=$GREEN
+        if (( ${FREE_MB:-0} < 100 )); then mem_color=$RED; fi
+
+        local disk_str="Disk: ${ROOT_USE:-?}%"
+        local mem_str="Mem Free: ${FREE_MB:-?}MB"
+
+        printf "│ ${disk_color}%-32s${NC} ${mem_color}%-33s${NC} │\n" "$disk_str" "$mem_str"
+
+        # Row 2
+        local load_color=$GREEN
+        if (( $(echo "${LOAD_1MIN:-0} > 4" | bc -l 2>/dev/null || echo 0) )); then load_color=$YELLOW; fi
+
+        local batt_str="Battery: N/A"
+        local batt_color=$GREEN
+        if [[ -n "${BATTERY_PCT:-}" ]]; then
+             if (( BATTERY_PCT < 20 )); then batt_color=$RED; fi
+             batt_str="Battery: ${BATTERY_PCT}%"
+        fi
+
+        local load_str="Load: ${LOAD_1MIN:-?}"
+
+        printf "│ ${load_color}%-32s${NC} ${batt_color}%-33s${NC} │\n" "$load_str" "$batt_str"
+
+        echo -e "${BOLD}${BLUE}├${border}┤${NC}"
+
+        if (( HEALTH_ISSUES > 0 )); then
+             echo -e "│ ${RED}${BOLD}ISSUES DETECTED (${HEALTH_ISSUES}):${NC}                                              │"
+             for reason in "${ISSUE_REASONS[@]}"; do
+                 local clean_reason="${reason:0:64}"
+                 printf "│ ${RED}• %-64s${NC} │\n" "$clean_reason"
+             done
+        else
+             echo -e "│ ${GREEN}${BOLD}✅  SYSTEM IS HEALTHY${NC}                                               │"
+             echo -e "│    No critical issues found.                                       │"
+        fi
+
+        echo -e "${BOLD}${BLUE}└${border}┘${NC}"
+        echo ""
+    }
+    print_dashboard
+fi
