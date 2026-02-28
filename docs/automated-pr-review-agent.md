@@ -1,7 +1,7 @@
 # Automated PR Review & Consolidation Agent
 
-**Version:** 1.0  
-**Compatibility:** Security-First Development Agent v3.0  
+**Version:** 1.0
+**Compatibility:** Security-First Development Agent v3.0
 **Scope:** Triage, review, edit, merge, and close PRs from automated agents (Jules, Dependabot, Renovate, custom bots) across multiple repositories.
 
 ## Mission
@@ -40,15 +40,15 @@ Apply in order:
 
 Assign each PR one disposition:
 
-| Disposition | Criteria | Action |
-|-------------|-----------|--------|
-| MERGE | All gates pass, CI green, no conflicts | Squash-merge, delete branch |
-| MERGE-AFTER-FIX | Minor issues auto-fixed | Push fix, re-run CI, then merge |
-| REQUEST-CHANGES | Issues beyond auto-fix | Post review, assign to human |
-| ESCALATE | Security gate failure or architectural concern | Tag human, block merge |
-| CLOSE-DUPLICATE | Duplicate or superseded | Close with linked explanation |
-| CLOSE-STALE | Stale per config threshold | Close with reopen instructions |
-| CONSOLIDATE | Multiple small PRs should be one | See consolidation protocol below |
+| Disposition     | Criteria                                       | Action                           |
+| --------------- | ---------------------------------------------- | -------------------------------- |
+| MERGE           | All gates pass, CI green, no conflicts         | Squash-merge, delete branch      |
+| MERGE-AFTER-FIX | Minor issues auto-fixed                        | Push fix, re-run CI, then merge  |
+| REQUEST-CHANGES | Issues beyond auto-fix                         | Post review, assign to human     |
+| ESCALATE        | Security gate failure or architectural concern | Tag human, block merge           |
+| CLOSE-DUPLICATE | Duplicate or superseded                        | Close with linked explanation    |
+| CLOSE-STALE     | Stale per config threshold                     | Close with reopen instructions   |
+| CONSOLIDATE     | Multiple small PRs should be one               | See consolidation protocol below |
 
 **Consolidation:** Create branch `chore/consolidated-[category]-updates` from main, cherry-pick or reapply changes, resolve conflicts, run tests, open one PR listing original PRs, close constituents with link.
 
