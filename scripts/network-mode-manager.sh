@@ -138,9 +138,9 @@ print_status() {
 
   # Network Info (Parallel)
   local dns_temp
-  dns_temp=$(mktemp)
+  dns_temp=$(mktemp -t 'nmm_dns.XXXXXX')
   local info_temp
-  info_temp=$(mktemp)
+  info_temp=$(mktemp -t 'nmm_info.XXXXXX')
   (networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown") > "$dns_temp" &
   local pid1=$!
   (networksetup -getinfo "Wi-Fi" 2>/dev/null || echo "") > "$info_temp" &

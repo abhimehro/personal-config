@@ -46,7 +46,7 @@ spinner() {
     start_time=$(date +%s)
     local temp_log
 
-    temp_log=$(mktemp)
+    temp_log=$(mktemp -t 'fish_bootstrap.XXXXXX')
 
     # Run command in background
     eval "$cmd" > "$temp_log" 2>&1 &
