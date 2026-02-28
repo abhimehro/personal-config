@@ -1,3 +1,5 @@
+<<<<<<< HEAD
+
 # ELIR Handoff: `fix-allowlist-format.py` Testing Improvement
 
 📋 **Purpose:**
@@ -44,3 +46,10 @@ SECURITY: Validates expected HTTP authentication challenge formats are adhered t
 FAILS IF: The implementation of `send_auth_request` modifies its response status code or removes the Basic realm header.
 VERIFY: Run `python3 -m unittest discover -s tests -p 'test_*.py'` to ensure isolation and zero socket interaction.
 MAINTAIN: Avoid modifying `__init__` in a way that breaks instantiation via `__new__` in the testing suite without adjusting the mock objects respectively.
+
+═════ ELIR ═════
+PURPOSE: Extracted the allowlist processing logic in `create_consolidated_lists.py` into a distinct `process_allowlist_files` function and added comprehensive unit tests using Python's `unittest`.
+SECURITY: Leveraged `tempfile.TemporaryDirectory()` for test sandboxing. This avoids filesystem pollution and realistically tests file parsing/handling without relying entirely on mocked internal variables, thus protecting the integrity of the host OS and accurately validating the script. The script gracefully handles JSON parsing errors via generic exception catching.
+FAILS IF: A file has invalid JSON structure, but does not crash. It will fail gracefully (log an error message, then continue).
+VERIFY: Verify that the 8 new unit tests in `tests/test_create_consolidated_lists.py` pass cleanly. They validate the happy path, missing files, empty data structures, invalid JSON, unexpected keys, and domain deduplication.
+MAINTAIN: If adding more files to the allowlist processing logic, add additional `base_dir / filename` logic inside `process_allowlist_files` and ensure it's validated by existing or new test scenarios.

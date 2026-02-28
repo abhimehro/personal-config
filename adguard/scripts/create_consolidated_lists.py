@@ -29,6 +29,35 @@ def extract_domains_from_file(filepath, action_filter=None):
         print(f"Error reading {filepath}: {e}")
     return domains
 
+
+def process_allowlist_files(base_dir):
+    """Process allowlist files (Control D Bypass + legitimate TLDs)."""
+    print("\n📋 Creating Allowlist...")
+    allowlist_domains = set()
+
+    # Add Control D Bypass rules (do: 1 = allow)
+    bypass_file = base_dir / "CD-Control-D-Bypass.json"
+    if bypass_file.exists():
+        print("  Processing: CD-Control-D-Bypass.json")
+        domains = extract_domains_from_file(bypass_file, action_filter=1)  # Only allow rules
+        allowlist_domains.update(domains)
+        print(f"    Added {len(domains)} bypass domains")
+    else:
+        print(f"  ⚠️  File not found: CD-Control-D-Bypass.json")
+
+    # Add legitimate TLDs from Most Abused TLDs (do: 1 = allow)
+    tlds_file = base_dir / "CD-Most-Abused-TLDs.json"
+    if tlds_file.exists():
+        print("  Processing: CD-Most-Abused-TLDs.json")
+        domains = extract_domains_from_file(tlds_file, action_filter=1)  # Only allow rules
+        allowlist_domains.update(domains)
+        print(f"    Added {len(domains)} legitimate TLD domains")
+    else:
+        print(f"  ⚠️  File not found: CD-Most-Abused-TLDs.json")
+
+    print(f"\n✅ Allowlist total domains: {len(allowlist_domains)}")
+    return allowlist_domains
+
 def main():
     # Allow overriding base directory for testing/portability
     base_dir = Path(os.environ.get("ADGUARD_LISTS_DIR", "/Users/abhimehrotra/Downloads"))
@@ -71,26 +100,7 @@ def main():
     print(f"\n✅ Denylist total domains: {len(denylist_domains)}")
     
     # 2. CREATE ALLOWLIST (Control D Bypass + legitimate TLDs - do: 1)
-    print("\n📋 Creating Allowlist...")
-    allowlist_domains = set()
-    
-    # Add Control D Bypass rules (do: 1 = allow)
-    bypass_file = base_dir / "CD-Control-D-Bypass.json"
-    if bypass_file.exists():
-        print("  Processing: CD-Control-D-Bypass.json")
-        domains = extract_domains_from_file(bypass_file, action_filter=1)  # Only allow rules
-        allowlist_domains.update(domains)
-        print(f"    Added {len(domains)} bypass domains")
-    
-    # Add legitimate TLDs from Most Abused TLDs (do: 1 = allow)
-    tlds_file = base_dir / "CD-Most-Abused-TLDs.json"
-    if tlds_file.exists():
-        print("  Processing: CD-Most-Abused-TLDs.json")
-        domains = extract_domains_from_file(tlds_file, action_filter=1)  # Only allow rules
-        allowlist_domains.update(domains)
-        print(f"    Added {len(domains)} legitimate TLD domains")
-    
-    print(f"\n✅ Allowlist total domains: {len(allowlist_domains)}")
+    allowlist_domains = process_allowlist_files(base_dir)
     
     # ⚡ Bolt Optimization: Sort once, reuse everywhere (O(N log N))
     sorted_denylist = sorted(denylist_domains)
