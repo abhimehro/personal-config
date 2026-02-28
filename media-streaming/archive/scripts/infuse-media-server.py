@@ -247,7 +247,7 @@ def setup_authentication(args):
     generated_user = False
     if not user:
         user_alphabet = string.ascii_lowercase + string.digits
-        user = "user_" + "".join(secrets.choice(user_alphabet) for _ in range(8))
+        user = "user_" + "".join(secrets.SystemRandom().choices(user_alphabet, k=8))
         generated_user = True
     
     if not password:
