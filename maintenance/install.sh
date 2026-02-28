@@ -18,6 +18,14 @@ mkdir -p "$INSTALL_DIR/conf"
 mkdir -p "$LOG_DIR"
 mkdir -p "$LAUNCHAGENTS_DIR"
 
+# Unload and clean up old agents BEFORE overwriting their plist files (prevents Error 5: Input/output error cache corruption)
+echo "🔄 Unloading old agents..."
+for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maint.*.plist "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maintenance.*.plist; do
+    [ -f "$plist" ] || continue
+    launchctl bootout gui/$(id -u) "$plist" 2>/dev/null || launchctl unload "$plist" 2>/dev/null || true
+    rm -f "$plist" 2>/dev/null || true
+done
+
 # Copy scripts
 echo "📦 Copying scripts to $INSTALL_DIR..."
 cp -r "$SCRIPT_DIR/bin/"* "$INSTALL_DIR/bin/"
@@ -32,14 +40,14 @@ fi
 echo "📝 Generating launchd plist files..."
 
 # Brew Maintenance (Daily at 10 AM)
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.brew.plist" <<EOF
+cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.brew.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maintenance.brew</string>
-    
+    <string>com.abhimehrotra.maint.brew</string>
+
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
@@ -51,19 +59,19 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.brew.plist" <<EOF
         <key>AUTOMATED_RUN</key>
         <string>1</string>
     </dict>
-    
+
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
         <string>$INSTALL_DIR/bin/brew_maintenance.sh</string>
     </array>
-    
+
     <key>StandardOutPath</key>
     <string>$LOG_DIR/brew_maintenance.out</string>
-    
+
     <key>StandardErrorPath</key>
     <string>$LOG_DIR/brew_maintenance.err</string>
-    
+
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
@@ -71,10 +79,10 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.brew.plist" <<EOF
         <key>Minute</key>
         <integer>0</integer>
     </dict>
-    
+
     <key>RunAtLoad</key>
     <false/>
-    
+
     <key>KeepAlive</key>
     <false/>
 </dict>
@@ -82,14 +90,14 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.brew.plist" <<EOF
 EOF
 
 # Health Check (Daily at 8:30 AM)
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.healthcheck.plist" <<EOF
+cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.healthcheck.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maintenance.healthcheck</string>
-    
+    <string>com.abhimehrotra.maint.healthcheck</string>
+
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
@@ -99,19 +107,19 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.healthcheck.plist" <<EOF
         <key>AUTOMATED_RUN</key>
         <string>1</string>
     </dict>
-    
+
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
         <string>$INSTALL_DIR/bin/health_check.sh</string>
     </array>
-    
+
     <key>StandardOutPath</key>
     <string>$LOG_DIR/health_check.out</string>
-    
+
     <key>StandardErrorPath</key>
     <string>$LOG_DIR/health_check.err</string>
-    
+
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
@@ -119,10 +127,10 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.healthcheck.plist" <<EOF
         <key>Minute</key>
         <integer>30</integer>
     </dict>
-    
+
     <key>RunAtLoad</key>
     <false/>
-    
+
     <key>KeepAlive</key>
     <false/>
 </dict>
@@ -130,14 +138,14 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.healthcheck.plist" <<EOF
 EOF
 
 # System Cleanup (Daily at 9 AM)
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.systemcleanup.plist" <<EOF
+cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.systemcleanup.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maintenance.systemcleanup</string>
-    
+    <string>com.abhimehrotra.maint.systemcleanup</string>
+
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
@@ -147,19 +155,19 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.systemcleanup.plist" <<EOF
         <key>AUTOMATED_RUN</key>
         <string>1</string>
     </dict>
-    
+
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
         <string>$INSTALL_DIR/bin/system_cleanup.sh</string>
     </array>
-    
+
     <key>StandardOutPath</key>
     <string>$LOG_DIR/system_cleanup.out</string>
-    
+
     <key>StandardErrorPath</key>
     <string>$LOG_DIR/system_cleanup.err</string>
-    
+
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
@@ -167,10 +175,10 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.systemcleanup.plist" <<EOF
         <key>Minute</key>
         <integer>0</integer>
     </dict>
-    
+
     <key>RunAtLoad</key>
     <false/>
-    
+
     <key>KeepAlive</key>
     <false/>
 </dict>
@@ -178,14 +186,14 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.systemcleanup.plist" <<EOF
 EOF
 
 # Weekly Maintenance (Mondays at 9 AM)
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.weekly.plist" <<EOF
+cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.weekly.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maintenance.weekly</string>
-    
+    <string>com.abhimehrotra.maint.weekly</string>
+
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
@@ -195,19 +203,19 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.weekly.plist" <<EOF
         <key>AUTOMATED_RUN</key>
         <string>1</string>
     </dict>
-    
+
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
         <string>$INSTALL_DIR/bin/weekly_maintenance.sh</string>
     </array>
-    
+
     <key>StandardOutPath</key>
     <string>$LOG_DIR/maintenance_weekly.out</string>
-    
+
     <key>StandardErrorPath</key>
     <string>$LOG_DIR/maintenance_weekly.err</string>
-    
+
     <key>StartCalendarInterval</key>
     <dict>
         <key>Weekday</key>
@@ -217,10 +225,10 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.weekly.plist" <<EOF
         <key>Minute</key>
         <integer>0</integer>
     </dict>
-    
+
     <key>RunAtLoad</key>
     <false/>
-    
+
     <key>KeepAlive</key>
     <false/>
 </dict>
@@ -228,14 +236,14 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.weekly.plist" <<EOF
 EOF
 
 # Monthly Maintenance (1st of month at 6 AM)
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.monthly.plist" <<EOF
+cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.monthly.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maintenance.monthly</string>
-    
+    <string>com.abhimehrotra.maint.monthly</string>
+
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
@@ -245,19 +253,19 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.monthly.plist" <<EOF
         <key>AUTOMATED_RUN</key>
         <string>1</string>
     </dict>
-    
+
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
         <string>$INSTALL_DIR/bin/monthly_maintenance.sh</string>
     </array>
-    
+
     <key>StandardOutPath</key>
     <string>$LOG_DIR/maintenance_monthly.out</string>
-    
+
     <key>StandardErrorPath</key>
     <string>$LOG_DIR/maintenance_monthly.err</string>
-    
+
     <key>StartCalendarInterval</key>
     <dict>
         <key>Day</key>
@@ -267,10 +275,10 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.monthly.plist" <<EOF
         <key>Minute</key>
         <integer>0</integer>
     </dict>
-    
+
     <key>RunAtLoad</key>
     <false/>
-    
+
     <key>KeepAlive</key>
     <false/>
 </dict>
@@ -278,14 +286,14 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.monthly.plist" <<EOF
 EOF
 
 # Service Monitor (Daily at 8:35 AM)
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.servicemonitor.plist" <<EOF
+cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.servicemonitor.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maintenance.servicemonitor</string>
-    
+    <string>com.abhimehrotra.maint.servicemonitor</string>
+
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
@@ -295,19 +303,19 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.servicemonitor.plist" <<EO
         <key>AUTOMATED_RUN</key>
         <string>1</string>
     </dict>
-    
+
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
         <string>$INSTALL_DIR/bin/service_monitor.sh</string>
     </array>
-    
+
     <key>StandardOutPath</key>
     <string>$LOG_DIR/servicemonitor-stdout.log</string>
-    
+
     <key>StandardErrorPath</key>
     <string>$LOG_DIR/servicemonitor-stderr.log</string>
-    
+
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
@@ -315,10 +323,10 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.servicemonitor.plist" <<EO
         <key>Minute</key>
         <integer>35</integer>
     </dict>
-    
+
     <key>RunAtLoad</key>
     <false/>
-    
+
     <key>ProcessType</key>
     <string>Background</string>
 </dict>
@@ -327,14 +335,14 @@ EOF
 
 # Screen Capture Nag Remover (Daily at 10:00 AM)
 # Note: Requires Full Disk Access for /bin/bash to modify TCC database
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.screencapture-nag-remover.plist" <<EOF
+cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.screencapture-nag-remover.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maintenance.screencapture-nag-remover</string>
-    
+    <string>com.abhimehrotra.maint.screencapture-nag-remover</string>
+
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
@@ -342,19 +350,19 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.screencapture-nag-remover.
         <key>MAINTENANCE_HOME</key>
         <string>$INSTALL_DIR</string>
     </dict>
-    
+
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
         <string>$INSTALL_DIR/bin/screencapture_nag_remover.sh</string>
     </array>
-    
+
     <key>StandardOutPath</key>
     <string>$LOG_DIR/screencapture_nag_remover.out</string>
-    
+
     <key>StandardErrorPath</key>
     <string>$LOG_DIR/screencapture_nag_remover.err</string>
-    
+
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
@@ -362,7 +370,7 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.screencapture-nag-remover.
         <key>Minute</key>
         <integer>0</integer>
     </dict>
-    
+
     <key>RunAtLoad</key>
     <true/>
 </dict>
@@ -371,13 +379,13 @@ EOF
 
 # Google Drive Home Backup (Daily at 3:15 AM - Light Mode)
 # Skips weekends automatically via script logic to avoid gaming interference
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.googledrivebackup.light.plist" <<EOF
+cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.googledrivebackup.light.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maintenance.googledrivebackup.light</string>
+    <string>com.abhimehrotra.maint.googledrivebackup.light</string>
 
     <key>EnvironmentVariables</key>
     <dict>
@@ -423,13 +431,13 @@ EOF
 
 # Google Drive Full Backup (Weekly - Monday at 4:00 AM)
 # Runs full backup once a week
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.googledrivebackup.full.plist" <<EOF
+cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.googledrivebackup.full.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maintenance.googledrivebackup.full</string>
+    <string>com.abhimehrotra.maint.googledrivebackup.full</string>
 
     <key>EnvironmentVariables</key>
     <dict>
@@ -477,16 +485,11 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maintenance.googledrivebackup.full.pli
 </plist>
 EOF
 
-# Unload old agents (ignore errors)
-echo "🔄 Unloading old agents..."
-for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maintenance.*.plist "$LAUNCHAGENTS_DIR"/com.user.maintenance.*.plist; do
-    [ -f "$plist" ] || continue
-    launchctl unload "$plist" 2>/dev/null || true
-done
+
 
 # Load new agents
 echo "✅ Loading new agents..."
-for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maintenance.*.plist; do
+for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maint.*.plist; do
     [ -f "$plist" ] || continue
     launchctl load "$plist" 2>&1 || echo "⚠️  Warning: Failed to load $(basename "$plist")"
 done
@@ -514,4 +517,4 @@ echo "To view logs:"
 echo "  tail -f $LOG_DIR/brew_maintenance.log"
 echo ""
 echo "To check agent status:"
-echo "  launchctl list | grep maintenance"
+echo "  launchctl list | grep maint"
