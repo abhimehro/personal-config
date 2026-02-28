@@ -1,4 +1,4 @@
-# Automated PR Review Session Plan
+T1+H
 
 ## Session 1 (2026-02-26)
 
@@ -45,3 +45,12 @@
 - [ ] Resolve escalations: #404 (architectural decision), #396 (validator verification), #376 (test coverage).
 - [ ] Rebase personal-config#385 and evaluate for merge.
 - [ ] Post-merge conflict cascade check on all remaining approved PRs.
+
+## PR 424 Test Plan
+
+- [x] Create test plan
+- [x] Extract `process_allowlist_files` into a standalone testable function
+- [x] Implement comprehensive unit tests focusing on temp directories and isolation
+- [x] Test edge cases (missing files, invalid json, empty rules, deduplication)
+- [x] Verify tests pass cleanly and safely
+- [x] Write ELIR summary in `handoff.md`
