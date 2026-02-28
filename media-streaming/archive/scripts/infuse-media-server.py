@@ -78,8 +78,9 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         clean_path = path.lstrip('/')
 
         # 1. Prevent Directory Traversal
-        # Check for '..' components
-        parts = clean_path.split('/')
+        # Check for '..' components (handle both / and \ as separators)
+        normalized_path = clean_path.replace('\\', '/')
+        parts = normalized_path.split('/')
         if '..' in parts:
             raise ValueError("Invalid path: Directory traversal attempt detected")
 
