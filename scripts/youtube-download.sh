@@ -24,11 +24,11 @@ E_VIDEO="🎬"
 E_DOWN="⬇️"
 E_SEARCH="🔍"
 
-info()  { echo -e "${BLUE}${E_INFO}  [INFO]${NC}  $*"; }
-ok()    { echo -e "${GREEN}${E_OK} [OK]${NC}    $*"; }
-warn()  { echo -e "${YELLOW}${E_WARN}  [WARN]${NC}  $*"; }
-err()   { echo -e "${RED}${E_ERR} [ERR]${NC}   $*" >&2; }
-header() { echo -e "\n${BOLD}${BLUE}$*${NC}\n"; }
+info()  { printf "${BLUE}${E_INFO}  [INFO]${NC}  %s\n" "$*"; }
+ok()    { printf "${GREEN}${E_OK} [OK]${NC}    %s\n" "$*"; }
+warn()  { printf "${YELLOW}${E_WARN}  [WARN]${NC}  %s\n" "$*"; }
+err()   { printf "${RED}${E_ERR} [ERR]${NC}   %s\n" "$*" >&2; }
+header() { printf "\n${BOLD}${BLUE}%s${NC}\n" "$*"; }
 
 # --- Usage ---
 
@@ -58,7 +58,7 @@ if [[ -z "$URL" ]] && [[ -t 0 ]]; then
     CLIP_CONTENT=$(pbpaste)
     # Simple heuristic for YouTube URLs
     if [[ "$CLIP_CONTENT" =~ ^https?://(www\.)?(youtube\.com|youtu\.be)/ ]]; then
-      echo -e "${YELLOW}${E_SEARCH} Found in clipboard: ${BOLD}$CLIP_CONTENT${NC}"
+      printf "${YELLOW}${E_SEARCH} Found in clipboard: ${BOLD}%s${NC}" "$CLIP_CONTENT"
       read -p "Use this URL? [Y/n] " -n 1 -r REPLY
       echo "" # Newline
       if [[ -z "$REPLY" ]] || [[ "$REPLY" =~ ^[Yy]$ ]]; then
