@@ -26,11 +26,8 @@ def load_json_file(filepath):
 
 def extract_domains_from_rules(rules):
     """Extract domain names from rules array."""
-    domains = []
-    for rule in rules:
-        if 'PK' in rule:
-            domains.append(rule['PK'])
-    return domains
+    # ⚡ Bolt Optimization: Use list comprehension for faster domain extraction
+    return [rule['PK'] for rule in rules if 'PK' in rule]
 
 def process_tracker_files(base_dir, tracker_files):
     """Process tracker files to create denylist domains."""
@@ -59,9 +56,12 @@ def extract_allowlist_from_file(filepath, description):
         print(f"  Processing: {filepath.name}")
         data = load_json_file(filepath)
         if data and 'rules' in data:
-            for rule in data['rules']:
-                if 'PK' in rule and rule.get('action', {}).get('do') == 1:
-                    domains.add(rule['PK'])
+            # ⚡ Bolt Optimization: Use generator expression with `in` checks instead of nested `.get()`
+            domains.update(
+                rule['PK']
+                for rule in data['rules']
+                if 'PK' in rule and 'action' in rule and rule['action'].get('do') == 1
+            )
             count = len(domains)
             print(f"    Added {count} {description}")
     return domains

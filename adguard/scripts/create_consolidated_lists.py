@@ -15,19 +15,22 @@ from pathlib import Path
 
 def extract_domains_from_file(filepath, action_filter=None):
     """Extract domains from a JSON file with optional action filtering."""
-    domains = []
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             data = json.load(f)
             if 'rules' in data:
-                for rule in data['rules']:
-                    if 'PK' in rule:
-                        # If action_filter is specified, only include matching actions
-                        if action_filter is None or rule.get('action', {}).get('do') == action_filter:
-                            domains.append(rule['PK'])
+                # ⚡ Bolt Optimization: List comprehension with explicit dictionary checks
+                if action_filter is None:
+                    return [rule['PK'] for rule in data['rules'] if 'PK' in rule]
+                else:
+                    return [
+                        rule['PK']
+                        for rule in data['rules']
+                        if 'PK' in rule and 'action' in rule and rule['action'].get('do') == action_filter
+                    ]
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
-    return domains
+    return []
 
 
 def process_allowlist_files(base_dir):
