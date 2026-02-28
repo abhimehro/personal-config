@@ -44,7 +44,15 @@ Optional (only if you need agent-driven auto-merge management):
 
 ## 5) Preflight Validation (Fail Fast)
 
-Use the preflight script before each triage session:
+**Preflight must pass before any triage or write actions.** If preflight fails, the session must not proceed to inventory, merge, or close. See [Automated PR Review Agent](automated-pr-review-agent.md).
+
+Use the preflight script before each triage session. With config (repos from `tasks/pr-review-agent.config.yaml`):
+
+```bash
+bash scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml
+```
+
+Or with explicit repos:
 
 ```bash
 bash scripts/preflight-gh-pr-automation.sh \
@@ -79,3 +87,16 @@ bash scripts/preflight-gh-pr-automation.sh \
   - `closePullRequest`: increase **Pull requests** write scope.
   - `enablePullRequestAutoMerge`: update branch policy and app capabilities for auto-merge.
 - If one repo passes and others fail, compare app installation scope and branch rulesets repo-by-repo.
+
+## 8) Session 3 Runbook (Permission Remediation + Queues)
+
+When elevating permissions to run close/merge queues on all repos:
+
+1. **Grant permissions:** Give the integration write access (Pull requests: Read & write, Contents: Read & write) on `ctrld-sync` and `email-security-pipeline` per sections 1–2 above.
+2. **Verify:** Run preflight with `--require-write-probes` and probe PRs to confirm close/comment/review.
+3. **Close queue:** Execute the close commands in `tasks/pr-triage.md` under "Ready-to-Execute Human Actions" (ctrld-sync then email-security-pipeline).
+4. **Merge queue:** Execute the merge commands in the same section in the recommended order (security/dependency first, then CI/infra, then refactors).
+5. **Re-check:** After each merge, re-check remaining approved PRs for new conflicts before proceeding.
+6. **MERGE-AFTER-FIX and escalations:** Handle as documented in the latest session report (e.g. `tasks/pr-review-YYYY-MM-DD.md`).
+
+After each session, update `tasks/lessons.md` and reflect material lessons in the [Automated PR Review Agent](automated-pr-review-agent.md) heuristics subsection.

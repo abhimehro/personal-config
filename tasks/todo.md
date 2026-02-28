@@ -36,6 +36,8 @@
 
 ## Session 3 (Next)
 
+**Runbook:** See `docs/github-app-pr-automation-checklist.md` §8 (Session 3 Runbook): grant permissions → preflight with write probes → close queue → merge queue in order → re-check conflicts after each merge.
+
 - [ ] Resolve permission escalation: grant integration write access to ctrld-sync and email-security-pipeline.
 - [ ] Execute close queue (10 PRs across 2 repos) using elevated permissions.
 - [ ] Execute merge queue (12 PRs across 2 repos) in recommended order.
