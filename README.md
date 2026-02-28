@@ -6,7 +6,7 @@ A comprehensive repository for personal system configurations, scripts, and docu
 
 This repository contains configuration files, automation scripts, and detailed documentation for my personal computing environment. Key features:
 
-- **🔐 Secure SSH Configuration** - 1Password integration with dynamic network support
+- **🔐 Secure SSH Configuration** - 1Password and [Proton Pass (NEW!)] integration with dynamic network support
 - **🌐 Enhanced VPN + DNS Integration** - Windscribe VPN with Control D privacy filtering
 - **🛡️ Dual Protection System** - VPN encryption + DNS privacy filtering with real-time logging
 - **🛠️ Automated Maintenance System** - Comprehensive system health monitoring and cleanup (NEW!)
