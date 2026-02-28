@@ -1,7 +1,5 @@
 T1+H
 
-<<<<<<< HEAD
-
 ## Session 1 (2026-02-26)
 
 - [x] Discover in-scope repositories and list open bot-authored PRs.

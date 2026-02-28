@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-
 # ELIR Handoff: `fix-allowlist-format.py` Testing Improvement
 
 📋 **Purpose:**
@@ -20,6 +18,7 @@ The script currently parses files securely, though error swallowing could obscur
 
 🔧 **Maintenance:**
 The tests run efficiently and purely in memory without affecting the host filesystem, aligning with the project's testing practices. The integration test safely creates and deletes its temporary file.
+<<<<<<< HEAD
 
 # 🧪 Testing Improvement: test_infuse_media_server.py
 
