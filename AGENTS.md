@@ -125,6 +125,20 @@ make benchmark
 ./tests/benchmarks/benchmark_scripts.sh all
 ```
 
+### PR Review Agent (preflight gate)
+Before running a bot PR triage/review session, preflight must pass. See `docs/automated-pr-review-agent.md` and `docs/github-app-pr-automation-checklist.md`.
+
+```bash
+# Run preflight gate and print next steps (uses tasks/pr-review-agent.config.yaml if present)
+./scripts/run-pr-review-session.sh
+
+# Preflight with explicit config
+./scripts/run-pr-review-session.sh --config tasks/pr-review-agent.config.yaml
+
+# Preflight only (read-only), default repos
+./scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml
+```
+
 ## Big-picture architecture (how the pieces fit)
 ### 1) Config-as-code via symlink orchestration
 Core pattern: keep authoritative config files in-repo and symlink them into the real locations.

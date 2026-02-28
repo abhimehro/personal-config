@@ -16,6 +16,7 @@ readonly DEFAULT_REPOS=(
 declare -a REPOS=()
 declare -A PROBE_PRS=()
 REQUIRE_WRITE_PROBES=false
+CONFIG_FILE=""
 
 usage() {
   cat <<'USAGE'
@@ -23,13 +24,17 @@ Usage:
   preflight-gh-pr-automation.sh [options]
 
 Options:
+  --config PATH                 Load repos from YAML config (path to pr-review-agent.config.yaml).
   --repo OWNER/REPO             Add repository to check (repeatable).
   --require-write-probes        Enable mutation probes for review/comment/close/reopen.
   --probe-pr OWNER/REPO#NUMBER  Probe PR mapping (repeatable, required with --require-write-probes).
   -h, --help                    Show this help.
 
 Examples:
-  # Read-only preflight
+  # Read-only preflight (repos from config)
+  bash scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml
+
+  # Read-only preflight (explicit repos)
   bash scripts/preflight-gh-pr-automation.sh \
     --repo abhimehro/personal-config \
     --repo abhimehro/email-security-pipeline \
@@ -60,9 +65,28 @@ require_cmd() {
   command -v "$cmd" >/dev/null 2>&1 || fail "Missing required command: $cmd"
 }
 
+# Load repos from YAML config. Expects top-level "repos:" list.
+# ASSUMES: config has "repos:" followed by "- owner/repo" lines until next top-level key.
+load_repos_from_config() {
+  local config_file="$1"
+  [[ -f "$config_file" ]] || fail "Config file not found: $config_file"
+  REPOS=()
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^[[:space:]]*-[[:space:]]+(.+)$ ]]; then
+      REPOS+=("${BASH_REMATCH[1]}")
+    fi
+  done < <(sed -n '/^repos:/,/^[a-zA-Z_][a-zA-Z0-9_]*:/p' "$config_file" | grep '^  - ' | sed 's/^  - //' | tr -d '\r')
+  [[ ${#REPOS[@]} -gt 0 ]] || fail "Config file has no repos list: $config_file"
+}
+
 parse_args() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
+      --config)
+        [[ $# -ge 2 ]] || fail "--config requires a value"
+        CONFIG_FILE="$2"
+        shift 2
+        ;;
       --repo)
         [[ $# -ge 2 ]] || fail "--repo requires a value"
         REPOS+=("$2")
@@ -93,7 +117,9 @@ parse_args() {
     esac
   done
 
-  if [[ "${#REPOS[@]}" -eq 0 ]]; then
+  if [[ -n "$CONFIG_FILE" ]]; then
+    load_repos_from_config "$CONFIG_FILE"
+  elif [[ ${#REPOS[@]} -eq 0 ]]; then
     REPOS=("${DEFAULT_REPOS[@]}")
   fi
 

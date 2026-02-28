@@ -1,0 +1,19 @@
+# Automated PR Review Agent — Configuration
+# Used by humans and scripts (e.g. preflight, run-pr-review-session).
+# Override repos via preflight --repo flags if needed.
+
+repos:
+  - abhimehro/personal-config
+  - abhimehro/email-security-pipeline
+  - abhimehro/ctrld-sync
+
+bot_authors:
+  - jules[bot]
+  - dependabot[bot]
+  - renovate[bot]
+  - app/copilot-swe-agent
+
+stale_threshold_days: 30
+merge_strategy: squash
+auto_fix_enabled: true
+human_escalation_channel: github-review-request

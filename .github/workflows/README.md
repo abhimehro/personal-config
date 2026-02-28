@@ -31,6 +31,8 @@ These workflows are powered by [GitHub Agentic Workflows (gh-aw)](https://github
 
 #### On-Demand Workflows
 
+- **PR Review Agent** — Triage and resolve bot-authored PRs across multiple repos (personal-config, email-security-pipeline, ctrld-sync). Run on-demand via human or agent; see `docs/automated-pr-review-agent.md` and `scripts/run-pr-review-session.sh`. A future scheduled workflow may be added after permission parity and a validated orchestrator exist.
+
 - **plan.md** - Generates project plans and task breakdowns when invoked with `/plan` command in issues or PRs. Analyzes an issue or discussion and breaks it down into a sequence of actionable work items that can be assigned to GitHub Copilot agents. Creates sub-issues grouped under a parent issue.
 
 - **pr-fix.md** - Makes fixes to pull requests on-demand via the `/pr-fix` command. Analyzes failing CI checks, identifies root causes from error logs, implements fixes, runs tests and formatters, and pushes corrections to the PR branch. Provides detailed comments explaining changes made. Helps rapidly resolve PR blockers and keep development flowing.
