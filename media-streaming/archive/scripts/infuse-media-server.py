@@ -166,7 +166,7 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         """Generate HTML directory listing"""
         safe_path = html.escape(current_path)
 
-        html_content = f"""
+        html_parts = [f"""
         <!DOCTYPE html>
         <html>
         <head>
@@ -181,14 +181,17 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         </head>
         <body>
             <h1>📁 Media Library: /{safe_path}</h1>
-        """
+        """]
         
         # Add parent directory link if not root
         if current_path and current_path != '/':
             parent = '/'.join(current_path.rstrip('/').split('/')[:-1])
             # Parent path is constructed safely from split, but escaping is good hygiene
             safe_parent = html.escape(parent)
-            html_content += f'<a href="/{safe_parent}" class="file directory">📁 .. (Parent Directory)</a>\n'
+            html_parts.append(f'<a href="/{safe_parent}" class="file directory">📁 .. (Parent Directory)</a>\n')
+
+        # ⚡ Performance: tuple for fast C-level endswith checking
+        video_exts = ('.mp4', '.mkv', '.avi', '.mov')
         
         # Add files and directories
         for item in files:
@@ -209,17 +212,17 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
 
             if item.endswith('/'):
                 # Directory
-                html_content += f'<a href="/{safe_item_path}" class="file directory">📁 {safe_item[:-1]}</a>\n'
+                html_parts.append(f'<a href="/{safe_item_path}" class="file directory">📁 {safe_item[:-1]}</a>\n')
             else:
                 # File
-                icon = "🎬" if any(item.lower().endswith(ext) for ext in ['.mp4', '.mkv', '.avi', '.mov']) else "📄"
-                html_content += f'<a href="/{safe_item_path}" class="file video">{icon} {safe_item}</a>\n'
+                icon = "🎬" if item.lower().endswith(video_exts) else "📄"
+                html_parts.append(f'<a href="/{safe_item_path}" class="file video">{{icon}} {{safe_item}}</a>\n')
         
-        html_content += """
+        html_parts.append("""
         </body>
         </html>
-        """
-        return html_content
+        """)
+        return "".join(html_parts)
     
     def send_directory_response(self, content):
         """Send directory listing response"""
