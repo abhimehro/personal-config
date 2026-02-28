@@ -1,3 +1,7 @@
+## 2026-05-20 - Forgiving CLI Menus
+**Learning:** Users make typos; exiting on error frustrates them.
+**Action:** Loop on invalid input in interactive menus.
+
 ## 2026-02-08 - Explicit Defaults in Interactive CLIs
 **Learning:** When offering a default option in a CLI prompt (e.g., "Enter for Default"), explicitly setting the default value in code (var=${var:-default}) is safer and more robust than relying on empty string matching.
 **Action:** Use parameter expansion to set defaults before processing switch logic to prevent "false affordances" where the UI promises a default but the code doesn't strictly enforce it.
