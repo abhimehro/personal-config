@@ -52,7 +52,9 @@ class TestPathValidation(unittest.TestCase):
             "/../secret",
             "..\\secret",
             "folder\\..\\secret",
-            "..\\..\\etc\\passwd"
+            "..\\..\\etc\\passwd",
+            "\\\\etc\\\\passwd",
+            "\\\\folder\\\\file",
         ]
         for p in invalid_paths:
             with self.assertRaises(ValueError, msg=f"Traversal path '{p}' should fail"):
