@@ -155,11 +155,27 @@ mkdir -p "$TEST_DIR/maint7/bin" "$TEST_DIR/maint7/conf"
 cp "$SCRIPT" "$TEST_DIR/maint7/bin/health_check.sh"
 echo "DISK_CRIT_PCT=not_a_number" > "$TEST_DIR/maint7/conf/config.env"
 
-PATH="$MOCK_BIN:$PATH" HOME="$HOME4" AUTOMATED_RUN=1 \
-    bash "$TEST_DIR/maint7/bin/health_check.sh" > "$TEST_DIR/t7.log" 2>&1 || true
+if PATH="$MOCK_BIN:$PATH" HOME="$HOME4" AUTOMATED_RUN=1 \
+        bash "$TEST_DIR/maint7/bin/health_check.sh" > "$TEST_DIR/t7.log" 2>&1; then
+    echo "PASS: script completes (exits 0) after DISK_CRIT_PCT fallback"
+    PASS=$((PASS + 1))
+else
+    echo "FAIL: script failed after DISK_CRIT_PCT fallback"
+    cat "$TEST_DIR/t7.log"
+    FAIL=$((FAIL + 1))
+fi
 
 check_grep "invalid DISK_CRIT_PCT fallback warning" "Invalid DISK_CRIT_PCT" \
     "$HOME4/Library/Logs/maintenance/health_check.log"
+
+REPORT7=$(find "$HOME4/Library/Logs/maintenance" -name "health_report-*.txt" 2>/dev/null | wc -l | tr -d ' ')
+if [[ "$REPORT7" -gt 0 ]]; then
+    echo "PASS: report written after DISK_CRIT_PCT fallback"
+    PASS=$((PASS + 1))
+else
+    echo "FAIL: report not written after DISK_CRIT_PCT fallback"
+    FAIL=$((FAIL + 1))
+fi
 
 # ---- Test 8: invalid HEALTH_LOG_LOOKBACK_HOURS in config triggers fallback ----
 HOME5="$TEST_DIR/home5"
@@ -169,12 +185,28 @@ mkdir -p "$TEST_DIR/maint8/bin" "$TEST_DIR/maint8/conf"
 cp "$SCRIPT" "$TEST_DIR/maint8/bin/health_check.sh"
 echo "HEALTH_LOG_LOOKBACK_HOURS=invalid" > "$TEST_DIR/maint8/conf/config.env"
 
-PATH="$MOCK_BIN:$PATH" HOME="$HOME5" AUTOMATED_RUN=1 \
-    bash "$TEST_DIR/maint8/bin/health_check.sh" > "$TEST_DIR/t8.log" 2>&1 || true
+if PATH="$MOCK_BIN:$PATH" HOME="$HOME5" AUTOMATED_RUN=1 \
+        bash "$TEST_DIR/maint8/bin/health_check.sh" > "$TEST_DIR/t8.log" 2>&1; then
+    echo "PASS: script completes (exits 0) after HEALTH_LOG_LOOKBACK_HOURS fallback"
+    PASS=$((PASS + 1))
+else
+    echo "FAIL: script failed after HEALTH_LOG_LOOKBACK_HOURS fallback"
+    cat "$TEST_DIR/t8.log"
+    FAIL=$((FAIL + 1))
+fi
 
 check_grep "invalid HEALTH_LOG_LOOKBACK_HOURS fallback warning" \
     "Invalid HEALTH_LOG_LOOKBACK_HOURS" \
     "$HOME5/Library/Logs/maintenance/health_check.log"
+
+REPORT8=$(find "$HOME5/Library/Logs/maintenance" -name "health_report-*.txt" 2>/dev/null | wc -l | tr -d ' ')
+if [[ "$REPORT8" -gt 0 ]]; then
+    echo "PASS: report written after HEALTH_LOG_LOOKBACK_HOURS fallback"
+    PASS=$((PASS + 1))
+else
+    echo "FAIL: report not written after HEALTH_LOG_LOOKBACK_HOURS fallback"
+    FAIL=$((FAIL + 1))
+fi
 
 # ---- Summary ----
 echo ""
