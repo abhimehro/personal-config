@@ -173,8 +173,15 @@ touch "$OLD_FILE"
 # Set mtime well beyond the 30-day threshold (2020-01-01)
 touch -t 202001010000 "$OLD_FILE"
 
-PATH="$MOCK_BIN:$PATH" HOME="$HOME4" CLEANUP_CACHE_DAYS=30 \
-    bash "$SCRIPT" > "$TEST_DIR/t6.log" 2>&1 || true
+if PATH="$MOCK_BIN:$PATH" HOME="$HOME4" CLEANUP_CACHE_DAYS=30 \
+    bash "$SCRIPT" > "$TEST_DIR/t6.log" 2>&1; then
+    echo "PASS: cache pruning run exited 0"
+    PASS=$((PASS + 1))
+else
+    echo "FAIL: cache pruning run exited non-zero"
+    cat "$TEST_DIR/t6.log"
+    FAIL=$((FAIL + 1))
+fi
 
 if [[ ! -f "$OLD_FILE" ]]; then
     echo "PASS: old cache file pruned"
