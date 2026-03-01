@@ -311,7 +311,7 @@ HEALTH_ISSUES=0
 ISSUE_REASONS=()
 
 if [[ "${ROOT_USE:-0}" -ge "${DISK_WARN_VAL:-80}" ]]; then
-  ((HEALTH_ISSUES++))
+  HEALTH_ISSUES=$((HEALTH_ISSUES + 1))
   ISSUE_REASONS+=("Disk ${ROOT_USE:-?}%")
 fi
 
@@ -320,27 +320,27 @@ REAL_KPANIC_INT=${REAL_KPANIC:-0}
 PANIC_COUNT=$((PANIC_REPORTS_INT + REAL_KPANIC_INT))
 
 if (( PANIC_COUNT > 0 )); then
-  ((HEALTH_ISSUES++))
+  HEALTH_ISSUES=$((HEALTH_ISSUES + 1))
   ISSUE_REASONS+=("Panics ${PANIC_COUNT}")
 fi
 
 if [[ "${CRASH_LOGS:-0}" -gt 0 ]]; then
-  ((HEALTH_ISSUES++))
+  HEALTH_ISSUES=$((HEALTH_ISSUES + 1))
   ISSUE_REASONS+=("Crash logs ${CRASH_LOGS}")
 fi
 
 if [[ "${DIAGNOSTIC_REPORTS:-0}" -gt 5 ]]; then
-  ((HEALTH_ISSUES++))
+  HEALTH_ISSUES=$((HEALTH_ISSUES + 1))
   ISSUE_REASONS+=("Diagnostic reports ${DIAGNOSTIC_REPORTS}")
 fi
 
 if [[ -n "${FAILED_JOBS}" ]]; then
-  ((HEALTH_ISSUES++))
+  HEALTH_ISSUES=$((HEALTH_ISSUES + 1))
   ISSUE_REASONS+=("Launch agents failed")
 fi
 
 if [[ "${WIDGET_COUNT:-0}" -gt 60 ]]; then
-  ((HEALTH_ISSUES++))
+  HEALTH_ISSUES=$((HEALTH_ISSUES + 1))
   ISSUE_REASONS+=("Widgets ${WIDGET_COUNT}")
 fi
 
