@@ -122,6 +122,13 @@ mcp-configs/*.local.json
 mcp-configs/servers.local.json
 .mcp-config.local.json
 
+# Session artifact files (scratch files from PR/agent sessions)
+commit_msg.txt
+pr_body.md
+pr-review-report.md
+pr-review-batch-*.md
+handoff.md
+
 # History files
 .bash_history
 .zsh_history
