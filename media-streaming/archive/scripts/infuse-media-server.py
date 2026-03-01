@@ -74,12 +74,11 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         # Decode URL encoding (already done by caller, but good to be safe if moved)
         # unquote(path) is called before passing here in do_GET
 
-        # Remove leading slash to ensure relative path
-        clean_path = path.lstrip('/')
-
         # Normalize backslashes to forward slashes to prevent bypasses
-        clean_path = clean_path.replace('\\', '/')
+        clean_path = path.replace('\\', '/')
 
+        # Remove leading slash to ensure relative path
+        clean_path = clean_path.lstrip('/')
         # 1. Prevent Directory Traversal
         # Check for '..' components
         parts = clean_path.split('/')
