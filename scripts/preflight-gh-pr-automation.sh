@@ -5,8 +5,6 @@ set -euo pipefail
 # Default mode is read-only capability verification.
 # Optional write-probe mode performs real PR mutations on dedicated probe PRs.
 
-SCRIPT_NAME="$(basename "$0")"
-
 readonly DEFAULT_REPOS=(
   "abhimehro/personal-config"
   "abhimehro/email-security-pipeline"
