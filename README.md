@@ -182,13 +182,11 @@ Intelligent DNS switching system with Control D integration:
 - Enhanced security filtering
 - Malware & tracking protection
 - Optimized for browsing and AI applications
-- Profile ID: `2eoeqoo9ib9`
 
 **Gaming Mode (`dns-gaming`)**
 - Minimal filtering for maximum performance
 - Gaming service optimizations (Battle.net, GeForce Now, Overwatch 2)
 - Ultra-low latency DNS resolution
-- Profile ID: `1igcvpwtsfg`
 
 **Features:**
 - ✅ **Windscribe VPN Integration** - Seamless VPN compatibility
@@ -308,14 +306,14 @@ chmod 600 ~/.ssh/config ~/.ssh/agent.toml
 export PATH="$HOME/bin:$PATH"  # For DNS scripts
 
 # Optional: Set Control D profile IDs
-export CTRLD_PRIVACY_PROFILE="2eoeqoo9ib9"
-export CTRLD_GAMING_PROFILE="1igcvpwtsfg"
+export CTRLD_PRIVACY_PROFILE=<Privacy_Profile_ID>
+export CTRLD_GAMING_PROFILE=<Gaming_Profile_ID>
 ```
 
 ### Media automation (Infuse + Alldebrid + cloud union)
 - **Data roots**: iCloud Desktop/Documents (`~/Library/Mobile Documents/com~apple~CloudDocs/Media`) via rclone union of `gdrive:Media` + `onedrive:Media` (no local duplication).
-- **WebDAV server**: LaunchAgent `com.abhimehrotra.media.webdav` runs `/Users/abhimehrotra/Library/Media/bin/start-media-server.sh` on port **8088** (read-only).
-- **Alldebrid helper**: LaunchAgent `com.abhimehrotra.media.alldebrid` mounts to `/Users/abhimehrotra/mnt/alldebrid` and serves on **8080**.
+- **WebDAV server**: LaunchAgent `com.<your_home_folder>.media.webdav` runs `/Users/<your_home_folder>/Library/Media/bin/start-media-server.sh` on port **8088** (read-only).
+- **Alldebrid helper**: LaunchAgent `com.<your_home_folder>.media.alldebrid` mounts to `/Users/<your_home_folder>/mnt/alldebrid` and serves on **8080**.
 - **Secrets**:
   - `~/.config/rclone/rclone.conf` (seed from `media-streaming/configs/rclone.conf.template`, fill via `op inject`).
   - `~/.config/media-server/credentials` (untracked; copy `media-streaming/configs/media-credentials.example` and inject creds with 1Password).
@@ -336,8 +334,6 @@ export CTRLD_GAMING_PROFILE="1igcvpwtsfg"
 
 **ProtonVPN Alternative:**
 - Use Control D custom DNS when needed
-- Gaming: `https://dns.controld.com/1igcvpwtsfg`
-- Privacy: `https://dns.controld.com/2eoeqoo9ib9`
 
 ## 🧪 Testing & Verification
 
