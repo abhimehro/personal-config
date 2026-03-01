@@ -77,6 +77,9 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         # Remove leading slash to ensure relative path
         clean_path = path.lstrip('/')
 
+        # Normalize backslashes to forward slashes to prevent bypasses
+        clean_path = clean_path.replace('\\', '/')
+
         # 1. Prevent Directory Traversal
         # Check for '..' components
         parts = clean_path.split('/')
