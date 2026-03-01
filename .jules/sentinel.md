@@ -123,3 +123,8 @@
 **Prevention:** Use `printf "%s\n" "$VAR"` to print untrusted strings. This treats the content literally. If color codes are needed, print them separately with `echo -ne` or `printf` and then print the variable content safely.
 
 [CWE-150]: https://cwe.mitre.org/data/definitions/150.html
+
+## 2026-05-23 - Path Traversal Bypass via Backslashes
+**Vulnerability:** A directory traversal ([CWE-22](https://cwe.mitre.org/data/definitions/22.html)) vulnerability existed in `media-streaming/archive/scripts/infuse-media-server.py` where the `validate_path` function split the path using forward slashes (`/`) to check for `..` components. This allowed an attacker to bypass the check by using backslashes (`\`), e.g., `..\..\etc\passwd`, which might be interpreted by the underlying operating system or tools (like `rclone`) as directory separators, leading to unauthorized file access.
+**Learning:** Checking for directory traversal using only string splitting on forward slashes is insufficient because many systems and tools normalize or accept backslashes as path separators. Attackers can use this discrepancy to bypass simple string-matching filters.
+**Prevention:** Always normalize path separators (e.g., converting all `\` to `/`) before performing any path validation or traversal checks. This ensures that all potential directory traversal sequences are evaluated consistently, regardless of the separator used by the attacker.
