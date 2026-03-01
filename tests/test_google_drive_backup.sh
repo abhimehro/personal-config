@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 #
 # Unit tests for maintenance/bin/google_drive_backup.sh
-# Mocks rsync and date; verifies dry-run behavior, fail-secure exclusion
+# Mocks date; verifies dry-run behavior, fail-secure exclusion
 # fallback, Monday skip, and argument handling.
+# NOTE: google_drive_backup.sh calls /usr/bin/rsync directly (absolute path),
+# so rsync cannot be intercepted via PATH mocking; tests use --dry-run instead.
 
 set -euo pipefail
 
@@ -47,13 +49,6 @@ check_output() {
 # ---- mock bin ----
 MOCK_BIN="$TEST_DIR/mock_bin"
 mkdir -p "$MOCK_BIN"
-
-# Mock rsync: accept any args, succeed silently
-cat > "$MOCK_BIN/rsync" << 'MOCK'
-#!/bin/bash
-exit 0
-MOCK
-chmod +x "$MOCK_BIN/rsync"
 
 # Mock date for day-of-week tests: returns Monday (1) for +%u
 cat > "$MOCK_BIN/date_monday" << 'MOCK'
@@ -129,9 +124,16 @@ rm -f "$MOCK_BIN/date"
 
 # ---- Test 6: FORCE_RUN=1 bypasses Monday skip ----
 cp "$MOCK_BIN/date_monday" "$MOCK_BIN/date"
-PATH="$MOCK_BIN:$PATH" HOME="$MOCK_HOME" FORCE_RUN=1 \
-    bash "$SCRIPT" --dry-run --light \
-    > "$TEST_DIR/t6.log" 2>&1 || true
+if PATH="$MOCK_BIN:$PATH" HOME="$MOCK_HOME" FORCE_RUN=1 \
+        bash "$SCRIPT" --dry-run --light \
+        > "$TEST_DIR/t6.log" 2>&1; then
+    echo "PASS: FORCE_RUN=1 bypass exits 0"
+    PASS=$((PASS + 1))
+else
+    echo "FAIL: FORCE_RUN=1 bypass exited non-zero"
+    cat "$TEST_DIR/t6.log"
+    FAIL=$((FAIL + 1))
+fi
 
 # When FORCE_RUN=1, the script should NOT print the skipping message
 if ! grep -q "Skipping Light Backup on Monday" "$TEST_DIR/t6.log" 2>/dev/null; then

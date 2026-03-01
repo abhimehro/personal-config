@@ -129,8 +129,15 @@ HOME2="$TEST_DIR/home2"
 make_mock_home "$HOME2"
 write_df_mock 85
 
-PATH="$MOCK_BIN:$PATH" HOME="$HOME2" AUTOMATED_RUN=1 DISK_WARN_PCT=80 \
-    bash "$SCRIPT" > "$TEST_DIR/t2.log" 2>&1 || true
+if PATH="$MOCK_BIN:$PATH" HOME="$HOME2" AUTOMATED_RUN=1 DISK_WARN_PCT=80 \
+        bash "$SCRIPT" > "$TEST_DIR/t2.log" 2>&1; then
+    echo "PASS: high disk usage run exits 0"
+    PASS=$((PASS + 1))
+else
+    echo "FAIL: high disk usage run exited non-zero"
+    cat "$TEST_DIR/t2.log"
+    FAIL=$((FAIL + 1))
+fi
 
 check_grep "high disk usage warning logged" "High disk usage" \
     "$HOME2/Library/Logs/maintenance/health_check.log"
@@ -140,8 +147,15 @@ HOME3="$TEST_DIR/home3"
 make_mock_home "$HOME3"
 write_df_mock 92
 
-PATH="$MOCK_BIN:$PATH" HOME="$HOME3" AUTOMATED_RUN=1 DISK_CRIT_PCT=90 \
-    bash "$SCRIPT" > "$TEST_DIR/t3.log" 2>&1 || true
+if PATH="$MOCK_BIN:$PATH" HOME="$HOME3" AUTOMATED_RUN=1 DISK_CRIT_PCT=90 \
+        bash "$SCRIPT" > "$TEST_DIR/t3.log" 2>&1; then
+    echo "PASS: critical disk usage run exits 0"
+    PASS=$((PASS + 1))
+else
+    echo "FAIL: critical disk usage run exited non-zero"
+    cat "$TEST_DIR/t3.log"
+    FAIL=$((FAIL + 1))
+fi
 
 check_grep "critical disk usage warning logged" "Critical disk usage" \
     "$HOME3/Library/Logs/maintenance/health_check.log"
