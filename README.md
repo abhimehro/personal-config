@@ -306,14 +306,14 @@ chmod 600 ~/.ssh/config ~/.ssh/agent.toml
 export PATH="$HOME/bin:$PATH"  # For DNS scripts
 
 # Optional: Set Control D profile IDs
-export CTRLD_PRIVACY_PROFILE=<Privacy_Profile_ID>
-export CTRLD_GAMING_PROFILE=<Gaming_Profile_ID>
+export CTRLD_PRIVACY_PROFILE=<Privacy-Profile-ID>
+export CTRLD_GAMING_PROFILE=<Gaming-Profile-ID>
 ```
 
 ### Media automation (Infuse + Alldebrid + cloud union)
 - **Data roots**: iCloud Desktop/Documents (`~/Library/Mobile Documents/com~apple~CloudDocs/Media`) via rclone union of `gdrive:Media` + `onedrive:Media` (no local duplication).
-- **WebDAV server**: LaunchAgent `com.<your_home_folder>.media.webdav` runs `/Users/<your_home_folder>/Library/Media/bin/start-media-server.sh` on port **8088** (read-only).
-- **Alldebrid helper**: LaunchAgent `com.<your_home_folder>.media.alldebrid` mounts to `/Users/<your_home_folder>/mnt/alldebrid` and serves on **8080**.
+- **WebDAV server**: LaunchAgent `com.<your-home-folder>.media.webdav` runs `/Users/<your-home-folder>/Library/Media/bin/start-media-server.sh` on port **8088** (read-only).
+- **Alldebrid helper**: LaunchAgent `com.<your-home-folder>.media.alldebrid` mounts to `/Users/<your-home-folder>/mnt/alldebrid` and serves on **8080**.
 - **Secrets**:
   - `~/.config/rclone/rclone.conf` (seed from `media-streaming/configs/rclone.conf.template`, fill via `op inject`).
   - `~/.config/media-server/credentials` (untracked; copy `media-streaming/configs/media-credentials.example` and inject creds with 1Password).
