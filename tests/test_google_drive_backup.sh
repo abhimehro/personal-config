@@ -92,10 +92,19 @@ fi
 
 # ---- Test 4: missing excludes file triggers fail-secure fallback ----
 # Pass a non-existent excludes file; script should warn and apply defaults
+t4_exit=0
 PATH="$MOCK_BIN:$PATH" HOME="$MOCK_HOME" FORCE_RUN=1 \
     bash "$SCRIPT" --dry-run --light \
     --excludes "$TEST_DIR/no_such_excludes.txt" \
-    > "$TEST_DIR/t4.log" 2>&1 || true
+    > "$TEST_DIR/t4.log" 2>&1 || t4_exit=$?
+if [[ "$t4_exit" -eq 0 ]]; then
+    echo "PASS: missing excludes exits 0"
+    PASS=$((PASS + 1))
+else
+    echo "FAIL: missing excludes exited $t4_exit (expected 0)"
+    cat "$TEST_DIR/t4.log"
+    FAIL=$((FAIL + 1))
+fi
 
 check_output "missing excludes triggers fallback warning" \
     "DEFAULT SECURITY EXCLUSIONS" "$TEST_DIR/t4.log"
