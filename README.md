@@ -342,7 +342,7 @@ export CTRLD_GAMING_PROFILE=<Gaming-Profile-ID>
 This repository includes a comprehensive test suite. The shell tests run in parallel by default for maximum performance.
 
 ```bash
-# Run all shell tests in parallel (automatically ignores known macOS-specific failures on Linux)
+# Run all shell tests in parallel (automatically ignores known macOS-specific failures)
 make test
 
 # Run a single shell test
