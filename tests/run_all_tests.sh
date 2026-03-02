@@ -95,7 +95,7 @@ if [[ "$use_expected_failures_suppression" -eq 1 ]]; then
     # Safety net: these tests emit a SKIP guard (exit 77) on Linux/CI, so they
     # should never appear in failed_tests.  Listed here in case a future change
     # accidentally removes a guard and the test starts failing again.
-    expected_failures=("test_config_fish.sh" "test_ssh_config.sh" "test_security_manager_restore.sh" "test_media_server_auth.sh" "test_network_mode_manager.sh")
+    expected_failures=("test_config_fish.sh" "test_ssh_config.sh" "test_security_manager_restore.sh" "test_media_server_auth.sh")
     unexpected_failures_count=0
 
     for failed_test in "${failed_tests[@]}"; do
