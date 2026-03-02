@@ -299,3 +299,34 @@ The following tests are **expected to fail on Linux** and are automatically skip
 | `tests/test_media_server_auth.sh` | Credential flow assertion depends on macOS Keychain |
 
 If you add a new test that is intentionally macOS-only, add a `uname` guard at the top (Pattern 5 above) and add an entry to this table.
+
+---
+
+## Smoke test subset (`make test-quick`)
+
+A curated subset of fast, cross-platform tests is wired into `make test-quick`. Use this target for quick pre-commit feedback without running the full suite (~23 tests).
+
+**Included tests:**
+
+| Test | What it covers |
+|---|---|
+| `tests/test_lib_common.sh` | `scripts/lib/common.sh` — temp-file helpers, path guards |
+| `tests/test_lib_dns_utils.sh` | `scripts/lib/dns-utils.sh` — caching, health-check |
+| `tests/test_path_validation.py` | Path validation utilities |
+
+All three tests run on macOS and Linux and complete in well under 10 seconds total.
+
+### Pre-commit hook example
+
+Add the following to `.git/hooks/pre-commit` to gate every commit on the smoke suite:
+
+```bash
+#!/bin/sh
+make test-quick
+```
+
+Make the hook executable:
+
+```bash
+chmod +x .git/hooks/pre-commit
+```
