@@ -64,8 +64,7 @@ clean_cache_dir() {
             log_info "Cleaning $editor_name cache older than $age_days days..."
             
             # Clean files older than specified days
-    # shellcheck disable=SC2086  # intentional word splitting or dynamic args
-            find "$cache_dir" -type f -mtime +$age_days -delete 2>/dev/null || true
+            find "$cache_dir" -type f -mtime +"$age_days" -delete 2>/dev/null || true
             
             # Remove empty directories
             find "$cache_dir" -type d -empty -delete 2>/dev/null || true
