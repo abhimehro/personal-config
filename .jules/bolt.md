@@ -55,5 +55,5 @@
 **Action:** When extracting data from large JSON arrays, default to list or set comprehensions and use explicit `in` checks for nested dictionaries instead of `.get()` chains.
 
 ## 2026-03-05 - [Parameter Expansion vs basename]
-**Learning:** Using `basename` in a subshell creates significant performance overhead due to process spawning (e.g., `$(basename "$file")`). Using the built-in shell parameter expansion `${file##*/}` achieves the exact same result but operates ~300x faster, which is critical in loops or hot-path utility scripts.
-**Action:** Replace `$(basename "$var")` with `${var##*/}` in all shell scripts to improve performance and reduce system calls.
+**Learning:** Using `basename` in a subshell creates significant performance overhead due to process spawning (e.g., `$(basename "$file")`). The built-in shell parameter expansion `${file##*/}` avoids this overhead and is ~300x faster in tight loops, but it does not strip trailing slashes the way `basename` does (e.g., `/a/b/`), so inputs may need to be normalized first (for example with `${file%/}`).
+**Action:** Where path inputs are normalized to not end with `/` (or after first stripping any trailing `/` with `${var%/}`), prefer `${var##*/}` over `$(basename "$var")` in shell scripts to improve performance and reduce system calls.
