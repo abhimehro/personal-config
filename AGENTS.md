@@ -202,7 +202,7 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 | What | Command | Notes |
 |---|---|---|
 | Python tests | `python3 -m unittest discover -s tests -p 'test_*.py'` | stdlib only, no pip deps |
-| Shell tests | `make test` | Runs in parallel. Known macOS failures on Linux are automatically ignored. |
+| Shell tests | `make test` | Runs in parallel. Known macOS-specific failures are currently auto-ignored on all platforms. |
 | Lint (all) | `trunk check --all` | Trunk downloads its own tool versions on first run |
 | Format | `trunk fmt` | Auto-fixes where supported |
 
