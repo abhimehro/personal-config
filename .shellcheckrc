@@ -1,8 +1,14 @@
 # Project-wide ShellCheck configuration
 # See: https://github.com/koalaman/shellcheck/wiki/Configuration
 
-# SC1091: Not following sourced files — dynamic sourcing pattern used throughout
-disable=SC1091
+# Mirror Trunk's primary ShellCheck configuration so direct `shellcheck`
+# invocations behave the same as `trunk check`.
+enable=all
+source-path=SCRIPTDIR
+disable=SC2154
 
+# SC1091: Not following sourced files — dynamic sourcing pattern is used in
+# the repo, but Trunk's config does not disable this check, so we keep it
+# enabled here as well for consistent behavior.
 # SC2034: Unused variables — many are exported for child process consumption
 # disable=SC2034
