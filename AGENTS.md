@@ -237,5 +237,5 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 - **Trunk first-run latency**: The first `trunk check` or `trunk fmt` invocation downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`. Subsequent runs are fast. The update script installs the Trunk launcher, but tool downloads happen lazily.
 - **No `requirements.txt`**: Python tests and scripts use only the standard library. No `pip install` is needed for the test suite.
 - **`package.json` is empty**: The root `package.json` is `{}` — it exists as a Trunk runtime anchor for Node-based linters (prettier, markdownlint). Do not run `npm install`.
-- **macOS-specific test skips on Linux**: `test_config_fish.sh`, `test_ssh_config.sh`, `test_security_manager_restore.sh`, `test_media_server_auth.sh`, and `test_network_mode_manager.sh` emit a `SKIP:` message and exit cleanly (exit 0) on Linux/CI. They are not failures.
+- **macOS-specific test skips on Linux**: `test_config_fish.sh`, `test_ssh_config.sh`, `test_security_manager_restore.sh`, `test_media_server_auth.sh`, and `test_network_mode_manager.sh` emit a `SKIP:` message and exit with code 77 on Linux/CI. The test runner treats this as a skip, not a failure.
 - **`setup.sh` is macOS-only**: Do not run `./setup.sh` on Linux — it calls `launchctl`, Homebrew, and macOS system utilities.
