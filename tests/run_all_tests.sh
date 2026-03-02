@@ -92,7 +92,7 @@ if [[ "${CI:-}" == "true" || "$(uname -s)" != "Darwin" ]]; then
 fi
 
 if [[ "$use_expected_failures_suppression" -eq 1 ]]; then
-    # Safety net: these tests emit a SKIP guard (exit 0) on Linux/CI, so they
+    # Safety net: these tests emit a SKIP guard (exit 77) on Linux/CI, so they
     # should never appear in failed_tests.  Listed here in case a future change
     # accidentally removes a guard and the test starts failing again.
     expected_failures=("test_config_fish.sh" "test_ssh_config.sh" "test_security_manager_restore.sh" "test_media_server_auth.sh" "test_network_mode_manager.sh")
