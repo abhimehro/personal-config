@@ -107,3 +107,74 @@ dns_health_check() {
         dig +short +time=3 +tries=1 "$test_host" >/dev/null 2>&1
     fi
 }
+
+# --- Network settings backup/restore ---
+
+# Backup current network settings
+backup_network_settings() {
+    local backup_dir="$1"
+
+    # Delegate DNS backup to the shared helper (network-common.sh) if available
+    if command -v backup_dns_settings >/dev/null 2>&1; then
+        backup_dns_settings "$backup_dir"
+    else
+        networksetup -getdnsservers Wi-Fi > "$backup_dir/original_dns.txt" 2>/dev/null \
+            || echo "No DNS servers" > "$backup_dir/original_dns.txt"
+    fi
+
+    # Backup current network configuration
+    scutil --dns > "$backup_dir/dns_config.txt" 2>/dev/null || true
+}
+
+# Restore network settings (emergency recovery)
+restore_network_settings() {
+    local backup_dir="$1"
+
+    # Delegate DNS restore to the shared helper (network-common.sh) if available
+    if command -v restore_dns_settings >/dev/null 2>&1; then
+        restore_dns_settings "$backup_dir"
+    else
+        if [[ -f "$backup_dir/original_dns.txt" ]]; then
+            local original_dns
+            original_dns=$(cat "$backup_dir/original_dns.txt")
+            if [[ "$original_dns" == "No DNS servers" ]] || [[ "$original_dns" == "There aren't any DNS Servers set on Wi-Fi." ]]; then
+                networksetup -setdnsservers Wi-Fi "Empty"
+            else
+                while IFS= read -r dns_server; do
+                    if [[ -n "$dns_server" ]]; then
+                        networksetup -setdnsservers Wi-Fi "$dns_server"
+                        break
+                    fi
+                done < "$backup_dir/original_dns.txt"
+            fi
+        else
+            networksetup -setdnsservers Wi-Fi 1.1.1.1 8.8.8.8
+        fi
+    fi
+
+    # Flush DNS cache
+    dscacheutil -flushcache 2>/dev/null || true
+    sudo killall -HUP mDNSResponder 2>/dev/null || true
+}
+
+# --- DNS Resolution Test ---
+
+# Test generic DNS resolution against a specific resolver
+# Returns 0 if successful, 1 if failed
+# Usage: test_dns_resolution [resolver_ip] [domain]
+test_dns_resolution() {
+    local resolver="${1:-127.0.0.1}"
+    local domain="${2:-google.com}"
+
+    # Use dns_health_check if available (it is in this file)
+    if command -v dns_health_check >/dev/null 2>&1; then
+        dns_health_check "$resolver" "$domain"
+        return $?
+    else
+        if dig @"$resolver" "$domain" +short +time=5 >/dev/null 2>&1; then
+            return 0
+        else
+            return 1
+        fi
+    fi
+}
