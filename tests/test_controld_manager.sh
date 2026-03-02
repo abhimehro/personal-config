@@ -118,9 +118,22 @@ test_main_commands() {
 
 # ── Test: main switch without profile name shows usage ───────────────────────
 test_switch_missing_profile() {
-    local output
-    output=$(main "switch" 2>&1)
+    local output rc
 
+    # NOTE: main "switch" intentionally returns non-zero when profile is missing.
+    # Run it in an if-condition so set -e does not terminate the script on failure.
+    if output=$(main "switch" 2>&1); then
+        rc=0
+    else
+        rc=$?
+    fi
+
+    if [[ "$rc" -eq 0 ]]; then
+        echo "Fail: 'main switch' (no profile arg) should return non-zero exit code."
+        echo "Output:"
+        echo "$output"
+        return 1
+    fi
     if ! echo "$output" | grep -qiE "usage|available profiles"; then
         echo "Fail: 'main switch' (no profile arg) should show usage. Output:"
         echo "$output"
