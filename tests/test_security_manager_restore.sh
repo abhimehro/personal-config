@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+# BSD sed -i '' syntax is macOS-only; skip on Linux/CI
+[[ "$(uname -s)" == "Darwin" ]] || { echo "SKIP: requires macOS (BSD sed -i '')"; exit 77; }
+
 # Setup mock environment
 TEST_DIR=$(mktemp -d)
 
