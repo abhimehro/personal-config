@@ -84,9 +84,13 @@ This repo is wired for Trunk via `.trunk/trunk.yaml` (shellcheck, shfmt, ruff, b
 
 ```bash
 # Run all configured linters
-trunk check --all
+make lint
 
 # Auto-format (where supported)
+make lint-fix
+
+# Or invoke trunk directly
+trunk check --all
 trunk fmt
 ```
 
@@ -224,8 +228,8 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 |---|---|---|
 | Python tests | `python3 -m unittest discover -s tests -p 'test_*.py'` | stdlib only, no pip deps |
 | Shell tests | `make test` | Runs in parallel. Known macOS-specific failures are currently auto-ignored on all platforms. |
-| Lint (all) | `trunk check --all` | Trunk downloads its own tool versions on first run |
-| Format | `trunk fmt` | Auto-fixes where supported |
+| Lint (all) | `make lint` | Trunk downloads its own tool versions on first run |
+| Format | `make lint-fix` | Auto-fixes where supported |
 
 ### Non-obvious caveats
 

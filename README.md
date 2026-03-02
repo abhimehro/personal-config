@@ -46,6 +46,15 @@ cd ~/Documents/dev/personal-config
 #  - Stages media services + LaunchAgents (WebDAV + Alldebrid)
 ```
 
+### Linting and Formatting
+```bash
+# Run all linters
+make lint
+
+# Auto-fix lint issues
+make lint-fix
+```
+
 ### Automated Maintenance System (NEW!)
 ```bash
 # Check system health
