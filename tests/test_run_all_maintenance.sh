@@ -115,19 +115,30 @@ check_grep "weekly calls health_check.sh"        "health_check.sh called"       
 check_grep "weekly calls quick_cleanup.sh"       "quick_cleanup.sh called"       "$CALL_LOG"
 check_grep "weekly calls performance_optimizer"  "performance_optimizer.sh called" "$CALL_LOG"
 
-# ---- Test 6: error propagation — orchestrator exits non-zero when sub-script fails ----
+# ---- Test 6: default (no-args) mode runs weekly tasks ----
+> "$CALL_LOG"
+if bash "$MOCK_DIR/run_all_maintenance.sh" > "$TEST_DIR/t6.log" 2>&1; then
+    echo "PASS: default (no-args) mode exits 0"; PASS=$((PASS + 1))
+else
+    echo "FAIL: default (no-args) mode exited non-zero"; cat "$TEST_DIR/t6.log"; FAIL=$((FAIL + 1))
+fi
+check_grep "no-args calls health_check.sh"        "health_check.sh called"        "$CALL_LOG"
+check_grep "no-args calls quick_cleanup.sh"       "quick_cleanup.sh called"       "$CALL_LOG"
+check_grep "no-args calls performance_optimizer"  "performance_optimizer.sh called" "$CALL_LOG"
+
+# ---- Test 7: error propagation — orchestrator exits non-zero when sub-script fails ----
 make_mock_fail "health_check.sh"
 > "$CALL_LOG"
-t6_exit=0
-bash "$MOCK_DIR/run_all_maintenance.sh" health > "$TEST_DIR/t6.log" 2>&1 || t6_exit=$?
-if [[ "$t6_exit" -ne 0 ]]; then
+t7_exit=0
+bash "$MOCK_DIR/run_all_maintenance.sh" health > "$TEST_DIR/t7.log" 2>&1 || t7_exit=$?
+if [[ "$t7_exit" -ne 0 ]]; then
     echo "PASS: sub-script failure propagated to orchestrator"; PASS=$((PASS + 1))
 else
     echo "FAIL: orchestrator did not propagate sub-script failure"; FAIL=$((FAIL + 1))
 fi
 make_mock_ok "health_check.sh"
 
-# ---- Test 7: master log file is created in LOG_DIR ----
+# ---- Test 8: master log file is created in LOG_DIR ----
 > "$CALL_LOG"
 bash "$MOCK_DIR/run_all_maintenance.sh" health > "$TEST_DIR/t7.log" 2>&1
 log_count=$(find "$LOG_TMP" -name "maintenance_master_*.log" -type f 2>/dev/null | wc -l | tr -d ' ')
