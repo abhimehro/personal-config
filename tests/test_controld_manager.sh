@@ -79,7 +79,14 @@ test_switch_profile_invalid_protocol() {
 
     local output
     output=$(switch_profile "gaming" "invalid_proto" 2>&1)
+    local status=$?
 
+    if [ "$status" -eq 0 ]; then
+        echo "Fail: switch_profile should return non-zero for invalid protocol. Exit status: $status"
+        echo "Output:"
+        echo "$output"
+        return 1
+    fi
     if ! echo "$output" | grep -q "Invalid profile ID or protocol"; then
         echo "Fail: switch_profile should reject invalid protocol. Output:"
         echo "$output"
