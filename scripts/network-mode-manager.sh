@@ -21,10 +21,14 @@ else
 fi
 
 # Source optional shared libraries
-# shellcheck source=scripts/lib/network-utils.sh
-if [[ -f "$SCRIPT_DIR/lib/network-utils.sh" ]]; then source "$SCRIPT_DIR/lib/network-utils.sh"; fi
-# shellcheck source=scripts/lib/dns-utils.sh
-if [[ -f "$SCRIPT_DIR/lib/dns-utils.sh" ]]; then source "$SCRIPT_DIR/lib/dns-utils.sh"; fi
+if [[ -f "$SCRIPT_DIR/lib/network-utils.sh" ]]; then
+    # shellcheck source=scripts/lib/network-utils.sh
+    source "$SCRIPT_DIR/lib/network-utils.sh"
+fi
+if [[ -f "$SCRIPT_DIR/lib/dns-utils.sh" ]]; then
+    # shellcheck source=scripts/lib/dns-utils.sh
+    source "$SCRIPT_DIR/lib/dns-utils.sh"
+fi
 
 # --- Configuration ---
 DEFAULT_PROFILE="browsing"
