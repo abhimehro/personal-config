@@ -5,6 +5,7 @@ on:
     branches:
       - main
 
+# This gives the default GITHUB_TOKEN the power to push commits
 permissions:
   contents: write
 
@@ -18,7 +19,10 @@ jobs:
           ruby-version: 3.1
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          # Required for changelog generators to read previous tags and commit history
+          fetch-depth: 0 
 
       - name: Install github_changelog_generator
         run: |
@@ -27,25 +31,23 @@ jobs:
           echo "PATH=$GEM_BIN_DIR:$PATH" >> $GITHUB_ENV
 
       - name: Generate changelog
-        env:
-          CHANGELOG_GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        # Pass the built-in GITHUB_TOKEN explicitly using the --token flag
         run: |
-          github_changelog_generator --user "${GITHUB_REPOSITORY_OWNER}" --project "${GITHUB_REPOSITORY#*/}"
+          github_changelog_generator \
+            --user "${GITHUB_REPOSITORY_OWNER}" \
+            --project "${GITHUB_REPOSITORY#*/}" \
+            --token "${{ secrets.GITHUB_TOKEN }}"
 
       - name: Commit and Push Changes
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add CHANGELOG.md
+          
           if ! git diff --cached --quiet; then
             git commit -m "docs: update CHANGELOG [automated]"
-            git push https://x-access-token:${GH_PAT}@github.com/abhimehro/personal-config.git
+            # actions/checkout automatically handles authentication, a simple 'git push' works safely
+            git push
           else
             echo "No changes to commit."
           fi
-
-# This workflow will automatically generate or update CHANGELOG.md on every push to main or when manually triggered.
-# It uses github-changelog-generator to pull PRs, issues, and release notes from GitHub.
-# For more customization, see: https://github.com/github-changelog-generator/github-changelog-generator 
