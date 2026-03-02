@@ -7,12 +7,12 @@ This PR introduces a centralized `.shellcheckrc` file at the repository root to 
 No new vulnerabilities are introduced. We strictly enforce that warnings such as `SC2034` (unused variables) are NOT globally disabled, ensuring unused variables continue to be flagged for review to prevent silent regressions or logic errors.
 
 **FAILS IF:**
-If Trunk CI or a developer's local instance runs `shellcheck` with an explicit `--norc` flag, these exclusions will be ignored. However, the standard `trunk check` respects this natively.
+If developers assume Trunk's integrated ShellCheck reads the repo‑root `.shellcheckrc`. Trunk instead uses `.trunk/configs/.shellcheckrc` as its authoritative configuration, so the root file only affects direct `shellcheck` CLI runs (and even then is ignored when `--norc` is provided).
 
 **VERIFY:**
 - Ensure `.shellcheckrc` only disables `SC1091`.
 - Ensure `SC2034` is present but commented out, keeping the warnings visible for individual review.
-- Confirm `trunk check scripts/network-mode-manager.sh` (or any script locally) throws fewer warnings natively.
+- Confirm that running `shellcheck` from the repository root (without `--norc`) respects the `.shellcheckrc` exclusions, and that `trunk check` behavior remains governed by `.trunk/configs/.shellcheckrc`.
 
 **MAINTAIN:**
 Any new global exclusions must be added directly to this file, with explicit rationale as a comment above the `disable=` directive. Ensure not to broadly disable real logical bugs.
