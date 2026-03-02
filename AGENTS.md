@@ -207,7 +207,7 @@ Detailed patterns, mock recipes, and a copy-paste test skeleton live in [`docs/T
 - **Script-patching via `sed`** — when a script hardcodes a dependency path (e.g. `IPV6_MANAGER=…`), copy the script to `$TEST_DIR` and patch with `sed`. Branch on `$(uname -s)` for `sed -i ''` (macOS) vs `sed -i` (Linux).
 - **Capturing expected-failure output under `set -e`** — use `$(cmd 2>&1 || true)` or capture the exit code with `|| actual=$?` to prevent `set -euo pipefail` from aborting the test on a deliberately failing command.
 
-**Tests that skip on Linux/CI** (not bugs — each file contains an early-exit skip guard that prints `SKIP:` and exits 0):
+**Tests that skip on Linux/CI** (not bugs — each file contains an early-exit skip guard that prints `SKIP:` and exits 77):
 
 | Test | Skip Reason | Guard |
 |---|---|---|
@@ -228,7 +228,7 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 | What | Command | Notes |
 |---|---|---|
 | Python tests | `python3 -m unittest discover -s tests -p 'test_*.py'` | stdlib only, no pip deps |
-| Shell tests | `make test` | Runs in parallel. Platform-specific tests emit `SKIP:` and exit 0 on Linux/CI. |
+| Shell tests | `make test` | Runs in parallel. Platform-specific tests emit `SKIP:` and exit 77 on Linux/CI. |
 | Lint (all) | `make lint` | Trunk downloads its own tool versions on first run |
 | Format | `make lint-fix` | Auto-fixes where supported |
 
