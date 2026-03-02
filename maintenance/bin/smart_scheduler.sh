@@ -336,5 +336,7 @@ EOF
     esac
 }
 
-# Execute main function
-main "$@"
+# Execute main function only when run directly, not when sourced
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
