@@ -120,11 +120,10 @@ generate_profile_config() {
     local ctrld_pid
     if [[ "$protocol" == "doh3" ]]; then
         ctrld run --cd "$profile_id" --proto doh3 --config="$TEMP_CONFIG" --skip_self_checks >/dev/null 2>&1 &
-        ctrld_pid=$!
     else
         ctrld run --cd "$profile_id" --config="$TEMP_CONFIG" --skip_self_checks >/dev/null 2>&1 &
-        ctrld_pid=$!
     fi
+    ctrld_pid=$!
 
     # Wait for config file to be created (optimized)
     local max_retries=50
