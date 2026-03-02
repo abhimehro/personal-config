@@ -122,7 +122,7 @@ restart_with_config() {
     local listener_ip="$4"
 
     ctrld stop 2>/dev/null || true
-    pkill -f ctrld 2>/dev/null || true
+    pkill -x ctrld 2>/dev/null || true
 
     _wait_for_process_stop "ctrld" 30
 
