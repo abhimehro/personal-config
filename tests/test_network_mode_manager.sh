@@ -6,7 +6,7 @@
 set -euo pipefail
 
 # network-mode-manager.sh issues sudo commands; skip if passwordless sudo is unavailable
-sudo -n true 2>/dev/null || { echo "SKIP: passwordless sudo not available in this environment"; exit 0; }
+sudo -n true 2>/dev/null || { echo "SKIP: passwordless sudo not available in this environment"; exit 77; }
 
 # Setup
 TEST_DIR=$(mktemp -d)

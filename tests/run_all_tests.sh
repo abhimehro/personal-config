@@ -55,7 +55,7 @@ for i in "${!test_pids[@]}"; do
     exit_code=$?
     log_file="$TMP_DIR/output-${test_names[$i]}.log"
 
-    if [ "$exit_code" -eq 0 ] && grep -q "^SKIP:" "$log_file" 2>/dev/null; then
+    if [ "$exit_code" -eq 77 ]; then
         echo "⏭️  ${test_names[$i]} (skipped)"
         skipped_tests+=("${test_names[$i]}")
     elif [ "$exit_code" -eq 0 ]; then
