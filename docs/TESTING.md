@@ -4,7 +4,7 @@ This guide documents the mock and test patterns used across `tests/`. Read this 
 
 ## Quick reference: test helpers
 
-Every shell test file in this repo uses the same small set of named helpers. Copy these verbatim into a new test file:
+Most unit-style shell test files in this repo use the same small set of named helpers. For new tests, copy these verbatim into a new test file (some older or ad‑hoc tests may use custom assertions instead):
 
 ```bash
 PASS=0
