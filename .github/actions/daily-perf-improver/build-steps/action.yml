@@ -168,20 +168,14 @@ runs:
       run: |
         echo ">> Running existing test suite..." | tee -a build-steps.log
         
-        # Run tests that don't require special setup
-        test_count=0
-        failed_tests=0
-        
-        for test_file in tests/test_*.sh; do
-          if [ -f "$test_file" ] && [ -x "$test_file" ]; then
-            test_count=$((test_count + 1))
-            echo "  Running: $test_file" | tee -a build-steps.log
-            if ! bash "$test_file" >> build-steps.log 2>&1; then
-              echo "    ⚠️  Test failed: $test_file" | tee -a build-steps.log
-              failed_tests=$((failed_tests + 1))
-            fi
-          fi
-        done
+        echo "  Running shell tests in parallel (make test)..." | tee -a build-steps.log
+        if ! make test >> build-steps.log 2>&1; then
+          echo "    ⚠️  Shell test suite failed" | tee -a build-steps.log
+          failed_tests=1
+        else
+          echo "    ✓ Shell tests passed" | tee -a build-steps.log
+          failed_tests=0
+        fi
         
         # Run Python tests if pytest is available
         if command -v pytest &> /dev/null && [ -f tests/test_path_validation.py ]; then
@@ -194,15 +188,13 @@ runs:
           fi
         fi
         
-        if [ $test_count -eq 0 ]; then
-          echo "  No executable tests found" | tee -a build-steps.log
-        elif [ $failed_tests -gt 0 ]; then
-          echo "  $failed_tests/$test_count test(s) failed" | tee -a build-steps.log
+        if [ $failed_tests -gt 0 ]; then
+          echo "  ⚠️ Some test suites failed" | tee -a build-steps.log
         else
-          echo "  ✓ All $test_count test(s) passed" | tee -a build-steps.log
+          echo "  ✓ All test suites passed" | tee -a build-steps.log
         fi
         echo "" | tee -a build-steps.log
-        
+
     - name: Verify benchmarking tools
       shell: bash
       run: |
