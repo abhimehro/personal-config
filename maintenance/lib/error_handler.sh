@@ -381,7 +381,14 @@ emergency_recovery() {
     
     # 3. Reset circuit breakers if all are open
     local open_breakers
-    open_breakers=$(jq -r 'to_entries[] | select(.value.status == "open") | .key' "$CIRCUIT_BREAKER_STATE_FILE" 2>/dev/null | wc -l)
+
+    if command -v jq >/dev/null 2>&1; then
+        open_breakers=$(jq -r 'to_entries[] | select(.value.status == "open") | .key' "$CIRCUIT_BREAKER_STATE_FILE" 2>/dev/null | wc -l)
+    else
+        # SECURITY: Avoid unpredictable behavior when jq is unavailable; default to 0 open breakers
+        error_log "jq not found; skipping circuit breaker open-breaker count in emergency_recovery"
+        open_breakers=0
+    fi
     if [[ ${open_breakers:-0} -gt 3 ]]; then
         error_log "Too many circuit breakers open - resetting all"
         echo '{}' > "$CIRCUIT_BREAKER_STATE_FILE"
