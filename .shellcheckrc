@@ -1,0 +1,40 @@
+# Project-wide ShellCheck configuration
+# See: https://www.shellcheck.net/wiki/Directive
+#
+# This file centralises intentional, policy-level exclusions so that inline
+# `# shellcheck disable=` annotations can be reserved for one-off, site-specific
+# suppressions that need their own rationale.
+#
+# Guidelines:
+#   • Only exclude codes whose suppression is *project policy* (not a bug being hidden).
+#   • Each entry MUST have a comment explaining WHY it is excluded and what the
+#     acceptable alternative looks like.
+#   • Real-bug warnings (SC2155, SC2086, SC2046, …) are NOT silenced here; they
+#     must be fixed at the call site or suppressed inline with a justification.
+
+# SC1091: Not following sourced files.
+# Rationale: The codebase uses a dynamic sourcing pattern where paths are computed
+# at runtime (e.g. source "$LIB_DIR/foo.sh" or source "${SCRIPT_DIR}/lib/common.sh").
+# ShellCheck cannot statically resolve these paths, so every sourced library triggers
+# SC1091. All sourced files are version-controlled in this repo; the warning adds no
+# value project-wide.
+# Acceptable alternative: use `# shellcheck source=path/to/file` at specific call
+# sites when static analysis of the sourced content is genuinely needed.
+disable=SC1091
+
+# SC1090: ShellCheck can't follow non-constant source.
+# Rationale: Same dynamic-sourcing pattern as SC1091. Many scripts construct the
+# source path via variables (e.g. source "${SCRIPT_DIR}/lib/common.sh" or
+# source "$LIB_DIR/utils.sh"). This is intentional and safe; the files are always
+# present in the repo.
+# Acceptable alternative: use `# shellcheck source=…` inline where the sourced
+# file's interface needs to be visible to static analysis.
+disable=SC1090
+
+# SC2034: Variable appears unused.
+# NOTE: intentionally kept commented-out. Many color/emoji constants and
+# configuration variables are exported for consumption by child processes
+# (e.g. RED, GREEN, E_PASS). However, SC2034 also catches genuine unused locals
+# that should be cleaned up, so the warning remains visible project-wide.
+# Re-evaluate once the variable audit in issue #446 is complete.
+# disable=SC2034
