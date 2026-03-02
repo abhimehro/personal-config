@@ -139,8 +139,10 @@ fi
 make_mock_ok "health_check.sh"
 
 # ---- Test 8: master log file is created in LOG_DIR ----
+# Remove any master logs left by earlier tests so this assertion is unambiguous.
+rm -f "$LOG_TMP"/maintenance_master_*.log 2>/dev/null || true
 > "$CALL_LOG"
-bash "$MOCK_DIR/run_all_maintenance.sh" health > "$TEST_DIR/t7.log" 2>&1
+bash "$MOCK_DIR/run_all_maintenance.sh" health > "$TEST_DIR/t8.log" 2>&1
 log_count=$(find "$LOG_TMP" -name "maintenance_master_*.log" -type f 2>/dev/null | wc -l | tr -d ' ')
 if [[ "$log_count" -gt 0 ]]; then
     echo "PASS: master log file created in LOG_DIR"; PASS=$((PASS + 1))
