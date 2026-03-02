@@ -158,7 +158,7 @@ fi
 > "$CALL_LOG"
 bash "$MOCK_DIR/run_all_maintenance.sh" health > "$TEST_DIR/t9a.log" 2>&1
 bash "$MOCK_DIR/run_all_maintenance.sh" health > "$TEST_DIR/t9b.log" 2>&1
-call_count=$(grep -c "health_check.sh called" "$CALL_LOG" 2>/dev/null || echo "0")
+call_count=$(grep -c "health_check.sh called" "$CALL_LOG" 2>/dev/null || true)
 if [[ "$call_count" -eq 2 ]]; then
     echo "PASS: idempotency — two sequential runs both dispatched"; PASS=$((PASS + 1))
 else
