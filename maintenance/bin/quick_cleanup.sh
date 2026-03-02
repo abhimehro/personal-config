@@ -50,8 +50,7 @@ if [[ -d "$HOME/Library/Caches" ]]; then
                     has_old_files=1
                 fi
             else
-    # shellcheck disable=SC2086  # intentional word splitting or dynamic args
-                if find "$cache_dir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -print -quit 2>/dev/null | grep -q .; then
+                if find "$cache_dir" -type f -mtime +"${CLEANUP_CACHE_DAYS:-30}" -print -quit 2>/dev/null | grep -q .; then
                     has_old_files=1
                 fi
             fi
