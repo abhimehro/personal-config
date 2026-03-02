@@ -197,8 +197,8 @@ show_status() {
         if [[ -L "$controld_dir/ctrld.toml" ]]; then
             local current_config
             current_config=$(readlink "$controld_dir/ctrld.toml")
-            local extracted_name="${current_config##*/}"
-            local profile_name="${extracted_name#ctrld.}"
+            local profile_name="${current_config##*/}"
+            profile_name="${profile_name#ctrld.}"
             profile_name="${profile_name%.toml}"
             local protocol
             protocol=$(grep "type = " "$current_config" 2>/dev/null | sed "s/.*type = '\(.*\)'.*/\1/" || echo "unknown")
