@@ -197,7 +197,7 @@ If you are operating as an agent in this repo, align with:
 
 Detailed patterns, mock recipes, and a copy-paste test skeleton live in [`docs/TESTING.md`](docs/TESTING.md). The key points:
 
-- **`$MOCK_BIN` / PATH injection** — create a temp dir of fake executables and prepend it to `PATH` before running the script under test. Every test file in `tests/` uses this pattern.
+- **`$MOCK_BIN` / PATH injection** — create a temp dir of fake executables and prepend it to `PATH` before running the script under test. Most shell unit tests in `tests/` use this pattern.
 - **Log-file assertion** — write mock binaries that record their invocations to a file in `$TEST_DIR`, then `grep` that file to assert the right command and arguments were used.
 - **Mock `HOME` isolation** — set `HOME="$TEST_DIR/home"` so scripts that write to `~/Library/Logs/` don't touch real user data and don't collide between parallel runs.
 - **Script-patching via `sed`** — when a script hardcodes a dependency path (e.g. `IPV6_MANAGER=…`), copy the script to `$TEST_DIR` and patch with `sed`. Branch on `$(uname -s)` for `sed -i ''` (macOS) vs `sed -i` (Linux).
