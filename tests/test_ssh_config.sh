@@ -4,6 +4,9 @@
 
 set -Eeuo pipefail
 
+# 1Password SSH agent socket is macOS-only; skip on Linux/CI
+[[ "$(uname -s)" == "Darwin" ]] || { echo "SKIP: requires macOS (1Password SSH agent socket)"; exit 0; }
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "🧪 Testing SSH Configuration..."
