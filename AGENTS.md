@@ -193,6 +193,27 @@ If you are operating as an agent in this repo, align with:
   - deleting them to avoid drift, or
   - replacing them with a short pointer to this root `AGENTS.md`.
 
+## Writing Tests
+
+Detailed patterns, mock recipes, and a copy-paste test skeleton live in [`docs/TESTING.md`](docs/TESTING.md). The key points:
+
+- **`$MOCK_BIN` / PATH injection** — create a temp dir of fake executables and prepend it to `PATH` before running the script under test. Every test file in `tests/` uses this pattern.
+- **Log-file assertion** — write mock binaries that record their invocations to a file in `$TEST_DIR`, then `grep` that file to assert the right command and arguments were used.
+- **Mock `HOME` isolation** — set `HOME="$TEST_DIR/home"` so scripts that write to `~/Library/Logs/` don't touch real user data and don't collide between parallel runs.
+- **Script-patching via `sed`** — when a script hardcodes a dependency path (e.g. `IPV6_MANAGER=…`), copy the script to `$TEST_DIR` and patch with `sed`. Branch on `$(uname -s)` for `sed -i ''` (macOS) vs `sed -i` (Linux).
+- **Capturing expected-failure output under `set -e`** — use `$(cmd 2>&1 || true)` or capture the exit code with `|| actual=$?` to prevent `set -euo pipefail` from aborting the test on a deliberately failing command.
+
+**Tests known to fail on Linux** (not bugs — skip or tolerate in CI):
+
+| Test | Reason |
+|---|---|
+| `test_config_fish.sh` | Needs `fish` shell |
+| `test_ssh_config.sh` | Needs 1Password agent socket |
+| `test_security_manager_restore.sh` | Uses BSD `sed -i ''` (macOS only) |
+| `test_media_server_auth.sh` | macOS Keychain credential flow |
+
+See [`docs/TESTING.md`](docs/TESTING.md) for the full guide including a copy-paste test skeleton and a known-limitations table.
+
 ## Cursor Cloud specific instructions
 
 This is a macOS-focused dotfiles/IaC repo. There are no web services or databases to start. The dev workflow is: edit scripts, lint, and run tests.
