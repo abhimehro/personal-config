@@ -9,12 +9,14 @@ LOG_DIR="$HOME/Library/Logs/maintenance"
 mkdir -p "$LOG_DIR"
 
 log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [INFO] [panic_analyzer] $*" | tee -a "$LOG_DIR/panic_analyzer.log"
 }
 
 log_warn() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [WARNING] [panic_analyzer] $*" | tee -a "$LOG_DIR/panic_analyzer.log"
 }
 

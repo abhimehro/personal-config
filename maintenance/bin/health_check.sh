@@ -23,12 +23,14 @@ to_int() { printf '%d' "${1:-0}" 2>/dev/null || echo 0; }
 
 # Basic logging
 log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [INFO] [health_check] $*" | tee -a "$LOG_DIR/health_check.log"
 }
 
 log_warn() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [WARNING] [health_check] $*" | tee -a "$LOG_DIR/health_check.log"
 }
 
@@ -49,7 +51,8 @@ run_with_timeout() {
         gtimeout "$timeout_seconds" bash -c "$cmd" 2>/dev/null || echo ""
     else
         # Fallback: use background process with kill
-        local output_file=$(mktemp)
+        local output_file
+        output_file=$(mktemp)
         bash -c "$cmd" > "$output_file" 2>/dev/null &
         local pid=$!
         local count=0

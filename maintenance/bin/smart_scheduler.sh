@@ -65,10 +65,12 @@ get_disk_io_load() {
 
 # Usage pattern analysis
 analyze_usage_patterns() {
-    local hour=$(date +%H)
+    local hour
+    hour=$(date +%H)
     # Remove leading zero to avoid octal interpretation
     hour=$((10#$hour))
-    local day=$(date +%u)  # 1=Monday, 7=Sunday
+    local day
+    day=$(date +%u)  # 1=Monday, 7=Sunday
     
     # Define usage patterns based on typical work schedule
     local usage_level="low"

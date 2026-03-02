@@ -14,7 +14,8 @@ mkdir -p "$METRICS_DIR" "$REPORTS_DIR"
 
 # Basic logging
 log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [ANALYTICS] $*" | tee -a "$ANALYTICS_LOG"
 }
 
@@ -33,8 +34,10 @@ aggregate_metrics() {
     
     log_info "Aggregating $period metrics for last $days_back days"
     
-    local output_file="$REPORTS_DIR/${period}_metrics_$(date +%Y%m%d).json"
-    local temp_file=$(mktemp)
+    local output_file
+    output_file="$REPORTS_DIR/${period}_metrics_$(date +%Y%m%d).json"
+    local temp_file
+    temp_file=$(mktemp)
     
     # Initialize aggregated data structure
     cat > "$temp_file" << 'EOF'
@@ -61,8 +64,10 @@ EOF
     
     # shellcheck disable=SC2086  # intentional dynamic args
     # Process metrics files
-    local start_date=$(date -j -v-${days_back}d "+%Y%m%d" 2>/dev/null || date -d "-${days_back} days" "+%Y%m%d")
-    local end_date=$(date "+%Y%m%d")
+    local start_date
+    start_date=$(date -j -v-${days_back}d "+%Y%m%d" 2>/dev/null || date -d "-${days_back} days" "+%Y%m%d")
+    local end_date
+    end_date=$(date "+%Y%m%d")
     
     if command -v jq >/dev/null 2>&1; then
         # Update basic info
@@ -82,15 +87,20 @@ EOF
         # Process each day's metrics
         # shellcheck disable=SC2086  # intentional dynamic args
         for i in $(seq 0 $((days_back-1))); do
-            local check_date=$(date -j -v-${i}d "+%Y%m%d" 2>/dev/null || date -d "-${i} days" "+%Y%m%d")
+            local check_date
+            check_date=$(date -j -v-${i}d "+%Y%m%d" 2>/dev/null || date -d "-${i} days" "+%Y%m%d")
             local metrics_file="$METRICS_DIR/${check_date}.jsonl"
             
             if [[ -f "$metrics_file" ]]; then
                 # Extract key metrics for the day
-                local day_performance=$(tail -1 "$metrics_file" 2>/dev/null | jq -r 'select(.type=="performance_score") | .value' 2>/dev/null || echo "0")
-                local day_disk=$(tail -1 "$metrics_file" 2>/dev/null | jq -r 'select(.type=="disk_usage_percent") | .value' 2>/dev/null || echo "0")
-                local day_memory=$(tail -1 "$metrics_file" 2>/dev/null | jq -r 'select(.type=="memory_free") | .value' 2>/dev/null || echo "0")
-                local day_warnings=$(grep '"type":"health_warnings"' "$metrics_file" 2>/dev/null | tail -1 | jq -r '.value' 2>/dev/null || echo "0")
+                local day_performance
+                day_performance=$(tail -1 "$metrics_file" 2>/dev/null | jq -r 'select(.type=="performance_score") | .value' 2>/dev/null || echo "0")
+                local day_disk
+                day_disk=$(tail -1 "$metrics_file" 2>/dev/null | jq -r 'select(.type=="disk_usage_percent") | .value' 2>/dev/null || echo "0")
+                local day_memory
+                day_memory=$(tail -1 "$metrics_file" 2>/dev/null | jq -r 'select(.type=="memory_free") | .value' 2>/dev/null || echo "0")
+                local day_warnings
+                day_warnings=$(grep '"type":"health_warnings"' "$metrics_file" 2>/dev/null | tail -1 | jq -r '.value' 2>/dev/null || echo "0")
                 
                 # Accumulate totals
                 total_performance=$((total_performance + ${day_performance:-0}))
@@ -103,9 +113,12 @@ EOF
         
         # Calculate averages
         if [[ $day_count -gt 0 ]]; then
-            local avg_performance=$((total_performance / day_count))
-            local avg_disk=$((total_disk / day_count))
-            local avg_memory=$((total_memory / day_count))
+            local avg_performance
+            avg_performance=$((total_performance / day_count))
+            local avg_disk
+            avg_disk=$((total_disk / day_count))
+            local avg_memory
+            avg_memory=$((total_memory / day_count))
             
             # Update summary in report
             jq --argjson perf "$avg_performance" \
@@ -140,11 +153,13 @@ analyze_trends() {
     # Collect values from the last N days
         # shellcheck disable=SC2086  # intentional dynamic args
     for i in $(seq $((days_back-1)) -1 0); do
-        local check_date=$(date -j -v-${i}d "+%Y%m%d" 2>/dev/null || date -d "-${i} days" "+%Y%m%d")
+        local check_date
+        check_date=$(date -j -v-${i}d "+%Y%m%d" 2>/dev/null || date -d "-${i} days" "+%Y%m%d")
         local metrics_file="$METRICS_DIR/${check_date}.jsonl"
         
         if [[ -f "$metrics_file" ]]; then
-            local value=$(grep "\"type\":\"$metric_name\"" "$metrics_file" 2>/dev/null | tail -1 | jq -r '.value' 2>/dev/null || echo "0")
+            local value
+            value=$(grep "\"type\":\"$metric_name\"" "$metrics_file" 2>/dev/null | tail -1 | jq -r '.value' 2>/dev/null || echo "0")
             values+=("${value:-0}")
             dates+=("$check_date")
         fi
@@ -178,7 +193,8 @@ generate_insights() {
     
     log_info "Generating performance insights"
     
-    local insights_file="$REPORTS_DIR/insights_$(date +%Y%m%d).txt"
+    local insights_file
+    insights_file="$REPORTS_DIR/insights_$(date +%Y%m%d).txt"
     
     cat > "$insights_file" << EOF
 System Performance Insights - $(date +"%B %d, %Y")
@@ -187,10 +203,14 @@ System Performance Insights - $(date +"%B %d, %Y")
 EOF
     
     if command -v jq >/dev/null 2>&1 && [[ -f "$report_file" ]]; then
-        local avg_performance=$(jq -r '.summary.avg_performance_score // 0' "$report_file")
-        local avg_disk=$(jq -r '.summary.avg_disk_usage // 0' "$report_file")
-        local avg_memory=$(jq -r '.summary.avg_memory_free // 0' "$report_file")
-        local total_warnings=$(jq -r '.summary.total_warnings // 0' "$report_file")
+        local avg_performance
+        avg_performance=$(jq -r '.summary.avg_performance_score // 0' "$report_file")
+        local avg_disk
+        avg_disk=$(jq -r '.summary.avg_disk_usage // 0' "$report_file")
+        local avg_memory
+        avg_memory=$(jq -r '.summary.avg_memory_free // 0' "$report_file")
+        local total_warnings
+        total_warnings=$(jq -r '.summary.total_warnings // 0' "$report_file")
         
         # Performance assessment
         # shellcheck disable=SC2129  # explicit logging structure preferred
@@ -225,9 +245,12 @@ EOF
         echo "==============" >> "$insights_file"
         echo "" >> "$insights_file"
         
-        local perf_trend=$(analyze_trends "performance_score" 7)
-        local disk_trend=$(analyze_trends "disk_usage_percent" 7)
-        local memory_trend=$(analyze_trends "memory_free" 7)
+        local perf_trend
+        perf_trend=$(analyze_trends "performance_score" 7)
+        local disk_trend
+        disk_trend=$(analyze_trends "disk_usage_percent" 7)
+        local memory_trend
+        memory_trend=$(analyze_trends "memory_free" 7)
         
         # shellcheck disable=SC2129  # explicit logging structure preferred
         echo "• Performance Score: ${perf_trend%%:*} (${perf_trend##*:}% change)" >> "$insights_file"
@@ -266,7 +289,8 @@ EOF
 
 # Health score calculation
 calculate_health_score() {
-    local current_metrics_file="$METRICS_DIR/$(date +%Y%m%d).jsonl"
+    local current_metrics_file
+    current_metrics_file="$METRICS_DIR/$(date +%Y%m%d).jsonl"
     
     if [[ ! -f "$current_metrics_file" ]]; then
         echo "0"
@@ -274,11 +298,16 @@ calculate_health_score() {
     fi
     
     # Get latest metrics
-    local performance_score=$(grep '"type":"performance_score"' "$current_metrics_file" 2>/dev/null | tail -1 | jq -r '.value' 2>/dev/null || echo "0")
-    local disk_usage=$(grep '"type":"disk_usage_percent"' "$current_metrics_file" 2>/dev/null | tail -1 | jq -r '.value' 2>/dev/null || echo "0")
-    local memory_free=$(grep '"type":"memory_free"' "$current_metrics_file" 2>/dev/null | tail -1 | jq -r '.value' 2>/dev/null || echo "1000")
-    local warnings=$(grep '"type":"health_warnings"' "$current_metrics_file" 2>/dev/null | tail -1 | jq -r '.value' 2>/dev/null || echo "0")
-    local failed_agents=$(grep '"type":"maintenance_agents_failed"' "$current_metrics_file" 2>/dev/null | tail -1 | jq -r '.value' 2>/dev/null || echo "0")
+    local performance_score
+    performance_score=$(grep '"type":"performance_score"' "$current_metrics_file" 2>/dev/null | tail -1 | jq -r '.value' 2>/dev/null || echo "0")
+    local disk_usage
+    disk_usage=$(grep '"type":"disk_usage_percent"' "$current_metrics_file" 2>/dev/null | tail -1 | jq -r '.value' 2>/dev/null || echo "0")
+    local memory_free
+    memory_free=$(grep '"type":"memory_free"' "$current_metrics_file" 2>/dev/null | tail -1 | jq -r '.value' 2>/dev/null || echo "1000")
+    local warnings
+    warnings=$(grep '"type":"health_warnings"' "$current_metrics_file" 2>/dev/null | tail -1 | jq -r '.value' 2>/dev/null || echo "0")
+    local failed_agents
+    failed_agents=$(grep '"type":"maintenance_agents_failed"' "$current_metrics_file" 2>/dev/null | tail -1 | jq -r '.value' 2>/dev/null || echo "0")
     
     # Calculate weighted health score
     local health_score=100
@@ -320,7 +349,8 @@ generate_dashboard() {
     
     log_info "Generating $period dashboard"
     
-    local dashboard_file="$REPORTS_DIR/dashboard_${period}_$(date +%Y%m%d).html"
+    local dashboard_file
+    dashboard_file="$REPORTS_DIR/dashboard_${period}_$(date +%Y%m%d).html"
     
     # Get aggregated data
     local metrics_report
@@ -331,10 +361,12 @@ generate_dashboard() {
     esac
     
     # Generate insights
-    local insights_file=$(generate_insights "$metrics_report")
+    local insights_file
+    insights_file=$(generate_insights "$metrics_report")
     
     # Calculate current health score
-    local current_health=$(calculate_health_score)
+    local current_health
+    current_health=$(calculate_health_score)
     
     # Create HTML dashboard
     cat > "$dashboard_file" << EOF
@@ -382,9 +414,12 @@ EOF
     
     # Add more metric cards based on available data
     if command -v jq >/dev/null 2>&1 && [[ -f "$metrics_report" ]]; then
-        local avg_performance=$(jq -r '.summary.avg_performance_score // 0' "$metrics_report")
-        local avg_disk=$(jq -r '.summary.avg_disk_usage // 0' "$metrics_report")
-        local total_warnings=$(jq -r '.summary.total_warnings // 0' "$metrics_report")
+        local avg_performance
+        avg_performance=$(jq -r '.summary.avg_performance_score // 0' "$metrics_report")
+        local avg_disk
+        avg_disk=$(jq -r '.summary.avg_disk_usage // 0' "$metrics_report")
+        local total_warnings
+        total_warnings=$(jq -r '.summary.total_warnings // 0' "$metrics_report")
         
         cat >> "$dashboard_file" << EOF
             <div class="metric-card">
@@ -444,8 +479,10 @@ generate_summary_report() {
     
     log_info "Generating $period summary report"
     
-    local summary_file="$REPORTS_DIR/summary_${period}_$(date +%Y%m%d).txt"
-    local current_health=$(calculate_health_score)
+    local summary_file
+    summary_file="$REPORTS_DIR/summary_${period}_$(date +%Y%m%d).txt"
+    local current_health
+    current_health=$(calculate_health_score)
     
     cat > "$summary_file" << EOF
 SYSTEM MAINTENANCE SUMMARY REPORT
@@ -476,7 +513,8 @@ EOF
     echo "" >> "$summary_file"
     
     # Add trend information
-    local perf_trend=$(analyze_trends "performance_score" 7)
+    local perf_trend
+    perf_trend=$(analyze_trends "performance_score" 7)
     echo "PERFORMANCE TREND: ${perf_trend%%:*} (${perf_trend##*:}% change)" >> "$summary_file"
     
     log_info "Summary report saved to $summary_file"

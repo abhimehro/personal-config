@@ -198,7 +198,8 @@ optimize_disk_usage() {
                 
                 local cache_size_after
                 cache_size_after=$(du -sm "$cache_dir" 2>/dev/null | awk '{print $1}' || echo "0")
-                local freed=$((cache_size_before - cache_size_after))
+                local freed
+                freed=$((cache_size_before - cache_size_after))
                 
                 if [[ $freed -gt 0 ]]; then
                     log_info "Cleaned $cache_dir: freed ${freed}MB"
@@ -314,7 +315,8 @@ monitor_resources() {
     local monitor_duration="${1:-60}"  # Default 1 minute
     log_info "Starting resource monitoring for $monitor_duration seconds..."
     
-    local monitor_file="$METRICS_DIR/resource_monitor_$(date +%Y%m%d_%H%M%S).log"
+    local monitor_file
+    monitor_file="$METRICS_DIR/resource_monitor_$(date +%Y%m%d_%H%M%S).log"
     local start_time end_time
     start_time=$(date +%s)
     end_time=$((start_time + monitor_duration))
@@ -343,7 +345,8 @@ monitor_resources() {
 run_benchmark() {
     log_info "Running performance benchmark..."
     
-    local benchmark_file="$METRICS_DIR/performance_benchmark_$(date +%Y%m%d_%H%M%S).log"
+    local benchmark_file
+    benchmark_file="$METRICS_DIR/performance_benchmark_$(date +%Y%m%d_%H%M%S).log"
     
     echo "Performance Benchmark - $(date)" > "$benchmark_file"
     echo "================================" >> "$benchmark_file"
@@ -389,7 +392,8 @@ print(f'Memory allocation test: {time.time() - start:.3f}s')
 generate_performance_report() {
     log_info "Generating performance report..."
     
-    local report_file="$SCRIPT_DIR/../reports/performance_report_$(date +%Y%m%d).html"
+    local report_file
+    report_file="$SCRIPT_DIR/../reports/performance_report_$(date +%Y%m%d).html"
     mkdir -p "$(dirname "$report_file")"
     
     # Get system information
