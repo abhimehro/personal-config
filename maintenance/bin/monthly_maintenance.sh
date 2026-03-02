@@ -5,7 +5,8 @@
 set -o pipefail
 
 # Configuration
-export RUN_START=$(date +%s)
+RUN_START=$(date +%s)
+export RUN_START
 LOG_DIR="$HOME/Library/Logs/maintenance"
 LOCK_DIR="/tmp/monthly_maintenance.lock"
 LOCK_CONTEXT_LOG="$LOG_DIR/lock_context_$(date +%Y%m%d-%H%M%S).log"
@@ -43,12 +44,14 @@ fi
 
 # Basic logging
 log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [INFO] [monthly_maintenance] $*" | tee -a "$LOG_DIR/monthly_maintenance.log"
 }
 
 log_warn() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [WARNING] [monthly_maintenance] $*" | tee -a "$LOG_DIR/monthly_maintenance.log"
 }
 

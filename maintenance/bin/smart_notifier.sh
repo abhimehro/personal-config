@@ -56,7 +56,8 @@ fi
 
 # Logging function
 notify_log() {
-    local timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
+    local timestamp
+    timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$timestamp [NOTIFIER] $*" | tee -a "$NOTIFICATION_LOG"
 }
 
@@ -66,19 +67,26 @@ is_quiet_hours() {
         return 1
     fi
     
-    local quiet_enabled=$(jq -r '.quiet_hours.enabled // false' "$NOTIFICATION_CONFIG")
+    local quiet_enabled
+    quiet_enabled=$(jq -r '.quiet_hours.enabled // false' "$NOTIFICATION_CONFIG")
     if [[ "$quiet_enabled" != "true" ]]; then
         return 1
     fi
     
-    local current_time=$(date +%H:%M)
-    local start_time=$(jq -r '.quiet_hours.start // "22:00"' "$NOTIFICATION_CONFIG")
-    local end_time=$(jq -r '.quiet_hours.end // "08:00"' "$NOTIFICATION_CONFIG")
+    local current_time
+    current_time=$(date +%H:%M)
+    local start_time
+    start_time=$(jq -r '.quiet_hours.start // "22:00"' "$NOTIFICATION_CONFIG")
+    local end_time
+    end_time=$(jq -r '.quiet_hours.end // "08:00"' "$NOTIFICATION_CONFIG")
     
     # Convert times to minutes for comparison
-    local current_minutes=$(date -j -f "%H:%M" "$current_time" "+%H * 60 + %M" 2>/dev/null | bc 2>/dev/null || echo "0")
-    local start_minutes=$(date -j -f "%H:%M" "$start_time" "+%H * 60 + %M" 2>/dev/null | bc 2>/dev/null || echo "1320")
-    local end_minutes=$(date -j -f "%H:%M" "$end_time" "+%H * 60 + %M" 2>/dev/null | bc 2>/dev/null || echo "480")
+    local current_minutes
+    current_minutes=$(date -j -f "%H:%M" "$current_time" "+%H * 60 + %M" 2>/dev/null | bc 2>/dev/null || echo "0")
+    local start_minutes
+    start_minutes=$(date -j -f "%H:%M" "$start_time" "+%H * 60 + %M" 2>/dev/null | bc 2>/dev/null || echo "1320")
+    local end_minutes
+    end_minutes=$(date -j -f "%H:%M" "$end_time" "+%H * 60 + %M" 2>/dev/null | bc 2>/dev/null || echo "480")
     
     # Handle overnight quiet hours
     if [[ $start_minutes -gt $end_minutes ]]; then
@@ -104,7 +112,8 @@ should_rate_limit() {
         return 1
     fi
     
-    local rate_enabled=$(jq -r '.rate_limiting.enabled // false' "$NOTIFICATION_CONFIG")
+    local rate_enabled
+    rate_enabled=$(jq -r '.rate_limiting.enabled // false' "$NOTIFICATION_CONFIG")
     if [[ "$rate_enabled" != "true" ]]; then
         return 1
     fi
@@ -114,8 +123,10 @@ should_rate_limit() {
         return 1
     fi
     
-    local max_per_hour=$(jq -r '.rate_limiting.max_per_hour // 10' "$NOTIFICATION_CONFIG")
-    local current_hour=$(date +%Y%m%d%H)
+    local max_per_hour
+    max_per_hour=$(jq -r '.rate_limiting.max_per_hour // 10' "$NOTIFICATION_CONFIG")
+    local current_hour
+    current_hour=$(date +%Y%m%d%H)
     
     # Count notifications in the last hour
     local notifications_this_hour=0
@@ -137,8 +148,10 @@ record_notification() {
     local priority="$1"
     local title="$2"
     local message="$3"
-    local timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
-    local hour_key="$(date +%Y%m%d%H)"
+    local timestamp
+    timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
+    local hour_key
+    hour_key="$(date +%Y%m%d%H)"
     
     if command -v jq >/dev/null 2>&1; then
         echo "{\"timestamp\":\"$timestamp\",\"hour\":\"$hour_key\",\"priority\":\"$priority\",\"title\":\"$title\",\"message\":\"$message\"}" >> "$NOTIFICATION_HISTORY"
@@ -174,7 +187,8 @@ smart_notify() {
     local skip_notification=false
     
     if is_quiet_hours; then
-        local always_notify=$(jq -r ".priority_levels.$priority.always_notify // false" "$NOTIFICATION_CONFIG" 2>/dev/null)
+        local always_notify
+        always_notify=$(jq -r ".priority_levels.$priority.always_notify // false" "$NOTIFICATION_CONFIG" 2>/dev/null)
         if [[ "$always_notify" != "true" ]]; then
             notify_log "Quiet hours active - skipping notification: $title"
             skip_notification=true
@@ -488,7 +502,8 @@ update_notification_config() {
     local value="$2"
     
     if command -v jq >/dev/null 2>&1; then
-        local temp_file=$(mktemp)
+        local temp_file
+        temp_file=$(mktemp)
         jq --arg key "$key" --arg value "$value" \
            'setpath($key | split("."); $value)' \
            "$NOTIFICATION_CONFIG" > "$temp_file" && mv "$temp_file" "$NOTIFICATION_CONFIG"

@@ -16,12 +16,14 @@ fi
 
 # Basic logging
 log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [INFO] [editor_cleanup] $*" | tee -a "$LOG_DIR/editor_cleanup.log"
 }
 
 log_warn() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [WARNING] [editor_cleanup] $*" | tee -a "$LOG_DIR/editor_cleanup.log"
 }
 
@@ -49,12 +51,14 @@ clean_cache_dir() {
     # Get size before cleanup
     local size_before
     size_before=$(du -sk "$cache_dir" 2>/dev/null | cut -f1)
-    local size_before_mb=$((size_before / 1024))
+    local size_before_mb
+    size_before_mb=$((size_before / 1024))
     
     log_info "$editor_name cache directory: $cache_dir (${size_before_mb}MB)"
     
     # Check if cache is larger than threshold
-    local max_size_kb=$((${EDITOR_CACHE_MAX_GB:-2} * 1024 * 1024))
+    local max_size_kb
+    max_size_kb=$((${EDITOR_CACHE_MAX_GB:-2} * 1024 * 1024))
     local age_days=${EDITOR_CACHE_AGE_DAYS:-14}
     
     if [[ $size_before -gt $max_size_kb ]]; then
@@ -72,9 +76,12 @@ clean_cache_dir() {
             # Get size after cleanup
             local size_after
             size_after=$(du -sk "$cache_dir" 2>/dev/null | cut -f1)
-            local size_after_mb=$((size_after / 1024))
-            local freed_kb=$((size_before - size_after))
-            local freed_mb=$((freed_kb / 1024))
+            local size_after_mb
+            size_after_mb=$((size_after / 1024))
+            local freed_kb
+            freed_kb=$((size_before - size_after))
+            local freed_mb
+            freed_mb=$((freed_kb / 1024))
             
             if [[ $freed_kb -gt 0 ]]; then
                 log_info "$editor_name cache cleanup freed ${freed_mb}MB (${size_before_mb}MB -> ${size_after_mb}MB)"

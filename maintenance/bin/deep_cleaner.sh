@@ -16,12 +16,14 @@ fi
 
 # Basic logging
 log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [INFO] [deep_cleaner] $*" | tee -a "$LOG_DIR/deep_cleaner.log"
 }
 
 log_warn() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [WARNING] [deep_cleaner] $*" | tee -a "$LOG_DIR/deep_cleaner.log"
 }
 
