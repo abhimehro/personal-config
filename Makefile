@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help test control-d-regression benchmark
+.PHONY: help test lint lint-fix control-d-regression benchmark
 
 help:  ## Show this help message
 	@echo "Available targets:"
@@ -14,3 +14,9 @@ control-d-regression:  ## Run full Control D regression test suite
 
 benchmark:  ## Run performance benchmarks for core scripts (requires hyperfine)
 	./tests/benchmarks/benchmark_scripts.sh all
+
+lint:  ## Run all linters (requires Trunk; runs: trunk check --all)
+	trunk check --all
+
+lint-fix:  ## Auto-fix lint issues (requires Trunk; runs: trunk fmt)
+	trunk fmt

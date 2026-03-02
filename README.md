@@ -46,6 +46,18 @@ cd ~/Documents/dev/personal-config
 #  - Stages media services + LaunchAgents (WebDAV + Alldebrid)
 ```
 
+### Linting and Formatting
+
+> **Requires:** [Trunk CLI](https://docs.trunk.io/check/usage) — install with `brew install trunk-io` or `curl https://get.trunk.io -fsSL | bash`
+
+```bash
+# Run all linters
+make lint
+
+# Auto-fix lint issues
+make lint-fix
+```
+
 ### Automated Maintenance System (NEW!)
 ```bash
 # Check system health
