@@ -21,6 +21,7 @@ log_warn() {
 # Load config
 CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
 if [[ -f "$CONFIG_FILE" ]]; then
+    # shellcheck disable=SC1090  # intentional dynamic sourcing
     source "$CONFIG_FILE" 2>/dev/null || true
 fi
 
@@ -199,6 +200,7 @@ else
     log_warn "Autoremove had issues"
 fi
 
+    # shellcheck disable=SC2086  # intentional word splitting or dynamic args
 if brew cleanup --prune=${BREW_CLEAN_PRUNE_DAYS:-30} 2>&1 | tee -a "$LOG_DIR/brew_maintenance.log"; then
     log_info "Successfully cleaned up old versions (older than ${BREW_CLEAN_PRUNE_DAYS:-30} days)"
 else

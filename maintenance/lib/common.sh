@@ -23,6 +23,7 @@ mkdir -p "$LOG_DIR" "$MNT_ROOT/tmp"
 CONFIG_FILE="$MNT_ROOT/conf/config.env"
 if [[ -f "$CONFIG_FILE" ]]; then
     set -a
+    # shellcheck disable=SC1090  # intentional dynamic sourcing
     source "$CONFIG_FILE" 2>/dev/null || true
     set +a
 fi
@@ -105,6 +106,7 @@ notify() {
 prune_logs() {
     local days="${LOG_RETENTION_DAYS:-60}"
     if [[ -d "$LOG_DIR" ]]; then
+    # shellcheck disable=SC2086  # intentional word splitting or dynamic args
         find "$LOG_DIR" -type f -name "*.log" -mtime +$days -delete 2>/dev/null || true
     fi
 }

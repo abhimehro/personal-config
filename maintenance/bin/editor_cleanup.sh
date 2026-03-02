@@ -28,6 +28,7 @@ log_warn() {
 # Load config
 CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
 if [[ -f "$CONFIG_FILE" ]]; then
+    # shellcheck disable=SC1090  # intentional dynamic sourcing
     source "$CONFIG_FILE" 2>/dev/null || true
 fi
 
@@ -63,6 +64,7 @@ clean_cache_dir() {
             log_info "Cleaning $editor_name cache older than $age_days days..."
             
             # Clean files older than specified days
+    # shellcheck disable=SC2086  # intentional word splitting or dynamic args
             find "$cache_dir" -type f -mtime +$age_days -delete 2>/dev/null || true
             
             # Remove empty directories
