@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # macOS Keychain credential flow is macOS-only; skip on Linux/CI
-[[ "$(uname -s)" == "Darwin" ]] || { echo "SKIP: requires macOS (Keychain credential flow)"; exit 0; }
+[[ "$(uname -s)" == "Darwin" ]] || { echo "SKIP: requires macOS (Keychain credential flow)"; exit 77; }
 
 # Setup Mock Bin
 MOCK_BIN=$(mktemp -d)

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Check if the Fish shell is installed; skip on platforms where it is unavailable (e.g. Linux CI)
-command -v fish >/dev/null 2>&1 || { echo "SKIP: fish shell not available — macOS only"; exit 0; }
+command -v fish >/dev/null 2>&1 || { echo "SKIP: fish shell not available"; exit 77; }
 # Determine repository root and config path (support both repo and configs path)
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CONFIG_FILE="$REPO_ROOT/configs/.config/fish/config.fish"
