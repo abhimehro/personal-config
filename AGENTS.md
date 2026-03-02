@@ -94,6 +94,9 @@ trunk check --all
 trunk fmt
 ```
 
+> **ShellCheck dual-config note:** Local `shellcheck` uses `.shellcheckrc` (defaults, disables SC1091/SC1090) while Trunk/CI uses `.trunk/configs/.shellcheckrc` (`enable=all`, disables SC2154/SC1091/SC1090), so CI will report more issues than direct `shellcheck`.
+> To match CI behavior locally, run `trunk check <file>` instead of calling `shellcheck` directly.
+
 ### Tests
 There isn’t a single “test runner” script; most tests are directly executable shell scripts under `tests/`.
 
