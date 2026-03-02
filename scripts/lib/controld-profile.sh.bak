@@ -11,6 +11,8 @@ if [[ "${_CONTROLD_PROFILE_SH_:-}" == "true" ]]; then
 fi
 _CONTROLD_PROFILE_SH_="true"
 
+}
+
 # Validate DNS protocol.
 validate_protocol() {
     local proto="$1"
@@ -50,12 +52,11 @@ get_profile_id() {
 
     # Validate the resolved profile ID
     if [[ -n "$profile_id" ]]; then
-        # Use validate_profile_id from network-common.sh (assumes it's loaded)
-        if command -v validate_profile_id >/dev/null 2>&1; then
-            if ! validate_profile_id "$profile_id"; then
-                echo ""
-                return 0
-            fi
+        if ! validate_profile_id "$profile_id"; then
+            # Validation failed, but this function runs in subshells often,
+            # so logging error directly might not be ideal. Outputting empty string instead.
+            echo ""
+            return 0
         fi
     fi
 
@@ -88,10 +89,8 @@ generate_profile_config() {
     local config_file="$profiles_dir/ctrld.$profile_name.toml"
 
     # Input Validation
-    if command -v validate_profile_id >/dev/null 2>&1; then
-        if ! validate_profile_id "$profile_id"; then
-            return 1
-        fi
+    if ! validate_profile_id "$profile_id"; then
+        return 1
     fi
 
     # Ensure destination directory exists

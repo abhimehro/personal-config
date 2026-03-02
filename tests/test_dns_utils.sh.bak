@@ -7,8 +7,6 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/scripts/lib/dns-utils.sh"
 
 # Mock command dependencies
-sudo() { "$@"; }
-killall() { echo "mock_killall" >/dev/null; }
 networksetup() { echo "mock_networksetup $*" >/dev/null; }
 scutil() { echo "mock_scutil" >/dev/null; }
 dscacheutil() { echo "mock_dscacheutil" >/dev/null; }
