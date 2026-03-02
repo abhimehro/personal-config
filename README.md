@@ -47,6 +47,9 @@ cd ~/Documents/dev/personal-config
 ```
 
 ### Linting and Formatting
+
+> **Requires:** [Trunk CLI](https://docs.trunk.io/check/usage) — install with `brew install trunk-io` or `curl https://get.trunk.io -fsSL | bash`
+
 ```bash
 # Run all linters
 make lint
