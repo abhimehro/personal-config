@@ -12,17 +12,22 @@ fi
 _CONTROLD_PROFILE_SH_="true"
 
 # Validate profile ID.
-# Allow alphanumeric characters, underscores, and hyphens.
+# SECURITY: Only define this helper if it does not already exist (e.g., from network-common.sh)
+# to avoid clobbering a stricter shared implementation.
+# Allow only lowercase alphanumeric characters and underscores (no uppercase, no hyphens)
+# to align with the stricter validation contract used elsewhere.
+if ! declare -F validate_profile_id >/dev/null 2>&1; then
 validate_profile_id() {
     local profile_id="$1"
     if [[ -z "$profile_id" ]]; then
         return 1
     fi
-    if [[ ! "$profile_id" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    if [[ ! "$profile_id" =~ ^[a-z0-9_]+$ ]]; then
         return 1
     fi
     return 0
 }
+fi
 
 # Validate DNS protocol.
 validate_protocol() {
