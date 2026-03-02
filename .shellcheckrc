@@ -1,0 +1,8 @@
+# Project-wide ShellCheck configuration
+# See: https://github.com/koalaman/shellcheck/wiki/Configuration
+
+# SC1091: Not following sourced files — dynamic sourcing pattern used throughout
+disable=SC1091
+
+# SC2034: Unused variables — many are exported for child process consumption
+# disable=SC2034
