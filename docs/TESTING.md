@@ -289,7 +289,7 @@ echo "=== Results: $PASS passed, $FAIL failed ==="
 
 ## Tests that skip on Linux/CI
 
-The following tests contain early-exit skip guards that print `SKIP:` and exit 0 on Linux/CI. They are **not failures** — `make test` will show them as `⏭️ skipped`:
+The following tests contain early-exit skip guards that print `SKIP:` and exit 77 on Linux/CI. They are **not failures** — `make test` will show them as `⏭️ skipped`:
 
 | Test file | Skip Reason | Guard |
 |---|---|---|
