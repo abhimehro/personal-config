@@ -234,8 +234,7 @@ should_auto_remediate() {
 prune_logs() {
     local days="${LOG_RETENTION_DAYS:-60}"
     if [[ -d "$LOG_DIR" ]]; then
-    # shellcheck disable=SC2086  # intentional word splitting or dynamic args
-        find "$LOG_DIR" -type f -name "*.log" -mtime +$days -delete 2>/dev/null || true
+        find "$LOG_DIR" -type f -name "*.log" -mtime +"$days" -delete 2>/dev/null || true
         
         # Simple log rotation for large files
         find "$LOG_DIR" -type f -name "*.log" -size +10M -print0 2>/dev/null | while IFS= read -r -d '' log_file; do
