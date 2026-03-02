@@ -3,7 +3,7 @@
 # Unit tests for maintenance/bin/run_all_maintenance.sh
 # Mocks: health_check.sh, quick_cleanup.sh, and all weekly-mode sub-scripts
 #
-# Pattern: script-copy + mock-sibling (docs/TESTING.md Pattern 4)
+# Pattern: script-copy + mock-sibling (see docs/TESTING.md for patterns)
 # The orchestrator resolves sub-scripts relative to its own SCRIPT_DIR, so
 # we copy it into a temp directory alongside mock siblings.  LOG_DIR is then
 # automatically "$TEST_DIR/bin/../tmp" — no sed-patching required.
