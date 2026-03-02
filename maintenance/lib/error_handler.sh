@@ -93,10 +93,10 @@ retry_with_backoff() {
         error_log "Waiting ${delay}s before retry..."
         sleep "$delay"
         
-        # Calculate next delay with exponential backoff
-        delay=$(( delay * backoff_multiplier ))
-        if [[ $delay -gt $max_delay ]]; then
-            delay=$max_delay
+        # Calculate next delay with exponential backoff (awk handles non-integer multipliers)
+        delay=$(awk "BEGIN { d = $delay * $backoff_multiplier; printf \"%d\", (d > $max_delay ? $max_delay : d) }")
+        if [[ $delay -lt 1 ]]; then
+            delay=1
         fi
         
         ((attempt++))
@@ -117,12 +117,14 @@ circuit_breaker_check() {
     # Get current state
     local cb_state
     cb_state=$(get_circuit_breaker_state "$service_name")
-    local state_status
-    state_status=$(echo "$cb_state" | jq -r '.status // "closed"')
-    local failure_count
-    failure_count=$(echo "$cb_state" | jq -r '.failure_count // 0')
-    local last_failure
-    last_failure=$(echo "$cb_state" | jq -r '.last_failure // 0')
+    local state_status="closed"
+    local failure_count=0
+    local last_failure=0
+    if command -v jq >/dev/null 2>&1; then
+        state_status=$(echo "$cb_state" | jq -r '.status // "closed"')
+        failure_count=$(echo "$cb_state" | jq -r '.failure_count // 0')
+        last_failure=$(echo "$cb_state" | jq -r '.last_failure // 0')
+    fi
     
     case "$state_status" in
         "closed")
@@ -170,8 +172,10 @@ circuit_breaker_failure() {
     
     local cb_state
     cb_state=$(get_circuit_breaker_state "$service_name")
-    local failure_count
-    failure_count=$(echo "$cb_state" | jq -r '.failure_count // 0')
+    local failure_count=0
+    if command -v jq >/dev/null 2>&1; then
+        failure_count=$(echo "$cb_state" | jq -r '.failure_count // 0')
+    fi
     local current_time
     current_time=$(date +%s)
     
