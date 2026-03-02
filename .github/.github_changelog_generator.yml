@@ -1,7 +1,7 @@
 # Optimized .github_changelog_generator configuration for Seatek_Analysis project
 
 user: abhimehro
-project: Seatek_Analysis
+project: personal-config
 output: CHANGELOG.md
 issues: true
 pulls: true
