@@ -18,7 +18,9 @@ for _lib in \
     "$_CTRLD_SCRIPTS_LIB/common.sh" \
     "$_CTRLD_SCRIPTS_LIB/dns-utils.sh" \
     "$_CTRLD_SCRIPTS_LIB/network-common.sh" \
-    "$_CTRLD_SCRIPTS_LIB/file-common.sh"; do
+    "$_CTRLD_SCRIPTS_LIB/file-common.sh" \
+    "$_CTRLD_SCRIPTS_LIB/controld-profile.sh" \
+    "$_CTRLD_SCRIPTS_LIB/controld-service.sh"; do
     if [[ -f "$_lib" ]]; then
         # shellcheck source=/dev/null
         source "$_lib"
@@ -39,116 +41,6 @@ if [[ -f "$ENV_FILE" ]]; then
     # shellcheck source=/dev/null
     source "$ENV_FILE"
 fi
-
-# Profile configurations with protocol preferences
-#
-# All profiles now default to DoH3 (QUIC) for consistency and performance.
-# You can still force a fallback to DoH/TCP for debugging by passing an
-# explicit protocol override (e.g., `controld-manager switch privacy doh`).
-
-# Validation helper
-# Delegates to validate_dns_protocol from network-common.sh when available,
-# otherwise falls back to the inline implementation.
-validate_protocol() {
-    local proto="$1"
-    if command -v validate_dns_protocol >/dev/null 2>&1; then
-        validate_dns_protocol "$proto"
-        return
-    fi
-    case "$proto" in
-        doh|doh3) return 0 ;;
-        *) return 1 ;;
-    esac
-}
-
-# validate_profile_id – provided by network-common.sh when available.
-# Inline fallback for standalone installs.
-if ! command -v validate_profile_id >/dev/null 2>&1; then
-validate_profile_id() {
-    local profile_id="$1"
-    # Allow alphanumeric characters, underscores, and hyphens.
-    if [[ -z "$profile_id" ]]; then
-        return 1
-    fi
-    if [[ ! "$profile_id" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-        return 1
-    fi
-    return 0
-}
-fi
-
-# redact_profile_id – provided by network-common.sh when available.
-# Inline fallback for standalone installs.
-if ! command -v redact_profile_id >/dev/null 2>&1; then
-redact_profile_id() {
-    local profile_id="$1"
-    if [[ -z "$profile_id" ]]; then
-        echo "(empty)"
-        return
-    fi
-    local len=${#profile_id}
-    if [[ $len -le 5 ]]; then
-        # For short IDs (5 chars or less), mask completely to avoid revealing all chars
-        echo "***...**"
-    else
-        echo "${profile_id:0:3}...${profile_id: -2}"
-    fi
-}
-fi
-
-get_profile_id() {
-    local profile_name="$1"
-    local profile_id=""
-
-    case "$profile_name" in
-        "privacy") profile_id="${CTR_PROFILE_PRIVACY_ID:-${CTRLD_PRIVACY_PROFILE:-6m971e9jaf}}" ;;
-        "gaming") profile_id="${CTR_PROFILE_GAMING_ID:-${CTRLD_GAMING_PROFILE:-1xfy57w34t7}}" ;;
-        "browsing") profile_id="${CTR_PROFILE_BROWSING_ID:-${CTRLD_BROWSING_PROFILE:-rcnz7qgvwg}}" ;;
-        *) echo ""; return 0 ;;
-    esac
-
-    # Validate the resolved profile ID
-    if [[ -n "$profile_id" ]]; then
-        if ! validate_profile_id "$profile_id"; then
-            log_error "Profile validation failed"
-            echo ""
-            return 0
-        fi
-    fi
-
-    echo "$profile_id"
-    return 0
-}
-
-get_profile_protocol() {
-    case "$1" in
-        "gaming") echo "doh3" ;;
-        "privacy") echo "doh3" ;;
-        "browsing") echo "doh3" ;;
-        *) echo "doh3" ;;
-    esac
-}
-
-get_all_profiles() {
-    echo "privacy gaming browsing"
-}
-
-# Wait for a named process to stop, polling every 0.1 s for up to max_retries attempts.
-# Delegates to wait_for_process_stop from common.sh when available.
-# Usage: _wait_for_process_stop <process_name> [max_retries]
-_wait_for_process_stop() {
-    if command -v wait_for_process_stop >/dev/null 2>&1; then
-        wait_for_process_stop "$@"
-        return
-    fi
-    local process_name="$1"
-    local max_retries="${2:-20}"
-    local retry=0
-    while pgrep -x "$process_name" >/dev/null 2>&1 && [[ $retry -lt $max_retries ]]; do
-        sleep 0.1
-        retry=$((retry + 1))
-    done
-}
 
 # Color codes
 RED='\033[0;31m'
@@ -181,244 +73,35 @@ log_warning() {
 check_root() {
     if [[ $EUID -ne 0 ]]; then
         log_error "This script must be run as root. Use: sudo $0"
-        exit 1
-    fi
-}
-
-# Create directory structure
-setup_directories() {
-    # 🛡️ Pre-flight hardening for log file to prevent symlink-based log hijacking
-    # Must validate LOG_FILE *before* calling any log function that appends to it.
-    if [[ -L "$LOG_FILE" ]]; then
-        echo "Security Alert: $LOG_FILE is a symlink! Aborting to prevent log hijack." >&2
-        exit 1
-    fi
-    if [[ -e "$LOG_FILE" && ! -f "$LOG_FILE" ]]; then
-        echo "Security Alert: $LOG_FILE is not a regular file! Aborting." >&2
-        exit 1
-    fi
-    log "Setting up directory structure..."
-
-    # 🛡️ Sentinel: Verify all critical paths are not symlinks before creation
-    # Uses assert_not_symlink from file-common.sh when available, inline otherwise.
-    _check_not_symlink() {
-        local path="$1" label="${2:-$1}"
-        if command -v assert_not_symlink >/dev/null 2>&1; then
-            assert_not_symlink "$path" "$label" || { log_error "Security Alert: $label is a symlink! Aborting."; exit 1; }
-        elif [[ -L "$path" ]]; then
-            log_error "Security Alert: $label is a symlink! Aborting to prevent hijack."
-            exit 1
-        fi
-    }
-    _check_not_symlink "$CONTROLD_DIR"  "CONTROLD_DIR"
-    _check_not_symlink "$PROFILES_DIR"  "PROFILES_DIR"
-    _check_not_symlink "$BACKUP_DIR"    "BACKUP_DIR"
-
-    # 🛡️ Sentinel: Use secure_mkdir (file-common.sh) or atomic 'install -d' fallback
-    # to create directories with the correct permissions in a single atomic operation.
-    if command -v secure_mkdir >/dev/null 2>&1; then
-        secure_mkdir "$CONTROLD_DIR" 700 || exit 1
-        secure_mkdir "$PROFILES_DIR" 700 || exit 1
-        secure_mkdir "$BACKUP_DIR"   700 || exit 1
-    else
-        [[ -e "$CONTROLD_DIR" && ! -d "$CONTROLD_DIR" ]] && { log_error "Security Alert: $CONTROLD_DIR is not a directory."; exit 1; }
-        install -d -m 700 "$CONTROLD_DIR" "$PROFILES_DIR" "$BACKUP_DIR"
-    fi
-
-    # 🛡️ Sentinel: Post-creation verification to reduce TOCTOU window
-    if [[ -L "$CONTROLD_DIR" ]] || [[ -L "$PROFILES_DIR" ]] || [[ -L "$BACKUP_DIR" ]]; then
-        log_error "Security Alert: A ControlD directory became a symlink after creation. Aborting."
-        exit 1
-    fi
-    if [[ ! -d "$CONTROLD_DIR" ]] || [[ ! -d "$PROFILES_DIR" ]] || [[ ! -d "$BACKUP_DIR" ]]; then
-        log_error "Expected directories are missing after creation. Aborting."
-        exit 1
-    fi
-
-    # 🛡️ Sentinel: Securely create log file (protect against symlink attacks)
-    if [[ -L "$LOG_FILE" ]]; then
-        rm -f "$LOG_FILE"
-    fi
-    if [[ ! -e "$LOG_FILE" ]]; then
-        (umask 077 && touch "$LOG_FILE") 2>/dev/null || true
-    fi
-
-    # Restrict log file to root-only (600) to protect sensitive profile IDs
-    if [[ -L "$LOG_FILE" ]]; then
-        log_warning "Log file $LOG_FILE is a symlink. Skipping permission change to prevent symlink attack."
-    elif [[ -f "$LOG_FILE" ]]; then
-        chmod 600 "$LOG_FILE" 2>/dev/null || true
-    fi
-}
-
-# Backup current network settings
-backup_network_settings() {
-    log "Backing up current network settings..."
-
-    # Delegate DNS backup to the shared helper (network-common.sh)
-    if command -v backup_dns_settings >/dev/null 2>&1; then
-        backup_dns_settings "$BACKUP_DIR"
-    else
-        networksetup -getdnsservers Wi-Fi > "$BACKUP_DIR/original_dns.txt" 2>/dev/null \
-            || echo "No DNS servers" > "$BACKUP_DIR/original_dns.txt"
-    fi
-
-    # Backup current network configuration
-    scutil --dns > "$BACKUP_DIR/dns_config.txt" 2>/dev/null || true
-
-    log_success "Network settings backed up"
-}
-
-# Restore network settings (emergency recovery)
-restore_network_settings() {
-    log_warning "Restoring original network settings..."
-
-    # Delegate DNS restore to the shared helper (network-common.sh)
-    if command -v restore_dns_settings >/dev/null 2>&1; then
-        restore_dns_settings "$BACKUP_DIR"
-    else
-        if [[ -f "$BACKUP_DIR/original_dns.txt" ]]; then
-            local original_dns
-            original_dns=$(cat "$BACKUP_DIR/original_dns.txt")
-            if [[ "$original_dns" == "No DNS servers" ]] || [[ "$original_dns" == "There aren't any DNS Servers set on Wi-Fi." ]]; then
-                networksetup -setdnsservers Wi-Fi "Empty"
-            else
-                while IFS= read -r dns_server; do
-                    if [[ -n "$dns_server" ]]; then
-                        networksetup -setdnsservers Wi-Fi "$dns_server"
-                        break
-                    fi
-                done < "$BACKUP_DIR/original_dns.txt"
-            fi
-        else
-            networksetup -setdnsservers Wi-Fi 1.1.1.1 8.8.8.8
-        fi
-    fi
-
-    # Flush DNS cache
-    dscacheutil -flushcache
-    sudo killall -HUP mDNSResponder 2>/dev/null || true
-
-    log_success "Network settings restored"
-}
-
-# Safe service stop with cleanup
-safe_stop() {
-    log "Safely stopping Control D service..."
-
-    # Stop ctrld service
-    ctrld stop 2>/dev/null || true
-
-    # Kill any remaining processes
-    pkill -x ctrld 2>/dev/null || true
-
-    # Wait for processes to fully terminate (optimized with polling)
-    _wait_for_process_stop "ctrld" 20
-
-    # Verify no ctrld processes are running
-    if pgrep -x "ctrld" >/dev/null; then
-        log_warning "Force killing remaining ctrld processes..."
-        pkill -9 -x ctrld 2>/dev/null || true
-        # Quick check if it's gone
-        sleep 0.1
-    fi
-
-    # Reset DNS to prevent network hijacking
-    restore_network_settings
-
-    log_success "Service safely stopped and network restored"
-}
-
-# Generate profile configuration with protocol support
-generate_profile_config() {
-    local profile_name="$1"
-    local profile_id="$2"
-    local protocol="$3"
-    local config_file="$PROFILES_DIR/ctrld.$profile_name.toml"
-
-    # 🛡️ Defense in depth: Validate profile_id even though callers should validate
-    if ! validate_profile_id "$profile_id"; then
-        log_error "Invalid profile ID provided to generate_profile_config"
         return 1
     fi
+    return 0
+}
 
-    log "Generating $profile_name profile configuration with $protocol protocol..."
+# Test connection using the currently active profile
+test_current_connection() {
+    log "Testing DNS connection..."
+    local controld_dir="${1:-$CONTROLD_DIR}"
 
-    # Ensure destination directory exists
-    mkdir -p "$PROFILES_DIR"
-
-    # Generate configuration using ctrld
-    # 🛡️ Sentinel: Use local variable and ensure cleanup
-    local TEMP_CONFIG
-    TEMP_CONFIG=$(mktemp /tmp/ctrld_temp.toml.XXXXXX)
-    trap 'rm -f "$TEMP_CONFIG"' RETURN
-
-    # Start service temporarily to generate config
-    # ⚡ Bolt Optimization: Use 'run' in background instead of 'start' to avoid
-    # service registration overhead and unnecessary DNS flapping.
-    local ctrld_pid
-    if [[ "$protocol" == "doh3" ]]; then
-        ctrld run --cd "$profile_id" --proto doh3 --config="$TEMP_CONFIG" --skip_self_checks >/dev/null 2>&1 &
-        ctrld_pid=$!
-    else
-        ctrld run --cd "$profile_id" --config="$TEMP_CONFIG" --skip_self_checks >/dev/null 2>&1 &
-        ctrld_pid=$!
+    local current_profile="unknown"
+    if [[ -L "$controld_dir/ctrld.toml" ]]; then
+        local current_config
+        current_config=$(readlink "$controld_dir/ctrld.toml")
+        current_profile=$(basename "$current_config" | sed 's/ctrld\.\(.*\)\.toml/\1/')
     fi
 
-    # Wait for config file to be created (optimized)
-    local max_retries=50
-    local count=0
-    while [[ ! -f "$TEMP_CONFIG" ]] && [[ $count -lt $max_retries ]]; do
-        # If process died prematurely, stop waiting
-        if ! kill -0 "$ctrld_pid" 2>/dev/null; then
-            break
-        fi
-        sleep 0.1
-        ((count++))
-    done
+    local test_result
+    test_profile_connection "$current_profile" "$LISTENER_IP"
+    test_result=$?
 
-    # Ensure file has content
-    if [[ -f "$TEMP_CONFIG" ]]; then
-        # Tiny buffer to ensure write flush
-        sleep 0.1
-    fi
-
-    # Cleanup background process
-    kill "$ctrld_pid" 2>/dev/null || true
-    wait "$ctrld_pid" 2>/dev/null || true
-
-    if [[ -f "$TEMP_CONFIG" ]]; then
-        # 🛡️ Sentinel: Security Hardening against Symlink Attacks
-        # Use 'install -m 600' for atomic copy+permission setting
-        # This is safer than 'rm -f' + 'cp' + 'chmod' as it's a single atomic operation
-        # that won't follow symlinks and avoids TOCTOU races where an attacker could
-        # create a symlink between the rm and cp operations
-        install -m 600 "$TEMP_CONFIG" "$config_file"
-        # Cleanup handled by trap, but explicit remove doesn't hurt
-        rm -f "$TEMP_CONFIG"
-
-        # 🛡️ Sentinel: Security Hardening
-        # 1. Strictly enforce localhost binding to prevent Open Resolver vulnerability
-        # 2. Remove IPv6 wildcards
-        # 3. Optimize timeout
-        sed -i '' -e "s/ip = ['\"]0.0.0.0['\"]/ip = \"127.0.0.1\"/g" \
-                  -e "s/ip = ['\"]::['\"]/ip = \"127.0.0.1\"/g" \
-                  -e 's/, "::\/0"//g' \
-                  -e 's/"::\/0", //g' \
-                  -e "s/timeout = 5000/timeout = 3000/g" \
-                  "$config_file" 2>/dev/null || true
-
-        # 🛡️ Sentinel: Verification
-        # Ensure no wildcard bindings remain in the config
-        if grep -qE "ip = ['\"]?0\.0\.0\.0['\"]?|ip = ['\"]?::['\"]?" "$config_file"; then
-             log_error "Security Check Failed: Config still contains wildcard binding! Aborting."
-             rm -f "$config_file"
-             return 1
-        fi
-
-        log_success "$profile_name profile configuration generated with $protocol"
+    if [[ $test_result -eq 0 ]]; then
+        log_success "DNS resolution and filtering checks passed"
+        return 0
+    elif [[ $test_result -eq 2 ]]; then
+        log_warning "DNS resolution works, but filtering behavior seems incorrect"
+        return 0
     else
-        log_error "Failed to generate $profile_name profile configuration"
+        log_error "Connection test failed"
         return 1
     fi
 }
@@ -426,275 +109,75 @@ generate_profile_config() {
 # Switch profile safely with protocol selection
 switch_profile() {
     local profile_name="$1"
-    local force_protocol="$2"  # Optional: force specific protocol
+    local force_protocol="$2"
     local profile_id
     profile_id="$(get_profile_id "$profile_name")"
     local protocol=${force_protocol:-$(get_profile_protocol "$profile_name")}
 
-    # 🛡️ Sentinel: Input Validation
     if [[ -z "$profile_id" ]]; then
         log_error "Unknown profile: $profile_name"
         echo "Available profiles: $(get_all_profiles)"
         return 1
     fi
 
-    # Validate Profile ID to prevent injection
-    if ! validate_profile_id "$profile_id"; then
-        log_error "Invalid profile ID detected for '$profile_name'. Profile IDs must be alphanumeric."
-        return 1
-    fi
-
-    # Validate protocol to prevent injection/log-spoofing
-    if ! validate_protocol "$protocol"; then
-        log_error "Invalid protocol: '$protocol'. Must be 'doh' or 'doh3'."
+    if ! validate_profile_id "$profile_id" || ! validate_protocol "$protocol"; then
+        log_error "Invalid profile ID or protocol."
         return 1
     fi
 
     local config_file="$PROFILES_DIR/ctrld.$profile_name.toml"
-
-    if [[ -z "$profile_id" ]]; then
-        if [[ -z "${CTR_PROFILE_PRIVACY_ID:-}" ]] && [[ -z "${CTR_PROFILE_GAMING_ID:-}" ]] && [[ -z "${CTR_PROFILE_BROWSING_ID:-}" ]]; then
-             log_error "Profile IDs not configured. Please populate $ENV_FILE"
-        fi
-        log_error "Unknown profile or missing ID for: $profile_name"
-        echo "Available profiles: $(get_all_profiles)"
-        return 1
-    fi
     log "Switching to $profile_name profile with $protocol protocol..."
 
     # Optimization: Early exit if already running the desired profile/protocol
     if pgrep -x "ctrld" >/dev/null && [[ -L "$CONTROLD_DIR/ctrld.toml" ]]; then
-        local current_config
-        current_config=$(readlink "$CONTROLD_DIR/ctrld.toml")
-
-        # Verify the symlink points to the correct profile config file
-        if [[ "$current_config" == "$config_file" ]]; then
-            # Verify the protocol inside the config matches
-            if grep -q "type = '$protocol'" "$config_file" 2>/dev/null; then
-                # Quick health check (fast path) to ensure it's actually working
-                if dig @127.0.0.1 google.com +short +time=1 >/dev/null 2>&1; then
-                    log_success "Already running $profile_name profile with $protocol. No change needed."
-                    return 0
-                fi
-                log_warning "Profile matches but health check failed. Restarting service..."
+        if [[ "$(readlink "$CONTROLD_DIR/ctrld.toml")" == "$config_file" ]] && grep -q "type = '$protocol'" "$config_file" 2>/dev/null; then
+            if dig @127.0.0.1 google.com +short +time=1 >/dev/null 2>&1; then
+                log_success "Already running $profile_name profile with $protocol. No change needed."
+                return 0
             fi
+            log_warning "Profile matches but health check failed. Restarting service..."
         fi
     fi
 
-    # Ensure directories exist before generating configs
-    setup_directories
-
-    # Stop current service efficiently without touching network settings (avoids Windscribe interference)
+    setup_directories "$CONTROLD_DIR" "$PROFILES_DIR" "$BACKUP_DIR" "$LOG_FILE" || return 1
     log "Stopping Control D service..."
-    ctrld stop 2>/dev/null || true
-    pkill -f ctrld 2>/dev/null || true
-
-    # Wait for process to terminate (optimized)
-    _wait_for_process_stop "ctrld" 30
 
     # Generate profile config if it doesn't exist or if protocol changed
     if [[ ! -f "$config_file" ]] || ! grep -q "type = '$protocol'" "$config_file" 2>/dev/null; then
-        generate_profile_config "$profile_name" "$profile_id" "$protocol"
+        generate_profile_config "$profile_name" "$profile_id" "$protocol" "$PROFILES_DIR" || return 1
     fi
 
-    # Create symlink to active configuration
-    ln -sf "$config_file" "$CONTROLD_DIR/ctrld.toml"
-
-    # Start service with the new profile
     log "Starting Control D with $profile_name profile ($protocol)..."
-    if [[ "$protocol" == "doh3" ]]; then
-        ctrld start --config="$CONTROLD_DIR/ctrld.toml" --skip_self_checks
-    else
-        ctrld start --config="$CONTROLD_DIR/ctrld.toml" --skip_self_checks
-    fi
+    restart_with_config "$config_file" "$CONTROLD_DIR" "$protocol" "$LISTENER_IP" || return 1
 
-    # Wait for service to initialize (optimized)
-    local retry=0
-    while ! dig @127.0.0.1 google.com +short +time=1 >/dev/null 2>&1 && [[ $retry -lt 30 ]]; do
-        sleep 0.1
-        ((retry++))
-    done
+    local test_result
+    test_profile_connection "$profile_name" "$LISTENER_IP"
+    test_result=$?
 
-    # Configure system DNS to use localhost resolver
-    log "Configuring system DNS to use Control D resolver at $LISTENER_IP..."
-    networksetup -setdnsservers Wi-Fi 127.0.0.1
-
-    # Validate DNS configuration was applied
-    sleep 0.2
-    local configured_dns
-    configured_dns=$(networksetup -getdnsservers Wi-Fi 2>/dev/null || echo "")
-    if echo "$configured_dns" | grep -q "$LISTENER_IP"; then
-      log_success "System DNS configured to use Control D at $LISTENER_IP"
-    else
-      log_warning "DNS configuration may not have applied correctly. Retrying..."
-      # Force retry once
-      sleep 0.5
-      networksetup -setdnsservers Wi-Fi 127.0.0.1
-    fi
-
-    # Flush DNS cache
-    dscacheutil -flushcache
-    sudo killall -HUP mDNSResponder 2>/dev/null || true
-
-    # Test the connection
-    if test_connection; then
+    if [[ $test_result -eq 0 ]]; then
         log_success "Successfully switched to $profile_name profile ($protocol)"
-        echo
-        echo "Profile: $profile_name"
-        echo "ID: $(redact_profile_id "$profile_id")"
-        echo "Protocol: $protocol"
-        echo "Status: Active"
+        echo -e "\nProfile: $profile_name\nID: $(redact_profile_id "$profile_id")\nProtocol: $protocol\nStatus: Active"
+        return 0
+    elif [[ $test_result -eq 2 ]]; then
+        log_warning "Successfully switched to $profile_name profile ($protocol), but ads are not being blocked."
+        echo -e "\nProfile: $profile_name\nID: $(redact_profile_id "$profile_id")\nProtocol: $protocol\nStatus: Active (Warning: Filtering may not be active)"
         return 0
     else
         log_error "Failed to establish connection with $profile_name profile"
-        restore_network_settings
+        restore_network_settings "$BACKUP_DIR"
         return 1
-    fi
-}
-
-# Test DNS connection
-test_connection() {
-    log "Testing DNS connection..."
-
-    # Use dns_health_check from dns-utils.sh if available, otherwise fall back to dig
-    local _resolver="127.0.0.1"
-    if command -v dns_health_check >/dev/null 2>&1; then
-        if ! dns_health_check "$_resolver" "google.com"; then
-            log_error "Basic DNS resolution failed"
-            return 1
-        fi
-        log_success "Basic DNS resolution working"
-
-        if ! dns_health_check "$_resolver" "p.controld.com"; then
-            log_error "Control D connectivity failed"
-            return 1
-        fi
-        log_success "Control D connectivity confirmed"
-    else
-        # Fallback: direct dig invocation
-        if dig @"$_resolver" google.com +short +time=5 >/dev/null 2>&1; then
-            log_success "Basic DNS resolution working"
-        else
-            log_error "Basic DNS resolution failed"
-            return 1
-        fi
-
-        if dig @"$_resolver" p.controld.com +short +time=5 >/dev/null 2>&1; then
-            log_success "Control D connectivity confirmed"
-        else
-            log_error "Control D connectivity failed"
-            return 1
-        fi
-    fi
-
-    # Test filtering (different for gaming vs privacy vs browsing)
-    local block_test
-    block_test=$(dig @"$_resolver" doubleclick.net +short 2>/dev/null | wc -l)
-    if [[ "$block_test" -eq 0 ]]; then
-        log_success "Filtering is working (ads blocked)"
-    elif [[ "$block_test" -gt 0 ]]; then
-        if [[ "${profile_name:-}" == "gaming" ]]; then
-            log_success "Gaming filtering is working (ads allowed for gaming compatibility)"
-        else
-            log_warning "Ads are not being blocked - this may be intended for this profile"
-        fi
-    fi
-
-    return 0
-}
-
-# Show current status with protocol information
-show_status() {
-    echo "=== Control D Profile Manager Status ==="
-    echo
-
-    # Check if service is running
-    if pgrep -f ctrld >/dev/null; then
-        echo "Service Status: ✅ Running"
-
-        # Determine current profile and protocol
-        if [[ -L "$CONTROLD_DIR/ctrld.toml" ]]; then
-            local current_config=$(readlink "$CONTROLD_DIR/ctrld.toml")
-            local profile_name=$(basename "$current_config" | sed 's/ctrld\.\(.*\)\.toml/\1/')
-            local protocol=$(grep "type = " "$current_config" 2>/dev/null | sed "s/.*type = '\(.*\)'.*/\1/" || echo "unknown")
-            local profile_id=$(get_profile_id "$profile_name")
-            echo "Active Profile: $profile_name"
-            echo "Profile ID: $(redact_profile_id "$profile_id")"
-            echo "Protocol: $protocol"
-        else
-            echo "Active Profile: Unknown (direct configuration)"
-        fi
-
-        # Show DNS configuration
-        local dns_servers=$(networksetup -getdnsservers Wi-Fi)
-        echo "System DNS: $dns_servers"
-
-        # Test connection
-        if test_connection >/dev/null 2>&1; then
-            echo "Connection: ✅ Working"
-        else
-            echo "Connection: ❌ Issues detected"
-        fi
-    else
-        echo "Service Status: ❌ Stopped"
-    fi
-
-    echo
-    echo "Available Profiles:"
-    for profile in $(get_all_profiles); do
-        local default_protocol=$(get_profile_protocol "$profile")
-        local profile_id=$(get_profile_id "$profile")
-        echo "  - $profile ($(redact_profile_id "$profile_id")) - Default: $default_protocol"
-    done
-
-    echo
-    echo "Protocols:"
-    echo "  - doh3: DNS-over-HTTPS/3 (QUIC) - Faster, more secure"
-    echo "  - doh:  DNS-over-HTTPS (TCP) - Fallback for compatibility"
-}
-
-# Emergency recovery
-emergency_recovery() {
-    log_warning "Performing emergency recovery..."
-
-    # Force stop all ctrld processes
-    pkill -9 -f ctrld 2>/dev/null || true
-
-    # Remove any configurations that might cause issues
-    rm -f "$CONTROLD_DIR/ctrld.toml"
-
-    # Restore network settings
-    restore_network_settings
-
-    # Clear any stuck network states
-    sudo dscacheutil -flushcache
-    sudo killall -HUP mDNSResponder 2>/dev/null || true
-
-    # Test network connectivity
-    if ping -c 1 8.8.8.8 >/dev/null 2>&1; then
-        log_success "Network connectivity restored"
-        echo "Emergency recovery completed successfully"
-        echo "Your network should now be working normally"
-    else
-        log_error "Network connectivity still has issues"
-        echo "Please restart your router and/or use VPN as fallback"
     fi
 }
 
 # Initialize the system
 initialize() {
     log "Initializing Control D Profile Manager..."
+    setup_directories "$CONTROLD_DIR" "$PROFILES_DIR" "$BACKUP_DIR" "$LOG_FILE" || return 1
+    backup_network_settings "$BACKUP_DIR"
 
-    setup_directories
-    backup_network_settings
-
-    # Generate configurations for all profiles with their preferred protocols
     for profile in $(get_all_profiles); do
-        local profile_id=$(get_profile_id "$profile")
-        local protocol=$(get_profile_protocol "$profile")
-        generate_profile_config "$profile" "$profile_id" "$protocol"
+        generate_profile_config "$profile" "$(get_profile_id "$profile")" "$(get_profile_protocol "$profile")" "$PROFILES_DIR"
     done
-
     log_success "Initialization completed"
 }
 
@@ -702,32 +185,41 @@ initialize() {
 main() {
     case "${1:-""}" in
         "init"|"initialize")
-            check_root
+            check_root || return 1
             initialize
             ;;
         "switch")
-            check_root
+            check_root || return 1
             if [[ -z "$2" ]]; then
                 echo "Usage: $0 switch <profile_name> [protocol]"
                 echo "Available profiles: $(get_all_profiles)"
                 echo "Available protocols: doh3, doh"
-                exit 1
+                return 1
             fi
             switch_profile "$2" "$3"
             ;;
         "status")
-            show_status
+            show_status "$CONTROLD_DIR"
             ;;
         "stop")
-            check_root
-            safe_stop
+            check_root || return 1
+            log "Safely stopping Control D service..."
+            safe_stop "$BACKUP_DIR"
+            log_success "Service safely stopped and network restored"
             ;;
         "test")
-            test_connection
+            test_current_connection
             ;;
         "emergency"|"recover")
-            check_root
-            emergency_recovery
+            check_root || return 1
+            log_warning "Performing emergency recovery..."
+            if emergency_recovery "$BACKUP_DIR" "$CONTROLD_DIR"; then
+                log_success "Network connectivity restored"
+                echo "Emergency recovery completed successfully"
+            else
+                log_error "Network connectivity still has issues"
+                echo "Please restart your router and/or use VPN as fallback"
+            fi
             ;;
         *)
             echo "Control D Profile Manager - Enhanced with DOH3 Support"
@@ -743,17 +235,10 @@ main() {
             echo
             echo "Available profiles: $(get_all_profiles)"
             echo "Protocols: doh3 (default), doh (fallback)"
-            echo
-            echo "Examples:"
-            echo "  sudo $0 init"
-            echo "  sudo $0 switch gaming        # Use default DOH3"
-            echo "  sudo $0 switch gaming doh3   # Force DOH3"
-            echo "  sudo $0 switch gaming doh    # Force DOH fallback"
-            echo "  sudo $0 switch privacy       # Use default DOH3"
-            echo "  $0 status"
-            echo "  sudo $0 emergency"
             ;;
     esac
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
