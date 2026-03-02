@@ -2,7 +2,8 @@
 set -euo pipefail
 
 # Setup Mock Environment
-export HOME=$(mktemp -d)
+HOME=$(mktemp -d)
+export HOME
 MOCK_BIN=$(mktemp -d)
 mkdir -p "$HOME/Library/Logs"
 

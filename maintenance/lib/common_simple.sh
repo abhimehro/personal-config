@@ -36,8 +36,10 @@ fi
 log() {
     local level="${1:-INFO}"
     shift
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
-    local script_name="$(basename "${BASH_SOURCE[2]:-${BASH_SOURCE[1]:-common}}" .sh)"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local script_name
+    script_name="$(basename "${BASH_SOURCE[2]:-${BASH_SOURCE[1]:-common}}" .sh)"
     local line="$ts [$level] [$script_name] $*"
     
     echo "$line" | tee -a "$LOG_DIR/${script_name}.log" 2>/dev/null || echo "$line"

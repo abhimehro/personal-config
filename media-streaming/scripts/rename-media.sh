@@ -52,7 +52,8 @@ notify() {
 
 rename_and_upload() {
     local file="$1"
-    local filename=$(basename "$file")
+    local filename
+    filename=$(basename "$file")
 
     log "Processing: $filename"
 
@@ -117,7 +118,8 @@ rename_and_upload() {
 # Improved Strategy for Handling FileBot + Rclone
 process_file() {
     local file="$1"
-    local filename=$(basename "$file")
+    local filename
+    filename=$(basename "$file")
 
     log "---------------------------------------------------"
     log "Processing: $filename"
@@ -156,14 +158,16 @@ process_file() {
         --log fine >> "$LOG_FILE" 2>&1; then
 
         # Find the file in temp_stage
-        local renamed_file=$(find "$temp_stage" -type f | head -1)
+        local renamed_file
+        renamed_file=$(find "$temp_stage" -type f | head -1)
 
         if [[ -z "$renamed_file" ]]; then
              log "⚠ FileBot said success but file not found in $temp_stage"
              return 1
         fi
 
-        local new_name=$(basename "$renamed_file")
+        local new_name
+        new_name=$(basename "$renamed_file")
         log "✓ Renamed to: $new_name"
 
         # Upload to Union Remote

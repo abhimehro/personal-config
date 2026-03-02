@@ -179,7 +179,8 @@ create_union() {
 
 # Function to get local IP
 get_local_ip() {
-    local ip=$(ipconfig getifaddr en0 2>/dev/null)
+    local ip
+    ip=$(ipconfig getifaddr en0 2>/dev/null)
     if [[ -z "$ip" ]]; then
         ip="localhost"
     fi
