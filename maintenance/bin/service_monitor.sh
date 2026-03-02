@@ -46,6 +46,7 @@ log_error() {
 # Load config
 CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
 if [[ -f "$CONFIG_FILE" ]]; then
+    # shellcheck disable=SC1090  # intentional dynamic sourcing
     source "$CONFIG_FILE" 2>/dev/null || true
 fi
 
@@ -123,6 +124,7 @@ check_process_running() {
 }
 
 count_widget_extensions() {
+    # shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
     ps aux | grep -E "\.appex/Contents/MacOS" | grep -v grep | wc -l | tr -d ' '
 }
 
@@ -235,9 +237,13 @@ append ""
 # Check for key background services that shouldn't be running persistently
 append "Background Services Check:"
 append "--------------------------"
+# shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
 CHRONOD_RUNNING=$(ps aux | grep -E "chronod" | grep -v grep | wc -l | tr -d ' ')
+# shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
 DUET_RUNNING=$(ps aux | grep -E "duetexpertd" | grep -v grep | wc -l | tr -d ' ')
+# shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
 SUGGESTD_RUNNING=$(ps aux | grep -E "suggestd" | grep -v grep | wc -l | tr -d ' ')
+# shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
 PROACTIVED_RUNNING=$(ps aux | grep -E "proactived" | grep -v grep | wc -l | tr -d ' ')
 
 append "chronod instances: $CHRONOD_RUNNING"

@@ -29,6 +29,7 @@ log_info() {
 # Load config
 CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
 if [[ -f "$CONFIG_FILE" ]]; then
+    # shellcheck disable=SC1090  # intentional dynamic sourcing
     source "$CONFIG_FILE" 2>/dev/null || true
 fi
 
@@ -138,6 +139,7 @@ log_metric "high_cpu_processes" "$HIGH_CPU_PROCESSES" "count"
 log_metric "high_memory_processes" "$HIGH_MEM_PROCESSES" "count"
 
 # Maintenance System Health
+# shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
 MAINTENANCE_AGENTS=$(launchctl list | grep "com.abhimehrotra.maintenance" | wc -l | tr -d ' ')
 FAILED_AGENTS=$(launchctl list | grep "com.abhimehrotra.maintenance" | awk '$3 != "0" {count++} END {print count+0}')
 

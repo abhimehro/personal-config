@@ -53,7 +53,7 @@ run_with_timeout() {
         bash -c "$cmd" > "$output_file" 2>/dev/null &
         local pid=$!
         local count=0
-        while kill -0 $pid 2>/dev/null && [ $count -lt $timeout_seconds ]; do
+        while kill -0 "$pid" 2>/dev/null && [ "$count" -lt "$timeout_seconds" ]; do
             sleep 1
             ((count++))
         done
@@ -72,6 +72,7 @@ run_with_timeout() {
 # Load config
 CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
 if [[ -f "$CONFIG_FILE" ]]; then
+    # shellcheck disable=SC1090  # intentional dynamic sourcing
     source "$CONFIG_FILE" 2>/dev/null || true
 fi
 
@@ -279,6 +280,7 @@ if (( DIAGNOSTIC_REPORTS > 5 )); then
 fi
 
 # 10) Background service monitoring
+# shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
 WIDGET_COUNT=$(ps aux | grep -E "\.appex/Contents/MacOS" | grep -v grep | wc -l | count_clean || echo "0")
 WIDGET_COUNT=$(to_int "$WIDGET_COUNT")
 append "Widget extensions running: ${WIDGET_COUNT}"
