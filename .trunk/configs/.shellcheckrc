@@ -1,7 +1,15 @@
 enable=all
 source-path=SCRIPTDIR
+
+# SC2154: Variable referenced but not assigned — suppressed because many variables
+# are injected by Trunk's own environment or defined in shell profile files that
+# ShellCheck cannot see at lint time.
 disable=SC2154
 
-# If you're having issues with shellcheck following source, disable the errors via:
-# disable=SC1090
-# disable=SC1091
+# SC1091: Not following sourced files — dynamic sourcing pattern used throughout.
+# See repo-root .shellcheckrc for full rationale.
+disable=SC1091
+
+# SC1090: ShellCheck can't follow non-constant source — same dynamic-sourcing
+# policy as SC1091. See repo-root .shellcheckrc for full rationale.
+disable=SC1090
