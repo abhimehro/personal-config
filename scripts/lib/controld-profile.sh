@@ -115,6 +115,7 @@ generate_profile_config() {
     # Use local variable and ensure cleanup
     local TEMP_CONFIG
     TEMP_CONFIG=$(mktemp /tmp/ctrld_temp.toml.XXXXXX)
+    trap 'rm -f "$TEMP_CONFIG"' RETURN
 
     local ctrld_pid
     if [[ "$protocol" == "doh3" ]]; then
