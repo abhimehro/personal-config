@@ -92,7 +92,8 @@ check_upstream() {
 check_split_dns() {
     # Get unique DNS servers from system config
     # Optimized: Use awk to count unique IPs in one pass, avoiding grep|sort|wc|tr pipeline overhead
-    local dns_count=$(scutil --dns 2>/dev/null | awk '/nameserver\[0\]/ { if (!seen[$3]++) count++ } END { print count+0 }')
+    local dns_count
+    dns_count=$(scutil --dns 2>/dev/null | awk '/nameserver\[0\]/ { if (!seen[$3]++) count++ } END { print count+0 }')
     
     # If more than 2 unique DNS servers and Control D is running, might be split-horizon
     # (Allow 2: one for Control D 127.0.0.1, one fallback)
@@ -119,7 +120,8 @@ check_primary_resolver() {
 # Check 6: Detect stale mDNSResponder cache
 check_mdns_cache() {
     # Test with a timestamp-based query to ensure fresh resolution
-    local test_domain="test-$(date +%s).example.com"
+    local test_domain
+    test_domain="test-$(date +%s).example.com"
     
     # This should fail fast (NXDOMAIN) if cache is healthy
     # If it hangs, cache might be stuck

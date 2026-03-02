@@ -226,7 +226,8 @@ check_service_status() {
     
     echo
     echo -e "${BLUE}=== DNS Binding Status ===${NC}"
-    local dns_binding=$(lsof -nP -iTCP:53 -iUDP:53 2>/dev/null | grep ctrld | head -1)
+    local dns_binding
+    dns_binding=$(lsof -nP -iTCP:53 -iUDP:53 2>/dev/null | grep ctrld | head -1)
     if [[ -n "$dns_binding" ]]; then
         echo "✅ DNS service: ACTIVE"
         echo "   $dns_binding"
@@ -243,7 +244,8 @@ check_service_status() {
     echo
     echo -e "${BLUE}=== Configuration Status ===${NC}"
     if [ -f "$CONTROLD_CONFIG" ]; then
-        local current_profile=$(readlink "$CONTROLD_CONFIG" | grep -o 'ctrld\.[^.]*\.toml' | cut -d'.' -f2)
+        local current_profile
+        current_profile=$(readlink "$CONTROLD_CONFIG" | grep -o 'ctrld\.[^.]*\.toml' | cut -d'.' -f2)
         echo "✅ Active profile: ${current_profile:-unknown}"
         echo "   Config: $CONTROLD_CONFIG"
     else
@@ -274,7 +276,8 @@ test_windscribe_compatibility() {
     fi
     
     # Check DNS binding
-    local dns_binding=$(lsof -nP -iTCP:53 -iUDP:53 2>/dev/null | grep ctrld)
+    local dns_binding
+    dns_binding=$(lsof -nP -iTCP:53 -iUDP:53 2>/dev/null | grep ctrld)
     if ! echo "$dns_binding" | grep -q "0.0.0.0:53"; then
         print_error "Control D is not using VPN-compatible binding"
         return 1
