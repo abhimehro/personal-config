@@ -1,5 +1,10 @@
-# Project-wide ShellCheck configuration
+# Project-wide ShellCheck configuration (developer / local scope)
 # See: https://www.shellcheck.net/wiki/Directive
+#
+# CI / Trunk uses a separate config at .trunk/configs/.shellcheckrc which sets
+# enable=all (surfacing optional/style checks). Running `shellcheck` directly
+# will therefore produce fewer warnings than `trunk check`. Use
+# `trunk check <file>` to reproduce full CI output locally.
 #
 # This file centralises intentional, policy-level exclusions so that inline
 # `# shellcheck disable=` annotations can be reserved for one-off, site-specific
