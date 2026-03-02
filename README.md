@@ -1,5 +1,7 @@
 # Personal System Configuration
 
+[![Changelog Status](https://github.com/abhimehro/personal-config/actions/workflows/changelog.yml/badge.svg)](https://github.com/abhimehro/personal-config/actions/workflows/changelog.yml)
+
 A comprehensive repository for personal system configurations, scripts, and documentation to make my macOS development and gaming setup reproducible and backed up.
 
 ## Overview
