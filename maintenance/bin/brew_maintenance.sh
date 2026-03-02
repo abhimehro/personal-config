@@ -200,8 +200,7 @@ else
     log_warn "Autoremove had issues"
 fi
 
-    # shellcheck disable=SC2086  # intentional word splitting or dynamic args
-if brew cleanup --prune=${BREW_CLEAN_PRUNE_DAYS:-30} 2>&1 | tee -a "$LOG_DIR/brew_maintenance.log"; then
+if brew cleanup --prune="${BREW_CLEAN_PRUNE_DAYS:-30}" 2>&1 | tee -a "$LOG_DIR/brew_maintenance.log"; then
     log_info "Successfully cleaned up old versions (older than ${BREW_CLEAN_PRUNE_DAYS:-30} days)"
 else
     log_warn "Cleanup had issues"
