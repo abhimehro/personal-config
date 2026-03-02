@@ -357,6 +357,9 @@ This repository includes a comprehensive test suite. The shell tests run in para
 # Run all shell tests in parallel (automatically ignores known macOS-specific failures)
 make test
 
+# Run smoke test subset only — fast, cross-platform, ideal for pre-commit hooks
+make test-quick
+
 # Run a single shell test
 bash tests/test_ssh_config.sh
 

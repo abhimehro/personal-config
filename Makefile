@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help test lint lint-fix control-d-regression benchmark
+.PHONY: help test test-quick lint lint-fix control-d-regression benchmark
 
 help:  ## Show this help message
 	@echo "Available targets:"
@@ -8,6 +8,12 @@ help:  ## Show this help message
 
 test:  ## Run all shell tests in parallel (ignoring known macOS-specific failures on Linux)
 	./tests/run_all_tests.sh
+
+test-quick:  ## Run smoke test subset (fast, cross-platform) for pre-commit verification
+	@echo "Running smoke tests..."
+	@bash tests/test_lib_common.sh
+	@bash tests/test_lib_dns_utils.sh
+	@python3 -m unittest tests.test_path_validation -v
 
 control-d-regression:  ## Run full Control D regression test suite
 	./scripts/network-mode-regression.sh browsing
