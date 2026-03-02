@@ -117,7 +117,8 @@ show_cleanup_preview() {
     for pattern in "${REMOVE_PATTERNS[@]}"; do
         while IFS= read -r -d '' file; do
             if [ -e "$file" ]; then
-                local size=$(du -sh "$file" 2>/dev/null | cut -f1 || echo "0B")
+                local size
+                size=$(du -sh "$file" 2>/dev/null | cut -f1 || echo "0B")
                 echo "🗑️  $file ($size)"
                 ((count++))
             fi
@@ -132,13 +133,15 @@ show_cleanup_preview() {
     for keeper in "${KEEP_FILES[@]}"; do
         local full_path="$HOME/$keeper"
         if [ -e "$full_path" ]; then
-            local size=$(du -sh "$full_path" 2>/dev/null | cut -f1 || echo "0B")
+            local size
+            size=$(du -sh "$full_path" 2>/dev/null | cut -f1 || echo "0B")
             echo "✅ $keeper ($size)"
         fi
     done
     
     if [ "$KEEP_FISH_CONFIG" = true ] && [ -d "$HOME/.config/fish" ]; then
-        local size=$(du -sh "$HOME/.config/fish" 2>/dev/null | cut -f1 || echo "0B")
+        local size
+        size=$(du -sh "$HOME/.config/fish" 2>/dev/null | cut -f1 || echo "0B")
         echo "✅ .config/fish ($size)"
     fi
 }
@@ -249,7 +252,8 @@ verify_cleanup() {
     fi
     
     # Check available space
-    local available_space=$(df -h "$HOME" | awk 'NR==2{print $4}')
+    local available_space
+    available_space=$(df -h "$HOME" | awk 'NR==2{print $4}')
     echo "💾 Available space: $available_space"
 }
 

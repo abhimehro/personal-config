@@ -48,7 +48,8 @@ fi
 
 # Logging function
 error_log() {
-    local timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
+    local timestamp
+    timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$timestamp [ERROR_HANDLER] $*" | tee -a "$ERROR_LOG"
 }
 
@@ -60,10 +61,14 @@ retry_with_backoff() {
     local command=("$@")
     
     # Get retry configuration
-    local max_retries=$(get_config_value "$category" "max_retries" 3)
-    local base_delay=$(get_config_value "$category" "base_delay" 1)
-    local max_delay=$(get_config_value "$category" "max_delay" 30)
-    local backoff_multiplier=$(get_config_value "$category" "backoff_multiplier" 2)
+    local max_retries
+    max_retries=$(get_config_value "$category" "max_retries" 3)
+    local base_delay
+    base_delay=$(get_config_value "$category" "base_delay" 1)
+    local max_delay
+    max_delay=$(get_config_value "$category" "max_delay" 30)
+    local backoff_multiplier
+    backoff_multiplier=$(get_config_value "$category" "backoff_multiplier" 2)
     
     local attempt=1
     local delay=$base_delay
@@ -106,13 +111,18 @@ circuit_breaker_check() {
     local failure_threshold="${2:-5}"
     local recovery_timeout="${3:-300}" # 5 minutes default
     
-    local current_time=$(date +%s)
+    local current_time
+    current_time=$(date +%s)
     
     # Get current state
-    local cb_state=$(get_circuit_breaker_state "$service_name")
-    local state_status=$(echo "$cb_state" | jq -r '.status // "closed"')
-    local failure_count=$(echo "$cb_state" | jq -r '.failure_count // 0')
-    local last_failure=$(echo "$cb_state" | jq -r '.last_failure // 0')
+    local cb_state
+    cb_state=$(get_circuit_breaker_state "$service_name")
+    local state_status
+    state_status=$(echo "$cb_state" | jq -r '.status // "closed"')
+    local failure_count
+    failure_count=$(echo "$cb_state" | jq -r '.failure_count // 0')
+    local last_failure
+    last_failure=$(echo "$cb_state" | jq -r '.last_failure // 0')
     
     case "$state_status" in
         "closed")
@@ -121,13 +131,15 @@ circuit_breaker_check() {
             ;;
         "open")
             # Circuit is open, check if recovery timeout has passed
-            local time_since_failure=$((current_time - last_failure))
+            local time_since_failure
+            time_since_failure=$((current_time - last_failure))
             if [[ $time_since_failure -gt $recovery_timeout ]]; then
                 error_log "Circuit breaker for '$service_name' moving from OPEN to HALF_OPEN"
                 set_circuit_breaker_state "$service_name" "half_open" "$failure_count" "$last_failure"
                 return 0
             else
-                local wait_time=$((recovery_timeout - time_since_failure))
+                local wait_time
+                wait_time=$((recovery_timeout - time_since_failure))
                 error_log "Circuit breaker for '$service_name' is OPEN. Waiting ${wait_time}s before retry"
                 return 1
             fi
@@ -156,9 +168,12 @@ circuit_breaker_failure() {
     local service_name="$1"
     local failure_threshold="${2:-5}"
     
-    local cb_state=$(get_circuit_breaker_state "$service_name")
-    local failure_count=$(echo "$cb_state" | jq -r '.failure_count // 0')
-    local current_time=$(date +%s)
+    local cb_state
+    cb_state=$(get_circuit_breaker_state "$service_name")
+    local failure_count
+    failure_count=$(echo "$cb_state" | jq -r '.failure_count // 0')
+    local current_time
+    current_time=$(date +%s)
     
     ((failure_count++))
     
@@ -240,7 +255,8 @@ set_circuit_breaker_state() {
     local last_failure="$4"
     
     if command -v jq >/dev/null 2>&1; then
-        local temp_file=$(mktemp)
+        local temp_file
+        temp_file=$(mktemp)
         jq --arg service "$service_name" \
            --arg status "$status" \
            --argjson count "$failure_count" \
@@ -253,7 +269,8 @@ set_circuit_breaker_state() {
 record_failure() {
     local operation="$1"
     local exit_code="$2"
-    local timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
+    local timestamp
+    timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
     
     error_log "FAILURE RECORDED: Operation='$operation', ExitCode='$exit_code', Time='$timestamp'"
     
@@ -293,7 +310,8 @@ system_health_check() {
     error_log "Starting system health check"
     
     # Check disk space
-    local disk_usage=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
+    local disk_usage
+    disk_usage=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
     if [[ ${disk_usage:-0} -gt 90 ]]; then
         error_log "CRITICAL: Disk usage is ${disk_usage}%"
         ((issues_found++))
@@ -301,9 +319,12 @@ system_health_check() {
     
     # Check memory pressure
     if command -v vm_stat >/dev/null 2>&1; then
-        local free_pages=$(vm_stat | awk '/Pages free:/ {print $3}' | tr -d '.' || echo "0")
-        local page_size=$(vm_stat | awk '/page size of/ {print $8}' || echo "4096")
-        local free_mb=$(( (free_pages * page_size) / 1024 / 1024 ))
+        local free_pages
+        free_pages=$(vm_stat | awk '/Pages free:/ {print $3}' | tr -d '.' || echo "0")
+        local page_size
+        page_size=$(vm_stat | awk '/page size of/ {print $8}' || echo "4096")
+        local free_mb
+        free_mb=$(( (free_pages * page_size) / 1024 / 1024 ))
         
         if [[ $free_mb -lt 500 ]]; then
             error_log "WARNING: Low memory - only ${free_mb}MB free"
@@ -312,7 +333,8 @@ system_health_check() {
     fi
     
     # Check maintenance agents
-    local failed_agents=$(launchctl list | grep "com.abhimehrotra.maintenance" | awk '$3 != "0" {count++} END {print count+0}')
+    local failed_agents
+    failed_agents=$(launchctl list | grep "com.abhimehrotra.maintenance" | awk '$3 != "0" {count++} END {print count+0}')
     if [[ ${failed_agents:-0} -gt 0 ]]; then
         error_log "WARNING: $failed_agents maintenance agents have failed"
         ((issues_found++))
@@ -334,7 +356,8 @@ emergency_recovery() {
     local recovery_actions=0
     
     # 1. Try to restart failed launch agents
-    local failed_agents=$(launchctl list | grep "com.abhimehrotra.maintenance" | awk '$3 != "0" {print $1}')
+    local failed_agents
+    failed_agents=$(launchctl list | grep "com.abhimehrotra.maintenance" | awk '$3 != "0" {print $1}')
     if [[ -n "$failed_agents" ]]; then
         error_log "Attempting to restart failed maintenance agents"
         echo "$failed_agents" | while read -r agent; do
@@ -346,7 +369,8 @@ emergency_recovery() {
     fi
     
     # 2. Clear temporary files if disk space is critical
-    local disk_usage=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
+    local disk_usage
+    disk_usage=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
     if [[ ${disk_usage:-0} -gt 95 ]]; then
         error_log "Critical disk space - attempting emergency cleanup"
         if rm -rf /tmp/maintenance_* 2>/dev/null; then
@@ -356,7 +380,8 @@ emergency_recovery() {
     fi
     
     # 3. Reset circuit breakers if all are open
-    local open_breakers=$(jq -r 'to_entries[] | select(.value.status == "open") | .key' "$CIRCUIT_BREAKER_STATE_FILE" 2>/dev/null | wc -l)
+    local open_breakers
+    open_breakers=$(jq -r 'to_entries[] | select(.value.status == "open") | .key' "$CIRCUIT_BREAKER_STATE_FILE" 2>/dev/null | wc -l)
     if [[ ${open_breakers:-0} -gt 3 ]]; then
         error_log "Too many circuit breakers open - resetting all"
         echo '{}' > "$CIRCUIT_BREAKER_STATE_FILE"
