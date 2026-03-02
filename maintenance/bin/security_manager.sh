@@ -174,7 +174,8 @@ check_backup_safety() {
     if [[ -f "$checksum_file" ]]; then
         log_security "INFO" "Verifying backup integrity using SHA256 checksum..."
         if command -v shasum >/dev/null 2>&1; then
-            local expected_hash=$(awk '{print $1}' "$checksum_file")
+            local expected_hash
+            expected_hash=$(awk '{print $1}' "$checksum_file")
             if ! echo "$expected_hash  $backup_file" | shasum -a 256 -c - >/dev/null 2>&1; then
                 log_security "ERROR" "SECURITY ALERT: Backup checksum verification failed! File may be corrupted or tampered with."
                 return 1
@@ -226,7 +227,8 @@ restore_config() {
     # 🛡️ Sentinel: TOCTOU Protection
     # Copy backup and checksum to secure temp dir BEFORE verification
     # This ensures the file checked is the same file extracted
-    local safe_backup_path="$temp_dir/$(basename "$backup_file")"
+    local safe_backup_path
+    safe_backup_path="$temp_dir/$(basename "$backup_file")"
 
     log_security "INFO" "Copying backup to secure temporary location..."
     cp "$backup_file" "$safe_backup_path"

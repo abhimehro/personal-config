@@ -9,12 +9,14 @@ mkdir -p "$LOG_DIR"
 
 # Basic logging
 log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [INFO] [node_maintenance] $*" | tee -a "$LOG_DIR/node_maintenance.log"
 }
 
 log_warn() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [WARNING] [node_maintenance] $*" | tee -a "$LOG_DIR/node_maintenance.log"
 }
 

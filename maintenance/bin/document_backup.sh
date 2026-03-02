@@ -21,8 +21,10 @@ backup_directory() {
         echo "📂 Backing up $source_dir..."
         mkdir -p "$FULL_BACKUP_PATH/$backup_subdir"
         rsync -av --exclude='.DS_Store' --exclude='*.tmp' "$source_dir/" "$FULL_BACKUP_PATH/$backup_subdir/" >/dev/null 2>&1 || true
-        local file_count=$(find "$source_dir" -type f | wc -l | xargs)
-        local size=$(du -sh "$source_dir" 2>/dev/null | cut -f1)
+        local file_count
+        file_count=$(find "$source_dir" -type f | wc -l | xargs)
+        local size
+        size=$(du -sh "$source_dir" 2>/dev/null | cut -f1)
         echo "   ✅ $file_count files ($size) backed up"
     else
         echo "   ⚠️  Directory $source_dir not found, skipping"
