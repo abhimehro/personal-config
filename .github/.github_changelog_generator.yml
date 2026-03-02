@@ -1,0 +1,70 @@
+# Optimized .github_changelog_generator configuration for Seatek_Analysis project
+
+user: abhimehro
+project: Seatek_Analysis
+output: CHANGELOG.md
+issues: true
+pulls: true
+
+exclude_labels:
+  - duplicate
+  - question
+  - invalid
+  - wontfix
+  - Meta: Exclude From Changelog
+
+# Consolidated label groups with case-insensitive matching for robustness
+enhancement_labels:
+  - enhancement
+  - type: enhancement
+
+bug_labels:
+  - bug
+  - type: bug
+
+breaking_labels:
+  - breaking
+  - backwards incompatible
+
+deprecated_labels:
+  - deprecated
+
+removed_labels:
+  - removed
+
+security_labels:
+  - security
+
+data_update_labels:
+  - data update
+  - dataset
+data_update_prefix: "**Data updates:**"
+
+analysis_labels:
+  - analysis
+  - results
+analysis_prefix: "**Analysis & Results:**"
+
+# Custom section headers with consistent formatting
+header: "# Changelog"
+merge_prefix: "**Merged pull requests:**"
+issue_prefix: "**Closed issues:**"
+breaking_prefix: "**Breaking changes:**"
+enhancement_prefix: "**Enhancements:**"
+bug_prefix: "**Bug fixes:**"
+deprecated_prefix: "**Deprecated:**"
+removed_prefix: "**Removed:**"
+security_prefix: "**Security:**"
+
+add_issues_wo_labels: true
+add_pr_wo_labels: true
+author: true
+unreleased: true
+unreleased_label: "Unreleased"
+compare_link: true
+verbose: true
+
+# Notes:
+# - Removed duplicate label entries with different casing by using lowercase only.
+# - This assumes the changelog generator supports case-insensitive label matching.
+# - Simplifies maintenance and reduces potential label mismatches.
