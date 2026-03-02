@@ -101,7 +101,7 @@ bash tests/test_network_mode_manager.sh
 
 Run all shell tests:
 ```bash
-# Runs tests in parallel and ignores known macOS-specific failures on Linux
+# Runs all shell tests in parallel via the test runner script
 make test
 ```
 
