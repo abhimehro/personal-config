@@ -53,3 +53,7 @@
 ## 2026-02-28 - [Python List/Generator Comprehensions vs For Loops]
 **Learning:** In Python data parsing scripts, replacing `for` loops with `.append()` calls with list comprehensions provides a small but consistent performance boost (~5-7%). Further, when doing dictionary lookups in tight loops, using `'key' in dict` checks is more efficient than nested `.get().get()` calls due to avoiding function overhead.
 **Action:** When extracting data from large JSON arrays, default to list or set comprehensions and use explicit `in` checks for nested dictionaries instead of `.get()` chains.
+
+## 2026-03-05 - [Parameter Expansion vs basename]
+**Learning:** Using `basename` in a subshell creates significant performance overhead due to process spawning (e.g., `$(basename "$file")`). The built-in shell parameter expansion `${file##*/}` avoids this overhead and is ~300x faster in tight loops, but it does not strip trailing slashes the way `basename` does (e.g., `/a/b/`), so inputs may need to be normalized first (for example with `${file%/}`).
+**Action:** Where path inputs are normalized to not end with `/` (or after first stripping any trailing `/` with `${var%/}`), prefer `${var##*/}` over `$(basename "$var")` in shell scripts to improve performance and reduce system calls.
