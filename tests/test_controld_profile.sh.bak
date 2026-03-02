@@ -40,6 +40,7 @@ test_get_profile_id() {
     return 0
 }
 
+if ! test_validate_profile_id; then echo "test_validate_profile_id failed"; test_failed=1; fi
 if ! test_validate_protocol; then echo "test_validate_protocol failed"; test_failed=1; fi
 if ! test_redact_profile_id; then echo "test_redact_profile_id failed"; test_failed=1; fi
 if ! test_get_profile_id; then echo "test_get_profile_id failed"; test_failed=1; fi
