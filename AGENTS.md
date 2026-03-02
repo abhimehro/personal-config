@@ -192,11 +192,6 @@ If you are operating as an agent in this repo, align with:
 - `.cursorrules`: security-first collaboration style (state approach before coding, comment *why*, provide a handoff summary after changes) + hard boundaries (don’t implement auth/payment/db schema changes without explicit user approval; don’t run destructive commands without confirmation).
 - `.github/copilot-instructions.md`: “development partner” protocol (before/while/after coding rhythm).
 
-## Existing guidance files (suggested improvements)
-- `docs/archive/AGENTS.md` and `docs/archive/WARP.md` contain older guidance. Consider either:
-  - deleting them to avoid drift, or
-  - replacing them with a short pointer to this root `AGENTS.md`.
-
 ## Writing Tests
 
 Detailed patterns, mock recipes, and a copy-paste test skeleton live in [`docs/TESTING.md`](docs/TESTING.md). The key points:
