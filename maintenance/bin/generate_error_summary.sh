@@ -77,6 +77,7 @@ else
         TOTAL_WARNINGS=$((TOTAL_WARNINGS + WARNINGS))
         
         if [[ $ERRORS -gt 0 ]] || [[ $WARNINGS -gt 0 ]]; then
+            # shellcheck disable=SC2129  # explicit logging structure preferred
             echo "----------------------------------------" >> "$SUMMARY_FILE"
             echo "File: $(basename "$log_file")" >> "$SUMMARY_FILE"
             echo "  Errors: $ERRORS" >> "$SUMMARY_FILE"
@@ -90,12 +91,14 @@ else
             
             # Show sample of errors/warnings
             if [[ $ERRORS -gt 0 ]]; then
+                # shellcheck disable=SC2129  # explicit logging structure preferred
                 echo "  Sample errors:" >> "$SUMMARY_FILE"
                 grep -Ein 'ERROR|CRITICAL|FATAL' "$log_file" 2>/dev/null | head -3 | sed 's/^/    /' >> "$SUMMARY_FILE"
                 echo "" >> "$SUMMARY_FILE"
             fi
             
             if [[ $WARNINGS -gt 0 ]]; then
+                # shellcheck disable=SC2129  # explicit logging structure preferred
                 echo "  Sample warnings:" >> "$SUMMARY_FILE"
                 grep -Ein 'WARN|WARNING' "$log_file" 2>/dev/null | head -2 | sed 's/^/    /' >> "$SUMMARY_FILE"
                 echo "" >> "$SUMMARY_FILE"

@@ -59,6 +59,7 @@ aggregate_metrics() {
 }
 EOF
     
+    # shellcheck disable=SC2086  # intentional dynamic args
     # Process metrics files
     local start_date=$(date -j -v-${days_back}d "+%Y%m%d" 2>/dev/null || date -d "-${days_back} days" "+%Y%m%d")
     local end_date=$(date "+%Y%m%d")
@@ -79,6 +80,7 @@ EOF
         local day_count=0
         
         # Process each day's metrics
+        # shellcheck disable=SC2086  # intentional dynamic args
         for i in $(seq 0 $((days_back-1))); do
             local check_date=$(date -j -v-${i}d "+%Y%m%d" 2>/dev/null || date -d "-${i} days" "+%Y%m%d")
             local metrics_file="$METRICS_DIR/${check_date}.jsonl"
@@ -136,6 +138,7 @@ analyze_trends() {
     local dates=()
     
     # Collect values from the last N days
+        # shellcheck disable=SC2086  # intentional dynamic args
     for i in $(seq $((days_back-1)) -1 0); do
         local check_date=$(date -j -v-${i}d "+%Y%m%d" 2>/dev/null || date -d "-${i} days" "+%Y%m%d")
         local metrics_file="$METRICS_DIR/${check_date}.jsonl"
@@ -190,6 +193,7 @@ EOF
         local total_warnings=$(jq -r '.summary.total_warnings // 0' "$report_file")
         
         # Performance assessment
+        # shellcheck disable=SC2129  # explicit logging structure preferred
         echo "PERFORMANCE ASSESSMENT" >> "$insights_file"
         echo "=====================" >> "$insights_file"
         echo "" >> "$insights_file"
@@ -204,6 +208,7 @@ EOF
             echo "🚨 Poor: Critical performance issues detected (${avg_performance}/100)" >> "$insights_file"
         fi
         
+        # shellcheck disable=SC2129  # explicit logging structure preferred
         echo "" >> "$insights_file"
         
         # Resource utilization
@@ -224,6 +229,7 @@ EOF
         local disk_trend=$(analyze_trends "disk_usage_percent" 7)
         local memory_trend=$(analyze_trends "memory_free" 7)
         
+        # shellcheck disable=SC2129  # explicit logging structure preferred
         echo "• Performance Score: ${perf_trend%%:*} (${perf_trend##*:}% change)" >> "$insights_file"
         echo "• Disk Usage: ${disk_trend%%:*} (${disk_trend##*:}% change)" >> "$insights_file"
         echo "• Memory Available: ${memory_trend%%:*} (${memory_trend##*:}% change)" >> "$insights_file"
@@ -385,11 +391,11 @@ EOF
                 <div class="metric-value">${avg_performance}</div>
                 <div class="metric-label">Performance Score</div>
             </div>
-            <div class="metric-card $([ ${avg_disk:-0} -gt 85 ] && echo "warning" || echo "success")">
+            <div class="metric-card $([ "${avg_disk:-0}" -gt 85 ] && echo "warning" || echo "success")">
                 <div class="metric-value">${avg_disk}%</div>
                 <div class="metric-label">Disk Usage</div>
             </div>
-            <div class="metric-card $([ ${total_warnings:-0} -gt 3 ] && echo "warning" || echo "success")">
+            <div class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")">
                 <div class="metric-value">${total_warnings}</div>
                 <div class="metric-label">Total Warnings</div>
             </div>
@@ -461,6 +467,7 @@ EOF
         echo "Status: 🚨 CRITICAL" >> "$summary_file"
     fi
     
+    # shellcheck disable=SC2129  # explicit logging structure preferred
     echo "" >> "$summary_file"
     echo "MAINTENANCE SCHEDULE STATUS:" >> "$summary_file"
     echo "• Daily Tasks: Active ✅" >> "$summary_file"

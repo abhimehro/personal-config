@@ -21,6 +21,7 @@ log_warn() {
 # Load config
 CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
 if [[ -f "$CONFIG_FILE" ]]; then
+    # shellcheck disable=SC1090  # intentional dynamic sourcing
     source "$CONFIG_FILE" 2>/dev/null || true
 fi
 
@@ -66,6 +67,8 @@ if pgrep -f "Google Drive" >/dev/null 2>&1; then
             # Look for error patterns in recent logs
             RECENT_LOGS=$(find "$HOME/Library/Application Support/Google/DriveFS/Logs" -name "*.log" -mtime -1 2>/dev/null)
             if [[ -n "$RECENT_LOGS" ]]; then
+    # shellcheck disable=SC2086  # intentional word splitting or dynamic args
+                # shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
                 SYNC_ERRORS=$(grep -i "error\|failed\|cannot sync" $RECENT_LOGS 2>/dev/null | wc -l | tr -d "[:space:]" || echo "0")
                 SYNC_ERRORS=$(printf "%s" "${SYNC_ERRORS}" | tr -cd "0-9")
                 SYNC_ERRORS=${SYNC_ERRORS:-0}

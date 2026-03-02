@@ -120,6 +120,7 @@ should_rate_limit() {
     # Count notifications in the last hour
     local notifications_this_hour=0
     if [[ -f "$NOTIFICATION_HISTORY" ]]; then
+        # shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
         notifications_this_hour=$(grep "$current_hour" "$NOTIFICATION_HISTORY" 2>/dev/null | wc -l | tr -d ' ')
     fi
     

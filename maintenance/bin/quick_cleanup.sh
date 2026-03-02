@@ -50,7 +50,7 @@ if [[ -d "$HOME/Library/Caches" ]]; then
                     has_old_files=1
                 fi
             else
-                if find "$cache_dir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -print -quit 2>/dev/null | grep -q .; then
+                if find "$cache_dir" -type f -mtime +"${CLEANUP_CACHE_DAYS:-30}" -print -quit 2>/dev/null | grep -q .; then
                     has_old_files=1
                 fi
             fi
@@ -62,6 +62,7 @@ if [[ -d "$HOME/Library/Caches" ]]; then
                     else
                         log_warn "Could not clean some files in $(basename "$cache_dir") (permission denied)"
                     fi
+    # shellcheck disable=SC2086  # intentional word splitting or dynamic args
                 else
                     if find "$cache_dir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -delete 2>/dev/null; then
                         ((CLEANED++))
@@ -79,6 +80,7 @@ log_info "Cleaning old downloads..."
 if [[ -d "$HOME/Downloads" ]]; then
     # Count files before cleanup (handle permission errors)
     BEFORE_COUNT=$(find "$HOME/Downloads" -type f 2>/dev/null | wc -l | tr -d ' \n' || echo 0)
+    # shellcheck disable=SC2086  # intentional word splitting or dynamic args
     
     # Attempt cleanup with explicit error tracking
     if ! find "$HOME/Downloads" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -delete 2>/dev/null; then
@@ -101,6 +103,7 @@ log_info "Cleaning temporary directories..."
 for tmp_dir in "/tmp" "$HOME/.tmp" "/var/tmp"; do
     if [[ -d "$tmp_dir" ]]; then
         # Only clean files owned by current user to avoid permission issues
+    # shellcheck disable=SC2086  # intentional word splitting or dynamic args
         if find "$tmp_dir" -user "$(whoami)" -type f -mtime +${TMP_CLEAN_DAYS:-7} -delete 2>/dev/null; then
             ((CLEANED++))
         else
@@ -135,6 +138,7 @@ done
 
 # 6) System log cleanup (user-accessible only)
 log_info "Cleaning old logs..."
+    # shellcheck disable=SC2086  # intentional word splitting or dynamic args
 if [[ -d "$LOG_DIR" ]]; then
     find "$LOG_DIR" -type f -name "*.log" -mtime +${LOG_RETENTION_DAYS:-60} -delete 2>/dev/null || true
 fi

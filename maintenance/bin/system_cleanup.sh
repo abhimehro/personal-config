@@ -69,7 +69,7 @@ if [[ -d "${CACHE_DIR}" ]]; then
                 # Skip critical system caches and editor caches handled by editor_cleanup.sh
                 com.apple.*|CloudKit|CrashReporter|SkyLight|Cursor|dev.zed.Zed|com.microsoft.VSCode) continue ;;
                 *)
-                    FILES_CLEANED=$(find "$cache_subdir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -print -delete 2>/dev/null | wc -l | tr -d ' ')
+                    FILES_CLEANED=$(find "$cache_subdir" -type f -mtime +"${CLEANUP_CACHE_DAYS:-30}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
                     if [[ $FILES_CLEANED -gt 0 ]]; then
                         log_info "Cleaned $FILES_CLEANED cache files from $(basename "$cache_subdir")"
                         CLEANED_ITEMS=$((CLEANED_ITEMS + FILES_CLEANED))
@@ -87,7 +87,7 @@ fi
 for TDIR in "${TMPDIR:-/tmp}" "/tmp"; do
     if [[ -d "$TDIR" ]]; then
         log_info "Cleaning temporary files older than ${TMP_CLEAN_DAYS:-7} days in $TDIR"
-        TEMP_FILES_CLEANED=$(find "$TDIR" -type f -mtime +${TMP_CLEAN_DAYS:-7} -user "${USER}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
+        TEMP_FILES_CLEANED=$(find "$TDIR" -type f -mtime +"${TMP_CLEAN_DAYS:-7}" -user "${USER}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
         if [[ $TEMP_FILES_CLEANED -gt 0 ]]; then
             log_info "Cleaned $TEMP_FILES_CLEANED temporary files from $TDIR"
             CLEANED_ITEMS=$((CLEANED_ITEMS + TEMP_FILES_CLEANED))
@@ -106,9 +106,9 @@ if [[ -d "${DDIR}" ]]; then
     # Actually, we can just list them and then xargs rm -rf.
     # But let's stick to the double find for directories requiring recursive delete to avoid complexity and risks,
     # focusing optimization on file deletion which is high volume.
-    XCODE_CLEANED=$(find "${DDIR}" -mindepth 1 -maxdepth 1 -mtime +${XCODE_DERIVEDDATA_KEEP_DAYS:-30} -print 2>/dev/null | wc -l | tr -d ' ')
+    XCODE_CLEANED=$(find "${DDIR}" -mindepth 1 -maxdepth 1 -mtime +"${XCODE_DERIVEDDATA_KEEP_DAYS:-30}" -print 2>/dev/null | wc -l | tr -d ' ')
     if [[ $XCODE_CLEANED -gt 0 ]]; then
-        find "${DDIR}" -mindepth 1 -maxdepth 1 -mtime +${XCODE_DERIVEDDATA_KEEP_DAYS:-30} -print0 2>/dev/null | xargs -0 rm -rf 2>/dev/null || true
+        find "${DDIR}" -mindepth 1 -maxdepth 1 -mtime +"${XCODE_DERIVEDDATA_KEEP_DAYS:-30}" -print0 2>/dev/null | xargs -0 rm -rf 2>/dev/null || true
         log_info "Cleaned $XCODE_CLEANED Xcode DerivedData directories"
         CLEANED_ITEMS=$((CLEANED_ITEMS + XCODE_CLEANED))
     fi
@@ -128,7 +128,7 @@ fi
 # 5) Homebrew cleanup
 if command -v brew >/dev/null 2>&1; then
     log_info "Running Homebrew cleanup"
-    if brew cleanup --prune=${BREW_CLEAN_PRUNE_DAYS:-30} 2>&1 | tee -a "$LOG_DIR/system_cleanup.log"; then
+    if brew cleanup --prune="${BREW_CLEAN_PRUNE_DAYS:-30}" 2>&1 | tee -a "$LOG_DIR/system_cleanup.log"; then
         log_info "Homebrew cleanup completed successfully"
         CLEANED_ITEMS=$((CLEANED_ITEMS + 1))
     fi
@@ -204,7 +204,7 @@ for browser_cache in \
 done
 
 # 9) Clean old maintenance logs
-MAINT_LOGS_CLEANED=$(find "$LOG_DIR" -type f -name "*.log" -mtime +${LOG_RETENTION_DAYS:-60} -print -delete 2>/dev/null | wc -l | tr -d ' ')
+MAINT_LOGS_CLEANED=$(find "$LOG_DIR" -type f -name "*.log" -mtime +"${LOG_RETENTION_DAYS:-60}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
 if [[ $MAINT_LOGS_CLEANED -gt 0 ]]; then
     log_info "Cleaned $MAINT_LOGS_CLEANED old maintenance logs"
     CLEANED_ITEMS=$((CLEANED_ITEMS + MAINT_LOGS_CLEANED))

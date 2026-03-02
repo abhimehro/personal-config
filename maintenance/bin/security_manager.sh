@@ -506,7 +506,7 @@ cleanup_old_backups() {
             log_security "INFO" "Deleting old backup: $backup_name"
             rm -f "$old_backup"
             ((deleted_count++))
-        done < <(find "$BACKUP_DIR" -name "config_backup_*.tar.gz" -type f -mtime +$retention_days)
+        done < <(find "$BACKUP_DIR" -name "config_backup_*.tar.gz" -type f -mtime +"$retention_days")
         
         if [[ $deleted_count -gt 0 ]]; then
             log_security "INFO" "Deleted $deleted_count old backups"
