@@ -207,14 +207,15 @@ Detailed patterns, mock recipes, and a copy-paste test skeleton live in [`docs/T
 - **Script-patching via `sed`** — when a script hardcodes a dependency path (e.g. `IPV6_MANAGER=…`), copy the script to `$TEST_DIR` and patch with `sed`. Branch on `$(uname -s)` for `sed -i ''` (macOS) vs `sed -i` (Linux).
 - **Capturing expected-failure output under `set -e`** — use `$(cmd 2>&1 || true)` or capture the exit code with `|| actual=$?` to prevent `set -euo pipefail` from aborting the test on a deliberately failing command.
 
-**Tests known to fail on Linux** (not bugs — skip or tolerate in CI):
+**Tests that skip on Linux/CI** (not bugs — each file contains an early-exit skip guard that prints `SKIP:` and exits 77):
 
-| Test | Reason |
-|---|---|
-| `test_config_fish.sh` | Needs `fish` shell |
-| `test_ssh_config.sh` | Needs 1Password agent socket |
-| `test_security_manager_restore.sh` | Uses BSD `sed -i ''` (macOS only) |
-| `test_media_server_auth.sh` | macOS Keychain credential flow |
+| Test | Skip Reason | Guard |
+|---|---|---|
+| `test_config_fish.sh` | Needs `fish` shell | `command -v fish` |
+| `test_ssh_config.sh` | Needs 1Password agent socket | `uname -s == Darwin` |
+| `test_security_manager_restore.sh` | Uses BSD `sed -i ''` (macOS only) | `uname -s == Darwin` |
+| `test_media_server_auth.sh` | macOS Keychain credential flow | `uname -s == Darwin` |
+| `test_network_mode_manager.sh` | Requires passwordless sudo | `sudo -n true` |
 
 See [`docs/TESTING.md`](docs/TESTING.md) for the full guide including a copy-paste test skeleton and a known-limitations table.
 
@@ -227,7 +228,7 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 | What | Command | Notes |
 |---|---|---|
 | Python tests | `python3 -m unittest discover -s tests -p 'test_*.py'` | stdlib only, no pip deps |
-| Shell tests | `make test` | Runs in parallel. Known macOS-specific failures are currently auto-ignored on all platforms. |
+| Shell tests | `make test` | Runs in parallel. Platform-specific tests emit `SKIP:` and exit 77 on Linux/CI. |
 | Lint (all) | `make lint` | Trunk downloads its own tool versions on first run |
 | Format | `make lint-fix` | Auto-fixes where supported |
 
@@ -236,5 +237,5 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 - **Trunk first-run latency**: The first `trunk check` or `trunk fmt` invocation downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`. Subsequent runs are fast. The update script installs the Trunk launcher, but tool downloads happen lazily.
 - **No `requirements.txt`**: Python tests and scripts use only the standard library. No `pip install` is needed for the test suite.
 - **`package.json` is empty**: The root `package.json` is `{}` — it exists as a Trunk runtime anchor for Node-based linters (prettier, markdownlint). Do not run `npm install`.
-- **macOS-specific test failures on Linux**: `test_config_fish.sh` (needs fish), `test_ssh_config.sh` (needs 1Password agent socket), `test_security_manager_restore.sh` (BSD sed syntax), and `test_media_server_auth.sh` (credential flow assertion) fail on Linux. These are not bugs.
+- **macOS-specific test skips on Linux**: `test_config_fish.sh`, `test_ssh_config.sh`, `test_security_manager_restore.sh`, `test_media_server_auth.sh`, and `test_network_mode_manager.sh` emit a `SKIP:` message and exit with code 77 on Linux/CI. The test runner treats this as a skip, not a failure.
 - **`setup.sh` is macOS-only**: Do not run `./setup.sh` on Linux — it calls `launchctl`, Homebrew, and macOS system utilities.
