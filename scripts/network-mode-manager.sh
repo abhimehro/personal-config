@@ -21,13 +21,10 @@ else
 fi
 
 # Source optional shared libraries
-for _lib in "$SCRIPT_DIR/lib/network-utils.sh" "$SCRIPT_DIR/lib/dns-utils.sh"; do
-    if [[ -f "$_lib" ]]; then
-        # shellcheck source=/dev/null
-        source "$_lib"
-    fi
-done
-unset _lib
+# shellcheck source=scripts/lib/network-utils.sh
+if [[ -f "$SCRIPT_DIR/lib/network-utils.sh" ]]; then source "$SCRIPT_DIR/lib/network-utils.sh"; fi
+# shellcheck source=scripts/lib/dns-utils.sh
+if [[ -f "$SCRIPT_DIR/lib/dns-utils.sh" ]]; then source "$SCRIPT_DIR/lib/dns-utils.sh"; fi
 
 # --- Configuration ---
 DEFAULT_PROFILE="browsing"
