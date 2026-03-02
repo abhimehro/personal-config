@@ -24,7 +24,8 @@ else
 fi
 
 # Configuration
-export RUN_START=$(date +%s)
+RUN_START=$(date +%s)
+export RUN_START
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$SCRIPT_DIR/../tmp"
 
@@ -138,13 +139,15 @@ spinner() {
         # Trap to restore cursor if interrupted
         trap 'tput cnorm 2>/dev/null || true; exit' INT TERM
 
-        local start_time=$(date +%s)
+        local start_time
+        start_time=$(date +%s)
         local elapsed=0
         local update_counter=0
         while kill -0 "$pid" 2>/dev/null; do
             # Update elapsed time only every 10 iterations (every second)
             if (( update_counter % 10 == 0 )); then
-                local current_time=$(date +%s)
+                local current_time
+                current_time=$(date +%s)
                 elapsed=$((current_time - start_time))
             fi
 
@@ -184,7 +187,8 @@ wait_for_pids() {
         tput civis 2>/dev/null || true
         trap 'tput cnorm 2>/dev/null || true; trap - INT TERM; kill -s INT $$' INT TERM
 
-        local start_time=$(date +%s)
+        local start_time
+        start_time=$(date +%s)
         local elapsed=0
         local update_counter=0
 
@@ -204,7 +208,8 @@ wait_for_pids() {
             fi
 
             if (( update_counter % 10 == 0 )); then
-                local current_time=$(date +%s)
+                local current_time
+                current_time=$(date +%s)
                 elapsed=$((current_time - start_time))
             fi
 
@@ -426,8 +431,10 @@ run_monthly_maintenance() {
 # Function to print summary table
 print_summary() {
     # Calculate total duration
-    local current_time=$(date +%s)
-    local total_duration=$((current_time - RUN_START))
+    local current_time
+    current_time=$(date +%s)
+    local total_duration
+    total_duration=$((current_time - RUN_START))
     local total_fmt
     if (( total_duration > 60 )); then
         total_fmt="$((total_duration / 60))m $((total_duration % 60))s"

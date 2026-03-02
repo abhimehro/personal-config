@@ -11,7 +11,8 @@ mkdir -p "$METRICS_DIR"
 
 # Basic logging with performance timestamps
 log_metric() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     local metric_type="$1"
     local value="$2"
     local unit="${3:-}"
@@ -22,7 +23,8 @@ log_metric() {
 }
 
 log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [INFO] [system_metrics] $*" | tee -a "$LOG_DIR/system_metrics.log"
 }
 

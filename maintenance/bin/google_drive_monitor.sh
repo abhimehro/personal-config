@@ -9,12 +9,14 @@ mkdir -p "$LOG_DIR"
 
 # Basic logging
 log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [INFO] [google_drive_monitor] $*" | tee -a "$LOG_DIR/google_drive_monitor.log"
 }
 
 log_warn() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [WARNING] [google_drive_monitor] $*" | tee -a "$LOG_DIR/google_drive_monitor.log"
 }
 
