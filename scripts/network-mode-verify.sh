@@ -143,8 +143,8 @@ check_controld_active() {
       local target
       target=$(readlink "/etc/controld/ctrld.toml" 2>/dev/null || true)
       active_config="$target"
-      local extracted_name="${target##*/}"
-      active_profile="${extracted_name#ctrld.}"
+      active_profile="${target##*/}"
+      active_profile="${active_profile#ctrld.}"
       active_profile="${active_profile%.toml}"
     fi
 
