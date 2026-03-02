@@ -53,8 +53,7 @@ run_with_timeout() {
         bash -c "$cmd" > "$output_file" 2>/dev/null &
         local pid=$!
         local count=0
-    # shellcheck disable=SC2086  # intentional word splitting or dynamic args
-        while kill -0 $pid 2>/dev/null && [ $count -lt $timeout_seconds ]; do
+        while kill -0 "$pid" 2>/dev/null && [ "$count" -lt "$timeout_seconds" ]; do
             sleep 1
             ((count++))
         done
