@@ -15,8 +15,8 @@ control-d-regression:  ## Run full Control D regression test suite
 benchmark:  ## Run performance benchmarks for core scripts (requires hyperfine)
 	./tests/benchmarks/benchmark_scripts.sh all
 
-lint:  ## Run all linters (trunk check --all)
+lint:  ## Run all linters (requires Trunk; runs: trunk check --all)
 	trunk check --all
 
-lint-fix:  ## Auto-fix lint issues (trunk fmt)
+lint-fix:  ## Auto-fix lint issues (requires Trunk; runs: trunk fmt)
 	trunk fmt
