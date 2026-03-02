@@ -56,7 +56,8 @@ log_error() { log "ERROR" "$@"; }
 
 # Simple locking using mkdir
 with_lock() {
-    local name="${1:-$(basename "${BASH_SOURCE[1]}" .sh)}"
+    local name
+    name="${1:-$(basename "${BASH_SOURCE[1]}" .sh)}"
     local lock_dir="$MNT_ROOT/tmp/${name}.lock"
     
     if mkdir "$lock_dir" 2>/dev/null; then
