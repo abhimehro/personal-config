@@ -101,7 +101,8 @@ bash tests/test_network_mode_manager.sh
 
 Run all shell tests:
 ```bash
-for f in tests/test_*.sh; do bash "$f"; done
+# Runs all shell tests in parallel via the test runner script
+make test
 ```
 
 Python tests use `unittest` (see `tests/test_*.py`).
@@ -201,7 +202,7 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 | What | Command | Notes |
 |---|---|---|
 | Python tests | `python3 -m unittest discover -s tests -p 'test_*.py'` | stdlib only, no pip deps |
-| Shell tests | `for f in tests/test_*.sh; do bash "$f"; done` | Some tests are expected to fail on Linux; see caveats below. |
+| Shell tests | `make test` | Runs in parallel. Known macOS-specific failures are currently auto-ignored on all platforms. |
 | Lint (all) | `trunk check --all` | Trunk downloads its own tool versions on first run |
 | Format | `trunk fmt` | Auto-fixes where supported |
 
