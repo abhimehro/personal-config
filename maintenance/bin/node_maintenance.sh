@@ -122,8 +122,7 @@ if [[ -n "${REPO_SEARCH_PATHS:-}" ]] && [[ "${NODE_MODULES_MAX_GB:-0}" -gt 0 ]];
                     size_gb=$((size_kb / 1024 / 1024))
                     
                     # Check if directory is old
-    # shellcheck disable=SC2086  # intentional word splitting or dynamic args
-                    days_old=$(find "$node_modules_dir" -maxdepth 0 -type d -mtime +${NODE_MODULES_MAX_AGE_DAYS:-90} 2>/dev/null | wc -l | tr -d ' ')
+                    days_old=$(find "$node_modules_dir" -maxdepth 0 -type d -mtime +"${NODE_MODULES_MAX_AGE_DAYS:-90}" 2>/dev/null | wc -l | tr -d ' ')
                     
                     if [[ $size_gb -gt ${NODE_MODULES_MAX_GB:-5} ]] && [[ $days_old -gt 0 ]]; then
                         project_dir=$(dirname "$node_modules_dir")
