@@ -1,7 +1,7 @@
 # ELIR Handoff: Control D Manager Refactor
 
 📋 **Purpose:**
-Refactored `controld-manager` from a monolithic 759-line script down to a 244-line orchestrator. Extracted reusable functions into `scripts/lib/dns-utils.sh` (DNS network settings and resolution checks), `scripts/lib/controld-profile.sh` (profile access, config generation, connection testing), and `scripts/lib/controld-service.sh` (setup, safe stop, restart, emergency recovery). All extracted logic is unit-tested.
+Refactored `controld-manager` from a monolithic 759-line script down to a 244-line orchestrator. Extracted reusable functions into `scripts/lib/dns-utils.sh` (DNS network settings and resolution checks), `scripts/lib/controld-profile.sh` (profile access, config generation, connection testing), and `scripts/lib/controld-service.sh` (setup, safe stop, restart, emergency recovery). Core extracted logic is covered by unit tests.
 
 🛡️ **Security:**
 Maintained all existing security boundaries:
