@@ -111,8 +111,7 @@ print_status() {
     if sudo test -L "$config_link"; then
       local target
       target=$(sudo readlink "$config_link" || echo "")
-      local extracted_name
-      extracted_name=$(basename "$target")
+      local extracted_name="${target##*/}"
       extracted_name="${extracted_name#ctrld.}"
       extracted_name="${extracted_name%.toml}"
       case "$extracted_name" in

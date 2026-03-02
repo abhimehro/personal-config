@@ -151,7 +151,7 @@ perform_surgical_removal() {
     for pattern in "${REMOVE_PATTERNS[@]}"; do
         while IFS= read -r -d '' file; do
             if [ -e "$file" ]; then
-                print_status "Removing: $(basename "$file")"
+                print_status "Removing: ${file##*/}"
                 rm -rf "$file" 2>/dev/null || true
                 ((removed_count++))
             fi

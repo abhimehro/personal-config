@@ -36,10 +36,10 @@ print_usage() {
   echo -e "${BOLD}YouTube Downloader${NC}"
   echo -e "Downloads videos to ~/Downloads with best quality + aria2c acceleration."
   echo -e ""
-  echo -e "Usage: $(basename "$0") <url>"
+  echo -e "Usage: ${0##*/} <url>"
   echo -e ""
   echo -e "Example:"
-  echo -e "  $(basename "$0") \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\""
+  echo -e "  ${0##*/} \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\""
 }
 
 # --- Main ---
