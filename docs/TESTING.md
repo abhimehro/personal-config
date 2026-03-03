@@ -296,7 +296,6 @@ The following tests contain early-exit skip guards that print `SKIP:` and exit 7
 | `tests/test_config_fish.sh` | Requires the `fish` shell, which is not present in the Linux CI image | `command -v fish` |
 | `tests/test_ssh_config.sh` | Requires the 1Password SSH agent socket (`~/.1password/agent.sock`) | `uname -s == Darwin` |
 | `tests/test_security_manager_restore.sh` | Uses BSD `sed -i ''` syntax (macOS only) | `uname -s == Darwin` |
-| `tests/test_media_server_auth.sh` | Credential flow assertion depends on macOS Keychain | `uname -s == Darwin` |
 | `tests/test_network_mode_manager.sh` | `network-mode-manager.sh` issues `sudo` commands unavailable in CI containers | `sudo -n true` |
 
 If you add a new test that is intentionally macOS-only, add a `uname` guard at the top (Pattern 5 above) and add an entry to this table.
