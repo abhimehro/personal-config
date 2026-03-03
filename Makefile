@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help test test-quick lint lint-fix control-d-regression benchmark
+.PHONY: help test test-quick lint lint-errors lint-fix control-d-regression benchmark
 
 help:  ## Show this help message
 	@echo "Available targets:"
@@ -23,6 +23,13 @@ benchmark:  ## Run performance benchmarks for core scripts (requires hyperfine)
 
 lint:  ## Run all linters (requires Trunk; runs: trunk check --all)
 	trunk check --all
+
+lint-errors:  ## Fail on SC2155/SC2145 correctness violations (run without Trunk; regression gate)
+	@echo "Checking for SC2155 (declare+assign) and SC2145 (arg mixing) violations..."
+	@find scripts/ maintenance/ tests/ -name "*.sh" ! -path "*/archive/*" \
+		-exec shellcheck --include=SC2155,SC2145 --format=gcc {} \; 2>/dev/null | \
+		grep -E "SC2155|SC2145" && { echo "❌ SC2155/SC2145 violations found — fix before merging"; exit 1; } || \
+		echo "✅ No SC2155/SC2145 violations found"
 
 lint-fix:  ## Auto-fix lint issues (requires Trunk; runs: trunk fmt)
 	trunk fmt
