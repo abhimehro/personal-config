@@ -122,6 +122,10 @@ mcp-configs/*.local.json
 mcp-configs/servers.local.json
 .mcp-config.local.json
 
+# Shell/Python sed backup artifacts
+*.sh.bak
+*.py.bak
+
 # Session artifact files (scratch files from PR/agent sessions)
 commit_msg.txt
 pr_body.md
@@ -184,6 +188,9 @@ coverage/
 # Allow scripts (but not sensitive ones)
 !scripts/
 !*.sh
+
+# One-shot patch scripts are ephemeral agent artifacts (overrides !*.sh above)
+patch.sh
 
 # Allow test files
 !tests/
