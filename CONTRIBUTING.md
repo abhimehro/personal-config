@@ -12,7 +12,7 @@ submitting a well-formed pull request.
 2. [Development Setup](#development-setup)
 3. [Running Tests](#running-tests)
 4. [Running the Linter](#running-the-linter)
-5. [Running Pre-commit Checks](#running-pre-commit-checks)
+5. [Running Pre-push Checks](#running-pre-push-checks)
 6. [Submitting a Pull Request](#submitting-a-pull-request)
 7. [Secrets Policy](#secrets-policy)
 
@@ -119,7 +119,7 @@ Trunk downloads its own tool versions on first run — subsequent runs are fast.
 
 ---
 
-## Running Pre-commit Checks
+## Running Pre-push Checks
 
 Before pushing, run the smoke test + lint pass to catch the most common issues:
 
