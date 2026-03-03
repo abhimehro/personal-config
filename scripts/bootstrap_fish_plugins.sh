@@ -28,6 +28,12 @@ trap 'tput cnorm 2>/dev/null || true' EXIT INT TERM
 spinner() {
     local message="$1"
     shift
+
+    if [ "$#" -eq 0 ]; then
+        err "spinner: No command provided for message: '$message'"
+        return 1
+    fi
+
     # If not running in a TTY, just run the command without spinner
     if [ ! -t 1 ]; then
         info "$message..."
@@ -99,7 +105,7 @@ if ! fish -lc 'type -q fisher'; then
     fi
 
     # Install Fisher
-    spinner "Installing Fisher" fish -lc 'curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher'
+    spinner "Installing Fisher" fish -lc 'curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/v4.4.4/functions/fisher.fish | source && fisher install jorgebucaran/fisher'
 else
     ok "Fisher is already installed."
 fi
