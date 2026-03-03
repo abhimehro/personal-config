@@ -143,6 +143,7 @@
 
 **Merged pull requests:**
 
+- 🛡️ Sentinel: \[MEDIUM\] Fix command injection risk in spinner function [\#492](https://github.com/abhimehro/personal-config/pull/492) ([abhimehro](https://github.com/abhimehro))
 - fix\(SC2155\): separate local declaration from assignment in with\_lock\(\) [\#488](https://github.com/abhimehro/personal-config/pull/488) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix: resolve remaining SC2155 violations in 6 first-party scripts \(13 instances\) [\#487](https://github.com/abhimehro/personal-config/pull/487) ([github-actions[bot]](https://github.com/apps/github-actions))
 - feat\(shellcheck\): replace `/dev/null` source suppressions with explicit path annotations in network-mode-manager.sh [\#486](https://github.com/abhimehro/personal-config/pull/486) ([Copilot](https://github.com/apps/copilot-swe-agent))
