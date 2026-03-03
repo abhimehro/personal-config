@@ -17,7 +17,8 @@ disable=SC1090
 # SC2155 and SC2145 are correctness issues, not style warnings:
 #   SC2155 — Declaring and assigning local var=$(cmd) in one step masks the
 #             command's exit code; use separate declare + assign.
-#   SC2145 — Mixing "$*"/"$@" in arithmetic expansions can corrupt argument lists.
+#   SC2145 — Mixing a literal string with "$*"/"$@" in a single word (e.g., "prefix $@")
+#             can corrupt argument lists; keep the prefix and "$@" as separate arguments.
 # ShellCheck .shellcheckrc does not support per-code severity overrides, so these
 # cannot be elevated to error-level here. Instead, use `make lint-errors` as an
 # explicit regression gate — it runs `shellcheck --include=SC2155,SC2145` and
