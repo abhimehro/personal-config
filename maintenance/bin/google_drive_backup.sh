@@ -229,13 +229,13 @@ echo "Starting Google Drive Backup ($MODE)..."
 echo "Destination: $DEST"
 
 if [[ "$MODE" == "full" ]]; then
-    run_rsync_relative "Full Core" "${CORE_FULL[@]}" || ((BACKUP_ERRORS++))
+    run_rsync_relative "Full Core" "${CORE_FULL[@]}" || BACKUP_ERRORS=$((BACKUP_ERRORS + 1))
 else
-    run_rsync_relative "Light Core" "${CORE_LIGHT[@]}" || ((BACKUP_ERRORS++))
+    run_rsync_relative "Light Core" "${CORE_LIGHT[@]}" || BACKUP_ERRORS=$((BACKUP_ERRORS + 1))
 fi
 
 # Always backup dotfiles
-run_rsync_relative "Dotfiles" "${DOTFILES[@]}" || ((BACKUP_ERRORS++))
+run_rsync_relative "Dotfiles" "${DOTFILES[@]}" || BACKUP_ERRORS=$((BACKUP_ERRORS + 1))
 
 echo ""
 echo "=========================================="

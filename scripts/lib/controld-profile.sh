@@ -119,7 +119,7 @@ generate_profile_config() {
             break
         fi
         sleep 0.1
-        ((count++))
+        count=$((count + 1))
     done
 
     # Ensure file has content
