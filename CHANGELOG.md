@@ -21,6 +21,8 @@
 
 **Closed issues:**
 
+- fix: add SC2155/SC2145 regression gate and fix remaining archive violations \(\#506\) [\#508](https://github.com/abhimehro/personal-config/issues/508)
+- \[Code Quality\] Audit and update .gitignore to prevent future ephemeral artifact commits [\#503](https://github.com/abhimehro/personal-config/issues/503)
 - \[Code Quality\] Add shellcheck source annotations to network-mode-manager.sh dynamic library sourcing [\#481](https://github.com/abhimehro/personal-config/issues/481)
 - \[Code Quality\] Document dual .shellcheckrc configuration \(root vs Trunk\) in AGENTS.md [\#480](https://github.com/abhimehro/personal-config/issues/480)
 - \[Code Quality\] Add BASH\_SOURCE execution guards to smart\_scheduler.sh and performance\_optimizer.sh [\#479](https://github.com/abhimehro/personal-config/issues/479)
@@ -143,6 +145,7 @@
 
 **Merged pull requests:**
 
+- chore: close .gitignore gaps for shell .bak artifacts and one-shot patch scripts [\#511](https://github.com/abhimehro/personal-config/pull/511) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - docs: add CONTRIBUTING.md and pull request template [\#493](https://github.com/abhimehro/personal-config/pull/493) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - 🛡️ Sentinel: \[MEDIUM\] Fix command injection risk in spinner function [\#492](https://github.com/abhimehro/personal-config/pull/492) ([abhimehro](https://github.com/abhimehro))
 - fix\(SC2155\): separate local declaration from assignment in with\_lock\(\) [\#488](https://github.com/abhimehro/personal-config/pull/488) ([Copilot](https://github.com/apps/copilot-swe-agent))
