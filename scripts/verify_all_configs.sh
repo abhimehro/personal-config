@@ -192,7 +192,7 @@ if [[ -d "$HOME/.config/fish/functions" ]]; then
     function_count=0
     for func in nm-browse nm-privacy nm-gaming nm-vpn nm-status nm-regress nm-cd-status; do
         if [[ -f "$HOME/.config/fish/functions/$func.fish" ]]; then
-            ((function_count++))
+            function_count=$((function_count + 1))
         fi
     done
     if [[ $function_count -eq 7 ]]; then

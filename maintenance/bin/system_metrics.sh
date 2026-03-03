@@ -185,17 +185,17 @@ WARNING_COUNT=0
 # Health checks
 if [[ ${ROOT_USAGE:-0} -gt 85 ]]; then
     OVERALL_HEALTH="warning"
-    ((WARNING_COUNT++))
+    WARNING_COUNT=$((WARNING_COUNT + 1))
 fi
 
 if [[ ${FREE_MB:-1000} -lt 500 ]]; then
     OVERALL_HEALTH="warning"
-    ((WARNING_COUNT++))
+    WARNING_COUNT=$((WARNING_COUNT + 1))
 fi
 
 if [[ ${FAILED_AGENTS:-0} -gt 0 ]]; then
     OVERALL_HEALTH="warning"
-    ((WARNING_COUNT++))
+    WARNING_COUNT=$((WARNING_COUNT + 1))
 fi
 
 if [[ $WARNING_COUNT -gt 2 ]]; then
