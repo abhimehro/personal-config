@@ -165,7 +165,12 @@ smart_notify() {
     local message="$3"
     local action="${4:-}"  # Optional action button
     local sound_override="${5:-}"
-    
+
+    # Allow CI/automated environments to suppress all desktop notifications
+    if [[ "${SMART_NOTIFIER_DISABLE:-}" == "1" ]]; then
+        return 0
+    fi
+
     # Validate inputs
     if [[ -z "$title" ]] || [[ -z "$message" ]]; then
         notify_log "ERROR: Title and message are required for notifications"
