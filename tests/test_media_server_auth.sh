@@ -122,9 +122,34 @@ else
     cat "$TEST_DIR/t2.log"
     FAIL=$((FAIL + 1))
 fi
-check_grep "generated credentials: rclone called with user" "USER=" "$RCLONE_LOG"
-check_grep "generated credentials: rclone called with pass" "PASS=" "$RCLONE_LOG"
 
+# Validate generated credentials content and ensure rclone received exact values.
+GENERATED_CREDS_FILE="$MOCK_HOME/.config/media-server/credentials"
+GENERATED_USER=""
+GENERATED_PASS=""
+if [[ -f "$GENERATED_CREDS_FILE" ]]; then
+    GENERATED_USER=$(grep '^MEDIA_WEBDAV_USER=' "$GENERATED_CREDS_FILE" | cut -d'=' -f2- || true)
+    GENERATED_PASS=$(grep '^MEDIA_WEBDAV_PASS=' "$GENERATED_CREDS_FILE" | cut -d'=' -f2- || true)
+fi
+
+if [[ "$GENERATED_USER" == "infuse" ]]; then
+    echo "PASS: generated credentials use default user 'infuse'"; PASS=$((PASS + 1))
+else
+    echo "FAIL: generated credentials user is '$GENERATED_USER', expected 'infuse'"; FAIL=$((FAIL + 1))
+fi
+
+if [[ -n "$GENERATED_PASS" ]]; then
+    echo "PASS: generated credentials password is non-empty"; PASS=$((PASS + 1))
+else
+    echo "FAIL: generated credentials password is empty"; FAIL=$((FAIL + 1))
+fi
+
+check_grep "generated credentials: rclone called with default user" "USER=infuse" "$RCLONE_LOG"
+if [[ -n "$GENERATED_PASS" ]]; then
+    check_grep "generated credentials: rclone called with generated pass" "PASS=$GENERATED_PASS" "$RCLONE_LOG"
+else
+    echo "FAIL: skipping rclone password pattern check because generated password is empty"; FAIL=$((FAIL + 1))
+fi
 # ---- Test 3: security mock — find-generic-password returns expected password ----
 # NOTE: start-media-server-fast.sh uses file-based credentials, not Keychain, so the
 # security binary is not called by the script under test. Tests 3 and 4 validate the
