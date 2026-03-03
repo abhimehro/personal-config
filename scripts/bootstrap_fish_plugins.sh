@@ -28,14 +28,16 @@ trap 'tput cnorm 2>/dev/null || true' EXIT INT TERM
 spinner() {
     local message="$1"
     shift
-    # Join remaining arguments into a single command string for eval
-    # Using $* instead of $@ because eval needs a single string
-    local cmd="$*"
+
+    if [ "$#" -eq 0 ]; then
+        err "spinner: No command provided for message: '$message'"
+        return 1
+    fi
 
     # If not running in a TTY, just run the command without spinner
     if [ ! -t 1 ]; then
         info "$message..."
-        eval "$cmd"
+        "$@"
         return $?
     fi
 
@@ -49,7 +51,7 @@ spinner() {
     temp_log=$(mktemp -t 'fish_bootstrap.XXXXXX')
 
     # Run command in background
-    eval "$cmd" > "$temp_log" 2>&1 &
+    "$@" > "$temp_log" 2>&1 &
     pid=$!
 
     # Hide cursor
@@ -103,7 +105,7 @@ if ! fish -lc 'type -q fisher'; then
     fi
 
     # Install Fisher
-    spinner "Installing Fisher" "fish -lc 'curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher'"
+    spinner "Installing Fisher" fish -lc 'curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/v4.4.4/functions/fisher.fish | source && fisher install jorgebucaran/fisher'
 else
     ok "Fisher is already installed."
 fi
@@ -111,6 +113,6 @@ fi
 # 2. Update plugins
 # We capture the output via spinner so user sees animation instead of raw output
 # (unless it fails)
-spinner "Updating plugins via Fisher" "fish -lc 'fisher update'"
+spinner "Updating plugins via Fisher" fish -lc 'fisher update'
 
 ok "Bootstrap complete!"
