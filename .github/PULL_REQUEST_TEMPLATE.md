@@ -31,4 +31,4 @@
 - [ ] `make lint` reports no new errors
 - [ ] No secrets, tokens, or `.env` files included
 - [ ] Documentation updated if behaviour changed
-- [ ] Branch name follows the convention in [CONTRIBUTING.md](../CONTRIBUTING.md#branch-naming)
+- [ ] Branch name follows the convention in CONTRIBUTING.md (section "Branch naming")
