@@ -143,6 +143,7 @@
 
 **Merged pull requests:**
 
+- docs: add CONTRIBUTING.md and pull request template [\#493](https://github.com/abhimehro/personal-config/pull/493) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - 🛡️ Sentinel: \[MEDIUM\] Fix command injection risk in spinner function [\#492](https://github.com/abhimehro/personal-config/pull/492) ([abhimehro](https://github.com/abhimehro))
 - fix\(SC2155\): separate local declaration from assignment in with\_lock\(\) [\#488](https://github.com/abhimehro/personal-config/pull/488) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix: resolve remaining SC2155 violations in 6 first-party scripts \(13 instances\) [\#487](https://github.com/abhimehro/personal-config/pull/487) ([github-actions[bot]](https://github.com/apps/github-actions))
