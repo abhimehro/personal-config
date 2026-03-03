@@ -27,9 +27,12 @@ lint:  ## Run all linters (requires Trunk; runs: trunk check --all)
 lint-errors:  ## Fail on SC2155/SC2145 correctness violations (run without Trunk; regression gate)
 	@echo "Checking for SC2155 (declare+assign) and SC2145 (arg mixing) violations..."
 	@bash -c 'set -euo pipefail; \
-		if find . -name "*.sh" ! -path "*/archive/*" ! -path "./.trunk/*" ! -path "./configs/.config/mole/*" \
-			-exec shellcheck --include=SC2155,SC2145 --format=gcc {} \; | \
-			grep -E "SC2155|SC2145"; then \
+		output=$$(find . -name "*.sh" ! -path "*/archive/*" ! -path "./.trunk/*" ! -path "./configs/.config/mole/*" \
+			-exec shellcheck --include=SC2155,SC2145 --format=gcc {} \; || { \
+				echo "❌ shellcheck failed to run correctly (missing, usage error, or parse error)"; \
+				exit 1; \
+			}); \
+		if echo "$$output" | grep -E "SC2155|SC2145"; then \
 			echo "❌ SC2155/SC2145 violations found — fix before merging"; \
 			exit 1; \
 		else \
