@@ -18,9 +18,10 @@ def test_new():
     auth_data = EXPECTED_TOKEN
     return secrets.compare_digest(auth_data, EXPECTED_TOKEN)
 
-old_time = timeit.timeit(test_old, number=1000000)
-new_time = timeit.timeit(test_new, number=1000000)
+if __name__ == "__main__":
+    old_time = timeit.timeit(test_old, number=1000000)
+    new_time = timeit.timeit(test_new, number=1000000)
 
-print(f"Old: {old_time:.4f}s")
-print(f"New: {new_time:.4f}s")
-print(f"Speedup: {old_time / new_time:.2f}x")
+    print(f"Old: {old_time:.4f}s")
+    print(f"New: {new_time:.4f}s")
+    print(f"Speedup: {old_time / new_time:.2f}x")
