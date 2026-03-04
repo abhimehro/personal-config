@@ -8,6 +8,7 @@
 #   [[ $raw == \'*\' ]] && value=${raw:1:-1} || value=$raw
 #   (tr -d "'" also works but removes embedded quotes; prefer the form above)
 # See: start-media-server-fast.sh (generates this format)
+
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
