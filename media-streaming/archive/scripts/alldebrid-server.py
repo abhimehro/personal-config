@@ -14,6 +14,7 @@ MOUNT_DIR = os.environ.get("ALD_MOUNT_DIR", os.path.expanduser("~/mnt/alldebrid"
 # Global auth credentials
 AUTH_USER = None
 AUTH_PASS = None
+EXPECTED_AUTH_TOKEN = None
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -30,7 +31,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().do_GET()
 
     def check_auth(self):
-        global AUTH_USER, AUTH_PASS
+        global AUTH_USER, AUTH_PASS, EXPECTED_AUTH_TOKEN
 
         # If no auth configured (shouldn't happen with new logic), allow
         if not AUTH_USER or not AUTH_PASS:
@@ -47,14 +48,9 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_auth_request()
                 return False
 
-            decoded = base64.b64decode(auth_data).decode('utf-8')
-            username, password = decoded.split(':', 1)
-
+            # ⚡ Performance: Compare base64 token directly (O(1) request time vs O(n) decoding + splitting)
             # Use constant time comparison to prevent timing attacks
-            user_match = secrets.compare_digest(username, AUTH_USER)
-            pass_match = secrets.compare_digest(password, AUTH_PASS)
-
-            if user_match and pass_match:
+            if secrets.compare_digest(auth_data, EXPECTED_AUTH_TOKEN):
                 return True
         except Exception:
             # Malformed header or decoding error
@@ -152,5 +148,8 @@ if __name__ == "__main__":
         print("   (Use these credentials to access the server)\n")
     else:
         print("\n🔒 Security: Authentication Enabled (using configured credentials)\n")
+
+    # Pre-compute expected token
+    EXPECTED_AUTH_TOKEN = base64.b64encode(f"{AUTH_USER}:{AUTH_PASS}".encode('utf-8')).decode('utf-8')
 
     start_server(host, args.port)
