@@ -128,8 +128,8 @@ GENERATED_CREDS_FILE="$MOCK_HOME/.config/media-server/credentials"
 GENERATED_USER=""
 GENERATED_PASS=""
 if [[ -f "$GENERATED_CREDS_FILE" ]]; then
-    GENERATED_USER=$(grep '^MEDIA_WEBDAV_USER=' "$GENERATED_CREDS_FILE" | cut -d'=' -f2- || true)
-    GENERATED_PASS=$(grep '^MEDIA_WEBDAV_PASS=' "$GENERATED_CREDS_FILE" | cut -d'=' -f2- || true)
+    GENERATED_USER=$(grep '^MEDIA_WEBDAV_USER=' "$GENERATED_CREDS_FILE" | cut -d'=' -f2- | tr -d "'" || true)
+    GENERATED_PASS=$(grep '^MEDIA_WEBDAV_PASS=' "$GENERATED_CREDS_FILE" | cut -d'=' -f2- | tr -d "'" || true)
 fi
 
 if [[ "$GENERATED_USER" == "infuse" ]]; then
