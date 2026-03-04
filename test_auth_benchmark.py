@@ -2,8 +2,8 @@ import base64
 import timeit
 import secrets
 
-AUTH_USER = "admin_user_long_name"
-AUTH_PASS = "super_secret_password_12345"
+AUTH_USER = "dummy_user"
+AUTH_PASS = "dummy_password"
 EXPECTED_TOKEN = base64.b64encode(f"{AUTH_USER}:{AUTH_PASS}".encode()).decode()
 
 def test_old():
