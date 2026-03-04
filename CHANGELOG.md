@@ -21,6 +21,7 @@
 
 **Closed issues:**
 
+- \[Code Quality\] Document media-streaming credential file format contract to prevent test parsing failures [\#527](https://github.com/abhimehro/personal-config/issues/527)
 - \[Code Quality\] Add `controld-manager` smoke tests as prerequisite for \#445 refactor [\#518](https://github.com/abhimehro/personal-config/issues/518)
 - \[Code Quality\] Investigate `test_media_server_auth.sh` CI skip: expected macOS-only but has no Darwin guard [\#517](https://github.com/abhimehro/personal-config/issues/517)
 - \[Code Quality\] Document `make lint-errors` regression gate in AGENTS.md and README [\#516](https://github.com/abhimehro/personal-config/issues/516)
@@ -163,6 +164,7 @@
 
 **Merged pull requests:**
 
+- docs: make credential file format an explicit contract in media-streaming scripts and README [\#530](https://github.com/abhimehro/personal-config/pull/530) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - ⚡ Bolt: Optimize Basic Auth Validation [\#526](https://github.com/abhimehro/personal-config/pull/526) ([abhimehro](https://github.com/abhimehro))
 - docs: document `make lint-errors` SC2155/SC2145 regression gate in AGENTS.md and README [\#523](https://github.com/abhimehro/personal-config/pull/523) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - tests\(controld-manager\): add $MOCK\_BIN subprocess smoke tests as refactor prereq [\#522](https://github.com/abhimehro/personal-config/pull/522) ([Copilot](https://github.com/apps/copilot-swe-agent))
