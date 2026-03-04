@@ -70,10 +70,19 @@ test_smoke_status() {
 
 # Smoke: unknown/help command shows usage text
 test_smoke_help() {
-    local output
-    # controld-manager's '*' case prints usage and returns 0; || true is a
-    # defensive guard in case the exit code changes in a future refactor.
-    output=$(PATH="$MOCK_BIN:$PATH" bash "$CONTROLD_MGR" --help 2>&1 || true)
+    local output rc
+    # controld-manager's '*' case prints usage and is expected to return 0.
+    # Run under 'if' so non-zero exit doesn't trigger 'set -e', and capture rc explicitly.
+    if output=$(PATH="$MOCK_BIN:$PATH" bash "$CONTROLD_MGR" --help 2>&1); then
+        rc=0
+    else
+        rc=$?
+    fi
+    if [[ "$rc" -ne 0 ]]; then
+        echo "Fail: '--help' should exit with status 0, got $rc. Output:"
+        echo "$output"
+        return 1
+    fi
     if ! echo "$output" | grep -qiE "usage|commands"; then
         echo "Fail: '--help' should display usage/commands. Output:"
         echo "$output"
