@@ -31,6 +31,7 @@
 - \[Code Quality\] Document `make lint-errors` regression gate in AGENTS.md and README [\#516](https://github.com/abhimehro/personal-config/issues/516)
 - \[Code Quality\] Audit `maintenance/bin/archive/` scripts for ShellCheck violations [\#515](https://github.com/abhimehro/personal-config/issues/515)
 - fix: add SC2155/SC2145 regression gate and fix remaining archive violations \(\#506\) [\#508](https://github.com/abhimehro/personal-config/issues/508)
+- \[Code Quality\] Add unit tests for `scripts/lib/` core utility modules \(network-core, controld-service, controld-profile\) [\#507](https://github.com/abhimehro/personal-config/issues/507)
 - \[Code Quality\] Promote SC2155 and SC2145 to error-severity in Trunk ShellCheck config to prevent regression [\#506](https://github.com/abhimehro/personal-config/issues/506)
 - \[Code Quality\] Audit all scripts under `set -e` for remaining `((var++))` post-increment bugs [\#505](https://github.com/abhimehro/personal-config/issues/505)
 - \[repo-status\] Daily Repo Status — March 3, 2026 [\#504](https://github.com/abhimehro/personal-config/issues/504)
@@ -62,7 +63,6 @@
 - \[Code Quality\] Add `make lint` and `make lint-fix` targets to Makefile for linting discoverability [\#449](https://github.com/abhimehro/personal-config/issues/449)
 - \[Code Quality\] Create `.shellcheckrc` for project-wide ShellCheck baseline configuration [\#448](https://github.com/abhimehro/personal-config/issues/448)
 - \[Code Quality\] Audit and annotate 264 persistent ShellCheck warnings with inline suppression comments or fixes [\#446](https://github.com/abhimehro/personal-config/issues/446)
-- \[Code Quality\] Refactor controld-manager \(759 lines\) by extracting testable library modules into scripts/lib/ [\#445](https://github.com/abhimehro/personal-config/issues/445)
 - \[Code Quality\] Integrate parallel test runner \(tests/run\_all\_tests.sh\) into Makefile and document usage [\#444](https://github.com/abhimehro/personal-config/issues/444)
 - \[repo-status\] 📊 Daily Repo Status — March 1, 2026 [\#443](https://github.com/abhimehro/personal-config/issues/443)
 - \[Code Quality\] Resolve SC2034 ShellCheck warnings: remove or fix unused variable declarations [\#442](https://github.com/abhimehro/personal-config/issues/442)
@@ -169,6 +169,7 @@
 
 **Merged pull requests:**
 
+- Add unit tests for scripts/lib/ core utility modules [\#535](https://github.com/abhimehro/personal-config/pull/535) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix\(archive\): clear all ShellCheck violations in maintenance/bin/archive/ [\#534](https://github.com/abhimehro/personal-config/pull/534) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - feat\(tests\): add shared parse\_cred\_value\(\) helper for shell-quoted credential parsing [\#533](https://github.com/abhimehro/personal-config/pull/533) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - docs: verify TESTING.md CI-skip table is accurate after test\_media\_server\_auth.sh portability change [\#531](https://github.com/abhimehro/personal-config/pull/531) ([Copilot](https://github.com/apps/copilot-swe-agent))
