@@ -24,6 +24,7 @@
 - fix: add SC2155/SC2145 regression gate and fix remaining archive violations \(\#506\) [\#508](https://github.com/abhimehro/personal-config/issues/508)
 - \[Code Quality\] Promote SC2155 and SC2145 to error-severity in Trunk ShellCheck config to prevent regression [\#506](https://github.com/abhimehro/personal-config/issues/506)
 - \[Code Quality\] Audit and update .gitignore to prevent future ephemeral artifact commits [\#503](https://github.com/abhimehro/personal-config/issues/503)
+- \[Code Quality\] Make test\_media\_server\_auth.sh CI-portable by mocking macOS `security` \(Keychain\) command [\#502](https://github.com/abhimehro/personal-config/issues/502)
 - \[Code Quality\] Add unit tests for analytics\_dashboard.sh \(575 lines, no coverage\) [\#491](https://github.com/abhimehro/personal-config/issues/491)
 - \[Code Quality\] Add unit tests for performance\_optimizer.sh \(582 lines, no coverage\) [\#490](https://github.com/abhimehro/personal-config/issues/490)
 - \[Code Quality\] Remove stale .bak backup files committed to scripts/lib/ [\#489](https://github.com/abhimehro/personal-config/issues/489)
@@ -149,6 +150,7 @@
 
 **Merged pull requests:**
 
+- Make test\_media\_server\_auth.sh CI-portable by mocking macOS security \(Keychain\) command [\#512](https://github.com/abhimehro/personal-config/pull/512) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - chore: close .gitignore gaps for shell .bak artifacts and one-shot patch scripts [\#511](https://github.com/abhimehro/personal-config/pull/511) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix: expand lint-errors gate to cover all first-party shell scripts [\#510](https://github.com/abhimehro/personal-config/pull/510) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix: add SC2155/SC2145 regression gate and fix remaining archive violations \(\#506\) [\#509](https://github.com/abhimehro/personal-config/pull/509) ([abhimehro](https://github.com/abhimehro))
