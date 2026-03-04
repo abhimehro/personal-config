@@ -52,3 +52,6 @@
 ## 2026-02-23 - Contextual Delight in CLI
 **Learning:** Adding variable feedback (e.g., random loading messages) and contextual greetings transforms a utilitarian tool into a delightful experience, reducing perceived latency.
 **Action:** When implementing loading states or startup banners, consider using dynamic text based on time or random selection to add personality.
+## 2026-03-04 - [CLI Accessibility: Spinner terminal spam]
+**Learning:** Animated CLI spinners using `\r` and interval writes create an inaccessible "terminal spam" experience for screen readers and CI environments, reading every single frame update.
+**Action:** When implementing CLI spinners, wrap the animation start in a `process.stdout.isTTY` check to ensure it gracefully falls back to a static "working..." message or no spinner in non-interactive/accessible environments.
