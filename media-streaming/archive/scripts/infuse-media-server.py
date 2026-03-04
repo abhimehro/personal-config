@@ -46,7 +46,7 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_auth_request()
                 return False
 
-            # ⚡ Performance: Compare base64 token directly (O(1) request time vs O(n) decoding + splitting)
+            # ⚡ Performance: Compare base64 token directly to avoid decoding and splitting overhead
             if secrets.compare_digest(auth_data, EXPECTED_AUTH_TOKEN):
                 return True
         except Exception:
