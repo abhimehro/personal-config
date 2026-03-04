@@ -362,7 +362,7 @@ EOF
         # Check for overly permissive SSH files
         while read -r file; do
             echo "⚠️  SSH file has overly permissive permissions: $file" >> "$security_report"
-            ((security_issues++))
+            security_issues=$((security_issues + 1))
         done < <(find "$HOME/.ssh" -type f \( -perm -044 -o -perm -004 \) 2>/dev/null)
     fi
     echo "" >> "$security_report"
@@ -377,7 +377,7 @@ EOF
     if [[ -n "$world_writable" ]]; then
         echo "⚠️  World-writable files found:" >> "$security_report"
         echo "$world_writable" >> "$security_report"
-        ((security_issues++))
+        security_issues=$((security_issues + 1))
     else
         echo "✅ No world-writable files found in maintenance directory" >> "$security_report"
     fi
@@ -437,7 +437,7 @@ EOF
     failed_logins=$(log show --predicate 'eventMessage CONTAINS "authentication failure"' --last 24h 2>/dev/null | wc -l | tr -d ' ')
     if [[ ${failed_logins:-0} -gt 5 ]]; then
         echo "⚠️  Multiple failed login attempts detected: $failed_logins" >> "$security_report"
-        ((security_issues++))
+        security_issues=$((security_issues + 1))
     else
         echo "✅ No excessive failed login attempts" >> "$security_report"
     fi
@@ -507,7 +507,7 @@ cleanup_old_backups() {
             backup_name=$(basename "$old_backup")
             log_security "INFO" "Deleting old backup: $backup_name"
             rm -f "$old_backup"
-            ((deleted_count++))
+            deleted_count=$((deleted_count + 1))
         done < <(find "$BACKUP_DIR" -name "config_backup_*.tar.gz" -type f -mtime +"$retention_days")
         
         if [[ $deleted_count -gt 0 ]]; then

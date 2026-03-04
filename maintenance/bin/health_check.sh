@@ -58,7 +58,7 @@ run_with_timeout() {
         local count=0
         while kill -0 "$pid" 2>/dev/null && [ "$count" -lt "$timeout_seconds" ]; do
             sleep 1
-            ((count++))
+            count=$((count + 1))
         done
         if kill -0 $pid 2>/dev/null; then
             kill -9 $pid 2>/dev/null || true
