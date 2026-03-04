@@ -21,6 +21,7 @@
 
 **Closed issues:**
 
+- \[Code Quality\] Add `controld-manager` smoke tests as prerequisite for \#445 refactor [\#518](https://github.com/abhimehro/personal-config/issues/518)
 - \[Code Quality\] Investigate `test_media_server_auth.sh` CI skip: expected macOS-only but has no Darwin guard [\#517](https://github.com/abhimehro/personal-config/issues/517)
 - \[Code Quality\] Document `make lint-errors` regression gate in AGENTS.md and README [\#516](https://github.com/abhimehro/personal-config/issues/516)
 - fix: add SC2155/SC2145 regression gate and fix remaining archive violations \(\#506\) [\#508](https://github.com/abhimehro/personal-config/issues/508)
@@ -159,6 +160,7 @@
 **Merged pull requests:**
 
 - docs: document `make lint-errors` SC2155/SC2145 regression gate in AGENTS.md and README [\#523](https://github.com/abhimehro/personal-config/pull/523) ([Copilot](https://github.com/apps/copilot-swe-agent))
+- tests\(controld-manager\): add $MOCK\_BIN subprocess smoke tests as refactor prereq [\#522](https://github.com/abhimehro/personal-config/pull/522) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix\(tests\): strip single quotes when parsing generated credentials in test\_media\_server\_auth [\#519](https://github.com/abhimehro/personal-config/pull/519) ([github-actions[bot]](https://github.com/apps/github-actions))
 - fix: replace `((var++))` post-increment with safe arithmetic in `set -e` scripts [\#514](https://github.com/abhimehro/personal-config/pull/514) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - Add unit tests for `smart_notifier.sh` + `SMART_NOTIFIER_DISABLE` CI guard [\#513](https://github.com/abhimehro/personal-config/pull/513) ([Copilot](https://github.com/apps/copilot-swe-agent))
