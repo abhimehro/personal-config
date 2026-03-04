@@ -86,6 +86,9 @@ This repo is wired for Trunk via `.trunk/trunk.yaml` (shellcheck, shfmt, ruff, b
 # Run all configured linters
 make lint
 
+# Correctness-only regression gate (SC2155/SC2145; no Trunk required)
+make lint-errors
+
 # Auto-format (where supported)
 make lint-fix
 
@@ -227,6 +230,7 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 | Python tests | `python3 -m unittest discover -s tests -p 'test_*.py'` | stdlib only, no pip deps |
 | Shell tests | `make test` | Runs in parallel. Platform-specific tests emit `SKIP:` and exit 77 on Linux/CI. |
 | Lint (all) | `make lint` | Trunk downloads its own tool versions on first run |
+| Lint (correctness gate) | `make lint-errors` | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate. |
 | Format | `make lint-fix` | Auto-fixes where supported |
 
 ### Non-obvious caveats

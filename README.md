@@ -53,8 +53,11 @@ cd ~/Documents/dev/personal-config
 > **Requires:** [Trunk CLI](https://docs.trunk.io/check/usage) — install with `brew install trunk-io` or `curl https://get.trunk.io -fsSL | bash`
 
 ```bash
-# Run all linters
+# Run all linters (full Trunk pass: style + correctness)
 make lint
+
+# Correctness-only regression gate — SC2155/SC2145; no Trunk required; fast pre-commit check
+make lint-errors
 
 # Auto-fix lint issues
 make lint-fix
