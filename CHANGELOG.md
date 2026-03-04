@@ -30,6 +30,10 @@
 - \[repo-status\] Daily Repo Status — March 3, 2026 [\#504](https://github.com/abhimehro/personal-config/issues/504)
 - \[Code Quality\] Audit and update .gitignore to prevent future ephemeral artifact commits [\#503](https://github.com/abhimehro/personal-config/issues/503)
 - \[Code Quality\] Make test\_media\_server\_auth.sh CI-portable by mocking macOS `security` \(Keychain\) command [\#502](https://github.com/abhimehro/personal-config/issues/502)
+- \[Code Quality\] Remove scripts/lib/\*.bak artifacts missed by \#498 and prevent recurrence via .gitignore [\#501](https://github.com/abhimehro/personal-config/issues/501)
+- \[Code Quality\] Fix hardcoded `/tmp` in `controld-profile.sh` to use `\$\{TMPDIR:-/tmp}` for secure temp files [\#500](https://github.com/abhimehro/personal-config/issues/500)
+- \[Code Quality\] Refactor `test_security_manager_restore.sh` to use HOME env override instead of BSD sed patching [\#499](https://github.com/abhimehro/personal-config/issues/499)
+- \[Code Quality\] Remove leftover `.bak` artifacts and ephemeral `patch.sh` from repository [\#498](https://github.com/abhimehro/personal-config/issues/498)
 - \[Code Quality\] Create targeted test scaffold for `controld-manager` DNS/profile functions \(refactor prerequisite\) [\#497](https://github.com/abhimehro/personal-config/issues/497)
 - \[Code Quality\] Add mock-based unit tests for `network-mode-manager.sh` that run on Linux CI [\#496](https://github.com/abhimehro/personal-config/issues/496)
 - \[Code Quality\] Document UNC path normalization behavior in `path_validation.py` to prevent false-positive tests [\#495](https://github.com/abhimehro/personal-config/issues/495)
@@ -159,6 +163,7 @@
 
 **Merged pull requests:**
 
+- ⚡ Bolt: Optimize Basic Auth Validation [\#526](https://github.com/abhimehro/personal-config/pull/526) ([abhimehro](https://github.com/abhimehro))
 - docs: document `make lint-errors` SC2155/SC2145 regression gate in AGENTS.md and README [\#523](https://github.com/abhimehro/personal-config/pull/523) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - tests\(controld-manager\): add $MOCK\_BIN subprocess smoke tests as refactor prereq [\#522](https://github.com/abhimehro/personal-config/pull/522) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix\(tests\): strip single quotes when parsing generated credentials in test\_media\_server\_auth [\#519](https://github.com/abhimehro/personal-config/pull/519) ([github-actions[bot]](https://github.com/apps/github-actions))
