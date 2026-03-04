@@ -66,5 +66,37 @@ launchctl list | grep speedybee
 - **Redundancy**: The `media:` remote is a union of Google Drive and OneDrive, ensuring your library survives a single provider outage.
 - **Fail-Safe**: Any files that fail identification are automatically moved to `~/CloudMedia/failed` for manual audit.
 
+## 🗝️ **Credential File Format**
+
+The media-server startup scripts (`archive/scripts/start-media-server-fast.sh` and `archive/scripts/start-media-server.sh`) write and read credentials from `~/.config/media-server/credentials` using **shell-quoted assignment** syntax:
+
+```
+MEDIA_WEBDAV_USER='infuse'
+MEDIA_WEBDAV_PASS='generated-secret'
+```
+
+The file is sourced directly by bash (`source "$CREDS_FILE"`), so the `KEY='value'` quoting is intentional and correct for that use case.
+
+**Parsing values in tests or other scripts:** Because values are wrapped in single quotes, a plain `cut -d'=' -f2-` yields `'infuse'` rather than `infuse`. Use bash parameter expansion to strip only the surrounding quotes:
+
+```bash
+# Recommended: bash parameter expansion (strips only surrounding quotes)
+raw=$(grep '^MEDIA_WEBDAV_USER=' credentials | cut -d'=' -f2-)
+[[ $raw == \'*\' ]] && value=${raw:1:-1} || value=$raw
+
+# Simpler alternative — tr (removes ALL single quotes; avoid if values may contain them):
+raw=$(grep '^MEDIA_WEBDAV_USER=' credentials | cut -d'=' -f2-)
+value=$(echo "$raw" | tr -d "'")
+```
+
+> **Note:** Generated passwords use `[a-zA-Z0-9]` characters only (see `openssl rand` pipeline in `start-media-server-fast.sh`), so both approaches are safe for auto-generated credentials. The parameter-expansion form is preferred for correctness.
+
+**Scripts that generate this format:**
+- `media-streaming/archive/scripts/start-media-server-fast.sh`
+- `media-streaming/archive/scripts/start-media-server.sh` (delegates to `start-media-server-fast.sh`)
+
+**Scripts and tests that consume this format:**
+- `tests/test_media_server_auth.sh` (uses the bash parameter-expansion form above)
+
 ---
 *"Zero clicks, zero maintenance, ultimate streaming."* 🎬✨
