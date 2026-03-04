@@ -92,11 +92,13 @@ value=$(echo "$raw" | tr -d "'")
 > **Note:** Generated passwords use `[a-zA-Z0-9]` characters only (see `openssl rand` pipeline in `start-media-server-fast.sh`), so both approaches are safe for auto-generated credentials. The parameter-expansion form is preferred for correctness.
 
 **Scripts that generate this format:**
-- `media-streaming/archive/scripts/start-media-server-fast.sh`
 - `media-streaming/archive/scripts/start-media-server.sh` (delegates to `start-media-server-fast.sh`)
+- `media-streaming/archive/scripts/start-media-server-vpn-fix.sh`
 
 **Scripts and tests that consume this format:**
-- `tests/test_media_server_auth.sh` (uses the bash parameter-expansion form above)
+- `media-streaming/archive/scripts/diagnose-infuse-connection.sh`
+- `media-streaming/archive/scripts/start-media-server-vpn-fix.sh`
+- `media-streaming/archive/scripts/test-infuse-connection.sh`
 
 ---
 *"Zero clicks, zero maintenance, ultimate streaming."* 🎬✨
