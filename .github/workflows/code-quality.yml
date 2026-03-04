@@ -1,0 +1,113 @@
+name: Code Quality
+
+on:
+  pull_request:
+    paths:
+      - '**/*.sh'
+      - '**/*.py'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'controld-system/**'
+      - 'windscribe-controld/**'
+      - 'Makefile'
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  shell-quality:
+    name: Shell Script Quality
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+      - name: ShellCheck correctness gate (SC2155/SC2145)
+        run: make lint-errors
+
+      - name: ShellCheck analysis
+        run: |
+          echo "Running ShellCheck on all shell scripts..."
+          find . \( -path "./.git" -o -path "./.trunk" -o -path "./configs/.config/mole" -o -path "*/archive" -o -path "./node_modules" \) -prune -o \
+            -name "*.sh" -type f -print0 | while IFS= read -r -d '' script; do
+            echo "Checking: $script"
+            shellcheck "$script" || true
+          done
+          echo "✅ ShellCheck analysis complete"
+
+      - name: Check script lengths
+        run: |
+          echo "Checking script lengths (warning threshold: 200 lines)..."
+          find . \( -path "./.git" -o -path "./.trunk" -o -path "./configs/.config/mole" -o -path "*/archive" -o -path "./node_modules" \) -prune -o \
+            -name "*.sh" -type f -print0 | while IFS= read -r -d '' script; do
+            lines=$(wc -l < "$script")
+            if [ "$lines" -gt 200 ]; then
+              echo "⚠️  WARNING: $script has $lines lines (threshold: 200)"
+            fi
+          done
+          echo "✅ Script length check complete"
+
+  python-quality:
+    name: Python Code Quality
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python quality tools
+        run: pip install radon ruff bandit
+
+      - name: Check Python complexity (cyclomatic)
+        run: |
+          echo "Checking Python cyclomatic complexity (warning threshold: CC > 10, rank C+)..."
+          find . \( -path "./.git" -o -path "./node_modules" \) -prune -o \
+            -name "*.py" -type f -print0 | while IFS= read -r -d '' pyfile; do
+            radon cc "$pyfile" -s -n C || true
+          done
+          echo "✅ Cyclomatic complexity check complete"
+
+      - name: Check Python maintainability index
+        run: |
+          echo "Checking Python maintainability index (warning threshold: MI < 20)..."
+          find . \( -path "./.git" -o -path "./node_modules" \) -prune -o \
+            -name "*.py" -type f -print0 | while IFS= read -r -d '' pyfile; do
+            radon mi "$pyfile" -s || true
+          done
+          echo "✅ Maintainability index check complete"
+
+      - name: Check Python file lengths
+        run: |
+          echo "Checking Python file lengths (warning threshold: 300 lines)..."
+          find . \( -path "./.git" -o -path "./node_modules" \) -prune -o \
+            -name "*.py" -type f -print0 | while IFS= read -r -d '' pyfile; do
+            lines=$(wc -l < "$pyfile")
+            if [ "$lines" -gt 300 ]; then
+              echo "⚠️  WARNING: $pyfile has $lines lines (threshold: 300)"
+            fi
+          done
+          echo "✅ Python file length check complete"
+
+      - name: Python linting (ruff, bandit)
+        run: |
+          echo "Running ruff on Python files..."
+          ruff check . --exclude .git --exclude node_modules --statistics || true
+          echo "Running bandit security scan on Python files..."
+          bandit -r . -x ./.git -x ./node_modules --skip B101 -ll -q || true
+          echo "✅ Python linting complete"
