@@ -40,6 +40,13 @@ const startSpinner = () => {
   if (spinnerInterval) return; // Prevent multiple spinners
   let i = 0;
   const msg = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
+
+  // Fallback for non-TTY (CI, screen readers) or when terminal isn't fully interactive
+  if (!process.stdout.isTTY) {
+    process.stdout.write(`${COLORS.Green}Assistant:${COLORS.Reset} ${COLORS.Dim}(${msg})${COLORS.Reset}\n`);
+    return;
+  }
+
   process.stdout.write(ANSI.HideCursor);
   spinnerInterval = setInterval(() => {
     process.stdout.write(
@@ -170,7 +177,8 @@ console.log(`${COLORS.Cyan}
 ║           🌤️  Weather Assistant CLI          ║
 ╚══════════════════════════════════════════════╝${COLORS.Reset}`);
 console.log(
-  `${COLORS.Dim}   ${getGreeting()} Try: 'What's the weather in Paris?'${COLORS.Reset}\n`,
+  `${COLORS.Dim}   ${getGreeting()} Try: 'What's the weather in Paris?'
+   Type 'help' to see available commands, or 'exit' to quit.${COLORS.Reset}\n`,
 );
 
 // Graceful shutdown on Ctrl+C
@@ -194,13 +202,13 @@ const prompt = () => {
       return;
     }
 
-    if (input.trim().toLowerCase() === "clear") {
+    if (["clear", "cls"].includes(input.trim().toLowerCase())) {
       console.clear();
       prompt();
       return;
     }
 
-    if (input.toLowerCase() === "exit") {
+    if (["exit", "quit", "q"].includes(input.trim().toLowerCase())) {
       console.log(`${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
       await client.stop();
       rl.close();
@@ -219,9 +227,9 @@ ${COLORS.Cyan}💡 Examples:${COLORS.Reset}
   • "What time is it?"
 
 ${COLORS.Cyan}Commands:${COLORS.Reset}
-  • clear - Clear the screen
-  • help - Show this message
-  • exit - Quit the application
+  • clear (or cls)    - Clear the screen
+  • help              - Show this message
+  • exit (or quit, q) - Quit the application
 `);
       prompt();
       return;
