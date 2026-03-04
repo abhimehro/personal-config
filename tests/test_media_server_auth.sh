@@ -12,6 +12,9 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=tests/lib/test_helpers.sh
+source "$REPO_ROOT/tests/lib/test_helpers.sh"
+
 SCRIPT="$REPO_ROOT/media-streaming/archive/scripts/start-media-server.sh"
 
 TEST_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'test-media-server-auth')
@@ -128,19 +131,8 @@ GENERATED_CREDS_FILE="$MOCK_HOME/.config/media-server/credentials"
 GENERATED_USER=""
 GENERATED_PASS=""
 if [[ -f "$GENERATED_CREDS_FILE" ]]; then
-    raw_user=$(grep '^MEDIA_WEBDAV_USER=' "$GENERATED_CREDS_FILE" | cut -d'=' -f2- || true)
-    if [[ $raw_user == \'*\' ]]; then
-        GENERATED_USER=${raw_user:1:-1}
-    else
-        GENERATED_USER=$raw_user
-    fi
-
-    raw_pass=$(grep '^MEDIA_WEBDAV_PASS=' "$GENERATED_CREDS_FILE" | cut -d'=' -f2- || true)
-    if [[ $raw_pass == \'*\' ]]; then
-        GENERATED_PASS=${raw_pass:1:-1}
-    else
-        GENERATED_PASS=$raw_pass
-    fi
+    GENERATED_USER=$(parse_cred_value "$(grep '^MEDIA_WEBDAV_USER=' "$GENERATED_CREDS_FILE" || true)")
+    GENERATED_PASS=$(parse_cred_value "$(grep '^MEDIA_WEBDAV_PASS=' "$GENERATED_CREDS_FILE" || true)")
 fi
 
 if [[ "$GENERATED_USER" == "infuse" ]]; then
