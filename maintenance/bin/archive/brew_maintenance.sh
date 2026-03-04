@@ -34,7 +34,7 @@ with_retry 3 5 brew upgrade --cask --greedy || log_warn "cask upgrade had issues
 # Cleanup
 log_info "Cleaning up..."
 with_retry 3 5 brew autoremove || true
-with_retry 3 5 brew cleanup --prune=${BREW_CLEAN_PRUNE_DAYS:-30} || true
+with_retry 3 5 brew cleanup --prune="${BREW_CLEAN_PRUNE_DAYS:-30}" || true
 
 # Check for failed brew services and restart them
 if command -v brew >/dev/null 2>&1; then

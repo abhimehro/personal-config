@@ -60,7 +60,7 @@ if [[ "${REPO_SEARCH_PATHS:-}" ]] && [[ "${NODE_MODULES_MAX_GB:-0}" -gt 0 ]]; th
                     
                     # Get last modified time in days
                     if [[ -f "$node_modules_dir/../package.json" ]]; then
-                        days_old=$(find "$node_modules_dir" -maxdepth 1 -type d -mtime +${NODE_MODULES_MAX_AGE_DAYS:-90} | wc -l | tr -d ' ')
+                        days_old=$(find "$node_modules_dir" -maxdepth 1 -type d -mtime +"${NODE_MODULES_MAX_AGE_DAYS:-90}" | wc -l | tr -d ' ')
                         
                         if [[ $size_gb -gt ${NODE_MODULES_MAX_GB:-5} ]] && [[ $days_old -gt 0 ]]; then
                             project_dir=$(dirname "$node_modules_dir")
@@ -92,8 +92,16 @@ if command -v corepack >/dev/null 2>&1; then
         corepack prepare pnpm@latest --activate 2>/dev/null || log_warn "Failed to prepare pnpm"
         
         log_info "Package manager versions:"
-        yarn --version 2>/dev/null && log_info "Yarn: $(yarn --version)" || log_info "Yarn: not available"
-        pnpm --version 2>/dev/null && log_info "pnpm: $(pnpm --version)" || log_info "pnpm: not available"
+        if yarn --version >/dev/null 2>&1; then
+            log_info "Yarn: $(yarn --version)"
+        else
+            log_info "Yarn: not available"
+        fi
+        if pnpm --version >/dev/null 2>&1; then
+            log_info "pnpm: $(pnpm --version)"
+        else
+            log_info "pnpm: not available"
+        fi
     else
         log_warn "Failed to enable corepack"
     fi

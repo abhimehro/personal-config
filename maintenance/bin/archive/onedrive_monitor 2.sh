@@ -5,7 +5,7 @@ with_lock "onedrive_monitor"
 log_info "OneDrive monitoring started"
 
 # Detect OneDrive root directory
-ONEDRIVE_ROOT=$(ls -d "$HOME/Library/CloudStorage/OneDrive"* 2>/dev/null | head -1)
+ONEDRIVE_ROOT=$(find "$HOME/Library/CloudStorage" -maxdepth 1 -type d -name "OneDrive*" 2>/dev/null | head -1)
 
 if [[ -z "$ONEDRIVE_ROOT" ]]; then
     log_warn "OneDrive directory not found in CloudStorage"
