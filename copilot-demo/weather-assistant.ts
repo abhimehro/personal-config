@@ -43,7 +43,7 @@ const startSpinner = () => {
 
   // Fallback for non-TTY (CI, screen readers) or when terminal isn't fully interactive
   if (!process.stdout.isTTY) {
-    process.stdout.write(`${COLORS.Green}Assistant:${COLORS.Reset} ${COLORS.Dim}(${msg})...${COLORS.Reset}\n`);
+    process.stdout.write(`${COLORS.Green}Assistant:${COLORS.Reset} ${COLORS.Dim}(${msg})${COLORS.Reset}\n`);
     return;
   }
 
