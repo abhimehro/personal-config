@@ -9,12 +9,15 @@ mkdir -p "$LOG_DIR"
 
 # Basic logging
 log_info() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    # SC2155: declare and assign separately to avoid masking return values
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [INFO] [onedrive_monitor] $*" | tee -a "$LOG_DIR/onedrive_monitor.log"
 }
 
 log_warn() {
-    local ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local ts
+    ts="$(date '+%Y-%m-%d %H:%M:%S')"
     echo "$ts [WARNING] [onedrive_monitor] $*" | tee -a "$LOG_DIR/onedrive_monitor.log"
 }
 
