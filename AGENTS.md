@@ -207,6 +207,7 @@ Detailed patterns, mock recipes, and a copy-paste test skeleton live in [`docs/T
 - **Mock `HOME` isolation** — set `HOME="$TEST_DIR/home"` so scripts that write to `~/Library/Logs/` don't touch real user data and don't collide between parallel runs.
 - **Script-patching via `sed`** — when a script hardcodes a dependency path (e.g. `IPV6_MANAGER=…`), copy the script to `$TEST_DIR` and patch with `sed`. Branch on `$(uname -s)` for `sed -i ''` (macOS) vs `sed -i` (Linux).
 - **Capturing expected-failure output under `set -e`** — use `$(cmd 2>&1 || true)` or capture the exit code with `|| actual=$?` to prevent `set -euo pipefail` from aborting the test on a deliberately failing command.
+- **Credential file parsing** — use `parse_cred_value()` from `tests/lib/test_helpers.sh` when reading values from media-server credential files (`KEY='value'` format); never use raw `cut -d'=' -f2-` on a credential line (it returns quoted values like `'infuse'` instead of `infuse`).
 
 **Tests that skip on Linux/CI** (not bugs — each file contains an early-exit skip guard that prints `SKIP:` and exits 77):
 
