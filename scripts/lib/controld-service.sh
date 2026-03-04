@@ -140,7 +140,7 @@ restart_with_config() {
     local retry=0
     while ! dig @"$listener_ip" google.com +short +time=1 >/dev/null 2>&1 && [[ $retry -lt 30 ]]; do
         sleep 0.1
-        ((retry++))
+        retry=$((retry + 1))
     done
 
     # Configure system DNS

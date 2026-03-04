@@ -107,7 +107,7 @@ EOF
                 total_disk=$((total_disk + ${day_disk:-0}))
                 total_memory=$((total_memory + ${day_memory:-0}))
                 total_warnings=$((total_warnings + ${day_warnings:-0}))
-                ((day_count++))
+                day_count=$((day_count + 1))
             fi
         done
         

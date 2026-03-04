@@ -170,13 +170,13 @@ for service in "${SYSTEM_SERVICES[@]}"; do
         log_error "$service is not disabled - attempting to re-disable"
         if sudo launchctl disable "system/$service" 2>/dev/null; then
             append "   ↳ Successfully re-disabled"
-            ((ACTIONS_TAKEN++))
+            ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
             # Invalidate cache for this domain since we changed state
             # Though strictly we only need to if we re-check, but good practice
             SYSTEM_DISABLED_STATUS=""
         else
             append "   ↳ Failed to re-disable"
-            ((ISSUES++))
+            ISSUES=$((ISSUES + 1))
         fi
     fi
 done
@@ -194,11 +194,11 @@ for service in "${USER_SERVICES[@]}"; do
         log_error "$service is not disabled - attempting to re-disable"
         if sudo launchctl disable "gui/$USER_ID/$service" 2>/dev/null; then
             append "   ↳ Successfully re-disabled"
-            ((ACTIONS_TAKEN++))
+            ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
             USER_DISABLED_STATUS=""
         else
             append "   ↳ Failed to re-disable"
-            ((ISSUES++))
+            ISSUES=$((ISSUES + 1))
         fi
     fi
 done
@@ -213,10 +213,10 @@ for process in "${PROBLEM_PROCESSES[@]}"; do
         log_warn "$process is running - killing process"
         if pkill -9 "$process" 2>/dev/null; then
             append "   ↳ Successfully killed"
-            ((ACTIONS_TAKEN++))
+            ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
         else
             append "   ↳ Failed to kill"
-            ((WARNINGS++))
+            WARNINGS=$((WARNINGS + 1))
         fi
     else
         append "✅ $process: NOT RUNNING"
@@ -230,7 +230,7 @@ append "Widget Extensions Running: $WIDGET_COUNT"
 if (( WIDGET_COUNT > 60 )); then
     append "⚠️  High widget count detected (threshold: 60)"
     log_warn "Widget count is high: $WIDGET_COUNT"
-    ((WARNINGS++))
+    WARNINGS=$((WARNINGS + 1))
 fi
 append ""
 
@@ -269,7 +269,7 @@ if (( REPORT_COUNT > 10 )); then
     get_top_crash_reports | while read -r line; do
         append "  $line"
     done
-    ((WARNINGS++))
+    WARNINGS=$((WARNINGS + 1))
 elif (( REPORT_COUNT > 0 )); then
     append "ℹ️  Some crash reports present but within normal range"
 else
