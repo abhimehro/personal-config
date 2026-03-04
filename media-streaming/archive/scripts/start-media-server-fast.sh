@@ -3,6 +3,14 @@
 # High-Performance Media Server (Longer Cache)
 # Use this when VPN is OFF for best performance at home
 #
+# Credential file format: shell-quoted assignment (KEY='value')
+# Example output written to ~/.config/media-server/credentials:
+#   MEDIA_WEBDAV_USER='infuse'
+#   MEDIA_WEBDAV_PASS='generated-secret'
+# Consumers: strip surrounding single quotes when parsing values
+#   raw=$(grep '^KEY=' file | cut -d'=' -f2-)
+#   [[ $raw == \'*\' ]] && value=${raw:1:-1} || value=$raw
+#   (tr -d "'" also works but removes embedded quotes; prefer the form above)
 
 set -euo pipefail
 
