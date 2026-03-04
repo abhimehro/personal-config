@@ -21,6 +21,8 @@
 
 **Closed issues:**
 
+- \[Code Quality\] Document parse\_cred\_value\(\) helper in TESTING.md and AGENTS.md [\#538](https://github.com/abhimehro/personal-config/issues/538)
+- \[Code Quality\] Remove stale .bak files from tests/ directory [\#537](https://github.com/abhimehro/personal-config/issues/537)
 - \[repo-status\] Daily Repo Status — March 4, 2026 [\#532](https://github.com/abhimehro/personal-config/issues/532)
 - \[Code Quality\] Wire `make lint-errors` SC2155/SC2145 regression gate into GitHub Actions CI [\#528](https://github.com/abhimehro/personal-config/issues/528)
 - \[Code Quality\] Document media-streaming credential file format contract to prevent test parsing failures [\#527](https://github.com/abhimehro/personal-config/issues/527)
@@ -63,7 +65,6 @@
 - \[Code Quality\] Add `make lint` and `make lint-fix` targets to Makefile for linting discoverability [\#449](https://github.com/abhimehro/personal-config/issues/449)
 - \[Code Quality\] Create `.shellcheckrc` for project-wide ShellCheck baseline configuration [\#448](https://github.com/abhimehro/personal-config/issues/448)
 - \[Code Quality\] Audit and annotate 264 persistent ShellCheck warnings with inline suppression comments or fixes [\#446](https://github.com/abhimehro/personal-config/issues/446)
-- \[Code Quality\] Refactor controld-manager \(759 lines\) by extracting testable library modules into scripts/lib/ [\#445](https://github.com/abhimehro/personal-config/issues/445)
 - \[Code Quality\] Integrate parallel test runner \(tests/run\_all\_tests.sh\) into Makefile and document usage [\#444](https://github.com/abhimehro/personal-config/issues/444)
 - \[repo-status\] 📊 Daily Repo Status — March 1, 2026 [\#443](https://github.com/abhimehro/personal-config/issues/443)
 - \[Code Quality\] Resolve SC2034 ShellCheck warnings: remove or fix unused variable declarations [\#442](https://github.com/abhimehro/personal-config/issues/442)
@@ -170,6 +171,7 @@
 
 **Merged pull requests:**
 
+- chore: remove stale .bak test files and document parse\_cred\_value\(\) helper [\#540](https://github.com/abhimehro/personal-config/pull/540) ([github-actions[bot]](https://github.com/apps/github-actions))
 - 🎨 Palette: Improve CLI accessibility and discoverability [\#539](https://github.com/abhimehro/personal-config/pull/539) ([abhimehro](https://github.com/abhimehro))
 - Add unit tests for scripts/lib/ core utility modules [\#535](https://github.com/abhimehro/personal-config/pull/535) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix\(archive\): clear all ShellCheck violations in maintenance/bin/archive/ [\#534](https://github.com/abhimehro/personal-config/pull/534) ([Copilot](https://github.com/apps/copilot-swe-agent))
