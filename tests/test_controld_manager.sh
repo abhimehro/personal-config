@@ -30,6 +30,93 @@ pgrep() { return 1; }
 # Global flag used by test_switch_profile_restores_on_failure
 TEST_RESTORE_CALLED=""
 
+# === $MOCK_BIN subprocess smoke tests ========================================
+# Invoke controld-manager as a subprocess with PATH-injected fakes so no real
+# system calls reach launchctl, scutil, dig, etc.
+# shellcheck disable=SC2064  # we want the current $TEST_DIR value captured in the trap
+TEST_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'test-controld-manager')
+trap "rm -rf '$TEST_DIR'" EXIT
+MOCK_BIN="$TEST_DIR/mock_bin"
+CONTROLD_MGR="$REPO_ROOT/controld-system/scripts/controld-manager"
+mkdir -p "$MOCK_BIN"
+
+# Mock pgrep: report ctrld as not running (avoids macOS-only paths in show_status)
+cat > "$MOCK_BIN/pgrep" << 'MOCK'
+#!/bin/sh
+exit 1
+MOCK
+chmod +x "$MOCK_BIN/pgrep"
+
+# Smoke: 'status' exits 0 and emits the Service Status header
+test_smoke_status() {
+    local output rc
+    if output=$(PATH="$MOCK_BIN:$PATH" bash "$CONTROLD_MGR" status 2>&1); then
+        rc=0
+    else
+        rc=$?
+    fi
+    if [[ "$rc" -ne 0 ]]; then
+        echo "Fail: 'status' should exit 0, got $rc. Output:"
+        echo "$output"
+        return 1
+    fi
+    if ! echo "$output" | grep -q "Service Status"; then
+        echo "Fail: 'status' should output 'Service Status'. Output:"
+        echo "$output"
+        return 1
+    fi
+    return 0
+}
+
+# Smoke: unknown/help command shows usage text
+test_smoke_help() {
+    local output rc
+    # controld-manager's '*' case prints usage and is expected to return 0.
+    # Run under 'if' so non-zero exit doesn't trigger 'set -e', and capture rc explicitly.
+    if output=$(PATH="$MOCK_BIN:$PATH" bash "$CONTROLD_MGR" --help 2>&1); then
+        rc=0
+    else
+        rc=$?
+    fi
+    if [[ "$rc" -ne 0 ]]; then
+        echo "Fail: '--help' should exit with status 0, got $rc. Output:"
+        echo "$output"
+        return 1
+    fi
+    if ! echo "$output" | grep -qiE "usage|commands"; then
+        echo "Fail: '--help' should display usage/commands. Output:"
+        echo "$output"
+        return 1
+    fi
+    return 0
+}
+
+# Smoke: root-required commands (stop) exit non-zero and mention 'root'
+# when invoked as a non-root user.  Skipped automatically if running as root.
+test_smoke_stop_requires_root() {
+    if [[ "${EUID:-$(id -u 2>/dev/null || echo 0)}" -eq 0 ]]; then
+        echo "SKIP: test_smoke_stop_requires_root (running as root)"
+        return 0  # skip: already root — meaningful only in non-root environments
+    fi
+    local output rc
+    if output=$(PATH="$MOCK_BIN:$PATH" bash "$CONTROLD_MGR" stop 2>&1); then
+        rc=0
+    else
+        rc=$?
+    fi
+    if [[ "$rc" -eq 0 ]]; then
+        echo "Fail: 'stop' (as non-root) should exit non-zero. Exit: $rc. Output:"
+        echo "$output"
+        return 1
+    fi
+    if ! echo "$output" | grep -qi "root"; then
+        echo "Fail: 'stop' (as non-root) should mention root requirement. Output:"
+        echo "$output"
+        return 1
+    fi
+    return 0
+}
+
 # ── Test: valid profile switch (doh3) ────────────────────────────────────────
 test_switch_profile_valid() {
     export CTR_PROFILE_PRIVACY_ID="test1234"
@@ -241,6 +328,10 @@ if ! test_emergency_command;                   then echo "test_emergency_command
 if ! test_test_command;                        then echo "test_test_command failed";                        test_failed=1; fi
 if ! test_unknown_command;                     then echo "test_unknown_command failed";                     test_failed=1; fi
 if ! test_switch_profile_restores_on_failure;  then echo "test_switch_profile_restores_on_failure failed";  test_failed=1; fi
+# $MOCK_BIN subprocess smoke tests
+if ! test_smoke_status;                        then echo "test_smoke_status failed";                        test_failed=1; fi
+if ! test_smoke_help;                          then echo "test_smoke_help failed";                          test_failed=1; fi
+if ! test_smoke_stop_requires_root;            then echo "test_smoke_stop_requires_root failed";            test_failed=1; fi
 
 if [[ $test_failed -eq 0 ]]; then
     echo "test_controld_manager.sh passed!"
