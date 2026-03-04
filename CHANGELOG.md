@@ -24,8 +24,10 @@
 - fix: add SC2155/SC2145 regression gate and fix remaining archive violations \(\#506\) [\#508](https://github.com/abhimehro/personal-config/issues/508)
 - \[Code Quality\] Promote SC2155 and SC2145 to error-severity in Trunk ShellCheck config to prevent regression [\#506](https://github.com/abhimehro/personal-config/issues/506)
 - \[Code Quality\] Audit all scripts under `set -e` for remaining `((var++))` post-increment bugs [\#505](https://github.com/abhimehro/personal-config/issues/505)
+- \[repo-status\] Daily Repo Status — March 3, 2026 [\#504](https://github.com/abhimehro/personal-config/issues/504)
 - \[Code Quality\] Audit and update .gitignore to prevent future ephemeral artifact commits [\#503](https://github.com/abhimehro/personal-config/issues/503)
 - \[Code Quality\] Make test\_media\_server\_auth.sh CI-portable by mocking macOS `security` \(Keychain\) command [\#502](https://github.com/abhimehro/personal-config/issues/502)
+- \[Code Quality\] Document UNC path normalization behavior in `path_validation.py` to prevent false-positive tests [\#495](https://github.com/abhimehro/personal-config/issues/495)
 - \[Code Quality\] Add unit tests for `smart_notifier.sh` \(shared dependency with no coverage\) [\#494](https://github.com/abhimehro/personal-config/issues/494)
 - \[Code Quality\] Add unit tests for analytics\_dashboard.sh \(575 lines, no coverage\) [\#491](https://github.com/abhimehro/personal-config/issues/491)
 - \[Code Quality\] Add unit tests for performance\_optimizer.sh \(582 lines, no coverage\) [\#490](https://github.com/abhimehro/personal-config/issues/490)
@@ -152,6 +154,7 @@
 
 **Merged pull requests:**
 
+- fix\(tests\): strip single quotes when parsing generated credentials in test\_media\_server\_auth [\#519](https://github.com/abhimehro/personal-config/pull/519) ([github-actions[bot]](https://github.com/apps/github-actions))
 - fix: replace `((var++))` post-increment with safe arithmetic in `set -e` scripts [\#514](https://github.com/abhimehro/personal-config/pull/514) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - Add unit tests for `smart_notifier.sh` + `SMART_NOTIFIER_DISABLE` CI guard [\#513](https://github.com/abhimehro/personal-config/pull/513) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - Make test\_media\_server\_auth.sh CI-portable by mocking macOS security \(Keychain\) command [\#512](https://github.com/abhimehro/personal-config/pull/512) ([Copilot](https://github.com/apps/copilot-swe-agent))
