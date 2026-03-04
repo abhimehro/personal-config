@@ -210,6 +210,34 @@ Real examples: `tests/test_media_server_env_vars.sh:112`, `tests/test_lib_dns_ut
 
 ---
 
+## Pattern 7 — Credential file parsing with `parse_cred_value()`
+
+Media-server credential files use shell assignment syntax (`KEY='value'`). Using
+`cut -d'=' -f2-` directly returns values with surrounding single quotes
+(e.g. `'infuse'`), causing string comparisons to fail silently.
+
+Use the shared `parse_cred_value()` helper from `tests/lib/test_helpers.sh`
+instead:
+
+```bash
+# At the top of the test file, source the shared helpers
+source "$(dirname "${BASH_SOURCE[0]}")/lib/test_helpers.sh"
+
+# Read a field from the credentials file (strips surrounding quotes automatically)
+user=$(parse_cred_value "$(grep '^MEDIA_WEBDAV_USER=' "$CREDS_FILE")")
+pass=$(parse_cred_value "$(grep '^MEDIA_WEBDAV_PASS=' "$CREDS_FILE")")
+
+# ❌ Avoid: returns 'infuse' with quotes, comparison fails
+# user=$(grep '^MEDIA_WEBDAV_USER=' "$CREDS_FILE" | cut -d'=' -f2-)
+
+# ✅ Correct: returns infuse (bare value)
+[[ "$user" == "infuse" ]] || { echo "FAIL: unexpected user '$user'"; FAIL=$((FAIL+1)); }
+```
+
+Real example: `tests/test_media_server_auth.sh` (sources `tests/lib/test_helpers.sh`).
+
+---
+
 ## Standard test file skeleton
 
 Use this as a starting point for any new `tests/test_<name>.sh`:
