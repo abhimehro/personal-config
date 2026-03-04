@@ -63,6 +63,7 @@
 - \[Code Quality\] Add `make lint` and `make lint-fix` targets to Makefile for linting discoverability [\#449](https://github.com/abhimehro/personal-config/issues/449)
 - \[Code Quality\] Create `.shellcheckrc` for project-wide ShellCheck baseline configuration [\#448](https://github.com/abhimehro/personal-config/issues/448)
 - \[Code Quality\] Audit and annotate 264 persistent ShellCheck warnings with inline suppression comments or fixes [\#446](https://github.com/abhimehro/personal-config/issues/446)
+- \[Code Quality\] Refactor controld-manager \(759 lines\) by extracting testable library modules into scripts/lib/ [\#445](https://github.com/abhimehro/personal-config/issues/445)
 - \[Code Quality\] Integrate parallel test runner \(tests/run\_all\_tests.sh\) into Makefile and document usage [\#444](https://github.com/abhimehro/personal-config/issues/444)
 - \[repo-status\] 📊 Daily Repo Status — March 1, 2026 [\#443](https://github.com/abhimehro/personal-config/issues/443)
 - \[Code Quality\] Resolve SC2034 ShellCheck warnings: remove or fix unused variable declarations [\#442](https://github.com/abhimehro/personal-config/issues/442)
@@ -169,6 +170,7 @@
 
 **Merged pull requests:**
 
+- 🎨 Palette: Improve CLI accessibility and discoverability [\#539](https://github.com/abhimehro/personal-config/pull/539) ([abhimehro](https://github.com/abhimehro))
 - Add unit tests for scripts/lib/ core utility modules [\#535](https://github.com/abhimehro/personal-config/pull/535) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix\(archive\): clear all ShellCheck violations in maintenance/bin/archive/ [\#534](https://github.com/abhimehro/personal-config/pull/534) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - feat\(tests\): add shared parse\_cred\_value\(\) helper for shell-quoted credential parsing [\#533](https://github.com/abhimehro/personal-config/pull/533) ([Copilot](https://github.com/apps/copilot-swe-agent))
