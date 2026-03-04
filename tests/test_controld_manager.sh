@@ -49,8 +49,17 @@ chmod +x "$MOCK_BIN/pgrep"
 
 # Smoke: 'status' exits 0 and emits the Service Status header
 test_smoke_status() {
-    local output
-    output=$(PATH="$MOCK_BIN:$PATH" bash "$CONTROLD_MGR" status 2>&1)
+    local output rc
+    if output=$(PATH="$MOCK_BIN:$PATH" bash "$CONTROLD_MGR" status 2>&1); then
+        rc=0
+    else
+        rc=$?
+    fi
+    if [[ "$rc" -ne 0 ]]; then
+        echo "Fail: 'status' should exit 0, got $rc. Output:"
+        echo "$output"
+        return 1
+    fi
     if ! echo "$output" | grep -q "Service Status"; then
         echo "Fail: 'status' should output 'Service Status'. Output:"
         echo "$output"
