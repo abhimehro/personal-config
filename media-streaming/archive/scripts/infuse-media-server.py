@@ -17,6 +17,7 @@ from urllib.parse import unquote
 # Global auth credentials
 AUTH_USER = None
 AUTH_PASS = None
+EXPECTED_AUTH_TOKEN = None
 
 class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -29,7 +30,7 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         super().do_HEAD()
 
     def check_auth(self):
-        global AUTH_USER, AUTH_PASS
+        global AUTH_USER, AUTH_PASS, EXPECTED_AUTH_TOKEN
 
         if not AUTH_USER or not AUTH_PASS:
             return True
@@ -45,13 +46,8 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_auth_request()
                 return False
 
-            decoded = base64.b64decode(auth_data).decode('utf-8')
-            username, password = decoded.split(':', 1)
-
-            user_match = secrets.compare_digest(username, AUTH_USER)
-            pass_match = secrets.compare_digest(password, AUTH_PASS)
-
-            if user_match and pass_match:
+            # ⚡ Performance: Compare base64 token directly (O(1) request time vs O(n) decoding + splitting)
+            if secrets.compare_digest(auth_data, EXPECTED_AUTH_TOKEN):
                 return True
         except Exception:
             pass
@@ -241,7 +237,7 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
 def setup_authentication(args):
     """Set up authentication credentials with secure defaults.
     
-    Returns: tuple (AUTH_USER, AUTH_PASS) or exits if password cannot be generated.
+    Returns: tuple (AUTH_USER, AUTH_PASS, EXPECTED_AUTH_TOKEN) or exits if password cannot be generated.
     """
     user = args.user or os.environ.get("AUTH_USER")
     password = args.password or os.environ.get("AUTH_PASS")
@@ -272,7 +268,8 @@ def setup_authentication(args):
     else:
         print("\n🔒 Security: Authentication Enabled (using configured credentials; password is hidden)\n")
     
-    return user, password
+    expected_token = base64.b64encode(f"{user}:{password}".encode('utf-8')).decode('utf-8')
+    return user, password, expected_token
 
 def verify_rclone_remote():
     """Verify that rclone media remote exists.
@@ -296,13 +293,13 @@ def main():
     parser.add_argument("--password", help="Password for Basic Auth")
     args = parser.parse_args()
 
-    global AUTH_USER, AUTH_PASS
+    global AUTH_USER, AUTH_PASS, EXPECTED_AUTH_TOKEN
     
     # Verify rclone setup
     verify_rclone_remote()
     
     # Configure authentication
-    AUTH_USER, AUTH_PASS = setup_authentication(args)
+    AUTH_USER, AUTH_PASS, EXPECTED_AUTH_TOKEN = setup_authentication(args)
     
     # Configure host
     host = "0.0.0.0" if args.public else args.host
