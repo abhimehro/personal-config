@@ -134,12 +134,12 @@ if __name__ == "__main__":
     if not AUTH_USER:
         # Generate a random username to avoid "admin" default
         user_alphabet = string.ascii_lowercase + string.digits
-        AUTH_USER = "user_" + "".join(secrets.choice(user_alphabet) for _ in range(8))
+        AUTH_USER = "user_" + "".join(secrets.choices(user_alphabet, k=8))
         generated_user = True
 
     if not AUTH_PASS:
         alphabet = string.ascii_letters + string.digits
-        AUTH_PASS = ''.join(secrets.choice(alphabet) for i in range(16))
+        AUTH_PASS = ''.join(secrets.choices(alphabet, k=16))
         print("\n🔒 Security: Authentication Enabled")
         print(f"   User: {AUTH_USER}")
         print(f"   Pass: {AUTH_PASS}")
