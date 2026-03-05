@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help test test-quick lint lint-errors lint-fix control-d-regression benchmark
+.PHONY: help test test-python test-all test-quick lint lint-errors lint-fix control-d-regression benchmark
 
 help:  ## Show this help message
 	@echo "Available targets:"
@@ -8,6 +8,13 @@ help:  ## Show this help message
 
 test:  ## Run all shell tests in parallel (ignoring known macOS-specific failures on Linux)
 	./tests/run_all_tests.sh
+
+test-python:  ## Run all Python unit tests
+	python3 -m unittest discover -s tests -p 'test_*.py' -v
+
+test-all:  ## Run all tests: shell (parallel) + Python
+	$(MAKE) test
+	$(MAKE) test-python
 
 test-quick:  ## Run smoke test subset (fast, cross-platform) for pre-commit verification
 	@echo "Running smoke tests..."

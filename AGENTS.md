@@ -124,7 +124,12 @@ python3 -m unittest tests.test_path_validation
 
 Run all Python tests:
 ```bash
-python3 -m unittest discover -s tests -p 'test_*.py'
+make test-python
+```
+
+Run all tests (shell + Python):
+```bash
+make test-all
 ```
 
 ### Benchmarks
@@ -228,8 +233,9 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 
 | What | Command | Notes |
 |---|---|---|
-| Python tests | `python3 -m unittest discover -s tests -p 'test_*.py'` | stdlib only, no pip deps |
+| Python tests | `make test-python` | stdlib only, no pip deps |
 | Shell tests | `make test` | Runs in parallel. Platform-specific tests emit `SKIP:` and exit 77 on Linux/CI. |
+| All tests | `make test-all` | Runs shell tests then Python tests sequentially |
 | Lint (all) | `make lint` | Trunk downloads its own tool versions on first run |
 | Lint (correctness gate) | `make lint-errors` | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate. |
 | Format | `make lint-fix` | Auto-fixes where supported |
