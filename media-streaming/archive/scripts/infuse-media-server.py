@@ -252,7 +252,7 @@ def setup_authentication(args):
         # If output is a TTY, generate a password for interactive use
         if sys.stdout.isatty():
             alphabet = string.ascii_letters + string.digits
-            password = ''.join(secrets.choice(alphabet) for i in range(16))
+            password = ''.join(secrets.SystemRandom().choices(alphabet, k=16))
             print("\n🔒 Security: Authentication Enabled")
             print(f"   User: {user}")
             print(f"   Password: {password}")
