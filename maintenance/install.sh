@@ -22,18 +22,26 @@ mkdir -p "$LAUNCHAGENTS_DIR"
 echo "🔄 Unloading old agents..."
 for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maint.*.plist "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maintenance.*.plist; do
     [ -f "$plist" ] || continue
-    launchctl bootout gui/$(id -u) "$plist" 2>/dev/null || launchctl unload "$plist" 2>/dev/null || true
+    launchctl bootout "gui/$(id -u)" "$plist" 2>/dev/null || launchctl unload "$plist" 2>/dev/null || true
     rm -f "$plist" 2>/dev/null || true
 done
 
 # Copy scripts
 echo "📦 Copying scripts to $INSTALL_DIR..."
-cp -r "$SCRIPT_DIR/bin/"* "$INSTALL_DIR/bin/"
-chmod +x "$INSTALL_DIR/bin/"*.sh
+for script in "$SCRIPT_DIR/bin/"*; do
+    if [[ -f "$script" ]]; then
+        install -m 755 "$script" "$INSTALL_DIR/bin/"
+    elif [[ -d "$script" ]]; then
+        # Recursively copy directories if they exist in bin/
+        cp -R "$script" "$INSTALL_DIR/bin/"
+        # Find all shell scripts and make them executable (not ideal but handles dirs)
+        find "$INSTALL_DIR/bin/$(basename "$script")" -type f -name "*.sh" -exec chmod +x {} +
+    fi
+done
 
 # Copy configuration if exists
 if [ -d "$SCRIPT_DIR/conf" ]; then
-    cp -r "$SCRIPT_DIR/conf/"* "$INSTALL_DIR/conf/" 2>/dev/null || true
+    cp -R "$SCRIPT_DIR/conf/"* "$INSTALL_DIR/conf/" 2>/dev/null || true
 fi
 
 # Generate plist files with correct paths
