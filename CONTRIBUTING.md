@@ -85,7 +85,7 @@ make test-python
 make test-all
 
 # All Python tests directly (alternative)
-python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m unittest -v discover -s tests -p 'test_*.py'
 
 # Single module
 python3 -m unittest tests.test_path_validation -v
