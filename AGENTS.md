@@ -229,6 +229,8 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 
 | What | Command | Notes |
 |---|---|---|
+| Shell tests only | `make test` | Fastest full suite; 29 tests, 3 expected macOS-only skips (fish, BSD sed, 1Password socket) |
+| Smoke tests (pre-commit) | `make test-quick` | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target |
 | All tests (shell + Python) | `make test-all` | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI. |
 | Single Python module | `python3 -m unittest tests.test_path_validation` | stdlib only, no pip deps |
 | Python tests only | `make test-python` | stdlib only, no pip deps |
@@ -238,6 +240,7 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 
 ### Non-obvious caveats
 
+- **`make test` vs `make test-all`**: `make test` runs shell tests only (faster for iteration). `make test-all` additionally runs Python tests. Use `make test-quick` for pre-commit smoke checks.
 - **Trunk first-run latency**: The first `trunk check` or `trunk fmt` invocation downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`. Subsequent runs are fast. The update script installs the Trunk launcher, but tool downloads happen lazily.
 - **No `requirements.txt`**: Python tests and scripts use only the standard library. No `pip install` is needed for the test suite.
 - **`package.json` is empty**: The root `package.json` is `{}` — it exists as a Trunk runtime anchor for Node-based linters (prettier, markdownlint). Do not run `npm install`.
