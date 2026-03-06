@@ -190,13 +190,13 @@ main() {
             ;;
         "switch")
             check_root || return 1
-            if [[ -z "$2" ]]; then
+            if [[ -z "${2:-}" ]]; then
                 echo "Usage: $0 switch <profile_name> [protocol]"
                 echo "Available profiles: $(get_all_profiles)"
                 echo "Available protocols: doh3, doh"
                 return 1
             fi
-            switch_profile "$2" "$3"
+            switch_profile "$2" "${3:-}"
             ;;
         "status")
             show_status "$CONTROLD_DIR"
