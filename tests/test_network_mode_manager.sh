@@ -5,9 +5,6 @@
 
 set -euo pipefail
 
-# network-mode-manager.sh issues sudo commands; skip if passwordless sudo is unavailable
-sudo -n true 2>/dev/null || { echo "SKIP: passwordless sudo not available in this environment"; exit 77; }
-
 # Setup
 TEST_DIR=$(mktemp -d)
 trap 'rm -rf "$TEST_DIR"' EXIT
@@ -18,6 +15,31 @@ mkdir -p "$MOCK_BIN"
 export PATH="$MOCK_BIN:$PATH"
 
 # Create mocks
+
+# sudo passthrough: execute arguments directly in the mock environment without privilege escalation
+cat > "$MOCK_BIN/sudo" << 'EOF'
+#!/bin/bash
+exec "$@"
+EOF
+chmod +x "$MOCK_BIN/sudo"
+
+# Mock pkill to avoid touching the host process table during tests
+cat > "$MOCK_BIN/pkill" << 'EOF'
+#!/bin/bash
+echo "MOCK PKILL CALLED: $*"
+# NOTE: Intentionally no real process management; always succeed in tests.
+exit 0
+EOF
+chmod +x "$MOCK_BIN/pkill"
+
+# Optional: Mock pgrep if network-mode-manager uses it
+cat > "$MOCK_BIN/pgrep" << 'EOF'
+#!/bin/bash
+echo "MOCK PGREP CALLED: $*"
+# NOTE: Default to 'not found' in tests unless explicitly extended.
+exit 1
+EOF
+chmod +x "$MOCK_BIN/pgrep"
 cat > "$MOCK_BIN/ctrld" << 'EOF'
 #!/bin/bash
 echo "MOCK CTRLD CALLED: $*"
