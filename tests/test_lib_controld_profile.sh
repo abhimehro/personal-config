@@ -1,14 +1,46 @@
 #!/bin/bash
 #
-# NOTE: This file previously contained unit tests for scripts/lib/controld-profile.sh.
-# The tests have been consolidated into tests/test_controld_profile.sh to avoid
-# duplication and redundant execution. This script is retained as a no-op shim
-# for backwards compatibility with any tooling that still references it.
+# Unit tests for scripts/lib/controld-profile.sh
+# Covers: validate_protocol, redact_profile_id, get_profile_id,
+#         get_profile_protocol, get_all_profiles, source guard
+#
+# Note: functions tested here (validate_protocol, get_profile_id, etc.) do not
+# invoke `ctrld` directly, so no ctrld mock is needed.
 
 set -euo pipefail
 
-# Intentionally do nothing; all relevant tests live in tests/test_controld_profile.sh.
-exit 0
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TEST_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'test-lib-controld-profile')
+MOCK_BIN="$TEST_DIR/bin"
+mkdir -p "$MOCK_BIN"
+trap 'rm -rf "$TEST_DIR"' EXIT
+
+export PATH="$MOCK_BIN:$PATH"
+export HOME="$TEST_DIR/home"
+mkdir -p "$HOME"
+
+# Source network-common.sh first so validate_profile_id is available.
+# shellcheck source=scripts/lib/network-common.sh
+source "$REPO_ROOT/scripts/lib/network-common.sh"
+
+# Source the library under test.
+# shellcheck source=scripts/lib/controld-profile.sh
+source "$REPO_ROOT/scripts/lib/controld-profile.sh"
+
+PASS=0
+FAIL=0
+
+check() {
+    local name="$1"; shift
+    if "$@" >/dev/null 2>&1; then
+        echo "PASS: $name"
+        PASS=$((PASS + 1))
+    else
+        echo "FAIL: $name"
+        FAIL=$((FAIL + 1))
+    fi
+}
+
 check_false() {
     local name="$1"; shift
     if ! "$@" >/dev/null 2>&1; then
@@ -44,7 +76,7 @@ check_false "validate_protocol rejects empty string" validate_protocol ""
 check_false "validate_protocol rejects dot3"         validate_protocol "dot3"
 check_false "validate_protocol rejects arbitrary"    validate_protocol "tcp"
 
-# --- redact_profile_id (from controld-profile.sh) ---
+# --- redact_profile_id ---
 echo ""
 echo "-- redact_profile_id --"
 REDACTED=$(redact_profile_id "abcde12345")
@@ -60,7 +92,6 @@ check_output "redact_profile_id returns (empty) for empty input" "(empty)" "$EMP
 echo ""
 echo "-- get_profile_id --"
 
-# Default IDs from the library
 PRIVACY_ID=$(get_profile_id "privacy")
 check "get_profile_id returns non-empty ID for 'privacy'" test -n "$PRIVACY_ID"
 
