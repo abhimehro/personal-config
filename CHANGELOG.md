@@ -21,6 +21,8 @@
 
 **Closed issues:**
 
+- \[Code Quality\] Fix missing safety flags in `maintenance/lib/` shared libraries and `maintenance/controld_monitor.sh` [\#577](https://github.com/abhimehro/personal-config/issues/577)
+- \[Code Quality\] Fix `set -eo pipefail` → `set -euo pipefail` in 5 recently-added test files [\#575](https://github.com/abhimehro/personal-config/issues/575)
 - \[Code Quality\] Add `make test` and `make test-quick` to AGENTS.md key services table [\#573](https://github.com/abhimehro/personal-config/issues/573)
 - \[Code Quality\] Remove stale root artifacts: `patch.sh` \(applied\) and `handoff.md` \(completed refactor\) [\#572](https://github.com/abhimehro/personal-config/issues/572)
 - \[Code Quality\] Add unit tests for scripts/lib/controld-profile.sh and network-common.sh [\#555](https://github.com/abhimehro/personal-config/issues/555)
@@ -187,6 +189,8 @@
 
 - test: add unit tests for controld-profile.sh and network-common.sh [\#581](https://github.com/abhimehro/personal-config/pull/581) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - chore: remove stale root artifacts — delete patch.sh, archive handoff.md [\#580](https://github.com/abhimehro/personal-config/pull/580) ([Copilot](https://github.com/apps/copilot-swe-agent))
+- fix: set -euo pipefail in 4 test files; fix unbound $2/$3 in controld-manager [\#579](https://github.com/abhimehro/personal-config/pull/579) ([Copilot](https://github.com/apps/copilot-swe-agent))
+- fix: add -u nounset flag to maintenance/lib/ and controld\_monitor.sh \(\#577\) [\#578](https://github.com/abhimehro/personal-config/pull/578) ([github-actions[bot]](https://github.com/apps/github-actions))
 - ⚡ Bolt: Replace subshell basename calls with bash parameter expansion in maintenance scripts [\#574](https://github.com/abhimehro/personal-config/pull/574) ([abhimehro](https://github.com/abhimehro))
 - fix: resolve merge conflicts blocking PR \#556 from merging into main [\#564](https://github.com/abhimehro/personal-config/pull/564) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix: resolve PR \#556 merge conflicts with main and sync upstream changes [\#563](https://github.com/abhimehro/personal-config/pull/563) ([Copilot](https://github.com/apps/copilot-swe-agent))
