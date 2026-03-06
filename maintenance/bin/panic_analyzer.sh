@@ -3,7 +3,7 @@
 # Self-contained kernel panic analysis report.
 # Safe to run non-interactively; avoids hanging by using short timeouts where possible.
 
-set -eo pipefail
+set -euo pipefail
 
 LOG_DIR="$HOME/Library/Logs/maintenance"
 mkdir -p "$LOG_DIR"

@@ -2,7 +2,7 @@
 
 # Advanced System Metrics Collector & Performance Monitor
 # Collects detailed system performance data and trends
-set -eo pipefail
+set -euo pipefail
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"
@@ -49,6 +49,8 @@ log_metric "load_15min" "$LOAD_15MIN" "avg"
 log_metric "cpu_count" "$CPU_COUNT" "cores"
 
 # Memory Metrics (enhanced)
+FREE_MB=0
+TOTAL_USED_MB=0
 if command -v vm_stat >/dev/null 2>&1; then
     VM_STAT=$(vm_stat)
     
@@ -149,6 +151,10 @@ log_metric "maintenance_agents_total" "$MAINTENANCE_AGENTS" "count"
 log_metric "maintenance_agents_failed" "$FAILED_AGENTS" "count"
 
 # Homebrew Health
+BREW_INSTALLED=0
+BREW_OUTDATED=0
+BREW_CASKS_INSTALLED=0
+BREW_CASKS_OUTDATED=0
 if command -v brew >/dev/null 2>&1; then
     BREW_OUTDATED=$(brew outdated 2>/dev/null | wc -l | tr -d ' ')
     BREW_INSTALLED=$(brew list 2>/dev/null | wc -l | tr -d ' ')

@@ -2,7 +2,7 @@
 
 # Advanced Maintenance Analytics & Reporting Dashboard
 # Provides comprehensive system insights, trend analysis, and performance reports
-set -eo pipefail
+set -euo pipefail
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"
