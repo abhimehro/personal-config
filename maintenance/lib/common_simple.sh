@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Simplified and robust common.sh library for maintenance scripts
 
-# Use less strict error handling to avoid exit on minor issues
-set -eo pipefail
+set -euo pipefail
 
 # Architecture and OS detection
 ARCH="$(uname -m)"
@@ -45,7 +44,7 @@ log() {
     echo "$line" | tee -a "$LOG_DIR/${script_name}.log" 2>/dev/null || echo "$line"
 }
 
-log_debug() { [[ "${DEBUG:-0}" == "1" ]] && log "DEBUG" "$@"; }
+log_debug() { [[ "${DEBUG:-0}" == "1" ]] && log "DEBUG" "$@" || true; }
 log_info()  { log "INFO" "$@"; }
 log_warn()  { log "WARNING" "$@"; }
 log_error() { log "ERROR" "$@"; }
