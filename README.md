@@ -369,6 +369,12 @@ make test-quick
 bash tests/test_ssh_config.sh
 
 # Run all Python tests
+make test-python
+
+# Run all tests (shell + Python)
+make test-all
+
+# Run all Python tests directly (alternative)
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
