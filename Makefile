@@ -10,7 +10,7 @@ test:  ## Run all tests (shell + Python)
 	@echo "Running shell tests..."
 	@bash tests/run_all_tests.sh; SHELL_EXIT=$$?; \
 	echo "Running Python tests..."; \
-	python3 -m unittest discover -s tests -p 'test_*.py' -v || true; PYTHON_EXIT=$$?; \
+	python3 -m unittest discover -s tests -p 'test_*.py' -v; PYTHON_EXIT=$$?; \
 	exit $$(( (SHELL_EXIT != 0) | (PYTHON_EXIT != 0) ))
 
 test-quick:  ## Run smoke test subset (fast, cross-platform) for pre-commit verification
