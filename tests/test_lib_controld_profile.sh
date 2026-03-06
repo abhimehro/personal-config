@@ -1,61 +1,14 @@
 #!/bin/bash
 #
-# Unit tests for scripts/lib/controld-profile.sh
-# Covers: validate_protocol, redact_profile_id, get_profile_id,
-#         get_profile_protocol, get_all_profiles, source guard
-# Mocks: ctrld (records invocations), networksetup
+# NOTE: This file previously contained unit tests for scripts/lib/controld-profile.sh.
+# The tests have been consolidated into tests/test_controld_profile.sh to avoid
+# duplication and redundant execution. This script is retained as a no-op shim
+# for backwards compatibility with any tooling that still references it.
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TEST_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'test-lib-controld-profile')
-MOCK_BIN="$TEST_DIR/bin"
-mkdir -p "$MOCK_BIN"
-trap 'rm -rf "$TEST_DIR"' EXIT
-
-# --- Mocks ---
-# ctrld mock: records every invocation.
-CTRLD_LOG="$TEST_DIR/ctrld.log"
-cat > "$MOCK_BIN/ctrld" << MOCK
-#!/bin/bash
-echo "ctrld \$*" >> "$CTRLD_LOG"
+# Intentionally do nothing; all relevant tests live in tests/test_controld_profile.sh.
 exit 0
-MOCK
-chmod +x "$MOCK_BIN/ctrld"
-
-# networksetup mock: returns a plausible DNS value.
-cat > "$MOCK_BIN/networksetup" << 'MOCK'
-#!/bin/bash
-echo "1.1.1.1"
-MOCK
-chmod +x "$MOCK_BIN/networksetup"
-
-export PATH="$MOCK_BIN:$PATH"
-export HOME="$TEST_DIR/home"
-mkdir -p "$HOME"
-
-# Source network-common.sh first so validate_profile_id is available.
-# shellcheck source=scripts/lib/network-common.sh
-source "$REPO_ROOT/scripts/lib/network-common.sh"
-
-# Source the library under test.
-# shellcheck source=scripts/lib/controld-profile.sh
-source "$REPO_ROOT/scripts/lib/controld-profile.sh"
-
-PASS=0
-FAIL=0
-
-check() {
-    local name="$1"; shift
-    if "$@" >/dev/null 2>&1; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name"
-        FAIL=$((FAIL + 1))
-    fi
-}
-
 check_false() {
     local name="$1"; shift
     if ! "$@" >/dev/null 2>&1; then
