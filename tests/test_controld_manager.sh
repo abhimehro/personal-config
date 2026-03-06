@@ -1,7 +1,7 @@
 #!/bin/bash
 # Tests for controld-manager.sh orchestration
 
-set -eo pipefail
+set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
