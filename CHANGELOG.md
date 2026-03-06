@@ -21,8 +21,10 @@
 
 **Closed issues:**
 
+- \[Code Quality\] Add \*.bak pattern to .gitignore to prevent future accidental commits [\#541](https://github.com/abhimehro/personal-config/issues/541)
 - \[Code Quality\] Document parse\_cred\_value\(\) helper in TESTING.md and AGENTS.md [\#538](https://github.com/abhimehro/personal-config/issues/538)
 - \[Code Quality\] Remove stale .bak files from tests/ directory [\#537](https://github.com/abhimehro/personal-config/issues/537)
+- \[Code Quality\] Add unit tests for tests/lib/test\_helpers.sh \(parse\_cred\_value\) [\#536](https://github.com/abhimehro/personal-config/issues/536)
 - \[repo-status\] Daily Repo Status — March 4, 2026 [\#532](https://github.com/abhimehro/personal-config/issues/532)
 - \[Code Quality\] Wire `make lint-errors` SC2155/SC2145 regression gate into GitHub Actions CI [\#528](https://github.com/abhimehro/personal-config/issues/528)
 - \[Code Quality\] Document media-streaming credential file format contract to prevent test parsing failures [\#527](https://github.com/abhimehro/personal-config/issues/527)
@@ -172,6 +174,7 @@
 
 **Merged pull requests:**
 
+- ⚡ Bolt: Optimize directory listing HTML generation with list comprehension [\#550](https://github.com/abhimehro/personal-config/pull/550) ([abhimehro](https://github.com/abhimehro))
 - 🛡️ Sentinel: \[Security Improvement\] Improve secure random string generation [\#542](https://github.com/abhimehro/personal-config/pull/542) ([abhimehro](https://github.com/abhimehro))
 - chore: remove stale .bak test files and document parse\_cred\_value\(\) helper [\#540](https://github.com/abhimehro/personal-config/pull/540) ([github-actions[bot]](https://github.com/apps/github-actions))
 - 🎨 Palette: Improve CLI accessibility and discoverability [\#539](https://github.com/abhimehro/personal-config/pull/539) ([abhimehro](https://github.com/abhimehro))
