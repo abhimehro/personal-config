@@ -111,25 +111,22 @@ bash tests/test_network_mode_manager.sh
 
 Run all shell tests:
 ```bash
-# Runs all shell tests in parallel via the test runner script
 make test
 ```
 
-Python tests use `unittest` (see `tests/test_*.py`).
+Run all tests (shell + Python):
+```bash
+make test-all
+```
 
 Run a single Python test module:
 ```bash
 python3 -m unittest tests.test_path_validation
 ```
 
-Run all Python tests:
+Run Python tests only:
 ```bash
 make test-python
-```
-
-Run all tests (shell + Python):
-```bash
-make test-all
 ```
 
 ### Benchmarks
@@ -221,7 +218,6 @@ Detailed patterns, mock recipes, and a copy-paste test skeleton live in [`docs/T
 | `test_config_fish.sh` | Needs `fish` shell | `command -v fish` |
 | `test_ssh_config.sh` | Needs 1Password agent socket | `uname -s == Darwin` |
 | `test_security_manager_restore.sh` | Uses BSD `sed -i ''` (macOS only) | `uname -s == Darwin` |
-| `test_network_mode_manager.sh` | Requires passwordless sudo | `sudo -n true` |
 
 See [`docs/TESTING.md`](docs/TESTING.md) for the full guide including a copy-paste test skeleton and a known-limitations table.
 
@@ -233,9 +229,9 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 
 | What | Command | Notes |
 |---|---|---|
-| Python tests | `make test-python` | stdlib only, no pip deps |
-| Shell tests | `make test` | Runs in parallel. Platform-specific tests emit `SKIP:` and exit 77 on Linux/CI. |
-| All tests | `make test-all` | Runs shell tests then Python tests sequentially |
+| All tests (shell + Python) | `make test-all` | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI. |
+| Single Python module | `python3 -m unittest tests.test_path_validation` | stdlib only, no pip deps |
+| Python tests only | `make test-python` | stdlib only, no pip deps |
 | Lint (all) | `make lint` | Trunk downloads its own tool versions on first run |
 | Lint (correctness gate) | `make lint-errors` | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate. |
 | Format | `make lint-fix` | Auto-fixes where supported |
@@ -245,5 +241,5 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 - **Trunk first-run latency**: The first `trunk check` or `trunk fmt` invocation downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`. Subsequent runs are fast. The update script installs the Trunk launcher, but tool downloads happen lazily.
 - **No `requirements.txt`**: Python tests and scripts use only the standard library. No `pip install` is needed for the test suite.
 - **`package.json` is empty**: The root `package.json` is `{}` — it exists as a Trunk runtime anchor for Node-based linters (prettier, markdownlint). Do not run `npm install`.
-- **macOS-specific test skips on Linux**: `test_config_fish.sh`, `test_ssh_config.sh`, `test_security_manager_restore.sh`, and `test_network_mode_manager.sh` emit a `SKIP:` message and exit with code 77 on Linux/CI. The test runner treats this as a skip, not a failure.
+- **macOS-specific test skips on Linux**: `test_config_fish.sh`, `test_ssh_config.sh`, and `test_security_manager_restore.sh` emit a `SKIP:` message and exit with code 77 on Linux/CI. The test runner treats this as a skip, not a failure.
 - **`setup.sh` is macOS-only**: Do not run `./setup.sh` on Linux — it calls `launchctl`, Homebrew, and macOS system utilities.

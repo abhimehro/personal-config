@@ -21,8 +21,14 @@
 
 **Closed issues:**
 
+- \[repo-status\] Daily Repo Status — March 5, 2026 [\#552](https://github.com/abhimehro/personal-config/issues/552)
+- \[Code Quality\] Make test\_network\_mode\_manager.sh CI-portable by mocking sudo-requiring commands [\#551](https://github.com/abhimehro/personal-config/issues/551)
+- \[Code Quality\] Refactor test\_media\_server\_auth.sh to use parse\_cred\_value\(\) consistently [\#549](https://github.com/abhimehro/personal-config/issues/549)
+- \[Code Quality\] Add Python tests to `make test` for a unified test command [\#548](https://github.com/abhimehro/personal-config/issues/548)
+- \[Code Quality\] Add \*.bak pattern to .gitignore to prevent future accidental commits [\#541](https://github.com/abhimehro/personal-config/issues/541)
 - \[Code Quality\] Document parse\_cred\_value\(\) helper in TESTING.md and AGENTS.md [\#538](https://github.com/abhimehro/personal-config/issues/538)
 - \[Code Quality\] Remove stale .bak files from tests/ directory [\#537](https://github.com/abhimehro/personal-config/issues/537)
+- \[Code Quality\] Add unit tests for tests/lib/test\_helpers.sh \(parse\_cred\_value\) [\#536](https://github.com/abhimehro/personal-config/issues/536)
 - \[repo-status\] Daily Repo Status — March 4, 2026 [\#532](https://github.com/abhimehro/personal-config/issues/532)
 - \[Code Quality\] Wire `make lint-errors` SC2155/SC2145 regression gate into GitHub Actions CI [\#528](https://github.com/abhimehro/personal-config/issues/528)
 - \[Code Quality\] Document media-streaming credential file format contract to prevent test parsing failures [\#527](https://github.com/abhimehro/personal-config/issues/527)
@@ -65,7 +71,6 @@
 - \[Code Quality\] Add `make lint` and `make lint-fix` targets to Makefile for linting discoverability [\#449](https://github.com/abhimehro/personal-config/issues/449)
 - \[Code Quality\] Create `.shellcheckrc` for project-wide ShellCheck baseline configuration [\#448](https://github.com/abhimehro/personal-config/issues/448)
 - \[Code Quality\] Audit and annotate 264 persistent ShellCheck warnings with inline suppression comments or fixes [\#446](https://github.com/abhimehro/personal-config/issues/446)
-- \[Code Quality\] Refactor controld-manager \(759 lines\) by extracting testable library modules into scripts/lib/ [\#445](https://github.com/abhimehro/personal-config/issues/445)
 - \[Code Quality\] Integrate parallel test runner \(tests/run\_all\_tests.sh\) into Makefile and document usage [\#444](https://github.com/abhimehro/personal-config/issues/444)
 - \[repo-status\] 📊 Daily Repo Status — March 1, 2026 [\#443](https://github.com/abhimehro/personal-config/issues/443)
 - \[Code Quality\] Resolve SC2034 ShellCheck warnings: remove or fix unused variable declarations [\#442](https://github.com/abhimehro/personal-config/issues/442)
@@ -172,6 +177,12 @@
 
 **Merged pull requests:**
 
+- Improve preflight CI check visibility with check-run links and deterministic error handling [\#562](https://github.com/abhimehro/personal-config/pull/562) ([Copilot](https://github.com/apps/copilot-swe-agent))
+- Verify parse\_cred\_value\(\) adoption in test\_media\_server\_auth.sh [\#560](https://github.com/abhimehro/personal-config/pull/560) ([Copilot](https://github.com/apps/copilot-swe-agent))
+- Unify `make test` to cover shell + Python tests [\#559](https://github.com/abhimehro/personal-config/pull/559) ([Copilot](https://github.com/apps/copilot-swe-agent))
+- Make test\_network\_mode\_manager.sh CI-portable by mocking sudo [\#558](https://github.com/abhimehro/personal-config/pull/558) ([Copilot](https://github.com/apps/copilot-swe-agent))
+- 🛡️ Sentinel: \[MEDIUM\] Fix TOCTOU vulnerability in maintenance install script [\#557](https://github.com/abhimehro/personal-config/pull/557) ([abhimehro](https://github.com/abhimehro))
+- ⚡ Bolt: Optimize directory listing HTML generation with list comprehension [\#550](https://github.com/abhimehro/personal-config/pull/550) ([abhimehro](https://github.com/abhimehro))
 - 🛡️ Sentinel: \[Security Improvement\] Improve secure random string generation [\#542](https://github.com/abhimehro/personal-config/pull/542) ([abhimehro](https://github.com/abhimehro))
 - chore: remove stale .bak test files and document parse\_cred\_value\(\) helper [\#540](https://github.com/abhimehro/personal-config/pull/540) ([github-actions[bot]](https://github.com/apps/github-actions))
 - 🎨 Palette: Improve CLI accessibility and discoverability [\#539](https://github.com/abhimehro/personal-config/pull/539) ([abhimehro](https://github.com/abhimehro))
