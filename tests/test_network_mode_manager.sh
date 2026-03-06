@@ -23,6 +23,23 @@ exec "$@"
 EOF
 chmod +x "$MOCK_BIN/sudo"
 
+# Mock pkill to avoid touching the host process table during tests
+cat > "$MOCK_BIN/pkill" << 'EOF'
+#!/bin/bash
+echo "MOCK PKILL CALLED: $*"
+# NOTE: Intentionally no real process management; always succeed in tests.
+exit 0
+EOF
+chmod +x "$MOCK_BIN/pkill"
+
+# Optional: Mock pgrep if network-mode-manager uses it
+cat > "$MOCK_BIN/pgrep" << 'EOF'
+#!/bin/bash
+echo "MOCK PGREP CALLED: $*"
+# NOTE: Default to 'not found' in tests unless explicitly extended.
+exit 1
+EOF
+chmod +x "$MOCK_BIN/pgrep"
 cat > "$MOCK_BIN/ctrld" << 'EOF'
 #!/bin/bash
 echo "MOCK CTRLD CALLED: $*"
