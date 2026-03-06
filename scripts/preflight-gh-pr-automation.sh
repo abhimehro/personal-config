@@ -169,15 +169,29 @@ check_repo_readonly() {
   pass "$repo#${pr_number} PR metadata read OK"
 
   local checks_out=""
+  local checks_err_file=""
   local checks_err=""
-  checks_out="$(gh pr checks "$pr_number" --repo "$repo" --json name,state,bucket,workflow 2> >(checks_err="$(cat)"; typeset -p checks_err >/dev/null) || true)"
-
-  if [[ -z "$checks_out" ]]; then
-    # Re-run once to capture deterministic stderr content.
-    checks_err="$(gh pr checks "$pr_number" --repo "$repo" --json name,state,bucket,workflow 2>&1 >/dev/null || true)"
+  checks_err_file="$(mktemp)"
+  if ! checks_out="$(gh pr checks "$pr_number" --repo "$repo" --json name,state,bucket,workflow,link 2>"$checks_err_file")"; then
+    checks_err="$(cat "$checks_err_file")"
+    rm -f "$checks_err_file"
     fail "$repo#${pr_number} check visibility failed. Details: ${checks_err:-unknown error}"
   fi
+  rm -f "$checks_err_file"
   pass "$repo#${pr_number} checks visibility OK"
+
+  local failing_checks=""
+  failing_checks="$(
+    gh pr checks "$pr_number" --repo "$repo" --json name,bucket,link \
+      --jq '.[] | select(.bucket == "fail" or .bucket == "cancel") | "\(.name) (\(.bucket)): \(.link // "no-link")"' \
+      2>/dev/null || true
+  )"
+  if [[ -n "$failing_checks" ]]; then
+    warn "$repo#${pr_number} has failing checks:"
+    while IFS= read -r check_line; do
+      [[ -n "$check_line" ]] && warn "  - $check_line"
+    done <<< "$failing_checks"
+  fi
 
   local owner="${repo%%/*}"
   local name="${repo##*/}"
