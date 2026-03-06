@@ -197,10 +197,17 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         base_path = f"{current_path.rstrip('/')}/" if current_path != '/' else ""
 
         items_html = [
-            f'<a href="/{html.escape(base_path + item)}" class="file directory">📁 {html.escape(item)[:-1]}</a>\n'
+            (
+                f'<a href="/{html.escape(base_path + item)}" class="file directory">'
+                f'📁 {html.escape(item)[:-1]}</a>\n'
+            )
             if item.endswith('/') else
-            f'<a href="/{html.escape(base_path + item)}" class="file video">{"🎬" if item.lower().endswith(video_exts) else "📄"} {html.escape(item)}</a>\n'
+            (
+                f'<a href="/{html.escape(base_path + item)}" class="file video">'
+                f'{"🎬" if item.lower().endswith(video_exts) else "📄"} {html.escape(item)}</a>\n'
+            )
             for item in files if item
+        ]
         ]
         html_parts.extend(items_html)
         
