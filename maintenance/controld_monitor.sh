@@ -4,7 +4,7 @@
 # Designed to integrate with existing maintenance system
 # Performs lightweight health check and logs results
 
-set -e
+set -euo pipefail
 
 # Configuration
 LOG_DIR="${HOME}/Public/Scripts"
