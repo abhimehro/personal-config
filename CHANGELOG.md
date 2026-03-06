@@ -22,9 +22,11 @@
 **Closed issues:**
 
 - \[Code Quality\] Fix missing safety flags in `maintenance/lib/` shared libraries and `maintenance/controld_monitor.sh` [\#577](https://github.com/abhimehro/personal-config/issues/577)
+- \[repo-status\] Daily Status Report — March 6, 2026 [\#576](https://github.com/abhimehro/personal-config/issues/576)
 - \[Code Quality\] Fix `set -eo pipefail` → `set -euo pipefail` in 5 recently-added test files [\#575](https://github.com/abhimehro/personal-config/issues/575)
 - \[Code Quality\] Add `make test` and `make test-quick` to AGENTS.md key services table [\#573](https://github.com/abhimehro/personal-config/issues/573)
 - \[Code Quality\] Remove stale root artifacts: `patch.sh` \(applied\) and `handoff.md` \(completed refactor\) [\#572](https://github.com/abhimehro/personal-config/issues/572)
+- \[Code Quality\] Fix missing -u \(nounset\) flag in 16 maintenance/bin/ scripts and maintenance/install.sh [\#568](https://github.com/abhimehro/personal-config/issues/568)
 - \[Code Quality\] Add unit tests for scripts/lib/controld-profile.sh and network-common.sh [\#555](https://github.com/abhimehro/personal-config/issues/555)
 - \[Code Quality\] Add Python tests to `make test` for unified test execution [\#554](https://github.com/abhimehro/personal-config/issues/554)
 - \[repo-status\] Daily Repo Status — March 5, 2026 [\#552](https://github.com/abhimehro/personal-config/issues/552)
@@ -187,6 +189,7 @@
 
 **Merged pull requests:**
 
+- fix: add missing -u \(nounset\) flag to 17 maintenance scripts [\#582](https://github.com/abhimehro/personal-config/pull/582) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - test: add unit tests for controld-profile.sh and network-common.sh [\#581](https://github.com/abhimehro/personal-config/pull/581) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - chore: remove stale root artifacts — delete patch.sh, archive handoff.md [\#580](https://github.com/abhimehro/personal-config/pull/580) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix: set -euo pipefail in 4 test files; fix unbound $2/$3 in controld-manager [\#579](https://github.com/abhimehro/personal-config/pull/579) ([Copilot](https://github.com/apps/copilot-swe-agent))
