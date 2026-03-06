@@ -6,8 +6,12 @@ help:  ## Show this help message
 	@echo "Available targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-test:  ## Run all shell tests in parallel (ignoring known macOS-specific failures on Linux)
-	./tests/run_all_tests.sh
+test:  ## Run all tests (shell + Python)
+	@echo "Running shell tests..."
+	@bash tests/run_all_tests.sh; SHELL_EXIT=$$?; \
+	echo "Running Python tests..."; \
+	python3 -m unittest discover -s tests -p 'test_*.py' -v; PYTHON_EXIT=$$?; \
+	exit $$(( (SHELL_EXIT != 0) | (PYTHON_EXIT != 0) ))
 
 test-quick:  ## Run smoke test subset (fast, cross-platform) for pre-commit verification
 	@echo "Running smoke tests..."

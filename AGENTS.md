@@ -109,22 +109,15 @@ bash tests/test_ssh_config.sh
 bash tests/test_network_mode_manager.sh
 ```
 
-Run all shell tests:
+Run all tests (shell + Python):
 ```bash
-# Runs all shell tests in parallel via the test runner script
+# Runs all shell tests in parallel, then all Python tests
 make test
 ```
-
-Python tests use `unittest` (see `tests/test_*.py`).
 
 Run a single Python test module:
 ```bash
 python3 -m unittest tests.test_path_validation
-```
-
-Run all Python tests:
-```bash
-python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
 ### Benchmarks
@@ -228,8 +221,8 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 
 | What | Command | Notes |
 |---|---|---|
-| Python tests | `python3 -m unittest discover -s tests -p 'test_*.py'` | stdlib only, no pip deps |
-| Shell tests | `make test` | Runs in parallel. Platform-specific tests emit `SKIP:` and exit 77 on Linux/CI. |
+| All tests (shell + Python) | `make test` | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI. |
+| Single Python module | `python3 -m unittest tests.test_path_validation` | stdlib only, no pip deps |
 | Lint (all) | `make lint` | Trunk downloads its own tool versions on first run |
 | Lint (correctness gate) | `make lint-errors` | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate. |
 | Format | `make lint-fix` | Auto-fixes where supported |
