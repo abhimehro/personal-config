@@ -171,7 +171,7 @@ check_repo_readonly() {
   local checks_out=""
   local checks_err_file=""
   local checks_err=""
-  checks_err_file="$(mktemp)"
+  checks_err_file="$(mktemp "${TMPDIR:-/tmp}/preflight_checks_err.XXXXXX")"
   if ! checks_out="$(gh pr checks "$pr_number" --repo "$repo" --json name,state,bucket,workflow,link 2>"$checks_err_file")"; then
     checks_err="$(cat "$checks_err_file")"
     rm -f "$checks_err_file"
