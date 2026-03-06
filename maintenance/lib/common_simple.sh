@@ -44,7 +44,12 @@ log() {
     echo "$line" | tee -a "$LOG_DIR/${script_name}.log" 2>/dev/null || echo "$line"
 }
 
-log_debug() { [[ "${DEBUG:-0}" == "1" ]] && log "DEBUG" "$@" || true; }
+log_debug() {
+    if [[ "${DEBUG:-0}" == "1" ]]; then
+        # NOTE: Debug logging is intentionally non-fatal; ignore log failures.
+        log "DEBUG" "$@" || true
+    fi
+}
 log_info()  { log "INFO" "$@"; }
 log_warn()  { log "WARNING" "$@"; }
 log_error() { log "ERROR" "$@"; }
