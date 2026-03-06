@@ -1,18 +1,18 @@
 #!/bin/bash
 #
-# Unit tests for scripts/lib/network-common.sh
-# Covers: validate_dns_protocol, validate_profile_id, redact_profile_id,
-#         backup_dns_settings, restore_dns_settings, source guard
-# Mocks: networksetup
+# Wrapper for network-common tests.
+# Canonical tests for scripts/lib/network-common.sh live in
+# tests/test_network_common.sh to avoid duplication of coverage and
+# maintenance overhead.
+#
+# This script is kept to preserve the test_lib_*.sh naming convention and
+# delegates directly to the original test file.
+exec "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/test_network_common.sh"
 
-set -euo pipefail
+# NOTE: Any code below this point is legacy and will not execute because of
+# the exec() above. The canonical test definitions are in test_network_common.sh.
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TEST_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'test-lib-network-common')
-MOCK_BIN="$TEST_DIR/bin"
-mkdir -p "$MOCK_BIN"
-trap 'rm -rf "$TEST_DIR"' EXIT
-
+# --- Legacy implementation below (kept temporarily for reference) ---
 # --- Mocks ---
 # networksetup mock: simulates -getdnsservers and -setdnsservers.
 NS_LOG="$TEST_DIR/networksetup.log"
