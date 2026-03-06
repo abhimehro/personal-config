@@ -192,29 +192,23 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         video_exts = ('.mp4', '.mkv', '.avi', '.mov')
         
         # Add files and directories
-        for item in files:
-            if not item:
-                continue
+        # ⚡ Performance: Use generator expression/list comprehension instead of for loop with .append
+        # Pre-compute the base path logic to avoid evaluating it per-item
+        base_path = f"{current_path.rstrip('/')}/" if current_path != '/' else ""
 
-            # Escape the item name for display and URL construction
-            safe_item = html.escape(item)
-
-            # Construct item path. Note: item_path is used in href, so we should be careful.
-            # If current_path has special chars, they are already in it.
-            # We need to construct the URL properly.
-            # Ideally we should use quote() for hrefs, and escape() for display.
-            # For now, let's escape for HTML context to prevent XSS.
-
-            item_path = f"{current_path.rstrip('/')}/{item}" if current_path != '/' else item
-            safe_item_path = html.escape(item_path)
-
-            if item.endswith('/'):
-                # Directory
-                html_parts.append(f'<a href="/{safe_item_path}" class="file directory">📁 {safe_item[:-1]}</a>\n')
-            else:
-                # File
-                icon = "🎬" if item.lower().endswith(video_exts) else "📄"
-                html_parts.append(f'<a href="/{safe_item_path}" class="file video">{{icon}} {{safe_item}}</a>\n')
+        items_html = [
+            (
+                f'<a href="/{html.escape(base_path + item)}" class="file directory">'
+                f'📁 {html.escape(item)[:-1]}</a>\n'
+            )
+            if item.endswith('/') else
+            (
+                f'<a href="/{html.escape(base_path + item)}" class="file video">'
+                f'{"🎬" if item.lower().endswith(video_exts) else "📄"} {html.escape(item)}</a>\n'
+            )
+            for item in files if item
+        ]
+        html_parts.extend(items_html)
         
         html_parts.append("""
         </body>
