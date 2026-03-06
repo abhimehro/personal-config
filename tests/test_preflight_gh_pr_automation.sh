@@ -43,11 +43,7 @@ if [[ "$1" == "pr" && "$2" == "checks" ]]; then
     exit 1
   fi
 
-  if [[ "$*" == *"--json name,bucket,link"* ]]; then
-    echo "Tests (fail): https://github.com/abhimehro/ctrld-sync/pull/563/checks?check_run_id=65965568921"
-  else
-    echo '[{"name":"Tests","state":"FAILURE","bucket":"fail","workflow":"Tests","link":"https://github.com/abhimehro/ctrld-sync/pull/563/checks?check_run_id=65965568921"}]'
-  fi
+  echo "Tests (fail): https://github.com/abhimehro/ctrld-sync/pull/563/checks?check_run_id=65965568921"
   exit 0
 fi
 
@@ -101,7 +97,16 @@ rm -f "$GH_LOG"
 GH_CHECKS_MODE=ok PATH="$MOCK_BIN:$PATH" bash "$SCRIPT" --repo abhimehro/ctrld-sync > "$TEST_DIR/t1.out" 2>&1
 check_contains "includes failing-check warning" "[WARN] abhimehro/ctrld-sync#563 has failing checks:" "$TEST_DIR/t1.out"
 check_contains "includes check_run_id URL in warning" "check_run_id=65965568921" "$TEST_DIR/t1.out"
-check_contains "requests link field from gh pr checks" "--json name,state,bucket,workflow,link" "$GH_LOG"
+check_contains "requests minimal fields from gh pr checks" "--json name,bucket,link" "$GH_LOG"
+check_contains "filters failing checks with jq" "--jq .[] | select(.bucket == \"fail\" or .bucket == \"cancel\")" "$GH_LOG"
+PR_CHECKS_CALLS="$(grep -c "pr checks" "$GH_LOG" || true)"
+if [[ "$PR_CHECKS_CALLS" == "1" ]]; then
+  echo "PASS: invokes gh pr checks once"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: expected one gh pr checks call, got $PR_CHECKS_CALLS"
+  FAIL=$((FAIL + 1))
+fi
 
 echo "=== Test 2: fails with stderr details when check visibility call fails ==="
 rm -f "$GH_LOG"
