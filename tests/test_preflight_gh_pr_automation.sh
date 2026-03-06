@@ -43,7 +43,7 @@ if [[ "$1" == "pr" && "$2" == "checks" ]]; then
     exit 1
   fi
 
-  if [[ "$*" == *"--jq"* ]]; then
+  if [[ "$*" == *"--json name,bucket,link"* ]]; then
     echo "Tests (fail): https://github.com/abhimehro/ctrld-sync/pull/563/checks?check_run_id=65965568921"
   else
     echo '[{"name":"Tests","state":"FAILURE","bucket":"fail","workflow":"Tests","link":"https://github.com/abhimehro/ctrld-sync/pull/563/checks?check_run_id=65965568921"}]'
