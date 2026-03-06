@@ -97,9 +97,9 @@ rm -f "$GH_LOG"
 GH_CHECKS_MODE=ok PATH="$MOCK_BIN:$PATH" bash "$SCRIPT" --repo abhimehro/ctrld-sync > "$TEST_DIR/t1.out" 2>&1
 check_contains "includes failing-check warning" "[WARN] abhimehro/ctrld-sync#563 has failing checks:" "$TEST_DIR/t1.out"
 check_contains "includes check_run_id URL in warning" "check_run_id=65965568921" "$TEST_DIR/t1.out"
+check_contains "includes formatted failing check line" "Tests (fail): https://github.com/abhimehro/ctrld-sync/pull/563/checks?check_run_id=65965568921" "$TEST_DIR/t1.out"
 check_contains "requests minimal fields from gh pr checks" "--json name,bucket,link" "$GH_LOG"
-check_contains "filters failing checks with jq" "--jq .[] | select(.bucket == \"fail\" or .bucket == \"cancel\")" "$GH_LOG"
-check_contains "formats failing check output with link fallback" "\\(.name) (\\(.bucket)): \\(.link // \"no-link\")" "$GH_LOG"
+check_contains "uses full jq filter and formatter for failing checks" "--jq .[] | select(.bucket == \"fail\" or .bucket == \"cancel\") | \"\\(.name) (\\(.bucket)): \\(.link // \"no-link\")\"" "$GH_LOG"
 PR_CHECKS_CALLS="$(grep -c "pr checks" "$GH_LOG" || true)"
 if [[ "$PR_CHECKS_CALLS" == "1" ]]; then
   echo "PASS: invokes gh pr checks once"
