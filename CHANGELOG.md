@@ -175,6 +175,7 @@
 
 **Merged pull requests:**
 
+- Improve preflight CI check visibility with check-run links and deterministic error handling [\#562](https://github.com/abhimehro/personal-config/pull/562) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - Verify parse\_cred\_value\(\) adoption in test\_media\_server\_auth.sh [\#560](https://github.com/abhimehro/personal-config/pull/560) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - 🛡️ Sentinel: \[MEDIUM\] Fix TOCTOU vulnerability in maintenance install script [\#557](https://github.com/abhimehro/personal-config/pull/557) ([abhimehro](https://github.com/abhimehro))
 - ⚡ Bolt: Optimize directory listing HTML generation with list comprehension [\#550](https://github.com/abhimehro/personal-config/pull/550) ([abhimehro](https://github.com/abhimehro))
