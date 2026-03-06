@@ -172,6 +172,9 @@ check_repo_readonly() {
   local checks_err=""
   local failing_checks=""
   checks_err_file="$(mktemp "${TMPDIR:-/tmp}/preflight_checks_err.XXXXXX")"
+  # NOTE: this single gh invocation serves two purposes:
+  # - command success confirms checks visibility API access
+  # - output contains only failing/canceled checks; empty output means no failures
   if ! failing_checks="$(gh pr checks "$pr_number" --repo "$repo" \
     --json name,bucket,link \
     --jq '.[] | select(.bucket == "fail" or .bucket == "cancel") | "\(.name) (\(.bucket)): \(.link // "no-link")"' \

@@ -99,6 +99,7 @@ check_contains "includes failing-check warning" "[WARN] abhimehro/ctrld-sync#563
 check_contains "includes check_run_id URL in warning" "check_run_id=65965568921" "$TEST_DIR/t1.out"
 check_contains "requests minimal fields from gh pr checks" "--json name,bucket,link" "$GH_LOG"
 check_contains "filters failing checks with jq" "--jq .[] | select(.bucket == \"fail\" or .bucket == \"cancel\")" "$GH_LOG"
+check_contains "formats failing check output with link fallback" "\\(.name) (\\(.bucket)): \\(.link // \"no-link\")" "$GH_LOG"
 PR_CHECKS_CALLS="$(grep -c "pr checks" "$GH_LOG" || true)"
 if [[ "$PR_CHECKS_CALLS" == "1" ]]; then
   echo "PASS: invokes gh pr checks once"
