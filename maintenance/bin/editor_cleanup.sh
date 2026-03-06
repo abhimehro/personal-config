@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Self-contained editor cache cleanup script - MONTHLY VERSION
-set -eo pipefail
+set -euo pipefail
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Google Drive monitoring and health check script
-set -eo pipefail
+set -euo pipefail
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"
@@ -32,6 +32,7 @@ log_info "Google Drive monitoring started"
 # Check if Google Drive is running
 GDRIVE_STATUS="Not detected"
 SYNC_STATUS="Unknown"
+GDRIVE_DIR=""
 
 # Check for Google Drive process
 if pgrep -f "Google Drive" >/dev/null 2>&1; then
