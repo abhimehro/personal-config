@@ -66,13 +66,14 @@ if [[ -d "${CACHE_DIR}" ]]; then
     for cache_subdir in "${CACHE_DIR}"/*; do
         if [[ -d "$cache_subdir" ]]; then
             # ⚡ Bolt Optimization: parameter expansion avoids process spawning
-            case "${cache_subdir##*/}" in
+            subdir_name="${cache_subdir##*/}"
+            case "$subdir_name" in
                 # Skip critical system caches and editor caches handled by editor_cleanup.sh
                 com.apple.*|CloudKit|CrashReporter|SkyLight|Cursor|dev.zed.Zed|com.microsoft.VSCode) continue ;;
                 *)
                     FILES_CLEANED=$(find "$cache_subdir" -type f -mtime +"${CLEANUP_CACHE_DAYS:-30}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
                     if [[ $FILES_CLEANED -gt 0 ]]; then
-                        log_info "Cleaned $FILES_CLEANED cache files from ${cache_subdir##*/}"
+                        log_info "Cleaned $FILES_CLEANED cache files from $subdir_name"
                         CLEANED_ITEMS=$((CLEANED_ITEMS + FILES_CLEANED))
                     fi
                     ;;
@@ -196,7 +197,7 @@ for browser_cache in \
     if [[ -d "$browser_cache" ]]; then
         # ⚡ Bolt Optimization: parameter expansion avoids process spawning
         BROWSER_NAME="${browser_cache##*/}"
-        BROWSER_NAME="${BROWSER_NAME##com.*.}"
+        BROWSER_NAME="${BROWSER_NAME#com.*.}"
         log_info "Cleaning old browser cache: $BROWSER_NAME"
         BROWSER_FILES_CLEANED=$(find "$browser_cache" -type f -mtime +14 -print -delete 2>/dev/null | wc -l | tr -d ' ')
         if [[ $BROWSER_FILES_CLEANED -gt 0 ]]; then

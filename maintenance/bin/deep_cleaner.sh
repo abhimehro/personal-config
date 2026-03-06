@@ -218,8 +218,9 @@ for browser_dir in "${BROWSER_DIRS[@]}"; do
     if [[ -d "$browser_dir" ]]; then
         browser_size=$(du -sh "$browser_dir" 2>/dev/null | cut -f1)
         # ⚡ Bolt Optimization: parameter expansion avoids 2 process spawns (dirname + basename)
-        browser_dir_path="${browser_dir%/*}"
-        browser_name="${browser_dir_path##*/}"
+        tmp="${browser_dir%/}" # Remove potential trailing slash
+        parent_path="${tmp%/*}"
+        browser_name="${parent_path##*/}"
         append "$browser_name profile: $browser_size"
     fi
 done
