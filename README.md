@@ -375,7 +375,7 @@ make test-python
 make test-all
 
 # Run all Python tests directly (alternative)
-python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
 ### DNS System
