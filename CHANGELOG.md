@@ -21,6 +21,8 @@
 
 **Closed issues:**
 
+- \[repo-status\] Daily Repo Status — March 5, 2026 [\#552](https://github.com/abhimehro/personal-config/issues/552)
+- \[Code Quality\] Refactor test\_media\_server\_auth.sh to use parse\_cred\_value\(\) consistently [\#549](https://github.com/abhimehro/personal-config/issues/549)
 - \[Code Quality\] Add \*.bak pattern to .gitignore to prevent future accidental commits [\#541](https://github.com/abhimehro/personal-config/issues/541)
 - \[Code Quality\] Document parse\_cred\_value\(\) helper in TESTING.md and AGENTS.md [\#538](https://github.com/abhimehro/personal-config/issues/538)
 - \[Code Quality\] Remove stale .bak files from tests/ directory [\#537](https://github.com/abhimehro/personal-config/issues/537)
@@ -67,7 +69,6 @@
 - \[Code Quality\] Add `make lint` and `make lint-fix` targets to Makefile for linting discoverability [\#449](https://github.com/abhimehro/personal-config/issues/449)
 - \[Code Quality\] Create `.shellcheckrc` for project-wide ShellCheck baseline configuration [\#448](https://github.com/abhimehro/personal-config/issues/448)
 - \[Code Quality\] Audit and annotate 264 persistent ShellCheck warnings with inline suppression comments or fixes [\#446](https://github.com/abhimehro/personal-config/issues/446)
-- \[Code Quality\] Refactor controld-manager \(759 lines\) by extracting testable library modules into scripts/lib/ [\#445](https://github.com/abhimehro/personal-config/issues/445)
 - \[Code Quality\] Integrate parallel test runner \(tests/run\_all\_tests.sh\) into Makefile and document usage [\#444](https://github.com/abhimehro/personal-config/issues/444)
 - \[repo-status\] 📊 Daily Repo Status — March 1, 2026 [\#443](https://github.com/abhimehro/personal-config/issues/443)
 - \[Code Quality\] Resolve SC2034 ShellCheck warnings: remove or fix unused variable declarations [\#442](https://github.com/abhimehro/personal-config/issues/442)
@@ -174,6 +175,7 @@
 
 **Merged pull requests:**
 
+- Verify parse\_cred\_value\(\) adoption in test\_media\_server\_auth.sh [\#560](https://github.com/abhimehro/personal-config/pull/560) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - 🛡️ Sentinel: \[MEDIUM\] Fix TOCTOU vulnerability in maintenance install script [\#557](https://github.com/abhimehro/personal-config/pull/557) ([abhimehro](https://github.com/abhimehro))
 - ⚡ Bolt: Optimize directory listing HTML generation with list comprehension [\#550](https://github.com/abhimehro/personal-config/pull/550) ([abhimehro](https://github.com/abhimehro))
 - 🛡️ Sentinel: \[Security Improvement\] Improve secure random string generation [\#542](https://github.com/abhimehro/personal-config/pull/542) ([abhimehro](https://github.com/abhimehro))
