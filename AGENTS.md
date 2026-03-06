@@ -109,10 +109,14 @@ bash tests/test_ssh_config.sh
 bash tests/test_network_mode_manager.sh
 ```
 
+Run all shell tests:
+```bash
+make test
+```
+
 Run all tests (shell + Python):
 ```bash
-# Runs all shell tests in parallel, then all Python tests
-make test
+make test-all
 ```
 
 Run a single Python test module:
