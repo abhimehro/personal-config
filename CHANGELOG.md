@@ -22,6 +22,7 @@
 **Closed issues:**
 
 - \[Code Quality\] Add `make test` and `make test-quick` to AGENTS.md key services table [\#573](https://github.com/abhimehro/personal-config/issues/573)
+- \[Code Quality\] Remove stale root artifacts: `patch.sh` \(applied\) and `handoff.md` \(completed refactor\) [\#572](https://github.com/abhimehro/personal-config/issues/572)
 - \[Code Quality\] Add Python tests to `make test` for unified test execution [\#554](https://github.com/abhimehro/personal-config/issues/554)
 - \[repo-status\] Daily Repo Status — March 5, 2026 [\#552](https://github.com/abhimehro/personal-config/issues/552)
 - \[Code Quality\] Make test\_network\_mode\_manager.sh CI-portable by mocking sudo-requiring commands [\#551](https://github.com/abhimehro/personal-config/issues/551)
@@ -183,6 +184,7 @@
 
 **Merged pull requests:**
 
+- chore: remove stale root artifacts — delete patch.sh, archive handoff.md [\#580](https://github.com/abhimehro/personal-config/pull/580) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - ⚡ Bolt: Replace subshell basename calls with bash parameter expansion in maintenance scripts [\#574](https://github.com/abhimehro/personal-config/pull/574) ([abhimehro](https://github.com/abhimehro))
 - fix: resolve merge conflicts blocking PR \#556 from merging into main [\#564](https://github.com/abhimehro/personal-config/pull/564) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix: resolve PR \#556 merge conflicts with main and sync upstream changes [\#563](https://github.com/abhimehro/personal-config/pull/563) ([Copilot](https://github.com/apps/copilot-swe-agent))
