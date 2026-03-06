@@ -79,6 +79,12 @@ bash tests/test_lib_dns_utils.sh
 
 ```bash
 # All Python tests (stdlib only — no pip install needed)
+make test-python
+
+# All tests (shell + Python)
+make test-all
+
+# All Python tests directly (alternative)
 python3 -m unittest discover -s tests -p 'test_*.py'
 
 # Single module
