@@ -26,6 +26,10 @@
 - \[Code Quality\] Make test\_network\_mode\_manager.sh CI-portable by mocking sudo-requiring commands [\#551](https://github.com/abhimehro/personal-config/issues/551)
 - \[Code Quality\] Refactor test\_media\_server\_auth.sh to use parse\_cred\_value\(\) consistently [\#549](https://github.com/abhimehro/personal-config/issues/549)
 - \[Code Quality\] Add Python tests to `make test` for a unified test command [\#548](https://github.com/abhimehro/personal-config/issues/548)
+- \[Code Quality\] Clean up root-level ephemeral artifacts \(test\_auth\_benchmark.py, patch.sh\) [\#547](https://github.com/abhimehro/personal-config/issues/547)
+- \[Code Quality\] Add SC2034 unused-variable check to lint-errors correctness gate [\#546](https://github.com/abhimehro/personal-config/issues/546)
+- \[Code Quality\] Make test\_security\_manager\_restore.sh CI-portable via platform-aware sed [\#545](https://github.com/abhimehro/personal-config/issues/545)
+- \[Code Quality\] Add Makefile lint check to detect raw `cut -d'='` credential parsing in test files [\#543](https://github.com/abhimehro/personal-config/issues/543)
 - \[Code Quality\] Add \*.bak pattern to .gitignore to prevent future accidental commits [\#541](https://github.com/abhimehro/personal-config/issues/541)
 - \[Code Quality\] Document parse\_cred\_value\(\) helper in TESTING.md and AGENTS.md [\#538](https://github.com/abhimehro/personal-config/issues/538)
 - \[Code Quality\] Remove stale .bak files from tests/ directory [\#537](https://github.com/abhimehro/personal-config/issues/537)
@@ -178,6 +182,7 @@
 
 **Merged pull requests:**
 
+- ⚡ Bolt: Replace subshell basename calls with bash parameter expansion in maintenance scripts [\#574](https://github.com/abhimehro/personal-config/pull/574) ([abhimehro](https://github.com/abhimehro))
 - fix: resolve merge conflicts blocking PR \#556 from merging into main [\#564](https://github.com/abhimehro/personal-config/pull/564) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix: resolve PR \#556 merge conflicts with main and sync upstream changes [\#563](https://github.com/abhimehro/personal-config/pull/563) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - Improve preflight CI check visibility with check-run links and deterministic error handling [\#562](https://github.com/abhimehro/personal-config/pull/562) ([Copilot](https://github.com/apps/copilot-swe-agent))
