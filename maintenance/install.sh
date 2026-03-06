@@ -22,18 +22,41 @@ mkdir -p "$LAUNCHAGENTS_DIR"
 echo "🔄 Unloading old agents..."
 for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maint.*.plist "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maintenance.*.plist; do
     [ -f "$plist" ] || continue
-    launchctl bootout gui/$(id -u) "$plist" 2>/dev/null || launchctl unload "$plist" 2>/dev/null || true
+    launchctl bootout "gui/$(id -u)" "$plist" 2>/dev/null || launchctl unload "$plist" 2>/dev/null || true
     rm -f "$plist" 2>/dev/null || true
 done
 
 # Copy scripts
 echo "📦 Copying scripts to $INSTALL_DIR..."
-cp -r "$SCRIPT_DIR/bin/"* "$INSTALL_DIR/bin/"
-chmod +x "$INSTALL_DIR/bin/"*.sh
+for script in "$SCRIPT_DIR/bin/"*; do
+    if [[ -f "$script" ]]; then
+        install -m 755 "$script" "$INSTALL_DIR/bin/"
+    elif [[ -d "$script" ]]; then
+        # Recursively copy directories if they exist in bin/
+        # To securely copy a directory and set permissions, we should process
+        # each file individually using `install` to perform an atomic copy-and-chmod.
+        find "$script" -type f -print0 | while IFS= read -r -d '' file; do
+            # Calculate the relative path to preserve directory structure.
+            relative_path="${file#"$script/"}"
+            dest_file="$INSTALL_DIR/bin/$(basename "$script")/$relative_path"
+
+            # Create the destination directory if it doesn't exist.
+            mkdir -p "$(dirname "$dest_file")"
+
+            # Use install to copy with correct permissions.
+            if [[ "$file" == *.sh ]]; then
+                install -m 755 "$file" "$dest_file"
+            else
+                # For non-script files, copy with default file permissions.
+                install -m 644 "$file" "$dest_file"
+            fi
+        done
+    fi
+done
 
 # Copy configuration if exists
 if [ -d "$SCRIPT_DIR/conf" ]; then
-    cp -r "$SCRIPT_DIR/conf/"* "$INSTALL_DIR/conf/" 2>/dev/null || true
+    cp -R "$SCRIPT_DIR/conf/"* "$INSTALL_DIR/conf/" 2>/dev/null || true
 fi
 
 # Generate plist files with correct paths
