@@ -22,7 +22,9 @@
 **Closed issues:**
 
 - \[repo-status\] Daily Repo Status — March 5, 2026 [\#552](https://github.com/abhimehro/personal-config/issues/552)
+- \[Code Quality\] Make test\_network\_mode\_manager.sh CI-portable by mocking sudo-requiring commands [\#551](https://github.com/abhimehro/personal-config/issues/551)
 - \[Code Quality\] Refactor test\_media\_server\_auth.sh to use parse\_cred\_value\(\) consistently [\#549](https://github.com/abhimehro/personal-config/issues/549)
+- \[Code Quality\] Add Python tests to `make test` for a unified test command [\#548](https://github.com/abhimehro/personal-config/issues/548)
 - \[Code Quality\] Add \*.bak pattern to .gitignore to prevent future accidental commits [\#541](https://github.com/abhimehro/personal-config/issues/541)
 - \[Code Quality\] Document parse\_cred\_value\(\) helper in TESTING.md and AGENTS.md [\#538](https://github.com/abhimehro/personal-config/issues/538)
 - \[Code Quality\] Remove stale .bak files from tests/ directory [\#537](https://github.com/abhimehro/personal-config/issues/537)
@@ -177,6 +179,8 @@
 
 - Improve preflight CI check visibility with check-run links and deterministic error handling [\#562](https://github.com/abhimehro/personal-config/pull/562) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - Verify parse\_cred\_value\(\) adoption in test\_media\_server\_auth.sh [\#560](https://github.com/abhimehro/personal-config/pull/560) ([Copilot](https://github.com/apps/copilot-swe-agent))
+- Unify `make test` to cover shell + Python tests [\#559](https://github.com/abhimehro/personal-config/pull/559) ([Copilot](https://github.com/apps/copilot-swe-agent))
+- Make test\_network\_mode\_manager.sh CI-portable by mocking sudo [\#558](https://github.com/abhimehro/personal-config/pull/558) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - 🛡️ Sentinel: \[MEDIUM\] Fix TOCTOU vulnerability in maintenance install script [\#557](https://github.com/abhimehro/personal-config/pull/557) ([abhimehro](https://github.com/abhimehro))
 - ⚡ Bolt: Optimize directory listing HTML generation with list comprehension [\#550](https://github.com/abhimehro/personal-config/pull/550) ([abhimehro](https://github.com/abhimehro))
 - 🛡️ Sentinel: \[Security Improvement\] Improve secure random string generation [\#542](https://github.com/abhimehro/personal-config/pull/542) ([abhimehro](https://github.com/abhimehro))
