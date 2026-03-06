@@ -3,7 +3,7 @@
 # Maintenance Scripts Installation
 # Installs scripts to ~/Library/Maintenance and sets up launchd agents
 
-set -eo pipefail
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="$HOME/Library/Maintenance"

@@ -2,7 +2,7 @@
 
 # Advanced Security & Backup Management System
 # Provides configuration backup, security monitoring, and recovery mechanisms
-set -eo pipefail
+set -euo pipefail
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"

@@ -3,7 +3,7 @@
 # Error Summary Generator - Consolidates errors from maintenance logs
 # Usage: generate_error_summary.sh
 
-set -eo pipefail
+set -euo pipefail
 
 LOG_DIR="$HOME/Library/Logs/maintenance"
 SUMMARY_FILE="$LOG_DIR/error_summary_$(date +%Y%m%d-%H%M%S).txt"

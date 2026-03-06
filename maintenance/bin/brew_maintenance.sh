@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Self-contained Homebrew maintenance script with comprehensive cask updates
-set -eo pipefail
+set -euo pipefail
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"

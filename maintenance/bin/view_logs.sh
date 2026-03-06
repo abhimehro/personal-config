@@ -3,10 +3,10 @@
 # Log Viewer Script - Opens maintenance logs in a user-friendly way
 # Usage: view_logs.sh [task_name|summary]
 
-set -eo pipefail
+set -euo pipefail
 
 LOG_DIR="$HOME/Library/Logs/maintenance"
-TASK="$1"
+TASK="${1:-}"
 
 # Colors for UX
 BOLD=$(tput bold 2>/dev/null || echo "")

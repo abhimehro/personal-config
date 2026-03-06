@@ -2,7 +2,7 @@
 
 # Smart Notification & Alert System
 # Provides intelligent notifications with system insights and actionable recommendations
-set -eo pipefail
+set -euo pipefail
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"
