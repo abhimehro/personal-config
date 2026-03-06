@@ -2,7 +2,7 @@
 
 # Service Monitor - Check disabled background services stay disabled
 # Part of the macOS maintenance system
-set -eo pipefail
+set -euo pipefail
 
 # Configuration
 LOG_DIR="$HOME/Library/Logs/maintenance"
