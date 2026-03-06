@@ -196,7 +196,7 @@ for browser_cache in \
     if [[ -d "$browser_cache" ]]; then
         # ⚡ Bolt Optimization: parameter expansion avoids process spawning
         BROWSER_NAME="${browser_cache##*/}"
-        BROWSER_NAME="${BROWSER_NAME#com.*.}"
+        BROWSER_NAME="${BROWSER_NAME##com.*.}"
         log_info "Cleaning old browser cache: $BROWSER_NAME"
         BROWSER_FILES_CLEANED=$(find "$browser_cache" -type f -mtime +14 -print -delete 2>/dev/null | wc -l | tr -d ' ')
         if [[ $BROWSER_FILES_CLEANED -gt 0 ]]; then
