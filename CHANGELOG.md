@@ -174,6 +174,7 @@
 
 **Merged pull requests:**
 
+- 🛡️ Sentinel: \[MEDIUM\] Fix TOCTOU vulnerability in maintenance install script [\#557](https://github.com/abhimehro/personal-config/pull/557) ([abhimehro](https://github.com/abhimehro))
 - ⚡ Bolt: Optimize directory listing HTML generation with list comprehension [\#550](https://github.com/abhimehro/personal-config/pull/550) ([abhimehro](https://github.com/abhimehro))
 - 🛡️ Sentinel: \[Security Improvement\] Improve secure random string generation [\#542](https://github.com/abhimehro/personal-config/pull/542) ([abhimehro](https://github.com/abhimehro))
 - chore: remove stale .bak test files and document parse\_cred\_value\(\) helper [\#540](https://github.com/abhimehro/personal-config/pull/540) ([github-actions[bot]](https://github.com/apps/github-actions))
