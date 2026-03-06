@@ -98,7 +98,7 @@ log_metric "disk_available" "$ROOT_AVAILABLE_GB" "GB"
 log_metric "disk_used" "$ROOT_USED_GB" "GB"
 
 # Disk I/O Performance Test (lightweight)
-TEST_FILE="/tmp/maintenance_io_test.tmp"
+TEST_FILE="$(mktemp -t 'maintenance_io_test.XXXXXX')"
 if time dd if=/dev/zero of="$TEST_FILE" bs=1024 count=1024 2>/dev/null >/dev/null; then
     rm -f "$TEST_FILE" 2>/dev/null
     log_metric "disk_io_test" "passed" "status"
