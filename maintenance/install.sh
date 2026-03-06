@@ -33,9 +33,24 @@ for script in "$SCRIPT_DIR/bin/"*; do
         install -m 755 "$script" "$INSTALL_DIR/bin/"
     elif [[ -d "$script" ]]; then
         # Recursively copy directories if they exist in bin/
-        cp -R "$script" "$INSTALL_DIR/bin/"
-        # Find all shell scripts and make them executable (not ideal but handles dirs)
-        find "$INSTALL_DIR/bin/$(basename "$script")" -type f -name "*.sh" -exec chmod +x {} +
+        # To securely copy a directory and set permissions, we should process
+        # each file individually using `install` to perform an atomic copy-and-chmod.
+        find "$script" -type f -print0 | while IFS= read -r -d '' file; do
+            # Calculate the relative path to preserve directory structure.
+            relative_path="${file#"$script/"}"
+            dest_file="$INSTALL_DIR/bin/$(basename "$script")/$relative_path"
+
+            # Create the destination directory if it doesn't exist.
+            mkdir -p "$(dirname "$dest_file")"
+
+            # Use install to copy with correct permissions.
+            if [[ "$file" == *.sh ]]; then
+                install -m 755 "$file" "$dest_file"
+            else
+                # For non-script files, copy with default file permissions.
+                install -m 644 "$file" "$dest_file"
+            fi
+        done
     fi
 done
 
