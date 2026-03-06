@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Working maintenance common library
 
-set -eo pipefail
+set -euo pipefail
 
 # Architecture and OS detection
 ARCH="$(uname -m)"
