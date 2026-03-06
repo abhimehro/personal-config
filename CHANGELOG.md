@@ -21,6 +21,7 @@
 
 **Closed issues:**
 
+- \[Code Quality\] Add `make test` and `make test-quick` to AGENTS.md key services table [\#573](https://github.com/abhimehro/personal-config/issues/573)
 - \[Code Quality\] Add Python tests to `make test` for unified test execution [\#554](https://github.com/abhimehro/personal-config/issues/554)
 - \[repo-status\] Daily Repo Status — March 5, 2026 [\#552](https://github.com/abhimehro/personal-config/issues/552)
 - \[Code Quality\] Make test\_network\_mode\_manager.sh CI-portable by mocking sudo-requiring commands [\#551](https://github.com/abhimehro/personal-config/issues/551)
