@@ -28,8 +28,30 @@ def worker(url, i):
     except Exception as e:
         return (i, -1, str(e))
 
+def _get_benchmark_port() -> int:
+    """Return the port to use for the benchmark.
+
+    Prefer the INFUSE_BENCHMARK_PORT environment variable if it is set to a
+    valid TCP port number; otherwise, fall back to an ephemeral port selected
+    by the OS to avoid collisions and in-place source edits.
+    """
+    env_port = os.environ.get("INFUSE_BENCHMARK_PORT")
+    if env_port:
+        try:
+            port = int(env_port)
+            if 0 < port < 65536:
+                return port
+        except ValueError:
+            # Ignore invalid env var and fall back to ephemeral port
+            pass
+
+    # Ask the OS for a free ephemeral port by binding to port 0, then close it.
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
 def run_benchmark(num_requests=50, concurrency=50):
-    port = 8082
+    port = _get_benchmark_port()
     url = f"http://127.0.0.1:{port}/"
 
     print(f"Starting benchmark with {num_requests} total requests, concurrency {concurrency}")
