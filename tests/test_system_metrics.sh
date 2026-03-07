@@ -113,6 +113,17 @@ echo "0       -       com.abhimehrotra.maintenance.metrics"
 MOCK
 chmod +x "$MOCK_BIN/launchctl"
 
+# Mock brew: deterministic counts so the test is hermetic even when Homebrew is installed
+cat > "$MOCK_BIN/brew" << 'MOCK'
+#!/bin/bash
+case "$1" in
+    list)   printf "pkg1\npkg2\npkg3\n" ;;
+    outdated) printf "old-pkg\n" ;;
+    *)      exit 0 ;;
+esac
+MOCK
+chmod +x "$MOCK_BIN/brew"
+
 # ---- helper: create an isolated home with required log directories ----
 make_mock_home() {
     local home="$1"
