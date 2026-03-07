@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Add the project root to sys.path so we can import the script
 project_root = Path(__file__).resolve().parent.parent
-sys.path.append(str(project_root))
+sys.path.insert(0, str(project_root))
 
 from adguard.scripts.extract_domains import extract_domains_from_file
 
