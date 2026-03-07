@@ -197,6 +197,7 @@
 
 **Merged pull requests:**
 
+- ⚡ Bolt: Optimize basename usage in shell script loops [\#596](https://github.com/abhimehro/personal-config/pull/596) ([abhimehro](https://github.com/abhimehro))
 - refactor\(controld\): extract DNS and profile libs from 759-line monolith [\#592](https://github.com/abhimehro/personal-config/pull/592) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix: portable mktemp and cleanup trap in controld-profile.sh [\#591](https://github.com/abhimehro/personal-config/pull/591) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - 🧪 Add tests for extract\_domains\_from\_file [\#590](https://github.com/abhimehro/personal-config/pull/590) ([abhimehro](https://github.com/abhimehro))
