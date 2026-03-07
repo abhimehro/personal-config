@@ -199,6 +199,7 @@
 
 **Merged pull requests:**
 
+- 🎨 Palette: Enhance install\_all\_configs.sh UX with forgiving prompt and graceful exit [\#606](https://github.com/abhimehro/personal-config/pull/606) ([abhimehro](https://github.com/abhimehro))
 - test: add unit tests for maintenance/lib/common.sh and common\_simple.sh [\#605](https://github.com/abhimehro/personal-config/pull/605) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - perf: replace basename/dirname forks in loops with bash parameter expansion [\#604](https://github.com/abhimehro/personal-config/pull/604) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - ⚡ Bolt: Optimize basename usage in shell script loops [\#596](https://github.com/abhimehro/personal-config/pull/596) ([abhimehro](https://github.com/abhimehro))
