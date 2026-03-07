@@ -2,7 +2,7 @@ import unittest
 import json
 import tempfile
 import os
-from unittest.mock import patch, mock_open
+from unittest.mock import patch
 
 # Adjust the import path since the script is in adguard/scripts/
 import sys
