@@ -125,15 +125,22 @@ else
     check_fail "tar invoked for archive creation" "TAR_LOG empty"
 fi
 
-# ---- Test 8: mock HOME isolation — no writes to real HOME Backups ----
-# The real $HOME/Backups must not be created (or not contain our test artifacts).
+# ---- Test 8: mock HOME isolation — backup destinations use mock HOME ----
+# Assert via mocked command logs instead of inspecting the real $HOME/Backups.
+# The rsync/tar invocations should target $MOCK_HOME/Backups and never $HOME/Backups.
 real_backup_dir="$HOME/Backups"
-if [[ ! -d "$real_backup_dir" ]] || \
-   ! ls "$real_backup_dir"/documents_backup_* > /dev/null 2>&1; then
-    check_pass "mock HOME isolation — no writes to real HOME/Backups"
+if grep -q "$MOCK_HOME/Backups" "$RSYNC_LOG" 2>/dev/null || \
+   grep -q "$MOCK_HOME/Backups" "$TAR_LOG" 2>/dev/null; then
+    if ! grep -q "$real_backup_dir" "$RSYNC_LOG" 2>/dev/null && \
+       ! grep -q "$real_backup_dir" "$TAR_LOG" 2>/dev/null; then
+        check_pass "mock HOME isolation — backups use MOCK_HOME/Backups, not real HOME"
+    else
+        check_fail "mock HOME isolation — backups use MOCK_HOME/Backups, not real HOME" \
+            "real HOME path found in rsync/tar logs: $real_backup_dir"
+    fi
 else
-    check_fail "mock HOME isolation — no writes to real HOME/Backups" \
-        "real backup artifacts found at $real_backup_dir"
+    check_fail "mock HOME isolation — backups use MOCK_HOME/Backups, not real HOME" \
+        "no MOCK_HOME/Backups destination found in rsync/tar logs"
 fi
 
 # ---- Test 9: old backup pruning — keeps ≤5 when 7 archives pre-exist ----
