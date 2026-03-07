@@ -52,16 +52,20 @@ substep "Backup existing files automatically"
 substep "Verify all symlinks"
 echo ""
 while true; do
-    read -p "Ready to proceed? (y/N) " -n 1 -r
+    read -r -p "Ready to proceed? (y/N) " reply
     echo ""
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        break
-    elif [[ -z $REPLY ]] || [[ $REPLY =~ ^[Nn]$ ]]; then
-        log "Installation cancelled"
-        exit 0
-    else
-        warn "Invalid input. Please press 'y' to continue or 'n' to cancel."
-    fi
+    case "$reply" in
+        [Yy]*)
+            break
+            ;;
+        ""|[Nn]*)
+            log "Installation cancelled"
+            exit 0
+            ;;
+        *)
+            warn "Invalid input. Please press 'y' to continue or 'n' to cancel."
+            ;;
+    esac
 done
 
 echo ""
