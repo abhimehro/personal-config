@@ -95,8 +95,9 @@ echo "-- dns_lookup_cached (cache miss) --"
 RESULT=$(dns_lookup_cached "google.com" 60)
 check_output "cache miss returns IP from dig" "1.2.3.4" "$RESULT"
 check "cache miss creates cache file" test -f "$DNS_CACHE_DIR/google.com.cache"
-check "cache file contains two lines (timestamp + result)" bash -c \
-    'test "$(wc -l < '"\"$DNS_CACHE_DIR/google.com.cache\""')" -eq 2'
+CACHE_LINES=$(wc -l < "$DNS_CACHE_DIR/google.com.cache")
+CACHE_LINES="${CACHE_LINES// /}"
+check_output "cache file contains two lines (timestamp + result)" "2" "$CACHE_LINES"
 
 # --- dns_lookup_cached: second call (cache hit) ---
 echo ""
