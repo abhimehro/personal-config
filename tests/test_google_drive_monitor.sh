@@ -2,10 +2,8 @@
 #
 # Unit tests for maintenance/bin/google_drive_monitor.sh
 # Uses $MOCK_BIN / PATH injection + mock HOME pattern.
-# Tests cover: exit codes, log creation, healthy-state detection,
-# process-not-found warning, connectivity warnings, and Proton Drive
-# backup-directory warning.
-
+# Tests cover: exit codes, log creation, process-not-found warning,
+# and Proton Drive backup-directory warning.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
