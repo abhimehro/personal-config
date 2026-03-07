@@ -194,6 +194,7 @@
 
 **Merged pull requests:**
 
+- 🧪 Add tests for extract\_domains\_from\_file [\#590](https://github.com/abhimehro/personal-config/pull/590) ([abhimehro](https://github.com/abhimehro))
 - 🛡️ Sentinel: \[CRITICAL\] Fix insecure temporary file creation in maintenance scripts [\#585](https://github.com/abhimehro/personal-config/pull/585) ([abhimehro](https://github.com/abhimehro))
 - fix: add missing -u \(nounset\) flag to 17 maintenance scripts [\#582](https://github.com/abhimehro/personal-config/pull/582) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - test: add unit tests for controld-profile.sh and network-common.sh [\#581](https://github.com/abhimehro/personal-config/pull/581) ([Copilot](https://github.com/apps/copilot-swe-agent))
