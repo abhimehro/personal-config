@@ -127,8 +127,9 @@ if [[ -n "${REPO_SEARCH_PATHS:-}" ]] && [[ "${NODE_MODULES_MAX_GB:-0}" -gt 0 ]];
                     days_old=$(find "$node_modules_dir" -maxdepth 0 -type d -mtime +"${NODE_MODULES_MAX_AGE_DAYS:-90}" 2>/dev/null | wc -l | tr -d ' ')
                     
                     if [[ $size_gb -gt ${NODE_MODULES_MAX_GB:-5} ]] && [[ $days_old -gt 0 ]]; then
-                        project_dir=$(dirname "$node_modules_dir")
-                        project_name=$(basename "$project_dir")
+                        # NOTE: bash-native expansion; avoids fork per iteration
+                        project_dir="${node_modules_dir%/*}"
+                        project_name="${project_dir##*/}"
                         
                         log_warn "Large old node_modules: $project_name (${size_gb}GB, ${NODE_MODULES_MAX_AGE_DAYS:-90}+ days old)"
                         
