@@ -35,7 +35,7 @@ check_output() {
     local name="$1"
     local pattern="$2"
     local logfile="$3"
-    if grep -q "$pattern" "$logfile" 2>/dev/null; then
+    if grep -Fq -- "$pattern" "$logfile" 2>/dev/null; then
         check_pass "$name"
     else
         check_fail "$name" "pattern '$pattern' not found in $logfile"
@@ -105,7 +105,7 @@ check_output "rsync --exclude=.DS_Store flag present" \
 
 # ---- Test 4: rsync uses --exclude='*.tmp' ----
 check_output "rsync --exclude=*.tmp flag present" \
-    "exclude=.*tmp" "$RSYNC_LOG"
+    "exclude=*.tmp" "$RSYNC_LOG"
 
 # ---- Test 5: Backups directory created under mock HOME ----
 if [[ -d "$MOCK_HOME/Backups" ]]; then
