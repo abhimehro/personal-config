@@ -21,7 +21,9 @@
 
 **Closed issues:**
 
+- \[Code Quality\] Audit and replace `basename`/`dirname` in loops across all shell scripts [\#603](https://github.com/abhimehro/personal-config/issues/603)
 - \[Code Quality\] Update AGENTS.md shell test count from 29 to 31 [\#589](https://github.com/abhimehro/personal-config/issues/589)
+- \[Code Quality\] Add unit tests for `maintenance/lib/common.sh` and `common_simple.sh` [\#583](https://github.com/abhimehro/personal-config/issues/583)
 - \[Code Quality\] Fix missing safety flags in `maintenance/lib/` shared libraries and `maintenance/controld_monitor.sh` [\#577](https://github.com/abhimehro/personal-config/issues/577)
 - \[repo-status\] Daily Status Report — March 6, 2026 [\#576](https://github.com/abhimehro/personal-config/issues/576)
 - \[Code Quality\] Fix `set -eo pipefail` → `set -euo pipefail` in 5 recently-added test files [\#575](https://github.com/abhimehro/personal-config/issues/575)
@@ -197,6 +199,8 @@
 
 **Merged pull requests:**
 
+- test: add unit tests for maintenance/lib/common.sh and common\_simple.sh [\#605](https://github.com/abhimehro/personal-config/pull/605) ([Copilot](https://github.com/apps/copilot-swe-agent))
+- perf: replace basename/dirname forks in loops with bash parameter expansion [\#604](https://github.com/abhimehro/personal-config/pull/604) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - ⚡ Bolt: Optimize basename usage in shell script loops [\#596](https://github.com/abhimehro/personal-config/pull/596) ([abhimehro](https://github.com/abhimehro))
 - refactor\(controld\): extract DNS and profile libs from 759-line monolith [\#592](https://github.com/abhimehro/personal-config/pull/592) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix: portable mktemp and cleanup trap in controld-profile.sh [\#591](https://github.com/abhimehro/personal-config/pull/591) ([Copilot](https://github.com/apps/copilot-swe-agent))
