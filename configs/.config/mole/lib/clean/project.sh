@@ -1115,8 +1115,10 @@ clean_project_artifacts() {
         local project_name=$(get_project_name "$norm_path")
 
         # Get dirname then basename for parent
-        local dir_path="${norm_path%/*}"
-        local parent_name="${dir_path##*/}"
+local dir_path="${norm_path%/*}"
+if [[ "$norm_path" == /* && ! "$dir_path" == /* ]]; then dir_path="/"; fi
+local parent_name="${dir_path##*/}"
+if [[ -z "$parent_name" && "$dir_path" == "/" ]]; then parent_name="/"; fi
 
         # Check if there are other items with same artifact name AND same project
         local has_duplicate=false
