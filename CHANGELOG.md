@@ -23,6 +23,7 @@
 
 - \[Code Quality\] Audit and replace `basename`/`dirname` in loops across all shell scripts [\#603](https://github.com/abhimehro/personal-config/issues/603)
 - \[Code Quality\] Add unit tests for `maintenance/bin/google_drive_monitor.sh` [\#599](https://github.com/abhimehro/personal-config/issues/599)
+- \[Code Quality\] Add unit tests for `maintenance/bin/document_backup.sh` [\#598](https://github.com/abhimehro/personal-config/issues/598)
 - \[Code Quality\] Add unit tests for `maintenance/bin/system_metrics.sh` [\#597](https://github.com/abhimehro/personal-config/issues/597)
 - \[Code Quality\] Update AGENTS.md shell test count from 29 to 31 [\#589](https://github.com/abhimehro/personal-config/issues/589)
 - \[Code Quality\] Add unit tests for `maintenance/lib/common.sh` and `common_simple.sh` [\#583](https://github.com/abhimehro/personal-config/issues/583)
@@ -201,9 +202,12 @@
 
 **Merged pull requests:**
 
+- fix\(tests\): use fixed-string grep in check\_output\(\) and correct Test 4 pattern [\#612](https://github.com/abhimehro/personal-config/pull/612) ([Copilot](https://github.com/apps/copilot-swe-agent))
+- test: add unit tests for maintenance/bin/document\_backup.sh \(\#598\) [\#611](https://github.com/abhimehro/personal-config/pull/611) ([github-actions[bot]](https://github.com/apps/github-actions))
 - ⚡ Remove blocking sleep from auth handler [\#610](https://github.com/abhimehro/personal-config/pull/610) ([abhimehro](https://github.com/abhimehro))
 - test: add unit tests for maintenance/bin/system\_metrics.sh [\#609](https://github.com/abhimehro/personal-config/pull/609) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - test: add unit tests for google\_drive\_monitor.sh [\#608](https://github.com/abhimehro/personal-config/pull/608) ([Copilot](https://github.com/apps/copilot-swe-agent))
+- test: add unit tests for maintenance/bin/system\_metrics.sh [\#607](https://github.com/abhimehro/personal-config/pull/607) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - 🎨 Palette: Enhance install\_all\_configs.sh UX with forgiving prompt and graceful exit [\#606](https://github.com/abhimehro/personal-config/pull/606) ([abhimehro](https://github.com/abhimehro))
 - test: add unit tests for maintenance/lib/common.sh and common\_simple.sh [\#605](https://github.com/abhimehro/personal-config/pull/605) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - perf: replace basename/dirname forks in loops with bash parameter expansion [\#604](https://github.com/abhimehro/personal-config/pull/604) ([Copilot](https://github.com/apps/copilot-swe-agent))
