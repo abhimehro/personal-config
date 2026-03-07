@@ -229,7 +229,7 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 
 | What | Command | Notes |
 |---|---|---|
-| Shell tests only | `make test` | Fastest full suite; 29 tests, 3 expected macOS-only skips (fish, BSD sed, 1Password socket) |
+| Shell tests only | `make test` | Fastest full suite; 31 tests, 3 expected macOS-only skips (fish, BSD sed, 1Password socket) |
 | Smoke tests (pre-commit) | `make test-quick` | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target |
 | All tests (shell + Python) | `make test-all` | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI. |
 | Single Python module | `python3 -m unittest tests.test_path_validation` | stdlib only, no pip deps |
