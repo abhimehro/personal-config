@@ -43,11 +43,13 @@ check_contains() {
     local name="$1"
     local pattern="$2"
     local haystack="$3"
-    if echo "$haystack" | grep -q "$pattern"; then
+    if echo "$haystack" | grep -Fq -- "$pattern"; then
         echo "PASS: $name"
         PASS=$((PASS + 1))
     else
-        echo "FAIL: $name (pattern '$pattern' not found in: $haystack)"
+        echo "FAIL: $name (pattern '$pattern' not found)"
+        echo "Output:"
+        echo "$haystack"
         FAIL=$((FAIL + 1))
     fi
 }
