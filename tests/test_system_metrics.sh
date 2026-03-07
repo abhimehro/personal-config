@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
 # Unit tests for maintenance/bin/system_metrics.sh
-# Mocks vm_stat, df, uptime, sysctl, launchctl, ps, ping to run cleanly on
-# Linux CI.  Verifies metrics file creation, log format, graceful degradation
-# when a system command is absent, and HOME isolation.
+# Mocks vm_stat, df, uptime, sysctl, launchctl, ps, ping, brew to run cleanly
+# on Linux CI.  Verifies metrics file creation, log format, graceful
+# degradation when a system command is absent, and HOME isolation.
 
 set -euo pipefail
 
@@ -119,6 +119,20 @@ echo "PING 8.8.8.8: 56 data bytes"
 echo "64 bytes from 8.8.8.8: icmp_seq=0 ttl=115 time=10.123 ms"
 MOCK
 chmod +x "$MOCK_BIN/ping"
+
+# Mock brew: deterministic counts so the test is hermetic even when Homebrew
+# is installed on the host.  system_metrics.sh only calls brew when it is
+# present on PATH, so without this mock a real brew invocation could make the
+# test slow or produce non-deterministic output.
+cat > "$MOCK_BIN/brew" << 'MOCK'
+#!/bin/bash
+case "$1" in
+    list)     printf "pkg1\npkg2\npkg3\n" ;;
+    outdated) printf "old-pkg\n" ;;
+    *)        exit 0 ;;
+esac
+MOCK
+chmod +x "$MOCK_BIN/brew"
 
 # ---- helper: create an isolated home with the expected log directories ----
 make_mock_home() {
