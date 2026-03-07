@@ -2,7 +2,7 @@ import unittest
 import json
 import tempfile
 import os
-from unittest.mock import patch
+from unittest.mock import patch, mock_open
 
 # Adjust the import path since the script is in adguard/scripts/
 import sys
@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Add the project root to sys.path so we can import the script
 project_root = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(project_root))
+sys.path.append(str(project_root))
 
 from adguard.scripts.extract_domains import extract_domains_from_file
 
@@ -24,9 +24,15 @@ class TestExtractDomainsFromFile(unittest.TestCase):
                 {"PK": "test.com"}
             ]
         })
-        with patch('builtins.open', mock_open(read_data=json_data)):
-            result = extract_domains_from_file("dummy.json")
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, encoding='utf-8') as tf:
+            tf.write(json_data)
+            temp_path = tf.name
+
+        try:
+            result = extract_domains_from_file(temp_path)
             self.assertEqual(result, ["example.com", "test.com"])
+        finally:
+            os.remove(temp_path)
 
     def test_partial_data(self):
         """Partial data: some rules missing PK, function skips those entries cleanly."""
