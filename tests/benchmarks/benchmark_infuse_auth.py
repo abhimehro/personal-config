@@ -76,7 +76,7 @@ def run_benchmark(num_requests=50, concurrency=50):
     total_time = end_time_total - start_time_total
 
     successes = [r for r in results if isinstance(r[2], int) and r[2] == 401]
-    failures = [r for r in results if r not in successes]
+    failures = [r for r in results if not (isinstance(r[2], int) and r[2] == 401)]
 
     if successes:
         avg_latency = sum(r[1] for r in successes) / len(successes)
