@@ -79,7 +79,8 @@ else
         if [[ $ERRORS -gt 0 ]] || [[ $WARNINGS -gt 0 ]]; then
             # shellcheck disable=SC2129  # explicit logging structure preferred
             echo "----------------------------------------" >> "$SUMMARY_FILE"
-            echo "File: $(basename "$log_file")" >> "$SUMMARY_FILE"
+            # NOTE: bash-native expansion; avoids fork per iteration
+            echo "File: ${log_file##*/}" >> "$SUMMARY_FILE"
             echo "  Errors: $ERRORS" >> "$SUMMARY_FILE"
             echo "  Warnings: $WARNINGS" >> "$SUMMARY_FILE"
             

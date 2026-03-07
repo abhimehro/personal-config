@@ -87,7 +87,8 @@ backup_files=($(ls -1t "$BACKUP_DIR"/documents_backup_*.tar.gz 2>/dev/null || tr
 if [ ${#backup_files[@]} -gt 5 ]; then
     for ((i=5; i<${#backup_files[@]}; i++)); do
         rm -f "${backup_files[$i]}"
-        echo "   🗑️  Removed: $(basename "${backup_files[$i]}")"
+        # NOTE: bash-native expansion; avoids fork per iteration
+        echo "   🗑️  Removed: ${backup_files[$i]##*/}"
     done
     echo "   ✅ Cleanup complete"
 else

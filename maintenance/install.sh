@@ -35,13 +35,16 @@ for script in "$SCRIPT_DIR/bin/"*; do
         # Recursively copy directories if they exist in bin/
         # To securely copy a directory and set permissions, we should process
         # each file individually using `install` to perform an atomic copy-and-chmod.
+        # NOTE: bash-native expansion; extracted here to avoid repeated fork in inner loop
+        script_base="${script##*/}"
         find "$script" -type f -print0 | while IFS= read -r -d '' file; do
             # Calculate the relative path to preserve directory structure.
             relative_path="${file#"$script/"}"
-            dest_file="$INSTALL_DIR/bin/$(basename "$script")/$relative_path"
+            dest_file="$INSTALL_DIR/bin/${script_base}/$relative_path"
 
             # Create the destination directory if it doesn't exist.
-            mkdir -p "$(dirname "$dest_file")"
+            # NOTE: bash-native expansion; avoids fork per iteration
+            mkdir -p "${dest_file%/*}"
 
             # Use install to copy with correct permissions.
             if [[ "$file" == *.sh ]]; then
@@ -514,7 +517,8 @@ EOF
 echo "✅ Loading new agents..."
 for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maint.*.plist; do
     [ -f "$plist" ] || continue
-    launchctl load "$plist" 2>&1 || echo "⚠️  Warning: Failed to load $(basename "$plist")"
+    # NOTE: bash-native expansion; avoids fork per iteration
+    launchctl load "$plist" 2>&1 || echo "⚠️  Warning: Failed to load ${plist##*/}"
 done
 
 echo ""
