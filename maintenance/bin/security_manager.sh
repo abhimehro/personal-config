@@ -476,7 +476,8 @@ list_backups() {
     if [[ -d "$BACKUP_DIR" ]]; then
         find "$BACKUP_DIR" -name "config_backup_*.tar.gz" -type f | sort -r | while read -r backup; do
             local backup_name
-            backup_name=$(basename "$backup")
+            # NOTE: bash-native expansion; avoids fork per iteration
+            backup_name="${backup##*/}"
             local backup_size
             backup_size=$(du -h "$backup" | cut -f1)
             local backup_date
@@ -504,7 +505,8 @@ cleanup_old_backups() {
         # Find and delete old backups
         while read -r old_backup; do
             local backup_name
-            backup_name=$(basename "$old_backup")
+            # NOTE: bash-native expansion; avoids fork per iteration
+            backup_name="${old_backup##*/}"
             log_security "INFO" "Deleting old backup: $backup_name"
             rm -f "$old_backup"
             deleted_count=$((deleted_count + 1))
