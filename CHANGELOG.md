@@ -90,6 +90,7 @@
 - \[Code Quality\] Add `make lint` and `make lint-fix` targets to Makefile for linting discoverability [\#449](https://github.com/abhimehro/personal-config/issues/449)
 - \[Code Quality\] Create `.shellcheckrc` for project-wide ShellCheck baseline configuration [\#448](https://github.com/abhimehro/personal-config/issues/448)
 - \[Code Quality\] Audit and annotate 264 persistent ShellCheck warnings with inline suppression comments or fixes [\#446](https://github.com/abhimehro/personal-config/issues/446)
+- \[Code Quality\] Refactor controld-manager \(759 lines\) by extracting testable library modules into scripts/lib/ [\#445](https://github.com/abhimehro/personal-config/issues/445)
 - \[Code Quality\] Integrate parallel test runner \(tests/run\_all\_tests.sh\) into Makefile and document usage [\#444](https://github.com/abhimehro/personal-config/issues/444)
 - \[repo-status\] 📊 Daily Repo Status — March 1, 2026 [\#443](https://github.com/abhimehro/personal-config/issues/443)
 - \[Code Quality\] Resolve SC2034 ShellCheck warnings: remove or fix unused variable declarations [\#442](https://github.com/abhimehro/personal-config/issues/442)
@@ -196,6 +197,7 @@
 
 **Merged pull requests:**
 
+- refactor\(controld\): extract DNS and profile libs from 759-line monolith [\#592](https://github.com/abhimehro/personal-config/pull/592) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix: portable mktemp and cleanup trap in controld-profile.sh [\#591](https://github.com/abhimehro/personal-config/pull/591) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - 🧪 Add tests for extract\_domains\_from\_file [\#590](https://github.com/abhimehro/personal-config/pull/590) ([abhimehro](https://github.com/abhimehro))
 - 🛡️ Sentinel: \[CRITICAL\] Fix insecure temporary file creation in maintenance scripts [\#585](https://github.com/abhimehro/personal-config/pull/585) ([abhimehro](https://github.com/abhimehro))
