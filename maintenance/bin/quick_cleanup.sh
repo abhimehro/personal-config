@@ -39,7 +39,8 @@ if [[ -d "$HOME/Library/Caches" ]]; then
     for cache_dir in "$HOME/Library/Caches"/*; do
         if [[ -d "$cache_dir" ]]; then
             # Skip system-critical caches
-            case "$(basename "$cache_dir")" in
+            # NOTE: bash-native expansion; avoids fork per iteration
+            case "${cache_dir##*/}" in
                 com.apple.*|CloudKit|CrashReporter|SkyLight) continue ;;
             esac
             
@@ -60,14 +61,14 @@ if [[ -d "$HOME/Library/Caches" ]]; then
                     if fd . "$cache_dir" --type f --changed-before "${CLEANUP_CACHE_DAYS:-30}d" -x rm 2>/dev/null; then
                         ((CLEANED++))
                     else
-                        log_warn "Could not clean some files in $(basename "$cache_dir") (permission denied)"
+                        log_warn "Could not clean some files in ${cache_dir##*/} (permission denied)"
                     fi
     # shellcheck disable=SC2086  # intentional word splitting or dynamic args
                 else
                     if find "$cache_dir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -delete 2>/dev/null; then
                         ((CLEANED++))
                     else
-                        log_warn "Could not clean some files in $(basename "$cache_dir") (permission denied)"
+                        log_warn "Could not clean some files in ${cache_dir##*/} (permission denied)"
                     fi
                 fi
             fi
@@ -127,7 +128,10 @@ for browser_cache in \
     "$HOME/Library/Caches/com.apple.Safari"; do
     
     if [[ -d "$browser_cache" ]]; then
-        CACHE_NAME=$(basename "$(dirname "$browser_cache")")
+        # NOTE: bash-native expansion; avoids fork per iteration
+        _parent="${browser_cache%/*}"
+        CACHE_NAME="${_parent##*/}"
+        unset _parent
         if find "$browser_cache" -type f -mtime +7 -delete 2>/dev/null; then
             ((CLEANED++))
         else
