@@ -9,14 +9,14 @@ LOG_DIR="$HOME/Library/Logs/maintenance"
 SUMMARY_FILE="$LOG_DIR/error_summary_$(date +%Y%m%d-%H%M%S).txt"
 
 # Determine time window for log collection
+# SECURITY: Use mktemp to prevent insecure predictable temporary files (CWE-377)
+MARKER_FILE="$(mktemp -t 'maintenance_run_marker.XXXXXX')"
 if [[ -n "${RUN_START:-}" ]]; then
     # Use RUN_START epoch if provided by orchestrator
-    MARKER_FILE="/tmp/maintenance_run_marker_$$"
     touch -t "$(date -r "$RUN_START" +%Y%m%d%H%M.%S)" "$MARKER_FILE" 2>/dev/null || touch "$MARKER_FILE"
     TIME_DESC="since $(date -r "$RUN_START" '+%Y-%m-%d %H:%M:%S')"
 else
     # Fallback: last 120 minutes
-    MARKER_FILE="/tmp/maintenance_run_marker_$$"
     touch -d "120 minutes ago" "$MARKER_FILE" 2>/dev/null || touch -t "$(date -v-120M +%Y%m%d%H%M.%S)" "$MARKER_FILE" 2>/dev/null || touch "$MARKER_FILE"
     TIME_DESC="in last 120 minutes"
 fi

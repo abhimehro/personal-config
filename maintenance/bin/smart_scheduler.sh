@@ -50,9 +50,12 @@ get_memory_usage() {
 get_disk_io_load() {
     # Simple disk I/O test - time a small write operation
     local start_time end_time duration
+    # SECURITY: Use mktemp to prevent insecure predictable temporary files (CWE-377)
+    local io_test_file
+    io_test_file="$(mktemp -t 'io_test.XXXXXX')"
     start_time=$(gdate +%s.%3N 2>/dev/null || date +%s)
-    dd if=/dev/zero of=/tmp/io_test bs=1024 count=1024 2>/dev/null
-    rm -f /tmp/io_test
+    dd if=/dev/zero of="$io_test_file" bs=1024 count=1024 2>/dev/null
+    rm -f "$io_test_file"
     end_time=$(gdate +%s.%3N 2>/dev/null || date +%s)
     
     duration=$(echo "scale=3; $end_time - $start_time" | bc -l 2>/dev/null || echo "1")
