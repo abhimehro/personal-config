@@ -19,6 +19,9 @@ AUTH_USER = None
 AUTH_PASS = None
 EXPECTED_AUTH_TOKEN = None
 
+# Rate limiting for auth failures
+FAILED_AUTH_ATTEMPTS = {}
+
 class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         self.rclone_remote = "media:"
@@ -30,31 +33,63 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         super().do_HEAD()
 
     def check_auth(self):
-        global AUTH_USER, AUTH_PASS, EXPECTED_AUTH_TOKEN
+        global AUTH_USER, AUTH_PASS, EXPECTED_AUTH_TOKEN, FAILED_AUTH_ATTEMPTS
 
         if not AUTH_USER or not AUTH_PASS:
             return True
 
+        # Extract client IP
+        client_ip = self.client_address[0]
+        now = time.time()
+
+        # Cleanup old failed attempts (older than 1 minute)
+        # Avoid concurrent modification issues by copying keys and safely getting values
+        for ip in list(FAILED_AUTH_ATTEMPTS.keys()):
+            attempt = FAILED_AUTH_ATTEMPTS.get(ip)
+            if attempt and now - attempt['last_attempt'] > 60:
+                FAILED_AUTH_ATTEMPTS.pop(ip, None)
+
+        # Check rate limit (e.g., max 5 failures per minute)
+        attempts = FAILED_AUTH_ATTEMPTS.get(client_ip)
+        if attempts and attempts['count'] >= 5 and now - attempts['last_attempt'] < 60:
+            self.send_response(429)
+            self.send_header('Retry-After', '60')
+            self.end_headers()
+            self.wfile.write(b'Too Many Requests')
+            return False
+
         auth_header = self.headers.get('Authorization')
         if not auth_header:
+            self._record_auth_failure(client_ip, now)
             self.send_auth_request()
             return False
 
         try:
             auth_type, auth_data = auth_header.split(' ', 1)
             if auth_type.lower() != 'basic':
+                self._record_auth_failure(client_ip, now)
                 self.send_auth_request()
                 return False
 
             # ⚡ Performance: Compare base64 token directly to avoid decoding and splitting overhead
             if secrets.compare_digest(auth_data, EXPECTED_AUTH_TOKEN):
+                # Successful auth resets the counter safely
+                FAILED_AUTH_ATTEMPTS.pop(client_ip, None)
                 return True
         except Exception:
             pass
 
-        time.sleep(1)
+        self._record_auth_failure(client_ip, now)
         self.send_auth_request()
         return False
+
+    def _record_auth_failure(self, ip, now):
+        """Helper to record failed auth attempts for rate limiting."""
+        global FAILED_AUTH_ATTEMPTS
+        if ip not in FAILED_AUTH_ATTEMPTS:
+            FAILED_AUTH_ATTEMPTS[ip] = {'count': 0, 'last_attempt': now}
+        FAILED_AUTH_ATTEMPTS[ip]['count'] += 1
+        FAILED_AUTH_ATTEMPTS[ip]['last_attempt'] = now
 
     def send_auth_request(self):
         self.send_response(401)

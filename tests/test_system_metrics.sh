@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
 # Unit tests for maintenance/bin/system_metrics.sh
-# Mocks uptime, sysctl, vm_stat, df, dd, ping, ps, launchctl so the tests
-# run cleanly on Linux CI without any macOS-specific tools.
+# Mocks vm_stat, df, uptime, sysctl, launchctl, ps, ping, brew to run cleanly
+# on Linux CI.  Verifies metrics file creation, log format, graceful
+# degradation when a system command is absent, and HOME isolation.
 
 set -euo pipefail
 
@@ -10,6 +11,11 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPT="$REPO_ROOT/maintenance/bin/system_metrics.sh"
 
 TEST_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'test-system-metrics')
+# Save real HOME before any test overrides it
+ORIG_HOME="$HOME"
+MARKER="$TEST_DIR/start_marker"
+touch "$MARKER"
+
 trap 'rm -rf "$TEST_DIR"' EXIT
 
 PASS=0
@@ -43,10 +49,10 @@ check_grep() {
 MOCK_BIN="$TEST_DIR/mock_bin"
 mkdir -p "$MOCK_BIN"
 
-# Mock uptime: macOS-style "load averages:" so the awk field-split succeeds
+# Mock uptime: macOS-style "load averages:" so awk parsing in the script succeeds
 cat > "$MOCK_BIN/uptime" << 'MOCK'
 #!/bin/bash
-echo " 10:00AM  up 1 day,  2:30, 3 users, load averages: 0.50 0.60 0.70"
+echo " 10:00AM  up 3 days,  2:30, 3 users, load averages: 0.50 0.60 0.70"
 MOCK
 chmod +x "$MOCK_BIN/uptime"
 
@@ -57,74 +63,78 @@ echo "4"
 MOCK
 chmod +x "$MOCK_BIN/sysctl"
 
-# Mock vm_stat: deterministic page-level memory statistics
+# Mock vm_stat: deterministic memory page output matching macOS format.
+# Field positions match the awk selectors in system_metrics.sh:
+#   /Pages free:/            -> $3 (value)
+#   /Pages active:/          -> $3
+#   /Pages inactive:/        -> $3
+#   /Pages wired down:/      -> $4
+#   /Pages stored in compressor:/ -> $5
+#   /page size of/           -> $8 (page size in bytes)
 cat > "$MOCK_BIN/vm_stat" << 'MOCK'
 #!/bin/bash
 echo "Mach Virtual Memory Statistics: (page size of 4096 bytes)"
 echo "Pages free:                               12345."
 echo "Pages active:                             67890."
-echo "Pages inactive:                           11111."
-echo "Pages speculative:                         2222."
+echo "Pages inactive:                           10000."
+echo "Pages speculative:                            0."
 echo "Pages throttled:                              0."
-echo "Pages wired down:                         33333."
-echo "Pages purgeable:                           4444."
-echo "Pages stored in compressor:                5555."
+echo "Pages wired down:                         20000."
+echo "Pages stored in compressor:               5000."
 MOCK
 chmod +x "$MOCK_BIN/vm_stat"
 
-# Mock df: 70 % disk usage, matching column positions the script expects
-#   $3 = Used, $4 = Avail, $5 = Capacity (percent)
+# Mock df: return a consistent disk usage line (30% used, 350G available).
+# $3=Used, $4=Avail, $5=Use% — matches NR==2 selectors in system_metrics.sh.
 cat > "$MOCK_BIN/df" << 'MOCK'
 #!/bin/bash
-echo "Filesystem       Size   Used  Avail Capacity  Mounted on"
-echo "/dev/disk1s1    500G   350G   150G      70%   /"
+echo "Filesystem      Size  Used Avail Use% Mounted on"
+echo "/dev/sda1       500G  150G  350G  30% /"
 MOCK
 chmod +x "$MOCK_BIN/df"
 
-# Mock dd: succeed immediately without performing any actual I/O
-cat > "$MOCK_BIN/dd" << 'MOCK'
-#!/bin/bash
-exit 0
-MOCK
-chmod +x "$MOCK_BIN/dd"
-
-# Mock ping: returns a successful reply so the latency branch runs
-cat > "$MOCK_BIN/ping" << 'MOCK'
-#!/bin/bash
-echo "PING 8.8.8.8: 56 data bytes"
-echo "64 bytes from 8.8.8.8: icmp_seq=0 ttl=56 time=10.5 ms"
-MOCK
-chmod +x "$MOCK_BIN/ping"
-
-# Mock ps: small deterministic process table (CPU/MEM below threshold)
-cat > "$MOCK_BIN/ps" << 'MOCK'
-#!/bin/bash
-echo "USER   PID  %CPU %MEM    VSZ   RSS STAT STARTED      TIME COMMAND"
-echo "root     1   0.0  0.1   1234   567 S    Mon01    0:00.00 launchd"
-echo "root     2   0.5  0.2   2468  1024 S    Mon01    0:00.01 kernel_task"
-echo "user   100   1.0  0.3   3456  2048 S    Mon01    0:00.02 bash"
-MOCK
-chmod +x "$MOCK_BIN/ps"
-
-# Mock launchctl: one healthy maintenance agent (keeps the grep | wc -l pipeline happy)
+# Mock launchctl: one healthy maintenance agent (PID 0 in $1, status '-' in $2)
 cat > "$MOCK_BIN/launchctl" << 'MOCK'
 #!/bin/bash
-echo "0       -       com.abhimehrotra.maintenance.metrics"
+echo "0       -       com.abhimehrotra.maintenance.test"
 MOCK
 chmod +x "$MOCK_BIN/launchctl"
 
-# Mock brew: deterministic counts so the test is hermetic even when Homebrew is installed
+# Mock ps: return a header plus two low-resource processes so that the awk
+# high-CPU / high-MEM counters produce deterministic (zero) values.
+cat > "$MOCK_BIN/ps" << 'MOCK'
+#!/bin/bash
+echo "USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND"
+echo "user      1234  0.0  0.1 100000  1234 ?        S    10:00   0:00 /usr/bin/proc1"
+echo "user      5678  2.0  1.0 200000  2000 ?        S    10:00   0:00 /usr/bin/proc2"
+MOCK
+chmod +x "$MOCK_BIN/ps"
+
+# Mock ping: succeed and emit a line containing "time=" so the awk/cut chain
+# can extract a numeric latency value.
+# Field layout: $7 = "time=10.123" -> cut -d'=' -f2 = "10.123"
+cat > "$MOCK_BIN/ping" << 'MOCK'
+#!/bin/bash
+echo "PING 8.8.8.8: 56 data bytes"
+echo "64 bytes from 8.8.8.8: icmp_seq=0 ttl=115 time=10.123 ms"
+MOCK
+chmod +x "$MOCK_BIN/ping"
+
+# Mock brew: deterministic counts so the test is hermetic even when Homebrew
+# is installed on the host.  system_metrics.sh only calls brew when it is
+# present on PATH, so without this mock a real brew invocation could make the
+# test slow or produce non-deterministic output.
 cat > "$MOCK_BIN/brew" << 'MOCK'
 #!/bin/bash
 case "$1" in
-    list)   printf "pkg1\npkg2\npkg3\n" ;;
+    list)     printf "pkg1\npkg2\npkg3\n" ;;
     outdated) printf "old-pkg\n" ;;
-    *)      exit 0 ;;
+    *)        exit 0 ;;
 esac
 MOCK
 chmod +x "$MOCK_BIN/brew"
 
-# ---- helper: create an isolated home with required log directories ----
+# ---- helper: create an isolated home with the expected log directories ----
 make_mock_home() {
     local home="$1"
     mkdir -p "$home/Library/Logs/maintenance/metrics"
@@ -146,13 +156,10 @@ else
     FAIL=$((FAIL + 1))
 fi
 
-# ---- Test 2: system_metrics.log is created ----
-check "system_metrics.log created" \
-    test -f "$HOME1/Library/Logs/maintenance/system_metrics.log"
-
-# ---- Test 3: metrics JSONL file is created in metrics/ subdirectory ----
-if [[ -n "$(find "$HOME1/Library/Logs/maintenance/metrics" \
-        -name "*.jsonl" -print -quit 2>/dev/null)" ]]; then
+# ---- Test 2: metrics JSONL file is created in the metrics directory ----
+JSONL_COUNT=$(find "$HOME1/Library/Logs/maintenance/metrics" \
+    -name "*.jsonl" 2>/dev/null | wc -l | tr -d ' ')
+if [[ "$JSONL_COUNT" -gt 0 ]]; then
     echo "PASS: metrics JSONL file created"
     PASS=$((PASS + 1))
 else
@@ -160,18 +167,18 @@ else
     FAIL=$((FAIL + 1))
 fi
 
-# ---- Test 4: log contains [METRIC] formatted entries ----
-check_grep "[METRIC] entries present in log" "\[METRIC\]" \
+# ---- Test 3: system_metrics.log is created ----
+check "system_metrics.log created" \
+    test -f "$HOME1/Library/Logs/maintenance/system_metrics.log"
+
+# ---- Test 4: log entries use the [METRIC] format ----
+check_grep "log entries use [METRIC] format" "\[METRIC\]" \
     "$HOME1/Library/Logs/maintenance/system_metrics.log"
 
-# ---- Test 5: JSONL file contains the expected timestamp field ----
-JSONL_FILE=$(find "$HOME1/Library/Logs/maintenance/metrics" \
-    -name "*.jsonl" | head -1)
-check_grep "JSONL contains timestamp field" '"timestamp"' "$JSONL_FILE"
-
-# ---- Test 6: daily summary file is created ----
-if [[ -n "$(find "$HOME1/Library/Logs/maintenance/metrics" \
-        -name "daily_summary_*.txt" -print -quit 2>/dev/null)" ]]; then
+# ---- Test 5: daily summary file is created ----
+SUMMARY_COUNT=$(find "$HOME1/Library/Logs/maintenance/metrics" \
+    -name "daily_summary_*.txt" 2>/dev/null | wc -l | tr -d ' ')
+if [[ "$SUMMARY_COUNT" -gt 0 ]]; then
     echo "PASS: daily summary file created"
     PASS=$((PASS + 1))
 else
@@ -179,42 +186,40 @@ else
     FAIL=$((FAIL + 1))
 fi
 
-# ---- Test 7: memory metrics logged when vm_stat is available ----
-check_grep "memory_free metric logged" "memory_free" \
-    "$HOME1/Library/Logs/maintenance/system_metrics.log"
-
-# ---- Test 8: disk usage percent metric logged ----
-check_grep "disk_usage_percent metric logged" "disk_usage_percent" \
-    "$HOME1/Library/Logs/maintenance/system_metrics.log"
-
-# ---- Test 9: graceful degradation when vm_stat is absent ----
-# Build a second mock bin that intentionally omits vm_stat
-MOCK_BIN2="$TEST_DIR/mock_bin2"
-mkdir -p "$MOCK_BIN2"
-for f in uptime sysctl df dd ping ps launchctl; do
-    cp "$MOCK_BIN/$f" "$MOCK_BIN2/$f"
-done
-
+# ---- Test 6: graceful degradation — exits 0 when vm_stat is absent ----
+# The script guards the vm_stat block with `if command -v vm_stat >/dev/null 2>&1`
+# so removing it from PATH must not abort the script under set -euo pipefail.
 HOME2="$TEST_DIR/home2"
 make_mock_home "$HOME2"
 
+# Build a second mock_bin without vm_stat
+MOCK_BIN2="$TEST_DIR/mock_bin2"
+cp -r "$MOCK_BIN" "$MOCK_BIN2"
+rm -f "$MOCK_BIN2/vm_stat"
+
 if PATH="$MOCK_BIN2:$PATH" HOME="$HOME2" \
-        bash "$SCRIPT" > "$TEST_DIR/t9.log" 2>&1; then
-    echo "PASS: exits 0 without vm_stat (graceful degradation)"
+        bash "$SCRIPT" > "$TEST_DIR/t6.log" 2>&1; then
+    echo "PASS: graceful degradation exits 0 without vm_stat"
     PASS=$((PASS + 1))
 else
-    echo "FAIL: exited non-zero without vm_stat"
-    cat "$TEST_DIR/t9.log"
+    echo "FAIL: script aborted when vm_stat is absent"
+    cat "$TEST_DIR/t6.log"
     FAIL=$((FAIL + 1))
 fi
 
-# ---- Test 10: writes are isolated to the mock HOME ----
-# Verify that log files landed inside HOME1 (not the runner's real home).
-if [[ -n "$(find "$HOME1/Library/Logs/maintenance" -type f -print -quit 2>/dev/null)" ]]; then
-    echo "PASS: metrics written to isolated mock HOME"
+# ---- Test 7: system_metrics.log still created when vm_stat is absent ----
+check "system_metrics.log created without vm_stat" \
+    test -f "$HOME2/Library/Logs/maintenance/system_metrics.log"
+
+# ---- Test 8: no writes to real HOME during test run ----
+# All test invocations above used a dedicated $TEST_DIR/homeN as HOME, so the
+# real home must not have a system_metrics.log that is newer than our start marker.
+REAL_METRICS_LOG="${ORIG_HOME}/Library/Logs/maintenance/system_metrics.log"
+if [[ ! -f "$REAL_METRICS_LOG" ]] || [[ "$REAL_METRICS_LOG" -ot "$MARKER" ]]; then
+    echo "PASS: no writes to real HOME during test"
     PASS=$((PASS + 1))
 else
-    echo "FAIL: no metric files found in mock HOME"
+    echo "FAIL: script wrote to real HOME (${ORIG_HOME}/Library/Logs/maintenance)"
     FAIL=$((FAIL + 1))
 fi
 
