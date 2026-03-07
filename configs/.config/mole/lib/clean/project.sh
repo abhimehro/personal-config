@@ -1106,16 +1106,25 @@ clean_project_artifacts() {
     # For duplicate artifact names within same project, include parent directory for context
     get_artifact_display_name() {
         local path="$1"
-        local artifact_name=$(basename "$path")
-        local project_name=$(get_project_name "$path")
-        local parent_name=$(basename "$(dirname "$path")")
+
+        # Strip trailing slash if any
+        local norm_path="${path%/}"
+
+        # ⚡ Bolt Optimization: Use fast parameter expansion instead of $(basename) in loops
+        local artifact_name="${norm_path##*/}"
+        local project_name=$(get_project_name "$norm_path")
+
+        # Get dirname then basename for parent
+        local dir_path="${norm_path%/*}"
+        local parent_name="${dir_path##*/}"
 
         # Check if there are other items with same artifact name AND same project
         local has_duplicate=false
         for other_item in "${safe_to_clean[@]}"; do
-            if [[ "$other_item" != "$path" && "$(basename "$other_item")" == "$artifact_name" ]]; then
+            local norm_other="${other_item%/}"
+            if [[ "$norm_other" != "$norm_path" && "${norm_other##*/}" == "$artifact_name" ]]; then
                 # Same artifact name, check if same project
-                if [[ "$(get_project_name "$other_item")" == "$project_name" ]]; then
+                if [[ "$(get_project_name "$norm_other")" == "$project_name" ]]; then
                     has_duplicate=true
                     break
                 fi
@@ -1369,8 +1378,13 @@ clean_project_artifacts() {
     local cleaned_count=0
     for idx in "${selected_indices[@]}"; do
         local item_path="${item_paths[idx]}"
-        local artifact_type=$(basename "$item_path")
-        local project_path=$(get_project_path "$item_path")
+
+        # Strip trailing slash if any
+        local norm_path="${item_path%/}"
+
+        # ⚡ Bolt Optimization: Use fast parameter expansion
+        local artifact_type="${norm_path##*/}"
+        local project_path=$(get_project_path "$norm_path")
         local size_kb="${item_sizes[idx]}"
         local size_unknown="${item_size_unknown_flags[idx]:-false}"
         local size_human
