@@ -208,7 +208,7 @@ main() {
             log_success "Service safely stopped and network restored"
             ;;
         "test")
-            test_current_connection
+            test_current_connection "$CONTROLD_DIR"
             ;;
         "emergency"|"recover")
             check_root || return 1
