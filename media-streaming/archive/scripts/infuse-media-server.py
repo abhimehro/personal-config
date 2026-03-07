@@ -52,7 +52,6 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         except Exception:
             pass
 
-        time.sleep(1)
         self.send_auth_request()
         return False
 
