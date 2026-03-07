@@ -53,7 +53,8 @@ notify() {
 rename_and_upload() {
     local file="$1"
     local filename
-    filename=$(basename "$file")
+    # ⚡ Bolt Optimization: Fast parameter expansion instead of subshell
+    filename="${file##*/}"
 
     log "Processing: $filename"
 
@@ -119,7 +120,8 @@ rename_and_upload() {
 process_file() {
     local file="$1"
     local filename
-    filename=$(basename "$file")
+    # ⚡ Bolt Optimization: Fast parameter expansion instead of subshell
+    filename="${file##*/}"
 
     log "---------------------------------------------------"
     log "Processing: $filename"
@@ -167,7 +169,8 @@ process_file() {
         fi
 
         local new_name
-        new_name=$(basename "$renamed_file")
+        # ⚡ Bolt Optimization: Fast parameter expansion instead of subshell
+        new_name="${renamed_file##*/}"
         log "✓ Renamed to: $new_name"
 
         # Upload to Union Remote
@@ -205,7 +208,8 @@ process_staging() {
     # 1. Move files from Processed -> Staging
     mkdir -p "$PROCESSED_DIR"
     find "$PROCESSED_DIR" -maxdepth 1 -type f ! -name ".*" -print0 | while IFS= read -r -d '' file; do
-        log "🔄 Moving from Processed to Staging: $(basename "$file")"
+        # ⚡ Bolt Optimization: Fast parameter expansion instead of subshell
+        log "🔄 Moving from Processed to Staging: ${file##*/}"
         mv "$file" "$STAGING_DIR/"
     done
 
@@ -231,7 +235,8 @@ watch_mode() {
 
             # Check if file is in Processed
             if [[ "$file" == "$PROCESSED_DIR"* ]]; then
-                 log "Detected file in processed: $(basename "$file")"
+                 # ⚡ Bolt Optimization: Fast parameter expansion instead of subshell
+                 log "Detected file in processed: ${file##*/}"
                  mv "$file" "$STAGING_DIR/"
             elif [[ "$file" == "$STAGING_DIR"* ]]; then
                  process_file "$file"
