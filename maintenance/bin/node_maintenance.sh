@@ -112,6 +112,9 @@ if [[ -n "${REPO_SEARCH_PATHS:-}" ]] && [[ "${NODE_MODULES_MAX_GB:-0}" -gt 0 ]];
     
     IFS=' ' read -ra SEARCH_PATHS <<< "$REPO_SEARCH_PATHS"
     CLEANED_DIRS=0
+    # SECURITY: Use mktemp to prevent insecure predictable temporary files (CWE-377)
+    CLEANED_DIRS_FILE="$(mktemp -t 'cleaned_dirs.XXXXXX')"
+    echo "0" > "$CLEANED_DIRS_FILE"
     
     for search_path in "${SEARCH_PATHS[@]}"; do
         if [[ -d "$search_path" ]]; then
@@ -136,7 +139,9 @@ if [[ -n "${REPO_SEARCH_PATHS:-}" ]] && [[ "${NODE_MODULES_MAX_GB:-0}" -gt 0 ]];
                         if [[ "${DRY_RUN:-0}" == "0" ]]; then
                             log_info "Removing old node_modules: $node_modules_dir"
                             if rm -rf "$node_modules_dir" 2>/dev/null; then
-                                echo "$((CLEANED_DIRS + 1))" > /tmp/cleaned_dirs_$$ 2>/dev/null || true
+                                # Update count safely
+                                CURRENT_COUNT=$(cat "$CLEANED_DIRS_FILE" 2>/dev/null || echo "0")
+                                echo "$((CURRENT_COUNT + 1))" > "$CLEANED_DIRS_FILE" 2>/dev/null || true
                                 log_info "Successfully removed node_modules for $project_name"
                             else
                                 log_warn "Failed to remove $node_modules_dir"
@@ -149,12 +154,12 @@ if [[ -n "${REPO_SEARCH_PATHS:-}" ]] && [[ "${NODE_MODULES_MAX_GB:-0}" -gt 0 ]];
             done
             
             # Get cleaned count (limited by shell scope)
-            if [[ -f "/tmp/cleaned_dirs_$$" ]]; then
-                CLEANED_DIRS=$(cat "/tmp/cleaned_dirs_$$" 2>/dev/null || echo "0")
-                rm -f "/tmp/cleaned_dirs_$$" 2>/dev/null || true
+            if [[ -f "$CLEANED_DIRS_FILE" ]]; then
+                CLEANED_DIRS=$(cat "$CLEANED_DIRS_FILE" 2>/dev/null || echo "0")
             fi
         fi
     done
+    rm -f "$CLEANED_DIRS_FILE" 2>/dev/null || true
     
     if [[ $CLEANED_DIRS -gt 0 ]]; then
         log_info "Cleaned up $CLEANED_DIRS large/old node_modules directories"

@@ -377,11 +377,14 @@ print(f'Memory allocation test: {time.time() - start:.3f}s')
     # Disk I/O benchmark
     log_info "Running disk I/O benchmark..."
     local io_start io_end io_time
+    # SECURITY: Use mktemp to prevent insecure predictable temporary files (CWE-377)
+    local io_test_file
+    io_test_file="$(mktemp -t 'benchmark_test.XXXXXX')"
     io_start=$(date +%s.%3N)
-    dd if=/dev/zero of=/tmp/benchmark_test bs=1024 count=10240 2>/dev/null
+    dd if=/dev/zero of="$io_test_file" bs=1024 count=10240 2>/dev/null
     sync
     io_end=$(date +%s.%3N)
-    rm -f /tmp/benchmark_test
+    rm -f "$io_test_file"
     io_time=$(echo "scale=3; $io_end - $io_start" | bc -l)
     echo "Disk I/O Test: ${io_time}s" >> "$benchmark_file"
     
