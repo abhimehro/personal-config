@@ -21,12 +21,17 @@
 
 **Closed issues:**
 
+- \[Code Quality\] Update AGENTS.md shell test count from 29 to 31 [\#589](https://github.com/abhimehro/personal-config/issues/589)
 - \[Code Quality\] Fix missing safety flags in `maintenance/lib/` shared libraries and `maintenance/controld_monitor.sh` [\#577](https://github.com/abhimehro/personal-config/issues/577)
 - \[repo-status\] Daily Status Report — March 6, 2026 [\#576](https://github.com/abhimehro/personal-config/issues/576)
 - \[Code Quality\] Fix `set -eo pipefail` → `set -euo pipefail` in 5 recently-added test files [\#575](https://github.com/abhimehro/personal-config/issues/575)
 - \[Code Quality\] Add `make test` and `make test-quick` to AGENTS.md key services table [\#573](https://github.com/abhimehro/personal-config/issues/573)
 - \[Code Quality\] Remove stale root artifacts: `patch.sh` \(applied\) and `handoff.md` \(completed refactor\) [\#572](https://github.com/abhimehro/personal-config/issues/572)
+- \[Code Quality\] Add CI gate to enforce set -euo pipefail \(nounset\) across all shell scripts [\#569](https://github.com/abhimehro/personal-config/issues/569)
 - \[Code Quality\] Fix missing -u \(nounset\) flag in 16 maintenance/bin/ scripts and maintenance/install.sh [\#568](https://github.com/abhimehro/personal-config/issues/568)
+- \[Code Quality\] Centralize check\(\)/check\_false\(\)/check\_output\(\) helpers into tests/lib/test\_helpers.sh [\#567](https://github.com/abhimehro/personal-config/issues/567)
+- \[Code Quality\] Refactor test\_controld\_profile.sh to match canonical test\_lib\_\*.sh test structure [\#566](https://github.com/abhimehro/personal-config/issues/566)
+- \[Code Quality\] Rename test\_controld\_profile.sh and test\_network\_common.sh to match test\_lib\_\* naming convention [\#565](https://github.com/abhimehro/personal-config/issues/565)
 - \[Code Quality\] Add unit tests for scripts/lib/controld-profile.sh and network-common.sh [\#555](https://github.com/abhimehro/personal-config/issues/555)
 - \[Code Quality\] Add Python tests to `make test` for unified test execution [\#554](https://github.com/abhimehro/personal-config/issues/554)
 - \[repo-status\] Daily Repo Status — March 5, 2026 [\#552](https://github.com/abhimehro/personal-config/issues/552)
