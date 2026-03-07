@@ -24,15 +24,9 @@ class TestExtractDomainsFromFile(unittest.TestCase):
                 {"PK": "test.com"}
             ]
         })
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, encoding='utf-8') as tf:
-            tf.write(json_data)
-            temp_path = tf.name
-
-        try:
-            result = extract_domains_from_file(temp_path)
+        with patch('builtins.open', mock_open(read_data=json_data)):
+            result = extract_domains_from_file("dummy.json")
             self.assertEqual(result, ["example.com", "test.com"])
-        finally:
-            os.remove(temp_path)
 
     def test_partial_data(self):
         """Partial data: some rules missing PK, function skips those entries cleanly."""
