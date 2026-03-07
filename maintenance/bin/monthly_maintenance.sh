@@ -8,7 +8,7 @@ set -o pipefail
 RUN_START=$(date +%s)
 export RUN_START
 LOG_DIR="$HOME/Library/Logs/maintenance"
-LOCK_DIR="/tmp/monthly_maintenance.lock"
+LOCK_DIR="$LOG_DIR/monthly_maintenance.lock"
 LOCK_CONTEXT_LOG="$LOG_DIR/lock_context_$(date +%Y%m%d-%H%M%S).log"
 mkdir -p "$LOG_DIR"
 
