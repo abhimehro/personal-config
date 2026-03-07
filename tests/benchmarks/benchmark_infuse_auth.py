@@ -2,11 +2,9 @@ import time
 import requests
 import concurrent.futures
 import threading
-import subprocess
 import os
 import sys
 import socket
-from unittest.mock import patch
 import importlib.util
 
 def wait_for_port(port, timeout=5.0):
