@@ -99,17 +99,23 @@ else
     FAIL=$((FAIL + 1))
 fi
 
+# Stash the test-computed repo root so the source path below remains valid after
+# REPO_ROOT and MNT_ROOT are unset.  This ensures A2/A3 verify that common.sh
+# actually sets those variables, not that the test script's pre-defined value leaks.
+_TEST_REPO_ROOT="$REPO_ROOT"
+unset REPO_ROOT MNT_ROOT
+
 # Source common.sh into the current shell for A2–A11
 HOME="$HOME_A"
 LOG_DIR="$LOG_DIR_A"
 PATH="$MOCK_BIN:$PATH"
 # shellcheck source=maintenance/lib/common.sh
-source "$REPO_ROOT/maintenance/lib/common.sh"
+source "$_TEST_REPO_ROOT/maintenance/lib/common.sh"
 
-# ---- A2: REPO_ROOT is set and non-empty ----
+# ---- A2: REPO_ROOT is set and non-empty (must have been set by the library) ----
 check "common.sh: REPO_ROOT is set and non-empty" test -n "${REPO_ROOT:-}"
 
-# ---- A3: MNT_ROOT is set and non-empty ----
+# ---- A3: MNT_ROOT is set and non-empty (must have been set by the library) ----
 check "common.sh: MNT_ROOT is set and non-empty" test -n "${MNT_ROOT:-}"
 
 # ---- A4: LOG_DIR is set and uses mock HOME (no real ~/Library writes) ----
@@ -183,18 +189,22 @@ b_results="$TEST_DIR/b_results.log"
     export HOME="$HOME_B"
     export LOG_DIR="$LOG_DIR_B"
     PATH="$MOCK_BIN:$PATH"
+    # Stash the current REPO_ROOT so the source path stays valid after unset.
+    # Unsetting REPO_ROOT/MNT_ROOT before sourcing ensures the library sets them.
+    _b_repo_root="$REPO_ROOT"
+    unset REPO_ROOT MNT_ROOT
     # shellcheck source=maintenance/lib/common_simple.sh
-    source "$REPO_ROOT/maintenance/lib/common_simple.sh"
+    source "$_b_repo_root/maintenance/lib/common_simple.sh"
 
     b_pass() { echo "PASS: $*"; }
     b_fail() { echo "FAIL: $*"; }
 
-    # B2: REPO_ROOT is set and non-empty
+    # B2: REPO_ROOT is set and non-empty (must have been set by the library)
     [[ -n "${REPO_ROOT:-}" ]] \
         && b_pass "common_simple.sh: REPO_ROOT is set and non-empty" \
         || b_fail "common_simple.sh: REPO_ROOT is empty"
 
-    # B3: MNT_ROOT is set and non-empty
+    # B3: MNT_ROOT is set and non-empty (must have been set by the library)
     [[ -n "${MNT_ROOT:-}" ]] \
         && b_pass "common_simple.sh: MNT_ROOT is set and non-empty" \
         || b_fail "common_simple.sh: MNT_ROOT is empty"
