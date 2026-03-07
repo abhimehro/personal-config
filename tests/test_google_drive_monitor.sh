@@ -68,7 +68,7 @@ mkdir -p "$MOCK_HOME"
 
 LOG_FILE="$MOCK_HOME/Library/Logs/maintenance/google_drive_monitor.log"
 
-# Run the script once; tests 1-5 inspect the resulting log file
+# Run the script once; subsequent tests inspect the resulting log file
 RUN1_EXIT=0
 PATH="$MOCK_BIN:$PATH" HOME="$MOCK_HOME" bash "$SCRIPT" \
     > "$TEST_DIR/run1.log" 2>&1 || RUN1_EXIT=$?
