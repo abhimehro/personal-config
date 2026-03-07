@@ -93,7 +93,7 @@ echo "/dev/sda1       500G  150G  350G  30% /"
 MOCK
 chmod +x "$MOCK_BIN/df"
 
-# Mock launchctl: return one healthy maintenance agent (exit code 0 in $2)
+# Mock launchctl: one healthy maintenance agent (PID 0 in $1, status '-' in $2)
 cat > "$MOCK_BIN/launchctl" << 'MOCK'
 #!/bin/bash
 echo "0       -       com.abhimehrotra.maintenance.test"
