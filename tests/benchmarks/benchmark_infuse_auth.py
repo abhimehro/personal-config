@@ -1,10 +1,12 @@
 import time
-import requests
+import urllib.request
+import urllib.error
 import concurrent.futures
 import threading
 import os
 import sys
 import socket
+from unittest.mock import patch
 import importlib.util
 
 def wait_for_port(port, timeout=5.0):
@@ -19,39 +21,23 @@ def wait_for_port(port, timeout=5.0):
 
 def worker(url, i):
     try:
-        # Send bad auth
-        headers = {'Authorization': 'Basic YmFkOnBhc3N3b3Jk'} # bad:password
+        req = urllib.request.Request(url, method='HEAD')
+        req.add_header('Authorization', 'Basic YmFkOnBhc3N3b3Jk') # bad:password
         start_time = time.time()
-        response = requests.head(url, headers=headers, timeout=10)
+        try:
+            with urllib.request.urlopen(req, timeout=10) as response:
+                status = response.status
+        except urllib.error.HTTPError as e:
+            status = e.code
+        except urllib.error.URLError as e:
+            status = -1
         end_time = time.time()
-        return (i, end_time - start_time, response.status_code)
+        return (i, end_time - start_time, status)
     except Exception as e:
         return (i, -1, str(e))
 
-def _get_benchmark_port() -> int:
-    """Return the port to use for the benchmark.
-
-    Prefer the INFUSE_BENCHMARK_PORT environment variable if it is set to a
-    valid TCP port number; otherwise, fall back to an ephemeral port selected
-    by the OS to avoid collisions and in-place source edits.
-    """
-    env_port = os.environ.get("INFUSE_BENCHMARK_PORT")
-    if env_port:
-        try:
-            port = int(env_port)
-            if 0 < port < 65536:
-                return port
-        except ValueError:
-            # Ignore invalid env var and fall back to ephemeral port
-            pass
-
-    # Ask the OS for a free ephemeral port by binding to port 0, then close it.
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
-
 def run_benchmark(num_requests=50, concurrency=50):
-    port = _get_benchmark_port()
+    port = 8081
     url = f"http://127.0.0.1:{port}/"
 
     print(f"Starting benchmark with {num_requests} total requests, concurrency {concurrency}")
@@ -96,23 +82,26 @@ def run_benchmark(num_requests=50, concurrency=50):
     total_time = end_time_total - start_time_total
 
     successes = [r for r in results if isinstance(r[2], int) and r[2] == 401]
-    failures = [r for r in results if not (isinstance(r[2], int) and r[2] == 401)]
+    rate_limited = [r for r in results if isinstance(r[2], int) and r[2] == 429]
+    failures = [r for r in results if r not in successes and r not in rate_limited]
 
-    if successes:
-        avg_latency = sum(r[1] for r in successes) / len(successes)
-        max_latency = max(r[1] for r in successes)
-        min_latency = min(r[1] for r in successes)
+    if successes or rate_limited:
+        valid_responses = successes + rate_limited
+        avg_latency = sum(r[1] for r in valid_responses) / len(valid_responses)
+        max_latency = max(r[1] for r in valid_responses)
+        min_latency = min(r[1] for r in valid_responses)
     else:
         avg_latency = max_latency = min_latency = 0
 
     print(f"\n--- Benchmark Results ---")
     print(f"Total time taken: {total_time:.2f} seconds")
-    print(f"Successful requests (got 401): {len(successes)}")
+    print(f"401 Unauthorized responses: {len(successes)}")
+    print(f"429 Too Many Requests responses: {len(rate_limited)}")
     print(f"Failed requests (timeout/error): {len(failures)}")
     print(f"Average latency per request: {avg_latency:.2f} seconds")
     print(f"Min latency: {min_latency:.2f} seconds")
     print(f"Max latency: {max_latency:.2f} seconds")
-    print(f"Throughput: {len(successes) / total_time:.2f} requests/second")
+    print(f"Throughput: {(len(successes) + len(rate_limited)) / total_time:.2f} requests/second")
 
 if __name__ == '__main__':
     run_benchmark(num_requests=50, concurrency=50)
