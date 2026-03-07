@@ -92,7 +92,8 @@ rclone lsf "$CLOUD_SOURCE" --files-only 2>/dev/null | while read -r file; do
                 renamed=$(find "$temp_out" -type f -name "*.mp4" | head -1)
                 
                 if [[ -n "$renamed" && -f "$renamed" ]]; then
-                    new_name=$(basename "$renamed")
+                    # ⚡ Bolt Optimization: Use fast parameter expansion
+                    new_name="${renamed##*/}"
                     log "✓ Identified as: $new_name"
                     
                     # Upload renamed file
