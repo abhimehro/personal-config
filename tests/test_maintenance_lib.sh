@@ -129,9 +129,7 @@ err_out=$(log_error "test-error-message" 2>/dev/null)
 check_contains "common.sh: log_error output contains ERROR" "ERROR" "$err_out"
 
 # ---- A8: logging functions exit 0 (non-fatal) ----
-log_info "exit-code-check" > /dev/null 2>&1
-check "common.sh: log_info exits 0" true
-
+check "common.sh: log_info exits 0" log_info "exit-code-check"
 # ---- A9: log writes a file to LOG_DIR ----
 log_file_count=$(find "$LOG_DIR_A" -type f -name "*.log" 2>/dev/null | wc -l | tr -d ' ')
 if [[ "$log_file_count" -gt 0 ]]; then
