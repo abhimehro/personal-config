@@ -34,6 +34,7 @@
 - \[Code Quality\] Rename test\_controld\_profile.sh and test\_network\_common.sh to match test\_lib\_\* naming convention [\#565](https://github.com/abhimehro/personal-config/issues/565)
 - \[Code Quality\] Add unit tests for scripts/lib/controld-profile.sh and network-common.sh [\#555](https://github.com/abhimehro/personal-config/issues/555)
 - \[Code Quality\] Add Python tests to `make test` for unified test execution [\#554](https://github.com/abhimehro/personal-config/issues/554)
+- \[Code Quality\] Remove stale .bak files from scripts/lib/ directory [\#553](https://github.com/abhimehro/personal-config/issues/553)
 - \[repo-status\] Daily Repo Status — March 5, 2026 [\#552](https://github.com/abhimehro/personal-config/issues/552)
 - \[Code Quality\] Make test\_network\_mode\_manager.sh CI-portable by mocking sudo-requiring commands [\#551](https://github.com/abhimehro/personal-config/issues/551)
 - \[Code Quality\] Refactor test\_media\_server\_auth.sh to use parse\_cred\_value\(\) consistently [\#549](https://github.com/abhimehro/personal-config/issues/549)
