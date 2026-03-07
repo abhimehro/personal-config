@@ -161,13 +161,13 @@ else
     check_fail "cleanup run exits 0 when 7 pre-existing archives present" "exit=$t9_exit"
     cat "$TEST_DIR/t9.log"
 fi
-# After pruning, at most 5 archives should remain (plus at most 1 new from this run = 6 max).
+# After pruning, at most 5 archives should remain in total (including any new one from this run).
 # shellcheck disable=SC2012  # ls glob matches only known-safe names; find alternative doesn't simplify
 remaining=$(ls "$BACKUP_DIR"/documents_backup_*.tar.gz 2>/dev/null | wc -l | tr -d ' ')
-if [[ "$remaining" -le 6 ]]; then
-    check_pass "old backups pruned (≤6 archives after cleanup of 7+new)"
+if [[ "$remaining" -le 5 ]]; then
+    check_pass "old backups pruned (≤5 archives after cleanup of 7+new)"
 else
-    check_fail "old backups pruned" "expected ≤6, got $remaining"
+    check_fail "old backups pruned" "expected ≤5, got $remaining"
 fi
 
 # ---- Summary ----
