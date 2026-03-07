@@ -27,6 +27,7 @@
 - \[Code Quality\] Fix `set -eo pipefail` → `set -euo pipefail` in 5 recently-added test files [\#575](https://github.com/abhimehro/personal-config/issues/575)
 - \[Code Quality\] Add `make test` and `make test-quick` to AGENTS.md key services table [\#573](https://github.com/abhimehro/personal-config/issues/573)
 - \[Code Quality\] Remove stale root artifacts: `patch.sh` \(applied\) and `handoff.md` \(completed refactor\) [\#572](https://github.com/abhimehro/personal-config/issues/572)
+- \[Code Quality\] Fix hardcoded `/tmp/` path and add cleanup trap in `controld-profile.sh` [\#570](https://github.com/abhimehro/personal-config/issues/570)
 - \[Code Quality\] Add CI gate to enforce set -euo pipefail \(nounset\) across all shell scripts [\#569](https://github.com/abhimehro/personal-config/issues/569)
 - \[Code Quality\] Fix missing -u \(nounset\) flag in 16 maintenance/bin/ scripts and maintenance/install.sh [\#568](https://github.com/abhimehro/personal-config/issues/568)
 - \[Code Quality\] Centralize check\(\)/check\_false\(\)/check\_output\(\) helpers into tests/lib/test\_helpers.sh [\#567](https://github.com/abhimehro/personal-config/issues/567)
@@ -195,6 +196,7 @@
 
 **Merged pull requests:**
 
+- fix: portable mktemp and cleanup trap in controld-profile.sh [\#591](https://github.com/abhimehro/personal-config/pull/591) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - 🧪 Add tests for extract\_domains\_from\_file [\#590](https://github.com/abhimehro/personal-config/pull/590) ([abhimehro](https://github.com/abhimehro))
 - 🛡️ Sentinel: \[CRITICAL\] Fix insecure temporary file creation in maintenance scripts [\#585](https://github.com/abhimehro/personal-config/pull/585) ([abhimehro](https://github.com/abhimehro))
 - fix: add missing -u \(nounset\) flag to 17 maintenance scripts [\#582](https://github.com/abhimehro/personal-config/pull/582) ([Copilot](https://github.com/apps/copilot-swe-agent))
