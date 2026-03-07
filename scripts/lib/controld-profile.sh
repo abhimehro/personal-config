@@ -99,7 +99,10 @@ generate_profile_config() {
 
     # Use local variable and ensure cleanup
     local TEMP_CONFIG
-    TEMP_CONFIG=$(mktemp /tmp/ctrld_temp.toml.XXXXXX)
+    TEMP_CONFIG=$(mktemp "${TMPDIR:-/tmp}/ctrld_temp.toml.XXXXXX")
+    # Ensure temp file is removed when the function returns (success or error)
+    # shellcheck disable=SC2064  # expand TEMP_CONFIG now to capture the current path
+    trap "rm -f '$TEMP_CONFIG'" RETURN
 
     local ctrld_pid
     if [[ "$protocol" == "doh3" ]]; then
