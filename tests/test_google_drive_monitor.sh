@@ -15,22 +15,6 @@ trap 'rm -rf "$TEST_DIR"' EXIT
 PASS=0
 FAIL=0
 
-check_exit() {
-    local name="$1"
-    local expected="$2"
-    shift 2
-    local actual=0
-    "$@" > "$TEST_DIR/check.log" 2>&1 || actual=$?
-    if [[ "$actual" -eq "$expected" ]]; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name (expected exit $expected, got $actual)"
-        cat "$TEST_DIR/check.log"
-        FAIL=$((FAIL + 1))
-    fi
-}
-
 check_output() {
     local name="$1"
     local pattern="$2"
