@@ -17,6 +17,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# UX Additions
+trap 'echo -e "\n${YELLOW}👋 Installation cancelled by user. Goodbye!${NC}" ; trap - SIGINT ; kill -s INT $$' SIGINT
+
 # Helper functions (Palette 🎨 UX enhanced)
 log()      { echo -e "${BLUE}ℹ️  [INFO]${NC}  $*"; }
 success()  { echo -e "${GREEN}✅ [OK]${NC}    $*"; }
@@ -48,12 +51,18 @@ substep "Link Editor Configs (${YELLOW}~/.cursor, ~/.vscode${NC})"
 substep "Backup existing files automatically"
 substep "Verify all symlinks"
 echo ""
-read -p "Ready to proceed? (y/N) " -n 1 -r
-echo ""
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    log "Installation cancelled"
-    exit 0
-fi
+while true; do
+    read -p "Ready to proceed? (y/N) " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        break
+    elif [[ -z $REPLY ]] || [[ $REPLY =~ ^[Nn]$ ]]; then
+        log "Installation cancelled"
+        exit 0
+    else
+        warn "Invalid input. Please press 'y' to continue or 'n' to cancel."
+    fi
+done
 
 echo ""
 
