@@ -380,6 +380,7 @@ print(f'Memory allocation test: {time.time() - start:.3f}s')
     # SECURITY: Use mktemp to prevent insecure predictable temporary files (CWE-377)
     local io_test_file
     io_test_file="$(mktemp -t 'benchmark_test.XXXXXX')"
+    trap 'rm -f "$io_test_file" 2>/dev/null' RETURN
     io_start=$(date +%s.%3N)
     dd if=/dev/zero of="$io_test_file" bs=1024 count=10240 2>/dev/null
     sync
