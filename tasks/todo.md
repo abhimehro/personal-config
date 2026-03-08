@@ -1,18 +1,12 @@
-# Task: Automated bot PR review session
+# Task: Extract DNS utility functions from controld-manager
 
-## Route
-- T5+S - Orchestrate with security review
+## Approach
+- Created `scripts/lib/dns-utils.sh` (or updated existing) and moved `backup_network_settings`, `restore_network_settings`, and `test_dns_resolution`.
+- Created `scripts/lib/controld-profile.sh` for profile logic (`get_profile_id`, `generate_profile_config`, `test_profile_connection`).
+- Created `scripts/lib/controld-service.sh` for lifecycle management (`setup_directories`, `safe_stop`, `restart_with_config`, `emergency_recovery`, `show_status`).
+- `controld-manager` reduced from 759 lines to 244 lines.
+- Wrote tests for all 4 shell scripts (`test_dns_utils.sh`, `test_controld_profile.sh`, `test_controld_service.sh`, `test_controld_manager.sh`) which mirror their respective source modules.
+- Updated `test_controld_validation.sh` to work with the updated guard in `controld-manager`.
 
-## Trust boundaries
-- GitHub API data from `gh` is untrusted input and must be validated before making decisions.
-- Remote PR state can change mid-session; mergeability and checks must be re-read before final dispositions.
-- Preflight must pass before any inventory, triage, or write-path actions.
-
-## Plan
-- [x] Run mandatory preflight with `tasks/pr-review-agent.config.yaml`.
-- [x] Collect current open bot PR inventory for each configured repository.
-- [x] Classify PRs, identify duplicates/conflicts/stale items, and update `tasks/pr-inventory.md` and `tasks/pr-triage.md`.
-- [x] Review top candidates by merge order, record dispositions, and note any trust-boundary escalations.
-- [x] Write `tasks/pr-review-2026-03-08.md` with actions, metrics, and ready-to-execute follow-ups.
-- [x] Update `tasks/lessons.md` with any new patterns from this session.
-- [ ] Verify artifacts, inspect diff, commit, and push changes.
+## Completion
+- All task steps completed. Code is structured cleanly and tests pass.

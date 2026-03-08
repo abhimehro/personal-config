@@ -74,11 +74,9 @@ Use `tasks/pr-review-agent.config.yaml` (or override via CLI). Key fields:
 
 Apply these during classification and review (see also `tasks/lessons.md`):
 
-- **Delegated-author Jules heuristic:** Some Jules PRs appear under the triggering human account instead of `jules[bot]`. Treat them as bot-authored when the PR footer says `PR created automatically by Jules ... started by @<user>` and a bootstrap comment from `google-labs-jules` is present.
 - **Zero-diff / superseded:** Detect early (`changed_files_count == 0` or no effective diff); route to closure. Merge-only token can still squash-merge zero-diff PRs to clear queue. Draft PRs can be marked ready then merged.
 - **Post-merge conflict cascade:** Re-check mergeable state after each merge before proceeding.
 - **Lockfile scope creep:** Review lockfile in every PR; strip unrelated lockfile changes (e.g. docstring PR adding `pytest-benchmark`).
-- **Generated-file scope creep:** Strip generated or agent-journal files such as `.trunk/plugins/trunk`, `.jules/*.md`, `tasks/lessons.md`, and unrelated one-line test edits unless the task explicitly targets them.
 - **Validator return-value risk:** Before approving dead-code removal that removes `return True`, verify no callers depend on truthy return.
 - **Security in REFACTOR:** Category classification should account for security (e.g. endswith fix, ReDoS-safe regex); treat as security-sensitive when applicable.
 - **File-path overlap:** Same files do not alone mean duplicate; confirm title/intent before closing as duplicate.
