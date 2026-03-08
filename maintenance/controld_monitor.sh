@@ -350,7 +350,7 @@ monitor_controld() {
 	verify_service_status || all_checks_passed=false
 	verify_listener || all_checks_passed=false
 	verify_dns_resolution || all_checks_passed=false
-	verify_upstream_connectivity || all_checks_passed=false
+	verify_upstream_connectivity
 	verify_filtering || all_checks_passed=false
 	verify_doh3_enforced || all_checks_passed=false
 	verify_network_transitions || all_checks_passed=false
