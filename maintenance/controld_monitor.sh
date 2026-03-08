@@ -166,7 +166,7 @@ check_filtering() {
 	dig_out=$(dig @********* doubleclick.net +short 2>/dev/null)
 
 	local block_test=0
-	if [[ -n $dig_out ]]; then
+	if [[ -n "$dig_out" ]]; then
 		block_test=1
 	fi
 
