@@ -87,24 +87,15 @@ class TestMediaServerHandler(unittest.TestCase):
         # Setup request context
         self.handler.client_address = ('127.0.0.1', 12345)
 
-        # Basic followed by a space, then something that would cause compare_digest to raise TypeError
-        # Since compare_digest requires bytes or strings of the same length, passing an integer
-        # or different type inside the original code wouldn't happen as split returns string.
-        # But wait, what if auth_data is a different length from EXPECTED_AUTH_TOKEN?
-        # compare_digest does not raise an exception for different lengths, it just returns False.
-        # However, we can mock `secrets.compare_digest` to raise an Exception.
-        # Actually, let's just use the missing split case as it natively raises ValueError.
-        # Another case that natively raises an exception: auth_header.split() on a None value
-        # is already caught by `if not auth_header`.
-
-        # Let's mock secrets.compare_digest to raise an Exception to ensure the except block
-        # catches it and correctly handles it.
-        import secrets
+        # Force an exception from the token comparison logic so we can verify
+        # that check_auth catches it and responds with 401.
         from unittest.mock import patch
 
         self.handler.headers = {'Authorization': 'Basic SomeToken'}
 
-        with patch('secrets.compare_digest', side_effect=Exception('Mocked exception')):
+        # Patch the compare_digest used inside infuse_media_server so the mock
+        # is scoped to this module under test.
+        with patch('infuse_media_server.secrets.compare_digest', side_effect=Exception('Mocked exception')):
             result = self.handler.check_auth()
 
         # Assertions
