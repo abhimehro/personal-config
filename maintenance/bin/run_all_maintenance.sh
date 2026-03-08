@@ -537,14 +537,7 @@ print_summary() {
             local formatting
             formatting=$(get_status_formatting "$status")
             local status_text="${formatting%%|*}"
-            local color_name="${formatting##*|}"
-            local color=""
-
-            case "$color_name" in
-                GREEN) color="$GREEN" ;;
-                RED) color="$RED" ;;
-                YELLOW) color="$YELLOW" ;;
-            esac
+            local color="${formatting##*|}"
 
             local icon
             icon=$(get_type_icon "$type")
