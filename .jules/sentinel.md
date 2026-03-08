@@ -138,3 +138,8 @@
 **Vulnerability:** Maintenance scripts (`monthly_maintenance.sh`, `weekly_maintenance.sh`, `system_metrics.sh`) used hardcoded, predictable temporary file paths in `/tmp` (e.g., `/tmp/monthly_maintenance.lock`, `/tmp/maintenance_io_test.tmp`).
 **Learning:** This is a classic CWE-377 (Insecure Temporary File Creation) vulnerability. It allows for symlink attacks where an attacker pre-creates the file as a symlink to a critical system file, tricking the script (often running as root or a privileged user) into overwriting it. It also allows Denial of Service by pre-creating lock files to prevent scripts from running.
 **Prevention:** Always use `mktemp -t 'prefix.XXXXXX'` for temporary files, or store lock files in user-specific, restricted directories (e.g., `$HOME/Library/Logs/maintenance/`) rather than the world-writable `/tmp`.
+
+## 2026-05-24 - Insecure Temporary File Creation (CWE-377) in Maintenance Scripts
+**Vulnerability:** Predictable temporary file creation in `/tmp/` existed across several maintenance scripts (`generate_error_summary.sh`, `node_maintenance.sh`, `performance_optimizer.sh`, `smart_scheduler.sh`). For example, `MARKER_FILE="/tmp/maintenance_run_marker_$$"`.
+**Learning:** This is a classic CWE-377 vulnerability. It allows for symlink attacks where an attacker pre-creates the file as a symlink to a critical system file, tricking the script (often running as root or a privileged user) into overwriting it. It also allows Denial of Service by pre-creating lock files to prevent scripts from running.
+**Prevention:** Always use `mktemp -t 'prefix.XXXXXX'` for secure temporary file creation. This guarantees uniqueness and correct permissions, preventing race conditions and symlink attacks.
