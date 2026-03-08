@@ -502,9 +502,16 @@ download_binary() {
 
     # Attempt to fetch the SHA256 digest from the GitHub Releases API
     if command -v curl > /dev/null 2>&1; then
-        expected_hash=$(curl -fsSL --connect-timeout 5 --max-time 10 "$api_url" 2> /dev/null |
-            grep -A 5 "\"name\": \"${binary_name}-darwin-${arch_suffix}\"" |
-            grep '"digest":' | head -n 1 | sed -E 's/.*"digest": "sha256:([^"]+)".*/\1/')
+        # NOTE: Make this pipeline non-fatal under `set -euo pipefail`.
+        # Run in a subshell with `set +e` so that any curl/grep failure
+        # does not abort the script; on failure, `expected_hash` stays empty
+        # and the fallback logic below will handle it.
+        expected_hash="$(
+            set +e
+            curl -fsSL --connect-timeout 5 --max-time 10 "$api_url" 2> /dev/null |
+                grep -A 5 "\"name\": \"${binary_name}-darwin-${arch_suffix}\"" |
+                grep '"digest":' | head -n 1 | sed -E 's/.*"digest": "sha256:([^"]+)".*/\1/'
+        )" || true
     fi
 
     if [[ -t 1 ]]; then
