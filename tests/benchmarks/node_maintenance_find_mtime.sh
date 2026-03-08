@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 export NODE_MODULES_MAX_AGE_DAYS=90
 export NODE_MODULES_MAX_GB=0
 
