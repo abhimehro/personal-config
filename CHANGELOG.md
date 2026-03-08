@@ -212,6 +212,8 @@
 **Merged pull requests:**
 
 - Fix PR automation preflight parsing and refresh Jules triage artifacts [\#623](https://github.com/abhimehro/personal-config/pull/623) ([cursor[bot]](https://github.com/apps/cursor))
+- 🧹 refactor: Break down complex print\_summary in run\_all\_maintenance.sh [\#621](https://github.com/abhimehro/personal-config/pull/621) ([abhimehro](https://github.com/abhimehro))
+- 🧹 \[code health improvement\] Remove unused json import in infuse-media-server.py [\#620](https://github.com/abhimehro/personal-config/pull/620) ([abhimehro](https://github.com/abhimehro))
 - 🔒 fix\(security\): prevent command injection \(CWE-78\) via eval in get\_user\_home [\#617](https://github.com/abhimehro/personal-config/pull/617) ([abhimehro](https://github.com/abhimehro))
 - 🔒 fix\(security\): Add Missing Integrity Check on Downloaded Executables [\#616](https://github.com/abhimehro/personal-config/pull/616) ([abhimehro](https://github.com/abhimehro))
 - test: add unit tests for maintenance/bin/analytics\_dashboard.sh [\#613](https://github.com/abhimehro/personal-config/pull/613) ([Copilot](https://github.com/apps/copilot-swe-agent))
