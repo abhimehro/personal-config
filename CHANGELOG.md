@@ -212,10 +212,13 @@
 **Merged pull requests:**
 
 - Fix PR automation preflight parsing and refresh Jules triage artifacts [\#623](https://github.com/abhimehro/personal-config/pull/623) ([cursor[bot]](https://github.com/apps/cursor))
+- 🎨 Palette: Forgiving CLI Menu Improvement [\#622](https://github.com/abhimehro/personal-config/pull/622) ([abhimehro](https://github.com/abhimehro))
 - 🧹 refactor: Break down complex print\_summary in run\_all\_maintenance.sh [\#621](https://github.com/abhimehro/personal-config/pull/621) ([abhimehro](https://github.com/abhimehro))
 - 🧹 \[code health improvement\] Remove unused json import in infuse-media-server.py [\#620](https://github.com/abhimehro/personal-config/pull/620) ([abhimehro](https://github.com/abhimehro))
 - 🔒 fix\(security\): prevent command injection \(CWE-78\) via eval in get\_user\_home [\#617](https://github.com/abhimehro/personal-config/pull/617) ([abhimehro](https://github.com/abhimehro))
 - 🔒 fix\(security\): Add Missing Integrity Check on Downloaded Executables [\#616](https://github.com/abhimehro/personal-config/pull/616) ([abhimehro](https://github.com/abhimehro))
+- 🛡️ Sentinel: \[HIGH\] Fix Insecure Temporary File Creation \(CWE-377\) [\#615](https://github.com/abhimehro/personal-config/pull/615) ([abhimehro](https://github.com/abhimehro))
+- 🧪 Add tests for extract\_allowlist\_domains\_from\_file [\#614](https://github.com/abhimehro/personal-config/pull/614) ([abhimehro](https://github.com/abhimehro))
 - test: add unit tests for maintenance/bin/analytics\_dashboard.sh [\#613](https://github.com/abhimehro/personal-config/pull/613) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix\(tests\): use fixed-string grep in check\_output\(\) and correct Test 4 pattern [\#612](https://github.com/abhimehro/personal-config/pull/612) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - test: add unit tests for maintenance/bin/document\_backup.sh \(\#598\) [\#611](https://github.com/abhimehro/personal-config/pull/611) ([github-actions[bot]](https://github.com/apps/github-actions))
