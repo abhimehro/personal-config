@@ -11,6 +11,7 @@ SUMMARY_FILE="$LOG_DIR/error_summary_$(date +%Y%m%d-%H%M%S).txt"
 # Determine time window for log collection
 # SECURITY: Use mktemp to prevent insecure predictable temporary files (CWE-377)
 MARKER_FILE="$(mktemp -t 'maintenance_run_marker.XXXXXX')"
+trap 'rm -f "$MARKER_FILE" 2>/dev/null' EXIT
 if [[ -n "${RUN_START:-}" ]]; then
     # Use RUN_START epoch if provided by orchestrator
     touch -t "$(date -r "$RUN_START" +%Y%m%d%H%M.%S)" "$MARKER_FILE" 2>/dev/null || touch "$MARKER_FILE"
