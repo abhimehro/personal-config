@@ -268,6 +268,7 @@ main() {
     
     echo
     read -p "Continue with surgical cleanup? (y/N): " confirm
+    confirm=${confirm:-N}
     if [[ $confirm != [yY] ]]; then
         echo "Cleanup cancelled."
         exit 0
