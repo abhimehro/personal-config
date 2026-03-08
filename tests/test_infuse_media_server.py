@@ -51,5 +51,57 @@ class TestMediaServerHandler(unittest.TestCase):
         # Verify the body is written
         self.handler.wfile.write.assert_called_once_with(b'Authentication required')
 
+
+    def test_check_auth_missing_split(self):
+        """
+        Test that an Authorization header without a space triggers the except block
+        and results in a 401 response (ValueError from unpacking).
+        """
+        # Setup mock authentication globals
+        infuse_media_server.AUTH_USER = 'test_user'
+        infuse_media_server.AUTH_PASS = 'test_pass'
+        infuse_media_server.EXPECTED_AUTH_TOKEN = 'mock_token'
+
+        # Setup request context
+        self.handler.client_address = ('127.0.0.1', 12345)
+        self.handler.headers = {'Authorization': 'BasicInvalidFormatNoSpace'}
+
+        # Method under test
+        result = self.handler.check_auth()
+
+        # Assertions
+        self.assertFalse(result)
+        self.handler.send_response.assert_called_with(401)
+        self.handler.send_header.assert_called_with('WWW-Authenticate', 'Basic realm="Infuse Media Server"')
+
+    def test_check_auth_handles_comparison_exception(self):
+        """
+        Test that an exception during token comparison is caught and results
+        in a 401 response.
+        """
+        # Setup mock authentication globals
+        infuse_media_server.AUTH_USER = 'test_user'
+        infuse_media_server.AUTH_PASS = 'test_pass'
+        infuse_media_server.EXPECTED_AUTH_TOKEN = 'mock_token'
+
+        # Setup request context
+        self.handler.client_address = ('127.0.0.1', 12345)
+
+        # Force an exception from the token comparison logic so we can verify
+        # that check_auth catches it and responds with 401.
+        from unittest.mock import patch
+
+        self.handler.headers = {'Authorization': 'Basic SomeToken'}
+
+        # Patch the compare_digest used inside infuse_media_server so the mock
+        # is scoped to this module under test.
+        with patch('infuse_media_server.secrets.compare_digest', side_effect=Exception('Mocked exception')):
+            result = self.handler.check_auth()
+
+        # Assertions
+        self.assertFalse(result)
+        self.handler.send_response.assert_called_with(401)
+        self.handler.send_header.assert_called_with('WWW-Authenticate', 'Basic realm="Infuse Media Server"')
+
 if __name__ == '__main__':
     unittest.main()

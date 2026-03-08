@@ -22,19 +22,12 @@
 **Closed issues:**
 
 - \[Code Quality\] Audit and replace `basename`/`dirname` in loops across all shell scripts [\#603](https://github.com/abhimehro/personal-config/issues/603)
-- \[Code Quality\] Add unit tests for `maintenance/bin/run_all_maintenance.sh` orchestration logic [\#602](https://github.com/abhimehro/personal-config/issues/602)
-- \[Code Quality\] Add mock-based tests for `network-mode-manager.sh` that run without sudo in CI [\#601](https://github.com/abhimehro/personal-config/issues/601)
 - \[repo-status\] Daily Status Report — March 7, 2026 [\#600](https://github.com/abhimehro/personal-config/issues/600)
 - \[Code Quality\] Add unit tests for `maintenance/bin/google_drive_monitor.sh` [\#599](https://github.com/abhimehro/personal-config/issues/599)
 - \[Code Quality\] Add unit tests for `maintenance/bin/document_backup.sh` [\#598](https://github.com/abhimehro/personal-config/issues/598)
 - \[Code Quality\] Add unit tests for `maintenance/bin/system_metrics.sh` [\#597](https://github.com/abhimehro/personal-config/issues/597)
 - \[Code Quality\] Add unit tests for `maintenance/bin/analytics_dashboard.sh` [\#595](https://github.com/abhimehro/personal-config/issues/595)
-- \[Code Quality\] Add unit tests for `maintenance/bin/service_monitor.sh` [\#594](https://github.com/abhimehro/personal-config/issues/594)
-- \[Code Quality\] Add unit tests for `maintenance/bin/brew_maintenance.sh` [\#593](https://github.com/abhimehro/personal-config/issues/593)
 - \[Code Quality\] Update AGENTS.md shell test count from 29 to 31 [\#589](https://github.com/abhimehro/personal-config/issues/589)
-- \[Code Quality\] Audit test files for raw `cut -d'='` credential parsing; migrate to `parse_cred_value()` [\#587](https://github.com/abhimehro/personal-config/issues/587)
-- \[Code Quality\] Add Linux/CI exit 77 skip guard to `test_media_server_auth.sh` [\#586](https://github.com/abhimehro/personal-config/issues/586)
-- \[Code Quality\] Add unit tests for `maintenance/bin/security_manager.sh` core orchestration logic [\#584](https://github.com/abhimehro/personal-config/issues/584)
 - \[Code Quality\] Add unit tests for `maintenance/lib/common.sh` and `common_simple.sh` [\#583](https://github.com/abhimehro/personal-config/issues/583)
 - \[Code Quality\] Fix missing safety flags in `maintenance/lib/` shared libraries and `maintenance/controld_monitor.sh` [\#577](https://github.com/abhimehro/personal-config/issues/577)
 - \[repo-status\] Daily Status Report — March 6, 2026 [\#576](https://github.com/abhimehro/personal-config/issues/576)
@@ -211,11 +204,16 @@
 
 **Merged pull requests:**
 
+- 🧪 test: add missing error path tests for check\_auth in infuse-media-server [\#625](https://github.com/abhimehro/personal-config/pull/625) ([abhimehro](https://github.com/abhimehro))
+- 🧹 Refactor: Extract helper functions from monitor\_controld [\#624](https://github.com/abhimehro/personal-config/pull/624) ([abhimehro](https://github.com/abhimehro))
 - Fix PR automation preflight parsing and refresh Jules triage artifacts [\#623](https://github.com/abhimehro/personal-config/pull/623) ([cursor[bot]](https://github.com/apps/cursor))
+- 🎨 Palette: Forgiving CLI Menu Improvement [\#622](https://github.com/abhimehro/personal-config/pull/622) ([abhimehro](https://github.com/abhimehro))
 - 🧹 refactor: Break down complex print\_summary in run\_all\_maintenance.sh [\#621](https://github.com/abhimehro/personal-config/pull/621) ([abhimehro](https://github.com/abhimehro))
 - 🧹 \[code health improvement\] Remove unused json import in infuse-media-server.py [\#620](https://github.com/abhimehro/personal-config/pull/620) ([abhimehro](https://github.com/abhimehro))
 - 🔒 fix\(security\): prevent command injection \(CWE-78\) via eval in get\_user\_home [\#617](https://github.com/abhimehro/personal-config/pull/617) ([abhimehro](https://github.com/abhimehro))
 - 🔒 fix\(security\): Add Missing Integrity Check on Downloaded Executables [\#616](https://github.com/abhimehro/personal-config/pull/616) ([abhimehro](https://github.com/abhimehro))
+- 🛡️ Sentinel: \[HIGH\] Fix Insecure Temporary File Creation \(CWE-377\) [\#615](https://github.com/abhimehro/personal-config/pull/615) ([abhimehro](https://github.com/abhimehro))
+- 🧪 Add tests for extract\_allowlist\_domains\_from\_file [\#614](https://github.com/abhimehro/personal-config/pull/614) ([abhimehro](https://github.com/abhimehro))
 - test: add unit tests for maintenance/bin/analytics\_dashboard.sh [\#613](https://github.com/abhimehro/personal-config/pull/613) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - fix\(tests\): use fixed-string grep in check\_output\(\) and correct Test 4 pattern [\#612](https://github.com/abhimehro/personal-config/pull/612) ([Copilot](https://github.com/apps/copilot-swe-agent))
 - test: add unit tests for maintenance/bin/document\_backup.sh \(\#598\) [\#611](https://github.com/abhimehro/personal-config/pull/611) ([github-actions[bot]](https://github.com/apps/github-actions))

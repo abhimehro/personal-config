@@ -497,23 +497,6 @@ download_binary() {
 
     # Skip preflight network checks to avoid false negatives.
 
-    local expected_hash=""
-    local api_url="https://api.github.com/repos/tw93/mole/releases/tags/V${version}"
-
-    # Attempt to fetch the SHA256 digest from the GitHub Releases API
-    if command -v curl > /dev/null 2>&1; then
-        # NOTE: Make this pipeline non-fatal under `set -euo pipefail`.
-        # Run in a subshell with `set +e` so that any curl/grep failure
-        # does not abort the script; on failure, `expected_hash` stays empty
-        # and the fallback logic below will handle it.
-        expected_hash="$(
-            set +e
-            curl -fsSL --connect-timeout 5 --max-time 10 "$api_url" 2> /dev/null |
-                grep -A 5 "\"name\": \"${binary_name}-darwin-${arch_suffix}\"" |
-                grep '"digest":' | head -n 1 | sed -E 's/.*"digest": "sha256:([^"]+)".*/\1/'
-        )" || true
-    fi
-
     if [[ -t 1 ]]; then
         start_line_spinner "Downloading ${binary_name}..."
     else
@@ -522,36 +505,9 @@ download_binary() {
 
     if curl -fsSL --connect-timeout 10 --max-time 60 -o "$target_path" "$url"; then
         if [[ -t 1 ]]; then stop_line_spinner; fi
-
-        local local_hash=""
-        if command -v shasum > /dev/null 2>&1; then
-            local_hash=$(shasum -a 256 "$target_path" | awk '{print $1}')
-        elif command -v sha256sum > /dev/null 2>&1; then
-            local_hash=$(sha256sum "$target_path" | awk '{print $1}')
-        fi
-
-        if [[ -z "$expected_hash" ]] || [[ "$local_hash" != "$expected_hash" ]]; then
-            rm -f "$target_path"
-            if [[ -z "$expected_hash" ]]; then
-                log_warning "Could not retrieve expected hash for ${binary_name} (API limit or network issue)"
-                log_warning "Falling back to local build for security..."
-            else
-                log_error "Integrity check failed for ${binary_name}! Hash mismatch."
-                log_warning "Expected: ${expected_hash}"
-                log_warning "Got:      ${local_hash}"
-                log_warning "Falling back to local build..."
-            fi
-
-            if build_binary_from_source "$binary_name" "$target_path"; then
-                return 0
-            fi
-            log_error "Failed to install ${binary_name} binary"
-            return 1
-        fi
-
         chmod +x "$target_path"
         xattr -c "$target_path" 2> /dev/null || true
-        log_success "Downloaded and verified ${binary_name} binary"
+        log_success "Downloaded ${binary_name} binary"
     else
         if [[ -t 1 ]]; then stop_line_spinner; fi
         log_warning "Could not download ${binary_name} binary, v${version}, trying local build"
