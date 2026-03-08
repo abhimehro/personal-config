@@ -222,30 +222,22 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
             safe_parent = html.escape(parent)
             html_parts.append(f'<a href="/{safe_parent}" class="file directory">📁 .. (Parent Directory)</a>\n')
 
-        # ⚡ Performance: tuple for fast C-level endswith checking
-        video_exts = ('.mp4', '.mkv', '.avi', '.mov')
+        for item in files:
+            if not item:
+                continue
 
-        # Add files and directories
-        # ⚡ Performance: Use generator expression/list comprehension instead of for loop with .append
-        # Pre-compute the base path logic to avoid evaluating it per-item
-        # Pre-escape the base path once to avoid O(N) redundant string concatenations and html.escape calls
-        # This reduces overhead for large directories
-        base_path = f"{current_path.rstrip('/')}/" if current_path != '/' else ""
-        safe_base_path = html.escape(base_path)
+            safe_item = html.escape(item)
+            href = f'/{safe_base_path}{safe_item}'
 
-        items_html = [
-            (
-                f'<a href="/{safe_base_path}{html.escape(item)}" class="file directory">'
-                f'📁 {html.escape(item)[:-1]}</a>\n'
-            )
-            if item.endswith('/') else
-            (
-                f'<a href="/{safe_base_path}{html.escape(item)}" class="file video">'
-                f'{"🎬" if item.lower().endswith(video_exts) else "📄"} {html.escape(item)}</a>\n'
-            )
-            for item in files if item
-        ]
-        html_parts.extend(items_html)
+            if item.endswith('/'):
+                link_text = f'📁 {safe_item[:-1]}'
+                html_class = 'file directory'
+            else:
+                icon = '🎬' if item.lower().endswith(video_exts) else '📄'
+                link_text = f'{icon} {safe_item}'
+                html_class = 'file video'
+
+            html_parts.append(f"<a href='{href}' class='{html_class}'>{link_text}</a>\n")
 
         html_parts.append("""
         </body>
