@@ -12,7 +12,7 @@
 set -euo pipefail
 
 # Set PATH to include Homebrew/local binaries for launchd compatibility
-export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
 
 # Log file location
 LOG_FILE="${HOME}/Library/Logs/alldebrid-sync.log"
