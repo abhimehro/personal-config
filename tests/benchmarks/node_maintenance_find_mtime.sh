@@ -19,7 +19,7 @@ echo "Optimized:"
 time {
   count=0
   find "$search_path" -name "node_modules" -type d -mtime +"${NODE_MODULES_MAX_AGE_DAYS:-90}" -print0 2>/dev/null | while IFS= read -r -d '' node_modules_dir; do
-      if [[ -d "$node_modules_dir" ]] && [[ -f "$node_modules_dir/../package.json" ]]; then
+      if [[ -f "$node_modules_dir/../package.json" ]]; then
           count=$((count + 1))
       fi
   done
