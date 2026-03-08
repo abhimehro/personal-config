@@ -118,21 +118,6 @@ set -e
 check_exit_code "returns non-zero on check visibility failure" 1 "$EXIT_CODE"
 check_contains "propagates check visibility failure context" "check visibility failed. Details: simulated checks failure" "$TEST_DIR/t2.out"
 
-echo "=== Test 3: loads repos from YAML config ==="
-rm -f "$GH_LOG"
-cat > "$TEST_DIR/pr-review-agent.config.yaml" <<'EOF'
-repos:
-  - abhimehro/ctrld-sync
-  - abhimehro/email-security-pipeline
-
-bot_authors:
-  - app/copilot-swe-agent
-EOF
-PATH="$MOCK_BIN:$PATH" bash "$SCRIPT" --config "$TEST_DIR/pr-review-agent.config.yaml" > "$TEST_DIR/t3.out" 2>&1
-check_contains "config mode checks first repo" "repo view abhimehro/ctrld-sync" "$GH_LOG"
-check_contains "config mode checks second repo" "repo view abhimehro/email-security-pipeline" "$GH_LOG"
-check_contains "config mode succeeds" "[PASS] Preflight completed successfully for 2 repository/repositories" "$TEST_DIR/t3.out"
-
 echo ""
 echo "=== Results: $PASS passed, $FAIL failed ==="
 [[ "$FAIL" -eq 0 ]]

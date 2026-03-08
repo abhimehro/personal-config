@@ -62,7 +62,7 @@ if [[ -z "$URL" ]] && [[ -t 0 ]]; then
       read -p "Use this URL? [Y/n] " -n 1 -r REPLY
       REPLY=${REPLY:-Y}
       echo "" # Newline
-      if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+      if [[ -z "$REPLY" ]] || [[ "$REPLY" =~ ^[Yy]$ ]]; then
         URL="$CLIP_CONTENT"
       fi
     fi
