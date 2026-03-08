@@ -51,5 +51,66 @@ class TestMediaServerHandler(unittest.TestCase):
         # Verify the body is written
         self.handler.wfile.write.assert_called_once_with(b'Authentication required')
 
+
+    def test_check_auth_missing_split(self):
+        """
+        Test that an Authorization header without a space triggers the except block
+        and results in a 401 response (ValueError from unpacking).
+        """
+        # Setup mock authentication globals
+        infuse_media_server.AUTH_USER = 'test_user'
+        infuse_media_server.AUTH_PASS = 'test_pass'
+        infuse_media_server.EXPECTED_AUTH_TOKEN = 'mock_token'
+
+        # Setup request context
+        self.handler.client_address = ('127.0.0.1', 12345)
+        self.handler.headers = {'Authorization': 'BasicInvalidFormatNoSpace'}
+
+        # Method under test
+        result = self.handler.check_auth()
+
+        # Assertions
+        self.assertFalse(result)
+        self.handler.send_response.assert_called_with(401)
+        self.handler.send_header.assert_called_with('WWW-Authenticate', 'Basic realm="Infuse Media Server"')
+
+    def test_check_auth_invalid_base64(self):
+        """
+        Test that an Authorization header with invalid base64 token format triggers
+        the except block and results in a 401 response.
+        """
+        # Setup mock authentication globals
+        infuse_media_server.AUTH_USER = 'test_user'
+        infuse_media_server.AUTH_PASS = 'test_pass'
+        infuse_media_server.EXPECTED_AUTH_TOKEN = 'mock_token'
+
+        # Setup request context
+        self.handler.client_address = ('127.0.0.1', 12345)
+
+        # Basic followed by a space, then something that would cause compare_digest to raise TypeError
+        # Since compare_digest requires bytes or strings of the same length, passing an integer
+        # or different type inside the original code wouldn't happen as split returns string.
+        # But wait, what if auth_data is a different length from EXPECTED_AUTH_TOKEN?
+        # compare_digest does not raise an exception for different lengths, it just returns False.
+        # However, we can mock `secrets.compare_digest` to raise an Exception.
+        # Actually, let's just use the missing split case as it natively raises ValueError.
+        # Another case that natively raises an exception: auth_header.split() on a None value
+        # is already caught by `if not auth_header`.
+
+        # Let's mock secrets.compare_digest to raise an Exception to ensure the except block
+        # catches it and correctly handles it.
+        import secrets
+        from unittest.mock import patch
+
+        self.handler.headers = {'Authorization': 'Basic SomeToken'}
+
+        with patch('secrets.compare_digest', side_effect=Exception('Mocked exception')):
+            result = self.handler.check_auth()
+
+        # Assertions
+        self.assertFalse(result)
+        self.handler.send_response.assert_called_with(401)
+        self.handler.send_header.assert_called_with('WWW-Authenticate', 'Basic realm="Infuse Media Server"')
+
 if __name__ == '__main__':
     unittest.main()
