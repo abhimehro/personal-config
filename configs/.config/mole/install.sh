@@ -530,21 +530,18 @@ download_binary() {
             local_hash=$(sha256sum "$target_path" | awk '{print $1}')
         fi
 
-        if [[ -z "$expected_hash" ]]; then
-            log_warning "Could not retrieve expected hash for ${binary_name} (API limit or network issue)"
-            log_warning "Falling back to local build for security..."
+        if [[ -z "$expected_hash" ]] || [[ "$local_hash" != "$expected_hash" ]]; then
             rm -f "$target_path"
-            if build_binary_from_source "$binary_name" "$target_path"; then
-                return 0
+            if [[ -z "$expected_hash" ]]; then
+                log_warning "Could not retrieve expected hash for ${binary_name} (API limit or network issue)"
+                log_warning "Falling back to local build for security..."
+            else
+                log_error "Integrity check failed for ${binary_name}! Hash mismatch."
+                log_warning "Expected: ${expected_hash}"
+                log_warning "Got:      ${local_hash}"
+                log_warning "Falling back to local build..."
             fi
-            log_error "Failed to install ${binary_name} binary"
-            return 1
-        elif [[ "$local_hash" != "$expected_hash" ]]; then
-            log_error "Integrity check failed for ${binary_name}! Hash mismatch."
-            log_warning "Expected: ${expected_hash}"
-            log_warning "Got:      ${local_hash}"
-            rm -f "$target_path"
-            log_warning "Falling back to local build..."
+
             if build_binary_from_source "$binary_name" "$target_path"; then
                 return 0
             fi
