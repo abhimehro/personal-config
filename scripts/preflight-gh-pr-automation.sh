@@ -67,13 +67,28 @@ require_cmd() {
 # ASSUMES: config has "repos:" followed by "- owner/repo" lines until next top-level key.
 load_repos_from_config() {
   local config_file="$1"
+  local in_repos=false
+  local line=""
   [[ -f "$config_file" ]] || fail "Config file not found: $config_file"
   REPOS=()
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^[[:space:]]*-[[:space:]]+(.+)$ ]]; then
-      REPOS+=("${BASH_REMATCH[1]}")
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+
+    if [[ "$line" =~ ^repos:[[:space:]]*$ ]]; then
+      in_repos=true
+      continue
     fi
-  done < <(sed -n '/^repos:/,/^[a-zA-Z_][a-zA-Z0-9_]*:/p' "$config_file" | grep '^  - ' | sed 's/^  - //' | tr -d '\r')
+
+    if [[ "$in_repos" == true ]]; then
+      if [[ "$line" =~ ^[a-zA-Z_][a-zA-Z0-9_]*:[[:space:]]*$ ]]; then
+        break
+      fi
+
+      if [[ "$line" =~ ^[[:space:]]*-[[:space:]]+([^[:space:]].*)$ ]]; then
+        REPOS+=("${BASH_REMATCH[1]}")
+      fi
+    fi
+  done < "$config_file"
   [[ ${#REPOS[@]} -gt 0 ]] || fail "Config file has no repos list: $config_file"
 }
 
