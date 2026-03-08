@@ -114,6 +114,7 @@ if [[ -n "${REPO_SEARCH_PATHS:-}" ]] && [[ "${NODE_MODULES_MAX_GB:-0}" -gt 0 ]];
     CLEANED_DIRS=0
     # SECURITY: Use mktemp to prevent insecure predictable temporary files (CWE-377)
     CLEANED_DIRS_FILE="$(mktemp -t 'cleaned_dirs.XXXXXX')"
+    trap 'rm -f "$CLEANED_DIRS_FILE" 2>/dev/null' EXIT
     echo "0" > "$CLEANED_DIRS_FILE"
     
     for search_path in "${SEARCH_PATHS[@]}"; do
