@@ -6,7 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import mock_open, patch
 
 # Add the project root to sys.path so we can import the script
 project_root = Path(__file__).resolve().parent.parent
