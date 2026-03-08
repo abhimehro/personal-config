@@ -27,7 +27,3 @@
 - **Zero-diff PRs persist**: #417 had zero files changed. This is the same pattern from sessions 1-2 where Jules creates verification-only PRs.
 - **Auth-adjacent changes require caution**: #413 modifies profile ID handling in `controld-manager` with env var support and `sudo env` propagation. Even though it's a security improvement, it touches auth-adjacent logic and should be reviewed manually.
 - **Batch close commands accelerate cleanup**: Since we can merge but not close, providing the user with ready-to-run `gh pr close` commands for the entire duplicate queue saves significant time.
-
-## Session 4 — 2026-03-01
-**Learning:** `extract_allowlist_domains_from_file` optimizes dictionary access avoiding `get().get()` by checking `'PK' in rule and 'action' in rule and rule['action'].get('do') == 1`. Testing this effectively requires verifying the behavior when rules are complete, have missing keys (partial data), or missing `do` key entirely.
-**Action:** When creating tests for similar dictionaries access optimization, assure testing happy path, partial data missing inner key or outer key individually to fully verify the loop logic safely skips invalid items instead of throwing a KeyError or AttributeError.
