@@ -181,6 +181,7 @@ main() {
     echo -e "${YELLOW}⚠️  This will modify configuration files in your home directory.${NC}"
     echo
     read -p "Ready to proceed? (y/N) " -n 1 -r
+    REPLY=${REPLY:-N}
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
       log_info "Bootstrap cancelled by user."

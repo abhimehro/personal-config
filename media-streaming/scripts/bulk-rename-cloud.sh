@@ -53,6 +53,7 @@ if [[ "$DRY_RUN" == "true" ]]; then
 fi
 
 read -p "Do you want to attempt automatic renaming? (y/N) " -n 1 -r
+REPLY=${REPLY:-N}
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     log "User cancelled"
