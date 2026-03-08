@@ -151,7 +151,7 @@ if [[ -n ${REPO_SEARCH_PATHS-} ]] && [[ ${NODE_MODULES_MAX_GB:-0} -gt 0 ]]; then
 				rm -f "/tmp/cleaned_dirs_$$" 2>/dev/null || true
 			fi
 		fi
-	done < <(find "$search_path" -name "node_modules" -type d -mtime +"${NODE_MODULES_MAX_AGE_DAYS:-90}" -print0 2>/dev/null)
+	done
 
 	if [[ $CLEANED_DIRS -gt 0 ]]; then
 		log_info "Cleaned up $CLEANED_DIRS large/old node_modules directories"
