@@ -316,7 +316,7 @@ get_user_home() {
     if command -v dscl > /dev/null 2>&1; then
         home=$(dscl . -read "/Users/$user" NFSHomeDirectory 2> /dev/null | awk '{print $2}' | head -1 || true)
     elif command -v getent > /dev/null 2>&1; then
-        home=$(getent passwd "$user" | cut -d: -f6 2> /dev/null || true)
+        home=$(getent passwd "$user" 2> /dev/null | cut -d: -f6 || true)
     fi
 
     if [[ -z "$home" ]]; then
