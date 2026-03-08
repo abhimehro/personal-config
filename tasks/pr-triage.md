@@ -1,65 +1,116 @@
 # PR Triage Findings
 
-Triage basis: live session 4 inventory from `tasks/pr-inventory.md` (2026-03-08).
+Triage basis: session 2 inventory from `tasks/pr-inventory.md` (2026-02-27).
 
 ## Exact Duplicates / High File Overlap
 
-No exact duplicates detected in the current open Jules queue.
+| Repo | PRs | Overlap | Keep | Close | Rationale |
+|---|---|---:|---|---|---|
+| abhimehro/ctrld-sync | #406, #399 | 1.00 | Neither | Both | Both fail CI with identical pytest-xdist approach; consolidate into fresh PR if feature wanted |
+| abhimehro/ctrld-sync | #405, #402, #395 | 0.90 | #395 | #405, #402 | All add test workflow; #395 is superset with uv caching + badge; #402 is a subset; #405 fails CI |
+| abhimehro/email-security-pipeline | #381, #372 | 0.85 | #381 | #372 | Both target nested archive detection in media_analyzer; #381 is broader, includes tests, and adds constant |
 
-## Overlap / Merge-Ordering Risks
+## Semantic Duplicates
 
-| Repo | PRs | Shared Files | Keep / Order | Rationale |
+| Repo | PRs | Keep | Close | Rationale |
 |---|---|---|---|---|
-| abhimehro/[REDACTED]-config | #615, #618 | `maintenance/bin/node_maintenance.sh` | Merge #615 first, then re-check #618 | Security fix for insecure temp files should land before the performance refactor touching the same block |
-| abhimehro/[REDACTED]-config | #619, #620 | `media-streaming/archive/scripts/infuse-media-server.py` | Merge #620 first; require a narrowed diff for #619 | #620 is a safe dead-import cleanup; #619 includes broad formatting churn beyond the target optimization |
-| abhimehro/ctrld-sync | #620, #623 | `main.py` | Merge #620 first, then rebase/re-check #623 | SSRF hardening is higher priority than the loop-optimization PR touching the same function area |
-| abhimehro/ctrld-sync | #622, #623 | `tests/test_ux.py` | Strip the identical unrelated test hunk from at least one PR | The shared one-line test change is unrelated to both primary tasks and will create needless conflicts |
+| abhimehro/ctrld-sync | #401, #400 | Both | — | Complementary CI cache improvements: #401 pins hashes, #400 broadens scope. Merge sequentially: #401 first |
+| abhimehro/ctrld-sync | #394, #396 | #396 | #394 | #394 has conflicts and is partially subsumed by #396's dead-code removal |
 
-## Scope-Creep Findings
+## Superseded PRs (No Effective Diff vs Base)
 
-| Repo | PR # | Finding | Disposition Impact |
+| Repo | PR # | Disposition | Rationale |
 |---|---:|---|---|
-| abhimehro/[REDACTED]-config | 614 | Adds `tasks/lessons.md` update unrelated to the test gap | MERGE-AFTER-FIX |
-| abhimehro/[REDACTED]-config | 615 | Includes generated `.trunk/plugins/trunk` symlink churn | MERGE-AFTER-FIX |
-| abhimehro/[REDACTED]-config | 619 | Includes `.jules/bolt.md`, generated `.trunk/plugins/trunk`, and broad quote-format churn in the target file | REQUEST-CHANGES |
-| abhimehro/ctrld-sync | 622 | Includes unrelated `tests/test_ux.py` edit | MERGE-AFTER-FIX |
-| abhimehro/ctrld-sync | 623 | Includes unrelated `.jules/bolt.md` and `tests/test_ux.py` changes | MERGE-AFTER-FIX |
+| abhimehro/ctrld-sync | 397 | CLOSE-STALE | Zero changed files — SECURITY.md changes already on main |
+| abhimehro/ctrld-sync | 394 | CLOSE-STALE | CONFLICTING/DIRTY + subsumed by #396 |
+| abhimehro/email-security-pipeline | 373 | CLOSE-STALE | Zero-diff WIP — no docstrings added |
+| abhimehro/email-security-pipeline | 371 | CLOSE-STALE | Zero-diff WIP — no refactoring done |
+| abhimehro/email-security-pipeline | 370 | CLOSE-STALE | Zero-diff WIP — no tests added |
 
-## Security Gate Notes
+## Conflicting PRs
 
-| Repo | PR # | Security Result | Notes |
+| Repo | PR # | Issue | Action |
 |---|---:|---|---|
-| abhimehro/[REDACTED]-config | 615 | PASS with cleanup needed | Fix addresses predictable temp-file usage, but generated `.trunk` symlink must be removed before merge |
-| abhimehro/[REDACTED]-config | 616 | PASS | Hash verification fails closed by deleting the download and falling back to a local build |
-| abhimehro/[REDACTED]-config | 617 | PASS | `getent` fallback plus username allowlist reduces `eval` exposure |
-| abhimehro/ctrld-sync | 620 | PASS | SSRF checks explicitly block loopback, private, unspecified, link-local, multicast, and CGNAT IPv4 |
+| abhimehro/personal-config | 385 | CONFLICTING/DIRTY after #384 merge changed shared files | ESCALATE: author rebase needed |
+| abhimehro/ctrld-sync | 394 | CONFLICTING/DIRTY on `main.py` and `uv.lock` | CLOSE-STALE: subsumed by #396 |
+| abhimehro/email-security-pipeline | 381 | CONFLICTING/DIRTY on `media_analyzer.py` | MERGE-AFTER-FIX: rebase then merge |
+| abhimehro/email-security-pipeline | 372 | CONFLICTING/DIRTY on `media_analyzer.py` | CLOSE-DUPLICATE: superseded by #381 |
 
 ## Stale Candidates (>30 days inactive and failing CI)
 
-No stale candidates detected under the configured threshold.
+No stale candidates detected under the configured threshold. All bot PRs are 7–12 days old.
 
-## Ready-to-Execute Human Merge Queue
+## Permission Constraints
 
-Because this environment treats `gh` as read-only and the repositories use Trunk-managed merge flows, no remote actions were executed here. Recommended order:
+| Repo | Merge | Close | Comment | Review |
+|---|---|---|---|---|
+| abhimehro/personal-config | ✅ | ❌ | ❌ | ❌ |
+| abhimehro/email-security-pipeline | ❌ | ❌ | ❌ | ❌ |
+| abhimehro/ctrld-sync | ❌ | ❌ | ❌ | ❌ |
 
-### abhimehro/[REDACTED]-config
+All `CLOSE-*` dispositions for non-personal-config repos require human execution or elevated token scopes.
 
-1. **MERGE** `#617` — command injection fix in `get_user_home`
-2. **MERGE** `#616` — binary integrity verification for Mole installer
-3. **MERGE-AFTER-FIX** `#615` — remove `.trunk/plugins/trunk`, then merge the CWE-377 fix
-4. **MERGE** `#618` — re-check against `#615`, then merge the `node_maintenance.sh` optimization
-5. **MERGE** `#620` — unused import cleanup
-6. **REQUEST-CHANGES** `#619` — narrow the diff to the actual perf change before merge consideration
-7. **MERGE-AFTER-FIX** `#614` — drop the unrelated `tasks/lessons.md` edit
-8. **MERGE** `#621` — `print_summary` refactor after the higher-priority items above
+## Ready-to-Execute Human Actions
 
-### abhimehro/email-security-pipeline
+### ctrld-sync — Close Queue
 
-1. **MERGE** `#539` — clean `_validate_signature_match` optimization
+```bash
+# Close duplicates and stale
+gh pr close 406 --repo abhimehro/ctrld-sync --comment "Closing: duplicate of parallel pytest work (#399 also fails CI). Consolidate if feature desired."
+gh pr close 405 --repo abhimehro/ctrld-sync --comment "Closing: duplicate of test workflow (#395 is superset with uv caching). Use #395 instead."
+gh pr close 402 --repo abhimehro/ctrld-sync --comment "Closing: duplicate of test workflow (#395 is superset). Use #395 instead."
+gh pr close 399 --repo abhimehro/ctrld-sync --comment "Closing: duplicate of #406, both fail CI. Consolidate if feature desired."
+gh pr close 397 --repo abhimehro/ctrld-sync --comment "Closing: zero changed files — SECURITY.md changes already on main."
+gh pr close 394 --repo abhimehro/ctrld-sync --comment "Closing: merge conflicts + subsumed by #396 dead-code removal."
+```
 
-### abhimehro/ctrld-sync
+### ctrld-sync — Merge Queue (recommended order)
 
-1. **MERGE** `#620` — SSRF hardening (re-check mergeability first)
-2. **MERGE** `#621` — profile ID format tests (re-check mergeability first)
-3. **MERGE-AFTER-FIX** `#622` — remove the unrelated `tests/test_ux.py` hunk
-4. **MERGE-AFTER-FIX** `#623` — remove `.jules/bolt.md` and the unrelated `tests/test_ux.py` hunk, then rebase after `#620`
+```bash
+gh pr merge 403 --repo abhimehro/ctrld-sync --squash --delete-branch  # Python 3.13 standardization
+gh pr merge 401 --repo abhimehro/ctrld-sync --squash --delete-branch  # Pin CI cache keys
+gh pr merge 400 --repo abhimehro/ctrld-sync --squash --delete-branch  # Broaden pip cache keys
+gh pr merge 395 --repo abhimehro/ctrld-sync --squash --delete-branch  # Test workflow (best of 3)
+gh pr merge 398 --repo abhimehro/ctrld-sync --squash --delete-branch  # README fix
+```
+
+### email-security-pipeline — Close Queue
+
+```bash
+gh pr close 372 --repo abhimehro/email-security-pipeline --comment "Closing: superseded by #381 (broader fix with tests)."
+gh pr close 373 --repo abhimehro/email-security-pipeline --comment "Closing: zero-diff WIP — no docstrings added."
+gh pr close 371 --repo abhimehro/email-security-pipeline --comment "Closing: zero-diff WIP — no refactoring done."
+gh pr close 370 --repo abhimehro/email-security-pipeline --comment "Closing: zero-diff WIP — no tests added."
+```
+
+### email-security-pipeline — Merge Queue (recommended order)
+
+```bash
+# Phase 1: Independent PRs
+gh pr merge 374 --repo abhimehro/email-security-pipeline --squash --delete-branch  # Static analysis fixes
+gh pr merge 368 --repo abhimehro/email-security-pipeline --squash --delete-branch  # TTL cache limits
+gh pr merge 369 --repo abhimehro/email-security-pipeline --squash --delete-branch  # Regex compilation
+gh pr merge 378 --repo abhimehro/email-security-pipeline --squash --delete-branch  # endswith() fix
+
+# Phase 2: email_parser
+gh pr merge 380 --repo abhimehro/email-security-pipeline --squash --delete-branch  # Replace bare excepts
+
+# Phase 3: Analyzer scoring (sequential)
+gh pr merge 379 --repo abhimehro/email-security-pipeline --squash --delete-branch  # Risk level extraction
+gh pr merge 377 --repo abhimehro/email-security-pipeline --squash --delete-branch  # ThreatScorer utility
+
+# Phase 4: Post-cleanup
+# #381 — rebase after closing #372, then merge
+# #375 — fix CodeFactor nit, then merge
+```
+
+### PRs Requiring Human Review Before Merge
+
+| Repo | PR # | Why |
+|---|---:|---|
+| abhimehro/ctrld-sync | 407 | `uv.lock` adds `pytest-benchmark` — strip lockfile changes |
+| abhimehro/ctrld-sync | 404 | FEATURE: adds `pyyaml` runtime dep + `~/.ctrld-sync/` convention — needs architectural sign-off |
+| abhimehro/ctrld-sync | 396 | Removes `return True` from validators — verify no caller depends on truthy return |
+| abhimehro/email-security-pipeline | 376 | Refactors body-size limiting (DoS protection) without tests |
+| abhimehro/email-security-pipeline | 375 | 639-line test file with CodeFactor nit — minor fix needed |
+| abhimehro/personal-config | 385 | CONFLICTING: rebase needed after #384 merge |
