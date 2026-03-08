@@ -204,7 +204,7 @@ check_doh3_enforced() {
 
 	# Look for any upstream type declarations and ensure they are all doh3.
 	local doh_types
-	doh_types=$(grep -E "^\s*type = 'doh" "$link_target" 2>/dev/null || true)
+	doh_types=$(grep -E "^[[:space:]]*type = 'doh" "$link_target" 2>/dev/null || true)
 	if [ -z "$doh_types" ]; then
 		# No explicit types found; treat as unknown but not fatal.
 		return 0
