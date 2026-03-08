@@ -61,3 +61,7 @@
 ## 2024-05-24 - Basic Auth Decoding Overhead
 **Learning:** Python's `http.server` handler methods (`do_HEAD`, `do_GET`) execute the `check_auth` logic entirely on the main thread for every incoming HTTP request. In custom implementations (like `infuse-media-server.py` and `alldebrid-server.py`), decoding the base64 `Authorization` header and splitting the string (`base64.b64decode(auth_data).decode('utf-8').split(':', 1)`) on every single request adds significant unnecessary overhead (up to a ~9x slowdown in microbenchmarks) compared to directly comparing the base64 token.
 **Action:** Always pre-compute expected static tokens (like Basic Auth base64 strings) at server startup and use a single `secrets.compare_digest` against the incoming request header to avoid repeated decoding and allocations on every request.
+
+## 2026-11-20 - [Redundant String Escape Ops in HTML Generation]
+**Learning:** In list comprehensions that generate HTML strings, executing operations like string concatenation (`base_path + item`) and HTML escaping (`html.escape(...)`) on constant portions of the string (like a directory's base path) creates significant O(N) overhead.
+**Action:** When generating HTML elements in a loop, pre-compute and pre-escape any static parent strings outside the loop.
