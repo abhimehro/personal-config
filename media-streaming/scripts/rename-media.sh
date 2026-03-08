@@ -10,7 +10,7 @@
 set -euo pipefail
 
 # Set PATH to include Homebrew/local binaries for launchd compatibility
-export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
 
 # === Configuration ===
 STAGING_DIR="$HOME/CloudMedia/staging"
