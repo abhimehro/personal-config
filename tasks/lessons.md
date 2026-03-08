@@ -27,3 +27,15 @@
 - **Zero-diff PRs persist**: #417 had zero files changed. This is the same pattern from sessions 1-2 where Jules creates verification-only PRs.
 - **Auth-adjacent changes require caution**: #413 modifies profile ID handling in `controld-manager` with env var support and `sudo env` propagation. Even though it's a security improvement, it touches auth-adjacent logic and should be reviewed manually.
 - **Batch close commands accelerate cleanup**: Since we can merge but not close, providing the user with ready-to-run `gh pr close` commands for the entire duplicate queue saves significant time.
+
+## Session 4 — 2026-03-08
+
+- **Jules can masquerade as the triggering human author**: Current PRs showed `author.login=abhimehro`, but the PR body/footer and the bootstrap comment from `google-labs-jules` confirmed they were bot-generated. Author-login filtering alone will miss active Jules queues.
+- **Delegated-author heuristic is reliable enough for triage**: Treat a PR as Jules-authored when both signals are present: the footer says `PR created automatically by Jules ... started by @<user>` and a `google-labs-jules` comment appears on the thread.
+- **Scope creep is now the dominant Jules failure mode**: Recent PRs frequently include generated `.trunk/plugins/trunk` churn, `.jules/*.md`, `tasks/lessons.md`, or unrelated single-line test edits. These should usually be stripped before merge rather than blocking otherwise good changes.
+- **Tiny unrelated hunks create avoidable conflict waves**: `ctrld-sync#622` and `#623` both carried the same stray `tests/test_ux.py` change, which would create unnecessary overlap despite different primary intents.
+- **The preflight gate itself needs regression coverage**: The session initially failed because `scripts/preflight-gh-pr-automation.sh` used a `sed` range that ended on the same `repos:` line it started on. Config parsing is security-critical for safe automation and should stay covered by tests.
+
+## 2024-05-24 - Parallel Test Sandboxing & PATH Modification
+**Learning:** Shell scripts that modify `PATH` by explicitly appending it rather than prepending to it (e.g., `export PATH="/usr/bin:$PATH"`) can break out of test sandboxes if they are invoked from parallel test runners (like `run_all_tests.sh`) that rely on mocked executables placed at the beginning of the `PATH` (e.g., `export PATH="$MOCK_BIN:$PATH"`). Because `/usr/bin` forces the system path first, it bypasses the mock directory. This can cause mock commands (like `pkill`) to run the real system binary, terminating unrelated tests executing in parallel.
+**Action:** When a script requires adding specific paths to `PATH`, always append them (`export PATH="$PATH:/new/path"`) unless there is a critical reason to override the user's environment. This guarantees that mock environments remain properly isolated during test suite execution.
