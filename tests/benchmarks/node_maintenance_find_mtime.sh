@@ -3,8 +3,8 @@ export NODE_MODULES_MAX_AGE_DAYS=90
 export NODE_MODULES_MAX_GB=0
 
 echo "Creating mock data..."
-rm -rf /tmp/test_node_modules
-mkdir -p /tmp/test_node_modules
+search_path=$(mktemp -d -t test_node_modules.XXXXXX)
+trap 'rm -rf "$search_path"' EXIT
 for i in {1..200}; do
   mkdir -p "/tmp/test_node_modules/proj_$i/node_modules"
   touch "/tmp/test_node_modules/proj_$i/package.json"
