@@ -30,6 +30,9 @@ else
 	USE_PRINTF_TIME=false
 fi
 
+# Create log directory if it doesn't exist to prevent tee from failing
+mkdir -p "$LOG_DIR" || true
+
 # Logging function with bash version compatibility
 # Use optimized printf built-in for bash 4.2+, fall back to date command for older versions
 if [ "$USE_PRINTF_TIME" = true ]; then
@@ -166,7 +169,7 @@ check_filtering() {
 	dig_out=$(dig @********* doubleclick.net +short 2>/dev/null)
 
 	local block_test=0
-	if [[ -n "$dig_out" ]]; then
+	if [[ -n $dig_out ]]; then
 		block_test=1
 	fi
 
@@ -204,7 +207,7 @@ check_doh3_enforced() {
 
 	# Look for any upstream type declarations and ensure they are all doh3.
 	local doh_types
-	doh_types=$(grep -E "^[[:space:]]*type = 'doh" "$link_target" 2>/dev/null || true)
+	doh_types=$(grep -E "^\s*type = 'doh" "$link_target" 2>/dev/null || true)
 	if [ -z "$doh_types" ]; then
 		# No explicit types found; treat as unknown but not fatal.
 		return 0
@@ -290,49 +293,46 @@ verify_doh3_enforced() {
 }
 
 verify_network_transitions() {
-	local service_running=false
-	if check_service; then
-		service_running=true
+	if ! check_service; then
+		return 0
 	fi
 
-	if [ "$service_running" = true ]; then
-		# Check for split-horizon DNS
+	# Check for split-horizon DNS
+	if check_split_dns; then
+		log "✓ No split-horizon DNS detected"
+	else
+		log_error "Multiple DNS resolvers detected (split-horizon)"
+		log_error "Flushing DNS cache to recover..."
+		sudo dscacheutil -flushcache 2>/dev/null
+		sudo killall -HUP mDNSResponder 2>/dev/null
+		sleep 2
+		# Recheck
 		if check_split_dns; then
-			log "✓ No split-horizon DNS detected"
+			log "✓ Split-horizon resolved after cache flush"
 		else
-			log_error "Multiple DNS resolvers detected (split-horizon)"
-			log_error "Flushing DNS cache to recover..."
-			sudo dscacheutil -flushcache 2>/dev/null
-			sudo killall -HUP mDNSResponder 2>/dev/null
-			sleep 2
-			# Recheck
-			if check_split_dns; then
-				log "✓ Split-horizon resolved after cache flush"
-			else
-				log_error "Split-horizon persists - manual intervention may be needed"
-				return 1
-			fi
-		fi
-
-		# Check Control D is primary resolver
-		if check_primary_resolver; then
-			log "✓ Control D is primary resolver"
-		else
-			log_error "Control D not found as primary resolver"
-			log_error "System may be using fallback DNS"
+			log_error "Split-horizon persists - manual intervention may be needed"
 			return 1
 		fi
+	fi
 
-		# Check mDNS cache health
-		if check_mdns_cache; then
-			log "✓ mDNS cache responding normally"
-		else
-			log_error "mDNS cache may be stale or hung"
-			log_error "Flushing DNS cache..."
-			sudo dscacheutil -flushcache 2>/dev/null
-			sudo killall -HUP mDNSResponder 2>/dev/null
-			log "✓ Cache flushed"
-		fi
+	# Check Control D is primary resolver
+	if check_primary_resolver; then
+		log "✓ Control D is primary resolver"
+	else
+		log_error "Control D not found as primary resolver"
+		log_error "System may be using fallback DNS"
+		return 1
+	fi
+
+	# Check mDNS cache health
+	if check_mdns_cache; then
+		log "✓ mDNS cache responding normally"
+	else
+		log_error "mDNS cache may be stale or hung"
+		log_error "Flushing DNS cache..."
+		sudo dscacheutil -flushcache 2>/dev/null
+		sudo killall -HUP mDNSResponder 2>/dev/null
+		log "✓ Cache flushed"
 	fi
 
 	return 0
@@ -350,7 +350,7 @@ monitor_controld() {
 	verify_service_status || all_checks_passed=false
 	verify_listener || all_checks_passed=false
 	verify_dns_resolution || all_checks_passed=false
-	verify_upstream_connectivity
+	verify_upstream_connectivity || all_checks_passed=false
 	verify_filtering || all_checks_passed=false
 	verify_doh3_enforced || all_checks_passed=false
 	verify_network_transitions || all_checks_passed=false
