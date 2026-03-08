@@ -428,62 +428,81 @@ run_monthly_maintenance() {
     run_script "deep_cleaner.sh" "cleanup"
 }
 
-# Formats duration in seconds to Xm Ys
-format_duration() {
-    local total_duration=$1
+# Function to print summary table
+print_summary() {
+    # Calculate total duration
+    local current_time
+    current_time=$(date +%s)
+    local total_duration
+    total_duration=$((current_time - RUN_START))
+    local total_fmt
     if (( total_duration > 60 )); then
-        echo "$((total_duration / 60))m $((total_duration % 60))s"
+        total_fmt="$((total_duration / 60))m $((total_duration % 60))s"
     else
-        echo "${total_duration}s"
+        total_fmt="${total_duration}s"
     fi
-}
 
-# Prints the summary table header
-print_summary_header() {
     echo "" | tee -a "$MASTER_LOG"
     echo "┌────────────────────────────────────────────────────────────────────────┐" | tee -a "$MASTER_LOG"
     echo "│                        MAINTENANCE RUN SUMMARY                         │" | tee -a "$MASTER_LOG"
     echo "├────────────────────────────────────────────────────────────────────────┤" | tee -a "$MASTER_LOG"
+
+    # Header row
     printf "│ %-12s │ %-40s │ %-10s │\n" "STATUS" "TASK" "DURATION" | tee -a "$MASTER_LOG"
     echo "├──────────────┼──────────────────────────────────────────┼────────────┤" | tee -a "$MASTER_LOG"
-}
 
-# Returns status text and color variable name
-get_status_formatting() {
-    local status=$1
-    if [[ "$status" == *"Success"* ]]; then
-        echo "✅ Success  |GREEN"
-    elif [[ "$status" == *"Failed"* ]]; then
-        echo "❌ Failed   |RED"
-    elif [[ "$status" == *"Missing"* ]]; then
-        echo "⚠️  Missing  |YELLOW"
+    if [[ ${#SUMMARY_RESULTS[@]} -eq 0 ]]; then
+        echo "│ No tasks recorded.                                                     │" | tee -a "$MASTER_LOG"
     else
-        echo "$(printf "%-12s" "$status")|"
+        for entry in "${SUMMARY_RESULTS[@]}"; do
+            IFS="|" read -r name status duration type <<< "$entry"
+
+            # Prepare padded string and color
+            local status_text=""
+            local color=""
+
+            if [[ "$status" == *"Success"* ]]; then
+                 status_text="✅ Success  "
+                 color="$GREEN"
+            elif [[ "$status" == *"Failed"* ]]; then
+                 status_text="❌ Failed   "
+                 color="$RED"
+            elif [[ "$status" == *"Missing"* ]]; then
+                 status_text="⚠️  Missing  "
+                 color="$YELLOW"
+            else
+                 status_text="$(printf "%-12s" "$status")"
+                 color=""
+            fi
+
+            # Select icon based on type
+            local icon="📋"
+            case "$type" in
+                "critical") icon="🚑" ;;
+                "cleanup") icon="🧹" ;;
+                "maintenance") icon="🔧" ;;
+                "optimization") icon="⚡" ;;
+            esac
+
+            # Add icon to name
+            name="$icon $name"
+
+            # Truncate name if too long
+            if [[ ${#name} -gt 39 ]]; then
+                name="${name:0:36}..."
+            fi
+
+            # Print row with colors (ANSI codes)
+            printf "│ ${color}%s${NC} │ %-39s │ %-10s │\n" "$status_text" "$name" "$duration" | tee -a "$MASTER_LOG"
+        done
     fi
-}
 
-# Returns icon based on task type
-get_type_icon() {
-    local type=$1
-    case "$type" in
-        "critical") echo "🚑" ;;
-        "cleanup") echo "🧹" ;;
-        "maintenance") echo "🔧" ;;
-        "optimization") echo "⚡" ;;
-        *) echo "📋" ;;
-    esac
-}
-
-# Prints the footer with total duration
-print_summary_footer() {
-    local total_fmt=$1
+    # Footer with Total Duration
     echo "├──────────────┴──────────────────────────────────────────┼────────────┤" | tee -a "$MASTER_LOG"
     printf "│ %55s │ %-10s │\n" "TOTAL DURATION" "$total_fmt" | tee -a "$MASTER_LOG"
     echo "└─────────────────────────────────────────────────────────┴────────────┘" | tee -a "$MASTER_LOG"
-}
 
-# Evaluates and prints overall completion status
-print_overall_status() {
+    # Check overall status
     local any_failed=false
     local any_missing=false
 
@@ -506,54 +525,14 @@ print_overall_status() {
         echo -e "${GREEN}${BOLD}✨ MAINTENANCE COMPLETED SUCCESSFULLY ✨${NC}" | tee -a "$MASTER_LOG"
         echo -e "System is clean and optimized." | tee -a "$MASTER_LOG"
     fi
-}
 
-# Prints log directory link
-print_log_link() {
+    # Link to log directory
     if [[ "${TERM_PROGRAM:-}" == "iTerm.app" || "${TERM_PROGRAM:-}" == "vscode" || "${TERM_PROGRAM:-}" == "Apple_Terminal" ]]; then
          # OSC 8 hyperlink sequence
          echo -e "Logs: \033]8;;file://${LOG_DIR}\033\\${LOG_DIR}\033]8;;\033\\" | tee -a "$MASTER_LOG"
     else
          echo "Logs saved to: $LOG_DIR" | tee -a "$MASTER_LOG"
     fi
-}
-
-# Function to print summary table
-print_summary() {
-    local current_time
-    current_time=$(date +%s)
-    local total_duration=$((current_time - RUN_START))
-    local total_fmt
-    total_fmt=$(format_duration "$total_duration")
-
-    print_summary_header
-
-    if [[ ${#SUMMARY_RESULTS[@]} -eq 0 ]]; then
-        echo "│ No tasks recorded.                                                     │" | tee -a "$MASTER_LOG"
-    else
-        for entry in "${SUMMARY_RESULTS[@]}"; do
-            IFS="|" read -r name status duration type <<< "$entry"
-
-            local formatting
-            formatting=$(get_status_formatting "$status")
-            local status_text="${formatting%%|*}"
-            local color="${formatting##*|}"
-
-            name="$(get_type_icon "$type") $name"
-
-            # Truncate name if too long
-            if [[ ${#name} -gt 39 ]]; then
-                name="${name:0:36}..."
-            fi
-
-            # Print row with colors (ANSI codes)
-            printf "│ ${color}%s${NC} │ %-39s │ %-10s │\n" "$status_text" "$name" "$duration" | tee -a "$MASTER_LOG"
-        done
-    fi
-
-    print_summary_footer "$total_fmt"
-    print_overall_status
-    print_log_link
 }
 
 # --- Execution Entry Point ---
