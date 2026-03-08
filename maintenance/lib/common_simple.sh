@@ -8,7 +8,7 @@ ARCH="$(uname -m)"
 OS_VER="$(sw_vers -productVersion)"
 
 # Simple PATH setup for Apple Silicon
-export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+export PATH="$PATH:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 # Repository-aware paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
