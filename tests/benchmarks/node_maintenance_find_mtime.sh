@@ -1,10 +1,13 @@
 #!/bin/bash
 export NODE_MODULES_MAX_AGE_DAYS=90
-export NODE_MODULES_MAX_GB=0
+export NODE_MODULES_MAX_GB=5
 
 echo "Creating mock data..."
-rm -rf /tmp/test_node_modules
-mkdir -p /tmp/test_node_modules
+test_dir="/tmp/test_node_modules"
+if [[ -d "$test_dir" ]]; then
+  rm -rf "$test_dir"
+fi
+mkdir -p "$test_dir"
 for i in {1..200}; do
 	mkdir -p "/tmp/test_node_modules/proj_$i/node_modules"
 	touch "/tmp/test_node_modules/proj_$i/package.json"
