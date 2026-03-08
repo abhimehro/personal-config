@@ -47,6 +47,7 @@ fi
 if [[ -f "$CONTROLD_MANAGER_DEST" ]]; then
     warn "controld-manager already installed at $CONTROLD_MANAGER_DEST"
     read -p "Overwrite? (y/N): " -n 1 -r
+    REPLY=${REPLY:-N}
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         log "Skipping controld-manager installation"

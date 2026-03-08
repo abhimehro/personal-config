@@ -49,6 +49,8 @@ if [[ -z "$TASK" ]]; then
             break
         elif [[ "$opt" == "Quit" ]]; then
             break
+        else
+            echo "${RED}Invalid selection. Please try again.${RESET}"
         fi
     done
     exit 0
