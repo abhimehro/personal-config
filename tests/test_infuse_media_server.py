@@ -74,10 +74,10 @@ class TestMediaServerHandler(unittest.TestCase):
         self.handler.send_response.assert_called_with(401)
         self.handler.send_header.assert_called_with('WWW-Authenticate', 'Basic realm="Infuse Media Server"')
 
-    def test_check_auth_invalid_base64(self):
+    def test_check_auth_handles_comparison_exception(self):
         """
-        Test that an Authorization header with invalid base64 token format triggers
-        the except block and results in a 401 response.
+        Test that an exception during token comparison is caught and results
+        in a 401 response.
         """
         # Setup mock authentication globals
         infuse_media_server.AUTH_USER = 'test_user'
