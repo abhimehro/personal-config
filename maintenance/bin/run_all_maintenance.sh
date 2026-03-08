@@ -539,9 +539,7 @@ print_summary() {
             local status_text="${formatting%%|*}"
             local color="${formatting##*|}"
 
-            local icon
-            icon=$(get_type_icon "$type")
-            name="$icon $name"
+            name="$(get_type_icon "$type") $name"
 
             # Truncate name if too long
             if [[ ${#name} -gt 39 ]]; then
