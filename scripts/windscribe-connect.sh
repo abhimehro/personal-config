@@ -23,6 +23,28 @@ warn() { echo -e "${YELLOW}[WARN]${NC}" "$@"; }
 error() { echo -e "${RED}[ERROR]${NC}" "$@" >&2; }
 success() { echo -e "${GREEN}[OK]${NC}" "$@"; }
 
+# Accessible Spinner
+spinner_wait() {
+  local duration=$1
+  local msg="${2:-Working}"
+
+  if [ -t 1 ]; then
+    local i=1
+    local sp="/-\|"
+    local iterations=$((duration * 10))
+
+    for ((c=0; c<iterations; c++)); do
+      printf "\r${BLUE}[%c]${NC} %s..." "${sp:i++%${#sp}:1}" "$msg"
+      sleep 0.1
+    done
+    printf "\r\033[K" # Clear line
+  else
+    # Fallback for non-TTY environments (CI, screen readers)
+    log "$msg (waiting ${duration}s)..."
+    sleep "$duration"
+  fi
+}
+
 # Pre-flight checks
 if [[ ! -x "$REPO_ROOT/scripts/network-mode-manager.sh" ]]; then
   error "network-mode-manager.sh not found at $REPO_ROOT/scripts/"
@@ -45,14 +67,14 @@ cd "$REPO_ROOT"
 sudo ./scripts/network-mode-manager.sh windscribe "$PROFILE"
 
 # Wait for Control D to stabilize
-sleep 2
+spinner_wait 2 "Waiting for Control D to stabilize"
 
 # Step 2: Connect Windscribe
 log "Step 2: Connecting Windscribe VPN..."
 windscribe connect
 
 # Wait for VPN to establish
-sleep 3
+spinner_wait 3 "Waiting for VPN to establish"
 
 # Step 3: Force DNS back to localhost (Windscribe may have overridden it)
 log "Step 3: Re-enforcing DNS lock to Control D (127.0.0.1)..."
@@ -62,7 +84,7 @@ sudo networksetup -setdnsservers Wi-Fi 127.0.0.1
 sudo dscacheutil -flushcache 2>/dev/null || true
 sudo killall -HUP mDNSResponder 2>/dev/null || true
 
-sleep 1
+spinner_wait 1 "Applying DNS rules"
 
 # Step 4: Verification
 echo ""
@@ -92,7 +114,7 @@ else
   warn "DNS was overridden. Attempting recovery..."
   sudo networksetup -setdnsservers Wi-Fi 127.0.0.1
   sudo dscacheutil -flushcache
-  sleep 1
+  spinner_wait 1 "Waiting for recovery"
   CURRENT_DNS=$(networksetup -getdnsservers Wi-Fi 2</dev/null || echo "")
   if echo "$CURRENT_DNS" | grep -q "127.0.0.1"; then
     success "Recovery successful: DNS now locked to 127.0.0.1"
