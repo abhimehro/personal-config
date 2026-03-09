@@ -103,5 +103,107 @@ class TestMediaServerHandler(unittest.TestCase):
         self.handler.send_response.assert_called_with(401)
         self.handler.send_header.assert_called_with('WWW-Authenticate', 'Basic realm="Infuse Media Server"')
 
+    def test_check_auth_missing_auth_header(self):
+        """
+        Test that missing Authorization header results in a 401 response.
+        """
+        infuse_media_server.AUTH_USER = 'test_user'
+        infuse_media_server.AUTH_PASS = 'test_pass'
+        infuse_media_server.EXPECTED_AUTH_TOKEN = 'mock_token'
+
+        self.handler.client_address = ('127.0.0.1', 12345)
+        self.handler.headers = {}
+
+        result = self.handler.check_auth()
+
+        self.assertFalse(result)
+        self.handler.send_response.assert_called_with(401)
+        self.handler.send_header.assert_called_with('WWW-Authenticate', 'Basic realm="Infuse Media Server"')
+
+    def test_check_auth_not_basic_auth(self):
+        """
+        Test that Authorization header with non-Basic scheme results in a 401 response.
+        """
+        infuse_media_server.AUTH_USER = 'test_user'
+        infuse_media_server.AUTH_PASS = 'test_pass'
+        infuse_media_server.EXPECTED_AUTH_TOKEN = 'mock_token'
+
+        self.handler.client_address = ('127.0.0.1', 12345)
+        self.handler.headers = {'Authorization': 'Bearer some_token'}
+
+        result = self.handler.check_auth()
+
+        self.assertFalse(result)
+        self.handler.send_response.assert_called_with(401)
+        self.handler.send_header.assert_called_with('WWW-Authenticate', 'Basic realm="Infuse Media Server"')
+
+    def test_check_auth_invalid_token(self):
+        """
+        Test that an invalid token (failed digest comparison) results in a 401 response.
+        """
+        infuse_media_server.AUTH_USER = 'test_user'
+        infuse_media_server.AUTH_PASS = 'test_pass'
+        infuse_media_server.EXPECTED_AUTH_TOKEN = 'mock_token'
+
+        self.handler.client_address = ('127.0.0.1', 12345)
+        self.handler.headers = {'Authorization': 'Basic invalid_token'}
+
+        result = self.handler.check_auth()
+
+        self.assertFalse(result)
+        self.handler.send_response.assert_called_with(401)
+        self.handler.send_header.assert_called_with('WWW-Authenticate', 'Basic realm="Infuse Media Server"')
+
+    def test_check_auth_missing_auth_header(self):
+        """
+        Test that missing Authorization header results in a 401 response.
+        """
+        infuse_media_server.AUTH_USER = 'test_user'
+        infuse_media_server.AUTH_PASS = 'test_pass'
+        infuse_media_server.EXPECTED_AUTH_TOKEN = 'mock_token'
+
+        self.handler.client_address = ('127.0.0.1', 12345)
+        self.handler.headers = {}
+
+        result = self.handler.check_auth()
+
+        self.assertFalse(result)
+        self.handler.send_response.assert_called_with(401)
+        self.handler.send_header.assert_called_with('WWW-Authenticate', 'Basic realm="Infuse Media Server"')
+
+    def test_check_auth_not_basic_auth(self):
+        """
+        Test that Authorization header with non-Basic scheme results in a 401 response.
+        """
+        infuse_media_server.AUTH_USER = 'test_user'
+        infuse_media_server.AUTH_PASS = 'test_pass'
+        infuse_media_server.EXPECTED_AUTH_TOKEN = 'mock_token'
+
+        self.handler.client_address = ('127.0.0.1', 12345)
+        self.handler.headers = {'Authorization': 'Bearer some_token'}
+
+        result = self.handler.check_auth()
+
+        self.assertFalse(result)
+        self.handler.send_response.assert_called_with(401)
+        self.handler.send_header.assert_called_with('WWW-Authenticate', 'Basic realm="Infuse Media Server"')
+
+    def test_check_auth_invalid_token(self):
+        """
+        Test that an invalid token (failed digest comparison) results in a 401 response.
+        """
+        infuse_media_server.AUTH_USER = 'test_user'
+        infuse_media_server.AUTH_PASS = 'test_pass'
+        infuse_media_server.EXPECTED_AUTH_TOKEN = 'mock_token'
+
+        self.handler.client_address = ('127.0.0.1', 12345)
+        self.handler.headers = {'Authorization': 'Basic invalid_token'}
+
+        result = self.handler.check_auth()
+
+        self.assertFalse(result)
+        self.handler.send_response.assert_called_with(401)
+        self.handler.send_header.assert_called_with('WWW-Authenticate', 'Basic realm="Infuse Media Server"')
+
 if __name__ == '__main__':
     unittest.main()
