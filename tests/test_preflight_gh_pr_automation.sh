@@ -118,6 +118,29 @@ set -e
 check_exit_code "returns non-zero on check visibility failure" 1 "$EXIT_CODE"
 check_contains "propagates check visibility failure context" "check visibility failed. Details: simulated checks failure" "$TEST_DIR/t2.out"
 
+echo "=== Test 3: loads repos from config without leaking into later lists ==="
+cat > "$TEST_DIR/config.yaml" <<'EOF'
+repos:
+  - owner-one/repo-one
+  - owner-two/repo-two
+
+bot_authors:
+  - dependabot[bot]
+  - renovate[bot]
+EOF
+
+rm -f "$GH_LOG"
+GH_CHECKS_MODE=ok PATH="$MOCK_BIN:$PATH" bash "$SCRIPT" --config "$TEST_DIR/config.yaml" > "$TEST_DIR/t3.out" 2>&1
+check_contains "loads first configured repo" "repo view owner-one/repo-one --json nameWithOwner,defaultBranchRef" "$GH_LOG"
+check_contains "loads second configured repo" "repo view owner-two/repo-two --json nameWithOwner,defaultBranchRef" "$GH_LOG"
+if grep -Fq -- "dependabot[bot]" "$GH_LOG"; then
+  echo "FAIL: config parser should not treat bot_authors as repos"
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: config parser stops at next top-level key"
+  PASS=$((PASS + 1))
+fi
+
 echo ""
 echo "=== Results: $PASS passed, $FAIL failed ==="
 [[ "$FAIL" -eq 0 ]]
