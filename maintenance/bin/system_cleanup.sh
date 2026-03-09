@@ -14,28 +14,16 @@ if [[ "${AUTOMATED_RUN:-0}" == "1" ]] && [[ "$(date +%u)" -eq 1 ]]; then
 fi
 
 # Basic logging
-if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
-    get_timestamp() {
-        printf -v "$1" "%(%Y-%m-%d %H:%M:%S)T" -1
-    }
-else
-    get_timestamp() {
-        local val
-        val="$(date '+%Y-%m-%d %H:%M:%S')"
-        eval "$1='$val'"
-    }
-fi
+get_timestamp() {
+    date '+%Y-%m-%d %H:%M:%S'
+}
 
 log_info() {
-    local ts
-    get_timestamp ts
-    echo "$ts [INFO] [system_cleanup] $*" | tee -a "$LOG_DIR/system_cleanup.log"
+    echo "$(get_timestamp) [INFO] [system_cleanup] $*" | tee -a "$LOG_DIR/system_cleanup.log"
 }
 
 log_warn() {
-    local ts
-    get_timestamp ts
-    echo "$ts [WARNING] [system_cleanup] $*" | tee -a "$LOG_DIR/system_cleanup.log"
+    echo "$(get_timestamp) [WARNING] [system_cleanup] $*" | tee -a "$LOG_DIR/system_cleanup.log"
 }
 
 # Load config
@@ -61,7 +49,6 @@ CLEANED_ITEMS=0
 CACHE_DIR="${HOME}/Library/Caches"
 if [[ -d "${CACHE_DIR}" ]]; then
     log_info "Pruning caches older than ${CLEANUP_CACHE_DAYS:-30} days in ${CACHE_DIR}"
-    
     # Clean cache files (excluding critical system caches)
     for cache_subdir in "${CACHE_DIR}"/*; do
         if [[ -d "$cache_subdir" ]]; then
@@ -80,7 +67,6 @@ if [[ -d "${CACHE_DIR}" ]]; then
             esac
         fi
     done
-    
     # Remove empty directories
     find "${CACHE_DIR}" -type d -empty -delete 2>/dev/null || true
 fi
@@ -134,7 +120,6 @@ if command -v brew >/dev/null 2>&1; then
         log_info "Homebrew cleanup completed successfully"
         CLEANED_ITEMS=$((CLEANED_ITEMS + 1))
     fi
-    
     if brew autoremove 2>&1 | tee -a "$LOG_DIR/system_cleanup.log"; then
         log_info "Homebrew autoremove completed successfully"
     fi
@@ -193,7 +178,6 @@ for browser_cache in \
     "${HOME}/Library/Caches/com.google.Chrome" \
     "${HOME}/Library/Caches/com.apple.Safari" \
     "${HOME}/Library/Caches/org.mozilla.firefox"; do
-    
     if [[ -d "$browser_cache" ]]; then
         # ⚡ Bolt Optimization: parameter expansion avoids process spawning
         BROWSER_NAME="${browser_cache##*/}"
