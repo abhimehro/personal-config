@@ -115,14 +115,14 @@ class TestMediaServerHandler(unittest.TestCase):
         html_root = self.handler.generate_directory_listing(files, "/")
 
         self.assertIn("<title>Media Library - /</title>", html_root)
-        self.assertIn("<h1>📁 Media Library: //</h1>", html_root)
+        self.assertIn("Media Library: //</h1>", html_root)
         self.assertNotIn(".. (Parent Directory)", html_root)
 
         # File checks
-        self.assertIn('<a href="/video.mp4" class="file video">🎬 video.mp4</a>', html_root)
-        self.assertIn('<a href="/movie.MKV" class="file video">🎬 movie.MKV</a>', html_root)
-        self.assertIn('<a href="/folder/" class="file directory">📁 folder</a>', html_root)
-        self.assertIn('<a href="/document.txt" class="file video">📄 document.txt</a>', html_root)
+        self.assertIn('<a href="/video.mp4" class="file video">video.mp4</a>', html_root)
+        self.assertIn('<a href="/movie.MKV" class="file video">movie.MKV</a>', html_root)
+        self.assertIn('<a href="/folder/" class="file directory">folder</a>', html_root)
+        self.assertIn('<a href="/document.txt" class="file video">document.txt</a>', html_root)
 
         # Test 2: Subdirectory with escaping
         html_sub = self.handler.generate_directory_listing(files, "/Movies/Action <Sci-Fi>")
@@ -134,7 +134,7 @@ class TestMediaServerHandler(unittest.TestCase):
         self.assertIn('<a href="//Movies" class="file directory">', html_sub)
 
         # Check files in subdirectory
-        self.assertIn('<a href="//Movies/Action &lt;Sci-Fi&gt;/video.mp4" class="file video">🎬 video.mp4</a>', html_sub)
+        self.assertIn('<a href="//Movies/Action &lt;Sci-Fi&gt;/video.mp4" class="file video">video.mp4</a>', html_sub)
 
 if __name__ == '__main__':
     unittest.main()
