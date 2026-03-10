@@ -2,3 +2,8 @@
 exclude_paths:
   - 'tests/**'
   - 'media-streaming/**'
+  - 'copilot-demo/**'
+  - 'configs/.config/mole/bin/**'
+  - 'configs/.gemini/extensions/context7/docs/**'
+  - 'configs/*.bak'
+  - 'configs/*.rayconfig'
