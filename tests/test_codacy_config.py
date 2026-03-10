@@ -1,5 +1,5 @@
 import codecs
-import re
+import fnmatch
 import subprocess
 import unittest
 from pathlib import Path, PurePosixPath
@@ -25,6 +25,7 @@ def load_exclude_paths():
                 exclude_indent = indent
             continue
 
+        # Stop when we hit the next top-level YAML key after exclude_paths.
         if indent <= exclude_indent and stripped and not stripped.startswith("- "):
             break
 
@@ -35,29 +36,38 @@ def load_exclude_paths():
 
 
 def codacy_path_matches(path, pattern):
-    path = PurePosixPath(path).as_posix()
-    pattern = PurePosixPath(pattern).as_posix()
+    path_parts = PurePosixPath(path).parts
+    pattern_parts = PurePosixPath(pattern).parts
+    return _match_path_parts(path_parts, pattern_parts)
 
-    regex_parts = []
-    i = 0
-    while i < len(pattern):
-        char = pattern[i]
-        if char == "*":
-            if i + 1 < len(pattern) and pattern[i + 1] == "*":
-                regex_parts.append(".*")
-                i += 2
-                continue
-            regex_parts.append("[^/]*")
-        elif char == "?":
-            regex_parts.append("[^/]")
-        else:
-            regex_parts.append(re.escape(char))
-        i += 1
 
-    return re.fullmatch("".join(regex_parts), path) is not None
+def _match_path_parts(path_parts, pattern_parts):
+    if not pattern_parts:
+        return not path_parts
+
+    current_pattern = pattern_parts[0]
+    remaining_patterns = pattern_parts[1:]
+
+    if current_pattern == "**":
+        return _match_path_parts(path_parts, remaining_patterns) or (
+            bool(path_parts) and _match_path_parts(path_parts[1:], pattern_parts)
+        )
+
+    return (
+        bool(path_parts)
+        and fnmatch.fnmatchcase(path_parts[0], current_pattern)
+        and _match_path_parts(path_parts[1:], remaining_patterns)
+    )
 
 
 def is_utf8_encoded(file_path, chunk_size=8192):
+    """Return True when a file decodes as UTF-8 using bounded memory.
+
+    The test only needs to know whether Codacy might trip over non-UTF-8 content,
+    so it validates incrementally in 8 KB chunks instead of loading large tracked
+    binaries or exports fully into memory.
+    """
+
     decoder = codecs.getincrementaldecoder("utf-8")()
 
     with file_path.open("rb") as handle:
@@ -76,6 +86,24 @@ def is_utf8_encoded(file_path, chunk_size=8192):
 
 
 class TestCodacyConfig(unittest.TestCase):
+    def test_codacy_path_matches_respects_segment_boundaries(self):
+        self.assertTrue(codacy_path_matches("configs/foo.bak", "configs/*.bak"))
+        self.assertFalse(codacy_path_matches("configs/subdir/foo.bak", "configs/*.bak"))
+        self.assertTrue(codacy_path_matches("configs/file1.bak", "configs/file?.bak"))
+        self.assertFalse(codacy_path_matches("configs/file10.bak", "configs/file?.bak"))
+        self.assertTrue(
+            codacy_path_matches(
+                "configs/.gemini/extensions/context7/docs/public/favicon.ico",
+                "configs/.gemini/extensions/context7/docs/**",
+            )
+        )
+        self.assertFalse(
+            codacy_path_matches(
+                "configs/.gemini/extensions/context7/other/favicon.ico",
+                "configs/.gemini/extensions/context7/docs/**",
+            )
+        )
+
     def test_load_exclude_paths_only_reads_exclude_paths_block(self):
         config_text = """exclude_paths:
   - 'tests/**'
@@ -116,11 +144,6 @@ languages:
                 any(codacy_path_matches(path, pattern) for pattern in exclude_paths),
                 f"{path} is not covered by .codacy.yml exclude_paths",
             )
-
-        self.assertFalse(
-            codacy_path_matches("configs/subdir/something.bak", "configs/*.bak"),
-        )
-
     def test_tracked_non_utf8_files_are_excluded_from_codacy(self):
         exclude_paths = load_exclude_paths()
         tracked_files = subprocess.check_output(
