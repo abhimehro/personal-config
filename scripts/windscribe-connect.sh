@@ -31,7 +31,8 @@ spinner_wait() {
   if [[ -t 1 ]]; then
     local i=1
     local sp="/-\|"
-    local iterations=$(awk -v d="$duration" 'BEGIN {print int(d * 10)}')
+    local iterations
+    iterations=$((duration * 10))
     local c=0
 
     while [[ $c -lt $iterations ]]; do
