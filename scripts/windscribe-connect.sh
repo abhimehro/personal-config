@@ -23,6 +23,39 @@ warn() { echo -e "${YELLOW}[WARN]${NC}" "$@"; }
 error() { echo -e "${RED}[ERROR]${NC}" "$@" >&2; }
 success() { echo -e "${GREEN}[OK]${NC}" "$@"; }
 
+# Spinner wait function (Palette 🎨 UX enhanced)
+spinner_wait() {
+    local duration=$1
+    local message="${2:-Waiting}"
+
+    # If not running in a TTY, just standard sleep
+    if [[ ! -t 1 ]]; then
+        log "$message... (${duration}s)"
+        sleep "$duration"
+        return 0
+    fi
+
+    local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+    local iters=$((duration * 10))
+    local i=0
+
+    # Hide cursor
+    tput civis 2>/dev/null || true
+
+    while [ $i -lt $iters ]; do
+        local elapsed=$((i / 10))
+        local temp=${spinstr#?}
+        printf "\r${BLUE}%c${NC} %s (%ds/%ds)..." "$spinstr" "$message" "$elapsed" "$duration"
+        spinstr=$temp${spinstr%"$temp"}
+        sleep 0.1
+        i=$((i + 1))
+    done
+
+    # Restore cursor
+    tput cnorm 2>/dev/null || true
+    printf "\r\033[K"
+}
+
 # Pre-flight checks
 if [[ ! -x "$REPO_ROOT/scripts/network-mode-manager.sh" ]]; then
   error "network-mode-manager.sh not found at $REPO_ROOT/scripts/"
@@ -45,14 +78,14 @@ cd "$REPO_ROOT"
 sudo ./scripts/network-mode-manager.sh windscribe "$PROFILE"
 
 # Wait for Control D to stabilize
-sleep 2
+spinner_wait 2 "Allowing Control D to stabilize"
 
 # Step 2: Connect Windscribe
 log "Step 2: Connecting Windscribe VPN..."
 windscribe connect
 
 # Wait for VPN to establish
-sleep 3
+spinner_wait 3 "Waiting for VPN to establish"
 
 # Step 3: Force DNS back to localhost (Windscribe may have overridden it)
 log "Step 3: Re-enforcing DNS lock to Control D (127.0.0.1)..."
@@ -62,7 +95,7 @@ sudo networksetup -setdnsservers Wi-Fi 127.0.0.1
 sudo dscacheutil -flushcache 2>/dev/null || true
 sudo killall -HUP mDNSResponder 2>/dev/null || true
 
-sleep 1
+spinner_wait 1 "Flushing DNS caches"
 
 # Step 4: Verification
 echo ""
@@ -92,7 +125,7 @@ else
   warn "DNS was overridden. Attempting recovery..."
   sudo networksetup -setdnsservers Wi-Fi 127.0.0.1
   sudo dscacheutil -flushcache
-  sleep 1
+  spinner_wait 1 "Recovering DNS configuration"
   CURRENT_DNS=$(networksetup -getdnsservers Wi-Fi 2</dev/null || echo "")
   if echo "$CURRENT_DNS" | grep -q "127.0.0.1"; then
     success "Recovery successful: DNS now locked to 127.0.0.1"
