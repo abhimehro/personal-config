@@ -1,6 +1,7 @@
 import codecs
 import fnmatch
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path, PurePosixPath
 from unittest.mock import patch
@@ -25,12 +26,16 @@ def load_exclude_paths():
                 exclude_indent = indent
             continue
 
-        # Stop when we hit the next top-level YAML key after exclude_paths.
-        if indent <= exclude_indent and stripped and not stripped.startswith("- "):
-            break
+        if not stripped:
+            continue
 
-        if indent > exclude_indent and line.lstrip().startswith("- "):
+        if stripped.startswith("- "):
             excludes.append(line.lstrip()[2:].strip("'\""))
+            continue
+
+        # Stop when we hit the next top-level YAML key after exclude_paths.
+        if indent <= exclude_indent:
+            break
 
     return excludes
 
@@ -68,7 +73,7 @@ def is_utf8_encoded(file_path, chunk_size=8192):
     binaries or exports fully into memory.
     """
 
-    decoder = codecs.getincrementaldecoder("utf-8")()
+    decoder = codecs.getincrementaldecoder("utf-8")(errors="strict")
 
     with file_path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(chunk_size), b""):
@@ -108,6 +113,17 @@ class TestCodacyConfig(unittest.TestCase):
         config_text = """exclude_paths:
   - 'tests/**'
   - 'copilot-demo/**'
+languages:
+  - python
+"""
+
+        with patch.object(Path, "read_text", return_value=config_text):
+            self.assertEqual(load_exclude_paths(), ["tests/**", "copilot-demo/**"])
+
+    def test_load_exclude_paths_supports_same_indent_list_style(self):
+        config_text = """exclude_paths:
+- 'tests/**'
+- 'copilot-demo/**'
 languages:
   - python
 """
@@ -177,6 +193,22 @@ languages:
             [],
             f"Tracked non-UTF8 files must be excluded from Codacy: {uncovered_files}",
         )
+
+    def test_is_utf8_encoded_handles_chunk_boundaries(self):
+        with tempfile.NamedTemporaryFile() as handle:
+            handle.write("🙂".encode("utf-8"))
+            handle.flush()
+            self.assertTrue(is_utf8_encoded(Path(handle.name), chunk_size=1))
+
+    def test_is_utf8_encoded_accepts_empty_file(self):
+        with tempfile.NamedTemporaryFile() as handle:
+            self.assertTrue(is_utf8_encoded(Path(handle.name)))
+
+    def test_is_utf8_encoded_rejects_invalid_bytes(self):
+        with tempfile.NamedTemporaryFile() as handle:
+            handle.write(b"valid-prefix\xffinvalid")
+            handle.flush()
+            self.assertFalse(is_utf8_encoded(Path(handle.name), chunk_size=4))
 
 
 if __name__ == "__main__":
