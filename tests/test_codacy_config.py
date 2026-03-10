@@ -30,7 +30,7 @@ def load_exclude_paths():
             continue
 
         if stripped.startswith("- "):
-            excludes.append(line.lstrip()[2:].strip("'\""))
+            excludes.append(stripped[2:].strip("'\""))
             continue
 
         # Stop when we hit the next top-level YAML key after exclude_paths.
@@ -65,7 +65,7 @@ def _match_path_parts(path_parts, pattern_parts):
     )
 
 
-def is_utf8_encoded(file_path, chunk_size=8192):
+def can_decode_as_utf8(file_path, chunk_size=8192):
     """Return True when a file decodes as UTF-8 using bounded memory.
 
     The test only needs to know whether Codacy might trip over non-UTF-8 content,
@@ -73,9 +73,8 @@ def is_utf8_encoded(file_path, chunk_size=8192):
     binaries or exports fully into memory.
     """
 
-    decoder = codecs.getincrementaldecoder("utf-8")(errors="strict")
-
     with file_path.open("rb") as handle:
+        decoder = codecs.getincrementaldecoder("utf-8")(errors="strict")
         for chunk in iter(lambda: handle.read(chunk_size), b""):
             try:
                 decoder.decode(chunk)
@@ -176,7 +175,7 @@ languages:
             if not file_path.is_file():
                 continue
 
-            if not is_utf8_encoded(file_path):
+            if not can_decode_as_utf8(file_path):
                 tracked_non_utf8_files.append(relative_path)
 
         self.assertGreater(len(tracked_non_utf8_files), 0)
@@ -194,21 +193,27 @@ languages:
             f"Tracked non-UTF8 files must be excluded from Codacy: {uncovered_files}",
         )
 
-    def test_is_utf8_encoded_handles_chunk_boundaries(self):
+    def test_can_decode_as_utf8_handles_chunk_boundaries(self):
         with tempfile.NamedTemporaryFile() as handle:
             handle.write("🙂".encode("utf-8"))
             handle.flush()
-            self.assertTrue(is_utf8_encoded(Path(handle.name), chunk_size=1))
+            self.assertTrue(can_decode_as_utf8(Path(handle.name), chunk_size=1))
 
-    def test_is_utf8_encoded_accepts_empty_file(self):
+    def test_can_decode_as_utf8_handles_multiple_multibyte_boundaries(self):
         with tempfile.NamedTemporaryFile() as handle:
-            self.assertTrue(is_utf8_encoded(Path(handle.name)))
+            handle.write("🙂é🙂".encode("utf-8"))
+            handle.flush()
+            self.assertTrue(can_decode_as_utf8(Path(handle.name), chunk_size=2))
 
-    def test_is_utf8_encoded_rejects_invalid_bytes(self):
+    def test_can_decode_as_utf8_accepts_empty_file(self):
+        with tempfile.NamedTemporaryFile() as handle:
+            self.assertTrue(can_decode_as_utf8(Path(handle.name)))
+
+    def test_can_decode_as_utf8_rejects_invalid_bytes(self):
         with tempfile.NamedTemporaryFile() as handle:
             handle.write(b"valid-prefix\xffinvalid")
             handle.flush()
-            self.assertFalse(is_utf8_encoded(Path(handle.name), chunk_size=4))
+            self.assertFalse(can_decode_as_utf8(Path(handle.name), chunk_size=4))
 
 
 if __name__ == "__main__":
