@@ -68,6 +68,10 @@ def _match_path_parts(path_parts, pattern_parts):
 def can_decode_as_utf8(file_path, chunk_size=8192):
     """Return True when a file decodes as UTF-8 using bounded memory.
 
+    Parameters:
+        file_path (Path): File to validate by decoding its bytes as UTF-8.
+        chunk_size (int): Number of bytes to read per decode step.
+
     The test only needs to know whether Codacy might trip over non-UTF-8 content,
     so it validates incrementally in 8 KB chunks instead of loading large tracked
     binaries or exports fully into memory.
@@ -194,23 +198,23 @@ languages:
         )
 
     def test_can_decode_as_utf8_handles_chunk_boundaries(self):
-        with tempfile.NamedTemporaryFile() as handle:
+        with tempfile.NamedTemporaryFile(mode="wb") as handle:
             handle.write("🙂".encode("utf-8"))
             handle.flush()
             self.assertTrue(can_decode_as_utf8(Path(handle.name), chunk_size=1))
 
     def test_can_decode_as_utf8_handles_multiple_multibyte_boundaries(self):
-        with tempfile.NamedTemporaryFile() as handle:
+        with tempfile.NamedTemporaryFile(mode="wb") as handle:
             handle.write("🙂é🙂".encode("utf-8"))
             handle.flush()
             self.assertTrue(can_decode_as_utf8(Path(handle.name), chunk_size=2))
 
     def test_can_decode_as_utf8_accepts_empty_file(self):
-        with tempfile.NamedTemporaryFile() as handle:
+        with tempfile.NamedTemporaryFile(mode="wb") as handle:
             self.assertTrue(can_decode_as_utf8(Path(handle.name)))
 
     def test_can_decode_as_utf8_rejects_invalid_bytes(self):
-        with tempfile.NamedTemporaryFile() as handle:
+        with tempfile.NamedTemporaryFile(mode="wb") as handle:
             handle.write(b"valid-prefix\xffinvalid")
             handle.flush()
             self.assertFalse(can_decode_as_utf8(Path(handle.name), chunk_size=4))
