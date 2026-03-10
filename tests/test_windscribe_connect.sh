@@ -214,6 +214,23 @@ else
     exit 1
 fi
 
+# Test 9: Verify script is free of SC2155/SC2145 correctness warnings
+echo ""
+echo "Test 9: ShellCheck correctness regression guard"
+echo "---"
+
+if ! command -v shellcheck >/dev/null 2>&1; then
+    echo "SKIP: shellcheck not installed"
+else
+    shellcheck_output="$(shellcheck --include=SC2155,SC2145 --format=gcc "$SCRIPT" || true)"
+    if [[ -n "$shellcheck_output" ]]; then
+        echo "❌ FAIL: ShellCheck reported SC2155/SC2145 warnings"
+        echo "$shellcheck_output"
+        exit 1
+    fi
+    echo "✅ PASS: No SC2155/SC2145 warnings reported"
+fi
+
 echo ""
 echo "=========================================="
 echo "✅ All tests passed!"
