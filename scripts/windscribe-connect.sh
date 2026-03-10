@@ -28,14 +28,16 @@ spinner_wait() {
   local duration=$1
   local msg="${2:-Working}"
 
-  if [ -t 1 ]; then
+  if [[ -t 1 ]]; then
     local i=1
     local sp="/-\|"
     local iterations=$((duration * 10))
+    local c=0
 
-    for ((c=0; c<iterations; c++)); do
+    while [[ $c -lt $iterations ]]; do
       printf "\r${BLUE}[%c]${NC} %s..." "${sp:i++%${#sp}:1}" "$msg"
       sleep 0.1
+      c=$((c + 1))
     done
     printf "\r\033[K" # Clear line
   else
@@ -115,7 +117,7 @@ else
   sudo networksetup -setdnsservers Wi-Fi 127.0.0.1
   sudo dscacheutil -flushcache
   spinner_wait 1 "Waiting for recovery"
-  CURRENT_DNS=$(networksetup -getdnsservers Wi-Fi 2</dev/null || echo "")
+  CURRENT_DNS=$(networksetup -getdnsservers Wi-Fi 2>/dev/null || echo "")
   if echo "$CURRENT_DNS" | grep -q "127.0.0.1"; then
     success "Recovery successful: DNS now locked to 127.0.0.1"
   else
