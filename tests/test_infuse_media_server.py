@@ -107,9 +107,17 @@ class TestMediaServerHandler(unittest.TestCase):
 
     def test_generate_directory_listing(self):
         """
-        Test that generate_directory_listing produces correct HTML output.
+        Test that generate_directory_listing produces correct HTML output,
+        handles proper paths, and escapes file and directory names.
         """
-        files = ["video.mp4", "movie.MKV", "folder/", "document.txt"]
+        # Include files and directories with characters needing escaping like < > &
+        files = [
+            "video.mp4",
+            "movie.MKV",
+            "folder with <tag>/",
+            "document & file.txt",
+            "<script>alert(1)</script>.avi"
+        ]
 
         # Test 1: Root path
         html_root = self.handler.generate_directory_listing(files, "/")
@@ -118,23 +126,29 @@ class TestMediaServerHandler(unittest.TestCase):
         self.assertIn("\U0001f4c1 Media Library: //</h1>", html_root)
         self.assertNotIn(".. (Parent Directory)", html_root)
 
-        # File checks
+        # File checks with escaped characters
         self.assertIn('<a href="/video.mp4" class="file video">\U0001f3ac video.mp4</a>', html_root)
-        self.assertIn('<a href="/movie.MKV" class="file video">\U0001f3ac movie.MKV</a>', html_root)
-        self.assertIn('<a href="/folder/" class="file directory">\U0001f4c1 folder</a>', html_root)
-        self.assertIn('<a href="/document.txt" class="file video">\U0001f4c4 document.txt</a>', html_root)
+        self.assertIn('<a href="/folder with &lt;tag&gt;/" class="file directory">\U0001f4c1 folder with &lt;tag&gt;</a>', html_root)
+        self.assertIn('<a href="/document &amp; file.txt" class="file video">\U0001f4c4 document &amp; file.txt</a>', html_root)
+        self.assertIn('<a href="/&lt;script&gt;alert(1)&lt;/script&gt;.avi" class="file video">\U0001f3ac &lt;script&gt;alert(1)&lt;/script&gt;.avi</a>', html_root)
 
-        # Test 2: Subdirectory with escaping
-        html_sub = self.handler.generate_directory_listing(files, "/Movies/Action <Sci-Fi>")
+        # Test 2: Subdirectory with escaping - matching a realistic path shape
+        # The server script typically hosts from a specific media directory, so we'll use a realistic relative path
+        current_path = "/Movies & TV/Action <Sci-Fi>"
+        html_sub = self.handler.generate_directory_listing(files, current_path)
 
-        self.assertIn("Media Library - /Movies/Action &lt;Sci-Fi&gt;", html_sub)
+        self.assertIn("Media Library - /Movies &amp; TV/Action &lt;Sci-Fi&gt;", html_sub)
         self.assertIn(".. (Parent Directory)", html_sub)
 
-        # Check parent link
-        self.assertIn('<a href="//Movies" class="file directory">', html_sub)
+        # Check parent link (split takes off the last component)
+        # Note: actually current_path does NOT get escaped before computing parent?
+        # Let's check code: parent = "/".join(current_path.rstrip("/").split("/")[:-1]) -> "/Movies & TV"
+        # safe_parent = html.escape(parent) -> "/Movies &amp; TV"
+        self.assertIn('<a href="//Movies &amp; TV" class="file directory">', html_sub)
 
-        # Check files in subdirectory
-        self.assertIn('<a href="//Movies/Action &lt;Sci-Fi&gt;/video.mp4" class="file video">\U0001f3ac video.mp4</a>', html_sub)
+        # Check files in subdirectory (href should append to the escaped base_path)
+        self.assertIn('<a href="//Movies &amp; TV/Action &lt;Sci-Fi&gt;/video.mp4" class="file video">\U0001f3ac video.mp4</a>', html_sub)
+        self.assertIn('<a href="//Movies &amp; TV/Action &lt;Sci-Fi&gt;/folder with &lt;tag&gt;/" class="file directory">\U0001f4c1 folder with &lt;tag&gt;</a>', html_sub)
 
 if __name__ == '__main__':
     unittest.main()
