@@ -22,7 +22,7 @@ else
     get_timestamp() {
         local val
         val="$(date '+%Y-%m-%d %H:%M:%S')"
-        printf -v "$1" "%s" "$val"
+        eval "$1='$val'"
     }
 fi
 

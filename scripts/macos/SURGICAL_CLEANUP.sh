@@ -163,9 +163,12 @@ perform_surgical_removal() {
     
     # Special handling for .config directory - keep only fish
     if [ -d "$HOME/.config" ]; then
+        local fish_backup_dir=""
         if [ "$KEEP_FISH_CONFIG" = true ] && [ -d "$HOME/.config/fish" ]; then
-            # Backup fish config temporarily
-            cp -R "$HOME/.config/fish" "/tmp/fish_backup" 2>/dev/null || true
+            # Backup fish config temporarily using secure temporary directory
+            # SECURITY: Prevent CWE-377 (Insecure Temporary File) symlink attacks
+            fish_backup_dir="$(mktemp -d -t 'fish_backup.XXXXXX')"
+            cp -R "$HOME/.config/fish" "$fish_backup_dir/fish" 2>/dev/null || true
         fi
         
         # Remove .config directory
@@ -173,9 +176,10 @@ perform_surgical_removal() {
         print_status "Removed .config directory"
         
         # Restore fish config if it was backed up
-        if [ "$KEEP_FISH_CONFIG" = true ] && [ -d "/tmp/fish_backup" ]; then
+        if [ "$KEEP_FISH_CONFIG" = true ] && [ -n "$fish_backup_dir" ] && [ -d "$fish_backup_dir/fish" ]; then
             mkdir -p "$HOME/.config"
-            mv "/tmp/fish_backup" "$HOME/.config/fish"
+            mv "$fish_backup_dir/fish" "$HOME/.config/fish"
+            rm -rf "$fish_backup_dir" 2>/dev/null || true
             print_status "Restored Fish shell config"
         fi
     fi
