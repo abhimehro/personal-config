@@ -143,3 +143,8 @@
 **Vulnerability:** Predictable temporary file creation in `/tmp/` existed across several maintenance scripts (`generate_error_summary.sh`, `node_maintenance.sh`, `performance_optimizer.sh`, `smart_scheduler.sh`). For example, `MARKER_FILE="/tmp/maintenance_run_marker_$$"`.
 **Learning:** This is a classic CWE-377 vulnerability. It allows for symlink attacks where an attacker pre-creates the file as a symlink to a critical system file, tricking the script (often running as root or a privileged user) into overwriting it. It also allows Denial of Service by pre-creating lock files to prevent scripts from running.
 **Prevention:** Always use `mktemp -t 'prefix.XXXXXX'` for secure temporary file creation. This guarantees uniqueness and correct permissions, preventing race conditions and symlink attacks.
+
+## 2026-05-26 - Command Injection via eval for Variable Assignment
+**Vulnerability:** A Command Injection ([CWE-78](https://cwe.mitre.org/data/definitions/78.html)) risk was identified in `maintenance/bin/system_cleanup.sh` where `eval` was used to dynamically assign a variable name passed as a function argument (`eval "$1='$val'"`).
+**Learning:** Using `eval` to perform indirect variable assignments based on function arguments is an anti-pattern. If the variable name (`$1`) ever becomes controllable by user input, an attacker can inject arbitrary shell commands (e.g., passing `foo=bar; rm -rf /; foo` as the argument).
+**Prevention:** Never use `eval` for dynamic variable assignment. Instead, use secure, native features like `printf -v "$1" "%s" "$val"`, which safely assigns the value without evaluating the string as code.
