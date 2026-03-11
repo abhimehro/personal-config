@@ -7,6 +7,9 @@
 
 set -euo pipefail
 
+# Graceful exit on Ctrl+C
+trap 'echo -e "\n\n👋 Cancelled by user. Goodbye!"; trap - SIGINT; kill -s SIGINT $$' SIGINT
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONTROLD_MANAGER_SRC="$REPO_ROOT/controld-system/scripts/controld-manager"
 CONTROLD_MANAGER_DEST="/usr/local/bin/controld-manager"
@@ -20,14 +23,17 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-log()      { echo -e "${BLUE}[INFO]${NC} $*"; }
-success()  { echo -e "${GREEN}[OK]${NC} $*"; }
-error()    { echo -e "${RED}[ERR]${NC} $*" >&2; exit 1; }
-warn()     { echo -e "${YELLOW}[WARN]${NC} $*"; }
+log() { echo -e "${BLUE}[INFO]${NC} $*"; }
+success() { echo -e "${GREEN}[OK]${NC} $*"; }
+error() {
+	echo -e "${RED}[ERR]${NC} $*" >&2
+	exit 1
+}
+warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 
 # Check if running as root
 if [[ $EUID -eq 0 ]]; then
-    error "Please run as your normal user (not root). The script will ask for sudo when needed."
+	error "Please run as your normal user (not root). The script will ask for sudo when needed."
 fi
 
 # Check prerequisites
@@ -35,34 +41,34 @@ command -v ctrld >/dev/null 2>&1 || error "ctrld not found. Install with: brew i
 
 # Install controld-manager
 log "Installing controld-manager..."
-if [[ ! -f "$CONTROLD_MANAGER_SRC" ]]; then
-    error "controld-manager source not found at: $CONTROLD_MANAGER_SRC"
+if [[ ! -f $CONTROLD_MANAGER_SRC ]]; then
+	error "controld-manager source not found at: $CONTROLD_MANAGER_SRC"
 fi
 
 # 🛡️ Sentinel: Prevent Symlink Hijacking
-if [[ -L "$CONTROLD_MANAGER_DEST" ]]; then
-    error "Security Alert: $CONTROLD_MANAGER_DEST is a symbolic link. Aborting to prevent hijack."
+if [[ -L $CONTROLD_MANAGER_DEST ]]; then
+	error "Security Alert: $CONTROLD_MANAGER_DEST is a symbolic link. Aborting to prevent hijack."
 fi
 
-if [[ -f "$CONTROLD_MANAGER_DEST" ]]; then
-    warn "controld-manager already installed at $CONTROLD_MANAGER_DEST"
-    read -p "Overwrite? (y/N): " -n 1 -r
-    REPLY=${REPLY:-N}
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        log "Skipping controld-manager installation"
-    else
-        sudo install -m 755 -o root -g wheel "$CONTROLD_MANAGER_SRC" "$CONTROLD_MANAGER_DEST"
-        success "controld-manager installed"
-    fi
+if [[ -f $CONTROLD_MANAGER_DEST ]]; then
+	warn "controld-manager already installed at $CONTROLD_MANAGER_DEST"
+	read -p "Overwrite? (y/N): " -n 1 -r
+	REPLY=${REPLY:-N}
+	echo
+	if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+		log "Skipping controld-manager installation"
+	else
+		sudo install -m 755 -o root -g wheel "$CONTROLD_MANAGER_SRC" "$CONTROLD_MANAGER_DEST"
+		success "controld-manager installed"
+	fi
 else
-    sudo install -m 755 -o root -g wheel "$CONTROLD_MANAGER_SRC" "$CONTROLD_MANAGER_DEST"
-    success "controld-manager installed"
+	sudo install -m 755 -o root -g wheel "$CONTROLD_MANAGER_SRC" "$CONTROLD_MANAGER_DEST"
+	success "controld-manager installed"
 fi
 
 # Verify installation
 if ! command -v controld-manager >/dev/null 2>&1; then
-    error "controld-manager installation failed"
+	error "controld-manager installation failed"
 fi
 
 # Setup Environment File
@@ -70,12 +76,12 @@ log "Setting up configuration file..."
 
 # 🛡️ Sentinel: Prevent Symlink Hijacking
 if [[ -L "/etc/controld" ]]; then
-    error "Security Alert: /etc/controld is a symbolic link. Aborting to prevent permission hijacking."
+	error "Security Alert: /etc/controld is a symbolic link. Aborting to prevent permission hijacking."
 fi
 
 # Ensure /etc/controld exists (controld-manager creates it usually, but we should ensure it here for the config)
 if [[ -e "/etc/controld" && ! -d "/etc/controld" ]]; then
-    error "/etc/controld exists but is not a directory. Please fix this and rerun the script."
+	error "/etc/controld exists but is not a directory. Please fix this and rerun the script."
 fi
 
 # 🛡️ Sentinel: Use atomic directory creation to prevent TOCTOU race conditions
@@ -84,24 +90,24 @@ sudo install -d -m 700 -o root -g wheel "/etc/controld"
 
 # 🛡️ Sentinel: Post-creation verification to catch TOCTOU symlink swaps
 if [[ -L "/etc/controld" ]]; then
-    error "Security Alert: /etc/controld became a symlink after creation. Aborting to prevent hijack."
+	error "Security Alert: /etc/controld became a symlink after creation. Aborting to prevent hijack."
 fi
 
 # 🛡️ Sentinel: Prevent Symlink Hijacking for Config File
-if [[ -L "$ENV_DEST" ]]; then
-    error "Security Alert: $ENV_DEST is a symbolic link. Aborting to prevent hijack."
+if [[ -L $ENV_DEST ]]; then
+	error "Security Alert: $ENV_DEST is a symbolic link. Aborting to prevent hijack."
 fi
 
-if [[ ! -f "$ENV_DEST" ]]; then
-    if [[ -f "$ENV_EXAMPLE_SRC" ]]; then
-        sudo install -m 600 -o root -g wheel "$ENV_EXAMPLE_SRC" "$ENV_DEST"
-        log "Created $ENV_DEST"
-        warn "You must edit $ENV_DEST and add your Control D Profile IDs!"
-    else
-        warn "Example config not found at $ENV_EXAMPLE_SRC"
-    fi
+if [[ ! -f $ENV_DEST ]]; then
+	if [[ -f $ENV_EXAMPLE_SRC ]]; then
+		sudo install -m 600 -o root -g wheel "$ENV_EXAMPLE_SRC" "$ENV_DEST"
+		log "Created $ENV_DEST"
+		warn "You must edit $ENV_DEST and add your Control D Profile IDs!"
+	else
+		warn "Example config not found at $ENV_EXAMPLE_SRC"
+	fi
 else
-    log "Configuration file already exists at $ENV_DEST"
+	log "Configuration file already exists at $ENV_DEST"
 fi
 
 success "Setup complete!"

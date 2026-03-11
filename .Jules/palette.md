@@ -55,3 +55,7 @@
 ## 2026-03-04 - [CLI Accessibility: Spinner terminal spam]
 **Learning:** Animated CLI spinners using `\r` and interval writes create an inaccessible "terminal spam" experience for screen readers and CI environments, reading every single frame update.
 **Action:** When implementing CLI spinners, wrap the animation start in a `process.stdout.isTTY` check to ensure it gracefully falls back to a static "working..." message or no spinner in non-interactive/accessible environments.
+
+## 2026-03-12 - CLI Micro-Interactions: Graceful SIGINT Handling
+**Learning:** When interactive shell scripts are interrupted (Ctrl+C) while waiting for user input, the shell terminates abruptly without visual feedback, which can feel unpolished and leave terminal state messy. A graceful exit message provides closure.
+**Action:** Implement `trap 'echo -e "\n\n👋 Cancelled by user. Goodbye!"; trap - SIGINT; kill -s SIGINT $$' SIGINT` in interactive shell scripts that solicit user input to ensure a clean, polite exit when interrupted.
