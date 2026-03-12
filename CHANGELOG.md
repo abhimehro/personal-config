@@ -211,6 +211,8 @@
 
 **Merged pull requests:**
 
+- 🛡️ Sentinel: \[CRITICAL\] Fix Command Injection \(CWE-78\) in system\_cleanup.sh [\#637](https://github.com/abhimehro/personal-config/pull/637) ([abhimehro](https://github.com/abhimehro))
+- Fix PR-review preflight config parsing and refresh 2026-03-09 session artifacts [\#628](https://github.com/abhimehro/personal-config/pull/628) ([cursor[bot]](https://github.com/apps/cursor))
 - 🧪 test: add missing error path tests for check\_auth in infuse-media-server [\#625](https://github.com/abhimehro/personal-config/pull/625) ([abhimehro](https://github.com/abhimehro))
 - 🧹 Refactor: Extract helper functions from monitor\_controld [\#624](https://github.com/abhimehro/personal-config/pull/624) ([abhimehro](https://github.com/abhimehro))
 - Fix PR automation preflight parsing and refresh Jules triage artifacts [\#623](https://github.com/abhimehro/personal-config/pull/623) ([cursor[bot]](https://github.com/apps/cursor))
