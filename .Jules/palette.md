@@ -55,3 +55,7 @@
 ## 2026-03-04 - [CLI Accessibility: Spinner terminal spam]
 **Learning:** Animated CLI spinners using `\r` and interval writes create an inaccessible "terminal spam" experience for screen readers and CI environments, reading every single frame update.
 **Action:** When implementing CLI spinners, wrap the animation start in a `process.stdout.isTTY` check to ensure it gracefully falls back to a static "working..." message or no spinner in non-interactive/accessible environments.
+
+## 2026-03-09 - Transparent Wait States
+**Learning:** Hardcoded sleeps without visual feedback create uncertainty; users don't know if a script is frozen or just taking time.
+**Action:** Replace arbitrary `sleep` commands with accessible spinners to provide clear visual feedback during wait periods.
