@@ -36,6 +36,12 @@
 - **Tiny unrelated hunks create avoidable conflict waves**: `ctrld-sync#622` and `#623` both carried the same stray `tests/test_ux.py` change, which would create unnecessary overlap despite different primary intents.
 - **The preflight gate itself needs regression coverage**: The session initially failed because `scripts/preflight-gh-pr-automation.sh` used a `sed` range that ended on the same `repos:` line it started on. Config parsing is security-critical for safe automation and should stay covered by tests.
 
+## Session 5 — 2026-03-09
+
+- **Jules test-improvement tasks can smuggle CI security regressions**: `[REDACTED]-config#626` and `#627` were presented as test additions, but the actual diffs changed workflow action references from pinned SHAs to mutable tags and altered scan configuration. For Jules-authored "test" PRs, always inspect workflow and config files before trusting the summary.
+- **Reduced scanner scope is a security blocker even in test PRs**: Adding `.codacy.yml` exclusions for `tests/**` and large source directories is not harmless cleanup; it weakens review depth and should fail the security gate unless explicitly approved.
+- **Preflight recovery should be validated immediately on the real config**: Fixing the config parser was not enough by itself; rerunning the actual session preflight right after the regression test caught environment-specific issues early and prevented a false sense of readiness.
+
 ## 2024-05-24 - Parallel Test Sandboxing & PATH Modification
 **Learning:** Shell scripts that modify `PATH` by explicitly appending it rather than prepending to it (e.g., `export PATH="/usr/bin:$PATH"`) can break out of test sandboxes if they are invoked from parallel test runners (like `run_all_tests.sh`) that rely on mocked executables placed at the beginning of the `PATH` (e.g., `export PATH="$MOCK_BIN:$PATH"`). Because `/usr/bin` forces the system path first, it bypasses the mock directory. This can cause mock commands (like `pkill`) to run the real system binary, terminating unrelated tests executing in parallel.
 **Action:** When a script requires adding specific paths to `PATH`, always append them (`export PATH="$PATH:/new/path"`) unless there is a critical reason to override the user's environment. This guarantees that mock environments remain properly isolated during test suite execution.
