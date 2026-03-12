@@ -317,8 +317,15 @@ get_user_home() {
         home=$(dscl . -read "/Users/$user" NFSHomeDirectory 2> /dev/null | awk '{print $2}' | head -1 || true)
     fi
 
+    if [[ -z "$home" ]] && command -v getent > /dev/null 2>&1; then
+        home=$(getent passwd "$user" 2> /dev/null | cut -d: -f6 || true)
+    fi
+
     if [[ -z "$home" ]]; then
-        home=$(eval echo "~$user" 2> /dev/null || true)
+        # SECURITY: Strictly validate user input before eval to prevent CWE-78 (OS Command Injection)
+        if [[ "$user" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]*\$?$ ]]; then
+            home=$(eval echo "~$user" 2> /dev/null || true)
+        fi
     fi
 
     if [[ "$home" == "~"* ]]; then
