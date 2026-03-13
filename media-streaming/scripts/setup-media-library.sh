@@ -246,5 +246,5 @@ echo
 echo "🎬 Then add to Infuse:"
 echo "   Address: http://$(get_local_ip):8088"
 echo "   Username: infuse"
-echo "   Password: (see ~/.config/media-server/credentials)"
+echo "   Password: resolved via 1Password in the current setup (fallback file: ~/.config/media-server/credentials)"
 echo

@@ -7,7 +7,7 @@
     
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/speedybee/Documents/dev/personal-config/maintenance/bin/service_monitor.sh</string>
+        <string>/Users/speedybee/dev/personal-config/maintenance/bin/service_monitor.sh</string>
     </array>
     
     <key>EnvironmentVariables</key>

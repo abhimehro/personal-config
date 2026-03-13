@@ -44,7 +44,7 @@ git clone git@github.com:&lt;user&gt;/personal-config.git](https://brew.sh.Insta
 ```
 
 [mkdir -p ~/.config/fish
-ln -s ~/Documents/dev/personal-config/configs/.config/fish/config.fish 
+ln -s ~/dev/personal-config/configs/.config/fish/config.fish 
 ~/.config/fish/config.fish](https://brew.sh.Install)
 
 ```
@@ -253,7 +253,7 @@ Everything should report ✅ for Treesitter, providers, and LSP.[web:443][web:43
 - title: personal-config
 color: Green
 layout:
-cwd: /Users/speedybee/Documents/dev/personal-config](https://brew.sh.Install)
+cwd: /Users/speedybee/dev/personal-config](https://brew.sh.Install)
 
 ```
      - title: dev-root
@@ -270,7 +270,7 @@ cwd: /Users/speedybee/Documents/dev/personal-config](https://brew.sh.Install)
      - title: nvim
        color: Magenta
        layout:
-         cwd: /Users/speedybee/Documents/dev/personal-config
+         cwd: /Users/speedybee/dev/personal-config
          commands:
            - exec: nvim
 ```

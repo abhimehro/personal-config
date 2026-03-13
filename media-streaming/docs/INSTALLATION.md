@@ -1,4 +1,6 @@
-# 🚀 Installation & Recovery Guide
+#
+
+> Note: Current media auth is 1Password-first. References below to the media-server credentials file are optional fallback only. 🚀 Installation & Recovery Guide
 
 ## 📥 **Fresh Installation**
 

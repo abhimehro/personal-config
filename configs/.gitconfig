@@ -1,11 +1,9 @@
 [user]
-	name = Abhi Mehrotra
+	name = abhimehro
 	email = abhimehro@pm.me
-	signingkey = key::ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJoWdkOM4r8DcuM2m0Q5bCYamjwJHVw7gm98v5liGpvr GitHub SSH Key
-[gpg "ssh"]
-	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+	signingkey = key::ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILs85wxLcdzIE5jk4eXRWLEOyYEUPp0FYRKOnO+gQIK6 Personal SSH Key
 [commit]
-	gpgsign = false
+	gpgsign = true
 	template = /Users/speedybee/.config/git/commit-template.personal-config.txt
 [core]
 	excludesfile = /Users/speedybee/.gitignore_global
@@ -13,3 +11,5 @@
 	keepBackup = true
 [gpg]
 	format = ssh
+[gpg "ssh"]
+	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign

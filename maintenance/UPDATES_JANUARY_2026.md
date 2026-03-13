@@ -32,7 +32,7 @@ Click to view detailed panic analysis
 ```
 
 #### Files Modified:
-- `/Users/speedybee/Documents/dev/personal-config/maintenance/bin/health_check.sh`
+- `/Users/speedybee/dev/personal-config/maintenance/bin/health_check.sh`
 
 #### New Notification Behavior:
 - **With Panics**: Shows "View Panic Analysis" action → executes `panic_analyzer.sh`
@@ -76,7 +76,7 @@ Click to view detailed panic analysis
 - Maintains weekly Monday execution schedule
 
 ##### Archived Script: `onedrive_monitor.sh`
-- Moved to: `/Users/speedybee/Documents/dev/personal-config/maintenance/bin/archive/`
+- Moved to: `/Users/speedybee/dev/personal-config/maintenance/bin/archive/`
 - Preserved for reference if needed
 
 #### Technical Details:
@@ -118,7 +118,7 @@ Proton Drive Backup: Recent backup detected
 ### Test Enhanced Health Check:
 ```bash
 # Manual execution
-~/Documents/dev/personal-config/maintenance/bin/health_check.sh
+~/dev/personal-config/maintenance/bin/health_check.sh
 
 # Check for panic analysis integration
 # If panics detected, notification should offer "View Panic Analysis" action
@@ -128,7 +128,7 @@ Proton Drive Backup: Recent backup detected
 ### Test Google Drive Monitoring:
 ```bash
 # Manual execution
-~/Documents/dev/personal-config/maintenance/bin/google_drive_monitor.sh
+~/dev/personal-config/maintenance/bin/google_drive_monitor.sh
 
 # Should report:
 # - Google Drive status (Running/Not running)
@@ -140,7 +140,7 @@ Proton Drive Backup: Recent backup detected
 ### Test Weekly Maintenance:
 ```bash
 # Force run (don't wait for Monday)
-FORCE_RUN=1 ~/Documents/dev/personal-config/maintenance/bin/weekly_maintenance.sh
+FORCE_RUN=1 ~/dev/personal-config/maintenance/bin/weekly_maintenance.sh
 
 # Should execute:
 # 1. quick_cleanup.sh
@@ -226,10 +226,10 @@ All required tools already installed:
 terminal-notifier -title "Test" -message "Click me" -execute "echo test"
 
 # Verify panic_analyzer.sh is executable
-ls -l ~/Documents/dev/personal-config/maintenance/bin/panic_analyzer.sh
+ls -l ~/dev/personal-config/maintenance/bin/panic_analyzer.sh
 
 # Run health check manually to see output
-~/Documents/dev/personal-config/maintenance/bin/health_check.sh
+~/dev/personal-config/maintenance/bin/health_check.sh
 ```
 
 ### If Google Drive Monitoring Fails:
@@ -244,7 +244,7 @@ pgrep -fl "Google Drive"
 ping -c 3 drive.google.com
 
 # Run monitor manually
-~/Documents/dev/personal-config/maintenance/bin/google_drive_monitor.sh
+~/dev/personal-config/maintenance/bin/google_drive_monitor.sh
 ```
 
 ---
