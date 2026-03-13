@@ -27,4 +27,4 @@ vault = "Personal"
 
 # Enable all SSH keys from Private vault as fallback
 [[ssh-keys]]
-vault = "Private"
+vault = "Private”
