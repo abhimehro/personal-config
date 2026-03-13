@@ -7,8 +7,8 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/speedybee/Documents/dev/personal-config/scripts/morning-brief/venv/bin/python</string>
-        <string>/Users/speedybee/Documents/dev/personal-config/scripts/morning-brief/morning-brief.py</string>
+        <string>/Users/speedybee/dev/personal-config/scripts/morning-brief/venv/bin/python</string>
+        <string>/Users/speedybee/dev/personal-config/scripts/morning-brief/morning-brief.py</string>
     </array>
 
     <key>StartCalendarInterval</key>

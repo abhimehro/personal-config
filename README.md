@@ -37,7 +37,7 @@ Edit `./scripts/protondrive_backup.exclude` to tune exclusions (git repos, build
 
 ### Bootstrap this Mac (idempotent)
 ```bash
-cd ~/Documents/dev/personal-config
+cd ~/dev/personal-config
 ./setup.sh
 # Requires: macOS, Homebrew, 1Password CLI (`op`), rclone installed via brew
 # Does:
@@ -66,10 +66,10 @@ make lint-fix
 ### Automated Maintenance System (NEW!)
 ```bash
 # Check system health
-~/Documents/dev/personal-config/maintenance/bin/run_all_maintenance.sh health
+~/dev/personal-config/maintenance/bin/run_all_maintenance.sh health
 
 # Quick system cleanup
-~/Documents/dev/personal-config/maintenance/bin/run_all_maintenance.sh quick
+~/dev/personal-config/maintenance/bin/run_all_maintenance.sh quick
 
 # View automation status
 launchctl list | grep maintenance
@@ -237,8 +237,8 @@ ssh dev-auto    # Auto-detection fallback
 ### Complete Setup (Recommended)
 ```bash
 # Clone the repository
-git clone <your-repo-url> ~/Documents/dev/personal-config
-cd ~/Documents/dev/personal-config
+git clone <your-repo-url> ~/dev/personal-config
+cd ~/dev/personal-config
 
 # Install all configuration files (symlinks to home directory)
 ./scripts/install_all_configs.sh
@@ -333,7 +333,7 @@ export CTRLD_GAMING_PROFILE=<Gaming-Profile-ID>
 - **Alldebrid helper**: LaunchAgent `com.<your-home-folder>.media.alldebrid` mounts to `/Users/<your-home-folder>/mnt/alldebrid` and serves on **8080**.
 - **Secrets**:
   - `~/.config/rclone/rclone.conf` (seed from `media-streaming/configs/rclone.conf.template`, fill via `op inject`).
-  - `~/.config/media-server/credentials` (untracked; copy `media-streaming/configs/media-credentials.example` and inject creds with 1Password).
+  - `~/.config/media-server/credentials (optional fallback only in the current 1Password-first setup)` (untracked; copy `media-streaming/configs/media-credentials.example` and inject creds with 1Password).
 - **Cache & logs**: `~/Library/Application Support/MediaCache` (kept out of iCloud) and `~/Library/Logs/media/*.out|*.err`.
 - **Control**: `launchctl list | grep media` to verify; manual start: `~/Library/Media/bin/start-media-server.sh`.
 
@@ -574,8 +574,8 @@ _SSH Configuration: v2.0_
   - `configs/ssh/config`
   - `configs/ssh/agent.toml`
 - Local symlinks:
-  - `~/.ssh/config` → `~/Documents/dev/personal-config/configs/ssh/config`
-  - `~/.ssh/agent.toml` → `~/Documents/dev/personal-config/configs/ssh/agent.toml`
+  - `~/.ssh/config` → `~/dev/personal-config/configs/ssh/config`
+  - `~/.ssh/agent.toml` → `~/dev/personal-config/configs/ssh/agent.toml`
 - 1Password integration:
   - Include `~/.ssh/1Password/config`
   - IdentityAgent: `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`

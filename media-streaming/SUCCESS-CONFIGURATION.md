@@ -1,4 +1,6 @@
-# 🏆 SUCCESS! Ultimate Media Streaming - Working Configuration
+#
+
+> Note: Current media auth is 1Password-first. References below to the media-server credentials file are optional fallback only. 🏆 SUCCESS! Ultimate Media Streaming - Working Configuration
 
 **Status**: ✅ **FULLY OPERATIONAL** - Achieved October 5, 2025  
 **Result**: **SUPERCALIFRAGILISTICEXPIALIDOCIOUS!** 🎭✨  

@@ -1,5 +1,7 @@
 # Infuse Connection Recovery Guide
 
+> Note: Current media auth is 1Password-first. References in this guide to the media-server credentials file describe the optional fallback path, not a required file for normal operation.
+
 ## 🔍 Problem Identified
 
 **Root Cause**: Your rclone configuration file (`~/.config/rclone/rclone.conf`) is missing.
@@ -22,7 +24,7 @@ This file contains:
 Run the automated setup script:
 
 ```bash
-cd ~/Documents/dev/personal-config
+cd ~/dev/personal-config
 ./media-streaming/scripts/setup-media-library.sh
 ```
 
@@ -116,7 +118,7 @@ rclone lsd media:
 
 #### 6. Start WebDAV Server
 ```bash
-cd ~/Documents/dev/personal-config
+cd ~/dev/personal-config
 ./media-streaming/scripts/start-media-server-fast.sh
 ```
 
@@ -244,7 +246,7 @@ After setup, verify everything:
 Run the diagnostic script anytime:
 
 ```bash
-cd ~/Documents/dev/personal-config
+cd ~/dev/personal-config
 ./media-streaming/scripts/diagnose-infuse-connection.sh
 ```
 
@@ -263,7 +265,7 @@ This will check all components and tell you exactly what's wrong.
 
 4. **Backup Your Config**: After setup, backup your config:
    ```bash
-   cp ~/.config/rclone/rclone.conf ~/Documents/dev/personal-config/media-streaming/configs/rclone.conf.backup
+   cp ~/.config/rclone/rclone.conf ~/dev/personal-config/media-streaming/configs/rclone.conf.backup
    ```
 
 ---

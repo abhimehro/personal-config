@@ -8,7 +8,7 @@
     <array>
         <string>/bin/bash</string>
         <string>-c</string>
-        <string>/Users/speedybee/Documents/dev/personal-config/media-streaming/scripts/sync-alldebrid.sh</string>
+        <string>/Users/speedybee/dev/personal-config/media-streaming/scripts/sync-alldebrid.sh</string>
     </array>
     <key>StartInterval</key>
     <integer>3600</integer>

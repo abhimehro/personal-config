@@ -1,5 +1,7 @@
 # 🎬 Ultimate Autonomous Media Streaming Pipeline
 
+> Note: Current media auth is 1Password-first. The media-server credentials file is optional fallback only and is not required for normal runtime operation.
+
 **Status**: ✅ **FULLY AUTOMATED** - Updated January 2026
 **Total Storage**: ~3TB Cloud Union (Google Drive + OneDrive) + Alldebrid Streaming
 **Platforms**: macOS (Background processing), iOS, tvOS via Infuse
@@ -66,7 +68,7 @@ launchctl list | grep speedybee
 - **Redundancy**: The `media:` remote is a union of Google Drive and OneDrive, ensuring your library survives a single provider outage.
 - **Fail-Safe**: Any files that fail identification are automatically moved to `~/CloudMedia/failed` for manual audit.
 
-## 🗝️ **Credential File Format**
+## 🗝️ **Optional Fallback Credential File Format**
 
 The media-server startup scripts (`archive/scripts/start-media-server-fast.sh` and `archive/scripts/start-media-server.sh`) write and read credentials from `~/.config/media-server/credentials` using **shell-quoted assignment** syntax:
 

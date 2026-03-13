@@ -213,7 +213,7 @@ main() {
   echo -e "${BOLD}👉 Next Steps:${NC}"
   echo -e "  1. Populate ${BOLD}~/.config/rclone/rclone.conf${NC} with real credentials"
   echo -e "     (use ${CYAN}op inject${NC} if available)"
-  echo -e "  2. If needed, set credentials in ${BOLD}~/.config/media-server/credentials${NC}"
+  echo -e "  2. Verify 1Password-backed media credentials resolve correctly; optional fallback file remains ${BOLD}~/.config/media-server/credentials${NC}"
   echo -e "  3. Verify services:"
   echo -e "     ${CYAN}launchctl list | grep maintenance${NC}"
   echo -e "     ${CYAN}launchctl list | grep media${NC}"

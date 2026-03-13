@@ -57,7 +57,7 @@ end
 # ============================================
 # Environment Variables
 # ============================================
-set -gx NM_ROOT $HOME/Documents/dev/personal-config
+set -gx NM_ROOT /Users/speedybee/dev/personal-config
 
 # Default Editor (NeoVim)
 if not set -q EDITOR
@@ -131,8 +131,8 @@ alias ...   'cd ../..'
 alias ....  'cd ../../..'
 alias ..... 'cd ../../../..'
 
-alias dev       'cd ~/Documents/dev'
-alias config    'cd ~/Documents/dev/personal-config'
+alias dev       'cd ~/dev'
+alias config    'cd ~/dev/personal-config'
 alias downloads 'cd ~/Downloads'
 alias desktop   'cd ~/Desktop'
 

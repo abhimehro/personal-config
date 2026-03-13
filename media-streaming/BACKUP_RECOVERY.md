@@ -3,6 +3,8 @@
 **Last Updated**: December 20, 2025  
 **Recovery Time**: ~5 minutes
 
+> Note: Current media auth is 1Password-first. Restoring the media-server credentials file is only needed if you intentionally use the fallback file-based path.
+
 ---
 
 ## 📦 What's Backed Up
@@ -49,7 +51,7 @@ rclone listremotes
 
 ---
 
-### Step 2: Restore WebDAV Credentials
+### Step 2: Optional fallback - restore WebDAV credentials file
 
 ```bash
 # Create credentials directory
@@ -89,7 +91,7 @@ rclone lsd media:
 
 ```bash
 # Start WebDAV server
-~/Documents/dev/personal-config/media-streaming/scripts/start-media-server-fast.sh
+~/dev/personal-config/media-streaming/scripts/start-media-server-fast.sh
 
 # Verify server is running
 lsof -nP -i:8088 | grep rclone
@@ -129,7 +131,7 @@ op document get "Rclone Config Backup" --vault Personal --output ~/.config/rclon
 chmod 600 ~/.config/rclone/rclone.conf && \
 op document get "Media Server WebDAV Credentials" --vault Personal --output ~/.config/media-server/credentials && \
 chmod 600 ~/.config/media-server/credentials && \
-~/Documents/dev/personal-config/media-streaming/scripts/start-media-server-fast.sh
+~/dev/personal-config/media-streaming/scripts/start-media-server-fast.sh
 ```
 
 ---
@@ -178,7 +180,7 @@ pkill -9 rclone
 lsof -nP -i:8088
 
 # Restart server
-~/Documents/dev/personal-config/media-streaming/scripts/start-media-server-fast.sh
+~/dev/personal-config/media-streaming/scripts/start-media-server-fast.sh
 ```
 
 ---
