@@ -15,6 +15,9 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+# Handle user cancellations gracefully
+trap 'echo -e "\n\033[1;33m[WARN]\033[0m Interrupted by user. Exiting gracefully..."; exit 130' SIGINT
+
 PROFILE="${1:-browsing}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -25,38 +28,38 @@ success() { echo -e "${GREEN}[OK]${NC}" "$@"; }
 
 # Accessible Spinner
 spinner_wait() {
-  local duration=$1
-  local msg="${2:-Working}"
+	local duration=$1
+	local msg="${2:-Working}"
 
-  if [[ -t 1 ]]; then
-    local i=1
-    local sp="/-\|"
-    local iterations
-    iterations=$((duration * 10))
-    local c=0
+	if [[ -t 1 ]]; then
+		local i=1
+		local sp="/-\|"
+		local iterations
+		iterations=$((duration * 10))
+		local c=0
 
-    while [[ $c -lt $iterations ]]; do
-      printf "\r${BLUE}[%c]${NC} %s..." "${sp:i++%${#sp}:1}" "$msg"
-      sleep 0.1
-      c=$((c + 1))
-    done
-    printf "\r\033[K" # Clear line
-  else
-    # Fallback for non-TTY environments (CI, screen readers)
-    log "$msg (waiting ${duration}s)..."
-    sleep "$duration"
-  fi
+		while [[ $c -lt $iterations ]]; do
+			printf "\r${BLUE}[%c]${NC} %s..." "${sp:i++%${#sp}:1}" "$msg"
+			sleep 0.1
+			c=$((c + 1))
+		done
+		printf "\r\033[K" # Clear line
+	else
+		# Fallback for non-TTY environments (CI, screen readers)
+		log "$msg (waiting ${duration}s)..."
+		sleep "$duration"
+	fi
 }
 
 # Pre-flight checks
 if [[ ! -x "$REPO_ROOT/scripts/network-mode-manager.sh" ]]; then
-  error "network-mode-manager.sh not found at $REPO_ROOT/scripts/"
-  exit 1
+	error "network-mode-manager.sh not found at $REPO_ROOT/scripts/"
+	exit 1
 fi
 
 if ! command -v windscribe >/dev/null 2>&1; then
-  error "Windscribe CLI not found. Install from Windscribe app."
-  exit 1
+	error "Windscribe CLI not found. Install from Windscribe app."
+	exit 1
 fi
 
 echo ""
@@ -95,54 +98,54 @@ log "Step 4: Verifying configuration..."
 
 # Check Control D is running
 if pgrep -x ctrld >/dev/null; then
-  success "Control D service: RUNNING"
+	success "Control D service: RUNNING"
 else
-  error "Control D service: STOPPED"
-  exit 1
+	error "Control D service: STOPPED"
+	exit 1
 fi
 
 # Check VPN is connected
 if ifconfig | grep -A5 "utun" | grep "inet " | grep -v "127.0.0.1" >/dev/null 2>&1; then
-  success "VPN tunnel: CONNECTED"
+	success "VPN tunnel: CONNECTED"
 else
-  warn "VPN tunnel: NOT DETECTED (may still be connecting...)"
+	warn "VPN tunnel: NOT DETECTED (may still be connecting...)"
 fi
 
 # Check DNS configuration
 CURRENT_DNS=$(networksetup -getdnsservers Wi-Fi 2>/dev/null || echo "")
 if echo "$CURRENT_DNS" | grep -q "127.0.0.1"; then
-  success "System DNS: 127.0.0.1 (Control D) ✅"
+	success "System DNS: 127.0.0.1 (Control D) ✅"
 else
-  error "System DNS: $CURRENT_DNS (NOT Control D!) ❌"
-  warn "DNS was overridden. Attempting recovery..."
-  sudo networksetup -setdnsservers Wi-Fi 127.0.0.1
-  sudo dscacheutil -flushcache
-  spinner_wait 1 "Waiting for recovery"
-  CURRENT_DNS=$(networksetup -getdnsservers Wi-Fi 2>/dev/null || echo "")
-  if echo "$CURRENT_DNS" | grep -q "127.0.0.1"; then
-    success "Recovery successful: DNS now locked to 127.0.0.1"
-  else
-    error "Recovery failed: DNS still showing $CURRENT_DNS"
-    exit 1
-  fi
+	error "System DNS: $CURRENT_DNS (NOT Control D!) ❌"
+	warn "DNS was overridden. Attempting recovery..."
+	sudo networksetup -setdnsservers Wi-Fi 127.0.0.1
+	sudo dscacheutil -flushcache
+	spinner_wait 1 "Waiting for recovery"
+	CURRENT_DNS=$(networksetup -getdnsservers Wi-Fi 2>/dev/null || echo "")
+	if echo "$CURRENT_DNS" | grep -q "127.0.0.1"; then
+		success "Recovery successful: DNS now locked to 127.0.0.1"
+	else
+		error "Recovery failed: DNS still showing $CURRENT_DNS"
+		exit 1
+	fi
 fi
 
 # Test DNS resolution
 if dig @127.0.0.1 google.com +short +timeout=5 >/dev/null 2>&1; then
-  success "DNS resolution: WORKING"
+	success "DNS resolution: WORKING"
 else
-  error "DNS resolution: FAILED"
-  exit 1
+	error "DNS resolution: FAILED"
+	exit 1
 fi
 
 # Check filtering
 BLOCKED_RESULT=$(dig @127.0.0.1 doubleclick.net +short 2>/dev/null || echo "")
-if [[ -z "$BLOCKED_RESULT" ]]; then
-  success "Ad blocking: ACTIVE (doubleclick.net blocked)"
-elif [[ "$BLOCKED_RESULT" == "127.0.0.1" ]] || [[ "$BLOCKED_RESULT" == "0.0.0.0" ]]; then
-  success "Ad blocking: ACTIVE (doubleclick.net → $BLOCKED_RESULT)"
+if [[ -z $BLOCKED_RESULT ]]; then
+	success "Ad blocking: ACTIVE (doubleclick.net blocked)"
+elif [[ $BLOCKED_RESULT == "127.0.0.1" ]] || [[ $BLOCKED_RESULT == "0.0.0.0" ]]; then
+	success "Ad blocking: ACTIVE (doubleclick.net → $BLOCKED_RESULT)"
 else
-  warn "Ad blocking: INACTIVE or bypassed (doubleclick.net → $BLOCKED_RESULT)"
+	warn "Ad blocking: INACTIVE or bypassed (doubleclick.net → $BLOCKED_RESULT)"
 fi
 
 echo ""
