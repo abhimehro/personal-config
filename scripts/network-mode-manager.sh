@@ -81,9 +81,12 @@ start_controld() {
 
   log "Starting Control D (profile=$profile_key) via controld-manager..."
 
-  local controld_manager="/usr/local/bin/controld-manager"
+  local controld_manager="$SCRIPT_DIR/../controld-system/scripts/controld-manager"
   if [[ ! -x "$controld_manager" ]]; then
-    error "controld-manager script not found in /usr/local/bin. Please run 'scripts/setup-controld.sh' to install it securely."
+    controld_manager="/usr/local/bin/controld-manager"
+  fi
+  if [[ ! -x "$controld_manager" ]]; then
+    error "controld-manager script not found in repo or /usr/local/bin. Please run 'scripts/setup-controld.sh' to install it securely."
   fi
 
   # Call switch with profile and optional protocol override

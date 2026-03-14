@@ -151,8 +151,23 @@ switch_profile() {
     restart_with_config "$config_file" "$CONTROLD_DIR" "$protocol" "$LISTENER_IP" || return 1
 
     local test_result
-    test_profile_connection "$profile_name" "$LISTENER_IP"
-    test_result=$?
+    local retry=0
+    local max_retries=5
+    while true; do
+        if test_profile_connection "$profile_name" "$LISTENER_IP"; then
+            test_result=0
+        else
+            test_result=$?
+        fi
+        if [[ $test_result -eq 0 || $test_result -eq 2 ]]; then
+            break
+        fi
+        if [[ $retry -ge $max_retries ]]; then
+            break
+        fi
+        retry=$((retry + 1))
+        sleep 1
+    done
 
     if [[ $test_result -eq 0 ]]; then
         log_success "Successfully switched to $profile_name profile ($protocol)"
