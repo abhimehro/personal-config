@@ -63,7 +63,7 @@ else
     test_failed=1
 fi
 
-rm -f "$LIB_FILE" "${LIB_FILE}.bak"
+rm -f "$LIB_FILE" "${LIB_FILE}.bak" "$LOG_FILE"
 rm -rf "$CONTROLD_DIR"
 
 if [[ $test_failed -eq 0 ]]; then
