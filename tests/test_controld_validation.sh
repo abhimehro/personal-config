@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Test script for controld-manager protocol validation
 # Usage: ./tests/test_controld_validation.sh
