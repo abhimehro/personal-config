@@ -41,7 +41,7 @@ TEST_RESTORE_CALLED=""
 # system calls reach launchctl, scutil, dig, etc.
 TEST_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'test-controld-manager')
 # shellcheck disable=SC2064  # we want the current $TEST_DIR value captured in the trap
-trap "rm -rf '$TEST_DIR'" EXIT
+trap "rm -rf '$TEST_DIR' '$LOG_FILE'" EXIT
 MOCK_BIN="$TEST_DIR/mock_bin"
 CONTROLD_MGR="$REPO_ROOT/controld-system/scripts/controld-manager"
 mkdir -p "$MOCK_BIN"
