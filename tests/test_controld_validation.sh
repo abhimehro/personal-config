@@ -3,12 +3,12 @@
 # Test script for controld-manager protocol validation
 # Usage: ./tests/test_controld_validation.sh
 
-cp controld-system/scripts/controld-manager /tmp/controld-manager-lib.sh
-sed -i.bak -e 's|CONTROLD_DIR="/etc/controld"|CONTROLD_DIR="/tmp/controld"|g' \
-           -e 's|LOG_FILE="/var/log/controld_manager.log"|LOG_FILE="/tmp/controld_manager.log"|g' \
-           /tmp/controld-manager-lib.sh
+export CONTROLD_DIR="/tmp/controld"
+export LOG_FILE="/tmp/controld_manager.log"
 
-mkdir -p /tmp/controld/profiles /tmp/controld/backup
+cp controld-system/scripts/controld-manager /tmp/controld-manager-lib.sh
+
+mkdir -p "$CONTROLD_DIR/profiles" "$CONTROLD_DIR/backup"
 
 # Mock external commands
 ctrld() { echo "ctrld called with $*"; }
@@ -42,6 +42,7 @@ echo "Testing Valid Protocol (doh3)..."
 setup_directories() { return 0; }
 generate_profile_config() { return 0; }
 restart_with_config() { return 0; }
+restart_with_native_profile() { return 0; }
 test_profile_connection() { return 0; }
 pgrep() { return 1; }
 
