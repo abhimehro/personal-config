@@ -189,18 +189,17 @@ def save_to_reader(html_content):
 def main():
     print("⏳ Gathering local intel...")
 
-    # 1. Gather Data (Parallel execution for ALL network I/O)
-    # ⚡ Bolt Optimization: Run weather, horoscope, and RSS feeds API calls concurrently.
-    # Total execution time is now bottlenecked by the single slowest network request
-    # instead of the sum of weather + horoscope + slowest RSS feed.
+    # 1. Gather Data
+    # Run weather and horoscope API calls concurrently.
+    # RSS feeds are fetched via get_all_rss_parallel(), which manages its own concurrency.
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         future_weather = executor.submit(get_weather)
         future_horoscope = executor.submit(get_horoscope)
-        future_news = executor.submit(get_all_rss_parallel, FEEDS)
 
         weather_html = future_weather.result()
         horoscope_html = future_horoscope.result()
-        news_html = future_news.result()
+
+    news_html = get_all_rss_parallel(FEEDS)
 
     # 2. Build Document
     full_content = f"""
