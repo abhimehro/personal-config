@@ -85,6 +85,15 @@ cp "$REAL_MANAGER" "$TEST_MANAGER"
 mkdir -p "$TEST_DIR/lib"
 cp scripts/lib/network-core.sh "$TEST_DIR/lib/"
 
+# Create a mock controld environment so network-core.sh doesn't read /etc/controld
+export CONTROLD_DIR="$TEST_DIR/controld"
+mkdir -p "$CONTROLD_DIR"
+cat > "$CONTROLD_DIR/controld.env" << 'ENVEOF'
+CTR_PROFILE_PRIVACY_ID="mock_privacy_id"
+CTR_PROFILE_BROWSING_ID="mock_browsing_id"
+CTR_PROFILE_GAMING_ID="mock_gaming_id"
+ENVEOF
+
 # Inject mocks into the test manager
 # Use portable sed syntax (works on both macOS and Linux)
 if [[ "$(uname -s)" == "Darwin" ]]; then

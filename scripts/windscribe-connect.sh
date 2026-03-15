@@ -1,10 +1,8 @@
 #!/bin/bash
 
 # Windscribe + Control D Connection Script
-# Ensures DNS stays locked to Control D (127.0.0.1) after VPN connection
-#
-# Usage: ./scripts/windscribe-connect.sh [profile]
-# Profile: privacy | browsing | gaming (default: browsing)
+# Combined mode: start Control D on DoH/TCP, then connect Windscribe static IP,
+# then re-enforce localhost DNS to avoid DNS drift.
 
 set -euo pipefail
 
@@ -19,12 +17,14 @@ NC='\033[0m'
 trap 'echo -e "\n\033[1;33m[WARN]\033[0m Interrupted by user. Exiting gracefully..."; exit 130' SIGINT
 
 PROFILE="${1:-browsing}"
+LOCATION="${2:-Atlanta}"
+PROTOCOL="${3:-wireguard:443}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-log() { echo -e "${BLUE}[INFO]${NC}" "$@"; }
-warn() { echo -e "${YELLOW}[WARN]${NC}" "$@"; }
-error() { echo -e "${RED}[ERROR]${NC}" "$@" >&2; }
-success() { echo -e "${GREEN}[OK]${NC}" "$@"; }
+log() { echo -e "${BLUE}[INFO]${NC} $*"; }
+warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
+error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
+success() { echo -e "${GREEN}[OK]${NC} $*"; }
 
 # Accessible Spinner
 spinner_wait() {
@@ -62,33 +62,27 @@ if ! command -v windscribe >/dev/null 2>&1; then
 	exit 1
 fi
 
-echo ""
+echo
 log "Windscribe + Control D Connection Sequence"
-log "Profile: $PROFILE"
-echo ""
+log "Profile:  $PROFILE"
+log "Location: $LOCATION"
+log "Protocol: $PROTOCOL"
+echo
 
-# Step 1: Configure Control D with DoH (TCP) protocol for VPN compatibility
 log "Step 1: Starting Control D in Windscribe-compatible mode (DoH/TCP)..."
 cd "$REPO_ROOT"
-sudo ./scripts/network-mode-manager.sh windscribe "$PROFILE"
+./scripts/network-mode-manager.sh windscribe "$PROFILE"
+sleep 2
 
-# Wait for Control D to stabilize
-spinner_wait 2 "Waiting for Control D to stabilize"
+log "Step 2: Connecting Windscribe static location..."
+windscribe connect static "$LOCATION" "$PROTOCOL"
+sleep 5
 
-# Step 2: Connect Windscribe
-log "Step 2: Connecting Windscribe VPN..."
-windscribe connect
-
-# Wait for VPN to establish
-spinner_wait 3 "Waiting for VPN to establish"
-
-# Step 3: Force DNS back to localhost (Windscribe may have overridden it)
 log "Step 3: Re-enforcing DNS lock to Control D (127.0.0.1)..."
 sudo networksetup -setdnsservers Wi-Fi 127.0.0.1
-
-# Flush DNS cache to clear any stale ISP entries
 sudo dscacheutil -flushcache 2>/dev/null || true
 sudo killall -HUP mDNSResponder 2>/dev/null || true
+sleep 1
 
 spinner_wait 1 "Applying DNS rules"
 
@@ -148,16 +142,6 @@ else
 	warn "Ad blocking: INACTIVE or bypassed (doubleclick.net → $BLOCKED_RESULT)"
 fi
 
-echo ""
-success "✅ Windscribe + Control D connection complete!"
-echo ""
-log "Current configuration:"
-log "  Profile: $PROFILE (DoH/TCP)"
-log "  DNS: 127.0.0.1 (Control D)"
-log "  IPv6: DISABLED"
-log "  VPN: Windscribe"
-echo ""
-log "To disconnect safely:"
-log "  1. windscribe disconnect"
-log "  2. ./scripts/network-mode-manager.sh controld $PROFILE"
-echo ""
+echo
+success "Combined Windscribe + Control D mode active"
+log "Disconnect path: windscribe disconnect && ./scripts/network-mode-manager.sh controld $PROFILE"

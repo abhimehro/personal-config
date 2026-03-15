@@ -11,6 +11,9 @@ if [[ "${_CONTROLD_SERVICE_SH_:-}" == "true" ]]; then
 fi
 _CONTROLD_SERVICE_SH_="true"
 
+# State file for currently active profile
+ACTIVE_PROFILE_FILE="${CONTROLD_DIR:-/etc/controld}/active_profile"
+
 # Setup necessary directory structure
 setup_directories() {
     local controld_dir="$1"
@@ -111,6 +114,8 @@ safe_stop() {
         restore_network_settings "$backup_dir"
     fi
 
+    rm -f "$ACTIVE_PROFILE_FILE" 2>/dev/null || true
+
     return 0
 }
 
@@ -169,6 +174,7 @@ emergency_recovery() {
 
     pkill -9 -f ctrld 2>/dev/null || true
     rm -f "$controld_dir/ctrld.toml"
+    rm -f "$ACTIVE_PROFILE_FILE"
 
     if command -v restore_network_settings >/dev/null 2>&1; then
         restore_network_settings "$backup_dir"
@@ -184,6 +190,59 @@ emergency_recovery() {
     fi
 }
 
+# Stop the current service, and restart natively via profile ID
+restart_with_native_profile() {
+    local profile_id="$1"
+    local profile_name="$2"
+    local protocol="$3"
+    local controld_dir="$4"
+    local listener_ip="$5"
+
+    ctrld stop 2>/dev/null || true
+    pkill -f ctrld 2>/dev/null || true
+
+    _wait_for_process_stop "ctrld" 30
+
+    # Clear old symbolic link if it exists to avoid confusion
+    rm -f "$controld_dir/ctrld.toml" 2>/dev/null || true
+
+    # Start service natively
+    if [[ "$protocol" == "doh3" ]]; then
+        ctrld start --cd "$profile_id" --proto doh3 --skip_self_checks
+    else
+        ctrld start --cd "$profile_id" --proto doh --skip_self_checks
+    fi
+
+    # Record the active profile state
+    echo -e "PROFILE_NAME=$profile_name\nPROFILE_ID=$profile_id\nPROTOCOL=$protocol" > "$ACTIVE_PROFILE_FILE"
+    chmod 600 "$ACTIVE_PROFILE_FILE" 2>/dev/null || true
+
+    # Wait for service to initialize
+    local retry=0
+    while ! dig @"$listener_ip" google.com +short +time=1 >/dev/null 2>&1 && [[ $retry -lt 30 ]]; do
+        sleep 0.1
+        retry=$((retry + 1))
+    done
+
+    # Configure system DNS
+    networksetup -setdnsservers Wi-Fi "$listener_ip"
+
+    # Validate DNS configuration
+    sleep 0.2
+    local configured_dns
+    configured_dns=$(networksetup -getdnsservers Wi-Fi 2>/dev/null || echo "")
+    if ! echo "$configured_dns" | grep -q "$listener_ip"; then
+      sleep 0.5
+      networksetup -setdnsservers Wi-Fi "$listener_ip"
+    fi
+
+    # Flush DNS cache
+    dscacheutil -flushcache 2>/dev/null || true
+    sudo killall -HUP mDNSResponder 2>/dev/null || true
+
+    return 0
+}
+
 # Show status of Control D manager
 show_status() {
     local controld_dir="$1"
@@ -194,7 +253,22 @@ show_status() {
     if pgrep -f ctrld >/dev/null; then
         echo "Service Status: ✅ Running"
 
-        if [[ -L "$controld_dir/ctrld.toml" ]]; then
+        if [[ -f "$ACTIVE_PROFILE_FILE" ]]; then
+            # Read state
+            source "$ACTIVE_PROFILE_FILE"
+            
+            local profile_name="${PROFILE_NAME:-unknown}"
+            local protocol="${PROTOCOL:-unknown}"
+            local profile_id="${PROFILE_ID:-unknown}"
+            
+            if command -v redact_profile_id >/dev/null 2>&1; then
+                profile_id=$(redact_profile_id "$profile_id")
+            fi
+
+            echo "Active Profile: $profile_name"
+            echo "Profile ID: $profile_id"
+            echo "Protocol: $protocol"
+        elif [[ -L "$controld_dir/ctrld.toml" ]]; then
             local current_config
             current_config=$(readlink "$controld_dir/ctrld.toml")
             local profile_name="${current_config##*/}"
@@ -210,7 +284,7 @@ show_status() {
                 fi
             fi
 
-            echo "Active Profile: $profile_name"
+            echo "Active Profile: $profile_name (Legacy TOML)"
             echo "Profile ID: $profile_id"
             echo "Protocol: $protocol"
         else
