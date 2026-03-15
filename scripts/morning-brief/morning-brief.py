@@ -137,12 +137,23 @@ def fetch_single_feed(name, url, limit=3):
         return ""  # Fail silently for individual feeds to keep the brief clean
 
 
-def get_all_rss_parallel(feeds_dict):
-    """Fetches all RSS feeds in parallel using ThreadPoolExecutor."""
+def get_all_rss_parallel(feeds_dict, executor=None, max_workers=None):
+    """Fetches all RSS feeds in parallel.
+
+    If an executor is provided, it will be used and not shut down here.
+    If no executor is provided, a ThreadPoolExecutor will be created,
+    optionally honoring max_workers, and shut down before returning.
+    """
     results = []
 
-    # We use a ThreadPoolExecutor to run the network requests simultaneously
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    # NOTE: Allow caller to supply an executor to avoid nested executors and
+    # keep total concurrency under external control.
+    should_shutdown = False
+    if executor is None:
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
+        should_shutdown = True
+
+    try:
         # Submit all tasks
         future_to_feed = {
             executor.submit(fetch_single_feed, name, url): name
@@ -154,6 +165,10 @@ def get_all_rss_parallel(feeds_dict):
             data = future.result()
             if data:
                 results.append(data)
+    finally:
+        # Only shut down executors that we created ourselves.
+        if should_shutdown:
+            executor.shutdown(wait=True)
 
     return "".join(results)
 
