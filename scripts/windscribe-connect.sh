@@ -82,9 +82,7 @@ log "Step 3: Re-enforcing DNS lock to Control D (127.0.0.1)..."
 sudo networksetup -setdnsservers Wi-Fi 127.0.0.1
 sudo dscacheutil -flushcache 2>/dev/null || true
 sudo killall -HUP mDNSResponder 2>/dev/null || true
-spinner_wait 1 "Flushing DNS cache"
-
-spinner_wait 1 "Applying DNS rules"
+spinner_wait 2 "Applying DNS changes"
 
 # Step 4: Verification
 echo ""
