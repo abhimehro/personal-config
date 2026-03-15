@@ -1,0 +1,36 @@
+name: Clean Stale Branches
+
+on:
+  schedule:
+    - cron: '0 2 * * 0' # Every Sunday at 2 AM
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Delete stale merged branches
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git checkout main && git pull
+
+          merged_branches=$(
+            git branch -r --merged main \
+              | grep -v 'main\|develop\|HEAD' \
+              | sed 's/origin\///'
+          )
+
+          for branch in $merged_branches; do
+            last_commit_date=$(git log -1 --format=%ct "origin/$branch")
+            days_old=$(( ($(date +%s) - last_commit_date) / 86400 ))
+
+            if [ "$days_old" -gt 7 ]; then
+              echo "Deleting branch: $branch ($days_old days old)"
+              git push origin --delete "$branch" || true
+            fi
+          done
+          
