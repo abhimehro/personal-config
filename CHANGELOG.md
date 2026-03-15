@@ -211,6 +211,7 @@
 
 **Merged pull requests:**
 
+- 🛡️ Sentinel: \[MEDIUM\] Fix CWE-377 insecure temporary files in tests [\#644](https://github.com/abhimehro/personal-config/pull/644) ([abhimehro](https://github.com/abhimehro))
 - 🎨 Palette: Add visual feedback for wait states in windscribe-connect [\#643](https://github.com/abhimehro/personal-config/pull/643) ([abhimehro](https://github.com/abhimehro))
 - ⚡ Bolt: Parallelize all top-level network I/O in morning-brief [\#642](https://github.com/abhimehro/personal-config/pull/642) ([abhimehro](https://github.com/abhimehro))
 - 🛡️ Sentinel: \[CRITICAL\] Fix command injection \(CWE-78\) via eval in get\_user\_home [\#641](https://github.com/abhimehro/personal-config/pull/641) ([abhimehro](https://github.com/abhimehro))
