@@ -3,8 +3,10 @@
 # Test script for controld-manager protocol validation
 # Usage: ./tests/test_controld_validation.sh
 
-export CONTROLD_DIR="$(mktemp -d)"
-export LOG_FILE="$(mktemp)"
+export CONTROLD_DIR
+CONTROLD_DIR="$(mktemp -d)"
+export LOG_FILE
+LOG_FILE="$(mktemp)"
 
 LIB_FILE="$(mktemp)"
 cp controld-system/scripts/controld-manager "$LIB_FILE"
