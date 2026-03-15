@@ -31,7 +31,7 @@ spinner_wait() {
 	local duration=$1
 	local msg="${2:-Working}"
 
-	if [[ -t 1 ]]; then
+	if [[ -t 1 && -z "${CI:-}" ]]; then
 		local i=1
 		local sp="/-\|"
 		local iterations
