@@ -120,16 +120,13 @@ if [[ -n ${REPO_SEARCH_PATHS-} ]] && [[ ${NODE_MODULES_MAX_GB:-0} -gt 0 ]]; then
 		if [[ -d $search_path ]]; then
 			log_info "Scanning $search_path for node_modules..."
 
-			find "$search_path" -name "node_modules" -type d -print0 2>/dev/null | while IFS= read -r -d '' node_modules_dir; do
+			while IFS= read -r -d '' node_modules_dir; do
 				if [[ -d $node_modules_dir ]] && [[ -f "$node_modules_dir/../package.json" ]]; then
 					# Get directory size in GB
 					size_kb=$(du -sk "$node_modules_dir" 2>/dev/null | cut -f1 || echo "0")
 					size_gb=$((size_kb / 1024 / 1024))
 
-					# Check if directory is old
-					days_old=$(find "$node_modules_dir" -maxdepth 0 -type d -mtime +"${NODE_MODULES_MAX_AGE_DAYS:-90}" 2>/dev/null | wc -l | tr -d ' ')
-
-					if [[ $size_gb -gt ${NODE_MODULES_MAX_GB:-5} ]] && [[ $days_old -gt 0 ]]; then
+					if [[ $size_gb -gt ${NODE_MODULES_MAX_GB:-5} ]]; then
 						# NOTE: bash-native expansion; avoids fork per iteration
 						project_dir="${node_modules_dir%/*}"
 						project_name="${project_dir##*/}"
@@ -151,7 +148,7 @@ if [[ -n ${REPO_SEARCH_PATHS-} ]] && [[ ${NODE_MODULES_MAX_GB:-0} -gt 0 ]]; then
 						fi
 					fi
 				fi
-			done
+			done < <(find "$search_path" -name "node_modules" -type d -mtime +"${NODE_MODULES_MAX_AGE_DAYS:-90}" -print0 2>/dev/null)
 
 			# Get cleaned count (limited by shell scope)
 			if [[ -f $CLEANED_DIRS_FILE ]]; then
