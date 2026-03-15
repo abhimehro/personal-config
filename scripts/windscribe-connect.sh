@@ -31,7 +31,7 @@ spinner_wait() {
 	local duration=$1
 	local msg="${2:-Working}"
 
-	if [[ -t 1 ]]; then
+	if [[ -t 1 && -z "${CI:-}" ]]; then
 		local i=1
 		local sp="/-\|"
 		local iterations
@@ -72,19 +72,17 @@ echo
 log "Step 1: Starting Control D in Windscribe-compatible mode (DoH/TCP)..."
 cd "$REPO_ROOT"
 ./scripts/network-mode-manager.sh windscribe "$PROFILE"
-sleep 2
+spinner_wait 2 "Starting service"
 
 log "Step 2: Connecting Windscribe static location..."
 windscribe connect static "$LOCATION" "$PROTOCOL"
-sleep 5
+spinner_wait 5 "Establishing connection"
 
 log "Step 3: Re-enforcing DNS lock to Control D (127.0.0.1)..."
 sudo networksetup -setdnsservers Wi-Fi 127.0.0.1
 sudo dscacheutil -flushcache 2>/dev/null || true
 sudo killall -HUP mDNSResponder 2>/dev/null || true
-sleep 1
-
-spinner_wait 1 "Applying DNS rules"
+spinner_wait 2 "Applying DNS changes"
 
 # Step 4: Verification
 echo ""
