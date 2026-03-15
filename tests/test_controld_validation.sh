@@ -3,10 +3,11 @@
 # Test script for controld-manager protocol validation
 # Usage: ./tests/test_controld_validation.sh
 
-export CONTROLD_DIR="/tmp/controld"
-export LOG_FILE="/tmp/controld_manager.log"
+export CONTROLD_DIR="$(mktemp -d)"
+export LOG_FILE="$(mktemp)"
 
-cp controld-system/scripts/controld-manager /tmp/controld-manager-lib.sh
+LIB_FILE="$(mktemp)"
+cp controld-system/scripts/controld-manager "$LIB_FILE"
 
 mkdir -p "$CONTROLD_DIR/profiles" "$CONTROLD_DIR/backup"
 
@@ -21,7 +22,7 @@ dig() { echo "dig called with $*"; }
 sudo() { "$@"; } # Mock sudo by just running the command
 
 # Source the library
-source /tmp/controld-manager-lib.sh
+source "$LIB_FILE"
 
 # Mock get_profile_id to always return something (to bypass that check)
 get_profile_id() { echo "mock_id"; }
@@ -60,8 +61,8 @@ else
     test_failed=1
 fi
 
-rm -f /tmp/controld-manager-lib.sh /tmp/controld-manager-lib.sh.bak
-rm -rf /tmp/controld
+rm -f "$LIB_FILE" "${LIB_FILE}.bak"
+rm -rf "$CONTROLD_DIR"
 
 if [[ $test_failed -eq 0 ]]; then
     true
