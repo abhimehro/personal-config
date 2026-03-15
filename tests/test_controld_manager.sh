@@ -7,7 +7,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Use a test directory for controld config and logs
 export CONTROLD_DIR="$REPO_ROOT/tests/fixtures/controld"
-export LOG_FILE="/tmp/controld_manager.log"
+export LOG_FILE
+LOG_FILE="$(mktemp)"
 mkdir -p "$CONTROLD_DIR"
 
 # Source the manager via the BASH_SOURCE guard (avoids running main "$@")
@@ -40,7 +41,7 @@ TEST_RESTORE_CALLED=""
 # system calls reach launchctl, scutil, dig, etc.
 TEST_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'test-controld-manager')
 # shellcheck disable=SC2064  # we want the current $TEST_DIR value captured in the trap
-trap "rm -rf '$TEST_DIR'" EXIT
+trap "rm -rf '$TEST_DIR' '$LOG_FILE'" EXIT
 MOCK_BIN="$TEST_DIR/mock_bin"
 CONTROLD_MGR="$REPO_ROOT/controld-system/scripts/controld-manager"
 mkdir -p "$MOCK_BIN"
