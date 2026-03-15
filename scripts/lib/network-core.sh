@@ -89,8 +89,8 @@ smart_find() {
 
 # --- Environment ---
 load_network_env() {
-    local env_file="/etc/controld/controld.env"
-    if [[ -f "$env_file" ]]; then
+    local env_file="${CONTROLD_DIR:-/etc/controld}/controld.env"
+    if [[ -r "$env_file" ]]; then
         # shellcheck source=/dev/null
         source "$env_file"
     fi

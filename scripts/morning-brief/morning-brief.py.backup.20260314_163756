@@ -19,18 +19,8 @@ import concurrent.futures
 import time
 import os
 import sys
-from pathlib import Path
-from dotenv import load_dotenv
 
 # --- CONFIGURATION ---
-
-# Prefer local-only secret files in HOME rather than committing secrets in the repo.
-_local_env = Path.home() / '.config' / 'morning-brief.env'
-if _local_env.exists():
-    load_dotenv(_local_env)
-else:
-    load_dotenv(Path(__file__).with_name('.env'))
-
 READWISE_TOKEN = os.getenv("READWISE_TOKEN")
 if not READWISE_TOKEN:
     print("Error: READWISE_TOKEN environment variable is not set.", file=sys.stderr)

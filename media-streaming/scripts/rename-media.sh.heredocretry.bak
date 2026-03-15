@@ -28,27 +28,18 @@ is_video_file() { [[ "$1" =~ \.(mp4|mkv|avi|mov|m4v)$ ]]; }
 detect_type() { local f="$1"; if [[ "$f" =~ [Ss][0-9]+[Ee][0-9]+ ]]; then echo tv; else echo movie; fi; }
 check_remote_duplicate() { local r="$1"; local n="$2"; rclone lsf "$r" --files-only 2>/dev/null | grep -Fxq "$n"; }
 write_sidecar() {
-  local sidecar_path="$1" original_path="$2" proposed_path="$3" media_type="$4" target_remote="$5" db="$6" fmt="$7" duplicate_flag="$8"
-  local created_at proposal_id
-  created_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  proposal_id="$(printf %s "$original_path|$created_at" | shasum | awk '{print substr($1,1,12)}')"
-  cat > "$sidecar_path" <<EOF
-{
-  "proposal_id": "$proposal_id",
-  "original_path": "$original_path",
-  "original_name": "${original_path##*/}",
-  "proposed_path": "$proposed_path",
-  "proposed_name": "${proposed_path##*/}",
-  "media_type": "$media_type",
-  "target_remote": "$target_remote",
-  "filebot_db": "$db",
-  "filebot_format": "$fmt",
-  "created_at": "$created_at",
-  "status": "pending",
-  "duplicate_remote_match": $duplicate_flag,
-  "notes": []
-}
-EOF
+  local sidecar="$1"; local orig="$2"; local prop="$3"; local mtype="$4"; local remote="$5"; local db="$6"; local fmt="$7"; local dup="$8"
+  ORIGINAL_PATH="$orig" PROPOSED_PATH="$prop" MEDIA_TYPE="$mtype" TARGET_REMOTE="$remote" FILEBOT_DB_VAL="$db" FILEBOT_FMT_VAL="$fmt" DUPLICATE_FLAG="$dup" SIDECAR_PATH="$sidecar" python3 - <<'PY'
+import json, os, hashlib
+from pathlib import Path
+from datetime import datetime
+orig = os.environ["ORIGINAL_PATH"]
+prop = os.environ["PROPOSED_PATH"]
+created = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+payload = {"proposal_id": hashlib.sha1((orig + "|" + created).encode()).hexdigest()[:12], "original_path": orig, "original_name": Path(orig).name, "proposed_path": prop, "proposed_name": Path(prop).name, "media_type": os.environ["MEDIA_TYPE"], "target_remote": os.environ["TARGET_REMOTE"], "filebot_db": os.environ["FILEBOT_DB_VAL"], "filebot_format": os.environ["FILEBOT_FMT_VAL"], "created_at": created, "status": "pending", "duplicate_remote_match": os.environ["DUPLICATE_FLAG"].lower() == "true", "notes": ["remote duplicate detected"] if os.environ["DUPLICATE_FLAG"].lower() == "true" else []}
+Path(os.environ["SIDECAR_PATH"]).write_text(json.dumps(payload, indent=2) + "
+")
+PY
 }
 list_pending() { python3 - <<'PY'
 import json
@@ -71,18 +62,20 @@ for s in sidecars:
 PY
 }
 approve_candidate() {
-  local sidecar="$1"
-  [[ -f "$sidecar" ]] || { log "Sidecar not found: $sidecar"; return 1; }
-  local proposed_path target_remote dup proposed_name sidecar_name failed_target
-  local parsed
-  parsed="$(python3 - "$sidecar" <<'PY' 
-import json, sys
+  local sidecar="$1"; [[ -f "$sidecar" ]] || { log "Sidecar not found: $sidecar"; return 1; }
+  local parsed proposed_path target_remote dup proposed_name sidecar_name failed_target
+  parsed="$(SIDECAR="$sidecar" python3 - <<'PY'
+import json, os
 from pathlib import Path
-d = json.loads(Path(sys.argv[1]).read_text())
-print(d["proposed_path"] + "|" + d["target_remote"] + "|" + ("true" if d.get("duplicate_remote_match") else "false"))
+d = json.loads(Path(os.environ["SIDECAR"]).read_text())
+print(d["proposed_path"])
+print(d["target_remote"])
+print("true" if d.get("duplicate_remote_match") else "false")
 PY
 )"
-  IFS="|" read -r proposed_path target_remote dup <<< "$parsed"
+  proposed_path=""
+  target_remote=""
+  dup=""
   proposed_name="${proposed_path##*/}"
   sidecar_name="${sidecar##*/}"
   [[ -f "$proposed_path" ]] || { log "Missing proposed file: $proposed_path"; return 1; }

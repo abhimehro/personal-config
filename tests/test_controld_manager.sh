@@ -5,6 +5,11 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Use a test directory for controld config and logs
+export CONTROLD_DIR="$REPO_ROOT/tests/fixtures/controld"
+export LOG_FILE="/tmp/controld_manager.log"
+mkdir -p "$CONTROLD_DIR"
+
 # Source the manager via the BASH_SOURCE guard (avoids running main "$@")
 # shellcheck source=controld-system/scripts/controld-manager
 source "$REPO_ROOT/controld-system/scripts/controld-manager"

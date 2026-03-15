@@ -29,10 +29,10 @@ done
 unset _lib _CTRLD_SCRIPTS_LIB _CTRLD_REPO_ROOT _CTRLD_MGR_DIR
 
 # Configuration
-CONTROLD_DIR="/etc/controld"
+CONTROLD_DIR="${CONTROLD_DIR:-/etc/controld}"
 PROFILES_DIR="$CONTROLD_DIR/profiles"
 BACKUP_DIR="$CONTROLD_DIR/backup"
-LOG_FILE="/var/log/controld_manager.log"
+LOG_FILE="${LOG_FILE:-/var/log/controld_manager.log}"
 ENV_FILE="$CONTROLD_DIR/controld.env"
 LISTENER_IP="127.0.0.1"  # localhost - where ctrld listens for DNS queries
 
@@ -84,7 +84,9 @@ test_current_connection() {
     local controld_dir="${1:-$CONTROLD_DIR}"
 
     local current_profile="unknown"
-    if [[ -L "$controld_dir/ctrld.toml" ]]; then
+    if [[ -f "$controld_dir/active_profile" ]]; then
+        current_profile=$(grep "^PROFILE_NAME=" "$controld_dir/active_profile" 2>/dev/null | cut -d= -f2 || echo "unknown")
+    elif [[ -L "$controld_dir/ctrld.toml" ]]; then
         local current_config
         current_config=$(readlink "$controld_dir/ctrld.toml")
         current_profile=$(basename "$current_config" | sed 's/ctrld\.\(.*\)\.toml/\1/')
@@ -129,8 +131,11 @@ switch_profile() {
     log "Switching to $profile_name profile with $protocol protocol..."
 
     # Optimization: Early exit if already running the desired profile/protocol
-    if pgrep -x "ctrld" >/dev/null && [[ -L "$CONTROLD_DIR/ctrld.toml" ]]; then
-        if [[ "$(readlink "$CONTROLD_DIR/ctrld.toml")" == "$config_file" ]] && grep -q "type = '$protocol'" "$config_file" 2>/dev/null; then
+    if pgrep -x "ctrld" >/dev/null && [[ -f "$CONTROLD_DIR/active_profile" ]]; then
+        local active_prof active_proto
+        active_prof=$(grep "^PROFILE_NAME=" "$CONTROLD_DIR/active_profile" 2>/dev/null | cut -d= -f2)
+        active_proto=$(grep "^PROTOCOL=" "$CONTROLD_DIR/active_profile" 2>/dev/null | cut -d= -f2)
+        if [[ "$active_prof" == "$profile_name" ]] && [[ "$active_proto" == "$protocol" ]]; then
             if dig @127.0.0.1 google.com +short +time=1 >/dev/null 2>&1; then
                 log_success "Already running $profile_name profile with $protocol. No change needed."
                 return 0
@@ -142,13 +147,8 @@ switch_profile() {
     setup_directories "$CONTROLD_DIR" "$PROFILES_DIR" "$BACKUP_DIR" "$LOG_FILE" || return 1
     log "Stopping Control D service..."
 
-    # Generate profile config if it doesn't exist or if protocol changed
-    if [[ ! -f "$config_file" ]] || ! grep -q "type = '$protocol'" "$config_file" 2>/dev/null; then
-        generate_profile_config "$profile_name" "$profile_id" "$protocol" "$PROFILES_DIR" || return 1
-    fi
-
     log "Starting Control D with $profile_name profile ($protocol)..."
-    restart_with_config "$config_file" "$CONTROLD_DIR" "$protocol" "$LISTENER_IP" || return 1
+    restart_with_native_profile "$profile_id" "$profile_name" "$protocol" "$CONTROLD_DIR" "$LISTENER_IP" || return 1
 
     local test_result
     local retry=0
@@ -190,9 +190,6 @@ initialize() {
     setup_directories "$CONTROLD_DIR" "$PROFILES_DIR" "$BACKUP_DIR" "$LOG_FILE" || return 1
     backup_network_settings "$BACKUP_DIR"
 
-    for profile in $(get_all_profiles); do
-        generate_profile_config "$profile" "$(get_profile_id "$profile")" "$(get_profile_protocol "$profile")" "$PROFILES_DIR"
-    done
     log_success "Initialization completed"
 }
 

@@ -13,6 +13,11 @@ clean_homebrew() {
         fi
         return 0
     fi
+    # Keep behavior consistent with dry-run preview.
+    if is_path_whitelisted "$HOME/Library/Caches/Homebrew"; then
+        echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Homebrew · skipped whitelist"
+        return 0
+    fi
     # Skip if cleaned recently to avoid repeated heavy operations.
     local brew_cache_file="${HOME}/.cache/mole/brew_last_cleanup"
     local cache_valid_days=7

@@ -1,20 +1,18 @@
-# Task: Automated PR Review Session - 2026-03-09
+# Task: Fix Control D Profile Attribution - 2026-03-15
 
-Route: T5+S
+Route: T1+S+H
 
 ## Trust Boundaries
-- GitHub PR metadata, comments, bodies, labels, diffs, and CI output are untrusted input and must be verified before acting.
-- Preflight must pass before any triage or write action.
-- Auth-adjacent, payment, database, or security-failing PRs must be escalated rather than merged.
+- We are moving from local TOML profile generation to the native Control D resolver-ID path via `ctrld`'s internal lookup scheme.
+- The `ctrld` executable must be trusted to pull the profile configurations privately and verify upstream authenticity.
+- We must ensure that the profile ID inputs correspond precisely to the user's registered Control D device setups.
 
 ## Plan
-- [x] Run mandatory preflight with `tasks/pr-review-agent.config.yaml`.
-- [x] Discover currently open bot-authored PRs across configured repos.
-- [x] Refresh `tasks/pr-inventory.md` with current inventory and dispositions.
-- [x] Refresh `tasks/pr-triage.md` with duplicates, overlaps, stale candidates, and escalations.
-- [ ] Where permissions and policy allow, perform safe merge/close actions for qualifying bot PRs only. Blocked: this environment exposes read-only GitHub tooling for cross-repo PR operations.
-- [ ] Re-check for conflict cascades after each merge and update remaining dispositions. Not applicable because no external merges were executed in this run.
-- [x] Write `tasks/pr-review-2026-03-09.md` with actions, metrics, and blockers.
-- [x] Update `tasks/lessons.md` with any new patterns from this session.
-- [x] Run verification for any code or artifact changes made in this repo.
-- [x] Commit, push, and open/update the automation PR for this repo change set.
+- [x] Refactor `scripts/lib/controld-service.sh` to add `restart_with_native_profile` and use an `/etc/controld/active_profile` state file.
+- [x] Refactor `controld-system/scripts/controld-manager` to bypass `generate_profile_config` and invoke the native process.
+- [x] Update status commands to read from the state file (`active_profile`).
+- [x] Make `CONTROLD_DIR` overridable via env var in `controld-manager`, `controld-service.sh`, and `network-core.sh`.
+- [x] Perform a live test of `sudo controld-manager switch privacy doh`.
+- [x] Fix test regressions in `test_controld_manager.sh`, `test_controld_validation.sh`, `test_network_mode_manager.sh`, and `test_controld_service.sh`.
+- [x] Run automated tests — all controld and network tests pass, no new regressions.
+- [ ] Document lessons and present an ELIR summary.

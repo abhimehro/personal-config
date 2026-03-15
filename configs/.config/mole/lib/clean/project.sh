@@ -1106,27 +1106,16 @@ clean_project_artifacts() {
     # For duplicate artifact names within same project, include parent directory for context
     get_artifact_display_name() {
         local path="$1"
-
-        # Strip trailing slash if any
-        local norm_path="${path%/}"
-
-        # ⚡ Bolt Optimization: Use fast parameter expansion instead of $(basename) in loops
-        local artifact_name="${norm_path##*/}"
-        local project_name=$(get_project_name "$norm_path")
-
-        # Get dirname then basename for parent
-local dir_path="${norm_path%/*}"
-if [[ "$norm_path" == /* && ! "$dir_path" == /* ]]; then dir_path="/"; fi
-local parent_name="${dir_path##*/}"
-if [[ -z "$parent_name" && "$dir_path" == "/" ]]; then parent_name="/"; fi
+        local artifact_name=$(basename "$path")
+        local project_name=$(get_project_name "$path")
+        local parent_name=$(basename "$(dirname "$path")")
 
         # Check if there are other items with same artifact name AND same project
         local has_duplicate=false
         for other_item in "${safe_to_clean[@]}"; do
-            local norm_other="${other_item%/}"
-            if [[ "$norm_other" != "$norm_path" && "${norm_other##*/}" == "$artifact_name" ]]; then
+            if [[ "$other_item" != "$path" && "$(basename "$other_item")" == "$artifact_name" ]]; then
                 # Same artifact name, check if same project
-                if [[ "$(get_project_name "$norm_other")" == "$project_name" ]]; then
+                if [[ "$(get_project_name "$other_item")" == "$project_name" ]]; then
                     has_duplicate=true
                     break
                 fi
@@ -1321,6 +1310,14 @@ if [[ -z "$parent_name" && "$dir_path" == "/" ]]; then parent_name="/"; fi
     if [[ -t 1 ]]; then
         stop_inline_spinner
     fi
+    # Exit early if no artifacts were found to avoid unbound variable errors
+    # when expanding empty arrays with set -u active.
+    if [[ ${#menu_options[@]} -eq 0 ]]; then
+        echo ""
+        echo -e "${GRAY}No artifacts found to purge${NC}"
+        printf '\n'
+        return 0
+    fi
     # Set global vars for selector
     export PURGE_CATEGORY_SIZES=$(
         IFS=,
@@ -1378,15 +1375,11 @@ if [[ -z "$parent_name" && "$dir_path" == "/" ]]; then parent_name="/"; fi
     echo ""
     local stats_dir="${XDG_CACHE_HOME:-$HOME/.cache}/mole"
     local cleaned_count=0
+    local dry_run_mode="${MOLE_DRY_RUN:-0}"
     for idx in "${selected_indices[@]}"; do
         local item_path="${item_paths[idx]}"
-
-        # Strip trailing slash if any
-        local norm_path="${item_path%/}"
-
-        # ⚡ Bolt Optimization: Use fast parameter expansion
-        local artifact_type="${norm_path##*/}"
-        local project_path=$(get_project_path "$norm_path")
+        local artifact_type=$(basename "$item_path")
+        local project_path=$(get_project_path "$item_path")
         local size_kb="${item_sizes[idx]}"
         local size_unknown="${item_size_unknown_flags[idx]:-false}"
         local size_human
@@ -1402,17 +1395,27 @@ if [[ -z "$parent_name" && "$dir_path" == "/" ]]; then parent_name="/"; fi
         if [[ -t 1 ]]; then
             start_inline_spinner "Cleaning $project_path/$artifact_type..."
         fi
+        local removal_recorded=false
         if [[ -e "$item_path" ]]; then
-            safe_remove "$item_path" true
-            if [[ ! -e "$item_path" ]]; then
-                local current_total=$(cat "$stats_dir/purge_stats" 2> /dev/null || echo "0")
-                echo "$((current_total + size_kb))" > "$stats_dir/purge_stats"
-                cleaned_count=$((cleaned_count + 1))
+            if safe_remove "$item_path" true; then
+                if [[ "$dry_run_mode" == "1" || ! -e "$item_path" ]]; then
+                    local current_total
+                    current_total=$(cat "$stats_dir/purge_stats" 2> /dev/null || echo "0")
+                    echo "$((current_total + size_kb))" > "$stats_dir/purge_stats"
+                    cleaned_count=$((cleaned_count + 1))
+                    removal_recorded=true
+                fi
             fi
         fi
         if [[ -t 1 ]]; then
             stop_inline_spinner
-            echo -e "${GREEN}${ICON_SUCCESS}${NC} $project_path, $artifact_type${NC}, ${GREEN}$size_human${NC}"
+            if [[ "$removal_recorded" == "true" ]]; then
+                if [[ "$dry_run_mode" == "1" ]]; then
+                    echo -e "${GREEN}${ICON_SUCCESS}${NC} [DRY RUN] $project_path, $artifact_type${NC}, ${GREEN}$size_human${NC}"
+                else
+                    echo -e "${GREEN}${ICON_SUCCESS}${NC} $project_path, $artifact_type${NC}, ${GREEN}$size_human${NC}"
+                fi
+            fi
         fi
     done
     # Update count
