@@ -211,6 +211,9 @@
 
 **Merged pull requests:**
 
+- 🛡️ Sentinel: \[CRITICAL\] Fix command injection \(CWE-78\) via eval in get\_user\_home [\#641](https://github.com/abhimehro/personal-config/pull/641) ([abhimehro](https://github.com/abhimehro))
+- 🎨 Palette: Add graceful exit on SIGINT in windscribe-connect.sh [\#640](https://github.com/abhimehro/personal-config/pull/640) ([abhimehro](https://github.com/abhimehro))
+- ⚡ Bolt: Optimize node\_modules cleanup find operation [\#639](https://github.com/abhimehro/personal-config/pull/639) ([abhimehro](https://github.com/abhimehro))
 - 🛡️ Sentinel: \[CRITICAL\] Fix Command Injection \(CWE-78\) in system\_cleanup.sh [\#637](https://github.com/abhimehro/personal-config/pull/637) ([abhimehro](https://github.com/abhimehro))
 - 🎨 Palette: Add accessible spinner to Windscribe connection script [\#629](https://github.com/abhimehro/personal-config/pull/629) ([abhimehro](https://github.com/abhimehro))
 - Fix PR-review preflight config parsing and refresh 2026-03-09 session artifacts [\#628](https://github.com/abhimehro/personal-config/pull/628) ([cursor[bot]](https://github.com/apps/cursor))
