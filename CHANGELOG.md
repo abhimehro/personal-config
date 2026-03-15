@@ -211,6 +211,8 @@
 
 **Merged pull requests:**
 
+- 🎨 Palette: Add visual feedback for wait states in windscribe-connect [\#643](https://github.com/abhimehro/personal-config/pull/643) ([abhimehro](https://github.com/abhimehro))
+- ⚡ Bolt: Parallelize all top-level network I/O in morning-brief [\#642](https://github.com/abhimehro/personal-config/pull/642) ([abhimehro](https://github.com/abhimehro))
 - 🛡️ Sentinel: \[CRITICAL\] Fix command injection \(CWE-78\) via eval in get\_user\_home [\#641](https://github.com/abhimehro/personal-config/pull/641) ([abhimehro](https://github.com/abhimehro))
 - 🎨 Palette: Add graceful exit on SIGINT in windscribe-connect.sh [\#640](https://github.com/abhimehro/personal-config/pull/640) ([abhimehro](https://github.com/abhimehro))
 - ⚡ Bolt: Optimize node\_modules cleanup find operation [\#639](https://github.com/abhimehro/personal-config/pull/639) ([abhimehro](https://github.com/abhimehro))
