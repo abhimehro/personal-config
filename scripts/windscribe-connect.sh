@@ -57,13 +57,18 @@ if [[ ! -x "$REPO_ROOT/scripts/network-mode-manager.sh" ]]; then
 	exit 1
 fi
 
-if ! command -v windscribe >/dev/null 2>&1; then
+if command -v windscribe-cli >/dev/null 2>&1; then
+	export WINDSCRIBE_BIN="windscribe-cli"
+elif command -v windscribe >/dev/null 2>&1; then
+	export WINDSCRIBE_BIN="windscribe"
+else
 	error "Windscribe CLI not found. Install from Windscribe app."
 	exit 1
 fi
 
 echo
 log "Windscribe + Control D Connection Sequence"
+log "Using Windscribe CLI: $WINDSCRIBE_BIN"
 log "Profile:  $PROFILE"
 log "Location: $LOCATION"
 log "Protocol: $PROTOCOL"
@@ -75,7 +80,7 @@ cd "$REPO_ROOT"
 spinner_wait 2 "Starting service"
 
 log "Step 2: Connecting Windscribe static location..."
-windscribe connect static "$LOCATION" "$PROTOCOL"
+"$WINDSCRIBE_BIN" connect static "$LOCATION" "$PROTOCOL"
 spinner_wait 5 "Establishing connection"
 
 log "Step 3: Re-enforcing DNS lock to Control D (127.0.0.1)..."
@@ -142,4 +147,4 @@ fi
 
 echo
 success "Combined Windscribe + Control D mode active"
-log "Disconnect path: windscribe disconnect && ./scripts/network-mode-manager.sh controld $PROFILE"
+log "Disconnect path: $WINDSCRIBE_BIN disconnect && ./scripts/network-mode-manager.sh controld $PROFILE"
