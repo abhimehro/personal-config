@@ -312,4 +312,4 @@ if status is-interactive
 end
 
 # History Setup
-set -g fish_history_limit 10000
+set -g fish_history_limit 10000set -U fish_user_paths $fish_user_paths /Users/speedybee/.local/bin
