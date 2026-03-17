@@ -1,8 +1,8 @@
 # Personal System Configuration
 
+[![CodeScene general](https://codescene.io/images/analyzed-by-codescene-badge.svg)](https://codescene.io/projects/78057)
 [![Changelog Status](https://github.com/abhimehro/personal-config/actions/workflows/changelog.yml/badge.svg)](https://github.com/abhimehro/personal-config/actions/workflows/changelog.yml)
 [![CodeScene System Mastery](https://codescene.io/projects/78057/status-badges/system-mastery?component-name=Personal-config)](https://codescene.io/projects/78057/)
-[![CodeScene general](https://codescene.io/images/analyzed-by-codescene-badge.svg)](https://codescene.io/projects/78057)
 
 A comprehensive repository for personal system configurations, scripts, and documentation to make my macOS development and gaming setup reproducible and backed up.
 
