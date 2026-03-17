@@ -1,6 +1,10 @@
 # Personal System Configuration
 
 [![Changelog Status](https://github.com/abhimehro/personal-config/actions/workflows/changelog.yml/badge.svg)](https://github.com/abhimehro/personal-config/actions/workflows/changelog.yml)
+[![CodeScene Average Code Health](https://codescene.io/projects/78057/status-badges/average-code-health)](https://codescene.io/projects/78057)
+[![CodeScene Hotspot Code Health](https://codescene.io/projects/78057/status-badges/hotspot-code-health)](https://codescene.io/projects/78057)
+[![CodeScene Missed Goals](https://codescene.io/projects/78057/status-badges/missed-goals)](https://codescene.io/projects/78057)
+[![CodeScene System Mastery](https://codescene.io/projects/78057/status-badges/system-mastery?component-name=Personal-config)](https://codescene.io/projects/78057/)
 
 A comprehensive repository for personal system configurations, scripts, and documentation to make my macOS development and gaming setup reproducible and backed up.
 
