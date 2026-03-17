@@ -217,10 +217,10 @@ def main():
     # 1. Gather Data
     # ⚡ Performance: Fetch weather, horoscope, and ALL RSS feeds concurrently using the same ThreadPoolExecutor.
     # Previously, weather and horoscope were fetched concurrently, but the script waited for them to finish
-    # before fetching RSS feeds. By sharing the executor, we bind the total execution time to the single slowest
-    # API call (usually RSS), improving overall startup time by ~50% (e.g., from ~2s to ~1s).
-    # We increase max_workers to accommodate the 2 API calls + the number of RSS feeds.
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2 + len(FEEDS)) as executor:
+    # before fetching RSS feeds. By sharing the executor, overlapping I/O removes the sequential bottleneck
+    # and bounds the total execution time to the single slowest API call (usually RSS).
+    # We cap max_workers to prevent excessive threads if the FEEDS list grows.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(32, 2 + len(FEEDS))) as executor:
         future_weather = executor.submit(get_weather)
         future_horoscope = executor.submit(get_horoscope)
 
