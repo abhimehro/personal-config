@@ -220,7 +220,9 @@ def main():
     # before fetching RSS feeds. By sharing the executor, overlapping I/O removes the sequential bottleneck
     # and bounds the total execution time to the single slowest API call (usually RSS).
     # We cap max_workers to prevent excessive threads if the FEEDS list grows.
-    with concurrent.futures.ThreadPoolExecutor(max_workers=min(32, 2 + len(FEEDS))) as executor:
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=min(32, 2 + len(FEEDS))
+    ) as executor:
         future_weather = executor.submit(get_weather)
         future_horoscope = executor.submit(get_horoscope)
 
