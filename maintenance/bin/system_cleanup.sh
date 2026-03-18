@@ -23,12 +23,11 @@ else
         local val
         val="$(date '+%Y-%m-%d %H:%M:%S')"
         # SECURITY: Mitigate CWE-78 Command Injection by validating variable name before eval
-        if [[ "$1" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-            eval "$1='$val'"
-        else
+        if [[ ! "$1" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
             echo "Error: Invalid variable name '$1' for timestamp" >&2
             return 1
         fi
+        eval "$1='$val'"
     }
 fi
 
