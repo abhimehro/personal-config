@@ -728,7 +728,11 @@ update_progress_if_needed() {
 
     # Get last update time from variable
     local last_time
-    eval "last_time=\${$last_update_var:-0}"
+    if [[ "$last_update_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        eval "last_time=\${$last_update_var:-0}"
+    else
+        last_time=0
+    fi
     [[ "$last_time" =~ ^[0-9]+$ ]] || last_time=0
 
     # Check if enough time has elapsed
@@ -738,7 +742,9 @@ update_progress_if_needed() {
         start_section_spinner "Scanning items... $completed/$total"
 
         # Update the last_update_time variable
-        eval "$last_update_var=$current_time"
+        if [[ "$last_update_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+            eval "$last_update_var=$current_time"
+        fi
         return 0
     fi
 
