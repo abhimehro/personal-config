@@ -1,17 +1,20 @@
 # Automated PR Review Agent — Configuration
-# Used by humans and scripts (e.g. preflight, run-pr-review-session).
-# Override repos via preflight --repo flags if needed.
+# Session: backlog cleanup test (review-and-merge), schedule: none
+
+mode: review-and-merge
+schedule: none
 
 repos:
   - abhimehro/personal-config
-  - abhimehro/email-security-pipeline
   - abhimehro/ctrld-sync
+  - abhimehro/email-security-pipeline
+  - abhimehro/Seatek_Analysis
+  - abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
 
 bot_authors:
-  - jules[bot]
   - dependabot[bot]
   - renovate[bot]
-  - app/copilot-swe-agent
+  # Delegated automation (Jules/Copilot/etc.) detected via PR body/branch/comments — see triage doc
 
 stale_threshold_days: 30
 merge_strategy: squash
