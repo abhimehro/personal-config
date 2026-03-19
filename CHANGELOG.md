@@ -211,6 +211,8 @@
 
 **Merged pull requests:**
 
+- 🛡️ Sentinel: \[CRITICAL\] Fix Command Injection \(CWE-78\) via eval in dynamic variable assignment [\#648](https://github.com/abhimehro/personal-config/pull/648) ([abhimehro](https://github.com/abhimehro))
+- 🎨 Palette: \[UX improvement\] Replace subprocess polling in spinner with iteration counter [\#647](https://github.com/abhimehro/personal-config/pull/647) ([abhimehro](https://github.com/abhimehro))
 - ⚡ Bolt: \[performance improvement\] Optimize morning brief startup time [\#645](https://github.com/abhimehro/personal-config/pull/645) ([abhimehro](https://github.com/abhimehro))
 - 🛡️ Sentinel: \[MEDIUM\] Fix CWE-377 insecure temporary files in tests [\#644](https://github.com/abhimehro/personal-config/pull/644) ([abhimehro](https://github.com/abhimehro))
 - 🎨 Palette: Add visual feedback for wait states in windscribe-connect [\#643](https://github.com/abhimehro/personal-config/pull/643) ([abhimehro](https://github.com/abhimehro))
