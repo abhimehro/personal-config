@@ -154,7 +154,7 @@
 **Learning:** `eval` is dangerous when used for dynamic variable expansion like tilde expansion if the input is not strictly validated. Even if primarily internal, it creates a risky trust boundary violation.
 **Prevention:** Use native, secure commands like `getent passwd "$user" | cut -d: -f6` on Linux. If `eval` is absolutely necessary for tilde expansion, strictly validate the username against a safe POSIX regex (`^[a-zA-Z0-9_][a-zA-Z0-9_.-]*\$?$`) before execution.
 
-## YYYY-MM-DD - Command Injection Risk via eval in Dynamic Variable Assignment
+## $(date +%Y-%m-%d) - Command Injection Risk via eval in Dynamic Variable Assignment
 **Vulnerability:** Command Injection ([CWE-78](https://cwe.mitre.org/data/definitions/78.html)) risk existed in `maintenance/bin/system_cleanup.sh` and `configs/.config/mole/lib/core/` scripts where `eval "$var_name=\"\$val\""` was used to dynamically assign values to variables passed as arguments.
 **Learning:** `eval` was used to mimic pass-by-reference in older Bash versions without validating the variable name string, allowing arbitrary code execution if an attacker controlled the variable name argument.
 **Prevention:** Always validate dynamically passed variable names against a strict regex `^[a-zA-Z_][a-zA-Z0-9_]*$` before passing them to `eval`, or use safer alternatives like `printf -v` in modern Bash.
