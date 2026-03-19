@@ -44,8 +44,6 @@ spinner() {
     local pid
     local delay=0.1
     local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
-    local start_time
-    start_time=$(date +%s)
     local temp_log
 
     temp_log=$(mktemp -t 'fish_bootstrap.XXXXXX')
@@ -58,14 +56,14 @@ spinner() {
     tput civis 2>/dev/null || true
 
     local elapsed=0
+    local count=0
     while kill -0 $pid 2>/dev/null; do
-        local current_time
-        current_time=$(date +%s)
-        elapsed=$((current_time - start_time))
+        elapsed=$((count / 10))
         local temp=${spinstr#?}
         printf "\r${BLUE}%c${NC} %s (${elapsed}s)..." "$spinstr" "$message"
         local spinstr=$temp${spinstr%"$temp"}
         sleep $delay
+        count=$((count + 1))
     done
 
     wait $pid
