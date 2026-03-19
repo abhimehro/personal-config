@@ -6,12 +6,18 @@ repos:
   - abhimehro/personal-config
   - abhimehro/email-security-pipeline
   - abhimehro/ctrld-sync
+  - abhimehro/Seatek_Analysis
+  - abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
 
 bot_authors:
   - jules[bot]
+  - google-labs-jules[bot]
   - dependabot[bot]
   - renovate[bot]
   - app/copilot-swe-agent
+  # Also match PRs authored by abhimehro when branch/title/body indicate Jules automation
+  # Detection pattern: branch matches /^(sentinel|palette|bolt|fix\/sentinel)-.*-\d{10,}$/
+  # or body contains "PR created automatically by Jules"
 
 stale_threshold_days: 30
 merge_strategy: squash
