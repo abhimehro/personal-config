@@ -28,6 +28,6 @@
 | personal-config | 646 | abhimehro (Jules) | SECURITY | UNSTABLE — Codacy fail | None | Overlapped 648 |
 | email-security-pipeline | 555 | abhimehro (Jules) | UI | UNSTABLE — CodeScene fail; pytest/Codacy pass | None | Palette spinner |
 | Seatek_Analysis | 87–92 | abhimehro (Jules) | mixed | Mostly CLEAN | 91 vs main after prior merges | See triage |
-| Hydrograph_Vs_Seatek | 79–83 | abhimehro (Jules) | mixed | CLEAN / UNSTABLE | 81/82 after 79/80 | See triage |
+| Hydrograph             | 79–83 | abhimehro (Jules) | mixed | CLEAN / UNSTABLE | 81/82 after 79/80 | See triage |
 
 **Stale (30d):** none of the above exceeded 30 days inactive.
