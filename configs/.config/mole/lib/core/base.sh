@@ -96,6 +96,7 @@ declare -a DEFAULT_WHITELIST_PATTERNS=(
     "$HOME/Library/Caches/pypoetry/virtualenvs*"
     "$HOME/Library/Caches/JetBrains*"
     "$HOME/Library/Caches/com.jetbrains.toolbox*"
+    "$HOME/Library/Caches/tealdeer/tldr-pages"
     "$HOME/Library/Application Support/JetBrains*"
     "$HOME/Library/Caches/com.apple.finder"
     "$HOME/Library/Mobile Documents*"
@@ -331,15 +332,8 @@ get_user_home() {
         home=$(dscl . -read "/Users/$user" NFSHomeDirectory 2> /dev/null | awk '{print $2}' | head -1 || true)
     fi
 
-    if [[ -z "$home" ]] && command -v getent > /dev/null 2>&1; then
-        home=$(getent passwd "$user" 2> /dev/null | cut -d: -f6 || true)
-    fi
-
     if [[ -z "$home" ]]; then
-        # SECURITY: Mitigate CWE-78 Command Injection by validating username before eval
-        if [[ "$user" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]*\$?$ ]]; then
-            home=$(eval echo "~$user" 2> /dev/null || true)
-        fi
+        home=$(id -P "$user" 2> /dev/null | cut -d: -f9 || true)
     fi
 
     if [[ "$home" == "~"* ]]; then

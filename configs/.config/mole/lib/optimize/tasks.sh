@@ -641,6 +641,7 @@ opt_bluetooth_reset() {
     fi
 
     local spinner_started="false"
+    local disconnect_notice="Bluetooth devices may disconnect briefly during refresh"
     if [[ -t 1 ]]; then
         MOLE_SPINNER_PREFIX="  " start_inline_spinner "Checking Bluetooth..."
         spinner_started="true"
@@ -688,6 +689,7 @@ opt_bluetooth_reset() {
         fi
 
         if sudo pkill -TERM bluetoothd > /dev/null 2>&1; then
+            echo -e "  ${GRAY}${ICON_WARNING}${NC} ${GRAY}${disconnect_notice}${NC}"
             sleep 1
             if pgrep -x bluetoothd > /dev/null 2>&1; then
                 sudo pkill -KILL bluetoothd > /dev/null 2>&1 || true
@@ -707,6 +709,7 @@ opt_bluetooth_reset() {
         if [[ "$spinner_started" == "true" ]]; then
             stop_inline_spinner
         fi
+        echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} ${disconnect_notice}"
         opt_msg "Bluetooth module restarted"
         opt_msg "Connectivity issues resolved"
     fi

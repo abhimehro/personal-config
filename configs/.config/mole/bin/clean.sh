@@ -129,12 +129,27 @@ PROJECT_ARTIFACT_HINT_EXAMPLES=()
 PROJECT_ARTIFACT_HINT_ESTIMATED_KB=0
 PROJECT_ARTIFACT_HINT_ESTIMATE_SAMPLES=0
 PROJECT_ARTIFACT_HINT_ESTIMATE_PARTIAL=false
+declare -a DRY_RUN_SEEN_IDENTITIES=()
 
 # shellcheck disable=SC2329
 note_activity() {
     if [[ "${TRACK_SECTION:-0}" == "1" ]]; then
         SECTION_ACTIVITY=1
     fi
+}
+
+# shellcheck disable=SC2329
+register_dry_run_cleanup_target() {
+    local path="$1"
+    local identity
+    identity=$(mole_path_identity "$path")
+
+    if [[ ${#DRY_RUN_SEEN_IDENTITIES[@]} -gt 0 ]] && mole_identity_in_list "$identity" "${DRY_RUN_SEEN_IDENTITIES[@]}"; then
+        return 1
+    fi
+
+    DRY_RUN_SEEN_IDENTITIES+=("$identity")
+    return 0
 }
 
 CLEANUP_DONE=false
@@ -380,7 +395,12 @@ safe_clean() {
             log_operation "clean" "SKIPPED" "$path" "whitelist"
         fi
         [[ "$skip" == "true" ]] && continue
-        [[ -e "$path" ]] && existing_paths+=("$path")
+        if [[ -e "$path" ]]; then
+            if [[ "$DRY_RUN" == "true" ]]; then
+                register_dry_run_cleanup_target "$path" || continue
+            fi
+            existing_paths+=("$path")
+        fi
     done
 
     if [[ "$show_scan_feedback" == "true" ]]; then
@@ -705,6 +725,7 @@ start_cleanup() {
     # Set current command for operation logging
     export MOLE_CURRENT_COMMAND="clean"
     log_operation_session_start "clean"
+    DRY_RUN_SEEN_IDENTITIES=()
 
     if [[ -t 1 ]]; then
         printf '\033[2J\033[H'
@@ -976,7 +997,7 @@ perform_cleanup() {
     start_section "Orphaned data"
     clean_orphaned_app_data
     clean_orphaned_system_services
-    clean_orphaned_launch_agents
+    show_user_launch_agent_hint_notice
     end_section
 
     # ===== 11. Apple Silicon =====
