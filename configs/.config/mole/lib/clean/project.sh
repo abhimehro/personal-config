@@ -26,6 +26,7 @@ readonly PURGE_CONFIG_FILE="$HOME/.config/mole/purge_paths"
 
 # Resolved search paths.
 PURGE_SEARCH_PATHS=()
+PURGE_CATEGORY_FULL_PATHS_ARRAY=()
 
 # Project indicators for container detection.
 # Monorepo indicators (higher priority)
@@ -154,6 +155,53 @@ load_purge_config() {
 
 # Initialize paths on script load.
 load_purge_config
+
+format_purge_target_path() {
+    local path="$1"
+    echo "${path/#$HOME/~}"
+}
+
+compact_purge_menu_path() {
+    local path="$1"
+    local max_width="${2:-0}"
+
+    if ! [[ "$max_width" =~ ^[0-9]+$ ]] || [[ "$max_width" -lt 4 ]]; then
+        max_width=4
+    fi
+
+    local path_width
+    path_width=$(get_display_width "$path")
+    if [[ $path_width -le $max_width ]]; then
+        echo "$path"
+        return
+    fi
+
+    local tail=""
+    local remainder="$path"
+    local prefix_width=3
+
+    while [[ "$remainder" == */* ]]; do
+        local segment="/${remainder##*/}"
+        remainder="${remainder%/*}"
+
+        local candidate="${segment}${tail}"
+        local candidate_width
+        candidate_width=$(get_display_width "$candidate")
+        if [[ $((candidate_width + prefix_width)) -le $max_width ]]; then
+            tail="$candidate"
+        else
+            break
+        fi
+    done
+
+    if [[ -n "$tail" ]]; then
+        echo "...${tail}"
+        return
+    fi
+
+    local suffix_len=$((max_width - 3))
+    echo "...${path: -$suffix_len}"
+}
 
 # Args: $1 - directory path
 # Determine whether a directory is a project root.
@@ -542,7 +590,7 @@ select_purge_categories() {
                 term_height=24
             fi
         fi
-        local reserved=6
+        local reserved=8
         local available=$((term_height - reserved))
         if [[ $available -lt 3 ]]; then
             echo 3
@@ -679,6 +727,13 @@ select_purge_categories() {
 
         # Keep one blank line between the list and footer tips.
         printf "%s\n" "$clear_line"
+
+        local current_index=$((top_index + cursor_pos))
+        local current_full_path="${PURGE_CATEGORY_FULL_PATHS_ARRAY[current_index]:-}"
+        if [[ -n "$current_full_path" ]]; then
+            printf "%s${GRAY}Full path:${NC} %s\n" "$clear_line" "$current_full_path"
+            printf "%s\n" "$clear_line"
+        fi
 
         # Adaptive footer hints — mirrors menu_paginated.sh pattern
         local _term_w
@@ -821,6 +876,7 @@ confirm_purge_cleanup() {
     local item_count="${1:-0}"
     local total_size_kb="${2:-0}"
     local unknown_count="${3:-0}"
+    local -a selected_paths=("${@:4}")
 
     [[ "$item_count" =~ ^[0-9]+$ ]] || item_count=0
     [[ "$total_size_kb" =~ ^[0-9]+$ ]] || total_size_kb=0
@@ -837,6 +893,15 @@ confirm_purge_cleanup() {
         local unknown_text="unknown size"
         [[ $unknown_count -gt 1 ]] && unknown_text="unknown sizes"
         unknown_hint=", ${unknown_count} ${unknown_text}"
+    fi
+
+    if [[ ${#selected_paths[@]} -gt 0 ]]; then
+        echo ""
+        echo -e "${GRAY}Selected paths:${NC}"
+        local selected_path=""
+        for selected_path in "${selected_paths[@]}"; do
+            echo "  $selected_path"
+        done
     fi
 
     echo -ne "${PURPLE}${ICON_ARROW}${NC} Remove ${item_count} ${item_text}, ${size_display}${unknown_hint}  ${GREEN}Enter${NC} confirm, ${GRAY}ESC${NC} cancel: "
@@ -952,6 +1017,24 @@ clean_project_artifacts() {
     if [[ -t 1 ]]; then
         start_inline_spinner "Calculating sizes..."
     fi
+
+    # Pre-compute all sizes in parallel to avoid sequential timeout hangs (issue #560).
+    # With N artifacts each taking up to 15s, sequential calculation can take N×15s.
+    # Parallel: all sizes computed concurrently, total ≤ single longest du call.
+    local -a _size_tmpfiles=()
+    local -a _size_pids=()
+    for _sz_item in "${safe_to_clean[@]}"; do
+        local _stmp
+        _stmp=$(mktemp)
+        register_temp_file "$_stmp"
+        _size_tmpfiles+=("$_stmp")
+        (get_dir_size_kb "$_sz_item" > "$_stmp" 2> /dev/null) &
+        _size_pids+=($!)
+    done
+    for _spid in "${_size_pids[@]+"${_size_pids[@]}"}"; do
+        wait "$_spid" 2> /dev/null || true
+    done
+
     local -a menu_options=()
     local -a item_paths=()
     local -a item_sizes=()
@@ -1157,12 +1240,11 @@ clean_project_artifacts() {
             fi
 
             [[ $available_width -lt $min_width ]] && available_width=$min_width
-            [[ $available_width -gt 60 ]] && available_width=60
         fi
 
         # Truncate project path if needed
         local truncated_path
-        truncated_path=$(truncate_by_display_width "$project_path" "$available_width")
+        truncated_path=$(compact_purge_menu_path "$project_path" "$available_width")
         local current_width
         current_width=$(get_display_width "$truncated_path")
         local char_count=${#truncated_path}
@@ -1172,16 +1254,21 @@ clean_project_artifacts() {
         printf "%-*s %9s | %-*s" "$printf_width" "$truncated_path" "$size_str" "$artifact_col" "$artifact_type"
     }
     # Build menu options - one line per artifact
-    # Pass 1: collect data into parallel arrays (needed for pre-scan of widths)
+    # Pass 1: collect data into parallel arrays (needed for pre-scan of widths).
+    # Sizes are read from pre-computed results (parallel du calls launched above).
     local -a raw_project_paths=()
     local -a raw_artifact_types=()
+    local -a item_display_paths=()
+    local _sz_idx=0
     for item in "${safe_to_clean[@]}"; do
         local project_path
         project_path=$(get_project_path "$item")
         local artifact_type
         artifact_type=$(get_artifact_display_name "$item")
         local size_raw
-        size_raw=$(get_dir_size_kb "$item")
+        size_raw=$(cat "${_size_tmpfiles[_sz_idx]}" 2> /dev/null || echo "0")
+        rm -f "${_size_tmpfiles[_sz_idx]}" 2> /dev/null || true
+        _sz_idx=$((_sz_idx + 1))
         local size_kb=0
         local size_human=""
         local size_unknown=false
@@ -1211,6 +1298,7 @@ clean_project_artifacts() {
         raw_project_paths+=("$project_path")
         raw_artifact_types+=("$artifact_type")
         item_paths+=("$item")
+        item_display_paths+=("$(format_purge_target_path "$item")")
         item_sizes+=("$size_kb")
         item_size_unknown_flags+=("$size_unknown")
         item_recent_flags+=("$is_recent")
@@ -1251,7 +1339,6 @@ clean_project_artifacts() {
 
     [[ $max_path_display_width -lt $min_path_width ]] && max_path_display_width=$min_path_width
     [[ $available_for_path -lt $max_path_display_width ]] && max_path_display_width=$available_for_path
-    [[ $max_path_display_width -gt 60 ]] && max_path_display_width=60
     # Ensure path width is at least 5 on very narrow terminals
     [[ $max_path_display_width -lt 5 ]] && max_path_display_width=5
 
@@ -1329,8 +1416,10 @@ clean_project_artifacts() {
     )
     # Interactive selection (only if terminal is available)
     PURGE_SELECTION_RESULT=""
+    PURGE_CATEGORY_FULL_PATHS_ARRAY=("${item_display_paths[@]}")
     if [[ -t 0 ]]; then
         if ! select_purge_categories "${menu_options[@]}"; then
+            PURGE_CATEGORY_FULL_PATHS_ARRAY=()
             unset PURGE_CATEGORY_SIZES PURGE_RECENT_CATEGORIES PURGE_SELECTION_RESULT
             return 1
         fi
@@ -1347,12 +1436,14 @@ clean_project_artifacts() {
         echo ""
         echo -e "${GRAY}No items selected${NC}"
         printf '\n'
+        PURGE_CATEGORY_FULL_PATHS_ARRAY=()
         unset PURGE_CATEGORY_SIZES PURGE_RECENT_CATEGORIES PURGE_SELECTION_RESULT
         return 0
     fi
     IFS=',' read -r -a selected_indices <<< "$PURGE_SELECTION_RESULT"
     local selected_total_kb=0
     local selected_unknown_count=0
+    local -a selected_display_paths=()
     for idx in "${selected_indices[@]}"; do
         local selected_size_kb="${item_sizes[idx]:-0}"
         [[ "$selected_size_kb" =~ ^[0-9]+$ ]] || selected_size_kb=0
@@ -1360,16 +1451,19 @@ clean_project_artifacts() {
         if [[ "${item_size_unknown_flags[idx]:-false}" == "true" ]]; then
             selected_unknown_count=$((selected_unknown_count + 1))
         fi
+        selected_display_paths+=("${item_display_paths[idx]}")
     done
 
     if [[ -t 0 ]]; then
-        if ! confirm_purge_cleanup "${#selected_indices[@]}" "$selected_total_kb" "$selected_unknown_count"; then
+        if ! confirm_purge_cleanup "${#selected_indices[@]}" "$selected_total_kb" "$selected_unknown_count" "${selected_display_paths[@]}"; then
             echo -e "${GRAY}Purge cancelled${NC}"
             printf '\n'
+            PURGE_CATEGORY_FULL_PATHS_ARRAY=()
             unset PURGE_CATEGORY_SIZES PURGE_RECENT_CATEGORIES PURGE_SELECTION_RESULT
             return 1
         fi
     fi
+    PURGE_CATEGORY_FULL_PATHS_ARRAY=()
 
     # Clean selected items
     echo ""
@@ -1378,8 +1472,8 @@ clean_project_artifacts() {
     local dry_run_mode="${MOLE_DRY_RUN:-0}"
     for idx in "${selected_indices[@]}"; do
         local item_path="${item_paths[idx]}"
-        local artifact_type=$(basename "$item_path")
-        local project_path=$(get_project_path "$item_path")
+        local display_item_path
+        display_item_path=$(format_purge_target_path "$item_path")
         local size_kb="${item_sizes[idx]}"
         local size_unknown="${item_size_unknown_flags[idx]:-false}"
         local size_human
@@ -1393,7 +1487,7 @@ clean_project_artifacts() {
             continue
         fi
         if [[ -t 1 ]]; then
-            start_inline_spinner "Cleaning $project_path/$artifact_type..."
+            start_inline_spinner "Cleaning $display_item_path..."
         fi
         local removal_recorded=false
         if [[ -e "$item_path" ]]; then
@@ -1411,9 +1505,9 @@ clean_project_artifacts() {
             stop_inline_spinner
             if [[ "$removal_recorded" == "true" ]]; then
                 if [[ "$dry_run_mode" == "1" ]]; then
-                    echo -e "${GREEN}${ICON_SUCCESS}${NC} [DRY RUN] $project_path, $artifact_type${NC}, ${GREEN}$size_human${NC}"
+                    echo -e "${GREEN}${ICON_SUCCESS}${NC} [DRY RUN] $display_item_path${NC}, ${GREEN}$size_human${NC}"
                 else
-                    echo -e "${GREEN}${ICON_SUCCESS}${NC} $project_path, $artifact_type${NC}, ${GREEN}$size_human${NC}"
+                    echo -e "${GREEN}${ICON_SUCCESS}${NC} $display_item_path${NC}, ${GREEN}$size_human${NC}"
                 fi
             fi
         fi

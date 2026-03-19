@@ -108,6 +108,11 @@ request_sudo_access() {
         return 0
     fi
 
+    # Tests must never trigger real password or Touch ID prompts.
+    if [[ "${MOLE_TEST_MODE:-0}" == "1" || "${MOLE_TEST_NO_AUTH:-0}" == "1" ]]; then
+        return 1
+    fi
+
     # Detect if running in TTY environment
     local tty_path="/dev/tty"
     local is_gui_mode=false
@@ -297,6 +302,11 @@ ensure_sudo_session() {
     # Check if already established
     if has_sudo_session && [[ "$MOLE_SUDO_ESTABLISHED" == "true" ]]; then
         return 0
+    fi
+
+    if [[ "${MOLE_TEST_MODE:-0}" == "1" || "${MOLE_TEST_NO_AUTH:-0}" == "1" ]]; then
+        MOLE_SUDO_ESTABLISHED="false"
+        return 1
     fi
 
     # Stop old keepalive if exists

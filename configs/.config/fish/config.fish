@@ -313,3 +313,6 @@ end
 
 # History Setup
 set -g fish_history_limit 10000set -U fish_user_paths $fish_user_paths /Users/speedybee/.local/bin
+
+# Mole shell completion
+set -l output (mole completion fish 2>/dev/null); and echo "$output" | source

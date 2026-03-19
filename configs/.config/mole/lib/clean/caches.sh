@@ -117,6 +117,8 @@ project_cache_has_indicators() {
 # Discover candidate project roots without scanning the whole home directory.
 discover_project_cache_roots() {
     local -a roots=()
+    local -a unique_roots=()
+    local -a seen_identities=()
     local root
 
     for root in "${MOLE_PURGE_DEFAULT_SEARCH_PATHS[@]}"; do
@@ -147,7 +149,18 @@ discover_project_cache_roots() {
 
     [[ ${#roots[@]} -eq 0 ]] && return 0
 
-    printf '%s\n' "${roots[@]}" | LC_ALL=C sort -u
+    for root in "${roots[@]}"; do
+        local identity
+        identity=$(mole_path_identity "$root")
+        if [[ ${#seen_identities[@]} -gt 0 ]] && mole_identity_in_list "$identity" "${seen_identities[@]}"; then
+            continue
+        fi
+
+        seen_identities+=("$identity")
+        unique_roots+=("$root")
+    done
+
+    [[ ${#unique_roots[@]} -gt 0 ]] && printf '%s\n' "${unique_roots[@]}"
 }
 
 # Scan a project root for supported build caches while pruning heavy subtrees.
