@@ -22,7 +22,10 @@ else
     get_timestamp() {
         local val
         val="$(date '+%Y-%m-%d %H:%M:%S')"
-        eval "$1='$val'"
+        # SECURITY: Validate variable name to prevent Command Injection (CWE-78)
+        if [[ "$1" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+            eval "$1=\"$val\""
+        fi
     }
 fi
 

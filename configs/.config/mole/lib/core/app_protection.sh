@@ -617,7 +617,10 @@ build_regex_var() {
             regex="$regex|$p"
         fi
     done
-    eval "$var_name=\"\$regex\""
+    # SECURITY: Validate variable name to prevent Command Injection (CWE-78)
+    if [[ "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        eval "$var_name=\"\$regex\""
+    fi
 }
 
 # Lazy-loaded regex (only built when needed)
