@@ -1,4 +1,12 @@
-# Lessons Learned — Control D Pipeline Fix (2026-03-15)
+# Lessons Learned
+
+## Lesson 0: Multi-repo automated PR merges need sequential re-validation
+**Pattern:** After squash-merging one automation PR, sibling PRs from the same bot often become **CONFLICTING** with `main`.
+**Rule:** Re-run mergeability after each merge; merge `origin/main` into the PR branch and resolve conflicts with ordinary commits (never force-push). Use `GH_TOKEN` on the git remote if `gh` picks a bot credential that cannot push.
+
+---
+
+## Lessons Learned — Control D Pipeline Fix (2026-03-15)
 
 ## Lesson 1: Hardcoded paths break test isolation
 **Pattern:** Scripts that hardcode `/etc/controld/...` fail in non-root test environments.

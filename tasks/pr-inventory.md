@@ -1,27 +1,33 @@
-# Bot PR Inventory
+# Bot / automated PR inventory
 
-Snapshot timestamp: 2026-03-09 (current session, post-preflight).
+**Session:** backlog cleanup test (review-and-merge), **snapshot:** 2026-03-19 (execution)  
+**Config:** `tasks/pr-review-agent.config.yaml` — 5 repos, squash merge, stale threshold 30d, auto-fix enabled.
+
+## Scope rules
+
+- **Primary authors:** `dependabot[bot]`, `renovate[bot]` (none were open in this snapshot).
+- **Expanded scope:** PRs with visible author `abhimehro` when **Jules / automation markers** are present (branch prefixes `sentinel-`, `palette-`, `bolt/`, `bolt-`, `ux-`, emoji titles 🛡️/🎨/⚡, `.jules/*` learnings in diff, PR body/tooling).
 
 ## Summary
 
-| Repo | Open Bot PRs | Merge-Ready | Escalated | Remaining Open |
-|---|---:|---:|---:|---:|
-| abhimehro/[REDACTED]-config | 2 | 0 | 2 | 2 |
-| abhimehro/email-security-pipeline | 0 | 0 | 0 | 0 |
-| abhimehro/ctrld-sync | 1 | 1 | 0 | 1 |
-| **Totals** | **3** | **1** | **2** | **3** |
+| Repo | Open (in-scope) at start | After session |
+|------|--------------------------|---------------|
+| `abhimehro/personal-config` | 3 | 0 |
+| `abhimehro/ctrld-sync` | 0 | 0 |
+| `abhimehro/email-security-pipeline` | 1 | 0 |
+| `abhimehro/Seatek_Analysis` | 6 | 0 |
+| `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project` | 5 | 0 |
+| **Total** | **15** | **0** |
 
-## Open Bot PRs
+## Open PRs (at start) — field inventory
 
-| Repo | PR # | Author | Category | CI | Conflicts | Age (days) | Status | Disposition |
-|---|---:|---|---|---|---|---:|---|---|
-| abhimehro/[REDACTED]-config | 626 | Jules (delegated via @abhimehro) | CI/INFRA | failing | No | 0 | OPEN | ESCALATE |
-| abhimehro/[REDACTED]-config | 627 | Jules (delegated via @abhimehro) | CI/INFRA | failing | No | 0 | OPEN | ESCALATE |
-| abhimehro/ctrld-sync | 628 | Jules (delegated via @abhimehro) | REFACTOR | passing | No | 0 | OPEN | MERGE |
+| Repo | PR | Author (UI) | Category | CI (summary) | Conflicts | Notes |
+|------|-----|---------------|----------|--------------|-----------|--------|
+| personal-config | 648 | abhimehro (Jules) | SECURITY | UNSTABLE — Codacy Security Scan fail; tests/lint pass | None | Sentinel CWE-78 / eval |
+| personal-config | 647 | abhimehro (Jules) | UI | UNSTABLE — Codacy fail | None | Palette spinner |
+| personal-config | 646 | abhimehro (Jules) | SECURITY | UNSTABLE — Codacy fail | None | Overlapped 648 |
+| email-security-pipeline | 555 | abhimehro (Jules) | UI | UNSTABLE — CodeScene fail; pytest/Codacy pass | None | Palette spinner |
+| Seatek_Analysis | 87–92 | abhimehro (Jules) | mixed | Mostly CLEAN | 91 vs main after prior merges | See triage |
+| Hydrograph             | 79–83 | abhimehro (Jules) | mixed | CLEAN / UNSTABLE | 81/82 after 79/80 | See triage |
 
-## Notes
-
-- Jules-authored PRs are attributed to `author.login=abhimehro` in current metadata, so inventory uses the delegated-author heuristic: the Jules footer in the PR body plus the `google-labs-jules` bootstrap comment on the thread.
-- `CI = failing` includes `mergeStateStatus=UNSTABLE` with at least one failed check in `statusCheckRollup`.
-- `Conflicts = No` means `mergeable=MERGEABLE`; none of the current PRs are in a `DIRTY` or `CONFLICTING` merge state.
-- `MERGE` for `ctrld-sync#628` reflects the review disposition, not an executed action. This environment can gather evidence and update local session artifacts, but it does not expose a GitHub write tool for cross-repo PR mutations.
+**Stale (30d):** none of the above exceeded 30 days inactive.
