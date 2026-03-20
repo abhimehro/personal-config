@@ -2,6 +2,11 @@
 
 This repository uses several GitHub Actions workflows for automation and code quality.
 
+> **Consolidation note:** Scheduled agentic workflows have been consolidated into
+> `repository-automation-daily.yml` and `repository-automation-weekly.yml`.
+> Legacy agentic workflows remain available for manual dispatch, but their
+> schedules were removed so the consolidated orchestration owns the cadence.
+
 ## Workflows
 
 ### Core Workflows

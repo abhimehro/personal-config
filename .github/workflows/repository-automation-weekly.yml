@@ -1,0 +1,71 @@
+name: Repository Automation - Weekly Retrospective
+
+# Weekly retrospective for the consolidated repository automation system.
+# Reviews the past seven daily runs, highlights patterns and failures, and can
+# optionally propose or apply safe .github-only tuning when enabled in config.
+#
+# Required secret:
+#   GH_TOKEN -> fine-grained PAT or GitHub App token with actions:read and
+#               issues:write. contents:write and pull_requests:write are only
+#               needed if weekly safe auto-apply is enabled.
+#
+# Outputs:
+#   * Step summary and uploaded retrospective artifact
+#   * A weekly GitHub Issue with patterns, failures, and recommendations
+on:
+  schedule:
+    - cron: "17 10 * * 0"
+  workflow_dispatch:
+    inputs:
+      allow_write_actions:
+        description: "Allow gated writes such as weekly issue updates and safe .github PRs"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repository-automation-weekly-${{ github.repository }}
+  cancel-in-progress: false
+
+env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  AUTOMATION_ALLOW_WRITES: ${{ github.event_name != 'workflow_dispatch' || inputs.allow_write_actions }}
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  retrospective:
+    name: Weekly retrospective and self-improvement review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install automation runner dependencies
+        run: python -m pip install --upgrade pip pyyaml
+
+      - name: Execute weekly retrospective task
+        continue-on-error: true
+        run: python .github/scripts/repository_automation.py weekly-retrospective
+
+      - name: Upload retrospective artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-retrospective
+          path: .automation-output/weekly-retrospective
+          if-no-files-found: warn
+
+      - name: Enforce weekly retrospective result
+        if: always()
+        run: python .github/scripts/repository_automation.py enforce .automation-output/weekly-retrospective/result.json

@@ -33,9 +33,6 @@
 
 name: "Daily Perf Improver"
 "on":
-  schedule:
-  - cron: "19 11 * * *"
-    # Friendly format: daily (scattered)
   workflow_dispatch:
 
 permissions: {}

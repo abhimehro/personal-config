@@ -1,0 +1,225 @@
+name: Repository Automation - Daily
+
+# Consolidated daily automation entrypoint.
+# Execution order is fixed to preserve context and to ensure a failure in one task
+# never silently skips the remaining analysis or the final human-readable report.
+#
+# Required secret:
+#   GH_TOKEN -> fine-grained PAT or GitHub App token with read access to the repo,
+#               actions:read, issues:write, pull_requests:write, and contents:write
+#               if you want the workflow-updater draft PR automation enabled.
+#
+# Outputs:
+#   * Step summaries for every task
+#   * Uploaded task artifacts under .automation-output/
+#   * A daily GitHub Issue summarising what ran, what changed, and what needs review
+on:
+  schedule:
+    - cron: "17 9 * * *"
+  workflow_dispatch:
+    inputs:
+      allow_write_actions:
+        description: "Allow gated writes such as status issues and draft PRs"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repository-automation-daily-${{ github.repository }}
+  cancel-in-progress: false
+
+env:
+  GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  AUTOMATION_ALLOW_WRITES: ${{ github.event_name != 'workflow_dispatch' || inputs.allow_write_actions }}
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  workflow_updater:
+    name: 1. Workflow updater
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install automation runner dependencies
+        run: python -m pip install --upgrade pip pyyaml
+
+      - name: Execute workflow updater task
+        continue-on-error: true
+        run: python .github/scripts/repository_automation.py workflow-updater
+
+      - name: Upload workflow updater artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-updater
+          path: .automation-output/workflow-updater
+          if-no-files-found: warn
+
+      - name: Enforce workflow updater result
+        if: always()
+        run: python .github/scripts/repository_automation.py enforce .automation-output/workflow-updater/result.json
+
+  performance_optimizer:
+    name: 2. Performance optimizer
+    runs-on: ubuntu-latest
+    needs: workflow_updater
+    if: always()
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install automation runner dependencies
+        run: python -m pip install --upgrade pip pyyaml
+
+      - name: Execute performance optimizer task
+        continue-on-error: true
+        run: python .github/scripts/repository_automation.py performance-optimizer
+
+      - name: Upload performance artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-optimizer
+          path: .automation-output/performance-optimizer
+          if-no-files-found: warn
+
+      - name: Enforce performance result
+        if: always()
+        run: python .github/scripts/repository_automation.py enforce .automation-output/performance-optimizer/result.json
+
+  quality_assurance:
+    name: 3. Quality assurance
+    runs-on: ubuntu-latest
+    needs: performance_optimizer
+    if: always()
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install automation runner dependencies
+        run: python -m pip install --upgrade pip pyyaml
+
+      - name: Execute quality assurance task
+        continue-on-error: true
+        run: python .github/scripts/repository_automation.py quality-assurance
+
+      - name: Upload QA artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-assurance
+          path: .automation-output/quality-assurance
+          if-no-files-found: warn
+
+      - name: Enforce QA result
+        if: always()
+        run: python .github/scripts/repository_automation.py enforce .automation-output/quality-assurance/result.json
+
+  backlog_manager:
+    name: 4. Backlog manager
+    runs-on: ubuntu-latest
+    needs: quality_assurance
+    if: always()
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install automation runner dependencies
+        run: python -m pip install --upgrade pip pyyaml
+
+      - name: Execute backlog manager task
+        continue-on-error: true
+        run: python .github/scripts/repository_automation.py backlog-manager
+
+      - name: Upload backlog artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backlog-manager
+          path: .automation-output/backlog-manager
+          if-no-files-found: warn
+
+      - name: Enforce backlog result
+        if: always()
+        run: python .github/scripts/repository_automation.py enforce .automation-output/backlog-manager/result.json
+
+  daily_status_report:
+    name: 5. Daily status report
+    runs-on: ubuntu-latest
+    needs:
+      - workflow_updater
+      - performance_optimizer
+      - quality_assurance
+      - backlog_manager
+    if: always()
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install automation runner dependencies
+        run: python -m pip install --upgrade pip pyyaml
+
+      - name: Download task artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: .automation-output
+
+      - name: Execute daily status report task
+        continue-on-error: true
+        run: python .github/scripts/repository_automation.py daily-status-report
+
+      - name: Upload status artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-status-report
+          path: .automation-output/daily-status-report
+          if-no-files-found: warn
+
+      - name: Enforce daily status result
+        if: always()
+        run: python .github/scripts/repository_automation.py enforce .automation-output/daily-status-report/result.json
