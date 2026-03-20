@@ -42,7 +42,8 @@ APP_SUPPORT_DIR="${HOME}/Library/Application Support"
 if [[ -d "${APP_SUPPORT_DIR}" ]]; then
     log_info "Scanning Application Support for orphaned files..."
     while IFS= read -r -d '' app_dir; do
-        app_name=$(basename "$app_dir")
+        # ⚡ Performance: Use bash parameter expansion instead of $(basename "$app_dir") to avoid subshell overhead
+        app_name="${app_dir##*/}"
         # Check if corresponding app exists in Applications or is a known system component
         if [[ ! -d "/Applications/${app_name}.app" ]] && [[ ! -d "/System/Applications/${app_name}.app" ]] && 
            [[ ! "$app_name" =~ ^(com\.|Adobe|Microsoft|Google|Apple|Dropbox|Slack|Zoom).*$ ]]; then
@@ -66,7 +67,9 @@ PREFS_DIR="${HOME}/Library/Preferences"
 ORPHANED_PREFS=""
 if [[ -d "${PREFS_DIR}" ]]; then
     while IFS= read -r -d '' pref_file; do
-        pref_name=$(basename "$pref_file" .plist)
+        # ⚡ Performance: Use bash parameter expansion instead of $(basename "$pref_file" .plist) to avoid subshell overhead
+        pref_name="${pref_file##*/}"
+        pref_name="${pref_name%.plist}"
         # Skip known system preferences
         if [[ ! "$pref_name" =~ ^(com\.apple\.|loginwindow|systemuiserver).*$ ]] && 
            [[ ! -d "/Applications/${pref_name}.app" ]] && 
@@ -172,7 +175,9 @@ BROWSER_DIRS=(
 for browser_dir in "${BROWSER_DIRS[@]}"; do
     if [[ -d "$browser_dir" ]]; then
         browser_size=$(du -sh "$browser_dir" 2>/dev/null | cut -f1)
-        browser_name=$(basename "$(dirname "$browser_dir")")
+        # ⚡ Performance: Use bash parameter expansion instead of $(basename "$(dirname "$browser_dir")") to avoid subshell overhead
+        tmp="${browser_dir%/*}"
+        browser_name="${tmp##*/}"
         append "$browser_name profile: $browser_size"
     fi
 done
@@ -195,7 +200,8 @@ DEV_CACHES=(
 for dev_cache in "${DEV_CACHES[@]}"; do
     if [[ -d "$dev_cache" ]]; then
         cache_size=$(du -sh "$dev_cache" 2>/dev/null | cut -f1)
-        cache_name=$(basename "$dev_cache")
+        # ⚡ Performance: Use bash parameter expansion instead of $(basename "$dev_cache") to avoid subshell overhead
+        cache_name="${dev_cache##*/}"
         append "Development cache ($cache_name): $cache_size"
     fi
 done
