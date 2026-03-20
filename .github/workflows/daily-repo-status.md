@@ -6,7 +6,6 @@ description: |
   and project recommendations.
 
 on:
-  schedule: daily
   workflow_dispatch:
 
 permissions:
@@ -29,7 +28,6 @@ safe-outputs:
     labels: [report, daily-status]
 source: githubnext/agentics/workflows/daily-repo-status.md@69b5e3ae5fa7f35fa555b0a22aee14c36ab57ebb
 ---
-
 # Daily Repo Status
 
 Create an upbeat daily status report for the repo as a GitHub issue.

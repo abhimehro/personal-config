@@ -1,7 +1,5 @@
 ---
 on:
-  schedule:
-  - cron: every 4h
   workflow_dispatch: null
 permissions:
   contents: read
