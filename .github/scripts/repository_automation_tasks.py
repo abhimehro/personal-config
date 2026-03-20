@@ -274,8 +274,9 @@ def run_performance_optimizer(config: dict[str, Any]) -> dict[str, Any]:
         "setup_commands": section.get("setup_commands", []),
         "commands": section.get("commands", []),
     })
+    hotspots = discover_hotspots()
     lines = [details["body"].rstrip(), "## Static hotspots", "| File | Approximate lines |", "| --- | ---: |"]
-    for file_name, count in discover_hotspots():
+    for file_name, count in hotspots:
         lines.append(f"| `{file_name}` | {count} |")
     suggestions = section.get("suggestions", [])
     if suggestions:
@@ -286,7 +287,7 @@ def run_performance_optimizer(config: dict[str, Any]) -> dict[str, Any]:
         status,
         summary,
         "\n".join(lines) + "\n",
-        {"hotspots": discover_hotspots(), "command_results": details["command_results"]},
+        {"hotspots": hotspots, "command_results": details["command_results"]},
     )
 
 

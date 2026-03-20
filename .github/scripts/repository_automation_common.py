@@ -207,12 +207,47 @@ def safe_pr_body(title: str, updates: list[dict[str, str]], notes: list[str]) ->
     return "\n".join(lines) + "\n"
 
 
-def filter_existing_labels(labels: list[str]) -> list[str]:
+def normalize_label_specs(labels: list[Any]) -> list[dict[str, str]]:
     if not labels:
+        return []
+    specs = []
+    for entry in labels:
+        if isinstance(entry, str):
+            specs.append({"name": entry, "color": "1d76db", "description": ""})
+        elif isinstance(entry, dict) and entry.get("name"):
+            specs.append(
+                {
+                    "name": str(entry["name"]),
+                    "color": str(entry.get("color", "1d76db")),
+                    "description": str(entry.get("description", "")),
+                }
+            )
+    return specs
+
+
+def ensure_label_exists(spec: dict[str, str], known_labels: set[str]) -> None:
+    name = spec["name"]
+    if name in known_labels or not writes_allowed():
+        return
+    args = [GH_BIN, "label", "create", name, "--color", spec["color"]]
+    if spec["description"]:
+        args.extend(["--description", spec["description"]])
+    proc = run_process(args)
+    if proc.returncode != 0:
+        warn_on_default("gh", args[1:], proc)
+        return
+    known_labels.add(name)
+
+
+def filter_existing_labels(labels: list[Any]) -> list[str]:
+    specs = normalize_label_specs(labels)
+    if not specs:
         return []
     label_rows = gh_json(["label", "list", "--limit", "100", "--json", "name"], default=[])
     known = {row.get("name") for row in label_rows}
-    return [label for label in labels if label in known]
+    for spec in specs:
+        ensure_label_exists(spec, known)
+    return [spec["name"] for spec in specs if spec["name"] in known]
 
 
 def gh_with_body(args: list[str], body: str) -> str:
@@ -222,7 +257,7 @@ def gh_with_body(args: list[str], body: str) -> str:
     return proc.stdout.strip()
 
 
-def create_or_update_issue(title: str, body: str, labels: list[str]) -> str:
+def create_or_update_issue(title: str, body: str, labels: list[Any]) -> str:
     search = gh_json(["issue", "list", "--state", "all", "--limit", "100", "--json", "number,title,url"], default=[])
     existing = next((item for item in search if item.get("title") == title), None)
     existing_labels = filter_existing_labels(labels)
@@ -284,7 +319,7 @@ def append_publication_result(
     body: str,
     *,
     title: str,
-    labels: list[str],
+    labels: list[Any],
     noun: str,
 ) -> tuple[str, str, str | None]:
     if not writes_allowed():

@@ -15,7 +15,9 @@ name: Repository Automation - Daily
 #   * A daily GitHub Issue summarising what ran, what changed, and what needs review
 on:
   schedule:
-    - cron: "17 9 * * *"
+    # personal-config slot: odd-minute scheduling avoids top-of-hour congestion
+    # and stays staggered from ctrld-sync and email-security-pipeline.
+    - cron: "23 8 * * *"
   workflow_dispatch:
     inputs:
       allow_write_actions:
