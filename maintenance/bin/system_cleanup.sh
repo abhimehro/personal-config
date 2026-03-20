@@ -20,24 +20,28 @@ if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
     }
 else
     get_timestamp() {
-        local val
-        val="$(date '+%Y-%m-%d %H:%M:%S')"
-        # SECURITY: Validate variable name to prevent Command Injection (CWE-78)
-        if [[ "$1" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-            eval "$1=\"$val\""
-        fi
+        # POSIX-compliant fallback to avoid eval security theater
+        date '+%Y-%m-%d %H:%M:%S'
     }
 fi
 
 log_info() {
     local ts
-    get_timestamp ts
+    if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+        get_timestamp ts
+    else
+        ts="$(get_timestamp)"
+    fi
     echo "$ts [INFO] [system_cleanup] $*" | tee -a "$LOG_DIR/system_cleanup.log"
 }
 
 log_warn() {
     local ts
-    get_timestamp ts
+    if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+        get_timestamp ts
+    else
+        ts="$(get_timestamp)"
+    fi
     echo "$ts [WARNING] [system_cleanup] $*" | tee -a "$LOG_DIR/system_cleanup.log"
 }
 
