@@ -23,8 +23,7 @@ on:
         default: false
         type: boolean
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: repository-automation-weekly-${{ github.repository }}

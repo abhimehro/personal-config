@@ -24,8 +24,7 @@ on:
         default: true
         type: boolean
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: repository-automation-daily-${{ github.repository }}

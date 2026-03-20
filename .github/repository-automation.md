@@ -7,6 +7,8 @@ This repository uses a consolidated automation model with two scheduled agent wo
 
 Repo-specific behaviour lives in `.github/repository-automation.yml`, while shared logic lives in `.github/scripts/repository_automation.py`.
 
+The consolidated daily and weekly workflows are intentionally **Copilot-independent**. They rely on repository-local scripting plus `GH_TOKEN`, so they can run without consuming GitHub Copilot allowances.
+
 ## Guardrails
 
 - Security gates run before every write action.

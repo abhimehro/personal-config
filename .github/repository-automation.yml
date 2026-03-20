@@ -36,7 +36,7 @@ automation:
     enabled: true
     setup_commands:
       - name: install shellcheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
+        run: python -m pip install --upgrade shellcheck-py
         optional: false
         timeout_seconds: 900
     commands:
@@ -75,5 +75,8 @@ automation:
     branch_prefix: automation/weekly-workflow-tuning
     commit_message: "chore(actions): apply safe weekly automation tuning"
     allowed_paths:
-      - .github/**
+      - .github/workflows/*.yml
+      - .github/workflows/*.yaml
+      - .github/actions/**/*.yml
+      - .github/actions/**/*.yaml
     safe_adjustment_commands: []

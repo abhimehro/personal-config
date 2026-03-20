@@ -6,6 +6,9 @@ This repository uses several GitHub Actions workflows for automation and code qu
 > `repository-automation-daily.yml` and `repository-automation-weekly.yml`.
 > Legacy agentic workflows remain available for manual dispatch, but their
 > schedules were removed so the consolidated orchestration owns the cadence.
+> Those consolidated workflows are Copilot-independent; legacy gh-aw lockfiles
+> still retain their upstream Copilot integration but are dormant unless a human
+> triggers them manually.
 
 ## Workflows
 
