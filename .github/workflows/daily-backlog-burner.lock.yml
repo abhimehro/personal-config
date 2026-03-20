@@ -32,9 +32,6 @@
 
 name: "Daily Backlog Burner"
 "on":
-  schedule:
-  - cron: "47 18 * * *"
-    # Friendly format: daily (scattered)
   workflow_dispatch:
 
 permissions: {}

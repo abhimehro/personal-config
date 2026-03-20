@@ -16,11 +16,10 @@ on:
     branches: [ "main" ]
   merge_group:
     branches: [ "main" ]
-  schedule:
-    - cron: '36 6 * * 3'
   push:
     branches: [ "main" ]
 
+  workflow_dispatch:
 permissions:
   # Require writing security events to upload SARIF file to security tab
   security-events: write

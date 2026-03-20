@@ -7,7 +7,6 @@ description: |
   Creates discussions to coordinate and draft PRs with improvements.
 
 on:
-  schedule: daily
   workflow_dispatch:
 
 timeout-minutes: 60
@@ -58,7 +57,6 @@ steps:
 
 source: githubnext/agentics/workflows/daily-perf-improver.md@69b5e3ae5fa7f35fa555b0a22aee14c36ab57ebb
 ---
-
 # Daily Perf Improver
 
 ## Job Description

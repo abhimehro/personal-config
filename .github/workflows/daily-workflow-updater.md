@@ -2,9 +2,6 @@
 name: Daily Workflow Updater
 description: Automatically updates GitHub Actions versions and creates a PR if changes are detected
 on:
-  schedule:
-    # Every day at 3am UTC
-    - cron: daily
   workflow_dispatch:
 
 permissions:
@@ -43,7 +40,6 @@ timeout-minutes: 15
 
 source: github/gh-aw/.github/workflows/daily-workflow-updater.md@94662b1dee8ce96c876ba9f33b3ab8be32de82a4
 ---
-
 {{#runtime-import? .github/shared-instructions.md}}
 
 # Daily Workflow Updater

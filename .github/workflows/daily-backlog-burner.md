@@ -6,7 +6,6 @@ description: |
   progress and gather maintainer feedback, helping reduce technical debt.
 
 on:
-  schedule: daily
   workflow_dispatch:
 
 timeout-minutes: 30
@@ -35,7 +34,6 @@ tools:
 
 source: githubnext/agentics/workflows/daily-backlog-burner.md@69b5e3ae5fa7f35fa555b0a22aee14c36ab57ebb
 ---
-
 # Daily Backlog Burner
 
 ## Job Description

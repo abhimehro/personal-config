@@ -1,9 +1,7 @@
 name: Clean Stale Branches
 
 on:
-  schedule:
-    - cron: '0 2 * * 0' # Every Sunday at 2 AM
-
+  workflow_dispatch:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
