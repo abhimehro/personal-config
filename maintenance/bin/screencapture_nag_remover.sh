@@ -191,13 +191,13 @@ _install_launchagent() {
 			<string>$FQPN</string>
 		</array>
 		<key>StandardErrorPath</key>
-		<string>/private/tmp/$SELF.stderr</string>
+		<string>$HOME/Library/Logs/$SELF.stderr</string>
 		<key>StandardOutPath</key>
-		<string>/private/tmp/$SELF.stdout</string>
+		<string>$HOME/Library/Logs/$SELF.stdout</string>
 		<key>StartInterval</key>
 		<integer>$INTERVAL</integer>
 		<key>WorkingDirectory</key>
-		<string>/private/tmp</string>
+		<string>$HOME</string>
 	</dict>
 	</plist>
 	EOF
