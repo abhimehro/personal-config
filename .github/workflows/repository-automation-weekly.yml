@@ -14,8 +14,6 @@ name: Repository Automation - Weekly Retrospective
 #   * A weekly GitHub Issue with patterns, failures, and recommendations
 on:
   schedule:
-    # personal-config slot: scheduled after the daily slot and offset from the
-    # other repositories so weekly retrospectives do not overlap.
     - cron: "11 9 * * 0"
   workflow_dispatch:
     inputs:
@@ -25,7 +23,12 @@ on:
         default: false
         type: boolean
 
-permissions: {}
+# FIX 1: was `permissions: {}` which grants zero permissions
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  actions: read
 
 concurrency:
   group: repository-automation-weekly-${{ github.repository }}
@@ -35,6 +38,8 @@ env:
   GH_TOKEN: ${{ secrets.GH_TOKEN }}
   AUTOMATION_ALLOW_WRITES: ${{ github.event_name != 'workflow_dispatch' || inputs.allow_write_actions }}
   PYTHONUNBUFFERED: "1"
+  # FIX 2: makes sibling modules importable without cd-ing into scripts/
+  PYTHONPATH: .github/scripts
 
 jobs:
   retrospective:
