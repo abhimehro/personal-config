@@ -1,9 +1,0 @@
-# This file contains fish universal variable definitions.
-# VERSION: 3.0
-SETUVAR __fish_initialized:4300
-SETUVAR _fisher_jorgebucaran_2F_hydro_files:\x7e/\x2econfig/fish/functions/fish_mode_prompt\x2efish\x1e\x7e/\x2econfig/fish/functions/fish_prompt\x2efish\x1e\x7e/\x2econfig/fish/conf\x2ed/hydro\x2efish
-SETUVAR _fisher_plugins:jorgebucaran/hydro
-SETUVAR _fisher_upgraded_to_4_4:\x1d
-SETUVAR _hydro_git_24914:main\u2022\x20
-SETUVAR _hydro_git_26107:main\u2022\x20
-SETUVAR _hydro_git_39051:main\u2022\x20

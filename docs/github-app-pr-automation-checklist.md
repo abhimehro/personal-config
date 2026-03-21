@@ -97,6 +97,6 @@ When elevating permissions to run close/merge queues on all repos:
 3. **Close queue:** Execute the close commands in `tasks/pr-triage.md` under "Ready-to-Execute Human Actions" (ctrld-sync then email-security-pipeline).
 4. **Merge queue:** Execute the merge commands in the same section in the recommended order (security/dependency first, then CI/infra, then refactors).
 5. **Re-check:** After each merge, re-check remaining approved PRs for new conflicts before proceeding.
-6. **MERGE-AFTER-FIX and escalations:** Handle as documented in the latest session report (e.g. `tasks/pr-review-YYYY-MM-DD.md`).
+6. **MERGE-AFTER-FIX and escalations:** Handle as documented in the latest session report (e.g. `tasks/pr-review-session-reports.md` or a dated `tasks/pr-review-YYYY-MM-DD.md` snapshot).
 
 After each session, update `tasks/lessons.md` and reflect material lessons in the [Automated PR Review Agent](automated-pr-review-agent.md) heuristics subsection.
