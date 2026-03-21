@@ -18,8 +18,8 @@ No other duplicate groups in this batch (distinct tasks per PR).
 
 - **#95 (Seatek):** Path sandbox via `normalizePath` + `startsWith` with trailing `/`; no new auth/DB/payment paths. **Merged.**
 - **#653 (personal-config):** Moves LaunchAgent log paths off world-writable `/private/tmp` to `$HOME/Library/Logs/`. No secrets; **merged** after core tests/CodeQL/dependency-review green. Codacy Security Scan was **in progress / UNSTABLE** — treated like prior runs: optional third-party noise when required checks pass and diff reviewed.
-- **#652:** Shell performance-only (`basename`/`dirname` → parameter expansion). No privilege changes. Codacy **cancelled** on rollup — core pipeline green.
-- **email / Hydro:** Performance or CLI UX; Bandit/pytest or CodeQL green where applicable.
+- **#652 (personal-config):** Shell performance-only (`basename`/`dirname` → parameter expansion). No privilege changes. Codacy **cancelled** on rollup — core pipeline green.
+- **`email-security-pipeline` / `Hydrograph_Versus_Seatek_Sensors_Project`:** Performance or CLI UX; Bandit/pytest or CodeQL green where applicable.
 
 ## CI policy applied
 
