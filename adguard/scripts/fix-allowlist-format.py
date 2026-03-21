@@ -66,8 +66,9 @@ def main():
         f.write("# Generated from: CD-Control-D-Bypass and legitimate entries from CD-Most-Abused-TLDs\n")
         f.write(f"# Total domains: {len(allowlist_domains):,}\n\n")
         
-        for domain in sorted(allowlist_domains):
-            f.write(f"{domain}\n")
+        # ⚡ Bolt Optimization: Use join() for faster string concatenation over a loop of f.write() calls
+        if allowlist_domains:
+            f.write("\n".join(sorted(allowlist_domains)) + "\n")
     
     print(f"✅ Created: {allowlist_path}")
     print(f"📊 File contains {len(allowlist_domains):,} domains")

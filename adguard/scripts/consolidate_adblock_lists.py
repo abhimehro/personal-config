@@ -130,13 +130,14 @@ def write_text_files(output_dir, denylist_domains, allowlist_domains):
     
     denylist_txt_path = output_dir / "Consolidated-Denylist.txt"
     with open(denylist_txt_path, 'w', encoding='utf-8') as f:
-        for domain in sorted(denylist_domains):
-            f.write(f"{domain}\n")
+        # ⚡ Bolt Optimization: Use join() for faster string concatenation over a loop of f.write() calls
+        if denylist_domains:
+            f.write("\n".join(sorted(denylist_domains)) + "\n")
     
     allowlist_txt_path = output_dir / "Consolidated-Allowlist.txt"
     with open(allowlist_txt_path, 'w', encoding='utf-8') as f:
-        for domain in sorted(allowlist_domains):
-            f.write(f"@@{domain}\n")
+        if allowlist_domains:
+            f.write("@@" + "\n@@".join(sorted(allowlist_domains)) + "\n")
     
     print(f"✅ Created: {denylist_txt_path}")
     print(f"✅ Created: {allowlist_txt_path}")
