@@ -148,8 +148,9 @@ restart_with_config() {
         retry=$((retry + 1))
     done
 
-    # Configure system DNS
-    networksetup -setdnsservers Wi-Fi "$listener_ip"
+    # Configure system DNS for Wi-Fi and wired Ethernet
+    networksetup -setdnsservers Wi-Fi "$listener_ip" 2>/dev/null || true
+    networksetup -setdnsservers "USB 10/100/1000 LAN" "$listener_ip" 2>/dev/null || true
 
     # Validate DNS configuration
     sleep 0.2
@@ -157,7 +158,8 @@ restart_with_config() {
     configured_dns=$(networksetup -getdnsservers Wi-Fi 2>/dev/null || echo "")
     if ! echo "$configured_dns" | grep -q "$listener_ip"; then
       sleep 0.5
-      networksetup -setdnsservers Wi-Fi "$listener_ip"
+      networksetup -setdnsservers Wi-Fi "$listener_ip" 2>/dev/null || true
+      networksetup -setdnsservers "USB 10/100/1000 LAN" "$listener_ip" 2>/dev/null || true
     fi
 
     # Flush DNS cache
@@ -206,12 +208,18 @@ restart_with_native_profile() {
     # Clear old symbolic link if it exists to avoid confusion
     rm -f "$controld_dir/ctrld.toml" 2>/dev/null || true
 
-    # Start service natively
+    # Start service natively and catch stderr
+    local start_err_log
+    start_err_log=$(mktemp "${TMPDIR:-/tmp}/ctrld_err.XXXXXX")
+
     if [[ "$protocol" == "doh3" ]]; then
-        ctrld start --cd "$profile_id" --proto doh3 --skip_self_checks
+        ctrld start --cd "$profile_id" --proto doh3 --skip_self_checks >"$start_err_log" 2>&1 || true
     else
-        ctrld start --cd "$profile_id" --proto doh --skip_self_checks
+        ctrld start --cd "$profile_id" --proto doh --skip_self_checks >"$start_err_log" 2>&1 || true
     fi
+
+    # Print out any messages from start for transparency
+    cat "$start_err_log" || true
 
     # Record the active profile state
     echo -e "PROFILE_NAME=$profile_name\nPROFILE_ID=$profile_id\nPROTOCOL=$protocol" > "$ACTIVE_PROFILE_FILE"
@@ -219,13 +227,41 @@ restart_with_native_profile() {
 
     # Wait for service to initialize
     local retry=0
-    while ! dig @"$listener_ip" google.com +short +time=1 >/dev/null 2>&1 && [[ $retry -lt 30 ]]; do
-        sleep 0.1
-        retry=$((retry + 1))
-    done
+    local fallback_needed=0
+
+    # Fast-fail check for API maintenance
+    if grep -qi "Maintenance is in progress\|failed to fetch resolver config" "$start_err_log" 2>/dev/null; then
+        fallback_needed=1
+    else
+        while ! dig @"$listener_ip" google.com +short +time=1 >/dev/null 2>&1 && [[ $retry -lt 30 ]]; do
+            sleep 0.1
+            retry=$((retry + 1))
+        done
+        if [[ $retry -ge 30 ]]; then
+            fallback_needed=1
+        fi
+    fi
+
+    rm -f "$start_err_log" 2>/dev/null || true
+
+    if [[ $fallback_needed -eq 1 ]]; then
+        if command -v generate_fallback_config >/dev/null 2>&1; then
+            echo -e "\n\033[1;33m[WARN]\033[0m Native Control D API failed (likely maintenance). Attempting static fallback..." >&2
+            local profiles_dir="$controld_dir/profiles"
+            if generate_fallback_config "$profile_name" "$profile_id" "$profiles_dir"; then
+                # Fallback to config file
+                local fallback_file="$profiles_dir/ctrld.$profile_name.fallback.toml"
+                restart_with_config "$fallback_file" "$controld_dir" "doh" "$listener_ip"
+                return $?
+            fi
+        else
+            echo -e "\033[0;31m[ERROR]\033[0m Fallback config generator not found!" >&2
+        fi
+    fi
 
     # Configure system DNS
-    networksetup -setdnsservers Wi-Fi "$listener_ip"
+    networksetup -setdnsservers Wi-Fi "$listener_ip" 2>/dev/null || true
+    networksetup -setdnsservers "USB 10/100/1000 LAN" "$listener_ip" 2>/dev/null || true
 
     # Validate DNS configuration
     sleep 0.2
@@ -233,7 +269,8 @@ restart_with_native_profile() {
     configured_dns=$(networksetup -getdnsservers Wi-Fi 2>/dev/null || echo "")
     if ! echo "$configured_dns" | grep -q "$listener_ip"; then
       sleep 0.5
-      networksetup -setdnsservers Wi-Fi "$listener_ip"
+      networksetup -setdnsservers Wi-Fi "$listener_ip" 2>/dev/null || true
+      networksetup -setdnsservers "USB 10/100/1000 LAN" "$listener_ip" 2>/dev/null || true
     fi
 
     # Flush DNS cache

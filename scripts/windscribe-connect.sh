@@ -84,7 +84,8 @@ log "Step 2: Connecting Windscribe static location..."
 spinner_wait 5 "Establishing connection"
 
 log "Step 3: Re-enforcing DNS lock to Control D (127.0.0.1)..."
-sudo networksetup -setdnsservers Wi-Fi 127.0.0.1
+sudo networksetup -setdnsservers Wi-Fi 127.0.0.1 2>/dev/null || true
+sudo networksetup -setdnsservers "USB 10/100/1000 LAN" 127.0.0.1 2>/dev/null || true
 sudo dscacheutil -flushcache 2>/dev/null || true
 sudo killall -HUP mDNSResponder 2>/dev/null || true
 spinner_wait 2 "Applying DNS changes"
@@ -115,7 +116,8 @@ if echo "$CURRENT_DNS" | grep -q "127.0.0.1"; then
 else
 	error "System DNS: $CURRENT_DNS (NOT Control D!) ❌"
 	warn "DNS was overridden. Attempting recovery..."
-	sudo networksetup -setdnsservers Wi-Fi 127.0.0.1
+	sudo networksetup -setdnsservers Wi-Fi 127.0.0.1 2>/dev/null || true
+	sudo networksetup -setdnsservers "USB 10/100/1000 LAN" 127.0.0.1 2>/dev/null || true
 	sudo dscacheutil -flushcache
 	spinner_wait 1 "Waiting for recovery"
 	CURRENT_DNS=$(networksetup -getdnsservers Wi-Fi 2>/dev/null || echo "")
