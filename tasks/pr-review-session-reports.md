@@ -1,6 +1,8 @@
-# PR review session report — 2026-03-10 (deliverable filename)
+# PR review session reports (rolling log)
 
-> **Latest execution:** 2026-03-21 (this file is the standing deliverable path from the backlog cleanup test; section below appends the new run).
+> **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
+>
+> **Latest execution:** 2026-03-21.
 
 ## Mode (unchanged policy)
 
@@ -13,11 +15,11 @@
 
 ### Repos processed
 
-1. `abhimehro/personal-config`
-2. `abhimehro/ctrld-sync`
-3. `abhimehro/email-security-pipeline`
-4. `abhimehro/Seatek_Analysis`
-5. `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project`
+1. `abhimehro/personal-config` <!-- pragma: allowlist secret -->
+2. `abhimehro/ctrld-sync` <!-- pragma: allowlist secret -->
+3. `abhimehro/email-security-pipeline` <!-- pragma: allowlist secret -->
+4. `abhimehro/Seatek_Analysis` <!-- pragma: allowlist secret -->
+5. `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project` <!-- pragma: allowlist secret -->
 
 ### Metrics
 
@@ -31,10 +33,10 @@
 
 ### Merged PRs (squash)
 
-**personal-config**
+**personal-config** <!-- pragma: allowlist secret -->
 
-- https://github.com/abhimehro/personal-config/pull/652
-- https://github.com/abhimehro/personal-config/pull/653
+- https://github.com/abhimehro/personal-config/pull/652 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/653 <!-- pragma: allowlist secret -->
 
 **email-security-pipeline**
 
@@ -62,7 +64,7 @@
 ### Workflow completion
 
 - **Intended:** full in-scope inventory, security-first review, merge safe work, close zero-diff/superseded, re-check after merges, no force-push.
-- **Result:** **Completed** — open in-scope queue is **empty** across all five repos. `personal-config` #653 succeeded on **second** merge attempt after #652 updated `main` (“Base branch was modified”).
+- **Result:** **Completed** — open in-scope queue is **empty** across all five repos. `personal-config` #653 succeeded on **second** merge attempt after #652 updated `main` (“Base branch was modified”). <!-- pragma: allowlist secret -->
 
 ---
 
@@ -70,6 +72,6 @@
 
 The following reflects an earlier completed sweep (preserved for audit). Figures are **not** merged with the 2026-03-21 metrics above.
 
-- Repos processed: `personal-config` (as named in that run), `ctrld-sync`, `email-security-pipeline`, `Seatek_Analysis`, `Hydrograph_Versus_Seatek_Sensors_Project`.
+- Repos processed: `personal-config` (as named in that run), `ctrld-sync`, `email-security-pipeline`, `Seatek_Analysis`, `Hydrograph_Versus_Seatek_Sensors_Project`. <!-- pragma: allowlist secret -->
 - Merged: 13; closed duplicates/superseded: 2; escalations: 0.
 - See git history of this file prior to 2026-03-21 if full line-item URLs from that run are required.

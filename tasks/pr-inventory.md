@@ -40,4 +40,4 @@
 
 ## Prior session carry-over (2026-03-10 report in-repo)
 
-An earlier agent run (documented in `tasks/pr-review-2026-03-10.md` before this sweep) had already cleared an older Jules queue. This session targeted the **new** March 20 batch only; no repeated work on already-merged PRs from that report.
+An earlier agent run (documented in `tasks/pr-review-session-reports.md` before this sweep) had already cleared an older Jules queue. This session targeted the **new** March 20 batch only; no repeated work on already-merged PRs from that report.
