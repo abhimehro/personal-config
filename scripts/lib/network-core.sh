@@ -106,6 +106,7 @@ flush_dns_cache() {
 reset_system_dns() {
     log "Resetting system DNS to DHCP defaults..."
     sudo networksetup -setdnsservers "Wi-Fi" "Empty" 2>/dev/null || true
+    sudo networksetup -setdnsservers "USB 10/100/1000 LAN" "Empty" 2>/dev/null || true
     flush_dns_cache
 }
 

@@ -24,6 +24,7 @@ backup_network_settings() { echo "mock_backup_network_settings"; }
 restore_network_settings() { echo "mock_restore_network_settings"; }
 generate_profile_config() { echo "mock_generate_profile_config"; return 0; }
 restart_with_config() { echo "mock_restart_with_config"; return 0; }
+restart_with_native_profile() { echo "mock_restart_with_native_profile"; return 0; }
 test_profile_connection() {
     if [[ "$1" == "bad_profile" ]]; then return 1; fi
     return 0
