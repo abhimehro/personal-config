@@ -246,3 +246,7 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 - **`package.json` is empty**: The root `package.json` is `{}` — it exists as a Trunk runtime anchor for Node-based linters (prettier, markdownlint). Do not run `npm install`.
 - **macOS-specific test skips on Linux**: `test_config_fish.sh`, `test_ssh_config.sh`, and `test_security_manager_restore.sh` emit a `SKIP:` message and exit with code 77 on Linux/CI. The test runner treats this as a skip, not a failure.
 - **`setup.sh` is macOS-only**: Do not run `./setup.sh` on Linux — it calls `launchctl`, Homebrew, and macOS system utilities.
+
+### Cursor Cloud pre-commit secret scan
+
+Cursor injects `pre-commit.cursor` and `commit-msg.cursor` (under `~/.cursor/agent-hooks/<workspace-hash>/`) to scan staged diffs and the commit message for values of secrets listed in `CLOUD_AGENT_INJECTED_SECRET_NAMES`. Secret **labels** may include spaces (e.g. `GitHub SSH Key`); both hooks must use `printenv` for lookup, not bash `${!var}` indirect expansion (which errors with `invalid variable name`). Canonical copies: `scripts/cursor_cloud_agent_pre_commit.sh` and `scripts/cursor_cloud_agent_commit_msg.sh` — keep them aligned with the injected hooks when debugging Cloud Agent commits.

@@ -66,4 +66,4 @@ fi
 
 echo ""
 echo "Preflight passed. Proceed with Phase 1 (inventory) per docs/automated-pr-review-agent.md."
-echo "Artifacts: tasks/pr-inventory.md, tasks/pr-triage.md, tasks/pr-review-YYYY-MM-DD.md"
+echo "Artifacts: tasks/pr-inventory.md, tasks/pr-triage.md, tasks/pr-review-session-reports.md (append per session; optional tasks/pr-review-YYYY-MM-DD.md snapshots)"
