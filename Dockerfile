@@ -2,7 +2,7 @@
 # Optimized for shell scripting, testing, and configuration management
 
 # Stage 1: Builder - Install all dependencies
-FROM ubuntu:24.04 as builder
+FROM ubuntu:24.04 AS builder
 
 WORKDIR /workspace
 
