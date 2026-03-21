@@ -1,0 +1,138 @@
+services:
+  # Development environment with all tools
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: personal-config-dev
+    image: personal-config:latest
+    stdin_open: true
+    tty: true
+    volumes:
+      # Mount source code for hot-reload
+      - .:/app
+      - ./scripts:/app/scripts:ro
+      - ./tests:/app/tests:ro
+      - ./configs:/app/configs:ro
+      # Shared volumes for logs and reports
+      - logs:/app/logs
+      - reports:/app/reports
+    environment:
+      - LOG_LEVEL=INFO
+      - PYTHONUNBUFFERED=1
+    working_dir: /app
+    command: /bin/bash
+
+  # Testing environment
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: personal-config-test
+    image: personal-config:latest
+    volumes:
+      - .:/app
+      - ./scripts:/app/scripts:ro
+      - ./tests:/app/tests:ro
+      - logs:/app/logs
+      - reports:/app/reports
+    environment:
+      - LOG_LEVEL=DEBUG
+      - PYTHONUNBUFFERED=1
+    working_dir: /app
+    command: bash -c "make test-quick"
+
+  # Quick validation service
+  validate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: personal-config-validate
+    image: personal-config:latest
+    volumes:
+      - .:/app
+      - ./scripts:/app/scripts:ro
+      - ./tests:/app/tests:ro
+      - logs:/app/logs
+    environment:
+      - LOG_LEVEL=INFO
+    working_dir: /app
+    command: bash -c "bash tests/test_lib_common.sh && echo '✅ Validation passed'"
+
+  # Shell linting environment (requires trunk or shellcheck)
+  lint:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: personal-config-lint
+    image: personal-config:latest
+    volumes:
+      - .:/app
+      - ./scripts:/app/scripts:ro
+      - ./tests:/app/tests:ro
+      - logs:/app/logs
+    working_dir: /app
+    command: bash -c "make lint-errors"
+
+  # Python testing service
+  test-python:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: personal-config-test-python
+    image: personal-config:latest
+    volumes:
+      - .:/app
+      - ./tests:/app/tests:ro
+      - reports:/app/reports
+    environment:
+      - PYTHONUNBUFFERED=1
+    working_dir: /app
+    command: bash -c "python3 -m pytest tests/test_*.py -v --tb=short || python3 -m unittest discover -s tests -p 'test_*.py' -v"
+
+  # Benchmarking service (for performance analysis)
+  benchmark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: personal-config-benchmark
+    image: personal-config:latest
+    volumes:
+      - .:/app
+      - ./scripts:/app/scripts:ro
+      - ./tests:/app/tests:ro
+      - reports:/app/reports
+    working_dir: /app
+    command: bash -c "make benchmark"
+
+  # SSH configuration testing
+  ssh-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: personal-config-ssh-test
+    image: personal-config:latest
+    volumes:
+      - .:/app
+      - ./scripts:/app/scripts:ro
+      - ./tests:/app/tests:ro
+      - logs:/app/logs
+    working_dir: /app
+    command: bash -c "bash tests/test_ssh_config.sh"
+
+volumes:
+  logs:
+    driver: local
+  reports:
+    driver: local
+
+networks:
+  default:
+    name: personal-config-network
