@@ -1,0 +1,103 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+.gitmessage
+
+# CI/CD and version control
+.github/
+.gitlab-ci.yml
+.circleci/
+
+# Development tools
+.cursor/
+.vscode/
+.trunk/
+.nori-config.json
+
+# IDE and editor files
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+.idea/
+
+# Environment and config
+.env
+.env.local
+.env.*.local
+.cursorignore
+.cursorrules
+.shellcheckrc
+
+# Node and dependencies
+node_modules/
+npm-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Python cache and virtual environments
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Temporary and cache files
+*.tmp
+*.temp
+*.log
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS-specific
+Thumbs.db
+*.bak
+*.backup
+
+# Docker-specific (don't include Docker artifacts in build)
+docker-compose.override.yml
+.dockerignore
+
+# Build artifacts
+bin/
+obj/
+out/
+
+# Sensitive data
+*.key
+*.pem
+secrets/
+.secrets/
+
+# Large media files
+*.iso
+*.dmg
+*.tar.gz
+*.zip
+
+# Archive directories
+archive/
+archived/
+backup/
+
+# Temporary directories
+tmp/
+temp/
+.tmp/
+mole/
+
+# Application specific
+.Jules/
+controld-system/backups/
+media-streaming/creds/
