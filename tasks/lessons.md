@@ -1,5 +1,9 @@
 # Lessons Learned
 
+## Lesson 0d: Cursor Cloud pre-commit hook + spaced secret names (2026-03-21)
+**Pattern:** `pre-commit.cursor` used `SECRET_VALUE="${!SECRET_NAME}"`. Entries in `CLOUD_AGENT_INJECTED_SECRET_NAMES` can be human-readable labels with spaces (`GitHub SSH Key`), which are **not** valid bash identifier names → `invalid variable name` at commit time.
+**Rule:** Resolve values with `printenv "$SECRET_NAME"` (after trimming whitespace from comma-split tokens). Canonical copies: `scripts/cursor_cloud_agent_pre_commit.sh` and `scripts/cursor_cloud_agent_commit_msg.sh`.
+
 ## Lesson 0b: Zero-diff “security” PRs should be closed, not merged (2026-03-21)
 **Pattern:** Automation opens a PR whose **body** describes fixes, but `changedFiles == 0` and `gh pr diff` is empty—often because `main` already contains the change.
 **Rule:** Close with a short comment linking the finding; do not squash-merge empty commits. Saves queue noise and avoids misleading “merged” history.
