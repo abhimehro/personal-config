@@ -9,7 +9,7 @@
 - **Expanded scope:** PRs with visible author `abhimehro` when automation markers are present:
   - Branch prefixes: `sentinel-`, `sentinel/`, `palette-`, `bolt/`, `bolt-`, `ux-`
   - Title prefixes: 🛡️ Sentinel, 🎨 Palette, ⚡ Bolt
-  - PR body: “PR created automatically by Jules”, `jules.google.com/task`, `.jules/` / `.Jules/` learnings
+  - PR body: “PR created automatically by Jules”, `jules.google.com/task`, or learnings in `.jules/` and `.Jules/` directories
 
 ## Summary
 
