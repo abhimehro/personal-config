@@ -45,7 +45,7 @@ selection-foreground = f8f8f2
 # TERMINAL APPEARANCE
 # ═══════════════════════════════════════════════════════════════
 # Font configuration
-font-family = Cascadia Code
+font-family = Menlo
 font-size = 12
 
 # Cursor style
