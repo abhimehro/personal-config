@@ -619,7 +619,7 @@ build_regex_var() {
     done
     # SECURITY: Validate variable name to prevent Command Injection (CWE-78)
     if [[ "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-        eval "$var_name=\"\$regex\""
+        printf -v "$var_name" "%s" "$regex"
     fi
 }
 

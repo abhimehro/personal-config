@@ -154,12 +154,17 @@
 **Learning:** `eval` is dangerous when used for dynamic variable expansion like tilde expansion if the input is not strictly validated. Even if primarily internal, it creates a risky trust boundary violation.
 **Prevention:** Use native, secure commands like `getent passwd "$user" | cut -d: -f6` on Linux. If `eval` is absolutely necessary for tilde expansion, strictly validate the username against a safe POSIX regex (`^[a-zA-Z0-9_][a-zA-Z0-9_.-]*\$?$`) before execution.
 
-## $(date +%Y-%m-%d) - Command Injection Risk via eval in dynamic variable assignment
+## 2026-03-21 - Command Injection Risk via eval in dynamic variable assignment
 **Vulnerability:** Command Injection ([CWE-78](https://cwe.mitre.org/data/definitions/78.html)) risk existed in `maintenance/bin/system_cleanup.sh`, `configs/.config/mole/lib/core/base.sh`, and `configs/.config/mole/lib/core/app_protection.sh`. Functions used `eval` to assign variables dynamically based on function arguments (e.g. `eval "$var_name=\"\$value\""`). If an attacker could control the variable name passed to these functions, they could inject arbitrary bash commands.
 **Learning:** Using `eval` to mimic pass-by-reference variable assignment in shell scripts exposes the script to command injection vulnerabilities if the variable name is not strictly validated.
 **Prevention:** Strictly validate the dynamically passed variable name against `^[a-zA-Z_][a-zA-Z0-9_]*$` before evaluation to prevent Command Injection (CWE-78).
 
-## $(date +%Y-%m-%d) - Command Injection Risk via eval in dynamic variable assignment
+## 2026-03-21 - Command Injection Risk via eval in dynamic variable assignment
 **Vulnerability:** Command Injection ([CWE-78](https://cwe.mitre.org/data/definitions/78.html)) risk existed in `maintenance/bin/system_cleanup.sh`. The `get_timestamp` function used `eval` with regular expressions to validate and assign internally-controlled variables. While a regex was used, this practice represents 'security theater' since the input was not user-controlled.
 **Learning:** Using `eval` to mimic pass-by-reference variable assignment in shell scripts exposes the script to command injection vulnerabilities. Attempting to mitigate this with regex validation on strictly internally-controlled variables is security theater.
 **Prevention:** Remove `eval` entirely. For returning values from shell functions, prefer POSIX-compliant command substitution (e.g., `ts="$(get_timestamp)"`). For scripts targeting Bash 4+, `printf -v` is a safe and performant alternative for pass-by-reference style assignments.
+
+## 2026-03-21 - Command Injection Risk via eval in dynamic variable assignment
+**Vulnerability:** Command Injection ([CWE-78](https://cwe.mitre.org/data/definitions/78.html)) risk existed in `configs/.config/mole/lib/core/base.sh` and `configs/.config/mole/lib/core/app_protection.sh`. Functions used `eval` to assign and read variables dynamically based on function arguments (e.g., `eval "last_time=\${$last_update_var:-0}"` and `eval "$var_name=\"\$regex\""`).
+**Learning:** Altering internally controlled variables via `eval` can be risky if inputs later become user-controlled. While preventing Command Injection, it's essential to preserve Bash 4+ performance optimizations like `printf -v`.
+**Prevention:** Avoid `eval` for dynamic assignments. Use standard variable indirection (`${!var}`) to safely read dynamically named variables. For writing, use `printf -v "$var_name" "%s" "$value"` which safely writes the variable without command execution risks and is natively supported in Bash 3.1+ (including the macOS Bash 3.2 default).
