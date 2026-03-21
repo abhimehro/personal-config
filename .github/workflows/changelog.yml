@@ -19,7 +19,7 @@ jobs:
           ruby-version: 3.1
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Required for changelog generators to read previous tags and commit history
           fetch-depth: 0 
