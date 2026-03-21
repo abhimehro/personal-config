@@ -11,8 +11,8 @@ No other duplicate groups in this batch (distinct tasks per PR).
 ## Merge ordering
 
 1. **Security:** `Seatek_Analysis` #95 (path traversal) — merged first.
-2. **Remaining non-personal-config:** #94, email #558/#559, Hydro #85/#86 — merged; re-checked mergeability between steps where needed.
-3. **personal-config:** #652 merged first; **#653 retried** after “base branch was modified” from #652.
+2. **Remaining non-personal-config:** `Seatek_Analysis` #94, `email-security-pipeline` #558/#559, `Hydrograph_Versus_Seatek_Sensors_Project` #85/#86 — merged; re-checked mergeability between steps where needed.
+3. **`personal-config`:** #652 merged first; **#653 retried** after “base branch was modified” from #652.
 
 ## Security gates (high level)
 
