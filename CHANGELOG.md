@@ -211,6 +211,8 @@
 
 **Merged pull requests:**
 
+- 🛡️ Sentinel: \[HIGH\] Fix Insecure Temporary File Creation \(CWE-377\) in LaunchAgent logs [\#653](https://github.com/abhimehro/personal-config/pull/653) ([abhimehro](https://github.com/abhimehro))
+- ⚡ Bolt: \[performance improvement\] optimize massive subshell overhead in loop [\#652](https://github.com/abhimehro/personal-config/pull/652) ([abhimehro](https://github.com/abhimehro))
 - chore\(actions\): consolidate repository automation [\#651](https://github.com/abhimehro/personal-config/pull/651) ([abhimehro](https://github.com/abhimehro))
 - chore\(actions\): consolidate repository automation [\#650](https://github.com/abhimehro/personal-config/pull/650) ([abhimehro](https://github.com/abhimehro))
 - docs\(tasks\): PR backlog cleanup session artifacts \(automated-pr-review-agent\) [\#649](https://github.com/abhimehro/personal-config/pull/649) ([abhimehro](https://github.com/abhimehro))
