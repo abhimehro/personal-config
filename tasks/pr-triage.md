@@ -1,32 +1,31 @@
-# PR triage — backlog cleanup test (2026-03-19)
+# PR triage — backlog cleanup test (2026-03-21)
 
 ## Duplicates / superseded
 
 | Repo | PRs | Finding | Action |
 |------|-----|---------|--------|
-| personal-config | #646 vs #648 | Same Sentinel/CWE-78 theme; #648 newer, removes stray `fix.py`, broader base.sh handling | **Close #646** (superseded by #648) |
-| Seatek_Analysis | #89 vs #92 | **Identical** `Updated_Seatek_Analysis.R` hunk; only `.jules/palette.md` wording differed | **Close #89** (duplicate of #92) |
+| ctrld-sync | #651 | **Zero diff** (`changedFiles` 0, `gh pr diff` empty). Body describes TOCTOU fixes already consistent with `main`. | **Close #651** with explanation (superseded / nothing to merge) |
 
-## Overlap (not duplicates)
+No other duplicate groups in this batch (distinct tasks per PR).
 
-| Repo | PRs | Notes |
-|------|-----|--------|
-| personal-config | #646, #648 | Same files touched; resolved by closing #646, merging #648 |
-| Seatek_Analysis | #88, #91 | Same R file family; sequential merges + **merge commit on #91** after main moved |
-| Hydrograph | #79–82 | `data_validator.py` / `processor.py` overlap; sequential merges + **merge commits on #81, #82** |
+## Merge ordering
+
+1. **Security:** `Seatek_Analysis` #95 (path traversal) — merged first.
+2. **Remaining non-personal-config:** #94, email #558/#559, Hydro #85/#86 — merged; re-checked mergeability between steps where needed.
+3. **personal-config:** #652 merged first; **#653 retried** after “base branch was modified” from #652.
 
 ## Security gates (high level)
 
-- **personal-config #646–648, #647:** No secrets added; eval use **reduced/validated** (Sentinel). Codacy workflow failed with long-running/cancel pattern — treated as **tooling/baseline noise** because `Run All Tests`, Shell/Python quality, CodeQL, dependency-review passed and diff reviewed manually.
-- **email-security-pipeline #555:** CodeScene failed — **treated as unrelated** to small Spinner UX change; pytest + Codacy + CodeQL passed.
-- **Seatek / Hydro:** No new auth/payment/DB migration paths; Sentinel PRs reviewed for DoS/validation — merged after conflict resolution and green checks.
+- **#95 (Seatek):** Path sandbox via `normalizePath` + `startsWith` with trailing `/`; no new auth/DB/payment paths. **Merged.**
+- **#653 (personal-config):** Moves LaunchAgent log paths off world-writable `/private/tmp` to `$HOME/Library/Logs/`. No secrets; **merged** after core tests/CodeQL/dependency-review green. Codacy Security Scan was **in progress / UNSTABLE** — treated like prior runs: optional third-party noise when required checks pass and diff reviewed.
+- **#652:** Shell performance-only (`basename`/`dirname` → parameter expansion). No privilege changes. Codacy **cancelled** on rollup — core pipeline green.
+- **email / Hydro:** Performance or CLI UX; Bandit/pytest or CodeQL green where applicable.
 
 ## CI policy applied
 
-- Did **not** merge with failing **pytest**/core repo tests.
-- Allowed merge when **optional / third-party** checks failed (Codacy, CodeScene) if failure was **not plausibly caused by the diff** and core checks passed.
+- Did **not** merge with failing **pytest** / **Run All Tests** (personal-config) or primary test jobs on other repos.
+- Allowed merge when **Codacy** was cancelled/in progress but **Code Quality**, **CodeQL**, **dependency-review**, and **tests** succeeded and the diff was manually reviewed for security (aligned with `docs/automated-pr-review-agent.md` optional-check guidance).
 
-## Operational notes
+## Auto-fix
 
-- **Git push** to update PR branches required `remote` URL with `GH_TOKEN` (default credential picked `cursor[bot]` — 403). Document for future runs.
-- **Sequential merges** caused **DIRTY** state on downstream PRs; **re-checked** after each merge and used **merge-main-into-branch** fixes (no force-push).
+- **None required** this session (no lint-only branches, no trivial conflicts on these PRs).
