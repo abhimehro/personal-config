@@ -1,24 +1,32 @@
 # Label PRs based on changed file paths
 
 documentation:
-  - '**/*.md'
-  - 'docs/**/*'
-  - 'README*'
-  - 'LICENSE'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'docs/**/*'
+      - 'README*'
+      - 'LICENSE'
 
 configuration:
-  - '*.yml'
-  - '*.yaml'
-  - '.github/**/*'
-  - '.gitignore'
-  - '.cursorignore'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '*.yml'
+      - '*.yaml'
+      - '.github/**/*'
+      - '.gitignore'
+      - '.cursorignore'
 
 configs:
-  - 'configs/**/*'
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'configs/**/*'
 
 scripts:
-  - '**/*.sh'
-  - '**/*.bash'
-  - 'scripts/**/*'
-  - 'tests/**/*'
-  - 'Makefile'
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.sh'
+      - '**/*.bash'
+      - 'scripts/**/*'
+      - 'tests/**/*'
+      - 'Makefile'
