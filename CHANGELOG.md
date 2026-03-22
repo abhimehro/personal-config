@@ -21,6 +21,7 @@
 
 **Closed issues:**
 
+- \[repo-automation\] Daily Status Report - 2026-03-21 [\#656](https://github.com/abhimehro/personal-config/issues/656)
 - \[Code Quality\] Audit and replace `basename`/`dirname` in loops across all shell scripts [\#603](https://github.com/abhimehro/personal-config/issues/603)
 - \[Code Quality\] Add unit tests for `maintenance/bin/run_all_maintenance.sh` orchestration logic [\#602](https://github.com/abhimehro/personal-config/issues/602)
 - \[Code Quality\] Add mock-based tests for `network-mode-manager.sh` that run without sudo in CI [\#601](https://github.com/abhimehro/personal-config/issues/601)
@@ -211,6 +212,9 @@
 
 **Merged pull requests:**
 
+- docs: PR review agent session artifacts \(2026-03-22 backlog cleanup\) [\#661](https://github.com/abhimehro/personal-config/pull/661) ([abhimehro](https://github.com/abhimehro))
+- 🛡️ Sentinel: \[CRITICAL\] Fix Command Injection \(CWE-78\) via eval in dynamic variable assignment [\#660](https://github.com/abhimehro/personal-config/pull/660) ([abhimehro](https://github.com/abhimehro))
+- ⚡ Bolt: Optimize AdGuard list file generation with string join\(\) [\#658](https://github.com/abhimehro/personal-config/pull/658) ([abhimehro](https://github.com/abhimehro))
 - chore\(actions\): archive stale agentic workflow artifacts [\#657](https://github.com/abhimehro/personal-config/pull/657) ([abhimehro](https://github.com/abhimehro))
 - chore\(actions\): consolidate workflow automation [\#655](https://github.com/abhimehro/personal-config/pull/655) ([abhimehro](https://github.com/abhimehro))
 - docs\(tasks\): automated PR review backlog test report \(2026-03-21\) [\#654](https://github.com/abhimehro/personal-config/pull/654) ([abhimehro](https://github.com/abhimehro))

@@ -16,6 +16,14 @@
 **Pattern:** `pre-commit.cursor` used `SECRET_VALUE="${!SECRET_NAME}"`. Entries in `CLOUD_AGENT_INJECTED_SECRET_NAMES` can be human-readable labels with spaces (`GitHub SSH Key`), which are **not** valid bash identifier names → `invalid variable name` at commit time.
 **Rule:** Resolve values with `printenv "$SECRET_NAME"` (after trimming whitespace from comma-split tokens). Canonical copies: `scripts/cursor_cloud_agent_pre_commit.sh` and `scripts/cursor_cloud_agent_commit_msg.sh`.
 
+## Lesson 0d: Jules “Bolt” PRs may ship 100k-line junk fixtures (2026-03-22)
+**Pattern:** A performance-titled PR adds a multi-megabyte `test.txt` of generated hostnames and scratch `test_perf*.py` files.
+**Rule:** Treat as **merge blocker** (hygiene + abuse-of-repo signal). Require removal before any squash-merge; do not assume good faith without a minimal reproducible benchmark tied to `docs/TESTING.md` patterns.
+
+## Lesson 0e: Emoji-heavy default branch names can break dependency-submission jobs (2026-03-22)
+**Pattern:** `submit-pypi` / GitHub dependency snapshot action failed with `HttpError` on a branch named with leading emoji after syncing `main` into a PR.
+**Rule:** When `submit-pypi` fails only on bot branches, check for **ref/encoding** issues before blaming application code; still treat as **merge blocker** unless branch protection marks the job non-required.
+
 ---
 
 ## Lessons Learned — Control D Pipeline Fix (2026-03-15)

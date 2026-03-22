@@ -14,7 +14,8 @@ repos:
 bot_authors:
   - dependabot[bot]
   - renovate[bot]
-  # Delegated automation (Jules/Copilot/etc.) detected via PR body/branch/comments — see triage doc
+  - google-labs-jules[bot]
+  # Expanded: human-authored PRs when branch/title/body/comments indicate automation — see pr-triage.md
 
 stale_threshold_days: 30
 merge_strategy: squash
