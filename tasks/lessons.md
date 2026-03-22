@@ -1,5 +1,13 @@
 # Lessons Learned
 
+## Lesson 0d: Jules “Bolt” PRs may ship 100k-line junk fixtures (2026-03-22)
+**Pattern:** A performance-titled PR adds a multi-megabyte `test.txt` of generated hostnames and scratch `test_perf*.py` files.
+**Rule:** Treat as **merge blocker** (hygiene + abuse-of-repo signal). Require removal before any squash-merge; do not assume good faith without a minimal reproducible benchmark tied to `docs/TESTING.md` patterns.
+
+## Lesson 0e: Emoji-heavy default branch names can break dependency-submission jobs (2026-03-22)
+**Pattern:** `submit-pypi` / GitHub dependency snapshot action failed with `HttpError` on a branch named with leading emoji after syncing `main` into a PR.
+**Rule:** When `submit-pypi` fails only on bot branches, check for **ref/encoding** issues before blaming application code; still treat as **merge blocker** unless branch protection marks the job non-required.
+
 ## Lesson 0: Multi-repo automated PR merges need sequential re-validation
 **Pattern:** After squash-merging one automation PR, sibling PRs from the same bot often become **CONFLICTING** with `main`.
 **Rule:** Re-run mergeability after each merge; merge `origin/main` into the PR branch and resolve conflicts with ordinary commits (never force-push). Use `GH_TOKEN` on the git remote if `gh` picks a bot credential that cannot push.
