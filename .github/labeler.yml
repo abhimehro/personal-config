@@ -2,31 +2,16 @@
 
 documentation:
   - changed-files:
-      - any-glob-to-any-file:
-          - "**/*.md"
-          - "docs/**/*"
-          - "README*"
-          - "LICENSE"
+    - any-glob-to-any-file: ['**/*.md', 'docs/**/*', 'README*', 'LICENSE']
 
 configuration:
   - changed-files:
-      - any-glob-to-any-file:
-          - "*.yml"
-          - "*.yaml"
-          - ".github/**/*"
-          - ".gitignore"
-          - ".cursorignore"
+    - any-glob-to-any-file: ['*.yml', '*.yaml', '.github/**/*', '.gitignore', '.cursorignore']
 
 configs:
   - changed-files:
-      - any-glob-to-any-file:
-          - "configs/**/*"
+    - any-glob-to-any-file: ['configs/**/*']
 
 scripts:
   - changed-files:
-      - any-glob-to-any-file:
-          - "**/*.sh"
-          - "**/*.bash"
-          - "scripts/**/*"
-          - "tests/**/*"
-          - "Makefile"
+    - any-glob-to-any-file: ['**/*.sh', '**/*.bash', 'scripts/**/*', 'tests/**/*', 'Makefile']

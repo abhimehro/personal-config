@@ -203,6 +203,46 @@ test_profile_connection() {
     return 0
 }
 
+# Generate a robust static DO fallback configuration when the Control D API is unreachable.
+# Usage: generate_fallback_config <profile_name> <profile_id> <profiles_dir>
+generate_fallback_config() {
+    local profile_name="$1"
+    local profile_id="$2"
+    local profiles_dir="$3"
+    local config_file="$profiles_dir/ctrld.$profile_name.fallback.toml"
+
+    mkdir -p "$profiles_dir"
+
+    # We use DoH unconditionally for maximum stability during a fallback situation
+    cat <<EOF > "$config_file"
+# AUTO-GENERATED FALLBACK VIA NM-VPN - BYPASSES CONTROL D API
+[listener]
+  [listener.0]
+    ip = '127.0.0.1'
+    port = 53
+
+[network]
+  [network.0]
+    name = 'Network 0'
+    cidrs = ['0.0.0.0/0']
+
+[upstream]
+  [upstream.0]
+    name = 'Control D Fallback ($profile_name)'
+    type = 'doh'
+    endpoint = 'https://dns.controld.com/${profile_id}'
+    timeout = 5000
+EOF
+
+    chmod 600 "$config_file" 2>/dev/null || true
+
+    # Verify the file was created
+    if [[ ! -f "$config_file" ]]; then
+        return 1
+    fi
+    return 0
+}
+
 # Self-execution guard for testing
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # Return 0 when executed directly
