@@ -138,17 +138,20 @@ restore_network_settings() {
             local original_dns
             original_dns=$(cat "$backup_dir/original_dns.txt")
             if [[ "$original_dns" == "No DNS servers" ]] || [[ "$original_dns" == "There aren't any DNS Servers set on Wi-Fi." ]]; then
-                networksetup -setdnsservers Wi-Fi "Empty"
+                networksetup -setdnsservers Wi-Fi "Empty" 2>/dev/null || true
+                networksetup -setdnsservers "USB 10/100/1000 LAN" "Empty" 2>/dev/null || true
             else
                 while IFS= read -r dns_server; do
                     if [[ -n "$dns_server" ]]; then
-                        networksetup -setdnsservers Wi-Fi "$dns_server"
+                        networksetup -setdnsservers Wi-Fi "$dns_server" 2>/dev/null || true
+                        networksetup -setdnsservers "USB 10/100/1000 LAN" "$dns_server" 2>/dev/null || true
                         break
                     fi
                 done < "$backup_dir/original_dns.txt"
             fi
         else
-            networksetup -setdnsservers Wi-Fi 1.1.1.1 8.8.8.8
+            networksetup -setdnsservers Wi-Fi 1.1.1.1 8.8.8.8 2>/dev/null || true
+            networksetup -setdnsservers "USB 10/100/1000 LAN" 1.1.1.1 8.8.8.8 2>/dev/null || true
         fi
     fi
 
