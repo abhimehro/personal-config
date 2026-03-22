@@ -5,7 +5,7 @@ This repository is now containerized with Docker for reproducible development, t
 ## Files Generated
 
 - **Dockerfile** - Multi-stage build with builder and runtime stages
-- **docker-compose.yml** - Orchestrates dev, test, lint, and validation services  
+- **docker-compose.yml** - Orchestrates dev, test, lint, and validation services
 - **.dockerignore** - Optimizes build context (excludes git, logs, caches, etc.)
 
 ## Quick Start
@@ -99,14 +99,14 @@ docker push myregistry/personal-config:latest
 
 ## Best Practices Applied
 
-✓ **Multi-stage builds** - Separate builder and runtime stages for minimal final image  
-✓ **Non-root user** - Runs as `scriptuser` for security  
-✓ **Layer caching** - Dependencies installed before source copy  
-✓ **Health checks** - Container health verification  
-✓ **Volume management** - Persistent logs and reports  
-✓ **Read-only mounts** - Scripts/tests mounted as read-only where appropriate  
-✓ **.dockerignore** - Reduces build context by ~80%  
-✓ **Environment isolation** - Separate services for dev/test/lint workflows  
+✓ **Multi-stage builds** - Separate builder and runtime stages for minimal final image
+✓ **Non-root user** - Runs as `scriptuser` for security
+✓ **Layer caching** - Dependencies installed before source copy
+✓ **Health checks** - Container health verification
+✓ **Volume management** - Persistent logs and reports
+✓ **Read-only mounts** - Scripts/tests mounted as read-only where appropriate
+✓ **.dockerignore** - Reduces build context by ~80%
+✓ **Environment isolation** - Separate services for dev/test/lint workflows
 
 ## Service Reference
 
