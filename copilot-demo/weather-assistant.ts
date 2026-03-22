@@ -39,11 +39,14 @@ const stopSpinner = () => {
 const startSpinner = () => {
   if (spinnerInterval) return; // Prevent multiple spinners
   let i = 0;
-  const msg = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
+  const msg =
+    thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
 
   // Fallback for non-TTY (CI, screen readers) or when terminal isn't fully interactive
   if (!process.stdout.isTTY) {
-    process.stdout.write(`${COLORS.Green}Assistant:${COLORS.Reset} ${COLORS.Dim}(${msg})${COLORS.Reset}\n`);
+    process.stdout.write(
+      `${COLORS.Green}Assistant:${COLORS.Reset} ${COLORS.Dim}(${msg})${COLORS.Reset}\n`,
+    );
     return;
   }
 
@@ -164,6 +167,14 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
+const TIPS = [
+  'Try asking "What\'s the weather in Tokyo?"',
+  'Try asking "What time is it right now?"',
+  'Try asking "Is it raining in London?"',
+  "You can type 'help' to see available commands.",
+  "Type 'clear' to reset the screen.",
+];
+
 const getGreeting = () => {
   const hour = new Date().getHours();
   if (hour < 5) return "Burning the midnight oil? 🦉";
@@ -172,17 +183,21 @@ const getGreeting = () => {
   return "Good evening! 🌙";
 };
 
-console.log(`${COLORS.Cyan}
+const printHeader = () => {
+  console.log(`${COLORS.Cyan}
 ╔══════════════════════════════════════════════╗
 ║           🌤️  Weather Assistant CLI          ║
 ╚══════════════════════════════════════════════╝${COLORS.Reset}`);
-console.log(
-  `${COLORS.Dim}   ${getGreeting()} Try: 'What's the weather in Paris?'
+  console.log(
+    `${COLORS.Dim}   ${getGreeting()} Try: 'What's the weather in Paris?'
    Type 'help' to see available commands, or 'exit' to quit.${COLORS.Reset}\n`,
-);
+  );
+};
+
+printHeader();
 
 // Graceful shutdown on Ctrl+C
-rl.on('SIGINT', async () => {
+rl.on("SIGINT", async () => {
   stopSpinner();
   console.log(`\n${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
   try {
@@ -197,13 +212,15 @@ rl.on('SIGINT', async () => {
 const prompt = () => {
   rl.question(`${COLORS.Cyan}You:${COLORS.Reset} `, async (input) => {
     if (input.trim() === "") {
-      console.log(`${COLORS.Dim}Tip: Try asking "What's the weather in Tokyo?"${COLORS.Reset}`);
+      const tip = TIPS[Math.floor(Math.random() * TIPS.length)];
+      console.log(`${COLORS.Dim}Tip: ${tip}${COLORS.Reset}`);
       prompt();
       return;
     }
 
     if (["clear", "cls"].includes(input.trim().toLowerCase())) {
       console.clear();
+      printHeader();
       prompt();
       return;
     }

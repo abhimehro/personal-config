@@ -235,7 +235,7 @@ generate_fallback_config() {
 EOF
 
     chmod 600 "$config_file" 2>/dev/null || true
-    
+
     # Verify the file was created
     if [[ ! -f "$config_file" ]]; then
         return 1
