@@ -7,4 +7,4 @@
 - [x] Per PR: fetch context (body, diff summary, checks, reviews, comments)
 - [x] Apply gates; merge / close / escalate; re-check after merges
 - [x] Write `tasks/pr-inventory.md`, `tasks/pr-triage.md`, `tasks/pr-review-2026-03-10.md`, update `tasks/lessons.md`
-- [ ] Commit + push branch; create/update PR
+- [x] Commit + push branch; create/update PR
