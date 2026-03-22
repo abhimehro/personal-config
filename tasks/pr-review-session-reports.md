@@ -83,7 +83,7 @@
 | Metric | Count |
 |--------|------:|
 | PRs reviewed (in-scope) | 7 |
-| PRs merged (squash) | 3 |
+| PRs merged (squash) | 3 (1 with auto-fix) |
 | PRs fixed then merged | 1 (`ctrld-sync#655`, Ruff `conftest.py`) |
 | PRs closed (duplicate / stale) | 0 |
 | PRs escalated / request-changes (GitHub comments) | 4 |
