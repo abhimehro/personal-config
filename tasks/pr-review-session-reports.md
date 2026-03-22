@@ -2,7 +2,7 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-03-21.
+> **Latest execution:** 2026-03-22.
 
 ## Mode (unchanged policy)
 
@@ -65,6 +65,45 @@
 
 - **Intended:** full in-scope inventory, security-first review, merge safe work, close zero-diff/superseded, re-check after merges, no force-push.
 - **Result:** **Completed** — open in-scope queue is **empty** across all five repos. `personal-config` #653 succeeded on **second** merge attempt after #652 updated `main` (“Base branch was modified”). <!-- pragma: allowlist secret -->
+
+---
+
+## Run — 2026-03-22 (one-time backlog cleanup test, write-capable)
+
+### Repos processed
+
+1. `abhimehro/personal-config`
+2. `abhimehro/ctrld-sync`
+3. `abhimehro/email-security-pipeline`
+4. `abhimehro/Seatek_Analysis`
+5. `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project`
+
+### Metrics
+
+| Metric | Count |
+|--------|------:|
+| PRs reviewed (in-scope) | 7 |
+| PRs merged (squash) | 3 (1 with auto-fix) |
+| PRs fixed then merged | 1 (`ctrld-sync#655`, Ruff `conftest.py`) |
+| PRs closed (duplicate / stale) | 0 |
+| PRs escalated / request-changes (GitHub comments) | 4 |
+
+### Merged PRs (squash)
+
+- https://github.com/abhimehro/email-security-pipeline/pull/566
+- https://github.com/abhimehro/personal-config/pull/660
+- https://github.com/abhimehro/ctrld-sync/pull/655
+
+### Escalated / request-changes (left open)
+
+- https://github.com/abhimehro/personal-config/pull/658 — hygiene (`test.txt` bulk artifact)
+- https://github.com/abhimehro/personal-config/pull/659 — scope creep + conflicts
+- https://github.com/abhimehro/email-security-pipeline/pull/565 — supply-chain (mutable action tags)
+- https://github.com/abhimehro/ctrld-sync/pull/656 — CodeScene + `submit-pypi` still failing after `main` sync
+
+### Workflow completion
+
+- **Partial:** merges completed for all PRs that passed gates; remaining PRs blocked per security-first policy (no merge on ambiguous/red CI; no merge on supply-chain downgrades without human approval).
 
 ---
 

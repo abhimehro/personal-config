@@ -1,31 +1,40 @@
-# PR triage — backlog cleanup test (2026-03-21)
+# PR triage — backlog cleanup test (2026-03-22)
 
 ## Duplicates / superseded
 
 | Repo | PRs | Finding | Action |
 |------|-----|---------|--------|
-| ctrld-sync | #651 | **Zero diff** (`changedFiles` 0, `gh pr diff` empty). Body describes TOCTOU fixes already consistent with `main`. | **Close #651** with explanation (superseded / nothing to merge) |
+| — | — | No exact duplicate groups identified among open automation PRs | — |
 
-No other duplicate groups in this batch (distinct tasks per PR).
+## Merge ordering (executed)
 
-## Merge ordering
+1. `email-security-pipeline` **#566** — independent repo; squash-merged first.
+2. `personal-config` **#660** — security-hardening shell changes; squash-merged after review of `eval` removals.
+3. `ctrld-sync` **#655** — auto-fix **Ruff F401** (`conftest.py` unused `pytest` import), then squash-merged after CI green.
 
-1. **Security:** `Seatek_Analysis` #95 (path traversal) — merged first.
-2. **Remaining non-personal-config:** `Seatek_Analysis` #94, `email-security-pipeline` #558/#559, `Hydrograph_Versus_Seatek_Sensors_Project` #85/#86 — merged; re-checked mergeability between steps where needed.
-3. **`personal-config`:** #652 merged first; **#653 retried** after “base branch was modified” from #652.
+**Post-merge:** Re-listed open PRs; no additional merges performed on remaining items (gates failed or escalated).
 
-## Security gates (high level)
+## Security gates (summary)
 
-- **#95 (Seatek):** Path sandbox via `normalizePath` + `startsWith` with trailing `/`; no new auth/DB/payment paths. **Merged.**
-- **#653 (personal-config):** Moves LaunchAgent log paths off world-writable `/private/tmp` to `$HOME/Library/Logs/`. No secrets; **merged** after core tests/CodeQL/dependency-review green. Codacy Security Scan was **in progress / UNSTABLE** — treated like prior runs: optional third-party noise when required checks pass and diff reviewed.
-- **#652 (personal-config):** Shell performance-only (`basename`/`dirname` → parameter expansion). No privilege changes. Codacy **cancelled** on rollup — core pipeline green.
-- **`email-security-pipeline` / `Hydrograph_Versus_Seatek_Sensors_Project`:** Performance or CLI UX; Bandit/pytest or CodeQL green where applicable.
-
-## CI policy applied
-
-- Did **not** merge with failing **pytest** / **Run All Tests** (personal-config) or primary test jobs on other repos.
-- Allowed merge when **Codacy** was cancelled/in progress but **Code Quality**, **CodeQL**, **dependency-review**, and **tests** succeeded and the diff was manually reviewed for security (aligned with `docs/automated-pr-review-agent.md` optional-check guidance).
+| PR | Gate 1 CI | Gate 2 security | Decision |
+|----|-----------|-------------------|----------|
+| 566 | Green | No secrets/`eval`/shell injection in diff sample | **MERGE** |
+| 660 | Core green; `label` fail treated as optional noise | `printf -v` / indirect expansion replaces `eval`; large formatting churn — reviewed hotspots | **MERGE** |
+| 655 | Green after fix | `api_client.py` threading snapshot — no auth/payment/DB | **MERGE** |
+| 658 | Core green | **Hygiene fail:** 100k-line generated `test.txt` | **REQUEST-CHANGES** (comment) |
+| 659 | Incomplete + conflicts | **Scope creep** (Docker, `.cursor`, network libs) | **ESCALATE** (comment) |
+| 565 | Green / draft | **Supply-chain:** SHA pins → mutable tags | **ESCALATE** (comment) |
+| 656 | CodeScene + submit-pypi fail | UX-only intent; failures not proven unrelated | **REQUEST-CHANGES** (comment); no merge |
 
 ## Auto-fix
 
-- **None required** this session (no lint-only branches, no trivial conflicts on these PRs).
+| Repo | PR | Fix |
+|------|-----|-----|
+| ctrld-sync | 655 | Removed unused `import pytest` from `conftest.py`; pushed to head branch. |
+| ctrld-sync | 656 | Merged latest `main` into PR branch so `conftest` lint fix applies (ruff then green); **other checks still failing**. |
+
+## CI policy notes
+
+- Did **not** merge with failing **ruff**, **CodeScene**, or ambiguous **submit-pypi** on #656.
+- Did **not** merge **#565** due to supply-chain policy (mutable action tags), regardless of green auxiliary checks.
+- `label` failures on personal-config PRs treated as non-blocking when **Run All Tests**, **CodeQL**, **dependency-review**, and **Shell/Python quality** were green and diff reviewed (consistent with prior session playbook).
