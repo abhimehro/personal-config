@@ -723,8 +723,7 @@ update_progress_if_needed() {
     # Get last update time from variable
     local last_time
     if [[ "$last_update_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-        last_time="${!last_update_var}"
-        [[ -z "$last_time" ]] && last_time=0
+        last_time="${!last_update_var:-0}"
     else
         last_time=0
     fi
