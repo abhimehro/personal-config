@@ -140,24 +140,26 @@ def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
 
 
 
-def evaluate_action_update(
-    match: re.Match[str],
-    file_path: Path,
-    latest_cache: dict[str, str],
-    exists_cache: dict[tuple[str, str], bool]
-) -> dict[str, Any] | None:
-    action_ref = match.group(2)
-    current = match.group(3)
+
+def _extract_repo_id(action_ref: str) -> str | None:
     if action_ref.startswith("./") or action_ref.startswith("docker://"):
         return None
     parts = action_ref.split("/")
     if len(parts) < 2:
         return None
-    repo_id = "/".join(parts[:2])
+    return "/".join(parts[:2])
+
+def _resolve_proposed_tag(
+    repo_id: str,
+    current: str,
+    latest_cache: dict[str, str],
+    exists_cache: dict[tuple[str, str], bool]
+) -> str | None:
     latest = latest_cache.get(repo_id)
     if latest is None:
         latest = latest_tag_for_action(repo_id)
         latest_cache[repo_id] = latest
+
     proposed = target_ref(current, latest)
     if not proposed or proposed == current:
         return None
@@ -172,9 +174,29 @@ def evaluate_action_update(
         print(f"Warning: Proposed tag {proposed} for {repo_id} does not exist. Skipping update.")
         return None
 
+    return proposed
+
+def _is_major_bump(current: str, proposed: str) -> bool:
     current_v = numeric_version(current)
     target_v = numeric_version(proposed)
-    is_major_bump = bool(current_v and target_v and target_v[0] > current_v[0])
+    return bool(current_v and target_v and target_v[0] > current_v[0])
+
+def evaluate_action_update(
+    match: re.Match[str],
+    file_path: Path,
+    latest_cache: dict[str, str],
+    exists_cache: dict[tuple[str, str], bool]
+) -> dict[str, Any] | None:
+    action_ref = match.group(2)
+    current = match.group(3)
+
+    repo_id = _extract_repo_id(action_ref)
+    if not repo_id:
+        return None
+
+    proposed = _resolve_proposed_tag(repo_id, current, latest_cache, exists_cache)
+    if not proposed:
+        return None
 
     return {
         "old": match.group(0),
@@ -183,7 +205,7 @@ def evaluate_action_update(
         "action": action_ref,
         "current": current,
         "target": proposed,
-        "major_bump": is_major_bump,
+        "major_bump": _is_major_bump(current, proposed),
     }
 
 def workflow_file_plans() -> list[dict[str, Any]]:
@@ -249,25 +271,27 @@ def render_update_table(updates: list[dict[str, str]]) -> list[str]:
 
 
 
-def close_invalid_prs(branch_prefix: str) -> None:
-    from repository_automation_common import gh_json, run_process, GH_BIN, tag_exists
+def _pr_has_invalid_tags(body: str) -> bool:
+    from repository_automation_common import tag_exists
     import re
+    # Using raw string in code string: we have to escape backslashes again since we are not using re.sub for replacement value directly
+    for match in re.finditer(r"\\|\\s*`[^`]+`\\s*\\|\\s*`([^`]+)`\\s*\\|\\s*`[^`]+`\\s*\\|\\s*`([^`]+)`\\s*\\|", body):
+        action_ref = match.group(1)
+        target = match.group(2)
+        parts = action_ref.split("/")
+        if len(parts) >= 2:
+            repo_id = "/".join(parts[:2])
+            if not tag_exists(repo_id, target):
+                return True
+    return False
+
+def close_invalid_prs(branch_prefix: str) -> None:
+    from repository_automation_common import gh_json, run_process, GH_BIN
     open_prs = gh_json(["pr", "list", "--state", "open", "--json", "number,headRefName,body"], default=[])
     for pr in open_prs:
         if not pr.get("headRefName", "").startswith(branch_prefix.replace('/', '-')):
             continue
-        body = pr.get("body", "")
-        invalid = False
-        for match in re.finditer(r"\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|", body):
-            action_ref = match.group(1)
-            target = match.group(2)
-            parts = action_ref.split("/")
-            if len(parts) >= 2:
-                repo_id = "/".join(parts[:2])
-                if not tag_exists(repo_id, target):
-                    invalid = True
-                    break
-        if invalid:
+        if _pr_has_invalid_tags(pr.get("body", "")):
             print(f"Closing PR #{pr['number']} because it contains invalid tag updates.")
             run_process([GH_BIN, "pr", "close", str(pr["number"]), "--comment", "Closing this draft PR because it contains one or more invalid action versions. A corrected PR will be opened automatically."])
 
