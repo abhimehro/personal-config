@@ -139,6 +139,53 @@ def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
     return sorted(candidates, key=lambda item: item[1], reverse=True)[:limit]
 
 
+
+def evaluate_action_update(
+    match: re.Match[str],
+    file_path: Path,
+    latest_cache: dict[str, str],
+    exists_cache: dict[tuple[str, str], bool]
+) -> dict[str, Any] | None:
+    action_ref = match.group(2)
+    current = match.group(3)
+    if action_ref.startswith("./") or action_ref.startswith("docker://"):
+        return None
+    parts = action_ref.split("/")
+    if len(parts) < 2:
+        return None
+    repo_id = "/".join(parts[:2])
+    latest = latest_cache.get(repo_id)
+    if latest is None:
+        latest = latest_tag_for_action(repo_id)
+        latest_cache[repo_id] = latest
+    proposed = target_ref(current, latest)
+    if not proposed or proposed == current:
+        return None
+
+    cache_key = (repo_id, proposed)
+    exists = exists_cache.get(cache_key)
+    if exists is None:
+        exists = tag_exists(repo_id, proposed)
+        exists_cache[cache_key] = exists
+
+    if not exists:
+        print(f"Warning: Proposed tag {proposed} for {repo_id} does not exist. Skipping update.")
+        return None
+
+    current_v = numeric_version(current)
+    target_v = numeric_version(proposed)
+    is_major_bump = bool(current_v and target_v and target_v[0] > current_v[0])
+
+    return {
+        "old": match.group(0),
+        "new": f"{match.group(1)}{action_ref}@{proposed}",
+        "file": str(file_path.relative_to(ROOT)),
+        "action": action_ref,
+        "current": current,
+        "target": proposed,
+        "major_bump": is_major_bump,
+    }
+
 def workflow_file_plans() -> list[dict[str, Any]]:
     latest_cache: dict[str, str] = {}
     exists_cache: dict[tuple[str, str], bool] = {}
@@ -147,50 +194,9 @@ def workflow_file_plans() -> list[dict[str, Any]]:
         text = file_path.read_text()
         replacements = []
         for match in WORKFLOW_PATTERN.finditer(text):
-            action_ref = match.group(2)
-            current = match.group(3)
-            if action_ref.startswith("./") or action_ref.startswith("docker://"):
-                continue
-            parts = action_ref.split("/")
-            if len(parts) < 2:
-                continue
-            repo_id = "/".join(parts[:2])
-            latest = latest_cache.get(repo_id)
-            if latest is None:
-                latest = latest_tag_for_action(repo_id)
-                latest_cache[repo_id] = latest
-            proposed = target_ref(current, latest)
-            if not proposed or proposed == current:
-                continue
-
-            # Verify tag exists
-            cache_key = (repo_id, proposed)
-            exists = exists_cache.get(cache_key)
-            if exists is None:
-                exists = tag_exists(repo_id, proposed)
-                exists_cache[cache_key] = exists
-
-            if not exists:
-                print(f"Warning: Proposed tag {proposed} for {repo_id} does not exist. Skipping update.")
-                continue
-
-            current_v = numeric_version(current)
-            target_v = numeric_version(proposed)
-            is_major_bump = False
-            if current_v and target_v and target_v[0] > current_v[0]:
-                is_major_bump = True
-
-            replacements.append(
-                {
-                    "old": match.group(0),
-                    "new": f"{match.group(1)}{action_ref}@{proposed}",
-                    "file": str(file_path.relative_to(ROOT)),
-                    "action": action_ref,
-                    "current": current,
-                    "target": proposed,
-                    "major_bump": is_major_bump,
-                }
-            )
+            update = evaluate_action_update(match, file_path, latest_cache, exists_cache)
+            if update:
+                replacements.append(update)
         if replacements:
             plans.append({"path": file_path, "text": text, "replacements": replacements})
     return plans
