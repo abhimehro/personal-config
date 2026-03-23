@@ -23,6 +23,8 @@ from repository_automation_common import (
     run_shell_command,
     safe_pr_body,
     target_ref,
+    tag_exists,
+    numeric_version,
     write_result,
     writes_allowed,
 )
@@ -139,6 +141,7 @@ def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
 
 def workflow_file_plans() -> list[dict[str, Any]]:
     latest_cache: dict[str, str] = {}
+    exists_cache: dict[tuple[str, str], bool] = {}
     plans = []
     for file_path in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
         text = file_path.read_text()
@@ -159,6 +162,24 @@ def workflow_file_plans() -> list[dict[str, Any]]:
             proposed = target_ref(current, latest)
             if not proposed or proposed == current:
                 continue
+
+            # Verify tag exists
+            cache_key = (repo_id, proposed)
+            exists = exists_cache.get(cache_key)
+            if exists is None:
+                exists = tag_exists(repo_id, proposed)
+                exists_cache[cache_key] = exists
+
+            if not exists:
+                print(f"Warning: Proposed tag {proposed} for {repo_id} does not exist. Skipping update.")
+                continue
+
+            current_v = numeric_version(current)
+            target_v = numeric_version(proposed)
+            is_major_bump = False
+            if current_v and target_v and target_v[0] > current_v[0]:
+                is_major_bump = True
+
             replacements.append(
                 {
                     "old": match.group(0),
@@ -167,6 +188,7 @@ def workflow_file_plans() -> list[dict[str, Any]]:
                     "action": action_ref,
                     "current": current,
                     "target": proposed,
+                    "major_bump": is_major_bump,
                 }
             )
         if replacements:
@@ -174,7 +196,7 @@ def workflow_file_plans() -> list[dict[str, Any]]:
     return plans
 
 
-def flattened_updates(plans: list[dict[str, Any]]) -> list[dict[str, str]]:
+def flattened_updates(plans: list[dict[str, Any]]) -> list[dict[str, Any]]:
     updates = []
     for plan in plans:
         for item in plan["replacements"]:
@@ -184,6 +206,7 @@ def flattened_updates(plans: list[dict[str, Any]]) -> list[dict[str, str]]:
                     "action": item["action"],
                     "current": item["current"],
                     "target": item["target"],
+                    "major_bump": item.get("major_bump", False),
                 }
             )
     return updates
@@ -218,6 +241,30 @@ def render_update_table(updates: list[dict[str, str]]) -> list[str]:
     return lines
 
 
+
+
+def close_invalid_prs(branch_prefix: str) -> None:
+    from repository_automation_common import gh_json, run_process, GH_BIN, tag_exists
+    import re
+    open_prs = gh_json(["pr", "list", "--state", "open", "--json", "number,headRefName,body"], default=[])
+    for pr in open_prs:
+        if not pr.get("headRefName", "").startswith(branch_prefix.replace('/', '-')):
+            continue
+        body = pr.get("body", "")
+        invalid = False
+        for match in re.finditer(r"\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|", body):
+            action_ref = match.group(1)
+            target = match.group(2)
+            parts = action_ref.split("/")
+            if len(parts) >= 2:
+                repo_id = "/".join(parts[:2])
+                if not tag_exists(repo_id, target):
+                    invalid = True
+                    break
+        if invalid:
+            print(f"Closing PR #{pr['number']} because it contains invalid tag updates.")
+            run_process([GH_BIN, "pr", "close", str(pr["number"]), "--comment", "Closing this draft PR because it contains one or more invalid action versions. A corrected PR will be opened automatically."])
+
 def run_workflow_updater(config: dict[str, Any]) -> dict[str, Any]:
     section = config.get("workflow_updater", {})
     plans = workflow_file_plans()
@@ -232,6 +279,8 @@ def run_workflow_updater(config: dict[str, Any]) -> dict[str, Any]:
     body_parts.extend(render_update_table(updates))
 
     can_write = writes_allowed() and ensure_gh_token() and section.get("create_draft_pr", False)
+    if can_write:
+        close_invalid_prs(section.get("branch_prefix", "automation/workflow-updates"))
     if not can_write:
         body_parts.extend(["## Write gate", "- Draft PR creation is disabled or writes are not allowed for this run.", ""])
         return write_result("workflow-updater", status, summary, "\n".join(body_parts), {"updates": updates, "pull_request_url": ""})
