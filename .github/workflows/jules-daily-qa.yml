@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Trigger Jules QA
         env:
@@ -24,7 +24,7 @@ jobs:
         run: |
           cat << 'EOF' > prompt.md
           @google-labs-jules Please act as an agentic QA engineer for this repository.
-          
+
           Your tasks:
           1. Check that the code builds and runs.
           2. Check that the tests pass.
@@ -32,10 +32,10 @@ jobs:
           4. Search for any previous "Jules Daily QA & Agentic Review" open discussions/issues. If the status is the same, just comment that you found nothing new.
           5. If you find small problems you can fix with high confidence, create a PR.
           6. Summarize your findings in this issue. Use note form. Highlight any bash commands you used.
-          
+
           If the repository is perfectly healthy, simply state that and close this issue.
           EOF
-          
+
           gh issue create \
             --title "Daily QA Check - $(date +'%Y-%m-%d')" \
             --body-file prompt.md \
