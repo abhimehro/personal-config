@@ -1,0 +1,100 @@
+{
+  "name": "tavily_search_tool",
+  "description": "A powerful web search tool that provides comprehensive, real-time results using Tavily's AI search engine\n\n---\n\n**BEST PRACTICES:**\n\n            - Use specific terms rather than generic ones (e.g., 'climate change impacts on coral reefs' vs 'climate change')\n            - Add contextual information to disambiguate terms (e.g., 'python programming language' vs 'python snake')\n            - For exact phrase matching, use quotes in your query\n            - Keep queries concise but informative - focus on key terms\n            - Keep your query under 400 characters for efficient processing\n            - Break complex questions into multiple focused sub-queries and send them as separate requests\n            - Use 'topic': 'news' for current events, 'general' for broader knowledge\n            - For time-sensitive topics, use 'time_range' parameter to get recent information\n            - Use 'basic' search_depth for quick searches (1 credit), 'advanced' for comprehensive research (10 credits)\n            - With search_depth=advanced, setting include_raw_content=true can increase retrieval precision\n            - Use 'include_domains' to focus on trusted sources for specific topics (minimize the number of domains)\n            - Use 'exclude_domains' to filter out irrelevant domains from your results\n            - When working with news, use 'days' parameter to specify how many days back to include\n            - For post-processing, consider using metadata like score, title, and content for better results\n            - For extracting specific information, consider a two-step process: search first, then extract\n            \n\n**PARAMETER GUIDELINES:**\n- query: Be specific and include contextual information. For exact phrases, use quotes in your query string.\n- search_depth: Use 'basic' for quick searches (1 credit), 'advanced' for comprehensive research (10 credits).\n- topic: Use 'news' for current events, 'general' for broader knowledge.\n- days: Useful when topic='news' to specify how many days back to search.\n- time_range: Alternative time filter using 'day', 'week', 'month', or 'year'.\n- include_domains: Focus search on specific trusted domains (e.g., ['nature.com', 'bbc.com']).\n- exclude_domains: Exclude specific domains from search results (e.g., ['pinterest.com']).\n- max_results: Adjust between 5-20 to control how many results are returned.\n\n**EXAMPLES:**\nExample 1: News Search\nDescription: Search for recent news articles\nParameters: {'query': 'Latest AI developments', 'topic': 'news', 'days': 3}\nExplanation: Searches for AI news from the past 3 days\n\nExample 2: Academic Research\nDescription: Focus on academic or scholarly content\nParameters: {'query': 'recent advancements in quantum computing', 'include_domains': ['nature.com', 'science.org', 'arxiv.org'], 'time_range': 'year'}\nExplanation: Focuses on scholarly content about quantum computing from academic sources within the last year\n\nExample 3: Product Comparison\nDescription: Research product comparisons effectively\nParameters: {'query': 'iPhone 15 Pro vs Samsung Galaxy S23 Ultra camera comparison', 'exclude_domains': ['pinterest.com', 'quora.com'], 'time_range': 'month'}\nExplanation: Targets specific product comparison while excluding less reliable sources\n\n",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "what_is_your_intent": {
+        "description": "Describe your intent for using Tavily",
+        "title": "What Is Your Intent",
+        "type": "string"
+      },
+      "query": {
+        "description": "Search query",
+        "title": "Query",
+        "type": "string"
+      },
+      "search_depth": {
+        "default": "basic",
+        "description": "The depth of the search ('basic' or 'advanced')",
+        "title": "Search Depth",
+        "type": "string"
+      },
+      "topic": {
+        "default": "",
+        "description": "The category of the search ('general' or 'news')",
+        "title": "Topic",
+        "type": "string"
+      },
+      "days": {
+        "default": 0,
+        "description": "Number of days back to include in search results (only for 'news' topic)",
+        "title": "Days",
+        "type": "integer"
+      },
+      "time_range": {
+        "default": "",
+        "description": "Time range for results ('day', 'week', 'month', 'year', 'd', 'w', 'm', 'y')",
+        "title": "Time Range",
+        "type": "string"
+      },
+      "include_domains": {
+        "description": "List of domains to specifically include in search results",
+        "items": {
+          "type": "string"
+        },
+        "title": "Include Domains",
+        "type": "array"
+      },
+      "exclude_domains": {
+        "description": "List of domains to specifically exclude from search results",
+        "items": {
+          "type": "string"
+        },
+        "title": "Exclude Domains",
+        "type": "array"
+      },
+      "include_answer": {
+        "default": true,
+        "description": "Whether to include an answer summary generated by an LLM",
+        "title": "Include Answer",
+        "type": "boolean"
+      },
+      "include_raw_content": {
+        "default": false,
+        "description": "Whether to include the cleaned and parsed HTML content of each result",
+        "title": "Include Raw Content",
+        "type": "boolean"
+      },
+      "include_images": {
+        "default": false,
+        "description": "Whether to include images from search results",
+        "title": "Include Images",
+        "type": "boolean"
+      },
+      "include_image_descriptions": {
+        "default": false,
+        "description": "Whether to include descriptions with images",
+        "title": "Include Image Descriptions",
+        "type": "boolean"
+      },
+      "max_results": {
+        "default": 10,
+        "description": "Maximum number of results to return (5-20)",
+        "title": "Max Results",
+        "type": "integer"
+      },
+      "async_search": {
+        "default": false,
+        "description": "Whether to perform the search asynchronously",
+        "title": "Async Search",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "what_is_your_intent",
+      "query"
+    ],
+    "title": "tavily_search_toolArguments"
+  }
+}

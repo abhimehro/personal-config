@@ -1,0 +1,8 @@
+{
+  "name": "tavily_get_auth_info_tool",
+  "description": "Authentication details and API key management for Tavily",
+  "arguments": {
+    "type": "object",
+    "properties": {}
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "list_technical_debt_goals_for_project_file",
+  "description": "Lists the technical debt goals for a specific file in a project.\n\n        When to use:\n            Use this tool when you need goal details for one file before\n            planning targeted refactoring work.\n\n        Limitations:\n            - Requires a valid project_id.\n            - Returns data from the latest available analysis only.\n            - A file may return zero goals, which is a valid outcome.\n\n        Args:\n            file_path: The absolute path to the source code file.\n            project_id: The Project ID selected by the user.\n\n        Returns:\n            A JSON array containing the goals for the specified file, or a string error message if no project was selected.\n            Show the goals in a structured format that is easy to read and explain\n            the goal description. It also includes a description, please include that in your output.\n\n            Additionally, provide a link to the CodeScene Code Biomarkers page for the project file technical debt goals.\n            Explain that you can find more details about the technical debt goals on that page.\n\n        Example:\n            Call with file_path=\"/repo/src/module.py\" and project_id=42, then\n            use the goals and link to propose file-level improvements.\n        \nNote: If the result contains version update information (indicated by\n\"VERSION UPDATE AVAILABLE\"), please inform the user about this update\nnotice and recommend they update their CodeScene MCP Server.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "file_path": {
+        "title": "File Path",
+        "type": "string"
+      },
+      "project_id": {
+        "title": "Project Id",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "file_path",
+      "project_id"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "result": {
+        "title": "Result",
+        "type": "string"
+      }
+    },
+    "required": [
+      "result"
+    ],
+    "title": "_WrappedResult",
+    "x-fastmcp-wrap-result": true
+  }
+}

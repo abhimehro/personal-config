@@ -1,0 +1,30 @@
+{
+  "name": "list_technical_debt_goals_for_project",
+  "description": "Lists the technical debt goals for a project.\n\n        When to use:\n            Use this tool to see all files in a project that currently have\n            explicit technical debt goals in CodeScene.\n\n        Limitations:\n            - Requires a valid project_id.\n            - Returns goal data from the latest available analysis.\n            - Includes only files with non-empty goals.\n\n        Args:\n            project_id: The Project ID selected by the user.\n\n        Returns:\n            A JSON array containing the path of a file and its goals, or a string error message if no project was selected.\n            Show the goals for each file in a structured format that is easy to read and explain\n            the goal description for each file. It also includes a description, please include that in your output.\n\n            Additionally, provide a link to the CodeScene Code Biomarkers page for the project technical debt goals.\n            Explain that you can find more details about the technical debt goals on that page.\n\n        Example:\n            Call with project_id=42 and summarize each file's goals with the\n            biomarkers link for deeper inspection.\n        \nNote: If the result contains version update information (indicated by\n\"VERSION UPDATE AVAILABLE\"), please inform the user about this update\nnotice and recommend they update their CodeScene MCP Server.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "project_id": {
+        "title": "Project Id",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "project_id"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "result": {
+        "title": "Result",
+        "type": "string"
+      }
+    },
+    "required": [
+      "result"
+    ],
+    "title": "_WrappedResult",
+    "x-fastmcp-wrap-result": true
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "tavily_get_langchain_integration_tool",
+  "description": "Information about Tavily's LangChain integration including setup, features, and usage examples",
+  "arguments": {
+    "type": "object",
+    "properties": {}
+  }
+}

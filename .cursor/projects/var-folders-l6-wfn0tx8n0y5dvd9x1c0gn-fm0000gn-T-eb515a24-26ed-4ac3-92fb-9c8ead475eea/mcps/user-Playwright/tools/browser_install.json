@@ -1,0 +1,8 @@
+{
+  "name": "browser_install",
+  "description": "Install the browser specified in the config. Call this if you get an error about the browser not being installed.",
+  "arguments": {
+    "type": "object",
+    "properties": {}
+  }
+}

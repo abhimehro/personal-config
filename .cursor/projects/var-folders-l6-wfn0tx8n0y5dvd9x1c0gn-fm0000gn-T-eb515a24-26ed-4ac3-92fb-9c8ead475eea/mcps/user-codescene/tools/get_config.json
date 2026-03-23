@@ -1,0 +1,35 @@
+{
+  "name": "get_config",
+  "description": "Read current CodeScene MCP Server configuration values.\n\n        When to use:\n            Use this tool to discover available configuration keys, inspect\n            effective values, and understand where each value comes from.\n\n        Limitations:\n            - Returns JSON text only; callers must format it for display.\n            - Sensitive values (tokens) are masked.\n            - Effective values can be overridden by client-provided env vars.\n\n        When called without a key, lists every available configuration\n        option together with its current effective value, the source of\n        that value (environment variable vs. config file), and a short\n        description.\n\n        When called with a specific key, returns details for that option\n        only.  Sensitive values (tokens) are masked in the output.\n\n        Args:\n            key: Optional config key to query. Omit to list all options.\n        Returns:\n            A JSON string. When querying a single key, the object has:\n            key, env_var, value, source, description, aliases, and\n            docs_url.  When listing all, the object has: config_dir and\n            options (array of the same shape).  Use the aliases array\n            to match user intent to the correct key.  Present the data\n            clearly and always include docs_url links.\n\n        Example:\n            Call with key=\"access_token\" to inspect one setting, or\n            call without key to list all configurable options.\n        \nNote: If the result contains version update information (indicated by\n\"VERSION UPDATE AVAILABLE\"), please inform the user about this update\nnotice and recommend they update their CodeScene MCP Server.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "key": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Key"
+      }
+    }
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "result": {
+        "title": "Result",
+        "type": "string"
+      }
+    },
+    "required": [
+      "result"
+    ],
+    "title": "_WrappedResult",
+    "x-fastmcp-wrap-result": true
+  }
+}

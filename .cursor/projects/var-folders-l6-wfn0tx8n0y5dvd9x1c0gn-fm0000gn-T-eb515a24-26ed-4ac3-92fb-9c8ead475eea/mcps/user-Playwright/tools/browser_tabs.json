@@ -1,0 +1,28 @@
+{
+  "name": "browser_tabs",
+  "description": "List, create, close, or select a browser tab.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "list",
+          "new",
+          "close",
+          "select"
+        ],
+        "description": "Operation to perform"
+      },
+      "index": {
+        "description": "Tab index, used for close/select. If omitted for close, current tab is closed.",
+        "type": "number"
+      }
+    },
+    "required": [
+      "action"
+    ],
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "additionalProperties": false
+  }
+}

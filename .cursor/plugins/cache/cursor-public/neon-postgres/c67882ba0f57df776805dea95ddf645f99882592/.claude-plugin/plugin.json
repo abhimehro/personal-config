@@ -1,0 +1,15 @@
+{
+  "name": "neon",
+  "version": "1.0.0",
+  "description": "Manage your Neon projects and databases with the neon-postgres agent skill and the Neon MCP Server",
+  "author": {
+    "name": "Neon",
+    "url": "https://neon.com"
+  },
+  "homepage": "https://neon.com",
+  "repository": "https://github.com/neondatabase/agent-skills",
+  "license": "Apache-2.0",
+  "keywords": ["neon", "postgres", "serverless", "database", "mcp"],
+  "skills": "./skills/",
+  "mcpServers": "./mcp.json"
+}
