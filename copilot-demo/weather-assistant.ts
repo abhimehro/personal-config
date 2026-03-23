@@ -209,6 +209,18 @@ rl.on("SIGINT", async () => {
   process.exit(0);
 });
 
+// Graceful shutdown on EOF (Ctrl+D)
+rl.on("close", async () => {
+  stopSpinner();
+  console.log(`\n${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
+  try {
+    await client.stop();
+  } catch (e) {
+    // Ignore error
+  }
+  process.exit(0);
+});
+
 const prompt = () => {
   rl.question(`${COLORS.Cyan}You:${COLORS.Reset} `, async (input) => {
     if (input.trim() === "") {
