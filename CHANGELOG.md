@@ -212,6 +212,7 @@
 
 **Merged pull requests:**
 
+- 🎨 Palette: Add graceful exit handling for Ctrl+D \(EOF\) [\#664](https://github.com/abhimehro/personal-config/pull/664) ([abhimehro](https://github.com/abhimehro))
 - docs: PR review agent session artifacts \(2026-03-22 backlog cleanup\) [\#661](https://github.com/abhimehro/personal-config/pull/661) ([abhimehro](https://github.com/abhimehro))
 - 🛡️ Sentinel: \[CRITICAL\] Fix Command Injection \(CWE-78\) via eval in dynamic variable assignment [\#660](https://github.com/abhimehro/personal-config/pull/660) ([abhimehro](https://github.com/abhimehro))
 - 🎨 Palette: \[UX improvement\] Retain context after screen clears and randomize tips [\#659](https://github.com/abhimehro/personal-config/pull/659) ([abhimehro](https://github.com/abhimehro))
