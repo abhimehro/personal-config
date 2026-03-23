@@ -1,8 +1,10 @@
 ## 2025-03-22 - Retaining Context in CLI Applications
+
 **Learning:** When users clear the screen in a CLI application (e.g., via a `clear` or `cls` command), they often lose the context of the application they are running, leading to a blank, disorienting state.
 **Action:** Always re-print the application header, greeting, or essential context after executing a clear screen command to maintain a continuous and guided user experience.
 
 ## 2026-05-20 - Forgiving CLI Menus
+
 **Learning:** Users make typos; exiting on error frustrates them.
 **Action:** Loop on invalid input in interactive menus.
 

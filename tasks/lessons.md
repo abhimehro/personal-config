@@ -28,6 +28,14 @@
 **Pattern:** `submit-pypi` / GitHub dependency snapshot action failed with `HttpError` on a branch named with leading emoji after syncing `main` into a PR.
 **Rule:** When `submit-pypi` fails only on bot branches, check for **ref/encoding** issues before blaming application code; still treat as **merge blocker** unless branch protection marks the job non-required.
 
+## Lesson 0g: Terminal paralysis from interactive prompt elements (2026-03-23)
+**Pattern:** Running basic `cd` or `git` commands via automated background terminals hangs indefinitely because the interactive user shell (e.g., Fish) or Git credential helpers (e.g., 1Password SSH Touch ID) silently block waiting for TTY user input.
+**Rule:** When an agent executes local file synchronizations, bypass the interactive terminal. Use pure filesystem/API tools, or run native shell scripts via macOS AppleScript (`do shell script`) to execute in pure `/bin/sh` without invoking the developer's interactive environment.
+
+## Lesson 0h: GitHub PAT security boundaries for Actions (2026-03-23)
+**Pattern:** Attempting to commit or create PRs that modify `.github/workflows/` files via the GitHub API fails with permission denied because the default agent Personal Access Token correctly lacks the elevated `workflow` scope.
+**Rule:** When expanding automation by modifying GitHub Actions YAMLs, securely write the files to the local disk and hand off the `git commit` and `git push` execution to the human developer to respect the remote authorization boundary.
+
 ---
 
 ## Lessons Learned — Control D Pipeline Fix (2026-03-15)
