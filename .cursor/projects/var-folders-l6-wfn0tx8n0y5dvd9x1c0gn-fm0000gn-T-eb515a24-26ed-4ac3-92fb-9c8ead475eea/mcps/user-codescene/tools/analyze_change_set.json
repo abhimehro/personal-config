@@ -1,0 +1,35 @@
+{
+  "name": "analyze_change_set",
+  "description": "Run a branch-level Code Health review for all files that differ between\n        current HEAD and base_ref.\n\n        When to use:\n            Use this as a local PR pre-flight check before opening a pull\n            request, so regressions are caught across the full change set.\n\n        Limitations:\n            - Requires a valid git repository path.\n            - base_ref must exist and be resolvable by git in that repository.\n            - Reviews only files that differ from base_ref.\n            - Output is JSON text from the CLI command.\n\n        The result can be used to decide whether to refactor before creating\n        or updating a pull request.\n\n        Args:\n            base_ref: Git reference to compare against, typically the target\n                branch of the pull request (for example \"main\" or \"origin/main\").\n            git_repository_path: Absolute path to the local git repository.\n\n        Returns:\n            A JSON object containing:\n              - quality_gates: the central outcome, summarizing whether the change\n                set passes or fails Code Health thresholds (\"passed\" or \"failed\").\n              - results: an array of objects for each affected file with:\n                  - name: the name of the file whose Code Health is impacted.\n                  - verdict: \"improved\", \"degraded\", or \"stable\".\n                  - findings: an array describing improvements/degradation for each code smell.\n\n        Example:\n            Compare against base_ref=\"main\" for git_repository_path=\"/repo\" and\n            fail the local PR check if any file verdict is \"degraded\".\n        \nNote: If the result contains version update information (indicated by\n\"VERSION UPDATE AVAILABLE\"), please inform the user about this update\nnotice and recommend they update their CodeScene MCP Server.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "base_ref": {
+        "title": "Base Ref",
+        "type": "string"
+      },
+      "git_repository_path": {
+        "title": "Git Repository Path",
+        "type": "string"
+      }
+    },
+    "required": [
+      "base_ref",
+      "git_repository_path"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "result": {
+        "title": "Result",
+        "type": "string"
+      }
+    },
+    "required": [
+      "result"
+    ],
+    "title": "_WrappedResult",
+    "x-fastmcp-wrap-result": true
+  }
+}

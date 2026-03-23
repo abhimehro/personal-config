@@ -1,0 +1,30 @@
+{
+  "name": "code_health_refactoring_business_case",
+  "description": "Generate a data-driven business case for refactoring a source file.\n\n        When to use:\n            Use this tool to justify refactoring investment with quantified\n            predictions tied to the file's current Code Health.\n\n        Limitations:\n            - Estimates are model-based projections, not guarantees.\n            - Evaluates one file at a time.\n            - Requires an analyzable source file.\n\n        Args:\n            file_path: Absolute path to the source code file to analyze.\n\n        Returns:\n            A JSON object with:\n                - scenario: Recommended target Code Health level.\n                - optimistic_outcome: Upper bound estimate for improvements\n                  in development speed and defect reduction.\n                - pessimistic_outcome: Lower bound estimate for improvements.\n                - confidence_interval: The optimistic → pessimistic range,\n                  representing a 90% confidence interval for the expected impact.\n\n        Example:\n            Call with file_path=\"/repo/src/service.py\" and use the optimistic\n            and pessimistic outcomes to frame a refactoring proposal.\n        \nNote: If the result contains version update information (indicated by\n\"VERSION UPDATE AVAILABLE\"), please inform the user about this update\nnotice and recommend they update their CodeScene MCP Server.",
+  "arguments": {
+    "type": "object",
+    "properties": {
+      "file_path": {
+        "title": "File Path",
+        "type": "string"
+      }
+    },
+    "required": [
+      "file_path"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "result": {
+        "title": "Result",
+        "type": "string"
+      }
+    },
+    "required": [
+      "result"
+    ],
+    "title": "_WrappedResult",
+    "x-fastmcp-wrap-result": true
+  }
+}

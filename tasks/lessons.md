@@ -4,6 +4,10 @@
 **Pattern:** After squash-merging one automation PR, sibling PRs from the same bot often become **CONFLICTING** with `main`.
 **Rule:** Re-run mergeability after each merge; merge `origin/main` into the PR branch and resolve conflicts with ordinary commits (never force-push). Use `GH_TOKEN` on the git remote if `gh` picks a bot credential that cannot push.
 
+## Lesson 0f: Self-review failures with GitHub API (2026-03-22)
+**Pattern:** Attempting to `gh pr review --request-changes` fails with `Can not request changes on your own pull request` when the automation bot is the same identity that opened the PR.
+**Rule:** Use `gh pr comment` to leave feedback and manually request resolution instead of using the formal review state for self-authored automated PRs.
+
 ## Lesson 0a: Zero-diff “security” PRs should be closed, not merged (2026-03-21)
 **Pattern:** Automation opens a PR whose **body** describes fixes, but `changedFiles == 0` and `gh pr diff` is empty—often because `main` already contains the change.
 **Rule:** Close with a short comment linking the finding; do not squash-merge empty commits. Saves queue noise and avoids misleading “merged” history.

@@ -1,0 +1,8 @@
+{
+  "name": "tavily_get_zapier_integration_tool",
+  "description": "Information about Tavily's Zapier integration including setup, features, and usage examples",
+  "arguments": {
+    "type": "object",
+    "properties": {}
+  }
+}

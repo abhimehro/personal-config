@@ -1,0 +1,6 @@
+{
+  "uri": "file://codescene-docs/code-health/how-it-works.md",
+  "name": "Code Health: how it works",
+  "description": "Explains CodeScene's Code Health metric for assessing code quality and maintainability for both human devs and AI.",
+  "mimeType": "text/markdown"
+}
