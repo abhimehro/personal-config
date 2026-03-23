@@ -21,6 +21,8 @@
 
 **Closed issues:**
 
+- \[repo-automation\] Weekly Retrospective - 2026-03-22 [\#663](https://github.com/abhimehro/personal-config/issues/663)
+- \[repo-automation\] Daily Status Report - 2026-03-22 [\#662](https://github.com/abhimehro/personal-config/issues/662)
 - \[repo-automation\] Daily Status Report - 2026-03-21 [\#656](https://github.com/abhimehro/personal-config/issues/656)
 - \[Code Quality\] Audit and replace `basename`/`dirname` in loops across all shell scripts [\#603](https://github.com/abhimehro/personal-config/issues/603)
 - \[Code Quality\] Add unit tests for `maintenance/bin/run_all_maintenance.sh` orchestration logic [\#602](https://github.com/abhimehro/personal-config/issues/602)
