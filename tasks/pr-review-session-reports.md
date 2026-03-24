@@ -22,7 +22,7 @@
 | PRs merged (squash) | 5 |
 | PRs closed (superseded) | 1 |
 | PRs escalated / hold (PR comments) | 4 |
-| Direct commits to default branch (CI fix) | 2 (`ctrld-sync` `main` labeler.yml) |
+| Direct commits (CI fix) | 2 |
 
 ### Merged (squash)
 
