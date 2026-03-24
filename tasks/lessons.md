@@ -35,6 +35,18 @@
 **Pattern:** `submit-pypi` / GitHub dependency snapshot action failed with `HttpError` on a branch named with leading emoji after syncing `main` into a PR.
 **Rule:** When `submit-pypi` fails only on bot branches, check for **ref/encoding** issues before blaming application code; still treat as **merge blocker** unless branch protection marks the job non-required.
 
+## Lesson 0i: IDE background terminal stalling — root cause is 1Password SSH Agent (2026-03-24)
+
+**Pattern:** All `run_command` calls from IDE agents stall indefinitely in repos using 1Password SSH Agent, regardless of Fish prompt theme. Removing Hydro, disabling gitnow, and setting `hydro_fetch false` did NOT fix it. The root cause is 1Password's Touch ID gate: background terminals have no window to display the biometric prompt, so auth blocks forever. This is a confirmed upstream bug (1Password 8.12.x + Apple Keychain, still under investigation).
+**Mitigations applied (layered):**
+
+1. **SSH key pinning:** `IdentitiesOnly yes` + `IdentityFile ~/.ssh/1Password/GitHub SSH Key.pub` in `Host github.com` block — reduces agent re-prompting.
+2. **Tight timeouts:** `ServerAliveInterval 10`, `ConnectTimeout 10` — connections fail fast instead of hanging forever.
+3. **Socket health check:** `config.fish` detects 1Password socket availability and falls back to macOS native agent.
+4. **Agent API bypass:** Use GitHub MCP API (`mcp_GitHub_*` tools) for all PR/repo operations instead of `run_command`.
+
+**Verified:** Hydro and gitnow were both eliminated as suspects through systematic removal testing on 2026-03-24.
+
 ---
 
 ## Lessons Learned — Control D Pipeline Fix (2026-03-15)

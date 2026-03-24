@@ -1,53 +1,7 @@
-name: Generate Changelog
-
-on:
-  push:
-    branches:
-      - main
-
-# This gives the default GITHUB_TOKEN the power to push commits
-permissions:
-  contents: write
-
+name: Disabled Changelog
+on: []
 jobs:
-  changelog:
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Ruby 3.1
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: 3.1
-
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          # Required for changelog generators to read previous tags and commit history
-          fetch-depth: 0 
-
-      - name: Install github_changelog_generator
-        run: |
-          gem install github_changelog_generator --user-install
-          GEM_BIN_DIR="$(ruby -e 'puts Gem.user_dir')/bin"
-          echo "PATH=$GEM_BIN_DIR:$PATH" >> $GITHUB_ENV
-
-      - name: Generate changelog
-        # Pass the built-in GITHUB_TOKEN explicitly using the --token flag
-        run: |
-          github_changelog_generator \
-            --user "${GITHUB_REPOSITORY_OWNER}" \
-            --project "${GITHUB_REPOSITORY#*/}" \
-            --token "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Commit and Push Changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md
-          
-          if ! git diff --cached --quiet; then
-            git commit -m "docs: update CHANGELOG [automated]"
-            # actions/checkout automatically handles authentication, a simple 'git push' works safely
-            git push
-          else
-            echo "No changes to commit."
-          fi
+      - run: echo "Disabled per modernization plan. Tracked centrally via release-drafter."

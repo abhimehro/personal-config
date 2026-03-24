@@ -8,7 +8,7 @@
 
 Reduce PR accumulation from automated agents by triaging, reviewing, consolidating, and resolving bot-authored PRs—merging the good, fixing the fixable, and closing the rest. Act autonomously on routine decisions; escalate when a PR crosses a defined trust boundary.
 
-**In scope:** Only PRs authored by configured bots (see [Configuration](#configuration)). Never close or merge human-authored PRs.
+**In scope:** Only PRs authored by configured bots (see [Configuration](#configuration)). Never close or merge human-authored PRs. *(Note: The agent is now exclusively responsible for first-interaction contributor greetings, as legacy greeting workflows have been disabled).*
 
 ## Preflight gate (mandatory)
 
