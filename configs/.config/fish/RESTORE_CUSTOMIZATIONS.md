@@ -1,77 +1,85 @@
-# Fish Shell Customizations (Hydro + Dracula)
+# Fish Shell Customizations (Tide + Dracula)
 
-This document captures the current “known good” Fish setup in this repo and how to restore/adjust it.
+This document captures the current "known good" Fish setup and how to restore it.
 
-## Prompt: Hydro (via Fisher)
+## Prompt: Tide v6 (via Fisher)
 
-This repo tracks your Fisher plugin list in `~/.config/fish/fish_plugins`.
+Install/update plugins (including Tide):
 
-To install/update plugins (including Hydro):
-
-```bash
+```fish
 fisher update
 ```
 
-Repo shortcut (recommended):
+If `fisher` is not installed (fresh machine / disaster recovery):
 
-```bash
-./scripts/bootstrap_fish_plugins.sh
-```
-
-If `fisher` is not installed yet (fresh machine / disaster recovery), bootstrap it first:
-
-```bash
+```fish
 curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source
 fisher install jorgebucaran/fisher
 fisher update
 ```
 
-Or install Hydro explicitly:
+To reconfigure Tide's layout interactively:
 
-```bash
-fisher install jorgebucaran/hydro
+```fish
+tide configure
 ```
 
-### Prompt conflict notes
+### Tide Dracula Colors
 
-Hydro defines `fish_prompt` and (depending on your configuration) may also define `fish_right_prompt`.
-To avoid conflicts, any prior custom prompt implementations are kept as backups:
+Tide manages prompt colors via `set -U` universal variables. Apply the Dracula palette:
 
-- `~/.config/fish/functions/fish_prompt.fish.backup`
-- `~/.config/fish/functions/fish_right_prompt.fish.backup`
+```fish
+# Git segment
+set -U tide_git_color_branch BD93F9
+set -U tide_git_color_dirty F1FA8C
+set -U tide_git_color_staged 50FA7B
+set -U tide_git_color_stash FFB86C
+set -U tide_git_color_untracked FF79C6
 
-If you want to restore your old prompt temporarily, rename the backups back to `fish_prompt.fish` / `fish_right_prompt.fish`
-and reload your shell.
+# Directory path
+set -U tide_pwd_color_dirs F8F8F2
+set -U tide_pwd_color_anchors BD93F9
+set -U tide_pwd_color_truncated_dirs 6272A4
 
-**Note on `$$var` in Fish**: Hydro’s `fish_prompt.fish` uses `$$var` for *indirect expansion* (it dereferences a variable whose name is stored in another variable). In Fish, the shell PID is exposed as `$fish_pid` (not `$$`).
+# Command duration + status
+set -U tide_cmd_duration_color FFB86C
+set -U tide_status_color 50FA7B
+set -U tide_status_color_failure FF5555
 
-## Theme: Dracula (cohesive dark theme)
-
-- **Fish syntax highlighting**: set in `~/.config/fish/config.fish` using a Dracula palette (we intentionally do **not** track `fish_variables` to avoid noisy diffs).
-- **fzf**: `FZF_DEFAULT_OPTS` gets a Dracula-style color scheme by default (only if you haven’t set it already).
-- **bat**: `BAT_THEME` defaults to `Dracula` (only if you haven’t set it already).
-
-To preview/change Fish themes interactively:
-
-```bash
-fish_config theme
+# Context (user@host, shown for SSH/root)
+set -U tide_context_color_default 8BE9FD
+set -U tide_context_color_root FF5555
 ```
+
+## Theme: Dracula (syntax highlighting)
+
+Syntax colors are managed by the `dracula/fish` theme, activated once via:
+
+```fish
+fish_config theme choose "Dracula Official"
+```
+
+This stores colors as universals — no need to set them in `config.fish`.
+
+Tool-specific theming is also set in `config.fish`:
+
+- **fzf**: `FZF_DEFAULT_OPTS` → Dracula color scheme (set only if not already defined)
+- **bat**: `BAT_THEME` → `Dracula` (set only if not already defined)
+
+## SSH Agent
+
+`config.fish` includes a health check that uses 1Password's SSH agent when
+available and falls back to macOS native agent if the socket is missing.
+This prevents IDE background terminals from stalling (see `tasks/lessons.md` Lesson 0i).
 
 ## Greeting Function
 
-A rotating greeting function lives at:
-`~/.config/fish/functions/fish_greeting.fish`
-
-To customize:
-
-```bash
-cursor --wait ~/.config/fish/functions/fish_greeting.fish
-```
+A rotating time-based greeting function is defined inline in `config.fish`.
 
 ## Verifying Configuration
 
 After making changes, reload Fish:
 
-```bash
+```fish
 exec fish
 ```
