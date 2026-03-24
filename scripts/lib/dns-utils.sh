@@ -12,7 +12,8 @@ fi
 _DNS_UTILS_SH_="true"
 
 # Cache directory (override via DNS_CACHE_DIR env var before sourcing)
-DNS_CACHE_DIR="${DNS_CACHE_DIR:-${TMPDIR:-/tmp}/dns_cache_$$}"
+# SECURITY: Use mktemp to prevent CWE-377 Insecure Temporary File symlink attacks
+DNS_CACHE_DIR="${DNS_CACHE_DIR:-$(mktemp -d "${TMPDIR:-/tmp}/dns_cache.XXXXXX")}"
 
 # --- Cache management ---
 
