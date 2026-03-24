@@ -290,9 +290,23 @@ def create_pr_for_current_changes(branch_prefix: str, commit_message: str, pr_ti
 
 def latest_tag_for_action(repo_id: str) -> str:
     latest = gh_text(["api", f"repos/{repo_id}/releases/latest", "--jq", ".tag_name"])
-    if latest:
+    if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
         return latest
-    return gh_text(["api", f"repos/{repo_id}/tags?per_page=1", "--jq", ".[0].name"])
+
+    tags_json = gh_json(["api", f"repos/{repo_id}/tags?per_page=100"], default=[])
+    stable_tags = []
+    for t in tags_json:
+        name = t.get("name", "")
+        if re.fullmatch(r"v?\d+(?:\.\d+)*", name):
+            parsed = numeric_version(name)
+            if parsed:
+                stable_tags.append((parsed, name))
+
+    if stable_tags:
+        stable_tags.sort(key=lambda x: x[0], reverse=True)
+        return stable_tags[0][1]
+
+    return ""
 
 
 def numeric_version(text: str) -> tuple[int, int, int] | None:
@@ -301,6 +315,10 @@ def numeric_version(text: str) -> tuple[int, int, int] | None:
         return None
     return tuple(int(group or 0) for group in match.groups())
 
+
+def tag_exists(repo_id: str, tag: str) -> bool:
+    proc = run_process([GH_BIN, "api", f"repos/{repo_id}/git/ref/tags/{tag}"])
+    return proc.returncode == 0
 
 def target_ref(current: str, latest: str) -> str | None:
     current_v = numeric_version(current)

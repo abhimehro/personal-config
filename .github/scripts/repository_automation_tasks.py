@@ -23,6 +23,8 @@ from repository_automation_common import (
     run_shell_command,
     safe_pr_body,
     target_ref,
+    tag_exists,
+    numeric_version,
     write_result,
     writes_allowed,
 )
@@ -137,44 +139,92 @@ def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
     return sorted(candidates, key=lambda item: item[1], reverse=True)[:limit]
 
 
+
+
+def _extract_repo_id(action_ref: str) -> str | None:
+    if action_ref.startswith("./") or action_ref.startswith("docker://"):
+        return None
+    parts = action_ref.split("/")
+    if len(parts) < 2:
+        return None
+    return "/".join(parts[:2])
+
+def _resolve_proposed_tag(
+    repo_id: str,
+    current: str,
+    latest_cache: dict[str, str],
+    exists_cache: dict[tuple[str, str], bool]
+) -> str | None:
+    latest = latest_cache.get(repo_id)
+    if latest is None:
+        latest = latest_tag_for_action(repo_id)
+        latest_cache[repo_id] = latest
+
+    proposed = target_ref(current, latest)
+    if not proposed or proposed == current:
+        return None
+
+    cache_key = (repo_id, proposed)
+    exists = exists_cache.get(cache_key)
+    if exists is None:
+        exists = tag_exists(repo_id, proposed)
+        exists_cache[cache_key] = exists
+
+    if not exists:
+        print(f"Warning: Proposed tag {proposed} for {repo_id} does not exist. Skipping update.")
+        return None
+
+    return proposed
+
+def _is_major_bump(current: str, proposed: str) -> bool:
+    current_v = numeric_version(current)
+    target_v = numeric_version(proposed)
+    return bool(current_v and target_v and target_v[0] > current_v[0])
+
+def evaluate_action_update(
+    match: re.Match[str],
+    file_path: Path,
+    latest_cache: dict[str, str],
+    exists_cache: dict[tuple[str, str], bool]
+) -> dict[str, Any] | None:
+    action_ref = match.group(2)
+    current = match.group(3)
+
+    repo_id = _extract_repo_id(action_ref)
+    if not repo_id:
+        return None
+
+    proposed = _resolve_proposed_tag(repo_id, current, latest_cache, exists_cache)
+    if not proposed:
+        return None
+
+    return {
+        "old": match.group(0),
+        "new": f"{match.group(1)}{action_ref}@{proposed}",
+        "file": str(file_path.relative_to(ROOT)),
+        "action": action_ref,
+        "current": current,
+        "target": proposed,
+        "major_bump": _is_major_bump(current, proposed),
+    }
+
 def workflow_file_plans() -> list[dict[str, Any]]:
     latest_cache: dict[str, str] = {}
+    exists_cache: dict[tuple[str, str], bool] = {}
     plans = []
     for file_path in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
         text = file_path.read_text()
         replacements = []
         for match in WORKFLOW_PATTERN.finditer(text):
-            action_ref = match.group(2)
-            current = match.group(3)
-            if action_ref.startswith("./") or action_ref.startswith("docker://"):
-                continue
-            parts = action_ref.split("/")
-            if len(parts) < 2:
-                continue
-            repo_id = "/".join(parts[:2])
-            latest = latest_cache.get(repo_id)
-            if latest is None:
-                latest = latest_tag_for_action(repo_id)
-                latest_cache[repo_id] = latest
-            proposed = target_ref(current, latest)
-            if not proposed or proposed == current:
-                continue
-            replacements.append(
-                {
-                    "old": match.group(0),
-                    "new": f"{match.group(1)}{action_ref}@{proposed}",
-                    "file": str(file_path.relative_to(ROOT)),
-                    "action": action_ref,
-                    "current": current,
-                    "target": proposed,
-                }
-            )
+            update = evaluate_action_update(match, file_path, latest_cache, exists_cache)
+            if update:
+                replacements.append(update)
         if replacements:
             plans.append({"path": file_path, "text": text, "replacements": replacements})
     return plans
 
 
-def flattened_updates(plans: list[dict[str, Any]]) -> list[dict[str, str]]:
+def flattened_updates(plans: list[dict[str, Any]]) -> list[dict[str, Any]]:
     updates = []
     for plan in plans:
         for item in plan["replacements"]:
@@ -184,6 +234,7 @@ def flattened_updates(plans: list[dict[str, Any]]) -> list[dict[str, str]]:
                     "action": item["action"],
                     "current": item["current"],
                     "target": item["target"],
+                    "major_bump": item.get("major_bump", False),
                 }
             )
     return updates
@@ -218,6 +269,32 @@ def render_update_table(updates: list[dict[str, str]]) -> list[str]:
     return lines
 
 
+
+
+def _pr_has_invalid_tags(body: str) -> bool:
+    from repository_automation_common import tag_exists
+    import re
+    # Using raw string in code string: we have to escape backslashes again since we are not using re.sub for replacement value directly
+    for match in re.finditer(r"\\|\\s*`[^`]+`\\s*\\|\\s*`([^`]+)`\\s*\\|\\s*`[^`]+`\\s*\\|\\s*`([^`]+)`\\s*\\|", body):
+        action_ref = match.group(1)
+        target = match.group(2)
+        parts = action_ref.split("/")
+        if len(parts) >= 2:
+            repo_id = "/".join(parts[:2])
+            if not tag_exists(repo_id, target):
+                return True
+    return False
+
+def close_invalid_prs(branch_prefix: str) -> None:
+    from repository_automation_common import gh_json, run_process, GH_BIN
+    open_prs = gh_json(["pr", "list", "--state", "open", "--json", "number,headRefName,body"], default=[])
+    for pr in open_prs:
+        if not pr.get("headRefName", "").startswith(branch_prefix.replace('/', '-')):
+            continue
+        if _pr_has_invalid_tags(pr.get("body", "")):
+            print(f"Closing PR #{pr['number']} because it contains invalid tag updates.")
+            run_process([GH_BIN, "pr", "close", str(pr["number"]), "--comment", "Closing this draft PR because it contains one or more invalid action versions. A corrected PR will be opened automatically."])
+
 def run_workflow_updater(config: dict[str, Any]) -> dict[str, Any]:
     section = config.get("workflow_updater", {})
     plans = workflow_file_plans()
@@ -232,6 +309,8 @@ def run_workflow_updater(config: dict[str, Any]) -> dict[str, Any]:
     body_parts.extend(render_update_table(updates))
 
     can_write = writes_allowed() and ensure_gh_token() and section.get("create_draft_pr", False)
+    if can_write:
+        close_invalid_prs(section.get("branch_prefix", "automation/workflow-updates"))
     if not can_write:
         body_parts.extend(["## Write gate", "- Draft PR creation is disabled or writes are not allowed for this run.", ""])
         return write_result("workflow-updater", status, summary, "\n".join(body_parts), {"updates": updates, "pull_request_url": ""})
