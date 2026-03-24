@@ -203,6 +203,41 @@ if status is-interactive
     # Prevent Hydro from running background git fetch on every prompt render
     set -g hydro_fetch false
 
+    # Selected heavy repos to exclude from Hydro git prompt rendering
+    set -g hydro_dev_heavy_repos /Users/speedybee/dev/personal-config /Users/speedybee/dev/ctrld-sync /Users/speedybee/dev/email-security-pipeline /Users/speedybee/dev/Seatek_Analysis /Users/speedybee/dev/Hydrograph_Versus_Seatek_Sensors_Project
+
+    if not set -q hydro_dev_mode
+        set -U hydro_dev_mode off
+    end
+
+    function __hydro_apply_dev_mode --description 'Apply Hydro git prompt mode for selected heavy repos'
+        switch "$hydro_dev_mode"
+            case off
+                set -g hydro_ignored_git_paths $hydro_dev_heavy_repos
+            case on
+                set -e hydro_ignored_git_paths
+            case '*'
+                set -U hydro_dev_mode off
+                set -g hydro_ignored_git_paths $hydro_dev_heavy_repos
+        end
+    end
+
+    function hydro-dev-off --description 'Disable Hydro git prompt for selected heavy ~/dev repos'
+        set -g hydro_dev_mode off
+        set -U hydro_dev_mode off
+        __hydro_apply_dev_mode
+        echo "Hydro git prompt disabled for selected heavy ~/dev repos."
+    end
+
+    function hydro-dev-on --description 'Enable Hydro git prompt for all repos'
+        set -g hydro_dev_mode on
+        set -U hydro_dev_mode on
+        __hydro_apply_dev_mode
+        echo "Hydro git prompt enabled for all repos."
+    end
+
+    __hydro_apply_dev_mode
+
     set -g hydro_color_pwd      bd93f9
     set -g hydro_color_git      f1fa8c
     set -g hydro_color_error    ff5555
