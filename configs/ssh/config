@@ -11,7 +11,7 @@ Host github.com
     HostName github.com
     User git
     IdentitiesOnly yes
-    IdentityFile ~/.ssh/1Password/GitHub SSH Key.pub
+    IdentityFile "~/.ssh/GitHub SSH Key.pub"
 
 #  Proton Pass SSH agent: GitHub alias 
 # Use Proton Pass SSH agent for GitHub under alias "github-proton".

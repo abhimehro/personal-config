@@ -40,7 +40,7 @@
 **Pattern:** All `run_command` calls from IDE agents stall indefinitely in repos using 1Password SSH Agent, regardless of Fish prompt theme. Removing Hydro, disabling gitnow, and setting `hydro_fetch false` did NOT fix it. The root cause is 1Password's Touch ID gate: background terminals have no window to display the biometric prompt, so auth blocks forever. This is a confirmed upstream bug (1Password 8.12.x + Apple Keychain, still under investigation).
 **Mitigations applied (layered):**
 
-1. **SSH key pinning:** `IdentitiesOnly yes` + `IdentityFile ~/.ssh/1Password/GitHub SSH Key.pub` in `Host github.com` block — reduces agent re-prompting.
+1. **SSH key pinning:** `IdentitiesOnly yes` + `IdentityFile "~/.ssh/GitHub SSH Key.pub"` in `Host github.com` block — reduces agent re-prompting.
 2. **Tight timeouts:** `ServerAliveInterval 10`, `ConnectTimeout 10` — connections fail fast instead of hanging forever.
 3. **Socket health check:** `config.fish` detects 1Password socket availability and falls back to macOS native agent.
 4. **Agent API bypass:** Use GitHub MCP API (`mcp_GitHub_*` tools) for all PR/repo operations instead of `run_command`.
