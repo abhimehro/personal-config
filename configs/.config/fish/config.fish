@@ -200,6 +200,9 @@ abbr -a nmcs nm-cd-status
 # ============================================
 if status is-interactive
     # Hydro Prompt Configuration
+    # Prevent Hydro from running background git fetch on every prompt render
+    set -g hydro_fetch false
+
     set -g hydro_color_pwd      bd93f9
     set -g hydro_color_git      f1fa8c
     set -g hydro_color_error    ff5555
