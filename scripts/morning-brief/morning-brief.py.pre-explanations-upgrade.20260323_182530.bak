@@ -212,57 +212,6 @@ def score_linear_issue(issue):
     return score
 
 
-def build_selection_reason(role, item):
-    if not item:
-        if role == "admin":
-            return "No live admin source was available, so the brief falls back to a lightweight housekeeping prompt."
-        return "No live work item was available, so the brief falls back to a general planning prompt."
-
-    reasons = []
-    if item.get("kind") == "linear":
-        if is_due_today(item.get("dueDate")):
-            reasons.append("it is due today")
-        elif item.get("dueDate"):
-            reasons.append(f"it already has a due date ({item.get('dueDate')})")
-        if item.get("badge") in {"urgent", "high priority"}:
-            reasons.append(f"it is marked {item.get('badge')}")
-        elif item.get("state"):
-            reasons.append(f"it is currently in {item.get('state')}")
-        if not reasons:
-            reasons.append("it is your highest-ranked active Linear issue")
-    elif item.get("kind") == "calendar":
-        if item.get("timeLabel"):
-            reasons.append(f"it has a clear time block at {item.get('timeLabel')}")
-        reasons.append("it looks like routine maintenance or operational admin")
-    else:
-        reasons.append("it best matches the current fallback rules")
-
-    return f"{role.capitalize()} was chosen because " + ", ".join(reasons) + "."
-
-
-def build_github_context_note(deep_item, admin_item):
-    if deep_item and deep_item.get("kind") == "linear":
-        return (
-            "Use the admin block to check related pull requests, review requests, and GitHub notifications after the main work block. "
-            "This keeps code review overhead from interrupting deep work."
-        )
-    if admin_item and admin_item.get("kind") == "calendar":
-        return (
-            "Pair the admin item with a quick GitHub sweep: review open PRs, triage notifications, and clear any lightweight repository follow-ups."
-        )
-    return "Use the admin slot for PR reviews, notification triage, and small repository maintenance tasks."
-
-
-def get_time_aware_guidance(now=None):
-    now = now or datetime.datetime.now()
-    hour = now.hour
-    if hour < 12:
-        return "Morning favors deep work: tackle the hardest task first and defer inbox, PRs, and light cleanup until later in the day."
-    if hour < 16:
-        return "Midday is a good handoff point: finish a focused block, then clear one admin task before context-switching again."
-    return "Late-day energy is usually better for lighter admin work, PR reviews, and cleanup than for starting brand-new deep work."
-
-
 def get_focus_items_from_linear(session):
     if not LINEAR_API_KEY:
         return []
@@ -379,7 +328,7 @@ def get_focus_items_from_google_calendar(session):
         items.sort(key=lambda item: (-item["score"], item.get("timeLabel") or "99:99", item.get("title") or ""))
         return items
     except Exception as e:
-        print("Calendar Focus Error: Google Calendar request failed; skipping calendar backup")
+        print(f"Calendar Focus Error: {e}")
         return []
 
 
@@ -521,45 +470,35 @@ def get_focus_section():
     bullets = []
     if deep_item:
         bullets.append(render_focus_bullet("Deep work", deep_item))
-    else:
-        bullets.append('<li><strong>Deep work:</strong> Choose the highest-leverage task that meaningfully moves a project forward.</li>')
-
     if admin_item:
         bullets.append(render_focus_bullet("Admin", admin_item))
-    else:
-        bullets.append('<li><strong>Admin:</strong> Clear one small obligation that reduces background stress.</li>')
 
-    why_chosen_html = f"""
-    <h4>Why this was chosen</h4>
-    <ul>
-        <li>{sanitize_text(build_selection_reason('deep work', deep_item))}</li>
-        <li>{sanitize_text(build_selection_reason('admin', admin_item))}</li>
-    </ul>
-    """
+    if bullets:
+        if not admin_item:
+            bullets.append('<li><strong>Admin:</strong> Clear one small obligation that reduces background stress.</li>')
+        note_parts = []
+        if deep_item and is_due_today(deep_item.get("dueDate")):
+            note_parts.append("due-today work is prioritized")
+        if deep_item and deep_item.get("badge") in {"urgent", "high priority"}:
+            note_parts.append("urgent items are bubbled to the top")
+        note = "; ".join(note_parts)
+        note_html = f'<p style="color: #666;"><em>{sanitize_text(note).capitalize()}.</em></p>' if note else ""
+        return f"""
+        <h3>🚀 Focus</h3>
+        <p><strong>Today's structure:</strong> one deep work item + one admin item</p>
+        <ul>
+            {''.join(bullets)}
+        </ul>
+        {note_html}
+        """
 
-    github_context_html = f"""
-    <h4>PR / GitHub Context</h4>
-    <ul>
-        <li>{sanitize_text(build_github_context_note(deep_item, admin_item))}</li>
-    </ul>
-    """
-
-    time_aware_html = f"""
-    <h4>Time-aware selection</h4>
-    <ul>
-        <li>{sanitize_text(get_time_aware_guidance())}</li>
-    </ul>
-    """
-
-    return f"""
+    return """
     <h3>🚀 Focus</h3>
     <p><strong>Today's structure:</strong> one deep work item + one admin item</p>
     <ul>
-        {''.join(bullets)}
+        <li><strong>Deep work:</strong> Choose the highest-leverage task that meaningfully moves a project forward.</li>
+        <li><strong>Admin:</strong> Clear one small obligation that reduces background stress.</li>
     </ul>
-    {why_chosen_html}
-    {github_context_html}
-    {time_aware_html}
     """
 
 

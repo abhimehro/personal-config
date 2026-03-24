@@ -25,6 +25,7 @@ from urllib3.util.retry import Retry
 
 # --- CONFIGURATION ---
 
+# Prefer local-only secret files in HOME rather than committing secrets in the repo.
 _local_env = Path.home() / ".config" / "morning-brief.env"
 if _local_env.exists():
     load_dotenv(_local_env)
@@ -36,6 +37,7 @@ if not READWISE_TOKEN:
     print("Error: READWISE_TOKEN environment variable is not set.", file=sys.stderr)
     sys.exit(1)
 
+# Location: Baton Rouge
 LAT = 30.4515
 LON = -91.1871
 ZODIAC_SIGN = "cancer"
@@ -50,6 +52,7 @@ GOOGLE_CALENDAR_EMAIL = os.getenv("GOOGLE_CALENDAR_EMAIL")
 GOOGLE_CALENDAR_TIMEZONE = os.getenv("GOOGLE_CALENDAR_TIMEZONE", "America/Chicago")
 FOCUS_MAX_ITEMS = int(os.getenv("MORNING_BRIEF_FOCUS_MAX_ITEMS", "3"))
 
+# Feed Dictionary: Name -> URL
 FEEDS = {
     "🔍 The Lens": "https://thelensnola.org/feed/",
     "🏛️ LA Illuminator": "https://lailluminator.com/feed/",
@@ -77,6 +80,7 @@ LINEAR_GRAPHQL_URL = "https://api.linear.app/graphql"
 
 
 def build_retry_session(total=3, backoff_factor=1):
+    """Return a requests session with retry support for flaky network/DNS issues."""
     session = requests.Session()
     retry = Retry(
         total=total,
@@ -110,6 +114,7 @@ def truncate_text(text, max_len=220):
 
 
 def extract_horoscope_text(data):
+    """Handle different horoscope API response shapes."""
     if not isinstance(data, dict):
         return None
 
@@ -127,142 +132,6 @@ def extract_horoscope_text(data):
     return None
 
 
-def is_due_today(date_str):
-    return bool(date_str) and date_str == TODAY
-
-
-def format_time_label(start_raw):
-    if not start_raw:
-        return "Anytime"
-    return start_raw[11:16] if "T" in start_raw else "All day"
-
-
-def calendar_admin_score(title, description=""):
-    text = f"{title} {description}".lower()
-    score = 0
-    keyword_weights = {
-        "maintenance": 6,
-        "cleanup": 6,
-        "health check": 5,
-        "report": 5,
-        "review": 4,
-        "admin": 4,
-        "system": 3,
-        "monitor": 3,
-        "schedule": 3,
-        "planning": 3,
-        "homebrew": 3,
-        "deals": 1,
-    }
-    for keyword, weight in keyword_weights.items():
-        if keyword in text:
-            score += weight
-    return score
-
-
-def build_focus_meta_parts(item):
-    parts = []
-    if item.get("badge"):
-        parts.append(item["badge"])
-    if item.get("state"):
-        parts.append(item["state"])
-    if item.get("dueDate"):
-        label = "due today" if is_due_today(item.get("dueDate")) else f"due {item.get('dueDate')}"
-        parts.append(label)
-    if item.get("timeLabel"):
-        parts.append(item["timeLabel"])
-    return parts
-
-
-def render_focus_bullet(label, item):
-    title = sanitize_text(item.get("title", "Untitled"))
-    url = item.get("url", "#")
-    identifier = sanitize_text(item.get("identifier", ""))
-    meta = " · ".join(build_focus_meta_parts(item))
-
-    prefix = f"<strong>{sanitize_text(label)}:</strong> "
-    body = f'<a href="{url}">'
-    if identifier:
-        body += f"<strong>{identifier}</strong>: "
-    body += f"{title}</a>"
-    if meta:
-        body += f' <span style="color: #666;">({sanitize_text(meta)})</span>'
-    return f"<li>{prefix}{body}</li>"
-
-
-def score_linear_issue(issue):
-    priority = issue.get("priority") or 0
-    due_date = issue.get("dueDate")
-    score = 0
-
-    if is_due_today(due_date):
-        score += 100
-    elif due_date:
-        score += 20
-
-    if priority == 1:
-        score += 80
-    elif priority == 2:
-        score += 60
-    elif priority == 3:
-        score += 30
-    elif priority == 4:
-        score += 10
-
-    return score
-
-
-def build_selection_reason(role, item):
-    if not item:
-        if role == "admin":
-            return "No live admin source was available, so the brief falls back to a lightweight housekeeping prompt."
-        return "No live work item was available, so the brief falls back to a general planning prompt."
-
-    reasons = []
-    if item.get("kind") == "linear":
-        if is_due_today(item.get("dueDate")):
-            reasons.append("it is due today")
-        elif item.get("dueDate"):
-            reasons.append(f"it already has a due date ({item.get('dueDate')})")
-        if item.get("badge") in {"urgent", "high priority"}:
-            reasons.append(f"it is marked {item.get('badge')}")
-        elif item.get("state"):
-            reasons.append(f"it is currently in {item.get('state')}")
-        if not reasons:
-            reasons.append("it is your highest-ranked active Linear issue")
-    elif item.get("kind") == "calendar":
-        if item.get("timeLabel"):
-            reasons.append(f"it has a clear time block at {item.get('timeLabel')}")
-        reasons.append("it looks like routine maintenance or operational admin")
-    else:
-        reasons.append("it best matches the current fallback rules")
-
-    return f"{role.capitalize()} was chosen because " + ", ".join(reasons) + "."
-
-
-def build_github_context_note(deep_item, admin_item):
-    if deep_item and deep_item.get("kind") == "linear":
-        return (
-            "Use the admin block to check related pull requests, review requests, and GitHub notifications after the main work block. "
-            "This keeps code review overhead from interrupting deep work."
-        )
-    if admin_item and admin_item.get("kind") == "calendar":
-        return (
-            "Pair the admin item with a quick GitHub sweep: review open PRs, triage notifications, and clear any lightweight repository follow-ups."
-        )
-    return "Use the admin slot for PR reviews, notification triage, and small repository maintenance tasks."
-
-
-def get_time_aware_guidance(now=None):
-    now = now or datetime.datetime.now()
-    hour = now.hour
-    if hour < 12:
-        return "Morning favors deep work: tackle the hardest task first and defer inbox, PRs, and light cleanup until later in the day."
-    if hour < 16:
-        return "Midday is a good handoff point: finish a focused block, then clear one admin task before context-switching again."
-    return "Late-day energy is usually better for lighter admin work, PR reviews, and cleanup than for starting brand-new deep work."
-
-
 def get_focus_items_from_linear(session):
     if not LINEAR_API_KEY:
         return []
@@ -270,7 +139,11 @@ def get_focus_items_from_linear(session):
     query = """
     query MorningBriefFocus {
       viewer {
-        assignedIssues(first: 12, orderBy: updatedAt) {
+        assignedIssues(
+          first: 5,
+          filter: { state: { type: { neq: completed } } },
+          orderBy: updatedAt
+        ) {
           nodes {
             identifier
             title
@@ -287,13 +160,6 @@ def get_focus_items_from_linear(session):
     }
     """
 
-    priority_labels = {
-        1: "urgent",
-        2: "high priority",
-        3: "medium priority",
-        4: "low priority",
-    }
-
     try:
         response = session.post(
             LINEAR_GRAPHQL_URL,
@@ -309,23 +175,15 @@ def get_focus_items_from_linear(session):
         nodes = payload.get("data", {}).get("viewer", {}).get("assignedIssues", {}).get("nodes", [])
 
         items = []
-        for issue in nodes:
-            if issue.get("state", {}).get("type") == "completed":
-                continue
-            priority = issue.get("priority") or 0
-            item = {
-                "kind": "linear",
-                "identifier": issue.get("identifier", "Linear"),
-                "title": issue.get("title", "Untitled issue"),
-                "url": issue.get("url", "#"),
-                "state": issue.get("state", {}).get("name", "Open"),
-                "dueDate": issue.get("dueDate"),
-                "badge": priority_labels.get(priority, ""),
-                "score": score_linear_issue(issue),
-            }
-            items.append(item)
+        for issue in nodes[:FOCUS_MAX_ITEMS]:
+            identifier = sanitize_text(issue.get("identifier", "Linear"))
+            title = sanitize_text(issue.get("title", "Untitled issue"))
+            url = issue.get("url", "#")
+            state_name = sanitize_text(issue.get("state", {}).get("name", "Open"))
+            due = sanitize_text(issue.get("dueDate") or "")
+            meta = state_name if not due else f"{state_name} · due {due}"
+            items.append(f'<li><a href="{url}"><strong>{identifier}</strong>: {title}</a> <span style="color: #666;">({meta})</span></li>')
 
-        items.sort(key=lambda item: (-item["score"], item.get("dueDate") or "9999-12-31", item.get("title") or ""))
         return items
     except Exception as e:
         print(f"Linear Focus Error: {e}")
@@ -334,9 +192,6 @@ def get_focus_items_from_linear(session):
 
 def get_focus_items_from_google_calendar(session):
     if not GOOGLE_CALENDAR_API_KEY or not GOOGLE_CALENDAR_EMAIL:
-        return []
-    if GOOGLE_CALENDAR_API_KEY.startswith("GOCSPX-"):
-        print("Calendar Focus Error: GOOGLE_CALENDAR_API_KEY appears to be an OAuth client secret, not a simple API key; skipping calendar backup")
         return []
 
     encoded_calendar_id = requests.utils.quote(GOOGLE_CALENDAR_EMAIL, safe="")
@@ -347,7 +202,7 @@ def get_focus_items_from_google_calendar(session):
         "timeMax": CALENDAR_TIME_MAX,
         "singleEvents": "true",
         "orderBy": "startTime",
-        "maxResults": "10",
+        "maxResults": str(FOCUS_MAX_ITEMS),
         "timeZone": GOOGLE_CALENDAR_TIMEZONE,
     }
 
@@ -358,28 +213,19 @@ def get_focus_items_from_google_calendar(session):
 
         items = []
         for event in events:
-            title = event.get("summary", "Calendar event")
-            description = event.get("description", "")
+            title = sanitize_text(event.get("summary", "Calendar event"))
             start_raw = (
                 event.get("start", {}).get("dateTime")
                 or event.get("start", {}).get("date")
                 or ""
             )
-            item = {
-                "kind": "calendar",
-                "identifier": "Calendar",
-                "title": title,
-                "url": event.get("htmlLink", "#"),
-                "timeLabel": format_time_label(start_raw),
-                "badge": "admin",
-                "score": calendar_admin_score(title, description),
-            }
-            items.append(item)
+            link = event.get("htmlLink", "#")
+            start_label = sanitize_text(start_raw[11:16] if "T" in start_raw else "All day")
+            items.append(f'<li><a href="{link}"><strong>{start_label}</strong> — {title}</a></li>')
 
-        items.sort(key=lambda item: (-item["score"], item.get("timeLabel") or "99:99", item.get("title") or ""))
         return items
     except Exception as e:
-        print("Calendar Focus Error: Google Calendar request failed; skipping calendar backup")
+        print(f"Calendar Focus Error: {e}")
         return []
 
 
@@ -387,6 +233,7 @@ def get_focus_items_from_google_calendar(session):
 
 
 def get_weather():
+    """Fetches weather with auto-retries to handle VPN/DNS hiccups."""
     try:
         session = build_retry_session()
         url = (
@@ -423,6 +270,7 @@ def get_weather():
 
 
 def get_horoscope():
+    """Fetch a daily horoscope with endpoint failover and graceful fallback."""
     session = build_retry_session(total=2, backoff_factor=0.5)
     errors = []
 
@@ -449,6 +297,7 @@ def get_horoscope():
 
 
 def fetch_single_feed(name, url, limit=3):
+    """Helper function to fetch a single RSS feed."""
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -486,6 +335,7 @@ def fetch_single_feed(name, url, limit=3):
 
 
 def get_all_rss_parallel(feeds_dict, executor=None, max_workers=None):
+    """Fetches all RSS feeds in parallel."""
     results = []
     should_shutdown = False
     if executor is None:
@@ -513,57 +363,31 @@ def get_focus_section():
     session = build_retry_session(total=2, backoff_factor=0.5)
 
     linear_items = get_focus_items_from_linear(session)
+    if linear_items:
+        return f"""
+        <h3>🚀 Focus</h3>
+        <ul>
+            {''.join(linear_items)}
+        </ul>
+        """
+
     calendar_items = get_focus_items_from_google_calendar(session)
+    if calendar_items:
+        return f"""
+        <h3>🚀 Focus</h3>
+        <ul>
+            {''.join(calendar_items)}
+        </ul>
+        """
 
-    deep_item = linear_items[0] if linear_items else None
-    admin_item = calendar_items[0] if calendar_items else None
-
-    bullets = []
-    if deep_item:
-        bullets.append(render_focus_bullet("Deep work", deep_item))
-    else:
-        bullets.append('<li><strong>Deep work:</strong> Choose the highest-leverage task that meaningfully moves a project forward.</li>')
-
-    if admin_item:
-        bullets.append(render_focus_bullet("Admin", admin_item))
-    else:
-        bullets.append('<li><strong>Admin:</strong> Clear one small obligation that reduces background stress.</li>')
-
-    why_chosen_html = f"""
-    <h4>Why this was chosen</h4>
-    <ul>
-        <li>{sanitize_text(build_selection_reason('deep work', deep_item))}</li>
-        <li>{sanitize_text(build_selection_reason('admin', admin_item))}</li>
-    </ul>
-    """
-
-    github_context_html = f"""
-    <h4>PR / GitHub Context</h4>
-    <ul>
-        <li>{sanitize_text(build_github_context_note(deep_item, admin_item))}</li>
-    </ul>
-    """
-
-    time_aware_html = f"""
-    <h4>Time-aware selection</h4>
-    <ul>
-        <li>{sanitize_text(get_time_aware_guidance())}</li>
-    </ul>
-    """
-
-    return f"""
+    return """
     <h3>🚀 Focus</h3>
-    <p><strong>Today's structure:</strong> one deep work item + one admin item</p>
-    <ul>
-        {''.join(bullets)}
-    </ul>
-    {why_chosen_html}
-    {github_context_html}
-    {time_aware_html}
+    <p>Pick one meaningful task, one necessary admin item, and one thing you can finish before lunch.</p>
     """
 
 
 def save_to_reader(html_content):
+    """Pushes the compiled HTML to Readwise Reader."""
     url = "https://readwise.io/api/v3/save"
     headers = {"Authorization": f"Token {READWISE_TOKEN}"}
 
@@ -585,6 +409,9 @@ def save_to_reader(html_content):
         print("✅ Brief sent to Reader")
     else:
         print(f"❌ Error sending to Reader: {response.text}")
+
+
+# --- MAIN EXECUTION ---
 
 
 def main():
