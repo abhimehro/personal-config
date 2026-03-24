@@ -35,6 +35,12 @@
 **Pattern:** `submit-pypi` / GitHub dependency snapshot action failed with `HttpError` on a branch named with leading emoji after syncing `main` into a PR.
 **Rule:** When `submit-pypi` fails only on bot branches, check for **ref/encoding** issues before blaming application code; still treat as **merge blocker** unless branch protection marks the job non-required.
 
+## Lesson 0j: `actions/labeler@v6` + `pull_request_target` reads **base** `labeler.yml` (2026-03-24)
+
+**Pattern:** A PR updates `.github/labeler.yml` to a new structure, but the `label` workflow still fails with `found unexpected type for label 'documentation'`.
+**Root cause:** Workflows using `on: pull_request_target` execute with workflow + config from the **default branch**, not the PR head. Until `main`’s `.github/labeler.yml` matches **labeler v5+ / v6** expectations, PRs will keep failing the label job.
+**Rule:** When fixing labeler config for `pull_request_target`, patch **`main` first** (or temporarily switch the workflow to `pull_request` for verification per upstream README). Validate against the **array-of-match-objects** schema from `actions/labeler` README — avoid over-nesting under `any-glob-to-any-file`.
+
 ## Lesson 0i: IDE background terminal stalling — root cause is 1Password SSH Agent (2026-03-24)
 
 **Pattern:** All `run_command` calls from IDE agents stall indefinitely in repos using 1Password SSH Agent, regardless of Fish prompt theme. Removing Hydro, disabling gitnow, and setting `hydro_fetch false` did NOT fix it. The root cause is 1Password's Touch ID gate: background terminals have no window to display the biometric prompt, so auth blocks forever. This is a confirmed upstream bug (1Password 8.12.x + Apple Keychain, still under investigation).
