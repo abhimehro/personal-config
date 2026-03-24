@@ -1,16 +1,7 @@
-name: Greetings
-
-on: [pull_request_target, issues]
-
+name: Disabled Greetings
+on: []
 jobs:
-  greeting:
+  disabled:
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      pull-requests: write
     steps:
-      - uses: actions/first-interaction@v3
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          issue_message: "Message that will be displayed on users' first issue"
-          pr_message: "Message that will be displayed on users' first pull request"
+      - run: echo "Disabled per modernization plan. Functionality fully shifted to agentic PR reviewers."

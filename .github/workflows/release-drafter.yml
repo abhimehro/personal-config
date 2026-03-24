@@ -1,0 +1,19 @@
+name: Release Drafter
+
+on:
+  push:
+    branches:
+      - main
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  update_release_draft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter@65c5fb495d1e69fa8d08a6100c5c53b7c274154b # SHA lock for added security
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

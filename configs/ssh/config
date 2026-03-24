@@ -5,11 +5,13 @@ Include ~/.ssh/config.local
 
 # ─ GitHub configuration
 # Uses 1Password SSH agent for key management
+# SECURITY: Pinning IdentityFile prevents agent key-spray and reduces
+# Touch ID re-prompting in IDE background terminals (Lesson 0i).
 Host github.com
     HostName github.com
     User git
-    IdentitiesOnly no
-    # Keys provided by 1Password agent (overrides global IdentitiesOnly yes)
+    IdentitiesOnly yes
+    IdentityFile ~/.ssh/1Password/GitHub SSH Key.pub
 
 #  Proton Pass SSH agent: GitHub alias 
 # Use Proton Pass SSH agent for GitHub under alias "github-proton".
@@ -50,7 +52,9 @@ Host *
     IdentitiesOnly yes
 
     # Connection persistence and reliability
-    ServerAliveInterval 60
+    # SECURITY: Tight keepalive prevents indefinite hangs when 1Password
+    # agent blocks on Touch ID in headless terminals (Lesson 0i).
+    ServerAliveInterval 10
     ServerAliveCountMax 3
     TCPKeepAlive yes
 
@@ -74,8 +78,8 @@ Host *
     # Environment
     SendEnv LANG LC_*
 
-    # Timeout settings
-    ConnectTimeout 30
+    # Timeout settings (low to fail-fast if agent is unresponsive)
+    ConnectTimeout 10
 
     # Prevent hanging connections
     ExitOnForwardFailure yes

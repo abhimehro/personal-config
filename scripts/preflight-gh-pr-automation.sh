@@ -12,7 +12,7 @@ readonly DEFAULT_REPOS=(
 )
 
 declare -a REPOS=()
-declare -A PROBE_PRS=()
+declare -a PROBE_PRS=() # Refactored to standard array for Bash 3 compatibility
 REQUIRE_WRITE_PROBES=false
 CONFIG_FILE=""
 
@@ -118,7 +118,7 @@ parse_args() {
         local pr="${mapping##*#}"
         [[ "$repo" == */* ]] || fail "Invalid repo in --probe-pr: $mapping"
         [[ "$pr" =~ ^[0-9]+$ ]] || fail "Invalid PR number in --probe-pr: $mapping"
-        PROBE_PRS["$repo"]="$pr"
+        PROBE_PRS+=("$repo:$pr")
         shift 2
         ;;
       -h|--help)
@@ -138,9 +138,16 @@ parse_args() {
   fi
 
   if [[ "$REQUIRE_WRITE_PROBES" == true ]]; then
-    local repo
+    local repo probe_found
     for repo in "${REPOS[@]}"; do
-      [[ -n "${PROBE_PRS[$repo]:-}" ]] || fail "Missing --probe-pr for $repo while --require-write-probes is enabled"
+      probe_found=false
+      for mapping in "${PROBE_PRS[@]}"; do
+        if [[ "$mapping" == "$repo:"* ]]; then
+          probe_found=true
+          break
+        fi
+      done
+      [[ "$probe_found" == true ]] || fail "Missing --probe-pr for $repo while --require-write-probes is enabled"
     done
   fi
 }
@@ -242,7 +249,13 @@ check_repo_readonly() {
 
 check_repo_write_probe() {
   local repo="$1"
-  local pr_number="${PROBE_PRS[$repo]}"
+  local pr_number=""
+  for mapping in "${PROBE_PRS[@]}"; do
+    if [[ "$mapping" == "$repo:"* ]]; then
+      pr_number="${mapping#*:}"
+      break
+    fi
+  done
   local marker
   marker="[automation-preflight $(date -u +%Y-%m-%dT%H:%M:%SZ)]"
 
