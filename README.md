@@ -1,7 +1,7 @@
 # Personal System Configuration
 
 [![CodeScene general](https://codescene.io/images/analyzed-by-codescene-badge.svg)](https://codescene.io/projects/78056)
-[![Changelog Status](https://github.com/abhimehro/personal-config/actions/workflows/changelog.yml/badge.svg)](https://github.com/abhimehro/personal-config/actions/workflows/changelog.yml)
+[![Changelog Status](https://github.com/abhimehro/personal-config/actions/workflows/release-drafter.yml/badge.svg)](https://github.com/abhimehro/personal-config/actions/workflows/release-drafter.yml)
 
 [![CodeScene Average Code Health](https://codescene.io/projects/78056/status-badges/average-code-health?component-name=Personal-config)](https://codescene.io/projects/78056/architecture/biomarkers?component=Personal-config)
 [![CodeScene Hotspot Code Health](https://codescene.io/projects/78056/status-badges/hotspot-code-health)](https://codescene.io/projects/78056)
