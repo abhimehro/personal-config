@@ -90,7 +90,8 @@ PATH="$MOCK_BIN:$PATH" bash "$SCRIPT" > "$TEST_DIR/out.log" 2>&1
 Real examples: `tests/test_health_check.sh:42–88`, `tests/test_network_mode_manager.sh:13–49`.
 
 **Key rules:**
-- Always put `MOCK_BIN` *before* the existing `$PATH`.
+
+- Always put `MOCK_BIN` _before_ the existing `$PATH`.
 - Always `chmod +x` every mock binary.
 - Use `trap 'rm -rf "$TEST_DIR"' EXIT` — not manual `rm` at the end — so cleanup runs even on error.
 
@@ -98,7 +99,7 @@ Real examples: `tests/test_health_check.sh:42–88`, `tests/test_network_mode_ma
 
 ## Pattern 2 — Log-file assertion (assert a command was called)
 
-When you need to verify that a script *invoked a specific command with specific arguments*, write the mock so it records its invocation to a log file, then assert against that file.
+When you need to verify that a script _invoked a specific command with specific arguments_, write the mock so it records its invocation to a log file, then assert against that file.
 
 ```bash
 CALL_LOG="$TEST_DIR/launchctl-calls.log"
@@ -305,13 +306,13 @@ echo "=== Results: $PASS passed, $FAIL failed ==="
 
 ## Known mocking limitations
 
-| Scenario | Limitation | Workaround |
-|---|---|---|
-| Script calls `/usr/bin/rsync` (absolute path) | PATH injection has no effect | Use `--dry-run` flag if the script supports it (see `test_google_drive_backup.sh`) |
-| `launchd` socket activation | Cannot be simulated in a test process | Test the script's behavior when the socket is absent; assert it logs a clear error |
-| `launchctl bootout` / `bootstrap` | Requires elevated privileges in CI | Mock `launchctl` via `$MOCK_BIN` and assert the right subcommand is passed |
-| BSD `sed -i ''` vs GNU `sed -i` | Script-patching tests break cross-platform | Branch on `$(uname -s)` (see Pattern 4) |
-| `sudo`-gated binaries | Cannot be mocked via PATH safely | Refactor the script so the sudo call is isolated; test the surrounding logic without sudo |
+| Scenario                                      | Limitation                                 | Workaround                                                                                |
+| --------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| Script calls `/usr/bin/rsync` (absolute path) | PATH injection has no effect               | Use `--dry-run` flag if the script supports it (see `test_google_drive_backup.sh`)        |
+| `launchd` socket activation                   | Cannot be simulated in a test process      | Test the script's behavior when the socket is absent; assert it logs a clear error        |
+| `launchctl bootout` / `bootstrap`             | Requires elevated privileges in CI         | Mock `launchctl` via `$MOCK_BIN` and assert the right subcommand is passed                |
+| BSD `sed -i ''` vs GNU `sed -i`               | Script-patching tests break cross-platform | Branch on `$(uname -s)` (see Pattern 4)                                                   |
+| `sudo`-gated binaries                         | Cannot be mocked via PATH safely           | Refactor the script so the sudo call is isolated; test the surrounding logic without sudo |
 
 ---
 
@@ -319,12 +320,12 @@ echo "=== Results: $PASS passed, $FAIL failed ==="
 
 The following tests contain early-exit skip guards that print `SKIP:` and exit 77 on Linux/CI. They are **not failures** — `make test` will show them as `⏭️ skipped`:
 
-| Test file | Skip Reason | Guard |
-|---|---|---|
-| `tests/test_config_fish.sh` | Requires the `fish` shell, which is not present in the Linux CI image | `command -v fish` |
-| `tests/test_ssh_config.sh` | Requires the 1Password SSH agent socket (`~/.1password/agent.sock`) | `uname -s == Darwin` |
-| `tests/test_security_manager_restore.sh` | Uses BSD `sed -i ''` syntax (macOS only) | `uname -s == Darwin` |
-| `tests/test_network_mode_manager.sh` | `network-mode-manager.sh` issues `sudo` commands unavailable in CI containers | `sudo -n true` |
+| Test file                                | Skip Reason                                                                   | Guard                |
+| ---------------------------------------- | ----------------------------------------------------------------------------- | -------------------- |
+| `tests/test_config_fish.sh`              | Requires the `fish` shell, which is not present in the Linux CI image         | `command -v fish`    |
+| `tests/test_ssh_config.sh`               | Requires the 1Password SSH agent socket (`~/.1password/agent.sock`)           | `uname -s == Darwin` |
+| `tests/test_security_manager_restore.sh` | Uses BSD `sed -i ''` syntax (macOS only)                                      | `uname -s == Darwin` |
+| `tests/test_network_mode_manager.sh`     | `network-mode-manager.sh` issues `sudo` commands unavailable in CI containers | `sudo -n true`       |
 
 If you add a new test that is intentionally macOS-only, add a `uname` guard at the top (Pattern 5 above) and add an entry to this table.
 
@@ -336,11 +337,11 @@ A curated subset of fast, cross-platform tests is wired into `make test-quick`. 
 
 **Included tests:**
 
-| Test | What it covers |
-|---|---|
-| `tests/test_lib_common.sh` | `scripts/lib/common.sh` — temp-file helpers, path guards |
-| `tests/test_lib_dns_utils.sh` | `scripts/lib/dns-utils.sh` — caching, health-check |
-| `tests/test_path_validation.py` | Path validation utilities |
+| Test                            | What it covers                                           |
+| ------------------------------- | -------------------------------------------------------- |
+| `tests/test_lib_common.sh`      | `scripts/lib/common.sh` — temp-file helpers, path guards |
+| `tests/test_lib_dns_utils.sh`   | `scripts/lib/dns-utils.sh` — caching, health-check       |
+| `tests/test_path_validation.py` | Path validation utilities                                |
 
 All three tests run on macOS and Linux and complete in well under 10 seconds total.
 

@@ -3,13 +3,13 @@ name: Code Quality
 on:
   pull_request:
     paths:
-      - '**/*.sh'
-      - '**/*.py'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'controld-system/**'
-      - 'windscribe-controld/**'
-      - 'Makefile'
+      - "**/*.sh"
+      - "**/*.py"
+      - "scripts/**"
+      - "tests/**"
+      - "controld-system/**"
+      - "windscribe-controld/**"
+      - "Makefile"
   push:
     branches:
       - main
@@ -69,7 +69,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install Python quality tools
         run: pip install radon ruff bandit
@@ -125,7 +125,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Run all tests (shell + Python)
         run: make test-all

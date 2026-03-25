@@ -5,17 +5,18 @@ description: >-
   change editor settings, preferences, configuration, themes, font size, tab
   size, format on save, auto save, keybindings, or any settings.json values.
 ---
+
 # Updating Cursor Settings
 
 This skill guides you through modifying Cursor/VSCode user settings. Use this when you want to change editor settings, preferences, configuration, themes, keybindings, or any `settings.json` values.
 
 ## Settings File Location
 
-| OS | Path |
-|----|------|
-| macOS | ~/Library/Application Support/Cursor/User/settings.json |
-| Linux | ~/.config/Cursor/User/settings.json |
-| Windows | %APPDATA%\Cursor\User\settings.json |
+| OS      | Path                                                    |
+| ------- | ------------------------------------------------------- |
+| macOS   | ~/Library/Application Support/Cursor/User/settings.json |
+| Linux   | ~/.config/Cursor/User/settings.json                     |
+| Windows | %APPDATA%\Cursor\User\settings.json                     |
 
 ## Before Modifying Settings
 
@@ -36,6 +37,7 @@ const settingsPath = "~/Library/Application Support/Cursor/User/settings.json";
 ### Step 2: Identify the Setting to Change
 
 Common setting categories:
+
 - **Editor**: `editor.fontSize`, `editor.tabSize`, `editor.wordWrap`, `editor.formatOnSave`
 - **Workbench**: `workbench.colorTheme`, `workbench.iconTheme`, `workbench.sideBar.location`
 - **Files**: `files.autoSave`, `files.exclude`, `files.associations`
@@ -45,6 +47,7 @@ Common setting categories:
 ### Step 3: Update the Setting
 
 When modifying settings.json:
+
 1. Parse the existing JSON (handle comments - VSCode settings support JSON with comments)
 2. Add or update the requested setting
 3. Preserve all other existing settings
@@ -96,19 +99,19 @@ If user says "use dark theme" or "change my theme":
 
 ## Common User Requests → Settings
 
-| User Request | Setting |
-|--------------|---------|
-| "bigger/smaller font" | `editor.fontSize` |
-| "change tab size" | `editor.tabSize` |
-| "format on save" | `editor.formatOnSave` |
-| "word wrap" | `editor.wordWrap` |
-| "change theme" | `workbench.colorTheme` |
-| "hide minimap" | `editor.minimap.enabled` |
-| "auto save" | `files.autoSave` |
-| "line numbers" | `editor.lineNumbers` |
-| "bracket matching" | `editor.bracketPairColorization.enabled` |
-| "cursor style" | `editor.cursorStyle` |
-| "smooth scrolling" | `editor.smoothScrolling` |
+| User Request          | Setting                                  |
+| --------------------- | ---------------------------------------- |
+| "bigger/smaller font" | `editor.fontSize`                        |
+| "change tab size"     | `editor.tabSize`                         |
+| "format on save"      | `editor.formatOnSave`                    |
+| "word wrap"           | `editor.wordWrap`                        |
+| "change theme"        | `workbench.colorTheme`                   |
+| "hide minimap"        | `editor.minimap.enabled`                 |
+| "auto save"           | `files.autoSave`                         |
+| "line numbers"        | `editor.lineNumbers`                     |
+| "bracket matching"    | `editor.bracketPairColorization.enabled` |
+| "cursor style"        | `editor.cursorStyle`                     |
+| "smooth scrolling"    | `editor.smoothScrolling`                 |
 
 ## Workflow
 

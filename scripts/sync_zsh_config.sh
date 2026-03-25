@@ -18,10 +18,10 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Helper functions
-log()      { printf '%b\n' "${BLUE}[INFO]${NC} $*"; }
-success()  { printf '%b\n' "${GREEN}[OK]${NC} $*"; }
-warn()     { printf '%b\n' "${YELLOW}[WARN]${NC} $*"; }
-error()    { printf '%b\n' "${RED}[ERROR]${NC} $*" >&2; }
+log() { printf '%b\n' "${BLUE}[INFO]${NC} $*"; }
+success() { printf '%b\n' "${GREEN}[OK]${NC} $*"; }
+warn() { printf '%b\n' "${YELLOW}[WARN]${NC} $*"; }
+error() { printf '%b\n' "${RED}[ERROR]${NC} $*" >&2; }
 
 # Paths
 LOCAL_ZSHRC="$HOME/.zshrc"
@@ -34,17 +34,17 @@ EXTRACT_ONLY=0
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --no-symlink)
-            CREATE_SYMLINK=0
-            shift
-            ;;
-        --extract-only)
-            EXTRACT_ONLY=1
-            shift
-            ;;
-        -h|--help)
-            cat <<'EOF'
+	case "$1" in
+	--no-symlink)
+		CREATE_SYMLINK=0
+		shift
+		;;
+	--extract-only)
+		EXTRACT_ONLY=1
+		shift
+		;;
+	-h | --help)
+		cat <<'EOF'
 Usage: sync_zsh_config.sh [OPTIONS]
 
 Track local Zsh configuration in the repository.
@@ -65,13 +65,13 @@ Examples:
   ./scripts/sync_zsh_config.sh --no-symlink # Copy only, no symlink
   ./scripts/sync_zsh_config.sh --extract-only # Just extract enhancements
 EOF
-            exit 0
-            ;;
-        *)
-            error "Unknown option: $1"
-            exit 1
-            ;;
-    esac
+		exit 0
+		;;
+	*)
+		error "Unknown option: $1"
+		exit 1
+		;;
+	esac
 done
 
 echo ""
@@ -81,71 +81,71 @@ echo "=========================================="
 echo ""
 
 # Check if local .zshrc exists
-if [[ ! -f "$LOCAL_ZSHRC" ]] && [[ ! -L "$LOCAL_ZSHRC" ]]; then
-    error "Local .zshrc not found: $LOCAL_ZSHRC"
-    exit 1
+if [[ ! -f $LOCAL_ZSHRC ]] && [[ ! -L $LOCAL_ZSHRC ]]; then
+	error "Local .zshrc not found: $LOCAL_ZSHRC"
+	exit 1
 fi
 
 # If it's already a symlink to repo, check if it's correct
 ALREADY_SYNCED=0
-if [[ -L "$LOCAL_ZSHRC" ]]; then
-    link_target=$(readlink "$LOCAL_ZSHRC")
-    if [[ "$link_target" == "$REPO_ZSHRC" ]]; then
-        success "Local .zshrc is already symlinked to repository"
-        ALREADY_SYNCED=1
-        if [[ $EXTRACT_ONLY -eq 0 ]]; then
-            log "Nothing to do - configs are in sync"
-        fi
-    else
-        warn "Local .zshrc is symlinked to different location: $link_target"
-        log "Will update to point to repository"
-    fi
+if [[ -L $LOCAL_ZSHRC ]]; then
+	link_target=$(readlink "$LOCAL_ZSHRC")
+	if [[ $link_target == "$REPO_ZSHRC" ]]; then
+		success "Local .zshrc is already symlinked to repository"
+		ALREADY_SYNCED=1
+		if [[ $EXTRACT_ONLY -eq 0 ]]; then
+			log "Nothing to do - configs are in sync"
+		fi
+	else
+		warn "Local .zshrc is symlinked to different location: $link_target"
+		log "Will update to point to repository"
+	fi
 fi
 
 # =============================================================================
 # Step 1: Backup existing repo .zshrc (if exists)
 # =============================================================================
-if [[ -f "$REPO_ZSHRC" ]] && [[ $EXTRACT_ONLY -eq 0 ]] && [[ $ALREADY_SYNCED -eq 0 ]]; then
-    backup_path="${REPO_ZSHRC}.backup.$(date +%Y%m%d_%H%M%S)"
-    log "Backing up existing repo .zshrc to: $backup_path"
-    cp "$REPO_ZSHRC" "$backup_path"
-    success "Backup created"
+if [[ -f $REPO_ZSHRC ]] && [[ $EXTRACT_ONLY -eq 0 ]] && [[ $ALREADY_SYNCED -eq 0 ]]; then
+	backup_path="${REPO_ZSHRC}.backup.$(date +%Y%m%d_%H%M%S)"
+	log "Backing up existing repo .zshrc to: $backup_path"
+	cp "$REPO_ZSHRC" "$backup_path"
+	success "Backup created"
 fi
 
 # =============================================================================
 # Step 2: Copy local .zshrc to repository
 # =============================================================================
 if [[ $EXTRACT_ONLY -eq 0 ]] && [[ $ALREADY_SYNCED -eq 0 ]]; then
-    # Copy local .zshrc to repository (use -L to follow symlinks on macOS)
-    if [[ -L "$LOCAL_ZSHRC" ]]; then
-        log "Following symlink and copying content to repository"
-    else
-        log "Copying local .zshrc to repository"
-    fi
-    # -L dereferences symlinks (portable across BSD/GNU)
-    cp -L "$LOCAL_ZSHRC" "$REPO_ZSHRC"
-    success "Copied to: $REPO_ZSHRC"
+	# Copy local .zshrc to repository (use -L to follow symlinks on macOS)
+	if [[ -L $LOCAL_ZSHRC ]]; then
+		log "Following symlink and copying content to repository"
+	else
+		log "Copying local .zshrc to repository"
+	fi
+	# -L dereferences symlinks (portable across BSD/GNU)
+	cp -L "$LOCAL_ZSHRC" "$REPO_ZSHRC"
+	success "Copied to: $REPO_ZSHRC"
 fi
 
 # =============================================================================
 # Step 3: Create symlink (unless --no-symlink or --extract-only)
 # =============================================================================
 if [[ $CREATE_SYMLINK -eq 1 ]] && [[ $EXTRACT_ONLY -eq 0 ]] && [[ $ALREADY_SYNCED -eq 0 ]]; then
-    # Remove existing file/symlink
-    if [[ -e "$LOCAL_ZSHRC" ]] || [[ -L "$LOCAL_ZSHRC" ]]; then
-        # Only backup if it's a regular file (not already a symlink)
-        if [[ ! -L "$LOCAL_ZSHRC" ]]; then
-            backup_path="${LOCAL_ZSHRC}.backup.$(date +%Y%m%d_%H%M%S)"
-            log "Backing up local .zshrc to: $backup_path"
-            mv "$LOCAL_ZSHRC" "$backup_path"
-        else
-            rm "$LOCAL_ZSHRC"
-        fi
-    fi
-    
-    log "Creating symlink: $LOCAL_ZSHRC -> $REPO_ZSHRC"
-    ln -s "$REPO_ZSHRC" "$LOCAL_ZSHRC"
-    success "Symlink created"
+	# Remove existing file/symlink
+	if [[ -e $LOCAL_ZSHRC ]] || [[ -L $LOCAL_ZSHRC ]]; then
+		# Only backup if it's a regular file (not already a symlink)
+		if [[ ! -L $LOCAL_ZSHRC ]]; then
+			backup_path="${LOCAL_ZSHRC}.backup.$(date +%Y%m%d_%H%M%S)"
+			log "Backing up local .zshrc to: $backup_path"
+			mv "$LOCAL_ZSHRC" "$backup_path"
+		else
+			rm "$LOCAL_ZSHRC"
+		fi
+	fi
+
+	log "Creating symlink: $LOCAL_ZSHRC -> $REPO_ZSHRC"
+	ln -s "$REPO_ZSHRC" "$LOCAL_ZSHRC"
+	success "Symlink created"
 fi
 
 # =============================================================================
@@ -154,14 +154,14 @@ fi
 log "Extracting portable enhancements for Fish porting..."
 
 # Read the config content (from repo if available, otherwise local)
-if [[ -f "$REPO_ZSHRC" ]]; then
-    config_source="$REPO_ZSHRC"
+if [[ -f $REPO_ZSHRC ]]; then
+	config_source="$REPO_ZSHRC"
 else
-    config_source="$LOCAL_ZSHRC"
+	config_source="$LOCAL_ZSHRC"
 fi
 
 {
-    cat <<'HEADER'
+	cat <<'HEADER'
 # Zsh Configuration Enhancements - Fish Porting Guide
 
 This file documents portable patterns from `.zshrc` that can be ported to Fish shell.
@@ -169,11 +169,11 @@ This file documents portable patterns from `.zshrc` that can be ported to Fish s
 ## Source Configuration
 
 HEADER
-    echo "- **Source**: \`$config_source\`"
-    echo "- **Generated**: $(date '+%Y-%m-%d %H:%M:%S')"
-    echo ""
-    
-    cat <<'INTRO'
+	echo "- **Source**: \`$config_source\`"
+	echo "- **Generated**: $(date '+%Y-%m-%d %H:%M:%S')"
+	echo ""
+
+	cat <<'INTRO'
 ## Porting Reference
 
 | Zsh/Bash Pattern | Fish Equivalent |
@@ -191,42 +191,42 @@ HEADER
 
 INTRO
 
-    echo "### PATH Modifications"
-    echo '```bash'
-    grep -E '^export PATH=|^PATH=|\$PATH' "$config_source" 2>/dev/null || echo "# (none found)"
-    echo '```'
-    echo ""
-    
-    echo "**Fish equivalent:**"
-    echo '```fish'
-    # Parse and convert PATH additions
-    while IFS= read -r line; do
-        # Extract path additions like $PATH:dir or dir:$PATH
-        if [[ "$line" =~ \$HOME/([^:\"\']+) ]]; then
-            dir="${BASH_REMATCH[1]}"
-            echo "fish_add_path --global \$HOME/$dir"
-        elif [[ "$line" =~ /([^:\"\']+) ]] && [[ ! "$line" =~ \$PATH ]]; then
-            echo "# Check: $line"
-        fi
-    done < <(grep -E 'PATH=' "$config_source" 2>/dev/null || true)
-    echo '```'
-    echo ""
-    
-    echo "### Environment Variables"
-    echo '```bash'
-    grep -E '^export [A-Z_]+=' "$config_source" 2>/dev/null | grep -v '^export PATH' || echo "# (none found)"
-    echo '```'
-    echo ""
-    
-    echo "### Tool Initializations"
-    echo '```bash'
-    grep -E '(chruby|rbenv|pyenv|nvm|conda|brew|eval|source.*/opt)' "$config_source" 2>/dev/null || echo "# (none found)"
-    echo '```'
-    echo ""
-    
-    # Specific tool conversion suggestions
-    if grep -q 'chruby' "$config_source" 2>/dev/null; then
-        cat <<'CHRUBY'
+	echo "### PATH Modifications"
+	echo '```bash'
+	grep -E '^export PATH=|^PATH=|\$PATH' "$config_source" 2>/dev/null || echo "# (none found)"
+	echo '```'
+	echo ""
+
+	echo "**Fish equivalent:**"
+	echo '```fish'
+	# Parse and convert PATH additions
+	while IFS= read -r line; do
+		# Extract path additions like $PATH:dir or dir:$PATH
+		if [[ $line =~ \$HOME/([^:\"\']+) ]]; then
+			dir="${BASH_REMATCH[1]}"
+			echo "fish_add_path --global \$HOME/$dir"
+		elif [[ $line =~ /([^:\"\']+) ]] && [[ ! $line =~ \$PATH ]]; then
+			echo "# Check: $line"
+		fi
+	done < <(grep -E 'PATH=' "$config_source" 2>/dev/null || true)
+	echo '```'
+	echo ""
+
+	echo "### Environment Variables"
+	echo '```bash'
+	grep -E '^export [A-Z_]+=' "$config_source" 2>/dev/null | grep -v '^export PATH' || echo "# (none found)"
+	echo '```'
+	echo ""
+
+	echo "### Tool Initializations"
+	echo '```bash'
+	grep -E '(chruby|rbenv|pyenv|nvm|conda|brew|eval|source.*/opt)' "$config_source" 2>/dev/null || echo "# (none found)"
+	echo '```'
+	echo ""
+
+	# Specific tool conversion suggestions
+	if grep -q 'chruby' "$config_source" 2>/dev/null; then
+		cat <<'CHRUBY'
 **Fish equivalent for chruby:**
 ```fish
 # Add to config.fish or create functions/chruby.fish
@@ -245,10 +245,10 @@ chruby ruby-3.4.7
 > **Note**: Install chruby-fish via `brew install chruby-fish`
 
 CHRUBY
-    fi
-    
-    if grep -q 'pyenv' "$config_source" 2>/dev/null; then
-        cat <<'PYENV'
+	fi
+
+	if grep -q 'pyenv' "$config_source" 2>/dev/null; then
+		cat <<'PYENV'
 **Fish equivalent for pyenv:**
 ```fish
 if type -q pyenv
@@ -257,10 +257,10 @@ end
 ```
 
 PYENV
-    fi
-    
-    if grep -q 'nvm' "$config_source" 2>/dev/null; then
-        cat <<'NVM'
+	fi
+
+	if grep -q 'nvm' "$config_source" 2>/dev/null; then
+		cat <<'NVM'
 **Fish equivalent for nvm:**
 ```fish
 # Consider using nvm.fish or fnm instead
@@ -269,15 +269,15 @@ PYENV
 ```
 
 NVM
-    fi
-    
-    echo "### Aliases"
-    echo '```bash'
-    grep -E '^alias ' "$config_source" 2>/dev/null || echo "# (none found)"
-    echo '```'
-    echo ""
-    
-    cat <<'FOOTER'
+	fi
+
+	echo "### Aliases"
+	echo '```bash'
+	grep -E '^alias ' "$config_source" 2>/dev/null || echo "# (none found)"
+	echo '```'
+	echo ""
+
+	cat <<'FOOTER'
 ---
 
 ## Next Steps
@@ -288,7 +288,7 @@ NVM
 4. Commit changes to the repository
 
 FOOTER
-} > "$ENHANCEMENTS_FILE"
+} >"$ENHANCEMENTS_FILE"
 
 success "Enhancements documented in: $ENHANCEMENTS_FILE"
 
@@ -299,16 +299,16 @@ echo "=========================================="
 echo ""
 
 if [[ $EXTRACT_ONLY -eq 1 ]]; then
-    log "Extraction complete (no files modified)"
+	log "Extraction complete (no files modified)"
 elif [[ $ALREADY_SYNCED -eq 1 ]]; then
-    success "Zsh configuration already in sync (no changes needed)"
+	success "Zsh configuration already in sync (no changes needed)"
 else
-    success "Zsh configuration synced to repository"
-    if [[ $CREATE_SYMLINK -eq 1 ]]; then
-        success "Symlink created: ~/.zshrc -> configs/.zshrc"
-    else
-        log "No symlink created (--no-symlink specified)"
-    fi
+	success "Zsh configuration synced to repository"
+	if [[ $CREATE_SYMLINK -eq 1 ]]; then
+		success "Symlink created: ~/.zshrc -> configs/.zshrc"
+	else
+		log "No symlink created (--no-symlink specified)"
+	fi
 fi
 
 echo ""

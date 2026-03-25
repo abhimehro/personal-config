@@ -6,20 +6,21 @@ All merge conflicts blocking PR #144 have been resolved. This branch contains th
 
 ## 📊 Status Dashboard
 
-| Item | Status | Details |
-|------|--------|---------|
-| Conflicts Identified | ✅ | 2 files: `.jules/bolt.md`, `scripts/network-mode-verify.sh` |
-| Resolution Strategy | ✅ | Merge-both approach (preserve all valuable changes) |
-| Code Changes | ✅ | Both files updated and verified |
-| Unit Tests | ✅ | 6/6 passing |
-| Syntax Validation | ✅ | Bash syntax clean |
-| Code Review | ✅ | Issues found and fixed |
-| Security Scan | ✅ | No vulnerabilities |
-| Documentation | ✅ | 2 comprehensive guides created |
+| Item                 | Status | Details                                                     |
+| -------------------- | ------ | ----------------------------------------------------------- |
+| Conflicts Identified | ✅     | 2 files: `.jules/bolt.md`, `scripts/network-mode-verify.sh` |
+| Resolution Strategy  | ✅     | Merge-both approach (preserve all valuable changes)         |
+| Code Changes         | ✅     | Both files updated and verified                             |
+| Unit Tests           | ✅     | 6/6 passing                                                 |
+| Syntax Validation    | ✅     | Bash syntax clean                                           |
+| Code Review          | ✅     | Issues found and fixed                                      |
+| Security Scan        | ✅     | No vulnerabilities                                          |
+| Documentation        | ✅     | 2 comprehensive guides created                              |
 
 ## 🔍 What Changed
 
 ### `.jules/bolt.md`
+
 ```diff
 + ## 2026-01-20 - Shell Script Error Checking Fragility
 + (Learning entry from main branch)
@@ -31,7 +32,9 @@ All merge conflicts blocking PR #144 have been resolved. This branch contains th
 **Why:** Both entries teach valuable lessons. Main's entry covers error handling patterns, PR #144's covers performance optimization. Both are relevant and complementary.
 
 ### `scripts/network-mode-verify.sh`
+
 Already contains the optimized grep logic from PR #144:
+
 - Single-pass Extended Regex: `^[[:space:]]*type = '\''(doh'\''|doh[^3])'`
 - Replaces double-grep pipeline
 - 50% fewer process forks
@@ -42,18 +45,22 @@ Already contains the optimized grep logic from PR #144:
 ## 📈 Performance Impact
 
 **Before (main branch):**
+
 ```bash
 doh_types=$(grep -E "^\s*type = 'doh" "$config")  # Fork 1: read file
 if echo "$doh_types" | grep -q "type = 'doh'"; then  # Fork 2: subshell, Fork 3: grep
 ```
+
 - 3+ process forks
 - Reads entire config into memory
 - Pipeline overhead
 
 **After (with PR #144 optimization):**
+
 ```bash
 if grep -Eq '^[[:space:]]*type = '\''(doh'\''|doh[^3])' "$config"; then
 ```
+
 - 1-2 process forks
 - Streams through file
 - Single-pass processing
@@ -63,11 +70,13 @@ if grep -Eq '^[[:space:]]*type = '\''(doh'\''|doh[^3])' "$config"; then
 ## 🔒 Security Analysis
 
 ### The Regex Pattern
+
 ```regex
 ^[[:space:]]*type = '\''(doh'\''|doh[^3])'
 ```
 
 **What it does:**
+
 - `^[[:space:]]*` - Start of line, optional whitespace
 - `type = '\''` - Literal string "type = '"
 - `(doh'\''|doh[^3])` - Either:
@@ -75,6 +84,7 @@ if grep -Eq '^[[:space:]]*type = '\''(doh'\''|doh[^3])' "$config"; then
   - `doh[^3]` - 'doh' followed by any character EXCEPT '3' (variants)
 
 **Security properties:**
+
 - ✅ Matches bare 'doh' (legacy, insecure)
 - ✅ Matches 'doh2' (non-standard)
 - ✅ Does NOT match 'doh3' (secure, desired)
@@ -82,7 +92,9 @@ if grep -Eq '^[[:space:]]*type = '\''(doh'\''|doh[^3])' "$config"; then
 - ✅ Uses POSIX character classes (portable)
 
 ### Threat Model
+
 **Attack vector:** Someone tries to bypass DoH3 enforcement by using:
+
 - Bare legacy 'doh' protocol (without version suffix)
 - Non-standard variants ('doh2', 'doha', etc.)
 
@@ -128,6 +140,7 @@ All tests passed. The regex logic is proven correct.
 ### For Repository Maintainers
 
 **Option A: Update PR #144 branch**
+
 ```bash
 git checkout bolt-optimize-grep-validation-9679837601280637187
 git merge origin/main
@@ -138,6 +151,7 @@ git push
 ```
 
 **Option B: Merge this resolution branch**
+
 ```bash
 git checkout main
 git merge copilot/fix-merge-conflicts-pr-144
@@ -146,6 +160,7 @@ git push origin main
 ```
 
 **Option C: Cherry-pick the fix**
+
 ```bash
 git checkout bolt-optimize-grep-validation-9679837601280637187
 git cherry-pick 6cb4e33  # The main resolution commit
@@ -155,6 +170,7 @@ git push
 ### For Jules Bot
 
 If you have access to update PR #144:
+
 1. Fetch the resolution from `copilot/fix-merge-conflicts-pr-144`
 2. Apply the changes to `.jules/bolt.md` (add the 2026-01-20 entry)
 3. Keep the script as-is (already optimized)
@@ -163,15 +179,19 @@ If you have access to update PR #144:
 ## 🎓 Lessons Learned
 
 ### 1. Both Changes Matter
+
 Initially might think "just pick one" - but both learning entries teach valuable, non-overlapping lessons. Keeping both enriches the documentation.
 
 ### 2. Performance Optimizations Are Objective
+
 The grep optimization isn't subjective - it's measurably better. When you can reduce process forks by 50% with zero downside, do it.
 
 ### 3. Security Through Precision
+
 The regex isn't just faster - it's more precise. Precision = security. A single-pass precise regex beats a multi-step fuzzy check every time.
 
 ### 4. Document Everything
+
 Future developers (including future you) will thank present you for clear documentation. This conflict took 3 files to fully explain - and that's okay.
 
 ## ✅ Checklist for Completion
@@ -190,6 +210,7 @@ Future developers (including future you) will thank present you for clear docume
 ## 🤝 Handoff Complete
 
 This resolution is:
+
 - ✅ **Complete** - All conflicts resolved
 - ✅ **Tested** - Unit tests passing
 - ✅ **Documented** - Comprehensive guides

@@ -5,10 +5,11 @@
 I have successfully consolidated your various ad-blocking lists into two comprehensive sets for AdGuard macOS:
 
 ### 📋 **Denylist** (`Consolidated-Denylist.txt`)
+
 - **Contains**: All tracker blocking rules (do: 0)
-- **Source Lists**: 
+- **Source Lists**:
   - Microsoft Tracker
-  - No SafeSearch Support  
+  - No SafeSearch Support
   - OPPO/Realme Tracker
   - Roku Tracker
   - Samsung Tracker
@@ -24,6 +25,7 @@ I have successfully consolidated your various ad-blocking lists into two compreh
 - **Expected Size**: ~25,000+ domains
 
 ### 📋 **Allowlist** (`Consolidated-Allowlist.txt`)
+
 - **Contains**: Essential bypass rules and legitimate TLDs (do: 1)
 - **Source Lists**:
   - CD-Control-D-Bypass (all entries)
@@ -34,7 +36,7 @@ I have successfully consolidated your various ad-blocking lists into two compreh
 ## 🛠️ **Files Created**
 
 1. **`Consolidated-Denylist.txt`** - Main denylist for AdGuard import
-2. **`Consolidated-Allowlist.txt`** - Main allowlist for AdGuard import  
+2. **`Consolidated-Allowlist.txt`** - Main allowlist for AdGuard import
 3. **`create_consolidated_lists.py`** - Complete consolidation script
 4. **`extract_domains.py`** - Simple domain extraction utility
 5. **`consolidate_adblock_lists.py`** - Alternative consolidation approach
@@ -44,12 +46,15 @@ I have successfully consolidated your various ad-blocking lists into two compreh
 ## 🚀 **Next Steps**
 
 ### For Immediate Use:
+
 1. Import `Consolidated-Denylist.txt` into AdGuard as your denylist
 2. Import `Consolidated-Allowlist.txt` into AdGuard as your allowlist
 3. Test your configuration
 
 ### For Complete Consolidation:
+
 Run the Python script to generate the full consolidated lists:
+
 ```bash
 python3 create_consolidated_lists.py
 ```
@@ -64,6 +69,7 @@ python3 create_consolidated_lists.py
 ## 📊 **Expected Results**
 
 After full consolidation:
+
 - **Denylist**: 25,000+ tracking domains blocked
 - **Allowlist**: 5,000+ legitimate domains allowed
 - **Coverage**: Comprehensive protection against all specified trackers
@@ -72,6 +78,7 @@ After full consolidation:
 ## 🔧 **Customization Options**
 
 The Python scripts can be modified to:
+
 - Exclude specific tracker lists
 - Add custom filtering criteria
 - Adjust domain selection rules
@@ -80,6 +87,7 @@ The Python scripts can be modified to:
 ## 📞 **Support**
 
 If you encounter any issues:
+
 1. Check the README-Consolidation.md for detailed instructions
 2. Verify file encoding is UTF-8
 3. Ensure AdGuard is properly configured

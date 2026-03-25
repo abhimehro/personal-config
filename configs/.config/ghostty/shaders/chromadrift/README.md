@@ -1,13 +1,13 @@
 ```
-                                                     
-        )                      (          (       )  
-     ( /( (          )      )  )\ ) (  (  )\ ) ( /(  
-  (  )\()))(   (    (    ( /( (()/( )( )\(()/( )\()) 
-  )\((_)\(()\  )\   )\  ')(_)) ((_)|()((_)/(_)|_))/  
- ((_) |(_)((_)((_)_((_))((_)_  _| | ((_|_|_) _| |_   
-/ _|| ' \| '_/ _ \ '  \() _` / _` || '_| ||  _|  _|  
-\__||_||_|_| \___/_|_|_|\__,_\__,_||_| |_||_|  \__|  
-                                                     
+
+        )                      (          (       )
+     ( /( (          )      )  )\ ) (  (  )\ ) ( /(
+  (  )\()))(   (    (    ( /( (()/( )( )\(()/( )\())
+  )\((_)\(()\  )\   )\  ')(_)) ((_)|()((_)/(_)|_))/
+ ((_) |(_)((_)((_)_((_))((_)_  _| | ((_|_|_) _| |_
+/ _|| ' \| '_/ _ \ '  \() _` / _` || '_| ||  _|  _|
+\__||_||_|_| \___/_|_|_|\__,_\__,_||_| |_||_|  \__|
+
 ```
 
 **a digital lifestyle entanglement system for [ghostty](https://ghostty.org) terminal.**
@@ -71,6 +71,7 @@ close and reopen ghostty. you should see the chromadrift gradient flowing behind
 ghostty supports hot-reloading custom shaders, allowing for real-time updates without restarting the application. simply save changes to your `.glsl` shader file; ghostty's renderer generally updates to reflect modifications instantly.
 
 if changes do not appear, use the default configuration reload shortcut:
+
 - **macOS**: `Cmd+Shift+,`
 - **Linux**: `Ctrl+Shift+R`
 
@@ -105,34 +106,34 @@ all other variants live in the `mutations/` folder. these are the evolutionary s
 
 ### foundation layer
 
-| shader | description |
-|--------|-------------|
+| shader                          | description                                                                                                                    |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `mutations/chromadrift360.glsl` | **the origin.** 360° rotating gradient with noise dithering. one full rotation per minute. the foundation of all that follows. |
 
 ### feature variants
 
-| shader | what it adds |
-|--------|--------------|
-| `mutations/chromadrift360-aurora.glsl` | **aurora wisps.** gentle sine-wave undulations along the gradient edge. the boundary ripples like northern lights. |
-| `mutations/chromadrift360-breathing.glsl` | **breathing luminance.** 8-second brightness cycle. the screen gently inhales and exhales. 15% luminance variation. |
+| shader                                      | what it adds                                                                                                                                       |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mutations/chromadrift360-aurora.glsl`      | **aurora wisps.** gentle sine-wave undulations along the gradient edge. the boundary ripples like northern lights.                                 |
+| `mutations/chromadrift360-breathing.glsl`   | **breathing luminance.** 8-second brightness cycle. the screen gently inhales and exhales. 15% luminance variation.                                |
 | `mutations/chromadrift360-temperature.glsl` | **temperature drift.** palette shifts from cool (blues, teals, purples) to warm (reds, oranges, magentas) over 5 minutes. glacial mood transition. |
 
 ### combined variants
 
-| shader | features combined |
-|--------|-------------------|
-| `mutations/chromadrift360-ultra.glsl` | **the unification.** aurora + breathing + temperature. all three feature layers merged. |
-| `mutations/chromadrift360-ultra-hypno.glsl` | **hypno mode.** ultra + 4-layer dithering system: fbm clouds, fine grain, bayer matrix, moving texture. present and animated. |
+| shader                                         | features combined                                                                                                                          |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `mutations/chromadrift360-ultra.glsl`          | **the unification.** aurora + breathing + temperature. all three feature layers merged.                                                    |
+| `mutations/chromadrift360-ultra-hypno.glsl`    | **hypno mode.** ultra + 4-layer dithering system: fbm clouds, fine grain, bayer matrix, moving texture. present and animated.              |
 | `mutations/chromadrift360-ultra-hypno-k7.glsl` | **k7 refinement.** reduced hypno intensity. expanded texture scale. 8x8 bayer dithering. 2px micro-grid alignment. the intensity, refined. |
 
 ### gx series (pixelation experiments)
 
-| shader | pixel size | character |
-|--------|------------|-----------|
-| `mutations/chromadrift360-hypno-gx.glsl` | 3px | subtle 8-bit texture |
-| `mutations/chromadrift360-hypno-gx-6.glsl` | 6px | visible pixel grid |
-| `mutations/chromadrift360-hypno-gx-12.glsl` | 12px | chunky retro blocks |
-| `mutations/chromadrift360-hypno-gx-1200.glsl` | 1200px | massive color fields |
+| shader                                        | pixel size | character            |
+| --------------------------------------------- | ---------- | -------------------- |
+| `mutations/chromadrift360-hypno-gx.glsl`      | 3px        | subtle 8-bit texture |
+| `mutations/chromadrift360-hypno-gx-6.glsl`    | 6px        | visible pixel grid   |
+| `mutations/chromadrift360-hypno-gx-12.glsl`   | 12px       | chunky retro blocks  |
+| `mutations/chromadrift360-hypno-gx-1200.glsl` | 1200px     | massive color fields |
 
 ---
 
@@ -167,24 +168,25 @@ graph TD
 
 ### timing cycles
 
-| system | duration | purpose |
-|--------|----------|---------|
-| gradient rotation | 60 seconds | full 360° sweep |
-| color cycling | ~63 seconds | color interpolation phase |
-| breathing | 8 seconds | luminance pulse |
-| temperature drift | 5 minutes | cool/warm palette shift |
+| system            | duration    | purpose                   |
+| ----------------- | ----------- | ------------------------- |
+| gradient rotation | 60 seconds  | full 360° sweep           |
+| color cycling     | ~63 seconds | color interpolation phase |
+| breathing         | 8 seconds   | luminance pulse           |
+| temperature drift | 5 minutes   | cool/warm palette shift   |
 
 ### dithering layers (premium)
 
-| layer | scale | intensity | movement |
-|-------|-------|-----------|----------|
-| organic fbm | 0.003 | 0.010 | slow drift |
-| bayer 8x8 | 1:1 | 0.018 | static pattern |
-| hypno wave | 0.005 | 0.008 | whisper motion |
+| layer       | scale | intensity | movement       |
+| ----------- | ----- | --------- | -------------- |
+| organic fbm | 0.003 | 0.010     | slow drift     |
+| bayer 8x8   | 1:1   | 0.018     | static pattern |
+| hypno wave  | 0.005 | 0.008     | whisper motion |
 
 ### color palettes
 
 **cool spectrum:**
+
 ```
 ┌────────────┬────────────┬────────────┐
 │ deep blue  │   teal     │  purple    │
@@ -194,6 +196,7 @@ graph TD
 ```
 
 **warm spectrum:**
+
 ```
 ┌────────────┬────────────┬────────────┐
 │ deep red   │  orange    │  magenta   │

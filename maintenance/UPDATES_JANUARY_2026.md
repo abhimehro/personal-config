@@ -9,6 +9,7 @@
 **Solution:** Enhanced `health_check.sh` with comprehensive panic analysis integration.
 
 #### Changes Made:
+
 - **Detailed Panic Detection**: Added logic to detect both actual panic report files and panic messages in system logs
 - **File Path Resolution**: Extracts most recent panic report file path with timestamp
 - **Contextual Information**: Notification now shows:
@@ -21,6 +22,7 @@
   - Click-to-view functionality for full diagnostics
 
 #### Technical Improvements:
+
 ```bash
 # Before: Simple count
 Panics: 2
@@ -32,9 +34,11 @@ Click to view detailed panic analysis
 ```
 
 #### Files Modified:
+
 - `/Users/speedybee/dev/personal-config/maintenance/bin/health_check.sh`
 
 #### New Notification Behavior:
+
 - **With Panics**: Shows "View Panic Analysis" action → executes `panic_analyzer.sh`
 - **No Panics**: Shows simple "System healthy" notification
 - **Other Issues**: Shows "View Logs" action → opens health check logs
@@ -50,6 +54,7 @@ Click to view detailed panic analysis
 #### Changes Made:
 
 ##### New Script: `google_drive_monitor.sh`
+
 - **Location Detection**: Auto-detects Google Drive at:
   - `~/Library/CloudStorage/GoogleDrive-abhimhrtr@gmail.com`
 - **Sync Status Monitoring**:
@@ -71,17 +76,20 @@ Click to view detailed panic analysis
   - Shows both Google Drive and Proton Drive status
 
 ##### Updated Script: `weekly_maintenance.sh`
+
 - **Removed**: `onedrive_monitor.sh` task
 - **Added**: `google_drive_monitor.sh` task
 - Maintains weekly Monday execution schedule
 
 ##### Archived Script: `onedrive_monitor.sh`
+
 - Moved to: `/Users/speedybee/dev/personal-config/maintenance/bin/archive/`
 - Preserved for reference if needed
 
 #### Technical Details:
 
 **Google Drive Detection:**
+
 ```bash
 GDRIVE_DIR="$HOME/Library/CloudStorage/GoogleDrive-abhimhrtr@gmail.com"
 # Checks:
@@ -92,6 +100,7 @@ GDRIVE_DIR="$HOME/Library/CloudStorage/GoogleDrive-abhimhrtr@gmail.com"
 ```
 
 **Proton Drive Backup Verification:**
+
 ```bash
 PROTON_DIR="$HOME/Library/CloudStorage/ProtonDrive-abhimehro@pm.me-folder/HomeBackup"
 # Checks:
@@ -101,12 +110,14 @@ PROTON_DIR="$HOME/Library/CloudStorage/ProtonDrive-abhimehro@pm.me-folder/HomeBa
 ```
 
 **Notification Message Format:**
+
 ```
 Google Drive: Running | Sync: Active (127 files modified in last 48h)
 Proton Drive Backup: Recent backup detected
 ```
 
 #### Files Created/Modified:
+
 - ✅ **Created**: `google_drive_monitor.sh`
 - ✅ **Modified**: `weekly_maintenance.sh`
 - ✅ **Archived**: `onedrive_monitor.sh` → `archive/onedrive_monitor.sh`
@@ -116,6 +127,7 @@ Proton Drive Backup: Recent backup detected
 ## 📋 Verification Steps
 
 ### Test Enhanced Health Check:
+
 ```bash
 # Manual execution
 ~/dev/personal-config/maintenance/bin/health_check.sh
@@ -126,6 +138,7 @@ Proton Drive Backup: Recent backup detected
 ```
 
 ### Test Google Drive Monitoring:
+
 ```bash
 # Manual execution
 ~/dev/personal-config/maintenance/bin/google_drive_monitor.sh
@@ -138,6 +151,7 @@ Proton Drive Backup: Recent backup detected
 ```
 
 ### Test Weekly Maintenance:
+
 ```bash
 # Force run (don't wait for Monday)
 FORCE_RUN=1 ~/dev/personal-config/maintenance/bin/weekly_maintenance.sh
@@ -166,6 +180,7 @@ Your existing LaunchAgent schedules remain active:
 ## 📦 Dependencies
 
 All required tools already installed:
+
 - ✅ `terminal-notifier` (for enhanced notifications)
 - ✅ Google Drive app
 - ✅ Proton Drive app
@@ -176,12 +191,14 @@ All required tools already installed:
 ## 🎓 Key Improvements Summary
 
 ### Health Check Enhancement:
+
 1. **Better Diagnostics**: Panic reports now include file paths and timestamps
 2. **Actionable Alerts**: Click notification to view full panic analysis
 3. **Root Cause Visibility**: No more vague "Issue detected: 1" messages
 4. **Integrated Analysis**: Leverages existing `panic_analyzer.sh` tool
 
 ### Cloud Drive Migration:
+
 1. **Dual-Drive Support**: Monitors both Google Drive (primary) and Proton Drive (backup)
 2. **Comprehensive Checks**: Sync status, connectivity, disk space, error logs
 3. **Automated Monitoring**: Weekly execution via existing LaunchAgent
@@ -191,19 +208,20 @@ All required tools already installed:
 
 ## 📝 Next Steps (Optional)
 
-1. **Monitor First Automated Run**: 
+1. **Monitor First Automated Run**:
    - Health check runs daily at 8:30 AM
    - Weekly maintenance runs Monday at 9:00 AM
    - Check notifications and logs for proper operation
 
 2. **Review Logs After First Week**:
+
    ```bash
    # View recent logs
    ls ~/Library/Logs/maintenance/ | tail -10
-   
+
    # Check Google Drive monitor logs
    tail -50 ~/Library/Logs/maintenance/google_drive_monitor.log
-   
+
    # Check health check logs
    tail -50 ~/Library/Logs/maintenance/health_check.log
    ```
@@ -221,6 +239,7 @@ All required tools already installed:
 ## 🔍 Troubleshooting
 
 ### If Health Check Still Shows Vague Messages:
+
 ```bash
 # Check if terminal-notifier is working
 terminal-notifier -title "Test" -message "Click me" -execute "echo test"
@@ -233,6 +252,7 @@ ls -l ~/dev/personal-config/maintenance/bin/panic_analyzer.sh
 ```
 
 ### If Google Drive Monitoring Fails:
+
 ```bash
 # Verify Google Drive path
 ls -la ~/Library/CloudStorage/GoogleDrive-abhimhrtr@gmail.com
@@ -252,6 +272,7 @@ ping -c 3 drive.google.com
 ## ✅ Completion Status
 
 **All requested improvements implemented and tested:**
+
 - ✅ Health check now provides detailed panic diagnostics
 - ✅ Notifications are actionable with click-to-view analysis
 - ✅ Google Drive monitoring integrated with comprehensive checks
@@ -264,5 +285,5 @@ ping -c 3 drive.google.com
 
 ---
 
-*Updated: January 5, 2026*
-*System Status: ✅ Fully Operational*
+_Updated: January 5, 2026_
+_System Status: ✅ Fully Operational_

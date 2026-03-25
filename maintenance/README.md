@@ -209,19 +209,19 @@ UPDATE_MAS_APPS=1          # Auto-update Mac App Store apps
    - Script: `system_cleanup.sh`
    - Purpose: System maintenance
 
-4. **Weekly Maintenance** (`com.user.maintenance.weekly`)
+6. **Weekly Maintenance** (`com.user.maintenance.weekly`)
    - Time: Monday 9:00 AM
    - Script: `weekly_maintenance.sh`
    - Purpose: Comprehensive weekly tasks
    - Notifications: ✅ Click to view error summary
 
-5. **Monthly Maintenance** (`com.abhimehrotra.maintenance.monthly`)
+7. **Monthly Maintenance** (`com.abhimehrotra.maintenance.monthly`)
    - Time: 1st of month 6:00 AM
    - Script: `monthly_maintenance.sh`
    - Purpose: Deep system maintenance
    - Notifications: ✅ Click to view error summary
 
-6. **ProtonDrive Backup** (`com.abhimehrotra.maintenance.protondrivebackup`)
+8. **ProtonDrive Backup** (`com.abhimehrotra.maintenance.protondrivebackup`)
    - Time: 3:15 AM daily
    - Script: `protondrive_backup.sh`
    - Purpose: One-way home backup to ProtonDrive
@@ -341,4 +341,4 @@ This maintenance system is self-maintaining, but you can:
 
 ---
 
-*Last Updated: January 2026 - System Status: Fully Operational*
+_Last Updated: January 2026 - System Status: Fully Operational_

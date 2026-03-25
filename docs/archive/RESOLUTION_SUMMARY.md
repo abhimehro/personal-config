@@ -7,16 +7,21 @@ The merge conflicts preventing PR #144 from being merged have been successfully 
 ## What Was Done
 
 ### 1. Conflict Analysis
+
 Identified two files with conflicts between PR #144 and main:
+
 - `.jules/bolt.md`: Conflicting entries added at the same location
 - `scripts/network-mode-verify.sh`: Same code section modified differently
 
 ### 2. Resolution Strategy
+
 Applied a **merge-both** strategy since both changes are valuable:
+
 - **Preserved both learning entries** in bolt.md (chronological order)
 - **Applied the performance optimization** from PR #144 to the script
 
 ### 3. Validation
+
 - ✅ Created comprehensive unit tests (6 test cases, all passing)
 - ✅ Validated bash syntax
 - ✅ Verified regex security (prevents DNS downgrade attacks)
@@ -26,11 +31,13 @@ Applied a **merge-both** strategy since both changes are valuable:
 ## Resolution Details
 
 ### File: `.jules/bolt.md`
+
 **Action:** Added the missing "2026-01-20" entry from main before the "2026-02-15" entry from PR #144.
 
 **Result:** Both learning entries are now present in chronological order.
 
 ### File: `scripts/network-mode-verify.sh`
+
 **Action:** No changes needed - already has PR #144's optimized grep logic.
 
 **Result:** Single-pass regex validation (50% fewer process forks, better memory usage).
@@ -38,6 +45,7 @@ Applied a **merge-both** strategy since both changes are valuable:
 ## How to Apply This Resolution
 
 ### Option 1: Update PR #144 Branch (Recommended)
+
 Since PR #144 is owned by `google-labs-jules[bot]`, the bot or a maintainer with access can update it:
 
 ```bash
@@ -57,6 +65,7 @@ git push origin bolt-optimize-grep-validation-9679837601280637187
 ```
 
 ### Option 2: Merge This Resolution Branch
+
 Alternatively, merge this resolution branch into main:
 
 ```bash
@@ -69,6 +78,7 @@ git push origin main
 ```
 
 ### Option 3: Cherry-Pick to PR Branch
+
 Pick the resolution commit to apply to PR #144:
 
 ```bash
@@ -87,6 +97,7 @@ git push origin bolt-optimize-grep-validation-9679837601280637187
 ## Testing Evidence
 
 Created `/tmp/test_doh3_validation.sh` with comprehensive tests:
+
 - ✅ Test 1: Correctly identifies doh3-only configs
 - ✅ Test 2: Correctly matches doh3 pattern
 - ✅ Test 3: Correctly identifies legacy doh
@@ -97,6 +108,7 @@ Created `/tmp/test_doh3_validation.sh` with comprehensive tests:
 ## Security Considerations
 
 The regex pattern `^[[:space:]]*type = '\''(doh'\''|doh[^3])'` is secure:
+
 - ✅ Matches bare 'doh' (legacy) via `doh'`
 - ✅ Matches 'doh2', 'doha', etc. via `doh[^3]`
 - ✅ Excludes 'doh3' (the secure version)
@@ -106,6 +118,7 @@ The regex pattern `^[[:space:]]*type = '\''(doh'\''|doh[^3])'` is secure:
 ## Performance Impact
 
 PR #144's optimization provides measurable benefits:
+
 - **Process forks:** Reduced by ~50% (from 3+ to 1-2)
 - **Memory usage:** No longer reads entire config into memory
 - **Subshell overhead:** Eliminated pipeline complexity
@@ -120,6 +133,7 @@ PR #144's optimization provides measurable benefits:
 ## Questions?
 
 Refer to `PR144_RESOLUTION_GUIDE.md` for more detailed information about:
+
 - The exact nature of each conflict
 - Line-by-line resolution details
 - Alternative resolution approaches

@@ -6,6 +6,7 @@
 ## 📋 Overview
 
 Successfully disabled excessive background services and widget extensions that were causing:
+
 - 76 CalendarWidgetExtension crashes
 - Random app activations (Podcasts, etc.)
 - App Tamer conflicts and memory bloat
@@ -16,12 +17,14 @@ Successfully disabled excessive background services and widget extensions that w
 ### 1. Disabled Background Services (Permanent)
 
 **System-Level Services:**
+
 - ✅ `com.apple.ReportCrash.Root` - No more crash report generation
-- ✅ `com.apple.chronod` - Widget timeline manager  
+- ✅ `com.apple.chronod` - Widget timeline manager
 - ✅ `com.apple.duetexpertd` - Predictive app launcher
 - ✅ `com.apple.suggestd` - Background suggestions daemon
 
 **User-Level Services:**
+
 - ✅ `com.apple.ReportCrash` - User crash reporting
 - ✅ `com.apple.calendar.CalendarAgentBookmarkMigrationService` - Calendar widget
 - ✅ `com.apple.podcasts.PodcastContentService` - Podcasts background service
@@ -38,6 +41,7 @@ Successfully disabled excessive background services and widget extensions that w
 ### 2. Killed Unnecessary Widget Extensions
 
 Terminated ~40+ widget extensions including:
+
 - Calendar, Stocks, Weather, News, Tips, Home, FindMy, Journal, Reminders
 - Shortcuts, Notes, Photos, World Clock, People, Safari, Screen Time
 - Microsoft Office widgets (Excel, PowerPoint, Word)
@@ -53,6 +57,7 @@ Terminated ~40+ widget extensions including:
 ### 4. Integrated Monitoring System
 
 **New Service Monitor (`service_monitor.sh`):**
+
 - Checks all disabled services daily (8:35 AM)
 - Automatically re-disables services if they become enabled
 - Kills problematic processes (CalendarWidgetExtension, PodcastsWidget)
@@ -62,12 +67,14 @@ Terminated ~40+ widget extensions including:
 - Logs to `~/Library/Logs/maintenance/`
 
 **Enhanced Health Check:**
+
 - Now monitors diagnostic reports (threshold: 5/day)
 - Tracks widget extension count (threshold: 60)
 - Verifies disabled services status
 - Integrated into your existing 8:30 AM daily health check
 
 **New Launch Agent:**
+
 - `com.abhimehrotra.maintenance.servicemonitor.plist`
 - Runs daily at 8:35 AM (after health check)
 - Automated with no password prompts
@@ -96,6 +103,7 @@ Terminated ~40+ widget extensions including:
 ## 📊 Results
 
 ### Before
+
 - Widget extensions: ~95
 - Background services: 15+ unnecessary
 - Crash reports: 76 (CalendarWidgetExtension)
@@ -104,6 +112,7 @@ Terminated ~40+ widget extensions including:
 - ReportCrash: Active and generating constant reports
 
 ### After
+
 - Widget extensions: ~55 (essential only)
 - Background services: 10+ disabled
 - Crash reports: 0
@@ -112,6 +121,7 @@ Terminated ~40+ widget extensions including:
 - ReportCrash: Disabled permanently
 
 ### Performance Improvements
+
 - ✅ No more crash report spam
 - ✅ Reduced memory footprint
 - ✅ Eliminated App Tamer conflicts
@@ -126,6 +136,7 @@ Terminated ~40+ widget extensions including:
 **Q:** Do disabled services run continuously or only on-demand?
 
 **A:** When you disable a service with `launchctl disable`, it:
+
 1. **Prevents auto-start** at login/boot ✅
 2. **Allows on-demand launch** when requested by other services ⚠️
 3. **Should terminate** after completing its task (but varies by service)
@@ -135,10 +146,12 @@ Some services like `chronod` and `proactived` can be "sticky" and stay resident.
 ### Monitoring System
 
 **Daily Schedule:**
+
 - **8:30 AM** - Health check runs (now includes service monitoring)
 - **8:35 AM** - Service monitor runs (detailed verification and auto-remediation)
 
 **What Gets Monitored:**
+
 1. All 14 disabled services verified as disabled
 2. Problematic processes (CalendarWidgetExtension, PodcastsWidget) killed if running
 3. Widget extension count tracked (threshold: 60)
@@ -146,6 +159,7 @@ Some services like `chronod` and `proactived` can be "sticky" and stay resident.
 5. Auto-remediation: Re-disables services if they become enabled
 
 **Notifications:**
+
 - Issues detected → macOS notification with details
 - Warnings → macOS notification with metrics
 - All clear → Silent (check logs for confirmation)
@@ -153,6 +167,7 @@ Some services like `chronod` and `proactived` can be "sticky" and stay resident.
 ### Verification After Restart
 
 After a system restart, the service monitor will automatically:
+
 1. Verify all services remain disabled (they should - stored in launchd database)
 2. Check for any new widget respawns
 3. Re-disable services if macOS update re-enabled them
@@ -161,6 +176,7 @@ After a system restart, the service monitor will automatically:
 ## 🚀 Quick Reference Commands
 
 ### Check Status
+
 ```bash
 # Run service monitor manually
 ~/Documents/dev/personal-config/maintenance/bin/service_monitor.sh
@@ -177,6 +193,7 @@ ls -lh ~/Library/Logs/DiagnosticReports/ | wc -l
 ```
 
 ### View Logs
+
 ```bash
 # Service monitor logs
 tail -f ~/Library/Logs/maintenance/service_monitor.log
@@ -192,6 +209,7 @@ ls -t ~/Library/Logs/maintenance/health_report-*.txt | head -1 | xargs cat
 ```
 
 ### Manual Actions
+
 ```bash
 # Kill widgets manually
 pkill -9 CalendarWidgetExtension
@@ -210,6 +228,7 @@ find ~/Library/Logs/DiagnosticReports/ -type f -name "*.ips" -delete
 Your existing maintenance system now includes service monitoring:
 
 **Maintenance Schedule:**
+
 - **8:30 AM Daily** - Health Check (includes basic service monitoring)
 - **8:35 AM Daily** - Service Monitor (detailed verification)
 - **9:00 AM Daily** - System Cleanup
@@ -230,6 +249,7 @@ All scripts log to `~/Library/Logs/maintenance/` and send macOS notifications.
 ### Widget Count Still High
 
 **Check:** Which widgets are running?
+
 ```bash
 ps aux | grep -E "\.appex/Contents/MacOS" | grep -v grep | awk '{print $11}' | sort -u
 ```
@@ -239,6 +259,7 @@ ps aux | grep -E "\.appex/Contents/MacOS" | grep -v grep | awk '{print $11}' | s
 ### Crash Reports Accumulating
 
 **Check:** What's crashing?
+
 ```bash
 ls ~/Library/Logs/DiagnosticReports/ | sed 's/-[0-9].*$//' | sort | uniq -c | sort -rn
 ```
@@ -254,11 +275,13 @@ ls ~/Library/Logs/DiagnosticReports/ | sed 's/-[0-9].*$//' | sort | uniq -c | so
 ### Launch Agent Not Running
 
 **Check:**
+
 ```bash
 launchctl list | grep servicemonitor
 ```
 
 **Fix:**
+
 ```bash
 launchctl unload ~/Documents/dev/personal-config/maintenance/launchd/com.abhimehrotra.maintenance.servicemonitor.plist
 launchctl load ~/Documents/dev/personal-config/maintenance/launchd/com.abhimehrotra.maintenance.servicemonitor.plist
@@ -269,6 +292,7 @@ launchctl load ~/Documents/dev/personal-config/maintenance/launchd/com.abhimehro
 ### All Changes Are Reversible
 
 Every service can be re-enabled using commands in `macos-disabled-services.md`:
+
 ```bash
 sudo launchctl enable system/com.apple.chronod
 sudo launchctl enable gui/$(id -u)/com.apple.proactived
@@ -278,6 +302,7 @@ sudo launchctl enable gui/$(id -u)/com.apple.proactived
 ### Side Effects (Minimal)
 
 **Expected:**
+
 - Calendar won't sync in background (syncs when you open the app)
 - Podcasts won't pre-fetch (downloads when you launch it)
 - Photos won't analyze in background (analyzes when you open the app)
@@ -285,6 +310,7 @@ sudo launchctl enable gui/$(id -u)/com.apple.proactived
 - No automatic App Store update checks (manual updates still work)
 
 **No Impact On:**
+
 - ✅ Your essential Control Center widgets (Network, Bluetooth, etc.)
 - ✅ Now Playing media controls
 - ✅ Core system functionality
@@ -342,6 +368,7 @@ You'll know the optimizations are working when:
 ## 🎉 You're All Set!
 
 Your system is now optimized with:
+
 - ✅ 14 unnecessary background services disabled
 - ✅ ~40 widget extensions terminated
 - ✅ Automated daily monitoring at 8:35 AM
@@ -354,7 +381,8 @@ Your system is now optimized with:
 
 ---
 
-*For questions or issues, refer to:*
-- *Troubleshooting section above*
-- *`macos-disabled-services.md` for service details*
-- *Logs in `~/Library/Logs/maintenance/`*
+_For questions or issues, refer to:_
+
+- _Troubleshooting section above_
+- _`macos-disabled-services.md` for service details_
+- _Logs in `~/Library/Logs/maintenance/`_

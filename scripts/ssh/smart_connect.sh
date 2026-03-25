@@ -7,9 +7,9 @@ set -Eeuo pipefail
 hosts=("dev-mdns" "dev-local" "dev-auto" "dev-vpn")
 
 for h in "${hosts[@]}"; do
-  if ssh -G "$h" >/dev/null 2>&1; then
-    exec ssh "$h" "$@"
-  fi
+	if ssh -G "$h" >/dev/null 2>&1; then
+		exec ssh "$h" "$@"
+	fi
 done
 
 echo "ERROR: No dev SSH hosts found (expected one of: ${hosts[*]})." >&2

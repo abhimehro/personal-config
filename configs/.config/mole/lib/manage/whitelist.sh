@@ -20,63 +20,63 @@ readonly WHITELIST_CONFIG_OPTIMIZE_LEGACY="$HOME/.config/mole/whitelist_checks"
 
 # Save whitelist patterns to config (defaults to "clean" for legacy callers)
 save_whitelist_patterns() {
-    local mode="clean"
-    if [[ $# -gt 0 ]]; then
-        case "$1" in
-            clean | optimize)
-                mode="$1"
-                shift
-                ;;
-        esac
-    fi
+	local mode="clean"
+	if [[ $# -gt 0 ]]; then
+		case "$1" in
+		clean | optimize)
+			mode="$1"
+			shift
+			;;
+		esac
+	fi
 
-    local -a patterns
-    patterns=("$@")
+	local -a patterns
+	patterns=("$@")
 
-    local config_file
-    local header_text
+	local config_file
+	local header_text
 
-    if [[ "$mode" == "optimize" ]]; then
-        config_file="$WHITELIST_CONFIG_OPTIMIZE"
-        header_text="# Mole Optimization Whitelist - These checks will be skipped during optimization"
-    else
-        config_file="$WHITELIST_CONFIG_CLEAN"
-        header_text="# Mole Whitelist - Protected paths won't be deleted\n# Default protections: Playwright browsers, HuggingFace models, Maven repo, Ollama models, Surge Mac, R renv, Finder metadata\n# Add one pattern per line to keep items safe."
-    fi
+	if [[ $mode == "optimize" ]]; then
+		config_file="$WHITELIST_CONFIG_OPTIMIZE"
+		header_text="# Mole Optimization Whitelist - These checks will be skipped during optimization"
+	else
+		config_file="$WHITELIST_CONFIG_CLEAN"
+		header_text="# Mole Whitelist - Protected paths won't be deleted\n# Default protections: Playwright browsers, HuggingFace models, Maven repo, Ollama models, Surge Mac, R renv, Finder metadata\n# Add one pattern per line to keep items safe."
+	fi
 
-    ensure_user_file "$config_file"
+	ensure_user_file "$config_file"
 
-    echo -e "$header_text" > "$config_file"
+	echo -e "$header_text" >"$config_file"
 
-    if [[ ${#patterns[@]} -gt 0 ]]; then
-        local -a unique_patterns=()
-        for pattern in "${patterns[@]}"; do
-            local duplicate="false"
-            if [[ ${#unique_patterns[@]} -gt 0 ]]; then
-                for existing in "${unique_patterns[@]}"; do
-                    if patterns_equivalent "$pattern" "$existing"; then
-                        duplicate="true"
-                        break
-                    fi
-                done
-            fi
-            [[ "$duplicate" == "true" ]] && continue
-            unique_patterns+=("$pattern")
-        done
+	if [[ ${#patterns[@]} -gt 0 ]]; then
+		local -a unique_patterns=()
+		for pattern in "${patterns[@]}"; do
+			local duplicate="false"
+			if [[ ${#unique_patterns[@]} -gt 0 ]]; then
+				for existing in "${unique_patterns[@]}"; do
+					if patterns_equivalent "$pattern" "$existing"; then
+						duplicate="true"
+						break
+					fi
+				done
+			fi
+			[[ $duplicate == "true" ]] && continue
+			unique_patterns+=("$pattern")
+		done
 
-        if [[ ${#unique_patterns[@]} -gt 0 ]]; then
-            printf '\n' >> "$config_file"
-            for pattern in "${unique_patterns[@]}"; do
-                echo "$pattern" >> "$config_file"
-            done
-        fi
-    fi
+		if [[ ${#unique_patterns[@]} -gt 0 ]]; then
+			printf '\n' >>"$config_file"
+			for pattern in "${unique_patterns[@]}"; do
+				echo "$pattern" >>"$config_file"
+			done
+		fi
+	fi
 }
 
 # Get all cache items with their patterns
 get_all_cache_items() {
-    # Format: "display_name|pattern|category"
-    cat << 'EOF'
+	# Format: "display_name|pattern|category"
+	cat <<'EOF'
 Apple Mail cache|$HOME/Library/Caches/com.apple.mail/*|system_cache
 Gradle build cache (Android Studio, Gradle projects)|$HOME/.gradle/caches/*|ide_cache
 Gradle daemon processes cache|$HOME/.gradle/daemon/*|ide_cache
@@ -148,14 +148,14 @@ Spotlight metadata cache|$HOME/Library/Caches/com.apple.spotlight/*|system_cache
 CloudKit cache|$HOME/Library/Caches/CloudKit/*|system_cache
 Trash|$HOME/.Trash|system_cache
 EOF
-    # Add FINDER_METADATA with constant reference
-    echo "Finder metadata, .DS_Store|$FINDER_METADATA_SENTINEL|system_cache"
+	# Add FINDER_METADATA with constant reference
+	echo "Finder metadata, .DS_Store|$FINDER_METADATA_SENTINEL|system_cache"
 }
 
 # Get all optimize items with their patterns
 get_optimize_whitelist_items() {
-    # Format: "display_name|pattern|category"
-    cat << 'EOF'
+	# Format: "display_name|pattern|category"
+	cat <<'EOF'
 macOS Firewall check|firewall|security_check
 Gatekeeper check|gatekeeper|security_check
 macOS system updates check|check_macos_updates|update_check
@@ -171,261 +171,261 @@ EOF
 }
 
 patterns_equivalent() {
-    local first="${1/#~/$HOME}"
-    local second="${2/#~/$HOME}"
+	local first="${1/#~/$HOME}"
+	local second="${2/#~/$HOME}"
 
-    # Only exact string match, no glob expansion
-    [[ "$first" == "$second" ]] && return 0
-    return 1
+	# Only exact string match, no glob expansion
+	[[ $first == "$second" ]] && return 0
+	return 1
 }
 
 load_whitelist() {
-    local mode="${1:-clean}"
-    local -a patterns=()
-    local config_file
-    local legacy_file=""
+	local mode="${1:-clean}"
+	local -a patterns=()
+	local config_file
+	local legacy_file=""
 
-    if [[ "$mode" == "optimize" ]]; then
-        config_file="$WHITELIST_CONFIG_OPTIMIZE"
-        legacy_file="$WHITELIST_CONFIG_OPTIMIZE_LEGACY"
-    else
-        config_file="$WHITELIST_CONFIG_CLEAN"
-    fi
+	if [[ $mode == "optimize" ]]; then
+		config_file="$WHITELIST_CONFIG_OPTIMIZE"
+		legacy_file="$WHITELIST_CONFIG_OPTIMIZE_LEGACY"
+	else
+		config_file="$WHITELIST_CONFIG_CLEAN"
+	fi
 
-    local using_legacy="false"
-    if [[ ! -f "$config_file" && -n "$legacy_file" && -f "$legacy_file" ]]; then
-        config_file="$legacy_file"
-        using_legacy="true"
-    fi
+	local using_legacy="false"
+	if [[ ! -f $config_file && -n $legacy_file && -f $legacy_file ]]; then
+		config_file="$legacy_file"
+		using_legacy="true"
+	fi
 
-    if [[ -f "$config_file" ]]; then
-        while IFS= read -r line; do
-            # shellcheck disable=SC2295
-            line="${line#"${line%%[![:space:]]*}"}"
-            # shellcheck disable=SC2295
-            line="${line%"${line##*[![:space:]]}"}"
-            [[ -z "$line" || "$line" =~ ^# ]] && continue
-            patterns+=("$line")
-        done < "$config_file"
-    else
-        if [[ "$mode" == "clean" ]]; then
-            patterns=("${DEFAULT_WHITELIST_PATTERNS[@]}")
-        elif [[ "$mode" == "optimize" ]]; then
-            patterns=("${DEFAULT_OPTIMIZE_WHITELIST_PATTERNS[@]}")
-        fi
-    fi
+	if [[ -f $config_file ]]; then
+		while IFS= read -r line; do
+			# shellcheck disable=SC2295
+			line="${line#"${line%%[![:space:]]*}"}"
+			# shellcheck disable=SC2295
+			line="${line%"${line##*[![:space:]]}"}"
+			[[ -z $line || $line =~ ^# ]] && continue
+			patterns+=("$line")
+		done <"$config_file"
+	else
+		if [[ $mode == "clean" ]]; then
+			patterns=("${DEFAULT_WHITELIST_PATTERNS[@]}")
+		elif [[ $mode == "optimize" ]]; then
+			patterns=("${DEFAULT_OPTIMIZE_WHITELIST_PATTERNS[@]}")
+		fi
+	fi
 
-    if [[ ${#patterns[@]} -gt 0 ]]; then
-        local -a unique_patterns=()
-        for pattern in "${patterns[@]}"; do
-            local duplicate="false"
-            if [[ ${#unique_patterns[@]} -gt 0 ]]; then
-                for existing in "${unique_patterns[@]}"; do
-                    if patterns_equivalent "$pattern" "$existing"; then
-                        duplicate="true"
-                        break
-                    fi
-                done
-            fi
-            [[ "$duplicate" == "true" ]] && continue
-            unique_patterns+=("$pattern")
-        done
-        CURRENT_WHITELIST_PATTERNS=("${unique_patterns[@]}")
+	if [[ ${#patterns[@]} -gt 0 ]]; then
+		local -a unique_patterns=()
+		for pattern in "${patterns[@]}"; do
+			local duplicate="false"
+			if [[ ${#unique_patterns[@]} -gt 0 ]]; then
+				for existing in "${unique_patterns[@]}"; do
+					if patterns_equivalent "$pattern" "$existing"; then
+						duplicate="true"
+						break
+					fi
+				done
+			fi
+			[[ $duplicate == "true" ]] && continue
+			unique_patterns+=("$pattern")
+		done
+		CURRENT_WHITELIST_PATTERNS=("${unique_patterns[@]}")
 
-        # Migrate legacy optimize config to the new path automatically
-        if [[ "$mode" == "optimize" && "$using_legacy" == "true" && "$config_file" != "$WHITELIST_CONFIG_OPTIMIZE" ]]; then
-            save_whitelist_patterns "$mode" "${CURRENT_WHITELIST_PATTERNS[@]}"
-        fi
-    else
-        CURRENT_WHITELIST_PATTERNS=()
-    fi
+		# Migrate legacy optimize config to the new path automatically
+		if [[ $mode == "optimize" && $using_legacy == "true" && $config_file != "$WHITELIST_CONFIG_OPTIMIZE" ]]; then
+			save_whitelist_patterns "$mode" "${CURRENT_WHITELIST_PATTERNS[@]}"
+		fi
+	else
+		CURRENT_WHITELIST_PATTERNS=()
+	fi
 }
 
 is_whitelisted() {
-    local pattern="$1"
-    local check_pattern="${pattern/#\~/$HOME}"
+	local pattern="$1"
+	local check_pattern="${pattern/#\~/$HOME}"
 
-    if [[ ${#CURRENT_WHITELIST_PATTERNS[@]} -eq 0 ]]; then
-        return 1
-    fi
+	if [[ ${#CURRENT_WHITELIST_PATTERNS[@]} -eq 0 ]]; then
+		return 1
+	fi
 
-    for existing in "${CURRENT_WHITELIST_PATTERNS[@]}"; do
-        local existing_expanded="${existing/#\~/$HOME}"
-        # Only use exact string match to prevent glob expansion security issues
-        if [[ "$check_pattern" == "$existing_expanded" ]]; then
-            return 0
-        fi
-    done
-    return 1
+	for existing in "${CURRENT_WHITELIST_PATTERNS[@]}"; do
+		local existing_expanded="${existing/#\~/$HOME}"
+		# Only use exact string match to prevent glob expansion security issues
+		if [[ $check_pattern == "$existing_expanded" ]]; then
+			return 0
+		fi
+	done
+	return 1
 }
 
 manage_whitelist() {
-    local mode="${1:-clean}"
-    manage_whitelist_categories "$mode"
+	local mode="${1:-clean}"
+	manage_whitelist_categories "$mode"
 }
 
 manage_whitelist_categories() {
-    local mode="$1"
+	local mode="$1"
 
-    # Load currently enabled patterns from both sources
-    load_whitelist "$mode"
+	# Load currently enabled patterns from both sources
+	load_whitelist "$mode"
 
-    # Build cache items list
-    local -a cache_items=()
-    local -a cache_patterns=()
-    local -a menu_options=()
-    local index=0
+	# Build cache items list
+	local -a cache_items=()
+	local -a cache_patterns=()
+	local -a menu_options=()
+	local index=0
 
-    # Choose source based on mode
-    local items_source
-    local menu_title
-    local active_config_file
+	# Choose source based on mode
+	local items_source
+	local menu_title
+	local active_config_file
 
-    if [[ "$mode" == "optimize" ]]; then
-        items_source=$(get_optimize_whitelist_items)
-        active_config_file="$WHITELIST_CONFIG_OPTIMIZE"
-        local display_config="${active_config_file/#$HOME/~}"
-        menu_title="Whitelist Manager, Select system checks to ignore
+	if [[ $mode == "optimize" ]]; then
+		items_source=$(get_optimize_whitelist_items)
+		active_config_file="$WHITELIST_CONFIG_OPTIMIZE"
+		local display_config="${active_config_file/#$HOME/~}"
+		menu_title="Whitelist Manager, Select system checks to ignore
 ${GRAY}Edit: ${display_config}${NC}"
-    else
-        items_source=$(get_all_cache_items)
-        active_config_file="$WHITELIST_CONFIG_CLEAN"
-        local display_config="${active_config_file/#$HOME/~}"
-        menu_title="Whitelist Manager, Select caches to protect
+	else
+		items_source=$(get_all_cache_items)
+		active_config_file="$WHITELIST_CONFIG_CLEAN"
+		local display_config="${active_config_file/#$HOME/~}"
+		menu_title="Whitelist Manager, Select caches to protect
 ${GRAY}Edit: ${display_config}${NC}"
-    fi
+	fi
 
-    while IFS='|' read -r display_name pattern _; do
-        # Expand $HOME in pattern
-        pattern="${pattern/\$HOME/$HOME}"
+	while IFS='|' read -r display_name pattern _; do
+		# Expand $HOME in pattern
+		pattern="${pattern/\$HOME/$HOME}"
 
-        cache_items+=("$display_name")
-        cache_patterns+=("$pattern")
-        menu_options+=("$display_name")
+		cache_items+=("$display_name")
+		cache_patterns+=("$pattern")
+		menu_options+=("$display_name")
 
-        index=$((index + 1))
-    done <<< "$items_source"
+		index=$((index + 1))
+	done <<<"$items_source"
 
-    # Identify custom patterns (not in predefined list)
-    local -a custom_patterns=()
-    if [[ ${#CURRENT_WHITELIST_PATTERNS[@]} -gt 0 ]]; then
-        for current_pattern in "${CURRENT_WHITELIST_PATTERNS[@]}"; do
-            local is_predefined=false
-            for predefined_pattern in "${cache_patterns[@]}"; do
-                if patterns_equivalent "$current_pattern" "$predefined_pattern"; then
-                    is_predefined=true
-                    break
-                fi
-            done
-            if [[ "$is_predefined" == "false" ]]; then
-                custom_patterns+=("$current_pattern")
-            fi
-        done
-    fi
+	# Identify custom patterns (not in predefined list)
+	local -a custom_patterns=()
+	if [[ ${#CURRENT_WHITELIST_PATTERNS[@]} -gt 0 ]]; then
+		for current_pattern in "${CURRENT_WHITELIST_PATTERNS[@]}"; do
+			local is_predefined=false
+			for predefined_pattern in "${cache_patterns[@]}"; do
+				if patterns_equivalent "$current_pattern" "$predefined_pattern"; then
+					is_predefined=true
+					break
+				fi
+			done
+			if [[ $is_predefined == "false" ]]; then
+				custom_patterns+=("$current_pattern")
+			fi
+		done
+	fi
 
-    # Prioritize already-selected items to appear first
-    local -a selected_cache_items=()
-    local -a selected_cache_patterns=()
-    local -a selected_menu_options=()
-    local -a remaining_cache_items=()
-    local -a remaining_cache_patterns=()
-    local -a remaining_menu_options=()
+	# Prioritize already-selected items to appear first
+	local -a selected_cache_items=()
+	local -a selected_cache_patterns=()
+	local -a selected_menu_options=()
+	local -a remaining_cache_items=()
+	local -a remaining_cache_patterns=()
+	local -a remaining_menu_options=()
 
-    for ((i = 0; i < ${#cache_patterns[@]}; i++)); do
-        if is_whitelisted "${cache_patterns[i]}"; then
-            selected_cache_items+=("${cache_items[i]}")
-            selected_cache_patterns+=("${cache_patterns[i]}")
-            selected_menu_options+=("${menu_options[i]}")
-        else
-            remaining_cache_items+=("${cache_items[i]}")
-            remaining_cache_patterns+=("${cache_patterns[i]}")
-            remaining_menu_options+=("${menu_options[i]}")
-        fi
-    done
+	for ((i = 0; i < ${#cache_patterns[@]}; i++)); do
+		if is_whitelisted "${cache_patterns[i]}"; then
+			selected_cache_items+=("${cache_items[i]}")
+			selected_cache_patterns+=("${cache_patterns[i]}")
+			selected_menu_options+=("${menu_options[i]}")
+		else
+			remaining_cache_items+=("${cache_items[i]}")
+			remaining_cache_patterns+=("${cache_patterns[i]}")
+			remaining_menu_options+=("${menu_options[i]}")
+		fi
+	done
 
-    cache_items=()
-    cache_patterns=()
-    menu_options=()
-    if [[ ${#selected_cache_items[@]} -gt 0 ]]; then
-        cache_items=("${selected_cache_items[@]}")
-        cache_patterns=("${selected_cache_patterns[@]}")
-        menu_options=("${selected_menu_options[@]}")
-    fi
-    if [[ ${#remaining_cache_items[@]} -gt 0 ]]; then
-        cache_items+=("${remaining_cache_items[@]}")
-        cache_patterns+=("${remaining_cache_patterns[@]}")
-        menu_options+=("${remaining_menu_options[@]}")
-    fi
+	cache_items=()
+	cache_patterns=()
+	menu_options=()
+	if [[ ${#selected_cache_items[@]} -gt 0 ]]; then
+		cache_items=("${selected_cache_items[@]}")
+		cache_patterns=("${selected_cache_patterns[@]}")
+		menu_options=("${selected_menu_options[@]}")
+	fi
+	if [[ ${#remaining_cache_items[@]} -gt 0 ]]; then
+		cache_items+=("${remaining_cache_items[@]}")
+		cache_patterns+=("${remaining_cache_patterns[@]}")
+		menu_options+=("${remaining_menu_options[@]}")
+	fi
 
-    if [[ ${#selected_cache_patterns[@]} -gt 0 ]]; then
-        local -a preselected_indices=()
-        for ((i = 0; i < ${#selected_cache_patterns[@]}; i++)); do
-            preselected_indices+=("$i")
-        done
-        local IFS=','
-        export MOLE_PRESELECTED_INDICES="${preselected_indices[*]}"
-    else
-        unset MOLE_PRESELECTED_INDICES
-    fi
+	if [[ ${#selected_cache_patterns[@]} -gt 0 ]]; then
+		local -a preselected_indices=()
+		for ((i = 0; i < ${#selected_cache_patterns[@]}; i++)); do
+			preselected_indices+=("$i")
+		done
+		local IFS=','
+		export MOLE_PRESELECTED_INDICES="${preselected_indices[*]}"
+	else
+		unset MOLE_PRESELECTED_INDICES
+	fi
 
-    MOLE_SELECTION_RESULT=""
-    paginated_multi_select "$menu_title" "${menu_options[@]}"
-    unset MOLE_PRESELECTED_INDICES
-    local exit_code=$?
+	MOLE_SELECTION_RESULT=""
+	paginated_multi_select "$menu_title" "${menu_options[@]}"
+	unset MOLE_PRESELECTED_INDICES
+	local exit_code=$?
 
-    # Normal exit or cancel
-    if [[ $exit_code -ne 0 ]]; then
-        return 1
-    fi
+	# Normal exit or cancel
+	if [[ $exit_code -ne 0 ]]; then
+		return 1
+	fi
 
-    # Convert selected indices to patterns
-    local -a selected_patterns=()
-    if [[ -n "$MOLE_SELECTION_RESULT" ]]; then
-        local -a selected_indices
-        IFS=',' read -ra selected_indices <<< "$MOLE_SELECTION_RESULT"
-        for idx in "${selected_indices[@]}"; do
-            if [[ $idx -ge 0 && $idx -lt ${#cache_patterns[@]} ]]; then
-                local pattern="${cache_patterns[$idx]}"
-                # Convert back to portable format with ~
-                pattern="${pattern/#$HOME/~}"
-                selected_patterns+=("$pattern")
-            fi
-        done
-    fi
+	# Convert selected indices to patterns
+	local -a selected_patterns=()
+	if [[ -n $MOLE_SELECTION_RESULT ]]; then
+		local -a selected_indices
+		IFS=',' read -ra selected_indices <<<"$MOLE_SELECTION_RESULT"
+		for idx in "${selected_indices[@]}"; do
+			if [[ $idx -ge 0 && $idx -lt ${#cache_patterns[@]} ]]; then
+				local pattern="${cache_patterns[$idx]}"
+				# Convert back to portable format with ~
+				pattern="${pattern/#$HOME/~}"
+				selected_patterns+=("$pattern")
+			fi
+		done
+	fi
 
-    # Merge custom patterns with selected patterns
-    local -a all_patterns=()
-    if [[ ${#selected_patterns[@]} -gt 0 ]]; then
-        all_patterns=("${selected_patterns[@]}")
-    fi
-    if [[ ${#custom_patterns[@]} -gt 0 ]]; then
-        for custom_pattern in "${custom_patterns[@]}"; do
-            all_patterns+=("$custom_pattern")
-        done
-    fi
+	# Merge custom patterns with selected patterns
+	local -a all_patterns=()
+	if [[ ${#selected_patterns[@]} -gt 0 ]]; then
+		all_patterns=("${selected_patterns[@]}")
+	fi
+	if [[ ${#custom_patterns[@]} -gt 0 ]]; then
+		for custom_pattern in "${custom_patterns[@]}"; do
+			all_patterns+=("$custom_pattern")
+		done
+	fi
 
-    # Save to whitelist config (bash 3.2 + set -u safe)
-    if [[ ${#all_patterns[@]} -gt 0 ]]; then
-        save_whitelist_patterns "$mode" "${all_patterns[@]}"
-    else
-        save_whitelist_patterns "$mode"
-    fi
+	# Save to whitelist config (bash 3.2 + set -u safe)
+	if [[ ${#all_patterns[@]} -gt 0 ]]; then
+		save_whitelist_patterns "$mode" "${all_patterns[@]}"
+	else
+		save_whitelist_patterns "$mode"
+	fi
 
-    local total_protected=$((${#selected_patterns[@]} + ${#custom_patterns[@]}))
-    local -a summary_lines=()
-    summary_lines+=("Whitelist Updated")
-    if [[ ${#custom_patterns[@]} -gt 0 ]]; then
-        summary_lines+=("Protected ${#selected_patterns[@]} predefined + ${#custom_patterns[@]} custom patterns")
-    else
-        summary_lines+=("Protected ${total_protected} caches")
-    fi
-    local display_config="${active_config_file/#$HOME/~}"
-    summary_lines+=("Config: ${GRAY}${display_config}${NC}")
+	local total_protected=$((${#selected_patterns[@]} + ${#custom_patterns[@]}))
+	local -a summary_lines=()
+	summary_lines+=("Whitelist Updated")
+	if [[ ${#custom_patterns[@]} -gt 0 ]]; then
+		summary_lines+=("Protected ${#selected_patterns[@]} predefined + ${#custom_patterns[@]} custom patterns")
+	else
+		summary_lines+=("Protected ${total_protected} caches")
+	fi
+	local display_config="${active_config_file/#$HOME/~}"
+	summary_lines+=("Config: ${GRAY}${display_config}${NC}")
 
-    print_summary_block "${summary_lines[@]}"
-    printf '\n'
+	print_summary_block "${summary_lines[@]}"
+	printf '\n'
 }
 
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    manage_whitelist
+if [[ ${BASH_SOURCE[0]} == "${0}" ]]; then
+	manage_whitelist
 fi

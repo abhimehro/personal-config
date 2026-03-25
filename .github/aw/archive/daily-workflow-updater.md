@@ -40,6 +40,7 @@ timeout-minutes: 15
 
 source: github/gh-aw/.github/workflows/daily-workflow-updater.md@94662b1dee8ce96c876ba9f33b3ab8be32de82a4
 ---
+
 {{#runtime-import? .github/shared-instructions.md}}
 
 # Daily Workflow Updater
@@ -61,6 +62,7 @@ gh aw update --verbose
 ```
 
 This command will:
+
 - Check for gh-aw extension updates
 - Update GitHub Actions versions in `.github/aw/actions-lock.json`
 - Update workflows from their source repositories
@@ -118,6 +120,7 @@ If `.github/aw/actions-lock.json` has changes:
 **PR Title Format**: `[actions] Update GitHub Actions versions - [date]`
 
 **PR Body Template**:
+
 ```markdown
 ## GitHub Actions Updates - [Date]
 
@@ -126,6 +129,7 @@ This PR updates GitHub Actions versions in `.github/aw/actions-lock.json` to the
 ### Actions Updated
 
 [List each action that was updated with before/after versions, e.g.:]
+
 - `actions/checkout`: v4 → v5
 - `actions/setup-node`: v5 → v6
 
@@ -147,7 +151,7 @@ The updated actions will be automatically used in workflow compilations. No manu
 
 ---
 
-*This PR was automatically created by the Daily Workflow Updater workflow.*
+_This PR was automatically created by the Daily Workflow Updater workflow._
 ```
 
 ### 6. Handle Edge Cases

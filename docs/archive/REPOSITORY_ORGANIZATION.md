@@ -1,14 +1,16 @@
 # Repository Organization Summary
 
 ## Overview
+
 This document summarizes the organization and cleanup of the personal-config repository following the successful integration of Windscribe VPN + Control D DNS privacy filtering.
 
 ## Recent Changes (October 2025)
 
 ### 🆕 Added
+
 - **`windscribe-controld/`** - Complete VPN + DNS integration system
   - `windscribe-controld-setup.sh` - Automated verification script
-  - `setup-guide.md` - Comprehensive technical documentation  
+  - `setup-guide.md` - Comprehensive technical documentation
   - `ctrld.toml.backup` - Configuration backup
   - `README.md` - Integration documentation
 - **`scripts/network-mode-*.sh`** - Network mode orchestration layer (v4.x)
@@ -16,7 +18,8 @@ This document summarizes the organization and cleanup of the personal-config rep
   - `network-mode-verify.sh` - Tight verification for each mode
   - `network-mode-regression.sh` - Full timed regression (Control D → Windscribe)
 
-### ✨ Enhanced  
+### ✨ Enhanced
+
 - **Main README.md** - Updated to highlight enhanced VPN + DNS integration
 - **Quick Start section** - Added VPN + DNS commands as primary workflow
 - **Repository structure** - Reorganized to show current active systems
@@ -25,6 +28,7 @@ This document summarizes the organization and cleanup of the personal-config rep
 ### 📊 Current System Status
 
 #### Active Configurations
+
 1. **Windscribe VPN + Control D DNS** (Primary - v4.0)
    - Dual protection: VPN encryption + DNS privacy filtering
    - Real-time DNS logging with DOH encryption
@@ -36,11 +40,12 @@ This document summarizes the organization and cleanup of the personal-config rep
    - Dynamic network support (VPN-aware)
    - Multiple connection methods
 
-3. **Legacy DNS Management** (v3.0)  
+3. **Legacy DNS Management** (v3.0)
    - Direct Control D switching (without VPN)
    - Maintained for fallback scenarios
 
 #### Deprecated/Legacy
+
 - **AdGuard configurations** - Migrated to Control D system
 - **Standalone DNS switching** - Enhanced with VPN integration
 
@@ -78,16 +83,19 @@ personal-config/
 ## System Priorities
 
 ### Primary (Active Daily Use)
+
 1. **Windscribe + Control D Integration** - Main privacy and security system
 2. **SSH Configuration** - Development workflow
 3. **Control D Profile Switching** - Privacy vs gaming modes
 
 ### Secondary (Maintenance/Fallback)
+
 1. **Legacy DNS scripts** - Direct Control D switching
 2. **System diagnostics** - Troubleshooting tools
 3. **Configuration backups** - Recovery capabilities
 
 ### Archive (Historical/Reference)
+
 1. **AdGuard configurations** - Migration reference
 2. **Old deployment summaries** - Historical context
 3. **Previous DNS setups** - Fallback documentation
@@ -95,6 +103,7 @@ personal-config/
 ## Key Commands Reference
 
 ### Primary Workflow (VPN + DNS)
+
 ```bash
 # Verify complete setup
 bash windscribe-controld/windscribe-controld-setup.sh
@@ -110,11 +119,12 @@ curl -s https://ipinfo.io/json | grep city  # Should show Miami, FL
 ```
 
 ### Secondary Workflows
+
 ```bash
 # SSH connections
 ssh cursor-mdns                             # Primary connection method
 
-# Legacy DNS switching  
+# Legacy DNS switching
 sudo dns-privacy                            # Direct privacy switching
 sudo dns-gaming                             # Direct gaming switching
 
@@ -133,14 +143,16 @@ sudo dns-gaming                             # Direct gaming switching
 ## Success Metrics
 
 ### Technical Achievements
+
 - ✅ Dual protection: VPN + DNS privacy filtering
-- ✅ Real-time DNS logging with DOH encryption  
+- ✅ Real-time DNS logging with DOH encryption
 - ✅ Geographic routing (Miami proxy)
 - ✅ Profile switching (privacy/gaming)
 - ✅ Zero DNS leaks with VPN active
 - ✅ 500+ ad/tracking domains blocked
 
 ### Operational Benefits
+
 - ✅ One-command verification (`bash windscribe-controld-setup.sh`)
 - ✅ Seamless profile switching (`sudo controld-manager switch`)
 - ✅ Comprehensive documentation and troubleshooting
@@ -150,14 +162,16 @@ sudo dns-gaming                             # Direct gaming switching
 ## Next Steps
 
 ### Immediate (Completed)
+
 - ✅ VPN + DNS integration working perfectly
 - ✅ Repository reorganized and documented
 - ✅ Verification scripts automated
 - ✅ Backup procedures established
 
 ### Future Enhancements
+
 - [ ] Automated VPN detection and switching
-- [ ] Performance monitoring and alerting  
+- [ ] Performance monitoring and alerting
 - [ ] Mobile device integration
 - [ ] Scheduled profile switching
 - [ ] Advanced analytics and reporting

@@ -3,6 +3,7 @@
 A focused history of the SSH setup in this repo. See the main `README.md` for the broader system version history.
 
 ## v3.0 – Dual-Agent SSH (1Password + Proton Pass)
+
 - **Date:** 2026-02-03
 - **Status:** Current
 - **Highlights:**
@@ -21,6 +22,7 @@ A focused history of the SSH setup in this repo. See the main `README.md` for th
   - Generic hostnames standardized to `dev-*` (e.g., `dev-mdns`, `dev-local`, `dev-auto`, `dev-vpn`).
 
 ## v2.1 – Generic `dev-*` Hostnames
+
 - **Date:** 2026-02-03
 - **Status:** Supersedes earlier `cursor-*` naming
 - **Highlights:**
@@ -34,6 +36,7 @@ A focused history of the SSH setup in this repo. See the main `README.md` for th
   - Legacy docs (`docs/ssh/*.md`) marked explicitly as describing the older `cursor-*` + 1Password-only configuration.
 
 ## v2.0 – 1Password-Managed SSH for Cursor IDE
+
 - **Date:** 2025-08-04
 - **Status:** Legacy but still valid if Proton is disabled
 - **Highlights:**
@@ -58,6 +61,7 @@ A focused history of the SSH setup in this repo. See the main `README.md` for th
     - `docs/ssh/SSH_FIX_SUMMARY.md`
 
 ## v1.0 – Initial SSH Structure
+
 - **Date:** 2025-04 (approx.)
 - **Status:** Historical
 - **Highlights:**
@@ -68,6 +72,7 @@ A focused history of the SSH setup in this repo. See the main `README.md` for th
 ---
 
 **Current recommended path (v3.0):**
+
 - 1Password remains the primary SSH agent.
 - Proton Pass provides a second, optional agent (`SSH Keys` vault) with clear scripts, fish helpers, and dedicated host aliases.
 - Generic `dev-*` hostnames keep configs portable across machines and workflows.

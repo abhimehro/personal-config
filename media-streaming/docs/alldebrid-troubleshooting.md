@@ -1,8 +1,9 @@
 # 🔧 Alldebrid + Infuse Troubleshooting Guide
 
 ## ✅ **Your Confirmed Working Setup**
+
 - **Server**: `webdav.debrid.it`
-- **Port**: `443` 
+- **Port**: `443`
 - **Username**: `ZuoByo8HrnujRsDzae6s`
 - **Password**: `eeeee`
 - **HTTPS**: ✅ Enabled
@@ -13,6 +14,7 @@ We've confirmed these credentials work perfectly from your Mac via curl.
 ## 🔍 **If Infuse Still Shows "Unable to Connect"**
 
 ### **Quick Fixes:**
+
 1. **Try again** - Temporary network issues are common
 2. **Leave Path blank** initially, then add `/links/` later
 3. **Check VPN** - Temporarily disable Proton VPN to test
@@ -20,6 +22,7 @@ We've confirmed these credentials work perfectly from your Mac via curl.
 5. **Check device network** - Ensure same WiFi network
 
 ### **Alternative: Use rclone WebDAV Server**
+
 If direct connection keeps failing, use our backup method:
 
 ```bash
@@ -28,6 +31,7 @@ If direct connection keeps failing, use our backup method:
 ```
 
 Then in Infuse:
+
 - **Address**: `http://YOUR_MAC_IP:8080`
 - **Username**: Leave blank
 - **Password**: Leave blank
@@ -35,7 +39,9 @@ Then in Infuse:
 ## 🎯 **Pro Tips**
 
 ### **Folder Organization**
+
 When Alldebrid connection works, organize like this:
+
 ```
 /links/
 ├── Movies/
@@ -49,23 +55,25 @@ When Alldebrid connection works, organize like this:
 ```
 
 ### **Performance Settings**
+
 - Enable "Pre-Cache Details" ✅
-- Enable "Pre-Cache Artwork" ✅  
+- Enable "Pre-Cache Artwork" ✅
 - Enable "Smart Folders" ✅
 - Auto Scan: ✅ ON
 
 ### **Your Network Details**
+
 - **VPN**: Proton VPN (port forwarding enabled but not needed for outbound connections)
 - **DNS**: Default Proton DNS
 - **Firewall**: Check macOS firewall if local rclone method needed
 
 ## 🚨 **Common Issues**
 
-**"Authentication Failed"** 
+**"Authentication Failed"**
 → Double-check username/password (no extra spaces)
 
 **"Server Unreachable"**
-→ Check VPN settings or try without VPN temporarily  
+→ Check VPN settings or try without VPN temporarily
 
 **"Timeout"**
 → Try different WiFi network or mobile hotspot

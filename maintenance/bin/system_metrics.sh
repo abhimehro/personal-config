@@ -11,28 +11,28 @@ mkdir -p "$METRICS_DIR"
 
 # Basic logging with performance timestamps
 log_metric() {
-    local ts
-    ts="$(date '+%Y-%m-%d %H:%M:%S')"
-    local metric_type="$1"
-    local value="$2"
-    local unit="${3:-}"
-    echo "$ts [METRIC] [$metric_type] $value $unit" | tee -a "$LOG_DIR/system_metrics.log"
-    
-    # Also log to JSON format for analysis
-    echo "{\"timestamp\":\"$ts\",\"type\":\"$metric_type\",\"value\":$value,\"unit\":\"$unit\"}" >> "$METRICS_DIR/$(date +%Y%m%d).jsonl"
+	local ts
+	ts="$(date '+%Y-%m-%d %H:%M:%S')"
+	local metric_type="$1"
+	local value="$2"
+	local unit="${3-}"
+	echo "$ts [METRIC] [$metric_type] $value $unit" | tee -a "$LOG_DIR/system_metrics.log"
+
+	# Also log to JSON format for analysis
+	echo "{\"timestamp\":\"$ts\",\"type\":\"$metric_type\",\"value\":$value,\"unit\":\"$unit\"}" >>"$METRICS_DIR/$(date +%Y%m%d).jsonl"
 }
 
 log_info() {
-    local ts
-    ts="$(date '+%Y-%m-%d %H:%M:%S')"
-    echo "$ts [INFO] [system_metrics] $*" | tee -a "$LOG_DIR/system_metrics.log"
+	local ts
+	ts="$(date '+%Y-%m-%d %H:%M:%S')"
+	echo "$ts [INFO] [system_metrics] $*" | tee -a "$LOG_DIR/system_metrics.log"
 }
 
 # Load config
 CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
-if [[ -f "$CONFIG_FILE" ]]; then
-    # shellcheck disable=SC1090  # intentional dynamic sourcing
-    source "$CONFIG_FILE" 2>/dev/null || true
+if [[ -f $CONFIG_FILE ]]; then
+	# shellcheck disable=SC1090  # intentional dynamic sourcing
+	source "$CONFIG_FILE" 2>/dev/null || true
 fi
 
 log_info "System metrics collection started"
@@ -52,40 +52,40 @@ log_metric "cpu_count" "$CPU_COUNT" "cores"
 FREE_MB=0
 TOTAL_USED_MB=0
 if command -v vm_stat >/dev/null 2>&1; then
-    VM_STAT=$(vm_stat)
-    
-    # Extract memory stats
-    FREE_PAGES=$(echo "$VM_STAT" | awk '/Pages free:/ {print $3}' | tr -d '.' || echo "0")
-    ACTIVE_PAGES=$(echo "$VM_STAT" | awk '/Pages active:/ {print $3}' | tr -d '.' || echo "0")
-    INACTIVE_PAGES=$(echo "$VM_STAT" | awk '/Pages inactive:/ {print $3}' | tr -d '.' || echo "0")
-    WIRED_PAGES=$(echo "$VM_STAT" | awk '/Pages wired down:/ {print $4}' | tr -d '.' || echo "0")
-    COMPRESSED_PAGES=$(echo "$VM_STAT" | awk '/Pages stored in compressor:/ {print $5}' | tr -d '.' || echo "0")
-    
-    PAGE_SIZE=$(echo "$VM_STAT" | awk '/page size of/ {print $8}' || echo "4096")
-    
-    # Convert to MB
-    FREE_MB=$(( (FREE_PAGES * PAGE_SIZE) / 1024 / 1024 ))
-    ACTIVE_MB=$(( (ACTIVE_PAGES * PAGE_SIZE) / 1024 / 1024 ))
-    INACTIVE_MB=$(( (INACTIVE_PAGES * PAGE_SIZE) / 1024 / 1024 ))
-    WIRED_MB=$(( (WIRED_PAGES * PAGE_SIZE) / 1024 / 1024 ))
-    COMPRESSED_MB=$(( (COMPRESSED_PAGES * PAGE_SIZE) / 1024 / 1024 ))
-    TOTAL_USED_MB=$((ACTIVE_MB + INACTIVE_MB + WIRED_MB))
-    
-    log_metric "memory_free" "$FREE_MB" "MB"
-    log_metric "memory_active" "$ACTIVE_MB" "MB"
-    log_metric "memory_inactive" "$INACTIVE_MB" "MB"
-    log_metric "memory_wired" "$WIRED_MB" "MB"
-    log_metric "memory_compressed" "$COMPRESSED_MB" "MB"
-    log_metric "memory_used_total" "$TOTAL_USED_MB" "MB"
-    
-    # Memory pressure indicator
-    if [[ $FREE_MB -lt 500 ]]; then
-        log_metric "memory_pressure" "high" "status"
-    elif [[ $FREE_MB -lt 1000 ]]; then
-        log_metric "memory_pressure" "medium" "status"
-    else
-        log_metric "memory_pressure" "low" "status"
-    fi
+	VM_STAT=$(vm_stat)
+
+	# Extract memory stats
+	FREE_PAGES=$(echo "$VM_STAT" | awk '/Pages free:/ {print $3}' | tr -d '.' || echo "0")
+	ACTIVE_PAGES=$(echo "$VM_STAT" | awk '/Pages active:/ {print $3}' | tr -d '.' || echo "0")
+	INACTIVE_PAGES=$(echo "$VM_STAT" | awk '/Pages inactive:/ {print $3}' | tr -d '.' || echo "0")
+	WIRED_PAGES=$(echo "$VM_STAT" | awk '/Pages wired down:/ {print $4}' | tr -d '.' || echo "0")
+	COMPRESSED_PAGES=$(echo "$VM_STAT" | awk '/Pages stored in compressor:/ {print $5}' | tr -d '.' || echo "0")
+
+	PAGE_SIZE=$(echo "$VM_STAT" | awk '/page size of/ {print $8}' || echo "4096")
+
+	# Convert to MB
+	FREE_MB=$(((FREE_PAGES * PAGE_SIZE) / 1024 / 1024))
+	ACTIVE_MB=$(((ACTIVE_PAGES * PAGE_SIZE) / 1024 / 1024))
+	INACTIVE_MB=$(((INACTIVE_PAGES * PAGE_SIZE) / 1024 / 1024))
+	WIRED_MB=$(((WIRED_PAGES * PAGE_SIZE) / 1024 / 1024))
+	COMPRESSED_MB=$(((COMPRESSED_PAGES * PAGE_SIZE) / 1024 / 1024))
+	TOTAL_USED_MB=$((ACTIVE_MB + INACTIVE_MB + WIRED_MB))
+
+	log_metric "memory_free" "$FREE_MB" "MB"
+	log_metric "memory_active" "$ACTIVE_MB" "MB"
+	log_metric "memory_inactive" "$INACTIVE_MB" "MB"
+	log_metric "memory_wired" "$WIRED_MB" "MB"
+	log_metric "memory_compressed" "$COMPRESSED_MB" "MB"
+	log_metric "memory_used_total" "$TOTAL_USED_MB" "MB"
+
+	# Memory pressure indicator
+	if [[ $FREE_MB -lt 500 ]]; then
+		log_metric "memory_pressure" "high" "status"
+	elif [[ $FREE_MB -lt 1000 ]]; then
+		log_metric "memory_pressure" "medium" "status"
+	else
+		log_metric "memory_pressure" "low" "status"
+	fi
 fi
 
 # Disk Usage Metrics (enhanced)
@@ -100,37 +100,37 @@ log_metric "disk_used" "$ROOT_USED_GB" "GB"
 # Disk I/O Performance Test (lightweight)
 TEST_FILE="$(mktemp -t 'maintenance_io_test.XXXXXX')"
 if time dd if=/dev/zero of="$TEST_FILE" bs=1024 count=1024 2>/dev/null >/dev/null; then
-    rm -f "$TEST_FILE" 2>/dev/null
-    log_metric "disk_io_test" "passed" "status"
+	rm -f "$TEST_FILE" 2>/dev/null
+	log_metric "disk_io_test" "passed" "status"
 else
-    log_metric "disk_io_test" "failed" "status"
+	log_metric "disk_io_test" "failed" "status"
 fi
 
 # Network Connectivity Metrics
 PING_TARGET="8.8.8.8"
 if PING_TIME=$(ping -c 1 -W 3000 $PING_TARGET 2>/dev/null | grep 'time=' | awk '{print $7}' | cut -d'=' -f2); then
-    log_metric "network_latency_ms" "${PING_TIME:-999}" "ms"
-    log_metric "network_status" "connected" "status"
+	log_metric "network_latency_ms" "${PING_TIME:-999}" "ms"
+	log_metric "network_status" "connected" "status"
 else
-    log_metric "network_latency_ms" "999" "ms"
-    log_metric "network_status" "disconnected" "status"
+	log_metric "network_latency_ms" "999" "ms"
+	log_metric "network_status" "disconnected" "status"
 fi
 
 # Battery Metrics (for MacBooks)
 if command -v pmset >/dev/null 2>&1; then
-    BATTERY_INFO=$(pmset -g batt 2>/dev/null | grep -v "Battery Power" | tail -1)
-    if [[ -n "$BATTERY_INFO" ]]; then
-        BATTERY_PERCENT=$(echo "$BATTERY_INFO" | grep -o '[0-9]\+%' | tr -d '%')
-        BATTERY_STATUS=$(echo "$BATTERY_INFO" | grep -o '\(charging\|discharging\|charged\)')
-        
-        log_metric "battery_percent" "${BATTERY_PERCENT:-0}" "percent"
-        log_metric "battery_status" "${BATTERY_STATUS:-unknown}" "status"
-        
-        # Battery health warning
-        if [[ ${BATTERY_PERCENT:-100} -lt 20 ]]; then
-            log_metric "battery_warning" "low" "status"
-        fi
-    fi
+	BATTERY_INFO=$(pmset -g batt 2>/dev/null | grep -v "Battery Power" | tail -1)
+	if [[ -n $BATTERY_INFO ]]; then
+		BATTERY_PERCENT=$(echo "$BATTERY_INFO" | grep -o '[0-9]\+%' | tr -d '%')
+		BATTERY_STATUS=$(echo "$BATTERY_INFO" | grep -o '\(charging\|discharging\|charged\)')
+
+		log_metric "battery_percent" "${BATTERY_PERCENT:-0}" "percent"
+		log_metric "battery_status" "${BATTERY_STATUS:-unknown}" "status"
+
+		# Battery health warning
+		if [[ ${BATTERY_PERCENT:-100} -lt 20 ]]; then
+			log_metric "battery_warning" "low" "status"
+		fi
+	fi
 fi
 
 # Process and System Load Analysis
@@ -156,18 +156,18 @@ BREW_OUTDATED=0
 BREW_CASKS_INSTALLED=0
 BREW_CASKS_OUTDATED=0
 if command -v brew >/dev/null 2>&1; then
-    BREW_OUTDATED=$(brew outdated 2>/dev/null | wc -l | tr -d ' ')
-    BREW_INSTALLED=$(brew list 2>/dev/null | wc -l | tr -d ' ')
-    
-    log_metric "brew_packages_installed" "$BREW_INSTALLED" "count"
-    log_metric "brew_packages_outdated" "$BREW_OUTDATED" "count"
-    
-    # Homebrew cask metrics
-    BREW_CASKS_INSTALLED=$(brew list --cask 2>/dev/null | wc -l | tr -d ' ')
-    BREW_CASKS_OUTDATED=$(brew outdated --cask 2>/dev/null | wc -l | tr -d ' ')
-    
-    log_metric "brew_casks_installed" "$BREW_CASKS_INSTALLED" "count"
-    log_metric "brew_casks_outdated" "$BREW_CASKS_OUTDATED" "count"
+	BREW_OUTDATED=$(brew outdated 2>/dev/null | wc -l | tr -d ' ')
+	BREW_INSTALLED=$(brew list 2>/dev/null | wc -l | tr -d ' ')
+
+	log_metric "brew_packages_installed" "$BREW_INSTALLED" "count"
+	log_metric "brew_packages_outdated" "$BREW_OUTDATED" "count"
+
+	# Homebrew cask metrics
+	BREW_CASKS_INSTALLED=$(brew list --cask 2>/dev/null | wc -l | tr -d ' ')
+	BREW_CASKS_OUTDATED=$(brew outdated --cask 2>/dev/null | wc -l | tr -d ' ')
+
+	log_metric "brew_casks_installed" "$BREW_CASKS_INSTALLED" "count"
+	log_metric "brew_casks_outdated" "$BREW_CASKS_OUTDATED" "count"
 fi
 
 # System Uptime
@@ -176,12 +176,12 @@ log_metric "system_uptime_days" "${UPTIME_DAYS:-0}" "days"
 
 # Temperature Monitoring (if available)
 if command -v osx-cpu-temp >/dev/null 2>&1; then
-    CPU_TEMP=$(osx-cpu-temp | grep -o '[0-9]\+\.[0-9]\+' | head -1)
-    log_metric "cpu_temperature" "${CPU_TEMP:-0}" "celsius"
+	CPU_TEMP=$(osx-cpu-temp | grep -o '[0-9]\+\.[0-9]\+' | head -1)
+	log_metric "cpu_temperature" "${CPU_TEMP:-0}" "celsius"
 elif [[ -f /sys/class/thermal/thermal_zone0/temp ]]; then
-    CPU_TEMP_RAW=$(cat /sys/class/thermal/thermal_zone0/temp)
-    CPU_TEMP=$((CPU_TEMP_RAW / 1000))
-    log_metric "cpu_temperature" "$CPU_TEMP" "celsius"
+	CPU_TEMP_RAW=$(cat /sys/class/thermal/thermal_zone0/temp)
+	CPU_TEMP=$((CPU_TEMP_RAW / 1000))
+	log_metric "cpu_temperature" "$CPU_TEMP" "celsius"
 fi
 
 # Generate summary metrics
@@ -190,22 +190,22 @@ WARNING_COUNT=0
 
 # Health checks
 if [[ ${ROOT_USAGE:-0} -gt 85 ]]; then
-    OVERALL_HEALTH="warning"
-    WARNING_COUNT=$((WARNING_COUNT + 1))
+	OVERALL_HEALTH="warning"
+	WARNING_COUNT=$((WARNING_COUNT + 1))
 fi
 
 if [[ ${FREE_MB:-1000} -lt 500 ]]; then
-    OVERALL_HEALTH="warning"
-    WARNING_COUNT=$((WARNING_COUNT + 1))
+	OVERALL_HEALTH="warning"
+	WARNING_COUNT=$((WARNING_COUNT + 1))
 fi
 
 if [[ ${FAILED_AGENTS:-0} -gt 0 ]]; then
-    OVERALL_HEALTH="warning"
-    WARNING_COUNT=$((WARNING_COUNT + 1))
+	OVERALL_HEALTH="warning"
+	WARNING_COUNT=$((WARNING_COUNT + 1))
 fi
 
 if [[ $WARNING_COUNT -gt 2 ]]; then
-    OVERALL_HEALTH="critical"
+	OVERALL_HEALTH="critical"
 fi
 
 log_metric "system_health" "$OVERALL_HEALTH" "status"
@@ -229,8 +229,8 @@ log_metric "performance_score" "$PERF_SCORE" "score"
 
 # Create daily summary if this is the first run of the day
 SUMMARY_FILE="$METRICS_DIR/daily_summary_$(date +%Y%m%d).txt"
-if [[ ! -f "$SUMMARY_FILE" ]]; then
-    cat > "$SUMMARY_FILE" << EOF
+if [[ ! -f $SUMMARY_FILE ]]; then
+	cat >"$SUMMARY_FILE" <<EOF
 Daily System Summary - $(date +"%B %d, %Y")
 =========================================
 
@@ -262,8 +262,8 @@ fi
 log_info "System metrics collection complete - Health: $OVERALL_HEALTH, Performance: $PERF_SCORE/100"
 
 # Optional notification for critical issues
-if [[ "$OVERALL_HEALTH" == "critical" ]] && command -v osascript >/dev/null 2>&1; then
-    osascript -e "display notification \"System health is critical! Check metrics for details.\" with title \"System Alert\" sound name \"Basso\"" 2>/dev/null || true
+if [[ $OVERALL_HEALTH == "critical" ]] && command -v osascript >/dev/null 2>&1; then
+	osascript -e 'display notification "System health is critical! Check metrics for details." with title "System Alert" sound name "Basso"' 2>/dev/null || true
 fi
 
 echo "System metrics collection completed successfully!"

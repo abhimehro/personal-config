@@ -5,6 +5,7 @@ This directory contains configuration files and documentation for macOS 26.0.1 (
 ## Documentation
 
 ### Screen Capture Alerts - ✅ Fully Suppressible
+
 📄 [`screencapture-nag-remover-setup.md`](./screencapture-nag-remover-setup.md)
 
 **Status**: ✅ **Working Solution**  
@@ -16,6 +17,7 @@ This directory contains configuration files and documentation for macOS 26.0.1 (
 - Full Disk Access required for WarpPreview and /bin/bash
 
 ### Microphone Mode Indicator - 🎨 Creative Workaround
+
 📄 [`barbee-menubar-configuration.md`](./barbee-menubar-configuration.md)
 
 **Status**: 🎨 **Visual Solution**  
@@ -28,13 +30,13 @@ This directory contains configuration files and documentation for macOS 26.0.1 (
 
 ## Key Differences
 
-| Feature | Screen Capture Alert | Mic Mode Indicator |
-|---------|---------------------|-------------------|
-| **Can be disabled?** | ✅ Yes (via plist) | ❌ No (system-rendered) |
-| **Solution type** | Technical suppression | Visual obscuration |
-| **Persistence** | Permanent (with LaunchAgent) | Layout-dependent |
-| **Requirements** | Full Disk Access | Barbee app + configuration |
-| **Effectiveness** | 100% suppression | ~95% visual hiding |
+| Feature              | Screen Capture Alert         | Mic Mode Indicator         |
+| -------------------- | ---------------------------- | -------------------------- |
+| **Can be disabled?** | ✅ Yes (via plist)           | ❌ No (system-rendered)    |
+| **Solution type**    | Technical suppression        | Visual obscuration         |
+| **Persistence**      | Permanent (with LaunchAgent) | Layout-dependent           |
+| **Requirements**     | Full Disk Access             | Barbee app + configuration |
+| **Effectiveness**    | 100% suppression             | ~95% visual hiding         |
 
 ## ProtonDrive one-way home backup
 
@@ -49,6 +51,7 @@ This repo includes a one-way rsync-based backup into ProtonDrive (preferred over
 ```
 
 ### Optional: schedule via launchd
+
 ```bash
 mkdir -p ~/Library/LaunchAgents
 cp ~/Documents/dev/personal-config/macos/com.abhimehrotra.protondrive-backup.plist \
@@ -64,6 +67,7 @@ tail -n 200 ~/Library/Logs/protondrive-backup.log
 ## Quick Links
 
 ### Screen Capture Setup
+
 ```bash
 # Run the wrapper script manually
 bash ~/bin/screencapture-nag-remover-wrapper.sh
@@ -76,16 +80,18 @@ cat /private/tmp/screencapture-nag-remover-wrapper.log
 ```
 
 ### Barbee Restoration
+
 ```bash
 # Restore Barbee configuration (adjust date folder as needed)
 cp -R ~/Documents/dev/personal-config/macos/barbee-config/Backup/Barbee_Profile_2025_10_17_17_11_05/Default.bbp \
       "$HOME/Library/Application Support/Barbee/Profiles/"
-      
+
 # Relaunch Barbee
 killall "Barbee" && open -a "Barbee"
 ```
 
 ### Update Backups
+
 ```bash
 # Update Barbee backup after changes
 DATE_FOLDER="Barbee_Profile_$(date +%Y_%m_%d_%H_%M_%S)"
@@ -111,12 +117,14 @@ git push origin main
 ## Related Tools
 
 ### Privacy & Menu Bar Management
+
 - **Barbee** (DynamicLake Pro): Menu bar customization and mic indicator hiding
 - **Ice**: Additional menu bar organization
 - **BetterDisplay**: Display management and XDR brightness
 - **Lunar**: Auto-learned brightness via sensor
 
 ### Audio Tools (Trigger Mic Indicator)
+
 - **Boom 3D**: System-wide audio enhancement
 - **SpeakerAmp**: Audio amplification
 - Both use mic passthrough, triggering the indicator constantly
@@ -128,6 +136,7 @@ Both issues have been widely reported to Apple:
 🔗 **Submit feedback**: https://www.apple.com/feedback/macos.html
 
 **Key points to mention**:
+
 - Privacy indicators are redundant (dot + large icon)
 - Take excessive menu bar space (especially on notched displays)
 - Impact audio professionals, musicians, and power users
@@ -142,6 +151,7 @@ Both issues have been widely reported to Apple:
 ## Future Monitoring
 
 Watch for these potential improvements in future macOS updates:
+
 - System Settings toggle for mic mode indicator
 - Terminal command to disable indicator
 - Configuration profile option (MDM)

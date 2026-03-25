@@ -10,13 +10,13 @@ FUTURE=$(/bin/date -j -v+100y +"%Y-%m-%d %H:%M:%S +0000")
 INTERVAL=86400 #run every 24h
 
 IFS='.' read -r MAJ MIN _ < <(/usr/bin/sw_vers --productVersion)
-if (( MAJ < 15 )); then
+if ((MAJ < 15)); then
 	echo >&2 "this tool requires macOS 15 (Sequoia)"
 	exit
 fi
 
 _os_is_151_or_higher() {
-	(( MAJ >= 15 )) && (( MIN > 0 ))
+	((MAJ >= 15)) && ((MIN > 0))
 }
 
 _fda_settings() {
@@ -35,12 +35,12 @@ _bundleid_to_name() {
 
 _create_plist() {
 	cat <<-EOF 2>/dev/null >"$PLIST"
-	<?xml version="1.0" encoding="UTF-8"?>
-	<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-	<plist version="1.0">
-	<dict>
-	</dict>
-	</plist>
+		<?xml version="1.0" encoding="UTF-8"?>
+		<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+		<plist version="1.0">
+		<dict>
+		</dict>
+		</plist>
 	EOF
 }
 
@@ -61,14 +61,17 @@ _nagblock() {
 		/usr/bin/defaults write "$PLIST" "$1" -dict \
 			kScreenCaptureApprovalLastAlerted -date "$FUTURE" \
 			kScreenCaptureApprovalLastUsed -date "$FUTURE"
-		(( c++ ))
+		((c++))
 	else
 		if [[ -z $1 ]]; then
 			echo >&2 "supply complete pathname to the binary inside the app bundle"
 			return 1
 		fi
-		[[ -e $1 ]] || { echo >&2 "$1 does not exist"; return 1; }
-		IFS='/' read -ra PARTS <<< "$1"
+		[[ -e $1 ]] || {
+			echo >&2 "$1 does not exist"
+			return 1
+		}
+		IFS='/' read -ra PARTS <<<"$1"
 		for p in "${PARTS[@]}"; do
 			if [[ $p == *.app ]]; then
 				APP_NAME=$p
@@ -77,7 +80,7 @@ _nagblock() {
 		done
 		echo "disabling nag for ${APP_NAME:-$1}"
 		/usr/bin/defaults write "$PLIST" "$1" -date "$FUTURE"
-		(( c++ ))
+		((c++))
 		return 0
 	fi
 }
@@ -88,14 +91,14 @@ _enum_apps() {
 		/usr/bin/plutil -convert raw -o - -- "$PLIST"
 	else
 		/usr/bin/plutil -convert xml1 -o - -- "$PLIST" |
-		/usr/bin/sed -n "s/.*<key>\(.*\)<\/key>.*/\1/p"
+			/usr/bin/sed -n "s/.*<key>\(.*\)<\/key>.*/\1/p"
 	fi
 }
 
 _generate_mdm_profile() {
-UUID1=$(/usr/bin/uuidgen)
-UUID2=$(/usr/bin/uuidgen)
-/bin/cat <<EOF >"$MDM_PROFILE"
+	UUID1=$(/usr/bin/uuidgen)
+	UUID2=$(/usr/bin/uuidgen)
+	/bin/cat <<EOF >"$MDM_PROFILE"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -136,11 +139,11 @@ UUID2=$(/usr/bin/uuidgen)
 </dict>
 </plist>
 EOF
-#Apple prohibits self-installing TCC profiles, they can only be pushed via MDM
-#/usr/bin/open "$MDM_PROFILE"
-#_open_device_management
-echo "import ${MDM_PROFILE##*/} into your MDM to provision it"
-/usr/bin/open -R "$MDM_PROFILE"
+	#Apple prohibits self-installing TCC profiles, they can only be pushed via MDM
+	#/usr/bin/open "$MDM_PROFILE"
+	#_open_device_management
+	echo "import ${MDM_PROFILE##*/} into your MDM to provision it"
+	/usr/bin/open -R "$MDM_PROFILE"
 }
 
 _uninstall_launchagent() {
@@ -151,55 +154,56 @@ _uninstall_launchagent() {
 
 _install_launchagent() {
 	_uninstall_launchagent &>/dev/null
-	read -r FDA_TEST < <(/usr/bin/sqlite3 "$TCC_DB" <<-EOS
-	SELECT COUNT(client)
-	FROM access
-	WHERE
-		client = '/bin/bash' AND
-		service = 'kTCCServiceSystemPolicyAllFiles' AND
-		auth_value = 2
-	EOS
+	read -r FDA_TEST < <(
+		/usr/bin/sqlite3 "$TCC_DB" <<-EOS
+			SELECT COUNT(client)
+			FROM access
+			WHERE
+				client = '/bin/bash' AND
+				service = 'kTCCServiceSystemPolicyAllFiles' AND
+				auth_value = 2
+		EOS
 	)
-	if (( FDA_TEST == 0 )); then
+	if ((FDA_TEST == 0)); then
 		/bin/cat <<-EOF >&2
-		┌──────────────────────────────────────────────────────────────────────────────────────┐
-		│  For the LaunchAgent to work properly, you must grant Full Disk Access to /bin/bash  │
-		│                                                                                      │
-		│  The Full Disk Access settings panel will now be opened. Press the (+) button near   │
-		│  the bottom of the window, then press [⌘cmd + ⇧shift + g] and type '/bin/bash' and   │
-		│  click Open to get it to appear in the app list.                                     │
-		│                                                                                      │
-		│  Once that's all done, run the --install command again.                              │
-		└──────────────────────────────────────────────────────────────────────────────────────┘
+			┌──────────────────────────────────────────────────────────────────────────────────────┐
+			│  For the LaunchAgent to work properly, you must grant Full Disk Access to /bin/bash  │
+			│                                                                                      │
+			│  The Full Disk Access settings panel will now be opened. Press the (+) button near   │
+			│  the bottom of the window, then press [⌘cmd + ⇧shift + g] and type '/bin/bash' and   │
+			│  click Open to get it to appear in the app list.                                     │
+			│                                                                                      │
+			│  Once that's all done, run the --install command again.                              │
+			└──────────────────────────────────────────────────────────────────────────────────────┘
 		EOF
 		sleep 3
 		_fda_settings
 		return 1
 	fi
 	/bin/cat >"$AGENT_PLIST" <<-EOF
-	<?xml version="1.0" encoding="UTF-8"?>
-	<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-	<plist version="1.0">
-	<dict>
-		<key>Label</key>
-		<string>$SELF.agent</string>
-		<key>ProgramArguments</key>
-		<array>
-			<string>/bin/bash</string>
-			<string>--norc</string>
-			<string>--noprofile</string>
-			<string>$FQPN</string>
-		</array>
-		<key>StandardErrorPath</key>
-		<string>$HOME/Library/Logs/$SELF.stderr</string>
-		<key>StandardOutPath</key>
-		<string>$HOME/Library/Logs/$SELF.stdout</string>
-		<key>StartInterval</key>
-		<integer>$INTERVAL</integer>
-		<key>WorkingDirectory</key>
-		<string>$HOME</string>
-	</dict>
-	</plist>
+		<?xml version="1.0" encoding="UTF-8"?>
+		<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+		<plist version="1.0">
+		<dict>
+			<key>Label</key>
+			<string>$SELF.agent</string>
+			<key>ProgramArguments</key>
+			<array>
+				<string>/bin/bash</string>
+				<string>--norc</string>
+				<string>--noprofile</string>
+				<string>$FQPN</string>
+			</array>
+			<key>StandardErrorPath</key>
+			<string>$HOME/Library/Logs/$SELF.stderr</string>
+			<key>StandardOutPath</key>
+			<string>$HOME/Library/Logs/$SELF.stdout</string>
+			<key>StartInterval</key>
+			<integer>$INTERVAL</integer>
+			<key>WorkingDirectory</key>
+			<string>$HOME</string>
+		</dict>
+		</plist>
 	EOF
 	/bin/chmod 644 "$PLIST"
 	if /bin/launchctl bootstrap gui/$UID "$AGENT_PLIST"; then
@@ -208,7 +212,7 @@ _install_launchagent() {
 }
 
 _manual_add_desc() {
-	if _os_is_151_or_higher ; then
+	if _os_is_151_or_higher; then
 		echo "-a,--add <bundle_id>   manually create an entry"
 	else
 		echo "-a,--add <path>        manually create an entry (supply full path to binary)"
@@ -216,8 +220,8 @@ _manual_add_desc() {
 }
 
 case $1 in
-	-h|--help)
-		/bin/cat <<-EOF
+-h | --help)
+	/bin/cat <<-EOF
 
 		a tool to help suppress macOS Sequoia's persistent ScreenCapture alerts
 		usage: ${0##*/} [args]
@@ -229,41 +233,57 @@ case $1 in
 		    --profiles             opens Device Management in System Settings
 		    --install              install LaunchAgent to ensure alerts continue to be silenced
 		    --uninstall            remove LaunchAgent
-		EOF
-		if _os_is_151_or_higher; then /bin/cat <<-EOF
+	EOF
+	if _os_is_151_or_higher; then
+		/bin/cat <<-EOF
 
-		    ┌────────────────────────────────────────────────────────────────────────────────────┐
-		    │  macOS 15.1 introduced an official method for suppressing ScreenCapture alerts     │
-		    │  for ALL apps on Macs enrolled in an MDM server (Jamf, Addigy, Mosyle etc).        │
-		    │                                                                                    │
-		    │  A configuration profile to enable this can be generated using --generate_profile  │
-		    └────────────────────────────────────────────────────────────────────────────────────┘
+			    ┌────────────────────────────────────────────────────────────────────────────────────┐
+			    │  macOS 15.1 introduced an official method for suppressing ScreenCapture alerts     │
+			    │  for ALL apps on Macs enrolled in an MDM server (Jamf, Addigy, Mosyle etc).        │
+			    │                                                                                    │
+			    │  A configuration profile to enable this can be generated using --generate_profile  │
+			    └────────────────────────────────────────────────────────────────────────────────────┘
 
 		EOF
-		fi
-		exit
-		;;
-	-r|--reveal)
-		if [[ -e $PLIST ]]; then
-			/usr/bin/open -R "$PLIST"
-		else
-			/usr/bin/open "$(/usr/bin/dirname "$PLIST")"
-		fi
-		exit
-		;;
-	-p|--print)
-		if [[ -e $PLIST ]]; then
-			/usr/bin/plutil -p "$PLIST"
-		else
-			echo >&2 "${PLIST##*/} does not exist"
-		fi
-		exit
-		;;
-	--reset) _create_plist || echo >&2 "error, could not create ${PLIST##*/}"; exit;;
-	--generate_profile) _generate_mdm_profile; exit;;
-	--profiles) _open_device_management; exit;;
-	--install) _install_launchagent; exit;;
-	--uninstall) _uninstall_launchagent; exit;;
+	fi
+	exit
+	;;
+-r | --reveal)
+	if [[ -e $PLIST ]]; then
+		/usr/bin/open -R "$PLIST"
+	else
+		/usr/bin/open "$(/usr/bin/dirname "$PLIST")"
+	fi
+	exit
+	;;
+-p | --print)
+	if [[ -e $PLIST ]]; then
+		/usr/bin/plutil -p "$PLIST"
+	else
+		echo >&2 "${PLIST##*/} does not exist"
+	fi
+	exit
+	;;
+--reset)
+	_create_plist || echo >&2 "error, could not create ${PLIST##*/}"
+	exit
+	;;
+--generate_profile)
+	_generate_mdm_profile
+	exit
+	;;
+--profiles)
+	_open_device_management
+	exit
+	;;
+--install)
+	_install_launchagent
+	exit
+	;;
+--uninstall)
+	_uninstall_launchagent
+	exit
+	;;
 esac
 
 [[ -e $PLIST ]] || _create_plist
@@ -277,21 +297,24 @@ if ! /usr/bin/touch "$PLIST" 2>/dev/null; then
 fi
 
 case $1 in
-	-a|--add)
-		_nagblock "$2"
-		_bounce_daemons
-		exit
-		;;
-	-*) echo >&2 "invalid arg: $1"; exit 1;;
+-a | --add)
+	_nagblock "$2"
+	_bounce_daemons
+	exit
+	;;
+-*)
+	echo >&2 "invalid arg: $1"
+	exit 1
+	;;
 esac
 
 c=0
-while read -r APP_PATH ; do
+while read -r APP_PATH; do
 	[[ -n $APP_PATH ]] || continue
 	_nagblock "$APP_PATH"
 done < <(_enum_apps)
 
 #bounce daemons if any changes were made so the new settings take effect
-(( c > 0 )) && _bounce_daemons
+((c > 0)) && _bounce_daemons
 
 exit 0

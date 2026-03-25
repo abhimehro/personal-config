@@ -42,11 +42,13 @@ sudo ctrld service restart
 ### Changing Profiles
 
 **Edit the config file:**
+
 ```bash
 nano ~/.config/controld/ctrld.toml
 ```
 
 **Change the upstream in `[network.0]` section:**
+
 ```toml
 [network.0]
 name = "Network 0"
@@ -55,6 +57,7 @@ upstream = ["gaming_optimized"]  # Change this line
 ```
 
 **Restart service:**
+
 ```bash
 sudo ctrld service restart
 
@@ -68,6 +71,7 @@ sleep 3
 ### Adding New Profiles
 
 **Add new upstream block:**
+
 ```toml
 [upstream.3]
 name = "custom_profile"
@@ -78,6 +82,7 @@ bootstrap_ip = "76.76.2.22"
 ```
 
 **Restart service:**
+
 ```bash
 sudo ctrld service restart
 ```
@@ -97,37 +102,44 @@ If Control D changes their bootstrap IPs:
 macOS major updates can sometimes reset system configurations. After updating:
 
 ### Step 1: Verify Service Status
+
 ```bash
 sudo ctrld service status
 ```
 
 If not running:
+
 ```bash
 sudo ctrld service start --config ~/.config/controld/ctrld.toml --skip_self_checks
 ```
 
 ### Step 2: Check Firewall Exception
+
 ```bash
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --listapps | grep ctrld
 ```
 
 If missing:
+
 ```bash
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /opt/homebrew/bin/ctrld
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp /opt/homebrew/bin/ctrld
 ```
 
 ### Step 3: Verify Launch Daemon
+
 ```bash
 sudo launchctl list | grep ctrld
 ```
 
 If missing:
+
 ```bash
 sudo ctrld service start --config ~/.config/controld/ctrld.toml --skip_self_checks
 ```
 
 ### Step 4: Full Health Check
+
 ```bash
 ~/.config/controld/health-check.sh
 ```
@@ -139,6 +151,7 @@ sudo ctrld service start --config ~/.config/controld/ctrld.toml --skip_self_chec
 If you need to completely reinstall:
 
 ### Step 1: Backup Configuration
+
 ```bash
 mkdir -p ~/Backups/controld-$(date +%Y%m%d)
 cp ~/.config/controld/ctrld.toml ~/Backups/controld-$(date +%Y%m%d)/
@@ -148,6 +161,7 @@ sudo cp /Library/LaunchDaemons/ctrld.plist ~/Backups/controld-$(date +%Y%m%d)/ 2
 ```
 
 ### Step 2: Uninstall Completely
+
 ```bash
 # Stop and remove service
 sudo ctrld service uninstall
@@ -163,6 +177,7 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --remove /opt/homebrew/bin/
 ```
 
 ### Step 3: Reinstall
+
 ```bash
 # Install binary
 brew install ctrld
@@ -190,6 +205,7 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp /opt/homebrew/
 ## Migrating to New Machine
 
 ### On Old Machine: Export Configuration
+
 ```bash
 # Create export directory
 mkdir -p ~/controld-export
@@ -205,6 +221,7 @@ tar -czf ~/controld-export.tar.gz -C ~ controld-export/
 ```
 
 ### On New Machine: Import Configuration
+
 ```bash
 # Extract archive
 tar -xzf ~/Downloads/controld-export.tar.gz -C ~
@@ -234,6 +251,7 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp /opt/homebrew/
 If you want to switch from DoH (DNS-over-HTTPS) to DoT (DNS-over-TLS) or DoQ (DNS-over-QUIC):
 
 ### For DoT
+
 ```toml
 [upstream.0]
 name = "privacy_enhanced"
@@ -244,6 +262,7 @@ bootstrap_ip = "76.76.2.22"
 ```
 
 ### For DoQ (if supported)
+
 ```toml
 [upstream.0]
 name = "privacy_enhanced"
@@ -254,6 +273,7 @@ bootstrap_ip = "76.76.2.22"
 ```
 
 **After changing:**
+
 ```bash
 sudo ctrld service restart
 ~/.config/controld/health-check.sh
@@ -310,6 +330,7 @@ Create `~/Library/LaunchAgents/com.user.controld-daily-check.plist`:
 ```
 
 Load it:
+
 ```bash
 launchctl load ~/Library/LaunchAgents/com.user.controld-daily-check.plist
 ```
@@ -319,6 +340,7 @@ launchctl load ~/Library/LaunchAgents/com.user.controld-daily-check.plist
 ## When `--skip_self_checks` Becomes Unnecessary
 
 In future versions, if:
+
 1. macOS firewall behavior changes, OR
 2. ctrld modifies its self-check logic, OR
 3. Control D changes bootstrap IP handling
@@ -347,6 +369,7 @@ Until then, `--skip_self_checks` remains the recommended configuration.
 ### Issue: Service won't start after upgrade
 
 **Check binary path:**
+
 ```bash
 which ctrld
 # Should be: /opt/homebrew/bin/ctrld
@@ -356,6 +379,7 @@ sudo cat /Library/LaunchDaemons/ctrld.plist | grep ProgramArguments -A5
 ```
 
 **If path changed, reinstall service:**
+
 ```bash
 sudo ctrld service uninstall
 sudo ctrld service start --config ~/.config/controld/ctrld.toml --skip_self_checks
@@ -364,6 +388,7 @@ sudo ctrld service start --config ~/.config/controld/ctrld.toml --skip_self_chec
 ### Issue: Configuration format changed
 
 Check ctrld changelog:
+
 ```bash
 brew info ctrld
 ```
@@ -373,6 +398,7 @@ Look for breaking changes in TOML format. Update `ctrld.toml` accordingly.
 ### Issue: New self-check behavior
 
 If a new version introduces different self-check logic:
+
 1. Try running without `--skip_self_checks` first
 2. If it works, update launch daemon
 3. If it fails, continue using `--skip_self_checks`
@@ -462,6 +488,7 @@ fi
 ```
 
 Make it executable:
+
 ```bash
 chmod +x ~/.config/controld/baseline-test.sh
 ```
@@ -469,6 +496,7 @@ chmod +x ~/.config/controld/baseline-test.sh
 ### When to Run Baseline Tests
 
 **Always run after**:
+
 1. macOS major version update (e.g., 14.x → 15.x)
 2. ctrld version upgrade (`brew upgrade ctrld`)
 3. Changing Control D profile
@@ -476,6 +504,7 @@ chmod +x ~/.config/controld/baseline-test.sh
 5. Any manual edits to `ctrld.toml`
 
 **Usage**:
+
 ```bash
 # Quick baseline check
 ~/.config/controld/baseline-test.sh

@@ -14,15 +14,15 @@
 # assignment syntax (e.g. USERNAME='infuse'), so `cut -d'=' -f2-` returns the
 # quoted form.
 parse_cred_value() {
-  local line="$1"
-  local value
-  value="$(echo "$line" | cut -d'=' -f2-)"
-  # Strip surrounding single quotes
-  if [[ $value == \'*\' ]]; then
-    value="${value:1:-1}"
-  # Strip surrounding double quotes
-  elif [[ $value == '"'*'"' ]]; then
-    value="${value:1:-1}"
-  fi
-  echo "$value"
+	local line="$1"
+	local value
+	value="$(echo "$line" | cut -d'=' -f2-)"
+	# Strip surrounding single quotes
+	if [[ $value == \'*\' ]]; then
+		value="${value:1:-1}"
+	# Strip surrounding double quotes
+	elif [[ $value == '"'*'"' ]]; then
+		value="${value:1:-1}"
+	fi
+	echo "$value"
 }

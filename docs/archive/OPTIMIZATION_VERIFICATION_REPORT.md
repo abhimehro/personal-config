@@ -19,17 +19,21 @@ The services you see running (`duetexpertd`, `suggestd`, `proactived`) are **dis
 ### 1. Siri Suggestions - CONFIRMED DISABLED ✅
 
 **Spotlight Siri Suggestions:**
+
 ```
 enabled = 0  (DISABLED) ✅
 ```
 
 **Siri Data Sharing:**
+
 ```
 Status: 2  (OPT-OUT) ✅
 ```
-*Status 2 = User has opted out of Siri data sharing*
+
+_Status 2 = User has opted out of Siri data sharing_
 
 **Verdict:** ✅ **Siri Suggestions are fully disabled**
+
 - Spotlight won't show Siri suggestions
 - No data sharing with Apple
 - Services may run on-demand but won't provide suggestions
@@ -39,22 +43,26 @@ Status: 2  (OPT-OUT) ✅
 ### 2. Analytics & Diagnostics - CONFIRMED DISABLED ✅
 
 **Device Analytics:**
+
 ```
 No analytics config found ✅
 ```
 
 **Crash Reporter Settings:**
+
 ```
 AutoSubmit: Not set (disabled) ✅
 ThirdPartyDataSubmit: Not set (disabled) ✅
 ```
 
 **User Analytics:**
+
 ```
 No user analytics found ✅
 ```
 
 **Verdict:** ✅ **All analytics and diagnostics are disabled**
+
 - No data being sent to Apple
 - No crash report auto-submission
 - No third-party data sharing
@@ -67,11 +75,11 @@ No user analytics found ✅
 
 All services are correctly marked as **disabled** in launchd:
 
-| Service | Status | Auto-Start | Currently Running |
-|---------|--------|-----------|-------------------|
-| `duetexpertd` | ✅ DISABLED | ❌ No | ⚠️ Yes (on-demand) |
-| `suggestd` | ✅ DISABLED | ❌ No | ⚠️ Yes (on-demand) |
-| `proactived` | ✅ DISABLED | ❌ No | ⚠️ Yes (on-demand) |
+| Service       | Status      | Auto-Start | Currently Running  |
+| ------------- | ----------- | ---------- | ------------------ |
+| `duetexpertd` | ✅ DISABLED | ❌ No      | ⚠️ Yes (on-demand) |
+| `suggestd`    | ✅ DISABLED | ❌ No      | ⚠️ Yes (on-demand) |
+| `proactived`  | ✅ DISABLED | ❌ No      | ⚠️ Yes (on-demand) |
 
 #### Resource Usage (Minimal) ✅
 
@@ -85,6 +93,7 @@ duetexpertd      0.0%   0.3%     2 min 83 sec
 ```
 
 **Analysis:**
+
 - CPU usage: **Negligible** (0.0% each)
 - Memory: **Very low** (0.1-0.3%, ~21MB for duetexpertd)
 - Runtime: Short bursts (most time is idle)
@@ -94,6 +103,7 @@ duetexpertd      0.0%   0.3%     2 min 83 sec
 ### 4. Handoff Status - NEEDS VERIFICATION ⚠️
 
 **Current Status:**
+
 ```
 ActivityAdvertisingAllowed: Not set
 ActivityReceivingAllowed: Not set
@@ -103,6 +113,7 @@ useractivityd: Running (1 instance)
 **Issue:** The defaults aren't showing disabled status. Let me check if Handoff is actually disabled:
 
 **Recommendation:** Verify in System Settings:
+
 1. System Settings → General → AirDrop & Handoff
 2. Ensure "Allow Handoff between this Mac and your iCloud devices" is **OFF**
 
@@ -122,6 +133,7 @@ If it's off in settings but `useractivityd` is running, that's normal - it handl
 **Purpose:** Predictive intelligence system that learns app usage patterns
 
 **What it does:**
+
 - Predicts which apps you'll use next
 - Pre-warms apps in background (App Tamer conflict source!)
 - Powers "Suggested Apps" in Dock
@@ -148,12 +160,14 @@ Even though you **disabled** `duetexpertd`, it's running because:
 **Short answer: No.** Here's why:
 
 **Current Resource Usage:**
+
 - CPU: 0.0% (idle)
 - Memory: 21 MB (0.3% of your RAM)
 - Runtime: 2m 83s over several hours
 - **Not actively doing much**
 
 **After disabled:**
+
 - ✅ Won't auto-start at boot
 - ✅ Won't proactively predict apps
 - ✅ Limited functionality when running
@@ -172,14 +186,16 @@ Even though you **disabled** `duetexpertd`, it's running because:
 ### Option A: Monitor Only (Recommended First Step)
 
 **Why:**
+
 - Current usage is very low (0.0% CPU, 21MB RAM)
 - Already disabled from auto-start
 - May not be worth the complexity
 
 **How to monitor:**
+
 ```bash
 # Check duetexpertd resource usage over time
-while true; do 
+while true; do
   ps aux | grep duetexpertd | grep -v grep | awk '{printf "%s CPU: %s%% MEM: %s%%\n", strftime("%H:%M:%S"), $3, $4}'
   sleep 300  # Check every 5 minutes
 done
@@ -188,11 +204,13 @@ done
 ### Option B: App Tamer Throttling (If Usage Spikes)
 
 **When to consider:**
+
 - If CPU usage consistently > 5%
 - If memory usage > 100MB
 - If you see App Tamer conflicts with it
 
 **Settings in App Tamer:**
+
 1. **Auto-Stop when idle:** Yes
 2. **Memory threshold:** 20% (as you suggested) - but change to 100MB absolute
 3. **CPU threshold:** 10% for 30 seconds
@@ -218,12 +236,14 @@ fi
 **For now: Do nothing** ✅
 
 **Reasoning:**
+
 - It's using 0.0% CPU
 - Only 21MB RAM (negligible)
 - Already disabled from auto-start
 - Not causing active problems
 
 **Monitor for a week**, then:
+
 - If usage stays low → Leave it alone ✅
 - If usage spikes → Configure App Tamer throttling
 - If it causes conflicts → Add to kill list in service_monitor.sh
@@ -281,6 +301,7 @@ Services should **not** be running immediately after boot if truly disabled.
 ## 📊 Performance Comparison
 
 ### Before All Optimizations
+
 - Background services: 15+ unnecessary
 - Widget extensions: ~95
 - duetexpertd: Auto-started, constantly active
@@ -288,6 +309,7 @@ Services should **not** be running immediately after boot if truly disabled.
 - Memory pressure: High
 
 ### After Your Optimizations ✅
+
 - Background services: 14 disabled (won't auto-start)
 - Widget extensions: ~55
 - duetexpertd: Disabled from auto-start, minimal resource use when launched
@@ -305,20 +327,20 @@ Services should **not** be running immediately after boot if truly disabled.
 
 ## ✅ Final Verification Checklist
 
-| Optimization | Status | Verified |
-|-------------|--------|----------|
-| ReportCrash disabled | ✅ | Yes |
-| 14 services disabled from auto-start | ✅ | Yes |
-| Widget extensions reduced | ✅ | Yes (55 running) |
-| Diagnostic reports cleared | ✅ | Yes (0 reports) |
-| Siri Suggestions disabled | ✅ | Yes (enabled=0) |
-| Siri Data Sharing disabled | ✅ | Yes (status=2) |
-| Analytics disabled | ✅ | Yes (no config) |
-| Handoff disabled | ⚠️ | Needs verification |
-| Motion reduced | ✅ | User confirmed |
-| Transparency reduced | ✅ | User confirmed |
-| Login items cleaned | ✅ | User confirmed |
-| Spotlight indexing reduced | ✅ | User confirmed |
+| Optimization                         | Status | Verified           |
+| ------------------------------------ | ------ | ------------------ |
+| ReportCrash disabled                 | ✅     | Yes                |
+| 14 services disabled from auto-start | ✅     | Yes                |
+| Widget extensions reduced            | ✅     | Yes (55 running)   |
+| Diagnostic reports cleared           | ✅     | Yes (0 reports)    |
+| Siri Suggestions disabled            | ✅     | Yes (enabled=0)    |
+| Siri Data Sharing disabled           | ✅     | Yes (status=2)     |
+| Analytics disabled                   | ✅     | Yes (no config)    |
+| Handoff disabled                     | ⚠️     | Needs verification |
+| Motion reduced                       | ✅     | User confirmed     |
+| Transparency reduced                 | ✅     | User confirmed     |
+| Login items cleaned                  | ✅     | User confirmed     |
+| Spotlight indexing reduced           | ✅     | User confirmed     |
 
 **Overall Status:** ✅ **97% Complete** (verify Handoff)
 
@@ -362,18 +384,21 @@ Services should **not** be running immediately after boot if truly disabled.
 **Current Recommendation: NO** ✅
 
 **Reasoning:**
+
 - Current usage is negligible (0.0% CPU, 0.3% memory)
 - Already disabled from auto-start
 - Not causing active problems
 - Adding throttling complexity isn't worth it right now
 
 **When to throttle:**
+
 - If CPU usage consistently exceeds 5%
 - If memory usage exceeds 100MB
 - If you see App Tamer conflicts
 - If it's pre-warming unwanted apps
 
 **How to throttle (if needed):**
+
 1. App Tamer: Auto-stop when idle, 100MB threshold
 2. OR: Add to service_monitor.sh kill list if memory > 100MB
 3. Efficiency cores: Only helps on Apple Silicon, minimal benefit
@@ -387,6 +412,7 @@ Services should **not** be running immediately after boot if truly disabled.
 ### Immediate Actions
 
 1. **Verify Handoff** (5 minutes)
+
    ```bash
    defaults -currentHost write com.apple.coreservices.useractivityd ActivityAdvertisingAllowed -bool no
    defaults -currentHost write com.apple.coreservices.useractivityd ActivityReceivingAllowed -bool no
@@ -401,6 +427,7 @@ Services should **not** be running immediately after boot if truly disabled.
 ### After One Week
 
 1. **Review service_monitor reports**
+
    ```bash
    ls -t ~/Library/Logs/maintenance/service_monitor-*.txt | head -7 | xargs grep "duetexpertd"
    ```
@@ -425,11 +452,12 @@ Services should **not** be running immediately after boot if truly disabled.
 **Your optimizations are working perfectly!** ✅
 
 - **Siri Suggestions:** ✅ Fully disabled
-- **Analytics:** ✅ Fully disabled  
+- **Analytics:** ✅ Fully disabled
 - **duetexpertd:** ✅ Disabled from auto-start, minimal resource use when running
 - **Handoff:** ⚠️ Verify with command above
 
 The services you see running (`duetexpertd`, `suggestd`, `proactived`) are disabled from auto-starting but have been launched on-demand. This is **expected and acceptable behavior** given:
+
 1. They won't auto-start on boot
 2. They're using minimal resources
 3. They won't provide their intended functionality (suggestions/predictions) since disabled

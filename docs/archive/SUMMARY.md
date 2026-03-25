@@ -7,6 +7,7 @@ Your personal-config repository now contains a comprehensive, tested, and docume
 ## 📦 What's Included
 
 ### 🌐 Dynamic DNS Management System (NEW!)
+
 - **Profile Switching Scripts** - `dns-privacy` and `dns-gaming` commands
 - **Control D Integration** - Profile-specific DoH endpoints
 - **Windscribe VPN Compatibility** - Seamless VPN integration
@@ -15,6 +16,7 @@ Your personal-config repository now contains a comprehensive, tested, and docume
 - **Comprehensive Documentation** - Complete setup and troubleshooting guides
 
 ### 🔐 SSH Configuration System
+
 - **1Password Integration** - Secure SSH key management
 - **Dynamic Network Support** - VPN-aware connection methods
 - **Cursor IDE Optimization** - Perfect remote development setup
@@ -23,18 +25,21 @@ Your personal-config repository now contains a comprehensive, tested, and docume
 - **Comprehensive Testing Suite** - Automated validation
 
 ### 🎨 Development Environment
+
 - **Cursor IDE Themes** - Custom Dracula theme variations
 - **Fish Shell Configuration** - Optimized terminal setup
 - **R Development Tools** - VSCode-R integration
 - **Terminal Automation** - Smart connection scripts
 
 ### 📚 Documentation & Testing
+
 - **Setup Guides** - Step-by-step instructions for all components
 - **Troubleshooting Documentation** - Comprehensive problem-solving guides
 - **Automated Testing** - Validation scripts for all configurations
 - **Deployment Scripts** - One-command setup automation
 
 ### 🎥 Media Streaming (Infuse + Alldebrid + Cloud union)
+
 - **Unified library**: rclone union of `gdrive:Media` + `onedrive:Media` (no local duplication; iCloud Desktop/Documents hosts structure).
 - **WebDAV service**: LaunchAgent `com.abhimehrotra.media.webdav` → port 8088, read-only.
 - **Alldebrid helper**: LaunchAgent `com.abhimehrotra.media.alldebrid` → mount `/Users/abhimehrotra/mnt/alldebrid`, serve 8080.
@@ -44,6 +49,7 @@ Your personal-config repository now contains a comprehensive, tested, and docume
 ## ✨ Key Achievements
 
 ### 🎯 DNS Management Excellence
+
 - ✅ **One-Command Switching** - `sudo dns-privacy` / `sudo dns-gaming`
 - ✅ **Profile-Specific Optimization** - Privacy vs Gaming configurations
 - ✅ **VPN Integration** - Works seamlessly with Windscribe and ProtonVPN
@@ -52,6 +58,7 @@ Your personal-config repository now contains a comprehensive, tested, and docume
 - ✅ **Backup & Deployment** - Version controlled with easy updates
 
 ### 🔒 SSH Security & Reliability
+
 - ✅ **Zero Local Key Storage** - 1Password SSH agent integration
 - ✅ **Network Adaptability** - Automatic VPN on/off detection
 - ✅ **Development Optimized** - Cursor IDE remote development
@@ -59,6 +66,7 @@ Your personal-config repository now contains a comprehensive, tested, and docume
 - ✅ **Comprehensive Testing** - Automated validation suite
 
 ### 🎮 Gaming & Performance
+
 - ✅ **Gaming DNS Profile** - Minimal filtering, maximum performance
 - ✅ **Service Optimization** - Battle.net, GeForce Now, Overwatch 2
 - ✅ **Latency Optimization** - Ultra-fast DNS resolution
@@ -83,16 +91,19 @@ personal-config/
 ## 🎯 Perfect Workflow Integration
 
 ### Development Session
+
 1. `ssh cursor-mdns` - Connect to development machine
 2. `sudo dns-privacy` - Enable enhanced privacy filtering
 3. Develop with secure, fast DNS resolution
 
 ### Gaming Session
+
 1. `sudo dns-gaming` - Switch to gaming-optimized DNS
 2. Launch games with minimal filtering overhead
 3. Enjoy optimized performance for Battle.net, GeForce Now, etc.
 
 ### VPN Switching
+
 1. Switch between Windscribe (daily) and ProtonVPN (special cases)
 2. DNS profiles work seamlessly with both providers
 3. Automatic network detection and adaptation
@@ -100,12 +111,14 @@ personal-config/
 ## 🔧 Maintenance & Updates
 
 ### Bootstrap (idempotent)
+
 ```bash
 cd ~/Documents/dev/personal-config
 ./setup.sh   # macOS + Homebrew + 1Password CLI required
 ```
 
 ### Easy Updates
+
 ```bash
 # Update DNS scripts from repository
 ./dns-setup/scripts/deploy.sh
@@ -116,6 +129,7 @@ sudo dns-privacy && dig +short google.com @127.0.0.1
 ```
 
 ### Monitoring
+
 ```bash
 # Check DNS logs
 sudo tail -f /var/log/ctrld-privacy.log
@@ -141,18 +155,21 @@ scutil --dns | head -20
 ## 🎉 What Makes This Special
 
 ### 🌟 Production Quality
+
 - **Tested & Validated** - Comprehensive test suites
 - **Error Handling** - Graceful failure and recovery
 - **Documentation** - Complete setup and troubleshooting guides
 - **Version Control** - Full history and backup capabilities
 
 ### 🚀 Innovation
+
 - **Hybrid DNS Approach** - Best of privacy and performance
 - **VPN-Aware Automation** - Intelligent network detection
 - **One-Command Switching** - Simple yet powerful interface
 - **Real-Time Verification** - Confirms system state changes
 
 ### 🎯 User Experience
+
 - **Zero Configuration** - Works out of the box after deployment
 - **Clear Feedback** - Visual indicators and status messages
 - **Reliable Operation** - Handles edge cases and network changes

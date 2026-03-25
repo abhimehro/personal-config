@@ -9,9 +9,9 @@
 set -euo pipefail
 
 TARGET="${TARGET_BREW_SCRIPT:-$HOME/Library/Maintenance/bin/brew_maintenance.sh}"
-if [[ ! -x "$TARGET" ]]; then
-  echo "❌ brew_maintenance.sh not found at $TARGET"
-  exit 1
+if [[ ! -x $TARGET ]]; then
+	echo "❌ brew_maintenance.sh not found at $TARGET"
+	exit 1
 fi
 
 bash "$TARGET"

@@ -3,16 +3,19 @@
 ## ✅ Security Issues Resolved
 
 ### OAuth Tokens Removed
+
 - ✅ Terminal history files removed from git tracking
 - ✅ Local terminal files deleted (contained OAuth tokens)
 - ✅ .gitignore updated to exclude terminal history files
 - ✅ No OAuth tokens found in repository
 
 ### Files Removed from Git
+
 - `.cursor/projects/Users-abhimehrotra-Documents-dev-personal-config/terminals/5.txt`
 - `.cursor/projects/Users-abhimehrotra-Documents-dev-personal-config/terminals/7.txt`
 
 ### .gitignore Status
+
 - ✅ Terminal history files now properly excluded
 - ✅ Pattern: `.cursor/**/terminals/*.txt` (line 168)
 
@@ -21,19 +24,23 @@
 **Before pushing, you MUST revoke the exposed OAuth tokens:**
 
 ### Google OAuth Tokens
+
 1. Go to: https://myaccount.google.com/permissions
 2. Find apps with Google Drive access
 3. Revoke access for rclone/Google Drive API
 4. **OR** go to: https://security.google.com/settings/security/permissions
 
 ### Microsoft OAuth Tokens (OneDrive)
+
 1. Go to: https://account.live.com/consent/Manage
 2. Find apps with OneDrive access
 3. Revoke access for rclone/OneDrive
 4. **OR** go to: https://account.microsoft.com/privacy/app-permissions
 
 ### After Revoking
+
 Re-authenticate rclone:
+
 ```bash
 rclone config reconnect gdrive:
 rclone config reconnect onedrive:
@@ -79,6 +86,7 @@ git push origin main
 ## ✅ Post-Push Verification
 
 After pushing, verify:
+
 1. ✅ Push succeeded without GitHub protection errors
 2. ✅ Terminal files not in repository
 3. ✅ New rclone tokens working

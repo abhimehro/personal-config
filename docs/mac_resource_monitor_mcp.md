@@ -22,10 +22,13 @@ This document summarizes how to run and extend the MacOS Resource Monitor MCP se
 ## Running the Server
 
 Start the MCP server with:
+
 ```bash
 python src/monitor.py
 ```
+
 You should see output similar to:
+
 ```text
 Simple MacOS Resource Monitor MCP server starting...
 Monitoring CPU, Memory, and Network resource usage...
@@ -60,4 +63,3 @@ Add a server block to clients such as Cursor or Claude Desktop so they can call 
 - [MCP Python SDK](https://pypi.org/project/mcp/)
 - [MacOS Resource Monitor repository](https://github.com/Pratyay/mac-monitor-mcp)
 - [psutil documentation](https://psutil.readthedocs.io/en/latest/)
-

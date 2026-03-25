@@ -3,6 +3,7 @@
 This document outlines security patterns and defensive coding practices used throughout this repository. These patterns help prevent common vulnerabilities and provide defense-in-depth.
 
 ## Table of Contents
+
 1. [Symlink Attack Prevention](#symlink-attack-prevention)
 2. [TOCTOU Race Condition Mitigation](#toctou-race-condition-mitigation)
 3. [File Permission Hardening](#file-permission-hardening)
@@ -32,6 +33,7 @@ chmod 700 /etc/app/profiles
 ```
 
 **Attack scenario:**
+
 1. Script runs `rm -f /etc/app/config.conf`
 2. **Attacker quickly creates symlink:** `ln -s /etc/passwd /etc/app/config.conf`
 3. Script runs `cp new_config.conf /etc/app/config.conf` → overwrites `/etc/passwd`!
@@ -74,6 +76,7 @@ check_not_symlink "$TARGET_PATH"
 ```
 
 **Why multiple layers?**
+
 - Pre-flight checks catch obvious attacks
 - Atomic operations minimize race windows
 - Post-creation verification catches race condition exploits
@@ -82,11 +85,13 @@ check_not_symlink "$TARGET_PATH"
 ### Testing
 
 Run symlink protection tests:
+
 ```bash
 ./tests/test_symlink_protection.sh
 ```
 
 This test demonstrates:
+
 - How `install -m` replaces symlinks (secure for files)
 - How `install -d` follows symlinks (requires pre-flight checks)
 - How `rm + cp` pattern is vulnerable to race conditions
@@ -173,13 +178,13 @@ install -m 600 source.conf /etc/app/private/config.conf
 
 ### Standard Permissions
 
-| File Type | Permission | Octal | Use Case |
-|-----------|-----------|-------|----------|
-| Private config | `rw-------` | 600 | Configuration with secrets |
-| Private directory | `rwx------` | 700 | Directory with sensitive files |
-| Shared config | `rw-r--r--` | 644 | Configuration without secrets |
-| Executable | `rwxr-xr-x` | 755 | Scripts, binaries |
-| Secure executable | `rwx------` | 700 | Scripts with embedded secrets |
+| File Type         | Permission  | Octal | Use Case                       |
+| ----------------- | ----------- | ----- | ------------------------------ |
+| Private config    | `rw-------` | 600   | Configuration with secrets     |
+| Private directory | `rwx------` | 700   | Directory with sensitive files |
+| Shared config     | `rw-r--r--` | 644   | Configuration without secrets  |
+| Executable        | `rwxr-xr-x` | 755   | Scripts, binaries              |
+| Secure executable | `rwx------` | 700   | Scripts with embedded secrets  |
 
 ---
 
@@ -330,6 +335,7 @@ source /etc/app/secrets.env
 When writing or reviewing security-sensitive code:
 
 **File Operations**
+
 - [ ] Use `install -m 600` instead of `rm + cp + chmod`
 - [ ] Use `install -d -m 700` for directories (with pre-flight checks)
 - [ ] Add pre-flight symlink checks for critical paths
@@ -337,23 +343,27 @@ When writing or reviewing security-sensitive code:
 - [ ] Check parent directories aren't symlinks
 
 **Permissions**
+
 - [ ] Use restrictive permissions (600/700) for sensitive files/dirs
 - [ ] Set permissions atomically during creation
 - [ ] Never rely on default umask for security
 
 **Input Validation**
+
 - [ ] Validate numeric inputs with regex: `[[ "$var" =~ ^[0-9]+$ ]]`
 - [ ] Reject path traversal: Check for `..` sequences
 - [ ] Validate paths are within expected root
 - [ ] Quote all variables: `"$var"`
 
 **Credentials**
+
 - [ ] Use environment variables, not CLI args
 - [ ] Source from secure storage (1Password, etc.)
 - [ ] Ensure secret files are mode 600
 - [ ] Mask secrets in logs and CI output
 
 **Race Conditions**
+
 - [ ] Use atomic operations when possible
 - [ ] Document unavoidable TOCTOU risks
 - [ ] Add verification layers for critical operations
@@ -378,18 +388,20 @@ python3 ./tests/test_path_validation.py
 ### Manual Security Review
 
 1. Search for vulnerable patterns:
+
    ```bash
    # Find rm + cp patterns
    grep -r "rm.*cp" scripts/
-   
+
    # Find chmod after file creation
    grep -r "touch.*chmod" scripts/
-   
+
    # Find eval usage
    grep -r "eval\|bash -c" scripts/
    ```
 
 2. Check file permissions:
+
    ```bash
    # Find world-readable config files
    find . -name "*.conf" -perm -004
@@ -421,4 +433,4 @@ python3 ./tests/test_path_validation.py
 
 ---
 
-*This document is a living guide. When you discover new security patterns or vulnerabilities, please update both this document and the sentinel journal (`.jules/sentinel.md`).*
+_This document is a living guide. When you discover new security patterns or vulnerabilities, please update both this document and the sentinel journal (`.jules/sentinel.md`)._

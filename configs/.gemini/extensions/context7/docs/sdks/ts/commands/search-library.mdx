@@ -64,7 +64,11 @@ Search across available libraries. Returns finalized public libraries and access
     </ResponseField>
     <ResponseField name="metadata" type="APIResponseMetadata" required>
       <Expandable title="properties">
-        <ResponseField name="authentication" type="'none' | 'personal' | 'team'" required>
+        <ResponseField
+          name="authentication"
+          type="'none' | 'personal' | 'team'"
+          required
+        >
           Authentication level used for the request
         </ResponseField>
       </Expandable>
@@ -151,3 +155,4 @@ if (library.versions) {
   console.log(`Available versions: ${library.versions.join(", ")}`);
 }
 ```
+````

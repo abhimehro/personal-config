@@ -3,12 +3,15 @@
 This file provides guidance to WARP (warp.dev) when working with code in this repository.
 
 ## Repository intent (what this repo is)
+
 `personal-config` is an “infrastructure as code” repo for a macOS workstation: dotfiles + automation scripts + launchd agents that manage networking (Control D/Windscribe), SSH setup, maintenance jobs, and a media pipeline.
 
 Many scripts intentionally modify system state (symlinks in `$HOME`, `launchctl` agents, DNS/IPv6 settings, services). Prefer reading scripts first and using the repo’s verify/test scripts after changes.
 
 ## Common commands (local development)
+
 ### Bootstrap / install (idempotent)
+
 ```bash
 # Full bootstrap (macOS-only): dotfiles + maintenance + network tools + media staging
 ./setup.sh
@@ -18,6 +21,7 @@ Many scripts intentionally modify system state (symlinks in `$HOME`, `launchctl`
 ```
 
 ### Sync + verify symlinked configs
+
 ```bash
 # Create/update symlinks from repo → home directory
 ./scripts/sync_all_configs.sh
@@ -30,6 +34,7 @@ Many scripts intentionally modify system state (symlinks in `$HOME`, `launchctl`
 ```
 
 ### Network mode switching (Control D ⇄ Windscribe)
+
 Primary entrypoint is `scripts/network-mode-manager.sh`.
 
 ```bash
@@ -47,6 +52,7 @@ Primary entrypoint is `scripts/network-mode-manager.sh`.
 ```
 
 Verification/regression:
+
 ```bash
 # Verify current state (profile-aware for controld)
 ./scripts/network-mode-verify.sh controld browsing
@@ -60,6 +66,7 @@ make control-d-regression
 ```
 
 ### Maintenance system (manual run + status)
+
 The maintenance system is documented in `maintenance/README.md`.
 
 ```bash
@@ -72,6 +79,7 @@ launchctl list | grep maintenance
 ```
 
 ### Media streaming pipeline
+
 High-level docs live in `media-streaming/README.md`. Setup is staged by `setup.sh` (templates + LaunchAgents).
 
 ```bash
@@ -80,6 +88,7 @@ launchctl list | grep -E '(media|alldebrid|speedybee)'
 ```
 
 ### Lint / formatting (Trunk)
+
 This repo is wired for Trunk via `.trunk/trunk.yaml` (shellcheck, shfmt, ruff, black, prettier, trufflehog, etc.).
 
 ```bash
@@ -101,35 +110,42 @@ trunk fmt
 > To match CI behavior locally, run `trunk check <file>` instead of calling `shellcheck` directly.
 
 ### Tests
+
 There isn’t a single “test runner” script; most tests are directly executable shell scripts under `tests/`.
 
 Run a single shell test:
+
 ```bash
 bash tests/test_ssh_config.sh
 bash tests/test_network_mode_manager.sh
 ```
 
 Run all shell tests:
+
 ```bash
 make test
 ```
 
 Run all tests (shell + Python):
+
 ```bash
 make test-all
 ```
 
 Run a single Python test module:
+
 ```bash
 python3 -m unittest tests.test_path_validation
 ```
 
 Run Python tests only:
+
 ```bash
 make test-python
 ```
 
 ### Benchmarks
+
 ```bash
 # Requires hyperfine
 make benchmark
@@ -139,6 +155,7 @@ make benchmark
 ```
 
 ### PR Review Agent (preflight gate)
+
 Before running a bot PR triage/review session, preflight must pass. See `docs/automated-pr-review-agent.md` and `docs/github-app-pr-automation-checklist.md`.
 
 ```bash
@@ -153,19 +170,24 @@ Before running a bot PR triage/review session, preflight must pass. See `docs/au
 ```
 
 ## Big-picture architecture (how the pieces fit)
+
 ### 1) Config-as-code via symlink orchestration
+
 Core pattern: keep authoritative config files in-repo and symlink them into the real locations.
 
 Key entrypoints:
+
 - `scripts/sync_all_configs.sh`: creates/updates symlinks and backups when appropriate.
 - `scripts/verify_all_configs.sh`: verifies links/targets and checks a few invariants (e.g., SSH perms, fish functions presence).
 
 This is the backbone that makes “git pull” translate into a live system update.
 
 ### 2) Network mode manager (DNS + VPN state machine)
+
 The networking subsystem is intentionally centralized so that “mode switching” is not a series of manual steps.
 
 Key components:
+
 - `scripts/network-mode-manager.sh`: orchestrates the state transition.
 - `scripts/network-mode-verify.sh`: asserts the machine is in the expected state (Control D active vs Windscribe ready), including DNS resolver checks and some profile/DoH3 assertions.
 - `scripts/network-mode-regression.sh` + `Makefile`: repeatable end-to-end regression to catch drift.
@@ -175,7 +197,9 @@ Key components:
 If you’re debugging a network issue, start from the manager → verify script outputs before changing anything.
 
 ### 3) Automated maintenance (launchd + modular scripts)
+
 Maintenance is structured as:
+
 - `maintenance/bin/*`: task scripts and orchestrators.
 - `maintenance/install.sh` (invoked by `setup.sh`): installs/boots LaunchAgents.
 - Logs are written under `~/Library/Logs/maintenance/` (see `maintenance/README.md`).
@@ -183,7 +207,9 @@ Maintenance is structured as:
 The important architectural idea: tasks are meant to be launchd-driven and observable via logs and `launchctl`.
 
 ### 4) Media streaming pipeline (agents + scripts)
+
 The media pipeline is split into:
+
 - Setup + configuration templates (e.g., rclone template seeded by `setup.sh`).
 - Automation via LaunchAgents (installed if present).
 - Operational scripts in `media-streaming/scripts/` (sync, rename/finalize, repair).
@@ -191,13 +217,16 @@ The media pipeline is split into:
 The docs in `media-streaming/README.md` describe the intended “zero-click” flow and the responsibilities of each agent/script.
 
 ### 5) Code quality + automation workflows
+
 - Trunk is the “local lint hub” (`.trunk/trunk.yaml`).
 - CI additionally runs complexity checks (ShellCheck + radon) and a Trunk check (see `.github/workflows/code-quality.yml`).
 - `.github/workflows/README.md` documents additional agentic workflows and notes that `.md` workflow sources compile to `.lock.yml` (compiled files should not be edited by hand).
 
 ## Repo-specific agent behavior (important excerpts from existing rules)
+
 If you are operating as an agent in this repo, align with:
-- `.cursorrules`: security-first collaboration style (state approach before coding, comment *why*, provide a handoff summary after changes) + hard boundaries (don’t implement auth/payment/db schema changes without explicit user approval; don’t run destructive commands without confirmation).
+
+- `.cursorrules`: security-first collaboration style (state approach before coding, comment _why_, provide a handoff summary after changes) + hard boundaries (don’t implement auth/payment/db schema changes without explicit user approval; don’t run destructive commands without confirmation).
 - `.github/copilot-instructions.md`: “development partner” protocol (before/while/after coding rhythm).
 
 ## Writing Tests
@@ -213,10 +242,10 @@ Detailed patterns, mock recipes, and a copy-paste test skeleton live in [`docs/T
 
 **Tests that skip on Linux/CI** (not bugs — each file contains an early-exit skip guard that prints `SKIP:` and exits 77):
 
-| Test | Skip Reason | Guard |
-|---|---|---|
-| `test_config_fish.sh` | Needs `fish` shell | `command -v fish` |
-| `test_ssh_config.sh` | Needs 1Password agent socket | `uname -s == Darwin` |
+| Test                               | Skip Reason                       | Guard                |
+| ---------------------------------- | --------------------------------- | -------------------- |
+| `test_config_fish.sh`              | Needs `fish` shell                | `command -v fish`    |
+| `test_ssh_config.sh`               | Needs 1Password agent socket      | `uname -s == Darwin` |
 | `test_security_manager_restore.sh` | Uses BSD `sed -i ''` (macOS only) | `uname -s == Darwin` |
 
 See [`docs/TESTING.md`](docs/TESTING.md) for the full guide including a copy-paste test skeleton and a known-limitations table.
@@ -227,16 +256,16 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 
 ### Key services and how to run them
 
-| What | Command | Notes |
-|---|---|---|
-| Shell tests only | `make test` | Fastest full suite; 31 tests, 3 expected macOS-only skips (fish, BSD sed, 1Password socket) |
-| Smoke tests (pre-commit) | `make test-quick` | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target |
-| All tests (shell + Python) | `make test-all` | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI. |
-| Single Python module | `python3 -m unittest tests.test_path_validation` | stdlib only, no pip deps |
-| Python tests only | `make test-python` | stdlib only, no pip deps |
-| Lint (all) | `make lint` | Trunk downloads its own tool versions on first run |
-| Lint (correctness gate) | `make lint-errors` | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate. |
-| Format | `make lint-fix` | Auto-fixes where supported |
+| What                       | Command                                          | Notes                                                                                                                |
+| -------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Shell tests only           | `make test`                                      | Fastest full suite; 31 tests, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                          |
+| Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                            |
+| All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI. |
+| Single Python module       | `python3 -m unittest tests.test_path_validation` | stdlib only, no pip deps                                                                                             |
+| Python tests only          | `make test-python`                               | stdlib only, no pip deps                                                                                             |
+| Lint (all)                 | `make lint`                                      | Trunk downloads its own tool versions on first run                                                                   |
+| Lint (correctness gate)    | `make lint-errors`                               | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate.                                              |
+| Format                     | `make lint-fix`                                  | Auto-fixes where supported                                                                                           |
 
 ### Non-obvious caveats
 

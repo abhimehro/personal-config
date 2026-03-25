@@ -14,45 +14,45 @@ mkdir -p "$LOG_DIR"
 
 # Simple locking to prevent concurrent runs with stale lock detection
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
-    # Check if lock is stale (older than 2 hours)
-    if [[ -d "$LOCK_DIR" ]]; then
-        LOCK_AGE=$(($(date +%s) - $(stat -f %m "$LOCK_DIR" 2>/dev/null || date +%s)))
-        if [[ $LOCK_AGE -gt 7200 ]]; then
-            LOCK_MSG="$(date '+%Y-%m-%d %H:%M:%S') [WARNING] Removing stale lock (age: $((LOCK_AGE/60)) minutes)"
-            echo "$LOCK_MSG"
-            echo "$LOCK_MSG [RUN_START: $RUN_START] [LOCK_DIR: $LOCK_DIR]" >> "$LOCK_CONTEXT_LOG"
-            rm -rf "$LOCK_DIR" 2>/dev/null || true
-            # Try to acquire lock again
-            if ! mkdir "$LOCK_DIR" 2>/dev/null; then
-                echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] Failed to acquire lock after stale removal"
-                exit 0
-            fi
-        else
-            echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] Another instance is already running (lock: $LOCK_DIR, age: $((LOCK_AGE/60)) min)"
-            exit 0
-        fi
-    fi
+	# Check if lock is stale (older than 2 hours)
+	if [[ -d $LOCK_DIR ]]; then
+		LOCK_AGE=$(($(date +%s) - $(stat -f %m "$LOCK_DIR" 2>/dev/null || date +%s)))
+		if [[ $LOCK_AGE -gt 7200 ]]; then
+			LOCK_MSG="$(date '+%Y-%m-%d %H:%M:%S') [WARNING] Removing stale lock (age: $((LOCK_AGE / 60)) minutes)"
+			echo "$LOCK_MSG"
+			echo "$LOCK_MSG [RUN_START: $RUN_START] [LOCK_DIR: $LOCK_DIR]" >>"$LOCK_CONTEXT_LOG"
+			rm -rf "$LOCK_DIR" 2>/dev/null || true
+			# Try to acquire lock again
+			if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+				echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] Failed to acquire lock after stale removal"
+				exit 0
+			fi
+		else
+			echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] Another instance is already running (lock: $LOCK_DIR, age: $((LOCK_AGE / 60)) min)"
+			exit 0
+		fi
+	fi
 fi
 trap 'rm -rf "$LOCK_DIR" 2>/dev/null || true' EXIT INT TERM
 
 # Only run on the 1st of the month or if FORCE_RUN is set
-DAY_OF_MONTH=$(date +%-d)  # %-d removes leading zero
-if [[ "$DAY_OF_MONTH" -ne 1 ]] && [[ "${FORCE_RUN:-0}" != "1" ]]; then
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] [monthly_maintenance] Monthly maintenance skipped - only runs on 1st of month (today is $(date +%B) $(date +%d))"
-    exit 0
+DAY_OF_MONTH=$(date +%-d) # %-d removes leading zero
+if [[ $DAY_OF_MONTH -ne 1 ]] && [[ ${FORCE_RUN:-0} != "1" ]]; then
+	echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] [monthly_maintenance] Monthly maintenance skipped - only runs on 1st of month (today is $(date +%B) $(date +%d))"
+	exit 0
 fi
 
 # Basic logging
 log_info() {
-    local ts
-    ts="$(date '+%Y-%m-%d %H:%M:%S')"
-    echo "$ts [INFO] [monthly_maintenance] $*" | tee -a "$LOG_DIR/monthly_maintenance.log"
+	local ts
+	ts="$(date '+%Y-%m-%d %H:%M:%S')"
+	echo "$ts [INFO] [monthly_maintenance] $*" | tee -a "$LOG_DIR/monthly_maintenance.log"
 }
 
 log_warn() {
-    local ts
-    ts="$(date '+%Y-%m-%d %H:%M:%S')"
-    echo "$ts [WARNING] [monthly_maintenance] $*" | tee -a "$LOG_DIR/monthly_maintenance.log"
+	local ts
+	ts="$(date '+%Y-%m-%d %H:%M:%S')"
+	echo "$ts [WARNING] [monthly_maintenance] $*" | tee -a "$LOG_DIR/monthly_maintenance.log"
 }
 
 # Script directory
@@ -65,33 +65,33 @@ TASKS_FAILED=0
 
 # Function to run a maintenance script
 run_task() {
-    local script_name="$1"
-    local script_path="$SCRIPT_DIR/$script_name"
-    
-    if [[ ! -f "$script_path" ]]; then
-        log_warn "Script not found: $script_path"
-        ((TASKS_FAILED++))
-        return 1
-    fi
-    
-    if [[ ! -x "$script_path" ]]; then
-        log_warn "Script not executable: $script_path"
-        ((TASKS_FAILED++))
-        return 1
-    fi
-    
-    log_info "Running monthly task: $script_name"
-    
-    # Set AUTOMATED_RUN and run the script
-    if AUTOMATED_RUN=1 "$script_path" 2>&1 | tee -a "$LOG_DIR/monthly_maintenance.log"; then
-        log_info "Monthly task completed successfully: $script_name"
-        ((TASKS_COMPLETED++))
-        return 0
-    else
-        log_warn "Monthly task failed: $script_name"
-        ((TASKS_FAILED++))
-        return 1
-    fi
+	local script_name="$1"
+	local script_path="$SCRIPT_DIR/$script_name"
+
+	if [[ ! -f $script_path ]]; then
+		log_warn "Script not found: $script_path"
+		((TASKS_FAILED++))
+		return 1
+	fi
+
+	if [[ ! -x $script_path ]]; then
+		log_warn "Script not executable: $script_path"
+		((TASKS_FAILED++))
+		return 1
+	fi
+
+	log_info "Running monthly task: $script_name"
+
+	# Set AUTOMATED_RUN and run the script
+	if AUTOMATED_RUN=1 "$script_path" 2>&1 | tee -a "$LOG_DIR/monthly_maintenance.log"; then
+		log_info "Monthly task completed successfully: $script_name"
+		((TASKS_COMPLETED++))
+		return 0
+	else
+		log_warn "Monthly task failed: $script_name"
+		((TASKS_FAILED++))
+		return 1
+	fi
 }
 
 # Run monthly maintenance tasks
@@ -101,7 +101,7 @@ log_info "=== MONTHLY DEEP CLEANING TASKS ==="
 run_task "system_cleanup.sh"
 
 # 2) Editor cache cleanup
-run_task "editor_cleanup.sh" 
+run_task "editor_cleanup.sh"
 
 # 3) Deep system analysis and recommendations
 run_task "deep_cleaner.sh"
@@ -113,45 +113,45 @@ log_info "Tasks failed: $TASKS_FAILED"
 
 TOTAL_TASKS=$((TASKS_COMPLETED + TASKS_FAILED))
 if [[ $TASKS_FAILED -eq 0 ]]; then
-    STATUS="✅ All monthly tasks completed successfully ($TASKS_COMPLETED/$TOTAL_TASKS)"
-    log_info "Monthly maintenance completed successfully"
+	STATUS="✅ All monthly tasks completed successfully ($TASKS_COMPLETED/$TOTAL_TASKS)"
+	log_info "Monthly maintenance completed successfully"
 else
-    STATUS="⚠️ Monthly maintenance completed with ${TASKS_FAILED} failures ($TASKS_COMPLETED/$TOTAL_TASKS)"
-    log_warn "Monthly maintenance had $TASKS_FAILED failures"
+	STATUS="⚠️ Monthly maintenance completed with ${TASKS_FAILED} failures ($TASKS_COMPLETED/$TOTAL_TASKS)"
+	log_warn "Monthly maintenance had $TASKS_FAILED failures"
 fi
 
 # Notification
 if command -v osascript >/dev/null 2>&1; then
-    osascript -e "display notification \"$STATUS\" with title \"Monthly Maintenance\"" 2>/dev/null || true
+	osascript -e "display notification \"$STATUS\" with title \"Monthly Maintenance\"" 2>/dev/null || true
 fi
 
 log_info "Monthly maintenance finished: $STATUS"
 
 # Generate error summary
 if [[ -x "$SCRIPT_DIR/generate_error_summary.sh" ]]; then
-    SUMMARY_FILE=$("$SCRIPT_DIR/generate_error_summary.sh" 2>/dev/null || echo "")
-    if [[ -n "$SUMMARY_FILE" ]] && [[ -f "$SUMMARY_FILE" ]]; then
-        log_info "Error summary generated: $SUMMARY_FILE"
-    fi
+	SUMMARY_FILE=$("$SCRIPT_DIR/generate_error_summary.sh" 2>/dev/null || echo "")
+	if [[ -n $SUMMARY_FILE ]] && [[ -f $SUMMARY_FILE ]]; then
+		log_info "Error summary generated: $SUMMARY_FILE"
+	fi
 fi
 
 # Enhanced notification with terminal-notifier (actionable)
 if command -v terminal-notifier >/dev/null 2>&1; then
-    if [[ $TASKS_FAILED -gt 0 ]]; then
-  terminal-notifier -title "Monthly Maintenance" \
-    -subtitle "Completed with $EXIT_CODE task error(s)" \
-    -message "Click for details" \
-    -group "maintenance" \
-    -execute "$HOME/Library/Maintenance/bin/view_logs.sh monthly" 2>/dev/null || true
-    else
-        terminal-notifier -title "Monthly Maintenance" \
-            -subtitle "All tasks completed successfully" \
-            -message "$TASKS_COMPLETED/$TASKS_COMPLETED tasks passed" \
-            -group "maintenance" 2>/dev/null || true
-    fi
+	if [[ $TASKS_FAILED -gt 0 ]]; then
+		terminal-notifier -title "Monthly Maintenance" \
+			-subtitle "Completed with $EXIT_CODE task error(s)" \
+			-message "Click for details" \
+			-group "maintenance" \
+			-execute "$HOME/Library/Maintenance/bin/view_logs.sh monthly" 2>/dev/null || true
+	else
+		terminal-notifier -title "Monthly Maintenance" \
+			-subtitle "All tasks completed successfully" \
+			-message "$TASKS_COMPLETED/$TASKS_COMPLETED tasks passed" \
+			-group "maintenance" 2>/dev/null || true
+	fi
 elif command -v osascript >/dev/null 2>&1; then
-    # Fallback to osascript
-    osascript -e "display notification \"$STATUS\" with title \"Monthly Maintenance\"" 2>/dev/null || true
+	# Fallback to osascript
+	osascript -e "display notification \"$STATUS\" with title \"Monthly Maintenance\"" 2>/dev/null || true
 fi
 
 echo "Monthly maintenance completed!"

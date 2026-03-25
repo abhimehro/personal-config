@@ -1,17 +1,20 @@
 # Windscribe VPN + Control D DNS Setup Guide
 
 ## Summary
+
 This guide documents the successful configuration of Windscribe VPN with Control D DNS privacy filtering on macOS.
 
 ## Final Working Configuration
 
 ### Control D Settings
+
 - **Profile**: Privacy profile (6m971e9jaf)
 - **Protocol**: DNS-over-HTTPS (DoH)
 - **Listener**: `0.0.0.0:53` (all interfaces) - **KEY CHANGE**
 - **Manager**: Custom controld-manager with profile switching
 
 ### Windscribe Settings
+
 - **DNS**: Local DNS
 - **App Internal DNS**: OS Default
 - **Split Tunneling**: OFF (disabled)
@@ -26,10 +29,12 @@ The critical breakthrough was modifying Control D's configuration to listen on a
 ## Configuration Files
 
 ### Control D Privacy Profile
+
 Location: `/etc/controld/ctrld.privacy.toml`
 Key change: `ip = '0.0.0.0'` instead of `ip = '127.0.0.1'`
 
 ### Setup Script
+
 Location: `~/Documents/dev/personal-config/windscribe-controld-setup.sh`
 Purpose: Automated verification and configuration
 
@@ -72,6 +77,7 @@ scutil --dns | head -10         # Should show Windscribe VPN in resolver #1
 ## Split Tunneling Issue
 
 **Problem**: When split tunneling was enabled, DNS behavior was inconsistent
+
 - Some apps used VPN DNS (Control D filtering)
 - Other apps bypassed VPN (no filtering)
 - Created connection/disconnection loops
@@ -90,10 +96,12 @@ scutil --dns | head -10         # Should show Windscribe VPN in resolver #1
 ## Backup and Recovery
 
 Backup files created in:
+
 - `/etc/controld/ctrld.privacy.toml.backup`
 - `~/Documents/dev/personal-config/ctrld.toml.backup`
 
 To restore original configuration:
+
 ```bash
 sudo controld-manager stop
 sudo cp /etc/controld/ctrld.privacy.toml.backup /etc/controld/ctrld.privacy.toml
@@ -103,6 +111,7 @@ sudo controld-manager switch privacy doh
 ## Maintenance
 
 Profile switching commands:
+
 ```bash
 sudo controld-manager switch privacy doh    # Privacy profile
 sudo controld-manager switch gaming doh     # Gaming profile

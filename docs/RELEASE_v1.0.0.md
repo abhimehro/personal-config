@@ -21,6 +21,7 @@ This release marks a significant security milestone with comprehensive protectio
 ### 🛡️ Security Improvements
 
 **Major Security Fixes:**
+
 1. **PR #213**: Hardened `controld-manager` against symlink attacks
    - Atomic file and directory operations
    - Comprehensive symlink detection
@@ -36,6 +37,7 @@ This release marks a significant security milestone with comprehensive protectio
    - Reduced attack surface with atomic operations
 
 **Security Vulnerabilities Fixed:**
+
 - [CWE-59](https://cwe.mitre.org/data/definitions/59.html): Improper Link Resolution Before File Access (Symlink Following)
 - [CWE-362](https://cwe.mitre.org/data/definitions/362.html): Race Condition (TOCTOU)
 - [CWE-732](https://cwe.mitre.org/data/definitions/732.html): Incorrect Permission Assignment
@@ -50,12 +52,14 @@ This release marks a significant security milestone with comprehensive protectio
 ### 📚 Documentation
 
 **New Documentation:**
+
 - `docs/SECURITY_PATTERNS.md`: Comprehensive security best practices guide
 - `tests/test_symlink_protection.sh`: Security test suite
 - Updated `CHANGELOG.md` with February 2026 security sprint details
 - Updated `.jules/sentinel.md` with security learnings
 
 **Documentation Improvements:**
+
 - Security pattern examples with vulnerable/secure code comparisons
 - Quick reference checklists for security reviews
 - CWE references and mitigation strategies
@@ -137,7 +141,7 @@ Then create the release from the tag via GitHub UI with detailed notes.
 
 Use this template when creating the GitHub release:
 
-```markdown
+````markdown
 # 🎉 v1.0.0 - Security Hardening Milestone
 
 This release marks a major security milestone with comprehensive protection against common attack vectors in configuration management scripts.
@@ -145,29 +149,34 @@ This release marks a major security milestone with comprehensive protection agai
 ## 🛡️ Security Improvements
 
 ### Symlink Attack Prevention
+
 - **Fixed [CWE-59](https://cwe.mitre.org/data/definitions/59.html)**: Improper Link Resolution Before File Access
 - Replaced vulnerable `cp` + `chmod` patterns with atomic `install -m` operations
 - Added comprehensive symlink detection for all critical paths
 - Implemented defense-in-depth with pre-flight and post-creation checks
 
 ### TOCTOU Race Condition Elimination
+
 - **Fixed [CWE-362](https://cwe.mitre.org/data/definitions/362.html)**: Time-of-Check-Time-of-Use races
 - Minimized race windows with atomic operations
 - Added verification layers for critical file operations
 
 ### File Permission Hardening
+
 - **Fixed [CWE-732](https://cwe.mitre.org/data/definitions/732.html)**: Incorrect Permission Assignment
 - Configuration files now created with mode 600 atomically
 - Directories created with mode 700 atomically
 - Eliminated world-readable sensitive files
 
 ### Scripts Hardened
+
 - `controld-system/scripts/controld-manager` (PRs #213, #215)
 - `scripts/setup-controld.sh` (PR #216)
 
 ## 🤖 Automation
 
 ### Daily Repository Status Workflow
+
 - **PR #217**: Automated health monitoring and status reports
 - Integration with GitHub Agentic Workflows
 - Daily summaries of PRs, issues, and recommendations
@@ -175,6 +184,7 @@ This release marks a major security milestone with comprehensive protection agai
 ## 📚 Documentation
 
 ### New Security Guide
+
 - **`docs/SECURITY_PATTERNS.md`**: Comprehensive guide to secure coding patterns
   - Symlink attack prevention techniques
   - TOCTOU mitigation strategies
@@ -184,6 +194,7 @@ This release marks a major security milestone with comprehensive protection agai
   - Quick reference checklists
 
 ### Updated Documentation
+
 - `CHANGELOG.md`: February 2026 security sprint details
 - `.jules/sentinel.md`: New security learnings and CWE references
 - Test suite documentation
@@ -198,29 +209,35 @@ This release marks a major security milestone with comprehensive protection agai
 ## 🧪 Testing
 
 ### New Test Suite
+
 - `tests/test_symlink_protection.sh`: Validates symlink protection mechanisms
 - Demonstrates vulnerable vs. secure patterns
 - Tests atomic operations and race condition scenarios
 
 ### Test Commands
+
 ```bash
 ./tests/test_symlink_protection.sh  # Symlink protection validation
 make control-d-regression           # Full Control D regression suite
 ```
+````
 
 ## 📦 What's Changed
 
 **Security PRs:**
+
 - #213: Hardened controld-manager against symlink attacks
-- #215: Eliminated TOCTOU races in controld-manager  
+- #215: Eliminated TOCTOU races in controld-manager
 - #216: Fixed symlink hijacking in setup-controld.sh
 
 **Automation PRs:**
+
 - #217: Added daily repository status workflow
 
 ## 🙏 Credits
 
 Special thanks to:
+
 - **@Copilot** for security code reviews and improvements
 - **@Jules** for automated security analysis
 - GitHub Agentic Workflows team for the daily status automation
@@ -235,6 +252,7 @@ Special thanks to:
 No breaking changes. All improvements are backward compatible.
 
 To benefit from security improvements:
+
 1. Pull latest changes: `git pull origin main`
 2. Re-run setup if needed: `./setup.sh`
 3. Review `docs/SECURITY_PATTERNS.md` for best practices
@@ -242,6 +260,7 @@ To benefit from security improvements:
 ---
 
 **Full Changelog**: https://github.com/abhimehro/personal-config/blob/main/CHANGELOG.md
+
 ```
 
 ---
@@ -294,3 +313,4 @@ After creating the release:
 ---
 
 *This release preparation document was created as part of the February 2026 security hardening initiative.*
+```

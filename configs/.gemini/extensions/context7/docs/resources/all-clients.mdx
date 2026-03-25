@@ -199,7 +199,13 @@ Add this to your Opencode configuration file. See [Opencode MCP docs](https://op
   "mcp": {
     "context7": {
       "type": "local",
-      "command": ["npx", "-y", "@upstash/context7-mcp", "--api-key", "YOUR_API_KEY"],
+      "command": [
+        "npx",
+        "-y",
+        "@upstash/context7-mcp",
+        "--api-key",
+        "YOUR_API_KEY"
+      ],
       "enabled": true
     }
   }
@@ -527,7 +533,8 @@ http_headers = { "CONTEXT7_API_KEY" = "YOUR_API_KEY" }
 ```
 
 <Note>
-If you see startup timeout errors, try increasing `startup_timeout_ms` to `40_000`.
+  If you see startup timeout errors, try increasing `startup_timeout_ms` to
+  `40_000`.
 </Note>
 
 </Accordion>
@@ -692,7 +699,14 @@ The configuration on Windows is slightly different. Use `cmd` to run npx:
   "mcpServers": {
     "context7": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@upstash/context7-mcp", "--api-key", "YOUR_API_KEY"],
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@upstash/context7-mcp",
+        "--api-key",
+        "YOUR_API_KEY"
+      ],
       "disabled": false,
       "autoApprove": []
     }

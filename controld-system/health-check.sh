@@ -16,9 +16,9 @@ NC='\033[0m' # No Color
 
 VERIFY_SCRIPT="$(cd "$(dirname "$0")/.." && pwd)/scripts/network-mode-verify.sh"
 
-if [[ ! -x "$VERIFY_SCRIPT" ]]; then
-  echo -e "${RED}[ERR]${NC} network-mode-verify.sh not found or not executable at $VERIFY_SCRIPT" >&2
-  exit 1
+if [[ ! -x $VERIFY_SCRIPT ]]; then
+	echo -e "${RED}[ERR]${NC} network-mode-verify.sh not found or not executable at $VERIFY_SCRIPT" >&2
+	exit 1
 fi
 
 echo "=================================================="
@@ -32,10 +32,10 @@ echo ""
 # Detect active profile from system symlink (Separation Strategy)
 DETECTED_PROFILE="browsing" # Default fallback
 if sudo test -L "/etc/controld/ctrld.toml"; then
-    TARGET=$(sudo readlink "/etc/controld/ctrld.toml")
-    # Extract profile name from filename (e.g., ctrld.privacy.toml -> privacy)
-    FILENAME=$(basename "$TARGET")
-    DETECTED_PROFILE=$(echo "$FILENAME" | sed -E 's/^ctrld\.(.*)\.toml$/\1/')
+	TARGET=$(sudo readlink "/etc/controld/ctrld.toml")
+	# Extract profile name from filename (e.g., ctrld.privacy.toml -> privacy)
+	FILENAME=$(basename "$TARGET")
+	DETECTED_PROFILE=$(echo "$FILENAME" | sed -E 's/^ctrld\.(.*)\.toml$/\1/')
 fi
 
 echo -e "${BLUE}Running deep verification for profile: ${DETECTED_PROFILE}...${NC}"
@@ -43,9 +43,9 @@ echo ""
 
 VERIFY_STATUS=0
 if "$VERIFY_SCRIPT" controld "$DETECTED_PROFILE"; then
-  VERIFY_STATUS=0
+	VERIFY_STATUS=0
 else
-  VERIFY_STATUS=1
+	VERIFY_STATUS=1
 fi
 
 echo ""
@@ -61,31 +61,31 @@ echo ""
 # Check 1: Service Status
 echo -n "1. Checking if ctrld service is running... "
 if sudo ctrld service status &>/dev/null; then
-    echo -e "${GREEN}✓ PASS${NC}"
-    SERVICE_RUNNING=true
+	echo -e "${GREEN}✓ PASS${NC}"
+	SERVICE_RUNNING=true
 else
-    echo -e "${RED}✗ FAIL${NC}"
-    echo "   Service is not running. Start it with:"
-    echo -e "   ${YELLOW}sudo ctrld service start --config ~/.config/controld/ctrld.toml --skip_self_checks${NC}"
-    SERVICE_RUNNING=false
+	echo -e "${RED}✗ FAIL${NC}"
+	echo "   Service is not running. Start it with:"
+	echo -e "   ${YELLOW}sudo ctrld service start --config ~/.config/controld/ctrld.toml --skip_self_checks${NC}"
+	SERVICE_RUNNING=false
 fi
 
 echo ""
 
 # Check 2: DNS Resolution (only if service is running)
 if [ "$SERVICE_RUNNING" = true ]; then
-    echo -n "2. Testing DNS resolution via ctrld... "
-    if dig @127.0.0.1 example.com +short +timeout=5 &>/dev/null; then
-        echo -e "${GREEN}✓ PASS${NC}"
-        DNS_WORKING=true
-    else
-        echo -e "${RED}✗ FAIL${NC}"
-        echo "   DNS queries are not being resolved via localhost."
-        DNS_WORKING=false
-    fi
+	echo -n "2. Testing DNS resolution via ctrld... "
+	if dig @127.0.0.1 example.com +short +timeout=5 &>/dev/null; then
+		echo -e "${GREEN}✓ PASS${NC}"
+		DNS_WORKING=true
+	else
+		echo -e "${RED}✗ FAIL${NC}"
+		echo "   DNS queries are not being resolved via localhost."
+		DNS_WORKING=false
+	fi
 else
-    echo "2. Skipping DNS resolution test (service not running)"
-    DNS_WORKING=false
+	echo "2. Skipping DNS resolution test (service not running)"
+	DNS_WORKING=false
 fi
 
 echo ""
@@ -93,37 +93,37 @@ echo ""
 # Check 3: Log file errors
 echo -n "3. Checking for recent errors in logs... "
 # Use a mockable path for logs if needed, but for now standard path
-ERROR_COUNT=$(sudo tail -20 /var/log/ctrld.log 2>/dev/null | grep -c "\"level\":\"error\"" || true)
+ERROR_COUNT=$(sudo tail -20 /var/log/ctrld.log 2>/dev/null | grep -c '"level":"error"' || true)
 if [ -z "$ERROR_COUNT" ]; then
-    ERROR_COUNT=0
+	ERROR_COUNT=0
 fi
 
 if [ "$ERROR_COUNT" -eq 0 ]; then
-    echo -e "${GREEN}✓ PASS${NC} (no errors in last 20 log lines)"
+	echo -e "${GREEN}✓ PASS${NC} (no errors in last 20 log lines)"
 elif [ "$ERROR_COUNT" -lt 5 ]; then
-    echo -e "${YELLOW}⚠ WARNING${NC} (${ERROR_COUNT} errors found)"
-    echo "   This may be normal if you just restarted the service."
+	echo -e "${YELLOW}⚠ WARNING${NC} (${ERROR_COUNT} errors found)"
+	echo "   This may be normal if you just restarted the service."
 else
-    echo -e "${RED}✗ FAIL${NC} (${ERROR_COUNT} errors found)"
-    echo "   Run: sudo tail -20 /var/log/ctrld.log | grep error"
+	echo -e "${RED}✗ FAIL${NC} (${ERROR_COUNT} errors found)"
+	echo "   Run: sudo tail -20 /var/log/ctrld.log | grep error"
 fi
 
 echo ""
 
 # Check 4: Upstream connectivity
 if [ "$SERVICE_RUNNING" = true ] && [ "$DNS_WORKING" = true ]; then
-    echo -n "4. Checking upstream DoH connectivity... "
-    
-    # Look for "upstream marked as down" in recent logs
-    if sudo tail -50 /var/log/ctrld.log 2>/dev/null | grep -q "marked as down"; then
-        echo -e "${RED}✗ FAIL${NC}"
-        echo "   Upstream is marked as down. Check logs:"
-        echo "   sudo tail -50 /var/log/ctrld.log | grep upstream"
-    else
-        echo -e "${GREEN}✓ PASS${NC}"
-    fi
+	echo -n "4. Checking upstream DoH connectivity... "
+
+	# Look for "upstream marked as down" in recent logs
+	if sudo tail -50 /var/log/ctrld.log 2>/dev/null | grep -q "marked as down"; then
+		echo -e "${RED}✗ FAIL${NC}"
+		echo "   Upstream is marked as down. Check logs:"
+		echo "   sudo tail -50 /var/log/ctrld.log | grep upstream"
+	else
+		echo -e "${GREEN}✓ PASS${NC}"
+	fi
 else
-    echo "4. Skipping upstream check (prerequisites failed)"
+	echo "4. Skipping upstream check (prerequisites failed)"
 fi
 
 echo ""
@@ -132,14 +132,14 @@ echo ""
 echo -n "5. Verifying configuration file exists... "
 CONFIG_FOUND=false
 if [ -f "$HOME/.config/controld/ctrld.toml" ]; then
-    echo -e "${GREEN}✓ PASS${NC} (Local config found)"
-    CONFIG_FOUND=true
+	echo -e "${GREEN}✓ PASS${NC} (Local config found)"
+	CONFIG_FOUND=true
 elif sudo test -f "/etc/controld/ctrld.toml"; then
-    echo -e "${GREEN}✓ PASS${NC} (System config found via Separation Strategy)"
-    CONFIG_FOUND=true
+	echo -e "${GREEN}✓ PASS${NC} (System config found via Separation Strategy)"
+	CONFIG_FOUND=true
 else
-    echo -e "${RED}✗ FAIL${NC}"
-    echo "   Config file not found at ~/.config/controld/ctrld.toml or /etc/controld/ctrld.toml"
+	echo -e "${RED}✗ FAIL${NC}"
+	echo "   Config file not found at ~/.config/controld/ctrld.toml or /etc/controld/ctrld.toml"
 fi
 
 echo ""
@@ -147,11 +147,11 @@ echo ""
 # Check 6: Firewall exception
 echo -n "6. Checking firewall exception... "
 if sudo /usr/libexec/ApplicationFirewall/socketfilterfw --listapps 2>/dev/null | grep -q ctrld; then
-    echo -e "${GREEN}✓ PASS${NC}"
+	echo -e "${GREEN}✓ PASS${NC}"
 else
-    echo -e "${YELLOW}⚠ WARNING${NC}"
-    echo "   ctrld not found in firewall allowlist."
-    echo "   Add with: sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /opt/homebrew/bin/ctrld"
+	echo -e "${YELLOW}⚠ WARNING${NC}"
+	echo "   ctrld not found in firewall allowlist."
+	echo "   Add with: sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /opt/homebrew/bin/ctrld"
 fi
 
 echo ""
@@ -162,20 +162,20 @@ echo "=================================================="
 ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 if [ "$VERIFY_STATUS" -eq 0 ] && [ "$SERVICE_RUNNING" = true ] && [ "$DNS_WORKING" = true ] && [ "$CONFIG_FOUND" = true ]; then
-    echo -e "${GREEN}Overall Status: HEALTHY ✓${NC}"
-    echo ""
-    # Try to show active profile
-    if sudo test -f "/etc/controld/ctrld.toml"; then
-      echo "Active configuration: /etc/controld/ctrld.toml"
-    elif [ -f "$HOME/.config/controld/ctrld.toml" ]; then
-      echo "Active configuration: $HOME/.config/controld/ctrld.toml"
-    fi
-    echo "SUMMARY TS=${ts} MODE=health-check RESULT=PASS PROFILE=${DETECTED_PROFILE}"
-    exit 0
+	echo -e "${GREEN}Overall Status: HEALTHY ✓${NC}"
+	echo ""
+	# Try to show active profile
+	if sudo test -f "/etc/controld/ctrld.toml"; then
+		echo "Active configuration: /etc/controld/ctrld.toml"
+	elif [ -f "$HOME/.config/controld/ctrld.toml" ]; then
+		echo "Active configuration: $HOME/.config/controld/ctrld.toml"
+	fi
+	echo "SUMMARY TS=${ts} MODE=health-check RESULT=PASS PROFILE=${DETECTED_PROFILE}"
+	exit 0
 else
-    echo -e "${RED}Overall Status: UNHEALTHY ✗${NC}"
-    echo ""
-    echo "Please address the issues highlighted above."
-    echo "SUMMARY TS=${ts} MODE=health-check RESULT=FAIL PROFILE=${DETECTED_PROFILE}"
-    exit 1
+	echo -e "${RED}Overall Status: UNHEALTHY ✗${NC}"
+	echo ""
+	echo "Please address the issues highlighted above."
+	echo "SUMMARY TS=${ts} MODE=health-check RESULT=FAIL PROFILE=${DETECTED_PROFILE}"
+	exit 1
 fi

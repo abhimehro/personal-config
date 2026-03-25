@@ -9,19 +9,19 @@ DEST_DEFAULT="${PROTON_BACKUP_DEST:-$PROTON_ROOT_DEFAULT/HomeBackup}"
 
 # Load config
 CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
-if [[ -f "$CONFIG_FILE" ]]; then
-  # shellcheck disable=SC1090
-  source "$CONFIG_FILE" 2>/dev/null || true
+if [[ -f $CONFIG_FILE ]]; then
+	# shellcheck disable=SC1090
+	source "$CONFIG_FILE" 2>/dev/null || true
 fi
 
-if [[ -n "${MAINTENANCE_HOME:-}" ]]; then
-  EXCLUDES_FILE_DEFAULT="$MAINTENANCE_HOME/conf/protondrive_backup.exclude"
+if [[ -n ${MAINTENANCE_HOME-} ]]; then
+	EXCLUDES_FILE_DEFAULT="$MAINTENANCE_HOME/conf/protondrive_backup.exclude"
 else
-  EXCLUDES_FILE_DEFAULT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/protondrive_backup.exclude"
+	EXCLUDES_FILE_DEFAULT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/protondrive_backup.exclude"
 fi
 
 usage() {
-  cat <<'EOF'
+	cat <<'EOF'
 Usage:
   protondrive_backup.sh [--run] [--dry-run] [--no-delete] [--dest PATH] [--proton-root PATH] [--excludes FILE]
 
@@ -49,28 +49,53 @@ DEST="$DEST_DEFAULT"
 EXCLUDES_FILE="$EXCLUDES_FILE_DEFAULT"
 
 while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --run) DRY_RUN=0; shift ;;
-    --dry-run) DRY_RUN=1; shift ;;
-    --no-delete) DELETE=0; shift ;;
-    --proton-root) PROTON_ROOT="$2"; shift 2 ;;
-    --dest) DEST="$2"; shift 2 ;;
-    --excludes) EXCLUDES_FILE="$2"; shift 2 ;;
-    -h|--help) usage; exit 0 ;;
-    *) echo "Unknown arg: $1" >&2; usage; exit 2 ;;
-  esac
+	case "$1" in
+	--run)
+		DRY_RUN=0
+		shift
+		;;
+	--dry-run)
+		DRY_RUN=1
+		shift
+		;;
+	--no-delete)
+		DELETE=0
+		shift
+		;;
+	--proton-root)
+		PROTON_ROOT="$2"
+		shift 2
+		;;
+	--dest)
+		DEST="$2"
+		shift 2
+		;;
+	--excludes)
+		EXCLUDES_FILE="$2"
+		shift 2
+		;;
+	-h | --help)
+		usage
+		exit 0
+		;;
+	*)
+		echo "Unknown arg: $1" >&2
+		usage
+		exit 2
+		;;
+	esac
 done
 
-if [[ ! -d "$PROTON_ROOT" ]]; then
-  echo "ERROR: ProtonDrive root not found: $PROTON_ROOT" >&2
-  echo "Make sure Proton Drive is mounted and syncing." >&2
-  exit 1
+if [[ ! -d $PROTON_ROOT ]]; then
+	echo "ERROR: ProtonDrive root not found: $PROTON_ROOT" >&2
+	echo "Make sure Proton Drive is mounted and syncing." >&2
+	exit 1
 fi
 
-if [[ ! -f "$EXCLUDES_FILE" ]]; then
-  echo "WARNING: Excludes file not found: $EXCLUDES_FILE" >&2
-  echo "Proceeding without exclusions (not recommended)." >&2
-  echo "Consider creating an exclude file to skip cache/tmp directories." >&2
+if [[ ! -f $EXCLUDES_FILE ]]; then
+	echo "WARNING: Excludes file not found: $EXCLUDES_FILE" >&2
+	echo "Proceeding without exclusions (not recommended)." >&2
+	echo "Consider creating an exclude file to skip cache/tmp directories." >&2
 fi
 
 mkdir -p "$DEST"
@@ -86,106 +111,107 @@ mkdir -p "$DEST"
 RSYNC=(/usr/bin/rsync -aE --ignore-errors --partial --human-readable --stats)
 
 # Add exclude file if it exists
-if [[ -f "$EXCLUDES_FILE" ]]; then
-  RSYNC+=(--exclude-from="$EXCLUDES_FILE")
+if [[ -f $EXCLUDES_FILE ]]; then
+	RSYNC+=(--exclude-from="$EXCLUDES_FILE")
 fi
 
 # Add delete option if enabled
 if [[ $DELETE -eq 1 ]]; then
-  RSYNC+=(--delete-after)
+	RSYNC+=(--delete-after)
 fi
 
 # Add dry-run if enabled
 if [[ $DRY_RUN -eq 1 ]]; then
-  RSYNC+=(--dry-run)
-  echo "=========================================="
-  echo "DRY RUN MODE - No changes will be made"
-  echo "Run with --run to actually perform backup"
-  echo "=========================================="
-  echo ""
+	RSYNC+=(--dry-run)
+	echo "=========================================="
+	echo "DRY RUN MODE - No changes will be made"
+	echo "Run with --run to actually perform backup"
+	echo "=========================================="
+	echo ""
 fi
 
 require_path() {
-  local p="$1"
-  if [[ ! -e "$p" ]]; then
-    echo "Skipping missing path: $p" >&2
-    return 1
-  fi
-  return 0
+	local p="$1"
+	if [[ ! -e $p ]]; then
+		echo "Skipping missing path: $p" >&2
+		return 1
+	fi
+	return 0
 }
 
 CORE=(
-  "$HOME/Documents"
-  "$HOME/Desktop"
-  "$HOME/Downloads"
-  "$HOME/Pictures"
-  "$HOME/Movies"
-  "$HOME/Public"
-  "$HOME/Applications"
-  "$HOME/CloudMedia"
-  "$HOME/FontBase"
-  "$HOME/Backups"
+	"$HOME/Documents"
+	"$HOME/Desktop"
+	"$HOME/Downloads"
+	"$HOME/Pictures"
+	"$HOME/Movies"
+	"$HOME/Public"
+	"$HOME/Applications"
+	"$HOME/CloudMedia"
+	"$HOME/FontBase"
+	"$HOME/Backups"
 )
 
 DOTFILES=(
-  "$HOME/.bashrc"
-  "$HOME/.gitconfig"
-  "$HOME/.zshrc"
-  "$HOME/.aws"
-  "$HOME/.cargo"
-  "$HOME/.config"
-  "$HOME/.filebot"
-  "$HOME/.gemini"
-  "$HOME/.jules"
-  "$HOME/.local"
-  "$HOME/.vscode-R"
-  "$HOME/.warp"
+	"$HOME/.bashrc"
+	"$HOME/.gitconfig"
+	"$HOME/.zshrc"
+	"$HOME/.aws"
+	"$HOME/.cargo"
+	"$HOME/.config"
+	"$HOME/.filebot"
+	"$HOME/.gemini"
+	"$HOME/.jules"
+	"$HOME/.local"
+	"$HOME/.vscode-R"
+	"$HOME/.warp"
 )
 
 run_rsync_relative() {
-  local label="$1"; shift
-  local -a items=("$@")
+	local label="$1"
+	shift
+	local -a items=("$@")
 
-  echo ""
-  echo "==> Backing up: $label"
-  echo ""
+	echo ""
+	echo "==> Backing up: $label"
+	echo ""
 
-  local -a existing=()
-  for p in "${items[@]}"; do
-    if require_path "$p"; then
-      existing+=("$p")
-    fi
-  done
+	local -a existing=()
+	for p in "${items[@]}"; do
+		if require_path "$p"; then
+			existing+=("$p")
+		fi
+	done
 
-  if [[ ${#existing[@]} -eq 0 ]]; then
-    echo "No paths exist for $label; skipping." >&2
-    return 0
-  fi
+	if [[ ${#existing[@]} -eq 0 ]]; then
+		echo "No paths exist for $label; skipping." >&2
+		return 0
+	fi
 
-  # Run rsync and capture exit code
-  set +e
-  "${RSYNC[@]}" --relative "${existing[@]}" "$DEST/"
-  local rc=$?
-  set -e
+	# Run rsync and capture exit code
+	set +e
+	"${RSYNC[@]}" --relative "${existing[@]}" "$DEST/"
+	local rc=$?
+	set -e
 
-  # rsync exit codes:
-  # 0 = success
-  # 23 = "Partial transfer due to error" (common with ._* files)
-  # 24 = "Partial transfer due to vanished source files" (common on macOS)
-  if [[ $rc -eq 0 ]]; then
-    echo "✅ $label backup completed successfully"
-  elif [[ $rc -eq 23 ]]; then
-    echo "⚠️  $label backup completed with some file errors (exit code 23)"
-    echo "This is usually caused by macOS resource fork (._*) files and can be safely ignored."
-  elif [[ $rc -eq 24 ]]; then
-    echo "⚠️  $label backup completed with some vanished files (exit code 24)"
-    echo "This is normal - some files were deleted/moved during backup."
-  else
-    echo "❌ $label backup failed with exit code: $rc" >&2
-    return $rc
-  fi
+	# rsync exit codes:
+	# 0 = success
+	# 23 = "Partial transfer due to error" (common with ._* files)
+	# 24 = "Partial transfer due to vanished source files" (common on macOS)
+	if [[ $rc -eq 0 ]]; then
+		echo "✅ $label backup completed successfully"
+	elif [[ $rc -eq 23 ]]; then
+		echo "⚠️  $label backup completed with some file errors (exit code 23)"
+		echo "This is usually caused by macOS resource fork (._*) files and can be safely ignored."
+	elif [[ $rc -eq 24 ]]; then
+		echo "⚠️  $label backup completed with some vanished files (exit code 24)"
+		echo "This is normal - some files were deleted/moved during backup."
+	else
+		echo "❌ $label backup failed with exit code: $rc" >&2
+		return $rc
+	fi
 
-  return 0
+	return 0
 }
 
 # Track overall success
@@ -203,17 +229,17 @@ echo "Destination: $DEST"
 echo "Delete enabled: $([[ $DELETE -eq 1 ]] && echo "Yes" || echo "No")"
 
 if [[ $DRY_RUN -eq 1 ]]; then
-  echo ""
-  echo "⚠️  DRY RUN MODE - No changes were made"
-  echo "Re-run with --run to actually perform backup:"
-  echo "  $0 --run"
+	echo ""
+	echo "⚠️  DRY RUN MODE - No changes were made"
+	echo "Re-run with --run to actually perform backup:"
+	echo "  $0 --run"
 else
-  echo ""
-  if [[ $BACKUP_ERRORS -eq 0 ]]; then
-    echo "✅ Backup completed successfully!"
-  else
-    echo "⚠️  Backup completed with $BACKUP_ERRORS errors"
-    echo "Check the output above for details."
-  fi
+	echo ""
+	if [[ $BACKUP_ERRORS -eq 0 ]]; then
+		echo "✅ Backup completed successfully!"
+	else
+		echo "⚠️  Backup completed with $BACKUP_ERRORS errors"
+		echo "Check the output above for details."
+	fi
 fi
 echo "=========================================="

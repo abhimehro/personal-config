@@ -1,15 +1,18 @@
 # AdGuard Import Checklist
+
 ## Quick Reference for Your Migration
 
 ### ✅ **Pre-Import Verification**
 
 #### File Check:
+
 - [ ] `Consolidated-Denylist.txt` exists in Downloads folder
 - [ ] `Consolidated-Allowlist.txt` exists in Downloads folder
 - [ ] Files are readable (not corrupted)
 - [ ] Files contain expected content (not empty)
 
 #### AdGuard Check:
+
 - [ ] AdGuard for macOS is installed
 - [ ] AdGuard is running (icon in menu bar)
 - [ ] You have admin privileges
@@ -20,6 +23,7 @@
 ### 🚀 **Import Process (5 minutes)**
 
 #### Step 1: Import Denylist (2 minutes)
+
 1. [ ] Click AdGuard icon in menu bar
 2. [ ] Click gear icon ⚙️ (Preferences)
 3. [ ] Click "Filters" tab
@@ -32,6 +36,7 @@
 10. [ ] Ensure filter is checked/enabled
 
 #### Step 2: Import Allowlist (2 minutes)
+
 1. [ ] In Preferences, click "Allowlist" tab
 2. [ ] Click "Import" button
 3. [ ] Select `Consolidated-Allowlist.txt`
@@ -39,6 +44,7 @@
 5. [ ] Verify domains appear in allowlist
 
 #### Step 3: Test Configuration (1 minute)
+
 1. [ ] Visit a website (e.g., google.com)
 2. [ ] Check AdGuard Statistics tab
 3. [ ] Verify some requests are blocked
@@ -49,12 +55,14 @@
 ### 🔍 **Quick File Verification**
 
 #### Denylist Format Check:
+
 - [ ] File starts with comment lines (#)
 - [ ] Contains domain names (one per line)
 - [ ] No @@ prefix on domains
 - [ ] No empty lines at end
 
 #### Allowlist Format Check:
+
 - [ ] File starts with comment lines (#)
 - [ ] All domains have @@ prefix
 - [ ] One domain per line
@@ -65,18 +73,21 @@
 ### ⚠️ **Troubleshooting Quick Fixes**
 
 #### If Import Fails:
+
 - [ ] Check file encoding (should be UTF-8)
 - [ ] Verify file permissions
 - [ ] Try importing smaller test file first
 - [ ] Restart AdGuard and try again
 
 #### If Websites Break:
+
 - [ ] Check allowlist is imported correctly
 - [ ] Add broken domains to allowlist manually
 - [ ] Temporarily disable denylist to test
 - [ ] Adjust filter sensitivity if needed
 
 #### If Performance Issues:
+
 - [ ] Monitor system resources
 - [ ] Consider reducing list size initially
 - [ ] Check AdGuard Statistics for load
@@ -87,6 +98,7 @@
 ### 📊 **Expected Results**
 
 #### After Successful Import:
+
 - [ ] AdGuard Statistics shows blocked requests
 - [ ] Tracker domains are blocked
 - [ ] Essential websites work normally
@@ -94,6 +106,7 @@
 - [ ] No false positives on major sites
 
 #### Performance Indicators:
+
 - [ ] Browsing speed is normal
 - [ ] AdGuard responds quickly
 - [ ] System resources are stable
@@ -104,6 +117,7 @@
 ### 🎯 **Success Criteria**
 
 Your migration is successful when:
+
 - [ ] All tracker lists are consolidated into two files
 - [ ] Both files import without errors
 - [ ] AdGuard blocks tracking requests

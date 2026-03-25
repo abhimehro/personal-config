@@ -15,11 +15,11 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Cleanup function
 cleanup() {
-    rm -rf "$TEST_DIR"
-    # Remove any mock scripts we created
-    if [[ -n "${ORIGINAL_PATH:-}" ]]; then
-        export PATH="$ORIGINAL_PATH"
-    fi
+	rm -rf "$TEST_DIR"
+	# Remove any mock scripts we created
+	if [[ -n ${ORIGINAL_PATH-} ]]; then
+		export PATH="$ORIGINAL_PATH"
+	fi
 }
 trap cleanup EXIT
 
@@ -29,14 +29,14 @@ echo "Test 1: Script existence and executability"
 echo "---"
 
 SCRIPT="$REPO_ROOT/scripts/windscribe-connect.sh"
-if [[ ! -f "$SCRIPT" ]]; then
-    echo "❌ FAIL: Script not found at $SCRIPT"
-    exit 1
+if [[ ! -f $SCRIPT ]]; then
+	echo "❌ FAIL: Script not found at $SCRIPT"
+	exit 1
 fi
 
-if [[ ! -x "$SCRIPT" ]]; then
-    echo "❌ FAIL: Script is not executable"
-    exit 1
+if [[ ! -x $SCRIPT ]]; then
+	echo "❌ FAIL: Script is not executable"
+	exit 1
 fi
 
 echo "✅ PASS: Script exists and is executable"
@@ -51,7 +51,7 @@ MOCK_REPO="$TEST_DIR/mock_repo"
 mkdir -p "$MOCK_REPO/scripts"
 
 # Create a minimal version of the script for testing (put it in scripts dir)
-cat > "$MOCK_REPO/scripts/test_script.sh" << 'EOF'
+cat >"$MOCK_REPO/scripts/test_script.sh" <<'EOF'
 #!/bin/bash
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -65,23 +65,23 @@ chmod +x "$MOCK_REPO/scripts/test_script.sh"
 
 # Test without network-mode-manager.sh
 if bash "$MOCK_REPO/scripts/test_script.sh" 2>&1 | grep -q "ERROR: network-mode-manager.sh not found"; then
-    echo "✅ PASS: Correctly detects missing network-mode-manager.sh"
+	echo "✅ PASS: Correctly detects missing network-mode-manager.sh"
 else
-    echo "❌ FAIL: Did not detect missing network-mode-manager.sh"
-    exit 1
+	echo "❌ FAIL: Did not detect missing network-mode-manager.sh"
+	exit 1
 fi
 
 # Test with network-mode-manager.sh present
-cat > "$MOCK_REPO/scripts/network-mode-manager.sh" << 'NMEOF'
+cat >"$MOCK_REPO/scripts/network-mode-manager.sh" <<'NMEOF'
 #!/bin/bash
 echo "network-mode-manager stub"
 NMEOF
 chmod +x "$MOCK_REPO/scripts/network-mode-manager.sh"
 if bash "$MOCK_REPO/scripts/test_script.sh" 2>&1 | grep -q "network-mode-manager.sh found"; then
-    echo "✅ PASS: Correctly detects present network-mode-manager.sh"
+	echo "✅ PASS: Correctly detects present network-mode-manager.sh"
 else
-    echo "❌ FAIL: Did not detect present network-mode-manager.sh"
-    exit 1
+	echo "❌ FAIL: Did not detect present network-mode-manager.sh"
+	exit 1
 fi
 
 # Test 3: Verify windscribe CLI dependency check
@@ -90,7 +90,7 @@ echo "Test 3: windscribe CLI dependency detection"
 echo "---"
 
 # Create a test script that checks for windscribe
-cat > "$TEST_DIR/check_windscribe.sh" << 'EOF'
+cat >"$TEST_DIR/check_windscribe.sh" <<'EOF'
 #!/bin/bash
 set -euo pipefail
 if ! command -v windscribe >/dev/null 2>&1; then
@@ -103,19 +103,19 @@ chmod +x "$TEST_DIR/check_windscribe.sh"
 
 # Test without windscribe in PATH
 ORIGINAL_PATH="$PATH"
-export PATH="/usr/bin:/bin"  # Minimal PATH; may or may not contain windscribe on this system
+export PATH="/usr/bin:/bin" # Minimal PATH; may or may not contain windscribe on this system
 
 # If windscribe is already available in this restricted PATH, we cannot meaningfully
 # test "missing dependency" behavior, so we skip instead of reporting a false PASS.
 if command -v windscribe >/dev/null 2>&1; then
-    echo "SKIP: windscribe CLI already available, cannot test detection of missing dependency"
+	echo "SKIP: windscribe CLI already available, cannot test detection of missing dependency"
 else
-    if bash "$TEST_DIR/check_windscribe.sh" 2>&1 | grep -q "ERROR: Windscribe CLI not found"; then
-        echo "✅ PASS: Correctly detects missing windscribe CLI"
-    else
-        echo "FAIL: Did not detect missing windscribe CLI as expected"
-        exit 1
-    fi
+	if bash "$TEST_DIR/check_windscribe.sh" 2>&1 | grep -q "ERROR: Windscribe CLI not found"; then
+		echo "✅ PASS: Correctly detects missing windscribe CLI"
+	else
+		echo "FAIL: Did not detect missing windscribe CLI as expected"
+		exit 1
+	fi
 fi
 export PATH="$ORIGINAL_PATH"
 
@@ -125,7 +125,7 @@ echo "Test 4: Profile argument parsing and defaults"
 echo "---"
 
 # Create a minimal version that tests profile parsing
-cat > "$TEST_DIR/test_profile.sh" << 'EOF'
+cat >"$TEST_DIR/test_profile.sh" <<'EOF'
 #!/bin/bash
 set -euo pipefail
 PROFILE="${1:-browsing}"
@@ -135,25 +135,25 @@ chmod +x "$TEST_DIR/test_profile.sh"
 
 # Test default profile
 if bash "$TEST_DIR/test_profile.sh" | grep -q "Profile: browsing"; then
-    echo "✅ PASS: Default profile is 'browsing'"
+	echo "✅ PASS: Default profile is 'browsing'"
 else
-    echo "❌ FAIL: Default profile is not 'browsing'"
-    exit 1
+	echo "❌ FAIL: Default profile is not 'browsing'"
+	exit 1
 fi
 
 # Test custom profile
 if bash "$TEST_DIR/test_profile.sh" privacy | grep -q "Profile: privacy"; then
-    echo "✅ PASS: Custom profile 'privacy' accepted"
+	echo "✅ PASS: Custom profile 'privacy' accepted"
 else
-    echo "❌ FAIL: Custom profile not accepted"
-    exit 1
+	echo "❌ FAIL: Custom profile not accepted"
+	exit 1
 fi
 
 if bash "$TEST_DIR/test_profile.sh" gaming | grep -q "Profile: gaming"; then
-    echo "✅ PASS: Custom profile 'gaming' accepted"
+	echo "✅ PASS: Custom profile 'gaming' accepted"
 else
-    echo "❌ FAIL: Custom profile not accepted"
-    exit 1
+	echo "❌ FAIL: Custom profile not accepted"
+	exit 1
 fi
 
 # Test 5: Verify script has proper error handling (set -euo pipefail)
@@ -162,10 +162,10 @@ echo "Test 5: Error handling configuration"
 echo "---"
 
 if grep -q "set -euo pipefail" "$SCRIPT"; then
-    echo "✅ PASS: Script uses 'set -euo pipefail' for fail-fast behavior"
+	echo "✅ PASS: Script uses 'set -euo pipefail' for fail-fast behavior"
 else
-    echo "❌ FAIL: Script does not use proper error handling"
-    exit 1
+	echo "❌ FAIL: Script does not use proper error handling"
+	exit 1
 fi
 
 # Test 6: Verify helper function definitions
@@ -177,16 +177,16 @@ required_functions=("log" "warn" "error" "success")
 all_found=true
 
 for func in "${required_functions[@]}"; do
-    if grep -q "^${func}()" "$SCRIPT" || grep -q "^${func}[[:space:]]*(" "$SCRIPT"; then
-        echo "✅ PASS: Function '$func' defined"
-    else
-        echo "❌ FAIL: Function '$func' not found"
-        all_found=false
-    fi
+	if grep -q "^${func}()" "$SCRIPT" || grep -q "^${func}[[:space:]]*(" "$SCRIPT"; then
+		echo "✅ PASS: Function '$func' defined"
+	else
+		echo "❌ FAIL: Function '$func' not found"
+		all_found=false
+	fi
 done
 
-if [[ "$all_found" != true ]]; then
-    exit 1
+if [[ $all_found != true ]]; then
+	exit 1
 fi
 
 # Test 7: Verify script does not have hardcoded paths to home directory
@@ -196,10 +196,10 @@ echo "---"
 
 # Check for hardcoded paths like /Users/username
 if grep -E "/Users/[a-zA-Z0-9_-]+" "$SCRIPT" | grep -v "REPO_ROOT" | grep -v "#" >/dev/null 2>&1; then
-    echo "⚠️  WARNING: Found potential hardcoded user paths"
-    grep -E "/Users/[a-zA-Z0-9_-]+" "$SCRIPT" | grep -v "REPO_ROOT" | grep -v "#"
+	echo "⚠️  WARNING: Found potential hardcoded user paths"
+	grep -E "/Users/[a-zA-Z0-9_-]+" "$SCRIPT" | grep -v "REPO_ROOT" | grep -v "#"
 else
-    echo "✅ PASS: No hardcoded home directory paths found"
+	echo "✅ PASS: No hardcoded home directory paths found"
 fi
 
 # Test 8: Verify script uses REPO_ROOT variable
@@ -208,10 +208,10 @@ echo "Test 8: Uses REPO_ROOT variable for repo-relative paths"
 echo "---"
 
 if grep -q 'REPO_ROOT=' "$SCRIPT"; then
-    echo "✅ PASS: Script defines REPO_ROOT variable"
+	echo "✅ PASS: Script defines REPO_ROOT variable"
 else
-    echo "❌ FAIL: Script does not define REPO_ROOT variable"
-    exit 1
+	echo "❌ FAIL: Script does not define REPO_ROOT variable"
+	exit 1
 fi
 
 echo ""

@@ -155,12 +155,12 @@ cat configs/.zshrc.enhancements.md
 
 **Common patterns to port:**
 
-| Zsh Pattern | Fish Equivalent |
-|-------------|-----------------|
-| `export PATH="$PATH:dir"` | `fish_add_path --global --append dir` |
-| `export VAR=value` | `set -gx VAR value` |
-| `eval "$(tool init bash)"` | `tool init fish \| source` |
-| `source file` | `source file` |
+| Zsh Pattern                | Fish Equivalent                       |
+| -------------------------- | ------------------------------------- |
+| `export PATH="$PATH:dir"`  | `fish_add_path --global --append dir` |
+| `export VAR=value`         | `set -gx VAR value`                   |
+| `eval "$(tool init bash)"` | `tool init fish \| source`            |
+| `source file`              | `source file`                         |
 
 ### Reload Fish Configuration
 
@@ -248,26 +248,26 @@ These actions require GUI interaction or sensitive credentials:
 
 ### Authentication (Required)
 
-| Step | Action | Status |
-|------|--------|--------|
-| 1 | Open 1Password, authenticate with biometrics | ☐ |
-| 2 | 1Password Settings > Developer > Enable SSH Agent | ☐ |
-| 3 | Verify SSH: `ssh -T git@github.com` | ☐ |
+| Step | Action                                            | Status |
+| ---- | ------------------------------------------------- | ------ |
+| 1    | Open 1Password, authenticate with biometrics      | ☐      |
+| 2    | 1Password Settings > Developer > Enable SSH Agent | ☐      |
+| 3    | Verify SSH: `ssh -T git@github.com`               | ☐      |
 
 ### Application Setup (Required)
 
-| Step | Action | Status |
-|------|--------|--------|
-| 4 | Open ProtonDrive app, sign in | ☐ |
-| 5 | Open Windscribe, authenticate | ☐ |
-| 6 | Cursor: Cmd+Shift+P > "Shell Command: Install 'cursor'" | ☐ |
+| Step | Action                                                  | Status |
+| ---- | ------------------------------------------------------- | ------ |
+| 4    | Open ProtonDrive app, sign in                           | ☐      |
+| 5    | Open Windscribe, authenticate                           | ☐      |
+| 6    | Cursor: Cmd+Shift+P > "Shell Command: Install 'cursor'" | ☐      |
 
 ### System Permissions (Required)
 
-| Step | Action | Status |
-|------|--------|--------|
-| 7 | System Settings > Privacy > Full Disk Access | ☐ |
-| 8 | Grant access to Terminal.app or Warp | ☐ |
+| Step | Action                                       | Status |
+| ---- | -------------------------------------------- | ------ |
+| 7    | System Settings > Privacy > Full Disk Access | ☐      |
+| 8    | Grant access to Terminal.app or Warp         | ☐      |
 
 ### Credentials Injection (If using rclone)
 
@@ -422,16 +422,16 @@ nm-status  # Fish function
 
 ## Files Reference
 
-| File | Purpose |
-|------|---------|
-| `setup.sh` | Main bootstrap script |
-| `scripts/sync_all_configs.sh` | Create config symlinks |
-| `scripts/verify_all_configs.sh` | Verify symlinks |
-| `scripts/compare_shell_configs.sh` | Audit shell config divergence |
-| `scripts/sync_zsh_config.sh` | Track Zsh config in repo |
-| `scripts/bootstrap_fish_plugins.sh` | Install Fisher and plugins |
-| `maintenance/install.sh` | Install LaunchD agents |
-| `scripts/protondrive_backup.sh` | One-way home backup |
+| File                                | Purpose                       |
+| ----------------------------------- | ----------------------------- |
+| `setup.sh`                          | Main bootstrap script         |
+| `scripts/sync_all_configs.sh`       | Create config symlinks        |
+| `scripts/verify_all_configs.sh`     | Verify symlinks               |
+| `scripts/compare_shell_configs.sh`  | Audit shell config divergence |
+| `scripts/sync_zsh_config.sh`        | Track Zsh config in repo      |
+| `scripts/bootstrap_fish_plugins.sh` | Install Fisher and plugins    |
+| `maintenance/install.sh`            | Install LaunchD agents        |
+| `scripts/protondrive_backup.sh`     | One-way home backup           |
 
 ---
 
@@ -467,4 +467,3 @@ nm-status  # Fish function
 **Document Version**: 1.0  
 **Created**: December 2025  
 **Repository**: [personal-config](https://github.com/abhimehro/personal-config)
-

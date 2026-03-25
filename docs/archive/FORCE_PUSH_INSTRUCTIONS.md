@@ -22,6 +22,7 @@ git push --force-with-lease origin main
 ```
 
 **What `--force-with-lease` does:**
+
 - Only pushes if remote hasn't changed since you last fetched
 - Safer than `--force` - prevents overwriting others' work
 - If it fails, someone else pushed - fetch first, then retry

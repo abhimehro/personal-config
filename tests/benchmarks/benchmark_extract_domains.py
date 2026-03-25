@@ -1,7 +1,8 @@
 import json
 import os
-import timeit
 import tempfile
+import timeit
+
 
 def generate_test_data(num_rules):
     """Generate synthetic JSON data mirroring the expected structure."""
@@ -10,17 +11,18 @@ def generate_test_data(num_rules):
         rule = {}
         # 80% have PK
         if i % 10 < 8:
-            rule['PK'] = f"domain{i}.com"
+            rule["PK"] = f"domain{i}.com"
         # 30% have action.do = 1
         if i % 10 < 3:
-            rule['action'] = {'do': 1}
+            rule["action"] = {"do": 1}
         # 20% have action.do = 0
         elif i % 10 < 5:
-            rule['action'] = {'do': 0}
+            rule["action"] = {"do": 0}
 
         rules.append(rule)
 
-    return {'rules': rules}
+    return {"rules": rules}
+
 
 def main():
     num_rules = 500000
@@ -29,7 +31,7 @@ def main():
     test_data = generate_test_data(num_rules)
 
     # Save test data to file to benchmark the full end-to-end execution
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump(test_data, f)
         temp_filepath = f.name
 
@@ -101,11 +103,21 @@ def extract(filepath):
         print(f"\nBenchmarking end-to-end (including file read and JSON parsing)")
         print(f"Dataset size: {num_rules} rules. Iterations: {iterations}")
 
-        globals_dict = {'temp_filepath': temp_filepath}
+        globals_dict = {"temp_filepath": temp_filepath}
 
         # Test extract_domains
-        old_time = timeit.timeit('extract(temp_filepath)', setup=setup_e2e_old, globals=globals_dict, number=iterations)
-        new_time = timeit.timeit('extract(temp_filepath)', setup=setup_e2e_new, globals=globals_dict, number=iterations)
+        old_time = timeit.timeit(
+            "extract(temp_filepath)",
+            setup=setup_e2e_old,
+            globals=globals_dict,
+            number=iterations,
+        )
+        new_time = timeit.timeit(
+            "extract(temp_filepath)",
+            setup=setup_e2e_new,
+            globals=globals_dict,
+            number=iterations,
+        )
 
         print("\nextract_domains (end-to-end):")
         print(f"Old approach (for loop + append): {old_time:.4f} seconds")
@@ -114,8 +126,18 @@ def extract(filepath):
         print(f"Time saved: {old_time - new_time:.4f} seconds")
 
         # Test extract_allowlist_domains
-        old_allow_time = timeit.timeit('extract(temp_filepath)', setup=setup_e2e_allow_old, globals=globals_dict, number=iterations)
-        new_allow_time = timeit.timeit('extract(temp_filepath)', setup=setup_e2e_allow_new, globals=globals_dict, number=iterations)
+        old_allow_time = timeit.timeit(
+            "extract(temp_filepath)",
+            setup=setup_e2e_allow_old,
+            globals=globals_dict,
+            number=iterations,
+        )
+        new_allow_time = timeit.timeit(
+            "extract(temp_filepath)",
+            setup=setup_e2e_allow_new,
+            globals=globals_dict,
+            number=iterations,
+        )
 
         print("\nextract_allowlist_domains (end-to-end):")
         print(f"Old approach (for loop + append): {old_allow_time:.4f} seconds")
@@ -125,6 +147,7 @@ def extract(filepath):
 
     finally:
         os.unlink(temp_filepath)
+
 
 if __name__ == "__main__":
     main()

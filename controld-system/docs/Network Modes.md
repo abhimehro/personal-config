@@ -7,17 +7,17 @@
 
 This repository defines two primary network modes for macOS:
 
-* **Control D DNS mode (“DNS mode”)**
-* **Windscribe VPN mode (“VPN mode”)**
+- **Control D DNS mode (“DNS mode”)**
+- **Windscribe VPN mode (“VPN mode”)**
 
 Network state is coordinated by:
 
- `scripts/network-mode-manager.sh` *– top-level switch between DNS and VPN modes* `controld-system/scripts/controld-manager` – low-level Control D profile manager
+`scripts/network-mode-manager.sh` _– top-level switch between DNS and VPN modes_ `controld-system/scripts/controld-manager` – low-level Control D profile manager
 
 The goal is to keep **DNS mode** and **VPN mode** clearly separated:
 
- *In* *DNS mode**, Control D is responsible for DNS, IPv6 is enabled, and Windscribe should be disconnected.
- *In* *VPN mode**, Windscribe is responsible for network routing and DNS, Control D is stopped, and IPv6 is disabled for leak protection.
+_In_ *DNS mode\*\*, Control D is responsible for DNS, IPv6 is enabled, and Windscribe should be disconnected.
+*In\* \*VPN mode\*\*, Windscribe is responsible for network routing and DNS, Control D is stopped, and IPv6 is disabled for leak protection.
 
 &gt; **Preferred entrypoint:** Use `scripts/network-mode-manager.sh` for day‑to‑day switching.  
 &gt; Use `controld-manager` directly only when debugging or doing low-level Control D work.
@@ -28,12 +28,11 @@ The goal is to keep **DNS mode** and **VPN mode** clearly separated:
 
 Assumptions:
 
- *Repository cloned to:* `~/Documents/dev/personal-config`
+_Repository cloned to:_ `~/Documents/dev/personal-config`
 
+Commands run from the repository root
 
- Commands run from the repository root
-
-```bash
+````bash
 cd ~/Documents/dev/personal-config
 
 # Everyday browsing (Control D DNS mode, browsing profile)
@@ -187,3 +186,4 @@ nm-vpn       # Windscribe VPN mode
 nm-status    # Show current mode/DNS/IPv6
 nm-regress   # Full regression run
 nm-cd-status # Detailed Control D status
+````

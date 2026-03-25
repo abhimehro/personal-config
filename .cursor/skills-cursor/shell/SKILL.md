@@ -6,6 +6,7 @@ description: >-
   directly in the terminal.
 disable-model-invocation: true
 ---
+
 # Run Shell Commands
 
 Use this skill only when the user explicitly invokes `/shell`.
