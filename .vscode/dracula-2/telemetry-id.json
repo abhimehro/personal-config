@@ -1,0 +1,19 @@
+{
+  "userId": "544d1204-3778-442a-b7de-7ab3329b659a",
+  "installEnvironment": {
+    "timestamp": 1774395539799,
+    "uiKind": 1,
+    "isRemote": true,
+    "platform": "darwin",
+    "vscodeVersion": "1.108.2-next",
+    "uriScheme": "windsurf-next"
+  },
+  "lastSession": {
+    "timestamp": 1774402545835,
+    "uiKind": 1,
+    "isRemote": true,
+    "platform": "darwin",
+    "vscodeVersion": "1.108.2-next",
+    "uriScheme": "windsurf-next"
+  }
+}
