@@ -81,6 +81,12 @@ if not set -q FZF_DEFAULT_OPTS
     set -gx FZF_DEFAULT_OPTS "--color=bg+:#44475a,bg:#282a36,spinner:#f8f8f2,hl:#6272a4,fg:#f8f8f2,header:#6272a4,info:#bd93f9,pointer:#ff79c6,marker:#ff79c6,fg+:#f8f8f2,prompt:#bd93f9,hl+:#ff79c6"
 end
 
+# Make FZF use 'fd' to respect .gitignore and ignore hidden .git folders
+if type -q fd
+    set -gx FZF_DEFAULT_COMMAND "fd --type f --hidden --exclude .git"
+    set -gx FZF_CTRL_T_COMMAND $FZF_DEFAULT_COMMAND
+end
+
 # ============================================
 # Functions
 # ============================================
