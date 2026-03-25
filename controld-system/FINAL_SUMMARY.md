@@ -17,12 +17,14 @@
 ## What You Have Now
 
 ### Core Service
+
 - ✅ Auto-start on boot via Launch Daemon
 - ✅ `--skip_self_checks` flag (fail-operational mode)
 - ✅ Firewall exception configured
 - ✅ Three DNS profiles ready (privacy, browsing, gaming)
 
 ### Monitoring & Health
+
 - ✅ **Enhanced health check** with network transition detection
 - ✅ **Baseline test suite** for post-change verification
 - ✅ **Integrated monitoring** in weekly maintenance system
@@ -30,6 +32,7 @@
 - ✅ Auto-recovery from DNS cache issues
 
 ### Documentation
+
 - ✅ **README.md** - Comprehensive guide with break-glass procedures
 - ✅ **QUICKREF.md** - Daily command reference
 - ✅ **VPN_INTEGRATION.md** - Windscribe + Control D guide
@@ -43,28 +46,33 @@
 Your question about "stuck" DNS states was prescient. The enhanced monitor now detects and auto-recovers from:
 
 ### 1. Split-Horizon DNS
+
 **Problem**: Multiple DNS resolvers active after network transitions  
 **Detection**: Counts unique nameservers in system config  
 **Recovery**: Auto-flushes DNS cache if detected
 
 ### 2. mDNSResponder Cache Poisoning
+
 **Problem**: Stale DNS entries persist after network change  
 **Detection**: Tests with timestamp-based unique query  
 **Recovery**: Flushes mDNSResponder cache automatically
 
 ### 3. Control D Not Primary Resolver
+
 **Problem**: System falls back to DHCP DNS after sleep/wake  
 **Detection**: Checks if 127.0.0.1 is in resolver list  
 **Recovery**: Flags for attention (may need service restart)
 
 ### 4. VPN Reconnection Race
+
 **Problem**: VPN reconnects before Control D ready  
 **Detection**: DNS resolution test + upstream connectivity check  
 **Recovery**: Service auto-restart if needed
 
 **Result**: The monitor script now runs 9 checks (up from 3), catching edge cases you might encounter during:
+
 - Sleep/wake cycles
-- WiFi network switches  
+- WiFi network switches
 - VPN connect/disconnect
 - macOS network preference changes
 
@@ -73,16 +81,18 @@ Your question about "stuck" DNS states was prescient. The enhanced monitor now d
 ## Data Flow Visualized
 
 ### Without VPN
+
 ```
-App → macOS Resolver → Control D (127.0.0.1:53) 
+App → macOS Resolver → Control D (127.0.0.1:53)
   → DoH (encrypted) → Control D Servers → Internet
 ```
 
 **Privacy**: DNS encrypted, IPs visible to ISP
 
 ### With VPN + Local DNS (Recommended)
+
 ```
-App → macOS Resolver → Control D (127.0.0.1:53) 
+App → macOS Resolver → Control D (127.0.0.1:53)
   → VPN Tunnel → DoH (encrypted) → Control D Servers → Internet
 ```
 
@@ -94,12 +104,13 @@ App → macOS Resolver → Control D (127.0.0.1:53)
 ## Maintenance Integration - COMPLETE
 
 ### Weekly Maintenance
+
 Your `run_all_maintenance.sh` now includes Control D as task #7:
 
 ```bash
 # Automatically runs:
 1. System Health Check
-2. Homebrew Maintenance  
+2. Homebrew Maintenance
 3. Quick System Cleanup
 4. Deep System Cleaning
 5. Remove Unwanted Files
@@ -112,21 +123,27 @@ Your `run_all_maintenance.sh` now includes Control D as task #7:
 ### Test Suites
 
 **Quick Baseline** (6 tests, ~2 seconds):
+
 ```bash
 ~/.config/controld/baseline-test.sh
 ```
+
 Run after: upgrades, config changes, macOS updates
 
 **Full Health Check** (6-9 checks, ~5 seconds):
+
 ```bash
 ~/.config/controld/health-check.sh
 ```
+
 Run for: troubleshooting, post-reboot verification
 
 **Integrated Monitor** (9 checks + auto-recovery):
+
 ```bash
 ~/Public/Scripts/maintenance/controld_monitor.sh
 ```
+
 Runs automatically via weekly maintenance
 
 ---
@@ -134,6 +151,7 @@ Runs automatically via weekly maintenance
 ## Windscribe VPN Integration
 
 ### Recommended Setup
+
 ```bash
 # One-time configuration
 windscribe connect
@@ -145,13 +163,16 @@ curl -s https://ipleak.net/json/ | jq -r '.dns_servers[]'
 ```
 
 ### Startup Order (Automatic)
+
 1. Control D auto-starts on boot
 2. Wait 5-10 seconds
 3. Connect Windscribe (manual or auto)
 4. System uses Control D → VPN tunnel → Internet
 
 ### Common Issues (All Documented)
+
 See `~/.config/controld/VPN_INTEGRATION.md` for:
+
 - DNS not resolving after VPN connects
 - DNS leak detection and fixes
 - Split personality (inconsistent DNS)
@@ -162,6 +183,7 @@ See `~/.config/controld/VPN_INTEGRATION.md` for:
 ## Upgrade Pattern
 
 ### When Upgrading ctrld
+
 ```bash
 brew upgrade ctrld
 sudo ctrld service status  # Usually still running
@@ -171,6 +193,7 @@ sudo ctrld service status  # Usually still running
 **No reconfiguration needed** - launch daemon persists with `--skip_self_checks`
 
 ### After macOS Updates
+
 ```bash
 # Check service
 sudo ctrld service status
@@ -189,17 +212,21 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --listapps | grep ctrld
 ## File Locations
 
 ### Configuration
+
 - **Main config**: `~/.config/controld/ctrld.toml`
 - **Launch daemon**: `/Library/LaunchDaemons/ctrld.plist`
 - **Logs**: `/var/log/ctrld.log`
 
 ### Tools
+
 - **Health check**: `~/.config/controld/health-check.sh`
 - **Baseline test**: `~/.config/controld/baseline-test.sh`
 - **Monitor**: `~/Public/Scripts/maintenance/controld_monitor.sh`
 
 ### Documentation
+
 All in `~/.config/controld/`:
+
 - `README.md` - Main guide + break-glass procedures
 - `QUICKREF.md` - Daily commands
 - `VPN_INTEGRATION.md` - Windscribe guide
@@ -207,6 +234,7 @@ All in `~/.config/controld/`:
 - `SETUP_SUMMARY.md` - Technical details + diagrams
 
 ### Logs
+
 - **Monitor log**: `~/Public/Scripts/controld_monitor.log`
 - **Error log**: `~/Public/Scripts/controld_monitor_error.log`
 - **Service log**: `/var/log/ctrld.log`
@@ -216,6 +244,7 @@ All in `~/.config/controld/`:
 ## Quick Command Reference
 
 ### Daily Operations
+
 ```bash
 # Check status
 sudo ctrld service status
@@ -228,6 +257,7 @@ sudo tail -f /var/log/ctrld.log
 ```
 
 ### After Network Changes
+
 ```bash
 # Flush DNS cache (if things feel slow)
 sudo dscacheutil -flushcache
@@ -238,10 +268,11 @@ sudo killall -HUP mDNSResponder
 ```
 
 ### Troubleshooting
+
 ```bash
 # Break-glass procedure (see README.md)
 # 1. Check service
-# 2. Check DNS resolution  
+# 2. Check DNS resolution
 # 3. Check logs
 # 4. Emergency DNS restore
 # 5. Complete reset (nuclear option)
@@ -252,18 +283,21 @@ sudo killall -HUP mDNSResponder
 ## Security Posture
 
 ### What's Protected
+
 - ✅ DNS queries encrypted (DoH)
 - ✅ Malware/tracker blocking active
 - ✅ No DNS leaks (with proper VPN config)
 - ✅ Local filtering (works offline)
 
 ### What `--skip_self_checks` Does NOT Compromise
+
 - ❌ DNS encryption (still active)
 - ❌ Filtering rules (still enforced)
 - ❌ Upstream connectivity (tested at runtime)
 - ❌ Attack prevention (DoH provides this)
 
 ### What It IS
+
 - ✅ Configuration validation bypass
 - ✅ Operational reliability enhancement
 - ✅ Firewall timing workaround
@@ -275,15 +309,18 @@ sudo killall -HUP mDNSResponder
 ## Next Actions for You
 
 ### Immediate (Next Reboot)
+
 ```bash
 # After reboot, verify auto-start
 ~/.config/controld/health-check.sh
 ```
 
 ### Optional (Daily Check)
+
 If you want daily automated monitoring, see `UPGRADES.md` for launchd agent setup.
 
 ### When Using Windscribe
+
 ```bash
 # Configure once
 windscribe dns local
@@ -293,6 +330,7 @@ curl -s https://ipleak.net/json/ | jq -r '.dns_servers[]'
 ```
 
 ### After System/Software Updates
+
 ```bash
 # Quick baseline
 ~/.config/controld/baseline-test.sh
@@ -306,14 +344,18 @@ curl -s https://ipleak.net/json/ | jq -r '.dns_servers[]'
 ## Teaching Moments Reinforced
 
 ### 1. Fail-Operational Philosophy
+
 We chose availability over startup validation because:
+
 - Self-checks validate config, not security
 - DoH encryption provides real security
 - Service can self-heal from upstream issues
 - No ongoing maintenance (no IP allow-lists to manage)
 
 ### 2. Defense in Depth
+
 Multiple security layers:
+
 - Layer 1: Control D filtering (malware/trackers)
 - Layer 2: DoH encryption (DNS privacy)
 - Layer 3: VPN tunnel (IP privacy)
@@ -322,7 +364,9 @@ Multiple security layers:
 Self-checks are validation, not a security layer.
 
 ### 3. Network Transitions Are Hard
+
 macOS DNS resolver state can persist incorrectly after:
+
 - Sleep/wake with different network
 - VPN connect/disconnect
 - Network preference changes
@@ -331,7 +375,9 @@ macOS DNS resolver state can persist incorrectly after:
 **Solution**: Proactive monitoring with auto-recovery
 
 ### 4. Operational Wisdom
+
 "Future you will thank present you for":
+
 - Creating multiple test tiers (baseline → health → monitor)
 - Documenting edge cases before they bite you
 - Building auto-recovery into monitoring
@@ -342,18 +388,21 @@ macOS DNS resolver state can persist incorrectly after:
 ## Known Limitations
 
 ### What's NOT Covered
+
 1. **Corporate VPNs**: May override DNS, see `VPN_INTEGRATION.md`
 2. **Captive Portals**: May need to temporarily disable Control D
 3. **Split DNS Scenarios**: Some apps may bypass system resolver
 4. **DNS over port 53**: If blocked, need to use DoT/DoQ instead
 
 ### When to Seek Help
+
 - Persistent DNS failures after running health check
 - Service won't start after following break-glass procedure
 - Upgrade changes config format
 - New macOS version breaks launch daemon
 
 **Resources**:
+
 - Local docs: `~/.config/controld/`
 - Control D Support: support@controld.com
 - Community: Control D Discord/Reddit

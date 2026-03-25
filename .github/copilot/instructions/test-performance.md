@@ -1,6 +1,7 @@
 # Test Suite Performance Engineering Guide
 
 ## Overview
+
 Fast tests enable rapid development cycles. This repo has shell-based tests, Python tests (unittest), and performance benchmarks. Target: full test suite under 30 seconds.
 
 ## Current Test Structure
@@ -15,6 +16,7 @@ tests/
 ```
 
 ## Performance Goals
+
 - **Unit tests:** <5 seconds total
 - **Integration tests:** <15 seconds total
 - **Full regression suite:** <30 seconds total
@@ -23,9 +25,11 @@ tests/
 ## Common Performance Issues
 
 ### 1. Slow External Commands
+
 **Problem:** Tests call real system commands that are slow
 
 **Example:**
+
 ```bash
 # SLOW: Real network call (200-500ms)
 networksetup -getairportnetwork en0
@@ -35,6 +39,7 @@ dig +short example.com
 ```
 
 **Solution:** Mock expensive operations
+
 ```bash
 # tests/test_network_mode_manager.sh
 networksetup() {
@@ -50,9 +55,11 @@ export -f networksetup
 ```
 
 ### 2. Sequential Test Execution
+
 **Problem:** Tests run one by one, wasting CPU cores
 
 **Solution:** Run test files in parallel using shell job control
+
 ```bash
 # Run all Python test files in parallel
 pids=()
@@ -78,9 +85,11 @@ find tests -name 'test_*.py' | \
 **Impact:** Significant speedup if tests are independent. Note: unittest doesn't have built-in parallel execution like pytest-xdist, so shell-level parallelization is used.
 
 ### 3. Repeated Setup/Teardown
+
 **Problem:** Each test creates/deletes same fixtures
 
 **Solution:** Use shared setup with unittest setUpClass/tearDownClass (or equivalent)
+
 ```python
 import unittest
 import tempfile
@@ -115,9 +124,11 @@ class TestWithSharedTempDir(unittest.TestCase):
 ```
 
 ### 4. Testing Against Real Filesystem
+
 **Problem:** Creating files on disk is slow (I/O bound)
 
 **Solution:** Use in-memory filesystem
+
 ```python
 from io import StringIO
 import sys
@@ -138,6 +149,7 @@ class TestConfigParsing(unittest.TestCase):
 ## Performance Measurement
 
 ### Benchmark Entire Test Suite
+
 ```bash
 # Time all tests
 time make test
@@ -147,6 +159,7 @@ hyperfine --warmup 1 --runs 3 'make test'
 ```
 
 ### Profile Individual Tests
+
 ```bash
 # Time individual test files
 time python -m unittest tests.test_path_validation
@@ -159,6 +172,7 @@ time bash tests/test_network_mode_manager.sh
 ```
 
 ### Identify Slow Tests
+
 ```bash
 # Profile unittest tests with cProfile
 python -m cProfile -o profile.stats -m unittest discover -s tests
@@ -177,6 +191,7 @@ Output shows execution times for tests.
 ## Optimization Strategies
 
 ### Strategy 1: Incremental Testing
+
 Only run tests affected by changes:
 
 ```bash
@@ -197,6 +212,7 @@ done
 **Impact:** 90% faster for single-file changes
 
 ### Strategy 2: Test Categorization
+
 Separate fast and slow tests using file naming or test discovery patterns:
 
 ```bash
@@ -211,6 +227,7 @@ python -m unittest discover -s tests -p 'test_integration_*.py'
 ```
 
 Organize tests by file naming:
+
 ```python
 # tests/test_unit_config.py
 import unittest
@@ -232,6 +249,7 @@ class TestNetworkSwitch(unittest.TestCase):
 **Alternative:** Use test suite filtering with custom test runners if needed.
 
 ### Strategy 3: Parallel Shell Tests
+
 Run independent shell tests in parallel:
 
 ```bash
@@ -256,7 +274,9 @@ exit "$exit_code"
 ```
 
 ### Strategy 4: Efficient Assertions
+
 **Slow:**
+
 ```python
 # Runs command for each assertion
 assert get_status() == "active"
@@ -265,6 +285,7 @@ assert get_status() == "active"
 ```
 
 **Fast:**
+
 ```python
 # Cache result
 status = get_status()
@@ -276,17 +297,20 @@ assert status == "active"
 ## Real-World Example: Optimizing Network Tests
 
 **Before:** 45 seconds
+
 - Called real `networksetup` (20 commands × 200ms = 4s)
 - Called real `dig` (10 queries × 300ms = 3s)
 - Sequential execution
 - Created temp files on disk
 
 **After:** 8 seconds (5.6x faster)
+
 1. Mocked `networksetup` and `dig` (saved 7s)
 2. Parallel test execution with shell background jobs (saved 22s)
 3. In-memory temp files (saved 8s)
 
 **Implementation:**
+
 ```python
 # tests/test_network_manager.py
 from unittest.mock import patch, MagicMock
@@ -298,7 +322,7 @@ def test_network_switch(mock_run):
         returncode=0,
         stdout="Wi-Fi: On"
     )
-    
+
     # Test runs instantly
     result = switch_network_mode("browsing")
     assert result.success
@@ -335,6 +359,7 @@ fi
 ## CI Integration
 
 ### Fast feedback loop in CI:
+
 ```yaml
 # .github/workflows/tests.yml
 jobs:
@@ -343,7 +368,7 @@ jobs:
     steps:
       - name: Run unit tests only
         run: python -m unittest discover -s tests -p 'test_unit_*.py'
-        
+
   full-tests:
     runs-on: ubuntu-latest
     needs: quick-tests
@@ -358,12 +383,14 @@ jobs:
 ## When to Optimize Tests
 
 ✅ **Optimize when:**
+
 - Test suite takes >30 seconds
 - Developers skip tests due to slowness
 - CI provides feedback slowly (>2 min)
 - Tests don't run in parallel
 
 ❌ **Don't optimize when:**
+
 - Already under 10 seconds
 - Tests require real system state (integration tests)
 - Optimization breaks test reliability
@@ -371,6 +398,7 @@ jobs:
 ## Success Metrics
 
 **Measure these regularly:**
+
 ```bash
 # Total test/benchmark time
 time make benchmark
@@ -388,6 +416,7 @@ grep "mock" tests/*.py | wc -l
 ```
 
 **Target metrics:**
+
 - 95% of tests run with mocks (fast)
 - 5% integration tests (real system)
 - Average test <100ms

@@ -55,26 +55,26 @@ make benchmark
 
 ### Available Targets
 
-| Target | Script benchmarked | Description |
-|--------|--------------------|-------------|
-| `nm-status` | `scripts/network-mode-manager.sh status` | Network mode status check |
-| `sync-all` | `scripts/sync_all_configs.sh` | Configuration sync operations |
-| `verify-all` | `scripts/verify_all_configs.sh` | Configuration verification |
-| `all` | All scripts above | Run every benchmark (default via `make benchmark`) |
+| Target       | Script benchmarked                       | Description                                        |
+| ------------ | ---------------------------------------- | -------------------------------------------------- |
+| `nm-status`  | `scripts/network-mode-manager.sh status` | Network mode status check                          |
+| `sync-all`   | `scripts/sync_all_configs.sh`            | Configuration sync operations                      |
+| `verify-all` | `scripts/verify_all_configs.sh`          | Configuration verification                         |
+| `all`        | All scripts above                        | Run every benchmark (default via `make benchmark`) |
 
 ### Benchmark Settings
 
-| Setting | Value | Reason |
-|---------|-------|--------|
-| Warmup runs | 2 | Prime filesystem and OS caches before measuring |
-| Benchmark runs | 5 | Enough samples for a stable mean/stddev |
-| Output format | JSON | Machine-readable; stored in `baselines/` for diffing |
+| Setting        | Value | Reason                                               |
+| -------------- | ----- | ---------------------------------------------------- |
+| Warmup runs    | 2     | Prime filesystem and OS caches before measuring      |
+| Benchmark runs | 5     | Enough samples for a stable mean/stddev              |
+| Output format  | JSON  | Machine-readable; stored in `baselines/` for diffing |
 
 ### Interpreting Results
 
-Results are written to `tests/benchmarks/baselines/<target>.json`.  Each JSON
+Results are written to `tests/benchmarks/baselines/<target>.json`. Each JSON
 file is produced by hyperfine and contains mean execution time, standard
-deviation, min/max, and per-run timings.  Compare a new run against a saved
+deviation, min/max, and per-run timings. Compare a new run against a saved
 baseline to detect regressions before merging a change:
 
 ```bash

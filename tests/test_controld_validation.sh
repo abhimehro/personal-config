@@ -35,10 +35,10 @@ test_failed=0
 # Test Case 1: Invalid Protocol
 echo "Testing Invalid Protocol..."
 if switch_profile "gaming" "invalid_proto" >/dev/null 2>&1; then
-    echo "FAIL: switch_profile accepted 'invalid_proto'"
-    test_failed=1
+	echo "FAIL: switch_profile accepted 'invalid_proto'"
+	test_failed=1
 else
-    echo "PASS: switch_profile rejected 'invalid_proto'"
+	echo "PASS: switch_profile rejected 'invalid_proto'"
 fi
 
 # Test Case 2: Valid Protocol
@@ -58,17 +58,17 @@ redact_profile_id() { echo "mock_id"; }
 
 output=$(switch_profile "gaming" "doh3" 2>&1)
 if echo "$output" | grep -q "Successfully switched to gaming profile"; then
-    echo "PASS: switch_profile accepted 'doh3'"
+	echo "PASS: switch_profile accepted 'doh3'"
 else
-    echo "FAIL: switch_profile rejected 'doh3' or failed early: $output"
-    test_failed=1
+	echo "FAIL: switch_profile rejected 'doh3' or failed early: $output"
+	test_failed=1
 fi
 
 rm -f "$LIB_FILE" "${LIB_FILE}.bak" "$LOG_FILE"
 rm -rf "$CONTROLD_DIR"
 
 if [[ $test_failed -eq 0 ]]; then
-    true
+	true
 else
-    false
+	false
 fi

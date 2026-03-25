@@ -24,7 +24,9 @@ TASK_RUNNERS = {
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Consolidated repository automation runner")
+    parser = argparse.ArgumentParser(
+        description="Consolidated repository automation runner"
+    )
     parser.add_argument("task")
     parser.add_argument("result_path", nargs="?")
     args = parser.parse_args()

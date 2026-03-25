@@ -5,6 +5,7 @@ description: >-
   want to create, write, or author a new skill, or asks about skill structure,
   best practices, or SKILL.md format.
 ---
+
 # Creating Skills in Cursor
 
 This skill guides you through creating effective Agent Skills for Cursor. Skills are markdown files that teach the agent how to perform specific tasks: reviewing PRs using team standards, generating commit messages in a preferred format, querying database schemas, or any specialized workflow.
@@ -56,10 +57,10 @@ skill-name/
 
 ### Storage Locations
 
-| Type | Path | Scope |
-|------|------|-------|
-| Personal | ~/.cursor/skills/skill-name/ | Available across all your projects |
-| Project | .cursor/skills/skill-name/ | Shared with anyone using the repository |
+| Type     | Path                         | Scope                                   |
+| -------- | ---------------------------- | --------------------------------------- |
+| Personal | ~/.cursor/skills/skill-name/ | Available across all your projects      |
+| Project  | .cursor/skills/skill-name/   | Shared with anyone using the repository |
 
 **IMPORTANT**: Never create skills in `~/.cursor/skills-cursor/`. This directory is reserved for Cursor's internal built-in skills and is managed automatically by the system.
 
@@ -76,18 +77,20 @@ description: Brief description of what this skill does and when to use it
 # Your Skill Name
 
 ## Instructions
+
 Clear, step-by-step guidance for the agent.
 
 ## Examples
+
 Concrete examples of using this skill.
 ```
 
 ### Required Metadata Fields
 
-| Field | Requirements | Purpose |
-|-------|--------------|---------|
-| `name` | Max 64 chars, lowercase letters/numbers/hyphens only | Unique identifier for the skill |
-| `description` | Max 1024 chars, non-empty | Helps agent decide when to apply the skill |
+| Field         | Requirements                                         | Purpose                                    |
+| ------------- | ---------------------------------------------------- | ------------------------------------------ |
+| `name`        | Max 64 chars, lowercase letters/numbers/hyphens only | Unique identifier for the skill            |
+| `description` | Max 1024 chars, non-empty                            | Helps agent decide when to apply the skill |
 
 ---
 
@@ -137,11 +140,13 @@ The context window is shared with conversation history, other skills, and reques
 **Default assumption**: The agent is already very smart. Only add context it doesn't already have.
 
 Challenge each piece of information:
+
 - "Does the agent really need this explanation?"
 - "Can I assume the agent knows this?"
 - "Does this paragraph justify its token cost?"
 
 **Good (concise)**:
+
 ```markdown
 ## Extract PDF text
 
@@ -151,11 +156,12 @@ Use pdfplumber for text extraction:
 import pdfplumber
 
 with pdfplumber.open("file.pdf") as pdf:
-    text = pdf.pages[0].extract_text()
+text = pdf.pages[0].extract_text()
 \`\`\`
 ```
 
 **Bad (verbose)**:
+
 ```markdown
 ## Extract PDF text
 
@@ -177,9 +183,11 @@ Put essential information in SKILL.md; detailed reference material in separate f
 # PDF Processing
 
 ## Quick start
+
 [Essential instructions here]
 
 ## Additional resources
+
 - For complete API details, see [reference.md](reference.md)
 - For usage examples, see [examples.md](examples.md)
 ```
@@ -190,11 +198,11 @@ Put essential information in SKILL.md; detailed reference material in separate f
 
 Match specificity to the task's fragility:
 
-| Freedom Level | When to Use | Example |
-|---------------|-------------|---------|
-| **High** (text instructions) | Multiple valid approaches, context-dependent | Code review guidelines |
-| **Medium** (pseudocode/templates) | Preferred pattern with acceptable variation | Report generation |
-| **Low** (specific scripts) | Fragile operations, consistency critical | Database migrations |
+| Freedom Level                     | When to Use                                  | Example                |
+| --------------------------------- | -------------------------------------------- | ---------------------- |
+| **High** (text instructions)      | Multiple valid approaches, context-dependent | Code review guidelines |
+| **Medium** (pseudocode/templates) | Preferred pattern with acceptable variation  | Report generation      |
+| **Low** (specific scripts)        | Fragile operations, consistency critical     | Database migrations    |
 
 ---
 
@@ -210,19 +218,23 @@ Provide output format templates:
 Use this template:
 
 \`\`\`markdown
+
 # [Analysis Title]
 
 ## Executive summary
+
 [One-paragraph overview of key findings]
 
 ## Key findings
+
 - Finding 1 with supporting data
 - Finding 2 with supporting data
 
 ## Recommendations
+
 1. Specific actionable recommendation
 2. Specific actionable recommendation
-\`\`\`
+   \`\`\`
 ```
 
 ### Examples Pattern
@@ -262,12 +274,13 @@ Copy this checklist and track progress:
 
 \`\`\`
 Task Progress:
+
 - [ ] Step 1: Analyze the form
 - [ ] Step 2: Create field mapping
 - [ ] Step 3: Validate mapping
 - [ ] Step 4: Fill the form
 - [ ] Step 5: Verify output
-\`\`\`
+      \`\`\`
 
 **Step 1: Analyze the form**
 Run: \`python scripts/analyze_form.py input.pdf\`
@@ -289,7 +302,7 @@ Guide through decision points:
 2. Creation workflow:
    - Use docx-js library
    - Build document from scratch
-   ...
+     ...
 ```
 
 ### Feedback Loop Pattern
@@ -313,6 +326,7 @@ For quality-critical tasks, implement validation loops:
 ## Utility Scripts
 
 Pre-made scripts offer advantages over generated code:
+
 - More reliable than generated code
 - Save tokens (no code in context)
 - Save time (no code generation)
@@ -329,7 +343,9 @@ python scripts/analyze_form.py input.pdf > fields.json
 **validate.py**: Check for errors
 \`\`\`bash
 python scripts/validate.py fields.json
+
 # Returns: "OK" or lists conflicts
+
 \`\`\`
 ```
 
@@ -340,29 +356,38 @@ Make clear whether the agent should **execute** the script (most common) or **re
 ## Anti-Patterns to Avoid
 
 ### 1. Windows-Style Paths
+
 - ✅ Use: `scripts/helper.py`
 - ❌ Avoid: `scripts\helper.py`
 
 ### 2. Too Many Options
+
 ```markdown
 # Bad - confusing
+
 "You can use pypdf, or pdfplumber, or PyMuPDF, or..."
 
 # Good - provide a default with escape hatch
+
 "Use pdfplumber for text extraction.
 For scanned PDFs requiring OCR, use pdf2image with pytesseract instead."
 ```
 
 ### 3. Time-Sensitive Information
+
 ```markdown
 # Bad - will become outdated
+
 "If you're doing this before August 2025, use the old API."
 
 # Good - use an "old patterns" section
+
 ## Current method
+
 Use the v2 API endpoint.
 
 ## Old patterns (deprecated)
+
 <details>
 <summary>Legacy v1 API</summary>
 ...
@@ -370,11 +395,14 @@ Use the v2 API endpoint.
 ```
 
 ### 4. Inconsistent Terminology
+
 Choose one term and use it throughout:
+
 - ✅ Always "API endpoint" (not mixing "URL", "route", "path")
 - ✅ Always "field" (not mixing "box", "element", "control")
 
 ### 5. Vague Skill Names
+
 - ✅ Good: `processing-pdfs`, `analyzing-spreadsheets`
 - ❌ Avoid: `helper`, `utils`, `tools`
 
@@ -387,6 +415,7 @@ When helping a user create a skill, follow this process:
 ### Phase 1: Discovery
 
 Gather information about:
+
 1. The skill's purpose and primary use case
 2. Storage location (personal vs project)
 3. Trigger scenarios
@@ -424,6 +453,7 @@ If you have access to the AskQuestion tool, use it for efficient structured gath
 Here's a complete example of a well-structured skill:
 
 **Directory structure:**
+
 ```
 code-review/
 ├── SKILL.md
@@ -432,6 +462,7 @@ code-review/
 ```
 
 **SKILL.md:**
+
 ```markdown
 ---
 name: code-review
@@ -461,6 +492,7 @@ When reviewing code:
 ## Providing Feedback
 
 Format feedback as:
+
 - 🔴 **Critical**: Must fix before merge
 - 🟡 **Suggestion**: Consider improving
 - 🟢 **Nice to have**: Optional enhancement
@@ -478,6 +510,7 @@ Format feedback as:
 Before finalizing a skill, verify:
 
 ### Core Quality
+
 - [ ] Description is specific and includes key terms
 - [ ] Description includes both WHAT and WHEN
 - [ ] Written in third person
@@ -486,12 +519,14 @@ Before finalizing a skill, verify:
 - [ ] Examples are concrete, not abstract
 
 ### Structure
+
 - [ ] File references are one level deep
 - [ ] Progressive disclosure used appropriately
 - [ ] Workflows have clear steps
 - [ ] No time-sensitive information
 
 ### If Including Scripts
+
 - [ ] Scripts solve problems rather than punt
 - [ ] Required packages are documented
 - [ ] Error handling is explicit and helpful

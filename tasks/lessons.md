@@ -29,7 +29,7 @@
 
 ## Lesson 0c: Retry merge after “Base branch was modified” (2026-03-21)
 
-**Pattern:** Squash-merging PR A updates `main`; immediate merge of PR B fails with GraphQL *Base branch was modified*.
+**Pattern:** Squash-merging PR A updates `main`; immediate merge of PR B fails with GraphQL _Base branch was modified_.
 **Rule:** Re-fetch mergeability and retry B without force-push; no branch rewrite required.
 
 ## Lesson 0d: Cursor Cloud pre-commit hook + spaced secret names (2026-03-21)

@@ -26,55 +26,55 @@ error() { echo -e "${RED}[FAIL]${NC}" "$@"; }
 
 # Check for hyperfine
 if ! command -v hyperfine >/dev/null 2>&1; then
-    error "hyperfine not found. Please install it to run benchmarks:"
-    echo "  brew install hyperfine"
-    exit 1
+	error "hyperfine not found. Please install it to run benchmarks:"
+	echo "  brew install hyperfine"
+	exit 1
 fi
 
 # Ensure baseline directory exists
 mkdir -p "$BASELINE_DIR"
 
 benchmark_cmd() {
-    local name="$1"
-    local cmd="$2"
-    local baseline_file="$BASELINE_DIR/${name}.json"
+	local name="$1"
+	local cmd="$2"
+	local baseline_file="$BASELINE_DIR/${name}.json"
 
-    log "Benchmarking: $name ($cmd)"
-    
-    # Run benchmark
-    hyperfine --warmup "$WARMUP_RUNS" --runs "$BENCHMARK_RUNS" \
-        --export-json "$baseline_file" \
-        "$cmd"
+	log "Benchmarking: $name ($cmd)"
 
-    success "Benchmark completed. Results saved to $baseline_file"
+	# Run benchmark
+	hyperfine --warmup "$WARMUP_RUNS" --runs "$BENCHMARK_RUNS" \
+		--export-json "$baseline_file" \
+		"$cmd"
+
+	success "Benchmark completed. Results saved to $baseline_file"
 }
 
 # --- Targets ---
 
 main() {
-    local target="${1:-all}"
+	local target="${1:-all}"
 
-    case "$target" in
-        "status"|"nm-status")
-            benchmark_cmd "nm-status" "scripts/network-mode-manager.sh status"
-            ;;
-        "sync"|"sync-all")
-            benchmark_cmd "sync-all" "scripts/sync_all_configs.sh"
-            ;;
-        "verify"|"verify-all")
-            benchmark_cmd "verify-all" "scripts/verify_all_configs.sh"
-            ;;
-        "all")
-            benchmark_cmd "nm-status" "scripts/network-mode-manager.sh status"
-            benchmark_cmd "sync-all" "scripts/sync_all_configs.sh"
-            benchmark_cmd "verify-all" "scripts/verify_all_configs.sh"
-            ;;
-        *)
-            error "Unknown target: $target"
-            echo "Available targets: nm-status, sync-all, verify-all, all"
-            exit 1
-            ;;
-    esac
+	case "$target" in
+	"status" | "nm-status")
+		benchmark_cmd "nm-status" "scripts/network-mode-manager.sh status"
+		;;
+	"sync" | "sync-all")
+		benchmark_cmd "sync-all" "scripts/sync_all_configs.sh"
+		;;
+	"verify" | "verify-all")
+		benchmark_cmd "verify-all" "scripts/verify_all_configs.sh"
+		;;
+	"all")
+		benchmark_cmd "nm-status" "scripts/network-mode-manager.sh status"
+		benchmark_cmd "sync-all" "scripts/sync_all_configs.sh"
+		benchmark_cmd "verify-all" "scripts/verify_all_configs.sh"
+		;;
+	*)
+		error "Unknown target: $target"
+		echo "Available targets: nm-status, sync-all, verify-all, all"
+		exit 1
+		;;
+	esac
 }
 
 main "$@"

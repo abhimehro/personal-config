@@ -16,13 +16,13 @@
 
 ### Metrics
 
-| Metric | Count |
-|--------|------:|
-| PRs reviewed (in-scope) | 10 |
-| PRs merged (squash) | 5 |
-| PRs closed (superseded) | 1 |
-| PRs escalated / hold (PR comments) | 4 |
-| Direct commits (CI fix) | 2 |
+| Metric                             | Count |
+| ---------------------------------- | ----: |
+| PRs reviewed (in-scope)            |    10 |
+| PRs merged (squash)                |     5 |
+| PRs closed (superseded)            |     1 |
+| PRs escalated / hold (PR comments) |     4 |
+| Direct commits (CI fix)            |     2 |
 
 ### Merged (squash)
 
@@ -73,13 +73,13 @@
 
 ### Metrics
 
-| Metric | Count |
-|--------|------:|
-| PRs reviewed (in-scope) | 9 |
-| PRs merged (squash) | 8 |
-| PRs fixed then merged | 0 |
-| PRs closed (duplicate / superseded / zero-diff) | 1 |
-| PRs escalated / request-changes | 0 |
+| Metric                                          | Count |
+| ----------------------------------------------- | ----: |
+| PRs reviewed (in-scope)                         |     9 |
+| PRs merged (squash)                             |     8 |
+| PRs fixed then merged                           |     0 |
+| PRs closed (duplicate / superseded / zero-diff) |     1 |
+| PRs escalated / request-changes                 |     0 |
 
 ### Merged PRs (squash)
 
@@ -130,13 +130,13 @@
 
 ### Metrics
 
-| Metric | Count |
-|--------|------:|
-| PRs reviewed (in-scope) | 7 |
-| PRs merged (squash) | 3 (1 with auto-fix) |
-| PRs fixed then merged | 1 (`ctrld-sync#655`, Ruff `conftest.py`) |
-| PRs closed (duplicate / stale) | 0 |
-| PRs escalated / request-changes (GitHub comments) | 4 |
+| Metric                                            |                                    Count |
+| ------------------------------------------------- | ---------------------------------------: |
+| PRs reviewed (in-scope)                           |                                        7 |
+| PRs merged (squash)                               |                      3 (1 with auto-fix) |
+| PRs fixed then merged                             | 1 (`ctrld-sync#655`, Ruff `conftest.py`) |
+| PRs closed (duplicate / stale)                    |                                        0 |
+| PRs escalated / request-changes (GitHub comments) |                                        4 |
 
 ### Merged PRs (squash)
 

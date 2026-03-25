@@ -3,15 +3,17 @@
 ## 📋 Essential Commands
 
 ### Daily Operations
+
 ```bash
 # Health Check (2-3 minutes)
 ~/Documents/dev/personal-config/maintenance/bin/run_all_maintenance.sh health
 
-# Quick Cleanup (1-2 minutes)  
+# Quick Cleanup (1-2 minutes)
 ~/Documents/dev/personal-config/maintenance/bin/run_all_maintenance.sh quick
 ```
 
 ### Weekly/Monthly Operations
+
 ```bash
 # Weekly Maintenance (5-10 minutes)
 ~/Documents/dev/personal-config/maintenance/bin/run_all_maintenance.sh weekly
@@ -23,6 +25,7 @@
 ## 📊 System Monitoring
 
 ### Check Status
+
 ```bash
 # Launch agents status
 launchctl list | grep maintenance
@@ -35,6 +38,7 @@ ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
 ```
 
 ### Current Automation Schedule
+
 - **8:30 AM Daily**: Health Check
 - **9:00 AM Daily**: System Cleanup
 - **10:00 AM Daily**: Homebrew Updates
@@ -44,6 +48,7 @@ ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
 ## 🔧 Troubleshooting
 
 ### Restart Launch Agents
+
 ```bash
 # Restart health check
 launchctl unload ~/Library/LaunchAgents/com.abhimehrotra.maintenance.healthcheck.plist
@@ -51,11 +56,13 @@ launchctl load ~/Library/LaunchAgents/com.abhimehrotra.maintenance.healthcheck.p
 ```
 
 ### Fix Permissions
+
 ```bash
 chmod +x ~/Documents/dev/personal-config/maintenance/bin/*.sh
 ```
 
 ### Create Missing Directories
+
 ```bash
 mkdir -p ~/Library/Logs/maintenance
 mkdir -p ~/Documents/dev/personal-config/maintenance/tmp
@@ -64,12 +71,14 @@ mkdir -p ~/Documents/dev/personal-config/maintenance/tmp
 ## 📈 Current System Health
 
 **As of Last Check:**
+
 - ✅ Disk Usage: 15% (healthy)
-- ✅ Homebrew: 0 outdated packages  
+- ✅ Homebrew: 0 outdated packages
 - ✅ Network: Connected
 - ✅ Launch Agents: All running (exit code 0)
 - ✅ Battery: 87% and charging
 - ✅ Software Updates: None available
 
 ---
-*For detailed information, see the full [README.md](README.md)*
+
+_For detailed information, see the full [README.md](README.md)_

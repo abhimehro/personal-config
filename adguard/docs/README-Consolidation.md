@@ -5,18 +5,21 @@ This directory contains consolidated ad-blocking lists for AdGuard macOS, combin
 ## Files Created
 
 ### 1. Consolidated-Denylist.txt
+
 - **Purpose**: Contains all domains that should be blocked
 - **Source Lists**: All tracker lists (Microsoft, No SafeSearch, OPPO/Realme, Roku, Samsung, TikTok, Vivo, Xiaomi, Amazon, Apple, Badware Hoster, LG webOS, Huawei)
 - **Format**: One domain per line
 - **Usage**: Import as denylist in AdGuard macOS
 
 ### 2. Consolidated-Allowlist.txt
+
 - **Purpose**: Contains domains that should NOT be blocked
 - **Source Lists**: CD-Control-D-Bypass + legitimate entries from CD-Most-Abused-TLDs
 - **Format**: AdGuard allowlist syntax (`@@domain.com`)
 - **Usage**: Import as allowlist in AdGuard macOS
 
 ### 3. Python Scripts
+
 - **create_consolidated_lists.py**: Complete consolidation script
 - **extract_domains.py**: Simple domain extraction utility
 - **consolidate_adblock_lists.py**: Alternative consolidation approach
@@ -48,6 +51,7 @@ python3 create_consolidated_lists.py
 ```
 
 This will create:
+
 - `Consolidated-Denylist.txt` (complete)
 - `Consolidated-Allowlist.txt` (complete)
 - `Consolidated-Denylist.json` (JSON reference)
@@ -58,6 +62,7 @@ This will create:
 ⚠️ **AdGuard macOS Limitation**: The macOS app only supports importing one denylist and one allowlist. Importing additional lists will override existing ones.
 
 📊 **Expected Domain Counts**:
+
 - Denylist: ~25,000+ domains
 - Allowlist: ~5,000+ domains
 
@@ -66,6 +71,7 @@ This will create:
 ## Source Lists Included
 
 ### Denylist Sources:
+
 - CD-Microsoft-Tracker.json
 - CD-No-Safesearch-Support.json
 - CD-OPPO_Realme-Tracker.json
@@ -81,6 +87,7 @@ This will create:
 - CD-Huawei-Tracker.json
 
 ### Allowlist Sources:
+
 - CD-Control-D-Bypass.json (all entries with `"do": 1`)
 - CD-Most-Abused-TLDs.json (entries with `"do": 1`)
 
@@ -114,5 +121,6 @@ This will create:
 ## Support
 
 For issues with the consolidation process or AdGuard configuration, refer to:
+
 - AdGuard documentation: https://adguard.com/en/support.html
 - AdGuard community forums: https://forum.adguard.com/

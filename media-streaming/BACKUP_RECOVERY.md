@@ -9,18 +9,19 @@
 
 ## 📦 What's Backed Up
 
-| Component | Location | Type |
-|-----------|----------|------|
-| **rclone config** | 1Password → "Rclone Config Backup" | Secure vault |
-| **WebDAV credentials** | 1Password → "Media Server WebDAV Credentials" | Secure vault |
-| **Setup scripts** | `media-streaming/scripts/` | Git repository |
-| **Documentation** | `media-streaming/docs/` | Git repository |
+| Component              | Location                                      | Type           |
+| ---------------------- | --------------------------------------------- | -------------- |
+| **rclone config**      | 1Password → "Rclone Config Backup"            | Secure vault   |
+| **WebDAV credentials** | 1Password → "Media Server WebDAV Credentials" | Secure vault   |
+| **Setup scripts**      | `media-streaming/scripts/`                    | Git repository |
+| **Documentation**      | `media-streaming/docs/`                       | Git repository |
 
 ---
 
 ## 🚨 When to Use This Guide
 
 Use this recovery process when:
+
 - ✅ Moving to a new Mac
 - ✅ After system reinstall or migration
 - ✅ If cloud sync (OneDrive/iCloud) corrupts config files
@@ -106,11 +107,13 @@ curl -u infuse:$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut
 ### Step 5: Reconnect Infuse
 
 Get your local IP:
+
 ```bash
 ipconfig getifaddr en0
 ```
 
 **Infuse Configuration:**
+
 ```
 Protocol: WebDAV
 Address: http://YOUR_LOCAL_IP:8088
@@ -141,6 +144,7 @@ chmod 600 ~/.config/media-server/credentials && \
 ### Issue: "rclone listremotes" shows nothing
 
 **Solution:**
+
 ```bash
 # Check if config file exists
 ls -la ~/.config/rclone/rclone.conf
@@ -156,6 +160,7 @@ rclone config show
 ### Issue: OAuth tokens expired
 
 **Solution:**
+
 ```bash
 # Reconnect Google Drive
 rclone config reconnect gdrive:
@@ -172,6 +177,7 @@ op document edit "Rclone Config Backup" ~/.config/rclone/rclone.conf --vault Per
 ### Issue: WebDAV server won't start
 
 **Solution:**
+
 ```bash
 # Kill any existing rclone processes
 pkill -9 rclone
@@ -188,6 +194,7 @@ lsof -nP -i:8088
 ### Issue: Can't retrieve credentials from 1Password
 
 **Solution:**
+
 ```bash
 # Check if you're signed in
 op account list
@@ -208,12 +215,14 @@ op document get "Media Server WebDAV Credentials" --vault Personal
 ## 🔄 Updating Backups
 
 ### After OAuth Token Refresh:
+
 ```bash
 # Update rclone config in 1Password
 op document edit "Rclone Config Backup" ~/.config/rclone/rclone.conf --vault Personal
 ```
 
 ### After Changing WebDAV Password:
+
 ```bash
 # Update credentials in 1Password
 op document edit "Media Server WebDAV Credentials" ~/.config/media-server/credentials --vault Personal
@@ -239,6 +248,7 @@ After recovery, verify everything works:
 ### Exclude from Cloud Sync
 
 Add these to **OneDrive/iCloud exclusions**:
+
 ```
 ~/.config/rclone/
 ~/.config/media-server/
@@ -248,6 +258,7 @@ Add these to **OneDrive/iCloud exclusions**:
 ### Regular Backup Schedule
 
 Update 1Password backups monthly or after major changes:
+
 ```bash
 # Update both backups
 op document edit "Rclone Config Backup" ~/.config/rclone/rclone.conf --vault Personal
@@ -269,16 +280,17 @@ op document edit "Media Server WebDAV Credentials" ~/.config/media-server/creden
 
 All sensitive configurations are stored in your **Personal vault**:
 
-| Document Name | Contains | UUID |
-|--------------|----------|------|
-| **Rclone Config Backup** | OAuth tokens, remote configs | opgr52y2brbsfmzzk56p4qrkzu |
-| **Media Server WebDAV Credentials** | Username & password | mv76o4tmrwg2ure3jyedmlphti |
+| Document Name                       | Contains                     | UUID                       |
+| ----------------------------------- | ---------------------------- | -------------------------- |
+| **Rclone Config Backup**            | OAuth tokens, remote configs | opgr52y2brbsfmzzk56p4qrkzu |
+| **Media Server WebDAV Credentials** | Username & password          | mv76o4tmrwg2ure3jyedmlphti |
 
 ---
 
 ## 🎯 Recovery Success Criteria
 
 You'll know recovery is complete when:
+
 1. ✅ All rclone remotes are accessible
 2. ✅ WebDAV server is running on port 8088
 3. ✅ Infuse can connect and browse media
@@ -298,6 +310,7 @@ _Last tested: December 20, 2025 - ✅ Successful recovery from OneDrive sync inc
 ## 🔒 Security Note
 
 **Why everything is in 1Password:**
+
 - GitHub's push protection blocks OAuth tokens in git commits
 - 1Password provides encrypted, secure storage for sensitive credentials
 - Recovery is just as fast with `op document get` commands

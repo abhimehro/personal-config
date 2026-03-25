@@ -3,6 +3,7 @@
 Check items as you pin them into Sidebar. Order left→right by frequency.
 
 ## Core
+
 - [ ] 💡 Raycast
 - [ ] 🗂️ Finder
 - [ ] ⚙️ System Settings
@@ -11,6 +12,7 @@ Check items as you pin them into Sidebar. Order left→right by frequency.
 - [ ] 📈 Activity Monitor
 
 ## Browsers
+
 - [ ] 🔁 Switchbar (default)
 - [ ] 🧭 Safari
 - [ ] 🧪 Chrome Canary
@@ -21,6 +23,7 @@ Check items as you pin them into Sidebar. Order left→right by frequency.
 - [ ] 🪞 Mirror Browser
 
 ## Communication
+
 - [ ] ✉️ Mail
 - [ ] 💬 Messages
 - [ ] 🎥 FaceTime
@@ -29,6 +32,7 @@ Check items as you pin them into Sidebar. Order left→right by frequency.
 - [ ] 📚 Readwise Reader
 
 ## Work / Dev
+
 - [ ] 🧑‍💻 Zed
 - [ ] 🧾 Script Editor
 - [ ] 🔗 Shortcuts
@@ -37,6 +41,7 @@ Check items as you pin them into Sidebar. Order left→right by frequency.
 - [ ] 📱 Xcode Simulator (if used)
 
 ## Media & Creative
+
 - [ ] 🎵 Music
 - [ ] 🎙️ Podcasts
 - [ ] 🎧 Spotify
@@ -50,6 +55,7 @@ Check items as you pin them into Sidebar. Order left→right by frequency.
 - [ ] 🌈 Digital Color Meter
 
 ## Files & Cloud
+
 - [ ] 🧭 Path Finder
 - [ ] 💽 Disk Utility
 - [ ] 🗜️ Archive Utility
@@ -58,6 +64,7 @@ Check items as you pin them into Sidebar. Order left→right by frequency.
 - [ ] ☁️ Amazon Drive
 
 ## Utilities
+
 - [ ] 🖥️ BetterDisplay
 - [ ] 🌕 Lunar
 - [ ] 🔊 Boom 3D
@@ -74,6 +81,7 @@ Check items as you pin them into Sidebar. Order left→right by frequency.
 - [ ] 🧱 MultiDock (backup)
 
 ## System & Tools
+
 - [ ] 🗣️ Feedback Assistant
 - [ ] 🖥️↔️🖥️ Screen Sharing
 - [ ] 🌈 Digital Color Meter (if not in Media)
@@ -81,6 +89,7 @@ Check items as you pin them into Sidebar. Order left→right by frequency.
 - [ ] 🔁 Relaunch Sidebar (Raycast script)
 
 ## Folders / Stacks
+
 - [ ] 📁 ~/Downloads
 - [ ] 📁 ~/Documents
 - [ ] 📁 ~/Desktop
@@ -88,6 +97,7 @@ Check items as you pin them into Sidebar. Order left→right by frequency.
 - [ ] 📁 ~/Projects (create if missing)
 
 ## Web Shortcuts (optional)
+
 - [ ] 🗺️ Sidebar Roadmap
 - [ ] 🚀 Product Hunt
 - [ ] 🧰 Raycast Store

@@ -17,7 +17,7 @@ TEST_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t 'controld-symlink-test')"
 
 # Cleanup function
 cleanup() {
-    rm -rf "$TEST_DIR"
+	rm -rf "$TEST_DIR"
 }
 trap cleanup EXIT
 
@@ -37,15 +37,15 @@ echo "Created symlink: $TEST1_DIR -> $TARGET_DIR"
 echo "Running: install -d -m 700 $TEST1_DIR"
 
 if install -d -m 700 "$TEST1_DIR" 2>/dev/null; then
-    # Check if it's still a symlink (bad) or now a directory (good)
-    if [[ -L "$TEST1_DIR" ]]; then
-        echo "❌ BAD: install -d followed the symlink"
-        echo "   This means pre-flight checks are essential"
-    else
-        echo "✅ GOOD: install -d created a real directory (removed symlink)"
-    fi
+	# Check if it's still a symlink (bad) or now a directory (good)
+	if [[ -L $TEST1_DIR ]]; then
+		echo "❌ BAD: install -d followed the symlink"
+		echo "   This means pre-flight checks are essential"
+	else
+		echo "✅ GOOD: install -d created a real directory (removed symlink)"
+	fi
 else
-    echo "⚠️  install -d failed (may not support this behavior)"
+	echo "⚠️  install -d failed (may not support this behavior)"
 fi
 
 # Test 2: Verify 'install -m' behavior with symlinks
@@ -57,8 +57,8 @@ TEST2_FILE="$TEST_DIR/test2.txt"
 TARGET_FILE="$TEST_DIR/target2.txt"
 SOURCE_FILE="$TEST_DIR/source2.txt"
 
-echo "test content" > "$SOURCE_FILE"
-echo "target content" > "$TARGET_FILE"
+echo "test content" >"$SOURCE_FILE"
+echo "target content" >"$TARGET_FILE"
 
 # Create a symlink where we want to copy the file
 ln -s "$TARGET_FILE" "$TEST2_FILE"
@@ -67,21 +67,21 @@ echo "Created symlink: $TEST2_FILE -> $TARGET_FILE"
 echo "Running: install -m 600 $SOURCE_FILE $TEST2_FILE"
 
 if install -m 600 "$SOURCE_FILE" "$TEST2_FILE" 2>/dev/null; then
-    # Check if it's still a symlink (bad) or now a file (good)
-    if [[ -L "$TEST2_FILE" ]]; then
-        echo "❌ BAD: install -m followed the symlink"
-        echo "   Original target would be overwritten!"
-    else
-        echo "✅ GOOD: install -m replaced symlink with real file"
-        # Verify target file wasn't modified
-        if grep -q "target content" "$TARGET_FILE"; then
-            echo "✅ GOOD: Original target file untouched"
-        else
-            echo "❌ BAD: Original target file was modified"
-        fi
-    fi
+	# Check if it's still a symlink (bad) or now a file (good)
+	if [[ -L $TEST2_FILE ]]; then
+		echo "❌ BAD: install -m followed the symlink"
+		echo "   Original target would be overwritten!"
+	else
+		echo "✅ GOOD: install -m replaced symlink with real file"
+		# Verify target file wasn't modified
+		if grep -q "target content" "$TARGET_FILE"; then
+			echo "✅ GOOD: Original target file untouched"
+		else
+			echo "❌ BAD: Original target file was modified"
+		fi
+	fi
 else
-    echo "⚠️  install -m failed"
+	echo "⚠️  install -m failed"
 fi
 
 # Test 3: Compare with old vulnerable pattern (rm + cp + chmod)
@@ -93,8 +93,8 @@ TEST3_FILE="$TEST_DIR/test3.txt"
 TARGET3_FILE="$TEST_DIR/target3.txt"
 SOURCE3_FILE="$TEST_DIR/source3.txt"
 
-echo "test content 3" > "$SOURCE3_FILE"
-echo "target content 3" > "$TARGET3_FILE"
+echo "test content 3" >"$SOURCE3_FILE"
+echo "target content 3" >"$TARGET3_FILE"
 ln -s "$TARGET3_FILE" "$TEST3_FILE"
 
 echo "Created symlink: $TEST3_FILE -> $TARGET3_FILE"
@@ -106,17 +106,17 @@ ln -s "$TARGET3_FILE" "$TEST3_FILE"
 cp "$SOURCE3_FILE" "$TEST3_FILE" 2>/dev/null || true
 chmod 600 "$TEST3_FILE" 2>/dev/null || true
 
-if [[ -L "$TEST3_FILE" ]]; then
-    echo "⚠️  Symlink still exists (cp failed)"
-    if grep -q "test content 3" "$TARGET3_FILE"; then
-        echo "❌ VULNERABLE: Target file was overwritten via symlink!"
-    fi
+if [[ -L $TEST3_FILE ]]; then
+	echo "⚠️  Symlink still exists (cp failed)"
+	if grep -q "test content 3" "$TARGET3_FILE"; then
+		echo "❌ VULNERABLE: Target file was overwritten via symlink!"
+	fi
 else
-    if grep -q "test content 3" "$TARGET3_FILE"; then
-        echo "❌ VULNERABLE: Even without race, target could be overwritten"
-    else
-        echo "✅ File operations worked without following symlink"
-    fi
+	if grep -q "test content 3" "$TARGET3_FILE"; then
+		echo "❌ VULNERABLE: Even without race, target could be overwritten"
+	else
+		echo "✅ File operations worked without following symlink"
+	fi
 fi
 
 echo ""

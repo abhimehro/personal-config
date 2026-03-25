@@ -1,8 +1,7 @@
-import sys
-from pathlib import Path
-
 # Need to import a script with hyphens in the name
 import importlib.util
+import sys
+from pathlib import Path
 
 # Get absolute path to fix-allowlist-format.py
 current_dir = Path(__file__).resolve().parent
@@ -14,4 +13,6 @@ fix_allowlist_format = importlib.util.module_from_spec(spec)
 sys.modules["fix_allowlist_format"] = fix_allowlist_format
 spec.loader.exec_module(fix_allowlist_format)
 
-extract_allowlist_domains_from_file = fix_allowlist_format.extract_allowlist_domains_from_file
+extract_allowlist_domains_from_file = (
+    fix_allowlist_format.extract_allowlist_domains_from_file
+)

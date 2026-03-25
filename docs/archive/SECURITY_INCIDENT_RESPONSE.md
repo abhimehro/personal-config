@@ -12,23 +12,27 @@ Terminal history files (`.cursor/projects/.../terminals/7.txt`) contained Google
 ## Tokens Exposed
 
 ### Google OAuth Tokens
+
 - **Access Token**: `ya29.[REDACTED]` (Google OAuth access token - REVOKED)
 - **Refresh Token**: `1//[REDACTED]` (Google OAuth refresh token - REVOKED)
 - **Location**: Terminal history file (`.cursor/projects/.../terminals/7.txt`)
 
 ### Microsoft OAuth Tokens
+
 - Microsoft OAuth tokens also found in terminal history (OneDrive setup)
 - **Status**: REVOKED
 
 ## Actions Taken
 
 ### ✅ Immediate Response
+
 1. **Removed files from git tracking**: `git rm --cached` for terminal history files
 2. **Deleted local files**: Removed terminal history files containing tokens
 3. **Fixed .gitignore**: Updated to properly exclude terminal history files
 4. **Verified no other secrets**: Scanned repository for other exposed tokens
 
 ### ✅ Prevention Measures
+
 1. **Updated .gitignore**: Terminal history files now properly excluded
 2. **Security audit**: Verified no other credentials in repository
 3. **Documentation**: Created this incident response document
@@ -40,12 +44,14 @@ Terminal history files (`.cursor/projects/.../terminals/7.txt`) contained Google
 **You MUST revoke these tokens immediately:**
 
 #### Google OAuth Tokens
+
 1. Go to: https://myaccount.google.com/permissions
 2. Find "rclone" or "Google Drive API" app
 3. Click "Remove Access" or "Revoke"
 4. Or go to: https://security.google.com/settings/security/permissions
 
 #### Microsoft OAuth Tokens (OneDrive)
+
 1. Go to: https://account.live.com/consent/Manage
 2. Find apps with OneDrive access
 3. Revoke access for any suspicious apps
@@ -54,6 +60,7 @@ Terminal history files (`.cursor/projects/.../terminals/7.txt`) contained Google
 ### After Revoking Tokens
 
 1. **Re-authenticate rclone**:
+
    ```bash
    rclone config reconnect gdrive:
    rclone config reconnect onedrive:
@@ -73,6 +80,7 @@ Terminal history files (`.cursor/projects/.../terminals/7.txt`) contained Google
 ## .gitignore Updates
 
 Updated to properly exclude terminal history files:
+
 ```
 .cursor/projects/**/terminals/*.txt
 .cursor/**/terminals/*.txt
@@ -113,6 +121,7 @@ git status
 ## Status
 
 ✅ **RESOLVED**
+
 - Files removed from git tracking
 - Local files deleted
 - .gitignore updated

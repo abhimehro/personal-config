@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-import http.server
-import socketserver
-import os
-import sys
 import argparse
 import base64
+import http.server
+import os
 import secrets
+import socketserver
 import string
+import sys
 import time
 
 MOUNT_DIR = os.environ.get("ALD_MOUNT_DIR", os.path.expanduser("~/mnt/alldebrid"))
@@ -15,6 +15,7 @@ MOUNT_DIR = os.environ.get("ALD_MOUNT_DIR", os.path.expanduser("~/mnt/alldebrid"
 AUTH_USER = None
 AUTH_PASS = None
 EXPECTED_AUTH_TOKEN = None
+
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -37,14 +38,14 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         if not AUTH_USER or not AUTH_PASS:
             return True
 
-        auth_header = self.headers.get('Authorization')
+        auth_header = self.headers.get("Authorization")
         if not auth_header:
             self.send_auth_request()
             return False
 
         try:
-            auth_type, auth_data = auth_header.split(' ', 1)
-            if auth_type.lower() != 'basic':
+            auth_type, auth_data = auth_header.split(" ", 1)
+            if auth_type.lower() != "basic":
                 self.send_auth_request()
                 return False
 
@@ -63,34 +64,39 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def send_auth_request(self):
         self.send_response(401)
-        self.send_header('WWW-Authenticate', 'Basic realm="Media Server"')
+        self.send_header("WWW-Authenticate", 'Basic realm="Media Server"')
         self.end_headers()
-        self.wfile.write(b'Authentication required')
+        self.wfile.write(b"Authentication required")
 
     def end_headers(self):
         # Handle CORS
         # If auth is enabled, strictly control CORS
         if AUTH_USER and AUTH_PASS:
-            origin = self.headers.get('Origin')
-            allowed_origins_env = os.environ.get('ALD_ALLOWED_ORIGINS')
+            origin = self.headers.get("Origin")
+            allowed_origins_env = os.environ.get("ALD_ALLOWED_ORIGINS")
 
             if allowed_origins_env and origin:
-                allowed_origins = {o.strip() for o in allowed_origins_env.split(',') if o.strip()}
+                allowed_origins = {
+                    o.strip() for o in allowed_origins_env.split(",") if o.strip()
+                }
                 safe_origin = origin.replace("\r", "").replace("\n", "")
                 # Security: Use exact match, not substring check, to prevent bypass attacks
                 # (e.g., "http://example.com" should not match "http://example.com.evil.com")
-                if safe_origin in allowed_origins:  # This 'in' checks set membership (exact match), not substring
-                    self.send_header('Access-Control-Allow-Origin', safe_origin)
-                    self.send_header('Vary', 'Origin')
+                if (
+                    safe_origin in allowed_origins
+                ):  # This 'in' checks set membership (exact match), not substring
+                    self.send_header("Access-Control-Allow-Origin", safe_origin)
+                    self.send_header("Vary", "Origin")
             # If no allowed origins configured, do not send Access-Control-Allow-Origin
             # This effectively blocks browser fetch/XHR from other origins
         else:
             # No auth, allow all (legacy behavior)
-            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header("Access-Control-Allow-Origin", "*")
 
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         super().end_headers()
+
 
 def start_server(host, port):
     mount_dir = MOUNT_DIR
@@ -98,15 +104,21 @@ def start_server(host, port):
     if not os.path.exists(mount_dir):
         print(f"❌ Mount directory {mount_dir} doesn't exist!")
         print("Please mount your rclone first:")
-        print("rclone mount alldebrid:links ~/mnt/alldebrid --dir-cache-time 10s --multi-thread-streams=0 --cutoff-mode=cautious --vfs-cache-mode minimal --buffer-size=0 --read-only --daemon")
+        print(
+            "rclone mount alldebrid:links ~/mnt/alldebrid --dir-cache-time 10s --multi-thread-streams=0 --cutoff-mode=cautious --vfs-cache-mode minimal --buffer-size=0 --read-only --daemon"
+        )
         sys.exit(1)
 
     if not os.listdir(mount_dir):
         print(f"⚠️  Warning: Mount directory {mount_dir} is empty!")
-        print("Make sure rclone is properly mounted and there's content in your links folder.")
+        print(
+            "Make sure rclone is properly mounted and there's content in your links folder."
+        )
 
     # ⚡ Performance: Use ThreadingTCPServer to handle concurrent requests
-    with socketserver.ThreadingTCPServer((host, port), CustomHTTPRequestHandler) as httpd:
+    with socketserver.ThreadingTCPServer(
+        (host, port), CustomHTTPRequestHandler
+    ) as httpd:
         print(f"🚀 Serving Alldebrid content on http://{host}:{port}")
         print(f"📁 Directory: {mount_dir}")
         print("Press Ctrl+C to stop")
@@ -115,11 +127,16 @@ def start_server(host, port):
         except KeyboardInterrupt:
             print("\n🛑 Server stopped")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Alldebrid Media Server")
-    parser.add_argument("port", type=int, nargs="?", default=8080, help="Port to serve on")
+    parser.add_argument(
+        "port", type=int, nargs="?", default=8080, help="Port to serve on"
+    )
     parser.add_argument("--host", default="127.0.0.1", help="Host interface to bind to")
-    parser.add_argument("--public", action="store_true", help="Bind to all interfaces (0.0.0.0)")
+    parser.add_argument(
+        "--public", action="store_true", help="Bind to all interfaces (0.0.0.0)"
+    )
     parser.add_argument("--user", help="Username for Basic Auth")
     parser.add_argument("--password", help="Password for Basic Auth")
     args = parser.parse_args()
@@ -139,17 +156,19 @@ if __name__ == "__main__":
 
     if not AUTH_PASS:
         alphabet = string.ascii_letters + string.digits
-        AUTH_PASS = ''.join(secrets.choices(alphabet, k=16))
+        AUTH_PASS = "".join(secrets.choices(alphabet, k=16))
         print("\n🔒 Security: Authentication Enabled")
         print(f"   User: {AUTH_USER}")
         print(f"   Pass: {AUTH_PASS}")
         if generated_user:
-             print("   (Random username generated. Set custom user via --user)")
+            print("   (Random username generated. Set custom user via --user)")
         print("   (Use these credentials to access the server)\n")
     else:
         print("\n🔒 Security: Authentication Enabled (using configured credentials)\n")
 
     # Pre-compute expected token
-    EXPECTED_AUTH_TOKEN = base64.b64encode(f"{AUTH_USER}:{AUTH_PASS}".encode('utf-8')).decode('utf-8')
+    EXPECTED_AUTH_TOKEN = base64.b64encode(
+        f"{AUTH_USER}:{AUTH_PASS}".encode("utf-8")
+    ).decode("utf-8")
 
     start_server(host, args.port)

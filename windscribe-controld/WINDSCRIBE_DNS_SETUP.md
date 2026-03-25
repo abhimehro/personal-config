@@ -6,11 +6,13 @@
 > historical/advanced reference rather than the main setup path.
 
 ## Current Status
+
 ✅ **Control D Service**: Running with VPN-compatible binding (`*:53`)  
 ✅ **Windscribe VPN**: Connected (Dallas, US)  
 ❌ **DNS Filtering**: Not active (VPN overriding Control D DNS)
 
 ## Problem Diagnosis
+
 Windscribe VPN is using its own DNS servers (`1.1.1.1`) instead of Control D (`127.0.0.1`), preventing ad blocking and privacy filtering.
 
 ## Solution Options
@@ -49,7 +51,7 @@ sudo ~/Documents/dev/personal-config/windscribe-controld/fix-dns-priority.sh dis
 Try these Windscribe DNS configurations:
 
 1. **DNS**: `Local DNS` + **App Internal DNS**: `127.0.0.1` (custom)
-2. **DNS**: `Control D` (if available) + **App Internal DNS**: `OS Default`  
+2. **DNS**: `Control D` (if available) + **App Internal DNS**: `OS Default`
 3. **DNS**: `Custom` (`127.0.0.1`) + **App Internal DNS**: `OS Default`
 
 ## Verification Steps
@@ -64,6 +66,7 @@ After changing Windscribe settings:
    ```
 
 ### Expected Results
+
 ```
 ✅ Control D service: RUNNING
 ✅ VPN interface: CONNECTED
@@ -76,6 +79,7 @@ After changing Windscribe settings:
 ## Troubleshooting
 
 ### DNS Filtering Not Working
+
 - Check Windscribe "App Internal DNS" setting
 - Try disconnecting/reconnecting VPN
 - Flush DNS cache:
@@ -84,6 +88,7 @@ After changing Windscribe settings:
   ```
 
 ### VPN Connection Issues
+
 - Ensure Control D service is running:
   ```bash
   sudo ~/Documents/dev/personal-config/windscribe-controld/controld-service-manager.sh status
@@ -94,14 +99,17 @@ After changing Windscribe settings:
   ```
 
 ### Complete Reset
+
 If nothing works:
 
 1. **Disable DNS override:**
+
    ```bash
    sudo ~/Documents/dev/personal-config/windscribe-controld/fix-dns-priority.sh disable
    ```
 
 2. **Stop Control D:**
+
    ```bash
    sudo ~/Documents/dev/personal-config/windscribe-controld/controld-service-manager.sh stop
    ```
@@ -109,6 +117,7 @@ If nothing works:
 3. **Disconnect Windscribe VPN**
 
 4. **Restart Control D:**
+
    ```bash
    sudo ~/Documents/dev/personal-config/windscribe-controld/controld-service-manager.sh start
    ```
@@ -118,12 +127,14 @@ If nothing works:
 ## Success Indicators
 
 ### ✅ Working Configuration
+
 - **Ad domains blocked**: `doubleclick.net` → `127.0.0.1`
 - **Normal sites work**: `google.com` resolves correctly
 - **VPN location**: Shows VPN server location
 - **DNS filtering**: Visible in Control D dashboard
 
 ### ❌ Issues
+
 - Ad domains resolve to real IPs (not `127.0.0.1`)
 - DNS queries not appearing in Control D dashboard
 - VPN connection failures
@@ -136,7 +147,7 @@ You can also test different Control D profiles while VPN is connected:
 # Switch to Gaming profile (less filtering)
 sudo controld-manager switch gaming
 
-# Switch back to Privacy profile (full filtering)  
+# Switch back to Privacy profile (full filtering)
 sudo controld-manager switch privacy
 
 # Test after switching

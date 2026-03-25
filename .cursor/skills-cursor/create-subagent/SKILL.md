@@ -6,6 +6,7 @@ description: >-
   debuggers, or domain-specific assistants with custom prompts.
 disable-model-invocation: true
 ---
+
 # Creating Custom Subagents
 
 This skill guides you through creating custom subagents for Cursor. Subagents are specialized AI assistants that run in isolated contexts with custom system prompts.
@@ -13,6 +14,7 @@ This skill guides you through creating custom subagents for Cursor. Subagents ar
 ## When to Use Subagents
 
 Subagents help you:
+
 - **Preserve context** by isolating exploration from your main conversation
 - **Specialize behavior** with focused system prompts for specific domains
 - **Reuse configurations** across projects with user-level subagents
@@ -23,10 +25,10 @@ If you have previous conversation context, infer the subagent's purpose and beha
 
 ## Subagent Locations
 
-| Location | Scope | Priority |
-|----------|-------|----------|
-| `.cursor/agents/` | Current project | Higher |
-| `~/.cursor/agents/` | All your projects | Lower |
+| Location            | Scope             | Priority |
+| ------------------- | ----------------- | -------- |
+| `.cursor/agents/`   | Current project   | Higher   |
+| `~/.cursor/agents/` | All your projects | Lower    |
 
 When multiple subagents share the same name, the higher-priority location wins.
 
@@ -50,10 +52,10 @@ specific, actionable feedback on quality, security, and best practices.
 
 ### Required Fields
 
-| Field | Description |
-|-------|-------------|
-| `name` | Unique identifier (lowercase letters and hyphens only) |
-| `description` | When to delegate to this subagent (be specific!) |
+| Field         | Description                                            |
+| ------------- | ------------------------------------------------------ |
+| `name`        | Unique identifier (lowercase letters and hyphens only) |
+| `description` | When to delegate to this subagent (be specific!)       |
 
 ## Writing Effective Descriptions
 
@@ -82,11 +84,13 @@ description: Expert code review specialist. Proactively reviews code for quality
 You are a senior code reviewer ensuring high standards of code quality and security.
 
 When invoked:
+
 1. Run git diff to see recent changes
 2. Focus on modified files
 3. Begin review immediately
 
 Review checklist:
+
 - Code is clear and readable
 - Functions and variables are well-named
 - No duplicated code
@@ -97,6 +101,7 @@ Review checklist:
 - Performance considerations addressed
 
 Provide feedback organized by priority:
+
 - Critical issues (must fix)
 - Warnings (should fix)
 - Suggestions (consider improving)
@@ -115,6 +120,7 @@ description: Debugging specialist for errors, test failures, and unexpected beha
 You are an expert debugger specializing in root cause analysis.
 
 When invoked:
+
 1. Capture error message and stack trace
 2. Identify reproduction steps
 3. Isolate the failure location
@@ -122,6 +128,7 @@ When invoked:
 5. Verify solution works
 
 Debugging process:
+
 - Analyze error messages and logs
 - Check recent code changes
 - Form and test hypotheses
@@ -129,6 +136,7 @@ Debugging process:
 - Inspect variable states
 
 For each issue, provide:
+
 - Root cause explanation
 - Evidence supporting the diagnosis
 - Specific code fix
@@ -149,6 +157,7 @@ description: Data analysis expert for SQL queries, BigQuery operations, and data
 You are a data scientist specializing in SQL and BigQuery analysis.
 
 When invoked:
+
 1. Understand the data analysis requirement
 2. Write efficient SQL queries
 3. Use BigQuery command line tools (bq) when appropriate
@@ -156,6 +165,7 @@ When invoked:
 5. Present findings clearly
 
 Key practices:
+
 - Write optimized SQL queries with proper filters
 - Use appropriate aggregations and joins
 - Include comments explaining complex logic
@@ -163,6 +173,7 @@ Key practices:
 - Provide data-driven recommendations
 
 For each analysis:
+
 - Explain the query approach
 - Document any assumptions
 - Highlight key findings
@@ -197,6 +208,7 @@ Write the frontmatter with the required fields (`name` and `description`).
 ### Step 4: Write the System Prompt
 
 The body becomes the system prompt. Be specific about:
+
 - What the agent should do when invoked
 - The workflow or process to follow
 - Output format and structure
@@ -220,6 +232,7 @@ Use the my-agent subagent to [task description]
 ## Troubleshooting
 
 ### Subagent Not Found
+
 - Ensure file is in `.cursor/agents/` or `~/.cursor/agents/`
 - Check file has `.md` extension
 - Verify YAML frontmatter syntax is valid

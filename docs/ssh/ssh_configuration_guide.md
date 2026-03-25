@@ -22,12 +22,12 @@ This SSH configuration provides seamless integration between Cursor IDE, 1Passwo
 
 ### SSH Host Configurations
 
-| Host | Target | Use Case | Network |
-|------|--------|----------|---------|
-| `cursor-mdns` | `<mdns-hostname>.local` | **Primary** - Most reliable | Any |
-| `cursor-local` | `<local-hostname>` | Local network only | Local |
-| `cursor-vpn` | `<vpn-ip-address>` | VPN connections | VPN |
-| `cursor-auto` | `<mdns-hostname>.local` | Smart detection | Any |
+| Host           | Target                  | Use Case                    | Network |
+| -------------- | ----------------------- | --------------------------- | ------- |
+| `cursor-mdns`  | `<mdns-hostname>.local` | **Primary** - Most reliable | Any     |
+| `cursor-local` | `<local-hostname>`      | Local network only          | Local   |
+| `cursor-vpn`   | `<vpn-ip-address>`      | VPN connections             | VPN     |
+| `cursor-auto`  | `<mdns-hostname>.local` | Smart detection             | Any     |
 
 ### Connection Priority
 
@@ -97,9 +97,11 @@ ssh cursor-auto     # Auto-detection
 ## 🛠️ Configuration Files
 
 ### `/configs/ssh/config`
+
 Main SSH configuration with host definitions, 1Password integration, and optimization settings.
 
 ### `/configs/ssh/agent.toml`
+
 1Password SSH agent configuration specifying which vaults and keys to use.
 
 ## 🔧 Scripts
@@ -132,16 +134,19 @@ Main SSH configuration with host definitions, 1Password integration, and optimiz
 ## 🌐 Network Scenarios
 
 ### Scenario 1: Local Network (VPN OFF)
+
 - **Best:** `ssh cursor-mdns` or `ssh cursor-local`
 - **Target:** Local hostname resolution
 - **Optimizations:** Compression disabled for speed
 
 ### Scenario 2: VPN Connected (Windscribe/etc)
+
 - **Best:** `ssh cursor-mdns` (still works!)
 - **Alternative:** `ssh cursor-vpn` (for different machines)
 - **Optimizations:** Compression enabled, extra keepalives
 
 ### Scenario 3: mDNS/Bonjour Fallback
+
 - **Always works:** `ssh cursor-mdns`
 - **Target:** Bonjour service discovery
 - **Use case:** When hostname resolution fails
@@ -151,6 +156,7 @@ Main SSH configuration with host definitions, 1Password integration, and optimiz
 ### Common Issues
 
 **Connection timeouts:**
+
 ```bash
 # Check network connectivity
 ~/.ssh/check_connections.sh
@@ -160,6 +166,7 @@ ping <mdns-hostname>.local
 ```
 
 **1Password authentication fails:**
+
 ```bash
 # Verify SSH agent
 ssh-add -l
@@ -169,10 +176,12 @@ ssh-add -l
 ```
 
 **Host key verification errors:**
+
 - Automatically handled with `StrictHostKeyChecking accept-new`
 - Old keys are safely replaced
 
 **VPN connection issues:**
+
 ```bash
 # Run VPN diagnostics
 ~/.ssh/diagnose_vpn.sh
@@ -181,6 +190,7 @@ ssh-add -l
 ### Debug Mode
 
 For detailed connection information:
+
 ```bash
 ssh -vvv cursor-mdns
 ```
@@ -190,6 +200,7 @@ ssh -vvv cursor-mdns
 ### Cursor IDE
 
 **Recommended setup:**
+
 1. **Primary host:** `cursor-mdns`
 2. **Backup host:** `cursor-auto`
 3. **Connection multiplexing:** Enabled (30-minute persist)
@@ -202,16 +213,19 @@ See [iTerm2 Setup Guide](iTerm2_setup_guide.md) for detailed configuration.
 ## 🔒 Security
 
 ### Key Management
+
 - **No local key storage** - All keys managed by 1Password
 - **Automatic key rotation** supported
 - **Secure vault storage** with 1Password encryption
 
 ### Network Security
+
 - **Host key verification** with automatic updates
 - **Modern encryption** (ED25519 preferred)
 - **Connection multiplexing** for efficiency
 
 ### Best Practices
+
 - **Regular key rotation** through 1Password
 - **VPN usage** for remote connections
 - **Firewall configuration** on target machines

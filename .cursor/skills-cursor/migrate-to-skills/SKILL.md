@@ -7,6 +7,7 @@ description: >-
   SKILL.md format, or consolidate commands into the skills directory.
 disable-model-invocation: true
 ---
+
 # Migrate Rules and Slash Commands to Skills
 
 Convert Cursor rules ("Applied intelligently") and slash commands to Agent Skills format.
@@ -15,12 +16,13 @@ Convert Cursor rules ("Applied intelligently") and slash commands to Agent Skill
 
 ## Locations
 
-| Level | Source | Destination |
-|-------|--------|-------------|
+| Level   | Source                                                                                | Destination |
+| ------- | ------------------------------------------------------------------------------------- | ----------- |
 | Project | `{workspaceFolder}/**/.cursor/rules/*.mdc`, `{workspaceFolder}/.cursor/commands/*.md` |
-| User | `~/.cursor/commands/*.md` |
+| User    | `~/.cursor/commands/*.md`                                                             |
 
 Notes:
+
 - Cursor rules inside the project can live in nested directories. Be thorough in your search and use glob patterns to find them.
 - Ignore anything in ~/.cursor/worktrees
 - Ignore anything in ~/.cursor/skills-cursor. This is reserved for Cursor's internal built-in skills and is managed automatically by the system.
@@ -37,22 +39,32 @@ Notes:
 
 ```markdown
 # Before: .cursor/rules/my-rule.mdc
+
 ---
+
 description: What this rule does
 globs:
 alwaysApply: false
+
 ---
+
 # Title
+
 Body content...
 ```
 
 ```markdown
 # After: .cursor/skills/my-rule/SKILL.md
+
 ---
+
 name: my-rule
 description: What this rule does
+
 ---
+
 # Title
+
 Body content...
 ```
 
@@ -62,18 +74,25 @@ Changes: Add `name` field, remove `globs`/`alwaysApply`, keep body exactly.
 
 ```markdown
 # Before: .cursor/commands/commit.md
+
 # Commit current work
+
 Instructions here...
 ```
 
 ```markdown
 # After: .cursor/skills/commit/SKILL.md
+
 ---
+
 name: commit
 description: Commit current work with standardized message format
 disable-model-invocation: true
+
 ---
+
 # Commit current work
+
 Instructions here...
 ```
 
@@ -113,17 +132,17 @@ DO NOT start to read all of the files yourself. That function should be delegate
 
 1. [ ] Create the skills directories if they don't exist (`.cursor/skills/` for project, `~/.cursor/skills/` for user)
 2. Dispatch three fast general purpose subagents (NOT explore) in parallel to do the following steps for project rules (pattern: `{workspaceFolder}/**/.cursor/rules/*.mdc`), user commands (pattern: `~/.cursor/commands/*.md`), and project commands (pattern: `{workspaceFolder}/**/.cursor/commands/*.md`):
-  I. [ ] Find files to migrate in the given pattern
-  II. [ ] For rules, check if it's an "applied intelligently" rule (has `description`, no `globs`, no `alwaysApply: true`). Commands are always migrated. DO NOT use the terminal to read files. Use the read tool.
-  III. [ ] Make a list of files to migrate. If empty, done.
-  IV. [ ] For each file, read it, then write the new skill file preserving the body content EXACTLY. DO NOT use the terminal to write these files. Use the edit tool.
-  V. [ ] Delete the original file. DO NOT use the terminal to delete these files. Use the delete tool.
-  VI. [ ] Return a list of all the skill files that were migrated along with the original file paths.
+   I. [ ] Find files to migrate in the given pattern
+   II. [ ] For rules, check if it's an "applied intelligently" rule (has `description`, no `globs`, no `alwaysApply: true`). Commands are always migrated. DO NOT use the terminal to read files. Use the read tool.
+   III. [ ] Make a list of files to migrate. If empty, done.
+   IV. [ ] For each file, read it, then write the new skill file preserving the body content EXACTLY. DO NOT use the terminal to write these files. Use the edit tool.
+   V. [ ] Delete the original file. DO NOT use the terminal to delete these files. Use the delete tool.
+   VI. [ ] Return a list of all the skill files that were migrated along with the original file paths.
 3. [ ] Wait for all subagents to complete and summarize the results to the user. IMPORTANT: Make sure to let them know if they want to undo the migration, to ask you to.
 4. [ ] If the user asks you to undo the migration, do the opposite of the above steps to restore the original files.
 
-
 If you don't have the Task tool available:
+
 1. [ ] Create the skills directories if they don't exist (`.cursor/skills/` for project, `~/.cursor/skills/` for user)
 2. [ ] Find files to migrate in both project (`.cursor/`) and user (`~/.cursor/`) directories
 3. [ ] For rules, check if it's an "applied intelligently" rule (has `description`, no `globs`, no `alwaysApply: true`). Commands are always migrated. DO NOT use the terminal to read files. Use the read tool.

@@ -12,18 +12,21 @@ This guide documents the reconfiguration process after transitioning from iCloud
 ## Path Changes
 
 ### Old Structure (iCloud)
+
 ```
 ~/Documents/dev/               ← Old location
 ~/Desktop/                     ← Old location
 ```
 
 ### New Structure (OneDrive)
+
 ```
 ~/Documents/dev/               ← Active location (restored)
 /Users/abhimehrotra/Library/CloudStorage/OneDrive-Personal/.Documents OneDrive/dev/  ← OneDrive sync location
 ```
 
 ### Solution: Dual Structure
+
 - **Active configs**: `~/Documents/dev/personal-config` (git repo)
 - **OneDrive backup**: Automatic sync via OneDrive client
 - **Git remote**: github.com/abhimehro/personal-config
@@ -33,6 +36,7 @@ This guide documents the reconfiguration process after transitioning from iCloud
 ## Reconfiguration Steps Completed
 
 ### 1. Repository Setup ✅
+
 ```bash
 # Cloned fresh from GitHub
 cd ~/Documents/dev
@@ -44,7 +48,9 @@ cp ~/Public/Scripts/maintenance/controld_monitor.sh ~/Documents/dev/personal-con
 ```
 
 ### 2. Control D Integration ✅
+
 All Control D configurations from today's setup are now in the repo:
+
 - `controld-system/ctrld.toml` - Main configuration
 - `controld-system/README.md` - Comprehensive guide
 - `controld-system/QUICKREF.md` - Quick reference
@@ -63,6 +69,7 @@ All Control D configurations from today's setup are now in the repo:
 ### Scripts/Configs That May Reference Old Paths
 
 **Check these files for hard-coded paths**:
+
 ```bash
 # Search for old path references
 cd ~/Documents/dev/personal-config
@@ -73,11 +80,13 @@ grep -r "/Users/abhimehrotra/Documents/dev" . 2>/dev/null | grep -v ".git"
 ### Common Path Patterns to Fix
 
 **Before** (broken):
+
 ```bash
 /Users/abhimehrotra/Library/CloudStorage/OneDrive-Personal/.Documents OneDrive/dev/...
 ```
 
 **After** (working):
+
 ```bash
 ~/Documents/dev/personal-config/...
 # OR
@@ -89,7 +98,9 @@ ${HOME}/Documents/dev/personal-config/...
 ## Maintenance Scripts
 
 ### Current Location
+
 All maintenance scripts are in:
+
 ```
 ~/Public/Scripts/
 ├── maintenance/
@@ -104,6 +115,7 @@ All maintenance scripts are in:
 **Status**: No path changes needed (already using `~/Public`)
 
 ### Backup Location in Repo
+
 ```
 ~/Documents/dev/personal-config/maintenance/
 ├── controld_monitor.sh              ← Backed up
@@ -115,13 +127,16 @@ All maintenance scripts are in:
 ## OneDrive Integration
 
 ### How It Works
+
 1. **Active development**: `~/Documents/dev/personal-config/`
 2. **Git for version control**: Push changes to GitHub
 3. **OneDrive for backup**: Syncs `~/Documents/` automatically
 4. **Result**: Triple redundancy (local + git + OneDrive)
 
 ### OneDrive Exclusions (if needed)
+
 If OneDrive syncing causes issues with git:
+
 ```bash
 # Exclude .git from OneDrive sync
 # Settings → Backup → Manage Backup → Advanced → Exclude folders
@@ -133,18 +148,24 @@ If OneDrive syncing causes issues with git:
 ## Services Requiring Path Updates
 
 ### Control D ✅
+
 **Status**: Already configured with absolute paths
+
 - Config: `~/.config/controld/ctrld.toml` (user directory)
 - Launch daemon: `/Library/LaunchDaemons/ctrld.plist`
 - No changes needed
 
 ### Maintenance System ✅
+
 **Status**: Uses `~/Public/Scripts/`
+
 - No changes needed
 - Already integrated with Control D monitor
 
 ### Shell Configs
+
 **Locations to check**:
+
 ```bash
 ~/.bash_profile
 ~/.bashrc
@@ -153,6 +174,7 @@ If OneDrive syncing causes issues with git:
 ```
 
 **What to update**: Any references to:
+
 - Old dev paths
 - iCloud-specific paths
 - Hard-coded user directories
@@ -162,6 +184,7 @@ If OneDrive syncing causes issues with git:
 ## Git Workflow Going Forward
 
 ### Daily Workflow
+
 ```bash
 # Make changes to configs
 cd ~/Documents/dev/personal-config
@@ -178,6 +201,7 @@ git push origin main
 ```
 
 ### After System Changes
+
 ```bash
 # After installing new software, updating configs, etc.
 cd ~/Documents/dev/personal-config
@@ -197,6 +221,7 @@ git push origin main
 ## Recovery Procedures
 
 ### If Configs Are Lost
+
 ```bash
 # Pull from GitHub
 cd ~/Documents/dev
@@ -210,6 +235,7 @@ sudo ctrld service restart
 ```
 
 ### If OneDrive Causes Issues
+
 ```bash
 # Disable OneDrive backup for Documents temporarily
 # Work directly from ~/Documents/dev/personal-config
@@ -261,6 +287,7 @@ personal-config/
 ## Next Steps
 
 ### Immediate
+
 1. ✅ Repository cloned and configured
 2. ✅ Control D configs added
 3. ⏭️ Commit and push changes
@@ -268,6 +295,7 @@ personal-config/
 5. ⏭️ Test git workflow
 
 ### Ongoing
+
 - Update repo after significant system changes
 - Push to GitHub weekly (or after major changes)
 - Verify OneDrive backup is current
@@ -278,15 +306,19 @@ personal-config/
 ## Common Issues & Solutions
 
 ### Issue: Git conflicts with OneDrive
+
 **Solution**: OneDrive should sync files, git handles versions. If conflicts arise, git is source of truth.
 
 ### Issue: Hard-coded paths in scripts
+
 **Solution**: Use environment variables:
+
 ```bash
 REPO_ROOT="${HOME}/Documents/dev/personal-config"
 ```
 
 ### Issue: OneDrive sync lag
+
 **Solution**: Force sync or work directly from `~/Documents/dev/` (OneDrive will catch up)
 
 ---
@@ -294,17 +326,20 @@ REPO_ROOT="${HOME}/Documents/dev/personal-config"
 ## Teaching Moment: Triple Redundancy
 
 Your config backup strategy now has three layers:
+
 1. **Local**: `~/Documents/dev/personal-config/` (active work)
 2. **Git**: GitHub repository (version history)
 3. **Cloud**: OneDrive sync (automatic backup)
 
 **Why this works**:
+
 - Git provides version control and rollback
 - GitHub provides off-site backup and sharing
 - OneDrive provides continuous backup without manual steps
 - If any one fails, you have two others
 
 **Trade-off**:
+
 - More complex than single backup
 - Requires discipline to commit changes
 - Potential for sync conflicts
@@ -316,6 +351,7 @@ Your config backup strategy now has three layers:
 ## Maintenance
 
 Update this guide when:
+
 - Adding new major configurations
 - Changing backup strategy
 - Discovering path issues

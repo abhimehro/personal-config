@@ -11,46 +11,46 @@ echo
 
 # Load credentials shared with start-media-server-fast.sh
 MEDIA_WEBDAV_USER="${MEDIA_WEBDAV_USER:-infuse}"
-MEDIA_WEBDAV_PASS="${MEDIA_WEBDAV_PASS:-}"
+MEDIA_WEBDAV_PASS="${MEDIA_WEBDAV_PASS-}"
 CREDS_FILE="${MEDIA_CREDENTIALS_FILE:-$HOME/.config/media-server/credentials}"
 
-if [[ -z "$MEDIA_WEBDAV_PASS" && -f "$CREDS_FILE" ]]; then
-    # shellcheck disable=SC1090
-    source "$CREDS_FILE"
+if [[ -z $MEDIA_WEBDAV_PASS && -f $CREDS_FILE ]]; then
+	# shellcheck disable=SC1090
+	source "$CREDS_FILE"
 fi
 
-if [[ -z "$MEDIA_WEBDAV_PASS" ]]; then
-    echo "❌ WebDAV credentials missing."
-    echo "   Run: ~/start-media-server-fast.sh to auto-generate credentials."
-    exit 1
+if [[ -z $MEDIA_WEBDAV_PASS ]]; then
+	echo "❌ WebDAV credentials missing."
+	echo "   Run: ~/start-media-server-fast.sh to auto-generate credentials."
+	exit 1
 fi
 
 # Test server status
 echo "🖥️  Server Status:"
 if lsof -nP -i:8088 | grep -q rclone; then
-    echo "✅ rclone server is running on port 8088"
+	echo "✅ rclone server is running on port 8088"
 else
-    echo "❌ rclone server is NOT running on port 8088"
-    echo "   Run: ~/start-media-server-fast.sh"
-    exit 1
+	echo "❌ rclone server is NOT running on port 8088"
+	echo "   Run: ~/start-media-server-fast.sh"
+	exit 1
 fi
 echo
 
 # Test local connection
 echo "🔗 Testing Local Connection:"
 if curl -s -u "${MEDIA_WEBDAV_USER}:${MEDIA_WEBDAV_PASS}" http://localhost:8088/ | grep -q "<!DOCTYPE html>"; then
-    echo "✅ Local connection works (http://localhost:8088)"
+	echo "✅ Local connection works (http://localhost:8088)"
 else
-    echo "❌ Local connection failed"
+	echo "❌ Local connection failed"
 fi
 
 # Test network connection
 echo
 echo "🌐 Testing Network Connection:"
 if curl -s -u "${MEDIA_WEBDAV_USER}:${MEDIA_WEBDAV_PASS}" http://$LOCAL_IP:8088/ | grep -q "<!DOCTYPE html>"; then
-    echo "✅ Network connection works (http://$LOCAL_IP:8088)"
+	echo "✅ Network connection works (http://$LOCAL_IP:8088)"
 else
-    echo "❌ Network connection failed - likely firewall issue"
+	echo "❌ Network connection failed - likely firewall issue"
 fi
 echo
 
@@ -60,12 +60,12 @@ FIREWALL_STATE=$(sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getgloba
 echo "$FIREWALL_STATE"
 
 if echo "$FIREWALL_STATE" | grep -q "State = 1"; then
-    echo "⚠️  Firewall is enabled - may block connections"
-    echo "   Trying to fix..."
-    sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /opt/homebrew/bin/rclone --unblockapp /opt/homebrew/bin/rclone
-    echo "✅ Added rclone to firewall exceptions"
+	echo "⚠️  Firewall is enabled - may block connections"
+	echo "   Trying to fix..."
+	sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /opt/homebrew/bin/rclone --unblockapp /opt/homebrew/bin/rclone
+	echo "✅ Added rclone to firewall exceptions"
 else
-    echo "✅ Firewall is disabled or allowing connections"
+	echo "✅ Firewall is disabled or allowing connections"
 fi
 echo
 

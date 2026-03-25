@@ -11,12 +11,12 @@ set -euo pipefail
 # If vault-name is omitted, defaults to "SSH Keys".
 # The script will prompt you to paste the private key, then hit Ctrl+D.
 
-TITLE=${1:-}
+TITLE=${1-}
 VAULT_NAME=${2:-SSH Keys}
 
-if [[ -z "${TITLE}" ]]; then
-  echo "Usage: $0 \"Key title\" [vault-name]" >&2
-  exit 1
+if [[ -z ${TITLE} ]]; then
+	echo "Usage: $0 \"Key title\" [vault-name]" >&2
+	exit 1
 fi
 
 # Use a secure temporary directory instead of a file directly in /tmp
@@ -25,20 +25,20 @@ TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/op2proton.XXXXXX")
 TMP_FILE="${TMP_DIR}/key"
 
 cleanup() {
-  # Securely delete the temporary file if it exists
-  if [[ -f "${TMP_FILE}" ]]; then
-    if command -v shred >/dev/null 2>&1; then
-      # GNU shred: overwrite and remove
-      shred -u "${TMP_FILE}" 2>/dev/null
-    else
-      # Fallback: try macOS rm -P (overwrite) or standard rm
-      rm -P "${TMP_FILE}" 2>/dev/null || rm -f "${TMP_FILE}"
-    fi
-  fi
-  # Remove the directory
-  if [[ -d "${TMP_DIR}" ]]; then
-    rm -rf "${TMP_DIR}"
-  fi
+	# Securely delete the temporary file if it exists
+	if [[ -f ${TMP_FILE} ]]; then
+		if command -v shred >/dev/null 2>&1; then
+			# GNU shred: overwrite and remove
+			shred -u "${TMP_FILE}" 2>/dev/null
+		else
+			# Fallback: try macOS rm -P (overwrite) or standard rm
+			rm -P "${TMP_FILE}" 2>/dev/null || rm -f "${TMP_FILE}"
+		fi
+	fi
+	# Remove the directory
+	if [[ -d ${TMP_DIR} ]]; then
+		rm -rf "${TMP_DIR}"
+	fi
 }
 trap cleanup EXIT
 
@@ -52,8 +52,8 @@ cat >"${TMP_FILE}"
 
 # Import into Proton Pass
 pass-cli item create ssh-key import \
-  --from-private-key "${TMP_FILE}" \
-  --vault-name "${VAULT_NAME}" \
-  --title "${TITLE}"
+	--from-private-key "${TMP_FILE}" \
+	--vault-name "${VAULT_NAME}" \
+	--title "${TITLE}"
 
 echo "Imported SSH key '${TITLE}' into Proton Pass vault '${VAULT_NAME}'."

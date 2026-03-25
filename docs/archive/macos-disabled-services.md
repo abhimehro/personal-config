@@ -6,7 +6,7 @@
 ## Problem Context
 
 - **Issue:** macOS aggressively launches widget extensions and background services even when widgets are removed from view
-- **Symptoms:** 
+- **Symptoms:**
   - CalendarWidgetExtension crashed 76 times generating diagnostic reports
   - Apps like Podcasts randomly activate without user interaction
   - App Tamer stopping processes causes crash/restart cycles
@@ -79,6 +79,7 @@ These are intentionally left enabled as they're actively used:
 ## Expected Side Effects
 
 ### Minimal Impact
+
 - ✅ Widget refresh timelines disabled (widgets removed anyway)
 - ✅ Calendar won't sync in background (syncs when app opened)
 - ✅ Podcasts won't pre-fetch episodes (works on-demand)
@@ -86,12 +87,14 @@ These are intentionally left enabled as they're actively used:
 - ✅ App Store won't auto-check for updates (manual updates still work)
 
 ### Possible Impact
+
 - ⚠️ Siri/Spotlight suggestions may be less predictive
 - ⚠️ "Suggested apps" in Dock may not appear
 - ⚠️ Handoff predictions may be reduced
 - ⚠️ Photo Memories may not auto-generate
 
 ### Known Behavior
+
 - 🔄 Some services may respawn on-demand when other apps request them
 - 🔄 The `disable` command prevents auto-launch at login but doesn't prevent on-demand activation
 - 🔄 After system updates, some services may re-enable (check and re-run disable commands)
@@ -99,6 +102,7 @@ These are intentionally left enabled as they're actively used:
 ## Verification Commands
 
 ### Check if services are disabled:
+
 ```bash
 # System services
 sudo launchctl print-disabled system | grep -E "chronod|duetexpertd|suggestd|ReportCrash"
@@ -108,6 +112,7 @@ sudo launchctl print-disabled gui/501 | grep -E "calendar|podcast|proactived|peo
 ```
 
 ### Check if services are currently running:
+
 ```bash
 # Background services
 ps aux | grep -E "chronod|duetexpertd|suggestd|proactived|peopled" | grep -v grep
@@ -117,6 +122,7 @@ ps aux | grep -E "\.appex/Contents/MacOS" | grep -v grep | wc -l
 ```
 
 ### Check crash reports:
+
 ```bash
 # View current crash reports
 ls -lh ~/Library/Logs/DiagnosticReports/
@@ -128,6 +134,7 @@ ls ~/Library/Logs/DiagnosticReports/ | sed 's/-[0-9].*$//' | sort | uniq -c | so
 ## Maintenance
 
 ### Clear diagnostic reports:
+
 ```bash
 # View size
 du -sh ~/Library/Logs/DiagnosticReports/
@@ -140,6 +147,7 @@ du -sh ~/Library/Logs/DiagnosticReports/
 ```
 
 ### If services respawn and become problematic:
+
 ```bash
 # Force kill running instances
 sudo pkill -9 chronod

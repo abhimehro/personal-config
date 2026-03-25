@@ -16,6 +16,7 @@
 ## At a Glance: Data Flow
 
 ### Without VPN
+
 ```
 ┌─────────────┐
 │   Your App  │
@@ -48,11 +49,13 @@
 ```
 
 **Security layers**:
+
 - ✅ ISP can't see DNS queries (DoH encryption)
-- ⚠️  ISP can see destination IPs (HTTP traffic)
+- ⚠️ ISP can see destination IPs (HTTP traffic)
 - ✅ Control D filtering active (malware/tracker blocking)
 
 ### With VPN (Windscribe + Local DNS)
+
 ```
 ┌─────────────┐
 │   Your App  │
@@ -90,6 +93,7 @@
 ```
 
 **Security layers**:
+
 - ✅ ISP can't see DNS queries (VPN + DoH = double encrypted)
 - ✅ ISP can't see destination IPs (VPN tunnel)
 - ✅ Control D filtering active
@@ -98,12 +102,14 @@
 ## What Was Configured
 
 ### 1. Service Installation
+
 - **Method**: ctrld's built-in service installer
 - **Launch Daemon**: `/Library/LaunchDaemons/ctrld.plist`
 - **Auto-start**: Enabled (starts on boot)
 - **Special Flag**: `--skip_self_checks` (see below for reasoning)
 
 ### 2. DNS Profiles
+
 Three Control D resolver profiles configured:
 
 1. **privacy_enhanced** (6m971e9jaf) - Default, active
@@ -112,34 +118,40 @@ Three Control D resolver profiles configured:
 
 2. **browsing_privacy** (rcnz7qgvwg)
    - Balanced privacy for general use
-   
 3. **gaming_optimized** (1xfy57w34t7)
    - Minimal filtering for lower latency
 
 ### 3. Firewall Configuration
+
 - **Exception added**: `/opt/homebrew/bin/ctrld`
 - **Reason**: Allow ctrld to make outbound DoH connections
 - **Method**: macOS Application Firewall
 
 ### 4. Bootstrap IPs
+
 - All upstreams use: `76.76.2.22`
 - This is Control D's primary bootstrap IP for establishing initial DoH connections
 
 ## The "Connection Refused" Problem
 
 ### Root Cause
+
 During startup, ctrld runs self-checks that attempt to:
+
 1. Connect to bootstrap IPs on port 443
 2. Verify DoH endpoints are reachable
 3. Perform test DNS queries
 
 **The Issue**: macOS firewall blocks these initial connections during the self-check phase, causing "connection refused" errors even though:
+
 - The firewall exception is present
 - The connections work fine during normal operation
 - curl can successfully reach the same endpoints
 
 ### Why This Happens
+
 Timing issue between:
+
 - Service startup (requires sudo/root)
 - Firewall rule application
 - Initial connection attempts
@@ -149,6 +161,7 @@ The self-checks happen too quickly, before firewall rules fully apply.
 ## The Solution: `--skip_self_checks`
 
 ### What It Does
+
 - Bypasses startup validation tests
 - Service starts immediately
 - Connections established during normal operation (which work fine)
@@ -180,6 +193,7 @@ The self-checks happen too quickly, before firewall rules fully apply.
 **Option**: Modify firewall to explicitly allow bootstrap IPs
 
 **Why we didn't do this**:
+
 - Bootstrap IPs can change without notice
 - Would require ongoing maintenance
 - Doesn't add meaningful security
@@ -189,18 +203,22 @@ The self-checks happen too quickly, before firewall rules fully apply.
 ## Files Created/Modified
 
 ### Configuration Files
+
 - `~/.config/controld/ctrld.toml` - Main configuration
 - `/Library/LaunchDaemons/ctrld.plist` - Auto-start daemon
 
 ### Documentation
+
 - `~/.config/controld/README.md` - Comprehensive guide
 - `~/.config/controld/QUICKREF.md` - Quick command reference
 - `~/.config/controld/SETUP_SUMMARY.md` - This file
 
 ### Utilities
+
 - `~/.config/controld/health-check.sh` - Service health monitoring
 
 ### System Configuration
+
 - Firewall exception for `/opt/homebrew/bin/ctrld`
 
 ## Verification Commands
@@ -225,6 +243,7 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --listapps | grep ctrld
 ## Post-Reboot Testing
 
 After a system reboot, verify:
+
 1. Service auto-starts: `sudo ctrld service status`
 2. DNS resolves: `dig @127.0.0.1 example.com`
 3. No errors in logs: `sudo tail -20 /var/log/ctrld.log`
@@ -233,21 +252,27 @@ After a system reboot, verify:
 ## Teaching Moments from This Setup
 
 ### 1. Fail-Secure vs Fail-Operational
+
 Professional systems must choose:
+
 - **Fail-secure**: Refuse to start if any check fails (prevents misconfig)
 - **Fail-operational**: Start anyway, detect issues at runtime (better availability)
 
 Our choice: Fail-operational because the self-checks provide validation but not security.
 
 ### 2. Defense in Depth
+
 Real security comes from layered protections:
+
 - DoH encryption (prevents DNS snooping)
 - Control D filtering (blocks malicious domains)
 - Firewall (controls network access)
 - Self-checks are just validation, not a security layer
 
 ### 3. The "Works on My Machine" Problem
+
 curl succeeded but ctrld failed with identical connections because:
+
 - Different execution context (interactive user vs system service)
 - Different timing (immediate vs startup phase)
 - Different permissions (user vs root)
@@ -255,7 +280,9 @@ curl succeeded but ctrld failed with identical connections because:
 This taught us: Test services in the environment where they'll actually run.
 
 ### 4. Operational Wisdom
+
 "Future you will thank present you for":
+
 - Creating health check scripts (validate assumptions)
 - Documenting decisions with reasoning (especially tradeoffs)
 - Writing quick reference guides (reduce cognitive load)
@@ -264,6 +291,7 @@ This taught us: Test services in the environment where they'll actually run.
 ## Backup/Restore Strategy
 
 ### Backup Important Files
+
 ```bash
 # Create backup directory
 mkdir -p ~/Backups/controld-$(date +%Y%m%d)
@@ -278,6 +306,7 @@ sudo cp /Library/LaunchDaemons/ctrld.plist ~/Backups/controld-$(date +%Y%m%d)/
 ```
 
 ### Restore After Reinstall
+
 ```bash
 # Reinstall ctrld
 brew install ctrld
@@ -298,18 +327,22 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /opt/homebrew/bin/ctr
 ## Future Maintenance
 
 ### When to Update
+
 - Control D releases new resolver IDs
 - ctrld software updates (via Homebrew)
 - macOS major version updates
 
 ### After macOS Updates
+
 1. Verify service is still running
 2. Check firewall exception still exists
 3. Run health check
 4. Check logs for new errors
 
 ### Profile Changes
+
 To switch between profiles, either:
+
 - Use `ctrld-switch` script (if available)
 - Edit `ctrld.toml` and change `upstream` value
 - Restart service: `sudo ctrld service restart`

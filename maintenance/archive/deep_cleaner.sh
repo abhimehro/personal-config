@@ -7,7 +7,11 @@ log_info "Deep system cleaning started"
 
 REPORT_FILE="${LOG_DIR}/deep_clean_report-$(date +%Y%m%d-%H%M).txt"
 REPORT=""
-append() { REPORT+="$1"$'\n'; log_info "$1"; echo "$1"; }
+append() {
+	REPORT+="$1"$'\n'
+	log_info "$1"
+	echo "$1"
+}
 
 append "=== DEEP SYSTEM CLEANING REPORT ==="
 append "Generated: $(date)"
@@ -22,14 +26,14 @@ append "=== LARGEST FILES AND DIRECTORIES ==="
 log_info "Scanning for large files (this may take a moment)..."
 append "Top 20 largest files over 100MB:"
 find / -type f -size +100M 2>/dev/null | head -20 | while read -r file; do
-    size=$(du -h "$file" 2>/dev/null | cut -f1)
-    append "  $size - $file"
+	size=$(du -h "$file" 2>/dev/null | cut -f1)
+	append "  $size - $file"
 done
 
 append ""
 append "Top 10 largest directories:"
 du -h / 2>/dev/null | sort -hr | head -10 | while read -r line; do
-    append "  $line"
+	append "  $line"
 done
 append ""
 
@@ -39,25 +43,25 @@ append "=== APPLICATION REMNANTS ANALYSIS ==="
 # Check for orphaned application support files
 ORPHANED_APP_SUPPORT=""
 APP_SUPPORT_DIR="${HOME}/Library/Application Support"
-if [[ -d "${APP_SUPPORT_DIR}" ]]; then
-    log_info "Scanning Application Support for orphaned files..."
-    while IFS= read -r -d '' app_dir; do
-        # ⚡ Performance: Use bash parameter expansion instead of $(basename "$app_dir") to avoid subshell overhead
-        app_name="${app_dir##*/}"
-        # Check if corresponding app exists in Applications or is a known system component
-        if [[ ! -d "/Applications/${app_name}.app" ]] && [[ ! -d "/System/Applications/${app_name}.app" ]] && 
-           [[ ! "$app_name" =~ ^(com\.|Adobe|Microsoft|Google|Apple|Dropbox|Slack|Zoom).*$ ]]; then
-            size=$(du -sh "$app_dir" 2>/dev/null | cut -f1)
-            ORPHANED_APP_SUPPORT+="  $size - $app_dir"$'\n'
-        fi
-    done < <(find "${APP_SUPPORT_DIR}" -maxdepth 1 -type d -not -name ".*" -print0 2>/dev/null)
+if [[ -d ${APP_SUPPORT_DIR} ]]; then
+	log_info "Scanning Application Support for orphaned files..."
+	while IFS= read -r -d '' app_dir; do
+		# ⚡ Performance: Use bash parameter expansion instead of $(basename "$app_dir") to avoid subshell overhead
+		app_name="${app_dir##*/}"
+		# Check if corresponding app exists in Applications or is a known system component
+		if [[ ! -d "/Applications/${app_name}.app" ]] && [[ ! -d "/System/Applications/${app_name}.app" ]] &&
+			[[ ! $app_name =~ ^(com\.|Adobe|Microsoft|Google|Apple|Dropbox|Slack|Zoom).*$ ]]; then
+			size=$(du -sh "$app_dir" 2>/dev/null | cut -f1)
+			ORPHANED_APP_SUPPORT+="  $size - $app_dir"$'\n'
+		fi
+	done < <(find "${APP_SUPPORT_DIR}" -maxdepth 1 -type d -not -name ".*" -print0 2>/dev/null)
 fi
 
-if [[ -n "${ORPHANED_APP_SUPPORT}" ]]; then
-    append "Potentially orphaned Application Support directories:"
-    append "${ORPHANED_APP_SUPPORT}"
+if [[ -n ${ORPHANED_APP_SUPPORT} ]]; then
+	append "Potentially orphaned Application Support directories:"
+	append "${ORPHANED_APP_SUPPORT}"
 else
-    append "No obvious orphaned Application Support directories found"
+	append "No obvious orphaned Application Support directories found"
 fi
 
 # Check for orphaned preference files
@@ -65,43 +69,43 @@ append ""
 append "Potentially orphaned preference files:"
 PREFS_DIR="${HOME}/Library/Preferences"
 ORPHANED_PREFS=""
-if [[ -d "${PREFS_DIR}" ]]; then
-    while IFS= read -r -d '' pref_file; do
-        # ⚡ Performance: Use bash parameter expansion instead of $(basename "$pref_file" .plist) to avoid subshell overhead
-        pref_name="${pref_file##*/}"
-        pref_name="${pref_name%.plist}"
-        # Skip known system preferences
-        if [[ ! "$pref_name" =~ ^(com\.apple\.|loginwindow|systemuiserver).*$ ]] && 
-           [[ ! -d "/Applications/${pref_name}.app" ]] && 
-           [[ ! -d "/System/Applications/${pref_name}.app" ]]; then
-            size=$(du -sh "$pref_file" 2>/dev/null | cut -f1)
-            ORPHANED_PREFS+="  $size - $pref_file"$'\n'
-        fi
-    done < <(find "${PREFS_DIR}" -name "*.plist" -print0 2>/dev/null)
+if [[ -d ${PREFS_DIR} ]]; then
+	while IFS= read -r -d '' pref_file; do
+		# ⚡ Performance: Use bash parameter expansion instead of $(basename "$pref_file" .plist) to avoid subshell overhead
+		pref_name="${pref_file##*/}"
+		pref_name="${pref_name%.plist}"
+		# Skip known system preferences
+		if [[ ! $pref_name =~ ^(com\.apple\.|loginwindow|systemuiserver).*$ ]] &&
+			[[ ! -d "/Applications/${pref_name}.app" ]] &&
+			[[ ! -d "/System/Applications/${pref_name}.app" ]]; then
+			size=$(du -sh "$pref_file" 2>/dev/null | cut -f1)
+			ORPHANED_PREFS+="  $size - $pref_file"$'\n'
+		fi
+	done < <(find "${PREFS_DIR}" -name "*.plist" -print0 2>/dev/null)
 fi
 
-if [[ -n "${ORPHANED_PREFS}" ]]; then
-    append "${ORPHANED_PREFS}"
+if [[ -n ${ORPHANED_PREFS} ]]; then
+	append "${ORPHANED_PREFS}"
 else
-    append "No obvious orphaned preference files found"
+	append "No obvious orphaned preference files found"
 fi
 append ""
 
 # 3) System caches beyond user caches
 append "=== SYSTEM-WIDE CACHE ANALYSIS ==="
 SYSTEM_CACHES=(
-    "/Library/Caches"
-    "/System/Library/Caches"
-    "/private/var/tmp"
-    "/private/tmp"
-    "/Users/Shared"
+	"/Library/Caches"
+	"/System/Library/Caches"
+	"/private/var/tmp"
+	"/private/tmp"
+	"/Users/Shared"
 )
 
 for cache_dir in "${SYSTEM_CACHES[@]}"; do
-    if [[ -d "$cache_dir" ]] && [[ -r "$cache_dir" ]]; then
-        cache_size=$(du -sh "$cache_dir" 2>/dev/null | cut -f1)
-        append "$cache_dir: $cache_size"
-    fi
+	if [[ -d $cache_dir ]] && [[ -r $cache_dir ]]; then
+		cache_size=$(du -sh "$cache_dir" 2>/dev/null | cut -f1)
+		append "$cache_dir: $cache_size"
+	fi
 done
 append ""
 
@@ -117,110 +121,110 @@ append ""
 append "=== DUPLICATE FILE ANALYSIS ==="
 log_info "Scanning for potential duplicate files in common locations..."
 COMMON_DUPE_DIRS=(
-    "${HOME}/Downloads"
-    "${HOME}/Desktop"
-    "${HOME}/Documents"
-    "${HOME}/Pictures"
+	"${HOME}/Downloads"
+	"${HOME}/Desktop"
+	"${HOME}/Documents"
+	"${HOME}/Pictures"
 )
 
 for dir in "${COMMON_DUPE_DIRS[@]}"; do
-    if [[ -d "$dir" ]]; then
-        dupes=$(find "$dir" -type f -name "*copy*" -o -name "*duplicate*" -o -name "*(1)*" 2>/dev/null | wc -l | tr -d ' ')
-        if (( dupes > 0 )); then
-            append "Potential duplicates in $dir: $dupes files"
-        fi
-    fi
+	if [[ -d $dir ]]; then
+		dupes=$(find "$dir" -type f -name "*copy*" -o -name "*duplicate*" -o -name "*(1)*" 2>/dev/null | wc -l | tr -d ' ')
+		if ((dupes > 0)); then
+			append "Potential duplicates in $dir: $dupes files"
+		fi
+	fi
 done
 append ""
 
 # 6) Old iOS backups and device syncs
 append "=== MOBILE DEVICE BACKUPS ==="
 MOBILE_BACKUP_DIR="${HOME}/Library/Application Support/MobileSync/Backup"
-if [[ -d "${MOBILE_BACKUP_DIR}" ]]; then
-    backup_size=$(du -sh "${MOBILE_BACKUP_DIR}" 2>/dev/null | cut -f1)
-    backup_count=$(find "${MOBILE_BACKUP_DIR}" -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
-    append "iOS Backups: $backup_size in $backup_count backup sets"
-    append "Location: ${MOBILE_BACKUP_DIR}"
+if [[ -d ${MOBILE_BACKUP_DIR} ]]; then
+	backup_size=$(du -sh "${MOBILE_BACKUP_DIR}" 2>/dev/null | cut -f1)
+	backup_count=$(find "${MOBILE_BACKUP_DIR}" -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+	append "iOS Backups: $backup_size in $backup_count backup sets"
+	append "Location: ${MOBILE_BACKUP_DIR}"
 else
-    append "No iOS backups found"
+	append "No iOS backups found"
 fi
 append ""
 
 # 7) Docker and VM images
 append "=== DOCKER AND VIRTUAL MACHINE FILES ==="
 VM_DIRS=(
-    "${HOME}/Virtual Machines.localized"
-    "${HOME}/Documents/Virtual Machines"
-    "${HOME}/Library/Application Support/VMware Fusion"
-    "${HOME}/.docker"
+	"${HOME}/Virtual Machines.localized"
+	"${HOME}/Documents/Virtual Machines"
+	"${HOME}/Library/Application Support/VMware Fusion"
+	"${HOME}/.docker"
 )
 
 for vm_dir in "${VM_DIRS[@]}"; do
-    if [[ -d "$vm_dir" ]]; then
-        vm_size=$(du -sh "$vm_dir" 2>/dev/null | cut -f1)
-        append "VM/Container files in $vm_dir: $vm_size"
-    fi
+	if [[ -d $vm_dir ]]; then
+		vm_size=$(du -sh "$vm_dir" 2>/dev/null | cut -f1)
+		append "VM/Container files in $vm_dir: $vm_size"
+	fi
 done
 append ""
 
 # 8) Browser profile bloat
 append "=== BROWSER PROFILE ANALYSIS ==="
 BROWSER_DIRS=(
-    "${HOME}/Library/Application Support/Google/Chrome"
-    "${HOME}/Library/Safari"
-    "${HOME}/Library/Application Support/Firefox"
-    "${HOME}/Library/Application Support/Microsoft Edge"
+	"${HOME}/Library/Application Support/Google/Chrome"
+	"${HOME}/Library/Safari"
+	"${HOME}/Library/Application Support/Firefox"
+	"${HOME}/Library/Application Support/Microsoft Edge"
 )
 
 for browser_dir in "${BROWSER_DIRS[@]}"; do
-    if [[ -d "$browser_dir" ]]; then
-        browser_size=$(du -sh "$browser_dir" 2>/dev/null | cut -f1)
-        # ⚡ Performance: Use bash parameter expansion instead of $(basename "$(dirname "$browser_dir")") to avoid subshell overhead
-        tmp="${browser_dir%/*}"
-        browser_name="${tmp##*/}"
-        append "$browser_name profile: $browser_size"
-    fi
+	if [[ -d $browser_dir ]]; then
+		browser_size=$(du -sh "$browser_dir" 2>/dev/null | cut -f1)
+		# ⚡ Performance: Use bash parameter expansion instead of $(basename "$(dirname "$browser_dir")") to avoid subshell overhead
+		tmp="${browser_dir%/*}"
+		browser_name="${tmp##*/}"
+		append "$browser_name profile: $browser_size"
+	fi
 done
 append ""
 
 # 9) Development environment cleanup
 append "=== DEVELOPMENT ENVIRONMENT CLEANUP ==="
 DEV_CACHES=(
-    "${HOME}/.npm"
-    "${HOME}/.yarn"
-    "${HOME}/.gradle"
-    "${HOME}/.m2"
-    "${HOME}/.cargo"
-    "${HOME}/Library/Developer/Xcode/DerivedData"
-    "${HOME}/Library/Developer/CoreSimulator"
-    "${HOME}/.rbenv"
-    "${HOME}/.pyenv"
+	"${HOME}/.npm"
+	"${HOME}/.yarn"
+	"${HOME}/.gradle"
+	"${HOME}/.m2"
+	"${HOME}/.cargo"
+	"${HOME}/Library/Developer/Xcode/DerivedData"
+	"${HOME}/Library/Developer/CoreSimulator"
+	"${HOME}/.rbenv"
+	"${HOME}/.pyenv"
 )
 
 for dev_cache in "${DEV_CACHES[@]}"; do
-    if [[ -d "$dev_cache" ]]; then
-        cache_size=$(du -sh "$dev_cache" 2>/dev/null | cut -f1)
-        # ⚡ Performance: Use bash parameter expansion instead of $(basename "$dev_cache") to avoid subshell overhead
-        cache_name="${dev_cache##*/}"
-        append "Development cache ($cache_name): $cache_size"
-    fi
+	if [[ -d $dev_cache ]]; then
+		cache_size=$(du -sh "$dev_cache" 2>/dev/null | cut -f1)
+		# ⚡ Performance: Use bash parameter expansion instead of $(basename "$dev_cache") to avoid subshell overhead
+		cache_name="${dev_cache##*/}"
+		append "Development cache ($cache_name): $cache_size"
+	fi
 done
 append ""
 
 # 10) Log file analysis
 append "=== LOG FILE ANALYSIS ==="
 LOG_DIRS=(
-    "${HOME}/Library/Logs"
-    "/var/log"
-    "/Library/Logs"
+	"${HOME}/Library/Logs"
+	"/var/log"
+	"/Library/Logs"
 )
 
 for log_dir in "${LOG_DIRS[@]}"; do
-    if [[ -d "$log_dir" ]] && [[ -r "$log_dir" ]]; then
-        log_size=$(du -sh "$log_dir" 2>/dev/null | cut -f1)
-        old_logs=$(find "$log_dir" -name "*.log" -mtime +30 2>/dev/null | wc -l | tr -d ' ')
-        append "$log_dir: $log_size ($old_logs files older than 30 days)"
-    fi
+	if [[ -d $log_dir ]] && [[ -r $log_dir ]]; then
+		log_size=$(du -sh "$log_dir" 2>/dev/null | cut -f1)
+		old_logs=$(find "$log_dir" -name "*.log" -mtime +30 2>/dev/null | wc -l | tr -d ' ')
+		append "$log_dir: $log_size ($old_logs files older than 30 days)"
+	fi
 done
 append ""
 
@@ -228,10 +232,10 @@ append ""
 append "=== MAIL ATTACHMENTS ==="
 MAIL_DOWNLOADS="${HOME}/Library/Mail/V*/MailData/Attachments"
 if ls ${MAIL_DOWNLOADS} >/dev/null 2>&1; then
-    mail_size=$(du -sh ${MAIL_DOWNLOADS} 2>/dev/null | cut -f1)
-    append "Mail attachments: $mail_size"
+	mail_size=$(du -sh ${MAIL_DOWNLOADS} 2>/dev/null | cut -f1)
+	append "Mail attachments: $mail_size"
 else
-    append "No mail attachments found"
+	append "No mail attachments found"
 fi
 append ""
 
@@ -269,7 +273,7 @@ append "# Clear DNS cache"
 append "sudo dscacheutil -flushcache"
 
 # Save comprehensive report
-printf "%s\n" "${REPORT}" > "${REPORT_FILE}"
+printf "%s\n" "${REPORT}" >"${REPORT_FILE}"
 
 DISK_AFTER=$(percent_used "/")
 append ""

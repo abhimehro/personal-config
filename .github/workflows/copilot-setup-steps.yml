@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       request:
-        description: 'Specific request for the development partner'
+        description: "Specific request for the development partner"
         required: false
         type: string
   pull_request:
@@ -20,7 +20,7 @@ jobs:
       contents: read
       pull-requests: write
       issues: write
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
@@ -28,7 +28,7 @@ jobs:
       - name: Setup Python Environment
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Development Partner Session
         uses: actions/github-script@v8
@@ -38,7 +38,7 @@ jobs:
             console.log('🤝 Development Partner Protocol Activated');
             console.log('Repository:', context.repo.owner + '/' + context.repo.repo);
             console.log('Event:', context.eventName);
-            
+
             // Log the request if provided via workflow_dispatch
             const request = '${{ github.event.inputs.request }}';
             if (request) {

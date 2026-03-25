@@ -25,6 +25,7 @@ python3 -m git_filter_repo \
 ## Verification
 
 After cleanup:
+
 - ✅ Files no longer exist in any commit
 - ✅ OAuth tokens removed from git history
 - ✅ Repository ready to push

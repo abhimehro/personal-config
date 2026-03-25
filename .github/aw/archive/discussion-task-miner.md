@@ -8,22 +8,22 @@ permissions:
   pull-requests: read
 network:
   allowed:
-  - defaults
+    - defaults
 imports:
-- github/gh-aw/.github/workflows/shared/jqschema.md@94662b1dee8ce96c876ba9f33b3ab8be32de82a4
-- github/gh-aw/.github/workflows/shared/reporting.md@94662b1dee8ce96c876ba9f33b3ab8be32de82a4
+  - github/gh-aw/.github/workflows/shared/jqschema.md@94662b1dee8ce96c876ba9f33b3ab8be32de82a4
+  - github/gh-aw/.github/workflows/shared/reporting.md@94662b1dee8ce96c876ba9f33b3ab8be32de82a4
 safe-outputs:
   add-comment:
-    max: 3  # Maximum comments to post per run
+    max: 3 # Maximum comments to post per run
   create-issue:
     expires: 1d
     group: true
     labels:
-    - code-quality
-    - automation
-    - task-mining
-    - cookie
-    max: 5  # Maximum issues to create per run
+      - code-quality
+      - automation
+      - task-mining
+      - cookie
+    max: 5 # Maximum issues to create per run
     title-prefix: "[Code Quality] "
   messages:
     footer: "> 🔍 *Task mining by [{workflow_name}]({run_url})*"
@@ -37,23 +37,24 @@ strict: true
 timeout-minutes: 20
 tools:
   bash:
-  - find .github -name '*.md'
-  - jq *
-  - cat *
-  - date *
+    - find .github -name '*.md'
+    - jq *
+    - cat *
+    - date *
   github:
     toolsets:
-    - default
-    - discussions
+      - default
+      - discussions
   repo-memory:
     branch-name: memory/discussion-task-miner
     description: Track processed discussions and extracted tasks
     file-glob:
-    - memory/discussion-task-miner/*.json
-    - memory/discussion-task-miner/*.md
+      - memory/discussion-task-miner/*.json
+      - memory/discussion-task-miner/*.md
     max-file-size: 102400
 tracker-id: discussion-task-miner
 ---
+
 # Discussion Task Miner - Code Quality Improvement Agent
 
 You are a task mining agent that analyzes AI-generated discussions to discover actionable code quality improvement opportunities.
@@ -74,6 +75,7 @@ Scan recent GitHub Discussions created by AI agents to identify and extract spec
 Focus on extracting tasks that meet **ALL** these criteria:
 
 ### Quality Criteria
+
 - ✅ **Specific**: Task has clear scope and acceptance criteria
 - ✅ **Actionable**: Can be completed by an AI agent or developer
 - ✅ **Valuable**: Improves code quality, maintainability, or performance
@@ -81,6 +83,7 @@ Focus on extracting tasks that meet **ALL** these criteria:
 - ✅ **Independent**: Doesn't require completing other tasks first
 
 ### Code Quality Focus Areas
+
 - **Refactoring**: Simplify complex code, reduce duplication, improve structure
 - **Testing**: Add missing tests, improve test coverage, fix flaky tests
 - **Documentation**: Add or improve code documentation, examples, guides
@@ -91,6 +94,7 @@ Focus on extracting tasks that meet **ALL** these criteria:
 - **Tooling**: Improve linters, formatters, build scripts, CI/CD
 
 ### Exclude These
+
 - ❌ Vague suggestions without clear scope ("improve code")
 - ❌ Already tracked in existing issues
 - ❌ Feature requests or new functionality
@@ -127,6 +131,7 @@ Use GitHub MCP tools to fetch recent discussions from the last 7 days:
 ```
 
 **Filtering tips:**
+
 - Look for discussions with titles containing keywords like "analysis", "audit", "report", "review", "findings"
 - Focus on discussions created by AI agents (look for bot authors)
 - Prioritize recent discussions (last 7 days)
@@ -135,6 +140,7 @@ Use GitHub MCP tools to fetch recent discussions from the last 7 days:
 ### Step 3: Analyze Discussion Content
 
 For each discussion, extract the full content including:
+
 - Title and body
 - All comments (especially from AI agents)
 - Look for sections like:
@@ -146,6 +152,7 @@ For each discussion, extract the full content including:
   - "Refactoring Opportunities"
 
 **Analysis approach:**
+
 1. Read the discussion content carefully
 2. Identify mentions of code quality issues or improvements
 3. Extract specific tasks with clear descriptions
@@ -155,12 +162,14 @@ For each discussion, extract the full content including:
 ### Step 4: Filter and Prioritize Tasks
 
 From all identified tasks, select the **top 3-5 highest-value tasks** based on:
+
 1. **Impact**: How much does this improve code quality?
 2. **Effort**: Is it achievable in 1-3 days?
 3. **Clarity**: Is the task well-defined?
 4. **Uniqueness**: Haven't we already created an issue for this?
 
 **Deduplication:**
+
 - Check processed-discussions.json to avoid re-extracting from same discussion
 - Check extracted-tasks.json to avoid creating duplicate issues
 - Search existing GitHub issues to ensure task isn't already tracked
@@ -179,6 +188,7 @@ For each selected task, use the `create-issue` safe output:
 ```
 
 **Issue formatting guidelines:**
+
 - Use clear, descriptive titles (50-80 characters)
 - Include "Description", "Suggested Changes", "Files Affected", "Success Criteria" sections
 - Link back to source discussion
@@ -250,11 +260,13 @@ If there's an active campaign issue or discussion, post a brief summary using `a
 Scanned **[N] discussions** from the last 7 days and identified **[M] actionable tasks**.
 
 ### Created Issues
+
 - #[num]: [title]
 - #[num]: [title]
 - #[num]: [title]
 
 ### Top Quality Themes
+
 - [Theme 1]: [count] mentions
 - [Theme 2]: [count] mentions
 
@@ -264,17 +276,20 @@ All tasks focus on code quality improvements and are ready for assignment to age
 ## Output Requirements
 
 ### Issue Creation
+
 - Create **3-5 issues maximum** per run (respects rate limits)
 - Each issue expires after 1 day if not addressed
 - All issues tagged with `code-quality`, `automation`, `task-mining`
 - Issues include clear acceptance criteria and file paths
 
 ### Memory Tracking
+
 - Always update processed-discussions.json to avoid duplicates
 - Maintain extracted-tasks.json for historical tracking
 - Create readable summary in latest-run.md
 
 ### Quality Standards
+
 - Only create issues for high-value, actionable tasks
 - Ensure each issue is specific and well-scoped
 - Link back to source discussions for context
@@ -283,6 +298,7 @@ All tasks focus on code quality improvements and are ready for assignment to age
 ## Success Metrics
 
 Track these metrics in repo-memory:
+
 - **Discovery Rate**: Tasks identified per discussion scanned
 - **Creation Rate**: Issues created per run
 - **Deduplication Rate**: Duplicate tasks avoided
@@ -301,6 +317,7 @@ Track these metrics in repo-memory:
 ## Example Task Sources
 
 Good examples of discussions to mine:
+
 - Agent performance analysis reports mentioning code issues
 - Security audit findings
 - Code metrics reports highlighting complexity

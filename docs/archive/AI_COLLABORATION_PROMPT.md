@@ -93,11 +93,13 @@ Deployment: [LOCAL | CLOUD | ENTERPRISE]
 ## Tiered Session Prompts
 
 ### Quick Tasks (Minimal)
+
 Act as my development partner. Explain security implications in plain language.
 Comment the WHY behind decisions. Provide a short ELIR summary at the end.
 Task: [DESCRIBE YOUR TASK]
 
 ### Standard Work (Balanced)
+
 Discuss approach and security concerns before coding. Explain reasoning inline.
 After coding, provide a brief ELIR handoff: what it does, security, verify steps.
 Project: [PROJECT NAME]
@@ -105,6 +107,7 @@ Task: [WHAT WE ARE BUILDING]
 Experience level: [BEGINNER | INTERMEDIATE | ADVANCED]
 
 ### Production Work (Comprehensive)
+
 Follow secure development practices and document security decisions.
 Before coding: threat model the feature. After coding: full ELIR handoff.
 Application: [PROJECT NAME]
@@ -113,8 +116,10 @@ Deployment: [LOCAL | CLOUD | ENTERPRISE]
 Security requirements: [COMPLIANCE]
 
 ### Sensitive Features (Security-Critical)
+
 We handle [DATA TYPE]. No implementation without explicit security approval.
 Requirements:
+
 - Threat model before implementation
 - Invoke security protocols (input, auth, secrets, deps)
 - Full ELIR handoff with security narrative
@@ -124,6 +129,7 @@ Requirements:
 ## Protocols (Invoke by Name)
 
 ### Input Validation Protocol
+
 1. Characterize the threat (type and worst-case impact).
 2. Show vulnerable vs secure implementations.
 3. Explain how the defense works and which attack it blocks.
@@ -131,103 +137,115 @@ Requirements:
 5. Identify defense-in-depth layers.
 
 ### Authentication and Session Protocol
+
 1. Map the end-to-end auth flow and decision points.
 2. Failure modes: fail secure, no leakage, constant-time responses.
 3. Session checklist: entropy, expiry, rotation, secure cookie flags.
 4. Authorization boundaries: check every request, deny by default.
 
 ### Secrets Protocol
+
 1. Storage: env vars for dev, secrets manager for CI/prod.
 2. Access: least privilege, audited, never logged.
 3. Rotation: defined cadence, no-downtime plan.
 4. Pre-commit check for leaked secrets.
 
 ### Dependency Protocol
+
 1. Justify the need and alternatives.
 2. Security assessment: update cadence, CVEs, maintainer activity.
 3. Permission audit: network, filesystem, dynamic code.
 4. Pin versions and document the decision.
 
 ### CI/CD Security Protocol
+
 1. Pre-merge gates: SAST, dep scan, secrets scan, security tests.
 2. Environment separation: dev vs staging vs prod.
 3. Post-deploy verification: signals, alerts, rollback plan.
 
 ## ELIR Handoff Document Template
 
-ELIR HANDOFF DOCUMENT
-=====================
+# ELIR HANDOFF DOCUMENT
 
-PURPOSE STATEMENT
------------------
+## PURPOSE STATEMENT
+
 This code [DOES WHAT] by [MECHANISM] to achieve [GOAL].
 
-SECURITY NARRATIVE
-------------------
+## SECURITY NARRATIVE
+
 Threats Addressed:
 +-----------+----------------------+----------------------+
-| Threat    | Protection           | Mechanism            |
+| Threat | Protection | Mechanism |
 +-----------+----------------------+----------------------+
-| [THREAT]  | [WHAT IT PREVENTS]   | [HOW IT WORKS]       |
-| [THREAT]  | [WHAT IT PREVENTS]   | [HOW IT WORKS]       |
+| [THREAT] | [WHAT IT PREVENTS] | [HOW IT WORKS] |
+| [THREAT] | [WHAT IT PREVENTS] | [HOW IT WORKS] |
 +-----------+----------------------+----------------------+
 
 Security Assumptions:
+
 - [ASSUMPTION]: [WHY IT IS SAFE]
 - [ASSUMPTION]: [WHY IT IS SAFE]
 
 Trust Boundaries:
+
 - Input from [SOURCE] is treated as [TRUSTED | UNTRUSTED]
 - Output to [DESTINATION] is protected by [MECHANISM]
 
-FAILURE MODES
--------------
+## FAILURE MODES
+
 +-----------+----------------------+----------------------+
-| Scenario  | Consequence          | Mitigation           |
+| Scenario | Consequence | Mitigation |
 +-----------+----------------------+----------------------+
-| [FAILS]   | [WHAT HAPPENS]       | [HOW WE HANDLE IT]   |
-| [FAILS]   | [WHAT HAPPENS]       | [HOW WE HANDLE IT]   |
+| [FAILS] | [WHAT HAPPENS] | [HOW WE HANDLE IT] |
+| [FAILS] | [WHAT HAPPENS] | [HOW WE HANDLE IT] |
 +-----------+----------------------+----------------------+
 
 What This Code Does NOT Handle:
+
 - [OUT OF SCOPE ITEM]
 - [OUT OF SCOPE ITEM]
 
-REVIEW CHECKLIST
-----------------
+## REVIEW CHECKLIST
+
 Security:
+
 - [ ] [SECURITY CHECK 1]
 - [ ] [SECURITY CHECK 2]
-Functionality:
+      Functionality:
 - [ ] [BEHAVIOR TO TEST]
 - [ ] [EDGE CASE]
-Integration:
+      Integration:
 - [ ] [DEPENDENCY OR INTERFACE]
 - [ ] [ENVIRONMENT REQUIREMENT]
 
-TEST COVERAGE
--------------
+## TEST COVERAGE
+
 Covered by automated tests:
+
 - [SCENARIO]
 - [SCENARIO]
-Requires manual verification:
+  Requires manual verification:
 - [SCENARIO]
-Not yet tested:
+  Not yet tested:
 - [KNOWN GAP]
 
-MAINTENANCE NOTES
------------------
+## MAINTENANCE NOTES
+
 Critical Knowledge:
+
 - [NON-OBVIOUS DETAIL]
 - [DECISION CONTEXT]
 
 Common Pitfalls:
+
 - Do not [DANGEROUS CHANGE] because [CONSEQUENCE]
 
 Modification Guide:
+
 - To change [BEHAVIOR], update [FILE/FUNCTION]
 
 Dependencies:
+
 - [EXTERNAL SERVICE/LIBRARY] for [PURPOSE]
 - Version sensitivity: [NOTES]
 

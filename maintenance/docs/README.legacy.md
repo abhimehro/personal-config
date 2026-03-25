@@ -5,8 +5,9 @@ A comprehensive, automated maintenance system designed to prevent system resets 
 ## 🎯 Purpose
 
 This system addresses common causes of macOS instability and resets:
+
 - **Disk pressure** (automated cleanup)
-- **Memory pressure** (monitoring and alerting) 
+- **Memory pressure** (monitoring and alerting)
 - **Kernel panics** (detection and logging)
 - **Failed launch agents** (detection and reporting)
 - **Stale caches** (regular cleanup)
@@ -64,21 +65,25 @@ export UPDATE_MAS_APPS="1"        # Auto-update Mac App Store apps
 ## 🚨 Critical Features for Reset Prevention
 
 ### 1. **Proactive Disk Monitoring**
+
 - Warns at 80% disk usage
 - Auto-cleanup at 90% usage
 - Prevents disk-full scenarios that cause system instability
 
 ### 2. **Kernel Panic Detection**
+
 - Monitors system logs for panic events
 - Tracks shutdown causes
 - Early warning system for hardware issues
 
 ### 3. **Memory Pressure Monitoring**
+
 - Tracks system memory pressure
 - Alerts when memory usage is high
 - Helps identify problematic processes
 
 ### 4. **Failed Service Detection**
+
 - Monitors launchd services for failures
 - Attempts to restart failed Homebrew services
 - Prevents cascade failures
@@ -86,16 +91,19 @@ export UPDATE_MAS_APPS="1"        # Auto-update Mac App Store apps
 ## 📊 Logs and Reports
 
 ### Log Locations
+
 - **Main logs**: `~/Library/Logs/Maintenance/`
 - **Daily health reports**: `~/Library/Logs/Maintenance/health_report-YYYYMMDD-HHMM.txt`
 
 ### Log Retention
+
 - Logs are automatically cleaned after 60 days (configurable)
 - Health reports provide point-in-time system snapshots
 
 ## 🔔 Notifications
 
 The system sends notifications via:
+
 1. **macOS notifications** (always)
 2. **Slack** (if webhook URL configured)
 3. **Google Cloud Logging** (if enabled)
@@ -120,11 +128,13 @@ Run scripts manually to test:
 ### Common Issues
 
 1. **Script not found errors**
+
    ```bash
    chmod +x ~/Scripts/maintenance/*.sh
    ```
 
 2. **Permission denied**
+
    ```bash
    chmod 700 ~/Scripts/maintenance
    chmod 600 ~/.config/maintenance/config.env
@@ -145,6 +155,7 @@ Run scripts manually to test:
 ## 🔧 Current System Status
 
 Based on your recent health check:
+
 - ✅ **Disk usage**: 30% (healthy)
 - ⚠️ **Kernel panics**: 238 in 24h (concerning - likely due to macOS beta)
 - ✅ **Network**: Working

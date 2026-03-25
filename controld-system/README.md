@@ -1,13 +1,15 @@
 # Control D Setup Guide
 
 ## Overview
+
 This setup provides three resolver profiles for different use cases:
 
 1. **Privacy Enhanced** (`6m971e9jaf`) - Maximum privacy/security filtering
-2. **Browsing Privacy** (`rcnz7qgvwg`) - Balanced privacy for general browsing  
+2. **Browsing Privacy** (`rcnz7qgvwg`) - Balanced privacy for general browsing
 3. **Gaming Optimized** (`1xfy57w34t7`) - Minimal rules for optimal gaming performance
 
 ## Installation Status
+
 ✅ `ctrld` installed via Homebrew (v1.4.7)  
 ✅ Configuration file created at `~/.config/controld/ctrld.toml`  
 ✅ Profile switcher script at `~/bin/ctrld-switch`  
@@ -19,6 +21,7 @@ This setup provides three resolver profiles for different use cases:
 The service is now installed as a Launch Daemon and will **automatically start on boot**.
 
 ### Check Service Status
+
 ```bash
 # Check if service is running
 sudo ctrld service status
@@ -28,6 +31,7 @@ sudo tail -f /var/log/ctrld.log
 ```
 
 ### Manual Service Control
+
 ```bash
 # Stop service
 sudo ctrld service stop
@@ -40,6 +44,7 @@ sudo ctrld service restart
 ```
 
 ### Verify DNS Resolution
+
 ```bash
 # Test DNS through Control D
 dig @127.0.0.1 example.com +short
@@ -48,6 +53,7 @@ dig @127.0.0.1 example.com +short
 ## Profile Management
 
 ### Switch Profiles (Easy Method)
+
 ```bash
 # Switch to gaming profile
 ctrld-switch gaming
@@ -60,6 +66,7 @@ ctrld-switch privacy
 ```
 
 ### Manual Profile Switching
+
 If you prefer manual control:
 
 1. Edit `~/.config/controld/ctrld.toml`
@@ -70,6 +77,7 @@ If you prefer manual control:
 3. Restart service: `sudo ctrld service restart`
 
 ### Quick Start with Specific Profile
+
 ```bash
 # Start directly with a specific resolver
 sudo ctrld start --cd 6m971e9jaf   # Privacy
@@ -84,26 +92,29 @@ sudo ctrld start --cd 1xfy57w34t7  # Gaming
 The service is configured with the `--skip_self_checks` flag to bypass startup validation tests.
 
 **The Problem:**
+
 - During startup, ctrld performs connectivity tests to bootstrap IPs
 - These tests attempt to connect to Control D's DoH endpoints on port 443
 - macOS firewall blocks these initial connections during self-checks
 - Result: "connection refused" errors cause startup to fail
 
 **The Solution:**
+
 - `--skip_self_checks` skips the startup validation phase
 - Service starts immediately and establishes connections during normal operation
 - Once running, DNS queries resolve successfully via DoH
 
 **Security Tradeoff: Fail-Secure vs Fail-Operational**
 
-| Approach | Description | Pros | Cons |
-|----------|-------------|------|------|
-| **Fail-Secure** | Self-checks must pass before service starts | Catches config errors early | Service won't start if checks fail |
-| **Fail-Operational** | Skip checks, prioritize availability | Service starts reliably | Config errors detected at runtime |
+| Approach             | Description                                 | Pros                        | Cons                               |
+| -------------------- | ------------------------------------------- | --------------------------- | ---------------------------------- |
+| **Fail-Secure**      | Self-checks must pass before service starts | Catches config errors early | Service won't start if checks fail |
+| **Fail-Operational** | Skip checks, prioritize availability        | Service starts reliably     | Config errors detected at runtime  |
 
 **Our Decision: Fail-Operational** (using `--skip_self_checks`)
 
 **Reasoning:**
+
 1. **Self-checks protect against misconfiguration, not attacks**
    - They verify connectivity and config syntax
    - They don't prevent DNS spoofing, MITM, or other security threats
@@ -124,7 +135,8 @@ The service is configured with the `--skip_self_checks` flag to bypass startup v
    - Aligns with "infrastructure should self-heal" principle
 
 **Alternative (Not Recommended):**
-You *could* add firewall exceptions for bootstrap IPs, but:
+You _could_ add firewall exceptions for bootstrap IPs, but:
+
 - Bootstrap IPs may change without notice from Control D
 - Requires ongoing firewall rule maintenance
 - Doesn't provide meaningful security benefit
@@ -133,6 +145,7 @@ You *could* add firewall exceptions for bootstrap IPs, but:
 ### Health Monitoring
 
 Use the included health check script:
+
 ```bash
 ~/.config/controld/health-check.sh
 ```
@@ -142,6 +155,7 @@ This provides the same confidence as self-checks, but at runtime.
 ## Common Commands
 
 ### Service Management
+
 ```bash
 sudo ctrld service status      # Check service status
 sudo ctrld service stop        # Stop the service
@@ -154,6 +168,7 @@ sudo ctrld service uninstall   # Remove service
 **When the health check fails, follow this diagnostic tree:**
 
 #### Step 1: Is the service running?
+
 ```bash
 sudo ctrld service status
 ```
@@ -162,6 +177,7 @@ sudo ctrld service status
 **If YES** → Go to Step 3
 
 #### Step 2: Service not running
+
 ```bash
 # Check if launch daemon is loaded
 sudo launchctl list | grep ctrld
@@ -174,11 +190,13 @@ sudo tail -50 /var/log/ctrld.log | grep -i error
 ```
 
 **Common causes:**
+
 - Config file syntax error → Check `~/.config/controld/ctrld.toml`
 - Port 53 conflict → Check: `sudo lsof -i :53`
 - Missing binary → Reinstall: `brew reinstall ctrld`
 
 #### Step 3: Service running but DNS not resolving
+
 ```bash
 # Test local DNS
 dig @127.0.0.1 example.com +short
@@ -188,12 +206,15 @@ sudo tail -50 /var/log/ctrld.log | grep upstream
 ```
 
 **Common causes:**
+
 - Upstream marked as down → Check internet connection
 - Bootstrap IP unreachable → Check firewall: `sudo /usr/libexec/ApplicationFirewall/socketfilterfw --listapps | grep ctrld`
 - Wrong listener IP → Verify `listener.0` in config is 127.0.0.1
 
 #### Step 4: Emergency DNS restoration
+
 **If you need to bypass Control D immediately:**
+
 ```bash
 # Stop Control D
 sudo ctrld service stop
@@ -206,7 +227,9 @@ sudo ctrld service uninstall
 ```
 
 #### Step 5: Complete reset
+
 **Nuclear option - start from scratch:**
+
 ```bash
 # Uninstall service
 sudo ctrld service uninstall
@@ -229,18 +252,22 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /opt/homebrew/bin/ctr
 ### Troubleshooting
 
 #### "Connection Refused" Errors in Logs
+
 If you see these during manual startup (without `--skip_self_checks`):
+
 ```
 ERR failed to connect to upstream.0, endpoint: https://freedns.controld.com/... error="dial tcp ***:443: connect: connection refused"
 ```
 
 **This is expected and harmless**:
+
 - These errors occur during self-checks only
 - They don't affect runtime DNS resolution
 - Service will work correctly with `--skip_self_checks`
 - No action needed
 
 #### DNS Not Resolving
+
 ```bash
 # Test DNS resolution directly
 dig @127.0.0.1 example.com
@@ -256,6 +283,7 @@ cat ~/.config/controld/ctrld.toml | grep "upstream ="
 ```
 
 #### Service Not Starting After Reboot
+
 ```bash
 # Check if launch daemon is loaded
 sudo launchctl list | grep ctrld
@@ -266,6 +294,7 @@ sudo ctrld service start --config ~/.config/controld/ctrld.toml --skip_self_chec
 ```
 
 #### Verify Firewall Configuration
+
 ```bash
 # Check if ctrld is allowed through firewall
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --listapps | grep ctrld
@@ -274,6 +303,7 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --listapps | grep ctrld
 ```
 
 ### Uninstall
+
 ```bash
 # Stop and remove service
 sudo ctrld service uninstall
@@ -285,16 +315,19 @@ rm -rf ~/.config/controld/
 ## Security Notes
 
 ### WHY This Matters
+
 - **Local DNS Proxy**: ctrld runs locally and forwards DNS queries to Control D's encrypted resolvers
 - **DoH (DNS over HTTPS)**: All DNS queries are encrypted, preventing ISP snooping
 - **Profile-Based Filtering**: Different profiles block different categories of threats/content
 
 ### Attack Prevention
+
 - **DNS Hijacking**: Encrypted DNS prevents MITM attacks on DNS queries
 - **Tracking**: Control D's resolvers can block trackers and ads at DNS level
 - **Malware**: Privacy profiles block known malicious domains
 
 ### What Could Go Wrong
+
 - **Service Conflicts**: If another DNS service (like dnsmasq) uses port 53, ctrld will fail
 - **Sudo Required**: Service management requires root permissions for system DNS configuration
 - **Profile Mismatch**: Using gaming profile may allow more connections (less filtering)
@@ -302,11 +335,13 @@ rm -rf ~/.config/controld/
 ## Backup & Restore
 
 ### Backup Configuration
+
 ```bash
 cp ~/.config/controld/ctrld.toml ~/Documents/dev/personal-config/controld-backup.toml
 ```
 
-### Restore Configuration  
+### Restore Configuration
+
 ```bash
 cp ~/Documents/dev/personal-config/controld-backup.toml ~/.config/controld/ctrld.toml
 sudo ctrld reload
@@ -315,6 +350,7 @@ sudo ctrld reload
 ## Integration with personal-config Repository
 
 Consider adding these files to your personal-config repo:
+
 ```bash
 cd ~/Documents/dev/personal-config
 mkdir -p controld
@@ -335,18 +371,21 @@ compatibility) by passing `doh` as an explicit protocol override, e.g.
 `sudo controld-manager switch privacy doh`.
 
 **Privacy Enhanced** (Default Protocol: DoH3/QUIC) - Use when:
+
 - Banking, sensitive work
 - Maximum security needed
 - Don't mind some sites potentially blocked
 - Works well with or without VPN; prefer this for high-sensitivity tasks
 
 **Browsing Privacy** (Default Protocol: DoH3/QUIC) - Use when:
+
 - General web browsing
 - Social media, shopping
 - Want balance of security and compatibility
 - Recommended everyday profile
 
 **Gaming Optimized** (Default Protocol: DoH3/QUIC) - Use when:
+
 - Online gaming (reduces latency)
 - Streaming services
 - Need maximum compatibility
@@ -361,17 +400,20 @@ We have consolidated network state management into a single script to reliably s
 ### Usage
 
 - **Enable Control D DNS mode**
+
   ```bash
   ./scripts/network-mode-manager.sh controld browsing
   # or: controld privacy | controld gaming
   ```
 
 - **Enable Windscribe VPN mode**
+
   ```bash
   ./scripts/network-mode-manager.sh windscribe
   ```
 
 - **Show current status**
+
   ```bash
   ./scripts/network-mode-manager.sh status
   ```
@@ -390,19 +432,24 @@ We have consolidated network state management into a single script to reliably s
 ## Teaching Moments
 
 ### Pattern: Configuration as Code
+
 This setup follows the "infrastructure as code" pattern:
+
 - Declarative config file (TOML format)
 - Version-controllable profiles
 - Automated switching scripts
 - Professional teams use this for reproducible environments
 
 ### Security Story: DNS Layer Protection
+
 This protects against attacks where malicious actors:
+
 1. Redirect DNS queries to fake IPs (pharming)
 2. Track browsing via DNS logs (ISP surveillance)
 3. Inject ads or malware via DNS manipulation
 
 ### Maintenance Wisdom: Future You Will Thank You For
+
 - Documenting resolver IDs in comments
 - Creating helper scripts for common tasks
 - Keeping configs in version control

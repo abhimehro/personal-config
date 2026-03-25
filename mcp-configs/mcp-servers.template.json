@@ -27,7 +27,11 @@
   },
   "Filesystem": {
     "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/abhimehrotra/Documents/dev/"],
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-filesystem",
+      "/Users/abhimehrotra/Documents/dev/"
+    ],
     "env": {}
   },
   "firecrawl-mcp": {

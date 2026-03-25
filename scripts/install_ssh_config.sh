@@ -10,16 +10,16 @@ echo "🔧 Installing SSH Configuration for Cursor IDE + 1Password..."
 echo ""
 
 # Check if we're on macOS
-if [[ "$OSTYPE" != "darwin"* ]]; then
-    echo "❌ This configuration is designed for macOS"
-    exit 1
+if [[ $OSTYPE != "darwin"* ]]; then
+	echo "❌ This configuration is designed for macOS"
+	exit 1
 fi
 
 # Backup existing SSH config
 if [ -f ~/.ssh/config ]; then
-    echo "📦 Backing up existing SSH config..."
-    cp ~/.ssh/config ~/.ssh/config.backup."$(date +%Y%m%d_%H%M%S)"
-    echo "✅ Backup created"
+	echo "📦 Backing up existing SSH config..."
+	cp ~/.ssh/config ~/.ssh/config.backup."$(date +%Y%m%d_%H%M%S)"
+	echo "✅ Backup created"
 fi
 
 # Create SSH directory if it doesn't exist securely (avoids TOCTOU)

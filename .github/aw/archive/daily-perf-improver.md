@@ -57,6 +57,7 @@ steps:
 
 source: githubnext/agentics/workflows/daily-perf-improver.md@69b5e3ae5fa7f35fa555b0a22aee14c36ab57ebb
 ---
+
 # Daily Perf Improver
 
 ## Job Description
@@ -78,21 +79,23 @@ To decide which phase to perform:
 ## Phase 1 - Performance research
 
 1. Research performance landscape in this repo:
-  - Current performance testing practices and tooling
-  - User-facing performance concerns (load times, responsiveness, throughput)
-  - System performance bottlenecks (compute, memory, I/O, network)
-  - Maintainer performance priorities and success metrics
-  - Development/build performance issues affecting performance engineering
-  - Existing performance documentation and measurement approaches
 
-  **Identify optimization targets:**
-  - User experience bottlenecks (slow page loads, UI lag, high resource usage)
-  - System inefficiencies (algorithms, data structures, resource utilization)
-  - Development workflow pain points affecting performance engineering (build times, test execution, CI duration)
-  - Infrastructure concerns (scaling, deployment, monitoring)
-  - Performance engineering gaps (lack of guides, rapidity, measurement strategies)
+- Current performance testing practices and tooling
+- User-facing performance concerns (load times, responsiveness, throughput)
+- System performance bottlenecks (compute, memory, I/O, network)
+- Maintainer performance priorities and success metrics
+- Development/build performance issues affecting performance engineering
+- Existing performance documentation and measurement approaches
 
-  **Goal:** Enable engineers to quickly measure performance impact across different dimensions using appropriate tools - from quick synthetic tests to realistic user scenarios.
+**Identify optimization targets:**
+
+- User experience bottlenecks (slow page loads, UI lag, high resource usage)
+- System inefficiencies (algorithms, data structures, resource utilization)
+- Development workflow pain points affecting performance engineering (build times, test execution, CI duration)
+- Infrastructure concerns (scaling, deployment, monitoring)
+- Performance engineering gaps (lack of guides, rapidity, measurement strategies)
+
+**Goal:** Enable engineers to quickly measure performance impact across different dimensions using appropriate tools - from quick synthetic tests to realistic user scenarios.
 
 2. Use this research to create a discussion with title "${{ github.workflow }} - Research and Plan"
 
@@ -100,10 +103,10 @@ To decide which phase to perform:
    - The user can add comments to the discussion to provide feedback or adjustments to the plan
    - The user can use these commands:
 
-      gh aw disable daily-perf-improver --repo ${{ github.repository }}
-      gh aw enable daily-perf-improver --repo ${{ github.repository }}
-      gh aw run daily-perf-improver --repo ${{ github.repository }} --repeat <number-of-repeats>
-      gh aw logs daily-perf-improver --repo ${{ github.repository }}
+     gh aw disable daily-perf-improver --repo ${{ github.repository }}
+     gh aw enable daily-perf-improver --repo ${{ github.repository }}
+     gh aw run daily-perf-improver --repo ${{ github.repository }} --repeat <number-of-repeats>
+     gh aw logs daily-perf-improver --repo ${{ github.repository }}
 
    **Include a "What Happens Next" section at the end of the discussion that explains:**
    - The next time this workflow runs, Phase 2 will be performed, which will analyze the codebase to create build steps configuration and performance engineering guides
@@ -122,12 +125,13 @@ To decide which phase to perform:
 3. Create `.github/actions/daily-perf-improver/build-steps/action.yml` with validated build steps. Each step must log output to `build-steps.log` in repo root. Cross-check against existing CI/devcontainer configs.
 
 4. Create 1-5 performance engineering guides in `.github/copilot/instructions/` covering relevant areas (e.g., frontend performance, backend optimization, build performance, infrastructure scaling). Each guide should be maximum 500 words and should succinctly document practical, non-obvious, repo-specific details regarding:
-  - Performance measurement strategies and tooling
-  - Common bottlenecks and optimization techniques
-  - Success metrics and testing approaches
-  - How to do explore performance efficiently using focused, maximally-efficient measurements and rebuilds
 
-5. Create PR with title "${{ github.workflow }} - Updates to complete configuration" containing files from steps 3-4. Request maintainer review. 
+- Performance measurement strategies and tooling
+- Common bottlenecks and optimization techniques
+- Success metrics and testing approaches
+- How to do explore performance efficiently using focused, maximally-efficient measurements and rebuilds
+
+5. Create PR with title "${{ github.workflow }} - Updates to complete configuration" containing files from steps 3-4. Request maintainer review.
 
    **Include a "What Happens Next" section in the PR description that explains:**
    - Once this PR is merged, the next workflow run will proceed to Phase 3, where actual performance improvements will be implemented
@@ -148,13 +152,13 @@ To decide which phase to perform:
 1. **Goal selection**. Build an understanding of what to work on and select a part of the performance plan to pursue
 
    a. Repository is now performance-ready. Review `build-steps/action.yml` and `build-steps.log` to understand setup. If build failed then create fix PR and exit.
-   
+
    b. Read the plan in the discussion mentioned earlier, along with comments.
 
    c. Check for existing performance PRs (especially yours with "${{ github.workflow }}" prefix). Avoid duplicate work.
-   
+
    d. If plan needs updating then comment on planning discussion with revised plan and rationale. Consider maintainer feedback.
-  
+
    e. Select a performance improvement goal to pursue from the plan. Ensure that you have a good understanding of the code and the performance issues before proceeding.
 
    f. Select and read the appropriate performance engineering guide(s) in `.github/copilot/instructions/` to help you with your work. If it doesn't exist, create it and later add it to your pull request.
@@ -162,49 +166,47 @@ To decide which phase to perform:
 2. **Work towards your selected goal**. For the performance improvement goal you selected, do the following:
 
    a. Create a new branch starting with "perf/".
-   
-   b. Work towards the performance improvement goal you selected. Consider approaches like:
-     - **Code optimization:** Algorithm improvements, data structure changes, caching
-     - **User experience:** Reducing load times, improving responsiveness, optimizing assets
-     - **System efficiency:** Resource utilization, concurrency, I/O optimization
-     - **Performance engineering workflow:** Build optimization, test performance, CI improvements for faster performance engineering
-     - **Infrastructure:** Scaling strategies, deployment efficiency, monitoring setup
 
-     **Measurement strategy:**
-     Plan before/after measurements using appropriate methods for your performance target - synthetic benchmarks for algorithms, user journey tests for UX, load tests for scalability, or build time comparisons for developer experience. Choose reliable measurement approaches that clearly demonstrate impact.
+   b. Work towards the performance improvement goal you selected. Consider approaches like:
+   - **Code optimization:** Algorithm improvements, data structure changes, caching
+   - **User experience:** Reducing load times, improving responsiveness, optimizing assets
+   - **System efficiency:** Resource utilization, concurrency, I/O optimization
+   - **Performance engineering workflow:** Build optimization, test performance, CI improvements for faster performance engineering
+   - **Infrastructure:** Scaling strategies, deployment efficiency, monitoring setup
+
+   **Measurement strategy:**
+   Plan before/after measurements using appropriate methods for your performance target - synthetic benchmarks for algorithms, user journey tests for UX, load tests for scalability, or build time comparisons for developer experience. Choose reliable measurement approaches that clearly demonstrate impact.
 
    c. Ensure the code still works as expected and that any existing relevant tests pass. Add new tests if appropriate and make sure they pass too.
 
    d. Measure performance impact. Document measurement attempts even if unsuccessful. If no improvement then iterate, revert, or try different approach.
 
 3. **Finalizing changes**
-
    1. Apply any automatic code formatting used in the repo. If necessary check CI files to understand what code formatting is used.
-   
+
    b. Run any appropriate code linter used in the repo and ensure no new linting errors remain. If necessary check CI files to understand what code linting is used.
 
 4. **Results and learnings**
 
-   a. If you succeeded in writing useful code changes that improve performance, create a draft pull request with your changes. 
+   a. If you succeeded in writing useful code changes that improve performance, create a draft pull request with your changes.
 
-      **Critical:** Exclude performance reports and tool-generated files from PR. Double-check added files and remove any that don't belong.
+   **Critical:** Exclude performance reports and tool-generated files from PR. Double-check added files and remove any that don't belong.
 
-      Include a description of the improvements with evidence of impact. In the description, explain:
-      
-      - **Goal and rationale:** Performance target chosen and why it matters
-      - **Approach:** Strategy, methodology, and implementation steps
-      - **Impact measurement:** How performance was tested and results achieved
-      - **Trade-offs:** What changed (complexity, maintainability, resource usage)
-      - **Validation:** Testing approach and success criteria met
-      - **Future work:** Additional opportunities identified
+   Include a description of the improvements with evidence of impact. In the description, explain:
+   - **Goal and rationale:** Performance target chosen and why it matters
+   - **Approach:** Strategy, methodology, and implementation steps
+   - **Impact measurement:** How performance was tested and results achieved
+   - **Trade-offs:** What changed (complexity, maintainability, resource usage)
+   - **Validation:** Testing approach and success criteria met
+   - **Future work:** Additional opportunities identified
 
-      **Performance evidence section:**
-      Document performance impact with appropriate evidence - timing data, resource usage, user metrics, or other relevant measurements. Be transparent about measurement limitations and methodology. Mark estimates clearly.
+   **Performance evidence section:**
+   Document performance impact with appropriate evidence - timing data, resource usage, user metrics, or other relevant measurements. Be transparent about measurement limitations and methodology. Mark estimates clearly.
 
-      **Reproducibility section:**
-      Provide clear instructions to reproduce performance testing, including setup commands, measurement procedures, and expected results format.
+   **Reproducibility section:**
+   Provide clear instructions to reproduce performance testing, including setup commands, measurement procedures, and expected results format.
 
-      After creation, check the pull request to ensure it is correct, includes all expected files, and doesn't include any unwanted files or changes. Make any necessary corrections by pushing further commits to the branch.
+   After creation, check the pull request to ensure it is correct, includes all expected files, and doesn't include any unwanted files or changes. Make any necessary corrections by pushing further commits to the branch.
 
    b. If failed or lessons learned then add more files to the PR branch to update relevant performance guide in `.github/copilot/instructions/` with insights. Create a new guide if needed, or split, merge or delete existing guides as appropriate. This is your chance to improve the performance engineering documentation for next time, so you and your team don't make the same mistakes again! Make the most of it!
 

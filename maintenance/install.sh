@@ -21,52 +21,52 @@ mkdir -p "$LAUNCHAGENTS_DIR"
 # Unload and clean up old agents BEFORE overwriting their plist files (prevents Error 5: Input/output error cache corruption)
 echo "🔄 Unloading old agents..."
 for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maint.*.plist "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maintenance.*.plist; do
-    [ -f "$plist" ] || continue
-    launchctl bootout "gui/$(id -u)" "$plist" 2>/dev/null || launchctl unload "$plist" 2>/dev/null || true
-    rm -f "$plist" 2>/dev/null || true
+	[ -f "$plist" ] || continue
+	launchctl bootout "gui/$(id -u)" "$plist" 2>/dev/null || launchctl unload "$plist" 2>/dev/null || true
+	rm -f "$plist" 2>/dev/null || true
 done
 
 # Copy scripts
 echo "📦 Copying scripts to $INSTALL_DIR..."
 for script in "$SCRIPT_DIR/bin/"*; do
-    if [[ -f "$script" ]]; then
-        install -m 755 "$script" "$INSTALL_DIR/bin/"
-    elif [[ -d "$script" ]]; then
-        # Recursively copy directories if they exist in bin/
-        # To securely copy a directory and set permissions, we should process
-        # each file individually using `install` to perform an atomic copy-and-chmod.
-        # NOTE: bash-native expansion; extracted here to avoid repeated fork in inner loop
-        script_base="${script##*/}"
-        find "$script" -type f -print0 | while IFS= read -r -d '' file; do
-            # Calculate the relative path to preserve directory structure.
-            relative_path="${file#"$script/"}"
-            dest_file="$INSTALL_DIR/bin/${script_base}/$relative_path"
+	if [[ -f $script ]]; then
+		install -m 755 "$script" "$INSTALL_DIR/bin/"
+	elif [[ -d $script ]]; then
+		# Recursively copy directories if they exist in bin/
+		# To securely copy a directory and set permissions, we should process
+		# each file individually using `install` to perform an atomic copy-and-chmod.
+		# NOTE: bash-native expansion; extracted here to avoid repeated fork in inner loop
+		script_base="${script##*/}"
+		find "$script" -type f -print0 | while IFS= read -r -d '' file; do
+			# Calculate the relative path to preserve directory structure.
+			relative_path="${file#"$script/"}"
+			dest_file="$INSTALL_DIR/bin/${script_base}/$relative_path"
 
-            # Create the destination directory if it doesn't exist.
-            # NOTE: bash-native expansion; avoids fork per iteration
-            mkdir -p "${dest_file%/*}"
+			# Create the destination directory if it doesn't exist.
+			# NOTE: bash-native expansion; avoids fork per iteration
+			mkdir -p "${dest_file%/*}"
 
-            # Use install to copy with correct permissions.
-            if [[ "$file" == *.sh ]]; then
-                install -m 755 "$file" "$dest_file"
-            else
-                # For non-script files, copy with default file permissions.
-                install -m 644 "$file" "$dest_file"
-            fi
-        done
-    fi
+			# Use install to copy with correct permissions.
+			if [[ $file == *.sh ]]; then
+				install -m 755 "$file" "$dest_file"
+			else
+				# For non-script files, copy with default file permissions.
+				install -m 644 "$file" "$dest_file"
+			fi
+		done
+	fi
 done
 
 # Copy configuration if exists
 if [ -d "$SCRIPT_DIR/conf" ]; then
-    cp -R "$SCRIPT_DIR/conf/"* "$INSTALL_DIR/conf/" 2>/dev/null || true
+	cp -R "$SCRIPT_DIR/conf/"* "$INSTALL_DIR/conf/" 2>/dev/null || true
 fi
 
 # Generate plist files with correct paths
 echo "📝 Generating launchd plist files..."
 
 # Brew Maintenance (Daily at 10 AM)
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.brew.plist" <<EOF
+cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.brew.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -116,7 +116,7 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.brew.plist" <<EOF
 EOF
 
 # Health Check (Daily at 8:30 AM)
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.healthcheck.plist" <<EOF
+cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.healthcheck.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -164,7 +164,7 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.healthcheck.plist" <<EOF
 EOF
 
 # System Cleanup (Daily at 9 AM)
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.systemcleanup.plist" <<EOF
+cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.systemcleanup.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -212,7 +212,7 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.systemcleanup.plist" <<EOF
 EOF
 
 # Weekly Maintenance (Mondays at 9 AM)
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.weekly.plist" <<EOF
+cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.weekly.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -262,7 +262,7 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.weekly.plist" <<EOF
 EOF
 
 # Monthly Maintenance (1st of month at 6 AM)
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.monthly.plist" <<EOF
+cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.monthly.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -312,7 +312,7 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.monthly.plist" <<EOF
 EOF
 
 # Service Monitor (Daily at 8:35 AM)
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.servicemonitor.plist" <<EOF
+cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.servicemonitor.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -361,7 +361,7 @@ EOF
 
 # Screen Capture Nag Remover (Daily at 10:00 AM)
 # Note: Requires Full Disk Access for /bin/bash to modify TCC database
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.screencapture-nag-remover.plist" <<EOF
+cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.screencapture-nag-remover.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -405,7 +405,7 @@ EOF
 
 # Google Drive Home Backup (Daily at 3:15 AM - Light Mode)
 # Skips weekends automatically via script logic to avoid gaming interference
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.googledrivebackup.light.plist" <<EOF
+cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.googledrivebackup.light.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -457,7 +457,7 @@ EOF
 
 # Google Drive Full Backup (Weekly - Monday at 4:00 AM)
 # Runs full backup once a week
-cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.googledrivebackup.full.plist" <<EOF
+cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.googledrivebackup.full.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -511,14 +511,12 @@ cat > "$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.googledrivebackup.full.plist" <<
 </plist>
 EOF
 
-
-
 # Load new agents
 echo "✅ Loading new agents..."
 for plist in "$LAUNCHAGENTS_DIR"/com.abhimehrotra.maint.*.plist; do
-    [ -f "$plist" ] || continue
-    # NOTE: bash-native expansion; avoids fork per iteration
-    launchctl load "$plist" 2>&1 || echo "⚠️  Warning: Failed to load ${plist##*/}"
+	[ -f "$plist" ] || continue
+	# NOTE: bash-native expansion; avoids fork per iteration
+	launchctl load "$plist" 2>&1 || echo "⚠️  Warning: Failed to load ${plist##*/}"
 done
 
 echo ""

@@ -16,7 +16,7 @@ exec "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/test_network_common.sh"
 # --- Mocks ---
 # networksetup mock: simulates -getdnsservers and -setdnsservers.
 NS_LOG="$TEST_DIR/networksetup.log"
-cat > "$MOCK_BIN/networksetup" << MOCK
+cat >"$MOCK_BIN/networksetup" <<MOCK
 #!/bin/bash
 echo "networksetup \$*" >> "$NS_LOG"
 case "\$1" in
@@ -39,51 +39,53 @@ PASS=0
 FAIL=0
 
 check() {
-    local name="$1"; shift
-    if "$@" >/dev/null 2>&1; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name"
-        FAIL=$((FAIL + 1))
-    fi
+	local name="$1"
+	shift
+	if "$@" >/dev/null 2>&1; then
+		echo "PASS: $name"
+		PASS=$((PASS + 1))
+	else
+		echo "FAIL: $name"
+		FAIL=$((FAIL + 1))
+	fi
 }
 
 check_false() {
-    local name="$1"; shift
-    if ! "$@" >/dev/null 2>&1; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name"
-        FAIL=$((FAIL + 1))
-    fi
+	local name="$1"
+	shift
+	if ! "$@" >/dev/null 2>&1; then
+		echo "PASS: $name"
+		PASS=$((PASS + 1))
+	else
+		echo "FAIL: $name"
+		FAIL=$((FAIL + 1))
+	fi
 }
 
 check_output() {
-    local name="$1"
-    local expected="$2"
-    local actual="$3"
-    if [[ "$actual" == "$expected" ]]; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name (expected='$expected', got='$actual')"
-        FAIL=$((FAIL + 1))
-    fi
+	local name="$1"
+	local expected="$2"
+	local actual="$3"
+	if [[ $actual == "$expected" ]]; then
+		echo "PASS: $name"
+		PASS=$((PASS + 1))
+	else
+		echo "FAIL: $name (expected='$expected', got='$actual')"
+		FAIL=$((FAIL + 1))
+	fi
 }
 
 check_grep() {
-    local name="$1"
-    local pattern="$2"
-    local file="$3"
-    if grep -q "$pattern" "$file" 2>/dev/null; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name (pattern '$pattern' not found in $file)"
-        FAIL=$((FAIL + 1))
-    fi
+	local name="$1"
+	local pattern="$2"
+	local file="$3"
+	if grep -q "$pattern" "$file" 2>/dev/null; then
+		echo "PASS: $name"
+		PASS=$((PASS + 1))
+	else
+		echo "FAIL: $name (pattern '$pattern' not found in $file)"
+		FAIL=$((FAIL + 1))
+	fi
 }
 
 echo "=== Testing scripts/lib/network-common.sh ==="
@@ -91,21 +93,21 @@ echo "=== Testing scripts/lib/network-common.sh ==="
 # --- validate_dns_protocol ---
 echo ""
 echo "-- validate_dns_protocol --"
-check       "validate_dns_protocol accepts doh"          validate_dns_protocol "doh"
-check       "validate_dns_protocol accepts doh3"         validate_dns_protocol "doh3"
-check_false "validate_dns_protocol rejects empty"        validate_dns_protocol ""
-check_false "validate_dns_protocol rejects dot3"         validate_dns_protocol "dot3"
-check_false "validate_dns_protocol rejects arbitrary"    validate_dns_protocol "udp"
+check "validate_dns_protocol accepts doh" validate_dns_protocol "doh"
+check "validate_dns_protocol accepts doh3" validate_dns_protocol "doh3"
+check_false "validate_dns_protocol rejects empty" validate_dns_protocol ""
+check_false "validate_dns_protocol rejects dot3" validate_dns_protocol "dot3"
+check_false "validate_dns_protocol rejects arbitrary" validate_dns_protocol "udp"
 
 # --- validate_profile_id ---
 echo ""
 echo "-- validate_profile_id --"
-check       "validate_profile_id accepts lowercase-alphanumeric ID" validate_profile_id "abc123xyz0"
-check       "validate_profile_id accepts single-char ID"            validate_profile_id "a"
-check_false "validate_profile_id rejects empty string"              validate_profile_id ""
-check_false "validate_profile_id rejects ID with uppercase"         validate_profile_id "ABC123"
-check_false "validate_profile_id rejects ID with hyphen"            validate_profile_id "abc-123"
-check_false "validate_profile_id rejects ID with space"             validate_profile_id "abc 123"
+check "validate_profile_id accepts lowercase-alphanumeric ID" validate_profile_id "abc123xyz0"
+check "validate_profile_id accepts single-char ID" validate_profile_id "a"
+check_false "validate_profile_id rejects empty string" validate_profile_id ""
+check_false "validate_profile_id rejects ID with uppercase" validate_profile_id "ABC123"
+check_false "validate_profile_id rejects ID with hyphen" validate_profile_id "abc-123"
+check_false "validate_profile_id rejects ID with space" validate_profile_id "abc 123"
 
 # --- redact_profile_id ---
 echo ""
@@ -139,7 +141,7 @@ check_grep "networksetup -getdnsservers was invoked" "getdnsservers" "$NS_LOG"
 echo ""
 echo "-- restore_dns_settings (from backup file) --"
 NS_LOG2="$TEST_DIR/networksetup2.log"
-cat > "$MOCK_BIN/networksetup" << MOCK2
+cat >"$MOCK_BIN/networksetup" <<MOCK2
 #!/bin/bash
 echo "networksetup \$*" >> "$NS_LOG2"
 case "\$1" in
@@ -152,7 +154,7 @@ chmod +x "$MOCK_BIN/networksetup"
 # Backup contains a real DNS address
 RESTORE_DIR="$TEST_DIR/dns_restore"
 mkdir -p "$RESTORE_DIR"
-echo "1.1.1.1" > "$RESTORE_DIR/original_dns.txt"
+echo "1.1.1.1" >"$RESTORE_DIR/original_dns.txt"
 
 restore_dns_settings "$RESTORE_DIR"
 check_grep "restore invokes networksetup -setdnsservers" "setdnsservers" "$NS_LOG2"
@@ -161,7 +163,7 @@ check_grep "restore invokes networksetup -setdnsservers" "setdnsservers" "$NS_LO
 echo ""
 echo "-- restore_dns_settings (no backup file – fallback) --"
 NS_LOG3="$TEST_DIR/networksetup3.log"
-cat > "$MOCK_BIN/networksetup" << MOCK3
+cat >"$MOCK_BIN/networksetup" <<MOCK3
 #!/bin/bash
 echo "networksetup \$*" >> "$NS_LOG3"
 exit 0
@@ -187,5 +189,5 @@ echo ""
 echo "=== Results: $PASS passed, $FAIL failed ==="
 
 if [[ $FAIL -gt 0 ]]; then
-    exit 1
+	exit 1
 fi

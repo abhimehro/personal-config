@@ -8,15 +8,15 @@
 
 ## ✅ Executive Summary
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| **Repository** | ✅ Healthy | Clean git state, latest changes pushed |
-| **SSH Config** | ✅ Symlinked | Properly linked to repo |
-| **Fish Shell** | ✅ Symlinked | Properly linked to repo |
-| **Maintenance System** | ✅ Active | 7 LaunchAgents loaded |
-| **Media Server** | ✅ Recovered | Config in 1Password, server running |
-| **Network Tools** | ✅ Present | All scripts available |
-| **Backups** | ✅ Secured | 1Password + git |
+| Component              | Status       | Notes                                  |
+| ---------------------- | ------------ | -------------------------------------- |
+| **Repository**         | ✅ Healthy   | Clean git state, latest changes pushed |
+| **SSH Config**         | ✅ Symlinked | Properly linked to repo                |
+| **Fish Shell**         | ✅ Symlinked | Properly linked to repo                |
+| **Maintenance System** | ✅ Active    | 7 LaunchAgents loaded                  |
+| **Media Server**       | ✅ Recovered | Config in 1Password, server running    |
+| **Network Tools**      | ✅ Present   | All scripts available                  |
+| **Backups**            | ✅ Secured   | 1Password + git                        |
 
 ---
 
@@ -34,29 +34,38 @@
 All critical configuration symlinks are **correctly established**:
 
 ### SSH Configuration ✅
+
 ```
 ~/.ssh/config → ~/Documents/dev/personal-config/configs/ssh/config
 ~/.ssh/agent.toml → ~/Documents/dev/personal-config/configs/ssh/agent.toml
 ```
+
 **Status**: Valid symlinks, 1Password integration active
 
 ### Fish Shell Configuration ✅
+
 ```
 ~/.config/fish → ~/Documents/dev/personal-config/configs/.config/fish
 ```
+
 **Status**: Valid symlink, Fish shell functions available:
+
 - `nm-status`, `nm-browse`, `nm-privacy`, `nm-gaming`, `nm-vpn`, `nm-regress`
 
 ### Cursor IDE Configuration ✅
+
 ```
 ~/.cursor → ~/Documents/dev/personal-config/.cursor
 ```
+
 **Status**: Valid symlink
 
 ### VSCode Configuration ✅
+
 ```
 ~/.vscode → ~/Documents/dev/personal-config/.vscode
 ```
+
 **Status**: Valid symlink
 
 ---
@@ -67,19 +76,21 @@ All critical configuration symlinks are **correctly established**:
 **Status**: ✅ Fully operational
 
 ### LaunchAgents Loaded (7 active):
-| Agent | PID | Status | Purpose |
-|-------|-----|--------|---------|
-| `com.abhimehrotra.maintenance.healthcheck` | - | ✅ Active | System health monitoring |
-| `com.abhimehrotra.maintenance.systemcleanup` | - | ⚠️  Exit 1 | System cleanup tasks |
-| `com.abhimehrotra.maintenance.weekly` | - | ✅ Active | Weekly maintenance |
-| `com.abhimehrotra.maintenance.brew` | - | ✅ Active | Homebrew updates |
-| `com.abhimehrotra.maintenance.protondrivebackup` | - | ⚠️  Exit 1 | ProtonDrive backup |
-| `com.abhimehrotra.maintenance.screencapture-nag-remover` | - | ⚠️  Exit 126 | Screen capture tool |
-| `com.abhimehrotra.maintenance.monthly` | - | ✅ Active | Monthly maintenance |
+
+| Agent                                                    | PID | Status      | Purpose                  |
+| -------------------------------------------------------- | --- | ----------- | ------------------------ |
+| `com.abhimehrotra.maintenance.healthcheck`               | -   | ✅ Active   | System health monitoring |
+| `com.abhimehrotra.maintenance.systemcleanup`             | -   | ⚠️ Exit 1   | System cleanup tasks     |
+| `com.abhimehrotra.maintenance.weekly`                    | -   | ✅ Active   | Weekly maintenance       |
+| `com.abhimehrotra.maintenance.brew`                      | -   | ✅ Active   | Homebrew updates         |
+| `com.abhimehrotra.maintenance.protondrivebackup`         | -   | ⚠️ Exit 1   | ProtonDrive backup       |
+| `com.abhimehrotra.maintenance.screencapture-nag-remover` | -   | ⚠️ Exit 126 | Screen capture tool      |
+| `com.abhimehrotra.maintenance.monthly`                   | -   | ✅ Active   | Monthly maintenance      |
 
 **Note**: Some exit codes are expected for scheduled tasks (they run and exit).
 
 ### Available Maintenance Scripts (31 total):
+
 ```
 ✅ analytics_dashboard.sh
 ✅ brew_maintenance.sh
@@ -120,24 +131,29 @@ All critical configuration symlinks are **correctly established**:
 ## 🎬 Media Streaming Configuration
 
 ### rclone Configuration ✅
+
 **Location**: `~/.config/rclone/rclone.conf`  
 **Status**: ✅ Restored from 1Password  
 **Backup**: 1Password → "Rclone Config Backup" (UUID: opgr52y2...)
 
 **Remotes Configured**:
+
 - `gdrive:` - Google Drive (2TB)
 - `onedrive:` - OneDrive (1TB)
 - `media:` - Union of Google Drive + OneDrive
 - `alldebrid:` - Alldebrid WebDAV (optional)
 
 ### WebDAV Server ✅
+
 **Status**: ✅ Running on port 8088  
 **Process**: rclone serve webdav  
 **Credentials**: `~/.config/media-server/credentials` (backed up in 1Password)
 
 ### NEW: Windscribe VPN Support 🔥
+
 **Script**: `start-media-server-windscribe.sh`  
 **Features**:
+
 - Binds to 0.0.0.0 (all interfaces)
 - Supports local network access
 - Supports remote access via static IP (82.21.151.194)
@@ -149,6 +165,7 @@ All critical configuration symlinks are **correctly established**:
 ## 🌐 Network Configuration
 
 ### Scripts Available:
+
 ```
 ✅ network-mode-manager.sh      - Network mode switching
 ✅ network-mode-regression.sh   - Regression testing
@@ -156,10 +173,12 @@ All critical configuration symlinks are **correctly established**:
 ```
 
 ### Control D Integration:
+
 **Location**: `~/Documents/dev/personal-config/controld-system/`  
 **Status**: ✅ Available
 
 ### Windscribe Integration:
+
 **Location**: `~/Documents/dev/personal-config/windscribe-controld/`  
 **Status**: ✅ Available  
 **NEW**: Media server now VPN-compatible
@@ -169,12 +188,14 @@ All critical configuration symlinks are **correctly established**:
 ## 🔐 Security & Backups
 
 ### Backed Up in 1Password:
-| Item | UUID | Location |
-|------|------|----------|
-| Rclone Config | `opgr52y2...` | Personal vault |
-| WebDAV Credentials | `mv76o4...` | Personal vault |
+
+| Item               | UUID          | Location       |
+| ------------------ | ------------- | -------------- |
+| Rclone Config      | `opgr52y2...` | Personal vault |
+| WebDAV Credentials | `mv76o4...`   | Personal vault |
 
 ### Protected in .gitignore:
+
 ```
 ✅ media-streaming/backup/*.backup
 ✅ media-streaming/backup/rclone.conf.backup
@@ -183,6 +204,7 @@ All critical configuration symlinks are **correctly established**:
 ```
 
 ### Git History:
+
 ✅ **Clean** - No sensitive data in commit history  
 ✅ **No OAuth tokens** exposed  
 ✅ **No credentials** in git
@@ -192,6 +214,7 @@ All critical configuration symlinks are **correctly established**:
 ## 📊 Current Network Status
 
 **Local IPs**:
+
 - WiFi (en0): 192.168.0.199
 - Ethernet (en1): Not connected
 
@@ -218,12 +241,14 @@ All critical configuration symlinks are **correctly established**:
 ## 🎯 Recommendations
 
 ### Immediate:
+
 1. ✅ **Already done**: OneDrive disabled
 2. ✅ **Already done**: ProtonDrive backup configured
 3. ⏳ **To do**: Configure router port forwarding (8088 → Mac)
 4. ⏳ **To do**: Enable "Allow LAN Traffic" in Windscribe
 
 ### Future Enhancements:
+
 - [ ] Set up automated health checks for media server
 - [ ] Configure monitoring for rclone OAuth token expiration
 - [ ] Add alerting for failed maintenance tasks
@@ -234,6 +259,7 @@ All critical configuration symlinks are **correctly established**:
 ## 📞 Quick Reference
 
 ### Maintenance Commands:
+
 ```bash
 # Run health check
 ~/Documents/dev/personal-config/maintenance/bin/health_check.sh
@@ -246,6 +272,7 @@ launchctl list | grep maintenance
 ```
 
 ### Media Server Commands:
+
 ```bash
 # Start server (VPN-compatible)
 ~/Documents/dev/personal-config/media-streaming/scripts/start-media-server-windscribe.sh
@@ -258,6 +285,7 @@ lsof -nP -i:8088 | grep rclone
 ```
 
 ### Recovery Commands:
+
 ```bash
 # Restore rclone config
 op document get "Rclone Config Backup" --vault Personal --output ~/.config/rclone/rclone.conf
@@ -276,6 +304,7 @@ op document get "Media Server WebDAV Credentials" --vault Personal --output ~/.c
 **System Status**: ✅ **HEALTHY**
 
 All configurations have been verified and are working correctly after the OneDrive incident. The system is now:
+
 - Fully operational
 - Properly backed up
 - Protected from future cloud sync issues

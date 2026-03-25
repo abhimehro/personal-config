@@ -13,6 +13,7 @@ This repository uses several GitHub Actions workflows for automation and code qu
 ## Workflows
 
 ### Core Workflows
+
 - **label.yml** - Automatically labels pull requests based on changed files
 - **stale.yml** - Manages stale issues and pull requests
 - **summary.yml** - Generates PR summaries
@@ -132,16 +133,20 @@ rm .github/workflows/gemini-*.yml
 ## Troubleshooting
 
 ### Workflows are skipped
+
 This is expected behavior when authentication is not configured. The workflows will show as "skipped" rather than "failed".
 
 ### Authentication errors
+
 Check that:
+
 - Secrets are properly named (case-sensitive)
 - API keys are valid and not expired
 - GCP project has the necessary APIs enabled
 - Service account has required permissions
 
 ### For more information
+
 - [Gemini API Documentation](https://ai.google.dev/docs)
 - [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 - [Workload Identity Federation](https://cloud.google.com/iam/docs/workload-identity-federation)
@@ -153,11 +158,13 @@ The **code-quality.yml** workflow performs automated code quality and complexity
 ### What It Checks
 
 #### Shell Scripts (`.sh`, `.bash`)
+
 1. **ShellCheck Analysis** - Runs ShellCheck on all shell scripts to find bugs and potential issues
 2. **Script Length** - Warns when scripts exceed 200 lines
 3. **Complexity** - Encourages refactoring large scripts into smaller, more maintainable functions
 
 #### Python Files (`.py`)
+
 1. **Cyclomatic Complexity** - Measures code complexity using Radon
    - Threshold: Warns when function complexity > 10
    - Scale: 1-5 (simple), 6-10 (moderate), 11-20 (complex), 21+ (very complex)
@@ -184,6 +191,7 @@ The workflow provides **warnings**, not errors. These are suggestions to improve
 ### How to Fix Complexity Issues
 
 #### For Shell Scripts:
+
 ```bash
 # Before: Large monolithic script (300+ lines)
 # After: Refactor into functions
@@ -207,6 +215,7 @@ main "$@"
 ```
 
 #### For Python:
+
 ```python
 # Before: Complex function (CC > 10)
 def complex_function(data):
@@ -228,12 +237,12 @@ def complex_function(data):
 
 ### Thresholds
 
-| Check | Threshold | Severity |
-|-------|-----------|----------|
-| Shell script length | >200 lines | Warning |
-| Python cyclomatic complexity | >10 | Warning |
-| Python maintainability index | <20 | Warning |
-| Python file length | >300 lines | Warning |
+| Check                        | Threshold  | Severity |
+| ---------------------------- | ---------- | -------- |
+| Shell script length          | >200 lines | Warning  |
+| Python cyclomatic complexity | >10        | Warning  |
+| Python maintainability index | <20        | Warning  |
+| Python file length           | >300 lines | Warning  |
 
 These thresholds are based on industry best practices and can be adjusted in `.github/workflows/code-quality.yml`.
 
@@ -246,5 +255,6 @@ These thresholds are based on industry best practices and can be adjusted in `.g
 ### References
 
 This workflow was added to prevent complex method issues similar to those found in CodeFactor analysis of related repositories. For more information, see:
+
 - [CodeFactor Complex Method Detection](https://www.codefactor.io/docs/issues/complexity)
 - [Cyclomatic Complexity Explanation](https://en.wikipedia.org/wiki/Cyclomatic_complexity)

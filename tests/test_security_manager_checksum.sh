@@ -10,8 +10,8 @@ mkdir -p "$MOCK_HOME/conf"
 mkdir -p "$MOCK_HOME/bin"
 
 # Create dummy config
-echo "dummy config" > "$MOCK_HOME/conf/config.env"
-echo "dummy script" > "$MOCK_HOME/bin/script.sh"
+echo "dummy config" >"$MOCK_HOME/conf/config.env"
+echo "dummy script" >"$MOCK_HOME/bin/script.sh"
 
 # Mock HOME for the script
 export HOME="$MOCK_HOME"
@@ -38,37 +38,37 @@ echo "Backup created at: $BACKUP_FILE"
 
 # Verify checksum file exists
 CHECKSUM_FILE="${BACKUP_FILE}.sha256"
-if [[ ! -f "$CHECKSUM_FILE" ]]; then
-    echo "❌ Checksum file not created: $CHECKSUM_FILE"
-    echo "Backup output:"
-    echo "$BACKUP_OUTPUT"
-    exit 1
+if [[ ! -f $CHECKSUM_FILE ]]; then
+	echo "❌ Checksum file not created: $CHECKSUM_FILE"
+	echo "Backup output:"
+	echo "$BACKUP_OUTPUT"
+	exit 1
 fi
 echo "✅ Checksum file created."
 
 # 2. Verify Restore (should pass)
 echo "Testing valid restore..."
 if check_backup_safety "$BACKUP_FILE"; then
-    echo "✅ Backup safety check passed."
+	echo "✅ Backup safety check passed."
 else
-    echo "❌ Backup safety check failed for valid backup!"
-    exit 1
+	echo "❌ Backup safety check failed for valid backup!"
+	exit 1
 fi
 
 # 3. Tamper with Backup
 echo "Tampering with backup..."
 # We append garbage to the end of the gzip file.
 # Note: gzip might ignore trailing garbage, but shasum won't.
-echo "CORRUPTION" >> "$BACKUP_FILE"
+echo "CORRUPTION" >>"$BACKUP_FILE"
 
 # 4. Verify Restore Fails
 echo "Testing tampered restore (should fail)..."
 # check_backup_safety returns 0 on success, 1 on failure.
 if check_backup_safety "$BACKUP_FILE"; then
-    echo "❌ Tampered backup passed safety check!"
-    exit 1
+	echo "❌ Tampered backup passed safety check!"
+	exit 1
 else
-    echo "✅ Tampered backup failed safety check as expected."
+	echo "✅ Tampered backup failed safety check as expected."
 fi
 
 # Clean up

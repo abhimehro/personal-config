@@ -15,11 +15,13 @@ Your unified cloud library is configured correctly:
 ### **Recommended: Use the Union Remote (Automatic Distribution)**
 
 **Best Practice**: Upload directly to the `media:` union remote. The union will automatically:
+
 - **Distribute files** based on available space (`create_policy = epmfs`)
 - **Show files from both** providers in Infuse (`action_policy = epall`)
 - **Search efficiently** across both (`search_policy = ff`)
 
 #### Upload via rclone:
+
 ```bash
 # Upload a movie
 rclone copy "/path/to/Movie Name (2024).mkv" media:Movies/
@@ -36,11 +38,13 @@ rclone copy "/path/to/media/" media:Movies/ --progress
 You can also upload directly to either cloud provider:
 
 **Option A: Google Drive**
+
 - Upload to: `Google Drive/Media/Movies/` (or appropriate subfolder)
 - Files will appear in Infuse via union remote
 - Good if: Google Drive has more free space
 
 **Option B: OneDrive**
+
 - Upload to: `OneDrive/Media/Movies/` (or appropriate subfolder)
 - Files will appear in Infuse via union remote
 - Good if: OneDrive has more free space
@@ -67,9 +71,11 @@ Your union remote uses these policies:
 ### **For New Media Files:**
 
 1. **Upload via rclone to union remote** (Recommended):
+
    ```bash
    rclone copy "/path/to/file.mkv" media:Movies/ --progress
    ```
+
    - Automatically goes to provider with most free space
    - Appears immediately in Infuse
    - No need to manually choose provider
@@ -136,6 +142,7 @@ Media/
 ```
 
 **If structures differ:**
+
 - Union will show files from both, but may be confusing
 - Best to keep structures identical
 
@@ -144,12 +151,14 @@ Media/
 For best Infuse experience:
 
 **Movies:**
+
 ```
 Movie Name (Year).ext
 Example: The Matrix (1999).mkv
 ```
 
 **TV Shows:**
+
 ```
 TV Shows/Show Name/Season XX/Show Name SXXEXX.ext
 Example: TV Shows/Breaking Bad/Season 01/Breaking Bad S01E01.mkv
@@ -157,12 +166,12 @@ Example: TV Shows/Breaking Bad/Season 01/Breaking Bad S01E01.mkv
 
 ### **Upload Methods Comparison**
 
-| Method | Pros | Cons |
-|--------|------|------|
-| **rclone to `media:`** | Auto-distributes, efficient, shows progress | Requires command line |
-| **Google Drive web** | Easy, visual interface | Manual space management |
-| **OneDrive web** | Easy, visual interface | Manual space management |
-| **Cloud sync apps** | Automatic, background | May sync to wrong folder |
+| Method                 | Pros                                        | Cons                     |
+| ---------------------- | ------------------------------------------- | ------------------------ |
+| **rclone to `media:`** | Auto-distributes, efficient, shows progress | Requires command line    |
+| **Google Drive web**   | Easy, visual interface                      | Manual space management  |
+| **OneDrive web**       | Easy, visual interface                      | Manual space management  |
+| **Cloud sync apps**    | Automatic, background                       | May sync to wrong folder |
 
 ## 🚀 Quick Reference Commands
 

@@ -19,38 +19,40 @@ PASS=0
 FAIL=0
 
 check() {
-    local name="$1"; shift
-    if "$@" >/dev/null 2>&1; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name"
-        FAIL=$((FAIL + 1))
-    fi
+	local name="$1"
+	shift
+	if "$@" >/dev/null 2>&1; then
+		echo "PASS: $name"
+		PASS=$((PASS + 1))
+	else
+		echo "FAIL: $name"
+		FAIL=$((FAIL + 1))
+	fi
 }
 
 check_false() {
-    local name="$1"; shift
-    if ! "$@" >/dev/null 2>&1; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name"
-        FAIL=$((FAIL + 1))
-    fi
+	local name="$1"
+	shift
+	if ! "$@" >/dev/null 2>&1; then
+		echo "PASS: $name"
+		PASS=$((PASS + 1))
+	else
+		echo "FAIL: $name"
+		FAIL=$((FAIL + 1))
+	fi
 }
 
 check_output() {
-    local name="$1"
-    local expected="$2"
-    local actual="$3"
-    if [[ "$actual" == "$expected" ]]; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name (expected='$expected', got='$actual')"
-        FAIL=$((FAIL + 1))
-    fi
+	local name="$1"
+	local expected="$2"
+	local actual="$3"
+	if [[ $actual == "$expected" ]]; then
+		echo "PASS: $name"
+		PASS=$((PASS + 1))
+	else
+		echo "FAIL: $name (expected='$expected', got='$actual')"
+		FAIL=$((FAIL + 1))
+	fi
 }
 
 echo "=== Testing scripts/lib/file-common.sh ==="
@@ -65,10 +67,10 @@ ln -s "$REAL_FILE" "$LINK_FILE"
 echo ""
 echo "-- assert_not_symlink --"
 
-check       "assert_not_symlink: returns 0 for regular file"       assert_not_symlink "$REAL_FILE"
-check_false "assert_not_symlink: returns 1 for symlink"            assert_not_symlink "$LINK_FILE"
+check "assert_not_symlink: returns 0 for regular file" assert_not_symlink "$REAL_FILE"
+check_false "assert_not_symlink: returns 1 for symlink" assert_not_symlink "$LINK_FILE"
 # Non-existent path is not a symlink, so should return 0.
-check       "assert_not_symlink: returns 0 for non-existent path"  assert_not_symlink "$TEST_DIR/no_such_file"
+check "assert_not_symlink: returns 0 for non-existent path" assert_not_symlink "$TEST_DIR/no_such_file"
 
 # --- assert_none_are_symlinks ---
 echo ""
@@ -77,25 +79,25 @@ echo "-- assert_none_are_symlinks --"
 REAL_2="$TEST_DIR/real2.txt"
 touch "$REAL_2"
 
-check       "assert_none_are_symlinks: returns 0 when no symlinks present" \
-    assert_none_are_symlinks "$REAL_FILE" "$REAL_2"
+check "assert_none_are_symlinks: returns 0 when no symlinks present" \
+	assert_none_are_symlinks "$REAL_FILE" "$REAL_2"
 check_false "assert_none_are_symlinks: returns 1 when one path is a symlink" \
-    assert_none_are_symlinks "$REAL_FILE" "$LINK_FILE"
+	assert_none_are_symlinks "$REAL_FILE" "$LINK_FILE"
 
 # --- secure_mkdir ---
 echo ""
 echo "-- secure_mkdir --"
 
 NEW_DIR="$TEST_DIR/newdir"
-check "secure_mkdir creates the directory"            secure_mkdir "$NEW_DIR" 700
-check "secure_mkdir is idempotent (second call ok)"   secure_mkdir "$NEW_DIR" 700
+check "secure_mkdir creates the directory" secure_mkdir "$NEW_DIR" 700
+check "secure_mkdir is idempotent (second call ok)" secure_mkdir "$NEW_DIR" 700
 
 # Refuses to operate on an existing symlink.
 REAL_TARGET_DIR="$TEST_DIR/realdir"
 LINK_DIR="$TEST_DIR/linkdir"
 mkdir "$REAL_TARGET_DIR"
 ln -s "$REAL_TARGET_DIR" "$LINK_DIR"
-check_false "secure_mkdir rejects an existing symlink"          secure_mkdir "$LINK_DIR"
+check_false "secure_mkdir rejects an existing symlink" secure_mkdir "$LINK_DIR"
 
 # Refuses to overwrite an existing non-directory file.
 NONDIR="$TEST_DIR/nondir"
@@ -108,8 +110,8 @@ echo "-- atomic_write --"
 
 DEST="$TEST_DIR/output.txt"
 atomic_write "$DEST" "hello world"
-check "atomic_write creates the destination file"   test -f "$DEST"
-check_output "atomic_write writes correct content"  "hello world" "$(cat "$DEST")"
+check "atomic_write creates the destination file" test -f "$DEST"
+check_output "atomic_write writes correct content" "hello world" "$(cat "$DEST")"
 
 # Overwrite of an existing regular file must succeed.
 atomic_write "$DEST" "updated content"
@@ -138,5 +140,5 @@ echo ""
 echo "=== Results: $PASS passed, $FAIL failed ==="
 
 if [[ $FAIL -gt 0 ]]; then
-    exit 1
+	exit 1
 fi

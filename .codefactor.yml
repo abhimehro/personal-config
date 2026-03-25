@@ -6,19 +6,19 @@ languages:
   python:
     # Enable Python checks
     enabled: true
-    
+
     # Complexity thresholds for Python
     # These match our GitHub Actions workflow thresholds
     complexity:
       # Cyclomatic complexity threshold
       # Default is 15, we set to 10 to match our workflow
       threshold: 10
-    
+
     # Line length
     line-length:
       # Maximum line length for Python files
       threshold: 120
-    
+
     # Tools configuration
     tools:
       radon:
@@ -26,15 +26,15 @@ languages:
         enabled: true
         # Minimum maintainability index (we warn at <20)
         mi-threshold: 20
-      
+
       pylint:
         # PyLint static analyzer
         enabled: true
-  
+
   shell:
     # Enable shell script checks
     enabled: true
-    
+
     # ShellCheck configuration
     tools:
       shellcheck:
@@ -46,36 +46,36 @@ languages:
 exclude:
   # Version control
   - .git/**
-  
+
   # Dependencies
   - node_modules/**
   - .local/**
   - venv/**
   - .venv/**
-  
+
   # Build artifacts
   - dist/**
   - build/**
-  
+
   # Archive/backup directories
   - archive/**
   - .Jules/**
   - .cursor/**
-  
+
   # IDE configurations (not code)
   - .vscode/**
   - .idea/**
-  
+
   # Specific large/generated files
   - configs/raycast/extensions/**/assets/scripts/fileicon.sh
 
 # Ignore patterns
 ignore:
   # Ignore certain complexity warnings for specific use cases
-  - "**/*test*.py"  # Test files may be complex
+  - "**/*test*.py" # Test files may be complex
   - "**/*_test.py"
   - "**/test_*.py"
-  
+
   # Ignore archived scripts (not actively maintained)
   - "**/archive/**"
   - "**/maintenance/archive/**"
@@ -100,9 +100,9 @@ branches:
 pr-comments:
   # Comment on PRs with quality issues
   enabled: true
-  
+
   # Only comment on new issues, not existing ones
   only-new-issues: true
-  
+
   # Maximum number of comments per PR
   max-comments: 10

@@ -1,11 +1,13 @@
 # Windscribe VPN + Control D DNS Integration
 
 ## Overview
+
 This directory contains the complete setup and configuration for integrating Windscribe VPN with Control D DNS privacy filtering, providing dual protection: VPN encryption + DNS privacy filtering.
 
 ## ✅ Current Active Configuration
 
 ### System Status
+
 - **VPN**: Windscribe connected with Local DNS setting
 - **DNS Privacy**: Control D Privacy Profile (6m971e9jaf) with DOH encryption
 - **Geographic Routing**: Miami, FL (NetActuate, Inc) - Control D proxy
@@ -13,6 +15,7 @@ This directory contains the complete setup and configuration for integrating Win
 - **Real-time Logging**: DNS queries visible in Control D dashboard
 
 ### Key Achievement
+
 **Dual Protection System**: VPN tunnel encryption + DNS privacy filtering working simultaneously through a sophisticated integration that routes DNS queries through the VPN tunnel to a local Control D resolver.
 
 ## 🚀 Quick Usage
@@ -23,6 +26,7 @@ This directory contains the complete setup and configuration for integrating Win
 > integration, but `network-mode-manager.sh` is the primary entrypoint.
 
 ### Setup Verification
+
 ```bash
 # Run complete system verification
 bash windscribe-controld-setup.sh
@@ -31,6 +35,7 @@ bash windscribe-controld-setup.sh
 ```
 
 ### Profile Switching
+
 ```bash
 # Switch to privacy profile (enhanced filtering, DoH3 by default)
 sudo controld-manager switch privacy
@@ -47,6 +52,7 @@ sudo controld-manager status
 ```
 
 ### Manual Testing
+
 ```bash
 # Test ad blocking
 dig doubleclick.net +short          # Should return 127.0.0.1 (blocked)
@@ -64,7 +70,7 @@ curl -s https://ipinfo.io/json | grep -E '(city|region|country|org)'
 ## 📁 Files
 
 - **`windscribe-controld-setup.sh`** - Automated setup verification and troubleshooting
-- **`setup-guide.md`** - Complete technical documentation  
+- **`setup-guide.md`** - Complete technical documentation
 - **`ctrld.toml.backup`** - Backup of original Control D configuration
 - **`README.md`** - This file
 
@@ -91,11 +97,13 @@ Application Receives Response
 ### Key Configuration Changes
 
 **Control D Configuration:**
+
 - **Before**: Listened on `127.0.0.1:53` (localhost only)
 - **After**: Listens on `0.0.0.0:53` (all interfaces)
 - **Why**: Allows VPN tunnel to reach local Control D resolver
 
 **Windscribe Configuration:**
+
 - **DNS Setting**: Local DNS (not Custom DNS)
 - **App Internal DNS**: OS Default
 - **Split Tunneling**: Disabled (for consistency)
@@ -103,11 +111,12 @@ Application Receives Response
 ## 🛠️ Configuration Files
 
 ### Control D Profiles
+
 ```bash
 # Privacy profile configuration
 /etc/controld/ctrld.privacy.toml
 
-# Gaming profile configuration  
+# Gaming profile configuration
 /etc/controld/ctrld.gaming.toml
 
 # Active configuration (symlink)
@@ -115,20 +124,23 @@ Application Receives Response
 ```
 
 ### Windscribe Settings
+
 - **DNS**: Local DNS ✅
-- **App Internal DNS**: OS Default ✅  
+- **App Internal DNS**: OS Default ✅
 - **Split Tunneling**: OFF ✅
 - **Firewall**: Enabled for leak protection
 
 ## 📊 Expected Indicators
 
 ### ✅ Success Indicators
+
 - **Location**: Miami, FL (NetActuate, Inc)
 - **DNS Logs**: Real-time queries in Control D dashboard
 - **Ad Blocking**: `doubleclick.net` → `127.0.0.1`
 - **VPN Status**: Connected through Windscribe
 
-### ⚠️ Normal Behaviors  
+### ⚠️ Normal Behaviors
+
 - **Raycast**: Shows "Control D not connected" (this is expected)
 - **IP Location**: Miami instead of Windscribe server (this is correct)
 - **DNS Resolution**: Appears to use Windscribe DNS (technically true at network level)
@@ -138,6 +150,7 @@ Application Receives Response
 ### Common Issues
 
 **1. VPN Connection Fails**
+
 ```bash
 # Temporarily set Windscribe DNS to "Auto"
 # Connect to VPN first
@@ -145,6 +158,7 @@ Application Receives Response
 ```
 
 **2. DNS Not Filtering**
+
 ```bash
 # Check Control D binding
 sudo lsof -nP -iTCP:53    # Should show *:53 not 127.0.0.1:53
@@ -154,12 +168,14 @@ sudo controld-manager switch privacy doh
 ```
 
 **3. Inconsistent Behavior**
+
 ```bash
 # Ensure split tunneling is disabled in Windscribe
 # All traffic must use VPN consistently
 ```
 
 ### Diagnostic Commands
+
 ```bash
 # Check Control D status
 sudo controld-manager status
@@ -180,14 +196,16 @@ netstat -rn | head -10
 ## 🔒 Security Benefits
 
 ### Dual Protection
+
 1. **VPN Encryption**: All traffic encrypted through Windscribe tunnel
 2. **DNS Privacy**: DNS queries filtered and logged by Control D
 3. **Geographic Masking**: Traffic routes through Control D's Miami proxy
 4. **Ad Blocking**: Comprehensive filtering of advertising/tracking domains
 
 ### Privacy Features
+
 - **DOH Encryption**: DNS-over-HTTPS for DNS query protection
-- **Real-time Logging**: Transparent DNS query monitoring  
+- **Real-time Logging**: Transparent DNS query monitoring
 - **Profile-based Filtering**: Different rules for privacy vs gaming
 - **Leak Protection**: VPN + DNS settings prevent data leaks
 
@@ -200,6 +218,7 @@ netstat -rn | head -10
 ## 🎯 Use Cases
 
 ### Privacy Browsing
+
 ```bash
 sudo controld-manager switch privacy doh
 # Enhanced filtering active
@@ -207,7 +226,8 @@ sudo controld-manager switch privacy doh
 # Geographic routing through Miami
 ```
 
-### Gaming Session  
+### Gaming Session
+
 ```bash
 sudo controld-manager switch gaming doh
 # Minimal filtering for performance
@@ -216,6 +236,7 @@ sudo controld-manager switch gaming doh
 ```
 
 ### Development Work
+
 ```bash
 # Privacy profile provides enhanced security
 # Essential development services bypassed
@@ -225,16 +246,17 @@ sudo controld-manager switch gaming doh
 ## 🚀 Future Enhancements
 
 - [ ] **Automated VPN Detection** - Auto-switch based on VPN status
-- [ ] **Profile Scheduling** - Time-based profile switching  
+- [ ] **Profile Scheduling** - Time-based profile switching
 - [ ] **Performance Monitoring** - DNS resolution latency tracking
 - [ ] **Mobile Integration** - iOS/Android companion setup
 
 ## 📝 Recent Updates
 
 **October 2025** - Enhanced VPN Integration
+
 - ✅ Integrated Windscribe VPN with Control D DNS
 - ✅ Modified Control D to listen on all interfaces (0.0.0.0:53)
-- ✅ Disabled split tunneling for consistent behavior  
+- ✅ Disabled split tunneling for consistent behavior
 - ✅ Achieved dual protection: VPN + DNS privacy
 - ✅ Real-time DNS logging with DOH encryption
 - ✅ Geographic routing through Miami proxy

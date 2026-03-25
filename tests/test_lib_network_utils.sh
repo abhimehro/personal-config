@@ -13,7 +13,7 @@ mkdir -p "$MOCK_BIN"
 trap 'rm -rf "$TEST_DIR"' EXIT
 
 # --- Mocks ---
-cat > "$MOCK_BIN/networksetup" << 'EOF'
+cat >"$MOCK_BIN/networksetup" <<'EOF'
 #!/bin/bash
 case "$1" in
     -listallnetworkservices)
@@ -32,7 +32,7 @@ esac
 EOF
 chmod +x "$MOCK_BIN/networksetup"
 
-cat > "$MOCK_BIN/route" << 'EOF'
+cat >"$MOCK_BIN/route" <<'EOF'
 #!/bin/bash
 if [[ "$*" == "get default" ]]; then
     printf '   route to: default\ndestination: default\n     gateway: 192.168.1.1\n   interface: en0\n'
@@ -50,38 +50,40 @@ PASS=0
 FAIL=0
 
 check() {
-    local name="$1"; shift
-    if "$@" >/dev/null 2>&1; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name"
-        FAIL=$((FAIL + 1))
-    fi
+	local name="$1"
+	shift
+	if "$@" >/dev/null 2>&1; then
+		echo "PASS: $name"
+		PASS=$((PASS + 1))
+	else
+		echo "FAIL: $name"
+		FAIL=$((FAIL + 1))
+	fi
 }
 
 check_false() {
-    local name="$1"; shift
-    if ! "$@" >/dev/null 2>&1; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name"
-        FAIL=$((FAIL + 1))
-    fi
+	local name="$1"
+	shift
+	if ! "$@" >/dev/null 2>&1; then
+		echo "PASS: $name"
+		PASS=$((PASS + 1))
+	else
+		echo "FAIL: $name"
+		FAIL=$((FAIL + 1))
+	fi
 }
 
 check_output() {
-    local name="$1"
-    local expected="$2"
-    local actual="$3"
-    if [[ "$actual" == "$expected" ]]; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name (expected '$expected', got '$actual')"
-        FAIL=$((FAIL + 1))
-    fi
+	local name="$1"
+	local expected="$2"
+	local actual="$3"
+	if [[ $actual == "$expected" ]]; then
+		echo "PASS: $name"
+		PASS=$((PASS + 1))
+	else
+		echo "FAIL: $name (expected '$expected', got '$actual')"
+		FAIL=$((FAIL + 1))
+	fi
 }
 
 echo "=== Testing scripts/lib/network-utils.sh ==="
@@ -130,5 +132,5 @@ echo ""
 echo "=== Results: $PASS passed, $FAIL failed ==="
 
 if [[ $FAIL -gt 0 ]]; then
-    exit 1
+	exit 1
 fi

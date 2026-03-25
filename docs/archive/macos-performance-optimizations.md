@@ -6,6 +6,7 @@
 ## Applied Optimizations
 
 ### 1. ✅ Disabled Background Services
+
 See `macos-disabled-services.md` for complete list of disabled services.
 
 ### 2. Additional Recommendations
@@ -232,12 +233,14 @@ chmod +x ~/Documents/dev/personal-config/maintenance/bin/kill_unwanted_widgets.s
 ## Performance Benchmarks
 
 ### Before Optimizations
+
 - Widget extensions running: ~95
 - Background services: ~15+ unnecessary services
 - Diagnostic reports: 76 CalendarWidgetExtension crashes
 - Memory pressure: Variable (likely high)
 
 ### After Optimizations
+
 - Widget extensions running: ~55 (only system-critical + your Control Center widgets)
 - Background services: 10+ disabled permanently
 - Diagnostic reports: 0 (ReportCrash disabled)
@@ -247,6 +250,7 @@ chmod +x ~/Documents/dev/personal-config/maintenance/bin/kill_unwanted_widgets.s
 ## Reversibility
 
 All optimizations above can be reversed:
+
 - `defaults delete` for any `defaults write` command
 - `launchctl enable` for any disabled service (see macos-disabled-services.md)
 - System Settings can manually re-enable most features
@@ -254,12 +258,14 @@ All optimizations above can be reversed:
 ## Integration with Maintenance System
 
 Your daily health check (8:30 AM) now automatically monitors:
+
 - ✅ Disabled services status
 - ✅ Widget extension count
 - ✅ Diagnostic report accumulation
 - ✅ Background service respawning
 
 The new service monitor (8:35 AM) provides detailed reporting on:
+
 - ✅ All disabled services verification
 - ✅ Automatic re-disabling if services become enabled
 - ✅ Problematic process killing

@@ -22,17 +22,28 @@ DIRECT_FILE=""
 cleanup() { rm -f "$LOCK_FILE" 2>/dev/null || true; }
 trap cleanup EXIT INT TERM
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
-notify() { local t="$1"; local m="$2"; if command -v terminal-notifier >/dev/null 2>&1; then terminal-notifier -title "$t" -message "$m" -sound default; fi; }
+notify() {
+	local t="$1"
+	local m="$2"
+	if command -v terminal-notifier >/dev/null 2>&1; then terminal-notifier -title "$t" -message "$m" -sound default; fi
+}
 ensure_dirs() { mkdir -p "$STAGING_DIR" "$PROCESSED_DIR" "$FAILED_DIR" "$REVIEW_DIR" "$(dirname "$LOG_FILE")"; }
-is_video_file() { [[ "$1" =~ \.(mp4|mkv|avi|mov|m4v)$ ]]; }
-detect_type() { local f="$1"; if [[ "$f" =~ [Ss][0-9]+[Ee][0-9]+ ]]; then echo tv; else echo movie; fi; }
-check_remote_duplicate() { local r="$1"; local n="$2"; rclone lsf "$r" --files-only 2>/dev/null | grep -Fxq "$n"; }
+is_video_file() { [[ $1 =~ \.(mp4|mkv|avi|mov|m4v)$ ]]; }
+detect_type() {
+	local f="$1"
+	if [[ $f =~ [Ss][0-9]+[Ee][0-9]+ ]]; then echo tv; else echo movie; fi
+}
+check_remote_duplicate() {
+	local r="$1"
+	local n="$2"
+	rclone lsf "$r" --files-only 2>/dev/null | grep -Fxq "$n"
+}
 write_sidecar() {
-  local sidecar_path="$1" original_path="$2" proposed_path="$3" media_type="$4" target_remote="$5" db="$6" fmt="$7" duplicate_flag="$8"
-  local created_at proposal_id
-  created_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  proposal_id="$(printf %s "$original_path|$created_at" | shasum | awk '{print substr($1,1,12)}')"
-  cat > "$sidecar_path" <<EOF
+	local sidecar_path="$1" original_path="$2" proposed_path="$3" media_type="$4" target_remote="$5" db="$6" fmt="$7" duplicate_flag="$8"
+	local created_at proposal_id
+	created_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+	proposal_id="$(printf %s "$original_path|$created_at" | shasum | awk '{print substr($1,1,12)}')"
+	cat >"$sidecar_path" <<EOF
 {
   "proposal_id": "$proposal_id",
   "original_path": "$original_path",
@@ -50,7 +61,8 @@ write_sidecar() {
 }
 EOF
 }
-list_pending() { python3 - <<'PY'
+list_pending() {
+	python3 - <<'PY'
 import json
 from pathlib import Path
 sidecars = sorted((Path.home()/"CloudMedia"/"upload_stage").rglob("*.proposal.json"))
@@ -71,105 +83,177 @@ for s in sidecars:
 PY
 }
 approve_candidate() {
-  local sidecar="$1"
-  [[ -f "$sidecar" ]] || { log "Sidecar not found: $sidecar"; return 1; }
-  local proposed_path target_remote dup proposed_name sidecar_name failed_target
-  local parsed
-  parsed="$(python3 - "$sidecar" <<'PY' 
+	local sidecar="$1"
+	[[ -f $sidecar ]] || {
+		log "Sidecar not found: $sidecar"
+		return 1
+	}
+	local proposed_path target_remote dup proposed_name sidecar_name failed_target
+	local parsed
+	parsed="$(
+		python3 - "$sidecar" <<'PY'
 import json, sys
 from pathlib import Path
 d = json.loads(Path(sys.argv[1]).read_text())
 print(d["proposed_path"] + "|" + d["target_remote"] + "|" + ("true" if d.get("duplicate_remote_match") else "false"))
 PY
-)"
-  IFS="|" read -r proposed_path target_remote dup <<< "$parsed"
-  proposed_name="${proposed_path##*/}"
-  sidecar_name="${sidecar##*/}"
-  [[ -f "$proposed_path" ]] || { log "Missing proposed file: $proposed_path"; return 1; }
-  if [[ "$dup" == "true" ]]; then log "Skipping duplicate candidate pending manual review: $proposed_path"; notify "Duplicate Pending" "Manual review needed for $proposed_name"; return 2; fi
-  touch "$LOCK_FILE"
-  log "Uploading approved file: $proposed_name -> $target_remote"
-  if rclone move "$proposed_path" "$target_remote" --transfers=4 --checkers=8 >> "$LOG_FILE" 2>&1; then
-    rm -f "$sidecar"
-    log "Upload successful: $target_remote"
-    notify "Media Uploaded" "$proposed_name"
-    rm -f "$LOCK_FILE" || true
-  else
-    failed_target="$FAILED_DIR/$proposed_name"
-    mv "$proposed_path" "$failed_target" 2>/dev/null || true
-    mv "$sidecar" "$FAILED_DIR/$sidecar_name" 2>/dev/null || true
-    log "Upload failed; moved candidate to failed queue"
-    notify "Upload Failed" "$proposed_name"
-    rm -f "$LOCK_FILE" || true
-    return 1
-  fi
+	)"
+	IFS="|" read -r proposed_path target_remote dup <<<"$parsed"
+	proposed_name="${proposed_path##*/}"
+	sidecar_name="${sidecar##*/}"
+	[[ -f $proposed_path ]] || {
+		log "Missing proposed file: $proposed_path"
+		return 1
+	}
+	if [[ $dup == "true" ]]; then
+		log "Skipping duplicate candidate pending manual review: $proposed_path"
+		notify "Duplicate Pending" "Manual review needed for $proposed_name"
+		return 2
+	fi
+	touch "$LOCK_FILE"
+	log "Uploading approved file: $proposed_name -> $target_remote"
+	if rclone move "$proposed_path" "$target_remote" --transfers=4 --checkers=8 >>"$LOG_FILE" 2>&1; then
+		rm -f "$sidecar"
+		log "Upload successful: $target_remote"
+		notify "Media Uploaded" "$proposed_name"
+		rm -f "$LOCK_FILE" || true
+	else
+		failed_target="$FAILED_DIR/$proposed_name"
+		mv "$proposed_path" "$failed_target" 2>/dev/null || true
+		mv "$sidecar" "$FAILED_DIR/$sidecar_name" 2>/dev/null || true
+		log "Upload failed; moved candidate to failed queue"
+		notify "Upload Failed" "$proposed_name"
+		rm -f "$LOCK_FILE" || true
+		return 1
+	fi
 }
 approve_ready() {
-  if [[ -n "$APPROVE_TARGET" ]]; then
-    local target="$APPROVE_TARGET"
-    if [[ -f "$target" && "$target" == *.proposal.json ]]; then approve_candidate "$target"; return; fi
-    if [[ -f "$target.proposal.json" ]]; then approve_candidate "$target.proposal.json"; return; fi
-    log "No matching proposal for target: $target"; return 1
-  fi
-  local found=0
-  while IFS= read -r sidecar; do found=1; approve_candidate "$sidecar" || true; done < <(find "$REVIEW_DIR" -type f -name "*.proposal.json" | sort)
-  if [[ $found -eq 0 ]]; then log "No pending proposals to approve."; fi
+	if [[ -n $APPROVE_TARGET ]]; then
+		local target="$APPROVE_TARGET"
+		if [[ -f $target && $target == *.proposal.json ]]; then
+			approve_candidate "$target"
+			return
+		fi
+		if [[ -f "$target.proposal.json" ]]; then
+			approve_candidate "$target.proposal.json"
+			return
+		fi
+		log "No matching proposal for target: $target"
+		return 1
+	fi
+	local found=0
+	while IFS= read -r sidecar; do
+		found=1
+		approve_candidate "$sidecar" || true
+	done < <(find "$REVIEW_DIR" -type f -name "*.proposal.json" | sort)
+	if [[ $found -eq 0 ]]; then log "No pending proposals to approve."; fi
 }
 process_file() {
-  local file="$1" filename media_type db fmt dest_subfolder temp_output renamed_file final_dir final_path target_remote duplicate sidecar
-  filename="${file##*/}"
-  log "---------------------------------------------------"
-  log "Processing: $filename"
-  if ! is_video_file "$file"; then log "Skipping non-video file: $filename"; return 0; fi
-  media_type="$(detect_type "$filename")"
-  if [[ "$media_type" == "tv" ]]; then db="$FILEBOT_TV_DB"; fmt="$FORMAT_TV"; dest_subfolder="$TV_DEST"; else db="$FILEBOT_MOVIE_DB"; fmt="$FORMAT_MOVIE"; dest_subfolder="$MOVIE_DEST"; fi
-  temp_output="$(mktemp -d "$REVIEW_DIR/.incoming.XXXXXX")"
-  log "Running FileBot using $db -> $dest_subfolder"
-  if filebot -rename "$file" --db "$db" --format "$fmt" --output "$temp_output" --action move -non-strict --log fine >> "$LOG_FILE" 2>&1; then
-    renamed_file="$(find "$temp_output" -type f | head -1)"
-    if [[ -z "$renamed_file" || ! -f "$renamed_file" ]]; then log "FileBot reported success but no output file was found."; rmdir "$temp_output" 2>/dev/null || true; return 1; fi
-    final_dir="$REVIEW_DIR/$dest_subfolder"; mkdir -p "$final_dir"
-    final_path="$final_dir/${renamed_file##*/}"
-    mv "$renamed_file" "$final_path"
-    rmdir "$temp_output" 2>/dev/null || true
-    target_remote="$CLOUD_REMOTE:$dest_subfolder"
-    duplicate=false
-    if check_remote_duplicate "$target_remote" "${final_path##*/}"; then duplicate=true; log "Duplicate found in remote target: ${final_path##*/}"; fi
-    sidecar="$final_path.proposal.json"
-    write_sidecar "$sidecar" "$file" "$final_path" "$media_type" "$target_remote" "$db" "$fmt" "$duplicate"
-    if [[ "$AUTO_UPLOAD" -eq 1 ]]; then log "AUTO_UPLOAD enabled; approving immediately."; approve_candidate "$sidecar" || true; else log "Queued for review: $final_path"; notify "Rename Review Ready" "${final_path##*/} queued for approval"; fi
-  else
-    log "FileBot identification failed for $filename"
-    mv "$file" "$FAILED_DIR/" 2>/dev/null || true
-    notify "Identification Failed" "$filename"
-    rmdir "$temp_output" 2>/dev/null || true
-  fi
+	local file="$1" filename media_type db fmt dest_subfolder temp_output renamed_file final_dir final_path target_remote duplicate sidecar
+	filename="${file##*/}"
+	log "---------------------------------------------------"
+	log "Processing: $filename"
+	if ! is_video_file "$file"; then
+		log "Skipping non-video file: $filename"
+		return 0
+	fi
+	media_type="$(detect_type "$filename")"
+	if [[ $media_type == "tv" ]]; then
+		db="$FILEBOT_TV_DB"
+		fmt="$FORMAT_TV"
+		dest_subfolder="$TV_DEST"
+	else
+		db="$FILEBOT_MOVIE_DB"
+		fmt="$FORMAT_MOVIE"
+		dest_subfolder="$MOVIE_DEST"
+	fi
+	temp_output="$(mktemp -d "$REVIEW_DIR/.incoming.XXXXXX")"
+	log "Running FileBot using $db -> $dest_subfolder"
+	if filebot -rename "$file" --db "$db" --format "$fmt" --output "$temp_output" --action move -non-strict --log fine >>"$LOG_FILE" 2>&1; then
+		renamed_file="$(find "$temp_output" -type f | head -1)"
+		if [[ -z $renamed_file || ! -f $renamed_file ]]; then
+			log "FileBot reported success but no output file was found."
+			rmdir "$temp_output" 2>/dev/null || true
+			return 1
+		fi
+		final_dir="$REVIEW_DIR/$dest_subfolder"
+		mkdir -p "$final_dir"
+		final_path="$final_dir/${renamed_file##*/}"
+		mv "$renamed_file" "$final_path"
+		rmdir "$temp_output" 2>/dev/null || true
+		target_remote="$CLOUD_REMOTE:$dest_subfolder"
+		duplicate=false
+		if check_remote_duplicate "$target_remote" "${final_path##*/}"; then
+			duplicate=true
+			log "Duplicate found in remote target: ${final_path##*/}"
+		fi
+		sidecar="$final_path.proposal.json"
+		write_sidecar "$sidecar" "$file" "$final_path" "$media_type" "$target_remote" "$db" "$fmt" "$duplicate"
+		if [[ $AUTO_UPLOAD -eq 1 ]]; then
+			log "AUTO_UPLOAD enabled; approving immediately."
+			approve_candidate "$sidecar" || true
+		else
+			log "Queued for review: $final_path"
+			notify "Rename Review Ready" "${final_path##*/} queued for approval"
+		fi
+	else
+		log "FileBot identification failed for $filename"
+		mv "$file" "$FAILED_DIR/" 2>/dev/null || true
+		notify "Identification Failed" "$filename"
+		rmdir "$temp_output" 2>/dev/null || true
+	fi
 }
 process_staging() {
-  find "$PROCESSED_DIR" -maxdepth 1 -type f ! -name ".*" -print0 | while IFS= read -r -d "" file; do log "Moving from processed to staging: ${file##*/}"; mv "$file" "$STAGING_DIR/"; done
-  find "$STAGING_DIR" -maxdepth 1 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.m4v" -o -name "*.avi" -o -name "*.mov" \) -print0 | while IFS= read -r -d "" file; do process_file "$file"; done
+	find "$PROCESSED_DIR" -maxdepth 1 -type f ! -name ".*" -print0 | while IFS= read -r -d "" file; do
+		log "Moving from processed to staging: ${file##*/}"
+		mv "$file" "$STAGING_DIR/"
+	done
+	find "$STAGING_DIR" -maxdepth 1 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.m4v" -o -name "*.avi" -o -name "*.mov" \) -print0 | while IFS= read -r -d "" file; do process_file "$file"; done
 }
 watch_mode() {
-  log "Watch mode active ($STAGING_DIR & $PROCESSED_DIR)"
-  if ! command -v fswatch >/dev/null 2>&1; then log "Installing fswatch..."; brew install fswatch; fi
-  process_staging
-  fswatch -0 --event Created --event MovedTo "$STAGING_DIR" "$PROCESSED_DIR" | while IFS= read -r -d "" file; do if [[ -f "$file" ]]; then sleep 2; if [[ "$file" == "$PROCESSED_DIR"* ]]; then log "Detected processed file: ${file##*/}"; mv "$file" "$STAGING_DIR/"; elif [[ "$file" == "$STAGING_DIR"* ]]; then process_file "$file"; fi; fi; done
+	log "Watch mode active ($STAGING_DIR & $PROCESSED_DIR)"
+	if ! command -v fswatch >/dev/null 2>&1; then
+		log "Installing fswatch..."
+		brew install fswatch
+	fi
+	process_staging
+	fswatch -0 --event Created --event MovedTo "$STAGING_DIR" "$PROCESSED_DIR" | while IFS= read -r -d "" file; do if [[ -f $file ]]; then
+		sleep 2
+		if [[ $file == "$PROCESSED_DIR"* ]]; then
+			log "Detected processed file: ${file##*/}"
+			mv "$file" "$STAGING_DIR/"
+		elif [[ $file == "$STAGING_DIR"* ]]; then process_file "$file"; fi
+	fi; done
 }
 usage() { echo "Usage: rename-media.sh [--watch] [--auto-upload] | --list-pending | --approve-ready [proposal-or-media-file] | <file>"; }
 ensure_dirs
 while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --watch) WATCH_MODE=1 ;;
-    --auto-upload) AUTO_UPLOAD=1 ;;
-    --list-pending) ACTION="list" ;;
-    --approve-ready) ACTION="approve"; shift; APPROVE_TARGET="${1:-}"; if [[ -z "$APPROVE_TARGET" ]]; then set --; break; fi ;;
-    -h|--help) usage; exit 0 ;;
-    *) if [[ -f "$1" ]]; then DIRECT_FILE="$1"; else echo "File not found: $1"; exit 1; fi ;;
-  esac
-  shift || break
+	case "$1" in
+	--watch) WATCH_MODE=1 ;;
+	--auto-upload) AUTO_UPLOAD=1 ;;
+	--list-pending) ACTION="list" ;;
+	--approve-ready)
+		ACTION="approve"
+		shift
+		APPROVE_TARGET="${1-}"
+		if [[ -z $APPROVE_TARGET ]]; then
+			set --
+			break
+		fi
+		;;
+	-h | --help)
+		usage
+		exit 0
+		;;
+	*) if [[ -f $1 ]]; then DIRECT_FILE="$1"; else
+		echo "File not found: $1"
+		exit 1
+	fi ;;
+	esac
+	shift || break
 done
 case "$ACTION" in
-  list) list_pending ;;
-  approve) approve_ready ;;
-  process) if [[ -n "$DIRECT_FILE" ]]; then process_file "$DIRECT_FILE"; elif [[ "$WATCH_MODE" -eq 1 ]]; then watch_mode; else process_staging; fi ;;
+list) list_pending ;;
+approve) approve_ready ;;
+process) if [[ -n $DIRECT_FILE ]]; then process_file "$DIRECT_FILE"; elif [[ $WATCH_MODE -eq 1 ]]; then watch_mode; else process_staging; fi ;;
 esac

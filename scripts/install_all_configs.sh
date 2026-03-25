@@ -21,17 +21,17 @@ NC='\033[0m' # No Color
 trap 'echo -e "\n${YELLOW}👋 Installation cancelled by user. Goodbye!${NC}"; exit 130' SIGINT
 
 # Helper functions (Palette 🎨 UX enhanced)
-log()      { echo -e "${BLUE}ℹ️  [INFO]${NC}  $*"; }
-success()  { echo -e "${GREEN}✅ [OK]${NC}    $*"; }
-warn()     { echo -e "${YELLOW}⚠️  [WARN]${NC}  $*"; }
-error()    { echo -e "${RED}❌ [ERROR]${NC} $*" >&2; }
-step()     { echo -e "${BLUE}==>${NC} ${1}"; }
-substep()  { echo -e "  ${BLUE}->${NC} ${1}"; }
+log() { echo -e "${BLUE}ℹ️  [INFO]${NC}  $*"; }
+success() { echo -e "${GREEN}✅ [OK]${NC}    $*"; }
+warn() { echo -e "${YELLOW}⚠️  [WARN]${NC}  $*"; }
+error() { echo -e "${RED}❌ [ERROR]${NC} $*" >&2; }
+step() { echo -e "${BLUE}==>${NC} ${1}"; }
+substep() { echo -e "  ${BLUE}->${NC} ${1}"; }
 
 # Ensure we're in the repo root
-if [[ ! -d "$REPO_ROOT" ]]; then
-    error "Repository root not found: $REPO_ROOT"
-    exit 1
+if [[ ! -d $REPO_ROOT ]]; then
+	error "Repository root not found: $REPO_ROOT"
+	exit 1
 fi
 
 cd "$REPO_ROOT"
@@ -52,28 +52,28 @@ substep "Backup existing files automatically"
 substep "Verify all symlinks"
 echo ""
 while true; do
-    read -r -p "Ready to proceed? (y/N) " reply
-    echo ""
-    case "$reply" in
-        [Yy]*)
-            break
-            ;;
-        ""|[Nn]*)
-            log "Installation cancelled"
-            exit 0
-            ;;
-        *)
-            warn "Invalid input. Please press 'y' to continue or 'n' to cancel."
-            ;;
-    esac
+	read -r -p "Ready to proceed? (y/N) " reply
+	echo ""
+	case "$reply" in
+	[Yy]*)
+		break
+		;;
+	"" | [Nn]*)
+		log "Installation cancelled"
+		exit 0
+		;;
+	*)
+		warn "Invalid input. Please press 'y' to continue or 'n' to cancel."
+		;;
+	esac
 done
 
 echo ""
 
 # Step 1: Sync all configs
-if [[ ! -x "$SYNC_SCRIPT" ]]; then
-    error "Sync script not found or not executable: $SYNC_SCRIPT"
-    exit 1
+if [[ ! -x $SYNC_SCRIPT ]]; then
+	error "Sync script not found or not executable: $SYNC_SCRIPT"
+	exit 1
 fi
 
 step "Creating symlinks..."
@@ -81,16 +81,16 @@ step "Creating symlinks..."
 sync_exit=$?
 
 if [[ $sync_exit -ne 0 ]]; then
-    error "Failed to sync configuration files"
-    exit 1
+	error "Failed to sync configuration files"
+	exit 1
 fi
 
 echo ""
 
 # Step 2: Verify installation
-if [[ ! -x "$VERIFY_SCRIPT" ]]; then
-    error "Verify script not found or not executable: $VERIFY_SCRIPT"
-    exit 1
+if [[ ! -x $VERIFY_SCRIPT ]]; then
+	error "Verify script not found or not executable: $VERIFY_SCRIPT"
+	exit 1
 fi
 
 step "Verifying installation..."
@@ -101,22 +101,22 @@ echo ""
 
 # Summary
 if [[ $sync_exit -eq 0 ]] && [[ $verify_exit -eq 0 ]]; then
-    echo -e "${GREEN}✨ Installation completed successfully!${NC}"
-    echo "=========================================="
-    echo ""
-    step "Next steps:"
-    substep "Reload shell: ${YELLOW}exec fish${NC}"
-    substep "Test Network: ${YELLOW}nm-status${NC}"
-    substep "Verify SSH:   ${YELLOW}./scripts/verify_ssh_config.sh${NC}"
-    echo ""
-    exit 0
+	echo -e "${GREEN}✨ Installation completed successfully!${NC}"
+	echo "=========================================="
+	echo ""
+	step "Next steps:"
+	substep "Reload shell: ${YELLOW}exec fish${NC}"
+	substep "Test Network: ${YELLOW}nm-status${NC}"
+	substep "Verify SSH:   ${YELLOW}./scripts/verify_ssh_config.sh${NC}"
+	echo ""
+	exit 0
 else
-    error "Installation completed with errors"
-    echo "=========================================="
-    echo ""
-    step "Troubleshooting:"
-    substep "Run sync manually:   ${YELLOW}./scripts/sync_all_configs.sh${NC}"
-    substep "Run verify manually: ${YELLOW}./scripts/verify_all_configs.sh${NC}"
-    echo ""
-    exit 1
+	error "Installation completed with errors"
+	echo "=========================================="
+	echo ""
+	step "Troubleshooting:"
+	substep "Run sync manually:   ${YELLOW}./scripts/sync_all_configs.sh${NC}"
+	substep "Run verify manually: ${YELLOW}./scripts/verify_all_configs.sh${NC}"
+	echo ""
+	exit 1
 fi

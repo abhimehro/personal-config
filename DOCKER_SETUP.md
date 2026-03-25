@@ -11,6 +11,7 @@ This repository is now containerized with Docker for reproducible development, t
 ## Quick Start
 
 ### Development Environment
+
 ```bash
 # Start interactive development shell
 docker compose run --rm dev
@@ -23,6 +24,7 @@ docker compose run --rm dev bash -c "bash scripts/network-mode-manager.sh status
 ```
 
 ### Run Tests
+
 ```bash
 # Quick smoke tests (fast validation)
 docker compose run --rm validate
@@ -38,6 +40,7 @@ docker compose run --rm dev make test-all
 ```
 
 ### Code Quality
+
 ```bash
 # Shellcheck linting (correctness checks)
 docker compose run --rm lint
@@ -71,10 +74,12 @@ docker compose run --rm ssh-test
 ## Environment Variables
 
 Set in docker-compose.yml:
+
 - `LOG_LEVEL=INFO` (dev), `DEBUG` (test)
 - `PYTHONUNBUFFERED=1`
 
 Override with:
+
 ```bash
 docker compose run --rm -e LOG_LEVEL=DEBUG dev
 ```
@@ -82,16 +87,19 @@ docker compose run --rm -e LOG_LEVEL=DEBUG dev
 ## Build & Push
 
 ### Build locally
+
 ```bash
 docker build -t personal-config:latest -f Dockerfile .
 ```
 
 ### Build for multiple platforms (requires buildx)
+
 ```bash
 docker buildx build -t personal-config:latest --platform linux/amd64,linux/arm64 .
 ```
 
 ### Push to registry
+
 ```bash
 docker tag personal-config:latest myregistry/personal-config:latest
 docker push myregistry/personal-config:latest
@@ -110,15 +118,15 @@ docker push myregistry/personal-config:latest
 
 ## Service Reference
 
-| Service | Purpose | Command |
-|---------|---------|---------|
-| `dev` | Interactive development shell | `docker compose up dev` |
-| `test` | Run all shell tests | `docker compose run --rm test` |
-| `validate` | Quick validation checks | `docker compose run --rm validate` |
-| `lint` | Shellcheck linting (SC2155/SC2145) | `docker compose run --rm lint` |
-| `test-python` | Python unit tests | `docker compose run --rm test-python` |
-| `benchmark` | Performance benchmarks | `docker compose run --rm benchmark` |
-| `ssh-test` | SSH configuration tests | `docker compose run --rm ssh-test` |
+| Service       | Purpose                            | Command                               |
+| ------------- | ---------------------------------- | ------------------------------------- |
+| `dev`         | Interactive development shell      | `docker compose up dev`               |
+| `test`        | Run all shell tests                | `docker compose run --rm test`        |
+| `validate`    | Quick validation checks            | `docker compose run --rm validate`    |
+| `lint`        | Shellcheck linting (SC2155/SC2145) | `docker compose run --rm lint`        |
+| `test-python` | Python unit tests                  | `docker compose run --rm test-python` |
+| `benchmark`   | Performance benchmarks             | `docker compose run --rm benchmark`   |
+| `ssh-test`    | SSH configuration tests            | `docker compose run --rm ssh-test`    |
 
 ## Tips
 
