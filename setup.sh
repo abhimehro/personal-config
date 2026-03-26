@@ -155,7 +155,11 @@ install_media_launchd() {
 		base="$(basename "$plist")"
 		cp "$plist" "$launch_dst/$base"
 		launchctl bootout "gui/$(id -u)" "$launch_dst/$base" 2>/dev/null || true
-		launchctl bootstrap "gui/$(id -u)" "$launch_dst/$base" 2>/dev/null && log_ok "Loaded $base" || log_warn "Failed to load $base (check logs)."
+		if launchctl bootstrap "gui/$(id -u)" "$launch_dst/$base" 2>/dev/null; then
+			log_ok "Loaded $base"
+		else
+			log_warn "Failed to load $base (check ~/Library/Logs or Console.app)."
+		fi
 	done
 }
 

@@ -1,0 +1,10 @@
+{
+  "name": "elastic-docs",
+  "version": "0.1.0",
+  "description": "Elastic Documentation MCP server — search, browse, and analyze Elastic docs directly from Cursor",
+  "author": {
+    "name": "Elastic"
+  },
+  "homepage": "https://docs-v3-preview.elastic.dev/elastic/docs-builder/tree/main/mcp",
+  "keywords": ["elastic", "elasticsearch", "documentation", "mcp", "docs"]
+}

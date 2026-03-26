@@ -5,11 +5,11 @@ on:
     paths:
       - "**/*.sh"
       - "**/*.py"
-      - "scripts/**"
-      - "tests/**"
-      - "controld-system/**"
-      - "windscribe-controld/**"
-      - "Makefile"
+      - scripts/**
+      - tests/**
+      - controld-system/**
+      - windscribe-controld/**
+      - Makefile
   push:
     branches:
       - main
@@ -37,7 +37,7 @@ jobs:
       - name: ShellCheck analysis
         run: |
           echo "Running ShellCheck on all shell scripts..."
-          find . \( -path "./.git" -o -path "./.trunk" -o -path "./configs/.config/mole" -o -path "*/archive" -o -path "./node_modules" \) -prune -o \
+          find . \( -path "./.git" -o -path "./.trunk" -o -path "./configs/.config/mole" -o -path "./mole.*" -o -path "*/archive" -o -path "./node_modules" \) -prune -o \
             -name "*.sh" -type f -print0 | while IFS= read -r -d '' script; do
             echo "Checking: $script"
             shellcheck "$script" || true
@@ -47,7 +47,7 @@ jobs:
       - name: Check script lengths
         run: |
           echo "Checking script lengths (warning threshold: 200 lines)..."
-          find . \( -path "./.git" -o -path "./.trunk" -o -path "./configs/.config/mole" -o -path "*/archive" -o -path "./node_modules" \) -prune -o \
+          find . \( -path "./.git" -o -path "./.trunk" -o -path "./configs/.config/mole" -o -path "./mole.*" -o -path "*/archive" -o -path "./node_modules" \) -prune -o \
             -name "*.sh" -type f -print0 | while IFS= read -r -d '' script; do
             lines=$(wc -l < "$script")
             if [ "$lines" -gt 200 ]; then
@@ -107,9 +107,9 @@ jobs:
       - name: Python linting (ruff, bandit)
         run: |
           echo "Running ruff on Python files..."
-          ruff check . --exclude .git --exclude node_modules --statistics || true
+          ruff check . --exclude .git --exclude node_modules --exclude configs/.config/mole --exclude 'mole.*' --exclude archive --statistics || true
           echo "Running bandit security scan on Python files..."
-          bandit -r . -x ./.git -x ./node_modules --skip B101 -ll -q || true
+          bandit -r . -x ./.git -x ./node_modules -x ./configs/.config/mole -x ./archive -x 'mole.*' --skip B101 -ll -q || true
           echo "✅ Python linting complete"
 
   test:

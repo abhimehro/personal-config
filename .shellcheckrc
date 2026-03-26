@@ -43,3 +43,8 @@ disable=SC1090
 # that should be cleaned up, so the warning remains visible project-wide.
 # Re-evaluate once the variable audit in issue #446 is complete.
 # disable=SC2034
+
+# Note: Mole distribution files (configs/.config/mole/, archive/mole-distribution/)
+# are excluded from linting via trunk.yaml ignore rules and .shellcheckignore.
+# ShellCheck itself doesn't support file exclusion in its config, so files must
+# be excluded by the tool invoking ShellCheck (e.g., trunk, IDE settings).

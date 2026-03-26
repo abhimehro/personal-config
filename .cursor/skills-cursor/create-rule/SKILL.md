@@ -43,11 +43,11 @@ Use the AskQuestion tool when available to gather this efficiently.
 
 Rules are `.mdc` files in `.cursor/rules/` with YAML frontmatter:
 
-```
+```markdown
 .cursor/rules/
-  typescript-standards.mdc
-  react-patterns.mdc
-  api-conventions.mdc
+typescript-standards.mdc
+react-patterns.mdc
+api-conventions.mdc
 ```
 
 ### File Structure
@@ -116,30 +116,30 @@ alwaysApply: false
 
 ### TypeScript Standards
 
-```markdown
+````markdown
 ---
 description: TypeScript coding standards
-globs: **/*.ts
+globs: ["**/*.ts", "**/*.tsx"]
 alwaysApply: false
 ---
 
 # Error Handling
 
-\`\`\`typescript
+```typescript
 // ❌ BAD
 try {
-await fetchData();
+  fetchData();
 } catch (e) {}
 
 // ✅ GOOD
 try {
-await fetchData();
+  await fetchData();
 } catch (e) {
-logger.error('Failed to fetch', { error: e });
-throw new DataFetchError('Unable to retrieve data', { cause: e });
+  logger.error("Failed to fetch", { error: e });
+  throw new DataFetchError("Unable to retrieve data", { cause: e });
 }
-\`\`\`
 ```
+````
 
 ### React Patterns
 

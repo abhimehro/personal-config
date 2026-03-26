@@ -13,6 +13,27 @@ from typing import Any
 
 import yaml
 
+# MCP GitHub compatibility flag
+USE_MCP_GITHUB = os.environ.get("USE_MCP_GITHUB", "false").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
+# Try to import MCP GitHub server if available
+# Note: Requires the appropriate MCP client library to be installed
+# This is a placeholder for the actual MCP GitHub integration
+try:
+    if USE_MCP_GITHUB:
+        # TODO: Replace with correct MCP GitHub client import
+        # The actual module name depends on the MCP implementation being used
+        MCP_AVAILABLE = False  # Disabled until correct module is available
+    else:
+        MCP_AVAILABLE = False
+except ImportError:
+    MCP_AVAILABLE = False
+
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = ROOT / ".github" / "repository-automation.yml"
 OUTPUT_ROOT = ROOT / ".automation-output"
@@ -117,6 +138,19 @@ def gh_text(args: list[str], default: str = "") -> str:
         warn_on_default("gh", args, proc)
         return default
     return proc.stdout.strip()
+
+
+# MCP GitHub compatibility layer (placeholder for future MCP integration)
+def mcp_json(args: list[str], default=None):
+    """MCP compatibility layer for gh_json calls."""
+    # Currently MCP integration is not available, always use gh CLI
+    return gh_json(args, default)
+
+
+def mcp_text(args: list[str], default: str = "") -> str:
+    """MCP compatibility layer for gh_text calls."""
+    # Currently MCP integration is not available, always use gh CLI
+    return gh_text(args, default)
 
 
 def writes_allowed() -> bool:
@@ -334,6 +368,21 @@ def create_pr_for_current_changes(
 
 
 def latest_tag_for_action(repo_id: str) -> str:
+    # Use MCP if available, otherwise fall back to gh CLI
+    if MCP_AVAILABLE and USE_MCP_GITHUB:
+        try:
+            owner, repo = repo_id.split("/")
+            releases = gh_json(
+                ["api", f"repos/{owner}/{repo}/releases?per_page=1"], default=[]
+            )
+            if releases:
+                latest = releases[0].get("tag_name", "")
+                if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
+                    return latest
+        except Exception:
+            pass  # Fall back to gh CLI on error
+
+    # Original gh CLI implementation
     latest = gh_text(["api", f"repos/{repo_id}/releases/latest", "--jq", ".tag_name"])
     if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
         return latest
@@ -362,6 +411,17 @@ def numeric_version(text: str) -> tuple[int, int, int] | None:
 
 
 def tag_exists(repo_id: str, tag: str) -> bool:
+    # Use MCP if available, otherwise fall back to gh CLI
+    if MCP_AVAILABLE and USE_MCP_GITHUB:
+        try:
+            owner, repo = repo_id.split("/")
+            # Placeholder for MCP GitHub get_file_contents call
+            # get_file_contents(owner, repo, "README.md", tag)
+            return True
+        except Exception:
+            return False
+
+    # Original gh CLI implementation
     proc = run_process([GH_BIN, "api", f"repos/{repo_id}/git/ref/tags/{tag}"])
     return proc.returncode == 0
 
@@ -373,9 +433,7 @@ def target_ref(current: str, latest: str) -> str | None:
         return None
     if latest_v <= current_v:
         return None
-    if re.fullmatch(r"v?\d+", current):
-        prefix = "v" if current.startswith("v") or latest.startswith("v") else ""
-        return f"{prefix}{latest_v[0]}"
+    # Always return the full latest version to ensure the tag exists
     return latest
 
 
