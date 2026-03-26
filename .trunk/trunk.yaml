@@ -18,28 +18,48 @@ runtimes:
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
   enabled:
-    - actionlint@1.7.11
-    - bandit@1.9.4
-    - black@26.3.1
-    - checkov@3.2.510
-    - dotenv-linter@4.0.0
-    - git-diff-check
-    - hadolint@2.14.0
-    - isort@8.0.1
-    - markdownlint@0.48.0
-    - osv-scanner@2.3.5
-    - oxipng@10.1.0
-    - prettier@3.8.1
-    - ruff@0.15.7
-    - shellcheck@0.11.0
-    - shfmt@3.6.0
-    - svgo@4.0.1
+    - oxipng@9.1.5
     - taplo@0.10.0
-    - trufflehog@3.94.0
+    - osv-scanner@2.2.4
+    - svgo@4.0.1
+    - hadolint@2.14.0
+    - dotenv-linter@4.0.0
+    - checkov@3.2.510
+    - ruff@0.15.7
+    - isort@8.0.1
+    - black@26.3.1
+    - bandit@1.9.4
+    - prettier@3.8.1
+    - markdownlint@0.48.0
+    - git-diff-check
+    - trufflehog@3.94.1
+    - shfmt@3.6.0
+    - shellcheck@0.11.0
+    - actionlint@1.7.11
     - yamllint@1.38.0
+  ignore:
+    - linters: [ALL]
+      paths:
+        - configs/.config/mole/bin/**
+        - configs/.config/mole/lib/**
+        - configs/.config/mole/LICENSE
+        - configs/.config/mole/README.md
+        - configs/.config/mole/install.sh
+        - configs/.config/mole/install_channel
+        - configs/.config/mole/purge_paths
+        - archive/mole-distribution/**
+        - mole.*/**
+    - linters: [shellcheck]
+      paths:
+        - configs/.config/mole/**
+        - archive/mole-distribution/**
+        - mole.*
 actions:
   enabled:
     - trunk-announce
     - trunk-check-pre-push
     - trunk-fmt-pre-commit
     - trunk-upgrade-available
+tools:
+  disabled:
+    - prettier

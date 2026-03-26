@@ -1,0 +1,13 @@
+{
+  "name": "clickhouse-cursor-plugin",
+  "displayName": "ClickHouse",
+  "version": "1.0.5",
+  "description": "ClickHouse Cursor plugin: skills (ClickHouse best practices), rules and MCP.",
+  "author": {
+    "name": "ClickHouse",
+    "email": "ai@clickhouse.com"
+  },
+  "keywords": ["database", "clickhouse", "skills", "mcp", "analytics"],
+  "license": "Apache-2.0",
+  "logo": "assets/logo.svg"
+}

@@ -1,0 +1,4 @@
+# Exclude mole distribution files from ShellCheck
+configs/.config/mole/
+archive/mole-distribution/
+mole.*
