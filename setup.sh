@@ -44,6 +44,7 @@ require_cmd() {
 		fi
 		return 1
 	fi
+	log_ok "Found $cmd"
 }
 
 ensure_macos() {
