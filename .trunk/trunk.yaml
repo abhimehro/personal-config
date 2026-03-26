@@ -23,14 +23,14 @@ lint:
     - actionlint@1.7.11
     - bandit@1.9.4
     - black@26.3.1
-    - checkov@3.2.510
+    - checkov@3.2.511
     - dotenv-linter@4.0.0
     - git-diff-check
     - hadolint@2.14.0
     - isort@8.0.1
     - markdownlint@0.48.0
-    - osv-scanner@2.2.4
-    - oxipng@9.1.5
+    - osv-scanner@2.3.5
+    - oxipng@10.1.0
     - ruff@0.15.7
     - shellcheck@0.11.0
     - shfmt@3.6.0
