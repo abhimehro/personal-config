@@ -38,7 +38,7 @@ require_cmd() {
 		if [[ -n $install_hint ]]; then
 			log_info "To install: $install_hint"
 		elif [[ $cmd == "brew" ]]; then
-			log_info 'To install: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+			log_info "To install: /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
 		elif [[ $cmd == "op" ]]; then
 			log_info "To install: brew install --cask 1password/tap/1password-cli"
 		fi

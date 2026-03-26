@@ -23,7 +23,6 @@ This workflow leverages three complementary capabilities:
 ### How File Selection Drives the Workflow
 
 The **file selection** is the shared context between you, the context builder, and the chat:
-
 1. `context_builder` populates the selection with relevant files/slices it discovers
 2. The chat analyzes whatever is currently selected — it has no other view of the codebase
 3. You can **add or remove** specific files via `manage_selection` to augment or refine what the chat sees
@@ -32,7 +31,6 @@ The **file selection** is the shared context between you, the context builder, a
 **Important:** The context builder operates with a large token budget and works hard to maximize useful context. Don't constrain it — build on its selection with targeted `add`/`remove` calls rather than replacing it.
 
 ### Core Principles
-
 1. **Don't stop until confident** — pursue every lead until you have solid evidence
 2. **Play to each tool's strengths** — context builder for broad discovery, the chat for deep analysis, your own tools for precise evidence gathering
 3. **You produce the evidence** — the chat analyzes and hypothesizes; you verify with exact file reads, git blame, searches
@@ -45,29 +43,25 @@ The **file selection** is the shared context between you, the context builder, a
 Before any investigation, confirm the target codebase is loaded:
 
 ```json
-{ "tool": "list_windows", "args": {} }
+{"tool":"list_windows","args":{}}
 ```
 
 **Check the output:**
-
 - If your target root appears in a window → bind to that window with `select_window`
 - If not → the codebase isn't loaded
 
 **Bind to the correct window:**
-
 ```json
 {"tool":"select_window","args":{"window_id":<window_id_with_your_root>}}
 ```
 
 **If the root isn't loaded**, find and open the workspace:
-
 ```json
 {"tool":"manage_workspaces","args":{"action":"list"}}
 {"tool":"manage_workspaces","args":{"action":"switch","workspace":"<workspace_name>","open_in_new_window":true}}
 ```
 
 ---
-
 ### Phase 1: Initial Assessment (Agent — you)
 
 1. Read any provided files/reports (traces, logs, error reports)
@@ -83,25 +77,25 @@ Keep this short — save deep exploration for after `context_builder`.
 
 Use `context_builder` with detailed instructions describing what to investigate and why:
 
-```yaml
+```
 mcp__RepoPrompt__context_builder:
   instructions: |
- <task>Describe the specific issue or question to investigate</task>
+	<task>Describe the specific issue or question to investigate</task>
 
- <context>
+	<context>
     Symptoms observed:
- - <concrete symptom 1>
- - <concrete symptom 2>
+	- <concrete symptom 1>
+	- <concrete symptom 2>
 
     Hypotheses to test:
- - <theory 1>
- - <theory 2>
+	- <theory 1>
+	- <theory 2>
 
- Areas likely involved:
- - <specific files, patterns, or subsystems>
- </context>
+	Areas likely involved:
+	- <specific files, patterns, or subsystems>
+	</context>
 
- response_type: question
+	response_type: question
 ```
 
 Use `response_type: question` so the chat immediately analyzes the gathered context and returns its initial assessment.
@@ -124,29 +118,29 @@ If a factual gap can be closed with `read_file`, `file_search`, `git`, or anothe
 
 Update the selection to focus the chat on what matters now, then ask targeted questions that require synthesis rather than direct lookup:
 
-```yaml
+```
 // Add files the chat hasn't seen yet
 mcp__RepoPrompt__manage_selection:
- op: add
- paths: [<additional files relevant to the current hypothesis>]
+	op: add
+	paths: [<additional files relevant to the current hypothesis>]
 
 // Or add a slice of a large file
 mcp__RepoPrompt__manage_selection:
- op: add
- slices:
- - path: "Root/large/file.swift"
-  ranges: [{start_line: 100, end_line: 250}]
+	op: add
+	slices:
+	- path: "Root/large/file.swift"
+		ranges: [{start_line: 100, end_line: 250}]
 
 // Then ask a focused question — the chat will see the updated selection
 mcp__RepoPrompt__`chat_send`:
   chat_id: <from context_builder>
- message: |
- Based on my investigation, here's what I found:
- - <concrete evidence 1 with file:line>
- - <concrete evidence 2 with file:line>
+	message: |
+	Based on my investigation, here's what I found:
+	- <concrete evidence 1 with file:line>
+	- <concrete evidence 2 with file:line>
 
- Given this evidence, <specific analytical question>
- mode: chat
+	Given this evidence, <specific analytical question>
+	mode: chat
 ```
 
 **Repeat Phases 3–4** as needed, but be judicious. The chat is slow and resource-intensive — do substantial reasoning and evidence gathering on your own between calls. Don't invoke it just to ask a quick question you could answer yourself with `read_file`, `file_search`, `git`, or other direct tool calls. Reserve it for moments when you need deep analytical synthesis, competing explanations, or cross-file reasoning across the selected context.
@@ -156,7 +150,6 @@ mcp__RepoPrompt__`chat_send`:
 You write the final report with precise references. The chat reasons about patterns but can't produce exact line numbers — that's your job.
 
 Document:
-
 - **Root cause** — with exact file paths, line numbers, and code snippets as evidence
 - **Eliminated hypotheses** — and what evidence ruled them out
 - **Recommended fixes** — specific, actionable changes with file locations
@@ -166,17 +159,17 @@ Document:
 
 ## Role Summary
 
-| Capability                         | Agent (you) | Context Builder | Chat (`chat_send`)       |
-| ---------------------------------- | ----------- | --------------- | ------------------------ |
-| Discover relevant files broadly    | ❌ Limited  | ✅ Primary      | ❌                       |
-| Populate file selection            | ❌          | ✅ Primary      | ❌                       |
-| Read exact file contents & lines   | ✅ Primary  | ❌              | Sees full selected files |
-| Run git blame/log/diff             | ✅          | ❌              | ❌                       |
-| Search across codebase             | ✅          | ✅              | ❌                       |
-| Synthesize patterns & architecture | ⚠️ OK       | ❌              | ✅ Primary               |
-| Form & refine hypotheses           | ⚠️ OK       | ❌              | ✅ Primary               |
-| Produce line-number evidence       | ✅ Primary  | ❌              | ❌                       |
-| Mutate selection to refocus chat   | ✅          | ❌              | ❌                       |
+| Capability | Agent (you) | Context Builder | Chat (`chat_send`) |
+|------------|-------------|-----------------|--------|
+| Discover relevant files broadly | ❌ Limited | ✅ Primary | ❌ |
+| Populate file selection | ❌ | ✅ Primary | ❌ |
+| Read exact file contents & lines | ✅ Primary | ❌ | Sees full selected files |
+| Run git blame/log/diff | ✅ | ❌ | ❌ |
+| Search across codebase | ✅ | ✅ | ❌ |
+| Synthesize patterns & architecture | ⚠️ OK | ❌ | ✅ Primary |
+| Form & refine hypotheses | ⚠️ OK | ❌ | ✅ Primary |
+| Produce line-number evidence | ✅ Primary | ❌ | ❌ |
+| Mutate selection to refocus chat | ✅ | ❌ | ❌ |
 
 ---
 
@@ -188,34 +181,28 @@ Create a findings report as you investigate:
 # Investigation: [Title]
 
 ## Summary
-
 [1-2 sentence summary of findings]
 
 ## Symptoms
-
 - [Observed symptom 1]
 - [Observed symptom 2]
 
 ## Investigation Log
 
 ### [Phase] - [Area Investigated]
-
 **Hypothesis:** [What you were testing]
 **Findings:** [What you found]
 **Evidence:** [Exact file paths, line numbers, code snippets, git commits]
 **Conclusion:** [Confirmed/Eliminated/Needs more investigation]
 
 ## Root Cause
-
 [Detailed explanation with precise evidence]
 
 ## Recommendations
-
 1. [Fix 1 — specific file and location]
 2. [Fix 2 — specific file and location]
 
 ## Preventive Measures
-
 - [How to prevent this in future]
 ```
 
