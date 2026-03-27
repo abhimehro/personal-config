@@ -1,13 +1,15 @@
 # Complete Mac Factory Reset Guide
 
 ## 🎯 Goal
+
 Complete factory reset to eliminate ALL configurations, launch daemons, old files, and start completely fresh.
 
 ## 📦 Step 1: Essential Data Backup
 
 ### What to Backup (Essentials Only)
+
 - **Documents** - Important files, projects, papers
-- **Desktop files** - Current working files  
+- **Desktop files** - Current working files
 - **Photos** - Personal photos (if not in iCloud)
 - **Downloads** - Recent important downloads
 - **SSH Keys** - For GitHub/Git access
@@ -15,8 +17,9 @@ Complete factory reset to eliminate ALL configurations, launch daemons, old file
 - **Application Data** - Only critical app data
 
 ### What NOT to Backup (Clean Slate)
+
 - ❌ Application preferences/settings
-- ❌ Launch daemons or system configurations  
+- ❌ Launch daemons or system configurations
 - ❌ Cache files or temporary data
 - ❌ Old downloads or installer files
 - ❌ System preferences or customizations
@@ -49,15 +52,18 @@ echo "📝 Don't forget to export browser bookmarks manually!"
 ## 💾 Backup Storage Options
 
 ### Option 1: External Drive (Recommended)
+
 - Copy `~/Desktop/ESSENTIAL_BACKUP` to external drive
 - Verify files are accessible
 - Safely eject drive
 
-### Option 2: Cloud Storage  
+### Option 2: Cloud Storage
+
 - Upload to OneDrive, Google Drive, or iCloud Drive
 - Wait for complete sync before proceeding
 
 ### Option 3: Another Mac/Computer
+
 - AirDrop or network transfer to another device
 
 ## 🔒 Step 2: Sign Out of Everything
@@ -81,12 +87,14 @@ Before factory reset:
 ## 🏭 Step 3: Factory Reset Process
 
 ### Method 1: Erase Mac (macOS Monterey+)
+
 1. **Apple Menu → System Settings**
-2. **General → Transfer or Reset**  
+2. **General → Transfer or Reset**
 3. **Erase All Content and Settings**
 4. **Follow prompts to complete reset**
 
 ### Method 2: Recovery Mode (All macOS versions)
+
 1. **Restart Mac and hold Command + R** during startup
 2. **Wait for Recovery Mode to load**
 3. **Open Disk Utility**
@@ -101,21 +109,24 @@ Before factory reset:
 ## 🆕 Step 4: Fresh Setup
 
 ### Initial Setup
+
 - **Create new user account** (can use same name)
 - **Skip data migration** for completely clean start
 - **Sign into Apple ID** when prompted
 - **Set up basic preferences** only
 
 ### Essential Apps to Reinstall
+
 - **Web browser** of choice
 - **Basic productivity apps**
 - **Only install what you actually need**
 
 ### Restore Your Data
+
 1. **Connect backup drive or download from cloud**
 2. **Copy essential files to appropriate locations**:
    - Documents → ~/Documents
-   - Desktop files → ~/Desktop  
+   - Desktop files → ~/Desktop
    - SSH keys → ~/.ssh (set permissions: `chmod 600 ~/.ssh/*`)
 3. **Import browser bookmarks**
 4. **Reinstall only essential applications**
@@ -123,6 +134,7 @@ Before factory reset:
 ## ✅ Benefits of Fresh Start
 
 After factory reset:
+
 - **No conflicting launch daemons**
 - **No old configurations causing issues**
 - **Fast, clean system performance**
@@ -133,12 +145,14 @@ After factory reset:
 ## 🎯 Post-Reset Philosophy
 
 ### Keep It Simple
+
 - **Install only what you need** when you need it
 - **Avoid complex system modifications**
 - **Use built-in macOS features when possible**
 - **Browser-based solutions** over system-level ones
 
 ### If You Want Privacy Later
+
 - **Start with browser extensions** (uBlock Origin)
 - **Use simple DNS changes** if needed
 - **Choose one VPN** and let it handle everything
@@ -150,7 +164,7 @@ Before proceeding, ensure you have:
 
 - [ ] **Backed up all essential data**
 - [ ] **Verified backup is accessible**
-- [ ] **Exported browser bookmarks**  
+- [ ] **Exported browser bookmarks**
 - [ ] **Noted down important passwords** (use password manager)
 - [ ] **Signed out of all accounts**
 - [ ] **Deauthorized Mac from iTunes**

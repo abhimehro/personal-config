@@ -20,15 +20,15 @@ submitting a well-formed pull request.
 
 ## Prerequisites
 
-| Tool | Minimum version | Install |
-|---|---|---|
-| macOS | Sequoia 15+ (recommended) | — |
-| Homebrew | latest | `https://brew.sh` |
-| Git | 2.x | `brew install git` |
-| Bash | 5.x | `brew install bash` |
-| Python 3 | 3.11+ | `brew install python` |
-| Trunk CLI | latest | `brew install trunk-io` |
-| 1Password CLI (`op`) | v2+ | `brew install 1password-cli` |
+| Tool                 | Minimum version           | Install                      |
+| -------------------- | ------------------------- | ---------------------------- |
+| macOS                | Sequoia 15+ (recommended) | —                            |
+| Homebrew             | latest                    | `https://brew.sh`            |
+| Git                  | 2.x                       | `brew install git`           |
+| Bash                 | 5.x                       | `brew install bash`          |
+| Python 3             | 3.11+                     | `brew install python`        |
+| Trunk CLI            | latest                    | `brew install trunk-io`      |
+| 1Password CLI (`op`) | v2+                       | `brew install 1password-cli` |
 
 > **Linux / CI:** Most shell tests that touch macOS-specific APIs (launchctl,
 > Keychain, 1Password socket) emit `SKIP:` and exit with code 77. The test
@@ -152,13 +152,13 @@ chmod +x .git/hooks/pre-push
 
 ### Branch naming
 
-| Type | Pattern | Example |
-|---|---|---|
-| Feature | `feat/<short-description>` | `feat/add-dns-fallback` |
-| Bug fix | `fix/<short-description>` | `fix/verify-ssh-perms` |
-| Documentation | `docs/<short-description>` | `docs/update-testing-guide` |
-| Refactor | `refactor/<short-description>` | `refactor/extract-network-core` |
-| Chore / CI | `chore/<short-description>` | `chore/update-trunk-versions` |
+| Type          | Pattern                        | Example                         |
+| ------------- | ------------------------------ | ------------------------------- |
+| Feature       | `feat/<short-description>`     | `feat/add-dns-fallback`         |
+| Bug fix       | `fix/<short-description>`      | `fix/verify-ssh-perms`          |
+| Documentation | `docs/<short-description>`     | `docs/update-testing-guide`     |
+| Refactor      | `refactor/<short-description>` | `refactor/extract-network-core` |
+| Chore / CI    | `chore/<short-description>`    | `chore/update-trunk-versions`   |
 
 Use lowercase, hyphens only, ≤ 40 characters after the prefix.
 
@@ -193,12 +193,12 @@ section; delete sections that genuinely do not apply.
 **Never commit secrets.** This includes API keys, tokens, passwords, private
 SSH keys, and any credential that grants access to a system.
 
-| Do | Don't |
-|---|---|
-| Store secrets in a `.env` file (gitignored) | Commit a `.env` file |
-| Use `op run -- <command>` to inject secrets at runtime | Hardcode secrets in scripts |
-| Use `.env.example` to document required variables | Put real values in `.env.example` |
-| Reference `~/.config/<tool>/credentials` (gitignored) | Track credential files |
+| Do                                                     | Don't                             |
+| ------------------------------------------------------ | --------------------------------- |
+| Store secrets in a `.env` file (gitignored)            | Commit a `.env` file              |
+| Use `op run -- <command>` to inject secrets at runtime | Hardcode secrets in scripts       |
+| Use `.env.example` to document required variables      | Put real values in `.env.example` |
+| Reference `~/.config/<tool>/credentials` (gitignored)  | Track credential files            |
 
 The `.gitignore` already excludes `.env`, `.env.*`, `*.secret*`, and several
 other secret-bearing paths. Trunk's trufflehog linter scans for accidental

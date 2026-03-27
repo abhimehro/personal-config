@@ -210,12 +210,13 @@ const client = new Context7();
 
 // JSON is the default format, no need to specify
 const docs = await client.getDocs("/facebook/react", {
-  mode: "code",
-  limit: 5,
+mode: "code",
+limit: 5,
 });
 
 console.log(`Retrieved ${docs.snippets.length} code snippets`);
-```
+
+````
 
 ```typescript Code Docs (Text)
 import { Context7 } from "@upstash/context7-sdk";
@@ -229,7 +230,7 @@ const docs = await client.getDocs("/facebook/react", {
 });
 
 console.log(docs.content);
-```
+````
 
 ```typescript Info Docs (Text)
 import { Context7 } from "@upstash/context7-sdk";

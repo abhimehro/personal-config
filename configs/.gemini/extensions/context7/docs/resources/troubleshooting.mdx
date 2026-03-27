@@ -13,7 +13,11 @@ This guide helps you resolve common issues when setting up or using Context7 MCP
 - Enable debug logs (`DEBUG=*`) before collecting support information
 
 <Tip>
-  **Skip Node.js issues entirely**: Use the remote server connection instead of local npx. Most MCP clients support connecting to `https://mcp.context7.com/mcp` directly, which requires no local Node.js installation. See [All MCP Clients](/resources/all-clients) for configuration examples.
+  **Skip Node.js issues entirely**: Use the remote server connection instead of
+  local npx. Most MCP clients support connecting to
+  `https://mcp.context7.com/mcp` directly, which requires no local Node.js
+  installation. See [All MCP Clients](/resources/all-clients) for configuration
+  examples.
 </Tip>
 
 ## Common Fixes
@@ -27,7 +31,12 @@ Add `@latest` to ensure you're using the most recent version:
   "mcpServers": {
     "context7": {
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest", "--api-key", "YOUR_API_KEY"]
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest",
+        "--api-key",
+        "YOUR_API_KEY"
+      ]
     }
   }
 }
@@ -53,7 +62,12 @@ If you encounter `ERR_MODULE_NOT_FOUND`, try `bunx` or `deno` instead of `npx`:
   "mcpServers": {
     "context7": {
       "command": "deno",
-      "args": ["run", "--allow-env=NO_DEPRECATION,TRACE_DEPRECATION", "--allow-net", "npm:@upstash/context7-mcp"]
+      "args": [
+        "run",
+        "--allow-env=NO_DEPRECATION,TRACE_DEPRECATION",
+        "--allow-net",
+        "npm:@upstash/context7-mcp"
+      ]
     }
   }
 }
@@ -68,7 +82,11 @@ For `Error: Cannot find module 'uriTemplate.js'`, use the `--experimental-vm-mod
   "mcpServers": {
     "context7": {
       "command": "npx",
-      "args": ["-y", "--node-options=--experimental-vm-modules", "@upstash/context7-mcp@1.0.6"]
+      "args": [
+        "-y",
+        "--node-options=--experimental-vm-modules",
+        "@upstash/context7-mcp@1.0.6"
+      ]
     }
   }
 }
@@ -83,7 +101,11 @@ Use the `--experimental-fetch` flag:
   "mcpServers": {
     "context7": {
       "command": "npx",
-      "args": ["-y", "--node-options=--experimental-fetch", "@upstash/context7-mcp"]
+      "args": [
+        "-y",
+        "--node-options=--experimental-fetch",
+        "@upstash/context7-mcp"
+      ]
     }
   }
 }
@@ -125,7 +147,14 @@ Alternatively, use this configuration with `cmd`:
   "mcpServers": {
     "context7": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@upstash/context7-mcp", "--api-key", "YOUR_API_KEY"]
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@upstash/context7-mcp",
+        "--api-key",
+        "YOUR_API_KEY"
+      ]
     }
   }
 }
@@ -155,8 +184,8 @@ On macOS, some users may encounter the same request timeout errors. Use the full
 ```
 
 <Note>
-  Replace `yourname` and the Node.js version (`v22.14.0`) with your actual username and installed
-  Node.js version.
+  Replace `yourname` and the Node.js version (`v22.14.0`) with your actual
+  username and installed Node.js version.
 </Note>
 
 ## API and Connection Issues
@@ -297,8 +326,8 @@ Add proxy directly to your MCP configuration:
 Both lowercase and uppercase environment variables are supported.
 
 <Tip>
-  After updating proxy settings, run `curl https://mcp.context7.com/mcp/ping` to confirm outbound
-  connectivity before restarting your IDE.
+  After updating proxy settings, run `curl https://mcp.context7.com/mcp/ping` to
+  confirm outbound connectivity before restarting your IDE.
 </Tip>
 
 ## Debugging Tips

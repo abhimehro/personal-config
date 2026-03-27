@@ -7,12 +7,14 @@
 **Root Cause**: Your rclone configuration file (`~/.config/rclone/rclone.conf`) is missing.
 
 This file contains:
+
 - Google Drive OAuth tokens and configuration
 - OneDrive OAuth tokens and configuration
 - Union remote configuration (combines gdrive + onedrive)
 - Alldebrid WebDAV credentials
 
 **Why Infuse Can't Connect:**
+
 1. ❌ No rclone remotes configured → Can't access cloud storage
 2. ❌ No union remote → Can't combine Google Drive + OneDrive
 3. ❌ No WebDAV server → Infuse has nothing to connect to
@@ -29,6 +31,7 @@ cd ~/dev/personal-config
 ```
 
 This will guide you through:
+
 1. **Google Drive setup** - Authorize in browser
 2. **OneDrive setup** - Authorize in browser
 3. **Folder structure** - Creates Media folders on both
@@ -40,6 +43,7 @@ This will guide you through:
 If you prefer manual setup:
 
 #### 1. Configure Google Drive
+
 ```bash
 rclone config
 # Choose: n (new remote)
@@ -56,6 +60,7 @@ rclone config
 ```
 
 #### 2. Configure OneDrive
+
 ```bash
 rclone config
 # Choose: n (new remote)
@@ -69,6 +74,7 @@ rclone config
 ```
 
 #### 3. Create Folder Structure
+
 ```bash
 # Create Media folder on Google Drive
 rclone mkdir gdrive:Media
@@ -84,6 +90,7 @@ done
 ```
 
 #### 4. Create Union Remote (Critical!)
+
 ```bash
 rclone config
 # Choose: n (new remote)
@@ -97,11 +104,13 @@ rclone config
 ```
 
 **Important**: The union remote combines both cloud providers. Make sure:
+
 - Both `gdrive:Media` and `onedrive:Media` folders exist
 - Folder structures match (or union will show empty)
 - Both remotes are working (`rclone about gdrive:` and `rclone about onedrive:`)
 
 #### 5. Verify Setup
+
 ```bash
 # List all remotes
 rclone listremotes
@@ -117,12 +126,14 @@ rclone lsd media:
 ```
 
 #### 6. Start WebDAV Server
+
 ```bash
 cd ~/dev/personal-config
 ./media-streaming/scripts/start-media-server-fast.sh
 ```
 
 Or manually:
+
 ```bash
 rclone serve webdav media: \
     --addr 0.0.0.0:8088 \
@@ -135,6 +146,7 @@ rclone serve webdav media: \
 #### 7. Configure Infuse
 
 Get your local IP:
+
 ```bash
 ipconfig getifaddr en0
 # or
@@ -142,6 +154,7 @@ ipconfig getifaddr en5
 ```
 
 In Infuse, add WebDAV source:
+
 ```
 Protocol: WebDAV
 Address: http://YOUR_LOCAL_IP:8088
@@ -157,12 +170,14 @@ Path: /
 If you see folders in Google Drive but not in the union:
 
 1. **Check folder paths match exactly:**
+
    ```bash
    rclone lsd gdrive:Media
    rclone lsd onedrive:Media
    ```
 
 2. **Both should have identical structure:**
+
    ```
    Media/
    ├── Movies/
@@ -180,11 +195,13 @@ If you see folders in Google Drive but not in the union:
 ### "Union remote shows empty"
 
 **Common causes:**
+
 1. **Folder paths don't match** - Check both `gdrive:Media` and `onedrive:Media` exist
 2. **One remote not working** - Test with `rclone about gdrive:` and `rclone about onedrive:`
 3. **Union misconfigured** - Check with `rclone config show media`
 
 **Fix:**
+
 ```bash
 # Verify union configuration
 rclone config show media

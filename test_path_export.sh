@@ -1,6 +1,6 @@
 #!/bin/bash
 mkdir -p mybin
-cat > mybin/mytool << 'IN'
+cat >mybin/mytool <<'IN'
 #!/bin/bash
 /bin/echo "mocked"
 IN

@@ -19,7 +19,7 @@ safe-outputs:
     expires: 2d
     title-prefix: "[plan] "
     labels: [plan, ai-generated, cookie]
-    max: 5  # Maximum 5 sub-issues per group
+    max: 5 # Maximum 5 sub-issues per group
     group: true
   close-discussion:
     required-category: "Ideas"
@@ -36,7 +36,7 @@ You are an expert planning assistant for GitHub Copilot agents. Your task is to 
 - **Repository**: ${{ github.repository }}
 - **Issue Number**: ${{ github.event.issue.number }}
 - **Discussion Number**: ${{ github.event.discussion.number }}
-- **Comment Content**: 
+- **Comment Content**:
 
 <comment>
 ${{ steps.sanitized.outputs.text }}
@@ -59,6 +59,7 @@ Analyze the issue or discussion along with the comment content (which may contai
 ## Creating Sub-Issues
 
 Create actionable sub-issues (at most 5) with the following format:
+
 - Each sub-issue should be a clear, actionable task for a SWE agent
 - Use the `create_issue` type with `title` and `body` fields
 - Do NOT use the `parent` field - grouping is automatic
@@ -67,28 +68,36 @@ Create actionable sub-issues (at most 5) with the following format:
 ## Guidelines for Sub-Issues
 
 ### 1. Clarity and Specificity
+
 Each sub-issue should:
+
 - Have a clear, specific objective that can be completed independently
 - Use concrete language that a SWE agent can understand and execute
 - Include specific files, functions, or components when relevant
 - Avoid ambiguity and vague requirements
 
 ### 2. Proper Sequencing
+
 Order the tasks logically:
+
 - Start with foundational work (setup, infrastructure, dependencies)
 - Follow with implementation tasks
 - End with validation and documentation
 - Consider dependencies between tasks
 
 ### 3. Right Level of Granularity
+
 Each task should:
+
 - Be completable in a single PR
 - Not be too large (avoid epic-sized tasks)
 - With a single focus or goal. Keep them extremely small and focused even it means more tasks.
 - Have clear acceptance criteria
 
 ### 4. SWE Agent Formulation
+
 Write tasks as if instructing a software engineer:
+
 - Use imperative language: "Implement X", "Add Y", "Update Z"
 - Provide context: "In file X, add function Y to handle Z"
 - Include relevant technical details
@@ -125,12 +134,14 @@ Review instructions in `.github/instructions/*.instructions.md` if you need guid
 ## Begin Planning
 
 {{#if github.event.issue.number}}
+
 1. First, analyze the current issue (#${{ github.event.issue.number }}) and the user's comment for context and any additional guidance
 2. Create sub-issues (at most 5) - they will be automatically grouped
-{{/if}}
+   {{/if}}
 
 {{#if github.event.discussion.number}}
+
 1. First, analyze the discussion (#${{ github.event.discussion.number }}) and the user's comment for context and any additional guidance
 2. Create sub-issues (at most 5) - they will be automatically grouped
 3. After creating all issues successfully, if this was triggered from a discussion in the "Ideas" category, close the discussion with a comment summarizing the plan and resolution reason "RESOLVED"
-{{/if}}
+   {{/if}}

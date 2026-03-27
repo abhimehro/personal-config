@@ -9,9 +9,9 @@
 set -euo pipefail
 
 TARGET="${TARGET_DEV_MAINT_SCRIPT:-$HOME/Library/Maintenance/bin/dev_maintenance.sh}"
-if [[ ! -x "$TARGET" ]]; then
-  echo "❌ dev_maintenance.sh not found at $TARGET"
-  exit 1
+if [[ ! -x $TARGET ]]; then
+	echo "❌ dev_maintenance.sh not found at $TARGET"
+	exit 1
 fi
 
 bash "$TARGET"

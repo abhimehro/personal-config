@@ -6,6 +6,7 @@ description: >-
   file-specific patterns, create RULE.md files, or asks about .cursor/rules/ or
   AGENTS.md.
 ---
+
 # Creating Cursor Rules
 
 Create project rules in `.cursor/rules/` to provide persistent context for the AI agent.
@@ -25,9 +26,11 @@ If you have previous conversation context, infer rules from what was discussed. 
 ### Required Questions
 
 If the user hasn't specified scope, ask:
+
 - "Should this rule always apply, or only when working with specific files?"
 
 If they mentioned specific files and haven't provided concrete patterns, ask:
+
 - "Which file patterns should this rule apply to?" (e.g., `**/*.ts`, `backend/**/*.py`)
 
 It's very important that we get clarity on the file patterns.
@@ -40,11 +43,11 @@ Use the AskQuestion tool when available to gather this efficiently.
 
 Rules are `.mdc` files in `.cursor/rules/` with YAML frontmatter:
 
-```
+```markdown
 .cursor/rules/
-  typescript-standards.mdc
-  react-patterns.mdc
-  api-conventions.mdc
+typescript-standards.mdc
+react-patterns.mdc
+api-conventions.mdc
 ```
 
 ### File Structure
@@ -63,11 +66,11 @@ Your rule content here...
 
 ### Frontmatter Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `description` | string | What the rule does (shown in rule picker) |
-| `globs` | string | File pattern - rule applies when matching files are open |
-| `alwaysApply` | boolean | If true, applies to every session |
+| Field         | Type    | Description                                              |
+| ------------- | ------- | -------------------------------------------------------- |
+| `description` | string  | What the rule does (shown in rule picker)                |
+| `globs`       | string  | File pattern - rule applies when matching files are open |
+| `alwaysApply` | boolean | If true, applies to every session                        |
 
 ---
 
@@ -113,30 +116,30 @@ alwaysApply: false
 
 ### TypeScript Standards
 
-```markdown
+````markdown
 ---
 description: TypeScript coding standards
-globs: **/*.ts
+globs: ["**/*.ts", "**/*.tsx"]
 alwaysApply: false
 ---
 
 # Error Handling
 
-\`\`\`typescript
+```typescript
 // ❌ BAD
 try {
-  await fetchData();
+  fetchData();
 } catch (e) {}
 
 // ✅ GOOD
 try {
   await fetchData();
 } catch (e) {
-  logger.error('Failed to fetch', { error: e });
-  throw new DataFetchError('Unable to retrieve data', { cause: e });
+  logger.error("Failed to fetch", { error: e });
+  throw new DataFetchError("Unable to retrieve data", { cause: e });
 }
-\`\`\`
 ```
+````
 
 ### React Patterns
 

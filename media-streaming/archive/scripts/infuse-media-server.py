@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 
-import http.server
-import socketserver
-import subprocess
-import json
-import os
-import sys
 import argparse
 import base64
 import html
 import http.server
+import json
 import os
 import secrets
 import socketserver

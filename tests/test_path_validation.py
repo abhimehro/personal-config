@@ -1,16 +1,29 @@
-import unittest
-import sys
 import os
+import sys
+import unittest
 
 # Add the script directory to path to import the module
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../media-streaming/archive/scripts')))
+sys.path.append(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../media-streaming/archive/scripts")
+    )
+)
 
 # Import the module
 import importlib.util
-spec = importlib.util.spec_from_file_location("infuse_media_server",
-    os.path.abspath(os.path.join(os.path.dirname(__file__), '../media-streaming/archive/scripts/infuse-media-server.py')))
+
+spec = importlib.util.spec_from_file_location(
+    "infuse_media_server",
+    os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            "../media-streaming/archive/scripts/infuse-media-server.py",
+        )
+    ),
+)
 infuse_media_server = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(infuse_media_server)
+
 
 class TestPathValidation(unittest.TestCase):
     def setUp(self):
@@ -34,8 +47,8 @@ class TestPathValidation(unittest.TestCase):
             "folder/subfolder/",
             "file with spaces.mkv",
             "movie-2023.mp4",
-            "folder/..filename..mp4", # legitimate filenames containing dots
-            ""
+            "folder/..filename..mp4",  # legitimate filenames containing dots
+            "",
         ]
         for p in valid_paths:
             try:
@@ -59,23 +72,19 @@ class TestPathValidation(unittest.TestCase):
                 self.validate_path(p)
 
     def test_argument_injection(self):
-        invalid_paths = [
-            "-flag",
-            "--option",
-            "-v"
-        ]
+        invalid_paths = ["-flag", "--option", "-v"]
         for p in invalid_paths:
-            with self.assertRaises(ValueError, msg=f"Argument injection path '{p}' should fail"):
+            with self.assertRaises(
+                ValueError, msg=f"Argument injection path '{p}' should fail"
+            ):
                 self.validate_path(p)
 
     def test_null_byte(self):
-        invalid_paths = [
-            "file.mp4\0",
-            "folder\0/file"
-        ]
+        invalid_paths = ["file.mp4\0", "folder\0/file"]
         for p in invalid_paths:
             with self.assertRaises(ValueError, msg=f"Null byte path '{p}' should fail"):
                 self.validate_path(p)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

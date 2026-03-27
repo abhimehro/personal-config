@@ -51,7 +51,7 @@ check_actual_dns_usage() {
 	# Check if 127.0.0.1 appears in resolver #1 (not just resolver #2)
 	resolver1_dns=$(scutil --dns | grep -A5 "resolver #1" | grep "nameserver" | head -1)
 
-	if echo "$resolver1_dns" | grep -q "\*\*\*\*\*\*\*\*\*"; then
+	if echo "$resolver1_dns" | grep -q "*********"; then
 		echo "✅ System is using Control D (127.0.0.1)"
 		return 0
 	else

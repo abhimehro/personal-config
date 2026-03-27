@@ -225,10 +225,10 @@ controld-system/health-check.sh
 
 or:
 
-  ```text
-  Overall Status: UNHEALTHY ✗
-  SUMMARY TS=... MODE=health-check RESULT=FAIL
-  ```
+```text
+Overall Status: UNHEALTHY ✗
+SUMMARY TS=... MODE=health-check RESULT=FAIL
+```
 
 Use this when you want a **simple health snapshot** of Control D DNS mode.
 
@@ -248,10 +248,10 @@ controld-system/baseline-test.sh
 
 or:
 
-  ```text
-  Result: Baseline verification FAILED ✗
-  SUMMARY TS=... MODE=baseline-test RESULT=FAIL
-  ```
+```text
+Result: Baseline verification FAILED ✗
+SUMMARY TS=... MODE=baseline-test RESULT=FAIL
+```
 
 Use this as a **quick baseline test** (e.g. before/after changes, or part of manual checklists).
 
@@ -353,14 +353,14 @@ If it fails, run the individual verifiers:
 
 ### Scenario D: Something Feels Off (DNS / IPv6)
 
-If you *expect* to be in Control D DNS mode:
+If you _expect_ to be in Control D DNS mode:
 
 ```bash
 ./scripts/network-mode-verify.sh controld
 controld-system/health-check.sh
 ```
 
-If you *expect* to be in Windscribe mode:
+If you _expect_ to be in Windscribe mode:
 
 ```bash
 ./scripts/network-mode-verify.sh windscribe

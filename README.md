@@ -23,6 +23,7 @@ This repository contains configuration files, automation scripts, and detailed d
 - **📱 Network Automation** - VPN-aware configurations with automatic failover
 
 By keeping these configurations in version control, I can:
+
 - Back up critical system configurations
 - Track changes over time with full history
 - Reproduce my environment on any new machine
@@ -32,6 +33,7 @@ By keeping these configurations in version control, I can:
 ## 🎯 Quick Start
 
 ### ProtonDrive one-way home backup
+
 ```bash
 # Safe preview (no changes)
 ./scripts/protondrive_backup.sh --dry-run --no-delete
@@ -39,9 +41,11 @@ By keeping these configurations in version control, I can:
 # Live mirror into ProtonDrive (uses --delete-delay unless you pass --no-delete)
 ./scripts/protondrive_backup.sh --run
 ```
+
 Edit `./scripts/protondrive_backup.exclude` to tune exclusions (git repos, build artifacts, caches, etc.).
 
 ### Bootstrap this Mac (idempotent)
+
 ```bash
 cd ~/dev/personal-config
 ./setup.sh
@@ -70,6 +74,7 @@ make lint-fix
 ```
 
 ### Automated Maintenance System (NEW!)
+
 ```bash
 # Check system health
 ~/dev/personal-config/maintenance/bin/run_all_maintenance.sh health
@@ -87,6 +92,7 @@ ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
 ### Enhanced VPN + DNS Integration
 
 **Using Fish Shell Functions (Recommended):**
+
 ```bash
 # After installing configs and reloading fish shell (exec fish)
 nm-status          # Check current network status
@@ -99,6 +105,7 @@ nm-cd-status       # Check Control D daemon status
 ```
 
 **Using Scripts Directly:**
+
 ```bash
 # Preferred: use the unified network mode manager
 ./scripts/network-mode-manager.sh controld browsing   # Enable Control D DNS mode
@@ -113,6 +120,7 @@ starts `ctrld` and applies the correct Control D profile; `network-mode-manager.
 wraps this with IPv6 management, DNS routing, and verification.
 
 ### SSH Configuration
+
 ```bash
 # Install SSH configuration with 1Password integration
 ./scripts/install_ssh_config.sh
@@ -130,6 +138,7 @@ ssh dev-auto   # Smart alias / fallback
 > connections fail.
 
 ### Run Performance Benchmarks
+
 ```bash
 # Install hyperfine (one-time setup — required)
 brew install hyperfine
@@ -144,6 +153,7 @@ make benchmark
 ```
 
 ### Legacy DNS Management (v3.x)
+
 ```bash
 # Alternative direct DNS switching (without VPN)
 # Kept for fallback and historical reference; v4.x prefers network-mode-manager.
@@ -202,16 +212,19 @@ personal-config/
 Intelligent DNS switching system with Control D integration:
 
 **Privacy Mode (`dns-privacy`)**
+
 - Enhanced security filtering
 - Malware & tracking protection
 - Optimized for browsing and AI applications
 
 **Gaming Mode (`dns-gaming`)**
+
 - Minimal filtering for maximum performance
 - Gaming service optimizations (Battle.net, GeForce Now, Overwatch 2)
 - Ultra-low latency DNS resolution
 
 **Features:**
+
 - ✅ **Windscribe VPN Integration** - Seamless VPN compatibility
 - ✅ **Profile-Specific DoH Endpoints** - Optimized upstream resolvers
 - ✅ **Automatic Network Detection** - Skips VPN interfaces intelligently
@@ -224,6 +237,7 @@ Intelligent DNS switching system with Control D integration:
 Professional SSH setup optimized for development:
 
 **Features:**
+
 - **🔐 1Password SSH Agent** - Secure key management without local storage
 - **🌐 Dynamic Network Support** - VPN-aware connection methods
 - **🎨 Cursor IDE Optimized** - Perfect remote development setup
@@ -232,6 +246,7 @@ Professional SSH setup optimized for development:
 - **📊 Comprehensive Diagnostics** - Built-in testing and troubleshooting
 
 **Connection Methods (generic hostnames):**
+
 ```bash
 ssh dev-mdns    # Primary (works with/without VPN)
 ssh dev-local   # Local network only
@@ -241,6 +256,7 @@ ssh dev-auto    # Auto-detection fallback
 ## 🚀 Installation
 
 ### Complete Setup (Recommended)
+
 ```bash
 # Clone the repository
 git clone <your-repo-url> ~/dev/personal-config
@@ -265,11 +281,13 @@ nm-status          # Check network status
 ### Configuration Management (Symlink-Based)
 
 This repository uses a **symlink-based configuration** model where repository files are linked to your home directory. This ensures:
+
 - ✅ Repository updates automatically reflect in your home directory
 - ✅ Single source of truth for all configurations
 - ✅ Easy backup and restore via git
 
 **Symlinked Configurations:**
+
 - `~/.ssh/config` → `configs/ssh/config`
 - `~/.ssh/agent.toml` → `configs/ssh/agent.toml`
 - `~/.config/fish/` → `configs/.config/fish/`
@@ -277,6 +295,7 @@ This repository uses a **symlink-based configuration** model where repository fi
 - `~/.vscode/` → `.vscode/`
 
 **Management Commands:**
+
 ```bash
 # Sync all configs (create/update symlinks)
 ./scripts/sync_all_configs.sh
@@ -291,6 +310,7 @@ This repository uses a **symlink-based configuration** model where repository fi
 ### Individual Component Setup
 
 #### SSH Configuration Only
+
 ```bash
 # Quick install
 ./scripts/install_ssh_config.sh
@@ -301,6 +321,7 @@ This repository uses a **symlink-based configuration** model where repository fi
 ```
 
 ### DNS Management Only
+
 ```bash
 # Deploy DNS scripts to ~/bin
 ./dns-setup/scripts/deploy.sh
@@ -311,6 +332,7 @@ sudo dns-gaming   # Gaming optimization
 ```
 
 ### SSH Configuration Only
+
 ```bash
 # Quick install
 ./scripts/install_ssh_config.sh
@@ -324,6 +346,7 @@ chmod 600 ~/.ssh/config ~/.ssh/agent.toml
 ## 🔧 Configuration
 
 ### Environment Setup
+
 ```bash
 # Add required environment variables
 export PATH="$HOME/bin:$PATH"  # For DNS scripts
@@ -334,6 +357,7 @@ export CTRLD_GAMING_PROFILE=<Gaming-Profile-ID>
 ```
 
 ### Media automation (Infuse + Alldebrid + cloud union)
+
 - **Data roots**: iCloud Desktop/Documents (`~/Library/Mobile Documents/com~apple~CloudDocs/Media`) via rclone union of `gdrive:Media` + `onedrive:Media` (no local duplication).
 - **WebDAV server**: LaunchAgent `com.<your-home-folder>.media.webdav` runs `/Users/<your-home-folder>/Library/Media/bin/start-media-server.sh` on port **8088** (read-only).
 - **Alldebrid helper**: LaunchAgent `com.<your-home-folder>.media.alldebrid` mounts to `/Users/<your-home-folder>/mnt/alldebrid` and serves on **8080**.
@@ -344,6 +368,7 @@ export CTRLD_GAMING_PROFILE=<Gaming-Profile-ID>
 - **Control**: `launchctl list | grep media` to verify; manual start: `~/Library/Media/bin/start-media-server.sh`.
 
 ### MCP tooling
+
 - Templates live in `mcp-configs/README.md` and `mcp-configs/mcp-servers.template.json`.
 - Copy the template to a local `servers.local.json`, fill keys from 1Password, and keep it gitignored (patterns already in `.gitignore`).
 - When running commands that need secrets resolved from 1Password, use `op run -- <command>` (e.g., `op run -- uv run python main.py --dry-run --profiles dummy`).
@@ -351,11 +376,13 @@ export CTRLD_GAMING_PROFILE=<Gaming-Profile-ID>
 ### VPN Integration
 
 **Windscribe Configuration:**
+
 - **VPN Tunnel DNS**: Leave default (inherits Control D)
 - **App Internal DNS**: Set to "OS Default"
 - **Firewall**: Enable for DNS leak protection
 
 **ProtonVPN Alternative:**
+
 - Use Control D custom DNS when needed
 
 ## 🧪 Testing & Verification
@@ -385,6 +412,7 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
 ### DNS System
+
 ```bash
 # Test current DNS resolution
 dig +short google.com @127.0.0.1
@@ -397,6 +425,7 @@ scutil --dns | head -20
 ```
 
 ### SSH Configuration
+
 ```bash
 # Comprehensive SSH tests
 ./tests/test_ssh_config.sh
@@ -427,12 +456,12 @@ make benchmark
 
 ### Available Benchmark Targets
 
-| Target | Script | Description |
-|--------|--------|-------------|
-| `nm-status` | `network-mode-manager.sh status` | Network mode status check |
-| `sync-all` | `sync_all_configs.sh` | Configuration sync operations |
-| `verify-all` | `verify_all_configs.sh` | Configuration verification |
-| `all` | All scripts above | Run all benchmarks (default) |
+| Target       | Script                           | Description                   |
+| ------------ | -------------------------------- | ----------------------------- |
+| `nm-status`  | `network-mode-manager.sh status` | Network mode status check     |
+| `sync-all`   | `sync_all_configs.sh`            | Configuration sync operations |
+| `verify-all` | `verify_all_configs.sh`          | Configuration verification    |
+| `all`        | All scripts above                | Run all benchmarks (default)  |
 
 ### Benchmark Configuration
 
@@ -459,6 +488,7 @@ make benchmark
 ### Baseline Results
 
 Results are saved as JSON files in `tests/benchmarks/baselines/` for:
+
 - Performance regression tracking
 - Before/after optimization comparisons
 - CI/CD integration potential
@@ -466,6 +496,7 @@ Results are saved as JSON files in `tests/benchmarks/baselines/` for:
 ## 📊 Monitoring & Maintenance
 
 ### DNS Logs
+
 ```bash
 # View DNS switching logs
 sudo tail -f /var/log/ctrld-privacy.log
@@ -476,6 +507,7 @@ sudo lsof -nP -iTCP:53 -sTCP:LISTEN -iUDP:53
 ```
 
 ### System Health
+
 ```bash
 # Network diagnostics
 ./scripts/ssh/diagnose_vpn.sh
@@ -490,16 +522,19 @@ done
 ## 🎮 Use Cases
 
 ### Development Workflow
+
 1. **Connect**: `ssh dev-mdns`
 2. **Privacy Mode**: `sudo dns-privacy`
-3. **Code with enhanced security filtering`
+3. \*\*Code with enhanced security filtering`
 
 ### Gaming Session
+
 1. **Gaming Mode**: `sudo dns-gaming`
 2. **Minimal filtering for maximum performance**
 3. **Optimized for Battle.net, Steam, Nvidia GeForce Now, Overwatch 2**
 
 ### VPN Switching
+
 1. **Windscribe VPN**: Default setup with Control D integration
 2. **Proton VPN**: When port forwarding or different geo-location needed
 3. **DNS profiles work seamlessly with both**
@@ -517,6 +552,7 @@ done
 ### Common Issues
 
 **DNS switching problems:**
+
 ```bash
 # Check what's using port 53
 sudo lsof -nP -iTCP:53 -sTCP:LISTEN -iUDP:53
@@ -528,6 +564,7 @@ done
 ```
 
 **SSH connection issues:**
+
 ```bash
 # Comprehensive diagnostics
 ./scripts/ssh/diagnose_vpn.sh
@@ -589,10 +626,12 @@ _SSH Configuration: v2.0_
   - `~/.ssh/control` (700)
 
 **Maintenance:**
+
 - Verify: `scripts/verify_ssh_config.sh`
 - Sync: `scripts/sync_ssh_config.sh`
 
 **Notes:**
+
 - Keep 1Password unlocked with SSH agent integration enabled.
 - No private keys are stored in `~/.ssh`; all keys are 1Password-managed.
 
@@ -618,6 +657,7 @@ _SSH Configuration: v2.0_
   - `proton-*` – any host matching this pattern prefers Proton’s agent.
 
 **Usage examples:**
+
 ```bash
 # Import a key from 1Password into Proton (SSH Keys vault)
 ./scripts/ssh/op_to_proton_import.sh "GitHub main SSH key"
@@ -636,20 +676,22 @@ pp-use-proton    # then: ssh -T git@github-proton
 
 After installing configs and reloading fish shell (`exec fish`), you'll have access to these convenient functions:
 
-| Function | Description |
-|----------|-------------|
-| `nm-status` | Check current network status (Control D vs Windscribe) |
-| `nm-browse` | Switch to Control D browsing mode (balanced privacy) |
-| `nm-privacy` | Switch to Control D privacy mode (maximum security) |
-| `nm-gaming` | Switch to Control D gaming mode (minimal filtering) |
-| `nm-vpn` | Switch to Windscribe VPN mode (disables Control D) |
-| `nm-regress` | Run full regression test (Control D → Windscribe) |
-| `nm-cd-status` | Check Control D daemon status |
+| Function       | Description                                            |
+| -------------- | ------------------------------------------------------ |
+| `nm-status`    | Check current network status (Control D vs Windscribe) |
+| `nm-browse`    | Switch to Control D browsing mode (balanced privacy)   |
+| `nm-privacy`   | Switch to Control D privacy mode (maximum security)    |
+| `nm-gaming`    | Switch to Control D gaming mode (minimal filtering)    |
+| `nm-vpn`       | Switch to Windscribe VPN mode (disables Control D)     |
+| `nm-regress`   | Run full regression test (Control D → Windscribe)      |
+| `nm-cd-status` | Check Control D daemon status                          |
 
 **Environment Variable:**
+
 - `NM_ROOT` is automatically set to `$HOME/Documents/dev/personal-config`
 
 **Configuration Location:**
+
 - `~/.config/fish/` → `configs/.config/fish/` (symlinked)
 - Functions: `~/.config/fish/functions/nm-*.fish`
 - Config: `~/.config/fish/config.fish`

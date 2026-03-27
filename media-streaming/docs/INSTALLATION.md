@@ -5,28 +5,32 @@
 ## 📥 **Fresh Installation**
 
 ### **Prerequisites:**
+
 ```bash
 # Install rclone via Homebrew
 brew install rclone
 
-# Verify installation  
+# Verify installation
 rclone version
 ```
 
 ### **Quick Setup:**
+
 1. **Copy scripts to home directory:**
+
    ```bash
    cp scripts/* ~/
    chmod +x ~/*.sh
    ```
 
 2. **Run the comprehensive setup:**
+
    ```bash
    ~/setup-media-library.sh
    ```
 
 3. **Follow the guided prompts for:**
-   - Google Drive authorization 
+   - Google Drive authorization
    - OneDrive authorization
    - Folder structure creation
    - Union remote setup
@@ -34,6 +38,7 @@ rclone version
 ## 🔄 **Recovery from Backup**
 
 ### **Restore rclone Configuration:**
+
 ```bash
 # Copy backup config
 cp backup/rclone.conf.backup ~/.config/rclone/rclone.conf
@@ -45,6 +50,7 @@ rclone about onedrive:
 ```
 
 ### **Refresh Authentication (if tokens expired):**
+
 ```bash
 # Automated fix
 ~/fix-gdrive.sh
@@ -57,6 +63,7 @@ rclone config reconnect onedrive:
 ## 🔧 **Individual Component Setup**
 
 ### **Google Drive Only:**
+
 ```bash
 ~/setup-gdrive.sh
 # OR
@@ -64,12 +71,14 @@ rclone config reconnect onedrive:
 ```
 
 ### **Alldebrid Local Server:**
+
 ```bash
 ~/start-alldebrid.sh  # Start
 ~/stop-alldebrid.sh   # Stop
 ```
 
 ### **Unified Cloud Server:**
+
 ```bash
 ~/start-media-server-fast.sh
 ```
@@ -77,6 +86,7 @@ rclone config reconnect onedrive:
 ## 🏥 **Emergency Recovery**
 
 ### **Complete Reset:**
+
 ```bash
 # Remove old config
 rm -rf ~/.config/rclone/
@@ -86,6 +96,7 @@ rm -rf ~/.config/rclone/
 ```
 
 ### **Partial Reset (Keep Google Drive):**
+
 ```bash
 # Delete only OneDrive remote
 rclone config delete onedrive
@@ -97,6 +108,7 @@ rclone config delete onedrive
 ## 🔍 **Verification Commands**
 
 ### **Check All Remotes:**
+
 ```bash
 for remote in alldebrid gdrive onedrive media; do
   echo "=== $remote ==="
@@ -106,12 +118,14 @@ done
 ```
 
 ### **Test Union Remote:**
+
 ```bash
 rclone lsd media:
 rclone tree media: --level 1
 ```
 
 ### **Verify Folder Structure:**
+
 ```bash
 rclone tree gdrive:Media --level 2
 rclone tree onedrive:Media --level 2
@@ -120,6 +134,7 @@ rclone tree onedrive:Media --level 2
 ## 📡 **Server Management**
 
 ### **Check Running Servers:**
+
 ```bash
 # Check what's using our ports
 lsof -nP -i:8088  # Unified server
@@ -130,6 +145,7 @@ pkill -f "rclone serve"
 ```
 
 ### **Server Logs:**
+
 ```bash
 # Monitor server output
 ~/start-media-server-fast.sh  # Shows live logs
@@ -138,17 +154,19 @@ pkill -f "rclone serve"
 ## 🎯 **Infuse Configuration**
 
 ### **Add Source - Alldebrid:**
+
 ```
 Protocol: WebDAV
 Address: webdav.debrid.it
 Port: 443
 HTTPS: ✅ ON
-Username: [From backup config]  
+Username: [From backup config]
 Password: [From backup config]
 Path: /links/
 ```
 
 ### **Add Source - Unified Cloud:**
+
 ```bash
 # First, start the server
 ~/start-media-server-fast.sh
@@ -156,6 +174,7 @@ Path: /links/
 # Get your local IP
 ipconfig getifaddr en0
 ```
+
 ```
 Protocol: WebDAV
 Address: http://YOUR_LOCAL_IP:8088
@@ -167,23 +186,27 @@ Path: /
 ## 🚨 **Common Issues**
 
 ### **"Remote not found" Error:**
+
 ```bash
 rclone listremotes  # Check what exists
 ~/setup-media-library.sh  # Recreate missing remotes
 ```
 
 ### **Authentication Expired:**
+
 ```bash
 ~/fix-gdrive.sh  # Automated fix
 ```
 
 ### **Port Already in Use:**
+
 ```bash
 lsof -nP -i:8088  # Check what's using the port
 pkill -f "rclone serve"  # Kill existing servers
 ```
 
 ### **Empty Folder in Infuse:**
+
 ```bash
 # Check if content exists
 rclone lsd media:
@@ -194,4 +217,5 @@ curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cu
 ```
 
 ---
-*💡 **Pro Tip**: Keep this documentation in sync with any configuration changes!*
+
+_💡 **Pro Tip**: Keep this documentation in sync with any configuration changes!_

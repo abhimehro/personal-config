@@ -7,12 +7,14 @@
 ### What Each Service Does
 
 **Control D (ctrld)**:
+
 - Runs locally on port 53 (standard DNS port)
 - Intercepts all DNS queries from your system
 - Forwards queries to Control D's DoH endpoints
 - Provides filtering, privacy, and malware protection
 
 **Windscribe VPN**:
+
 - Creates a VPN tunnel (utun interfaces)
 - Routes all traffic through encrypted tunnel
 - Has its own DNS servers for privacy
@@ -23,25 +25,30 @@
 ### Scenario 1: Windscribe with Local DNS (Uses Control D) ✅ RECOMMENDED
 
 **Configuration**:
+
 - Windscribe: Set to "Use local DNS"
 - Control D: Running normally
 
 **What happens**:
+
 ```
 Your app → Windscribe tunnel → Control D (127.0.0.1:53) → DoH to Control D servers
 ```
 
 **Pros**:
+
 - ✅ Get both VPN encryption AND Control D filtering
 - ✅ DNS queries encrypted twice (VPN tunnel + DoH)
 - ✅ Control D's malware/tracker blocking works
 - ✅ No DNS leaks
 
 **Cons**:
+
 - ⚠️ Slightly higher latency (double encryption)
 - ⚠️ If Control D fails, DNS breaks completely
 
 **Setup**:
+
 ```bash
 # 1. Ensure Control D is running
 sudo ctrld service status
@@ -57,6 +64,7 @@ dig example.com +short
 ```
 
 **Verification**:
+
 ```bash
 # Check VPN is active
 windscribe status
@@ -73,26 +81,31 @@ curl -s https://ipleak.net/json/ | jq -r '.ip, .dns_servers[]'
 ### Scenario 2: Windscribe with Custom DNS (Control D Endpoints) ✅ ALTERNATIVE
 
 **Configuration**:
+
 - Windscribe: Set custom DNS to Control D's DoH endpoints
 - Control D: Can be disabled (not needed)
 
 **What happens**:
+
 ```
 Your app → Windscribe tunnel → Control D DoH endpoints directly
 ```
 
 **Pros**:
+
 - ✅ Get Control D filtering through VPN
 - ✅ Lower latency (single encryption layer)
 - ✅ Simpler setup
 - ✅ No local Control D service needed
 
 **Cons**:
+
 - ⚠️ No failover if you switch profiles
 - ⚠️ Manual config changes needed for profile switching
 - ⚠️ Can't easily disable filtering temporarily
 
 **Setup**:
+
 ```bash
 # 1. Stop Control D (optional)
 sudo ctrld service stop
@@ -112,20 +125,24 @@ windscribe connect
 ### Scenario 3: Windscribe DNS Only ⚠️ NOT RECOMMENDED
 
 **Configuration**:
+
 - Windscribe: Use Windscribe DNS
 - Control D: Disabled
 
 **What happens**:
+
 ```
 Your app → Windscribe tunnel → Windscribe DNS
 ```
 
 **Pros**:
+
 - ✅ Simplest setup
 - ✅ Guaranteed no DNS leaks
 - ✅ Lowest latency
 
 **Cons**:
+
 - ❌ Lose Control D's filtering capabilities
 - ❌ Less control over DNS behavior
 - ❌ Can't switch between privacy profiles
@@ -137,11 +154,13 @@ Your app → Windscribe tunnel → Windscribe DNS
 ### Problem 1: DNS Not Resolving After Connecting VPN
 
 **Symptoms**:
+
 - Websites won't load
 - `dig example.com` times out
 - `curl` fails with "Could not resolve host"
 
 **Diagnosis**:
+
 ```bash
 # Check what DNS servers are active
 scutil --dns | head -20
@@ -154,6 +173,7 @@ windscribe status
 ```
 
 **Solution A**: VPN is routing around Control D
+
 ```bash
 # Tell Windscribe to use local DNS
 windscribe dns local
@@ -167,6 +187,7 @@ dig @127.0.0.1 example.com
 ```
 
 **Solution B**: Control D stopped when VPN connected
+
 ```bash
 # Restart Control D
 sudo ctrld service restart
@@ -183,10 +204,12 @@ dig @127.0.0.1 example.com
 ### Problem 2: DNS Leaks (ISP Can See Queries)
 
 **Symptoms**:
+
 - DNS leak test shows ISP DNS servers
 - Privacy compromised despite VPN
 
 **Diagnosis**:
+
 ```bash
 # Run DNS leak test
 curl -s https://ipleak.net/json/ | jq -r '.dns_servers[]'
@@ -195,6 +218,7 @@ curl -s https://ipleak.net/json/ | jq -r '.dns_servers[]'
 ```
 
 **Solution**:
+
 ```bash
 # Ensure Control D or Windscribe DNS is being used
 windscribe dns local  # For Control D
@@ -207,11 +231,13 @@ windscribe dns custom <Control D endpoint>
 ### Problem 3: Control D Self-Checks Fail With VPN Active
 
 **Symptoms**:
+
 - `sudo ctrld start` fails with "connection refused"
 - Service won't start when VPN is connected
 
 **Solution**:
 This is why we use `--skip_self_checks`:
+
 ```bash
 # Already configured in your setup
 sudo ctrld service start --config ~/.config/controld/ctrld.toml --skip_self_checks
@@ -224,10 +250,12 @@ The flag bypasses startup validation that fails due to VPN routing.
 ### Problem 4: Split Personality (Some Apps Use VPN DNS, Others Use Control D)
 
 **Symptoms**:
+
 - Inconsistent behavior between apps
 - Some apps bypass filtering
 
 **Diagnosis**:
+
 ```bash
 # Check system DNS configuration
 scutil --dns
@@ -236,6 +264,7 @@ scutil --dns
 ```
 
 **Solution**:
+
 ```bash
 # Reset DNS configuration
 sudo dscacheutil -flushcache
@@ -250,25 +279,27 @@ windscribe disconnect && windscribe connect
 
 ## Recommended Configuration Matrix
 
-| Use Case | Control D | Windscribe DNS Setting | Why |
-|----------|-----------|----------------------|-----|
-| **Maximum Privacy + Filtering** | Running | Local DNS | Double encryption, full filtering |
-| **Traveling/Untrusted Networks** | Running | Local DNS | Protects against MITM + malware |
-| **Gaming** | Running (gaming profile) | Local DNS | Low latency filtering |
-| **Streaming** | Disabled | Windscribe DNS | Avoid potential blocking |
-| **Work VPN** | Running | Local DNS | Corporate VPN + threat protection |
+| Use Case                         | Control D                | Windscribe DNS Setting | Why                               |
+| -------------------------------- | ------------------------ | ---------------------- | --------------------------------- |
+| **Maximum Privacy + Filtering**  | Running                  | Local DNS              | Double encryption, full filtering |
+| **Traveling/Untrusted Networks** | Running                  | Local DNS              | Protects against MITM + malware   |
+| **Gaming**                       | Running (gaming profile) | Local DNS              | Low latency filtering             |
+| **Streaming**                    | Disabled                 | Windscribe DNS         | Avoid potential blocking          |
+| **Work VPN**                     | Running                  | Local DNS              | Corporate VPN + threat protection |
 
 ---
 
 ## Testing Your Configuration
 
 ### Test 1: DNS Resolution Works
+
 ```bash
 dig example.com +short
 # Should return IP addresses
 ```
 
 ### Test 2: Control D Filtering Active
+
 ```bash
 # Test against known malware domain (blocked by Control D)
 dig malware.wicar.org @127.0.0.1
@@ -276,6 +307,7 @@ dig malware.wicar.org @127.0.0.1
 ```
 
 ### Test 3: No DNS Leaks
+
 ```bash
 # Check public DNS
 curl -s https://ipleak.net/json/ | jq -r '.dns_servers[]'
@@ -283,6 +315,7 @@ curl -s https://ipleak.net/json/ | jq -r '.dns_servers[]'
 ```
 
 ### Test 4: VPN Active and Routing Correctly
+
 ```bash
 # Check public IP (should be VPN location)
 curl -s https://ipinfo.io/ip
@@ -299,12 +332,14 @@ netstat -rn | grep default
 **Order matters!** Here's the recommended sequence:
 
 ### On System Boot:
+
 1. ✅ Control D auto-starts (via Launch Daemon)
 2. ✅ Wait 5-10 seconds for DNS to stabilize
 3. ✅ Connect Windscribe VPN
 4. ✅ System uses Control D for DNS, Windscribe for routing
 
 ### Manual Connection:
+
 ```bash
 # If Control D is running and you want to connect VPN:
 sudo ctrld service status  # Verify running
@@ -367,17 +402,21 @@ dig example.com +short
 ### DNS Query Path Analysis
 
 **Without VPN**:
+
 ```
 App → Control D (local) → DoH (encrypted) → Control D servers → Internet
 ```
+
 - ✅ ISP can't see DNS queries (DoH encrypted)
 - ⚠️ ISP can see destination IPs
 - ✅ Control D filtering active
 
 **With VPN + Local DNS**:
+
 ```
 App → Control D (local) → VPN tunnel (encrypted) → DoH (encrypted) → Control D servers → Internet
 ```
+
 - ✅ ISP can't see DNS queries (double encrypted)
 - ✅ ISP can't see destination IPs (VPN tunnel)
 - ✅ Control D filtering active
@@ -386,6 +425,7 @@ App → Control D (local) → VPN tunnel (encrypted) → DoH (encrypted) → Con
 ### Attack Surface
 
 **Threat Model**:
+
 1. **MITM on DNS** → Prevented by DoH + VPN
 2. **DNS Hijacking** → Prevented by local Control D + encrypted tunnel
 3. **ISP Surveillance** → Prevented by VPN tunnel
@@ -418,6 +458,7 @@ fi
 ## Future-Proofing
 
 ### When Upgrading ctrld
+
 ```bash
 # Upgrade via Homebrew
 brew upgrade ctrld
@@ -429,13 +470,16 @@ sudo ctrld service status
 ```
 
 ### When Changing VPN Providers
+
 If you switch from Windscribe to another VPN:
+
 1. Configure new VPN to use local DNS (127.0.0.1)
 2. Test: `dig @127.0.0.1 example.com`
 3. Verify no DNS leaks
 4. Update this documentation
 
 ### When Switching Control D Profiles
+
 ```bash
 # Edit config
 nano ~/.config/controld/ctrld.toml

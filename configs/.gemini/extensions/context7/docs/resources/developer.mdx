@@ -31,14 +31,15 @@ node packages/mcp/dist/index.js
 
 `context7-mcp` accepts the following CLI flags:
 
-| Flag | Description | Default |
-|------|-------------|---------|
+| Flag                        | Description                                                                           | Default |
+| --------------------------- | ------------------------------------------------------------------------------------- | ------- |
 | `--transport <stdio\|http>` | Transport to use. Use `http` for remote HTTP server or `stdio` for local integration. | `stdio` |
-| `--port <number>` | Port to listen on when using `http` transport. | `3000` |
-| `--api-key <key>` | API key for authentication (or set `CONTEXT7_API_KEY` env var). | - |
+| `--port <number>`           | Port to listen on when using `http` transport.                                        | `3000`  |
+| `--api-key <key>`           | API key for authentication (or set `CONTEXT7_API_KEY` env var).                       | -       |
 
 <Note>
-  Get your API key by creating an account at [context7.com/dashboard](https://context7.com/dashboard).
+  Get your API key by creating an account at
+  [context7.com/dashboard](https://context7.com/dashboard).
 </Note>
 
 ### Examples
@@ -64,7 +65,8 @@ You can use the `CONTEXT7_API_KEY` environment variable instead of passing the `
 - Tools that prefer environment variable configuration
 
 <Warning>
-  The `--api-key` CLI flag takes precedence over the environment variable when both are provided.
+  The `--api-key` CLI flag takes precedence over the environment variable when
+  both are provided.
 </Warning>
 
 ### Using .env File
@@ -99,7 +101,12 @@ When developing locally, use this configuration to run from source:
   "mcpServers": {
     "context7": {
       "command": "npx",
-      "args": ["tsx", "/path/to/folder/context7/src/index.ts", "--api-key", "YOUR_API_KEY"]
+      "args": [
+        "tsx",
+        "/path/to/folder/context7/src/index.ts",
+        "--api-key",
+        "YOUR_API_KEY"
+      ]
     }
   }
 }

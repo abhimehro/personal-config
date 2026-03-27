@@ -17,7 +17,7 @@ export DNS_CACHE_DIR="$TEST_DIR/dns_cache"
 
 # --- Mock dig ---
 # Returns a predictable IP so we can verify caching behaviour
-cat > "$MOCK_BIN/dig" << 'EOF'
+cat >"$MOCK_BIN/dig" <<'EOF'
 #!/bin/bash
 # Emit a fake answer for any host that looks like "google.com" or "p.controld.com"
 case "$*" in
@@ -46,38 +46,40 @@ PASS=0
 FAIL=0
 
 check() {
-    local name="$1"; shift
-    if "$@" >/dev/null 2>&1; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name"
-        FAIL=$((FAIL + 1))
-    fi
+	local name="$1"
+	shift
+	if "$@" >/dev/null 2>&1; then
+		echo "PASS: $name"
+		PASS=$((PASS + 1))
+	else
+		echo "FAIL: $name"
+		FAIL=$((FAIL + 1))
+	fi
 }
 
 check_output() {
-    local name="$1"
-    local expected="$2"
-    local actual="$3"
-    if [[ "$actual" == "$expected" ]]; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name (expected='$expected', got='$actual')"
-        FAIL=$((FAIL + 1))
-    fi
+	local name="$1"
+	local expected="$2"
+	local actual="$3"
+	if [[ $actual == "$expected" ]]; then
+		echo "PASS: $name"
+		PASS=$((PASS + 1))
+	else
+		echo "FAIL: $name (expected='$expected', got='$actual')"
+		FAIL=$((FAIL + 1))
+	fi
 }
 
 check_false() {
-    local name="$1"; shift
-    if ! "$@" >/dev/null 2>&1; then
-        echo "PASS: $name"
-        PASS=$((PASS + 1))
-    else
-        echo "FAIL: $name"
-        FAIL=$((FAIL + 1))
-    fi
+	local name="$1"
+	shift
+	if ! "$@" >/dev/null 2>&1; then
+		echo "PASS: $name"
+		PASS=$((PASS + 1))
+	else
+		echo "FAIL: $name"
+		FAIL=$((FAIL + 1))
+	fi
 }
 
 echo "=== Testing scripts/lib/dns-utils.sh ==="
@@ -95,7 +97,7 @@ echo "-- dns_lookup_cached (cache miss) --"
 RESULT=$(dns_lookup_cached "google.com" 60)
 check_output "cache miss returns IP from dig" "1.2.3.4" "$RESULT"
 check "cache miss creates cache file" test -f "$DNS_CACHE_DIR/google.com.cache"
-CACHE_LINES=$(wc -l < "$DNS_CACHE_DIR/google.com.cache")
+CACHE_LINES=$(wc -l <"$DNS_CACHE_DIR/google.com.cache")
 CACHE_LINES="${CACHE_LINES// /}"
 check_output "cache file contains two lines (timestamp + result)" "2" "$CACHE_LINES"
 
@@ -103,7 +105,7 @@ check_output "cache file contains two lines (timestamp + result)" "2" "$CACHE_LI
 echo ""
 echo "-- dns_lookup_cached (cache hit) --"
 # Replace mock dig with one that fails so we know the result came from cache
-cat > "$MOCK_BIN/dig" << 'EOF'
+cat >"$MOCK_BIN/dig" <<'EOF'
 #!/bin/bash
 echo "UNEXPECTED DIG CALL" >&2
 exit 1
@@ -112,7 +114,7 @@ CACHED=$(dns_lookup_cached "google.com" 60)
 check_output "cache hit returns cached IP (no dig call)" "1.2.3.4" "$CACHED"
 
 # Restore the working mock dig for further tests
-cat > "$MOCK_BIN/dig" << 'EOF'
+cat >"$MOCK_BIN/dig" <<'EOF'
 #!/bin/bash
 case "$*" in
     *"google.com"*|*"p.controld.com"*)
@@ -156,13 +158,13 @@ echo "-- dns_health_check --"
 dns_cache_init
 
 check "dns_health_check with resolver returns true for valid host" \
-    dns_health_check "127.0.0.1" "google.com"
+	dns_health_check "127.0.0.1" "google.com"
 
 check "dns_health_check without resolver uses system DNS" \
-    dns_health_check "" "google.com"
+	dns_health_check "" "google.com"
 
 check_false "dns_health_check returns false for failing host" \
-    dns_health_check "" "fail.example.com"
+	dns_health_check "" "fail.example.com"
 
 # --- Source guard ---
 echo ""
@@ -175,5 +177,5 @@ echo ""
 echo "=== Results: $PASS passed, $FAIL failed ==="
 
 if [[ $FAIL -gt 0 ]]; then
-    exit 1
+	exit 1
 fi

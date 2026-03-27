@@ -1,5 +1,5 @@
 #!/bin/bash
 func() {
-  shift 2
+	shift 2
 }
 func a

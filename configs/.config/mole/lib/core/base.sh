@@ -78,6 +78,8 @@ readonly MOLE_SAVED_STATE_AGE_DAYS=30    # Saved state retention (days) - increa
 readonly MOLE_TM_BACKUP_SAFE_HOURS=48    # TM backup safety window (hours)
 readonly MOLE_MAX_DS_STORE_FILES=500     # Max .DS_Store files to clean per scan
 readonly MOLE_MAX_ORPHAN_ITERATIONS=100  # Max iterations for orphaned app data scan
+readonly MOLE_ONE_GIB_KB=$((1024 * 1024))
+readonly MOLE_ONE_GB_BYTES=1000000000
 
 # ============================================================================
 # Whitelist Configuration
@@ -548,6 +550,18 @@ bytes_to_human_kb() {
 	bytes_to_human "$((${1:-0} * 1024))"
 }
 
+# Pick a cleanup result color using the displayed decimal 1 GB threshold.
+cleanup_result_color_kb() {
+	local size_kb="${1:-0}"
+	[[ $size_kb =~ ^[0-9]+$ ]] || size_kb=0
+
+	if ((size_kb * 1024 >= MOLE_ONE_GB_BYTES)); then
+		printf '%s' "$GREEN"
+	else
+		printf '%s' "$YELLOW"
+	fi
+}
+
 # ============================================================================
 # Temporary File Management
 # ============================================================================
@@ -556,10 +570,93 @@ bytes_to_human_kb() {
 declare -a MOLE_TEMP_FILES=()
 declare -a MOLE_TEMP_DIRS=()
 
+normalize_temp_root() {
+	local path="${1-}"
+	[[ -z $path ]] && return 1
+
+	if [[ $path == "~"* ]]; then
+		path="${path/#\~/$HOME}"
+	fi
+
+	while [[ $path != "/" && $path == */ ]]; do
+		path="${path%/}"
+	done
+
+	[[ -n $path ]] || return 1
+	printf '%s\n' "$path"
+}
+
+probe_temp_root() {
+	local raw_path="$1"
+	local allow_create="${2:-false}"
+	local path
+	local probe=""
+
+	path=$(normalize_temp_root "$raw_path") || return 1
+
+	if [[ $allow_create == "true" ]]; then
+		ensure_user_dir "$path"
+	fi
+
+	[[ -d $path ]] || return 1
+
+	probe=$(mktemp "$path/mole.probe.XXXXXX" 2>/dev/null) || return 1
+	rm -f "$probe" 2>/dev/null || true
+
+	printf '%s\n' "$path"
+}
+
+ensure_mole_temp_root() {
+	if [[ -n ${MOLE_RESOLVED_TMPDIR-} ]]; then
+		return 0
+	fi
+
+	local resolved=""
+	local candidate="${TMPDIR-}"
+	local invoking_home=""
+
+	if [[ -n $candidate ]]; then
+		resolved=$(probe_temp_root "$candidate" false || true)
+	fi
+
+	if [[ -z $resolved ]]; then
+		invoking_home=$(get_invoking_home)
+		if [[ -n $invoking_home ]]; then
+			resolved=$(probe_temp_root "$invoking_home/.cache/mole/tmp" true || true)
+		fi
+	fi
+
+	if [[ -z $resolved ]]; then
+		resolved=$(probe_temp_root "/tmp" false || true)
+	fi
+
+	[[ -n $resolved ]] || resolved="/tmp"
+	MOLE_RESOLVED_TMPDIR="$resolved"
+	export MOLE_RESOLVED_TMPDIR
+}
+
+get_mole_temp_root() {
+	ensure_mole_temp_root
+	printf '%s\n' "$MOLE_RESOLVED_TMPDIR"
+}
+
+prepare_mole_tmpdir() {
+	ensure_mole_temp_root
+	export TMPDIR="$MOLE_RESOLVED_TMPDIR"
+	printf '%s\n' "$MOLE_RESOLVED_TMPDIR"
+}
+
+mole_temp_path_template() {
+	local prefix="${1:-mole}"
+	ensure_mole_temp_root
+	printf '%s/%s.XXXXXX\n' "$MOLE_RESOLVED_TMPDIR" "$prefix"
+}
+
 # Create tracked temporary file
 create_temp_file() {
 	local temp
-	temp=$(mktemp) || return 1
+	ensure_mole_temp_root
+	temp=$(mktemp "$MOLE_RESOLVED_TMPDIR/mole.XXXXXX") || return 1
 	register_temp_file "$temp"
 	echo "$temp"
 }
@@ -567,7 +664,8 @@ create_temp_file() {
 # Create tracked temporary directory
 create_temp_dir() {
 	local temp
-	temp=$(mktemp -d) || return 1
+	ensure_mole_temp_root
+	temp=$(mktemp -d "$MOLE_RESOLVED_TMPDIR/mole.XXXXXX") || return 1
 	register_temp_dir "$temp"
 	echo "$temp"
 }
@@ -588,9 +686,8 @@ mktemp_file() {
 	local prefix="${1:-mole}"
 	local temp
 	local error_msg
-	# Use TMPDIR if set, otherwise /tmp
 	# Add .XXXXXX suffix to work with both BSD and GNU mktemp
-	if ! error_msg=$(mktemp "${TMPDIR:-/tmp}/${prefix}.XXXXXX" 2>&1); then
+	if ! error_msg=$(mktemp "$(mole_temp_path_template "$prefix")" 2>&1); then
 		echo "Error: Failed to create temporary file: $error_msg" >&2
 		return 1
 	fi
@@ -601,7 +698,9 @@ mktemp_file() {
 
 # Cleanup all tracked temp files and directories
 cleanup_temp_files() {
-	stop_inline_spinner || true
+	if declare -F stop_inline_spinner >/dev/null 2>&1; then
+		stop_inline_spinner || true
+	fi
 	local file
 	if [[ ${#MOLE_TEMP_FILES[@]} -gt 0 ]]; then
 		for file in "${MOLE_TEMP_FILES[@]}"; do
@@ -722,12 +821,7 @@ update_progress_if_needed() {
 
 	# Get last update time from variable
 	local last_time
-	if [[ $last_update_var =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-		last_time="${!last_update_var}"
-		[[ -z $last_time ]] && last_time=0
-	else
-		last_time=0
-	fi
+	eval "last_time=\${$last_update_var:-0}"
 	[[ $last_time =~ ^[0-9]+$ ]] || last_time=0
 
 	# Check if enough time has elapsed
@@ -737,9 +831,7 @@ update_progress_if_needed() {
 		start_section_spinner "Scanning items... $completed/$total"
 
 		# Update the last_update_time variable
-		if [[ $last_update_var =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-			printf -v "$last_update_var" "%s" "$current_time"
-		fi
+		eval "$last_update_var=$current_time"
 		return 0
 	fi
 

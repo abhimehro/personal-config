@@ -1,28 +1,30 @@
-import time
-import urllib.request
-import urllib.error
 import concurrent.futures
-import threading
-import os
-import sys
-import socket
-from unittest.mock import patch
 import importlib.util
+import os
+import socket
+import sys
+import threading
+import time
+import urllib.error
+import urllib.request
+from unittest.mock import patch
+
 
 def wait_for_port(port, timeout=5.0):
     start = time.time()
     while time.time() - start < timeout:
         try:
-            with socket.create_connection(('127.0.0.1', port), timeout=1):
+            with socket.create_connection(("127.0.0.1", port), timeout=1):
                 return True
         except OSError:
             time.sleep(0.1)
     return False
 
+
 def worker(url, i):
     try:
-        req = urllib.request.Request(url, method='HEAD')
-        req.add_header('Authorization', 'Basic YmFkOnBhc3N3b3Jk') # bad:password
+        req = urllib.request.Request(url, method="HEAD")
+        req.add_header("Authorization", "Basic YmFkOnBhc3N3b3Jk")  # bad:password
         start_time = time.time()
         try:
             with urllib.request.urlopen(req, timeout=10) as response:
@@ -36,14 +38,23 @@ def worker(url, i):
     except Exception as e:
         return (i, -1, str(e))
 
+
 def run_benchmark(num_requests=50, concurrency=50):
     port = 8081
     url = f"http://127.0.0.1:{port}/"
 
-    print(f"Starting benchmark with {num_requests} total requests, concurrency {concurrency}")
+    print(
+        f"Starting benchmark with {num_requests} total requests, concurrency {concurrency}"
+    )
 
     # Start the server using import instead of subprocess so we can mock verify_rclone_remote
-    script_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "media-streaming", "archive", "scripts", "infuse-media-server.py")
+    script_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+        "media-streaming",
+        "archive",
+        "scripts",
+        "infuse-media-server.py",
+    )
     spec = importlib.util.spec_from_file_location("infuse_media_server", script_path)
     infuse_media_server = importlib.util.module_from_spec(spec)
     sys.modules["infuse_media_server"] = infuse_media_server
@@ -54,7 +65,14 @@ def run_benchmark(num_requests=50, concurrency=50):
 
     # Mock sys.argv
     old_argv = sys.argv
-    sys.argv = ["infuse-media-server.py", str(port), "--user", "admin", "--password", "admin"]
+    sys.argv = [
+        "infuse-media-server.py",
+        str(port),
+        "--user",
+        "admin",
+        "--password",
+        "admin",
+    ]
 
     # Start server in a background thread
     server_thread = threading.Thread(target=infuse_media_server.main)
@@ -101,7 +119,10 @@ def run_benchmark(num_requests=50, concurrency=50):
     print(f"Average latency per request: {avg_latency:.2f} seconds")
     print(f"Min latency: {min_latency:.2f} seconds")
     print(f"Max latency: {max_latency:.2f} seconds")
-    print(f"Throughput: {(len(successes) + len(rate_limited)) / total_time:.2f} requests/second")
+    print(
+        f"Throughput: {(len(successes) + len(rate_limited)) / total_time:.2f} requests/second"
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     run_benchmark(num_requests=50, concurrency=50)

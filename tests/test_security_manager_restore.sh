@@ -2,7 +2,10 @@
 set -e
 
 # BSD sed -i '' syntax is macOS-only; skip on Linux/CI
-[[ "$(uname -s)" == "Darwin" ]] || { echo "SKIP: requires macOS (BSD sed -i '')"; exit 77; }
+[[ "$(uname -s)" == "Darwin" ]] || {
+	echo "SKIP: requires macOS (BSD sed -i '')"
+	exit 77
+}
 
 # Setup mock environment
 TEST_DIR=$(mktemp -d)
@@ -11,12 +14,12 @@ TEST_DIR=$(mktemp -d)
 # This is important because the test handles sensitive backup data and uses `set -e`,
 # which can cause early termination before manual cleanup runs.
 cleanup() {
-    # Only remove TEST_DIR if it is non-empty and actually exists as a directory.
-    # This defensive check helps avoid accidental deletion if TEST_DIR were ever unset
-    # or modified unexpectedly.
-    if [[ -n "$TEST_DIR" && -d "$TEST_DIR" ]]; then
-        rm -rf "$TEST_DIR"
-    fi
+	# Only remove TEST_DIR if it is non-empty and actually exists as a directory.
+	# This defensive check helps avoid accidental deletion if TEST_DIR were ever unset
+	# or modified unexpectedly.
+	if [[ -n $TEST_DIR && -d $TEST_DIR ]]; then
+		rm -rf "$TEST_DIR"
+	fi
 }
 
 # Run cleanup on any script exit (normal completion or error-induced exit).
@@ -29,8 +32,8 @@ mkdir -p "$MOCK_HOME/bin"
 mkdir -p "$MOCK_HOME/launchd"
 
 # Create dummy config
-echo "dummy config" > "$MOCK_HOME/conf/config.env"
-echo "dummy script" > "$MOCK_HOME/bin/script.sh"
+echo "dummy config" >"$MOCK_HOME/conf/config.env"
+echo "dummy script" >"$MOCK_HOME/bin/script.sh"
 chmod +x "$MOCK_HOME/bin/script.sh"
 
 # Mock HOME for the script
@@ -52,7 +55,7 @@ sed -i '' 's|CONFIG_DIR="$(cd "$(dirname "${BASH_SOURCE\\[0\\]}")/../" && pwd)"|
 
 # Create a wrapper script to export internal functions and set CONFIG_DIR
 WRAPPER="$TEST_DIR/wrapper.sh"
-cat > "$WRAPPER" <<EOF
+cat >"$WRAPPER" <<EOF
 #!/bin/bash
 export HOME="$MOCK_HOME"
 # Override CONFIG_DIR logic
@@ -81,11 +84,11 @@ BACKUP_OUTPUT=$("$WRAPPER" backup_config full)
 BACKUP_PATH=$(echo "$BACKUP_OUTPUT" | tail -n 1)
 echo "Backup created at: $BACKUP_PATH"
 
-if [[ ! -f "$BACKUP_PATH" ]]; then
-    echo "❌ Backup file not created!"
-    echo "Output: $BACKUP_OUTPUT"
-    rm -rf "$TEST_DIR"
-    exit 1
+if [[ ! -f $BACKUP_PATH ]]; then
+	echo "❌ Backup file not created!"
+	echo "Output: $BACKUP_OUTPUT"
+	rm -rf "$TEST_DIR"
+	exit 1
 fi
 
 # Verify restore preview works
@@ -95,32 +98,32 @@ echo "Testing restore preview..."
 # Verify actual restore
 echo "Testing actual restore..."
 # Modify the config file to verify restore overwrites it
-echo "modified config" > "$MOCK_HOME/conf/config.env"
+echo "modified config" >"$MOCK_HOME/conf/config.env"
 # Use 'yes' to answer prompts (system config restore, etc.)
 echo "y" | "$WRAPPER" restore_config "$BACKUP_PATH" restore
 
 if grep -q "dummy config" "$MOCK_HOME/conf/config.env"; then
-    echo "✅ Restore successful (config overwritten)"
+	echo "✅ Restore successful (config overwritten)"
 else
-    echo "❌ Restore failed (config not overwritten)"
-    echo "Content of config.env:"
-    cat "$MOCK_HOME/conf/config.env"
-    rm -rf "$TEST_DIR"
-    exit 1
+	echo "❌ Restore failed (config not overwritten)"
+	echo "Content of config.env:"
+	cat "$MOCK_HOME/conf/config.env"
+	rm -rf "$TEST_DIR"
+	exit 1
 fi
 
 # Test tamper detection during restore
 echo "Tampering with backup..."
-echo "CORRUPTION" >> "$BACKUP_PATH"
+echo "CORRUPTION" >>"$BACKUP_PATH"
 
 echo "Testing restore with tampered backup (should fail)..."
 # Expect failure, so prompts might not be reached, but pipe 'y' just in case
 if echo "y" | "$WRAPPER" restore_config "$BACKUP_PATH" restore; then
-    echo "❌ Tampered backup restore succeeded (should have failed)!"
-    rm -rf "$TEST_DIR"
-    exit 1
+	echo "❌ Tampered backup restore succeeded (should have failed)!"
+	rm -rf "$TEST_DIR"
+	exit 1
 else
-    echo "✅ Tampered backup restore failed as expected."
+	echo "✅ Tampered backup restore failed as expected."
 fi
 
 rm -rf "$TEST_DIR"

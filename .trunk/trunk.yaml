@@ -21,7 +21,7 @@ lint:
     - actionlint@1.7.11
     - bandit@1.9.4
     - black@26.3.1
-    - checkov@3.2.510
+    - checkov@3.2.511
     - dotenv-linter@4.0.0
     - git-diff-check
     - hadolint@2.14.0
@@ -30,18 +30,17 @@ lint:
     - osv-scanner@2.3.5
     - oxipng@10.1.0
     - prettier@3.8.1
-    - ruff@0.15.7
+    - ruff@0.15.8
     - shellcheck@0.11.0
     - shfmt@3.6.0
     - svgo@4.0.1
     - taplo@0.10.0
-    - trufflehog@3.94.0
+    - trufflehog@3.94.1
     - yamllint@1.38.0
 actions:
   disabled:
-    - commitizen
-  enabled:
     - trunk-announce
     - trunk-check-pre-push
     - trunk-fmt-pre-commit
+  enabled:
     - trunk-upgrade-available

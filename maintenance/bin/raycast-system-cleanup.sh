@@ -9,9 +9,9 @@
 set -euo pipefail
 
 TARGET="${TARGET_CLEANUP_SCRIPT:-$HOME/Library/Maintenance/bin/system_cleanup.sh}"
-if [[ ! -x "$TARGET" ]]; then
-  echo "❌ system_cleanup.sh not found at $TARGET"
-  exit 1
+if [[ ! -x $TARGET ]]; then
+	echo "❌ system_cleanup.sh not found at $TARGET"
+	exit 1
 fi
 
 bash "$TARGET"

@@ -1,34 +1,39 @@
 import json
 import os
 
+
 def extract_domains_from_file(filepath):
     """Extract domains from a JSON file."""
     domains = []
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
-            if 'rules' in data:
-                domains = [rule['PK'] for rule in data['rules'] if 'PK' in rule]
+            if "rules" in data:
+                domains = [rule["PK"] for rule in data["rules"] if "PK" in rule]
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
     return domains
+
 
 def extract_allowlist_domains_from_file(filepath):
     """Extract allowlist domains (do: 1) from a JSON file."""
     domains = []
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
-            if 'rules' in data:
+            if "rules" in data:
                 domains = [
-                    rule['PK']
-                    for rule in data['rules']
+                    rule["PK"]
+                    for rule in data["rules"]
                     # Optimize dictionary access avoiding get().get()
-                    if 'PK' in rule and 'action' in rule and rule['action'].get('do') == 1
+                    if "PK" in rule
+                    and "action" in rule
+                    and rule["action"].get("do") == 1
                 ]
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
     return domains
+
 
 if __name__ == "__main__":
     # Base directory
@@ -48,7 +53,7 @@ if __name__ == "__main__":
         "CD-Apple-Tracker.json",
         "CD-Badware-Hoster.json",
         "CD-LG-webOS-Tracker.json",
-        "CD-Huawei-Tracker.json"
+        "CD-Huawei-Tracker.json",
     ]
 
     print("Extracting denylist domains...")
@@ -85,12 +90,12 @@ if __name__ == "__main__":
 
     # Write denylist
     if os.path.exists(base_dir):
-        with open(os.path.join(base_dir, "Consolidated-Denylist.txt"), 'w') as f:
+        with open(os.path.join(base_dir, "Consolidated-Denylist.txt"), "w") as f:
             for domain in sorted(denylist_domains):
                 f.write(f"{domain}\n")
 
         # Write allowlist
-        with open(os.path.join(base_dir, "Consolidated-Allowlist.txt"), 'w') as f:
+        with open(os.path.join(base_dir, "Consolidated-Allowlist.txt"), "w") as f:
             for domain in sorted(allowlist_domains):
                 f.write(f"@@{domain}\n")
 

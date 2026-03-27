@@ -1,18 +1,18 @@
 # PR Triage — 2026-03-24
 
-| Repo | PR # | Category | Duplicate / stale | Disposition | Rationale (short) |
-|------|-----:|----------|-------------------|-------------|-------------------|
-| personal-config | 675 | UI | None | **MERGED** | Shell script UX; required checks green except `update_release_draft` (**infra flake**: action tarball download error — unrelated to diff). |
-| personal-config | 669 | CI/INFRA | None | **ESCALATE / hold** | **Merge conflicts** with `main`; large workflow-updater + auto-close PR behavior — trust-boundary / human review. |
-| ctrld-sync | 663 | CI/INFRA | None | **ESCALATE / hold** | Substantive automation OK directionally; **fixed** `label` via v6-compatible `.github/labeler.yml` on `main` + PR branch. **CodeScene** still **fail** → no merge. |
-| email-security-pipeline | 584 | UI | None | **MERGED** | Spinner/elapsed time; full gate green. |
-| email-security-pipeline | 582 | CI/INFRA | None | **ESCALATE** | Draft; proposes likely-invalid `actions/checkout@v6` etc. Do not merge until regenerated with verified refs. |
-| email-security-pipeline | 579 | SECURITY | None | **MERGED** | HF revision pinning; tests + bandit green. |
-| email-security-pipeline | 578 | PERFORMANCE | None | **MERGED** | Sanitization short-circuit; tests green. |
-| email-security-pipeline | 576 | SECURITY | None | **ESCALATE** | **TOCTOU / `.env` permissions** — sensitive local security behavior; **CodeQL** red on PR head. |
-| Hydrograph_Versus_Seatek_Sensors_Project | 91 | PERFORMANCE | Supersedes #89 | **MERGED** | Prefer #91 (fallback if column missing; avoids scratch `test_perf.py` edits from #89). |
-| Hydrograph_Versus_Seatek_Sensors_Project | 89 | PERFORMANCE | Superseded by #91 | **CLOSED** | Same intent as #91; closed with link. |
-| Seatek_Analysis | — | — | — | **N/A** | No open PRs. |
+| Repo                                     | PR # | Category    | Duplicate / stale | Disposition         | Rationale (short)                                                                                                                                                  |
+| ---------------------------------------- | ---: | ----------- | ----------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| personal-config                          |  675 | UI          | None              | **MERGED**          | Shell script UX; required checks green except `update_release_draft` (**infra flake**: action tarball download error — unrelated to diff).                         |
+| personal-config                          |  669 | CI/INFRA    | None              | **ESCALATE / hold** | **Merge conflicts** with `main`; large workflow-updater + auto-close PR behavior — trust-boundary / human review.                                                  |
+| ctrld-sync                               |  663 | CI/INFRA    | None              | **ESCALATE / hold** | Substantive automation OK directionally; **fixed** `label` via v6-compatible `.github/labeler.yml` on `main` + PR branch. **CodeScene** still **fail** → no merge. |
+| email-security-pipeline                  |  584 | UI          | None              | **MERGED**          | Spinner/elapsed time; full gate green.                                                                                                                             |
+| email-security-pipeline                  |  582 | CI/INFRA    | None              | **ESCALATE**        | Draft; proposes likely-invalid `actions/checkout@v6` etc. Do not merge until regenerated with verified refs.                                                       |
+| email-security-pipeline                  |  579 | SECURITY    | None              | **MERGED**          | HF revision pinning; tests + bandit green.                                                                                                                         |
+| email-security-pipeline                  |  578 | PERFORMANCE | None              | **MERGED**          | Sanitization short-circuit; tests green.                                                                                                                           |
+| email-security-pipeline                  |  576 | SECURITY    | None              | **ESCALATE**        | **TOCTOU / `.env` permissions** — sensitive local security behavior; **CodeQL** red on PR head.                                                                    |
+| Hydrograph_Versus_Seatek_Sensors_Project |   91 | PERFORMANCE | Supersedes #89    | **MERGED**          | Prefer #91 (fallback if column missing; avoids scratch `test_perf.py` edits from #89).                                                                             |
+| Hydrograph_Versus_Seatek_Sensors_Project |   89 | PERFORMANCE | Superseded by #91 | **CLOSED**          | Same intent as #91; closed with link.                                                                                                                              |
+| Seatek_Analysis                          |    — | —           | —                 | **N/A**             | No open PRs.                                                                                                                                                       |
 
 ## Automation expansion notes
 

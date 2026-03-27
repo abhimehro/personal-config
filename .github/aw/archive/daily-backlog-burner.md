@@ -34,6 +34,7 @@ tools:
 
 source: githubnext/agentics/workflows/daily-backlog-burner.md@69b5e3ae5fa7f35fa555b0a22aee14c36ab57ebb
 ---
+
 # Daily Backlog Burner
 
 ## Job Description
@@ -62,17 +63,16 @@ To decide which phase to perform:
    - Estimate the effort required to address each issue, considering factors such as complexity, dependencies, and potential impact
    - Identify any patterns or common themes among the issues, such as recurring bugs, feature requests, or areas of improvement
    - Look for any issues that may be duplicates or closely related to each other, and consider whether they can be consolidated or linked together
-    
 2. Use this research to create a discussion with title "${{ github.workflow }} - Research, Roadmap and Plan". This discussion should be a comprehensive plan for dealing with the backlog in this repo, and summarize your findings from the backlog research, including any patterns or themes you identified, and your recommendations for addressing the backlog.
 
    **Include a "How to Control this Workflow" section at the end of the discussion that explains:**
    - The user can add comments to the discussion to provide feedback or adjustments to the plan
    - The user can use these commands:
 
-      gh aw disable daily-backlog-burner --repo ${{ github.repository }}
-      gh aw enable daily-backlog-burner --repo ${{ github.repository }}
-      gh aw run daily-backlog-burner --repo ${{ github.repository }} --repeat <number-of-repeats>
-      gh aw logs daily-backlog-burner --repo ${{ github.repository }}
+     gh aw disable daily-backlog-burner --repo ${{ github.repository }}
+     gh aw enable daily-backlog-burner --repo ${{ github.repository }}
+     gh aw run daily-backlog-burner --repo ${{ github.repository }} --repeat <number-of-repeats>
+     gh aw logs daily-backlog-burner --repo ${{ github.repository }}
 
    **Include a "What Happens Next" section at the end of the discussion that explains:**
    - The next time this workflow runs, it will begin working on items from the backlog based on the plan
@@ -88,15 +88,15 @@ To decide which phase to perform:
    a. Read the plan in the discussion mentioned earlier, along with comments.
 
    b. Check for existing open pull requests (especially yours with "${{ github.workflow }}" prefix). Avoid duplicate work.
-   
+
    c. If plan needs updating then comment on planning discussion with revised plan and rationale. Consider maintainer feedback.
-  
+
    d. Select a goal to pursue from the plan. Ensure that you have a good understanding of the code and the issues before proceeding. Don't work on areas that overlap with any open pull requests you identified.
 
 2. **Work towards your selected goal**. For the backlog item you selected, do the following:
 
    a. Create a new branch.
-   
+
    b. Make the changes to work towards the goal you selected.
 
    c. Ensure the code still works as expected and that any existing relevant tests pass. Add new tests if appropriate and make sure they pass too.
@@ -104,23 +104,23 @@ To decide which phase to perform:
 3. **Finalizing changes**
 
    a. Apply any automatic code formatting used in the repo. If necessary check CI files to understand what code formatting is used.
-   
+
    b. Run any appropriate code linter used in the repo and ensure no new linting errors remain. If necessary check CI files to understand what code linting is used.
 
 4. **Results and learnings**
 
    a. If you succeeded in writing useful code changes that work on the backlog, create a draft pull request with your changes.
 
-      **Critical:** Exclude tool-generated files from PR. Double-check added files and remove any that don't belong.
+   **Critical:** Exclude tool-generated files from PR. Double-check added files and remove any that don't belong.
 
-      In the description, explain:
-      - **Goal and rationale:** What you worked on and why it matters
-      - **Approach:** Strategy, methodology, and implementation steps
-      - **Impact:** What changed and what was fixed or improved
-      - **Validation:** Testing approach and success criteria met
-      - **Future work:** Related opportunities identified
+   In the description, explain:
+   - **Goal and rationale:** What you worked on and why it matters
+   - **Approach:** Strategy, methodology, and implementation steps
+   - **Impact:** What changed and what was fixed or improved
+   - **Validation:** Testing approach and success criteria met
+   - **Future work:** Related opportunities identified
 
-      After creation, check the pull request to ensure it is correct, includes all expected files, and doesn't include any unwanted files or changes. Make any necessary corrections by pushing further commits to the branch.
+   After creation, check the pull request to ensure it is correct, includes all expected files, and doesn't include any unwanted files or changes. Make any necessary corrections by pushing further commits to the branch.
 
 5. **Final update**: Add brief comment (1 or 2 sentences) to the discussion identified at the start of the workflow stating goal worked on, PR links, and progress made.
 

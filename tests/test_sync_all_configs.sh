@@ -15,7 +15,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Cleanup function
 cleanup() {
-    rm -rf "$TEST_DIR"
+	rm -rf "$TEST_DIR"
 }
 trap cleanup EXIT
 
@@ -25,14 +25,14 @@ echo "Test 1: Script existence and executability"
 echo "---"
 
 SCRIPT="$REPO_ROOT/scripts/sync_all_configs.sh"
-if [[ ! -f "$SCRIPT" ]]; then
-    echo "❌ FAIL: Script not found at $SCRIPT"
-    exit 1
+if [[ ! -f $SCRIPT ]]; then
+	echo "❌ FAIL: Script not found at $SCRIPT"
+	exit 1
 fi
 
-if [[ ! -x "$SCRIPT" ]]; then
-    echo "❌ FAIL: Script is not executable"
-    exit 1
+if [[ ! -x $SCRIPT ]]; then
+	echo "❌ FAIL: Script is not executable"
+	exit 1
 fi
 
 echo "✅ PASS: Script exists and is executable"
@@ -43,10 +43,10 @@ echo "Test 2: Error handling configuration"
 echo "---"
 
 if grep -q "set -Eeuo pipefail" "$SCRIPT"; then
-    echo "✅ PASS: Script uses 'set -Eeuo pipefail' for fail-fast behavior"
+	echo "✅ PASS: Script uses 'set -Eeuo pipefail' for fail-fast behavior"
 else
-    echo "❌ FAIL: Script does not use proper error handling"
-    exit 1
+	echo "❌ FAIL: Script does not use proper error handling"
+	exit 1
 fi
 
 # Test 3: Verify helper function definitions
@@ -58,16 +58,16 @@ required_functions=("log" "success" "warn" "error" "ensure_file_link" "ensure_di
 all_found=true
 
 for func in "${required_functions[@]}"; do
-    if grep -q "^${func}()" "$SCRIPT" || grep -q "^${func}[[:space:]]*(" "$SCRIPT"; then
-        echo "✅ PASS: Function '$func' defined"
-    else
-        echo "❌ FAIL: Function '$func' not found"
-        all_found=false
-    fi
+	if grep -q "^${func}()" "$SCRIPT" || grep -q "^${func}[[:space:]]*(" "$SCRIPT"; then
+		echo "✅ PASS: Function '$func' defined"
+	else
+		echo "❌ FAIL: Function '$func' not found"
+		all_found=false
+	fi
 done
 
-if [[ "$all_found" != true ]]; then
-    exit 1
+if [[ $all_found != true ]]; then
+	exit 1
 fi
 
 # Test 4: Test ensure_file_link function behavior with mocks
@@ -82,10 +82,10 @@ mkdir -p "$MOCK_REPO/configs"
 mkdir -p "$MOCK_HOME"
 
 # Create a test file
-echo "test content" > "$MOCK_REPO/configs/test.conf"
+echo "test content" >"$MOCK_REPO/configs/test.conf"
 
 # Create a minimal ensure_file_link function for testing
-cat > "$TEST_DIR/test_file_link.sh" << 'EOF'
+cat >"$TEST_DIR/test_file_link.sh" <<'EOF'
 #!/bin/bash
 set -Eeuo pipefail
 
@@ -133,26 +133,26 @@ chmod +x "$TEST_DIR/test_file_link.sh"
 
 # Test: Create new symlink
 if bash "$TEST_DIR/test_file_link.sh" "$MOCK_HOME/test.conf" "$MOCK_REPO/configs/test.conf" "test.conf" | grep -q "CREATE"; then
-    echo "✅ PASS: Creates new symlink when target exists"
+	echo "✅ PASS: Creates new symlink when target exists"
 else
-    echo "❌ FAIL: Did not create symlink"
-    exit 1
+	echo "❌ FAIL: Did not create symlink"
+	exit 1
 fi
 
 # Verify symlink was created correctly
 if [[ -L "$MOCK_HOME/test.conf" ]] && [[ "$(readlink "$MOCK_HOME/test.conf")" == "$MOCK_REPO/configs/test.conf" ]]; then
-    echo "✅ PASS: Symlink points to correct target"
+	echo "✅ PASS: Symlink points to correct target"
 else
-    echo "❌ FAIL: Symlink not created correctly"
-    exit 1
+	echo "❌ FAIL: Symlink not created correctly"
+	exit 1
 fi
 
 # Test: Existing correct symlink
 if bash "$TEST_DIR/test_file_link.sh" "$MOCK_HOME/test.conf" "$MOCK_REPO/configs/test.conf" "test.conf" | grep -q "OK"; then
-    echo "✅ PASS: Recognizes existing correct symlink"
+	echo "✅ PASS: Recognizes existing correct symlink"
 else
-    echo "❌ FAIL: Did not recognize existing symlink"
-    exit 1
+	echo "❌ FAIL: Did not recognize existing symlink"
+	exit 1
 fi
 
 # Test 5: Test backup behavior when file already exists
@@ -163,24 +163,24 @@ echo "---"
 # Create a new test with existing file
 MOCK_HOME2="$TEST_DIR/mock_home2"
 mkdir -p "$MOCK_HOME2"
-echo "original content" > "$MOCK_HOME2/test.conf"
+echo "original content" >"$MOCK_HOME2/test.conf"
 
 # Run the symlink function
-bash "$TEST_DIR/test_file_link.sh" "$MOCK_HOME2/test.conf" "$MOCK_REPO/configs/test.conf" "test.conf" > /dev/null 2>&1
+bash "$TEST_DIR/test_file_link.sh" "$MOCK_HOME2/test.conf" "$MOCK_REPO/configs/test.conf" "test.conf" >/dev/null 2>&1
 
 # Check if backup was created
 if ls "$MOCK_HOME2"/test.conf.backup.* >/dev/null 2>&1; then
-    echo "✅ PASS: Created backup of existing file"
-    # Verify backup contains original content
-    if grep -q "original content" "$MOCK_HOME2"/test.conf.backup.*; then
-        echo "✅ PASS: Backup preserves original content"
-    else
-        echo "❌ FAIL: Backup does not contain original content"
-        exit 1
-    fi
+	echo "✅ PASS: Created backup of existing file"
+	# Verify backup contains original content
+	if grep -q "original content" "$MOCK_HOME2"/test.conf.backup.*; then
+		echo "✅ PASS: Backup preserves original content"
+	else
+		echo "❌ FAIL: Backup does not contain original content"
+		exit 1
+	fi
 else
-    echo "❌ FAIL: Did not create backup"
-    exit 1
+	echo "❌ FAIL: Did not create backup"
+	exit 1
 fi
 
 # Test 6: Test ensure_dir_link function behavior
@@ -190,10 +190,10 @@ echo "---"
 
 # Create a test directory
 mkdir -p "$MOCK_REPO/configs/testdir"
-echo "test" > "$MOCK_REPO/configs/testdir/file.txt"
+echo "test" >"$MOCK_REPO/configs/testdir/file.txt"
 
 # Create a minimal ensure_dir_link function for testing
-cat > "$TEST_DIR/test_dir_link.sh" << 'EOF'
+cat >"$TEST_DIR/test_dir_link.sh" <<'EOF'
 #!/bin/bash
 set -Eeuo pipefail
 
@@ -241,18 +241,18 @@ chmod +x "$TEST_DIR/test_dir_link.sh"
 
 # Test: Create new directory symlink
 if bash "$TEST_DIR/test_dir_link.sh" "$MOCK_HOME/testdir" "$MOCK_REPO/configs/testdir" "testdir" | grep -q "CREATE"; then
-    echo "✅ PASS: Creates new directory symlink when target exists"
+	echo "✅ PASS: Creates new directory symlink when target exists"
 else
-    echo "❌ FAIL: Did not create directory symlink"
-    exit 1
+	echo "❌ FAIL: Did not create directory symlink"
+	exit 1
 fi
 
 # Verify directory symlink was created correctly
 if [[ -L "$MOCK_HOME/testdir" ]] && [[ "$(readlink "$MOCK_HOME/testdir")" == "$MOCK_REPO/configs/testdir" ]]; then
-    echo "✅ PASS: Directory symlink points to correct target"
+	echo "✅ PASS: Directory symlink points to correct target"
 else
-    echo "❌ FAIL: Directory symlink not created correctly"
-    exit 1
+	echo "❌ FAIL: Directory symlink not created correctly"
+	exit 1
 fi
 
 # Test 7: Verify script uses REPO_ROOT variable
@@ -261,30 +261,30 @@ echo "Test 7: Uses REPO_ROOT variable for repo-relative paths"
 echo "---"
 
 if grep -q 'REPO_ROOT=' "$SCRIPT"; then
-    echo "✅ PASS: Script defines REPO_ROOT variable"
+	echo "✅ PASS: Script defines REPO_ROOT variable"
 else
-    echo "❌ FAIL: Script does not define REPO_ROOT variable"
-    exit 1
+	echo "❌ FAIL: Script does not define REPO_ROOT variable"
+	exit 1
 fi
 
 # Test 8: Verify no hardcoded home directory paths
 echo ""
-echo "Test 8: Uses \$HOME variable instead of hardcoded paths"
+echo 'Test 8: Uses $HOME variable instead of hardcoded paths'
 echo "---"
 
 # Check that script uses $HOME instead of hardcoded paths like /Users/username
 if grep -q '\$HOME' "$SCRIPT"; then
-    echo "✅ PASS: Script uses \$HOME variable"
+	echo '✅ PASS: Script uses $HOME variable'
 else
-    echo "⚠️  WARNING: Script may not use \$HOME variable"
+	echo '⚠️  WARNING: Script may not use $HOME variable'
 fi
 
 # Check for hardcoded paths (excluding comments)
 if grep -E "/Users/[a-zA-Z0-9_-]+" "$SCRIPT" | grep -v "^\s*#" | grep -v "REPO_ROOT" >/dev/null 2>&1; then
-    echo "⚠️  WARNING: Found potential hardcoded user paths"
-    grep -E "/Users/[a-zA-Z0-9_-]+" "$SCRIPT" | grep -v "^\s*#" | grep -v "REPO_ROOT"
+	echo "⚠️  WARNING: Found potential hardcoded user paths"
+	grep -E "/Users/[a-zA-Z0-9_-]+" "$SCRIPT" | grep -v "^\s*#" | grep -v "REPO_ROOT"
 else
-    echo "✅ PASS: No hardcoded user paths found"
+	echo "✅ PASS: No hardcoded user paths found"
 fi
 
 # Test 9: Verify script has configuration sections
@@ -296,19 +296,19 @@ expected_sections=("SSH" "Fish" "Cursor" "VS Code" "Git")
 found_sections=0
 
 for section in "${expected_sections[@]}"; do
-    if grep -qi "$section" "$SCRIPT"; then
-        echo "✅ PASS: Found '$section' configuration section"
-        found_sections=$((found_sections + 1))
-    else
-        echo "⚠️  WARNING: '$section' section not found"
-    fi
+	if grep -qi "$section" "$SCRIPT"; then
+		echo "✅ PASS: Found '$section' configuration section"
+		found_sections=$((found_sections + 1))
+	else
+		echo "⚠️  WARNING: '$section' section not found"
+	fi
 done
 
 if [[ $found_sections -ge 3 ]]; then
-    echo "✅ PASS: Script has multiple configuration sections"
+	echo "✅ PASS: Script has multiple configuration sections"
 else
-    echo "❌ FAIL: Script is missing expected configuration sections"
-    exit 1
+	echo "❌ FAIL: Script is missing expected configuration sections"
+	exit 1
 fi
 
 echo ""

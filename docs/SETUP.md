@@ -11,14 +11,13 @@ This document captures the steps to recreate the terminal and editor setup on a 
 
 1. Install Homebrew (if needed) from https://brew.sh.
 2. Install base tools:
-
 ```
 
 [brew install git fish neovim tree-sitter-cli lua-language-server
-brew install python        # Homebrew Python 3.x
-npm install -g neovim      # Node provider for Neovim
-npm install -g pyright bash-language-server 
-vscode-langservers-extracted yaml-language-server 
+brew install python # Homebrew Python 3.x
+npm install -g neovim # Node provider for Neovim
+npm install -g pyright bash-language-server
+vscode-langservers-extracted yaml-language-server
 typescript typescript-language-server](https://brew.sh.Install)
 
 ```
@@ -44,7 +43,7 @@ git clone git@github.com:&lt;user&gt;/personal-config.git](https://brew.sh.Insta
 ```
 
 [mkdir -p ~/.config/fish
-ln -s ~/dev/personal-config/configs/.config/fish/config.fish 
+ln -s ~/dev/personal-config/configs/.config/fish/config.fish
 ~/.config/fish/config.fish](https://brew.sh.Install)
 
 ```
@@ -68,7 +67,7 @@ $EDITOR ~/Library/Application\ Support/com.mitchellh.ghostty/config.ghostty](htt
 
 ```
 
-[theme = dracula              # Dracula Ghostty theme file in ~/.config/ghostty/themes
+[theme = dracula # Dracula Ghostty theme file in ~/.config/ghostty/themes
 background-opacity = 0.96
 unfocused-split-opacity = 0.90](https://brew.sh.Install)
 
@@ -125,10 +124,10 @@ keybind = super+shift+down=goto_split:down](https://brew.sh.Install)
 
 [mkdir -p ~/.local/share/nvim/site/pack/nvim/start](https://brew.sh.Install)
 
-[git clone https://github.com/nvim-treesitter/nvim-treesitter 
+[git clone https://github.com/nvim-treesitter/nvim-treesitter
 ~/.local/share/nvim/site/pack/nvim/start/nvim-treesitter](https://brew.sh.Install)
 
-[git clone https://github.com/neovim/nvim-lspconfig 
+[git clone https://github.com/neovim/nvim-lspconfig
 ~/.local/share/nvim/site/pack/nvim/start/nvim-lspconfig](https://brew.sh.Install)
 
 ```
@@ -138,7 +137,7 @@ keybind = super+shift+down=goto_split:down](https://brew.sh.Install)
 ```
 
 [mkdir -p ~/.config/nvim/pack/themes/start
-git clone https://github.com/dracula/vim.git 
+git clone https://github.com/dracula/vim.git
 ~/.config/nvim/pack/themes/start/dracula](https://brew.sh.Install)
 
 ```
@@ -179,8 +178,8 @@ vim.opt.splitright = true
 vim.opt.updatetime = 300
 vim.opt.timeoutlen = 400](https://brew.sh.Install)
 
-[vim.g.loaded_perl_provider  = 0
-vim.g.loaded_ruby_provider  = 0](https://brew.sh.Install)
+[vim.g.loaded_perl_provider = 0
+vim.g.loaded_ruby_provider = 0](https://brew.sh.Install)
 
 [-- Treesitter
 require("nvim-treesitter.configs").setup({
@@ -193,7 +192,7 @@ ensure_installed = {
 "swift",
 },
 highlight = { enable = true },
-indent    = { enable = true },
+indent = { enable = true },
 })](https://brew.sh.Install)
 
 [-- LSP servers (require language servers to be installed)
@@ -216,11 +215,11 @@ callback = function(ev)
 local opts = { buffer = ev.buf, silent = true }
 vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
 vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
-vim.keymap.set("n", "K",  vim.lsp.buf.hover, opts)
+vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
 vim.keymap.set("n", "&lt;leader&gt;rn", vim.lsp.buf.rename, opts)
 vim.keymap.set("n", "&lt;leader&gt;ca", vim.lsp.buf.code_action, opts)
-vim.keymap.set("n", "[d", vim.diagnostic.goto_prev,   opts)
-vim.keymap.set("n", "]d", vim.diagnostic.goto_next,   opts)
+vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
+vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
 end,
 })](https://brew.sh.Install)
 
@@ -249,11 +248,12 @@ Everything should report ✅ for Treesitter, providers, and LSP.[web:443][web:43
 [name: Ghostty – Two Window Dev](https://brew.sh.Install)
 
 [windows:
+
 - tabs:
 - title: personal-config
-color: Green
-layout:
-cwd: /Users/speedybee/dev/personal-config](https://brew.sh.Install)
+  color: Green
+  layout:
+  cwd: /Users/speedybee/dev/personal-config](https://brew.sh.Install)
 
 ```
      - title: dev-root

@@ -37,9 +37,11 @@ controld-manager status
 ## 🚨 **Common Issues & Solutions**
 
 ### **Issue: Raycast Shows "Disconnected"**
+
 **Symptoms**: Extension shows not connected, IP location shows real location
 **Cause**: Service not actually connecting to Control D
 **Solution**:
+
 ```bash
 # Restart current profile
 sudo controld-manager switch $(controld-manager status | grep "Active Profile" | awk '{print $3}')
@@ -49,9 +51,11 @@ dig @127.0.0.1 p.controld.com +short
 ```
 
 ### **Issue: IP Location Not Changing**
+
 **Symptoms**: Location always shows real location regardless of profile
 **Cause**: DNS not routing through Control D properly
 **Solution**:
+
 ```bash
 # Check system DNS configuration
 networksetup -getdnsservers Wi-Fi
@@ -66,8 +70,10 @@ sudo controld-manager switch privacy  # or gaming
 ```
 
 ### **Issue: Profile Switching Fails**
+
 **Symptoms**: Error during profile switch, network connectivity lost
 **Solution**:
+
 ```bash
 # Emergency recovery - restores network immediately
 sudo controld-manager emergency
@@ -77,8 +83,10 @@ sudo controld-manager switch <desired_profile>
 ```
 
 ### **Issue: DNS Resolution Slow/Failing**
+
 **Symptoms**: Websites load slowly, DNS timeouts
 **Solution**:
+
 ```bash
 # Check if service is running
 controld-manager status
@@ -91,8 +99,10 @@ time dig @127.0.0.1 google.com +short
 ```
 
 ### **Issue: Ad Blocking Not Working**
+
 **Symptoms**: Ads still showing with privacy profile
 **Solution**:
+
 ```bash
 # Verify privacy profile is active
 controld-manager status
@@ -108,6 +118,7 @@ sudo controld-manager switch privacy
 ## 🔧 **System Recovery Procedures**
 
 ### **Complete System Reset**
+
 ```bash
 # 1. Emergency recovery
 sudo controld-manager emergency
@@ -124,6 +135,7 @@ sudo controld-manager switch gaming  # or privacy
 ```
 
 ### **Service Won't Start**
+
 ```bash
 # Check for conflicting processes
 ps aux | grep ctrld
@@ -139,6 +151,7 @@ sudo controld-manager switch gaming
 ```
 
 ### **Network Completely Broken**
+
 ```bash
 # Emergency DNS restoration
 sudo networksetup -setdnsservers Wi-Fi "Empty"
@@ -158,16 +171,16 @@ DoH3, a misconfigured LaunchDaemon, and ad-hoc monitoring produced
 unreliable behavior. The current v4.1+ setup has fixed these issues and
 **does** use DoH3, a LaunchDaemon, and the consolidated
 `controld_monitor.sh` checks. Keep these notes as guardrails against
-reintroducing the *old* failure modes:
+reintroducing the _old_ failure modes:
 
 ❌ Avoid rolling your own unvalidated DoH3 configs outside the
-   `controld-manager` + `network-mode-manager.sh` path.
+`controld-manager` + `network-mode-manager.sh` path.
 ❌ Avoid creating additional LaunchDaemons for `ctrld` beyond the one
-   installed by `ctrld service`.
+installed by `ctrld service`.
 ❌ Don't hand-edit live TOML files on disk without backups and tests;
-   prefer regeneration via `controld-manager`.
+prefer regeneration via `controld-manager`.
 ❌ Don't bolt on extra monitoring scripts that duplicate what
-   `maintenance/controld_monitor.sh` already checks.
+`maintenance/controld_monitor.sh` already checks.
 
 ## ✅ **Verification Commands**
 
@@ -203,6 +216,7 @@ If issues persist after following this guide:
    - Describe what you were trying to do
 
 2. **Run emergency recovery**:
+
    ```bash
    sudo controld-manager emergency
    ```

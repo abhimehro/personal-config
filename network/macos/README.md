@@ -6,6 +6,7 @@
 ## Current Configuration
 
 ### 🌐 DNS & Privacy: Control D + AdGuard
+
 - **Status**: ✅ Working optimally
 - **Configuration**: [controld-adguard-setup.md](controld-adguard-setup.md)
 - **Automation**: Auto-configured via LaunchAgent
@@ -13,15 +14,16 @@
 
 ### 🔧 Key Components
 
-| Component | Function | Protocol | Status |
-|-----------|----------|----------|--------|
-| Control D | DNS filtering, privacy, IP masking | DoH (TCP/443) | ✅ Active |
-| AdGuard | Web content filtering | System DNS | ✅ Active |
-| System DNS | Points to Control D localhost | 127.0.0.1:53 | ✅ Configured |
+| Component  | Function                           | Protocol      | Status        |
+| ---------- | ---------------------------------- | ------------- | ------------- |
+| Control D  | DNS filtering, privacy, IP masking | DoH (TCP/443) | ✅ Active     |
+| AdGuard    | Web content filtering              | System DNS    | ✅ Active     |
+| System DNS | Points to Control D localhost      | 127.0.0.1:53  | ✅ Configured |
 
 ### 🚀 Quick Commands
 
 **Test Configuration**:
+
 ```bash
 # Run automation script
 bash ~/Documents/dev/personal-config/scripts/macos/controld-ensure.sh
@@ -31,6 +33,7 @@ dig +short verify.controld.com
 ```
 
 **Validate Status**:
+
 - Control D: Visit https://verify.controld.com
 - AdGuard: Check blocking statistics in app
 - IP Masking: Should show Miami, FL location
@@ -56,11 +59,13 @@ Final Response (Filtered & Private)
 ## 🔄 Maintenance
 
 ### Automatic
+
 - **LaunchAgent**: Runs every 5 minutes
 - **Login Enforcement**: Ensures configuration at startup
 - **Health Monitoring**: Validates DNS resolution
 
 ### Manual
+
 - **After macOS Updates**: Re-run automation script
 - **After App Updates**: Verify both apps still work together
 - **Troubleshooting**: See full documentation
@@ -75,12 +80,14 @@ Final Response (Filtered & Private)
 ## 🔍 Troubleshooting
 
 **Quick Fixes**:
+
 1. Run automation script: `bash ~/Documents/dev/personal-config/scripts/macos/controld-ensure.sh`
 2. Check Control D is running: `sudo lsof -i :53`
 3. Verify AdGuard DNS setting: Should be "System default"
 4. Test resolution: `dig +short verify.controld.com`
 
 **Common Issues**:
+
 - Control D not binding to localhost → Restart Control D app
 - AdGuard blocking Control D → Check DNS provider setting
 - IPv6/UDP errors → Configuration uses DoH (TCP) to avoid this
@@ -96,4 +103,4 @@ Final Response (Filtered & Private)
 
 ---
 
-*This configuration provides enterprise-grade DNS privacy and content filtering on macOS with zero conflicts and full automation.*
+_This configuration provides enterprise-grade DNS privacy and content filtering on macOS with zero conflicts and full automation._

@@ -15,16 +15,16 @@ _CTRLD_SCRIPTS_LIB="$_CTRLD_REPO_ROOT/scripts/lib"
 
 # Source shared libraries when available (not present in standalone installs)
 for _lib in \
-    "$_CTRLD_SCRIPTS_LIB/common.sh" \
-    "$_CTRLD_SCRIPTS_LIB/dns-utils.sh" \
-    "$_CTRLD_SCRIPTS_LIB/network-common.sh" \
-    "$_CTRLD_SCRIPTS_LIB/file-common.sh" \
-    "$_CTRLD_SCRIPTS_LIB/controld-profile.sh" \
-    "$_CTRLD_SCRIPTS_LIB/controld-service.sh"; do
-    if [[ -f "$_lib" ]]; then
-        # shellcheck source=/dev/null
-        source "$_lib"
-    fi
+	"$_CTRLD_SCRIPTS_LIB/common.sh" \
+	"$_CTRLD_SCRIPTS_LIB/dns-utils.sh" \
+	"$_CTRLD_SCRIPTS_LIB/network-common.sh" \
+	"$_CTRLD_SCRIPTS_LIB/file-common.sh" \
+	"$_CTRLD_SCRIPTS_LIB/controld-profile.sh" \
+	"$_CTRLD_SCRIPTS_LIB/controld-service.sh"; do
+	if [[ -f $_lib ]]; then
+		# shellcheck source=/dev/null
+		source "$_lib"
+	fi
 done
 unset _lib _CTRLD_SCRIPTS_LIB _CTRLD_REPO_ROOT _CTRLD_MGR_DIR
 
@@ -34,12 +34,12 @@ PROFILES_DIR="$CONTROLD_DIR/profiles"
 BACKUP_DIR="$CONTROLD_DIR/backup"
 LOG_FILE="${LOG_FILE:-/var/log/controld_manager.log}"
 ENV_FILE="$CONTROLD_DIR/controld.env"
-LISTENER_IP="127.0.0.1"  # localhost - where ctrld listens for DNS queries
+LISTENER_IP="127.0.0.1" # localhost - where ctrld listens for DNS queries
 
 # Load environment variables if present
-if [[ -f "$ENV_FILE" ]]; then
-    # shellcheck source=/dev/null
-    source "$ENV_FILE"
+if [[ -f $ENV_FILE ]]; then
+	# shellcheck source=/dev/null
+	source "$ENV_FILE"
 fi
 
 # Color codes
@@ -50,207 +50,207 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 log() {
-    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE" 2>/dev/null || true
+	echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >>"$LOG_FILE" 2>/dev/null || true
 }
 
 log_error() {
-    echo -e "${RED}[ERROR]${NC} $1" >&2
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $1" >> "$LOG_FILE" 2>/dev/null || true
+	echo -e "${RED}[ERROR]${NC} $1" >&2
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $1" >>"$LOG_FILE" 2>/dev/null || true
 }
 
 log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS: $1" >> "$LOG_FILE" 2>/dev/null || true
+	echo -e "${GREEN}[SUCCESS]${NC} $1"
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS: $1" >>"$LOG_FILE" 2>/dev/null || true
 }
 
 log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARNING: $1" >> "$LOG_FILE" 2>/dev/null || true
+	echo -e "${YELLOW}[WARNING]${NC} $1"
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARNING: $1" >>"$LOG_FILE" 2>/dev/null || true
 }
 
 # Check if we're running as root
 check_root() {
-    if [[ $EUID -ne 0 ]]; then
-        log_error "This script must be run as root. Use: sudo $0"
-        return 1
-    fi
-    return 0
+	if [[ $EUID -ne 0 ]]; then
+		log_error "This script must be run as root. Use: sudo $0"
+		return 1
+	fi
+	return 0
 }
 
 # Test connection using the currently active profile
 test_current_connection() {
-    log "Testing DNS connection..."
-    local controld_dir="${1:-$CONTROLD_DIR}"
+	log "Testing DNS connection..."
+	local controld_dir="${1:-$CONTROLD_DIR}"
 
-    local current_profile="unknown"
-    if [[ -f "$controld_dir/active_profile" ]]; then
-        current_profile=$(grep "^PROFILE_NAME=" "$controld_dir/active_profile" 2>/dev/null | cut -d= -f2 || echo "unknown")
-    elif [[ -L "$controld_dir/ctrld.toml" ]]; then
-        local current_config
-        current_config=$(readlink "$controld_dir/ctrld.toml")
-        current_profile=$(basename "$current_config" | sed 's/ctrld\.\(.*\)\.toml/\1/')
-    fi
+	local current_profile="unknown"
+	if [[ -f "$controld_dir/active_profile" ]]; then
+		current_profile=$(grep "^PROFILE_NAME=" "$controld_dir/active_profile" 2>/dev/null | cut -d= -f2 || echo "unknown")
+	elif [[ -L "$controld_dir/ctrld.toml" ]]; then
+		local current_config
+		current_config=$(readlink "$controld_dir/ctrld.toml")
+		current_profile=$(basename "$current_config" | sed 's/ctrld\.\(.*\)\.toml/\1/')
+	fi
 
-    local test_result
-    test_profile_connection "$current_profile" "$LISTENER_IP"
-    test_result=$?
+	local test_result
+	test_profile_connection "$current_profile" "$LISTENER_IP"
+	test_result=$?
 
-    if [[ $test_result -eq 0 ]]; then
-        log_success "DNS resolution and filtering checks passed"
-        return 0
-    elif [[ $test_result -eq 2 ]]; then
-        log_warning "DNS resolution works, but filtering behavior seems incorrect"
-        return 0
-    else
-        log_error "Connection test failed"
-        return 1
-    fi
+	if [[ $test_result -eq 0 ]]; then
+		log_success "DNS resolution and filtering checks passed"
+		return 0
+	elif [[ $test_result -eq 2 ]]; then
+		log_warning "DNS resolution works, but filtering behavior seems incorrect"
+		return 0
+	else
+		log_error "Connection test failed"
+		return 1
+	fi
 }
 
 # Switch profile safely with protocol selection
 switch_profile() {
-    local profile_name="$1"
-    local force_protocol="$2"
-    local profile_id
-    profile_id="$(get_profile_id "$profile_name")"
-    local protocol=${force_protocol:-$(get_profile_protocol "$profile_name")}
+	local profile_name="$1"
+	local force_protocol="$2"
+	local profile_id
+	profile_id="$(get_profile_id "$profile_name")"
+	local protocol=${force_protocol:-$(get_profile_protocol "$profile_name")}
 
-    if [[ -z "$profile_id" ]]; then
-        log_error "Unknown profile: $profile_name"
-        echo "Available profiles: $(get_all_profiles)"
-        return 1
-    fi
+	if [[ -z $profile_id ]]; then
+		log_error "Unknown profile: $profile_name"
+		echo "Available profiles: $(get_all_profiles)"
+		return 1
+	fi
 
-    if ! validate_profile_id "$profile_id" || ! validate_protocol "$protocol"; then
-        log_error "Invalid profile ID or protocol."
-        return 1
-    fi
+	if ! validate_profile_id "$profile_id" || ! validate_protocol "$protocol"; then
+		log_error "Invalid profile ID or protocol."
+		return 1
+	fi
 
-    local config_file="$PROFILES_DIR/ctrld.$profile_name.toml"
-    log "Switching to $profile_name profile with $protocol protocol..."
+	local config_file="$PROFILES_DIR/ctrld.$profile_name.toml"
+	log "Switching to $profile_name profile with $protocol protocol..."
 
-    # Optimization: Early exit if already running the desired profile/protocol
-    if pgrep -x "ctrld" >/dev/null && [[ -f "$CONTROLD_DIR/active_profile" ]]; then
-        local active_prof active_proto
-        active_prof=$(grep "^PROFILE_NAME=" "$CONTROLD_DIR/active_profile" 2>/dev/null | cut -d= -f2)
-        active_proto=$(grep "^PROTOCOL=" "$CONTROLD_DIR/active_profile" 2>/dev/null | cut -d= -f2)
-        if [[ "$active_prof" == "$profile_name" ]] && [[ "$active_proto" == "$protocol" ]]; then
-            if dig @127.0.0.1 google.com +short +time=1 >/dev/null 2>&1; then
-                log_success "Already running $profile_name profile with $protocol. No change needed."
-                return 0
-            fi
-            log_warning "Profile matches but health check failed. Restarting service..."
-        fi
-    fi
+	# Optimization: Early exit if already running the desired profile/protocol
+	if pgrep -x "ctrld" >/dev/null && [[ -f "$CONTROLD_DIR/active_profile" ]]; then
+		local active_prof active_proto
+		active_prof=$(grep "^PROFILE_NAME=" "$CONTROLD_DIR/active_profile" 2>/dev/null | cut -d= -f2)
+		active_proto=$(grep "^PROTOCOL=" "$CONTROLD_DIR/active_profile" 2>/dev/null | cut -d= -f2)
+		if [[ $active_prof == "$profile_name" ]] && [[ $active_proto == "$protocol" ]]; then
+			if dig @127.0.0.1 google.com +short +time=1 >/dev/null 2>&1; then
+				log_success "Already running $profile_name profile with $protocol. No change needed."
+				return 0
+			fi
+			log_warning "Profile matches but health check failed. Restarting service..."
+		fi
+	fi
 
-    setup_directories "$CONTROLD_DIR" "$PROFILES_DIR" "$BACKUP_DIR" "$LOG_FILE" || return 1
-    log "Stopping Control D service..."
+	setup_directories "$CONTROLD_DIR" "$PROFILES_DIR" "$BACKUP_DIR" "$LOG_FILE" || return 1
+	log "Stopping Control D service..."
 
-    log "Starting Control D with $profile_name profile ($protocol)..."
-    restart_with_native_profile "$profile_id" "$profile_name" "$protocol" "$CONTROLD_DIR" "$LISTENER_IP" || return 1
+	log "Starting Control D with $profile_name profile ($protocol)..."
+	restart_with_native_profile "$profile_id" "$profile_name" "$protocol" "$CONTROLD_DIR" "$LISTENER_IP" || return 1
 
-    local test_result
-    local retry=0
-    local max_retries=5
-    while true; do
-        if test_profile_connection "$profile_name" "$LISTENER_IP"; then
-            test_result=0
-        else
-            test_result=$?
-        fi
-        if [[ $test_result -eq 0 || $test_result -eq 2 ]]; then
-            break
-        fi
-        if [[ $retry -ge $max_retries ]]; then
-            break
-        fi
-        retry=$((retry + 1))
-        sleep 1
-    done
+	local test_result
+	local retry=0
+	local max_retries=5
+	while true; do
+		if test_profile_connection "$profile_name" "$LISTENER_IP"; then
+			test_result=0
+		else
+			test_result=$?
+		fi
+		if [[ $test_result -eq 0 || $test_result -eq 2 ]]; then
+			break
+		fi
+		if [[ $retry -ge $max_retries ]]; then
+			break
+		fi
+		retry=$((retry + 1))
+		sleep 1
+	done
 
-    if [[ $test_result -eq 0 ]]; then
-        log_success "Successfully switched to $profile_name profile ($protocol)"
-        echo -e "\nProfile: $profile_name\nID: $(redact_profile_id "$profile_id")\nProtocol: $protocol\nStatus: Active"
-        return 0
-    elif [[ $test_result -eq 2 ]]; then
-        log_warning "Successfully switched to $profile_name profile ($protocol), but ads are not being blocked."
-        echo -e "\nProfile: $profile_name\nID: $(redact_profile_id "$profile_id")\nProtocol: $protocol\nStatus: Active (Warning: Filtering may not be active)"
-        return 0
-    else
-        log_error "Failed to establish connection with $profile_name profile"
-        restore_network_settings "$BACKUP_DIR"
-        return 1
-    fi
+	if [[ $test_result -eq 0 ]]; then
+		log_success "Successfully switched to $profile_name profile ($protocol)"
+		echo -e "\nProfile: $profile_name\nID: $(redact_profile_id "$profile_id")\nProtocol: $protocol\nStatus: Active"
+		return 0
+	elif [[ $test_result -eq 2 ]]; then
+		log_warning "Successfully switched to $profile_name profile ($protocol), but ads are not being blocked."
+		echo -e "\nProfile: $profile_name\nID: $(redact_profile_id "$profile_id")\nProtocol: $protocol\nStatus: Active (Warning: Filtering may not be active)"
+		return 0
+	else
+		log_error "Failed to establish connection with $profile_name profile"
+		restore_network_settings "$BACKUP_DIR"
+		return 1
+	fi
 }
 
 # Initialize the system
 initialize() {
-    log "Initializing Control D Profile Manager..."
-    setup_directories "$CONTROLD_DIR" "$PROFILES_DIR" "$BACKUP_DIR" "$LOG_FILE" || return 1
-    backup_network_settings "$BACKUP_DIR"
+	log "Initializing Control D Profile Manager..."
+	setup_directories "$CONTROLD_DIR" "$PROFILES_DIR" "$BACKUP_DIR" "$LOG_FILE" || return 1
+	backup_network_settings "$BACKUP_DIR"
 
-    log_success "Initialization completed"
+	log_success "Initialization completed"
 }
 
 # Main function
 main() {
-    case "${1:-""}" in
-        "init"|"initialize")
-            check_root || return 1
-            initialize
-            ;;
-        "switch")
-            check_root || return 1
-            if [[ -z "${2:-}" ]]; then
-                echo "Usage: $0 switch <profile_name> [protocol]"
-                echo "Available profiles: $(get_all_profiles)"
-                echo "Available protocols: doh3, doh"
-                return 1
-            fi
-            switch_profile "$2" "${3:-}"
-            ;;
-        "status")
-            show_status "$CONTROLD_DIR"
-            ;;
-        "stop")
-            check_root || return 1
-            log "Safely stopping Control D service..."
-            safe_stop "$BACKUP_DIR"
-            log_success "Service safely stopped and network restored"
-            ;;
-        "test")
-            test_current_connection "$CONTROLD_DIR"
-            ;;
-        "emergency"|"recover")
-            check_root || return 1
-            log_warning "Performing emergency recovery..."
-            if emergency_recovery "$BACKUP_DIR" "$CONTROLD_DIR"; then
-                log_success "Network connectivity restored"
-                echo "Emergency recovery completed successfully"
-            else
-                log_error "Network connectivity still has issues"
-                echo "Please restart your router and/or use VPN as fallback"
-            fi
-            ;;
-        *)
-            echo "Control D Profile Manager - Enhanced with DOH3 Support"
-            echo "Usage: $0 <command> [options]"
-            echo
-            echo "Commands:"
-            echo "  init                         Initialize the profile manager"
-            echo "  switch <profile> [protocol]  Switch to profile (gaming/privacy) with optional protocol"
-            echo "  status                      Show current status and protocol info"
-            echo "  stop                        Safely stop Control D service"
-            echo "  test                        Test DNS connection"
-            echo "  emergency                   Emergency recovery (restore network)"
-            echo
-            echo "Available profiles: $(get_all_profiles)"
-            echo "Protocols: doh3 (default), doh (fallback)"
-            ;;
-    esac
+	case "${1:-""}" in
+	"init" | "initialize")
+		check_root || return 1
+		initialize
+		;;
+	"switch")
+		check_root || return 1
+		if [[ -z ${2-} ]]; then
+			echo "Usage: $0 switch <profile_name> [protocol]"
+			echo "Available profiles: $(get_all_profiles)"
+			echo "Available protocols: doh3, doh"
+			return 1
+		fi
+		switch_profile "$2" "${3-}"
+		;;
+	"status")
+		show_status "$CONTROLD_DIR"
+		;;
+	"stop")
+		check_root || return 1
+		log "Safely stopping Control D service..."
+		safe_stop "$BACKUP_DIR"
+		log_success "Service safely stopped and network restored"
+		;;
+	"test")
+		test_current_connection "$CONTROLD_DIR"
+		;;
+	"emergency" | "recover")
+		check_root || return 1
+		log_warning "Performing emergency recovery..."
+		if emergency_recovery "$BACKUP_DIR" "$CONTROLD_DIR"; then
+			log_success "Network connectivity restored"
+			echo "Emergency recovery completed successfully"
+		else
+			log_error "Network connectivity still has issues"
+			echo "Please restart your router and/or use VPN as fallback"
+		fi
+		;;
+	*)
+		echo "Control D Profile Manager - Enhanced with DOH3 Support"
+		echo "Usage: $0 <command> [options]"
+		echo
+		echo "Commands:"
+		echo "  init                         Initialize the profile manager"
+		echo "  switch <profile> [protocol]  Switch to profile (gaming/privacy) with optional protocol"
+		echo "  status                      Show current status and protocol info"
+		echo "  stop                        Safely stop Control D service"
+		echo "  test                        Test DNS connection"
+		echo "  emergency                   Emergency recovery (restore network)"
+		echo
+		echo "Available profiles: $(get_all_profiles)"
+		echo "Protocols: doh3 (default), doh (fallback)"
+		;;
+	esac
 }
 
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
+if [[ ${BASH_SOURCE[0]} == "${0}" ]]; then
+	main "$@"
 fi

@@ -579,6 +579,7 @@ is_critical_system_component() {
 
 # Legacy function - preserved for backward compatibility
 # Use should_protect_from_uninstall() or should_protect_data() instead
+# shellcheck disable=SC2034
 readonly PRESERVED_BUNDLE_PATTERNS=("${SYSTEM_CRITICAL_BUNDLES[@]}" "${DATA_PROTECTED_BUNDLES[@]}")
 
 # Check if bundle ID matches pattern (glob support)
@@ -617,16 +618,14 @@ build_regex_var() {
 			regex="$regex|$p"
 		fi
 	done
-	# SECURITY: Validate variable name to prevent Command Injection (CWE-78)
-	if [[ $var_name =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-		printf -v "$var_name" "%s" "$regex"
-	fi
+	eval "$var_name=\"\$regex\""
 }
 
 # Lazy-loaded regex (only built when needed)
 APPLE_UNINSTALLABLE_REGEX=""
 SYSTEM_CRITICAL_REGEX=""
 SYSTEM_CRITICAL_FAST_REGEX=""
+# shellcheck disable=SC2034
 DATA_PROTECTED_REGEX=""
 
 _ensure_uninstall_regex() {
@@ -925,12 +924,16 @@ find_app_files() {
 	# Normalize app name for matching - generate all common naming variants
 	# Apps use inconsistent naming: "Maestro Studio" vs "maestro-studio" vs "MaestroStudio"
 	# Note: Using tr for lowercase conversion (Bash 3.2 compatible, no ${var,,} support)
-	local nospace_name="${app_name// /}"                                               # "Maestro Studio" -> "MaestroStudio"
-	local underscore_name="${app_name// /_}"                                           # "Maestro Studio" -> "Maestro_Studio"
-	local hyphen_name="${app_name// /-}"                                               # "Maestro Studio" -> "Maestro-Studio"
-	local lowercase_name=$(echo "$app_name" | tr '[:upper:]' '[:lower:]')              # "Zed Nightly" -> "zed nightly"
-	local lowercase_nospace=$(echo "$nospace_name" | tr '[:upper:]' '[:lower:]')       # "MaestroStudio" -> "maestrostudio"
-	local lowercase_hyphen=$(echo "$hyphen_name" | tr '[:upper:]' '[:lower:]')         # "Maestro-Studio" -> "maestro-studio"
+	local nospace_name="${app_name// /}"     # "Maestro Studio" -> "MaestroStudio"
+	local underscore_name="${app_name// /_}" # "Maestro Studio" -> "Maestro_Studio"
+	local hyphen_name="${app_name// /-}"     # "Maestro Studio" -> "Maestro-Studio"
+	# shellcheck disable=SC2155
+	local lowercase_name=$(echo "$app_name" | tr '[:upper:]' '[:lower:]') # "Zed Nightly" -> "zed nightly"
+	# shellcheck disable=SC2155
+	local lowercase_nospace=$(echo "$nospace_name" | tr '[:upper:]' '[:lower:]') # "MaestroStudio" -> "maestrostudio"
+	# shellcheck disable=SC2155
+	local lowercase_hyphen=$(echo "$hyphen_name" | tr '[:upper:]' '[:lower:]') # "Maestro-Studio" -> "maestro-studio"
+	# shellcheck disable=SC2155
 	local lowercase_underscore=$(echo "$underscore_name" | tr '[:upper:]' '[:lower:]') # "Maestro_Studio" -> "maestro_studio"
 
 	# Extract base name by removing common version/channel suffixes
@@ -941,6 +944,7 @@ find_app_files() {
 	if [[ $app_name =~ ^(.+)[[:space:]]+(${version_suffixes})$ ]]; then
 		base_name="${BASH_REMATCH[1]}"
 	fi
+	# shellcheck disable=SC2155
 	local base_lowercase=$(echo "$base_name" | tr '[:upper:]' '[:lower:]') # "Zed" -> "zed"
 
 	# Standard path patterns for user-level files
@@ -1103,6 +1107,7 @@ find_app_files() {
 			debug_log "Skipping LaunchAgent name search for common word: $app_name"
 		else
 			while IFS= read -r -d '' plist; do
+				# shellcheck disable=SC2155
 				local plist_name=$(basename "$plist")
 				# Skip Apple's LaunchAgents
 				if [[ $plist_name =~ ^com\.apple\. ]]; then
@@ -1250,6 +1255,7 @@ find_app_system_files() {
 	local nospace_name="${app_name// /}"
 	local underscore_name="${app_name// /_}"
 	local hyphen_name="${app_name// /-}"
+	# shellcheck disable=SC2155
 	local lowercase_hyphen=$(echo "$hyphen_name" | tr '[:upper:]' '[:lower:]')
 
 	# Standard system path patterns

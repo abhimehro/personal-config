@@ -33,6 +33,7 @@ sudo ctrld service restart
 ## Troubleshooting
 
 ### Service won't start
+
 ```bash
 # Check if it's a self-check issue
 sudo ctrld start --config ~/.config/controld/ctrld.toml --skip_self_checks
@@ -43,6 +44,7 @@ sudo ctrld service start --config ~/.config/controld/ctrld.toml --skip_self_chec
 ```
 
 ### DNS not resolving
+
 ```bash
 # Check service status
 sudo ctrld service status
@@ -55,6 +57,7 @@ sudo ctrld service restart
 ```
 
 ### After system updates
+
 ```bash
 # Verify firewall exception still exists
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --listapps | grep ctrld

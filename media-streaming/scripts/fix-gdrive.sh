@@ -10,10 +10,10 @@ echo
 
 echo "Testing current gdrive status..."
 if rclone about gdrive: &>/dev/null; then
-    echo "✅ gdrive remote is already working!"
-    exit 0
+	echo "✅ gdrive remote is already working!"
+	exit 0
 else
-    echo "❌ gdrive remote needs authentication refresh"
+	echo "❌ gdrive remote needs authentication refresh"
 fi
 
 echo
@@ -28,17 +28,17 @@ rclone config reconnect gdrive:
 echo
 echo "Testing connection..."
 if rclone about gdrive: &>/dev/null; then
-    echo "✅ gdrive remote is now working!"
-    echo "📊 Drive info:"
-    rclone about gdrive:
+	echo "✅ gdrive remote is now working!"
+	echo "📊 Drive info:"
+	rclone about gdrive:
 else
-    echo "❌ Reconnect failed. Let's delete and recreate..."
-    echo
-    read -p "Delete gdrive remote and start fresh? (y/n): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        rclone config delete gdrive
-        echo "✅ Old gdrive remote deleted"
-        echo "Now run: ~/setup-media-library.sh to recreate it"
-    fi
+	echo "❌ Reconnect failed. Let's delete and recreate..."
+	echo
+	read -p "Delete gdrive remote and start fresh? (y/n): " -n 1 -r
+	echo
+	if [[ $REPLY =~ ^[Yy]$ ]]; then
+		rclone config delete gdrive
+		echo "✅ Old gdrive remote deleted"
+		echo "Now run: ~/setup-media-library.sh to recreate it"
+	fi
 fi

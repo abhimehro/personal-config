@@ -14,17 +14,17 @@ item = "Personal SSH Key"
 vault = "Personal"
 
 [[ssh-keys]]
-item = "GitHub SSH Key"
+item = “GitHub SSH Key"
 vault = "Personal"
 
 [[ssh-keys]]
-item = "Ollama SSH Key"
+item = “Ollama SSH Key"
 vault = "Personal"
 
 [[ssh-keys]]
-item = "Render Deploy Key"
+item = “Render Deploy Key"
 vault = "Personal"
 
 # Enable all SSH keys from Private vault as fallback
 [[ssh-keys]]
-vault = "Private"
+vault = "Private”

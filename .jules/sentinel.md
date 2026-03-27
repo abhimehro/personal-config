@@ -195,3 +195,9 @@
 **Vulnerability:** Command Injection ([CWE-78](https://cwe.mitre.org/data/definitions/78.html)) risk existed in `maintenance/bin/system_cleanup.sh`, `configs/.config/mole/lib/core/base.sh`, and `configs/.config/mole/lib/core/app_protection.sh`. Functions used `eval` to assign variables dynamically based on function arguments (e.g. `eval "$var_name=\"\$value\""`). If an attacker could control the variable name passed to these functions, they could inject arbitrary bash commands.
 **Learning:** Using `eval` to mimic pass-by-reference variable assignment in shell scripts exposes the script to command injection vulnerabilities if the variable name is not strictly validated.
 **Prevention:** Strictly validate the dynamically passed variable name against `^[a-zA-Z_][a-zA-Z0-9_]*$` before evaluation to prevent Command Injection (CWE-78).
+
+## 2026-11-20 - Insecure Temporary File Creation (CWE-377) in LaunchAgent
+
+**Vulnerability:** Predictable temporary file paths (`/tmp/morning-brief.out` and `/tmp/morning-brief.err`) were used for `StandardOutPath` and `StandardErrorPath` in `launch-agents/com.speedybee.morningbrief.plist`.
+**Learning:** This is a classic CWE-377 vulnerability. It allows for symlink attacks where a local attacker can pre-create the log files as symlinks pointing to sensitive files. When the LaunchAgent runs, `launchd` will open the files following the symlink, overwriting the target files with the job's output.
+**Prevention:** Always route macOS LaunchAgent/LaunchDaemon logs to secure, user-owned directories (like `/Users/username/Library/Logs/`) instead of world-writable directories like `/tmp`.
