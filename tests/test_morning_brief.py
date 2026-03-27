@@ -3,21 +3,81 @@
 Unit tests for the pure helpers in morning-brief.py.
 
 Run with:
-    python3 -m pytest test_morning_brief.py -v
+    python3 -m unittest tests.test_morning_brief -v
+    # or: python3 -m pytest test_morning_brief.py -v  (optional dev dependency)
 """
 
 from __future__ import annotations
 
 import datetime as dt
-
-# Adjust import path if needed (e.g., if script is in scripts/morning-brief/)
-# sys.path.insert(0, str(Path(__file__).resolve().parent))
 import importlib.util
 import os
 import sys as _sys
+import tempfile
+import types
+import unittest
 from pathlib import Path
 
-import pytest
+# Adjust import path if needed (e.g., if script is in scripts/morning-brief/)
+# sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+
+def _install_morning_brief_import_stubs() -> None:
+    """CI runs unittest with stdlib only; morning-brief.py imports pip deps at top level.
+
+    Pure helpers under test do not need real feedparser/requests/dotenv. Stub them so
+    the module loads; integration behavior is not covered here.
+    """
+    if "feedparser" not in _sys.modules:
+        _fp = types.ModuleType("feedparser")
+
+        def _parse(*_a, **_kw):  # noqa: ANN002, ANN003
+            return types.SimpleNamespace(entries=[])
+
+        _fp.parse = _parse
+        _sys.modules["feedparser"] = _fp
+
+    if "dotenv" not in _sys.modules:
+        _de = types.ModuleType("dotenv")
+        _de.load_dotenv = lambda *_a, **_kw: None  # noqa: ANN002, ANN003
+        _sys.modules["dotenv"] = _de
+
+    if "requests" not in _sys.modules:
+        _rq = types.ModuleType("requests")
+
+        class _Session:
+            pass
+
+        _rq.Session = _Session
+        _rq.utils = types.SimpleNamespace(
+            quote=lambda s, safe="": s,
+        )
+        _sys.modules["requests"] = _rq
+
+    if "requests.adapters" not in _sys.modules:
+        _ad = types.ModuleType("requests.adapters")
+
+        class HTTPAdapter:  # noqa: D101
+            def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+                pass
+
+        _ad.HTTPAdapter = HTTPAdapter
+        _sys.modules["requests.adapters"] = _ad
+
+    _sys.modules.setdefault("urllib3", types.ModuleType("urllib3"))
+    _sys.modules.setdefault("urllib3.util", types.ModuleType("urllib3.util"))
+    if "urllib3.util.retry" not in _sys.modules:
+        _ur = types.ModuleType("urllib3.util.retry")
+
+        class Retry:  # noqa: D101
+            def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
+                pass
+
+        _ur.Retry = Retry
+        _sys.modules["urllib3.util.retry"] = _ur
+
+
+_install_morning_brief_import_stubs()
 
 # Import the script by file path — handles the hyphenated module name
 _script = (
@@ -34,7 +94,7 @@ _spec.loader.exec_module(mb)
 # ============================================================
 
 
-class TestSanitizeText:
+class TestSanitizeText(unittest.TestCase):
     def test_none(self):
         assert mb.sanitize_text(None) == ""
 
@@ -56,7 +116,7 @@ class TestSanitizeText:
         assert mb.sanitize_text("A & B") == "A &amp; B"
 
 
-class TestTruncateText:
+class TestTruncateText(unittest.TestCase):
     def test_short_text_unchanged(self):
         assert mb.truncate_text("short", 100) == "short"
 
@@ -77,7 +137,7 @@ class TestTruncateText:
         assert mb.truncate_text(None, 10) == ""
 
 
-class TestStripHtmlTags:
+class TestStripHtmlTags(unittest.TestCase):
     def test_removes_tags(self):
         assert mb.strip_html_tags("<p>Hello <b>world</b></p>") == "Hello world"
 
@@ -96,7 +156,7 @@ class TestStripHtmlTags:
 # ============================================================
 
 
-class TestHtmlHelpers:
+class TestHtmlHelpers(unittest.TestCase):
     def test_html_li(self):
         assert mb.html_li("content") == "<li>content</li>"
 
@@ -120,7 +180,7 @@ class TestHtmlHelpers:
 # ============================================================
 
 
-class TestIsDueToday:
+class TestIsDueToday(unittest.TestCase):
     def test_matches(self):
         assert mb.is_due_today("2026-03-25", "2026-03-25") is True
 
@@ -134,7 +194,7 @@ class TestIsDueToday:
         assert mb.is_due_today(None, "2026-03-25") is False
 
 
-class TestFormatTimeLabel:
+class TestFormatTimeLabel(unittest.TestCase):
     def test_datetime(self):
         assert mb.format_time_label("2026-03-25T09:30:00-05:00") == "09:30"
 
@@ -150,7 +210,7 @@ class TestFormatTimeLabel:
 # ============================================================
 
 
-class TestExtractHoroscopeText:
+class TestExtractHoroscopeText(unittest.TestCase):
     def test_nested_data(self):
         payload = {"data": {"horoscope_data": "Stars align."}}
         assert mb.extract_horoscope_text(payload) == "Stars align."
@@ -179,7 +239,7 @@ class TestExtractHoroscopeText:
 # ============================================================
 
 
-class TestStaleness:
+class TestStaleness(unittest.TestCase):
     def test_zero_for_today(self):
         assert mb.staleness_days("2026-03-25T12:00:00Z", "2026-03-25") == 0
 
@@ -201,7 +261,7 @@ class TestStaleness:
 # ============================================================
 
 
-class TestScoreLinearIssue:
+class TestScoreLinearIssue(unittest.TestCase):
     TODAY = "2026-03-25"
 
     def _issue(self, **overrides):
@@ -271,7 +331,7 @@ class TestScoreLinearIssue:
 # ============================================================
 
 
-class TestCalendarAdminScore:
+class TestCalendarAdminScore(unittest.TestCase):
     def test_strong_keywords(self):
         assert mb.calendar_admin_score("System Maintenance") > 0
 
@@ -291,7 +351,7 @@ class TestCalendarAdminScore:
 # ============================================================
 
 
-class TestBuildFocusMetaParts:
+class TestBuildFocusMetaParts(unittest.TestCase):
     def test_full_item(self):
         item = mb.FocusItem(
             kind="linear",
@@ -313,7 +373,7 @@ class TestBuildFocusMetaParts:
         assert mb.build_focus_meta_parts(item, "2026-03-25") == []
 
 
-class TestSelectFocusPair:
+class TestSelectFocusPair(unittest.TestCase):
     def test_both_available(self):
         li = [mb.FocusItem(kind="linear", identifier="A", title="t", url="#")]
         ci = [mb.FocusItem(kind="calendar", identifier="B", title="t", url="#")]
@@ -327,7 +387,7 @@ class TestSelectFocusPair:
         assert admin is None
 
 
-class TestBuildSelectionReason:
+class TestBuildSelectionReason(unittest.TestCase):
     def test_no_item_deep(self):
         result = mb.build_selection_reason("deep work", None, "2026-03-25")
         assert "general planning" in result
@@ -356,7 +416,7 @@ class TestBuildSelectionReason:
 # ============================================================
 
 
-class TestDeriveDynamicTags:
+class TestDeriveDynamicTags(unittest.TestCase):
     def test_coastal_keyword(self):
         assert "coastal-science" in mb.derive_dynamic_tags(
             "The coastal wetland study results"
@@ -374,7 +434,7 @@ class TestDeriveDynamicTags:
 # ============================================================
 
 
-class TestTimeAwareGuidance:
+class TestTimeAwareGuidance(unittest.TestCase):
     def test_morning(self):
         result = mb.get_time_aware_guidance(dt.datetime(2026, 3, 25, 8, 0))
         assert "deep work" in result.lower()
@@ -393,7 +453,7 @@ class TestTimeAwareGuidance:
 # ============================================================
 
 
-class TestGithubContextNote:
+class TestGithubContextNote(unittest.TestCase):
     def test_linear_deep(self):
         item = mb.FocusItem(kind="linear", identifier="X", title="t", url="#")
         result = mb.build_github_context_note(item, None)
@@ -414,7 +474,7 @@ class TestGithubContextNote:
 # ============================================================
 
 
-class TestEnvBool:
+class TestEnvBool(unittest.TestCase):
     def test_defaults_true(self):
         assert mb._env_bool("NONEXISTENT_KEY_XYZ_123", True) is True
 
@@ -431,7 +491,7 @@ class TestEnvBool:
             del os.environ["_TEST_BOOL"]
 
 
-class TestSafeInt:
+class TestSafeInt(unittest.TestCase):
     def test_valid(self):
         os.environ["_TEST_INT"] = "42"
         assert mb._safe_int("_TEST_INT", 10) == 42
@@ -451,34 +511,39 @@ class TestSafeInt:
 # ============================================================
 
 
-class TestFileCache:
-    def test_roundtrip(self, tmp_path):
-        cache = mb.FileCache(str(tmp_path / "cache"))
-        cache.set("test-key", {"hello": "world"})
-        result = cache.get("test-key", ttl=60)
-        assert result == {"hello": "world"}
+class TestFileCache(unittest.TestCase):
+    def test_roundtrip(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            cache = mb.FileCache(str(Path(td) / "cache"))
+            cache.set("test-key", {"hello": "world"})
+            result = cache.get("test-key", ttl=60)
+            self.assertEqual(result, {"hello": "world"})
 
-    def test_expired(self, tmp_path):
-        cache = mb.FileCache(str(tmp_path / "cache"))
-        cache.set("test-key", "value")
-        result = cache.get("test-key", ttl=0)
-        assert result is None
+    def test_expired(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            cache = mb.FileCache(str(Path(td) / "cache"))
+            cache.set("test-key", "value")
+            result = cache.get("test-key", ttl=0)
+            self.assertIsNone(result)
 
-    def test_missing(self, tmp_path):
-        cache = mb.FileCache(str(tmp_path / "cache"))
-        assert cache.get("nonexistent", ttl=60) is None
+    def test_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            cache = mb.FileCache(str(Path(td) / "cache"))
+            self.assertIsNone(cache.get("nonexistent", ttl=60))
 
-    def test_corrupted_json(self, tmp_path):
-        cache = mb.FileCache(str(tmp_path / "cache"))
-        cache.set("test-key", "value")
-        path = cache._key_path("test-key")
-        path.write_text("NOT VALID JSON", encoding="utf-8")
-        assert cache.get("test-key", ttl=60) is None
+    def test_corrupted_json(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            cache = mb.FileCache(str(Path(td) / "cache"))
+            cache.set("test-key", "value")
+            path = cache._key_path("test-key")
+            path.write_text("NOT VALID JSON", encoding="utf-8")
+            self.assertIsNone(cache.get("test-key", ttl=60))
 
-    def test_string_value(self, tmp_path):
-        cache = mb.FileCache(str(tmp_path / "cache"))
-        cache.set("html", "<h1>Hello</h1>")
-        assert cache.get("html", ttl=60) == "<h1>Hello</h1>"
+    def test_string_value(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            cache = mb.FileCache(str(Path(td) / "cache"))
+            cache.set("html", "<h1>Hello</h1>")
+            self.assertEqual(cache.get("html", ttl=60), "<h1>Hello</h1>")
 
 
 # ============================================================
@@ -486,7 +551,7 @@ class TestFileCache:
 # ============================================================
 
 
-class TestDailyContext:
+class TestDailyContext(unittest.TestCase):
     def test_build(self):
         ctx = mb.DailyContext.build("-05:00")
         assert ctx.today == dt.date.today()
@@ -499,7 +564,7 @@ class TestDailyContext:
 # ============================================================
 
 
-class TestSectionToggles:
+class TestSectionToggles(unittest.TestCase):
     def test_all_enabled(self):
         t = mb.SectionToggles()
         assert t.any_enabled is True

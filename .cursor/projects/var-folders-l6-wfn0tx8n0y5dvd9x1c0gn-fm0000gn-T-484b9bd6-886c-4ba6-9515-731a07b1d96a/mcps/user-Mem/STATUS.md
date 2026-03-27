@@ -1,1 +1,0 @@
-The MCP server needs authentication. You must call the `mcp_auth` tool for server "user-Mem" through your MCP tool-calling interface using an empty arguments object `{}` soon so the user can access all of the tools this MCP server offers.

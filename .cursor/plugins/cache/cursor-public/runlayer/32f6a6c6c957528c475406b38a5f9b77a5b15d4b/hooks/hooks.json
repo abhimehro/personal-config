@@ -1,7 +1,0 @@
-{
-  "hooks": {
-    "sessionStart": [{ "command": "./scripts/runlayer-hook.sh" }],
-    "beforeMCPExecution": [{ "command": "./scripts/runlayer-hook.sh" }],
-    "beforeReadFile": [{ "command": "./scripts/runlayer-hook.sh" }]
-  }
-}

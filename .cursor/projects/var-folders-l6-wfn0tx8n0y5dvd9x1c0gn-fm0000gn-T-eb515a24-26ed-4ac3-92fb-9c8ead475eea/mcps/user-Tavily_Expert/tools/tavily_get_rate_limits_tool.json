@@ -1,8 +1,0 @@
-{
-  "name": "tavily_get_rate_limits_tool",
-  "description": "Information about Tavily API rate limits and credit usage",
-  "arguments": {
-    "type": "object",
-    "properties": {}
-  }
-}
