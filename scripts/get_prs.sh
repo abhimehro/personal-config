@@ -183,13 +183,8 @@ elif [[ ${#REPOS[@]} -eq 0 ]]; then
 		load_repos_from_config "$default_config"
 		CONFIG_PATH_RESOLVED="$default_config"
 	else
-		REPOS=(
-			"abhimehro/personal-config"
-			"abhimehro/ctrld-sync"
-			"abhimehro/email-security-pipeline"
-			"abhimehro/Seatek_Analysis"
-			"abhimehro/Hydrograph_Versus_Seatek_Sensors_Project"
-		)
+		echo "ERROR: No repositories specified. Use --repo or provide a config file." >&2
+		exit 1
 	fi
 fi
 
