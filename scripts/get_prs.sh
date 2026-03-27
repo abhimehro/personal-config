@@ -457,7 +457,11 @@ for pr in data:
                 esc_cell(pr.get("url") or "", 40),
             ]
         )
-        + " |"
+# Near the beginning of the script (e.g., line 22)
+cleanup() {
+	rm -f "$json_file" 2>/dev/null
+}
+trap cleanup EXIT
     )
 
 if include_details:
