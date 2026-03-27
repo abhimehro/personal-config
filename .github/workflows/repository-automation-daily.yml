@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2.0.2.0.2.0.2.0.2
+        uses: actions/checkout@v6.0.2
         with:
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
