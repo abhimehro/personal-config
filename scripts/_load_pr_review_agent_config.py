@@ -13,6 +13,46 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
+
+
+def _try_import_yaml():
+    try:
+        import yaml  # type: ignore[import-untyped]
+
+        return yaml
+    except ImportError:
+        return None
+
+
+def _load_mapping(path: Path) -> dict[str, Any] | None:
+    yaml = _try_import_yaml()
+    if yaml is None:
+        return None
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        return None
+    return data
+
+
+def _emit_repos(repos: Any) -> bool:
+    if not isinstance(repos, list):
+        return False
+    for item in repos:
+        if isinstance(item, str) and item.strip():
+            print(f"repo\t{item.strip()}")
+    return True
+
+
+def _emit_bot_authors(bots: Any) -> None:
+    if not isinstance(bots, list):
+        return
+    for item in bots:
+        if not isinstance(item, str):
+            continue
+        ent = item.split("#", 1)[0].strip()
+        if ent:
+            print(f"bot\t{ent}")
 
 
 def main() -> int:
@@ -22,30 +62,14 @@ def main() -> int:
     path = Path(sys.argv[1])
     if not path.is_file():
         return 1
-    try:
-        import yaml  # type: ignore[import-untyped]
-    except ImportError:
-        return 2
 
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
+    data = _load_mapping(path)
+    if data is None:
+        return 2 if _try_import_yaml() is None else 1
+
+    if not _emit_repos(data.get("repos") or []):
         return 1
-
-    repos = data.get("repos") or []
-    if not isinstance(repos, list):
-        return 1
-    for item in repos:
-        if isinstance(item, str) and item.strip():
-            print(f"repo\t{item.strip()}")
-
-    bots = data.get("bot_authors") or []
-    if isinstance(bots, list):
-        for item in bots:
-            if not isinstance(item, str):
-                continue
-            ent = item.split("#", 1)[0].strip()
-            if ent:
-                print(f"bot\t{ent}")
+    _emit_bot_authors(data.get("bot_authors") or [])
     return 0
 
 
