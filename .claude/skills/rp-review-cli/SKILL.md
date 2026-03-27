@@ -22,20 +22,19 @@ rp-cli -e '<command>'
 
 **Quick reference:**
 
-| MCP Tool             | CLI Command                                                                  |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `get_file_tree`      | `rp-cli -e 'tree'`                                                           |
-| `file_search`        | `rp-cli -e 'search "pattern"'`                                               |
-| `get_code_structure` | `rp-cli -e 'structure path/'`                                                |
-| `read_file`          | `rp-cli -e 'read path/file.swift'`                                           |
-| `manage_selection`   | `rp-cli -e 'select add path/'`                                               |
-| `context_builder`    | `rp-cli -e 'builder "instructions" --response-type plan'`                    |
-| `chat_send`          | `rp-cli -e 'chat "message" --mode plan'`                                     |
-| `apply_edits`        | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
-| `file_actions`       | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'`             |
+| MCP Tool | CLI Command |
+|----------|-------------|
+| `get_file_tree` | `rp-cli -e 'tree'` |
+| `file_search` | `rp-cli -e 'search "pattern"'` |
+| `get_code_structure` | `rp-cli -e 'structure path/'` |
+| `read_file` | `rp-cli -e 'read path/file.swift'` |
+| `manage_selection` | `rp-cli -e 'select add path/'` |
+| `context_builder` | `rp-cli -e 'builder "instructions" --response-type plan'` |
+| `chat_send` | `rp-cli -e 'chat "message" --mode plan'` |
+| `apply_edits` | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
+| `file_actions` | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'` |
 
 Chain commands with `&&`:
-
 ```bash
 rp-cli -e 'select set src/ && context'
 ```
@@ -47,7 +46,6 @@ JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected), `@file`
 **⚠️ TIMEOUT WARNING:** The `builder` and `chat` commands can take several minutes to complete. When invoking rp-cli, **set your command timeout to at least 2700 seconds (45 minutes)** to avoid premature termination.
 
 ---
-
 ## Protocol
 
 0. **Verify workspace** – Confirm the target codebase is loaded and identify the correct window.
@@ -71,20 +69,16 @@ rp-cli -w <window_id> -e 'tree --type roots'
 ```
 
 **Check the output:**
-
 - If your target root appears in a window → note the window ID and proceed to Step 1
 - If not → the codebase isn't loaded in any window
 
 **CLI Window Routing (CRITICAL):**
-
 - CLI invocations are stateless—you MUST pass `-w <window_id>` to target the correct window
 - Use `rp-cli -e 'windows'` to list all open windows and their workspaces
 - Always include `-w <window_id>` in ALL subsequent commands
 
 ---
-
 ## Step 1: Survey Changes
-
 ```bash
 rp-cli -w <window_id> -e 'git status'
 rp-cli -w <window_id> -e 'git log --count 10'
@@ -98,7 +92,6 @@ Determine the comparison scope from the user's request and git state.
 **If the user already specified a clear comparison target** (e.g., "review against main", "compare with develop", "review last 3 commits"), **skip confirmation and proceed** using the scope they specified.
 
 **If the scope is ambiguous or not specified**, ask the user to clarify:
-
 - **Current branch**: What branch are you on? (from git status)
 - **Comparison target**: What should changes be compared against?
   - `uncommitted` – All uncommitted changes vs HEAD (default)
@@ -108,9 +101,7 @@ Determine the comparison scope from the user's request and git state.
   - `<branch_name>` – Compare against specific branch
 
 **Example prompt to user (only if scope is unclear):**
-
 > "You're on branch `feature/xyz`. What should I compare against?
->
 > - `uncommitted` (default) - review all uncommitted changes
 > - `main` - review all changes on this branch vs main
 > - Other branch name?"
@@ -124,7 +115,6 @@ Determine the comparison scope from the user's request and git state.
 **CRITICAL:** Include the confirmed comparison scope in your instructions so the context builder knows exactly what to review.
 
 Use XML tags to structure the instructions:
-
 ```bash
 rp-cli -w <window_id> -e 'builder "<task>Review changes comparing <current_branch> against <confirmed_comparison_target>. Focus on correctness, security, API changes, error handling.</task>
 
@@ -138,7 +128,6 @@ Changed files: <list key files></context>
 ## Optional: Clarify Findings
 
 After receiving review findings, you can ask clarifying questions in the same chat:
-
 ```bash
 rp-cli -w <window_id> -t '<tab_id>' -e 'chat "Can you explain the security concern in more detail? What'\''s the attack vector?" --mode chat'
 ```
@@ -148,7 +137,6 @@ rp-cli -w <window_id> -t '<tab_id>' -e 'chat "Can you explain the security conce
 ## Step 4: Fill Gaps
 
 If the review omitted significant areas, run a focused follow-up. **You must explicitly describe what was already covered and what needs review now** (`builder` has no memory of previous runs):
-
 ```bash
 rp-cli -w <window_id> -e 'builder "<task>Review <specific area> in depth.</task>
 

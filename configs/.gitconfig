@@ -7,6 +7,7 @@
 	template = /Users/speedybee/.config/git/commit-template.personal-config.txt
 [core]
 	excludesfile = /Users/speedybee/.gitignore_global
+	hooksPath = /Users/speedybee/.git-hooks
 [mergetool]
 	keepBackup = true
 [gpg]
