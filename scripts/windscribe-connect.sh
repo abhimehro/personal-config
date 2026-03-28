@@ -38,12 +38,30 @@ spinner_wait() {
 		iterations=$((duration * 10))
 		local c=0
 
+		# Hide cursor
+		tput civis 2>/dev/null || true
+
+		# Trap to restore cursor if interrupted
+		local previous_trap
+		previous_trap=$(trap -p INT TERM 2>/dev/null || true)
+		trap 'tput cnorm 2>/dev/null || true; builtin exit 1' INT TERM
+
 		while [[ $c -lt $iterations ]]; do
 			printf "\r${BLUE}[%c]${NC} %s..." "${sp:i++%${#sp}:1}" "$msg"
 			sleep 0.1
 			c=$((c + 1))
 		done
 		printf "\r\033[K" # Clear line
+
+		# Restore cursor
+		tput cnorm 2>/dev/null || true
+
+		# Restore trap
+		if [[ -n $previous_trap ]]; then
+			eval "$previous_trap"
+		else
+			trap - INT TERM
+		fi
 	else
 		# Fallback for non-TTY environments (CI, screen readers)
 		log "$msg (waiting ${duration}s)..."
