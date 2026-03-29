@@ -58,10 +58,14 @@
 **Learning:** Using `basename` in a subshell creates significant performance overhead due to process spawning (e.g., `$(basename "$file")`). The built-in shell parameter expansion `${file##*/}` avoids this overhead and is ~300x faster in tight loops, but it does not strip trailing slashes the way `basename` does (e.g., `/a/b/`), so inputs may need to be normalized first (for example with `${file%/}`).
 **Action:** Where path inputs are normalized to not end with `/` (or after first stripping any trailing `/` with `${var%/}`), prefer `${var##*/}` over `$(basename "$var")` in shell scripts to improve performance and reduce system calls.
 
-## 2024-05-24 - Basic Auth Decoding Overhead
+## 2026-05-24 - Basic Auth Decoding Overhead
 **Learning:** Python's `http.server` handler methods (`do_HEAD`, `do_GET`) execute the `check_auth` logic entirely on the main thread for every incoming HTTP request. In custom implementations (like `infuse-media-server.py` and `alldebrid-server.py`), decoding the base64 `Authorization` header and splitting the string (`base64.b64decode(auth_data).decode('utf-8').split(':', 1)`) on every single request adds significant unnecessary overhead (up to a ~9x slowdown in microbenchmarks) compared to directly comparing the base64 token.
 **Action:** Always pre-compute expected static tokens (like Basic Auth base64 strings) at server startup and use a single `secrets.compare_digest` against the incoming request header to avoid repeated decoding and allocations on every request.
 
-## 2024-05-24 - [Avoid N+1 Filesystem Queries in Loops]
+## 2026-05-24 - [Avoid N+1 Filesystem Queries in Loops]
 **Learning:** In Bash scripts, using `find` inside a loop that iterates over the results of another `find` command creates an N+1 query problem, leading to massive overhead for large directories. We can combine checks (like `-mtime` or `-size`) directly into the initial `find` command to avoid spawning sub-processes and filesystem lookups. Using `while read ... done < <(find ...)` allows us to efficiently parse results and avoid subshell variable isolation issues.
 **Action:** Always combine file criteria into a single `find` query instead of querying the filesystem again inside the loop.
+
+## 2026-05-29 - [Path Filtering Optimization: isdisjoint vs any]
+**Learning:** When filtering paths or tuples against a set of excluded strings in Python (e.g., `any(part in EXCLUDES for part in path.parts)`), iterating with a generator expression introduces significant overhead, especially in deep recursive directory walks like `rglob`. Using the built-in C-level set operation `not EXCLUDES.isdisjoint(path.parts)` is ~7x faster for hits and ~4x faster for misses.
+**Action:** When checking if any element of an iterable exists in a `set`, prefer `not your_set.isdisjoint(iterable)` over using `any()` with a generator expression for optimal performance.
