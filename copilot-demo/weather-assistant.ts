@@ -30,9 +30,11 @@ const stopSpinner = () => {
   if (spinnerInterval) {
     clearInterval(spinnerInterval);
     spinnerInterval = undefined;
-    process.stdout.write(ANSI.ShowCursor);
-    process.stdout.write(`\r${COLORS.Green}Assistant:${COLORS.Reset} `);
-    process.stdout.write(ANSI.ClearLine);
+    if (process.stdout.isTTY) {
+      process.stdout.write(ANSI.ShowCursor);
+      process.stdout.write(`\r${COLORS.Green}Assistant:${COLORS.Reset} `);
+      process.stdout.write(ANSI.ClearLine);
+    }
   }
 };
 
@@ -61,7 +63,9 @@ const startSpinner = () => {
 
 // Ensure cursor is restored on exit
 process.on("exit", () => {
-  process.stdout.write(ANSI.ShowCursor);
+  if (process.stdout.isTTY) {
+    process.stdout.write(ANSI.ShowCursor);
+  }
 });
 
 // Helper functions for emojis
