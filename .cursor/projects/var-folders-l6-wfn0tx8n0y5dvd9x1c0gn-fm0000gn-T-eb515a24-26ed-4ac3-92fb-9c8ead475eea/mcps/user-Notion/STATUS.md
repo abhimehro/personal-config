@@ -1,1 +1,0 @@
-The MCP server needs authentication. Authenticate it by calling the `mcp_auth` tool for server "user-Notion" through your MCP tool-calling interface using an empty arguments object. If this server is important for completing the task, do that first; otherwise continue with a different approach.
