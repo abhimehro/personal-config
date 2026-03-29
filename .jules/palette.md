@@ -79,3 +79,8 @@
 
 **Learning:** Hardcoded sleeps without visual feedback create uncertainty; users don't know if a script is frozen or just taking time.
 **Action:** Replace arbitrary `sleep` commands with accessible spinners to provide clear visual feedback during wait periods.
+
+## 2026-03-28 - Prevent Distracting Cursor Flicker in Spinners
+
+**Learning:** When using loops to implement loading spinners in interactive shell scripts, the terminal cursor frequently flickers as it redraws the line, distracting the user and degrading the "micro-UX".
+**Action:** Hide the terminal cursor using `tput civis 2>/dev/null || true` before the loop, and restore it using `tput cnorm 2>/dev/null || true` immediately after the loop (and within error traps) to ensure a smooth, clean animation.
