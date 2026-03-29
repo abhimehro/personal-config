@@ -94,7 +94,7 @@ else
 fi
 
 # ---- Test 3: health mode dispatches to health_check.sh ----
->"$CALL_LOG"
+: >"$CALL_LOG"
 if bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t3.log" 2>&1; then
 	echo "PASS: health mode exits 0"
 	PASS=$((PASS + 1))
@@ -106,7 +106,7 @@ fi
 check_grep "health mode calls health_check.sh" "health_check.sh called" "$CALL_LOG"
 
 # ---- Test 4: quick mode dispatches to quick_cleanup.sh ----
->"$CALL_LOG"
+: >"$CALL_LOG"
 if bash "$MOCK_DIR/run_all_maintenance.sh" quick >"$TEST_DIR/t4.log" 2>&1; then
 	echo "PASS: quick mode exits 0"
 	PASS=$((PASS + 1))
@@ -118,7 +118,7 @@ fi
 check_grep "quick mode calls quick_cleanup.sh" "quick_cleanup.sh called" "$CALL_LOG"
 
 # ---- Test 5: weekly mode dispatches to expected scripts ----
->"$CALL_LOG"
+: >"$CALL_LOG"
 if bash "$MOCK_DIR/run_all_maintenance.sh" weekly >"$TEST_DIR/t5.log" 2>&1; then
 	echo "PASS: weekly mode exits 0"
 	PASS=$((PASS + 1))
@@ -132,7 +132,7 @@ check_grep "weekly calls quick_cleanup.sh" "quick_cleanup.sh called" "$CALL_LOG"
 check_grep "weekly calls performance_optimizer" "performance_optimizer.sh called" "$CALL_LOG"
 
 # ---- Test 6: default (no-args) mode runs weekly tasks ----
->"$CALL_LOG"
+: >"$CALL_LOG"
 if bash "$MOCK_DIR/run_all_maintenance.sh" >"$TEST_DIR/t6.log" 2>&1; then
 	echo "PASS: default (no-args) mode exits 0"
 	PASS=$((PASS + 1))
@@ -147,7 +147,7 @@ check_grep "no-args calls performance_optimizer" "performance_optimizer.sh calle
 
 # ---- Test 7: error propagation — orchestrator exits non-zero when sub-script fails ----
 make_mock_fail "health_check.sh"
->"$CALL_LOG"
+: >"$CALL_LOG"
 t7_exit=0
 bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t7.log" 2>&1 || t7_exit=$?
 if [[ $t7_exit -ne 0 ]]; then
@@ -162,7 +162,7 @@ make_mock_ok "health_check.sh"
 # ---- Test 8: master log file is created in LOG_DIR ----
 # Remove any master logs left by earlier tests so this assertion is unambiguous.
 rm -f "$LOG_TMP"/maintenance_master_*.log 2>/dev/null || true
->"$CALL_LOG"
+: >"$CALL_LOG"
 bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t8.log" 2>&1
 log_count=$(find "$LOG_TMP" -name "maintenance_master_*.log" -type f 2>/dev/null | wc -l | tr -d ' ')
 if [[ $log_count -gt 0 ]]; then
@@ -176,7 +176,7 @@ fi
 # ---- Test 8: concurrent locking prevents second instance ----
 # Pre-create a fresh lock so the orchestrator sees a recent (non-stale) lock
 mkdir -p "$LOG_TMP/run_all_maintenance.lock"
->"$CALL_LOG"
+: >"$CALL_LOG"
 t8_out=$(bash "$MOCK_DIR/run_all_maintenance.sh" health 2>&1 || true)
 rmdir "$LOG_TMP/run_all_maintenance.lock" 2>/dev/null || true
 if echo "$t8_out" | grep -q "already running"; then
@@ -195,7 +195,7 @@ else
 fi
 
 # ---- Test 9: idempotency — two sequential runs both dispatch successfully ----
->"$CALL_LOG"
+: >"$CALL_LOG"
 bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t9a.log" 2>&1
 bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t9b.log" 2>&1
 call_count=$(grep -c "health_check.sh called" "$CALL_LOG" 2>/dev/null || true)
