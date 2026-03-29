@@ -217,8 +217,9 @@ patch.sh
 .cursor/ide_state.json
 .cursor/ai-tracking/
 .cursor/extensions/
+# Plugin cache and local project metadata are machine-generated (gitlinks if committed break clones).
 .cursor/projects/
-.cursor/plugins/cache/
+.cursor/plugins/
 
 # =============================================================================
 # FISH (Option A: track source config + plugin list; ignore Fisher-managed files)
@@ -249,8 +250,6 @@ media-streaming/backup/rclone.conf.backup
 
 # Secrets
 controld-system/profiles.env
-".cursor"
-".cursor"
 
 .gemini/
 gha-creds-*.json

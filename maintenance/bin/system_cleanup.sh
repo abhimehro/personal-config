@@ -51,6 +51,25 @@ if [[ -f $CONFIG_FILE ]]; then
 	source "$CONFIG_FILE" 2>/dev/null || true
 fi
 
+# NOTE: maintenance/conf/config.env may use inline comments inside double-quoted
+# values (e.g. CLEANUP_CACHE_DAYS="30      # ..."). Those strings break find -mtime,
+# brew --prune, etc. Extract a leading integer for any variable used numerically.
+_int_from_config() {
+	local raw="${1-}"
+	local default="${2-30}"
+	if [[ $raw =~ ^[[:space:]]*([0-9]+) ]]; then
+		printf '%s\n' "${BASH_REMATCH[1]}"
+	else
+		printf '%s\n' "$default"
+	fi
+}
+
+CLEANUP_CACHE_DAYS="$(_int_from_config "${CLEANUP_CACHE_DAYS:-}" 30)"
+TMP_CLEAN_DAYS="$(_int_from_config "${TMP_CLEAN_DAYS:-}" 7)"
+XCODE_DERIVEDDATA_KEEP_DAYS="$(_int_from_config "${XCODE_DERIVEDDATA_KEEP_DAYS:-}" 30)"
+BREW_CLEAN_PRUNE_DAYS="$(_int_from_config "${BREW_CLEAN_PRUNE_DAYS:-}" 30)"
+LOG_RETENTION_DAYS="$(_int_from_config "${LOG_RETENTION_DAYS:-}" 60)"
+
 # Get disk usage percentage
 percent_used() {
 	local path="${1:-/}"

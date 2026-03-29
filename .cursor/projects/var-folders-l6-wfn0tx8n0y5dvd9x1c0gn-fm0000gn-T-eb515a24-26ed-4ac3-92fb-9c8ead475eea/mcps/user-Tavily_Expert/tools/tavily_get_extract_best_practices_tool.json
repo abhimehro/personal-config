@@ -1,8 +1,0 @@
-{
-  "name": "tavily_get_extract_best_practices_tool",
-  "description": "Information about best practices for Tavily extract",
-  "arguments": {
-    "type": "object",
-    "properties": {}
-  }
-}

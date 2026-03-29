@@ -1,8 +1,0 @@
-{
-  "name": "tavily_get_search_best_practices_tool",
-  "description": "Information about best practices for Tavily search",
-  "arguments": {
-    "type": "object",
-    "properties": {}
-  }
-}

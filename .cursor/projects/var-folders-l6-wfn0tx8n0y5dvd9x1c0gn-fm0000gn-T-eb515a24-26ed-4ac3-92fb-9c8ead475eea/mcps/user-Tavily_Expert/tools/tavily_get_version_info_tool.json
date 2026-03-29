@@ -1,8 +1,0 @@
-{
-  "name": "tavily_get_version_info_tool",
-  "description": "Version information and compatibility details for Tavily API",
-  "arguments": {
-    "type": "object",
-    "properties": {}
-  }
-}

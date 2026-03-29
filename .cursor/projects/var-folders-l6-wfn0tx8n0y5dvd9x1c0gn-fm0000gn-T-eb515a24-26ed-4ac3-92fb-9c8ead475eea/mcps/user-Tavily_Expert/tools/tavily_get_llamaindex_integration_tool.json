@@ -1,8 +1,0 @@
-{
-  "name": "tavily_get_llamaindex_integration_tool",
-  "description": "Information about Tavily's LlamaIndex integration including setup, features, and usage examples",
-  "arguments": {
-    "type": "object",
-    "properties": {}
-  }
-}
