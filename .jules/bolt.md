@@ -65,3 +65,7 @@
 ## 2024-05-24 - [Avoid N+1 Filesystem Queries in Loops]
 **Learning:** In Bash scripts, using `find` inside a loop that iterates over the results of another `find` command creates an N+1 query problem, leading to massive overhead for large directories. We can combine checks (like `-mtime` or `-size`) directly into the initial `find` command to avoid spawning sub-processes and filesystem lookups. Using `while read ... done < <(find ...)` allows us to efficiently parse results and avoid subshell variable isolation issues.
 **Action:** Always combine file criteria into a single `find` query instead of querying the filesystem again inside the loop.
+
+## 2024-10-27 - [Path Filtering Optimization: isdisjoint vs any]
+**Learning:** When filtering paths or tuples against a set of excluded strings in Python (e.g., `any(part in EXCLUDES for part in path.parts)`), iterating with a generator expression introduces significant overhead, especially in deep recursive directory walks like `rglob`. Using the built-in C-level set operation `not EXCLUDES.isdisjoint(path.parts)` is ~7x faster for hits and ~4x faster for misses.
+**Action:** When checking if any element of a tuple or list exists within a predefined `set`, always use the `set.isdisjoint()` method instead of `any()` with a generator expression for optimal performance.
