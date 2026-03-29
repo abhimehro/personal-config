@@ -84,3 +84,7 @@
 
 **Learning:** When using loops to implement loading spinners in interactive shell scripts, the terminal cursor frequently flickers as it redraws the line, distracting the user and degrading the "micro-UX".
 **Action:** Hide the terminal cursor using `tput civis 2>/dev/null || true` before the loop, and restore it using `tput cnorm 2>/dev/null || true` immediately after the loop (and within error traps) to ensure a smooth, clean animation.
+
+## 2026-03-30 - Graceful degradation for non-TTY environments
+**Learning:** In Node.js CLI tools, unconditional ANSI escape sequences for cursor manipulation (e.g., `\x1B[?25h`, `\x1B[K`) cause 'terminal spam' in non-TTY environments, breaking screen readers and cluttering CI logs.
+**Action:** Always wrap these in `if (process.stdout.isTTY)` checks to ensure accessibility and clean output.
