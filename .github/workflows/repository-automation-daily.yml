@@ -135,6 +135,14 @@ jobs:
       - name: Install automation runner dependencies
         run: python -m pip install --upgrade pip pyyaml
 
+      - name: Install Trunk CLI (for make lint / trunk check)
+        run: |
+          set -euo pipefail
+          mkdir -p "${HOME}/.local/bin"
+          curl -fsSL https://trunk.io/releases/trunk -o "${HOME}/.local/bin/trunk"
+          chmod +x "${HOME}/.local/bin/trunk"
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+
       - name: Execute quality assurance task
         continue-on-error: true
         run: python .github/scripts/repository_automation.py quality-assurance

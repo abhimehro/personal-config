@@ -217,6 +217,7 @@ patch.sh
 .cursor/ide_state.json
 .cursor/ai-tracking/
 .cursor/extensions/
+# Plugin cache and local project metadata are machine-generated (gitlinks if committed break clones).
 .cursor/projects/
 .cursor/plugins/cache/
 

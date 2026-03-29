@@ -1,8 +1,0 @@
-{
-  "name": "tavily_get_api_docs_tool",
-  "description": "Provides detailed documentation about Tavily API endpoints",
-  "arguments": {
-    "type": "object",
-    "properties": {}
-  }
-}
