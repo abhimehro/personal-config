@@ -41,10 +41,14 @@ spinner_wait() {
 		# Hide cursor
 		tput civis 2>/dev/null || true
 
-		# Trap to restore cursor if interrupted
-		local previous_trap
-		previous_trap=$(trap -p INT TERM 2>/dev/null || true)
-		trap 'tput cnorm 2>/dev/null || true; builtin exit 1' INT TERM
+		# Save original traps and set temporary ones
+		local old_int_trap
+		old_int_trap=$(trap -p INT)
+		trap 'tput cnorm 2>/dev/null || true; eval "${old_int_trap:-trap - INT}"; kill -INT "$$"' INT
+
+		local old_term_trap
+		old_term_trap=$(trap -p TERM)
+		trap 'tput cnorm 2>/dev/null || true; eval "${old_term_trap:-trap - TERM}"; kill -TERM "$$"' TERM
 
 		while [[ $c -lt $iterations ]]; do
 			printf "\r${BLUE}[%c]${NC} %s..." "${sp:i++%${#sp}:1}" "$msg"
@@ -53,15 +57,10 @@ spinner_wait() {
 		done
 		printf "\r\033[K" # Clear line
 
-		# Restore cursor
+		# Restore cursor and original traps
 		tput cnorm 2>/dev/null || true
-
-		# Restore trap
-		if [[ -n $previous_trap ]]; then
-			eval "$previous_trap"
-		else
-			trap - INT TERM
-		fi
+		eval "${old_int_trap:-trap - INT}"
+		eval "${old_term_trap:-trap - TERM}"
 	else
 		# Fallback for non-TTY environments (CI, screen readers)
 		log "$msg (waiting ${duration}s)..."
