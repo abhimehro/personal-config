@@ -31,9 +31,7 @@ const stopSpinner = () => {
     clearInterval(spinnerInterval);
     spinnerInterval = undefined;
     if (process.stdout.isTTY) {
-      process.stdout.write(ANSI.ShowCursor);
-      process.stdout.write(`\r${COLORS.Green}Assistant:${COLORS.Reset} `);
-      process.stdout.write(ANSI.ClearLine);
+      process.stdout.write(ANSI.ShowCursor + '\r' + COLORS.Green + 'Assistant:' + COLORS.Reset + ' ' + ANSI.ClearLine);
     }
   }
 };
