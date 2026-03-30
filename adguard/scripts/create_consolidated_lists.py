@@ -136,8 +136,9 @@ def main():
             "# Generated from: Microsoft, No SafeSearch, OPPO/Realme, Roku, Samsung, TikTok, Vivo, Xiaomi, Amazon, Apple, Badware Hoster, LG webOS, Huawei Trackers\n"
         )
         f.write(f"# Total domains: {len(denylist_domains):,}\n\n")
-        for domain in sorted_denylist:
-            f.write(f"{domain}\n")
+        if sorted_denylist:
+            # ⚡ Bolt Optimization: Use join() for faster batched string writing instead of looping f.write()
+            f.write("\n".join(sorted_denylist) + "\n")
 
     # Create Allowlist text file (AdGuard allowlist syntax with @@ prefix)
     allowlist_txt_path = base_dir / "Consolidated-Allowlist.txt"
@@ -148,8 +149,9 @@ def main():
             "# Generated from: CD-Control-D-Bypass and legitimate entries from CD-Most-Abused-TLDs\n"
         )
         f.write(f"# Total domains: {len(allowlist_domains):,}\n\n")
-        for domain in sorted_allowlist:
-            f.write(f"@@{domain}\n")  # AdGuard allowlist syntax
+        if sorted_allowlist:
+            # ⚡ Bolt Optimization: Use join() for faster batched string writing instead of looping f.write()
+            f.write("\n".join(f"@@{domain}" for domain in sorted_allowlist) + "\n")
 
     print(f"✅ Created: {denylist_txt_path}")
     print(f"✅ Created: {allowlist_txt_path}")
