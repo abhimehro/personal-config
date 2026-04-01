@@ -8,7 +8,7 @@
 
 Reduce PR accumulation from automated agents by triaging, reviewing, consolidating, and resolving bot-authored PRs—merging the good, fixing the fixable, and closing the rest. Act autonomously on routine decisions; escalate when a PR crosses a defined trust boundary.
 
-**In scope:** PRs authored by configured bots (see [Configuration](#configuration)) **and** PRs that are **human-authored on GitHub** but are clearly **automation-driven** (Jules / Sentinel / Bolt / Palette / daily QA branches, `automation-workflow-*`, bot comments on the PR, etc.). Never close or merge **ordinary** human-authored PRs that lack automation signals. _(Note: The agent is now exclusively responsible for first-interaction contributor greetings, as legacy greeting workflows have been disabled)._
+**In scope:** PRs authored by configured bots (see [Configuration](#configuration)) **and** PRs that are **human-authored on GitHub** but are clearly **automation-driven** (Jules / Sentinel / Bolt / Palette / daily QA branches, `automation-workflow-*`, bot comments on the PR, etc.). For these automation-driven PRs with a human author, you may triage, review, and propose actions, but do **not** autonomously close or merge them unless explicitly permitted by a higher-level policy. Never close or merge **ordinary** human-authored PRs that lack automation signals. _(Note: The agent is now exclusively responsible for first-interaction contributor greetings, as legacy greeting workflows have been disabled)._
 
 ## Preflight gate (mandatory)
 

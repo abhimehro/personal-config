@@ -76,7 +76,7 @@
 
 **Verified:** Hydro and gitnow were both eliminated as suspects through systematic removal testing on 2026-03-24.
 
-## Lesson 0i: `actions/labeler@v6` + `pull_request_target` reads **base** `labeler.yml` (2026-03-24)
+## Lesson 0k: `actions/labeler@v6` + `pull_request_target` reads **base** `labeler.yml` (2026-03-24)
 
 **Pattern:** A PR updates `.github/labeler.yml` to a new structure, but the `label` workflow still fails with `found unexpected type for label 'documentation'`.
 **Root cause:** Workflows using `on: pull_request_target` execute with workflow + config from the **default branch**, not the PR head. Until `main`’s `.github/labeler.yml` matches **labeler v5+ / v6** expectations, PRs will keep failing the label job.

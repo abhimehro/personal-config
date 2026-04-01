@@ -60,7 +60,7 @@
 | Hydrograph_Versus_Seatek_Sensors_Project | 98 | abhimehro | Bolt | PERFORMANCE | Green | CLEAN | 3 | Boolean masking |
 | Hydrograph_Versus_Seatek_Sensors_Project | 97 | abhimehro | Sentinel path traversal | SECURITY | Green | CLEAN | 2 | Test data processor |
 
-**Total in-scope at start:** 20 open PRs across 5 repos.
+**Total in-scope at start:** 19 open PRs across 5 repos.
 
 ## Inventory after session — 2026-04-01 (remaining open)
 
