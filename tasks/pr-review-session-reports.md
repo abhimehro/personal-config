@@ -2,7 +2,7 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-03-24.
+> **Latest execution:** 2026-04-01.
 
 ## Run — 2026-03-24 (one-time backlog cleanup test, expanded automation scope)
 
@@ -154,6 +154,59 @@
 ### Workflow completion
 
 - **Partial:** merges completed for all PRs that passed gates; remaining PRs blocked per security-first policy (no merge on ambiguous/red CI; no merge on supply-chain downgrades without human approval).
+
+---
+
+## Run — 2026-04-01 (backlog cleanup continuation, review-and-merge)
+
+### Repos processed
+
+1. `abhimehro/personal-config` (same repo as historical `[REDACTED]-config` naming in older rows)
+2. `abhimehro/ctrld-sync`
+3. `abhimehro/email-security-pipeline`
+4. `abhimehro/Seatek_Analysis`
+5. `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project`
+
+### Metrics
+
+| Metric | Count |
+| ------ | ----: |
+| PRs reviewed (in-scope) | 19 |
+| PRs merged (squash) | 12 |
+| PRs closed (duplicate / superseded / no-op) | 3 |
+| PRs escalated / hold (PR comments, left open) | 4 |
+
+### Merged (squash)
+
+- https://github.com/abhimehro/Seatek_Analysis/pull/114
+- https://github.com/abhimehro/Seatek_Analysis/pull/115
+- https://github.com/abhimehro/Seatek_Analysis/pull/116
+- https://github.com/abhimehro/Seatek_Analysis/pull/117
+- https://github.com/abhimehro/Seatek_Analysis/pull/119
+- https://github.com/abhimehro/email-security-pipeline/pull/617
+- https://github.com/abhimehro/email-security-pipeline/pull/616
+- https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/97
+- https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/98
+- https://github.com/abhimehro/personal-config/pull/701
+- https://github.com/abhimehro/personal-config/pull/699
+- https://github.com/abhimehro/personal-config/pull/703
+
+### Closed
+
+- https://github.com/abhimehro/Seatek_Analysis/pull/118 (superseded by #114; branch update blocked — see `tasks/lessons.md`)
+- https://github.com/abhimehro/email-security-pipeline/pull/611 (superseded by #617)
+- https://github.com/abhimehro/email-security-pipeline/pull/618 (no-op diff)
+
+### Escalated / left open
+
+- https://github.com/abhimehro/personal-config/pull/697
+- https://github.com/abhimehro/ctrld-sync/pull/687
+- https://github.com/abhimehro/email-security-pipeline/pull/612
+- https://github.com/abhimehro/email-security-pipeline/pull/614 (merge conflicts after other merges)
+
+### Workflow completion
+
+- **Partial (intended):** all PRs triaged; safe squash-merges executed; draft workflow consolidations escalated; one conflicted performance PR held open.
 
 ---
 
