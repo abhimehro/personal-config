@@ -171,9 +171,9 @@
 
 | Metric | Count |
 | ------ | ----: |
-| PRs reviewed (in-scope) | 20 |
-| PRs merged (squash) | 14 |
-| PRs closed (duplicate / superseded / no-op) | 4 |
+| PRs reviewed (in-scope) | 19 |
+| PRs merged (squash) | 12 |
+| PRs closed (duplicate / superseded / no-op) | 3 |
 | PRs escalated / hold (PR comments, left open) | 4 |
 
 ### Merged (squash)
