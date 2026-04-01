@@ -7,8 +7,8 @@ set -e
 echo "🔧 Windscribe + Control D DNS Setup"
 echo "===================================="
 check_windscribe_connected() {
-    # Look for Windscribe VPN interface with IPv4 address
-    ifconfig | awk '/^utun/ {s=1; next} s && /inet / && !/127\.0\.0\.1/ {f=1; exit} s && /^[^ \t]/ {s=0} END {exit !f}' >/dev/null 2>&1
+	# Look for Windscribe VPN interface with IPv4 address
+	ifconfig | awk '/^utun/ {s=1; next} s && /inet / && !/127\.0\.0\.1/ {f=1; exit} s && /^[^ \t]/ {s=0} END {exit !f}' >/dev/null 2>&1
 }
 
 # Function to set Control D DNS
