@@ -201,3 +201,8 @@
 **Vulnerability:** Predictable temporary file paths (`/tmp/morning-brief.out` and `/tmp/morning-brief.err`) were used for `StandardOutPath` and `StandardErrorPath` in `launch-agents/com.speedybee.morningbrief.plist`.
 **Learning:** This is a classic CWE-377 vulnerability. It allows for symlink attacks where a local attacker can pre-create the log files as symlinks pointing to sensitive files. When the LaunchAgent runs, `launchd` will open the files following the symlink, overwriting the target files with the job's output.
 **Prevention:** Always route macOS LaunchAgent/LaunchDaemon logs to secure, user-owned directories (like `/Users/username/Library/Logs/`) instead of world-writable directories like `/tmp`.
+
+## 2025-03-31 - [secrets module AttributeError]
+**Vulnerability:** Use of `secrets.choices` instead of `secrets.SystemRandom().choices`
+**Learning:** `secrets` module does not have a module-level `choices` function, leading to `AttributeError` and runtime crashes, potentially preventing server from starting up or properly initializing secure credentials.
+**Prevention:** Use `secrets.choice` in a loop or `secrets.SystemRandom().choices` to generate random strings of a given length.

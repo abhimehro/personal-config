@@ -8,7 +8,7 @@
 
 Reduce PR accumulation from automated agents by triaging, reviewing, consolidating, and resolving bot-authored PRs—merging the good, fixing the fixable, and closing the rest. Act autonomously on routine decisions; escalate when a PR crosses a defined trust boundary.
 
-**In scope:** Only PRs authored by configured bots (see [Configuration](#configuration)). Never close or merge human-authored PRs. _(Note: The agent is now exclusively responsible for first-interaction contributor greetings, as legacy greeting workflows have been disabled)._
+**In scope:** PRs authored by configured bots (see [Configuration](#configuration)) **and** PRs that are **human-authored on GitHub** but are clearly **automation-driven** (Jules / Sentinel / Bolt / Palette / daily QA branches, `automation-workflow-*`, bot comments on the PR, etc.). For these automation-driven PRs with a human author, you may triage, review, and propose actions, but do **not** autonomously close or merge them unless explicitly permitted by a higher-level policy. Never close or merge **ordinary** human-authored PRs that lack automation signals. _(Note: The agent is now exclusively responsible for first-interaction contributor greetings, as legacy greeting workflows have been disabled)._
 
 ## Preflight gate (mandatory)
 
@@ -58,6 +58,11 @@ Assign each PR one disposition:
 
 - Write session report by appending to `tasks/pr-review-session-reports.md` (repos processed, actions taken, escalations, consolidations, patterns, metrics). Optionally also add a point-in-time snapshot as `tasks/pr-review-YYYY-MM-DD.md` when a standalone dated file is needed.
 - Update `tasks/lessons.md` with new patterns (bot behaviors, repo quirks, effective heuristics). Optionally reflect material lessons in [Review heuristics](#review-heuristics) below.
+
+## Local Git, `gh`, and Jujitsu (jj)
+
+- Prefer **`gh pr merge` / `gh pr comment` / GraphQL** for agent operations when tokens are injected as `GH_TOKEN`.
+- If you also use **Jujitsu** or multiple `gh` host credentials, validate that **`git push` / `jj git push`** uses the **same write-capable PAT** as `gh`; otherwise branch updates can fail with **403** while merges still work. See [GitHub App Permission Checklist](github-app-pr-automation-checklist.md) §4.
 
 ## Configuration
 

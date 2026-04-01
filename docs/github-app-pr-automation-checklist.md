@@ -41,6 +41,7 @@ Optional (only if you need agent-driven auto-merge management):
 - [ ] Inject as `GH_TOKEN` in the agent environment at startup.
 - [ ] Never commit token values to repo files.
 - [ ] Rotate token regularly and on any suspected leak.
+- [ ] **Git and Jujitsu (jj):** If you use **multiple GitHub accounts** in `gh` (`hosts.yml`) or hybrid **jj + git**, confirm **`git push` / `jj git push`** resolves to the **same PAT as `GH_TOKEN`** for write operations. Otherwise merges via `gh pr merge` may succeed while **pushing updates to a PR branch** fails with **403** (e.g. `cursor[bot]`). Run `gh auth setup-git` after selecting the active account, or use HTTPS remotes with an explicit credential helper.
 
 ## 5) Preflight Validation (Fail Fast)
 
