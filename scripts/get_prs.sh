@@ -33,7 +33,7 @@ BOT_AUTHORS=()
 
 declare -a _GET_PRS_TEMP_FILES=()
 cleanup_get_prs_temp() {
-	rm -f "${_GET_PRS_TEMP_FILES[@]:-}"
+	rm -f "${_GET_PRS_TEMP_FILES[@]-}"
 }
 trap cleanup_get_prs_temp EXIT
 
@@ -147,7 +147,7 @@ load_pr_review_agent_config() {
 	elif [[ $py_status -eq 0 ]]; then
 		local key val
 		while IFS=$'\t' read -r key val; do
-			[[ -z ${key:-} ]] && continue
+			[[ -z ${key-} ]] && continue
 			case "$key" in
 			repo) REPOS+=("$val") ;;
 			bot) BOT_AUTHORS+=("$val") ;;
@@ -218,7 +218,7 @@ if [[ $BOTS_ONLY == true && $COMPARE_BOTS == true ]]; then
 	exit 1
 fi
 
-if [[ -n ${GH_REPO:-} ]]; then
+if [[ -n ${GH_REPO-} ]]; then
 	REPOS=("$GH_REPO")
 fi
 
@@ -274,7 +274,7 @@ summarize_pr_json_for_repo() {
 		echo ""
 		return 0
 	fi
-	if [[ -z "$json_raw" ]] || [[ ${json_raw:0:1} != "[" ]]; then
+	if [[ -z $json_raw ]] || [[ ${json_raw:0:1} != "[" ]]; then
 		printf '%s\n' "$json_raw" >&2
 		echo "_Unexpected gh output for ${repo} (expected JSON array)._"
 		echo ""
@@ -303,7 +303,7 @@ run_full_inventory() {
 # Legacy comparison: original script behavior (per-repo × per-bot --author filter).
 run_legacy_bots_only() {
 	echo ""
-	echo "## Legacy comparison: \`gh pr list --author\` (bots only)"
+	echo '## Legacy comparison: `gh pr list --author` (bots only)'
 	echo ""
 	printf '_Bot logins: `%s`._\n' "${BOT_AUTHORS[*]}"
 	echo "_Misses automation opened under a human GitHub user (common for Jules UI) even when the body or commits reference a bot._"
@@ -320,9 +320,9 @@ run_legacy_bots_only() {
 export GH_DETAIL_REPO=""
 
 if [[ $BOTS_ONLY == true ]]; then
-	echo "# Open PR inventory (legacy: \`--bots-only\`)"
+	echo '# Open PR inventory (legacy: `--bots-only`)'
 	echo ""
-	echo "_Only PRs whose GitHub **author** matches \`bot_authors\`. Use default mode or \`--compare-bots\` for the full open list._"
+	echo '_Only PRs whose GitHub **author** matches `bot_authors`. Use default mode or `--compare-bots` for the full open list._'
 	echo ""
 	run_legacy_bots_only
 	echo "---"
@@ -334,7 +334,7 @@ echo "# Open PR inventory"
 echo ""
 echo "_Generated for agent triage: lists **all** open PRs; automation is inferred from metadata and optional review/comment fetch._"
 if [[ $COMPARE_BOTS == true ]]; then
-	echo "_Also appending a **legacy bots-only** section at the end (\`--compare-bots\`)._"
+	echo '_Also appending a **legacy bots-only** section at the end (`--compare-bots`)._'
 fi
 echo ""
 

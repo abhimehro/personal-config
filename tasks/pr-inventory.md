@@ -1,17 +1,42 @@
 # Automated PR inventory — 2026-04-01 (backlog cleanup, review-and-merge)
 
-**Config:** `tasks/pr-review-agent.config.yaml`  
-**Stale threshold:** 30 days (no in-scope open PR exceeded this at inventory time)  
+**Config:** `tasks/pr-review-agent.config.yaml`
+**Stale threshold:** 30 days (no in-scope open PR exceeded this at inventory time)
 **Mode:** `review-and-merge` · **Merge strategy:** squash · **Auto-fix:** enabled (none applied this session — merges were API-only)
 
-**Repo note:** `abhimehro/personal-config` is the canonical GitHub name; some tooling redacts it in CLI output as `[REDACTED]-config`. They are the same repository.
+**Repo note:** Use `abhimehro/personal-config` in config and URLs; some environments redact the slug as `personal-config` in CLI or logs. Same repository.
 
 ## Scope rules
 
 1. **Configured bot logins:** `dependabot[bot]`, `renovate[bot]`, `google-labs-jules[bot]` (GitHub may surface Dependabot as `app/dependabot`).
 2. **Expanded automation:** include PRs where GitHub shows `abhimehro` as author when **branch**, **title**, **labels**, or **comments** indicate Jules / Sentinel / Bolt / Palette / daily QA / `automation-workflow-*`, etc.
 
-## Inventory at session start (open, in-scope)
+## Historical inventory — 2026-03-27 (archived snapshot)
+
+| Repo | PR # | Visible author | Automation signals | Category | CI (rollup) | Conflicts | changedFiles | Notes |
+| ---- | ---: | -------------- | ------------------ | -------- | ----------- | --------- | -----------: | ----- |
+| personal-config | 682 | abhimehro | Jules branch + footer | SECURITY | Green | CLEAN → merged | 3 | Trunk symlink fixed before merge |
+| personal-config | 681 | abhimehro | `chore/jules-daily-*` | CI/INFRA | Green | CONFLICTING | 2 | Escalated — resolve conflicts |
+| personal-config | 678 | abhimehro | `automation-workflow-*` draft | CI/INFRA | Green | CLEAN | 1 | Escalated — draft workflow trust boundary |
+| personal-config | 677 | abhimehro | Sentinel branch | SECURITY | Green | CONFLICTING | 2 | **Closed** superseded by #682 |
+| ctrld-sync | 672 | abhimehro | Sentinel branch | SECURITY | Green | CLEAN → merged | 2 | Preferred over #668 |
+| ctrld-sync | 669 | abhimehro | `automation-workflow-*` draft | CI/INFRA | Green | CLEAN | 2 | Escalated |
+| ctrld-sync | 668 | abhimehro | Sentinel branch | SECURITY | Green | CONFLICTING | 3 | **Closed** superseded by #672 |
+| email-security-pipeline | 597 | abhimehro | Sentinel | SECURITY | Green | CLEAN → merged | 3 | Malware/attachment parsing |
+| email-security-pipeline | 596 | abhimehro | Palette branch | UI | Green | CLEAN → merged | 2 | Screen reader / CLI |
+| email-security-pipeline | 594 | abhimehro | `automation-workflow-*` draft | CI/INFRA | Green | CLEAN | 14 | Escalated |
+| email-security-pipeline | 593 | abhimehro | `daily-qa-review-*` | CI/INFRA | Green | CLEAN | 0 | **Closed** no-op diff |
+| email-security-pipeline | 592 | abhimehro | Bolt branch | PERFORMANCE | Green | CLEAN → merged | 2 | Magic-byte fast path |
+| email-security-pipeline | 587 | abhimehro | fix pre-commit | CI/INFRA | Green | CLEAN → merged | 1 | Valid pre-commit rev |
+| email-security-pipeline | 585 | abhimehro | Sentinel | SECURITY | Green | CONFLICTING | 2 | **Closed** superseded post-#597 |
+| Seatek_Analysis | 107 | abhimehro | Bolt | PERFORMANCE | Green | CLEAN → merged | 1 | Vectorized pandas |
+| Seatek_Analysis | 106 | abhimehro | Sentinel | SECURITY | Green | CLEAN → merged | 1 | Generic error leakage |
+| Hydrograph_Versus_Seatek_Sensors_Project | 94 | abhimehro | Sentinel | SECURITY | Green | CLEAN → merged | 3 | Shared sanitize_filename |
+| Hydrograph_Versus_Seatek_Sensors_Project | 93 | abhimehro | Bolt | PERFORMANCE | Green | CLEAN → merged | 4 | `len(df)` vs `.empty` |
+
+**Totals at snapshot:** 18 in-scope open PRs across 5 repos (Seatek + Hydro had none beyond the listed).
+
+## Inventory at session start — 2026-04-01 (open, in-scope)
 
 | Repo | PR # | Visible author | Automation signals | Category | CI (summary) | Merge state | changedFiles | Notes |
 | ---- | ---: | -------------- | ------------------ | -------- | ------------ | ----------- | -----------: | ----- |
@@ -37,7 +62,7 @@
 
 **Total in-scope at start:** 20 open PRs across 5 repos.
 
-## Inventory after session (remaining open)
+## Inventory after session — 2026-04-01 (remaining open)
 
 | Repo | PR # | State | Reason still open |
 | ---- | ---: | ----- | ----------------- |

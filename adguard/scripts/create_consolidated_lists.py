@@ -70,16 +70,8 @@ def process_allowlist_files(base_dir):
     return allowlist_domains
 
 
-def main():
-    # Allow overriding base directory for testing/portability
-    base_dir = Path(
-        os.environ.get("ADGUARD_LISTS_DIR", "/Users/abhimehrotra/Downloads")
-    )
-
-    print("🔍 Consolidating Ad-Blocking Lists...")
-    print("=" * 50)
-
-    # 1. CREATE DENYLIST (All tracker blocking rules - do: 0)
+def create_denylist(base_dir):
+    """Create denylist domains from tracker files."""
     print("\n📋 Creating Denylist...")
     tracker_files = [
         "CD-Microsoft-Tracker.json",
@@ -114,15 +106,11 @@ def main():
             print(f"  ⚠️  File not found: {filename}")
 
     print(f"\n✅ Denylist total domains: {len(denylist_domains)}")
+    return denylist_domains
 
-    # 2. CREATE ALLOWLIST (Control D Bypass + legitimate TLDs - do: 1)
-    allowlist_domains = process_allowlist_files(base_dir)
 
-    # ⚡ Bolt Optimization: Sort once, reuse everywhere (O(N log N))
-    sorted_denylist = sorted(denylist_domains)
-    sorted_allowlist = sorted(allowlist_domains)
-
-    # 3. CREATE CONSOLIDATED TEXT FILES
+def write_text_files(base_dir, sorted_denylist, sorted_allowlist):
+    """Write consolidated text files."""
     print("\n💾 Creating consolidated text files...")
 
     # Create Denylist text file (one domain per line)
@@ -135,9 +123,10 @@ def main():
         f.write(
             "# Generated from: Microsoft, No SafeSearch, OPPO/Realme, Roku, Samsung, TikTok, Vivo, Xiaomi, Amazon, Apple, Badware Hoster, LG webOS, Huawei Trackers\n"
         )
-        f.write(f"# Total domains: {len(denylist_domains):,}\n\n")
-        for domain in sorted_denylist:
-            f.write(f"{domain}\n")
+        f.write(f"# Total domains: {len(sorted_denylist):,}\n\n")
+        if sorted_denylist:
+            # ⚡ Bolt Optimization: Use join() for faster batched string writing instead of looping f.write()
+            f.write("\n".join(sorted_denylist) + "\n")
 
     # Create Allowlist text file (AdGuard allowlist syntax with @@ prefix)
     allowlist_txt_path = base_dir / "Consolidated-Allowlist.txt"
@@ -147,14 +136,17 @@ def main():
         f.write(
             "# Generated from: CD-Control-D-Bypass and legitimate entries from CD-Most-Abused-TLDs\n"
         )
-        f.write(f"# Total domains: {len(allowlist_domains):,}\n\n")
-        for domain in sorted_allowlist:
-            f.write(f"@@{domain}\n")  # AdGuard allowlist syntax
+        f.write(f"# Total domains: {len(sorted_allowlist):,}\n\n")
+        if sorted_allowlist:
+            # ⚡ Bolt Optimization: Use join() for faster batched string writing instead of looping f.write()
+            f.write("\n".join(f"@@{domain}" for domain in sorted_allowlist) + "\n")
 
     print(f"✅ Created: {denylist_txt_path}")
     print(f"✅ Created: {allowlist_txt_path}")
 
-    # 4. CREATE JSON VERSIONS (for reference)
+
+def write_json_files(base_dir, sorted_denylist, sorted_allowlist):
+    """Write consolidated JSON reference files."""
     print("\n💾 Creating JSON reference files...")
 
     # Create Denylist JSON
@@ -192,15 +184,15 @@ def main():
     print(f"✅ Created: {denylist_json_path}")
     print(f"✅ Created: {allowlist_json_path}")
 
-    # 5. SUMMARY
+
+def print_summary(num_denylist, num_allowlist):
+    """Print the final summary output."""
     print("\n" + "=" * 50)
     print("🎉 CONSOLIDATION COMPLETE!")
     print("=" * 50)
-    print(f"📊 Denylist: {len(denylist_domains):,} domains")
-    print(f"📊 Allowlist: {len(allowlist_domains):,} domains")
-    print(
-        f"📊 Total processed: {len(denylist_domains) + len(allowlist_domains):,} domains"
-    )
+    print(f"📊 Denylist: {num_denylist:,} domains")
+    print(f"📊 Allowlist: {num_allowlist:,} domains")
+    print(f"📊 Total processed: {num_denylist + num_allowlist:,} domains")
 
     print("\n📁 Files created:")
     print(f"  • Consolidated-Denylist.txt (Text format for AdGuard import)")
@@ -214,6 +206,35 @@ def main():
     print("  3. Test your configuration to ensure proper functionality")
     print("\n📝 Note: AdGuard macOS only supports one denylist and one allowlist.")
     print("    Importing additional lists will override existing ones.")
+
+
+def main():
+    # Allow overriding base directory for testing/portability
+    base_dir = Path(
+        os.environ.get("ADGUARD_LISTS_DIR", "/Users/abhimehrotra/Downloads")
+    )
+
+    print("🔍 Consolidating Ad-Blocking Lists...")
+    print("=" * 50)
+
+    # 1. CREATE DENYLIST (All tracker blocking rules - do: 0)
+    denylist_domains = create_denylist(base_dir)
+
+    # 2. CREATE ALLOWLIST (Control D Bypass + legitimate TLDs - do: 1)
+    allowlist_domains = process_allowlist_files(base_dir)
+
+    # ⚡ Bolt Optimization: Sort once, reuse everywhere (O(N log N))
+    sorted_denylist = sorted(denylist_domains)
+    sorted_allowlist = sorted(allowlist_domains)
+
+    # 3. CREATE CONSOLIDATED TEXT FILES
+    write_text_files(base_dir, sorted_denylist, sorted_allowlist)
+
+    # 4. CREATE JSON VERSIONS (for reference)
+    write_json_files(base_dir, sorted_denylist, sorted_allowlist)
+
+    # 5. SUMMARY
+    print_summary(len(denylist_domains), len(allowlist_domains))
 
 
 if __name__ == "__main__":
