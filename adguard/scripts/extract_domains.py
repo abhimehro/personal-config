@@ -91,13 +91,15 @@ if __name__ == "__main__":
     # Write denylist
     if os.path.exists(base_dir):
         with open(os.path.join(base_dir, "Consolidated-Denylist.txt"), "w") as f:
-            for domain in sorted(denylist_domains):
-                f.write(f"{domain}\n")
+            if denylist_domains:
+                # ⚡ Bolt Optimization: Use join() for faster batched string writing instead of looping f.write()
+                f.write("\n".join(sorted(denylist_domains)) + "\n")
 
         # Write allowlist
         with open(os.path.join(base_dir, "Consolidated-Allowlist.txt"), "w") as f:
-            for domain in sorted(allowlist_domains):
-                f.write(f"@@{domain}\n")
+            if allowlist_domains:
+                # ⚡ Bolt Optimization: Use join() for faster batched string writing instead of looping f.write()
+                f.write("\n".join(f"@@{domain}" for domain in sorted(allowlist_domains)) + "\n")
 
         print(f"\nFiles created:")
         print(f"- Consolidated-Denylist.txt ({len(denylist_domains)} domains)")

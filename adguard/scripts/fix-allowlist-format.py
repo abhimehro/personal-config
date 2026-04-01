@@ -73,8 +73,9 @@ def main():
         )
         f.write(f"# Total domains: {len(allowlist_domains):,}\n\n")
 
-        for domain in sorted(allowlist_domains):
-            f.write(f"{domain}\n")
+        if allowlist_domains:
+            # ⚡ Bolt Optimization: Use join() for faster batched string writing instead of looping f.write()
+            f.write("\n".join(sorted(allowlist_domains)) + "\n")
 
     print(f"✅ Created: {allowlist_path}")
     print(f"📊 File contains {len(allowlist_domains):,} domains")
