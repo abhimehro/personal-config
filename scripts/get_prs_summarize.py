@@ -12,7 +12,6 @@ import os
 import subprocess
 import sys
 
-
 FAIL_CONCLUSIONS = frozenset(
     {
         "FAILURE",

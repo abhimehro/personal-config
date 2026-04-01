@@ -64,11 +64,11 @@ _int_from_config() {
 	fi
 }
 
-CLEANUP_CACHE_DAYS="$(_int_from_config "${CLEANUP_CACHE_DAYS:-}" 30)"
-TMP_CLEAN_DAYS="$(_int_from_config "${TMP_CLEAN_DAYS:-}" 7)"
-XCODE_DERIVEDDATA_KEEP_DAYS="$(_int_from_config "${XCODE_DERIVEDDATA_KEEP_DAYS:-}" 30)"
-BREW_CLEAN_PRUNE_DAYS="$(_int_from_config "${BREW_CLEAN_PRUNE_DAYS:-}" 30)"
-LOG_RETENTION_DAYS="$(_int_from_config "${LOG_RETENTION_DAYS:-}" 60)"
+CLEANUP_CACHE_DAYS="$(_int_from_config "${CLEANUP_CACHE_DAYS-}" 30)"
+TMP_CLEAN_DAYS="$(_int_from_config "${TMP_CLEAN_DAYS-}" 7)"
+XCODE_DERIVEDDATA_KEEP_DAYS="$(_int_from_config "${XCODE_DERIVEDDATA_KEEP_DAYS-}" 30)"
+BREW_CLEAN_PRUNE_DAYS="$(_int_from_config "${BREW_CLEAN_PRUNE_DAYS-}" 30)"
+LOG_RETENTION_DAYS="$(_int_from_config "${LOG_RETENTION_DAYS-}" 60)"
 
 # Get disk usage percentage
 percent_used() {
