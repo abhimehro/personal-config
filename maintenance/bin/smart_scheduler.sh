@@ -26,6 +26,48 @@ log_info() { log_message "INFO" "$@"; }
 log_warn() { log_message "WARN" "$@"; }
 log_error() { log_message "ERROR" "$@"; }
 
+# Accessible Spinner
+spinner_wait() {
+	local duration=$1
+	local msg="${2:-Working}"
+
+	if [[ -t 1 && -z ${CI-} ]]; then
+		local i=1
+		local sp="/-\|"
+		local iterations
+		iterations=$((duration * 10))
+		local c=0
+
+		# Hide cursor
+		tput civis 2>/dev/null || true
+
+		# Save original traps and set temporary ones
+		local old_int_trap
+		old_int_trap=$(trap -p INT)
+		trap 'tput cnorm 2>/dev/null || true; eval "${old_int_trap:-trap - INT}"; kill -INT "$$"' INT
+
+		local old_term_trap
+		old_term_trap=$(trap -p TERM)
+		trap 'tput cnorm 2>/dev/null || true; eval "${old_term_trap:-trap - TERM}"; kill -TERM "$$"' TERM
+
+		while [[ $c -lt $iterations ]]; do
+			printf "\r\033[0;34m[%c]\033[0m %s..." "${sp:i++%${#sp}:1}" "$msg"
+			sleep 0.1
+			c=$((c + 1))
+		done
+		printf "\r\033[K" # Clear line
+
+		# Restore cursor and original traps
+		tput cnorm 2>/dev/null || true
+		eval "${old_int_trap:-trap - INT}"
+		eval "${old_term_trap:-trap - TERM}"
+	else
+		# Fallback for non-TTY environments (CI, screen readers)
+		log_info "$msg (waiting ${duration}s)..."
+		sleep "$duration"
+	fi
+}
+
 # System load assessment
 get_system_load() {
 	local load_1min cpu_count
@@ -178,7 +220,7 @@ smart_delay() {
 				"Task '$task_name' delayed by $((optimal_delay / 60)) minutes due to system load"
 		fi
 
-		sleep "$optimal_delay"
+		spinner_wait "$optimal_delay" "Waiting for optimal load window"
 		log_info "Delay completed for $task_name"
 	else
 		log_info "No delay needed for $task_name - system resources available"
@@ -206,7 +248,7 @@ adaptive_reschedule() {
 		fi
 
 		log_info "System still busy (Load: ${system_load}%, Memory: ${memory_usage}%), waiting 20 minutes..."
-		sleep 1200 # 20 minutes
+		spinner_wait 1200 "System still busy, waiting 20 minutes"
 		reschedule_attempts=$((reschedule_attempts + 1))
 	done
 
