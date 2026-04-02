@@ -203,6 +203,7 @@
 **Prevention:** Always route macOS LaunchAgent/LaunchDaemon logs to secure, user-owned directories (like `/Users/username/Library/Logs/`) instead of world-writable directories like `/tmp`.
 
 ## 2025-03-31 - [secrets module AttributeError]
+
 **Vulnerability:** Use of `secrets.choices` instead of `secrets.SystemRandom().choices`
 **Learning:** `secrets` module does not have a module-level `choices` function, leading to `AttributeError` and runtime crashes, potentially preventing server from starting up or properly initializing secure credentials.
 **Prevention:** Use `secrets.choice` in a loop or `secrets.SystemRandom().choices` to generate random strings of a given length.

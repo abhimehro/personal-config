@@ -151,7 +151,9 @@ if __name__ == "__main__":
     if not AUTH_USER:
         # Generate a random username to avoid "admin" default
         user_alphabet = string.ascii_lowercase + string.digits
-        AUTH_USER = "user_" + "".join(secrets.SystemRandom().choices(user_alphabet, k=8))
+        AUTH_USER = "user_" + "".join(
+            secrets.SystemRandom().choices(user_alphabet, k=8)
+        )
         generated_user = True
 
     if not AUTH_PASS:

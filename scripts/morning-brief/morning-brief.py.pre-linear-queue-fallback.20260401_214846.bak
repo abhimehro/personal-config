@@ -308,13 +308,6 @@ class SectionResult:
 
 
 @dataclass(frozen=True)
-class LinearQueueSnapshot:
-    unread_count: int = 0
-    review_items: tuple[FocusItem, ...] = ()
-    notification_items: tuple[FocusItem, ...] = ()
-
-
-@dataclass(frozen=True)
 class DailyContext:
     today: dt.date
     today_iso: str
@@ -942,94 +935,6 @@ def fetch_linear_focus_items(
         return []
 
 
-def fetch_linear_queue_snapshot(
-    session: requests.Session,
-    config: AppConfig,
-) -> LinearQueueSnapshot:
-    if not config.linear_api_key:
-        return LinearQueueSnapshot()
-
-    query = """
-    query MorningBriefLinearQueue {
-      notificationsUnreadCount
-      notifications(first: 25, orderBy: updatedAt) {
-        nodes {
-          __typename
-          id
-          type
-          category
-          title
-          subtitle
-          url
-          inboxUrl
-          readAt
-          updatedAt
-        }
-      }
-    }
-    """
-
-    try:
-        response = session.post(
-            LINEAR_GRAPHQL_URL,
-            headers={
-                "Authorization": config.linear_api_key,
-                "Content-Type": "application/json",
-            },
-            json={"query": query},
-            timeout=DEFAULT_TIMEOUT,
-        )
-        response.raise_for_status()
-        payload = response.json().get("data", {})
-        unread_count = payload.get("notificationsUnreadCount", 0)
-        nodes = payload.get("notifications", {}).get("nodes", [])
-        unread_nodes = [node for node in nodes if not node.get("readAt")]
-
-        review_items: list[FocusItem] = []
-        seen_reviews: set[str] = set()
-        notification_items: list[FocusItem] = []
-        seen_notifications: set[str] = set()
-
-        for node in unread_nodes:
-            category = (node.get("category") or "").lower()
-            title = node.get("title") or "Untitled notification"
-            subtitle = truncate_text(node.get("subtitle") or "", 140)
-            url = node.get("inboxUrl") or node.get("url") or "#"
-            dedupe_key = url or title
-
-            item = FocusItem(
-                kind="linear-notification",
-                identifier="Review" if category == "reviews" else "Inbox",
-                title=title,
-                url=url,
-                badge=category or "notification",
-                score=0,
-                updated_at=node.get("updatedAt") or "",
-                description=subtitle,
-            )
-
-            if category == "reviews":
-                if dedupe_key in seen_reviews:
-                    continue
-                seen_reviews.add(dedupe_key)
-                review_items.append(item)
-                continue
-
-            if dedupe_key in seen_notifications:
-                continue
-            seen_notifications.add(dedupe_key)
-            notification_items.append(item)
-
-        return LinearQueueSnapshot(
-            unread_count=unread_count,
-            review_items=tuple(review_items[:3]),
-            notification_items=tuple(notification_items[:5]),
-        )
-    except Exception as exc:
-        logger.error("Linear queue snapshot error: %s", exc)
-        return LinearQueueSnapshot()
-
-
 def fetch_calendar_focus_items(
     session: requests.Session,
     config: AppConfig,
@@ -1231,64 +1136,6 @@ def render_greeting_section(weather: WeatherSnapshot, greeting_paragraph: str) -
     return html_section("🌅 Good Morning, Abhi", body)
 
 
-def render_linear_queue_item(item: FocusItem) -> str:
-    subtitle = (
-        f'<br><span style="color: #666; font-size: 0.9em;">{sanitize_text(item.description)}</span>'
-        if item.description
-        else ""
-    )
-    return html_li(
-        f'<a href="{item.url}"><strong>{sanitize_text(item.title)}</strong></a>{subtitle}'
-    )
-
-
-def render_linear_queue_focus_section(
-    queue: LinearQueueSnapshot,
-    daily: DailyContext,
-) -> str:
-    review_body = html_ul([render_linear_queue_item(item) for item in queue.review_items]) if queue.review_items else '<p><em>No review items were surfaced from Linear.</em></p>'
-    notification_body = html_ul([render_linear_queue_item(item) for item in queue.notification_items]) if queue.notification_items else '<p><em>No unread notifications were surfaced from Linear.</em></p>'
-
-    subsections = [
-        html_subsection("Pending reviews", review_body),
-        html_subsection("Unread notifications", notification_body),
-        html_subsection(
-            "Why this was chosen",
-            html_ul(
-                [
-                    html_li(
-                        sanitize_text(
-                            f"No active Linear issues were available, so the brief surfaced your current queue instead: {queue.unread_count} unread notifications and {len(queue.review_items)} highlighted reviews."
-                        )
-                    )
-                ]
-            ),
-        ),
-        html_subsection(
-            "PR / GitHub Context",
-            html_ul(
-                [
-                    html_li(
-                        sanitize_text(
-                            "Start with pending reviews first, then clear the highest-signal unread notifications. This keeps merge and feedback loops moving even when no active issue is assigned."
-                        )
-                    )
-                ]
-            ),
-        ),
-        html_subsection(
-            "Time-aware selection",
-            html_ul([html_li(sanitize_text(get_time_aware_guidance()))]),
-        ),
-    ]
-
-    body = (
-        f"<p><strong>Linear queue snapshot:</strong> {queue.unread_count} unread notifications, {len(queue.review_items)} highlighted reviews</p>"
-        + "".join(subsections)
-    )
-    return html_section("🚀 Focus", body)
-
-
 def render_focus_section(
     deep_item: FocusItem | None, admin_item: FocusItem | None, daily: DailyContext
 ) -> str:
@@ -1400,16 +1247,10 @@ def build_greeting_section(
 def build_focus_section(config: AppConfig, daily: DailyContext) -> str:
     session = build_retry_session(total=2, backoff_factor=0.5)
     linear_items = fetch_linear_focus_items(session, config, daily)
-    if linear_items:
-        calendar_items: list[FocusItem] = []
-        deep_item, admin_item = select_focus_pair(linear_items, calendar_items)
-        return render_focus_section(deep_item, admin_item, daily)
-
-    queue = fetch_linear_queue_snapshot(session, config)
-    if queue.review_items or queue.notification_items or queue.unread_count:
-        return render_linear_queue_focus_section(queue, daily)
-
-    return render_focus_section(None, None, daily)
+    # Calendar integration intentionally disabled for now.
+    calendar_items: list[FocusItem] = []
+    deep_item, admin_item = select_focus_pair(linear_items, calendar_items)
+    return render_focus_section(deep_item, admin_item, daily)
 
 
 def save_to_reader(
