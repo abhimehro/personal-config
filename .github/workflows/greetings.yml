@@ -1,5 +1,6 @@
 name: Disabled Greetings
-on: []
+on:
+  workflow_dispatch:
 jobs:
   disabled:
     runs-on: ubuntu-latest
