@@ -46,8 +46,8 @@ jobs:
           - Apply domain-specific priorities (defined above) when evaluating correctness, security, and reliability.
 
           ### 2. Historical Check
-          - Search for any open issues or discussions tagged *"Jules Daily QA & Agentic Review"*.
-          - If one exists with an unchanged status, add a status comment rather than duplicating work.
+          - Search for any open issues titled starting with **"Daily QA Check - "** or labeled with **automation** and **qa** that were created by this workflow.
+          - If one exists with an unchanged status, add a status comment rather than duplicating work, instead of opening a new issue.
 
           ### 3. Actionable Insights
           - For high-confidence minor fixes, open a pull request directly.
