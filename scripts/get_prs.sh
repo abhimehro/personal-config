@@ -222,15 +222,12 @@ if [[ -n ${GH_REPO-} ]]; then
 	REPOS=("$GH_REPO")
 fi
 
-CONFIG_PATH_RESOLVED=""
 if [[ -n $CONFIG_FILE ]]; then
 	load_pr_review_agent_config "$CONFIG_FILE"
-	CONFIG_PATH_RESOLVED="$CONFIG_FILE"
 elif [[ ${#REPOS[@]} -eq 0 ]]; then
 	default_config="$REPO_ROOT/tasks/pr-review-agent.config.yaml"
 	if [[ -f $default_config ]]; then
 		load_pr_review_agent_config "$default_config"
-		CONFIG_PATH_RESOLVED="$default_config"
 	else
 		echo "ERROR: No repositories specified. Use --repo or provide a config file." >&2
 		exit 1
@@ -303,8 +300,10 @@ run_full_inventory() {
 # Legacy comparison: original script behavior (per-repo × per-bot --author filter).
 run_legacy_bots_only() {
 	echo ""
+	# shellcheck disable=SC2016
 	echo '## Legacy comparison: `gh pr list --author` (bots only)'
 	echo ""
+	# shellcheck disable=SC2016
 	printf '_Bot logins: `%s`._\n' "${BOT_AUTHORS[*]}"
 	echo "_Misses automation opened under a human GitHub user (common for Jules UI) even when the body or commits reference a bot._"
 	echo ""
@@ -320,8 +319,10 @@ run_legacy_bots_only() {
 export GH_DETAIL_REPO=""
 
 if [[ $BOTS_ONLY == true ]]; then
+	# shellcheck disable=SC2016
 	echo '# Open PR inventory (legacy: `--bots-only`)'
 	echo ""
+	# shellcheck disable=SC2016
 	echo '_Only PRs whose GitHub **author** matches `bot_authors`. Use default mode or `--compare-bots` for the full open list._'
 	echo ""
 	run_legacy_bots_only
@@ -334,6 +335,7 @@ echo "# Open PR inventory"
 echo ""
 echo "_Generated for agent triage: lists **all** open PRs; automation is inferred from metadata and optional review/comment fetch._"
 if [[ $COMPARE_BOTS == true ]]; then
+	# shellcheck disable=SC2016
 	echo '_Also appending a **legacy bots-only** section at the end (`--compare-bots`)._'
 fi
 echo ""

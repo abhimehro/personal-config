@@ -278,9 +278,11 @@ if [[ $EXTRACT_ENHANCEMENTS -eq 1 ]]; then
 		echo "#"
 		echo "# Zsh/Bash Pattern          | Fish Equivalent"
 		echo "# --------------------------|----------------------------------"
+		# shellcheck disable=SC2016
 		echo '# export PATH="$PATH:dir"   | fish_add_path --global --append dir'
 		echo "# export VAR=value          | set -gx VAR value"
 		echo "# alias foo='bar'           | alias foo='bar' (same)"
+		# shellcheck disable=SC2016
 		echo '# eval "$(tool init)"       | tool init fish | source'
 		echo "# source file               | source file (same)"
 		echo "# if [ condition ]; then    | if test condition"
