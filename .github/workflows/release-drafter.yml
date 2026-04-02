@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
-      - uses: release-drafter/release-drafter@v7.1.1
+      - uses: release-drafter/release-drafter@<COMMIT-SHA-FOR-v7.1.1> # v7.1.1
         with:
           commitish: ${{ github.event.pull_request.head.sha || github.sha }}
         env:
