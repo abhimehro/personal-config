@@ -222,15 +222,12 @@ if [[ -n ${GH_REPO-} ]]; then
 	REPOS=("$GH_REPO")
 fi
 
-export CONFIG_PATH_RESOLVED=""
 if [[ -n $CONFIG_FILE ]]; then
 	load_pr_review_agent_config "$CONFIG_FILE"
-	CONFIG_PATH_RESOLVED="$CONFIG_FILE"
 elif [[ ${#REPOS[@]} -eq 0 ]]; then
 	default_config="$REPO_ROOT/tasks/pr-review-agent.config.yaml"
 	if [[ -f $default_config ]]; then
 		load_pr_review_agent_config "$default_config"
-		CONFIG_PATH_RESOLVED="$default_config"
 	else
 		echo "ERROR: No repositories specified. Use --repo or provide a config file." >&2
 		exit 1
