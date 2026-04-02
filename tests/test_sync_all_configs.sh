@@ -269,13 +269,17 @@ fi
 
 # Test 8: Verify no hardcoded home directory paths
 echo ""
+# shellcheck disable=SC2016
 echo 'Test 8: Uses $HOME variable instead of hardcoded paths'
 echo "---"
 
 # Check that script uses $HOME instead of hardcoded paths like /Users/username
+# shellcheck disable=SC2016
 if grep -q '$HOME' "$SCRIPT"; then
+	# shellcheck disable=SC2016
 	echo '✅ PASS: Script uses $HOME variable'
 else
+	# shellcheck disable=SC2016
 	echo '⚠️  WARNING: Script may not use $HOME variable'
 fi
 
