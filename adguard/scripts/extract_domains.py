@@ -99,7 +99,10 @@ if __name__ == "__main__":
         with open(os.path.join(base_dir, "Consolidated-Allowlist.txt"), "w") as f:
             if allowlist_domains:
                 # ⚡ Bolt Optimization: Use join() for faster batched string writing instead of looping f.write()
-                f.write("\n".join(f"@@{domain}" for domain in sorted(allowlist_domains)) + "\n")
+                f.write(
+                    "\n".join(f"@@{domain}" for domain in sorted(allowlist_domains))
+                    + "\n"
+                )
 
         print(f"\nFiles created:")
         print(f"- Consolidated-Denylist.txt ({len(denylist_domains)} domains)")

@@ -86,4 +86,3 @@
 
 **Pattern:** `gh pr merge` / API calls authenticate as the user via `GH_TOKEN`, but a plain `git push https://github.com/owner/repo.git` may pick **`cursor[bot]`** (or another secondary host entry) from `~/.config/gh/hosts.yml`, producing **403 Permission denied** even when the user can merge via UI/`gh`.
 **Rule:** After `gh auth setup-git`, verify `git push` uses the **intended** identity, or avoid pushes entirely and use **`gh pr merge`** / **`gh workflow run`** / **MCP**. For **Jujitsu (jj)**: treat `jj git push` the same way — ensure remote credentials map to the **human/maintenance PAT**, not a read-only bot. Prefer documenting: “PR branch sync: `gh` API or PAT-in-URL remote,” not unauthenticated HTTPS.
-
