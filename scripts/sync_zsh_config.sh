@@ -193,6 +193,7 @@ INTRO
 
 	echo "### PATH Modifications"
 	echo '```bash'
+	# shellcheck disable=SC2016
 	grep -E '^export PATH=|^PATH=|\$PATH' "$config_source" 2>/dev/null || echo "# (none found)"
 	echo '```'
 	echo ""
