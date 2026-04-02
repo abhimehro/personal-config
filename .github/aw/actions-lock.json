@@ -1,10 +1,5 @@
 {
   "entries": {
-    "actions/checkout@v5.0.1": {
-      "repo": "actions/checkout",
-      "version": "v5.0.1",
-      "sha": "93cb6efe18208431cddfb8368fd83d5badbf9bfd"
-    },
     "actions/checkout@v6.0.2": {
       "repo": "actions/checkout",
       "version": "v6.0.2",
@@ -15,40 +10,20 @@
       "version": "v8",
       "sha": "ed597411d8f924073f98dfc5c65a23a2325f34cd"
     },
-    "actions/setup-node@v6.2.0": {
+    "actions/setup-node@v6.3.0": {
       "repo": "actions/setup-node",
-      "version": "v6.2.0",
-      "sha": "6044e13b5dc448c55e2357c09f80417699197238"
+      "version": "v6.3.0",
+      "sha": "53b83947a5a98c8d113130e565377fae1a50d02f"
     },
-    "actions/upload-artifact@v6.0.0": {
+    "actions/upload-artifact@v7.0.0": {
       "repo": "actions/upload-artifact",
-      "version": "v6.0.0",
-      "sha": "b7c566a772e6b6bfb58ed0dc250532a479d7789f"
+      "version": "v7.0.0",
+      "sha": "bbbca2ddaa5d8feaa63e36b76fdaad77386f024f"
     },
-    "github/gh-aw/actions/setup@v0.45.0": {
+    "github/gh-aw/actions/setup@v0.65.4": {
       "repo": "github/gh-aw/actions/setup",
-      "version": "v0.45.0",
-      "sha": "58d1d157fbac0f1204798500faefc4f7461ebe28"
-    },
-    "github/gh-aw/actions/setup@v0.47.1": {
-      "repo": "github/gh-aw/actions/setup",
-      "version": "v0.47.1",
-      "sha": "c94abee3e98890c5ddf4e8f41a74ed3302c56cec"
-    },
-    "github/gh-aw/actions/setup@v0.51.2": {
-      "repo": "github/gh-aw/actions/setup",
-      "version": "v0.51.2",
-      "sha": "cccf96100f50705c4291b91a6071c556f72cb3ef"
-    },
-    "github/gh-aw/actions/setup@v0.51.5": {
-      "repo": "github/gh-aw/actions/setup",
-      "version": "v0.51.5",
-      "sha": "88319be75ab1adc60640307a10e5cf04b3deff1e"
-    },
-    "github/gh-aw/actions/setup@v0.55.0": {
-      "repo": "github/gh-aw/actions/setup",
-      "version": "v0.55.0",
-      "sha": "e211c855a20aa6cf9297b411466e1c382a8686db"
+      "version": "v0.65.4",
+      "sha": "b5a9fb08751b738a86b3b605ff1fdf34956adbf4"
     }
   }
 }
