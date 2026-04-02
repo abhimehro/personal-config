@@ -207,3 +207,9 @@
 **Vulnerability:** Use of `secrets.choices` instead of `secrets.SystemRandom().choices`
 **Learning:** `secrets` module does not have a module-level `choices` function, leading to `AttributeError` and runtime crashes, potentially preventing server from starting up or properly initializing secure credentials.
 **Prevention:** Use `secrets.choice` in a loop or `secrets.SystemRandom().choices` to generate random strings of a given length.
+
+## 2026-03-22 - Command Injection Risk via printf -v dynamic variable assignment
+
+**Vulnerability:** Command Injection ([CWE-78](https://cwe.mitre.org/data/definitions/78.html)) risk existed in `maintenance/bin/system_cleanup.sh`. The script used `printf -v "$1" ...` to assign variables dynamically based on function arguments. In bash, if an attacker can control the variable name passed to `printf -v`, they can execute arbitrary shell commands via array index execution (e.g. `a[0$(id>&2)]`).
+**Learning:** Using `printf -v` to mimic pass-by-reference variable assignment in shell scripts exposes the script to command injection vulnerabilities, similar to `eval`, if the variable name is not strictly validated. The attacker can inject commands through the array index evaluation mechanism built into bash's variable resolution.
+**Prevention:** Strictly validate the dynamically passed variable name against `^[a-zA-Z_][a-zA-Z0-9_]*$` before execution in `printf -v`, `eval`, or `declare` to prevent Command Injection (CWE-78).

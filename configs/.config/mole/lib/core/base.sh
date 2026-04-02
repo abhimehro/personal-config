@@ -821,6 +821,11 @@ update_progress_if_needed() {
 
 	# Get last update time from variable
 	local last_time
+	# SECURITY: Prevent Command Injection (CWE-78) by validating dynamic variable name
+	if [[ ! "$last_update_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+		echo "Error: Invalid variable name '$last_update_var'" >&2
+		return 1
+	fi
 	eval "last_time=\${$last_update_var:-0}"
 	[[ $last_time =~ ^[0-9]+$ ]] || last_time=0
 

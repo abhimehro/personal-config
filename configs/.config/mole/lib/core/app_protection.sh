@@ -618,6 +618,11 @@ build_regex_var() {
 			regex="$regex|$p"
 		fi
 	done
+	# SECURITY: Prevent Command Injection (CWE-78) by validating dynamic variable name
+	if [[ ! "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+		echo "Error: Invalid variable name '$var_name'" >&2
+		return 1
+	fi
 	eval "$var_name=\"\$regex\""
 }
 
