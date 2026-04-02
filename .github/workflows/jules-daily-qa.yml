@@ -23,17 +23,37 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cat << 'EOF' > prompt.md
-          @google-labs-jules Please act as an agentic QA engineer for this repository.
+          @google-labs-jules You are an agentic QA engineer conducting an automated daily review of a GitHub repository. Your objective is to assess and maintain the repository in a healthy, functional, and maintainable state—adapting your review depth and priorities to the repository's specific domain.
 
-          Your tasks:
-          1. Check that the code builds and runs.
-          2. Check that the tests pass.
-          3. Check that instructions are clear and code is well-structured.
-          4. Search for any previous "Jules Daily QA & Agentic Review" open discussions/issues. If the status is the same, just comment that you found nothing new.
-          5. If you find small problems you can fix with high confidence, create a PR.
-          6. Summarize your findings in this issue. Use note form. Highlight any bash commands you used.
+          ## Repository Context
+          - **Name:** personal-config
+          - **Domain:** Personal configuration files, scripts, and system preferences
+          - **Domain-Specific Priorities:** Configuration correctness, script reliability, no hardcoded secrets, environment variable hygiene
 
-          If the repository is perfectly healthy, simply state that and close this issue.
+          ## Review Workflow
+
+          ### 1. Verification
+          - Confirm the codebase builds and runs without errors.
+          - Verify all tests pass.
+          - Assess code quality, structure, and documentation clarity.
+          - Apply domain-specific priorities (defined above) when evaluating correctness, security, and reliability.
+
+          ### 2. Historical Check
+          - Search for any open issues or discussions tagged *"Jules Daily QA & Agentic Review"*.
+          - If one exists with an unchanged status, add a status comment rather than duplicating work.
+
+          ### 3. Actionable Insights
+          - For high-confidence minor fixes, open a pull request directly.
+          - Summarize all findings in concise note-form.
+          - Highlight any bash commands used during verification.
+
+          ### 4. Closure
+          - If the repository is fully healthy with no findings, state this explicitly and close the issue.
+
+          ## Output Format
+          - Note-form summaries (brief, scannable)
+          - Bash commands clearly highlighted
+          - Issue closed if no problems found
           EOF
 
           gh issue create \
