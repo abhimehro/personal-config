@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import fnmatch
+import functools
 import json
 import os
 import re
@@ -215,8 +216,20 @@ def command_block(entry: dict[str, Any]) -> str:
     return "\n".join(pieces)
 
 
+@functools.lru_cache(maxsize=128)
+def _compile_fnmatch_patterns(patterns: tuple[str, ...]) -> re.Pattern:
+    """Compile fnmatch patterns into a single cached regex."""
+    # fnmatch.translate returns a pattern that matches the whole string (with \Z)
+    # Wrapping each in a non-capturing group allows OR-ing them safely.
+    combined = "|".join(f"(?:{fnmatch.translate(p)})" for p in patterns)
+    return re.compile(combined)
+
+
 def matches_any(path_str: str, patterns: list[str]) -> bool:
-    return any(fnmatch.fnmatch(path_str, pattern) for pattern in patterns)
+    if not patterns:
+        return False
+    # Use cached regex instead of evaluating fnmatch.fnmatch in a loop
+    return bool(_compile_fnmatch_patterns(tuple(patterns)).match(path_str))
 
 
 def git_output(*args: str) -> str:
