@@ -241,19 +241,19 @@ class TestExtractHoroscopeText(unittest.TestCase):
 
 class TestStaleness(unittest.TestCase):
     def test_zero_for_today(self):
-        assert mb.staleness_days("2026-03-25T12:00:00Z", "2026-03-25") == 0
+        assert mb.staleness_days("2026-03-25T12:00:00Z", dt.date(2026, 3, 25)) == 0
 
     def test_positive_days(self):
-        assert mb.staleness_days("2026-03-20T12:00:00Z", "2026-03-25") == 5
+        assert mb.staleness_days("2026-03-20T12:00:00Z", dt.date(2026, 3, 25)) == 5
 
     def test_empty_string(self):
-        assert mb.staleness_days("", "2026-03-25") == 0
+        assert mb.staleness_days("", dt.date(2026, 3, 25)) == 0
 
     def test_invalid_format(self):
-        assert mb.staleness_days("not-a-date", "2026-03-25") == 0
+        assert mb.staleness_days("not-a-date", dt.date(2026, 3, 25)) == 0
 
     def test_future_date(self):
-        assert mb.staleness_days("2026-03-30T12:00:00Z", "2026-03-25") == 0
+        assert mb.staleness_days("2026-03-30T12:00:00Z", dt.date(2026, 3, 25)) == 0
 
 
 # ============================================================
@@ -263,6 +263,7 @@ class TestStaleness(unittest.TestCase):
 
 class TestScoreLinearIssue(unittest.TestCase):
     TODAY = "2026-03-25"
+    TODAY_DATE = dt.date(2026, 3, 25)
 
     def _issue(self, **overrides):
         base = {
@@ -278,50 +279,50 @@ class TestScoreLinearIssue(unittest.TestCase):
 
     def test_due_today_urgent(self):
         issue = self._issue(priority=1, dueDate=self.TODAY)
-        score = mb.score_linear_issue(issue, self.TODAY)
+        score = mb.score_linear_issue(issue, self.TODAY, self.TODAY_DATE)
         assert score >= 180  # 100 + 80 + state
 
     def test_no_priority_no_due(self):
         issue = self._issue()
-        score = mb.score_linear_issue(issue, self.TODAY)
+        score = mb.score_linear_issue(issue, self.TODAY, self.TODAY_DATE)
         assert score >= 0
         assert score < 50
 
     def test_started_state_bonus(self):
         issue = self._issue(state={"name": "In Progress", "type": "started"})
-        score_started = mb.score_linear_issue(issue, self.TODAY)
+        score_started = mb.score_linear_issue(issue, self.TODAY, self.TODAY_DATE)
         issue_backlog = self._issue(state={"name": "Backlog", "type": "backlog"})
-        score_backlog = mb.score_linear_issue(issue_backlog, self.TODAY)
+        score_backlog = mb.score_linear_issue(issue_backlog, self.TODAY, self.TODAY_DATE)
         assert score_started > score_backlog
 
     def test_label_bonus(self):
         issue_bug = self._issue(labels={"nodes": [{"name": "Bug"}]})
         issue_plain = self._issue()
-        assert mb.score_linear_issue(issue_bug, self.TODAY) > mb.score_linear_issue(
-            issue_plain, self.TODAY
+        assert mb.score_linear_issue(issue_bug, self.TODAY, self.TODAY_DATE) > mb.score_linear_issue(
+            issue_plain, self.TODAY, self.TODAY_DATE
         )
 
     def test_staleness_penalty(self):
         issue_stale = self._issue(updatedAt="2026-02-01T00:00:00Z")
         issue_fresh = self._issue(updatedAt="2026-03-24T00:00:00Z")
-        assert mb.score_linear_issue(issue_fresh, self.TODAY) >= mb.score_linear_issue(
-            issue_stale, self.TODAY
+        assert mb.score_linear_issue(issue_fresh, self.TODAY, self.TODAY_DATE) >= mb.score_linear_issue(
+            issue_stale, self.TODAY, self.TODAY_DATE
         )
 
     def test_cycle_bonus(self):
         issue_cycle = self._issue(cycle={"id": "abc"})
         issue_no_cycle = self._issue()
-        assert mb.score_linear_issue(issue_cycle, self.TODAY) > mb.score_linear_issue(
-            issue_no_cycle, self.TODAY
+        assert mb.score_linear_issue(issue_cycle, self.TODAY, self.TODAY_DATE) > mb.score_linear_issue(
+            issue_no_cycle, self.TODAY, self.TODAY_DATE
         )
 
     def test_score_never_negative(self):
         issue = self._issue(updatedAt="2020-01-01T00:00:00Z")
-        assert mb.score_linear_issue(issue, self.TODAY) >= 0
+        assert mb.score_linear_issue(issue, self.TODAY, self.TODAY_DATE) >= 0
 
     def test_missing_fields(self):
         """Issues with completely missing fields should not crash."""
-        score = mb.score_linear_issue({}, self.TODAY)
+        score = mb.score_linear_issue({}, self.TODAY, self.TODAY_DATE)
         assert isinstance(score, int)
         assert score >= 0
 

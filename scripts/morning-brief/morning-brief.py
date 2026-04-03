@@ -607,19 +607,18 @@ def extract_horoscope_text(data: dict[str, Any]) -> str | None:
     return None
 
 
-def staleness_days(updated_at: str, today_iso: str) -> int:
+def staleness_days(updated_at: str, today: dt.date) -> int:
     """Return days since last update, or 0 on parse failure."""
     if not updated_at:
         return 0
     try:
         updated_date = dt.date.fromisoformat(updated_at[:10])
-        today = dt.date.fromisoformat(today_iso)
         return max((today - updated_date).days, 0)
     except (ValueError, TypeError):
         return 0
 
 
-def score_linear_issue(issue: dict[str, Any], today_iso: str) -> int:
+def score_linear_issue(issue: dict[str, Any], today_iso: str, daily_today: dt.date) -> int:
     """Score a Linear issue with priority, due date, state, labels, and staleness."""
     priority = issue.get("priority") or 0
     due_date = issue.get("dueDate") or ""
@@ -652,7 +651,7 @@ def score_linear_issue(issue: dict[str, Any], today_iso: str) -> int:
                 score += bonus
 
     # Staleness penalty (issues untouched > 14 days get penalized)
-    stale = staleness_days(updated_at, today_iso)
+    stale = staleness_days(updated_at, daily_today)
     if stale > 14:
         score -= min(stale - 14, 30)
 
@@ -926,7 +925,7 @@ def fetch_linear_focus_items(
                     state_type=state.get("type", ""),
                     due_date=issue.get("dueDate") or "",
                     badge=priority_labels.get(issue.get("priority") or 0, ""),
-                    score=score_linear_issue(issue, daily.today_iso),
+                    score=score_linear_issue(issue, daily.today_iso, daily.today),
                     labels=label_names,
                     updated_at=issue.get("updatedAt") or "",
                 )
