@@ -2,7 +2,7 @@
 name: "rp-build-cli"
 description: "Build with rp-cli context builder plan → implement"
 repoprompt_managed: true
-repoprompt_skills_version: 29
+repoprompt_skills_version: 30
 repoprompt_variant: cli
 ---
 
@@ -22,20 +22,19 @@ rp-cli -e '<command>'
 
 **Quick reference:**
 
-| MCP Tool             | CLI Command                                                                  |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `get_file_tree`      | `rp-cli -e 'tree'`                                                           |
-| `file_search`        | `rp-cli -e 'search "pattern"'`                                               |
-| `get_code_structure` | `rp-cli -e 'structure path/'`                                                |
-| `read_file`          | `rp-cli -e 'read path/file.swift'`                                           |
-| `manage_selection`   | `rp-cli -e 'select add path/'`                                               |
-| `context_builder`    | `rp-cli -e 'builder "instructions" --response-type plan'`                    |
-| `chat_send`          | `rp-cli -e 'chat "message" --mode plan'`                                     |
-| `apply_edits`        | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
-| `file_actions`       | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'`             |
+| MCP Tool | CLI Command |
+|----------|-------------|
+| `get_file_tree` | `rp-cli -e 'tree'` |
+| `file_search` | `rp-cli -e 'search "pattern"'` |
+| `get_code_structure` | `rp-cli -e 'structure path/'` |
+| `read_file` | `rp-cli -e 'read path/file.swift'` |
+| `manage_selection` | `rp-cli -e 'select add path/'` |
+| `context_builder` | `rp-cli -e 'builder "instructions" --response-type plan'` |
+| `chat_send` | `rp-cli -e 'chat "message" --mode plan'` |
+| `apply_edits` | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
+| `file_actions` | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'` |
 
 Chain commands with `&&`:
-
 ```bash
 rp-cli -e 'select set src/ && context'
 ```
@@ -47,7 +46,6 @@ JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected), `@file`
 **⚠️ TIMEOUT WARNING:** The `builder` and `chat` commands can take several minutes to complete. When invoking rp-cli, **set your command timeout to at least 2700 seconds (45 minutes)** to avoid premature termination.
 
 ---
-
 ## The Workflow
 
 0. **Verify workspace** – Confirm the target codebase is loaded
@@ -61,7 +59,6 @@ JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected), `@file`
 ## CRITICAL REQUIREMENT
 
 ⚠️ **DO NOT START IMPLEMENTATION** until you have:
-
 1. Completed Phase 0 (Workspace Verification)
 2. Completed Phase 1 (Quick Scan)
 3. **Called `builder`** and received its plan
@@ -83,31 +80,26 @@ rp-cli -w <window_id> -e 'tree --type roots'
 ```
 
 **Check the output:**
-
 - If your target root appears in a window → note the window ID and proceed to Phase 1
 - If not → the codebase isn't loaded in any window
 
 **CLI Window Routing (CRITICAL):**
-
 - CLI invocations are stateless—you MUST pass `-w <window_id>` to target the correct window
 - Use `rp-cli -e 'windows'` to list all open windows and their workspaces
 - Always include `-w <window_id>` in ALL subsequent commands
 - Without `-w`, commands may target the wrong workspace
 
 ---
-
 ## Phase 1: Quick Scan (LIMITED - 2-3 tool calls max)
 
 ⚠️ **This phase is intentionally brief.** Do NOT do extensive exploration here—that's what `builder` is for.
 
 Start by getting a lay of the land with the file tree:
-
 ```bash
 rp-cli -w <window_id> -e 'tree'
 ```
 
 Then use targeted searches to understand how the task maps to the codebase:
-
 ```bash
 rp-cli -w <window_id> -e 'search "<key term from task>"'
 rp-cli -w <window_id> -e 'structure RootName/likely/relevant/area/'
@@ -128,7 +120,6 @@ rp-cli -w <window_id> -e 'builder "<reformulated prompt with codebase context>" 
 ```
 
 **What you get back:**
-
 - Smart file selection (automatically curated within token budget)
 - Architectural plan grounded in actual code
 - Chat session for follow-up conversation
@@ -146,7 +137,6 @@ rp-cli -w <window_id> -e 'builder "<reformulated prompt with codebase context>" 
 **This phase is optional.** If the builder's plan is already clear and navigation through the selected code is straightforward, proceed straight to Phase 4.
 
 Bring a follow-up to `chat` only when:
-
 - Navigating the selected code proves difficult even with the builder's plan
 - You need cross-file reasoning over the files already selected
 - The plan leaves a concrete unresolved gap you cannot close by reading the selected files directly
@@ -160,13 +150,11 @@ rp-cli -t '<tab_id>' -e 'chat "The plan points me to X and Y, but I'''m still ha
 > **Note:** Pass `-t <tab_id>` to target the same tab across separate CLI invocations.
 
 **`chat` excels at:**
-
 - Deep reasoning over the context_builder output and selected files
 - Spotting cross-file connections that piecemeal reading might miss
 - Answering targeted "what am I missing in this selected context" questions
 
 **Don't expect:**
-
 - Knowledge of files outside the selection
 - Repository exploration or missing-file discovery — that's `builder`'s job
 - Implementation — that's your job
@@ -176,7 +164,6 @@ rp-cli -t '<tab_id>' -e 'chat "The plan points me to X and Y, but I'''m still ha
 ## Phase 4: Direct Implementation
 
 **STOP** - Before implementing, verify you have:
-
 - [ ] A builder result available (`tab_id` if follow-up is needed)
 - [ ] An architectural plan grounded in actual code
 
@@ -185,7 +172,6 @@ If a specific point is still unclear, use `chat` to clarify before proceeding.
 Implement the plan directly. **Do not use `chat` with `mode:"edit"`** – you implement directly.
 
 **Primary tools:**
-
 ```bash
 # Modify existing files (search/replace) - JSON format required
 rp-cli -w <window_id> -e 'call apply_edits {"path":"Root/File.swift","search":"old","replace":"new"}'
@@ -201,7 +187,6 @@ rp-cli -w <window_id> -e 'read Root/File.swift --start-line 50 --limit 30'
 ```
 
 **Ask `chat` only when navigation or cross-file reasoning is the bottleneck:**
-
 ```bash
 rp-cli -w <window_id> -t '<tab_id>' -e 'chat "I'''m implementing X. The plan does not fully explain Y, and reading the selected files still leaves a gap. What pattern or connection am I missing here?" --mode chat'
 ```
@@ -213,7 +198,6 @@ rp-cli -w <window_id> -t '<tab_id>' -e 'chat "I'''m implementing X. The plan doe
 **Token limit:** Stay under ~160k tokens. Check with `select get` if unsure. Context builder manages this, but be aware if you add files.
 
 **Selection coverage:**
-
 - `builder` should already have selected the files needed for the plan
 - `chat` can reason only over that selected context; it cannot discover missing files on its own
 - If a material coverage gap blocks you, prefer rerunning `builder` with a better prompt over hand-curating selection
