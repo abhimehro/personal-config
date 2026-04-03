@@ -145,6 +145,13 @@ def run_command_set(
     )
 
 
+def _count_file_lines(path: Path) -> int:
+    try:
+        return path.read_text(encoding="utf-8").count("\n") + 1
+    except (UnicodeDecodeError, OSError):
+        return -1
+
+
 def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
     candidates = []
     for root_dir, dirs, files in os.walk(ROOT):
@@ -152,13 +159,14 @@ def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
         dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
 
         for file in files:
-            if file.endswith(".py") or file.endswith(".sh"):
-                path = Path(root_dir) / file
-                try:
-                    line_count = path.read_text(encoding="utf-8").count("\n") + 1
-                except (UnicodeDecodeError, OSError):
-                    continue
+            if not file.endswith((".py", ".sh")):
+                continue
+
+            path = Path(root_dir) / file
+            line_count = _count_file_lines(path)
+            if line_count > 0:
                 candidates.append((str(path.relative_to(ROOT)), line_count))
+
     return sorted(candidates, key=lambda item: item[1], reverse=True)[:limit]
 
 
