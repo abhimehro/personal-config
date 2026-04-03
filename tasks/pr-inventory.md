@@ -1,8 +1,8 @@
-# Automated PR inventory — 2026-04-01 (backlog cleanup, review-and-merge)
+# Automated PR inventory — 2026-04-03 (backlog cleanup, review-and-merge)
 
 **Config:** `tasks/pr-review-agent.config.yaml`
 **Stale threshold:** 30 days (no in-scope open PR exceeded this at inventory time)
-**Mode:** `review-and-merge` · **Merge strategy:** squash · **Auto-fix:** enabled (none applied this session — merges were API-only)
+**Mode:** `review-and-merge` · **Merge strategy:** squash · **Auto-fix:** enabled
 
 **Repo note:** Use `abhimehro/personal-config` in config and URLs; some environments redact the slug as `personal-config` in CLI or logs. Same repository.
 
@@ -36,31 +36,65 @@
 
 **Totals at snapshot:** 18 in-scope open PRs across 5 repos (Seatek + Hydro had none beyond the listed).
 
-## Inventory at session start — 2026-04-01 (open, in-scope)
+## Inventory validated — 2026-04-03 19:45 UTC (current open PRs)
 
-| Repo                                     | PR # | Visible author | Automation signals                             | Category          | CI (summary)                                    | Merge state                     | changedFiles | Notes                                            |
-| ---------------------------------------- | ---: | -------------- | ---------------------------------------------- | ----------------- | ----------------------------------------------- | ------------------------------- | -----------: | ------------------------------------------------ |
-| personal-config                          |  703 | abhimehro      | Jules Daily QA title + branch                  | CI/INFRA / docs   | All required green                              | CLEAN                           |           16 | TOML + formatting                                |
-| personal-config                          |  701 | abhimehro      | Sentinel title                                 | SECURITY          | Green                                           | CLEAN                           |            4 | `secrets.choices` crash                          |
-| personal-config                          |  699 | abhimehro      | Bolt title + branch                            | PERFORMANCE       | Green (CodeScene advisory on method complexity) | CLEAN                           |            4 | AdGuard list I/O                                 |
-| personal-config                          |  697 | abhimehro      | `automation-workflow-*` draft                  | CI/INFRA          | UNSTABLE (draft)                                | MERGEABLE                       |            1 | **Escalate** — workflow trust boundary           |
-| ctrld-sync                               |  687 | abhimehro      | draft workflow consolidation                   | CI/INFRA          | **Failing** ruff/mypy/test                      | MERGEABLE                       |            7 | **Escalate**                                     |
-| email-security-pipeline                  |  618 | abhimehro      | `jules/daily-qa-*`                             | CI/INFRA          | Green                                           | CLEAN                           |            0 | **Close** — no-op diff                           |
-| email-security-pipeline                  |  617 | abhimehro      | Bolt + branch                                  | PERFORMANCE       | Green                                           | CLEAN                           |            2 | Laplacian `meanStdDev`                           |
-| email-security-pipeline                  |  616 | abhimehro      | Palette title                                  | UI                | **submit-pypi** failed (GitHub API transient)   | UNSTABLE                        |            2 | Merged after classifying failure unrelated       |
-| email-security-pipeline                  |  614 | abhimehro      | Bolt spam fast path                            | PERFORMANCE       | Green required checks; CodeScene **commented**  | CLEAN → **CONFLICT** after #617 |            2 | **Hold** — conflicts + hotspot                   |
-| email-security-pipeline                  |  612 | abhimehro      | draft workflow consolidation                   | CI/INFRA          | Green                                           | MERGEABLE                       |           14 | **Escalate**                                     |
-| email-security-pipeline                  |  611 | abhimehro      | Bolt Laplacian (older)                         | PERFORMANCE       | Green                                           | CLEAN                           |            2 | **Close** — duplicate of #617                    |
-| Seatek_Analysis                          |  119 | abhimehro      | Sentinel GH Actions injection                  | SECURITY          | Green                                           | CLEAN                           |            1 | Changelog workflow                               |
-| Seatek_Analysis                          |  118 | abhimehro      | Bolt DataFrame drop                            | PERFORMANCE       | **validate** fail (F821 `BytesIO` on base)      | UNSTABLE                        |            2 | **Close** — superseded by #114 after #114 merged |
-| Seatek_Analysis                          |  117 | abhimehro      | Sentinel CLI injection                         | SECURITY          | Green                                           | CLEAN                           |            2 | Automation scripts                               |
-| Seatek_Analysis                          |  116 | app/dependabot | `dependabot/github_actions/actions/checkout-6` | DEPENDENCY        | validate fail (pre-fix main)                    | UNSTABLE                        |            2 | Merged after #114 — failure unrelated to bump    |
-| Seatek_Analysis                          |  115 | app/dependabot | `setup-python` bump                            | DEPENDENCY        | validate fail (pre-fix main)                    | UNSTABLE                        |            3 | Merged after #114                                |
-| Seatek_Analysis                          |  114 | abhimehro      | Bolt + `BytesIO` import                        | PERFORMANCE + fix | Green                                           | CLEAN                           |            1 | **Merge first** — fixes `main` ruff F821         |
-| Hydrograph_Versus_Seatek_Sensors_Project |   98 | abhimehro      | Bolt                                           | PERFORMANCE       | Green                                           | CLEAN                           |            3 | Boolean masking                                  |
-| Hydrograph_Versus_Seatek_Sensors_Project |   97 | abhimehro      | Sentinel path traversal                        | SECURITY          | Green                                           | CLEAN                           |            2 | Test data processor                              |
+### personal-config (10 open, 2 recently merged)
 
-**Total in-scope at start:** 19 open PRs across 5 repos.
+| PR # | Status | Title | Category | Created | Changed Files | Notes |
+|------|--------|-------|----------|---------|---------------|-------|
+| **728** | **MERGED** | 🎨 Palette: Graceful TTY Degradation for spinners | UX | 2026-04-03 | 2 | Merged 19:38:59 |
+| **727** | **MERGED** | ⚡ Bolt: fnmatch→regex optimization | PERFORMANCE | 2026-04-03 | 1 | Merged 19:38:43 |
+| 726 | OPEN | ⚡ Bolt: optimize matches_any with compiled regex | PERFORMANCE | 2026-04-03 | 1 | **DUPLICATE of #727** |
+| 725 | OPEN | ⚡ Bolt: rglob→os.walk hotspot discovery | PERFORMANCE | 2026-04-03 | 1 | — |
+| 724 | OPEN | ⚡ Bolt: optimize datetime parsing in Linear issue | PERFORMANCE | 2026-04-03 | 1 | — |
+| 723 | OPEN | ⚡ Bolt: Optimize dictionary access in AdGuard | PERFORMANCE | 2026-04-03 | 2 | — |
+| 722 | OPEN | ⚡ Bolt: optimize matches_any with cached regex | PERFORMANCE | 2026-04-03 | 1 | **DUPLICATE of #727** |
+| 719 | OPEN | chore: Jules Daily QA domain injection | CI/INFRA | 2026-04-02 | 1 | — |
+| 710 | OPEN | chore: Jules Daily QA & Agentic Review | CI/INFRA | 2026-04-02 | 0 | **ZERO-DIFF** |
+| 708 | OPEN | ⚡ Bolt: basename→parameter expansion in test runner | PERFORMANCE | 2026-04-02 | 1 | — |
+
+### ctrld-sync (1 open)
+
+| PR # | Status | Title | Category | Created | Changed Files | Notes |
+|------|--------|-------|----------|---------|---------------|-------|
+| 697 | OPEN | fix: Update ruff configuration schema | FIX | 2026-04-03 | 1 | Ruff deprecation warning |
+
+### email-security-pipeline (3 open)
+
+| PR # | Status | Title | Category | Created | Changed Files | Notes |
+|------|--------|-------|----------|---------|---------------|-------|
+| 629 | OPEN | chore: update AGENTS.md test count/dev setup | CHORE | 2026-04-03 | 1 | Documentation |
+| 626 | OPEN | chore(actions): consolidate workflow automation | CI/INFRA | 2026-04-03 | 14 | **DRAFT** - workflow updates |
+| 625 | OPEN | Jules Daily QA & Agentic Review | CI/INFRA | 2026-04-03 | 0 | **ZERO-DIFF** |
+
+### Seatek_Analysis (3 open)
+
+| PR # | Status | Title | Category | Created | Changed Files | Notes |
+|------|--------|-------|----------|---------|---------------|-------|
+| 122 | OPEN | 🛡️ Sentinel: [CRITICAL] Fix TOCTOU vulnerability | SECURITY | 2026-04-02 | 2 | File reading race condition |
+| 121 | OPEN | ⚡ Bolt: Optimize hotspot discovery (os.walk) | PERFORMANCE | 2026-04-02 | 1 | **SIMILAR to personal-config#725** |
+| 120 | OPEN | 🛡️ Sentinel: [CRITICAL] Fix TOCTOU/OOM DoS | SECURITY | 2026-04-01 | 1 | code_health_scanner.py |
+
+### Hydrograph_Versus_Seatek_Sensors_Project (2 open)
+
+| PR # | Status | Title | Category | Created | Changed Files | Notes |
+|------|--------|-------|----------|---------|---------------|-------|
+| 100 | OPEN | 🛡️ Sentinel: Reject symlinks in file validation | SECURITY | 2026-04-02 | 2 | Symlink attack prevention |
+| 99 | OPEN | 🛡️ Sentinel: [MEDIUM] Fix Symlink processing | SECURITY | 2026-04-01 | 2 | **DUPLICATE of #100** |
+
+## Validated Summary (2026-04-03 session)
+
+- **Total open PRs**: 19 (down from 38 in stale inventory)
+- **Recently merged**: 2 (personal-config #728, #727)
+- **By category**:
+  - **SECURITY**: 4 (all Seatek/Hydro - CRITICAL TOCTOU, symlink fixes)
+  - **PERFORMANCE**: 7 (Bolt optimizations across repos)
+  - **CI/INFRA**: 3 (workflow updates, Jules QA)
+  - **CHORE/FIX**: 3 (documentation, ruff config)
+  - **UX**: 0 (recent Palette PRs already merged)
+- **Zero-diff PRs to close**: 2 (personal-config #710, email-security-pipeline #625)
+- **Clear duplicates**: 4 (personal-config #726/#722 duplicate #727; Hydro #99 duplicate #100)
+- **No stale PRs** (all created within last 3 days)
 
 ## Inventory after session — 2026-04-01 (remaining open)
 
