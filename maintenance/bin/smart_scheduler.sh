@@ -50,11 +50,13 @@ spinner_wait() {
 		old_term_trap=$(trap -p TERM)
 		trap 'tput cnorm 2>/dev/null || true; eval "${old_term_trap:-trap - TERM}"; kill -TERM "$$"' TERM
 
-		while [[ $c -lt $iterations ]]; do
-			printf "\r\033[0;34m[%c]\033[0m %s..." "${sp:i++%${#sp}:1}" "$msg"
-			sleep 0.1
-			c=$((c + 1))
-		done
+        local interval=0.5
+        iterations=$(echo "$duration / $interval" | bc -l | cut -d. -f1)
+        while [[ $c -lt $iterations ]]; do
+            printf "\r\033[0;34m[%c]\033[0m %s..." "${sp:i++%${#sp}:1}" "$msg"
+            sleep $interval
+            c=$((c + 1))
+        done
 		printf "\r\033[K" # Clear line
 
 		# Restore cursor and original traps
