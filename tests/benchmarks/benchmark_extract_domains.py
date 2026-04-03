@@ -93,7 +93,7 @@ def extract(filepath):
                 return [
                     rule['PK']
                     for rule in data['rules']
-                    if 'PK' in rule and 'action' in rule and rule['action'].get('do') == 1
+                    if 'PK' in rule and 'action' in rule and 'do' in rule['action'] and rule['action']['do'] == 1
                 ]
     except Exception as e:
         pass

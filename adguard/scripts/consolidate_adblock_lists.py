@@ -67,7 +67,8 @@ def extract_allowlist_from_file(filepath, description):
                 if "PK" in rule
                 and "action" in rule
                 and isinstance(rule["action"], dict)
-                and rule["action"].get("do") == 1
+                and "do" in rule["action"]
+                and rule["action"]["do"] == 1
             )
             count = len(domains)
             print(f"    Added {count} {description}")
