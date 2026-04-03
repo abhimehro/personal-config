@@ -15,6 +15,64 @@ fish_add_path --global --prepend $HOME/bin $HOME/.local/bin
 fish_add_path --global --append $HOME/.cache/lm-studio/bin
 
 # ============================================
+# Theme and Prompt Management
+# ============================================
+# NOTE: Prompt theming is managed by Tide via `set -U tide_*_color` universals, and syntax colors are managed by `fish_config theme choose "Dracula Official"` (also stored as universals). This keeps our config.fish clean and focused on functional setup rather than visual styling, which is handled separately through the interactive theme configuration. See: configs/.config/fish/RESTORE_CUSTOMIZATIONS.md for setup instructions on restoring your visual customizations after a fresh install.
+# This approach allows you to easily switch themes and prompt styles using the interactive `fish_config` tool without needing to modify your config.fish, while still ensuring that your preferred colors and styles are preserved as universals that persist across sessions and installations. It also keeps the visual styling concerns separate from the functional setup of your shell environment, making it easier to manage and maintain over time.
+# If you ever want to change your theme or prompt style, simply run `fish_config` and choose your desired options. Your selections will be saved as universals, so they will automatically apply in all future sessions without needing to edit your config.fish again. This way, you can focus on configuring the functional aspects of your shell environment in config.fish, while leaving the visual customizations to be managed interactively through the theme configuration tool.
+# By keeping the visual styling separate from the functional setup, we also ensure that any changes to themes or prompt styles won't accidentally interfere with the core functionality of your shell environment, allowing for a more modular and maintainable configuration overall.
+# In summary, the key point is that visual styling (themes and prompts) is managed interactively through `fish_config` and stored as universals, while config.fish focuses on setting up the functional environment (PATH, tool initialization, aliases, functions, etc.) without hardcoding visual preferences. This separation of concerns allows for greater flexibility and ease of maintenance in your shell configuration.
+# This also means that if you ever want to share your config.fish with someone else, they can easily apply their own visual customizations through `fish_config` without needing to modify the shared config.fish, while still benefiting from the functional setup you've created. It's a win-win for both customization and maintainability!
+# Overall, this approach allows you to have a clean and organized config.fish that focuses on the functional aspects of your shell environment, while still giving you the freedom to customize the visual styling through the interactive theme configuration tool without needing to edit your config.fish for visual changes. It's a great way to keep things modular and maintainable while still allowing for a personalized and visually appealing shell experience!
+
+fish_config theme choose "Dracula Official"
+
+# ============================================
+# Version Control (Git)
+# ============================================
+# Set up Git to use the 'delta' pager for improved diffs if available
+# This enhances the readability of git diffs in the terminal by providing syntax highlighting and better formatting, making it easier to review changes before committing or pushing code.
+# By configuring Git to use 'delta' as the pager, you can quickly see the differences between file versions with color-coded output, which can help you catch mistakes and understand changes more effectively. If 'delta' is not installed, Git will fall back to the default pager, so this configuration is safe to include even if you don't have 'delta' installed yet.
+# To install 'delta', you can typically use your package manager (e.g., `brew install git-delta` on macOS) and then this configuration will automatically take effect the next time you use Git commands that produce diff output (like `git diff`, `git show`, etc.). It's a great way to enhance your Git workflow with better visual feedback on code changes!
+# If you ever want to customize the 'delta' output further, you can create a '.deltarc' configuration file in your home directory with additional settings for how 'delta' formats diffs, such as enabling side-by-side diffs, changing color schemes, or adjusting context lines. This allows you to tailor the diff output to your preferences and make it even more effective for reviewing code changes.
+# Overall, setting up Git to use 'delta' as the pager is a simple yet powerful way to improve your code review process and make it easier to understand changes in your repositories, ultimately leading to better code quality and more efficient development workflows.
+# Note: If you prefer to use 'delta' only for certain Git commands (like 'git diff') and not for others (like 'git log'), you can customize the Git configuration further by setting specific pager configurations for different commands. For example, you could set 'pager.diff' to 'delta' while leaving 'pager.log' as the default pager. This allows you to have more granular control over when 'delta' is used in your Git workflow, giving you the flexibility to choose the best tool for each type of output.
+# To set 'delta' as the pager for all Git commands, you can use the following configuration:
+
+git config --global core.pager delta
+
+# If you want to set 'delta' as the pager only for specific commands, you can use:
+# git config --global pager.diff delta
+# git config --global pager.show delta 
+# git config --global pager.log delta 
+# This way, you can have 'delta' enhance the output of 'git diff', 'git show', and 'git log' while keeping the default pager for other Git commands that may not benefit from 'delta's formatting. It's all about customizing your Git experience to fit your workflow and preferences!
+# By configuring Git to use 'delta' as the pager, you can significantly enhance the readability of your diffs and logs, making it easier to review changes and understand the history of your repositories. Whether you choose to use 'delta' for all Git commands or just specific ones, it's a great way to improve your Git workflow and make code reviews more efficient and enjoyable!
+# In summary, setting up Git to use 'delta' as the pager is a powerful way to enhance your code review process by providing better formatting and syntax highlighting for diffs and logs. You can customize this configuration to fit your workflow, using 'delta' for all commands or just specific ones, and you can further tailor the output with a '.deltarc' file for an even more personalized experience. It's a simple change that can have a big impact on how you interact with Git and review code changes in your repositories!
+
+# ============================================
+# Language Runtimes (Managed by chruby-fish and fnm)
+# ============================================
+# NOTE: chruby-fish and fnm will automatically manage PATH for Ruby and Node versions, so we don't need to manually add them here. Just ensure their initialization scripts are sourced below.
+# For Ruby, chruby-fish will handle switching between versions and updating PATH accordingly.
+# For Node, fnm will set up the PATH for the active version when initialized.
+# This keeps our PATH clean and lets the version managers do their job without conflicts.
+# If you have other language runtimes (like Python with pyenv), you can add their initialization here as well, following the same pattern.
+# Example for Python with pyenv (if you use it):
+# if test -d $HOME/.pyenv and type -q pyenv
+#     set -gx PYENV_ROOT $HOME/.pyenv
+#     set -gx PATH $PYENV_ROOT/bin $PATH 
+#     pyenv init --path | source 
+#     pyenv init - | source 
+#     pyenv virtualenv-init - | source 
+#     #     # Optional: set a global Python version 
+#     if type -q pyenv and test -d $HOME/.pyenv/versions/3.15.2
+#     pyenv global 3.15.2
+#     end
+#     # end
+#     This example is commented out since you didn't mention Python, but you can easily enable it if you decide to use pyenv in the future. Just make sure to adjust the version number as needed.
+#     The key point is that for language runtimes managed by version managers, we rely on their initialization scripts to set up the PATH and environment variables correctly, rather than hardcoding paths in our config.fish. This keeps things flexible and allows the version managers to do their job without conflicts.
+
+# ============================================
 # Tool Initialization
 # ============================================
 
