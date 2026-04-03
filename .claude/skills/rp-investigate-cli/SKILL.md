@@ -2,7 +2,7 @@
 name: "rp-investigate-cli"
 description: "Deep investigation with rp-cli commands: tools gather evidence, follow-up reasoning synthesizes selected context"
 repoprompt_managed: true
-repoprompt_skills_version: 29
+repoprompt_skills_version: 30
 repoprompt_variant: cli
 ---
 
@@ -22,20 +22,19 @@ rp-cli -e '<command>'
 
 **Quick reference:**
 
-| MCP Tool             | CLI Command                                                                  |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `get_file_tree`      | `rp-cli -e 'tree'`                                                           |
-| `file_search`        | `rp-cli -e 'search "pattern"'`                                               |
-| `get_code_structure` | `rp-cli -e 'structure path/'`                                                |
-| `read_file`          | `rp-cli -e 'read path/file.swift'`                                           |
-| `manage_selection`   | `rp-cli -e 'select add path/'`                                               |
-| `context_builder`    | `rp-cli -e 'builder "instructions" --response-type plan'`                    |
-| `chat_send`          | `rp-cli -e 'chat "message" --mode plan'`                                     |
-| `apply_edits`        | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
-| `file_actions`       | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'`             |
+| MCP Tool | CLI Command |
+|----------|-------------|
+| `get_file_tree` | `rp-cli -e 'tree'` |
+| `file_search` | `rp-cli -e 'search "pattern"'` |
+| `get_code_structure` | `rp-cli -e 'structure path/'` |
+| `read_file` | `rp-cli -e 'read path/file.swift'` |
+| `manage_selection` | `rp-cli -e 'select add path/'` |
+| `context_builder` | `rp-cli -e 'builder "instructions" --response-type plan'` |
+| `chat_send` | `rp-cli -e 'chat "message" --mode plan'` |
+| `apply_edits` | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
+| `file_actions` | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'` |
 
 Chain commands with `&&`:
-
 ```bash
 rp-cli -e 'select set src/ && context'
 ```
@@ -47,7 +46,6 @@ JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected), `@file`
 **⚠️ TIMEOUT WARNING:** The `builder` and `chat` commands can take several minutes to complete. When invoking rp-cli, **set your command timeout to at least 2700 seconds (45 minutes)** to avoid premature termination.
 
 ---
-
 ## Investigation Protocol
 
 This workflow leverages three complementary capabilities:
@@ -59,7 +57,6 @@ This workflow leverages three complementary capabilities:
 ### How File Selection Drives the Workflow
 
 The **file selection** is the shared context between you, the context builder, and the chat:
-
 1. `builder` populates the selection with relevant files/slices it discovers
 2. The chat analyzes whatever is currently selected — it has no other view of the codebase
 3. You can **add or remove** specific files via `manage_selection` to augment or refine what the chat sees
@@ -68,7 +65,6 @@ The **file selection** is the shared context between you, the context builder, a
 **Important:** The context builder operates with a large token budget and works hard to maximize useful context. Don't constrain it — build on its selection with targeted `add`/`remove` calls rather than replacing it.
 
 ### Core Principles
-
 1. **Don't stop until confident** — pursue every lead until you have solid evidence
 2. **Play to each tool's strengths** — context builder for broad discovery, the chat for deep analysis, your own tools for precise evidence gathering
 3. **You produce the evidence** — the chat analyzes and hypothesizes; you verify with exact file reads, git blame, searches
@@ -89,18 +85,15 @@ rp-cli -w <window_id> -e 'tree --type roots'
 ```
 
 **Check the output:**
-
 - If your target root appears in a window → note the window ID and proceed to Phase 1
 - If not → the codebase isn't loaded in any window
 
 **CLI Window Routing (CRITICAL):**
-
 - CLI invocations are stateless—you MUST pass `-w <window_id>` to target the correct window
 - Use `rp-cli -e 'windows'` to list all open windows and their workspaces
 - Always include `-w <window_id>` in ALL subsequent commands
 
 ---
-
 ### Phase 1: Initial Assessment (Agent — you)
 
 1. Read any provided files/reports (traces, logs, error reports)
@@ -178,7 +171,6 @@ Given this evidence, <specific question>" --mode chat'
 You write the final report with precise references. The chat reasons about patterns but can't produce exact line numbers — that's your job.
 
 Document:
-
 - **Root cause** — with exact file paths, line numbers, and code snippets as evidence
 - **Eliminated hypotheses** — and what evidence ruled them out
 - **Recommended fixes** — specific, actionable changes with file locations
@@ -188,17 +180,17 @@ Document:
 
 ## Role Summary
 
-| Capability                         | Agent (you) | Context Builder | Chat (`chat_send`)       |
-| ---------------------------------- | ----------- | --------------- | ------------------------ |
-| Discover relevant files broadly    | ❌ Limited  | ✅ Primary      | ❌                       |
-| Populate file selection            | ❌          | ✅ Primary      | ❌                       |
-| Read exact file contents & lines   | ✅ Primary  | ❌              | Sees full selected files |
-| Run git blame/log/diff             | ✅          | ❌              | ❌                       |
-| Search across codebase             | ✅          | ✅              | ❌                       |
-| Synthesize patterns & architecture | ⚠️ OK       | ❌              | ✅ Primary               |
-| Form & refine hypotheses           | ⚠️ OK       | ❌              | ✅ Primary               |
-| Produce line-number evidence       | ✅ Primary  | ❌              | ❌                       |
-| Mutate selection to refocus chat   | ✅          | ❌              | ❌                       |
+| Capability | Agent (you) | Context Builder | Chat (`chat_send`) |
+|------------|-------------|-----------------|--------|
+| Discover relevant files broadly | ❌ Limited | ✅ Primary | ❌ |
+| Populate file selection | ❌ | ✅ Primary | ❌ |
+| Read exact file contents & lines | ✅ Primary | ❌ | Sees full selected files |
+| Run git blame/log/diff | ✅ | ❌ | ❌ |
+| Search across codebase | ✅ | ✅ | ❌ |
+| Synthesize patterns & architecture | ⚠️ OK | ❌ | ✅ Primary |
+| Form & refine hypotheses | ⚠️ OK | ❌ | ✅ Primary |
+| Produce line-number evidence | ✅ Primary | ❌ | ❌ |
+| Mutate selection to refocus chat | ✅ | ❌ | ❌ |
 
 ---
 
@@ -210,34 +202,28 @@ Create a findings report as you investigate:
 # Investigation: [Title]
 
 ## Summary
-
 [1-2 sentence summary of findings]
 
 ## Symptoms
-
 - [Observed symptom 1]
 - [Observed symptom 2]
 
 ## Investigation Log
 
 ### [Phase] - [Area Investigated]
-
 **Hypothesis:** [What you were testing]
 **Findings:** [What you found]
 **Evidence:** [Exact file paths, line numbers, code snippets, git commits]
 **Conclusion:** [Confirmed/Eliminated/Needs more investigation]
 
 ## Root Cause
-
 [Detailed explanation with precise evidence]
 
 ## Recommendations
-
 1. [Fix 1 — specific file and location]
 2. [Fix 2 — specific file and location]
 
 ## Preventive Measures
-
 - [How to prevent this in future]
 ```
 

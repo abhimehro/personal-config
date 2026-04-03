@@ -2,7 +2,7 @@
 name: "rp-refactor-cli"
 description: "Refactoring assistant using rp-cli to analyze and improve code organization"
 repoprompt_managed: true
-repoprompt_skills_version: 29
+repoprompt_skills_version: 30
 repoprompt_variant: cli
 ---
 
@@ -22,20 +22,19 @@ rp-cli -e '<command>'
 
 **Quick reference:**
 
-| MCP Tool             | CLI Command                                                                  |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `get_file_tree`      | `rp-cli -e 'tree'`                                                           |
-| `file_search`        | `rp-cli -e 'search "pattern"'`                                               |
-| `get_code_structure` | `rp-cli -e 'structure path/'`                                                |
-| `read_file`          | `rp-cli -e 'read path/file.swift'`                                           |
-| `manage_selection`   | `rp-cli -e 'select add path/'`                                               |
-| `context_builder`    | `rp-cli -e 'builder "instructions" --response-type plan'`                    |
-| `chat_send`          | `rp-cli -e 'chat "message" --mode plan'`                                     |
-| `apply_edits`        | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
-| `file_actions`       | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'`             |
+| MCP Tool | CLI Command |
+|----------|-------------|
+| `get_file_tree` | `rp-cli -e 'tree'` |
+| `file_search` | `rp-cli -e 'search "pattern"'` |
+| `get_code_structure` | `rp-cli -e 'structure path/'` |
+| `read_file` | `rp-cli -e 'read path/file.swift'` |
+| `manage_selection` | `rp-cli -e 'select add path/'` |
+| `context_builder` | `rp-cli -e 'builder "instructions" --response-type plan'` |
+| `chat_send` | `rp-cli -e 'chat "message" --mode plan'` |
+| `apply_edits` | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
+| `file_actions` | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'` |
 
 Chain commands with `&&`:
-
 ```bash
 rp-cli -e 'select set src/ && context'
 ```
@@ -47,7 +46,6 @@ JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected), `@file`
 **⚠️ TIMEOUT WARNING:** The `builder` and `chat` commands can take several minutes to complete. When invoking rp-cli, **set your command timeout to at least 2700 seconds (45 minutes)** to avoid premature termination.
 
 ---
-
 ## Goal
 
 Analyze code for redundancies and complexity, then implement improvements. **Preserve behavior** unless something is broken.
@@ -75,24 +73,20 @@ rp-cli -w <window_id> -e 'tree --type roots'
 ```
 
 **Check the output:**
-
 - If your target root appears in a window → note the window ID and proceed to Step 1
 - If not → the codebase isn't loaded in any window
 
 **CLI Window Routing (CRITICAL):**
-
 - CLI invocations are stateless—you MUST pass `-w <window_id>` to target the correct window
 - Use `rp-cli -e 'windows'` to list all open windows and their workspaces
 - Always include `-w <window_id>` in ALL subsequent commands
 
 ---
-
 ## Step 1: Analyze for Refactoring Opportunities (via `builder` - REQUIRED)
 
 ⚠️ **Do NOT skip this step.** You MUST call `builder` with `response_type: "review"` to properly analyze the code.
 
 Use XML tags to structure the instructions:
-
 ```bash
 rp-cli -w <window_id> -e 'builder "<task>Analyze for refactoring opportunities. Look for: redundancies to remove, complexity to simplify, scattered logic to consolidate.</task>
 
@@ -107,7 +101,6 @@ Review the findings. If areas were missed, run additional focused reviews with e
 ## Optional: Clarify Analysis
 
 After receiving analysis findings, you can ask clarifying questions in the same chat:
-
 ```bash
 rp-cli -w <window_id> -t '<tab_id>' -e 'chat "For the duplicate logic you identified, which location should be the canonical one?" --mode chat'
 ```
@@ -117,7 +110,6 @@ rp-cli -w <window_id> -t '<tab_id>' -e 'chat "For the duplicate logic you identi
 ## Step 2: Implement the Refactorings
 
 Once you have a clear list of refactoring opportunities, use `builder` with `response_type: "plan"` to implement:
-
 ```bash
 rp-cli -w <window_id> -e 'builder "<task>Implement these refactorings:</task>
 
@@ -135,13 +127,11 @@ Preserve existing behavior. Make incremental changes.</context>
 ## Output Format (be concise)
 
 **After analysis:**
-
 - **Scope**: 1 line summary
 - **Findings** (max 7): `[File]` what to change + why
 - **Recommended order**: safest/highest-value first
 
 **After implementation:**
-
 - Summary of changes made
 - Any issues encountered
 

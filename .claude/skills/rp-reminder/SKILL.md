@@ -2,7 +2,7 @@
 name: "rp-reminder"
 description: "Reminder to use RepoPrompt MCP tools"
 repoprompt_managed: true
-repoprompt_skills_version: 29
+repoprompt_skills_version: 30
 repoprompt_variant: mcp
 ---
 
@@ -12,11 +12,11 @@ Continue your current workflow using RepoPrompt MCP tools instead of built-in al
 
 ## Primary Tools
 
-| Task               | Use This       | Not This             |
-| ------------------ | -------------- | -------------------- |
-| Find files/content | `file_search`  | grep, find, Glob     |
-| Read files         | `read_file`    | cat, Read            |
-| Edit files         | `apply_edits`  | sed, Edit            |
+| Task | Use This | Not This |
+|------|----------|----------|
+| Find files/content | `file_search` | grep, find, Glob |
+| Read files | `read_file` | cat, Read |
+| Edit files | `apply_edits` | sed, Edit |
 | Create/delete/move | `file_actions` | touch, rm, mv, Write |
 
 ## Quick Reference

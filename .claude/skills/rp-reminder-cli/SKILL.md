@@ -2,7 +2,7 @@
 name: "rp-reminder-cli"
 description: "Reminder to use rp-cli"
 repoprompt_managed: true
-repoprompt_skills_version: 29
+repoprompt_skills_version: 30
 repoprompt_variant: cli
 ---
 
@@ -12,12 +12,12 @@ Continue your current workflow using rp-cli instead of built-in alternatives.
 
 ## Primary Tools
 
-| Task               | Use This | Not This             |
-| ------------------ | -------- | -------------------- |
-| Find files/content | `search` | grep, find, Glob     |
-| Read files         | `read`   | cat, Read            |
-| Edit files         | `edit`   | sed, Edit            |
-| Create/delete/move | `file`   | touch, rm, mv, Write |
+| Task | Use This | Not This |
+|------|----------|----------|
+| Find files/content | `search` | grep, find, Glob |
+| Read files | `read` | cat, Read |
+| Edit files | `edit` | sed, Edit |
+| Create/delete/move | `file` | touch, rm, mv, Write |
 
 ## Quick Reference
 
