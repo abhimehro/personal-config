@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import fnmatch
+import functools
 import json
 import os
 import re
@@ -215,8 +216,19 @@ def command_block(entry: dict[str, Any]) -> str:
     return "\n".join(pieces)
 
 
+@functools.lru_cache(maxsize=128)
+def _compile_patterns(patterns: tuple[str, ...]) -> re.Pattern[str]:
+    # fnmatch.fnmatch applies normcase implicitly; we must replicate it
+    return re.compile(
+        "|".join(fnmatch.translate(os.path.normcase(p)) for p in patterns)
+    )
+
+
 def matches_any(path_str: str, patterns: list[str]) -> bool:
-    return any(fnmatch.fnmatch(path_str, pattern) for pattern in patterns)
+    if not patterns:
+        return False
+    # fnmatch.fnmatch normalizes the input path
+    return bool(_compile_patterns(tuple(patterns)).match(os.path.normcase(path_str)))
 
 
 def git_output(*args: str) -> str:
