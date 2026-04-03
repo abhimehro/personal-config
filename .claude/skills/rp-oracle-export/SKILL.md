@@ -38,26 +38,20 @@ Use the extracted task (not the raw request) for all downstream steps — intent
 
 ### 0: Workspace Verification (REQUIRED)
 
-Before any building context, confirm the target codebase is loaded:
+Before any building context, bind to the target codebase using its working directory:
 
 ```json
-{"tool":"list_windows","args":{}}
+{"tool":"bind_context","args":{"op":"bind","working_dirs":["/absolute/path/to/project"]}}
 ```
+This auto-resolves to the window containing your project. No need to list windows first.
 
-**Check the output:**
-- If your target root appears in a window → bind to that window with `select_window`
-- If not → the codebase isn't loaded
-
-**Bind to the correct window:**
-```json
-{"tool":"select_window","args":{"window_id":<window_id_with_your_root>}}
-```
-
-**If the root isn't loaded**, find and open the workspace:
+**If binding succeeds** → proceed to Step 1
+**If no match** → the codebase isn't loaded. Find and open the workspace:
 ```json
 {"tool":"manage_workspaces","args":{"action":"list"}}
 {"tool":"manage_workspaces","args":{"action":"switch","workspace":"<workspace_name>","open_in_new_window":true}}
 ```
+Then retry the `working_dirs` bind.
 
 ---
 ### 1. Determine intent and scope
