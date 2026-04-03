@@ -16,6 +16,11 @@ fi
 # Basic logging
 if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
 	get_timestamp() {
+		# SECURITY: Prevent Command Injection (CWE-78) by validating dynamic variable name
+		if [[ ! "$1" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+			echo "Error: Invalid variable name '$1'" >&2
+			return 1
+		fi
 		printf -v "$1" "%(%Y-%m-%d %H:%M:%S)T" -1
 	}
 else
