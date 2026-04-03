@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -144,19 +145,28 @@ def run_command_set(
     )
 
 
+def _count_file_lines(path: Path) -> int:
+    try:
+        return path.read_text(encoding="utf-8").count("\n") + 1
+    except (UnicodeDecodeError, OSError):
+        return -1
+
+
 def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
     candidates = []
-    for extension in ("*.py", "*.sh"):
-        for path in ROOT.rglob(extension):
-            # ⚡ Bolt: Using isdisjoint() is ~7x faster for hits and ~4x faster for misses
-            # compared to an iterative generator expression (any(part in IGNORED_DIRS)).
-            if not IGNORED_DIRS.isdisjoint(path.parts):
+    for root_dir, dirs, files in os.walk(ROOT):
+        # ⚡ Bolt Optimization: Prune ignored directories in-place to avoid traversing them entirely
+        dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
+
+        for file in files:
+            if not file.endswith((".py", ".sh")):
                 continue
-            try:
-                line_count = path.read_text(encoding="utf-8").count("\n") + 1
-            except (UnicodeDecodeError, OSError):
-                continue
-            candidates.append((str(path.relative_to(ROOT)), line_count))
+
+            path = Path(root_dir) / file
+            line_count = _count_file_lines(path)
+            if line_count > 0:
+                candidates.append((str(path.relative_to(ROOT)), line_count))
+
     return sorted(candidates, key=lambda item: item[1], reverse=True)[:limit]
 
 
