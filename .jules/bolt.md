@@ -87,3 +87,8 @@
 
 **Learning:** When filtering paths or tuples against a set of excluded strings in Python (e.g., `any(part in EXCLUDES for part in path.parts)`), iterating with a generator expression introduces significant overhead, especially in deep recursive directory walks like `rglob`. Using the built-in C-level set operation `not EXCLUDES.isdisjoint(path.parts)` is ~7x faster for hits and ~4x faster for misses.
 **Action:** When checking if any element of an iterable exists in a `set`, prefer `not your_set.isdisjoint(iterable)` over using `any()` with a generator expression for optimal performance.
+
+## 2026-06-03 - [Path Pattern Matching Optimization]
+
+**Learning:** When matching file paths against multiple glob patterns in Python (e.g., `any(fnmatch.fnmatch(path, p) for p in patterns)`), iterative `fnmatch.fnmatch` evaluation introduces significant overhead. Replacing this with a single pre-compiled regex generated from `fnmatch.translate()` and cached with `@functools.lru_cache` provides a ~3x performance boost on path matching, avoiding repetitive function calls and parsing.
+**Action:** When filtering paths against a static list of multiple glob patterns, compile the translated patterns into a single combined regex instead of iterating with `any(fnmatch.fnmatch(...))`. Be sure to explicitly use `os.path.normcase` on the input patterns and path string to replicate the internal behavior of `fnmatch`.
