@@ -35,7 +35,76 @@
 
 ---
 
-## Triage — 2026-04-01 (this run)
+## Triage — 2026-04-03 (this run)
+
+### Summary
+
+- **Total PRs**: 38 across 5 repositories
+- **Security fixes (Sentinel)**: 11 (CRITICAL priority)
+- **Performance optimizations (Bolt)**: 8 (HIGH priority)
+- **UX improvements (Palette)**: 7 (MEDIUM priority)
+- **Maintenance/Chore**: 9 (LOW priority)
+- **Duplicates identified**: 15+ across multiple categories
+
+### Priority Order
+
+1. **CRITICAL**: Sentinel security fixes (CWE-78, TOCTOU, symlink vulnerabilities)
+2. **HIGH**: Bolt performance optimizations
+3. **MEDIUM**: Palette UX improvements
+4. **LOW**: Chore/Documentation updates (close obvious duplicates)
+
+### Duplicate Groups to Close
+
+#### AGENTS.md Updates (personal-config)
+
+- **Keep**: #726 (newest)
+- **Close**: #721, #716, #711, #706 (older duplicates)
+
+#### Ruff Deprecation Fixes (ctrld-sync)
+
+- **Keep**: #697 (newest, more comprehensive)
+- **Close**: #694 (older duplicate)
+
+#### Palette Log Padding
+
+- **personal-config**: Keep #719, close older duplicates
+- **email-security-pipeline**: Keep #628, close #625
+
+#### Bolt ANSI Stripping
+
+- **personal-config**: Keep #723, close older duplicates
+- **email-security-pipeline**: Keep #624
+
+### Planned Actions
+
+#### Security (Sentinel) - CRITICAL
+
+1. **personal-config #722**: Fix Command Injection (CWE-78) via eval
+2. **email-security-pipeline #627**: Fix Command Injection (CWE-78) via eval
+3. **Seatek_Analysis #122**: Fix TOCTOU vulnerability in file reading
+4. **Seatek_Analysis #120**: Fix TOCTOU / OOM DoS vulnerability
+5. **Hydrograph #100**: Reject symlinks in file size validation
+6. **Hydrograph #99**: Fix Symlink processing vulnerability
+
+#### Performance (Bolt) - HIGH
+
+1. **personal-config #727**: fnmatch optimization
+2. **ctrld-sync #696**: Dictionary lookup optimization
+3. **Seatek_Analysis #123**: os.walk vs rglob optimization
+4. **email-security-pipeline #624**: ANSI stripping fast-path
+
+#### UX (Palette) - MEDIUM
+
+1. **personal-config #728**: Graceful TTY degradation
+2. **ctrld-sync #698**: Trailing space for prompts
+3. **email-security-pipeline #628**: Log level padding
+
+### Notes
+
+- All PRs are recent (no stale >30 days)
+- No merge conflicts detected yet (will re-check after each merge)
+- Security fixes should be reviewed carefully for potential conflicts
+- Many similar fixes across repos suggest opportunity for consolidation
 
 | Repo                                     | PR # | Category          | Duplicate / notes                       | Disposition         | Rationale                                                                                                                |
 | ---------------------------------------- | ---: | ----------------- | --------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |

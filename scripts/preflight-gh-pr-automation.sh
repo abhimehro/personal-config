@@ -218,6 +218,7 @@ check_repo_readonly() {
 	local owner="${repo%%/*}"
 	local name="${repo##*/}"
 	local gql
+	# shellcheck disable=SC2016
 	gql="$(gh api graphql \
 		-f query='query($owner:String!, $name:String!, $number:Int!){ repository(owner:$owner,name:$name){ pullRequest(number:$number){ viewerCanUpdate viewerCanEnableAutoMerge viewerCanDeleteHeadRef mergeable } } }' \
 		-f owner="$owner" -f name="$name" -F number="$pr_number" \
@@ -229,10 +230,12 @@ check_repo_readonly() {
 		pass "$repo#${pr_number} capability introspection OK"
 		local can_update
 		local can_auto_merge
+		# shellcheck disable=SC2016
 		can_update="$(gh api graphql \
 			-f query='query($owner:String!, $name:String!, $number:Int!){ repository(owner:$owner,name:$name){ pullRequest(number:$number){ viewerCanUpdate } } }' \
 			-f owner="$owner" -f name="$name" -F number="$pr_number" \
 			--jq '.data.repository.pullRequest.viewerCanUpdate' 2>/dev/null || true)"
+		# shellcheck disable=SC2016
 		can_auto_merge="$(gh api graphql \
 			-f query='query($owner:String!, $name:String!, $number:Int!){ repository(owner:$owner,name:$name){ pullRequest(number:$number){ viewerCanEnableAutoMerge } } }' \
 			-f owner="$owner" -f name="$name" -F number="$pr_number" \
