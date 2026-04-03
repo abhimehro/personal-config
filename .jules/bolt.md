@@ -87,3 +87,7 @@
 
 **Learning:** When filtering paths or tuples against a set of excluded strings in Python (e.g., `any(part in EXCLUDES for part in path.parts)`), iterating with a generator expression introduces significant overhead, especially in deep recursive directory walks like `rglob`. Using the built-in C-level set operation `not EXCLUDES.isdisjoint(path.parts)` is ~7x faster for hits and ~4x faster for misses.
 **Action:** When checking if any element of an iterable exists in a `set`, prefer `not your_set.isdisjoint(iterable)` over using `any()` with a generator expression for optimal performance.
+
+## 2025-04-03 - Path.rglob overhead on ignored deep directories
+**Learning:** `Path.rglob()` always traverses the full directory tree matching the extension before returning paths, making it inefficient when evaluating large trees containing ignored directories (like `node_modules` or `.venv`) even if a post-filter like `isdisjoint` is used.
+**Action:** When searching for files but needing to skip specific deep directories, use `os.walk` and modify the `dirs` list in-place (e.g. `dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]`) to prune the traversal tree early and avoid reading unnecessary file metadata.

@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import os
+
 from repository_automation_common import (
     DAILY_WORKFLOW_NAME,
     GH_BIN,
@@ -31,6 +33,7 @@ from repository_automation_common import (
     write_result,
     writes_allowed,
 )
+
 
 WORKFLOW_PATTERN = re.compile(r"(uses:\s*)([^@\s]+)@([^\s#]+)")
 IGNORED_DIRS = {".git", ".venv", "node_modules", "__pycache__"}
@@ -146,17 +149,19 @@ def run_command_set(
 
 def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
     candidates = []
-    for extension in ("*.py", "*.sh"):
-        for path in ROOT.rglob(extension):
-            # ⚡ Bolt: Using isdisjoint() is ~7x faster for hits and ~4x faster for misses
-            # compared to an iterative generator expression (any(part in IGNORED_DIRS)).
-            if not IGNORED_DIRS.isdisjoint(path.parts):
-                continue
-            try:
-                line_count = path.read_text(encoding="utf-8").count("\n") + 1
-            except (UnicodeDecodeError, OSError):
-                continue
-            candidates.append((str(path.relative_to(ROOT)), line_count))
+    # ⚡ Bolt: Using os.walk with directory pruning avoids reading metadata
+    # from deep ignored directories like node_modules or .venv, performing
+    # substantially faster than Path.rglob + post-filtering.
+    for root_dir, dirs, files in os.walk(ROOT):
+        dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
+        for file in files:
+            if file.endswith(".py") or file.endswith(".sh"):
+                path = Path(root_dir) / file
+                try:
+                    line_count = path.read_text(encoding="utf-8").count("\n") + 1
+                except (UnicodeDecodeError, OSError):
+                    continue
+                candidates.append((str(path.relative_to(ROOT)), line_count))
     return sorted(candidates, key=lambda item: item[1], reverse=True)[:limit]
 
 
