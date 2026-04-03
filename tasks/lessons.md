@@ -86,3 +86,29 @@
 
 **Pattern:** `gh pr merge` / API calls authenticate as the user via `GH_TOKEN`, but a plain `git push https://github.com/owner/repo.git` may pick **`cursor[bot]`** (or another secondary host entry) from `~/.config/gh/hosts.yml`, producing **403 Permission denied** even when the user can merge via UI/`gh`.
 **Rule:** After `gh auth setup-git`, verify `git push` uses the **intended** identity, or avoid pushes entirely and use **`gh pr merge`** / **`gh workflow run`** / **MCP**. For **Jujitsu (jj)**: treat `jj git push` the same way — ensure remote credentials map to the **human/maintenance PAT**, not a read-only bot. Prefer documenting: “PR branch sync: `gh` API or PAT-in-URL remote,” not unauthenticated HTTPS.
+
+## Lesson 0l: Inventory data can become stale - verify PR existence before triage (2026-04-03)
+
+**Pattern:** PR inventory lists non-existent PRs (e.g., email-security-pipeline #627) causing "Not Found" errors during merge attempts.
+**Rule:** Before adding PRs to inventory or attempting merges, verify existence with `get_pull_request`. Inventory should be treated as a snapshot that may drift.
+
+## Lesson 0m: Merge order matters - security before performance (2026-04-03)
+
+**Pattern:** Merging performance PRs first (e.g., Seatek #123) caused security fixes (Seatek #120, #122) to become unmergeable due to conflicts.
+**Rule:** When security and performance PRs touch the same files, merge security fixes first. Performance optimizations can be rebased on top of security patches more easily than vice versa.
+
+## Lesson 0n: Duplicate PR patterns indicate automation opportunities (2026-04-03)
+
+**Pattern:** Multiple similar fixes across repos (ANSI stripping, fnmatch optimization, TTY degradation) suggest repetitive automation.
+**Rule:** Consider creating shared libraries or common patterns to reduce duplicate PR creation. Track duplicate patterns to identify consolidation opportunities.
+
+## Lesson 0o: GitHub MCP API cannot auto-merge some repos (2026-04-03)
+
+**Pattern:** `mcp4_merge_pull_request` fails with "Pull Request is not mergeable" even when PR has no conflicts and all checks pass. PRs return `merge_commit_sha: null` and `mergeable: null` in API responses.
+**Root cause:** Repository settings or branch protection rules may require manual merge approval or lack auto-merge configuration for MCP tools.
+**Rule:** When automated merge via MCP tools fails, verify repo settings: (1) Enable auto-merge in repository settings, (2) Check branch protection rules for merge restrictions, (3) Verify MCP token has sufficient permissions. For security PRs that pass all gates, document approval status and provide manual merge instructions via GitHub UI.
+
+## Lesson 0p: Jules zero-diff QA PRs pollute PR list (2026-04-03)
+
+**Pattern:** Automated Jules Daily QA creates PRs with `changedFiles: 0` when QA passes but no code changes are needed. PR body contains valuable findings, but empty diff adds noise to PR list.
+**Rule:** Close zero-diff QA PRs immediately with comment acknowledging findings. If QA findings are valuable, extract them to `tasks/lessons.md` or session reports. Configure Jules to skip PR creation when `git diff --stat` shows no changes.

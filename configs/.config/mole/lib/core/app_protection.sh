@@ -602,6 +602,16 @@ bundle_matches_pattern() {
 # $2...: Array elements (passed as expanded list)
 build_regex_var() {
 	local var_name="$1"
+
+	# Prevent command injection (CWE-78) via eval by validating variable name
+	if [[ ! "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+		# SECURITY: Escape potentially untrusted var_name before passing to debug_log
+		local safe_var_name
+		safe_var_name="$(printf '%q' "$var_name")"
+		debug_log "Invalid variable name for build_regex_var: $safe_var_name"
+		return 1
+	fi
+
 	shift
 	local regex=""
 	for pattern in "$@"; do

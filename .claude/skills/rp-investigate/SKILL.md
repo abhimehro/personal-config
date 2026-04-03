@@ -18,7 +18,7 @@ This workflow leverages three complementary capabilities:
 
 - **You (the agent)**: Can read any file with exact line numbers, run git commands, search the codebase, run experiments, and produce concrete evidence. You can also **mutate the file selection** to control what the chat sees. You are the hands and eyes.
 - **Context Builder** (`context_builder`): Explores the codebase and **populates the file selection** — choosing full files or slices of files relevant to the task. This is its primary output: a curated selection the chat can analyze.
-- **Chat** (`chat_send`): Deep analytical reasoning over **the current file selection**. It sees selected files **completely** (full content, not summaries), but it **only sees what's in the selection** — nothing else. It excels at synthesizing patterns, spotting architectural issues, and forming hypotheses from the big picture. It is **not** a lookup tool: if a question can be answered by reading files, searching, or running git/tool calls, do that yourself first.
+- **Chat** (`oracle_send`): Deep analytical reasoning over **the current file selection**. It sees selected files **completely** (full content, not summaries), but it **only sees what's in the selection** — nothing else. It excels at synthesizing patterns, spotting architectural issues, and forming hypotheses from the big picture. It is **not** a lookup tool: if a question can be answered by reading files, searching, or running git/tool calls, do that yourself first.
 
 ### How File Selection Drives the Workflow
 
@@ -40,26 +40,20 @@ The **file selection** is the shared context between you, the context builder, a
 
 ### Phase 0: Workspace Verification (REQUIRED)
 
-Before any investigation, confirm the target codebase is loaded:
+Before any investigation, bind to the target codebase using its working directory:
 
 ```json
-{"tool":"list_windows","args":{}}
+{"tool":"bind_context","args":{"op":"bind","working_dirs":["/absolute/path/to/project"]}}
 ```
+This auto-resolves to the window containing your project. No need to list windows first.
 
-**Check the output:**
-- If your target root appears in a window → bind to that window with `select_window`
-- If not → the codebase isn't loaded
-
-**Bind to the correct window:**
-```json
-{"tool":"select_window","args":{"window_id":<window_id_with_your_root>}}
-```
-
-**If the root isn't loaded**, find and open the workspace:
+**If binding succeeds** → proceed to Phase 1
+**If no match** → the codebase isn't loaded. Find and open the workspace:
 ```json
 {"tool":"manage_workspaces","args":{"action":"list"}}
 {"tool":"manage_workspaces","args":{"action":"switch","workspace":"<workspace_name>","open_in_new_window":true}}
 ```
+Then retry the `working_dirs` bind.
 
 ---
 ### Phase 1: Initial Assessment (Agent — you)
@@ -132,7 +126,7 @@ mcp__RepoPrompt__manage_selection:
 		ranges: [{start_line: 100, end_line: 250}]
 
 // Then ask a focused question — the chat will see the updated selection
-mcp__RepoPrompt__`chat_send`:
+mcp__RepoPrompt__`oracle_send`:
   chat_id: <from context_builder>
 	message: |
 	Based on my investigation, here's what I found:
@@ -159,7 +153,7 @@ Document:
 
 ## Role Summary
 
-| Capability | Agent (you) | Context Builder | Chat (`chat_send`) |
+| Capability | Agent (you) | Context Builder | Chat (`oracle_send`) |
 |------------|-------------|-----------------|--------|
 | Discover relevant files broadly | ❌ Limited | ✅ Primary | ❌ |
 | Populate file selection | ❌ | ✅ Primary | ❌ |
