@@ -38,7 +38,8 @@ echo ""
 for test_file in "$TESTS_DIR"/test_*.sh; do
 	# Guard against an empty directory (un-expanded glob produces a literal path)
 	[ -f "$test_file" ] || continue
-	name="$(basename "$test_file")"
+	# ⚡ Bolt Optimization: Use parameter expansion to avoid subshell and command spawning overhead
+	name="${test_file##*/}"
 	echo "Starting $name..."
 	bash "$test_file" >"$TMP_DIR/output-$name.log" 2>&1 &
 	test_pids+=($!)
