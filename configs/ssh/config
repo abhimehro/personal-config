@@ -1,3 +1,5 @@
+Include /Users/speedybee/.colima/ssh_config
+
 # ─ include the 1Password‑managed keys ───────────────
 Include ~/.ssh/1Password/config
 # Optional local overrides (not tracked in git)

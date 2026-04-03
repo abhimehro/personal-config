@@ -39,6 +39,12 @@ lint:
     - yamllint@1.38.0
 actions:
   disabled:
+    - trunk-check-pre-commit
+    - trunk-check-pre-push-always
+    - git-lfs
+    - npm-check
+    - poetry-install
+    - submodule-init-update
     - trunk-announce
     - trunk-check-pre-push
     - trunk-fmt-pre-commit
