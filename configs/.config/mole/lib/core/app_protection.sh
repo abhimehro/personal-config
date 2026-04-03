@@ -623,7 +623,7 @@ build_regex_var() {
 		echo "Error: Invalid variable name '$var_name'" >&2
 		return 1
 	fi
-	eval "$var_name=\"\$regex\""
+	printf -v "$var_name" "%s" "$regex"
 }
 
 # Lazy-loaded regex (only built when needed)
