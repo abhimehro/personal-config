@@ -147,6 +147,13 @@ def run_command_set(
     )
 
 
+def _count_lines(path: Path) -> int | None:
+    try:
+        return path.read_text(encoding="utf-8").count("\n") + 1
+    except (UnicodeDecodeError, OSError):
+        return None
+
+
 def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
     candidates = []
     # ⚡ Bolt: Using os.walk with directory pruning avoids reading metadata
@@ -155,13 +162,14 @@ def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
     for root_dir, dirs, files in os.walk(ROOT):
         dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
         for file in files:
-            if file.endswith(".py") or file.endswith(".sh"):
-                path = Path(root_dir) / file
-                try:
-                    line_count = path.read_text(encoding="utf-8").count("\n") + 1
-                except (UnicodeDecodeError, OSError):
-                    continue
+            if not (file.endswith(".py") or file.endswith(".sh")):
+                continue
+
+            path = Path(root_dir) / file
+            line_count = _count_lines(path)
+            if line_count is not None:
                 candidates.append((str(path.relative_to(ROOT)), line_count))
+
     return sorted(candidates, key=lambda item: item[1], reverse=True)[:limit]
 
 
