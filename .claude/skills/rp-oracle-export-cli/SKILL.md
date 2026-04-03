@@ -38,7 +38,7 @@ Use the extracted task (not the raw request) for all downstream steps — intent
 
 ### 0: Workspace Verification (REQUIRED)
 
-Before any building context, confirm the target codebase is loaded:
+Before any building context, bind to the target codebase using its working directory:
 
 ```bash
 # First, list available windows to find the right one

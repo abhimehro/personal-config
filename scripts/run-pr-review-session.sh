@@ -53,6 +53,13 @@ done
 
 cd "$REPO_ROOT"
 
+# Source environment variables from 1Password-mounted .env file if present
+# The 1Password hook ensures this is a valid FIFO mount before allowing execution
+if [[ -f ".env" ]] && [[ -p ".env" ]]; then
+	echo "Sourcing environment variables from 1Password-mounted .env file..."
+	source .env
+fi
+
 PREFLIGHT_CMD=("$SCRIPT_DIR/preflight-gh-pr-automation.sh")
 if [[ -n $CONFIG_FILE ]]; then
 	PREFLIGHT_CMD+=(--config "$CONFIG_FILE")
