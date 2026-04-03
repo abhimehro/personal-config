@@ -14,14 +14,14 @@ echo " first time you use Trunk in a repo it will download the latest version."
 bin_path="/usr/local/bin"
 install_path="${bin_path}/trunk"
 if ! [[ -d ${bin_path} ]]; then
-	if [[ -n ${USERPROFILE-} ]]; then
-		# Windows only
-		bin_path="${USERPROFILE:-${HOME}}\\\\bin"
-		install_path="${bin_path}\\\\trunk"
-	else
-		bin_path="${HOME}/.local/bin"
-		install_path="${bin_path}/trunk"
-	fi
+  if [[ -n ${USERPROFILE-} ]]; then
+    # Windows only
+    bin_path="${USERPROFILE:-${HOME}}\\\\bin"
+    install_path="${bin_path}\\\\trunk"
+  else
+    bin_path="${HOME}/.local/bin"
+    install_path="${bin_path}/trunk"
+  fi
 fi
 
 header "\nThis script will install\n"

@@ -2,7 +2,7 @@
 name: "rp-investigate"
 description: "Deep investigation with RepoPrompt MCP tools: tools gather evidence, follow-up reasoning synthesizes selected context"
 repoprompt_managed: true
-repoprompt_skills_version: 29
+repoprompt_skills_version: 30
 repoprompt_variant: mcp
 ---
 
@@ -18,12 +18,11 @@ This workflow leverages three complementary capabilities:
 
 - **You (the agent)**: Can read any file with exact line numbers, run git commands, search the codebase, run experiments, and produce concrete evidence. You can also **mutate the file selection** to control what the chat sees. You are the hands and eyes.
 - **Context Builder** (`context_builder`): Explores the codebase and **populates the file selection** — choosing full files or slices of files relevant to the task. This is its primary output: a curated selection the chat can analyze.
-- **Chat** (`chat_send`): Deep analytical reasoning over **the current file selection**. It sees selected files **completely** (full content, not summaries), but it **only sees what's in the selection** — nothing else. It excels at synthesizing patterns, spotting architectural issues, and forming hypotheses from the big picture. It is **not** a lookup tool: if a question can be answered by reading files, searching, or running git/tool calls, do that yourself first.
+- **Chat** (`oracle_send`): Deep analytical reasoning over **the current file selection**. It sees selected files **completely** (full content, not summaries), but it **only sees what's in the selection** — nothing else. It excels at synthesizing patterns, spotting architectural issues, and forming hypotheses from the big picture. It is **not** a lookup tool: if a question can be answered by reading files, searching, or running git/tool calls, do that yourself first.
 
 ### How File Selection Drives the Workflow
 
 The **file selection** is the shared context between you, the context builder, and the chat:
-
 1. `context_builder` populates the selection with relevant files/slices it discovers
 2. The chat analyzes whatever is currently selected — it has no other view of the codebase
 3. You can **add or remove** specific files via `manage_selection` to augment or refine what the chat sees
@@ -32,7 +31,6 @@ The **file selection** is the shared context between you, the context builder, a
 **Important:** The context builder operates with a large token budget and works hard to maximize useful context. Don't constrain it — build on its selection with targeted `add`/`remove` calls rather than replacing it.
 
 ### Core Principles
-
 1. **Don't stop until confident** — pursue every lead until you have solid evidence
 2. **Play to each tool's strengths** — context builder for broad discovery, the chat for deep analysis, your own tools for precise evidence gathering
 3. **You produce the evidence** — the chat analyzes and hypothesizes; you verify with exact file reads, git blame, searches
@@ -42,32 +40,22 @@ The **file selection** is the shared context between you, the context builder, a
 
 ### Phase 0: Workspace Verification (REQUIRED)
 
-Before any investigation, confirm the target codebase is loaded:
+Before any investigation, bind to the target codebase using its working directory:
 
 ```json
-{ "tool": "list_windows", "args": {} }
+{"tool":"bind_context","args":{"op":"bind","working_dirs":["/absolute/path/to/project"]}}
 ```
+This auto-resolves to the window containing your project. No need to list windows first.
 
-**Check the output:**
-
-- If your target root appears in a window → bind to that window with `select_window`
-- If not → the codebase isn't loaded
-
-**Bind to the correct window:**
-
-```json
-{"tool":"select_window","args":{"window_id":<window_id_with_your_root>}}
-```
-
-**If the root isn't loaded**, find and open the workspace:
-
+**If binding succeeds** → proceed to Phase 1
+**If no match** → the codebase isn't loaded. Find and open the workspace:
 ```json
 {"tool":"manage_workspaces","args":{"action":"list"}}
 {"tool":"manage_workspaces","args":{"action":"switch","workspace":"<workspace_name>","open_in_new_window":true}}
 ```
+Then retry the `working_dirs` bind.
 
 ---
-
 ### Phase 1: Initial Assessment (Agent — you)
 
 1. Read any provided files/reports (traces, logs, error reports)
@@ -138,7 +126,7 @@ mcp__RepoPrompt__manage_selection:
 		ranges: [{start_line: 100, end_line: 250}]
 
 // Then ask a focused question — the chat will see the updated selection
-mcp__RepoPrompt__`chat_send`:
+mcp__RepoPrompt__`oracle_send`:
   chat_id: <from context_builder>
 	message: |
 	Based on my investigation, here's what I found:
@@ -156,7 +144,6 @@ mcp__RepoPrompt__`chat_send`:
 You write the final report with precise references. The chat reasons about patterns but can't produce exact line numbers — that's your job.
 
 Document:
-
 - **Root cause** — with exact file paths, line numbers, and code snippets as evidence
 - **Eliminated hypotheses** — and what evidence ruled them out
 - **Recommended fixes** — specific, actionable changes with file locations
@@ -166,17 +153,17 @@ Document:
 
 ## Role Summary
 
-| Capability                         | Agent (you) | Context Builder | Chat (`chat_send`)       |
-| ---------------------------------- | ----------- | --------------- | ------------------------ |
-| Discover relevant files broadly    | ❌ Limited  | ✅ Primary      | ❌                       |
-| Populate file selection            | ❌          | ✅ Primary      | ❌                       |
-| Read exact file contents & lines   | ✅ Primary  | ❌              | Sees full selected files |
-| Run git blame/log/diff             | ✅          | ❌              | ❌                       |
-| Search across codebase             | ✅          | ✅              | ❌                       |
-| Synthesize patterns & architecture | ⚠️ OK       | ❌              | ✅ Primary               |
-| Form & refine hypotheses           | ⚠️ OK       | ❌              | ✅ Primary               |
-| Produce line-number evidence       | ✅ Primary  | ❌              | ❌                       |
-| Mutate selection to refocus chat   | ✅          | ❌              | ❌                       |
+| Capability | Agent (you) | Context Builder | Chat (`oracle_send`) |
+|------------|-------------|-----------------|--------|
+| Discover relevant files broadly | ❌ Limited | ✅ Primary | ❌ |
+| Populate file selection | ❌ | ✅ Primary | ❌ |
+| Read exact file contents & lines | ✅ Primary | ❌ | Sees full selected files |
+| Run git blame/log/diff | ✅ | ❌ | ❌ |
+| Search across codebase | ✅ | ✅ | ❌ |
+| Synthesize patterns & architecture | ⚠️ OK | ❌ | ✅ Primary |
+| Form & refine hypotheses | ⚠️ OK | ❌ | ✅ Primary |
+| Produce line-number evidence | ✅ Primary | ❌ | ❌ |
+| Mutate selection to refocus chat | ✅ | ❌ | ❌ |
 
 ---
 
@@ -188,34 +175,28 @@ Create a findings report as you investigate:
 # Investigation: [Title]
 
 ## Summary
-
 [1-2 sentence summary of findings]
 
 ## Symptoms
-
 - [Observed symptom 1]
 - [Observed symptom 2]
 
 ## Investigation Log
 
 ### [Phase] - [Area Investigated]
-
 **Hypothesis:** [What you were testing]
 **Findings:** [What you found]
 **Evidence:** [Exact file paths, line numbers, code snippets, git commits]
 **Conclusion:** [Confirmed/Eliminated/Needs more investigation]
 
 ## Root Cause
-
 [Detailed explanation with precise evidence]
 
 ## Recommendations
-
 1. [Fix 1 — specific file and location]
 2. [Fix 2 — specific file and location]
 
 ## Preventive Measures
-
 - [How to prevent this in future]
 ```
 
