@@ -651,7 +651,7 @@ def score_linear_issue(issue: dict[str, Any], today_iso: str, today: dt.date) ->
                 score += bonus
 
     # Staleness penalty (issues untouched > 14 days get penalized)
-    stale = staleness_days(updated_at, daily_today)
+    stale = staleness_days(updated_at, today)
     if stale > 14:
         score -= min(stale - 14, 30)
 
