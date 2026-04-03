@@ -826,7 +826,7 @@ update_progress_if_needed() {
 		echo "Error: Invalid variable name '$last_update_var'" >&2
 		return 1
 	fi
-	eval "last_time=\${$last_update_var:-0}"
+	last_time="${!last_update_var}"
 	[[ $last_time =~ ^[0-9]+$ ]] || last_time=0
 
 	# Check if enough time has elapsed
