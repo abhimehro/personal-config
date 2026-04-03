@@ -618,7 +618,7 @@ def staleness_days(updated_at: str, today: dt.date) -> int:
         return 0
 
 
-def score_linear_issue(issue: dict[str, Any], today_iso: str, daily_today: dt.date) -> int:
+def score_linear_issue(issue: dict[str, Any], today_iso: str, today: dt.date) -> int:
     """Score a Linear issue with priority, due date, state, labels, and staleness."""
     priority = issue.get("priority") or 0
     due_date = issue.get("dueDate") or ""
