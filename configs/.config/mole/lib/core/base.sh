@@ -841,7 +841,7 @@ update_progress_if_needed() {
 		start_section_spinner "Scanning items... $completed/$total"
 
 		# Update the last_update_time variable
-		eval "$last_update_var=$current_time"
+		printf -v "$last_update_var" "%s" "$current_time"
 		return 0
 	fi
 
