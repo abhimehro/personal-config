@@ -607,20 +607,29 @@ def extract_horoscope_text(data: dict[str, Any]) -> str | None:
     return None
 
 
-def staleness_days(updated_at: str, today_iso: str) -> int:
-    """Return days since last update, or 0 on parse failure."""
+def staleness_days(updated_at: str, today: dt.date) -> int:
+    """Return days since last update, or 0 on parse failure.
+
+    Performance Note:
+    Accepts a pre-computed datetime.date object instead of an ISO string
+    to avoid redundant O(N) parsing operations during loop traversal.
+    """
     if not updated_at:
         return 0
     try:
         updated_date = dt.date.fromisoformat(updated_at[:10])
-        today = dt.date.fromisoformat(today_iso)
         return max((today - updated_date).days, 0)
     except (ValueError, TypeError):
         return 0
 
 
-def score_linear_issue(issue: dict[str, Any], today_iso: str) -> int:
-    """Score a Linear issue with priority, due date, state, labels, and staleness."""
+def score_linear_issue(issue: dict[str, Any], today_iso: str, today: dt.date) -> int:
+    """Score a Linear issue with priority, due date, state, labels, and staleness.
+
+    Performance Note:
+    Accepts both the string and date object formats for 'today' so string comparisons
+    (for due dates) and date math (for staleness) can both happen without conversions.
+    """
     priority = issue.get("priority") or 0
     due_date = issue.get("dueDate") or ""
     state_type = (issue.get("state", {}).get("type") or "").lower().replace("_", "")
@@ -652,7 +661,7 @@ def score_linear_issue(issue: dict[str, Any], today_iso: str) -> int:
                 score += bonus
 
     # Staleness penalty (issues untouched > 14 days get penalized)
-    stale = staleness_days(updated_at, today_iso)
+    stale = staleness_days(updated_at, today)
     if stale > 14:
         score -= min(stale - 14, 30)
 
@@ -926,7 +935,7 @@ def fetch_linear_focus_items(
                     state_type=state.get("type", ""),
                     due_date=issue.get("dueDate") or "",
                     badge=priority_labels.get(issue.get("priority") or 0, ""),
-                    score=score_linear_issue(issue, daily.today_iso),
+                    score=score_linear_issue(issue, daily.today_iso, daily.today),
                     labels=label_names,
                     updated_at=issue.get("updatedAt") or "",
                 )
