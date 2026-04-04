@@ -618,7 +618,9 @@ def staleness_days(updated_at: str, today: dt.date) -> int:
         return 0
 
 
-def score_linear_issue(issue: dict[str, Any], today_iso: str, daily_today: dt.date) -> int:
+def score_linear_issue(
+    issue: dict[str, Any], today_iso: str, daily_today: dt.date
+) -> int:
     """Score a Linear issue with priority, due date, state, labels, and staleness."""
     priority = issue.get("priority") or 0
     due_date = issue.get("dueDate") or ""
@@ -1245,8 +1247,16 @@ def render_linear_queue_focus_section(
     queue: LinearQueueSnapshot,
     daily: DailyContext,
 ) -> str:
-    review_body = html_ul([render_linear_queue_item(item) for item in queue.review_items]) if queue.review_items else '<p><em>No review items were surfaced from Linear.</em></p>'
-    notification_body = html_ul([render_linear_queue_item(item) for item in queue.notification_items]) if queue.notification_items else '<p><em>No unread notifications were surfaced from Linear.</em></p>'
+    review_body = (
+        html_ul([render_linear_queue_item(item) for item in queue.review_items])
+        if queue.review_items
+        else "<p><em>No review items were surfaced from Linear.</em></p>"
+    )
+    notification_body = (
+        html_ul([render_linear_queue_item(item) for item in queue.notification_items])
+        if queue.notification_items
+        else "<p><em>No unread notifications were surfaced from Linear.</em></p>"
+    )
 
     subsections = [
         html_subsection("Pending reviews", review_body),
