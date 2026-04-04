@@ -123,7 +123,7 @@ clean_deep_system() {
 		local app_name
 		app_name=$(basename "$installer_app")
 		# Skip if installer is currently running
-		if pgrep -f "$installer_app" >/dev/null 2>&1; then
+		if pgrep -f -- "$installer_app" >/dev/null 2>&1; then
 			debug_log "Skipping $app_name: currently running"
 			continue
 		fi
