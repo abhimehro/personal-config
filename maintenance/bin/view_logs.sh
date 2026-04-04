@@ -42,12 +42,27 @@ if [[ -z $TASK ]]; then
 		exit 0
 	fi
 
-	PS3="${BOLD}Select a log to view (1-${#LOGS[@]}): ${RESET}"
-	select opt in "${LOGS[@]##*/}" "Quit"; do
-		if [[ -n $opt && $opt != "Quit" ]]; then
-			open_files "$LOG_DIR/$opt"
+	for i in "${!LOGS[@]}"; do
+		echo "   $((i+1))) ${LOGS[$i]##*/}"
+	done
+	echo "   0) Quit"
+
+	while true; do
+		echo -ne "\n${BOLD}Select a log to view [0-${#LOGS[@]}] (Enter for Default: 1): ${RESET}"
+		read -r choice
+		choice="${choice:-1}"
+
+		if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+			echo "${RED}Invalid selection. Please enter a number.${RESET}"
+			continue
+		fi
+
+		if [[ "$choice" -eq 0 ]]; then
 			break
-		elif [[ $opt == "Quit" ]]; then
+		elif [[ "$choice" -ge 1 && "$choice" -le "${#LOGS[@]}" ]]; then
+			idx=$((choice-1))
+			opt="${LOGS[$idx]##*/}"
+			open_files "$LOG_DIR/$opt"
 			break
 		else
 			echo "${RED}Invalid selection. Please try again.${RESET}"
