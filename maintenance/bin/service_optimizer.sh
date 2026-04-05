@@ -129,7 +129,7 @@ for widget in "${WIDGETS_TO_KILL[@]}"; do
 	# Use pkill to find and kill processes matching the widget name.
 	# The -f flag matches against the full command line for better accuracy.
 	# Errors are redirected to /dev/null if the process isn't running.
-	if pkill -9 -f "$widget" &>/dev/null; then
+	if pkill -9 -f -- "$widget" &>/dev/null; then
 		echo "  - Terminated processes matching: $widget"
 		killed_count=$((killed_count + 1))
 	fi
