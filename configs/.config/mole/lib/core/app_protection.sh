@@ -1532,7 +1532,7 @@ force_kill_app() {
 	done
 
 	# Still running after all attempts
-	pgrep -x -- "$match_pattern" >/dev/null 2>&1 && return 1 || return 0
+	! pgrep -x -- "$match_pattern" >/dev/null 2>&1
 }
 
 # Note: calculate_total_size() is defined in lib/core/file_ops.sh
