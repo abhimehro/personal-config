@@ -60,9 +60,8 @@ if [[ -z $TASK ]]; then
 		if [[ "$choice" -eq 0 ]]; then
 			break
 		elif [[ "$choice" -ge 1 && "$choice" -le "${#LOGS[@]}" ]]; then
-			idx=$((choice-1))
-			opt="${LOGS[$idx]##*/}"
-			open_files "$LOG_DIR/$opt"
+			idx=$((10#$choice - 1))
+			open_files "${LOGS[$idx]}"
 			break
 		else
 			echo "${RED}Invalid selection. Please try again.${RESET}"
