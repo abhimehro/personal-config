@@ -233,7 +233,10 @@ def _matches_any_impl(path_str: str, patterns_tuple: tuple[str, ...]) -> bool:
 def matches_any(path_str: str, patterns: list[str]) -> bool:
     if not patterns:
         return False
-    return _matches_any_impl(path_str, tuple(patterns))
+    # NOTE: Normalize before crossing the cached boundary so semantically
+    # equivalent paths share a cache key on case-insensitive platforms.
+    normalized_path_str = os.path.normcase(path_str)
+    return _matches_any_impl(normalized_path_str, tuple(patterns))
 
 
 def git_output(*args: str) -> str:
