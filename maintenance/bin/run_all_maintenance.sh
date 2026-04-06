@@ -134,10 +134,16 @@ spinner() {
 	# Also disable in CI environments to prevent log clutter
 	if [ -t 1 ] && [ -z "${CI-}" ]; then
 		# Hide cursor
-		tput civis 2>/dev/null || true
+		[ -t 1 ] && tput civis 2>/dev/null || true
 
 		# Trap to restore cursor if interrupted
-		trap 'tput cnorm 2>/dev/null || true; exit' INT TERM
+		local old_int_trap
+		old_int_trap=$(trap -p INT)
+		trap '[ -t 1 ] && tput cnorm 2>/dev/null || true; eval "${old_int_trap:-trap - INT}"; kill -INT "$$"' INT
+
+		local old_term_trap
+		old_term_trap=$(trap -p TERM)
+		trap '[ -t 1 ] && tput cnorm 2>/dev/null || true; eval "${old_term_trap:-trap - TERM}"; kill -TERM "$$"' TERM
 
 		local start_time
 		start_time=$(date +%s)
@@ -161,13 +167,14 @@ spinner() {
 		done
 
 		# Restore cursor
-		tput cnorm 2>/dev/null || true
+		[ -t 1 ] && tput cnorm 2>/dev/null || true
 
 		# Clear spinner line completely
 		printf "\r\033[K"
 
-		# Remove trap
-		trap - INT TERM
+		# Restore original traps
+		eval "${old_int_trap:-trap - INT}"
+		eval "${old_term_trap:-trap - TERM}"
 	else
 		# If not interactive or in CI, do nothing (caller handles wait)
 		:
@@ -184,8 +191,15 @@ wait_for_pids() {
 	local num_chars=${#SPIN_CHARS[@]}
 
 	if [ -t 1 ] && [ -z "${CI-}" ]; then
-		tput civis 2>/dev/null || true
-		trap 'tput cnorm 2>/dev/null || true; trap - INT TERM; kill -s INT $$' INT TERM
+		[ -t 1 ] && tput civis 2>/dev/null || true
+
+		local old_int_trap
+		old_int_trap=$(trap -p INT)
+		trap '[ -t 1 ] && tput cnorm 2>/dev/null || true; eval "${old_int_trap:-trap - INT}"; kill -INT "$$"' INT
+
+		local old_term_trap
+		old_term_trap=$(trap -p TERM)
+		trap '[ -t 1 ] && tput cnorm 2>/dev/null || true; eval "${old_term_trap:-trap - TERM}"; kill -TERM "$$"' TERM
 
 		local start_time
 		start_time=$(date +%s)
@@ -226,9 +240,11 @@ wait_for_pids() {
 			sleep $delay
 		done
 
-		tput cnorm 2>/dev/null || true
+		[ -t 1 ] && tput cnorm 2>/dev/null || true
 		printf "\r\033[K"
-		trap - INT TERM
+
+		eval "${old_int_trap:-trap - INT}"
+		eval "${old_term_trap:-trap - TERM}"
 
 		# Ensure we reap exit codes, though we don't use them here directly
 		for pid in $pids_list; do

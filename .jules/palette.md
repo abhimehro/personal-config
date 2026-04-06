@@ -94,3 +94,8 @@
 
 **Learning:** Unconditional ANSI color codes in Node.js CLI tools create severe "terminal spam" for screen readers and CI environments. Even if a script conditionally handles interactive features (like a spinner), unconditionally styling static output (like headers and static messages) still breaks accessibility.
 **Action:** Make both cursor manipulation codes and styling variables (like `COLORS`) strictly conditional on `process.stdout.isTTY` using ternary operators, ensuring a clean and accessible text fallback.
+
+## 2026-04-03 - Accessible Shell Script Terminal Controls
+
+**Learning:** Unconditional calls to `tput civis` (hide cursor) and `tput cnorm` (restore cursor) in shell scripts generate terminal spam and error messages in non-TTY environments (like CI systems and screen reader pipelines). Furthermore, signal trap handlers that fail to check for TTY or properly preserve the previous trap state can break terminal environments entirely when interrupted.
+**Action:** Always gate terminal control commands behind a TTY check (`[ -t 1 ] && tput civis 2>/dev/null || true`). When modifying cursor state, preserve the original signal trap using `trap -p`, and ensure the temporary trap restores the cursor conditionally before evaluating the original trap handler.
