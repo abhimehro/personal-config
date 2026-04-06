@@ -1,17 +1,19 @@
 import { CopilotClient, defineTool, SessionEvent } from "@github/copilot-sdk";
 import * as readline from "readline";
 
+const isTTY = !!process.stdout.isTTY;
+
 const COLORS = {
-  Reset: "\x1b[0m",
-  Cyan: "\x1b[36m",
-  Green: "\x1b[32m",
-  Dim: "\x1b[2m",
+  Reset: isTTY ? "\x1b[0m" : "",
+  Cyan: isTTY ? "\x1b[36m" : "",
+  Green: isTTY ? "\x1b[32m" : "",
+  Dim: isTTY ? "\x1b[2m" : "",
 };
 
 const ANSI = {
-  HideCursor: "\x1B[?25l",
-  ShowCursor: "\x1B[?25h",
-  ClearLine: "\x1B[K",
+  HideCursor: isTTY ? "\x1B[?25l" : "",
+  ShowCursor: isTTY ? "\x1B[?25h" : "",
+  ClearLine: isTTY ? "\x1B[K" : "",
 };
 
 const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];

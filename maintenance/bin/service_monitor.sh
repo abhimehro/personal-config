@@ -211,7 +211,7 @@ for process in "${PROBLEM_PROCESSES[@]}"; do
 	if check_process_running "$process"; then
 		append "⚠️  $process: RUNNING (should not be)"
 		log_warn "$process is running - killing process"
-		if pkill -9 "$process" 2>/dev/null; then
+		if pkill -9 -- "$process" 2>/dev/null; then
 			append "   ↳ Successfully killed"
 			ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
 		else

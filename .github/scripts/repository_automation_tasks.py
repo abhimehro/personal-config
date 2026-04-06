@@ -34,6 +34,7 @@ from repository_automation_common import (
 )
 
 WORKFLOW_PATTERN = re.compile(r"(uses:\s*)([^@\s]+)@([^\s#]+)")
+PR_TABLE_ROW_PATTERN = re.compile(r"\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|")
 IGNORED_DIRS = {".git", ".venv", "node_modules", "__pycache__"}
 
 
@@ -143,6 +144,13 @@ def run_command_set(
             "body": "\n".join(body_parts).strip() + "\n",
         },
     )
+
+
+def _count_file_lines(path: Path) -> int:
+    try:
+        return path.read_text(encoding="utf-8").count("\n") + 1
+    except (UnicodeDecodeError, OSError):
+        return -1
 
 
 def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
@@ -312,9 +320,7 @@ def render_update_table(updates: list[dict[str, str]]) -> list[str]:
 def _pr_has_invalid_tags(body: str) -> bool:
     """Check if PR body contains invalid action version tags in the update table."""
     # Match markdown table rows: | file | action | current | target |
-    for match in re.finditer(
-        r"\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|", body
-    ):
+    for match in PR_TABLE_ROW_PATTERN.finditer(body):
         action_ref = match.group(1)
         target = match.group(2)
         parts = action_ref.split("/")

@@ -25,7 +25,7 @@ def extract_allowlist_domains_from_file(filepath):
                 domains = [
                     rule["PK"]
                     for rule in data["rules"]
-                    # Optimize dictionary access avoiding get().get()
+                    # NOTE: Use membership checks before direct indexing to avoid unnecessary lookups and ensure nested keys exist.
                     if "PK" in rule
                     and "action" in rule
                     and rule["action"].get("do") == 1

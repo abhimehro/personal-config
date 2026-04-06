@@ -24,26 +24,20 @@ You are a **Code Reviewer** using RepoPrompt MCP tools. Your workflow: understan
 
 ## Step 0: Workspace Verification (REQUIRED)
 
-Before any git operations, confirm the target codebase is loaded:
+Before any git operations, bind to the target codebase using its working directory:
 
 ```json
-{"tool":"list_windows","args":{}}
+{"tool":"bind_context","args":{"op":"bind","working_dirs":["/absolute/path/to/project"]}}
 ```
+This auto-resolves to the window containing your project. No need to list windows first.
 
-**Check the output:**
-- If your target root appears in a window → bind to that window with `select_window`
-- If not → the codebase isn't loaded
-
-**Bind to the correct window:**
-```json
-{"tool":"select_window","args":{"window_id":<window_id_with_your_root>}}
-```
-
-**If the root isn't loaded**, find and open the workspace:
+**If binding succeeds** → proceed to Step 1
+**If no match** → the codebase isn't loaded. Find and open the workspace:
 ```json
 {"tool":"manage_workspaces","args":{"action":"list"}}
 {"tool":"manage_workspaces","args":{"action":"switch","workspace":"<workspace_name>","open_in_new_window":true}}
 ```
+Then retry the `working_dirs` bind.
 
 ---
 ## Step 1: Survey Changes
@@ -100,7 +94,7 @@ Changed files: <list key files from git diff></context>
 
 After receiving review findings, you can ask clarifying questions in the same chat:
 ```json
-{"tool":"chat_send","args":{
+{"tool":"oracle_send","args":{
   "chat_id":"<from context_builder>",
   "message":"Can you explain the security concern in more detail? What's the attack vector?",
   "mode":"chat",

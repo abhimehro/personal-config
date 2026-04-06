@@ -30,7 +30,7 @@ rp-cli -e '<command>'
 | `read_file` | `rp-cli -e 'read path/file.swift'` |
 | `manage_selection` | `rp-cli -e 'select add path/'` |
 | `context_builder` | `rp-cli -e 'builder "instructions" --response-type plan'` |
-| `chat_send` | `rp-cli -e 'chat "message" --mode plan'` |
+| `oracle_send` | `rp-cli -e 'oracle "message" --mode plan'` |
 | `apply_edits` | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
 | `file_actions` | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'` |
 
@@ -52,7 +52,7 @@ This workflow leverages three complementary capabilities:
 
 - **You (the agent)**: Can read any file with exact line numbers, run git commands, search the codebase, run experiments, and produce concrete evidence. You can also **mutate the file selection** to control what the chat sees. You are the hands and eyes.
 - **Context Builder** (`builder`): Explores the codebase and **populates the file selection** — choosing full files or slices of files relevant to the task. This is its primary output: a curated selection the chat can analyze.
-- **Chat** (`chat_send`): Deep analytical reasoning over **the current file selection**. It sees selected files **completely** (full content, not summaries), but it **only sees what's in the selection** — nothing else. It excels at synthesizing patterns, spotting architectural issues, and forming hypotheses from the big picture. It is **not** a lookup tool: if a question can be answered by reading files, searching, or running git/tool calls, do that yourself first.
+- **Chat** (`oracle_send`): Deep analytical reasoning over **the current file selection**. It sees selected files **completely** (full content, not summaries), but it **only sees what's in the selection** — nothing else. It excels at synthesizing patterns, spotting architectural issues, and forming hypotheses from the big picture. It is **not** a lookup tool: if a question can be answered by reading files, searching, or running git/tool calls, do that yourself first.
 
 ### How File Selection Drives the Workflow
 
@@ -74,7 +74,7 @@ The **file selection** is the shared context between you, the context builder, a
 
 ### Phase 0: Workspace Verification (REQUIRED)
 
-Before any investigation, confirm the target codebase is loaded:
+Before any investigation, bind to the target codebase using its working directory:
 
 ```bash
 # First, list available windows to find the right one
@@ -180,7 +180,7 @@ Document:
 
 ## Role Summary
 
-| Capability | Agent (you) | Context Builder | Chat (`chat_send`) |
+| Capability | Agent (you) | Context Builder | Chat (`oracle_send`) |
 |------------|-------------|-----------------|--------|
 | Discover relevant files broadly | ❌ Limited | ✅ Primary | ❌ |
 | Populate file selection | ❌ | ✅ Primary | ❌ |

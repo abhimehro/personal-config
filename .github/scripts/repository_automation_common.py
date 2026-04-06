@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import fnmatch
+import functools
 import json
 import os
 import re
@@ -44,6 +45,8 @@ GH_BIN = shutil.which("gh") or "gh"
 GIT_BIN = shutil.which("git") or "git"
 
 ALLOWED_STATUSES = {"success", "warning", "failure", "needs_review", "skipped"}
+
+VERSION_PATTERN = re.compile(r"v?(\d+)(?:\.(\d+))?(?:\.(\d+))?")
 
 
 def command_env() -> dict[str, str]:
@@ -215,8 +218,25 @@ def command_block(entry: dict[str, Any]) -> str:
     return "\n".join(pieces)
 
 
+@functools.lru_cache(maxsize=128)
+def _compile_patterns(patterns_tuple: tuple[str, ...]) -> re.Pattern:
+    # Use explicit normcase to match fnmatch's behavior internally
+    translated = [fnmatch.translate(os.path.normcase(p)) for p in patterns_tuple]
+    return re.compile("|".join(translated))
+
+
+@functools.lru_cache(maxsize=1024)
+def _matches_any_impl(path_str: str, patterns_tuple: tuple[str, ...]) -> bool:
+    compiled = _compile_patterns(patterns_tuple)
+    return bool(compiled.match(os.path.normcase(path_str)))
+
 def matches_any(path_str: str, patterns: list[str]) -> bool:
-    return any(fnmatch.fnmatch(path_str, pattern) for pattern in patterns)
+    if not patterns:
+        return False
+    # NOTE: Normalize before crossing the cached boundary so semantically
+    # equivalent paths share a cache key on case-insensitive platforms.
+    normalized_path_str = os.path.normcase(path_str)
+    return _matches_any_impl(normalized_path_str, tuple(patterns))
 
 
 def git_output(*args: str) -> str:
@@ -403,8 +423,9 @@ def latest_tag_for_action(repo_id: str) -> str:
     return ""
 
 
+@functools.lru_cache(maxsize=1024)
 def numeric_version(text: str) -> tuple[int, int, int] | None:
-    match = re.search(r"v?(\d+)(?:\.(\d+))?(?:\.(\d+))?", text)
+    match = VERSION_PATTERN.search(text)
     if not match:
         return None
     return tuple(int(group or 0) for group in match.groups())

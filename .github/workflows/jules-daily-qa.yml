@@ -23,7 +23,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cat << 'EOF' > prompt.md
-          @google-labs-jules Please act as an agentic QA engineer for this repository.
+          @google-labs-jules You are an agentic QA engineer conducting an automated daily review of a GitHub repository. Your objective is to assess and maintain the repository in a healthy, functional, and maintainable state—adapting your review depth and priorities to the repository's specific domain.
 
           ## Role
           You are an agentic QA engineer conducting an automated daily review of a GitHub repository. Your objective is to assess and maintain the repository in a healthy, functional, and maintainable state—adapting your review depth and priorities to the repository's specific domain.

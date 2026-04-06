@@ -30,7 +30,7 @@ rp-cli -e '<command>'
 | `read_file` | `rp-cli -e 'read path/file.swift'` |
 | `manage_selection` | `rp-cli -e 'select add path/'` |
 | `context_builder` | `rp-cli -e 'builder "instructions" --response-type plan'` |
-| `chat_send` | `rp-cli -e 'chat "message" --mode plan'` |
+| `oracle_send` | `rp-cli -e 'oracle "message" --mode plan'` |
 | `apply_edits` | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
 | `file_actions` | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'` |
 
@@ -58,7 +58,7 @@ JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected), `@file`
 
 ## Step 0: Workspace Verification (REQUIRED)
 
-Before any git operations, confirm the target codebase is loaded:
+Before any git operations, bind to the target codebase using its working directory:
 
 ```bash
 # First, list available windows to find the right one

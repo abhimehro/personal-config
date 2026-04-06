@@ -602,6 +602,16 @@ bundle_matches_pattern() {
 # $2...: Array elements (passed as expanded list)
 build_regex_var() {
 	local var_name="$1"
+
+	# Prevent command injection (CWE-78) via eval by validating variable name
+	if [[ ! "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+		# SECURITY: Escape potentially untrusted var_name before passing to debug_log
+		local safe_var_name
+		safe_var_name="$(printf '%q' "$var_name")"
+		debug_log "Invalid variable name for build_regex_var: $safe_var_name"
+		return 1
+	fi
+
 	shift
 	local regex=""
 	for pattern in "$@"; do
@@ -1486,27 +1496,27 @@ force_kill_app() {
 	local match_pattern="${exec_name:-$app_name}"
 
 	# Check if process is running using exact match only
-	if ! pgrep -x "$match_pattern" >/dev/null 2>&1; then
+	if ! pgrep -x -- "$match_pattern" >/dev/null 2>&1; then
 		return 0
 	fi
 
 	# Try graceful termination first
-	pkill -x "$match_pattern" 2>/dev/null || true
+	pkill -x -- "$match_pattern" 2>/dev/null || true
 	sleep 2
 
 	# Check again after graceful kill
-	if ! pgrep -x "$match_pattern" >/dev/null 2>&1; then
+	if ! pgrep -x -- "$match_pattern" >/dev/null 2>&1; then
 		return 0
 	fi
 
 	# Force kill if still running
-	pkill -9 -x "$match_pattern" 2>/dev/null || true
+	pkill -9 -x -- "$match_pattern" 2>/dev/null || true
 	sleep 2
 
 	# If still running and sudo is available, try with sudo
-	if pgrep -x "$match_pattern" >/dev/null 2>&1; then
+	if pgrep -x -- "$match_pattern" >/dev/null 2>&1; then
 		if sudo -n true 2>/dev/null; then
-			sudo pkill -9 -x "$match_pattern" 2>/dev/null || true
+			sudo pkill -9 -x -- "$match_pattern" 2>/dev/null || true
 			sleep 2
 		fi
 	fi
@@ -1514,7 +1524,7 @@ force_kill_app() {
 	# Final check with longer timeout for stubborn processes
 	local retries=3
 	while [[ $retries -gt 0 ]]; do
-		if ! pgrep -x "$match_pattern" >/dev/null 2>&1; then
+		if ! pgrep -x -- "$match_pattern" >/dev/null 2>&1; then
 			return 0
 		fi
 		sleep 1
@@ -1522,7 +1532,7 @@ force_kill_app() {
 	done
 
 	# Still running after all attempts
-	pgrep -x "$match_pattern" >/dev/null 2>&1 && return 1 || return 0
+	pgrep -x -- "$match_pattern" >/dev/null 2>&1 && return 1 || return 0
 }
 
 # Note: calculate_total_size() is defined in lib/core/file_ops.sh

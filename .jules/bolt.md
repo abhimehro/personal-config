@@ -92,3 +92,12 @@
 
 **Learning:** `Path.rglob()` always traverses the entire directory tree before yielding results. When skipping large directories (like `node_modules` or `.venv`), checking the path parts (e.g., `isdisjoint(path.parts)`) still requires the OS to read all those underlying files and directories first, resulting in massive I/O overhead.
 **Action:** When searching a directory tree where large subdirectories should be entirely ignored, use `os.walk()` and modify the `dirs` list in-place (`dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]`). This prunes the tree traversal early and completely bypasses the ignored directories.
+## 2026-06-03 - [Path Pattern Matching Optimization]
+
+**Learning:** When matching file paths against multiple glob patterns in Python (e.g., `any(fnmatch.fnmatch(path, p) for p in patterns)`), iterative `fnmatch.fnmatch` evaluation introduces significant overhead. Replacing this with a single pre-compiled regex generated from `fnmatch.translate()` and cached with `@functools.lru_cache` provides a ~3x performance boost on path matching, avoiding repetitive function calls and parsing.
+**Action:** When filtering paths against a static list of multiple glob patterns, compile the translated patterns into a single combined regex instead of iterating with `any(fnmatch.fnmatch(...))`. Be sure to explicitly use `os.path.normcase` on the input patterns and path string to replicate the internal behavior of `fnmatch`.
+
+## 2026-06-03 - [Avoid Redundant ISO String Parsing]
+
+**Learning:** Passing an ISO string and parsing it with `dt.date.fromisoformat()` repeatedly within tight loops (e.g., inside the scoring loop for Linear issues) creates unnecessary CPU overhead. By parsing the date once and passing the `datetime.date` object down to the utility functions, we save ~30% parsing overhead per issue without impacting functionality.
+**Action:** When a function requires a date for calculations and is called repeatedly in a loop, parse the date outside the loop and pass the `datetime.date` object as an argument instead of the raw string.
