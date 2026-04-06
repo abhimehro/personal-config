@@ -46,6 +46,8 @@ GIT_BIN = shutil.which("git") or "git"
 
 ALLOWED_STATUSES = {"success", "warning", "failure", "needs_review", "skipped"}
 
+VERSION_PATTERN = re.compile(r"v?(\d+)(?:\.(\d+))?(?:\.(\d+))?")
+
 
 def command_env() -> dict[str, str]:
     return {**os.environ, "GH_PAGER": "cat"}
@@ -223,11 +225,18 @@ def _compile_patterns(patterns_tuple: tuple[str, ...]) -> re.Pattern:
     return re.compile("|".join(translated))
 
 
+@functools.lru_cache(maxsize=1024)
+def _matches_any_impl(path_str: str, patterns_tuple: tuple[str, ...]) -> bool:
+    compiled = _compile_patterns(patterns_tuple)
+    return bool(compiled.match(os.path.normcase(path_str)))
+
 def matches_any(path_str: str, patterns: list[str]) -> bool:
     if not patterns:
         return False
-    compiled = _compile_patterns(tuple(patterns))
-    return bool(compiled.match(os.path.normcase(path_str)))
+    # NOTE: Normalize before crossing the cached boundary so semantically
+    # equivalent paths share a cache key on case-insensitive platforms.
+    normalized_path_str = os.path.normcase(path_str)
+    return _matches_any_impl(normalized_path_str, tuple(patterns))
 
 
 def git_output(*args: str) -> str:
@@ -414,8 +423,9 @@ def latest_tag_for_action(repo_id: str) -> str:
     return ""
 
 
+@functools.lru_cache(maxsize=1024)
 def numeric_version(text: str) -> tuple[int, int, int] | None:
-    match = re.search(r"v?(\d+)(?:\.(\d+))?(?:\.(\d+))?", text)
+    match = VERSION_PATTERN.search(text)
     if not match:
         return None
     return tuple(int(group or 0) for group in match.groups())
