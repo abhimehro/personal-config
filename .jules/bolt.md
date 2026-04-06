@@ -90,5 +90,5 @@
 
 ## 2026-06-12 - [os.walk vs Path.rglob Directory Pruning]
 
-**Learning:** `Path.rglob()` yields results lazily as it walks the tree, but it still descends into directories before you can filter them out. When skipping large directories (like `node_modules` or `.venv`), checking the path parts afterward (e.g., `isdisjoint(path.parts)`) still requires the OS to read those underlying directories and files, resulting in massive I/O overhead.
+**Learning:** `Path.rglob()` always traverses the entire directory tree before yielding results. When skipping large directories (like `node_modules` or `.venv`), checking the path parts (e.g., `isdisjoint(path.parts)`) still requires the OS to read all those underlying files and directories first, resulting in massive I/O overhead.
 **Action:** When searching a directory tree where large subdirectories should be entirely ignored, use `os.walk()` and modify the `dirs` list in-place (`dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]`). This prunes the tree traversal early and completely bypasses the ignored directories.
