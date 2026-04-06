@@ -71,8 +71,7 @@ bash tests/test_config_fish.sh     # skips if `fish` missing
 
 ```bash
 bash tests/test_network_mode_manager.sh
-bash tests/test_network_mode_verify.sh
-# Optional full regression (macOS / environment-dependent):
+# Verification coverage uses the regression entrypoint below (macOS / environment-dependent):
 make control-d-regression
 # Or directly:
 ./scripts/network-mode-regression.sh browsing
