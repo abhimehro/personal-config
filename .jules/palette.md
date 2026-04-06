@@ -89,3 +89,8 @@
 
 **Learning:** In Node.js CLI tools, unconditional ANSI escape sequences for cursor manipulation (e.g., `\x1B[?25h`, `\x1B[K`) cause 'terminal spam' in non-TTY environments, breaking screen readers and cluttering CI logs.
 **Action:** Always wrap these in `if (process.stdout.isTTY)` checks to ensure accessibility and clean output.
+
+## 2026-03-31 - Disable ANSI Colors in non-TTY CLIs
+
+**Learning:** Unconditional ANSI color codes in Node.js CLI tools create severe "terminal spam" for screen readers and CI environments. Even if a script conditionally handles interactive features (like a spinner), unconditionally styling static output (like headers and static messages) still breaks accessibility.
+**Action:** Make both cursor manipulation codes and styling variables (like `COLORS`) strictly conditional on `process.stdout.isTTY` using ternary operators, ensuring a clean and accessible text fallback.
