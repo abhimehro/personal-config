@@ -155,18 +155,22 @@ def _count_file_lines(path: Path) -> int:
 
 def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
     candidates = []
-    for root_dir, dirs, files in os.walk(ROOT):
-        # ⚡ Bolt Optimization: Prune ignored directories in-place to avoid traversing them entirely
+    for root, dirs, files in os.walk(ROOT):
+        # ⚡ Bolt: Prune ignored directories in-place to prevent os.walk from
+        # traversing them entirely, massively reducing I/O compared to Path.rglob().
         dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
 
+        root_path = Path(root)
         for file in files:
             if not file.endswith((".py", ".sh")):
                 continue
 
-            path = Path(root_dir) / file
-            line_count = _count_file_lines(path)
-            if line_count > 0:
-                candidates.append((str(path.relative_to(ROOT)), line_count))
+            path = root_path / file
+            try:
+                line_count = path.read_text(encoding="utf-8").count("\n") + 1
+            except (UnicodeDecodeError, OSError):
+                continue
+            candidates.append((str(path.relative_to(ROOT)), line_count))
 
     return sorted(candidates, key=lambda item: item[1], reverse=True)[:limit]
 
