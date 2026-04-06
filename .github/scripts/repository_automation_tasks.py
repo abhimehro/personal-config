@@ -162,7 +162,7 @@ def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
 
         root_path = Path(root)
         for file in files:
-            if not (file.endswith(".py") or file.endswith(".sh")):
+            if not file.endswith((".py", ".sh")):
                 continue
 
             path = root_path / file
