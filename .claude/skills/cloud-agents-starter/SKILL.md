@@ -126,7 +126,6 @@ python3 -m unittest tests.test_infuse_media_server -v
 ```bash
 bash tests/test_lib_common.sh
 bash tests/test_lib_dns_utils.sh
-bash tests/test_dns_utils.sh
 ```
 
 ---
