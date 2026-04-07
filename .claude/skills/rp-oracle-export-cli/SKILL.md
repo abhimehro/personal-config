@@ -13,6 +13,7 @@ Raw request: $ARGUMENTS
 Your job: select the right files and export a prompt file that another model can act on directly.
 
 **Before you do anything else**, extract the real task from the raw request above. Users often phrase this as "export a prompt for X" or "write a prompt about Y" — strip away any meta-framing about exporting/prompting and identify the underlying problem. For example:
+
 - "export a prompt to evaluate the auth refresh logic" → the task is "evaluate the auth refresh logic"
 - "write a ChatGPT prompt about the token caching bug" → the task is "investigate the token caching bug"
 - "review the last 3 commits" → the task is already clean
@@ -49,32 +50,37 @@ rp-cli -w <window_id> -e 'tree --type roots'
 ```
 
 **Check the output:**
+
 - If your target root appears in a window → note the window ID and proceed to Step 1
 - If not → the codebase isn't loaded in any window
 
 **CLI Window Routing (CRITICAL):**
+
 - CLI invocations are stateless—you MUST pass `-w <window_id>` to target the correct window
 - Use `rp-cli -e 'windows'` to list all open windows and their workspaces
 - Always include `-w <window_id>` in ALL subsequent commands
 
 ---
+
 ### 1. Determine intent and scope
 
 Infer the prompt type from the request:
-- **Review** for git diff / PR / branch comparison requests — i.e. the user wants to inspect *changes*
+
+- **Review** for git diff / PR / branch comparison requests — i.e. the user wants to inspect _changes_
 - **Plan** for design / approach / implementation-plan / architectural audit / code evaluation requests — even if the user says "review" or "audit", if there are no diffs involved, this is a Plan
 - **Question** only when the user is asking a specific, bounded question with a clear answer
 - **When in doubt, default to Plan.** Generic or open-ended requests ("look into X", "help me with Y", "figure out Z") produce better results with the Plan preset, which gives the receiving model structured guidance.
 
 If the request is vague:
+
 - for **Review**: inspect git state first
 - for **Question/Plan**: if it sounds broad, architectural, evaluative, redesign-oriented, or likely multi-file, skip manual exploration and go straight to `context_builder`
 
 Ask **one specific question** only if needed, and base it on the repo state you found.
 Good question shapes:
+
 - “I see changes in A and B. Do you want review of these current uncommitted changes, or against `main`?”
 - “I found likely touchpoints in X and Y. Is the fix plan for X only, or this broader flow?”
-
 
 **If the scope is still unclear, STOP and ask the user.** Do not ask generic workflow questions when you could ask a concrete scope question instead.
 
@@ -85,6 +91,7 @@ Because this prompt does not expose the workflow export budget directly, prefer 
 #### Review
 
 Start by checking git state:
+
 ```bash
 rp-cli -w <window_id> -e 'git status'
 rp-cli -w <window_id> -e 'git diff --detail files'
@@ -97,6 +104,7 @@ Determine the comparison scope from the user's request and git state.
 **If the user already specified a clear comparison target** (e.g., "review against main", "compare with develop", "review last 3 commits"), **skip confirmation and proceed** using the scope they specified.
 
 **If the scope is ambiguous or not specified**, ask the user to clarify:
+
 - **Current branch**: What branch are you on? (from git status)
 - **Comparison target**: What should changes be compared against?
   - `uncommitted` – All uncommitted changes vs HEAD (default)
@@ -106,7 +114,9 @@ Determine the comparison scope from the user's request and git state.
   - `<branch_name>` – Compare against specific branch
 
 **Example prompt to user (only if scope is unclear):**
+
 > "You're on branch `feature/xyz`. What should I compare against?
+>
 > - `uncommitted` (default) - review all uncommitted changes
 > - `main` - review all changes on this branch vs main
 > - Other branch name?"
@@ -127,6 +137,7 @@ Default to `context_builder` for any request that is broad, architectural, evalu
 Do **not** spend tool calls proving that these requests are complex. If the user is asking you to evaluate logic, assess a design, rethink a flow, or reason about behavior across a system, call `context_builder` immediately.
 
 Use the fast path only when the request is already small and obvious:
+
 ```bash
 rp-cli -w <window_id> -e 'search "<key term>"'
 rp-cli -w <window_id> -e 'select add RootName/path/to/FileA.swift RootName/path/to/FileB.swift'
@@ -135,6 +146,7 @@ rp-cli -w <window_id> -e 'select add RootName/path/to/FileA.swift RootName/path/
 If there is any real doubt that the fast path will fully cover the task, use `context_builder`.
 
 Otherwise use `context_builder`:
+
 ```bash
 rp-cli -w <window_id> -e 'builder "<task>The actual problem to solve — not about exporting or prompting</task>
 <context>Scope: <what you found>.</context>" --response-type clarify'
@@ -148,12 +160,14 @@ rp-cli -w <window_id> -e 'builder "<task>Code review of changes against <confirm
 **If you used `context_builder`, skip this step entirely and go straight to Step 4.** The builder already curated the selection, managed the token budget, and wrote the prompt. Do not read the prompt back, do not inspect the selection, do not check token counts, and do not critique, rewrite, or "improve" the generated prompt text. Treat the builder's output as the final payload for export.
 
 **If you used the fast path**, check the selection and prompt text before exporting:
+
 ```bash
 rp-cli -w <window_id> -e 'select get'
 rp-cli -w <window_id> -e 'prompt get'
 ```
 
 If available in this surface, the fast path may also inspect token state:
+
 ```bash
 rp-cli -w <window_id> -e 'context --include selection,tokens'
 ```
@@ -163,6 +177,7 @@ If the prompt wording or selection is off, fix it before exporting.
 ### 4. Export
 
 Use a unique repo-local relative path such as:
+
 - `prompt-exports/<yyyy-mm-dd>-<hhmmss>-question-<slug-from-request>.md`
 - `prompt-exports/<yyyy-mm-dd>-<hhmmss>-plan-<slug-from-request>.md`
 - `prompt-exports/<yyyy-mm-dd>-<hhmmss>-review-<slug-from-request>.md`
@@ -172,6 +187,7 @@ Choose `<slug-from-request>` by summarizing the user's request into a short file
 Unless the user explicitly asks for another destination, keep the export path relative and repo-local under `prompt-exports/`.
 
 Preset mapping:
+
 - `Question` → `standard` (only for specific, bounded questions)
 - `Plan` → `plan` (default for generic, open-ended, or ambiguous requests)
 - `Review` → `codeReview`
@@ -194,6 +210,6 @@ rp-cli -w <window_id> -e 'prompt export "prompt-exports/<unique filename>.md" --
 - Reusing generic filenames like `oracle-prompt.md` by default
 - Using generic slugs like `export`, `question`, or `plan` when the request gives you enough detail for a better filename
 - Writing to an absolute path or outside the repo by default when the user did not ask for that
-- Passing export/prompt meta-framing to `context_builder` — instructions like "export a prompt for X" or "build context for a ChatGPT prompt about Y" cause the builder to write a prompt *about prompting* instead of a prompt that solves X. Always pass the extracted task directly.
+- Passing export/prompt meta-framing to `context_builder` — instructions like "export a prompt for X" or "build context for a ChatGPT prompt about Y" cause the builder to write a prompt _about prompting_ instead of a prompt that solves X. Always pass the extracted task directly.
 
 Report the final export path, prompt type, whether you used the fast path or `context_builder`, and token count if available.

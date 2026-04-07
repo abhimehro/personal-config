@@ -294,29 +294,31 @@ class TestScoreLinearIssue(unittest.TestCase):
         issue = self._issue(state={"name": "In Progress", "type": "started"})
         score_started = mb.score_linear_issue(issue, self.TODAY_ISO, self.TODAY_DATE)
         issue_backlog = self._issue(state={"name": "Backlog", "type": "backlog"})
-        score_backlog = mb.score_linear_issue(issue_backlog, self.TODAY_ISO, self.TODAY_DATE)
+        score_backlog = mb.score_linear_issue(
+            issue_backlog, self.TODAY_ISO, self.TODAY_DATE
+        )
         assert score_started > score_backlog
 
     def test_label_bonus(self):
         issue_bug = self._issue(labels={"nodes": [{"name": "Bug"}]})
         issue_plain = self._issue()
-        assert mb.score_linear_issue(issue_bug, self.TODAY_ISO, self.TODAY_DATE) > mb.score_linear_issue(
-            issue_plain, self.TODAY_ISO, self.TODAY_DATE
-        )
+        assert mb.score_linear_issue(
+            issue_bug, self.TODAY_ISO, self.TODAY_DATE
+        ) > mb.score_linear_issue(issue_plain, self.TODAY_ISO, self.TODAY_DATE)
 
     def test_staleness_penalty(self):
         issue_stale = self._issue(updatedAt="2026-02-01T00:00:00Z")
         issue_fresh = self._issue(updatedAt="2026-03-24T00:00:00Z")
-        assert mb.score_linear_issue(issue_fresh, self.TODAY_ISO, self.TODAY_DATE) >= mb.score_linear_issue(
-            issue_stale, self.TODAY_ISO, self.TODAY_DATE
-        )
+        assert mb.score_linear_issue(
+            issue_fresh, self.TODAY_ISO, self.TODAY_DATE
+        ) >= mb.score_linear_issue(issue_stale, self.TODAY_ISO, self.TODAY_DATE)
 
     def test_cycle_bonus(self):
         issue_cycle = self._issue(cycle={"id": "abc"})
         issue_no_cycle = self._issue()
-        assert mb.score_linear_issue(issue_cycle, self.TODAY_ISO, self.TODAY_DATE) > mb.score_linear_issue(
-            issue_no_cycle, self.TODAY_ISO, self.TODAY_DATE
-        )
+        assert mb.score_linear_issue(
+            issue_cycle, self.TODAY_ISO, self.TODAY_DATE
+        ) > mb.score_linear_issue(issue_no_cycle, self.TODAY_ISO, self.TODAY_DATE)
 
     def test_score_never_negative(self):
         issue = self._issue(updatedAt="2020-01-01T00:00:00Z")
