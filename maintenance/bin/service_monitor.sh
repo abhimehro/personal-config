@@ -120,7 +120,7 @@ check_disabled_status() {
 
 check_process_running() {
 	local process=$1
-	ps aux | grep -i -- "$process" | grep -v grep >/dev/null 2>&1
+	pgrep -i -- "$process" >/dev/null 2>&1
 }
 
 count_widget_extensions() {
