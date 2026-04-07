@@ -230,6 +230,7 @@ def _matches_any_impl(path_str: str, patterns_tuple: tuple[str, ...]) -> bool:
     compiled = _compile_patterns(patterns_tuple)
     return bool(compiled.match(os.path.normcase(path_str)))
 
+
 def matches_any(path_str: str, patterns: list[str]) -> bool:
     if not patterns:
         return False

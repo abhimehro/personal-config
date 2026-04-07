@@ -40,47 +40,47 @@
 
 ### personal-config (10 open, 2 recently merged)
 
-| PR # | Status | Title | Category | Created | Changed Files | Notes |
-|------|--------|-------|----------|---------|---------------|-------|
-| **728** | **MERGED** | 🎨 Palette: Graceful TTY Degradation for spinners | UX | 2026-04-03 | 2 | Merged 19:38:59 |
-| **727** | **MERGED** | ⚡ Bolt: fnmatch→regex optimization | PERFORMANCE | 2026-04-03 | 1 | Merged 19:38:43 |
-| 726 | OPEN | ⚡ Bolt: optimize matches_any with compiled regex | PERFORMANCE | 2026-04-03 | 1 | **DUPLICATE of #727** |
-| 725 | OPEN | ⚡ Bolt: rglob→os.walk hotspot discovery | PERFORMANCE | 2026-04-03 | 1 | — |
-| 724 | OPEN | ⚡ Bolt: optimize datetime parsing in Linear issue | PERFORMANCE | 2026-04-03 | 1 | — |
-| 723 | OPEN | ⚡ Bolt: Optimize dictionary access in AdGuard | PERFORMANCE | 2026-04-03 | 2 | — |
-| 722 | OPEN | ⚡ Bolt: optimize matches_any with cached regex | PERFORMANCE | 2026-04-03 | 1 | **DUPLICATE of #727** |
-| 719 | OPEN | chore: Jules Daily QA domain injection | CI/INFRA | 2026-04-02 | 1 | — |
-| 710 | OPEN | chore: Jules Daily QA & Agentic Review | CI/INFRA | 2026-04-02 | 0 | **ZERO-DIFF** |
-| 708 | OPEN | ⚡ Bolt: basename→parameter expansion in test runner | PERFORMANCE | 2026-04-02 | 1 | — |
+| PR #    | Status     | Title                                                | Category    | Created    | Changed Files | Notes                 |
+| ------- | ---------- | ---------------------------------------------------- | ----------- | ---------- | ------------- | --------------------- |
+| **728** | **MERGED** | 🎨 Palette: Graceful TTY Degradation for spinners    | UX          | 2026-04-03 | 2             | Merged 19:38:59       |
+| **727** | **MERGED** | ⚡ Bolt: fnmatch→regex optimization                  | PERFORMANCE | 2026-04-03 | 1             | Merged 19:38:43       |
+| 726     | OPEN       | ⚡ Bolt: optimize matches_any with compiled regex    | PERFORMANCE | 2026-04-03 | 1             | **DUPLICATE of #727** |
+| 725     | OPEN       | ⚡ Bolt: rglob→os.walk hotspot discovery             | PERFORMANCE | 2026-04-03 | 1             | —                     |
+| 724     | OPEN       | ⚡ Bolt: optimize datetime parsing in Linear issue   | PERFORMANCE | 2026-04-03 | 1             | —                     |
+| 723     | OPEN       | ⚡ Bolt: Optimize dictionary access in AdGuard       | PERFORMANCE | 2026-04-03 | 2             | —                     |
+| 722     | OPEN       | ⚡ Bolt: optimize matches_any with cached regex      | PERFORMANCE | 2026-04-03 | 1             | **DUPLICATE of #727** |
+| 719     | OPEN       | chore: Jules Daily QA domain injection               | CI/INFRA    | 2026-04-02 | 1             | —                     |
+| 710     | OPEN       | chore: Jules Daily QA & Agentic Review               | CI/INFRA    | 2026-04-02 | 0             | **ZERO-DIFF**         |
+| 708     | OPEN       | ⚡ Bolt: basename→parameter expansion in test runner | PERFORMANCE | 2026-04-02 | 1             | —                     |
 
 ### ctrld-sync (1 open)
 
-| PR # | Status | Title | Category | Created | Changed Files | Notes |
-|------|--------|-------|----------|---------|---------------|-------|
-| 697 | OPEN | fix: Update ruff configuration schema | FIX | 2026-04-03 | 1 | Ruff deprecation warning |
+| PR # | Status | Title                                 | Category | Created    | Changed Files | Notes                    |
+| ---- | ------ | ------------------------------------- | -------- | ---------- | ------------- | ------------------------ |
+| 697  | OPEN   | fix: Update ruff configuration schema | FIX      | 2026-04-03 | 1             | Ruff deprecation warning |
 
 ### email-security-pipeline (3 open)
 
-| PR # | Status | Title | Category | Created | Changed Files | Notes |
-|------|--------|-------|----------|---------|---------------|-------|
-| 629 | OPEN | chore: update AGENTS.md test count/dev setup | CHORE | 2026-04-03 | 1 | Documentation |
-| 626 | OPEN | chore(actions): consolidate workflow automation | CI/INFRA | 2026-04-03 | 14 | **DRAFT** - workflow updates |
-| 625 | OPEN | Jules Daily QA & Agentic Review | CI/INFRA | 2026-04-03 | 0 | **ZERO-DIFF** |
+| PR # | Status | Title                                           | Category | Created    | Changed Files | Notes                        |
+| ---- | ------ | ----------------------------------------------- | -------- | ---------- | ------------- | ---------------------------- |
+| 629  | OPEN   | chore: update AGENTS.md test count/dev setup    | CHORE    | 2026-04-03 | 1             | Documentation                |
+| 626  | OPEN   | chore(actions): consolidate workflow automation | CI/INFRA | 2026-04-03 | 14            | **DRAFT** - workflow updates |
+| 625  | OPEN   | Jules Daily QA & Agentic Review                 | CI/INFRA | 2026-04-03 | 0             | **ZERO-DIFF**                |
 
 ### Seatek_Analysis (3 open)
 
-| PR # | Status | Title | Category | Created | Changed Files | Notes |
-|------|--------|-------|----------|---------|---------------|-------|
-| 122 | OPEN | 🛡️ Sentinel: [CRITICAL] Fix TOCTOU vulnerability | SECURITY | 2026-04-02 | 2 | File reading race condition |
-| 121 | OPEN | ⚡ Bolt: Optimize hotspot discovery (os.walk) | PERFORMANCE | 2026-04-02 | 1 | **SIMILAR to personal-config#725** |
-| 120 | OPEN | 🛡️ Sentinel: [CRITICAL] Fix TOCTOU/OOM DoS | SECURITY | 2026-04-01 | 1 | code_health_scanner.py |
+| PR # | Status | Title                                            | Category    | Created    | Changed Files | Notes                              |
+| ---- | ------ | ------------------------------------------------ | ----------- | ---------- | ------------- | ---------------------------------- |
+| 122  | OPEN   | 🛡️ Sentinel: [CRITICAL] Fix TOCTOU vulnerability | SECURITY    | 2026-04-02 | 2             | File reading race condition        |
+| 121  | OPEN   | ⚡ Bolt: Optimize hotspot discovery (os.walk)    | PERFORMANCE | 2026-04-02 | 1             | **SIMILAR to personal-config#725** |
+| 120  | OPEN   | 🛡️ Sentinel: [CRITICAL] Fix TOCTOU/OOM DoS       | SECURITY    | 2026-04-01 | 1             | code_health_scanner.py             |
 
 ### Hydrograph_Versus_Seatek_Sensors_Project (2 open)
 
-| PR # | Status | Title | Category | Created | Changed Files | Notes |
-|------|--------|-------|----------|---------|---------------|-------|
-| 100 | OPEN | 🛡️ Sentinel: Reject symlinks in file validation | SECURITY | 2026-04-02 | 2 | Symlink attack prevention |
-| 99 | OPEN | 🛡️ Sentinel: [MEDIUM] Fix Symlink processing | SECURITY | 2026-04-01 | 2 | **DUPLICATE of #100** |
+| PR # | Status | Title                                           | Category | Created    | Changed Files | Notes                     |
+| ---- | ------ | ----------------------------------------------- | -------- | ---------- | ------------- | ------------------------- |
+| 100  | OPEN   | 🛡️ Sentinel: Reject symlinks in file validation | SECURITY | 2026-04-02 | 2             | Symlink attack prevention |
+| 99   | OPEN   | 🛡️ Sentinel: [MEDIUM] Fix Symlink processing    | SECURITY | 2026-04-01 | 2             | **DUPLICATE of #100**     |
 
 ## Validated Summary (2026-04-03 session)
 

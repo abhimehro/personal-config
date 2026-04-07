@@ -816,7 +816,7 @@ update_progress_if_needed() {
 	local interval="${4:-2}"   # Default: update every 2 seconds
 
 	# Prevent command injection (CWE-78) via eval by validating variable name
-	if [[ ! "$last_update_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+	if [[ ! $last_update_var =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
 		return 1
 	fi
 
@@ -827,7 +827,7 @@ update_progress_if_needed() {
 	# Get last update time from variable
 	local last_time
 	# SECURITY: Prevent Command Injection (CWE-78) by validating dynamic variable name
-	if [[ ! "$last_update_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+	if [[ ! $last_update_var =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
 		echo "Error: Invalid variable name '$last_update_var'" >&2
 		return 1
 	fi
