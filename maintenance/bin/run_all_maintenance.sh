@@ -240,7 +240,7 @@ wait_for_pids() {
 			sleep $delay
 		done
 
-		[ -t 1 ] && tput cnorm 2>/dev/null || true
+		tput cnorm 2>/dev/null || true
 		printf "\r\033[K"
 
 		eval "${old_int_trap:-trap - INT}"
