@@ -191,7 +191,7 @@ wait_for_pids() {
 	local num_chars=${#SPIN_CHARS[@]}
 
 	if [ -t 1 ] && [ -z "${CI-}" ]; then
-		[ -t 1 ] && tput civis 2>/dev/null || true
+		tput civis 2>/dev/null || true
 
 		local old_int_trap
 		old_int_trap=$(trap -p INT)
