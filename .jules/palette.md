@@ -94,3 +94,8 @@
 
 **Learning:** Unconditional ANSI color codes in Node.js CLI tools create severe "terminal spam" for screen readers and CI environments. Even if a script conditionally handles interactive features (like a spinner), unconditionally styling static output (like headers and static messages) still breaks accessibility.
 **Action:** Make both cursor manipulation codes and styling variables (like `COLORS`) strictly conditional on `process.stdout.isTTY` using ternary operators, ensuring a clean and accessible text fallback.
+
+## 2026-03-31 - Clean Termination for Terminal Spinners
+
+**Learning:** When interrupting bash scripts (e.g., via Ctrl+C) that use `\r` to overwrite lines (like loading spinners), failing to clear the line leaves behind incomplete spinner frames or fragmented text, degrading the CLI UX.
+**Action:** Always include `printf "\r\033[K"` in signal traps (SIGINT/SIGTERM) immediately after restoring the cursor (`tput cnorm`) to ensure the line is completely cleared and the terminal is left in a clean state upon termination.
