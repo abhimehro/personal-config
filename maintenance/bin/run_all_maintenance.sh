@@ -134,7 +134,7 @@ spinner() {
 	# Also disable in CI environments to prevent log clutter
 	if [ -t 1 ] && [ -z "${CI-}" ]; then
 		# Hide cursor
-		[ -t 1 ] && tput civis 2>/dev/null || true
+		tput civis 2>/dev/null || true
 
 		# Trap to restore cursor if interrupted
 		local old_int_trap
