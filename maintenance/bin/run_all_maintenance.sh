@@ -167,7 +167,7 @@ spinner() {
 		done
 
 		# Restore cursor
-		[ -t 1 ] && tput cnorm 2>/dev/null || true
+		tput cnorm 2>/dev/null || true
 
 		# Clear spinner line completely
 		printf "\r\033[K"
