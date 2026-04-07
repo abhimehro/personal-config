@@ -34,7 +34,10 @@ from repository_automation_common import (
 )
 
 WORKFLOW_PATTERN = re.compile(r"(uses:\s*)([^@\s]+)@([^\s#]+)")
-PR_TABLE_ROW_PATTERN = re.compile(r"\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|")
+PR_TABLE_ROW_PATTERN = re.compile(
+    r"\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|",
+    re.VERBOSE
+)
 IGNORED_DIRS = {".git", ".venv", "node_modules", "__pycache__"}
 
 

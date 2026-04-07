@@ -43,7 +43,7 @@ if [[ -z $TASK ]]; then
 	fi
 
 	for i in "${!LOGS[@]}"; do
-		echo "   $((i+1))) ${LOGS[$i]##*/}"
+		echo "   $((i + 1))) ${LOGS[$i]##*/}"
 	done
 	echo "   0) Quit"
 
@@ -52,14 +52,14 @@ if [[ -z $TASK ]]; then
 		read -r choice
 		choice="${choice:-1}"
 
-		if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+		if ! [[ $choice =~ ^[0-9]+$ ]]; then
 			echo "${RED}Invalid selection. Please enter a number.${RESET}"
 			continue
 		fi
 
-		if [[ "$choice" -eq 0 ]]; then
+		if [[ $choice -eq 0 ]]; then
 			break
-		elif [[ "$choice" -ge 1 && "$choice" -le "${#LOGS[@]}" ]]; then
+		elif [[ $choice -ge 1 && $choice -le ${#LOGS[@]} ]]; then
 			idx=$((10#$choice - 1))
 			open_files "${LOGS[$idx]}"
 			break

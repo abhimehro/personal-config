@@ -92,6 +92,7 @@
 
 **Learning:** `Path.rglob()` always traverses the entire directory tree before yielding results. When skipping large directories (like `node_modules` or `.venv`), checking the path parts (e.g., `isdisjoint(path.parts)`) still requires the OS to read all those underlying files and directories first, resulting in massive I/O overhead.
 **Action:** When searching a directory tree where large subdirectories should be entirely ignored, use `os.walk()` and modify the `dirs` list in-place (`dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]`). This prunes the tree traversal early and completely bypasses the ignored directories.
+
 ## 2026-06-03 - [Path Pattern Matching Optimization]
 
 **Learning:** When matching file paths against multiple glob patterns in Python (e.g., `any(fnmatch.fnmatch(path, p) for p in patterns)`), iterative `fnmatch.fnmatch` evaluation introduces significant overhead. Replacing this with a single pre-compiled regex generated from `fnmatch.translate()` and cached with `@functools.lru_cache` provides a ~3x performance boost on path matching, avoiding repetitive function calls and parsing.
