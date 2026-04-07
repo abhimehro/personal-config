@@ -39,7 +39,7 @@ spinner_wait() {
 		local c=0
 
 		# Hide cursor
-		[ -t 1 ] && tput civis 2>/dev/null || true
+		tput civis 2>/dev/null || true
 
 		# Save original traps and set temporary ones
 		local old_int_trap
