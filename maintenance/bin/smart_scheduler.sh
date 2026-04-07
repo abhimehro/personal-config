@@ -39,7 +39,7 @@ spinner_wait() {
 		local c=0
 
 		# Hide cursor
-		tput civis 2>/dev/null || true
+		[ -t 1 ] && tput civis 2>/dev/null || true
 
 		# Save original traps and set temporary ones
 		local old_int_trap
@@ -60,7 +60,7 @@ spinner_wait() {
 		printf "\r\033[K" # Clear line
 
 		# Restore cursor and original traps
-		tput cnorm 2>/dev/null || true
+		[ -t 1 ] && tput cnorm 2>/dev/null || true
 		eval "${old_int_trap:-trap - INT}"
 		eval "${old_term_trap:-trap - TERM}"
 	else
