@@ -60,7 +60,7 @@ spinner_wait() {
 		printf "\r\033[K" # Clear line
 
 		# Restore cursor and original traps
-		[ -t 1 ] && tput cnorm 2>/dev/null || true
+		tput cnorm 2>/dev/null || true
 		eval "${old_int_trap:-trap - INT}"
 		eval "${old_term_trap:-trap - TERM}"
 	else
