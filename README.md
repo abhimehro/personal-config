@@ -672,26 +672,65 @@ pp-use-proton    # then: ssh -T git@github-proton
 
 ### Fish Shell Configuration
 
-**Control D Network Mode Functions:**
+The Fish setup in this repo is meant to stay practical, reproducible, and easy to recover after a rebuild.
 
-After installing configs and reloading fish shell (`exec fish`), you'll have access to these convenient functions:
+**Source of truth:**
 
-| Function       | Description                                            |
-| -------------- | ------------------------------------------------------ |
-| `nm-status`    | Check current network status (Control D vs Windscribe) |
-| `nm-browse`    | Switch to Control D browsing mode (balanced privacy)   |
-| `nm-privacy`   | Switch to Control D privacy mode (maximum security)    |
-| `nm-gaming`    | Switch to Control D gaming mode (minimal filtering)    |
-| `nm-vpn`       | Switch to Windscribe VPN mode (disables Control D)     |
-| `nm-regress`   | Run full regression test (Control D → Windscribe)      |
-| `nm-cd-status` | Check Control D daemon status                          |
+* `~/dev/personal-config/configs/.config/fish/config.fish`
+* `~/.config/fish/` should be symlinked to `configs/.config/fish/`
 
-**Environment Variable:**
+**What the Fish config does:**
 
-- `NM_ROOT` is automatically set to `$HOME/Documents/dev/personal-config`
+* sets up core PATH entries and shell defaults
+* configures `NM_ROOT` as `~/dev/personal-config`
+* prefers the 1Password SSH agent and falls back to the macOS native agent when needed
+* initializes interactive tools such as `chruby-fish`, `fnm`, `zoxide`, and `fzf`
+* keeps a Dracula-aligned experience across Fish syntax colors, Tide, `fzf`, and `bat`
+* provides aliases, abbreviations, autoloaded helper functions, and a time-based greeting
 
-**Configuration Location:**
+**Theme layering:**
 
-- `~/.config/fish/` → `configs/.config/fish/` (symlinked)
-- Functions: `~/.config/fish/functions/nm-*.fish`
-- Config: `~/.config/fish/config.fish`
+* **Ghostty** provides the terminal color theme
+* **Tide** manages prompt styling via universal variables
+* **Fish syntax highlighting** is repaired on interactive startup by `__ensure_dracula_theme`, which re-runs `fish_config theme choose "Dracula Official"` only when drift is detected
+* **fzf** uses Dracula colors with the `full` style preset via `FZF_DEFAULT_OPTS`
+
+**Control D network mode functions:**
+
+After reloading Fish with `exec fish`, these helpers are available:
+
+| Function | Description |
+| --- | --- |
+| `nm-status` | Check current network status (Control D vs Windscribe) |
+| `nm-browse` | Switch to Control D browsing mode (balanced privacy) |
+| `nm-privacy` | Switch to Control D privacy mode (maximum security) |
+| `nm-gaming` | Switch to Control D gaming mode (minimal filtering) |
+| `nm-vpn` | Switch to Windscribe VPN mode (disables Control D) |
+| `nm-regress` | Run full regression test (Control D → Windscribe) |
+| `nm-cd-status` | Check Control D daemon status |
+
+**Safe files to edit manually:**
+
+* `configs/.config/fish/config.fish`
+* `configs/.config/fish/fish_plugins`
+* `configs/.config/fish/RESTORE_CUSTOMIZATIONS.md`
+* `configs/.config/fish/functions/__ensure_dracula_theme.fish`
+* `configs/.config/fish/functions/fish_greeting.fish`
+* `configs/.config/fish/functions/git-mirror-clean.fish`
+* `configs/.config/fish/functions/vibe.fish`
+* `configs/.config/fish/functions/__run_editor.fish`
+
+**Usually plugin-managed or machine-generated:**
+
+* `configs/.config/fish/conf.d/*.fish`
+* `configs/.config/fish/functions/_fzf_*`
+* `configs/.config/fish/functions/_tide_*`
+* `configs/.config/fish/fish_variables`
+
+**Useful commands:**
+
+```fish
+exec fish
+fish --no-config --no-execute ~/dev/personal-config/configs/.config/fish/config.fish
+fisher update
+```

@@ -20,7 +20,7 @@ export PATH="$HOME/.cache/lm-studio/bin:$PATH"
 # Environment Variables
 # ============================================
 # Network Mode Manager - Control D and Windscribe integration
-export NM_ROOT="$HOME/Documents/dev/personal-config"
+export NM_ROOT="$HOME/dev/personal-config"
 
 # Set default editor - NeoVim
 if [ -z "$EDITOR" ]; then
@@ -62,8 +62,8 @@ alias ...='cd ../..'
 alias ....='cd ../../..'
 alias .....='cd ../../../..'
 
-alias dev='cd ~/Documents/dev'
-alias config='cd ~/Documents/dev/personal-config'
+alias dev='cd ~/dev'
+alias config='cd ~/dev/personal-config'
 alias downloads='cd ~/Downloads'
 alias desktop='cd ~/Desktop'
 
@@ -138,7 +138,7 @@ if [ -z "$BAT_THEME" ]; then
 fi
 
 if [ -z "$FZF_DEFAULT_OPTS" ]; then
-    export FZF_DEFAULT_OPTS="--color=bg+:#44475a,bg:#282a36,spinner:#f8f8f2,hl:#6272a4,fg:#f8f8f2,header:#6272a4,info:#bd93f9,pointer:#ff79c6,marker:#ff79c6,fg+:#f8f8f2,prompt:#bd93f9,hl+:#ff79c6"
+    export FZF_DEFAULT_OPTS="--style=full --color=bg+:#44475a,bg:#282a36,spinner:#f8f8f2,hl:#6272a4,fg:#f8f8f2,header:#6272a4,info:#bd93f9,pointer:#ff79c6,marker:#ff79c6,fg+:#f8f8f2,prompt:#bd93f9,hl+:#ff79c6"
 fi
 
 # ============================================
