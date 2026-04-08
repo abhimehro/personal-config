@@ -1,16 +1,30 @@
 # Fish Shell Customizations (Tide + Dracula)
 
-This document captures the current "known good" Fish setup and how to restore it.
+This document captures the current known-good Fish setup and how to restore it after a fresh machine setup or shell reset.
+
+## Source of Truth
+
+The canonical Fish config for this repo lives at:
+
+```text
+~/dev/personal-config/configs/.config/fish/config.fish
+```
+
+Your live config should point to it via:
+
+```text
+~/.config/fish/ -> ~/dev/personal-config/configs/.config/fish/
+```
 
 ## Prompt: Tide v6 (via Fisher)
 
-Install/update plugins (including Tide):
+Install or update plugins:
 
 ```fish
 fisher update
 ```
 
-If `fisher` is not installed (fresh machine / disaster recovery):
+If `fisher` is not installed yet:
 
 ```fish
 curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source
@@ -18,15 +32,40 @@ fisher install jorgebucaran/fisher
 fisher update
 ```
 
-To reconfigure Tide's layout interactively:
+To reconfigure Tide interactively:
 
 ```fish
 tide configure
 ```
 
-### Tide Dracula Colors
+## Dracula Theme Layering
 
-Tide manages prompt colors via `set -U` universal variables. Apply the Dracula palette:
+The terminal look is intentionally layered:
+
+* **Ghostty** handles the terminal color theme
+* **Tide** handles the prompt via universal variables
+* **Fish syntax highlighting** uses the Dracula Fish theme
+* **fzf** and **bat** are styled from `config.fish`
+
+## Fish Syntax Highlighting
+
+Fish syntax colors are repaired on interactive startup by the helper:
+
+```fish
+__ensure_dracula_theme
+```
+
+That helper re-runs this command only when startup drift is detected:
+
+```fish
+fish_config theme choose "Dracula Official"
+```
+
+This is intentional because Fish syntax colors had occasionally drifted away from Dracula after startup.
+
+## Tide Prompt Colors
+
+Tide colors are stored in universal variables. Example Dracula-aligned values:
 
 ```fish
 # Git segment
@@ -51,35 +90,48 @@ set -U tide_context_color_default 8BE9FD
 set -U tide_context_color_root FF5555
 ```
 
-## Theme: Dracula (syntax highlighting)
+## Tool Theming from `config.fish`
 
-Syntax colors are managed by the `dracula/fish` theme, activated once via:
+`config.fish` currently sets:
+
+* `BAT_THEME=Dracula`
+* `FZF_DEFAULT_OPTS` with Dracula colors and `--style=full`
+* `FZF_DEFAULT_COMMAND` and `FZF_CTRL_T_COMMAND` via `fd` when available
+
+## SSH Agent Behavior
+
+`config.fish` includes a health check that:
+
+* prefers the 1Password SSH agent when its socket is available
+* falls back to the macOS native SSH agent if needed
+
+This keeps interactive shells and IDE terminals more stable.
+
+## Safe Files to Edit
+
+These are the main Fish files intended for manual edits:
+
+* `configs/.config/fish/config.fish`
+* `configs/.config/fish/fish_plugins`
+* `configs/.config/fish/RESTORE_CUSTOMIZATIONS.md`
+* `configs/.config/fish/functions/__ensure_dracula_theme.fish`
+* `configs/.config/fish/functions/fish_greeting.fish`
+* `configs/.config/fish/functions/git-mirror-clean.fish`
+* `configs/.config/fish/functions/vibe.fish`
+* `configs/.config/fish/functions/__run_editor.fish`
+
+These are generally plugin-managed or machine-generated:
+
+* `configs/.config/fish/conf.d/*.fish`
+* `configs/.config/fish/functions/_fzf_*`
+* `configs/.config/fish/functions/_tide_*`
+* `configs/.config/fish/fish_variables`
+
+## Verification
+
+After making changes:
 
 ```fish
-fish_config theme choose "Dracula Official"
-```
-
-This stores colors as universals — no need to set them in `config.fish`.
-
-Tool-specific theming is also set in `config.fish`:
-
-- **fzf**: `FZF_DEFAULT_OPTS` → Dracula color scheme (set only if not already defined)
-- **bat**: `BAT_THEME` → `Dracula` (set only if not already defined)
-
-## SSH Agent
-
-`config.fish` includes a health check that uses 1Password's SSH agent when
-available and falls back to macOS native agent if the socket is missing.
-This prevents IDE background terminals from stalling (see `tasks/lessons.md` Lesson 0i).
-
-## Greeting Function
-
-A rotating time-based greeting function is defined inline in `config.fish`.
-
-## Verifying Configuration
-
-After making changes, reload Fish:
-
-```fish
+fish --no-config --no-execute ~/dev/personal-config/configs/.config/fish/config.fish
 exec fish
 ```

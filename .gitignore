@@ -243,6 +243,10 @@ configs/.config/fish/fish_variables
 
 # Local/backup files
 configs/.config/fish/config.fish.bak
+configs/.config/fish/config.fish.bak.*
+configs/.config/fish/config.fish.test
+configs/.config/fish/fish_variables*
+configs/.config/fish.backup.*/
 
 # Fisher-installed plugin files (generated on each machine via `fisher update`)
 configs/.config/fish/conf.d/*
@@ -254,7 +258,11 @@ configs/.config/fish/functions/*
 !configs/.config/fish/fish_plugins
 !configs/.config/fish/RESTORE_CUSTOMIZATIONS.md
 !configs/.config/fish/functions/nm-*.fish
+!configs/.config/fish/functions/__ensure_dracula_theme.fish
+!configs/.config/fish/functions/__run_editor.fish
 !configs/.config/fish/functions/fish_greeting.fish
+!configs/.config/fish/functions/git-mirror-clean.fish
+!configs/.config/fish/functions/vibe.fish
 !configs/.config/fish/functions/*.backup
 
 # Local-only / machine-generated files

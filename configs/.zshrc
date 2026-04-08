@@ -1,2 +1,2 @@
-
-export PATH="$PATH:$HOME/.local/bin"
+# Minimal Zsh compatibility shim
+export PATH="$HOME/.local/bin:$PATH"
