@@ -37,6 +37,11 @@
 **Pattern:** `pre-commit.cursor` used `SECRET_VALUE="${!SECRET_NAME}"`. Entries in `CLOUD_AGENT_INJECTED_SECRET_NAMES` can be human-readable labels with spaces (`GitHub SSH Key`), which are **not** valid bash identifier names → `invalid variable name` at commit time.
 **Rule:** Resolve values with `printenv "$SECRET_NAME"` (after trimming whitespace from comma-split tokens). Canonical copies: `scripts/cursor_cloud_agent_pre_commit.sh` and `scripts/cursor_cloud_agent_commit_msg.sh`.
 
+## Lesson 0r: Injected Cloud hooks do not persist — sync from the repo (2026-04-11)
+
+**Pattern:** Fixes applied only under `~/.cursor/agent-hooks/<hash>/` are **not in git** and disappear on the next fresh Cloud workspace. Injected copies can still use `${!SECRET_NAME}` and break commits when secret **labels** contain spaces.
+**Rule:** After clone in Cursor Cloud, run **`make cursor-cloud-hooks`** (or `./scripts/install_cursor_cloud_agent_hooks.sh`) so `pre-commit.cursor` and `commit-msg.cursor` are overwritten from the canonical scripts in this repository. The installer requires **both** files as **regular** (non-symlink) paths and uses `install -m 0755` instead of `cp` to avoid symlink follow / TOCTOU surprises.
+
 ## Lesson 0e: Jules “Bolt” PRs may ship 100k-line junk fixtures (2026-03-22)
 
 **Pattern:** A performance-titled PR adds a multi-megabyte `test.txt` of generated hostnames and scratch `test_perf*.py` files.
@@ -107,6 +112,11 @@
 **Pattern:** `mcp4_merge_pull_request` fails with "Pull Request is not mergeable" even when PR has no conflicts and all checks pass. PRs return `merge_commit_sha: null` and `mergeable: null` in API responses.
 **Root cause:** Repository settings or branch protection rules may require manual merge approval or lack auto-merge configuration for MCP tools.
 **Rule:** When automated merge via MCP tools fails, verify repo settings: (1) Enable auto-merge in repository settings, (2) Check branch protection rules for merge restrictions, (3) Verify MCP token has sufficient permissions. For security PRs that pass all gates, document approval status and provide manual merge instructions via GitHub UI.
+
+## Lesson 0q: Inventory regex can miss Jules PRs with “fix/” branches (2026-04-11)
+
+**Pattern:** A Jules PR uses branch `fix/github-actions-checkout-version-<taskid>` and title `ci(actions): …` with **no** Bolt/Sentinel/Palette emoji — branch regex may **exclude** it even though the **body** contains `PR created automatically by Jules` and a `jules.google.com` task link.
+**Rule:** Treat PR body/footer as a first-class automation signal when building `tasks/pr-inventory.md` (not only branch/title). Optionally match `jules\.google\.com/task/` in `gh pr view --json body`.
 
 ## Lesson 0p: Jules zero-diff QA PRs pollute PR list (2026-04-03)
 
