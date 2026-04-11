@@ -7,6 +7,7 @@ const COLORS = {
   Reset: isTTY ? "\x1b[0m" : "",
   Cyan: isTTY ? "\x1b[36m" : "",
   Green: isTTY ? "\x1b[32m" : "",
+  Red: isTTY ? "\x1b[31m" : "",
   Dim: isTTY ? "\x1b[2m" : "",
 };
 
@@ -28,20 +29,12 @@ const thinkingMessages = [
   "Looking at the sky...",
 ];
 
-const stopSpinner = () => {
+const clearSpinner = () => {
   if (spinnerInterval) {
     clearInterval(spinnerInterval);
     spinnerInterval = undefined;
     if (process.stdout.isTTY) {
-      process.stdout.write(
-        ANSI.ShowCursor +
-          "\r" +
-          COLORS.Green +
-          "Assistant:" +
-          COLORS.Reset +
-          " " +
-          ANSI.ClearLine,
-      );
+      process.stdout.write(ANSI.ShowCursor + "\r" + ANSI.ClearLine);
     }
   }
 };
@@ -167,9 +160,17 @@ const session = await client.createSession({
   tools: [getWeather, getCurrentTime],
 });
 
+let responseStarted = false;
+
 session.on((event: SessionEvent) => {
   if (event.type === "assistant.message_delta") {
-    stopSpinner();
+    if (!responseStarted) {
+      clearSpinner();
+      process.stdout.write(
+        COLORS.Green + "Assistant:" + COLORS.Reset + " "
+      );
+      responseStarted = true;
+    }
     process.stdout.write(event.data.deltaContent);
   }
 });
@@ -210,7 +211,7 @@ printHeader();
 
 // Graceful shutdown on Ctrl+C
 rl.on("SIGINT", async () => {
-  stopSpinner();
+  clearSpinner();
   console.log(`\n${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
   try {
     await client.stop();
@@ -223,7 +224,7 @@ rl.on("SIGINT", async () => {
 
 // Graceful shutdown on EOF (Ctrl+D)
 rl.on("close", async () => {
-  stopSpinner();
+  clearSpinner();
   console.log(`\n${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
   try {
     await client.stop();
@@ -277,10 +278,16 @@ ${COLORS.Cyan}Commands:${COLORS.Reset}
     }
 
     startSpinner();
+    responseStarted = false;
     try {
       await session.sendAndWait({ prompt: input });
+    } catch (err: any) {
+      clearSpinner();
+      console.log(
+        `${COLORS.Red}Error:${COLORS.Reset} Could not reach the assistant. Please try again. (${err?.message || "Unknown error"})`
+      );
     } finally {
-      stopSpinner();
+      clearSpinner();
     }
     console.log("\n");
     prompt();

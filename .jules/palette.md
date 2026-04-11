@@ -94,3 +94,8 @@
 
 **Learning:** Unconditional ANSI color codes in Node.js CLI tools create severe "terminal spam" for screen readers and CI environments. Even if a script conditionally handles interactive features (like a spinner), unconditionally styling static output (like headers and static messages) still breaks accessibility.
 **Action:** Make both cursor manipulation codes and styling variables (like `COLORS`) strictly conditional on `process.stdout.isTTY` using ternary operators, ensuring a clean and accessible text fallback.
+
+## 2026-04-10 - Graceful Cleanup of CLI Animations
+
+**Learning:** When interrupting an asynchronous stream (like a CLI loading spinner) or handling an error, hardcoded prefix strings in the cleanup function can cause visual artifacts. If the stream starts and fails, or if a user hits Ctrl+C, they might be left with orphaned text like "Assistant: " hanging on their terminal prompt.
+**Action:** Separate terminal clearing logic (e.g. `clearSpinner`) from content rendering. Only print standard prefixes when the response actually begins streaming, and ensure error handlers and signal traps completely clear the line.
