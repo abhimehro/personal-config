@@ -20,6 +20,8 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+trap 'echo -e "\n${YELLOW}👋 Cancelled by user. Goodbye!${NC}"; exit 130' SIGINT
+
 log() { echo -e "${BLUE}[INFO]${NC} $*"; }
 success() { echo -e "${GREEN}[OK]${NC} $*"; }
 error() {

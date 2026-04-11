@@ -99,3 +99,8 @@
 
 **Learning:** When interrupting an asynchronous stream (like a CLI loading spinner) or handling an error, hardcoded prefix strings in the cleanup function can cause visual artifacts. If the stream starts and fails, or if a user hits Ctrl+C, they might be left with orphaned text like "Assistant: " hanging on their terminal prompt.
 **Action:** Separate terminal clearing logic (e.g. `clearSpinner`) from content rendering. Only print standard prefixes when the response actually begins streaming, and ensure error handlers and signal traps completely clear the line.
+
+## 2026-04-11 - Graceful SIGINT handling in interactive scripts
+
+**Learning:** When users interrupt an interactive script via Ctrl+C, abrupt termination can leave the terminal in an untidy state without giving proper feedback.
+**Action:** In interactive bash scripts, always add a `trap` for `SIGINT` that outputs a polite, color-coded cancellation message and terminates using `exit 130` (the POSIX standard for `SIGINT`).

@@ -14,6 +14,8 @@ BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+trap 'echo -e "\n${YELLOW}👋 Cancelled by user. Goodbye!${NC}"; exit 130' SIGINT
+
 # Emojis 🎨
 E_INFO="ℹ️"
 E_OK="✅"
