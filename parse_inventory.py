@@ -9,8 +9,13 @@ def _parse_env_file(filepath: str, env_vars: dict) -> None:
         with open(filepath, "r") as f:
             for line in f:
                 line = line.strip()
-                if not line or line.startswith("#") or "=" not in line:
+                if not line:
                     continue
+                if line.startswith("#"):
+                    continue
+                if "=" not in line:
+                    continue
+
                 if line.startswith("export "):
                     line = line[len("export "):]
                 key, val = line.split("=", 1)

@@ -228,3 +228,7 @@
 ## 2026-04-11 - CodeScene PR Check failure (Complex Method) on refactoring
 **Learning:** Adding new parsing logic (like manual `.env` processing loops and `try/except` blocks) directly inside an existing function (e.g., `run_gh`) increases the cyclomatic complexity. This can trigger CodeScene CI check failures for "Complex Method" or "Complex Conditional".
 **Prevention:** Always extract multi-step helper logic, especially file parsing or validation loops, into separate, well-named helper functions (e.g., `_parse_env_file`) to keep the main function focused on orchestration and keep the complexity score within passing limits.
+
+## 2026-04-11 - CodeScene PR Check failure (Complex Conditional) on refactoring
+**Learning:** Writing compound boolean expressions in `if` statements (e.g. `if not line or line.startswith("#") or "=" not in line:`) can artificially inflate cyclomatic complexity scores, triggering the "Complex Conditional" limit in CodeScene's PR checks.
+**Prevention:** To pass strict complexity gates, break apart multi-clause compound conditions into separate `if` blocks with early returns (or `continue` inside loops). This satisfies the parser's complexity threshold while keeping the logic identical.
