@@ -1,141 +1,49 @@
-# PR triage — automated PR review agent (review-and-merge)
+# PR triage — automated PR review agent (2026-04-11)
 
-**Preflight:** `bash scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml` — **passed** (read-only); expected `viewerCanEnableAutoMerge=false` warnings.
+**Preflight:** `bash scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml` — **passed** (read-only).
 
-## Historical triage — 2026-03-27 (archived)
+## Merge ordering (executed)
 
-| Repo                                     | PR # | Category    | Duplicate / stale           | Disposition         | Rationale                                                                                                                                                         |
-| ---------------------------------------- | ---: | ----------- | --------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| personal-config                          |  682 | SECURITY    | None                        | **MERGED** (squash) | CWE-377 LaunchAgent log paths; checks green. **Auto-fix:** restored `.trunk/plugins/trunk` symlink to match `main` (Jules had pointed it at a runner-local path). |
-| personal-config                          |  681 | CI/INFRA    | None                        | **ESCALATE / hold** | Merge conflicts with `main`; daily QA batch — human rebase + review.                                                                                              |
-| personal-config                          |  678 | CI/INFRA    | None                        | **ESCALATE**        | Draft workflow consolidation — CI trust boundary; verify action pins and `permissions:`.                                                                          |
-| personal-config                          |  677 | SECURITY    | Superseded by #682          | **CLOSED**          | Same plist fix as #682; redundant sentinel doc + conflicts.                                                                                                       |
-| ctrld-sync                               |  672 | SECURITY    | None                        | **MERGED**          | URL length cap in `validate_folder_url`; checks green.                                                                                                            |
-| ctrld-sync                               |  669 | CI/INFRA    | None                        | **ESCALATE**        | Draft workflow consolidation.                                                                                                                                     |
-| ctrld-sync                               |  668 | SECURITY    | Superseded by #672          | **CLOSED**          | Same URL limit intent; conflicting + #672 merged.                                                                                                                 |
-| email-security-pipeline                  |  587 | CI/INFRA    | None                        | **MERGED**          | Fix invalid `<version>` placeholder in pre-commit config; checks green.                                                                                           |
-| email-security-pipeline                  |  592 | PERFORMANCE | None                        | **MERGED**          | File signature detection optimization; checks green.                                                                                                              |
-| email-security-pipeline                  |  596 | UI          | None                        | **MERGED**          | CLI spinner / a11y; checks green.                                                                                                                                 |
-| email-security-pipeline                  |  597 | SECURITY    | None                        | **MERGED**          | Attachment detection bypass; checks green; merge before closing #585.                                                                                             |
-| email-security-pipeline                  |  594 | CI/INFRA    | None                        | **ESCALATE**        | Draft; 14 workflow files — human review required.                                                                                                                 |
-| email-security-pipeline                  |  593 | CI/INFRA    | No-op                       | **CLOSED**          | `changedFiles == 0`; QA narrative only.                                                                                                                           |
-| email-security-pipeline                  |  585 | SECURITY    | Obsolete vs main after #597 | **CLOSED**          | Conflicted; superseded by merged attachment hardening.                                                                                                            |
-| Seatek_Analysis                          |  106 | SECURITY    | None                        | **MERGED**          | Redact exception details in logs; checks green.                                                                                                                   |
-| Seatek_Analysis                          |  107 | PERFORMANCE | None                        | **MERGED**          | Vectorized correction application; checks green (merged after #106).                                                                                              |
-| Hydrograph_Versus_Seatek_Sensors_Project |   93 | PERFORMANCE | None                        | **MERGED**          | Micro-optimizations; checks green.                                                                                                                                |
-| Hydrograph_Versus_Seatek_Sensors_Project |   94 | SECURITY    | None                        | **MERGED**          | Centralize `sanitize_filename`; checks green (merged after #93).                                                                                                  |
+1. **ctrld-sync:** #712 (Sentinel + tests) → #714 (complementary loopback guard) → #716 (Palette UX). Re-checked mergeability after each merge.
+2. **dotfiles-iac:** #748 (Sentinel) → #758 (Bolt) → #760 (Palette) → #754 (Palette) → #759 (Jules CI pin; discovered mid-run). <!-- pragma: allowlist secret -->
+3. **email-security-pipeline:** #657 (Sentinel) → #658 (Bolt) → #659 (chore) → #662 (Palette) — then close duplicate Palette PRs.
+4. **Seatek_Analysis:** #129 → attempted #130 (**blocked** — conflicting after base update).
+5. **Hydrograph:** #116 → close #112 / #114 as superseded.
 
-### Merge ordering — 2026-03-27 (executed)
+## Dispositions table
 
-1. email-security-pipeline: 587 → 592 → 596 → 597 (dependency/UI before security parser change).
-2. personal-config: 682 (after symlink fix).
-3. ctrld-sync: 672.
-4. Seatek_Analysis: 106 → 107.
-5. Hydrograph: 93 → 94.
+| Repo | PR | Category | Disposition | Rationale |
+| ---- | --: | -------- | ----------- | --------- |
+| ctrld-sync | 712 | SECURITY | **MERGED** | SSRF loopback tests + implementation; CI green |
+| ctrld-sync | 714 | SECURITY | **MERGED** | Small complementary guard; CI green |
+| ctrld-sync | 716 | UX | **MERGED** | Canonical NO_COLOR / completion UX |
+| ctrld-sync | 715 | SECURITY | **CLOSED** | Superseded by #712; conflicting after merge |
+| ctrld-sync | 711 | UX | **CLOSED** | Duplicate of merged #716 |
+| ctrld-sync | 709 | UX | **CLOSED** | Superseded by #716 |
+| dotfiles-iac | 748 | SECURITY | **MERGED** | CWE-88 hardening; CI green |
+| dotfiles-iac | 752 | SECURITY | **CLOSED** | Superseded by #748 |
+| dotfiles-iac | 758 | PERFORMANCE | **MERGED** | Bolt date parsing; CI green |
+| dotfiles-iac | 760 | UX | **MERGED** | Spinner cleanup; CI green |
+| dotfiles-iac | 754 | UX | **MERGED** | Spinner artifacts; CI green |
+| dotfiles-iac | 747 | UX | **CLOSED** | Redundant vs merged stack; conflicting |
+| dotfiles-iac | 751 | UX | **CLOSED** | Superseded by #754/#760; conflicting |
+| dotfiles-iac | 759 | CI/INFRA | **MERGED** | Jules PR: pin `actions/checkout` SHA; checks green |
+| dotfiles-iac | 756 | CI/INFRA | **ESCALATE** | Draft workflow consolidation — trust boundary |
+| email | 657 | SECURITY | **MERGED** | B101 / assert hygiene; CI green |
+| email | 658 | PERFORMANCE | **MERGED** | Unicode sanitization path; CI green |
+| email | 659 | CHORE | **MERGED** | Formatting only; CI green |
+| email | 662 | UX | **MERGED** | Canonical Palette CLI summary |
+| email | 646 | UX | **CLOSED** | Superseded by #662 |
+| email | 650 | UX | **CLOSED** | Superseded by #662; `submit-pypi` fail unrelated to code (lesson 0f) |
+| email | 656 | UX | **CLOSED** | Superseded by #662 |
+| email | 651 | DEPENDENCY | **ESCALATE** | `transformers` **5.0.0rc3** — major RC; needs human call |
+| email | 660 | CI/INFRA | **ESCALATE** | Draft workflows — permissions / pins review |
+| Seatek | 129 | PERFORMANCE | **MERGED** | CI green |
+| Seatek | 130 | PERFORMANCE | **ESCALATE** | Conflicting after #129; needs merge-from-main |
+| Hydro | 116 | PERFORMANCE | **MERGED** | Canonical redundant-sort fix |
+| Hydro | 112 | PERFORMANCE | **CLOSED** | Superseded by #116 |
+| Hydro | 114 | PERFORMANCE | **CLOSED** | Superseded by #116 |
 
----
+## Automation expansion (policy reminder)
 
-## Triage — 2026-04-03 (this run)
-
-### Summary
-
-- **Total PRs**: 38 across 5 repositories
-- **Security fixes (Sentinel)**: 11 (CRITICAL priority)
-- **Performance optimizations (Bolt)**: 8 (HIGH priority)
-- **UX improvements (Palette)**: 7 (MEDIUM priority)
-- **Maintenance/Chore**: 9 (LOW priority)
-- **Duplicates identified**: 15+ across multiple categories
-
-### Priority Order
-
-1. **CRITICAL**: Sentinel security fixes (CWE-78, TOCTOU, symlink vulnerabilities)
-2. **HIGH**: Bolt performance optimizations
-3. **MEDIUM**: Palette UX improvements
-4. **LOW**: Chore/Documentation updates (close obvious duplicates)
-
-### Duplicate Groups to Close
-
-#### AGENTS.md Updates (personal-config)
-
-- **Keep**: #726 (newest)
-- **Close**: #721, #716, #711, #706 (older duplicates)
-
-#### Ruff Deprecation Fixes (ctrld-sync)
-
-- **Keep**: #697 (newest, more comprehensive)
-- **Close**: #694 (older duplicate)
-
-#### Palette Log Padding
-
-- **personal-config**: Keep #719, close older duplicates
-- **email-security-pipeline**: Keep #628, close #625
-
-#### Bolt ANSI Stripping
-
-- **personal-config**: Keep #723, close older duplicates
-- **email-security-pipeline**: Keep #624
-
-### Planned Actions
-
-#### Security (Sentinel) - CRITICAL
-
-1. **personal-config #722**: Fix Command Injection (CWE-78) via eval
-2. **email-security-pipeline #627**: Fix Command Injection (CWE-78) via eval
-3. **Seatek_Analysis #122**: Fix TOCTOU vulnerability in file reading
-4. **Seatek_Analysis #120**: Fix TOCTOU / OOM DoS vulnerability
-5. **Hydrograph #100**: Reject symlinks in file size validation
-6. **Hydrograph #99**: Fix Symlink processing vulnerability
-
-#### Performance (Bolt) - HIGH
-
-1. **personal-config #727**: fnmatch optimization
-2. **ctrld-sync #696**: Dictionary lookup optimization
-3. **Seatek_Analysis #123**: os.walk vs rglob optimization
-4. **email-security-pipeline #624**: ANSI stripping fast-path
-
-#### UX (Palette) - MEDIUM
-
-1. **personal-config #728**: Graceful TTY degradation
-2. **ctrld-sync #698**: Trailing space for prompts
-3. **email-security-pipeline #628**: Log level padding
-
-### Notes
-
-- All PRs are recent (no stale >30 days)
-- No merge conflicts detected yet (will re-check after each merge)
-- Security fixes should be reviewed carefully for potential conflicts
-- Many similar fixes across repos suggest opportunity for consolidation
-
-| Repo                                     | PR # | Category          | Duplicate / notes                       | Disposition         | Rationale                                                                                                                |
-| ---------------------------------------- | ---: | ----------------- | --------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Seatek_Analysis                          |  114 | PERFORMANCE + fix | Fixes `main` F821 (`BytesIO` undefined) | **MERGED** (squash) | Required for green `validate` on Dependabot PRs; security-adjacent but mechanical import                                 |
-| Seatek_Analysis                          |  115 | DEPENDENCY        | None                                    | **MERGED** (squash) | `actions/setup-python` bump; `validate` failure traced to **pre-merge `main`** bug, not PR diff                          |
-| Seatek_Analysis                          |  116 | DEPENDENCY        | None                                    | **MERGED** (squash) | `actions/checkout` bump; same rationale as #115                                                                          |
-| Seatek_Analysis                          |  117 | SECURITY          | None                                    | **MERGED** (squash) | CLI option injection hardening; CI green                                                                                 |
-| Seatek_Analysis                          |  119 | SECURITY          | None                                    | **MERGED** (squash) | Changelog workflow injection fix; CI green                                                                               |
-| Seatek_Analysis                          |  118 | PERFORMANCE       | Superseded by #114 (+ same code path)   | **CLOSED**          | Redundant with merged #114; could not push merge commit to PR branch (git credential used `cursor[bot]` — see lessons)   |
-| email-security-pipeline                  |  617 | PERFORMANCE       | Preferred over #611                     | **MERGED** (squash) | Newer Laplacian optimization PR                                                                                          |
-| email-security-pipeline                  |  616 | UI                | None                                    | **MERGED** (squash) | `submit-pypi` failed with GitHub **HttpError** on dependency snapshot API — **unrelated** to PR code; other checks green |
-| email-security-pipeline                  |  611 | PERFORMANCE       | Duplicate of #617                       | **CLOSED**          | Superseded by #617                                                                                                       |
-| email-security-pipeline                  |  618 | CI/INFRA          | No-op                                   | **CLOSED**          | `changedFiles == 0`                                                                                                      |
-| email-security-pipeline                  |  614 | PERFORMANCE       | Conflicts after #617                    | **HOLD**            | `mergeable=CONFLICTING`; CodeScene previously flagged complexity — comment left, no merge                                |
-| Hydrograph_Versus_Seatek_Sensors_Project |   97 | SECURITY          | None                                    | **MERGED** (squash) | Path traversal fix in test processor; CI green                                                                           |
-| Hydrograph_Versus_Seatek_Sensors_Project |   98 | PERFORMANCE       | None                                    | **MERGED** (squash) | Boolean masking micro-opts; merged after #97                                                                             |
-| personal-config                          |  701 | SECURITY          | None                                    | **MERGED** (squash) | Sentinel fix; CI green                                                                                                   |
-| personal-config                          |  699 | PERFORMANCE       | None                                    | **MERGED** (squash) | Bolt I/O optimization; CI green                                                                                          |
-| personal-config                          |  703 | CI/INFRA          | None                                    | **MERGED** (squash) | Jules daily QA TOML/format; CI green                                                                                     |
-| personal-config                          |  697 | CI/INFRA          | None                                    | **ESCALATE**        | Draft workflow consolidation — human security review                                                                     |
-| ctrld-sync                               |  687 | CI/INFRA          | None                                    | **ESCALATE**        | Draft + **failing** ruff/mypy/test                                                                                       |
-| email-security-pipeline                  |  612 | CI/INFRA          | None                                    | **ESCALATE**        | Draft workflow consolidation — 14 files                                                                                  |
-
-### Merge ordering — 2026-04-01 (executed)
-
-1. Seatek: **114** → **115** → **116** → **117** → **119** (fix base, then deps, then security).
-2. email: **617** → close **611**/**618** → **616**.
-3. Hydro: **97** → **98**.
-4. personal-config: **701** → **699** → **703**.
-5. Seatek: close **118** (superseded).
-
-## Automation expansion (policy)
-
-Include when **any** of: `author.is_bot`, Dependabot branch prefix, branch matches `jules/*`, `sentinel-*`, `bolt/*`, `palette/*`, `automation-*`, `daily-qa-*`, `chore/jules-*`, `fix/toml-*` with Jules title, or PR comments from `google-labs-jules`.
+Include when **any** of: bot author, Dependabot branch, branch/title/body matches Jules/Sentinel/Bolt/Palette/`automation-workflow-*`, or Jules task link in body.

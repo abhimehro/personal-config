@@ -1,106 +1,68 @@
-# Automated PR inventory — 2026-04-03 (backlog cleanup, review-and-merge)
+# Automated PR inventory — 2026-04-11 (backlog cleanup, review-and-merge)
 
-**Config:** `tasks/pr-review-agent.config.yaml`
-**Stale threshold:** 30 days (no in-scope open PR exceeded this at inventory time)
-**Mode:** `review-and-merge` · **Merge strategy:** squash · **Auto-fix:** enabled
-
-**Repo note:** Use `abhimehro/personal-config` in config and URLs; some environments redact the slug as `personal-config` in CLI or logs. Same repository.
+**Config:** `tasks/pr-review-agent.config.yaml`  
+**Stale threshold:** 30 days — **none** of the in-scope PRs at inventory time exceeded this (all recent).  
+**Mode:** `review-and-merge` · **Merge strategy:** squash · **Auto-fix:** enabled (no branch pushes required this session → **0** auto-fix commits)
 
 ## Scope rules
 
-1. **Configured bot logins:** `dependabot[bot]`, `renovate[bot]`, `google-labs-jules[bot]` (GitHub may surface Dependabot as `app/dependabot`).
-2. **Expanded automation:** include PRs where GitHub shows `abhimehro` as author when **branch**, **title**, **labels**, or **comments** indicate Jules / Sentinel / Bolt / Palette / daily QA / `automation-workflow-*`, etc.
+1. **Configured bot logins:** `dependabot[bot]`, `renovate[bot]`, `google-labs-jules[bot]` (GitHub may show `app/dependabot`).
+2. **Expanded automation:** include PRs where GitHub shows `abhimehro` as author when **branch**, **title**, or **body** indicates Jules / Sentinel / Bolt / Palette / `automation-workflow-*`, etc.  
+   **Gap noted:** `dotfiles-iac` **#759** (`fix/github-actions-checkout-version-*`) matched via **body** (Jules footer), not branch/title regex — inventory scripts should also scan PR body for the Jules task host (subdomain `jules`, then dot, then the usual Google domain TLD) / `PR created automatically by Jules`. <!-- pragma: allowlist secret -->
 
-## Historical inventory — 2026-03-27 (archived snapshot)
+## Repos
 
-| Repo                                     | PR # | Visible author | Automation signals            | Category    | CI (rollup) | Conflicts      | changedFiles | Notes                                     |
-| ---------------------------------------- | ---: | -------------- | ----------------------------- | ----------- | ----------- | -------------- | -----------: | ----------------------------------------- |
-| personal-config                          |  682 | abhimehro      | Jules branch + footer         | SECURITY    | Green       | CLEAN → merged |            3 | Trunk symlink fixed before merge          |
-| personal-config                          |  681 | abhimehro      | `chore/jules-daily-*`         | CI/INFRA    | Green       | CONFLICTING    |            2 | Escalated — resolve conflicts             |
-| personal-config                          |  678 | abhimehro      | `automation-workflow-*` draft | CI/INFRA    | Green       | CLEAN          |            1 | Escalated — draft workflow trust boundary |
-| personal-config                          |  677 | abhimehro      | Sentinel branch               | SECURITY    | Green       | CONFLICTING    |            2 | **Closed** superseded by #682             |
-| ctrld-sync                               |  672 | abhimehro      | Sentinel branch               | SECURITY    | Green       | CLEAN → merged |            2 | Preferred over #668                       |
-| ctrld-sync                               |  669 | abhimehro      | `automation-workflow-*` draft | CI/INFRA    | Green       | CLEAN          |            2 | Escalated                                 |
-| ctrld-sync                               |  668 | abhimehro      | Sentinel branch               | SECURITY    | Green       | CONFLICTING    |            3 | **Closed** superseded by #672             |
-| email-security-pipeline                  |  597 | abhimehro      | Sentinel                      | SECURITY    | Green       | CLEAN → merged |            3 | Malware/attachment parsing                |
-| email-security-pipeline                  |  596 | abhimehro      | Palette branch                | UI          | Green       | CLEAN → merged |            2 | Screen reader / CLI                       |
-| email-security-pipeline                  |  594 | abhimehro      | `automation-workflow-*` draft | CI/INFRA    | Green       | CLEAN          |           14 | Escalated                                 |
-| email-security-pipeline                  |  593 | abhimehro      | `daily-qa-review-*`           | CI/INFRA    | Green       | CLEAN          |            0 | **Closed** no-op diff                     |
-| email-security-pipeline                  |  592 | abhimehro      | Bolt branch                   | PERFORMANCE | Green       | CLEAN → merged |            2 | Magic-byte fast path                      |
-| email-security-pipeline                  |  587 | abhimehro      | fix pre-commit                | CI/INFRA    | Green       | CLEAN → merged |            1 | Valid pre-commit rev                      |
-| email-security-pipeline                  |  585 | abhimehro      | Sentinel                      | SECURITY    | Green       | CONFLICTING    |            2 | **Closed** superseded post-#597           |
-| Seatek_Analysis                          |  107 | abhimehro      | Bolt                          | PERFORMANCE | Green       | CLEAN → merged |            1 | Vectorized pandas                         |
-| Seatek_Analysis                          |  106 | abhimehro      | Sentinel                      | SECURITY    | Green       | CLEAN → merged |            1 | Generic error leakage                     |
-| Hydrograph_Versus_Seatek_Sensors_Project |   94 | abhimehro      | Sentinel                      | SECURITY    | Green       | CLEAN → merged |            3 | Shared sanitize_filename                  |
-| Hydrograph_Versus_Seatek_Sensors_Project |   93 | abhimehro      | Bolt                          | PERFORMANCE | Green       | CLEAN → merged |            4 | `len(df)` vs `.empty`                     |
+| Repo | Slug |
+| ---- | ---- |
+| Dotfiles / IaC | `abhimehro/dotfiles-iac` | <!-- pragma: allowlist secret -->
+| Control D sync | `abhimehro/ctrld-sync` |
+| Email pipeline | `abhimehro/email-security-pipeline` |
+| Seatek | `abhimehro/Seatek_Analysis` |
+| Hydrograph | `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project` |
 
-**Totals at snapshot:** 18 in-scope open PRs across 5 repos (Seatek + Hydro had none beyond the listed).
+## Initial open inventory (2026-04-11, before actions)
 
-## Inventory validated — 2026-04-03 19:45 UTC (current open PRs)
+| Repo | PR | Author | Branch (abbr.) | Category | CI (rollup) | Mergeable | Files | Notes |
+| ---- | --: | ------ | -------------- | -------- | ----------- | --------- | ----: | ----- |
+| Hydrograph | 112 | abhimehro | `bolt/avoid-sort-*` | PERFORMANCE | PASS | MERGEABLE | 1 | Superseded → **closed** after #116 |
+| Hydrograph | 114 | abhimehro | `bolt/optimize-sort-*` | PERFORMANCE | PASS | MERGEABLE | 5 | Superseded → **closed** after #116 |
+| Hydrograph | 116 | abhimehro | `bolt-optimize-redundant-*` | PERFORMANCE | PASS | MERGEABLE | 3 | **Merged** (canonical sort optimization) |
+| Seatek | 129 | abhimehro | `bolt-optimize-lang-map-*` | PERFORMANCE | PASS | MERGEABLE | 1 | **Merged** |
+| Seatek | 130 | abhimehro | `bolt/optimize-code-health-*` | PERFORMANCE | PASS | MERGEABLE | 1 | **Conflicting** after #129 → escalate |
+| ctrld-sync | 709 | abhimehro | `palette-ux-emojis-*` | UX | PASS | CONFLICTING | 2 | **Closed** duplicate vs #716 |
+| ctrld-sync | 711 | abhimehro | `ux-no-color-emojis-*` | UX | PASS | MERGEABLE | 3 | **Closed** duplicate vs #716 |
+| ctrld-sync | 712 | abhimehro | `sentinel-explicit-loopback-*` | SECURITY | PASS | MERGEABLE | 3 | **Merged** (preferred SSRF fix + tests) |
+| ctrld-sync | 714 | abhimehro | `sentinel-fix-ssrf-loopback-*` | SECURITY | PASS | MERGEABLE | 1 | **Merged** |
+| ctrld-sync | 715 | abhimehro | `sentinel-fix-ssrf-loopback-*` | SECURITY | PASS | MERGEABLE | 2 | **Closed** superseded by #712 |
+| ctrld-sync | 716 | abhimehro | `fix-cli-output-fallbacks-*` | UX | PASS | MERGEABLE | 3 | **Merged** |
+| email | 646 | abhimehro | `jules-*` | UX | PASS | MERGEABLE | 3 | **Closed** superseded by #662 |
+| email | 650 | abhimehro | `palette/ux-*` | UX | FAIL (submit-pypi) | MERGEABLE | 2 | **Closed** superseded by #662 |
+| email | 651 | app/dependabot | `dependabot/pip/*` | DEPENDENCY | pending/mixed → later PASS | MERGEABLE | 1 | **Escalate** transformers 5.0.0rc3 |
+| email | 656 | abhimehro | `palette/cli-*` | UX | PASS | MERGEABLE | 2 | **Closed** superseded by #662 |
+| email | 657 | abhimehro | `sentinel-fix-assert-*` | SECURITY | PASS | MERGEABLE | 1 | **Merged** |
+| email | 658 | abhimehro | `jules-*` | PERFORMANCE | PASS | MERGEABLE | 3 | **Merged** |
+| email | 659 | abhimehro | `jules-*` | CHORE | PASS | MERGEABLE | 1 | **Merged** |
+| email | 660 | abhimehro | `automation-workflow-*` | CI/INFRA | PASS | MERGEABLE | 2 | **Draft** → escalate |
+| email | 662 | abhimehro | `palette-improve-*` | UX | PASS | MERGEABLE | 1 | **Merged** |
+| dotfiles-iac | 747 | abhimehro | `palette-accessible-*` | UX | PASS | MERGEABLE | 4 | **Closed** redundant vs #760/#754 |
+| dotfiles-iac | 748 | abhimehro | `sentinel/fix-option-injection-*` | SECURITY | PASS | MERGEABLE | 2 | **Merged** |
+| dotfiles-iac | 751 | abhimehro | `fix-spinner-terminal-*` | UX | PASS | MERGEABLE | 5 | **Closed** superseded |
+| dotfiles-iac | 752 | abhimehro | `fix/option-injection-pgrep-*` | SECURITY | PASS | MERGEABLE | 3 | **Closed** superseded by #748 |
+| dotfiles-iac | 754 | abhimehro | `palette/cli-spinner-artifacts-*` | UX | PASS | MERGEABLE | 4 | **Merged** |
+| dotfiles-iac | 756 | abhimehro | `automation-workflow-*` | CI/INFRA | PASS | MERGEABLE | 1 | **Draft** → escalate |
+| dotfiles-iac | 758 | abhimehro | `jules-*` | PERFORMANCE | PASS | MERGEABLE | 2 | **Merged** |
+| dotfiles-iac | 760 | abhimehro | `palette-cli-spinner-cleanup-*` | UX | PASS | MERGEABLE | 2 | **Merged** |
 
-### personal-config (10 open, 2 recently merged)
+## Post-session remainder (open, in-scope)
 
-| PR #    | Status     | Title                                                | Category    | Created    | Changed Files | Notes                 |
-| ------- | ---------- | ---------------------------------------------------- | ----------- | ---------- | ------------- | --------------------- |
-| **728** | **MERGED** | 🎨 Palette: Graceful TTY Degradation for spinners    | UX          | 2026-04-03 | 2             | Merged 19:38:59       |
-| **727** | **MERGED** | ⚡ Bolt: fnmatch→regex optimization                  | PERFORMANCE | 2026-04-03 | 1             | Merged 19:38:43       |
-| 726     | OPEN       | ⚡ Bolt: optimize matches_any with compiled regex    | PERFORMANCE | 2026-04-03 | 1             | **DUPLICATE of #727** |
-| 725     | OPEN       | ⚡ Bolt: rglob→os.walk hotspot discovery             | PERFORMANCE | 2026-04-03 | 1             | —                     |
-| 724     | OPEN       | ⚡ Bolt: optimize datetime parsing in Linear issue   | PERFORMANCE | 2026-04-03 | 1             | —                     |
-| 723     | OPEN       | ⚡ Bolt: Optimize dictionary access in AdGuard       | PERFORMANCE | 2026-04-03 | 2             | —                     |
-| 722     | OPEN       | ⚡ Bolt: optimize matches_any with cached regex      | PERFORMANCE | 2026-04-03 | 1             | **DUPLICATE of #727** |
-| 719     | OPEN       | chore: Jules Daily QA domain injection               | CI/INFRA    | 2026-04-02 | 1             | —                     |
-| 710     | OPEN       | chore: Jules Daily QA & Agentic Review               | CI/INFRA    | 2026-04-02 | 0             | **ZERO-DIFF**         |
-| 708     | OPEN       | ⚡ Bolt: basename→parameter expansion in test runner | PERFORMANCE | 2026-04-02 | 1             | —                     |
+| Repo | PR | Reason still open |
+| ---- | --: | ----------------- |
+| dotfiles-iac | 756 | Draft workflow consolidation — escalated |
+| email-security-pipeline | 660 | Draft workflow consolidation — escalated |
+| email-security-pipeline | 651 | RC major dependency bump — escalated |
+| Seatek_Analysis | 130 | Merge conflict after #129 — escalated |
 
-### ctrld-sync (1 open)
+## Summary counts (initial inventory)
 
-| PR # | Status | Title                                 | Category | Created    | Changed Files | Notes                    |
-| ---- | ------ | ------------------------------------- | -------- | ---------- | ------------- | ------------------------ |
-| 697  | OPEN   | fix: Update ruff configuration schema | FIX      | 2026-04-03 | 1             | Ruff deprecation warning |
-
-### email-security-pipeline (3 open)
-
-| PR # | Status | Title                                           | Category | Created    | Changed Files | Notes                        |
-| ---- | ------ | ----------------------------------------------- | -------- | ---------- | ------------- | ---------------------------- |
-| 629  | OPEN   | chore: update AGENTS.md test count/dev setup    | CHORE    | 2026-04-03 | 1             | Documentation                |
-| 626  | OPEN   | chore(actions): consolidate workflow automation | CI/INFRA | 2026-04-03 | 14            | **DRAFT** - workflow updates |
-| 625  | OPEN   | Jules Daily QA & Agentic Review                 | CI/INFRA | 2026-04-03 | 0             | **ZERO-DIFF**                |
-
-### Seatek_Analysis (3 open)
-
-| PR # | Status | Title                                            | Category    | Created    | Changed Files | Notes                              |
-| ---- | ------ | ------------------------------------------------ | ----------- | ---------- | ------------- | ---------------------------------- |
-| 122  | OPEN   | 🛡️ Sentinel: [CRITICAL] Fix TOCTOU vulnerability | SECURITY    | 2026-04-02 | 2             | File reading race condition        |
-| 121  | OPEN   | ⚡ Bolt: Optimize hotspot discovery (os.walk)    | PERFORMANCE | 2026-04-02 | 1             | **SIMILAR to personal-config#725** |
-| 120  | OPEN   | 🛡️ Sentinel: [CRITICAL] Fix TOCTOU/OOM DoS       | SECURITY    | 2026-04-01 | 1             | code_health_scanner.py             |
-
-### Hydrograph_Versus_Seatek_Sensors_Project (2 open)
-
-| PR # | Status | Title                                           | Category | Created    | Changed Files | Notes                     |
-| ---- | ------ | ----------------------------------------------- | -------- | ---------- | ------------- | ------------------------- |
-| 100  | OPEN   | 🛡️ Sentinel: Reject symlinks in file validation | SECURITY | 2026-04-02 | 2             | Symlink attack prevention |
-| 99   | OPEN   | 🛡️ Sentinel: [MEDIUM] Fix Symlink processing    | SECURITY | 2026-04-01 | 2             | **DUPLICATE of #100**     |
-
-## Validated Summary (2026-04-03 session)
-
-- **Total open PRs**: 19 (down from 38 in stale inventory)
-- **Recently merged**: 2 (personal-config #728, #727)
-- **By category**:
-  - **SECURITY**: 4 (all Seatek/Hydro - CRITICAL TOCTOU, symlink fixes)
-  - **PERFORMANCE**: 7 (Bolt optimizations across repos)
-  - **CI/INFRA**: 3 (workflow updates, Jules QA)
-  - **CHORE/FIX**: 3 (documentation, ruff config)
-  - **UX**: 0 (recent Palette PRs already merged)
-- **Zero-diff PRs to close**: 2 (personal-config #710, email-security-pipeline #625)
-- **Clear duplicates**: 4 (personal-config #726/#722 duplicate #727; Hydro #99 duplicate #100)
-- **No stale PRs** (all created within last 3 days)
-
-## Inventory after session — 2026-04-01 (remaining open)
-
-| Repo                    | PR # | State | Reason still open                                                    |
-| ----------------------- | ---: | ----- | -------------------------------------------------------------------- |
-| personal-config         |  697 | DRAFT | Escalated — workflow consolidation / trust boundary                  |
-| ctrld-sync              |  687 | DRAFT | Escalated — failing CI + workflow consolidation                      |
-| email-security-pipeline |  612 | DRAFT | Escalated — workflow consolidation                                   |
-| email-security-pipeline |  614 | OPEN  | Merge conflicts with `main`; human rebase + CodeScene hotspot review |
+- **Total in-scope open:** 28  
+- **By theme:** SECURITY 6 · PERFORMANCE/UX 18 · DEPENDENCY 1 · CI/INFRA (draft) 2 · CHORE 1  

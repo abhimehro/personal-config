@@ -108,6 +108,11 @@
 **Root cause:** Repository settings or branch protection rules may require manual merge approval or lack auto-merge configuration for MCP tools.
 **Rule:** When automated merge via MCP tools fails, verify repo settings: (1) Enable auto-merge in repository settings, (2) Check branch protection rules for merge restrictions, (3) Verify MCP token has sufficient permissions. For security PRs that pass all gates, document approval status and provide manual merge instructions via GitHub UI.
 
+## Lesson 0q: Inventory regex can miss Jules PRs with “fix/” branches (2026-04-11)
+
+**Pattern:** A Jules PR uses branch `fix/github-actions-checkout-version-<taskid>` and title `ci(actions): …` with **no** Bolt/Sentinel/Palette emoji — branch regex may **exclude** it even though the **body** contains `PR created automatically by Jules` and a `jules.google.com` task link.
+**Rule:** Treat PR body/footer as a first-class automation signal when building `tasks/pr-inventory.md` (not only branch/title). Optionally match `jules\.google\.com/task/` in `gh pr view --json body`.
+
 ## Lesson 0p: Jules zero-diff QA PRs pollute PR list (2026-04-03)
 
 **Pattern:** Automated Jules Daily QA creates PRs with `changedFiles: 0` when QA passes but no code changes are needed. PR body contains valuable findings, but empty diff adds noise to PR list.
