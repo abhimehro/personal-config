@@ -2,10 +2,12 @@
 
 **Preflight:** `bash scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml` — **passed** (read-only).
 
+**Repo naming note:** `dotfiles-iac` is the shorthand used in this report for the configured GitHub repo slug `abhimehro/personal-config`. Use the configured slug when cross-referencing PR URLs or rerunning automation.
+
 ## Merge ordering (executed)
 
 1. **ctrld-sync:** #712 (Sentinel + tests) → #714 (complementary loopback guard) → #716 (Palette UX). Re-checked mergeability after each merge.
-2. **dotfiles-iac:** #748 (Sentinel) → #758 (Bolt) → #760 (Palette) → #754 (Palette) → #759 (Jules CI pin; discovered mid-run). <!-- pragma: allowlist secret -->
+2. **dotfiles-iac** (`abhimehro/personal-config`): #748 (Sentinel) → #758 (Bolt) → #760 (Palette) → #754 (Palette) → #759 (Jules CI pin; discovered mid-run). <!-- pragma: allowlist secret -->
 3. **email-security-pipeline:** #657 (Sentinel) → #658 (Bolt) → #659 (chore) → #662 (Palette) — then close duplicate Palette PRs.
 4. **Seatek_Analysis:** #129 → attempted #130 (**blocked** — conflicting after base update).
 5. **Hydrograph:** #116 → close #112 / #114 as superseded.
