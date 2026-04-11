@@ -9,6 +9,10 @@
 #   scripts/cursor_cloud_agent_pre_commit.sh  -> pre-commit.cursor
 #   scripts/cursor_cloud_agent_commit_msg.sh   -> commit-msg.cursor
 #
+# A directory is updated only when **both** hook files already exist as **regular**
+# non-symlink files (Cursor’s normal layout). We use install(1) instead of cp so we
+# never follow a symlink target and overwrite an arbitrary path.
+#
 # Usage:
 #   ./scripts/install_cursor_cloud_agent_hooks.sh              # all hook dirs under ~/.cursor/agent-hooks
 #   ./scripts/install_cursor_cloud_agent_hooks.sh /path/to/dir # single workspace hash directory
@@ -26,13 +30,30 @@ log() { printf '[cursor-cloud-hooks] %s\n' "$*" >&2; }
 
 require_sources() {
 	if [[ ! -f $PRE_COMMIT_SRC ]]; then
-		printf 'Missing canonical pre-commit source: %s\n' "$PRE_COMMIT_SRC" >&2
+		log "Missing canonical pre-commit source: $PRE_COMMIT_SRC"
 		exit 1
 	fi
 	if [[ ! -f $COMMIT_MSG_SRC ]]; then
-		printf 'Missing canonical commit-msg source: %s\n' "$COMMIT_MSG_SRC" >&2
+		log "Missing canonical commit-msg source: $COMMIT_MSG_SRC"
 		exit 1
 	fi
+}
+
+# SECURITY: Refuse symlink hook paths — a symlink can point outside dest_dir; treat as unsafe.
+# NOTE: `[[ -e symlink ]]` is false for a **broken** symlink, so we must test `-L` before `-e`
+# or we would mis-classify broken symlinks as "missing" and skip instead of refusing.
+hooks_are_safe_regular_files() {
+	local dest_dir="$1"
+	local pc="${dest_dir}/pre-commit.cursor"
+	local cm="${dest_dir}/commit-msg.cursor"
+	if [[ -L $pc ]] || [[ -L $cm ]]; then
+		log "refuse: hook paths must not be symlinks: $dest_dir"
+		return 2
+	fi
+	if [[ -f $pc && -f $cm ]]; then
+		return 0
+	fi
+	return 1
 }
 
 install_into_dir() {
@@ -42,16 +63,23 @@ install_into_dir() {
 		return 0
 	fi
 
-	local installed=0
-	if [[ -f ${dest_dir}/pre-commit.cursor ]] || [[ -f ${dest_dir}/commit-msg.cursor ]]; then
-		cp -f "$PRE_COMMIT_SRC" "${dest_dir}/pre-commit.cursor"
-		cp -f "$COMMIT_MSG_SRC" "${dest_dir}/commit-msg.cursor"
-		chmod a+x "${dest_dir}/pre-commit.cursor" "${dest_dir}/commit-msg.cursor"
+	# NOTE: Cannot call hooks_are_safe_regular_files and then read $? under `set -e` — a non-zero
+	# return would exit the script before assignment. Use if/else and read $? in the else branch.
+	if hooks_are_safe_regular_files "$dest_dir"; then
+		# install -m 0755 replaces destination atomically where supported; avoids cp following symlinks.
+		install -m 0755 "$PRE_COMMIT_SRC" "${dest_dir}/pre-commit.cursor"
+		install -m 0755 "$COMMIT_MSG_SRC" "${dest_dir}/commit-msg.cursor"
 		log "updated hooks in $dest_dir"
-		installed=1
-	fi
-	if [[ $installed -eq 0 ]]; then
-		log "skip (no pre-commit.cursor / commit-msg.cursor present): $dest_dir"
+	else
+		case $? in
+		2)
+			return 1
+			;;
+		*)
+			log "skip (need both pre-commit.cursor and commit-msg.cursor as regular files): $dest_dir"
+			return 0
+			;;
+		esac
 	fi
 }
 
@@ -80,7 +108,7 @@ main() {
 		[[ -e $entry ]] || continue
 		if [[ -d $entry ]]; then
 			found=1
-			install_into_dir "$entry"
+			install_into_dir "$entry" || return 1
 		fi
 	done
 
