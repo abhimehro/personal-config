@@ -37,6 +37,11 @@
 **Pattern:** `pre-commit.cursor` used `SECRET_VALUE="${!SECRET_NAME}"`. Entries in `CLOUD_AGENT_INJECTED_SECRET_NAMES` can be human-readable labels with spaces (`GitHub SSH Key`), which are **not** valid bash identifier names → `invalid variable name` at commit time.
 **Rule:** Resolve values with `printenv "$SECRET_NAME"` (after trimming whitespace from comma-split tokens). Canonical copies: `scripts/cursor_cloud_agent_pre_commit.sh` and `scripts/cursor_cloud_agent_commit_msg.sh`.
 
+## Lesson 0r: Injected Cloud hooks do not persist — sync from the repo (2026-04-11)
+
+**Pattern:** Fixes applied only under `~/.cursor/agent-hooks/<hash>/` are **not in git** and disappear on the next fresh Cloud workspace. Injected copies can still use `${!SECRET_NAME}` and break commits when secret **labels** contain spaces.
+**Rule:** After clone in Cursor Cloud, run **`make cursor-cloud-hooks`** (or `./scripts/install_cursor_cloud_agent_hooks.sh`) so `pre-commit.cursor` and `commit-msg.cursor` are overwritten from the canonical scripts in this repository. The installer requires **both** files as **regular** (non-symlink) paths and uses `install -m 0755` instead of `cp` to avoid symlink follow / TOCTOU surprises.
+
 ## Lesson 0e: Jules “Bolt” PRs may ship 100k-line junk fixtures (2026-03-22)
 
 **Pattern:** A performance-titled PR adds a multi-megabyte `test.txt` of generated hostnames and scratch `test_perf*.py` files.
