@@ -4,21 +4,24 @@ import json
 import subprocess
 import os
 
+def _parse_env_file(filepath: str, env_vars: dict) -> None:
+    try:
+        with open(filepath, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                if line.startswith("export "):
+                    line = line[len("export "):]
+                key, val = line.split("=", 1)
+                env_vars[key.strip()] = val.strip("'\"")
+    except FileNotFoundError:
+        pass
+
 def run_gh(cmd_list):
     # SECURITY: Parse environment file manually instead of sourcing via shell to prevent Command Injection (CWE-78)
     env_vars = os.environ.copy()
-    try:
-        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    if line.startswith("export "):
-                        line = line[len("export "):]
-                    key, val = line.split("=", 1)
-                    val = val.strip("'\"")
-                    env_vars[key.strip()] = val
-    except FileNotFoundError:
-        pass
+    _parse_env_file("../email-security-pipeline/GH_TOKEN.env", env_vars)
 
     result = subprocess.run(cmd_list, capture_output=True, text=True, env=env_vars)
     if result.returncode != 0:
