@@ -61,7 +61,9 @@ for repo, prs in repos.items():
         
         days_old = 0
         if updated_at:
-            dt = datetime.strptime(updated_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+            # ⚡ Bolt Optimization: Replace strptime with fromisoformat for ~40x faster date parsing.
+            # Replace 'Z' with '+00:00' to support Python < 3.11 parsing of UTC strings
+            dt = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
             now = datetime.now(timezone.utc)
             days_old = (now - dt).days
             

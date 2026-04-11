@@ -22,7 +22,7 @@ warn() { echo -e "${YELLOW}⚠️  [WARN]${NC}  $*"; }
 err() { echo -e "${RED}❌ [ERR]${NC}   $*" >&2; }
 
 # Restore cursor on exit/interrupt
-trap '[ -t 1 ] && tput cnorm 2>/dev/null || true' EXIT INT TERM
+trap '[ -t 1 ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"' EXIT INT TERM
 
 # Spinner function (Palette 🎨 UX enhanced)
 spinner() {
