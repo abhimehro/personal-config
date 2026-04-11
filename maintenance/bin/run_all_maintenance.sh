@@ -137,7 +137,7 @@ spinner() {
 		tput civis 2>/dev/null || true
 
 		# Trap to restore cursor if interrupted
-		trap 'tput cnorm 2>/dev/null || true; exit' INT TERM
+		trap 'tput cnorm 2>/dev/null || true; printf "\r\033[K"; exit' INT TERM
 
 		local start_time
 		start_time=$(date +%s)
@@ -185,7 +185,7 @@ wait_for_pids() {
 
 	if [ -t 1 ] && [ -z "${CI-}" ]; then
 		tput civis 2>/dev/null || true
-		trap 'tput cnorm 2>/dev/null || true; trap - INT TERM; kill -s INT $$' INT TERM
+		trap 'tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - INT TERM; kill -s INT $$' INT TERM
 
 		local start_time
 		start_time=$(date +%s)
