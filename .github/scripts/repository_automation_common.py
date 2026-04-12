@@ -47,6 +47,10 @@ GIT_BIN = shutil.which("git") or "git"
 ALLOWED_STATUSES = {"success", "warning", "failure", "needs_review", "skipped"}
 
 VERSION_PATTERN = re.compile(r"v?(\d+)(?:\.(\d+))?(?:\.(\d+))?")
+# ⚡ Bolt: Pre-compiled regex for parsing stable release versions.
+# Avoids regex compilation cache lookup overhead during large tag iteration loops (~100 items),
+# providing a minor speedup on repeated evaluations.
+STABLE_VERSION_PATTERN = re.compile(r"v?\d+(?:\.\d+)*")
 
 
 def command_env() -> dict[str, str]:
@@ -398,21 +402,21 @@ def latest_tag_for_action(repo_id: str) -> str:
             )
             if releases:
                 latest = releases[0].get("tag_name", "")
-                if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
+                if latest and STABLE_VERSION_PATTERN.fullmatch(latest):
                     return latest
         except Exception:
             pass  # Fall back to gh CLI on error
 
     # Original gh CLI implementation
     latest = gh_text(["api", f"repos/{repo_id}/releases/latest", "--jq", ".tag_name"])
-    if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
+    if latest and STABLE_VERSION_PATTERN.fullmatch(latest):
         return latest
 
     tags_json = gh_json(["api", f"repos/{repo_id}/tags?per_page=100"], default=[])
     stable_tags = []
     for t in tags_json:
         name = t.get("name", "")
-        if re.fullmatch(r"v?\d+(?:\.\d+)*", name):
+        if STABLE_VERSION_PATTERN.fullmatch(name):
             parsed = numeric_version(name)
             if parsed:
                 stable_tags.append((parsed, name))

@@ -38,6 +38,12 @@ PR_TABLE_ROW_PATTERN = re.compile(
     r"\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|",
     re.VERBOSE
 )
+# ⚡ Bolt: Pre-compiled regex for extracting status markers.
+# Avoids regex compilation cache lookup overhead during repetitive issue body parsing
+# (e.g., when iterating through hundreds of issues), providing a minor speedup.
+STATUS_MARKER_PATTERN = re.compile(
+    r"<!-- repository-automation:task-status\n(.*?)\n-->", re.S
+)
 IGNORED_DIRS = {".git", ".venv", "node_modules", "__pycache__"}
 
 
@@ -734,9 +740,7 @@ def run_daily_status_report(config: dict[str, Any]) -> dict[str, Any]:
 
 
 def extract_status_markers(issue_body: str) -> dict[str, str]:
-    match = re.search(
-        r"<!-- repository-automation:task-status\n(.*?)\n-->", issue_body, re.S
-    )
+    match = STATUS_MARKER_PATTERN.search(issue_body)
     if not match:
         return {}
     markers = {}
