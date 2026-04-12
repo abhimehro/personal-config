@@ -23,7 +23,9 @@ Using a `grep` check, some suspicious tokens/keys were reviewed.
   - `make test-all`
   - `make lint-errors`
   - `sudo apt-get install -y shellcheck` (to properly run lint-errors)
-  - `curl https://get.trunk.io -fsSL -o install_trunk.sh && bash install_trunk.sh`
+  - `curl https://get.trunk.io -fsSL -o install_trunk.sh`
+  - `sha256sum install_trunk.sh` (verify the checksum/signature against a trusted source before execution)
+  - `bash install_trunk.sh`
   - `trunk check --all`
   - `grep -rnIEi "(password|secret|token|api_key|apikey)[[:space:]]*[:=]" --exclude-dir=.git --exclude-dir=.trunk --exclude-dir=.github .`
 - **Notes:** Repository health is strong based on targeted checks. Shellcheck enforcement is strong and the tests are comprehensive. However, `trunk check --all` did report 1403 lint issues and 148 security findings; based on spot review, many appear to be minor styling items or test-related `bandit/B101` assertions, so no immediate blocking remediation is required today, but the scanner output should be triaged separately.
