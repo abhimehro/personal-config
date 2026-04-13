@@ -2,9 +2,30 @@ import re
 from datetime import datetime, timezone
 import json
 import subprocess
+import os
 
-def run_gh(cmd):
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+def run_gh(repo, pr):
+    # Manually parse the .env file to avoid shell=True and source
+    env = os.environ.copy()
+    try:
+        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    # Handle optional 'export ' prefix
+                    if line.startswith("export "):
+                        line = line[7:].strip()
+                    if "=" in line:
+                        key, val = line.split("=", 1)
+                        # Strip quotes if present
+                        val = val.strip("'\"")
+                        env[key] = val
+    except FileNotFoundError:
+        pass # Handle gracefully if run in an environment where it doesn't exist
+
+    cmd = ["gh", "pr", "view", str(pr), "-R", str(repo), "--json", "files,updatedAt,mergeStateStatus"]
+    result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+
     if result.returncode != 0:
         return None
     try:
@@ -46,7 +67,7 @@ for repo, prs in repos.items():
         pr = pr_info['pr']
         checks = pr_info['checks']
         print(f"Checking {repo}#{pr}")
-        info = run_gh(f"source ../email-security-pipeline/GH_TOKEN.env && gh pr view {pr} -R {repo} --json files,updatedAt,mergeStateStatus")
+        info = run_gh(repo, pr)
         if not info:
             print(f"Failed to fetch {repo}#{pr}")
             continue
