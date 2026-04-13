@@ -99,3 +99,8 @@
 
 **Learning:** When interrupting an asynchronous stream (like a CLI loading spinner) or handling an error, hardcoded prefix strings in the cleanup function can cause visual artifacts. If the stream starts and fails, or if a user hits Ctrl+C, they might be left with orphaned text like "Assistant: " hanging on their terminal prompt.
 **Action:** Separate terminal clearing logic (e.g. `clearSpinner`) from content rendering. Only print standard prefixes when the response actually begins streaming, and ensure error handlers and signal traps completely clear the line.
+
+## 2026-06-03 - Native OS Notification Fallbacks
+
+**Learning:** When adding optional notifications to CLI scripts (like `terminal-notifier` on macOS), users without the third-party tool installed miss out on the UX improvement.
+**Action:** Always provide a native fallback when possible (e.g., using `osascript -e 'display notification...'` on Darwin) to ensure the UX enhancement reaches all users on that platform without requiring extra dependencies.
