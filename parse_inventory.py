@@ -4,25 +4,31 @@ import json
 import subprocess
 import os
 
-def run_gh(repo, pr):
-    # Manually parse the .env file to avoid shell=True and source
+def _parse_env_line(line, env_dict):
+    line = line.strip()
+    if not line:
+        return
+    if line.startswith("#"):
+        return
+    if line.startswith("export "):
+        line = line[7:].strip()
+    if "=" not in line:
+        return
+    key, val = line.split("=", 1)
+    env_dict[key] = val.strip("'\"")
+
+def _load_gh_token_env():
     env = os.environ.copy()
     try:
         with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
             for line in f:
-                line = line.strip()
-                if line and not line.startswith("#"):
-                    # Handle optional 'export ' prefix
-                    if line.startswith("export "):
-                        line = line[7:].strip()
-                    if "=" in line:
-                        key, val = line.split("=", 1)
-                        # Strip quotes if present
-                        val = val.strip("'\"")
-                        env[key] = val
+                _parse_env_line(line, env)
     except FileNotFoundError:
-        pass # Handle gracefully if run in an environment where it doesn't exist
+        pass
+    return env
 
+def run_gh(repo, pr):
+    env = _load_gh_token_env()
     cmd = ["gh", "pr", "view", str(pr), "-R", str(repo), "--json", "files,updatedAt,mergeStateStatus"]
     result = subprocess.run(cmd, capture_output=True, text=True, env=env)
 
