@@ -35,8 +35,10 @@ from repository_automation_common import (
 
 WORKFLOW_PATTERN = re.compile(r"(uses:\s*)([^@\s]+)@([^\s#]+)")
 PR_TABLE_ROW_PATTERN = re.compile(
-    r"\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|",
-    re.VERBOSE
+    r"\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|", re.VERBOSE
+)
+STATUS_MARKER_PATTERN = re.compile(
+    r"<!-- repository-automation:task-status\n(.*?)\n-->", re.S
 )
 IGNORED_DIRS = {".git", ".venv", "node_modules", "__pycache__"}
 
@@ -734,9 +736,7 @@ def run_daily_status_report(config: dict[str, Any]) -> dict[str, Any]:
 
 
 def extract_status_markers(issue_body: str) -> dict[str, str]:
-    match = re.search(
-        r"<!-- repository-automation:task-status\n(.*?)\n-->", issue_body, re.S
-    )
+    match = STATUS_MARKER_PATTERN.search(issue_body)
     if not match:
         return {}
     markers = {}

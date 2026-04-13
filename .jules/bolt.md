@@ -106,3 +106,6 @@
 ## 2026-04-04 - strptime vs fromisoformat overhead
 **Learning:** In Python, parsing ISO-8601 timestamp strings using `datetime.strptime` involves format string processing overhead that can be significantly slow inside loops. `datetime.fromisoformat()` is implemented in C and optimized for ISO strings, executing 20x-40x faster.
 **Action:** When parsing standard ISO timestamps (e.g., from APIs or configuration files), use `datetime.fromisoformat()` instead of `strptime`. For strings ending with `"Z"` (UTC), use `.replace("Z", "+00:00")` before parsing to maintain compatibility with Python versions older than 3.11.
+## 2026-03-10 - Regex Pre-compilation Overhead
+**Learning:** In Python automation scripts (like `.github/scripts/repository_automation_tasks.py`), placing `re.search` inside functions called within tight loops (like `extract_status_markers`) causes redundant compilation overhead.
+**Action:** Always pre-compile regex patterns at the module level using `re.compile()` and call `.search()` or `.match()` on the compiled object to avoid this overhead.
