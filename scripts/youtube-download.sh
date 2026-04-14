@@ -142,4 +142,6 @@ info "Video saved to ~/Downloads"
 # Optional: Notification
 if command -v terminal-notifier >/dev/null 2>&1; then
 	terminal-notifier -title "Download Complete" -message "Video saved to Downloads"
+elif [[ $(uname) == "Darwin" ]] && command -v osascript >/dev/null 2>&1; then
+	osascript -e 'display notification "Video saved to Downloads" with title "Download Complete"'
 fi
