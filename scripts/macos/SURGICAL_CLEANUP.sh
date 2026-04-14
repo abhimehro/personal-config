@@ -271,7 +271,7 @@ main() {
 	show_cleanup_preview
 
 	echo
-	read -p "Continue with surgical cleanup? (y/N): " confirm
+	read -r -p "Continue with surgical cleanup? (y/N): " confirm
 	confirm=${confirm:-N}
 	if [[ $confirm != [yY] ]]; then
 		echo "Cleanup cancelled."
