@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import functools
 import json
 import os
 import re
@@ -34,9 +35,16 @@ from repository_automation_common import (
 )
 
 WORKFLOW_PATTERN = re.compile(r"(uses:\s*)([^@\s]+)@([^\s#]+)")
+
+
+# ⚡ Bolt Optimization: Cache regex compilation and normalisation overhead for multiple checks inside loops.
+@functools.lru_cache(maxsize=512)
+def _cached_matches_any(path_str: str, patterns_tuple: tuple[str, ...]) -> bool:
+    return matches_any(path_str, list(patterns_tuple))
+
+
 PR_TABLE_ROW_PATTERN = re.compile(
-    r"\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|",
-    re.VERBOSE
+    r"\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|\s*`[^`]+`\s*\|\s*`([^`]+)`\s*\|", re.VERBOSE
 )
 IGNORED_DIRS = {".git", ".venv", "node_modules", "__pycache__"}
 
@@ -217,7 +225,9 @@ def _resolve_proposed_tag(
     return proposed
 
 
+@functools.lru_cache(maxsize=512)
 def _is_major_bump(current: str, proposed: str) -> bool:
+    # ⚡ Bolt Optimization: Decorate with lru_cache to skip repeated regex search across loops
     current_v = numeric_version(current)
     target_v = numeric_version(proposed)
     return bool(current_v and target_v and target_v[0] > current_v[0])
@@ -303,7 +313,8 @@ def restore_workflow_updates(plans: list[dict[str, Any]]) -> None:
 def allowed_workflow_updates(
     updates: list[dict[str, str]], patterns: list[str]
 ) -> bool:
-    return all(matches_any(item["file"], patterns) for item in updates)
+    patterns_tuple = tuple(patterns)
+    return all(_cached_matches_any(item["file"], patterns_tuple) for item in updates)
 
 
 def render_update_table(updates: list[dict[str, str]]) -> list[str]:
@@ -768,7 +779,10 @@ def run_safe_adjustment_commands(
     allowed_paths = section.get(
         "allowed_paths", [".github/workflows/*.yml", ".github/workflows/*.yaml"]
     )
-    if not changed or not all(matches_any(path, allowed_paths) for path in changed):
+    allowed_paths_tuple = tuple(allowed_paths)
+    if not changed or not all(
+        _cached_matches_any(path, allowed_paths_tuple) for path in changed
+    ):
         return command_results, ""
     body = safe_pr_body(
         "Weekly safe workflow tuning",
