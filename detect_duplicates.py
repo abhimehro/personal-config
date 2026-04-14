@@ -1,10 +1,27 @@
 import re
 import json
 import subprocess
+import os
 from collections import defaultdict
 
+def _load_gh_token_env():
+    env = os.environ.copy()
+    try:
+        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"): continue
+                if line.startswith("export "): line = line[7:].strip()
+                if "=" in line:
+                    key, val = line.split("=", 1)
+                    env[key] = val.strip("'\"")
+    except FileNotFoundError:
+        pass
+    return env
+
 def run_gh(cmd):
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    env = _load_gh_token_env()
+    result = subprocess.run(cmd, capture_output=True, text=True, env=env)
     if result.returncode != 0:
         return None
     try:
@@ -23,7 +40,7 @@ ready_only = [pr for pr in ready_prs if not any(pr in l for l in lines[:lines.in
 file_groups = defaultdict(list)
 for pr in ready_only:
     repo, pr_id = pr.split('#')
-    info = run_gh(f"source ../email-security-pipeline/GH_TOKEN.env && gh pr view {pr_id} -R {repo} --json files,title,number")
+    info = run_gh(["gh", "pr", "view", str(pr_id), "-R", str(repo), "--json", "files,title,number"])
     if not info:
         continue
     files = tuple(sorted([f['path'] for f in info.get('files', [])]))

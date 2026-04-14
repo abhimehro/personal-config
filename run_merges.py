@@ -1,9 +1,26 @@
 import subprocess
 import json
 import time
+import os
+
+def _load_gh_token_env():
+    env = os.environ.copy()
+    try:
+        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"): continue
+                if line.startswith("export "): line = line[7:].strip()
+                if "=" in line:
+                    key, val = line.split("=", 1)
+                    env[key] = val.strip("'\"")
+    except FileNotFoundError:
+        pass
+    return env
 
 def run_gh(cmd):
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    env = _load_gh_token_env()
+    result = subprocess.run(cmd, capture_output=True, text=True, env=env)
     if result.returncode != 0:
         return None
     try:
@@ -12,7 +29,8 @@ def run_gh(cmd):
         return result.stdout
 
 def get_diff(repo, pr):
-    result = subprocess.run(f"source ../email-security-pipeline/GH_TOKEN.env && gh pr diff {pr} -R {repo}", shell=True, capture_output=True, text=True)
+    env = _load_gh_token_env()
+    result = subprocess.run(["gh", "pr", "diff", str(pr), "-R", str(repo)], capture_output=True, text=True, env=env)
     return result.stdout
 
 queue = [
@@ -54,7 +72,7 @@ for repo, pr, title in queue:
     print(f"\nProcessing {repo}#{pr}: {title}")
     
     # Re-check status
-    info = run_gh(f"source ../email-security-pipeline/GH_TOKEN.env && gh pr view {pr} -R {repo} --json mergeStateStatus")
+    info = run_gh(["gh", "pr", "view", str(pr), "-R", str(repo), "--json", "mergeStateStatus"])
     if not info:
         print("Failed to get info")
         continue
@@ -95,7 +113,8 @@ for repo, pr, title in queue:
         continue
         
     print(f"Gate 2 passed. Merging...")
-    res = subprocess.run(f"source ../email-security-pipeline/GH_TOKEN.env && gh pr merge {pr} -R {repo} --squash --delete-branch", shell=True, capture_output=True, text=True)
+    env = _load_gh_token_env()
+    res = subprocess.run(["gh", "pr", "merge", str(pr), "-R", str(repo), "--squash", "--delete-branch"], capture_output=True, text=True, env=env)
     if res.returncode == 0:
         print(f"Successfully merged {repo}#{pr}")
         results['merged'].append((repo, pr, title))
