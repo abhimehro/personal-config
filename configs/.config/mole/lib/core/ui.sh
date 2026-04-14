@@ -337,6 +337,9 @@ start_inline_spinner() {
 			# Clear line on first output to prevent text remnants from previous messages
 			printf "\r\033[2K" >&2 || true
 
+			# Hide terminal cursor to prevent flicker
+			tput civis >&2 2>/dev/null || true
+
 			# Cooperative exit: check for stop file instead of relying on signals
 			while [[ ! -f $stop_file ]]; do
 				local c="${chars:$((i % ${#chars})):1}"
@@ -345,6 +348,9 @@ start_inline_spinner() {
 				i=$((i + 1))
 				/bin/sleep 0.05
 			done
+
+			# Restore terminal cursor
+			tput cnorm >&2 2>/dev/null || true
 
 			# Clean up stop file before exiting
 			rm -f "$stop_file" 2>/dev/null || true
@@ -384,7 +390,10 @@ stop_inline_spinner() {
 		INLINE_SPINNER_STOP_FILE=""
 
 		# Clear the line - use \033[2K to clear entire line, not just to end
-		[[ -t 1 ]] && printf "\r\033[2K" >&2 || true
+		if [[ -t 1 ]]; then
+			printf "\r\033[2K" >&2 || true
+			tput cnorm >&2 2>/dev/null || true
+		fi
 	fi
 }
 
