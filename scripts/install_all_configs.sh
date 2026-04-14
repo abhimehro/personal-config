@@ -53,6 +53,7 @@ substep "Verify all symlinks"
 echo ""
 while true; do
 	read -r -p "Ready to proceed? (y/N) " reply
+	reply=${reply:-N}
 	echo ""
 	case "$reply" in
 	[Yy]*)
