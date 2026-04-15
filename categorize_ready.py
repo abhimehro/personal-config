@@ -1,8 +1,33 @@
+import os
 import subprocess
 import json
 
+def _parse_env_line(line, env_dict):
+    line = line.strip()
+    if not line:
+        return
+    if line.startswith("#"):
+        return
+    if line.startswith("export "):
+        line = line[7:].strip()
+    if "=" not in line:
+        return
+    key, val = line.split("=", 1)
+    env_dict[key] = val.strip("'\"")
+
+def _load_gh_token_env():
+    env = os.environ.copy()
+    try:
+        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
+            for line in f:
+                _parse_env_line(line, env)
+    except FileNotFoundError:
+        pass
+    return env
+
 def run_gh(cmd):
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    env = _load_gh_token_env()
+    result = subprocess.run(cmd, capture_output=True, text=True, env=env)
     if result.returncode != 0:
         return None
     try:
@@ -47,7 +72,8 @@ categorized = {
 
 for pr in ready_prs:
     repo, pr_id = pr.split('#')
-    info = run_gh(f"source ../email-security-pipeline/GH_TOKEN.env && gh pr view {pr_id} -R {repo} --json title,mergeStateStatus")
+    cmd = ["gh", "pr", "view", str(pr_id), "-R", str(repo), "--json", "title,mergeStateStatus"]
+    info = run_gh(cmd)
     if not info: continue
     
     # Exclude unstable/dirty
