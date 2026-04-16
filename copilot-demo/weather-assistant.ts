@@ -34,7 +34,7 @@ const clearSpinner = () => {
     clearInterval(spinnerInterval);
     spinnerInterval = undefined;
     if (process.stdout.isTTY) {
-      process.stdout.write(ANSI.ShowCursor + "\r" + ANSI.ClearLine);
+      process.stdout.write("\r" + ANSI.ClearLine + ANSI.ShowCursor);
     }
   }
 };
@@ -48,7 +48,7 @@ const startSpinner = () => {
   // Fallback for non-TTY (CI, screen readers) or when terminal isn't fully interactive
   if (!process.stdout.isTTY) {
     process.stdout.write(
-      `${COLORS.Green}Assistant:${COLORS.Reset} ${COLORS.Dim}(${msg})${COLORS.Reset}\n`,
+      `${COLORS.Dim}(${msg})${COLORS.Reset}\n`,
     );
     return;
   }
@@ -56,7 +56,7 @@ const startSpinner = () => {
   process.stdout.write(ANSI.HideCursor);
   spinnerInterval = setInterval(() => {
     process.stdout.write(
-      `\r${COLORS.Green}Assistant:${COLORS.Reset} ${spinnerFrames[i]} ${COLORS.Dim}(${msg})${COLORS.Reset}`,
+      `\r${spinnerFrames[i]} ${COLORS.Dim}(${msg})${COLORS.Reset}`,
     );
     i = (i + 1) % spinnerFrames.length;
   }, 80);
@@ -212,7 +212,10 @@ printHeader();
 // Graceful shutdown on Ctrl+C
 rl.on("SIGINT", async () => {
   clearSpinner();
-  console.log(`\n${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
+  if (process.stdout.isTTY) {
+    process.stdout.write("\r" + ANSI.ClearLine);
+  }
+  console.log(`${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
   try {
     await client.stop();
   } catch (e) {
@@ -225,7 +228,10 @@ rl.on("SIGINT", async () => {
 // Graceful shutdown on EOF (Ctrl+D)
 rl.on("close", async () => {
   clearSpinner();
-  console.log(`\n${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
+  if (process.stdout.isTTY) {
+    process.stdout.write("\r" + ANSI.ClearLine);
+  }
+  console.log(`${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
   try {
     await client.stop();
   } catch (e) {

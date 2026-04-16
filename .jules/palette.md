@@ -104,3 +104,7 @@
 
 **Learning:** When adding optional notifications to CLI scripts (like `terminal-notifier` on macOS), users without the third-party tool installed miss out on the UX improvement.
 **Action:** Always provide a native fallback when possible (e.g., using `osascript -e 'display notification...'` on Darwin) to ensure the UX enhancement reaches all users on that platform without requiring extra dependencies.
+
+## 2024-04-16 - Delaying static prefixes in CLI loading states
+**Learning:** Printing static prefixes (like "Assistant:") before a dynamic spinner completes causes screen reader redundancy and can leave visual artifacts on the terminal if the process is interrupted before the stream begins.
+**Action:** Delay printing static prefixes until the dynamic stream actually begins, and ensure that signal (SIGINT) and error handlers completely clear the line using `\r\x1B[K` to prevent orphaned text artifacts upon interruption.
