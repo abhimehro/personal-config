@@ -209,8 +209,7 @@ const printHeader = () => {
 
 printHeader();
 
-// Graceful shutdown on Ctrl+C
-rl.on("SIGINT", async () => {
+const handleShutdown = async () => {
   clearSpinner();
   if (process.stdout.isTTY) {
     process.stdout.write("\r" + ANSI.ClearLine);
@@ -223,22 +222,13 @@ rl.on("SIGINT", async () => {
   }
   rl.close();
   process.exit(0);
-});
+};
+
+// Graceful shutdown on Ctrl+C
+rl.on("SIGINT", handleShutdown);
 
 // Graceful shutdown on EOF (Ctrl+D)
-rl.on("close", async () => {
-  clearSpinner();
-  if (process.stdout.isTTY) {
-    process.stdout.write("\r" + ANSI.ClearLine);
-  }
-  console.log(`${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
-  try {
-    await client.stop();
-  } catch (e) {
-    // Ignore error
-  }
-  process.exit(0);
-});
+rl.on("close", handleShutdown);
 
 const prompt = () => {
   rl.question(`${COLORS.Cyan}You:${COLORS.Reset} `, async (input) => {
