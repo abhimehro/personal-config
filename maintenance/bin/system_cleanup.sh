@@ -254,7 +254,11 @@ log_info "Disk usage after cleanup: ${DISK_AFTER}% (saved: ${DISK_SAVED}%)"
 STATUS_MSG="Cleaned ${CLEANED_ITEMS} items, saved ${DISK_SAVED}% disk space"
 
 # Notification
-if command -v osascript >/dev/null 2>&1; then
+if command -v terminal-notifier >/dev/null 2>&1; then
+	terminal-notifier -title "System Cleanup" \
+		-message "${STATUS_MSG}" \
+		-group "maintenance" 2>/dev/null || true
+elif command -v osascript >/dev/null 2>&1; then
 	osascript -e "display notification \"${STATUS_MSG}\" with title \"System Cleanup\"" 2>/dev/null || true
 fi
 

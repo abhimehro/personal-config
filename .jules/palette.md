@@ -103,4 +103,3 @@
 ## 2026-06-03 - Native OS Notification Fallbacks
 
 **Learning:** When adding optional notifications to CLI scripts (like `terminal-notifier` on macOS), users without the third-party tool installed miss out on the UX improvement.
-**Action:** Always provide a native fallback when possible (e.g., using `osascript -e 'display notification...'` on Darwin) to ensure the UX enhancement reaches all users on that platform without requiring extra dependencies.
