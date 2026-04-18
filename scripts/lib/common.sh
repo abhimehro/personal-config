@@ -47,7 +47,7 @@ wait_for_process_stop() {
 	local process_name="$1"
 	local max_retries="${2:-20}"
 	local retry=0
-	while pgrep -x "$process_name" >/dev/null 2>&1 && [[ $retry -lt $max_retries ]]; do
+	while pgrep -x -- "$process_name" >/dev/null 2>&1 && [[ $retry -lt $max_retries ]]; do
 		sleep 0.1
 		retry=$((retry + 1))
 	done
