@@ -262,8 +262,15 @@ fi
 log_info "System metrics collection complete - Health: $OVERALL_HEALTH, Performance: $PERF_SCORE/100"
 
 # Optional notification for critical issues
-if [[ $OVERALL_HEALTH == "critical" ]] && command -v osascript >/dev/null 2>&1; then
-	osascript -e 'display notification "System health is critical! Check metrics for details." with title "System Alert" sound name "Basso"' 2>/dev/null || true
+if [[ $OVERALL_HEALTH == "critical" ]]; then
+	if command -v terminal-notifier >/dev/null 2>&1; then
+		terminal-notifier -title "System Alert" \
+			-message "System health is critical! Check metrics for details." \
+			-sound "Basso" \
+			-group "maintenance" 2>/dev/null || true
+	elif command -v osascript >/dev/null 2>&1; then
+		osascript -e 'display notification "System health is critical! Check metrics for details." with title "System Alert" sound name "Basso"' 2>/dev/null || true
+	fi
 fi
 
 echo "System metrics collection completed successfully!"
