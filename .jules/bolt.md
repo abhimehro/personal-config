@@ -121,3 +121,8 @@
 
 **Learning:** macOS uses BSD `find`, which does not support the GNU-specific `-quit` flag. Using `-quit` on macOS causes silent script failures if `stderr` is redirected, which can break conditional logic (e.g. `grep -q .` succeeding falsely or failing falsely).
 **Action:** Do not use the `-quit` flag in `find` commands within macOS-specific scripts. If early exit behavior is needed on the first match, use `find ... | head -n 1` or `grep -q .`.
+
+## 2026-06-25 - [Pre-Joined String Matching vs List Comprehension any()]
+
+**Learning:** In Python, replacing `any(substring in line for line in line_list)` within a loop with a single `substring in pre_joined_string` (where `pre_joined_string = "".join(line_list)`) provides massive performance gains (e.g., ~94% in `detect_duplicates.py`) by leveraging optimized C-level string searching and eliminating repeated list slicing and iteration overhead.
+**Action:** When repeatedly checking if an item exists within a list of strings using `any()`, pre-join the list into a single string outside the loop and use a simple `in` check instead.
