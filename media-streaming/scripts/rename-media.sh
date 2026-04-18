@@ -25,7 +25,14 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
 notify() {
 	local t="$1"
 	local m="$2"
-	if command -v terminal-notifier >/dev/null 2>&1; then terminal-notifier -title "$t" -message "$m" -sound default; fi
+	if command -v terminal-notifier >/dev/null 2>&1; then
+		terminal-notifier -title "$t" -message "$m" -sound default
+	elif command -v osascript >/dev/null 2>&1; then
+		# Escape double quotes for osascript
+		local esc_t="${t//\"/\\\"}"
+		local esc_m="${m//\"/\\\"}"
+		osascript -e "display notification \"$esc_m\" with title \"$esc_t\"" 2>/dev/null || true
+	fi
 }
 ensure_dirs() { mkdir -p "$STAGING_DIR" "$PROCESSED_DIR" "$FAILED_DIR" "$REVIEW_DIR" "$(dirname "$LOG_FILE")"; }
 is_video_file() { [[ $1 =~ \.(mp4|mkv|avi|mov|m4v)$ ]]; }

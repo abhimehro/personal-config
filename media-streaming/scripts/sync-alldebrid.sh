@@ -46,6 +46,11 @@ notify() {
 	local message="$2"
 	if command -v terminal-notifier &>/dev/null; then
 		terminal-notifier -title "$title" -message "$message" -sound default
+	elif command -v osascript &>/dev/null; then
+		# Escape double quotes for osascript
+		local esc_t="${title//\"/\\\"}"
+		local esc_m="${message//\"/\\\"}"
+		osascript -e "display notification \"$esc_m\" with title \"$esc_t\"" 2>/dev/null || true
 	fi
 }
 
