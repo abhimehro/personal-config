@@ -111,3 +111,13 @@
 
 **Learning:** In Python automation scripts calling functions like `matches_any` or `numeric_version` inside loops, using an `@functools.lru_cache` helper function at the module scope caches both regex application and normalisation overhead (e.g. `tuple()` casts and `os.path.normcase` internally), yielding ~50% performance gains on repeated inputs compared to just caching the regex compilation.
 **Action:** When repeatedly calling string matching logic inside loop comprehensions, write a lightweight module-scoped helper decorated with `lru_cache(maxsize=512)` that delegates to the target function to bypass duplicate internal processing logic safely.
+
+## 2026-06-25 - [Avoid N+1 Filesystem Queries in Find Patterns]
+
+**Learning:** Running `find` repeatedly inside a loop over an array of filename patterns creates an N+1 query problem, leading to massive redundant filesystem scanning overhead.
+**Action:** Combine all `-name` patterns dynamically into an array with the `-o` (OR) operator and pass them to a single `find` command. Guard the `find` execution to ensure the pattern array isn't empty, as `find` throws a syntax error on empty parentheses `\( \)`.
+
+## 2026-06-25 - [macOS BSD Find Limitations]
+
+**Learning:** macOS uses BSD `find`, which does not support the GNU-specific `-quit` flag. Using `-quit` on macOS causes silent script failures if `stderr` is redirected, which can break conditional logic (e.g. `grep -q .` succeeding falsely or failing falsely).
+**Action:** Do not use the `-quit` flag in `find` commands within macOS-specific scripts. If early exit behavior is needed on the first match, use `find ... | head -n 1` or `grep -q .`.
