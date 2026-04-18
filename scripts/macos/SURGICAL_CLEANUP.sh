@@ -114,7 +114,16 @@ show_cleanup_preview() {
 
 	local count=0
 
-	for pattern in "${REMOVE_PATTERNS[@]}"; do
+	if [ ${#REMOVE_PATTERNS[@]} -gt 0 ]; then
+		# ⚡ Bolt Optimization: Combine find patterns to avoid N+1 filesystem queries
+		local find_args=()
+		for i in "${!REMOVE_PATTERNS[@]}"; do
+			if [ "$i" -gt 0 ]; then
+				find_args+=("-o")
+			fi
+			find_args+=("-name" "${REMOVE_PATTERNS[$i]}")
+		done
+
 		while IFS= read -r -d '' file; do
 			if [ -e "$file" ]; then
 				local size
@@ -122,8 +131,8 @@ show_cleanup_preview() {
 				echo "🗑️  $file ($size)"
 				((count++))
 			fi
-		done < <(find "$HOME" -maxdepth 1 -name "$pattern" -print0 2>/dev/null)
-	done
+		done < <(find "$HOME" -maxdepth 1 \( "${find_args[@]}" \) -print0 2>/dev/null)
+	fi
 
 	echo
 	echo -e "${YELLOW}Found $count items to remove${NC}"
@@ -151,15 +160,24 @@ perform_surgical_removal() {
 
 	local removed_count=0
 
-	for pattern in "${REMOVE_PATTERNS[@]}"; do
+	if [ ${#REMOVE_PATTERNS[@]} -gt 0 ]; then
+		# ⚡ Bolt Optimization: Combine find patterns to avoid N+1 filesystem queries
+		local find_args=()
+		for i in "${!REMOVE_PATTERNS[@]}"; do
+			if [ "$i" -gt 0 ]; then
+				find_args+=("-o")
+			fi
+			find_args+=("-name" "${REMOVE_PATTERNS[$i]}")
+		done
+
 		while IFS= read -r -d '' file; do
 			if [ -e "$file" ]; then
 				print_status "Removing: ${file##*/}"
 				rm -rf "$file" 2>/dev/null || true
 				((removed_count++))
 			fi
-		done < <(find "$HOME" -maxdepth 1 -name "$pattern" -print0 2>/dev/null)
-	done
+		done < <(find "$HOME" -maxdepth 1 \( "${find_args[@]}" \) -print0 2>/dev/null)
+	fi
 
 	# Special handling for .config directory - keep only fish
 	if [ -d "$HOME/.config" ]; then
@@ -243,11 +261,22 @@ verify_cleanup() {
 
 	echo
 	local remaining_junk=0
-	for pattern in "${REMOVE_PATTERNS[@]}"; do
-		if find "$HOME" -maxdepth 1 -name "$pattern" | grep -q .; then
+
+	if [ ${#REMOVE_PATTERNS[@]} -gt 0 ]; then
+		# ⚡ Bolt Optimization: Combine find patterns to avoid N+1 filesystem queries
+		local find_args=()
+		for i in "${!REMOVE_PATTERNS[@]}"; do
+			if [ "$i" -gt 0 ]; then
+				find_args+=("-o")
+			fi
+			find_args+=("-name" "${REMOVE_PATTERNS[$i]}")
+		done
+
+		# Print matches and exit early by piping to grep -q which stops after the first match
+		if find "$HOME" -maxdepth 1 \( "${find_args[@]}" \) -print 2>/dev/null | grep -q .; then
 			((remaining_junk++))
 		fi
-	done
+	fi
 
 	if [ $remaining_junk -eq 0 ]; then
 		echo -e "${GREEN}🎉 All junk successfully removed!${NC}"
