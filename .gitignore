@@ -277,3 +277,8 @@ controld-system/profiles.env
 
 .gemini/
 gha-creds-*.json
+
+# Cursor generated directories and files
+.cursor/projects/
+.cursor/skills-cursor/
+GH_TOKEN.env
