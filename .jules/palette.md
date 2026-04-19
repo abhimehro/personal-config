@@ -103,3 +103,8 @@
 ## 2026-06-03 - Native OS Notification Fallbacks
 
 **Learning:** When adding optional notifications to CLI scripts (like `terminal-notifier` on macOS), users without the third-party tool installed miss out on the UX improvement.
+
+## 2026-06-25 - Graceful Exit Handlers
+
+**Learning:** When users interrupt interactive CLI scripts (like setup scripts) with `Ctrl+C` (`SIGINT`), abruptly terminating the script without feedback feels broken and unpolished.
+**Action:** Always add a `trap` for `SIGINT` to gracefully catch the interruption, print a clear, polite cancellation message (e.g., `👋 Setup cancelled by user. Goodbye!`), and exit cleanly with standard code 130.

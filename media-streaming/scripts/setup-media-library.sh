@@ -3,6 +3,9 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+# UX Additions
+trap 'echo -e "\n👋 Setup cancelled by user. Goodbye!"; exit 130' SIGINT
+
 echo "🎬 Ultimate Infuse + Cloud Media Library Setup"
 echo "=============================================="
 echo
