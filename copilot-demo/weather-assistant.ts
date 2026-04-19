@@ -166,9 +166,7 @@ session.on((event: SessionEvent) => {
   if (event.type === "assistant.message_delta") {
     if (!responseStarted) {
       clearSpinner();
-      process.stdout.write(
-        COLORS.Green + "Assistant:" + COLORS.Reset + " "
-      );
+      process.stdout.write(COLORS.Green + "Assistant:" + COLORS.Reset + " ");
       responseStarted = true;
     }
     process.stdout.write(event.data.deltaContent);
@@ -284,7 +282,7 @@ ${COLORS.Cyan}Commands:${COLORS.Reset}
     } catch (err: any) {
       clearSpinner();
       console.log(
-        `${COLORS.Red}Error:${COLORS.Reset} Could not reach the assistant. Please try again. (${err?.message || "Unknown error"})`
+        `${COLORS.Red}Error:${COLORS.Reset} Could not reach the assistant. Please try again. (${err?.message || "Unknown error"})`,
       );
     } finally {
       clearSpinner();

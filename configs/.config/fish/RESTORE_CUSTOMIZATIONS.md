@@ -42,10 +42,10 @@ tide configure
 
 The terminal look is intentionally layered:
 
-* **Ghostty** handles the terminal color theme
-* **Tide** handles the prompt via universal variables
-* **Fish syntax highlighting** uses the Dracula Fish theme
-* **fzf** and **bat** are styled from `config.fish`
+- **Ghostty** handles the terminal color theme
+- **Tide** handles the prompt via universal variables
+- **Fish syntax highlighting** uses the Dracula Fish theme
+- **fzf** and **bat** are styled from `config.fish`
 
 ## Fish Syntax Highlighting
 
@@ -94,16 +94,16 @@ set -U tide_context_color_root FF5555
 
 `config.fish` currently sets:
 
-* `BAT_THEME=Dracula`
-* `FZF_DEFAULT_OPTS` with Dracula colors and `--style=full`
-* `FZF_DEFAULT_COMMAND` and `FZF_CTRL_T_COMMAND` via `fd` when available
+- `BAT_THEME=Dracula`
+- `FZF_DEFAULT_OPTS` with Dracula colors and `--style=full`
+- `FZF_DEFAULT_COMMAND` and `FZF_CTRL_T_COMMAND` via `fd` when available
 
 ## SSH Agent Behavior
 
 `config.fish` includes a health check that:
 
-* prefers the 1Password SSH agent when its socket is available
-* falls back to the macOS native SSH agent if needed
+- prefers the 1Password SSH agent when its socket is available
+- falls back to the macOS native SSH agent if needed
 
 This keeps interactive shells and IDE terminals more stable.
 
@@ -111,21 +111,21 @@ This keeps interactive shells and IDE terminals more stable.
 
 These are the main Fish files intended for manual edits:
 
-* `configs/.config/fish/config.fish`
-* `configs/.config/fish/fish_plugins`
-* `configs/.config/fish/RESTORE_CUSTOMIZATIONS.md`
-* `configs/.config/fish/functions/__ensure_dracula_theme.fish`
-* `configs/.config/fish/functions/fish_greeting.fish`
-* `configs/.config/fish/functions/git-mirror-clean.fish`
-* `configs/.config/fish/functions/vibe.fish`
-* `configs/.config/fish/functions/__run_editor.fish`
+- `configs/.config/fish/config.fish`
+- `configs/.config/fish/fish_plugins`
+- `configs/.config/fish/RESTORE_CUSTOMIZATIONS.md`
+- `configs/.config/fish/functions/__ensure_dracula_theme.fish`
+- `configs/.config/fish/functions/fish_greeting.fish`
+- `configs/.config/fish/functions/git-mirror-clean.fish`
+- `configs/.config/fish/functions/vibe.fish`
+- `configs/.config/fish/functions/__run_editor.fish`
 
 These are generally plugin-managed or machine-generated:
 
-* `configs/.config/fish/conf.d/*.fish`
-* `configs/.config/fish/functions/_fzf_*`
-* `configs/.config/fish/functions/_tide_*`
-* `configs/.config/fish/fish_variables`
+- `configs/.config/fish/conf.d/*.fish`
+- `configs/.config/fish/functions/_fzf_*`
+- `configs/.config/fish/functions/_tide_*`
+- `configs/.config/fish/fish_variables`
 
 ## Verification
 

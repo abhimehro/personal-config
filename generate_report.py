@@ -1,17 +1,21 @@
 import json
 
-with open('tasks/pr-merge-results.json') as f:
+with open("tasks/pr-merge-results.json") as f:
     results = json.load(f)
 
 # Adjust for draft PRs fixed manually
-draft_fixes = ["abhimehro/email-security-pipeline#632", "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#102", "abhimehro/personal-config#743"]
+draft_fixes = [
+    "abhimehro/email-security-pipeline#632",
+    "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#102",
+    "abhimehro/personal-config#743",
+]
 new_escalated = []
-for e in results['escalated']:
+for e in results["escalated"]:
     if f"{e[0]}#{e[1]}" in draft_fixes:
-        results['merged'].append((e[0], e[1], e[2]))
+        results["merged"].append((e[0], e[1], e[2]))
     else:
         new_escalated.append(e)
-results['escalated'] = new_escalated
+results["escalated"] = new_escalated
 
 closed = [
     "abhimehro/personal-config#739",
@@ -29,12 +33,12 @@ closed = [
     "abhimehro/ctrld-sync#702",
     "abhimehro/ctrld-sync#697",
     "abhimehro/personal-config#732",
-    "abhimehro/personal-config#724"
+    "abhimehro/personal-config#724",
 ]
 
 escalated = [
     "abhimehro/personal-config#725 (Merge Conflict)",
-    "abhimehro/email-security-pipeline#630 (Merge Conflict during pipeline)"
+    "abhimehro/email-security-pipeline#630 (Merge Conflict during pipeline)",
 ]
 
 report = """# Automated PR Review Session Report
@@ -64,19 +68,30 @@ report = """# Automated PR Review Session Report
 The automated PR review agent successfully processed the backlog across 5 repositories. Duplicates, superseded PRs, and semantic overlaps were cleanly closed. Security, CI/Infra, and Performance PRs that passed the safety gates were squash-merged successfully. Draft PRs were identified, marked ready, and merged to clear the queue. Two PRs were escalated due to conflicts requiring human resolution. 
 """
 
-merged_str = "\n".join([f"- [#{pr}](https://github.com/{repo}/pull/{pr}) in `{repo}`: {title}" for repo, pr, title in results['merged']])
-closed_str = "\n".join([f"- [{pr}](https://github.com/{pr.replace('#', '/pull/')})" for pr in closed])
-escalated_str = "\n".join([f"- [{pr.split()[0]}](https://github.com/{pr.split()[0].replace('#', '/pull/')}) - {pr.split(maxsplit=1)[1]}" for pr in escalated])
+merged_str = "\n".join(
+    [
+        f"- [#{pr}](https://github.com/{repo}/pull/{pr}) in `{repo}`: {title}"
+        for repo, pr, title in results["merged"]
+    ]
+)
+closed_str = "\n".join(
+    [f"- [{pr}](https://github.com/{pr.replace('#', '/pull/')})" for pr in closed]
+)
+escalated_str = "\n".join(
+    [
+        f"- [{pr.split()[0]}](https://github.com/{pr.split()[0].replace('#', '/pull/')}) - {pr.split(maxsplit=1)[1]}"
+        for pr in escalated
+    ]
+)
 
 report = report.format(
-    merged_count=len(results['merged']),
+    merged_count=len(results["merged"]),
     closed_count=len(closed),
     escalated_count=len(escalated),
     merged_list=merged_str,
     closed_list=closed_str,
-    escalated_list=escalated_str
+    escalated_list=escalated_str,
 )
 
-with open('tasks/pr-review-2026-03-10.md', 'w') as f:
+with open("tasks/pr-review-2026-03-10.md", "w") as f:
     f.write(report)
-

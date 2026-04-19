@@ -1,8 +1,9 @@
-import re
-from datetime import datetime, timezone
 import json
-import subprocess
 import os
+import re
+import subprocess
+from datetime import datetime, timezone
+
 
 def _parse_env_line(line, env_dict):
     line = line.strip()
@@ -17,6 +18,7 @@ def _parse_env_line(line, env_dict):
     key, val = line.split("=", 1)
     env_dict[key] = val.strip("'\"")
 
+
 def _load_gh_token_env():
     env = os.environ.copy()
     try:
@@ -27,9 +29,19 @@ def _load_gh_token_env():
         pass
     return env
 
+
 def run_gh(repo, pr):
     env = _load_gh_token_env()
-    cmd = ["gh", "pr", "view", str(pr), "-R", str(repo), "--json", "files,updatedAt,mergeStateStatus"]
+    cmd = [
+        "gh",
+        "pr",
+        "view",
+        str(pr),
+        "-R",
+        str(repo),
+        "--json",
+        "files,updatedAt,mergeStateStatus",
+    ]
     result = subprocess.run(cmd, capture_output=True, text=True, env=env)
 
     if result.returncode != 0:
@@ -39,53 +51,53 @@ def run_gh(repo, pr):
     except:
         return None
 
-lines = open('tasks/pr-inventory.md').readlines()
+
+lines = open("tasks/pr-inventory.md").readlines()
 repos = {}
 current_repo = None
 
 # Repo -> [ (pr_id, author, merge, checks, hints), ... ]
 for line in lines:
-    m = re.match(r'^## (.*)', line)
+    m = re.match(r"^## (.*)", line)
     if m:
         current_repo = m.group(1).strip()
         repos[current_repo] = []
-    elif line.startswith('|') and not line.startswith('| # |') and not line.startswith('| ---'):
-        parts = [p.strip() for p in line.split('|')]
+    elif (
+        line.startswith("|")
+        and not line.startswith("| # |")
+        and not line.startswith("| ---")
+    ):
+        parts = [p.strip() for p in line.split("|")]
         if len(parts) > 8:
             pr_id = parts[1]
             author = parts[4]
             merge = parts[6]
             checks = parts[7]
             hints = parts[8]
-            if author.endswith('[bot]') or hints:
+            if author.endswith("[bot]") or hints:
                 if pr_id.isdigit():
-                    repos[current_repo].append({'pr': pr_id, 'checks': checks})
+                    repos[current_repo].append({"pr": pr_id, "checks": checks})
 
-triage = {
-    'SUPERSEDED': [],
-    'STALE': [],
-    'CONFLICTING': [],
-    'READY': []
-}
+triage = {"SUPERSEDED": [], "STALE": [], "CONFLICTING": [], "READY": []}
 
 for repo, prs in repos.items():
     for pr_info in prs:
-        pr = pr_info['pr']
-        checks = pr_info['checks']
+        pr = pr_info["pr"]
+        checks = pr_info["checks"]
         print(f"Checking {repo}#{pr}")
         info = run_gh(repo, pr)
         if not info:
             print(f"Failed to fetch {repo}#{pr}")
             continue
-        
-        files = info.get('files', [])
-        updated_at = info.get('updatedAt', '')
-        merge_status = info.get('mergeStateStatus', '')
-        
+
+        files = info.get("files", [])
+        updated_at = info.get("updatedAt", "")
+        merge_status = info.get("mergeStateStatus", "")
+
         if not files:
-            triage['SUPERSEDED'].append(f"{repo}#{pr}")
+            triage["SUPERSEDED"].append(f"{repo}#{pr}")
             continue
-        
+
         days_old = 0
         if updated_at:
             # ⚡ Bolt Optimization: Replace strptime with fromisoformat for ~40x faster date parsing.
@@ -93,24 +105,24 @@ for repo, prs in repos.items():
             dt = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
             now = datetime.now(timezone.utc)
             days_old = (now - dt).days
-            
+
         is_stale = days_old > 30
-        
-        checks_failing = ('FAIL' in checks) or ('PENDING' in checks)
-        
+
+        checks_failing = ("FAIL" in checks) or ("PENDING" in checks)
+
         if is_stale and checks_failing:
-            triage['STALE'].append(f"{repo}#{pr}")
-            continue
-            
-        if merge_status in ['DIRTY', 'CONFLICTING']:
-            triage['CONFLICTING'].append(f"{repo}#{pr}")
-            continue
-            
-        if merge_status == 'CLEAN' and not checks_failing:
-            triage['READY'].append(f"{repo}#{pr}")
+            triage["STALE"].append(f"{repo}#{pr}")
             continue
 
-with open('tasks/pr-triage.md', 'w') as f:
+        if merge_status in ["DIRTY", "CONFLICTING"]:
+            triage["CONFLICTING"].append(f"{repo}#{pr}")
+            continue
+
+        if merge_status == "CLEAN" and not checks_failing:
+            triage["READY"].append(f"{repo}#{pr}")
+            continue
+
+with open("tasks/pr-triage.md", "w") as f:
     f.write("# PR Triage\n\n")
     for category, pr_list in triage.items():
         f.write(f"## {category}\n")

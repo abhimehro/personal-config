@@ -12,6 +12,7 @@
 
 Using a `grep` check, some suspicious tokens/keys were reviewed.
 **Findings:**
+
 - `adguard/adblocking/dynamic-dnr-ruleset.json`: Uses `apiKey=` in regex filters.
 - `.env.example`: Provides placeholders for API keys.
 - `configs/.config/mole/lib/uninstall/brew.sh`: Uses `token=` variable name for paths, not an actual secret.

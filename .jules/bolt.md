@@ -104,6 +104,7 @@
 **Action:** When a function requires a date for calculations and is called repeatedly in a loop, parse the date outside the loop and pass the `datetime.date` object as an argument instead of the raw string.
 
 ## 2026-04-04 - strptime vs fromisoformat overhead
+
 **Learning:** In Python, parsing ISO-8601 timestamp strings using `datetime.strptime` involves format string processing overhead that can be significantly slow inside loops. `datetime.fromisoformat()` is implemented in C and optimized for ISO strings, executing 20x-40x faster.
 **Action:** When parsing standard ISO timestamps (e.g., from APIs or configuration files), use `datetime.fromisoformat()` instead of `strptime`. For strings ending with `"Z"` (UTC), use `.replace("Z", "+00:00")` before parsing to maintain compatibility with Python versions older than 3.11.
 

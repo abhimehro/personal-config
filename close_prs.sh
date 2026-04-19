@@ -1,11 +1,11 @@
 source ../email-security-pipeline/GH_TOKEN.env
 
 close_pr() {
-  local repo=$1
-  local pr=$2
-  local reason=$3
-  echo "Closing $repo#$pr ($reason)..."
-  gh pr close $pr -R $repo -c "Automated triage: $reason"
+	local repo=$1
+	local pr=$2
+	local reason=$3
+	echo "Closing $repo#$pr ($reason)..."
+	gh pr close $pr -R $repo -c "Automated triage: $reason"
 }
 
 # SUPERSEDED
@@ -25,4 +25,3 @@ close_pr "abhimehro/personal-config" "735" "Semantic duplicate of a newer automa
 close_pr "abhimehro/email-security-pipeline" "635" "Semantic duplicate of a newer automated PR (#642)"
 close_pr "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project" "105" "Semantic duplicate of a newer automated PR (#108)"
 close_pr "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project" "101" "Semantic duplicate of a newer automated PR (#108)"
-

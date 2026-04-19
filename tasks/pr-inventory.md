@@ -12,57 +12,57 @@
 
 ## Repos
 
-| Repo | Slug |
-| ---- | ---- |
-| Dotfiles / IaC | `abhimehro/dotfiles-iac` | <!-- pragma: allowlist secret -->
-| Control D sync | `abhimehro/ctrld-sync` |
-| Email pipeline | `abhimehro/email-security-pipeline` |
-| Seatek | `abhimehro/Seatek_Analysis` |
-| Hydrograph | `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project` |
+| Repo           | Slug                                                 |
+| -------------- | ---------------------------------------------------- | --------------------------------- |
+| Dotfiles / IaC | `abhimehro/dotfiles-iac`                             | <!-- pragma: allowlist secret --> |
+| Control D sync | `abhimehro/ctrld-sync`                               |
+| Email pipeline | `abhimehro/email-security-pipeline`                  |
+| Seatek         | `abhimehro/Seatek_Analysis`                          |
+| Hydrograph     | `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project` |
 
 ## Initial open inventory (2026-04-11, before actions)
 
-| Repo | PR | Author | Branch (abbr.) | Category | CI (rollup) | Mergeable | Files | Notes |
-| ---- | --: | ------ | -------------- | -------- | ----------- | --------- | ----: | ----- |
-| Hydrograph | 112 | abhimehro | `bolt/avoid-sort-*` | PERFORMANCE | PASS | MERGEABLE | 1 | Superseded → **closed** after #116 |
-| Hydrograph | 114 | abhimehro | `bolt/optimize-sort-*` | PERFORMANCE | PASS | MERGEABLE | 5 | Superseded → **closed** after #116 |
-| Hydrograph | 116 | abhimehro | `bolt-optimize-redundant-*` | PERFORMANCE | PASS | MERGEABLE | 3 | **Merged** (canonical sort optimization) |
-| Seatek | 129 | abhimehro | `bolt-optimize-lang-map-*` | PERFORMANCE | PASS | MERGEABLE | 1 | **Merged** |
-| Seatek | 130 | abhimehro | `bolt/optimize-code-health-*` | PERFORMANCE | PASS | MERGEABLE | 1 | **Conflicting** after #129 → escalate |
-| ctrld-sync | 709 | abhimehro | `palette-ux-emojis-*` | UX | PASS | CONFLICTING | 2 | **Closed** duplicate vs #716 |
-| ctrld-sync | 711 | abhimehro | `ux-no-color-emojis-*` | UX | PASS | MERGEABLE | 3 | **Closed** duplicate vs #716 |
-| ctrld-sync | 712 | abhimehro | `sentinel-explicit-loopback-*` | SECURITY | PASS | MERGEABLE | 3 | **Merged** (preferred SSRF fix + tests) |
-| ctrld-sync | 714 | abhimehro | `sentinel-fix-ssrf-loopback-*` | SECURITY | PASS | MERGEABLE | 1 | **Merged** |
-| ctrld-sync | 715 | abhimehro | `sentinel-fix-ssrf-loopback-*` | SECURITY | PASS | MERGEABLE | 2 | **Closed** superseded by #712 |
-| ctrld-sync | 716 | abhimehro | `fix-cli-output-fallbacks-*` | UX | PASS | MERGEABLE | 3 | **Merged** |
-| email | 646 | abhimehro | `jules-*` | UX | PASS | MERGEABLE | 3 | **Closed** superseded by #662 |
-| email | 650 | abhimehro | `palette/ux-*` | UX | FAIL (submit-pypi) | MERGEABLE | 2 | **Closed** superseded by #662 |
-| email | 651 | app/dependabot | `dependabot/pip/*` | DEPENDENCY | pending/mixed → later PASS | MERGEABLE | 1 | **Escalate** transformers 5.0.0rc3 |
-| email | 656 | abhimehro | `palette/cli-*` | UX | PASS | MERGEABLE | 2 | **Closed** superseded by #662 |
-| email | 657 | abhimehro | `sentinel-fix-assert-*` | SECURITY | PASS | MERGEABLE | 1 | **Merged** |
-| email | 658 | abhimehro | `jules-*` | PERFORMANCE | PASS | MERGEABLE | 3 | **Merged** |
-| email | 659 | abhimehro | `jules-*` | CHORE | PASS | MERGEABLE | 1 | **Merged** |
-| email | 660 | abhimehro | `automation-workflow-*` | CI/INFRA | PASS | MERGEABLE | 2 | **Draft** → escalate |
-| email | 662 | abhimehro | `palette-improve-*` | UX | PASS | MERGEABLE | 1 | **Merged** |
-| dotfiles-iac | 747 | abhimehro | `palette-accessible-*` | UX | PASS | MERGEABLE | 4 | **Closed** redundant vs #760/#754 |
-| dotfiles-iac | 748 | abhimehro | `sentinel/fix-option-injection-*` | SECURITY | PASS | MERGEABLE | 2 | **Merged** |
-| dotfiles-iac | 751 | abhimehro | `fix-spinner-terminal-*` | UX | PASS | MERGEABLE | 5 | **Closed** superseded |
-| dotfiles-iac | 752 | abhimehro | `fix/option-injection-pgrep-*` | SECURITY | PASS | MERGEABLE | 3 | **Closed** superseded by #748 |
-| dotfiles-iac | 754 | abhimehro | `palette/cli-spinner-artifacts-*` | UX | PASS | MERGEABLE | 4 | **Merged** |
-| dotfiles-iac | 756 | abhimehro | `automation-workflow-*` | CI/INFRA | PASS | MERGEABLE | 1 | **Draft** → escalate |
-| dotfiles-iac | 758 | abhimehro | `jules-*` | PERFORMANCE | PASS | MERGEABLE | 2 | **Merged** |
-| dotfiles-iac | 760 | abhimehro | `palette-cli-spinner-cleanup-*` | UX | PASS | MERGEABLE | 2 | **Merged** |
+| Repo         |  PR | Author         | Branch (abbr.)                    | Category    | CI (rollup)                | Mergeable   | Files | Notes                                    |
+| ------------ | --: | -------------- | --------------------------------- | ----------- | -------------------------- | ----------- | ----: | ---------------------------------------- |
+| Hydrograph   | 112 | abhimehro      | `bolt/avoid-sort-*`               | PERFORMANCE | PASS                       | MERGEABLE   |     1 | Superseded → **closed** after #116       |
+| Hydrograph   | 114 | abhimehro      | `bolt/optimize-sort-*`            | PERFORMANCE | PASS                       | MERGEABLE   |     5 | Superseded → **closed** after #116       |
+| Hydrograph   | 116 | abhimehro      | `bolt-optimize-redundant-*`       | PERFORMANCE | PASS                       | MERGEABLE   |     3 | **Merged** (canonical sort optimization) |
+| Seatek       | 129 | abhimehro      | `bolt-optimize-lang-map-*`        | PERFORMANCE | PASS                       | MERGEABLE   |     1 | **Merged**                               |
+| Seatek       | 130 | abhimehro      | `bolt/optimize-code-health-*`     | PERFORMANCE | PASS                       | MERGEABLE   |     1 | **Conflicting** after #129 → escalate    |
+| ctrld-sync   | 709 | abhimehro      | `palette-ux-emojis-*`             | UX          | PASS                       | CONFLICTING |     2 | **Closed** duplicate vs #716             |
+| ctrld-sync   | 711 | abhimehro      | `ux-no-color-emojis-*`            | UX          | PASS                       | MERGEABLE   |     3 | **Closed** duplicate vs #716             |
+| ctrld-sync   | 712 | abhimehro      | `sentinel-explicit-loopback-*`    | SECURITY    | PASS                       | MERGEABLE   |     3 | **Merged** (preferred SSRF fix + tests)  |
+| ctrld-sync   | 714 | abhimehro      | `sentinel-fix-ssrf-loopback-*`    | SECURITY    | PASS                       | MERGEABLE   |     1 | **Merged**                               |
+| ctrld-sync   | 715 | abhimehro      | `sentinel-fix-ssrf-loopback-*`    | SECURITY    | PASS                       | MERGEABLE   |     2 | **Closed** superseded by #712            |
+| ctrld-sync   | 716 | abhimehro      | `fix-cli-output-fallbacks-*`      | UX          | PASS                       | MERGEABLE   |     3 | **Merged**                               |
+| email        | 646 | abhimehro      | `jules-*`                         | UX          | PASS                       | MERGEABLE   |     3 | **Closed** superseded by #662            |
+| email        | 650 | abhimehro      | `palette/ux-*`                    | UX          | FAIL (submit-pypi)         | MERGEABLE   |     2 | **Closed** superseded by #662            |
+| email        | 651 | app/dependabot | `dependabot/pip/*`                | DEPENDENCY  | pending/mixed → later PASS | MERGEABLE   |     1 | **Escalate** transformers 5.0.0rc3       |
+| email        | 656 | abhimehro      | `palette/cli-*`                   | UX          | PASS                       | MERGEABLE   |     2 | **Closed** superseded by #662            |
+| email        | 657 | abhimehro      | `sentinel-fix-assert-*`           | SECURITY    | PASS                       | MERGEABLE   |     1 | **Merged**                               |
+| email        | 658 | abhimehro      | `jules-*`                         | PERFORMANCE | PASS                       | MERGEABLE   |     3 | **Merged**                               |
+| email        | 659 | abhimehro      | `jules-*`                         | CHORE       | PASS                       | MERGEABLE   |     1 | **Merged**                               |
+| email        | 660 | abhimehro      | `automation-workflow-*`           | CI/INFRA    | PASS                       | MERGEABLE   |     2 | **Draft** → escalate                     |
+| email        | 662 | abhimehro      | `palette-improve-*`               | UX          | PASS                       | MERGEABLE   |     1 | **Merged**                               |
+| dotfiles-iac | 747 | abhimehro      | `palette-accessible-*`            | UX          | PASS                       | MERGEABLE   |     4 | **Closed** redundant vs #760/#754        |
+| dotfiles-iac | 748 | abhimehro      | `sentinel/fix-option-injection-*` | SECURITY    | PASS                       | MERGEABLE   |     2 | **Merged**                               |
+| dotfiles-iac | 751 | abhimehro      | `fix-spinner-terminal-*`          | UX          | PASS                       | MERGEABLE   |     5 | **Closed** superseded                    |
+| dotfiles-iac | 752 | abhimehro      | `fix/option-injection-pgrep-*`    | SECURITY    | PASS                       | MERGEABLE   |     3 | **Closed** superseded by #748            |
+| dotfiles-iac | 754 | abhimehro      | `palette/cli-spinner-artifacts-*` | UX          | PASS                       | MERGEABLE   |     4 | **Merged**                               |
+| dotfiles-iac | 756 | abhimehro      | `automation-workflow-*`           | CI/INFRA    | PASS                       | MERGEABLE   |     1 | **Draft** → escalate                     |
+| dotfiles-iac | 758 | abhimehro      | `jules-*`                         | PERFORMANCE | PASS                       | MERGEABLE   |     2 | **Merged**                               |
+| dotfiles-iac | 760 | abhimehro      | `palette-cli-spinner-cleanup-*`   | UX          | PASS                       | MERGEABLE   |     2 | **Merged**                               |
 
 ## Post-session remainder (open, in-scope)
 
-| Repo | PR | Reason still open |
-| ---- | --: | ----------------- |
-| dotfiles-iac | 756 | Draft workflow consolidation — escalated |
+| Repo                    |  PR | Reason still open                        |
+| ----------------------- | --: | ---------------------------------------- |
+| dotfiles-iac            | 756 | Draft workflow consolidation — escalated |
 | email-security-pipeline | 660 | Draft workflow consolidation — escalated |
-| email-security-pipeline | 651 | RC major dependency bump — escalated |
-| Seatek_Analysis | 130 | Merge conflict after #129 — escalated |
+| email-security-pipeline | 651 | RC major dependency bump — escalated     |
+| Seatek_Analysis         | 130 | Merge conflict after #129 — escalated    |
 
 ## Summary counts (initial inventory)
 
-- **Total in-scope open:** 28  
-- **By theme:** SECURITY 6 · PERFORMANCE/UX 18 · DEPENDENCY 1 · CI/INFRA (draft) 2 · CHORE 1  
+- **Total in-scope open:** 28
+- **By theme:** SECURITY 6 · PERFORMANCE/UX 18 · DEPENDENCY 1 · CI/INFRA (draft) 2 · CHORE 1

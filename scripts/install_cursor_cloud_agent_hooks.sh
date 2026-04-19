@@ -86,7 +86,7 @@ install_into_dir() {
 main() {
 	require_sources
 
-	if [[ -n ${CURSOR_AGENT_HOOKS_DIR:-} ]]; then
+	if [[ -n ${CURSOR_AGENT_HOOKS_DIR-} ]]; then
 		install_into_dir "$CURSOR_AGENT_HOOKS_DIR"
 		return 0
 	fi

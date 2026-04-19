@@ -256,17 +256,17 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 
 ### Key services and how to run them
 
-| What                       | Command                                          | Notes                                                                                                                |
-| -------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| What                       | Command                                          | Notes                                                                                                                                                                                                            |
+| -------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Cursor Cloud hook sync     | `make cursor-cloud-hooks`                        | Copies `scripts/cursor_cloud_agent_*.sh` into `~/.cursor/agent-hooks/*` when **both** `pre-commit.cursor` and `commit-msg.cursor` exist as regular files; refuses symlink hook paths (`install(1)`, TOCTOU-safe) |
-| Shell tests only           | `make test`                                      | Fastest full suite; 31 tests, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                          |
-| Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                            |
-| All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI. |
-| Single Python module       | `python3 -m unittest tests.test_path_validation` | stdlib only, no pip deps                                                                                             |
-| Python tests only          | `make test-python`                               | stdlib only, no pip deps                                                                                             |
-| Lint (all)                 | `make lint`                                      | Trunk downloads its own tool versions on first run                                                                   |
-| Lint (correctness gate)    | `make lint-errors`                               | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate.                                              |
-| Format                     | `make lint-fix`                                  | Auto-fixes where supported                                                                                           |
+| Shell tests only           | `make test`                                      | Fastest full suite; 31 tests, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                                                                                                                      |
+| Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                                                                                                                        |
+| All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI.                                                                                             |
+| Single Python module       | `python3 -m unittest tests.test_path_validation` | stdlib only, no pip deps                                                                                                                                                                                         |
+| Python tests only          | `make test-python`                               | stdlib only, no pip deps                                                                                                                                                                                         |
+| Lint (all)                 | `make lint`                                      | Trunk downloads its own tool versions on first run                                                                                                                                                               |
+| Lint (correctness gate)    | `make lint-errors`                               | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate.                                                                                                                                          |
+| Format                     | `make lint-fix`                                  | Auto-fixes where supported                                                                                                                                                                                       |
 
 ### Non-obvious caveats
 

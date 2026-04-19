@@ -222,13 +222,13 @@
 
 ### Metrics
 
-| Metric | Count |
-| ------ | ----: |
-| PRs in-scope inventoried (initial) | 28 |
-| PRs merged (squash) | 14 |
-| PRs closed (duplicate / superseded) | 11 |
-| PRs escalated / hold (comments, left open) | 4 |
-| Auto-fix commits on PR branches | 0 |
+| Metric                                     | Count |
+| ------------------------------------------ | ----: |
+| PRs in-scope inventoried (initial)         |    28 |
+| PRs merged (squash)                        |    14 |
+| PRs closed (duplicate / superseded)        |    11 |
+| PRs escalated / hold (comments, left open) |     4 |
+| Auto-fix commits on PR branches            |     0 |
 
 ### Merged (squash)
 
