@@ -103,3 +103,4 @@
 ## 2026-06-03 - Native OS Notification Fallbacks
 
 **Learning:** When adding optional notifications to CLI scripts (like `terminal-notifier` on macOS), users without the third-party tool installed miss out on the UX improvement.
+**Action:** Always provide a fallback to native OS notifications (like `osascript -e` on macOS) when using third-party notification tools to ensure a consistent experience. When passing variables to `osascript`, ensure double quotes within the variables are properly escaped (e.g., `esc_val="${val//\"/\\\"}"`) to prevent syntax errors.
