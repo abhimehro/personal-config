@@ -5,8 +5,8 @@
 set -euo pipefail
 
 # Prevent multiple sourcing
-if [[ -n ${MOLE_TIMEOUT_LOADED-} ]]; then
-	return 0
+if [[ -n "${MOLE_TIMEOUT_LOADED:-}" ]]; then
+    return 0
 fi
 readonly MOLE_TIMEOUT_LOADED=1
 
@@ -29,38 +29,38 @@ readonly MOLE_TIMEOUT_LOADED=1
 #   - May not clean up all child processes
 #   - Has race conditions in edge cases
 #   - Less reliable than native timeout/perl helper
-if [[ -z ${MO_TIMEOUT_INITIALIZED-} ]]; then
-	MO_TIMEOUT_BIN=""
-	MO_TIMEOUT_PERL_BIN=""
-	for candidate in gtimeout timeout; do
-		if command -v "$candidate" >/dev/null 2>&1; then
-			MO_TIMEOUT_BIN="$candidate"
-			if [[ ${MO_DEBUG:-0} == "1" ]]; then
-				echo "[TIMEOUT] Using command: $candidate" >&2
-			fi
-			break
-		fi
-	done
+if [[ -z "${MO_TIMEOUT_INITIALIZED:-}" ]]; then
+    MO_TIMEOUT_BIN=""
+    MO_TIMEOUT_PERL_BIN=""
+    for candidate in gtimeout timeout; do
+        if command -v "$candidate" > /dev/null 2>&1; then
+            MO_TIMEOUT_BIN="$candidate"
+            if [[ "${MO_DEBUG:-0}" == "1" ]]; then
+                echo "[TIMEOUT] Using command: $candidate" >&2
+            fi
+            break
+        fi
+    done
 
-	if command -v perl >/dev/null 2>&1; then
-		MO_TIMEOUT_PERL_BIN="$(command -v perl)"
-		if [[ -z $MO_TIMEOUT_BIN ]] && [[ ${MO_DEBUG:-0} == "1" ]]; then
-			echo "[TIMEOUT] Using perl fallback: $MO_TIMEOUT_PERL_BIN" >&2
-		fi
-	fi
+    if command -v perl > /dev/null 2>&1; then
+        MO_TIMEOUT_PERL_BIN="$(command -v perl)"
+        if [[ -z "$MO_TIMEOUT_BIN" ]] && [[ "${MO_DEBUG:-0}" == "1" ]]; then
+            echo "[TIMEOUT] Using perl fallback: $MO_TIMEOUT_PERL_BIN" >&2
+        fi
+    fi
 
-	# Log warning if no timeout command available
-	if [[ -z $MO_TIMEOUT_BIN && -z $MO_TIMEOUT_PERL_BIN ]] && [[ ${MO_DEBUG:-0} == "1" ]]; then
-		echo "[TIMEOUT] No timeout command found, using shell fallback" >&2
-		echo "[TIMEOUT] Install coreutils for better reliability: brew install coreutils" >&2
-	fi
+    # Log warning if no timeout command available
+    if [[ -z "$MO_TIMEOUT_BIN" && -z "$MO_TIMEOUT_PERL_BIN" ]] && [[ "${MO_DEBUG:-0}" == "1" ]]; then
+        echo "[TIMEOUT] No timeout command found, using shell fallback" >&2
+        echo "[TIMEOUT] Install coreutils for better reliability: brew install coreutils" >&2
+    fi
 
-	# Export so child processes inherit detected values and skip re-detection.
-	# Without this, children that inherit MO_TIMEOUT_INITIALIZED=1 skip the init
-	# block but have empty bin vars, forcing the slow shell fallback.
-	export MO_TIMEOUT_BIN
-	export MO_TIMEOUT_PERL_BIN
-	export MO_TIMEOUT_INITIALIZED=1
+    # Export so child processes inherit detected values and skip re-detection.
+    # Without this, children that inherit MO_TIMEOUT_INITIALIZED=1 skip the init
+    # block but have empty bin vars, forcing the slow shell fallback.
+    export MO_TIMEOUT_BIN
+    export MO_TIMEOUT_PERL_BIN
+    export MO_TIMEOUT_INITIALIZED=1
 fi
 
 # ============================================================================
@@ -95,31 +95,31 @@ fi
 #
 # For mission-critical timeouts, install coreutils.
 run_with_timeout() {
-	local duration="${1:-0}"
-	shift || true
+    local duration="${1:-0}"
+    shift || true
 
-	# No timeout if duration is invalid or zero
-	if [[ ! $duration =~ ^[0-9]+(\.[0-9]+)?$ ]] || [[ $(echo "$duration <= 0" | bc -l 2>/dev/null) -eq 1 ]]; then
-		"$@"
-		return $?
-	fi
+    # No timeout if duration is invalid or zero
+    if [[ ! "$duration" =~ ^[0-9]+(\.[0-9]+)?$ ]] || [[ $(echo "$duration <= 0" | bc -l 2> /dev/null) -eq 1 ]]; then
+        "$@"
+        return $?
+    fi
 
-	# Use timeout command if available (preferred path)
-	if [[ -n ${MO_TIMEOUT_BIN-} ]]; then
-		if [[ ${MO_DEBUG:-0} == "1" ]]; then
-			echo "[TIMEOUT] Running with ${duration}s timeout: $*" >&2
-		fi
-		"$MO_TIMEOUT_BIN" "$duration" "$@"
-		return $?
-	fi
+    # Use timeout command if available (preferred path)
+    if [[ -n "${MO_TIMEOUT_BIN:-}" ]]; then
+        if [[ "${MO_DEBUG:-0}" == "1" ]]; then
+            echo "[TIMEOUT] Running with ${duration}s timeout: $*" >&2
+        fi
+        "$MO_TIMEOUT_BIN" "$duration" "$@"
+        return $?
+    fi
 
-	# Use perl helper when timeout command is unavailable.
-	if [[ -n ${MO_TIMEOUT_PERL_BIN-} ]]; then
-		if [[ ${MO_DEBUG:-0} == "1" ]]; then
-			echo "[TIMEOUT] Perl fallback, ${duration}s: $*" >&2
-		fi
-		# shellcheck disable=SC2016  # Embedded Perl uses Perl variables inside single quotes.
-		"$MO_TIMEOUT_PERL_BIN" -e '
+    # Use perl helper when timeout command is unavailable.
+    if [[ -n "${MO_TIMEOUT_PERL_BIN:-}" ]]; then
+        if [[ "${MO_DEBUG:-0}" == "1" ]]; then
+            echo "[TIMEOUT] Perl fallback, ${duration}s: $*" >&2
+        fi
+        # shellcheck disable=SC2016  # Embedded Perl uses Perl variables inside single quotes.
+        "$MO_TIMEOUT_PERL_BIN" -e '
             use strict;
             use warnings;
             use POSIX qw(:sys_wait_h setsid);
@@ -171,68 +171,68 @@ run_with_timeout() {
                 sleep 0.1;
             }
         ' "$duration" "$@"
-		return $?
-	fi
+        return $?
+    fi
 
-	# ========================================================================
-	# Shell-based fallback implementation
-	# ========================================================================
+    # ========================================================================
+    # Shell-based fallback implementation
+    # ========================================================================
 
-	if [[ ${MO_DEBUG:-0} == "1" ]]; then
-		echo "[TIMEOUT] Shell fallback, ${duration}s: $*" >&2
-	fi
+    if [[ "${MO_DEBUG:-0}" == "1" ]]; then
+        echo "[TIMEOUT] Shell fallback, ${duration}s: $*" >&2
+    fi
 
-	# Start command in background
-	"$@" &
-	local cmd_pid=$!
+    # Start command in background
+    "$@" &
+    local cmd_pid=$!
 
-	# Start timeout killer in background.
-	# Redirect all FDs to /dev/null so orphaned child processes (e.g. sleep $duration)
-	# do not inherit open file descriptors from the caller and block output pipes
-	# (notably bats output capture pipes that wait for all writers to close).
-	(
-		# Wait for timeout duration
-		sleep "$duration"
+    # Start timeout killer in background.
+    # Redirect all FDs to /dev/null so orphaned child processes (e.g. sleep $duration)
+    # do not inherit open file descriptors from the caller and block output pipes
+    # (notably bats output capture pipes that wait for all writers to close).
+    (
+        # Wait for timeout duration
+        sleep "$duration"
 
-		# Check if process still exists
-		if kill -0 "$cmd_pid" 2>/dev/null; then
-			# Try to kill process group first (negative PID), fallback to single process
-			# Process group kill is best effort - may not work if setsid was used
-			kill -TERM -"$cmd_pid" 2>/dev/null || kill -TERM "$cmd_pid" 2>/dev/null || true
+        # Check if process still exists
+        if kill -0 "$cmd_pid" 2> /dev/null; then
+            # Try to kill process group first (negative PID), fallback to single process
+            # Process group kill is best effort - may not work if setsid was used
+            kill -TERM -"$cmd_pid" 2> /dev/null || kill -TERM "$cmd_pid" 2> /dev/null || true
 
-			# Grace period for clean shutdown
-			sleep 2
+            # Grace period for clean shutdown
+            sleep 2
 
-			# Escalate to SIGKILL if still alive
-			if kill -0 "$cmd_pid" 2>/dev/null; then
-				kill -KILL -"$cmd_pid" 2>/dev/null || kill -KILL "$cmd_pid" 2>/dev/null || true
-			fi
-		fi
-	) </dev/null >/dev/null 2>&1 &
-	local killer_pid=$!
+            # Escalate to SIGKILL if still alive
+            if kill -0 "$cmd_pid" 2> /dev/null; then
+                kill -KILL -"$cmd_pid" 2> /dev/null || kill -KILL "$cmd_pid" 2> /dev/null || true
+            fi
+        fi
+    ) < /dev/null > /dev/null 2>&1 &
+    local killer_pid=$!
 
-	# Wait for command to complete
-	local exit_code=0
-	set +e
-	wait "$cmd_pid" 2>/dev/null
-	exit_code=$?
-	set -e
+    # Wait for command to complete
+    local exit_code=0
+    set +e
+    wait "$cmd_pid" 2> /dev/null
+    exit_code=$?
+    set -e
 
-	# Clean up killer process
-	if kill -0 "$killer_pid" 2>/dev/null; then
-		kill "$killer_pid" 2>/dev/null || true
-		wait "$killer_pid" 2>/dev/null || true
-	fi
+    # Clean up killer process
+    if kill -0 "$killer_pid" 2> /dev/null; then
+        kill "$killer_pid" 2> /dev/null || true
+        wait "$killer_pid" 2> /dev/null || true
+    fi
 
-	# Check if command was killed by timeout (exit codes 143=SIGTERM, 137=SIGKILL)
-	if [[ $exit_code -eq 143 || $exit_code -eq 137 ]]; then
-		# Command was killed by timeout
-		if [[ ${MO_DEBUG:-0} == "1" ]]; then
-			echo "[TIMEOUT] Command timed out after ${duration}s" >&2
-		fi
-		return 124
-	fi
+    # Check if command was killed by timeout (exit codes 143=SIGTERM, 137=SIGKILL)
+    if [[ $exit_code -eq 143 || $exit_code -eq 137 ]]; then
+        # Command was killed by timeout
+        if [[ "${MO_DEBUG:-0}" == "1" ]]; then
+            echo "[TIMEOUT] Command timed out after ${duration}s" >&2
+        fi
+        return 124
+    fi
 
-	# Command completed normally (or with its own error)
-	return "$exit_code"
+    # Command completed normally (or with its own error)
+    return "$exit_code"
 }

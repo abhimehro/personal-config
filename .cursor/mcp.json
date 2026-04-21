@@ -154,7 +154,10 @@
     },
     "Memory": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
       "env": {}
     },
     "MCP_DOCKER": {
@@ -169,6 +172,15 @@
       "command": "/Users/speedybee/RepoPrompt/repoprompt_cli",
       "args": [],
       "env": {}
+    },
+    "gemini-api-docs-mcp": {
+      "url": "https://gemini-api-docs-mcp.dev"
+    },
+    "context7": {
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "REDACTED_CONTEXT7_API_KEY"
+      }
     }
   }
 }
