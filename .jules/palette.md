@@ -104,3 +104,13 @@
 
 **Learning:** When adding optional notifications to CLI scripts (like `terminal-notifier` on macOS), users without the third-party tool installed miss out on the UX improvement.
 **Action:** Always provide a fallback to native OS notifications (like `osascript -e` on macOS) when using third-party notification tools to ensure a consistent experience. When passing variables to `osascript`, ensure double quotes within the variables are properly escaped (e.g., `esc_val="${val//\"/\\\"}"`) to prevent syntax errors.
+
+## 2026-06-25 - Graceful Exit Handlers
+
+**Learning:** When users interrupt interactive CLI scripts (like setup scripts) with `Ctrl+C` (`SIGINT`), abruptly terminating the script without feedback feels broken and unpolished.
+**Action:** Always add a `trap` for `SIGINT` to gracefully catch the interruption, print a clear, polite cancellation message (e.g., `👋 Setup cancelled by user. Goodbye!`), and exit cleanly with standard code 130.
+
+## 2024-04-16 - Delaying static prefixes in CLI loading states
+
+**Learning:** Printing static prefixes (like "Assistant:") before a dynamic spinner completes causes screen reader redundancy and can leave visual artifacts on the terminal if the process is interrupted before the stream begins.
+**Action:** Delay printing static prefixes until the dynamic stream actually begins, and ensure that signal (SIGINT) and error handlers completely clear the line using `\r\x1B[K` to prevent orphaned text artifacts upon interruption.
