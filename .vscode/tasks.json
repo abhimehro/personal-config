@@ -3,7 +3,9 @@
   "tasks": [
     {
       "type": "markdownlint",
-      "problemMatcher": ["$markdownlint"],
+      "problemMatcher": [
+        "$markdownlint"
+      ],
       "label": "markdownlint: Lint all Markdown files in the workspace with markdownlint",
       "group": {
         "kind": "build",

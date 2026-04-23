@@ -281,3 +281,53 @@ The following reflects an earlier completed sweep (preserved for audit). Figures
 - Repos processed: `personal‑config` (as named in that run), `ctrld-sync`, `email-security-pipeline`, `Seatek_Analysis`, `Hydrograph_Versus_Seatek_Sensors_Project`. <!-- pragma: allowlist secret -->
 - Merged: 13; closed duplicates/superseded: 2; escalations: 0.
 - See git history of this file prior to 2026-03-21 if full line-item URLs from that run are required.
+
+---
+
+## Run — 2026-04-23 (duplicate consolidation: Jules Bolt optimizations)
+
+### Repos processed
+
+1. `abhimehro/personal-config`
+2. `abhimehro/ctrld-sync`
+3. `abhimehro/email-security-pipeline`
+4. `abhimehro/Seatek_Analysis`
+5. `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project`
+
+### Metrics
+
+| Metric | Count |
+| ------ | ----: |
+| PRs reviewed (in-scope) | 3 |
+| PRs merged (squash) | 1 |
+| PRs closed (superseded) | 2 |
+| PRs escalated | 0 |
+| Direct commits (auto-fix) | 0 |
+
+### Merged (squash)
+
+- <https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/135> — `perf(validator): replace .sum() > 0 with .any()`
+
+### Closed (superseded)
+
+- <https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/133> — superseded by #135 (subset)
+- <https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/131> — superseded by #135 (subset)
+
+### Pattern observed: nested superset duplicates
+
+All 3 PRs from `google-labs-jules[bot]` (via `abhimehro` trigger) implemented the same `.sum() > 0` → `.any()` optimization:
+
+- #135 (2 files, newest, most focused) ⊂ #133 (4 files) ⊂ #131 (6 files, oldest)
+
+**Heuristic applied:** When Jules creates multiple PRs for the same optimization pattern, keep the most recent/focused one; close broader predecessors as superseded.
+
+### Gates passed
+
+- Preflight: PASS
+- CI health: All 3 PRs PASS
+- Security audit: All 3 PRs PASS (no secrets, no dangerous patterns)
+- Code quality: PASS
+
+### Workflow completion
+
+- **Complete:** 1 merge, 2 closures. No escalations, no conflicts after merge.
