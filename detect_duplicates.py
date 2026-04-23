@@ -47,10 +47,12 @@ for line in lines:
     if line.startswith("- abhimehro/"):
         ready_prs.append(line.strip()[2:])
 
+# OPTIMIZATION: Combine lines into a single string for fast C-level substring search
+pre_ready_text = "".join(lines[: lines.index("## READY\n")])
 ready_only = [
     pr
     for pr in ready_prs
-    if not any(pr in l for l in lines[: lines.index("## READY\n")])
+    if pr not in pre_ready_text
 ]
 
 file_groups = defaultdict(list)
