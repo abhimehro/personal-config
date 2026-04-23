@@ -283,46 +283,50 @@ disable_touchid() {
 
 # Interactive menu
 show_menu() {
-    echo ""
-    show_status
-    if is_touchid_configured; then
-        echo -ne "${PURPLE}☛${NC} Press ${GREEN}Enter${NC} to disable, ${GRAY}Q${NC} to quit: "
-        IFS= read -r -s -n1 key || key=""
-        drain_pending_input # Clean up any escape sequence remnants
+    while true; do
         echo ""
+        show_status
+        if is_touchid_configured; then
+            echo -ne "${PURPLE}☛${NC} Press ${GREEN}Enter${NC} to disable, ${GRAY}Q${NC} to quit: "
+            IFS= read -r -s -n1 key || key=""
+            drain_pending_input # Clean up any escape sequence remnants
+            echo ""
 
-        case "$key" in
-            $'\e' | q | Q) # ESC or Q
-                return 0
-                ;;
-            "" | $'\n' | $'\r')   # Enter
-                printf "\r\033[K" # Clear the prompt line
-                disable_touchid
-                ;;
-            *)
-                echo ""
-                log_error "Invalid key"
-                ;;
-        esac
-    else
-        echo -ne "${PURPLE}☛${NC} Press ${GREEN}Enter${NC} to enable, ${GRAY}Q${NC} to quit: "
-        IFS= read -r -s -n1 key || key=""
-        drain_pending_input # Clean up any escape sequence remnants
+            case "$key" in
+                $'\e' | q | Q) # ESC or Q
+                    return 0
+                    ;;
+                "" | $'\n' | $'\r')   # Enter
+                    printf "\r\033[K" # Clear the prompt line
+                    disable_touchid
+                    return 0
+                    ;;
+                *)
+                    echo ""
+                    log_error "Invalid key. Please try again."
+                    ;;
+            esac
+        else
+            echo -ne "${PURPLE}☛${NC} Press ${GREEN}Enter${NC} to enable, ${GRAY}Q${NC} to quit: "
+            IFS= read -r -s -n1 key || key=""
+            drain_pending_input # Clean up any escape sequence remnants
 
-        case "$key" in
-            $'\e' | q | Q) # ESC or Q
-                return 0
-                ;;
-            "" | $'\n' | $'\r')   # Enter
-                printf "\r\033[K" # Clear the prompt line
-                enable_touchid
-                ;;
-            *)
-                echo ""
-                log_error "Invalid key"
-                ;;
-        esac
-    fi
+            case "$key" in
+                $'\e' | q | Q) # ESC or Q
+                    return 0
+                    ;;
+                "" | $'\n' | $'\r')   # Enter
+                    printf "\r\033[K" # Clear the prompt line
+                    enable_touchid
+                    return 0
+                    ;;
+                *)
+                    echo ""
+                    log_error "Invalid key. Please try again."
+                    ;;
+            esac
+        fi
+    done
 }
 
 # Main
