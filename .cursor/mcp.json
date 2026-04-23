@@ -32,15 +32,6 @@
         "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_PERSONAL_ACCESS_TOKEN"
       }
     },
-    "Linear": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "https://mcp.linear.app/sse"
-      ],
-      "disabled": true
-    },
     "Exa": {
       "command": "npx",
       "args": [
@@ -58,16 +49,6 @@
         "/Users/speedybee/dev/"
       ],
       "env": {}
-    },
-    "firecrawl-mcp": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "firecrawl-mcp"
-      ],
-      "env": {
-        "FIRECRAWL_API_KEY": "YOUR_FIRECRAWL_API_KEY"
-      }
     },
     "gen-pdf": {
       "command": "npx",
@@ -98,26 +79,6 @@
       ],
       "env": {}
     },
-    "prisma": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "https://mcp.prisma.io/mcp"
-      ],
-      "env": {}
-    },
-    "Rube": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "https://rube.composio.dev/mcp"
-      ],
-      "env": {
-        "npm_config_yes": ""
-      }
-    },
     "Sequential thinking": {
       "command": "npx",
       "args": [
@@ -125,9 +86,6 @@
         "@modelcontextprotocol/server-sequential-thinking"
       ],
       "env": {}
-    },
-    "Tavily Expert": {
-      "url": "https://api.tavily.ai/mcp/tavily/cohort-jasmine-dialect-r8wdqh"
     },
     "Tavily": {
       "command": "npx",
@@ -160,27 +118,20 @@
       ],
       "env": {}
     },
-    "MCP_DOCKER": {
-      "command": "docker",
-      "args": [
-        "mcp",
-        "gateway",
-        "run"
-      ]
-    },
     "RepoPrompt": {
       "command": "/Users/speedybee/RepoPrompt/repoprompt_cli",
       "args": [],
       "env": {}
-    },
-    "gemini-api-docs-mcp": {
-      "url": "https://gemini-api-docs-mcp.dev"
     },
     "context7": {
       "url": "https://mcp.context7.com/mcp",
       "headers": {
         "CONTEXT7_API_KEY": "REDACTED_CONTEXT7_API_KEY"
       }
+    },
+    "hf-mcp-server": {
+      "url": "https://huggingface.co/mcp?login",
+      "headers": {}
     }
   }
 }
