@@ -28,7 +28,9 @@ def extract_allowlist_domains_from_file(filepath):
                     # NOTE: Use membership checks before direct indexing to avoid unnecessary lookups and ensure nested keys exist.
                     if "PK" in rule
                     and "action" in rule
-                    and rule["action"].get("do") == 1
+                    and type(rule["action"]) is dict
+                    and "do" in rule["action"]
+                    and rule["action"]["do"] == 1
                 ]
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
