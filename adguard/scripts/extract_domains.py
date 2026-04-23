@@ -2,6 +2,21 @@ import json
 import os
 
 
+
+def _is_allowlist_rule(rule):
+    """Helper to efficiently check if a rule is an allowlist rule."""
+    if "PK" not in rule:
+        return False
+    if "action" not in rule:
+        return False
+    action = rule["action"]
+    if type(action) is not dict:
+        return False
+    if "do" not in action:
+        return False
+    return action["do"] == 1
+
+
 def extract_domains_from_file(filepath):
     """Extract domains from a JSON file."""
     domains = []
@@ -22,20 +37,11 @@ def extract_allowlist_domains_from_file(filepath):
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
             if "rules" in data:
-                # ⚡ Bolt Optimization: Replaced complex list comprehension with loops
-                # for code health metric compliance while retaining dictionary access optimization
-                for rule in data["rules"]:
-                    if "PK" not in rule:
-                        continue
-                    if "action" not in rule:
-                        continue
-                    action = rule["action"]
-                    if type(action) is not dict:
-                        continue
-                    if "do" not in action:
-                        continue
-                    if action["do"] == 1:
-                        domains.append(rule["PK"])
+                # ⚡ Bolt Optimization: Use helper function and list comprehension
+                # to balance performance and CodeScene cyclomatic complexity limits
+                domains = [
+                    rule["PK"] for rule in data["rules"] if _is_allowlist_rule(rule)
+                ]
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
     return domains

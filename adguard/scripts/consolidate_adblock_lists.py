@@ -32,6 +32,21 @@ def extract_domains_from_rules(rules):
     return [rule["PK"] for rule in rules if "PK" in rule]
 
 
+
+def _is_allowlist_rule(rule):
+    """Helper to efficiently check if a rule is an allowlist rule."""
+    if "PK" not in rule:
+        return False
+    if "action" not in rule:
+        return False
+    action = rule["action"]
+    if type(action) is not dict:
+        return False
+    if "do" not in action:
+        return False
+    return action["do"] == 1
+
+
 def process_tracker_files(base_dir, tracker_files):
     """Process tracker files to create denylist domains."""
     print("\n📋 Creating Denylist...")
@@ -60,22 +75,13 @@ def extract_allowlist_from_file(filepath, description):
         print(f"  Processing: {filepath.name}")
         data = load_json_file(filepath)
         if data and "rules" in data:
-            # ⚡ Bolt Optimization: Replace complex list comprehension with explicit loops
-            # This satisfies CodeScene's cyclomatic complexity check while keeping performance
-            for rule in data["rules"]:
-                if "PK" not in rule:
-                    continue
-                if "action" not in rule:
-                    continue
-                action = rule["action"]
-                if type(action) is not dict:
-                    continue
-                if "do" not in action:
-                    continue
-                if action["do"] == 1:
-                    domains.add(rule["PK"])
-
-            print(f"    Added {len(domains)} {description}")
+            # ⚡ Bolt Optimization: Use helper function and list comprehension
+            # to balance performance and CodeScene cyclomatic complexity limits
+            domains.update([
+                rule["PK"] for rule in data["rules"] if _is_allowlist_rule(rule)
+            ])
+            count = len(domains)
+            print(f"    Added {count} {description}")
     return domains
 
 
