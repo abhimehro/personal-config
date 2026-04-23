@@ -4,7 +4,7 @@
 - [x] Sanitize realtime error logging in `copilot-demo/weather-assistant.ts`
 - [x] Revert root `package.json` to `{}` and keep dependencies in `copilot-demo/package.json`
 - [x] Verify with TypeScript check in `copilot-demo`
-- [ ] Commit and push changes to `origin/main`
+- [x] Commit and push changes to `origin/main`
 
 ---
 
