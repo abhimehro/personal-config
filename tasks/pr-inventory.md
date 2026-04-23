@@ -1,13 +1,13 @@
 # Automated PR inventory — 2026-04-11 (backlog cleanup, review-and-merge)
 
-**Config:** `tasks/pr-review-agent.config.yaml`  
-**Stale threshold:** 30 days — **none** of the in-scope PRs at inventory time exceeded this (all recent).  
+**Config:** `tasks/pr-review-agent.config.yaml`
+**Stale threshold:** 30 days — **none** of the in-scope PRs at inventory time exceeded this (all recent).
 **Mode:** `review-and-merge` · **Merge strategy:** squash · **Auto-fix:** enabled (no branch pushes required this session → **0** auto-fix commits)
 
 ## Scope rules
 
 1. **Configured bot logins:** `dependabot[bot]`, `renovate[bot]`, `google-labs-jules[bot]` (GitHub may show `app/dependabot`).
-2. **Expanded automation:** include PRs where GitHub shows `abhimehro` as author when **branch**, **title**, or **body** indicates Jules / Sentinel / Bolt / Palette / `automation-workflow-*`, etc.  
+2. **Expanded automation:** include PRs where GitHub shows `abhimehro` as author when **branch**, **title**, or **body** indicates Jules / Sentinel / Bolt / Palette / `automation-workflow-*`, etc.
    **Gap noted:** `dotfiles-iac` **#759** (`fix/github-actions-checkout-version-*`) matched via **body** (Jules footer), not branch/title regex — inventory scripts should also scan PR body for the Jules task host (subdomain `jules`, then dot, then the usual Google domain TLD) / `PR created automatically by Jules`. <!-- pragma: allowlist secret -->
 
 ## Repos
@@ -64,5 +64,53 @@
 
 ## Summary counts (initial inventory)
 
-- **Total in-scope open:** 28  
-- **By theme:** SECURITY 6 · PERFORMANCE/UX 18 · DEPENDENCY 1 · CI/INFRA (draft) 2 · CHORE 1  
+- **Total in-scope open:** 28
+- **By theme:** SECURITY 6 · PERFORMANCE/UX 18 · DEPENDENCY 1 · CI/INFRA (draft) 2 · CHORE 1
+
+---
+
+# Automated PR inventory — 2026-04-23 (review session)
+
+**Config:** `tasks/pr-review-agent.config.yaml`
+**Stale threshold:** 30 days
+**Mode:** `review-and-merge` · **Merge strategy:** squash · **Auto-fix:** enabled
+
+## Scope rules
+
+1. **Configured bot logins:** `dependabot[bot]`, `renovate[bot]`, `google-labs-jules[bot]`
+2. **Expanded automation:** Include PRs where GitHub shows `abhimehro` as author when **body** contains "PR created automatically by Jules"
+
+## Current open inventory (2026-04-23)
+
+| Repo | PR | Author | Branch | Category | CI Status | Mergeable | Files | Age | Notes |
+| ---- | --: | ------ | ------ | -------- | --------- | --------- | ----: | --- | ----- |
+| Hydrograph | **135** | abhimehro (Jules) | `bolt-replace-sum-with-any-*` | PERFORMANCE | **PASS** | CLEAN | 2 | 3 days | `.any()` optimization — **keep as canonical** |
+| Hydrograph | **133** | abhimehro (Jules) | `bolt-any-optimization-*` | PERFORMANCE | **PASS** | CLEAN | 4 | 4 days | Superset of #135 — **close as superseded** |
+| Hydrograph | **131** | abhimehro (Jules) | `bolt/optimize-sum-operations-*` | PERFORMANCE | **PASS** | CLEAN | 6 | 5 days | Superset of #133 — **close as superseded** |
+
+## File overlap analysis
+
+| File | #135 | #133 | #131 |
+| ---- | :--: | :--: | :--: |
+| `src/hydrograph_seatek_analysis/data/validator.py` | ✓ | ✓ | ✓ |
+| `benchmark_boolean.py` | ✓ | ✓ | ✓ |
+| `test_perf.py` | — | ✓ | ✓ |
+| `.jules/bolt.md` | — | ✓ | ✓ |
+| `utils/processor.py` | — | — | ✓ |
+| `benchmark_array_cache.py` | — | — | ✓ |
+
+**Observation:** PR #135 ⊂ PR #133 ⊂ PR #131 (nested supersets). All implement same optimization pattern.
+
+## Disposition summary
+
+| PR | Disposition | Rationale |
+| --: | ----------- | --------- |
+| 135 | **MERGE** | Most focused, recent, all gates pass |
+| 133 | **CLOSE-DUPLICATE** | Superseded by #135 (subset) |
+| 131 | **CLOSE-DUPLICATE** | Superseded by #135 (subset) |
+
+## Summary counts
+
+- **Total in-scope open:** 3
+- **By theme:** PERFORMANCE 3
+- **Action:** MERGE 1 · CLOSE-DUPLICATE 2

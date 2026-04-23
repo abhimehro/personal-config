@@ -11,8 +11,10 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@azure/identity": "^4.0.0",
     "@github/copilot-sdk": "^0.1.16",
     "@types/node": "^25.0.10",
+    "openai": "^4.81.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
