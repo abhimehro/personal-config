@@ -1,3 +1,13 @@
+# Demo Security Hardening — 2026-04-23
+
+- [x] Add env-based Azure config + fail-fast validation in `copilot-demo/weather-assistant.ts`
+- [x] Sanitize realtime error logging in `copilot-demo/weather-assistant.ts`
+- [x] Revert root `package.json` to `{}` and keep dependencies in `copilot-demo/package.json`
+- [x] Verify with TypeScript check in `copilot-demo`
+- [ ] Commit and push changes to `origin/main`
+
+---
+
 # Automation Expansion & PR Review Maintenance
 
 ## 1. Discovery & Verification
