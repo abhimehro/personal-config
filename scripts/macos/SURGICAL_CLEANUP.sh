@@ -10,6 +10,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+# UX Additions
+trap 'echo -e "\n👋 Cleanup cancelled by user. Goodbye!${NC}"; exit 130' SIGINT
+
 print_status() {
 	echo -e "${BLUE}[INFO]${NC} $1"
 }
