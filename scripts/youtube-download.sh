@@ -4,6 +4,9 @@
 
 set -euo pipefail
 
+# Graceful exit on Ctrl+C
+trap 'echo -e "\n\033[1;33m👋 Operation cancelled by user. Goodbye!\033[0m"; exit 130' SIGINT
+
 # --- UX Helpers ---
 
 # Colors
