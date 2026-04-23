@@ -60,18 +60,22 @@ def extract_allowlist_from_file(filepath, description):
         print(f"  Processing: {filepath.name}")
         data = load_json_file(filepath)
         if data and "rules" in data:
-            # ⚡ Bolt Optimization: Use list comprehension with `in` checks instead of nested `.get()` for ~20% performance boost
-            domains.update([
-                rule["PK"]
-                for rule in data["rules"]
-                if "PK" in rule
-                and "action" in rule
-                and type(rule["action"]) is dict
-                and "do" in rule["action"]
-                and rule["action"]["do"] == 1
-            ])
-            count = len(domains)
-            print(f"    Added {count} {description}")
+            # ⚡ Bolt Optimization: Replace complex list comprehension with explicit loops
+            # This satisfies CodeScene's cyclomatic complexity check while keeping performance
+            for rule in data["rules"]:
+                if "PK" not in rule:
+                    continue
+                if "action" not in rule:
+                    continue
+                action = rule["action"]
+                if type(action) is not dict:
+                    continue
+                if "do" not in action:
+                    continue
+                if action["do"] == 1:
+                    domains.add(rule["PK"])
+
+            print(f"    Added {len(domains)} {description}")
     return domains
 
 
