@@ -17,7 +17,7 @@ const ANSI = {
   ClearLine: isTTY ? "\x1B[K" : "",
 };
 
-const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+const spinnerFrames = ["\u280b", "\u2819", "\u2839", "\u2838", "\u283c", "\u2834", "\u2826", "\u2827", "\u2807", "\u280f"];
 let spinnerInterval: NodeJS.Timeout | undefined;
 
 const thinkingMessages = [
@@ -34,7 +34,7 @@ const clearSpinner = () => {
     clearInterval(spinnerInterval);
     spinnerInterval = undefined;
     if (process.stdout.isTTY) {
-      process.stdout.write(ANSI.ShowCursor + "\r" + ANSI.ClearLine);
+      process.stdout.write("\r" + ANSI.ClearLine + ANSI.ShowCursor);
     }
   }
 };
@@ -48,7 +48,7 @@ const startSpinner = () => {
   // Fallback for non-TTY (CI, screen readers) or when terminal isn't fully interactive
   if (!process.stdout.isTTY) {
     process.stdout.write(
-      `${COLORS.Green}Assistant:${COLORS.Reset} ${COLORS.Dim}(${msg})${COLORS.Reset}\n`,
+      `${COLORS.Dim}(${msg})${COLORS.Reset}\n`,
     );
     return;
   }
@@ -56,7 +56,7 @@ const startSpinner = () => {
   process.stdout.write(ANSI.HideCursor);
   spinnerInterval = setInterval(() => {
     process.stdout.write(
-      `\r${COLORS.Green}Assistant:${COLORS.Reset} ${spinnerFrames[i]} ${COLORS.Dim}(${msg})${COLORS.Reset}`,
+      `\r${spinnerFrames[i]} ${COLORS.Dim}(${msg})${COLORS.Reset}`,
     );
     i = (i + 1) % spinnerFrames.length;
   }, 80);
@@ -72,21 +72,21 @@ process.on("exit", () => {
 // Helper functions for emojis
 const getWeatherEmoji = (condition: string): string => {
   const normalized = condition.toLowerCase();
-  if (normalized.includes("sunny") || normalized.includes("clear")) return "☀️";
-  if (normalized.includes("partly cloudy")) return "⛅";
+  if (normalized.includes("sunny") || normalized.includes("clear")) return "\u2600\ufe0f";
+  if (normalized.includes("partly cloudy")) return "\u26c5";
   if (normalized.includes("cloudy") || normalized.includes("overcast"))
-    return "☁️";
+    return "\u2601\ufe0f";
   if (
     normalized.includes("rain") ||
     normalized.includes("drizzle") ||
     normalized.includes("shower")
   )
-    return "🌧️";
-  if (normalized.includes("thunder")) return "⛈️";
+    return "\ud83c\udf27\ufe0f";
+  if (normalized.includes("thunder")) return "\u26c8\ufe0f";
   if (normalized.includes("snow") || normalized.includes("blizzard"))
-    return "❄️";
-  if (normalized.includes("fog") || normalized.includes("mist")) return "🌫️";
-  return "🌡️";
+    return "\u2744\ufe0f";
+  if (normalized.includes("fog") || normalized.includes("mist")) return "\ud83c\udf2b\ufe0f";
+  return "\ud83c\udf21\ufe0f";
 };
 
 const getTimeEmoji = (date: Date): string => {
@@ -94,18 +94,18 @@ const getTimeEmoji = (date: Date): string => {
   // Map 0-11 and 12-23 to 0-11 index
   const clockIndex = hour % 12;
   const clocks = [
-    "🕛",
-    "🕐",
-    "🕑",
-    "🕒",
-    "🕓",
-    "🕔",
-    "🕕",
-    "🕖",
-    "🕗",
-    "🕘",
-    "🕙",
-    "🕚",
+    "\ud83d\udd5b",
+    "\ud83d\udd50",
+    "\ud83d\udd51",
+    "\ud83d\udd52",
+    "\ud83d\udd53",
+    "\ud83d\udd54",
+    "\ud83d\udd55",
+    "\ud83d\udd56",
+    "\ud83d\udd57",
+    "\ud83d\udd58",
+    "\ud83d\udd59",
+    "\ud83d\udd5a",
   ];
   return clocks[clockIndex];
 };
@@ -133,7 +133,7 @@ const getWeather = defineTool("get_weather", {
       const condition = current.weatherDesc[0].value;
       return {
         city,
-        temperature: `${current.temp_F}°F (${current.temp_C}°C)`,
+        temperature: `${current.temp_F}\u00b0F (${current.temp_C}\u00b0C)`,
         condition: `${condition} ${getWeatherEmoji(condition)}`,
         humidity: `${current.humidity}%`,
         wind: `${current.windspeedMiles}mph`,
@@ -190,17 +190,17 @@ const TIPS = [
 
 const getGreeting = () => {
   const hour = new Date().getHours();
-  if (hour < 5) return "Burning the midnight oil? 🦉";
-  if (hour < 12) return "Good morning! 🌅";
-  if (hour < 18) return "Good afternoon! ☀️";
-  return "Good evening! 🌙";
+  if (hour < 5) return "Burning the midnight oil? \ud83e\udd89";
+  if (hour < 12) return "Good morning! \ud83c\udf05";
+  if (hour < 18) return "Good afternoon! \u2600\ufe0f";
+  return "Good evening! \ud83c\udf19";
 };
 
 const printHeader = () => {
   console.log(`${COLORS.Cyan}
-╔══════════════════════════════════════════════╗
-║           🌤️  Weather Assistant CLI          ║
-╚══════════════════════════════════════════════╝${COLORS.Reset}`);
+\u256c\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563
+\u2551           \ud83c\udf24\ufe0f  Weather Assistant CLI          \u2551
+\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d${COLORS.Reset}`);
   console.log(
     `${COLORS.Dim}   ${getGreeting()} Try: 'What's the weather in Paris?'
    Type 'help' to see available commands, or 'exit' to quit.${COLORS.Reset}\n`,
@@ -209,10 +209,12 @@ const printHeader = () => {
 
 printHeader();
 
-// Graceful shutdown on Ctrl+C
-rl.on("SIGINT", async () => {
+const handleShutdown = async () => {
   clearSpinner();
-  console.log(`\n${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
+  if (process.stdout.isTTY) {
+    process.stdout.write("\r" + ANSI.ClearLine);
+  }
+  console.log(`${COLORS.Green}Goodbye! \ud83d\udc4b${COLORS.Reset}`);
   try {
     await client.stop();
   } catch (e) {
@@ -220,19 +222,13 @@ rl.on("SIGINT", async () => {
   }
   rl.close();
   process.exit(0);
-});
+};
+
+// Graceful shutdown on Ctrl+C
+rl.on("SIGINT", handleShutdown);
 
 // Graceful shutdown on EOF (Ctrl+D)
-rl.on("close", async () => {
-  clearSpinner();
-  console.log(`\n${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
-  try {
-    await client.stop();
-  } catch (e) {
-    // Ignore error
-  }
-  process.exit(0);
-});
+rl.on("close", handleShutdown);
 
 const prompt = () => {
   rl.question(`${COLORS.Cyan}You:${COLORS.Reset} `, async (input) => {
@@ -251,7 +247,7 @@ const prompt = () => {
     }
 
     if (["exit", "quit", "q"].includes(input.trim().toLowerCase())) {
-      console.log(`${COLORS.Green}Goodbye! 👋${COLORS.Reset}`);
+      console.log(`${COLORS.Green}Goodbye! \ud83d\udc4b${COLORS.Reset}`);
       await client.stop();
       rl.close();
       process.exit(0);
@@ -259,19 +255,19 @@ const prompt = () => {
 
     if (input.trim().toLowerCase() === "help") {
       console.log(`
-${COLORS.Cyan}🤖 Capabilities:${COLORS.Reset}
-  • 🌤️  Get current weather for any city
-  • 🕒 Get current local time
+${COLORS.Cyan}\ud83e\udd16 Capabilities:${COLORS.Reset}
+  \u2022 \ud83c\udf24\ufe0f  Get current weather for any city
+  \u2022 \ud83d\udd52 Get current local time
 
-${COLORS.Cyan}💡 Examples:${COLORS.Reset}
-  • "What's the weather in Tokyo?"
-  • "Is it raining in London?"
-  • "What time is it?"
+${COLORS.Cyan}\ud83d\udca1 Examples:${COLORS.Reset}
+  \u2022 "What's the weather in Tokyo?"
+  \u2022 "Is it raining in London?"
+  \u2022 "What time is it?"
 
 ${COLORS.Cyan}Commands:${COLORS.Reset}
-  • clear (or cls)    - Clear the screen
-  • help              - Show this message
-  • exit (or quit, q) - Quit the application
+  \u2022 clear (or cls)    - Clear the screen
+  \u2022 help              - Show this message
+  \u2022 exit (or quit, q) - Quit the application
 `);
       prompt();
       return;
