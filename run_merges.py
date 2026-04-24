@@ -45,32 +45,37 @@ def get_diff(repo, pr):
     result = subprocess.run(cmd, capture_output=True, text=True, env=env)
     return result.stdout
 
-def check_security_gate(repo, pr, title, diff):
-    diff_lower = diff.lower()
+def _check_dangerous_code(diff_lower):
     reasons = []
-
-    # Dangerous functions
     if "eval(" in diff_lower: reasons.append("eval() detected")
     if "exec(" in diff_lower: reasons.append("exec() detected")
     if "dangerouslysetinnerhtml" in diff_lower: reasons.append("dangerouslySetInnerHTML detected")
+    return reasons
 
-    # Dangerous GitHub Actions
-    if "pull_request_target" in diff_lower:
-        if "checkout" in diff_lower:
-            reasons.append("Dangerous GitHub Actions workflow (pull_request_target + checkout)")
+def _check_dangerous_actions(diff_lower):
+    if "pull_request_target" in diff_lower and "checkout" in diff_lower:
+        return ["Dangerous GitHub Actions workflow (pull_request_target + checkout)"]
+    return []
 
-    # Weakened environment
-    if ".env.example" in diff_lower:
-        if "- " in diff_lower:
-            reasons.append("Weakened .env.example")
-
-    # Sensitive domains
+def _check_sensitive_domains(title):
     t_lower = title.lower()
+    reasons = []
     if "auth" in t_lower: reasons.append("Touches auth domain")
     if "payment" in t_lower: reasons.append("Touches payment domain")
     if "migration" in t_lower: reasons.append("Touches migration domain")
     if "sql" in t_lower: reasons.append("Touches SQL domain")
+    return reasons
 
+def check_security_gate(repo, pr, title, diff):
+    diff_lower = diff.lower()
+    reasons = []
+    reasons.extend(_check_dangerous_code(diff_lower))
+    reasons.extend(_check_dangerous_actions(diff_lower))
+
+    if ".env.example" in diff_lower and "- " in diff_lower:
+        reasons.append("Weakened .env.example")
+
+    reasons.extend(_check_sensitive_domains(title))
     return reasons
 
 def merge_pr(repo, pr):
@@ -80,6 +85,27 @@ def merge_pr(repo, pr):
     cmd = ["gh", "pr", "merge", str(pr), "-R", str(repo), "--squash", "--delete-branch"]
     res = subprocess.run(cmd, capture_output=True, text=True, env=env)
     return res
+
+def process_queue_item(repo, pr, title):
+    print(f"\nProcessing {repo}#{pr}: {title}")
+
+    info = run_gh(["pr", "view", str(pr), "-R", str(repo), "--json", "mergeStateStatus"])
+    if not info:
+        return "failed_info", None
+
+    status = info.get('mergeStateStatus')
+    if status == 'DIRTY' or status == 'CONFLICTING':
+        return "conflicting", None
+
+    diff = get_diff(repo, pr)
+    reasons = check_security_gate(repo, pr, title, diff)
+    if reasons:
+        return "escalated", reasons
+
+    res = merge_pr(repo, pr)
+    if res.returncode == 0:
+        return "merged", None
+    return "error", [res.stderr]
 
 def main():
     queue = [
@@ -111,46 +137,26 @@ def main():
         ("abhimehro/Hydrograph_Versus_Seatek_Sensors_Project", "108", "⚡ Bolt: Optimize already-sorted dataframe sorting overhead")
     ]
 
-    results = {
-        'merged': [],
-        'escalated': [],
-        'conflicting': []
-    }
+    results = {'merged': [], 'escalated': [], 'conflicting': []}
 
     for repo, pr, title in queue:
-        print(f"\nProcessing {repo}#{pr}: {title}")
+        outcome, reasons = process_queue_item(repo, pr, title)
         
-        # Re-check status
-        info = run_gh(["pr", "view", str(pr), "-R", str(repo), "--json", "mergeStateStatus"])
-        if not info:
-            print("Failed to get info")
-            continue
-
-        status = info.get('mergeStateStatus')
-        if status == 'DIRTY' or status == 'CONFLICTING':
-            print(f"Status is {status}, moving to conflicting.")
-            results['conflicting'].append((repo, pr, title))
-            continue
-        
-        diff = get_diff(repo, pr)
-        reasons = check_security_gate(repo, pr, title, diff)
-
-        if reasons:
-            print(f"ESCALATING {repo}#{pr}: {', '.join(reasons)}")
-            results['escalated'].append((repo, pr, title, reasons))
-            continue
-
-        res = merge_pr(repo, pr)
-        if res.returncode == 0:
+        if outcome == "merged":
             print(f"Successfully merged {repo}#{pr}")
             results['merged'].append((repo, pr, title))
-        else:
-            print(f"Merge failed: {res.stderr}")
-            results['escalated'].append((repo, pr, title, ["Merge command failed", res.stderr]))
-            continue
-
-        print("Waiting 5 seconds for GitHub to update state...")
-        time.sleep(5)
+            time.sleep(5)
+        elif outcome == "conflicting":
+            print(f"Status is DIRTY/CONFLICTING, moving to conflicting.")
+            results['conflicting'].append((repo, pr, title))
+        elif outcome == "escalated":
+            print(f"ESCALATING {repo}#{pr}: {', '.join(reasons)}")
+            results['escalated'].append((repo, pr, title, reasons))
+        elif outcome == "error":
+            print(f"Merge failed: {reasons[0]}")
+            results['escalated'].append((repo, pr, title, ["Merge command failed", reasons[0]]))
+        elif outcome == "failed_info":
+            print("Failed to get info")
 
     print("\n--- DONE ---")
     with open('tasks/pr-merge-results.json', 'w') as f:

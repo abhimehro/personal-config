@@ -61,6 +61,22 @@ def get_category(title):
 
     return 'PERFORMANCE/REFACTOR/UI/FEATURE'
 
+def process_pr(pr, categorized):
+    repo, pr_id = pr.split('#')
+    info = run_gh(["pr", "view", pr_id, "-R", repo, "--json", "title,mergeStateStatus"])
+    if not info:
+        return
+
+    # Exclude unstable/dirty
+    status = info.get('mergeStateStatus')
+    if status == 'DIRTY' or status == 'CONFLICTING':
+        print(f"Skipping {pr} because it is {status}")
+        return
+
+    title = info.get('title', '')
+    cat = get_category(title)
+    categorized[cat].append((pr, title))
+
 def main():
     ready_prs = [
         "abhimehro/personal-config#744",
@@ -98,19 +114,7 @@ def main():
     }
 
     for pr in ready_prs:
-        repo, pr_id = pr.split('#')
-        info = run_gh(["pr", "view", pr_id, "-R", repo, "--json", "title,mergeStateStatus"])
-        if not info: continue
-
-        # Exclude unstable/dirty
-        status = info.get('mergeStateStatus')
-        if status == 'DIRTY' or status == 'CONFLICTING':
-            print(f"Skipping {pr} because it is {status}")
-            continue
-        
-        title = info.get('title', '')
-        cat = get_category(title)
-        categorized[cat].append((pr, title))
+        process_pr(pr, categorized)
 
     for cat, items in categorized.items():
         print(f"\n{cat}:")

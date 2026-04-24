@@ -68,29 +68,35 @@ def find_duplicates(file_groups):
                 duplicates.append(f"{repo}#{pr_info['number']}")
     return duplicates
 
+def _write_superseded(f, ready_prs, lines):
+    f.write("## SUPERSEDED\n")
+    try:
+        sup_idx = lines.index('## SUPERSEDED\n')
+        stale_idx = lines.index('## STALE\n')
+        for pr in ready_prs:
+            if pr in lines[sup_idx+1:stale_idx]:
+                if not pr.startswith('-'): pr = "- " + pr
+                f.write(f"{pr}\n")
+    except ValueError:
+        pass
+
+def _write_ready(f, ready_only, duplicates):
+    f.write("## READY\n")
+    for pr in ready_only:
+        if pr not in duplicates:
+            f.write(f"- {pr}\n")
+
 def write_triage_report(ready_prs, ready_only, duplicates, lines):
     with open('tasks/pr-triage.md', 'w') as f:
         f.write("# PR Triage\n\n")
-        f.write("## SUPERSEDED\n")
-        try:
-            sup_idx = lines.index('## SUPERSEDED\n')
-            stale_idx = lines.index('## STALE\n')
-            for pr in ready_prs:
-                if pr in lines[sup_idx+1:stale_idx]:
-                    if not pr.startswith('-'): pr = "- " + pr
-                    f.write(f"{pr}\n")
-        except ValueError:
-            pass
+        _write_superseded(f, ready_prs, lines)
         f.write("## STALE\n")
         f.write("## CONFLICTING\n")
         f.write("- abhimehro/personal-config#725\n")
         f.write("## DUPLICATE\n")
         for d in duplicates:
             f.write(f"- {d}\n")
-        f.write("## READY\n")
-        for pr in ready_only:
-            if pr not in duplicates:
-                f.write(f"- {pr}\n")
+        _write_ready(f, ready_only, duplicates)
 
 def main():
     try:
