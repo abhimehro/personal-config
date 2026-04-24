@@ -39,24 +39,14 @@ def run_gh(args):
     except:
         return None
 
-def main():
-    try:
-        with open('tasks/pr-triage.md') as f:
-            lines = f.readlines()
-    except FileNotFoundError:
-        return
-
+def get_ready_prs(lines):
     ready_prs = []
     for line in lines:
         if line.startswith('- abhimehro/'):
             ready_prs.append(line.strip()[2:])
+    return ready_prs
 
-    try:
-        ready_start_idx = lines.index('## READY\n')
-        ready_only = [pr for pr in ready_prs if not any(pr in l for l in lines[:ready_start_idx])]
-    except ValueError:
-        ready_only = []
-
+def group_prs_by_files(ready_only):
     file_groups = defaultdict(list)
     for pr in ready_only:
         repo, pr_id = pr.split('#')
@@ -65,7 +55,9 @@ def main():
             continue
         files = tuple(sorted([f['path'] for f in info.get('files', [])]))
         file_groups[(repo, files)].append(info)
+    return file_groups
 
+def find_duplicates(file_groups):
     duplicates = []
     for (repo, files), pr_list in file_groups.items():
         if len(pr_list) > 1:
@@ -74,9 +66,9 @@ def main():
             # keep the newest, close the rest
             for pr_info in pr_list[1:]:
                 duplicates.append(f"{repo}#{pr_info['number']}")
+    return duplicates
 
-    print("Duplicates:", duplicates)
-
+def write_triage_report(ready_prs, ready_only, duplicates, lines):
     with open('tasks/pr-triage.md', 'w') as f:
         f.write("# PR Triage\n\n")
         f.write("## SUPERSEDED\n")
@@ -100,6 +92,26 @@ def main():
             if pr not in duplicates:
                 f.write(f"- {pr}\n")
 
+def main():
+    try:
+        with open('tasks/pr-triage.md') as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        return
+
+    ready_prs = get_ready_prs(lines)
+
+    try:
+        ready_start_idx = lines.index('## READY\n')
+        ready_only = [pr for pr in ready_prs if not any(pr in l for l in lines[:ready_start_idx])]
+    except ValueError:
+        ready_only = []
+
+    file_groups = group_prs_by_files(ready_only)
+    duplicates = find_duplicates(file_groups)
+
+    print("Duplicates:", duplicates)
+    write_triage_report(ready_prs, ready_only, duplicates, lines)
     print("Done")
 
 if __name__ == "__main__":

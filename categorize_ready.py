@@ -39,6 +39,28 @@ def run_gh(args):
     except:
         return None
 
+def get_category(title):
+    title = title.lower()
+
+    # SECURITY
+    if 'sentinel' in title: return 'SECURITY'
+    if 'security' in title: return 'SECURITY'
+    if 'cve' in title: return 'SECURITY'
+    if 'xxe' in title: return 'SECURITY'
+
+    # DEPENDENCY
+    if 'dependabot' in title: return 'DEPENDENCY'
+    if 'renovate' in title: return 'DEPENDENCY'
+
+    # CI/INFRA
+    if 'chore' in title: return 'CI/INFRA'
+    if 'ci' in title: return 'CI/INFRA'
+    if 'automation' in title: return 'CI/INFRA'
+    if 'action' in title: return 'CI/INFRA'
+    if 'trunk' in title: return 'CI/INFRA'
+
+    return 'PERFORMANCE/REFACTOR/UI/FEATURE'
+
 def main():
     ready_prs = [
         "abhimehro/personal-config#744",
@@ -81,20 +103,14 @@ def main():
         if not info: continue
 
         # Exclude unstable/dirty
-        if info.get('mergeStateStatus') in ['DIRTY', 'CONFLICTING']:
-            print(f"Skipping {pr} because it is {info.get('mergeStateStatus')}")
+        status = info.get('mergeStateStatus')
+        if status == 'DIRTY' or status == 'CONFLICTING':
+            print(f"Skipping {pr} because it is {status}")
             continue
         
-        title = info.get('title', '').lower()
-        cat = 'PERFORMANCE/REFACTOR/UI/FEATURE'
-        if 'sentinel' in title or 'security' in title or 'cve' in title or 'xxe' in title:
-            cat = 'SECURITY'
-        elif 'dependabot' in title or 'renovate' in title:
-            cat = 'DEPENDENCY'
-        elif 'chore' in title or 'ci' in title or 'automation' in title or 'action' in title or 'trunk' in title:
-            cat = 'CI/INFRA'
-
-        categorized[cat].append((pr, info.get('title')))
+        title = info.get('title', '')
+        cat = get_category(title)
+        categorized[cat].append((pr, title))
 
     for cat, items in categorized.items():
         print(f"\n{cat}:")

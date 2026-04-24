@@ -45,6 +45,42 @@ def get_diff(repo, pr):
     result = subprocess.run(cmd, capture_output=True, text=True, env=env)
     return result.stdout
 
+def check_security_gate(repo, pr, title, diff):
+    diff_lower = diff.lower()
+    reasons = []
+
+    # Dangerous functions
+    if "eval(" in diff_lower: reasons.append("eval() detected")
+    if "exec(" in diff_lower: reasons.append("exec() detected")
+    if "dangerouslysetinnerhtml" in diff_lower: reasons.append("dangerouslySetInnerHTML detected")
+
+    # Dangerous GitHub Actions
+    if "pull_request_target" in diff_lower:
+        if "checkout" in diff_lower:
+            reasons.append("Dangerous GitHub Actions workflow (pull_request_target + checkout)")
+
+    # Weakened environment
+    if ".env.example" in diff_lower:
+        if "- " in diff_lower:
+            reasons.append("Weakened .env.example")
+
+    # Sensitive domains
+    t_lower = title.lower()
+    if "auth" in t_lower: reasons.append("Touches auth domain")
+    if "payment" in t_lower: reasons.append("Touches payment domain")
+    if "migration" in t_lower: reasons.append("Touches migration domain")
+    if "sql" in t_lower: reasons.append("Touches SQL domain")
+
+    return reasons
+
+def merge_pr(repo, pr):
+    print(f"Gate 2 passed. Merging...")
+    env = _load_gh_token_env()
+    env["GH_PAGER"] = "cat"
+    cmd = ["gh", "pr", "merge", str(pr), "-R", str(repo), "--squash", "--delete-branch"]
+    res = subprocess.run(cmd, capture_output=True, text=True, env=env)
+    return res
+
 def main():
     queue = [
         # SECURITY
@@ -91,45 +127,20 @@ def main():
             continue
 
         status = info.get('mergeStateStatus')
-        if status in ['DIRTY', 'CONFLICTING']:
+        if status == 'DIRTY' or status == 'CONFLICTING':
             print(f"Status is {status}, moving to conflicting.")
             results['conflicting'].append((repo, pr, title))
             continue
         
         diff = get_diff(repo, pr)
-        diff_lower = diff.lower()
-        
-        # Gate 2: Security check
-        escalate = False
-        reasons = []
-        
-        if "eval(" in diff_lower or "exec(" in diff_lower or "dangerouslysetinnerhtml" in diff_lower:
-            escalate = True
-            reasons.append("Dangerous evaluation function detected.")
-        if "pull_request_target" in diff_lower and "checkout" in diff_lower:
-            escalate = True
-            reasons.append("Dangerous GitHub Actions workflow detected.")
-        if ".gitignore" in diff_lower and "+" in diff_lower and "!" in diff_lower:
-            # Simplistic check for gitignore weakening
-            pass
-        if ".env.example" in diff_lower and "- " in diff_lower:
-            escalate = True
-            reasons.append("Weakened .env.example.")
+        reasons = check_security_gate(repo, pr, title, diff)
 
-        if "auth" in title.lower() or "payment" in title.lower() or "migration" in title.lower() or "sql" in title.lower():
-            escalate = True
-            reasons.append("Touches sensitive domain (auth/payments/db).")
-
-        if escalate:
+        if reasons:
             print(f"ESCALATING {repo}#{pr}: {', '.join(reasons)}")
             results['escalated'].append((repo, pr, title, reasons))
             continue
 
-        print(f"Gate 2 passed. Merging...")
-        env = _load_gh_token_env()
-        env["GH_PAGER"] = "cat"
-        cmd = ["gh", "pr", "merge", str(pr), "-R", str(repo), "--squash", "--delete-branch"]
-        res = subprocess.run(cmd, capture_output=True, text=True, env=env)
+        res = merge_pr(repo, pr)
         if res.returncode == 0:
             print(f"Successfully merged {repo}#{pr}")
             results['merged'].append((repo, pr, title))
