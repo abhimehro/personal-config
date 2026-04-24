@@ -39,26 +39,26 @@ def run_gh(args):
     except:
         return None
 
+def _is_security_pr(title):
+    keywords = {'sentinel', 'security', 'cve', 'xxe'}
+    return any(kw in title for kw in keywords)
+
+def _is_dependency_pr(title):
+    keywords = {'dependabot', 'renovate'}
+    return any(kw in title for kw in keywords)
+
+def _is_infra_pr(title):
+    keywords = {'chore', 'ci', 'automation', 'action', 'trunk'}
+    return any(kw in title for kw in keywords)
+
 def get_category(title):
     title = title.lower()
-
-    # SECURITY
-    if 'sentinel' in title: return 'SECURITY'
-    if 'security' in title: return 'SECURITY'
-    if 'cve' in title: return 'SECURITY'
-    if 'xxe' in title: return 'SECURITY'
-
-    # DEPENDENCY
-    if 'dependabot' in title: return 'DEPENDENCY'
-    if 'renovate' in title: return 'DEPENDENCY'
-
-    # CI/INFRA
-    if 'chore' in title: return 'CI/INFRA'
-    if 'ci' in title: return 'CI/INFRA'
-    if 'automation' in title: return 'CI/INFRA'
-    if 'action' in title: return 'CI/INFRA'
-    if 'trunk' in title: return 'CI/INFRA'
-
+    if _is_security_pr(title):
+        return 'SECURITY'
+    if _is_dependency_pr(title):
+        return 'DEPENDENCY'
+    if _is_infra_pr(title):
+        return 'CI/INFRA'
     return 'PERFORMANCE/REFACTOR/UI/FEATURE'
 
 def process_pr(pr, categorized):
