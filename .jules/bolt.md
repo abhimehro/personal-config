@@ -111,3 +111,8 @@
 
 **Learning:** In Python automation scripts calling functions like `matches_any` or `numeric_version` inside loops, using an `@functools.lru_cache` helper function at the module scope caches both regex application and normalisation overhead (e.g. `tuple()` casts and `os.path.normcase` internally), yielding ~50% performance gains on repeated inputs compared to just caching the regex compilation.
 **Action:** When repeatedly calling string matching logic inside loop comprehensions, write a lightweight module-scoped helper decorated with `lru_cache(maxsize=512)` that delegates to the target function to bypass duplicate internal processing logic safely.
+
+## 2026-07-15 - [Python Substring Search Optimization]
+
+**Learning:** In Python, checking if multiple substrings exist anywhere within a large collection of lines is highly inefficient when done by iterating through the lines (`any(substring in line for line in line_list)`). Joining the lines into a single string (`"".join(line_list)`) and performing a single `substring in joined_string` check is significantly faster (~15x or more) because it uses optimized C-level string searching algorithms (like Boyer-Moore/Horspool) and avoids the overhead of the Python loop and repeated substring checks.
+**Action:** When performing substring "exists in any of these lines" checks for a list of items, pre-join the target lines into a single string and use a simple `in` check against that string. Combine this with pre-calculating list indices and slices outside of list comprehensions to avoid $O(N)$ overhead inside loops.

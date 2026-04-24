@@ -18,7 +18,15 @@ for line in lines:
     if line.startswith('- abhimehro/'):
         ready_prs.append(line.strip()[2:])
 
-ready_only = [pr for pr in ready_prs if not any(pr in l for l in lines[:lines.index('## READY\n')])]
+# ⚡ Bolt Optimization: Pre-calculate the index and prefix content outside the loop
+# to avoid repeated list slicing and searching in the list comprehension.
+try:
+    ready_index = lines.index('## READY\n')
+except ValueError:
+    ready_index = len(lines)
+
+prefix_content = "".join(lines[:ready_index])
+ready_only = [pr for pr in ready_prs if pr not in prefix_content]
 
 file_groups = defaultdict(list)
 for pr in ready_only:
