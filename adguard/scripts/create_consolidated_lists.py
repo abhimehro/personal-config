@@ -29,8 +29,9 @@ def extract_domains_from_file(filepath, action_filter=None):
                         for rule in data["rules"]
                         if "PK" in rule
                         and "action" in rule
-                        and isinstance(rule["action"], dict)
-                        and rule["action"].get("do") == action_filter
+                        and type(rule["action"]) is dict
+                        and "do" in rule["action"]
+                        and rule["action"]["do"] == action_filter
                     ]
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
