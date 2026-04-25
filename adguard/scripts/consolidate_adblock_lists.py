@@ -56,24 +56,28 @@ def process_tracker_files(base_dir, tracker_files):
 def extract_allowlist_from_file(filepath, description):
     """Extract allowlist domains from a file with do: 1 rules."""
     domains = set()
-    if filepath.exists():
-        print(f"  Processing: {filepath.name}")
-        data = load_json_file(filepath)
-        if data and "rules" in data:
-            # ⚡ Bolt Optimization: Use list comprehension with `type() is dict` and direct dictionary lookups instead of generator with isinstance() and .get()
-            domains.update(
-                [
-                    rule["PK"]
-                    for rule in data["rules"]
-                    if "PK" in rule
-                    and "action" in rule
-                    and type(rule["action"]) is dict
-                    and "do" in rule["action"]
-                    and rule["action"]["do"] == 1
-                ]
-            )
-            count = len(domains)
-            print(f"    Added {count} {description}")
+    if not filepath.exists():
+        return domains
+
+    print(f"  Processing: {filepath.name}")
+    data = load_json_file(filepath)
+    if not data or "rules" not in data:
+        return domains
+
+    # ⚡ Bolt Optimization: Replace generator with list comprehension and use direct dict lookups
+    domains.update(
+        [
+            rule["PK"]
+            for rule in data["rules"]
+            if "PK" in rule
+            and "action" in rule
+            and isinstance(rule["action"], dict)
+            and "do" in rule["action"]
+            and rule["action"]["do"] == 1
+        ]
+    )
+    count = len(domains)
+    print(f"    Added {count} {description}")
     return domains
 
 

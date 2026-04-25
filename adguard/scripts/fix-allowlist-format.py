@@ -19,13 +19,13 @@ def extract_allowlist_domains_from_file(filepath):
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
             if "rules" in data:
-                # ⚡ Bolt Optimization: Use list comprehension with explicit dictionary checks
+                # ⚡ Bolt Optimization: Use list comprehension instead of generator and use direct dict lookups
                 return [
                     rule["PK"]
                     for rule in data["rules"]
                     if "PK" in rule
                     and "action" in rule
-                    and type(rule["action"]) is dict
+                    and isinstance(rule["action"], dict)
                     and "do" in rule["action"]
                     and rule["action"]["do"] == 1
                 ]

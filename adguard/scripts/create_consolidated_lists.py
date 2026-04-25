@@ -19,23 +19,26 @@ def extract_domains_from_file(filepath, action_filter=None):
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
-            if "rules" in data:
-                # ⚡ Bolt Optimization: List comprehension with explicit dictionary checks
-                if action_filter is None:
-                    return [rule["PK"] for rule in data["rules"] if "PK" in rule]
-                else:
-                    return [
-                        rule["PK"]
-                        for rule in data["rules"]
-                        if "PK" in rule
-                        and "action" in rule
-                        and type(rule["action"]) is dict
-                        and "do" in rule["action"]
-                        and rule["action"]["do"] == action_filter
-                    ]
+
+        if not data or "rules" not in data:
+            return []
+
+        # ⚡ Bolt Optimization: Use list comprehension instead of generator and use direct dict lookups
+        if action_filter is None:
+            return [rule["PK"] for rule in data["rules"] if "PK" in rule]
+
+        return [
+            rule["PK"]
+            for rule in data["rules"]
+            if "PK" in rule
+            and "action" in rule
+            and isinstance(rule["action"], dict)
+            and "do" in rule["action"]
+            and rule["action"]["do"] == action_filter
+        ]
     except Exception as e:
         print(f"Error reading {filepath}: {e}")
-    return []
+        return []
 
 
 def process_allowlist_files(base_dir):
