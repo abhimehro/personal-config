@@ -7,6 +7,9 @@
 
 set -euo pipefail
 
+trap 'echo -e "
+[0;31m👋 Operation cancelled by user. Goodbye![0m"; exit 130' SIGINT
+
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

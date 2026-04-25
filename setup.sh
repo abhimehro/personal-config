@@ -8,6 +8,9 @@
 
 set -Eeuo pipefail
 
+trap 'echo -e "
+[0;31m👋 Setup cancelled by user. Goodbye![0m"; exit 130' SIGINT
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 BOLD='\033[1m'
