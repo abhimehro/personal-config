@@ -233,6 +233,37 @@ class TestExtractHoroscopeText(unittest.TestCase):
     def test_whitespace_only(self):
         assert mb.extract_horoscope_text({"horoscope": "   "}) is None
 
+    def test_flat_horoscope_data(self):
+        assert mb.extract_horoscope_text({"horoscope_data": "Flat data."}) == "Flat data."
+
+    def test_priority_order(self):
+        payload = {
+            "data": {"horoscope_data": "Priority 1"},
+            "horoscope_data": "Priority 2",
+            "horoscope": "Priority 3",
+            "description": "Priority 4",
+        }
+        assert mb.extract_horoscope_text(payload) == "Priority 1"
+
+        del payload["data"]
+        assert mb.extract_horoscope_text(payload) == "Priority 2"
+
+        del payload["horoscope_data"]
+        assert mb.extract_horoscope_text(payload) == "Priority 3"
+
+    def test_non_string_candidates(self):
+        payload = {
+            "horoscope_data": 123,
+            "horoscope": ["not", "a", "string"],
+            "description": "The only string.",
+        }
+        assert mb.extract_horoscope_text(payload) == "The only string."
+
+    def test_nested_not_dict(self):
+        # If 'data' is a string, it shouldn't crash nested.get
+        payload = {"data": "not-a-dict", "horoscope": "Fallback."}
+        assert mb.extract_horoscope_text(payload) == "Fallback."
+
 
 # ============================================================
 # Staleness Calculation
