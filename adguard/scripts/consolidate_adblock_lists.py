@@ -31,6 +31,21 @@ def extract_domains_from_rules(rules):
     return [rule["PK"] for rule in rules if "PK" in rule]
 
 
+
+def _is_allowlist_rule(rule):
+    """Helper to efficiently check if a rule is an allowlist rule."""
+    if "PK" not in rule:
+        return False
+    if "action" not in rule:
+        return False
+    action = rule["action"]
+    if type(action) is not dict:
+        return False
+    if "do" not in action:
+        return False
+    return action["do"] == 1
+
+
 def process_tracker_files(base_dir, tracker_files):
     """Process tracker files to create denylist domains."""
     print("\n📋 Creating Denylist...")
@@ -59,15 +74,11 @@ def extract_allowlist_from_file(filepath, description):
         print(f"  Processing: {filepath.name}")
         data = load_json_file(filepath)
         if data and "rules" in data:
-            # ⚡ Bolt Optimization: Use generator expression with `in` checks instead of nested `.get()`
-            domains.update(
-                rule["PK"]
-                for rule in data["rules"]
-                if "PK" in rule
-                and "action" in rule
-                and isinstance(rule["action"], dict)
-                and rule["action"].get("do") == 1
-            )
+            # ⚡ Bolt Optimization: Use helper function and list comprehension
+            # to balance performance and CodeScene cyclomatic complexity limits
+            domains.update([
+                rule["PK"] for rule in data["rules"] if _is_allowlist_rule(rule)
+            ])
             count = len(domains)
             print(f"    Added {count} {description}")
     return domains
