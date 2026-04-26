@@ -71,7 +71,7 @@ def extract_allowlist_from_file(filepath, description):
             for rule in data["rules"]
             if "PK" in rule
             and "action" in rule
-            and isinstance(rule["action"], dict)
+            and type(rule["action"]) is dict
             and "do" in rule["action"]
             and rule["action"]["do"] == 1
         ]
