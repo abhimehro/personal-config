@@ -151,7 +151,7 @@ All PASS security audit.
 | personal-config | 810 | UI | **CLOSED** | Same fix as #822, narrower scope | <!-- pragma: allowlist secret -->
 | personal-config | 820 | PERFORMANCE | **DEFER** | UNSTABLE rollup; needs CI rerun after rebase | <!-- pragma: allowlist secret -->
 | personal-config | 818 | PERFORMANCE | **DEFER** | DIRTY post-cascade; safe substring optimization, just needs rebase | <!-- pragma: allowlist secret -->
-| personal-config | 812 | PERFORMANCE | **DEFER** | DIRTY post-cascade | <!-- pragma: allowlist secret -->
+| personal-config | 812 | PERFORMANCE | **DEFER** | DIRTY post-cascade (Lesson 0) | <!-- pragma: allowlist secret -->
 | personal-config | 816 | SECURITY | **ESCALATE** | Touches PR automation toolchain (`categorize_ready.py`, `detect_duplicates.py`, `run_merges.py`); trust boundary; DIRTY | <!-- pragma: allowlist secret -->
 | ctrld-sync | 739 | REFACTOR | **MERGED** | Tests for `_clean_env_kv` |
 | ctrld-sync | 740 | PERFORMANCE | **MERGED** | Bolt _clean_env_kv str.split optimization |
