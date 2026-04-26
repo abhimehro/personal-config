@@ -11,6 +11,7 @@ Usage: python3 consolidate_adblock_lists.py --input-dir <input_dir> --output-dir
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -29,21 +30,6 @@ def extract_domains_from_rules(rules):
     """Extract domain names from rules array."""
     # ⚡ Bolt Optimization: Use list comprehension for faster domain extraction
     return [rule["PK"] for rule in rules if "PK" in rule]
-
-
-
-def _is_allowlist_rule(rule):
-    """Helper to efficiently check if a rule is an allowlist rule."""
-    if "PK" not in rule:
-        return False
-    if "action" not in rule:
-        return False
-    action = rule["action"]
-    if type(action) is not dict:
-        return False
-    if "do" not in action:
-        return False
-    return action["do"] == 1
 
 
 def process_tracker_files(base_dir, tracker_files):
@@ -70,17 +56,28 @@ def process_tracker_files(base_dir, tracker_files):
 def extract_allowlist_from_file(filepath, description):
     """Extract allowlist domains from a file with do: 1 rules."""
     domains = set()
-    if filepath.exists():
-        print(f"  Processing: {filepath.name}")
-        data = load_json_file(filepath)
-        if data and "rules" in data:
-            # ⚡ Bolt Optimization: Use helper function and list comprehension
-            # to balance performance and CodeScene cyclomatic complexity limits
-            domains.update([
-                rule["PK"] for rule in data["rules"] if _is_allowlist_rule(rule)
-            ])
-            count = len(domains)
-            print(f"    Added {count} {description}")
+    if not filepath.exists():
+        return domains
+
+    print(f"  Processing: {filepath.name}")
+    data = load_json_file(filepath)
+    if not data or "rules" not in data:
+        return domains
+
+    # ⚡ Bolt Optimization: Replace generator with list comprehension and use direct dict lookups
+    domains.update(
+        [
+            rule["PK"]
+            for rule in data["rules"]
+            if "PK" in rule
+            and "action" in rule
+            and type(rule["action"]) is dict
+            and "do" in rule["action"]
+            and rule["action"]["do"] == 1
+        ]
+    )
+    count = len(domains)
+    print(f"    Added {count} {description}")
     return domains
 
 
