@@ -129,3 +129,7 @@
 ## 2026-06-25 - [List Comprehensions with Direct Dict Lookups]
 **Learning:** In Python data parsing scripts, combining list comprehensions with `type(dict) is dict` and direct dictionary lookups (`"key" in dict and dict["key"] == val`) provides a ~15-20% performance boost over using generator expressions with `isinstance()` and `.get()` calls by avoiding function overhead.
 **Action:** When extracting data from large JSON arrays based on nested conditions, prefer list comprehensions over generator expressions and use direct `in` checks combined with `type() is dict` instead of `.get()` and `isinstance()`.
+
+## 2026-03-10 - Cached Environment parsing in iterative scripts
+**Learning:** Repetitive file IO (e.g., parsing `.env` files) inside helper functions that are called in loops (like API wrappers across a large queue) creates a massive performance bottleneck.
+**Action:** Use Python's `functools.lru_cache` to cache environment or configuration file parsing that runs repeatedly but remains static during execution.
