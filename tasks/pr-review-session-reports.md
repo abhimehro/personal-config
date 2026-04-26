@@ -288,7 +288,7 @@ The following reflects an earlier completed sweep (preserved for audit). Figures
 
 ### Repos processed
 
-1. `abhimehro/personal-config`
+1. `abhimehro/personal-config` <!-- pragma: allowlist secret -->
 2. `abhimehro/ctrld-sync`
 3. `abhimehro/email-security-pipeline`
 4. `abhimehro/Seatek_Analysis`
@@ -331,3 +331,42 @@ All 3 PRs from `google-labs-jules[bot]` (via `abhimehro` trigger) implemented th
 ### Workflow completion
 
 - **Complete:** 1 merge, 2 closures. No escalations, no conflicts after merge.
+
+---
+
+## Run — 2026-04-25 (one-time backlog cleanup test, expanded automation scope)
+
+### Repos processed
+
+1. `abhimehro/personal-config` <!-- pragma: allowlist secret -->
+2. `abhimehro/ctrld-sync`
+3. `abhimehro/email-security-pipeline`
+4. `abhimehro/Seatek_Analysis`
+5. `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project`
+
+### Metrics
+
+| Metric | Count |
+| ------ | ----: |
+| PRs reviewed (in-scope) | 44 |
+| PRs merged (squash) | 15 |
+| PRs closed (duplicate / superseded) | 6 |
+| PRs closed (zero-diff / stale) | 5 |
+| PRs escalated | 6 |
+| PRs deferred (DIRTY/UNSTABLE) | 12 |
+| Auto-fix commits pushed | 0 |
+
+### Highlights
+
+- **Lesson 0u in action:** Seatek `#155` carried both a Bolt list-comp change and an infra fix (pinned `pandas<3.0.0` + bumped CI Python to 3.11). Merging it first unblocked the `validate` workflow for the entire repo; sibling PRs (`#151`, `#154`) flipped to CLEAN after `update-branch` and were merged in the same run. `#152` became zero-diff after sync and was closed.
+- **Lesson 0t (new):** `email-security-pipeline` is queue-jammed by pre-existing `pytest` collection-time `SyntaxError`s on `main` (since 2026-04-23). All 6 in-scope PRs in that repo were deferred or escalated; the agent did not bypass a broken pytest gate for a security pipeline. Top escalation for the next session: fix the test infra on `main`.
+- **Lesson 0 cascade respected:** After merging 7 PRs in `personal-config` and 3 in `ctrld-sync`, mergeability was re-checked between merges. PRs that flipped to DIRTY (`#812`, `#742`) were deferred with explicit comments rather than rebased via force-push. <!-- pragma: allowlist secret -->
+- **Trust boundaries respected:** `personal-config#816` (rewrites the PR automation toolchain itself) and `Seatek_Analysis#156` (touches `.github/scripts/`) were escalated with concrete review checklists rather than auto-merged. <!-- pragma: allowlist secret -->
+
+### Full report
+
+See [`tasks/pr-review-2026-04-25.md`](pr-review-2026-04-25.md) for per-repo dispositions, links to every merged / closed / escalated PR, and security gate analysis.
+
+### Workflow completion
+
+- **Complete:** all intended actions performed within hard boundaries. Merges where gates passed; closures where duplicates/zero-diff were detected; escalations where security-sensitive logic or trust boundaries were touched; deferrals where DIRTY conflicts or pre-existing CI infra failures blocked safe merge.
