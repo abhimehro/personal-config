@@ -134,3 +134,6 @@
 
 **Learning:** In Python data parsing scripts, replacing `.get()` calls inside generator expressions with explicit `key in dict` + direct `dict[key]` lookups gives a small but consistent speedup (~10-15%) when iterating over large lists of dicts (e.g. AdGuard rule lists with thousands of entries). The win comes from avoiding `.get()`'s default-value branching and the small per-call overhead of method dispatch.
 **Action:** When extracting fields from large JSON arrays inside a list comprehension, prefer `if "key" in d and d["key"] == val` over `if d.get("key") == val`, and use `[ ... for d in data ]` (list comprehension) instead of `( ... for d in data )` (generator) when the result is immediately materialized (e.g. passed to `set.update` or returned from a function).
+## 2026-03-10 - Cached Environment parsing in iterative scripts
+**Learning:** Repetitive file IO (e.g., parsing `.env` files) inside helper functions that are called in loops (like API wrappers across a large queue) creates a massive performance bottleneck.
+**Action:** Use Python's `functools.lru_cache` to cache environment or configuration file parsing that runs repeatedly but remains static during execution.
