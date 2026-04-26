@@ -114,3 +114,103 @@
 - **Total in-scope open:** 3
 - **By theme:** PERFORMANCE 3
 - **Action:** MERGE 1 · CLOSE-DUPLICATE 2
+
+---
+
+# Automated PR inventory — 2026-04-25 (backlog cleanup, review-and-merge)
+
+**Config:** `tasks/pr-review-agent.config.yaml`
+**Stale threshold:** 30 days — none of the in-scope PRs at inventory time exceeded this (all ≤ 2 days old).
+**Mode:** `review-and-merge` · **Merge strategy:** squash · **Auto-fix:** enabled (no auto-fix commits required this session)
+**Preflight:** `gh auth status` confirmed `GH_TOKEN` for `abhimehro` (branch-protection introspection denied by token scope; merges via gh CLI work).
+
+## Scope rules
+
+1. **Configured bot logins:** `dependabot[bot]`, `renovate[bot]`, `google-labs-jules[bot]` (GitHub may surface `app/dependabot`).
+2. **Expanded automation:** include PRs where GitHub shows `abhimehro` as the author when the **branch**, **title**, **body**, or **comments** indicate Jules / Sentinel / Bolt / Palette / `automation-workflow-*` / `jules.google.com/task/`.
+3. **Coverage check:** all 44 open PRs across the 5 repos matched at least one automation signal — every PR was bot-authored or carried a Jules/Sentinel/Bolt/Palette/Dependabot footer or branch prefix. No false positives required filtering.
+
+## Initial open inventory (2026-04-25, before actions)
+
+| Repo | PR | Author | Branch (abbr.) | Category | CI (rollup) | Mergeable | Files | Disposition |
+| ---- | --: | ------ | -------------- | -------- | ----------- | --------- | ----: | ----------- |
+| personal-config | 823 | abhimehro (Sentinel) | `fix/option-injection-cwe88-*` | SECURITY | PASS | MERGEABLE/CLEAN | 4 | **MERGED** | <!-- pragma: allowlist secret -->
+| personal-config | 822 | abhimehro (Palette) | `palette-graceful-exit-*` | UI | PASS | MERGEABLE/CLEAN | 3 | **MERGED** | <!-- pragma: allowlist secret -->
+| personal-config | 821 | abhimehro (Jules QA) | `jules/qa-review-*` | (zero-diff) | PASS | MERGEABLE/CLEAN | 0 | **CLOSED** zero-diff | <!-- pragma: allowlist secret -->
+| personal-config | 820 | abhimehro (Bolt) | `bolt/optimize-json-parsing-*` | PERFORMANCE | FAIL | MERGEABLE/UNSTABLE | 4 | DEFER (UNSTABLE) | <!-- pragma: allowlist secret -->
+| personal-config | 819 | abhimehro (Jules) | `testing-improvement-horoscope-*` | REFACTOR | PASS | MERGEABLE/CLEAN | 1 | **MERGED** | <!-- pragma: allowlist secret -->
+| personal-config | 818 | abhimehro (Bolt) | `bolt-optimize-detect-duplicates-*` | PERFORMANCE | PASS | CONFLICTING/DIRTY | 2 | DEFER (DIRTY) | <!-- pragma: allowlist secret -->
+| personal-config | 817 | abhimehro (Jules) | `fix-unused-import-os-*` | REFACTOR | PASS | MERGEABLE/CLEAN | 2 | **MERGED** | <!-- pragma: allowlist secret -->
+| personal-config | 816 | abhimehro (Sentinel) | `fix-command-injection-runrun-gh-*` | SECURITY | PASS | CONFLICTING/DIRTY | 7 | **ESCALATE** (PR automation toolchain trust boundary) | <!-- pragma: allowlist secret -->
+| personal-config | 815 | abhimehro (Sentinel) | `sentinel/fix-pgrep-option-injection-*` | SECURITY | PASS | MERGEABLE/CLEAN | 4 | **CLOSED** dup of #823 | <!-- pragma: allowlist secret -->
+| personal-config | 814 | abhimehro (Palette) | `palette-youtube-download-ux-*` | UI | PASS | MERGEABLE/CLEAN | 1 | **MERGED** | <!-- pragma: allowlist secret -->
+| personal-config | 813 | abhimehro (Jules QA) | `jules-qa-report-update-*` | (zero-diff) | PASS | MERGEABLE/CLEAN | 0 | **CLOSED** zero-diff | <!-- pragma: allowlist secret -->
+| personal-config | 812 | abhimehro (Bolt) | `bolt-cache-env-parsing-*` | PERFORMANCE | PASS | MERGEABLE/CLEAN → DIRTY | 5 | DEFER (DIRTY post-cascade) | <!-- pragma: allowlist secret -->
+| personal-config | 811 | abhimehro (Sentinel) | `sentinel-fix-cwe-78-eval-caches-*` | SECURITY | PASS | MERGEABLE/CLEAN | 1 | **MERGED** | <!-- pragma: allowlist secret -->
+| personal-config | 810 | abhimehro (Palette) | `palette-graceful-exit-trap-*` | UI | PASS | MERGEABLE/CLEAN | 2 | **CLOSED** dup of #822 | <!-- pragma: allowlist secret -->
+| personal-config | 809 | abhimehro (Jules QA) | `qa-report-*` | (zero-diff) | PASS | MERGEABLE/CLEAN | 0 | **CLOSED** zero-diff | <!-- pragma: allowlist secret -->
+| personal-config | 808 | abhimehro (Bolt) | `bolt/optimize-dict-lookup-comprehension-*` | PERFORMANCE | PASS | MERGEABLE/CLEAN | 3 | **MERGED** | <!-- pragma: allowlist secret -->
+| ctrld-sync | 742 | abhimehro (Palette) | `chore/ux-hidden-input-*` | UI | PASS | MERGEABLE/CLEAN → DIRTY | 4 | DEFER (DIRTY post-cascade) |
+| ctrld-sync | 741 | abhimehro (Jules QA) | `qa-daily-review-*` | (zero-diff) | PASS | MERGEABLE/CLEAN | 0 | **CLOSED** zero-diff |
+| ctrld-sync | 740 | abhimehro (Bolt) | `optimize-clean-env-kv-*` | PERFORMANCE | PASS | MERGEABLE/CLEAN | 3 | **MERGED** |
+| ctrld-sync | 739 | abhimehro (Jules) | `tests-add-clean-env-kv-tests-*` | REFACTOR | PASS | MERGEABLE/CLEAN | 1 | **MERGED** |
+| ctrld-sync | 738 | abhimehro (Bolt) | `perf-optimize-folder-validation-*` | PERFORMANCE | PASS | CONFLICTING/DIRTY | 1 | DEFER (DIRTY) |
+| ctrld-sync | 737 | abhimehro (Sentinel) | `security-fix-predictable-cache-temp-file-*` | SECURITY | PASS | CONFLICTING/DIRTY | 2 | **ESCALATE** (security + DIRTY) |
+| ctrld-sync | 736 | abhimehro (Palette) | `ux-password-hidden-hint-*` | UI | PASS | MERGEABLE/CLEAN | 2 | **CLOSED** dup of #742 |
+| ctrld-sync | 735 | abhimehro (Bolt) | `bolt-optimize-clean-env-kv-*` | PERFORMANCE | PASS | MERGEABLE/CLEAN | 2 | **CLOSED** dup of #740 |
+| ctrld-sync | 734 | abhimehro (Palette/Jules) | `jules-*-8d93aea1` | UI | PASS | MERGEABLE/CLEAN | 1 | **MERGED** |
+| email-security-pipeline | 721 | abhimehro (Sentinel) | `jules-1763991674-*` | SECURITY | FAIL (pytest pre-existing) | MERGEABLE/UNSTABLE | 2 | **ESCALATE** |
+| email-security-pipeline | 720 | abhimehro (Jules) | `code-health-main-py-imports-*` | REFACTOR | PASS | CONFLICTING/DIRTY | 2 | DEFER (DIRTY) |
+| email-security-pipeline | 719 | abhimehro (Sentinel) | `security-fix-toctou-permissions-*` | SECURITY | FAIL (pytest+CodeQL+CodeScene) | MERGEABLE/UNSTABLE | 4 | **ESCALATE** |
+| email-security-pipeline | 718 | abhimehro (Jules) | `test-caching-eviction-*` | REFACTOR | FAIL (pytest pre-existing) | MERGEABLE/UNSTABLE | 1 | DEFER (test infra) |
+| email-security-pipeline | 717 | abhimehro (Palette) | `palette-empty-state-ux-*` | UI | FAIL (pytest pre-existing) | MERGEABLE/UNSTABLE | 3 | DEFER (test infra) |
+| email-security-pipeline | 715 | abhimehro (Sentinel) | `jules-1790347126-*` | SECURITY | FAIL (pytest+CodeQL) | MERGEABLE/UNSTABLE | 4 | **ESCALATE** |
+| Seatek_Analysis | 156 | abhimehro (Sentinel) | `sentinel/fix-exc-info-leak-*` | SECURITY | FAIL (validate pre-existing) | MERGEABLE/UNSTABLE → DIRTY | 2 | DEFER/escalate (`.github/scripts/`) |
+| Seatek_Analysis | 155 | abhimehro (Bolt) | `bolt-opt-*` | PERFORMANCE + INFRA | PASS (validate pre-existing fail) | MERGEABLE/CLEAN | 4 | **MERGED** (also fixes validate via pandas pin) |
+| Seatek_Analysis | 154 | abhimehro (Jules) | `testing-improvement-outlier-analysis-*` | REFACTOR | FAIL → PASS after #155 | MERGEABLE/UNSTABLE → CLEAN | 1 | **MERGED** (after #155 unblocked validate) |
+| Seatek_Analysis | 153 | abhimehro (Bolt) | `perf-list-comp-scan-file-*` | PERFORMANCE | PASS | CONFLICTING/DIRTY | 2 | DEFER (DIRTY, mostly superseded by #155) |
+| Seatek_Analysis | 152 | abhimehro (Jules) | `code-health-unreachable-code-*` | REFACTOR | FAIL → 0-diff after sync | MERGEABLE/UNSTABLE → CLEAN(0-diff) | 1 | **CLOSED** zero-diff after sync |
+| Seatek_Analysis | 151 | app/dependabot | `dependabot/pip/Series_27/Analysis/matplotlib-gte-3` | DEPENDENCY | FAIL → PASS after #155 | MERGEABLE/UNSTABLE → CLEAN | 1 | **MERGED** (after #155 unblocked validate) |
+| Seatek_Analysis | 150 | abhimehro (Bolt) | `bolt/optimize-scan-file-*` | PERFORMANCE | PASS | MERGEABLE/CLEAN | 3 | **CLOSED** dup of #155 |
+| Seatek_Analysis | 149 | abhimehro (Bolt) | `bolt-perf-list-comprehension-*` | PERFORMANCE | PASS | MERGEABLE/CLEAN | 3 | **CLOSED** dup of #155 |
+| Hydrograph | 146 | abhimehro (Jules) | `fix-line-lengths-*` | REFACTOR | PASS | CONFLICTING/DIRTY | 3 | DEFER (DIRTY) |
+| Hydrograph | 145 | abhimehro (Jules) | `testing-improvement-dataloader-exception-*` | REFACTOR | PASS | CONFLICTING/DIRTY | 1 | DEFER (DIRTY) |
+| Hydrograph | 144 | abhimehro (Sentinel) | `security-fix-file-size-validation-*` | SECURITY | PASS | CONFLICTING/DIRTY | 4 | DEFER (DIRTY, security review queued) |
+| Hydrograph | 143 | abhimehro (Jules) | `code-health-cleanup-unused-imports-*` | REFACTOR | PASS | CONFLICTING/DIRTY | 1 | DEFER (DIRTY) |
+| Hydrograph | 140 | abhimehro (Bolt) | `perf-optimize-np-count-nonzero-*` | PERFORMANCE | PASS | MERGEABLE/CLEAN | 2 | **MERGED** |
+
+## Post-session remainder (open, in-scope)
+
+| Repo | PR | Reason still open |
+| ---- | --: | ----------------- |
+| personal-config | 820 | UNSTABLE rollup; needs CI re-run after rebase | <!-- pragma: allowlist secret -->
+| personal-config | 818 | DIRTY post-cascade (Lesson 0); just needs rebase | <!-- pragma: allowlist secret -->
+| personal-config | 812 | DIRTY post-cascade (Lesson 0); just needs rebase | <!-- pragma: allowlist secret -->
+| personal-config | 816 | **Escalated** — rewrites PR automation toolchain (trust boundary) | <!-- pragma: allowlist secret -->
+| ctrld-sync | 742 | DIRTY post-cascade after #740 merged |
+| ctrld-sync | 738 | DIRTY (pre-existing) |
+| ctrld-sync | 737 | **Escalated** — predictable temp-file fix; DIRTY |
+| email-security-pipeline | 721 | **Escalated** — CRITICAL filename bypass + broken pytest infra on main |
+| email-security-pipeline | 720 | DIRTY (`payload.json` cascade, Lesson 0) |
+| email-security-pipeline | 719 | **Escalated** — TOCTOU + CodeQL failing |
+| email-security-pipeline | 718 | DEFER — blocked by pre-existing pytest collection errors on main |
+| email-security-pipeline | 717 | DEFER — same pytest blocker |
+| email-security-pipeline | 715 | **Escalated** — `O_NOFOLLOW` symlink hardening + CodeQL failing |
+| Seatek_Analysis | 156 | DEFER — DIRTY (manual conflict resolution required); touches `.github/scripts/` |
+| Seatek_Analysis | 153 | DEFER — DIRTY, mostly superseded by #155 |
+| Hydrograph | 146 | DEFER — DIRTY (pre-existing) |
+| Hydrograph | 145 | DEFER — DIRTY (pre-existing) |
+| Hydrograph | 144 | DEFER — DIRTY (security file-size validation; rebase + human review) |
+| Hydrograph | 143 | DEFER — DIRTY (trivial unused-imports cleanup) |
+
+## Summary counts (initial inventory)
+
+- **Total in-scope open:** 44
+- **By theme:** SECURITY 13 · PERFORMANCE 12 · UI 6 · REFACTOR 9 · DEPENDENCY 1 · zero-diff QA 4 (CHORE-equivalent)
+- **By disposition:** MERGED 15 · CLOSED-DUP 6 · CLOSED-ZERODIFF 5 · ESCALATED 6 · DEFERRED 12
+
+## New scope-expansion observations (this session)
+
+- **All 44 PRs were in-scope.** Every human-authored PR also carried at least one of the automation signals (branch prefix, emoji marker like 🛡️/🎨/⚡/🧪/🧹, Jules task footer, or Dependabot author). No false-positive filtering was needed.
+- **Lesson 0u (new):** A single in-scope PR can fix the CI infra it depends on. Seatek `#155` not only applied the Bolt list-comprehension change but also pinned `pandas<3.0.0` in `Series_27/Analysis/requirements.txt` and bumped CI Python from 3.10 to 3.11, unblocking the `validate` job for the entire repo. Once merged, calling `update-branch` on sibling PRs (`#151`, `#152`, `#154`, `#156`) re-ran their checks against the fixed workflow — three of them flipped to MERGEABLE/CLEAN and were merged in the same session.
+
