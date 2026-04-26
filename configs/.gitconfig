@@ -19,3 +19,5 @@
 	prune = true
 [pull]
 	rebase = true
+[maintenance]
+	repo = /Users/speedybee/dev/personal-config
