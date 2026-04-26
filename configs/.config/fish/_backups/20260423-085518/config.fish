@@ -5,18 +5,14 @@
 # ============================================
 # Path Management
 # ============================================
-if not set -q __fish_path_initialized
-    # Homebrew (Apple Silicon)
-    fish_add_path --global --prepend /opt/homebrew/bin /opt/homebrew/sbin
+# Homebrew (Apple Silicon)
+fish_add_path --global --prepend /opt/homebrew/bin /opt/homebrew/sbin
 
-    # User binaries (prepend to prioritize local overrides)
-    fish_add_path --global --prepend /Users/speedybee/bin /Users/speedybee/.local/bin
+# User binaries (prepend to prioritize local overrides)
+fish_add_path --global --prepend $HOME/bin $HOME/.local/bin
 
-    # Tool-specific bins (append to avoid shadowing system tools)
-    fish_add_path --global --append /Users/speedybee/.cache/lm-studio/bin
-
-    set -g __fish_path_initialized 1
-end
+# Tool-specific bins (append to avoid shadowing system tools)
+fish_add_path --global --append $HOME/.cache/lm-studio/bin
 
 # ============================================
 # Theme and Prompt Management
