@@ -59,6 +59,14 @@ Assign each PR one disposition:
 - Write session report by appending to `tasks/pr-review-session-reports.md` (repos processed, actions taken, escalations, consolidations, patterns, metrics). Optionally also add a point-in-time snapshot as `tasks/pr-review-YYYY-MM-DD.md` when a standalone dated file is needed.
 - Update `tasks/lessons.md` with new patterns (bot behaviors, repo quirks, effective heuristics). Optionally reflect material lessons in [Review heuristics](#review-heuristics) below.
 
+## Phase 5 — Hand off the deferred / escalated tail to the Salvage Agent
+
+Phase 1 (this skill) is throughput-optimized: it merges what's clean, closes what's redundant, and surfaces the rest. The deferred / escalated tail is **explicitly out of scope here** — those PRs go to the [Automated PR Salvage & Recovery Agent](automated-pr-salvage-agent.md) (Phase 2).
+
+When this skill finishes a run, the dated session report (`tasks/pr-review-YYYY-MM-DD.md`) becomes Phase 2's input. To make that handoff machine-readable, the report's "Post-session remainder" section should be a YAML-style list with `repo`, `pr`, and `reason` fields per row. Trigger Phase 2 when **any** of: ≥1 PR is `ESCALATE`, ≥1 PR has been `DEFER`'d for >24 h, or 4+ PRs in the same repo share the same failing required check (suspected `main`-side infra breakage).
+
+Phase 2 will produce one or more **draft** salvage / infra-fix PRs and close the originals with cross-links. Phase 2 never merges autonomously.
+
 ## Local Git, `gh`, and Jujitsu (jj)
 
 - Prefer **`gh pr merge` / `gh pr comment` / GraphQL** for agent operations when tokens are injected as `GH_TOKEN`.
@@ -106,5 +114,6 @@ The PR Review Agent is currently run **on-demand** (human or agent). A future sc
 
 ## Related docs
 
+- [Automated PR Salvage & Recovery Agent](automated-pr-salvage-agent.md) — Phase 2 (the downstream skill that recovers the deferred / escalated tail this skill produces).
 - [GitHub App Permission Checklist](github-app-pr-automation-checklist.md) — Permissions, preflight, probe PRs, runbook.
 - [PR Review Automation ELIR](pr-review-automation-elir.md) — Handoff summary for maintainers.
