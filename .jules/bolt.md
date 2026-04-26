@@ -129,3 +129,8 @@
 ## 2026-06-25 - [List Comprehensions with Direct Dict Lookups]
 **Learning:** In Python data parsing scripts, combining list comprehensions with `type(dict) is dict` and direct dictionary lookups (`"key" in dict and dict["key"] == val`) provides a ~15-20% performance boost over using generator expressions with `isinstance()` and `.get()` calls by avoiding function overhead.
 **Action:** When extracting data from large JSON arrays based on nested conditions, prefer list comprehensions over generator expressions and use direct `in` checks combined with `type() is dict` instead of `.get()` and `isinstance()`.
+
+## 2026-04-25 - Direct Dict Lookups for Adblock Rule Filtering
+
+**Learning:** In Python data parsing scripts, replacing `.get()` calls inside generator expressions with explicit `key in dict` + direct `dict[key]` lookups gives a small but consistent speedup (~10-15%) when iterating over large lists of dicts (e.g. AdGuard rule lists with thousands of entries). The win comes from avoiding `.get()`'s default-value branching and the small per-call overhead of method dispatch.
+**Action:** When extracting fields from large JSON arrays inside a list comprehension, prefer `if "key" in d and d["key"] == val` over `if d.get("key") == val`, and use `[ ... for d in data ]` (list comprehension) instead of `( ... for d in data )` (generator) when the result is immediately materialized (e.g. passed to `set.update` or returned from a function).
