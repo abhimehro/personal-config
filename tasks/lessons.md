@@ -122,3 +122,35 @@
 
 **Pattern:** Automated Jules Daily QA creates PRs with `changedFiles: 0` when QA passes but no code changes are needed. PR body contains valuable findings, but empty diff adds noise to PR list.
 **Rule:** Close zero-diff QA PRs immediately with comment acknowledging findings. If QA findings are valuable, extract them to `tasks/lessons.md` or session reports. Configure Jules to skip PR creation when `git diff --stat` shows no changes.
+
+## Lesson 0t: Broken pre-existing tests on `main` create a queue jam (2026-04-25)
+
+**Pattern:** On `email-security-pipeline`, the `pytest` job on `main` has been failing with collection-time `SyntaxError`s in unrelated test files (`tests/test_alert_error_redaction.py`, `tests/test_error_recovery.py`, `tests/test_media_analyzer_error_handling.py`, etc.) since 2026-04-23. Every open PR's CI rollup goes UNSTABLE because the same broken collection step runs against the merge base — even tests-only PRs and pure UX changes that don't touch the broken files at all.
+**Rule:** When a required CI job fails for a reason that lives **on `main`** rather than in the PR's diff, the agent must **defer all merges** in that repo and surface a single top-priority escalation: "fix the test infra on `main`." Do **not** merge security-sensitive PRs (especially in a security pipeline) over a broken pytest gate, even if the PR's own changes are unrelated. The fix must land on `main` (via a maintenance PR or direct push by a human) before any in-flight PRs in that repo can be evaluated end-to-end.
+**Detection heuristic:** If 4+ PRs in the same repo show the same failing required check **and** the same job has failed on `main` since at least one merge ago, treat it as infra failure on `main` rather than a per-PR failure.
+
+## Lesson 0u: A single in-scope PR can fix the CI infra it depends on — merge it first, then sync siblings (2026-04-25)
+
+**Pattern:** `Seatek_Analysis`'s `validate` workflow had been failing because `Series_27/Analysis/requirements.txt` pinned `pandas>=3.0.2`, which requires Python 3.11, while the workflow used `python-version: "3.10"`. PR `#155` (a Bolt list-comprehension change) also included a one-line requirements pin (`pandas>=1.3.0,<3.0.0`) and bumped CI to Python 3.11. Merging it first unblocked validate for the entire repo.
+**Rule:** When triaging a repo whose CI is infra-broken, **scan inventory PRs for an in-scope diff that fixes the infra** (e.g. requirements pin, workflow file edit, action version bump) before deferring the whole repo. If found:
+1. Merge that PR first (security-and-infra ordering).
+2. After it merges, call `gh api -X PUT repos/$REPO/pulls/$PR/update-branch` on each sibling PR to re-run their checks against the fixed workflow.
+3. Re-evaluate mergeability and proceed with the normal merge order.
+**Caveats:** `update-branch` returns HTTP 422 if the PR has a real merge conflict (not just stale base). Treat that as DIRTY and defer for human rebase. Some PRs that pass the new validate may also become **zero-diff** once synced (their change was already on `main`); close those per Lesson 0b.
+
+## Lesson 0v: Closing duplicate Sentinel/Palette/Bolt PRs benefits from explicit superset accounting (2026-04-25)
+
+**Pattern:** Across `personal-config` and `ctrld-sync`, multiple Sentinel/Palette/Bolt PRs landed within 24 hours of each other proposing the **same fix** at different scopes. Examples: <!-- pragma: allowlist secret -->
+- `personal-config` `#823` (4 files, includes `clean/system.sh`) ⊃ `#815` (4 files, includes only `.jules/sentinel.md` journal) <!-- pragma: allowlist secret -->
+- `personal-config` `#822` (3 files including `view_logs.sh` + `setup.sh`) ⊃ `#810` (2 files) <!-- pragma: allowlist secret -->
+- `ctrld-sync` `#742` (4 files including `tests/test_ux.py`) ⊃ `#736` (2 files)
+- `ctrld-sync` `#740` (3 files including `pr_payload.json` artifact) ⊃ `#735` (2 files)
+**Rule:** When closing as duplicate, the comment must:
+1. Name the canonical PR explicitly with file overlap delta (e.g. "#823 covers `clean/system.sh` additionally").
+2. Note any unique content in the closed PR that does **not** carry forward (typically only the journal entry under `.jules/`), so a reviewer can decide whether to extract it.
+3. Cite Lesson 0n so the consolidation rationale is traceable.
+
+## Lesson 0w: Branch-protection introspection may be denied by personal-account tokens (2026-04-25) <!-- pragma: allowlist secret -->
+
+**Pattern:** `gh api repos/$REPO/branches/main/protection` returns `HTTP 403: Resource not accessible by [REDACTED] access token` for all five repos in this config when authenticated as the personal owner. This does **not** indicate misconfigured branch protection — it just means the token scope can't read the protection record. <!-- pragma: allowlist secret -->
+**Rule:** Treat 403 on the protection-read endpoint as benign for personal repos. Verify branch-protection behavior via merge attempts instead (`gh pr merge` will fail with a clear error if rules block the merge). Keep the preflight gate looking at `gh auth status` and `gh repo view` rather than the protection endpoint. <!-- pragma: allowlist secret -->

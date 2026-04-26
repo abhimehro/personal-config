@@ -80,11 +80,15 @@ Use `tasks/pr-review-agent.config.yaml` (or override via CLI). Key fields:
 Apply these during classification and review (see also `tasks/lessons.md`):
 
 - **Zero-diff / superseded:** Detect early (`changed_files_count == 0` or no effective diff); route to closure. Merge-only token can still squash-merge zero-diff PRs to clear queue. Draft PRs can be marked ready then merged.
-- **Post-merge conflict cascade:** Re-check mergeable state after each merge before proceeding.
+- **Post-merge conflict cascade (Lesson 0):** Re-check mergeable state after each merge before proceeding. PRs touching the same hot file (`main.py`, `payload.json`, etc.) frequently flip to DIRTY after a sibling merge — defer with an explicit comment rather than force-push.
 - **Lockfile scope creep:** Review lockfile in every PR; strip unrelated lockfile changes (e.g. docstring PR adding `pytest-benchmark`).
 - **Validator return-value risk:** Before approving dead-code removal that removes `return True`, verify no callers depend on truthy return.
 - **Security in REFACTOR:** Category classification should account for security (e.g. endswith fix, ReDoS-safe regex); treat as security-sensitive when applicable.
-- **File-path overlap:** Same files do not alone mean duplicate; confirm title/intent before closing as duplicate.
+- **File-path overlap:** Same files do not alone mean duplicate; confirm title/intent before closing as duplicate. Prefer explicit superset accounting in close comments (Lesson 0v).
+- **Pre-existing CI infra breakage on `main` (Lesson 0t):** If the same required check fails on 4+ open PRs in the same repo **and** has failed on `main` since at least one merge ago, treat it as infra failure on `main` rather than per-PR. Defer all merges in that repo and surface a single top-priority escalation to fix the infra. Never bypass a broken security/test gate for a security-sensitive pipeline.
+- **In-scope infra fixes (Lesson 0u):** Before deferring an entire repo, scan inventory for an in-scope PR whose diff also fixes the broken CI infra (e.g. requirements pin, workflow update, action SHA bump). Merge that PR first, then call `gh api -X PUT repos/$REPO/pulls/$PR/update-branch` on each sibling to re-run their checks against the fixed workflow. Re-evaluate mergeability and proceed with the normal merge order; close any sibling that becomes zero-diff per Lesson 0b.
+- **Trust boundary on PR automation toolchain itself:** A PR that rewrites scripts in `tasks/`, `scripts/run-pr-review-session.sh`, `scripts/preflight-gh-pr-automation.sh`, `categorize_ready.py`, `detect_duplicates.py`, `run_merges.py`, or `.github/scripts/` is touching the same toolchain the agent uses to act on PRs. Always escalate for human review even when the security intent is clear and CI is green.
+- **Branch-protection introspection (Lesson 0w):** `gh api repos/$REPO/branches/main/protection` may return `403` for personal-account tokens. Treat this as benign for personal repos and rely on `gh pr merge` exit codes to detect protection-blocked merges. <!-- pragma: allowlist secret -->
 
 ## Hard boundaries
 
