@@ -191,7 +191,7 @@
 | ctrld-sync | 738 | DIRTY (pre-existing) |
 | ctrld-sync | 737 | **Escalated** — predictable temp-file fix; DIRTY |
 | email-security-pipeline | 721 | **Escalated** — CRITICAL filename bypass + broken pytest infra on main |
-| email-security-pipeline | 720 | DIRTY (`payload.json` cascade, Lesson 0s) |
+| email-security-pipeline | 720 | DIRTY (`payload.json` cascade, Lesson 0) |
 | email-security-pipeline | 719 | **Escalated** — TOCTOU + CodeQL failing |
 | email-security-pipeline | 718 | DEFER — blocked by pre-existing pytest collection errors on main |
 | email-security-pipeline | 717 | DEFER — same pytest blocker |
