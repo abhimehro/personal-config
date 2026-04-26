@@ -4,6 +4,9 @@
 
 set -euo pipefail
 
+# UX Additions
+trap 'echo -e "\n${YELLOW}👋 Download cancelled by user. Goodbye!${NC}"; exit 130' SIGINT
+
 # --- UX Helpers ---
 
 # Colors
@@ -70,8 +73,13 @@ if [[ -z $URL ]] && [[ -t 0 ]]; then
 
 	# Prompt if still empty
 	if [[ -z $URL ]]; then
-		echo -e "${BLUE}${E_SEARCH} Please enter the YouTube URL:${NC}"
-		read -r URL
+		while true; do
+			echo -e "${BLUE}${E_SEARCH} Please enter the YouTube URL:${NC}"
+			read -r URL
+			if [[ -n $URL ]]; then
+				break
+			fi
+		done
 	fi
 fi
 

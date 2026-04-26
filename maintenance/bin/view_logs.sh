@@ -5,6 +5,9 @@
 
 set -euo pipefail
 
+trap 'echo -e "
+[0;31m👋 Log viewer cancelled by user. Goodbye![0m"; exit 130' SIGINT
+
 LOG_DIR="$HOME/Library/Logs/maintenance"
 TASK="${1-}"
 
