@@ -35,11 +35,14 @@ bundle_has_installed_app() {
     # Fast path: Spotlight. Gated with a timeout because mdfind has been known
     # to wedge on misconfigured indexes.
     if command -v mdfind > /dev/null 2>&1; then
-        local hit
+        # `|| true` guards against two failure modes under `set -e` + `pipefail`:
+        # run_with_timeout returning 124 on timeout, and mdfind itself exiting
+        # non-zero. Both must fall through to the filesystem scan below.
+        local hit=""
         if declare -f run_with_timeout > /dev/null 2>&1; then
-            hit=$(run_with_timeout 2 mdfind "kMDItemCFBundleIdentifier == '$bundle_id'" 2> /dev/null | head -1)
+            hit=$(run_with_timeout 2 mdfind "kMDItemCFBundleIdentifier == '$bundle_id'" 2> /dev/null | head -1) || true
         else
-            hit=$(mdfind "kMDItemCFBundleIdentifier == '$bundle_id'" 2> /dev/null | head -1)
+            hit=$(mdfind "kMDItemCFBundleIdentifier == '$bundle_id'" 2> /dev/null | head -1) || true
         fi
         [[ -n "$hit" ]] && return 0
     fi
@@ -61,6 +64,19 @@ bundle_has_installed_app() {
         fi
     done
 
+    local -a mapped_app_bundles=()
+    case "$bundle_id" in
+        com.microsoft.autoupdate.helper | com.microsoft.office.licensingV2.helper)
+            mapped_app_bundles=(
+                "com.microsoft.Word"
+                "com.microsoft.Excel"
+                "com.microsoft.Powerpoint"
+                "com.microsoft.Outlook"
+                "com.microsoft.OneNote"
+            )
+            ;;
+    esac
+
     local app_root app info app_bundle
     for app_root in "${_MOLE_BUNDLE_RESOLVER_APP_ROOTS[@]}"; do
         [[ -d "$app_root" ]] || continue
@@ -73,6 +89,12 @@ bundle_has_installed_app() {
             app_bundle=$(plutil -extract CFBundleIdentifier raw "$info" 2> /dev/null || echo "")
             [[ "$app_bundle" == "$bundle_id" ]] && return 0
             [[ -n "$parent_id" && "$app_bundle" == "$parent_id" ]] && return 0
+            if ((${#mapped_app_bundles[@]} > 0)); then
+                local mapped_bundle
+                for mapped_bundle in "${mapped_app_bundles[@]}"; do
+                    [[ "$app_bundle" == "$mapped_bundle" ]] && return 0
+                done
+            fi
         done < <(find "$app_root" -maxdepth 1 -name "*.app" -print0 2> /dev/null)
     done
 

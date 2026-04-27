@@ -940,6 +940,12 @@ opt_launch_agents_cleanup() {
 # Log path is configurable via MOLE_PERIODIC_LOG for testing; defaults to /var/log/daily.out.
 # A missing log file is treated as stale and triggers maintenance.
 opt_periodic_maintenance() {
+    # Check if periodic command exists (removed in macOS 26+)
+    if ! command -v periodic > /dev/null 2>&1; then
+        opt_msg "Periodic maintenance skipped (not available on this macOS version)"
+        return 0
+    fi
+
     local daily_log="${MOLE_PERIODIC_LOG:-/var/log/daily.out}"
     local stale_days=7
 
