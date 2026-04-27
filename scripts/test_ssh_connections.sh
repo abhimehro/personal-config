@@ -14,10 +14,10 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-log() { printf "%b[INFO]%b %s\n" "${BLUE}" "${NC}" "$*"; }
-success() { printf "%b[OK]%b %s\n" "${GREEN}" "${NC}" "$*"; }
-warn() { printf "%b[WARN]%b %s\n" "${YELLOW}" "${NC}" "$*"; }
-error() { printf "%b[ERROR]%b %s\n" "${RED}" "${NC}" "$*" >&2; }
+log() { printf "%b[INFO]%b%s\n" "${BLUE}" "${NC}" "${*:+ $*}"; }
+success() { printf "%b[OK]%b%s\n" "${GREEN}" "${NC}" "${*:+ $*}"; }
+warn() { printf "%b[WARN]%b%s\n" "${YELLOW}" "${NC}" "${*:+ $*}"; }
+error() { printf "%b[ERROR]%b%s\n" "${RED}" "${NC}" "${*:+ $*}" >&2; }
 
 echo "=========================================="
 echo "Testing SSH Connection Methods"
