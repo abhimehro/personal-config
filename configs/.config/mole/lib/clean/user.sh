@@ -796,6 +796,8 @@ clean_group_container_caches() {
     for container_dir in "$group_containers_dir"/*; do
         [[ -d "$container_dir" ]] || continue
         [[ -L "$container_dir" ]] && continue
+        # Skip containers we cannot read (avoids repeated TCC/privacy prompts on macOS).
+        [[ -r "$container_dir" ]] || continue
         local container_id="${container_dir##*/}"
 
         # Skip Apple-owned shared containers entirely.
@@ -1104,9 +1106,16 @@ clean_browsers() {
     safe_clean ~/Library/Application\ Support/Google/Chrome/GrShaderCache/* "Chrome GR shader cache"
     safe_clean ~/Library/Application\ Support/Google/Chrome/GraphiteDawnCache/* "Chrome Dawn cache"
     local _chrome_profile
+    # Skip ScriptCache wipe while the browser is running: removing V8 bytecode
+    # under a live Chromium process breaks loaded MV3 extension service workers
+    # until the user toggles them in chrome://extensions. See #785.
+    local _chrome_running=false
+    pgrep -x "Google Chrome" > /dev/null 2>&1 && _chrome_running=true
     for _chrome_profile in "$HOME/Library/Application Support/Google/Chrome"/*/; do
         clean_service_worker_cache "Chrome" "$_chrome_profile/Service Worker/CacheStorage"
-        safe_clean "$_chrome_profile"/Service\ Worker/ScriptCache/* "Chrome Service Worker ScriptCache"
+        if [[ "$_chrome_running" != "true" ]]; then
+            safe_clean "$_chrome_profile"/Service\ Worker/ScriptCache/* "Chrome Service Worker ScriptCache"
+        fi
     done
     safe_clean ~/Library/Application\ Support/Google/GoogleUpdater/crx_cache/* "GoogleUpdater CRX cache"
     safe_clean ~/Library/Application\ Support/Google/GoogleUpdater/*.old "GoogleUpdater old files"
@@ -1120,9 +1129,13 @@ clean_browsers() {
     safe_clean ~/Library/Application\ Support/Arc/GrShaderCache/* "Arc GR shader cache"
     safe_clean ~/Library/Application\ Support/Arc/GraphiteDawnCache/* "Arc Dawn cache"
     local _arc_profile
+    local _arc_running=false
+    pgrep -x "Arc" > /dev/null 2>&1 && _arc_running=true
     for _arc_profile in "$HOME/Library/Application Support/Arc"/*/; do
         clean_service_worker_cache "Arc" "$_arc_profile/Service Worker/CacheStorage"
-        safe_clean "$_arc_profile"/Service\ Worker/ScriptCache/* "Arc Service Worker ScriptCache"
+        if [[ "$_arc_running" != "true" ]]; then
+            safe_clean "$_arc_profile"/Service\ Worker/ScriptCache/* "Arc Service Worker ScriptCache"
+        fi
     done
     safe_clean ~/Library/Caches/company.thebrowser.dia/* "Dia cache"
     safe_clean ~/Library/Caches/BraveSoftware/Brave-Browser/* "Brave cache"
@@ -1133,9 +1146,13 @@ clean_browsers() {
     safe_clean ~/Library/Application\ Support/BraveSoftware/Brave-Browser/GrShaderCache/* "Brave GR shader cache"
     safe_clean ~/Library/Application\ Support/BraveSoftware/Brave-Browser/GraphiteDawnCache/* "Brave Dawn cache"
     local _brave_profile
+    local _brave_running=false
+    pgrep -x "Brave Browser" > /dev/null 2>&1 && _brave_running=true
     for _brave_profile in "$HOME/Library/Application Support/BraveSoftware/Brave-Browser"/*/; do
         clean_service_worker_cache "Brave" "$_brave_profile/Service Worker/CacheStorage"
-        safe_clean "$_brave_profile"/Service\ Worker/ScriptCache/* "Brave Service Worker ScriptCache"
+        if [[ "$_brave_running" != "true" ]]; then
+            safe_clean "$_brave_profile"/Service\ Worker/ScriptCache/* "Brave Service Worker ScriptCache"
+        fi
     done
     # Helium Browser.
     safe_clean ~/Library/Caches/net.imput.helium/* "Helium cache"
@@ -1169,9 +1186,13 @@ clean_browsers() {
     safe_clean ~/Library/Application\ Support/Vivaldi/GrShaderCache/* "Vivaldi GR shader cache"
     safe_clean ~/Library/Application\ Support/Vivaldi/GraphiteDawnCache/* "Vivaldi Dawn cache"
     local _vivaldi_profile
+    local _vivaldi_running=false
+    pgrep -x "Vivaldi" > /dev/null 2>&1 && _vivaldi_running=true
     for _vivaldi_profile in "$HOME/Library/Application Support/Vivaldi"/*/; do
         clean_service_worker_cache "Vivaldi" "$_vivaldi_profile/Service Worker/CacheStorage"
-        safe_clean "$_vivaldi_profile"/Service\ Worker/ScriptCache/* "Vivaldi Service Worker ScriptCache"
+        if [[ "$_vivaldi_running" != "true" ]]; then
+            safe_clean "$_vivaldi_profile"/Service\ Worker/ScriptCache/* "Vivaldi Service Worker ScriptCache"
+        fi
     done
     safe_clean ~/Library/Caches/Comet/* "Comet cache"
     safe_clean ~/Library/Caches/com.kagi.kagimacOS/* "Orion cache"
@@ -1189,6 +1210,9 @@ clean_browsers() {
 
 # Cloud storage caches.
 clean_cloud_storage() {
+    if [[ "${MO_DEBUG:-0}" == "1" ]]; then
+        echo "[DEBUG] Cleaning cloud storage caches..." >&2
+    fi
     safe_clean ~/Library/Caches/com.dropbox.* "Dropbox cache"
     safe_clean ~/Library/Caches/com.getdropbox.dropbox "Dropbox cache"
     safe_clean ~/Library/Caches/com.google.GoogleDrive "Google Drive cache"
@@ -1200,11 +1224,20 @@ clean_cloud_storage() {
 
 # Office app caches.
 clean_office_applications() {
+    if [[ "${MO_DEBUG:-0}" == "1" ]]; then
+        echo "[DEBUG] Cleaning office application caches..." >&2
+    fi
     safe_clean ~/Library/Caches/com.microsoft.Word "Microsoft Word cache"
+    if [[ "${MO_DEBUG:-0}" == "1" ]]; then
+        echo "[DEBUG] Cleaning Word container cache..." >&2
+    fi
     safe_clean ~/Library/Containers/com.microsoft.Word/Data/Library/Caches/* "Microsoft Word container cache"
     safe_clean ~/Library/Containers/com.microsoft.Word/Data/tmp/* "Microsoft Word temp files"
     safe_clean ~/Library/Containers/com.microsoft.Word/Data/Library/Logs/* "Microsoft Word container logs"
     safe_clean ~/Library/Caches/com.microsoft.Excel "Microsoft Excel cache"
+    if [[ "${MO_DEBUG:-0}" == "1" ]]; then
+        echo "[DEBUG] Cleaning Excel container cache..." >&2
+    fi
     safe_clean ~/Library/Containers/com.microsoft.Excel/Data/Library/Caches/* "Microsoft Excel container cache"
     safe_clean ~/Library/Containers/com.microsoft.Excel/Data/tmp/* "Microsoft Excel temp files"
     safe_clean ~/Library/Containers/com.microsoft.Excel/Data/Library/Logs/* "Microsoft Excel container logs"

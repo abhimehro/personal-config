@@ -631,10 +631,7 @@ build_regex_var() {
             regex="$regex|$p"
         fi
     done
-
-    if [[ ! "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-        return 1
-    fi
+    [[ "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] || return 1
     eval "$var_name=\"\$regex\""
 }
 
@@ -995,7 +992,6 @@ find_app_files() {
         "$HOME/Library/HTTPStorages/$bundle_id"
         "$HOME/Library/HTTPStorages/$bundle_id.binarycookies"
         "$HOME/Library/Cookies/$bundle_id.binarycookies"
-        "$HOME/Library/LaunchAgents/$bundle_id.plist"
         "$HOME/Library/Application Scripts/$bundle_id"
         "$HOME/Library/Services/$app_name.workflow"
         "$HOME/Library/QuickLook/$app_name.qlgenerator"
@@ -1096,6 +1092,11 @@ find_app_files() {
         [[ -d ~/Library/Preferences/ByHost ]] && while IFS= read -r -d '' pref; do
             files_to_clean+=("$pref")
         done < <(command find ~/Library/Preferences/ByHost -maxdepth 1 \( -name "$bundle_id*.plist" \) -print0 2> /dev/null)
+
+        # User LaunchAgents: wildcard scan for helper plists (e.g., com.example.app.helper.plist)
+        [[ -d ~/Library/LaunchAgents ]] && while IFS= read -r -d '' plist; do
+            files_to_clean+=("$plist")
+        done < <(command find ~/Library/LaunchAgents -maxdepth 1 \( -name "${bundle_id}.plist" -o -name "${bundle_id}.*.plist" \) -print0 2> /dev/null)
 
         # NSURLSession download caches
         local nsurlsession_dl="$HOME/Library/Caches/com.apple.nsurlsessiond/Downloads/$bundle_id"

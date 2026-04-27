@@ -431,7 +431,6 @@ clean_orphaned_system_services() {
     start_section_spinner "Scanning orphaned system services..."
 
     local orphaned_count=0
-    local total_orphaned_kb=0
     local -a orphaned_files=()
 
     # Known bundle ID patterns for common apps that leave system services behind
@@ -517,9 +516,6 @@ clean_orphaned_system_services() {
                         continue
                     fi
                     orphaned_files+=("$plist")
-                    local size_kb
-                    size_kb=$(sudo du -skP "$plist" 2> /dev/null | awk '{print $1}' || echo "0")
-                    total_orphaned_kb=$((total_orphaned_kb + size_kb))
                     orphaned_count=$((orphaned_count + 1))
                     break
                 fi
@@ -548,9 +544,6 @@ clean_orphaned_system_services() {
                         continue
                     fi
                     orphaned_files+=("$plist")
-                    local size_kb
-                    size_kb=$(sudo du -skP "$plist" 2> /dev/null | awk '{print $1}' || echo "0")
-                    total_orphaned_kb=$((total_orphaned_kb + size_kb))
                     orphaned_count=$((orphaned_count + 1))
                     break
                 fi
@@ -580,9 +573,6 @@ clean_orphaned_system_services() {
                         break
                     fi
                     orphaned_files+=("$helper")
-                    local size_kb
-                    size_kb=$(sudo du -skP "$helper" 2> /dev/null | awk '{print $1}' || echo "0")
-                    total_orphaned_kb=$((total_orphaned_kb + size_kb))
                     orphaned_count=$((orphaned_count + 1))
                     matched_known=true
                     break
@@ -598,9 +588,6 @@ clean_orphaned_system_services() {
             if [[ "$matched_known" == "false" ]] && [[ "$bundle_id" =~ ^(com|org|net|io)\. ]]; then
                 if ! bundle_has_installed_app "$bundle_id"; then
                     orphaned_files+=("$helper")
-                    local size_kb
-                    size_kb=$(sudo du -skP "$helper" 2> /dev/null | awk '{print $1}' || echo "0")
-                    total_orphaned_kb=$((total_orphaned_kb + size_kb))
                     orphaned_count=$((orphaned_count + 1))
                 fi
             fi
@@ -627,32 +614,53 @@ clean_orphaned_system_services() {
     if [[ $orphaned_count -gt 0 ]]; then
         echo -e "  ${GRAY}${ICON_WARNING}${NC} Found $orphaned_count orphaned system services"
 
-        for orphan_file in "${orphaned_files[@]}"; do
-            local filename
-            filename=$(basename "$orphan_file")
+        local removed_count=0
+        local skipped_protected_count=0
+        local failed_count=0
+        local removed_kb=0
 
+        for orphan_file in "${orphaned_files[@]}"; do
             if [[ "$DRY_RUN" == "true" ]]; then
                 debug_log "[DRY RUN] Would remove orphaned service: $orphan_file"
             else
+                if should_protect_path "$orphan_file"; then
+                    debug_log "Skipping protected orphaned service: $orphan_file"
+                    skipped_protected_count=$((skipped_protected_count + 1))
+                    continue
+                fi
+
+                local file_size_kb
+                file_size_kb=$(sudo du -skP "$orphan_file" 2> /dev/null | awk '{print $1}' || echo "0")
+
                 # Unload if it's a LaunchDaemon/LaunchAgent
                 if [[ "$orphan_file" == *.plist ]]; then
                     sudo launchctl unload "$orphan_file" 2> /dev/null || true
                 fi
                 if safe_sudo_remove "$orphan_file"; then
                     debug_log "Removed orphaned service: $orphan_file"
+                    removed_count=$((removed_count + 1))
+                    removed_kb=$((removed_kb + file_size_kb))
+                else
+                    debug_log "Failed to remove orphaned service: $orphan_file"
+                    failed_count=$((failed_count + 1))
                 fi
             fi
         done
 
         local orphaned_kb_display
-        if [[ $total_orphaned_kb -gt 1024 ]]; then
-            orphaned_kb_display=$(echo "$total_orphaned_kb" | awk '{printf "%.1fMB", $1/1024}')
+        if [[ $removed_kb -gt 1024 ]]; then
+            orphaned_kb_display=$(echo "$removed_kb" | awk '{printf "%.1fMB", $1/1024}')
         else
-            orphaned_kb_display="${total_orphaned_kb}KB"
+            orphaned_kb_display="${removed_kb}KB"
         fi
         if [[ "${DRY_RUN:-false}" != "true" ]]; then
-            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Cleaned $orphaned_count orphaned services, about $orphaned_kb_display"
-            note_activity
+            if [[ $removed_count -gt 0 ]]; then
+                echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Cleaned $removed_count orphaned services, about $orphaned_kb_display"
+                note_activity
+            fi
+            if [[ $skipped_protected_count -gt 0 || $failed_count -gt 0 ]]; then
+                echo -e "  ${GRAY}${ICON_WARNING}${NC} Orphaned services skipped $skipped_protected_count protected, failed $failed_count"
+            fi
         fi
     fi
 

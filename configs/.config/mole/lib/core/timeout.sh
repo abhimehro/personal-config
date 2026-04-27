@@ -211,6 +211,13 @@ run_with_timeout() {
     ) < /dev/null > /dev/null 2>&1 &
     local killer_pid=$!
 
+    local interrupted=0
+    local previous_int_trap
+    previous_int_trap=$(trap -p INT || true)
+
+    # Forward SIGINT to the command while preserving the caller's trap.
+    trap 'interrupted=1; kill -INT "$cmd_pid" 2>/dev/null || true; kill "$killer_pid" 2>/dev/null || true' INT
+
     # Wait for command to complete
     local exit_code=0
     set +e
@@ -218,10 +225,20 @@ run_with_timeout() {
     exit_code=$?
     set -e
 
+    if [[ -n "$previous_int_trap" ]]; then
+        eval "$previous_int_trap"
+    else
+        trap - INT
+    fi
+
     # Clean up killer process
     if kill -0 "$killer_pid" 2> /dev/null; then
         kill "$killer_pid" 2> /dev/null || true
         wait "$killer_pid" 2> /dev/null || true
+    fi
+
+    if [[ $interrupted -eq 1 ]]; then
+        return 130
     fi
 
     # Check if command was killed by timeout (exit codes 143=SIGTERM, 137=SIGKILL)

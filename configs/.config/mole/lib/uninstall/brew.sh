@@ -57,9 +57,10 @@ is_brew_cask_installed() {
 _extract_cask_token_from_path() {
     local path="$1"
 
-    # Check if path is inside Caskroom
+    # Check if path is inside Caskroom. Quote literals so Homebrew bottle
+    # relocation cannot break parsing when the prefix contains spaces.
     case "$path" in
-        /opt/homebrew/Caskroom/* | /usr/local/Caskroom/*) ;;
+        "/opt/homebrew/Caskroom/"* | "/usr/local/Caskroom/"*) ;;
         *) return 1 ;;
     esac
 
@@ -208,13 +209,23 @@ brew_uninstall_cask() {
         debug_log "App size: ${size_gb}GB, timeout: ${timeout}s"
     fi
 
-    # Run with timeout to prevent hangs from problematic cask scripts
-    local brew_exit=0
-    if HOMEBREW_NO_ENV_HINTS=1 HOMEBREW_NO_AUTO_UPDATE=1 NONINTERACTIVE=1 \
+    # Run with timeout to prevent hangs from problematic cask scripts.
+    if [[ -n "${SUDO_USER:-}" ]]; then
+        if run_with_timeout "$timeout" sudo -u "$SUDO_USER" env \
+            HOMEBREW_NO_ENV_HINTS=1 HOMEBREW_NO_AUTO_UPDATE=1 NONINTERACTIVE=1 \
+            brew uninstall --cask --zap "$cask_name" 2>&1; then
+            uninstall_ok=true
+        else
+            brew_exit=$?
+        fi
+    elif HOMEBREW_NO_ENV_HINTS=1 HOMEBREW_NO_AUTO_UPDATE=1 NONINTERACTIVE=1 \
         run_with_timeout "$timeout" brew uninstall --cask --zap "$cask_name" 2>&1; then
         uninstall_ok=true
     else
         brew_exit=$?
+    fi
+
+    if [[ "$uninstall_ok" != "true" ]]; then
         debug_log "brew uninstall timeout or failed with exit code: $brew_exit"
         # Exit code 124 indicates timeout from run_with_timeout
         # On timeout, fail immediately without verification to avoid inconsistent state
