@@ -8,7 +8,6 @@ on:
     types: [opened, reopened, synchronize]
 
 permissions:
-  pull-requests: write
   contents: write
 
 jobs:
@@ -18,8 +17,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4 # v4
         with:
-          fetch-depth: 1
-      - uses: release-drafter/release-drafter@v5 # v7.1.1
+          fetch-depth: 0
+      - uses: release-drafter/release-drafter@v6.0.0 # v7.1.1
         with:
           commitish: ${{ github.event.pull_request.head.sha || github.sha }}
         env:

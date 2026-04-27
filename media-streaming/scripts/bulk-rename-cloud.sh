@@ -9,9 +9,6 @@
 #
 set -euo pipefail
 
-# UX Additions
-trap 'echo -e "\n👋 Bulk rename cancelled by user. Goodbye!"; exit 130' SIGINT
-
 WORK_DIR="$HOME/CloudMedia/bulk-rename-temp"
 LOG_FILE="$HOME/Library/Logs/bulk-rename.log"
 CLOUD_SOURCE="gdrive:Media/Movies"
