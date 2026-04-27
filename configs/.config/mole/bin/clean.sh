@@ -1062,8 +1062,21 @@ perform_cleanup() {
 
         # ===== 5. Cloud & Office =====
         start_section "Cloud & Office"
-        clean_cloud_storage
-        clean_office_applications
+        # Force shell fallback so timeout runs in this shell context.
+        # The Cloud/Office cleaners rely on helpers (safe_clean, whitelist checks)
+        # defined in this script and sourced modules.
+        if run_with_shell_timeout 300 run_cloud_and_office_cleanup; then
+            : # completed successfully
+        else
+            local ret=$?
+            if [[ $ret -eq 124 ]]; then
+                log_warning "Cloud & Office cleanup timed out after 5 minutes, skipping remaining items"
+            elif [[ $ret -eq 130 ]]; then
+                return 130
+            else
+                log_warning "Cloud & Office cleanup failed with exit code $ret"
+            fi
+        fi
         end_section
 
         # ===== 6. Developer tools (merged CLI and GUI tooling) =====
@@ -1208,6 +1221,20 @@ perform_cleanup() {
 
     print_summary_block "$summary_heading" "${summary_details[@]}"
     printf '\n'
+}
+
+run_with_shell_timeout() {
+    local duration="$1"
+    shift || true
+    # Functions (for example safe_clean) are available only in the current shell.
+    # Force the shell fallback path so timeout can execute shell functions directly.
+    MO_TIMEOUT_BIN="" MO_TIMEOUT_PERL_BIN="" run_with_timeout "$duration" "$@"
+}
+
+# shellcheck disable=SC2329  # Invoked indirectly via run_with_timeout fallback.
+run_cloud_and_office_cleanup() {
+    clean_cloud_storage
+    clean_office_applications
 }
 
 main() {

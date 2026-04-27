@@ -495,6 +495,33 @@ scan_applications() {
         shopt -u nullglob
     fi
 
+    # Scan for pkg-installed apps in non-standard locations.
+    local pkg_app_path
+    while IFS= read -r pkg_app_path; do
+        [[ -n "$pkg_app_path" ]] || continue
+
+        local already_scanned=false
+        for app_dir in "${app_dirs[@]}"; do
+            if [[ "$pkg_app_path" == "$app_dir"/*.app ]]; then
+                already_scanned=true
+                break
+            fi
+        done
+        [[ "$already_scanned" == true ]] && continue
+
+        local app_name="${pkg_app_path##*/}"
+        app_name="${app_name%.app}"
+
+        local app_mtime
+        app_mtime=$(get_file_mtime "$pkg_app_path")
+
+        local cached_identity cached_bundle_id cached_display_name
+        cached_identity=$(lookup_cached_identity "$pkg_app_path" "$app_mtime")
+        IFS='|' read -r cached_bundle_id cached_display_name <<< "$cached_identity"
+
+        app_data_tuples+=("${pkg_app_path}|${app_name}|${app_mtime}|${cached_bundle_id}|${cached_display_name}")
+    done < <(pkg_receipt_nonstandard_app_paths)
+
     for app_dir in "${app_dirs[@]}"; do
         if [[ ! -d "$app_dir" ]]; then continue; fi
 

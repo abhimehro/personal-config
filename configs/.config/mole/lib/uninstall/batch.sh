@@ -115,6 +115,7 @@ stop_launch_services() {
     if [[ -d ~/Library/LaunchAgents ]]; then
         while IFS= read -r -d '' plist; do
             launchctl unload "$plist" 2> /dev/null || true
+            safe_remove "$plist" 2> /dev/null || true
         done < <(find ~/Library/LaunchAgents -maxdepth 1 -name "${bundle_id}*.plist" -print0 2> /dev/null)
     fi
 
@@ -122,11 +123,13 @@ stop_launch_services() {
         if [[ -d /Library/LaunchAgents ]]; then
             while IFS= read -r -d '' plist; do
                 sudo launchctl unload "$plist" 2> /dev/null || true
+                safe_sudo_remove "$plist" 2> /dev/null || true
             done < <(find /Library/LaunchAgents -maxdepth 1 -name "${bundle_id}*.plist" -print0 2> /dev/null)
         fi
         if [[ -d /Library/LaunchDaemons ]]; then
             while IFS= read -r -d '' plist; do
                 sudo launchctl unload "$plist" 2> /dev/null || true
+                safe_sudo_remove "$plist" 2> /dev/null || true
             done < <(find /Library/LaunchDaemons -maxdepth 1 -name "${bundle_id}*.plist" -print0 2> /dev/null)
         fi
     fi

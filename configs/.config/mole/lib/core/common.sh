@@ -23,6 +23,7 @@ source "$_MOLE_CORE_DIR/help.sh"
 source "$_MOLE_CORE_DIR/ui.sh"
 source "$_MOLE_CORE_DIR/app_protection.sh"
 source "$_MOLE_CORE_DIR/bundle_resolver.sh"
+source "$_MOLE_CORE_DIR/pkg_receipts.sh"
 
 # Load sudo management if available
 if [[ -f "$_MOLE_CORE_DIR/sudo.sh" ]]; then
