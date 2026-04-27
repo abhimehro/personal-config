@@ -50,22 +50,22 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 log() {
-	echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
+	printf "%b[%s]%b %s\n" "${BLUE}" "$(date '+%Y-%m-%d %H:%M:%S')" "${NC}" "$1"
 	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >>"$LOG_FILE" 2>/dev/null || true
 }
 
 log_error() {
-	echo -e "${RED}[ERROR]${NC} $1" >&2
+	printf "%b[ERROR]%b %s\n" "${RED}" "${NC}" "$1" >&2
 	echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $1" >>"$LOG_FILE" 2>/dev/null || true
 }
 
 log_success() {
-	echo -e "${GREEN}[SUCCESS]${NC} $1"
+	printf "%b[SUCCESS]%b %s\n" "${GREEN}" "${NC}" "$1"
 	echo "[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS: $1" >>"$LOG_FILE" 2>/dev/null || true
 }
 
 log_warning() {
-	echo -e "${YELLOW}[WARNING]${NC} $1"
+	printf "%b[WARNING]%b %s\n" "${YELLOW}" "${NC}" "$1"
 	echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARNING: $1" >>"$LOG_FILE" 2>/dev/null || true
 }
 
@@ -171,11 +171,11 @@ switch_profile() {
 
 	if [[ $test_result -eq 0 ]]; then
 		log_success "Successfully switched to $profile_name profile ($protocol)"
-		echo -e "\nProfile: $profile_name\nID: $(redact_profile_id "$profile_id")\nProtocol: $protocol\nStatus: Active"
+		printf "\nProfile: %s\nID: %s\nProtocol: %s\nStatus: Active\n" "$profile_name" "$(redact_profile_id "$profile_id")" "$protocol"
 		return 0
 	elif [[ $test_result -eq 2 ]]; then
 		log_warning "Successfully switched to $profile_name profile ($protocol), but ads are not being blocked."
-		echo -e "\nProfile: $profile_name\nID: $(redact_profile_id "$profile_id")\nProtocol: $protocol\nStatus: Active (Warning: Filtering may not be active)"
+		printf "\nProfile: %s\nID: %s\nProtocol: %s\nStatus: Active (Warning: Filtering may not be active)\n" "$profile_name" "$(redact_profile_id "$profile_id")" "$protocol"
 		return 0
 	else
 		log_error "Failed to establish connection with $profile_name profile"
