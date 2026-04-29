@@ -534,7 +534,7 @@ _mole_move_to_trash() {
         return 1
     fi
 
-    # Prefer the `trash` CLI (Homebrew formula) when available — it's faster
+    # Prefer the `trash` CLI (Homebrew formula) when available, it's faster
     # and does not need Finder running. Fall back to AppleScript, which
     # ships with macOS but prompts for auth on root-owned targets.
     if command -v trash > /dev/null 2>&1; then
@@ -553,6 +553,47 @@ on run argv
     tell application "Finder"
         delete p
     end tell
+end run
+APPLESCRIPT
+}
+
+# Batched Trash move for non-sudo, non-symlink paths. Removes the per-file
+# subprocess fan-out that made AppleScript-fallback uninstalls feel frozen
+# (100 files * ~1s each). Returns 0 only when the entire batch landed in the
+# Trash; callers must fall back to the per-file path on non-zero so nothing
+# is silently skipped.
+_mole_move_to_trash_batch() {
+    local -a paths=("$@")
+    [[ ${#paths[@]} -eq 0 ]] && return 0
+
+    if [[ -n "${MOLE_TEST_TRASH_DIR:-}" ]]; then
+        mkdir -p "$MOLE_TEST_TRASH_DIR" 2> /dev/null || return 1
+        local ts
+        ts=$(date +%s 2> /dev/null || echo 0)
+        local p dest
+        for p in "${paths[@]}"; do
+            dest="$MOLE_TEST_TRASH_DIR/$(basename "$p").$$.${ts}.$RANDOM"
+            mv "$p" "$dest" 2> /dev/null || return 1
+        done
+        return 0
+    fi
+
+    if [[ "${MOLE_TEST_NO_AUTH:-0}" == "1" ]]; then
+        return 1
+    fi
+
+    if command -v trash > /dev/null 2>&1; then
+        trash "${paths[@]}" > /dev/null 2>&1 && return 0
+    fi
+
+    # AppleScript fallback: build one POSIX-file list and tell Finder once.
+    osascript - "${paths[@]}" > /dev/null 2>&1 << 'APPLESCRIPT'
+on run argv
+    set posixList to {}
+    repeat with a in argv
+        set end of posixList to POSIX file (a as text)
+    end repeat
+    tell application "Finder" to delete posixList
 end run
 APPLESCRIPT
 }

@@ -291,7 +291,6 @@ flush_python_group_if_needed() {
     local group_root="$1"
     local array_name="$2"
 
-    [[ "$array_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] || return 1
     local group_count=0
     eval 'group_count=${#'"$array_name"'[@]}'
     [[ -z "$group_root" || "$group_count" -eq 0 ]] && return 0

@@ -814,7 +814,6 @@ update_progress_if_needed() {
 
     # Get last update time from variable
     local last_time
-    [[ "$last_update_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] || return 1
     eval "last_time=\${$last_update_var:-0}"
     [[ "$last_time" =~ ^[0-9]+$ ]] || last_time=0
 
