@@ -230,10 +230,19 @@ remove_login_item() {
 
 # Remove files (handles symlinks, optional sudo).
 # Security: All paths pass validate_path_for_deletion() before any deletion.
+# Performance: when MOLE_DELETE_MODE=trash and the batch is sudo-free and
+# symlink-free, the eligible paths are sent to Trash in a single subprocess
+# (one `trash` exec or one Finder AppleScript round-trip). This collapses the
+# previous N-subprocess fan-out that caused the post-confirmation "frozen
+# terminal" reported during `mo uninstall` on apps with many leftovers.
 remove_file_list() {
     local file_list="$1"
     local use_sudo="${2:-false}"
     local count=0
+    local mode="${MOLE_DELETE_MODE:-permanent}"
+
+    local -a trash_batch=()
+    local -a fallback_paths=()
 
     while IFS= read -r file; do
         [[ -n "$file" && -e "$file" ]] || continue
@@ -245,13 +254,46 @@ remove_file_list() {
         if [[ "$use_sudo" == "true" ]] && is_uninstall_dry_run; then
             debug_log "[DRY RUN] Would sudo remove: $file"
             ((++count))
+            continue
+        fi
+
+        # Symlinks and sudo-required paths stay on the per-file mole_delete
+        # path: safe_remove_symlink semantics differ from Trash, and AppleScript
+        # cannot run reliably as root for the batch fallback.
+        if [[ "$mode" == "trash" && "$use_sudo" != "true" && ! -L "$file" ]] &&
+            ! is_uninstall_dry_run; then
+            trash_batch+=("$file")
         else
+            fallback_paths+=("$file")
+        fi
+    done <<< "$file_list"
+
+    if [[ ${#trash_batch[@]} -gt 0 ]]; then
+        if _mole_move_to_trash_batch "${trash_batch[@]}"; then
+            local _bp _bsize
+            for _bp in "${trash_batch[@]}"; do
+                _bsize="unknown"
+                _mole_delete_log "trash" "$_bsize" "ok" "$_bp"
+                log_operation "${MOLE_CURRENT_COMMAND:-uninstall}" "TRASHED" "$_bp" "batch"
+            done
+            count=$((count + ${#trash_batch[@]}))
+        else
+            # Batch failed wholesale: route each path through mole_delete so
+            # the per-file fallback (Trash retry, then permanent rm) runs and
+            # forensic logging stays intact.
+            fallback_paths+=("${trash_batch[@]}")
+        fi
+    fi
+
+    if [[ ${#fallback_paths[@]} -gt 0 ]]; then
+        local fb
+        for fb in "${fallback_paths[@]}"; do
             # mole_delete routes through Trash when MOLE_DELETE_MODE=trash
             # (uninstall default), falls back to the underlying safe_* helpers
             # in permanent mode or when Trash is unavailable. See #723.
-            mole_delete "$file" "$use_sudo" && ((++count)) || true
-        fi
-    done <<< "$file_list"
+            mole_delete "$fb" "$use_sudo" && ((++count)) || true
+        done
+    fi
 
     echo "$count"
 }
@@ -314,7 +356,7 @@ batch_uninstall_applications() {
         if [[ -e "$info_plist" ]]; then
             exec_name=$(defaults read "$info_plist" CFBundleExecutable 2> /dev/null || echo "")
         fi
-        if pgrep -qx -- "${exec_name:-$app_name}" 2> /dev/null; then
+        if pgrep -qx "${exec_name:-$app_name}" 2> /dev/null; then
             running_apps+=("$app_name")
         fi
 
@@ -547,15 +589,19 @@ batch_uninstall_applications() {
             reason="still running"
         fi
 
-        # Remove the application only if not running.
-        # Stop spinner before any removal attempt (avoids mixed output on errors)
-        [[ -t 1 ]] && stop_inline_spinner
-
-        # For large apps, print a waiting hint so the terminal does not appear frozen
-        if [[ -t 1 && $total_kb -gt 1048576 && -z "$reason" ]]; then
-            local _wait_size
-            _wait_size=$(bytes_to_human "$((total_kb * 1024))")
-            echo -e "  ${GRAY}Removing ${app_name} (${_wait_size}), please wait...${NC}"
+        # Keep the spinner alive through the heavy work. For large apps the
+        # main bundle delete alone can take many seconds; for apps with
+        # 50-200 leftover files the per-file Trash moves add even more. The
+        # message is updated so the user sees which phase is running rather
+        # than a single static spinner.
+        if [[ -t 1 && -z "$reason" ]]; then
+            local _phase_size
+            _phase_size=$(bytes_to_human "$((total_kb * 1024))")
+            local _phase_prefix=""
+            if [[ ${#app_details[@]} -gt 1 ]]; then
+                _phase_prefix="[$current_index/${#app_details[@]}] "
+            fi
+            start_inline_spinner "${_phase_prefix}Removing ${app_name} (${_phase_size})..."
         fi
 
         local used_brew_successfully=false
@@ -644,10 +690,20 @@ batch_uninstall_applications() {
 
         # Remove related files if app removal succeeded.
         if [[ -z "$reason" ]]; then
+            if [[ -t 1 ]]; then
+                local _phase_prefix=""
+                if [[ ${#app_details[@]} -gt 1 ]]; then
+                    _phase_prefix="[$current_index/${#app_details[@]}] "
+                fi
+                start_inline_spinner "${_phase_prefix}Cleaning files for ${app_name}..."
+            fi
             remove_file_list "$related_files" "false" > /dev/null
 
-            # Check for related files that still exist after removal (silent failures,
-            # e.g. container directories managed by macOS that resist rm -rf).
+            # Identify leftovers (silent rm failures, e.g. container directories
+            # macOS protects via com.apple.provenance xattr). Compute their
+            # total size in a single du invocation rather than walking each
+            # path; the source paths that DID move to Trash are already gone
+            # and would just produce stderr noise we discard.
             local leftover_kb=0
             local -a leftover_paths=()
             while IFS= read -r _lf; do
@@ -659,11 +715,19 @@ batch_uninstall_applications() {
                     continue
                 fi
                 leftover_paths+=("$_lf")
-                local _lfkb
-                _lfkb=$(get_path_size_kb "$_lf" || echo "0")
-                leftover_kb=$((leftover_kb + _lfkb))
             done <<< "$related_files"
 
+            if [[ ${#leftover_paths[@]} -gt 0 ]]; then
+                local _du_total
+                _du_total=$(command du -skcP "${leftover_paths[@]}" 2> /dev/null | awk 'END {print $1}')
+                if [[ "$_du_total" =~ ^[0-9]+$ ]]; then
+                    leftover_kb=$_du_total
+                fi
+            fi
+
+            if [[ -t 1 ]]; then
+                start_inline_spinner "${_phase_prefix}Cleaning system files for ${app_name}..."
+            fi
             if [[ "$used_brew_successfully" == "true" ]]; then
                 remove_file_list "$diag_system" "true" > /dev/null
             else
@@ -698,6 +762,10 @@ batch_uninstall_applications() {
                     fi
                 fi
             fi
+
+            # All per-app side effects done; tear the spinner down before
+            # any echo so the success line does not collide with the spinner.
+            [[ -t 1 ]] && stop_inline_spinner
 
             # Show success
             if [[ -t 1 ]]; then
@@ -734,6 +802,9 @@ batch_uninstall_applications() {
                 fi
             fi
         else
+            # Stop spinner before printing the failure line so the error
+            # message is not painted over by the spinner's next tick.
+            [[ -t 1 ]] && stop_inline_spinner
             if [[ -t 1 ]]; then
                 if [[ ${#app_details[@]} -gt 1 ]]; then
                     echo -e "${ICON_ERROR} [$current_index/${#app_details[@]}] ${app_name} ${GRAY}, $reason${NC}"
