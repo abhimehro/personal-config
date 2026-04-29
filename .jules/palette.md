@@ -114,3 +114,8 @@
 
 **Learning:** Printing static prefixes (like "Assistant:") before a dynamic spinner completes causes screen reader redundancy and can leave visual artifacts on the terminal if the process is interrupted before the stream begins.
 **Action:** Delay printing static prefixes until the dynamic stream actually begins, and ensure that signal (SIGINT) and error handlers completely clear the line using `\r\x1B[K` to prevent orphaned text artifacts upon interruption.
+
+## 2026-06-25 - Yes/No Input Affordances in CLI
+
+**Learning:** When users see a (y/N) prompt, they intuitively type "yes" instead of just "y". Strict single-character matching fails silently on these valid intents, forcing a frustrating exit.
+**Action:** Always accept full words (yes/no) alongside single characters (y/n) in boolean prompts and loop on invalid inputs to prevent user frustration.
