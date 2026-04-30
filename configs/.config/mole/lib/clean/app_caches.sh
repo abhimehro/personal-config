@@ -155,19 +155,23 @@ clean_communication_apps() {
     safe_clean ~/Library/Caches/com.tencent.meeting/* "Tencent Meeting cache"
     safe_clean ~/Library/Caches/com.tencent.WeWorkMac/* "WeCom cache"
     safe_clean ~/Library/Caches/com.feishu.*/* "Feishu cache"
-    safe_clean ~/Library/Application\ Support/Microsoft/Teams/Cache/* "Microsoft Teams legacy cache"
-    safe_clean ~/Library/Application\ Support/Microsoft/Teams/Application\ Cache/* "Microsoft Teams legacy application cache"
-    safe_clean ~/Library/Application\ Support/Microsoft/Teams/Code\ Cache/* "Microsoft Teams legacy code cache"
-    safe_clean ~/Library/Application\ Support/Microsoft/Teams/GPUCache/* "Microsoft Teams legacy GPU cache"
-    safe_clean ~/Library/Application\ Support/Microsoft/Teams/logs/* "Microsoft Teams legacy logs"
-    safe_clean ~/Library/Application\ Support/Microsoft/Teams/tmp/* "Microsoft Teams legacy temp files"
+    if [[ -d ~/Library/Application\ Support/Microsoft/Teams ]]; then
+        safe_clean ~/Library/Application\ Support/Microsoft/Teams/Cache/* "Microsoft Teams legacy cache"
+        safe_clean ~/Library/Application\ Support/Microsoft/Teams/Application\ Cache/* "Microsoft Teams legacy application cache"
+        safe_clean ~/Library/Application\ Support/Microsoft/Teams/Code\ Cache/* "Microsoft Teams legacy code cache"
+        safe_clean ~/Library/Application\ Support/Microsoft/Teams/GPUCache/* "Microsoft Teams legacy GPU cache"
+        safe_clean ~/Library/Application\ Support/Microsoft/Teams/logs/* "Microsoft Teams legacy logs"
+        safe_clean ~/Library/Application\ Support/Microsoft/Teams/tmp/* "Microsoft Teams legacy temp files"
+    fi
 }
 # DingTalk.
 clean_dingtalk() {
     safe_clean ~/Library/Caches/dd.work.exclusive4aliding/* "DingTalk iDingTalk cache"
     safe_clean ~/Library/Caches/com.alibaba.AliLang.osx/* "AliLang security component"
-    safe_clean ~/Library/Application\ Support/iDingTalk/log/* "DingTalk logs"
-    safe_clean ~/Library/Application\ Support/iDingTalk/holmeslogs/* "DingTalk holmes logs"
+    if [[ -d ~/Library/Application\ Support/iDingTalk ]]; then
+        safe_clean ~/Library/Application\ Support/iDingTalk/log/* "DingTalk logs"
+        safe_clean ~/Library/Application\ Support/iDingTalk/holmeslogs/* "DingTalk holmes logs"
+    fi
 }
 # AI assistants.
 clean_ai_apps() {
@@ -176,11 +180,13 @@ clean_ai_apps() {
     safe_clean ~/Library/Logs/Claude/* "Claude logs"
     safe_clean ~/Library/Logs/com.openai.codex/* "Codex CLI logs"
     # Codex (OpenAI, Electron)
-    safe_clean ~/Library/Application\ Support/Codex/Cache/* "Codex cache"
-    safe_clean ~/Library/Application\ Support/Codex/Code\ Cache/* "Codex code cache"
-    safe_clean ~/Library/Application\ Support/Codex/GPUCache/* "Codex GPU cache"
-    safe_clean ~/Library/Application\ Support/Codex/DawnGraphiteCache/* "Codex Dawn cache"
-    safe_clean ~/Library/Application\ Support/Codex/DawnWebGPUCache/* "Codex WebGPU cache"
+    if [[ -d ~/Library/Application\ Support/Codex ]]; then
+        safe_clean ~/Library/Application\ Support/Codex/Cache/* "Codex cache"
+        safe_clean ~/Library/Application\ Support/Codex/Code\ Cache/* "Codex code cache"
+        safe_clean ~/Library/Application\ Support/Codex/GPUCache/* "Codex GPU cache"
+        safe_clean ~/Library/Application\ Support/Codex/DawnGraphiteCache/* "Codex Dawn cache"
+        safe_clean ~/Library/Application\ Support/Codex/DawnWebGPUCache/* "Codex WebGPU cache"
+    fi
 }
 # Design and creative tools.
 clean_design_tools() {
@@ -264,7 +270,9 @@ clean_video_players() {
     safe_clean ~/Library/Caches/com.douyu.*/* "Douyu cache"
     safe_clean ~/Library/Caches/com.huya.*/* "Huya cache"
     safe_clean ~/Library/Caches/smart.stremio*/* "Stremio cache"
-    safe_clean ~/Library/Application\ Support/stremio/stremio-server/stremio-cache/* "Stremio server cache"
+    if [[ -d ~/Library/Application\ Support/stremio ]]; then
+        safe_clean ~/Library/Application\ Support/stremio/stremio-server/stremio-cache/* "Stremio server cache"
+    fi
 }
 # Download managers.
 clean_download_managers() {
@@ -278,31 +286,43 @@ clean_download_managers() {
 # Gaming platforms.
 clean_gaming_platforms() {
     safe_clean ~/Library/Caches/com.valvesoftware.steam/* "Steam cache"
-    safe_clean ~/Library/Application\ Support/Steam/htmlcache/* "Steam web cache"
-    safe_clean ~/Library/Application\ Support/Steam/appcache/* "Steam app cache"
-    safe_clean ~/Library/Application\ Support/Steam/depotcache/* "Steam depot cache"
-    safe_clean ~/Library/Application\ Support/Steam/steamapps/shadercache/* "Steam shader cache"
-    safe_clean ~/Library/Application\ Support/Steam/logs/* "Steam logs"
+    if [[ -d ~/Library/Application\ Support/Steam ]]; then
+        safe_clean ~/Library/Application\ Support/Steam/htmlcache/* "Steam web cache"
+        safe_clean ~/Library/Application\ Support/Steam/appcache/* "Steam app cache"
+        safe_clean ~/Library/Application\ Support/Steam/depotcache/* "Steam depot cache"
+        safe_clean ~/Library/Application\ Support/Steam/steamapps/shadercache/* "Steam shader cache"
+        safe_clean ~/Library/Application\ Support/Steam/logs/* "Steam logs"
+    fi
     safe_clean ~/Library/Caches/com.epicgames.EpicGamesLauncher/* "Epic Games cache"
     safe_clean ~/Library/Caches/com.blizzard.Battle.net/* "Battle.net cache"
-    safe_clean ~/Library/Application\ Support/Battle.net/Cache/* "Battle.net app cache"
+    if [[ -d ~/Library/Application\ Support/Battle.net ]]; then
+        safe_clean ~/Library/Application\ Support/Battle.net/Cache/* "Battle.net app cache"
+    fi
     safe_clean ~/Library/Caches/com.ea.*/* "EA Origin cache"
     safe_clean ~/Library/Caches/com.gog.galaxy/* "GOG Galaxy cache"
     safe_clean ~/Library/Caches/com.riotgames.*/* "Riot Games cache"
-    safe_clean ~/Library/Application\ Support/minecraft/logs/* "Minecraft logs"
-    safe_clean ~/Library/Application\ Support/minecraft/crash-reports/* "Minecraft crash reports"
-    safe_clean ~/Library/Application\ Support/minecraft/webcache/* "Minecraft web cache"
-    safe_clean ~/Library/Application\ Support/minecraft/webcache2/* "Minecraft web cache 2"
-    safe_clean ~/.lunarclient/game-cache/* "Lunar Client game cache"
-    safe_clean ~/.lunarclient/launcher-cache/* "Lunar Client launcher cache"
-    safe_clean ~/.lunarclient/logs/* "Lunar Client logs"
-    safe_clean ~/.lunarclient/offline/*/logs/* "Lunar Client offline logs"
-    safe_clean ~/.lunarclient/offline/files/*/logs/* "Lunar Client offline file logs"
+    if [[ -d ~/Library/Application\ Support/minecraft ]]; then
+        safe_clean ~/Library/Application\ Support/minecraft/logs/* "Minecraft logs"
+        safe_clean ~/Library/Application\ Support/minecraft/crash-reports/* "Minecraft crash reports"
+        safe_clean ~/Library/Application\ Support/minecraft/webcache/* "Minecraft web cache"
+        safe_clean ~/Library/Application\ Support/minecraft/webcache2/* "Minecraft web cache 2"
+    fi
+    if [[ -d ~/.lunarclient ]]; then
+        safe_clean ~/.lunarclient/game-cache/* "Lunar Client game cache"
+        safe_clean ~/.lunarclient/launcher-cache/* "Lunar Client launcher cache"
+        safe_clean ~/.lunarclient/logs/* "Lunar Client logs"
+        safe_clean ~/.lunarclient/offline/*/logs/* "Lunar Client offline logs"
+        safe_clean ~/.lunarclient/offline/files/*/logs/* "Lunar Client offline file logs"
+    fi
     safe_clean ~/Library/Caches/net.pcsx2.PCSX2/* "PCSX2 cache"
-    safe_clean ~/Library/Application\ Support/PCSX2/cache/* "PCSX2 shader cache"
-    safe_clean ~/Library/Logs/PCSX2/* "PCSX2 logs"
-    safe_clean ~/Library/Caches/net.rpcs3.rpcs3/* "RPCS3 cache"
-    safe_clean ~/Library/Application\ Support/rpcs3/logs/* "RPCS3 logs"
+    if [[ -d ~/Library/Application\ Support/PCSX2 ]]; then
+        safe_clean ~/Library/Application\ Support/PCSX2/cache/* "PCSX2 shader cache"
+        safe_clean ~/Library/Logs/PCSX2/* "PCSX2 logs"
+    fi
+    if [[ -d ~/Library/Application\ Support/rpcs3 ]]; then
+        safe_clean ~/Library/Caches/net.rpcs3.rpcs3/* "RPCS3 cache"
+        safe_clean ~/Library/Application\ Support/rpcs3/logs/* "RPCS3 logs"
+    fi
 }
 # Translation/dictionary apps.
 clean_translation_apps() {
@@ -347,12 +367,14 @@ clean_system_utils() {
     safe_clean ~/Library/Application\ Support/WeType/com.onevcat.Kingfisher.ImageCache.WeType/* "WeType image cache"
     safe_clean ~/Library/Application\ Support/WeType/DictUpdate/* "WeType dict update cache"
     # mihomo-party proxy tool (Electron)
-    safe_clean ~/Library/Application\ Support/mihomo-party/Cache/* "mihomo-party cache"
-    safe_clean ~/Library/Application\ Support/mihomo-party/Code\ Cache/* "mihomo-party code cache"
-    safe_clean ~/Library/Application\ Support/mihomo-party/GPUCache/* "mihomo-party GPU cache"
-    safe_clean ~/Library/Application\ Support/mihomo-party/DawnGraphiteCache/* "mihomo-party Dawn cache"
-    safe_clean ~/Library/Application\ Support/mihomo-party/DawnWebGPUCache/* "mihomo-party WebGPU cache"
-    safe_clean ~/Library/Application\ Support/mihomo-party/logs/* "mihomo-party logs"
+    if [[ -d ~/Library/Application\ Support/mihomo-party ]]; then
+        safe_clean ~/Library/Application\ Support/mihomo-party/Cache/* "mihomo-party cache"
+        safe_clean ~/Library/Application\ Support/mihomo-party/Code\ Cache/* "mihomo-party code cache"
+        safe_clean ~/Library/Application\ Support/mihomo-party/GPUCache/* "mihomo-party GPU cache"
+        safe_clean ~/Library/Application\ Support/mihomo-party/DawnGraphiteCache/* "mihomo-party Dawn cache"
+        safe_clean ~/Library/Application\ Support/mihomo-party/DawnWebGPUCache/* "mihomo-party WebGPU cache"
+        safe_clean ~/Library/Application\ Support/mihomo-party/logs/* "mihomo-party logs"
+    fi
     # Stash proxy tool
     safe_clean ~/Library/Caches/ws.stash.app.mac/* "Stash cache"
 }

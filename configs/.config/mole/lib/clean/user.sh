@@ -692,6 +692,7 @@ clean_app_caches() {
     _ng_state=$(shopt -p nullglob || true)
     shopt -s nullglob
     for container_dir in "$containers_dir"/*; do
+        [[ -d "$container_dir/Data/Library/Caches" ]] || continue
         process_container_cache "$container_dir"
     done
     eval "$_ng_state"
@@ -1123,52 +1124,60 @@ clean_browsers() {
     safe_clean ~/.cache/puppeteer/* "Puppeteer browser cache"
     safe_clean ~/Library/Caches/com.microsoft.edgemac/* "Edge cache"
     # Arc Browser.
-    safe_clean ~/Library/Caches/company.thebrowser.Browser/* "Arc cache"
-    safe_clean ~/Library/Application\ Support/Arc/*/GPUCache/* "Arc GPU cache"
-    safe_clean ~/Library/Application\ Support/Arc/ShaderCache/* "Arc shader cache"
-    safe_clean ~/Library/Application\ Support/Arc/GrShaderCache/* "Arc GR shader cache"
-    safe_clean ~/Library/Application\ Support/Arc/GraphiteDawnCache/* "Arc Dawn cache"
-    local _arc_profile
-    local _arc_running=false
-    pgrep -x "Arc" > /dev/null 2>&1 && _arc_running=true
-    for _arc_profile in "$HOME/Library/Application Support/Arc"/*/; do
-        clean_service_worker_cache "Arc" "$_arc_profile/Service Worker/CacheStorage"
-        if [[ "$_arc_running" != "true" ]]; then
-            safe_clean "$_arc_profile"/Service\ Worker/ScriptCache/* "Arc Service Worker ScriptCache"
-        fi
-    done
+    if [[ -d ~/Library/Application\ Support/Arc ]]; then
+        safe_clean ~/Library/Caches/company.thebrowser.Browser/* "Arc cache"
+        safe_clean ~/Library/Application\ Support/Arc/*/GPUCache/* "Arc GPU cache"
+        safe_clean ~/Library/Application\ Support/Arc/ShaderCache/* "Arc shader cache"
+        safe_clean ~/Library/Application\ Support/Arc/GrShaderCache/* "Arc GR shader cache"
+        safe_clean ~/Library/Application\ Support/Arc/GraphiteDawnCache/* "Arc Dawn cache"
+        local _arc_profile
+        local _arc_running=false
+        pgrep -x "Arc" > /dev/null 2>&1 && _arc_running=true
+        for _arc_profile in "$HOME/Library/Application Support/Arc"/*/; do
+            clean_service_worker_cache "Arc" "$_arc_profile/Service Worker/CacheStorage"
+            if [[ "$_arc_running" != "true" ]]; then
+                safe_clean "$_arc_profile"/Service\ Worker/ScriptCache/* "Arc Service Worker ScriptCache"
+            fi
+        done
+    fi
     safe_clean ~/Library/Caches/company.thebrowser.dia/* "Dia cache"
-    safe_clean ~/Library/Caches/BraveSoftware/Brave-Browser/* "Brave cache"
-    safe_clean ~/Library/Application\ Support/BraveSoftware/Brave-Browser/*/Application\ Cache/* "Brave app cache"
-    safe_clean ~/Library/Application\ Support/BraveSoftware/Brave-Browser/*/GPUCache/* "Brave GPU cache"
-    safe_clean ~/Library/Application\ Support/BraveSoftware/Brave-Browser/component_crx_cache/* "Brave component CRX cache"
-    safe_clean ~/Library/Application\ Support/BraveSoftware/Brave-Browser/ShaderCache/* "Brave shader cache"
-    safe_clean ~/Library/Application\ Support/BraveSoftware/Brave-Browser/GrShaderCache/* "Brave GR shader cache"
-    safe_clean ~/Library/Application\ Support/BraveSoftware/Brave-Browser/GraphiteDawnCache/* "Brave Dawn cache"
-    local _brave_profile
-    local _brave_running=false
-    pgrep -x "Brave Browser" > /dev/null 2>&1 && _brave_running=true
-    for _brave_profile in "$HOME/Library/Application Support/BraveSoftware/Brave-Browser"/*/; do
-        clean_service_worker_cache "Brave" "$_brave_profile/Service Worker/CacheStorage"
-        if [[ "$_brave_running" != "true" ]]; then
-            safe_clean "$_brave_profile"/Service\ Worker/ScriptCache/* "Brave Service Worker ScriptCache"
-        fi
-    done
+    if [[ -d ~/Library/Application\ Support/BraveSoftware ]]; then
+        safe_clean ~/Library/Caches/BraveSoftware/Brave-Browser/* "Brave cache"
+        safe_clean ~/Library/Application\ Support/BraveSoftware/Brave-Browser/*/Application\ Cache/* "Brave app cache"
+        safe_clean ~/Library/Application\ Support/BraveSoftware/Brave-Browser/*/GPUCache/* "Brave GPU cache"
+        safe_clean ~/Library/Application\ Support/BraveSoftware/Brave-Browser/component_crx_cache/* "Brave component CRX cache"
+        safe_clean ~/Library/Application\ Support/BraveSoftware/Brave-Browser/ShaderCache/* "Brave shader cache"
+        safe_clean ~/Library/Application\ Support/BraveSoftware/Brave-Browser/GrShaderCache/* "Brave GR shader cache"
+        safe_clean ~/Library/Application\ Support/BraveSoftware/Brave-Browser/GraphiteDawnCache/* "Brave Dawn cache"
+        local _brave_profile
+        local _brave_running=false
+        pgrep -x "Brave Browser" > /dev/null 2>&1 && _brave_running=true
+        for _brave_profile in "$HOME/Library/Application Support/BraveSoftware/Brave-Browser"/*/; do
+            clean_service_worker_cache "Brave" "$_brave_profile/Service Worker/CacheStorage"
+            if [[ "$_brave_running" != "true" ]]; then
+                safe_clean "$_brave_profile"/Service\ Worker/ScriptCache/* "Brave Service Worker ScriptCache"
+            fi
+        done
+    fi
     # Helium Browser.
-    safe_clean ~/Library/Caches/net.imput.helium/* "Helium cache"
-    safe_clean ~/Library/Application\ Support/net.imput.helium/*/GPUCache/* "Helium GPU cache"
-    safe_clean ~/Library/Application\ Support/net.imput.helium/component_crx_cache/* "Helium component cache"
-    safe_clean ~/Library/Application\ Support/net.imput.helium/extensions_crx_cache/* "Helium extensions cache"
-    safe_clean ~/Library/Application\ Support/net.imput.helium/GrShaderCache/* "Helium shader cache"
-    safe_clean ~/Library/Application\ Support/net.imput.helium/GraphiteDawnCache/* "Helium Dawn cache"
-    safe_clean ~/Library/Application\ Support/net.imput.helium/ShaderCache/* "Helium shader cache"
-    safe_clean ~/Library/Application\ Support/net.imput.helium/*/Application\ Cache/* "Helium app cache"
+    if [[ -d ~/Library/Application\ Support/net.imput.helium ]]; then
+        safe_clean ~/Library/Caches/net.imput.helium/* "Helium cache"
+        safe_clean ~/Library/Application\ Support/net.imput.helium/*/GPUCache/* "Helium GPU cache"
+        safe_clean ~/Library/Application\ Support/net.imput.helium/component_crx_cache/* "Helium component cache"
+        safe_clean ~/Library/Application\ Support/net.imput.helium/extensions_crx_cache/* "Helium extensions cache"
+        safe_clean ~/Library/Application\ Support/net.imput.helium/GrShaderCache/* "Helium shader cache"
+        safe_clean ~/Library/Application\ Support/net.imput.helium/GraphiteDawnCache/* "Helium Dawn cache"
+        safe_clean ~/Library/Application\ Support/net.imput.helium/ShaderCache/* "Helium shader cache"
+        safe_clean ~/Library/Application\ Support/net.imput.helium/*/Application\ Cache/* "Helium app cache"
+    fi
     # Yandex Browser.
-    safe_clean ~/Library/Caches/Yandex/YandexBrowser/* "Yandex cache"
-    safe_clean ~/Library/Application\ Support/Yandex/YandexBrowser/ShaderCache/* "Yandex shader cache"
-    safe_clean ~/Library/Application\ Support/Yandex/YandexBrowser/GrShaderCache/* "Yandex GR shader cache"
-    safe_clean ~/Library/Application\ Support/Yandex/YandexBrowser/GraphiteDawnCache/* "Yandex Dawn cache"
-    safe_clean ~/Library/Application\ Support/Yandex/YandexBrowser/*/GPUCache/* "Yandex GPU cache"
+    if [[ -d ~/Library/Application\ Support/Yandex ]]; then
+        safe_clean ~/Library/Caches/Yandex/YandexBrowser/* "Yandex cache"
+        safe_clean ~/Library/Application\ Support/Yandex/YandexBrowser/ShaderCache/* "Yandex shader cache"
+        safe_clean ~/Library/Application\ Support/Yandex/YandexBrowser/GrShaderCache/* "Yandex GR shader cache"
+        safe_clean ~/Library/Application\ Support/Yandex/YandexBrowser/GraphiteDawnCache/* "Yandex Dawn cache"
+        safe_clean ~/Library/Application\ Support/Yandex/YandexBrowser/*/GPUCache/* "Yandex GPU cache"
+    fi
     local firefox_running=false
     if pgrep -x "Firefox" > /dev/null 2>&1; then
         firefox_running=true
@@ -1180,20 +1189,22 @@ clean_browsers() {
     fi
     safe_clean ~/Library/Caches/com.operasoftware.Opera/* "Opera cache"
     # Vivaldi Browser.
-    safe_clean ~/Library/Caches/com.vivaldi.Vivaldi/* "Vivaldi cache"
-    safe_clean ~/Library/Application\ Support/Vivaldi/*/GPUCache/* "Vivaldi GPU cache"
-    safe_clean ~/Library/Application\ Support/Vivaldi/ShaderCache/* "Vivaldi shader cache"
-    safe_clean ~/Library/Application\ Support/Vivaldi/GrShaderCache/* "Vivaldi GR shader cache"
-    safe_clean ~/Library/Application\ Support/Vivaldi/GraphiteDawnCache/* "Vivaldi Dawn cache"
-    local _vivaldi_profile
-    local _vivaldi_running=false
-    pgrep -x "Vivaldi" > /dev/null 2>&1 && _vivaldi_running=true
-    for _vivaldi_profile in "$HOME/Library/Application Support/Vivaldi"/*/; do
-        clean_service_worker_cache "Vivaldi" "$_vivaldi_profile/Service Worker/CacheStorage"
-        if [[ "$_vivaldi_running" != "true" ]]; then
-            safe_clean "$_vivaldi_profile"/Service\ Worker/ScriptCache/* "Vivaldi Service Worker ScriptCache"
-        fi
-    done
+    if [[ -d ~/Library/Application\ Support/Vivaldi ]]; then
+        safe_clean ~/Library/Caches/com.vivaldi.Vivaldi/* "Vivaldi cache"
+        safe_clean ~/Library/Application\ Support/Vivaldi/*/GPUCache/* "Vivaldi GPU cache"
+        safe_clean ~/Library/Application\ Support/Vivaldi/ShaderCache/* "Vivaldi shader cache"
+        safe_clean ~/Library/Application\ Support/Vivaldi/GrShaderCache/* "Vivaldi GR shader cache"
+        safe_clean ~/Library/Application\ Support/Vivaldi/GraphiteDawnCache/* "Vivaldi Dawn cache"
+        local _vivaldi_profile
+        local _vivaldi_running=false
+        pgrep -x "Vivaldi" > /dev/null 2>&1 && _vivaldi_running=true
+        for _vivaldi_profile in "$HOME/Library/Application Support/Vivaldi"/*/; do
+            clean_service_worker_cache "Vivaldi" "$_vivaldi_profile/Service Worker/CacheStorage"
+            if [[ "$_vivaldi_running" != "true" ]]; then
+                safe_clean "$_vivaldi_profile"/Service\ Worker/ScriptCache/* "Vivaldi Service Worker ScriptCache"
+            fi
+        done
+    fi
     safe_clean ~/Library/Caches/Comet/* "Comet cache"
     safe_clean ~/Library/Caches/com.kagi.kagimacOS/* "Orion cache"
     safe_clean ~/Library/Caches/zen/* "Zen cache"

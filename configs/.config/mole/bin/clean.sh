@@ -409,7 +409,7 @@ safe_clean() {
             if [[ "$base_path" == */ ]]; then
                 parent_dir="${base_path%/}"
             else
-                parent_dir=$(dirname "$base_path")
+                parent_dir="${base_path%/*}"
             fi
 
             if [[ ! -d "$parent_dir" ]]; then
@@ -443,6 +443,9 @@ safe_clean() {
         MOLE_SPINNER_PREFIX="  " start_inline_spinner "Scanning ${#targets[@]} items..."
     fi
 
+    local _perf_scan_start
+    debug_timer_start _perf_scan_start
+
     local -a existing_paths=()
     for path in "${targets[@]}"; do
         local skip=false
@@ -468,6 +471,8 @@ safe_clean() {
             existing_paths+=("$path")
         fi
     done
+
+    debug_timer_end "$description: path scan" _perf_scan_start
 
     if [[ "$show_scan_feedback" == "true" ]]; then
         stop_section_spinner
@@ -525,6 +530,9 @@ safe_clean() {
 
     local cleaning_spinner_started=false
 
+    local _perf_size_start
+    debug_timer_start _perf_size_start
+
     # For larger batches, precompute sizes in parallel for better UX/stat accuracy.
     if [[ ${#existing_paths[@]} -gt 3 ]]; then
         local temp_dir
@@ -539,7 +547,7 @@ safe_clean() {
             [[ -d "${existing_paths[i]}" ]] && ((dir_count++))
         done
 
-        # Heuristic: mostly files -> sequential stat is faster than subshells.
+        # Heuristic: mostly files -> bulk stat is faster than per-file subshells.
         if [[ $dir_count -lt 5 && ${#existing_paths[@]} -gt 20 ]]; then
             if [[ -t 1 && "$show_spinner" == "false" ]]; then
                 MOLE_SPINNER_PREFIX="  " start_inline_spinner "Scanning items..."
@@ -547,23 +555,31 @@ safe_clean() {
             fi
 
             local idx=0
-            local last_progress_update
-            last_progress_update=$(get_epoch_seconds)
-            for path in "${existing_paths[@]}"; do
-                local size
-                size=$(get_cleanup_path_size_kb "$path")
-                [[ ! "$size" =~ ^[0-9]+$ ]] && size=0
-
-                if [[ "$size" -gt 0 ]]; then
-                    echo "$size 1" > "$temp_dir/result_${idx}"
+            local _bytes
+            while IFS= read -r _bytes; do
+                [[ "$_bytes" =~ ^[0-9]+$ ]] || _bytes=0
+                local _kb=$(((_bytes + 1023) / 1024))
+                if [[ "$_kb" -gt 0 ]]; then
+                    echo "$_kb 1" > "$temp_dir/result_${idx}"
                 else
                     echo "0 0" > "$temp_dir/result_${idx}"
                 fi
-
                 idx=$((idx + 1))
-                if [[ $((idx % 20)) -eq 0 && "$show_spinner" == "true" && -t 1 ]]; then
-                    update_progress_if_needed "$idx" "${#existing_paths[@]}" last_progress_update 1 || true
-                    last_progress_update=$(get_epoch_seconds)
+            done < <(stat -f%z "${existing_paths[@]}" 2> /dev/null)
+            while [[ $idx -lt ${#existing_paths[@]} ]]; do
+                echo "0 0" > "$temp_dir/result_${idx}"
+                idx=$((idx + 1))
+            done
+            for ((idx = 0; idx < ${#existing_paths[@]}; idx++)); do
+                if [[ -d "${existing_paths[$idx]}" && ! -L "${existing_paths[$idx]}" ]]; then
+                    local _dsize
+                    _dsize=$(get_cleanup_path_size_kb "${existing_paths[$idx]}")
+                    [[ "$_dsize" =~ ^[0-9]+$ ]] || _dsize=0
+                    if [[ "$_dsize" -gt 0 ]]; then
+                        echo "$_dsize 1" > "$temp_dir/result_${idx}"
+                    else
+                        echo "0 0" > "$temp_dir/result_${idx}"
+                    fi
                 fi
             done
         else
@@ -615,6 +631,11 @@ safe_clean() {
             fi
         fi
 
+        debug_timer_end "$description: size calc" _perf_size_start
+
+        local _perf_del_start
+        debug_timer_start _perf_del_start
+
         # Read results back in original order.
         # Start spinner for cleaning phase
         if [[ "$DRY_RUN" != "true" && ${#existing_paths[@]} -gt 0 && -t 1 ]]; then
@@ -629,7 +650,7 @@ safe_clean() {
                     read -r size count < "$result_file" 2> /dev/null || true
                     local removed=0
                     if [[ "$DRY_RUN" != "true" ]]; then
-                        if safe_remove "$path" true; then
+                        if safe_remove "$path" true "$size"; then
                             removed=1
                         fi
                     else
@@ -652,7 +673,14 @@ safe_clean() {
             done
         fi
 
+        debug_timer_end "$description: deletion" _perf_del_start
+
     else
+        debug_timer_end "$description: size calc" _perf_size_start
+
+        local _perf_del_start
+        debug_timer_start _perf_del_start
+
         # Start spinner for cleaning phase (small batch)
         if [[ "$DRY_RUN" != "true" && ${#existing_paths[@]} -gt 0 && -t 1 ]]; then
             MOLE_SPINNER_PREFIX="  " start_inline_spinner "Cleaning..."
@@ -667,7 +695,7 @@ safe_clean() {
 
                 local removed=0
                 if [[ "$DRY_RUN" != "true" ]]; then
-                    if safe_remove "$path" true; then
+                    if safe_remove "$path" true "$size_kb"; then
                         removed=1
                     fi
                 else
@@ -688,6 +716,8 @@ safe_clean() {
                 idx=$((idx + 1))
             done
         fi
+
+        debug_timer_end "$description: deletion" _perf_del_start
     fi
 
     if [[ "$show_spinner" == "true" || "$cleaning_spinner_started" == "true" ]]; then

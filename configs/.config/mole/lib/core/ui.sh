@@ -230,6 +230,18 @@ read_key() {
         'k' | 'K') echo "UP" ;;
         'h' | 'H') echo "LEFT" ;;
         'l' | 'L') echo "RIGHT" ;;
+        'G') echo "BOTTOM" ;;
+        'g')
+            if IFS= read -r -s -n 1 -t 0.3 rest 2> /dev/null; then
+                if [[ "$rest" == "g" ]]; then
+                    echo "TOP"
+                else
+                    echo "OTHER"
+                fi
+            else
+                echo "OTHER"
+            fi
+            ;;
         $'\x03') echo "QUIT" ;;
         $'\x7f' | $'\x08') echo "DELETE" ;;
         $'\x15') echo "CLEAR_LINE" ;; # Ctrl+U

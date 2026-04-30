@@ -186,6 +186,7 @@ validate_path_for_deletion() {
 safe_remove() {
     local path="$1"
     local silent="${2:-false}"
+    local precomputed_size_kb="${3:-}"
 
     # Validate path
     if ! validate_path_for_deletion "$path"; then
@@ -234,15 +235,18 @@ safe_remove() {
 
     debug_log "Removing: $path"
 
-    # Calculate size before deletion for logging
+    # Calculate size before deletion for logging.
+    # Accept pre-computed size to skip redundant I/O when the caller already measured.
     local size_kb=0
     local size_human=""
     if oplog_enabled; then
-        if [[ -e "$path" ]]; then
+        if [[ -n "$precomputed_size_kb" && "$precomputed_size_kb" =~ ^[0-9]+$ ]]; then
+            size_kb="$precomputed_size_kb"
+        elif [[ -e "$path" ]]; then
             size_kb=$(get_path_size_kb "$path" 2> /dev/null || echo "0")
-            if [[ "$size_kb" =~ ^[0-9]+$ ]] && [[ "$size_kb" -gt 0 ]]; then
-                size_human=$(bytes_to_human "$((size_kb * 1024))" 2> /dev/null || echo "${size_kb}KB")
-            fi
+        fi
+        if [[ "$size_kb" =~ ^[0-9]+$ ]] && [[ "$size_kb" -gt 0 ]]; then
+            size_human=$(bytes_to_human "$((size_kb * 1024))" 2> /dev/null || echo "${size_kb}KB")
         fi
     fi
 
