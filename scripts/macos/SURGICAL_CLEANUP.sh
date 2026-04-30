@@ -303,12 +303,22 @@ main() {
 	show_cleanup_preview
 
 	echo
-	read -r -p "Continue with surgical cleanup? (y/N): " confirm
-	confirm=${confirm:-N}
-	if [[ $confirm != [yY] ]]; then
-		echo "Cleanup cancelled."
-		exit 0
-	fi
+	while true; do
+		read -r -p "Continue with surgical cleanup? (y/N): " confirm
+		confirm=${confirm:-N}
+
+		# Convert to lowercase
+		confirm=$(echo "$confirm" | tr '[:upper:]' '[:lower:]')
+
+		if [[ "$confirm" == "y" || "$confirm" == "yes" ]]; then
+			break
+		elif [[ "$confirm" == "n" || "$confirm" == "no" ]]; then
+			echo "Cleanup cancelled."
+			exit 0
+		else
+			echo -e "${YELLOW}Invalid input. Please enter 'yes' or 'no'.${NC}"
+		fi
+	done
 
 	create_backup_of_keepers
 	perform_surgical_removal

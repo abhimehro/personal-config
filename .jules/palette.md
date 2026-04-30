@@ -114,3 +114,7 @@
 
 **Learning:** Printing static prefixes (like "Assistant:") before a dynamic spinner completes causes screen reader redundancy and can leave visual artifacts on the terminal if the process is interrupted before the stream begins.
 **Action:** Delay printing static prefixes until the dynamic stream actually begins, and ensure that signal (SIGINT) and error handlers completely clear the line using `\r\x1B[K` to prevent orphaned text artifacts upon interruption.
+
+## 2026-05-20 - Forgiving Boolean Prompts in Destructive Operations
+**Learning:** Users make typos even in critical confirmations. Exiting a destructive/complex workflow immediately on an invalid keystroke (instead of re-prompting) creates a brittle and frustrating UX.
+**Action:** When confirming destructive actions, wrap the prompt in a loop and accept both single characters and full words (y/yes, n/no) case-insensitively.
