@@ -36,7 +36,8 @@ readonly MOLE_UNINSTALL_META_CACHE_FILE="$MOLE_UNINSTALL_META_CACHE_DIR/uninstal
 readonly MOLE_UNINSTALL_META_CACHE_LOCK="${MOLE_UNINSTALL_META_CACHE_FILE}.lock"
 readonly MOLE_UNINSTALL_META_REFRESH_TTL=604800 # 7 days
 readonly MOLE_UNINSTALL_SCAN_SPINNER_DELAY_SEC="0.25"
-readonly MOLE_UNINSTALL_INLINE_METADATA_LIMIT=8
+readonly MOLE_UNINSTALL_INLINE_METADATA_LIMIT=50
+readonly MOLE_UNINSTALL_EPOCH_FLOOR=978307200
 readonly MOLE_UNINSTALL_INLINE_MDLS_TIMEOUT_SEC="0.08"
 
 uninstall_relative_time_from_epoch() {
@@ -44,6 +45,11 @@ uninstall_relative_time_from_epoch() {
     local now_epoch="${2:-0}"
 
     if [[ ! "$value_epoch" =~ ^[0-9]+$ || $value_epoch -le 0 ]]; then
+        echo "Unknown"
+        return 0
+    fi
+
+    if [[ $value_epoch -lt $MOLE_UNINSTALL_EPOCH_FLOOR ]]; then
         echo "Unknown"
         return 0
     fi
@@ -227,9 +233,13 @@ uninstall_collect_inline_metadata() {
         last_used_epoch=$(date -j -f "%Y-%m-%d %H:%M:%S %z" "$metadata_date" "+%s" 2> /dev/null || echo "0")
     fi
 
+    if [[ "$last_used_epoch" =~ ^[0-9]+$ && $last_used_epoch -lt $MOLE_UNINSTALL_EPOCH_FLOOR ]]; then
+        last_used_epoch=0
+    fi
+
     # Fallback to app mtime so first scan does not show "...".
     if [[ ! "$last_used_epoch" =~ ^[0-9]+$ || $last_used_epoch -le 0 ]]; then
-        if [[ "$app_mtime" =~ ^[0-9]+$ && $app_mtime -gt 0 ]]; then
+        if [[ "$app_mtime" =~ ^[0-9]+$ && $app_mtime -gt $MOLE_UNINSTALL_EPOCH_FLOOR ]]; then
             last_used_epoch="$app_mtime"
         else
             last_used_epoch=0
@@ -298,7 +308,7 @@ start_uninstall_metadata_refresh() {
                     last_used_epoch=$(date -j -f "%Y-%m-%d %H:%M:%S %z" "$metadata_date" "+%s" 2> /dev/null || echo "0")
                 fi
 
-                if [[ ! "$last_used_epoch" =~ ^[0-9]+$ || $last_used_epoch -le 0 ]]; then
+                if [[ ! "$last_used_epoch" =~ ^[0-9]+$ || $last_used_epoch -le 0 || $last_used_epoch -lt $MOLE_UNINSTALL_EPOCH_FLOOR ]]; then
                     last_used_epoch=0
                 fi
 
@@ -737,9 +747,12 @@ scan_applications() {
             final_size=$(bytes_to_human "$((cached_size_kb * 1024))")
         fi
 
+        if [[ "$final_epoch" =~ ^[0-9]+$ && $final_epoch -lt $MOLE_UNINSTALL_EPOCH_FLOOR ]]; then
+            final_epoch=0
+        fi
         # Fallback to app mtime to avoid unknown "last used" on first scan.
         if [[ ! "$final_epoch" =~ ^[0-9]+$ || $final_epoch -le 0 ]]; then
-            if [[ "$app_mtime" =~ ^[0-9]+$ && $app_mtime -gt 0 ]]; then
+            if [[ "$app_mtime" =~ ^[0-9]+$ && $app_mtime -gt $MOLE_UNINSTALL_EPOCH_FLOOR ]]; then
                 final_epoch="$app_mtime"
             fi
         fi

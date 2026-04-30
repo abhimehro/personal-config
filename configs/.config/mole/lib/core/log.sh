@@ -146,6 +146,30 @@ debug_log() {
     fi
 }
 
+# Phase-level performance timing, gated behind MO_DEBUG=1.
+# Uses perl for millisecond precision; falls back to date +%s.
+debug_timer_start() {
+    [[ "${MO_DEBUG:-}" != "1" ]] && return 0
+    local varname="$1"
+    local ts
+    ts=$(perl -MTime::HiRes -e 'printf "%.3f\n", Time::HiRes::time()' 2> /dev/null || date +%s)
+    eval "$varname=$ts"
+}
+
+debug_timer_end() {
+    [[ "${MO_DEBUG:-}" != "1" ]] && return 0
+    local label="$1"
+    local start_var="$2"
+    local start_ts
+    eval "start_ts=\$$start_var"
+    [[ -z "$start_ts" ]] && return 0
+    local end_ts
+    end_ts=$(perl -MTime::HiRes -e 'printf "%.3f\n", Time::HiRes::time()' 2> /dev/null || date +%s)
+    local elapsed
+    elapsed=$(perl -e "printf '%.3f', $end_ts - $start_ts" 2> /dev/null || echo "$((end_ts - start_ts))")
+    debug_log "PERF [$label] ${elapsed}s"
+}
+
 # ============================================================================
 # Operation Logging (Enabled by default)
 # ============================================================================

@@ -119,21 +119,25 @@ opt_system_maintenance() {
 opt_cache_refresh() {
     local total_cache_size=0
 
+    local -a cache_targets=(
+        "$HOME/Library/Caches/com.apple.QuickLook.thumbnailcache"
+        "$HOME/Library/Caches/com.apple.iconservices.store"
+        "$HOME/Library/Caches/com.apple.iconservices"
+    )
+
     if [[ "${MO_DEBUG:-}" == "1" ]]; then
         debug_operation_start "Finder Cache Refresh" "Refresh QuickLook thumbnails and icon services"
         debug_operation_detail "Method" "Remove cache files and rebuild via qlmanage"
         debug_operation_detail "Expected outcome" "Faster Finder preview generation, fixed icon display issues"
         debug_risk_level "LOW" "Caches are automatically rebuilt"
 
-        local -a cache_targets=(
-            "$HOME/Library/Caches/com.apple.QuickLook.thumbnailcache"
-            "$HOME/Library/Caches/com.apple.iconservices.store"
-            "$HOME/Library/Caches/com.apple.iconservices"
-        )
-
-        debug_operation_detail "Files to be removed" ""
+        local found_files=false
         for target_path in "${cache_targets[@]}"; do
             if [[ -e "$target_path" ]]; then
+                if [[ "$found_files" == "false" ]]; then
+                    debug_operation_detail "Files to be removed" ""
+                    found_files=true
+                fi
                 local size_kb
                 size_kb=$(get_path_size_kb "$target_path" 2> /dev/null || echo "0")
                 local size_human="unknown"
@@ -143,18 +147,15 @@ opt_cache_refresh() {
                 debug_file_action "  Will remove" "$target_path" "$size_human" ""
             fi
         done
+        if [[ "$found_files" == "false" ]]; then
+            debug_operation_detail "Files to be removed" "none"
+        fi
     fi
 
     if [[ "${MOLE_DRY_RUN:-0}" != "1" ]]; then
         qlmanage -r cache > /dev/null 2>&1 || true
         qlmanage -r > /dev/null 2>&1 || true
     fi
-
-    local -a cache_targets=(
-        "$HOME/Library/Caches/com.apple.QuickLook.thumbnailcache"
-        "$HOME/Library/Caches/com.apple.iconservices.store"
-        "$HOME/Library/Caches/com.apple.iconservices"
-    )
 
     for target_path in "${cache_targets[@]}"; do
         if [[ -e "$target_path" ]]; then

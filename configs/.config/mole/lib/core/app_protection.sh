@@ -525,6 +525,14 @@ readonly DATA_PROTECTED_BUNDLES=(
     "com.shirtpocket.*"
     "homebrew.mxcl.*"
 
+    # Remote Desktop / Remote Access
+    "org.chromium.chromoting*"
+    "com.google.chrome_remote_desktop*"
+    "com.teamviewer.*"
+    "com.realvnc.*"
+    "com.logmein.*"
+    "com.anydesk.*"
+
     # Screenshot & Recording
     "com.cleanshot.*"
     "com.xnipapp.xnip"
@@ -755,25 +763,20 @@ should_protect_path() {
     local path="$1"
     [[ -z "$path" ]] && return 1
 
-    local path_lower
-    path_lower=$(echo "$path" | LC_ALL=C tr '[:upper:]' '[:lower:]')
+    local _container_cache_path=false
 
-    # 1. Keyword-based matching for system components
-    # Protect System Settings, Preferences, Control Center, and related XPC services
-    # Also protect "Settings" (used in macOS Sequoia) and savedState files
-    if [[ "$path_lower" =~ systemsettings || "$path_lower" =~ systempreferences || "$path_lower" =~ controlcenter ]]; then
-        return 0
-    fi
-
-    # Additional check for com.apple.Settings (macOS Sequoia System Settings)
-    if [[ "$path_lower" =~ com\.apple\.settings ]]; then
-        return 0
-    fi
-
-    # Protect Notes cache (search index issues)
-    if [[ "$path_lower" =~ com\.apple\.notes ]]; then
-        return 0
-    fi
+    # 1. Keyword-based matching for system components (case-insensitive via character classes)
+    case "$path" in
+        *[Ss]ystem[Ss]ettings* | *[Ss]ystem[Pp]references* | *[Cc]ontrol[Cc]enter*)
+            return 0
+            ;;
+        *com.apple.[Ss]ettings* | *com.apple.[Ss]ETTINGS*)
+            return 0
+            ;;
+        *com.apple.[Nn]otes* | *com.apple.[Nn]OTES*)
+            return 0
+            ;;
+    esac
 
     # 2. Protect caches critical for system UI rendering
     # These caches are essential for modern macOS (Sonoma/Sequoia) system UI rendering
@@ -804,8 +807,12 @@ should_protect_path() {
     # Matches: .../Library/Group Containers/group.id/...
     if [[ "$path" =~ /Library/Containers/([^/]+) ]] || [[ "$path" =~ /Library/Group\ Containers/([^/]+) ]]; then
         local bundle_id="${BASH_REMATCH[1]}"
-        # In uninstall mode, only system components are protected; skip data protection
-        if [[ "${MOLE_UNINSTALL_MODE:-0}" != "1" ]] && should_protect_data "$bundle_id"; then
+        # Cache and tmp directories inside containers are regenerable by definition.
+        # safe_clean calls explicitly target these; let them through instead of
+        # blocking on the blanket com.apple.* match in should_protect_data.
+        if [[ "$path" == */Data/Library/Caches/* || "$path" == */Data/tmp/* ]]; then
+            _container_cache_path=true
+        elif [[ "${MOLE_UNINSTALL_MODE:-0}" != "1" ]] && should_protect_data "$bundle_id"; then
             return 0
         fi
     fi
@@ -843,36 +850,38 @@ should_protect_path() {
 
     # 6. Match full path against protected patterns
     # This catches things like /Users/tw93/Library/Caches/Claude when pattern is *Claude*
-    # In uninstall mode, only check system-critical bundles (user explicitly chose to uninstall)
-    if [[ "${MOLE_UNINSTALL_MODE:-0}" == "1" ]]; then
-        # Uninstall mode: first check if it's an uninstallable Apple app
-        for pattern in "${APPLE_UNINSTALLABLE_APPS[@]}"; do
-            if bundle_matches_pattern "$path" "$pattern"; then
-                return 1 # Can be uninstalled
-            fi
-        done
-        # Then check system-critical components
-        for pattern in "${SYSTEM_CRITICAL_BUNDLES[@]}"; do
-            if bundle_matches_pattern "$path" "$pattern"; then
-                return 0
-            fi
-        done
-    else
-        # Normal mode (cleanup): protect both system-critical and data-protected bundles
-        for pattern in "${SYSTEM_CRITICAL_BUNDLES[@]}" "${DATA_PROTECTED_BUNDLES[@]}"; do
-            if bundle_matches_pattern "$path" "$pattern"; then
-                return 0
-            fi
-        done
-    fi
+    # Skip for container cache/tmp paths: bundle ID was already checked in step 3,
+    # and critical containers are caught by steps 1/4/5.
+    if [[ "$_container_cache_path" != "true" ]]; then
+        if [[ "${MOLE_UNINSTALL_MODE:-0}" == "1" ]]; then
+            # Uninstall mode: first check if it's an uninstallable Apple app
+            for pattern in "${APPLE_UNINSTALLABLE_APPS[@]}"; do
+                if bundle_matches_pattern "$path" "$pattern"; then
+                    return 1 # Can be uninstalled
+                fi
+            done
+            # Then check system-critical components
+            for pattern in "${SYSTEM_CRITICAL_BUNDLES[@]}"; do
+                if bundle_matches_pattern "$path" "$pattern"; then
+                    return 0
+                fi
+            done
+        else
+            # Normal mode (cleanup): protect both system-critical and data-protected bundles
+            for pattern in "${SYSTEM_CRITICAL_BUNDLES[@]}" "${DATA_PROTECTED_BUNDLES[@]}"; do
+                if bundle_matches_pattern "$path" "$pattern"; then
+                    return 0
+                fi
+            done
+        fi
 
-    # 7. Check if the filename itself matches any protected patterns
-    # Skip in uninstall mode - user explicitly chose to remove this app
-    if [[ "${MOLE_UNINSTALL_MODE:-0}" != "1" ]]; then
-        local filename
-        filename=$(basename "$path")
-        if should_protect_data "$filename"; then
-            return 0
+        # 7. Check if the filename itself matches any protected patterns
+        # Skip in uninstall mode - user explicitly chose to remove this app
+        if [[ "${MOLE_UNINSTALL_MODE:-0}" != "1" ]]; then
+            local filename="${path##*/}"
+            if should_protect_data "$filename"; then
+                return 0
+            fi
         fi
     fi
 
