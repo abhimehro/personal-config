@@ -235,3 +235,8 @@
 **Vulnerability:** Terminal Injection ([CWE-150](https://cwe.mitre.org/data/definitions/150.html)) existed in `scripts/test_ssh_connections.sh`. The script used `echo -e` to print log messages containing untrusted input, allowing an attacker to inject escape sequences to manipulate terminal output.
 **Learning:** `echo -e` interprets backslash escapes in all arguments. Even if the intent is to print a variable, `echo -e` treats it as a format string.
 **Prevention:** Use `printf "%b %s\n" "$COLOR" "$*"` for colored output instead of `echo -e` to ensure variables are printed literally.
+
+## 2026-05-01 - Command Injection Risk via eval in dynamic variable assignment
+**Vulnerability:** Command Injection ([CWE-78](https://cwe.mitre.org/data/definitions/78.html)) risk existed in `configs/.config/mole/lib/core/app_protection.sh`, `configs/.config/mole/lib/core/base.sh`, and `configs/.config/mole/lib/core/log.sh`. Functions used `eval` to assign variables dynamically based on function arguments without validating the variable name (e.g. `eval "$var_name=\"\$regex\""`). If an attacker could control the variable name passed to these functions, they could inject arbitrary bash commands.
+**Learning:** Using `eval` to mimic pass-by-reference variable assignment in shell scripts exposes the script to command injection vulnerabilities if the variable name is not strictly validated.
+**Prevention:** Strictly validate the dynamically passed variable name against `^[a-zA-Z_][a-zA-Z0-9_]*$` before evaluation to prevent Command Injection (CWE-78).

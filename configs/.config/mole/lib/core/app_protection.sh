@@ -639,6 +639,11 @@ build_regex_var() {
             regex="$regex|$p"
         fi
     done
+
+    # SECURITY: Prevent Command Injection (CWE-78) via dynamic variable name
+    if [[ ! "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        return 1
+    fi
     eval "$var_name=\"\$regex\""
 }
 
