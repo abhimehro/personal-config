@@ -556,10 +556,20 @@ clean_orphaned_system_services() {
         while IFS= read -r -d '' helper; do
             local filename
             filename=$(basename "$helper")
-            local bundle_id="$filename"
+
+            # Skip non-plist data files (configs, JSON, etc.) that are not
+            # bundle-ID-named helpers. Only .plist and extensionless files
+            # can be orphaned service registrations. See #808.
+            case "$filename" in
+                *.json | *.cfg | *.conf | *.me2me_enabled | *.log | *.dat | *.db | *.xml | *.yml | *.yaml | *.ini | *.txt | *.pid | *.sock | *.lock)
+                    continue
+                    ;;
+            esac
+
+            local bundle_id="${filename%.plist}"
 
             # Skip Apple system files
-            [[ "$filename" == com.apple.* ]] && continue
+            [[ "$bundle_id" == com.apple.* ]] && continue
 
             local matched_known=false
             for pattern_entry in "${known_orphan_patterns[@]}"; do

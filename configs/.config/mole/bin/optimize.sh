@@ -17,6 +17,7 @@ trap cleanup_temp_files EXIT INT TERM
 source "$SCRIPT_DIR/lib/core/sudo.sh"
 source "$SCRIPT_DIR/lib/manage/update.sh"
 source "$SCRIPT_DIR/lib/manage/autofix.sh"
+source "$SCRIPT_DIR/lib/optimize/diagnostics.sh"
 source "$SCRIPT_DIR/lib/optimize/maintenance.sh"
 source "$SCRIPT_DIR/lib/optimize/tasks.sh"
 source "$SCRIPT_DIR/lib/check/health_json.sh"
@@ -487,6 +488,8 @@ main() {
             echo -e "${ICON_ADMIN} Active Whitelist: ${patterns_list}"
         fi
     fi
+
+    run_optimize_diagnostics
 
     local -a items=()
     local opts_file
