@@ -12,11 +12,9 @@ _check_default() {
 	local actual
 	actual=$(defaults read "$domain" "$key" 2>/dev/null || echo "__MISSING__")
 	if [[ $actual == "$expected" ]]; then
-		[[ $risky == "bad" ]] && fail "$label  (current: $actual)" ||
-			pass "$label  (current: $actual)"
+		if [[ $risky == "bad" ]]; then fail "$label  (current: $actual)"; else pass "$label  (current: $actual)"; fi
 	else
-		[[ $risky == "bad" ]] && pass "$label  (not set to risky value)" ||
-			warn "$label  (expected: $expected, got: $actual)"
+		if [[ $risky == "bad" ]]; then pass "$label  (not set to risky value)"; else warn "$label  (expected: $expected, got: $actual)"; fi
 	fi
 }
 
@@ -25,9 +23,11 @@ check_defaults() {
 	local ci_mode="${CI_MODE:-false}"
 
 	info "Gatekeeper status:"
-	spctl --status 2>/dev/null | grep -q "enabled" &&
-		pass "Gatekeeper is enabled" ||
+	if spctl --status 2>/dev/null | grep -q "enabled"; then
+		pass "Gatekeeper is enabled"
+	else
 		fail "Gatekeeper is DISABLED"
+	fi
 
 	local fw
 	fw=$(defaults read /Library/Preferences/com.apple.alf globalstate 2>/dev/null || echo "0")
@@ -42,31 +42,39 @@ check_defaults() {
 
 	if [[ $ci_mode != "true" ]]; then
 		info "Remote Login (SSH):"
-		systemsetup -getremotelogin 2>/dev/null | grep -q "On" &&
-			warn "Remote Login (SSH) is ON — disable if unused" ||
+		if systemsetup -getremotelogin 2>/dev/null | grep -q "On"; then
+			warn "Remote Login (SSH) is ON — disable if unused"
+		else
 			pass "Remote Login (SSH) is OFF"
+		fi
 	else
 		info "Remote Login (SSH): skipped in CI (requires interactive sudo)"
 	fi
 
 	info "Remote Management (ARD):"
-	pgrep -x ARDAgent &>/dev/null &&
-		warn "Apple Remote Desktop agent is running" ||
+	if pgrep -x ARDAgent &>/dev/null; then
+		warn "Apple Remote Desktop agent is running"
+	else
 		pass "Apple Remote Desktop agent not running"
+	fi
 
 	_check_default com.apple.privacy DiagnosticsAutoSubmit 1 \
 		"Auto-submit diagnostics to Apple" bad
 
 	info "System Integrity Protection (SIP):"
-	csrutil status 2>/dev/null | grep -q "enabled" &&
-		pass "SIP is enabled" ||
+	if csrutil status 2>/dev/null | grep -q "enabled"; then
+		pass "SIP is enabled"
+	else
 		fail "SIP is DISABLED — high-risk configuration"
+	fi
 
 	if [[ $ci_mode != "true" ]]; then
 		info "FileVault:"
-		fdesetup status 2>/dev/null | grep -q "On" &&
-			pass "FileVault is ON" ||
+		if fdesetup status 2>/dev/null | grep -q "On"; then
+			pass "FileVault is ON"
+		else
 			fail "FileVault is OFF — enable in System Settings > Privacy & Security"
+		fi
 	else
 		info "FileVault: skipped in CI (hardware-only check)"
 	fi
