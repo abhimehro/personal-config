@@ -1,0 +1,16 @@
+# .github/workflows/shellcheck.yml
+# Lightweight lint on every push — no macOS runner needed.
+name: ShellCheck
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get install -y shellcheck
+      - run: shellcheck --severity=warning mac-audit/audit.sh mac-audit/lib/*.sh
