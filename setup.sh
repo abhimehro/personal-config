@@ -192,13 +192,20 @@ main() {
 		echo
 		echo -e "${YELLOW}⚠️  This will modify configuration files in your home directory.${NC}"
 		echo
-		read -p "Ready to proceed? (y/N) " -n 1 -r
-		REPLY=${REPLY:-N}
-		echo
-		if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-			log_info "Bootstrap cancelled by user."
-			exit 0
-		fi
+		while true; do
+			read -r -p "Ready to proceed? (y/N) " REPLY
+			REPLY=${REPLY:-N}
+			if [[ "$REPLY" =~ ^[Yy]([Ee][Ss])?$ ]]; then
+				echo
+				break
+			elif [[ "$REPLY" =~ ^[Nn]([Oo])?$ ]]; then
+				echo
+				log_info "Bootstrap cancelled by user."
+				exit 0
+			else
+				echo -e "${YELLOW}Please answer yes (y) or no (n).${NC}"
+			fi
+		done
 	else
 		echo -e "${BOLD}Running in non-interactive mode.${NC}"
 	fi

@@ -114,3 +114,8 @@
 
 **Learning:** Printing static prefixes (like "Assistant:") before a dynamic spinner completes causes screen reader redundancy and can leave visual artifacts on the terminal if the process is interrupted before the stream begins.
 **Action:** Delay printing static prefixes until the dynamic stream actually begins, and ensure that signal (SIGINT) and error handlers completely clear the line using `\r\x1B[K` to prevent orphaned text artifacts upon interruption.
+
+## 2026-06-25 - Forgiving Full-Word Boolean Prompts
+
+**Learning:** Users often intuitively type full words like "yes" or "no" in CLI prompts. Strict single-character matching (e.g. `read -n 1`) causes valid intents to fail or immediately abort the script, causing frustration.
+**Action:** When building boolean (y/N) CLI prompts, accept full words (case-insensitive) using regex matching like `^[Yy]([Ee][Ss])?$` alongside single characters. Wrap the prompt in a forgiving loop to repeatedly ask for input on invalid keystrokes rather than immediately exiting.
