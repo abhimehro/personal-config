@@ -5,7 +5,7 @@
 ### 🎯 **Pre-Import Checklist**
 
 - [ ] AdGuard for macOS is installed and running
-- [ ] Your consolidated files are ready in `/Users/abhimehrotra/Downloads/`
+- [ ] Your consolidated files are ready in `$HOME/Downloads/`
 - [ ] You have administrator access on your Mac
 - [ ] Backup any existing AdGuard settings (optional but recommended)
 
@@ -30,7 +30,7 @@
   - **Name**: `Comprehensive Tracker Denylist`
   - **URL**: Leave blank (we'll import from file)
   - Click **"Choose File"** or **"Browse"**
-  - Navigate to `/Users/abhimehrotra/Downloads/`
+  - Navigate to `$HOME/Downloads/`
   - Select `Consolidated-Denylist.txt`
   - Click **"Open"**
 
@@ -51,7 +51,7 @@
 ### 2.2 Import Allowlist File
 
 - Click the **"Import"** button (usually near the top)
-- Navigate to `/Users/abhimehrotra/Downloads/`
+- Navigate to `$HOME/Downloads/`
 - Select `Consolidated-Allowlist.txt`
 - Click **"Open"**
 

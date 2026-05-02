@@ -126,7 +126,7 @@ Or modify the script to bind to `100.125.56.240:8080` when VPN is detected.
 From another device (phone on cellular, NOT your WiFi):
 
 ```bash
-curl -u "infuse:MALARIA7bunch!katarina" "http://82.21.151.194:22650/"
+curl -u "infuse:${MEDIA_WEBDAV_PASS}" "http://82.21.151.194:22650/"
 ```
 
 Or open in a browser: `http://82.21.151.194:22650/`
@@ -142,7 +142,7 @@ Or open in a browser: `http://82.21.151.194:22650/`
 - **Address**: `192.168.0.111`
 - **Port**: `8080`
 - **Username**: `infuse`
-- **Password**: `MALARIA7bunch!katarina`
+- **Password**: `${MEDIA_WEBDAV_PASS}`
 
 **Use when**: At home on the same WiFi network
 
@@ -153,7 +153,7 @@ Or open in a browser: `http://82.21.151.194:22650/`
 - **Address**: `82.21.151.194`
 - **Port**: `22650`
 - **Username**: `infuse`
-- **Password**: `MALARIA7bunch!katarina`
+- **Password**: `${MEDIA_WEBDAV_PASS}`
 
 **Use when**: Away from home, traveling, or on cellular
 

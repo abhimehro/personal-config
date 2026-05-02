@@ -312,7 +312,7 @@ Create `~/Library/LaunchAgents/com.user.controld-daily-check.plist`:
     <string>com.user.controld-daily-check</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/abhimehrotra/Public/Scripts/maintenance/controld_monitor.sh</string>
+        <string>$HOME/Public/Scripts/maintenance/controld_monitor.sh</string>
     </array>
     <key>StartCalendarInterval</key>
     <dict>
@@ -322,9 +322,9 @@ Create `~/Library/LaunchAgents/com.user.controld-daily-check.plist`:
         <integer>0</integer>
     </dict>
     <key>StandardOutPath</key>
-    <string>/Users/abhimehrotra/Public/Scripts/controld_daily_check.log</string>
+    <string>$HOME/Public/Scripts/controld_daily_check.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/abhimehrotra/Public/Scripts/controld_daily_check_error.log</string>
+    <string>$HOME/Public/Scripts/controld_daily_check_error.log</string>
 </dict>
 </plist>
 ```

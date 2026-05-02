@@ -63,7 +63,7 @@ connect.facebook.com
 If you want the complete allowlist with all domains:
 
 ```bash
-cd /Users/abhimehrotra/Downloads
+cd $HOME/Downloads
 python3 fix-allowlist-format.py
 ```
 

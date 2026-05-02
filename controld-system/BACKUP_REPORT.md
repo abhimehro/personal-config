@@ -2,7 +2,7 @@
 
 **Backup Date**: Tue Oct 7 18:35:05 CDT 2025
 **Status**: ✅ **PRODUCTION READY SYSTEM BACKED UP**  
-**Location**: /Users/abhimehrotra/Documents/dev/personal-config/controld-system
+**Location**: $REPO_ROOT/controld-system
 
 ## 📊 **Backup Summary**
 
@@ -49,7 +49,7 @@
 
 ## 🚀 **Installation Instructions**
 
-1. Navigate to backup directory: `cd /Users/abhimehrotra/Documents/dev/personal-config/controld-system`
+1. Navigate to backup directory: `cd $REPO_ROOT/controld-system`
 2. Run installation script: `sudo ./install.sh`
 3. Choose profile: `sudo controld-manager switch gaming` or `sudo controld-manager switch privacy`
 4. Verify status: `controld-manager status`

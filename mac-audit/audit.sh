@@ -28,6 +28,13 @@ while [[ $# -gt 0 ]]; do
 	--ci) CI_MODE=true ;;
 	--module)
 		MODULE="${2:-all}"
+		case "$MODULE" in
+		launch | brew | defaults | all) ;;
+		*)
+			fail "Unknown module: $MODULE"
+			exit 1
+			;;
+		esac
 		shift
 		;;
 	-h | --help)
@@ -79,8 +86,10 @@ echo
 
 if [[ $SAVE_REPORT == true ]]; then
 	mkdir -p "$REPORT_DIR"
+	tmp_report=$(mktemp "$REPORT_DIR/audit.XXXXXX.tmp")
 	"$0" --module all ${CI_MODE:+--ci} 2>&1 |
-		sed 's/\x1b\[[0-9;]*m//g' >"$REPORT_FILE"
+		sed 's/\x1b\[[0-9;]*m//g' >"$tmp_report"
+	mv "$tmp_report" "$REPORT_FILE"
 	info "Report saved: $REPORT_FILE"
 fi
 

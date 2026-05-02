@@ -6,6 +6,8 @@
 # Handles launch daemon conflicts and ensures VPN-compatible DNS binding
 # Created: October 2025
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -68,7 +70,7 @@ stop_all_controld_services() {
 backup_launch_daemons() {
 	print_status "Backing up existing launch daemons..."
 
-	local backup_dir="/Users/abhimehrotra/Documents/dev/personal-config/windscribe-controld/daemon-backups"
+	local backup_dir="$SCRIPT_DIR/daemon-backups"
 	mkdir -p "$backup_dir"
 
 	for daemon in "${LAUNCH_DAEMONS[@]}"; do

@@ -96,7 +96,7 @@
 
 ## 2026-04-05 - Information Disclosure via Hardcoded Paths
 
-**Vulnerability:** Information Disclosure (Username) and Path Traversal in `adguard/scripts/consolidate_adblock_lists.py`. The script contained a hardcoded absolute path (`/Users/abhimehrotra/Downloads`), revealing the developer's username and making the script non-portable.
+**Vulnerability:** Information Disclosure (Username) and Path Traversal in `adguard/scripts/consolidate_adblock_lists.py`. The script contained a hardcoded absolute path (`$HOME/Downloads`), revealing the developer's username and making the script non-portable.
 **Learning:** Hardcoded paths in scripts often contain sensitive information (usernames, project structures) and break portability. They also encourage bad security practices by relying on specific environments rather than robust configuration.
 **Prevention:** Use `argparse` or environment variables to inject paths. Validate that input directories exist. Default to relative paths (like `.`) for better portability.
 
@@ -227,11 +227,13 @@
 **Prevention:** Avoid `shell=True` in `subprocess.run`. Pass commands and arguments as a list of strings. If you need to load environment variables, parse the `.env` file manually in Python and pass the resulting dictionary to the `env` parameter of `subprocess.run`.
 
 ## 2026-04-25 - Command Injection Risk via eval in dynamic variable assignment
+
 **Vulnerability:** Command Injection ([CWE-78](https://cwe.mitre.org/data/definitions/78.html)) risk existed in `configs/.config/mole/lib/core/app_protection.sh` and `configs/.config/mole/lib/core/base.sh`. Functions used `eval` to assign variables dynamically based on function arguments without validating the variable name (e.g. `eval "$var_name=\"\$regex\""`). If an attacker could control the variable name passed to these functions, they could inject arbitrary bash commands.
 **Learning:** Using `eval` to mimic pass-by-reference variable assignment in shell scripts exposes the script to command injection vulnerabilities if the variable name is not strictly validated.
 **Prevention:** Strictly validate the dynamically passed variable name against `^[a-zA-Z_][a-zA-Z0-9_]*$` before evaluation to prevent Command Injection (CWE-78).
 
 ## 2026-04-26 - Terminal Injection Risk via echo -e
+
 **Vulnerability:** Terminal Injection ([CWE-150](https://cwe.mitre.org/data/definitions/150.html)) existed in `scripts/test_ssh_connections.sh`. The script used `echo -e` to print log messages containing untrusted input, allowing an attacker to inject escape sequences to manipulate terminal output.
 **Learning:** `echo -e` interprets backslash escapes in all arguments. Even if the intent is to print a variable, `echo -e` treats it as a format string.
 **Prevention:** Use `printf "%b %s\n" "$COLOR" "$*"` for colored output instead of `echo -e` to ensure variables are printed literally.

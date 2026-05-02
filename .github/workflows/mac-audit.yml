@@ -3,21 +3,32 @@ name: Mac Audit
 
 on:
   push:
-    branches: ["**"]
+    branches: ["main"]
+    paths:
+      - "mac-audit/**"
+      - ".github/workflows/mac-audit.yml"
   pull_request:
-    branches: ["**"]
+    branches: ["main"]
+    paths:
+      - "mac-audit/**"
+      - ".github/workflows/mac-audit.yml"
   schedule:
-    - cron: "0 9 * * 1"   # Every Monday 09:00 UTC
+    - cron: "0 9 * * 1" # Every Monday 09:00 UTC
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   shellcheck:
     name: ShellCheck Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Install shellcheck
-        run: sudo apt-get install -y shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
       - name: Lint scripts
         run: shellcheck mac-audit/audit.sh mac-audit/lib/*.sh
 
@@ -32,22 +43,19 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Make executable
         run: chmod +x mac-audit/audit.sh
 
       - name: Audit — Launch Agents
         run: mac-audit/audit.sh --module launch
-        continue-on-error: true
 
       - name: Audit — Homebrew Sprawl
         run: mac-audit/audit.sh --module brew
-        continue-on-error: true
 
       - name: Audit — macOS Security Defaults
         run: mac-audit/audit.sh --module defaults --ci
-        continue-on-error: true
 
       - name: Save report artifact
         if: always()
@@ -55,7 +63,7 @@ jobs:
           mkdir -p mac-audit/reports
           mac-audit/audit.sh --module all --ci 2>&1 \
             | sed 's/\x1b\[[0-9;]*m//g' \
-            > mac-audit/reports/audit-${{ runner.os }}-${{ github.sha }}.txt
+            > mac-audit/reports/audit-${{ runner.os }}-${{ github.sha }}.txt || true
 
       - name: Upload report
         uses: actions/upload-artifact@v4
