@@ -137,3 +137,8 @@
 ## 2026-03-10 - Cached Environment parsing in iterative scripts
 **Learning:** Repetitive file IO (e.g., parsing `.env` files) inside helper functions that are called in loops (like API wrappers across a large queue) creates a massive performance bottleneck.
 **Action:** Use Python's `functools.lru_cache` to cache environment or configuration file parsing that runs repeatedly but remains static during execution.
+
+## 2026-05-02 - [Avoid List Comprehensions for Markdown Table Stripping]
+
+**Learning:** When parsing delimited strings like Markdown table rows, using a list comprehension to strip whitespace from every element (`[p.strip() for p in line.split('|')]`) introduces significant overhead when only a few fields are actually needed.
+**Action:** Split the line once (`line.split('|')`) and call `.strip()` only on the specific indices that are actually accessed downstream. This avoids redundant function calls and the generator overhead.
