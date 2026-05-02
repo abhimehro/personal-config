@@ -9,7 +9,7 @@
   <array>
     <string>/bin/bash</string>
     <string>-lc</string>
-    <string>/Users/abhimehrotra/Library/Media/bin/start-alldebrid.sh</string>
+    <string>$HOME/Library/Media/bin/start-alldebrid.sh</string>
   </array>
 
   <key>EnvironmentVariables</key>
@@ -17,7 +17,7 @@
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     <key>ALD_MOUNT_DIR</key>
-    <string>/Users/abhimehrotra/mnt/alldebrid</string>
+    <string>$HOME/mnt/alldebrid</string>
   </dict>
 
   <key>RunAtLoad</key>
@@ -26,8 +26,8 @@
   <true/>
 
   <key>StandardOutPath</key>
-  <string>/Users/abhimehrotra/Library/Logs/media/alldebrid.out</string>
+  <string>$HOME/Library/Logs/media/alldebrid.out</string>
   <key>StandardErrorPath</key>
-  <string>/Users/abhimehrotra/Library/Logs/media/alldebrid.err</string>
+  <string>$HOME/Library/Logs/media/alldebrid.err</string>
 </dict>
 </plist>

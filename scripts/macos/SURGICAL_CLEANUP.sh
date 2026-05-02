@@ -246,9 +246,10 @@ verify_cleanup() {
 
 	# Check what remains in home directory
 	echo "📁 Remaining items in home directory:"
-	ls -la "$HOME" | grep -v "^total" | while read line; do
+	while IFS= read -r line; do
+		[[ $line == total* ]] && continue
 		echo "   $line"
-	done
+	done < <(ls -la "$HOME")
 
 	echo
 	echo -e "${GREEN}✅ Essential files preserved:${NC}"
@@ -328,8 +329,8 @@ main() {
 }
 
 # Check if running from correct location
-if [[ "$(pwd)" != "/Users/abhimehrotra" ]]; then
-	cd "$HOME"
+if [[ "$(pwd)" != "$HOME" ]]; then
+	cd "$HOME" || exit 1
 fi
 
 main "$@"

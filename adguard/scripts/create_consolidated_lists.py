@@ -214,9 +214,7 @@ def print_summary(num_denylist, num_allowlist):
 
 def main():
     # Allow overriding base directory for testing/portability
-    base_dir = Path(
-        os.environ.get("ADGUARD_LISTS_DIR", "/Users/abhimehrotra/Downloads")
-    )
+    base_dir = Path(os.environ.get("ADGUARD_LISTS_DIR", Path.home() / "Downloads"))
 
     print("🔍 Consolidating Ad-Blocking Lists...")
     print("=" * 50)

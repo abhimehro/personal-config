@@ -42,7 +42,7 @@ Your personal-config repository now contains a comprehensive, tested, and docume
 
 - **Unified library**: rclone union of `gdrive:Media` + `onedrive:Media` (no local duplication; iCloud Desktop/Documents hosts structure).
 - **WebDAV service**: LaunchAgent `com.abhimehrotra.media.webdav` → port 8088, read-only.
-- **Alldebrid helper**: LaunchAgent `com.abhimehrotra.media.alldebrid` → mount `/Users/abhimehrotra/mnt/alldebrid`, serve 8080.
+- **Alldebrid helper**: LaunchAgent `com.abhimehrotra.media.alldebrid` → mount `$HOME/mnt/alldebrid`, serve 8080.
 - **Secrets**: `~/.config/rclone/rclone.conf` (seed from template, fill via 1Password) and `~/.config/media-server/credentials` (untracked).
 - **Cache/logs**: `~/Library/Application Support/MediaCache`, `~/Library/Logs/media`.
 

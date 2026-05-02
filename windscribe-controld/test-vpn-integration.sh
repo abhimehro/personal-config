@@ -4,6 +4,8 @@
 # LEGACY: older test harness; for reference only.
 # Tests VPN connection and DNS privacy filtering
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 echo "🧪 Testing Windscribe + Control D Integration"
 echo "=============================================="
 
@@ -12,7 +14,7 @@ if pgrep -f "ctrld run" >/dev/null; then
 	echo "✅ Control D service: RUNNING"
 else
 	echo "❌ Control D service: NOT RUNNING"
-	echo "   Run: sudo /Users/abhimehrotra/Documents/dev/personal-config/windscribe-controld/controld-service-manager.sh start"
+	echo "   Run: sudo $SCRIPT_DIR/controld-service-manager.sh start"
 	exit 1
 fi
 
