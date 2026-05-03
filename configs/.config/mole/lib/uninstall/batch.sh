@@ -382,7 +382,7 @@ batch_uninstall_applications() {
 		if [[ -e $info_plist ]]; then
 			exec_name=$(defaults read "$info_plist" CFBundleExecutable 2>/dev/null || echo "")
 		fi
-		if pgrep -qx "${exec_name:-$app_name}" 2>/dev/null; then
+		if pgrep -x -- "${exec_name:-$app_name}" >/dev/null 2>&1; then
 			running_apps+=("$app_name")
 		fi
 
