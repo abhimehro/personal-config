@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import concurrent.futures
 import datetime as dt
 import functools
 import json
@@ -66,17 +67,27 @@ def execute_configured_commands(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     setup_entries = []
     command_entries = []
-    for bucket_name, item in configured_commands(section):
-        entry = {
-            "bucket": bucket_name,
-            "name": item["name"],
-            **run_shell_command(item["run"], int(item.get("timeout_seconds", 1800))),
-            "optional": bool(item.get("optional", False)),
-        }
-        if bucket_name == "setup":
-            setup_entries.append(entry)
-        else:
-            command_entries.append(entry)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = []
+        for bucket_name, item in configured_commands(section):
+            timeout = int(item.get("timeout_seconds", 1800))
+            future = executor.submit(run_shell_command, item["run"], timeout)
+            futures.append((bucket_name, item, future))
+
+        for bucket_name, item, future in futures:
+            result = future.result()
+            entry = {
+                "bucket": bucket_name,
+                "name": item["name"],
+                **result,
+                "optional": bool(item.get("optional", False)),
+            }
+            if bucket_name == "setup":
+                setup_entries.append(entry)
+            else:
+                command_entries.append(entry)
+
     return setup_entries, command_entries
 
 
