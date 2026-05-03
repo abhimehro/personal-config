@@ -137,6 +137,10 @@
 ## 2026-03-10 - Cached Environment parsing in iterative scripts
 **Learning:** Repetitive file IO (e.g., parsing `.env` files) inside helper functions that are called in loops (like API wrappers across a large queue) creates a massive performance bottleneck.
 **Action:** Use Python's `functools.lru_cache` to cache environment or configuration file parsing that runs repeatedly but remains static during execution.
+## 2026-03-10 - [Memory Efficiency and PEP-8 in Data Extraction]
+**Learning:** Using `type() is dict` violates PEP-8 conventions. Furthermore, passing list comprehensions (e.g., `[x for x in data]`) to aggregate functions like `set.update()` forces the entire filtered sequence into memory at once, creating unnecessary memory spikes during large JSON extractions.
+**Action:** When extracting data based on type, always use `isinstance()`. When passing filtered sequences to aggregate functions that accept iterables (like `.update()`), preserve memory efficiency by using generator expressions `(...)` instead of list comprehensions `[...]`.
+
 ## 2024-05-03 - Batch LLM calls
 **Learning:** Calling an LLM sequentially inside a loop creates significant overhead due to repeated network latency and individual query processing.
 **Action:** Batch inputs into a single prompt separated by a delimiter, reducing N network calls to 1.
