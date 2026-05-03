@@ -3,6 +3,7 @@ import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
+from types import MappingProxyType
 
 
 def _parse_env_line(line, env_dict):
@@ -21,7 +22,6 @@ def _parse_env_line(line, env_dict):
 
 @lru_cache(maxsize=None)
 def _get_parsed_env_vars():
-    # ⚡ Bolt Optimization: Cache only the parsed variables from the file to prevent redundant IO reads, while keeping it safe from mutable dictionary cache poisoning
     parsed_vars = {}
     try:
         with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
@@ -29,7 +29,7 @@ def _get_parsed_env_vars():
                 _parse_env_line(line, parsed_vars)
     except FileNotFoundError:
         pass
-    return parsed_vars
+    return MappingProxyType(parsed_vars)
 
 
 def _load_gh_token_env():
@@ -45,7 +45,7 @@ def run_gh(cmd_list):
         return None
     try:
         return json.loads(result.stdout)
-    except:
+    except json.JSONDecodeError:
         return None
 
 
@@ -76,6 +76,7 @@ ready_prs = [
     "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#104",
     "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#102",
 ]
+MAX_WORKERS = min(10, len(ready_prs))
 
 categorized = {
     "SECURITY": [],
@@ -102,7 +103,7 @@ def fetch_pr_info(pr):
     return pr, info
 
 
-with ThreadPoolExecutor(max_workers=10) as executor:
+with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
     results = list(executor.map(fetch_pr_info, ready_prs))
 
 for pr, info in results:
