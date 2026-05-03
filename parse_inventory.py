@@ -58,13 +58,16 @@ for line in lines:
         current_repo = m.group(1).strip()
         repos[current_repo] = []
     elif line.startswith('|') and not line.startswith('| # |') and not line.startswith('| ---'):
-        # ⚡ Bolt Optimization: Split once and strip only accessed indices to avoid list comprehension overhead
+        # ⚡ Bolt Optimization: Split once and strip only the indices we actually
+        # read, avoiding the list allocation and per-element .strip() overhead of
+        # `[p.strip() for p in line.split('|')]`.
         parts = line.split('|')
         if len(parts) > 8:
-            pr_id = parts[1].strip()
-            author = parts[4].strip()
-            merge = parts[6].strip()
-            checks = parts[7].strip()
+            # Column indices match tasks/pr-inventory.md table layout:
+            # 0:'' 1:Repo 2:PR 3:Author 4:Kind 5:Category 6:CI rollup 7:Merge state 8:Changed files
+            pr_id = parts[2].strip()
+            author = parts[3].strip()
+            checks = parts[6].strip()
             hints = parts[8].strip()
             if author.endswith('[bot]') or hints:
                 if pr_id.isdigit():
