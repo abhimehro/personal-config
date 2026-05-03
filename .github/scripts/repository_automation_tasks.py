@@ -68,25 +68,45 @@ def execute_configured_commands(
     setup_entries = []
     command_entries = []
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = []
-        for bucket_name, item in configured_commands(section):
-            timeout = int(item.get("timeout_seconds", 1800))
-            future = executor.submit(run_shell_command, item["run"], timeout)
-            futures.append((bucket_name, item, future))
+    # Partition by bucket so setup_commands complete before command/security
+    # buckets begin. Some configs (e.g. quality_assurance) install tooling in
+    # setup that subsequent commands depend on, so the two phases must remain
+    # ordered. Within each phase we still run concurrently.
+    all_items = configured_commands(section)
+    setup_items = [(b, i) for b, i in all_items if b == "setup"]
+    later_items = [(b, i) for b, i in all_items if b != "setup"]
 
-        for bucket_name, item, future in futures:
-            result = future.result()
-            entry = {
+    def _run_phase(items):
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = []
+            for bucket_name, item in items:
+                timeout = int(item.get("timeout_seconds", 1800))
+                future = executor.submit(run_shell_command, item["run"], timeout)
+                futures.append((bucket_name, item, future))
+            results = []
+            for bucket_name, item, future in futures:
+                results.append((bucket_name, item, future.result()))
+            return results
+
+    for bucket_name, item, result in _run_phase(setup_items):
+        setup_entries.append(
+            {
                 "bucket": bucket_name,
                 "name": item["name"],
                 **result,
                 "optional": bool(item.get("optional", False)),
             }
-            if bucket_name == "setup":
-                setup_entries.append(entry)
-            else:
-                command_entries.append(entry)
+        )
+
+    for bucket_name, item, result in _run_phase(later_items):
+        command_entries.append(
+            {
+                "bucket": bucket_name,
+                "name": item["name"],
+                **result,
+                "optional": bool(item.get("optional", False)),
+            }
+        )
 
     return setup_entries, command_entries
 

@@ -170,11 +170,13 @@ def fetch_pr_data(item):
     info = run_gh(
         ["gh", "pr", "view", str(pr), "-R", str(repo), "--json", "mergeStateStatus"]
     )
+    # run_gh may return a string when JSON parsing fails; only proceed for dicts
+    if not isinstance(info, dict):
+        return item, None, None
     diff = None
-    if info:
-        status = info.get("mergeStateStatus")
-        if status not in ["DIRTY", "CONFLICTING"]:
-            diff = get_diff(repo, pr)
+    status = info.get("mergeStateStatus")
+    if status not in ["DIRTY", "CONFLICTING"]:
+        diff = get_diff(repo, pr)
     return item, info, diff
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
@@ -194,7 +196,9 @@ for item, info, diff in fetched_data:
         results["conflicting"].append((repo, pr, title))
         continue
 
-    if diff is None:
+    # get_diff returns the subprocess stdout, which is "" on failure — use a
+    # truthiness check so empty diffs don't silently bypass Gate 2.
+    if not diff:
         print("Failed to get diff")
         continue
 
