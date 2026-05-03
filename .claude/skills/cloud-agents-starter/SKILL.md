@@ -171,7 +171,8 @@ Key assertions:
 if [ -f tests/test_detect_duplicates_triage.py ]; then
   python3 -m unittest tests.test_detect_duplicates_triage -v
 else
-  python3 -m unittest discover -s tests -p 'test_*.py' -v
+  echo "tests/test_detect_duplicates_triage.py is missing; port/create it or run the mocked temp-workspace scenario manually before claiming duplicate-triage validation."
+  exit 1
 fi
 ```
 
