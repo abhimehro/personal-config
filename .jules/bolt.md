@@ -125,8 +125,8 @@
 
 ## 2024-05-18 - Fast String Searching for PR Exclusions
 
-**Learning:** In PR automation scripts like `detect_duplicates.py`, repeatedly evaluating `lines[: index]` and slicing lists inside a generator expression for exclusion filtering (`if not any(pr in l for l in lines[: index])`) introduces O(N*M) overhead.
-**Action:** When filtering a list of substrings against a prefix/slice of file lines, `"".join()` the target slice into a single string *once* outside the loop, and use the fast C-level `in` operator (`pr not in pre_joined_string`). This simple hoist-and-join strategy eliminates list slicing and Python loop overhead, yielding ~88% performance improvement on medium-sized lists.
+**Learning:** In PR automation scripts like `detect_duplicates.py`, repeatedly evaluating `lines[: index]` and slicing lists inside a generator expression for exclusion filtering (`if not any(pr in l for l in lines[: index])`) introduces O(N\*M) overhead.
+**Action:** When filtering a list of substrings against a prefix/slice of file lines, hoist `"".join()` outside the loop so the target slice is joined one time, and use the fast C-level `in` operator (`pr not in pre_joined_string`). This simple hoist-and-join strategy eliminates list slicing and Python loop overhead, yielding ~88% performance improvement on medium-sized lists.
 
 ## 2026-06-25 - [List Comprehensions with Direct Dict Lookups]
 
@@ -143,7 +143,7 @@
 **Learning:** Repetitive file IO (e.g., parsing `.env` files) inside helper functions that are called in loops (like API wrappers across a large queue) creates a massive performance bottleneck.
 **Action:** Use Python's `functools.lru_cache` to cache environment or configuration file parsing that runs repeatedly but remains static during execution.
 
-## 2024-05-03 - Concurrency over Sequential execution
+## 2026-05-03 - Concurrency over Sequential execution
 
 **Learning:** Sequential synchronous network/subprocess calls are inefficient.
 **Action:** Use concurrent execution for independent I/O-bound tasks to reduce overall execution time.
