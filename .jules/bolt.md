@@ -137,3 +137,6 @@
 ## 2026-03-10 - Cached Environment parsing in iterative scripts
 **Learning:** Repetitive file IO (e.g., parsing `.env` files) inside helper functions that are called in loops (like API wrappers across a large queue) creates a massive performance bottleneck.
 **Action:** Use Python's `functools.lru_cache` to cache environment or configuration file parsing that runs repeatedly but remains static during execution.
+## 2024-05-03 - Batch LLM calls
+**Learning:** Calling an LLM sequentially inside a loop creates significant overhead due to repeated network latency and individual query processing.
+**Action:** Batch inputs into a single prompt separated by a delimiter, reducing N network calls to 1.

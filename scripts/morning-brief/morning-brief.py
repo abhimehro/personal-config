@@ -499,6 +499,38 @@ class PerplexityClient:
             session=session,
         )
 
+    def summarize_podcasts(
+        self, texts: list[str], session: requests.Session | None = None
+    ) -> list[str]:
+        if not texts:
+            return []
+
+        joined_texts = "\n\n---NEXT_PODCAST---\n\n".join(
+            f"Podcast {i+1}:\n{t}" for i, t in enumerate(texts)
+        )
+
+        response = self.chat(
+            (
+                "You are a highly efficient assistant. You will be provided with multiple "
+                "podcast show notes separated by '---NEXT_PODCAST---'. "
+                "Summarize EACH provided podcast show note in exactly two concise sentences. "
+                "Focus on the core environmental or scientific takeaways. "
+                "Output your summaries in the exact same order, separated by '===SEP===' and nothing else."
+            ),
+            joined_texts,
+            max_tokens=LLM_MAX_TOKENS_SUMMARY * len(texts),
+            temperature=0.5,
+            session=session,
+        )
+
+        if not response:
+            return [""] * len(texts)
+
+        summaries = [s.strip() for s in response.split("===SEP===")]
+        while len(summaries) < len(texts):
+            summaries.append("")
+        return summaries[:len(texts)]
+
     def generate_greeting(
         self,
         weather_narrative: str,
@@ -1177,14 +1209,18 @@ def fetch_podcast_section(llm: PerplexityClient, *, limit: int = 3) -> SectionRe
         detected_tags: set[str] = set()
         items: list[str] = []
 
-        for entry in feed.entries[:limit]:
+        entries = feed.entries[:limit]
+        raw_summaries = [
+            strip_html_tags(html.unescape(e.get("summary", e.get("description", ""))))
+            for e in entries
+        ]
+
+        llm_summaries = llm.summarize_podcasts(raw_summaries, session=session)
+
+        for entry, llm_summary in zip(entries, llm_summaries):
             title = sanitize_text(entry.get("title", "No Title"))
             link = entry.get("link", "#")
             pub_date = sanitize_text(entry.get("published", ""))
-            summary_raw = entry.get("summary", entry.get("description", ""))
-            llm_summary = llm.summarize_podcast(
-                strip_html_tags(html.unescape(summary_raw)), session=session
-            )
 
             for tag in derive_dynamic_tags(llm_summary):
                 detected_tags.add(tag)
