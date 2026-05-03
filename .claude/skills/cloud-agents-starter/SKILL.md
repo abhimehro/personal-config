@@ -168,10 +168,11 @@ Key assertions:
 - `## DUPLICATE` stays empty when mocked file paths differ.
 
 ```bash
-# After the duplicate-triage regression exists on this branch:
-python3 -m unittest tests.test_detect_duplicates_triage -v
-# Otherwise, run full discovery and use the mocked temp-workspace assertions above:
-python3 -m unittest discover -s tests -p 'test_*.py' -v
+if [ -f tests/test_detect_duplicates_triage.py ]; then
+  python3 -m unittest tests.test_detect_duplicates_triage -v
+else
+  python3 -m unittest discover -s tests -p 'test_*.py' -v
+fi
 ```
 
 ---
