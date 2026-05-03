@@ -155,7 +155,9 @@ python3 -m unittest tests.test_path_validation -v
 
 When changing `detect_duplicates.py`, validate the rewrite behavior in an isolated temp workspace with `tasks/pr-triage.md` and a mocked `gh` executable first on `PATH`. Use full `abhimehro/<repo>#<number>` entries because the script only processes lines beginning with `- abhimehro/`.
 
-Use adversarial PR numbers where one is a prefix of another, e.g. SUPERSEDED has `abhimehro/example#123` and READY has `abhimehro/example#12`, `abhimehro/example#123`, and `abhimehro/example#124`. These assertions require the duplicate-triage fixes from PR #869 or an equivalent implementation; if they fail on an older branch, fix the script before relying on the runbook.
+Use adversarial PR numbers where one is a prefix of another, e.g. SUPERSEDED has `abhimehro/example#123` and READY has `abhimehro/example#12`, `abhimehro/example#123`, and `abhimehro/example#124`. These assertions are pass criteria only after the duplicate-triage fixes from PR #869 (or an equivalent implementation) are present; on older branches, treat failures as confirmation that the script must be fixed before relying on the runbook.
+
+PR #869 adds a dedicated `tests/test_detect_duplicates_triage.py` regression for this scenario. If that file is not present on your branch, port/create the regression first or run the same mocked temp-workspace scenario manually; do not run a module-specific unittest command for a file that does not exist.
 
 Key assertions:
 
@@ -166,7 +168,8 @@ Key assertions:
 - `## DUPLICATE` stays empty when mocked file paths differ.
 
 ```bash
-python3 -m unittest tests.test_detect_duplicates_triage -v
+# After the duplicate-triage regression exists on this branch:
+python3 -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
 ---
