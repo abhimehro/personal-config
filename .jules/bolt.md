@@ -137,3 +137,6 @@
 ## 2026-03-10 - Cached Environment parsing in iterative scripts
 **Learning:** Repetitive file IO (e.g., parsing `.env` files) inside helper functions that are called in loops (like API wrappers across a large queue) creates a massive performance bottleneck.
 **Action:** Use Python's `functools.lru_cache` to cache environment or configuration file parsing that runs repeatedly but remains static during execution.
+## 2026-03-10 - Concurrent I/O Pre-fetching
+**Learning:** Sequential network calls inside a processing loop (like fetching GH PR status and diffs one-by-one via `gh` CLI) creates massive idle time waiting on I/O. By using `concurrent.futures.ThreadPoolExecutor` to pre-fetch the data in parallel, we can drop execution time dramatically (e.g. 21s -> 3s, an ~85% improvement).
+**Action:** When a script iterates over a queue and makes independent network or sub-process calls for each item, extract the I/O operations into a standalone function and use `ThreadPoolExecutor.map` to pre-fetch the results concurrently before the main processing loop.

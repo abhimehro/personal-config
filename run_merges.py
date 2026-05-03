@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import time
+import concurrent.futures
 from functools import lru_cache
 
 
@@ -164,13 +165,25 @@ queue = [
 
 results = {"merged": [], "escalated": [], "conflicting": []}
 
-for repo, pr, title in queue:
-    print(f"\nProcessing {repo}#{pr}: {title}")
-
-    # Re-check status
+def fetch_pr_data(item):
+    repo, pr, title = item
     info = run_gh(
         ["gh", "pr", "view", str(pr), "-R", str(repo), "--json", "mergeStateStatus"]
     )
+    diff = None
+    if info:
+        status = info.get("mergeStateStatus")
+        if status not in ["DIRTY", "CONFLICTING"]:
+            diff = get_diff(repo, pr)
+    return item, info, diff
+
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    fetched_data = list(executor.map(fetch_pr_data, queue))
+
+for item, info, diff in fetched_data:
+    repo, pr, title = item
+    print(f"\nProcessing {repo}#{pr}: {title}")
+
     if not info:
         print("Failed to get info")
         continue
@@ -181,7 +194,10 @@ for repo, pr, title in queue:
         results["conflicting"].append((repo, pr, title))
         continue
 
-    diff = get_diff(repo, pr)
+    if diff is None:
+        print("Failed to get diff")
+        continue
+
     diff_lower = diff.lower()
 
     # Gate 2: Security check
