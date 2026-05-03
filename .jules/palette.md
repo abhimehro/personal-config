@@ -114,3 +114,8 @@
 
 **Learning:** Printing static prefixes (like "Assistant:") before a dynamic spinner completes causes screen reader redundancy and can leave visual artifacts on the terminal if the process is interrupted before the stream begins.
 **Action:** Delay printing static prefixes until the dynamic stream actually begins, and ensure that signal (SIGINT) and error handlers completely clear the line using `\r\x1B[K` to prevent orphaned text artifacts upon interruption.
+
+## 2026-05-18 - Graceful Exit Handling in TypeScript CLIs
+
+**Learning:** When adding asynchronous tasks like animated spinners to CLI tools built in TypeScript/Node.js, users expect the terminal to return to a clean state if they press `Ctrl+C`. Without a proper `SIGINT` handler, the cursor remains hidden, and spinner text is left scattered on the prompt.
+**Action:** Always attach a `process.on('SIGINT')` event listener that explicitly stops timers (`clearInterval`), restores the cursor (`\x1B[?25h`), clears the line (`\r\x1B[K`), and exits cleanly with `process.exit(130)`.
