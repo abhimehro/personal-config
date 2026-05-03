@@ -4,13 +4,26 @@ name: ShellCheck
 
 on:
   push:
+    branches: ["main"]
+    paths:
+      - "mac-audit/**"
+      - ".github/workflows/shellcheck.yml"
   pull_request:
+    branches: ["main"]
+    paths:
+      - "mac-audit/**"
+      - ".github/workflows/shellcheck.yml"
+
+permissions:
+  contents: read
 
 jobs:
   lint:
     name: ShellCheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - run: sudo apt-get install -y shellcheck
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
       - run: shellcheck --severity=warning mac-audit/audit.sh mac-audit/lib/*.sh

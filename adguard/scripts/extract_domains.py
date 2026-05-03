@@ -2,7 +2,6 @@ import json
 import os
 
 
-
 def _is_allowlist_rule(rule):
     """Helper to efficiently check if a rule is an allowlist rule."""
     if "PK" not in rule:
@@ -49,7 +48,7 @@ def extract_allowlist_domains_from_file(filepath):
 
 if __name__ == "__main__":
     # Base directory
-    base_dir = "/Users/abhimehrotra/Downloads"
+    base_dir = os.environ.get("ADGUARD_LISTS_DIR", str(Path.home() / "Downloads"))
 
     # Tracker files for denylist
     tracker_files = [

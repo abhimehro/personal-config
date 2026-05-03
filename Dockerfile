@@ -27,7 +27,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     iputils-ping \
     # SSH support
     openssh-client \
-    openssh-server \
     # Development tools
     build-essential \
     ca-certificates \
@@ -91,8 +90,7 @@ RUN python3 -m pip install --no-install-recommends --no-cache-dir \
 COPY . /app/
 
 # Create non-root user for running scripts
-RUN useradd -m -s /bin/bash -G sudo scriptuser && \
-    echo "scriptuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+RUN useradd -m -s /bin/bash scriptuser
 
 # Set proper permissions
 RUN chown -R scriptuser:scriptuser /app && \
@@ -114,7 +112,7 @@ ENV PATH="/app/scripts:/app/bin:${PATH}" \
 
 # Health check - verify basic shell functionality
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD bash -c "test -x /app/scripts/network-mode-manager.sh || echo 'Config OK'" || exit 1
+    CMD test -x /app/scripts/network-mode-manager.sh
 
 # Default command - interactive shell
 CMD ["/bin/bash"]

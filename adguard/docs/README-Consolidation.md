@@ -94,7 +94,7 @@ This will create:
 ## File Structure
 
 ```
-/Users/abhimehrotra/Downloads/
+$HOME/Downloads/
 ├── Consolidated-Denylist.txt          # Main denylist for AdGuard
 ├── Consolidated-Allowlist.txt         # Main allowlist for AdGuard
 ├── create_consolidated_lists.py       # Complete consolidation script

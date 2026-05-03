@@ -18,7 +18,7 @@ Reduce Spotlight CPU/disk usage by excluding folders you don't need indexed:
 ```bash
 # Exclude node_modules directories (reduces indexing load)
 sudo defaults write /.Spotlight-V100/VolumeConfiguration.plist Exclusions -array-add "$HOME/Documents/dev"
-sudo defaults write /.Spotlight-V100/VolumeConfiguration.plist Exclusions -array-add "/Users/abhimehrotra/Library/Application Support"
+sudo defaults write /.Spotlight-V100/VolumeConfiguration.plist Exclusions -array-add "$HOME/Library/Application Support"
 
 # Or use System Settings:
 # System Settings → Siri & Spotlight → Spotlight Privacy

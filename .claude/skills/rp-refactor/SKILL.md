@@ -2,7 +2,7 @@
 name: "rp-refactor"
 description: "Refactoring assistant using RepoPrompt MCP tools to analyze and improve code organization"
 repoprompt_managed: true
-repoprompt_skills_version: 46
+repoprompt_skills_version: 54
 repoprompt_variant: mcp
 ---
 
@@ -33,19 +33,26 @@ Analyze code for redundancies and complexity, then orchestrate agents to impleme
 Before any analysis, bind to the target codebase using its working directory:
 
 ```json
-{"tool":"bind_context","args":{"op":"bind","working_dirs":["/absolute/path/to/project"]}}
+{
+  "tool": "bind_context",
+  "args": { "op": "bind", "working_dirs": ["/absolute/path/to/project"] }
+}
 ```
+
 This auto-resolves to the window containing your project. No need to list windows first.
 
 **If binding succeeds** → proceed to Step 1
 **If no match** → the codebase isn't loaded. Find and open the workspace:
+
 ```json
 {"tool":"manage_workspaces","args":{"action":"list"}}
 {"tool":"manage_workspaces","args":{"action":"switch","workspace":"<workspace_name>","open_in_new_window":true}}
 ```
+
 Then retry the `working_dirs` bind.
 
 ---
+
 ## Step 1: Scope & Analyze
 
 ### 1a. Scout the territory with explore agents
@@ -78,7 +85,10 @@ Keep each explore prompt **short and focused** — one area per agent. Good: "Ma
 Collect results before proceeding:
 
 ```json
-{"tool":"agent_run","args":{"op":"wait","session_ids":["<id_1>","<id_2>"],"timeout":60}}
+{
+  "tool": "agent_run",
+  "args": { "op": "wait", "session_ids": ["<id_1>", "<id_2>"], "timeout": 60 }
+}
 ```
 
 Not every refactor needs explore agents. If the user's request already names specific files and the scope is narrow, skip straight to 1b.
@@ -111,13 +121,17 @@ Review the findings. If areas were missed, run additional focused reviews with e
 ## Optional: Clarify Analysis
 
 After receiving analysis findings, you can ask clarifying questions in the same chat:
+
 ```json
-{"tool":"oracle_send","args":{
-  "chat_id":"<from context_builder>",
-  "message":"For the duplicate logic you identified, which location should be the canonical one?",
-  "mode":"chat",
-  "new_chat":false
-}}
+{
+  "tool": "oracle_send",
+  "args": {
+    "chat_id": "<from context_builder>",
+    "message": "For the duplicate logic you identified, which location should be the canonical one?",
+    "mode": "chat",
+    "new_chat": false
+  }
+}
 ```
 
 ## Step 2: Plan the Refactorings (via `context_builder` - REQUIRED)
@@ -147,6 +161,7 @@ The tool returns `oracle_export_path` and `oracle_export_instruction`. Include `
 Take the plan and break it into **ordered work items**. Refactorings are usually sequential — later changes often depend on structures introduced by earlier ones.
 
 For each item, note:
+
 - **Goal**: What this item accomplishes (1-2 sentences)
 - **Done when**: Concrete completion criteria — what should be true when this item is finished
 - **Key files/modules**: Where the work happens
@@ -200,16 +215,16 @@ Since refactor relies on extended steering, it's worth checking whether the `eng
 To check which model is powering a role:
 
 ```json
-{"tool":"agent_manage","args":{"op":"list_agents","roles_only":true}}
+{ "tool": "agent_manage", "args": { "op": "list_agents", "roles_only": true } }
 ```
 
-A `codexExec:*` prefix on a role's `model_id` signals it's well-suited to extended steering.
+A role whose display name starts with `Codex CLI` (or an explicit `model_id` with a `codexExec:*` prefix) signals the role is well-suited to extended steering.
 
 ### Writing the dispatch brief
 
 The agents you dispatch are fully capable — they have tools, they'll read AGENTS.md and project instructions, they can explore and reason. Your job is to orient them, not direct them.
 
-**Scope is your most important job.** When you pass a plan export, the sub-agent can see the full plan — but it doesn't know which part is its responsibility unless you say so. Always be explicit about what it should do *now* and what it should leave alone. A few patterns:
+**Scope is your most important job.** When you pass a plan export, the sub-agent can see the full plan — but it doesn't know which part is its responsibility unless you say so. Always be explicit about what it should do _now_ and what it should leave alone. A few patterns:
 
 - **Paraphrase for narrow tasks**: If the work is small and self-contained, just describe it in the dispatch message. The agent doesn't need the full plan.
 - **Point to a section for broader tasks**: Reference the plan path in the `message` and tell the agent which part to focus on (e.g. "Read the plan at <path> with read_file first. Your job is item 2 in the plan. Items 1 and 3 are handled separately.").
@@ -256,7 +271,10 @@ Only parallelize when items have **zero file overlap**. When in doubt, run seque
 Sessions persist after agents finish — useful when you might revisit output, but they pile up over a multi-agent workflow. Once you've recorded what an agent produced, you can dismiss its session:
 
 ```json
-{"tool":"agent_manage","args":{"op":"cleanup_sessions","session_ids":["<session_id>"]}}
+{
+  "tool": "agent_manage",
+  "args": { "op": "cleanup_sessions", "session_ids": ["<session_id>"] }
+}
 ```
 
 Explore-agent sessions are good to dismiss right away — narrow reconnaissance, no follow-up value. Keep heavier agent sessions if you might revisit them.
@@ -269,17 +287,23 @@ As each agent completes:
 
 1. **Verify against the plan.** Check the agent's output against the "done when" criteria from the plan. Don't just skim — confirm the goal was actually met. A quick `read_file` or `file_search` on key deliverables costs little and catches drift before it compounds. If the plan said "add error handling to all three endpoints" and the agent only touched two, that's your catch. Mark the item as done (or note gaps) in the export file so you have a running record.
 2. **If something's off**, steer a correction before moving on — never proceed with unresolved gaps:
+
 ```json
-{"tool":"agent_run","args":{
-	"op":"steer",
-	"session_id":"<session_id>",
-	"message":"The goal was X but Y appears to be missing. Please address that before wrapping up.",
-	"wait":true
-}}
+{
+  "tool": "agent_run",
+  "args": {
+    "op": "steer",
+    "session_id": "<session_id>",
+    "message": "The goal was X but Y appears to be missing. Please address that before wrapping up.",
+    "wait": true
+  }
+}
 ```
+
 3. **Summarize to the user**: Brief status update — what completed, what's still running.
 
 After all items complete, give the user a **final rollup**:
+
 - What was accomplished per item
 - Any failures or partial completions
 - Any conflicts or coordination issues that surfaced

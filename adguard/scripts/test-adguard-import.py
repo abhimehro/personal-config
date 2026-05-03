@@ -112,7 +112,7 @@ def check_file_encoding(filepath):
 
 
 def main():
-    base_dir = Path("/Users/abhimehrotra/Downloads")
+    base_dir = Path(os.environ.get("ADGUARD_LISTS_DIR", Path.home() / "Downloads"))
 
     print("🔍 AdGuard Import Verification")
     print("=" * 50)

@@ -49,24 +49,11 @@ save_whitelist_patterns() {
     echo -e "$header_text" > "$config_file"
 
     if [[ ${#patterns[@]} -gt 0 ]]; then
-        local -a unique_patterns=()
-        for pattern in "${patterns[@]}"; do
-            local duplicate="false"
-            if [[ ${#unique_patterns[@]} -gt 0 ]]; then
-                for existing in "${unique_patterns[@]}"; do
-                    if patterns_equivalent "$pattern" "$existing"; then
-                        duplicate="true"
-                        break
-                    fi
-                done
-            fi
-            [[ "$duplicate" == "true" ]] && continue
-            unique_patterns+=("$pattern")
-        done
+        get_unique_patterns "${patterns[@]}"
 
-        if [[ ${#unique_patterns[@]} -gt 0 ]]; then
+        if [[ ${#UNIQUE_PATTERNS[@]} -gt 0 ]]; then
             printf '\n' >> "$config_file"
-            for pattern in "${unique_patterns[@]}"; do
+            for pattern in "${UNIQUE_PATTERNS[@]}"; do
                 echo "$pattern" >> "$config_file"
             done
         fi
@@ -182,6 +169,25 @@ patterns_equivalent() {
     return 1
 }
 
+get_unique_patterns() {
+    UNIQUE_PATTERNS=()
+    local pattern
+    for pattern in "$@"; do
+        local duplicate="false"
+        if [[ ${#UNIQUE_PATTERNS[@]} -gt 0 ]]; then
+            local existing
+            for existing in "${UNIQUE_PATTERNS[@]}"; do
+                if patterns_equivalent "$pattern" "$existing"; then
+                    duplicate="true"
+                    break
+                fi
+            done
+        fi
+        [[ "$duplicate" == "true" ]] && continue
+        UNIQUE_PATTERNS+=("$pattern")
+    done
+}
+
 load_whitelist() {
     local mode="${1:-clean}"
     local -a patterns=()
@@ -219,21 +225,8 @@ load_whitelist() {
     fi
 
     if [[ ${#patterns[@]} -gt 0 ]]; then
-        local -a unique_patterns=()
-        for pattern in "${patterns[@]}"; do
-            local duplicate="false"
-            if [[ ${#unique_patterns[@]} -gt 0 ]]; then
-                for existing in "${unique_patterns[@]}"; do
-                    if patterns_equivalent "$pattern" "$existing"; then
-                        duplicate="true"
-                        break
-                    fi
-                done
-            fi
-            [[ "$duplicate" == "true" ]] && continue
-            unique_patterns+=("$pattern")
-        done
-        CURRENT_WHITELIST_PATTERNS=("${unique_patterns[@]}")
+        get_unique_patterns "${patterns[@]}"
+        CURRENT_WHITELIST_PATTERNS=("${UNIQUE_PATTERNS[@]}")
 
         # Migrate legacy optimize config to the new path automatically
         if [[ "$mode" == "optimize" && "$using_legacy" == "true" && "$config_file" != "$WHITELIST_CONFIG_OPTIMIZE" ]]; then

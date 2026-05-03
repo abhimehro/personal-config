@@ -12,8 +12,8 @@ Include ~/.ssh/config.local
 Host github.com
     HostName github.com
     User git
-    IdentitiesOnly yes
     IdentityFile "~/.ssh/GitHub SSH Key.pub"
+    IdentitiesOnly yes
 
 #  Proton Pass SSH agent: GitHub alias 
 # Use Proton Pass SSH agent for GitHub under alias "github-proton".

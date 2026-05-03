@@ -30,7 +30,7 @@
     "args": [
       "-y",
       "@modelcontextprotocol/server-filesystem",
-      "/Users/abhimehrotra/Documents/dev/"
+      "~/Documents/dev/"
     ],
     "env": {}
   },

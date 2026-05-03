@@ -9,7 +9,7 @@
   <array>
     <string>/bin/bash</string>
     <string>-lc</string>
-    <string>/Users/abhimehrotra/Library/Media/bin/start-media-server-fast.sh</string>
+    <string>$HOME/Library/Media/bin/start-media-server-fast.sh</string>
   </array>
 
   <key>EnvironmentVariables</key>
@@ -17,11 +17,11 @@
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     <key>RCLONE_CONFIG</key>
-    <string>/Users/abhimehrotra/.config/rclone/rclone.conf</string>
+    <string>$HOME/.config/rclone/rclone.conf</string>
     <key>MEDIA_CACHE_DIR</key>
-    <string>/Users/abhimehrotra/Library/Application Support/MediaCache</string>
+    <string>$HOME/Library/Application Support/MediaCache</string>
     <key>MEDIA_CREDENTIALS_FILE</key>
-    <string>/Users/abhimehrotra/.config/media-server/credentials</string>
+    <string>$HOME/.config/media-server/credentials</string>
   </dict>
 
   <key>RunAtLoad</key>
@@ -30,8 +30,8 @@
   <true/>
 
   <key>StandardOutPath</key>
-  <string>/Users/abhimehrotra/Library/Logs/media/webdav.out</string>
+  <string>$HOME/Library/Logs/media/webdav.out</string>
   <key>StandardErrorPath</key>
-  <string>/Users/abhimehrotra/Library/Logs/media/webdav.err</string>
+  <string>$HOME/Library/Logs/media/webdav.err</string>
 </dict>
 </plist>

@@ -258,6 +258,46 @@ paginated_multi_select() {
     local filter_cache_text_lower=""
     local -a filter_cache_indices=()
 
+    _get_sort_key() {
+        case "$sort_mode" in
+            date)
+                # Date: ascending by default (oldest first)
+                if [[ "$sort_reverse" == "true" ]]; then echo "-k1,1nr"; else echo "-k1,1n"; fi
+                ;;
+            size)
+                # Size: descending by default (largest first)
+                if [[ "$sort_reverse" == "true" ]]; then echo "-k1,1n"; else echo "-k1,1nr"; fi
+                ;;
+            *)
+                # Name: ascending by default (A to Z)
+                if [[ "$sort_reverse" == "true" ]]; then echo "-k1,1fr"; else echo "-k1,1f"; fi
+                ;;
+        esac
+    }
+
+    _write_sort_data() {
+        local tmpfile="$1"
+        local k id
+        for id in "${orig_indices[@]}"; do
+            case "$sort_mode" in
+                date) k="${epochs[id]:-0}" ;;
+                size) k="${sizekb[id]:-0}" ;;
+                name | *) k="${items[id]}|${id}" ;;
+            esac
+            printf "%s\t%s\n" "$k" "$id" >> "$tmpfile"
+        done
+    }
+
+    _perform_sort() {
+        local tmpfile="$1"
+        local sort_key="$2"
+        sorted_indices_cache=()
+        while IFS=$'\t' read -r _key _id; do
+            [[ -z "$_id" ]] && continue
+            sorted_indices_cache+=("$_id")
+        done < <(LC_ALL=C sort -t $'\t' "$sort_key" -- "$tmpfile" 2> /dev/null)
+    }
+
     ensure_sorted_indices() {
         local requested_key="${sort_mode}:${sort_reverse}:${has_metadata}"
         if [[ "$requested_key" == "$sort_cache_key" && ${#sorted_indices_cache[@]} -gt 0 ]]; then
@@ -270,41 +310,14 @@ paginated_multi_select() {
             return
         fi
 
-        # Build sort key once; filtering should reuse this cached order.
         local sort_key
-        if [[ "$sort_mode" == "date" ]]; then
-            # Date: ascending by default (oldest first)
-            sort_key="-k1,1n"
-            [[ "$sort_reverse" == "true" ]] && sort_key="-k1,1nr"
-        elif [[ "$sort_mode" == "size" ]]; then
-            # Size: descending by default (largest first)
-            sort_key="-k1,1nr"
-            [[ "$sort_reverse" == "true" ]] && sort_key="-k1,1n"
-        else
-            # Name: ascending by default (A to Z)
-            sort_key="-k1,1f"
-            [[ "$sort_reverse" == "true" ]] && sort_key="-k1,1fr"
-        fi
+        sort_key=$(_get_sort_key)
 
         local tmpfile
         tmpfile=$(mktemp 2> /dev/null) || tmpfile=""
         if [[ -n "$tmpfile" ]]; then
-            local k id
-            for id in "${orig_indices[@]}"; do
-                case "$sort_mode" in
-                    date) k="${epochs[id]:-0}" ;;
-                    size) k="${sizekb[id]:-0}" ;;
-                    name | *) k="${items[id]}|${id}" ;;
-                esac
-                printf "%s\t%s\n" "$k" "$id" >> "$tmpfile"
-            done
-
-            sorted_indices_cache=()
-            while IFS=$'\t' read -r _key _id; do
-                [[ -z "$_id" ]] && continue
-                sorted_indices_cache+=("$_id")
-            done < <(LC_ALL=C sort -t $'\t' $sort_key -- "$tmpfile" 2> /dev/null)
-
+            _write_sort_data "$tmpfile"
+            _perform_sort "$tmpfile" "$sort_key"
             rm -f "$tmpfile"
         else
             sorted_indices_cache=("${orig_indices[@]}")

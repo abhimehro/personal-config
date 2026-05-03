@@ -143,7 +143,7 @@ echo ""
 echo "-- dns_cache_clear --"
 dns_lookup_cached "other.example" 60 >/dev/null || true
 dns_cache_clear
-check "dns_cache_clear removes .cache files" bash -c 'ls '"$DNS_CACHE_DIR"'/*.cache 2>/dev/null | wc -l | grep -qx "0"'
+check "dns_cache_clear removes .cache files" bash -c 'find '"$DNS_CACHE_DIR"' -maxdepth 1 -name "*.cache" -print -quit | grep -q . && exit 1 || exit 0'
 
 # --- dns_cache_destroy ---
 echo ""
