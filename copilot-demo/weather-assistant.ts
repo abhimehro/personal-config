@@ -100,10 +100,16 @@ async function main() {
     process.exit(130);
   });
 
+  let resolveResponseDone: () => void = () => {};
+  const responseDone = new Promise<void>((resolve) => {
+    resolveResponseDone = resolve;
+  });
+
   // Set up event handlers
   rt.on("error", (error: OpenAIRealtimeError) => {
     stopSpinner();
     handleRealtimeError(error);
+    resolveResponseDone();
   });
   rt.on("session.created", () => console.log("Session created\n"));
 
@@ -123,11 +129,6 @@ async function main() {
       process.stdout.write(event.delta);
     },
   );
-
-  let resolveResponseDone: () => void = () => {};
-  const responseDone = new Promise<void>((resolve) => {
-    resolveResponseDone = resolve;
-  });
 
   // Handle response completion
   rt.on("response.done", () => {
