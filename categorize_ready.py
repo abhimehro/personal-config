@@ -76,7 +76,7 @@ ready_prs = [
     "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#104",
     "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#102",
 ]
-MAX_WORKERS = min(10, len(ready_prs))
+MAX_WORKERS = min(10, len(ready_prs)) or 1
 
 categorized = {
     "SECURITY": [],
