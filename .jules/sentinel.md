@@ -237,3 +237,8 @@
 **Vulnerability:** Terminal Injection ([CWE-150](https://cwe.mitre.org/data/definitions/150.html)) existed in `scripts/test_ssh_connections.sh`. The script used `echo -e` to print log messages containing untrusted input, allowing an attacker to inject escape sequences to manipulate terminal output.
 **Learning:** `echo -e` interprets backslash escapes in all arguments. Even if the intent is to print a variable, `echo -e` treats it as a format string.
 **Prevention:** Use `printf "%b %s\n" "$COLOR" "$*"` for colored output instead of `echo -e` to ensure variables are printed literally.
+
+## 2026-05-03 - CLI Argument Information Exposure Fix in Fish Script
+**Vulnerability:** Information Exposure (CWE-214) / Exposure of Sensitive Information Through Process Arguments. `done.fish` passed the `__done_kitty_remote_control_password` to `kitty @` via the `--password` command-line flag.
+**Learning:** Process command lines are typically globally readable on Unix-like systems via `ps` or `/proc`. Passing secrets as command-line arguments is insecure.
+**Prevention:** Use environment variables, standard input (STDIN), or file descriptors to pass secrets to processes securely, as these are not exposed in the process table. For kitty specifically, the `KITTY_RC_PASSWORD` environment variable provides a secure alternative to the `--password` CLI flag.
