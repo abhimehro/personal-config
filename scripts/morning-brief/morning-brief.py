@@ -505,8 +505,19 @@ class PerplexityClient:
         if not texts:
             return []
 
+        # Reserve some budget for the per-item delimiter/prefix overhead so
+        # the joined payload fits within `MAX_LLM_INPUT_CHARS` after `chat()`
+        # truncates `user_content`. Without this, a multi-podcast batch is
+        # silently truncated and later entries get empty summaries.
+        overhead_per_item = len("\n\n---NEXT_PODCAST---\n\n") + len("Podcast NN:\n")
+        total_overhead = overhead_per_item * len(texts)
+        per_item_limit = max(
+            200, (MAX_LLM_INPUT_CHARS - total_overhead) // max(len(texts), 1)
+        )
+
         joined_texts = "\n\n---NEXT_PODCAST---\n\n".join(
-            f"Podcast {i+1}:\n{t}" for i, t in enumerate(texts)
+            f"Podcast {i+1}:\n{truncate_text(t, per_item_limit)}"
+            for i, t in enumerate(texts)
         )
 
         response = self.chat(
@@ -529,7 +540,7 @@ class PerplexityClient:
         summaries = [s.strip() for s in response.split("===SEP===")]
         while len(summaries) < len(texts):
             summaries.append("")
-        return summaries[:len(texts)]
+        return summaries[: len(texts)]
 
     def generate_greeting(
         self,

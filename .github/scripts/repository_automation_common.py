@@ -27,8 +27,12 @@ USE_MCP_GITHUB = os.environ.get("USE_MCP_GITHUB", "false").lower() in {
 # This is a placeholder for the actual MCP GitHub integration
 try:
     if USE_MCP_GITHUB:
-        import mcp
-        MCP_AVAILABLE = True
+        # TODO: Replace with the correct MCP GitHub client import once the
+        # actual integration (including a real `tag_exists` implementation)
+        # is in place. Importing the bare `mcp` module is not enough because
+        # the placeholder `tag_exists` path below unconditionally returns
+        # True, which would silently bypass tag validation.
+        MCP_AVAILABLE = False
     else:
         MCP_AVAILABLE = False
 except ImportError:
