@@ -78,6 +78,7 @@ class TestDetectDuplicatesTriage(unittest.TestCase):
             ready = _section(updated_triage, "## READY\n")
 
             self.assertIn("- abhimehro/example#123\n", superseded)
+            self.assertEqual(1, superseded.count("- abhimehro/example#123\n"))
             self.assertIn("- abhimehro/example#12\n", ready)
             self.assertIn("- abhimehro/example#124\n", ready)
             self.assertNotIn("- abhimehro/example#123\n", ready)

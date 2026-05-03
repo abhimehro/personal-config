@@ -52,9 +52,10 @@ def run_gh(cmd_list):
         return None
 
 
-lines = open("tasks/pr-triage.md").readlines()
+lines = open("tasks/pr-triage.md", encoding="utf-8").readlines()
 ready_prs = []
-for line in lines:
+ready_lines = lines[lines.index("## READY\n") + 1 :]
+for line in ready_lines:
     if line.startswith("- abhimehro/"):
         ready_prs.append(line.strip()[2:])
 
@@ -99,14 +100,16 @@ with open("tasks/pr-triage.md", "w") as f:
     superseded_lines = lines[
         lines.index("## SUPERSEDED\n") + 1 : lines.index("## STALE\n")
     ]
-    superseded_prs = {
-        line.strip()[2:] for line in superseded_lines if line.startswith("- abhimehro/")
-    }
-    for pr in ready_prs:
-        if pr in superseded_prs:
-            if not pr.startswith("-"):
-                pr = "- " + pr
-            f.write(f"{pr}\n")
+    superseded_prs = []
+    seen_superseded_prs = set()
+    for line in superseded_lines:
+        if line.startswith("- abhimehro/"):
+            pr = line.strip()[2:]
+            if pr not in seen_superseded_prs:
+                superseded_prs.append(pr)
+                seen_superseded_prs.add(pr)
+    for pr in superseded_prs:
+        f.write(f"- {pr}\n")
     f.write("## STALE\n")
     f.write("## CONFLICTING\n")
     f.write("- abhimehro/personal-config#725\n")
