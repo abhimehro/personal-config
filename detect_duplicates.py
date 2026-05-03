@@ -56,13 +56,20 @@ for line in lines:
     if line.startswith("- abhimehro/"):
         ready_prs.append(line.strip()[2:])
 
-# OPTIMIZATION: Combine lines into a single string for fast C-level substring search
-pre_ready_text = "".join(lines[: lines.index("## READY\n")])
-ready_only = [
-    pr
-    for pr in ready_prs
-    if pr not in pre_ready_text
-]
+# Build a set of PR identifiers that already appear above the "## READY"
+# section so we can filter with exact-line semantics. A previous version used
+# `pr not in pre_ready_text` (substring search), which incorrectly excluded
+# `repo#12` whenever `repo#123` appeared elsewhere in the document.
+_pre_ready_lines = lines[: lines.index("## READY\n")]
+_pre_ready_prs = set()
+for _line in _pre_ready_lines:
+    _stripped = _line.strip()
+    if _stripped.startswith("- "):
+        _stripped = _stripped[2:].strip()
+    if _stripped:
+        _pre_ready_prs.add(_stripped)
+
+ready_only = [pr for pr in ready_prs if pr not in _pre_ready_prs]
 
 def fetch_pr_info(pr):
     repo, pr_id = pr.split("#")
@@ -106,11 +113,23 @@ print("Duplicates:", duplicates)
 with open("tasks/pr-triage.md", "w") as f:
     f.write("# PR Triage\n\n")
     f.write("## SUPERSEDED\n")
+    # Compare against normalized PR identifiers (strip leading "- " and
+    # whitespace/newline) so bare ids in `ready_prs` match list entries in the
+    # source document. The previous `pr in lines[...]` check compared bare ids
+    # against full "- repo#N\n" lines and therefore always evaluated False.
+    _superseded_block = lines[
+        lines.index("## SUPERSEDED\n") + 1 : lines.index("## STALE\n")
+    ]
+    _superseded_prs = set()
+    for _line in _superseded_block:
+        _stripped = _line.strip()
+        if _stripped.startswith("- "):
+            _stripped = _stripped[2:].strip()
+        if _stripped:
+            _superseded_prs.add(_stripped)
     for pr in ready_prs:
-        if pr in lines[lines.index("## SUPERSEDED\n") + 1 : lines.index("## STALE\n")]:
-            if not pr.startswith("-"):
-                pr = "- " + pr
-            f.write(f"{pr}\n")
+        if pr in _superseded_prs:
+            f.write(f"- {pr}\n")
     f.write("## STALE\n")
     f.write("## CONFLICTING\n")
     f.write("- abhimehro/personal-config#725\n")

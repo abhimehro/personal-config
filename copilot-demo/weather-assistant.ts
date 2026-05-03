@@ -99,6 +99,22 @@ async function main() {
   process.on("SIGINT", () => {
     stopSpinner();
     console.log("\n👋 Cancelled by user. Goodbye!");
+    // Best-effort: close the realtime WebSocket so the server sees a clean
+    // disconnect instead of waiting for the TCP teardown on process.exit.
+    try {
+      const maybeClose = (rt as { close?: () => unknown }).close;
+      if (typeof maybeClose === "function") {
+        const result = maybeClose.call(rt);
+        if (
+          result &&
+          typeof (result as { catch?: unknown }).catch === "function"
+        ) {
+          (result as Promise<unknown>).catch(() => {});
+        }
+      }
+    } catch {
+      // Ignore: SIGINT must still terminate even if close() throws.
+    }
     process.exit(130);
   });
 
