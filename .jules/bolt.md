@@ -140,3 +140,7 @@
 ## 2026-03-10 - Concurrent I/O Pre-fetching
 **Learning:** Sequential network calls inside a processing loop (like fetching GH PR status and diffs one-by-one via `gh` CLI) creates massive idle time waiting on I/O. By using `concurrent.futures.ThreadPoolExecutor` to pre-fetch the data in parallel, we can drop execution time dramatically (e.g. 21s -> 3s, an ~85% improvement).
 **Action:** When a script iterates over a queue and makes independent network or sub-process calls for each item, extract the I/O operations into a standalone function and use `ThreadPoolExecutor.map` to pre-fetch the results concurrently before the main processing loop.
+
+## 2026-03-10 - [Memory Efficiency and PEP-8 in Data Extraction]
+**Learning:** Using `type() is dict` violates PEP-8 conventions. Furthermore, passing list comprehensions (e.g., `[x for x in data]`) to aggregate functions like `set.update()` forces the entire filtered sequence into memory at once, creating unnecessary memory spikes during large JSON extractions.
+**Action:** When extracting data based on type, always use `isinstance()`. When passing filtered sequences to aggregate functions that accept iterables (like `.update()`), preserve memory efficiency by using generator expressions `(...)` instead of list comprehensions `[...]`.
