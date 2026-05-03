@@ -104,6 +104,7 @@
 **Action:** When a function requires a date for calculations and is called repeatedly in a loop, parse the date outside the loop and pass the `datetime.date` object as an argument instead of the raw string.
 
 ## 2026-04-04 - strptime vs fromisoformat overhead
+
 **Learning:** In Python, parsing ISO-8601 timestamp strings using `datetime.strptime` involves format string processing overhead that can be significantly slow inside loops. `datetime.fromisoformat()` is implemented in C and optimized for ISO strings, executing 20x-40x faster.
 **Action:** When parsing standard ISO timestamps (e.g., from APIs or configuration files), use `datetime.fromisoformat()` instead of `strptime`. For strings ending with `"Z"` (UTC), use `.replace("Z", "+00:00")` before parsing to maintain compatibility with Python versions older than 3.11.
 
@@ -123,10 +124,12 @@
 **Action:** Do not use the `-quit` flag in `find` commands within macOS-specific scripts. If early exit behavior is needed on the first match, use `find ... | head -n 1` or `grep -q .`.
 
 ## 2024-05-18 - Fast String Searching for PR Exclusions
+
 **Learning:** In PR automation scripts like `detect_duplicates.py`, repeatedly evaluating `lines[: index]` and slicing lists inside a generator expression for exclusion filtering (`if not any(pr in l for l in lines[: index])`) introduces O(N*M) overhead.
-**Action:** When filtering a list of substrings against a prefix/slice of file lines, `"".join()` the target slice into a single string *once* outside the loop, and use the fast C-level `in` operator (`pr not in pre_joined_string`). This simple hoist-and-join strategy eliminates list slicing and Python loop overhead, yielding ~88% performance improvement on medium-sized lists.
+**Action:** When filtering a list of substrings against a prefix/slice of file lines, `"".join()` the target slice into a single string*once\* outside the loop, and use the fast C-level `in` operator (`pr not in pre_joined_string`). This simple hoist-and-join strategy eliminates list slicing and Python loop overhead, yielding ~88% performance improvement on medium-sized lists.
 
 ## 2026-06-25 - [List Comprehensions with Direct Dict Lookups]
+
 **Learning:** In Python data parsing scripts, combining list comprehensions with `type(dict) is dict` and direct dictionary lookups (`"key" in dict and dict["key"] == val`) provides a ~15-20% performance boost over using generator expressions with `isinstance()` and `.get()` calls by avoiding function overhead.
 **Action:** When extracting data from large JSON arrays based on nested conditions, prefer list comprehensions over generator expressions and use direct `in` checks combined with `type() is dict` instead of `.get()` and `isinstance()`.
 
@@ -134,6 +137,13 @@
 
 **Learning:** In Python data parsing scripts, replacing `.get()` calls inside generator expressions with explicit `key in dict` + direct `dict[key]` lookups gives a small but consistent speedup (~10-15%) when iterating over large lists of dicts (e.g. AdGuard rule lists with thousands of entries). The win comes from avoiding `.get()`'s default-value branching and the small per-call overhead of method dispatch.
 **Action:** When extracting fields from large JSON arrays inside a list comprehension, prefer `if "key" in d and d["key"] == val` over `if d.get("key") == val`, and use `[ ... for d in data ]` (list comprehension) instead of `( ... for d in data )` (generator) when the result is immediately materialized (e.g. passed to `set.update` or returned from a function).
+
 ## 2026-03-10 - Cached Environment parsing in iterative scripts
+
 **Learning:** Repetitive file IO (e.g., parsing `.env` files) inside helper functions that are called in loops (like API wrappers across a large queue) creates a massive performance bottleneck.
 **Action:** Use Python's `functools.lru_cache` to cache environment or configuration file parsing that runs repeatedly but remains static during execution.
+
+## 2024-05-03 - Concurrency over Sequential execution
+
+**Learning:** Sequential synchronous network/subprocess calls are inefficient.
+**Action:** Use concurrent execution for independent I/O-bound tasks to reduce overall execution time.

@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 
 
@@ -29,6 +30,7 @@ def _get_parsed_env_vars():
     except FileNotFoundError:
         pass
     return parsed_vars
+
 
 def _load_gh_token_env():
     env = os.environ.copy()
@@ -82,7 +84,8 @@ categorized = {
     "PERFORMANCE/REFACTOR/UI/FEATURE": [],
 }
 
-for pr in ready_prs:
+
+def fetch_pr_info(pr):
     repo, pr_id = pr.split("#")
     info = run_gh(
         [
@@ -96,6 +99,13 @@ for pr in ready_prs:
             "title,mergeStateStatus",
         ]
     )
+    return pr, info
+
+
+with ThreadPoolExecutor(max_workers=10) as executor:
+    results = list(executor.map(fetch_pr_info, ready_prs))
+
+for pr, info in results:
     if not info:
         continue
 
