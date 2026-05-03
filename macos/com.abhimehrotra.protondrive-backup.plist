@@ -8,7 +8,7 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>/Users/abhimehrotra/Documents/dev/personal-config/scripts/protondrive_backup.sh</string>
+    <string>/Users/speedybee/dev/personal-config/scripts/protondrive_backup.sh</string>
     <string>--run</string>
     <string>--no-delete</string>
   </array>
@@ -22,9 +22,9 @@
   </dict>
 
   <key>StandardOutPath</key>
-  <string>/Users/abhimehrotra/Library/Logs/protondrive-backup.log</string>
+  <string>/Users/speedybee/Library/Logs/protondrive-backup.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/abhimehrotra/Library/Logs/protondrive-backup.log</string>
+  <string>/Users/speedybee/Library/Logs/protondrive-backup.log</string>
 
   <key>RunAtLoad</key>
   <false/>

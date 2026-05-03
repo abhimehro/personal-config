@@ -22,7 +22,7 @@ This guide documents the reconfiguration process after transitioning from iCloud
 
 ```
 ~/Documents/dev/               ← Active location (restored)
-/Users/abhimehrotra/Library/CloudStorage/OneDrive-Personal/.Documents OneDrive/dev/  ← OneDrive sync location
+~/Library/CloudStorage/OneDrive-Personal/.Documents OneDrive/dev/  ← OneDrive sync location
 ```
 
 ### Solution: Dual Structure
@@ -74,7 +74,7 @@ All Control D configurations from today's setup are now in the repo:
 # Search for old path references
 cd ~/Documents/dev/personal-config
 grep -r "Library/CloudStorage/OneDrive" . 2>/dev/null | grep -v ".git"
-grep -r "/Users/abhimehrotra/Documents/dev" . 2>/dev/null | grep -v ".git"
+grep -r "$HOME/Documents/dev" . 2>/dev/null | grep -v ".git"
 ```
 
 ### Common Path Patterns to Fix
@@ -82,7 +82,7 @@ grep -r "/Users/abhimehrotra/Documents/dev" . 2>/dev/null | grep -v ".git"
 **Before** (broken):
 
 ```bash
-/Users/abhimehrotra/Library/CloudStorage/OneDrive-Personal/.Documents OneDrive/dev/...
+~/Library/CloudStorage/OneDrive-Personal/.Documents OneDrive/dev/...
 ```
 
 **After** (working):

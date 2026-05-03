@@ -103,7 +103,7 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate off
 
 ```bash
 # From your Mac (should work)
-curl -u "infuse:MALARIA7bunch!katarina" http://127.0.0.1:8080/
+curl -u "infuse:${MEDIA_WEBDAV_PASS}" http://127.0.0.1:8080/
 ```
 
 Expected: HTTP 200 OK with HTML response
@@ -112,7 +112,7 @@ Expected: HTTP 200 OK with HTML response
 
 ```bash
 # From another device on same WiFi (should work)
-curl -u "infuse:MALARIA7bunch!katarina" http://192.168.0.111:8080/
+curl -u "infuse:${MEDIA_WEBDAV_PASS}" http://192.168.0.111:8080/
 ```
 
 Expected: HTTP 200 OK
@@ -131,7 +131,7 @@ Expected: `82.21.151.194`
 **MUST BE DONE FROM EXTERNAL DEVICE (phone on cellular, NOT WiFi):**
 
 ```bash
-curl -u "infuse:MALARIA7bunch!katarina" http://82.21.151.194:22650/
+curl -u "infuse:${MEDIA_WEBDAV_PASS}" http://82.21.151.194:22650/
 ```
 
 Expected: HTTP 200 OK with HTML response
@@ -215,7 +215,7 @@ If after all these steps external access still fails:
 **Both use the same credentials** (from 1Password):
 
 - Username: `infuse`
-- Password: `MALARIA7bunch!katarina`
+- Password: `${MEDIA_WEBDAV_PASS}`
 
 ---
 

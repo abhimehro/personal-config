@@ -12,9 +12,55 @@ _check_default() {
 	local actual
 	actual=$(defaults read "$domain" "$key" 2>/dev/null || echo "__MISSING__")
 	if [[ $actual == "$expected" ]]; then
-		if [[ $risky == "bad" ]]; then fail "$label  (current: $actual)"; else pass "$label  (current: $actual)"; fi
+		if [[ $risky == "bad" ]]; then
+			fail "$label  (current: $actual)"
+		else
+			pass "$label  (current: $actual)"
+		fi
 	else
-		if [[ $risky == "bad" ]]; then pass "$label  (not set to risky value)"; else warn "$label  (expected: $expected, got: $actual)"; fi
+		if [[ $risky == "bad" ]]; then
+			pass "$label  (not set to risky value)"
+		else
+			warn "$label  (expected: $expected, got: $actual)"
+		fi
+	fi
+}
+
+_check_firewall() {
+	local fw_status fw
+	if [[ -x /usr/libexec/ApplicationFirewall/socketfilterfw ]]; then
+		fw_status=$(/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null || true)
+		case "$fw_status" in
+		*"State = 1"* | *enabled*)
+			pass "Application Firewall is ON"
+			return
+			;;
+		*"State = 0"* | *disabled*)
+			fail "Application Firewall is OFF"
+			return
+			;;
+		esac
+	fi
+
+	fw=$(defaults read /Library/Preferences/com.apple.alf globalstate 2>/dev/null || echo "0")
+	if [[ $fw -ge 1 ]]; then
+		pass "Application Firewall is ON (state: $fw)"
+	else fail "Application Firewall is OFF"; fi
+}
+
+_check_lock_default() {
+	local domain="$1"
+	local key="$2"
+	local expected="$3"
+	local label="$4"
+	local actual
+	actual=$(defaults read "$domain" "$key" 2>/dev/null || echo "__MISSING__")
+	if [[ $actual == "$expected" ]]; then
+		pass "$label  (current: $actual)"
+	elif [[ $actual == "__MISSING__" ]]; then
+		info "$label: legacy preference key not set; verify Lock Screen settings manually on modern macOS"
+	else
+		warn "$label  (expected: $expected, got: $actual)"
 	fi
 }
 
@@ -29,16 +75,12 @@ check_defaults() {
 		fail "Gatekeeper is DISABLED"
 	fi
 
-	local fw
-	fw=$(defaults read /Library/Preferences/com.apple.alf globalstate 2>/dev/null || echo "0")
-	if [[ $fw -ge 1 ]]; then
-		pass "Application Firewall is ON (state: $fw)"
-	else fail "Application Firewall is OFF"; fi
+	_check_firewall
 
-	_check_default com.apple.screensaver askForPassword 1 \
-		"Screen saver requires password" good
-	_check_default com.apple.screensaver askForPasswordDelay 0 \
-		"Password required immediately after lock" good
+	_check_lock_default com.apple.screensaver askForPassword 1 \
+		"Screen saver requires password"
+	_check_lock_default com.apple.screensaver askForPasswordDelay 0 \
+		"Password required immediately after lock"
 
 	if [[ $ci_mode != "true" ]]; then
 		info "Remote Login (SSH):"

@@ -28,8 +28,10 @@ check_brew() {
 	local casks
 	casks=$(brew list --cask 2>/dev/null | wc -l | tr -d ' ')
 	info "Installed casks: $casks"
-	if [[ $casks -gt 30 ]]; then
-		warn "$casks casks — consider pruning"
+	if [[ $casks -gt 50 ]]; then
+		warn "$casks casks — inventory review recommended, not necessarily a security issue"
+	elif [[ $casks -gt 30 ]]; then
+		info "$casks casks — moderate app inventory; review occasionally"
 	else pass "$casks casks — within reasonable range"; fi
 	info "Brew services running:"
 	brew services list 2>/dev/null | grep -v "^Name" | grep "started" |
