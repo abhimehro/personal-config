@@ -62,50 +62,33 @@ def configured_commands(section: dict[str, Any]) -> list[tuple[str, dict[str, An
     return buckets
 
 
+def _build_command_entry(bucket_name: str, item: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "bucket": bucket_name,
+        "name": item["name"],
+        **result,
+        "optional": bool(item.get("optional", False)),
+    }
+
+
 def execute_configured_commands(
     section: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     setup_entries = []
     command_entries = []
 
-    # Setup commands install prerequisites for the validation/security commands
-    # (e.g. tooling), so they MUST run sequentially and complete before the
-    # parallelizable phases. Only the validation and security commands are
-    # safe to fan out concurrently.
-    parallel_bucketed: list[tuple[str, dict[str, Any]]] = []
-    for bucket_name, item in configured_commands(section):
-        if bucket_name == "setup":
-            timeout = int(item.get("timeout_seconds", 1800))
-            result = run_shell_command(item["run"], timeout)
-            setup_entries.append(
-                {
-                    "bucket": bucket_name,
-                    "name": item["name"],
-                    **result,
-                    "optional": bool(item.get("optional", False)),
-                }
-            )
-        else:
-            parallel_bucketed.append((bucket_name, item))
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [
+            (bucket_name, item, executor.submit(run_shell_command, item["run"], int(item.get("timeout_seconds", 1800))))
+            for bucket_name, item in configured_commands(section)
+        ]
 
-    if parallel_bucketed:
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = []
-            for bucket_name, item in parallel_bucketed:
-                timeout = int(item.get("timeout_seconds", 1800))
-                future = executor.submit(run_shell_command, item["run"], timeout)
-                futures.append((bucket_name, item, future))
-
-            for bucket_name, item, future in futures:
-                result = future.result()
-                command_entries.append(
-                    {
-                        "bucket": bucket_name,
-                        "name": item["name"],
-                        **result,
-                        "optional": bool(item.get("optional", False)),
-                    }
-                )
+        for bucket_name, item, future in futures:
+            entry = _build_command_entry(bucket_name, item, future.result())
+            if bucket_name == "setup":
+                setup_entries.append(entry)
+            else:
+                command_entries.append(entry)
 
     return setup_entries, command_entries
 
