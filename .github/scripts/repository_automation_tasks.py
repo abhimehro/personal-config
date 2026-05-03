@@ -68,25 +68,50 @@ def execute_configured_commands(
     setup_entries = []
     command_entries = []
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = []
-        for bucket_name, item in configured_commands(section):
-            timeout = int(item.get("timeout_seconds", 1800))
-            future = executor.submit(run_shell_command, item["run"], timeout)
-            futures.append((bucket_name, item, future))
+    # Split into two phases to preserve the setup -> commands dependency:
+    # setup_commands (e.g. `pip install shellcheck-py`) must complete before
+    # validation/security commands (e.g. `make lint-errors`) start. Within
+    # each phase we still parallelize for speed.
+    setup_items: list[tuple[str, dict[str, Any]]] = []
+    rest_items: list[tuple[str, dict[str, Any]]] = []
+    for bucket_name, item in configured_commands(section):
+        if bucket_name == "setup":
+            setup_items.append((bucket_name, item))
+        else:
+            rest_items.append((bucket_name, item))
 
-        for bucket_name, item, future in futures:
-            result = future.result()
-            entry = {
-                "bucket": bucket_name,
-                "name": item["name"],
-                **result,
-                "optional": bool(item.get("optional", False)),
-            }
-            if bucket_name == "setup":
-                setup_entries.append(entry)
-            else:
-                command_entries.append(entry)
+    def _run_phase(
+        items: list[tuple[str, dict[str, Any]]],
+        sink: list[dict[str, Any]],
+    ) -> None:
+        if not items:
+            return
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [
+                (
+                    bucket_name,
+                    item,
+                    executor.submit(
+                        run_shell_command,
+                        item["run"],
+                        int(item.get("timeout_seconds", 1800)),
+                    ),
+                )
+                for bucket_name, item in items
+            ]
+            for bucket_name, item, future in futures:
+                result = future.result()
+                sink.append(
+                    {
+                        "bucket": bucket_name,
+                        "name": item["name"],
+                        **result,
+                        "optional": bool(item.get("optional", False)),
+                    }
+                )
+
+    _run_phase(setup_items, setup_entries)
+    _run_phase(rest_items, command_entries)
 
     return setup_entries, command_entries
 
