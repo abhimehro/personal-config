@@ -61,6 +61,14 @@ def run_gh(repo, pr):
         return None
 
 
+def _should_skip_table_row(line):
+    if not line.startswith("|"):
+        return True
+    if line.startswith("| # |") or line.startswith("| ---"):
+        return True
+    return False
+
+
 def _process_inventory_line(line, current_repo, repos):
     m = re.match(r"^## (.*)", line)
     if m:
@@ -69,9 +77,7 @@ def _process_inventory_line(line, current_repo, repos):
             repos[repo_name] = []
         return repo_name
 
-    if not line.startswith("|"):
-        return current_repo
-    if line.startswith("| # |") or line.startswith("| ---"):
+    if _should_skip_table_row(line):
         return current_repo
 
     parts = line.split("|")
@@ -83,14 +89,9 @@ def _process_inventory_line(line, current_repo, repos):
     checks = parts[8].strip()
     hints = parts[9].strip()
 
-    if not pr_id.isdigit():
-        return current_repo
-
-    if not (author.endswith("[bot]") or hints):
-        return current_repo
-
-    if current_repo is not None:
-        repos[current_repo].append({"pr": pr_id, "checks": checks})
+    if pr_id.isdigit() and (author.endswith("[bot]") or hints):
+        if current_repo is not None:
+            repos[current_repo].append({"pr": pr_id, "checks": checks})
 
     return current_repo
 
@@ -103,7 +104,15 @@ def parse_inventory_lines(lines):
     return repos
 
 
-def _process_pr(repo, pr_info, triage):
+def _is_pr_stale(updated_at):
+    if not updated_at:
+        return False
+    dt = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+    now = datetime.now(timezone.utc)
+    return (now - dt).days > 30
+
+
+def _categorize_pr(repo, pr_info, triage):
     pr = pr_info["pr"]
     checks = pr_info["checks"]
     print(f"Checking {repo}#{pr}")
@@ -113,21 +122,12 @@ def _process_pr(repo, pr_info, triage):
         print(f"Failed to fetch {repo}#{pr}")
         return
 
-    files = info.get("files", [])
-    if not files:
+    if not info.get("files", []):
         triage["SUPERSEDED"].append(f"{repo}#{pr}")
         return
 
-    updated_at = info.get("updatedAt", "")
     merge_status = info.get("mergeStateStatus", "")
-
-    days_old = 0
-    if updated_at:
-        dt = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
-        now = datetime.now(timezone.utc)
-        days_old = (now - dt).days
-
-    is_stale = days_old > 30
+    is_stale = _is_pr_stale(info.get("updatedAt", ""))
     checks_failing = ("FAIL" in checks) or ("PENDING" in checks)
 
     if is_stale and checks_failing:
@@ -143,28 +143,36 @@ def _process_pr(repo, pr_info, triage):
         return
 
 
-def main():
+def _load_inventory_lines(filepath):
     try:
-        with open("tasks/pr-inventory.md", "r") as f:
-            lines = f.readlines()
+        with open(filepath, "r") as f:
+            return f.readlines()
     except FileNotFoundError:
-        return
+        return []
 
-    repos = parse_inventory_lines(lines)
 
-    triage = {"SUPERSEDED": [], "STALE": [], "CONFLICTING": [], "READY": []}
-
-    for repo, prs in repos.items():
-        for pr_info in prs:
-            _process_pr(repo, pr_info, triage)
-
-    with open("tasks/pr-triage.md", "w") as f:
+def _write_triage_report(filepath, triage):
+    with open(filepath, "w") as f:
         f.write("# PR Triage\n\n")
         for category, pr_list in triage.items():
             f.write(f"## {category}\n")
             for pr in pr_list:
                 f.write(f"- {pr}\n")
 
+
+def main():
+    lines = _load_inventory_lines("tasks/pr-inventory.md")
+    if not lines:
+        return
+
+    repos = parse_inventory_lines(lines)
+    triage = {"SUPERSEDED": [], "STALE": [], "CONFLICTING": [], "READY": []}
+
+    for repo, prs in repos.items():
+        for pr_info in prs:
+            _categorize_pr(repo, pr_info, triage)
+
+    _write_triage_report("tasks/pr-triage.md", triage)
     print("Done")
 
 
