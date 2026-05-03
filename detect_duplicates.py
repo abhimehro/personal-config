@@ -115,7 +115,21 @@ with open("tasks/pr-triage.md", "w", encoding="utf-8") as f:
     f.write("## CONFLICTING\n")
     f.write("- abhimehro/personal-config#725\n")
     f.write("## DUPLICATE\n")
-    for d in duplicates:
+    duplicate_lines = lines[
+        lines.index("## DUPLICATE\n") + 1 : lines.index("## READY\n")
+    ]
+    duplicate_prs = []
+    seen_duplicate_prs = set()
+    for line in duplicate_lines:
+        if line.startswith("- abhimehro/"):
+            pr = line.strip()[2:]
+            duplicate_prs.append(pr)
+            seen_duplicate_prs.add(pr)
+    for pr in duplicates:
+        if pr not in seen_duplicate_prs:
+            duplicate_prs.append(pr)
+            seen_duplicate_prs.add(pr)
+    for d in duplicate_prs:
         f.write(f"- {d}\n")
     f.write("## READY\n")
     for pr in ready_only:

@@ -32,6 +32,7 @@ class TestDetectDuplicatesTriage(unittest.TestCase):
                     ## STALE
                     ## CONFLICTING
                     ## DUPLICATE
+                    - abhimehro/example#125
                     ## READY
                     - abhimehro/example#12
                     - abhimehro/example#123
@@ -75,10 +76,12 @@ class TestDetectDuplicatesTriage(unittest.TestCase):
 
             updated_triage = triage_file.read_text(encoding="utf-8")
             superseded = _section(updated_triage, "## SUPERSEDED\n", "## STALE\n")
+            duplicate = _section(updated_triage, "## DUPLICATE\n", "## READY\n")
             ready = _section(updated_triage, "## READY\n")
 
             self.assertIn("- abhimehro/example#123\n", superseded)
             self.assertEqual(1, superseded.count("- abhimehro/example#123\n"))
+            self.assertIn("- abhimehro/example#125\n", duplicate)
             self.assertIn("- abhimehro/example#12\n", ready)
             self.assertIn("- abhimehro/example#124\n", ready)
             self.assertNotIn("- abhimehro/example#123\n", ready)
