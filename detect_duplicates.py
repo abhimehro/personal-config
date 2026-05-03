@@ -8,9 +8,7 @@ from functools import lru_cache
 
 def _parse_env_line(line, env_dict):
     line = line.strip()
-    if not line:
-        return
-    if line.startswith("#"):
+    if not line or line.startswith("#"):
         return
     if line.startswith("export "):
         line = line[7:].strip()
@@ -68,17 +66,24 @@ def fetch_pr_info(pr):
     return None
 
 
-def get_duplicates(ready_only):
+def _process_pr_result(res, file_groups):
+    if not res:
+        return
+    repo, info = res
+    files = tuple(sorted([f["path"] for f in info.get("files", [])]))
+    file_groups[(repo, files)].append(info)
+
+
+def _group_prs_by_files(ready_only):
     file_groups = defaultdict(list)
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        future_to_pr = {executor.submit(fetch_pr_info, pr): pr for pr in ready_only}
-        for future in concurrent.futures.as_completed(future_to_pr):
-            res = future.result()
-            if res:
-                repo, info = res
-                files = tuple(sorted([f["path"] for f in info.get("files", [])]))
-                file_groups[(repo, files)].append(info)
+        futures = [executor.submit(fetch_pr_info, pr) for pr in ready_only]
+        for future in concurrent.futures.as_completed(futures):
+            _process_pr_result(future.result(), file_groups)
+    return file_groups
 
+
+def _extract_duplicates_from_groups(file_groups):
     duplicates = []
     for (repo, _), pr_list in file_groups.items():
         if len(pr_list) > 1:
@@ -88,8 +93,12 @@ def get_duplicates(ready_only):
     return duplicates
 
 
-def rewrite_triage_file(lines, ready_prs, duplicates, ready_only):
-    # Try finding markers, defaulting to fallback values if missing
+def get_duplicates(ready_only):
+    file_groups = _group_prs_by_files(ready_only)
+    return _extract_duplicates_from_groups(file_groups)
+
+
+def _get_superseded_text(lines):
     try:
         superseded_start = lines.index("## SUPERSEDED\n") + 1
     except ValueError:
@@ -98,28 +107,47 @@ def rewrite_triage_file(lines, ready_prs, duplicates, ready_only):
         stale_start = lines.index("## STALE\n")
     except ValueError:
         stale_start = len(lines)
+    return "".join(lines[superseded_start:stale_start])
 
-    # Preserve original substring matching logic by joining to text
-    superseded_text = "".join(lines[superseded_start:stale_start])
+
+def _generate_superseded_section(ready_prs, superseded_text):
+    out = ["## SUPERSEDED"]
+    for pr in ready_prs:
+        if pr in superseded_text:
+            out.append(pr if pr.startswith("-") else f"- {pr}")
+    return out
+
+
+def _generate_duplicate_section(duplicates):
+    out = ["## DUPLICATE"]
+    for d in duplicates:
+        out.append(f"- {d}")
+    return out
+
+
+def _generate_ready_section(ready_only, duplicates):
+    out = ["## READY"]
+    for pr in ready_only:
+        if pr not in duplicates:
+            out.append(f"- {pr}")
+    return out
+
+
+def rewrite_triage_file(lines, ready_prs, duplicates, ready_only):
+    superseded_text = _get_superseded_text(lines)
+
+    sections = [
+        "# PR Triage\n",
+        *_generate_superseded_section(ready_prs, superseded_text),
+        "## STALE",
+        "## CONFLICTING",
+        "- abhimehro/personal-config#725",
+        *_generate_duplicate_section(duplicates),
+        *_generate_ready_section(ready_only, duplicates),
+    ]
 
     with open("tasks/pr-triage.md", "w") as f:
-        f.write("# PR Triage\n\n")
-        f.write("## SUPERSEDED\n")
-        for pr in ready_prs:
-            if pr in superseded_text:
-                if not pr.startswith("-"):
-                    pr = "- " + pr
-                f.write(f"{pr}\n")
-        f.write("## STALE\n")
-        f.write("## CONFLICTING\n")
-        f.write("- abhimehro/personal-config#725\n")
-        f.write("## DUPLICATE\n")
-        for d in duplicates:
-            f.write(f"- {d}\n")
-        f.write("## READY\n")
-        for pr in ready_only:
-            if pr not in duplicates:
-                f.write(f"- {pr}\n")
+        f.write("\n".join(sections) + "\n")
 
 
 def main():
@@ -130,10 +158,7 @@ def main():
         print("tasks/pr-triage.md not found.")
         return
 
-    ready_prs = []
-    for line in lines:
-        if line.startswith("- abhimehro/"):
-            ready_prs.append(line.strip()[2:])
+    ready_prs = [line.strip()[2:] for line in lines if line.startswith("- abhimehro/")]
 
     try:
         ready_idx = lines.index("## READY\n")
