@@ -27,9 +27,8 @@ USE_MCP_GITHUB = os.environ.get("USE_MCP_GITHUB", "false").lower() in {
 # This is a placeholder for the actual MCP GitHub integration
 try:
     if USE_MCP_GITHUB:
-        # TODO: Replace with correct MCP GitHub client import
-        # The actual module name depends on the MCP implementation being used
-        MCP_AVAILABLE = False  # Disabled until correct module is available
+        import mcp
+        MCP_AVAILABLE = True
     else:
         MCP_AVAILABLE = False
 except ImportError:
