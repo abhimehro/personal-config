@@ -24,15 +24,14 @@ USE_MCP_GITHUB = os.environ.get("USE_MCP_GITHUB", "false").lower() in {
 
 # Try to import MCP GitHub server if available
 # Note: Requires the appropriate MCP client library to be installed
-# This is a placeholder for the actual MCP GitHub integration
-try:
-    if USE_MCP_GITHUB:
-        import mcp
-        MCP_AVAILABLE = True
-    else:
-        MCP_AVAILABLE = False
-except ImportError:
-    MCP_AVAILABLE = False
+# This is a placeholder for the actual MCP GitHub integration.
+#
+# IMPORTANT: MCP_AVAILABLE must remain False until the placeholder calls in
+# `latest_tag_for_action` and especially `tag_exists` are replaced with real
+# MCP client invocations. The current `tag_exists` MCP branch unconditionally
+# returns True, which would silently bypass workflow tag validation in
+# `_resolve_proposed_tag` and `_pr_has_invalid_tags`.
+MCP_AVAILABLE = False
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = ROOT / ".github" / "repository-automation.yml"
