@@ -40,7 +40,7 @@ function handleRealtimeError(error: OpenAIRealtimeError): void {
       ? safeError.code
       : "UNKNOWN";
 
-  console.error(`\r\x1B[K[realtime:error] code=${code} message=${message}`);
+  console.error(`[realtime:error] code=${code} message=${message}`);
 }
 
 async function main() {
@@ -124,9 +124,15 @@ async function main() {
     },
   );
 
+  let resolveResponseDone: () => void = () => {};
+  const responseDone = new Promise<void>((resolve) => {
+    resolveResponseDone = resolve;
+  });
+
   // Handle response completion
   rt.on("response.done", () => {
     console.log("\n");
+    resolveResponseDone();
   });
 
   const question = "What's the weather like in Seattle?";
@@ -148,7 +154,9 @@ async function main() {
   startSpinner();
 
   // Keep connection open for response
-  await new Promise((resolve) => setTimeout(resolve, 10000));
+  const fallbackTimeout = setTimeout(resolveResponseDone, 10000);
+  await responseDone;
+  clearTimeout(fallbackTimeout);
 
   stopSpinner();
   await rt.close();
@@ -157,6 +165,6 @@ async function main() {
 main().catch((error: unknown) => {
   const message =
     error instanceof Error ? error.message : "Unknown startup failure";
-  console.error(`\r\x1B[K[startup:error] ${message}`);
+  console.error(`[startup:error] ${message}`);
   process.exitCode = 1;
 });
