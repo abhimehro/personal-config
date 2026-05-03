@@ -1,6 +1,5 @@
 import json
 import os
-import re
 import subprocess
 from collections import defaultdict
 from functools import lru_cache
@@ -32,6 +31,7 @@ def _get_parsed_env_vars():
         pass
     return parsed_vars
 
+
 def _load_gh_token_env():
     env = os.environ.copy()
     env.update(_get_parsed_env_vars())
@@ -57,11 +57,7 @@ for line in lines:
 
 # OPTIMIZATION: Combine lines into a single string for fast C-level substring search
 pre_ready_text = "".join(lines[: lines.index("## READY\n")])
-ready_only = [
-    pr
-    for pr in ready_prs
-    if pr not in pre_ready_text
-]
+ready_only = [pr for pr in ready_prs if pr not in pre_ready_text]
 
 file_groups = defaultdict(list)
 for pr in ready_only:
