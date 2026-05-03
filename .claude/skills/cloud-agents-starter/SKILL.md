@@ -23,7 +23,7 @@ make test-quick          # smoke: lib tests + path_validation
 ## Devin Secrets Needed
 
 - **None required** for local lint/unit tests and mock-based CLI tests.
-- **`GH_TOKEN` / `GH_TOKEN_2`** may be needed only for live GitHub/`gh` flows; prefer mocked `gh` on `PATH` for deterministic tests of triage logic.
+- **`GH_TOKEN`** may be needed only for live GitHub/`gh` flows; prefer mocked `gh` on `PATH` for deterministic tests of triage logic.
 
 ---
 
