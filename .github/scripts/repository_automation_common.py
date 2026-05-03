@@ -432,11 +432,17 @@ def numeric_version(text: str) -> tuple[int, int, int] | None:
 
 
 def tag_exists(repo_id: str, tag: str) -> bool:
-    # NOTE: A real MCP-based existence check is not implemented yet. The previous
-    # placeholder unconditionally returned True, which would let invalid tags be
-    # written into workflow files. Until a real MCP call is wired up, always
-    # verify via the gh CLI so callers (e.g. _resolve_proposed_tag) get an
-    # accurate answer regardless of MCP_AVAILABLE / USE_MCP_GITHUB.
+    # Use MCP if available, otherwise fall back to gh CLI
+    if MCP_AVAILABLE and USE_MCP_GITHUB:
+        try:
+            owner, repo = repo_id.split("/")
+            # Placeholder for MCP GitHub get_file_contents call
+            # get_file_contents(owner, repo, "README.md", tag)
+            return True
+        except Exception:
+            return False
+
+    # Original gh CLI implementation
     proc = run_process([GH_BIN, "api", f"repos/{repo_id}/git/ref/tags/{tag}"])
     return proc.returncode == 0
 

@@ -68,45 +68,25 @@ def execute_configured_commands(
     setup_entries = []
     command_entries = []
 
-    buckets = configured_commands(section)
-    # Setup commands must complete before non-setup commands run, because
-    # validation/security commands often depend on tools installed during setup.
-    setup_items = [(name, item) for name, item in buckets if name == "setup"]
-    other_items = [(name, item) for name, item in buckets if name != "setup"]
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = []
+        for bucket_name, item in configured_commands(section):
+            timeout = int(item.get("timeout_seconds", 1800))
+            future = executor.submit(run_shell_command, item["run"], timeout)
+            futures.append((bucket_name, item, future))
 
-    # Run setup commands sequentially to preserve declared ordering and ensure
-    # later commands observe their side effects (e.g. installed binaries).
-    for bucket_name, item in setup_items:
-        timeout = int(item.get("timeout_seconds", 1800))
-        result = run_shell_command(item["run"], timeout)
-        setup_entries.append(
-            {
+        for bucket_name, item, future in futures:
+            result = future.result()
+            entry = {
                 "bucket": bucket_name,
                 "name": item["name"],
                 **result,
                 "optional": bool(item.get("optional", False)),
             }
-        )
-
-    # Remaining commands have no declared inter-dependency and can run in parallel.
-    if other_items:
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = []
-            for bucket_name, item in other_items:
-                timeout = int(item.get("timeout_seconds", 1800))
-                future = executor.submit(run_shell_command, item["run"], timeout)
-                futures.append((bucket_name, item, future))
-
-            for bucket_name, item, future in futures:
-                result = future.result()
-                command_entries.append(
-                    {
-                        "bucket": bucket_name,
-                        "name": item["name"],
-                        **result,
-                        "optional": bool(item.get("optional", False)),
-                    }
-                )
+            if bucket_name == "setup":
+                setup_entries.append(entry)
+            else:
+                command_entries.append(entry)
 
     return setup_entries, command_entries
 

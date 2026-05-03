@@ -291,13 +291,8 @@ flush_python_group_if_needed() {
     local group_root="$1"
     local array_name="$2"
 
-    # SECURITY: Validate array_name to prevent command injection via eval.
-    # Log the rejection so a buggy caller passing an invalid identifier is
-    # diagnosable instead of silently producing a no-op flush.
+    # SECURITY: Validate array_name to prevent command injection via eval
     if [[ ! "$array_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-        if declare -f debug_log > /dev/null 2>&1; then
-            debug_log "flush_python_group_if_needed: rejecting invalid array_name '${array_name}'"
-        fi
         return 0
     fi
 
