@@ -11,7 +11,6 @@ Usage: python3 consolidate_adblock_lists.py --input-dir <input_dir> --output-dir
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 
