@@ -45,7 +45,7 @@ def run_gh(cmd_list):
         return None
     try:
         return json.loads(result.stdout)
-    except:
+    except json.JSONDecodeError:
         return result.stdout
 
 
