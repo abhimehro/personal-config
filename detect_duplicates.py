@@ -94,7 +94,7 @@ for (repo, files), pr_list in file_groups.items():
 
 print("Duplicates:", duplicates)
 
-with open("tasks/pr-triage.md", "w") as f:
+with open("tasks/pr-triage.md", "w", encoding="utf-8") as f:
     f.write("# PR Triage\n\n")
     f.write("## SUPERSEDED\n")
     superseded_lines = lines[
