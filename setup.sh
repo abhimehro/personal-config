@@ -193,17 +193,22 @@ main() {
 		echo -e "${YELLOW}⚠️  This will modify configuration files in your home directory.${NC}"
 		echo
 		while true; do
-			read -r -p "Ready to proceed? (y/N) " REPLY
+			# Handle EOF (Ctrl+D / closed stdin) explicitly so `set -e` does not abort silently.
+			if ! read -r -p "Ready to proceed? (y/N) " REPLY; then
+				echo
+				log_info "Bootstrap cancelled: input closed."
+				exit 130
+			fi
 			REPLY=${REPLY:-N}
-			if [[ "$REPLY" =~ ^[Yy]([Ee][Ss])?$ ]]; then
+			if [[ $REPLY =~ ^[Yy]([Ee][Ss])?$ ]]; then
 				echo
 				break
-			elif [[ "$REPLY" =~ ^[Nn]([Oo])?$ ]]; then
+			elif [[ $REPLY =~ ^[Nn]([Oo])?$ ]]; then
 				echo
 				log_info "Bootstrap cancelled by user."
 				exit 0
 			else
-				echo -e "${YELLOW}Please answer yes (y) or no (n).${NC}"
+				log_warn "Please answer yes (y) or no (n)."
 			fi
 		done
 	else

@@ -305,15 +305,20 @@ main() {
 
 	echo
 	while true; do
-		read -r -p "Continue with surgical cleanup? (y/N): " confirm
+		# Handle EOF (Ctrl+D / closed stdin) before evaluating $confirm to avoid an EOF busy-loop.
+		if ! read -r -p "Continue with surgical cleanup? (y/N): " confirm; then
+			echo
+			print_status "Cleanup cancelled."
+			exit 0
+		fi
 		confirm=${confirm:-N}
-		if [[ "$confirm" =~ ^[Yy]([Ee][Ss])?$ ]]; then
+		if [[ $confirm =~ ^[Yy]([Ee][Ss])?$ ]]; then
 			break
-		elif [[ "$confirm" =~ ^[Nn]([Oo])?$ ]]; then
-			echo "Cleanup cancelled."
+		elif [[ $confirm =~ ^[Nn]([Oo])?$ ]]; then
+			print_status "Cleanup cancelled."
 			exit 0
 		else
-			echo "Please answer yes (y) or no (n)."
+			print_warning "Please answer yes (y) or no (n)."
 		fi
 	done
 
