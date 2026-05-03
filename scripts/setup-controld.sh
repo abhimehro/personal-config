@@ -52,10 +52,9 @@ fi
 
 if [[ -f $CONTROLD_MANAGER_DEST ]]; then
 	warn "controld-manager already installed at $CONTROLD_MANAGER_DEST"
-	read -p "Overwrite? (y/N): " -n 1 -r
+	read -p "Overwrite? (y/N): " -r
 	REPLY=${REPLY:-N}
-	echo
-	if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+	if [[ ! $REPLY =~ ^([Yy][Ee][Ss]|[Yy])$ ]]; then
 		log "Skipping controld-manager installation"
 	else
 		sudo install -m 755 -o root -g wheel "$CONTROLD_MANAGER_SRC" "$CONTROLD_MANAGER_DEST"
