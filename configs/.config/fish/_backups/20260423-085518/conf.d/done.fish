@@ -145,7 +145,7 @@ function __done_is_process_window_focused
     end
 
     if set -q __done_kitty_remote_control
-        kitty @ --password="$__done_kitty_remote_control_password" ls | jq -e ".[].tabs[] | select(any(.windows[]; .is_self)) | .is_focused" >/dev/null
+        env KITTY_RC_PASSWORD="$__done_kitty_remote_control_password" kitty @ ls | jq -e ".[].tabs[] | select(any(.windows[]; .is_self)) | .is_focused" >/dev/null
         return $status
     end
 
