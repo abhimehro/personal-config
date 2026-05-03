@@ -2,7 +2,141 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-02.
+> **Latest execution:** 2026-05-03.
+
+## Run — 2026-05-03 (backlog cleanup E2E, review-and-merge, expanded human-login automation scope)
+
+### Repos processed
+
+1. `abhimehro/personal-config` <!-- pragma: allowlist secret -->
+2. `abhimehro/ctrld-sync`
+3. `abhimehro/email-security-pipeline`
+4. `abhimehro/Seatek_Analysis`
+5. `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project`
+
+### Tooling notes
+
+- **Preflight:** `bash scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml` — **passed** (read-only).
+- **GitHub MCP** in this Cursor session returned `Authentication Failed: Bad credentials`; all reads/writes used **`gh` CLI** (`gh auth` from preflight).
+
+### Metrics
+
+| Metric                                   | Count |
+| ---------------------------------------- | ----: |
+| PRs inventoried (automation-class, open) |    77 |
+| PRs merged (squash)                      |    36 |
+| PRs fixed then merged                    |     0 |
+| PRs closed (duplicate / superseded)      |     6 |
+| PRs closed (zero-diff noise)             |     3 |
+| PRs held / escalated (PR comments)       |    20 |
+
+### Merged (squash)
+
+**personal-config** <!-- pragma: allowlist secret -->
+
+- https://github.com/abhimehro/personal-config/pull/854 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/881 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/876 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/866 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/864 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/839 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/852 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/853 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/859 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/860 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/861 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/865 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/868 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/870 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/872 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/875 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/877 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/878 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/879 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/882 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/883 <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/885 <!-- pragma: allowlist secret -->
+
+**ctrld-sync**
+
+- https://github.com/abhimehro/ctrld-sync/pull/755
+- https://github.com/abhimehro/ctrld-sync/pull/761
+- https://github.com/abhimehro/ctrld-sync/pull/756
+- https://github.com/abhimehro/ctrld-sync/pull/757
+- https://github.com/abhimehro/ctrld-sync/pull/751
+
+**email-security-pipeline**
+
+- https://github.com/abhimehro/email-security-pipeline/pull/759
+- https://github.com/abhimehro/email-security-pipeline/pull/758
+- https://github.com/abhimehro/email-security-pipeline/pull/761
+- https://github.com/abhimehro/email-security-pipeline/pull/762
+- https://github.com/abhimehro/email-security-pipeline/pull/751
+
+**Seatek_Analysis**
+
+- https://github.com/abhimehro/Seatek_Analysis/pull/159
+
+**Hydrograph_Versus_Seatek_Sensors_Project**
+
+- https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/157
+- https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/161
+- https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/162
+
+### Closed (duplicate / superseded / zero-diff)
+
+- https://github.com/abhimehro/personal-config/pull/873 — zero-diff Sentinel QA body vs empty diff <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/871 — zero-diff Sentinel path traversal <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/850 — duplicate CWE-88 vs merged **#854** <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/personal-config/pull/857 — duplicate CWE-88 vs merged **#854** <!-- pragma: allowlist secret -->
+- https://github.com/abhimehro/email-security-pipeline/pull/755 — zero-diff Jules QA
+- https://github.com/abhimehro/ctrld-sync/pull/754 — SSRF superseded by merged **#755**
+- https://github.com/abhimehro/email-security-pipeline/pull/752 — Bolt URL cache duplicate vs merged **#759**
+- https://github.com/abhimehro/email-security-pipeline/pull/753 — Bolt URL cache duplicate vs merged **#759**
+- https://github.com/abhimehro/email-security-pipeline/pull/757 — TLS refactor duplicate vs merged **#758**
+
+### Held open / escalated (representative tail)
+
+**personal-config** <!-- pragma: allowlist secret -->
+
+- Merge conflicts after burst merges: https://github.com/abhimehro/personal-config/pull/840 https://github.com/abhimehro/personal-config/pull/849 https://github.com/abhimehro/personal-config/pull/851 https://github.com/abhimehro/personal-config/pull/862 https://github.com/abhimehro/personal-config/pull/880 https://github.com/abhimehro/personal-config/pull/884 <!-- pragma: allowlist secret -->
+- Prior conflict + `update-branch` 422: https://github.com/abhimehro/personal-config/pull/863 <!-- pragma: allowlist secret -->
+- Bolt overlap / stale rollup mid-queue: https://github.com/abhimehro/personal-config/pull/867 https://github.com/abhimehro/personal-config/pull/869 <!-- pragma: allowlist secret -->
+- CI/CodeScene or ShellCheck red (snapshot): https://github.com/abhimehro/personal-config/pull/874 https://github.com/abhimehro/personal-config/pull/858 https://github.com/abhimehro/personal-config/pull/856 <!-- pragma: allowlist secret -->
+- Mega conflicting automation PRs (trust-boundary escalation): https://github.com/abhimehro/personal-config/pull/838 https://github.com/abhimehro/personal-config/pull/836 https://github.com/abhimehro/personal-config/pull/832 https://github.com/abhimehro/personal-config/pull/831 <!-- pragma: allowlist secret -->
+
+**email-security-pipeline**
+
+- Conflicting Bolt perf tail: https://github.com/abhimehro/email-security-pipeline/pull/732
+- CI rollup concerns (CodeScene / submit-pypi classes): https://github.com/abhimehro/email-security-pipeline/pull/760 https://github.com/abhimehro/email-security-pipeline/pull/747
+- Requirements / dependency migration judgment: https://github.com/abhimehro/email-security-pipeline/pull/744
+
+### Post-session remainder (YAML handoff hints)
+
+```yaml
+- repo: abhimehro/personal-config
+  pr: 863
+  reason: merge conflict vs main after sequential merges; setup.sh injection fix needs ordinary merge resolution
+- repo: abhimehro/personal-config
+  pr: 867
+  reason: Bolt categorize_ready concurrency overlaps merged siblings; refresh vs main
+- repo: abhimehro/personal-config
+  pr: 869
+  reason: overlaps merged Bolt/refactor wave on detect_duplicates.py
+- repo: abhimehro/personal-config
+  pr: 838
+  reason: ESCALATE mega conflicting CWE-78 automation PR (~869 files)
+- repo: abhimehro/email-security-pipeline
+  pr: 744
+  reason: CONFLICTING requirements edit — supply-chain / migration human gate
+```
+
+### Workflow completion
+
+- **Partial:** Cleared **all open PRs** in `ctrld-sync`, `Seatek_Analysis`, and `Hydrograph_Versus_Seatek_Sensors_Project` at session end snapshot; materially reduced `personal-config` / `email-security-pipeline` queues via squash merges + duplicate/zero-diff closures.
+- **Did not complete:** conflict tail on `personal-config`, failing-roll PRs held per gates, and mega conflicting automation PRs require human salvage.
+
+---
 
 ## Run — 2026-03-24 (one-time backlog cleanup test, expanded automation scope)
 

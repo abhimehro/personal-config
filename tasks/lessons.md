@@ -133,19 +133,22 @@
 
 **Pattern:** `Seatek_Analysis`'s `validate` workflow had been failing because `Series_27/Analysis/requirements.txt` pinned `pandas>=3.0.2`, which requires Python 3.11, while the workflow used `python-version: "3.10"`. PR `#155` (a Bolt list-comprehension change) also included a one-line requirements pin (`pandas>=1.3.0,<3.0.0`) and bumped CI to Python 3.11. Merging it first unblocked validate for the entire repo.
 **Rule:** When triaging a repo whose CI is infra-broken, **scan inventory PRs for an in-scope diff that fixes the infra** (e.g. requirements pin, workflow file edit, action version bump) before deferring the whole repo. If found:
+
 1. Merge that PR first (security-and-infra ordering).
 2. After it merges, call `gh api -X PUT repos/$REPO/pulls/$PR/update-branch` on each sibling PR to re-run their checks against the fixed workflow.
 3. Re-evaluate mergeability and proceed with the normal merge order.
-**Caveats:** `update-branch` returns HTTP 422 if the PR has a real merge conflict (not just stale base). Treat that as DIRTY and defer for human rebase. Some PRs that pass the new validate may also become **zero-diff** once synced (their change was already on `main`); close those per Lesson 0b.
+   **Caveats:** `update-branch` returns HTTP 422 if the PR has a real merge conflict (not just stale base). Treat that as DIRTY and defer for human rebase. Some PRs that pass the new validate may also become **zero-diff** once synced (their change was already on `main`); close those per Lesson 0b.
 
 ## Lesson 0v: Closing duplicate Sentinel/Palette/Bolt PRs benefits from explicit superset accounting (2026-04-25)
 
 **Pattern:** Across `personal-config` and `ctrld-sync`, multiple Sentinel/Palette/Bolt PRs landed within 24 hours of each other proposing the **same fix** at different scopes. Examples: <!-- pragma: allowlist secret -->
+
 - `personal-config` `#823` (4 files, includes `clean/system.sh`) ⊃ `#815` (4 files, includes only `.jules/sentinel.md` journal) <!-- pragma: allowlist secret -->
 - `personal-config` `#822` (3 files including `view_logs.sh` + `setup.sh`) ⊃ `#810` (2 files) <!-- pragma: allowlist secret -->
 - `ctrld-sync` `#742` (4 files including `tests/test_ux.py`) ⊃ `#736` (2 files)
 - `ctrld-sync` `#740` (3 files including `pr_payload.json` artifact) ⊃ `#735` (2 files)
-**Rule:** When closing as duplicate, the comment must:
+  **Rule:** When closing as duplicate, the comment must:
+
 1. Name the canonical PR explicitly with file overlap delta (e.g. "#823 covers `clean/system.sh` additionally").
 2. Note any unique content in the closed PR that does **not** carry forward (typically only the journal entry under `.jules/`), so a reviewer can decide whether to extract it.
 3. Cite Lesson 0n so the consolidation rationale is traceable.
@@ -153,20 +156,22 @@
 ## Lesson 0x: SyntaxError at line 1 of a "perf" PR can mean the file was committed as a JSON-encoded blob (2026-04-26)
 
 **Pattern:** `email-security-pipeline` `main` had been failing pytest with `SyntaxError: unexpected character after line continuation character` at `src/modules/media_analyzer.py:1` since 2026-04-23. Inspecting the file showed line 1 starting with literal `\n`/`\"` escape sequences — the entire ~28KB file was committed as a JSON string instead of source code, by an automation agent's PR (#693) that intended to add a perf optimization.
-**Rule:** When a CI infra failure is a `SyntaxError` at the very first line of a file, treat "the file is a stringified blob" as a top hypothesis. Verify by running `codecs.decode(open(file).read(), 'unicode_escape')` and checking whether the result compiles. **Important:** even when the decode produces valid Python, the *content* may be a regression — the bot agent may have round-tripped the file through an LLM that lost detail (in this case, ~547 lines of validated zip/tar inspection logic disappeared). The safest fix is **revert to the parent commit**, not re-commit the decoded blob. File a separate clean PR for the perf optimization that was intended.
+**Rule:** When a CI infra failure is a `SyntaxError` at the very first line of a file, treat "the file is a stringified blob" as a top hypothesis. Verify by running `codecs.decode(open(file).read(), 'unicode_escape')` and checking whether the result compiles. **Important:** even when the decode produces valid Python, the _content_ may be a regression — the bot agent may have round-tripped the file through an LLM that lost detail (in this case, ~547 lines of validated zip/tar inspection logic disappeared). The safest fix is **revert to the parent commit**, not re-commit the decoded blob. File a separate clean PR for the perf optimization that was intended.
 **Detection cost:** This single broken file blocked **every** open PR's pytest gate in the entire repo for >2 days because the file is transitively imported by every test that touches `src.modules.alert_system`. Catching this earlier (e.g. a pre-commit hook that runs `python -m py_compile` on all changed `.py` files) would be cheap insurance.
 
 ## Lesson 0y: "Cleanup" PRs that truncate append-only journal files are an integrity regression (2026-04-26)
 
 **Pattern:** Several Bolt/Sentinel automation PRs replaced (rather than appended to) `.jules/bolt.md` / `.jules/sentinel.md` / `.jules/palette.md`. Examples:
+
 - `personal-config#820` truncated `.jules/bolt.md` from 131 lines to 11 while applying a valid 3-file `.py` perf optimization. <!-- pragma: allowlist secret -->
 - Several other PRs in this session show similar full-rewrite patterns on these journal files.
-**Rule:** Treat `.jules/*.md`, `CHANGELOG.md`, `.jules/sentinel.md`, and any other append-only journal as **content-protected** during salvage. When salvaging a PR that touches one of these files, take only the new appended entry and merge it on top of `main`'s current journal — never copy the journal version from the PR wholesale. If the salvage tool of choice is `git checkout pr_branch -- file`, do **not** apply that to a journal file; instead, extract the new entry with `diff` or by reading the PR diff and append it programmatically.
+  **Rule:** Treat `.jules/*.md`, `CHANGELOG.md`, `.jules/sentinel.md`, and any other append-only journal as **content-protected** during salvage. When salvaging a PR that touches one of these files, take only the new appended entry and merge it on top of `main`'s current journal — never copy the journal version from the PR wholesale. If the salvage tool of choice is `git checkout pr_branch -- file`, do **not** apply that to a journal file; instead, extract the new entry with `diff` or by reading the PR diff and append it programmatically.
 
 ## Lesson 0z: Salvageable test contributions need API adaptation, not a wholesale checkout (2026-04-26)
 
-**Pattern:** `personal-config#816` proposed to refactor `run_gh` to take an args list and added `tests/test_vulnerability_fix.py` to lock in the change. By the time we reviewed the PR, the security refactor had already landed on main via `#788`, but with a *different* `run_gh` signature than #816 assumed. A wholesale `git checkout pr816 -- tests/test_vulnerability_fix.py` produced a test file that asserted `cmd[0] == "gh"` against a list whose first element was `"pr"` — failing because the test was written for a signature that never landed. <!-- pragma: allowlist secret -->
+**Pattern:** `personal-config#816` proposed to refactor `run_gh` to take an args list and added `tests/test_vulnerability_fix.py` to lock in the change. By the time we reviewed the PR, the security refactor had already landed on main via `#788`, but with a _different_ `run_gh` signature than #816 assumed. A wholesale `git checkout pr816 -- tests/test_vulnerability_fix.py` produced a test file that asserted `cmd[0] == "gh"` against a list whose first element was `"pr"` — failing because the test was written for a signature that never landed. <!-- pragma: allowlist secret -->
 **Rule:** When salvaging a test from a deferred PR:
+
 1. Re-read the test against the current implementation on `main` to confirm signatures and call sites match.
 2. Adapt the test to the actual API on `main`, not to the API the original PR proposed.
 3. Use an `ast`-based isolated loader (or `runpy.run_path` with controlled globals) when the target script has module-level side effects that you don't want to execute at test time.
@@ -176,6 +181,7 @@
 
 **Pattern:** When attempting to sync deferred PR branches with main, `gh api -X PUT repos/$REPO/pulls/$PR/update-branch` returned `HTTP 422: merge conflict between base and head` for several PRs (e.g. `Seatek_Analysis#156`, `ctrld-sync#737`). This is **not** the same as `422: There are no new commits on the base branch.` (which is benign).
 **Rule:** Distinguish the two `422` responses by the `message` body:
+
 - `"There are no new commits on the base branch."` → benign; the branch is already current.
 - `"merge conflict between base and head"` → real content conflict that GitHub's auto-merge cannot resolve. The salvage path is to **apply just the unique files** from the PR onto a fresh branch from main (`git checkout pr_branch -- path/to/file`) rather than try to rebase the original branch interactively.
 
@@ -183,6 +189,11 @@
 
 **Pattern:** During the 2026-04-25 session, six `email-security-pipeline` PRs (some CRITICAL/MEDIUM Sentinel fixes) carried CI rollups of `MERGEABLE/UNSTABLE` because pytest was failing on `main` for an unrelated reason (the corrupted `media_analyzer.py` from Lesson 0x). The runbook permits "Failing due to flaky/unrelated test → note and proceed with caution," but for a security pipeline the agent erred on the side of "do not bypass" and deferred all six.
 **Rule:** Codify the email-security-pipeline (and any future security-classified repo) as **never-bypass** when pytest is red on main. Surface the infra failure as the top escalation, fix it (Lesson 0x salvage workflow), then re-evaluate the queue. The cost of a slightly delayed merge is much lower than the cost of accidentally merging a CRITICAL bypass behind a green-by-omission gate.
+
+## Lesson 0cc: Burst squash merges can DIRTY overlapping automation branches immediately (2026-05-03)
+
+**Pattern:** On `personal-config`, sequential squash merges of ~20 small CLEAN Bolt/Jules/Sentinel PRs within minutes flipped sibling PRs touching shared hotspots (`run_merges.py`, `parse_inventory.py`, Palette prompts, Jules QA shells) from **MERGEABLE/CLEAN** to **CONFLICTING** mid-queue — even though each PR passed CI in isolation.
+**Rule:** After high-volume merges in one repo, assume mergeability metadata is stale until refreshed; batch merges must pause when GitHub reports **merge conflicts** or `update-branch` returns HTTP **422** (`merge conflict between base and head`). Prefer finishing **one semantic lane** (e.g. all concurrent Bolt PR-fetch changes) before opening adjacent lanes, or accept that the tail requires human conflict resolution (**no force-push**).
 
 ## Lesson 0w: Branch-protection introspection may be denied by personal-account tokens (2026-04-25) <!-- pragma: allowlist secret -->
 
