@@ -18,6 +18,12 @@ make test-quick          # smoke: lib tests + path_validation
 
 **Authoritative docs:** `AGENTS.md` (full command index), `docs/TESTING.md` (mock/`PATH` patterns).
 
+## Devin Secrets Needed
+
+- None for the local lint/test suite or `setup.sh` shell-output validation.
+- GitHub access is handled by Devin's built-in git/PR tools for PR inspection, comments, and CI status.
+- macOS-only live bootstrap validation may require local machine credentials or 1Password setup outside Linux cloud sessions; do not request these unless the user explicitly asks for live macOS bootstrap testing.
+
 ---
 
 ## Devin Secrets Needed
@@ -49,13 +55,22 @@ make lint                # full Trunk (match CI style)
 trunk check path/to/file.sh   # match CI ShellCheck config vs raw local shellcheck
 ```
 
+When running Trunk in Linux cloud workspaces, `.trunk/plugins/trunk` may be rewritten to the local Linux cache path. Before committing or final status, restore the tracked symlink target from HEAD if needed:
+
+```bash
+target=$(git show HEAD:.trunk/plugins/trunk)
+unlink .trunk/plugins/trunk && ln -s "$target" .trunk/plugins/trunk
+git status --short
+```
+
 ---
 
-## 2) Dotfiles & symlink orchestration (`scripts/`, `configs/`)
+## 2) Dotfiles & symlink orchestration (`scripts/`, `configs/`, `setup.sh`)
 
 ### Environment setup
 
-- **macOS:** `./setup.sh` or `./scripts/install_all_configs.sh` (interactive) — **do not run on Linux.**
+- **macOS:** `./setup.sh` or `./scripts/install_all_configs.sh` (interactive) — **do not run the full bootstrap on Linux.**
+- **Linux-safe `setup.sh` validation:** `bash setup.sh --yes` should stop at the macOS guard before sync/config/launchd/network/media steps.
 - **Config “live”:** `./scripts/sync_all_configs.sh` writes symlinks under `$HOME` — **mutates user home**; only run when explicitly testing that flow.
 
 ### Testing workflow
@@ -65,6 +80,35 @@ trunk check path/to/file.sh   # match CI ShellCheck config vs raw local shellche
 ./scripts/verify_ssh_config.sh     # SSH-focused (needs macOS / 1Password agent — may skip/fail elsewhere)
 bash tests/test_config_fish.sh     # skips if `fish` missing
 ```
+
+For terminal-output changes in `setup.sh` (for example `echo -e` → `printf` migrations), use a shell-only harness rather than running the full Linux-hostile bootstrap:
+
+```bash
+TEST_DIR=$(mktemp -d)
+trap 'rm -rf "$TEST_DIR"' EXIT
+sed '/^main "\$@"$/d' setup.sh > "$TEST_DIR/setup_harness.sh"
+source "$TEST_DIR/setup_harness.sh"
+
+malicious='safe-prefix \033[2J\033[H SPOOFED'
+log_info 'color probe' > "$TEST_DIR/info.out"
+log_info "$malicious" > "$TEST_DIR/malicious_info.out"
+log_err "$malicious" > "$TEST_DIR/err.stdout" 2> "$TEST_DIR/err.stderr"
+header "$malicious" > "$TEST_DIR/header.out"
+```
+
+Useful assertions:
+
+```bash
+grep -n 'echo -e' setup.sh || true      # should print no matches
+bash -n setup.sh
+od -An -tx1 "$TEST_DIR/info.out" | grep '1b 5b'   # hardcoded colors emit ESC bytes
+grep -F '\033[2J\033[H' "$TEST_DIR/malicious_info.out"  # dynamic text stays literal
+[[ ! -s "$TEST_DIR/err.stdout" ]]       # log_err writes to stderr
+(source "$TEST_DIR/setup_harness.sh"; kill -INT "$BASHPID") >/tmp/trap.out 2>&1 || [[ $? -eq 130 ]]
+bash setup.sh --yes                     # on Linux: exits 1 at macOS-only guard
+```
+
+When comparing ESC-byte counts for `header`, remember it also calls `hr`, so compare benign vs malicious counts for the same helper instead of hardcoding a single expected count.
 
 ---
 
