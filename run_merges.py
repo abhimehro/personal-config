@@ -3,7 +3,6 @@ import os
 import subprocess
 import time
 from functools import lru_cache
-from types import MappingProxyType
 
 
 def _parse_env_line(line, env_dict):
@@ -25,15 +24,12 @@ def _get_parsed_env_vars():
     # ⚡ Bolt Optimization: Cache only the parsed variables from the file to prevent redundant IO reads, while keeping it safe from mutable dictionary cache poisoning
     parsed_vars = {}
     try:
-        with open(
-            "../email-security-pipeline/GH_TOKEN.env", "r", encoding="utf-8"
-        ) as f:
+        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
             for line in f:
                 _parse_env_line(line, parsed_vars)
     except FileNotFoundError:
         pass
-    return MappingProxyType(parsed_vars)
-
+    return parsed_vars
 
 def _load_gh_token_env():
     env = os.environ.copy()
@@ -48,7 +44,7 @@ def run_gh(cmd_list):
         return None
     try:
         return json.loads(result.stdout)
-    except (json.JSONDecodeError, ValueError):
+    except:
         return result.stdout
 
 

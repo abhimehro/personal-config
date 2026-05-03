@@ -9,7 +9,7 @@ Usage: python3 fix-allowlist-format.py
 """
 
 import json
-import os
+from os import environ
 from pathlib import Path
 
 
@@ -35,7 +35,7 @@ def extract_allowlist_domains_from_file(filepath):
 
 
 def main():
-    base_dir = Path(os.environ.get("ADGUARD_LISTS_DIR", Path.home() / "Downloads"))
+    base_dir = Path(environ.get("ADGUARD_LISTS_DIR", Path.home() / "Downloads"))
 
     print("🔧 Fixing Allowlist Format for AdGuard")
     print("=" * 50)

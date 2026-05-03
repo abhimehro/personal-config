@@ -7,7 +7,6 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from unittest.mock import patch
 
 
 def wait_for_port(port, timeout=5.0):
@@ -31,7 +30,7 @@ def worker(url, i):
                 status = response.status
         except urllib.error.HTTPError as e:
             status = e.code
-        except urllib.error.URLError as e:
+        except urllib.error.URLError:
             status = -1
         end_time = time.time()
         return (i, end_time - start_time, status)
@@ -111,7 +110,7 @@ def run_benchmark(num_requests=50, concurrency=50):
     else:
         avg_latency = max_latency = min_latency = 0
 
-    print(f"\n--- Benchmark Results ---")
+    print("\n--- Benchmark Results ---")
     print(f"Total time taken: {total_time:.2f} seconds")
     print(f"401 Unauthorized responses: {len(successes)}")
     print(f"429 Too Many Requests responses: {len(rate_limited)}")
