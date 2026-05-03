@@ -3,6 +3,7 @@ import os
 import subprocess
 from collections import defaultdict
 from functools import lru_cache
+from types import MappingProxyType
 
 
 def _parse_env_line(line, env_dict):
@@ -21,15 +22,17 @@ def _parse_env_line(line, env_dict):
 
 @lru_cache(maxsize=None)
 def _get_parsed_env_vars():
-    # ⚡ Bolt Optimization: Cache only the parsed variables from the file to prevent redundant IO reads, while keeping it safe from mutable dictionary cache poisoning
+    # Cache parsed env vars as an immutable mapping to avoid repeated file reads.
     parsed_vars = {}
     try:
-        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
+        with open(
+            "../email-security-pipeline/GH_TOKEN.env", "r", encoding="utf-8"
+        ) as f:
             for line in f:
                 _parse_env_line(line, parsed_vars)
     except FileNotFoundError:
         pass
-    return parsed_vars
+    return MappingProxyType(parsed_vars)
 
 
 def _load_gh_token_env():
@@ -45,7 +48,7 @@ def run_gh(cmd_list):
         return None
     try:
         return json.loads(result.stdout)
-    except:
+    except (json.JSONDecodeError, ValueError):
         return None
 
 
@@ -57,7 +60,7 @@ for line in lines:
 
 # OPTIMIZATION: Combine lines into a single string for fast C-level substring search
 pre_ready_text = "".join(lines[: lines.index("## READY\n")])
-ready_only = [pr for pr in ready_prs if pr not in pre_ready_text]
+ready_only = [pr for pr in ready_prs if f"- {pr}\n" not in pre_ready_text]
 
 file_groups = defaultdict(list)
 for pr in ready_only:
@@ -93,8 +96,14 @@ print("Duplicates:", duplicates)
 with open("tasks/pr-triage.md", "w") as f:
     f.write("# PR Triage\n\n")
     f.write("## SUPERSEDED\n")
+    superseded_lines = lines[
+        lines.index("## SUPERSEDED\n") + 1 : lines.index("## STALE\n")
+    ]
+    superseded_prs = {
+        line.strip()[2:] for line in superseded_lines if line.startswith("- abhimehro/")
+    }
     for pr in ready_prs:
-        if pr in lines[lines.index("## SUPERSEDED\n") + 1 : lines.index("## STALE\n")]:
+        if pr in superseded_prs:
             if not pr.startswith("-"):
                 pr = "- " + pr
             f.write(f"{pr}\n")
