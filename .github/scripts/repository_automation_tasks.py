@@ -68,25 +68,45 @@ def execute_configured_commands(
     setup_entries = []
     command_entries = []
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = []
-        for bucket_name, item in configured_commands(section):
-            timeout = int(item.get("timeout_seconds", 1800))
-            future = executor.submit(run_shell_command, item["run"], timeout)
-            futures.append((bucket_name, item, future))
+    all_items = configured_commands(section)
+    setup_items = [(b, i) for b, i in all_items if b == "setup"]
+    parallel_items = [(b, i) for b, i in all_items if b != "setup"]
 
-        for bucket_name, item, future in futures:
-            result = future.result()
-            entry = {
+    # Run setup commands sequentially to preserve ordering guarantees
+    # (later commands may depend on side-effects like installed dependencies
+    # or environment configuration produced by earlier setup steps).
+    for bucket_name, item in setup_items:
+        timeout = int(item.get("timeout_seconds", 1800))
+        result = run_shell_command(item["run"], timeout)
+        setup_entries.append(
+            {
                 "bucket": bucket_name,
                 "name": item["name"],
                 **result,
                 "optional": bool(item.get("optional", False)),
             }
-            if bucket_name == "setup":
-                setup_entries.append(entry)
-            else:
-                command_entries.append(entry)
+        )
+
+    # Run validation/security commands in parallel; these are expected to be
+    # independent read-only checks that benefit from concurrent execution.
+    if parallel_items:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = []
+            for bucket_name, item in parallel_items:
+                timeout = int(item.get("timeout_seconds", 1800))
+                future = executor.submit(run_shell_command, item["run"], timeout)
+                futures.append((bucket_name, item, future))
+
+            for bucket_name, item, future in futures:
+                result = future.result()
+                command_entries.append(
+                    {
+                        "bucket": bucket_name,
+                        "name": item["name"],
+                        **result,
+                        "optional": bool(item.get("optional", False)),
+                    }
+                )
 
     return setup_entries, command_entries
 

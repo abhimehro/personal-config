@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TEMPLATE: launchd does NOT expand shell variables (`$HOME`, `~`) in plist
+  fields such as `EnvironmentVariables`, `StandardOutPath`, or
+  `StandardErrorPath`. Replace every `__HOME__` placeholder below with the
+  absolute path to the target user's home directory (e.g. `/Users/alice`)
+  before installing into `~/Library/LaunchAgents`. The `ProgramArguments`
+  entry runs through `/bin/bash -lc`, which DOES expand `$HOME` at runtime.
+-->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -17,11 +25,11 @@
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     <key>RCLONE_CONFIG</key>
-    <string>$HOME/.config/rclone/rclone.conf</string>
+    <string>__HOME__/.config/rclone/rclone.conf</string>
     <key>MEDIA_CACHE_DIR</key>
-    <string>$HOME/Library/Application Support/MediaCache</string>
+    <string>__HOME__/Library/Application Support/MediaCache</string>
     <key>MEDIA_CREDENTIALS_FILE</key>
-    <string>$HOME/.config/media-server/credentials</string>
+    <string>__HOME__/.config/media-server/credentials</string>
   </dict>
 
   <key>RunAtLoad</key>
@@ -30,8 +38,8 @@
   <true/>
 
   <key>StandardOutPath</key>
-  <string>$HOME/Library/Logs/media/webdav.out</string>
+  <string>__HOME__/Library/Logs/media/webdav.out</string>
   <key>StandardErrorPath</key>
-  <string>$HOME/Library/Logs/media/webdav.err</string>
+  <string>__HOME__/Library/Logs/media/webdav.err</string>
 </dict>
 </plist>
