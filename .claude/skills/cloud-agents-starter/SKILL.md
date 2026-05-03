@@ -20,6 +20,13 @@ make test-quick          # smoke: lib tests + path_validation
 
 ---
 
+## Devin Secrets Needed
+
+- **None required** for local lint/unit tests and mock-based CLI tests.
+- **`GH_TOKEN` / `GH_TOKEN_2`** may be needed only for live GitHub/`gh` flows; prefer mocked `gh` on `PATH` for deterministic tests of triage logic.
+
+---
+
 ## 1) Repo-wide — Cloud workspace & quality gates
 
 ### Environment setup
@@ -142,6 +149,24 @@ bash tests/test_lib_dns_utils.sh
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 # Single module:
 python3 -m unittest tests.test_path_validation -v
+```
+
+### Duplicate triage (`detect_duplicates.py`)
+
+Use an isolated temp workspace with `tasks/pr-triage.md` and a mocked `gh` executable first on `PATH` to test rewrite behavior deterministically. Include adversarial PR numbers where one is a prefix of another, e.g. SUPERSEDED has `abhimehro/example#123` and READY has `#12`, `#123`, and `#124`.
+
+Key assertions:
+
+- The script exits `0` and prints `Duplicates: []` when mocked file sets are unique.
+- `## SUPERSEDED` preserves existing entries exactly once.
+- `## READY` keeps prefix PRs like `#12` when `#123` appears before READY.
+- `## READY` removes PRs already in SUPERSEDED.
+- `## DUPLICATE` stays empty when mocked file paths differ.
+
+```bash
+python3 -m unittest tests.test_detect_duplicates_triage -v
+python3 -m unittest discover -s tests -p 'test_vulnerability_fix.py' -v
+git ls-files .trunk/plugins/trunk  # should print nothing; local Trunk plugin symlinks must stay untracked
 ```
 
 ---
