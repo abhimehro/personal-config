@@ -2,6 +2,7 @@ import json
 import os
 import re
 import subprocess
+import concurrent.futures
 from collections import defaultdict
 from functools import lru_cache
 
@@ -63,8 +64,7 @@ ready_only = [
     if pr not in pre_ready_text
 ]
 
-file_groups = defaultdict(list)
-for pr in ready_only:
+def fetch_pr_info(pr):
     repo, pr_id = pr.split("#")
     info = run_gh(
         [
@@ -78,10 +78,19 @@ for pr in ready_only:
             "files,title,number",
         ]
     )
-    if not info:
-        continue
-    files = tuple(sorted([f["path"] for f in info.get("files", [])]))
-    file_groups[(repo, files)].append(info)
+    if info:
+        return repo, info
+    return None
+
+file_groups = defaultdict(list)
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    future_to_pr = {executor.submit(fetch_pr_info, pr): pr for pr in ready_only}
+    for future in concurrent.futures.as_completed(future_to_pr):
+        res = future.result()
+        if res:
+            repo, info = res
+            files = tuple(sorted([f["path"] for f in info.get("files", [])]))
+            file_groups[(repo, files)].append(info)
 
 duplicates = []
 for (repo, files), pr_list in file_groups.items():

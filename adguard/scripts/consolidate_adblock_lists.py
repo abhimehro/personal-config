@@ -11,7 +11,6 @@ Usage: python3 consolidate_adblock_lists.py --input-dir <input_dir> --output-dir
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -64,17 +63,17 @@ def extract_allowlist_from_file(filepath, description):
     if not data or "rules" not in data:
         return domains
 
-    # ⚡ Bolt Optimization: Replace generator with list comprehension and use direct dict lookups
+    # ⚡ Bolt Optimization: Replace list comprehension with generator to avoid memory spikes, and use PEP-8 isinstance
     domains.update(
-        [
+        (
             rule["PK"]
             for rule in data["rules"]
             if "PK" in rule
             and "action" in rule
-            and type(rule["action"]) is dict
+            and isinstance(rule["action"], dict)
             and "do" in rule["action"]
             and rule["action"]["do"] == 1
-        ]
+        )
     )
     count = len(domains)
     print(f"    Added {count} {description}")
