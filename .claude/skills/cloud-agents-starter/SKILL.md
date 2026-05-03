@@ -178,7 +178,40 @@ fi
 
 ---
 
-## 8) GitHub / PR automation (`docs/`, `scripts/preflight-gh-pr-automation.sh`, `.github/`)
+## 8) Copilot demo CLI (`copilot-demo/weather-assistant.ts`)
+
+### Environment setup
+
+- Node dependencies live under `copilot-demo/`; install with `npm --prefix copilot-demo install` if `node_modules/` is missing.
+- The CLI uses Azure OpenAI Realtime through `DefaultAzureCredential`; live runs need Azure endpoint/deployment env vars and a working Azure identity.
+- The OpenAI realtime import may resolve optional WebSocket dependencies before app env validation. When using a temporary ESM loader for deterministic runtime tests, set `NODE_NO_WARNINGS=1` so Node loader warnings do not pollute stderr assertions.
+
+### Devin Secrets Needed
+
+- `AZURE_OPENAI_ENDPOINT` — Azure OpenAI resource endpoint for live smoke tests.
+- `AZURE_DEPLOYMENT_NAME` — realtime-capable Azure OpenAI deployment name for live smoke tests.
+- One Azure identity accepted by `DefaultAzureCredential`, usually service-principal secrets `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, and `AZURE_CLIENT_SECRET`, or an already-authenticated Azure CLI/session.
+
+### Testing workflow
+
+```bash
+/home/ubuntu/repos/personal-config/copilot-demo/node_modules/.bin/tsc --noEmit -p /home/ubuntu/repos/personal-config/copilot-demo/tsconfig.json
+trunk check copilot-demo/weather-assistant.ts
+```
+
+For local runtime validation when live Azure credentials are unavailable, use a temporary ESM loader outside the repo to stub only `@azure/identity`, `openai`, and `openai/beta/realtime/ws`, then run the real `weather-assistant.ts` through `node --import tsx --loader <stub-loader>`. Useful assertions:
+
+- Missing env startup path exits `1` and writes plain `[startup:error] ...` to stderr with no ESC byte.
+- Realtime `error` without `response.done` exits promptly instead of waiting for the inactivity fallback.
+- Slow active streams emit deltas beyond 10 seconds and only close after `response.done`.
+- Zero-delta `response.done` exits promptly and calls `close()`.
+- Pseudo-terminal runs show spinner/cursor hide-restore on stdout, and `SIGINT` exits `130` without escape bytes on stderr.
+
+Use shell command-output artifacts for these CLI tests; do not record the desktop unless the test is intentionally demonstrating an interactive terminal UI.
+
+---
+
+## 9) GitHub / PR automation (`docs/`, `scripts/preflight-gh-pr-automation.sh`, `.github/`)
 
 ### Environment setup
 
