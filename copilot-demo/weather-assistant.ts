@@ -9,6 +9,8 @@ import {
 
 type RequiredEnvVar = "AZURE_OPENAI_ENDPOINT" | "AZURE_DEPLOYMENT_NAME";
 
+const RESPONSE_INACTIVITY_TIMEOUT_MS = 10000;
+
 function getRequiredEnvVar(name: RequiredEnvVar): string {
   const value = process.env[name]?.trim();
   if (!value) {
@@ -104,6 +106,16 @@ async function main() {
   const responseDone = new Promise<void>((resolve) => {
     resolveResponseDone = resolve;
   });
+  let responseInactivityTimeout: NodeJS.Timeout | undefined;
+  const resetResponseInactivityTimeout = () => {
+    if (responseInactivityTimeout) {
+      clearTimeout(responseInactivityTimeout);
+    }
+    responseInactivityTimeout = setTimeout(
+      resolveResponseDone,
+      RESPONSE_INACTIVITY_TIMEOUT_MS,
+    );
+  };
 
   // Set up event handlers
   rt.on("error", (error: OpenAIRealtimeError) => {
@@ -127,6 +139,7 @@ async function main() {
         isFirstDelta = false;
       }
       process.stdout.write(event.delta);
+      resetResponseInactivityTimeout();
     },
   );
 
@@ -155,9 +168,11 @@ async function main() {
   startSpinner();
 
   // Keep connection open for response
-  const fallbackTimeout = setTimeout(resolveResponseDone, 10000);
+  resetResponseInactivityTimeout();
   await responseDone;
-  clearTimeout(fallbackTimeout);
+  if (responseInactivityTimeout) {
+    clearTimeout(responseInactivityTimeout);
+  }
 
   stopSpinner();
   await rt.close();
