@@ -14,7 +14,7 @@ class MockPerplexityClient:
         self.enabled = True
         self.call_count = 0
 
-    def chat(self, system_prompt, user_content, max_tokens, temperature, session=None):
+    def chat(self, system_prompt, user_content, **kwargs):
         self.call_count += 1
         time.sleep(0.5)  # Simulate network latency
         # If it's a batch request, it will have '---NEXT_PODCAST---'
@@ -24,7 +24,7 @@ class MockPerplexityClient:
         return "Mock summary for single item"
 
     def summarize_podcast(self, text: str, session=None) -> str:
-        return self.chat("...", text, 100, 0.5, session)
+        return self.chat("...", text, max_tokens=100, temperature=0.5, session=session)
 
     def summarize_podcasts(self, texts: list[str], session=None) -> list[str]:
         if not texts:
@@ -32,7 +32,7 @@ class MockPerplexityClient:
         joined_texts = "\n\n---NEXT_PODCAST---\n\n".join(
             f"Podcast {i+1}:\n{t}" for i, t in enumerate(texts)
         )
-        response = self.chat("...", joined_texts, 100 * len(texts), 0.5, session)
+        response = self.chat("...", joined_texts, max_tokens=100 * len(texts), temperature=0.5, session=session)
         if not response:
             return [""] * len(texts)
         summaries = [s.strip() for s in response.split("===SEP===")]
