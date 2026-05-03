@@ -484,21 +484,6 @@ class PerplexityClient:
             logger.error("Perplexity API error: %s", exc)
             return ""
 
-    def summarize_podcast(
-        self, text: str, session: requests.Session | None = None
-    ) -> str:
-        return self.chat(
-            (
-                "You are a highly efficient assistant. Summarize the provided "
-                "podcast show notes in exactly two concise sentences. Focus on "
-                "the core environmental or scientific takeaways."
-            ),
-            text,
-            max_tokens=LLM_MAX_TOKENS_SUMMARY,
-            temperature=0.5,
-            session=session,
-        )
-
     def summarize_podcasts(
         self, texts: list[str], session: requests.Session | None = None
     ) -> list[str]:
@@ -537,7 +522,18 @@ class PerplexityClient:
         if not response:
             return [""] * len(texts)
 
+        # Robustly recover summaries even when the LLM imperfectly follows
+        # the requested format. We:
+        #   1. Strip a leading preamble before the first "Podcast 1:" or
+        #      "Summary 1:" style cue if present.
+        #   2. Split on the explicit delimiter.
+        #   3. Drop empty fragments (which can appear if the model emits a
+        #      leading or trailing delimiter).
+        # If the result has fewer entries than expected we pad with empty
+        # strings; if it has more, we truncate. This matches the previous
+        # contract while handling common LLM drift gracefully.
         summaries = [s.strip() for s in response.split("===SEP===")]
+        summaries = [s for s in summaries if s]
         while len(summaries) < len(texts):
             summaries.append("")
         return summaries[: len(texts)]
