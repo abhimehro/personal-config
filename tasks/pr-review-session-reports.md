@@ -135,6 +135,7 @@
 
 - **Partial:** Cleared **all open PRs** in `ctrld-sync`, `Seatek_Analysis`, and `Hydrograph_Versus_Seatek_Sensors_Project` at session end snapshot; materially reduced `personal-config` / `email-security-pipeline` queues via squash merges + duplicate/zero-diff closures.
 - **Did not complete:** conflict tail on `personal-config`, failing-roll PRs held per gates, and mega conflicting automation PRs require human salvage.
+- **Salvage deep-dive (Phase 2):** See [`tasks/pr-escalation-salvage-plan.md`](pr-escalation-salvage-plan.md) for the human/agent playbook on clearing that tail (pairs with [`docs/automated-pr-salvage-agent.md`](../docs/automated-pr-salvage-agent.md)).
 
 ---
 
