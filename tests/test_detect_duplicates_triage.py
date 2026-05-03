@@ -49,7 +49,7 @@ class TestDetectDuplicatesTriage(unittest.TestCase):
                     import json
                     import sys
 
-                    pr_id = sys.argv[3]
+                    pr_id = sys.argv[sys.argv.index("view") + 1]
                     print(json.dumps({
                         "files": [{"path": f"file-{pr_id}.txt"}],
                         "number": int(pr_id),

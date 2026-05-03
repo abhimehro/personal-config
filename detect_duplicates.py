@@ -52,7 +52,8 @@ def run_gh(cmd_list):
         return None
 
 
-lines = open("tasks/pr-triage.md", encoding="utf-8").readlines()
+with open("tasks/pr-triage.md", encoding="utf-8") as f:
+    lines = f.readlines()
 ready_prs = []
 ready_lines = lines[lines.index("## READY\n") + 1 :]
 for line in ready_lines:
