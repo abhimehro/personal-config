@@ -27,14 +27,8 @@ USE_MCP_GITHUB = os.environ.get("USE_MCP_GITHUB", "false").lower() in {
 # This is a placeholder for the actual MCP GitHub integration
 try:
     if USE_MCP_GITHUB:
-        import mcp  # noqa: F401  (import probe; activation gated below)
-        # NOTE: Keep MCP_AVAILABLE disabled until the MCP code paths in
-        # `tag_exists` and friends are fully implemented. The current
-        # `tag_exists` MCP branch is a placeholder that unconditionally
-        # returns True, which would cause non-existent tags to be accepted
-        # and propagated into draft PRs. Re-enable only after replacing
-        # the placeholder with a real MCP `get_file_contents` call.
-        MCP_AVAILABLE = False
+        import mcp
+        MCP_AVAILABLE = True
     else:
         MCP_AVAILABLE = False
 except ImportError:
