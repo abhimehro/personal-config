@@ -68,25 +68,45 @@ def execute_configured_commands(
     setup_entries = []
     command_entries = []
 
+    buckets = configured_commands(section)
+    setup_items = [(b, i) for b, i in buckets if b == "setup"]
+    other_items = [(b, i) for b, i in buckets if b != "setup"]
+
+    # Setup commands must run sequentially and complete before validation /
+    # security commands, because setup steps install dependencies (e.g.
+    # `pip install shellcheck-py`) that later commands rely on. Running them
+    # in parallel would race installs against the commands that need them.
+    for bucket_name, item in setup_items:
+        timeout = int(item.get("timeout_seconds", 1800))
+        result = run_shell_command(item["run"], timeout)
+        setup_entries.append(
+            {
+                "bucket": bucket_name,
+                "name": item["name"],
+                **result,
+                "optional": bool(item.get("optional", False)),
+            }
+        )
+
+    # Validation and security commands have no ordering dependency on each
+    # other, so we can safely run them in parallel for speed.
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = []
-        for bucket_name, item in configured_commands(section):
+        for bucket_name, item in other_items:
             timeout = int(item.get("timeout_seconds", 1800))
             future = executor.submit(run_shell_command, item["run"], timeout)
             futures.append((bucket_name, item, future))
 
         for bucket_name, item, future in futures:
             result = future.result()
-            entry = {
-                "bucket": bucket_name,
-                "name": item["name"],
-                **result,
-                "optional": bool(item.get("optional", False)),
-            }
-            if bucket_name == "setup":
-                setup_entries.append(entry)
-            else:
-                command_entries.append(entry)
+            command_entries.append(
+                {
+                    "bucket": bucket_name,
+                    "name": item["name"],
+                    **result,
+                    "optional": bool(item.get("optional", False)),
+                }
+            )
 
     return setup_entries, command_entries
 
