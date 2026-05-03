@@ -153,20 +153,20 @@ python3 -m unittest tests.test_path_validation -v
 
 ### Duplicate triage (`detect_duplicates.py`)
 
-Use an isolated temp workspace with `tasks/pr-triage.md` and a mocked `gh` executable first on `PATH` to test rewrite behavior deterministically. Include adversarial PR numbers where one is a prefix of another, e.g. SUPERSEDED has `abhimehro/example#123` and READY has `#12`, `#123`, and `#124`.
+When changing `detect_duplicates.py`, validate the rewrite behavior in an isolated temp workspace with `tasks/pr-triage.md` and a mocked `gh` executable first on `PATH`. Use full `abhimehro/<repo>#<number>` entries because the script only processes lines beginning with `- abhimehro/`.
+
+Use adversarial PR numbers where one is a prefix of another, e.g. SUPERSEDED has `abhimehro/example#123` and READY has `abhimehro/example#12`, `abhimehro/example#123`, and `abhimehro/example#124`. These assertions require the duplicate-triage fixes from PR #869 or an equivalent implementation; if they fail on an older branch, fix the script before relying on the runbook.
 
 Key assertions:
 
 - The script exits `0` and prints `Duplicates: []` when mocked file sets are unique.
-- `## SUPERSEDED` preserves existing entries exactly once.
-- `## READY` keeps prefix PRs like `#12` when `#123` appears before READY.
-- `## READY` removes PRs already in SUPERSEDED.
+- `## SUPERSEDED` preserves `- abhimehro/example#123` exactly once.
+- `## READY` keeps the prefix PR `- abhimehro/example#12` when `abhimehro/example#123` appears before READY.
+- `## READY` removes the already-SUPERSEDED `- abhimehro/example#123`.
 - `## DUPLICATE` stays empty when mocked file paths differ.
 
 ```bash
 python3 -m unittest tests.test_detect_duplicates_triage -v
-python3 -m unittest discover -s tests -p 'test_vulnerability_fix.py' -v
-git ls-files .trunk/plugins/trunk  # should print nothing; local Trunk plugin symlinks must stay untracked
 ```
 
 ---
