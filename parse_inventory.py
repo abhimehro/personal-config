@@ -69,10 +69,20 @@ def _should_skip_table_row(line):
     return False
 
 
-def _process_inventory_line(line, current_repo, repos):
+def _parse_repo_name(line):
     m = re.match(r"^## (.*)", line)
-    if m:
-        repo_name = m.group(1).strip()
+    return m.group(1).strip() if m else None
+
+
+def _is_valid_pr_row(pr_id, author, hints):
+    if not pr_id.isdigit():
+        return False
+    return author.endswith("[bot]") or hints
+
+
+def _process_inventory_line(line, current_repo, repos):
+    repo_name = _parse_repo_name(line)
+    if repo_name:
         if repo_name not in repos:
             repos[repo_name] = []
         return repo_name
@@ -89,9 +99,8 @@ def _process_inventory_line(line, current_repo, repos):
     checks = parts[8].strip()
     hints = parts[9].strip()
 
-    if pr_id.isdigit() and (author.endswith("[bot]") or hints):
-        if current_repo is not None:
-            repos[current_repo].append({"pr": pr_id, "checks": checks})
+    if _is_valid_pr_row(pr_id, author, hints) and current_repo is not None:
+        repos[current_repo].append({"pr": pr_id, "checks": checks})
 
     return current_repo
 
@@ -112,6 +121,26 @@ def _is_pr_stale(updated_at):
     return (now - dt).days > 30
 
 
+def _get_pr_category(info, checks):
+    if not info.get("files", []):
+        return "SUPERSEDED"
+
+    merge_status = info.get("mergeStateStatus", "")
+    is_stale = _is_pr_stale(info.get("updatedAt", ""))
+    checks_failing = ("FAIL" in checks) or ("PENDING" in checks)
+
+    if is_stale and checks_failing:
+        return "STALE"
+
+    if merge_status in ["DIRTY", "CONFLICTING"]:
+        return "CONFLICTING"
+
+    if merge_status == "CLEAN" and not checks_failing:
+        return "READY"
+
+    return None
+
+
 def _categorize_pr(repo, pr_info, triage):
     pr = pr_info["pr"]
     checks = pr_info["checks"]
@@ -122,25 +151,9 @@ def _categorize_pr(repo, pr_info, triage):
         print(f"Failed to fetch {repo}#{pr}")
         return
 
-    if not info.get("files", []):
-        triage["SUPERSEDED"].append(f"{repo}#{pr}")
-        return
-
-    merge_status = info.get("mergeStateStatus", "")
-    is_stale = _is_pr_stale(info.get("updatedAt", ""))
-    checks_failing = ("FAIL" in checks) or ("PENDING" in checks)
-
-    if is_stale and checks_failing:
-        triage["STALE"].append(f"{repo}#{pr}")
-        return
-
-    if merge_status in ["DIRTY", "CONFLICTING"]:
-        triage["CONFLICTING"].append(f"{repo}#{pr}")
-        return
-
-    if merge_status == "CLEAN" and not checks_failing:
-        triage["READY"].append(f"{repo}#{pr}")
-        return
+    category = _get_pr_category(info, checks)
+    if category:
+        triage[category].append(f"{repo}#{pr}")
 
 
 def _load_inventory_lines(filepath):
