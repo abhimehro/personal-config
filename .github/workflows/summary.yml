@@ -25,10 +25,16 @@ jobs:
             Title: ${{ github.event.issue.title }}
             Body: ${{ github.event.issue.body }}
 
+      # SECURITY: do not interpolate ${{ steps.inference.outputs.response }} or
+      # any other untrusted field directly into a `run:` block. The LLM output
+      # is attacker-influenceable via prompt injection in the issue body, so a
+      # crafted response can break out of shell quoting and execute commands
+      # in the runner with GITHUB_TOKEN available. Bind the value to an env
+      # var and pass it as a quoted shell argument instead. See issue #892.
       - name: Comment with AI summary
-        run: |
-          gh issue comment $ISSUE_NUMBER --body '${{ steps.inference.outputs.response }}'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           RESPONSE: ${{ steps.inference.outputs.response }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "$RESPONSE"
