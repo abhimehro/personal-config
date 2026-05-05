@@ -180,7 +180,10 @@ debug_timer_end() {
     local end_ts
     end_ts=$(perl -MTime::HiRes -e 'printf "%.3f\n", Time::HiRes::time()' 2> /dev/null || date +%s)
     local elapsed
-    elapsed=$(perl -e "printf '%.3f', $end_ts - $start_ts" 2> /dev/null || echo "$((end_ts - start_ts))")
+    # Pass timestamps as @ARGV instead of interpolating into the perl script
+    # body. Avoids any chance of perl code injection if a future caller manages
+    # to seed start_ts with a non-numeric value via "${!start_var}".
+    elapsed=$(perl -e 'printf "%.3f", $ARGV[0] - $ARGV[1]' "$end_ts" "$start_ts" 2> /dev/null || echo "$((end_ts - start_ts))")
     debug_log "PERF [$label] ${elapsed}s"
 }
 
