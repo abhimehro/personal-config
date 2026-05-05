@@ -639,7 +639,7 @@ build_regex_var() {
 			regex="$regex|$p"
 		fi
 	done
-	eval "$var_name=\"\$regex\""
+	printf -v "$var_name" "%s" "$regex"
 }
 
 # Lazy-loaded regex (only built when needed)
