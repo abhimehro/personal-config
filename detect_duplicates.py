@@ -1,17 +1,14 @@
+import concurrent.futures
 import json
 import os
-import re
 import subprocess
-import concurrent.futures
 from collections import defaultdict
 from functools import lru_cache
 
 
 def _parse_env_line(line, env_dict):
     line = line.strip()
-    if not line:
-        return
-    if line.startswith("#"):
+    if not line or line.startswith("#"):
         return
     if line.startswith("export "):
         line = line[7:].strip()
@@ -23,7 +20,6 @@ def _parse_env_line(line, env_dict):
 
 @lru_cache(maxsize=None)
 def _get_parsed_env_vars():
-    # ⚡ Bolt Optimization: Cache only the parsed variables from the file to prevent redundant IO reads, while keeping it safe from mutable dictionary cache poisoning
     parsed_vars = {}
     try:
         with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
@@ -32,6 +28,7 @@ def _get_parsed_env_vars():
     except FileNotFoundError:
         pass
     return parsed_vars
+
 
 def _load_gh_token_env():
     env = os.environ.copy()
@@ -46,23 +43,9 @@ def run_gh(cmd_list):
         return None
     try:
         return json.loads(result.stdout)
-    except:
+    except Exception:
         return None
 
-
-lines = open("tasks/pr-triage.md").readlines()
-ready_prs = []
-for line in lines:
-    if line.startswith("- abhimehro/"):
-        ready_prs.append(line.strip()[2:])
-
-# OPTIMIZATION: Combine lines into a single string for fast C-level substring search
-pre_ready_text = "".join(lines[: lines.index("## READY\n")])
-ready_only = [
-    pr
-    for pr in ready_prs
-    if pr not in pre_ready_text
-]
 
 def fetch_pr_info(pr):
     repo, pr_id = pr.split("#")
@@ -82,44 +65,115 @@ def fetch_pr_info(pr):
         return repo, info
     return None
 
-file_groups = defaultdict(list)
-with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-    future_to_pr = {executor.submit(fetch_pr_info, pr): pr for pr in ready_only}
-    for future in concurrent.futures.as_completed(future_to_pr):
-        res = future.result()
-        if res:
-            repo, info = res
-            files = tuple(sorted([f["path"] for f in info.get("files", [])]))
-            file_groups[(repo, files)].append(info)
 
-duplicates = []
-for (repo, files), pr_list in file_groups.items():
-    if len(pr_list) > 1:
-        # sort by number descending
-        pr_list.sort(key=lambda x: x["number"], reverse=True)
-        # keep the newest, close the rest
-        for pr_info in pr_list[1:]:
-            duplicates.append(f"{repo}#{pr_info['number']}")
+def _process_pr_result(res, file_groups):
+    if not res:
+        return
+    repo, info = res
+    files = tuple(sorted([f["path"] for f in info.get("files", [])]))
+    file_groups[(repo, files)].append(info)
 
-print("Duplicates:", duplicates)
 
-with open("tasks/pr-triage.md", "w") as f:
-    f.write("# PR Triage\n\n")
-    f.write("## SUPERSEDED\n")
+def _group_prs_by_files(ready_only):
+    file_groups = defaultdict(list)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(fetch_pr_info, pr) for pr in ready_only]
+        for future in concurrent.futures.as_completed(futures):
+            _process_pr_result(future.result(), file_groups)
+    return file_groups
+
+
+def _extract_duplicates_from_groups(file_groups):
+    duplicates = []
+    for (repo, _), pr_list in file_groups.items():
+        if len(pr_list) > 1:
+            pr_list.sort(key=lambda x: x["number"], reverse=True)
+            for pr_info in pr_list[1:]:
+                duplicates.append(f"{repo}#{pr_info['number']}")
+    return duplicates
+
+
+def get_duplicates(ready_only):
+    file_groups = _group_prs_by_files(ready_only)
+    return _extract_duplicates_from_groups(file_groups)
+
+
+def _get_superseded_text(lines):
+    try:
+        superseded_start = lines.index("## SUPERSEDED\n") + 1
+    except ValueError:
+        superseded_start = 0
+    try:
+        stale_start = lines.index("## STALE\n")
+    except ValueError:
+        stale_start = len(lines)
+    return "".join(lines[superseded_start:stale_start])
+
+
+def _generate_superseded_section(ready_prs, superseded_text):
+    out = ["## SUPERSEDED"]
     for pr in ready_prs:
-        if pr in lines[lines.index("## SUPERSEDED\n") + 1 : lines.index("## STALE\n")]:
-            if not pr.startswith("-"):
-                pr = "- " + pr
-            f.write(f"{pr}\n")
-    f.write("## STALE\n")
-    f.write("## CONFLICTING\n")
-    f.write("- abhimehro/personal-config#725\n")
-    f.write("## DUPLICATE\n")
+        if pr in superseded_text:
+            out.append(pr if pr.startswith("-") else f"- {pr}")
+    return out
+
+
+def _generate_duplicate_section(duplicates):
+    out = ["## DUPLICATE"]
     for d in duplicates:
-        f.write(f"- {d}\n")
-    f.write("## READY\n")
+        out.append(f"- {d}")
+    return out
+
+
+def _generate_ready_section(ready_only, duplicates):
+    out = ["## READY"]
     for pr in ready_only:
         if pr not in duplicates:
-            f.write(f"- {pr}\n")
+            out.append(f"- {pr}")
+    return out
 
-print("Done")
+
+def rewrite_triage_file(lines, ready_prs, duplicates, ready_only):
+    superseded_text = _get_superseded_text(lines)
+
+    sections = [
+        "# PR Triage\n",
+        *_generate_superseded_section(ready_prs, superseded_text),
+        "## STALE",
+        "## CONFLICTING",
+        "- abhimehro/personal-config#725",
+        *_generate_duplicate_section(duplicates),
+        *_generate_ready_section(ready_only, duplicates),
+    ]
+
+    with open("tasks/pr-triage.md", "w") as f:
+        f.write("\n".join(sections) + "\n")
+
+
+def main():
+    try:
+        with open("tasks/pr-triage.md", "r") as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        print("tasks/pr-triage.md not found.")
+        return
+
+    ready_prs = [line.strip()[2:] for line in lines if line.startswith("- abhimehro/")]
+
+    try:
+        ready_idx = lines.index("## READY\n")
+        pre_ready_text = "".join(lines[:ready_idx])
+    except ValueError:
+        pre_ready_text = ""
+
+    ready_only = [pr for pr in ready_prs if pr not in pre_ready_text]
+
+    duplicates = get_duplicates(ready_only)
+    print("Duplicates:", duplicates)
+
+    rewrite_triage_file(lines, ready_prs, duplicates, ready_only)
+    print("Done")
+
+
+if __name__ == "__main__":
+    main()
