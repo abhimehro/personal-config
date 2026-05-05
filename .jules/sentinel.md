@@ -242,3 +242,8 @@
 **Vulnerability:** Information Exposure (CWE-214) / Exposure of Sensitive Information Through Process Arguments. `done.fish` passed the `__done_kitty_remote_control_password` to `kitty @` via the `--password` command-line flag.
 **Learning:** Process command lines are typically globally readable on Unix-like systems via `ps` or `/proc`. Passing secrets as command-line arguments is insecure.
 **Prevention:** Use environment variables, standard input (STDIN), or file descriptors to pass secrets to processes securely, as these are not exposed in the process table. For kitty specifically, the `KITTY_RC_PASSWORD` environment variable provides a secure alternative to the `--password` CLI flag.
+
+## 2026-05-05 - Command Injection Risk via eval in dynamic variable assignment
+**Vulnerability:** Command Injection (CWE-78) risk existed in log timers and app protection regex building due to the use of eval.
+**Learning:** Dynamic variable names were assigned via eval, allowing arbitrary command execution if an attacker controls the variable name.
+**Prevention:** Refactor to use printf -v for dynamic assignment and indirect expansion (${!var}) for dynamic reading.
