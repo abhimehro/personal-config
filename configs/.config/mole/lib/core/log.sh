@@ -154,9 +154,11 @@ debug_timer_start() {
     local ts
     ts=$(perl -MTime::HiRes -e 'printf "%.3f\n", Time::HiRes::time()' 2> /dev/null || date +%s)
 
-    # SECURITY: Validate varname to prevent command injection via printf -v
+    # SECURITY: Validate varname to prevent command injection via printf -v.
+    # Fail-secure: return non-zero so a paired debug_timer_end can detect that
+    # the timer never started instead of silently reporting bogus elapsed time.
     if [[ ! "$varname" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-        return 0
+        return 1
     fi
     printf -v "$varname" "%s" "$ts"
 }
@@ -167,9 +169,11 @@ debug_timer_end() {
     local start_var="$2"
     local start_ts
 
-    # SECURITY: Validate start_var to prevent command injection via indirect expansion
+    # SECURITY: Validate start_var to prevent command injection via indirect
+    # expansion. Fail-secure: return non-zero on invalid input so the caller is
+    # not misled into thinking timing completed normally.
     if [[ ! "$start_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-        return 0
+        return 1
     fi
     start_ts="${!start_var}"
     [[ -z "$start_ts" ]] && return 0

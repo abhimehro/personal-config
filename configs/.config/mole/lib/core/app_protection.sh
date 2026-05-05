@@ -640,9 +640,12 @@ build_regex_var() {
 		fi
 	done
 
-	# SECURITY: Validate var_name to prevent command injection via printf -v
+	# SECURITY: Validate var_name to prevent command injection via printf -v.
+	# Fail-secure: return non-zero on invalid input so callers do not silently
+	# proceed with an empty/unset target variable (an empty regex matches every
+	# bundle id, which would flip should_protect_from_uninstall() to fail-open).
 	if [[ ! "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-		return 0
+		return 1
 	fi
 	printf -v "$var_name" "%s" "$regex"
 }
