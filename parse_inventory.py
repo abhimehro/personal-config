@@ -64,9 +64,9 @@ def run_gh(repo, pr):
 def _should_skip_table_row(line):
     if not line.startswith("|"):
         return True
-    # Skip markdown table separator rows (e.g. "| --- |" or "| ---" variants).
-    stripped = line.lstrip("|").lstrip()
-    if stripped.startswith("---") or stripped.startswith(":--") or stripped.startswith("--:"):
+    if line.startswith("| # |"):
+        return True
+    if line.startswith("| ---"):
         return True
     return False
 
@@ -76,12 +76,10 @@ def _parse_repo_name(line):
     return m.group(1).strip() if m else None
 
 
-def _is_valid_pr_row(pr_id, author, kind):
+def _is_valid_pr_row(pr_id, author, hints):
     if not pr_id.isdigit():
         return False
-    # In-scope rows are either authored by a bot account or flagged by the
-    # inventory's `Kind` column as automation (e.g. "bot" or "human/auto").
-    return author.endswith("[bot]") or kind in ("bot", "human/auto")
+    return author.endswith("[bot]") or hints
 
 
 def _process_inventory_line(line, current_repo, repos):
@@ -95,19 +93,15 @@ def _process_inventory_line(line, current_repo, repos):
         return current_repo
 
     parts = line.split("|")
-    # Expected columns (1-indexed visible):
-    #   1=Repo  2=PR  3=Author  4=Kind  5=Category  6=CI rollup  7=Merge state ...
-    # parts[0] is the empty string before the leading "|", so visible column N
-    # lives at parts[N].
-    if len(parts) <= 6:
+    if len(parts) <= 9:
         return current_repo
 
     pr_id = parts[2].strip()
-    author = parts[3].strip().strip("`")
-    kind = parts[4].strip()
-    checks = parts[6].strip()
+    author = parts[5].strip()
+    checks = parts[8].strip()
+    hints = parts[9].strip()
 
-    if _is_valid_pr_row(pr_id, author, kind) and current_repo is not None:
+    if _is_valid_pr_row(pr_id, author, hints) and current_repo is not None:
         repos[current_repo].append({"pr": pr_id, "checks": checks})
 
     return current_repo
