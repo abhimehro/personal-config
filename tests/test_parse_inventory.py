@@ -37,25 +37,28 @@ class TestParseInventory(unittest.TestCase):
         self.assertEqual(env, {"FOO": "bar"})
 
     def test_parse_inventory_lines(self):
+        # Mirrors the real `tasks/pr-inventory.md` column layout:
+        #   Repo | PR | Author | Kind | Category | CI rollup | Merge state | ...
         lines = [
             "## repoA\n",
-            "| # | pr_id | 2 | 3 | author | 5 | merge_status | checks | hints |\n",
-            "|---|---|---|---|---|---|---|---|---|\n",
-            "| | 123 | | | some_user[bot] | | CLEAN | SUCCESS | |\n",
-            "| | 456 | | | human | | DIRTY | FAIL | has-hints |\n",
-            "| | 789 | | | human | | CLEAN | SUCCESS | |\n",
+            "| Repo | PR | Author | Kind | Category | CI rollup | Merge state | Files | Age | Draft | Branch | Title |\n",
+            "| ---- | --: | ------ | ---- | -------- | --------- | ----------- | ----: | --: | :---: | ------ | ----- |\n",
+            "| `repoA` | 123 | `some_user[bot]` | bot | DEPENDENCY | PASS | CLEAN | 1 | 0 | no | b | t |\n",
+            "| `repoA` | 456 | `abhimehro` | human/auto | SECURITY | FAIL | DIRTY | 2 | 1 | no | b | t |\n",
+            "| `repoA` | 789 | `abhimehro` |  | OTHER | PASS | CLEAN | 1 | 0 | no | b | t |\n",
             "## repoB\n",
-            "| | 101 | | | another[bot] | | CLEAN | SUCCESS | |\n"
+            "| `repoB` | 101 | `another[bot]` | bot | UI | PASS | CLEAN | 1 | 0 | no | b | t |\n",
         ]
         repos = parse_inventory_lines(lines)
 
         self.assertIn("repoA", repos)
         self.assertIn("repoB", repos)
 
-        # repoA should have 123 (bot) and 456 (hints), but not 789 (human, no hints)
+        # repoA should have 123 (bot) and 456 (human/auto kind), but not 789
+        # (human author with no automation Kind marker).
         self.assertEqual(len(repos["repoA"]), 2)
         self.assertEqual(repos["repoA"][0]["pr"], "123")
-        self.assertEqual(repos["repoA"][0]["checks"], "SUCCESS")
+        self.assertEqual(repos["repoA"][0]["checks"], "PASS")
 
         self.assertEqual(repos["repoA"][1]["pr"], "456")
         self.assertEqual(repos["repoA"][1]["checks"], "FAIL")
@@ -63,12 +66,12 @@ class TestParseInventory(unittest.TestCase):
         # repoB should have 101 (bot)
         self.assertEqual(len(repos["repoB"]), 1)
         self.assertEqual(repos["repoB"][0]["pr"], "101")
-        self.assertEqual(repos["repoB"][0]["checks"], "SUCCESS")
+        self.assertEqual(repos["repoB"][0]["checks"], "PASS")
 
     def test_parse_inventory_lines_missing_repo(self):
         # Edge case: No current_repo when matching lines
         lines = [
-            "| | 123 | | | some_user[bot] | | CLEAN | SUCCESS | |\n",
+            "| `repoA` | 123 | `some_user[bot]` | bot | DEPENDENCY | PASS | CLEAN | 1 | 0 | no | b | t |\n",
         ]
         repos = parse_inventory_lines(lines)
         self.assertEqual(repos, {})
@@ -76,7 +79,7 @@ class TestParseInventory(unittest.TestCase):
     def test_parse_inventory_lines_malformed(self):
         lines = [
             "## repoA\n",
-            "| | 123 | | | some_user[bot] | | CLEAN | \n", # Missing columns
+            "| `repoA` | 123 | `some_user[bot]` | bot |\n",  # Missing columns
         ]
         repos = parse_inventory_lines(lines)
         self.assertEqual(repos["repoA"], [])
