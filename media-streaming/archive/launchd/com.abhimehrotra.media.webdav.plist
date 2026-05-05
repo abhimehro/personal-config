@@ -5,11 +5,20 @@
   <key>Label</key>
   <string>com.abhimehrotra.media.webdav</string>
 
+  <!--
+    NOTE: launchd does not expand shell variables (e.g. $HOME) in plist
+    string values for EnvironmentVariables, StandardOutPath, or
+    StandardErrorPath. Only ProgramArguments invoked through `bash -lc`
+    will get shell expansion. Replace __HOME__ at install time with a
+    concrete path (e.g. via `sed` in your install script) before copying
+    this plist to ~/Library/LaunchAgents/.
+  -->
+
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
     <string>-lc</string>
-    <string>$HOME/Library/Media/bin/start-media-server-fast.sh</string>
+    <string>"$HOME/Library/Media/bin/start-media-server-fast.sh"</string>
   </array>
 
   <key>EnvironmentVariables</key>
@@ -17,11 +26,11 @@
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     <key>RCLONE_CONFIG</key>
-    <string>$HOME/.config/rclone/rclone.conf</string>
+    <string>__HOME__/.config/rclone/rclone.conf</string>
     <key>MEDIA_CACHE_DIR</key>
-    <string>$HOME/Library/Application Support/MediaCache</string>
+    <string>__HOME__/Library/Application Support/MediaCache</string>
     <key>MEDIA_CREDENTIALS_FILE</key>
-    <string>$HOME/.config/media-server/credentials</string>
+    <string>__HOME__/.config/media-server/credentials</string>
   </dict>
 
   <key>RunAtLoad</key>
@@ -30,8 +39,8 @@
   <true/>
 
   <key>StandardOutPath</key>
-  <string>$HOME/Library/Logs/media/webdav.out</string>
+  <string>__HOME__/Library/Logs/media/webdav.out</string>
   <key>StandardErrorPath</key>
-  <string>$HOME/Library/Logs/media/webdav.err</string>
+  <string>__HOME__/Library/Logs/media/webdav.err</string>
 </dict>
 </plist>

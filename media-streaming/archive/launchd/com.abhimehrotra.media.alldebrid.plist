@@ -5,11 +5,20 @@
   <key>Label</key>
   <string>com.abhimehrotra.media.alldebrid</string>
 
+  <!--
+    NOTE: launchd does not expand shell variables (e.g. $HOME) in plist
+    string values for EnvironmentVariables, StandardOutPath, or
+    StandardErrorPath. Only ProgramArguments invoked through `bash -lc`
+    will get shell expansion. Replace __HOME__ at install time with a
+    concrete path (e.g. via `sed` in your install script) before copying
+    this plist to ~/Library/LaunchAgents/.
+  -->
+
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
     <string>-lc</string>
-    <string>$HOME/Library/Media/bin/start-alldebrid.sh</string>
+    <string>"$HOME/Library/Media/bin/start-alldebrid.sh"</string>
   </array>
 
   <key>EnvironmentVariables</key>
@@ -17,7 +26,7 @@
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     <key>ALD_MOUNT_DIR</key>
-    <string>$HOME/mnt/alldebrid</string>
+    <string>__HOME__/mnt/alldebrid</string>
   </dict>
 
   <key>RunAtLoad</key>
@@ -26,8 +35,8 @@
   <true/>
 
   <key>StandardOutPath</key>
-  <string>$HOME/Library/Logs/media/alldebrid.out</string>
+  <string>__HOME__/Library/Logs/media/alldebrid.out</string>
   <key>StandardErrorPath</key>
-  <string>$HOME/Library/Logs/media/alldebrid.err</string>
+  <string>__HOME__/Library/Logs/media/alldebrid.err</string>
 </dict>
 </plist>
