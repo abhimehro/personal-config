@@ -2,16 +2,26 @@
 
 <<<<<<< Updated upstream
 
+<<<<<<< Updated upstream
+
 =======
 
 > > > > > > > Stashed changes
 > > > > > > > <taskname="PR Salvage Phase 2"/>
+> > > > > > > =======
+> > > > > > > <taskname="PR Salvage Phase 2"/>
+> > > > > > > Stashed changes
 
 <task>
 Execute a Phase 2 "Automated PR Salvage & Recovery" follow-up run based on `docs/automated-pr-salvage-agent.md`.
 
 Produce a numbered work plan, then execute it. The execution must address:
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 =======
 
@@ -25,6 +35,11 @@ Produce a numbered work plan, then execute it. The execution must address:
 
 Your work plan must include:
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 =======
 
@@ -38,6 +53,11 @@ Your work plan must include:
 
 Deliverables upon completion:
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 =======
 
@@ -48,9 +68,13 @@ Deliverables upon completion:
 3. Append `## Addendum — <today> salvage round 2` to `tasks/pr-review-2026-05-05.md` including a summary table.
 4. Append any new patterns/lessons to `tasks/lessons.md`.
    <<<<<<< Updated upstream
+   <<<<<<< Updated upstream
    </task>
    =======
    </task>
+   > > > > > > > # Stashed changes
+   > > > > > > >
+   > > > > > > > </task>
    > > > > > > > Stashed changes
 
 <architecture>
@@ -82,6 +106,12 @@ The initial request to clarify requirements with the user was skipped. Ensure yo
 
 <<<<<<< Updated upstream
 
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
+
 =======
 
 > > > > > > > Stashed changes
@@ -92,6 +122,8 @@ The initial request to clarify requirements with the user was skipped. Ensure yo
 - Copy preset: complete • 6 files • ~22,352 tokens (up ~0)
 
 ### Files
+
+<<<<<<< Updated upstream
 
 <<<<<<< Updated upstream
 
@@ -123,6 +155,21 @@ The initial request to clarify requirements with the user was skipped. Ensure yo
 │ └── pr-review-agent.config.yaml — 200 tokens (full)
 └── AGENTS.md — 3,917 tokens (full)
 
+> > > > > > > # Stashed changes
+
+### Selected Files
+
+/Users/speedybee/dev/personal-config/
+├── docs/
+│ └── automated-pr-salvage-agent.md — 6,166 tokens (full)
+├── scripts/
+│ └── preflight-gh-pr-automation.sh — 2,657 tokens (full)
+├── tasks/
+│ ├── lessons.md — 6,352 tokens (full)
+│ ├── pr-review-2026-05-05.md — 3,060 tokens (full)
+│ └── pr-review-agent.config.yaml — 200 tokens (full)
+└── AGENTS.md — 3,917 tokens (full)
+
 > > > > > > > Stashed changes
 
 ---
@@ -130,6 +177,8 @@ The initial request to clarify requirements with the user was skipped. Ensure yo
 ## Generated Plan
 
 ## Chat Send ✅
+
+<<<<<<< Updated upstream
 
 <<<<<<< Updated upstream
 
@@ -161,6 +210,21 @@ The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaini
 
 - A previous Phase 2 run created salvage drafts (#899, #900, #169, #10) which now have human review comments requiring adaptation.
 - `email-security-pipeline` is tagged as a security-classified repository (S6 applies: no test bypasses, all salvages are drafts).
+  > > > > > > > # Stashed changes
+- **Chat**: `pr-salvage-phase-2-591409` | **Mode**: plan
+
+### Response
+
+### 1. Summary
+
+This plan executes Phase 2 (Salvage & Recovery) for the remaining deferred PR tail from the 2026-05-05 review session. It defines a strict operational sequence to first address maintainer feedback on existing draft salvages (#899, #900, #169, #10) via `-v2` branches (adhering to S9 no-force-push), then triages a specified queue of 19 open PRs across `personal-config`, `email-security-pipeline`, and `ctrld-sync`. The plan strictly enforces the S1-S9 safeguards, prioritizes T0 infra-fixes and T1 security salvages, and tracks all outcomes in a new addendum block within the session report.
+
+### 2. Current-state analysis
+
+The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaining tail was left `OPEN` due to merge conflicts, trust boundaries, or unstable CI.
+
+- A previous Phase 2 run created salvage drafts (#899, #900, #169, #10) which now have human review comments requiring adaptation.
+- `email-security-pipeline` is tagged as a security-classified repository (S6 applies: no test bypasses, all salvages are drafts).
   > > > > > > > Stashed changes
 - `personal-config` and `ctrld-sync` contain an accumulation of T1/T2 (trust boundary/security) and T3 (perf) PRs that must be evaluated against the current state of `main`.
 - State flow for a salvage requires: pulling the original diff -> verifying if it exists on `main` -> applying valid source code to a new branch -> appending (not checking out) journal files (S2) -> creating a new draft PR -> closing the original.
@@ -169,6 +233,11 @@ The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaini
 
 **Execution Model & State Flow**
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 =======
 
@@ -185,6 +254,7 @@ The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaini
 6. **Reporting**: The memory of this run is persisted by appending an Addendum table to `tasks/pr-review-2026-05-05.md` and any identified failure patterns to `tasks/lessons.md`.
 
 **Error Handling & Edge Cases**
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 
 - **422 on `update-branch`**: Indicates hard conflicts (S5). Fallback is fresh branch checkout from `main` + `git checkout pr_branch -- <files>`.
@@ -205,6 +275,16 @@ The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaini
   - **Change**: Append `## Addendum — $(date +%Y-%m-%d) salvage round 2` to the EOF.
   - **Why**: Documents the disposition of the queue overrides and the `-v2` PRs for auditability.
 - **`tasks/lessons.md`**:
+  > > > > > > > # Stashed changes
+- **422 on `update-branch`**: Indicates hard conflicts (S5). Fallback is fresh branch checkout from `main` + `git checkout pr_branch -- <files>`.
+- **`email-security-pipeline` pytest failures**: Under S6, if `pytest` is red on main, all salvage operations for this repo halt until a T0 PR is created to fix it.
+
+### 4. File-by-file impact
+
+- **`tasks/pr-review-2026-05-05.md`**:
+  - **Change**: Append `## Addendum — $(date +%Y-%m-%d) salvage round 2` to the EOF.
+  - **Why**: Documents the disposition of the queue overrides and the `-v2` PRs for auditability.
+- **`tasks/lessons.md`**:
   > > > > > > > Stashed changes
   - **Change**: Append new `## Lesson <number>:` blocks if novel failure modes are encountered during salvage (e.g., new bot hallucination patterns or CI tripwires).
   - **Why**: Required by the salvage agent specification to ensure continuous learning.
@@ -215,6 +295,12 @@ The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaini
 ### 5. Risks and migration
 
 <<<<<<< Updated upstream
+
+<<<<<<< Updated upstream
+
+=======
+
+> > > > > > > Stashed changes
 
 =======
 
@@ -229,6 +315,7 @@ The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaini
 **Phase 2 Execution Work Plan**
 
 - [ ] **Item 1: Preflight & Draft PR Fixes**
+      <<<<<<< Updated upstream
       <<<<<<< Updated upstream
   - Run preflight script.
   - Address reviewer comments on #899, #900 (personal-config), #169 (Hydrograph), #10 (series_correction). Create `-v2` draft PRs, close originals.
@@ -247,6 +334,26 @@ The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaini
   - Append the Addendum to `tasks/pr-review-2026-05-05.md` and new patterns to `tasks/lessons.md`.
 
 > # 💡 Continue this plan conversation with ask_oracle(chat_id: "pr-salvage-phase-2-591409", new_chat: false)
+
+- Run preflight script.
+- Address reviewer comments on #899, #900 (personal-config), #169 (Hydrograph), #10 (series_correction). Create `-v2` draft PRs, close originals.
+
+- [ ] **Item 2: Process `email-security-pipeline` & `ctrld-sync`**
+  - Apply S6 rules for email-security-pipeline (PRs #760, #777, #778).
+  - Apply trust boundary rules for ctrld-sync (PRs #763, #769, #770).
+  - Create new salvage drafts, close originals. Track outcomes for reporting.
+
+- [ ] **Item 3: Process `personal-config` queue**
+  - Process PRs: #831, #836, #840, #849, #851, #856, #858, #862, #867, #869, #880, #884, #893.
+  - Apply S3 (JSON-blob) and S2 (journal append) checks. Create new salvage drafts, close originals. Track outcomes for reporting.
+
+- [ ] **Item 4: Finalize Reporting**
+  - Compile outcomes from Items 1-3.
+  - Append the Addendum to `tasks/pr-review-2026-05-05.md` and new patterns to `tasks/lessons.md`.
+
+> 💡 Continue this plan conversation with ask_oracle(chat_id: "pr-salvage-phase-2-591409", new_chat: false)
+>
+> > > > > > > # Stashed changes
 
 - Run preflight script.
 - Address reviewer comments on #899, #900 (personal-config), #169 (Hydrograph), #10 (series_correction). Create `-v2` draft PRs, close originals.

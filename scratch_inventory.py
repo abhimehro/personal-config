@@ -1,8 +1,15 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import datetime
 import json
 import subprocess
 
+=======
+import datetime
+import json
+import subprocess
+
+>>>>>>> Stashed changes
 =======
 import datetime
 import json
@@ -18,7 +25,11 @@ repos = [
     "abhimehro/Seatek_Analysis",
     "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     "abhimehro/series_correction_project_updated",
+=======
+    "abhimehro/series_correction_project_updated"
+>>>>>>> Stashed changes
 =======
     "abhimehro/series_correction_project_updated"
 >>>>>>> Stashed changes
@@ -27,6 +38,7 @@ repos = [
 all_prs = []
 
 for repo in repos:
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
     res = subprocess.run(
         [
@@ -65,6 +77,8 @@ out_md.append(
     "| Repo | PR | Author (API) | Branch (head) | Category | CI rollup | Conflicts | Age (created→) | Notes |"
 )
 =======
+=======
+>>>>>>> Stashed changes
     res = subprocess.run(["gh", "pr", "list", "--repo", repo, "--state", "open", "--limit", "100", "--json", "number,title,author,headRefName,mergeStateStatus,state,createdAt"], capture_output=True, text=True)
     if res.returncode == 0:
         prs = json.loads(res.stdout)
@@ -77,6 +91,9 @@ out_md.append(f"# Automated PR inventory — backlog cleanup test ({datetime.dat
 out_md.append("**Preflight:** `bash scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml` — **passed** (read-only).\n")
 out_md.append("**Config:** `tasks/pr-review-agent.config.yaml` — `mode: review-and-merge`, `merge_strategy: squash`, `stale_threshold_days: 30`, `auto_fix_enabled: true`, `schedule: none`.\n")
 out_md.append("| Repo | PR | Author (API) | Branch (head) | Category | CI rollup | Conflicts | Age (created→) | Notes |")
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 out_md.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
 
@@ -87,6 +104,7 @@ category_map = {
     "devin": "CI/INFRA",
     "qa": "CI/INFRA",
     "test": "CI/INFRA",
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
     "fix": "REFACTOR",
 }
@@ -133,6 +151,8 @@ for pr in sorted(all_prs, key=lambda x: (x["repo"], -x["number"])):
         f"| {pr['repo']} | {pr['number']} | {pr['author']['login']} | {pr['headRefName']} | {cat} | {ci} | {conflicts} | {date_str} | {pr['title']} |"
     )
 =======
+=======
+>>>>>>> Stashed changes
     "fix": "REFACTOR"
 }
 
@@ -151,6 +171,9 @@ for pr in sorted(all_prs, key=lambda x: (x['repo'], -x['number'])):
     conflicts = "yes" if pr['mergeStateStatus'] == "DIRTY" else "none"
     date_str = pr['createdAt'][:10] if 'createdAt' in pr else datetime.date.today().isoformat()
     out_md.append(f"| {pr['repo']} | {pr['number']} | {pr['author']['login']} | {pr['headRefName']} | {cat} | {ci} | {conflicts} | {date_str} | {pr['title']} |")
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 with open("tasks/pr-inventory.md", "w") as f:
