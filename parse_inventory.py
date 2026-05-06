@@ -97,8 +97,8 @@ def _process_inventory_line(line, current_repo, repos):
         return current_repo
 
     pr_id = parts[2].strip()
-    author = parts[5].strip()
-    checks = parts[8].strip()
+    author = parts[3].strip()
+    checks = parts[6].strip()
     hints = parts[9].strip()
 
     if _is_valid_pr_row(pr_id, author, hints) and current_repo is not None:
