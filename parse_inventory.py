@@ -57,7 +57,8 @@ def run_gh(repo, pr):
         return None
     try:
         return json.loads(result.stdout)
-    except:
+    except Exception:
+        return None
         return None
 
 
