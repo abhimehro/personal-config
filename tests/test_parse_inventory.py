@@ -39,11 +39,11 @@ class TestParseInventory(unittest.TestCase):
     def test_parse_inventory_lines(self):
         lines = [
             "## repoA\n",
-            "| # | pr_id | 2 | 3 | author | 5 | merge_status | checks | hints |\n",
+            "| Repo | PR | Author (API) | Branch | Category | CI rollup | Conflicts | Age | Notes |\n",
             "|---|---|---|---|---|---|---|---|---|\n",
-            "| | 123 | | | some_user[bot] | | CLEAN | SUCCESS | |\n",
-            "| | 456 | | | human | | DIRTY | FAIL | has-hints |\n",
-            "| | 789 | | | human | | CLEAN | SUCCESS | |\n",
+            "| repoA | 123 | some_user[bot] | branch | cat | SUCCESS | none | age | |\n",
+            "| repoA | 456 | human | branch | cat | FAIL | none | age | has-hints |\n",
+            "| repoA | 789 | human | branch | cat | SUCCESS | none | age | |\n",
             "## repoB\n",
             "| | 101 | | | another[bot] | | CLEAN | SUCCESS | |\n"
         ]
