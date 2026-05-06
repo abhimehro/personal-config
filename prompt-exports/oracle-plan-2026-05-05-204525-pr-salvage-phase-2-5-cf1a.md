@@ -1,31 +1,11 @@
 ## Final Prompt
 
-<<<<<<< Updated upstream
-
-<<<<<<< Updated upstream
-
-=======
-
-> > > > > > > Stashed changes
-> > > > > > > <taskname="PR Salvage Phase 2"/>
-> > > > > > > =======
-> > > > > > > <taskname="PR Salvage Phase 2"/>
-> > > > > > > Stashed changes
+<taskname="PR Salvage Phase 2"/>
 
 <task>
 Execute a Phase 2 "Automated PR Salvage & Recovery" follow-up run based on `docs/automated-pr-salvage-agent.md`.
 
 Produce a numbered work plan, then execute it. The execution must address:
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-
-=======
-
-> > > > > > > Stashed changes
-
-=======
-
-> > > > > > > Stashed changes
 
 1. Maintainer/reviewer findings on draft PRs (#899, #900, #169, #10) first. Use S9 policy for updates (supersede with new draft PR or `-v2` suffix, no force-push).
 2. The remaining open PR live queue overrides:
@@ -34,16 +14,6 @@ Produce a numbered work plan, then execute it. The execution must address:
    - ctrld-sync: #763, #769, #770
 
 Your work plan must include:
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-
-=======
-
-> > > > > > > Stashed changes
-
-=======
-
-> > > > > > > Stashed changes
 
 - **Preflight order:** run preflight scripts, verify `gh auth`.
 - **Per-repo groupings:** Group by repo and detect if a repo is "infra-broken" (4+ PRs with same check failing) before processing individual PRs.
@@ -52,30 +22,12 @@ Your work plan must include:
 - **Explicit "done when" criteria per item:** e.g., when a `-v2` draft PR is opened and the original is closed with a comment, OR when a PR is closed as superseded.
 
 Deliverables upon completion:
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-
-=======
-
-> > > > > > > Stashed changes
-
-=======
-
-> > > > > > > Stashed changes
 
 1. Address reviewer findings on #899/#900/#169/#10.
 2. Process all open PRs in the list according to the decision tree (salvage, supersede-close, escalate, or no-op close).
 3. Append `## Addendum — <today> salvage round 2` to `tasks/pr-review-2026-05-05.md` including a summary table.
 4. Append any new patterns/lessons to `tasks/lessons.md`.
-   <<<<<<< Updated upstream
-   <<<<<<< Updated upstream
    </task>
-   =======
-   </task>
-   > > > > > > > # Stashed changes
-   > > > > > > >
-   > > > > > > > </task>
-   > > > > > > > Stashed changes
 
 <architecture>
 The Salvage Agent (Phase 2) operates strictly on deferred/escalated PRs and NEVER autonomously merges. Every output must be a draft PR or a closure of superseded work.
@@ -104,18 +56,6 @@ The initial request to clarify requirements with the user was skipped. Ensure yo
 
 ## Selection
 
-<<<<<<< Updated upstream
-
-<<<<<<< Updated upstream
-
-=======
-
-> > > > > > > Stashed changes
-
-=======
-
-> > > > > > > Stashed changes
-
 - Files: 6 total (6 full)
 - Total tokens: 22352 (Auto view)
 - Token breakdown: full 22352
@@ -123,10 +63,6 @@ The initial request to clarify requirements with the user was skipped. Ensure yo
 
 ### Files
 
-<<<<<<< Updated upstream
-
-<<<<<<< Updated upstream
-
 ### Selected Files
 
 /Users/speedybee/dev/personal-config/
@@ -139,38 +75,6 @@ The initial request to clarify requirements with the user was skipped. Ensure yo
 │ ├── pr-review-2026-05-05.md — 3,060 tokens (full)
 │ └── pr-review-agent.config.yaml — 200 tokens (full)
 └── AGENTS.md — 3,917 tokens (full)
-
-=======
-
-### Selected Files
-
-/Users/speedybee/dev/personal-config/
-├── docs/
-│ └── automated-pr-salvage-agent.md — 6,166 tokens (full)
-├── scripts/
-│ └── preflight-gh-pr-automation.sh — 2,657 tokens (full)
-├── tasks/
-│ ├── lessons.md — 6,352 tokens (full)
-│ ├── pr-review-2026-05-05.md — 3,060 tokens (full)
-│ └── pr-review-agent.config.yaml — 200 tokens (full)
-└── AGENTS.md — 3,917 tokens (full)
-
-> > > > > > > # Stashed changes
-
-### Selected Files
-
-/Users/speedybee/dev/personal-config/
-├── docs/
-│ └── automated-pr-salvage-agent.md — 6,166 tokens (full)
-├── scripts/
-│ └── preflight-gh-pr-automation.sh — 2,657 tokens (full)
-├── tasks/
-│ ├── lessons.md — 6,352 tokens (full)
-│ ├── pr-review-2026-05-05.md — 3,060 tokens (full)
-│ └── pr-review-agent.config.yaml — 200 tokens (full)
-└── AGENTS.md — 3,917 tokens (full)
-
-> > > > > > > Stashed changes
 
 ---
 
@@ -178,24 +82,6 @@ The initial request to clarify requirements with the user was skipped. Ensure yo
 
 ## Chat Send ✅
 
-<<<<<<< Updated upstream
-
-<<<<<<< Updated upstream
-
-- **Chat**: `pr-salvage-phase-2-591409` | **Mode**: plan
-
-### Response
-
-### 1. Summary
-
-This plan executes Phase 2 (Salvage & Recovery) for the remaining deferred PR tail from the 2026-05-05 review session. It defines a strict operational sequence to first address maintainer feedback on existing draft salvages (#899, #900, #169, #10) via `-v2` branches (adhering to S9 no-force-push), then triages a specified queue of 19 open PRs across `personal-config`, `email-security-pipeline`, and `ctrld-sync`. The plan strictly enforces the S1-S9 safeguards, prioritizes T0 infra-fixes and T1 security salvages, and tracks all outcomes in a new addendum block within the session report.
-
-### 2. Current-state analysis
-
-The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaining tail was left `OPEN` due to merge conflicts, trust boundaries, or unstable CI.
-
-- A previous Phase 2 run created salvage drafts (#899, #900, #169, #10) which now have human review comments requiring adaptation.
-- # `email-security-pipeline` is tagged as a security-classified repository (S6 applies: no test bypasses, all salvages are drafts).
 - **Chat**: `pr-salvage-phase-2-591409` | **Mode**: plan
 
 ### Response
@@ -210,38 +96,12 @@ The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaini
 
 - A previous Phase 2 run created salvage drafts (#899, #900, #169, #10) which now have human review comments requiring adaptation.
 - `email-security-pipeline` is tagged as a security-classified repository (S6 applies: no test bypasses, all salvages are drafts).
-  > > > > > > > # Stashed changes
-- **Chat**: `pr-salvage-phase-2-591409` | **Mode**: plan
-
-### Response
-
-### 1. Summary
-
-This plan executes Phase 2 (Salvage & Recovery) for the remaining deferred PR tail from the 2026-05-05 review session. It defines a strict operational sequence to first address maintainer feedback on existing draft salvages (#899, #900, #169, #10) via `-v2` branches (adhering to S9 no-force-push), then triages a specified queue of 19 open PRs across `personal-config`, `email-security-pipeline`, and `ctrld-sync`. The plan strictly enforces the S1-S9 safeguards, prioritizes T0 infra-fixes and T1 security salvages, and tracks all outcomes in a new addendum block within the session report.
-
-### 2. Current-state analysis
-
-The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaining tail was left `OPEN` due to merge conflicts, trust boundaries, or unstable CI.
-
-- A previous Phase 2 run created salvage drafts (#899, #900, #169, #10) which now have human review comments requiring adaptation.
-- `email-security-pipeline` is tagged as a security-classified repository (S6 applies: no test bypasses, all salvages are drafts).
-  > > > > > > > Stashed changes
 - `personal-config` and `ctrld-sync` contain an accumulation of T1/T2 (trust boundary/security) and T3 (perf) PRs that must be evaluated against the current state of `main`.
 - State flow for a salvage requires: pulling the original diff -> verifying if it exists on `main` -> applying valid source code to a new branch -> appending (not checking out) journal files (S2) -> creating a new draft PR -> closing the original.
 
 ### 3. Design
 
 **Execution Model & State Flow**
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-
-=======
-
-> > > > > > > Stashed changes
-
-=======
-
-> > > > > > > Stashed changes
 
 1. **Preflight**: Execute `scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml`. Execution terminates immediately if authentication or read/write probes fail.
 2. **Data Ingestion**: Fetch current state of the 4 review-pending PRs and 19 queue PRs. Group by repository.
@@ -254,18 +114,7 @@ The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaini
 6. **Reporting**: The memory of this run is persisted by appending an Addendum table to `tasks/pr-review-2026-05-05.md` and any identified failure patterns to `tasks/lessons.md`.
 
 **Error Handling & Edge Cases**
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 
-- **422 on `update-branch`**: Indicates hard conflicts (S5). Fallback is fresh branch checkout from `main` + `git checkout pr_branch -- <files>`.
-- **`email-security-pipeline` pytest failures**: Under S6, if `pytest` is red on main, all salvage operations for this repo halt until a T0 PR is created to fix it.
-
-### 4. File-by-file impact
-
-- **`tasks/pr-review-2026-05-05.md`**:
-  - **Change**: Append `## Addendum — $(date +%Y-%m-%d) salvage round 2` to the EOF.
-  - **Why**: Documents the disposition of the queue overrides and the `-v2` PRs for auditability.
-- # **`tasks/lessons.md`**:
 - **422 on `update-branch`**: Indicates hard conflicts (S5). Fallback is fresh branch checkout from `main` + `git checkout pr_branch -- <files>`.
 - **`email-security-pipeline` pytest failures**: Under S6, if `pytest` is red on main, all salvage operations for this repo halt until a T0 PR is created to fix it.
 
@@ -275,17 +124,6 @@ The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaini
   - **Change**: Append `## Addendum — $(date +%Y-%m-%d) salvage round 2` to the EOF.
   - **Why**: Documents the disposition of the queue overrides and the `-v2` PRs for auditability.
 - **`tasks/lessons.md`**:
-  > > > > > > > # Stashed changes
-- **422 on `update-branch`**: Indicates hard conflicts (S5). Fallback is fresh branch checkout from `main` + `git checkout pr_branch -- <files>`.
-- **`email-security-pipeline` pytest failures**: Under S6, if `pytest` is red on main, all salvage operations for this repo halt until a T0 PR is created to fix it.
-
-### 4. File-by-file impact
-
-- **`tasks/pr-review-2026-05-05.md`**:
-  - **Change**: Append `## Addendum — $(date +%Y-%m-%d) salvage round 2` to the EOF.
-  - **Why**: Documents the disposition of the queue overrides and the `-v2` PRs for auditability.
-- **`tasks/lessons.md`**:
-  > > > > > > > Stashed changes
   - **Change**: Append new `## Lesson <number>:` blocks if novel failure modes are encountered during salvage (e.g., new bot hallucination patterns or CI tripwires).
   - **Why**: Required by the salvage agent specification to ensure continuous learning.
 - **Git State (Local/Remote Branches)**:
@@ -293,18 +131,6 @@ The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaini
   - **Why**: Isolates salvaged code for maintainer review without forcing pushes over active review threads.
 
 ### 5. Risks and migration
-
-<<<<<<< Updated upstream
-
-<<<<<<< Updated upstream
-
-=======
-
-> > > > > > > Stashed changes
-
-=======
-
-> > > > > > > Stashed changes
 
 - **S2 Violation Risk**: Overwriting `tasks/lessons.md` or `.jules/` journals via blanket `git checkout` will wipe history. Strict append-only logic must be enforced.
 - **S3 Violation Risk**: Accidentally salvaging a JSON-escaped blob as a Python script. Checked via `head` regex before commit.
@@ -315,8 +141,6 @@ The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaini
 **Phase 2 Execution Work Plan**
 
 - [ ] **Item 1: Preflight & Draft PR Fixes**
-      <<<<<<< Updated upstream
-      <<<<<<< Updated upstream
   - Run preflight script.
   - Address reviewer comments on #899, #900 (personal-config), #169 (Hydrograph), #10 (series_correction). Create `-v2` draft PRs, close originals.
 
@@ -333,44 +157,4 @@ The Phase 1 review agent processed 58 PRs, merging 18 and closing 8. The remaini
   - Compile outcomes from Items 1-3.
   - Append the Addendum to `tasks/pr-review-2026-05-05.md` and new patterns to `tasks/lessons.md`.
 
-> # 💡 Continue this plan conversation with ask_oracle(chat_id: "pr-salvage-phase-2-591409", new_chat: false)
-
-- Run preflight script.
-- Address reviewer comments on #899, #900 (personal-config), #169 (Hydrograph), #10 (series_correction). Create `-v2` draft PRs, close originals.
-
-- [ ] **Item 2: Process `email-security-pipeline` & `ctrld-sync`**
-  - Apply S6 rules for email-security-pipeline (PRs #760, #777, #778).
-  - Apply trust boundary rules for ctrld-sync (PRs #763, #769, #770).
-  - Create new salvage drafts, close originals. Track outcomes for reporting.
-
-- [ ] **Item 3: Process `personal-config` queue**
-  - Process PRs: #831, #836, #840, #849, #851, #856, #858, #862, #867, #869, #880, #884, #893.
-  - Apply S3 (JSON-blob) and S2 (journal append) checks. Create new salvage drafts, close originals. Track outcomes for reporting.
-
-- [ ] **Item 4: Finalize Reporting**
-  - Compile outcomes from Items 1-3.
-  - Append the Addendum to `tasks/pr-review-2026-05-05.md` and new patterns to `tasks/lessons.md`.
-
 > 💡 Continue this plan conversation with ask_oracle(chat_id: "pr-salvage-phase-2-591409", new_chat: false)
->
-> > > > > > > # Stashed changes
-
-- Run preflight script.
-- Address reviewer comments on #899, #900 (personal-config), #169 (Hydrograph), #10 (series_correction). Create `-v2` draft PRs, close originals.
-
-- [ ] **Item 2: Process `email-security-pipeline` & `ctrld-sync`**
-  - Apply S6 rules for email-security-pipeline (PRs #760, #777, #778).
-  - Apply trust boundary rules for ctrld-sync (PRs #763, #769, #770).
-  - Create new salvage drafts, close originals. Track outcomes for reporting.
-
-- [ ] **Item 3: Process `personal-config` queue**
-  - Process PRs: #831, #836, #840, #849, #851, #856, #858, #862, #867, #869, #880, #884, #893.
-  - Apply S3 (JSON-blob) and S2 (journal append) checks. Create new salvage drafts, close originals. Track outcomes for reporting.
-
-- [ ] **Item 4: Finalize Reporting**
-  - Compile outcomes from Items 1-3.
-  - Append the Addendum to `tasks/pr-review-2026-05-05.md` and new patterns to `tasks/lessons.md`.
-
-> 💡 Continue this plan conversation with ask_oracle(chat_id: "pr-salvage-phase-2-591409", new_chat: false)
->
-> > > > > > > Stashed changes
