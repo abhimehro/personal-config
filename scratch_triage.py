@@ -1,7 +1,16 @@
+<<<<<<< Updated upstream
 import datetime
 import json
 import re
 import subprocess
+
+=======
+import datetime
+import json
+import re
+import subprocess
+
+>>>>>>> Stashed changes
 
 repos = [
     "abhimehro/personal-config",
@@ -9,14 +18,21 @@ repos = [
     "abhimehro/email-security-pipeline",
     "abhimehro/Seatek_Analysis",
     "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project",
+<<<<<<< Updated upstream
     "abhimehro/series_correction_project_updated",
 ]
 
 
+=======
+    "abhimehro/series_correction_project_updated"
+]
+
+>>>>>>> Stashed changes
 def run_cmd(cmd):
     res = subprocess.run(cmd, capture_output=True, text=True)
     return res.returncode == 0, res.stdout, res.stderr
 
+<<<<<<< Updated upstream
 
 all_prs = []
 for repo in repos:
@@ -40,6 +56,16 @@ for repo in repos:
         for pr in prs:
             pr["repo"] = repo.split("/")[-1]
             pr["full_repo"] = repo
+=======
+all_prs = []
+for repo in repos:
+    success, stdout, _ = run_cmd(["gh", "pr", "list", "--repo", repo, "--state", "open", "--limit", "100", "--json", "number,title,author,headRefName,mergeStateStatus,state,createdAt"])
+    if success:
+        prs = json.loads(stdout)
+        for pr in prs:
+            pr['repo'] = repo.split('/')[-1]
+            pr['full_repo'] = repo
+>>>>>>> Stashed changes
             all_prs.append(pr)
 
 merged = []
@@ -51,6 +77,7 @@ triage_md = [
     "**Policy:** squash merge, stale_days 30, auto-fix enabled, mode review-and-merge. **No force-push.**\n",
     "## Duplicate / supersede groups\n",
     "| Keep (canonical) | Close as duplicate / superseded | Rationale |",
+<<<<<<< Updated upstream
     "| --- | --- | --- |",
 ]
 
@@ -123,10 +150,53 @@ def group_prs():
             f"| {g['repo']} **#{g['keep']['number']}** | {dups_str} | {g['rationale']} |"
         )
 
+=======
+    "| --- | --- | --- |"
+]
+
+def group_prs():
+    # manual grouping logic based on patterns
+    groups = []
+    
+    def find_and_group(repo, title_keywords, rationale):
+        matches = [p for p in all_prs if p['repo'] == repo and all(kw.lower() in p['title'].lower() for kw in title_keywords)]
+        if len(matches) > 1:
+            matches = sorted(matches, key=lambda x: x['number'], reverse=True)
+            keep = matches[0]
+            dups = matches[1:]
+            groups.append({
+                'repo': repo,
+                'keep': keep,
+                'dups': dups,
+                'rationale': rationale
+            })
+            for d in dups:
+                d['status_action'] = 'CLOSE'
+            keep['status_action'] = 'KEEP'
+            
+    # personal-config
+    find_and_group('personal-config', ['eval', 'cwe-78'], 'Same CWE-78 eval injection theme; keep newest')
+    find_and_group('personal-config', ['qa & agentic review'], 'Duplicate QA reviews; keep newest')
+    find_and_group('personal-config', ['markdown table'], 'Bolt perf optimizations for markdown tables; keep newest')
+    find_and_group('personal-config', ['palette', 'prompt'], 'Palette UX prompts; keep newest')
+    
+    # email-security-pipeline
+    find_and_group('email-security-pipeline', ['empty state'], 'Palette empty states; keep newest')
+    find_and_group('email-security-pipeline', ['video frame'], 'Bolt video frame performance; keep newest')
+    
+    # series_correction
+    find_and_group('series_correction_project_updated', ['itertuples'], 'Bolt dataframe iteration perf; keep newest')
+    find_and_group('series_correction_project_updated', ['iteration', 'performance'], 'Iteration optimizations; handled by above/keep newest')
+
+    for g in groups:
+        dups_str = ", ".join([f"**#{d['number']}**" for d in g['dups']])
+        triage_md.append(f"| {g['repo']} **#{g['keep']['number']}** | {dups_str} | {g['rationale']} |")
+>>>>>>> Stashed changes
 
 group_prs()
 
 # Process Actions
+<<<<<<< Updated upstream
 for pr in sorted(all_prs, key=lambda x: (x["repo"], -x["number"])):
     repo = pr["full_repo"]
     num = pr["number"]
@@ -151,6 +221,19 @@ for pr in sorted(all_prs, key=lambda x: (x["repo"], -x["number"])):
         success, out, err = run_cmd(
             ["gh", "pr", "merge", str(num), "--repo", repo, "--squash", "--admin"]
         )
+=======
+for pr in sorted(all_prs, key=lambda x: (x['repo'], -x['number'])):
+    repo = pr['full_repo']
+    num = pr['number']
+    
+    if pr.get('status_action') == 'CLOSE':
+        print(f"Closing {repo}#{num} (duplicate)")
+        run_cmd(["gh", "pr", "close", str(num), "--repo", repo, "--comment", "Closing as superseded/duplicate of newer PR."])
+        closed.append(pr)
+    elif pr['mergeStateStatus'] == 'CLEAN' or pr['mergeStateStatus'] == 'HAS_HOOKS':
+        print(f"Merging {repo}#{num}")
+        success, out, err = run_cmd(["gh", "pr", "merge", str(num), "--repo", repo, "--squash", "--admin"])
+>>>>>>> Stashed changes
         if success:
             merged.append(pr)
         else:
@@ -160,6 +243,7 @@ for pr in sorted(all_prs, key=lambda x: (x["repo"], -x["number"])):
         print(f"Holding {repo}#{num} ({pr['mergeStateStatus']})")
         escalated.append(pr)
 
+<<<<<<< Updated upstream
 triage_md.extend(
     [
         "\n## Escalate / defer (no autonomous merge)\n",
@@ -179,6 +263,21 @@ triage_md.extend(
         f"- **Deferred:** {len(escalated)} held.",
     ]
 )
+=======
+triage_md.extend([
+    "\n## Escalate / defer (no autonomous merge)\n",
+    "| PR | Reason |",
+    "| --- | --- |"
+])
+for p in escalated:
+    triage_md.append(f"| {p['repo']} **#{p['number']}** | {p['mergeStateStatus']} status - requires human review or CI fix |")
+
+triage_md.extend([
+    "\n## Outcomes\n",
+    f"- **Executed:** {len(closed)} duplicate closures, {len(merged)} squash merges.",
+    f"- **Deferred:** {len(escalated)} held."
+])
+>>>>>>> Stashed changes
 
 with open("tasks/pr-triage.md", "w") as f:
     f.write("\n".join(triage_md) + "\n")
@@ -191,6 +290,7 @@ report_md = [
 for i, r in enumerate(repos, 1):
     report_md.append(f"{i}. `{r}`")
 
+<<<<<<< Updated upstream
 report_md.extend(
     [
         "\n### Metrics\n",
@@ -209,6 +309,24 @@ for p in merged:
     if p["repo"] != current_repo:
         report_md.append(f"\n**{p['repo']}**\n")
         current_repo = p["repo"]
+=======
+report_md.extend([
+    "\n### Metrics\n",
+    "| Metric | Count |",
+    "| --- | ---: |",
+    f"| PRs inventoried (open) | {len(all_prs)} |",
+    f"| PRs merged (squash) | {len(merged)} |",
+    f"| PRs closed (duplicate) | {len(closed)} |",
+    f"| PRs escalated / held | {len(escalated)} |\n",
+    "### Merged (squash)\n"
+])
+
+current_repo = None
+for p in merged:
+    if p['repo'] != current_repo:
+        report_md.append(f"\n**{p['repo']}**\n")
+        current_repo = p['repo']
+>>>>>>> Stashed changes
     report_md.append(f"- https://github.com/{p['full_repo']}/pull/{p['number']}")
 
 report_md.append("\n### Closed (duplicate / superseded / zero-diff)\n")
@@ -217,13 +335,21 @@ for p in closed:
 
 report_md.append("\n### Held open / escalated\n")
 for p in escalated:
+<<<<<<< Updated upstream
     report_md.append(
         f"- https://github.com/{p['full_repo']}/pull/{p['number']} — {p['mergeStateStatus']}"
     )
+=======
+    report_md.append(f"- https://github.com/{p['full_repo']}/pull/{p['number']} — {p['mergeStateStatus']}")
+>>>>>>> Stashed changes
 
 with open("tasks/pr-review-session-reports.md", "a") as f:
     f.write("\n".join(report_md) + "\n")
 
+<<<<<<< Updated upstream
 print(
     f"Done. Merged: {len(merged)}, Closed: {len(closed)}, Escalated: {len(escalated)}"
 )
+=======
+print(f"Done. Merged: {len(merged)}, Closed: {len(closed)}, Escalated: {len(escalated)}")
+>>>>>>> Stashed changes
