@@ -86,7 +86,7 @@ def _extract_pr_row_fields(parts):
     repo_col = parts[1].strip()
     if repo_col:
         return repo_col, parts[2].strip(), parts[3].strip(), parts[6].strip(), parts[9].strip()
-    return "", parts[2].strip(), parts[5].strip(), parts[8].strip(), parts[9].strip()
+    return "", parts[2].strip(), parts[3].strip(), parts[6].strip(), parts[9].strip()
 
 
 def _ensure_repo_bucket(repo_name, repos):
