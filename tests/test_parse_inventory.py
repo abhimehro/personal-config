@@ -168,8 +168,8 @@ class TestParseInventory(unittest.TestCase):
         }
         self.assertEqual(_get_pr_category(info, "C"), "READY")
 
-    def test_get_pr_category_none_ambiguous(self):
-        # CLEAN merge state but checks failing → no clear category
+    def test_get_pr_category_none_recent_clean_failing(self):
+        # Recent PR + CLEAN merge state + failing checks → no category assigned
         recent = (datetime.now(timezone.utc) - timedelta(days=1)).strftime(
             "%Y-%m-%dT%H:%M:%SZ"
         )
