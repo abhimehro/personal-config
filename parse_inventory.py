@@ -89,27 +89,38 @@ def _extract_pr_row_fields(parts):
     return "", parts[2].strip(), parts[5].strip(), parts[8].strip(), parts[9].strip()
 
 
+def _ensure_repo_bucket(repo_name, repos):
+    if repo_name not in repos:
+        repos[repo_name] = []
+
+
+def _parse_row_record(line, current_repo):
+    parts = line.split("|")
+    if len(parts) <= 9:
+        return None
+    repo_col, pr_id, author, checks, hints = _extract_pr_row_fields(parts)
+    effective_repo = repo_col or current_repo
+    if effective_repo is None:
+        return None
+    if not _is_valid_pr_row(pr_id, author, hints):
+        return None
+    return effective_repo, {"pr": pr_id, "checks": checks}
+
+
 def _process_inventory_line(line, current_repo, repos):
     repo_name = _parse_repo_name(line)
     if repo_name:
-        if repo_name not in repos:
-            repos[repo_name] = []
+        _ensure_repo_bucket(repo_name, repos)
         return repo_name
 
     if _should_skip_table_row(line):
         return current_repo
 
-    parts = line.split("|")
-    if len(parts) <= 9:
-        return current_repo
-
-    repo_col, pr_id, author, checks, hints = _extract_pr_row_fields(parts)
-
-    effective_repo = repo_col if repo_col else current_repo
-    if _is_valid_pr_row(pr_id, author, hints) and effective_repo is not None:
-        if effective_repo not in repos:
-            repos[effective_repo] = []
-        repos[effective_repo].append({"pr": pr_id, "checks": checks})
+    row_record = _parse_row_record(line, current_repo)
+    if row_record:
+        effective_repo, payload = row_record
+        _ensure_repo_bucket(effective_repo, repos)
+        repos[effective_repo].append(payload)
 
     return current_repo
 
