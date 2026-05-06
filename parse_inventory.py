@@ -82,6 +82,13 @@ def _is_valid_pr_row(pr_id, author, hints):
     return author.endswith("[bot]") or hints
 
 
+def _extract_pr_row_fields(parts):
+    repo_col = parts[1].strip()
+    if repo_col:
+        return repo_col, parts[2].strip(), parts[3].strip(), parts[6].strip(), parts[9].strip()
+    return "", parts[2].strip(), parts[5].strip(), parts[8].strip(), parts[9].strip()
+
+
 def _process_inventory_line(line, current_repo, repos):
     repo_name = _parse_repo_name(line)
     if repo_name:
@@ -96,12 +103,7 @@ def _process_inventory_line(line, current_repo, repos):
     if len(parts) <= 9:
         return current_repo
 
-    # Flat-table format: repo is in column 1; fall back to section-header current_repo
-    repo_col = parts[1].strip()
-    pr_id = parts[2].strip()
-    author = parts[3].strip()
-    checks = parts[6].strip()
-    hints = parts[9].strip()
+    repo_col, pr_id, author, checks, hints = _extract_pr_row_fields(parts)
 
     effective_repo = repo_col if repo_col else current_repo
     if _is_valid_pr_row(pr_id, author, hints) and effective_repo is not None:

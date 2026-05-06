@@ -15,6 +15,21 @@ from parse_inventory import (
 )
 
 class TestParseInventory(unittest.TestCase):
+    @staticmethod
+    def _recent_iso(days=1):
+        return (datetime.now(timezone.utc) - timedelta(days=days)).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
+
+    @staticmethod
+    def _build_info(merge_state, updated_at, with_files=True):
+        if not with_files:
+            return {"files": []}
+        return {
+            "files": [{"filename": "foo.py"}],
+            "mergeStateStatus": merge_state,
+            "updatedAt": updated_at,
+        }
 
     def test_parse_env_line_basic(self):
         env = {}
@@ -94,9 +109,7 @@ class TestParseInventory(unittest.TestCase):
         self.assertTrue(_is_pr_stale("2020-01-01T00:00:00Z"))
 
     def test_is_pr_stale_recent_date(self):
-        recent = (datetime.now(timezone.utc) - timedelta(days=5)).strftime(
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
+        recent = self._recent_iso(days=5)
         self.assertFalse(_is_pr_stale(recent))
 
     def test_is_pr_stale_empty(self):
@@ -122,62 +135,31 @@ class TestParseInventory(unittest.TestCase):
     # --- _get_pr_category ---
 
     def test_get_pr_category_superseded_no_files(self):
-        self.assertEqual(_get_pr_category({"files": []}, "C"), "SUPERSEDED")
+        info = self._build_info("CLEAN", self._recent_iso(), with_files=False)
+        self.assertEqual(_get_pr_category(info, "C"), "SUPERSEDED")
 
     def test_get_pr_category_superseded_missing_files_key(self):
         self.assertEqual(_get_pr_category({}, "C"), "SUPERSEDED")
 
     def test_get_pr_category_stale(self):
-        info = {
-            "files": [{"filename": "foo.py"}],
-            "mergeStateStatus": "CLEAN",
-            "updatedAt": "2020-01-01T00:00:00Z",
-        }
+        info = self._build_info("CLEAN", "2020-01-01T00:00:00Z")
         self.assertEqual(_get_pr_category(info, "FAIL"), "STALE")
 
     def test_get_pr_category_conflicting_dirty(self):
-        recent = (datetime.now(timezone.utc) - timedelta(days=1)).strftime(
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
-        info = {
-            "files": [{"filename": "foo.py"}],
-            "mergeStateStatus": "DIRTY",
-            "updatedAt": recent,
-        }
+        info = self._build_info("DIRTY", self._recent_iso())
         self.assertEqual(_get_pr_category(info, "C"), "CONFLICTING")
 
     def test_get_pr_category_conflicting_explicit(self):
-        recent = (datetime.now(timezone.utc) - timedelta(days=1)).strftime(
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
-        info = {
-            "files": [{"filename": "foo.py"}],
-            "mergeStateStatus": "CONFLICTING",
-            "updatedAt": recent,
-        }
+        info = self._build_info("CONFLICTING", self._recent_iso())
         self.assertEqual(_get_pr_category(info, "C"), "CONFLICTING")
 
     def test_get_pr_category_ready(self):
-        recent = (datetime.now(timezone.utc) - timedelta(days=1)).strftime(
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
-        info = {
-            "files": [{"filename": "foo.py"}],
-            "mergeStateStatus": "CLEAN",
-            "updatedAt": recent,
-        }
+        info = self._build_info("CLEAN", self._recent_iso())
         self.assertEqual(_get_pr_category(info, "C"), "READY")
 
     def test_get_pr_category_none_recent_clean_failing(self):
         # Recent PR + CLEAN merge state + failing checks → no category assigned
-        recent = (datetime.now(timezone.utc) - timedelta(days=1)).strftime(
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
-        info = {
-            "files": [{"filename": "foo.py"}],
-            "mergeStateStatus": "CLEAN",
-            "updatedAt": recent,
-        }
+        info = self._build_info("CLEAN", self._recent_iso())
         self.assertIsNone(_get_pr_category(info, "FAIL"))
 
 
