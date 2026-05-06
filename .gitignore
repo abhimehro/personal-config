@@ -283,3 +283,7 @@ gha-creds-*.json
 .cursor/projects/
 .cursor/skills-cursor/
 GH_TOKEN.env
+
+# Ephemeral merge-conflict resolution scripts (local only)
+patch_*.sh
+resolve_*.sh
