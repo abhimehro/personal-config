@@ -57,8 +57,7 @@ def run_gh(repo, pr):
         return None
     try:
         return json.loads(result.stdout)
-    except Exception:
-        return None
+    except json.JSONDecodeError:
         return None
 
 
@@ -97,13 +96,18 @@ def _process_inventory_line(line, current_repo, repos):
     if len(parts) <= 9:
         return current_repo
 
+    # Flat-table format: repo is in column 1; fall back to section-header current_repo
+    repo_col = parts[1].strip()
     pr_id = parts[2].strip()
     author = parts[3].strip()
     checks = parts[6].strip()
     hints = parts[9].strip()
 
-    if _is_valid_pr_row(pr_id, author, hints) and current_repo is not None:
-        repos[current_repo].append({"pr": pr_id, "checks": checks})
+    effective_repo = repo_col if repo_col else current_repo
+    if _is_valid_pr_row(pr_id, author, hints) and effective_repo is not None:
+        if effective_repo not in repos:
+            repos[effective_repo] = []
+        repos[effective_repo].append({"pr": pr_id, "checks": checks})
 
     return current_repo
 
@@ -124,13 +128,17 @@ def _is_pr_stale(updated_at):
     return (now - dt).days > 30
 
 
+def _is_checks_failing(checks):
+    return ("FAIL" in checks) or ("PENDING" in checks) or ("U" in checks)
+
+
 def _get_pr_category(info, checks):
     if not info.get("files", []):
         return "SUPERSEDED"
 
     merge_status = info.get("mergeStateStatus", "")
     is_stale = _is_pr_stale(info.get("updatedAt", ""))
-    checks_failing = ("FAIL" in checks) or ("PENDING" in checks) or ("U" in checks)
+    checks_failing = _is_checks_failing(checks)
 
     if is_stale and checks_failing:
         return "STALE"
