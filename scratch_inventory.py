@@ -35,7 +35,7 @@ for repo in repos:
     if res.returncode == 0:
         prs = json.loads(res.stdout)
         for pr in prs:
-            pr["repo"] = repo.split("/")[-1]
+            pr["repo"] = repo.rpartition("/")[2]
             all_prs.append(pr)
 
 out_md = []

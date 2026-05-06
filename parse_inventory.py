@@ -13,9 +13,9 @@ def _parse_env_line(line, env_dict):
         return
     if line.startswith("export "):
         line = line[7:].strip()
-    if "=" not in line:
+    key, sep, val = line.partition("=")
+    if not sep:
         return
-    key, val = line.split("=", 1)
     env_dict[key] = val.strip("'\"")
 
 @lru_cache(maxsize=None)
@@ -53,9 +53,8 @@ current_repo = None
 
 # Repo -> [ (pr_id, author, merge, checks, hints), ... ]
 for line in lines:
-    m = re.match(r'^## (.*)', line)
-    if m:
-        current_repo = m.group(1).strip()
+    if line.startswith("## "):
+        current_repo = line[3:].strip()
         repos[current_repo] = []
     elif line.startswith('|') and not line.startswith('| # |') and not line.startswith('| ---'):
         # ⚡ Bolt Optimization: Split once and strip only required indices (~40% faster)
