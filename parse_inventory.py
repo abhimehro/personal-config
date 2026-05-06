@@ -129,7 +129,7 @@ def _get_pr_category(info, checks):
 
     merge_status = info.get("mergeStateStatus", "")
     is_stale = _is_pr_stale(info.get("updatedAt", ""))
-    checks_failing = ("FAIL" in checks) or ("PENDING" in checks)
+    checks_failing = ("FAIL" in checks) or ("PENDING" in checks) or ("U" in checks)
 
     if is_stale and checks_failing:
         return "STALE"
