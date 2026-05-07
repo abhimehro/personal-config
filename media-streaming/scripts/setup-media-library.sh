@@ -218,8 +218,7 @@ echo "• Create a unified 'media' remote"
 echo "• Set up WebDAV server for Infuse"
 echo
 
-read -p "Continue? (y/n): " -n 1 -r
-echo
+read -p "Continue? (y/n): " -r
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 	echo "Setup cancelled."
 	exit 1
