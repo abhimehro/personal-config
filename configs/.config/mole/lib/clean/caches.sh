@@ -296,12 +296,12 @@ flush_python_group_if_needed() {
         return 0
     fi
 
-    local group_count=0
-    eval 'group_count=${#'"$array_name"'[@]}'
+    # Use nameref for safe dynamic array access instead of eval
+    declare -n _group_dirs_ref="$array_name" 2>/dev/null || return 0
+
+    local group_count="${#_group_dirs_ref[@]}"
     [[ -z "$group_root" || "$group_count" -eq 0 ]] && return 0
-    eval 'local -a group_dirs=( "${'"$array_name"'[@]}" )'
-    # shellcheck disable=SC2154  # group_dirs assigned via eval above
-    clean_python_bytecode_cache_group "$group_root" "${group_dirs[@]}"
+    clean_python_bytecode_cache_group "$group_root" "${_group_dirs_ref[@]}"
 }
 
 process_project_cache_matches() {

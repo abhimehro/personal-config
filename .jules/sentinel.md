@@ -252,3 +252,8 @@
 **Vulnerability:** Terminal Injection vulnerability where malicious input containing escape characters could manipulate the terminal display or execute arbitrary commands depending on the terminal emulator. Found in `setup.sh` logging functions.
 **Learning:** `echo -e` interpolates escape characters in variables, which is dangerous when outputting untrusted input.
 **Prevention:** Use `printf "%b[INFO]%b %s\n"` to strictly separate color formatting (hardcoded via `%b`) from user data (passed via `%s`), preventing execution or interpretation of escape characters within dynamic input.
+
+## 2024-05-08 - Command Injection Risk via eval for Dynamic Arrays
+**Vulnerability:** Dynamic array expansion via `eval 'group_count=${#'"$array_name"'[@]}'` creates a risk of Command Injection if the input string is not strictly validated.
+**Learning:** Using `eval` for dynamic references is a legacy anti-pattern in Bash scripts. Although input validation mitigates the risk, the pattern is inherently dangerous.
+**Prevention:** Use Bash namerefs (`declare -n ref="$var_name"`) for safe dynamic variable and array access, which evaluates safely without shell command execution. Always pair with input validation to prevent nameref initialization errors on invalid strings.
