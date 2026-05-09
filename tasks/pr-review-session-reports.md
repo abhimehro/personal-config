@@ -564,7 +564,7 @@ See [`tasks/pr-review-2026-04-25.md`](pr-review-2026-04-25.md) for per-repo disp
 
 ### Repos processed
 
-1. `abhimehro/[REDACTED]-config` <!-- pragma: allowlist secret -->
+1. abhimehro/dotfiles <!-- pragma: allowlist secret -->
 2. `abhimehro/ctrld-sync`
 3. `abhimehro/email-security-pipeline`
 4. `abhimehro/Seatek_Analysis`
