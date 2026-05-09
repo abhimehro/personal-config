@@ -16,8 +16,10 @@ bot_authors:
   - dependabot[bot]
   - renovate[bot]
   - google-labs-jules[bot]
+  - cursor[bot]
   - devin[bot]
   - copilot[bot]
+  - app/copilot-swe-agent
   # Expanded: human-authored PRs when branch/title/body/comments indicate automation — see tasks/pr-inventory.md
 
 stale_threshold_days: 30
