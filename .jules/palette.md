@@ -119,3 +119,8 @@
 
 **Learning:** When adding asynchronous tasks like animated spinners to CLI tools built in TypeScript/Node.js, users expect the terminal to return to a clean state if they press `Ctrl+C`. Without a proper `SIGINT` handler, the cursor remains hidden, and spinner text is left scattered on the prompt.
 **Action:** Always attach a `process.on('SIGINT')` event listener that explicitly stops timers (`clearInterval`), restores the cursor (`\x1B[?25h`), clears the line (`\r\x1B[K`), and exits cleanly with `process.exit(130)`.
+
+## 2024-05-18 - Require Enter for Confirmation Prompts
+
+**Learning:** Using `read -n 1` for confirmation prompts (e.g., `read -p "Continue? (y/n): " -n 1`) allows users to accidentally trigger actions by bumping a key. Additionally, if a user types "yes" instead of "y", the "es" and the Enter keystroke are left in the stdin buffer, potentially executing unintended commands after the script finishes.
+**Action:** Remove the `-n 1` flag from `read` prompts to require an explicit Enter press, acting as a safety confirmation and preventing buffer stuffing. When doing so, also remove any immediately following `echo` command that was previously used to print the missing newline.

@@ -291,17 +291,17 @@ flush_python_group_if_needed() {
     local group_root="$1"
     local array_name="$2"
 
-    # SECURITY: Validate array_name to prevent command injection via eval
+    # SECURITY: Validate array_name to ensure safe and graceful failure on invalid input
     if [[ ! "$array_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
         return 0
     fi
 
-    local group_count=0
-    eval 'group_count=${#'"$array_name"'[@]}'
+    declare -n _group_dirs_ref="$array_name"
+
+    local group_count="${#_group_dirs_ref[@]}"
     [[ -z "$group_root" || "$group_count" -eq 0 ]] && return 0
-    eval 'local -a group_dirs=( "${'"$array_name"'[@]}" )'
-    # shellcheck disable=SC2154  # group_dirs assigned via eval above
-    clean_python_bytecode_cache_group "$group_root" "${group_dirs[@]}"
+
+    clean_python_bytecode_cache_group "$group_root" "${_group_dirs_ref[@]}"
 }
 
 process_project_cache_matches() {
