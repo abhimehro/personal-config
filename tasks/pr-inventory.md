@@ -4,7 +4,7 @@
 
 **Config:** `tasks/pr-review-agent.config.yaml` — `mode: review-and-merge`, `merge_strategy: squash`, `stale_threshold_days: 30`, `auto_fix_enabled: true`, `schedule: none`.
 
-**Bot authors (explicit):** `dependabot[bot]`, `renovate[bot]`, `google-labs-jules[bot]`, `devin[bot]`, `copilot[bot]`, plus `app/copilot-swe-agent` where present.
+**Bot authors (explicit):** `dependabot[bot]`, `renovate[bot]`, `google-labs-jules[bot]`, `devin[bot]`, `copilot[bot]`, `cursor[bot]`, plus `app/copilot-swe-agent` where present.
 
 **Scope expansion:** PRs whose GitHub author is `abhimehro` are included when **branch name**, **title**, or **PR body** matches automation heuristics (Jules/Bolt/Devin/Sentinel/Palette/Copilot/Renovate/Dependabot/daily QA patterns, `jules.google.com` links, etc.).
 

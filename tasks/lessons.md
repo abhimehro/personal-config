@@ -190,15 +190,15 @@
 **Pattern:** During the 2026-04-25 session, six `email-security-pipeline` PRs (some CRITICAL/MEDIUM Sentinel fixes) carried CI rollups of `MERGEABLE/UNSTABLE` because pytest was failing on `main` for an unrelated reason (the corrupted `media_analyzer.py` from Lesson 0x). The runbook permits "Failing due to flaky/unrelated test → note and proceed with caution," but for a security pipeline the agent erred on the side of "do not bypass" and deferred all six.
 **Rule:** Codify the email-security-pipeline (and any future security-classified repo) as **never-bypass** when pytest is red on main. Surface the infra failure as the top escalation, fix it (Lesson 0x salvage workflow), then re-evaluate the queue. The cost of a slightly delayed merge is much lower than the cost of accidentally merging a CRITICAL bypass behind a green-by-omission gate.
 
-## Lesson 0dd: Identical twin PRs can pass the same CI with the same file list (2026-05-09)
-
-**Pattern:** Two open PRs (**#785** / **#786** on `email-security-pipeline`) changed the same three paths (`src/utils/caching.py`, `tests/test_caching.py`, `.jules/bolt.md`) with the same intent; both showed green rollups.
-**Rule:** Before merging either, diff **titles + head SHAs + file lists** side-by-side. Pick one canonical PR (prefer the lower number if identical), squash-merge it, then **close** the twin as duplicate—do not leave both open to drift.
-
 ## Lesson 0cc: Burst squash merges can DIRTY overlapping automation branches immediately (2026-05-03)
 
 **Pattern:** On `personal-config`, sequential squash merges of ~20 small CLEAN Bolt/Jules/Sentinel PRs within minutes flipped sibling PRs touching shared hotspots (`run_merges.py`, `parse_inventory.py`, Palette prompts, Jules QA shells) from **MERGEABLE/CLEAN** to **CONFLICTING** mid-queue — even though each PR passed CI in isolation.
 **Rule:** After high-volume merges in one repo, assume mergeability metadata is stale until refreshed; batch merges must pause when GitHub reports **merge conflicts** or `update-branch` returns HTTP **422** (`merge conflict between base and head`). Prefer finishing **one semantic lane** (e.g. all concurrent Bolt PR-fetch changes) before opening adjacent lanes, or accept that the tail requires human conflict resolution (**no force-push**).
+
+## Lesson 0dd: Identical twin PRs can pass the same CI with the same file list (2026-05-09)
+
+**Pattern:** Two open PRs (**#785** / **#786** on `email-security-pipeline`) changed the same three paths (`src/utils/caching.py`, `tests/test_caching.py`, `.jules/bolt.md`) with the same intent; both showed green rollups.
+**Rule:** Before merging either, diff **titles + head SHAs + file lists** side-by-side. Pick one canonical PR (prefer the lower number if identical), squash-merge it, then **close** the twin as duplicate—do not leave both open to drift.
 
 ## Lesson 0w: Branch-protection introspection may be denied by personal-account tokens (2026-04-25) <!-- pragma: allowlist secret -->
 

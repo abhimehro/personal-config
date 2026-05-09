@@ -564,7 +564,7 @@ See [`tasks/pr-review-2026-04-25.md`](pr-review-2026-04-25.md) for per-repo disp
 
 ### Repos processed
 
-1. abhimehro/dotfiles <!-- pragma: allowlist secret -->
+1. `abhimehro/personal-config` <!-- pragma: allowlist secret -->
 2. `abhimehro/ctrld-sync`
 3. `abhimehro/email-security-pipeline`
 4. `abhimehro/Seatek_Analysis`
@@ -589,7 +589,7 @@ See [`tasks/pr-review-2026-04-25.md`](pr-review-2026-04-25.md) for per-repo disp
 
 ### Merged (squash)
 
-- `abhimehro/[REDACTED]-config` **#907**, **#904** <!-- pragma: allowlist secret -->
+- `abhimehro/personal-config` **#907**, **#904** <!-- pragma: allowlist secret -->
 - `abhimehro/email-security-pipeline` **#785**
 - `abhimehro/series_correction_project_updated` **#12**
 - `abhimehro/Seatek_Analysis` **#164**, **#161**
@@ -598,14 +598,14 @@ See [`tasks/pr-review-2026-04-25.md`](pr-review-2026-04-25.md) for per-repo disp
 
 ### Closed without merge
 
-- Zero-diff: `[REDACTED]-config#908`, `email-security-pipeline#788`, `email-security-pipeline#782` <!-- pragma: allowlist secret -->
+- Zero-diff: `personal-config#908`, `email-security-pipeline#788`, `email-security-pipeline#782` <!-- pragma: allowlist secret -->
 - Duplicate: `email-security-pipeline#786` (after **#785** merged)
 - Superseded: `Seatek_Analysis#162` (after **#164** merged)
 
 ### Escalated (PR comments)
 
-- `[REDACTED]-config#893`, `ctrld-sync#769`, `ctrld-sync#775` <!-- pragma: allowlist secret -->
+- `personal-config#893`, `ctrld-sync#769`, `ctrld-sync#775` <!-- pragma: allowlist secret -->
 
 ### Workflow completion
 
-- **Partial:** Throughput merges stopped when sibling PRs hit **merge conflicts** (`series_correction_project_updated#13/#14`, `ctrld-sync#771`) per cascade lesson (0cc). Large overlapping Sentinel/Bolt queues on `[REDACTED]-config` and `ctrld-sync` left for paced human or Salvage Agent follow-up.
+- **Partial:** Throughput merges stopped when sibling PRs hit **merge conflicts** (`series_correction_project_updated#13/#14`, `ctrld-sync#771`) per cascade lesson (0cc). Large overlapping Sentinel/Bolt queues on `personal-config` and `ctrld-sync` left for paced human or Salvage Agent follow-up. <!-- pragma: allowlist secret -->
