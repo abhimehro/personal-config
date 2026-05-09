@@ -8,7 +8,7 @@
 
 **Scope expansion:** PRs whose GitHub author is `abhimehro` are included when **branch name**, **title**, or **PR body** matches automation heuristics (Jules/Bolt/Devin/Sentinel/Palette/Copilot/Renovate/Dependabot/daily QA patterns, `jules.google.com` links, etc.).
 
-**Signal legend:** `A` = explicit bot author; `branch` / `title` / `body` = automation signal for human login; `C` / `U` / `P` / `?` = CI rollup clean / failing / pending / unknown from API.
+**Signal legend:** `branch` / `title` / `body` = automation signal for human login; `bot` = explicit bot author; `C` / `U` = CI rollup clean / failing; `CLEAN` / `UNSTABLE` / `DIRTY` = merge state.
 
 **Repo alias:** Rows labeled **dotfiles** map to the maintainer dotfiles GitHub repository in this workspace (same remote as `git clone` for this IaC repo). Branch names are omitted for that repo in this table to satisfy Cloud secret-scan hooks.
 
