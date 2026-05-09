@@ -1,83 +1,73 @@
-# Automated PR inventory — backlog cleanup test (2026-05-03)
+# Automated PR inventory — backlog cleanup session (2026-05-09)
 
-**Preflight:** `bash scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml` — **passed** (read-only).
+**Preflight:** `bash scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml` — **passed** (read-only, six repos).
 
 **Config:** `tasks/pr-review-agent.config.yaml` — `mode: review-and-merge`, `merge_strategy: squash`, `stale_threshold_days: 30`, `auto_fix_enabled: true`, `schedule: none`.
 
-**Scope:** Listed bot authors (`dependabot[bot]`, `renovate[bot]`, `google-labs-jules[bot]`) **plus** PRs where GitHub author is `abhimehro` but branch/title indicates automation (`jules-`, `bolt/`, `devin/`, `sentinel`, `palette`, Jules QA titles, numeric suffix branches, etc.). _(Snapshot: no open PRs from the three named bots; all in-scope rows are automation-style human-login PRs.)_
+**Bot authors (explicit):** `dependabot[bot]`, `renovate[bot]`, `google-labs-jules[bot]`, `devin[bot]`, `copilot[bot]`, plus `app/copilot-swe-agent` where present.
 
-**Signal legend:** `A` = automation-style author/branch; `Z` = zero file change count from API; `C` / `U` / `D` = merge state CLEAN / UNSTABLE / DIRTY (conflict).
+**Scope expansion:** PRs whose GitHub author is `abhimehro` are included when **branch name**, **title**, or **PR body** matches automation heuristics (Jules/Bolt/Devin/Sentinel/Palette/Copilot/Renovate/Dependabot/daily QA patterns, `jules.google.com` links, etc.).
 
-| Repo                                     | PR  | Author (API) | Branch (head)                                          | Category        | CI rollup | Conflicts | Age (created→) | Notes                                            |
-| ---------------------------------------- | --- | ------------ | ------------------------------------------------------ | --------------- | --------- | --------- | -------------- | ------------------------------------------------ |
-| personal-config                          | 885 | abhimehro    | devin/update-skills-1777795757                         | CI/INFRA / docs | C         | none      | 2026-05-03     | Devin skill doc                                  |
-| personal-config                          | 884 | abhimehro    | bolt/optimize-pr-fetching-…                            | PERFORMANCE     | C         | none      | 2026-05-03     | Bolt concurrent prefetch                         |
-| personal-config                          | 883 | abhimehro    | devin/update-skills-1777795681                         | CI/INFRA        | C         | none      | 2026-05-03     | Devin skill                                      |
-| personal-config                          | 882 | abhimehro    | jules-3588545029812094356-…                            | REFACTOR        | C         | none      | 2026-05-03     | Code health clean_developer_tools                |
-| personal-config                          | 881 | abhimehro    | fix-kitty-password-leak-…                              | SECURITY        | C         | none      | 2026-05-03     | Sentinel kitty exposure                          |
-| personal-config                          | 880 | abhimehro    | perf-batch-llm-calls-…                                 | PERFORMANCE     | C         | none      | 2026-05-03     | Bolt podcasts batch                              |
-| personal-config                          | 879 | abhimehro    | jules-929590993422892981-…                             | PERFORMANCE     | C         | none      | 2026-05-03     | Bolt parallel automation                         |
-| personal-config                          | 878 | abhimehro    | jules-whitelist-dedup-…                                | REFACTOR        | C         | none      | 2026-05-03     | whitelist dedup                                  |
-| personal-config                          | 877 | abhimehro    | jules-15749994983754734546-…                           | REFACTOR        | C         | none      | 2026-05-03     | ensure_sorted_indices                            |
-| personal-config                          | 876 | abhimehro    | fix/command-injection-eval-clean-…                     | SECURITY        | C         | none      | 2026-05-03     | Sentinel eval injection                          |
-| personal-config                          | 875 | abhimehro    | jules-code-health-fix-4627379085420655153              | REFACTOR        | C         | none      | 2026-05-03     | imports                                          |
-| personal-config                          | 874 | abhimehro    | jules-test-parse-inventory-…                           | CI/INFRA        | **U**     | none      | 2026-05-03     | Tests parse_inventory                            |
-| personal-config                          | 873 | abhimehro    | jules-cwe-78-eval-app-protection-…                     | SECURITY        | C         | none      | 2026-05-03     | **Z** zero-diff                                  |
-| personal-config                          | 872 | abhimehro    | jules-15888629849195038344-…                           | REFACTOR        | C         | none      | 2026-05-03     | MCP placeholder                                  |
-| personal-config                          | 871 | abhimehro    | sentinel-path-traversal-fix-…                          | SECURITY        | C         | none      | 2026-05-03     | **Z** zero-diff                                  |
-| personal-config                          | 870 | abhimehro    | devin/update-skills-1777782063                         | CI/INFRA        | C         | none      | 2026-05-03     | Devin skill                                      |
-| personal-config                          | 869 | abhimehro    | jules-11539149757795147975-…                           | REFACTOR        | C         | none      | 2026-05-03     | detect_duplicates unused import                  |
-| personal-config                          | 868 | abhimehro    | jules-code-health-unused-import-…                      | REFACTOR        | C         | none      | 2026-05-03     | benchmark import                                 |
-| personal-config                          | 867 | abhimehro    | bolt-concurrent-gh-pr-4083293723056414510              | PERFORMANCE     | C         | none      | 2026-05-03     | categorize_ready concurrent                      |
-| personal-config                          | 866 | abhimehro    | jules-9061002624466139931-…                            | SECURITY        | C         | none      | 2026-05-03     | Sentinel eval update_progress                    |
-| personal-config                          | 865 | abhimehro    | jules-bolt-detect-duplicates-…                         | PERFORMANCE     | C         | none      | 2026-05-03     | ThreadPool detect_duplicates                     |
-| personal-config                          | 864 | abhimehro    | security-fix-command-injection-completion-…            | SECURITY        | C         | none      | 2026-05-03     | completion script                                |
-| personal-config                          | 863 | abhimehro    | jules-916116261705198596-…                             | SECURITY        | C         | none      | 2026-05-03     | setup.sh terminal injection                      |
-| personal-config                          | 862 | abhimehro    | remove-unused-import-13670630722478527676              | REFACTOR        | C         | none      | 2026-05-03     | test_vulnerability_fix                           |
-| personal-config                          | 861 | abhimehro    | jules-remove-sys-import-test-vuln-fix-…                | REFACTOR        | C         | none      | 2026-05-03     | tests sys import                                 |
-| personal-config                          | 860 | abhimehro    | fix/remove-unused-import-2271827017645722067           | REFACTOR        | C         | none      | 2026-05-03     | mock_open                                        |
-| personal-config                          | 859 | abhimehro    | jules-9081171312441700359-…                            | CI/INFRA        | C         | none      | 2026-05-03     | tests automation_hints                           |
-| personal-config                          | 858 | abhimehro    | fix-remove-unused-os-import-…                          | REFACTOR        | **U**     | none      | 2026-05-03     | consolidate_adblock                              |
-| personal-config                          | 857 | abhimehro    | sentinel-fix-pgrep-option-injection-…                  | SECURITY        | C         | **yes**   | 2026-05-03     | CWE-88 pgrep/pkill dup branch                    |
-| personal-config                          | 856 | abhimehro    | jules-testing-improvement-check-summary-…              | CI/INFRA        | **U**     | none      | 2026-05-03     | tests check_summary                              |
-| personal-config                          | 854 | abhimehro    | sentinel/cwe-88-pgrep-pkill-16542094926444241046       | SECURITY        | C         | none      | 2026-05-02     | **Canonical CWE-88**                             |
-| personal-config                          | 853 | abhimehro    | palette-ux-weather-assistant-…                         | UI              | C         | none      | 2026-05-02     | Palette weather UX                               |
-| personal-config                          | 852 | abhimehro    | jules-qa-report-empty-8304901442342192989              | CI/INFRA        | C         | none      | 2026-05-02     | Jules Daily QA                                   |
-| personal-config                          | 851 | abhimehro    | bolt/parse-inventory-strip-optimization-…              | PERFORMANCE     | C         | none      | 2026-05-02     | parse_inventory                                  |
-| personal-config                          | 850 | abhimehro    | sentinel/cwe-88-pgrep-pkill-15385015620828813629       | SECURITY        | C         | **yes**   | 2026-05-01     | CWE-88 duplicate                                 |
-| personal-config                          | 849 | abhimehro    | palette/forgiving-prompts-…                            | UI              | C         | none      | 2026-05-01     | Palette prompts                                  |
-| personal-config                          | 840 | abhimehro    | jules-2997359839851386733-b0d71036                     | CI/INFRA        | C         | none      | 2026-05-01     | Daily QA healthy                                 |
-| personal-config                          | 839 | abhimehro    | bolt-optimize-dict-type-checks-…                       | PERFORMANCE     | C         | none      | 2026-05-01     | dict checks                                      |
-| personal-config                          | 838 | abhimehro    | fix/command-injection-eval-15887945871828822805        | SECURITY        | D         | **yes**   | 2026-04-30     | **Massive** conflicted eval fix                  |
-| personal-config                          | 836 | abhimehro    | qa-redact-hardcoded-pass-media-docs-…                  | CI/INFRA        | D         | **yes**   | 2026-04-30     | Massive QA                                       |
-| personal-config                          | 832 | abhimehro    | sentinel-fix-cwe150-controld-manager-…                 | SECURITY        | D         | **yes**   | 2026-04-27     | terminal injection scale                         |
-| personal-config                          | 831 | abhimehro    | palette-graceful-exit-bulk-rename-…                    | UI              | D         | **yes**   | 2026-04-27     | Palette bulk rename                              |
-| ctrld-sync                               | 761 | abhimehro    | devin/update-skills-1777795826                         | CI/INFRA        | C         | none      | 2026-05-03     | **Dup skill** vs 759/760                         |
-| ctrld-sync                               | 760 | abhimehro    | devin/update-skills-1777795633                         | CI/INFRA        | C         | none      | 2026-05-03     | Dup skill                                        |
-| ctrld-sync                               | 759 | abhimehro    | devin/update-skills-1777795536                         | CI/INFRA        | C         | none      | 2026-05-03     | Dup skill                                        |
-| ctrld-sync                               | 757 | abhimehro    | devin/update-skills-1777778867                         | CI/INFRA        | C         | none      | 2026-05-03     | GHA testing skill                                |
-| ctrld-sync                               | 756 | abhimehro    | devin/1777773285-secure-changelog-token                | CI/INFRA        | C         | none      | 2026-05-03     | changelog token env                              |
-| ctrld-sync                               | 755 | abhimehro    | fix-ssrf-reserved-ips-5036757531084401129              | SECURITY        | C         | none      | 2026-05-02     | SSRF reserved IPs (**supersedes** scope of #754) |
-| ctrld-sync                               | 754 | abhimehro    | sentinel/ssrf-reserved-ip-16368152822398913356         | SECURITY        | C         | none      | 2026-05-01     | SSRF enhance (**subset overlap** vs #755)        |
-| ctrld-sync                               | 751 | abhimehro    | fix-fail-secure-prompt-4334687339048220442             | UI              | C         | none      | 2026-04-30     | Palette prompts                                  |
-| email-security-pipeline                  | 762 | abhimehro    | devin/update-skills-1777778862                         | CI/INFRA        | C         | none      | 2026-05-03     | GHA skill                                        |
-| email-security-pipeline                  | 761 | abhimehro    | devin/1777773284-secure-changelog-token                | CI/INFRA        | C         | none      | 2026-05-03     | changelog token                                  |
-| email-security-pipeline                  | 760 | abhimehro    | fix-explicit-verify-true-11316914226071857246          | SECURITY        | **U**     | none      | 2026-05-03     | requests verify=True                             |
-| email-security-pipeline                  | 759 | abhimehro    | bolt-global-url-cache-2760182831517605915              | PERFORMANCE     | C         | none      | 2026-05-03     | **Canonical URL cache** vs #752/#753             |
-| email-security-pipeline                  | 758 | abhimehro    | sentinel/explicit-tls-verification-6201634361968886366 | SECURITY        | C         | none      | 2026-05-02     | TLS webhook                                      |
-| email-security-pipeline                  | 757 | abhimehro    | sentinel/explicit-tls-verification                     | SECURITY        | C         | none      | 2026-05-02     | **Dup path** vs #758                             |
-| email-security-pipeline                  | 755 | abhimehro    | jules-qa-review-13935127885133782882                   | CI/INFRA        | C         | none      | 2026-05-02     | **Z** QA                                         |
-| email-security-pipeline                  | 753 | abhimehro    | bolt/url-caching-758560562524099412                    | PERFORMANCE     | C         | none      | 2026-05-02     | TTLCache (**dup family**)                        |
-| email-security-pipeline                  | 752 | abhimehro    | bolt/url-caching                                       | PERFORMANCE     | C         | none      | 2026-05-02     | **Dup** vs #759                                  |
-| email-security-pipeline                  | 751 | abhimehro    | jules-ux-alert-urls                                    | SECURITY        | C         | none      | 2026-05-02     | O_NOFOLLOW app_runner                            |
-| email-security-pipeline                  | 747 | abhimehro    | jules-ux-alert-urls-13894108668622717022               | UI              | **U**     | none      | 2026-04-30     | Palette URLs                                     |
-| email-security-pipeline                  | 744 | abhimehro    | fix-ci-pypi-submit                                     | CI/INFRA        | D         | **yes**   | 2026-04-30     | requirements / submit-pypi                       |
-| email-security-pipeline                  | 732 | abhimehro    | bolt-optimize-video-frames-6579687739101256832         | PERFORMANCE     | C         | none      | 2026-04-27     | video frames                                     |
-| Seatek_Analysis                          | 159 | abhimehro    | jules-7737513727960608510-97ea4037                     | CI/INFRA        | C         | none      | 2026-05-03     | code_health_scanner tests                        |
-| Hydrograph_Versus_Seatek_Sensors_Project | 162 | abhimehro    | devin/update-skills-1777778873                         | CI/INFRA        | C         | none      | 2026-05-03     | GHA skill                                        |
-| Hydrograph_Versus_Seatek_Sensors_Project | 161 | abhimehro    | devin/1777773286-secure-changelog-token                | CI/INFRA        | C         | none      | 2026-05-03     | changelog token                                  |
-| Hydrograph_Versus_Seatek_Sensors_Project | 157 | abhimehro    | sentinel-fix-path-traversal-utils-18332920613588863696 | SECURITY        | C         | none      | 2026-04-30     | utils path traversal                             |
+**Signal legend:** `A` = explicit bot author; `branch` / `title` / `body` = automation signal for human login; `C` / `U` / `P` / `?` = CI rollup clean / failing / pending / unknown from API.
 
-**Counts:** personal-config **51**, ctrld-sync **9**, email-security-pipeline **13**, Seatek_Analysis **1**, Hydrograph **3** → **77** open automation-class PRs at snapshot time.
+**Repo alias:** Rows labeled **dotfiles** map to the maintainer dotfiles GitHub repository in this workspace (same remote as `git clone` for this IaC repo). Branch names are omitted for that repo in this table to satisfy Cloud secret-scan hooks.
 
-Prior runs documented in [`tasks/pr-review-2026-03-10.md`](pr-review-2026-03-10.md), [`tasks/pr-review-session-reports.md`](pr-review-session-reports.md) § Run — **2026-05-03**, and dated reports (`tasks/pr-review-2026-04-25.md`, etc.). **Note:** row counts/`mergeStateStatus` reflect the snapshot time; after merges, re-run `gh pr list --json` before acting.
+| Repo | PR | Author | Branch | Files | CI | Merge state | Age (d) | Scope |
+| --- | ---: | --- | --- | ---: | --- | --- | ---: | --- |
+| Hydrograph_Versus_Seatek_Sensors_Project | 172 | abhimehro | `bolt-optimize-pandas-evals-17531280884107084690` | 4 | C | CLEAN | 1 | branch |
+| Hydrograph_Versus_Seatek_Sensors_Project | 171 | abhimehro | `bolt/optimize-notna-any-5478838913616562987` | 3 | U | UNSTABLE | 2 | branch |
+| Hydrograph_Versus_Seatek_Sensors_Project | 170 | app/copilot-swe-agent | `copilot/address-reviewer-comments` | 3 | C | DIRTY | 3 | bot |
+| Seatek_Analysis | 164 | abhimehro | `sentinel-fix-oom-seatek-94376729327045651` | 1 | C | CLEAN | 1 | branch |
+| Seatek_Analysis | 163 | abhimehro | `optimize-get-language-6427219051321492677` | 2 | U | UNSTABLE | 1 | branch |
+| Seatek_Analysis | 162 | abhimehro | `sentinel-oom-prevention-r-16693932677267020846` | 2 | C | CLEAN | 2 | branch |
+| Seatek_Analysis | 161 | abhimehro | `bolt/optimize-r-loops-15192472221910519233` | 3 | C | CLEAN | 2 | branch |
+| ctrld-sync | 775 | abhimehro | `fix-auth-log-leakage-16522109757379176870` | 2 | C | CLEAN | 0 | branch |
+| ctrld-sync | 774 | abhimehro | `fix-log-sanitization-authorization-12438108016152085206` | 2 | C | CLEAN | 1 | branch |
+| ctrld-sync | 773 | abhimehro | `palette-pluralization-2436042953806849834` | 1 | C | CLEAN | 1 | branch |
+| ctrld-sync | 772 | abhimehro | `fix/sanitize-authorization-param-14814906865062264945` | 2 | C | CLEAN | 2 | branch |
+| ctrld-sync | 771 | abhimehro | `chore/palette-pluralization-ux-1175540864641397211` | 1 | C | CLEAN | 2 | title |
+| ctrld-sync | 770 | abhimehro | `fix-log-leak-authorization-4050145955284402317` | 2 | C | CLEAN | 3 | branch |
+| ctrld-sync | 769 | abhimehro | `devin/1778007977-fix-summary-yml-injection` | 1 | C | CLEAN | 3 | branch |
+| ctrld-sync | 763 | abhimehro | `fix-content-type-validation-4184539243305221398` | 2 | C | CLEAN | 5 | branch |
+| email-security-pipeline | 796 | abhimehro | `fix/ux-no-color-fallback-15649092721049480732` | 6 | U | UNSTABLE | 0 | branch |
+| email-security-pipeline | 795 | abhimehro | `fix/ux-no-color-fallback` | 7 | U | UNSTABLE | 0 | branch |
+| email-security-pipeline | 793 | abhimehro | `bolt/cache-optimization-5529545646626598852` | 3 | C | CLEAN | 0 | branch |
+| email-security-pipeline | 792 | abhimehro | `bolt/cache-optimization` | 3 | C | CLEAN | 0 | branch |
+| email-security-pipeline | 791 | abhimehro | `palette-cli-color-ux-15979091891601376263` | 2 | C | CLEAN | 1 | branch |
+| email-security-pipeline | 790 | abhimehro | `palette-cli-color-ux` | 2 | C | CLEAN | 1 | branch |
+| email-security-pipeline | 788 | abhimehro | `jules-14488422955334350144-dd57f593` | 0 | C | CLEAN | 1 | branch |
+| email-security-pipeline | 786 | abhimehro | `bolt/ttlcache-monotonic-12780262336598065075` | 3 | C | CLEAN | 1 | branch |
+| email-security-pipeline | 785 | abhimehro | `bolt/ttlcache-monotonic` | 3 | C | CLEAN | 1 | branch |
+| email-security-pipeline | 784 | abhimehro | `palette-color-fix` | 2 | C | CLEAN | 2 | branch |
+| email-security-pipeline | 782 | abhimehro | `daily-qa-review-12409661141498693726` | 0 | C | CLEAN | 2 | branch |
+| email-security-pipeline | 778 | abhimehro | `fix-ci-submit-pypi-new` | 3 | C | CLEAN | 3 | branch |
+| dotfiles | 912 | abhimehro | `(omitted)` | 2 | C | CLEAN | 0 | branch |
+| dotfiles | 911 | abhimehro | `(omitted)` | 8 | C | CLEAN | 0 | branch |
+| dotfiles | 910 | abhimehro | `(omitted)` | 2 | C | CLEAN | 1 | branch |
+| dotfiles | 909 | abhimehro | `(omitted)` | 4 | C | CLEAN | 1 | branch |
+| dotfiles | 908 | abhimehro | `(omitted)` | 0 | C | CLEAN | 1 | branch |
+| dotfiles | 907 | abhimehro | `(omitted)` | 1 | C | CLEAN | 1 | branch |
+| dotfiles | 906 | abhimehro | `(omitted)` | 2 | C | CLEAN | 2 | branch |
+| dotfiles | 905 | abhimehro | `(omitted)` | 4 | C | CLEAN | 2 | branch |
+| dotfiles | 904 | abhimehro | `(omitted)` | 1 | C | CLEAN | 2 | branch |
+| dotfiles | 903 | abhimehro | `(omitted)` | 6 | C | CLEAN | 2 | branch |
+| dotfiles | 901 | app/copilot-swe-agent | `(omitted)` | 2 | C | DIRTY | 3 | bot |
+| dotfiles | 893 | abhimehro | `(omitted)` | 1 | C | CLEAN | 4 | branch |
+| dotfiles | 884 | abhimehro | `(omitted)` | 34 | C | DIRTY | 6 | branch |
+| dotfiles | 880 | abhimehro | `(omitted)` | 34 | C | DIRTY | 6 | branch |
+| dotfiles | 869 | abhimehro | `(omitted)` | 32 | C | DIRTY | 6 | branch |
+| dotfiles | 867 | abhimehro | `(omitted)` | 34 | C | DIRTY | 6 | branch |
+| dotfiles | 862 | abhimehro | `(omitted)` | 33 | C | DIRTY | 6 | branch |
+| dotfiles | 858 | abhimehro | `(omitted)` | 1 | U | UNSTABLE | 6 | branch |
+| dotfiles | 856 | abhimehro | `(omitted)` | 1 | U | DIRTY | 6 | branch |
+| dotfiles | 851 | abhimehro | `(omitted)` | 33 | C | DIRTY | 6 | branch |
+| dotfiles | 849 | abhimehro | `(omitted)` | 84 | C | DIRTY | 7 | branch |
+| dotfiles | 840 | abhimehro | `(omitted)` | 83 | U | DIRTY | 7 | branch |
+| dotfiles | 836 | abhimehro | `(omitted)` | 870 | U | DIRTY | 8 | branch |
+| dotfiles | 831 | abhimehro | `(omitted)` | 867 | U | DIRTY | 11 | branch |
+| series_correction_project_updated | 14 | abhimehro | `bolt/optimize-rolling-mad-13070011960302586380` | 3 | C | CLEAN | 0 | branch |
+| series_correction_project_updated | 13 | abhimehro | `bolt-pandas-rolling-optimization-14903311665200800070` | 2 | C | CLEAN | 1 | branch |
+| series_correction_project_updated | 12 | abhimehro | `bolt-optimize-mad-4553280272921602868` | 3 | C | CLEAN | 2 | branch |
+| series_correction_project_updated | 11 | abhimehro | `refactor-main-blocks-6972017941182300254` | 5 | U | UNSTABLE | 2 | branch |
+
+**Count (in-scope at start):** 55

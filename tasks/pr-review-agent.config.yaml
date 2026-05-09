@@ -1,5 +1,5 @@
 # Automated PR Review Agent — Configuration
-# Session: backlog cleanup test (review-and-merge), schedule: none
+# Session: backlog cleanup test (review-and-merge), schedule: none (2026-05-09)
 
 mode: review-and-merge
 schedule: none
@@ -10,12 +10,15 @@ repos:
   - abhimehro/email-security-pipeline
   - abhimehro/Seatek_Analysis
   - abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+  - abhimehro/series_correction_project_updated
 
 bot_authors:
   - dependabot[bot]
   - renovate[bot]
   - google-labs-jules[bot]
-  # Expanded: human-authored PRs when branch/title/body/comments indicate automation — see pr-triage.md
+  - devin[bot]
+  - copilot[bot]
+  # Expanded: human-authored PRs when branch/title/body/comments indicate automation — see tasks/pr-inventory.md
 
 stale_threshold_days: 30
 merge_strategy: squash
