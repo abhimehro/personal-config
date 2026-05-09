@@ -252,3 +252,9 @@
 **Vulnerability:** Terminal Injection vulnerability where malicious input containing escape characters could manipulate the terminal display or execute arbitrary commands depending on the terminal emulator. Found in `setup.sh` logging functions.
 **Learning:** `echo -e` interpolates escape characters in variables, which is dangerous when outputting untrusted input.
 **Prevention:** Use `printf "%b[INFO]%b %s\n"` to strictly separate color formatting (hardcoded via `%b`) from user data (passed via `%s`), preventing execution or interpretation of escape characters within dynamic input.
+
+## 2026-05-09 - Command Injection Risk via eval in array length calculation
+
+**Vulnerability:** Command Injection ([CWE-78](https://cwe.mitre.org/data/definitions/78.html)) risk existed in `configs/.config/mole/lib/clean/caches.sh`. The `flush_python_group_if_needed` function used `eval` to get the length of an array and expand it by dynamic variable name (e.g. `eval 'group_count=${#'"$array_name"'[@]}'`).
+**Learning:** Using `eval` to access array properties and elements by dynamically built names in shell scripts is a command injection risk even if primarily internal.
+**Prevention:** Use Bash namerefs (`declare -n`) to access dynamically referenced array elements instead of string interpolation and `eval`.
