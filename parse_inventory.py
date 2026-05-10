@@ -145,7 +145,11 @@ def _is_pr_stale(updated_at):
 def _is_checks_failing(checks):
     # Substring matching is intentional: the inventory file uses markdown-formatted
     # statuses (e.g., "**U**") as well as plain codes, so exact equality would miss them.
-    return ("FAIL" in checks) or ("PENDING" in checks) or bool(re.search(r"(?<![a-zA-Z])U(?![a-zA-Z])", checks))
+    # For the single-letter unstable code, normalize away surrounding markdown/whitespace
+    # so we do not treat unrelated statuses containing "U" (e.g. "SUCCESS") as failing.
+    if ("FAIL" in checks) or ("PENDING" in checks):
+        return True
+    return checks.strip(' *_') == "U"
 
 
 def _get_pr_category(info, checks):
