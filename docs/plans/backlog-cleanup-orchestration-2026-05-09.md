@@ -182,13 +182,13 @@ PRs). Within a cluster:
 4. **Verify cluster membership against the live inventory before
    acting.** PR numbers may have moved between plan-time and run-time.
 
-| Cluster           | Likely files / signals                                                                                    | Default disposition                                             |
-| ----------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Bolt perf         | `categorize_ready.py`, `parse_inventory.py`, `detect_duplicates.py`; `⚡ Bolt:` title; `bolt-` branch     | Merge canonical, close zero-diff siblings, defer DIRTY siblings |
-| Sentinel security | `patch_sentinel*`, `summary.yml`, AI-output ingestion paths; `🛡 Sentinel:` title                         | Escalate; never auto-merge                                      |
-| Jules QA          | tests under `tests/`; `salvage-personal-config-` branches                                                 | Merge if green; defer if red on `main`                          |
-| Trust boundary    | `.github/`, automation toolchain itself, secret-handling paths                                            | Escalate by comment                                             |
-| Red gate          | any PR with failing CodeQL, GitGuardian, Devin Review, ShellCheck, or CodeScene Code Health Review (main) | Defer with red-gate citation                                    |
+| Cluster           | Likely files / signals                                                                                                    | Default disposition                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Bolt perf         | `categorize_ready.py`, `parse_inventory.py`, `detect_duplicates.py`; "Bolt:" title (often emoji-prefixed); `bolt-` branch | Merge canonical, close zero-diff siblings, defer DIRTY siblings |
+| Sentinel security | `patch_sentinel*`, `summary.yml`, AI-output ingestion paths; "Sentinel:" title (often emoji-prefixed)                     | Escalate; never auto-merge                                      |
+| Jules QA          | tests under `tests/`; `salvage-personal-config-` branches                                                                 | Merge if green; defer if red on `main`                          |
+| Trust boundary    | `.github/`, automation toolchain itself, secret-handling paths                                                            | Escalate by comment                                             |
+| Red gate          | any PR with failing CodeQL, GitGuardian, Devin Review, ShellCheck, or CodeScene Code Health Review (main)                 | Defer with red-gate citation                                    |
 
 ---
 
