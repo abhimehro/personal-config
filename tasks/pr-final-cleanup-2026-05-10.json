@@ -1,0 +1,275 @@
+{
+  "run": "backlog-cleanup-final-pass-2026-05-10",
+  "started_utc": "2026-05-10T01:55:00Z",
+  "completed_utc": "2026-05-10T02:30:00Z",
+  "context": "Phase B follow-up to backlog-cleanup-orchestrate-2026-05-09. Disposes of every PR that was DEFERRED, ESCALATED, or DIRTY at the end of the original run, plus the few PRs that surfaced in the live snapshot but were not yet logged. Trust-boundary security PRs are escalated and left open per .cursorrules; everything else is merged, closed, or salvaged.",
+  "summary": {
+    "merged": 1,
+    "closed_superseded": 7,
+    "closed_duplicate": 1,
+    "closed_stale": 6,
+    "escalated": 4,
+    "salvage_prs_opened": 3,
+    "salvage_attempts_aborted": 1,
+    "deferred_open_after_run": 0
+  },
+  "salvage_workspace": "/tmp/salvage-2026-05-10/",
+  "actions": [
+    {
+      "timestamp_utc": "2026-05-10T02:00:00Z",
+      "repo": "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project",
+      "pr": 169,
+      "disposition": "CLOSE-SUPERSEDED",
+      "outcome": "CLOSED",
+      "reason": "Phase 1 commits already merged on main via #172",
+      "comment_url": "https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/169"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:00:30Z",
+      "repo": "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project",
+      "pr": 170,
+      "disposition": "CLOSE-SUPERSEDED",
+      "outcome": "CLOSED",
+      "reason": "Stacked on #169 base; covered by #172"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:01:00Z",
+      "repo": "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project",
+      "pr": 171,
+      "disposition": "CLOSE-SUPERSEDED",
+      "outcome": "CLOSED",
+      "reason": "Bolt micro-opt overlapping #169 scope; covered by #172"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:01:30Z",
+      "repo": "abhimehro/series_correction_project_updated",
+      "pr": 13,
+      "disposition": "CLOSE-SUPERSEDED",
+      "outcome": "CLOSED",
+      "reason": "Replaced by salvage PR #15 (orchestrate test 2026-05-09)"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:02:00Z",
+      "repo": "abhimehro/personal-config",
+      "pr": 884,
+      "disposition": "CLOSE-DUPLICATE",
+      "outcome": "CLOSED",
+      "reason": "Twin of canonical #867; kept lower-numbered as canonical (Lesson 0dd)"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:02:30Z",
+      "repo": "abhimehro/personal-config",
+      "pr": 880,
+      "disposition": "CLOSE-SUPERSEDED",
+      "outcome": "CLOSED",
+      "reason": "Intent absorbed on main via 60f7e904 morning-brief truncate fix + benchmark/test commits"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:03:00Z",
+      "repo": "abhimehro/email-security-pipeline",
+      "pr": 791,
+      "disposition": "ESCALATE",
+      "outcome": "COMMENTED-LEAVE-OPEN",
+      "reason": "Trust-boundary security pipeline; agent does not autonomously merge per .cursorrules"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:03:30Z",
+      "repo": "abhimehro/email-security-pipeline",
+      "pr": 793,
+      "disposition": "ESCALATE",
+      "outcome": "COMMENTED-LEAVE-OPEN",
+      "reason": "Trust-boundary security pipeline; agent does not autonomously merge per .cursorrules"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:04:00Z",
+      "repo": "abhimehro/email-security-pipeline",
+      "pr": 796,
+      "disposition": "ESCALATE",
+      "outcome": "COMMENTED-LEAVE-OPEN",
+      "reason": "Trust-boundary security pipeline + red gates (CodeQL, CodeScene)"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:04:30Z",
+      "repo": "abhimehro/personal-config",
+      "pr": 901,
+      "disposition": "ESCALATE",
+      "outcome": "COMMENTED-LEAVE-OPEN",
+      "reason": "Copilot-authored modifications to setup.sh require human review"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:05:00Z",
+      "repo": "abhimehro/series_correction_project_updated",
+      "pr": 15,
+      "disposition": "MERGE",
+      "outcome": "MERGED",
+      "merge_method": "squash",
+      "merge_sha": "365644bc08e513351f4fb9737859aba54960baec",
+      "notes": "Salvage PR opened by orchestrate run 2026-05-09; clean CI; sole-of-kind"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:08:00Z",
+      "repo": "abhimehro/personal-config",
+      "pr": 836,
+      "disposition": "CLOSE-STALE",
+      "outcome": "CLOSED",
+      "reason": "Jules QA junk-fixture bleed (100+ files) + GitGuardian failing (Lesson 0e)"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:08:30Z",
+      "repo": "abhimehro/personal-config",
+      "pr": 840,
+      "disposition": "CLOSE-STALE",
+      "outcome": "CLOSED",
+      "reason": "Jules zero-diff QA + 85 files / 18.6k LOC bleed + CodeScene failing (Lessons 0e + 0p)"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:09:00Z",
+      "repo": "abhimehro/personal-config",
+      "pr": 831,
+      "disposition": "CLOSE-STALE",
+      "outcome": "CLOSED",
+      "reason": "Original Palette intent buried under 12.3k+ Jules bleed (Lesson 0e); GitGuardian failing"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:09:30Z",
+      "repo": "abhimehro/personal-config",
+      "pr": 862,
+      "disposition": "CLOSE-STALE",
+      "outcome": "CLOSED",
+      "reason": "Tiny chore (textwrap import removal) buried under 3k Jules bleed (Lesson 0e)"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:10:00Z",
+      "repo": "abhimehro/personal-config",
+      "pr": 869,
+      "disposition": "CLOSE-STALE",
+      "outcome": "CLOSED",
+      "reason": "Tiny chore (re import removal) buried under 3k Jules bleed (Lesson 0e)"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:10:30Z",
+      "repo": "abhimehro/personal-config",
+      "pr": 858,
+      "disposition": "CLOSE-SUPERSEDED",
+      "outcome": "CLOSED",
+      "reason": "Verified: os import already absent from origin/main:adguard/scripts/consolidate_adblock_lists.py"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:13:00Z",
+      "repo": "abhimehro/personal-config",
+      "pr": 911,
+      "disposition": "SALVAGE",
+      "outcome": "REPLACED",
+      "salvage_pr": "https://github.com/abhimehro/personal-config/pull/916",
+      "salvage_branch": "salvage-personal-config-911-bolt-partition",
+      "notes": "Cherry-picked fd9fcc25 onto fresh main; resolved parse_inventory.py conflict by deduplicating Bolt comments where main absorbed equivalent rewrites; 8 files / +27/-16"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:18:00Z",
+      "repo": "abhimehro/personal-config",
+      "pr": 899,
+      "disposition": "SALVAGE",
+      "outcome": "REPLACED",
+      "salvage_pr": "https://github.com/abhimehro/personal-config/pull/917",
+      "salvage_branch": "salvage-personal-config-899-parse-inventory-tests",
+      "notes": "Merge-replayed pr899 chain onto fresh main; kept refactored helper-function form; 22 unit tests pass; 2 files / +342/-85"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:22:00Z",
+      "repo": "abhimehro/personal-config",
+      "pr": 856,
+      "disposition": "SALVAGE",
+      "outcome": "REPLACED",
+      "salvage_pr": "https://github.com/abhimehro/personal-config/pull/918",
+      "salvage_branch": "salvage-personal-config-856-check-summary-tests",
+      "notes": "Merged TestCheckSummary into existing tests/test_get_prs_summarize.py (which on main had TestAutomationHints); 17 tests pass; 1 file / +65/-1"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:23:30Z",
+      "repo": "abhimehro/personal-config",
+      "pr": 867,
+      "disposition": "CLOSE-STALE",
+      "outcome": "CLOSED",
+      "reason": "Twin of #884 (already closed); diff polluted by 3k Jules junk-fixture bleed; concurrent-fetch intent partially absorbed by salvage #916"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:24:00Z",
+      "repo": "abhimehro/personal-config",
+      "pr": 849,
+      "disposition": "CLOSE-STALE",
+      "outcome": "CLOSED",
+      "reason": "Massive Jules junk-fixture bleed (11k+ adds across 80+ files) — original Palette intent unrecoverable from current PR"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:25:00Z",
+      "repo": "abhimehro/ctrld-sync",
+      "pr": 771,
+      "disposition": "CLOSE-SUPERSEDED",
+      "outcome": "CLOSED",
+      "reason": "Main now has dedicated pluralize() helper at main.py:573 used in 7+ call sites; PR's inline ternary is functionally equivalent but less DRY"
+    },
+    {
+      "timestamp_utc": "2026-05-10T02:27:00Z",
+      "repo": "abhimehro/series_correction_project_updated",
+      "pr": 11,
+      "disposition": "CLOSE-STALE",
+      "outcome": "CLOSED",
+      "reason": "Refactor PR (5 scripts to main() pattern) DIRTY against main; salvage attempt aborted with 6 conflict regions vs PR #10 test additions"
+    }
+  ],
+  "salvage_results": [
+    {
+      "cluster": "personal-config-bolt-partition",
+      "canonical_pr": "abhimehro/personal-config#911",
+      "outcome": "REPLACED",
+      "salvage_pr": "https://github.com/abhimehro/personal-config/pull/916",
+      "diff_stat": "8 files, +27/-16",
+      "verification": "git diff --check clean; ast.parse OK"
+    },
+    {
+      "cluster": "personal-config-parse-inventory-tests",
+      "canonical_pr": "abhimehro/personal-config#899",
+      "outcome": "REPLACED",
+      "salvage_pr": "https://github.com/abhimehro/personal-config/pull/917",
+      "diff_stat": "2 files, +342/-85",
+      "verification": "python3 -m unittest tests.test_parse_inventory -- Ran 22 tests, OK"
+    },
+    {
+      "cluster": "personal-config-check-summary-tests",
+      "canonical_pr": "abhimehro/personal-config#856",
+      "outcome": "REPLACED",
+      "salvage_pr": "https://github.com/abhimehro/personal-config/pull/918",
+      "diff_stat": "1 file, +65/-1",
+      "verification": "python3 -m unittest tests.test_get_prs_summarize -- Ran 17 tests, OK"
+    },
+    {
+      "cluster": "series_correction-main-refactor",
+      "canonical_pr": "abhimehro/series_correction_project_updated#11",
+      "outcome": "ABORTED",
+      "reason": "6 conflict regions vs PR #10 test additions; refactor cleaner if re-authored against current main"
+    }
+  ],
+  "open_after_run": {
+    "personal-config": [
+      {"pr": 916, "state": "DRAFT", "kind": "salvage of #911"},
+      {"pr": 917, "state": "DRAFT", "kind": "salvage of #899"},
+      {"pr": 918, "state": "DRAFT", "kind": "salvage of #856"},
+      {"pr": 901, "state": "DIRTY", "kind": "trust-boundary (copilot setup.sh) — escalated"},
+      {"pr": 893, "state": "BLOCKED", "kind": "trust-boundary (security summary.yml) — escalated"}
+    ],
+    "ctrld-sync": [
+      {"pr": 769, "state": "CLEAN", "kind": "trust-boundary (security summary.yml) — escalated; status flipped to CLEAN since prior session"}
+    ],
+    "email-security-pipeline": [
+      {"pr": 778, "state": "CLEAN", "kind": "trust-boundary (Palette suspicious URLs display) — escalated; status flipped to CLEAN since prior session"},
+      {"pr": 780, "state": "CLEAN", "kind": "trust-boundary (security summary.yml) — escalated; status flipped to CLEAN since prior session"},
+      {"pr": 791, "state": "DIRTY", "kind": "trust-boundary (Palette CLI accessibility) — escalated"},
+      {"pr": 793, "state": "DIRTY", "kind": "trust-boundary (Bolt time.monotonic for TTLCache) — escalated"},
+      {"pr": 796, "state": "UNSTABLE", "kind": "trust-boundary (Palette NO_COLOR) — escalated; red gate (CodeQL, CodeScene)"}
+    ],
+    "Seatek_Analysis": [],
+    "Hydrograph_Versus_Seatek_Sensors_Project": [],
+    "series_correction_project_updated": []
+  },
+  "lessons_referenced": ["0aa", "0bb", "0cc", "0de", "0dd", "0e", "0p", "0u", "0v", "0w", "0x", "0y", "0z", "0cd", "0df"]
+}
