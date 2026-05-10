@@ -38,7 +38,8 @@ for repo in repos:
     if success:
         prs = json.loads(stdout)
         for pr in prs:
-            pr["repo"] = repo.split("/")[-1]
+            # ⚡ Bolt Optimization: Use rpartition() over split() to avoid intermediate list allocation overhead
+            pr["repo"] = repo.rpartition("/")[2]
             pr["full_repo"] = repo
             all_prs.append(pr)
 

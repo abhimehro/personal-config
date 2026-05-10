@@ -50,7 +50,8 @@ def _emit_bot_authors(bots: Any) -> None:
     for item in bots:
         if not isinstance(item, str):
             continue
-        ent = item.split("#", 1)[0].strip()
+        # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
+        ent = item.partition("#")[0].strip()
         if ent:
             print(f"bot\t{ent}")
 
