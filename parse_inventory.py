@@ -1,4 +1,3 @@
-import re
 from datetime import datetime, timezone
 import json
 import subprocess
@@ -13,10 +12,10 @@ def _parse_env_line(line, env_dict):
         return
     if line.startswith("export "):
         line = line[7:].strip()
-    if "=" not in line:
-        return
-    # ⚡ Bolt Optimization: Use partition instead of split for faster key-value separation
+    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
     key, sep, val = line.partition("=")
+    if not sep:
+        return
     env_dict[key] = val.strip("'\"")
 
 @lru_cache(maxsize=None)
@@ -54,7 +53,7 @@ current_repo = None
 
 # Repo -> [ (pr_id, author, merge, checks, hints), ... ]
 for line in lines:
-    # ⚡ Bolt Optimization: Replace re.match with startswith and slicing for ~4x faster line parsing
+    # ⚡ Bolt Optimization: Replace re.match with startswith() + slicing for faster line parsing
     if line.startswith('## '):
         current_repo = line[3:].strip()
         repos[current_repo] = []
