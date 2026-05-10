@@ -34,8 +34,7 @@ if rclone about gdrive: &>/dev/null; then
 else
 	echo "❌ Reconnect failed. Let's delete and recreate..."
 	echo
-	read -p "Delete gdrive remote and start fresh? (y/n): " -n 1 -r
-	echo
+	read -p "Delete gdrive remote and start fresh? (y/n): " -r
 	if [[ $REPLY =~ ^[Yy]$ ]]; then
 		rclone config delete gdrive
 		echo "✅ Old gdrive remote deleted"

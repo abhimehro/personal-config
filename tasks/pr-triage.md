@@ -1,55 +1,45 @@
-# PR triage — backlog cleanup test (2026-05-03)
+# PR Triage — 2026-05-09 backlog cleanup (review-and-merge)
 
-**Policy:** squash merge, stale_days 30, auto-fix enabled, mode review-and-merge. **No force-push.**
+**Policy:** Squash merge, stale threshold 30 days (no qualifying **stale closures** this run — queue skews under 7 days old), auto-fix enabled (no branch pushes this pass; no safe auto-fix opportunities taken).
 
-## Duplicate / supersede groups
+## SUPERSEDED
 
-| Keep (canonical)                 | Close as duplicate / superseded | Rationale                                                                                                            |
-| -------------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| personal-config **#854**         | **#850**, **#857**              | Same CWE-88 pgrep/pkill theme; **#854** CLEAN mergeable on latest snapshot; **#850/#857** CONFLICTING older branches |
-| ctrld-sync **#761**              | **#759**, **#760**              | Identical title “Add ctrld-sync CLI testing skill”; keep newest PR                                                   |
-| ctrld-sync **#755**              | **#754**                        | Both SSRF/reserved IP hardening; **#755** newer HIGH finding + broader test file set vs **#754** MEDIUM              |
-| email-security-pipeline **#759** | **#752**, **#753**              | Same `spam_analyzer.py` Bolt URL caching; filenames overlap                                                          |
-| email-security-pipeline **#758** | **#757**                        | Same sentinel TLS refactor branch family (`explicit-tls-verification`)                                               |
+- abhimehro/Seatek_Analysis#162 — superseded by **#164** (CRITICAL OOM fix on same `Updated_Seatek_Analysis.R` path); closed after **#164** merged.
 
-## Zero-diff / QA noise (close, do not squash-merge)
+## DUPLICATE
 
-| PR                               | Action                                                 |
-| -------------------------------- | ------------------------------------------------------ |
-| personal-config **#873**         | CLOSE-STALE semantics → close as zero-diff (Lesson 0b) |
-| personal-config **#871**         | CLOSE zero-diff                                        |
-| email-security-pipeline **#755** | CLOSE zero-diff QA                                     |
+- abhimehro/email-security-pipeline#786 — duplicate of **#785** (identical `caching.py` / test / journal delta); **#785** merged first, **#786** closed.
 
-## Escalate / defer (no autonomous merge)
+## STALE (>30d, no activity)
 
-| PR                                                     | Reason                                                                                                                      |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| personal-config **#838**, **#836**, **#832**, **#831** | CONFLICTING + very large diffs (~869 files); trust boundary / conflict resolution needs human                               |
-| email-security-pipeline **#744**                       | CONFLICTING CI/requirements — potential migration/supply-chain scope                                                        |
-| personal-config **#867** + **#884**                    | Both touch orchestration (`run_merges.py`); merge sequentially with re-check — **not** duplicates but **coordination risk** |
+- _(none in-scope at snapshot; re-evaluate on next run with `updatedAt` vs `stale_threshold_days`.)_
 
-## UNSTABLE (investigate before merge)
+## CONFLICTING / DEFER (human rebase; no force-push)
 
-| PR                                           | Gate                                                                |
-| -------------------------------------------- | ------------------------------------------------------------------- |
-| personal-config **#874**, **#858**, **#856** | Request `gh pr checks`; merge only if failures unrelated per policy |
-| email-security-pipeline **#760**, **#747**   | Same                                                                |
+- abhimehro/series_correction_project_updated#13, #14 — conflicts after **#12** squash-merge (Lesson 0cc cascade).
+- abhimehro/ctrld-sync#771 — conflicts after **#773** merge (same pluralization lane).
+- abhimehro/Seatek_Analysis#163 — **UNSTABLE** CI at snapshot; not merged.
 
-## Recommended merge order (global)
+## READY (merged this session — cross-check `main`)
 
-1. **SECURITY / path fixes:** Hydrograph **#157**, email **#758**, email **#751**, ctrld **#755**, personal-config **#854**, then remaining personal-config Sentinel/eval fixes (**#876**, **#866**, **#864**, **#863**, **#881**) before broad Bolt perf merges.
-2. **CI hygiene (low risk):** Devin changelog token PRs ctrld **#756**, email **#761**, Hydrograph **#161**; skills **#762**, ctrld **#757**, Hydrograph **#162**, personal-config Devin docs PRs.
-3. **PERFORMANCE / REFACTOR:** Remaining CLEAN personal-config Bolt/Jules rows after each merge re-validation.
+- abhimehro/dotfiles#907, #904
+- abhimehro/email-security-pipeline#785
+- abhimehro/series_correction_project_updated#12
+- abhimehro/Seatek_Analysis#164, #161
+- abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#172
+- abhimehro/ctrld-sync#773
 
-After **each** merge: refresh `gh pr list --json mergeable,mergeStateStatus` for siblings (Lesson 0).
+## ESCALATE / trust boundary (commented; not merged)
 
-## Stale (>30d inactive)
+- abhimehro/dotfiles#893 — `summary.yml` / LLM output → shell trust boundary (re-tagged in session comment).
+- abhimehro/ctrld-sync#769 — Devin branch: shell injection hardening in automation summary path.
+- abhimehro/ctrld-sync#775 — Sentinel authorization / log leakage class (overlaps **#772**, **#774**, **#770**; needs human dedup).
 
-Snapshot: **none** met strict “last push + fail” stale closure policy; oldest mergeable heads still active May 2026.
+## ZERO-DIFF CLOSED (no merge; Lesson 0b)
 
----
+- abhimehro/dotfiles#908
+- abhimehro/email-security-pipeline#788, #782
 
-## Outcomes (2026-05-03 execution)
+## REMAINING HIGH-VOLUME (dotfiles repo)
 
-- **Executed:** zero-diff closures (**personal-config** `#873` `#871`, **email-security-pipeline** `#755`); duplicate closures (**personal-config** `#850` `#857`, **ctrld-sync** `#754`, **email** `#752` `#753` `#757`); squash merges per [`tasks/pr-review-session-reports.md`](pr-review-session-reports.md) Run — 2026-05-03 (**36** total).
-- **Deferred:** conflict tail (**personal-config** `#840` `#849` `#851` `#862` `#880` `#884`, **`#863`** earlier), Bolt overlap **`#867`** **`#869`**, mega conflicting **`#838`** **`#836`** **`#832`** **`#831`**, CI-red rollup (**personal-config** `#874` `#858` `#856`; **email** `#760` `#747`), requirements **`email#744`**, **`email#732`**.
+Large overlapping Bolt/Jules/Sentinel queues (**#901** `CONFLICTING`, **#910**–**#903**, etc.): prefer **one semantic lane** at a time; re-fetch `mergeable` after each merge (Lesson 0cc).

@@ -21,15 +21,15 @@ RED='\033[0;31m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-log_info() { echo -e "${BLUE}ℹ️  [INFO]${NC}  $*"; }
-log_ok() { echo -e "${GREEN}✅ [OK]${NC}    $*"; }
-log_warn() { echo -e "${YELLOW}⚠️  [WARN]${NC}  $*"; }
-log_err() { echo -e "${RED}❌ [ERR]${NC}   $*" >&2; }
+log_info() { printf "%bℹ️  [INFO]%b  %s\n" "${BLUE}" "${NC}" "$*"; }
+log_ok() { printf "%b✅ [OK]%b    %s\n" "${GREEN}" "${NC}" "$*"; }
+log_warn() { printf "%b⚠️  [WARN]%b  %s\n" "${YELLOW}" "${NC}" "$*"; }
+log_err() { printf "%b❌ [ERR]%b   %s\n" "${RED}" "${NC}" "$*" >&2; }
 
 hr() { echo -e "${BLUE}────────────────────────────────────────────────────────────${NC}"; }
 header() {
 	echo
-	echo -e "${BOLD}${BLUE}🔷 $*${NC}"
+	printf "%b🔷 %s%b\n" "${BOLD}${BLUE}" "$*" "${NC}"
 	hr
 }
 
@@ -170,7 +170,7 @@ install_media_launchd() {
 main() {
 	# Welcome Banner
 	echo -e "${BOLD}🎨 Personal Config Bootstrap${NC}"
-	echo -e "   Repository: $REPO_ROOT"
+	printf "   Repository: %s\n" "$REPO_ROOT"
 
 	# Check for non-interactive mode or flag
 	local interactive=true
@@ -192,10 +192,9 @@ main() {
 		echo
 		echo -e "${YELLOW}⚠️  This will modify configuration files in your home directory.${NC}"
 		echo
-		read -p "Ready to proceed? (y/N) " -n 1 -r
+		read -p "Ready to proceed? (y/N) " -r
 		REPLY=${REPLY:-N}
-		echo
-		if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+		if [[ ! $REPLY =~ ^([Yy][Ee][Ss]|[Yy])$ ]]; then
 			log_info "Bootstrap cancelled by user."
 			exit 0
 		fi

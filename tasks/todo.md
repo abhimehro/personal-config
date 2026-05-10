@@ -1,3 +1,77 @@
+# Backlog Cleanup Orchestration — 2026-05-09
+
+- [x] Interview scope: Phase 1 review-and-merge enabled; Phase 2 light salvage triage only.
+- [x] Read local runbooks, lessons, and prior reports.
+- [x] Run GitHub preflight for configured repos and verify sixth repo access explicitly.
+- [x] Build live six-repo inventory with automation-signal expansion.
+- [x] Execute safe Phase 1 merges/closures only after gates pass.
+- [x] Document light salvage triage candidates without creating salvage branches.
+- [x] Write a new dated addendum/run file and link it from the session report log.
+- [x] Verify docs and summarize results.
+
+---
+
+# Backlog Cleanup Final Pass — 2026-05-10
+
+- [x] Pull live state for all 6 repos and reconcile against 2026-05-09 action log.
+- [x] Merge `series_correction#15` (salvage from prior run, sole-of-kind, CLEAN).
+- [x] Close-superseded the Hydrograph #169/#170/#171 cluster (covered by merged #172).
+- [x] Close-superseded `series_correction#13` (replaced by salvage #15).
+- [x] Close-duplicate `personal-config#884` (twin of #867 per Lesson 0dd).
+- [x] Close-superseded `personal-config#880` (intent absorbed by `60f7e904 fix(morning-brief)`).
+- [x] Escalate trust-boundary PRs (`personal-config#901`; `email-security-pipeline#791/#793/#796`).
+- [x] Close-stale Jules junk-fixture bleed PRs (`personal-config#831/#836/#840/#849/#862/#867/#869`).
+- [x] Close-superseded `personal-config#858` (`os` import already absent on main).
+- [x] Salvage `personal-config#911` → draft #916 (Bolt partition perf, /tmp clone).
+- [x] Salvage `personal-config#899` → draft #917 (parse_inventory refactor + 22 tests, /tmp clone).
+- [x] Salvage `personal-config#856` → draft #918 (check_summary tests merged into existing module, /tmp clone).
+- [x] Close-superseded `ctrld-sync#771` (main now has dedicated `pluralize()` helper).
+- [x] Close-stale `series_correction#11` (refactor PR; salvage aborted with 6 conflicts vs PR #10 tests).
+- [x] Update `tasks/pr-review-session-reports.md` with 2026-05-10 final cleanup section.
+- [x] Write `tasks/pr-final-cleanup-2026-05-10.json` action log.
+
+---
+
+# Follow-up: Trunk + markdownlint@0.48.0 empty-stdout JSON parse bug (2026-05-09)
+
+**Status:** Open. Discovered while committing the recovery + upstream-sync
+batch on 2026-05-09 / 2026-05-10. Required `git commit --no-verify` plus
+manual `trufflehog` / `git diff --check` / token-regex sweep as a
+security-equivalent check.
+
+**Repro:**
+
+1. Stage any markdown file with no markdownlint findings.
+2. `git commit -m "test"` (or `trunk check --filter=markdownlint --no-progress`).
+3. Markdownlint emits an **empty stdout** instead of `[]` when there are no findings.
+4. Trunk's JSON parser fails with `parse error at line 1, column 7: syntax error while parsing array - unexpected ':'; expected ']'` (the parser falls through to the next pipeline stage's output and chokes there).
+5. Hook reports `1 failure, no issues` and blocks the commit.
+
+**Impact:** Every markdown commit on macOS where the markdownlint tool
+is at v0.48.0 must use `--no-verify` and run security checks manually.
+Defeats the purpose of the pre-commit hook for markdown-only changes.
+
+**Proposed fixes (pick one):**
+
+- File upstream against `trunk-io/plugins` describing the empty-stdout
+  vs `[]` discrepancy and asking either Trunk or markdownlint to be
+  tolerant.
+- Pin `markdownlint` in `.trunk/trunk.yaml` to a version where `--json`
+  emits `[]` on clean runs (verify locally before pinning).
+- Add a `.trunk/configs/.markdownlint.yaml` adjustment if it nudges the
+  CLI into emitting `[]` (e.g., a mode flag).
+
+**Also worth bundling into the same change:**
+
+- Add a `prettier-ignore` for `.claude/skills/**/SKILL.md` since those
+  files are auto-managed by RepoPrompt (`repoprompt_managed: true`) and
+  fighting prettier creates churn on the next sync.
+
+**Acceptance:** A clean markdown-only commit succeeds without
+`--no-verify` and with prettier untouching the auto-managed skill files.
+
+---
+
 # Demo Security Hardening — 2026-04-23
 
 - [x] Add env-based Azure config + fail-fast validation in `copilot-demo/weather-assistant.ts`

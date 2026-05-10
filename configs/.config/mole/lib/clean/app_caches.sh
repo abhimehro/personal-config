@@ -123,11 +123,10 @@ clean_xcode_tools() {
     safe_clean ~/Library/Developer/Xcode/Products/* "Xcode build products"
     if [[ "$xcode_running" == "false" ]]; then
         clean_xcode_derived_data
-        safe_clean ~/Library/Developer/Xcode/Archives/* "Xcode archives"
         safe_clean ~/Library/Developer/Xcode/DocumentationCache/* "Xcode documentation cache"
         safe_clean ~/Library/Developer/Xcode/DocumentationIndex/* "Xcode documentation index"
     else
-        echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode is running, skipping DerivedData/Archives/Documentation cleanup"
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} Xcode is running, skipping DerivedData/Documentation cleanup"
     fi
 }
 # Code editors.
@@ -198,9 +197,114 @@ clean_design_tools() {
     safe_clean ~/Library/Application\ Support/Adobe/Common/Media\ Cache\ Files/* "Adobe media cache files"
 }
 # Video editing tools.
+final_cut_pro_is_running() {
+    command -v pgrep > /dev/null 2>&1 || return 1
+
+    pgrep -x "Final Cut Pro" > /dev/null 2>&1 && return 0
+    pgrep -f "/Final Cut Pro.app/" > /dev/null 2>&1 && return 0
+    return 1
+}
+
+final_cut_pro_path_has_protected_component() {
+    local path="$1"
+
+    case "$path" in
+        */Original\ Media | */Original\ Media/* | \
+            */CurrentVersion.flexolibrary | */CurrentVersion.plist | */Settings.plist | \
+            */Motion\ Templates | */Motion\ Templates/* | \
+            */Final\ Cut\ Pro\ Backups | */Final\ Cut\ Pro\ Backups/*)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+is_final_cut_pro_generated_cache_target() {
+    local library="$1"
+    local target="$2"
+
+    [[ -n "$library" && -n "$target" ]] || return 1
+    [[ "$library" == /* && "$target" == /* ]] || return 1
+    [[ "$library" == "$HOME"/Movies/*.fcpbundle ]] || return 1
+    [[ "$target" == "$library"/* ]] || return 1
+    [[ -d "$library" && ! -L "$library" ]] || return 1
+    [[ -d "$target" && ! -L "$target" ]] || return 1
+
+    final_cut_pro_path_has_protected_component "$target" && return 1
+
+    if declare -f validate_path_for_deletion > /dev/null 2>&1; then
+        validate_path_for_deletion "$target" > /dev/null 2>&1 || return 1
+    fi
+
+    local relative_target="${target#"$library"/}"
+    case "$relative_target" in
+        */Render\ Files/High\ Quality\ Media | */Transcoded\ Media/Proxy\ Media)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+find_final_cut_pro_generated_cache_targets() {
+    local movies_dir="$HOME/Movies"
+    [[ -d "$movies_dir" ]] || return 0
+
+    local library target
+    while IFS= read -r -d '' library; do
+        [[ -d "$library" && ! -L "$library" ]] || continue
+
+        while IFS= read -r -d '' target; do
+            if is_final_cut_pro_generated_cache_target "$library" "$target"; then
+                printf '%s\0' "$target"
+            fi
+        done < <(command find "$library" \
+            \( -type d \( \
+            -name "Original Media" -o \
+            -name "Analysis Files" -o \
+            -name "Motion Templates" -o \
+            -name "Final Cut Pro Backups" \
+            \) -prune \) -o \
+            \( -type d \( \
+            -path "*/Render Files/High Quality Media" -o \
+            -path "*/Transcoded Media/Proxy Media" \
+            \) -print0 \) 2> /dev/null || true)
+    done < <(command find "$movies_dir" -maxdepth 4 -type d -name "*.fcpbundle" -prune -print0 2> /dev/null || true)
+}
+
+clean_final_cut_pro_generated_caches() {
+    if final_cut_pro_is_running; then
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} Final Cut Pro is running, skipping generated cache cleanup"
+        note_activity
+        return 0
+    fi
+
+    local -a fcp_cache_targets=()
+    local target
+    while IFS= read -r -d '' target; do
+        fcp_cache_targets+=("$target")
+    done < <(find_final_cut_pro_generated_cache_targets)
+
+    [[ ${#fcp_cache_targets[@]} -gt 0 ]] || return 0
+
+    # Final Cut Pro generated cache cleanup (issue #843).
+    # Safety scope for the first pass:
+    # - only scan ~/Movies, the default Apple library location;
+    # - only delete exact generated-media directories documented by Apple as
+    #   regenerable: render media and proxy media;
+    # - never touch Original Media, library databases, plist settings, backups,
+    #   Motion templates, Analysis Files, optimized media, or external .fcpcache.
+    # Future expansion can add explicit flags or configurable roots for
+    # optimized media, Analysis Files, and external cache bundles after more
+    # field feedback.
+    safe_clean "${fcp_cache_targets[@]}" "Final Cut Pro generated cache"
+}
+
 clean_video_tools() {
     safe_clean ~/Library/Caches/net.telestream.screenflow10/* "ScreenFlow cache"
     safe_clean ~/Library/Caches/com.apple.FinalCut/* "Final Cut Pro cache"
+    clean_final_cut_pro_generated_caches
     safe_clean ~/Library/Caches/com.blackmagic-design.DaVinciResolve/* "DaVinci Resolve cache"
     safe_clean ~/Movies/CacheClip/* "DaVinci Resolve CacheClip"
     safe_clean ~/Library/Caches/com.adobe.PremierePro.*/* "Premiere Pro cache"

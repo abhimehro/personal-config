@@ -18,6 +18,21 @@ opt_msg() {
     fi
 }
 
+opt_numeric_kb() {
+    local size_kb="${1:-0}"
+    [[ "$size_kb" =~ ^[0-9]+$ ]] && echo "$size_kb" || echo "0"
+}
+
+opt_existing_path_size_kb() {
+    local path="$1"
+    [[ -e "$path" ]] || {
+        echo "0"
+        return 0
+    }
+
+    opt_numeric_kb "$(get_path_size_kb "$path" 2> /dev/null || echo "0")"
+}
+
 run_launchctl_unload() {
     local plist_file="$1"
     local need_sudo="${2:-false}"
@@ -87,6 +102,31 @@ is_memory_pressure_high() {
     return 1
 }
 
+has_active_vpn_interface() {
+    case "${MOLE_ASSUME_VPN_ACTIVE:-}" in
+        1 | true | TRUE | yes | YES)
+            return 0
+            ;;
+        0 | false | FALSE | no | NO)
+            return 1
+            ;;
+    esac
+
+    if command -v netstat > /dev/null 2>&1; then
+        if netstat -rn -f inet 2> /dev/null | grep -Eq '[[:space:]]utun[0-9]+($|[[:space:]])'; then
+            return 0
+        fi
+    fi
+
+    if command -v ifconfig > /dev/null 2>&1; then
+        if ifconfig 2> /dev/null | grep -Eq '^utun[0-9]+:.*<[^>]*(UP|RUNNING)'; then
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
 flush_dns_cache() {
     if [[ "${MOLE_DRY_RUN:-0}" == "1" ]]; then
         MOLE_DNS_FLUSHED=1
@@ -124,32 +164,11 @@ opt_cache_refresh() {
         "$HOME/Library/Caches/com.apple.iconservices.store"
         "$HOME/Library/Caches/com.apple.iconservices"
     )
-
     if [[ "${MO_DEBUG:-}" == "1" ]]; then
         debug_operation_start "Finder Cache Refresh" "Refresh QuickLook thumbnails and icon services"
         debug_operation_detail "Method" "Remove cache files and rebuild via qlmanage"
         debug_operation_detail "Expected outcome" "Faster Finder preview generation, fixed icon display issues"
         debug_risk_level "LOW" "Caches are automatically rebuilt"
-
-        local found_files=false
-        for target_path in "${cache_targets[@]}"; do
-            if [[ -e "$target_path" ]]; then
-                if [[ "$found_files" == "false" ]]; then
-                    debug_operation_detail "Files to be removed" ""
-                    found_files=true
-                fi
-                local size_kb
-                size_kb=$(get_path_size_kb "$target_path" 2> /dev/null || echo "0")
-                local size_human="unknown"
-                if [[ "$size_kb" -gt 0 ]]; then
-                    size_human=$(bytes_to_human "$((size_kb * 1024))")
-                fi
-                debug_file_action "  Will remove" "$target_path" "$size_human" ""
-            fi
-        done
-        if [[ "$found_files" == "false" ]]; then
-            debug_operation_detail "Files to be removed" "none"
-        fi
     fi
 
     if [[ "${MOLE_DRY_RUN:-0}" != "1" ]]; then
@@ -157,17 +176,40 @@ opt_cache_refresh() {
         qlmanage -r > /dev/null 2>&1 || true
     fi
 
+    local -a removable_targets=()
+    local -a removable_sizes=()
+
+    local target_path=""
     for target_path in "${cache_targets[@]}"; do
-        if [[ -e "$target_path" ]]; then
-            if ! should_protect_path "$target_path"; then
-                local size_kb
-                size_kb=$(get_path_size_kb "$target_path" 2> /dev/null || echo "0")
-                if [[ "$size_kb" =~ ^[0-9]+$ ]]; then
-                    total_cache_size=$((total_cache_size + size_kb))
+        [[ -e "$target_path" ]] || continue
+        should_protect_path "$target_path" && continue
+
+        local size_kb
+        size_kb=$(opt_existing_path_size_kb "$target_path")
+        removable_targets+=("$target_path")
+        removable_sizes+=("$size_kb")
+        total_cache_size=$((total_cache_size + size_kb))
+    done
+
+    if [[ "${MO_DEBUG:-}" == "1" ]]; then
+        if [[ ${#removable_targets[@]} -eq 0 ]]; then
+            debug_operation_detail "Files to be removed" "none"
+        else
+            debug_operation_detail "Files to be removed" ""
+            local index
+            for index in "${!removable_targets[@]}"; do
+                local size_human="unknown"
+                if [[ "${removable_sizes[$index]}" -gt 0 ]]; then
+                    size_human=$(bytes_to_human "$((removable_sizes[index] * 1024))")
                 fi
-                safe_remove "$target_path" true > /dev/null 2>&1 || true
-            fi
+                debug_file_action "  Will remove" "${removable_targets[$index]}" "$size_human" ""
+            done
         fi
+    fi
+
+    local index
+    for index in "${!removable_targets[@]}"; do
+        safe_remove "${removable_targets[$index]}" true "${removable_sizes[$index]}" > /dev/null 2>&1 || true
     done
 
     export OPTIMIZE_CACHE_CLEANED_KB="${total_cache_size}"
@@ -325,7 +367,7 @@ opt_sqlite_vacuum() {
     local -a check_apps=("Mail" "Safari" "Messages")
     local app
     for app in "${check_apps[@]}"; do
-        if pgrep -x -- "$app" > /dev/null 2>&1; then
+        if pgrep -x "$app" > /dev/null 2>&1; then
             busy_apps+=("$app")
         fi
     done
@@ -360,9 +402,10 @@ opt_sqlite_vacuum() {
 
             should_protect_path "$db_file" && continue
 
-            if ! file "$db_file" 2> /dev/null | grep -q "SQLite"; then
-                continue
-            fi
+            case "$(file -b "$db_file" 2> /dev/null || true)" in
+                *SQLite*) ;;
+                *) continue ;;
+            esac
 
             # Skip large DBs (>100MB).
             local file_size
@@ -377,8 +420,11 @@ opt_sqlite_vacuum() {
             page_info=$(run_with_timeout 5 sqlite3 "$db_file" "PRAGMA page_count; PRAGMA freelist_count;" 2> /dev/null || echo "")
             local page_count=""
             local freelist_count=""
-            page_count=$(echo "$page_info" | awk 'NR==1 {print $1}' 2> /dev/null || echo "")
-            freelist_count=$(echo "$page_info" | awk 'NR==2 {print $1}' 2> /dev/null || echo "")
+            page_count="${page_info%%$'\n'*}"
+            if [[ "$page_info" == *$'\n'* ]]; then
+                freelist_count="${page_info#*$'\n'}"
+                freelist_count="${freelist_count%%$'\n'*}"
+            fi
             if [[ "$page_count" =~ ^[0-9]+$ && "$freelist_count" =~ ^[0-9]+$ && "$page_count" -gt 0 ]]; then
                 if ((freelist_count * 100 < page_count * 5)); then
                     skipped=$((skipped + 1))
@@ -394,7 +440,7 @@ opt_sqlite_vacuum() {
                 local integrity_status=$?
                 set -e
 
-                if [[ $integrity_status -ne 0 ]] || ! echo "$integrity_check" | grep -q "ok"; then
+                if [[ $integrity_status -ne 0 || "$integrity_check" != "ok" ]]; then
                     skipped=$((skipped + 1))
                     continue
                 fi
@@ -510,7 +556,7 @@ browser_family_is_running() {
             pgrep -if "Zen Browser|org\\.mozilla\\.zen|Zen Browser Helper|zen .*contentproc" > /dev/null 2>&1
             ;;
         *)
-            pgrep -ix -- "$browser_name" > /dev/null 2>&1
+            pgrep -ix "$browser_name" > /dev/null 2>&1
             ;;
     esac
 }
@@ -611,6 +657,11 @@ opt_memory_pressure_relief() {
 opt_network_stack_optimize() {
     local route_flushed="false"
     local arp_flushed="false"
+
+    if has_active_vpn_interface; then
+        opt_msg "Network stack refresh skipped, active VPN detected"
+        return 0
+    fi
 
     if [[ "${MOLE_DRY_RUN:-0}" != "1" ]]; then
         local route_ok=true
@@ -739,7 +790,7 @@ opt_bluetooth_reset() {
             if system_profiler SPBluetoothDataType 2> /dev/null | grep -q "Connected: Yes"; then
                 local -a media_apps=("Music" "Spotify" "VLC" "QuickTime Player" "TV" "Podcasts" "Safari" "Google Chrome" "Chrome" "Firefox" "Arc" "IINA" "mpv")
                 for app in "${media_apps[@]}"; do
-                    if pgrep -x -- "$app" > /dev/null 2>&1; then
+                    if pgrep -x "$app" > /dev/null 2>&1; then
                         bt_audio_active=true
                         break
                     fi
@@ -1003,7 +1054,7 @@ opt_shared_file_list_repair() {
             fi
             repaired=$((repaired + 1))
         fi
-    done < <(command find "$sfl_dir" \( -name "*.sfl2" -o -name "*.sfl3" \) -type f 2> /dev/null || true)
+    done < <(command find "$sfl_dir" \( -name "*.sfl2" -o -name "*.sfl3" \) -type f ! -path "*ApplicationRecentDocuments*" 2> /dev/null || true)
 
     if [[ $repaired -gt 0 ]]; then
         opt_msg "Repaired $repaired corrupted shared file list(s)"
@@ -1024,8 +1075,7 @@ opt_notification_cleanup() {
     fi
 
     local db_size
-    db_size=$(command du -sk "$nc_db" 2> /dev/null | awk '{print $1}')
-    db_size=${db_size:-0}
+    db_size=$(opt_existing_path_size_kb "$nc_db")
 
     # Only clean if database exceeds 50MB (51200 KB)
     if [[ $db_size -lt 51200 ]]; then
@@ -1100,14 +1150,16 @@ opt_coreduet_cleanup() {
     local wal_file="$knowledge_db-wal"
     local shm_file="$knowledge_db-shm"
     local total_size=0
+    local -a knowledge_files=()
 
     for f in "$knowledge_db" "$wal_file" "$shm_file"; do
-        if [[ -f "$f" ]]; then
-            local fsize
-            fsize=$(command du -sk "$f" 2> /dev/null | awk '{print $1}')
-            total_size=$((total_size + ${fsize:-0}))
-        fi
+        [[ -f "$f" ]] && knowledge_files+=("$f")
     done
+
+    if [[ ${#knowledge_files[@]} -gt 0 ]]; then
+        total_size=$(command du -skcP "${knowledge_files[@]}" 2> /dev/null | awk 'END {print $1 + 0}' || echo "0")
+        total_size=$(opt_numeric_kb "$total_size")
+    fi
 
     # Skip if combined size < 100MB (102400 KB)
     if [[ $total_size -lt 102400 ]]; then
@@ -1140,34 +1192,166 @@ opt_coreduet_cleanup() {
 }
 
 # Audit login items for broken entries referencing missing apps.
+# Return a tab-separated snapshot: login item display name, then best-effort
+# POSIX path. Display names can differ from the on-disk bundle name, so the
+# audit needs both pieces before deciding an item is broken.
+_login_items_snapshot() {
+    osascript << 'APPLESCRIPT'
+set oldDelimiters to AppleScript's text item delimiters
+set tabChar to ASCII character 9
+set linefeedChar to ASCII character 10
+set outputLines to {}
+
+tell application "System Events"
+    repeat with loginItem in login items
+        set itemName to ""
+        set itemPath to ""
+
+        try
+            set itemName to name of loginItem as text
+        end try
+
+        try
+            set itemPath to POSIX path of (path of loginItem as alias)
+        on error
+            try
+                set itemPath to path of loginItem as text
+            end try
+        end try
+
+        set end of outputLines to itemName & tabChar & itemPath
+    end repeat
+end tell
+
+set AppleScript's text item delimiters to linefeedChar
+set outputText to outputLines as text
+set AppleScript's text item delimiters to oldDelimiters
+return outputText
+APPLESCRIPT
+}
+
+_login_item_debug() {
+    if [[ "${MO_DEBUG:-}" == "1" ]] && declare -f debug_log > /dev/null 2>&1; then
+        debug_log "Login item audit: $*"
+    fi
+}
+
+_login_item_name_matches() {
+    local actual="$1"
+    local expected="$2"
+    local expected_nospace="$3"
+    local expected_stripped="$4"
+
+    [[ -z "$actual" ]] && return 1
+
+    local actual_nospace="${actual// /}"
+    [[ "$actual" == "$expected" ]] && return 0
+    [[ "$actual_nospace" == "$expected_nospace" ]] && return 0
+    [[ -n "$expected_stripped" && "$actual_nospace" == "$expected_stripped" ]] && return 0
+
+    return 1
+}
+
+_login_item_bundle_metadata_matches() {
+    local app_path="$1"
+    local name="$2"
+    local nospace="$3"
+    local stripped="$4"
+    local info="$app_path/Contents/Info.plist"
+    [[ -f "$info" ]] || return 1
+
+    local key value
+    for key in CFBundleDisplayName CFBundleName CFBundleExecutable; do
+        value=$(plutil -extract "$key" raw "$info" 2> /dev/null || echo "")
+        if _login_item_name_matches "$value" "$name" "$nospace" "$stripped"; then
+            _login_item_debug "'$name' matched $key '$value' at $app_path"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 # Check if a login item name corresponds to an installed app.
 # Login item names often differ from .app bundle names (e.g. "AliLangClient" -> "AliLang.app",
 # "Top Calendar" -> "TopCalendar.app"), so we try multiple matching strategies.
 _login_item_app_exists() {
     local name="$1"
+    local item_path="${2:-}"
+
+    if [[ -n "$item_path" ]]; then
+        if [[ -e "$item_path" || -L "$item_path" ]]; then
+            _login_item_debug "'$name' resolved by login item path: $item_path"
+            return 0
+        fi
+        _login_item_debug "'$name' login item path is missing: $item_path"
+    else
+        _login_item_debug "'$name' has no login item path from System Events"
+    fi
+
     # 1. Exact match
-    if mdfind "kMDItemFSName == '${name}.app'" 2> /dev/null | grep -q .; then
+    if [[ "$name" != *"'"* ]] && mdfind "kMDItemFSName == '${name}.app'" 2> /dev/null | grep -q .; then
+        _login_item_debug "'$name' resolved by Spotlight exact app name"
         return 0
     fi
     # 2. Try without spaces (e.g. "Top Calendar" -> "TopCalendar")
     local nospace="${name// /}"
-    if [[ "$nospace" != "$name" ]] && mdfind "kMDItemFSName == '${nospace}.app'" 2> /dev/null | grep -q .; then
+    if [[ "$name" != *"'"* && "$nospace" != "$name" ]] && mdfind "kMDItemFSName == '${nospace}.app'" 2> /dev/null | grep -q .; then
+        _login_item_debug "'$name' resolved by Spotlight no-space app name"
         return 0
     fi
     # 3. Strip common helper suffixes (e.g. "AliLangClient" -> "AliLang")
     local stripped
     stripped=$(echo "$nospace" | sed -E 's/(Client|Helper|Agent|Launcher|Service)$//')
-    if [[ "$stripped" != "$nospace" ]] && mdfind "kMDItemFSName == '${stripped}.app'" 2> /dev/null | grep -q .; then
+    if [[ "$name" != *"'"* && "$stripped" != "$nospace" ]] && mdfind "kMDItemFSName == '${stripped}.app'" 2> /dev/null | grep -q .; then
+        _login_item_debug "'$name' resolved by Spotlight stripped helper name"
         return 0
     fi
-    # 4. Fallback: check sfltool dumpbtm for the actual on-disk path.
+    # 4. Recursive filesystem fallback for nested helper apps inside parent
+    #    bundles. Spotlight often misses helpers under Contents/.
+    local candidate roots app_name app_path
+    local -a app_names=("${name}.app")
+    [[ "$nospace" != "$name" ]] && app_names+=("${nospace}.app")
+    [[ "$stripped" != "$nospace" ]] && app_names+=("${stripped}.app")
+    for roots in "/Applications" "$HOME/Applications"; do
+        [[ -d "$roots" ]] || continue
+        local -a name_expr=()
+        for app_name in "${app_names[@]}"; do
+            if [[ ${#name_expr[@]} -gt 0 ]]; then
+                name_expr+=("-o")
+            fi
+            name_expr+=("-name" "$app_name")
+        done
+        candidate=$(command find "$roots" -maxdepth 6 -type d \( "${name_expr[@]}" \) -print -quit 2> /dev/null || true)
+        if [[ -n "$candidate" && -d "$candidate" ]]; then
+            _login_item_debug "'$name' resolved by filesystem app name: $candidate"
+            return 0
+        fi
+
+        while IFS= read -r -d '' app_path; do
+            if _login_item_bundle_metadata_matches "$app_path" "$name" "$nospace" "$stripped"; then
+                return 0
+            fi
+        done < <(command find "$roots" -maxdepth 6 -type d -name "*.app" -print0 2> /dev/null)
+    done
+    # 5. Fallback: check sfltool dumpbtm for the actual on-disk path.
     #    Nested helper apps (e.g. DBnginMenuHelper.app inside DBngin.app) are
     #    invisible to mdfind but still have a valid URL in the BTM database.
     local btm_path
-    btm_path=$(sfltool dumpbtm 2> /dev/null | grep -i "${name}" | grep -oE '/[^ ]+\.app' | head -1)
+    btm_path=$(sfltool dumpbtm 2> /dev/null | awk -v item="$name" '
+        BEGIN { IGNORECASE = 1 }
+        index($0, item) {
+            if (match($0, "/.*\\.app")) {
+                print substr($0, RSTART, RLENGTH)
+                exit
+            }
+        }
+    ')
     if [[ -n "$btm_path" ]] && [[ -e "$btm_path" ]]; then
+        _login_item_debug "'$name' resolved by sfltool BTM path: $btm_path"
         return 0
     fi
+    _login_item_debug "'$name' unresolved after path, Spotlight, filesystem, and BTM checks"
     return 1
 }
 
@@ -1178,7 +1362,7 @@ opt_login_items_audit() {
     fi
 
     local items_output
-    items_output=$(osascript -e 'tell application "System Events" to get the name of every login item' 2> /dev/null || true)
+    items_output=$(_login_items_snapshot 2> /dev/null || true)
 
     if [[ -z "$items_output" ]]; then
         opt_msg "No login items found"
@@ -1187,24 +1371,16 @@ opt_login_items_audit() {
 
     local broken=0
     local checked=0
-    # Split on ", " (comma-space) to preserve multi-word names like "Top Calendar" and "mihomo-party"
-    local old_ifs="$IFS"
-    IFS=',' read -ra items_list <<< "$items_output"
-    IFS="$old_ifs"
-    for item in "${items_list[@]}"; do
-        # Strip leading/trailing spaces from each token
-        item="${item# }"
-        item="${item% }"
+    local item item_path
+    while IFS=$'\t' read -r item item_path; do
         [[ -z "$item" ]] && continue
-        # Skip items with single quotes to avoid breaking the mdfind query string
-        [[ "$item" == *"'"* ]] && continue
         checked=$((checked + 1))
-        if _login_item_app_exists "$item"; then
+        if _login_item_app_exists "$item" "$item_path"; then
             continue
         fi
         echo -e "  ${YELLOW}${ICON_WARNING}${NC} Broken login item: $item (app not found)"
         broken=$((broken + 1))
-    done
+    done <<< "$items_output"
 
     if [[ $broken -eq 0 ]]; then
         opt_msg "Login items all healthy ($checked checked)"
@@ -1217,6 +1393,11 @@ opt_login_items_audit() {
 execute_optimization() {
     local action="$1"
     local path="${2:-}"
+
+    if command -v is_whitelisted > /dev/null && is_whitelisted "$action"; then
+        opt_msg "Skipped (whitelisted): $action"
+        return 0
+    fi
 
     case "$action" in
         system_maintenance) opt_system_maintenance ;;

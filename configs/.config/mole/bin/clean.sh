@@ -196,6 +196,11 @@ trap 'cleanup EXIT $?' EXIT
 trap 'cleanup INT 130; exit 130' INT
 trap 'cleanup TERM 143; exit 143' TERM
 
+# IMPORTANT: This file overrides start_section / end_section from
+# lib/core/base.sh by virtue of being sourced after it. The clean variant adds
+# CURRENT_SECTION tracking, dry-run EXPORT_LIST_FILE writes and a section
+# spinner stop. See the cross-reference block in lib/core/base.sh and the
+# differing purge variant in bin/purge.sh before changing any of these three.
 start_section() {
     TRACK_SECTION=1
     SECTION_ACTIVITY=0
@@ -1133,7 +1138,9 @@ perform_cleanup() {
         start_section "App leftovers"
         clean_orphaned_app_data
         clean_orphaned_system_services
+        clean_orphaned_container_stubs
         show_user_launch_agent_hint_notice
+        show_orphan_dotdir_hint_notice
         end_section
 
         # ===== 11. Apple Silicon =====
