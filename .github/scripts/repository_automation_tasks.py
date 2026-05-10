@@ -76,15 +76,27 @@ def _execute_configured_item(bucket_name: str, item: dict[str, Any]) -> dict[str
 def execute_configured_commands(
     section: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [
-            executor.submit(_execute_configured_item, bucket_name, item)
-            for bucket_name, item in configured_commands(section)
-        ]
-        results = [future.result() for future in futures]
+    # Setup commands install prerequisites (e.g. linters) that validation
+    # commands depend on, so they must complete before the rest run. Only
+    # the validation/security commands are independent and safe to run in
+    # parallel.
+    bucketed = configured_commands(section)
+    setup_items = [(b, item) for b, item in bucketed if b == "setup"]
+    other_items = [(b, item) for b, item in bucketed if b != "setup"]
 
-    setup_entries = [r for r in results if r["bucket"] == "setup"]
-    command_entries = [r for r in results if r["bucket"] != "setup"]
+    setup_entries = [
+        _execute_configured_item(bucket_name, item)
+        for bucket_name, item in setup_items
+    ]
+
+    command_entries: list[dict[str, Any]] = []
+    if other_items:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(_execute_configured_item, bucket_name, item)
+                for bucket_name, item in other_items
+            ]
+            command_entries = [future.result() for future in futures]
 
     return setup_entries, command_entries
 

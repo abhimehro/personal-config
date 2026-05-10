@@ -103,14 +103,20 @@ for (repo, files), pr_list in file_groups.items():
 
 print("Duplicates:", duplicates)
 
+superseded_slice = lines[
+    lines.index("## SUPERSEDED\n") + 1 : lines.index("## STALE\n")
+]
+superseded_prs = {
+    line.strip()[2:]
+    for line in superseded_slice
+    if line.strip().startswith("- ")
+}
+
 with open("tasks/pr-triage.md", "w") as f:
     f.write("# PR Triage\n\n")
     f.write("## SUPERSEDED\n")
-    for pr in ready_prs:
-        if pr in lines[lines.index("## SUPERSEDED\n") + 1 : lines.index("## STALE\n")]:
-            if not pr.startswith("-"):
-                pr = "- " + pr
-            f.write(f"{pr}\n")
+    for pr in sorted(superseded_prs):
+        f.write(f"- {pr}\n")
     f.write("## STALE\n")
     f.write("## CONFLICTING\n")
     f.write("- abhimehro/personal-config#725\n")
