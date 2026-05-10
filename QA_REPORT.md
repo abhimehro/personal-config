@@ -16,6 +16,7 @@ Using a `grep` check, some suspicious tokens/keys were reviewed.
 - `adguard/adblocking/dynamic-dnr-ruleset.json`: Uses `apiKey=` in regex filters.
 - `.env.example`: Provides placeholders for API keys.
 - `configs/.config/mole/lib/uninstall/brew.sh`: Uses `token=` variable name for paths, not an actual secret.
+- `media-streaming/configs/rclone.conf.template`: Contains empty JSON token templates.
 - No immediate leaking of hardcoded secrets directly in source files out of the top matches. 1Password is heavily used, conforming to best practices.
 
 ## 3. Actionable Insights
