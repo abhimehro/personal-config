@@ -40,8 +40,8 @@ make test-quick          # smoke: lib tests + path_validation
 - **Deps:** `bash`, `python3` (stdlib only for Python tests). **Lint:** [Trunk](https://trunk.io) (`trunk check`) — first run downloads tools into `.trunk/`.
 - **No `.env` required** for tests. Do not commit secrets; Cloud pre-commit may scan staged diffs if `CLOUD_AGENT_INJECTED_SECRET_NAMES` is set (canonical hook logic: `scripts/cursor_cloud_agent_pre_commit.sh`). **Run `make cursor-cloud-hooks`** after clone in Cursor Cloud so injected hooks match the repo (avoids `${!var}` breakage on secret labels with spaces). The sync only runs when both `pre-commit.cursor` and `commit-msg.cursor` exist as regular files under each hash directory.
 - **Feature flags / toggles:** No central flag file. Examples:
-  - `USE_MCP_GITHUB=true` — optional GitHub automation path (`docs/github-mcp-integration.md`).
   - Tests/scripts: case-by-case env (e.g. `FORCE_RUN=1` in some maintenance tests — see the test file).
+  - Note: the previous `USE_MCP_GITHUB` toggle has been removed; the repository automation scripts now always use the `gh` CLI directly (see `docs/github-mcp-integration.md`).
 
 ### Testing workflow
 
@@ -260,7 +260,9 @@ Use shell command-output artifacts for these CLI tests; do not record the deskto
 ### Environment setup
 
 - **`gh` CLI** and repo access as needed for live commands.
-- Optional: `USE_MCP_GITHUB=true` for MCP-backed automation (see `docs/github-mcp-integration.md`).
+- The repository automation scripts use the `gh` CLI directly. The earlier
+  `USE_MCP_GITHUB` toggle and MCP compatibility layer have been removed; see
+  `docs/github-mcp-integration.md` for context.
 
 ### Testing workflow
 

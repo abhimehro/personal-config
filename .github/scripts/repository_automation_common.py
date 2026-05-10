@@ -14,26 +14,6 @@ from typing import Any
 
 import yaml
 
-# MCP GitHub compatibility flag
-USE_MCP_GITHUB = os.environ.get("USE_MCP_GITHUB", "false").lower() in {
-    "1",
-    "true",
-    "yes",
-    "on",
-}
-
-# Try to import MCP GitHub server if available
-# Note: Requires the appropriate MCP client library to be installed
-# This is a placeholder for the actual MCP GitHub integration
-try:
-    if USE_MCP_GITHUB:
-        import mcp
-        MCP_AVAILABLE = True
-    else:
-        MCP_AVAILABLE = False
-except ImportError:
-    MCP_AVAILABLE = False
-
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = ROOT / ".github" / "repository-automation.yml"
 OUTPUT_ROOT = ROOT / ".automation-output"
@@ -140,19 +120,6 @@ def gh_text(args: list[str], default: str = "") -> str:
         warn_on_default("gh", args, proc)
         return default
     return proc.stdout.strip()
-
-
-# MCP GitHub compatibility layer (placeholder for future MCP integration)
-def mcp_json(args: list[str], default=None):
-    """MCP compatibility layer for gh_json calls."""
-    # Currently MCP integration is not available, always use gh CLI
-    return gh_json(args, default)
-
-
-def mcp_text(args: list[str], default: str = "") -> str:
-    """MCP compatibility layer for gh_text calls."""
-    # Currently MCP integration is not available, always use gh CLI
-    return gh_text(args, default)
 
 
 def writes_allowed() -> bool:
@@ -388,21 +355,10 @@ def create_pr_for_current_changes(
 
 
 def latest_tag_for_action(repo_id: str) -> str:
-    # Use MCP if available, otherwise fall back to gh CLI
-    if MCP_AVAILABLE and USE_MCP_GITHUB:
-        try:
-            owner, repo = repo_id.split("/")
-            releases = gh_json(
-                ["api", f"repos/{owner}/{repo}/releases?per_page=1"], default=[]
-            )
-            if releases:
-                latest = releases[0].get("tag_name", "")
-                if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
-                    return latest
-        except Exception:
-            pass  # Fall back to gh CLI on error
-
-    # Original gh CLI implementation
+    # NOTE: An MCP-based implementation is intentionally not provided here.
+    # The previous MCP branch only called gh_json under the hood, so it
+    # provided no real benefit and added an extra failure mode. Always use
+    # the gh CLI directly.
     latest = gh_text(["api", f"repos/{repo_id}/releases/latest", "--jq", ".tag_name"])
     if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
         return latest
