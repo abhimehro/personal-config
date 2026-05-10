@@ -50,7 +50,7 @@ Before any cleanup, the following snapshots were taken and stored under `/tmp/`:
 
 ## Stash retained for inspection
 
-```
+```text
 stash@{0}: WIP on bolt-concurrent-gh-pr-4083293723056414510: <date> recovery-2026-05-10: damaged bolt-concurrent state from prior session
 ```
 
