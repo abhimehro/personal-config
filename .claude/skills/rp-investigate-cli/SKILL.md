@@ -2,7 +2,7 @@
 name: "rp-investigate-cli"
 description: "Deep investigation with rp-cli commands: tools gather evidence, follow-up reasoning synthesizes selected context"
 repoprompt_managed: true
-repoprompt_skills_version: 54
+repoprompt_skills_version: 60
 repoprompt_variant: cli
 ---
 
@@ -22,20 +22,19 @@ rp-cli -e '<command>'
 
 **Quick reference:**
 
-| MCP Tool             | CLI Command                                                                  |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `get_file_tree`      | `rp-cli -e 'tree'`                                                           |
-| `file_search`        | `rp-cli -e 'search "pattern"'`                                               |
-| `get_code_structure` | `rp-cli -e 'structure path/'`                                                |
-| `read_file`          | `rp-cli -e 'read path/file.swift'`                                           |
-| `manage_selection`   | `rp-cli -e 'select add path/'`                                               |
-| `context_builder`    | `rp-cli -e 'builder "instructions" --response-type plan'`                    |
-| `oracle_send`        | `rp-cli -e 'chat "message" --mode plan'`                                     |
-| `apply_edits`        | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
-| `file_actions`       | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'`             |
+| MCP Tool | CLI Command |
+|----------|-------------|
+| `get_file_tree` | `rp-cli -e 'tree'` |
+| `file_search` | `rp-cli -e 'search "pattern"'` |
+| `get_code_structure` | `rp-cli -e 'structure path/'` |
+| `read_file` | `rp-cli -e 'read path/file.swift'` |
+| `manage_selection` | `rp-cli -e 'select add path/'` |
+| `context_builder` | `rp-cli -e 'builder "instructions" --response-type plan'` |
+| `oracle_send` | `rp-cli -e 'chat "message" --mode plan'` |
+| `apply_edits` | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
+| `file_actions` | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'` |
 
 Chain commands with `&&`:
-
 ```bash
 rp-cli -e 'select set src/ && context'
 ```
@@ -47,7 +46,6 @@ JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected), `@file`
 **⚠️ TIMEOUT WARNING:** The `builder` and `chat` commands can take several minutes to complete. When invoking rp-cli, **set your command timeout to at least 2700 seconds (45 minutes)** to avoid premature termination.
 
 ---
-
 ## Investigation Protocol
 
 This workflow leverages five complementary capabilities:
@@ -70,7 +68,6 @@ This workflow is read-only. Output lands in the investigation report; no source 
 4. **Never `op:"clear"` or `op:"set"`** — they wipe `builder`'s curation. Use `op:"add"` / `op:"remove"` / slices
 
 ### Core Principles
-
 1. **Don't stop until confident** — pursue every lead until evidence is solid
 2. **Delegate before reading** — phases below lay out the default order (explore → `builder` → pair → chat). You orchestrate; the pair writes findings directly to the report.
 3. **Curate the selection between chat calls** — the pair's reads aren't visible in your selection; add files it surfaced, bias toward inclusion
@@ -90,27 +87,24 @@ rp-cli -w <window_id> -e 'tree --type roots'
 ```
 
 **Check the output:**
-
 - If your target root appears in a window → note the window ID and proceed to Phase 1
 - If not → the codebase isn't loaded in any window
 
 **CLI Window Routing:**
-
 - CLI invocations are stateless—you MUST pass `-w <window_id>` to target the correct window
 - Use `rp-cli -e 'windows'` to list all open windows and their workspaces
 - Always include `-w <window_id>` in ALL subsequent commands
 
 ---
-
 ### Phase 1: Initial Assessment & Triage (Agent — you)
 
 1. Read any provided files/reports (traces, logs, error reports)
 2. Summarize symptoms and form initial hypotheses
 3. **Create the investigation report file** — use `docs/investigations/<topic>-<YYYY-MM-DD>.md` (or match the repo's existing convention; look under `docs/investigations/` for examples). Note its absolute path; you'll feed it to `builder` and the pair.
 4. **Triage external info needs.** Does the task require anything `builder` can't see in the workspace?
-   - Git history (blame, log archaeology, "when did this regress", PR context)
-   - Web searches or external documentation
-   - Other facts outside the workspace
+	- Git history (blame, log archaeology, "when did this regress", PR context)
+	- Web searches or external documentation
+	- Other facts outside the workspace
 
 If yes, run Phase 1.5 first. Otherwise skip to Phase 2.
 
@@ -230,21 +224,21 @@ rp-cli -w <window_id> -t '<tab_id>' -e 'chat "Here is what the pair found:
 
 ## Role Summary
 
-| Capability                         | Agent (you)          | Context Builder   | Chat (`oracle_send`)     | Pair Investigator | Explore Agents |
-| ---------------------------------- | -------------------- | ----------------- | ------------------------ | ----------------- | -------------- |
-| Triage / orchestrate               | ✅ Primary           | ❌                | ❌                       | ❌                | ❌             |
-| Dispatch sub-agents                | ✅                   | ❌                | ❌                       | ✅                | ❌             |
-| Discover files in workspace        | ⚠️ Limited           | ✅ Primary        | ❌                       | ✅ Good           | ⚠️ Narrow      |
-| Populate file selection            | ✅ (curate)          | ✅ Primary (seed) | ❌                       | ❌                | ❌             |
-| Mutate selection to refocus chat   | ✅ Primary           | ❌                | ❌                       | ❌                | ❌             |
-| Read file contents & lines         | ✅                   | ❌                | Sees full selected files | ✅                | ✅             |
-| Run git blame/log/diff             | ✅                   | ❌                | ❌                       | ✅                | ✅             |
-| **Web searches / external docs**   | ❌                   | ❌                | ❌                       | ❌                | ✅ Primary     |
-| Multi-step cross-file reasoning    | ⚠️ OK                | ❌                | ✅ (on selection)        | ✅ Primary        | ❌             |
-| Synthesize patterns & architecture | ⚠️ OK                | ❌                | ✅ Primary               | ✅ Good           | ⚠️ OK          |
-| Form & refine hypotheses           | ⚠️ OK                | ❌                | ✅ Primary               | ✅ Good           | ❌             |
-| Produce line-number evidence       | ✅ (verify/augment)  | ❌                | ❌                       | ✅ Primary        | ✅             |
-| Write findings into report         | ✅ (final synthesis) | ❌                | ❌                       | ✅ Primary        | ❌             |
+| Capability | Agent (you) | Context Builder | Chat (`oracle_send`) | Pair Investigator | Explore Agents |
+|------------|-------------|-----------------|--------|-------------------|----------------|
+| Triage / orchestrate | ✅ Primary | ❌ | ❌ | ❌ | ❌ |
+| Dispatch sub-agents | ✅ | ❌ | ❌ | ✅ | ❌ |
+| Discover files in workspace | ⚠️ Limited | ✅ Primary | ❌ | ✅ Good | ⚠️ Narrow |
+| Populate file selection | ✅ (curate) | ✅ Primary (seed) | ❌ | ❌ | ❌ |
+| Mutate selection to refocus chat | ✅ Primary | ❌ | ❌ | ❌ | ❌ |
+| Read file contents & lines | ✅ | ❌ | Sees full selected files | ✅ | ✅ |
+| Run git blame/log/diff | ✅ | ❌ | ❌ | ✅ | ✅ |
+| **Web searches / external docs** | ❌ | ❌ | ❌ | ❌ | ✅ Primary |
+| Multi-step cross-file reasoning | ⚠️ OK | ❌ | ✅ (on selection) | ✅ Primary | ❌ |
+| Synthesize patterns & architecture | ⚠️ OK | ❌ | ✅ Primary | ✅ Good | ⚠️ OK |
+| Form & refine hypotheses | ⚠️ OK | ❌ | ✅ Primary | ✅ Good | ❌ |
+| Produce line-number evidence | ✅ (verify/augment) | ❌ | ❌ | ✅ Primary | ✅ |
+| Write findings into report | ✅ (final synthesis) | ❌ | ❌ | ✅ Primary | ❌ |
 
 ---
 
@@ -256,21 +250,17 @@ Create a findings report as you investigate:
 # Investigation: [Title]
 
 ## Summary
-
 [1-2 sentence summary of findings]
 
 ## Symptoms
-
 - [Observed symptom 1]
 - [Observed symptom 2]
 
 ## Background / Prior Research
-
 <!-- Findings from Phase 1.5 explore agents: git archaeology, external docs, web searches.
      The agent populates this section before running the context builder. Omit if nothing outside the workspace was needed. -->
 
 ## Investigator Findings
-
 <!-- The pair investigator appends its structured analysis here (file:line refs, evidence, conclusions).
      The agent leaves this section for the pair to populate and folds it into the root cause below.
 
@@ -283,23 +273,19 @@ Create a findings report as you investigate:
 ## Investigation Log
 
 ### [Phase] - [Area Investigated]
-
 **Hypothesis:** [What you were testing]
 **Findings:** [What you found]
 **Evidence:** [Exact file paths, line numbers, code snippets, git commits]
 **Conclusion:** [Confirmed/Eliminated/Needs more investigation]
 
 ## Root Cause
-
 [Detailed explanation with precise evidence]
 
 ## Recommendations
-
 1. [Fix 1 — specific file and location]
 2. [Fix 2 — specific file and location]
 
 ## Preventive Measures
-
 - [How to prevent this in future]
 ```
 

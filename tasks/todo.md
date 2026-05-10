@@ -1,3 +1,16 @@
+# Backlog Cleanup Orchestration — 2026-05-09
+
+- [x] Interview scope: Phase 1 review-and-merge enabled; Phase 2 light salvage triage only.
+- [x] Read local runbooks, lessons, and prior reports.
+- [x] Run GitHub preflight for configured repos and verify sixth repo access explicitly.
+- [x] Build live six-repo inventory with automation-signal expansion.
+- [x] Execute safe Phase 1 merges/closures only after gates pass.
+- [x] Document light salvage triage candidates without creating salvage branches.
+- [x] Write a new dated addendum/run file and link it from the session report log.
+- [x] Verify docs and summarize results.
+
+---
+
 # Demo Security Hardening — 2026-04-23
 
 - [x] Add env-based Azure config + fail-fast validation in `copilot-demo/weather-assistant.ts`

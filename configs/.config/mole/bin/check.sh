@@ -9,12 +9,27 @@ export LANG=C
 # Load common functions
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$SCRIPT_DIR/lib/core/common.sh"
+source "$SCRIPT_DIR/lib/core/help.sh"
 source "$SCRIPT_DIR/lib/core/sudo.sh"
 source "$SCRIPT_DIR/lib/manage/update.sh"
 source "$SCRIPT_DIR/lib/manage/autofix.sh"
 
 source "$SCRIPT_DIR/lib/check/all.sh"
 source "$SCRIPT_DIR/lib/check/dev_environment.sh"
+
+for arg in "$@"; do
+    case "$arg" in
+        -h | --help)
+            show_check_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown check option: $arg"
+            echo "Use 'mo check --help' for supported options."
+            exit 1
+            ;;
+    esac
+done
 
 cleanup_all() {
     stop_inline_spinner 2> /dev/null || true

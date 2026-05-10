@@ -347,11 +347,6 @@ clean_orphaned_app_data() {
         "$HOME/Library/Caches|Caches|com.*:org.*:net.*:io.*"
         "$HOME/Library/Logs|Logs|com.*:org.*:net.*:io.*"
         "$HOME/Library/Saved Application State|States|*.savedState"
-        "$HOME/Library/WebKit|WebKit|com.*:org.*:net.*:io.*"
-        "$HOME/Library/HTTPStorages|HTTP|com.*:org.*:net.*:io.*"
-        "$HOME/Library/Cookies|Cookies|*.binarycookies"
-        "$HOME/Library/Application Support|AppSupport|com.*:org.*:net.*:io.*"
-        "$HOME/Library/Preferences|Prefs|com.*:org.*:net.*:io.*"
     )
     for resource_type in "${resource_types[@]}"; do
         IFS='|' read -r base_path label patterns <<< "$resource_type"
@@ -432,10 +427,12 @@ clean_orphaned_system_services() {
 
     local orphaned_count=0
     local -a orphaned_files=()
-
-    # Known bundle ID patterns for common apps that leave system services behind
-    # Format: "file_pattern:app_check_command"
-    local -a known_orphan_patterns=(
+    # Force-protect list: if a plist's bundle ID matches one of these patterns AND
+    # the associated app IS installed, skip removal even if the binary appears missing.
+    # Format: "bundle_id_glob:pipe-separated app paths"
+    # NOTE: This list is now purely protective. Generic binary-existence detection
+    # (below) handles discovery; this list prevents false positives for known apps.
+    local -a known_protect_patterns=(
         # Sogou Input Method
         "com.sogou.*:/Library/Input Methods/SogouInput.app"
         # ClashX
@@ -446,19 +443,49 @@ clean_orphaned_system_services() {
         "com.nektony.AC*:/Applications/App Cleaner & Uninstaller.app"
         # i4tools (爱思助手)
         "cn.i4tools.*:/Applications/i4Tools.app"
+        # MacPaw CleanMyMac X / CleanMyMac (MAS and direct)
+        "com.macpaw.CleanMyMac*:/Applications/CleanMyMac X.app"
+        # Wireshark Foundation – ChmodBPF daemon
+        "org.wireshark.ChmodBPF:/Applications/Wireshark.app"
+        # Zoom Video Communications – daemon, updater agents, PrivilegedHelperTool
+        "us.zoom.*:/Applications/zoom.us.app"
+        # remot3.it / Remote.It – CLI daemon
+        "it.remote.cli:/Applications/Remote.It.app"
+        # Docker – system socket and vmnetd helpers (Docker.app manages these)
+        "com.docker.*:/Applications/Docker.app"
+        # NetBird / Wiretrustee – CLI-managed daemon (binary in /usr/local/bin)
+        "netbird:/usr/local/bin/netbird"
+        # Homebrew-managed services (managed by brew services, not .app bundles)
+        "homebrew.mxcl.*:"
     )
 
     local mdfind_cache_file=""
+    # Returns 0 (found/protected) when any app backing a system service is installed.
+    # app_path may be a pipe-separated list of candidate .app paths; any match = protected.
+    # An empty app_path always returns 0 (unconditionally protected).
     _system_service_app_exists() {
         local bundle_id="$1"
-        local app_path="$2"
+        local app_path_raw="$2"
 
-        [[ -n "$app_path" && -d "$app_path" ]] && return 0
+        # Empty path = unconditionally protected (e.g. homebrew.mxcl.*)
+        [[ -z "$app_path_raw" ]] && return 0
 
-        if [[ -n "$app_path" ]]; then
+        # Split on '|' to support multi-app helpers (e.g. Cindori TEHelper).
+        local _IFS_save="$IFS"
+        IFS='|'
+        # shellcheck disable=SC2206  # intentional word-split on '|' delimiter
+        local -a app_paths=($app_path_raw)
+        IFS="$_IFS_save"
+
+        local _path
+        for _path in "${app_paths[@]}"; do
+            [[ -n "$_path" ]] || continue
+            # Protect if the app path or binary exists
+            [[ -d "$_path" || -e "$_path" ]] && return 0
+
             local app_name
-            app_name=$(basename "$app_path")
-            case "$app_path" in
+            app_name=$(basename "$_path")
+            case "$_path" in
                 /Applications/*)
                     [[ -d "$HOME/Applications/$app_name" ]] && return 0
                     [[ -d "/Applications/Setapp/$app_name" ]] && return 0
@@ -467,7 +494,7 @@ clean_orphaned_system_services() {
                     [[ -d "$HOME/Library/Input Methods/$app_name" ]] && return 0
                     ;;
             esac
-        fi
+        done
 
         if [[ -n "$bundle_id" ]] && [[ "$bundle_id" =~ ^[a-zA-Z0-9._-]+$ ]] && [[ ${#bundle_id} -ge 5 ]]; then
             if [[ -z "$mdfind_cache_file" ]]; then
@@ -493,6 +520,70 @@ clean_orphaned_system_services() {
         return 1
     }
 
+    # Read the program binary from a plist (Program or ProgramArguments[0]).
+    # Prints the path; returns 1 if no Program key found.
+    _plist_binary_path() {
+        local plist="$1"
+        local binary=""
+        binary=$(/usr/libexec/PlistBuddy -c "Print :ProgramArguments:0" "$plist" 2> /dev/null || true)
+        if [[ -z "$binary" ]]; then
+            binary=$(/usr/libexec/PlistBuddy -c "Print :Program" "$plist" 2> /dev/null || true)
+        fi
+        [[ -z "$binary" ]] && return 1
+        printf '%s\n' "$binary"
+    }
+
+    # Returns 0 if the binary path is managed by a package manager or lives in a
+    # system directory — these should never be treated as orphans even when missing.
+    _is_package_managed_binary() {
+        local binary="$1"
+        case "$binary" in
+            /usr/local/bin/* | /usr/local/sbin/* | \
+                /opt/homebrew/bin/* | /opt/homebrew/sbin/* | \
+                /opt/homebrew/opt/*/bin/* | /opt/homebrew/opt/*/sbin/* | \
+                /usr/bin/* | /usr/sbin/* | /bin/* | /sbin/* | \
+                /usr/libexec/*)
+                return 0
+                ;;
+        esac
+        return 1
+    }
+
+    # Generic plist orphan check: returns 0 if the plist is orphaned.
+    # A plist is orphaned when:
+    #   1. Its Program binary path is known and missing from disk, AND
+    #   2. The binary is not in a package-manager / system directory, AND
+    #   3. No protect pattern covers this bundle ID.
+    _plist_is_orphaned() {
+        local plist="$1"
+        local bundle_id="$2"
+
+        # Read the binary the plist points to.
+        local binary
+        binary=$(_plist_binary_path "$plist") || return 1 # no Program key → skip
+
+        # If the binary still exists, the service is healthy.
+        [[ -e "$binary" ]] && return 1
+
+        # If the binary is in a package-manager / system path, skip.
+        _is_package_managed_binary "$binary" && return 1
+
+        # Check protect patterns: if any matching pattern declares the app as
+        # installed, this plist is protected.
+        local pattern_entry
+        for pattern_entry in "${known_protect_patterns[@]}"; do
+            local file_pattern="${pattern_entry%%:*}"
+            local app_path="${pattern_entry#*:}"
+            # shellcheck disable=SC2053
+            [[ "$bundle_id" == $file_pattern ]] || continue
+            _system_service_app_exists "$bundle_id" "$app_path" && return 1
+            # Pattern matched and app is gone → don't protect (fall through).
+            break
+        done
+
+        return 0 # orphaned
+    }
+
     # Scan system LaunchDaemons
     if [[ -d /Library/LaunchDaemons ]]; then
         while IFS= read -r -d '' plist; do
@@ -502,24 +593,13 @@ clean_orphaned_system_services() {
             # Skip Apple system files
             [[ "$filename" == com.apple.* ]] && continue
 
-            # Extract bundle ID from filename (remove .plist extension)
             local bundle_id="${filename%.plist}"
 
-            # Check against known orphan patterns
-            for pattern_entry in "${known_orphan_patterns[@]}"; do
-                local file_pattern="${pattern_entry%%:*}"
-                local app_path="${pattern_entry#*:}"
-
-                # shellcheck disable=SC2053
-                if [[ "$bundle_id" == $file_pattern ]] && [[ ! -d "$app_path" ]]; then
-                    if _system_service_app_exists "$bundle_id" "$app_path"; then
-                        continue
-                    fi
-                    orphaned_files+=("$plist")
-                    orphaned_count=$((orphaned_count + 1))
-                    break
-                fi
-            done
+            # Generic detection: binary-existence check.
+            if _plist_is_orphaned "$plist" "$bundle_id"; then
+                orphaned_files+=("$plist")
+                orphaned_count=$((orphaned_count + 1))
+            fi
         done < <(sudo find /Library/LaunchDaemons -maxdepth 1 -name "*.plist" -print0 2> /dev/null)
     fi
 
@@ -534,20 +614,11 @@ clean_orphaned_system_services() {
 
             local bundle_id="${filename%.plist}"
 
-            for pattern_entry in "${known_orphan_patterns[@]}"; do
-                local file_pattern="${pattern_entry%%:*}"
-                local app_path="${pattern_entry#*:}"
-
-                # shellcheck disable=SC2053
-                if [[ "$bundle_id" == $file_pattern ]] && [[ ! -d "$app_path" ]]; then
-                    if _system_service_app_exists "$bundle_id" "$app_path"; then
-                        continue
-                    fi
-                    orphaned_files+=("$plist")
-                    orphaned_count=$((orphaned_count + 1))
-                    break
-                fi
-            done
+            # Generic detection: binary-existence check.
+            if _plist_is_orphaned "$plist" "$bundle_id"; then
+                orphaned_files+=("$plist")
+                orphaned_count=$((orphaned_count + 1))
+            fi
         done < <(sudo find /Library/LaunchAgents -maxdepth 1 -name "*.plist" -print0 2> /dev/null)
     fi
 
@@ -571,31 +642,30 @@ clean_orphaned_system_services() {
             # Skip Apple system files
             [[ "$bundle_id" == com.apple.* ]] && continue
 
-            local matched_known=false
-            for pattern_entry in "${known_orphan_patterns[@]}"; do
+            # Check force-protect list first: if the helper's app is still installed,
+            # never flag it as orphaned regardless of what bundle_has_installed_app says.
+            local is_protected=false
+            local pattern_entry
+            for pattern_entry in "${known_protect_patterns[@]}"; do
                 local file_pattern="${pattern_entry%%:*}"
                 local app_path="${pattern_entry#*:}"
-
                 # shellcheck disable=SC2053
-                if [[ "$filename" == $file_pattern ]] && [[ ! -d "$app_path" ]]; then
-                    if _system_service_app_exists "$bundle_id" "$app_path"; then
-                        matched_known=true
-                        break
-                    fi
-                    orphaned_files+=("$helper")
-                    orphaned_count=$((orphaned_count + 1))
-                    matched_known=true
+                [[ "$filename" == $file_pattern || "$bundle_id" == $file_pattern ]] || continue
+                if _system_service_app_exists "$bundle_id" "$app_path"; then
+                    is_protected=true
                     break
                 fi
+                # Pattern matched but app is absent → not protected; stop searching.
+                break
             done
+            [[ "$is_protected" == "true" ]] && continue
 
-            # Generic detection: bundle-ID-style helpers not matched by hardcoded list.
-            # Privileged helpers are frequently registered via SMJobBless and ship
-            # *inside* the parent app bundle at Contents/Library/LaunchServices/<id>,
-            # which Spotlight does not index. Use the shared resolver so we do not
-            # falsely flag Adobe / 1Password / Docker helpers as orphaned when their
-            # parent app is installed. See #733.
-            if [[ "$matched_known" == "false" ]] && [[ "$bundle_id" =~ ^(com|org|net|io)\. ]]; then
+            # Generic detection: bundle-ID-style helpers registered via SMJobBless
+            # ship inside the parent app bundle (Contents/Library/LaunchServices/<id>),
+            # which Spotlight doesn't index directly. Use the shared resolver so we do
+            # not falsely flag Adobe / 1Password / Docker helpers when their parent app
+            # is installed. See #733.
+            if [[ "$bundle_id" =~ ^(com|org|net|io)\. ]]; then
                 if ! bundle_has_installed_app "$bundle_id"; then
                     orphaned_files+=("$helper")
                     orphaned_count=$((orphaned_count + 1))
@@ -684,4 +754,120 @@ clean_orphaned_system_services() {
 # cleanup targets. `mo clean` must not delete them automatically.
 clean_orphaned_launch_agents() {
     return 0
+}
+
+# ============================================================================
+# Orphaned container stubs
+# ============================================================================
+
+# Remove stub-only ~/Library/Containers directories left by uninstalled apps.
+# A stub container contains only .com.apple.containermanagerd.metadata.plist
+# with no Data/ subdirectory — it holds no user data and is safe to remove.
+# Only targets a hardcoded allowlist of apps known to leave such stubs.
+clean_orphaned_container_stubs() {
+    local containers_dir="$HOME/Library/Containers"
+    [[ -d "$containers_dir" ]] || return 0
+
+    # Format: "bundle_id_glob:app_path_to_check"
+    # The app_path_to_check is the canonical .app location; the stub is removed
+    # only when no common install location nor mdfind can locate the app.
+    local -a stub_patterns=(
+        # MacPaw CleanMyMac X (direct and MAS variants, bare bundle ID)
+        "com.macpaw.CleanMyMac*:/Applications/CleanMyMac X.app"
+        # MacPaw CleanMyMac X TeamID-prefixed helpers (e.g. S8EX82NJP6.com.macpaw.*)
+        "*.com.macpaw.CleanMyMac*:/Applications/CleanMyMac X.app"
+    )
+
+    local removed_count=0
+    local failed_count=0
+    local _ng_state
+    _ng_state=$(shopt -p nullglob || true)
+    shopt -s nullglob
+
+    _container_stub_app_exists() {
+        local bundle_id="$1"
+        local app_path="$2"
+
+        [[ -d "$app_path" || -e "$app_path" ]] && return 0
+
+        local app_name
+        app_name=$(basename "$app_path")
+        case "$app_path" in
+            /Applications/*)
+                [[ -d "$HOME/Applications/$app_name" ]] && return 0
+                [[ -d "/Applications/Setapp/$app_name" ]] && return 0
+                [[ -d "$HOME/Library/Application Support/Setapp/Applications/$app_name" ]] && return 0
+                ;;
+        esac
+
+        if [[ "$bundle_id" =~ ^[a-zA-Z0-9._-]+$ ]] && [[ ${#bundle_id} -ge 5 ]]; then
+            local app_found
+            app_found=$(run_with_timeout 5 mdfind "kMDItemCFBundleIdentifier == '$bundle_id'" 2> /dev/null | head -1 || echo "")
+            [[ -n "$app_found" ]] && return 0
+        fi
+
+        return 1
+    }
+
+    local pattern_entry
+    for pattern_entry in "${stub_patterns[@]}"; do
+        local bundle_glob="${pattern_entry%%:*}"
+        local app_path="${pattern_entry#*:}"
+
+        local container_dir
+        for container_dir in "$containers_dir"/$bundle_glob; do
+            [[ -d "$container_dir" ]] || continue
+            [[ -L "$container_dir" ]] && continue
+
+            local metadata_plist="$container_dir/.com.apple.containermanagerd.metadata.plist"
+            [[ -f "$metadata_plist" ]] || continue
+            if find "$container_dir" -mindepth 1 -maxdepth 1 ! -name ".com.apple.containermanagerd.metadata.plist" -print -quit 2> /dev/null | grep -q .; then
+                continue
+            fi
+
+            local bundle_id="${container_dir##*/}"
+
+            _container_stub_app_exists "$bundle_id" "$app_path" && continue
+
+            if is_path_whitelisted "$container_dir" 2> /dev/null; then
+                debug_log "Skipping whitelisted stub container: $container_dir"
+                continue
+            fi
+
+            if [[ "$DRY_RUN" != "true" ]]; then
+                # These directories have already passed the narrow stub-only
+                # checks above. Use direct removal so broad app-protection rules
+                # for the parent vendor bundle do not keep empty metadata stubs.
+                # safe_remove cannot be used here: it runs should_protect_path
+                # which intentionally vetos vendor-bundle paths we just verified.
+                if command rm -rf -- "$container_dir" > /dev/null 2>&1; then # SAFE: verified stub-only container
+                    removed_count=$((removed_count + 1))
+                    log_operation "${MOLE_CURRENT_COMMAND:-clean}" "REMOVED" "$container_dir" "stub-container"
+                else
+                    debug_log "Failed to remove stub container: $container_dir"
+                    failed_count=$((failed_count + 1))
+                    log_operation "${MOLE_CURRENT_COMMAND:-clean}" "FAILED" "$container_dir" "stub-container"
+                fi
+            else
+                removed_count=$((removed_count + 1))
+                log_operation "${MOLE_CURRENT_COMMAND:-clean}" "SKIPPED" "$container_dir" "dry-run stub-container"
+            fi
+        done
+    done
+
+    eval "$_ng_state"
+
+    if [[ $removed_count -gt 0 ]]; then
+        if [[ "$DRY_RUN" == "true" ]]; then
+            echo -e "  ${YELLOW}${ICON_DRY_RUN}${NC} Orphaned app container stubs, ${YELLOW}${removed_count} stubs dry${NC}"
+        else
+            echo -e "  ${GREEN}${ICON_SUCCESS}${NC} Orphaned app container stubs, ${GREEN}${removed_count} removed${NC}"
+            note_activity
+        fi
+        files_cleaned=$((files_cleaned + removed_count))
+        total_items=$((total_items + 1))
+    fi
+    if [[ $failed_count -gt 0 ]]; then
+        echo -e "  ${GRAY}${ICON_WARNING}${NC} Orphaned container stubs: $failed_count could not be removed"
+    fi
 }

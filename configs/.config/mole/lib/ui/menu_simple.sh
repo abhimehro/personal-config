@@ -279,6 +279,13 @@ paginated_multi_select() {
                     selected[i]=false
                 done
                 ;;
+            "LEFT" | "RIGHT")
+                # menu_simple is non-paginated; LEFT/RIGHT (h/l) have no
+                # navigation meaning here. Swallow them silently so set -e in
+                # callers doesn't trip and so a stray Vim user doesn't see a
+                # spurious cursor jump.
+                :
+                ;;
             "ENTER")
                 # Store result in global variable instead of returning via stdout
                 local -a selected_indices=()

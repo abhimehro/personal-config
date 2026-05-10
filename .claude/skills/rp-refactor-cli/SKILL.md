@@ -2,7 +2,7 @@
 name: "rp-refactor-cli"
 description: "Refactoring assistant using rp-cli to analyze and improve code organization"
 repoprompt_managed: true
-repoprompt_skills_version: 54
+repoprompt_skills_version: 60
 repoprompt_variant: cli
 ---
 
@@ -22,20 +22,19 @@ rp-cli -e '<command>'
 
 **Quick reference:**
 
-| MCP Tool             | CLI Command                                                                  |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `get_file_tree`      | `rp-cli -e 'tree'`                                                           |
-| `file_search`        | `rp-cli -e 'search "pattern"'`                                               |
-| `get_code_structure` | `rp-cli -e 'structure path/'`                                                |
-| `read_file`          | `rp-cli -e 'read path/file.swift'`                                           |
-| `manage_selection`   | `rp-cli -e 'select add path/'`                                               |
-| `context_builder`    | `rp-cli -e 'builder "instructions" --response-type plan'`                    |
-| `oracle_send`        | `rp-cli -e 'chat "message" --mode plan'`                                     |
-| `apply_edits`        | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
-| `file_actions`       | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'`             |
+| MCP Tool | CLI Command |
+|----------|-------------|
+| `get_file_tree` | `rp-cli -e 'tree'` |
+| `file_search` | `rp-cli -e 'search "pattern"'` |
+| `get_code_structure` | `rp-cli -e 'structure path/'` |
+| `read_file` | `rp-cli -e 'read path/file.swift'` |
+| `manage_selection` | `rp-cli -e 'select add path/'` |
+| `context_builder` | `rp-cli -e 'builder "instructions" --response-type plan'` |
+| `oracle_send` | `rp-cli -e 'chat "message" --mode plan'` |
+| `apply_edits` | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
+| `file_actions` | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'` |
 
 Chain commands with `&&`:
-
 ```bash
 rp-cli -e 'select set src/ && context'
 ```
@@ -47,7 +46,6 @@ JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected), `@file`
 **⚠️ TIMEOUT WARNING:** The `builder` and `chat` commands can take several minutes to complete. When invoking rp-cli, **set your command timeout to at least 2700 seconds (45 minutes)** to avoid premature termination.
 
 ---
-
 ## Goal
 
 Analyze code for redundancies and complexity, then orchestrate agents to implement improvements. **Preserve behavior** unless something is broken.
@@ -77,18 +75,15 @@ rp-cli -w <window_id> -e 'tree --type roots'
 ```
 
 **Check the output:**
-
 - If your target root appears in a window → note the window ID and proceed to Step 1
 - If not → the codebase isn't loaded in any window
 
 **CLI Window Routing:**
-
 - CLI invocations are stateless—you MUST pass `-w <window_id>` to target the correct window
 - Use `rp-cli -e 'windows'` to list all open windows and their workspaces
 - Always include `-w <window_id>` in ALL subsequent commands
 
 ---
-
 ## Step 1: Scope & Analyze
 
 ### 1a. Scout the territory with explore agents
@@ -136,7 +131,6 @@ Review the findings. If areas were missed, run additional focused reviews with e
 ## Optional: Clarify Analysis
 
 After receiving analysis findings, you can ask clarifying questions in the same chat:
-
 ```bash
 rp-cli -w <window_id> -t '<tab_id>' -e 'chat "For the duplicate logic you identified, which location should be the canonical one?" --mode chat'
 ```
@@ -166,7 +160,6 @@ The tool returns `oracle_export_path` and `oracle_export_instruction`. Include `
 Take the plan and break it into **ordered work items**. Refactorings are usually sequential — later changes often depend on structures introduced by earlier ones.
 
 For each item, note:
-
 - **Goal**: What this item accomplishes (1-2 sentences)
 - **Done when**: Concrete completion criteria — what should be true when this item is finished
 - **Key files/modules**: Where the work happens
@@ -211,7 +204,7 @@ A role whose display name starts with `Codex CLI` (or an explicit `model_id` wit
 
 The agents you dispatch are fully capable — they have tools, they'll read AGENTS.md and project instructions, they can explore and reason. Your job is to orient them, not direct them.
 
-**Scope is your most important job.** When you pass a plan export, the sub-agent can see the full plan — but it doesn't know which part is its responsibility unless you say so. Always be explicit about what it should do _now_ and what it should leave alone. A few patterns:
+**Scope is your most important job.** When you pass a plan export, the sub-agent can see the full plan — but it doesn't know which part is its responsibility unless you say so. Always be explicit about what it should do *now* and what it should leave alone. A few patterns:
 
 - **Paraphrase for narrow tasks**: If the work is small and self-contained, just describe it in the dispatch message. The agent doesn't need the full plan.
 - **Point to a section for broader tasks**: Reference the plan path in the `message` and tell the agent which part to focus on (e.g. "Read the plan at <path> with read_file first. Your job is item 2 in the plan. Items 1 and 3 are handled separately.").
@@ -224,6 +217,8 @@ You can always steer additional work later, or spin up a separate agent for the 
 **Don't include:** Project conventions already in CLAUDE.md, step-by-step instructions, or code snippets the agent can read itself.
 
 **Pass forward discoveries, not instructions.**
+
+**Two conversations, kept separate.** You hold one conversation with the user (preferences, course corrections, meta-instructions about how *you* should behave) and a separate one with each peer agent (purely the technical task). When the user steers you, translate the actionable parts into the next brief — never forward their words verbatim, and never narrate what the user told you about your own conduct. If a brief you already dispatched carried that kind of commentary, cancel it and re-send clean.
 
 ### When to use parallel dispatch
 
@@ -271,15 +266,12 @@ As each agent completes:
 
 1. **Verify against the plan.** Check the agent's output against the "done when" criteria from the plan. Don't just skim — confirm the goal was actually met. A quick `read_file` or `file_search` on key deliverables costs little and catches drift before it compounds. If the plan said "add error handling to all three endpoints" and the agent only touched two, that's your catch. Mark the item as done (or note gaps) in the export file so you have a running record.
 2. **If something's off**, steer a correction before moving on — never proceed with unresolved gaps:
-
 ```bash
 rp-cli -w <window_id> -e 'agent_run op=steer session_id="<session_id>" message="The goal was X but Y appears missing." wait=true'
 ```
-
 3. **Summarize to the user**: Brief status update — what completed, what's still running.
 
 After all items complete, give the user a **final rollup**:
-
 - What was accomplished per item
 - Any failures or partial completions
 - Any conflicts or coordination issues that surfaced

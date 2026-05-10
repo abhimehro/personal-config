@@ -150,6 +150,11 @@ discover_project_cache_roots() {
     local -a _indicator_pids=()
     local _max_jobs
     _max_jobs=$(get_optimal_parallel_jobs scan)
+    if ! [[ "$_max_jobs" =~ ^[0-9]+$ ]] || [[ "$_max_jobs" -lt 1 ]]; then
+        _max_jobs=1
+    elif [[ "$_max_jobs" -gt 8 ]]; then
+        _max_jobs=8
+    fi
 
     local dir
     local base
@@ -198,6 +203,18 @@ discover_project_cache_roots() {
     [[ ${#unique_roots[@]} -gt 0 ]] && printf '%s\n' "${unique_roots[@]}"
 }
 
+pycache_has_bytecode() {
+    local pycache_dir="$1"
+    [[ -d "$pycache_dir" ]] || return 1
+
+    local -a bytecode_files=("$pycache_dir"/*.pyc "$pycache_dir"/*.pyo)
+    local bytecode_file
+    for bytecode_file in "${bytecode_files[@]}"; do
+        [[ -e "$bytecode_file" ]] && return 0
+    done
+    return 1
+}
+
 # Scan a project root for supported build caches while pruning heavy subtrees.
 scan_project_cache_root() {
     local root="$1"
@@ -224,9 +241,7 @@ scan_project_cache_root() {
             [[ -z "$match_path" ]] && continue
             # Skip __pycache__ dirs with no .pyc/.pyo files (empty or already cleaned)
             if [[ "${match_path##*/}" == "__pycache__" ]]; then
-                local has_bytecode
-                has_bytecode=$(find "$match_path" -maxdepth 1 \( -name '*.pyc' -o -name '*.pyo' \) 2> /dev/null | head -1) || true
-                [[ -z "$has_bytecode" ]] && continue
+                pycache_has_bytecode "$match_path" || continue
             fi
             local project_root=""
             project_root=$(project_cache_group_root "$root" "$match_path")

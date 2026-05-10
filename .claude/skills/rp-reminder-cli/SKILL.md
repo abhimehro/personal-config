@@ -2,7 +2,7 @@
 name: "rp-reminder-cli"
 description: "Reminder to use rp-cli"
 repoprompt_managed: true
-repoprompt_skills_version: 54
+repoprompt_skills_version: 60
 repoprompt_variant: cli
 ---
 
@@ -12,27 +12,27 @@ Continue your current workflow using rp-cli instead of built-in alternatives.
 
 ## File & Code
 
-| Task                            | Use         | Not                       |
-| ------------------------------- | ----------- | ------------------------- |
-| Search paths/content            | `search`    | grep, find, Glob          |
-| Read file (whole or sliced)     | `read`      | cat, head, Read           |
-| Directory tree                  | `tree`      | ls, find                  |
-| Signatures / overview           | `structure` | reading whole files       |
-| Edit file                       | `edit`      | sed, Edit                 |
-| Create / delete / move          | `file`      | touch, rm, mv, Write      |
-| Git status / diff / log / blame | `git`       | shelling out for analysis |
+| Task | Use | Not |
+|------|-----|-----|
+| Search paths/content | `search` | grep, find, Glob |
+| Read file (whole or sliced) | `read` | cat, head, Read |
+| Directory tree | `tree` | ls, find |
+| Signatures / overview | `structure` | reading whole files |
+| Edit file | `edit` | sed, Edit |
+| Create / delete / move | `file` | touch, rm, mv, Write |
+| Git status / diff / log / blame | `git` | shelling out for analysis |
 
 ## Context & Planning
 
-| Tool                  | Use for                                                                                                                                                                                                              |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `manage_selection`    | Curate the file set used by chat, builder, and exports. Refresh before each planning call. Modes: `full`, `slices`, `codemap_only`.                                                                                  |
-| `workspace_context`   | Snapshot current prompt + selection + token budget; also exports.                                                                                                                                                    |
-| `prompt`              | Read/set the shared prompt; list or select copy presets.                                                                                                                                                             |
-| `context_builder`     | Heavy discovery sub-agent — describe the task, it curates files + rewrites the prompt. `response_type`: `clarify` / `plan` / `question` / `review`. Pass `export_response:true` to hand the result to a child agent. |
-| `chat` (`ask_oracle`) | Chat-mode reasoning over the current selection. Continue existing chats (`new_chat:false`) rather than opening new ones. Modes: `chat` / `plan` / `review`.                                                          |
-| `oracle_chat_log`     | Recover recent Oracle messages after compaction.                                                                                                                                                                     |
-| `ask_user`            | Ask the user when ambiguity is load-bearing — don't guess at requirements.                                                                                                                                           |
+| Tool | Use for |
+|------|---------|
+| `manage_selection` | Curate the file set used by chat, builder, and exports. Refresh before each planning call. Modes: `full`, `slices`, `codemap_only`. |
+| `workspace_context` | Snapshot current prompt + selection + token budget; also exports. |
+| `prompt` | Read/set the shared prompt; list or select copy presets. |
+| `context_builder` | Heavy discovery sub-agent — describe the task, it curates files + rewrites the prompt. `response_type`: `clarify` / `plan` / `question` / `review`. Pass `export_response:true` to hand the result to a child agent. |
+| `chat` (`ask_oracle`) | Chat-mode reasoning over the current selection. Continue existing chats (`new_chat:false`) rather than opening new ones. Modes: `chat` / `plan` / `review`. |
+| `oracle_chat_log` | Recover recent Oracle messages after compaction. |
+| `ask_user` | Ask the user when ambiguity is load-bearing — don't guess at requirements. |
 
 ## Agent Delegation — `agent_run` / `agent_manage`
 
@@ -40,12 +40,12 @@ Dispatch a sub-agent when a side investigation or delegated chunk of work would 
 
 **Role labels** (pass as `model_id` on `agent_run op=start`):
 
-| Role       | Use for                                                                                                                                                                                  |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `explore`  | Fast **read-only** probes — git archaeology, "where is X wired?", narrow lookups, web/doc search. One question per probe.                                                                |
-| `engineer` | Balanced implementation work delegated to a child agent.                                                                                                                                 |
-| `pair`     | Multi-step reasoning with back-and-forth — lead investigator or main implementer of a decomposed item.                                                                                   |
-| `design`   | Architecture / review / extended analysis — primary deliverable is a markdown report under `docs/reviews/`, `docs/designs/`, or `docs/analysis/`. Expect the report path in the summary. |
+| Role | Use for |
+|------|---------|
+| `explore` | Fast **read-only** probes — git archaeology, "where is X wired?", narrow lookups, web/doc search. One question per probe. |
+| `engineer` | Balanced implementation work delegated to a child agent. |
+| `pair` | Multi-step reasoning with back-and-forth — lead investigator or main implementer of a decomposed item. |
+| `design` | Architecture / review / extended analysis — primary deliverable is a markdown report under `docs/reviews/`, `docs/designs/`, or `docs/analysis/`. Expect the report path in the summary. |
 
 **Key `agent_run` ops:** `start` (creates a new session/tab — never pass `session_id` here), `wait` / `poll` (accept `session_id` **or** `session_ids` array), `steer` (continue an existing session), `respond` (answer a pending `interaction_id`), `cancel`.
 

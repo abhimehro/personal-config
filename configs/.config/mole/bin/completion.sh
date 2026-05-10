@@ -164,12 +164,12 @@ if [[ $# -eq 0 ]]; then
             config_file="${HOME}/.bashrc"
             [[ -f "${HOME}/.bash_profile" ]] && config_file="${HOME}/.bash_profile"
             # shellcheck disable=SC2016
-            completion_line='source <('"$completion_name"' completion bash 2>/dev/null)'
+            completion_line='if output="$('"$completion_name"' completion bash 2>/dev/null)"; then eval "$output"; fi'
             ;;
         zsh)
             config_file="${HOME}/.zshrc"
             # shellcheck disable=SC2016
-            completion_line='source <('"$completion_name"' completion zsh 2>/dev/null)'
+            completion_line='if output="$('"$completion_name"' completion zsh 2>/dev/null)"; then eval "$output"; fi'
             ;;
         *)
             log_error "Unsupported shell: $current_shell"
@@ -362,10 +362,10 @@ Examples:
   mole completion
 
   # Manual install - Bash
-  source <(mole completion bash)
+  eval "$(mole completion bash)"
 
   # Manual install - Zsh
-  source <(mole completion zsh)
+  eval "$(mole completion zsh)"
 
   # Manual install - Fish
   mole completion fish | source
