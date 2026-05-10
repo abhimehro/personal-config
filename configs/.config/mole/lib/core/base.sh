@@ -832,9 +832,15 @@ update_progress_if_needed() {
     local current_time
     current_time=$(get_epoch_seconds)
 
+    # SECURITY: Prevent CWE-78 command injection
+    if [[ ! "$last_update_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        echo "Error: Invalid variable name '$last_update_var' for progress update" >&2
+        return 1
+    fi
+
     # Get last update time from variable
     local last_time
-    eval "last_time=\${$last_update_var:-0}"
+    last_time="${!last_update_var:-0}"
     [[ "$last_time" =~ ^[0-9]+$ ]] || last_time=0
 
     # Check if enough time has elapsed
@@ -844,7 +850,7 @@ update_progress_if_needed() {
         start_section_spinner "Scanning items... $completed/$total"
 
         # Update the last_update_time variable
-        eval "$last_update_var=$current_time"
+        printf -v "$last_update_var" "%s" "$current_time"
         return 0
     fi
 
