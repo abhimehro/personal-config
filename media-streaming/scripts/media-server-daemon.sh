@@ -73,8 +73,10 @@ export RCLONE_PASS="$WEB_PASS"
 exec rclone serve webdav "media:" \
 	--addr "0.0.0.0:$AVAILABLE_PORT" \
 	--vfs-cache-mode full \
+	--vfs-cache-max-size 10G \
+	--vfs-cache-max-age 24h \
 	--vfs-read-chunk-size 32M \
-	--vfs-read-chunk-size-limit 2G \
+	--vfs-read-chunk-size-limit 1G \
 	--transfers 8 \
 	--checkers 16 \
 	--read-only \
