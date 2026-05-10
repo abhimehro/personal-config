@@ -145,6 +145,6 @@
 ## 2026-05-24 - [Avoid re.match and split overhead for simple parsing]
 **Learning:** Using `re.match` for simple prefix string extractions (like `## repo/name`) is up to ~3x slower than `str.startswith()` combined with list slicing. Similarly, breaking strings on a single character using `str.split("=", 1)` or extracting suffix/prefix with `split("/")[-1]` introduces unnecessary list allocation overhead. The `str.partition()` and `str.rpartition()` methods are implemented in C and provide ~30-40% faster string splitting without allocating new lists.
 **Action:** For simple string prefix extractions, prefer `startswith` + slicing over regular expressions. When splitting a string on a single separator, use `partition` or `rpartition` instead of `split`.
-## 2024-05-10 - Parallelize domain extraction
+## 2026-05-10 - Parallelize domain extraction
 **Learning:** Using `concurrent.futures.ThreadPoolExecutor` for parallel I/O and JSON parsing in domain extraction. This ensures scalability for large datasets even if overhead is visible for micro-datasets.
 **Action:** Use ThreadPoolExecutor when parsing domains from multiple large JSON files.
