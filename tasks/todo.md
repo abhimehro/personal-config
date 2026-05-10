@@ -11,6 +11,46 @@
 
 ---
 
+# Follow-up: Trunk + markdownlint@0.48.0 empty-stdout JSON parse bug (2026-05-09)
+
+**Status:** Open. Discovered while committing the recovery + upstream-sync
+batch on 2026-05-09 / 2026-05-10. Required `git commit --no-verify` plus
+manual `trufflehog` / `git diff --check` / token-regex sweep as a
+security-equivalent check.
+
+**Repro:**
+
+1. Stage any markdown file with no markdownlint findings.
+2. `git commit -m "test"` (or `trunk check --filter=markdownlint --no-progress`).
+3. Markdownlint emits an **empty stdout** instead of `[]` when there are no findings.
+4. Trunk's JSON parser fails with `parse error at line 1, column 7: syntax error while parsing array - unexpected ':'; expected ']'` (the parser falls through to the next pipeline stage's output and chokes there).
+5. Hook reports `1 failure, no issues` and blocks the commit.
+
+**Impact:** Every markdown commit on macOS where the markdownlint tool
+is at v0.48.0 must use `--no-verify` and run security checks manually.
+Defeats the purpose of the pre-commit hook for markdown-only changes.
+
+**Proposed fixes (pick one):**
+
+- File upstream against `trunk-io/plugins` describing the empty-stdout
+  vs `[]` discrepancy and asking either Trunk or markdownlint to be
+  tolerant.
+- Pin `markdownlint` in `.trunk/trunk.yaml` to a version where `--json`
+  emits `[]` on clean runs (verify locally before pinning).
+- Add a `.trunk/configs/.markdownlint.yaml` adjustment if it nudges the
+  CLI into emitting `[]` (e.g., a mode flag).
+
+**Also worth bundling into the same change:**
+
+- Add a `prettier-ignore` for `.claude/skills/**/SKILL.md` since those
+  files are auto-managed by RepoPrompt (`repoprompt_managed: true`) and
+  fighting prettier creates churn on the next sync.
+
+**Acceptance:** A clean markdown-only commit succeeds without
+`--no-verify` and with prettier untouching the auto-managed skill files.
+
+---
+
 # Demo Security Hardening — 2026-04-23
 
 - [x] Add env-based Azure config + fail-fast validation in `copilot-demo/weather-assistant.ts`
