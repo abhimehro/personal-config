@@ -311,6 +311,9 @@ main() {
 			print_status "Cleanup cancelled."
 			exit 0
 		fi
+		# Trim leading/trailing whitespace so inputs like "yes " match.
+		confirm="${confirm#"${confirm%%[![:space:]]*}"}"
+		confirm="${confirm%"${confirm##*[![:space:]]}"}"
 		confirm=${confirm:-N}
 		if [[ $confirm =~ ^[Yy]([Ee][Ss])?$ ]]; then
 			break

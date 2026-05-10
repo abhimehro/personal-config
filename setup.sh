@@ -199,12 +199,13 @@ main() {
 				log_info "Bootstrap cancelled: input closed."
 				exit 130
 			fi
+			# Trim leading/trailing whitespace so inputs like "yes " match.
+			REPLY="${REPLY#"${REPLY%%[![:space:]]*}"}"
+			REPLY="${REPLY%"${REPLY##*[![:space:]]}"}"
 			REPLY=${REPLY:-N}
 			if [[ $REPLY =~ ^[Yy]([Ee][Ss])?$ ]]; then
-				echo
 				break
 			elif [[ $REPLY =~ ^[Nn]([Oo])?$ ]]; then
-				echo
 				log_info "Bootstrap cancelled by user."
 				exit 0
 			else
