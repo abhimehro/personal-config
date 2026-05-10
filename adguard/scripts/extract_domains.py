@@ -89,7 +89,7 @@ if __name__ == "__main__":
                 denylist_domains.update(domains)
             except Exception as exc:
                 filename = futures[future]
-                print(f"{filename} generated an exception: {exc}")
+                print(f"  ⚠️  {filename} generated an exception: {exc}")
 
     print(f"\nTotal denylist domains: {len(denylist_domains)}")
 
