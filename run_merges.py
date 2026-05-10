@@ -13,9 +13,10 @@ def _parse_env_line(line, env_dict):
         return
     if line.startswith("export "):
         line = line[7:].strip()
-    if "=" not in line:
+    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
+    key, sep, val = line.partition("=")
+    if not sep:
         return
-    key, val = line.split("=", 1)
     env_dict[key] = val.strip("'\"")
 
 
