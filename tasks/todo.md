@@ -11,6 +11,27 @@
 
 ---
 
+# Backlog Cleanup Final Pass — 2026-05-10
+
+- [x] Pull live state for all 6 repos and reconcile against 2026-05-09 action log.
+- [x] Merge `series_correction#15` (salvage from prior run, sole-of-kind, CLEAN).
+- [x] Close-superseded the Hydrograph #169/#170/#171 cluster (covered by merged #172).
+- [x] Close-superseded `series_correction#13` (replaced by salvage #15).
+- [x] Close-duplicate `personal-config#884` (twin of #867 per Lesson 0dd).
+- [x] Close-superseded `personal-config#880` (intent absorbed by `60f7e904 fix(morning-brief)`).
+- [x] Escalate trust-boundary PRs (`personal-config#901`; `email-security-pipeline#791/#793/#796`).
+- [x] Close-stale Jules junk-fixture bleed PRs (`personal-config#831/#836/#840/#849/#862/#867/#869`).
+- [x] Close-superseded `personal-config#858` (`os` import already absent on main).
+- [x] Salvage `personal-config#911` → draft #916 (Bolt partition perf, /tmp clone).
+- [x] Salvage `personal-config#899` → draft #917 (parse_inventory refactor + 22 tests, /tmp clone).
+- [x] Salvage `personal-config#856` → draft #918 (check_summary tests merged into existing module, /tmp clone).
+- [x] Close-superseded `ctrld-sync#771` (main now has dedicated `pluralize()` helper).
+- [x] Close-stale `series_correction#11` (refactor PR; salvage aborted with 6 conflicts vs PR #10 tests).
+- [x] Update `tasks/pr-review-session-reports.md` with 2026-05-10 final cleanup section.
+- [x] Write `tasks/pr-final-cleanup-2026-05-10.json` action log.
+
+---
+
 # Follow-up: Trunk + markdownlint@0.48.0 empty-stdout JSON parse bug (2026-05-09)
 
 **Status:** Open. Discovered while committing the recovery + upstream-sync
