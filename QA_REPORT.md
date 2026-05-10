@@ -26,7 +26,7 @@ Using a `grep` check, some suspicious tokens/keys were reviewed.
   - `make lint-errors`
   - `grep -rIEi "(password|secret|token|api_key|apikey)[[:space:]]*[:=]" --exclude-dir=.git --exclude-dir=.trunk --exclude-dir=.github --exclude-dir=tests .`
 - **Notes:** Repository health is strong based on targeted checks. Shellcheck enforcement is strong and the tests are comprehensive. However, `trunk check --all` did report 1713 lint issues and 166 security findings; based on spot review, many appear to be minor styling items or test-related `bandit/B101` assertions.
-- **Security Check:** All security findings reported by `bandit` are either in tests (`assert`) or minor warnings. There are no critical issues found.
+- **Security Check:** All security findings reported by `bandit` are either in tests (`assert`) or minor warnings like `Try, Except, Pass` and `Possible binding to all interfaces`. There are no critical issues found.
 
 ## 4. Closure
 
