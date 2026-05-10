@@ -24,11 +24,17 @@ USE_MCP_GITHUB = os.environ.get("USE_MCP_GITHUB", "false").lower() in {
 
 # Try to import MCP GitHub server if available
 # Note: Requires the appropriate MCP client library to be installed
-# This is a placeholder for the actual MCP GitHub integration
+# This is a placeholder for the actual MCP GitHub integration.
+#
+# SAFETY: MCP_AVAILABLE must remain False until the `tag_exists` MCP branch
+# (see below) is replaced with a real implementation. The current MCP branch
+# is a placeholder that unconditionally returns True for any tag, which would
+# cause the workflow updater to accept and propagate non-existent tags into
+# draft PRs. Do not re-enable this without also fixing tag_exists.
 try:
     if USE_MCP_GITHUB:
-        import mcp
-        MCP_AVAILABLE = True
+        # Disabled until correct MCP module is available and tag_exists is implemented
+        MCP_AVAILABLE = False
     else:
         MCP_AVAILABLE = False
 except ImportError:

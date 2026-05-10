@@ -77,6 +77,30 @@ def execute_configured_commands(
     setup_entries = []
     command_entries = []
 
+    # Partition into setup (must run sequentially first, in order) and
+    # parallel buckets (commands + security). Setup commands often install
+    # dependencies that subsequent commands rely on, so they cannot be
+    # parallelized with the rest.
+    all_items = list(configured_commands(section))
+    setup_items = [(b, i) for b, i in all_items if b == "setup"]
+    parallel_items = [(b, i) for b, i in all_items if b != "setup"]
+
+    # Run setup commands sequentially to preserve ordering guarantees.
+    for bucket_name, item in setup_items:
+        result = run_shell_command(
+            item["run"], int(item.get("timeout_seconds", 1800))
+        )
+        setup_entries.append(
+            {
+                "bucket": bucket_name,
+                "name": item["name"],
+                **result,
+                "optional": bool(item.get("optional", False)),
+            }
+        )
+
+    # Validation and security commands have no inter-dependencies, so they
+    # can be parallelized for throughput.
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [
             (
@@ -86,15 +110,12 @@ def execute_configured_commands(
                     run_shell_command, item["run"], int(item.get("timeout_seconds", 1800))
                 ),
             )
-            for bucket_name, item in configured_commands(section)
+            for bucket_name, item in parallel_items
         ]
 
     for bucket_name, item, future in futures:
         entry = _process_future_result(bucket_name, item, future)
-        if bucket_name == "setup":
-            setup_entries.append(entry)
-        else:
-            command_entries.append(entry)
+        command_entries.append(entry)
 
     return setup_entries, command_entries
 
