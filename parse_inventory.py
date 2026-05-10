@@ -149,7 +149,7 @@ def _is_checks_failing(checks):
     # so we do not treat unrelated statuses containing "U" (e.g. "SUCCESS") as failing.
     if ("FAIL" in checks) or ("PENDING" in checks):
         return True
-    return checks.strip().strip("*") == "U"
+    return checks.strip(' *_') == "U"
 
 
 def _get_pr_category(info, checks):
