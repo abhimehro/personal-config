@@ -1,5 +1,16 @@
 import json
 import os
+from pathlib import Path
+import concurrent.futures
+
+
+def _process_tracker_file_for_extract(base_dir, filename):
+    filepath = os.path.join(base_dir, filename)
+    if os.path.exists(filepath):
+        domains = extract_domains_from_file(filepath)
+        print(f"{filename}: {len(domains)} domains")
+        return set(domains)
+    return set()
 
 
 def _is_allowlist_rule(rule):
@@ -70,12 +81,15 @@ if __name__ == "__main__":
     print("Extracting denylist domains...")
     denylist_domains = set()
 
-    for filename in tracker_files:
-        filepath = os.path.join(base_dir, filename)
-        if os.path.exists(filepath):
-            domains = extract_domains_from_file(filepath)
-            denylist_domains.update(domains)
-            print(f"{filename}: {len(domains)} domains")
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {executor.submit(_process_tracker_file_for_extract, base_dir, filename): filename for filename in tracker_files}
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                domains = future.result()
+                denylist_domains.update(domains)
+            except Exception as exc:
+                filename = futures[future]
+                print(f"{filename} generated an exception: {exc}")
 
     print(f"\nTotal denylist domains: {len(denylist_domains)}")
 
