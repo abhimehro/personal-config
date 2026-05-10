@@ -609,3 +609,114 @@ See [`tasks/pr-review-2026-04-25.md`](pr-review-2026-04-25.md) for per-repo disp
 ### Workflow completion
 
 - **Partial:** Throughput merges stopped when sibling PRs hit **merge conflicts** (`series_correction_project_updated#13/#14`, `ctrld-sync#771`) per cascade lesson (0cc). Large overlapping Sentinel/Bolt queues on `personal-config` and `ctrld-sync` left for paced human or Salvage Agent follow-up. <!-- pragma: allowlist secret -->
+
+## Run — 2026-05-10 (backlog cleanup final pass — orchestrate-test follow-up)
+
+### Context
+
+Follow-up cleanup that disposes of every PR that was DEFERRED, ESCALATED, or DIRTY at the end of the **2026-05-09** orchestrate run, plus any new PRs that surfaced in the 2026-05-10 inventory. Goal: leave each repo with **zero in-scope DIRTY/UNSTABLE PRs** so trust-boundary escalations can be surfaced cleanly to the human reviewer.
+
+All salvage work was performed in clones under `/tmp/salvage-2026-05-10/` per **Lesson 0df**; no working-tree manipulation in the active workspace.
+
+### Repos processed
+
+1. `abhimehro/personal-config`
+2. `abhimehro/ctrld-sync`
+3. `abhimehro/email-security-pipeline`
+4. `abhimehro/Seatek_Analysis`
+5. `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project`
+6. `abhimehro/series_correction_project_updated`
+
+### Metrics
+
+| Metric                           | Count |
+| -------------------------------- | ----: |
+| PRs disposed in this pass        |    25 |
+| PRs merged (squash)              |     1 |
+| PRs closed (superseded)          |     7 |
+| PRs closed (duplicate)           |     1 |
+| PRs closed (stale / junk-bleed)  |     6 |
+| Escalation comments posted       |     4 |
+| Salvage PRs opened (draft)       |     3 |
+| Salvage attempts aborted (close) |     1 |
+
+### Merged (squash)
+
+- `abhimehro/series_correction_project_updated` **#15** (salvage of #13/#14, opened by 2026-05-09 run; sole-of-kind, CLEAN)
+
+### Salvage PRs opened (draft)
+
+All performed in `/tmp/salvage-2026-05-10/pc/`:
+
+- **#916** — `salvage: Bolt partition()/startswith() perf` — replays #911 commit `fd9fcc25` onto fresh `main`. 8 files / +27/-16. Resolved `parse_inventory.py` conflict by deduplicating two `# ⚡ Bolt Optimization` comments where main had absorbed equivalent rewrites.
+- **#917** — `salvage: parse_inventory.py refactor + 22 unit tests` — replays #899 chain. 2 files / +342/-85. Resolved single conflict by keeping pr899's refactored helper-function form. `python3 -m unittest tests.test_parse_inventory` — 22 tests pass.
+- **#918** — `salvage: add 9 unit tests for check_summary` — merges PR's `TestCheckSummary` into existing `tests/test_get_prs_summarize.py` (which on main had `TestAutomationHints`). 1 file / +65/-1. 17 tests pass.
+
+### Closed (superseded / duplicate / stale)
+
+**`abhimehro/Hydrograph_Versus_Seatek_Sensors_Project`** — close-superseded (covered by merged #172):
+
+- #169, #170, #171
+
+**`abhimehro/series_correction_project_updated`**
+
+- #13 close-superseded (replaced by salvage #15)
+- #11 close-stale (refactor PR; salvage attempt aborted with 6 conflict regions vs PR #10)
+
+**`abhimehro/personal-config`**
+
+- #884 close-duplicate (twin of #867; lower-numbered kept canonical, then #867 itself closed-stale)
+- #880 close-superseded (intent absorbed by `60f7e904 fix(morning-brief): truncate per-podcast text…`)
+- #836, #840, #831, #862, #869, #867, #849 close-stale (Jules junk-fixture bleed — Lesson 0e)
+- #858 close-superseded (verified `import os` already absent from `origin/main:adguard/scripts/consolidate_adblock_lists.py`)
+
+**`abhimehro/ctrld-sync`**
+
+- #771 close-superseded (main now has `pluralize()` helper at `main.py:573` used in 7+ call sites)
+
+### Escalated (left open with comment)
+
+- `abhimehro/personal-config#901` — `app/copilot-swe-agent` modifications to `setup.sh`; trust-boundary
+- `abhimehro/email-security-pipeline#791` — Palette CLI accessibility on security pipeline
+- `abhimehro/email-security-pipeline#793` — Bolt cache opt on security pipeline
+- `abhimehro/email-security-pipeline#796` — Palette NO_COLOR on security pipeline (red gate too)
+
+### Open after this run
+
+All open PRs are intentionally open and waiting on human review:
+
+| Repo                                              |  PR | State    | Reason                                                   |
+| ------------------------------------------------- | --: | -------- | -------------------------------------------------------- |
+| `abhimehro/personal-config`                       | 916 | DRAFT    | Salvage of #911 (this run)                               |
+| `abhimehro/personal-config`                       | 917 | DRAFT    | Salvage of #899 (this run)                               |
+| `abhimehro/personal-config`                       | 918 | DRAFT    | Salvage of #856 (this run)                               |
+| `abhimehro/personal-config`                       | 901 | DIRTY    | Trust-boundary (copilot setup.sh) — escalated            |
+| `abhimehro/personal-config`                       | 893 | BLOCKED  | Trust-boundary (security summary.yml) — escalated        |
+| `abhimehro/ctrld-sync`                            | 769 | CLEAN    | Trust-boundary (security summary.yml) — escalated        |
+| `abhimehro/email-security-pipeline`               | 778 | CLEAN    | Trust-boundary (Palette suspicious URLs) — escalated     |
+| `abhimehro/email-security-pipeline`               | 780 | CLEAN    | Trust-boundary (security summary.yml) — escalated        |
+| `abhimehro/email-security-pipeline`               | 791 | DIRTY    | Trust-boundary (Palette CLI accessibility) — escalated   |
+| `abhimehro/email-security-pipeline`               | 793 | DIRTY    | Trust-boundary (Bolt time.monotonic for TTLCache)        |
+| `abhimehro/email-security-pipeline`               | 796 | UNSTABLE | Trust-boundary (Palette NO_COLOR) + red gate — escalated |
+| `abhimehro/Seatek_Analysis`                       |   — | —        | No open in-scope PRs                                     |
+| `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project` |   — | —        | No open in-scope PRs                                     |
+| `abhimehro/series_correction_project_updated`     |   — | —        | No open in-scope PRs                                     |
+
+**Status changes worth noting:** `ctrld-sync#769`, `email-security-pipeline#778`, and `email-security-pipeline#780` (all security/`summary.yml`-injection fixes that previous sessions escalated as DIRTY/CONFLICTING) have flipped to **CLEAN** since the last orchestrate run. Recommend a single human review pass over those three before merging — the security framing is correct (do not auto-merge), but the conflict that previously gated them is gone.
+
+### Action artifacts
+
+- `tasks/pr-final-cleanup-2026-05-10.json` — JSON action log for this pass
+- `tasks/pr-merge-results-2026-05-09.json` — JSON action log for the original orchestrate run
+
+### Workflow completion
+
+- **Complete.** Every in-scope DIRTY/UNSTABLE PR has been merged, closed, or replaced by a salvage. The remaining 11 open PRs are either fresh salvage drafts awaiting CI + review, or trust-boundary security PRs intentionally left open for human review per `.cursorrules`.
+
+### Lessons referenced (no new lessons added this pass)
+
+- **0e** — Jules junk-fixture bleed (referenced 7 times)
+- **0p** — Jules zero-diff QA noise
+- **0dd** — Identical twin PRs
+- **0bb** — Never bypass red gates on security repos
+- **0df** — Salvage agents must clone to /tmp; never working-tree manipulation in active workspace (followed throughout)
