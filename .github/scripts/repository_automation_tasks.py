@@ -77,17 +77,28 @@ def execute_configured_commands(
     setup_entries = []
     command_entries = []
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [
-            (bucket_name, item, executor.submit(run_shell_command, item["run"], int(item.get("timeout_seconds", 1800))))
-            for bucket_name, item in configured_commands(section)
-        ]
+    buckets = configured_commands(section)
+    setup_items = [(b, i) for b, i in buckets if b == "setup"]
+    other_items = [(b, i) for b, i in buckets if b != "setup"]
 
-        for bucket_name, item, future in futures:
-            entry = _build_command_entry(bucket_name, item, future.result())
-            if bucket_name == "setup":
-                setup_entries.append(entry)
-            else:
+    # Run setup commands sequentially to preserve dependency ordering
+    # (e.g. setup must complete before validation/security commands run).
+    for bucket_name, item in setup_items:
+        result = run_shell_command(
+            item["run"], int(item.get("timeout_seconds", 1800))
+        )
+        setup_entries.append(_build_command_entry(bucket_name, item, result))
+
+    # Validation and security commands can safely run in parallel.
+    if other_items:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [
+                (bucket_name, item, executor.submit(run_shell_command, item["run"], int(item.get("timeout_seconds", 1800))))
+                for bucket_name, item in other_items
+            ]
+
+            for bucket_name, item, future in futures:
+                entry = _build_command_entry(bucket_name, item, future.result())
                 command_entries.append(entry)
 
     return setup_entries, command_entries

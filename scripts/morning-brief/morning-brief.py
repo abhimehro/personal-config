@@ -505,8 +505,21 @@ class PerplexityClient:
         if not texts:
             return []
 
-        joined_texts = "\n\n---NEXT_PODCAST---\n\n".join(
-            f"Podcast {i+1}:\n{t}" for i, t in enumerate(texts)
+        # The shared MAX_LLM_INPUT_CHARS budget is enforced inside ``chat``,
+        # so we must pre-truncate each podcast text to its share of the
+        # budget. Without this, later podcasts get silently dropped when
+        # the joined string is sliced to MAX_LLM_INPUT_CHARS.
+        # Reserve overhead for the per-item prefix and the delimiter.
+        delimiter = "\n\n---NEXT_PODCAST---\n\n"
+        prefix_overhead = len(f"Podcast {len(texts)}:\n")
+        per_item_overhead = prefix_overhead + len(delimiter)
+        per_item_limit = max(
+            100,
+            (MAX_LLM_INPUT_CHARS // len(texts)) - per_item_overhead,
+        )
+        joined_texts = delimiter.join(
+            f"Podcast {i+1}:\n{truncate_text(t, per_item_limit)}"
+            for i, t in enumerate(texts)
         )
 
         response = self.chat(
