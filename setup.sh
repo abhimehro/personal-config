@@ -8,8 +8,7 @@
 
 set -Eeuo pipefail
 
-trap 'echo -e "
-[0;31m👋 Setup cancelled by user. Goodbye![0m"; exit 130' SIGINT
+trap 'printf "\n\033[0;31m👋 Setup cancelled by user. Goodbye!\033[0m\n"; exit 130' SIGINT
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -26,7 +25,7 @@ log_ok() { printf "%b✅ [OK]%b    %s\n" "${GREEN}" "${NC}" "$*"; }
 log_warn() { printf "%b⚠️  [WARN]%b  %s\n" "${YELLOW}" "${NC}" "$*"; }
 log_err() { printf "%b❌ [ERR]%b   %s\n" "${RED}" "${NC}" "$*" >&2; }
 
-hr() { echo -e "${BLUE}────────────────────────────────────────────────────────────${NC}"; }
+hr() { printf "%b────────────────────────────────────────────────────────────%b\n" "${BLUE}" "${NC}"; }
 header() {
 	echo
 	printf "%b🔷 %s%b\n" "${BOLD}${BLUE}" "$*" "${NC}"
@@ -169,7 +168,7 @@ install_media_launchd() {
 
 main() {
 	# Welcome Banner
-	echo -e "${BOLD}🎨 Personal Config Bootstrap${NC}"
+	printf "%b🎨 Personal Config Bootstrap%b\n" "${BOLD}" "${NC}"
 	printf "   Repository: %s\n" "$REPO_ROOT"
 
 	# Check for non-interactive mode or flag
@@ -184,13 +183,13 @@ main() {
 	# Interactive Confirmation
 	if [[ $interactive == "true" ]]; then
 		echo
-		echo -e "${BOLD}Plan of Execution:${NC}"
-		echo -e "  1. Check macOS environment and requirements (brew, op)"
-		echo -e "  2. Sync and verify configuration symlinks"
-		echo -e "  3. Install system maintenance agents"
-		echo -e "  4. Setup network tools and media services"
+		printf "%bPlan of Execution:%b\n" "${BOLD}" "${NC}"
+		printf "  1. Check macOS environment and requirements (brew, op)\n"
+		printf "  2. Sync and verify configuration symlinks\n"
+		printf "  3. Install system maintenance agents\n"
+		printf "  4. Setup network tools and media services\n"
 		echo
-		echo -e "${YELLOW}⚠️  This will modify configuration files in your home directory.${NC}"
+		printf "%b⚠️  This will modify configuration files in your home directory.%b\n" "${YELLOW}" "${NC}"
 		echo
 		read -p "Ready to proceed? (y/N) " -r
 		REPLY=${REPLY:-N}
@@ -199,7 +198,7 @@ main() {
 			exit 0
 		fi
 	else
-		echo -e "${BOLD}Running in non-interactive mode.${NC}"
+		printf "%bRunning in non-interactive mode.%b\n" "${BOLD}" "${NC}"
 	fi
 
 	check_requirements
@@ -212,24 +211,24 @@ main() {
 	install_media_launchd
 
 	echo
-	echo -e "${GREEN}🎉 Bootstrap Complete!${NC}"
+	printf "%b🎉 Bootstrap Complete!%b\n" "${GREEN}" "${NC}"
 	hr
-	echo -e "${BOLD}Summary of Actions:${NC}"
-	echo -e "  ✅ Dotfiles linked and verified"
-	echo -e "  ✅ Maintenance launchd installed"
-	echo -e "  ✅ Network helpers prepared"
-	echo -e "  ✅ Media scripts staged and launchd agents loaded"
+	printf "%bSummary of Actions:%b\n" "${BOLD}" "${NC}"
+	printf "  ✅ Dotfiles linked and verified\n"
+	printf "  ✅ Maintenance launchd installed\n"
+	printf "  ✅ Network helpers prepared\n"
+	printf "  ✅ Media scripts staged and launchd agents loaded\n"
 	hr
 	echo
-	echo -e "${BOLD}👉 Next Steps:${NC}"
-	echo -e "  1. Populate ${BOLD}~/.config/rclone/rclone.conf${NC} with real credentials"
-	echo -e "     (use ${CYAN}op inject${NC} if available)"
-	echo -e "  2. Verify 1Password-backed media credentials resolve correctly; optional fallback file remains ${BOLD}~/.config/media-server/credentials${NC}"
-	echo -e "  3. Verify services:"
-	echo -e "     ${CYAN}launchctl list | grep maintenance${NC}"
-	echo -e "     ${CYAN}launchctl list | grep media${NC}"
-	echo -e "  4. Run network verification:"
-	echo -e "     ${CYAN}./scripts/network-mode-verify.sh controld browsing${NC}"
+	printf "%b👉 Next Steps:%b\n" "${BOLD}" "${NC}"
+	printf "  1. Populate %b~/.config/rclone/rclone.conf%b with real credentials\n" "${BOLD}" "${NC}"
+	printf "     (use %bop inject%b if available)\n" "${CYAN}" "${NC}"
+	printf "  2. Verify 1Password-backed media credentials resolve correctly; optional fallback file remains %b~/.config/media-server/credentials%b\n" "${BOLD}" "${NC}"
+	printf "  3. Verify services:\n"
+	printf "     %blaunchctl list | grep maintenance%b\n" "${CYAN}" "${NC}"
+	printf "     %blaunchctl list | grep media%b\n" "${CYAN}" "${NC}"
+	printf "  4. Run network verification:\n"
+	printf "     %b./scripts/network-mode-verify.sh controld browsing%b\n" "${CYAN}" "${NC}"
 	echo
 }
 
