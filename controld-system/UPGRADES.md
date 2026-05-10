@@ -303,6 +303,14 @@ fi
 
 Create `~/Library/LaunchAgents/com.user.controld-daily-check.plist`:
 
+> **NOTE:** launchd does NOT expand shell variables (`$HOME`, `~`) in plist
+> fields such as `ProgramArguments`, `StandardOutPath`, or
+> `StandardErrorPath`. Replace every `__HOME__` placeholder below with the
+> absolute path to the target user's home directory (e.g. `/Users/alice`)
+> before installing into `~/Library/LaunchAgents`. To resolve `$HOME` at
+> runtime instead, wrap the command in `/bin/bash -lc` (see
+> `media-streaming/archive/launchd/com.abhimehrotra.media.webdav.plist`).
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -312,7 +320,7 @@ Create `~/Library/LaunchAgents/com.user.controld-daily-check.plist`:
     <string>com.user.controld-daily-check</string>
     <key>ProgramArguments</key>
     <array>
-        <string>$HOME/Public/Scripts/maintenance/controld_monitor.sh</string>
+        <string>__HOME__/Public/Scripts/maintenance/controld_monitor.sh</string>
     </array>
     <key>StartCalendarInterval</key>
     <dict>
@@ -322,9 +330,9 @@ Create `~/Library/LaunchAgents/com.user.controld-daily-check.plist`:
         <integer>0</integer>
     </dict>
     <key>StandardOutPath</key>
-    <string>$HOME/Public/Scripts/controld_daily_check.log</string>
+    <string>__HOME__/Public/Scripts/controld_daily_check.log</string>
     <key>StandardErrorPath</key>
-    <string>$HOME/Public/Scripts/controld_daily_check_error.log</string>
+    <string>__HOME__/Public/Scripts/controld_daily_check_error.log</string>
 </dict>
 </plist>
 ```
