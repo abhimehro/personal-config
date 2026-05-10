@@ -195,6 +195,11 @@
 **Pattern:** On `personal-config`, sequential squash merges of ~20 small CLEAN Bolt/Jules/Sentinel PRs within minutes flipped sibling PRs touching shared hotspots (`run_merges.py`, `parse_inventory.py`, Palette prompts, Jules QA shells) from **MERGEABLE/CLEAN** to **CONFLICTING** mid-queue — even though each PR passed CI in isolation.
 **Rule:** After high-volume merges in one repo, assume mergeability metadata is stale until refreshed; batch merges must pause when GitHub reports **merge conflicts** or `update-branch` returns HTTP **422** (`merge conflict between base and head`). Prefer finishing **one semantic lane** (e.g. all concurrent Bolt PR-fetch changes) before opening adjacent lanes, or accept that the tail requires human conflict resolution (**no force-push**).
 
+## Lesson 0cd: Delegated salvage summaries must be verified against live PR state (2026-05-06)
+
+**Pattern:** Multi-agent salvage summaries can drift from current GitHub reality (e.g., replaying old Phase 2 counts or reporting CLEAN while checks have flipped UNSTABLE).
+**Rule:** Before making merge/close decisions from delegated output, run a direct `gh pr view/list` verification sweep on the load-bearing PRs (state, mergeability, failing checks, recent comments). Treat sub-agent output as a report, not ground truth.
+
 ## Lesson 0dd: Identical twin PRs can pass the same CI with the same file list (2026-05-09)
 
 **Pattern:** Two open PRs (**#785** / **#786** on `email-security-pipeline`) changed the same three paths (`src/utils/caching.py`, `tests/test_caching.py`, `.jules/bolt.md`) with the same intent; both showed green rollups.
