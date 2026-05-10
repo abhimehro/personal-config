@@ -2,21 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>Label</key>
-    <string>com.speedybee.alldebrid.sync</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/bin/bash</string>
-        <string>-c</string>
-        <string>/Users/speedybee/dev/personal-config/media-streaming/scripts/sync-alldebrid.sh</string>
-    </array>
-    <key>StartInterval</key>
-    <integer>3600</integer>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>StandardOutPath</key>
-    <string>/Users/speedybee/Library/Logs/alldebrid-sync.log</string>
-    <key>StandardErrorPath</key>
-    <string>/Users/speedybee/Library/Logs/alldebrid-sync.log</string>
+	<key>Label</key>
+	<string>com.speedybee.alldebrid.sync</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>-c</string>
+		<string>/Users/speedybee/dev/personal-config/media-streaming/scripts/sync-alldebrid.sh</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/Users/speedybee/Library/Logs/alldebrid-sync.log</string>
+	<key>StandardOutPath</key>
+	<string>/Users/speedybee/Library/Logs/alldebrid-sync.log</string>
+	<key>StartInterval</key>
+	<integer>3600</integer>
 </dict>
 </plist>
