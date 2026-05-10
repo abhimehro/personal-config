@@ -195,6 +195,11 @@
 **Pattern:** On `personal-config`, sequential squash merges of ~20 small CLEAN Bolt/Jules/Sentinel PRs within minutes flipped sibling PRs touching shared hotspots (`run_merges.py`, `parse_inventory.py`, Palette prompts, Jules QA shells) from **MERGEABLE/CLEAN** to **CONFLICTING** mid-queue — even though each PR passed CI in isolation.
 **Rule:** After high-volume merges in one repo, assume mergeability metadata is stale until refreshed; batch merges must pause when GitHub reports **merge conflicts** or `update-branch` returns HTTP **422** (`merge conflict between base and head`). Prefer finishing **one semantic lane** (e.g. all concurrent Bolt PR-fetch changes) before opening adjacent lanes, or accept that the tail requires human conflict resolution (**no force-push**).
 
+## Lesson 0dd: Identical twin PRs can pass the same CI with the same file list (2026-05-09)
+
+**Pattern:** Two open PRs (**#785** / **#786** on `email-security-pipeline`) changed the same three paths (`src/utils/caching.py`, `tests/test_caching.py`, `.jules/bolt.md`) with the same intent; both showed green rollups.
+**Rule:** Before merging either, diff **titles + head SHAs + file lists** side-by-side. Pick one canonical PR (prefer the lower number if identical), squash-merge it, then **close** the twin as duplicate—do not leave both open to drift.
+
 ## Lesson 0w: Branch-protection introspection may be denied by personal-account tokens (2026-04-25) <!-- pragma: allowlist secret -->
 
 **Pattern:** `gh api repos/$REPO/branches/main/protection` returns `HTTP 403: Resource not accessible by [REDACTED] access token` for all five repos in this config when authenticated as the personal owner. This does **not** indicate misconfigured branch protection — it just means the token scope can't read the protection record. <!-- pragma: allowlist secret -->
