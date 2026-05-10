@@ -8,7 +8,7 @@ def _process_tracker_file_for_extract(base_dir, filename):
     filepath = Path(base_dir) / filename
     if filepath.exists():
         domains = extract_domains_from_file(filepath)
-        print(f"{filename}: {len(domains)} domains")
+        print(f"    Added {len(domains)} domains from {filename}")
         return set(domains)
     return set()
 
