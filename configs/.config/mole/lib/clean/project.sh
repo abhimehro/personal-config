@@ -474,22 +474,13 @@ scan_purge_targets() {
             "--exclude" "Applications"
         )
 
-        # Try running fd. If it succeeds (exit code 0), use it.
-        # If it fails (e.g. bad flag, permissions, binary issue), fallback to find.
+        # Trust fd when it exits successfully, including an empty result set.
+        # Empty scans are common in healthy project trees; falling back to find
+        # doubles the scan cost and can make "nothing to clean" feel slow.
         if fd "${fd_args[@]}" "$pattern" "$search_path" 2> /dev/null > "$output_file.raw"; then
-            # Check if fd actually found anything - if empty, fallback to find
-            if [[ -s "$output_file.raw" ]]; then
-                debug_log "Using fd for scanning (found results)"
-                process_scan_results "$output_file.raw"
-                if [[ -s "$output_file" ]]; then
-                    use_find=false
-                else
-                    debug_log "fd results became empty after filtering, falling back to find"
-                fi
-            else
-                debug_log "fd returned empty results, falling back to find"
-                rm -f "$output_file.raw"
-            fi
+            debug_log "Using fd for scanning"
+            process_scan_results "$output_file.raw"
+            use_find=false
         else
             debug_log "fd command failed, falling back to find"
         fi
@@ -981,7 +972,7 @@ confirm_purge_cleanup() {
 clean_project_artifacts() {
     local -a all_found_items=()
     local -a safe_to_clean=()
-    local -a recently_modified=()
+    local -a safe_recent_flags=()
     local previous_int_trap=""
     local previous_term_trap=""
     local trap_installed_by_this_call=false
@@ -1037,29 +1028,22 @@ clean_project_artifacts() {
         sleep 0.2
     fi
 
-    # Collect all results and deduplicate (overlapping search roots on
-    # case-insensitive filesystems can produce identical canonical paths).
-    # Uses a simple linear search instead of associative arrays for bash 3 compat.
+    # Collect all results and deduplicate once. This avoids an O(N²) shell loop
+    # when overlapping search roots produce the same artifact many times.
+    local dedupe_output
+    dedupe_output=$(mktemp_file "mole-purge-dedupe") || return 1
     for scan_output in "${scan_temps[@]+"${scan_temps[@]}"}"; do
         if [[ -f "$scan_output" ]]; then
-            while IFS= read -r item; do
-                if [[ -n "$item" ]]; then
-                    local _already_seen=false
-                    local _existing
-                    for _existing in "${all_found_items[@]+"${all_found_items[@]}"}"; do
-                        if [[ "$_existing" == "$item" ]]; then
-                            _already_seen=true
-                            break
-                        fi
-                    done
-                    if [[ "$_already_seen" == "false" ]]; then
-                        all_found_items+=("$item")
-                    fi
-                fi
-            done < "$scan_output"
+            cat "$scan_output" >> "$dedupe_output"
             rm -f "$scan_output"
         fi
     done
+    if [[ -s "$dedupe_output" ]]; then
+        while IFS= read -r item; do
+            [[ -n "$item" ]] && all_found_items+=("$item")
+        done < <(LC_COLLATE=C sort -u "$dedupe_output")
+    fi
+    rm -f "$dedupe_output"
     # Restore caller traps after this function completes.
     if [[ "$trap_installed_by_this_call" == "true" ]]; then
         trap - INT TERM
@@ -1076,11 +1060,13 @@ clean_project_artifacts() {
     local _now_epoch
     _now_epoch=$(get_epoch_seconds)
     for item in "${all_found_items[@]}"; do
+        local is_recent=false
         if is_recently_modified "$item" "$_now_epoch"; then
-            recently_modified+=("$item")
+            is_recent=true
         fi
         # Add all items to safe_to_clean, let user choose
         safe_to_clean+=("$item")
+        safe_recent_flags+=("$is_recent")
     done
     # Build menu options - one per artifact
     if [[ -t 1 ]]; then
@@ -1094,6 +1080,11 @@ clean_project_artifacts() {
     local -a _size_pids=()
     local _max_size_jobs
     _max_size_jobs=$(get_optimal_parallel_jobs io)
+    if ! [[ "$_max_size_jobs" =~ ^[0-9]+$ ]] || [[ "$_max_size_jobs" -lt 1 ]]; then
+        _max_size_jobs=1
+    elif [[ "$_max_size_jobs" -gt 8 ]]; then
+        _max_size_jobs=8
+    fi
 
     for _sz_item in "${safe_to_clean[@]}"; do
         local _stmp
@@ -1118,21 +1109,16 @@ clean_project_artifacts() {
     local -a item_size_unknown_flags=()
     local -a item_recent_flags=()
     local -a item_age_labels=()
-    # Helper to get project name from path
-    # For ~/www/pake/src-tauri/target -> returns "pake"
-    # For ~/work/code/MyProject/node_modules -> returns "MyProject"
-    # Strategy: Find the nearest ancestor directory containing a project indicator file
-    get_project_name() {
+    # Find the best project root for an artifact once; callers decide how to
+    # display it. Monorepo indicators win over plain project indicators.
+    find_purge_project_root_for_artifact() {
         local path="$1"
-
         local current_dir="${path%/*}"
         [[ -z "$current_dir" ]] && current_dir="/"
         local monorepo_root=""
         local project_root=""
 
-        # Single pass: check both monorepo and project indicators
         while [[ "$current_dir" != "/" && "$current_dir" != "$HOME" && -n "$current_dir" ]]; do
-            # First check for monorepo indicators (higher priority)
             if [[ -z "$monorepo_root" ]]; then
                 for indicator in "${MONOREPO_INDICATORS[@]}"; do
                     if [[ -e "$current_dir/$indicator" ]]; then
@@ -1142,7 +1128,6 @@ clean_project_artifacts() {
                 done
             fi
 
-            # Then check for project indicators (save first match)
             if [[ -z "$project_root" ]]; then
                 for indicator in "${PROJECT_INDICATORS[@]}"; do
                     if [[ -e "$current_dir/$indicator" ]]; then
@@ -1152,13 +1137,10 @@ clean_project_artifacts() {
                 done
             fi
 
-            # If we found monorepo, we can stop (monorepo always wins)
             if [[ -n "$monorepo_root" ]]; then
                 break
             fi
 
-            # If we found project but still checking for monorepo above
-            # (only stop if we're beyond reasonable depth)
             local _rel="${current_dir#"$HOME"}"
             local _stripped="${_rel//\//}"
             local depth=$((${#_rel} - ${#_stripped}))
@@ -1170,105 +1152,62 @@ clean_project_artifacts() {
             current_dir="${_parent:-/}"
         done
 
-        # Determine result: monorepo > project > fallback
-        local result=""
         if [[ -n "$monorepo_root" ]]; then
-            result="${monorepo_root##*/}"
-        elif [[ -n "$project_root" ]]; then
-            result="${project_root##*/}"
-        else
-            # Fallback: first directory under search root
-            local search_roots=()
-            if [[ ${#PURGE_SEARCH_PATHS[@]} -gt 0 ]]; then
-                search_roots=("${PURGE_SEARCH_PATHS[@]}")
-            else
-                search_roots=("$HOME/www" "$HOME/dev" "$HOME/Projects")
-            fi
-            for root in "${search_roots[@]}"; do
-                root="${root%/}"
-                if [[ -n "$root" && "$path" == "$root/"* ]]; then
-                    local relative_path="${path#"$root"/}"
-                    result="${relative_path%%/*}"
-                    break
-                fi
-            done
+            echo "$monorepo_root"
+            return 0
+        fi
 
-            # Final fallback: use grandparent directory
-            if [[ -z "$result" ]]; then
-                local _gp="${path%/*}"
-                _gp="${_gp%/*}"
-                result="${_gp##*/}"
+        if [[ -n "$project_root" ]]; then
+            echo "$project_root"
+            return 0
+        fi
+
+        return 1
+    }
+
+    # Helper to get project name from path.
+    get_project_name() {
+        local path="$1"
+        local project_root=""
+
+        if project_root=$(find_purge_project_root_for_artifact "$path"); then
+            echo "${project_root##*/}"
+            return
+        fi
+
+        local result=""
+        local search_roots=()
+        if [[ ${#PURGE_SEARCH_PATHS[@]} -gt 0 ]]; then
+            search_roots=("${PURGE_SEARCH_PATHS[@]}")
+        else
+            search_roots=("$HOME/www" "$HOME/dev" "$HOME/Projects")
+        fi
+        for root in "${search_roots[@]}"; do
+            root="${root%/}"
+            if [[ -n "$root" && "$path" == "$root/"* ]]; then
+                local relative_path="${path#"$root"/}"
+                result="${relative_path%%/*}"
+                break
             fi
+        done
+
+        if [[ -z "$result" ]]; then
+            local _gp="${path%/*}"
+            _gp="${_gp%/*}"
+            result="${_gp##*/}"
         fi
 
         echo "$result"
     }
 
-    # Helper to get project path (more complete than just project name)
-    # For ~/www/pake/src-tauri/target -> returns "~/www/pake"
-    # For ~/work/code/MyProject/node_modules -> returns "~/work/code/MyProject"
-    # Shows the full path relative to HOME with ~ prefix for better clarity
+    # Helper to get project path (more complete than just project name).
     get_project_path() {
         local path="$1"
-
-        local current_dir="${path%/*}"
-        [[ -z "$current_dir" ]] && current_dir="/"
-        local monorepo_root=""
         local project_root=""
-
-        # Single pass: check both monorepo and project indicators
-        while [[ "$current_dir" != "/" && "$current_dir" != "$HOME" && -n "$current_dir" ]]; do
-            # First check for monorepo indicators (higher priority)
-            if [[ -z "$monorepo_root" ]]; then
-                for indicator in "${MONOREPO_INDICATORS[@]}"; do
-                    if [[ -e "$current_dir/$indicator" ]]; then
-                        monorepo_root="$current_dir"
-                        break
-                    fi
-                done
-            fi
-
-            # Then check for project indicators (save first match)
-            if [[ -z "$project_root" ]]; then
-                for indicator in "${PROJECT_INDICATORS[@]}"; do
-                    if [[ -e "$current_dir/$indicator" ]]; then
-                        project_root="$current_dir"
-                        break
-                    fi
-                done
-            fi
-
-            # If we found monorepo, we can stop (monorepo always wins)
-            if [[ -n "$monorepo_root" ]]; then
-                break
-            fi
-
-            # If we found project but still checking for monorepo above
-            local _rel="${current_dir#"$HOME"}"
-            local _stripped="${_rel//\//}"
-            local depth=$((${#_rel} - ${#_stripped}))
-            if [[ -n "$project_root" && $depth -lt 2 ]]; then
-                break
-            fi
-
-            local _parent="${current_dir%/*}"
-            current_dir="${_parent:-/}"
-        done
-
-        # Determine result: monorepo > project > fallback
-        local result=""
-        if [[ -n "$monorepo_root" ]]; then
-            result="$monorepo_root"
-        elif [[ -n "$project_root" ]]; then
-            result="$project_root"
-        else
-            # Fallback: use parent directory of artifact
-            result="${path%/*}"
+        if ! project_root=$(find_purge_project_root_for_artifact "$path"); then
+            project_root="${path%/*}"
         fi
-
-        # Convert to ~ format for cleaner display
-        result="${result/#$HOME/~}"
-        echo "$result"
+        echo "${project_root/#$HOME/~}"
     }
 
     # Helper to get artifact display name
@@ -1394,12 +1333,13 @@ clean_project_artifacts() {
     local -a item_display_paths=()
     local _sz_idx=0
     for item in "${safe_to_clean[@]}"; do
-        local project_path="${_cached_project_paths[$_sz_idx]}"
+        local item_index=$_sz_idx
+        local project_path="${_cached_project_paths[$item_index]}"
         local artifact_type
         artifact_type=$(get_artifact_display_name "$item")
         local size_raw
-        size_raw=$(cat "${_size_tmpfiles[_sz_idx]}" 2> /dev/null || echo "0")
-        rm -f "${_size_tmpfiles[_sz_idx]}" 2> /dev/null || true
+        size_raw=$(cat "${_size_tmpfiles[$item_index]}" 2> /dev/null || echo "0")
+        rm -f "${_size_tmpfiles[$item_index]}" 2> /dev/null || true
         _sz_idx=$((_sz_idx + 1))
         local size_kb=0
         local size_human=""
@@ -1419,14 +1359,7 @@ clean_project_artifacts() {
             continue
         fi
 
-        # Check if recent
-        local is_recent=false
-        for recent_item in "${recently_modified[@]+"${recently_modified[@]}"}"; do
-            if [[ "$item" == "$recent_item" ]]; then
-                is_recent=true
-                break
-            fi
-        done
+        local is_recent="${safe_recent_flags[$item_index]:-false}"
         raw_project_paths+=("$project_path")
         raw_artifact_types+=("$artifact_type")
         item_paths+=("$item")

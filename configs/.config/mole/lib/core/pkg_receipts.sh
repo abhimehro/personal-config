@@ -33,6 +33,32 @@ pkg_receipt_nonstandard_app_paths() {
         return 0
     fi
 
+    local cache_file="${MOLE_PKG_RECEIPT_CACHE_FILE:-$HOME/.cache/mole/pkg_receipt_apps_v1}"
+    local cache_ttl="${MOLE_PKG_RECEIPT_CACHE_TTL:-3600}"
+    local now_epoch=0
+    if declare -f get_epoch_seconds > /dev/null 2>&1; then
+        now_epoch=$(get_epoch_seconds)
+    else
+        now_epoch=$(date +%s 2> /dev/null || echo 0)
+    fi
+
+    if [[ "${MOLE_PKG_RECEIPT_CACHE_DISABLE:-0}" != "1" && -r "$cache_file" ]]; then
+        local cache_mtime=0
+        if declare -f get_file_mtime > /dev/null 2>&1; then
+            cache_mtime=$(get_file_mtime "$cache_file")
+        else
+            cache_mtime=$(stat -f "%m" "$cache_file" 2> /dev/null || echo 0)
+        fi
+        if [[ "$cache_ttl" =~ ^[0-9]+$ && "$cache_mtime" =~ ^[0-9]+$ &&
+            "$now_epoch" =~ ^[0-9]+$ && $cache_ttl -gt 0 &&
+            $((now_epoch - cache_mtime)) -lt $cache_ttl ]]; then
+            while IFS= read -r cached_app_path; do
+                [[ -n "$cached_app_path" && -d "$cached_app_path" ]] && printf '%s\n' "$cached_app_path"
+            done < "$cache_file"
+            return 0
+        fi
+    fi
+
     local pkgs_output
     if declare -f run_with_timeout > /dev/null 2>&1; then
         pkgs_output=$(run_with_timeout "${MOLE_PKG_RECEIPT_LIST_TIMEOUT:-3}" pkgutil --pkgs 2> /dev/null || true)
@@ -88,7 +114,31 @@ pkg_receipt_nonstandard_app_paths() {
             [[ "$duplicate" == "true" ]] && continue
 
             seen_apps+=("$app_path")
-            printf '%s\n' "$app_path"
         done <<< "$pkg_files"
     done <<< "$pkgs_output"
+
+    if [[ ${#seen_apps[@]} -gt 0 ]]; then
+        printf '%s\n' "${seen_apps[@]}" | sort -u
+    fi
+
+    if [[ "${MOLE_PKG_RECEIPT_CACHE_DISABLE:-0}" != "1" && -n "$cache_file" ]]; then
+        local cache_dir="${cache_file%/*}"
+        if [[ -n "$cache_dir" && "$cache_dir" != "$cache_file" ]]; then
+            if declare -f ensure_user_dir > /dev/null 2>&1; then
+                ensure_user_dir "$cache_dir"
+            else
+                mkdir -p "$cache_dir" 2> /dev/null || true
+            fi
+        fi
+        local cache_tmp
+        cache_tmp=$(mktemp "${TMPDIR:-/tmp}/mole.pkg_receipts.XXXXXX" 2> /dev/null || true)
+        if [[ -n "$cache_tmp" ]]; then
+            if [[ ${#seen_apps[@]} -gt 0 ]]; then
+                printf '%s\n' "${seen_apps[@]}" | sort -u > "$cache_tmp"
+            else
+                : > "$cache_tmp"
+            fi
+            mv -f "$cache_tmp" "$cache_file" 2> /dev/null || rm -f "$cache_tmp" 2> /dev/null || true
+        fi
+    fi
 }

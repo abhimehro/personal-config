@@ -258,46 +258,6 @@ paginated_multi_select() {
     local filter_cache_text_lower=""
     local -a filter_cache_indices=()
 
-    _get_sort_key() {
-        case "$sort_mode" in
-            date)
-                # Date: ascending by default (oldest first)
-                if [[ "$sort_reverse" == "true" ]]; then echo "-k1,1nr"; else echo "-k1,1n"; fi
-                ;;
-            size)
-                # Size: descending by default (largest first)
-                if [[ "$sort_reverse" == "true" ]]; then echo "-k1,1n"; else echo "-k1,1nr"; fi
-                ;;
-            *)
-                # Name: ascending by default (A to Z)
-                if [[ "$sort_reverse" == "true" ]]; then echo "-k1,1fr"; else echo "-k1,1f"; fi
-                ;;
-        esac
-    }
-
-    _write_sort_data() {
-        local tmpfile="$1"
-        local k id
-        for id in "${orig_indices[@]}"; do
-            case "$sort_mode" in
-                date) k="${epochs[id]:-0}" ;;
-                size) k="${sizekb[id]:-0}" ;;
-                name | *) k="${items[id]}|${id}" ;;
-            esac
-            printf "%s\t%s\n" "$k" "$id" >> "$tmpfile"
-        done
-    }
-
-    _perform_sort() {
-        local tmpfile="$1"
-        local sort_key="$2"
-        sorted_indices_cache=()
-        while IFS=$'\t' read -r _key _id; do
-            [[ -z "$_id" ]] && continue
-            sorted_indices_cache+=("$_id")
-        done < <(LC_ALL=C sort -t $'\t' "$sort_key" -- "$tmpfile" 2> /dev/null)
-    }
-
     ensure_sorted_indices() {
         local requested_key="${sort_mode}:${sort_reverse}:${has_metadata}"
         if [[ "$requested_key" == "$sort_cache_key" && ${#sorted_indices_cache[@]} -gt 0 ]]; then
@@ -310,14 +270,41 @@ paginated_multi_select() {
             return
         fi
 
+        # Build sort key once; filtering should reuse this cached order.
         local sort_key
-        sort_key=$(_get_sort_key)
+        if [[ "$sort_mode" == "date" ]]; then
+            # Date: ascending by default (oldest first)
+            sort_key="-k1,1n"
+            [[ "$sort_reverse" == "true" ]] && sort_key="-k1,1nr"
+        elif [[ "$sort_mode" == "size" ]]; then
+            # Size: descending by default (largest first)
+            sort_key="-k1,1nr"
+            [[ "$sort_reverse" == "true" ]] && sort_key="-k1,1n"
+        else
+            # Name: ascending by default (A to Z)
+            sort_key="-k1,1f"
+            [[ "$sort_reverse" == "true" ]] && sort_key="-k1,1fr"
+        fi
 
         local tmpfile
         tmpfile=$(mktemp 2> /dev/null) || tmpfile=""
         if [[ -n "$tmpfile" ]]; then
-            _write_sort_data "$tmpfile"
-            _perform_sort "$tmpfile" "$sort_key"
+            local k id
+            for id in "${orig_indices[@]}"; do
+                case "$sort_mode" in
+                    date) k="${epochs[id]:-0}" ;;
+                    size) k="${sizekb[id]:-0}" ;;
+                    name | *) k="${items[id]}|${id}" ;;
+                esac
+                printf "%s\t%s\n" "$k" "$id" >> "$tmpfile"
+            done
+
+            sorted_indices_cache=()
+            while IFS=$'\t' read -r _key _id; do
+                [[ -z "$_id" ]] && continue
+                sorted_indices_cache+=("$_id")
+            done < <(LC_ALL=C sort -t $'\t' $sort_key -- "$tmpfile" 2> /dev/null)
+
             rm -f "$tmpfile"
         else
             sorted_indices_cache=("${orig_indices[@]}")
@@ -515,6 +502,7 @@ paginated_multi_select() {
 
         # Common menu items
         local nav="${GRAY}${ICON_NAV_UP}${ICON_NAV_DOWN}${NC}"
+        local page_ctrl="${GRAY}h/l Page${NC}"
         local space_select="${GRAY}Space Select${NC}"
         local enter="${GRAY}Enter Save${NC}"
         local cancel_label="${GRAY}Q Cancel${NC}"
@@ -536,7 +524,7 @@ paginated_multi_select() {
             [[ "$term_width" =~ ^[0-9]+$ ]] || term_width=80
 
             # Full controls
-            local -a _segs=("$nav" "$space_select" "$enter" "$sort_ctrl" "$order_ctrl" "$filter_ctrl" "$cancel_label")
+            local -a _segs=("$nav" "$page_ctrl" "$space_select" "$enter" "$sort_ctrl" "$order_ctrl" "$filter_ctrl" "$cancel_label")
 
             # Calculate width
             local total_len=0 seg_count=${#_segs[@]}
@@ -547,7 +535,7 @@ paginated_multi_select() {
 
             # Level 1: Remove "Space Select" if too wide
             if [[ $total_len -gt $term_width ]]; then
-                _segs=("$nav" "$enter" "$sort_ctrl" "$order_ctrl" "$filter_ctrl" "$cancel_label")
+                _segs=("$nav" "$page_ctrl" "$enter" "$sort_ctrl" "$order_ctrl" "$filter_ctrl" "$cancel_label")
 
                 total_len=0
                 seg_count=${#_segs[@]}
@@ -556,7 +544,7 @@ paginated_multi_select() {
                     [[ $i -lt $((seg_count - 1)) ]] && total_len=$((total_len + 3))
                 done
 
-                # Level 2: Remove sort label if still too wide
+                # Level 2: Remove sort label and page hint if still too wide
                 if [[ $total_len -gt $term_width ]]; then
                     _segs=("$nav" "$enter" "$order_ctrl" "$filter_ctrl" "$cancel_label")
                 fi
@@ -565,7 +553,7 @@ paginated_multi_select() {
             _print_wrapped_controls "$sep" "${_segs[@]}"
         else
             # Without metadata: basic controls
-            local -a _segs_simple=("$nav" "$space_select" "$enter" "$filter_ctrl" "$cancel_label")
+            local -a _segs_simple=("$nav" "$page_ctrl" "$space_select" "$enter" "$filter_ctrl" "$cancel_label")
             _print_wrapped_controls "$sep" "${_segs_simple[@]}"
         fi
         printf "${clear_line}" >&2
@@ -737,6 +725,31 @@ paginated_multi_select() {
                         top_index=0
                         cursor_pos=$((visible_total - 1))
                     fi
+                    need_full_redraw=true
+                fi
+                ;;
+            "LEFT")
+                if [[ ${#view_indices[@]} -gt 0 ]]; then
+                    if [[ $top_index -gt 0 ]]; then
+                        top_index=$((top_index - items_per_page))
+                        [[ $top_index -lt 0 ]] && top_index=0
+                    fi
+                    cursor_pos=0
+                    need_full_redraw=true
+                fi
+                ;;
+            "RIGHT")
+                if [[ ${#view_indices[@]} -gt 0 ]]; then
+                    local visible_total=${#view_indices[@]}
+                    if [[ $((top_index + items_per_page)) -lt $visible_total ]]; then
+                        top_index=$((top_index + items_per_page))
+                        local _remaining=$((visible_total - top_index))
+                        if [[ $_remaining -lt $items_per_page ]]; then
+                            top_index=$((visible_total - items_per_page))
+                            [[ $top_index -lt 0 ]] && top_index=0
+                        fi
+                    fi
+                    cursor_pos=0
                     need_full_redraw=true
                 fi
                 ;;

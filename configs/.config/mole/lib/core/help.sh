@@ -36,6 +36,28 @@ show_optimize_help() {
     echo "  -h, --help        Show this help message"
 }
 
+show_check_help() {
+    echo "Usage: mo check [OPTIONS]"
+    echo ""
+    echo "Run system diagnostics in parallel and report status of:"
+    echo "  - Mole and Homebrew updates"
+    echo "  - System health (disk, memory, swap, uptime)"
+    echo "  - Security posture (FileVault, firewall, SIP, Touch ID)"
+    echo "  - Configuration (whitelist, login items, launch agents)"
+    echo "  - Developer environment (shell, Git, common toolchains)"
+    echo ""
+    echo "After the report, you may be prompted to apply safe auto-fixes"
+    echo "(e.g. cleaning crash reports) or run available updates. Both"
+    echo "prompts default to no, so check is non-destructive unless you"
+    echo "explicitly confirm."
+    echo ""
+    echo "Aliases:"
+    echo "  mo doctor         Same as mo check"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help        Show this help message"
+}
+
 show_touchid_help() {
     echo "Usage: mo touchid [COMMAND]"
     echo ""

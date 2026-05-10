@@ -479,3 +479,141 @@ show_user_launch_agent_hint_notice() {
     done
     echo -e "  ${GRAY}${ICON_REVIEW}${NC} Review: open ~/Library/LaunchAgents and remove only items you recognize"
 }
+
+readonly ORPHAN_DOTDIR_KNOWN_SAFE=(
+    # Shell
+    ".bash_history" ".bash_profile" ".bash_sessions" ".bashrc"
+    ".zshrc" ".zsh_history" ".zsh_sessions" ".zprofile" ".zshenv" ".zlogout" ".zcompdump"
+    ".profile" ".inputrc" ".hushlogin"
+    ".oh-my-zsh" ".zinit" ".zplug" ".antigen" ".p10k.zsh"
+    ".config" ".local" ".cache"
+    # Security
+    ".ssh" ".gnupg" ".gpg" ".pass""word-store"
+    # Git
+    ".gitconfig" ".gitignore_global" ".git-credentials" ".gitattributes_global"
+    # Language tools (Mole handles their caches separately)
+    ".pyenv" ".rbenv" ".nvm" ".nodenv" ".goenv" ".jenv"
+    ".rustup" ".cargo" ".ghcup" ".stack" ".cabal"
+    ".sdkman" ".jabba" ".asdf" ".mise" ".rtx" ".volta" ".fnm"
+    ".deno" ".bun"
+    # Package managers
+    ".npm" ".yarn" ".pnpm" ".bundle" ".gem"
+    ".composer" ".nuget" ".pub-cache"
+    ".m2" ".gradle" ".sbt" ".ivy2" ".lein"
+    ".hex" ".mix" ".opam" ".cpan" ".cpanm"
+    ".conda" ".virtualenvs" ".pipx"
+    # Cloud / devops
+    ".docker" ".kube" ".minikube" ".helm"
+    ".aws" ".azure" ".terraform" ".vagrant"
+    # Editors / IDEs
+    ".vim" ".vimrc" ".viminfo" ".emacs" ".emacs.d" ".doom.d" ".nano" ".nanorc"
+    ".vscode" ".cursor" ".atom"
+    # AI tools
+    ".claude" ".copilot" ".ollama"
+    # macOS system
+    ".Trash" ".Trashes" ".CFUserTextEncoding" ".DS_Store" ".cups" ".dropbox"
+    # Mobile / native dev
+    ".android" ".cocoapods" ".fastlane" ".expo" ".react-native" ".swiftpm"
+    # Terminal / misc
+    ".tmux" ".screen" ".wget-hsts" ".curlrc" ".netrc" ".wgetrc"
+    ".putty"
+    ".lesshst" ".python_history" ".node_repl_history"
+    ".irb_history" ".pry_history"
+    ".jupyter" ".ipython" ".matplotlib" ".keras" ".torch"
+    ".psql_history" ".mysql_history" ".sqlite_history" ".rediscli_history" ".mongo" ".dbshell"
+    # Homebrew / VCS
+    ".homebrew" ".hg" ".hgrc" ".svn" ".bazaar"
+    # Fly.io / Gemini (Tang uses these)
+    ".fly" ".gemini"
+)
+
+# Detect ~/.<dir> directories that may belong to uninstalled CLI tools.
+# shellcheck disable=SC2329
+show_orphan_dotdir_hint_notice() {
+    local max_hits=5
+    local age_days="${MOLE_DOTDIR_ORPHAN_AGE_DAYS:-60}"
+    local now
+    now=$(date +%s)
+
+    local -a labels=()
+    local -a details=()
+
+    while IFS= read -r dotdir; do
+        [[ -d "$dotdir" ]] || continue
+        local basename
+        basename=$(basename "$dotdir")
+
+        local is_safe=false
+        local safe_name
+        for safe_name in "${ORPHAN_DOTDIR_KNOWN_SAFE[@]}"; do
+            if [[ "$basename" == "$safe_name" ]]; then
+                is_safe=true
+                break
+            fi
+        done
+        [[ "$is_safe" == "true" ]] && continue
+
+        if declare -f is_path_whitelisted > /dev/null && is_path_whitelisted "$dotdir"; then
+            continue
+        fi
+
+        local mtime
+        mtime=$(get_file_mtime "$dotdir" 2> /dev/null) || continue
+        local age_d=$(((now - mtime) / 86400))
+        [[ $age_d -lt $age_days ]] && continue
+
+        local name="${basename#.}"
+        local -a candidates=("$name")
+        local dehyphen="${name//-/_}"
+        [[ "$dehyphen" != "$name" ]] && candidates+=("$dehyphen")
+        local stripped="${name//-/}"
+        [[ "$stripped" != "$name" && "$stripped" != "$dehyphen" ]] && candidates+=("$stripped")
+        local no_suffix="${name%-cli}"
+        [[ "$no_suffix" != "$name" ]] && candidates+=("$no_suffix")
+        no_suffix="${name%-temp}"
+        [[ "$no_suffix" != "$name" ]] && candidates+=("$no_suffix")
+        no_suffix="${name%-data}"
+        [[ "$no_suffix" != "$name" ]] && candidates+=("$no_suffix")
+
+        local has_binary=false
+        local c
+        for c in "${candidates[@]}"; do
+            if command -v "$c" > /dev/null 2>&1; then
+                has_binary=true
+                break
+            fi
+        done
+        [[ "$has_binary" == "true" ]] && continue
+
+        if [[ -d "$HOME/Library/LaunchAgents" ]]; then
+            if run_with_timeout 2 grep -rlq "$basename" "$HOME/Library/LaunchAgents/" 2> /dev/null; then
+                continue
+            fi
+        fi
+
+        local size_human=""
+        local size_kb
+        if size_kb=$(hint_get_path_size_kb_with_timeout "$dotdir" 0.8); then
+            size_human=" ($(bytes_to_human $((size_kb * 1024))))"
+        fi
+
+        # shellcheck disable=SC2088
+        labels+=("~/${basename}${size_human}")
+        details+=("No matching binary in PATH, last modified ${age_d} days ago")
+
+        if [[ ${#labels[@]} -ge $max_hits ]]; then
+            break
+        fi
+    done < <(run_with_timeout 3 find "$HOME" -maxdepth 1 -mindepth 1 -type d -name '.*' 2> /dev/null | LC_ALL=C sort)
+
+    [[ ${#labels[@]} -eq 0 ]] && return 0
+
+    note_activity
+
+    local i
+    for i in "${!labels[@]}"; do
+        echo -e "  ${GREEN}${ICON_LIST}${NC} Potential orphan dotfile: ${labels[$i]}"
+        echo -e "  ${GRAY}${ICON_SUBLIST}${NC} ${details[$i]}"
+    done
+    echo -e "  ${GRAY}${ICON_REVIEW}${NC} Review manually before removing any ~/.<dir> directory"
+}

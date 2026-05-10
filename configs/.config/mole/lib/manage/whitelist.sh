@@ -49,11 +49,24 @@ save_whitelist_patterns() {
     echo -e "$header_text" > "$config_file"
 
     if [[ ${#patterns[@]} -gt 0 ]]; then
-        get_unique_patterns "${patterns[@]}"
+        local -a unique_patterns=()
+        for pattern in "${patterns[@]}"; do
+            local duplicate="false"
+            if [[ ${#unique_patterns[@]} -gt 0 ]]; then
+                for existing in "${unique_patterns[@]}"; do
+                    if patterns_equivalent "$pattern" "$existing"; then
+                        duplicate="true"
+                        break
+                    fi
+                done
+            fi
+            [[ "$duplicate" == "true" ]] && continue
+            unique_patterns+=("$pattern")
+        done
 
-        if [[ ${#UNIQUE_PATTERNS[@]} -gt 0 ]]; then
+        if [[ ${#unique_patterns[@]} -gt 0 ]]; then
             printf '\n' >> "$config_file"
-            for pattern in "${UNIQUE_PATTERNS[@]}"; do
+            for pattern in "${unique_patterns[@]}"; do
                 echo "$pattern" >> "$config_file"
             done
         fi
@@ -65,10 +78,10 @@ get_all_cache_items() {
     # Format: "display_name|pattern|category"
     cat << 'EOF'
 Apple Mail cache|$HOME/Library/Caches/com.apple.mail/*|system_cache
-Gradle build cache (Android Studio, Gradle projects)|$HOME/.gradle/caches/*|ide_cache
+Gradle build cache (Android Studio, Gradle projects)|$HOME/.gradle/caches/build-cache-*/*|ide_cache
 Gradle daemon processes cache|$HOME/.gradle/daemon/*|ide_cache
+Gradle worker cache|$HOME/.gradle/workers/*|ide_cache
 Xcode DerivedData (build outputs, indexes)|$HOME/Library/Developer/Xcode/DerivedData/*|ide_cache
-Xcode archives (built app packages)|$HOME/Library/Developer/Xcode/Archives/*|ide_cache
 Xcode internal cache files|$HOME/Library/Caches/com.apple.dt.Xcode/*|ide_cache
 Xcode iOS device support symbols|$HOME/Library/Developer/Xcode/iOS DeviceSupport/*/Symbols/System/Library/Caches/*|ide_cache
 Maven local repository (Java dependencies)|$HOME/.m2/repository/*|ide_cache
@@ -114,8 +127,8 @@ pnpm package store|$HOME/Library/pnpm/store/*|package_manager
 Composer PHP dependencies cache (legacy)|$HOME/.composer/cache/*|package_manager
 Composer PHP dependencies cache|$HOME/Library/Caches/composer/*|package_manager
 RubyGems cache|$HOME/.gem/cache/*|package_manager
-Conda packages cache|$HOME/.conda/pkgs/*|package_manager
-Anaconda packages cache|$HOME/anaconda3/pkgs/*|package_manager
+Conda package metadata/tarball cache|$HOME/.conda/pkgs|package_manager
+Anaconda package metadata/tarball cache|$HOME/anaconda3/pkgs|package_manager
 PyTorch model cache|$HOME/.cache/torch/*|ai_ml_cache
 TensorFlow model and dataset cache|$HOME/.cache/tensorflow/*|ai_ml_cache
 HuggingFace models and datasets|$HOME/.cache/huggingface/*|ai_ml_cache
@@ -157,6 +170,29 @@ TouchID sudo check|check_touchid|config_check
 Rosetta 2 check|check_rosetta|config_check
 Git configuration check|check_git_config|config_check
 Login items check|check_login_items|config_check
+DNS & Spotlight Check|system_maintenance|optimize_task
+Finder Cache Refresh|cache_refresh|optimize_task
+App State Cleanup|saved_state_cleanup|optimize_task
+Broken Config Repair|fix_broken_configs|optimize_task
+Network Cache Refresh|network_optimization|optimize_task
+Database Optimization|sqlite_vacuum|optimize_task
+LaunchServices Repair|launch_services_rebuild|optimize_task
+Font Cache Rebuild|font_cache_rebuild|optimize_task
+Dock Refresh|dock_refresh|optimize_task
+Prevent Finder .DS_Store|prevent_network_dsstore|optimize_task
+Memory Optimization|memory_pressure_relief|optimize_task
+Network Stack Refresh|network_stack_optimize|optimize_task
+Permission Repair|disk_permissions_repair|optimize_task
+Bluetooth Refresh|bluetooth_reset|optimize_task
+Spotlight Optimization|spotlight_index_optimize|optimize_task
+Periodic Maintenance|periodic_maintenance|optimize_task
+Shared File Lists|shared_file_list_repair|optimize_task
+Disk Health|disk_verify|optimize_task
+Login Items Audit|login_items_audit|optimize_task
+Quarantine Database Cleanup|quarantine_cleanup|optimize_task
+Launch Agents Cleanup|launch_agents_cleanup|optimize_task
+Notifications|notification_cleanup|optimize_task
+Usage Data|coreduet_cleanup|optimize_task
 EOF
 }
 
@@ -167,25 +203,6 @@ patterns_equivalent() {
     # Only exact string match, no glob expansion
     [[ "$first" == "$second" ]] && return 0
     return 1
-}
-
-get_unique_patterns() {
-    UNIQUE_PATTERNS=()
-    local pattern
-    for pattern in "$@"; do
-        local duplicate="false"
-        if [[ ${#UNIQUE_PATTERNS[@]} -gt 0 ]]; then
-            local existing
-            for existing in "${UNIQUE_PATTERNS[@]}"; do
-                if patterns_equivalent "$pattern" "$existing"; then
-                    duplicate="true"
-                    break
-                fi
-            done
-        fi
-        [[ "$duplicate" == "true" ]] && continue
-        UNIQUE_PATTERNS+=("$pattern")
-    done
 }
 
 load_whitelist() {
@@ -225,8 +242,21 @@ load_whitelist() {
     fi
 
     if [[ ${#patterns[@]} -gt 0 ]]; then
-        get_unique_patterns "${patterns[@]}"
-        CURRENT_WHITELIST_PATTERNS=("${UNIQUE_PATTERNS[@]}")
+        local -a unique_patterns=()
+        for pattern in "${patterns[@]}"; do
+            local duplicate="false"
+            if [[ ${#unique_patterns[@]} -gt 0 ]]; then
+                for existing in "${unique_patterns[@]}"; do
+                    if patterns_equivalent "$pattern" "$existing"; then
+                        duplicate="true"
+                        break
+                    fi
+                done
+            fi
+            [[ "$duplicate" == "true" ]] && continue
+            unique_patterns+=("$pattern")
+        done
+        CURRENT_WHITELIST_PATTERNS=("${unique_patterns[@]}")
 
         # Migrate legacy optimize config to the new path automatically
         if [[ "$mode" == "optimize" && "$using_legacy" == "true" && "$config_file" != "$WHITELIST_CONFIG_OPTIMIZE" ]]; then
@@ -281,7 +311,7 @@ manage_whitelist_categories() {
         items_source=$(get_optimize_whitelist_items)
         active_config_file="$WHITELIST_CONFIG_OPTIMIZE"
         local display_config="${active_config_file/#$HOME/~}"
-        menu_title="Whitelist Manager, Select system checks to ignore
+        menu_title="Whitelist Manager, Select system checks or optimize tasks to ignore
 ${GRAY}Edit: ${display_config}${NC}"
     else
         items_source=$(get_all_cache_items)

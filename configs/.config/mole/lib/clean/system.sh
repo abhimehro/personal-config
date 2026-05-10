@@ -1,6 +1,45 @@
 #!/bin/bash
 # System-Level Cleanup Module (requires sudo).
 set -euo pipefail
+
+is_rebuildable_gpu_cache_dir() {
+    local cache_dir="$1"
+
+    # Only match current-user-accessible Darwin cache shards under C/.  Do not
+    # match T/ temp folders, generic /private/var/folders entries, or arbitrary
+    # system paths: these Metal/GPU caches are rebuildable, but deleting active
+    # caches can force live apps to recompile shaders and momentarily stutter.
+    case "$cache_dir" in
+        /private/var/folders/*/*/C/*/com.apple.gpuarchiver | \
+            /private/var/folders/*/*/C/*/com.apple.metal | \
+            /private/var/folders/*/*/C/*/com.apple.metalfe | \
+            /var/folders/*/*/C/*/com.apple.gpuarchiver | \
+            /var/folders/*/*/C/*/com.apple.metal | \
+            /var/folders/*/*/C/*/com.apple.metalfe)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+gpu_cache_dir_is_stale() {
+    local cache_dir="$1"
+    local age_days="${2:-${MOLE_GPU_CACHE_AGE_DAYS:-1}}"
+
+    [[ "$age_days" =~ ^[0-9]+$ ]] || age_days=1
+    [[ -d "$cache_dir" ]] || return 1
+    [[ -L "$cache_dir" ]] && return 1
+
+    # Directory mtime only changes when entries are added/removed/renamed.
+    # Treat a cache as stale only when no contained file was modified inside
+    # the retention window, so live apps that rewrite existing Metal cache
+    # files do not lose their active shader/GPU cache on every cleanup run.
+    local recent_file=""
+    recent_file=$(command find "$cache_dir" -type f -mtime "-$age_days" -print -quit 2> /dev/null) || return 1
+    [[ -z "$recent_file" ]]
+}
+
 # System caches, logs, and temp files.
 clean_deep_system() {
     stop_section_spinner
@@ -126,7 +165,7 @@ clean_deep_system() {
         local app_name
         app_name=$(basename "$installer_app")
         # Skip if installer is currently running
-        if pgrep -f -- "$installer_app" > /dev/null 2>&1; then
+        if pgrep -f "$installer_app" > /dev/null 2>&1; then
             debug_log "Skipping $app_name: currently running"
             continue
         fi
@@ -174,6 +213,47 @@ clean_deep_system() {
     done < <(run_with_timeout 5 command find /private/var/folders -maxdepth 5 -type d -name "*.code_sign_clone" -path "*/X/*" -print0 2> /dev/null || true)
     stop_section_spinner
     [[ $code_sign_cleaned -gt 0 ]] && log_success "Browser code signature caches, $code_sign_cleaned items"
+
+    start_section_spinner "Cleaning rebuildable system service caches..."
+    local rebuildable_cache_cleaned=0
+    local -a rebuildable_cache_dirs=(
+        "/Library/Caches/com.apple.iconservices.store"
+    )
+    local rebuildable_cache_dir=""
+    for rebuildable_cache_dir in "${rebuildable_cache_dirs[@]}"; do
+        if sudo test -e "$rebuildable_cache_dir" 2> /dev/null; then
+            if safe_sudo_remove "$rebuildable_cache_dir"; then
+                rebuildable_cache_cleaned=$((rebuildable_cache_cleaned + 1))
+            fi
+        fi
+    done
+    stop_section_spinner
+    if [[ $rebuildable_cache_cleaned -gt 0 ]]; then
+        local rebuildable_cache_label="items"
+        [[ $rebuildable_cache_cleaned -eq 1 ]] && rebuildable_cache_label="item"
+        log_success "Rebuildable system caches, $rebuildable_cache_cleaned $rebuildable_cache_label"
+    fi
+
+    start_section_spinner "Scanning accessible rebuildable GPU caches..."
+    local gpu_cache_cleaned=0
+    local gpu_cache_dir=""
+    while IFS= read -r -d '' gpu_cache_dir; do
+        is_rebuildable_gpu_cache_dir "$gpu_cache_dir" || continue
+        gpu_cache_dir_is_stale "$gpu_cache_dir" "$MOLE_GPU_CACHE_AGE_DAYS" || continue
+        if safe_sudo_remove "$gpu_cache_dir"; then
+            gpu_cache_cleaned=$((gpu_cache_cleaned + 1))
+        fi
+    done < <(run_with_timeout 8 command find /private/var/folders -maxdepth 8 -type d \( \
+        -name "com.apple.gpuarchiver" -o \
+        -name "com.apple.metal" -o \
+        -name "com.apple.metalfe" \
+        \) -path "*/C/*" -print0 2> /dev/null || true)
+    stop_section_spinner
+    if [[ $gpu_cache_cleaned -gt 0 ]]; then
+        local gpu_cache_label="items"
+        [[ $gpu_cache_cleaned -eq 1 ]] && gpu_cache_label="item"
+        log_success "Accessible rebuildable GPU caches, $gpu_cache_cleaned $gpu_cache_label"
+    fi
 
     local diag_base="/private/var/db/diagnostics"
     start_section_spinner "Cleaning system diagnostic logs..."

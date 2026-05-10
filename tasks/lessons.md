@@ -195,7 +195,23 @@
 **Pattern:** On `personal-config`, sequential squash merges of ~20 small CLEAN Bolt/Jules/Sentinel PRs within minutes flipped sibling PRs touching shared hotspots (`run_merges.py`, `parse_inventory.py`, Palette prompts, Jules QA shells) from **MERGEABLE/CLEAN** to **CONFLICTING** mid-queue — even though each PR passed CI in isolation.
 **Rule:** After high-volume merges in one repo, assume mergeability metadata is stale until refreshed; batch merges must pause when GitHub reports **merge conflicts** or `update-branch` returns HTTP **422** (`merge conflict between base and head`). Prefer finishing **one semantic lane** (e.g. all concurrent Bolt PR-fetch changes) before opening adjacent lanes, or accept that the tail requires human conflict resolution (**no force-push**).
 
+## Lesson 0cd: Delegated salvage summaries must be verified against live PR state (2026-05-06)
+
+**Pattern:** Multi-agent salvage summaries can drift from current GitHub reality (e.g., replaying old Phase 2 counts or reporting CLEAN while checks have flipped UNSTABLE).
+**Rule:** Before making merge/close decisions from delegated output, run a direct `gh pr view/list` verification sweep on the load-bearing PRs (state, mergeability, failing checks, recent comments). Treat sub-agent output as a report, not ground truth.
+
+## Lesson 0dd: Identical twin PRs can pass the same CI with the same file list (2026-05-09)
+
+**Pattern:** Two open PRs (**#785** / **#786** on `email-security-pipeline`) changed the same three paths (`src/utils/caching.py`, `tests/test_caching.py`, `.jules/bolt.md`) with the same intent; both showed green rollups.
+**Rule:** Before merging either, diff **titles + head SHAs + file lists** side-by-side. Pick one canonical PR (prefer the lower number if identical), squash-merge it, then **close** the twin as duplicate—do not leave both open to drift.
+
 ## Lesson 0w: Branch-protection introspection may be denied by personal-account tokens (2026-04-25) <!-- pragma: allowlist secret -->
 
 **Pattern:** `gh api repos/$REPO/branches/main/protection` returns `HTTP 403: Resource not accessible by [REDACTED] access token` for all five repos in this config when authenticated as the personal owner. This does **not** indicate misconfigured branch protection — it just means the token scope can't read the protection record. <!-- pragma: allowlist secret -->
 **Rule:** Treat 403 on the protection-read endpoint as benign for personal repos. Verify branch-protection behavior via merge attempts instead (`gh pr merge` will fail with a clear error if rules block the merge). Keep the preflight gate looking at `gh auth status` and `gh repo view` rather than the protection endpoint. <!-- pragma: allowlist secret -->
+
+## Lesson 0df: A salvage agent given a "no local working-tree manipulation" rule will still `git checkout` if its prompt mentions cherry-picking commits (2026-05-09)
+
+**Pattern:** Item 4A of the 2026-05-09 orchestration plan briefed a `pair` agent with "no local working-tree manipulation" plus "create a salvage branch from `origin/main` and cherry-pick the canonical PR's commits." The agent interpreted that as licence to `git checkout <pr-branch>` in the working repo to read the commit list, switching the local tree off `main` for the rest of the session. Untracked-only documents (`docs/plans/`, `docs/reviews/`) were destroyed by the branch switch, and 51 unrelated files ended up staged on the bolt branch.
+**Rule:** Brief salvage agents to do **all** branch work in a `git clone` under `/tmp/<slug>-<date>/`, never in the working repo. The brief must call this out positively ("clone the repo into `/tmp/…` first; never `git checkout`, `git switch`, or `git fetch <ref>:<ref>` inside the active workspace") rather than relying on an unspecific "no working-tree manipulation" guard. Commit important orchestration documents (plans, reviews, handoffs) to `main` **before** dispatching any salvage agent so an unintended `git checkout` cannot erase them.
+**Detection cost:** Medium — surfaces only after the next session runs `git status` and finds an unexpected branch with staged churn. Recovery requires a careful unstage + stash + branch switch + reconstruction from surviving artifacts.

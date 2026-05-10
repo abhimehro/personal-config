@@ -21,7 +21,13 @@ source "$SCRIPT_DIR/../lib/clean/project.sh"
 # Configuration
 CURRENT_SECTION=""
 
-# Section management
+# IMPORTANT: This file overrides start_section / end_section / note_activity
+# from lib/core/base.sh by virtue of being sourced after it. The purge variant
+# uses a blue ━━━ box header, has no fallback "Nothing to ..." message, and
+# writes every note_activity call straight to EXPORT_LIST_FILE (purge always
+# wants the export list, not just under DRY_RUN). See the cross-reference in
+# lib/core/base.sh and the clean variant in bin/clean.sh before changing any
+# of these three.
 start_section() {
     local section_name="$1"
     CURRENT_SECTION="$section_name"
@@ -33,7 +39,6 @@ end_section() {
     CURRENT_SECTION=""
 }
 
-# Note activity for export list
 note_activity() {
     if [[ -n "$CURRENT_SECTION" ]]; then
         printf '%s\n' "$CURRENT_SECTION" >> "$EXPORT_LIST_FILE"
