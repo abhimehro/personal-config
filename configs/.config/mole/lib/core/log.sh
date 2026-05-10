@@ -153,14 +153,15 @@ debug_timer_start() {
     local varname="$1"
     local ts
     ts=$(perl -MTime::HiRes -e 'printf "%.3f\n", Time::HiRes::time()' 2> /dev/null || date +%s)
-    printf -v "$varname" "%s" "$ts"
+    eval "$varname=$ts"
 }
 
 debug_timer_end() {
     [[ "${MO_DEBUG:-}" != "1" ]] && return 0
     local label="$1"
     local start_var="$2"
-    local start_ts="${!start_var}"
+    local start_ts
+    eval "start_ts=\$$start_var"
     [[ -z "$start_ts" ]] && return 0
     local end_ts
     end_ts=$(perl -MTime::HiRes -e 'printf "%.3f\n", Time::HiRes::time()' 2> /dev/null || date +%s)

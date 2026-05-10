@@ -475,8 +475,6 @@ main() {
         stop_inline_spinner
     fi
 
-    show_system_health "$health_json"
-
     load_whitelist "optimize"
     if [[ ${#CURRENT_WHITELIST_PATTERNS[@]} -gt 0 ]]; then
         local count=${#CURRENT_WHITELIST_PATTERNS[@]}
@@ -488,6 +486,8 @@ main() {
             echo -e "${ICON_ADMIN} Active Whitelist: ${patterns_list}"
         fi
     fi
+
+    show_system_health "$health_json"
 
     run_optimize_diagnostics
 
@@ -509,6 +509,10 @@ main() {
     export FIRST_ACTION=true
     for item in "${items[@]}"; do
         IFS='|' read -r name desc action path <<< "$item"
+        if command -v is_whitelisted > /dev/null && is_whitelisted "$action"; then
+            opt_msg "Skipped (whitelisted): $name"
+            continue
+        fi
         announce_action "$name" "$desc" "safe"
         execute_optimization "$action" "$path"
     done

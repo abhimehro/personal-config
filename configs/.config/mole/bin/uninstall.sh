@@ -36,7 +36,7 @@ readonly MOLE_UNINSTALL_META_CACHE_FILE="$MOLE_UNINSTALL_META_CACHE_DIR/uninstal
 readonly MOLE_UNINSTALL_META_CACHE_LOCK="${MOLE_UNINSTALL_META_CACHE_FILE}.lock"
 readonly MOLE_UNINSTALL_META_REFRESH_TTL=604800 # 7 days
 readonly MOLE_UNINSTALL_SCAN_SPINNER_DELAY_SEC="0.25"
-readonly MOLE_UNINSTALL_INLINE_METADATA_LIMIT=50
+readonly MOLE_UNINSTALL_INLINE_METADATA_LIMIT="${MOLE_UNINSTALL_INLINE_METADATA_LIMIT:-0}"
 readonly MOLE_UNINSTALL_EPOCH_FLOOR=978307200
 readonly MOLE_UNINSTALL_INLINE_MDLS_TIMEOUT_SEC="0.08"
 
@@ -373,21 +373,182 @@ start_uninstall_metadata_refresh() {
         rm -f "$updates_file"
         rm -f "$refresh_file" 2> /dev/null || true
     ) > /dev/null 2>&1 &
+    disown "$!" 2> /dev/null || true
 
+}
+
+uninstall_print_app_search_dirs() {
+    local -a app_dirs=(
+        "/Applications"
+        "$HOME/Applications"
+        "/Library/Input Methods"
+        "$HOME/Library/Input Methods"
+    )
+
+    local vol_app_dir
+    local nullglob_was_set=0
+    shopt -q nullglob && nullglob_was_set=1
+    shopt -s nullglob
+    for vol_app_dir in /Volumes/*/Applications; do
+        [[ -d "$vol_app_dir" && -r "$vol_app_dir" ]] || continue
+        if [[ -d "/Applications" && "$vol_app_dir" -ef "/Applications" ]]; then
+            continue
+        fi
+        if [[ -d "$HOME/Applications" && "$vol_app_dir" -ef "$HOME/Applications" ]]; then
+            continue
+        fi
+        app_dirs+=("$vol_app_dir")
+    done
+    if [[ $nullglob_was_set -eq 0 ]]; then
+        shopt -u nullglob
+    fi
+
+    printf '%s\n' "${app_dirs[@]}"
+}
+
+uninstall_should_skip_app_path() {
+    local app_path="$1"
+
+    [[ -e "$app_path" ]] || return 0
+
+    # Skip nested apps inside another .app bundle.
+    local parent_dir="${app_path%/*}"
+    if [[ "$parent_dir" == *".app" || "$parent_dir" == *".app/"* ]]; then
+        return 0
+    fi
+
+    if [[ -L "$app_path" ]]; then
+        local link_target
+        link_target=$(readlink "$app_path" 2> /dev/null)
+        if [[ -n "$link_target" ]]; then
+            local resolved_target="$link_target"
+            if [[ "$link_target" != /* ]]; then
+                local link_dir="${app_path%/*}"
+                local _link_parent="${link_target%/*}"
+                [[ "$_link_parent" == "$link_target" ]] && _link_parent="."
+                resolved_target=$(cd "$link_dir" 2> /dev/null && cd "$_link_parent" 2> /dev/null && pwd)/"${link_target##*/}" 2> /dev/null || echo ""
+            fi
+            case "$resolved_target" in
+                /System/* | /usr/bin/* | /usr/lib/* | /bin/* | /sbin/* | /private/etc/*)
+                    return 0
+                    ;;
+            esac
+        fi
+    fi
+
+    return 1
+}
+
+uninstall_resolve_bundle_id() {
+    local app_path="$1"
+    local fallback_bundle_id="${2:-}"
+    local bundle_id=""
+    local plist="$app_path/Contents/Info.plist"
+
+    fallback_bundle_id="${fallback_bundle_id//|/-}"
+    fallback_bundle_id="${fallback_bundle_id//[$'\t\r\n']/}"
+
+    if [[ -f "$plist" ]]; then
+        bundle_id=$(plutil -extract CFBundleIdentifier raw "$plist" 2> /dev/null || echo "")
+        bundle_id="${bundle_id//|/-}"
+        bundle_id="${bundle_id//[$'\t\r\n']/}"
+    fi
+
+    if [[ -n "$bundle_id" && "$bundle_id" != "(null)" ]]; then
+        printf '%s\n' "$bundle_id"
+        return 0
+    fi
+
+    if [[ -n "$fallback_bundle_id" && "$fallback_bundle_id" != "(null)" ]]; then
+        printf '%s\n' "$fallback_bundle_id"
+        return 0
+    fi
+
+    printf '%s\n' "unknown"
+}
+
+uninstall_app_is_background_only() {
+    local app_path="$1"
+    local plist="$app_path/Contents/Info.plist"
+    [[ -f "$plist" ]] || return 1
+
+    local bg_only
+    bg_only=$(plutil -extract LSBackgroundOnly raw "$plist" 2> /dev/null || echo "")
+    case "$bg_only" in
+        1 | YES | yes | TRUE | true)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+uninstall_app_is_currently_eligible() {
+    local app_path="$1"
+    local bundle_id="${2:-}"
+
+    [[ -n "$app_path" && -e "$app_path" ]] || return 1
+
+    if [[ -n "$bundle_id" && "$bundle_id" != "unknown" ]] && should_protect_from_uninstall "$bundle_id"; then
+        return 1
+    fi
+
+    if uninstall_app_is_background_only "$app_path"; then
+        return 1
+    fi
+
+    return 0
+}
+
+uninstall_resolve_eligible_bundle_id() {
+    local app_path="$1"
+    local fallback_bundle_id="${2:-}"
+    local bundle_id
+
+    bundle_id=$(uninstall_resolve_bundle_id "$app_path" "$fallback_bundle_id")
+    uninstall_app_is_currently_eligible "$app_path" "$bundle_id" || return 1
+    printf '%s\n' "$bundle_id"
+}
+
+uninstall_app_inventory_fingerprint() {
+    local app_dir app_path app_mtime pkg_app_path
+
+    {
+        while IFS= read -r pkg_app_path; do
+            [[ -n "$pkg_app_path" && -d "$pkg_app_path" ]] || continue
+            app_mtime=$(get_file_mtime "$pkg_app_path")
+            printf '%s|%s\n' "$pkg_app_path" "${app_mtime:-0}"
+        done < <(pkg_receipt_nonstandard_app_paths)
+
+        while IFS= read -r app_dir; do
+            [[ -d "$app_dir" ]] || continue
+            while IFS=$'\t' read -r app_mtime app_path; do
+                [[ -n "$app_path" ]] || continue
+                uninstall_should_skip_app_path "$app_path" && continue
+                printf '%s|%s\n' "$app_path" "${app_mtime:-0}"
+            done < <(command find "$app_dir" -maxdepth 3 -name "*.app" -exec stat -f $'%m\t%N' {} + 2> /dev/null)
+        done < <(uninstall_print_app_search_dirs)
+    } | sort -u
 }
 
 # Scan applications and collect information.
 scan_applications() {
-    local temp_file scan_raw_file merged_file refresh_file cache_snapshot_file
+    local temp_file scan_raw_file merged_file refresh_file cache_snapshot_file discovered_file cached_rows_file uncached_rows_file
     temp_file=$(create_temp_file)
     scan_raw_file="${temp_file}.scan"
     merged_file="${temp_file}.merged"
     refresh_file="${temp_file}.refresh"
     cache_snapshot_file="${temp_file}.cache"
+    discovered_file="${temp_file}.discovered"
+    cached_rows_file="${temp_file}.cached_rows"
+    uncached_rows_file="${temp_file}.uncached_rows"
     local scan_status_file="${temp_file}.scan_status"
     : > "$scan_raw_file"
     : > "$refresh_file"
     : > "$cache_snapshot_file"
+    : > "$discovered_file"
+    : > "$cached_rows_file"
+    : > "$uncached_rows_file"
     : > "$scan_status_file"
 
     ensure_user_dir "$MOLE_UNINSTALL_META_CACHE_DIR"
@@ -400,35 +561,18 @@ scan_applications() {
         cache_source_is_temp=true
     fi
 
-    # Fast lookup cache for unchanged apps: path+mtime -> bundle_id/display_name.
-    local -a cache_paths=()
-    local -a cache_mtimes=()
-    local -a cache_bundle_ids=()
-    local -a cache_display_names=()
-    local cache_path cache_mtime _cache_size _cache_epoch _cache_updated cache_bundle cache_display
-    while IFS='|' read -r cache_path cache_mtime _cache_size _cache_epoch _cache_updated cache_bundle cache_display; do
-        [[ -n "$cache_path" ]] || continue
-        cache_paths+=("$cache_path")
-        cache_mtimes+=("${cache_mtime:-0}")
-        cache_bundle_ids+=("${cache_bundle:-}")
-        cache_display_names+=("${cache_display:-}")
-    done < "$cache_source"
+    use_cached_scan_metadata() {
+        local cached_app_path="$1"
+        local cached_app_mtime="$2"
+        local cached_bundle_id="$3"
+        local cached_display_name="$4"
 
-    lookup_cached_identity() {
-        local target_path="$1"
-        local target_mtime="$2"
-        local idx
-        for ((idx = 0; idx < ${#cache_paths[@]}; idx++)); do
-            if [[ "${cache_paths[idx]}" == "$target_path" ]]; then
-                if [[ "${cache_mtimes[idx]:-0}" == "${target_mtime:-0}" ]]; then
-                    echo "${cache_bundle_ids[idx]:-}|${cache_display_names[idx]:-}"
-                else
-                    echo "|"
-                fi
-                return 0
-            fi
-        done
-        echo "|"
+        [[ -n "$cached_bundle_id" && -n "$cached_display_name" ]] || return 1
+
+        cached_bundle_id=$(uninstall_resolve_eligible_bundle_id "$cached_app_path" "$cached_bundle_id") || return 1
+
+        printf "%s|%s|%s|%s\n" "$cached_app_path" "$cached_display_name" "$cached_bundle_id" "$cached_app_mtime" >> "$scan_raw_file"
+        return 0
     }
 
     # Local spinner_pid for cleanup
@@ -455,7 +599,7 @@ scan_applications() {
         if [[ -f "$spinner_shown_file" ]]; then
             printf "\r\033[K" >&2
         fi
-        rm -f "$temp_file" "$scan_raw_file" "$merged_file" "$refresh_file" "$cache_snapshot_file" "$scan_status_file" "${temp_file}.sorted" "$spinner_shown_file" 2> /dev/null || true
+        rm -f "$temp_file" "$scan_raw_file" "$merged_file" "$refresh_file" "$cache_snapshot_file" "$discovered_file" "$cached_rows_file" "$uncached_rows_file" "$scan_status_file" "${temp_file}.sorted" "$spinner_shown_file" 2> /dev/null || true
         exit 130
     }
     trap trap_scan_cleanup INT
@@ -481,29 +625,11 @@ scan_applications() {
 
     # Pass 1: collect app paths and bundle IDs (no mdls).
     local -a app_data_tuples=()
-    local -a app_dirs=(
-        "/Applications"
-        "$HOME/Applications"
-        "/Library/Input Methods"
-        "$HOME/Library/Input Methods"
-    )
-    local vol_app_dir
-    local nullglob_was_set=0
-    shopt -q nullglob && nullglob_was_set=1
-    shopt -s nullglob
-    for vol_app_dir in /Volumes/*/Applications; do
-        [[ -d "$vol_app_dir" && -r "$vol_app_dir" ]] || continue
-        if [[ -d "/Applications" && "$vol_app_dir" -ef "/Applications" ]]; then
-            continue
-        fi
-        if [[ -d "$HOME/Applications" && "$vol_app_dir" -ef "$HOME/Applications" ]]; then
-            continue
-        fi
-        app_dirs+=("$vol_app_dir")
-    done
-    if [[ $nullglob_was_set -eq 0 ]]; then
-        shopt -u nullglob
-    fi
+    local -a app_dirs=()
+    local app_dir
+    while IFS= read -r app_dir; do
+        [[ -n "$app_dir" ]] && app_dirs+=("$app_dir")
+    done < <(uninstall_print_app_search_dirs)
 
     # Scan for pkg-installed apps in non-standard locations.
     local pkg_app_path
@@ -525,61 +651,57 @@ scan_applications() {
         local app_mtime
         app_mtime=$(get_file_mtime "$pkg_app_path")
 
-        local cached_identity cached_bundle_id cached_display_name
-        cached_identity=$(lookup_cached_identity "$pkg_app_path" "$app_mtime")
-        IFS='|' read -r cached_bundle_id cached_display_name <<< "$cached_identity"
-
-        app_data_tuples+=("${pkg_app_path}|${app_name}|${app_mtime}|${cached_bundle_id}|${cached_display_name}")
+        printf "%s|%s|%s\n" "$pkg_app_path" "$app_name" "${app_mtime:-0}" >> "$discovered_file"
     done < <(pkg_receipt_nonstandard_app_paths)
 
     for app_dir in "${app_dirs[@]}"; do
         if [[ ! -d "$app_dir" ]]; then continue; fi
 
-        while IFS= read -r -d '' app_path; do
+        while IFS=$'\t' read -r app_mtime app_path; do
             if [[ ! -e "$app_path" ]]; then continue; fi
 
             local app_name="${app_path##*/}"
             app_name="${app_name%.app}"
 
-            # Skip nested apps inside another .app bundle.
-            local parent_dir="${app_path%/*}"
-            if [[ "$parent_dir" == *".app" || "$parent_dir" == *".app/"* ]]; then
-                continue
-            fi
+            uninstall_should_skip_app_path "$app_path" && continue
 
-            if [[ -L "$app_path" ]]; then
-                local link_target
-                link_target=$(readlink "$app_path" 2> /dev/null)
-                if [[ -n "$link_target" ]]; then
-                    local resolved_target="$link_target"
-                    if [[ "$link_target" != /* ]]; then
-                        local link_dir="${app_path%/*}"
-                        local _link_parent="${link_target%/*}"
-                        [[ "$_link_parent" == "$link_target" ]] && _link_parent="."
-                        resolved_target=$(cd "$link_dir" 2> /dev/null && cd "$_link_parent" 2> /dev/null && pwd)/"${link_target##*/}" 2> /dev/null || echo ""
-                    fi
-                    case "$resolved_target" in
-                        /System/* | /usr/bin/* | /usr/lib/* | /bin/* | /sbin/* | /private/etc/*)
-                            continue
-                            ;;
-                    esac
-                fi
-            fi
-
-            local app_mtime
-            app_mtime=$(get_file_mtime "$app_path")
-
-            local cached_identity cached_bundle_id cached_display_name
-            cached_identity=$(lookup_cached_identity "$app_path" "$app_mtime")
-            IFS='|' read -r cached_bundle_id cached_display_name <<< "$cached_identity"
-
-            # Store tuple for pass 2 (bundle + display resolution, then cache merge).
-            app_data_tuples+=("${app_path}|${app_name}|${app_mtime}|${cached_bundle_id}|${cached_display_name}")
-        done < <(command find "$app_dir" -name "*.app" -maxdepth 3 -print0 2> /dev/null)
+            printf "%s|%s|%s\n" "$app_path" "$app_name" "${app_mtime:-0}" >> "$discovered_file"
+        done < <(command find "$app_dir" -maxdepth 3 -name "*.app" -exec stat -f $'%m\t%N' {} + 2> /dev/null)
     done
 
-    if [[ ${#app_data_tuples[@]} -eq 0 ]]; then
-        rm -f "$temp_file" "$scan_raw_file" "$merged_file" "$refresh_file" "$cache_snapshot_file" "$scan_status_file" "${temp_file}.sorted" "$spinner_shown_file" 2> /dev/null || true
+    if [[ -s "$discovered_file" ]]; then
+        awk -F'|' -v cached_out="$cached_rows_file" -v uncached_out="$uncached_rows_file" '
+            FILENAME == ARGV[1] {
+                cache_mtime[$1] = $2
+                cache_bundle[$1] = $6
+                cache_display[$1] = $7
+                next
+            }
+            {
+                path = $1
+                app_mtime = $3
+                if (cache_mtime[path] == app_mtime && cache_display[path] != "") {
+                    cached_bundle = cache_bundle[path] == "" ? "unknown" : cache_bundle[path]
+                    print path "|" app_mtime "|" cached_bundle "|" cache_display[path] >> cached_out
+                } else {
+                    print path "|" $2 "|" app_mtime "|" cache_bundle[path] "|" cache_display[path] >> uncached_out
+                }
+            }
+        ' "$cache_source" "$discovered_file"
+
+        local cached_app_path cached_app_mtime cached_bundle_id cached_display_name
+        while IFS='|' read -r cached_app_path cached_app_mtime cached_bundle_id cached_display_name; do
+            use_cached_scan_metadata "$cached_app_path" "$cached_app_mtime" "$cached_bundle_id" "$cached_display_name" || true
+        done < "$cached_rows_file"
+
+        local uncached_app_path uncached_app_name uncached_app_mtime uncached_bundle_id uncached_display_name
+        while IFS='|' read -r uncached_app_path uncached_app_name uncached_app_mtime uncached_bundle_id uncached_display_name; do
+            app_data_tuples+=("${uncached_app_path}|${uncached_app_name}|${uncached_app_mtime}|${uncached_bundle_id}|${uncached_display_name}")
+        done < "$uncached_rows_file"
+    fi
+
+    if [[ ${#app_data_tuples[@]} -eq 0 && ! -s "$scan_raw_file" ]]; then
+        rm -f "$temp_file" "$scan_raw_file" "$merged_file" "$refresh_file" "$cache_snapshot_file" "$discovered_file" "$cached_rows_file" "$uncached_rows_file" "$scan_status_file" "${temp_file}.sorted" "$spinner_shown_file" 2> /dev/null || true
         [[ $cache_source_is_temp == true ]] && rm -f "$cache_source" 2> /dev/null || true
         restore_scan_int_trap
         printf "\r\033[K" >&2
@@ -604,26 +726,8 @@ scan_applications() {
 
         IFS='|' read -r app_path app_name app_mtime cached_bundle_id cached_display_name <<< "$app_data_tuple"
 
-        local bundle_id="${cached_bundle_id:-}"
-        if [[ -z "$bundle_id" ]]; then
-            bundle_id="unknown"
-            if [[ -f "$app_path/Contents/Info.plist" ]]; then
-                bundle_id=$(defaults read "$app_path/Contents/Info.plist" CFBundleIdentifier 2> /dev/null || echo "unknown")
-            fi
-        fi
-
-        if should_protect_from_uninstall "$bundle_id"; then
-            return 0
-        fi
-
-        local plist="$app_path/Contents/Info.plist"
-        if [[ -f "$plist" ]]; then
-            local bg_only
-            bg_only=$(defaults read "$plist" LSBackgroundOnly 2> /dev/null || echo "")
-            if [[ "$bg_only" == "1" || "$bg_only" == "YES" || "$bg_only" == "true" ]]; then
-                return 0
-            fi
-        fi
+        local bundle_id
+        bundle_id=$(uninstall_resolve_eligible_bundle_id "$app_path" "${cached_bundle_id:-}") || return 0
 
         local display_name="${cached_display_name:-}"
         if [[ -z "$display_name" ]]; then
@@ -686,7 +790,7 @@ scan_applications() {
     if [[ ! -s "$scan_raw_file" ]]; then
         stop_scan_spinner
         echo "No applications found to uninstall" >&2
-        rm -f "$temp_file" "$scan_raw_file" "$merged_file" "$refresh_file" "$cache_snapshot_file" "${temp_file}.sorted" "$spinner_shown_file" 2> /dev/null || true
+        rm -f "$temp_file" "$scan_raw_file" "$merged_file" "$refresh_file" "$cache_snapshot_file" "$discovered_file" "$cached_rows_file" "$uncached_rows_file" "${temp_file}.sorted" "$spinner_shown_file" 2> /dev/null || true
         [[ $cache_source_is_temp == true ]] && rm -f "$cache_source" 2> /dev/null || true
         restore_scan_int_trap
         return 1
@@ -715,99 +819,208 @@ scan_applications() {
     current_epoch=$(get_epoch_seconds)
     local inline_metadata_count=0
     local inline_metadata_effective_limit=$MOLE_UNINSTALL_INLINE_METADATA_LIMIT
-    [[ $cache_source_is_temp == true ]] && inline_metadata_effective_limit=99999
+    [[ $cache_source_is_temp == true && $inline_metadata_effective_limit -gt 0 ]] && inline_metadata_effective_limit=99999
     local metadata_total=0
     metadata_total=$(wc -l < "$merged_file" 2> /dev/null || echo "0")
     [[ "$metadata_total" =~ ^[0-9]+$ ]] || metadata_total=0
     local metadata_processed=0
     update_scan_status "Collecting metadata..." "0" "$metadata_total"
 
-    while IFS='|' read -r app_path display_name bundle_id app_mtime cached_mtime cached_size_kb cached_epoch cached_updated_epoch cached_bundle_id cached_display_name; do
-        ((metadata_processed++))
-        if ((metadata_processed % 5 == 0 || metadata_processed == metadata_total)); then
-            update_scan_status "Collecting metadata..." "$metadata_processed" "$metadata_total"
-        fi
+    if [[ "$inline_metadata_effective_limit" -eq 0 ]]; then
+        awk -F'|' \
+            -v now="$current_epoch" \
+            -v floor="$MOLE_UNINSTALL_EPOCH_FLOOR" \
+            -v ttl="$MOLE_UNINSTALL_META_REFRESH_TTL" \
+            -v refresh_out="$refresh_file" \
+            -v snapshot_out="$cache_snapshot_file" \
+            -v apps_out="$temp_file" '
+            function isnum(value) {
+                return value ~ /^[0-9]+$/
+            }
+            function human_size(kb, bytes, scaled) {
+                if (!isnum(kb) || kb <= 0) {
+                    return "--"
+                }
+                bytes = kb * 1024
+                if (bytes >= 1000000000) {
+                    scaled = int((bytes * 100 + 500000000) / 1000000000)
+                    return sprintf("%d.%02dGB", int(scaled / 100), scaled % 100)
+                }
+                if (bytes >= 1000000) {
+                    scaled = int((bytes * 10 + 500000) / 1000000)
+                    return sprintf("%d.%01dMB", int(scaled / 10), scaled % 10)
+                }
+                if (bytes >= 1000) {
+                    return sprintf("%dKB", int((bytes + 500) / 1000))
+                }
+                return sprintf("%dB", bytes)
+            }
+            function relative_time(epoch, now_epoch, days_ago, weeks_ago, months_ago, years_ago) {
+                if (!isnum(epoch) || epoch <= 0 || epoch < floor) {
+                    return "Unknown"
+                }
+                days_ago = int((now_epoch - epoch) / 86400)
+                if (days_ago < 0) {
+                    days_ago = 0
+                }
+                if (days_ago == 0) {
+                    return "Today"
+                }
+                if (days_ago == 1) {
+                    return "Yesterday"
+                }
+                if (days_ago < 7) {
+                    return days_ago " days ago"
+                }
+                if (days_ago < 30) {
+                    weeks_ago = int(days_ago / 7)
+                    return weeks_ago == 1 ? "1 week ago" : weeks_ago " weeks ago"
+                }
+                if (days_ago < 365) {
+                    months_ago = int(days_ago / 30)
+                    return months_ago == 1 ? "1 month ago" : months_ago " months ago"
+                }
+                years_ago = int(days_ago / 365)
+                return years_ago == 1 ? "1 year ago" : years_ago " years ago"
+            }
+            {
+                app_path = $1
+                display_name = $2
+                bundle_id = $3
+                app_mtime = $4
+                cached_mtime = $5
+                cached_size_kb = $6
+                cached_epoch = $7
+                cached_updated_epoch = $8
+                cached_bundle_id = $9
+                cached_display_name = $10
 
-        [[ -n "$app_path" && -e "$app_path" ]] || continue
+                cache_match = (cached_mtime != "" && app_mtime != "" && cached_mtime == app_mtime)
 
-        local cache_match=false
-        if [[ -n "$cached_mtime" && -n "$app_mtime" && "$cached_mtime" == "$app_mtime" ]]; then
-            cache_match=true
-        fi
+                final_epoch = (isnum(cached_epoch) && cached_epoch > 0) ? cached_epoch : 0
+                if (isnum(final_epoch) && final_epoch < floor) {
+                    final_epoch = 0
+                }
+                if ((!isnum(final_epoch) || final_epoch <= 0) && isnum(app_mtime) && app_mtime > floor) {
+                    final_epoch = app_mtime
+                }
 
-        local final_epoch=0
-        if [[ "$cached_epoch" =~ ^[0-9]+$ && $cached_epoch -gt 0 ]]; then
-            final_epoch="$cached_epoch"
-        fi
+                final_size_kb = (isnum(cached_size_kb) && cached_size_kb > 0) ? cached_size_kb : 0
+                final_size = human_size(final_size_kb)
+                final_last_used = relative_time(final_epoch, now)
 
-        local final_size_kb=0
-        local final_size="--"
-        if [[ "$cached_size_kb" =~ ^[0-9]+$ && $cached_size_kb -gt 0 ]]; then
-            final_size_kb="$cached_size_kb"
-            final_size=$(bytes_to_human "$((cached_size_kb * 1024))")
-        fi
+                needs_refresh = 0
+                if (!cache_match) {
+                    needs_refresh = 1
+                } else if (!isnum(cached_size_kb) || cached_size_kb <= 0) {
+                    needs_refresh = 1
+                } else if (!isnum(cached_epoch) || cached_epoch <= 0) {
+                    needs_refresh = 1
+                } else if (!isnum(cached_updated_epoch)) {
+                    needs_refresh = 1
+                } else if (cached_bundle_id == "" || cached_display_name == "") {
+                    needs_refresh = 1
+                } else if ((now - cached_updated_epoch) > ttl) {
+                    needs_refresh = 1
+                }
 
-        if [[ "$final_epoch" =~ ^[0-9]+$ && $final_epoch -lt $MOLE_UNINSTALL_EPOCH_FLOOR ]]; then
-            final_epoch=0
-        fi
-        # Fallback to app mtime to avoid unknown "last used" on first scan.
-        if [[ ! "$final_epoch" =~ ^[0-9]+$ || $final_epoch -le 0 ]]; then
-            if [[ "$app_mtime" =~ ^[0-9]+$ && $app_mtime -gt $MOLE_UNINSTALL_EPOCH_FLOOR ]]; then
-                final_epoch="$app_mtime"
+                if (needs_refresh) {
+                    print app_path "|" app_mtime "|" bundle_id "|" display_name >> refresh_out
+                }
+
+                persist_updated_epoch = (isnum(cached_updated_epoch) && cached_updated_epoch > 0) ? cached_updated_epoch : 0
+                print app_path "|" app_mtime "|" final_size_kb "|" final_epoch "|" persist_updated_epoch "|" bundle_id "|" display_name >> snapshot_out
+                print final_epoch "|" app_path "|" display_name "|" bundle_id "|" final_size "|" final_last_used "|" final_size_kb >> apps_out
+            }
+        ' "$merged_file"
+    else
+        while IFS='|' read -r app_path display_name bundle_id app_mtime cached_mtime cached_size_kb cached_epoch cached_updated_epoch cached_bundle_id cached_display_name; do
+            ((metadata_processed++))
+            if ((metadata_processed % 5 == 0 || metadata_processed == metadata_total)); then
+                update_scan_status "Collecting metadata..." "$metadata_processed" "$metadata_total"
             fi
-        fi
 
-        local final_last_used
-        final_last_used=$(uninstall_relative_time_from_epoch "$final_epoch" "$current_epoch")
+            [[ -n "$app_path" && -e "$app_path" ]] || continue
 
-        local needs_refresh=false
-        if [[ $cache_match == false ]]; then
-            needs_refresh=true
-        elif [[ ! "$cached_size_kb" =~ ^[0-9]+$ || $cached_size_kb -le 0 ]]; then
-            needs_refresh=true
-        elif [[ ! "$cached_epoch" =~ ^[0-9]+$ || $cached_epoch -le 0 ]]; then
-            needs_refresh=true
-        elif [[ ! "$cached_updated_epoch" =~ ^[0-9]+$ ]]; then
-            needs_refresh=true
-        elif [[ -z "$cached_bundle_id" || -z "$cached_display_name" ]]; then
-            needs_refresh=true
-        else
-            local cache_age=$((current_epoch - cached_updated_epoch))
-            if [[ $cache_age -gt $MOLE_UNINSTALL_META_REFRESH_TTL ]]; then
+            local cache_match=false
+            if [[ -n "$cached_mtime" && -n "$app_mtime" && "$cached_mtime" == "$app_mtime" ]]; then
+                cache_match=true
+            fi
+
+            local final_epoch=0
+            if [[ "$cached_epoch" =~ ^[0-9]+$ && $cached_epoch -gt 0 ]]; then
+                final_epoch="$cached_epoch"
+            fi
+
+            local final_size_kb=0
+            local final_size="--"
+            if [[ "$cached_size_kb" =~ ^[0-9]+$ && $cached_size_kb -gt 0 ]]; then
+                final_size_kb="$cached_size_kb"
+                final_size=$(bytes_to_human "$((cached_size_kb * 1024))")
+            fi
+
+            if [[ "$final_epoch" =~ ^[0-9]+$ && $final_epoch -lt $MOLE_UNINSTALL_EPOCH_FLOOR ]]; then
+                final_epoch=0
+            fi
+            # Fallback to app mtime to avoid unknown "last used" on first scan.
+            if [[ ! "$final_epoch" =~ ^[0-9]+$ || $final_epoch -le 0 ]]; then
+                if [[ "$app_mtime" =~ ^[0-9]+$ && $app_mtime -gt $MOLE_UNINSTALL_EPOCH_FLOOR ]]; then
+                    final_epoch="$app_mtime"
+                fi
+            fi
+
+            local final_last_used
+            final_last_used=$(uninstall_relative_time_from_epoch "$final_epoch" "$current_epoch")
+
+            local needs_refresh=false
+            if [[ $cache_match == false ]]; then
                 needs_refresh=true
-            fi
-        fi
-
-        if [[ $needs_refresh == true ]]; then
-            if [[ $inline_metadata_count -lt $inline_metadata_effective_limit ]]; then
-                local inline_metadata inline_size_kb inline_epoch inline_updated_epoch
-                inline_metadata=$(uninstall_collect_inline_metadata "$app_path" "${app_mtime:-0}" "$current_epoch")
-                IFS='|' read -r inline_size_kb inline_epoch inline_updated_epoch <<< "$inline_metadata"
-                ((inline_metadata_count++))
-
-                if [[ "$inline_size_kb" =~ ^[0-9]+$ && $inline_size_kb -gt 0 ]]; then
-                    final_size_kb="$inline_size_kb"
-                    final_size=$(bytes_to_human "$((inline_size_kb * 1024))")
-                fi
-                if [[ "$inline_epoch" =~ ^[0-9]+$ && $inline_epoch -gt 0 ]]; then
-                    final_epoch="$inline_epoch"
-                    final_last_used=$(uninstall_relative_time_from_epoch "$final_epoch" "$current_epoch")
-                fi
-                if [[ "$inline_updated_epoch" =~ ^[0-9]+$ && $inline_updated_epoch -gt 0 ]]; then
-                    cached_updated_epoch="$inline_updated_epoch"
+            elif [[ ! "$cached_size_kb" =~ ^[0-9]+$ || $cached_size_kb -le 0 ]]; then
+                needs_refresh=true
+            elif [[ ! "$cached_epoch" =~ ^[0-9]+$ || $cached_epoch -le 0 ]]; then
+                needs_refresh=true
+            elif [[ ! "$cached_updated_epoch" =~ ^[0-9]+$ ]]; then
+                needs_refresh=true
+            elif [[ -z "$cached_bundle_id" || -z "$cached_display_name" ]]; then
+                needs_refresh=true
+            else
+                local cache_age=$((current_epoch - cached_updated_epoch))
+                if [[ $cache_age -gt $MOLE_UNINSTALL_META_REFRESH_TTL ]]; then
+                    needs_refresh=true
                 fi
             fi
-            printf "%s|%s|%s|%s\n" "$app_path" "${app_mtime:-0}" "$bundle_id" "$display_name" >> "$refresh_file"
-        fi
 
-        local persist_updated_epoch=0
-        if [[ "$cached_updated_epoch" =~ ^[0-9]+$ && $cached_updated_epoch -gt 0 ]]; then
-            persist_updated_epoch="$cached_updated_epoch"
-        fi
-        printf "%s|%s|%s|%s|%s|%s|%s\n" "$app_path" "${app_mtime:-0}" "${final_size_kb:-0}" "${final_epoch:-0}" "${persist_updated_epoch:-0}" "$bundle_id" "$display_name" >> "$cache_snapshot_file"
+            if [[ $needs_refresh == true ]]; then
+                if [[ $inline_metadata_count -lt $inline_metadata_effective_limit ]]; then
+                    local inline_metadata inline_size_kb inline_epoch inline_updated_epoch
+                    inline_metadata=$(uninstall_collect_inline_metadata "$app_path" "${app_mtime:-0}" "$current_epoch")
+                    IFS='|' read -r inline_size_kb inline_epoch inline_updated_epoch <<< "$inline_metadata"
+                    ((inline_metadata_count++))
 
-        echo "${final_epoch}|${app_path}|${display_name}|${bundle_id}|${final_size}|${final_last_used}|${final_size_kb}" >> "$temp_file"
-    done < "$merged_file"
+                    if [[ "$inline_size_kb" =~ ^[0-9]+$ && $inline_size_kb -gt 0 ]]; then
+                        final_size_kb="$inline_size_kb"
+                        final_size=$(bytes_to_human "$((inline_size_kb * 1024))")
+                    fi
+                    if [[ "$inline_epoch" =~ ^[0-9]+$ && $inline_epoch -gt 0 ]]; then
+                        final_epoch="$inline_epoch"
+                        final_last_used=$(uninstall_relative_time_from_epoch "$final_epoch" "$current_epoch")
+                    fi
+                    if [[ "$inline_updated_epoch" =~ ^[0-9]+$ && $inline_updated_epoch -gt 0 ]]; then
+                        cached_updated_epoch="$inline_updated_epoch"
+                    fi
+                fi
+                printf "%s|%s|%s|%s\n" "$app_path" "${app_mtime:-0}" "$bundle_id" "$display_name" >> "$refresh_file"
+            fi
+
+            local persist_updated_epoch=0
+            if [[ "$cached_updated_epoch" =~ ^[0-9]+$ && $cached_updated_epoch -gt 0 ]]; then
+                persist_updated_epoch="$cached_updated_epoch"
+            fi
+            printf "%s|%s|%s|%s|%s|%s|%s\n" "$app_path" "${app_mtime:-0}" "${final_size_kb:-0}" "${final_epoch:-0}" "${persist_updated_epoch:-0}" "$bundle_id" "$display_name" >> "$cache_snapshot_file"
+
+            echo "${final_epoch}|${app_path}|${display_name}|${bundle_id}|${final_size}|${final_last_used}|${final_size_kb}" >> "$temp_file"
+        done < "$merged_file"
+    fi
 
     update_scan_status "Updating cache..." "0" "0"
     if [[ -s "$cache_snapshot_file" ]]; then
@@ -820,12 +1033,12 @@ scan_applications() {
     update_scan_status "Sorting application list..." "0" "0"
     sort -t'|' -k1,1n "$temp_file" > "${temp_file}.sorted" || {
         stop_scan_spinner
-        rm -f "$temp_file" "$scan_raw_file" "$merged_file" "$refresh_file" "$cache_snapshot_file"
+        rm -f "$temp_file" "$scan_raw_file" "$merged_file" "$refresh_file" "$cache_snapshot_file" "$discovered_file" "$cached_rows_file" "$uncached_rows_file"
         [[ $cache_source_is_temp == true ]] && rm -f "$cache_source" 2> /dev/null || true
         restore_scan_int_trap
         return 1
     }
-    rm -f "$temp_file" "$scan_raw_file" "$merged_file" "$cache_snapshot_file"
+    rm -f "$temp_file" "$scan_raw_file" "$merged_file" "$cache_snapshot_file" "$discovered_file" "$cached_rows_file" "$uncached_rows_file"
     [[ $cache_source_is_temp == true ]] && rm -f "$cache_source" 2> /dev/null || true
 
     update_scan_status "Finalizing list..." "0" "0"
@@ -833,6 +1046,7 @@ scan_applications() {
     stop_scan_spinner
 
     if [[ -f "${temp_file}.sorted" ]]; then
+        register_temp_file "${temp_file}.sorted"
         restore_scan_int_trap
         echo "${temp_file}.sorted"
         return 0
@@ -1211,17 +1425,38 @@ main() {
     fi
 
     local first_scan=true
+    local cached_apps_file=""
+    local cached_inventory_fingerprint=""
     while true; do
         unset MOLE_INLINE_LOADING MOLE_MANAGED_ALT_SCREEN
 
         if [[ $first_scan == false ]]; then
-            echo -e "${GRAY}Refreshing application list...${NC}" >&2
+            echo -e "${GRAY}Checking application list...${NC}" >&2
         fi
         first_scan=false
 
         local apps_file=""
-        if ! apps_file=$(scan_applications); then
-            return 1
+        local reused_app_cache=false
+        if [[ -n "$cached_apps_file" && -f "$cached_apps_file" && -n "$cached_inventory_fingerprint" ]]; then
+            local current_inventory_fingerprint
+            current_inventory_fingerprint=$(uninstall_app_inventory_fingerprint 2> /dev/null || echo "")
+            if [[ -n "$current_inventory_fingerprint" && "$current_inventory_fingerprint" == "$cached_inventory_fingerprint" ]]; then
+                apps_file="$cached_apps_file"
+                reused_app_cache=true
+            fi
+        fi
+
+        if [[ "$reused_app_cache" != "true" ]]; then
+            if [[ -n "$cached_apps_file" && -f "$cached_apps_file" ]]; then
+                rm -f "$cached_apps_file" 2> /dev/null || true
+            fi
+
+            if ! apps_file=$(scan_applications); then
+                return 1
+            fi
+
+            cached_apps_file="$apps_file"
+            cached_inventory_fingerprint=$(uninstall_app_inventory_fingerprint 2> /dev/null || echo "")
         fi
 
         if [[ ! -f "$apps_file" ]]; then
@@ -1230,6 +1465,7 @@ main() {
 
         if ! load_applications "$apps_file"; then
             rm -f "$apps_file"
+            [[ "$apps_file" == "$cached_apps_file" ]] && cached_apps_file=""
             return 1
         fi
 
@@ -1248,6 +1484,7 @@ main() {
             clear_screen
             printf '\033[2J\033[H' >&2
             rm -f "$apps_file"
+            [[ "$apps_file" == "$cached_apps_file" ]] && cached_apps_file=""
 
             return 0
         fi
@@ -1258,7 +1495,6 @@ main() {
         local selection_count=${#selected_apps[@]}
         if [[ $selection_count -eq 0 ]]; then
             echo "No apps selected"
-            rm -f "$apps_file"
             continue
         fi
         echo -e "${BLUE}${ICON_CONFIRM}${NC} Selected ${selection_count} apps:"
@@ -1345,8 +1581,6 @@ main() {
         done
 
         batch_uninstall_applications
-
-        rm -f "$apps_file"
 
         local _countdown=5
         local _key=""
