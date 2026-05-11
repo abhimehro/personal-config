@@ -55,7 +55,7 @@ while ! nc -z "$NFS_HOST" "$NFS_PORT" 2>/dev/null; do
 	fi
 	log "Waiting for NFS server..."
 	sleep 5
-	((RETRY_COUNT++))
+	((RETRY_COUNT++)) || true
 done
 
 # --- Mount ---
