@@ -175,7 +175,7 @@ debug_timer_end() {
     fi
 
     local start_ts
-    start_ts="${!start_var:-}"
+    start_ts="${!start_var}"
     [[ -z "$start_ts" ]] && return 0
     local end_ts
     end_ts=$(perl -MTime::HiRes -e 'printf "%.3f\n", Time::HiRes::time()' 2> /dev/null || date +%s)
