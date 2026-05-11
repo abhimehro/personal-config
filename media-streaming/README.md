@@ -45,7 +45,7 @@ Use these shortcuts in your terminal (Fish shell required):
 
 | Shortcut | Description |
 | :--- | :--- |
-| `media-status` | Check if all 3 agents are running |
+| `media-status` | Check if all 5 agents are running |
 | `media-logs` | Stream logs for server, nfs, and mount |
 | `media-restart` | Full restart of the media infrastructure |
 | `list-uploads` | Show files pending approval |
