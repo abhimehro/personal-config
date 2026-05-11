@@ -840,7 +840,7 @@ update_progress_if_needed() {
 
     # Get last update time from variable
     local last_time
-    last_time="${!last_update_var:-0}"
+    last_time="${!last_update_var}"
     [[ "$last_time" =~ ^[0-9]+$ ]] || last_time=0
 
     # Check if enough time has elapsed
