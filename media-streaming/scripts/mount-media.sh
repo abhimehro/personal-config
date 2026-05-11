@@ -67,7 +67,7 @@ log "Mounting NFS → $MOUNT_POINT"
 # - resvport: Usually needed for macOS NFS, but localhost works without it if rclone allows
 # - tcp: Ensure TCP is used
 # - port/mountport: Direct both to rclone's unified NFS port
-if mount_nfs -o "port=$NFS_PORT, mountport=$NFS_PORT, nolock, top, soft, intr" "$NFS_HOST:/" "$MOUNT_POINT" 2>81 | tee -a "$LOG_FILE"; then
+if mount_nfs -o "port=$NFS_PORT,mountport=$NFS_PORT,nolock,tcp,soft,intr" "$NFS_HOST:/" "$MOUNT_POINT" 2>&1 | tee -a "$LOG_FILE"; then
 	sleep 2
 	if mount | grep -q "$MOUNT_POINT"; then
 		log "✅ Mount successful"
