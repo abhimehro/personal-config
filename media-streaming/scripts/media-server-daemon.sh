@@ -15,8 +15,8 @@ log() {
 
 log "🔧 Media Server - Starting..."
 
-# Kill any existing rclone servers
-pkill -f "rclone serve" 2>/dev/null || true
+# Kill any existing rclone WebDAV servers
+pkill -f "rclone serve webdav" 2>/dev/null || true
 sleep 2
 
 # Get network info

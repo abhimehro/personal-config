@@ -189,7 +189,10 @@ abbr -a nmcs nm-cd-status
 
 # Media Workflow
 abbr -a approve-uploads ~/dev/personal-config/media-streaming/scripts/rename-media.sh --approve-ready
-abbr -a list-uploads ~/dev/personal-config/media-streaming/scripts/rename-media.sh --list-pending
+abbr -a list-uploads    ~/dev/personal-config/media-streaming/scripts/rename-media.sh --list-pending
+abbr -a media-status    "launchctl list | grep speedybee.media"
+abbr -a media-logs      "tail -f ~/Library/Logs/media-server.log ~/Library/Logs/media-nfs-server.log ~/Library/Logs/media-mount.log"
+abbr -a media-restart   "launchctl unload ~/Library/LaunchAgents/com.speedybee.media.server*.plist ~/Library/LaunchAgents/com.speedybee.media.mount.plist; launchctl load ~/Library/LaunchAgents/com.speedybee.media.server*.plist ~/Library/LaunchAgents/com.speedybee.media.mount.plist"
 
 # History Setup
 set -g fish_history_limit 10000
