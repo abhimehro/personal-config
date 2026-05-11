@@ -15,7 +15,7 @@ NFS_PORT=12049
 LOG_FILE="$HOME/Library/Logs/media-mount.log"
 
 log() {
-	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
 notify() {
