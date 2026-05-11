@@ -356,16 +356,16 @@ export CTRLD_PRIVACY_PROFILE=<Privacy-Profile-ID>
 export CTRLD_GAMING_PROFILE=<Gaming-Profile-ID>
 ```
 
-### Media automation (Infuse + Alldebrid + cloud union)
+### Media automation (Infuse + Plex + Alldebrid + cloud union)
 
-- **Data roots**: iCloud Desktop/Documents (`~/Library/Mobile Documents/com~apple~CloudDocs/Media`) via rclone union of `gdrive:Media` + `onedrive:Media` (no local duplication).
-- **WebDAV server**: LaunchAgent `com.<your-home-folder>.media.webdav` runs `/Users/<your-home-folder>/Library/Media/bin/start-media-server.sh` on port **8088** (read-only).
-- **Alldebrid helper**: LaunchAgent `com.<your-home-folder>.media.alldebrid` mounts to `/Users/<your-home-folder>/mnt/alldebrid` and serves on **8080**.
-- **Secrets**:
-  - `~/.config/rclone/rclone.conf` (seed from `media-streaming/configs/rclone.conf.template`, fill via `op inject`).
-  - `~/.config/media-server/credentials (optional fallback only in the current 1Password-first setup)` (untracked; copy `media-streaming/configs/media-credentials.example` and inject creds with 1Password).
-- **Cache & logs**: `~/Library/Application Support/MediaCache` (kept out of iCloud) and `~/Library/Logs/media/*.out|*.err`.
-- **Control**: `launchctl list | grep media` to verify; manual start: `~/Library/Media/bin/start-media-server.sh`.
+- **Architecture**: Hybrid WebDAV (Infuse) + NFS (Plex Local Mount).
+- **WebDAV Daemon**: LaunchAgent `com.speedybee.media.server` runs on port **8080** (WebDAV) with 1Password auth.
+- **NFS Daemon**: LaunchAgent `com.speedybee.media.server.nfs` runs on port **12049** (NFS, localhost-only).
+- **Native Mount**: LaunchAgent `com.speedybee.media.mount` bridges NFS to `~/CloudMedia/mounted` for native filesystem access.
+- **Alldebrid Sync**: LaunchAgent `com.speedybee.alldebrid.sync` (Hourly) fetches new downloads to the pipeline.
+- **Renamer/Uploader**: LaunchAgent `com.speedybee.media.renamer` (Watchdog) handles FileBot naming and cloud uploads.
+- **Cache**: Shared **10GB bounded VFS cache** ensures zero memory bloat and protects against local disk exhaustion.
+- **Control**: Use `media-status`, `media-logs`, and `media-restart` Fish abbreviations for management.
 
 ### MCP tooling
 

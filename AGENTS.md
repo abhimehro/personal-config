@@ -83,8 +83,13 @@ launchctl list | grep maintenance
 High-level docs live in `media-streaming/README.md`. Setup is staged by `setup.sh` (templates + LaunchAgents).
 
 ```bash
-# Verify media automation agents (names vary; grep is the easiest entrypoint)
+# Verify media automation agents (sync, renamer, server, nfs, mount)
 launchctl list | grep -E '(media|alldebrid|speedybee)'
+
+# Management via Fish abbreviations (if installed)
+media-status    # Show all agents
+media-logs      # Stream all logs
+media-restart   # Full infra restart
 ```
 
 ### Lint / formatting (Trunk)
@@ -211,8 +216,13 @@ The important architectural idea: tasks are meant to be launchd-driven and obser
 The media pipeline is split into:
 
 - Setup + configuration templates (e.g., rclone template seeded by `setup.sh`).
-- Automation via LaunchAgents (installed if present).
-- Operational scripts in `media-streaming/scripts/` (sync, rename/finalize, repair).
+- Automation via LaunchAgents:
+  - `com.speedybee.alldebrid.sync`: Hourly download sync.
+  - `com.speedybee.media.renamer`: Real-time renaming and cloud upload.
+  - `com.speedybee.media.server`: WebDAV daemon (port 8080) for Infuse.
+  - `com.speedybee.media.server.nfs`: NFS daemon (port 12049) for local Plex.
+  - `com.speedybee.media.mount`: Native macOS NFS mount agent (`~/CloudMedia/mounted`).
+- Operational scripts in `media-streaming/scripts/`.
 
 The docs in `media-streaming/README.md` describe the intended “zero-click” flow and the responsibilities of each agent/script.
 
