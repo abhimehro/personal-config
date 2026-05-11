@@ -16,7 +16,7 @@ log() {
 log "📡 Media NFS Server - Starting..."
 
 # Kill any existing rclone NFS servers
-pkill -f "rclone serve nfs" 2>/dev/null || true
+pkill -f "rclone serve nfs media:" 2>/dev/null || true
 sleep 2
 
 # Check rclone remote
