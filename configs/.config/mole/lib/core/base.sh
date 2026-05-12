@@ -834,7 +834,15 @@ update_progress_if_needed() {
 
     # Get last update time from variable
     local last_time
-    eval "last_time=\${$last_update_var:-0}"
+
+    # SECURITY: Validate variable name to prevent command injection
+    if [[ ! "$last_update_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        debug_log "Invalid variable name in update_progress_if_needed: $last_update_var"
+        return 1
+    fi
+    local tmp_val="${!last_update_var}"
+    last_time="${tmp_val:-0}"
+
     [[ "$last_time" =~ ^[0-9]+$ ]] || last_time=0
 
     # Check if enough time has elapsed
@@ -844,7 +852,7 @@ update_progress_if_needed() {
         start_section_spinner "Scanning items... $completed/$total"
 
         # Update the last_update_time variable
-        eval "$last_update_var=$current_time"
+        printf -v "$last_update_var" "%s" "$current_time"
         return 0
     fi
 

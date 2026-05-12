@@ -648,7 +648,13 @@ build_regex_var() {
             regex="$regex|$p"
         fi
     done
-    eval "$var_name=\"\$regex\""
+
+    # SECURITY: Validate variable name to prevent command injection
+    if [[ ! "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        debug_log "Invalid variable name in build_regex_var: $var_name"
+        return 1
+    fi
+    printf -v "$var_name" "%s" "$regex"
 }
 
 # Lazy-loaded regex (only built when needed)
