@@ -840,8 +840,7 @@ update_progress_if_needed() {
         debug_log "Invalid variable name in update_progress_if_needed: $last_update_var"
         return 1
     fi
-    local tmp_val="${!last_update_var}"
-    last_time="${tmp_val:-0}"
+    last_time="${!last_update_var:-0}"
 
     [[ "$last_time" =~ ^[0-9]+$ ]] || last_time=0
 
