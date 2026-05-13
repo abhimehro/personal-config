@@ -73,8 +73,10 @@ def _should_skip_table_row(line):
 
 
 def _parse_repo_name(line):
-    m = re.match(r"^## (.*)", line)
-    return m.group(1).strip() if m else None
+    if line.startswith("## "):
+        # ⚡ Bolt Optimization: Replace re.match with faster startswith() + slicing
+        return line[3:].strip()
+    return None
 
 
 def _is_valid_pr_row(pr_id, author, hints):
