@@ -191,9 +191,9 @@ process_file() {
 		ext="${final_name##*.}"
 		counter=1
 		
-		# Mimic FileBot's conflict resolution by checking the live mount
-		while [[ -f "$MOUNT_DIR/$dest_subfolder/$final_name" ]]; do
-			log "Duplicate detected in mount for $final_name. Appending index."
+		# Mimic FileBot's conflict resolution by checking the live mount and upload queue
+		while [[ -f "$MOUNT_DIR/$dest_subfolder/$final_name" || -f "$final_dir/$final_name" ]]; do
+			log "Duplicate detected for $final_name (mount or upload queue). Appending index."
 			final_name="${base_name} (${counter}).${ext}"
 			((counter++))
 		done
