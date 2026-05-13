@@ -16,7 +16,7 @@ This setup provides a high-performance, autonomous media pipeline that bridges c
 2.  **🏷️ Finalize (Renamer & Uploader)**
     - **Script**: `rename-media.sh`
     - **Agent**: `com.speedybee.media.renamer` (Watchdog)
-    - **Action**: Moves approved files from `staging` to the `media:` Union Remote (Google Drive + OneDrive).
+    - **Action**: Safely processes files from `staging` (Permute output) into `processed` once finished, then uses FileBot to rename and handle duplicate conflicts against the live mount, queuing them in `upload_stage`.
 
 3.  **📡 Serve (Dual-Protocol Daemons)**
     - **WebDAV**: `media-server-daemon.sh` serves on port **8080** for **Infuse** (iOS/tvOS).
@@ -33,7 +33,9 @@ This setup provides a high-performance, autonomous media pipeline that bridges c
 ```
 ~/CloudMedia/
 ├── approval_needed/   # New downloads waiting for approval
-├── upload_stage/      # Files ready for renaming/upload
+├── staging/           # Raw output from Permute (monitored for completion)
+├── processed/         # Finished Permute files ready for FileBot
+├── upload_stage/      # Files successfully renamed and queued for upload
 └── mounted/           # THE SOURCE OF TRUTH (NFS Mount)
     ├── Movies/
     └── TV Shows/
