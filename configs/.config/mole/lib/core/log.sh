@@ -173,7 +173,11 @@ debug_timer_end() {
         debug_log "Invalid variable name in debug_timer_end: $start_var"
         return 1
     fi
-    local tmp_val="${!start_var}"
+    local tmp_val=""
+    # SECURITY: Guard indirect expansion so unset timer vars do not abort under `set -u`.
+    if declare -p "$start_var" > /dev/null 2>&1; then
+        tmp_val="${!start_var}"
+    fi
     start_ts="${tmp_val:-}"
 
     [[ -z "$start_ts" ]] && return 0
