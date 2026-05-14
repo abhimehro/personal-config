@@ -290,54 +290,59 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(content.encode("utf-8"))
 
 
+def _get_or_generate_user(args):
+    user = args.user or os.environ.get("AUTH_USER")
+    if user:
+        return user, False
+    user_alphabet = string.ascii_lowercase + string.digits
+    return "user_" + "".join(secrets.SystemRandom().choices(user_alphabet, k=8)), True
+
+
+def _get_or_prompt_password(args, user, generated_user):
+    password = args.password or os.environ.get("AUTH_PASS")
+    if password:
+        print(
+            "\n🔒 Security: Authentication Enabled (using configured credentials; password is hidden)\n"
+        )
+        return password
+
+    if not sys.stdout.isatty():
+        print(
+            "\n❌ Error: Auto-generating a password is not supported when output is not a TTY.",
+            file=sys.stderr,
+        )
+        print(
+            "   (e.g., when output is redirected to a file or running in automation/CI)",
+            file=sys.stderr,
+        )
+        print(
+            "Please provide a password using the --password argument or the AUTH_PASS environment variable.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    import getpass
+
+    print("\n🔒 Security: Authentication Enabled")
+    print(f"   User: {user}")
+    if generated_user:
+        print("   (Random username generated. Set custom user via --user)")
+
+    while not password:
+        password = getpass.getpass("   Enter password for Basic Auth: ")
+        if not password:
+            print("   Password cannot be empty. Please try again.")
+    print("   Password set securely.\n")
+    return password
+
+
 def setup_authentication(args):
     """Set up authentication credentials with secure defaults.
 
     Returns: tuple (AUTH_USER, AUTH_PASS, EXPECTED_AUTH_TOKEN) or exits if password cannot be generated.
     """
-    user = args.user or os.environ.get("AUTH_USER")
-    password = args.password or os.environ.get("AUTH_PASS")
-
-    generated_user = False
-    if not user:
-        user_alphabet = string.ascii_lowercase + string.digits
-        user = "user_" + "".join(secrets.SystemRandom().choices(user_alphabet, k=8))
-        generated_user = True
-
-    if not password:
-        # If output is a TTY, securely prompt for a password
-        if sys.stdout.isatty():
-            import getpass
-
-            print("\n🔒 Security: Authentication Enabled")
-            print(f"   User: {user}")
-            if generated_user:
-                print("   (Random username generated. Set custom user via --user)")
-
-            while not password:
-                password = getpass.getpass("   Enter password for Basic Auth: ")
-                if not password:
-                    print("   Password cannot be empty. Please try again.")
-            print("   Password set securely.\n")
-        else:
-            # Fail and require user to set a password to avoid logging it
-            print(
-                "\n❌ Error: Auto-generating a password is not supported when output is not a TTY.",
-                file=sys.stderr,
-            )
-            print(
-                "   (e.g., when output is redirected to a file or running in automation/CI)",
-                file=sys.stderr,
-            )
-            print(
-                "Please provide a password using the --password argument or the AUTH_PASS environment variable.",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-    else:
-        print(
-            "\n🔒 Security: Authentication Enabled (using configured credentials; password is hidden)\n"
-        )
+    user, generated_user = _get_or_generate_user(args)
+    password = _get_or_prompt_password(args, user, generated_user)
 
     expected_token = base64.b64encode(f"{user}:{password}".encode("utf-8")).decode(
         "utf-8"
