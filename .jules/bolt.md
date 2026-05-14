@@ -141,3 +141,6 @@
 ## 2026-03-10 - [Memory Efficiency and PEP-8 in Data Extraction]
 **Learning:** Using `type() is dict` violates PEP-8 conventions. Furthermore, passing list comprehensions (e.g., `[x for x in data]`) to aggregate functions like `set.update()` forces the entire filtered sequence into memory at once, creating unnecessary memory spikes during large JSON extractions.
 **Action:** When extracting data based on type, always use `isinstance()`. When passing filtered sequences to aggregate functions that accept iterables (like `.update()`), preserve memory efficiency by using generator expressions `(...)` instead of list comprehensions `[...]`.
+## 2025-05-14 - Parallelize Tracker List Processing
+**Learning:** Parallelizing I/O-bound tasks and JSON parsing in Python using `ThreadPoolExecutor` significantly improves scalability for processing multiple data files, even when the overhead is visible for smaller datasets.
+**Action:** Use `ThreadPoolExecutor` for batch file processing and extraction tasks where tasks are independent.
