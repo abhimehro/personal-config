@@ -163,7 +163,7 @@ In Infuse, add WebDAV source:
 
 ```
 Protocol: WebDAV
-Address: http://YOUR_LOCAL_IP:8088
+Address: http://YOUR_LOCAL_IP:8080
 Username: infuse
 Password: [from ~/.config/media-server/credentials]
 Path: /
@@ -241,13 +241,13 @@ rclone config reconnect onedrive:
 
 ```bash
 # Check if port is in use
-lsof -nP -i:8088
+lsof -nP -i:8080
 
-# Kill existing servers
-pkill -f "rclone serve"
+# Kill existing WebDAV server (narrow pattern; does NOT kill the NFS daemon)
+pkill -f "rclone serve webdav media:"
 
 # Try different port
-rclone serve webdav media: --addr 0.0.0.0:8089 --user infuse --pass "$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" --read-only
+rclone serve webdav media: --addr 0.0.0.0:8081 --user infuse --pass "$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" --read-only
 ```
 
 ## 📋 Verification Checklist
@@ -260,8 +260,8 @@ After setup, verify everything:
 - [ ] `rclone lsd gdrive:Media` shows folders
 - [ ] `rclone lsd onedrive:Media` shows folders
 - [ ] `rclone lsd media:` shows folders (union)
-- [ ] WebDAV server running: `lsof -nP -i:8088 | grep rclone`
-- [ ] Local test works: `curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" http://localhost:8088/`
+- [ ] WebDAV server running: `lsof -nP -i:8080 | grep rclone`
+- [ ] Local test works: `curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" http://localhost:8080/`
 - [ ] Infuse can connect and see folders
 
 ## 🎯 Quick Diagnostic
