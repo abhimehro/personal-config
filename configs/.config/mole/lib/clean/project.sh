@@ -681,13 +681,13 @@ select_purge_categories() {
             stty "${original_stty}" 2> /dev/null || stty sane 2> /dev/null || true
         fi
         if [[ -n "$previous_exit_trap" ]]; then
-            eval "$previous_exit_trap"
+            if [[ "$previous_exit_trap" == "trap -- "* ]]; then eval "$previous_exit_trap"; fi
         fi
         if [[ -n "$previous_int_trap" ]]; then
-            eval "$previous_int_trap"
+            if [[ "$previous_int_trap" == "trap -- "* ]]; then eval "$previous_int_trap"; fi
         fi
         if [[ -n "$previous_term_trap" ]]; then
-            eval "$previous_term_trap"
+            if [[ "$previous_term_trap" == "trap -- "* ]]; then eval "$previous_term_trap"; fi
         fi
     }
     # shellcheck disable=SC2329
@@ -1047,8 +1047,8 @@ clean_project_artifacts() {
     # Restore caller traps after this function completes.
     if [[ "$trap_installed_by_this_call" == "true" ]]; then
         trap - INT TERM
-        [[ -n "$previous_int_trap" ]] && eval "$previous_int_trap"
-        [[ -n "$previous_term_trap" ]] && eval "$previous_term_trap"
+        [[ -n "$previous_int_trap" ]] && if [[ "$previous_int_trap" == "trap -- "* ]]; then eval "$previous_int_trap"; fi
+        [[ -n "$previous_term_trap" ]] && if [[ "$previous_term_trap" == "trap -- "* ]]; then eval "$previous_term_trap"; fi
     fi
     if [[ ${#all_found_items[@]} -eq 0 ]]; then
         echo ""
