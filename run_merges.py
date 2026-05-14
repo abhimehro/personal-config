@@ -23,8 +23,9 @@ def _parse_env_line(line, env_dict):
 def _get_parsed_env_vars():
     # ⚡ Bolt Optimization: Cache only the parsed variables from the file to prevent redundant IO reads, while keeping it safe from mutable dictionary cache poisoning
     parsed_vars = {}
+    env_path = os.getenv("GH_TOKEN_ENV_PATH", "../email-security-pipeline/GH_TOKEN.env")
     try:
-        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
+        with open(env_path, "r") as f:
             for line in f:
                 _parse_env_line(line, parsed_vars)
     except FileNotFoundError:

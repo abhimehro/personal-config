@@ -1,4 +1,4 @@
-source ../email-security-pipeline/GH_TOKEN.env
+source "${GH_TOKEN_ENV_PATH:-../email-security-pipeline/GH_TOKEN.env}"
 
 close_pr() {
   local repo=$1
