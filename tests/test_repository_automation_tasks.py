@@ -1,10 +1,22 @@
-import unittest
-import sys
 import os
+import sys
+import unittest
+from unittest.mock import MagicMock
 
-sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.github/scripts'))
+# Stub out the optional third-party `yaml` dependency so this test remains
+# stdlib-only (per AGENTS.md / CONTRIBUTING.md: tests must not require pip
+# installs). `repository_automation_common` imports `yaml` at module load
+# time, but `configured_commands` itself does not use it.
+sys.modules.setdefault("yaml", MagicMock())
 
-from repository_automation_tasks import configured_commands
+sys.path.append(
+    os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        ".github/scripts",
+    )
+)
+
+from repository_automation_tasks import configured_commands  # noqa: E402
 
 class TestRepositoryAutomationTasks(unittest.TestCase):
     def test_configured_commands_all_keys_present(self):
