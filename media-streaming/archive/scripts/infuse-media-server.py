@@ -308,7 +308,7 @@ def _get_or_prompt_password(args, user, generated_user):
 
     if not sys.stdout.isatty():
         print(
-            "\n❌ Error: Auto-generating a password is not supported when output is not a TTY.",
+            "\n❌ Error: Interactive password entry is not supported when output is not a TTY.",
             file=sys.stderr,
         )
         print(
