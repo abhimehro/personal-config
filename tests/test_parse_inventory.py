@@ -7,12 +7,13 @@ from datetime import datetime, timezone, timedelta
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from parse_inventory import (
-    _parse_env_line,
     parse_inventory_lines,
     _is_pr_stale,
     _get_pr_category,
     _is_checks_failing,
 )
+
+from env_utils import _parse_env_line
 
 class TestParseInventory(unittest.TestCase):
     @staticmethod
