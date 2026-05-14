@@ -31,21 +31,29 @@ class TestTruncate(unittest.TestCase):
 
     def test_truncate_over_limit(self):
         text = "a" * 51
-        expected = "a" * 35 + "\n... [truncated]"
-        self.assertEqual(rac.truncate(text, limit=50), expected)
+        expected = "a" * 34 + "\n... [truncated]"
+        result = rac.truncate(text, limit=50)
+        self.assertEqual(result, expected)
+        # Truncated output must never exceed the requested limit.
+        self.assertLessEqual(len(result), 50)
 
     def test_truncate_empty_text(self):
         self.assertEqual(rac.truncate("", limit=50), "")
 
-    def test_truncate_small_limit_negative_slice(self):
+    def test_truncate_small_limit(self):
+        # When limit is smaller than the suffix, the function must still
+        # respect the limit rather than growing the output via negative slicing.
         text = "abcdefghijklmnop"
-        expected = "abcdefghijk\n... [truncated]"
-        self.assertEqual(rac.truncate(text, limit=10), expected)
+        result = rac.truncate(text, limit=10)
+        self.assertEqual(result, "abcdefghij")
+        self.assertLessEqual(len(result), 10)
 
     def test_truncate_default_limit(self):
         text = "a" * 4001
-        expected = "a" * 3985 + "\n... [truncated]"
-        self.assertEqual(rac.truncate(text), expected)
+        expected = "a" * 3984 + "\n... [truncated]"
+        result = rac.truncate(text)
+        self.assertEqual(result, expected)
+        self.assertLessEqual(len(result), 4000)
 
 
 if __name__ == "__main__":

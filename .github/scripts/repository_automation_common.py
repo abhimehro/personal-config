@@ -71,10 +71,18 @@ def task_dir(task: str) -> Path:
     return path
 
 
+TRUNCATION_SUFFIX = "\n... [truncated]"
+
+
 def truncate(text: str, limit: int = 4000) -> str:
     if len(text) <= limit:
         return text
-    return text[: limit - 15] + "\n... [truncated]"
+    suffix_len = len(TRUNCATION_SUFFIX)
+    # If the limit is too small to fit the suffix, just hard-truncate the text
+    # so the output never exceeds the requested limit.
+    if limit <= suffix_len:
+        return text[:limit]
+    return text[: limit - suffix_len] + TRUNCATION_SUFFIX
 
 
 def run_process(
