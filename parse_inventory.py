@@ -2,9 +2,19 @@ import json
 import os
 import re
 import subprocess
+import threading
 from datetime import datetime, timezone
 from functools import lru_cache
 import concurrent.futures
+
+
+# Serializes print() calls from worker threads so log lines don't interleave.
+_print_lock = threading.Lock()
+
+
+def _safe_print(msg):
+    with _print_lock:
+        print(msg)
 
 
 def _parse_env_line(line, env_dict):
@@ -23,8 +33,10 @@ def _parse_env_line(line, env_dict):
 
 
 @lru_cache(maxsize=None)
-def _get_parsed_env_vars():
-    # ⚡ Bolt Optimization: Cache only the parsed variables from the file to prevent redundant IO reads, while keeping it safe from mutable dictionary cache poisoning
+def _get_parsed_env_vars_cached():
+    # ⚡ Bolt Optimization: Cache the parsed variables to avoid redundant IO reads.
+    # The cached dict is never returned directly to callers (see _get_parsed_env_vars)
+    # to prevent mutation-based cache poisoning across threads.
     parsed_vars = {}
     try:
         with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
@@ -33,6 +45,13 @@ def _get_parsed_env_vars():
     except FileNotFoundError:
         pass
     return parsed_vars
+
+
+def _get_parsed_env_vars():
+    # Always return a shallow copy so callers can mutate freely without
+    # corrupting the lru_cache entry (important now that callers run on
+    # multiple threads via ThreadPoolExecutor).
+    return dict(_get_parsed_env_vars_cached())
 
 
 def _load_gh_token_env():
@@ -182,11 +201,11 @@ def _get_pr_category(info, checks):
 def _categorize_pr(repo, pr_info):
     pr = pr_info["pr"]
     checks = pr_info["checks"]
-    print(f"Checking {repo}#{pr}")
+    _safe_print(f"Checking {repo}#{pr}")
 
     info = run_gh(repo, pr)
     if not info:
-        print(f"Failed to fetch {repo}#{pr}")
+        _safe_print(f"Failed to fetch {repo}#{pr}")
         return None
 
     category = _get_pr_category(info, checks)
@@ -226,8 +245,16 @@ def main():
             for pr_info in prs:
                 futures.append(executor.submit(_categorize_pr, repo, pr_info))
 
-        for future in concurrent.futures.as_completed(futures):
-            result = future.result()
+        # Iterate in submission order (not completion order) to keep the
+        # triage report deterministic and diffable across runs.
+        for future in futures:
+            try:
+                result = future.result()
+            except Exception as exc:
+                # Don't let a single failed future discard the rest of the
+                # already-completed results — log and continue.
+                _safe_print(f"Categorization task failed: {exc!r}")
+                continue
             if result:
                 category, pr_str = result
                 triage[category].append(pr_str)
