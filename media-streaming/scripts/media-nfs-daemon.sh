@@ -34,8 +34,15 @@ log "🚀 Starting rclone NFS server on $BIND_ADDR:$NFS_PORT"
 # Start rclone in FOREGROUND
 # Note: NFS in rclone currently doesn't require/support user/pass auth
 # We bind to localhost to keep it secure.
+# Use a dedicated VFS cache directory so the NFS daemon doesn't share state
+# with the WebDAV daemon (both serve the same `media:` remote and would
+# otherwise collide on rclone's default cache path).
+NFS_CACHE_DIR="$HOME/Library/Caches/rclone-media-nfs"
+mkdir -p "$NFS_CACHE_DIR"
+
 exec rclone serve nfs "media:" \
 	--addr "$BIND_ADDR:$NFS_PORT" \
+	--cache-dir "$NFS_CACHE_DIR" \
 	--vfs-cache-mode full \
 	--vfs-cache-max-size 10G \
 	--vfs-cache-max-age 24h \

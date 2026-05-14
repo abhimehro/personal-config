@@ -192,7 +192,7 @@ abbr -a approve-uploads ~/dev/personal-config/media-streaming/scripts/rename-med
 abbr -a list-uploads    ~/dev/personal-config/media-streaming/scripts/rename-media.sh --list-pending
 abbr -a media-status    "launchctl list | grep -F 'speedybee.media'"
 abbr -a media-logs      "tail -f ~/Library/Logs/media-server.log ~/Library/Logs/media-nfs-server.log ~/Library/Logs/media-mount.log"
-abbr -a media-restart   "launchctl unload ~/Library/LaunchAgents/com.speedybee.media.server*.plist ~/Library/LaunchAgents/com.speedybee.media.mount.plist; launchctl load ~/Library/LaunchAgents/com.speedybee.media.server*.plist ~/Library/LaunchAgents/com.speedybee.media.mount.plist"
+abbr -a media-restart   "for p in ~/Library/LaunchAgents/com.speedybee.media.server.plist ~/Library/LaunchAgents/com.speedybee.media.server.nfs.plist ~/Library/LaunchAgents/com.speedybee.media.mount.plist ~/Library/LaunchAgents/com.speedybee.media.renamer.plist; test -f \$p; and launchctl bootout gui/(id -u) \$p 2>/dev/null; test -f \$p; and launchctl bootstrap gui/(id -u) \$p; end"
 
 # History Setup
 set -g fish_history_limit 10000
