@@ -231,8 +231,17 @@ process_staging() {
 	find "$STAGING_DIR" -maxdepth 1 -type f ! -name ".*" -print0 | while IFS= read -r -d "" file; do
 		# Check if file is currently open by any process (e.g., Permute)
 		if ! lsof "$file" >/dev/null 2>&1; then
-			log "File completely written, moving to processed: ${file##*/}"
-			mv "$file" "$PROCESSED_DIR/"
+			# SECURITY: Re-check existence because the file may have been moved or deleted
+			# between find and lsof; treating every lsof failure as "safe to move" is racy.
+			if [[ -f "$file" ]]; then
+				log "File completely written, moving to processed: ${file##*/}"
+				if ! mv "$file" "$PROCESSED_DIR/"; then
+					# NOTE: A transient race should not terminate the watchdog loop under set -e.
+					log "Failed to move file to processed, skipping: ${file##*/}"
+				fi
+			else
+				log "File disappeared before move, skipping: ${file##*/}"
+			fi
 		else
 			log "File still being written by Permute, waiting: ${file##*/}"
 		fi
