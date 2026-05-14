@@ -1,4 +1,12 @@
-source "${GH_TOKEN_ENV_PATH:-../email-security-pipeline/GH_TOKEN.env}"
+gh_token_env_path="${GH_TOKEN_ENV_PATH:-../email-security-pipeline/GH_TOKEN.env}"
+
+# SECURITY: Fail closed if the token env file is missing or unreadable.
+if [ ! -r "$gh_token_env_path" ]; then
+  echo "Error: GH token env file is missing or unreadable: $gh_token_env_path" >&2
+  exit 1
+fi
+
+source "$gh_token_env_path"
 
 fix_and_merge() {
   local repo=$1
