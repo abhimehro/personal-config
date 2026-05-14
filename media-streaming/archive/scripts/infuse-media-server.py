@@ -329,7 +329,14 @@ def _get_or_prompt_password(args, user, generated_user):
         print("   (Random username generated. Set custom user via --user)")
 
     while not password:
-        password = getpass.getpass("   Enter password for Basic Auth: ")
+        try:
+            password = getpass.getpass("   Enter password for Basic Auth: ")
+        except (EOFError, KeyboardInterrupt):
+            print(
+                "\n❌ Error: Password entry aborted. Cannot start server without a password.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
         if not password:
             print("   Password cannot be empty. Please try again.")
     print("   Password set securely.\n")
