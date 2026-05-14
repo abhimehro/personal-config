@@ -262,8 +262,8 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 | Shell tests only           | `make test`                                      | Fastest full suite; 31 tests, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                          |
 | Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                            |
 | All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI. |
-| Single Python module       | `python3 -m unittest tests.test_path_validation` | stdlib only, no pip deps                                                                                             |
-| Python tests only          | `make test-python`                               | stdlib only, no pip deps                                                                                             |
+| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install pyyaml`                    |
+| Python tests only          | `make test-python`                               | Mostly stdlib; install `pyyaml` (`pip install pyyaml`) for the full suite                                            |
 | Lint (all)                 | `make lint`                                      | Trunk downloads its own tool versions on first run                                                                   |
 | Lint (correctness gate)    | `make lint-errors`                               | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate.                                              |
 | Format                     | `make lint-fix`                                  | Auto-fixes where supported                                                                                           |
@@ -272,7 +272,7 @@ This is a macOS-focused dotfiles/IaC repo. There are no web services or database
 
 - **`make test` vs `make test-all`**: `make test` runs shell tests only (faster for iteration). `make test-all` additionally runs Python tests. Use `make test-quick` for pre-commit smoke checks.
 - **Trunk first-run latency**: The first `trunk check` or `trunk fmt` invocation downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`. Subsequent runs are fast. The update script installs the Trunk launcher, but tool downloads happen lazily.
-- **No `requirements.txt`**: Python tests and scripts use only the standard library. No `pip install` is needed for the test suite.
+- **No `requirements.txt`**: Python tests and scripts are mostly standard library. The full test suite needs `pyyaml` (`pip install pyyaml`) — used by `tests/test_repository_automation_common.py` which exercises `.github/scripts/repository_automation_common.py`.
 - **`package.json` is empty**: The root `package.json` is `{}` — it exists as a Trunk runtime anchor for Node-based linters (prettier, markdownlint). Do not run `npm install`.
 - **macOS-specific test skips on Linux**: `test_config_fish.sh`, `test_ssh_config.sh`, and `test_security_manager_restore.sh` emit a `SKIP:` message and exit with code 77 on Linux/CI. The test runner treats this as a skip, not a failure.
 - **`setup.sh` is macOS-only**: Do not run `./setup.sh` on Linux — it calls `launchctl`, Homebrew, and macOS system utilities.
