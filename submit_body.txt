@@ -1,3 +1,0 @@
-💡 **What:** Optimized the N+1 PR triage API requests using `concurrent.futures.ThreadPoolExecutor` for parallelization. Changed the return type of `_categorize_pr` to `tuple[str, str]` and appended to `triage` outside of the parallel tasks.
-🎯 **Why:** To address the bottleneck caused by sequentially fetching info for multiple PRs, which was inefficient due to sequential independent network requests in the loop.
-📊 **Measured Improvement:** Simulated an API latency of 100ms. Baseline benchmark took 5.53 seconds vs optimized benchmark taking 0.62 seconds. An ~8.9x performance improvement.
