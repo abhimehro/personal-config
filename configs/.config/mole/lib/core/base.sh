@@ -840,8 +840,13 @@ update_progress_if_needed() {
         debug_log "Invalid variable name in update_progress_if_needed: $last_update_var"
         return 1
     fi
-    local tmp_val="${!last_update_var}"
-    last_time="${tmp_val:-0}"
+
+    # SECURITY: Guard indirect expansion so unset variables do not abort under `set -u`.
+    if declare -p "$last_update_var" > /dev/null 2>&1; then
+        last_time="${!last_update_var}"
+    else
+        last_time=0
+    fi
 
     [[ "$last_time" =~ ^[0-9]+$ ]] || last_time=0
 
