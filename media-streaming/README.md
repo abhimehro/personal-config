@@ -21,7 +21,7 @@ This setup provides a high-performance, autonomous media pipeline that bridges c
 3.  **📡 Serve (Dual-Protocol Daemons)**
     - **WebDAV**: `media-server-daemon.sh` serves on port **8080** for **Infuse** (iOS/tvOS).
     - **NFS**: `media-nfs-daemon.sh` serves on port **12049** specifically for **Plex** (macOS).
-    - **VFS Cache**: Both use a shared 10GB bounded cache to prevent memory exhaustion.
+    - **VFS Cache**: Each daemon has a dedicated 10GB bounded cache (separate cache dirs prevent cross-daemon interference).
 
 4.  **🔌 Mount (Native macOS Filesystem)**
     - **Script**: `mount-media.sh`
@@ -47,9 +47,9 @@ Use these shortcuts in your terminal (Fish shell required):
 
 | Shortcut | Description |
 | :--- | :--- |
-| `media-status` | Check if all 3 agents are running |
+| `media-status` | Check if all 4 media agents are running (server, nfs, mount, renamer) |
 | `media-logs` | Stream logs for server, nfs, and mount |
-| `media-restart` | Full restart of the media infrastructure |
+| `media-restart` | Full restart of the media infrastructure (server, nfs, mount, renamer) |
 | `list-uploads` | Show files pending approval |
 | `approve-uploads` | Process and upload pending files |
 

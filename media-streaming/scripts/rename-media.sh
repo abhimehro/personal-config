@@ -191,9 +191,14 @@ process_file() {
 		local ext="${final_name##*.}"
 		local counter=1
 		
-		# Mimic FileBot's conflict resolution by checking the live mount
-		while [[ -f "$MOUNT_DIR/$dest_subfolder/$final_name" ]]; do
-			log "Duplicate detected in mount for $final_name. Appending index."
+		# Mimic FileBot's conflict resolution by checking BOTH the live mount
+		# (already-uploaded files) AND the local upload queue (in-flight files
+		# that haven't been pushed to the remote yet). Skipping the queue check
+		# would allow two same-named renames to overwrite each other in
+		# $REVIEW_DIR before either is uploaded.
+		while [[ -f "$MOUNT_DIR/$dest_subfolder/$final_name" \
+			|| -f "$final_dir/$final_name" ]]; do
+			log "Duplicate detected for $final_name. Appending index."
 			final_name="${base_name} (${counter}).${ext}"
 			((counter++))
 		done
@@ -227,8 +232,11 @@ process_file() {
 	fi
 }
 process_staging() {
-	# 1. Process files that are fully written in STAGING_DIR
-	find "$STAGING_DIR" -maxdepth 1 -type f ! -name ".*" -print0 | while IFS= read -r -d "" file; do
+	# 1. Process video files that are fully written in STAGING_DIR.
+	#    Filtering by extension here (instead of `! -name ".*"`) prevents
+	#    non-video sidecars/junk from being moved into PROCESSED_DIR where
+	#    they would be stranded (the FileBot step below only picks up videos).
+	find "$STAGING_DIR" -maxdepth 1 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.m4v" -o -name "*.avi" -o -name "*.mov" \) -print0 | while IFS= read -r -d "" file; do
 		# Check if file is currently open by any process (e.g., Permute)
 		if ! lsof "$file" >/dev/null 2>&1; then
 			# SECURITY: Re-check existence because the file may have been moved or deleted

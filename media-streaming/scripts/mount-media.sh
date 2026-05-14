@@ -15,7 +15,9 @@ NFS_PORT=12049
 LOG_FILE="$HOME/Library/Logs/media-mount.log"
 
 log() {
-	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+	# Note: stdout is redirected to $LOG_FILE by the LaunchAgent plist, so plain
+	# echo is sufficient there. When run interactively, callers can tee manually.
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
 notify() {
@@ -33,12 +35,16 @@ notify() {
 mkdir -p "$(dirname "$LOG_FILE")"
 
 # --- Health Check ---
+# A mount is considered healthy if it appears in `mount` AND `ls` returns
+# without error. We deliberately do NOT require the directory to be non-empty:
+# a legitimately empty mount (or one briefly empty during NFS/rclone startup)
+# would otherwise be force-unmounted and remounted on every poll.
 if mount | grep -q "$MOUNT_POINT"; then
-	if ls "$MOUNT_POINT" &>/dev/null && [[ -n "$(ls -A "$MOUNT_POINT" 2>/dev/null)" ]]; then
-		# Already mounted and healthy
+	if ls "$MOUNT_POINT" &>/dev/null; then
+		# Already mounted and responsive
 		exit 0
 	else
-		log "⚠️  Stale mount detected. Unmounting..."
+		log "⚠️  Stale mount detected (unresponsive). Unmounting..."
 		diskutil unmount force "$MOUNT_POINT" 2>/dev/null || true
 		sleep 2
 	fi
@@ -55,7 +61,9 @@ while ! nc -z "$NFS_HOST" "$NFS_PORT" 2>/dev/null; do
 	fi
 	log "Waiting for NFS server..."
 	sleep 5
-	((RETRY_COUNT++))
+	# Guard against set -e: ((var++)) returns the pre-increment value, which is
+	# 0 (falsy) on the first iteration and would abort the script.
+	((RETRY_COUNT++)) || true
 done
 
 # --- Mount ---
@@ -67,7 +75,7 @@ log "Mounting NFS → $MOUNT_POINT"
 # - resvport: Usually needed for macOS NFS, but localhost works without it if rclone allows
 # - tcp: Ensure TCP is used
 # - port/mountport: Direct both to rclone's unified NFS port
-if mount_nfs -o "port=$NFS_PORT,mountport=$NFS_PORT,nolock,tcp,soft,intr" "$NFS_HOST:/" "$MOUNT_POINT" 2>&1 | tee -a "$LOG_FILE"; then
+if mount_nfs -o "port=$NFS_PORT,mountport=$NFS_PORT,nolock,tcp,soft,intr" "$NFS_HOST:/" "$MOUNT_POINT" 2>&1; then
 	sleep 2
 	if mount | grep -q "$MOUNT_POINT"; then
 		log "✅ Mount successful"
