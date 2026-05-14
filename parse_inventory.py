@@ -4,6 +4,7 @@ import re
 import subprocess
 from datetime import datetime, timezone
 from functools import lru_cache
+import concurrent.futures
 
 
 def _parse_env_line(line, env_dict):
@@ -86,7 +87,13 @@ def _is_valid_pr_row(pr_id, author, hints):
 def _extract_pr_row_fields(parts):
     repo_col = parts[1].strip()
     if repo_col:
-        return repo_col, parts[2].strip(), parts[3].strip(), parts[6].strip(), parts[9].strip()
+        return (
+            repo_col,
+            parts[2].strip(),
+            parts[3].strip(),
+            parts[6].strip(),
+            parts[9].strip(),
+        )
     return "", parts[2].strip(), parts[3].strip(), parts[6].strip(), parts[9].strip()
 
 
@@ -149,7 +156,7 @@ def _is_checks_failing(checks):
     # so we do not treat unrelated statuses containing "U" (e.g. "SUCCESS") as failing.
     if ("FAIL" in checks) or ("PENDING" in checks):
         return True
-    return checks.strip(' *_') == "U"
+    return checks.strip(" *_") == "U"
 
 
 def _get_pr_category(info, checks):
@@ -172,7 +179,7 @@ def _get_pr_category(info, checks):
     return None
 
 
-def _categorize_pr(repo, pr_info, triage):
+def _categorize_pr(repo, pr_info):
     pr = pr_info["pr"]
     checks = pr_info["checks"]
     print(f"Checking {repo}#{pr}")
@@ -180,11 +187,12 @@ def _categorize_pr(repo, pr_info, triage):
     info = run_gh(repo, pr)
     if not info:
         print(f"Failed to fetch {repo}#{pr}")
-        return
+        return None
 
     category = _get_pr_category(info, checks)
     if category:
-        triage[category].append(f"{repo}#{pr}")
+        return category, f"{repo}#{pr}"
+    return None
 
 
 def _load_inventory_lines(filepath):
@@ -212,9 +220,17 @@ def main():
     repos = parse_inventory_lines(lines)
     triage = {"SUPERSEDED": [], "STALE": [], "CONFLICTING": [], "READY": []}
 
-    for repo, prs in repos.items():
-        for pr_info in prs:
-            _categorize_pr(repo, pr_info, triage)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        futures = []
+        for repo, prs in repos.items():
+            for pr_info in prs:
+                futures.append(executor.submit(_categorize_pr, repo, pr_info))
+
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                category, pr_str = result
+                triage[category].append(pr_str)
 
     _write_triage_report("tasks/pr-triage.md", triage)
     print("Done")
