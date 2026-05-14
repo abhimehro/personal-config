@@ -2,7 +2,6 @@ import re
 from datetime import datetime, timezone
 import json
 import subprocess
-import os
 from env_utils import load_gh_token_env as _load_gh_token_env
 
 def run_gh(repo, pr):

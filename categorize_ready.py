@@ -1,5 +1,4 @@
 import json
-import os
 import subprocess
 from env_utils import load_gh_token_env as _load_gh_token_env
 

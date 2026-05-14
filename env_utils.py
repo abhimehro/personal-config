@@ -14,16 +14,24 @@ def parse_env_line(line, env_dict):
     env_dict[key] = val.strip("'\"")
 
 @lru_cache(maxsize=None)
-def get_parsed_env_vars(env_file="../email-security-pipeline/GH_TOKEN.env"):
-    """Reads and parses environment variables from a file, with caching."""
+def _get_parsed_env_items(env_file="../email-security-pipeline/GH_TOKEN.env"):
+    """Reads and parses env vars from a file, returning an immutable tuple of items.
+
+    Caching an immutable tuple (instead of a dict) prevents accidental cache
+    poisoning if a caller mutates the returned mapping.
+    """
     parsed_vars = {}
     try:
-        with open(env_file, "r") as f:
+        with open(env_file, "r", encoding="utf-8") as f:
             for line in f:
                 parse_env_line(line, parsed_vars)
     except FileNotFoundError:
         pass
-    return parsed_vars
+    return tuple(parsed_vars.items())
+
+def get_parsed_env_vars(env_file="../email-security-pipeline/GH_TOKEN.env"):
+    """Returns a fresh dict of environment variables parsed from the given file."""
+    return dict(_get_parsed_env_items(env_file))
 
 def load_gh_token_env():
     """Returns a copy of os.environ updated with variables from the GH_TOKEN.env file."""

@@ -27,9 +27,15 @@ class TestEnvUtils(unittest.TestCase):
     @patch("builtins.open", new_callable=mock_open, read_data="FOO=BAR\nBAZ=QUX")
     def test_get_parsed_env_vars(self, mock_file):
         # Clear cache for testing
-        get_parsed_env_vars.cache_clear()
-        vars = get_parsed_env_vars("fake.env")
-        self.assertEqual(vars, {"FOO": "BAR", "BAZ": "QUX"})
+        from env_utils import _get_parsed_env_items
+        _get_parsed_env_items.cache_clear()
+        parsed_vars = get_parsed_env_vars("fake.env")
+        self.assertEqual(parsed_vars, {"FOO": "BAR", "BAZ": "QUX"})
+
+        # Mutating the returned dict must not poison the cache.
+        parsed_vars["FOO"] = "MUTATED"
+        fresh = get_parsed_env_vars("fake.env")
+        self.assertEqual(fresh, {"FOO": "BAR", "BAZ": "QUX"})
 
     @patch("env_utils.get_parsed_env_vars")
     @patch.dict(os.environ, {"ORIGINAL": "VALUE"}, clear=True)
