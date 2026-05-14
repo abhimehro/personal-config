@@ -213,12 +213,26 @@ class AppConfig:
     dry_run: bool = False
 
     @classmethod
-    def load(cls, argv: list[str] | None = None) -> "AppConfig":
-        """Build config from env files, env vars, and CLI flags."""
+    def _load_env_source(cls) -> Path:
         preferred = Path.home() / ".config" / "morning-brief.env"
         fallback = Path(__file__).with_name(".env")
         env_source = preferred if preferred.exists() else fallback
         load_dotenv(env_source)
+        return env_source
+
+    @classmethod
+    def _build_toggles(cls) -> SectionToggles:
+        return SectionToggles(
+            greeting=_env_bool("MORNING_BRIEF_ENABLE_GREETING", True),
+            focus=_env_bool("MORNING_BRIEF_ENABLE_FOCUS", True),
+            news=_env_bool("MORNING_BRIEF_ENABLE_NEWS", True),
+            podcast=_env_bool("MORNING_BRIEF_ENABLE_PODCAST", True),
+        )
+
+    @classmethod
+    def load(cls, argv: list[str] | None = None) -> "AppConfig":
+        """Build config from env files, env vars, and CLI flags."""
+        env_source = cls._load_env_source()
 
         readwise_token = os.getenv("READWISE_TOKEN", "").strip()
         dry_run = "--dry-run" in (argv or sys.argv[1:])
@@ -244,12 +258,7 @@ class AppConfig:
                 "MORNING_BRIEF_FOCUS_MAX_ITEMS", DEFAULT_FOCUS_MAX_ITEMS
             ),
             env_source=str(env_source),
-            toggles=SectionToggles(
-                greeting=_env_bool("MORNING_BRIEF_ENABLE_GREETING", True),
-                focus=_env_bool("MORNING_BRIEF_ENABLE_FOCUS", True),
-                news=_env_bool("MORNING_BRIEF_ENABLE_NEWS", True),
-                podcast=_env_bool("MORNING_BRIEF_ENABLE_PODCAST", True),
-            ),
+            toggles=cls._build_toggles(),
             cache_dir=os.getenv(
                 "MORNING_BRIEF_CACHE_DIR",
                 str(Path.home() / ".cache" / "morning-brief"),
