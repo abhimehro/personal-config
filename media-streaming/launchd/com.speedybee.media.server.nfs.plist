@@ -7,16 +7,13 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/speedybee/dev/personal-config/media-streaming/scripts/media-nfs-daemon.sh</string>
+        <string>-lc</string>
+        <string>exec "$HOME/Library/Media/bin/media-nfs-daemon.sh" &gt;&gt;"$HOME/Library/Logs/media-nfs-server.log" 2&gt;&amp;1</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
-    <key>StandardOutPath</key>
-    <string>/Users/speedybee/Library/Logs/media-nfs-server.log</string>
-    <key>StandardErrorPath</key>
-    <string>/Users/speedybee/Library/Logs/media-nfs-server.log</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
