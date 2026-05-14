@@ -33,14 +33,21 @@ def _parse_env_line(line, env_dict):
     env_dict[key] = val.strip("'\"")
 
 
+def _resolve_env_path():
+    """Return (resolved_path, was_overridden) for the token env file."""
+    override = os.getenv("GH_TOKEN_ENV_PATH")
+    return (override or DEFAULT_GH_TOKEN_ENV_PATH, bool(override))
+
+
 @lru_cache(maxsize=None)
-def _get_parsed_env_vars():
+def _parse_env_file(env_path, fail_closed):
     # ⚡ Bolt Optimization: Cache only the parsed variables from the file to
     # prevent redundant IO reads. The cached value is wrapped in
     # MappingProxyType so callers cannot mutate it and poison the cache.
+    # Keying on `env_path` ensures that runtime changes to
+    # GH_TOKEN_ENV_PATH (e.g. in tests) produce a fresh read instead of
+    # silently returning a stale first-call result.
     parsed_vars = {}
-    override = os.getenv("GH_TOKEN_ENV_PATH")
-    env_path = override or DEFAULT_GH_TOKEN_ENV_PATH
     try:
         with open(env_path, "r") as f:
             for line in f:
@@ -48,9 +55,14 @@ def _get_parsed_env_vars():
     except FileNotFoundError:
         # Fail closed only when the caller explicitly overrode the path. A
         # missing default-path file is tolerated to preserve prior behavior.
-        if override:
+        if fail_closed:
             raise
     return MappingProxyType(parsed_vars)
+
+
+def _get_parsed_env_vars():
+    env_path, was_overridden = _resolve_env_path()
+    return _parse_env_file(env_path, was_overridden)
 
 
 def load_gh_token_env():
@@ -58,6 +70,22 @@ def load_gh_token_env():
     env = os.environ.copy()
     env.update(_get_parsed_env_vars())
     return env
+
+
+def require_gh_token_env():
+    """Fail-closed guard for destructive scripts.
+
+    Raises FileNotFoundError if the resolved token env file is missing.
+    Unlike load_gh_token_env(), this enforces presence of the file even
+    when the default path is in use (no GH_TOKEN_ENV_PATH override),
+    mirroring the fail-closed behavior of the shell scripts.
+    """
+    env_path, _ = _resolve_env_path()
+    if not os.path.isfile(env_path):
+        raise FileNotFoundError(
+            f"GH token env file is missing or unreadable: {env_path}"
+        )
+    return load_gh_token_env()
 
 
 def run_gh(cmd_list):

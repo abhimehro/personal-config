@@ -18,7 +18,11 @@ close_pr() {
   local pr=$2
   local reason=$3
   echo "Closing $repo#$pr ($reason)..."
-  gh pr close $pr -R $repo -c "Automated triage: $reason"
+  # Tolerate individual failures so a transient error on one PR does not
+  # abort the remaining batch. `set -e` still applies to setup above.
+  if ! gh pr close "$pr" -R "$repo" -c "Automated triage: $reason"; then
+    echo "  -> WARNING: failed to close $repo#$pr; continuing." >&2
+  fi
 }
 
 # SUPERSEDED

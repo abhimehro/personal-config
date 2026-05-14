@@ -1,19 +1,18 @@
 import json
 import subprocess
+import sys
 import time
 
-from gh_utils import load_gh_token_env
+from gh_utils import load_gh_token_env, require_gh_token_env, run_gh
 
-
-def run_gh(cmd_list):
-    env = load_gh_token_env()
-    result = subprocess.run(cmd_list, capture_output=True, text=True, env=env)
-    if result.returncode != 0:
-        return None
-    try:
-        return json.loads(result.stdout)
-    except (ValueError, json.JSONDecodeError):
-        return result.stdout
+# SECURITY: This script performs destructive `gh pr merge` operations. Fail
+# closed up front if the token env file cannot be resolved, mirroring the
+# shell scripts (close_prs.sh, close_more.sh, fix_drafts.sh).
+try:
+    require_gh_token_env()
+except FileNotFoundError as exc:
+    print(f"Error: {exc}", file=sys.stderr)
+    sys.exit(1)
 
 
 def get_diff(repo, pr):
