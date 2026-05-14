@@ -172,7 +172,7 @@ fi
 EOF
 chmod +x "$MOCK_BIN/rclone"
 
-./media-streaming/scripts/final-media-server.sh >/dev/null 2>&1 || true
+./media-streaming/archive/final-media-server.sh >/dev/null 2>&1 || true
 
 # Check log file
 # Log file location might vary because $HOME is not mocked fully (only for .config if I set it)

@@ -157,6 +157,7 @@ approve_ready() {
 }
 process_file() {
 	local file="$1" filename media_type db fmt dest_subfolder temp_output renamed_file final_dir final_path target_remote duplicate sidecar
+	local final_name base_name ext counter
 	filename="${file##*/}"
 	log "---------------------------------------------------"
 	log "Processing: $filename"
@@ -186,10 +187,10 @@ process_file() {
 		final_dir="$REVIEW_DIR/$dest_subfolder"
 		mkdir -p "$final_dir"
 		
-		local final_name="${renamed_file##*/}"
-		local base_name="${final_name%.*}"
-		local ext="${final_name##*.}"
-		local counter=1
+		final_name="${renamed_file##*/}"
+		base_name="${final_name%.*}"
+		ext="${final_name##*.}"
+		counter=1
 		
 		# Mimic FileBot's conflict resolution by checking BOTH the live mount
 		# (already-uploaded files) AND the local upload queue (in-flight files
