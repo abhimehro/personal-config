@@ -2,7 +2,7 @@
 
 > **Status**: ✅ **FULLY OPTIMIZED** - Updated May 2026
 > **Architecture**: Hybrid WebDAV + NFS + Native macOS Mount
-> **Performance**: 10GB Bounded VFS Cache (Zero-Memory Bloat)
+> **Performance**: Isolated 10GB per-daemon VFS Cache (20GB max total)
 
 This setup provides a high-performance, autonomous media pipeline that bridges cloud storage (Google Drive + OneDrive) to Plex and Infuse without consuming excessive local disk or memory.
 
@@ -21,7 +21,7 @@ This setup provides a high-performance, autonomous media pipeline that bridges c
 3.  **📡 Serve (Dual-Protocol Daemons)**
     - **WebDAV**: `media-server-daemon.sh` serves on port **8080** for **Infuse** (iOS/tvOS). Fails fast if the port is in use.
     - **NFS**: `media-nfs-daemon.sh` serves on port **12049** specifically for **Plex** (macOS).
-    - **VFS Cache**: Both use a shared 10GB bounded cache to prevent memory exhaustion.
+    - **VFS Cache**: Each daemon has its own isolated 10GB bounded cache (`rclone-vfs/webdav` and `rclone-vfs/nfs`) — 20GB max total. Caches are intentionally split to avoid two rclone processes contending over the same cache directory for the shared `media:` remote.
 
 4.  **🔌 Mount (Native macOS Filesystem)**
     - **Script**: `mount-media.sh`

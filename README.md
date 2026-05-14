@@ -364,7 +364,7 @@ export CTRLD_GAMING_PROFILE=<Gaming-Profile-ID>
 - **Native Mount**: LaunchAgent `com.speedybee.media.mount` bridges NFS to `~/CloudMedia/mounted` for native filesystem access.
 - **Alldebrid Sync**: LaunchAgent `com.speedybee.alldebrid.sync` (Hourly) fetches new downloads to the pipeline.
 - **Renamer/Uploader**: LaunchAgent `com.speedybee.media.renamer` (Watchdog) handles FileBot naming and cloud uploads.
-- **Cache**: Shared **10GB bounded VFS cache** ensures zero memory bloat and protects against local disk exhaustion.
+- **Cache**: Isolated **10GB bounded VFS cache per daemon** (`rclone-vfs/webdav` + `rclone-vfs/nfs`, 20GB max total) — split to avoid cache contention between the two rclone processes.
 - **Control**: Use `media-status`, `media-logs`, and `media-restart` Fish abbreviations for management.
 
 ### MCP tooling
