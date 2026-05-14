@@ -1,52 +1,13 @@
 import re
 from datetime import datetime, timezone
-import json
-import subprocess
-import os
-from functools import lru_cache
 
-def _parse_env_line(line, env_dict):
-    line = line.strip()
-    if not line:
-        return
-    if line.startswith("#"):
-        return
-    if line.startswith("export "):
-        line = line[7:].strip()
-    if "=" not in line:
-        return
-    key, val = line.split("=", 1)
-    env_dict[key] = val.strip("'\"")
+from gh_utils import run_gh as _run_gh
 
-@lru_cache(maxsize=None)
-def _get_parsed_env_vars():
-    # ⚡ Bolt Optimization: Cache only the parsed variables from the file to prevent redundant IO reads, while keeping it safe from mutable dictionary cache poisoning
-    parsed_vars = {}
-    env_path = os.getenv("GH_TOKEN_ENV_PATH", "../email-security-pipeline/GH_TOKEN.env")
-    try:
-        with open(env_path, "r") as f:
-            for line in f:
-                _parse_env_line(line, parsed_vars)
-    except FileNotFoundError:
-        pass
-    return parsed_vars
-
-def _load_gh_token_env():
-    env = os.environ.copy()
-    env.update(_get_parsed_env_vars())
-    return env
 
 def run_gh(repo, pr):
-    env = _load_gh_token_env()
-    cmd = ["gh", "pr", "view", str(pr), "-R", str(repo), "--json", "files,updatedAt,mergeStateStatus"]
-    result = subprocess.run(cmd, capture_output=True, text=True, env=env)
-
-    if result.returncode != 0:
-        return None
-    try:
-        return json.loads(result.stdout)
-    except:
-        return None
+    return _run_gh(
+        ["gh", "pr", "view", str(pr), "-R", str(repo), "--json", "files,updatedAt,mergeStateStatus"]
+    )
 
 lines = open('tasks/pr-inventory.md').readlines()
 repos = {}
