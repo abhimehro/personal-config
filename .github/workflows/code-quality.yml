@@ -128,4 +128,6 @@ jobs:
           python-version: "3.12"
 
       - name: Run all tests (shell + Python)
-        run: make test-all
+        run: |
+          pip install pyyaml
+          make test-all
