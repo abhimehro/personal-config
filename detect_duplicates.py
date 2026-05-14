@@ -21,7 +21,7 @@ def _parse_env_line(line, env_dict):
 @lru_cache(maxsize=None)
 def _get_parsed_env_vars():
     parsed_vars = {}
-    env_path = os.getenv("GH_TOKEN_ENV_PATH", "../email-security-pipeline/GH_TOKEN.env")
+    env_path = os.getenv("GH_TOKEN_ENV_PATH") or "../email-security-pipeline/GH_TOKEN.env"
     try:
         with open(env_path, "r") as f:
             for line in f:
