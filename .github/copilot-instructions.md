@@ -279,6 +279,9 @@ Swap this block per project or repo.
   - `personal-config` — Shell/Python macOS configs, VPN/DNS, 1Password SSH
   - `email-security-pipeline` — Python IMAP threat detection
   - `ctrld-sync` — Control D blocklist syncing
+  - `series_correction_project_updated` — Python Seatek sensor time-series correction
+  - `Hydrograph_Versus_Seatek_Sensors_Project` — Python hydrograph and Seatek sensor analysis
+  - `Seatek_Analysis` — R-based Seatek sensor processing and workbook generation
 - Autofix conventions: Autofix commits follow `autofix(): PR #N (cycle K) -- …` with `Autofix-PR`, `Autofix-Cycle`, `Review-Inputs`, and `Mode` trailers when practical.
 
 FEW-SHOT EXAMPLES
