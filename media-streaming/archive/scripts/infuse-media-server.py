@@ -305,18 +305,20 @@ def setup_authentication(args):
         generated_user = True
 
     if not password:
-        # If output is a TTY, generate a password for interactive use
+        # If output is a TTY, securely prompt for a password
         if sys.stdout.isatty():
-            alphabet = string.ascii_letters + string.digits
-            password = "".join(secrets.SystemRandom().choices(alphabet, k=16))
+            import getpass
+
             print("\n🔒 Security: Authentication Enabled")
             print(f"   User: {user}")
-            print(f"   Password: {password}")
             if generated_user:
                 print("   (Random username generated. Set custom user via --user)")
-            print(
-                "   (A random password has been generated and shown above. Store it securely, and consider setting a custom password via --password or AUTH_PASS.)\n"
-            )
+
+            while not password:
+                password = getpass.getpass("   Enter password for Basic Auth: ")
+                if not password:
+                    print("   Password cannot be empty. Please try again.")
+            print("   Password set securely.\n")
         else:
             # Fail and require user to set a password to avoid logging it
             print(
