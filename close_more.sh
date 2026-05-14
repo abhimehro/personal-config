@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
 gh_token_env_path="${GH_TOKEN_ENV_PATH:-../email-security-pipeline/GH_TOKEN.env}"
 
 # SECURITY: Fail closed if the token env file is missing or unreadable so we
