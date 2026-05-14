@@ -166,8 +166,9 @@ class TestParseInventory(unittest.TestCase):
 
     # --- run_gh ---
 
+    @patch("parse_inventory._load_gh_token_env", return_value={})
     @patch("parse_inventory.subprocess.run")
-    def test_run_gh_success(self, mock_run):
+    def test_run_gh_success(self, mock_run, _mock_env):
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stdout = '{"files": [{"filename": "foo.py"}], "updatedAt": "2026-05-03T00:00:00Z"}'
@@ -176,16 +177,18 @@ class TestParseInventory(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(result["files"][0]["filename"], "foo.py")
 
+    @patch("parse_inventory._load_gh_token_env", return_value={})
     @patch("parse_inventory.subprocess.run")
-    def test_run_gh_nonzero(self, mock_run):
+    def test_run_gh_nonzero(self, mock_run, _mock_env):
         mock_result = MagicMock()
         mock_result.returncode = 1
         mock_result.stdout = "error"
         mock_run.return_value = mock_result
         self.assertIsNone(run_gh("repoA", 123))
 
+    @patch("parse_inventory._load_gh_token_env", return_value={})
     @patch("parse_inventory.subprocess.run")
-    def test_run_gh_invalid_json(self, mock_run):
+    def test_run_gh_invalid_json(self, mock_run, _mock_env):
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stdout = "invalid json"
