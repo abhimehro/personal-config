@@ -191,8 +191,8 @@ abbr -a nmcs nm-cd-status
 abbr -a approve-uploads ~/dev/personal-config/media-streaming/scripts/rename-media.sh --approve-ready
 abbr -a list-uploads    ~/dev/personal-config/media-streaming/scripts/rename-media.sh --list-pending
 abbr -a media-status    "launchctl list | grep speedybee"
-abbr -a media-logs      "tail -f ~/Library/Logs/media-server.log ~/Library/Logs/media-nfs-server.log ~/Library/Logs/media-mount.log ~/Library/Logs/media-renamer.log ~/Library/Logs/alldebrid-sync.log"
-abbr -a media-restart   "launchctl unload ~/Library/LaunchAgents/com.speedybee.media.server*.plist ~/Library/LaunchAgents/com.speedybee.media.mount.plist; launchctl load ~/Library/LaunchAgents/com.speedybee.media.server*.plist ~/Library/LaunchAgents/com.speedybee.media.mount.plist"
+abbr -a media-logs      "tail -f ~/Library/Logs/media-server.log ~/Library/Logs/media-server-error.log ~/Library/Logs/media-nfs-server.log ~/Library/Logs/media-mount.log ~/Library/Logs/media-renamer.log ~/Library/Logs/alldebrid-sync.log"
+abbr -a media-restart   "for plist in ~/Library/LaunchAgents/com.speedybee.alldebrid.sync.plist ~/Library/LaunchAgents/com.speedybee.media.renamer.plist ~/Library/LaunchAgents/com.speedybee.media.server.plist ~/Library/LaunchAgents/com.speedybee.media.server.nfs.plist ~/Library/LaunchAgents/com.speedybee.media.mount.plist; launchctl unload \$plist; launchctl load \$plist; end"
 
 # History Setup
 set -g fish_history_limit 10000

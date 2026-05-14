@@ -27,8 +27,13 @@ Run the automated setup script:
 
 ```bash
 cd ~/dev/personal-config
-./media-streaming/scripts/setup-media-library.sh
+./media-streaming/archive/setup-media-library.sh
 ```
+
+> Note: This script was moved to `media-streaming/archive/` after the hybrid
+> NFS+WebDAV refactor. It is preserved for one-time bootstrap of `gdrive:`,
+> `onedrive:`, and the `media:` union remote, but day-to-day operations are
+> handled by the LaunchAgents documented in `media-streaming/README.md`.
 
 This will guide you through:
 
@@ -227,8 +232,8 @@ rclone config reconnect gdrive:
 # Reconnect OneDrive
 rclone config reconnect onedrive:
 
-# Or use automated fix
-./media-streaming/scripts/fix-gdrive.sh
+# Or use automated fix (moved to archive/ in the hybrid NFS+WebDAV refactor)
+./media-streaming/archive/fix-gdrive.sh
 ```
 
 ### "WebDAV server won't start"
@@ -264,7 +269,7 @@ Run the diagnostic script anytime:
 
 ```bash
 cd ~/dev/personal-config
-./media-streaming/scripts/diagnose-infuse-connection.sh
+./media-streaming/archive/scripts/diagnose-infuse-connection.sh
 ```
 
 This will check all components and tell you exactly what's wrong.
@@ -287,4 +292,4 @@ This will check all components and tell you exactly what's wrong.
 
 ---
 
-**Next Steps**: Run `./media-streaming/scripts/setup-media-library.sh` to restore your configuration!
+**Next Steps**: Run `./media-streaming/archive/setup-media-library.sh` to restore your configuration!

@@ -15,7 +15,7 @@ NFS_PORT=12049
 LOG_FILE="$HOME/Library/Logs/media-mount.log"
 
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
 notify() {
@@ -33,12 +33,15 @@ notify() {
 mkdir -p "$(dirname "$LOG_FILE")"
 
 # --- Health Check ---
-if mount | grep -q "$MOUNT_POINT"; then
-	if ls "$MOUNT_POINT" &>/dev/null && [[ -n "$(ls -A "$MOUNT_POINT" 2>/dev/null)" ]]; then
-		# Already mounted and healthy
+# Use fixed-string match to avoid regex metachar interpretation in $MOUNT_POINT.
+if mount | grep -qF "$MOUNT_POINT"; then
+	# Mount is healthy if the directory is readable. We intentionally do NOT
+	# treat an empty directory as stale: a legitimately empty library would
+	# otherwise cause unmount/remount flapping every StartInterval.
+	if ls "$MOUNT_POINT" &>/dev/null; then
 		exit 0
 	else
-		log "⚠️  Stale mount detected. Unmounting..."
+		log "⚠️  Stale mount detected (unreadable). Unmounting..."
 		diskutil unmount force "$MOUNT_POINT" 2>/dev/null || true
 		sleep 2
 	fi
@@ -67,9 +70,9 @@ log "Mounting NFS → $MOUNT_POINT"
 # - resvport: Usually needed for macOS NFS, but localhost works without it if rclone allows
 # - tcp: Ensure TCP is used
 # - port/mountport: Direct both to rclone's unified NFS port
-if mount_nfs -o "port=$NFS_PORT,mountport=$NFS_PORT,nolock,tcp,soft,intr" "$NFS_HOST:/" "$MOUNT_POINT" 2>&1 | tee -a "$LOG_FILE"; then
+if mount_nfs -o "port=$NFS_PORT,mountport=$NFS_PORT,nolock,tcp,soft,intr" "$NFS_HOST:/" "$MOUNT_POINT" 2>&1; then
 	sleep 2
-	if mount | grep -q "$MOUNT_POINT"; then
+	if mount | grep -qF "$MOUNT_POINT"; then
 		log "✅ Mount successful"
 		notify "Media Library Mounted" "Cloud media is now available at $MOUNT_POINT"
 	else

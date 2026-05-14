@@ -20,7 +20,7 @@ pkill -f "rclone serve nfs media:" 2>/dev/null || true
 sleep 2
 
 # Check rclone remote
-if ! rclone listremotes 2>/dev/null | grep -q "media:"; then
+if ! rclone listremotes 2>/dev/null | grep -qx "media:"; then
 	log "ERROR: 'media:' remote not found"
 	exit 1
 fi

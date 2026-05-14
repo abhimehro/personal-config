@@ -19,13 +19,13 @@ This setup provides a high-performance, autonomous media pipeline that bridges c
     - **Action**: Moves approved files from `staging` to the `media:` Union Remote (Google Drive + OneDrive).
 
 3.  **📡 Serve (Dual-Protocol Daemons)**
-    - **WebDAV**: `media-server-daemon.sh` serves on port **8080** for **Infuse** (iOS/tvOS).
+    - **WebDAV**: `media-server-daemon.sh` serves on port **8080** for **Infuse** (iOS/tvOS). Fails fast if the port is in use.
     - **NFS**: `media-nfs-daemon.sh` serves on port **12049** specifically for **Plex** (macOS).
     - **VFS Cache**: Both use a shared 10GB bounded cache to prevent memory exhaustion.
 
 4.  **🔌 Mount (Native macOS Filesystem)**
     - **Script**: `mount-media.sh`
-    - **Agent**: `com.speedybee.media.mount` (Watchdog)
+    - **Agent**: `com.speedybee.media.mount` (Periodic, every 5 min)
     - **Action**: Mounts the NFS share to `~/CloudMedia/mounted/`. Plex scans this local path directly.
 
 ## 📁 **Library Structure**
@@ -46,7 +46,7 @@ Use these shortcuts in your terminal (Fish shell required):
 | Shortcut | Description |
 | :--- | :--- |
 | `media-status` | Check if all 5 agents are running |
-| `media-logs` | Stream logs for server, nfs, and mount |
+| `media-logs` | Stream logs for all 5 agents (server, nfs, mount, renamer, sync) |
 | `media-restart` | Full restart of the media infrastructure |
 | `list-uploads` | Show files pending approval |
 | `approve-uploads` | Process and upload pending files |

@@ -25,19 +25,19 @@ PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me 2>/dev/null || echo "unknown")
 
 log "Network: LAN=$PRIMARY_IP, Public=$PUBLIC_IP"
 
-# Find available port
+# Pin to port 8080 so external (Windscribe) port-forwarding stays consistent.
+# Fail fast if the port is busy rather than silently drifting to 8081–8083.
 AVAILABLE_PORT=8080
-for port in 8080 8081 8082 8083; do
-	if ! lsof -nP -i:$port 2>/dev/null | grep -q LISTEN; then
-		AVAILABLE_PORT=$port
-		break
-	fi
-done
+if lsof -nP -i:$AVAILABLE_PORT 2>/dev/null | grep -q LISTEN; then
+	log "ERROR: Port $AVAILABLE_PORT is already in use"
+	log "Run: lsof -nP -i:$AVAILABLE_PORT to identify the conflicting process"
+	exit 1
+fi
 
 log "Using port: $AVAILABLE_PORT"
 
 # Check rclone remote
-if ! rclone listremotes 2>/dev/null | grep -q "media:"; then
+if ! rclone listremotes 2>/dev/null | grep -qx "media:"; then
 	log "ERROR: 'media:' remote not found"
 	exit 1
 fi
