@@ -1,7 +1,6 @@
 import sys
 import os
 import unittest
-from pathlib import Path
 from unittest.mock import patch
 
 # Ensure the project root is in the path
@@ -10,8 +9,15 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Also add the scripts dir so we can import repository_automation_common directly
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.github', 'scripts'))
 
-from repository_automation_common import task_dir, OUTPUT_ROOT
+try:
+    from repository_automation_common import task_dir, OUTPUT_ROOT
+    _IMPORT_ERROR = None
+except ImportError as exc:  # e.g. PyYAML not installed in the test environment
+    task_dir = None
+    OUTPUT_ROOT = None
+    _IMPORT_ERROR = exc
 
+@unittest.skipIf(_IMPORT_ERROR is not None, f"repository_automation_common unavailable: {_IMPORT_ERROR}")
 class TestTaskDir(unittest.TestCase):
     @patch('pathlib.Path.mkdir')
     def test_task_dir_basic(self, mock_mkdir):
