@@ -70,8 +70,11 @@ log "   LAN Address: $PRIMARY_IP:$AVAILABLE_PORT"
 export RCLONE_USER="$WEB_USER"
 export RCLONE_PASS="$WEB_PASS"
 
+# Isolate the VFS cache from the NFS daemon to avoid two rclone processes
+# contending over the same cache directory for the shared `media:` remote.
 exec rclone serve webdav "media:" \
 	--addr "0.0.0.0:$AVAILABLE_PORT" \
+	--cache-dir "$HOME/Library/Caches/rclone-vfs/webdav" \
 	--vfs-cache-mode full \
 	--vfs-cache-max-size 10G \
 	--vfs-cache-max-age 24h \

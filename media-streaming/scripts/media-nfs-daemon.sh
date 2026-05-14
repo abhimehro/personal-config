@@ -31,11 +31,14 @@ BIND_ADDR="localhost"
 
 log "🚀 Starting rclone NFS server on $BIND_ADDR:$NFS_PORT"
 
-# Start rclone in FOREGROUND
-# Note: NFS in rclone currently doesn't require/support user/pass auth
-# We bind to localhost to keep it secure.
+# Start rclone in FOREGROUND.
+# Note: NFS in rclone currently doesn't require/support user/pass auth;
+# we bind to localhost to keep it secure. The cache is isolated from the
+# WebDAV daemon to avoid two rclone processes contending over the same
+# cache directory for the shared `media:` remote.
 exec rclone serve nfs "media:" \
 	--addr "$BIND_ADDR:$NFS_PORT" \
+	--cache-dir "$HOME/Library/Caches/rclone-vfs/nfs" \
 	--vfs-cache-mode full \
 	--vfs-cache-max-size 10G \
 	--vfs-cache-max-age 24h \

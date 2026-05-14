@@ -132,21 +132,22 @@ rclone lsd media:
 
 #### 6. Start WebDAV Server
 
+The WebDAV server is managed by the `com.speedybee.media.server` LaunchAgent
+(see `media-streaming/launchd/com.speedybee.media.server.plist`). To start it:
+
+```bash
+launchctl load ~/Library/LaunchAgents/com.speedybee.media.server.plist
+```
+
+Or run the foreground daemon script directly for debugging:
+
 ```bash
 cd ~/dev/personal-config
-./media-streaming/scripts/start-media-server-fast.sh
+./media-streaming/scripts/media-server-daemon.sh
 ```
 
-Or manually:
-
-```bash
-rclone serve webdav media: \
-    --addr 0.0.0.0:8088 \
-    --user infuse \
-    --pass "$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" \
-    --read-only \
-    --verbose
-```
+> Note: The legacy `start-media-server-fast.sh` bootstrap script was moved to
+> `media-streaming/archive/scripts/` in the hybrid NFS+WebDAV refactor.
 
 #### 7. Configure Infuse
 
