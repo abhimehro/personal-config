@@ -2,6 +2,7 @@ import unittest
 import sys
 import os
 from datetime import datetime, timezone, timedelta
+from unittest.mock import patch, MagicMock
 
 # Ensure the project root is in the path so we can import parse_inventory
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,6 +13,7 @@ from parse_inventory import (
     _is_pr_stale,
     _get_pr_category,
     _is_checks_failing,
+    run_gh,
 )
 
 class TestParseInventory(unittest.TestCase):
@@ -161,6 +163,34 @@ class TestParseInventory(unittest.TestCase):
         # Recent PR + CLEAN merge state + failing checks → no category assigned
         info = self._build_info("CLEAN", self._recent_iso())
         self.assertIsNone(_get_pr_category(info, "FAIL"))
+
+    # --- run_gh ---
+
+    @patch("parse_inventory.subprocess.run")
+    def test_run_gh_success(self, mock_run):
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = '{"files": [{"filename": "foo.py"}], "updatedAt": "2026-05-03T00:00:00Z"}'
+        mock_run.return_value = mock_result
+        result = run_gh("repoA", 123)
+        self.assertIsNotNone(result)
+        self.assertEqual(result["files"][0]["filename"], "foo.py")
+
+    @patch("parse_inventory.subprocess.run")
+    def test_run_gh_nonzero(self, mock_run):
+        mock_result = MagicMock()
+        mock_result.returncode = 1
+        mock_result.stdout = "error"
+        mock_run.return_value = mock_result
+        self.assertIsNone(run_gh("repoA", 123))
+
+    @patch("parse_inventory.subprocess.run")
+    def test_run_gh_invalid_json(self, mock_run):
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = "invalid json"
+        mock_run.return_value = mock_result
+        self.assertIsNone(run_gh("repoA", 123))
 
 
 if __name__ == '__main__':
