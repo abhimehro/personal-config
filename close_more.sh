@@ -1,4 +1,14 @@
-source "${GH_TOKEN_ENV_PATH:-../email-security-pipeline/GH_TOKEN.env}"
+gh_token_env_path="${GH_TOKEN_ENV_PATH:-../email-security-pipeline/GH_TOKEN.env}"
+
+# SECURITY: Fail closed if the token env file is missing or unreadable so we
+# do not continue into destructive GitHub CLI operations with an uninitialized
+# environment.
+if [ ! -r "$gh_token_env_path" ]; then
+  echo "Error: GitHub token env file is missing or unreadable: $gh_token_env_path" >&2
+  exit 1
+fi
+
+source "$gh_token_env_path"
 
 close_pr() {
   local repo=$1
