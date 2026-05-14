@@ -840,7 +840,10 @@ update_progress_if_needed() {
     fi
 
     local last_time
-    eval "last_time=\${$last_update_var:-0}"
+    # SECURITY: Use Bash indirect expansion instead of eval to avoid reparsing
+    # untrusted input as shell code. The validated variable name is used only as
+    # a parameter reference here, with 0 as the default for unset or empty values.
+    last_time="${!last_update_var:-0}"
     [[ "$last_time" =~ ^[0-9]+$ ]] || last_time=0
 
     # Check if enough time has elapsed
