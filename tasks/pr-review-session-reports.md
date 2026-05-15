@@ -578,14 +578,14 @@ See [`tasks/pr-review-2026-04-25.md`](pr-review-2026-04-25.md) for per-repo disp
 
 ### Metrics
 
-| Metric | Count |
-| --- | ---: |
-| PRs inventoried (in-scope at start) | 55 |
-| PRs merged (squash) | 8 |
-| PRs fixed then merged | 0 |
-| PRs closed (zero-diff) | 3 |
-| PRs closed (duplicate / superseded) | 2 |
-| Escalation comments posted (trust boundary) | 3 |
+| Metric                                      | Count |
+| ------------------------------------------- | ----: |
+| PRs inventoried (in-scope at start)         |    55 |
+| PRs merged (squash)                         |     8 |
+| PRs fixed then merged                       |     0 |
+| PRs closed (zero-diff)                      |     3 |
+| PRs closed (duplicate / superseded)         |     2 |
+| Escalation comments posted (trust boundary) |     3 |
 
 ### Merged (squash)
 
@@ -685,22 +685,22 @@ All performed in `/tmp/salvage-2026-05-10/pc/`:
 
 All open PRs are intentionally open and waiting on human review:
 
-| Repo                                              |  PR | State    | Reason                                                   |
-| ------------------------------------------------- | --: | -------- | -------------------------------------------------------- |
-| `abhimehro/personal-config`                       | 916 | DRAFT    | Salvage of #911 (this run)                               |
-| `abhimehro/personal-config`                       | 917 | DRAFT    | Salvage of #899 (this run)                               |
-| `abhimehro/personal-config`                       | 918 | DRAFT    | Salvage of #856 (this run)                               |
-| `abhimehro/personal-config`                       | 901 | DIRTY    | Trust-boundary (copilot setup.sh) — escalated            |
-| `abhimehro/personal-config`                       | 893 | BLOCKED  | Trust-boundary (security summary.yml) — escalated        |
-| `abhimehro/ctrld-sync`                            | 769 | CLEAN    | Trust-boundary (security summary.yml) — escalated        |
-| `abhimehro/email-security-pipeline`               | 778 | CLEAN    | Trust-boundary (Palette suspicious URLs) — escalated     |
-| `abhimehro/email-security-pipeline`               | 780 | CLEAN    | Trust-boundary (security summary.yml) — escalated        |
-| `abhimehro/email-security-pipeline`               | 791 | DIRTY    | Trust-boundary (Palette CLI accessibility) — escalated   |
-| `abhimehro/email-security-pipeline`               | 793 | DIRTY    | Trust-boundary (Bolt time.monotonic for TTLCache)        |
-| `abhimehro/email-security-pipeline`               | 796 | UNSTABLE | Trust-boundary (Palette NO_COLOR) + red gate — escalated |
-| `abhimehro/Seatek_Analysis`                       |   — | —        | No open in-scope PRs                                     |
+| Repo                                                 |  PR | State    | Reason                                                   |
+| ---------------------------------------------------- | --: | -------- | -------------------------------------------------------- |
+| `abhimehro/personal-config`                          | 916 | DRAFT    | Salvage of #911 (this run)                               |
+| `abhimehro/personal-config`                          | 917 | DRAFT    | Salvage of #899 (this run)                               |
+| `abhimehro/personal-config`                          | 918 | DRAFT    | Salvage of #856 (this run)                               |
+| `abhimehro/personal-config`                          | 901 | DIRTY    | Trust-boundary (copilot setup.sh) — escalated            |
+| `abhimehro/personal-config`                          | 893 | BLOCKED  | Trust-boundary (security summary.yml) — escalated        |
+| `abhimehro/ctrld-sync`                               | 769 | CLEAN    | Trust-boundary (security summary.yml) — escalated        |
+| `abhimehro/email-security-pipeline`                  | 778 | CLEAN    | Trust-boundary (Palette suspicious URLs) — escalated     |
+| `abhimehro/email-security-pipeline`                  | 780 | CLEAN    | Trust-boundary (security summary.yml) — escalated        |
+| `abhimehro/email-security-pipeline`                  | 791 | DIRTY    | Trust-boundary (Palette CLI accessibility) — escalated   |
+| `abhimehro/email-security-pipeline`                  | 793 | DIRTY    | Trust-boundary (Bolt time.monotonic for TTLCache)        |
+| `abhimehro/email-security-pipeline`                  | 796 | UNSTABLE | Trust-boundary (Palette NO_COLOR) + red gate — escalated |
+| `abhimehro/Seatek_Analysis`                          |   — | —        | No open in-scope PRs                                     |
 | `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project` |   — | —        | No open in-scope PRs                                     |
-| `abhimehro/series_correction_project_updated`     |   — | —        | No open in-scope PRs                                     |
+| `abhimehro/series_correction_project_updated`        |   — | —        | No open in-scope PRs                                     |
 
 **Status changes worth noting:** `ctrld-sync#769`, `email-security-pipeline#778`, and `email-security-pipeline#780` (all security/`summary.yml`-injection fixes that previous sessions escalated as DIRTY/CONFLICTING) have flipped to **CLEAN** since the last orchestrate run. Recommend a single human review pass over those three before merging — the security framing is correct (do not auto-merge), but the conflict that previously gated them is gone.
 
@@ -720,3 +720,8 @@ All open PRs are intentionally open and waiting on human review:
 - **0dd** — Identical twin PRs
 - **0bb** — Never bypass red gates on security repos
 - **0df** — Salvage agents must clone to /tmp; never working-tree manipulation in active workspace (followed throughout)
+
+## 2026-05-15 Run
+
+- **Summary:** Merged 18, closed 7, failed 4.
+- **Details:** See `tasks/pr-triage.md` and `tasks/pr-review-2026-05-14.md` for full execution log.
