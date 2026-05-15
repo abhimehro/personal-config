@@ -17,10 +17,45 @@ echo
 # Determine mode
 MODE="${1:-auto}"
 
+# Accessible Spinner
+spinner_wait() {
+	local duration=$1
+	local msg="${2:-Working}"
+
+	if [[ -t 1 && -z ${CI-} ]]; then
+		local i=1
+		local sp="/-\|"
+		local iterations=$((duration * 10))
+		local c=0
+
+		[ -t 1 ] && tput civis 2>/dev/null || true
+
+		local old_int_trap old_term_trap
+		old_int_trap=$(trap -p INT)
+		trap '[ -t 1 ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; eval "${old_int_trap:-trap - INT}"; kill -INT "$$"' INT
+		old_term_trap=$(trap -p TERM)
+		trap '[ -t 1 ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; eval "${old_term_trap:-trap - TERM}"; kill -TERM "$$"' TERM
+
+		while [[ $c -lt $iterations ]]; do
+			printf "\r   %s [%c]" "$msg" "${sp:i++%${#sp}:1}"
+			sleep 0.1
+			c=$((c + 1))
+		done
+		printf "\r\033[K"
+
+		[ -t 1 ] && tput cnorm 2>/dev/null || true
+		eval "${old_int_trap:-trap - INT}"
+		eval "${old_term_trap:-trap - TERM}"
+	else
+		echo "   $msg (waiting ${duration}s)..."
+		sleep "$duration"
+	fi
+}
+
 # Kill any existing servers
 echo "🧹 Cleaning up existing servers..."
 pkill -f "rclone serve" 2>/dev/null || true
-sleep 2
+spinner_wait 2 "🧹 Waiting for cleanup..."
 
 # Network discovery
 echo "🔍 Network Discovery:"
@@ -134,7 +169,7 @@ nohup rclone serve webdav "media:" \
 
 SERVER_PID=$!
 echo "   PID: $SERVER_PID"
-sleep 5
+spinner_wait 5 "⏳ Waiting for server to initialize..."
 
 # Validation
 if ps -p $SERVER_PID >/dev/null; then
