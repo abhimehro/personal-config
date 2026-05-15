@@ -145,3 +145,7 @@
 ## 2026-05-24 - [Avoid re.match and split overhead for simple parsing]
 **Learning:** Using `re.match` for simple prefix string extractions (like `## repo/name`) is up to ~3x slower than `str.startswith()` combined with list slicing. Similarly, breaking strings on a single character using `str.split("=", 1)` or extracting suffix/prefix with `split("/")[-1]` introduces unnecessary list allocation overhead. The `str.partition()` and `str.rpartition()` methods are implemented in C and provide ~30-40% faster string splitting without allocating new lists.
 **Action:** For simple string prefix extractions, prefer `startswith` + slicing over regular expressions. When splitting a string on a single separator, use `partition` or `rpartition` instead of `split`.
+## 2026-05-14 - [Optimize N+1 API Calls with ThreadPoolExecutor]
+
+**Learning:** Making independent network API requests sequentially inside a loop creates an N+1 performance bottleneck. By utilizing Python's `concurrent.futures.ThreadPoolExecutor`, these independent IO-bound tasks can be executed concurrently, achieving significant speedups (e.g., ~8.9x reduction in execution time for 100ms latency simulated API requests).
+**Action:** Identify loops executing sequential independent network or IO-bound operations and refactor them using `concurrent.futures.ThreadPoolExecutor` to execute the operations in parallel. Ensure shared state (like appending to a dictionary or list) is handled safely outside the parallel execution or by using thread-safe data structures.
