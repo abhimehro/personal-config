@@ -18,8 +18,15 @@ The current workflow files in this repo use the `personal-config` slot from the 
 | `ctrld-sync`              | `03:17 UTC`      | `04:11 UTC` Sunday | Leaves a buffer after the live `sync.yml` run at `02:00 UTC`, avoids top-of-hour congestion, and keeps production-sensitive automation isolated. |
 | `personal-config`         | `08:23 UTC`      | `09:11 UTC` Sunday | Mid-morning UTC is typically quieter than top-of-hour windows, and the odd-minute offset avoids bunching with common shared cron defaults.       |
 | `email-security-pipeline` | `12:41 UTC`      | `13:29 UTC` Sunday | Keeps the third repo well separated from the other two while still landing during a same-day review window.                                      |
+| `series_correction_project_updated` | `10:00 UTC` | Not scheduled here | Included in the Jules Daily QA matrix for Seatek sensor correction review. |
+| `Hydrograph_Versus_Seatek_Sensors_Project` | `10:00 UTC` | Not scheduled here | Included in the Jules Daily QA matrix for hydrograph/Seatek analysis review. |
+| `Seatek_Analysis` | `10:00 UTC` | Not scheduled here | Included in the Jules Daily QA matrix for R-tier Seatek analysis review. |
 
-Future rollouts to the other repos should reuse the table above so the three repositories never start their daily or weekly automation at the same moment.
+Future rollouts to the other repos should reuse the table above so repositories
+never start their daily or weekly automation at the same moment. The Jules Daily
+QA workflow intentionally fans out from `personal-config` because it only opens
+per-repo QA prompt issues and does not run the heavier consolidated automation
+jobs in the target repositories.
 
 ## Guardrails
 
