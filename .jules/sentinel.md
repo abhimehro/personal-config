@@ -252,3 +252,8 @@
 **Vulnerability:** Terminal Injection vulnerability where malicious input containing escape characters could manipulate the terminal display or execute arbitrary commands depending on the terminal emulator. Found in `setup.sh` logging functions.
 **Learning:** `echo -e` interpolates escape characters in variables, which is dangerous when outputting untrusted input.
 **Prevention:** Use `printf "%b[INFO]%b %s\n"` to strictly separate color formatting (hardcoded via `%b`) from user data (passed via `%s`), preventing execution or interpretation of escape characters within dynamic input.
+
+## 2025-05-15 - AppleScript Command Injection in Bash Utilities
+**Vulnerability:** The `maintenance/bin/smart_notifier.sh` script invoked AppleScript using `osascript -e "$applescript"`, where `$applescript` was constructed using inline string interpolation of user inputs. Even with basic backslash and quote escaping, this pattern is highly vulnerable to AppleScript injection (Command Injection/Code Execution).
+**Learning:** Manual escaping of quotes and backslashes in Bash is fragile and often insufficient against complex injection payloads, especially in a secondary parser like `osascript`. The core issue was treating untrusted data as executable AppleScript code.
+**Prevention:** Avoid inline string interpolation when executing `osascript`. Always use the `on run argv` handler to securely pass variables as isolated positional arguments (`item 1 of argv`). For example: `osascript -e 'on run argv' -e '...' -e 'end run' "$var"`.
