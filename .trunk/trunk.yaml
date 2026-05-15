@@ -27,6 +27,11 @@ lint:
         - tasks/pr-review-2026-05-14.md
         - tasks/pr-triage.md
         - tasks/pr-review-session-reports.md
+        - tasks/pr-inventory.md
+    - linters: [prettier]
+      paths:
+        # Generated wide markdown tables; Prettier prompts interactively / churns.
+        - tasks/pr-inventory.md
   enabled:
     - trufflehog-git@3.95.2
     - grype@0.111.1
