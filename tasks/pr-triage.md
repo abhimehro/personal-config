@@ -328,3 +328,59 @@ gh pr close 20 --repo abhimehro/series_correction_project_updated --comment 'Dup
 gh pr close 18 --repo abhimehro/series_correction_project_updated --comment 'Duplicate of #23'
 gh pr close 17 --repo abhimehro/series_correction_project_updated --comment 'Duplicate of #23'
 ```
+
+## Planned mutations (salvage anchors — pending human sign-off)
+
+> **Blueprint only — not executed.** Resolve merge conflicts out-of-tree first (`/tmp/salvage-*` clones).  
+> `scripts/run_pr_triage_queue.py` parses the **first** `## Planned mutations` section (executed block above). To dry-run **this** block later, copy it to a scratch file or extend the runner with `--section salvage`.  
+> **Policy:** Never force-push. Update PR head branches with regular `git push` only after local rebase/merge succeeds. **Seatek #182** is `[HIGH]` security — require explicit human review before merge.
+
+### Preconditions (all four anchors)
+
+| Repo                                          | PR                                                                            | Head branch                                | Merge state (2026-05-16)                  |
+| --------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------ | ----------------------------------------- |
+| `abhimehro/personal-config`                   | [#950](https://github.com/abhimehro/personal-config/pull/950)                 | `test-load-config-5171976702519490849`     | CONFLICTING / DIRTY                       |
+| `abhimehro/ctrld-sync`                        | [#806](https://github.com/abhimehro/ctrld-sync/pull/806)                      | `jules-6914923103692939106-4124d57a`       | CONFLICTING / DIRTY                       |
+| `abhimehro/Seatek_Analysis`                   | [#182](https://github.com/abhimehro/Seatek_Analysis/pull/182)                 | `jules-17742468271774910214-6a013395`      | CONFLICTING / DIRTY — **security review** |
+| `abhimehro/series_correction_project_updated` | [#19](https://github.com/abhimehro/series_correction_project_updated/pull/19) | `jules-daily-qa-fixes-4370003782013820376` | CONFLICTING / DIRTY                       |
+
+**Out-of-tree workflow (per repo):**
+
+```bash
+# Example — personal-config #950 (repeat pattern for other repos / PR numbers)
+export SALVAGE=/tmp/salvage-personal-config-20260516
+rm -rf "$SALVAGE"
+git clone --depth=1 https://github.com/abhimehro/personal-config.git "$SALVAGE"
+cd "$SALVAGE"
+git fetch origin main && git checkout main && git pull --ff-only origin main
+git fetch origin pull/950/head:salvage-pr-950
+git checkout salvage-pr-950
+git rebase origin/main   # resolve conflicts; run repo tests
+git push origin salvage-pr-950:test-load-config-5171976702519490849   # no --force
+gh pr checks 950 --repo abhimehro/personal-config
+```
+
+### abhimehro/personal-config — after #950 is mergeable + CI green
+
+```bash
+gh pr merge 950 --repo abhimehro/personal-config --squash
+```
+
+### abhimehro/ctrld-sync — after #806 is mergeable + CI green
+
+```bash
+gh pr merge 806 --repo abhimehro/ctrld-sync --squash
+```
+
+### abhimehro/Seatek_Analysis — after #182 security review + CI green
+
+```bash
+# Human sign-off required — [HIGH] path-traversal fix
+gh pr merge 182 --repo abhimehro/Seatek_Analysis --squash
+```
+
+### abhimehro/series_correction_project_updated — after #19 is mergeable + CI green
+
+```bash
+gh pr merge 19 --repo abhimehro/series_correction_project_updated --squash
+```
