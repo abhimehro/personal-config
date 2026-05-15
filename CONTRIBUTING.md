@@ -78,7 +78,8 @@ bash tests/test_lib_dns_utils.sh
 ### Python tests
 
 ```bash
-# All Python tests (stdlib only — no pip install needed)
+# All Python tests (mostly stdlib; install pyyaml for the full suite)
+#   pip install pyyaml
 make test-python
 
 # All tests (shell + Python)

@@ -1,57 +1,76 @@
+import subprocess
 import sys
 import types
 import unittest
-from unittest.mock import patch, MagicMock
 from pathlib import Path
-import subprocess
+from unittest.mock import MagicMock, patch
 
-# Add scripts directory to path to import the module
 scripts_dir = Path(__file__).parent.parent / ".github" / "scripts"
 sys.path.append(str(scripts_dir))
 
-# Stub the `yaml` module so this test can run with stdlib only (no pip deps),
-# matching the repo convention documented in AGENTS.md / CONTRIBUTING.md.
-# `repository_automation_common` imports `yaml` at module load, but the
-# functions under test (`run_checked`, `run_process`) do not use YAML at all.
 if "yaml" not in sys.modules:
     _yaml = types.ModuleType("yaml")
     _yaml.safe_load = lambda *_a, **_kw: {}
     _yaml.safe_dump = lambda *_a, **_kw: ""
     sys.modules["yaml"] = _yaml
 
-import repository_automation_common
-from repository_automation_common import run_checked
+import repository_automation_common  # noqa: E402
+from repository_automation_common import load_config, run_checked  # noqa: E402
+
+
+class TestLoadConfig(unittest.TestCase):
+    @patch("repository_automation_common.yaml.safe_load")
+    @patch("repository_automation_common.CONFIG_PATH")
+    def test_load_config_valid_with_automation(self, mock_path, mock_safe_load):
+        mock_path.read_text.return_value = "automation:\n  key: value\n"
+        mock_safe_load.return_value = {"automation": {"key": "value"}}
+        self.assertEqual(load_config(), {"key": "value"})
+
+    @patch("repository_automation_common.yaml.safe_load")
+    @patch("repository_automation_common.CONFIG_PATH")
+    def test_load_config_valid_without_automation(self, mock_path, mock_safe_load):
+        mock_path.read_text.return_value = "other:\n  key: value\n"
+        mock_safe_load.return_value = {"other": {"key": "value"}}
+        self.assertEqual(load_config(), {})
+
+    @patch("repository_automation_common.yaml.safe_load")
+    @patch("repository_automation_common.CONFIG_PATH")
+    def test_load_config_empty(self, mock_path, mock_safe_load):
+        mock_path.read_text.return_value = ""
+        mock_safe_load.return_value = None
+        self.assertEqual(load_config(), {})
+
+    @patch("repository_automation_common.yaml.safe_load")
+    @patch("repository_automation_common.CONFIG_PATH")
+    def test_load_config_invalid_yaml(self, mock_path, mock_safe_load):
+        mock_path.read_text.return_value = "invalid: yaml: :"
+        mock_safe_load.side_effect = ValueError("bad yaml")
+        with self.assertRaises(ValueError):
+            load_config()
+
 
 class TestRunChecked(unittest.TestCase):
     @patch("repository_automation_common.run_process")
     def test_run_checked_calls_run_process_with_check_true(self, mock_run_process):
-        # Setup
         mock_result = MagicMock(spec=subprocess.CompletedProcess)
         mock_run_process.return_value = mock_result
         command = ["echo", "hello"]
 
-        # Execution
         result = run_checked(command)
 
-        # Assertion
         mock_run_process.assert_called_once_with(command, check=True)
         self.assertEqual(result, mock_result)
 
     @patch("repository_automation_common.subprocess.run")
     def test_run_checked_integration_with_subprocess(self, mock_subprocess_run):
-        # We can also mock subprocess.run to verify the entire chain
         mock_result = MagicMock(spec=subprocess.CompletedProcess)
         mock_subprocess_run.return_value = mock_result
         command = ["ls", "-l"]
 
-        # Capture expected env before execution to avoid spurious failures if
-        # os.environ is mutated between execution and assertion.
         expected_env = repository_automation_common.command_env()
 
-        # Execution
         result = run_checked(command)
 
-        # Assertion
         mock_subprocess_run.assert_called_once_with(
             command,
             cwd=repository_automation_common.ROOT,
@@ -63,6 +82,7 @@ class TestRunChecked(unittest.TestCase):
             env=expected_env,
         )
         self.assertEqual(result, mock_result)
+
 
 if __name__ == "__main__":
     unittest.main()
