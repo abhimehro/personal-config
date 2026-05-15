@@ -196,10 +196,6 @@ coverage/
 !*.md
 !*.txt
 
-# BUT exclude terminal history files (they may contain secrets)
-.cursor/projects/**/terminals/*.txt
-.cursor/**/terminals/*.txt
-
 # Allow scripts (but not sensitive ones)
 !scripts/
 !*.sh
@@ -274,8 +270,6 @@ media-streaming/backup/rclone.conf.backup
 
 # Secrets
 controld-system/profiles.env
-".cursor"
-".cursor"
 
 .gemini/
 gha-creds-*.json
@@ -288,3 +282,9 @@ GH_TOKEN.env
 # Ephemeral merge-conflict resolution scripts (local only)
 patch_*.sh
 resolve_*.sh
+
+# =============================================================================
+# Agent / AI workspace exports (RepoPrompt, Oracle, etc.)
+# Placed after broad !*.md so this directory stays ignored and cannot re-enter via negation.
+# =============================================================================
+prompt-exports/
