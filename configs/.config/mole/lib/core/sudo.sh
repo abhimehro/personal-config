@@ -95,24 +95,34 @@ request_sudo_access() {
         # Clear sudo cache before attempting authentication
         sudo -k 2> /dev/null
 
-        # Display native macOS password dialog
-        local password
-        password=$(osascript -e "display dialog \"$prompt_msg\" default answer \"\" with title \"Mole\" with icon caution with hidden answer" -e 'text returned of result' 2> /dev/null)
+        # Display native macOS password dialog using SUDO_ASKPASS
+        # This prevents the password from being stored in a bash variable
+        local askpass_script
+        askpass_script=$(mktemp)
+        chmod 0700 "$askpass_script"
 
-        if [[ -z "$password" ]]; then
-            # User cancelled the dialog
-            unset password
-            return 1
+        export MOLE_SUDO_PROMPT="$prompt_msg"
+
+        cat << 'ASKPASS_EOF' > "$askpass_script"
+#!/bin/bash
+osascript -e "display dialog \"${MOLE_SUDO_PROMPT:-Admin access required}\" default answer \"\" with title \"Mole\" with icon caution with hidden answer" -e 'text returned of result' 2> /dev/null
+ASKPASS_EOF
+
+        local sudo_success=false
+        # SUDO_ASKPASS is read by sudo -A
+        if SUDO_ASKPASS="$askpass_script" sudo -A -p "" -v > /dev/null 2>&1; then
+            sudo_success=true
         fi
 
-        # Attempt sudo authentication with the provided password
-        if printf '%s\n' "$password" | sudo -S -p "" -v > /dev/null 2>&1; then
-            unset password
+        # Clean up securely
+        rm -f "$askpass_script"
+        unset MOLE_SUDO_PROMPT
+
+        if [[ "$sudo_success" == true ]]; then
             return 0
         fi
 
-        # Password was incorrect
-        unset password
+        # User cancelled or password was incorrect
         return 1
     fi
 
