@@ -124,3 +124,7 @@
 
 **Learning:** Using `read -n 1` for confirmation prompts (e.g., `read -p "Continue? (y/n): " -n 1`) allows users to accidentally trigger actions by bumping a key. Additionally, if a user types "yes" instead of "y", the "es" and the Enter keystroke are left in the stdin buffer, potentially executing unintended commands after the script finishes.
 **Action:** Remove the `-n 1` flag from `read` prompts to require an explicit Enter press, acting as a safety confirmation and preventing buffer stuffing. When doing so, also remove any immediately following `echo` command that was previously used to print the missing newline.
+
+## 2024-05-19 - Accessible Spinners for Wait States
+**Learning:** Hardcoded sleeps without visual feedback create uncertainty; users don't know if a script is frozen or just taking time.
+**Action:** Replace arbitrary `sleep` commands with accessible spinners (e.g., `spinner_wait` function) to provide clear visual feedback during wait periods, ensuring they safely handle interrupts and only render in interactive terminals (e.g., checking `[ -t 1 ] && -z ${CI-}`) to avoid polluting logs.
