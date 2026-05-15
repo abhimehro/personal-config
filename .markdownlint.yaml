@@ -1,0 +1,3 @@
+# Prettier-friendly markdownlint (same as `.trunk/configs/.markdownlint.yaml`).
+# Inlined so Trunk's pre-commit sandbox (partial tree) still disables MD013 on long prose.
+extends: markdownlint/style/prettier
