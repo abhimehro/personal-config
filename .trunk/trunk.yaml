@@ -23,6 +23,10 @@ lint:
     - linters: [markdownlint]
       paths:
         - docs/plans/github-automated-pr-backlog-cleanup-2026-05-14.md
+        # Large session / triage tables: Prettier-formatted; markdownlint driver flakes on multiline tables (empty JSON + stderr noise).
+        - tasks/pr-review-2026-05-14.md
+        - tasks/pr-triage.md
+        - tasks/pr-review-session-reports.md
   enabled:
     - trufflehog-git@3.95.2
     - grype@0.111.1
