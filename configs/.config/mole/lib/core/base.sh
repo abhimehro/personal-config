@@ -828,13 +828,20 @@ update_progress_if_needed() {
     local last_update_var="$3" # Name of variable holding last update time
     local interval="${4:-2}"   # Default: update every 2 seconds
 
+    # SECURITY: [CWE-78] Validate variable name to prevent command injection
+    if [[ ! "$last_update_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        echo "Error: Invalid variable name '$last_update_var'" >&2
+        return 1
+    fi
+
     # Get current time
     local current_time
     current_time=$(get_epoch_seconds)
 
     # Get last update time from variable
     local last_time
-    eval "last_time=\${$last_update_var:-0}"
+    local tmp_val="${!last_update_var:-}"
+    last_time="${tmp_val:-0}"
     [[ "$last_time" =~ ^[0-9]+$ ]] || last_time=0
 
     # Check if enough time has elapsed
@@ -844,7 +851,7 @@ update_progress_if_needed() {
         start_section_spinner "Scanning items... $completed/$total"
 
         # Update the last_update_time variable
-        eval "$last_update_var=$current_time"
+        printf -v "$last_update_var" "%s" "$current_time"
         return 0
     fi
 
