@@ -149,3 +149,7 @@
 
 **Learning:** Making independent network API requests sequentially inside a loop creates an N+1 performance bottleneck. By utilizing Python's `concurrent.futures.ThreadPoolExecutor`, these independent IO-bound tasks can be executed concurrently, achieving significant speedups (e.g., ~8.9x reduction in execution time for 100ms latency simulated API requests).
 **Action:** Identify loops executing sequential independent network or IO-bound operations and refactor them using `concurrent.futures.ThreadPoolExecutor` to execute the operations in parallel. Ensure shared state (like appending to a dictionary or list) is handled safely outside the parallel execution or by using thread-safe data structures.
+
+## 2026-06-25 - [Parallelize N+1 Subprocess Read API Calls]
+**Learning:** For GitHub automation scripts in this repository, read-only `gh` CLI operations (e.g., `gh pr view`) executed sequentially inside a loop create severe N+1 API bottlenecks. By offloading these subprocess executions to a `concurrent.futures.ThreadPoolExecutor` using `.map()`, we can parallelize the network I/O while strictly preserving the priority order of the results without affecting memory footprint significantly.
+**Action:** Identify loops executing sequential, independent read-only CLI or network operations and refactor them to use `ThreadPoolExecutor.map()`. Note that state-mutating operations (e.g., `gh pr merge`) must remain sequential to prevent race conditions.

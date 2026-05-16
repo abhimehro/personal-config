@@ -1,5 +1,6 @@
 import json
 import os
+import concurrent.futures
 import subprocess
 from functools import lru_cache
 
@@ -83,7 +84,7 @@ categorized = {
     "PERFORMANCE/REFACTOR/UI/FEATURE": [],
 }
 
-for pr in ready_prs:
+def _process_pr(pr):
     # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
     repo, _, pr_id = pr.partition("#")
     info = run_gh(
@@ -99,29 +100,42 @@ for pr in ready_prs:
         ]
     )
     if not info:
-        continue
+        return None
 
     # Exclude unstable/dirty
-    if info.get("mergeStateStatus") in ["DIRTY", "CONFLICTING"]:
-        print(f"Skipping {pr} because it is {info.get('mergeStateStatus')}")
-        continue
+    status = info.get("mergeStateStatus")
+    if status in ["DIRTY", "CONFLICTING"]:
+        return pr, "SKIP", status
 
-    title = info.get("title", "").lower()
+    title = info.get("title", "")
+    title_lower = title.lower()
     cat = "PERFORMANCE/REFACTOR/UI/FEATURE"
-    if "sentinel" in title or "security" in title or "cve" in title or "xxe" in title:
+    if "sentinel" in title_lower or "security" in title_lower or "cve" in title_lower or "xxe" in title_lower:
         cat = "SECURITY"
-    elif "dependabot" in title or "renovate" in title:
+    elif "dependabot" in title_lower or "renovate" in title_lower:
         cat = "DEPENDENCY"
     elif (
-        "chore" in title
-        or "ci" in title
-        or "automation" in title
-        or "action" in title
-        or "trunk" in title
+        "chore" in title_lower
+        or "ci" in title_lower
+        or "automation" in title_lower
+        or "action" in title_lower
+        or "trunk" in title_lower
     ):
         cat = "CI/INFRA"
 
-    categorized[cat].append((pr, info.get("title")))
+    return pr, cat, title
+
+# ⚡ Bolt Optimization: Execute independent network API calls concurrently to avoid N+1 bottleneck
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    # Use map to preserve the original PR priority order
+    for result in executor.map(_process_pr, ready_prs):
+        if not result:
+            continue
+        pr, cat, title = result
+        if cat == "SKIP":
+            print(f"Skipping {pr} because it is {title}")
+        else:
+            categorized[cat].append((pr, title))
 
 for cat, items in categorized.items():
     print(f"\n{cat}:")
