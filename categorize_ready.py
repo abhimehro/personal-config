@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import concurrent.futures
 from functools import lru_cache
 
 
@@ -83,7 +84,7 @@ categorized = {
     "PERFORMANCE/REFACTOR/UI/FEATURE": [],
 }
 
-for pr in ready_prs:
+def _process_pr(pr):
     # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
     repo, _, pr_id = pr.partition("#")
     info = run_gh(
@@ -98,6 +99,13 @@ for pr in ready_prs:
             "title,mergeStateStatus",
         ]
     )
+    return pr, info
+
+# ⚡ Bolt Optimization: Parallelize independent gh CLI network calls to solve N+1 bottleneck
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    results = list(executor.map(_process_pr, ready_prs))
+
+for pr, info in results:
     if not info:
         continue
 
