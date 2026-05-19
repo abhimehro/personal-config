@@ -1,3 +1,13 @@
+# Security Fix: Cleartext Password Logging in infuse-media-server.py — 2026-05-14
+
+- [x] Replace auto-generated password printing with `getpass.getpass()` interactive prompt in `media-streaming/archive/scripts/infuse-media-server.py`.
+- [x] Preserve non-TTY fail-fast behavior (require `--password` or `AUTH_PASS`).
+- [x] Refactor `setup_authentication` into `_get_or_generate_user` and `_get_or_prompt_password` to reduce cognitive complexity.
+- [x] Correct stale "Auto-generating a password" error message in non-TTY branch.
+- [x] Handle `EOFError`/`KeyboardInterrupt` from `getpass.getpass()` with a graceful exit.
+
+---
+
 # Backlog Cleanup Orchestration — 2026-05-09
 
 - [x] Interview scope: Phase 1 review-and-merge enabled; Phase 2 light salvage triage only.
@@ -125,3 +135,5 @@ _(Blocked by Section 1: Proceed only after fetching actionable log data)_
 - **Supply-Chain Hardening:** Pinning `release-drafter` to an immutable commit SHA prevents injection via compromised mutable tags.
 - **Least-Privilege Authorization:** The `release-drafter.yml` workflow will be explicitly constrained to `permissions: { contents: write }` (no pull-request write vectors).
 - **Assumptions:** The `run-pr-review-session.sh` enforces hard boundaries. No autonomous merges of code failing _Security Gate 2_ (as defined in `docs/automated-pr-review-agent.md`) will be permitted. _Zero-diff / superseded_ heuristic rules (also defined in `docs/automated-pr-review-agent.md`) will govern closure rationale.
+
+
