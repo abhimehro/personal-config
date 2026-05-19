@@ -8,6 +8,7 @@ REVIEW_DIR="$HOME/CloudMedia/upload_stage"
 LOG_FILE="$HOME/Library/Logs/media-rename.log"
 LOCK_FILE="$HOME/.media_upload.lock"
 CLOUD_REMOTE="media"
+MOUNT_DIR="$HOME/CloudMedia/mounted"
 MOVIE_DEST="Movies"
 TV_DEST="TV Shows"
 FILEBOT_MOVIE_DB="TheMovieDB"
@@ -184,10 +185,26 @@ process_file() {
 		fi
 		final_dir="$REVIEW_DIR/$dest_subfolder"
 		mkdir -p "$final_dir"
-		final_path="$final_dir/${renamed_file##*/}"
+		
+		local final_name="${renamed_file##*/}"
+		local base_name="${final_name%.*}"
+		local ext="${final_name##*.}"
+		local counter=1
+		
+		# Mimic FileBot's conflict resolution by checking the live mount and upload queue
+		while [[ -f "$MOUNT_DIR/$dest_subfolder/$final_name" || -f "$final_dir/$final_name" ]]; do
+			log "Duplicate detected for $final_name (mount or upload queue). Appending index."
+			final_name="${base_name} (${counter}).${ext}"
+			((counter++))
+		done
+		
+		final_path="$final_dir/$final_name"
 		mv "$renamed_file" "$final_path"
 		rmdir "$temp_output" 2>/dev/null || true
 		target_remote="$CLOUD_REMOTE:$dest_subfolder"
+		
+		# Since we auto-resolved the duplicate above, it's technically no longer a duplicate on the remote.
+		# But we can still run a quick check just in case the mount is out of sync.
 		duplicate=false
 		if check_remote_duplicate "$target_remote" "${final_path##*/}"; then
 			duplicate=true
@@ -210,26 +227,39 @@ process_file() {
 	fi
 }
 process_staging() {
-	find "$PROCESSED_DIR" -maxdepth 1 -type f ! -name ".*" -print0 | while IFS= read -r -d "" file; do
-		log "Moving from processed to staging: ${file##*/}"
-		mv "$file" "$STAGING_DIR/"
+	# 1. Process files that are fully written in STAGING_DIR
+	find "$STAGING_DIR" -maxdepth 1 -type f ! -name ".*" -print0 | while IFS= read -r -d "" file; do
+		# Check if file is currently open by any process (e.g., Permute)
+		if ! lsof "$file" >/dev/null 2>&1; then
+			# SECURITY: Re-check existence because the file may have been moved or deleted
+			# between find and lsof; treating every lsof failure as "safe to move" is racy.
+			if [[ -f "$file" ]]; then
+				log "File completely written, moving to processed: ${file##*/}"
+				if ! mv "$file" "$PROCESSED_DIR/"; then
+					# NOTE: A transient race should not terminate the watchdog loop under set -e.
+					log "Failed to move file to processed, skipping: ${file##*/}"
+				fi
+			else
+				log "File disappeared before move, skipping: ${file##*/}"
+			fi
+		else
+			log "File still being written by Permute, waiting: ${file##*/}"
+		fi
 	done
-	find "$STAGING_DIR" -maxdepth 1 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.m4v" -o -name "*.avi" -o -name "*.mov" \) -print0 | while IFS= read -r -d "" file; do process_file "$file"; done
+
+	# 2. Run FileBot on files in PROCESSED_DIR
+	find "$PROCESSED_DIR" -maxdepth 1 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.m4v" -o -name "*.avi" -o -name "*.mov" \) -print0 | while IFS= read -r -d "" file; do
+		process_file "$file"
+	done
 }
 watch_mode() {
-	log "Watch mode active ($STAGING_DIR & $PROCESSED_DIR)"
-	if ! command -v fswatch >/dev/null 2>&1; then
-		log "Installing fswatch..."
-		brew install fswatch
-	fi
-	process_staging
-	fswatch -0 --event Created --event MovedTo "$STAGING_DIR" "$PROCESSED_DIR" | while IFS= read -r -d "" file; do if [[ -f $file ]]; then
-		sleep 2
-		if [[ $file == "$PROCESSED_DIR"* ]]; then
-			log "Detected processed file: ${file##*/}"
-			mv "$file" "$STAGING_DIR/"
-		elif [[ $file == "$STAGING_DIR"* ]]; then process_file "$file"; fi
-	fi; done
+	log "Watch mode active (Polling $STAGING_DIR & $PROCESSED_DIR)"
+	# A simple polling loop is much more robust for the 'wait until closed' logic
+	# than fswatch since it naturally checks state every few seconds.
+	while true; do
+		process_staging
+		sleep 10
+	done
 }
 usage() { echo "Usage: rename-media.sh [--watch] [--auto-upload] | --list-pending | --approve-ready [proposal-or-media-file] | <file>"; }
 ensure_dirs
