@@ -285,7 +285,19 @@ check_grep() {
 MOCK_BIN="$TEST_DIR/mock_bin"
 mkdir -p "$MOCK_BIN"
 
-# TODO: add mock binaries here (see patterns above)
+# Mock ping: always succeeds (avoids network dependency in CI)
+cat > "$MOCK_BIN/ping" << 'MOCK'
+#!/bin/bash
+exit 0
+MOCK
+chmod +x "$MOCK_BIN/ping"
+
+# Mock uptime: macOS-style "load averages:" so awk parsing succeeds
+cat > "$MOCK_BIN/uptime" << 'MOCK'
+#!/bin/bash
+echo " 10:00AM  up 1 day,  2:30, 3 users, load averages: 0.50 0.60 0.70"
+MOCK
+chmod +x "$MOCK_BIN/uptime"
 
 echo "=== Testing <name> ==="
 
