@@ -255,3 +255,8 @@
 **Vulnerability:** AppleScript Injection (CWE-74) existed in `configs/.config/mole/lib/core/sudo.sh` where `osascript` was executing a string containing user-controlled variable `${MOLE_SUDO_PROMPT:-Admin access required}`.
 **Learning:** Using inline string interpolation in AppleScript code executed via `osascript` allows an attacker to inject arbitrary AppleScript commands if they control the variable.
 **Prevention:** Use `osascript -e 'on run argv'` and pass dynamic variables safely as command-line arguments (e.g. `(item 1 of argv)`).
+
+## 2026-05-12 - Command Injection Risk via eval in dynamic variable assignment
+**Vulnerability:** Command Injection ([CWE-78](https://cwe.mitre.org/data/definitions/78.html)) risk existed in `configs/.config/mole/lib/core/app_protection.sh`, `configs/.config/mole/lib/core/base.sh`, and `configs/.config/mole/lib/core/log.sh`. Functions used `eval` to assign variables dynamically based on function arguments (e.g. `eval "$varname=$ts"`). If an attacker could control the variable name passed to these functions, they could inject arbitrary bash commands.
+**Learning:** `eval` was used as a shortcut for dynamic variable assignment and variable indirection, missing the understanding that even variable names must be strictly validated if they originate from caller input or could ever be influenced by untrusted data.
+**Prevention:** Always use `printf -v "$varname" "%s" "$value"` for safe dynamic assignment and `${!varname}` for indirect expansion, and strictly validate the variable name using a regex like `^[a-zA-Z_][a-zA-Z0-9_]*$` before use. Do not use indirect expansion on the same line as default variable substitution (e.g., `${!var:-}`) as it causes syntax errors in older bash versions.
