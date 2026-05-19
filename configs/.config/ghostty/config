@@ -1,94 +1,80 @@
-# Ghostty Configuration with chromadrift Ultra-Hypno-Premium Shader
-# Backed up previous config directory to ~/.config/ghostty/config.backup.d
+# ============================================
+# Theme & appearance
+# ============================================
 
-# ═══════════════════════════════════════════════════════════════
-# SHADER CONFIGURATION
-# ═══════════════════════════════════════════════════════════════
-# chromadrift: Digital lifestyle entanglement system
-# Features: 360° gradient rotation, aurora ripples, breathing luminance,
-# temperature drift, and 4-layer dithering system
-# Alternate chromadrift variants you can try:
-#   ~/.config/ghostty/shaders/chromadrift/chromadrift360-ultra-hypno-premium.glsl  # full intensity
-#   ~/.config/ghostty/shaders/chromadrift/mutations/chromadrift360-ultra-hypno-k7.glsl  # refined, darker
-#   ~/.config/ghostty/shaders/chromadrift/mutations/chromadrift360-ultra.glsl  # no hypno dithering
-#   ~/.config/ghostty/shaders/chromadrift/mutations/chromadrift360.glsl  # base gradient only
+theme = Dracula
+background-opacity = 0.96
+background-blur = 35
+window-padding-x = 8
+window-padding-y = 4
+unfocused-split-opacity = 0.90
+split-divider-color = #6272a4
+
+# macOS window integration
+macos-titlebar-style = tabs
+window-colorspace = display-p3
+window-theme = ghostty
+
+# Custom shader
 custom-shader = ~/.config/ghostty/shaders/chromadrift/mutations/chromadrift360-ultra-hypno-k7.glsl
 custom-shader-animation = always
 
-# ═══════════════════════════════════════════════════════════════
-# DRACULA COLOR SCHEME (from your existing config)
-# ═══════════════════════════════════════════════════════════════
-palette = 0=#21222c
-palette = 1=#ff5555
-palette = 2=#50fa7b
-palette = 3=#f1fa8c
-palette = 4=#bd93f9
-palette = 5=#ff79c6
-palette = 6=#8be9fd
-palette = 7=#f8f8f2
-palette = 8=#6272a4
-palette = 9=#ff6e6e
-palette = 10=#69ff94
-palette = 11=#ffffa5
-palette = 12=#d6acff
-palette = 13=#ff92df
-palette = 14=#a4ffff
-palette = 15=#ffffff
+# ============================================
+# Font
+# ============================================
 
-background = 282a36
-foreground = f8f8f2
-cursor-color = f8f8f2
-selection-background = 44475a
-selection-foreground = f8f8f2
+font-family = "Cascadia Code"
+font-size = 15.0
+font-feature = liga, zero
+font-thicken = true
+font-thicken-strength = 100  # Reduced from 200 (aggressive) to 100 (moderate)
+adjust-cell-height = 1
+bold-is-bright = false
 
-# ═══════════════════════════════════════════════════════════════
-# TERMINAL APPEARANCE
-# ═══════════════════════════════════════════════════════════════
-# Font configuration
-font-family = Cascadia Code
-font-size = 12
+# ============================================
+# Cursor
+# ============================================
 
-# Cursor style
 cursor-style = block
-cursor-opacity = 0.7
+cursor-style-blink = true
 
-# Padding around terminal text (allows shader to show behind text)
-window-padding-x = 12
-window-padding-y = 12
+# ============================================
+# Window, tabs, and working directory
+# ============================================
 
-# Window decorations
-window-decoration = true
-
-# ═══════════════════════════════════════════════════════════════
-# TERMINAL BEHAVIOR
-# ═══════════════════════════════════════════════════════════════
-# Shell integration (improves command awareness)
-shell-integration = detect
-shell-integration-features = sudo,title
-
-# Confirm before closing terminal with running processes
+window-save-state = always
+working-directory = inherit
+window-new-tab-position = current
+macos-option-as-alt = left
 confirm-close-surface = true
+mouse-hide-while-typing = true
+resize-overlay = always
+link-url = true
 
-# Copy to clipboard on selection
-copy-on-select = false
+# ============================================
+# Shell integration (fish)
+# ============================================
 
-# Scrollback buffer
-scrollback-limit = 10000000
+shell-integration = fish
+shell-integration-features = cursor,sudo,title
 
-# ═══════════════════════════════════════════════════════════════
-# MACOS SPECIFIC
-# ═══════════════════════════════════════════════════════════════
-macos-titlebar-style = tabs
-macos-option-as-alt = true
+# ============================================
+# Quick Terminal & keybindings
+# ============================================
 
-# ═══════════════════════════════════════════════════════════════
-# KEYBINDINGS (Optional - customize as needed)
-# ═══════════════════════════════════════════════════════════════
-# Create new window: Super+N
-keybind = super+n=new_window
+# Quick Terminal: toggle with Cmd+` (also triggered by F5 via Karabiner)
+# NOTE: cmd+backquote conflicts with macOS default "Cycle Through Windows" - consider remapping
+keybind = global:cmd+backquote=toggle_quick_terminal
+# NOTE: super+s (Cmd+S) may intercept Save commands in other applications - consider remapping
+keybind = global:super+s=toggle_secure_input
+keybind = super+enter=new_split:auto
+keybind = super+shift+left=goto_split:left
+keybind = super+shift+right=goto_split:right
+keybind = super+shift+up=goto_split:up
+keybind = super+shift+down=goto_split:down
 
-# Create new tab: Super+T
-keybind = super+t=new_tab
+# ============================================
+# Scrollback
+# ============================================
 
-# Reload config: Cmd+Shift+, (macOS default)
-# Built-in on macOS; no bind needed
+scrollback-limit = 100000  # Reduced from 50000000 (50M) to 100000 (100K) - 99% reduction

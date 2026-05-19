@@ -173,6 +173,9 @@ coverage/
 .coverage
 
 # =============================================================================
+# Sub-repositories (nested git repos - track via submodules if needed)
+salvage-ctrld-sync/
+
 # EXCEPTIONS - Allow these specific files
 # =============================================================================
 
