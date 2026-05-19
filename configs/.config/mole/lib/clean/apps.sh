@@ -403,7 +403,7 @@ clean_orphaned_app_data() {
                     fi
                 done
             done
-            eval "$_nullglob_state"
+            if [[ "$_nullglob_state" == "shopt -"[su]" "* ]]; then eval "$_nullglob_state"; fi
         fi
     done
     stop_section_spinner
@@ -855,7 +855,7 @@ clean_orphaned_container_stubs() {
         done
     done
 
-    eval "$_ng_state"
+    if [[ "$_ng_state" == "shopt -"[su]" "* ]]; then eval "$_ng_state"; fi
 
     if [[ $removed_count -gt 0 ]]; then
         if [[ "$DRY_RUN" == "true" ]]; then
