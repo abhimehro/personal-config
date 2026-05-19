@@ -27,6 +27,48 @@ log_info() { log_message "INFO" "$@"; }
 log_warn() { log_message "WARN" "$@"; }
 log_error() { log_message "ERROR" "$@"; }
 
+# Accessible Spinner
+spinner_wait() {
+	local duration=$1
+	local msg="${2:-Working}"
+
+	if [[ -t 1 && -z ${CI-} ]]; then
+		local i=1
+		local sp="/-\|"
+		local iterations
+		iterations=$((duration * 10))
+		local c=0
+
+		# Hide cursor gracefully in TTY
+		[ -t 1 ] && tput civis 2>/dev/null || true
+
+		# Save original traps and set temporary ones
+		local old_int_trap
+		old_int_trap=$(trap -p INT)
+		trap '[ -t 1 ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; eval "${old_int_trap:-trap - INT}"; kill -INT "$$"' INT
+
+		local old_term_trap
+		old_term_trap=$(trap -p TERM)
+		trap '[ -t 1 ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; eval "${old_term_trap:-trap - TERM}"; kill -TERM "$$"' TERM
+
+		while [[ $c -lt $iterations ]]; do
+			printf "\r\033[0;34m[%c]\033[0m %s..." "${sp:i++%${#sp}:1}" "$msg"
+			sleep 0.1
+			c=$((c + 1))
+		done
+		printf "\r\033[K" # Clear line
+
+		# Restore cursor and original traps
+		[ -t 1 ] && tput cnorm 2>/dev/null || true
+		eval "${old_int_trap:-trap - INT}"
+		eval "${old_term_trap:-trap - TERM}"
+	else
+		# Fallback for non-TTY environments (CI, screen readers)
+		log_info "$msg (waiting ${duration}s)..."
+		sleep "$duration"
+	fi
+}
+
 # Initialize performance configuration if it doesn't exist
 init_performance_config() {
 	if [[ ! -f $PERF_CONFIG ]]; then
@@ -357,7 +399,7 @@ run_benchmark() {
 	cpu_start=$(date +%s.%3N)
 	yes >/dev/null &
 	local cpu_pid=$!
-	sleep 10
+	spinner_wait 10 "Benchmarking CPU"
 	kill $cpu_pid >/dev/null 2>&1
 	cpu_end=$(date +%s.%3N)
 	cpu_time=$(echo "scale=3; $cpu_end - $cpu_start" | bc -l)
