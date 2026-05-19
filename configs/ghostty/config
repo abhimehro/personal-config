@@ -1,0 +1,75 @@
+# ============================================
+# Theme & appearance
+# ============================================
+
+theme = Dracula
+background-opacity = 0.96
+background-blur = 35
+window-padding-x = 8
+window-padding-y = 4
+unfocused-split-opacity = 0.90
+split-divider-color = #6272a4
+
+# macOS window integration
+macos-titlebar-style = tabs
+window-colorspace = display-p3
+window-theme = ghostty
+
+# ============================================
+# Font
+# ============================================
+
+font-family = \"Cascadia Code\"
+font-size = 15.0
+font-feature = liga, zero
+font-thicken = true
+# Reduced from 200 (aggressive) to 100 (moderate)
+font-thicken-strength = 100
+adjust-cell-height = 1
+bold-is-bright = false
+
+# ============================================
+# Cursor
+# ============================================
+
+cursor-style = block
+cursor-style-blink = true
+
+# ============================================
+# Window, tabs, and working directory
+# ============================================
+
+window-save-state = always
+working-directory = inherit
+window-new-tab-position = current
+macos-option-as-alt = left
+confirm-close-surface = true
+mouse-hide-while-typing = true
+resize-overlay = always
+link-url = true
+
+# ============================================
+# Shell integration (fish)
+# ============================================
+
+shell-integration = fish
+shell-integration-features = cursor,sudo,title
+
+# ============================================
+# Quick Terminal & keybindings
+# ============================================
+
+keybind = global:cmd+backquote=toggle_quick_terminal
+keybind = global:super+s=toggle_secure_input
+keybind = super+enter=new_split:auto
+keybind = super+shift+left=goto_split:left
+keybind = super+shift+right=goto_split:right
+keybind = super+shift+up=goto_split:up
+keybind = super+shift+down=goto_split:down
+
+# ============================================
+# Scrollback
+# ============================================
+
+# Reduced from 50000000 (50M) to 100000 (100K) - 99% reduction
+scrollback-limit = 100000
