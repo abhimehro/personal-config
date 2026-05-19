@@ -56,27 +56,35 @@ triage_md = [
 ]
 
 
+def _find_matching_prs(all_prs, repo, title_keywords):
+    return [
+        p
+        for p in all_prs
+        if p["repo"] == repo
+        and all(kw.lower() in p["title"].lower() for kw in title_keywords)
+    ]
+
+
+def _process_pr_group(matches, repo, rationale, groups):
+    if len(matches) > 1:
+        matches = sorted(matches, key=lambda x: x["number"], reverse=True)
+        keep = matches[0]
+        dups = matches[1:]
+        groups.append(
+            {"repo": repo, "keep": keep, "dups": dups, "rationale": rationale}
+        )
+        for d in dups:
+            d["status_action"] = "CLOSE"
+        keep["status_action"] = "KEEP"
+
+
 def group_prs():
     # manual grouping logic based on patterns
     groups = []
 
     def find_and_group(repo, title_keywords, rationale):
-        matches = [
-            p
-            for p in all_prs
-            if p["repo"] == repo
-            and all(kw.lower() in p["title"].lower() for kw in title_keywords)
-        ]
-        if len(matches) > 1:
-            matches = sorted(matches, key=lambda x: x["number"], reverse=True)
-            keep = matches[0]
-            dups = matches[1:]
-            groups.append(
-                {"repo": repo, "keep": keep, "dups": dups, "rationale": rationale}
-            )
-            for d in dups:
-                d["status_action"] = "CLOSE"
-            keep["status_action"] = "KEEP"
+        matches = _find_matching_prs(all_prs, repo, title_keywords)
+        _process_pr_group(matches, repo, rationale, groups)
 
     # personal-config
     find_and_group(
