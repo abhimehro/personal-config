@@ -1,56 +1,11 @@
 import concurrent.futures
-import json
-import os
-import subprocess
 from collections import defaultdict
-from functools import lru_cache
 
-
-def _parse_env_line(line, env_dict):
-    line = line.strip()
-    if not line or line.startswith("#"):
-        return
-    if line.startswith("export "):
-        line = line[7:].strip()
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    key, sep, val = line.partition("=")
-    if not sep:
-        return
-    env_dict[key] = val.strip("'\"")
-
-
-@lru_cache(maxsize=None)
-def _get_parsed_env_vars():
-    parsed_vars = {}
-    try:
-        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
-            for line in f:
-                _parse_env_line(line, parsed_vars)
-    except FileNotFoundError:
-        pass
-    return parsed_vars
-
-
-def _load_gh_token_env():
-    env = os.environ.copy()
-    env.update(_get_parsed_env_vars())
-    return env
-
-
-def run_gh(cmd_list):
-    env = _load_gh_token_env()
-    result = subprocess.run(cmd_list, capture_output=True, text=True, env=env)
-    if result.returncode != 0:
-        return None
-    try:
-        return json.loads(result.stdout)
-    except Exception:
-        return None
+from gh_utils import run_gh
 
 
 def fetch_pr_info(pr):
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    repo, _, pr_id = pr.partition("#")
+    repo, pr_id = pr.split("#")
     info = run_gh(
         [
             "gh",
