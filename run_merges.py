@@ -13,10 +13,9 @@ def _parse_env_line(line, env_dict):
         return
     if line.startswith("export "):
         line = line[7:].strip()
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    key, sep, val = line.partition("=")
-    if not sep:
+    if "=" not in line:
         return
+    key, val = line.split("=", 1)
     env_dict[key] = val.strip("'\"")
 
 
@@ -24,14 +23,14 @@ def _parse_env_line(line, env_dict):
 def _get_parsed_env_vars():
     # ⚡ Bolt Optimization: Cache only the parsed variables from the file to prevent redundant IO reads, while keeping it safe from mutable dictionary cache poisoning
     parsed_vars = {}
+    env_path = os.getenv("GH_TOKEN_ENV_PATH") or "../email-security-pipeline/GH_TOKEN.env"
     try:
-        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
+        with open(env_path, "r") as f:
             for line in f:
                 _parse_env_line(line, parsed_vars)
     except FileNotFoundError:
         pass
     return parsed_vars
-
 
 def _load_gh_token_env():
     env = os.environ.copy()
@@ -51,8 +50,14 @@ def run_gh(cmd_list):
 
 
 def get_diff(repo, pr):
-    res = run_gh(["gh", "pr", "diff", str(pr), "-R", str(repo)])
-    return res if isinstance(res, str) else ""
+    env = _load_gh_token_env()
+    result = subprocess.run(
+        ["gh", "pr", "diff", str(pr), "-R", str(repo)],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    return result.stdout
 
 
 queue = [

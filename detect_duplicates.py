@@ -12,18 +12,18 @@ def _parse_env_line(line, env_dict):
         return
     if line.startswith("export "):
         line = line[7:].strip()
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    key, sep, val = line.partition("=")
-    if not sep:
+    if "=" not in line:
         return
+    key, val = line.split("=", 1)
     env_dict[key] = val.strip("'\"")
 
 
 @lru_cache(maxsize=None)
 def _get_parsed_env_vars():
     parsed_vars = {}
+    env_path = os.getenv("GH_TOKEN_ENV_PATH") or "../email-security-pipeline/GH_TOKEN.env"
     try:
-        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
+        with open(env_path, "r") as f:
             for line in f:
                 _parse_env_line(line, parsed_vars)
     except FileNotFoundError:
@@ -49,8 +49,7 @@ def run_gh(cmd_list):
 
 
 def fetch_pr_info(pr):
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    repo, _, pr_id = pr.partition("#")
+    repo, pr_id = pr.split("#")
     info = run_gh(
         [
             "gh",
