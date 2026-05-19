@@ -71,12 +71,6 @@
     "args": ["-y", "mcp-remote", "https://mcp.prisma.io/mcp"],
     "env": {}
   },
-  "Rube": {
-    "command": "npx",
-    "args": ["-y", "mcp-remote", "https://rube.composio.dev/mcp"],
-    "env": {
-      "npm_config_yes": ""
-    }
   },
   "Sequential thinking": {
     "command": "npx",

@@ -95,7 +95,8 @@ log "Destination: $APPROVAL_DIR (Approval Folder)"
 log "Dry run: $DRY_RUN"
 
 # Check for existing pending approvals (ignore hidden files like .DS_Store or .downloading)
-pending_files=$(find "$APPROVAL_DIR" -maxdepth 1 -type f ! -name ".*" -exec printf '.' \; | wc -c | tr -d ' ')
+# Use null-delimited output to handle filenames with newlines
+pending_files=$(find "$APPROVAL_DIR" -maxdepth 1 -type f ! -name ".*" -print0 | grep -cz .)
 if ((pending_files > 0)); then
 	log "⏸️  A video is waiting for approval in $APPROVAL_DIR. Skipping download."
 	exit 0
@@ -122,7 +123,8 @@ if [[ -z $files_list ]]; then
 	exit 0
 fi
 
-file_count=$(echo "$files_list" | wc -l | tr -d ' ')
+# Count files robustly (handles filenames with spaces but assumes no newlines from rclone lsf)
+file_count=$(printf "%s\n" "$files_list" | grep -c .)
 log "Found $file_count video file(s)"
 
 if [[ $DRY_RUN == "true" ]]; then
