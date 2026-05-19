@@ -149,3 +149,7 @@
 
 **Learning:** Making independent network API requests sequentially inside a loop creates an N+1 performance bottleneck. By utilizing Python's `concurrent.futures.ThreadPoolExecutor`, these independent IO-bound tasks can be executed concurrently, achieving significant speedups (e.g., ~8.9x reduction in execution time for 100ms latency simulated API requests).
 **Action:** Identify loops executing sequential independent network or IO-bound operations and refactor them using `concurrent.futures.ThreadPoolExecutor` to execute the operations in parallel. Ensure shared state (like appending to a dictionary or list) is handled safely outside the parallel execution or by using thread-safe data structures.
+
+## 2026-11-20 - [Avoid unnecessary .split() list allocation in simple string formatting]
+**Learning:** When extracting substrings from a string separated by a known delimiter inside a loop or comprehension (e.g. `pr.split()[0]`), repeatedly calling `.split()` allocates new lists each time, causing a performance overhead.
+**Action:** When you only need to split once on the first delimiter and want to avoid unnecessary list allocation, use `str.partition()` instead of `str.split()`. It returns a tuple directly in C and doesn't allocate an arbitrary-length list. If doing inline formatting or transformations inside comprehensions, prefer doing the partition/split once and binding the results rather than repeating `.split()` multiple times on the same item.

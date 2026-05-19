@@ -66,7 +66,8 @@ The automated PR review agent successfully processed the backlog across 5 reposi
 
 merged_str = "\n".join([f"- [#{pr}](https://github.com/{repo}/pull/{pr}) in `{repo}`: {title}" for repo, pr, title in results['merged']])
 closed_str = "\n".join([f"- [{pr}](https://github.com/{pr.replace('#', '/pull/')})" for pr in closed])
-escalated_str = "\n".join([f"- [{pr.split()[0]}](https://github.com/{pr.split()[0].replace('#', '/pull/')}) - {pr.split(maxsplit=1)[1]}" for pr in escalated])
+# ⚡ Bolt Optimization: Use str.partition() over multiple split() calls to avoid redundant list allocations
+escalated_str = "\n".join([f"- [{p}](https://github.com/{p.replace('#', '/pull/')}) - {desc}" for p, _, desc in (pr.partition(" ") for pr in escalated)])
 
 report = report.format(
     merged_count=len(results['merged']),
