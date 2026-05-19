@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 from functools import lru_cache
+import concurrent.futures
 
 
 def _parse_env_line(line, env_dict):
@@ -83,7 +84,7 @@ categorized = {
     "PERFORMANCE/REFACTOR/UI/FEATURE": [],
 }
 
-for pr in ready_prs:
+def fetch_pr_info(pr):
     # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
     repo, _, pr_id = pr.partition("#")
     info = run_gh(
@@ -98,6 +99,13 @@ for pr in ready_prs:
             "title,mergeStateStatus",
         ]
     )
+    return pr, info
+
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls while preserving order using map()
+    results = executor.map(fetch_pr_info, ready_prs)
+
+for pr, info in results:
     if not info:
         continue
 
