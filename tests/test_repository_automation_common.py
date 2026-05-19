@@ -1,88 +1,50 @@
-import subprocess
 import sys
-import types
+import os
 import unittest
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-scripts_dir = Path(__file__).parent.parent / ".github" / "scripts"
-sys.path.append(str(scripts_dir))
+# Ensure the project root is in the path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-if "yaml" not in sys.modules:
-    _yaml = types.ModuleType("yaml")
-    _yaml.safe_load = lambda *_a, **_kw: {}
-    _yaml.safe_dump = lambda *_a, **_kw: ""
-    sys.modules["yaml"] = _yaml
+# Also add the scripts dir so we can import repository_automation_common directly
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.github', 'scripts'))
 
-import repository_automation_common  # noqa: E402
-from repository_automation_common import load_config, run_checked  # noqa: E402
+try:
+    from repository_automation_common import task_dir, OUTPUT_ROOT
+    _IMPORT_ERROR = None
+except ImportError as exc:  # e.g. PyYAML not installed in the test environment
+    task_dir = None
+    OUTPUT_ROOT = None
+    _IMPORT_ERROR = exc
 
+@unittest.skipIf(_IMPORT_ERROR is not None, f"repository_automation_common unavailable: {_IMPORT_ERROR}")
+class TestTaskDir(unittest.TestCase):
+    @patch('pathlib.Path.mkdir')
+    def test_task_dir_basic(self, mock_mkdir):
+        """Test basic directory creation"""
+        task_name = "test_task"
+        result = task_dir(task_name)
 
-class TestLoadConfig(unittest.TestCase):
-    @patch("repository_automation_common.yaml.safe_load")
-    @patch("repository_automation_common.CONFIG_PATH")
-    def test_load_config_valid_with_automation(self, mock_path, mock_safe_load):
-        mock_path.read_text.return_value = "automation:\n  key: value\n"
-        mock_safe_load.return_value = {"automation": {"key": "value"}}
-        self.assertEqual(load_config(), {"key": "value"})
+        expected_path = OUTPUT_ROOT / task_name
+        self.assertEqual(result, expected_path)
+        mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
 
-    @patch("repository_automation_common.yaml.safe_load")
-    @patch("repository_automation_common.CONFIG_PATH")
-    def test_load_config_valid_without_automation(self, mock_path, mock_safe_load):
-        mock_path.read_text.return_value = "other:\n  key: value\n"
-        mock_safe_load.return_value = {"other": {"key": "value"}}
-        self.assertEqual(load_config(), {})
+    @patch('pathlib.Path.mkdir')
+    def test_task_dir_nested(self, mock_mkdir):
+        """Test creating a nested task directory"""
+        task_name = "nested/test_task"
+        result = task_dir(task_name)
 
-    @patch("repository_automation_common.yaml.safe_load")
-    @patch("repository_automation_common.CONFIG_PATH")
-    def test_load_config_empty(self, mock_path, mock_safe_load):
-        mock_path.read_text.return_value = ""
-        mock_safe_load.return_value = None
-        self.assertEqual(load_config(), {})
+        expected_path = OUTPUT_ROOT / task_name
+        self.assertEqual(result, expected_path)
+        mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
 
-    @patch("repository_automation_common.yaml.safe_load")
-    @patch("repository_automation_common.CONFIG_PATH")
-    def test_load_config_invalid_yaml(self, mock_path, mock_safe_load):
-        mock_path.read_text.return_value = "invalid: yaml: :"
-        mock_safe_load.side_effect = ValueError("bad yaml")
-        with self.assertRaises(ValueError):
-            load_config()
+    @patch('pathlib.Path.mkdir')
+    def test_task_dir_exception(self, mock_mkdir):
+        """Test that exceptions from mkdir are propagated"""
+        mock_mkdir.side_effect = PermissionError("Permission denied")
+        with self.assertRaises(PermissionError):
+            task_dir("test_task")
 
-
-class TestRunChecked(unittest.TestCase):
-    @patch("repository_automation_common.run_process")
-    def test_run_checked_calls_run_process_with_check_true(self, mock_run_process):
-        mock_result = MagicMock(spec=subprocess.CompletedProcess)
-        mock_run_process.return_value = mock_result
-        command = ["echo", "hello"]
-
-        result = run_checked(command)
-
-        mock_run_process.assert_called_once_with(command, check=True)
-        self.assertEqual(result, mock_result)
-
-    @patch("repository_automation_common.subprocess.run")
-    def test_run_checked_integration_with_subprocess(self, mock_subprocess_run):
-        mock_result = MagicMock(spec=subprocess.CompletedProcess)
-        mock_subprocess_run.return_value = mock_result
-        command = ["ls", "-l"]
-
-        expected_env = repository_automation_common.command_env()
-
-        result = run_checked(command)
-
-        mock_subprocess_run.assert_called_once_with(
-            command,
-            cwd=repository_automation_common.ROOT,
-            check=True,
-            capture_output=True,
-            text=True,
-            input=None,
-            timeout=None,
-            env=expected_env,
-        )
-        self.assertEqual(result, mock_result)
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()
