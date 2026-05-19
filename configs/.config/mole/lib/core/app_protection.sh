@@ -632,13 +632,6 @@ bundle_matches_pattern() {
 # $2...: Array elements (passed as expanded list)
 build_regex_var() {
     local var_name="$1"
-
-    # SECURITY: [CWE-78] Validate variable name to prevent command injection
-    if [[ ! "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-        echo "Error: Invalid variable name '$var_name'" >&2
-        return 1
-    fi
-
     shift
     local regex=""
     for pattern in "$@"; do
@@ -655,6 +648,12 @@ build_regex_var() {
             regex="$regex|$p"
         fi
     done
+
+    # SECURITY: Prevent CWE-78 command injection
+    if [[ ! "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        echo "Error: Invalid variable name '$var_name' for regex assignment" >&2
+        return 1
+    fi
     printf -v "$var_name" "%s" "$regex"
 }
 

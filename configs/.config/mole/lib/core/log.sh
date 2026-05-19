@@ -152,9 +152,9 @@ debug_timer_start() {
     [[ "${MO_DEBUG:-}" != "1" ]] && return 0
     local varname="$1"
 
-    # SECURITY: [CWE-78] Validate variable name to prevent command injection
+    # SECURITY: Prevent CWE-78 command injection
     if [[ ! "$varname" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-        echo "Error: Invalid variable name '$varname'" >&2
+        echo "Error: Invalid variable name '$varname' for timer start" >&2
         return 1
     fi
 
@@ -168,14 +168,14 @@ debug_timer_end() {
     local label="$1"
     local start_var="$2"
 
-    # SECURITY: [CWE-78] Validate variable name to prevent command injection
+    # SECURITY: Prevent CWE-78 command injection
     if [[ ! "$start_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-        echo "Error: Invalid variable name '$start_var'" >&2
+        echo "Error: Invalid variable name '$start_var' for timer end" >&2
         return 1
     fi
 
     local start_ts
-    start_ts="${!start_var:-}"
+    start_ts="${!start_var}"
     [[ -z "$start_ts" ]] && return 0
     local end_ts
     end_ts=$(perl -MTime::HiRes -e 'printf "%.3f\n", Time::HiRes::time()' 2> /dev/null || date +%s)
