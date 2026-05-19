@@ -1,10 +1,8 @@
 import json
 import os
-import re
 import subprocess
 from datetime import datetime, timezone
 from functools import lru_cache
-import concurrent.futures
 
 
 def _parse_env_line(line, env_dict):
@@ -74,8 +72,8 @@ def _should_skip_table_row(line):
 
 
 def _parse_repo_name(line):
-    # ⚡ Bolt Optimization: Using str.startswith() and slicing is ~3x faster than re.match() for simple prefix extractions
     if line.startswith("## "):
+        # ⚡ Bolt Optimization: Replace re.match with faster startswith() + slicing
         return line[3:].strip()
     return None
 
@@ -89,13 +87,7 @@ def _is_valid_pr_row(pr_id, author, hints):
 def _extract_pr_row_fields(parts):
     repo_col = parts[1].strip()
     if repo_col:
-        return (
-            repo_col,
-            parts[2].strip(),
-            parts[3].strip(),
-            parts[6].strip(),
-            parts[9].strip(),
-        )
+        return repo_col, parts[2].strip(), parts[3].strip(), parts[6].strip(), parts[9].strip()
     return "", parts[2].strip(), parts[3].strip(), parts[6].strip(), parts[9].strip()
 
 
@@ -158,26 +150,30 @@ def _is_checks_failing(checks):
     # so we do not treat unrelated statuses containing "U" (e.g. "SUCCESS") as failing.
     if ("FAIL" in checks) or ("PENDING" in checks):
         return True
-    return checks.strip(" *_") == "U"
+    return checks.strip(' *_') == "U"
 
-
-def _get_category_from_status(status, failing):
-    if status in ("DIRTY", "CONFLICTING"):
-        return "CONFLICTING"
-    return "READY" if status == "CLEAN" and not failing else None
 
 def _get_pr_category(info, checks):
     if not info.get("files", []):
         return "SUPERSEDED"
 
-    failing = _is_checks_failing(checks)
-    if failing and _is_pr_stale(info.get("updatedAt", "")):
+    merge_status = info.get("mergeStateStatus", "")
+    is_stale = _is_pr_stale(info.get("updatedAt", ""))
+    checks_failing = _is_checks_failing(checks)
+
+    if is_stale and checks_failing:
         return "STALE"
 
-    return _get_category_from_status(info.get("mergeStateStatus", ""), failing)
+    if merge_status in ["DIRTY", "CONFLICTING"]:
+        return "CONFLICTING"
+
+    if merge_status == "CLEAN" and not checks_failing:
+        return "READY"
+
+    return None
 
 
-def _categorize_pr(repo, pr_info):
+def _categorize_pr(repo, pr_info, triage):
     pr = pr_info["pr"]
     checks = pr_info["checks"]
     print(f"Checking {repo}#{pr}")
@@ -185,12 +181,11 @@ def _categorize_pr(repo, pr_info):
     info = run_gh(repo, pr)
     if not info:
         print(f"Failed to fetch {repo}#{pr}")
-        return None
+        return
 
     category = _get_pr_category(info, checks)
     if category:
-        return category, f"{repo}#{pr}"
-    return None
+        triage[category].append(f"{repo}#{pr}")
 
 
 def _load_inventory_lines(filepath):
@@ -210,17 +205,6 @@ def _write_triage_report(filepath, triage):
                 f.write(f"- {pr}\n")
 
 
-def _collect_results(futures, triage):
-    for future in concurrent.futures.as_completed(futures):
-        result = future.result()
-        if result:
-            triage[result[0]].append(result[1])
-
-def _execute_tasks(repos, triage):
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(_categorize_pr, r, p) for r, prs in repos.items() for p in prs]
-        _collect_results(futures, triage)
-
 def main():
     lines = _load_inventory_lines("tasks/pr-inventory.md")
     if not lines:
@@ -229,7 +213,9 @@ def main():
     repos = parse_inventory_lines(lines)
     triage = {"SUPERSEDED": [], "STALE": [], "CONFLICTING": [], "READY": []}
 
-    _execute_tasks(repos, triage)
+    for repo, prs in repos.items():
+        for pr_info in prs:
+            _categorize_pr(repo, pr_info, triage)
 
     _write_triage_report("tasks/pr-triage.md", triage)
     print("Done")
