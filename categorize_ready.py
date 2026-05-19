@@ -1,41 +1,6 @@
 import json
-import os
 import subprocess
-from functools import lru_cache
-import concurrent.futures
-
-
-def _parse_env_line(line, env_dict):
-    line = line.strip()
-    if not line:
-        return
-    if line.startswith("#"):
-        return
-    if line.startswith("export "):
-        line = line[7:].strip()
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    key, sep, val = line.partition("=")
-    if not sep:
-        return
-    env_dict[key] = val.strip("'\"")
-
-
-@lru_cache(maxsize=None)
-def _get_parsed_env_vars():
-    # ⚡ Bolt Optimization: Cache only the parsed variables from the file to prevent redundant IO reads, while keeping it safe from mutable dictionary cache poisoning
-    parsed_vars = {}
-    try:
-        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
-            for line in f:
-                _parse_env_line(line, parsed_vars)
-    except FileNotFoundError:
-        pass
-    return parsed_vars
-
-def _load_gh_token_env():
-    env = os.environ.copy()
-    env.update(_get_parsed_env_vars())
-    return env
+from env_utils import load_gh_token_env as _load_gh_token_env
 
 
 def run_gh(cmd_list):
@@ -84,9 +49,8 @@ categorized = {
     "PERFORMANCE/REFACTOR/UI/FEATURE": [],
 }
 
-def fetch_pr_info(pr):
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    repo, _, pr_id = pr.partition("#")
+for pr in ready_prs:
+    repo, pr_id = pr.split("#")
     info = run_gh(
         [
             "gh",
@@ -99,13 +63,6 @@ def fetch_pr_info(pr):
             "title,mergeStateStatus",
         ]
     )
-    return pr, info
-
-with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-    # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls while preserving order using map()
-    results = executor.map(fetch_pr_info, ready_prs)
-
-for pr, info in results:
     if not info:
         continue
 
