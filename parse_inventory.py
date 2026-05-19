@@ -1,6 +1,5 @@
 import json
 import os
-import re
 import subprocess
 from datetime import datetime, timezone
 from functools import lru_cache
