@@ -153,3 +153,7 @@
 ## 2026-11-20 - [Avoid unnecessary .split() list allocation in simple string formatting]
 **Learning:** When extracting substrings from a string separated by a known delimiter inside a loop or comprehension (e.g. `pr.split()[0]`), repeatedly calling `.split()` allocates new lists each time, causing a performance overhead.
 **Action:** When you only need to split once on the first delimiter and want to avoid unnecessary list allocation, use `str.partition()` instead of `str.split()`. It returns a tuple directly in C and doesn't allocate an arbitrary-length list. If doing inline formatting or transformations inside comprehensions, prefer doing the partition/split once and binding the results rather than repeating `.split()` multiple times on the same item.
+
+## 2026-05-10 - Parallelize domain extraction
+**Learning:** Using `concurrent.futures.ThreadPoolExecutor` for parallel I/O and JSON parsing in domain extraction. This ensures scalability for large datasets even if overhead is visible for micro-datasets.
+**Action:** Use ThreadPoolExecutor when parsing domains from multiple large JSON files.

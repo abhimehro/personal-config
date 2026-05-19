@@ -13,6 +13,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+import concurrent.futures
 
 
 def load_json_file(filepath):
@@ -31,22 +32,34 @@ def extract_domains_from_rules(rules):
     return [rule["PK"] for rule in rules if "PK" in rule]
 
 
+def _process_tracker_file(base_dir, filename):
+    filepath = base_dir / filename
+    if filepath.exists():
+        print(f"  Processing: {filename}")
+        data = load_json_file(filepath)
+        if data and "rules" in data:
+            domains = extract_domains_from_rules(data["rules"])
+            print(f"    Added {len(domains)} domains from {filename}")
+            return set(domains)
+    else:
+        print(f"  ⚠️  File not found: {filename}")
+    return set()
+
+
 def process_tracker_files(base_dir, tracker_files):
     """Process tracker files to create denylist domains."""
     print("\n📋 Creating Denylist...")
     denylist_domains = set()
 
-    for filename in tracker_files:
-        filepath = base_dir / filename
-        if filepath.exists():
-            print(f"  Processing: {filename}")
-            data = load_json_file(filepath)
-            if data and "rules" in data:
-                domains = extract_domains_from_rules(data["rules"])
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {executor.submit(_process_tracker_file, base_dir, filename): filename for filename in tracker_files}
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                domains = future.result()
                 denylist_domains.update(domains)
-                print(f"    Added {len(domains)} domains")
-        else:
-            print(f"  ⚠️  File not found: {filename}")
+            except Exception as exc:
+                filename = futures[future]
+                print(f"  ⚠️  {filename} generated an exception: {exc}")
 
     print(f"\n✅ Denylist total domains: {len(denylist_domains)}")
     return denylist_domains

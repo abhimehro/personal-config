@@ -12,6 +12,7 @@ Usage: python3 create_consolidated_lists.py
 import json
 import os
 from pathlib import Path
+import concurrent.futures
 
 
 def extract_domains_from_file(filepath, action_filter=None):
@@ -74,6 +75,20 @@ def process_allowlist_files(base_dir):
     return allowlist_domains
 
 
+def _process_tracker_file_for_create(base_dir, filename):
+    filepath = base_dir / filename
+    if filepath.exists():
+        print(f"  Processing: {filename}")
+        domains = extract_domains_from_file(
+            filepath, action_filter=0
+        )  # Only blocking rules
+        print(f"    Added {len(domains)} blocking domains from {filename}")
+        return set(domains)
+    else:
+        print(f"  ⚠️  File not found: {filename}")
+    return set()
+
+
 def create_denylist(base_dir):
     """Create denylist domains from tracker files."""
     print("\n📋 Creating Denylist...")
@@ -94,20 +109,16 @@ def create_denylist(base_dir):
     ]
 
     denylist_domains = set()
-    total_tracker_domains = 0
 
-    for filename in tracker_files:
-        filepath = base_dir / filename
-        if filepath.exists():
-            print(f"  Processing: {filename}")
-            domains = extract_domains_from_file(
-                filepath, action_filter=0
-            )  # Only blocking rules
-            denylist_domains.update(domains)
-            total_tracker_domains += len(domains)
-            print(f"    Added {len(domains)} blocking domains")
-        else:
-            print(f"  ⚠️  File not found: {filename}")
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {executor.submit(_process_tracker_file_for_create, base_dir, filename): filename for filename in tracker_files}
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                domains = future.result()
+                denylist_domains.update(domains)
+            except Exception as exc:
+                filename = futures[future]
+                print(f"  ⚠️  {filename} generated an exception: {exc}")
 
     print(f"\n✅ Denylist total domains: {len(denylist_domains)}")
     return denylist_domains
