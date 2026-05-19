@@ -12,6 +12,7 @@ Usage: python3 create_consolidated_lists.py
 import json
 import os
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 
 
 def extract_domains_from_file(filepath, action_filter=None):
@@ -46,29 +47,29 @@ def process_allowlist_files(base_dir):
     print("\n📋 Creating Allowlist...")
     allowlist_domains = set()
 
-    # Add Control D Bypass rules (do: 1 = allow)
-    bypass_file = base_dir / "CD-Control-D-Bypass.json"
-    if bypass_file.exists():
-        print("  Processing: CD-Control-D-Bypass.json")
-        domains = extract_domains_from_file(
-            bypass_file, action_filter=1
-        )  # Only allow rules
-        allowlist_domains.update(domains)
-        print(f"    Added {len(domains)} bypass domains")
-    else:
-        print(f"  ⚠️  File not found: CD-Control-D-Bypass.json")
+    files_to_process = [
+        ("CD-Control-D-Bypass.json", 1, "bypass domains"),
+        ("CD-Most-Abused-TLDs.json", 1, "legitimate TLD domains"),
+    ]
 
-    # Add legitimate TLDs from Most Abused TLDs (do: 1 = allow)
-    tlds_file = base_dir / "CD-Most-Abused-TLDs.json"
-    if tlds_file.exists():
-        print("  Processing: CD-Most-Abused-TLDs.json")
-        domains = extract_domains_from_file(
-            tlds_file, action_filter=1
-        )  # Only allow rules
-        allowlist_domains.update(domains)
-        print(f"    Added {len(domains)} legitimate TLD domains")
-    else:
-        print(f"  ⚠️  File not found: CD-Most-Abused-TLDs.json")
+    def process_single_file(file_info):
+        filename, action_filter, desc = file_info
+        filepath = base_dir / filename
+        if filepath.exists():
+            domains = extract_domains_from_file(filepath, action_filter=action_filter)
+            return filename, domains, desc
+        return filename, None, desc
+
+    with ThreadPoolExecutor() as executor:
+        results = list(executor.map(process_single_file, files_to_process))
+
+    for filename, domains, desc in results:
+        if domains is not None:
+            print(f"  Processing: {filename}")
+            allowlist_domains.update(domains)
+            print(f"    Added {len(domains)} {desc}")
+        else:
+            print(f"  ⚠️  File not found: {filename}")
 
     print(f"\n✅ Allowlist total domains: {len(allowlist_domains)}")
     return allowlist_domains
@@ -96,13 +97,19 @@ def create_denylist(base_dir):
     denylist_domains = set()
     total_tracker_domains = 0
 
-    for filename in tracker_files:
+    def process_single_file(filename):
         filepath = base_dir / filename
         if filepath.exists():
+            domains = extract_domains_from_file(filepath, action_filter=0)
+            return filename, domains
+        return filename, None
+
+    with ThreadPoolExecutor() as executor:
+        results = list(executor.map(process_single_file, tracker_files))
+
+    for filename, domains in results:
+        if domains is not None:
             print(f"  Processing: {filename}")
-            domains = extract_domains_from_file(
-                filepath, action_filter=0
-            )  # Only blocking rules
             denylist_domains.update(domains)
             total_tracker_domains += len(domains)
             print(f"    Added {len(domains)} blocking domains")
