@@ -1,9 +1,8 @@
 import datetime
 import json
-import re
 import subprocess
 
-repos = [
+REPOS = [
     "abhimehro/personal-config",
     "abhimehro/ctrld-sync",
     "abhimehro/email-security-pipeline",
@@ -18,221 +17,168 @@ def run_cmd(cmd):
     return res.returncode == 0, res.stdout, res.stderr
 
 
-all_prs = []
-for repo in repos:
-    success, stdout, _ = run_cmd(
-        [
-            "gh",
-            "pr",
-            "list",
-            "--repo",
-            repo,
-            "--state",
-            "open",
-            "--limit",
-            "100",
-            "--json",
-            "number,title,author,headRefName,mergeStateStatus,state,createdAt",
-        ]
-    )
-    if success:
+class PRManager:
+    def __init__(self):
+        self.all_prs = []
+        self.groups = []
+        self.merged = []
+        self.closed = []
+        self.escalated = []
+
+    def load_all_prs(self):
+        for repo in REPOS:
+            self.all_prs.extend(self._fetch_prs(repo))
+
+    def _fetch_prs(self, repo):
+        success, stdout, _ = run_cmd([
+            "gh", "pr", "list", "--repo", repo, "--state", "open",
+            "--limit", "100", "--json",
+            "number,title,author,headRefName,mergeStateStatus,state,createdAt"
+        ])
+        if not success:
+            return []
+
         prs = json.loads(stdout)
         for pr in prs:
-            # ⚡ Bolt Optimization: Use rpartition() over split() to avoid intermediate list allocation overhead
             pr["repo"] = repo.rpartition("/")[2]
             pr["full_repo"] = repo
-            all_prs.append(pr)
+        return prs
 
-merged = []
-closed = []
-escalated = []
+    def group_duplicates(self):
+        self._find_and_group("personal-config", ["eval", "cwe-78"], "Same CWE-78 eval injection theme; keep newest")
+        self._find_and_group("personal-config", ["qa & agentic review"], "Duplicate QA reviews; keep newest")
+        self._find_and_group("personal-config", ["markdown table"], "Bolt perf optimizations for markdown tables; keep newest")
+        self._find_and_group("personal-config", ["palette", "prompt"], "Palette UX prompts; keep newest")
 
-triage_md = [
-    f"# PR triage — backlog cleanup test ({datetime.date.today().isoformat()})\n",
-    "**Policy:** squash merge, stale_days 30, auto-fix enabled, mode review-and-merge. **No force-push.**\n",
-    "## Duplicate / supersede groups\n",
-    "| Keep (canonical) | Close as duplicate / superseded | Rationale |",
-    "| --- | --- | --- |",
-]
+        self._find_and_group("email-security-pipeline", ["empty state"], "Palette empty states; keep newest")
+        self._find_and_group("email-security-pipeline", ["video frame"], "Bolt video frame performance; keep newest")
 
+        self._find_and_group("series_correction_project_updated", ["itertuples"], "Bolt dataframe iteration perf; keep newest")
+        self._find_and_group("series_correction_project_updated", ["iteration", "performance"], "Iteration optimizations; handled by above/keep newest")
 
-def _find_matching_prs(all_prs, repo, title_keywords):
-    return [
-        p
-        for p in all_prs
-        if p["repo"] == repo
-        and all(kw.lower() in p["title"].lower() for kw in title_keywords)
-    ]
+    def _find_and_group(self, repo, title_keywords, rationale):
+        matches = [
+            p for p in self.all_prs
+            if p["repo"] == repo and all(kw.lower() in p["title"].lower() for kw in title_keywords)
+        ]
+        if len(matches) > 1:
+            matches.sort(key=lambda x: x["number"], reverse=True)
+            keep = matches[0]
+            dups = matches[1:]
+            self.groups.append({"repo": repo, "keep": keep, "dups": dups, "rationale": rationale})
+            for d in dups:
+                d["status_action"] = "CLOSE"
+            keep["status_action"] = "KEEP"
 
+    def process_all_prs(self):
+        self.all_prs.sort(key=lambda x: (x["repo"], -x["number"]))
+        for pr in self.all_prs:
+            action = self._process_pr(pr)
+            if action == "closed":
+                self.closed.append(pr)
+            elif action == "merged":
+                self.merged.append(pr)
+            else:
+                self.escalated.append(pr)
 
-def _process_pr_group(matches, repo, rationale, groups):
-    if len(matches) > 1:
-        matches = sorted(matches, key=lambda x: x["number"], reverse=True)
-        keep = matches[0]
-        dups = matches[1:]
-        groups.append(
-            {"repo": repo, "keep": keep, "dups": dups, "rationale": rationale}
-        )
-        for d in dups:
-            d["status_action"] = "CLOSE"
-        keep["status_action"] = "KEEP"
+    def _process_pr(self, pr):
+        repo = pr["full_repo"]
+        num = pr["number"]
 
+        if pr.get("status_action") == "CLOSE":
+            print(f"Closing {repo}#{num} (duplicate)")
+            run_cmd(["gh", "pr", "close", str(num), "--repo", repo, "--comment", "Closing as superseded/duplicate of newer PR."])
+            return "closed"
 
-def group_prs():
-    # manual grouping logic based on patterns
-    groups = []
-
-    def find_and_group(repo, title_keywords, rationale):
-        matches = _find_matching_prs(all_prs, repo, title_keywords)
-        _process_pr_group(matches, repo, rationale, groups)
-
-    # personal-config
-    find_and_group(
-        "personal-config",
-        ["eval", "cwe-78"],
-        "Same CWE-78 eval injection theme; keep newest",
-    )
-    find_and_group(
-        "personal-config", ["qa & agentic review"], "Duplicate QA reviews; keep newest"
-    )
-    find_and_group(
-        "personal-config",
-        ["markdown table"],
-        "Bolt perf optimizations for markdown tables; keep newest",
-    )
-    find_and_group(
-        "personal-config", ["palette", "prompt"], "Palette UX prompts; keep newest"
-    )
-
-    # email-security-pipeline
-    find_and_group(
-        "email-security-pipeline", ["empty state"], "Palette empty states; keep newest"
-    )
-    find_and_group(
-        "email-security-pipeline",
-        ["video frame"],
-        "Bolt video frame performance; keep newest",
-    )
-
-    # series_correction
-    find_and_group(
-        "series_correction_project_updated",
-        ["itertuples"],
-        "Bolt dataframe iteration perf; keep newest",
-    )
-    find_and_group(
-        "series_correction_project_updated",
-        ["iteration", "performance"],
-        "Iteration optimizations; handled by above/keep newest",
-    )
-
-    for g in groups:
-        dups_str = ", ".join([f"**#{d['number']}**" for d in g["dups"]])
-        triage_md.append(
-            f"| {g['repo']} **#{g['keep']['number']}** | {dups_str} | {g['rationale']} |"
-        )
-
-
-group_prs()
-
-# Process Actions
-for pr in sorted(all_prs, key=lambda x: (x["repo"], -x["number"])):
-    repo = pr["full_repo"]
-    num = pr["number"]
-
-    if pr.get("status_action") == "CLOSE":
-        print(f"Closing {repo}#{num} (duplicate)")
-        run_cmd(
-            [
-                "gh",
-                "pr",
-                "close",
-                str(num),
-                "--repo",
-                repo,
-                "--comment",
-                "Closing as superseded/duplicate of newer PR.",
-            ]
-        )
-        closed.append(pr)
-    elif pr["mergeStateStatus"] == "CLEAN" or pr["mergeStateStatus"] == "HAS_HOOKS":
-        print(f"Merging {repo}#{num}")
-        success, out, err = run_cmd(
-            ["gh", "pr", "merge", str(num), "--repo", repo, "--squash", "--admin"]
-        )
-        if success:
-            merged.append(pr)
-        else:
+        if pr["mergeStateStatus"] in ("CLEAN", "HAS_HOOKS"):
+            print(f"Merging {repo}#{num}")
+            success, _, err = run_cmd(["gh", "pr", "merge", str(num), "--repo", repo, "--squash", "--admin"])
+            if success:
+                return "merged"
             print(f"Failed to merge: {err}")
-            escalated.append(pr)
-    else:
-        print(f"Holding {repo}#{num} ({pr['mergeStateStatus']})")
-        escalated.append(pr)
+            return "escalated"
 
-triage_md.extend(
-    [
+        print(f"Holding {repo}#{num} ({pr['mergeStateStatus']})")
+        return "escalated"
+
+
+def write_triage_report(manager: PRManager):
+    lines = [
+        f"# PR triage — backlog cleanup test ({datetime.date.today().isoformat()})\n",
+        "**Policy:** squash merge, stale_days 30, auto-fix enabled, mode review-and-merge. **No force-push.**\n",
+        "## Duplicate / supersede groups\n",
+        "| Keep (canonical) | Close as duplicate / superseded | Rationale |",
+        "| --- | --- | --- |",
+    ]
+    for g in manager.groups:
+        dups_str = ", ".join([f"**#{d['number']}**" for d in g["dups"]])
+        lines.append(f"| {g['repo']} **#{g['keep']['number']}** | {dups_str} | {g['rationale']} |")
+
+    lines.extend([
         "\n## Escalate / defer (no autonomous merge)\n",
         "| PR | Reason |",
         "| --- | --- |",
-    ]
-)
-for p in escalated:
-    triage_md.append(
-        f"| {p['repo']} **#{p['number']}** | {p['mergeStateStatus']} status - requires human review or CI fix |"
-    )
+    ])
+    for p in manager.escalated:
+        lines.append(f"| {p['repo']} **#{p['number']}** | {p['mergeStateStatus']} status - requires human review or CI fix |")
 
-triage_md.extend(
-    [
+    lines.extend([
         "\n## Outcomes\n",
-        f"- **Executed:** {len(closed)} duplicate closures, {len(merged)} squash merges.",
-        f"- **Deferred:** {len(escalated)} held.",
+        f"- **Executed:** {len(manager.closed)} duplicate closures, {len(manager.merged)} squash merges.",
+        f"- **Deferred:** {len(manager.escalated)} held.",
+    ])
+    with open("tasks/pr-triage.md", "w") as f:
+        f.write("\n".join(lines) + "\n")
+
+
+def write_session_report(manager: PRManager):
+    lines = [
+        f"\n## Run — {datetime.date.today().isoformat()} (backlog cleanup E2E, review-and-merge)\n",
+        "### Repos processed\n",
     ]
-)
+    for i, r in enumerate(REPOS, 1):
+        lines.append(f"{i}. `{r}`")
 
-with open("tasks/pr-triage.md", "w") as f:
-    f.write("\n".join(triage_md) + "\n")
-
-# Session Report
-report_md = [
-    f"\n## Run — {datetime.date.today().isoformat()} (backlog cleanup E2E, review-and-merge)\n",
-    "### Repos processed\n",
-]
-for i, r in enumerate(repos, 1):
-    report_md.append(f"{i}. `{r}`")
-
-report_md.extend(
-    [
+    lines.extend([
         "\n### Metrics\n",
         "| Metric | Count |",
         "| --- | ---: |",
-        f"| PRs inventoried (open) | {len(all_prs)} |",
-        f"| PRs merged (squash) | {len(merged)} |",
-        f"| PRs closed (duplicate) | {len(closed)} |",
-        f"| PRs escalated / held | {len(escalated)} |\n",
+        f"| PRs inventoried (open) | {len(manager.all_prs)} |",
+        f"| PRs merged (squash) | {len(manager.merged)} |",
+        f"| PRs closed (duplicate) | {len(manager.closed)} |",
+        f"| PRs escalated / held | {len(manager.escalated)} |\n",
         "### Merged (squash)\n",
-    ]
-)
+    ])
 
-current_repo = None
-for p in merged:
-    if p["repo"] != current_repo:
-        report_md.append(f"\n**{p['repo']}**\n")
-        current_repo = p["repo"]
-    report_md.append(f"- https://github.com/{p['full_repo']}/pull/{p['number']}")
+    current_repo = None
+    for p in manager.merged:
+        if p["repo"] != current_repo:
+            lines.append(f"\n**{p['repo']}**\n")
+            current_repo = p["repo"]
+        lines.append(f"- https://github.com/{p['full_repo']}/pull/{p['number']}")
 
-report_md.append("\n### Closed (duplicate / superseded / zero-diff)\n")
-for p in closed:
-    report_md.append(f"- https://github.com/{p['full_repo']}/pull/{p['number']}")
+    lines.append("\n### Closed (duplicate / superseded / zero-diff)\n")
+    for p in manager.closed:
+        lines.append(f"- https://github.com/{p['full_repo']}/pull/{p['number']}")
 
-report_md.append("\n### Held open / escalated\n")
-for p in escalated:
-    report_md.append(
-        f"- https://github.com/{p['full_repo']}/pull/{p['number']} — {p['mergeStateStatus']}"
-    )
+    lines.append("\n### Held open / escalated\n")
+    for p in manager.escalated:
+        lines.append(f"- https://github.com/{p['full_repo']}/pull/{p['number']} — {p['mergeStateStatus']}")
 
-with open("tasks/pr-review-session-reports.md", "a") as f:
-    f.write("\n".join(report_md) + "\n")
+    with open("tasks/pr-review-session-reports.md", "a") as f:
+        f.write("\n".join(lines) + "\n")
 
-print(
-    f"Done. Merged: {len(merged)}, Closed: {len(closed)}, Escalated: {len(escalated)}"
-)
+
+def main():
+    mgr = PRManager()
+    mgr.load_all_prs()
+    mgr.group_duplicates()
+    mgr.process_all_prs()
+
+    write_triage_report(mgr)
+    write_session_report(mgr)
+
+    print(f"Done. Merged: {len(mgr.merged)}, Closed: {len(mgr.closed)}, Escalated: {len(mgr.escalated)}")
+
+if __name__ == "__main__":
+    main()
