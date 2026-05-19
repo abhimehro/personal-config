@@ -32,6 +32,7 @@ def _get_parsed_env_vars():
         pass
     return parsed_vars
 
+
 def _load_gh_token_env():
     env = os.environ.copy()
     env.update(_get_parsed_env_vars())
@@ -50,14 +51,8 @@ def run_gh(cmd_list):
 
 
 def get_diff(repo, pr):
-    env = _load_gh_token_env()
-    result = subprocess.run(
-        ["gh", "pr", "diff", str(pr), "-R", str(repo)],
-        capture_output=True,
-        text=True,
-        env=env,
-    )
-    return result.stdout
+    res = run_gh(["gh", "pr", "diff", str(pr), "-R", str(repo)])
+    return res if isinstance(res, str) else ""
 
 
 queue = [
