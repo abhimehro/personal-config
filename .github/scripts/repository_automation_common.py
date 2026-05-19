@@ -28,6 +28,7 @@ USE_MCP_GITHUB = os.environ.get("USE_MCP_GITHUB", "false").lower() in {
 try:
     if USE_MCP_GITHUB:
         import mcp
+
         MCP_AVAILABLE = True
     else:
         MCP_AVAILABLE = False
@@ -61,7 +62,7 @@ def iso_day(value: dt.datetime | None = None) -> str:
 
 
 def load_config() -> dict[str, Any]:
-    data = yaml.safe_load(CONFIG_PATH.read_text())
+    data = yaml.safe_load(CONFIG_PATH.read_text()) or {}
     return data.get("automation", {})
 
 

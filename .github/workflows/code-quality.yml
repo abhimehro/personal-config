@@ -127,5 +127,8 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install dependencies for tests
+        run: pip install pyyaml
+
       - name: Run all tests (shell + Python)
         run: make test-all
