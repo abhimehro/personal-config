@@ -271,7 +271,10 @@ media-streaming/backup/rclone.conf.backup
 # Secrets
 controld-system/profiles.env
 
+# gemini-cli settings
 .gemini/
+
+# GitHub App credentials
 gha-creds-*.json
 
 # Cursor generated directories and files

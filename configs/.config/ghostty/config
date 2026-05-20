@@ -46,7 +46,7 @@ selection-foreground = f8f8f2
 # ═══════════════════════════════════════════════════════════════
 # Font configuration
 font-family = Cascadia Code
-font-size = 12
+font-size = 15
 
 # Cursor style
 cursor-style = block
