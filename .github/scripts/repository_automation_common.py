@@ -28,7 +28,6 @@ USE_MCP_GITHUB = os.environ.get("USE_MCP_GITHUB", "false").lower() in {
 try:
     if USE_MCP_GITHUB:
         import mcp
-
         MCP_AVAILABLE = True
     else:
         MCP_AVAILABLE = False
@@ -62,7 +61,7 @@ def iso_day(value: dt.datetime | None = None) -> str:
 
 
 def load_config() -> dict[str, Any]:
-    data = yaml.safe_load(CONFIG_PATH.read_text()) or {}
+    data = yaml.safe_load(CONFIG_PATH.read_text())
     return data.get("automation", {})
 
 
@@ -72,10 +71,18 @@ def task_dir(task: str) -> Path:
     return path
 
 
+TRUNCATION_SUFFIX = "\n... [truncated]"
+
+
 def truncate(text: str, limit: int = 4000) -> str:
     if len(text) <= limit:
         return text
-    return text[: limit - 15] + "\n... [truncated]"
+    suffix_len = len(TRUNCATION_SUFFIX)
+    # If the limit is too small to fit the suffix, just hard-truncate the text
+    # so the output never exceeds the requested limit.
+    if limit <= suffix_len:
+        return text[:limit]
+    return text[: limit - suffix_len] + TRUNCATION_SUFFIX
 
 
 def run_process(
