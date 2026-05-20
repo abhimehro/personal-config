@@ -57,11 +57,13 @@ triage_md = [
 
 
 def _find_matching_prs(all_prs, repo, title_keywords):
+    lower_kws = tuple(kw.lower() for kw in title_keywords)
     return [
         p
         for p in all_prs
         if p["repo"] == repo
-        and all(kw.lower() in p["title"].lower() for kw in title_keywords)
+        for title_lower in (p["title"].lower(),)
+        if all(kw in title_lower for kw in lower_kws)
     ]
 
 
