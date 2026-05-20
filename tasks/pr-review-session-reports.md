@@ -2,7 +2,21 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-09.
+> **Latest execution:** 2026-05-20.
+
+## Run — 2026-05-20 (cron salvage + cleanup)
+
+**Report:** `tasks/pr-review-2026-05-20.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 8 |
+| Closed superseded | 6 |
+| New salvage drafts | 1 (`personal-config#1005`) |
+| Deferred conflicting | 21 |
+
+**Highlights:** Cleared all CLEAN automation PRs with green CI. Rebuilt Sentinel CWE-78 salvage as **#1005** after batch2 #986–#988 conflicted. Remaining `personal-config` batch2 perf/test salvages need v2 rebuilds.
 
 ## Run — 2026-05-03 (backlog cleanup E2E, review-and-merge, expanded human-login automation scope)
 
