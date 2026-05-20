@@ -172,6 +172,7 @@ def _get_pr_category(info, checks):
 
     return None
 
+    return None
 
 def _categorize_pr(repo, pr_info, triage):
     pr = pr_info["pr"]

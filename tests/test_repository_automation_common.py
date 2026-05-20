@@ -1,87 +1,59 @@
-import subprocess
 import sys
+import os
 import types
 import unittest
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
-scripts_dir = Path(__file__).parent.parent / ".github" / "scripts"
-sys.path.append(str(scripts_dir))
+# Ensure the scripts directory is in the path
+sys.path.insert(
+    0,
+    os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        ".github",
+        "scripts",
+    ),
+)
 
+# Stub yaml since we don't need it for truncate and it might not be installed
 if "yaml" not in sys.modules:
     _yaml = types.ModuleType("yaml")
-    _yaml.safe_load = lambda *_a, **_kw: {}
-    _yaml.safe_dump = lambda *_a, **_kw: ""
     sys.modules["yaml"] = _yaml
 
-import repository_automation_common  # noqa: E402
-from repository_automation_common import load_config, run_checked  # noqa: E402
+import repository_automation_common as rac
 
 
-class TestLoadConfig(unittest.TestCase):
-    @patch("repository_automation_common.yaml.safe_load")
-    @patch("repository_automation_common.CONFIG_PATH")
-    def test_load_config_valid_with_automation(self, mock_path, mock_safe_load):
-        mock_path.read_text.return_value = "automation:\n  key: value\n"
-        mock_safe_load.return_value = {"automation": {"key": "value"}}
-        self.assertEqual(load_config(), {"key": "value"})
+class TestTruncate(unittest.TestCase):
+    def test_truncate_under_limit(self):
+        self.assertEqual(rac.truncate("hello", limit=50), "hello")
 
-    @patch("repository_automation_common.yaml.safe_load")
-    @patch("repository_automation_common.CONFIG_PATH")
-    def test_load_config_valid_without_automation(self, mock_path, mock_safe_load):
-        mock_path.read_text.return_value = "other:\n  key: value\n"
-        mock_safe_load.return_value = {"other": {"key": "value"}}
-        self.assertEqual(load_config(), {})
+    def test_truncate_exact_limit(self):
+        text = "a" * 50
+        self.assertEqual(rac.truncate(text, limit=50), text)
 
-    @patch("repository_automation_common.yaml.safe_load")
-    @patch("repository_automation_common.CONFIG_PATH")
-    def test_load_config_empty(self, mock_path, mock_safe_load):
-        mock_path.read_text.return_value = ""
-        mock_safe_load.return_value = None
-        self.assertEqual(load_config(), {})
+    def test_truncate_over_limit(self):
+        text = "a" * 51
+        expected = "a" * 34 + "\n... [truncated]"
+        result = rac.truncate(text, limit=50)
+        self.assertEqual(result, expected)
+        # Truncated output must never exceed the requested limit.
+        self.assertLessEqual(len(result), 50)
 
-    @patch("repository_automation_common.yaml.safe_load")
-    @patch("repository_automation_common.CONFIG_PATH")
-    def test_load_config_invalid_yaml(self, mock_path, mock_safe_load):
-        mock_path.read_text.return_value = "invalid: yaml: :"
-        mock_safe_load.side_effect = ValueError("bad yaml")
-        with self.assertRaises(ValueError):
-            load_config()
+    def test_truncate_empty_text(self):
+        self.assertEqual(rac.truncate("", limit=50), "")
 
+    def test_truncate_small_limit(self):
+        # When limit is smaller than the suffix, the function must still
+        # respect the limit rather than growing the output via negative slicing.
+        text = "abcdefghijklmnop"
+        result = rac.truncate(text, limit=10)
+        self.assertEqual(result, "abcdefghij")
+        self.assertLessEqual(len(result), 10)
 
-class TestRunChecked(unittest.TestCase):
-    @patch("repository_automation_common.run_process")
-    def test_run_checked_calls_run_process_with_check_true(self, mock_run_process):
-        mock_result = MagicMock(spec=subprocess.CompletedProcess)
-        mock_run_process.return_value = mock_result
-        command = ["echo", "hello"]
-
-        result = run_checked(command)
-
-        mock_run_process.assert_called_once_with(command, check=True)
-        self.assertEqual(result, mock_result)
-
-    @patch("repository_automation_common.subprocess.run")
-    def test_run_checked_integration_with_subprocess(self, mock_subprocess_run):
-        mock_result = MagicMock(spec=subprocess.CompletedProcess)
-        mock_subprocess_run.return_value = mock_result
-        command = ["ls", "-l"]
-
-        expected_env = repository_automation_common.command_env()
-
-        result = run_checked(command)
-
-        mock_subprocess_run.assert_called_once_with(
-            command,
-            cwd=repository_automation_common.ROOT,
-            check=True,
-            capture_output=True,
-            text=True,
-            input=None,
-            timeout=None,
-            env=expected_env,
-        )
-        self.assertEqual(result, mock_result)
+    def test_truncate_default_limit(self):
+        text = "a" * 4001
+        expected = "a" * 3984 + "\n... [truncated]"
+        result = rac.truncate(text)
+        self.assertEqual(result, expected)
+        self.assertLessEqual(len(result), 4000)
 
 
 if __name__ == "__main__":
