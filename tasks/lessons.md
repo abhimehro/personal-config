@@ -210,6 +210,12 @@
 **Pattern:** `gh api repos/$REPO/branches/main/protection` returns `HTTP 403: Resource not accessible by [REDACTED] access token` for all five repos in this config when authenticated as the personal owner. This does **not** indicate misconfigured branch protection — it just means the token scope can't read the protection record. <!-- pragma: allowlist secret -->
 **Rule:** Treat 403 on the protection-read endpoint as benign for personal repos. Verify branch-protection behavior via merge attempts instead (`gh pr merge` will fail with a clear error if rules block the merge). Keep the preflight gate looking at `gh auth status` and `gh repo view` rather than the protection endpoint. <!-- pragma: allowlist secret -->
 
+## Lesson 0cc: Salvage batch2 branches go DIRTY after every personal-config merge wave (2026-05-20)
+
+**Pattern:** Eleven `cursor-agent/salvage-personal-config-*-pc-batch2` PRs were opened 2026-05-19; after merges #989, #994, #999, #1002, and #1004 landed on `main`, every `gh api …/update-branch` returned HTTP 422 (`merge conflict between base and head`). Sentinel fixes in #986–#988 overlapped the same mole core paths.
+**Rule:** After a merge burst on `personal-config`, treat batch salvage branches as stale. Rebuild with `git checkout -b cursor-agent/salvage-<repo>-<old_pr>-v2-<date> origin/main`, `git checkout origin/<old-salvage-branch> -- <minimal paths>`, verify, push, open a **new draft** PR, then close conflicted salvages. Do not rely on GitHub “Update branch” for batch2 tails.
+**Detection cost:** Low — one `update-branch` 422 on any batch2 PR implies the whole batch needs v2.
+
 ## Lesson 0df: A salvage agent given a "no local working-tree manipulation" rule will still `git checkout` if its prompt mentions cherry-picking commits (2026-05-09)
 
 **Pattern:** Item 4A of the 2026-05-09 orchestration plan briefed a `pair` agent with "no local working-tree manipulation" plus "create a salvage branch from `origin/main` and cherry-pick the canonical PR's commits." The agent interpreted that as licence to `git checkout <pr-branch>` in the working repo to read the commit list, switching the local tree off `main` for the rest of the session. Untracked-only documents (`docs/plans/`, `docs/reviews/`) were destroyed by the branch switch, and 51 unrelated files ended up staged on the bolt branch.
