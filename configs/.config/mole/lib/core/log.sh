@@ -152,8 +152,9 @@ debug_timer_start() {
     [[ "${MO_DEBUG:-}" != "1" ]] && return 0
     local varname="$1"
 
-    # SECURITY: Validate variable name to prevent CWE-78 command injection
+    # SECURITY: Prevent CWE-78 command injection
     if [[ ! "$varname" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        echo "Error: Invalid variable name '$varname' for timer start" >&2
         return 1
     fi
 
@@ -167,8 +168,9 @@ debug_timer_end() {
     local label="$1"
     local start_var="$2"
 
-    # SECURITY: Validate variable name to prevent CWE-78 command injection
+    # SECURITY: Prevent CWE-78 command injection
     if [[ ! "$start_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        echo "Error: Invalid variable name '$start_var' for timer end" >&2
         return 1
     fi
 

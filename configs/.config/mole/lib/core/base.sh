@@ -832,13 +832,13 @@ update_progress_if_needed() {
     local current_time
     current_time=$(get_epoch_seconds)
 
-    # Get last update time from variable
-
-    # SECURITY: Validate variable name to prevent CWE-78 command injection
+    # SECURITY: Prevent CWE-78 command injection
     if [[ ! "$last_update_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        echo "Error: Invalid variable name '$last_update_var' for progress update" >&2
         return 1
     fi
 
+    # Get last update time from variable
     local last_time
     last_time="${!last_update_var:-0}"
     [[ "$last_time" =~ ^[0-9]+$ ]] || last_time=0
