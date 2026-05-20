@@ -153,3 +153,7 @@
 ## 2026-11-20 - [Avoid unnecessary .split() list allocation in simple string formatting]
 **Learning:** When extracting substrings from a string separated by a known delimiter inside a loop or comprehension (e.g. `pr.split()[0]`), repeatedly calling `.split()` allocates new lists each time, causing a performance overhead.
 **Action:** When you only need to split once on the first delimiter and want to avoid unnecessary list allocation, use `str.partition()` instead of `str.split()`. It returns a tuple directly in C and doesn't allocate an arbitrary-length list. If doing inline formatting or transformations inside comprehensions, prefer doing the partition/split once and binding the results rather than repeating `.split()` multiple times on the same item.
+
+## 2026-11-20 - [Avoid Repeated String Lowering in List Comprehensions]
+**Learning:** When evaluating nested loop conditions like `all(kw.lower() in p["title"].lower() for kw in keywords)` inside a list comprehension, Python repeatedly evaluates `.lower()` on both the keyword and the title for every iteration. This redundant string conversion overhead significantly slows down list filtering.
+**Action:** Pre-calculate `kw.lower()` outside the comprehension. To avoid repeatedly evaluating `p["title"].lower()` for each keyword during the `all()` check, use a single-element tuple in a `for` clause (e.g., `for title_lower in (p["title"].lower(),)`) to bind the value once per item.

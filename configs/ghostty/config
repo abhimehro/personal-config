@@ -15,10 +15,6 @@ macos-titlebar-style = tabs
 window-colorspace = display-p3
 window-theme = ghostty
 
-# Custom shader
-custom-shader = ~/.config/ghostty/shaders/chromadrift/mutations/chromadrift360-ultra-hypno-k7.glsl
-custom-shader-animation = always
-
 # ============================================
 # Font
 # ============================================
@@ -63,10 +59,7 @@ shell-integration-features = cursor,sudo,title
 # Quick Terminal & keybindings
 # ============================================
 
-# Quick Terminal: toggle with Cmd+` (also triggered by F5 via Karabiner)
-# NOTE: cmd+backquote conflicts with macOS default \"Cycle Through Windows\" - consider remapping
 keybind = global:cmd+backquote=toggle_quick_terminal
-# NOTE: super+s (Cmd+S) may intercept Save commands in other applications - consider remapping
 keybind = global:super+s=toggle_secure_input
 keybind = super+enter=new_split:auto
 keybind = super+shift+left=goto_split:left
