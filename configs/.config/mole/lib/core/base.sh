@@ -828,20 +828,19 @@ update_progress_if_needed() {
     local last_update_var="$3" # Name of variable holding last update time
     local interval="${4:-2}"   # Default: update every 2 seconds
 
-    # SECURITY: [CWE-78] Validate variable name to prevent command injection
-    if [[ ! "$last_update_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-        echo "Error: Invalid variable name '$last_update_var'" >&2
-        return 1
-    fi
-
     # Get current time
     local current_time
     current_time=$(get_epoch_seconds)
 
     # Get last update time from variable
+
+    # SECURITY: Validate variable name to prevent CWE-78 command injection
+    if [[ ! "$last_update_var" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        return 1
+    fi
+
     local last_time
-    local tmp_val="${!last_update_var:-}"
-    last_time="${tmp_val:-0}"
+    last_time="${!last_update_var:-0}"
     [[ "$last_time" =~ ^[0-9]+$ ]] || last_time=0
 
     # Check if enough time has elapsed
