@@ -19,10 +19,12 @@ parse_cred_value() {
 	value="$(echo "$line" | cut -d'=' -f2-)"
 	# Strip surrounding single quotes
 	if [[ $value == \'*\' ]]; then
-		value="${value:1:-1}"
+		value="${value#\'}"
+		value="${value%\'}"
 	# Strip surrounding double quotes
 	elif [[ $value == '"'*'"' ]]; then
-		value="${value:1:-1}"
+		value="${value#\"}"
+		value="${value%\"}"
 	fi
 	echo "$value"
 }

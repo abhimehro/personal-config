@@ -21,6 +21,8 @@
     <dict>
         <key>PATH</key>
         <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>SSH_AUTH_SOCK</key>
+        <string>/Users/speedybee/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock</string>
     </dict>
 </dict>
 </plist>

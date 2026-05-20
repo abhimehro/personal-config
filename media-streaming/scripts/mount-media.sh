@@ -34,13 +34,30 @@ notify() {
 
 mkdir -p "$(dirname "$LOG_FILE")"
 
+# --- Timeout Helper ---
+# Pure-bash implementation of a non-blocking timeout helper
+run_with_timeout() {
+	local timeout_secs="$1"
+	shift
+	"$@" &
+	local pid=$!
+	(
+		sleep "$timeout_secs"
+		kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null
+	) &
+	local watcher_pid=$!
+	wait "$pid" 2>/dev/null
+	local exit_code=$?
+	kill "$watcher_pid" 2>/dev/null || true
+	wait "$watcher_pid" 2>/dev/null || true
+	return $exit_code
+}
+
 # --- Health Check ---
-# A mount is considered healthy if it appears in `mount` AND `ls` returns
-# without error. We deliberately do NOT require the directory to be non-empty:
-# a legitimately empty mount (or one briefly empty during NFS/rclone startup)
-# would otherwise be force-unmounted and remounted on every poll.
+# A mount is considered healthy if it appears in `mount` AND a timeout-protected
+# `ls` check returns without error. This prevents the script from hanging on stale mounts.
 if mount | grep -q "$MOUNT_POINT"; then
-	if ls "$MOUNT_POINT" &>/dev/null; then
+	if run_with_timeout 3 ls "$MOUNT_POINT" &>/dev/null; then
 		# Already mounted and responsive
 		exit 0
 	else
@@ -55,7 +72,7 @@ fi
 MAX_RETRIES=6
 RETRY_COUNT=0
 while ! nc -z "$NFS_HOST" "$NFS_PORT" 2>/dev/null; do
-	if (( RETRY_COUNT >= MAX_RETRIES )); then
+	if ((RETRY_COUNT >= MAX_RETRIES)); then
 		log "ERROR: NFS server not available on port $NFS_PORT after 30s. Aborting."
 		exit 1
 	fi
@@ -72,10 +89,13 @@ mkdir -p "$MOUNT_POINT"
 log "Mounting NFS → $MOUNT_POINT"
 # Options:
 # - nolock: Required because rclone NFS doesn't support NLM
+# - locallocks: Enable local file locking on macOS
 # - resvport: Usually needed for macOS NFS, but localhost works without it if rclone allows
 # - tcp: Ensure TCP is used
 # - port/mountport: Direct both to rclone's unified NFS port
-if mount_nfs -o "port=$NFS_PORT,mountport=$NFS_PORT,nolock,tcp,soft,intr" "$NFS_HOST:/" "$MOUNT_POINT" 2>&1; then
+# - soft,intr: Allow interruption on network drops
+# - timeo/retrans: Fail fast if server goes unresponsive (avoid system hangs)
+if mount_nfs -o "port=$NFS_PORT,mountport=$NFS_PORT,nolock,locallocks,tcp,soft,intr,timeo=30,retrans=2" "$NFS_HOST:/" "$MOUNT_POINT" 2>&1; then
 	sleep 2
 	if mount | grep -q "$MOUNT_POINT"; then
 		log "✅ Mount successful"

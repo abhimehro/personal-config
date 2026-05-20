@@ -156,7 +156,8 @@ install_media_launchd() {
 		[[ -e $plist ]] || continue
 		local base
 		base="$(basename "$plist")"
-		cp "$plist" "$launch_dst/$base"
+		rm -f "$launch_dst/$base" 2>/dev/null || true
+		ln -s "$plist" "$launch_dst/$base"
 		launchctl bootout "gui/$(id -u)" "$launch_dst/$base" 2>/dev/null || true
 		if launchctl bootstrap "gui/$(id -u)" "$launch_dst/$base" 2>/dev/null; then
 			log_ok "Loaded $base"

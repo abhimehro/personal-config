@@ -9,6 +9,25 @@ set -e
 
 # Setup mock environment
 TEST_DIR=$(mktemp -d)
+MOCK_BIN="$TEST_DIR/mock_bin"
+mkdir -p "$MOCK_BIN"
+
+# Mock brew to avoid dumping/installing user packages during tests
+cat >"$MOCK_BIN/brew" <<'EOF'
+#!/bin/bash
+if [[ "$1" == "bundle" ]]; then
+	if [[ "$2" == "dump" ]]; then
+		echo "mock bundle dump" > Brewfile
+		exit 0
+	elif [[ "$2" == "install" ]]; then
+		echo "mock bundle install"
+		exit 0
+	fi
+fi
+exit 0
+EOF
+chmod +x "$MOCK_BIN/brew"
+export PATH="$MOCK_BIN:$PATH"
 
 # Ensure temporary test directory is always removed, even on unexpected exit.
 # This is important because the test handles sensitive backup data and uses `set -e`,
@@ -52,7 +71,7 @@ sed -i '' "s|LOG_DIR=\"\$HOME/Library/Logs/maintenance\"|LOG_DIR=\"$MOCK_LOGS\"|
 sed -i '' "s|BACKUP_DIR=\"\$HOME/Library/Logs/maintenance/backups\"|BACKUP_DIR=\"$MOCK_LOGS/backups\"|g" "$TEST_DIR/security_manager.sh"
 # Allow CONFIG_DIR override
 # shellcheck disable=SC2016
-sed -i '' 's|CONFIG_DIR="$(cd "$(dirname "${BASH_SOURCE\\[0\\]}")/../" && pwd)"|CONFIG_DIR="${CONFIG_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../" && pwd)}"|' "$TEST_DIR/security_manager.sh"
+sed -i '' 's|CONFIG_DIR=.*BASH_SOURCE.*|CONFIG_DIR="${CONFIG_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../" \&\& pwd)}"|' "$TEST_DIR/security_manager.sh"
 
 # Create a wrapper script to export internal functions and set CONFIG_DIR
 WRAPPER="$TEST_DIR/wrapper.sh"
@@ -100,8 +119,8 @@ echo "Testing restore preview..."
 echo "Testing actual restore..."
 # Modify the config file to verify restore overwrites it
 echo "modified config" >"$MOCK_HOME/conf/config.env"
-# Use 'yes' to answer prompts (system config restore, etc.)
-echo "y" | "$WRAPPER" restore_config "$BACKUP_PATH" restore
+# Use 'yes' to answer prompts (system config restore, Homebrew bundle install, etc.)
+yes | "$WRAPPER" restore_config "$BACKUP_PATH" restore
 
 if grep -q "dummy config" "$MOCK_HOME/conf/config.env"; then
 	echo "✅ Restore successful (config overwritten)"

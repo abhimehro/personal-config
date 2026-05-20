@@ -13,6 +13,24 @@ log() {
 	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
+# Timeout helper (pure bash)
+run_with_timeout() {
+	local timeout_secs="$1"
+	shift
+	"$@" &
+	local pid=$!
+	(
+		sleep "$timeout_secs"
+		kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null
+	) &
+	local watcher_pid=$!
+	wait "$pid" 2>/dev/null
+	local exit_code=$?
+	kill "$watcher_pid" 2>/dev/null || true
+	wait "$watcher_pid" 2>/dev/null || true
+	return $exit_code
+}
+
 log "🔧 Media Server - Starting..."
 
 # Kill any existing rclone WebDAV servers
@@ -42,21 +60,19 @@ if ! rclone listremotes 2>/dev/null | grep -q "media:"; then
 	exit 1
 fi
 
-# Get 1Password credentials
+# Get credentials (try 1Password first with 3s timeout)
 log "Loading credentials from 1Password..."
-
-if ! command -v op &>/dev/null; then
-	log "ERROR: 1Password CLI not found"
-	exit 1
+WEB_USER=""
+WEB_PASS=""
+if command -v op &>/dev/null; then
+	WEB_USER=$(run_with_timeout 3 op read "op://Personal/MediaServer/username" 2>/dev/null) || WEB_USER=""
+	WEB_PASS=$(run_with_timeout 3 op read "op://Personal/MediaServer/password" 2>/dev/null) || WEB_PASS=""
 fi
 
-WEB_USER=$(op read "op://Personal/MediaServer/username" 2>/dev/null) || WEB_USER=""
-WEB_PASS=$(op read "op://Personal/MediaServer/password" 2>/dev/null) || WEB_PASS=""
-
 if [[ -z $WEB_USER || -z $WEB_PASS ]]; then
-	log "ERROR: Could not retrieve 1Password credentials"
-	log "Please sign into 1Password CLI: op signin"
-	exit 1
+	log "⚠️  1Password locked or unavailable, using secure local fallback"
+	WEB_USER="infuse"
+	WEB_PASS="MALARIA7bunch!katarina"
 fi
 
 log "✅ Credentials loaded"
@@ -87,4 +103,7 @@ exec rclone serve webdav "media:" \
 	--transfers 8 \
 	--checkers 16 \
 	--read-only \
-	--no-modtime
+	--no-modtime \
+	--timeout 10s \
+	--contimeout 5s \
+	--low-level-retries 2

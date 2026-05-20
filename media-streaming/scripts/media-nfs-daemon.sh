@@ -51,4 +51,7 @@ exec rclone serve nfs "media:" \
 	--transfers 8 \
 	--checkers 16 \
 	--read-only \
-	--no-modtime
+	--no-modtime \
+	--timeout 10s \
+	--contimeout 5s \
+	--low-level-retries 2
