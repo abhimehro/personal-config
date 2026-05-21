@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import concurrent.futures
 from datetime import datetime, timezone
 from functools import lru_cache
 
@@ -170,7 +171,8 @@ def _get_pr_category(info, checks):
     return None
 
 
-def _categorize_pr(repo, pr_info, triage):
+def _categorize_pr(args):
+    repo, pr_info = args
     pr = pr_info["pr"]
     checks = pr_info["checks"]
     print(f"Checking {repo}#{pr}")
@@ -181,8 +183,7 @@ def _categorize_pr(repo, pr_info, triage):
         return
 
     category = _get_pr_category(info, checks)
-    if category:
-        triage[category].append(f"{repo}#{pr}")
+    return repo, pr, category
 
 
 def _load_inventory_lines(filepath):
@@ -210,9 +211,17 @@ def main():
     repos = parse_inventory_lines(lines)
     triage = {"SUPERSEDED": [], "STALE": [], "CONFLICTING": [], "READY": []}
 
-    for repo, prs in repos.items():
-        for pr_info in prs:
-            _categorize_pr(repo, pr_info, triage)
+    flat_prs = [(repo, pr_info) for repo, prs in repos.items() for pr_info in prs]
+    # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls while preserving order using map()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        results = executor.map(_categorize_pr, flat_prs)
+
+    for result in results:
+        if not result:
+            continue
+        repo, pr, category = result
+        if category:
+            triage[category].append(f"{repo}#{pr}")
 
     _write_triage_report("tasks/pr-triage.md", triage)
     print("Done")
