@@ -205,6 +205,11 @@
 **Pattern:** Two open PRs (**#785** / **#786** on `email-security-pipeline`) changed the same three paths (`src/utils/caching.py`, `tests/test_caching.py`, `.jules/bolt.md`) with the same intent; both showed green rollups.
 **Rule:** Before merging either, diff **titles + head SHAs + file lists** side-by-side. Pick one canonical PR (prefer the lower number if identical), squash-merge it, then **close** the twin as duplicate—do not leave both open to drift.
 
+## Lesson 0ee: Twin QA format-fix PRs with identical file lists (2026-05-21)
+
+**Pattern:** Two open PRs (`auto-fix-formatting` and `auto-fix-formatting-<numeric-suffix>`) change the same three files with green CI.
+**Rule:** Close the branch without the newer automation suffix as duplicate; squash-merge one canonical PR. Comment with the kept PR number for audit trail.
+
 ## Lesson 0w: Branch-protection introspection may be denied by personal-account tokens (2026-04-25) <!-- pragma: allowlist secret -->
 
 **Pattern:** `gh api repos/$REPO/branches/main/protection` returns `HTTP 403: Resource not accessible by [REDACTED] access token` for all five repos in this config when authenticated as the personal owner. This does **not** indicate misconfigured branch protection — it just means the token scope can't read the protection record. <!-- pragma: allowlist secret -->
