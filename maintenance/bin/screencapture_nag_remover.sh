@@ -9,6 +9,40 @@ TCC_DB='/Library/Application Support/com.apple.TCC/TCC.db'
 FUTURE=$(/bin/date -j -v+100y +"%Y-%m-%d %H:%M:%S +0000")
 INTERVAL=86400 #run every 24h
 
+spinner_wait() {
+	local duration=$1
+	local msg="${2:-Working}"
+
+	if [[ -t 1 && -z ${CI-} ]]; then
+		local i=1
+		local sp="/-\|"
+		local iterations=$((duration * 10))
+		local c=0
+
+		[ -t 1 ] && tput civis 2>/dev/null || true
+
+		local old_int_trap old_term_trap
+		old_int_trap=$(trap -p INT)
+		trap '[ -t 1 ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; eval "${old_int_trap:-trap - INT}"; kill -INT "$$"' INT
+		old_term_trap=$(trap -p TERM)
+		trap '[ -t 1 ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; eval "${old_term_trap:-trap - TERM}"; kill -TERM "$$"' TERM
+
+		while [[ $c -lt $iterations ]]; do
+			printf "\r   %s [%c]" "$msg" "${sp:i++%${#sp}:1}"
+			sleep 0.1
+			c=$((c + 1))
+		done
+		printf "\r\033[K"
+
+		[ -t 1 ] && tput cnorm 2>/dev/null || true
+		eval "${old_int_trap:-trap - INT}"
+		eval "${old_term_trap:-trap - TERM}"
+	else
+		echo "   $msg (waiting ${duration}s)..."
+		sleep "$duration"
+	fi
+}
+
 IFS='.' read -r MAJ MIN _ < <(/usr/bin/sw_vers --productVersion)
 if ((MAJ < 15)); then
 	echo >&2 "this tool requires macOS 15 (Sequoia)"
@@ -176,7 +210,7 @@ _install_launchagent() {
 			│  Once that's all done, run the --install command again.                              │
 			└──────────────────────────────────────────────────────────────────────────────────────┘
 		EOF
-		sleep 3
+		spinner_wait 3 "Opening System Settings..."
 		_fda_settings
 		return 1
 	fi
