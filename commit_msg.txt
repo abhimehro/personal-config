@@ -1,0 +1,7 @@
+🛡️ Sentinel: [CRITICAL] Fix AppleScript Injection via osascript
+
+🚨 Severity: CRITICAL
+💡 Vulnerability: AppleScript Injection (CWE-74) via string interpolation in `osascript -e`. Even when quotes were escaped, attackers could break out using `\" & do shell script "..." & \"`.
+🎯 Impact: An attacker who can control notification variables (like title or message) could execute arbitrary shell commands on the host machine.
+🔧 Fix: Refactored `osascript -e` usages to use `on run argv` with parameter passing (`item 1 of argv`), which safely handles arbitrary characters without evaluation.
+✅ Verification: Tested against malicious strings in the terminal. No commands are evaluated, notifications display the strings literally.
