@@ -23,7 +23,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 CONFIG_FILE=""
-CONFIG_PATH_RESOLVED="" # set when repos were loaded from default or explicit config
 LIMIT=100
 INCLUDE_DETAILS=false
 BOTS_ONLY=false
