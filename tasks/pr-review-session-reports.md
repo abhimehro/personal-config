@@ -2,7 +2,20 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-20.
+> **Latest execution:** 2026-05-21.
+
+## Run — 2026-05-21 (cron salvage + cleanup)
+
+**Report:** `tasks/pr-review-2026-05-21.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 3 |
+| Closed duplicate | 1 |
+| Open tail (end) | 26 |
+
+**Highlights:** Merged last CLEAN queue items (#886, #202, #1009). Confirmed #1005 already on `main`. Twenty-two PRs remain DEFER/ESCALATE (DIRTY salvages + CodeScene/Jules UNSTABLE).
 
 ## Run — 2026-05-20 (cron salvage + cleanup)
 
