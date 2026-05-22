@@ -30,7 +30,6 @@ lint:
     - isort@8.0.1
     - osv-scanner@2.3.8
     - oxipng@10.1.1
-    - prettier@3.8.3
     - ruff@0.15.13
     - shellcheck@0.11.0
     - shfmt@3.6.0
@@ -40,6 +39,7 @@ lint:
     - yamllint@1.38.0
   disabled:
     - markdownlint
+    - prettier
 actions:
   disabled:
     - trunk-check-pre-push-always

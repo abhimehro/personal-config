@@ -3,6 +3,14 @@
     "codescene": {
       "command": "cs-mcp"
     },
+    "firebase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "firebase-tools@latest",
+        "mcp"
+      ]
+    },
     "Brave Search": {
       "command": "npx",
       "args": [
@@ -32,14 +40,8 @@
         "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_PERSONAL_ACCESS_TOKEN"
       }
     },
-    "Exa": {
-      "command": "npx",
-      "args": [
-        "exa-mcp-server"
-      ],
-      "env": {
-        "EXA_API_KEY": "YOUR_EXA_API_KEY"
-      }
+    "exa": {
+      "url": "https://mcp.exa.ai/mcp"
     },
     "Filesystem": {
       "command": "npx",
