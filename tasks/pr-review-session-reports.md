@@ -2,7 +2,21 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-21.
+> **Latest execution:** 2026-05-22.
+
+## Run — 2026-05-22 (cron Phase 2 salvage)
+
+**Report:** `tasks/pr-review-2026-05-22.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos processed | 6 |
+| Draft salvage PRs opened | 4 |
+| Closed superseded | 4 |
+| Autonomous merges | 0 |
+| Open in-scope (end) | 27 |
+
+**Highlights:** v2 rebuilds for personal-config #992/#995, ESP #867, Seatek #188. Escalated #985 toolchain security. Hydrograph preflight restored (0 open PRs).
 
 ## Run — 2026-05-21 (cron review-and-merge)
 
