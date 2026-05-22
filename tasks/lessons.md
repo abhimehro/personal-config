@@ -226,6 +226,12 @@
 **Pattern:** `personal-config#1010` and `ctrld-sync#833` had `files=0` and `mergeStateStatus=UNSTABLE` only while Cursor Bugbot was `IN_PROGRESS`; squash-merge succeeded once required security/CodeQL checks were `SUCCESS`.
 **Rule:** For Jules Daily QA shells with empty diffs, prefer squash-merge to clear queue noise after GitGuardian/CodeQL are green; do not wait indefinitely on optional Bugbot if merge API accepts the PR.
 
+## Lesson 0eg: Salvage must drop corrupt journal tails from automation PRs (2026-05-22)
+
+**Pattern:** `email-security-pipeline#867` appended a truncated fragment to `.jules/palette.md` (`tion in a category before defaulting…`) while the valuable change lived in `alert_system.py`. A wholesale journal checkout would have corrupted `main`.
+**Rule:** On Phase 2 salvage, if a journal diff fails the “strictly longer + valid markdown section” tripwire, **omit the journal file** from the v2 commit and note the omission in the draft PR body. Apply only production-path files (`src/`, `tests/`) after `py_compile`/targeted tests.
+**Detection cost:** Low — read the last 20 lines of any `.jules/*.md` diff before `git checkout pr --` on that path.
+
 ## Lesson 0df: A salvage agent given a "no local working-tree manipulation" rule will still `git checkout` if its prompt mentions cherry-picking commits (2026-05-09)
 
 **Pattern:** Item 4A of the 2026-05-09 orchestration plan briefed a `pair` agent with "no local working-tree manipulation" plus "create a salvage branch from `origin/main` and cherry-pick the canonical PR's commits." The agent interpreted that as licence to `git checkout <pr-branch>` in the working repo to read the commit list, switching the local tree off `main` for the rest of the session. Untracked-only documents (`docs/plans/`, `docs/reviews/`) were destroyed by the branch switch, and 51 unrelated files ended up staged on the bolt branch.
