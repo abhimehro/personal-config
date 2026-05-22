@@ -255,3 +255,8 @@
 **Vulnerability:** AppleScript Injection (CWE-74) existed in `configs/.config/mole/lib/core/sudo.sh` where `osascript` was executing a string containing user-controlled variable `${MOLE_SUDO_PROMPT:-Admin access required}`.
 **Learning:** Using inline string interpolation in AppleScript code executed via `osascript` allows an attacker to inject arbitrary AppleScript commands if they control the variable.
 **Prevention:** Use `osascript -e 'on run argv'` and pass dynamic variables safely as command-line arguments (e.g. `(item 1 of argv)`).
+
+## 2026-05-21 - Widespread AppleScript Injection via osascript
+**Vulnerability:** AppleScript Injection (CWE-74) found in multiple scripts in `media-streaming/scripts/` and `maintenance/bin/`. Although some scripts attempted to escape double quotes (`esc_m="${m//\"/\\\"}"`), an attacker could still inject commands like `\\\" & do shell script "echo pwned" & \\"` which evaluated inside the `display notification` command.
+**Learning:** Simple string escaping is insufficient when interpolating dynamic variables into AppleScript executed via `osascript -e`. An attacker can break out of the string context and execute arbitrary AppleScript or shell commands.
+**Prevention:** Always use `osascript -e 'on run argv'` and pass dynamic variables securely as command-line arguments (e.g., `item 1 of argv`). Never construct AppleScript strings via bash interpolation.
