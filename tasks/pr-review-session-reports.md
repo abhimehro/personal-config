@@ -2,7 +2,21 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-20.
+> **Latest execution:** 2026-05-22.
+
+## Run — 2026-05-22 (cron review-and-merge)
+
+**Report:** `tasks/pr-review-2026-05-22.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 9 |
+| Closed superseded | 1 |
+| Escalated | 3 |
+| Deferred | 22 |
+
+**Highlights:** Preflight green on all six repos (including Hydrograph). Merged Sentinel AppleScript fix, pre-commit bump, Hydrograph lint, Seatek salvage #189, series_correction perf. Closed duplicate session-doc PR #1013. Salvage tails still CONFLICTING or CodeScene-blocked.
 
 ## Run — 2026-05-20 (cron salvage + cleanup)
 
