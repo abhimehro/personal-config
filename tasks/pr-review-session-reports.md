@@ -2,7 +2,20 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-20.
+> **Latest execution:** 2026-05-21.
+
+## Run — 2026-05-21 (cron review-and-merge)
+
+**Report:** `tasks/pr-review-2026-05-21.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos processed | 5 (+1 blocked) |
+| Merged | 2 |
+| Escalated | 2 |
+| Open in-scope (end) | 25 |
+
+**Highlights:** Squash-merged zero-diff Jules QA shells (#1010, ctrld-sync#833). Escalated toolchain PRs personal-config#1009 and Seatek#202 with review comments. Hydrograph inaccessible — fix GitHub App installation.
 
 ## Run — 2026-05-20 (cron salvage + cleanup)
 

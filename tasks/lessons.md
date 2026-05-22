@@ -216,6 +216,16 @@
 **Rule:** After a merge burst on `personal-config`, treat batch salvage branches as stale. Rebuild with `git checkout -b cursor-agent/salvage-<repo>-<old_pr>-v2-<date> origin/main`, `git checkout origin/<old-salvage-branch> -- <minimal paths>`, verify, push, open a **new draft** PR, then close conflicted salvages. Do not rely on GitHub “Update branch” for batch2 tails.
 **Detection cost:** Low — one `update-branch` 422 on any batch2 PR implies the whole batch needs v2.
 
+## Lesson 0ee: Partial preflight when one config repo is off-app (2026-05-21)
+
+**Pattern:** `preflight-gh-pr-automation.sh` exits non-zero when `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project` is not installed on the GitHub App, even though the other five repos pass read-only checks.
+**Rule:** Treat Hydrograph as **BLOCKED** until app installation is fixed; continue review-and-merge on accessible repos and record the partial preflight in the session report. Do not assume zero open PRs on an inaccessible repo.
+
+## Lesson 0ef: Zero-diff Jules QA PRs are safe queue-clearers when security scans pass (2026-05-21)
+
+**Pattern:** `personal-config#1010` and `ctrld-sync#833` had `files=0` and `mergeStateStatus=UNSTABLE` only while Cursor Bugbot was `IN_PROGRESS`; squash-merge succeeded once required security/CodeQL checks were `SUCCESS`.
+**Rule:** For Jules Daily QA shells with empty diffs, prefer squash-merge to clear queue noise after GitGuardian/CodeQL are green; do not wait indefinitely on optional Bugbot if merge API accepts the PR.
+
 ## Lesson 0df: A salvage agent given a "no local working-tree manipulation" rule will still `git checkout` if its prompt mentions cherry-picking commits (2026-05-09)
 
 **Pattern:** Item 4A of the 2026-05-09 orchestration plan briefed a `pair` agent with "no local working-tree manipulation" plus "create a salvage branch from `origin/main` and cherry-pick the canonical PR's commits." The agent interpreted that as licence to `git checkout <pr-branch>` in the working repo to read the commit list, switching the local tree off `main` for the rest of the session. Untracked-only documents (`docs/plans/`, `docs/reviews/`) were destroyed by the branch switch, and 51 unrelated files ended up staged on the bolt branch.

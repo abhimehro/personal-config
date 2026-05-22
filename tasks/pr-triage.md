@@ -1,66 +1,56 @@
-# PR Triage — 2026-05-20 salvage workflow
+# PR Triage — 2026-05-21
 
-**Session:** Automated PR salvage + cleanup (cron). Preflight passed.
+**Session:** Automated PR review-and-merge (cron `0 13 * * *`).  
+**Preflight:** Partial — Hydrograph repo inaccessible; five repos processed.
 
 ## MERGED (squash, branch deleted)
 
 | Repo | PR | Notes |
 | --- | ---: | --- |
-| email-security-pipeline | 881 | CWE-94 workflow_dispatch injection fix (security-first) |
-| email-security-pipeline | 883 | Remove empty JSON artifacts |
-| email-security-pipeline | 843 | Fix missing whitespace filenames |
-| email-security-pipeline | 820 | Refactor `_analyze_email` complexity |
-| ctrld-sync | 825 | mypy fix in `test_ux.py` |
-| ctrld-sync | 807 | Simplify `_retry_request` nesting |
-| Seatek_Analysis | 199 | Concurrent GitHub fetch (Bolt) |
-| Seatek_Analysis | 175 | Extract `execute_tasks_parallel` |
-| series_correction_project_updated | 53 | Remove redundant `pd.Series` wrapping |
+| personal-config | 1010 | Zero-diff Jules Daily QA — all required checks green enough to merge |
+| ctrld-sync | 833 | Zero-diff Jules Daily QA |
 
-## CLOSED-SUPERSEDED
+## ESCALATE (human review required)
 
 | Repo | PR | Reason |
 | --- | ---: | --- |
-| personal-config | 986, 987, 988 | Conflicted batch2 Sentinel salvages; superseded by draft **#1005** (v2 from `main`) |
-| ctrld-sync | 824 | Overlapping hostname dedup; prefer **#822** or **#830** |
-| email-security-pipeline | 874 | Duplicate Palette UX vs salvage **#867** |
+| personal-config | 1009 | Trust boundary: modifies `parse_inventory.py` (agent toolchain); CI CLEAN |
+| Seatek_Analysis | 202 | Trust boundary: `.github/scripts/repository_automation_tasks.py`; overlaps #199 hotspot; CI CLEAN |
 
-## SALVAGE-DRAFT (human merge required)
+Review comments posted on both PRs.
 
-| Repo | PR | Tier | Notes |
-| --- | ---: | --- | --- |
-| personal-config | 1005 | T1 | CWE-78 mole core — rebuilt `cursor-agent/salvage-pc-923-v2-20260520` |
+## DEFER — CONFLICTING (salvage / v2 rebuild from `main`)
 
-## DEFER — CONFLICTING (needs v2 salvage from `main`)
-
-### personal-config (batch2, `update-branch` → 422)
-
-983, 985, 990–993, 995–998, 1000 — hot files moved on `main` (#989, #994, #999, #1002, #1004). Rebuild per intent lane; do not `git checkout pr --` on journals.
-
-### Seatek_Analysis
-
-188–198 — salvage batch1 branches DIRTY after #199/#175 merges.
-
-### email-security-pipeline
-
-867 — Palette salvage; DIRTY after #881 merge.
-
-### ctrld-sync
-
-841, 823, 807 (merged), overlapping dedup queue: 788, 820, 822, 830.
+| Repo | PRs | Reason |
+| --- | --- | --- |
+| personal-config | 985, 992, 995 | batch2 salvages DIRTY on `main` |
+| email-security-pipeline | 807, 823, 841, 867 | conflicts after prior merges |
+| Seatek_Analysis | 188–198 (9 PRs) | salvage batch1 DIRTY after #199/#175/#200 wave |
 
 ## DEFER — UNSTABLE CI (do not merge)
 
 | Repo | PR | Blocker |
 | --- | ---: | --- |
-| ctrld-sync | 830 | `benchmark` failing |
-| ctrld-sync | 822, 821, 820, 818, 815 | CodeScene / overlapping dedup — pick one canonical PR |
-| Seatek_Analysis | 172, 189 | UNSTABLE rollup |
-| email-security-pipeline | 844, 842, 841, 823, 807 | conflicts or UNSTABLE |
+| ctrld-sync | 789 | `mypy` |
+| ctrld-sync | 815, 821 | CodeScene |
+| ctrld-sync | 818 | `greeting` |
+| email-security-pipeline | 842, 844 | CodeScene |
+| Seatek_Analysis | 172 | CodeScene |
+| Seatek_Analysis | 189 | CodeScene pending |
 
-## READY (CLEAN, not merged this session)
+## BLOCKED — REPO ACCESS
 
-_None remaining after merge pass._
+| Repo | Action |
+| --- | --- |
+| Hydrograph_Versus_Seatek_Sensors_Project | Escalate GitHub App installation / token scope; no inventory or writes |
 
-## Hydrograph_Versus_Seatek_Sensors_Project
+## CLOSE-STALE / CLOSE-DUPLICATE
 
-No open in-scope PRs.
+None this session (no PRs >30 days; duplicates left for salvage pass to avoid mistaken closure).
+
+## READY (CLEAN, not merged)
+
+| Repo | PR | Why held |
+| --- | ---: | --- |
+| personal-config | 1009 | ESCALATE toolchain |
+| Seatek_Analysis | 202 | ESCALATE toolchain |
