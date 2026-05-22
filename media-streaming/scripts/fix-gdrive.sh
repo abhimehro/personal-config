@@ -20,7 +20,7 @@ echo
 echo "🔐 Attempting to reconnect gdrive remote..."
 echo "This will open your browser for Google authorization."
 echo
-read -p "Press Enter to continue..."
+read -r -p "Press Enter to continue..."
 
 echo "Running: rclone config reconnect gdrive:"
 rclone config reconnect gdrive:
@@ -34,7 +34,7 @@ if rclone about gdrive: &>/dev/null; then
 else
 	echo "❌ Reconnect failed. Let's delete and recreate..."
 	echo
-	read -p "Delete gdrive remote and start fresh? (y/n): " -r
+	read -r -p "Delete gdrive remote and start fresh? (y/n): " REPLY
 	if [[ $REPLY =~ ^[Yy]$ ]]; then
 		rclone config delete gdrive
 		echo "✅ Old gdrive remote deleted"

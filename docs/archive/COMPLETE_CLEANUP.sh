@@ -38,7 +38,7 @@ confirm_cleanup() {
 	echo
 	echo "Your system will return to using default DNS (your ISP's DNS)."
 	echo
-	read -p "Are you absolutely sure you want to continue? (type 'YES' to confirm): " confirm
+	read -r -p "Are you absolutely sure you want to continue? (type 'YES' to confirm): " confirm
 
 	if [ "$confirm" != "YES" ]; then
 		echo "Cleanup cancelled."

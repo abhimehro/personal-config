@@ -61,7 +61,7 @@ setup_gdrive() {
 	echo "10. Team drive: choose 'n' (unless needed)"
 	echo "11. Save with 'y'"
 	echo
-	read -p "Press Enter to start Google Drive setup..."
+	read -r -p "Press Enter to start Google Drive setup..."
 
 	rclone config
 }
@@ -86,7 +86,7 @@ setup_onedrive() {
 	echo "7. Choose account type (personal/business)"
 	echo "8. Save with 'y'"
 	echo
-	read -p "Press Enter to start OneDrive setup..."
+	read -r -p "Press Enter to start OneDrive setup..."
 
 	rclone config
 }
@@ -160,7 +160,7 @@ create_union() {
 	echo "7. Search policy: ff (or press Enter for default)"
 	echo "8. Save with 'y'"
 	echo
-	read -p "Press Enter to create union remote..."
+	read -r -p "Press Enter to create union remote..."
 
 	rclone config
 
@@ -218,7 +218,7 @@ echo "• Create a unified 'media' remote"
 echo "• Set up WebDAV server for Infuse"
 echo
 
-read -p "Continue? (y/n): " -r
+read -r -p "Continue? (y/n): " REPLY
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 	echo "Setup cancelled."
 	exit 1
