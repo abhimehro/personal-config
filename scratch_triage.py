@@ -2,6 +2,7 @@ import datetime
 import json
 import re
 import subprocess
+import concurrent.futures
 
 repos = [
     "abhimehro/personal-config",
@@ -18,8 +19,7 @@ def run_cmd(cmd):
     return res.returncode == 0, res.stdout, res.stderr
 
 
-all_prs = []
-for repo in repos:
+def _fetch_repo_prs(repo):
     success, stdout, _ = run_cmd(
         [
             "gh",
@@ -41,7 +41,15 @@ for repo in repos:
             # ⚡ Bolt Optimization: Use rpartition() over split() to avoid intermediate list allocation overhead
             pr["repo"] = repo.rpartition("/")[2]
             pr["full_repo"] = repo
-            all_prs.append(pr)
+        return prs
+    return []
+
+
+all_prs = []
+# ⚡ Bolt Optimization: Parallelize N+1 read-only API calls while preserving order using map()
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    for prs in executor.map(_fetch_repo_prs, repos):
+        all_prs.extend(prs)
 
 merged = []
 closed = []
