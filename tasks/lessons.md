@@ -210,6 +210,12 @@
 **Pattern:** `gh api repos/$REPO/branches/main/protection` returns `HTTP 403: Resource not accessible by [REDACTED] access token` for all five repos in this config when authenticated as the personal owner. This does **not** indicate misconfigured branch protection — it just means the token scope can't read the protection record. <!-- pragma: allowlist secret -->
 **Rule:** Treat 403 on the protection-read endpoint as benign for personal repos. Verify branch-protection behavior via merge attempts instead (`gh pr merge` will fail with a clear error if rules block the merge). Keep the preflight gate looking at `gh auth status` and `gh repo view` rather than the protection endpoint. <!-- pragma: allowlist secret -->
 
+## Lesson 0gg: v2 salvage branches can pick up whole-repo scope creep (2026-05-23)
+
+**Pattern:** Draft salvages `#1020` and `#1021` on `personal-config` each showed ~402 changed files and ~42k insertions despite titles claiming tests-only or adguard-only intent. Likely caused by branching from a stale/conflicted base instead of a fresh shallow `main` clone.
+**Rule:** Phase 2 must clone to `/tmp/salvage-<slug>-<date>/` with `git clone --depth=1`, create the branch from `origin/main`, and stage **only** the paths listed in the salvage plan. Before `git push`, assert `git diff --stat origin/main` touches ≤10 files (or abort). Close scope-creep PRs with a comment rather than attempting `update-branch`.
+**Detection cost:** Low — `gh pr view --json changedFiles` > 20 on a “tests-only” salvage is an immediate red flag.
+
 ## Lesson 0cc: Salvage batch2 branches go DIRTY after every personal-config merge wave (2026-05-20)
 
 **Pattern:** Eleven `cursor-agent/salvage-personal-config-*-pc-batch2` PRs were opened 2026-05-19; after merges #989, #994, #999, #1002, and #1004 landed on `main`, every `gh api …/update-branch` returned HTTP 422 (`merge conflict between base and head`). Sentinel fixes in #986–#988 overlapped the same mole core paths.
