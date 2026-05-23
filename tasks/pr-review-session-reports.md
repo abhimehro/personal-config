@@ -4,18 +4,19 @@
 >
 > **Latest execution:** 2026-05-23.
 
-## Run — 2026-05-23 (cron review-and-merge)
+## Run — 2026-05-23 (review 13:00 + salvage 17:00)
 
 **Report:** `tasks/pr-review-2026-05-23.md`
 
 | Metric | Count |
 | --- | ---: |
 | Repos | 6 |
-| Merged | 10 |
-| Closed duplicate/superseded | 2 |
+| Merged (combined) | 12 |
+| Closed | 13 |
+| New salvage drafts | 1 (`personal-config#1028`) |
 | Escalated (benchmark) | 2 |
 
-**Highlights:** Cleared CI-green queue including Sentinel AppleScript fix (#1023), ESP monotonic uptime (#896), Hydrograph/series Bolt opts, Seatek #172, ctrld #821/#818. Closed ESP #897 and series #55 as duplicates. Benchmark blocks ctrld #837/#835; salvage tails remain CONFLICTING.
+**Highlights:** Morning run merged Sentinel #1023, Bolt perf, Hydrograph/series/ESP/Seatek/ctrld greens. Afternoon salvage merged session docs + Seatek #206, closed scope-creep salvages (#1020/#1021) and Seatek batch1 (#190–#198), opened tests-only **#1028**. ctrld **#837/#835** still blocked on benchmark.
 
 ## Run — 2026-05-20 (cron salvage + cleanup)
 
