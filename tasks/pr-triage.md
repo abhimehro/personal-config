@@ -1,66 +1,56 @@
-# PR Triage — 2026-05-20 salvage workflow
+# PR Triage — 2026-05-23 (combined)
 
-**Session:** Automated PR salvage + cleanup (cron). Preflight passed.
+**Disposition key:** MERGE · CLOSE-DUPLICATE · CLOSE-SCOPE-CREEP · DEFER · ESCALATE · SALVAGE-DRAFT
 
-## MERGED (squash, branch deleted)
+**Sessions:** Review-and-merge (13:00) + salvage cleanup (17:00). Preflight **passed** both runs.
 
-| Repo | PR | Notes |
+## Review session (13:00) — merged
+
+| Repo | PR | Disposition |
 | --- | ---: | --- |
-| email-security-pipeline | 881 | CWE-94 workflow_dispatch injection fix (security-first) |
-| email-security-pipeline | 883 | Remove empty JSON artifacts |
-| email-security-pipeline | 843 | Fix missing whitespace filenames |
-| email-security-pipeline | 820 | Refactor `_analyze_email` complexity |
-| ctrld-sync | 825 | mypy fix in `test_ux.py` |
-| ctrld-sync | 807 | Simplify `_retry_request` nesting |
-| Seatek_Analysis | 199 | Concurrent GitHub fetch (Bolt) |
-| Seatek_Analysis | 175 | Extract `execute_tasks_parallel` |
-| series_correction_project_updated | 53 | Remove redundant `pd.Series` wrapping |
+| personal-config | 1026, 1025, 1023 | **MERGE** |
+| email-security-pipeline | 896 | **MERGE** |
+| email-security-pipeline | 897 | **CLOSE-DUPLICATE** (#896) |
+| Hydrograph | 199 | **MERGE** |
+| series_correction | 59, 58 | **MERGE** |
+| series_correction | 55 | **CLOSE-DUPLICATE** (#58) |
+| Seatek_Analysis | 172 | **MERGE** |
+| ctrld-sync | 821, 818 | **MERGE** |
 
-## CLOSED-SUPERSEDED
+## Salvage session (17:00) — merged / closed / new draft
 
-| Repo | PR | Reason |
+| Repo | PR | Disposition |
 | --- | ---: | --- |
-| personal-config | 986, 987, 988 | Conflicted batch2 Sentinel salvages; superseded by draft **#1005** (v2 from `main`) |
-| ctrld-sync | 824 | Overlapping hostname dedup; prefer **#822** or **#830** |
-| email-security-pipeline | 874 | Duplicate Palette UX vs salvage **#867** |
+| personal-config | 1027 | **MERGE** (session artifacts) |
+| Seatek_Analysis | 206 | **MERGE** |
+| personal-config | 1019, 1022 | **CLOSE-SUPERSEDED** (#1027) |
+| personal-config | 1020, 1021 | **CLOSE-SCOPE-CREEP** |
+| personal-config | 985 | **CLOSE-SUPERSEDED** (rebuild needed) |
+| Seatek_Analysis | 190–198 | **CLOSE-SUPERSEDED** |
+| personal-config | 1028 | **SALVAGE-DRAFT** (salvages #992) |
 
-## SALVAGE-DRAFT (human merge required)
+## Still open (end of day)
 
-| Repo | PR | Tier | Notes |
+| Repo | PR | Disposition | Notes |
 | --- | ---: | --- | --- |
-| personal-config | 1005 | T1 | CWE-78 mole core — rebuilt `cursor-agent/salvage-pc-923-v2-20260520` |
+| personal-config | 1028 | **SALVAGE-DRAFT** | Human merge when CI green |
+| Seatek_Analysis | 204 | **SALVAGE-DRAFT** | #188 perf |
+| email-security-pipeline | 894 | **SALVAGE-DRAFT** | CodeScene fail |
+| ctrld-sync | 837, 835 | **ESCALATE** | `benchmark` required check |
+| ctrld-sync | 815, 789 | **DEFER** | CONFLICT / mypy |
+| email-security-pipeline | 807, 823, 841, 842, 844 | **DEFER** | CONFLICT or CodeScene |
 
-## DEFER — CONFLICTING (needs v2 salvage from `main`)
+## Duplicate / overlap groups
 
-### personal-config (batch2, `update-branch` → 422)
+| Group | Keep | Close / defer others |
+| --- | --- | --- |
+| ESP monotonic uptime | #896 | #897 closed |
+| Series exception leakage | #58 | #55 closed |
+| Session docs | #1027 merged | #1019, #1022 closed |
+| ctrld benchmark lane | — | #837 + #835 blocked until `main` benchmark fixed |
 
-983, 985, 990–993, 995–998, 1000 — hot files moved on `main` (#989, #994, #999, #1002, #1004). Rebuild per intent lane; do not `git checkout pr --` on journals.
+## Human next steps
 
-### Seatek_Analysis
-
-188–198 — salvage batch1 branches DIRTY after #199/#175 merges.
-
-### email-security-pipeline
-
-867 — Palette salvage; DIRTY after #881 merge.
-
-### ctrld-sync
-
-841, 823, 807 (merged), overlapping dedup queue: 788, 820, 822, 830.
-
-## DEFER — UNSTABLE CI (do not merge)
-
-| Repo | PR | Blocker |
-| --- | ---: | --- |
-| ctrld-sync | 830 | `benchmark` failing |
-| ctrld-sync | 822, 821, 820, 818, 815 | CodeScene / overlapping dedup — pick one canonical PR |
-| Seatek_Analysis | 172, 189 | UNSTABLE rollup |
-| email-security-pipeline | 844, 842, 841, 823, 807 | conflicts or UNSTABLE |
-
-## READY (CLEAN, not merged this session)
-
-_None remaining after merge pass._
-
-## Hydrograph_Versus_Seatek_Sensors_Project
-
-No open in-scope PRs.
+1. Fix **ctrld-sync** `benchmark` on `main`, then merge **#837** / **#835**.
+2. Human-merge salvage drafts **#1028**, **#204**, **#894** after review.
+3. v2-rebuild ESP DIRTY PRs (#807, #823, #841) from `/tmp` clones per Lesson **0gg**.

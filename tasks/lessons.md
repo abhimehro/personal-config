@@ -210,11 +210,27 @@
 **Pattern:** `gh api repos/$REPO/branches/main/protection` returns `HTTP 403: Resource not accessible by [REDACTED] access token` for all five repos in this config when authenticated as the personal owner. This does **not** indicate misconfigured branch protection — it just means the token scope can't read the protection record. <!-- pragma: allowlist secret -->
 **Rule:** Treat 403 on the protection-read endpoint as benign for personal repos. Verify branch-protection behavior via merge attempts instead (`gh pr merge` will fail with a clear error if rules block the merge). Keep the preflight gate looking at `gh auth status` and `gh repo view` rather than the protection endpoint. <!-- pragma: allowlist secret -->
 
+## Lesson 0gg: v2 salvage branches can pick up whole-repo scope creep (2026-05-23)
+
+**Pattern:** Draft salvages `#1020` and `#1021` on `personal-config` each showed ~402 changed files and ~42k insertions despite titles claiming tests-only or adguard-only intent. Likely caused by branching from a stale/conflicted base instead of a fresh shallow `main` clone.
+**Rule:** Phase 2 must clone to `/tmp/salvage-<slug>-<date>/` with `git clone --depth=1`, create the branch from `origin/main`, and stage **only** the paths listed in the salvage plan. Before `git push`, assert `git diff --stat origin/main` touches ≤10 files (or abort). Close scope-creep PRs with a comment rather than attempting `update-branch`.
+**Detection cost:** Low — `gh pr view --json changedFiles` > 20 on a “tests-only” salvage is an immediate red flag.
+
 ## Lesson 0cc: Salvage batch2 branches go DIRTY after every personal-config merge wave (2026-05-20)
 
 **Pattern:** Eleven `cursor-agent/salvage-personal-config-*-pc-batch2` PRs were opened 2026-05-19; after merges #989, #994, #999, #1002, and #1004 landed on `main`, every `gh api …/update-branch` returned HTTP 422 (`merge conflict between base and head`). Sentinel fixes in #986–#988 overlapped the same mole core paths.
 **Rule:** After a merge burst on `personal-config`, treat batch salvage branches as stale. Rebuild with `git checkout -b cursor-agent/salvage-<repo>-<old_pr>-v2-<date> origin/main`, `git checkout origin/<old-salvage-branch> -- <minimal paths>`, verify, push, open a **new draft** PR, then close conflicted salvages. Do not rely on GitHub “Update branch” for batch2 tails.
 **Detection cost:** Low — one `update-branch` 422 on any batch2 PR implies the whole batch needs v2.
+
+## Lesson 0dg: Sentinel PRs with scratch `.diff` siblings should lose to a clean branch (2026-05-23)
+
+**Pattern:** `series_correction_project_updated#55` carried nine files including `fix_*.diff`, `patch.diff`, and `batch_correction.py.orig` beside the real fix; `#58` changed only `batch_correction.py`, `processor.py`, and tests with the same security intent.
+**Rule:** When two Sentinel/Bolt PRs target the same CWE, prefer the branch with **no** scratch patch artifacts. Close the noisy PR with an explicit supersession link before merging the clean one.
+
+## Lesson 0dh: `greeting` and `benchmark` failures are infra lanes, not always PR regressions (2026-05-23)
+
+**Pattern:** `email-security-pipeline#897` failed only `greeting` while twin `#896` was identical and green. `ctrld-sync#837`/`#835` failed only `benchmark` with otherwise mergeable security/perf diffs.
+**Rule:** Diff twin PRs before blaming application code. Close the worse twin when file lists match. Escalate benchmark/greeting lanes repo-wide when multiple unrelated PRs share the same single failing check.
 
 ## Lesson 0df: A salvage agent given a "no local working-tree manipulation" rule will still `git checkout` if its prompt mentions cherry-picking commits (2026-05-09)
 
