@@ -1,66 +1,52 @@
-# PR Triage — 2026-05-20 salvage workflow
+# PR Triage — 2026-05-23
 
-**Session:** Automated PR salvage + cleanup (cron). Preflight passed.
+**Disposition key:** MERGE · MERGE-AFTER-FIX · CLOSE-DUPLICATE · CLOSE-STALE · DEFER · ESCALATE
 
-## MERGED (squash, branch deleted)
+## Phase 1 dispositions
 
-| Repo | PR | Notes |
-| --- | ---: | --- |
-| email-security-pipeline | 881 | CWE-94 workflow_dispatch injection fix (security-first) |
-| email-security-pipeline | 883 | Remove empty JSON artifacts |
-| email-security-pipeline | 843 | Fix missing whitespace filenames |
-| email-security-pipeline | 820 | Refactor `_analyze_email` complexity |
-| ctrld-sync | 825 | mypy fix in `test_ux.py` |
-| ctrld-sync | 807 | Simplify `_retry_request` nesting |
-| Seatek_Analysis | 199 | Concurrent GitHub fetch (Bolt) |
-| Seatek_Analysis | 175 | Extract `execute_tasks_parallel` |
-| series_correction_project_updated | 53 | Remove redundant `pd.Series` wrapping |
-
-## CLOSED-SUPERSEDED
-
-| Repo | PR | Reason |
-| --- | ---: | --- |
-| personal-config | 986, 987, 988 | Conflicted batch2 Sentinel salvages; superseded by draft **#1005** (v2 from `main`) |
-| ctrld-sync | 824 | Overlapping hostname dedup; prefer **#822** or **#830** |
-| email-security-pipeline | 874 | Duplicate Palette UX vs salvage **#867** |
-
-## SALVAGE-DRAFT (human merge required)
-
-| Repo | PR | Tier | Notes |
+| Repo | PR | Disposition | Rationale |
 | --- | ---: | --- | --- |
-| personal-config | 1005 | T1 | CWE-78 mole core — rebuilt `cursor-agent/salvage-pc-923-v2-20260520` |
+| personal-config | 1026 | **MERGE** | Zero-diff QA; CodeQL/ShellCheck green (Lesson 0b exception for QA queue hygiene) |
+| personal-config | 1025 | **MERGE** | Scoped perf; CI green; no trust-boundary change |
+| personal-config | 1023 | **MERGE** | Sentinel CWE-74 fix across maintenance/media scripts; CI green; not `parse_inventory` / `repository_automation_tasks` |
+| personal-config | 1021 | **DEFER** | Draft; 402-file salvage; CONFLICTING — Phase 2 rebuild |
+| personal-config | 1020 | **DEFER** | Draft; 402-file salvage; CONFLICTING |
+| personal-config | 985 | **DEFER** | Salvage secrets-path; CONFLICTING + CodeScene |
+| ctrld-sync | 837 | **ESCALATE** | Required `benchmark` failing; do not merge |
+| ctrld-sync | 835 | **ESCALATE** | Same benchmark infra failure |
+| ctrld-sync | 821 | **MERGE** | Green CI; mergeable (merged this session) |
+| ctrld-sync | 818 | **MERGE** | Merged (greeting fail non-blocking for merge API) |
+| ctrld-sync | 815 | **DEFER** | CONFLICTING after sibling merges |
+| ctrld-sync | 789 | **DEFER** | `mypy` failing; 8d old refactor |
+| email-security-pipeline | 896 | **MERGE** | Canonical monotonic uptime change |
+| email-security-pipeline | 897 | **CLOSE-DUPLICATE** | Same diff as #896; worse CI (`greeting`) |
+| email-security-pipeline | 894 | **DEFER** | Draft Palette salvage; security-sensitive pipeline |
+| email-security-pipeline | 841, 807 | **DEFER** | CONFLICTING; `update-branch` 422 |
+| email-security-pipeline | 842, 844 | **DEFER** | CodeScene failing; pre-existing on older Bolt/Jules PRs |
+| Seatek_Analysis | 172 | **MERGE** | Mergeable; CodeScene non-blocking |
+| Seatek_Analysis | 204 | **DEFER** | Draft salvage #188 |
+| Seatek_Analysis | 198–190 | **DEFER** | CONFLICTING salvage batch; commented for Phase 2 |
+| Hydrograph_Versus_Seatek_Sensors_Project | 199 | **MERGE** | CI green; scoped pandas micro-opt |
+| series_correction_project_updated | 59 | **MERGE** | CI green |
+| series_correction_project_updated | 58 | **MERGE** | Cleaner Sentinel fix |
+| series_correction_project_updated | 55 | **CLOSE-DUPLICATE** | Superseded by #58; scratch patch files |
 
-## DEFER — CONFLICTING (needs v2 salvage from `main`)
+## Duplicate / overlap groups
 
-### personal-config (batch2, `update-branch` → 422)
+| Group | Keep | Close / defer others |
+| --- | --- | --- |
+| ESP monotonic uptime | #896 | #897 closed |
+| Series exception leakage | #58 | #55 closed |
+| ctrld-sync benchmark lane | — | #837 + #835 both blocked until benchmark fixed |
 
-983, 985, 990–993, 995–998, 1000 — hot files moved on `main` (#989, #994, #999, #1002, #1004). Rebuild per intent lane; do not `git checkout pr --` on journals.
+## Ready-to-execute human actions
 
-### Seatek_Analysis
+1. **Fix ctrld-sync `benchmark` on `main`** then merge [#837](https://github.com/abhimehro/ctrld-sync/pull/837) and [#835](https://github.com/abhimehro/ctrld-sync/pull/835).
+2. **Phase-2 salvage:** Rebuild `personal-config` #1020/#1021 and `Seatek_Analysis` #198–190 from current `main`.
+3. **Mark ready + review** [#894](https://github.com/abhimehro/email-security-pipeline/pull/894) (Palette / trust-boundary in security pipeline).
+4. Re-run `gh api -X PUT repos/.../pulls/N/update-branch` on ESP #841/#807 after next `main` merge window.
 
-188–198 — salvage batch1 branches DIRTY after #199/#175 merges.
+## Security escalations (no auto-merge)
 
-### email-security-pipeline
-
-867 — Palette salvage; DIRTY after #881 merge.
-
-### ctrld-sync
-
-841, 823, 807 (merged), overlapping dedup queue: 788, 820, 822, 830.
-
-## DEFER — UNSTABLE CI (do not merge)
-
-| Repo | PR | Blocker |
-| --- | ---: | --- |
-| ctrld-sync | 830 | `benchmark` failing |
-| ctrld-sync | 822, 821, 820, 818, 815 | CodeScene / overlapping dedup — pick one canonical PR |
-| Seatek_Analysis | 172, 189 | UNSTABLE rollup |
-| email-security-pipeline | 844, 842, 841, 823, 807 | conflicts or UNSTABLE |
-
-## READY (CLEAN, not merged this session)
-
-_None remaining after merge pass._
-
-## Hydrograph_Versus_Seatek_Sensors_Project
-
-No open in-scope PRs.
+- None blocking beyond standard Sentinel/Bolt review — #1023 merged after Gate 2 pass (no secrets, injection fix only).
+- **email-security-pipeline** remains security-classified: defer feature/salvage PRs (#894) for human review.
