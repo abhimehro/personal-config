@@ -216,6 +216,16 @@
 **Rule:** After a merge burst on `personal-config`, treat batch salvage branches as stale. Rebuild with `git checkout -b cursor-agent/salvage-<repo>-<old_pr>-v2-<date> origin/main`, `git checkout origin/<old-salvage-branch> -- <minimal paths>`, verify, push, open a **new draft** PR, then close conflicted salvages. Do not rely on GitHub “Update branch” for batch2 tails.
 **Detection cost:** Low — one `update-branch` 422 on any batch2 PR implies the whole batch needs v2.
 
+## Lesson 0dg: Sentinel PRs with scratch `.diff` siblings should lose to a clean branch (2026-05-23)
+
+**Pattern:** `series_correction_project_updated#55` carried nine files including `fix_*.diff`, `patch.diff`, and `batch_correction.py.orig` beside the real fix; `#58` changed only `batch_correction.py`, `processor.py`, and tests with the same security intent.
+**Rule:** When two Sentinel/Bolt PRs target the same CWE, prefer the branch with **no** scratch patch artifacts. Close the noisy PR with an explicit supersession link before merging the clean one.
+
+## Lesson 0dh: `greeting` and `benchmark` failures are infra lanes, not always PR regressions (2026-05-23)
+
+**Pattern:** `email-security-pipeline#897` failed only `greeting` while twin `#896` was identical and green. `ctrld-sync#837`/`#835` failed only `benchmark` with otherwise mergeable security/perf diffs.
+**Rule:** Diff twin PRs before blaming application code. Close the worse twin when file lists match. Escalate benchmark/greeting lanes repo-wide when multiple unrelated PRs share the same single failing check.
+
 ## Lesson 0df: A salvage agent given a "no local working-tree manipulation" rule will still `git checkout` if its prompt mentions cherry-picking commits (2026-05-09)
 
 **Pattern:** Item 4A of the 2026-05-09 orchestration plan briefed a `pair` agent with "no local working-tree manipulation" plus "create a salvage branch from `origin/main` and cherry-pick the canonical PR's commits." The agent interpreted that as licence to `git checkout <pr-branch>` in the working repo to read the commit list, switching the local tree off `main` for the rest of the session. Untracked-only documents (`docs/plans/`, `docs/reviews/`) were destroyed by the branch switch, and 51 unrelated files ended up staged on the bolt branch.

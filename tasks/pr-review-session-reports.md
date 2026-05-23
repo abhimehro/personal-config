@@ -2,7 +2,20 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-20.
+> **Latest execution:** 2026-05-23.
+
+## Run — 2026-05-23 (cron review-and-merge)
+
+**Report:** `tasks/pr-review-2026-05-23.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 10 |
+| Closed duplicate/superseded | 2 |
+| Escalated (benchmark) | 2 |
+
+**Highlights:** Cleared CI-green queue including Sentinel AppleScript fix (#1023), ESP monotonic uptime (#896), Hydrograph/series Bolt opts, Seatek #172, ctrld #821/#818. Closed ESP #897 and series #55 as duplicates. Benchmark blocks ctrld #837/#835; salvage tails remain CONFLICTING.
 
 ## Run — 2026-05-20 (cron salvage + cleanup)
 
