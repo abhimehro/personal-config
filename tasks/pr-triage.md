@@ -1,54 +1,56 @@
-# PR Triage — 2026-05-23 salvage workflow
+# PR Triage — 2026-05-23 (combined)
 
-**Session:** Automated PR salvage + cleanup (cron). Preflight **passed**.
+**Disposition key:** MERGE · CLOSE-DUPLICATE · CLOSE-SCOPE-CREEP · DEFER · ESCALATE · SALVAGE-DRAFT
 
-## MERGED (squash, branch deleted)
+**Sessions:** Review-and-merge (13:00) + salvage cleanup (17:00). Preflight **passed** both runs.
 
-| Repo | PR | Notes |
+## Review session (13:00) — merged
+
+| Repo | PR | Disposition |
 | --- | ---: | --- |
-| personal-config | 1027 | Session artifacts (`tasks/pr-*`, `lessons.md`) — all required checks green |
-| Seatek_Analysis | 206 | Chore: untrack runtime `processing_warnings.log` |
+| personal-config | 1026, 1025, 1023 | **MERGE** |
+| email-security-pipeline | 896 | **MERGE** |
+| email-security-pipeline | 897 | **CLOSE-DUPLICATE** (#896) |
+| Hydrograph | 199 | **MERGE** |
+| series_correction | 59, 58 | **MERGE** |
+| series_correction | 55 | **CLOSE-DUPLICATE** (#58) |
+| Seatek_Analysis | 172 | **MERGE** |
+| ctrld-sync | 821, 818 | **MERGE** |
 
-## CLOSED-SUPERSEDED / CLOSED-SCOPE-CREEP
+## Salvage session (17:00) — merged / closed / new draft
 
-| Repo | PR | Reason |
+| Repo | PR | Disposition |
 | --- | ---: | --- |
-| personal-config | 1019 | Superseded by merged #1027; branch carried ~400 unrelated files |
-| personal-config | 1022 | Superseded by merged #1027 (salvage doc artifacts) |
-| personal-config | 1020, 1021 | v2 salvage branches with ~402 files — closed; rebuild tests/adguard-only from `main` |
-| personal-config | 985 | DIRTY batch2 secrets-path salvage; trust-boundary — rebuild as fresh draft |
-| Seatek_Analysis | 190–198 | Batch1 salvages DIRTY after #199/#175; overlapping `repository_automation_tasks.py` |
+| personal-config | 1027 | **MERGE** (session artifacts) |
+| Seatek_Analysis | 206 | **MERGE** |
+| personal-config | 1019, 1022 | **CLOSE-SUPERSEDED** (#1027) |
+| personal-config | 1020, 1021 | **CLOSE-SCOPE-CREEP** |
+| personal-config | 985 | **CLOSE-SUPERSEDED** (rebuild needed) |
+| Seatek_Analysis | 190–198 | **CLOSE-SUPERSEDED** |
+| personal-config | 1028 | **SALVAGE-DRAFT** (salvages #992) |
 
-## SALVAGE-DRAFT (human merge required — Phase 2 never auto-merges)
+## Still open (end of day)
 
-| Repo | PR | Tier | Notes |
+| Repo | PR | Disposition | Notes |
 | --- | ---: | --- | --- |
-| personal-config | 1028 | T3 | `tests/test_scratch_triage.py` only (salvages #992) |
-| Seatek_Analysis | 204 | T3 | Extension-check perf (salvages #188); CI green |
-| email-security-pipeline | 894 | T3 | Palette console indicators (salvages #867); CodeScene failing |
+| personal-config | 1028 | **SALVAGE-DRAFT** | Human merge when CI green |
+| Seatek_Analysis | 204 | **SALVAGE-DRAFT** | #188 perf |
+| email-security-pipeline | 894 | **SALVAGE-DRAFT** | CodeScene fail |
+| ctrld-sync | 837, 835 | **ESCALATE** | `benchmark` required check |
+| ctrld-sync | 815, 789 | **DEFER** | CONFLICT / mypy |
+| email-security-pipeline | 807, 823, 841, 842, 844 | **DEFER** | CONFLICT or CodeScene |
 
-## DEFER — CONFLICTING / UNSTABLE
+## Duplicate / overlap groups
 
-### ctrld-sync
+| Group | Keep | Close / defer others |
+| --- | --- | --- |
+| ESP monotonic uptime | #896 | #897 closed |
+| Series exception leakage | #58 | #55 closed |
+| Session docs | #1027 merged | #1019, #1022 closed |
+| ctrld benchmark lane | — | #837 + #835 blocked until `main` benchmark fixed |
 
-| PR | Disposition | Notes |
-| ---: | --- | --- |
-| 815 | DEFER-CONFLICT | Salvage `_gh_get` refactor |
-| 837 | ESCALATE | `benchmark` check failing |
-| 835, 789 | DEFER-UNSTABLE | Jules Sentinel / refactor |
+## Human next steps
 
-### email-security-pipeline
-
-| PR | Disposition | Notes |
-| ---: | --- | --- |
-| 807, 823, 841 | DEFER-CONFLICT | Bolt / code-health on hot paths |
-| 842, 844 | DEFER-UNSTABLE | Jules perf/refactor |
-
-## Phase 1 disposition summary
-
-| Disposition | Count |
-| --- | ---: |
-| MERGE | 2 |
-| CLOSE-SUPERSEDED / SCOPE-CREEP | 11 |
-| SALVAGE-DRAFT (new or retained) | 3 |
-| DEFER / ESCALATE | 9 |
+1. Fix **ctrld-sync** `benchmark` on `main`, then merge **#837** / **#835**.
+2. Human-merge salvage drafts **#1028**, **#204**, **#894** after review.
+3. v2-rebuild ESP DIRTY PRs (#807, #823, #841) from `/tmp` clones per Lesson **0gg**.

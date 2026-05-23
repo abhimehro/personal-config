@@ -4,19 +4,19 @@
 >
 > **Latest execution:** 2026-05-23.
 
-## Run — 2026-05-23 (cron salvage + cleanup)
+## Run — 2026-05-23 (review 13:00 + salvage 17:00)
 
 **Report:** `tasks/pr-review-2026-05-23.md`
 
 | Metric | Count |
 | --- | ---: |
 | Repos | 6 |
-| Merged | 2 |
-| Closed superseded / scope-creep | 11 |
+| Merged (combined) | 12 |
+| Closed | 13 |
 | New salvage drafts | 1 (`personal-config#1028`) |
-| Open deferred / escalated | 12 → 9 automation PRs + 3 salvage drafts |
+| Escalated (benchmark) | 2 |
 
-**Highlights:** Merged #1027 (session docs) and Seatek #206. Closed bloated v2 salvages #1020/#1021 and Seatek batch1 #190–#198. Opened clean tests-only salvage **#1028**. ctrld-sync **#837** still needs benchmark investigation.
+**Highlights:** Morning run merged Sentinel #1023, Bolt perf, Hydrograph/series/ESP/Seatek/ctrld greens. Afternoon salvage merged session docs + Seatek #206, closed scope-creep salvages (#1020/#1021) and Seatek batch1 (#190–#198), opened tests-only **#1028**. ctrld **#837/#835** still blocked on benchmark.
 
 ## Run — 2026-05-20 (cron salvage + cleanup)
 

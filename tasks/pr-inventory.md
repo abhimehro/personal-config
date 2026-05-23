@@ -1,42 +1,76 @@
-# Automated PR inventory — PR salvage workflow (2026-05-23)
+# PR Inventory — 2026-05-23 (combined)
 
-**Preflight:** `bash scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml` — **passed** (read-only).
+**Sessions:** Cursor automation cron — review-and-merge (`0 13 * * *`, merged via [#1027](https://github.com/abhimehro/personal-config/pull/1027)) and salvage cleanup (`0 17 * * *`, branch `cursor-agent/pr-salvage-workflow-f70d`).
 
-**Session:** Phase 1 merges + Phase 2 cleanup on cron `0 17 * * *`. Branch: `cursor-agent/pr-salvage-workflow-f70d`.
+**Mode:** `review-and-merge` + Phase 2 salvage  
+**Preflight:** PASS (6/6 repos)  
+**Config:** `tasks/pr-review-agent.config.yaml` — squash, 30d stale
 
-**Config:** `tasks/pr-review-agent.config.yaml` — `mode: review-and-merge`, `merge_strategy: squash`, `stale_threshold_days: 30`.
+## Summary (end of day)
 
-## Open at end of session
+| Metric | Review (13:00) | Salvage (17:00) | Combined |
+| --- | ---: | ---: | ---: |
+| Squash-merged | 10 | 2 | 12 |
+| Closed | 2 | 11 | 13 |
+| New salvage drafts | 0 | 1 ([#1028](https://github.com/abhimehro/personal-config/pull/1028)) | 1 |
+| Open in-scope tail | ~16 | 12 | 12 (post-salvage) |
 
-| Repo | PR | Author | Branch | Category | Merge | CI | Draft | Notes |
-| --- | ---: | --- | --- | --- | --- | --- | --- | --- |
-| personal-config | 1028 | abhimehro | `cursor-agent/salvage-v2-pc-992-scratch-triage-tests-f70d` | CI/INFRA | CLEAN | U | yes | Tests-only v2 salvage of #992 |
-| Seatek_Analysis | 204 | abhimehro | `cursor-agent/salvage-v2-seatek-188-ext-check-a3b9` | PERFORMANCE | CLEAN | G | yes | Salvage #188; human merge (Phase 2 never auto-merges salvage) |
-| ctrld-sync | 837 | abhimehro | `jules-6231350038773542620-bcd2b01f` | PERFORMANCE | U | F benchmark | no | ESCALATE benchmark failure |
-| ctrld-sync | 835 | abhimehro | `jules-1292956160202293417-4e897eb9` | SECURITY | U | ? | no | Sentinel log injection fix |
-| ctrld-sync | 815 | abhimehro | `cursor-agent/salvage-ctrld-sync-806-gh-get` | REFACTOR | D | ? | no | DEFER conflicting salvage |
-| ctrld-sync | 789 | abhimehro | `jules-17968531501053853214-4942ccca` | REFACTOR | U | ? | no | DEFER UNSTABLE |
-| email-security-pipeline | 894 | abhimehro | `cursor-agent/salvage-v2-esp-867-palette-console-a3b9` | UI | U | F CodeScene | yes | T3 salvage draft; human merge |
-| email-security-pipeline | 844 | abhimehro | `jules-11104805255867204712-ca12f13d` | REFACTOR | U | ? | no | DEFER |
-| email-security-pipeline | 842 | abhimehro | `jules-7019338312094169359-bacb924b` | PERFORMANCE | U | ? | no | DEFER |
-| email-security-pipeline | 841 | abhimehro | `optimize-dict-get-4171624623426141366` | PERFORMANCE | D | ? | no | DEFER DIRTY |
-| email-security-pipeline | 823 | abhimehro | `fix-unused-imports` | REFACTOR | D | ? | no | DEFER DIRTY |
-| email-security-pipeline | 807 | abhimehro | `jules-15757868954206831735-437014dc` | PERFORMANCE | D | ? | no | DEFER DIRTY |
+## Open at end of day (post-salvage)
 
-**Legend:** Merge = `mergeStateStatus`; CI = rollup (G=green required, U=UNSTABLE, F=fail, D=DIRTY); Draft = GitHub draft flag.
+| Repo | PR | Author | Category | Merge | CI | Draft | Notes |
+| --- | ---: | --- | --- | --- | --- | --- | --- |
+| personal-config | 1028 | abhimehro | CI/INFRA | CLEAN | U | yes | Tests-only v2 salvage of #992 |
+| Seatek_Analysis | 204 | abhimehro | PERFORMANCE | CLEAN | G | yes | Salvage #188; human merge |
+| ctrld-sync | 837 | abhimehro | PERFORMANCE | U | F benchmark | no | ESCALATE |
+| ctrld-sync | 835 | abhimehro | SECURITY | U | F benchmark | no | ESCALATE |
+| ctrld-sync | 815 | abhimehro | REFACTOR | D | ? | no | DEFER conflicting salvage |
+| ctrld-sync | 789 | abhimehro | REFACTOR | U | mypy fail | no | DEFER |
+| email-security-pipeline | 894 | abhimehro | UI | U | F CodeScene | yes | Palette salvage #867 |
+| email-security-pipeline | 844 | abhimehro | REFACTOR | U | ? | no | DEFER |
+| email-security-pipeline | 842 | abhimehro | PERFORMANCE | U | ? | no | DEFER |
+| email-security-pipeline | 841 | abhimehro | PERFORMANCE | D | ? | no | DEFER DIRTY |
+| email-security-pipeline | 823 | abhimehro | REFACTOR | D | ? | no | DEFER DIRTY |
+| email-security-pipeline | 807 | abhimehro | PERFORMANCE | D | ? | no | DEFER DIRTY |
 
-## Processed this session (closed or merged)
+**Legend:** Merge = `mergeStateStatus`; CI rollup shorthand (G=green, U=UNSTABLE, F=fail, D=DIRTY).
 
-| Repo | PR | Action | Notes |
-| --- | ---: | --- | --- |
-| personal-config | 1027 | MERGED | 2026-05-23 review session docs |
-| Seatek_Analysis | 206 | MERGED | Stop tracking `processing_warnings.log` |
-| personal-config | 1019, 1022 | CLOSED | Superseded by #1027; scope creep on #1019 |
-| personal-config | 1020, 1021 | CLOSED | ~402-file scope creep; rebuild from `main` |
-| personal-config | 985 | CLOSED | DIRTY batch2; trust-boundary toolchain |
-| Seatek_Analysis | 190–198 | CLOSED | Batch1 DIRTY; superseded by #199/#175 on `main` |
+## Inventory at start of review session (13:00)
+
+| Repo | PR | Category | CI | Conflicts | Notes |
+| --- | ---: | --- | --- | --- | --- |
+| personal-config | 1026 | CI/INFRA | GREEN | MERGEABLE | Zero-diff Daily QA |
+| personal-config | 1025 | PERFORMANCE | GREEN | MERGEABLE | `title.lower()` in `run_merges` |
+| personal-config | 1023 | SECURITY | GREEN | MERGEABLE | AppleScript injection CWE-74 |
+| ctrld-sync | 837, 835 | PERF/SEC | benchmark FAIL | MERGEABLE | HTTP streaming / log injection |
+| email-security-pipeline | 896, 897 | PERFORMANCE | GREEN / greeting FAIL | MERGEABLE | Duplicate pair |
+| Seatek_Analysis | 198–190, 172 | PERF/REFACTOR | mixed | CONFLICTING / MERGEABLE | Salvage batch1 + Bolt |
+| Hydrograph | 199 | PERFORMANCE | GREEN | MERGEABLE | `dict(zip())` |
+| series_correction | 59, 58, 55 | PERF/SEC | GREEN / CodeScene | MERGEABLE | Outlier + Sentinel |
+
+## Executed merges (all sessions)
+
+| Repo | PR | Session |
+| --- | ---: | --- |
+| personal-config | 1026, 1025, 1023 | Review |
+| personal-config | 1027 | Salvage (session docs) |
+| email-security-pipeline | 896 | Review |
+| Hydrograph_Versus_Seatek_Sensors_Project | 199 | Review |
+| series_correction_project_updated | 59, 58 | Review |
+| Seatek_Analysis | 172, 206 | Review / Salvage |
+| ctrld-sync | 821, 818 | Review |
+
+## Closed without merge (salvage session)
+
+| Repo | PR(s) | Reason |
+| --- | --- | --- |
+| personal-config | 1019, 1022 | Superseded by merged #1027 |
+| personal-config | 1020, 1021 | ~402-file scope creep |
+| personal-config | 985 | DIRTY trust-boundary salvage |
+| email-security-pipeline | 897 | Duplicate of #896 (review) |
+| series_correction | 55 | Superseded by #58 (review) |
+| Seatek_Analysis | 190–198 | Batch1 DIRTY; superseded by #199/#175 |
 
 ## Repos with zero open automation PRs
 
-- `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project`
-- `abhimehro/series_correction_project_updated`
+- `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project` (after #199 merge)
+- `abhimehro/series_correction_project_updated` (after #58/#59 merge)
