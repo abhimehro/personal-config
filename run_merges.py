@@ -201,11 +201,13 @@ for repo, pr, title in queue:
         escalate = True
         reasons.append("Weakened .env.example.")
 
+    # ⚡ Bolt Optimization: Cache title.lower() to prevent redundant C-level string allocations during multiple sequential "in" checks
+    title_lower = title.lower()
     if (
-        "auth" in title.lower()
-        or "payment" in title.lower()
-        or "migration" in title.lower()
-        or "sql" in title.lower()
+        "auth" in title_lower
+        or "payment" in title_lower
+        or "migration" in title_lower
+        or "sql" in title_lower
     ):
         escalate = True
         reasons.append("Touches sensitive domain (auth/payments/db).")
