@@ -2,7 +2,21 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-20.
+> **Latest execution:** 2026-05-23.
+
+## Run — 2026-05-23 (cron salvage + cleanup)
+
+**Report:** `tasks/pr-review-2026-05-23.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 2 |
+| Closed superseded / scope-creep | 11 |
+| New salvage drafts | 1 (`personal-config#1028`) |
+| Open deferred / escalated | 12 → 9 automation PRs + 3 salvage drafts |
+
+**Highlights:** Merged #1027 (session docs) and Seatek #206. Closed bloated v2 salvages #1020/#1021 and Seatek batch1 #190–#198. Opened clean tests-only salvage **#1028**. ctrld-sync **#837** still needs benchmark investigation.
 
 ## Run — 2026-05-20 (cron salvage + cleanup)
 
