@@ -1,9 +1,19 @@
+<<<<<<< HEAD
 # ABHI-956: Test CWE-94 fix with malicious payload — 2026-05-24
 
 - [x] Locate remediation in `.github/workflows/copilot-setup-steps.yml`
 - [x] Add regression tests (static YAML + env-binding simulation)
 - [x] Run tests and confirm malicious payload cannot break out of `process.env.REQUEST`
 - [x] Commit, push, open PR
+=======
+# Security Remediation Sprint (ABHI-967) — 2026-05-24
+
+- [x] Publish `docs/AI_AGENT_SECURITY_REMEDIATION_GUIDE.md` and `tasks/security-remediation-master-tracker.md`.
+- [x] Add `tests/test_copilot_setup_workflow.py` (ABHI-929 / ABHI-955 / ABHI-956 static checks).
+- [x] Add `tests/test_repo_credential_hygiene.sh` (ABHI-964 repo verification).
+- [ ] **Human:** Rotate GitHub PAT + WebDAV password (ABHI-918, ABHI-954, ABHI-965).
+- [ ] **email-security-pipeline:** Apply same CWE-94 fix for `copilot-setup-steps.yml` (ABHI-943).
+>>>>>>> origin/main
 
 # Security Fix: CWE-94 copilot-setup-steps.yml (ABHI-943) — 2026-05-24
 
