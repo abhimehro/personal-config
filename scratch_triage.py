@@ -19,7 +19,7 @@ def run_cmd(cmd):
 
 
 all_prs = []
-if __name__ == '__main__':
+if __name__ == "__main__":
     for repo in repos:
         success, stdout, _ = run_cmd(
             [
@@ -57,21 +57,20 @@ triage_md = [
 ]
 
 
+def _has_all_keywords(title_lower, lower_kws):
+    for kw in lower_kws:
+        if kw not in title_lower:
+            return False
+    return True
+
+
 def _find_matching_prs(all_prs, repo, title_keywords):
     lower_kws = tuple(kw.lower() for kw in title_keywords)
-    res = []
-    for p in all_prs:
-        if p["repo"] != repo:
-            continue
-        title_lower = p["title"].lower()
-        match = True
-        for kw in lower_kws:
-            if kw not in title_lower:
-                match = False
-                break
-        if match:
-            res.append(p)
-    return res
+    return [
+        p
+        for p in all_prs
+        if p["repo"] == repo and _has_all_keywords(p["title"].lower(), lower_kws)
+    ]
 
 
 def _process_pr_group(matches, repo, rationale, groups):
@@ -142,7 +141,7 @@ def group_prs():
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     group_prs()
 
     # Process Actions
