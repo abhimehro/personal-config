@@ -87,7 +87,11 @@ class TestCopilotSetupStepsWorkflowStatic(unittest.TestCase):
         )
 
     def test_security_comment_documents_cwe94(self) -> None:
-        self.assertIn("CWE-94", self.step)
+        step_start = self.workflow.find(STEP_MARKER)
+        self.assertGreater(step_start, 0)
+        preamble = self.workflow[:step_start]
+        self.assertIn("CWE-94", preamble)
+        self.assertIn("SECURITY", preamble)
         self.assertIn("process.env.REQUEST", self.step)
 
 
