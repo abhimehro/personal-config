@@ -13,10 +13,28 @@ log() {
 	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
+# Timeout helper (pure bash)
+run_with_timeout() {
+	local timeout_secs="$1"
+	shift
+	"$@" &
+	local pid=$!
+	(
+		sleep "$timeout_secs"
+		kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null
+	) &
+	local watcher_pid=$!
+	wait "$pid" 2>/dev/null
+	local exit_code=$?
+	kill "$watcher_pid" 2>/dev/null || true
+	wait "$watcher_pid" 2>/dev/null || true
+	return $exit_code
+}
+
 log "🔧 Media Server - Starting..."
 
-# Kill any existing rclone servers
-pkill -f "rclone serve" 2>/dev/null || true
+# Kill any existing rclone WebDAV servers
+pkill -f "rclone serve webdav" 2>/dev/null || true
 sleep 2
 
 # Get network info
@@ -42,20 +60,52 @@ if ! rclone listremotes 2>/dev/null | grep -q "media:"; then
 	exit 1
 fi
 
-# Get 1Password credentials
-log "Loading credentials from 1Password..."
+# Get credentials
+WEB_USER=""
+WEB_PASS=""
 
-if ! command -v op &>/dev/null; then
-	log "ERROR: 1Password CLI not found"
-	exit 1
+CRED_FILE="$HOME/.config/media-server/credentials"
+if [[ -f $CRED_FILE ]]; then
+	log "Loading credentials from fallback file $CRED_FILE..."
+	parse_value() {
+		local val="$1"
+		if [[ $val == \'*\' ]]; then
+			val="${val#\'}"
+			val="${val%\'}"
+		elif [[ $val == '"'*'"' ]]; then
+			val="${val#\"}"
+			val="${val%\"}"
+		fi
+		echo "$val"
+	}
+
+	while IFS= read -r line || [[ -n $line ]]; do
+		[[ $line =~ ^[[:space:]]*# ]] && continue
+		[[ -z ${line//[[:space:]]/} ]] && continue
+
+		if [[ $line =~ ^(MEDIA_WEBDAV_USER|MEDIA_USER)= ]]; then
+			raw_val=$(echo "$line" | cut -d'=' -f2-)
+			WEB_USER=$(parse_value "$raw_val")
+		elif [[ $line =~ ^(MEDIA_WEBDAV_PASS|MEDIA_PASS)= ]]; then
+			raw_val=$(echo "$line" | cut -d'=' -f2-)
+			WEB_PASS=$(parse_value "$raw_val")
+		fi
+	done <"$CRED_FILE"
 fi
 
-WEB_USER=$(op read "op://Personal/MediaServer/username" 2>/dev/null) || WEB_USER=""
-WEB_PASS=$(op read "op://Personal/MediaServer/password" 2>/dev/null) || WEB_PASS=""
+if [[ -z $WEB_USER || -z $WEB_PASS ]]; then
+	log "Loading credentials from 1Password..."
+	if command -v op &>/dev/null; then
+		WEB_USER=$(op read "op://Personal/MediaServer/username" 2>/dev/null) || WEB_USER=""
+		WEB_PASS=$(op read "op://Personal/MediaServer/password" 2>/dev/null) || WEB_PASS=""
+	else
+		log "WARNING: 1Password CLI not found"
+	fi
+fi
 
 if [[ -z $WEB_USER || -z $WEB_PASS ]]; then
-	log "ERROR: Could not retrieve 1Password credentials"
-	log "Please sign into 1Password CLI: op signin"
+	log "ERROR: Could not retrieve credentials from file or 1Password."
+	log "Please configure credentials in ~/.config/media-server/credentials or install 1Password CLI."
 	exit 1
 fi
 
@@ -70,8 +120,15 @@ log "   LAN Address: $PRIMARY_IP:$AVAILABLE_PORT"
 export RCLONE_USER="$WEB_USER"
 export RCLONE_PASS="$WEB_PASS"
 
+# Use a dedicated VFS cache directory so the WebDAV daemon doesn't share
+# state with the NFS daemon (both serve the same `media:` remote and would
+# otherwise collide on rclone's default cache path).
+WEBDAV_CACHE_DIR="$HOME/Library/Caches/rclone-media-webdav"
+mkdir -p "$WEBDAV_CACHE_DIR"
+
 exec rclone serve webdav "media:" \
 	--addr "0.0.0.0:$AVAILABLE_PORT" \
+	--cache-dir "$WEBDAV_CACHE_DIR" \
 	--vfs-cache-mode full \
 	--vfs-cache-max-size 10G \
 	--vfs-cache-max-age 24h \
@@ -80,4 +137,7 @@ exec rclone serve webdav "media:" \
 	--transfers 8 \
 	--checkers 16 \
 	--read-only \
-	--no-modtime
+	--no-modtime \
+	--timeout 10s \
+	--contimeout 5s \
+	--low-level-retries 2
