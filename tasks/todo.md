@@ -1,3 +1,12 @@
+# ABHI-964 — Verify no hardcoded credentials remain in repo — 2026-05-24
+
+- [x] Run `trufflehog filesystem . --only-verified` (0 verified secrets on 2026-05-24).
+- [x] Grep sweep for hardcoded password literals outside tests/examples.
+- [x] Confirm media-streaming `curl -u` docs use `${MEDIA_WEBDAV_PASS}` or credential-file substitution.
+- [x] Add `scripts/verify-repo-auth-hygiene.sh` and `make verify-credentials` for repeatability.
+
+---
+
 # Security Fix: Cleartext Password Logging in infuse-media-server.py — 2026-05-14
 
 - [x] Replace auto-generated password printing with `getpass.getpass()` interactive prompt in `media-streaming/archive/scripts/infuse-media-server.py`.
