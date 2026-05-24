@@ -30,6 +30,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      # SECURITY: bind untrusted workflow_dispatch input via step env (REQUEST),
+      # not direct interpolation inside actions/github-script `script:` blocks.
+      # Same env-var pattern as summary.yml (issue #892); CWE-94 / ABHI-963.
       - name: Development Partner Session
         uses: actions/github-script@v9.0.0
         env:
@@ -41,11 +44,6 @@ jobs:
             console.log('Repository:', context.repo.owner + '/' + context.repo.repo);
             console.log('Event:', context.eventName);
 
-            // SECURITY: bind untrusted workflow_dispatch input via env var to
-            // prevent script injection (CWE-94).  Direct interpolation of
-            // github.event.inputs.request into a JS string literal allows
-            // an attacker to break out of the quotes and execute arbitrary
-            // code.  See: github/codeql-action advisories.
             const request = process.env.REQUEST || '';
             if (request) {
               console.log('Request:', request);
