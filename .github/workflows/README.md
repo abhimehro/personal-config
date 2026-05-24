@@ -18,7 +18,7 @@ This repository uses several GitHub Actions workflows for automation and code qu
 - **stale.yml** - Manages stale issues and pull requests
 - **summary.yml** - Generates PR summaries
 - **code-quality.yml** - Code quality and complexity checks for shell scripts and Python files
-- **copilot-setup-steps.yml** - Adds Development Partner workflow for PRs and issues. This workflow sets up a Development Partner protocol that triggers on pull requests and issues, allowing for specific requests and automatic comments on PRs
+- **copilot-setup-steps.yml** - Adds Development Partner workflow for PRs and issues. This workflow sets up a Development Partner protocol that triggers on pull requests and issues, allowing for specific requests and automatic comments on PRs. **Security:** `workflow_dispatch` input is bound via `env.REQUEST` and read with `process.env.REQUEST` (CWE-94); see `docs/AI_AGENT_SECURITY_REMEDIATION_GUIDE.md` and `tests/test_copilot_setup_workflow.py`.
 
 ### GitHub Agentic Workflows
 
