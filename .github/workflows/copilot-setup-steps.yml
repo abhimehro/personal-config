@@ -42,10 +42,11 @@ jobs:
             console.log('Event:', context.eventName);
 
             // SECURITY: bind untrusted workflow_dispatch input via env var to
-            // prevent script injection (CWE-94).  Direct interpolation of
-            // github.event.inputs.request into a JS string literal allows
-            // an attacker to break out of the quotes and execute arbitrary
-            // code.  See: github/codeql-action advisories.
+            // prevent script injection (CWE-94). Same pattern as summary.yml
+            // (issue #892): never interpolate attacker-influenceable values into
+            // executable blocks. Direct interpolation of github.event.inputs.request
+            // into a JS string literal allows breaking out of quotes and running
+            // arbitrary code with GITHUB_TOKEN. See github/codeql-action advisories.
             const request = process.env.REQUEST || '';
             if (request) {
               console.log('Request:', request);

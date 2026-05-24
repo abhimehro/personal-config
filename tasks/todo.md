@@ -1,3 +1,12 @@
+# ABHI-955 — Verify workflow remediation matches summary.yml pattern — 2026-05-24
+
+- [x] Document reference pattern in `summary.yml` (env binding + quoted shell / `process.env`)
+- [x] Extend `tests/test_summary_workflow.py` to assert `copilot-setup-steps.yml` (#980) matches reference
+- [x] Assert all `gemini-*.yml` workflows use the same model (no `${{ }}` in `run`/`script` bodies)
+- [x] Run `python3 tests/test_summary_workflow.py` — all checks pass
+
+---
+
 # Security Fix: Cleartext Password Logging in infuse-media-server.py — 2026-05-14
 
 - [x] Replace auto-generated password printing with `getpass.getpass()` interactive prompt in `media-streaming/archive/scripts/infuse-media-server.py`.
@@ -135,5 +144,4 @@ _(Blocked by Section 1: Proceed only after fetching actionable log data)_
 - **Supply-Chain Hardening:** Pinning `release-drafter` to an immutable commit SHA prevents injection via compromised mutable tags.
 - **Least-Privilege Authorization:** The `release-drafter.yml` workflow will be explicitly constrained to `permissions: { contents: write }` (no pull-request write vectors).
 - **Assumptions:** The `run-pr-review-session.sh` enforces hard boundaries. No autonomous merges of code failing _Security Gate 2_ (as defined in `docs/automated-pr-review-agent.md`) will be permitted. _Zero-diff / superseded_ heuristic rules (also defined in `docs/automated-pr-review-agent.md`) will govern closure rationale.
-
 
