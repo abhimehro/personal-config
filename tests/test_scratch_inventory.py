@@ -5,7 +5,7 @@ import os
 # Ensure the project root is in the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from scratch_inventory import get_category
+from scratch_inventory import generate_markdown, get_category
 
 class TestScratchInventory(unittest.TestCase):
     def test_get_category_security(self):
@@ -49,6 +49,24 @@ class TestScratchInventory(unittest.TestCase):
         self.assertEqual(get_category("Add new widget", "main"), "FEATURE")
         self.assertEqual(get_category("Implement dark mode", "feature/dark-mode"), "FEATURE")
         self.assertEqual(get_category("", ""), "FEATURE")
+
+    def test_generate_markdown_escapes_formula_injection(self):
+        prs = [
+            {
+                "repo": "personal-config",
+                "number": 1,
+                "author": {"login": "+evil"},
+                "headRefName": "=branch",
+                "title": "=HYPERLINK(\"http://evil\")",
+                "mergeStateStatus": "CLEAN",
+                "createdAt": "2026-05-24T00:00:00Z",
+            }
+        ]
+        md = "\n".join(generate_markdown(prs))
+        self.assertIn("'+evil", md)
+        self.assertIn("'=branch", md)
+        self.assertIn("'=HYPERLINK", md)
+
 
 if __name__ == '__main__':
     unittest.main()
