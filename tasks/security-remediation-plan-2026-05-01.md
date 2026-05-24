@@ -20,7 +20,7 @@ Priority: P0
 ### Remaining manual actions
 
 - Rotate/revoke the GitHub PAT in GitHub settings.
-- Rotate the WebDAV password in 1Password/media-server configuration.
+- Rotate the WebDAV password in 1Password/media-server configuration (run `./media-streaming/scripts/rotate-media-webdav.sh` on macOS with `op` signed in; see `docs/CREDENTIAL_ROTATION.md`).
 - Decide whether repository history needs purging for the old WebDAV password.
 
 ### Acceptance criteria
