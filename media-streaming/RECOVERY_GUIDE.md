@@ -27,7 +27,7 @@ Run the automated setup script:
 
 ```bash
 cd ~/dev/personal-config
-./media-streaming/scripts/setup-media-library.sh
+./media-streaming/archive/setup-media-library.sh
 ```
 
 This will guide you through:
@@ -228,7 +228,7 @@ rclone config reconnect gdrive:
 rclone config reconnect onedrive:
 
 # Or use automated fix
-./media-streaming/scripts/fix-gdrive.sh
+./media-streaming/archive/fix-gdrive.sh
 ```
 
 ### "WebDAV server won't start"
@@ -287,4 +287,4 @@ This will check all components and tell you exactly what's wrong.
 
 ---
 
-**Next Steps**: Run `./media-streaming/scripts/setup-media-library.sh` to restore your configuration!
+**Next Steps**: Run `./media-streaming/archive/setup-media-library.sh` to restore your configuration!
