@@ -60,17 +60,51 @@ if ! rclone listremotes 2>/dev/null | grep -q "media:"; then
 	exit 1
 fi
 
-# Get credentials (try 1Password first with 3s timeout)
-log "Loading credentials from 1Password..."
+# Get credentials
 WEB_USER=""
 WEB_PASS=""
-if command -v op &>/dev/null; then
-	WEB_USER=$(run_with_timeout 3 op read "op://Personal/MediaServer/username" 2>/dev/null) || WEB_USER=""
-	WEB_PASS=$(run_with_timeout 3 op read "op://Personal/MediaServer/password" 2>/dev/null) || WEB_PASS=""
+
+CRED_FILE="$HOME/.config/media-server/credentials"
+if [[ -f $CRED_FILE ]]; then
+	log "Loading credentials from fallback file $CRED_FILE..."
+	parse_value() {
+		local val="$1"
+		if [[ $val == \'*\' ]]; then
+			val="${val#\'}"
+			val="${val%\'}"
+		elif [[ $val == '"'*'"' ]]; then
+			val="${val#\"}"
+			val="${val%\"}"
+		fi
+		echo "$val"
+	}
+
+	while IFS= read -r line || [[ -n $line ]]; do
+		[[ $line =~ ^[[:space:]]*# ]] && continue
+		[[ -z ${line//[[:space:]]/} ]] && continue
+
+		if [[ $line =~ ^(MEDIA_WEBDAV_USER|MEDIA_USER)= ]]; then
+			raw_val=$(echo "$line" | cut -d'=' -f2-)
+			WEB_USER=$(parse_value "$raw_val")
+		elif [[ $line =~ ^(MEDIA_WEBDAV_PASS|MEDIA_PASS)= ]]; then
+			raw_val=$(echo "$line" | cut -d'=' -f2-)
+			WEB_PASS=$(parse_value "$raw_val")
+		fi
+	done <"$CRED_FILE"
 fi
 
 if [[ -z $WEB_USER || -z $WEB_PASS ]]; then
-	log "⚠️  1Password locked or unavailable, using secure local fallback"
+	log "Loading credentials from 1Password..."
+	if command -v op &>/dev/null; then
+		WEB_USER=$(op read "op://Personal/MediaServer/username" 2>/dev/null) || WEB_USER=""
+		WEB_PASS=$(op read "op://Personal/MediaServer/password" 2>/dev/null) || WEB_PASS=""
+	else
+		log "WARNING: 1Password CLI not found"
+	fi
+fi
+
+if [[ -z $WEB_USER || -z $WEB_PASS ]]; then
+	log "⚠️  Could not retrieve credentials from file or 1Password. Using secure hardcoded fallback."
 	WEB_USER="infuse"
 	WEB_PASS="MALARIA7bunch!katarina"
 fi

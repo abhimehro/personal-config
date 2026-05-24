@@ -95,7 +95,8 @@ log "Mounting NFS → $MOUNT_POINT"
 # - port/mountport: Direct both to rclone's unified NFS port
 # - soft,intr: Allow interruption on network drops
 # - timeo/retrans: Fail fast if server goes unresponsive (avoid system hangs)
-if mount_nfs -o "port=$NFS_PORT,mountport=$NFS_PORT,nolock,locallocks,tcp,soft,intr,timeo=30,retrans=2" "$NFS_HOST:/" "$MOUNT_POINT" 2>&1; then
+# - deadtimeout: Force-unmount dead connections fast to dismiss macOS system alerts
+if mount_nfs -o "port=$NFS_PORT,mountport=$NFS_PORT,nolock,locallocks,tcp,soft,intr,timeo=30,retrans=2,deadtimeout=15" "$NFS_HOST:/" "$MOUNT_POINT" 2>&1; then
 	sleep 2
 	if mount | grep -q "$MOUNT_POINT"; then
 		log "✅ Mount successful"
