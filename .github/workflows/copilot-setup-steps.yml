@@ -26,12 +26,12 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup Python Environment
-        uses: actions/setup-python@v6.2.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
 
       - name: Development Partner Session
-        uses: actions/github-script@v9.0.0
+        uses: actions/github-script@d746ffe35508b1917358783b479e04febd2b8f71 # v9.0.0
         env:
           REQUEST: ${{ github.event.inputs.request }}
         with:
@@ -53,7 +53,7 @@ jobs:
 
       - name: PR Review Assistant
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v9.0.0
+        uses: actions/github-script@d746ffe35508b1917358783b479e04febd2b8f71 # v9.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

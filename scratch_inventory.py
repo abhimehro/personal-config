@@ -3,6 +3,8 @@ import json
 import subprocess
 from collections import defaultdict
 
+from spreadsheet_safety import escape_spreadsheet_formula
+
 
 def fetch_prs(repos):
     all_prs = []
@@ -74,8 +76,13 @@ def generate_markdown(all_prs):
         conflicts = "yes" if pr["mergeStateStatus"] == "DIRTY" else "none"
         date_str = pr.get("createdAt", datetime.date.today().isoformat())[:10]
 
+        # SECURITY: PR metadata is untrusted; escape formula injection if the
+        # inventory table is opened in Excel/Sheets (CWE-1236).
+        author = escape_spreadsheet_formula(pr["author"]["login"])
+        branch = escape_spreadsheet_formula(pr["headRefName"])
+        title = escape_spreadsheet_formula(pr["title"])
         out_md.append(
-            f"| {pr['repo']} | {pr['number']} | {pr['author']['login']} | {pr['headRefName']} | {cat} | {ci} | {conflicts} | {date_str} | {pr['title']} |"
+            f"| {pr['repo']} | {pr['number']} | {author} | {branch} | {cat} | {ci} | {conflicts} | {date_str} | {title} |"
         )
     return out_md
 

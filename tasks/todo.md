@@ -1,3 +1,16 @@
+# ABHI-950 Security Remediation Master Tracker — 2026-05-24
+
+- [x] Publish repo-local master tracker: `tasks/SECURITY_REMEDIATION_TRACKER.md`
+- [x] CWE-1236: `spreadsheet_safety.escape_spreadsheet_formula()` + `scratch_inventory.py` hardening
+- [x] Supply chain: pin `actions/setup-python` / `actions/github-script` SHAs on `copilot-setup-steps.yml`
+- [x] Document CWE-1236 pattern in `docs/SECURITY_PATTERNS.md`
+- [x] Regression tests: `tests/test_spreadsheet_safety.py`
+- [ ] P0 manual credential rotation (operator)
+- [ ] P1 repo-wide workflow action SHA pinning (remaining `@vN` uses)
+- [ ] P2 symlink/launchd + maintenance `--dry-run` items (see tracker)
+
+---
+
 # Security Fix: Cleartext Password Logging in infuse-media-server.py — 2026-05-14
 
 - [x] Replace auto-generated password printing with `getpass.getpass()` interactive prompt in `media-streaming/archive/scripts/infuse-media-server.py`.
