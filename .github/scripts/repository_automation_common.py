@@ -22,16 +22,14 @@ USE_MCP_GITHUB = os.environ.get("USE_MCP_GITHUB", "false").lower() in {
     "on",
 }
 
-# Try to import MCP GitHub server if available
-# Note: Requires the appropriate MCP client library to be installed
-# This is a placeholder for the actual MCP GitHub integration
 try:
     if USE_MCP_GITHUB:
-        import mcp
-        MCP_AVAILABLE = True
+        import importlib.util
+
+        MCP_AVAILABLE = importlib.util.find_spec("mcp") is not None
     else:
         MCP_AVAILABLE = False
-except ImportError:
+except Exception:
     MCP_AVAILABLE = False
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -440,17 +438,6 @@ def numeric_version(text: str) -> tuple[int, int, int] | None:
 
 
 def tag_exists(repo_id: str, tag: str) -> bool:
-    # Use MCP if available, otherwise fall back to gh CLI
-    if MCP_AVAILABLE and USE_MCP_GITHUB:
-        try:
-            owner, repo = repo_id.split("/")
-            # Placeholder for MCP GitHub get_file_contents call
-            # get_file_contents(owner, repo, "README.md", tag)
-            return True
-        except Exception:
-            return False
-
-    # Original gh CLI implementation
     proc = run_process([GH_BIN, "api", f"repos/{repo_id}/git/ref/tags/{tag}"])
     return proc.returncode == 0
 

@@ -311,7 +311,12 @@ def flattened_updates(plans: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def apply_workflow_updates(plans: list[dict[str, Any]]) -> None:
     for plan in plans:
         updated_text = plan["text"]
+        seen: set[tuple[str, str]] = set()
         for replacement in plan["replacements"]:
+            key = (replacement["old"], replacement["new"])
+            if key in seen:
+                continue
+            seen.add(key)
             updated_text = updated_text.replace(replacement["old"], replacement["new"])
         plan["path"].write_text(updated_text)
 
