@@ -2,7 +2,21 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-23.
+> **Latest execution:** 2026-05-24.
+
+## Run — 2026-05-24 (cron review 13:00)
+
+**Report:** `tasks/pr-review-2026-05-24.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 8 |
+| Closed duplicate | 3 |
+| Escalated (`parse_inventory`) | 2 |
+| Deferred open | 2 |
+
+**Highlights:** Squash-merged CWE-94 fix (#1037) plus regression/docs/tests cluster; closed three near-duplicate test PRs; merged Jules `email-security-pipeline#901`. Left #1039/#1047 for human toolchain review; #1048 blocked on CodeScene.
 
 ## Run — 2026-05-23 (review 13:00 + salvage 17:00)
 
