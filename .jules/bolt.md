@@ -160,3 +160,6 @@
 ## 2026-11-20 - [Avoid Redundant title.lower() in Security Audits]
 **Learning:** Checking a series of hardcoded substrings sequentially against `.lower()` of a string (`"auth" in title.lower() or "payment" in title.lower()`) inside loops creates unnecessary CPU overhead when the keyword doesn't match and the `or` falls through. In Python, doing `title.lower()` redundantly repeatedly inside an `if` block executes the C-level lowercase string allocation `N` times.
 **Action:** When performing `in` checks against multiple strings using an `or` operation, declare a temporary lowercase string variable (`title_lower = title.lower()`) before the `if` block and compare against it directly to halve the overhead.
+## 2026-05-24 - Optimize duplicate lookup array algorithm in `_generate_ready_section`
+**Learning:** Checking for list membership (`item not in list`) within a loop creates an O(N^2) time complexity which causes massive delays for lists containing thousands of items.
+**Action:** When filtering one list based on membership in another, convert the filter list to a set (`filter_set = set(filter_list)`) before the loop to reduce lookup complexity to O(1), making the overall algorithm O(N).
