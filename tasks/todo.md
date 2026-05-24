@@ -6,6 +6,12 @@
 - [ ] **Human:** Rotate GitHub PAT + WebDAV password (ABHI-918, ABHI-954, ABHI-965).
 - [ ] **email-security-pipeline:** Apply same CWE-94 fix for `copilot-setup-steps.yml` (ABHI-943).
 
+# Security Fix: CWE-94 copilot-setup-steps.yml (ABHI-943) — 2026-05-24
+
+- [x] Confirm remediation on `main` (PR #980): env `REQUEST` + `process.env.REQUEST`
+- [x] Add regression tests in `tests/test_copilot_setup_steps_workflow.py`
+- [x] Run `python3 -m unittest tests.test_copilot_setup_steps_workflow -v`
+
 ---
 
 # Security Fix: Cleartext Password Logging in infuse-media-server.py — 2026-05-14
