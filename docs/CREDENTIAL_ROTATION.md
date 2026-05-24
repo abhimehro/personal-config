@@ -1,5 +1,11 @@
 # Credential Rotation & History Sanitization
 
+## GitHub PAT (ABHI-954)
+
+For the TruffleHog finding in local `GH_TOKEN.env`, follow the dedicated runbook:
+
+- [GitHub PAT rotation runbook](github-pat-rotation-runbook.md)
+
 ## Immediate Rotation
 
 - Revoke and rotate any credentials that were stored in the repository.

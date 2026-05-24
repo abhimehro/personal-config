@@ -19,9 +19,16 @@ Priority: P0
 
 ### Remaining manual actions
 
-- Rotate/revoke the GitHub PAT in GitHub settings.
+- Rotate/revoke the GitHub PAT in GitHub settings — **runbook:** `docs/github-pat-rotation-runbook.md` (ABHI-954).
 - Rotate the WebDAV password in 1Password/media-server configuration.
 - Decide whether repository history needs purging for the old WebDAV password.
+
+### Done in ABHI-954 automation batch
+
+- Added `docs/github-pat-rotation-runbook.md` with revoke → replace → verify steps.
+- Centralized safe token loading in `gh_token_env.py` (no shell `source` of env files).
+- Replaced `source ../email-security-pipeline/GH_TOKEN.env` in ephemeral shell scripts with `scripts/ensure_gh_token.sh`.
+- Added `scripts/verify_gh_auth.sh` for post-rotation checks without printing tokens.
 
 ### Acceptance criteria
 

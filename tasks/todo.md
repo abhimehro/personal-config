@@ -1,3 +1,16 @@
+# ABHI-954 — Rotate GitHub PAT (GH_TOKEN.env)
+
+- [x] Document revoke → replace → verify flow (`docs/github-pat-rotation-runbook.md`).
+- [x] Remove shell `source` of `GH_TOKEN.env` from ephemeral scripts.
+- [x] Centralize Python env loading in `gh_token_env.py` with env-var precedence.
+- [x] Add `scripts/verify_gh_auth.sh` and unit tests for token loading.
+- [ ] **Manual (repo owner):** Revoke exposed PAT in GitHub → Settings → Developer settings.
+- [ ] **Manual:** Store replacement via `gh auth login` or `~/.config/personal-config/GH_TOKEN.env`.
+- [ ] **Manual:** Update repo/org `secrets.GH_TOKEN` if it reused the same PAT.
+- [ ] **Manual:** Run `./scripts/verify_gh_auth.sh` and confirm TruffleHog clean on tracked paths.
+
+---
+
 # Security Fix: Cleartext Password Logging in infuse-media-server.py — 2026-05-14
 
 - [x] Replace auto-generated password printing with `getpass.getpass()` interactive prompt in `media-streaming/archive/scripts/infuse-media-server.py`.
