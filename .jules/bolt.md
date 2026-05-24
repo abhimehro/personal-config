@@ -160,3 +160,6 @@
 ## 2026-11-20 - [Avoid Redundant title.lower() in Security Audits]
 **Learning:** Checking a series of hardcoded substrings sequentially against `.lower()` of a string (`"auth" in title.lower() or "payment" in title.lower()`) inside loops creates unnecessary CPU overhead when the keyword doesn't match and the `or` falls through. In Python, doing `title.lower()` redundantly repeatedly inside an `if` block executes the C-level lowercase string allocation `N` times.
 **Action:** When performing `in` checks against multiple strings using an `or` operation, declare a temporary lowercase string variable (`title_lower = title.lower()`) before the `if` block and compare against it directly to halve the overhead.
+## 2026-05-24 - Optimize list comprehension performance
+**Learning:** Nested generator expressions inside list comprehensions (e.g. `for title_lower in (p["title"].lower(),)`) create significant overhead compared to simple loop variable assignment.
+**Action:** When filtering objects where intermediate variables are needed (like lowercase conversions), prefer a simple `for` loop with a `break` or construct a pure list comprehension without nested generators for optimal performance.
