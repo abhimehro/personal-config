@@ -29,7 +29,9 @@ notify() {
 	if command -v terminal-notifier >/dev/null 2>&1; then
 		terminal-notifier -title "$t" -message "$m" -sound default
 	elif command -v osascript >/dev/null 2>&1; then
-		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "$m" "$t" 2>/dev/null || true
+		local esc_t="${t//\"/\\\"}"
+		local esc_m="${m//\"/\\\"}"
+		osascript -e "display notification \"$esc_m\" with title \"$esc_t\"" 2>/dev/null || true
 	fi
 }
 ensure_dirs() { mkdir -p "$STAGING_DIR" "$PROCESSED_DIR" "$FAILED_DIR" "$REVIEW_DIR" "$(dirname "$LOG_FILE")"; }
@@ -42,6 +44,21 @@ check_remote_duplicate() {
 	local r="$1"
 	local n="$2"
 	rclone lsf "$r" --files-only 2>/dev/null | grep -Fxq "$n"
+}
+has_base_name_match() {
+	local dir="$1"
+	local base="$2"
+	[[ -d $dir ]] || return 1
+	local f file_name file_base
+	for f in "$dir"/*; do
+		[[ -f $f ]] || continue
+		file_name="${f##*/}"
+		file_base="${file_name%.*}"
+		if [[ $file_base == "$base" ]]; then
+			return 0
+		fi
+	done
+	return 1
 }
 write_sidecar() {
 	local sidecar_path="$1" original_path="$2" proposed_path="$3" media_type="$4" target_remote="$5" db="$6" fmt="$7" duplicate_flag="$8"
@@ -155,6 +172,7 @@ approve_ready() {
 }
 process_file() {
 	local file="$1" filename media_type db fmt dest_subfolder temp_output renamed_file final_dir final_path target_remote duplicate sidecar
+	local final_name base_name ext counter
 	filename="${file##*/}"
 	log "---------------------------------------------------"
 	log "Processing: $filename"
@@ -183,24 +201,32 @@ process_file() {
 		fi
 		final_dir="$REVIEW_DIR/$dest_subfolder"
 		mkdir -p "$final_dir"
-		
-		local final_name="${renamed_file##*/}"
-		local base_name="${final_name%.*}"
-		local ext="${final_name##*.}"
-		local counter=1
-		
-		# Mimic FileBot's conflict resolution by checking the live mount and upload queue
-		while [[ -f "$MOUNT_DIR/$dest_subfolder/$final_name" || -f "$final_dir/$final_name" ]]; do
-			log "Duplicate detected for $final_name (mount or upload queue). Appending index."
-			final_name="${base_name} (${counter}).${ext}"
-			((counter++))
+
+		final_name="${renamed_file##*/}"
+		base_name="${final_name%.*}"
+		ext="${final_name##*.}"
+		counter=1
+
+		# Mimic FileBot's conflict resolution by checking BOTH the live mount
+		# (already-uploaded files) AND the local upload queue (in-flight files
+		# that haven't been pushed to the remote yet). Skipping the queue check
+		# would allow two same-named renames to overwrite each other in
+		# $REVIEW_DIR before either is uploaded.
+		# Check for base name matches to handle cases where extensions differ (e.g. .mp4 vs .mkv).
+		local current_base="$base_name"
+		while has_base_name_match "$MOUNT_DIR/$dest_subfolder" "$current_base" ||
+			has_base_name_match "$final_dir" "$current_base"; do
+			log "Duplicate detected for base name '$current_base'. Appending index."
+			current_base="${base_name} (${counter})"
+			((counter++)) || true
 		done
-		
+		final_name="${current_base}.${ext}"
+
 		final_path="$final_dir/$final_name"
 		mv "$renamed_file" "$final_path"
 		rmdir "$temp_output" 2>/dev/null || true
 		target_remote="$CLOUD_REMOTE:$dest_subfolder"
-		
+
 		# Since we auto-resolved the duplicate above, it's technically no longer a duplicate on the remote.
 		# But we can still run a quick check just in case the mount is out of sync.
 		duplicate=false
@@ -225,13 +251,16 @@ process_file() {
 	fi
 }
 process_staging() {
-	# 1. Process files that are fully written in STAGING_DIR
-	find "$STAGING_DIR" -maxdepth 1 -type f ! -name ".*" -print0 | while IFS= read -r -d "" file; do
+	# 1. Process video files that are fully written in STAGING_DIR.
+	#    Filtering by extension here (instead of `! -name ".*"`) prevents
+	#    non-video sidecars/junk from being moved into PROCESSED_DIR where
+	#    they would be stranded (the FileBot step below only picks up videos).
+	find "$STAGING_DIR" -maxdepth 1 -type f \( -name "*.mp4" -o -name "*.mkv" -o -name "*.m4v" -o -name "*.avi" -o -name "*.mov" \) -print0 | while IFS= read -r -d "" file; do
 		# Check if file is currently open by any process (e.g., Permute)
 		if ! lsof "$file" >/dev/null 2>&1; then
 			# SECURITY: Re-check existence because the file may have been moved or deleted
 			# between find and lsof; treating every lsof failure as "safe to move" is racy.
-			if [[ -f "$file" ]]; then
+			if [[ -f $file ]]; then
 				log "File completely written, moving to processed: ${file##*/}"
 				if ! mv "$file" "$PROCESSED_DIR/"; then
 					# NOTE: A transient race should not terminate the watchdog loop under set -e.

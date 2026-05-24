@@ -127,7 +127,7 @@ stage_media_scripts() {
 	mkdir -p "$media_bin"
 	log_info "Linking media helper scripts to $media_bin..."
 
-	for s in start-media-server-fast.sh start-media-server-vpn-fix.sh start-alldebrid.sh stop-alldebrid.sh test-infuse-connection.sh sync-alldebrid.sh; do
+	for s in media-server-daemon.sh media-nfs-daemon.sh mount-media.sh rename-media.sh sync-alldebrid.sh bulk-rename-cloud.sh; do
 		local src="$REPO_ROOT/media-streaming/scripts/$s"
 		if [[ -f $src ]]; then
 			ln -sf "$src" "$media_bin/$s"
@@ -156,7 +156,8 @@ install_media_launchd() {
 		[[ -e $plist ]] || continue
 		local base
 		base="$(basename "$plist")"
-		cp "$plist" "$launch_dst/$base"
+		rm -f "$launch_dst/$base" 2>/dev/null || true
+		ln -s "$plist" "$launch_dst/$base"
 		launchctl bootout "gui/$(id -u)" "$launch_dst/$base" 2>/dev/null || true
 		if launchctl bootstrap "gui/$(id -u)" "$launch_dst/$base" 2>/dev/null; then
 			log_ok "Loaded $base"
