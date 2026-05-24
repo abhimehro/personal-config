@@ -1,11 +1,17 @@
-<<<<<<< HEAD
 # ABHI-964 — Verify no hardcoded credentials remain in repo — 2026-05-24
 
 - [x] Run `trufflehog filesystem . --only-verified` (0 verified secrets on 2026-05-24).
 - [x] Grep sweep for hardcoded password literals outside tests/examples.
 - [x] Confirm media-streaming `curl -u` docs use `${MEDIA_WEBDAV_PASS}` or credential-file substitution.
 - [x] Add `scripts/verify-repo-auth-hygiene.sh` and `make verify-credentials` for repeatability.
-=======
+
+# ABHI-956: Test CWE-94 fix with malicious payload — 2026-05-24
+
+- [x] Locate remediation in `.github/workflows/copilot-setup-steps.yml`
+- [x] Add regression tests (static YAML + env-binding simulation)
+- [x] Run tests and confirm malicious payload cannot break out of `process.env.REQUEST`
+- [x] Commit, push, open PR
+
 # Security Remediation Sprint (ABHI-967) — 2026-05-24
 
 - [x] Publish `docs/AI_AGENT_SECURITY_REMEDIATION_GUIDE.md` and `tasks/security-remediation-master-tracker.md`.
@@ -13,12 +19,12 @@
 - [x] Add `tests/test_repo_credential_hygiene.sh` (ABHI-964 repo verification).
 - [ ] **Human:** Rotate GitHub PAT + WebDAV password (ABHI-918, ABHI-954, ABHI-965).
 - [ ] **email-security-pipeline:** Apply same CWE-94 fix for `copilot-setup-steps.yml` (ABHI-943).
->>>>>>> origin/main
+
 
 # Security Fix: CWE-94 copilot-setup-steps.yml (ABHI-943) — 2026-05-24
 
-- [x] Confirm remediation on `main` (PR #980): env `REQUEST` + `process.env.REQUEST`
-- [x] Add regression tests in `tests/test_copilot_setup_steps_workflow.py`
+- [x] Confirm remediation on `main` (PR #1037): env `REQUEST` + `process.env.REQUEST`
+- [x] Add regression tests in `tests/test_copilot_setup_steps_workflow.py` (PR #1045)
 - [x] Run `python3 -m unittest tests.test_copilot_setup_steps_workflow -v`
 
 ---
@@ -160,5 +166,4 @@ _(Blocked by Section 1: Proceed only after fetching actionable log data)_
 - **Supply-Chain Hardening:** Pinning `release-drafter` to an immutable commit SHA prevents injection via compromised mutable tags.
 - **Least-Privilege Authorization:** The `release-drafter.yml` workflow will be explicitly constrained to `permissions: { contents: write }` (no pull-request write vectors).
 - **Assumptions:** The `run-pr-review-session.sh` enforces hard boundaries. No autonomous merges of code failing _Security Gate 2_ (as defined in `docs/automated-pr-review-agent.md`) will be permitted. _Zero-diff / superseded_ heuristic rules (also defined in `docs/automated-pr-review-agent.md`) will govern closure rationale.
-
 
