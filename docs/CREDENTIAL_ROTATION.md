@@ -66,7 +66,7 @@ After rotation:
 
 1. Update **Infuse** (and any other WebDAV clients) with the new password from 1Password.
 2. Confirm the daemon loads credentials (`media-server-daemon.sh` prefers the fallback file when present, otherwise 1Password).
-3. Run a local auth check (replace port if needed):  
+3. Run a local auth check (replace port if needed):
    `curl -u "infuse:$(op read op://Personal/MediaServer/password)" http://127.0.0.1:8080/`
 
 ### Legacy document item
