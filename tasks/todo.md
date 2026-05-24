@@ -1,9 +1,19 @@
+<<<<<<< HEAD
 # ABHI-964 — Verify no hardcoded credentials remain in repo — 2026-05-24
 
 - [x] Run `trufflehog filesystem . --only-verified` (0 verified secrets on 2026-05-24).
 - [x] Grep sweep for hardcoded password literals outside tests/examples.
 - [x] Confirm media-streaming `curl -u` docs use `${MEDIA_WEBDAV_PASS}` or credential-file substitution.
 - [x] Add `scripts/verify-repo-auth-hygiene.sh` and `make verify-credentials` for repeatability.
+=======
+# Security Remediation Sprint (ABHI-967) — 2026-05-24
+
+- [x] Publish `docs/AI_AGENT_SECURITY_REMEDIATION_GUIDE.md` and `tasks/security-remediation-master-tracker.md`.
+- [x] Add `tests/test_copilot_setup_workflow.py` (ABHI-929 / ABHI-955 / ABHI-956 static checks).
+- [x] Add `tests/test_repo_credential_hygiene.sh` (ABHI-964 repo verification).
+- [ ] **Human:** Rotate GitHub PAT + WebDAV password (ABHI-918, ABHI-954, ABHI-965).
+- [ ] **email-security-pipeline:** Apply same CWE-94 fix for `copilot-setup-steps.yml` (ABHI-943).
+>>>>>>> origin/main
 
 # Security Fix: CWE-94 copilot-setup-steps.yml (ABHI-943) — 2026-05-24
 
