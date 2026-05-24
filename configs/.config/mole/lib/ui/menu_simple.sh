@@ -296,7 +296,6 @@ paginated_multi_select() {
                 done
 
                 # Allow empty selection - don't auto-select cursor position
-                # This fixes the bug where unselecting all items would still select the last cursor position
                 local final_result=""
                 if [[ ${#selected_indices[@]} -gt 0 ]]; then
                     local IFS=','
