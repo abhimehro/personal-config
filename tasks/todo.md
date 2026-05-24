@@ -1,3 +1,11 @@
+# Security Fix: CWE-94 copilot-setup-steps.yml (ABHI-943) — 2026-05-24
+
+- [x] Confirm remediation on `main` (PR #980): env `REQUEST` + `process.env.REQUEST`
+- [x] Add regression tests in `tests/test_copilot_setup_steps_workflow.py`
+- [x] Run `python3 -m unittest tests.test_copilot_setup_steps_workflow -v`
+
+---
+
 # Security Fix: Cleartext Password Logging in infuse-media-server.py — 2026-05-14
 
 - [x] Replace auto-generated password printing with `getpass.getpass()` interactive prompt in `media-streaming/archive/scripts/infuse-media-server.py`.
