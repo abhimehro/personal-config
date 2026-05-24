@@ -5,6 +5,12 @@
 - [x] Run tests and confirm malicious payload cannot break out of `process.env.REQUEST`
 - [x] Commit, push, open PR
 
+# Security Fix: CWE-94 copilot-setup-steps.yml (ABHI-943) — 2026-05-24
+
+- [x] Confirm remediation on `main` (PR #1037): env `REQUEST` + `process.env.REQUEST`
+- [x] Add regression tests in `tests/test_copilot_setup_steps_workflow.py` (PR #1045)
+- [x] Run `python3 -m unittest tests.test_copilot_setup_steps_workflow -v`
+
 ---
 
 # Security Fix: Cleartext Password Logging in infuse-media-server.py — 2026-05-14
