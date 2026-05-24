@@ -1,3 +1,12 @@
+# ABHI-956: Test CWE-94 fix with malicious payload — 2026-05-24
+
+- [x] Locate remediation in `.github/workflows/copilot-setup-steps.yml`
+- [ ] Add regression tests (static YAML + env-binding simulation)
+- [ ] Run tests and confirm malicious payload cannot break out of `process.env.REQUEST`
+- [ ] Commit, push, open PR
+
+---
+
 # Security Fix: Cleartext Password Logging in infuse-media-server.py — 2026-05-14
 
 - [x] Replace auto-generated password printing with `getpass.getpass()` interactive prompt in `media-streaming/archive/scripts/infuse-media-server.py`.
@@ -135,5 +144,4 @@ _(Blocked by Section 1: Proceed only after fetching actionable log data)_
 - **Supply-Chain Hardening:** Pinning `release-drafter` to an immutable commit SHA prevents injection via compromised mutable tags.
 - **Least-Privilege Authorization:** The `release-drafter.yml` workflow will be explicitly constrained to `permissions: { contents: write }` (no pull-request write vectors).
 - **Assumptions:** The `run-pr-review-session.sh` enforces hard boundaries. No autonomous merges of code failing _Security Gate 2_ (as defined in `docs/automated-pr-review-agent.md`) will be permitted. _Zero-diff / superseded_ heuristic rules (also defined in `docs/automated-pr-review-agent.md`) will govern closure rationale.
-
 
