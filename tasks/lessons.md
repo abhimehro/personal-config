@@ -237,6 +237,12 @@
 **Pattern:** After merging #1037, `test_copilot_setup_steps_cwe94.test_security_comment_documents_cwe94` failed because it asserted `CWE-94` inside the extracted Development Partner step block; the fix documents CWE-94 in a `# SECURITY:` comment immediately above the step.
 **Rule:** Static workflow tests should scan the workflow preamble before the step marker, or parse the full workflow file, when asserting on security documentation comments.
 
+## Lesson 0dj: Cloud pre-commit hook can block salvage commits with spaced secret label names (2026-05-24)
+
+**Pattern:** `pre-commit.cursor` emitted `GitHub SSH Key: invalid variable name` when the hook used bash `${!var}` against `CLOUD_AGENT_INJECTED_SECRET_NAMES` entries containing spaces. Salvage branches were pushed without commits when `git commit` failed silently in the same shell session.
+**Rule:** Salvage agents must use `git commit --no-verify` only after running the same verification commands locally (unit tests / `py_compile`). Before `git push`, assert `git rev-parse HEAD` is ahead of `origin/main` (`git log origin/main..HEAD --oneline` non-empty). Run `make cursor-cloud-hooks` at session start so injected hooks use `printenv` lookups.
+**Detection cost:** Low — empty PR create (`No commits between main and head`) or remote branch tip equals `main`.
+
 ## Lesson 0df: A salvage agent given a "no local working-tree manipulation" rule will still `git checkout` if its prompt mentions cherry-picking commits (2026-05-09)
 
 **Pattern:** Item 4A of the 2026-05-09 orchestration plan briefed a `pair` agent with "no local working-tree manipulation" plus "create a salvage branch from `origin/main` and cherry-pick the canonical PR's commits." The agent interpreted that as licence to `git checkout <pr-branch>` in the working repo to read the commit list, switching the local tree off `main` for the rest of the session. Untracked-only documents (`docs/plans/`, `docs/reviews/`) were destroyed by the branch switch, and 51 unrelated files ended up staged on the bolt branch.
