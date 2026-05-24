@@ -1,3 +1,11 @@
+# ABHI-929: CWE-94 script injection in copilot-setup-steps.yml — 2026-05-24
+
+- [x] Confirm PR #980 remediation on `main` (`REQUEST` env + `process.env.REQUEST`).
+- [x] Add static regression test: `tests/test_copilot_setup_steps_workflow.py`.
+- [x] Run regression test locally (pass).
+
+---
+
 # Security Fix: Cleartext Password Logging in infuse-media-server.py — 2026-05-14
 
 - [x] Replace auto-generated password printing with `getpass.getpass()` interactive prompt in `media-streaming/archive/scripts/infuse-media-server.py`.
