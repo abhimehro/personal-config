@@ -97,7 +97,7 @@ def group_prs(all_prs, triage_md):
         )
 
 
-def main():
+def _fetch_prs(repos):
     all_prs = []
     for repo in repos:
         success, stdout, _ = run_cmd(
@@ -122,20 +122,12 @@ def main():
                 pr["repo"] = repo.rpartition("/")[2]
                 pr["full_repo"] = repo
                 all_prs.append(pr)
+    return all_prs
 
+def _process_actions(all_prs):
     merged = []
     closed = []
     escalated = []
-
-    triage_md = [
-        f"# PR triage — backlog cleanup test ({datetime.date.today().isoformat()})\n",
-        "**Policy:** squash merge, stale_days 30, auto-fix enabled, mode review-and-merge. **No force-push.**\n",
-        "## Duplicate / supersede groups\n",
-        "| Keep (canonical) | Close as duplicate / superseded | Rationale |",
-        "| --- | --- | --- |",
-    ]
-
-    group_prs(all_prs, triage_md)
 
     # Process Actions
     for pr in sorted(all_prs, key=lambda x: (x["repo"], -x["number"])):
@@ -171,6 +163,9 @@ def main():
             print(f"Holding {repo}#{num} ({pr['mergeStateStatus']})")
             escalated.append(pr)
 
+    return merged, closed, escalated
+
+def _write_reports(repos, all_prs, merged, closed, escalated, triage_md):
     triage_md.extend(
         [
             "\n## Escalate / defer (no autonomous merge)\n",
@@ -234,6 +229,22 @@ def main():
 
     with open("tasks/pr-review-session-reports.md", "a") as f:
         f.write("\n".join(report_md) + "\n")
+
+
+def main():
+    all_prs = _fetch_prs(repos)
+
+    triage_md = [
+        f"# PR triage — backlog cleanup test ({datetime.date.today().isoformat()})\n",
+        "**Policy:** squash merge, stale_days 30, auto-fix enabled, mode review-and-merge. **No force-push.**\n",
+        "## Duplicate / supersede groups\n",
+        "| Keep (canonical) | Close as duplicate / superseded | Rationale |",
+        "| --- | --- | --- |",
+    ]
+
+    group_prs(all_prs, triage_md)
+    merged, closed, escalated = _process_actions(all_prs)
+    _write_reports(repos, all_prs, merged, closed, escalated, triage_md)
 
     print(
         f"Done. Merged: {len(merged)}, Closed: {len(closed)}, Escalated: {len(escalated)}"
