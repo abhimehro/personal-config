@@ -873,27 +873,8 @@ paginated_multi_select() {
                 handle_filter_char "${key#CHAR:}" || true
                 ;;
             "ENTER")
-                # Smart Enter behavior
-                # 1. Check if any items are already selected
-                local has_selection=false
-                for ((i = 0; i < total_items; i++)); do
-                    if [[ ${selected[i]} == true ]]; then
-                        has_selection=true
-                        break
-                    fi
-                done
-
-                # 2. If nothing selected, auto-select current item
-                if [[ $has_selection == false ]]; then
-                    local idx=$((top_index + cursor_pos))
-                    if [[ $idx -lt ${#view_indices[@]} ]]; then
-                        local real="${view_indices[idx]}"
-                        selected[real]=true
-                        selected_count=$((selected_count + 1))
-                    fi
-                fi
-
-                # 3. Confirm and exit with current selections
+                # Allow empty selection - don't auto-select cursor position
+                # This fixes the bug where unselecting all items would still select the last cursor position
                 local -a selected_indices=()
                 for ((i = 0; i < total_items; i++)); do
                     if [[ ${selected[i]} == true ]]; then
