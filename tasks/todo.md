@@ -1,9 +1,9 @@
 # ABHI-956: Test CWE-94 fix with malicious payload — 2026-05-24
 
 - [x] Locate remediation in `.github/workflows/copilot-setup-steps.yml`
-- [ ] Add regression tests (static YAML + env-binding simulation)
-- [ ] Run tests and confirm malicious payload cannot break out of `process.env.REQUEST`
-- [ ] Commit, push, open PR
+- [x] Add regression tests (static YAML + env-binding simulation)
+- [x] Run tests and confirm malicious payload cannot break out of `process.env.REQUEST`
+- [x] Commit, push, open PR
 
 ---
 
