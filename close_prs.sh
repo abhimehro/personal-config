@@ -1,4 +1,5 @@
-source ../email-security-pipeline/GH_TOKEN.env
+# shellcheck source=scripts/ensure_gh_token.sh
+source "$(dirname "$0")/scripts/ensure_gh_token.sh"
 
 close_pr() {
   local repo=$1

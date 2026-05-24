@@ -226,6 +226,13 @@ patch.sh
 *token*
 *_key
 
+# Credential helper modules (no secrets; env-var only)
+!gh_token_env.py
+!scripts/ensure_gh_token.sh
+!scripts/verify_security_issue1.sh
+!tests/test_gh_token_env.py
+!GH_TOKEN.env.example
+
 # But allow documentation about these topics
 !*secret*.md
 !*private*.md

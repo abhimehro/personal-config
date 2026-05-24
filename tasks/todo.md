@@ -1,3 +1,15 @@
+# ABHI-918 — Rotate credentials & remove WebDAV examples — 2026-05-24
+
+- [x] Confirm `grep -R 'curl -u "infuse:' media-streaming` uses `${MEDIA_WEBDAV_PASS}` placeholders only.
+- [x] Run `trufflehog filesystem . --only-verified` (0 verified secrets in CI workspace).
+- [x] Remove repo-relative `GH_TOKEN.env` reads from PR automation scripts; add `gh_token_env.py` + `scripts/ensure_gh_token.sh`.
+- [x] Add `scripts/verify_security_issue1.sh` and `tests/test_gh_token_env.py`.
+- [ ] **Manual:** Revoke/rotate GitHub PAT exposed in local `GH_TOKEN.env`.
+- [ ] **Manual:** Rotate WebDAV password in 1Password / media-server.
+- [ ] **Manual:** Decide on git history purge for old WebDAV password in commits.
+
+---
+
 # Security Fix: Cleartext Password Logging in infuse-media-server.py — 2026-05-14
 
 - [x] Replace auto-generated password printing with `getpass.getpass()` interactive prompt in `media-streaming/archive/scripts/infuse-media-server.py`.

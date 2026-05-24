@@ -22,6 +22,12 @@ Priority: P0
 - Rotate/revoke the GitHub PAT in GitHub settings.
 - Rotate the WebDAV password in 1Password/media-server configuration.
 - Decide whether repository history needs purging for the old WebDAV password.
+- Move any local `GH_TOKEN.env` out of the repository root; use `GH_TOKEN` / `GH_TOKEN_ENV_FILE` (see `GH_TOKEN.env.example`).
+
+### Repo automation (2026-05-24)
+
+- Added `gh_token_env.py` and `scripts/ensure_gh_token.sh` so PR helper scripts no longer read `../email-security-pipeline/GH_TOKEN.env`.
+- Added `scripts/verify_security_issue1.sh` for acceptance checks.
 
 ### Acceptance criteria
 

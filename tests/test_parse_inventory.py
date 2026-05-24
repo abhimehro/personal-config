@@ -7,8 +7,8 @@ from unittest.mock import patch, MagicMock
 # Ensure the project root is in the path so we can import parse_inventory
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from gh_token_env import _parse_env_line
 from parse_inventory import (
-    _parse_env_line,
     parse_inventory_lines,
     _is_pr_stale,
     _get_pr_category,
