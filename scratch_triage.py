@@ -18,6 +18,85 @@ def run_cmd(cmd):
     return res.returncode == 0, res.stdout, res.stderr
 
 
+def _find_matching_prs(all_prs, repo, title_keywords):
+    lower_kws = tuple(kw.lower() for kw in title_keywords)
+    return [
+        p
+        for p in all_prs
+        if p["repo"] == repo
+        for title_lower in (p["title"].lower(),)
+        if all(kw in title_lower for kw in lower_kws)
+    ]
+
+
+def _process_pr_group(matches, repo, rationale, groups):
+    if len(matches) > 1:
+        matches = sorted(matches, key=lambda x: x["number"], reverse=True)
+        keep = matches[0]
+        dups = matches[1:]
+        groups.append(
+            {"repo": repo, "keep": keep, "dups": dups, "rationale": rationale}
+        )
+        for d in dups:
+            d["status_action"] = "CLOSE"
+        keep["status_action"] = "KEEP"
+
+
+def group_prs(all_prs, triage_md):
+    # manual grouping logic based on patterns
+    groups = []
+
+    def find_and_group(repo, title_keywords, rationale):
+        matches = _find_matching_prs(all_prs, repo, title_keywords)
+        _process_pr_group(matches, repo, rationale, groups)
+
+    # personal-config
+    find_and_group(
+        "personal-config",
+        ["eval", "cwe-78"],
+        "Same CWE-78 eval injection theme; keep newest",
+    )
+    find_and_group(
+        "personal-config", ["qa & agentic review"], "Duplicate QA reviews; keep newest"
+    )
+    find_and_group(
+        "personal-config",
+        ["markdown table"],
+        "Bolt perf optimizations for markdown tables; keep newest",
+    )
+    find_and_group(
+        "personal-config", ["palette", "prompt"], "Palette UX prompts; keep newest"
+    )
+
+    # email-security-pipeline
+    find_and_group(
+        "email-security-pipeline", ["empty state"], "Palette empty states; keep newest"
+    )
+    find_and_group(
+        "email-security-pipeline",
+        ["video frame"],
+        "Bolt video frame performance; keep newest",
+    )
+
+    # series_correction
+    find_and_group(
+        "series_correction_project_updated",
+        ["itertuples"],
+        "Bolt dataframe iteration perf; keep newest",
+    )
+    find_and_group(
+        "series_correction_project_updated",
+        ["iteration", "performance"],
+        "Iteration optimizations; handled by above/keep newest",
+    )
+
+    for g in groups:
+        dups_str = ", ".join([f"**#{d['number']}**" for d in g["dups"]])
+        triage_md.append(
+            f"| {g['repo']} **#{g['keep']['number']}** | {dups_str} | {g['rationale']} |"
+        )
+
+
 def main():
     all_prs = []
     for repo in repos:
@@ -56,87 +135,7 @@ def main():
         "| --- | --- | --- |",
     ]
 
-
-    def _find_matching_prs(all_prs, repo, title_keywords):
-        lower_kws = tuple(kw.lower() for kw in title_keywords)
-        return [
-            p
-            for p in all_prs
-            if p["repo"] == repo
-            for title_lower in (p["title"].lower(),)
-            if all(kw in title_lower for kw in lower_kws)
-        ]
-
-
-    def _process_pr_group(matches, repo, rationale, groups):
-        if len(matches) > 1:
-            matches = sorted(matches, key=lambda x: x["number"], reverse=True)
-            keep = matches[0]
-            dups = matches[1:]
-            groups.append(
-                {"repo": repo, "keep": keep, "dups": dups, "rationale": rationale}
-            )
-            for d in dups:
-                d["status_action"] = "CLOSE"
-            keep["status_action"] = "KEEP"
-
-
-    def group_prs():
-        # manual grouping logic based on patterns
-        groups = []
-
-        def find_and_group(repo, title_keywords, rationale):
-            matches = _find_matching_prs(all_prs, repo, title_keywords)
-            _process_pr_group(matches, repo, rationale, groups)
-
-        # personal-config
-        find_and_group(
-            "personal-config",
-            ["eval", "cwe-78"],
-            "Same CWE-78 eval injection theme; keep newest",
-        )
-        find_and_group(
-            "personal-config", ["qa & agentic review"], "Duplicate QA reviews; keep newest"
-        )
-        find_and_group(
-            "personal-config",
-            ["markdown table"],
-            "Bolt perf optimizations for markdown tables; keep newest",
-        )
-        find_and_group(
-            "personal-config", ["palette", "prompt"], "Palette UX prompts; keep newest"
-        )
-
-        # email-security-pipeline
-        find_and_group(
-            "email-security-pipeline", ["empty state"], "Palette empty states; keep newest"
-        )
-        find_and_group(
-            "email-security-pipeline",
-            ["video frame"],
-            "Bolt video frame performance; keep newest",
-        )
-
-        # series_correction
-        find_and_group(
-            "series_correction_project_updated",
-            ["itertuples"],
-            "Bolt dataframe iteration perf; keep newest",
-        )
-        find_and_group(
-            "series_correction_project_updated",
-            ["iteration", "performance"],
-            "Iteration optimizations; handled by above/keep newest",
-        )
-
-        for g in groups:
-            dups_str = ", ".join([f"**#{d['number']}**" for d in g["dups"]])
-            triage_md.append(
-                f"| {g['repo']} **#{g['keep']['number']}** | {dups_str} | {g['rationale']} |"
-            )
-
-
-    group_prs()
+    group_prs(all_prs, triage_md)
 
     # Process Actions
     for pr in sorted(all_prs, key=lambda x: (x["repo"], -x["number"])):
