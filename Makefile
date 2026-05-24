@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help cursor-cloud-hooks test test-python test-all test-quick lint lint-errors lint-fix control-d-regression benchmark
+.PHONY: help cursor-cloud-hooks test test-python test-all test-quick lint lint-errors lint-fix control-d-regression benchmark verify-credentials
 
 help:  ## Show this help message
 	@echo "Available targets:"
@@ -51,3 +51,6 @@ lint-errors:  ## Fail on SC2155/SC2145 correctness violations (run without Trunk
 
 lint-fix:  ## Auto-fix lint issues (requires Trunk; runs: trunk fmt)
 	trunk fmt
+
+verify-credentials:  ## ABHI-964: trufflehog --only-verified + hardcoded password grep
+	@./scripts/verify-repo-auth-hygiene.sh
