@@ -12,7 +12,8 @@
 | Component              | Location                                      | Type           |
 | ---------------------- | --------------------------------------------- | -------------- |
 | **rclone config**      | 1Password → "Rclone Config Backup"            | Secure vault   |
-| **WebDAV credentials** | 1Password → "Media Server WebDAV Credentials" | Secure vault   |
+| **WebDAV credentials** | 1Password Login → `MediaServer` (`op://Personal/MediaServer/...`) | Secure vault   |
+| **WebDAV credentials (legacy doc)** | 1Password document → "Media Server WebDAV Credentials" | Optional backup |
 | **Setup scripts**      | `media-streaming/scripts/`                    | Git repository |
 | **Documentation**      | `media-streaming/docs/`                       | Git repository |
 
@@ -223,9 +224,17 @@ op document edit "Rclone Config Backup" ~/.config/rclone/rclone.conf --vault Per
 
 ### After Changing WebDAV Password:
 
+Prefer the rotation helper (generates a new password in 1Password; never prints it):
+
 ```bash
-# Update credentials in 1Password
+./media-streaming/scripts/rotate-media-webdav.sh --sync-legacy-document
+```
+
+Manual fallback (only if you already updated the password elsewhere):
+
+```bash
 op document edit "Media Server WebDAV Credentials" ~/.config/media-server/credentials --vault Personal
+op item edit MediaServer --vault Personal --generate-password='letters,digits,32'
 ```
 
 ---
@@ -283,7 +292,8 @@ All sensitive configurations are stored in your **Personal vault**:
 | Document Name                       | Contains                     | UUID                       |
 | ----------------------------------- | ---------------------------- | -------------------------- |
 | **Rclone Config Backup**            | OAuth tokens, remote configs | opgr52y2brbsfmzzk56p4qrkzu |
-| **Media Server WebDAV Credentials** | Username & password          | mv76o4tmrwg2ure3jyedmlphti |
+| **MediaServer** (Login)             | Username & password (primary) | Personal vault item name   |
+| **Media Server WebDAV Credentials** | Legacy document backup       | Optional; use `--sync-legacy-document` when rotating |
 
 ---
 

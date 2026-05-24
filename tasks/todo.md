@@ -1,3 +1,11 @@
+# ABHI-965 — Rotate WebDAV password in 1Password — 2026-05-24
+
+- [x] Add `media-streaming/scripts/rotate-media-webdav.sh` (op item edit + optional file/doc sync)
+- [x] Document procedure in `docs/CREDENTIAL_ROTATION.md` and `media-streaming/BACKUP_RECOVERY.md`
+- [x] Add `tests/test_rotate_webdav_credentials.sh`
+- [ ] **Manual (macOS):** `eval "$(op signin)"` then `./media-streaming/scripts/rotate-media-webdav.sh --sync-legacy-document --restart-media`
+- [ ] Update Infuse / remote clients with new password; verify `curl` against local WebDAV port
+
 # ABHI-964 — Verify no hardcoded credentials remain in repo — 2026-05-24
 
 - [x] Run `trufflehog filesystem . --only-verified` (0 verified secrets on 2026-05-24).

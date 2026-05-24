@@ -63,6 +63,7 @@ Use these shortcuts in your terminal (Fish shell required):
 ## 🔐 **Security Note**
 
 - **WebDAV** is password-protected via 1Password (Item: `MediaServer`).
+- **Password rotation**: `./scripts/rotate-media-webdav.sh` (see `docs/CREDENTIAL_ROTATION.md`).
 - **NFS** is bound to `localhost` and is **not** password protected; do **not** forward port 12049 to the internet.
 - **Port Forwarding**: Only forward **8080** (WebDAV) and **32400** (Plex) via Windscribe for remote access.
 
