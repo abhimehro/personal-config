@@ -1,3 +1,12 @@
+# ABHI-966: copilot-setup-steps.yml script injection (CWE-94) — 2026-05-24
+
+- [x] Verify `.github/workflows/copilot-setup-steps.yml` uses `env.REQUEST` + `process.env.REQUEST` (not direct `${{ }}` in `with.script`).
+- [x] Confirm fix landed on `main` via `4972970` / PR #980 (2026-05-19).
+- [x] YAML syntax check passed locally.
+- [x] No code change required — issue already resolved on default branch.
+
+---
+
 # Security Fix: Cleartext Password Logging in infuse-media-server.py — 2026-05-14
 
 - [x] Replace auto-generated password printing with `getpass.getpass()` interactive prompt in `media-streaming/archive/scripts/infuse-media-server.py`.
