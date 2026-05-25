@@ -129,8 +129,9 @@ def _generate_duplicate_section(duplicates):
 
 def _generate_ready_section(ready_only, duplicates):
     out = ["## READY"]
+    duplicates_set = set(duplicates)
     for pr in ready_only:
-        if pr not in duplicates:
+        if pr not in duplicates_set:
             out.append(f"- {pr}")
     return out
 
