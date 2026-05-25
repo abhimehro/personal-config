@@ -1,39 +1,56 @@
-# PR Inventory — 2026-05-24 (cron `0 13 * * *`)
+# PR Inventory — 2026-05-24 (combined)
 
-**Preflight:** PASS (`scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml`, 6/6 repos)
+**Sessions:** Review-and-merge (`0 13 * * *`, merged via [#1049](https://github.com/abhimehro/personal-config/pull/1049)) and salvage cleanup (`0 17 * * *`, branch `cursor-agent/pr-salvage-workflow-3feb`).
 
-**Mode:** `review-and-merge` | **Stale threshold:** 30 days | **Merge strategy:** squash
+**Mode:** `review-and-merge` + Phase 2 salvage  
+**Preflight:** PASS (6/6 repos)  
+**Config:** `tasks/pr-review-agent.config.yaml` — squash, 30d stale
 
-## Summary
+## Summary (end of day)
 
-| Repo | In-scope open | Notes |
-| --- | ---: | --- |
-| abhimehro/personal-config | 13 → 4 (end of session) | Security remediation burst (CWE-94 / ABHI-9xx) |
-| abhimehro/email-security-pipeline | 1 → 0 | Jules Daily QA import removal |
-| abhimehro/ctrld-sync | 0 | — |
-| abhimehro/Seatek_Analysis | 0 | — |
-| abhimehro/Hydrograph_Versus_Seatek_Sensors_Project | 0 | — |
-| abhimehro/series_correction_project_updated | 0 | — |
+| Metric | Review (13:00) | Salvage (17:00) | Combined |
+| --- | ---: | ---: | ---: |
+| Squash-merged | 8 | 2 | 10 |
+| Closed (superseded / duplicate) | 3 | 4 | 7 |
+| New salvage drafts | 0 | 3 ([#1050](https://github.com/abhimehro/personal-config/pull/1050)–[#1052](https://github.com/abhimehro/personal-config/pull/1052)) | 3 |
+| Open in-scope tail | 4 | 3 drafts + 1 ctrld | 4 |
 
-## Full inventory (session start)
+## Open at end of day (post-salvage)
 
-| Repo | PR | Author | Branch | Category | CI | Conflicts | Age | Session end |
-| --- | ---: | --- | --- | --- | --- | --- | --- | --- |
-| personal-config | [#1048](https://github.com/abhimehro/personal-config/pull/1048) | abhimehro (Jules) | `jules-*` | CI/INFRA | CodeScene **fail** | — | 0d | **OPEN** |
-| personal-config | [#1047](https://github.com/abhimehro/personal-config/pull/1047) | abhimehro (cursor) | `cursor-agent/abh-918-*` | SECURITY | CLEAN | — | 0d | **ESCALATE** |
-| personal-config | [#1046](https://github.com/abhimehro/personal-config/pull/1046) | abhimehro (cursor) | `cursor-agent/verify-no-hardcoded-*` | SECURITY | CLEAN | resolved | 0d | **MERGED** |
-| personal-config | [#1045](https://github.com/abhimehro/personal-config/pull/1045) | abhimehro (cursor) | `cursor-agent/abhi-943-*` | SECURITY | CLEAN | — | 0d | **MERGED** |
-| personal-config | [#1044](https://github.com/abhimehro/personal-config/pull/1044) | abhimehro (cursor) | `cursor-agent/abhi-929-*` | SECURITY | CodeScene fail | — | 0d | **CLOSED** dup #1045 |
-| personal-config | [#1043](https://github.com/abhimehro/personal-config/pull/1043) | abhimehro (cursor) | `cursor-agent/fix-copilot-*` | SECURITY | CLEAN | — | 0d | **CLOSED** superseded |
-| personal-config | [#1042](https://github.com/abhimehro/personal-config/pull/1042) | abhimehro (cursor) | `cursor-agent/verify-summary-*` | SECURITY | CodeScene fail | — | 0d | **CLOSED** dup #1037 |
-| personal-config | [#1041](https://github.com/abhimehro/personal-config/pull/1041) | abhimehro (cursor) | `cursor-agent/rotate-webdav-*` | SECURITY | CLEAN | resolved | 0d | **MERGED** |
-| personal-config | [#1040](https://github.com/abhimehro/personal-config/pull/1040) | abhimehro (cursor) | `cursor-agent/abhi-967-*` | SECURITY | CLEAN | resolved | 0d | **MERGED** |
-| personal-config | [#1039](https://github.com/abhimehro/personal-config/pull/1039) | abhimehro (cursor) | `cursor-agent/github-pat-*` | SECURITY | tests+CodeScene fail | — | 0d | **ESCALATE** |
-| personal-config | [#1038](https://github.com/abhimehro/personal-config/pull/1038) | abhimehro (cursor) | `cursor-agent/test-cwe94-*` | SECURITY | fixed+merged | resolved | 0d | **MERGED** |
-| personal-config | [#1037](https://github.com/abhimehro/personal-config/pull/1037) | abhimehro (cursor) | `cursor-agent/fix-copilot-setup-*` | SECURITY | CLEAN | — | 0d | **MERGED** |
-| personal-config | [#1036](https://github.com/abhimehro/personal-config/pull/1036) | abhimehro (cursor) | `cursor-agent/security-remediation-tracker-*` | SECURITY | CLEAN | DIRTY post-wave | 0d | **DEFER** |
-| email-security-pipeline | [#901](https://github.com/abhimehro/email-security-pipeline/pull/901) | abhimehro (Jules) | `fix/remove-unused-import-*` | REFACTOR | all green | — | 0d | **MERGED** |
+| Repo | PR | Author | Merge | CI | Draft | Notes |
+| --- | ---: | --- | --- | --- | --- | --- |
+| personal-config | 1050 | abhimehro | CLEAN | U | yes | Salvages #1036 — tracker + CWE-1236 |
+| personal-config | 1051 | abhimehro | CLEAN | U | yes | Salvages #1048 — scratch_triage refactor |
+| personal-config | 1052 | abhimehro | CLEAN | U | yes | Salvages #1039 — PAT runbook (T2) |
+| ctrld-sync | 844 | bot/human | U | ? | no | Palette dry-run placeholder (out of band) |
 
-## Automation signals
+**Legend:** Merge = `mergeStateStatus`; CI rollup shorthand (U=UNSTABLE until checks finish).
 
-All `abhimehro`-authored rows are in scope via `cursor-agent/*`, `jules-*`, or Jules task links in the PR body.
+## Review session inventory (13:00 start)
+
+| Repo | PR | Category | Result |
+| --- | ---: | --- | --- |
+| personal-config | 1037–1046 | SECURITY/TEST | Merged (CWE-94 cluster) |
+| personal-config | 1042–1044 | TEST | Closed duplicate |
+| personal-config | 1036, 1039, 1047, 1048 | DEFER/ESCALATE | Salvaged 17:00 |
+| email-security-pipeline | 901 | CI/INFRA | Merged |
+| series_correction | 64 | SECURITY | Merged (salvage) |
+| ctrld-sync, Seatek, Hydrograph | — | — | No open bot PRs |
+
+## Salvage session actions (17:00)
+
+| Repo | Old PR | Disposition | New PR |
+| --- | ---: | --- | ---: |
+| personal-config | 1036 | CLOSE-SUPERSEDED | [#1050](https://github.com/abhimehro/personal-config/pull/1050) |
+| personal-config | 1048 | CLOSE-SUPERSEDED | [#1051](https://github.com/abhimehro/personal-config/pull/1051) |
+| personal-config | 1039 | CLOSE-SUPERSEDED | [#1052](https://github.com/abhimehro/personal-config/pull/1052) |
+| personal-config | 1047 | CLOSE-DUPLICATE | (same lane as #1052) |
+| personal-config | 1049 | **MERGE** | Session docs on `main` |
+| series_correction | 64 | **MERGE** | Sentinel exception leakage |
+
+## Repos with zero open automation PRs (after salvage)
+
+- `abhimehro/email-security-pipeline`
+- `abhimehro/Seatek_Analysis`
+- `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project`
+- `abhimehro/series_correction_project_updated` (after #64 merge)

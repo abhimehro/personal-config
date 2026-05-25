@@ -1,68 +1,41 @@
-# PR Triage — 2026-05-24
+# PR Triage — 2026-05-24 (combined)
 
-## Phase 1 dispositions
+**Disposition key:** MERGE · CLOSE-DUPLICATE · CLOSE-SUPERSEDED · DEFER · ESCALATE · SALVAGE-DRAFT
 
-| Disposition | Count | PRs |
+**Sessions:** Review (13:00) + salvage (17:00). Preflight **passed** both runs.
+
+## Review session (13:00)
+
+| Repo | PR | Disposition |
 | --- | ---: | --- |
-| MERGE | 8 | personal-config #1037, #1038, #1040, #1041, #1045, #1046; email-security-pipeline #901 |
-| CLOSE-DUPLICATE | 3 | personal-config #1042, #1043, #1044 |
-| ESCALATE | 2 | personal-config #1039, #1047 (`parse_inventory.py` trust boundary) |
-| DEFER | 2 | personal-config #1036 (overlap + conflict after merge wave), #1048 (CodeScene fail) |
+| personal-config | 1037, 1038, 1040, 1041, 1045, 1046 | **MERGE** |
+| personal-config | 1042, 1043, 1044 | **CLOSE-DUPLICATE** |
+| personal-config | 1039, 1047 | **ESCALATE** → salvage |
+| personal-config | 1036, 1048 | **DEFER** → salvage |
+| email-security-pipeline | 901 | **MERGE** |
 
-## Duplicate / overlap groups
+## Salvage session (17:00)
 
-### CWE-94 workflow + regression tests
+| Repo | PR | Disposition |
+| --- | ---: | --- |
+| personal-config | 1049 | **MERGE** (session report artifacts) |
+| series_correction | 64 | **MERGE** (CLEAN + green CI) |
+| personal-config | 1036 | **CLOSE-SUPERSEDED** → **#1050** draft |
+| personal-config | 1048 | **CLOSE-SUPERSEDED** → **#1051** draft |
+| personal-config | 1039 | **CLOSE-SUPERSEDED** → **#1052** draft |
+| personal-config | 1047 | **CLOSE-DUPLICATE** (#1052 lane) |
 
-| Keeper | Closed / reason |
-| --- | --- |
-| **#1037** (workflow env binding) | — merged first |
-| **#1045** (`test_copilot_setup_steps_workflow.py`) | #1044 duplicate + failing CodeScene |
-| **#1038** (`test_copilot_setup_steps_cwe94.py` + malicious payload) | merged after test fix for preamble comment |
-| #1042 | closed — workflow fix in #1037; CodeScene red |
-| #1043 | closed — todo-only verification; superseded |
+## Still open (human merge queue)
 
-### PR automation toolchain (`parse_inventory.py`, merge helpers)
+| Repo | PR | Tier | Notes |
+| --- | ---: | --- | --- |
+| personal-config | 1050 | T1 | Security tracker + formula injection |
+| personal-config | 1051 | T3 | scratch_triage refactor |
+| personal-config | 1052 | T2 | PAT runbook; wire `parse_inventory` separately |
+| ctrld-sync | 844 | T3 | Palette UX — not in Phase 1 tail; triage next review |
 
-| PR | Action |
-| --- | --- |
-| #1039, #1047 | **ESCALATE** — human review required (agent spec + session memory) |
+## Human next steps
 
-### Tracker / Jules
-
-| PR | Action |
-| --- | --- |
-| #1036 | **DEFER** — rebase after #1037; drop duplicate workflow hunks |
-| #1048 | **DEFER** — CodeScene required check failing on `scratch_triage.py` |
-
-## Merge order executed
-
-1. #1037 (CWE-94 fix)
-2. #1045 (regression tests)
-3. Close #1042, #1043, #1044
-4. Rebase/fix conflicts → #1040, #1041, #1038, #1046
-5. #1046, #1038 (after auto-fix test)
-6. email-security-pipeline #901
-
-## Ready-to-execute human actions
-
-```bash
-# Rebase deferred tracker PR after today's merge wave
-gh pr checkout 1036 -R abhimehro/personal-config
-git fetch origin main && git merge origin/main
-# resolve tasks/todo.md if needed, push, wait for CI
-gh pr merge 1036 -R abhimehro/personal-config --squash --delete-branch
-
-# Investigate CodeScene delta on Jules QA shell
-gh pr checks 1048 -R abhimehro/personal-config
-# fix or close if scratch_triage.py is out of scope
-
-# Human review then merge ONE of the parse_inventory cluster (not both without consolidation)
-gh pr view 1039 -R abhimehro/personal-config
-gh pr view 1047 -R abhimehro/personal-config
-```
-
-## Security gate notes
-
-- Gate 2 **pass** on all merged PRs (no secrets added; CWE-94 binding verified).
-- **Never merged:** #1039, #1047 (toolchain trust boundary).
-- **Never merged with failing required checks:** #1048 (CodeScene).
+1. Review and merge draft salvages **#1050** → **#1052** after CI green (squash).
+2. Open a **separate** human-reviewed PR to adopt `gh_token_env` in `parse_inventory.py` / `run_merges.py` (not included in #1052).
+3. Triage **ctrld-sync#844** on next review cron if still open.
