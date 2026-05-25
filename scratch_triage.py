@@ -20,13 +20,13 @@ def run_cmd(cmd):
 
 def _find_matching_prs(all_prs, repo, title_keywords):
     lower_kws = tuple(kw.lower() for kw in title_keywords)
-    matches = []
-    for p in all_prs:
-        if p["repo"] == repo:
-            title_lower = p["title"].lower()
-            if all(kw in title_lower for kw in lower_kws):
-                matches.append(p)
-    return matches
+    return [
+        p
+        for p in all_prs
+        if p["repo"] == repo
+        for title_lower in (p["title"].lower(),)
+        if all(kw in title_lower for kw in lower_kws)
+    ]
 
 
 def _process_pr_group(matches, repo, rationale, groups):
@@ -97,7 +97,7 @@ def group_prs(all_prs, triage_md):
         )
 
 
-if __name__ == '__main__':
+def _fetch_prs(repos):
     all_prs = []
     for repo in repos:
         success, stdout, _ = run_cmd(
@@ -122,20 +122,12 @@ if __name__ == '__main__':
                 pr["repo"] = repo.rpartition("/")[2]
                 pr["full_repo"] = repo
                 all_prs.append(pr)
+    return all_prs
 
+def _process_actions(all_prs):
     merged = []
     closed = []
     escalated = []
-
-    triage_md = [
-        f"# PR triage — backlog cleanup test ({datetime.date.today().isoformat()})\n",
-        "**Policy:** squash merge, stale_days 30, auto-fix enabled, mode review-and-merge. **No force-push.**\n",
-        "## Duplicate / supersede groups\n",
-        "| Keep (canonical) | Close as duplicate / superseded | Rationale |",
-        "| --- | --- | --- |",
-    ]
-
-    group_prs(all_prs, triage_md)
 
     # Process Actions
     for pr in sorted(all_prs, key=lambda x: (x["repo"], -x["number"])):
@@ -171,6 +163,9 @@ if __name__ == '__main__':
             print(f"Holding {repo}#{num} ({pr['mergeStateStatus']})")
             escalated.append(pr)
 
+    return merged, closed, escalated
+
+def _write_reports(repos, all_prs, merged, closed, escalated, triage_md):
     triage_md.extend(
         [
             "\n## Escalate / defer (no autonomous merge)\n",
@@ -235,6 +230,25 @@ if __name__ == '__main__':
     with open("tasks/pr-review-session-reports.md", "a") as f:
         f.write("\n".join(report_md) + "\n")
 
+
+def main():
+    all_prs = _fetch_prs(repos)
+
+    triage_md = [
+        f"# PR triage — backlog cleanup test ({datetime.date.today().isoformat()})\n",
+        "**Policy:** squash merge, stale_days 30, auto-fix enabled, mode review-and-merge. **No force-push.**\n",
+        "## Duplicate / supersede groups\n",
+        "| Keep (canonical) | Close as duplicate / superseded | Rationale |",
+        "| --- | --- | --- |",
+    ]
+
+    group_prs(all_prs, triage_md)
+    merged, closed, escalated = _process_actions(all_prs)
+    _write_reports(repos, all_prs, merged, closed, escalated, triage_md)
+
     print(
         f"Done. Merged: {len(merged)}, Closed: {len(closed)}, Escalated: {len(escalated)}"
     )
+
+if __name__ == "__main__":
+    main()
