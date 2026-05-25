@@ -2,20 +2,21 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-24 (salvage 17:00).
+> **Latest execution:** 2026-05-25.
 
-## Run — 2026-05-24 (cron salvage 17:00)
+## Run — 2026-05-25 (cron review 13:00)
 
-**Report:** `tasks/pr-review-2026-05-24.md` (addendum)
+**Report:** `tasks/pr-review-2026-05-25.md`
 
 | Metric | Count |
 | --- | ---: |
 | Repos | 6 |
-| Merged (salvage) | 2 (#1049 docs, series_correction#64) |
-| Closed superseded | 4 (#1036, #1039, #1047, #1048) |
-| New salvage drafts | 3 (#1050–#1052) |
+| Merged | 10 |
+| Closed superseded | 2 |
+| Escalated | 2 |
+| Deferred open | 14 |
 
-**Highlights:** Rebuilt DIRTY tails from `main`; split PAT runbook (#1052) from `parse_inventory` refactors; closed sibling #1047.
+**Highlights:** Merged personal-config salvage tracker (#1050 after CWE-94 preamble auto-fix), scratch_triage autofix (#1063), and docs/perf batch; merged `email-security-pipeline` #925/#926 and `Seatek_Analysis` #222. Left CodeScene-blocked #1051/#1052 and conflicting Bolt queues.
 
 ## Run — 2026-05-24 (cron review 13:00)
 
