@@ -19,7 +19,7 @@ def run_cmd(cmd):
     return res.returncode == 0, res.stdout, res.stderr
 
 
-def fetch_repo_prs(repo):
+def _fetch_prs(repo):
     success, stdout, _ = run_cmd(
         [
             "gh",
@@ -35,14 +35,18 @@ def fetch_repo_prs(repo):
             "number,title,author,headRefName,mergeStateStatus,state,createdAt",
         ]
     )
+    prs_out = []
     if success:
-        prs = json.loads(stdout)
-        for pr in prs:
-            # ⚡ Bolt Optimization: Use rpartition() over split() to avoid intermediate list allocation overhead
-            pr["repo"] = repo.rpartition("/")[2]
-            pr["full_repo"] = repo
-        return prs
-    return []
+        try:
+            prs = json.loads(stdout)
+            for pr in prs:
+                # ⚡ Bolt Optimization: Use rpartition() over split() to avoid intermediate list allocation overhead
+                pr["repo"] = repo.rpartition("/")[2]
+                pr["full_repo"] = repo
+                prs_out.append(pr)
+        except Exception:
+            pass
+    return prs_out
 
 
 def _find_matching_prs(all_prs, repo, title_keywords):
@@ -124,12 +128,11 @@ def group_prs(all_prs, triage_md):
         )
 
 
-def main():
+if __name__ == '__main__':
     all_prs = []
-    # ⚡ Bolt Optimization: Parallelize N+1 API calls for fetching PRs across multiple repositories using ThreadPoolExecutor.
+    # ⚡ Bolt Optimization: Parallelize N+1 API calls using ThreadPoolExecutor for faster PR fetching.
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        results = executor.map(fetch_repo_prs, repos)
-        for prs in results:
+        for prs in executor.map(_fetch_prs, repos):
             all_prs.extend(prs)
 
     merged = []
@@ -247,6 +250,3 @@ def main():
     print(
         f"Done. Merged: {len(merged)}, Closed: {len(closed)}, Escalated: {len(escalated)}"
     )
-
-if __name__ == '__main__':
-    main()
