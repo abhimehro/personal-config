@@ -1,56 +1,75 @@
-# PR Inventory — 2026-05-24 (combined)
+# PR Inventory — 2026-05-25
 
-**Sessions:** Review-and-merge (`0 13 * * *`, merged via [#1049](https://github.com/abhimehro/personal-config/pull/1049)) and salvage cleanup (`0 17 * * *`, branch `cursor-agent/pr-salvage-workflow-3feb`).
-
-**Mode:** `review-and-merge` + Phase 2 salvage  
+**Trigger:** Cron `0 17 * * *` (automation `3e537981-04a6-456f-89a3-272d9d5fddd7`)  
+**Branch:** `cursor-agent/pr-salvage-workflow-bec5`  
+**Mode:** Phase 2 salvage + selective Phase 1 merges  
 **Preflight:** PASS (6/6 repos)  
-**Config:** `tasks/pr-review-agent.config.yaml` — squash, 30d stale
+**Config:** `tasks/pr-review-agent.config.yaml`
 
-## Summary (end of day)
+## Summary
 
-| Metric | Review (13:00) | Salvage (17:00) | Combined |
-| --- | ---: | ---: | ---: |
-| Squash-merged | 8 | 2 | 10 |
-| Closed (superseded / duplicate) | 3 | 4 | 7 |
-| New salvage drafts | 0 | 3 ([#1050](https://github.com/abhimehro/personal-config/pull/1050)–[#1052](https://github.com/abhimehro/personal-config/pull/1052)) | 3 |
-| Open in-scope tail | 4 | 3 drafts + 1 ctrld | 4 |
+| Metric | Count |
+| --- | ---: |
+| Repos processed | 6 |
+| In-scope open at start | 28 |
+| Squash-merged (Phase 1) | 4 |
+| Closed (duplicate / superseded / deferred comment) | 14 |
+| New salvage drafts opened | 9 |
+| Open tail (human merge queue) | 15 |
 
-## Open at end of day (post-salvage)
+## Phase 1 merges (CLEAN + green required checks)
 
-| Repo | PR | Author | Merge | CI | Draft | Notes |
-| --- | ---: | --- | --- | --- | --- | --- |
-| personal-config | 1050 | abhimehro | CLEAN | U | yes | Salvages #1036 — tracker + CWE-1236 |
-| personal-config | 1051 | abhimehro | CLEAN | U | yes | Salvages #1048 — scratch_triage refactor |
-| personal-config | 1052 | abhimehro | CLEAN | U | yes | Salvages #1039 — PAT runbook (T2) |
-| ctrld-sync | 844 | bot/human | U | ? | no | Palette dry-run placeholder (out of band) |
+| Repo | PR | Title (short) |
+| --- | ---: | --- |
+| email-security-pipeline | [#917](https://github.com/abhimehro/email-security-pipeline/pull/917) | Refactor `replace_secret` → lambda |
+| email-security-pipeline | [#927](https://github.com/abhimehro/email-security-pipeline/pull/927) | Jules daily QA notes |
+| email-security-pipeline | [#929](https://github.com/abhimehro/email-security-pipeline/pull/929) | Palette setup wizard colors |
+| personal-config | [#1052](https://github.com/abhimehro/personal-config/pull/1052) | PAT rotation runbook (salvages #1039) |
 
-**Legend:** Merge = `mergeStateStatus`; CI rollup shorthand (U=UNSTABLE until checks finish).
+**Note:** [#1050](https://github.com/abhimehro/personal-config/pull/1050) was already merged before this run.
 
-## Review session inventory (13:00 start)
+## Closures (no merge)
 
-| Repo | PR | Category | Result |
-| --- | ---: | --- | --- |
-| personal-config | 1037–1046 | SECURITY/TEST | Merged (CWE-94 cluster) |
-| personal-config | 1042–1044 | TEST | Closed duplicate |
-| personal-config | 1036, 1039, 1047, 1048 | DEFER/ESCALATE | Salvaged 17:00 |
-| email-security-pipeline | 901 | CI/INFRA | Merged |
-| series_correction | 64 | SECURITY | Merged (salvage) |
-| ctrld-sync, Seatek, Hydrograph | — | — | No open bot PRs |
+| Repo | PR | Reason |
+| --- | ---: | --- |
+| email-security-pipeline | 907 | Duplicate of #905 |
+| email-security-pipeline | 906, 908, 913 | Conflicted; deferred to next salvage cycle |
+| email-security-pipeline | 919, 921 | Superseded by salvage drafts (v2: #932, #933) |
+| personal-config | 1051 | Superseded by [#1065](https://github.com/abhimehro/personal-config/pull/1065) |
+| ctrld-sync | 846 | Superseded by [#847](https://github.com/abhimehro/ctrld-sync/pull/847) |
+| series_correction | 66, 68 | Superseded by [#72](https://github.com/abhimehro/series_correction_project_updated/pull/72), [#73](https://github.com/abhimehro/series_correction_project_updated/pull/73) |
+| Seatek_Analysis | 218, 219 | Superseded by [#223](https://github.com/abhimehro/Seatek_Analysis/pull/223), [#224](https://github.com/abhimehro/Seatek_Analysis/pull/224) |
+| email-security-pipeline | 930, 931 | Closed after immediate DIRTY; replaced by #932, #933 |
 
-## Salvage session actions (17:00)
+## New salvage drafts (Phase 2)
 
-| Repo | Old PR | Disposition | New PR |
-| --- | ---: | --- | ---: |
-| personal-config | 1036 | CLOSE-SUPERSEDED | [#1050](https://github.com/abhimehro/personal-config/pull/1050) |
-| personal-config | 1048 | CLOSE-SUPERSEDED | [#1051](https://github.com/abhimehro/personal-config/pull/1051) |
-| personal-config | 1039 | CLOSE-SUPERSEDED | [#1052](https://github.com/abhimehro/personal-config/pull/1052) |
-| personal-config | 1047 | CLOSE-DUPLICATE | (same lane as #1052) |
-| personal-config | 1049 | **MERGE** | Session docs on `main` |
-| series_correction | 64 | **MERGE** | Sentinel exception leakage |
+| Repo | Draft PR | Salvages | Tier |
+| --- | ---: | ---: | --- |
+| personal-config | [#1065](https://github.com/abhimehro/personal-config/pull/1065) | #1048 | T3 |
+| email-security-pipeline | [#932](https://github.com/abhimehro/email-security-pipeline/pull/932) | #919 | T1 |
+| email-security-pipeline | [#933](https://github.com/abhimehro/email-security-pipeline/pull/933) | #921 | T3 |
+| ctrld-sync | [#847](https://github.com/abhimehro/ctrld-sync/pull/847) | #846 | T3 |
+| series_correction | [#72](https://github.com/abhimehro/series_correction_project_updated/pull/72) | #66 | T3 |
+| series_correction | [#73](https://github.com/abhimehro/series_correction_project_updated/pull/73) | #68 | T3 |
+| Seatek_Analysis | [#223](https://github.com/abhimehro/Seatek_Analysis/pull/223) | #218 | T3 |
+| Seatek_Analysis | [#224](https://github.com/abhimehro/Seatek_Analysis/pull/224) | #219 | T3 |
 
-## Repos with zero open automation PRs (after salvage)
+## Open at end of run
 
-- `abhimehro/email-security-pipeline`
-- `abhimehro/Seatek_Analysis`
-- `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project`
-- `abhimehro/series_correction_project_updated` (after #64 merge)
+| Repo | PR | Merge | Draft | Notes |
+| --- | ---: | --- | --- | --- |
+| personal-config | 1064 | CLEAN | yes | Cursor session docs (prior review cron) |
+| personal-config | 1065 | UNSTABLE | yes | scratch_triage v2 |
+| email-security-pipeline | 905 | CONFLICTING | no | Metrics reset — next cycle |
+| email-security-pipeline | 932, 933 | pending CI | yes | Security + IMAP perf v2 |
+| ctrld-sync | 847 | UNSTABLE | yes | Watch benchmark check |
+| Seatek_Analysis | 209–214 | CONFLICTING | no | Commented defer; perf queue |
+| Seatek_Analysis | 223, 224 | UNSTABLE | yes | Test salvages |
+| series_correction | 72, 73 | UNSTABLE | yes | Perf + dead-code |
+| Hydrograph | — | — | — | Zero open bot PRs |
+
+**Legend:** Merge = `mergeStateStatus`; CI = poll `gh pr checks` before human merge.
+
+## Repos with no in-scope automation PRs at start
+
+- `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project` — empty queue (unchanged).
