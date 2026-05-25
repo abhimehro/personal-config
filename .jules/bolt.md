@@ -160,3 +160,7 @@
 ## 2026-11-20 - [Avoid Redundant title.lower() in Security Audits]
 **Learning:** Checking a series of hardcoded substrings sequentially against `.lower()` of a string (`"auth" in title.lower() or "payment" in title.lower()`) inside loops creates unnecessary CPU overhead when the keyword doesn't match and the `or` falls through. In Python, doing `title.lower()` redundantly repeatedly inside an `if` block executes the C-level lowercase string allocation `N` times.
 **Action:** When performing `in` checks against multiple strings using an `or` operation, declare a temporary lowercase string variable (`title_lower = title.lower()`) before the `if` block and compare against it directly to halve the overhead.
+
+## 2026-06-25 - [Focus on I/O Bottlenecks, not Variable Scope Micro-Optimizations]
+**Learning:** While wrapping global script execution inside a `main()` function technically optimizes CPython variable lookups (`LOAD_FAST` vs `LOAD_GLOBAL`), this is a negligible micro-optimization for scripts dominated by I/O (e.g., executing network requests or calling subprocesses like `gh pr list`).
+**Action:** Do not propose variable scope changes as a primary performance optimization for I/O-bound scripts. Instead, focus on architectural bottlenecks, such as parallelizing sequential N+1 network/subprocess calls using `concurrent.futures.ThreadPoolExecutor`.
