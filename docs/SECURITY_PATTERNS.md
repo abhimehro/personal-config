@@ -10,6 +10,7 @@ This document outlines security patterns and defensive coding practices used thr
 4. [Command Injection Prevention](#command-injection-prevention)
 5. [Path Traversal Protection](#path-traversal-protection)
 6. [Credential Security](#credential-security)
+7. [Spreadsheet Formula Injection](#spreadsheet-formula-injection)
 
 ---
 
@@ -327,6 +328,38 @@ source /etc/app/secrets.env
 3. **Avoid command-line args**: Never pass secrets via CLI flags
 4. **Restrict config files**: Ensure secret files are mode 600
 5. **Mask in logs**: Use `::add-mask::` in GitHub Actions
+
+---
+
+## Spreadsheet Formula Injection
+
+### Problem: [CWE-1236](https://cwe.mitre.org/data/definitions/1236.html) - Improper Neutralization of Formula Elements in CSV Files
+
+When tabular exports (CSV, or markdown tables copied into Excel) contain attacker-controlled text that begins with `=`, `+`, `-`, `@`, tab, or carriage return, spreadsheet software may interpret the cell as a formula and reach out to external resources or execute logic.
+
+### Vulnerable Pattern ❌
+
+```python
+# BAD: PR title from GitHub API written directly into a report row
+writer.writerow([pr["title"], pr["author"]["login"]])
+```
+
+### Secure Pattern ✅
+
+```python
+from spreadsheet_safety import escape_spreadsheet_formula
+
+writer.writerow([
+    escape_spreadsheet_formula(pr["title"]),
+    escape_spreadsheet_formula(pr["author"]["login"]),
+])
+```
+
+**Key principles:**
+
+1. Treat all GitHub metadata (titles, branch names, labels) as untrusted.
+2. Escape before writing any export that may be opened in a spreadsheet.
+3. Prefer `csv.writer` with proper quoting; still prefix dangerous leading characters.
 
 ---
 
