@@ -227,26 +227,49 @@ process_file() {
 		rmdir "$temp_output" 2>/dev/null || true
 		target_remote="$CLOUD_REMOTE:$dest_subfolder"
 
-		# Since we auto-resolved the duplicate above, it's technically no longer a duplicate on the remote.
-		# But we can still run a quick check just in case the mount is out of sync.
+		# Check whether the resolved name still collides on the remote (the
+		# mount may be slightly stale vs. what rclone sees directly).
 		duplicate=false
 		if check_remote_duplicate "$target_remote" "${final_path##*/}"; then
 			duplicate=true
-			log "Duplicate found in remote target: ${final_path##*/}"
+			log "Duplicate found in remote: ${final_path##*/}"
 		fi
-		sidecar="$final_path.proposal.json"
-		write_sidecar "$sidecar" "$file" "$final_path" "$media_type" "$target_remote" "$db" "$fmt" "$duplicate"
-		if [[ $AUTO_UPLOAD -eq 1 ]]; then
-			log "AUTO_UPLOAD enabled; approving immediately."
-			approve_candidate "$sidecar" || true
-		else
-			log "Queued for review: $final_path"
+
+		# Review queue is used ONLY for two exception cases:
+		#   1. A remote duplicate exists and needs manual disambiguation.
+		#   2. AUTO_UPLOAD is explicitly off (manual/test invocation).
+		# Every other successfully renamed file is uploaded immediately.
+		if [[ $duplicate == "true" ]]; then
+			sidecar="$final_path.proposal.json"
+			write_sidecar "$sidecar" "$file" "$final_path" "$media_type" "$target_remote" "$db" "$fmt" "true"
+			log "Queued for review (remote duplicate): $final_path"
+			notify "Duplicate Review Required" "${final_path##*/} already exists on server — manual review needed"
+		elif [[ $AUTO_UPLOAD -eq 0 ]]; then
+			sidecar="$final_path.proposal.json"
+			write_sidecar "$sidecar" "$file" "$final_path" "$media_type" "$target_remote" "$db" "$fmt" "false"
+			log "Queued for review (AUTO_UPLOAD off): $final_path"
 			notify "Rename Review Ready" "${final_path##*/} queued for approval"
+		else
+			# Happy path: clean rename, upload immediately.
+			touch "$LOCK_FILE"
+			log "Uploading: ${final_path##*/} -> $target_remote"
+			if rclone move "$final_path" "$target_remote" --transfers=4 --checkers=8 >>"$LOG_FILE" 2>&1; then
+				log "Upload successful: ${final_path##*/}"
+				notify "Media Uploaded" "${final_path##*/}"
+				rm -f "$LOCK_FILE" || true
+			else
+				local failed_target="$FAILED_DIR/${final_path##*/}"
+				mv "$final_path" "$failed_target" 2>/dev/null || true
+				log "Upload failed; moved to failed queue: ${final_path##*/}"
+				notify "Upload Failed" "${final_path##*/}"
+				rm -f "$LOCK_FILE" || true
+			fi
 		fi
 	else
-		log "FileBot identification failed for $filename"
-		mv "$file" "$FAILED_DIR/" 2>/dev/null || true
-		notify "Identification Failed" "$filename"
+		log "FileBot identification failed for $filename — queued for manual review"
+		mkdir -p "$REVIEW_DIR/unidentified"
+		mv "$file" "$REVIEW_DIR/unidentified/" 2>/dev/null || true
+		notify "Identification Failed — Review Required" "$filename could not be matched by FileBot"
 		rmdir "$temp_output" 2>/dev/null || true
 	fi
 }
