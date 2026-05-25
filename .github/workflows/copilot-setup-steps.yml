@@ -30,6 +30,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      # SECURITY: bind untrusted workflow_dispatch input via step env (REQUEST),
+      # not direct interpolation inside actions/github-script `script:` blocks.
+      # Same env-var pattern as summary.yml (issue #892); CWE-94 / ABHI-963.
       - name: Development Partner Session
         uses: actions/github-script@d746ffe35508b1917358783b479e04febd2b8f71 # v9.0.0
         env:
