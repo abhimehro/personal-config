@@ -163,3 +163,6 @@
 ## 2026-05-24 - Optimize duplicate lookup array algorithm in `_generate_ready_section`
 **Learning:** Checking for list membership (`item not in list`) within a loop creates an O(N^2) time complexity which causes massive delays for lists containing thousands of items.
 **Action:** When filtering one list based on membership in another, convert the filter list to a set (`filter_set = set(filter_list)`) before the loop to reduce lookup complexity to O(1), making the overall algorithm O(N).
+## 2026-05-26 - [Avoid N+1 CLI invocations using ThreadPoolExecutor in Python Scripts]
+**Learning:** Sequential execution of CLI commands like `gh` over a list of items causes significant N+1 performance bottlenecks due to network latency and subprocess startup overhead.
+**Action:** When a script needs to run independent read-only CLI commands in a loop, refactor the logic into a pure function and use `concurrent.futures.ThreadPoolExecutor` with `executor.map()` to parallelize the calls safely. Ensure results are returned to the main thread to avoid mutating shared state from worker threads.
