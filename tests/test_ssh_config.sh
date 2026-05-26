@@ -37,7 +37,7 @@ run_test() {
 }
 
 # Test SSH config syntax
-run_test "SSH config syntax" "ssh -F \"$REPO_ROOT/configs/ssh/config\" -G cursor-mdns"
+run_test "SSH config syntax" "ssh -F \"$REPO_ROOT/configs/ssh/config\" -G dev-mdns"
 
 # Test SSH config file exists
 run_test "SSH config file exists" "[ -f \"$REPO_ROOT/configs/ssh/config\" ]"
@@ -59,9 +59,9 @@ run_test "1Password SSH agent socket exists" '[ -S ~/Library/Group\ Containers/2
 run_test "1Password SSH agent responds" 'SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock ssh-add -l'
 
 # Test SSH host configurations
-run_test "cursor-mdns config valid" "ssh -F \"$REPO_ROOT/configs/ssh/config\" -G cursor-mdns | grep -qi 'hostname .*\\.local'"
-run_test "cursor-local config valid" "ssh -F \"$REPO_ROOT/configs/ssh/config\" -G cursor-local | grep -qi 'hostname'"
-run_test "cursor-auto config valid" "ssh -F \"$REPO_ROOT/configs/ssh/config\" -G cursor-auto | grep -qi 'hostname .*\\.local'"
+run_test "dev-mdns config valid" "ssh -F \"$REPO_ROOT/configs/ssh/config\" -G dev-mdns | grep -qi 'hostname .*\\.local'"
+run_test "dev-local config valid" "ssh -F \"$REPO_ROOT/configs/ssh/config\" -G dev-local | grep -qi 'hostname'"
+run_test "dev-auto config valid" "ssh -F \"$REPO_ROOT/configs/ssh/config\" -G dev-auto | grep -qi 'hostname .*\\.local'"
 
 echo ""
 echo "📊 Test Results: $TESTS_PASSED/$TESTS_TOTAL tests passed"

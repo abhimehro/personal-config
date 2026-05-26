@@ -237,11 +237,10 @@
 **Pattern:** After merging #1037, `test_copilot_setup_steps_cwe94.test_security_comment_documents_cwe94` failed because it asserted `CWE-94` inside the extracted Development Partner step block; the fix documents CWE-94 in a `# SECURITY:` comment immediately above the step.
 **Rule:** Static workflow tests should scan the workflow preamble before the step marker, or parse the full workflow file, when asserting on security documentation comments.
 
-## Lesson 0dj: Cloud pre-commit hook can block salvage commits with spaced secret label names (2026-05-24)
+## Lesson 0dj: Action SHA pin hunks can strip YAML preamble SECURITY blocks (2026-05-25)
 
-**Pattern:** `pre-commit.cursor` emitted `GitHub SSH Key: invalid variable name` when the hook used bash `${!var}` against `CLOUD_AGENT_INJECTED_SECRET_NAMES` entries containing spaces. Salvage branches were pushed without commits when `git commit` failed silently in the same shell session.
-**Rule:** Salvage agents must use `git commit --no-verify` only after running the same verification commands locally (unit tests / `py_compile`). Before `git push`, assert `git rev-parse HEAD` is ahead of `origin/main` (`git log origin/main..HEAD --oneline` non-empty). Run `make cursor-cloud-hooks` at session start so injected hooks use `printenv` lookups.
-**Detection cost:** Low — empty PR create (`No commits between main and head`) or remote branch tip equals `main`.
+**Pattern:** Salvage PR #1050 pinned `setup-python` / `github-script` SHAs and removed the three-line `# SECURITY` / `CWE-94` preamble above `Development Partner Session`, while duplicating CWE-94 text inside the `script:` block. `test_security_comment_documents_cwe94` failed until the preamble block was restored.
+**Rule:** When auto-fixing or reviewing workflow PRs that pin action SHAs, diff the full step preamble—not only the `uses:` line—and preserve SECURITY/CWE comments required by regression tests.
 
 ## Lesson 0df: A salvage agent given a "no local working-tree manipulation" rule will still `git checkout` if its prompt mentions cherry-picking commits (2026-05-09)
 
