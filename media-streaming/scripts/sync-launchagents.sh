@@ -167,8 +167,20 @@ bootstrap_label() {
         launchctl enable "$DOMAIN/$label" 2>/dev/null || true
         return 0
     fi
-    # Fallback to legacy load -w if bootstrap fails (older macOS, edge cases)
-    warn "bootstrap failed for $label, retrying with legacy load -w"
+
+    # If launchd reports the label as already loaded after bootout, do not use
+    # legacy `load -w`; that can leave the old job definition active. Remove it,
+    # wait briefly, then retry bootstrap from the copied plist.
+    warn "bootstrap failed for $label, removing stale label and retrying"
+    launchctl bootout "$DOMAIN/$label" 2>/dev/null || true
+    launchctl remove "$label" 2>/dev/null || true
+    sleep 1
+    if launchctl bootstrap "$DOMAIN" "$plist" 2>/dev/null; then
+        launchctl enable "$DOMAIN/$label" 2>/dev/null || true
+        return 0
+    fi
+
+    warn "bootstrap retry failed for $label; retrying with legacy load -w"
     launchctl load -w "$plist" 2>/dev/null
 }
 

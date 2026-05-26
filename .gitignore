@@ -226,6 +226,12 @@ patch.sh
 *token*
 *_key
 
+# Tracked helpers for safe GH_TOKEN loading (no secret values in repo)
+!gh_token_env.py
+!scripts/ensure_gh_token.sh
+!scripts/verify_gh_auth.sh
+!tests/test_gh_token_env.py
+
 # But allow documentation about these topics
 !*secret*.md
 !*private*.md
