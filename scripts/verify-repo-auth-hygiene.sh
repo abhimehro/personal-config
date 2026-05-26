@@ -105,6 +105,7 @@ run_password_grep() {
 		*media-streaming/configs/media-credentials.example* | \
 		*media-streaming/archive/scripts/start-media-server*.sh* | \
 		*media-streaming/archive/scripts/start-media-server-fast.sh* | \
+		*media-streaming/BACKUP_RECOVERY.md* | \
 		*.agents/skills/firebase-auth-basics/*)
 			continue
 			;;
