@@ -1,49 +1,62 @@
-# PR Triage — 2026-05-25
+# PR Triage — 2026-05-26
 
-**Disposition key:** MERGE · CLOSE-DUPLICATE · CLOSE-SUPERSEDED · CLOSE-DEFERRED · SALVAGE-DRAFT · DEFER-COMMENT
+**Preflight:** PASS (6/6)  
+**Disposition key:** MERGE · CLOSE-DUPLICATE · CLOSE-CONFLICT · DEFER · ESCALATE
 
-**Preflight:** PASS
+## Duplicate / overlap groups
 
-## Phase 1 (review-and-merge within salvage cron)
+### Spam analyzer perf (email-security-pipeline)
 
-| Repo | PR | Disposition |
+| Keeper | Closed |
+| --- | --- |
+| **#936** (merged) | #935 — identical diff, older branch |
+
+### ctrld-sync `_filter_rules_for_folder`
+
+| Keeper | Closed |
+| --- | --- |
+| **#849** (merged, Bolt) | #847 — salvage duplicate + failing benchmark |
+
+### Seatek Bolt perf cluster (#209–#214)
+
+| Action | PRs |
+| --- | --- |
+| **CLOSED** | #209–#214 — all CONFLICTING with `main`; superseded by merged #226 and salvage #223/#224 |
+
+## Phase 1 dispositions
+
+| Disposition | Count | PRs |
 | --- | ---: | --- |
-| email-security-pipeline | 917, 927, 929 | **MERGE** |
-| email-security-pipeline | 907 | **CLOSE-DUPLICATE** (#905) |
-| personal-config | 1052 | **MERGE** |
-| email-security-pipeline | 906, 908, 913 | **CLOSE-DEFERRED** (conflicted hygiene) |
+| MERGE | 7 | pc #1064, #1066, #1071; cs #849; esp #936; Seatek #226; Hydro #206; sc #74 |
+| CLOSE-DUPLICATE | 2 | esp #935; cs #847 |
+| CLOSE-CONFLICT | 6 | esp #905; Seatek #209–#214 (5 closed; #209 last) |
+| DEFER | 5 | pc #1065; esp #937, #933; sc #72, #73 |
+| ESCALATE | 5 | pc #1070, #1068; esp #932; Seatek #223, #224 |
 
-## Phase 2 (salvage)
+## Merge order executed
 
-| Repo | Old PR | Disposition | New draft |
-| --- | ---: | --- | ---: |
-| personal-config | 1048 / 1051 | **CLOSE-SUPERSEDED** | [#1065](https://github.com/abhimehro/personal-config/pull/1065) |
-| email-security-pipeline | 919 | **CLOSE-SUPERSEDED** | [#932](https://github.com/abhimehro/email-security-pipeline/pull/932) |
-| email-security-pipeline | 921 | **CLOSE-SUPERSEDED** | [#933](https://github.com/abhimehro/email-security-pipeline/pull/933) |
-| email-security-pipeline | 930, 931 | **CLOSE-SUPERSEDED** | v2 rebuild → #932, #933 |
-| ctrld-sync | 846 | **CLOSE-SUPERSEDED** | [#847](https://github.com/abhimehro/ctrld-sync/pull/847) |
-| series_correction | 66, 68 | **CLOSE-SUPERSEDED** | [#72](https://github.com/abhimehro/series_correction_project_updated/pull/72), [#73](https://github.com/abhimehro/series_correction_project_updated/pull/73) |
-| Seatek_Analysis | 218, 219 | **CLOSE-SUPERSEDED** | [#223](https://github.com/abhimehro/Seatek_Analysis/pull/223), [#224](https://github.com/abhimehro/Seatek_Analysis/pull/224) |
-| Seatek_Analysis | 209–214 | **DEFER-COMMENT** | Next cron / manual salvage |
+1. personal-config #1064 (docs — review session)
+2. personal-config #1066 (docs — salvage session; conflict resolved after #1064)
+3. personal-config #1071 (auth-hygiene allowlist)
+4. ctrld-sync #849 (perf — local pytest 339 pass)
+5. email-security-pipeline #936 (perf — local pytest 590 pass)
+6. series_correction #74 (pandas agg)
+7. Hydrograph #206 (dict zip perf)
+8. Seatek_Analysis #226 (sensor parsing)
 
-## Human merge queue (draft salvages — do not auto-merge)
+## Security gate notes
 
-| Repo | PR | Tier | Priority |
-| --- | ---: | --- | --- |
-| email-security-pipeline | 932 | T1 | Security TOCTOU |
-| email-security-pipeline | 933 | T3 | IMAP concurrency |
-| personal-config | 1065 | T3 | scratch_triage (CodeScene may fail) |
-| ctrld-sync | 847 | T3 | Confirm benchmark before merge |
-| series_correction | 72, 73 | T3 | Run `scripts/tests/` |
-| Seatek_Analysis | 223, 224 | T3 | R `testthat` suite |
+- **#1071:** Allowlist-only change to `verify-repo-auth-hygiene.sh`; no secrets added.
+- **#936:** Spam detection logic change; substring pre-check preserves regex fallback path; tests green locally.
+- **#932:** TOCTOU fix — escalated despite pytest/CodeQL green (security trust boundary).
+- **#1070 / #1068:** Toolchain files — never auto-merge per policy.
 
-## Ready-to-execute human actions
+## Human merge queue (priority)
 
-1. After CI green, squash-merge draft salvages in order: **ESP #932** → **#933** → **series #72/#73** → **Seatek #223/#224** → **pc #1065** → **ctrld #847** (benchmark last).
-2. Salvage or close **ESP #905** (still CONFLICTING) on next cycle.
-3. Batch-salvage **Seatek #209–#214** perf/refactor cluster or close as stale if intent already on `main`.
-4. Merge or close **personal-config #1064** session-doc draft after reviewing diff.
-
-## Escalations
-
-None new. Trust-boundary note: do **not** bundle `parse_inventory.py` / `gh_token_env` into #1052 follow-up — separate human PR per 2026-05-24 policy.
+1. **email-security-pipeline #932** — security TOCTOU (T1)
+2. **personal-config #1070, #1068** — toolchain review
+3. **Seatek #223, #224** — automation script boundary
+4. **email-security-pipeline #933** — IMAP perf salvage
+5. **series_correction #72, #73** — after CodeScene green
+6. **personal-config #1065** — scratch_triage after CodeScene green
+7. **email-security-pipeline #937** — after required CI infra fixed

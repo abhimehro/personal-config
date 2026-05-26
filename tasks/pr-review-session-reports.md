@@ -2,7 +2,21 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-25.
+> **Latest execution:** 2026-05-26.
+
+## Run — 2026-05-26 (cron review 13:00)
+
+**Report:** `tasks/pr-review-2026-05-26.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 7 |
+| Closed duplicate/conflict | 8 |
+| Escalated | 5 |
+| Deferred | 5 |
+
+**Highlights:** Merged doc artifacts (#1064, #1066), auth-hygiene #1071, and six verified perf PRs (ctrld-sync #849, esp #936, Seatek #226, Hydro #206, series #74). Closed Seatek CONFLICTING Bolt cluster (#209–#214). Escalated toolchain (#1070, #1068) and security salvage (#932).
 
 ## Run — 2026-05-25 (cron review 13:00)
 
