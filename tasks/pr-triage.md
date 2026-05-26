@@ -1,65 +1,49 @@
 # PR Triage — 2026-05-25
 
-## Phase 1 dispositions
+**Disposition key:** MERGE · CLOSE-DUPLICATE · CLOSE-SUPERSEDED · CLOSE-DEFERRED · SALVAGE-DRAFT · DEFER-COMMENT
 
-| Disposition | Count | PRs |
+**Preflight:** PASS
+
+## Phase 1 (review-and-merge within salvage cron)
+
+| Repo | PR | Disposition |
 | --- | ---: | --- |
-| MERGE | 10 | personal-config #1050, #1053–#1055, #1060, #1063; email-security #925, #926; Seatek #222 |
-| MERGE-AFTER-FIX | 1 | personal-config #1050 (CWE-94 preamble restored) |
-| CLOSE-DUPLICATE / SUPERSEDED | 2 | personal-config #1057, #1062 |
-| DEFER | 12 | personal-config #1051, #1052; email-security #905–908, #913, #917, #921, #927; Seatek #209–214; series_correction #66, #68 |
-| ESCALATE | 2 | email-security #919; ctrld-sync #846 (failing required benchmark) |
+| email-security-pipeline | 917, 927, 929 | **MERGE** |
+| email-security-pipeline | 907 | **CLOSE-DUPLICATE** (#905) |
+| personal-config | 1052 | **MERGE** |
+| email-security-pipeline | 906, 908, 913 | **CLOSE-DEFERRED** (conflicted hygiene) |
 
-## Duplicate / overlap groups
+## Phase 2 (salvage)
 
-### `scratch_triage.py` cluster
+| Repo | Old PR | Disposition | New draft |
+| --- | ---: | --- | ---: |
+| personal-config | 1048 / 1051 | **CLOSE-SUPERSEDED** | [#1065](https://github.com/abhimehro/personal-config/pull/1065) |
+| email-security-pipeline | 919 | **CLOSE-SUPERSEDED** | [#932](https://github.com/abhimehro/email-security-pipeline/pull/932) |
+| email-security-pipeline | 921 | **CLOSE-SUPERSEDED** | [#933](https://github.com/abhimehro/email-security-pipeline/pull/933) |
+| email-security-pipeline | 930, 931 | **CLOSE-SUPERSEDED** | v2 rebuild → #932, #933 |
+| ctrld-sync | 846 | **CLOSE-SUPERSEDED** | [#847](https://github.com/abhimehro/ctrld-sync/pull/847) |
+| series_correction | 66, 68 | **CLOSE-SUPERSEDED** | [#72](https://github.com/abhimehro/series_correction_project_updated/pull/72), [#73](https://github.com/abhimehro/series_correction_project_updated/pull/73) |
+| Seatek_Analysis | 218, 219 | **CLOSE-SUPERSEDED** | [#223](https://github.com/abhimehro/Seatek_Analysis/pull/223), [#224](https://github.com/abhimehro/Seatek_Analysis/pull/224) |
+| Seatek_Analysis | 209–214 | **DEFER-COMMENT** | Next cron / manual salvage |
 
-| Keeper | Closed / reason |
-| --- | --- |
-| **#1063** (autofix `main` guard) | #1057 closed — overlapping perf edit + CodeScene fail |
-| — | #1062 closed — conflicts after #1063; parallel `gh pr list` superseded |
-| #1051 | **DEFER** — larger modularize salvage; CodeScene fail; reconcile after #1063 on main |
+## Human merge queue (draft salvages — do not auto-merge)
 
-### Salvage PRs (Phase 2 carryover)
-
-| PR | Action |
-| --- | --- |
-| #1050 | **MERGED** — salvages #1036 tracker; auto-fix restored CWE-94 YAML preamble |
-| #1052 | **DEFER** — salvages #1039 PAT runbook; no `parse_inventory.py`; CodeScene red |
-| #1051 | **DEFER** — salvages #1048; overlaps merged #1063 |
-
-## Merge order executed
-
-1. personal-config #1053 (docs), #1054, #1055, #1060 (low-risk / docs / perf)
-2. personal-config #1063 (scratch_triage autofix)
-3. Close #1062, #1057
-4. Auto-fix + merge #1050
-5. email-security #925, #926
-6. Seatek #222
+| Repo | PR | Tier | Priority |
+| --- | ---: | --- | --- |
+| email-security-pipeline | 932 | T1 | Security TOCTOU |
+| email-security-pipeline | 933 | T3 | IMAP concurrency |
+| personal-config | 1065 | T3 | scratch_triage (CodeScene may fail) |
+| ctrld-sync | 847 | T3 | Confirm benchmark before merge |
+| series_correction | 72, 73 | T3 | Run `scripts/tests/` |
+| Seatek_Analysis | 223, 224 | T3 | R `testthat` suite |
 
 ## Ready-to-execute human actions
 
-```bash
-# Rebase conflicting email-security Bolt queue (oldest first)
-for pr in 905 906 907 908 913 917 921 927; do
-  gh api -X PUT "repos/abhimehro/email-security-pipeline/pulls/${pr}/update-branch" || true
-  gh pr merge "$pr" -R abhimehro/email-security-pipeline --squash --delete-branch
-done
+1. After CI green, squash-merge draft salvages in order: **ESP #932** → **#933** → **series #72/#73** → **Seatek #223/#224** → **pc #1065** → **ctrld #847** (benchmark last).
+2. Salvage or close **ESP #905** (still CONFLICTING) on next cycle.
+3. Batch-salvage **Seatek #209–#214** perf/refactor cluster or close as stale if intent already on `main`.
+4. Merge or close **personal-config #1064** session-doc draft after reviewing diff.
 
-# Human review before merge (security-classified repo)
-gh pr view 919 -R abhimehro/email-security-pipeline
+## Escalations
 
-# CodeScene-blocked salvage PRs
-gh pr checks 1051 -R abhimehro/personal-config
-gh pr checks 1052 -R abhimehro/personal-config
-
-# ctrld-sync benchmark regression
-gh pr checks 846 -R abhimehro/ctrld-sync
-```
-
-## Security gate notes
-
-- Gate 2 **pass** on all merged PRs (GitGuardian/CodeQL green where required).
-- **#1050:** Restored CWE-94 preamble comments removed by action SHA pin hunks; tests green before merge.
-- **#919:** TOCTOU config permission fix — **ESCALATE** (do not auto-merge in `email-security-pipeline` without human sign-off).
-- **Never merged:** PRs with failing required checks (CodeScene, benchmark) or unresolved conflicts.
+None new. Trust-boundary note: do **not** bundle `parse_inventory.py` / `gh_token_env` into #1052 follow-up — separate human PR per 2026-05-24 policy.
