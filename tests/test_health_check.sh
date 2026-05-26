@@ -71,6 +71,26 @@ echo "4"
 MOCK
 chmod +x "$MOCK_BIN/sysctl"
 
+# Mock log: return empty/0 to avoid scanning system logs during tests
+cat >"$MOCK_BIN/log" <<'MOCK'
+#!/bin/bash
+if [[ "$*" == *"show"* ]]; then
+	echo "0"
+fi
+exit 0
+MOCK
+chmod +x "$MOCK_BIN/log"
+
+# Mock brew: return successful doctor output instantly to avoid running actual brew doctor
+cat >"$MOCK_BIN/brew" <<'MOCK'
+#!/bin/bash
+if [[ "$*" == *"doctor"* ]]; then
+	echo "Your system is ready to brew."
+fi
+exit 0
+MOCK
+chmod +x "$MOCK_BIN/brew"
+
 # ---- helper: create an isolated home with required log dirs ----
 make_mock_home() {
 	local home="$1"

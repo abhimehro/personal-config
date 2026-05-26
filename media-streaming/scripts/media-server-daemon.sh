@@ -138,6 +138,9 @@ exec rclone serve webdav "media:" \
 	--checkers 16 \
 	--read-only \
 	--no-modtime \
-	--timeout 10s \
-	--contimeout 5s \
-	--low-level-retries 2
+	--timeout 1m \
+	--contimeout 15s \
+	--low-level-retries 10 \
+	--dir-cache-time 1000h \
+	--poll-interval 1m \
+	--vfs-read-ahead 128M

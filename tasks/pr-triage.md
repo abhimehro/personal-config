@@ -1,41 +1,62 @@
-# PR Triage — 2026-05-24 (combined)
+# PR Triage — 2026-05-26
 
-**Disposition key:** MERGE · CLOSE-DUPLICATE · CLOSE-SUPERSEDED · DEFER · ESCALATE · SALVAGE-DRAFT
+**Preflight:** PASS (6/6)  
+**Disposition key:** MERGE · CLOSE-DUPLICATE · CLOSE-CONFLICT · DEFER · ESCALATE
 
-**Sessions:** Review (13:00) + salvage (17:00). Preflight **passed** both runs.
+## Duplicate / overlap groups
 
-## Review session (13:00)
+### Spam analyzer perf (email-security-pipeline)
 
-| Repo | PR | Disposition |
+| Keeper | Closed |
+| --- | --- |
+| **#936** (merged) | #935 — identical diff, older branch |
+
+### ctrld-sync `_filter_rules_for_folder`
+
+| Keeper | Closed |
+| --- | --- |
+| **#849** (merged, Bolt) | #847 — salvage duplicate + failing benchmark |
+
+### Seatek Bolt perf cluster (#209–#214)
+
+| Action | PRs |
+| --- | --- |
+| **CLOSED** | #209–#214 — all CONFLICTING with `main`; superseded by merged #226 and salvage #223/#224 |
+
+## Phase 1 dispositions
+
+| Disposition | Count | PRs |
 | --- | ---: | --- |
-| personal-config | 1037, 1038, 1040, 1041, 1045, 1046 | **MERGE** |
-| personal-config | 1042, 1043, 1044 | **CLOSE-DUPLICATE** |
-| personal-config | 1039, 1047 | **ESCALATE** → salvage |
-| personal-config | 1036, 1048 | **DEFER** → salvage |
-| email-security-pipeline | 901 | **MERGE** |
+| MERGE | 7 | pc #1064, #1066, #1071; cs #849; esp #936; Seatek #226; Hydro #206; sc #74 |
+| CLOSE-DUPLICATE | 2 | esp #935; cs #847 |
+| CLOSE-CONFLICT | 6 | esp #905; Seatek #209–#214 (5 closed; #209 last) |
+| DEFER | 5 | pc #1065; esp #937, #933; sc #72, #73 |
+| ESCALATE | 5 | pc #1070, #1068; esp #932; Seatek #223, #224 |
 
-## Salvage session (17:00)
+## Merge order executed
 
-| Repo | PR | Disposition |
-| --- | ---: | --- |
-| personal-config | 1049 | **MERGE** (session report artifacts) |
-| series_correction | 64 | **MERGE** (CLEAN + green CI) |
-| personal-config | 1036 | **CLOSE-SUPERSEDED** → **#1050** draft |
-| personal-config | 1048 | **CLOSE-SUPERSEDED** → **#1051** draft |
-| personal-config | 1039 | **CLOSE-SUPERSEDED** → **#1052** draft |
-| personal-config | 1047 | **CLOSE-DUPLICATE** (#1052 lane) |
+1. personal-config #1064 (docs — review session)
+2. personal-config #1066 (docs — salvage session; conflict resolved after #1064)
+3. personal-config #1071 (auth-hygiene allowlist)
+4. ctrld-sync #849 (perf — local pytest 339 pass)
+5. email-security-pipeline #936 (perf — local pytest 590 pass)
+6. series_correction #74 (pandas agg)
+7. Hydrograph #206 (dict zip perf)
+8. Seatek_Analysis #226 (sensor parsing)
 
-## Still open (human merge queue)
+## Security gate notes
 
-| Repo | PR | Tier | Notes |
-| --- | ---: | --- | --- |
-| personal-config | 1050 | T1 | Security tracker + formula injection |
-| personal-config | 1051 | T3 | scratch_triage refactor |
-| personal-config | 1052 | T2 | PAT runbook; wire `parse_inventory` separately |
-| ctrld-sync | 844 | T3 | Palette UX — not in Phase 1 tail; triage next review |
+- **#1071:** Allowlist-only change to `verify-repo-auth-hygiene.sh`; no secrets added.
+- **#936:** Spam detection logic change; substring pre-check preserves regex fallback path; tests green locally.
+- **#932:** TOCTOU fix — escalated despite pytest/CodeQL green (security trust boundary).
+- **#1070 / #1068:** Toolchain files — never auto-merge per policy.
 
-## Human next steps
+## Human merge queue (priority)
 
-1. Review and merge draft salvages **#1050** → **#1052** after CI green (squash).
-2. Open a **separate** human-reviewed PR to adopt `gh_token_env` in `parse_inventory.py` / `run_merges.py` (not included in #1052).
-3. Triage **ctrld-sync#844** on next review cron if still open.
+1. **email-security-pipeline #932** — security TOCTOU (T1)
+2. **personal-config #1070, #1068** — toolchain review
+3. **Seatek #223, #224** — automation script boundary
+4. **email-security-pipeline #933** — IMAP perf salvage
+5. **series_correction #72, #73** — after CodeScene green
+6. **personal-config #1065** — scratch_triage after CodeScene green
+7. **email-security-pipeline #937** — after required CI infra fixed

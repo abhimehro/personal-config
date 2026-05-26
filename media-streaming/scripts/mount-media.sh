@@ -48,30 +48,47 @@ nfs_server_is_listening() {
 notify_mount_success() {
 	local now last=0
 	now=$(date +%s)
-	[[ -f "$LAST_NOTIFY_FILE" ]] && last=$(cat "$LAST_NOTIFY_FILE" 2>/dev/null || echo 0)
+	[[ -f $LAST_NOTIFY_FILE ]] && last=$(cat "$LAST_NOTIFY_FILE" 2>/dev/null || echo 0)
 
 	# Avoid repeated user notifications when launchd checks the mount frequently.
 	if ((now - last < NOTIFY_COOLDOWN_SECONDS)); then
 		return 0
 	fi
 
-	echo "$now" > "$LAST_NOTIFY_FILE"
+	echo "$now" >"$LAST_NOTIFY_FILE"
 	notify "Media Library Mounted" "Cloud media is now available at $MOUNT_POINT"
 }
 
-# --- Health Check ---
-# Do not touch/list the NFS directory during routine checks. A cold rclone NFS
-# directory listing can exceed a short timeout, which used to cause false
-# "stale mount" detections, forced unmounts, remounts, and repeated Dropover
-# notifications. If the mount is registered and the local NFS server is
-# listening, consider it healthy.
-if mount_is_registered; then
-	if nfs_server_is_listening; then
-		exit 0
-	fi
+# --- Timeout Helper ---
+run_with_timeout() {
+	local timeout_secs="$1"
+	shift
+	"$@" &
+	local pid=$!
+	(
+		sleep "$timeout_secs"
+		kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null
+	) &
+	local watcher_pid=$!
+	wait "$pid" 2>/dev/null
+	local exit_code=$?
+	kill "$watcher_pid" 2>/dev/null || true
+	wait "$watcher_pid" 2>/dev/null || true
+	return $exit_code
+}
 
-	log "Mount is registered, but NFS server is not listening yet. Leaving mount in place for next check."
-	exit 1
+# --- Health Check ---
+# A mount is considered healthy if it is registered AND a timeout-protected
+# `ls` check returns without error. We use a relaxed 15-second timeout to prevent
+# false-positives on cold-starts, while still allowing recovery from stale mounts.
+if mount_is_registered; then
+	if run_with_timeout 15 ls "$MOUNT_POINT" &>/dev/null; then
+		exit 0
+	else
+		log "⚠️  Stale mount detected (unresponsive). Unmounting..."
+		diskutil unmount force "$MOUNT_POINT" 2>/dev/null || true
+		sleep 2
+	fi
 fi
 
 # --- Dependency Check ---
@@ -103,7 +120,7 @@ log "Mounting NFS → $MOUNT_POINT"
 # - soft,intr: Allow interruption on network drops
 # - timeo/retrans: Fail fast if server goes unresponsive (avoid system hangs)
 # - deadtimeout: Force-unmount dead connections fast to dismiss macOS system alerts
-if mount_nfs -o "port=$NFS_PORT,mountport=$NFS_PORT,nolock,locallocks,tcp,soft,intr,timeo=30,retrans=2,deadtimeout=15" "$NFS_HOST:/" "$MOUNT_POINT" 2>&1; then
+if mount_nfs -o "port=$NFS_PORT,mountport=$NFS_PORT,nolock,locallocks,tcp,soft,intr,timeo=150,retrans=3,deadtimeout=300" "$NFS_HOST:/" "$MOUNT_POINT" 2>&1; then
 	sleep 2
 	if mount_is_registered; then
 		log "✅ Mount successful"

@@ -346,6 +346,8 @@ calculate_health_score() {
 # Generate comprehensive dashboard report
 generate_dashboard() {
 	local period="${1:-weekly}"
+	local cap_period
+	cap_period=$(echo "$period" | awk '{print toupper(substr($0,1,1))substr($0,2)}')
 
 	log_info "Generating $period dashboard"
 
@@ -375,7 +377,7 @@ generate_dashboard() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Maintenance Dashboard - ${period^}</title>
+    <title>System Maintenance Dashboard - ${cap_period}</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
         .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -402,7 +404,7 @@ generate_dashboard() {
     <div class="container">
         <div class="header">
             <h1>🔧 System Maintenance Dashboard</h1>
-            <div class="date">$(date "+%B %d, %Y at %H:%M") - ${period^} Report</div>
+            <div class="date">$(date "+%B %d, %Y at %H:%M") - ${cap_period} Report</div>
         </div>
         
         <div class="metrics-grid">
@@ -476,6 +478,8 @@ EOF
 # Generate summary report
 generate_summary_report() {
 	local period="${1:-weekly}"
+	local cap_period
+	cap_period=$(echo "$period" | awk '{print toupper(substr($0,1,1))substr($0,2)}')
 
 	log_info "Generating $period summary report"
 
@@ -487,7 +491,7 @@ generate_summary_report() {
 	cat >"$summary_file" <<EOF
 SYSTEM MAINTENANCE SUMMARY REPORT
 =================================
-Period: ${period^}
+Period: ${cap_period}
 Generated: $(date "+%Y-%m-%d %H:%M:%S")
 
 OVERALL HEALTH: $current_health/100
@@ -525,7 +529,7 @@ EOF
 		if [[ ${current_health:-0} -lt 70 ]]; then
 			priority="warning"
 		fi
-		smart_notify "$priority" "📊 ${period^} Report Generated" "Health: $current_health/100 | Trend: ${perf_trend%%:*}"
+		smart_notify "$priority" "📊 ${cap_period} Report Generated" "Health: $current_health/100 | Trend: ${perf_trend%%:*}"
 	fi
 
 	echo "$summary_file"

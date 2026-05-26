@@ -237,14 +237,29 @@
 **Pattern:** After merging #1037, `test_copilot_setup_steps_cwe94.test_security_comment_documents_cwe94` failed because it asserted `CWE-94` inside the extracted Development Partner step block; the fix documents CWE-94 in a `# SECURITY:` comment immediately above the step.
 **Rule:** Static workflow tests should scan the workflow preamble before the step marker, or parse the full workflow file, when asserting on security documentation comments.
 
-## Lesson 0dj: Cloud pre-commit hook can block salvage commits with spaced secret label names (2026-05-24)
+## Lesson 0dj: Action SHA pin hunks can strip YAML preamble SECURITY blocks (2026-05-25)
 
-**Pattern:** `pre-commit.cursor` emitted `GitHub SSH Key: invalid variable name` when the hook used bash `${!var}` against `CLOUD_AGENT_INJECTED_SECRET_NAMES` entries containing spaces. Salvage branches were pushed without commits when `git commit` failed silently in the same shell session.
-**Rule:** Salvage agents must use `git commit --no-verify` only after running the same verification commands locally (unit tests / `py_compile`). Before `git push`, assert `git rev-parse HEAD` is ahead of `origin/main` (`git log origin/main..HEAD --oneline` non-empty). Run `make cursor-cloud-hooks` at session start so injected hooks use `printenv` lookups.
-**Detection cost:** Low — empty PR create (`No commits between main and head`) or remote branch tip equals `main`.
+**Pattern:** Salvage PR #1050 pinned `setup-python` / `github-script` SHAs and removed the three-line `# SECURITY` / `CWE-94` preamble above `Development Partner Session`, while duplicating CWE-94 text inside the `script:` block. `test_security_comment_documents_cwe94` failed until the preamble block was restored.
+**Rule:** When auto-fixing or reviewing workflow PRs that pin action SHAs, diff the full step preamble—not only the `uses:` line—and preserve SECURITY/CWE comments required by regression tests.
 
 ## Lesson 0df: A salvage agent given a "no local working-tree manipulation" rule will still `git checkout` if its prompt mentions cherry-picking commits (2026-05-09)
 
 **Pattern:** Item 4A of the 2026-05-09 orchestration plan briefed a `pair` agent with "no local working-tree manipulation" plus "create a salvage branch from `origin/main` and cherry-pick the canonical PR's commits." The agent interpreted that as licence to `git checkout <pr-branch>` in the working repo to read the commit list, switching the local tree off `main` for the rest of the session. Untracked-only documents (`docs/plans/`, `docs/reviews/`) were destroyed by the branch switch, and 51 unrelated files ended up staged on the bolt branch.
 **Rule:** Brief salvage agents to do **all** branch work in a `git clone` under `/tmp/<slug>-<date>/`, never in the working repo. The brief must call this out positively ("clone the repo into `/tmp/…` first; never `git checkout`, `git switch`, or `git fetch <ref>:<ref>` inside the active workspace") rather than relying on an unspecific "no working-tree manipulation" guard. Commit important orchestration documents (plans, reviews, handoffs) to `main` **before** dispatching any salvage agent so an unintended `git checkout` cannot erase them.
 **Detection cost:** Medium — surfaces only after the next session runs `git status` and finds an unexpected branch with staged churn. Recovery requires a careful unstage + stash + branch switch + reconstruction from surviving artifacts.
+
+## Lesson 0dl: Bolt perf PRs may skip GitHub Actions test workflows (2026-05-26)
+
+**Pattern:** `ctrld-sync#849` and `email-security-pipeline#936` showed only advisory checks (CodeScene, Snyk, Devin) — no `pytest`/`ruff`/`test` workflow in the PR check rollup.
+**Rule:** Before merging logic-changing Bolt PRs, run the repo's local test suite on the PR branch (`uv run pytest` / `python3 -m pytest`). Do not rely on advisory-only green checks for application code.
+
+## Lesson 0dm: Sequential doc-artifact merges conflict on shared task files (2026-05-26)
+
+**Pattern:** Merging personal-config #1064 (review session docs) then #1066 (salvage session docs) caused conflicts in `tasks/pr-inventory.md`, `tasks/pr-triage.md`, and `tasks/pr-review-2026-05-25.md`.
+**Rule:** When two session-doc PRs touch the same task files, merge the older session first, then resolve conflicts on the newer branch keeping session-specific content (or consolidate into one PR).
+
+## Lesson 0dk: Salvage drafts must be built *after* the Phase 1 merge burst, not in parallel (2026-05-25)
+
+**Pattern:** During the 17:00 salvage cron, ESP salvages #930/#931 were pushed from `main` snapshots taken before #917/#927/#929 merged. GitHub immediately marked both drafts `DIRTY`/`CONFLICTING` even though CI had not yet run.
+**Rule:** Order operations: (1) merge all CLEAN PRs in a repo, (2) `git fetch origin main`, (3) build salvage branches with `-v2` suffix, (4) close stale salvage drafts. Never open salvage PRs until the repo's merge burst for that session is complete.
+**Detection cost:** Low — `mergeStateStatus: DIRTY` on a draft opened seconds after creation.
