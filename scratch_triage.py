@@ -1,4 +1,5 @@
 import datetime
+import concurrent.futures
 import json
 import re
 import subprocess
@@ -97,31 +98,38 @@ def group_prs(all_prs, triage_md):
         )
 
 
+def _fetch_repo_prs(repo):
+    repo_prs = []
+    success, stdout, _ = run_cmd(
+        [
+            "gh",
+            "pr",
+            "list",
+            "--repo",
+            repo,
+            "--state",
+            "open",
+            "--limit",
+            "100",
+            "--json",
+            "number,title,author,headRefName,mergeStateStatus,state,createdAt",
+        ]
+    )
+    if success:
+        prs = json.loads(stdout)
+        for pr in prs:
+            # ⚡ Bolt Optimization: Use rpartition() over split() to avoid intermediate list allocation overhead
+            pr["repo"] = repo.rpartition("/")[2]
+            pr["full_repo"] = repo
+            repo_prs.append(pr)
+    return repo_prs
+
 if __name__ == '__main__':
     all_prs = []
-    for repo in repos:
-        success, stdout, _ = run_cmd(
-            [
-                "gh",
-                "pr",
-                "list",
-                "--repo",
-                repo,
-                "--state",
-                "open",
-                "--limit",
-                "100",
-                "--json",
-                "number,title,author,headRefName,mergeStateStatus,state,createdAt",
-            ]
-        )
-        if success:
-            prs = json.loads(stdout)
-            for pr in prs:
-                # ⚡ Bolt Optimization: Use rpartition() over split() to avoid intermediate list allocation overhead
-                pr["repo"] = repo.rpartition("/")[2]
-                pr["full_repo"] = repo
-                all_prs.append(pr)
+    # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls using map() to significantly speed up PR fetching
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        for repo_prs in executor.map(_fetch_repo_prs, repos):
+            all_prs.extend(repo_prs)
 
     merged = []
     closed = []

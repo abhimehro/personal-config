@@ -166,3 +166,7 @@
 ## 2026-05-26 - [Avoid N+1 CLI invocations using ThreadPoolExecutor in Python Scripts]
 **Learning:** Sequential execution of CLI commands like `gh` over a list of items causes significant N+1 performance bottlenecks due to network latency and subprocess startup overhead.
 **Action:** When a script needs to run independent read-only CLI commands in a loop, refactor the logic into a pure function and use `concurrent.futures.ThreadPoolExecutor` with `executor.map()` to parallelize the calls safely. Ensure results are returned to the main thread to avoid mutating shared state from worker threads.
+
+## 2024-05-27 - [Avoid N+1 CLI invocations using ThreadPoolExecutor in scratch automation scripts]
+**Learning:** In sequential read-only data fetching scripts like `scratch_inventory.py` and `scratch_triage.py`, running `gh` CLI commands sequentially for a list of repositories creates massive N+1 performance bottlenecks due to network latency and subprocess startup overhead.
+**Action:** Always parallelize independent read-only IO-bound operations by extracting the subprocess loop body into a helper function and using `concurrent.futures.ThreadPoolExecutor().map()`. This pattern safely preserves list order while dramatically improving execution time.
