@@ -274,6 +274,16 @@
 **Rule:** Order operations: (1) merge all CLEAN PRs in a repo, (2) `git fetch origin main`, (3) build salvage branches with `-v2` suffix, (4) close stale salvage drafts. Never open salvage PRs until the repo's merge burst for that session is complete.
 **Detection cost:** Low — `mergeStateStatus: DIRTY` on a draft opened seconds after creation.
 
+## Lesson 0dp: Close obsolete salvage when main already contains the perf intent (2026-05-27)
+
+**Pattern:** `#1065` (scratch_triage modularization v2) conflicted and removed `ThreadPoolExecutor` already merged via `#1076`.
+**Rule:** Before opening v4 for a conflicting salvage, `git diff origin/main...salvage-head -- <intent-files>`; if the salvage **removes** capabilities already on `main`, close as superseded — do not rebuild.
+
+## Lesson 0dq: v4 TOCTOU salvage must not cherry-pick Palette/setup_wizard churn (2026-05-27)
+
+**Pattern:** v3 `#939` mixed TOCTOU fixes with provider-menu string downgrades and `re.sub` lambda churn; patch would not apply to current `main`.
+**Rule:** Re-implement security hunks manually on fresh `main` or extract only `_set_secure_permissions` / inode-verify blocks; never `git apply` a stale multi-intent bot diff.
+
 ## Lesson 0dl: Salvage branches must contain only intent files — never whole-bot diffs (2026-05-26)
 
 **Pattern:** v2 salvage branches for ESP (#932/#933) included `.jules/*.md` deletions, `CHANGELOG` churn, and large unrelated edits to `spam_analyzer.py` / `email_parser.py` from a stale bot base. Seatek v2 branches similarly pulled workflow automation file regressions.
