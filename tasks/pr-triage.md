@@ -1,62 +1,50 @@
 # PR Triage — 2026-05-26
 
 **Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · CLOSE-DUPLICATE · CLOSE-CONFLICT · DEFER · ESCALATE
+**Disposition key:** MERGE · CLOSE-DUPLICATE · CLOSE-SUPERSEDED · CLOSE-DEFERRED · CLOSE-CONFLICT · SALVAGE-DRAFT · ESCALATE · DEFER
+
+## Conflict note (documentation only)
+
+Morning review (`0 13 * * *`) and afternoon salvage (`0 17 * * *`) both wrote `tasks/pr-*` for the same date. Dispositions below are **reconciled to GitHub state**, not either snapshot alone.
 
 ## Duplicate / overlap groups
 
-### Spam analyzer perf (email-security-pipeline)
+| Group | Keeper | Closed |
+| --- | --- | --- |
+| ESP spam perf | **#936** merged | #935 |
+| ctrld dedup | **#849** merged | #847 |
+| ESP TOCTOU | **#939** draft (v3) | #932 (v2 DIRTY) |
+| ESP IMAP | **#940** draft (v3) | #933 (v2 DIRTY) |
+| Seatek tests | **#227** draft (v3) | #223, #224 |
+| series dead code | **#76** draft (v3) | #73; **#72** merged |
+| Seatek Bolt cluster | **#226** merged | #209–#214 CONFLICTING |
 
-| Keeper | Closed |
+## Final dispositions (ground truth)
+
+| Disposition | PRs |
 | --- | --- |
-| **#936** (merged) | #935 — identical diff, older branch |
+| **MERGE** | pc #1064, #1066, #1071, #1068, #1070, #1072; cs #849; esp #936; Seatek #226; Hydro #206; sc #72, #74 |
+| **CLOSE-SUPERSEDED** | esp #932→939, #933→940; Seatek #223/#224→227; sc #73→76; cs #847; esp #935 |
+| **CLOSE-DEFERRED** | esp #937 |
+| **CLOSE-CONFLICT** | esp #905; Seatek #209–#214 |
+| **SALVAGE-DRAFT** | esp #939, #940; Seatek #227; sc #76 |
+| **DEFER** | pc #1065 |
 
-### ctrld-sync `_filter_rules_for_folder`
+## Morning vs afternoon on same PRs
 
-| Keeper | Closed |
-| --- | --- |
-| **#849** (merged, Bolt) | #847 — salvage duplicate + failing benchmark |
-
-### Seatek Bolt perf cluster (#209–#214)
-
-| Action | PRs |
-| --- | --- |
-| **CLOSED** | #209–#214 — all CONFLICTING with `main`; superseded by merged #226 and salvage #223/#224 |
-
-## Phase 1 dispositions
-
-| Disposition | Count | PRs |
-| --- | ---: | --- |
-| MERGE | 7 | pc #1064, #1066, #1071; cs #849; esp #936; Seatek #226; Hydro #206; sc #74 |
-| CLOSE-DUPLICATE | 2 | esp #935; cs #847 |
-| CLOSE-CONFLICT | 6 | esp #905; Seatek #209–#214 (5 closed; #209 last) |
-| DEFER | 5 | pc #1065; esp #937, #933; sc #72, #73 |
-| ESCALATE | 5 | pc #1070, #1068; esp #932; Seatek #223, #224 |
-
-## Merge order executed
-
-1. personal-config #1064 (docs — review session)
-2. personal-config #1066 (docs — salvage session; conflict resolved after #1064)
-3. personal-config #1071 (auth-hygiene allowlist)
-4. ctrld-sync #849 (perf — local pytest 339 pass)
-5. email-security-pipeline #936 (perf — local pytest 590 pass)
-6. series_correction #74 (pandas agg)
-7. Hydrograph #206 (dict zip perf)
-8. Seatek_Analysis #226 (sensor parsing)
-
-## Security gate notes
-
-- **#1071:** Allowlist-only change to `verify-repo-auth-hygiene.sh`; no secrets added.
-- **#936:** Spam detection logic change; substring pre-check preserves regex fallback path; tests green locally.
-- **#932:** TOCTOU fix — escalated despite pytest/CodeQL green (security trust boundary).
-- **#1070 / #1068:** Toolchain files — never auto-merge per policy.
+| PR | Morning | Afternoon (actual) |
+| --- | --- | --- |
+| pc #1068, #1070 | ESCALATE (toolchain) | **MERGED** after full CI green |
+| esp #932, #933 | ESCALATE / DEFER | **CLOSED** → v3 #939, #940 |
+| sc #72, #73 | DEFER (CodeScene) | **#72 MERGED**; #73 → #76 |
+| Seatek #223, #224 | ESCALATE | **CLOSED** → #227 |
 
 ## Human merge queue (priority)
 
-1. **email-security-pipeline #932** — security TOCTOU (T1)
-2. **personal-config #1070, #1068** — toolchain review
-3. **Seatek #223, #224** — automation script boundary
-4. **email-security-pipeline #933** — IMAP perf salvage
-5. **series_correction #72, #73** — after CodeScene green
-6. **personal-config #1065** — scratch_triage after CodeScene green
-7. **email-security-pipeline #937** — after required CI infra fixed
+1. **ESP #939** (T1 TOCTOU) → **#940** (IMAP)
+2. **Seatek #227** → **series #76**
+3. **personal-config #1065** after CodeScene review
+
+## Escalations
+
+No new security escalations. Morning session correctly flagged toolchain PRs; afternoon merged them after verification — document policy choice for future runs.
