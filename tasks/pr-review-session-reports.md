@@ -2,7 +2,21 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-26.
+> **Latest execution:** 2026-05-27.
+
+## Run — 2026-05-27 (cron review 13:00)
+
+**Report:** `tasks/pr-review-2026-05-27.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 9 |
+| Closed duplicate/zero-diff | 3 |
+| Escalated | 1 |
+| Deferred | 2 |
+
+**Highlights:** Merged scratch parallelization (#1076), salvage doc artifacts (#1073), ESP NLP perf (#943) + Black QA (#944), Seatek perf/tests (#229, #227), series_correction security (#78) + perf/refactor (#77, #76). Closed zero-diff Jules QA (#1077). Escalated ESP TOCTOU #939.
 
 ## Run — 2026-05-26 (cron review 13:00)
 

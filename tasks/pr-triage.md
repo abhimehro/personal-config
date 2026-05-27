@@ -1,62 +1,62 @@
-# PR Triage — 2026-05-26
+# PR Triage — 2026-05-27
 
-**Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · CLOSE-DUPLICATE · CLOSE-CONFLICT · DEFER · ESCALATE
+**Session:** Cron PR review (`77c168e0-7f6b-42de-bad6-da4e4e640b79`)  
+**Preflight:** PASS  
+**Merge strategy:** squash
 
-## Duplicate / overlap groups
+## Duplicate groups
 
-### Spam analyzer perf (email-security-pipeline)
+| Keeper | Closed | Rationale |
+| --- | --- | --- |
+| email-security-pipeline #943 | #942 | Identical NLP regex optimization; #943 includes bolt metadata |
+| series_correction #78 | #80 | Both fix `load_config` traversal; #78 uses `commonpath` containment + test fix |
 
-| Keeper | Closed |
+## Zero-diff / hygiene
+
+| PR | Action |
 | --- | --- |
-| **#936** (merged) | #935 — identical diff, older branch |
-
-### ctrld-sync `_filter_rules_for_folder`
-
-| Keeper | Closed |
-| --- | --- |
-| **#849** (merged, Bolt) | #847 — salvage duplicate + failing benchmark |
-
-### Seatek Bolt perf cluster (#209–#214)
-
-| Action | PRs |
-| --- | --- |
-| **CLOSED** | #209–#214 — all CONFLICTING with `main`; superseded by merged #226 and salvage #223/#224 |
-
-## Phase 1 dispositions
-
-| Disposition | Count | PRs |
-| --- | ---: | --- |
-| MERGE | 7 | pc #1064, #1066, #1071; cs #849; esp #936; Seatek #226; Hydro #206; sc #74 |
-| CLOSE-DUPLICATE | 2 | esp #935; cs #847 |
-| CLOSE-CONFLICT | 6 | esp #905; Seatek #209–#214 (5 closed; #209 last) |
-| DEFER | 5 | pc #1065; esp #937, #933; sc #72, #73 |
-| ESCALATE | 5 | pc #1070, #1068; esp #932; Seatek #223, #224 |
+| personal-config #1077 | **CLOSED** — empty diff; health already on `main` |
 
 ## Merge order executed
 
-1. personal-config #1064 (docs — review session)
-2. personal-config #1066 (docs — salvage session; conflict resolved after #1064)
-3. personal-config #1071 (auth-hygiene allowlist)
-4. ctrld-sync #849 (perf — local pytest 339 pass)
-5. email-security-pipeline #936 (perf — local pytest 590 pass)
-6. series_correction #74 (pandas agg)
-7. Hydrograph #206 (dict zip perf)
-8. Seatek_Analysis #226 (sensor parsing)
+1. personal-config #1073 (docs) → #1076 (scratch parallelization)
+2. email-security-pipeline #943 → #944 (post-queue Black fix)
+3. Seatek_Analysis #229 → #227
+4. series_correction #77 → #76 → #78 (marked ready)
 
-## Security gate notes
+## Escalations
 
-- **#1071:** Allowlist-only change to `verify-repo-auth-hygiene.sh`; no secrets added.
-- **#936:** Spam detection logic change; substring pre-check preserves regex fallback path; tests green locally.
-- **#932:** TOCTOU fix — escalated despite pytest/CodeQL green (security trust boundary).
-- **#1070 / #1068:** Toolchain files — never auto-merge per policy.
+| PR | Repo | Gate | Notes |
+| --- | --- | --- | --- |
+| #939 | email-security-pipeline | Security + CI | TOCTOU inode-aware `chmod`; human security review. Analyze(actions) + submit-pypi red. |
 
-## Human merge queue (priority)
+## Deferred
 
-1. **email-security-pipeline #932** — security TOCTOU (T1)
-2. **personal-config #1070, #1068** — toolchain review
-3. **Seatek #223, #224** — automation script boundary
-4. **email-security-pipeline #933** — IMAP perf salvage
-5. **series_correction #72, #73** — after CodeScene green
-6. **personal-config #1065** — scratch_triage after CodeScene green
-7. **email-security-pipeline #937** — after required CI infra fixed
+| PR | Repo | Blocker | Next step |
+| --- | --- | --- | --- |
+| #1065 | personal-config | CodeScene + conflict with #1076 | Open salvage v3 on current `main` |
+| #940 | email-security-pipeline | CodeScene, CodeFactor, label | Merge after #939 reviewed; rebase on `main` |
+
+## Ready-to-execute human actions
+
+None required for merges completed this session. For the open tail:
+
+```bash
+# After human approves TOCTOU fix:
+gh pr merge 939 --repo abhimehro/email-security-pipeline --squash --delete-branch
+gh api -X PUT repos/abhimehro/email-security-pipeline/pulls/940/update-branch
+# Re-check checks, then:
+gh pr merge 940 --repo abhimehro/email-security-pipeline --squash --delete-branch
+
+# Re-salvage scratch_triage modularization onto post-#1076 main:
+# (new branch from main, cherry-pick/refactor, close #1065)
+```
+
+## Summary counts
+
+| Disposition | Count |
+| --- | ---: |
+| MERGED | 9 |
+| CLOSED-DUP / ZERO-DIFF | 3 |
+| ESCALATE | 1 |
+| DEFER | 2 |

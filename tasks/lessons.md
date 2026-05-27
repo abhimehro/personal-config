@@ -258,6 +258,16 @@
 **Pattern:** Merging personal-config #1064 (review session docs) then #1066 (salvage session docs) caused conflicts in `tasks/pr-inventory.md`, `tasks/pr-triage.md`, and `tasks/pr-review-2026-05-25.md`.
 **Rule:** When two session-doc PRs touch the same task files, merge the older session first, then resolve conflicts on the newer branch keeping session-specific content (or consolidate into one PR).
 
+## Lesson 0dn: Competing `load_config` security PRs — prefer containment over substring denylist (2026-05-27)
+
+**Pattern:** Jules #80 added a `..` substring check; Cursor #78 (draft) used `os.path.commonpath` containment plus a test `chdir` fix. Both had green advisory CI.
+**Rule:** When two automation PRs fix the same CWE-22 surface, compare mechanisms; prefer resolved-path containment. Close the weaker duplicate with a link to the keeper. Mark draft security PRs `ready` before merge when checks are green.
+
+## Lesson 0do: Jules QA Black PRs may follow perf merges on hot files (2026-05-27)
+
+**Pattern:** After merging ESP #943, Jules opened #944 with Black-only changes to `setup_wizard.py` (long-line fix class previously deferred as #937).
+**Rule:** Treat post-merge Jules style PRs as in-scope when diff is formatting-only, security scans pass, and pytest is green — merge before opening the next salvage on the same file.
+
 ## Lesson 0dk: Salvage drafts must be built *after* the Phase 1 merge burst, not in parallel (2026-05-25)
 
 **Pattern:** During the 17:00 salvage cron, ESP salvages #930/#931 were pushed from `main` snapshots taken before #917/#927/#929 merged. GitHub immediately marked both drafts `DIRTY`/`CONFLICTING` even though CI had not yet run.
