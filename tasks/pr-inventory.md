@@ -6,13 +6,15 @@
 **Preflight:** PASS (6/6 repos)  
 **Config:** `tasks/pr-review-agent.config.yaml`
 
+> **Merge note:** `main` advanced the prior snapshot to the reconciled 2026-05-26 end-of-day view (see `tasks/pr-review-2026-05-26.md`). This file is the **2026-05-27** morning review snapshot.
+
 ## Summary
 
 | Metric | Count |
 | --- | ---: |
 | Repos processed | 6 |
 | In-scope open at start | 14 |
-| Squash-merged | 9 |
+| Squash-merged | 10 |
 | Closed (duplicate / zero-diff) | 3 |
 | Escalated / deferred (open tail) | 3 |
 
@@ -43,6 +45,7 @@
 | Repo | PR | Author | Category | Disposition |
 | --- | ---: | --- | --- | --- |
 | email-security-pipeline | 944 | abhimehro (Jules QA) | CI/INFRA | **MERGED** (Black on `setup_wizard.py`; appeared after #943) |
+| email-security-pipeline | 945 | abhimehro (Jules QA) | CI/INFRA | **MERGED** (duplicate branch of #944 fix) |
 
 ## Merged this session
 
@@ -52,6 +55,7 @@
 | [#1076](https://github.com/abhimehro/personal-config/pull/1076) | personal-config | Parallel `gh` in scratch inventory/triage |
 | [#943](https://github.com/abhimehro/email-security-pipeline/pull/943) | email-security-pipeline | NLP regex case-fold perf |
 | [#944](https://github.com/abhimehro/email-security-pipeline/pull/944) | email-security-pipeline | Black long-line fix in setup_wizard |
+| [#945](https://github.com/abhimehro/email-security-pipeline/pull/945) | email-security-pipeline | Duplicate Black branch (merged after #944) |
 | [#229](https://github.com/abhimehro/Seatek_Analysis/pull/229) | Seatek_Analysis | Pandas string slice vs replace |
 | [#227](https://github.com/abhimehro/Seatek_Analysis/pull/227) | Seatek_Analysis | Combined test salvage #218/#219 |
 | [#78](https://github.com/abhimehro/series_correction_project_updated/pull/78) | series_correction | `load_config` path containment |

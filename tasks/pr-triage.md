@@ -4,11 +4,14 @@
 **Preflight:** PASS  
 **Merge strategy:** squash
 
+> **Merge note:** Prior `main` held the reconciled 2026-05-26 morning+afternoon snapshot. This triage reflects the **2026-05-27** morning review run only.
+
 ## Duplicate groups
 
 | Keeper | Closed | Rationale |
 | --- | --- | --- |
 | email-security-pipeline #943 | #942 | Identical NLP regex optimization; #943 includes bolt metadata |
+| email-security-pipeline #944 | #945 | Same Black `setup_wizard.py` fix; #945 was a duplicate branch |
 | series_correction #78 | #80 | Both fix `load_config` traversal; #78 uses `commonpath` containment + test fix |
 
 ## Zero-diff / hygiene
@@ -20,7 +23,7 @@
 ## Merge order executed
 
 1. personal-config #1073 (docs) → #1076 (scratch parallelization)
-2. email-security-pipeline #943 → #944 (post-queue Black fix)
+2. email-security-pipeline #943 → #944 → #945 (Black fix branches)
 3. Seatek_Analysis #229 → #227
 4. series_correction #77 → #76 → #78 (marked ready)
 
@@ -39,7 +42,7 @@
 
 ## Ready-to-execute human actions
 
-None required for merges completed this session. For the open tail:
+For the open tail:
 
 ```bash
 # After human approves TOCTOU fix:
@@ -56,7 +59,7 @@ gh pr merge 940 --repo abhimehro/email-security-pipeline --squash --delete-branc
 
 | Disposition | Count |
 | --- | ---: |
-| MERGED | 9 |
+| MERGED | 10 |
 | CLOSED-DUP / ZERO-DIFF | 3 |
 | ESCALATE | 1 |
 | DEFER | 2 |

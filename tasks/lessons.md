@@ -273,3 +273,9 @@
 **Pattern:** During the 17:00 salvage cron, ESP salvages #930/#931 were pushed from `main` snapshots taken before #917/#927/#929 merged. GitHub immediately marked both drafts `DIRTY`/`CONFLICTING` even though CI had not yet run.
 **Rule:** Order operations: (1) merge all CLEAN PRs in a repo, (2) `git fetch origin main`, (3) build salvage branches with `-v2` suffix, (4) close stale salvage drafts. Never open salvage PRs until the repo's merge burst for that session is complete.
 **Detection cost:** Low — `mergeStateStatus: DIRTY` on a draft opened seconds after creation.
+
+## Lesson 0dl: Salvage branches must contain only intent files — never whole-bot diffs (2026-05-26)
+
+**Pattern:** v2 salvage branches for ESP (#932/#933) included `.jules/*.md` deletions, `CHANGELOG` churn, and large unrelated edits to `spam_analyzer.py` / `email_parser.py` from a stale bot base. Seatek v2 branches similarly pulled workflow automation file regressions.
+**Rule:** When rebuilding (v3+), `git checkout salvage -- <intent-files-only>` from a fresh `origin/main` branch. For TOCTOU use only `app_runner.py` + `setup_wizard.py`; for IMAP perf use only `email_ingestion.py` + its tests; for R tests use only `tests/testthat/*` targets.
+**Detection cost:** Low — `gh pr diff` file count ≫ original bot PR file list.
