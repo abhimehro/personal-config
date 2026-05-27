@@ -1,4 +1,5 @@
 import datetime
+import concurrent.futures
 import json
 import subprocess
 from collections import defaultdict
@@ -6,32 +7,39 @@ from collections import defaultdict
 from spreadsheet_safety import escape_spreadsheet_formula
 
 
+def _fetch_repo_prs(repo):
+    repo_prs = []
+    res = subprocess.run(
+        [
+            "gh",
+            "pr",
+            "list",
+            "--repo",
+            repo,
+            "--state",
+            "open",
+            "--limit",
+            "100",
+            "--json",
+            "number,title,author,headRefName,mergeStateStatus,state,createdAt",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if res.returncode == 0:
+        prs = json.loads(res.stdout)
+        for pr in prs:
+            # ⚡ Bolt Optimization: Use rpartition() over split() to avoid intermediate list allocation overhead
+            pr["repo"] = repo.rpartition("/")[2]
+            repo_prs.append(pr)
+    return repo_prs
+
 def fetch_prs(repos):
     all_prs = []
-    for repo in repos:
-        res = subprocess.run(
-            [
-                "gh",
-                "pr",
-                "list",
-                "--repo",
-                repo,
-                "--state",
-                "open",
-                "--limit",
-                "100",
-                "--json",
-                "number,title,author,headRefName,mergeStateStatus,state,createdAt",
-            ],
-            capture_output=True,
-            text=True,
-        )
-        if res.returncode == 0:
-            prs = json.loads(res.stdout)
-            for pr in prs:
-                # ⚡ Bolt Optimization: Use rpartition() over split() to avoid intermediate list allocation overhead
-                pr["repo"] = repo.rpartition("/")[2]
-                all_prs.append(pr)
+    # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls using map() to significantly speed up PR fetching
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        for repo_prs in executor.map(_fetch_repo_prs, repos):
+            all_prs.extend(repo_prs)
     return all_prs
 
 
