@@ -2,7 +2,20 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-27.
+> **Latest execution:** 2026-05-27 (salvage 17:00).
+
+## Run — 2026-05-27 (cron salvage 17:00)
+
+**Report:** `tasks/pr-review-2026-05-27.md` (addendum)
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 2 |
+| Salvage v4 opened | 2 |
+| Closed superseded | 3 |
+
+**Highlights:** Merged ctrld-sync Palette #851 and doc artifacts #1078. Opened ESP TOCTOU [#947](https://github.com/abhimehro/email-security-pipeline/pull/947) and IMAP [#948](https://github.com/abhimehro/email-security-pipeline/pull/948); closed DIRTY v3 #939/#940 and obsolete #1065. Escalated series Sentinel #81 for human merge.
 
 ## Run — 2026-05-27 (cron review 13:00)
 
