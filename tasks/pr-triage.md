@@ -1,50 +1,65 @@
-# PR Triage — 2026-05-26
+# PR Triage — 2026-05-27
 
-**Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · CLOSE-DUPLICATE · CLOSE-SUPERSEDED · CLOSE-DEFERRED · CLOSE-CONFLICT · SALVAGE-DRAFT · ESCALATE · DEFER
+**Session:** Cron PR review (`77c168e0-7f6b-42de-bad6-da4e4e640b79`)  
+**Preflight:** PASS  
+**Merge strategy:** squash
 
-## Conflict note (documentation only)
+> **Merge note:** Prior `main` held the reconciled 2026-05-26 morning+afternoon snapshot. This triage reflects the **2026-05-27** morning review run only.
 
-Morning review (`0 13 * * *`) and afternoon salvage (`0 17 * * *`) both wrote `tasks/pr-*` for the same date. Dispositions below are **reconciled to GitHub state**, not either snapshot alone.
+## Duplicate groups
 
-## Duplicate / overlap groups
-
-| Group | Keeper | Closed |
+| Keeper | Closed | Rationale |
 | --- | --- | --- |
-| ESP spam perf | **#936** merged | #935 |
-| ctrld dedup | **#849** merged | #847 |
-| ESP TOCTOU | **#939** draft (v3) | #932 (v2 DIRTY) |
-| ESP IMAP | **#940** draft (v3) | #933 (v2 DIRTY) |
-| Seatek tests | **#227** draft (v3) | #223, #224 |
-| series dead code | **#76** draft (v3) | #73; **#72** merged |
-| Seatek Bolt cluster | **#226** merged | #209–#214 CONFLICTING |
+| email-security-pipeline #943 | #942 | Identical NLP regex optimization; #943 includes bolt metadata |
+| email-security-pipeline #944 | #945 | Same Black `setup_wizard.py` fix; #945 was a duplicate branch |
+| series_correction #78 | #80 | Both fix `load_config` traversal; #78 uses `commonpath` containment + test fix |
 
-## Final dispositions (ground truth)
+## Zero-diff / hygiene
 
-| Disposition | PRs |
+| PR | Action |
 | --- | --- |
-| **MERGE** | pc #1064, #1066, #1071, #1068, #1070, #1072; cs #849; esp #936; Seatek #226; Hydro #206; sc #72, #74 |
-| **CLOSE-SUPERSEDED** | esp #932→939, #933→940; Seatek #223/#224→227; sc #73→76; cs #847; esp #935 |
-| **CLOSE-DEFERRED** | esp #937 |
-| **CLOSE-CONFLICT** | esp #905; Seatek #209–#214 |
-| **SALVAGE-DRAFT** | esp #939, #940; Seatek #227; sc #76 |
-| **DEFER** | pc #1065 |
+| personal-config #1077 | **CLOSED** — empty diff; health already on `main` |
 
-## Morning vs afternoon on same PRs
+## Merge order executed
 
-| PR | Morning | Afternoon (actual) |
-| --- | --- | --- |
-| pc #1068, #1070 | ESCALATE (toolchain) | **MERGED** after full CI green |
-| esp #932, #933 | ESCALATE / DEFER | **CLOSED** → v3 #939, #940 |
-| sc #72, #73 | DEFER (CodeScene) | **#72 MERGED**; #73 → #76 |
-| Seatek #223, #224 | ESCALATE | **CLOSED** → #227 |
-
-## Human merge queue (priority)
-
-1. **ESP #939** (T1 TOCTOU) → **#940** (IMAP)
-2. **Seatek #227** → **series #76**
-3. **personal-config #1065** after CodeScene review
+1. personal-config #1073 (docs) → #1076 (scratch parallelization)
+2. email-security-pipeline #943 → #944 → #945 (Black fix branches)
+3. Seatek_Analysis #229 → #227
+4. series_correction #77 → #76 → #78 (marked ready)
 
 ## Escalations
 
-No new security escalations. Morning session correctly flagged toolchain PRs; afternoon merged them after verification — document policy choice for future runs.
+| PR | Repo | Gate | Notes |
+| --- | --- | --- | --- |
+| #939 | email-security-pipeline | Security + CI | TOCTOU inode-aware `chmod`; human security review. Analyze(actions) + submit-pypi red. |
+
+## Deferred
+
+| PR | Repo | Blocker | Next step |
+| --- | --- | --- | --- |
+| #1065 | personal-config | CodeScene + conflict with #1076 | Open salvage v3 on current `main` |
+| #940 | email-security-pipeline | CodeScene, CodeFactor, label | Merge after #939 reviewed; rebase on `main` |
+
+## Ready-to-execute human actions
+
+For the open tail:
+
+```bash
+# After human approves TOCTOU fix:
+gh pr merge 939 --repo abhimehro/email-security-pipeline --squash --delete-branch
+gh api -X PUT repos/abhimehro/email-security-pipeline/pulls/940/update-branch
+# Re-check checks, then:
+gh pr merge 940 --repo abhimehro/email-security-pipeline --squash --delete-branch
+
+# Re-salvage scratch_triage modularization onto post-#1076 main:
+# (new branch from main, cherry-pick/refactor, close #1065)
+```
+
+## Summary counts
+
+| Disposition | Count |
+| --- | ---: |
+| MERGED | 10 |
+| CLOSED-DUP / ZERO-DIFF | 3 |
+| ESCALATE | 1 |
+| DEFER | 2 |
