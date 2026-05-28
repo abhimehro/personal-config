@@ -72,7 +72,8 @@ def _process_pr_result(res, file_groups):
     if not res:
         return
     repo, info = res
-    files = tuple(sorted([f["path"] for f in info.get("files", [])]))
+    # ⚡ Bolt Optimization: Use generator expression inside sorted() instead of list comprehension to avoid unnecessary memory spikes
+    files = tuple(sorted(f["path"] for f in info.get("files", [])))
     file_groups[(repo, files)].append(info)
 
 
