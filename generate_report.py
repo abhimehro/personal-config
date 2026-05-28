@@ -64,10 +64,11 @@ report = """# Automated PR Review Session Report
 The automated PR review agent successfully processed the backlog across 5 repositories. Duplicates, superseded PRs, and semantic overlaps were cleanly closed. Security, CI/Infra, and Performance PRs that passed the safety gates were squash-merged successfully. Draft PRs were identified, marked ready, and merged to clear the queue. Two PRs were escalated due to conflicts requiring human resolution. 
 """
 
-merged_str = "\n".join([f"- [#{pr}](https://github.com/{repo}/pull/{pr}) in `{repo}`: {title}" for repo, pr, title in results['merged']])
-closed_str = "\n".join([f"- [{pr}](https://github.com/{pr.replace('#', '/pull/')})" for pr in closed])
+# ⚡ Bolt Optimization: Use generator expressions instead of list comprehensions inside str.join() to avoid intermediate list memory allocation overhead
+merged_str = "\n".join(f"- [#{pr}](https://github.com/{repo}/pull/{pr}) in `{repo}`: {title}" for repo, pr, title in results['merged'])
+closed_str = "\n".join(f"- [{pr}](https://github.com/{pr.replace('#', '/pull/')})" for pr in closed)
 # ⚡ Bolt Optimization: Use str.partition() over multiple split() calls to avoid redundant list allocations
-escalated_str = "\n".join([f"- [{p}](https://github.com/{p.replace('#', '/pull/')}) - {desc}" for p, _, desc in (pr.partition(" ") for pr in escalated)])
+escalated_str = "\n".join(f"- [{p}](https://github.com/{p.replace('#', '/pull/')}) - {desc}" for p, _, desc in (pr.partition(" ") for pr in escalated))
 
 report = report.format(
     merged_count=len(results['merged']),
