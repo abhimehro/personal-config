@@ -1,0 +1,22 @@
+name: CodeScene PR Refactoring Agent
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  refactor:
+    if: github.event.issue.pull_request != null && contains(github.event.comment.body, '/cs-agent')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: codescene-oss/pr-refactoring-agent@v1
+        with:
+          pr_number: ${{ github.event.issue.number }}
+          command: ${{ github.event.comment.body }}
+          model: 'google/gemini-flash-latest'
+          codescene_token: ${{ secrets.CODESCENE_ACCESS_TOKEN }}
+          google_api_key: ${{ secrets.GOOGLE_API_KEY }}
