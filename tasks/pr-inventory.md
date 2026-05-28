@@ -1,59 +1,57 @@
-# PR Inventory — 2026-05-27 (end of day)
+# PR Inventory — 2026-05-28
 
 **Preflight:** PASS (6/6 repos)  
-**Config:** `tasks/pr-review-agent.config.yaml`
+**Config:** `tasks/pr-review-agent.config.yaml`  
+**Trigger:** Cron `0 17 * * *` (automation `3e537981-04a6-456f-89a3-272d9d5fddd7`)  
+**Branch:** `cursor-agent/automated-pr-salvage-workflow-ce01`
 
-| Session | Trigger | Branch | Mode |
-| --- | --- | --- | --- |
-| Morning review | Cron `0 13 * * *` | `cursor-agent/automated-pr-workflow-9238` | review-and-merge |
-| Afternoon salvage | Cron `0 17 * * *` | `cursor-agent/automated-pr-salvage-workflow-c94c` | salvage v4 |
-
-## Summary (end of day)
+## Summary
 
 | Metric | Count |
 | --- | ---: |
 | Repos processed | 6 |
-| Squash-merged (both sessions) | 12 |
-| Salvage v4 opened | 2 |
-| Closed (superseded / zero-diff / conflict) | 6 |
-| Open tail | 3 |
+| In-scope PRs at start | 7 |
+| Squash-merged | 5 |
+| Autofixed + merged | 1 |
+| Closed (zero-diff / duplicate) | 2 |
+| Open tail | 0 |
 
-## Merged (both sessions)
+## In-scope PRs at start
 
-| PR | Repo | Session | Notes |
-| --- | ---: | --- | --- |
-| [#1073](https://github.com/abhimehro/personal-config/pull/1073) | personal-config | morning | 2026-05-26 salvage docs |
-| [#1076](https://github.com/abhimehro/personal-config/pull/1076) | personal-config | morning | ThreadPoolExecutor scratch tools |
-| [#1078](https://github.com/abhimehro/personal-config/pull/1078) | personal-config | salvage | 2026-05-27 review artifacts |
-| [#943](https://github.com/abhimehro/email-security-pipeline/pull/943)–[#945](https://github.com/abhimehro/email-security-pipeline/pull/945) | email-security-pipeline | morning | NLP + Black fixes |
-| [#229](https://github.com/abhimehro/Seatek_Analysis/pull/229) | Seatek_Analysis | morning | Sensor prefix slice |
-| [#227](https://github.com/abhimehro/Seatek_Analysis/pull/227) | Seatek_Analysis | morning | Combined R tests |
-| [#78](https://github.com/abhimehro/series_correction_project_updated/pull/78) | series_correction | morning | Path containment |
-| [#77](https://github.com/abhimehro/series_correction_project_updated/pull/77) | series_correction | morning | Vectorized gaps |
-| [#76](https://github.com/abhimehro/series_correction_project_updated/pull/76) | series_correction | morning | Dead code removal |
-| [#851](https://github.com/abhimehro/ctrld-sync/pull/851) | ctrld-sync | salvage | Palette pluralize sync log |
+| Repo | PR | Author signal | Merge state | CI |
+| --- | ---: | --- | --- | --- |
+| personal-config | [#1082](https://github.com/abhimehro/personal-config/pull/1082) | Jules Bolt | CLEAN | All green |
+| personal-config | [#1083](https://github.com/abhimehro/personal-config/pull/1083) | Jules Daily QA | CLEAN | All green (zero-diff) |
+| ctrld-sync | [#852](https://github.com/abhimehro/ctrld-sync/pull/852) | Jules Sentinel | UNSTABLE | ruff fail, benchmark flake |
+| ctrld-sync | [#854](https://github.com/abhimehro/ctrld-sync/pull/854) | Jules Palette | UNSTABLE | benchmark flake only |
+| email-security-pipeline | [#952](https://github.com/abhimehro/email-security-pipeline/pull/952) | Jules Daily QA | UNSTABLE | greeting fail |
+| email-security-pipeline | [#953](https://github.com/abhimehro/email-security-pipeline/pull/953) | Jules Daily QA | CLEAN | All green |
+| Seatek_Analysis | [#231](https://github.com/abhimehro/Seatek_Analysis/pull/231) | Jules Bolt | CLEAN | All green |
+
+## Merged
+
+| PR | Repo | Notes |
+| --- | ---: | --- |
+| [#1082](https://github.com/abhimehro/personal-config/pull/1082) | personal-config | Generator expressions in `detect_duplicates.py`, `generate_report.py` |
+| [#953](https://github.com/abhimehro/email-security-pipeline/pull/953) | email-security-pipeline | Bandit B110 fix + Black formatting |
+| [#231](https://github.com/abhimehro/Seatek_Analysis/pull/231) | Seatek_Analysis | Concurrent `run_backlog_manager` API fetches |
+| [#854](https://github.com/abhimehro/ctrld-sync/pull/854) | ctrld-sync | Palette emojis in sync summary headers |
+| [#852](https://github.com/abhimehro/ctrld-sync/pull/852) | ctrld-sync | Sentinel: replace `os.execv` restart with in-process loop (autofix ruff W293) |
 
 ## Closures (no merge)
 
 | Repo | PR | Reason |
 | --- | ---: | --- |
-| personal-config | 1077 | Zero-diff Jules QA |
-| personal-config | 1065 | Superseded by #1076 on `main` |
-| email-security-pipeline | 942 | Duplicate of #943 |
-| email-security-pipeline | 939, 940 | Superseded by v4 [#947](https://github.com/abhimehro/email-security-pipeline/pull/947), [#948](https://github.com/abhimehro/email-security-pipeline/pull/948) |
-| series_correction | 80 | Superseded by #78 |
+| personal-config | 1083 | Zero-diff Jules Daily QA (lesson 0b) |
+| email-security-pipeline | 952 | Identical diff to #953; #953 had all checks green |
 
-## Salvage v4 drafts (open)
+## Repos with no in-scope PRs
 
-| Repo | Draft PR | Salvages | Tier |
-| --- | ---: | ---: | --- |
-| email-security-pipeline | [#947](https://github.com/abhimehro/email-security-pipeline/pull/947) | #919, #939 | T1 |
-| email-security-pipeline | [#948](https://github.com/abhimehro/email-security-pipeline/pull/948) | #921, #940 | T3 |
+| Repo | Status |
+| --- | --- |
+| Hydrograph_Versus_Seatek_Sensors_Project | No open PRs |
+| series_correction_project_updated | No open PRs (tail #81 merged 2026-05-27) |
 
 ## Open tail
 
-| Repo | PR | Notes |
-| --- | ---: | --- |
-| email-security-pipeline | 947, 948 | v4 salvages — human merge after CI |
-| series_correction | [#81](https://github.com/abhimehro/series_correction_project_updated/pull/81) | Sentinel exception chaining — human merge |
-| personal-config / ctrld-sync / Seatek / Hydrograph | — | No other in-scope open PRs |
+None — all six repos clear.
