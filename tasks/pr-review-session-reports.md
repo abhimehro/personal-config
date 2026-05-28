@@ -2,7 +2,21 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-27 (salvage 17:00).
+> **Latest execution:** 2026-05-28 (salvage 17:00).
+
+## Run — 2026-05-28 (cron salvage 17:00)
+
+**Report:** `tasks/pr-review-2026-05-28.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 5 |
+| Autofixed + merged | 1 |
+| Closed zero-diff/duplicate | 2 |
+| Open tail | 0 |
+
+**Highlights:** Cleared all seven in-scope bot PRs. Merged pc Bolt #1082, ESP QA #953, Seatek Bolt #231, ctrld Palette #854, ctrld Sentinel #852 (autofix ruff W293). Closed zero-diff pc #1083 and duplicate esp #952. All six repos now have zero open bot PRs.
 
 ## Run — 2026-05-27 (cron salvage 17:00)
 
