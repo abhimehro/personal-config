@@ -1,16 +1,5 @@
 {
   "mcpServers": {
-    "codescene": {
-      "command": "cs-mcp"
-    },
-    "firebase": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "firebase-tools@latest",
-        "mcp"
-      ]
-    },
     "Brave Search": {
       "command": "npx",
       "args": [
@@ -18,7 +7,7 @@
         "@modelcontextprotocol/server-brave-search"
       ],
       "env": {
-        "BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"
+        "BRAVE_API_KEY": "op://Personal/BRAVE_API_KEY/credential"
       }
     },
     "Context7": {
@@ -31,26 +20,39 @@
       "start_on_launch": true
     },
     "GitHub": {
+      "serverUrl": "https://api.githubcopilot.com/mcp/"
+    },
+    "Linear": {
+      "serverUrl": "https://mcp.linear.app/sse"
+    },
+    "Exa": {
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-github"
+        "exa-mcp-server"
       ],
       "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_PERSONAL_ACCESS_TOKEN"
+        "EXA_API_KEY": "op://Personal/EXA_API_KEY/credential"
       }
-    },
-    "exa": {
-      "url": "https://mcp.exa.ai/mcp"
     },
     "Filesystem": {
       "command": "npx",
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "/Users/speedybee/dev/"
+        "~/dev/"
       ],
       "env": {}
+    },
+    "firecrawl-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "firecrawl-mcp"
+      ],
+      "env": {
+        "FIRECRAWL_API_KEY": "op://Personal/FIRECRAWL_API_KEY/credential"
+      }
     },
     "gen-pdf": {
       "command": "npx",
@@ -61,57 +63,6 @@
       ],
       "env": {}
     },
-    "Notion": {
-      "url": "https://mcp.notion.com/mcp"
-    },
-    "Perplexity": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "server-perplexity-ask"
-      ],
-      "env": {
-        "PERPLEXITY_API_KEY": "YOUR_PERPLEXITY_API_KEY"
-      }
-    },
-    "Playwright": {
-      "command": "npx",
-      "args": [
-        "@playwright/mcp@latest"
-      ],
-      "env": {}
-    },
-    "Sequential thinking": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
-      ],
-      "env": {}
-    },
-    "Tavily": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "tavily-mcp"
-      ],
-      "env": {
-        "TAVILY_API_KEY": "YOUR_TAVILY_API_KEY"
-      }
-    },
-    "applescript_execute": {
-      "command": "npx",
-      "args": [
-        "@peakmojo/applescript-mcp"
-      ],
-      "env": {}
-    },
-    "Mem": {
-      "httpHeaders": {
-        "http": "mem"
-      },
-      "url": "https://mcp.mem.ai/mcp"
-    },
     "Memory": {
       "command": "npx",
       "args": [
@@ -120,20 +71,76 @@
       ],
       "env": {}
     },
-    "RepoPrompt": {
-      "command": "/Users/speedybee/RepoPrompt/repoprompt_cli",
-      "args": [],
-      "env": {}
+    "Notion": {
+      "serverUrl": "https://mcp.notion.com/mcp"
     },
-    "context7": {
-      "url": "https://mcp.context7.com/mcp",
-      "headers": {
-        "CONTEXT7_API_KEY": "REDACTED_CONTEXT7_API_KEY"
+    "Perplexity": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "server-perplexity-ask"
+      ],
+      "env": {
+        "PERPLEXITY_API_KEY": "op://Personal/PERPLEXITY_RAYCAST_API_KEY/credential"
       }
     },
-    "hf-mcp-server": {
-      "url": "https://huggingface.co/mcp?login",
-      "headers": {}
+    "Playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ],
+      "env": {}
+    },
+    "prisma": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.prisma.io/mcp"
+      ],
+      "env": {}
+    },
+    "Sequential_thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "env": {}
+    },
+    "Tavily_Expert": {
+      "serverUrl": "https://tavily.api.tadata.com/mcp/tavily/cohort-jasmine-dialect-r8wdqh"
+    },
+    "Tavily": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "tavily-mcp"
+      ],
+      "env": {
+        "TAVILY_API_KEY": "op://Personal/TAVILY_API_KEY/credential"
+      }
+    },
+    "applescript_execute": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@peakmojo/applescript-mcp"
+      ],
+      "env": {}
+    },
+    "paste": {
+      "serverUrl": "http://127.0.0.1:39725/mcp"
+    },
+    "deepwiki": {
+      "serverUrl": "https://mcp.deepwiki.com/mcp"
+    },
+    "devin": {
+      "headers": {
+        "Authorization": "Bearer op://Personal/DEVIN_API_KEY/credential"
+      },
+      "serverUrl": "https://mcp.devin.ai/mcp"
     }
   }
 }

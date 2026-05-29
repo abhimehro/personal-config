@@ -1,0 +1,3 @@
+# Live MCP configs hold resolved secrets — never commit them.
+*/mcp_config.json
+!*/mcp_config.json.template

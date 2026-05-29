@@ -1,0 +1,66 @@
+{
+  "chrome-devtools-mcp": {
+    "command": "npx",
+    "args": ["-y", "chrome-devtools-mcp@latest"]
+  },
+  "cloudrun": {
+    "command": "npx",
+    "args": ["-y", "@google-cloud/cloud-run-mcp"]
+  },
+  "firebase-mcp-server": {
+    "command": "npx",
+    "args": ["-y", "firebase-tools@latest", "mcp"]
+  },
+  "github-mcp-server": {
+    "command": "docker",
+    "args": [
+      "run",
+      "-i",
+      "--rm",
+      "-e",
+      "GITHUB_PERSONAL_ACCESS_TOKEN",
+      "ghcr.io/github/github-mcp-server"
+    ],
+    "env": {
+      "GITHUB_PERSONAL_ACCESS_TOKEN": "op://Personal/GITHUB_PERSONAL_ACCESS_TOKEN/credential"
+    }
+  },
+  "linear-mcp-server": {
+    "command": "npx",
+    "args": ["-y", "mcp-remote", "https://mcp.linear.app/sse"]
+  },
+  "notion-mcp-server": {
+    "command": "npx",
+    "args": ["-y", "@notionhq/notion-mcp-server"],
+    "env": {
+      "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer op://Personal/NOTION_TOKEN/credential\", \"Notion-Version\": \"2022-06-28\"}"
+    }
+  },
+  "perplexity-ask": {
+    "command": "npx",
+    "args": ["-y", "server-perplexity-ask"],
+    "env": {
+      "PERPLEXITY_API_KEY": "op://Personal/PERPLEXITY_RAYCAST_API_KEY/credential"
+    }
+  },
+  "prisma-mcp-server": {
+    "command": "npx",
+    "args": ["-y", "prisma", "mcp"]
+  },
+  "sequential-thinking": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+  },
+  "deepwiki": {
+    "url": "https://mcp.deepwiki.com/mcp"
+  },
+  "devin": {
+    "url": "https://mcp.devin.ai/mcp",
+    "headers": {
+      "Authorization": "Bearer op://Personal/DEVIN_API_KEY/credential"
+    }
+  },
+  "paste": {
+    "url": "http://127.0.0.1:39725/mcp"
+  }
+}
