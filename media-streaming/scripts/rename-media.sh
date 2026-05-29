@@ -29,9 +29,7 @@ notify() {
 	if command -v terminal-notifier >/dev/null 2>&1; then
 		terminal-notifier -title "$t" -message "$m" -sound default
 	elif command -v osascript >/dev/null 2>&1; then
-		local esc_t="${t//\"/\\\"}"
-		local esc_m="${m//\"/\\\"}"
-		osascript -e "display notification \"$esc_m\" with title \"$esc_t\"" 2>/dev/null || true
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "$m" "$t" 2>/dev/null || true
 	fi
 }
 ensure_dirs() { mkdir -p "$STAGING_DIR" "$PROCESSED_DIR" "$FAILED_DIR" "$REVIEW_DIR" "$(dirname "$LOG_FILE")"; }
