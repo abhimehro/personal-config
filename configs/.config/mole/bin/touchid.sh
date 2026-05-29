@@ -91,7 +91,7 @@ enable_touchid() {
     # First check if system supports Touch ID
     if ! supports_touchid; then
         log_warning "This Mac may not support Touch ID"
-        read -rp "Continue anyway? [y/N] " confirm
+        read -r -p "Continue anyway? [y/N] " confirm
         if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
             echo -e "${YELLOW}Cancelled${NC}"
             return 1

@@ -349,7 +349,7 @@ start_inline_spinner() {
             local i=0
 
             # Hide cursor to prevent flicker
-            tput civis 2>/dev/null || true
+            [ -t 1 ] && [ -z "${CI-}" ] && tput civis 2>/dev/null || true
 
             # Clear line on first output to prevent text remnants from previous messages
             printf "\r\033[2K" >&2 || true
@@ -364,7 +364,7 @@ start_inline_spinner() {
             done
 
             # Clean up stop file and restore cursor before exiting
-            tput cnorm 2>/dev/null || true
+            [ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true
             rm -f "$stop_file" 2> /dev/null || true
             exit 0
         ) &
@@ -403,7 +403,7 @@ stop_inline_spinner() {
 
         # Clear the line and restore cursor
         if [[ -t 1 ]]; then
-            tput cnorm 2>/dev/null || true
+            [ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true
             printf "\r\033[2K" >&2 || true
         fi
     fi

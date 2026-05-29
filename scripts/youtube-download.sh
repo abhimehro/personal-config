@@ -62,7 +62,7 @@ if [[ -z $URL ]] && [[ -t 0 ]]; then
 		# Simple heuristic for YouTube URLs
 		if [[ $CLIP_CONTENT =~ ^https?://(www\.)?(youtube\.com|youtu\.be)/ ]]; then
 			printf "${YELLOW}${E_SEARCH} Found in clipboard: ${BOLD}%s${NC}" "$CLIP_CONTENT"
-			read -p "Use this URL? [Y/n] " -r REPLY
+			read -r -p "Use this URL? [Y/n] " REPLY
 			REPLY=${REPLY:-Y}
 			if [[ -z $REPLY ]] || [[ $REPLY =~ ^([Yy][Ee][Ss]|[Yy])$ ]]; then
 				URL="$CLIP_CONTENT"
