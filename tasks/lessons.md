@@ -299,3 +299,9 @@
 
 **Pattern:** ESP #952 and #953 had identical diffs on different branch names; #952 had a transient `greeting` fail while #953 was fully green.
 **Rule:** `diff <(gh pr diff A) <(gh pr diff B)` on same-day Jules QA pairs; merge the all-green branch, close the duplicate with a link.
+
+## Lesson 0y: Third-party bandit actions can block SHA-only repos (2026-05-29)
+
+**Pattern:** ESP #957 pinned `actions/checkout` in `.github/workflows/bandit.yml`, but the `shundor/python-bandit-scan` composite still referenced unpinned `actions/upload-artifact@main` and `github/codeql-action/upload-sarif@v3`, so the bandit job failed org policy anyway.
+**Rule:** Before deferring a “workflow pin” PR as complete, read the **failed job log** for nested unpinned actions. Fix by replacing the composite with inline bandit + fully pinned SARIF upload steps, or escalate for a maintained fork — pinning only checkout is insufficient.
+**Detection cost:** Low — one `gh run view --log-failed` on the bandit job.
