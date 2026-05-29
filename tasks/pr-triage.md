@@ -1,37 +1,40 @@
-# PR Triage — 2026-05-28
+# PR Triage — 2026-05-29
 
 **Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · CLOSE-ZERO-DIFF · CLOSE-DUPLICATE · AUTOFIX-MERGE · DEFER
+**Disposition key:** MERGE · DEFER · CLOSE-SUPERSEDED · ESCALATE
 
 ## Duplicate / overlap groups
 
-| Group | Keeper | Closed |
+| Group | Keeper | Action on others |
 | --- | --- | --- |
-| ESP Jules Daily QA | **#953** merged | #952 (identical diff; greeting fail on loser) |
-| pc Jules Daily QA | — | #1083 (zero-diff verification-only) |
+| ESP workflow pinning vs bandit nosec | **#957** (infra pins) first | #956 rebase after #957; not duplicate — different file sets |
 
 ## Dispositions
 
 | Disposition | PRs |
 | --- | --- |
-| **MERGE** | pc #1082; esp #953; Seatek #231; cs #854 |
-| **AUTOFIX-MERGE** | cs #852 (ruff W293 whitespace → pushed d5ba870 → merged) |
-| **CLOSE-ZERO-DIFF** | pc #1083 |
-| **CLOSE-DUPLICATE** | esp #952 |
+| **MERGE** | series #86; pc #1089 |
+| **DEFER** | esp #957, esp #956 |
+| **CLOSE-SUPERSEDED** | pc #1088 (after this session’s artifact PR lands) |
 
 ## Security review notes
 
 | PR | Tier | Assessment |
 | --- | --- | --- |
-| cs #852 | T1 Sentinel | Replaces `os.execv(sys.executable, new_argv)` with in-place `sys.argv` mutation + `while main()` loop. Eliminates B606 command-injection surface. Tests updated. Merged after autofix; benchmark CI flake only. |
-| esp #953 | T3 | Bandit B110: replaces bare `try/except/pass` with logged `debug` handler. Low risk. |
+| series #86 | T1 Sentinel | `realpath` before `commonpath` closes symlink traversal bypass in config loader. Merged. |
+| esp #956 | T3 | `# nosec` on intentional `subprocess` / SSL test helpers; valid if bandit job can run. Blocked by CI policy, not code gate. |
+| esp #957 | CI/INFRA | Checkout/setup-python SHA pins align with org policy; incomplete until bandit composite deps pinned. |
 
-## CI anomalies (non-blocking)
+## CI anomalies
 
 | PR | Check | Root cause |
 | --- | --- | --- |
-| cs #854, #852 | benchmark fail | github-action-benchmark perf alert (1.5× threshold); unrelated to code changes — runner variance |
+| esp #956, #957 | pytest / bandit | Org requires full-length action SHAs; branch workflows still use `@v6` or composite pulls `@main` / `@v3` |
+| pc #1089 | swift / bugbot pending | Non-blocking; required application checks passed |
 
 ## Human merge queue
 
-Empty.
+| PR | Repo | Why human |
+| --- | --- | --- |
+| #957 | email-security-pipeline | Replace or fork `shundor/python-bandit-scan` workflow with fully pinned SARIF upload path |
+| #956 | email-security-pipeline | Merge after infra unblocks CI |
