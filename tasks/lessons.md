@@ -295,6 +295,11 @@
 **Pattern:** Palette #854 (one-line emoji) and Sentinel #852 (security refactor) both failed `benchmark` with 1.5–2× perf alerts against prior runner baselines. All application checks (`test`, `ruff`, `bandit`, `mypy`) passed.
 **Rule:** Treat ctrld-sync benchmark failures as infrastructure variance unless the PR modifies benchmarked hot paths. Merge when substantive checks are green; note benchmark flake in merge body.
 
+## Lesson 0dt: SHA-pin label workflow is chicken-and-egg with pull_request_target (2026-05-29)
+
+**Pattern:** Org policy blocks `actions/labeler@v6.1.0` (tag refs). PR #1087 pins to full SHA on the PR branch, but the **label** check still fails until merge because `label.yml` runs on `pull_request_target` and executes the workflow definition from `main`.
+**Rule:** Treat the first SHA-pin PR as **CI/INFRA** and merge when security analyzers + application tests pass, even if **label** is red pre-merge. After merge, rebase sibling PRs (`gh api …/update-branch` or local merge) so they pick up pinned `main`.
+
 ## Lesson 0ds: Duplicate Jules Daily QA branches — diff before triage (2026-05-28)
 
 **Pattern:** ESP #952 and #953 had identical diffs on different branch names; #952 had a transient `greeting` fail while #953 was fully green.

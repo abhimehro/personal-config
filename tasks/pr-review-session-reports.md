@@ -2,7 +2,21 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-28 (salvage 17:00).
+> **Latest execution:** 2026-05-29 (cron review 13:00).
+
+## Run — 2026-05-29 (cron review 13:00)
+
+**Report:** `tasks/pr-review-2026-05-29.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 3 |
+| Autofixed + merged | 1 |
+| Escalated | 1 |
+| Open tail | 1 |
+
+**Highlights:** Merged pc Jules QA #1087 (SHA pins), pc Bolt #1086 (parallel gh + autofix rebase), series Bolt #84 (MAD). Escalated esp #956 (automation script + unpinned workflow actions). Five repos at zero open bot PRs.
 
 ## Run — 2026-05-28 (cron salvage 17:00)
 

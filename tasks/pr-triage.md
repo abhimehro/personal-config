@@ -1,37 +1,35 @@
-# PR Triage — 2026-05-28
+# PR Triage — 2026-05-29
 
-**Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · CLOSE-ZERO-DIFF · CLOSE-DUPLICATE · AUTOFIX-MERGE · DEFER
+## Duplicate / overlap
 
-## Duplicate / overlap groups
+None. Each open PR targets distinct intent (SHA pin QA vs Bolt parallel gh vs ESP bandit nosec vs MAD vectorization).
 
-| Group | Keeper | Closed |
+## Superseded / zero-diff
+
+None at inventory time.
+
+## Stale (>30 days)
+
+None.
+
+## Infra cascade (Lesson 0t / 0u)
+
+**personal-config — label workflow:** `pull_request_target` runs workflow from `main`. Until #1087 merged, `actions/labeler@v6.1.0` failed org SHA-pin policy. **Resolution:** merged #1087 first (infra fix), then autofixed #1086 merge conflicts with main.
+
+**email-security-pipeline — pytest/bandit/label:** Jobs fail at setup because workflows reference unpinned `actions/checkout@v6` / `actions/setup-python@v6`. Not caused by PR #956 diff (nosec only). **Resolution:** escalate; needs repo-wide workflow SHA pin PR (salvage).
+
+## Ordering applied
+
+1. Merge personal-config #1087 (unblocks labeler on main).
+2. Autofix + rebase personal-config #1086.
+3. Merge series_correction #84 (security analyzers green; CodeScene infra error).
+4. Escalate email-security #956 (trust boundary + CI infra).
+
+## Per-PR disposition
+
+| PR | Disposition | Rationale |
 | --- | --- | --- |
-| ESP Jules Daily QA | **#953** merged | #952 (identical diff; greeting fail on loser) |
-| pc Jules Daily QA | — | #1083 (zero-diff verification-only) |
-
-## Dispositions
-
-| Disposition | PRs |
-| --- | --- |
-| **MERGE** | pc #1082; esp #953; Seatek #231; cs #854 |
-| **AUTOFIX-MERGE** | cs #852 (ruff W293 whitespace → pushed d5ba870 → merged) |
-| **CLOSE-ZERO-DIFF** | pc #1083 |
-| **CLOSE-DUPLICATE** | esp #952 |
-
-## Security review notes
-
-| PR | Tier | Assessment |
-| --- | --- | --- |
-| cs #852 | T1 Sentinel | Replaces `os.execv(sys.executable, new_argv)` with in-place `sys.argv` mutation + `while main()` loop. Eliminates B606 command-injection surface. Tests updated. Merged after autofix; benchmark CI flake only. |
-| esp #953 | T3 | Bandit B110: replaces bare `try/except/pass` with logged `debug` handler. Low risk. |
-
-## CI anomalies (non-blocking)
-
-| PR | Check | Root cause |
-| --- | --- | --- |
-| cs #854, #852 | benchmark fail | github-action-benchmark perf alert (1.5× threshold); unrelated to code changes — runner variance |
-
-## Human merge queue
-
-Empty.
+| personal-config #1087 | MERGE | CI/INFRA SHA pins; security gates pass; label fail pre-merge was main-side |
+| personal-config #1086 | **MERGED** | Autofix conflict resolution; label green after #1087 |
+| email-security-pipeline #956 | ESCALATE | `.github/scripts/repository_automation_common.py` + unpinned workflow actions on main |
+| series_correction #84 | MERGE | PERFORMANCE; Gate 2 pass; CodeScene delta-error treated as non-blocking infra |

@@ -1,57 +1,28 @@
-# PR Inventory — 2026-05-28
+# PR Inventory — 2026-05-29
 
-**Preflight:** PASS (6/6 repos)  
-**Config:** `tasks/pr-review-agent.config.yaml`  
-**Trigger:** Cron `0 17 * * *` (automation `3e537981-04a6-456f-89a3-272d9d5fddd7`)  
-**Branch:** `cursor-agent/automated-pr-salvage-workflow-ce01`
+**Session:** Cron automation `77c168e0-7f6b-42de-bad6-da4e4e640b79`  
+**Mode:** review-and-merge  
+**Preflight:** PASS (6/6 repos)
 
-## Summary
+## Snapshot
 
-| Metric | Count |
-| --- | ---: |
-| Repos processed | 6 |
-| In-scope PRs at start | 7 |
-| Squash-merged | 5 |
-| Autofixed + merged | 1 |
-| Closed (zero-diff / duplicate) | 2 |
-| Open tail | 0 |
-
-## In-scope PRs at start
-
-| Repo | PR | Author signal | Merge state | CI |
-| --- | ---: | --- | --- | --- |
-| personal-config | [#1082](https://github.com/abhimehro/personal-config/pull/1082) | Jules Bolt | CLEAN | All green |
-| personal-config | [#1083](https://github.com/abhimehro/personal-config/pull/1083) | Jules Daily QA | CLEAN | All green (zero-diff) |
-| ctrld-sync | [#852](https://github.com/abhimehro/ctrld-sync/pull/852) | Jules Sentinel | UNSTABLE | ruff fail, benchmark flake |
-| ctrld-sync | [#854](https://github.com/abhimehro/ctrld-sync/pull/854) | Jules Palette | UNSTABLE | benchmark flake only |
-| email-security-pipeline | [#952](https://github.com/abhimehro/email-security-pipeline/pull/952) | Jules Daily QA | UNSTABLE | greeting fail |
-| email-security-pipeline | [#953](https://github.com/abhimehro/email-security-pipeline/pull/953) | Jules Daily QA | CLEAN | All green |
-| Seatek_Analysis | [#231](https://github.com/abhimehro/Seatek_Analysis/pull/231) | Jules Bolt | CLEAN | All green |
-
-## Merged
-
-| PR | Repo | Notes |
+| Repo | Open in-scope PRs | Notes |
 | --- | ---: | --- |
-| [#1082](https://github.com/abhimehro/personal-config/pull/1082) | personal-config | Generator expressions in `detect_duplicates.py`, `generate_report.py` |
-| [#953](https://github.com/abhimehro/email-security-pipeline/pull/953) | email-security-pipeline | Bandit B110 fix + Black formatting |
-| [#231](https://github.com/abhimehro/Seatek_Analysis/pull/231) | Seatek_Analysis | Concurrent `run_backlog_manager` API fetches |
-| [#854](https://github.com/abhimehro/ctrld-sync/pull/854) | ctrld-sync | Palette emojis in sync summary headers |
-| [#852](https://github.com/abhimehro/ctrld-sync/pull/852) | ctrld-sync | Sentinel: replace `os.execv` restart with in-process loop (autofix ruff W293) |
+| abhimehro/personal-config | 2 → 1 | #1087 merged this session |
+| abhimehro/ctrld-sync | 0 | — |
+| abhimehro/email-security-pipeline | 1 | #956 escalated |
+| abhimehro/Seatek_Analysis | 0 | — |
+| abhimehro/Hydrograph_Versus_Seatek_Sensors_Project | 0 | — |
+| abhimehro/series_correction_project_updated | 0 | #84 merged this session |
 
-## Closures (no merge)
+**Total in-scope at start:** 4  
+**Stale (>30d):** 0
 
-| Repo | PR | Reason |
-| --- | ---: | --- |
-| personal-config | 1083 | Zero-diff Jules Daily QA (lesson 0b) |
-| email-security-pipeline | 952 | Identical diff to #953; #953 had all checks green |
+## Detail table
 
-## Repos with no in-scope PRs
-
-| Repo | Status |
-| --- | --- |
-| Hydrograph_Versus_Seatek_Sensors_Project | No open PRs |
-| series_correction_project_updated | No open PRs (tail #81 merged 2026-05-27) |
-
-## Open tail
-
-None — all six repos clear.
+| Repo | PR # | Author | Branch | Category | CI (snapshot) | Age | Automation hints | Disposition |
+| --- | ---: | --- | --- | --- | --- | --- | --- | --- |
+| personal-config | [1087](https://github.com/abhimehro/personal-config/pull/1087) | abhimehro | jules-4211031345248959257-a228dd6b | CI/INFRA | label fail (main unpinned); security green | <1d | jules; Daily QA | **MERGED** |
+| personal-config | [1086](https://github.com/abhimehro/personal-config/pull/1086) | abhimehro | jules-18162184526785057723-a6cf3d41 | PERFORMANCE | CodeScene fail; tests green | <1d | bolt; jules branch | **MERGED** |
+| email-security-pipeline | [956](https://github.com/abhimehro/email-security-pipeline/pull/956) | abhimehro | jules-2405714680325162661-4e0c64d1 | CI/INFRA | pytest/bandit/label fail (unpinned actions) | <1d | jules; automation title | **ESCALATE** |
+| series_correction_project_updated | [84](https://github.com/abhimehro/series_correction_project_updated/pull/84) | abhimehro | bolt-optimize-mad-calculation-… | PERFORMANCE | CodeScene delta-error; security green | 1d | bolt branch/title | **MERGED** |
