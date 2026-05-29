@@ -170,3 +170,9 @@
 ## 2024-05-27 - [Avoid N+1 CLI invocations using ThreadPoolExecutor in scratch automation scripts]
 **Learning:** In sequential read-only data fetching scripts like `scratch_inventory.py` and `scratch_triage.py`, running `gh` CLI commands sequentially for a list of repositories creates massive N+1 performance bottlenecks due to network latency and subprocess startup overhead.
 **Action:** Always parallelize independent read-only IO-bound operations by extracting the subprocess loop body into a helper function and using `concurrent.futures.ThreadPoolExecutor().map()`. This pattern safely preserves list order while dramatically improving execution time.
+## 2026-03-10 - [Avoid N+1 CLI invocations using ThreadPoolExecutor in review summarization scripts]
+**Learning:** In PR summarization scripts like `scripts/get_prs_summarize.py`, executing sequential `gh` CLI commands to fetch details for a list of PRs creates a severe N+1 performance bottleneck due to network latency.
+**Action:** Use `concurrent.futures.ThreadPoolExecutor().map()` to parallelize these independent read-only IO-bound API calls. This preserves the original presentation order while dramatically reducing execution time.
+## 2026-05-29 - [GitHub Actions Dependency Pinning]
+**Learning:** CI linters or repository policies may enforce pinning GitHub Actions to full-length commit SHAs instead of tags (e.g., `actions/setup-python@v6.2.0` -> `actions/setup-python@<sha> # v6.2.0`) to prevent supply chain attacks via mutable tags.
+**Action:** Always pin GitHub Actions to full commit SHAs, even for official actions. Use `git ls-remote` to quickly find the commit hash for a specific tag.
