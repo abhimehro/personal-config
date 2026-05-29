@@ -128,3 +128,7 @@
 ## 2024-05-19 - Accessible Spinners for Wait States
 **Learning:** Hardcoded sleeps without visual feedback create uncertainty; users don't know if a script is frozen or just taking time.
 **Action:** Replace arbitrary `sleep` commands with accessible spinners (e.g., `spinner_wait` function) to provide clear visual feedback during wait periods, ensuring they safely handle interrupts and only render in interactive terminals (e.g., checking `[ -t 1 ] && -z ${CI-}`) to avoid polluting logs.
+
+## 2026-05-29 - Improve Interactive Prompts and Spinner UX
+**Learning:** Using `read -p` without the `-r` flag allows backslashes to escape characters, which can lead to unexpected behavior in interactive prompts. Additionally, using `tput civis` and `tput cnorm` to hide/show the cursor during spinners without checking if the output is an interactive terminal (`[ -t 1 ]`) or if it's running in CI (`[ -z "${CI-}" ]`) causes unnecessary log pollution and cursor state bugs in automated environments.
+**Action:** Always use `read -r -p` for interactive confirmations, and guard cursor manipulation commands with `[ -t 1 ] && [ -z "${CI-}" ] && tput civis 2>/dev/null || true`.

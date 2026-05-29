@@ -22,7 +22,7 @@ start_line_spinner() {
     # shellcheck disable=SC1003
     [[ -z "$chars" ]] && chars='|/-\\'
     local i=0
-    tput civis 2>/dev/null || true
+    [ -t 1 ] && [ -z "${CI-}" ] && tput civis 2>/dev/null || true
     (while true; do
         c="${chars:$((i % ${#chars})):1}"
         printf "\r${BLUE}%s${NC} %s" "$c" "$msg"
@@ -35,7 +35,7 @@ stop_line_spinner() { if [[ -n "$_SPINNER_PID" ]]; then
     kill "$_SPINNER_PID" 2> /dev/null || true
     wait "$_SPINNER_PID" 2> /dev/null || true
     _SPINNER_PID=""
-    tput cnorm 2>/dev/null || true
+    [ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true
     printf "\r\033[K"
 fi; }
 
