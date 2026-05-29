@@ -9,6 +9,7 @@
 	excludesfile = /Users/speedybee/.gitignore_global
 	pager = delta
 	hooksPath = /Users/speedybee/.git-hooks
+	editor = /Users/speedybee/.git-hooks/lrc/lrc_editor.sh
 [mergetool]
 	keepBackup = true
 [gpg]

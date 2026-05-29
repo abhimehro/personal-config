@@ -56,8 +56,10 @@ if status is-interactive
     end
 
     # --- Node (fnm) ---
+    # Stderr is redirected to /dev/null to suppress fnm's INFO-level version file
+    # scan messages, which fire before FNM_LOGLEVEL takes effect in the environment.
     if type -q fnm
-        fnm env --use-on-cd | source
+        fnm env --use-on-cd 2>/dev/null | source
     end
 
     # --- Zoxide (Navigation) ---
