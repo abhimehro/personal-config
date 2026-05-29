@@ -155,6 +155,14 @@ def fetch_details(repo: str, num: int) -> str:
     return "\n".join(lines)
 
 
+def _fetch_task_wrapper(args: tuple[str, dict]) -> tuple[int, str] | None:
+    repo, pr = args
+    num = pr.get("number")
+    if num is None:
+        return None
+    return num, fetch_details(repo, int(num))
+
+
 def print_table(data: list, include_details: bool) -> None:
     print(
         "| # | Draft | Title | Author | Branch | Merge | Checks | "
@@ -198,15 +206,10 @@ def print_table(data: list, include_details: bool) -> None:
 
     print("\n#### Review / comment context\n")
 
-    def _fetch_task(pr):
-        num = pr.get("number")
-        if num is None:
-            return None
-        return num, fetch_details(repo, int(num))
-
+    tasks = [(repo, pr) for pr in data]
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls while preserving PR order using map()
-        results = executor.map(_fetch_task, data)
+        results = executor.map(_fetch_task_wrapper, tasks)
 
     for res in results:
         if res:
