@@ -134,10 +134,10 @@ spinner() {
 	# Also disable in CI environments to prevent log clutter
 	if [ -t 1 ] && [ -z "${CI-}" ]; then
 		# Hide cursor
-		tput civis 2>/dev/null || true
+		[ -t 1 ] && [ -z "${CI-}" ] && tput civis 2>/dev/null || true
 
 		# Trap to restore cursor if interrupted
-		trap 'tput cnorm 2>/dev/null || true; printf "\r\033[K"; exit' INT TERM
+		trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; exit' INT TERM
 
 		local start_time
 		start_time=$(date +%s)
@@ -161,7 +161,7 @@ spinner() {
 		done
 
 		# Restore cursor
-		tput cnorm 2>/dev/null || true
+		[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true
 
 		# Clear spinner line completely
 		printf "\r\033[K"
@@ -184,8 +184,8 @@ wait_for_pids() {
 	local num_chars=${#SPIN_CHARS[@]}
 
 	if [ -t 1 ] && [ -z "${CI-}" ]; then
-		tput civis 2>/dev/null || true
-		trap 'tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - INT TERM; kill -s INT $$' INT TERM
+		[ -t 1 ] && [ -z "${CI-}" ] && tput civis 2>/dev/null || true
+		trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - INT TERM; kill -s INT $$' INT TERM
 
 		local start_time
 		start_time=$(date +%s)
@@ -226,7 +226,7 @@ wait_for_pids() {
 			sleep $delay
 		done
 
-		tput cnorm 2>/dev/null || true
+		[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true
 		printf "\r\033[K"
 		trap - INT TERM
 

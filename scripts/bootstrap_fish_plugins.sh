@@ -22,7 +22,7 @@ warn() { echo -e "${YELLOW}⚠️  [WARN]${NC}  $*"; }
 err() { echo -e "${RED}❌ [ERR]${NC}   $*" >&2; }
 
 # Restore cursor on exit/interrupt
-trap '[ -t 1 ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"' EXIT INT TERM
+trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"' EXIT INT TERM
 
 # Spinner function (Palette 🎨 UX enhanced)
 spinner() {
@@ -53,7 +53,7 @@ spinner() {
 	pid=$!
 
 	# Hide cursor gracefully in TTY
-	[ -t 1 ] && tput civis 2>/dev/null || true
+	[ -t 1 ] && [ -z "${CI-}" ] && tput civis 2>/dev/null || true
 
 	local elapsed=0
 	local count=0
@@ -70,7 +70,7 @@ spinner() {
 	local exit_code=$?
 
 	# Restore cursor gracefully in TTY
-	[ -t 1 ] && tput cnorm 2>/dev/null || true
+	[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true
 	printf "\r\033[K"
 
 	if [ $exit_code -eq 0 ]; then
