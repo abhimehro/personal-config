@@ -8,7 +8,7 @@
 
 | Repo | Open in-scope PRs | Notes |
 | --- | ---: | --- |
-| abhimehro/personal-config | 2 → 1 | #1087 merged this session |
+| abhimehro/personal-config | 0 | #1087, #1086 merged this session |
 | abhimehro/ctrld-sync | 0 | — |
 | abhimehro/email-security-pipeline | 1 | #956 escalated |
 | abhimehro/Seatek_Analysis | 0 | — |
