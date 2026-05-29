@@ -11,6 +11,7 @@ import json
 import os
 import subprocess
 import sys
+import concurrent.futures
 
 FAIL_CONCLUSIONS = frozenset(
     {
@@ -196,13 +197,23 @@ def print_table(data: list, include_details: bool) -> None:
         return
 
     print("\n#### Review / comment context\n")
-    for pr in data:
+
+    def _fetch_task(pr):
         num = pr.get("number")
         if num is None:
-            continue
-        print(f"**PR #{num}**\n")
-        print(fetch_details(repo, int(num)))
-        print()
+            return None
+        return num, fetch_details(repo, int(num))
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls while preserving PR order using map()
+        results = executor.map(_fetch_task, data)
+
+    for res in results:
+        if res:
+            num, details = res
+            print(f"**PR #{num}**\n")
+            print(details)
+            print()
 
 
 def main() -> int:
