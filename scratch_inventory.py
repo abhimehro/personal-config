@@ -116,19 +116,20 @@ def main():
 def get_category(title, branch):
     l = (title + branch).lower()
 
-    if any(k in l for k in ["sentinel", "security", "injection", "cwe", "ssrf", "tls"]):
+    # ⚡ Bolt Optimization: Use tuples instead of lists for fast constant lookups without allocating a new list every call
+    if any(k in l for k in ("sentinel", "security", "injection", "cwe", "ssrf", "tls")):
         return "SECURITY"
 
-    if any(k in l for k in ["bolt", "perf", "optimize"]):
+    if any(k in l for k in ("bolt", "perf", "optimize")):
         return "PERFORMANCE"
 
-    if any(k in l for k in ["palette", "ux", "ui"]):
+    if any(k in l for k in ("palette", "ux", "ui")):
         return "UI"
 
-    if any(k in l for k in ["qa", "test", "ci", "infra", "action"]):
+    if any(k in l for k in ("qa", "test", "ci", "infra", "action")):
         return "CI/INFRA"
 
-    if any(k in l for k in ["refactor", "import", "clean"]):
+    if any(k in l for k in ("refactor", "import", "clean")):
         return "REFACTOR"
 
     return "FEATURE"

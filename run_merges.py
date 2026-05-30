@@ -203,6 +203,7 @@ for repo, pr, title in queue:
 
     # ⚡ Bolt Optimization: Cache title.lower() to prevent redundant C-level string allocations during multiple sequential "in" checks
     title_lower = title.lower()
+    # ⚡ Bolt Optimization: Avoid redundant str.lower() overhead in loops by checking against pre-calculated title_lower directly
     if (
         "auth" in title_lower
         or "payment" in title_lower

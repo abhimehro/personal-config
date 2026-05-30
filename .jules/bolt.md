@@ -176,3 +176,6 @@
 ## 2026-05-29 - [GitHub Actions Dependency Pinning]
 **Learning:** CI linters or repository policies may enforce pinning GitHub Actions to full-length commit SHAs instead of tags (e.g., `actions/setup-python@v6.2.0` -> `actions/setup-python@<sha> # v6.2.0`) to prevent supply chain attacks via mutable tags.
 **Action:** Always pin GitHub Actions to full commit SHAs, even for official actions. Use `git ls-remote` to quickly find the commit hash for a specific tag.
+## 2026-05-30 - [Performance Pattern: Avoid intermediate list allocations]
+**Learning:** In Python, passing a list comprehension directly to `str.join()` or declaring constant lists inline in generator loops allocates intermediate lists in memory, creating unnecessary memory and GC overhead. Furthermore, repeated string `.lower()` conversions in loops create redundant C-level string allocations.
+**Action:** When filtering or joining strings, use generator expressions (e.g., `"".join(x for x in y)`) instead of list comprehensions. When checking against constants, use tuples `("a", "b")` instead of lists `["a", "b"]`. Cache expensive operations like `.lower()` outside loops or in short-lived variables.
