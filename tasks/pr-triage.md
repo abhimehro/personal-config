@@ -1,40 +1,34 @@
-# PR Triage — 2026-05-29
+# PR Triage — 2026-05-30
 
-**Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · DEFER · CLOSE-SUPERSEDED · ESCALATE
+**Session:** review-and-merge (cron `0 13 * * *`)  
+**Inventory:** `tasks/pr-inventory.md`
 
-## Duplicate / overlap groups
+## Duplicate / superseded groups
 
-| Group | Keeper | Action on others |
+| Keep | Close | Rationale |
 | --- | --- | --- |
-| ESP workflow pinning vs bandit nosec | **#957** (infra pins) first | #956 rebase after #957; not duplicate — different file sets |
+| email-security-pipeline **#961** | **#960** | Identical title, same four files, same Bolt regex optimization |
+| *(none — main already has QA)* | personal-config **#1094** | Zero-diff Jules Daily QA shell (Lesson 0b) |
 
-## Dispositions
+## Disposition summary
 
-| Disposition | PRs |
-| --- | --- |
-| **MERGE** | series #86; pc #1089 |
-| **DEFER** | esp #957, esp #956 |
-| **CLOSE-SUPERSEDED** | pc #1088 (after this session’s artifact PR lands) |
+| Disposition | Count | PRs |
+| --- | ---: | --- |
+| MERGE | 5 | personal-config #1091; ctrld-sync #857; email-security-pipeline #961, #963; series_correction #87 |
+| CLOSE-DUPLICATE / zero-diff | 2 | personal-config #1094; email-security-pipeline #960 |
+| ESCALATE | 1 | personal-config #1093 |
+| DEFER | 1 | email-security-pipeline #962 |
 
-## Security review notes
+## Gate notes
 
-| PR | Tier | Assessment |
-| --- | --- | --- |
-| series #86 | T1 Sentinel | `realpath` before `commonpath` closes symlink traversal bypass in config loader. Merged. |
-| esp #956 | T3 | `# nosec` on intentional `subprocess` / SSL test helpers; valid if bandit job can run. Blocked by CI policy, not code gate. |
-| esp #957 | CI/INFRA | Checkout/setup-python SHA pins align with org policy; incomplete until bandit composite deps pinned. |
+- **Gate 2 (security):** #1091 passed — no injection via string interpolation; argv-safe `osascript` pattern.
+- **Trust boundary:** #1093 touches `run_merges.py` / `scratch_*` — escalated per agent policy even with green CI.
+- **ESP Actions tail:** #962 fails `bandit` while pytest/CodeQL green — defer until composite action pinning is complete (extends Lesson 0u / 2026-05-29 #957 tail).
 
-## CI anomalies
+## Merge order executed
 
-| PR | Check | Root cause |
-| --- | --- | --- |
-| esp #956, #957 | pytest / bandit | Org requires full-length action SHAs; branch workflows still use `@v6` or composite pulls `@main` / `@v3` |
-| pc #1089 | swift / bugbot pending | Non-blocking; required application checks passed |
-
-## Human merge queue
-
-| PR | Repo | Why human |
-| --- | --- | --- |
-| #957 | email-security-pipeline | Replace or fork `shundor/python-bandit-scan` workflow with fully pinned SARIF upload path |
-| #956 | email-security-pipeline | Merge after infra unblocks CI |
+1. Security — personal-config #1091  
+2. Performance — email-security-pipeline #961  
+3. Hygiene — email-security-pipeline #963  
+4. Performance — series_correction_project_updated #87  
+5. CI/INFRA docs — ctrld-sync #857 (marked ready, then squash-merged)

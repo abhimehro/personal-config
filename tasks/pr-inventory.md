@@ -1,37 +1,41 @@
-# PR Inventory — 2026-05-29
+# PR Inventory — 2026-05-30
 
 **Preflight:** PASS (6/6 repos)  
 **Config:** `tasks/pr-review-agent.config.yaml`  
-**Trigger:** Cron `0 17 * * *` (automation `3e537981-04a6-456f-89a3-272d9d5fddd7`)  
-**Branch:** `cursor-agent/automated-pr-salvage-workflow-61a3`
+**Trigger:** Cron `0 13 * * *` (automation `77c168e0-7f6b-42de-bad6-da4e4e640b79`)  
+**Mode:** review-and-merge  
+**Branch:** `cursor-agent/automated-pr-workflow-428d`
 
 ## Summary
 
 | Metric | Count |
 | --- | ---: |
 | Repos processed | 6 |
-| In-scope PRs at start | 5 |
-| Squash-merged | 2 |
-| Deferred (DEFER) | 2 |
-| Conflicted (DIRTY/CONFLICTING) | 0 |
+| In-scope PRs at start | 9 |
+| Squash-merged | 5 |
+| Closed (duplicate / zero-diff) | 2 |
+| Escalated | 1 |
+| Deferred (failing CI) | 1 |
 | Open tail (in-scope) | 2 |
-| Out-of-scope open | 1 (#1088 agent docs draft) |
 
 ## In-scope PRs at start
 
-| Repo | PR | Author signal | Category | Merge state | CI rollup |
-| --- | ---: | --- | --- | --- | --- |
-| personal-config | [#1089](https://github.com/abhimehro/personal-config/pull/1089) | Jules Palette (`palette-ux-*`) | UI | MERGEABLE / UNSTABLE | Required checks green (swift/bugbot non-blocking) |
-| personal-config | [#1088](https://github.com/abhimehro/personal-config/pull/1088) | `app/cursor` agent branch | CI/INFRA | MERGEABLE / CLEAN | Draft session docs (superseded by this run) |
-| email-security-pipeline | [#957](https://github.com/abhimehro/email-security-pipeline/pull/957) | Jules (`jules-no-ux-*`) | CI/INFRA | MERGEABLE / UNSTABLE | bandit fail (unpinned composite actions) |
-| email-security-pipeline | [#956](https://github.com/abhimehro/email-security-pipeline/pull/956) | Jules QA (`jules-*`) | SECURITY | MERGEABLE / UNSTABLE | pytest/bandit fail (unpinned `checkout@v6`) |
-| series_correction_project_updated | [#86](https://github.com/abhimehro/series_correction_project_updated/pull/86) | Jules Sentinel | SECURITY | MERGEABLE / CLEAN | All green |
+| Repo | PR | Author signal | Category | Merge state | CI rollup | Disposition |
+| --- | ---: | --- | --- | --- | --- | --- |
+| personal-config | [#1094](https://github.com/abhimehro/personal-config/pull/1094) | Jules QA branch | CI/INFRA | MERGEABLE | PENDING (swift, Bugbot) | **CLOSED** — zero-diff (Lesson 0b) |
+| personal-config | [#1093](https://github.com/abhimehro/personal-config/pull/1093) | Jules Bolt | PERFORMANCE | MERGEABLE / CLEAN | PASS | **ESCALATE** — toolchain (`run_merges.py`, `scratch_*`) |
+| personal-config | [#1091](https://github.com/abhimehro/personal-config/pull/1091) | Jules Sentinel | SECURITY | MERGEABLE / CLEAN | PASS | **MERGED** — AppleScript argv hardening |
+| ctrld-sync | [#857](https://github.com/abhimehro/ctrld-sync/pull/857) | `app/cursor` | CI/INFRA | MERGEABLE (was draft) | PASS | **MERGED** — `tasks/qa_notes.md` |
+| email-security-pipeline | [#963](https://github.com/abhimehro/email-security-pipeline/pull/963) | Jules whitespace | CI/INFRA | MERGEABLE | PASS (Bugbot non-blocking) | **MERGED** — trailing whitespace |
+| email-security-pipeline | [#962](https://github.com/abhimehro/email-security-pipeline/pull/962) | automation-workflow | CI/INFRA | MERGEABLE | **FAIL** (bandit) | **DEFER** — Actions pinning tail |
+| email-security-pipeline | [#961](https://github.com/abhimehro/email-security-pipeline/pull/961) | Jules Bolt | PERFORMANCE | MERGEABLE / CLEAN | PASS | **MERGED** — regex IGNORECASE removal |
+| email-security-pipeline | [#960](https://github.com/abhimehro/email-security-pipeline/pull/960) | Jules Bolt | PERFORMANCE | MERGEABLE / CLEAN | PASS | **CLOSED** — duplicate of #961 |
+| series_correction_project_updated | [#87](https://github.com/abhimehro/series_correction_project_updated/pull/87) | Jules Bolt | PERFORMANCE | MERGEABLE / CLEAN | PASS | **MERGED** — vectorized rolling MAD |
 
 ## Repos with no in-scope open PRs at start
 
 | Repo | Status |
 | --- | --- |
-| ctrld-sync | No open PRs |
 | Seatek_Analysis | No open PRs |
 | Hydrograph_Versus_Seatek_Sensors_Project | No open PRs |
 
@@ -39,18 +43,15 @@
 
 | PR | Repo | Notes |
 | --- | ---: | --- |
-| [#86](https://github.com/abhimehro/series_correction_project_updated/pull/86) | series_correction_project_updated | Sentinel CWE-22: `os.path.realpath` in `scripts/loaders.py` |
-| [#1089](https://github.com/abhimehro/personal-config/pull/1089) | personal-config | Palette: `read -r -p`, CI-guarded `tput` in mole spinners |
+| [#1091](https://github.com/abhimehro/personal-config/pull/1091) | personal-config | Sentinel CWE-74: `osascript` argv pattern in media `notify()` |
+| [#961](https://github.com/abhimehro/email-security-pipeline/pull/961) | email-security-pipeline | Bolt: drop `re.IGNORECASE` on pre-lowercased HTML |
+| [#963](https://github.com/abhimehro/email-security-pipeline/pull/963) | email-security-pipeline | Jules QA: trailing whitespace in workflow/trunk config |
+| [#87](https://github.com/abhimehro/series_correction_project_updated/pull/87) | series_correction_project_updated | Bolt: NumPy `sliding_window_view` rolling MAD |
+| [#857](https://github.com/abhimehro/ctrld-sync/pull/857) | ctrld-sync | Cursor agent daily QA notes |
 
-## Open tail (deferred)
+## Open tail
 
 | Repo | PR | Reason |
 | --- | ---: | --- |
-| email-security-pipeline | [#957](https://github.com/abhimehro/email-security-pipeline/pull/957) | Partial workflow SHA pins; `python-bandit-scan` still pulls unpinned `upload-artifact@main` / `upload-sarif@v3` |
-| email-security-pipeline | [#956](https://github.com/abhimehro/email-security-pipeline/pull/956) | Blocked by unpinned Actions on branch; rebase after #957 infra fix |
-
-## Superseded / housekeeping
-
-| Repo | PR | Action |
-| --- | ---: | --- |
-| personal-config | #1088 | Close when artifact PR #TBD merges (duplicate session report from prior agent run) |
+| personal-config | [#1093](https://github.com/abhimehro/personal-config/pull/1093) | Trust-boundary: PR automation toolchain edits |
+| email-security-pipeline | [#962](https://github.com/abhimehro/email-security-pipeline/pull/962) | Required `bandit` failing; partial workflow pin consolidation |

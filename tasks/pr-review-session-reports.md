@@ -2,7 +2,23 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-28 (salvage 17:00).
+> **Latest execution:** 2026-05-30 (cron review-and-merge 13:00).
+
+## Run — 2026-05-30 (cron review-and-merge 13:00)
+
+**Report:** `tasks/pr-review-2026-05-30.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| In-scope at start | 9 |
+| Merged | 5 |
+| Closed (zero-diff / duplicate) | 2 |
+| Escalated | 1 |
+| Deferred | 1 |
+| Open tail | 2 |
+
+**Highlights:** Merged Sentinel AppleScript fix (pc #1091), ESP Bolt regex (#961) + whitespace QA (#963), series_correction vectorized MAD (#87), ctrld-sync QA notes (#857). Closed zero-diff pc #1094 and duplicate ESP #960. Escalated pc #1093 (toolchain); deferred ESP #962 (bandit fail on workflow consolidation).
 
 ## Run — 2026-05-28 (cron salvage 17:00)
 

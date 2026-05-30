@@ -305,3 +305,9 @@
 **Pattern:** ESP #957 pinned `actions/checkout` in `.github/workflows/bandit.yml`, but the `shundor/python-bandit-scan` composite still referenced unpinned `actions/upload-artifact@main` and `github/codeql-action/upload-sarif@v3`, so the bandit job failed org policy anyway.
 **Rule:** Before deferring a “workflow pin” PR as complete, read the **failed job log** for nested unpinned actions. Fix by replacing the composite with inline bandit + fully pinned SARIF upload steps, or escalate for a maintained fork — pinning only checkout is insufficient.
 **Detection cost:** Low — one `gh run view --log-failed` on the bandit job.
+
+## Lesson 0z: Bolt micro-opts on PR automation scratch files need human gate (2026-05-30)
+
+**Pattern:** personal-config #1093 applied tuple/generator micro-optimizations to `run_merges.py`, `scratch_inventory.py`, and `scratch_triage.py` with green CI — same trust boundary as Lesson 0dq / escalation history for `run_merges.py` shell=True refactors.
+**Rule:** Never auto-merge Bolt/Jules PRs that edit PR-automation helpers (`run_merges.py`, `parse_inventory.py`, `scratch_*`, `categorize_ready.py`) even when diffs are trivial; post ESCALATE and require human squash-merge.
+**Detection cost:** Low — `gh pr diff` file list.
