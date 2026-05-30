@@ -1,40 +1,44 @@
-# PR Triage — 2026-05-29
+# PR Triage — 2026-05-30 (salvage pass)
 
 **Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · DEFER · CLOSE-SUPERSEDED · ESCALATE
+**Disposition key:** MERGE · DEFER · CLOSE-SUPERSEDED · ESCALATE · CLOSE-NO-OP
 
-## Duplicate / overlap groups
+## Morning review (Phase 1) — reference
 
-| Group | Keeper | Action on others |
-| --- | --- | --- |
-| ESP workflow pinning vs bandit nosec | **#957** (infra pins) first | #956 rebase after #957; not duplicate — different file sets |
+Inventory and dispositions for the `0 13` review-and-merge run are in the review branch artifacts (merged into this file’s companion `tasks/pr-review-2026-05-30.md`).
 
-## Dispositions
+## Salvage pass (Phase 2, cron `0 17`)
 
-| Disposition | PRs |
-| --- | --- |
-| **MERGE** | series #86; pc #1089 |
-| **DEFER** | esp #957, esp #956 |
-| **CLOSE-SUPERSEDED** | pc #1088 (after this session’s artifact PR lands) |
+### Reconciliation
 
-## Security review notes
+| PR | Repo | Phase 1 disposition | Live state at salvage | Action |
+| --- | ---: | --- | --- | --- |
+| #957 | email-security-pipeline | DEFER | MERGED | Dropped from queue |
+| #956 | email-security-pipeline | DEFER | MERGED | Dropped from queue |
+| #962 | email-security-pipeline | DEFER | OPEN, bandit fail | **CLOSE-NO-OP** — unpins SHAs to tags |
+| #1093 | personal-config | ESCALATE | OPEN, CI green | **ESCALATE** (no change) |
+| #1095 | personal-config | (draft docs) | OPEN draft | **CLOSE-SUPERSEDED** by salvage artifact PR |
+
+### Conflict scan
+
+No open PRs with `DIRTY`, `BEHIND`, or `CONFLICTING` merge state across any configured repo.
+
+### Dispositions (salvage only)
+
+| Disposition | Count | PRs |
+| --- | ---: | --- |
+| CLOSE-NO-OP | 1 | email-security-pipeline #962 |
+| ESCALATE (carry) | 1 | personal-config #1093 |
+
+### Security / trust notes
 
 | PR | Tier | Assessment |
 | --- | --- | --- |
-| series #86 | T1 Sentinel | `realpath` before `commonpath` closes symlink traversal bypass in config loader. Merged. |
-| esp #956 | T3 | `# nosec` on intentional `subprocess` / SSL test helpers; valid if bandit job can run. Blocked by CI policy, not code gate. |
-| esp #957 | CI/INFRA | Checkout/setup-python SHA pins align with org policy; incomplete until bandit composite deps pinned. |
-
-## CI anomalies
-
-| PR | Check | Root cause |
-| --- | --- | --- |
-| esp #956, #957 | pytest / bandit | Org requires full-length action SHAs; branch workflows still use `@v6` or composite pulls `@main` / `@v3` |
-| pc #1089 | swift / bugbot pending | Non-blocking; required application checks passed |
+| #1093 | T2 trust-boundary | Micro-opts on PR automation scratch helpers; green CI does not waive human merge (Lesson 0z). |
+| #962 | CI/INFRA | Automation moved pins **from** full SHAs **to** version tags — violates org policy; closed without salvage branch. |
 
 ## Human merge queue
 
 | PR | Repo | Why human |
 | --- | --- | --- |
-| #957 | email-security-pipeline | Replace or fork `shundor/python-bandit-scan` workflow with fully pinned SARIF upload path |
-| #956 | email-security-pipeline | Merge after infra unblocks CI |
+| #1093 | personal-config | Trust-boundary on `run_merges.py` / `scratch_*` |

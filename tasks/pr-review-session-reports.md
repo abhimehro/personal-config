@@ -2,7 +2,23 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-28 (salvage 17:00).
+> **Latest execution:** 2026-05-30 (cron review-and-merge 13:00).
+
+## Run — 2026-05-30 (cron review-and-merge 13:00)
+
+**Report:** `tasks/pr-review-2026-05-30.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| In-scope at start | 9 |
+| Merged | 5 |
+| Closed (zero-diff / duplicate) | 2 |
+| Escalated | 1 |
+| Deferred | 1 |
+| Open tail | 2 |
+
+**Highlights:** Merged Sentinel AppleScript fix (pc #1091), ESP Bolt regex (#961) + whitespace QA (#963), series_correction vectorized MAD (#87), ctrld-sync QA notes (#857). Closed zero-diff pc #1094 and duplicate ESP #960. Escalated pc #1093 (toolchain); deferred ESP #962 (bandit fail on workflow consolidation).
 
 ## Run — 2026-05-28 (cron salvage 17:00)
 
@@ -831,3 +847,31 @@ All open PRs are intentionally open and waiting on human review:
 - **0dd** — Identical twin PRs
 - **0bb** — Never bypass red gates on security repos
 - **0df** — Salvage agents must clone to /tmp; never working-tree manipulation in active workspace (followed throughout)
+
+---
+
+## 2026-05-30 — Salvage pass (cron `0 17`, automation `3e537981-04a6-456f-89a3-272d9d5fddd7`)
+
+**Branch:** `cursor-agent/automated-pr-salvage-workflow-2b30`  
+**Preflight:** PASS (6/6)
+
+### Outcomes
+
+| Action | PR | Repo |
+| --- | ---: | --- |
+| Reconciled (merged since 2026-05-29) | #957, #956 | email-security-pipeline |
+| Closed (SHA→tag workflow regression) | #962 | email-security-pipeline |
+| Escalate (unchanged) | #1093 | personal-config |
+
+**Conflicted in-scope PRs:** 0 across all six repos.
+
+### Open after salvage
+
+| Repo | PR | Reason |
+| --- | ---: | --- |
+| personal-config | #1093 | Trust-boundary: `run_merges.py`, `scratch_*` (Lesson 0z) |
+
+### Lessons added
+
+- **0dt** — Never accept automation PRs that replace SHA pins with version tags
+- **0z** — PR automation scratch files require human merge even when CI is green
