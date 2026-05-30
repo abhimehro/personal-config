@@ -90,8 +90,10 @@ async function main() {
     if (spinnerInterval) {
       clearInterval(spinnerInterval);
       spinnerInterval = null;
-      // Clear line and restore cursor
-      process.stdout.write("\r\x1B[K\x1B[?25h");
+      // Clear line and restore cursor conditionally
+      if (process.stdout.isTTY) {
+        process.stdout.write("\r\x1B[K\x1B[?25h");
+      }
     }
   };
 
