@@ -230,25 +230,24 @@ remove_login_item() {
     if [[ -n "$clean_name" ]]; then
         # Skip AppleScript during tests to avoid permission dialogs
         if [[ "${MOLE_TEST_MODE:-0}" != "1" && "${MOLE_TEST_NO_AUTH:-0}" != "1" ]]; then
-            # Escape double quotes and backslashes for AppleScript
-            local escaped_name="${clean_name//\\/\\\\}"
-            escaped_name="${escaped_name//\"/\\\"}"
-
-            osascript <<- EOF > /dev/null 2>&1 || true
-				tell application "System Events"
-				    try
-				        set itemCount to count of login items
-				        -- Delete in reverse order to avoid index shifting
-				        repeat with i from itemCount to 1 by -1
-				            try
-				                set itemName to name of login item i
-				                if itemName is "$escaped_name" then
-				                    delete login item i
-				                end if
-				            end try
-				        end repeat
-				    end try
-				end tell
+            osascript - "$clean_name" <<- 'EOF' > /dev/null 2>&1 || true
+				on run argv
+				    set targetName to item 1 of argv
+				    tell application "System Events"
+				        try
+				            set itemCount to count of login items
+				            -- Delete in reverse order to avoid index shifting
+				            repeat with i from itemCount to 1 by -1
+				                try
+				                    set itemName to name of login item i
+				                    if itemName is targetName then
+				                        delete login item i
+				                    end if
+				                end try
+				            end repeat
+				        end try
+				    end tell
+				end run
 			EOF
         fi
     fi
