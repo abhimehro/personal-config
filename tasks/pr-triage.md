@@ -1,40 +1,39 @@
-# PR Triage — 2026-05-29
+# PR Triage — 2026-05-31
 
-**Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · DEFER · CLOSE-SUPERSEDED · ESCALATE
+**Session:** Automated PR review (cron `0 13 * * *`)  
+**Stale threshold:** 30 days (none in-scope exceeded)
 
-## Duplicate / overlap groups
+## Duplicate & overlap analysis
 
-| Group | Keeper | Action on others |
-| --- | --- | --- |
-| ESP workflow pinning vs bandit nosec | **#957** (infra pins) first | #956 rebase after #957; not duplicate — different file sets |
+| Group | Keep | Close / defer others | Rationale |
+| --- | --- | --- | --- |
+| Bolt scratch perf | **#1100** (merged) | **#1093** (defer, conflicting) | Same `scratch_inventory.py` tuple change; #1093 adds `run_merges.py` (toolchain) |
+| Jules Daily QA | **#1101** (merged) | — | Zero-diff queue hygiene |
 
-## Dispositions
+No semantic duplicates across repos. No stale (>30d) in-scope PRs.
 
-| Disposition | PRs |
-| --- | --- |
-| **MERGE** | series #86; pc #1089 |
-| **DEFER** | esp #957, esp #956 |
-| **CLOSE-SUPERSEDED** | pc #1088 (after this session’s artifact PR lands) |
+## Per-PR disposition
 
-## Security review notes
+| Repo | PR | Category | Disposition | Gates |
+| --- | ---: | --- | --- | --- |
+| personal-config | 1098 | SECURITY | **MERGE** | G1–G3 pass; CWE-74 fix validated |
+| personal-config | 1097 | UI | **MERGE** | G1–G3 pass; demo-only scope |
+| personal-config | 1100 | PERFORMANCE | **MERGE** | G1–G3 pass; scratch helper only |
+| personal-config | 1101 | CI/INFRA | **MERGE** | Zero-diff; required checks green |
+| ctrld-sync | 860 | CI/INFRA | **MERGE** | Docs-only QA notes |
+| personal-config | 1093 | PERFORMANCE | **DEFER** | G4 trust boundary (`run_merges.py`); conflict after #1100 |
+| personal-config | 1096 | CI/INFRA | **DEFER** | Draft; `tasks/pr-*` toolchain docs |
+| email-security-pipeline | 966 | CI/INFRA | **ESCALATE** | G1 fail (bandit); G2 fail (unpins actions) |
 
-| PR | Tier | Assessment |
-| --- | --- | --- |
-| series #86 | T1 Sentinel | `realpath` before `commonpath` closes symlink traversal bypass in config loader. Merged. |
-| esp #956 | T3 | `# nosec` on intentional `subprocess` / SSL test helpers; valid if bandit job can run. Blocked by CI policy, not code gate. |
-| esp #957 | CI/INFRA | Checkout/setup-python SHA pins align with org policy; incomplete until bandit composite deps pinned. |
+## Security notes
 
-## CI anomalies
+- **#1098:** Legitimate injection hardening; no privilege escalation.
+- **#966:** Regresses SHA pinning policy; must not merge until workflows use full commit SHAs throughout (including nested composite actions — Lesson 0y).
 
-| PR | Check | Root cause |
-| --- | --- | --- |
-| esp #956, #957 | pytest / bandit | Org requires full-length action SHAs; branch workflows still use `@v6` or composite pulls `@main` / `@v3` |
-| pc #1089 | swift / bugbot pending | Non-blocking; required application checks passed |
+## Merge order executed
 
-## Human merge queue
-
-| PR | Repo | Why human |
-| --- | --- | --- |
-| #957 | email-security-pipeline | Replace or fork `shundor/python-bandit-scan` workflow with fully pinned SARIF upload path |
-| #956 | email-security-pipeline | Merge after infra unblocks CI |
+1. Security (#1098)  
+2. UI (#1097)  
+3. Performance scratch (#1100)  
+4. Zero-diff QA (#1101)  
+5. ctrld-sync QA docs (#860)
