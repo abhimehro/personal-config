@@ -5,7 +5,7 @@
 # Part of SecOps Autopilot
 # Cadence: Bi-weekly / Monthly (1st and 15th at 10:00 AM)
 # ==============================================================================
-set -euo pipefail
+set -Eeuo pipefail
 
 DEV_ROOT="$HOME/dev"
 REPOS=(

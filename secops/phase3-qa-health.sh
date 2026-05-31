@@ -5,7 +5,7 @@
 # Part of SecOps Autopilot
 # Cadence: Daily (8:00 AM)
 # ==============================================================================
-set -euo pipefail
+set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/ai_engine.sh
@@ -38,46 +38,51 @@ notify() {
 # Returns: 0 pass, 1 fail, 2 no-test-path (skip — not a failure).
 run_project_tests() {
 	local dir="$1"
-	cd "$dir"
+	# Run in a subshell so the `cd` is scoped and can't leak the main
+	# process's cwd to the next repo iteration. `exit` codes from the
+	# subshell are naturally propagated as this function's return code.
+	(
+		cd "$dir"
 
-	# 1) Makefile is the strongest signal of the repo's real convention.
-	if [ -f "Makefile" ]; then
-		if grep -qE '^test-all:' Makefile; then
-			run_timeout "$SECOPS_TEST_TIMEOUT" make test-all 2>&1
-			return $?
-		elif grep -qE '^test:' Makefile; then
-			run_timeout "$SECOPS_TEST_TIMEOUT" make test 2>&1
-			return $?
+		# 1) Makefile is the strongest signal of the repo's real convention.
+		if [ -f "Makefile" ]; then
+			if grep -qE '^test-all:' Makefile; then
+				run_timeout "$SECOPS_TEST_TIMEOUT" make test-all 2>&1
+				exit $?
+			elif grep -qE '^test:' Makefile; then
+				run_timeout "$SECOPS_TEST_TIMEOUT" make test 2>&1
+				exit $?
+			fi
 		fi
-	fi
 
-	# 2) Node project — only if a real "test" script is declared.
-	if [ -f "package.json" ]; then
-		if node -e 'process.exit((require("./package.json").scripts||{}).test?0:1)' 2>/dev/null; then
-			run_timeout "$SECOPS_TEST_TIMEOUT" npm run test -- --watchAll=false 2>&1
-			return $?
-		else
-			echo "package.json present but no 'test' script declared — skipping."
-			return 2
+		# 2) Node project — only if a real "test" script is declared.
+		if [ -f "package.json" ]; then
+			if node -e 'process.exit((require("./package.json").scripts||{}).test?0:1)' 2>/dev/null; then
+				run_timeout "$SECOPS_TEST_TIMEOUT" npm run test -- --watchAll=false 2>&1
+				exit $?
+			else
+				echo "package.json present but no 'test' script declared — skipping."
+				exit 2
+			fi
 		fi
-	fi
 
-	# 3) Python project — prefer the repo's own venv, then a pytest on PATH.
-	if [ -f "pyproject.toml" ] || [ -f "requirements.txt" ] || [ -f "pytest.ini" ]; then
-		if [ -x ".venv/bin/pytest" ]; then
-			run_timeout "$SECOPS_TEST_TIMEOUT" .venv/bin/pytest 2>&1
-			return $?
-		elif command -v pytest &>/dev/null; then
-			run_timeout "$SECOPS_TEST_TIMEOUT" pytest 2>&1
-			return $?
-		else
-			echo "Python project but no .venv/pytest available — skipping."
-			return 2
+		# 3) Python project — prefer the repo's own venv, then a pytest on PATH.
+		if [ -f "pyproject.toml" ] || [ -f "requirements.txt" ] || [ -f "pytest.ini" ]; then
+			if [ -x ".venv/bin/pytest" ]; then
+				run_timeout "$SECOPS_TEST_TIMEOUT" .venv/bin/pytest 2>&1
+				exit $?
+			elif command -v pytest &>/dev/null; then
+				run_timeout "$SECOPS_TEST_TIMEOUT" pytest 2>&1
+				exit $?
+			else
+				echo "Python project but no .venv/pytest available — skipping."
+				exit 2
+			fi
 		fi
-	fi
 
-	echo "no recognized test path, skipping."
-	return 2
+		echo "no recognized test path, skipping."
+		exit 2
+	)
 }
 
 audit_system_drift() {

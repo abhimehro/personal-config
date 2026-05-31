@@ -52,6 +52,7 @@ run_timeout() {
     local $SIG{ALRM} = sub { kill(-9, $pid); waitpid $pid, 0; exit 124; };
     alarm $t;
     waitpid $pid, 0;
+    alarm 0;          # cancel pending alarm to close the race between waitpid returning and exit($rc) below
     my $rc = $? >> 8;
     kill(-9, $pid);   # reap any lingering group members
     exit($rc);
@@ -137,8 +138,12 @@ ai_diagnose() {
 
 	local engine out rc
 	for engine in $SECOPS_AI_ENGINE; do
-		out="$("_ai_try_${engine}" "$prompt" "$tmp")"
-		rc=$?
+		# Self-enforcing fail-safe: capture rc via `|| rc=$?` so a non-zero
+		# engine result (rc=2 missing, rc=124 timeout, etc.) never trips
+		# `set -e` in a caller that forgot to guard the call site. The `||`
+		# branch preserves the real exit code for the fallback dispatch below.
+		rc=0
+		out="$("_ai_try_${engine}" "$prompt" "$tmp")" || rc=$?
 		# rc 2 = engine not installed; 124 = timed out; skip to next.
 		if [ "$rc" -eq 2 ] || [ "$rc" -eq 124 ]; then
 			[ "$rc" -eq 124 ] && echo "[ai_diagnose] engine '$engine' timed out after ${SECOPS_AI_TIMEOUT}s, falling back." >&2

@@ -2,13 +2,15 @@
 # ==============================================================================
 # SecOps Autopilot — installer / loader
 # ==============================================================================
-# Installs (symlinks) the three LaunchAgents and (re)loads them via launchctl.
+# Installs (copies) the three LaunchAgents into ~/Library/LaunchAgents and
+# (re)loads them via launchctl. We copy rather than symlink because launchd
+# does not follow some symlinks reliably (see inline comment in install()).
 # Idempotent: safe to run repeatedly. Run from anywhere.
 #
 #   bash ~/secops/install.sh            # install + load
-#   bash ~/secops/install.sh --uninstall  # bootout + remove symlinks
+#   bash ~/secops/install.sh --uninstall  # bootout + remove plists
 # ==============================================================================
-set -euo pipefail
+set -Eeuo pipefail
 
 REPO_SECOPS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" # resolves through ~/secops symlink
 LA_DIR="$HOME/Library/LaunchAgents"
