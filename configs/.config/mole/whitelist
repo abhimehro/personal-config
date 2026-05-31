@@ -6,3 +6,5 @@
 /Users/speedybee/Library/Caches/JetBrains*
 /Users/speedybee/Library/Caches/com.jetbrains.toolbox*
 /Users/speedybee/Library/Caches/com.apple.finder
+/Users/speedybee/dev/**/venv*
+/Users/speedybee/dev/**/.venv*
