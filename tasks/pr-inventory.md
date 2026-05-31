@@ -1,56 +1,45 @@
-# PR Inventory — 2026-05-29
+# PR Inventory — 2026-05-31
 
+**Session:** Automated PR salvage (cron `0 17 * * *`, automation `3e537981-04a6-456f-89a3-272d9d5fddd7`)  
 **Preflight:** PASS (6/6 repos)  
-**Config:** `tasks/pr-review-agent.config.yaml`  
-**Trigger:** Cron `0 17 * * *` (automation `3e537981-04a6-456f-89a3-272d9d5fddd7`)  
-**Branch:** `cursor-agent/automated-pr-salvage-workflow-61a3`
+**Branch:** `cursor-agent/automated-pr-salvage-workflow-4f93`
 
-## Summary
+## Scope summary
 
-| Metric | Count |
-| --- | ---: |
-| Repos processed | 6 |
-| In-scope PRs at start | 5 |
-| Squash-merged | 2 |
-| Deferred (DEFER) | 2 |
-| Conflicted (DIRTY/CONFLICTING) | 0 |
-| Open tail (in-scope) | 2 |
-| Out-of-scope open | 1 (#1088 agent docs draft) |
+| Repo | Open PRs (all) | In-scope bot/automation | CONFLICTING / DIRTY |
+| --- | ---: | ---: | ---: |
+| personal-config | 4 | 3 | 0 |
+| ctrld-sync | 1 | 1 | 0 |
+| email-security-pipeline | 3 | 3 | 0 |
+| Seatek_Analysis | 0 | 0 | 0 |
+| Hydrograph_Versus_Seatek_Sensors_Project | 0 | 0 | 0 |
+| series_correction_project_updated | 0 | 0 | 0 |
+| **Total** | **8** | **7** | **0** |
 
-## In-scope PRs at start
+**Conflict tail:** None. Prior deferred `email-security-pipeline#957` and `#956` are **MERGED** (resolved since 2026-05-29).
 
-| Repo | PR | Author signal | Category | Merge state | CI rollup |
-| --- | ---: | --- | --- | --- | --- |
-| personal-config | [#1089](https://github.com/abhimehro/personal-config/pull/1089) | Jules Palette (`palette-ux-*`) | UI | MERGEABLE / UNSTABLE | Required checks green (swift/bugbot non-blocking) |
-| personal-config | [#1088](https://github.com/abhimehro/personal-config/pull/1088) | `app/cursor` agent branch | CI/INFRA | MERGEABLE / CLEAN | Draft session docs (superseded by this run) |
-| email-security-pipeline | [#957](https://github.com/abhimehro/email-security-pipeline/pull/957) | Jules (`jules-no-ux-*`) | CI/INFRA | MERGEABLE / UNSTABLE | bandit fail (unpinned composite actions) |
-| email-security-pipeline | [#956](https://github.com/abhimehro/email-security-pipeline/pull/956) | Jules QA (`jules-*`) | SECURITY | MERGEABLE / UNSTABLE | pytest/bandit fail (unpinned `checkout@v6`) |
-| series_correction_project_updated | [#86](https://github.com/abhimehro/series_correction_project_updated/pull/86) | Jules Sentinel | SECURITY | MERGEABLE / CLEAN | All green |
+## In-scope PR table
 
-## Repos with no in-scope open PRs at start
+| Repo | PR | Author | Branch signal | Merge state | CI rollup | Age (days) | Title |
+| --- | ---: | --- | --- | --- | --- | ---: | --- |
+| personal-config | [#1093](https://github.com/abhimehro/personal-config/pull/1093) | abhimehro | `jules-*` | CLEAN | Green (CodeQL/advisory) | 0 | Bolt: avoid intermediate list allocations |
+| personal-config | [#1102](https://github.com/abhimehro/personal-config/pull/1102) | app/cursor | `cursor-agent/*` | CLEAN | Green | 0 | docs(pr-review): 2026-05-31 review artifacts |
+| personal-config | [#1096](https://github.com/abhimehro/personal-config/pull/1096) | app/cursor | `cursor-agent/*` | CLEAN | Green | 1 | docs(pr-salvage): 2026-05-30 salvage artifacts |
+| personal-config | [#1103](https://github.com/abhimehro/personal-config/pull/1103) | abhimehro | human | CLEAN | Green (full suite) | 0 | secops: harden AI engine + fix launchd PATH |
+| ctrld-sync | [#861](https://github.com/abhimehro/ctrld-sync/pull/861) | abhimehro | `jules-*` | UNSTABLE | benchmark fail; app checks green | 0 | Palette: unspecified profile log presentation |
+| email-security-pipeline | [#968](https://github.com/abhimehro/email-security-pipeline/pull/968) | abhimehro | `qa-fix-*` | CLEAN | Green | 0 | chore: minor formatting fixes |
+| email-security-pipeline | [#970](https://github.com/abhimehro/email-security-pipeline/pull/970) | abhimehro | `jules-*` | UNSTABLE | pending Cursor Bugbot; else green | 0 | Palette: connection retry menu scannability |
+| email-security-pipeline | [#966](https://github.com/abhimehro/email-security-pipeline/pull/966) | abhimehro | `automation-workflow-*` | UNSTABLE | bandit fail (SHA policy) | 0 | chore(actions): consolidate workflow automation |
 
-| Repo | Status |
-| --- | --- |
-| ctrld-sync | No open PRs |
-| Seatek_Analysis | No open PRs |
-| Hydrograph_Versus_Seatek_Sensors_Project | No open PRs |
+## Out of scope (not bot/automation tail)
 
-## Merged this session
-
-| PR | Repo | Notes |
+| Repo | PR | Reason excluded |
 | --- | ---: | --- |
-| [#86](https://github.com/abhimehro/series_correction_project_updated/pull/86) | series_correction_project_updated | Sentinel CWE-22: `os.path.realpath` in `scripts/loaders.py` |
-| [#1089](https://github.com/abhimehro/personal-config/pull/1089) | personal-config | Palette: `read -r -p`, CI-guarded `tput` in mole spinners |
+| personal-config | #1103 | Human-authored secops feature; trust-boundary escalation per review heuristics |
 
-## Open tail (deferred)
+## Post–Phase 1 remainder (from 2026-05-29) — status
 
-| Repo | PR | Reason |
-| --- | ---: | --- |
-| email-security-pipeline | [#957](https://github.com/abhimehro/email-security-pipeline/pull/957) | Partial workflow SHA pins; `python-bandit-scan` still pulls unpinned `upload-artifact@main` / `upload-sarif@v3` |
-| email-security-pipeline | [#956](https://github.com/abhimehro/email-security-pipeline/pull/956) | Blocked by unpinned Actions on branch; rebase after #957 infra fix |
-
-## Superseded / housekeeping
-
-| Repo | PR | Action |
-| --- | ---: | --- |
-| personal-config | #1088 | Close when artifact PR #TBD merges (duplicate session report from prior agent run) |
+| PR | Prior disposition | Current state |
+| --- | --- | --- |
+| esp #957 | DEFER (bandit pins) | **MERGED** |
+| esp #956 | DEFER (after #957) | **MERGED** |
