@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.speedybee.secops.phase2</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/speedybee/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/speedybee/secops/phase2-mine.sh</string>
+    </array>
+    <key>StandardOutPath</key>
+    <string>/Users/speedybee/Library/Logs/maintenance/secops_phase2.out</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/speedybee/Library/Logs/maintenance/secops_phase2.err</string>
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Day</key>
+            <integer>1</integer>
+            <key>Hour</key>
+            <integer>10</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Day</key>
+            <integer>15</integer>
+            <key>Hour</key>
+            <integer>10</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>
