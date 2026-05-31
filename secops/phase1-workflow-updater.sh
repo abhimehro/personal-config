@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# PHASE 1: GITHUB ACTIONS WORKFLOW UPDATER
+# ==============================================================================
+# Part of SecOps Autopilot
+# Cadence: Weekly (Mondays at 9:00 AM)
+# ==============================================================================
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/ai_engine.sh
+source "$SCRIPT_DIR/lib/ai_engine.sh" # provides run_timeout
+
+DEV_ROOT="$HOME/dev"
+REPOS=(
+	"personal-config"
+	"ctrld-sync"
+	"email-security-pipeline"
+	"Seatek_Analysis"
+	"Hydrograph_Versus_Seatek_Sensors_Project"
+	"series_correction_project_updated"
+)
+LOCKFILE=".github/aw/actions-lock.json"
+LOG_FILE="$HOME/.workflow-updater-history.log"
+BRANCH="main"
+: "${SECOPS_GH_TIMEOUT:=300}" # network ops cap
+
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >>"$LOG_FILE"; }
+
+update_repo() {
+	local repo="$1"
+	local dir="$DEV_ROOT/$repo"
+
+	if [ ! -d "$dir/.git" ]; then
+		echo "skip: $repo (not a git repo)"
+		log "SKIP - $repo not a git repo."
+		return 0
+	fi
+
+	echo "==> $repo"
+	cd "$dir"
+
+	# Only act if this repo actually uses gh-aw lockfiles.
+	if [ ! -f "$LOCKFILE" ]; then
+		echo "  skip: no $LOCKFILE"
+		log "SKIP - $repo has no $LOCKFILE."
+		return 0
+	fi
+
+	if ! command -v gh &>/dev/null || ! gh extension list | grep -q "gh-aw"; then
+		echo "  warn: gh-aw not available, skipping update."
+		log "SKIP - $repo gh-aw unavailable."
+		return 0
+	fi
+
+	echo "  updating actions via gh-aw..."
+	if ! run_timeout "$SECOPS_GH_TIMEOUT" gh aw update --verbose; then
+		echo "  gh aw update failed/timed out, skipping repo."
+		log "FAIL - $repo gh aw update failed or timed out."
+		return 1
+	fi
+
+	if git diff --quiet -- "$LOCKFILE"; then
+		echo "  up to date."
+		log "NO-OP - $repo workflows up to date."
+		return 0
+	fi
+
+	# Safeguard: never commit compiled lock files.
+	echo "  resetting compiled .lock.yml files..."
+	git checkout -- .github/workflows/*.lock.yml 2>/dev/null || true
+
+	# Dry-run compile validation before committing.
+	echo "  validating compile (dry run)..."
+	if ! run_timeout "$SECOPS_GH_TIMEOUT" gh aw compile --validate 2>/dev/null; then
+		echo "  compile validation FAILED, aborting commit."
+		log "FAIL - $repo compile validation failed."
+		return 1
+	fi
+
+	echo "  diff:"
+	git diff -- "$LOCKFILE"
+
+	git add "$LOCKFILE"
+	git commit -m "chore(deps): update GitHub Actions versions [$(date '+%Y-%m-%d')]"
+	run_timeout "$SECOPS_GH_TIMEOUT" git push origin "$BRANCH"
+
+	echo "  done."
+	log "SUCCESS - $repo updated action lockfile."
+}
+
+echo "Starting Phase 1: Workflow Updater..."
+log "START - Phase 1 run begin."
+overall=0
+for repo in "${REPOS[@]}"; do
+	if ! update_repo "$repo"; then
+		overall=1
+	fi
+done
+
+if [ "$overall" -eq 0 ]; then
+	log "SUCCESS - Phase 1 complete."
+else
+	log "PARTIAL - Phase 1 completed with one or more failures."
+fi
+echo "Phase 1 complete. See $LOG_FILE."
+exit "$overall"
