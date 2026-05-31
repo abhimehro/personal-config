@@ -305,3 +305,9 @@
 **Pattern:** ESP #957 pinned `actions/checkout` in `.github/workflows/bandit.yml`, but the `shundor/python-bandit-scan` composite still referenced unpinned `actions/upload-artifact@main` and `github/codeql-action/upload-sarif@v3`, so the bandit job failed org policy anyway.
 **Rule:** Before deferring a “workflow pin” PR as complete, read the **failed job log** for nested unpinned actions. Fix by replacing the composite with inline bandit + fully pinned SARIF upload steps, or escalate for a maintained fork — pinning only checkout is insufficient.
 **Detection cost:** Low — one `gh run view --log-failed` on the bandit job.
+
+## Lesson 0z: “Workflow consolidation” PRs can unpin SHAs (2026-05-31)
+
+**Pattern:** ESP #966 replaced full commit SHAs with mutable tags (`actions/github-script@v9.0.0`) and `upload-sarif@codeql-bundle-v2.25.5`, causing bandit to fail with “actions must be pinned to a full-length commit SHA.”
+**Rule:** Treat tag-based workflow edits as **merge blockers** in SHA-only repos. Required fixes must pin **every** action reference (including SARIF upload), never downgrade SHA → tag. Close or rewrite the PR before re-triage.
+**Related:** Lesson 0y (nested unpinned actions inside composites).
