@@ -306,8 +306,9 @@
 **Rule:** Before deferring a “workflow pin” PR as complete, read the **failed job log** for nested unpinned actions. Fix by replacing the composite with inline bandit + fully pinned SARIF upload steps, or escalate for a maintained fork — pinning only checkout is insufficient.
 **Detection cost:** Low — one `gh run view --log-failed` on the bandit job.
 
-## Lesson 0dt: Workflow automation must not swap SHA pins for CodeQL bundle tags (2026-05-31)
+## Lesson 0z: “Workflow consolidation” PRs can unpin SHAs (2026-05-31)
 
-**Pattern:** ESP #966 proposed `github/codeql-action/upload-sarif@codeql-bundle-v2.25.5` while other steps used full SHAs. The bandit job failed: “all actions must be pinned to a full-length commit SHA.”
-**Rule:** Repository automation that bumps workflow actions must resolve **commit SHAs** for every `uses:` reference, including CodeQL upload steps — never substitute bundle version tags. Re-run `gh run view --log-failed` on bandit after any workflow-only PR.
+**Pattern:** ESP #966 replaced full commit SHAs with mutable tags (`actions/github-script@v9.0.0`) and `upload-sarif@codeql-bundle-v2.25.5`, causing bandit to fail with “actions must be pinned to a full-length commit SHA.”
+**Rule:** Treat tag-based workflow edits as **merge blockers** in SHA-only repos. Required fixes must pin **every** action reference (including SARIF upload), never downgrade SHA → tag. Close or rewrite the PR before re-triage.
+**Related:** Lesson 0y (nested unpinned actions inside composites).
 **Detection cost:** Low — bandit workflow fails before pytest on workflow-only diffs.
