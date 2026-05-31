@@ -54,7 +54,7 @@ for repo in "${REPOS[@]}"; do
 	fi
 
 	if [ -f "$lessons_file" ]; then
-		lessons_count=$(grep -c "^#" "$lessons_file" 2>/dev/null)
+		lessons_count=$(grep -c "^#" "$lessons_file" 2>/dev/null || true)
 		lessons_count=${lessons_count:-0}
 		echo "  Found tasks/lessons.md: ~$lessons_count rule records / titles."
 	else
