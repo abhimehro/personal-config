@@ -82,8 +82,16 @@ update_repo() {
 	git diff -- "$LOCKFILE"
 
 	git add "$LOCKFILE"
-	git commit -m "chore(deps): update GitHub Actions versions [$(date '+%Y-%m-%d')]"
-	run_timeout "$SECOPS_GH_TIMEOUT" git push origin "$BRANCH"
+	if ! git commit -m "chore(deps): update GitHub Actions versions [$(date '+%Y-%m-%d')]"; then
+		echo "  git commit failed."
+		log "FAIL - $repo git commit failed."
+		return 1
+	fi
+	if ! run_timeout "$SECOPS_GH_TIMEOUT" git push origin "$BRANCH"; then
+		echo "  git push failed/timed out."
+		log "FAIL - $repo git push failed or timed out."
+		return 1
+	fi
 
 	echo "  done."
 	log "SUCCESS - $repo updated action lockfile."
