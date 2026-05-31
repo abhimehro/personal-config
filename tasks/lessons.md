@@ -159,7 +159,7 @@
 **Rule:** When a CI infra failure is a `SyntaxError` at the very first line of a file, treat "the file is a stringified blob" as a top hypothesis. Verify by running `codecs.decode(open(file).read(), 'unicode_escape')` and checking whether the result compiles. **Important:** even when the decode produces valid Python, the _content_ may be a regression — the bot agent may have round-tripped the file through an LLM that lost detail (in this case, ~547 lines of validated zip/tar inspection logic disappeared). The safest fix is **revert to the parent commit**, not re-commit the decoded blob. File a separate clean PR for the perf optimization that was intended.
 **Detection cost:** This single broken file blocked **every** open PR's pytest gate in the entire repo for >2 days because the file is transitively imported by every test that touches `src.modules.alert_system`. Catching this earlier (e.g. a pre-commit hook that runs `python -m py_compile` on all changed `.py` files) would be cheap insurance.
 
-## Lesson 0y: "Cleanup" PRs that truncate append-only journal files are an integrity regression (2026-04-26)
+## Lesson 0de: "Cleanup" PRs that truncate append-only journal files are an integrity regression (2026-04-26)
 
 **Pattern:** Several Bolt/Sentinel automation PRs replaced (rather than appended to) `.jules/bolt.md` / `.jules/sentinel.md` / `.jules/palette.md`. Examples:
 
@@ -167,7 +167,7 @@
 - Several other PRs in this session show similar full-rewrite patterns on these journal files.
   **Rule:** Treat `.jules/*.md`, `CHANGELOG.md`, `.jules/sentinel.md`, and any other append-only journal as **content-protected** during salvage. When salvaging a PR that touches one of these files, take only the new appended entry and merge it on top of `main`'s current journal — never copy the journal version from the PR wholesale. If the salvage tool of choice is `git checkout pr_branch -- file`, do **not** apply that to a journal file; instead, extract the new entry with `diff` or by reading the PR diff and append it programmatically.
 
-## Lesson 0z: Salvageable test contributions need API adaptation, not a wholesale checkout (2026-04-26)
+## Lesson 0dt: Salvageable test contributions need API adaptation, not a wholesale checkout (2026-04-26)
 
 **Pattern:** `personal-config#816` proposed to refactor `run_gh` to take an args list and added `tests/test_vulnerability_fix.py` to lock in the change. By the time we reviewed the PR, the security refactor had already landed on main via `#788`, but with a _different_ `run_gh` signature than #816 assumed. A wholesale `git checkout pr816 -- tests/test_vulnerability_fix.py` produced a test file that asserted `cmd[0] == "gh"` against a list whose first element was `"pr"` — failing because the test was written for a signature that never landed. <!-- pragma: allowlist secret -->
 **Rule:** When salvaging a test from a deferred PR:
@@ -311,3 +311,4 @@
 **Pattern:** ESP #966 replaced full commit SHAs with mutable tags (`actions/github-script@v9.0.0`) and `upload-sarif@codeql-bundle-v2.25.5`, causing bandit to fail with “actions must be pinned to a full-length commit SHA.”
 **Rule:** Treat tag-based workflow edits as **merge blockers** in SHA-only repos. Required fixes must pin **every** action reference (including SARIF upload), never downgrade SHA → tag. Close or rewrite the PR before re-triage.
 **Related:** Lesson 0y (nested unpinned actions inside composites).
+**Detection cost:** Low — bandit workflow fails before pytest on workflow-only diffs.

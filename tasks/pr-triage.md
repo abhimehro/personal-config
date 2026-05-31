@@ -1,39 +1,55 @@
-# PR Triage — 2026-05-31
+# PR Triage — 2026-05-31 (combined)
 
-**Session:** Automated PR review (cron `0 13 * * *`)  
-**Stale threshold:** 30 days (none in-scope exceeded)
+**Preflight:** PASS (6/6) for both sessions  
+**Disposition key:** MERGE · DEFER · CLOSE-SUPERSEDED · ESCALATE · CLOSE-DUPLICATE
 
 ## Duplicate & overlap analysis
 
-| Group | Keep | Close / defer others | Rationale |
+| Group | Keeper | Action on others | Rationale |
 | --- | --- | --- | --- |
-| Bolt scratch perf | **#1100** (merged) | **#1093** (defer, conflicting) | Same `scratch_inventory.py` tuple change; #1093 adds `run_merges.py` (toolchain) |
-| Jules Daily QA | **#1101** (merged) | — | Zero-diff queue hygiene |
+| Bolt scratch perf | **#1100** (Session A merged) | **#1093** merged Session B as **doc-only** | Session A deferred full branch for `run_merges.py`; salvage merged `.jules/bolt.md` only |
+| Jules Daily QA (ESP) | **#968** merged | — | Distinct from Palette #970 |
+| Session doc artifacts | **#1104** (salvage 17:00) | Close **#1096**; **#1102** already on `main` | Same-day `tasks/pr-*` churn |
+| ESP workflow pins | **#966** merged on GitHub | Re-verify `main` workflows | Escalated in Session A; merged externally — confirm SHA policy |
 
-No semantic duplicates across repos. No stale (>30d) in-scope PRs.
+## Session A dispositions (13:00)
 
-## Per-PR disposition
+| Disposition | PRs |
+| --- | --- |
+| **MERGE** | pc #1098, #1097, #1100, #1101; ctrld #860 |
+| **DEFER** | pc #1093, #1096 |
+| **ESCALATE** | esp #966 |
 
-| Repo | PR | Category | Disposition | Gates |
-| --- | ---: | --- | --- | --- |
-| personal-config | 1098 | SECURITY | **MERGE** | G1–G3 pass; CWE-74 fix validated |
-| personal-config | 1097 | UI | **MERGE** | G1–G3 pass; demo-only scope |
-| personal-config | 1100 | PERFORMANCE | **MERGE** | G1–G3 pass; scratch helper only |
-| personal-config | 1101 | CI/INFRA | **MERGE** | Zero-diff; required checks green |
-| ctrld-sync | 860 | CI/INFRA | **MERGE** | Docs-only QA notes |
-| personal-config | 1093 | PERFORMANCE | **DEFER** | G4 trust boundary (`run_merges.py`); conflict after #1100 |
-| personal-config | 1096 | CI/INFRA | **DEFER** | Draft; `tasks/pr-*` toolchain docs |
-| email-security-pipeline | 966 | CI/INFRA | **ESCALATE** | G1 fail (bandit); G2 fail (unpins actions) |
+## Session B dispositions (17:00)
+
+| Disposition | PRs | Executed |
+| --- | --- | --- |
+| **MERGE** | esp #968; pc #1093; ctrld #861 | Squash-merged |
+| **DEFER** | esp #970 | Comment posted |
+| **ESCALATE** | pc #1103 | Comment posted |
+| **CLOSE-SUPERSEDED** | pc #1096 | After #1104 merges |
 
 ## Security notes
 
-- **#1098:** Legitimate injection hardening; no privilege escalation.
-- **#966:** Regresses SHA pinning policy; must not merge until workflows use full commit SHAs throughout (including nested composite actions — Lesson 0y).
+| PR | Tier | Assessment |
+| --- | --- | --- |
+| pc #1098 | Sentinel | AppleScript argv hardening — merged Session A |
+| pc #1103 | Trust boundary | launchd + `ai_engine.sh` — human only |
+| esp #966 | CI/INFRA | Tag/SHA regression — merged on GitHub; verify `main` still compliant (Lesson 0z) |
+| ctrld #861 | Palette UX | Log copy only; benchmark flake (Lesson 0dr) |
 
-## Merge order executed
+## CI anomalies
+
+| PR | Check | Root cause |
+| --- | --- | --- |
+| ctrld #861 | benchmark | Baseline noise (Lesson 0dr); merged anyway |
+| esp #966 | bandit | SHA-only policy; tag pins in workflow consolidation |
+| esp #970 | Cursor Bugbot | Advisory pending |
+
+## Merge order (Session A, executed)
 
 1. Security (#1098)  
 2. UI (#1097)  
 3. Performance scratch (#1100)  
 4. Zero-diff QA (#1101)  
-5. ctrld-sync QA docs (#860)
+5. ctrld QA docs (#860)

@@ -2,11 +2,25 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-31 (review-and-merge 13:00).
+> **Latest execution:** 2026-05-31 (salvage 17:00).
+
+## Run — 2026-05-31 (cron salvage 17:00)
+
+**Report:** `tasks/pr-review-2026-05-31.md` (Session B section)
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 3 |
+| Deferred | 1 |
+| Escalated | 1 |
+| Open tail | 2 |
+
+**Highlights:** Merged esp #968, pc #1093 (Bolt doc), ctrld #861. Deferred esp #970 (Bugbot). Escalated pc #1103 (secops). Artifacts PR #1104.
 
 ## Run — 2026-05-31 (cron review-and-merge 13:00)
 
-**Report:** `tasks/pr-review-2026-05-31.md`
+**Report:** `tasks/pr-review-2026-05-31.md` (Session A section)
 
 | Metric | Count |
 | --- | ---: |
