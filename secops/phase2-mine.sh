@@ -42,9 +42,9 @@ for repo in "${REPOS[@]}"; do
 	todo_file="$tasks_dir/todo.md"
 
 	if [ -f "$todo_file" ]; then
-		open_todos=$(grep -c "^- \[ \]" "$todo_file" 2>/dev/null)
+		open_todos=$(grep -c "^- \[ \]" "$todo_file" 2>/dev/null || true)
 		open_todos=${open_todos:-0}
-		completed_todos=$(grep -c "^- \[x\]" "$todo_file" 2>/dev/null)
+		completed_todos=$(grep -c "^- \[x\]" "$todo_file" 2>/dev/null || true)
 		completed_todos=${completed_todos:-0}
 		echo "  Found tasks/todo.md: $open_todos open, $completed_todos completed tasks."
 		log "INFO - $repo: $open_todos open, $completed_todos completed tasks."
