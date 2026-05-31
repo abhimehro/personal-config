@@ -176,3 +176,6 @@
 ## 2026-05-29 - [GitHub Actions Dependency Pinning]
 **Learning:** CI linters or repository policies may enforce pinning GitHub Actions to full-length commit SHAs instead of tags (e.g., `actions/setup-python@v6.2.0` -> `actions/setup-python@<sha> # v6.2.0`) to prevent supply chain attacks via mutable tags.
 **Action:** Always pin GitHub Actions to full commit SHAs, even for official actions. Use `git ls-remote` to quickly find the commit hash for a specific tag.
+## 2026-05-31 - [Avoid Redundant title.lower() in conditionals]
+**Learning:** Checking a series of hardcoded substrings sequentially against `.lower()` of a string (`"auth" in title.lower() or "payment" in title.lower()`) inside loops creates unnecessary CPU overhead when the keyword doesn't match and the `or` falls through. In Python, doing `title.lower()` redundantly repeatedly inside an `if` block executes the C-level lowercase string allocation `N` times.
+**Action:** When performing `in` checks against multiple strings using an `or` operation, declare a temporary lowercase string variable (`title_lower = title.lower()`) before the `if` block and compare against it directly to halve the overhead.
