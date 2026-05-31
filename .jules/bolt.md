@@ -176,6 +176,6 @@
 ## 2026-05-29 - [GitHub Actions Dependency Pinning]
 **Learning:** CI linters or repository policies may enforce pinning GitHub Actions to full-length commit SHAs instead of tags (e.g., `actions/setup-python@v6.2.0` -> `actions/setup-python@<sha> # v6.2.0`) to prevent supply chain attacks via mutable tags.
 **Action:** Always pin GitHub Actions to full commit SHAs, even for official actions. Use `git ls-remote` to quickly find the commit hash for a specific tag.
-## 2026-05-30 - [Performance Pattern: Avoid intermediate list allocations]
-**Learning:** In Python, passing a list comprehension directly to `str.join()` or declaring constant lists inline in generator loops allocates intermediate lists in memory, creating unnecessary memory and GC overhead. Furthermore, repeated string `.lower()` conversions in loops create redundant C-level string allocations.
-**Action:** When filtering or joining strings, use generator expressions (e.g., `"".join(x for x in y)`) instead of list comprehensions. When checking against constants, use tuples `("a", "b")` instead of lists `["a", "b"]`. Cache expensive operations like `.lower()` outside loops or in short-lived variables.
+## 2026-05-31 - [Avoid Redundant title.lower() in conditionals]
+**Learning:** Checking a series of hardcoded substrings sequentially against `.lower()` of a string (`"auth" in title.lower() or "payment" in title.lower()`) inside loops creates unnecessary CPU overhead when the keyword doesn't match and the `or` falls through. In Python, doing `title.lower()` redundantly repeatedly inside an `if` block executes the C-level lowercase string allocation `N` times.
+**Action:** When performing `in` checks against multiple strings using an `or` operation, declare a temporary lowercase string variable (`title_lower = title.lower()`) before the `if` block and compare against it directly to halve the overhead.
