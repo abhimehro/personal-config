@@ -196,5 +196,16 @@ class TestParseInventory(unittest.TestCase):
         self.assertIsNone(run_gh("repoA", 123))
 
 
+
+    @patch("parse_inventory._load_gh_token_env", return_value={})
+    @patch("parse_inventory.subprocess.run")
+    def test_run_gh_returncode_not_zero(self, mock_run, _mock_env):
+        mock_result = MagicMock()
+        mock_result.returncode = 1
+        mock_result.stdout = '{"files": []}'
+        mock_run.return_value = mock_result
+        self.assertIsNone(run_gh("repoA", 123))
+
+
 if __name__ == '__main__':
     unittest.main()
