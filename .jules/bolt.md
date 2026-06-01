@@ -179,3 +179,7 @@
 ## 2026-05-31 - [Avoid Redundant title.lower() in conditionals]
 **Learning:** Checking a series of hardcoded substrings sequentially against `.lower()` of a string (`"auth" in title.lower() or "payment" in title.lower()`) inside loops creates unnecessary CPU overhead when the keyword doesn't match and the `or` falls through. In Python, doing `title.lower()` redundantly repeatedly inside an `if` block executes the C-level lowercase string allocation `N` times.
 **Action:** When performing `in` checks against multiple strings using an `or` operation, declare a temporary lowercase string variable (`title_lower = title.lower()`) before the `if` block and compare against it directly to halve the overhead.
+
+## 2024-06-01 - Correctly report other errors instead of reporting success
+**Learning:** SSH connection failures (like DNS failures) were being reported as warnings because the default catch-all in the SSH checking logic used `warn` instead of `error`. This led to failures being treated as non-fatal.
+**Action:** Added an explicit check for `Could not resolve hostname` and converted the default catch-all statement from `warn` to `error`.
