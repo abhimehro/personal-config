@@ -1,3 +1,4 @@
+import concurrent.futures
 import json
 import os
 import subprocess
@@ -158,9 +159,8 @@ queue = [
     ),
 ]
 
-results = {"merged": [], "escalated": [], "conflicting": []}
 
-for repo, pr, title in queue:
+def process_pr(repo, pr, title):
     print(f"\nProcessing {repo}#{pr}: {title}")
 
     # Re-check status
@@ -169,13 +169,12 @@ for repo, pr, title in queue:
     )
     if not info:
         print("Failed to get info")
-        continue
+        return "failed", repo, pr, title, None
 
     status = info.get("mergeStateStatus")
     if status in ["DIRTY", "CONFLICTING"]:
         print(f"Status is {status}, moving to conflicting.")
-        results["conflicting"].append((repo, pr, title))
-        continue
+        return "conflicting", repo, pr, title, None
 
     diff = get_diff(repo, pr)
     diff_lower = diff.lower()
@@ -214,8 +213,7 @@ for repo, pr, title in queue:
 
     if escalate:
         print(f"ESCALATING {repo}#{pr}: {', '.join(reasons)}")
-        results["escalated"].append((repo, pr, title, reasons))
-        continue
+        return "escalated", repo, pr, title, reasons
 
     print(f"Gate 2 passed. Merging...")
     env = _load_gh_token_env()
@@ -227,16 +225,25 @@ for repo, pr, title in queue:
     )
     if res.returncode == 0:
         print(f"Successfully merged {repo}#{pr}")
-        results["merged"].append((repo, pr, title))
+        print("Waiting 5 seconds for GitHub to update state...")
+        time.sleep(5)
+        return "merged", repo, pr, title, None
     else:
         print(f"Merge failed: {res.stderr}")
-        results["escalated"].append(
-            (repo, pr, title, ["Merge command failed", res.stderr])
-        )
-        continue
+        return "escalated", repo, pr, title, ["Merge command failed", res.stderr]
 
-    print("Waiting 5 seconds for GitHub to update state...")
-    time.sleep(5)
+results = {"merged": [], "escalated": [], "conflicting": []}
+
+with concurrent.futures.ThreadPoolExecutor() as executor:
+    futures = [executor.submit(process_pr, repo, pr, title) for repo, pr, title in queue]
+    for future in concurrent.futures.as_completed(futures):
+        res_type, repo, pr, title, reasons = future.result()
+        if res_type == "merged":
+            results["merged"].append((repo, pr, title))
+        elif res_type == "conflicting":
+            results["conflicting"].append((repo, pr, title))
+        elif res_type == "escalated":
+            results["escalated"].append((repo, pr, title, reasons))
 
 print("\n--- DONE ---")
 with open("tasks/pr-merge-results.json", "w") as f:
