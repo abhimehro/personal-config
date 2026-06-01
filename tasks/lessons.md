@@ -312,3 +312,9 @@
 **Rule:** Treat tag-based workflow edits as **merge blockers** in SHA-only repos. Required fixes must pin **every** action reference (including SARIF upload), never downgrade SHA → tag. Close or rewrite the PR before re-triage.
 **Related:** Lesson 0y (nested unpinned actions inside composites).
 **Detection cost:** Low — bandit workflow fails before pytest on workflow-only diffs.
+
+## Lesson 0aa: Jules eval-injection storms need keeper-per-file merge (2026-06-01)
+
+**Pattern:** 30+ open personal-config PRs all titled “Bash Eval Injection” touched overlapping paths (`smart_scheduler.sh`, `final-media-server.sh`, `windscribe-connect.sh`). Merging one keeper per unique file set worked; merging multiple siblings on `smart_scheduler` caused CONFLICTING state and `update-branch` 422.
+**Rule:** Inventory by **exact file-set** (`gh pr view --json files`), merge highest-priority keeper per set (SECURITY > TEST > HEALTH), close duplicates immediately, then **close or defer** remaining CONFLICTING siblings on hot files — do not queue-merge the whole storm sequentially without file-set dedup first.
+**Salvage:** Leave one CONFLICTING PR per hot file (e.g. #1139 for `smart_scheduler`) with DEFER comment for rebase onto post-merge `main`.

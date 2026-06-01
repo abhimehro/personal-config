@@ -2,7 +2,22 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-31 (salvage 17:00).
+> **Latest execution:** 2026-06-01 (review-and-merge 13:00).
+
+## Run — 2026-06-01 (cron review-and-merge 13:00)
+
+**Report:** `tasks/pr-review-2026-06-01.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 38 |
+| Closed (dup/super) | 20 |
+| Deferred | 12 |
+| Escalated | 4 |
+| Open EOD | 18 |
+
+**Highlights:** personal-config 37→6 open after eval-injection + health batch. esp Daily QA #1005 + TOCTOU #1004 merged. Seatek CRITICAL #235 merged. Escalated `run_merges.py` PRs #1132/#1125. Tail: CONFLICTING smart_scheduler (#1139), esp #999 CodeScene, Seatek #238 CI.
 
 ## Run — 2026-05-31 (cron salvage 17:00)
 
