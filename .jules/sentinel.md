@@ -264,3 +264,8 @@
 **Vulnerability:** AppleScript Injection ([CWE-74](https://cwe.mitre.org/data/definitions/74.html)) existed in `configs/.config/mole/lib/uninstall/batch.sh` where `osascript` was executing a string containing the user-controlled variable `$clean_name` (derived from `$app_name`). Even though the script attempted to manually escape double quotes (`${clean_name//\"/\\\"}`), this approach is brittle and can be bypassed.
 **Learning:** Using inline string interpolation in AppleScript code executed via `osascript` allows an attacker to inject arbitrary AppleScript commands if they control the variable, even if quotes are escaped.
 **Prevention:** Use `osascript - "$variable"` (or `osascript -e 'on run argv'`) and pass dynamic variables safely as command-line arguments to the `on run argv` handler (e.g. `item 1 of argv`).
+
+## $(date +%Y-%m-%d) - Bash Eval Injection in smart_scheduler.sh
+**Vulnerability:** The script previously expanded `old_int_trap` directly within an `eval` command block, which is dangerous since an attacker could control this string through environment variables or manipulated signal handler states.
+**Learning:** `eval "$string"` is risky but relatively safe if we have strictly controlled the exact string, however `eval "something ${injected}"` forces arbitrary bash expansion of `injected` which may yield multiple un-escaped commands.
+**Prevention:** Rather than using `eval` to interpolate variable state during trap definition, securely interpolate variable contents when defining strings (e.g. `trap '..."'"$int_restore"'"...' INT`), and subsequently use proper conditionals `if [[ -n "$old_int_trap" ]]; then eval "$old_int_trap" ...` rather than blindly trying to evaluate string defaults during restoration.
