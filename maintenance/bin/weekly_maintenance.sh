@@ -31,6 +31,12 @@ if ! mkdir "$LOCK_DIR" 2>/dev/null; then
 			echo "$(date '+%Y-%m-%d %H:%M:%S') [WARNING] Another instance is already running (lock: $LOCK_DIR, age: $((LOCK_AGE / 60)) min)"
 			exit 0
 		fi
+	elif [[ -e $LOCK_DIR ]]; then
+		echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] Failed to acquire lock (path exists but is not a directory): $LOCK_DIR"
+		exit 1
+	else
+		echo "$(date '+%Y-%m-%d %H:%M:%S') [ERROR] Failed to acquire lock (permission denied or other error): $LOCK_DIR"
+		exit 1
 	fi
 fi
 trap 'rm -rf "$LOCK_DIR" 2>/dev/null || true' EXIT INT TERM
