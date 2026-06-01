@@ -199,3 +199,4 @@ abbr -a list-uploads ~/dev/personal-config/media-streaming/scripts/rename-media.
 
 # History Setup
 set -g fish_history_limit 10000
+set -U fish_user_paths $fish_user_paths /Users/speedybee/.local/bin
