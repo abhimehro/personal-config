@@ -94,9 +94,12 @@ if ! mkdir "$LOCK_DIR" 2>/dev/null; then
 			echo "Another instance is already running (age: $((LOCK_AGE / 60)) min)"
 			exit 0
 		fi
-	else
+	elif [[ -e $LOCK_DIR ]]; then
 		# 🛡️ Sentinel: Fix logic flaw where script continued if LOCK_DIR existed but wasn't a directory
-		echo "ERROR: Failed to acquire lock (path exists but is not a directory or permission denied): $LOCK_DIR"
+		echo "ERROR: Failed to acquire lock (path exists but is not a directory): $LOCK_DIR"
+		exit 1
+	else
+		echo "ERROR: Failed to acquire lock (permission denied or other error): $LOCK_DIR"
 		exit 1
 	fi
 fi

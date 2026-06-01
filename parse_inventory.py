@@ -1,7 +1,7 @@
 import json
 import os
 import subprocess
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from functools import lru_cache
 
@@ -216,7 +216,7 @@ def main():
     # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls using map() to significantly speed up categorization
     tasks = [(repo, pr_info) for repo, prs in repos.items() for pr_info in prs]
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         for result in executor.map(_categorize_pr_task, tasks):
             if result:
                 category, pr_str = result

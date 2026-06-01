@@ -181,7 +181,7 @@ HEADER
 | `export PATH="$PATH:dir"` | `fish_add_path --global --append dir` |
 | `export VAR=value` | `set -gx VAR value` |
 | `alias foo='bar'` | `alias foo='bar'` |
-| `eval "$(tool init bash)"` | `tool init fish \| source` |
+| `source <(tool init bash)` | `tool init fish \| source` |
 | `source file` | `source file` |
 | `if [ -f file ]; then` | `if test -f file` |
 

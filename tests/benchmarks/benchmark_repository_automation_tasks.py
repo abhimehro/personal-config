@@ -4,7 +4,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(".github/scripts").resolve()))
 
 import repository_automation_tasks
-import repository_automation_common
 
 def mock_run_shell_command(command, timeout=1800):
     time.sleep(0.1)
