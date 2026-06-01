@@ -28,13 +28,10 @@ spinner_wait() {
 		local iterations=$((duration * 10))
 		local c=0
 
-		[ -t 1 ] && [ -z "${CI-}" ] && tput civis 2>/dev/null || true
+		if [ -t 1 ] && [ -z "${CI-}" ]; then tput civis 2>/dev/null || true; fi
 
-		local old_int_trap old_term_trap
-		old_int_trap=$(trap -p INT)
-		trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; eval "${old_int_trap:-trap - INT}"; kill -INT "$$"' INT
-		old_term_trap=$(trap -p TERM)
-		trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; eval "${old_term_trap:-trap - TERM}"; kill -TERM "$$"' TERM
+		trap 'if [ -t 1 ] && [ -z "${CI-}" ]; then tput cnorm 2>/dev/null || true; fi; printf "\r\033[K"; trap - INT; kill -INT $$' INT
+		trap 'if [ -t 1 ] && [ -z "${CI-}" ]; then tput cnorm 2>/dev/null || true; fi; printf "\r\033[K"; trap - TERM; kill -TERM $$' TERM
 
 		while [[ $c -lt $iterations ]]; do
 			printf "\r   %s [%c]" "$msg" "${sp:i++%${#sp}:1}"
@@ -43,9 +40,8 @@ spinner_wait() {
 		done
 		printf "\r\033[K"
 
-		[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true
-		eval "${old_int_trap:-trap - INT}"
-		eval "${old_term_trap:-trap - TERM}"
+		if [ -t 1 ] && [ -z "${CI-}" ]; then tput cnorm 2>/dev/null || true; fi
+		trap - INT TERM
 	else
 		echo "   $msg (waiting ${duration}s)..."
 		sleep "$duration"
