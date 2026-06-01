@@ -312,4 +312,11 @@
 **Rule:** Treat tag-based workflow edits as **merge blockers** in SHA-only repos. Required fixes must pin **every** action reference (including SARIF upload), never downgrade SHA → tag. Close or rewrite the PR before re-triage.
 **Related:** Lesson 0y (nested unpinned actions inside composites).
 **Detection cost:** Low — bandit workflow fails before pytest on workflow-only diffs.
+
+## Lesson 0cd: Salvage workflow-heavy Bolt PRs with minimal file set (2026-06-01)
+
+**Pattern:** Seatek #237 touched eight workflow YAML files plus `code_health_scanner.py`; rebasing the full branch risked unrelated CI churn.
+**Rule:** When the substantive fix is a single script, salvage **only that file** unless workflow changes are required for the optimization to work. Document omitted paths in the salvage PR body.
+**Detection cost:** Low — inspect `gh pr view --json files` before checkout.
+
 - **Bash Eval Injection in Subshells**: When running traps inside a subshell instead of `eval`, the trap must explicitly use `$BASHPID` instead of `$$` if it wants to signal itself properly, because `$$` refers to the parent process. Also, ensure the subshell's trap explicitly handles signal propagation (e.g. `trap - INT; kill -INT $BASHPID`) so that the subshell terminates correctly, and then the parent script's wait mechanism triggers properly (WCE).
