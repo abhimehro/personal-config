@@ -145,39 +145,34 @@ if __name__ == '__main__':
 
     group_prs(all_prs, triage_md)
 
-    # Process Actions
-    for pr in sorted(all_prs, key=lambda x: (x["repo"], -x["number"])):
+    def _process_pr(pr):
         repo = pr["full_repo"]
         num = pr["number"]
-
         if pr.get("status_action") == "CLOSE":
             print(f"Closing {repo}#{num} (duplicate)")
-            run_cmd(
-                [
-                    "gh",
-                    "pr",
-                    "close",
-                    str(num),
-                    "--repo",
-                    repo,
-                    "--comment",
-                    "Closing as superseded/duplicate of newer PR.",
-                ]
-            )
-            closed.append(pr)
+            run_cmd(["gh", "pr", "close", str(num), "--repo", repo, "--comment", "Closing as superseded/duplicate of newer PR."])
+            return pr, "closed"
         elif pr["mergeStateStatus"] == "CLEAN" or pr["mergeStateStatus"] == "HAS_HOOKS":
             print(f"Merging {repo}#{num}")
-            success, out, err = run_cmd(
-                ["gh", "pr", "merge", str(num), "--repo", repo, "--squash", "--admin"]
-            )
+            success, out, err = run_cmd(["gh", "pr", "merge", str(num), "--repo", repo, "--squash", "--admin"])
             if success:
-                merged.append(pr)
+                return pr, "merged"
             else:
                 print(f"Failed to merge: {err}")
-                escalated.append(pr)
+                return pr, "escalated"
         else:
             print(f"Holding {repo}#{num} ({pr['mergeStateStatus']})")
-            escalated.append(pr)
+            return pr, "escalated"
+
+    # Process Actions
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        for pr, action in executor.map(_process_pr, sorted(all_prs, key=lambda x: (x["repo"], -x["number"]))):
+            if action == "closed":
+                closed.append(pr)
+            elif action == "merged":
+                merged.append(pr)
+            elif action == "escalated":
+                escalated.append(pr)
 
     triage_md.extend(
         [
