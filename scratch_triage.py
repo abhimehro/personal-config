@@ -1,7 +1,6 @@
 import datetime
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 import json
-import re
 import subprocess
 
 repos = [
@@ -127,7 +126,7 @@ def _fetch_repo_prs(repo):
 if __name__ == '__main__':
     all_prs = []
     # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls using map() to significantly speed up PR fetching
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         for repo_prs in executor.map(_fetch_repo_prs, repos):
             all_prs.extend(repo_prs)
 
