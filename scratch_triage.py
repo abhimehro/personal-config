@@ -1,7 +1,6 @@
 import datetime
 import concurrent.futures
 import json
-import re
 import subprocess
 
 repos = [
