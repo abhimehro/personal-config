@@ -1,4 +1,4 @@
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 import subprocess
@@ -79,9 +79,9 @@ def _process_pr_result(res, file_groups):
 
 def _group_prs_by_files(ready_only):
     file_groups = defaultdict(list)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         futures = [executor.submit(fetch_pr_info, pr) for pr in ready_only]
-        for future in concurrent.futures.as_completed(futures):
+        for future in as_completed(futures):
             _process_pr_result(future.result(), file_groups)
     return file_groups
 
