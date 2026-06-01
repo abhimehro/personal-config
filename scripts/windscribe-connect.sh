@@ -39,16 +39,16 @@ spinner_wait() {
 		local c=0
 
 		# Hide cursor gracefully in TTY
-		[ -t 1 ] && [ -z "${CI-}" ] && tput civis 2>/dev/null || true
+		if [ -t 1 ] && [ -z "${CI-}" ]; then tput civis 2>/dev/null || true; fi
 
 		# Save original traps and set temporary ones
 		local old_int_trap
 		old_int_trap=$(trap -p INT)
-		trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; eval "${old_int_trap:-trap - INT}"; kill -INT "$$"' INT
+		trap 'if [ -t 1 ] && [ -z "${CI-}" ]; then tput cnorm 2>/dev/null || true; fi; printf "\r\033[K"; '"${old_int_trap:-trap - INT}"'; kill -INT "$$"' INT
 
 		local old_term_trap
 		old_term_trap=$(trap -p TERM)
-		trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; eval "${old_term_trap:-trap - TERM}"; kill -TERM "$$"' TERM
+		trap 'if [ -t 1 ] && [ -z "${CI-}" ]; then tput cnorm 2>/dev/null || true; fi; printf "\r\033[K"; '"${old_term_trap:-trap - TERM}"'; kill -TERM "$$"' TERM
 
 		while [[ $c -lt $iterations ]]; do
 			printf "\r${BLUE}[%c]${NC} %s..." "${sp:i++%${#sp}:1}" "$msg"
@@ -58,7 +58,7 @@ spinner_wait() {
 		printf "\r\033[K" # Clear line
 
 		# Restore cursor and original traps
-		[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true
+		if [ -t 1 ] && [ -z "${CI-}" ]; then tput cnorm 2>/dev/null || true; fi
 		eval "${old_int_trap:-trap - INT}"
 		eval "${old_term_trap:-trap - TERM}"
 	else
