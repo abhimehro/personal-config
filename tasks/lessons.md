@@ -312,4 +312,7 @@
 **Rule:** Treat tag-based workflow edits as **merge blockers** in SHA-only repos. Required fixes must pin **every** action reference (including SARIF upload), never downgrade SHA → tag. Close or rewrite the PR before re-triage.
 **Related:** Lesson 0y (nested unpinned actions inside composites).
 **Detection cost:** Low — bandit workflow fails before pytest on workflow-only diffs.
-- **Bash Eval Injection in Subshells**: When running traps inside a subshell instead of `eval`, the trap must explicitly use `$BASHPID` instead of `$$` if it wants to signal itself properly, because `$$` refers to the parent process. Also, ensure the subshell's trap explicitly handles signal propagation (e.g. `trap - INT; kill -INT $BASHPID`) so that the subshell terminates correctly, and then the parent script's wait mechanism triggers properly (WCE).
+
+## YYYY-MM-DD - Missing explicit iteration consumption during map
+**Pattern:** Using `executor.map()` in `concurrent.futures.ThreadPoolExecutor` creates a generator that does not execute until it's explicitly consumed or if it naturally evaluates within a construct like `list()`.
+**Action:** When mapping over iterables with thread pools, if you want all underlying exceptions to bubble up securely and loudly (so they don't get swallowed), wrap it as `list(executor.map(func, iter))` or handle futures manually.
