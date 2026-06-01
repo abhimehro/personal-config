@@ -44,11 +44,19 @@ spinner_wait() {
 		# Save original traps and set temporary ones
 		local old_int_trap
 		old_int_trap=$(trap -p INT)
-		trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; eval "${old_int_trap:-trap - INT}"; kill -INT "$$"' INT
+		if [[ -n "$old_int_trap" ]]; then
+			trap "[ -t 1 ] && [ -z \"\${CI-}\" ] && tput cnorm 2>/dev/null || true; printf \"\\r\\033[K\"; eval \"\$old_int_trap\"; kill -INT \$\$" INT
+		else
+			trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - INT; kill -INT "$$"' INT
+		fi
 
 		local old_term_trap
 		old_term_trap=$(trap -p TERM)
-		trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; eval "${old_term_trap:-trap - TERM}"; kill -TERM "$$"' TERM
+		if [[ -n "$old_term_trap" ]]; then
+			trap "[ -t 1 ] && [ -z \"\${CI-}\" ] && tput cnorm 2>/dev/null || true; printf \"\\r\\033[K\"; eval \"\$old_term_trap\"; kill -TERM \$\$" TERM
+		else
+			trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - TERM; kill -TERM "$$"' TERM
+		fi
 
 		local interval=0.5
 		iterations=$(echo "$duration / $interval" | bc -l | cut -d. -f1)
@@ -61,8 +69,17 @@ spinner_wait() {
 
 		# Restore cursor and original traps
 		[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true
-		eval "${old_int_trap:-trap - INT}"
-		eval "${old_term_trap:-trap - TERM}"
+		if [[ -n "$old_int_trap" ]]; then
+			eval "$old_int_trap"
+		else
+			trap - INT
+		fi
+
+		if [[ -n "$old_term_trap" ]]; then
+			eval "$old_term_trap"
+		else
+			trap - TERM
+		fi
 	else
 		# Fallback for non-TTY environments (CI, screen readers)
 		log_info "$msg (waiting ${duration}s)..."
