@@ -161,26 +161,16 @@ queue = [
 
 
 def _check_security(diff_lower, title_lower):
-    escalate = False
-    reasons = []
-
-    if any(k in diff_lower for k in ("eval(", "exec(", "dangerouslysetinnerhtml")):
-        escalate = True
-        reasons.append("Dangerous evaluation function detected.")
-
-    if "pull_request_target" in diff_lower and "checkout" in diff_lower:
-        escalate = True
-        reasons.append("Dangerous GitHub Actions workflow detected.")
-
-    if ".env.example" in diff_lower and "- " in diff_lower:
-        escalate = True
-        reasons.append("Weakened .env.example.")
-
-    if any(k in title_lower for k in ("auth", "payment", "migration", "sql")):
-        escalate = True
-        reasons.append("Touches sensitive domain (auth/payments/db).")
-
-    return escalate, reasons
+    reasons = [
+        msg for cond, msg in [
+            (any(k in diff_lower for k in ("eval(", "exec(", "dangerouslysetinnerhtml")), "Dangerous evaluation function detected."),
+            ("pull_request_target" in diff_lower and "checkout" in diff_lower, "Dangerous GitHub Actions workflow detected."),
+            (".env.example" in diff_lower and "- " in diff_lower, "Weakened .env.example."),
+            (any(k in title_lower for k in ("auth", "payment", "migration", "sql")), "Touches sensitive domain (auth/payments/db)."),
+        ]
+        if cond
+    ]
+    return bool(reasons), reasons
 
 
 def process_pr(repo, pr, title):
