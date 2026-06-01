@@ -113,19 +113,38 @@ def main():
     print(f"Generated inventory for {len(all_prs)} PRs.")
 
 
+def _is_security(l: str) -> bool:
+    if "sentinel" in l or "security" in l or "injection" in l:
+        return True
+    return "cwe" in l or "ssrf" in l or "tls" in l
+
+def _is_performance(l: str) -> bool:
+    return "bolt" in l or "perf" in l or "optimize" in l
+
+def _is_ui(l: str) -> bool:
+    return "palette" in l or "ux" in l or "ui" in l
+
+def _is_ci_infra(l: str) -> bool:
+    if "qa" in l or "test" in l or "ci" in l:
+        return True
+    return "infra" in l or "action" in l
+
+def _is_refactor(l: str) -> bool:
+    return "refactor" in l or "import" in l or "clean" in l
+
 def _categorize_string(l: str) -> str:
     # ⚡ Bolt Optimization: Replace generator expression `any()` with explicit `or` chains
     # to avoid function call and iterator overhead, providing ~3x speedup for substring matching.
-    # Extracted to a helper function to avoid CodeScene "Complex Conditional" advisory rule.
-    if "sentinel" in l or "security" in l or "injection" in l or "cwe" in l or "ssrf" in l or "tls" in l:
+    # Extracted to helper functions to avoid CodeScene "Complex Conditional" advisory rule.
+    if _is_security(l):
         return "SECURITY"
-    if "bolt" in l or "perf" in l or "optimize" in l:
+    if _is_performance(l):
         return "PERFORMANCE"
-    if "palette" in l or "ux" in l or "ui" in l:
+    if _is_ui(l):
         return "UI"
-    if "qa" in l or "test" in l or "ci" in l or "infra" in l or "action" in l:
+    if _is_ci_infra(l):
         return "CI/INFRA"
-    if "refactor" in l or "import" in l or "clean" in l:
+    if _is_refactor(l):
         return "REFACTOR"
     return "FEATURE"
 
