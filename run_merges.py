@@ -1,9 +1,9 @@
+import concurrent.futures
 import json
 import os
 import subprocess
-import time
 import threading
-import concurrent.futures
+import time
 from functools import lru_cache
 
 
@@ -165,10 +165,11 @@ results = {"merged": [], "escalated": [], "conflicting": []}
 
 results_lock = threading.Lock()
 
+
 def _check_security(diff_lower, title_lower):
     reasons = []
 
-    if "eval(" in diff_lower or "exec(" in diff_lower or "dangerouslysetinnerhtml" in diff_lower:
+    if any(k in diff_lower for k in ("eval(", "exec(", "dangerouslysetinnerhtml")):
         reasons.append("Dangerous evaluation function detected.")
 
     if "pull_request_target" in diff_lower and "checkout" in diff_lower:
@@ -177,10 +178,11 @@ def _check_security(diff_lower, title_lower):
     if ".env.example" in diff_lower and "- " in diff_lower:
         reasons.append("Weakened .env.example.")
 
-    if "auth" in title_lower or "payment" in title_lower or "migration" in title_lower or "sql" in title_lower:
+    if any(k in title_lower for k in ("auth", "payment", "migration", "sql")):
         reasons.append("Touches sensitive domain (auth/payments/db).")
 
     return bool(reasons), reasons
+
 
 def process_pr(item):
     repo, pr, title = item
@@ -231,8 +233,8 @@ def process_pr(item):
         print(f"Merge failed: {res.stderr}")
         with results_lock:
             results["escalated"].append(
-            (repo, pr, title, ["Merge command failed", res.stderr])
-        )
+                (repo, pr, title, ["Merge command failed", res.stderr])
+            )
         return
 
     print("Waiting 5 seconds for GitHub to update state...")
