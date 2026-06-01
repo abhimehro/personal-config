@@ -166,36 +166,21 @@ results = {"merged": [], "escalated": [], "conflicting": []}
 results_lock = threading.Lock()
 
 def _check_security(diff_lower, title_lower):
-    escalate = False
     reasons = []
 
-    if (
-        "eval(" in diff_lower
-        or "exec(" in diff_lower
-        or "dangerouslysetinnerhtml" in diff_lower
-    ):
-        escalate = True
+    if "eval(" in diff_lower or "exec(" in diff_lower or "dangerouslysetinnerhtml" in diff_lower:
         reasons.append("Dangerous evaluation function detected.")
+
     if "pull_request_target" in diff_lower and "checkout" in diff_lower:
-        escalate = True
         reasons.append("Dangerous GitHub Actions workflow detected.")
-    if ".gitignore" in diff_lower and "+" in diff_lower and "!" in diff_lower:
-        # Simplistic check for gitignore weakening
-        pass
+
     if ".env.example" in diff_lower and "- " in diff_lower:
-        escalate = True
         reasons.append("Weakened .env.example.")
 
-    if (
-        "auth" in title_lower
-        or "payment" in title_lower
-        or "migration" in title_lower
-        or "sql" in title_lower
-    ):
-        escalate = True
+    if "auth" in title_lower or "payment" in title_lower or "migration" in title_lower or "sql" in title_lower:
         reasons.append("Touches sensitive domain (auth/payments/db).")
 
-    return escalate, reasons
+    return bool(reasons), reasons
 
 def process_pr(item):
     repo, pr, title = item
