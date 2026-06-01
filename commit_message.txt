@@ -1,0 +1,8 @@
+fix(security): eliminate bash eval injection in trap restoration
+
+========== ELIR ==========
+PURPOSE: Removed dynamic evaluation of previous signal traps during the spinner wait cleanup.
+SECURITY: Bash Eval Injection prevention. Restoring previously set traps using `eval "${old_trap:-...}"` allows attackers to execute arbitrary bash commands if they can control the environment string returned by `trap -p`.
+FAILS IF: An attacker manipulates the parent process's environment to inject unescaped commands into the local `old_int_trap` string execution.
+VERIFY: Confirm the `eval` statements have been completely removed from the `spinner_wait` functions in both `performance_optimizer.sh` and `smart_scheduler.sh`.
+MAINTAIN: When modifying signal traps inside a localized function, explicitly tear them down via `trap - INT TERM` instead of capturing and executing string output from `trap -p`.
