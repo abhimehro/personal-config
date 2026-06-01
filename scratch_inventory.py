@@ -2,7 +2,6 @@ import datetime
 import concurrent.futures
 import json
 import subprocess
-from collections import defaultdict
 
 from spreadsheet_safety import escape_spreadsheet_formula
 
