@@ -42,13 +42,14 @@ class TestGenerateReport(unittest.TestCase):
             'merged': [("repo", "1", "title")],
             'escalated': []
         }
-        draft_fixes = []
         closed_data = ["repo#2"]
         escalated_data = ["repo#3 (Error)"]
-        template = "Merged: {merged_count}, Closed: {closed_count}, Escalated: {escalated_count}\n{merged_list}\n{closed_list}\n{escalated_list}"
+
+        # Override the REPORT_TEMPLATE temporarily to avoid testing the full markdown content string
+        generate_report.REPORT_TEMPLATE = "Merged: {merged_count}, Closed: {closed_count}, Escalated: {escalated_count}\n{merged_list}\n{closed_list}\n{escalated_list}"
 
         content = generate_report.generate_report_content(
-            results, draft_fixes, closed_data, escalated_data, template
+            results, closed_data, escalated_data
         )
 
         self.assertIn("Merged: 1, Closed: 1, Escalated: 1", content)

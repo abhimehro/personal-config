@@ -1,5 +1,32 @@
 import json
 
+REPORT_TEMPLATE = """# Automated PR Review Session Report
+
+**Date:** 2026-03-10
+
+## Metrics
+- **Repos processed:** 5 (`personal-config`, `ctrld-sync`, `email-security-pipeline`, `Seatek_Analysis`, `Hydrograph_Versus_Seatek_Sensors_Project`)
+- **PRs reviewed:** 38
+- **PRs merged:** {merged_count}
+- **PRs fixed/merged:** 3 (Draft status resolved)
+- **PRs closed:** {closed_count}
+- **PRs escalated:** {escalated_count}
+
+## Itemized List of Processed PRs
+
+### Merged
+{merged_list}
+
+### Closed (Superseded/Duplicate)
+{closed_list}
+
+### Escalated (Conflicts/Manual Review Required)
+{escalated_list}
+
+## Conclusion
+The automated PR review agent successfully processed the backlog across 5 repositories. Duplicates, superseded PRs, and semantic overlaps were cleanly closed. Security, CI/Infra, and Performance PRs that passed the safety gates were squash-merged successfully. Draft PRs were identified, marked ready, and merged to clear the queue. Two PRs were escalated due to conflicts requiring human resolution.
+"""
+
 def process_draft_fixes(results, draft_fixes):
     new_escalated = []
     for e in results.get('escalated', []):
@@ -18,11 +45,10 @@ def format_lists(merged_data, closed_data, escalated_data):
     escalated_str = "\n".join(f"- [{p}](https://github.com/{p.replace('#', '/pull/')}) - {desc}" for p, _, desc in (pr.partition(" ") for pr in escalated_data))
     return merged_str, closed_str, escalated_str
 
-def generate_report_content(results, draft_fixes, closed_data, escalated_data, template):
-    results = process_draft_fixes(results, draft_fixes)
+def generate_report_content(results, closed_data, escalated_data):
     merged_str, closed_str, escalated_str = format_lists(results['merged'], closed_data, escalated_data)
 
-    return template.format(
+    return REPORT_TEMPLATE.format(
         merged_count=len(results['merged']),
         closed_count=len(closed_data),
         escalated_count=len(escalated_data),
@@ -62,34 +88,8 @@ if __name__ == '__main__':
         "abhimehro/email-security-pipeline#630 (Merge Conflict during pipeline)"
     ]
 
-    report_template = """# Automated PR Review Session Report
-
-**Date:** 2026-03-10
-
-## Metrics
-- **Repos processed:** 5 (`personal-config`, `ctrld-sync`, `email-security-pipeline`, `Seatek_Analysis`, `Hydrograph_Versus_Seatek_Sensors_Project`)
-- **PRs reviewed:** 38
-- **PRs merged:** {merged_count}
-- **PRs fixed/merged:** 3 (Draft status resolved)
-- **PRs closed:** {closed_count}
-- **PRs escalated:** {escalated_count}
-
-## Itemized List of Processed PRs
-
-### Merged
-{merged_list}
-
-### Closed (Superseded/Duplicate)
-{closed_list}
-
-### Escalated (Conflicts/Manual Review Required)
-{escalated_list}
-
-## Conclusion
-The automated PR review agent successfully processed the backlog across 5 repositories. Duplicates, superseded PRs, and semantic overlaps were cleanly closed. Security, CI/Infra, and Performance PRs that passed the safety gates were squash-merged successfully. Draft PRs were identified, marked ready, and merged to clear the queue. Two PRs were escalated due to conflicts requiring human resolution. 
-"""
-
-    report = generate_report_content(results, draft_fixes, closed, escalated, report_template)
+    results = process_draft_fixes(results, draft_fixes)
+    report = generate_report_content(results, closed, escalated)
 
     with open('tasks/pr-review-2026-03-10.md', 'w') as f:
         f.write(report)
