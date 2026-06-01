@@ -1,5 +1,5 @@
-import datetime
 import concurrent.futures
+import datetime
 import json
 import re
 import subprocess
@@ -124,7 +124,50 @@ def _fetch_repo_prs(repo):
             repo_prs.append(pr)
     return repo_prs
 
-if __name__ == '__main__':
+
+def _process_pr(pr):
+    repo = pr["full_repo"]
+    num = pr["number"]
+    if pr.get("status_action") == "CLOSE":
+        print(f"Closing {repo}#{num} (duplicate)")
+        run_cmd(
+            [
+                "gh",
+                "pr",
+                "close",
+                str(num),
+                "--repo",
+                repo,
+                "--comment",
+                "Closing as superseded/duplicate of newer PR.",
+            ]
+        )
+        return pr, "closed"
+    elif pr["mergeStateStatus"] == "CLEAN" or pr["mergeStateStatus"] == "HAS_HOOKS":
+        print(f"Merging {repo}#{num}")
+        success, out, err = run_cmd(
+            [
+                "gh",
+                "pr",
+                "merge",
+                str(num),
+                "--repo",
+                repo,
+                "--squash",
+                "--admin",
+            ]
+        )
+        if success:
+            return pr, "merged"
+        else:
+            print(f"Failed to merge: {err}")
+            return pr, "escalated"
+    else:
+        print(f"Holding {repo}#{num} ({pr['mergeStateStatus']})")
+        return pr, "escalated"
+
+
+if __name__ == "__main__":
     all_prs = []
     # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls using map() to significantly speed up PR fetching
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
@@ -145,28 +188,11 @@ if __name__ == '__main__':
 
     group_prs(all_prs, triage_md)
 
-    def _process_pr(pr):
-        repo = pr["full_repo"]
-        num = pr["number"]
-        if pr.get("status_action") == "CLOSE":
-            print(f"Closing {repo}#{num} (duplicate)")
-            run_cmd(["gh", "pr", "close", str(num), "--repo", repo, "--comment", "Closing as superseded/duplicate of newer PR."])
-            return pr, "closed"
-        elif pr["mergeStateStatus"] == "CLEAN" or pr["mergeStateStatus"] == "HAS_HOOKS":
-            print(f"Merging {repo}#{num}")
-            success, out, err = run_cmd(["gh", "pr", "merge", str(num), "--repo", repo, "--squash", "--admin"])
-            if success:
-                return pr, "merged"
-            else:
-                print(f"Failed to merge: {err}")
-                return pr, "escalated"
-        else:
-            print(f"Holding {repo}#{num} ({pr['mergeStateStatus']})")
-            return pr, "escalated"
-
     # Process Actions
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        for pr, action in executor.map(_process_pr, sorted(all_prs, key=lambda x: (x["repo"], -x["number"]))):
+        for pr, action in executor.map(
+            _process_pr, sorted(all_prs, key=lambda x: (x["repo"], -x["number"]))
+        ):
             if action == "closed":
                 closed.append(pr)
             elif action == "merged":
