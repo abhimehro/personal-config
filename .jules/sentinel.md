@@ -264,3 +264,7 @@
 **Vulnerability:** AppleScript Injection ([CWE-74](https://cwe.mitre.org/data/definitions/74.html)) existed in `configs/.config/mole/lib/uninstall/batch.sh` where `osascript` was executing a string containing the user-controlled variable `$clean_name` (derived from `$app_name`). Even though the script attempted to manually escape double quotes (`${clean_name//\"/\\\"}`), this approach is brittle and can be bypassed.
 **Learning:** Using inline string interpolation in AppleScript code executed via `osascript` allows an attacker to inject arbitrary AppleScript commands if they control the variable, even if quotes are escaped.
 **Prevention:** Use `osascript - "$variable"` (or `osascript -e 'on run argv'`) and pass dynamic variables safely as command-line arguments to the `on run argv` handler (e.g. `item 1 of argv`).
+## 2026-06-01 - Bash Eval Injection in Trap Restoration
+**Vulnerability:** Bash Eval Injection via `eval "${old_int_trap:-trap - INT}"` in UI spinner traps.
+**Learning:** Shell-assigned variable expansions inside `eval` can still introduce command injection if an attacker previously influenced the environment's `trap` commands. It creates unnecessary attack surface.
+**Prevention:** Avoid saving and restoring traps using `eval` when executing local synchronous blocks like UI spinners. Isolate the execution and custom temporary traps inside a subshell `( ... )`, which protects the parent shell's configuration and eliminates the need for `eval`.

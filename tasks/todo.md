@@ -175,3 +175,8 @@ _(Blocked by Section 1: Proceed only after fetching actionable log data)_
 - **Least-Privilege Authorization:** The `release-drafter.yml` workflow will be explicitly constrained to `permissions: { contents: write }` (no pull-request write vectors).
 - **Assumptions:** The `run-pr-review-session.sh` enforces hard boundaries. No autonomous merges of code failing _Security Gate 2_ (as defined in `docs/automated-pr-review-agent.md`) will be permitted. _Zero-diff / superseded_ heuristic rules (also defined in `docs/automated-pr-review-agent.md`) will govern closure rationale.
 
+- [x] Reproduce the eval injection vulnerability locally.
+- [x] Root-cause the issue in `performance_optimizer.sh` and `smart_scheduler.sh`.
+- [x] Implement subshell isolation to remove the insecure `eval` usages entirely.
+- [x] Write/confirm unit tests pass to prevent regressions.
+- [x] Review: Subshell effectively mitigates trap vulnerability.
