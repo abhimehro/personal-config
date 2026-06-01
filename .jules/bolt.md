@@ -179,3 +179,7 @@
 ## 2026-05-31 - [Avoid Redundant title.lower() in conditionals]
 **Learning:** Checking a series of hardcoded substrings sequentially against `.lower()` of a string (`"auth" in title.lower() or "payment" in title.lower()`) inside loops creates unnecessary CPU overhead when the keyword doesn't match and the `or` falls through. In Python, doing `title.lower()` redundantly repeatedly inside an `if` block executes the C-level lowercase string allocation `N` times.
 **Action:** When performing `in` checks against multiple strings using an `or` operation, declare a temporary lowercase string variable (`title_lower = title.lower()`) before the `if` block and compare against it directly to halve the overhead.
+
+## 2026-05-24 - [Avoid generator any() for substring matching]
+**Learning:** Using `any(k in s for k in items)` utilizes a Python generator expression which introduces significant function call overhead per iteration. Profiling shows that explicit `or` chains (`"a" in s or "b" in s`) execute significantly faster as they remain entirely at the C-level inside the interpreter.
+**Action:** When performing substring matching against a small, known set of keywords, prefer chained `or` operators over generator expressions wrapped in `any()` to avoid iterator allocation and function call overhead.
