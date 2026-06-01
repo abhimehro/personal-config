@@ -60,9 +60,11 @@ for host in "${hosts[@]}"; do
 				error "  SSH: Connection refused (SSH service not running)"
 			elif echo "$result" | grep -q "Connection timed out"; then
 				error "  SSH: Connection timed out"
+			elif echo "$result" | grep -q "Could not resolve hostname"; then
+				error "  SSH: Could not resolve hostname (DNS failure)"
 			else
 				# ⚡ Bolt Fix: correctly report other errors (e.g. DNS failure) instead of reporting success
-				warn "  SSH: $result"
+				error "  SSH: $result"
 			fi
 		fi
 	else
