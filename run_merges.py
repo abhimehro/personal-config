@@ -164,6 +164,39 @@ results = {"merged": [], "escalated": [], "conflicting": []}
 
 
 results_lock = threading.Lock()
+
+def _check_security(diff_lower, title_lower):
+    escalate = False
+    reasons = []
+
+    if (
+        "eval(" in diff_lower
+        or "exec(" in diff_lower
+        or "dangerouslysetinnerhtml" in diff_lower
+    ):
+        escalate = True
+        reasons.append("Dangerous evaluation function detected.")
+    if "pull_request_target" in diff_lower and "checkout" in diff_lower:
+        escalate = True
+        reasons.append("Dangerous GitHub Actions workflow detected.")
+    if ".gitignore" in diff_lower and "+" in diff_lower and "!" in diff_lower:
+        # Simplistic check for gitignore weakening
+        pass
+    if ".env.example" in diff_lower and "- " in diff_lower:
+        escalate = True
+        reasons.append("Weakened .env.example.")
+
+    if (
+        "auth" in title_lower
+        or "payment" in title_lower
+        or "migration" in title_lower
+        or "sql" in title_lower
+    ):
+        escalate = True
+        reasons.append("Touches sensitive domain (auth/payments/db).")
+
+    return escalate, reasons
+
 def process_pr(item):
     repo, pr, title = item
     print(f"\nProcessing {repo}#{pr}: {title}")
@@ -187,36 +220,9 @@ def process_pr(item):
     diff_lower = diff.lower()
 
     # Gate 2: Security check
-    escalate = False
-    reasons = []
-
-    if (
-        "eval(" in diff_lower
-        or "exec(" in diff_lower
-        or "dangerouslysetinnerhtml" in diff_lower
-    ):
-        escalate = True
-        reasons.append("Dangerous evaluation function detected.")
-    if "pull_request_target" in diff_lower and "checkout" in diff_lower:
-        escalate = True
-        reasons.append("Dangerous GitHub Actions workflow detected.")
-    if ".gitignore" in diff_lower and "+" in diff_lower and "!" in diff_lower:
-        # Simplistic check for gitignore weakening
-        pass
-    if ".env.example" in diff_lower and "- " in diff_lower:
-        escalate = True
-        reasons.append("Weakened .env.example.")
-
     # ⚡ Bolt Optimization: Cache title.lower() to prevent redundant C-level string allocations during multiple sequential "in" checks
     title_lower = title.lower()
-    if (
-        "auth" in title_lower
-        or "payment" in title_lower
-        or "migration" in title_lower
-        or "sql" in title_lower
-    ):
-        escalate = True
-        reasons.append("Touches sensitive domain (auth/payments/db).")
+    escalate, reasons = _check_security(diff_lower, title_lower)
 
     if escalate:
         print(f"ESCALATING {repo}#{pr}: {', '.join(reasons)}")
