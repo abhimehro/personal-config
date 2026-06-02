@@ -319,4 +319,16 @@
 **Rule:** When the substantive fix is a single script, salvage **only that file** unless workflow changes are required for the optimization to work. Document omitted paths in the salvage PR body.
 **Detection cost:** Low — inspect `gh pr view --json files` before checkout.
 
+## Lesson 0ce: v3 salvage suffix after same-day merge burst (2026-06-02)
+
+**Pattern:** personal-config #1145 and #1146 went DIRTY within 24h of opening because #1147 merged and #1150/#1152 landed on `main`. Rebuilding with `-v2` branches that tracked stale `FETCH_HEAD` produced empty commits.
+**Rule:** After any merge burst, fetch the **named salvage head ref** (`cursor-agent/salvage-*`) explicitly, diff against fresh `origin/main`, and push `-v3` (or higher). Close the stale draft with a cross-link before opening the replacement.
+**Detection cost:** Low — `mergeStateStatus: DIRTY` on salvage drafts opened before the burst completes.
+
+## Lesson 0cf: Batch ESP test salvages succeed with single intent file (2026-06-02)
+
+**Pattern:** ESP #972–#996 each conflicted with 9–15 files mixing tests, journals, and unrelated module edits. Checking out whole branches failed on `main`.
+**Rule:** For Jules test PRs, salvage **one test file or one src module** per draft PR. Run `pytest --collect-only` on that file before push. Close the multi-file original with "intent-files-only v2" comment.
+**Detection cost:** Low — `gh pr diff --name-only` file count ≫ 3 on a test-category PR.
+
 - **Bash Eval Injection in Subshells**: When running traps inside a subshell instead of `eval`, the trap must explicitly use `$BASHPID` instead of `$$` if it wants to signal itself properly, because `$$` refers to the parent process. Also, ensure the subshell's trap explicitly handles signal propagation (e.g. `trap - INT; kill -INT $BASHPID`) so that the subshell terminates correctly, and then the parent script's wait mechanism triggers properly (WCE).
