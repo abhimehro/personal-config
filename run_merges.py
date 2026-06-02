@@ -1,6 +1,8 @@
+import concurrent.futures
 import json
 import os
 import subprocess
+import threading
 import time
 from functools import lru_cache
 
@@ -160,7 +162,30 @@ queue = [
 
 results = {"merged": [], "escalated": [], "conflicting": []}
 
-for repo, pr, title in queue:
+
+results_lock = threading.Lock()
+
+
+def _check_security(diff_lower, title_lower):
+    reasons = []
+
+    if any(k in diff_lower for k in ("eval(", "exec(", "dangerouslysetinnerhtml")):
+        reasons.append("Dangerous evaluation function detected.")
+
+    if "pull_request_target" in diff_lower and "checkout" in diff_lower:
+        reasons.append("Dangerous GitHub Actions workflow detected.")
+
+    if ".env.example" in diff_lower and "- " in diff_lower:
+        reasons.append("Weakened .env.example.")
+
+    if any(k in title_lower for k in ("auth", "payment", "migration", "sql")):
+        reasons.append("Touches sensitive domain (auth/payments/db).")
+
+    return bool(reasons), reasons
+
+
+def process_pr(item):
+    repo, pr, title = item
     print(f"\nProcessing {repo}#{pr}: {title}")
 
     # Re-check status
@@ -169,53 +194,28 @@ for repo, pr, title in queue:
     )
     if not info:
         print("Failed to get info")
-        continue
+        return
 
     status = info.get("mergeStateStatus")
     if status in ["DIRTY", "CONFLICTING"]:
         print(f"Status is {status}, moving to conflicting.")
-        results["conflicting"].append((repo, pr, title))
-        continue
+        with results_lock:
+            results["conflicting"].append((repo, pr, title))
+        return
 
     diff = get_diff(repo, pr)
     diff_lower = diff.lower()
 
     # Gate 2: Security check
-    escalate = False
-    reasons = []
-
-    if (
-        "eval(" in diff_lower
-        or "exec(" in diff_lower
-        or "dangerouslysetinnerhtml" in diff_lower
-    ):
-        escalate = True
-        reasons.append("Dangerous evaluation function detected.")
-    if "pull_request_target" in diff_lower and "checkout" in diff_lower:
-        escalate = True
-        reasons.append("Dangerous GitHub Actions workflow detected.")
-    if ".gitignore" in diff_lower and "+" in diff_lower and "!" in diff_lower:
-        # Simplistic check for gitignore weakening
-        pass
-    if ".env.example" in diff_lower and "- " in diff_lower:
-        escalate = True
-        reasons.append("Weakened .env.example.")
-
     # ⚡ Bolt Optimization: Cache title.lower() to prevent redundant C-level string allocations during multiple sequential "in" checks
     title_lower = title.lower()
-    if (
-        "auth" in title_lower
-        or "payment" in title_lower
-        or "migration" in title_lower
-        or "sql" in title_lower
-    ):
-        escalate = True
-        reasons.append("Touches sensitive domain (auth/payments/db).")
+    escalate, reasons = _check_security(diff_lower, title_lower)
 
     if escalate:
         print(f"ESCALATING {repo}#{pr}: {', '.join(reasons)}")
-        results["escalated"].append((repo, pr, title, reasons))
-        continue
+        with results_lock:
+            results["escalated"].append((repo, pr, title, reasons))
+        return
 
     print(f"Gate 2 passed. Merging...")
     env = _load_gh_token_env()
@@ -227,16 +227,22 @@ for repo, pr, title in queue:
     )
     if res.returncode == 0:
         print(f"Successfully merged {repo}#{pr}")
-        results["merged"].append((repo, pr, title))
+        with results_lock:
+            results["merged"].append((repo, pr, title))
     else:
         print(f"Merge failed: {res.stderr}")
-        results["escalated"].append(
-            (repo, pr, title, ["Merge command failed", res.stderr])
-        )
-        continue
+        with results_lock:
+            results["escalated"].append(
+                (repo, pr, title, ["Merge command failed", res.stderr])
+            )
+        return
 
     print("Waiting 5 seconds for GitHub to update state...")
     time.sleep(5)
+
+
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    list(executor.map(process_pr, queue))
 
 print("\n--- DONE ---")
 with open("tasks/pr-merge-results.json", "w") as f:
