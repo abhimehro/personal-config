@@ -200,6 +200,18 @@ abbr -a list-downloads "$NM_ROOT/media-streaming/scripts/approve-downloads.sh --
 abbr -a approve-uploads "$NM_ROOT/media-streaming/scripts/rename-media.sh --approve-ready"
 abbr -a list-uploads "$NM_ROOT/media-streaming/scripts/rename-media.sh --list-pending"
 
+# Media Pipeline Scripts
+abbr -a sync-alldebrid "$NM_ROOT/media-streaming/scripts/sync-alldebrid.sh"
+abbr -a sync-alldebrid-dry "$NM_ROOT/media-streaming/scripts/sync-alldebrid.sh --dry-run"
+alias mount-media "$NM_ROOT/media-streaming/scripts/mount-media.sh"
+alias media-server "$NM_ROOT/media-streaming/scripts/media-server-daemon.sh"
+abbr -a rotate-webdav "$NM_ROOT/media-streaming/scripts/rotate-media-webdav.sh"
+alias final-media "$NM_ROOT/media-streaming/scripts/final-media-server.sh"
+
+# Media Setup Scripts
+alias setup-gdrive "$NM_ROOT/media-streaming/scripts/setup-gdrive.sh"
+alias setup-media "$NM_ROOT/media-streaming/scripts/setup-media-library.sh"
+
 # History Setup
 set -g fish_history_limit 10000
 set -U fish_user_paths $fish_user_paths /Users/speedybee/.local/bin
