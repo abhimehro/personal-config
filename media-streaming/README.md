@@ -1,7 +1,7 @@
 # 🎬 Ultimate Autonomous Media Streaming Pipeline
 
-> **Status**: ✅ **FULLY OPTIMIZED** - Updated May 2026
-> **Architecture**: Hybrid WebDAV + NFS + Native macOS Mount
+> **Status**: ✅ **FULLY OPTIMIZED** - Updated June 2026
+> **Architecture**: Hybrid WebDAV + Native macOS FSKit Mount
 > **Performance**: 10GB Bounded VFS Cache (Zero-Memory Bloat)
 
 This setup provides a high-performance, autonomous media pipeline that bridges cloud storage (Google Drive + OneDrive) to Plex and Infuse without consuming excessive local disk or memory.
@@ -18,15 +18,14 @@ This setup provides a high-performance, autonomous media pipeline that bridges c
     - **Agent**: `com.speedybee.media.renamer` (Watchdog)
     - **Action**: Safely processes files from `staging` (Permute output) into `processed` once finished, then uses FileBot to rename and handle duplicate conflicts against the live mount, queuing them in `upload_stage`.
 
-3.  **📡 Serve (Dual-Protocol Daemons)**
+3.  **📡 Serve (WebDAV Daemon)**
     - **WebDAV**: `media-server-daemon.sh` serves on port **8080** for **Infuse** (iOS/tvOS).
-    - **NFS**: `media-nfs-daemon.sh` serves on port **12049** specifically for **Plex** (macOS).
-    - **VFS Cache**: Each daemon has a dedicated 10GB bounded cache (separate cache dirs prevent cross-daemon interference).
+    - **VFS Cache**: Dedicated 10GB bounded cache folder.
 
-4.  **🔌 Mount (Native macOS Filesystem)**
+4.  **🔌 Mount (Native macOS FSKit Filesystem)**
     - **Script**: `mount-media.sh`
-    - **Agent**: `com.speedybee.media.mount` (Watchdog)
-    - **Action**: Mounts the NFS share to `~/CloudMedia/mounted/`. Plex scans this local path directly.
+    - **Agent**: `com.speedybee.media.mount` (KeepAlive Daemon)
+    - **Action**: Mounts the remote using `rclone mount` directly to `~/CloudMedia/mounted/` via macOS's native kernel-free FSKit API. This completely bypasses the legacy NFS loopback protocol, avoiding hangs and local loopback server dependencies. Plex scans this local path directly.
 
 ## 📁 **Library Structure**
 
@@ -36,7 +35,7 @@ This setup provides a high-performance, autonomous media pipeline that bridges c
 ├── staging/           # Raw output from Permute (monitored for completion)
 ├── processed/         # Finished Permute files ready for FileBot
 ├── upload_stage/      # Files successfully renamed and queued for upload
-└── mounted/           # THE SOURCE OF TRUTH (NFS Mount)
+└── mounted/           # THE SOURCE OF TRUTH (Direct FSKit Mount)
     ├── Movies/
     └── TV Shows/
 ```
@@ -47,15 +46,14 @@ Use these shortcuts in your terminal (Fish shell required):
 
 | Shortcut | Description |
 | :--- | :--- |
-| `media-status` | Check if all 4 media agents are running (server, nfs, mount, renamer) |
-| `media-logs` | Stream logs for server, nfs, and mount |
-| `media-restart` | Full restart of the media infrastructure (server, nfs, mount, renamer) |
+| `media-status` | Check if all 3 media agents are running (server, mount, renamer) |
+| `media-logs` | Stream logs for server and mount |
+| `media-restart` | Full restart of the media infrastructure (server, mount, renamer) |
 | `list-uploads` | Show files pending approval |
 | `approve-uploads` | Process and upload pending files |
 
 ## 🛠️ **Troubleshooting & Logs**
 
-- **NFS Server**: `tail -f ~/Library/Logs/media-nfs-server.log`
 - **WebDAV Server**: `tail -f ~/Library/Logs/media-server.log`
 - **Mount Status**: `tail -f ~/Library/Logs/media-mount.log`
 - **Sync History**: `tail -f ~/Library/Logs/alldebrid-sync.log`
@@ -64,7 +62,6 @@ Use these shortcuts in your terminal (Fish shell required):
 
 - **WebDAV** is password-protected via 1Password (Item: `MediaServer`).
 - **Password rotation**: `./scripts/rotate-media-webdav.sh` (see `docs/CREDENTIAL_ROTATION.md`).
-- **NFS** is bound to `localhost` and is **not** password protected; do **not** forward port 12049 to the internet.
 - **Port Forwarding**: Only forward **8080** (WebDAV) and **32400** (Plex) via Windscribe for remote access.
 
 ---

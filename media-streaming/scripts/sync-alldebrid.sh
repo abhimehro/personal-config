@@ -94,7 +94,7 @@ log "Dry run: $DRY_RUN"
 
 # Check for existing pending approvals (ignore hidden files like .DS_Store or .downloading)
 # Use null-delimited output to handle filenames with newlines
-pending_files=$(find "$APPROVAL_DIR" -maxdepth 1 -type f ! -name ".*" -print0 | grep -cz .)
+pending_files=$(find "$APPROVAL_DIR" -maxdepth 1 -type f ! -name ".*" -print0 | grep -cz . || true)
 if ((pending_files > 0)); then
 	log "⏸️  A video is waiting for approval in $APPROVAL_DIR. Skipping download."
 	exit 0
