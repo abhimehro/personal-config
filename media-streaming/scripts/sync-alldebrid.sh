@@ -11,11 +11,13 @@
 #
 set -euo pipefail
 
-# Set PATH to include Homebrew/local binaries for launchd compatibility
-export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+# Set PATH for launchd compatibility. Prefer the official rclone binary in
+# /usr/local/bin because the Homebrew build does not support macOS mounts.
+export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
 
 # Log file location
 LOG_FILE="${HOME}/Library/Logs/alldebrid-sync.log"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # === Configuration ===
 ALLDEBRID_REMOTE="alldebrid:links"
@@ -23,11 +25,18 @@ DOWNLOAD_DIR="$HOME/CloudMedia/downloads"
 APPROVAL_DIR="$HOME/CloudMedia/approval_needed"
 
 # Alldebrid-optimized rclone flags
-RCLONE_FLAGS="--multi-thread-streams=4 --buffer-size=32M"
+# Keep these as an array. Passing them as one quoted string makes rclone treat
+# the whole value as a positional argument, which caused scans to silently
+# return no files when stderr was redirected.
+RCLONE_FLAGS=(--multi-thread-streams=4 --buffer-size=32M)
 
 DRY_RUN=false
 LOCK_FILE="$HOME/.media_upload.lock"
 MIN_SPACE_GB=20
+MAX_APPROVAL_FILES=1
+MAX_DOWNLOADING_FILES=1
+REQUIRE_WINDSCRIBE=true
+VPN_INTERFACE_PREFIX="utun"
 TEMP_DOWNLOAD_DIR="${APPROVAL_DIR}/.downloading"
 
 for arg in "$@"; do
@@ -84,6 +93,41 @@ check_disk_space() {
 	fi
 }
 
+count_visible_files() {
+	local dir="$1"
+	find "$dir" -maxdepth 1 -type f ! -name ".*" -print0 | grep -cz . || true
+}
+
+check_vpn() {
+	if [[ $REQUIRE_WINDSCRIBE != "true" ]]; then
+		return 0
+	fi
+
+	if pgrep -ix "Windscribe" >/dev/null 2>&1 && ifconfig | grep -q "^${VPN_INTERFACE_PREFIX}"; then
+		return 0
+	fi
+
+	log "⏸️  Windscribe/VPN guard is not satisfied. Refusing to download."
+	notify "Alldebrid Download Paused" "Windscribe/VPN does not appear connected"
+	exit 0
+}
+
+check_containment() {
+	local approval_count downloading_count
+	approval_count=$(count_visible_files "$APPROVAL_DIR")
+	downloading_count=$(count_visible_files "$TEMP_DOWNLOAD_DIR")
+
+	if ((approval_count >= MAX_APPROVAL_FILES)); then
+		log "⏸️  Approval gate active: $approval_count file(s) already waiting in $APPROVAL_DIR."
+		exit 0
+	fi
+
+	if ((downloading_count >= MAX_DOWNLOADING_FILES)); then
+		log "⏸️  Download gate active: $downloading_count file(s) already in $TEMP_DOWNLOAD_DIR."
+		exit 0
+	fi
+}
+
 # === Main ===
 mkdir -p "$DOWNLOAD_DIR" "$APPROVAL_DIR" "$TEMP_DOWNLOAD_DIR" "$(dirname "$LOG_FILE")"
 
@@ -92,13 +136,10 @@ log "Source: $ALLDEBRID_REMOTE"
 log "Destination: $APPROVAL_DIR (Approval Folder)"
 log "Dry run: $DRY_RUN"
 
-# Check for existing pending approvals (ignore hidden files like .DS_Store or .downloading)
-# Use null-delimited output to handle filenames with newlines
-pending_files=$(find "$APPROVAL_DIR" -maxdepth 1 -type f ! -name ".*" -print0 | grep -cz . || true)
-if ((pending_files > 0)); then
-	log "⏸️  A video is waiting for approval in $APPROVAL_DIR. Skipping download."
-	exit 0
-fi
+# Hard safety gates. These prevent runaway downloads from a large Alldebrid backlog.
+check_vpn
+check_disk_space
+check_containment
 
 # Check if alldebrid remote exists
 if ! rclone listremotes | grep -q "^alldebrid:$"; then
@@ -108,7 +149,7 @@ fi
 
 # List files
 log "Scanning Alldebrid for video files..."
-files_list=$(rclone lsf "$ALLDEBRID_REMOTE" "$RCLONE_FLAGS" --files-only 2>/dev/null | grep -iE '\.(mp4|mkv|avi|m4v|mov)$' || true)
+files_list=$(rclone lsf "$ALLDEBRID_REMOTE" --files-only "${RCLONE_FLAGS[@]}" 2>/dev/null | grep -iE '\.(mp4|mkv|avi|m4v|mov)$' || true)
 
 # Filter out historically failed deletions to prevent infinite loops
 IGNORE_FILE="$APPROVAL_DIR/.alldebrid_ignore"
@@ -131,8 +172,14 @@ if [[ $DRY_RUN == "true" ]]; then
 	exit 0
 fi
 
-# Fetch ONLY the first file
-file=$(printf "%s\n" "$files_list" | sort | head -n 1)
+# Fetch ONLY the best conservative candidate for this sync run.
+selection_log=$(mktemp)
+trap 'rm -f "$selection_log"' EXIT
+file=$(printf "%s\n" "$files_list" | APPROVAL_DIR="$APPROVAL_DIR" python3 "$SCRIPT_DIR/select-best-alldebrid-candidate.py" 2>"$selection_log")
+while IFS= read -r line; do
+	log "$line"
+done <"$selection_log"
+rm -f "$selection_log"
 
 if [[ -z $file ]]; then
 	log "ERROR: Parsed file name is empty. Skipping."
@@ -147,8 +194,10 @@ fi
 log "----------------------------------------"
 log "Downloading: $file"
 
-# Check constraints
+# Re-check constraints immediately before transferring bytes.
+check_vpn
 check_disk_space
+check_containment
 
 while check_lock; do
 	sleep 60
@@ -158,7 +207,7 @@ done
 # 1. Download to .downloading/filename
 # 2. Move to approval_needed/filename
 
-rclone copy "$ALLDEBRID_REMOTE/$file" "$TEMP_DOWNLOAD_DIR/" "$RCLONE_FLAGS" --progress 2>&1 | tee -a "$LOG_FILE"
+rclone copy "$ALLDEBRID_REMOTE/$file" "$TEMP_DOWNLOAD_DIR/" "${RCLONE_FLAGS[@]}" --progress 2>&1 | tee -a "$LOG_FILE"
 if [[ ${PIPESTATUS[0]} -eq 0 ]]; then
 	log "✓ Downloaded to temp: $file"
 
@@ -168,13 +217,25 @@ if [[ ${PIPESTATUS[0]} -eq 0 ]]; then
 		if mv "$TEMP_DOWNLOAD_DIR/$file" "$APPROVAL_DIR/"; then
 			log "➜ Moved to Approval Folder: $file"
 
-			# Delete from Alldebrid to prevent re-downloads and clear the queue
-			log "🗑️  Deleting from Alldebrid remote to prevent duplicates..."
-			if ! rclone deletefile "$ALLDEBRID_REMOTE/$file" --retries 3; then
-				log "⚠️ Failed to delete from remote! Logging to ignore list to prevent loops."
-				echo "$file" >>"$IGNORE_FILE"
-				tail -n 100 "$IGNORE_FILE" >"$IGNORE_FILE.tmp" && mv "$IGNORE_FILE.tmp" "$IGNORE_FILE"
+			# Persist the selected canonical identity only after the file safely lands
+			# in approval_needed. This avoids marking failed downloads as processed.
+			PENDING_SELECTION="$APPROVAL_DIR/.alldebrid_candidate_pending.tsv"
+			SELECTED_LEDGER="$APPROVAL_DIR/.alldebrid_selected.tsv"
+			if [[ -s $PENDING_SELECTION ]]; then
+				if [[ ! -s $SELECTED_LEDGER ]]; then
+					head -n 1 "$PENDING_SELECTION" >"$SELECTED_LEDGER"
+				fi
+				if tail -n +2 "$PENDING_SELECTION" >>"$SELECTED_LEDGER"; then
+					rm -f "$PENDING_SELECTION"
+					log "✓ Persisted selected identity to ledger: $SELECTED_LEDGER"
+				else
+					log "✗ ERROR: Failed to append to ledger $SELECTED_LEDGER. PENDING_SELECTION preserved."
+				fi
 			fi
+
+			# Do not delete from Alldebrid automatically. The local ledger prevents
+			# repeat processing while keeping the remote library non-destructive.
+			log "ℹ️  Remote file preserved in Alldebrid; local ledger prevents duplicate processing."
 
 			notify "Video Needs Approval" "Review $file in CloudMedia/approval_needed"
 		else

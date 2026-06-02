@@ -194,8 +194,11 @@ abbr -a nmr  nm-regress
 abbr -a nmcs nm-cd-status
 
 # Media Workflow
-abbr -a approve-uploads ~/dev/personal-config/media-streaming/scripts/rename-media.sh --approve-ready
-abbr -a list-uploads ~/dev/personal-config/media-streaming/scripts/rename-media.sh --list-pending
+alias rename-media.sh "$NM_ROOT/media-streaming/scripts/rename-media.sh"
+alias approve-downloads "$NM_ROOT/media-streaming/scripts/approve-downloads.sh"
+abbr -a list-downloads "$NM_ROOT/media-streaming/scripts/approve-downloads.sh --list"
+abbr -a approve-uploads "$NM_ROOT/media-streaming/scripts/rename-media.sh --approve-ready"
+abbr -a list-uploads "$NM_ROOT/media-streaming/scripts/rename-media.sh --list-pending"
 
 # History Setup
 set -g fish_history_limit 10000
