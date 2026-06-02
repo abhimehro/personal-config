@@ -216,15 +216,17 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
 
         html_parts = [f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Media Library - {safe_path}</title>
             <style>
-                body {{ font-family: Arial, sans-serif; margin: 40px; }}
+                body {{ font-family: Arial, sans-serif; margin: 5%; }}
                 .file {{ display: block; padding: 10px; text-decoration: none; color: #333; }}
-                .file:hover {{ background: #f0f0f0; }}
+                .file:hover, .file:focus-visible {{ background: #f0f0f0; outline: 2px solid #0066cc; outline-offset: -2px; }}
                 .directory {{ font-weight: bold; color: #0066cc; }}
-                .video {{ color: #ff6600; }}
+                .video {{ color: #c04c00; }}
             </style>
         </head>
         <body>
