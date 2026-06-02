@@ -59,8 +59,8 @@ spinner_wait() {
 
 		# Restore cursor and original traps
 		if [ -t 1 ] && [ -z "${CI-}" ]; then tput cnorm 2>/dev/null || true; fi
-		eval "${old_int_trap:-trap - INT}"
-		eval "${old_term_trap:-trap - TERM}"
+		if [ -n "${old_int_trap-}" ]; then eval "$old_int_trap"; else trap - INT; fi
+		if [ -n "${old_term_trap-}" ]; then eval "$old_term_trap"; else trap - TERM; fi
 	else
 		# Fallback for non-TTY environments (CI, screen readers)
 		log "$msg (waiting ${duration}s)..."
