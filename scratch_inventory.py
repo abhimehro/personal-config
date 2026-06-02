@@ -115,21 +115,21 @@ def main():
 def get_category(title, branch):
     l = (title + branch).lower()
 
-    # ⚡ Bolt Optimization: Use tuples instead of lists for constant membership checks to avoid dynamic allocation overhead
-    if any(k in l for k in ("sentinel", "security", "injection", "cwe", "ssrf", "tls")):
-        return "SECURITY"
+    # ⚡ Bolt Optimization: Use explicit for loops instead of any() with generator expressions to avoid iterator allocation overhead
+    for k in ("sentinel", "security", "injection", "cwe", "ssrf", "tls"):
+        if k in l: return "SECURITY"
 
-    if any(k in l for k in ("bolt", "perf", "optimize")):
-        return "PERFORMANCE"
+    for k in ("bolt", "perf", "optimize"):
+        if k in l: return "PERFORMANCE"
 
-    if any(k in l for k in ("palette", "ux", "ui")):
-        return "UI"
+    for k in ("palette", "ux", "ui"):
+        if k in l: return "UI"
 
-    if any(k in l for k in ("qa", "test", "ci", "infra", "action")):
-        return "CI/INFRA"
+    for k in ("qa", "test", "ci", "infra", "action"):
+        if k in l: return "CI/INFRA"
 
-    if any(k in l for k in ("refactor", "import", "clean")):
-        return "REFACTOR"
+    for k in ("refactor", "import", "clean"):
+        if k in l: return "REFACTOR"
 
     return "FEATURE"
 
