@@ -11,3 +11,9 @@
 **Vulnerability:** Private SSH keys and sensitive credentials were being backed up to Google Drive by `google_drive_backup.sh` because it lacked default exclusions and failed open when configuration was missing.
 **Learning:** Cloud backup scripts must have "secure by default" behavior (fail-secure), meaning they should exclude everything sensitive unless explicitly configured otherwise, or at least have a hardcoded blocklist of known sensitive patterns if configuration is missing.
 **Prevention:** Always implement a fallback exclusion list in backup scripts for critical credentials (SSH keys, AWS tokens, etc.) to prevent accidental leakage if configuration files are missing.
+
+## 2026-06-03 - Bash Eval Injection via trap -p Expansion
+
+**Vulnerability:** A Bash Eval Injection vulnerability existed in `media-streaming/scripts/final-media-server.sh` due to the use of `eval` to restore previously saved traps, e.g. `eval "${old_int_trap:-trap - INT}"`.
+**Learning:** Shell-assigned variable expansions inside `eval` can still introduce command injection if an attacker previously influenced the environment's `trap` commands.
+**Prevention:** Avoid saving and restoring traps using `eval` when executing local synchronous blocks like UI spinners. Isolate the execution and custom temporary traps inside a subshell `( ... )`, which protects the parent shell's configuration and eliminates the need for `eval`.
