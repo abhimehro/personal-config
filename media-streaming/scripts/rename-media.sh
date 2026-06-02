@@ -17,6 +17,8 @@ FORMAT_MOVIE="{n.colon(' - ')} ({y}){subt}"
 FORMAT_TV="{n} - {s00e00} - {t}{subt}"
 AUTO_UPLOAD=0
 WATCH_MODE=0
+# Prevent uploading files > 15GB to avoid system stress
+MAX_UPLOAD_SIZE_GB=15
 ACTION="process"
 APPROVE_TARGET=""
 DIRECT_FILE=""
@@ -130,9 +132,22 @@ PY
 		notify "Duplicate Pending" "Manual review needed for $proposed_name"
 		return 2
 	fi
+	# Check file size before upload to prevent system stress
+	local file_size_mb
+	file_size_mb=$(stat -f "%z" "$proposed_path" 2>/dev/null | awk '{print $1/1024/1024}') || file_size_mb=0
+	if (($(echo "$file_size_mb > $MAX_UPLOAD_SIZE_GB * 1024" | bc -l))); then
+		local file_size_gb=$(echo "scale=2; $file_size_mb / 1024" | bc)
+		log "⏸️  File too large for upload (${file_size_gb}GB > ${MAX_UPLOAD_SIZE_GB}GB): $proposed_name. Moved to failed queue."
+		mv "$proposed_path" "$FAILED_DIR/" 2>/dev/null || true
+		mv "$sidecar" "$FAILED_DIR/$sidecar_name" 2>/dev/null || true
+		notify "Upload Skipped" "$proposed_name too large (${file_size_gb}GB)"
+		rm -f "$LOCK_FILE" || true
+		return 1
+	fi
+
 	touch "$LOCK_FILE"
 	log "Uploading approved file: $proposed_name -> $target_remote"
-	if rclone move "$proposed_path" "$target_remote" --transfers=4 --checkers=8 >>"$LOG_FILE" 2>&1; then
+	if timeout 300 rclone move "$proposed_path" "$target_remote" --transfers=4 --checkers=8 >>"$LOG_FILE" 2>&1; then
 		rm -f "$sidecar"
 		log "Upload successful: $target_remote"
 		notify "Media Uploaded" "$proposed_name"
@@ -248,10 +263,21 @@ process_file() {
 			log "Queued for review (AUTO_UPLOAD off): $final_path"
 			notify "Rename Review Ready" "${final_path##*/} queued for approval"
 		else
-			# Happy path: clean rename, upload immediately.
+			# Check file size before upload to prevent system stress
+			local file_size_mb
+			file_size_mb=$(stat -f "%z" "$final_path" 2>/dev/null | awk '{print $1/1024/1024}') || file_size_mb=0
+			if (($(echo "$file_size_mb > $MAX_UPLOAD_SIZE_GB * 1024" | bc -l))); then
+				local file_size_gb=$(echo "scale=2; $file_size_mb / 1024" | bc)
+				log "⏸️  File too large for upload (${file_size_gb}GB > ${MAX_UPLOAD_SIZE_GB}GB): ${final_path##*/}. Moved to failed queue."
+				mv "$final_path" "$FAILED_DIR/" 2>/dev/null || true
+				notify "Upload Skipped" "${final_path##*/} too large (${file_size_gb}GB)"
+				continue
+			fi
+
+			# Happy path: clean rename, upload immediately with timeout.
 			touch "$LOCK_FILE"
 			log "Uploading: ${final_path##*/} -> $target_remote"
-			if rclone move "$final_path" "$target_remote" --transfers=4 --checkers=8 >>"$LOG_FILE" 2>&1; then
+			if timeout 300 rclone move "$final_path" "$target_remote" --transfers=4 --checkers=8 >>"$LOG_FILE" 2>&1; then
 				log "Upload successful: ${final_path##*/}"
 				notify "Media Uploaded" "${final_path##*/}"
 				rm -f "$LOCK_FILE" || true
