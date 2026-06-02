@@ -13,10 +13,16 @@ This setup provides a high-performance, autonomous media pipeline that bridges c
     - **Agent**: `com.speedybee.alldebrid.sync` (Hourly)
     - **Action**: Fetches new video links from AllDebrid, stages them for approval in `~/CloudMedia/approval_needed`.
 
-2.  **🏷️ Finalize (Renamer & Uploader)**
+2.  **🎞️ Convert (Permute HEVC Transcoder - MANUAL STEP)**
+    - **App**: Permute 4
+    - **Input**: `~/CloudMedia/permute_input/` (drag files here manually)
+    - **Output**: `~/CloudMedia/staging/` (HEVC/H.265)
+    - **Action**: **MANUAL**: You must open Permute 4, drag files from permute_input/, set output to staging/, and start conversion. Once complete, files auto-progress to rename/upload.
+
+3.  **🏷️ Finalize (Renamer & Uploader)**
     - **Script**: `rename-media.sh`
     - **Agent**: `com.speedybee.media.renamer` (Watchdog)
-    - **Action**: Safely processes files from `staging` (Permute output) into `processed` once finished, then uses FileBot to rename and handle duplicate conflicts against the live mount, queuing them in `upload_stage`.
+    - **Action**: Safely processes HEVC files from `staging` into `processed` once finished, then uses FileBot to rename and handle duplicate conflicts against the live mount, queuing them in `upload_stage`.
 
 3.  **📡 Serve (WebDAV Daemon)**
     - **WebDAV**: `media-server-daemon.sh` serves on port **8080** for **Infuse** (iOS/tvOS).
@@ -32,7 +38,8 @@ This setup provides a high-performance, autonomous media pipeline that bridges c
 ```
 ~/CloudMedia/
 ├── approval_needed/   # New downloads waiting for approval
-├── staging/           # Raw output from Permute (monitored for completion)
+├── permute_input/     # MANUAL: Files awaiting Permute 4 HEVC conversion
+├── staging/           # HEVC output from Permute (auto-monitored for completion)
 ├── processed/         # Finished Permute files ready for FileBot
 ├── upload_stage/      # Files successfully renamed and queued for upload
 └── mounted/           # THE SOURCE OF TRUTH (Direct FSKit Mount)

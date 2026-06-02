@@ -127,7 +127,7 @@ stage_media_scripts() {
 	mkdir -p "$media_bin"
 	log_info "Linking media helper scripts to $media_bin..."
 
-	for s in media-server-daemon.sh mount-media.sh rename-media.sh sync-alldebrid.sh bulk-rename-cloud.sh; do
+	for s in media-server-daemon.sh mount-media.sh rename-media.sh sync-alldebrid.sh bulk-rename-cloud.sh launch-permute.sh; do
 		local src="$REPO_ROOT/media-streaming/scripts/$s"
 		if [[ -f $src ]]; then
 			ln -sf "$src" "$media_bin/$s"
