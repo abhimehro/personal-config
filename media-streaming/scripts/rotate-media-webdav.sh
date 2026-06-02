@@ -54,7 +54,7 @@ require_op() {
 		exit 1
 	fi
 	if ! op account list &>/dev/null; then
-		log "ERROR: Not signed in to 1Password CLI. Run: eval \"\$(op signin)\""
+		log "ERROR: Not signed in to 1Password CLI. Please sign in first (e.g. op signin)"
 		exit 1
 	fi
 }
