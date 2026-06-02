@@ -112,24 +112,23 @@ def main():
     print(f"Generated inventory for {len(all_prs)} PRs.")
 
 
+_CATEGORIES = (
+    ("SECURITY", ("sentinel", "security", "injection", "cwe", "ssrf", "tls")),
+    ("PERFORMANCE", ("bolt", "perf", "optimize")),
+    ("UI", ("palette", "ux", "ui")),
+    ("CI/INFRA", ("qa", "test", "ci", "infra", "action")),
+    ("REFACTOR", ("refactor", "import", "clean")),
+)
+
 def get_category(title, branch):
     l = (title + branch).lower()
 
-    # ⚡ Bolt Optimization: Use explicit for loops instead of any() with generator expressions to avoid iterator allocation overhead
-    for k in ("sentinel", "security", "injection", "cwe", "ssrf", "tls"):
-        if k in l: return "SECURITY"
-
-    for k in ("bolt", "perf", "optimize"):
-        if k in l: return "PERFORMANCE"
-
-    for k in ("palette", "ux", "ui"):
-        if k in l: return "UI"
-
-    for k in ("qa", "test", "ci", "infra", "action"):
-        if k in l: return "CI/INFRA"
-
-    for k in ("refactor", "import", "clean"):
-        if k in l: return "REFACTOR"
+    # ⚡ Bolt Optimization: Iterate over a predefined tuple of categories to avoid
+    # iterator allocation overhead while keeping cyclomatic complexity low (CodeScene Code Health)
+    for cat, keywords in _CATEGORIES:
+        for k in keywords:
+            if k in l:
+                return cat
 
     return "FEATURE"
 
