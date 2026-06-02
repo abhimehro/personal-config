@@ -1,12 +1,12 @@
 # Personal System Configuration
 
-[![CodeScene general](https://codescene.io/images/analyzed-by-codescene-badge.svg)](https://codescene.io/projects/78056)
+[![CodeScene general](https://codescene.io/images/analyzed-by-codescene-badge.svg)](https://codescene.io/projects/80825)
 [![Changelog Status](https://github.com/abhimehro/personal-config/actions/workflows/release-drafter.yml/badge.svg)](https://github.com/abhimehro/personal-config/actions/workflows/release-drafter.yml)
 
-[![CodeScene Average Code Health](https://codescene.io/projects/78056/status-badges/average-code-health?component-name=Personal-config)](https://codescene.io/projects/78056/architecture/biomarkers?component=Personal-config)
-[![CodeScene Hotspot Code Health](https://codescene.io/projects/78056/status-badges/hotspot-code-health)](https://codescene.io/projects/78056)
-[![CodeScene Missed Goals](https://codescene.io/projects/78056/status-badges/missed-goals)](https://codescene.io/projects/78056)
-[![CodeScene System Mastery](https://codescene.io/projects/78056/status-badges/system-mastery?component-name=Personal-config)](https://codescene.io/projects/78056/)
+[![CodeScene Average Code Health](https://codescene.io/projects/80825/status-badges/average-code-health)](https://codescene.io/projects/80825)
+[![CodeScene Hotspot Code Health](https://codescene.io/projects/80825/status-badges/hotspot-code-health)](https://codescene.io/projects/80825)
+[![CodeScene Missed Goals]([![CodeScene System Mastery](https://codescene.io/projects/80825/status-badges/system-mastery)](https://codescene.io/projects/80825))](https://codescene.io/projects/78056)
+[![CodeScene Missed Goals](https://codescene.io/projects/80825/status-badges/missed-goals)](https://codescene.io/projects/80825)
 
 A comprehensive repository for personal system configurations, scripts, and documentation to make my macOS development and gaming setup reproducible and backed up.
 
