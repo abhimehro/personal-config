@@ -306,6 +306,12 @@
 **Rule:** Before deferring a “workflow pin” PR as complete, read the **failed job log** for nested unpinned actions. Fix by replacing the composite with inline bandit + fully pinned SARIF upload steps, or escalate for a maintained fork — pinning only checkout is insufficient.
 **Detection cost:** Low — one `gh run view --log-failed` on the bandit job.
 
+## Lesson 0aa: Sentinel security PRs may ship repo hygiene junk (2026-06-02)
+
+**Pattern:** ESP #1011 described a valid ZipSlip fix but added root-level `patch*.diff`, `*.orig`, and scratch `test_zipslip*.py` files alongside a minimal production change in `media_analyzer.py`.
+**Rule:** Close the messy branch and merge the **clean salvage** (#1008) or a human-curated minimal diff. Never squash-merge security PRs that add non-production artifacts — they pollute history and confuse future scanners.
+**Detection cost:** Low — `gh pr view --json files` shows >10 files with `.orig` / `patch` paths.
+
 ## Lesson 0z: “Workflow consolidation” PRs can unpin SHAs (2026-05-31)
 
 **Pattern:** ESP #966 replaced full commit SHAs with mutable tags (`actions/github-script@v9.0.0`) and `upload-sarif@codeql-bundle-v2.25.5`, causing bandit to fail with “actions must be pinned to a full-length commit SHA.”

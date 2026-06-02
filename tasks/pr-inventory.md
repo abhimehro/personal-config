@@ -1,59 +1,56 @@
-# PR Inventory — 2026-05-31 (end of day)
+# PR Inventory — 2026-06-02
 
-**Preflight:** PASS (6/6 repos) for both sessions  
-**Sessions:** Review `0 13 * * *` → Salvage `0 17 * * *`  
-**Config:** `tasks/pr-review-agent.config.yaml`
+**Preflight:** PASS (6/6 repos)  
+**Mode:** review-and-merge  
+**Config:** `tasks/pr-review-agent.config.yaml`  
+**Trigger:** cron `0 13 * * *` (2026-06-02T13:02Z)
 
-## Scope summary (after both sessions)
+## Scope summary (end of session)
 
-| Repo | Open in-scope (EOD) | CONFLICTING / DIRTY |
-| --- | ---: | ---: |
-| personal-config | 3 | 0 |
-| ctrld-sync | 0 | 0 |
-| email-security-pipeline | 1 | 0 |
-| Seatek_Analysis | 0 | 0 |
-| Hydrograph_Versus_Seatek_Sensors_Project | 0 | 0 |
-| series_correction_project_updated | 0 | 0 |
+| Repo | Open in-scope (EOD) | Merged this session | Closed this session |
+| --- | ---: | ---: | ---: |
+| personal-config | 3 | 2 | 0 |
+| ctrld-sync | 0 | 2 | 0 |
+| email-security-pipeline | 10 | 1 | 2 |
+| Seatek_Analysis | 0 | 1 | 1 |
+| Hydrograph_Versus_Seatek_Sensors_Project | 0 | 0 | 0 |
+| series_correction_project_updated | 0 | 0 | 0 |
 
-**Merged today (combined):** pc #1098, #1097, #1100, #1101, #1093; ctrld #860, #861; esp #968, #966 (see note below).
+**Total in-scope at start:** 22 open PRs across 4 repos (Hydrograph + series_correction had none).
 
-## Session A — Review (13:00) — start-of-day queue
+## Merged this session
 
-| Repo | PR | Author signal | Category | Outcome |
-| --- | ---: | --- | --- | --- |
-| personal-config | [#1101](https://github.com/abhimehro/personal-config/pull/1101) | Jules Daily QA | CI/INFRA | **MERGED** |
-| personal-config | [#1100](https://github.com/abhimehro/personal-config/pull/1100) | Bolt | PERFORMANCE | **MERGED** |
-| personal-config | [#1098](https://github.com/abhimehro/personal-config/pull/1098) | Sentinel | SECURITY | **MERGED** |
-| personal-config | [#1097](https://github.com/abhimehro/personal-config/pull/1097) | Palette | UI | **MERGED** |
-| personal-config | [#1096](https://github.com/abhimehro/personal-config/pull/1096) | app/cursor draft | CI/INFRA | DEFER → still open |
-| personal-config | [#1093](https://github.com/abhimehro/personal-config/pull/1093) | Bolt `jules-*` | PERFORMANCE | DEFER → **MERGED** Session B (doc-only) |
-| ctrld-sync | [#860](https://github.com/abhimehro/ctrld-sync/pull/860) | app/cursor QA | CI/INFRA | **MERGED** |
-| email-security-pipeline | [#966](https://github.com/abhimehro/email-security-pipeline/pull/966) | automation-workflow | CI/INFRA | ESCALATE → later **MERGED** on GitHub |
-
-## Session B — Salvage (17:00) — queue at salvage start
-
-| Repo | PR | Branch signal | Merge state (start) | Outcome |
-| --- | ---: | --- | --- | --- |
-| personal-config | [#1093](https://github.com/abhimehro/personal-config/pull/1093) | `jules-*` | CLEAN | **MERGED** |
-| personal-config | [#1102](https://github.com/abhimehro/personal-config/pull/1102) | `cursor-agent/*` | CLEAN | superseded by #1104 |
-| personal-config | [#1096](https://github.com/abhimehro/personal-config/pull/1096) | `cursor-agent/*` | CLEAN | open; supersede after #1104 |
-| personal-config | [#1103](https://github.com/abhimehro/personal-config/pull/1103) | human | CLEAN | ESCALATE |
-| ctrld-sync | [#861](https://github.com/abhimehro/ctrld-sync/pull/861) | `jules-*` | UNSTABLE (benchmark) | **MERGED** |
-| email-security-pipeline | [#968](https://github.com/abhimehro/email-security-pipeline/pull/968) | `qa-fix-*` | CLEAN | **MERGED** |
-| email-security-pipeline | [#970](https://github.com/abhimehro/email-security-pipeline/pull/970) | `jules-*` | UNSTABLE (Bugbot) | DEFER |
-| email-security-pipeline | [#966](https://github.com/abhimehro/email-security-pipeline/pull/966) | automation | UNSTABLE | DEFER at salvage; **MERGED** later |
-
-## Open tail (end of day)
-
-| Repo | PR | Disposition | Notes |
+| Repo | PR | Category | Notes |
 | --- | ---: | --- | --- |
-| personal-config | [#1103](https://github.com/abhimehro/personal-config/pull/1103) | ESCALATE | Human secops |
-| personal-config | [#1104](https://github.com/abhimehro/personal-config/pull/1104) | MERGE | Session B artifacts; resolve merge with `main` |
-| personal-config | [#1096](https://github.com/abhimehro/personal-config/pull/1096) | CLOSE-SUPERSEDED | After #1104 |
-| email-security-pipeline | [#970](https://github.com/abhimehro/email-security-pipeline/pull/970) | MERGE when CLEAN | Palette UX |
+| ctrld-sync | [#865](https://github.com/abhimehro/ctrld-sync/pull/865) | PERFORMANCE | Bolt root-rule extraction; all required checks green |
+| ctrld-sync | [#864](https://github.com/abhimehro/ctrld-sync/pull/864) | CI/INFRA | Daily QA matrix notes; marked ready then merged |
+| email-security-pipeline | [#1010](https://github.com/abhimehro/email-security-pipeline/pull/1010) | UI | Palette `Colors.colorize()` CLI accessibility |
+| personal-config | [#1148](https://github.com/abhimehro/personal-config/pull/1148) | CI/INFRA | Salvage session artifacts (docs only) |
+| personal-config | [#1147](https://github.com/abhimehro/personal-config/pull/1147) | PERFORMANCE | Salvage `scratch_triage.py` parallel API calls |
+| Seatek_Analysis | [#241](https://github.com/abhimehro/Seatek_Analysis/pull/241) | PERFORMANCE | Bolt substring check; CI green (CodeScene infra error only) |
 
-## Prior deferrals (2026-05-29) — status
+## Closed this session
 
-| PR | Prior disposition | Current state |
-| --- | --- | --- |
-| esp #957, #956 | DEFER (bandit pins) | **MERGED** (before 2026-05-31) |
+| Repo | PR | Reason |
+| --- | ---: | --- |
+| email-security-pipeline | [#1011](https://github.com/abhimehro/email-security-pipeline/pull/1011) | Superseded by clean salvage [#1008](https://github.com/abhimehro/email-security-pipeline/pull/1008); hygiene (scratch `*.orig`, root test files) |
+| email-security-pipeline | [#1003](https://github.com/abhimehro/email-security-pipeline/pull/1003) | Duplicate of [#1009](https://github.com/abhimehro/email-security-pipeline/pull/1009) |
+| Seatek_Analysis | [#239](https://github.com/abhimehro/Seatek_Analysis/pull/239) | Superseded by [#241](https://github.com/abhimehro/Seatek_Analysis/pull/241) |
+
+## Open tail (end of session)
+
+| Repo | PR | Author signal | Category | Disposition |
+| --- | ---: | --- | --- | --- |
+| personal-config | [#1150](https://github.com/abhimehro/personal-config/pull/1150) | Jules Bolt | PERFORMANCE | **ESCALATE** — `scratch_inventory.py` toolchain + CodeScene fail |
+| personal-config | [#1146](https://github.com/abhimehro/personal-config/pull/1146) | cursor-agent salvage (draft) | PERFORMANCE | **DEFER** — draft; salvage #1142 |
+| personal-config | [#1145](https://github.com/abhimehro/personal-config/pull/1145) | cursor-agent salvage (draft) | PERFORMANCE | **DEFER** — draft; salvage #1132 |
+| email-security-pipeline | [#1008](https://github.com/abhimehro/email-security-pipeline/pull/1008) | cursor-agent salvage | SECURITY | **ESCALATE** — ZipSlip fix; human merge on security repo |
+| email-security-pipeline | [#1006](https://github.com/abhimehro/email-security-pipeline/pull/1006) | automation-workflow | CI/INFRA | **ESCALATE** — workflow SHA bumps; bandit check failed |
+| email-security-pipeline | [#1009](https://github.com/abhimehro/email-security-pipeline/pull/1009) | Jules test | FEATURE | **DEFER** — UNSTABLE (non-required checks) |
+| email-security-pipeline | [#992](https://github.com/abhimehro/email-security-pipeline/pull/992) | Jules test | FEATURE | **DEFER** |
+| email-security-pipeline | [#996](https://github.com/abhimehro/email-security-pipeline/pull/996) | Jules | REFACTOR | **DEFER** — CONFLICTING/DIRTY |
+| email-security-pipeline | [#989](https://github.com/abhimehro/email-security-pipeline/pull/989) | Jules test | FEATURE | **DEFER** — CONFLICTING/DIRTY |
+| email-security-pipeline | [#984](https://github.com/abhimehro/email-security-pipeline/pull/984) | Jules test | FEATURE | **DEFER** — CONFLICTING/DIRTY |
+| email-security-pipeline | [#982](https://github.com/abhimehro/email-security-pipeline/pull/982) | Jules test | FEATURE | **DEFER** — CONFLICTING/DIRTY |
+| email-security-pipeline | [#973](https://github.com/abhimehro/email-security-pipeline/pull/973) | Jules Sentinel | SECURITY | **ESCALATE** — NLP eval false-positive; large diff; DIRTY |
+| email-security-pipeline | [#972](https://github.com/abhimehro/email-security-pipeline/pull/972) | Jules | REFACTOR | **DEFER** — CONFLICTING/DIRTY |
