@@ -2,7 +2,21 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-31 (salvage 17:00).
+> **Latest execution:** 2026-06-03 (review-and-merge 13:00).
+
+## Run — 2026-06-03 (cron review-and-merge 13:00)
+
+**Report:** `tasks/pr-review-2026-06-03.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 25 |
+| Closed | 7 |
+| Escalated | 6 |
+| Open tail | 15 |
+
+**Highlights:** Cleared ctrld-sync and series_correction. Seatek deps + Sentinel merged; 5 duplicates closed. ESP test salvages merged; production PRs escalated. Hydrograph 5/7 merged.
 
 ## Run — 2026-05-31 (cron salvage 17:00)
 
