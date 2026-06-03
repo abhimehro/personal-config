@@ -319,4 +319,10 @@
 **Rule:** When the substantive fix is a single script, salvage **only that file** unless workflow changes are required for the optimization to work. Document omitted paths in the salvage PR body.
 **Detection cost:** Low — inspect `gh pr view --json files` before checkout.
 
+## Lesson 0ce: Hydrograph Bolt PRs may bundle repo-wide junk with small src fixes (2026-06-03)
+
+**Pattern:** Hydrograph #224 listed 25+ paths including `*_project_code.txt`, 1Password hook bundles, and notebook exports while the real perf change was five files under `src/hydrograph_seatek_analysis/`.
+**Rule:** For data-science repos, always `git diff main..pr --stat -- 'src/' 'tests/'` before salvage. If junk paths dominate, salvage src/tests only and close the original citing Lesson 0gg. Combine related conflicted PRs (#223 + #224) on one fresh branch when they touch adjacent modules.
+**Detection cost:** Low — `changedFiles` > 15 on a “perf” title is a red flag.
+
 - **Bash Eval Injection in Subshells**: When running traps inside a subshell instead of `eval`, the trap must explicitly use `$BASHPID` instead of `$$` if it wants to signal itself properly, because `$$` refers to the parent process. Also, ensure the subshell's trap explicitly handles signal propagation (e.g. `trap - INT; kill -INT $BASHPID`) so that the subshell terminates correctly, and then the parent script's wait mechanism triggers properly (WCE).
