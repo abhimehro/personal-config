@@ -136,7 +136,8 @@ PY
 	local file_size_mb
 	file_size_mb=$(stat -f "%z" "$proposed_path" 2>/dev/null | awk '{print $1/1024/1024}') || file_size_mb=0
 	if (($(echo "$file_size_mb > $MAX_UPLOAD_SIZE_GB * 1024" | bc -l))); then
-		local file_size_gb=$(echo "scale=2; $file_size_mb / 1024" | bc)
+		local file_size_gb
+		file_size_gb=$(echo "scale=2; $file_size_mb / 1024" | bc)
 		log "⏸️  File too large for upload (${file_size_gb}GB > ${MAX_UPLOAD_SIZE_GB}GB): $proposed_name. Moved to failed queue."
 		mv "$proposed_path" "$FAILED_DIR/" 2>/dev/null || true
 		mv "$sidecar" "$FAILED_DIR/$sidecar_name" 2>/dev/null || true
@@ -267,7 +268,8 @@ process_file() {
 			local file_size_mb
 			file_size_mb=$(stat -f "%z" "$final_path" 2>/dev/null | awk '{print $1/1024/1024}') || file_size_mb=0
 			if (($(echo "$file_size_mb > $MAX_UPLOAD_SIZE_GB * 1024" | bc -l))); then
-				local file_size_gb=$(echo "scale=2; $file_size_mb / 1024" | bc)
+				local file_size_gb
+				file_size_gb=$(echo "scale=2; $file_size_mb / 1024" | bc)
 				log "⏸️  File too large for upload (${file_size_gb}GB > ${MAX_UPLOAD_SIZE_GB}GB): ${final_path##*/}. Moved to failed queue."
 				mv "$final_path" "$FAILED_DIR/" 2>/dev/null || true
 				notify "Upload Skipped" "${final_path##*/} too large (${file_size_gb}GB)"
