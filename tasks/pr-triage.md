@@ -1,43 +1,70 @@
-# PR Triage — 2026-06-01 (Salvage 17:00)
+# PR Triage — 2026-06-03
 
-**Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · DEFER · CLOSE-SUPERSEDED · ESCALATE · SALVAGE-DRAFT
+**Mode:** review-and-merge | **Stale threshold:** 30 days | **Merge:** squash
 
-## Duplicate & overlap analysis
+## Phase 1 disposition summary
 
-| Group | Keeper | Action on others | Rationale |
-| --- | --- | --- | --- |
-| run_merges Bolt parallel | **Salvage #1145** | Close #1132, #1125 | Same `run_merges.py` intent; #1125 subset of #1132 |
-| scratch_triage Bolt | **Salvage #1147** | Close #1117 | Rebuilt from main |
-| scratch_inventory Bolt | **Salvage #1146** | Close #1142 | Rebuilt from main |
-| ESP tarfile Zip Slip | **Salvage #1008** | Close #999 | T1 security; conflicted original |
-| Seatek TODO scanner | **Salvage #239** | Close #237 | Single-file salvage; omitted workflow-only churn |
-| Session doc artifacts | **Salvage branch commit** | Supersede #1143 | Same-day `tasks/pr-*` on conflicted draft |
+| Disposition | Count | Notes |
+| --- | ---: | --- |
+| MERGE | 25 | All required checks green at merge time |
+| CLOSE-DUPLICATE | 5 | Seatek overlapping test/health PRs |
+| CLOSE-SUPERSEDED | 2 | #1028 zero-diff; #244 after #256 |
+| CLOSE (zero-diff) | 1 | Included in superseded row |
+| ESCALATE | 6 | ESP production + draft security |
+| DEFER | 2 | Hydrograph #224 CodeScene; #223 conflicts |
+| DEFER (draft) | 3 | personal-config session artifact PRs |
 
-## Session dispositions (executed)
+## Per-PR disposition (open tail)
 
-| Disposition | PRs | Executed |
+| Repo | PR | Disposition | Rationale |
+| --- | ---: | --- | --- |
+| personal-config | 1155 | DEFER | Draft; touches `tasks/*` automation artifacts |
+| personal-config | 1154 | DEFER | Draft salvage; UNSTABLE CI |
+| personal-config | 1151 | DEFER | Draft; DIRTY conflict on `tasks/*` |
+| email-security-pipeline | 1024 | ESCALATE | Sentinel; 17 files incl. `main.py`, ingestion |
+| email-security-pipeline | 1023 | ESCALATE | `nlp_analyzer.py` production change |
+| email-security-pipeline | 1022 | ESCALATE | `main.py` refactor (CONFLICTING) |
+| email-security-pipeline | 1021 | ESCALATE | `app_runner.py` secure-file refactor |
+| email-security-pipeline | 1008 | ESCALATE | Draft T1 Zip Slip salvage |
+| email-security-pipeline | 1006 | ESCALATE | Workflow consolidation + bandit history |
+| Seatek_Analysis | 249 | MERGE-AFTER-FIX | CONFLICTING after merge burst; rebase needed |
+| Seatek_Analysis | 247 | MERGE-AFTER-FIX | CONFLICTING; overlaps closed #243 |
+| Hydrograph | 224 | DEFER | CodeScene fail; other checks pass |
+| Hydrograph | 223 | MERGE-AFTER-FIX | DIRTY after #218–#222 merges |
+
+## Duplicate groups resolved
+
+| Keeper | Closed duplicates | Overlap |
 | --- | --- | --- |
-| **MERGE** | pc #1139, #1113, #1144; sc #92, #90; sa #238 | Squash-merged |
-| **SALVAGE-DRAFT** | pc #1145–#1147; esp #1008; sa #239 | Opened draft; originals closed with cross-link |
-| **CLOSE-SUPERSEDED** | pc #1132, #1125, #1117, #1142; esp #999; sa #237 | Closed with salvage comment |
-| **DEFER** | esp #972, #973, #982, #984, #989, #996 | Comment posted; rebuild-from-main queue |
-| **MERGE-AFTER-FIX** | esp #1006 | bandit failing — human + Lesson 0z |
-| **MERGE when CLEAN** | esp #992, #1003 | UNSTABLE advisory checks |
+| #253 | #252 | `test-write_year_sheet.R` |
+| #249 | #248 | `test-clean_vals.R` |
+| #255 | #246 | `test-execute_tasks_parallel.R` |
+| #245 | #242 | `scan_file` removal |
+| #256 (merged) | #244 | `get_repo_info` |
 
-## Security notes
+## Ready-to-Execute Human Actions
 
-| PR | Tier | Assessment |
-| --- | --- | --- |
-| pc #1139, #1113 | T1 | Eval/injection hardening — merged |
-| sc #92 | T1 | CSV injection — merged |
-| esp #1008 | T1 | Zip Slip tarfile guard — draft salvage |
-| esp #1006 | CI/INFRA | Workflow consolidation; bandit gate blocked |
+### Rebase-and-merge (after `git fetch` / `gh pr checkout`)
 
-## Ready-to-execute human actions
+```bash
+# Seatek — conflicted test/health PRs
+gh pr checkout 249 --repo abhimehro/Seatek_Analysis && git fetch origin main && git merge origin/main
+# resolve, push, then:
+gh pr merge 249 --repo abhimehro/Seatek_Analysis --squash --delete-branch
 
-1. **Merge T1:** [esp#1008](https://github.com/abhimehro/email-security-pipeline/pull/1008) after CI green.  
-2. **Merge T3 salvages:** [pc#1145](https://github.com/abhimehro/personal-config/pull/1145), [#1146](https://github.com/abhimehro/personal-config/pull/1146), [#1147](https://github.com/abhimehro/personal-config/pull/1147), [sa#239](https://github.com/abhimehro/Seatek_Analysis/pull/239).  
-3. **Fix then merge:** [esp#1006](https://github.com/abhimehro/email-security-pipeline/pull/1006) (bandit).  
-4. **ESP test batch:** Rebuild #972–#996 from `main` in a follow-up salvage cycle (do not use Update branch).  
-5. **Close** [pc#1143](https://github.com/abhimehro/personal-config/pull/1143) after merging session doc commit from salvage branch.
+gh pr checkout 247 --repo abhimehro/Seatek_Analysis && git fetch origin main && git merge origin/main
+# resolve, push, then:
+gh pr merge 247 --repo abhimehro/Seatek_Analysis --squash --delete-branch
+
+# Hydrograph — Bolt data_loader
+gh pr checkout 223 --repo abhimehro/Hydrograph_Versus_Seatek_Sensors_Project && git fetch origin main && git merge origin/main
+gh pr merge 223 --repo abhimehro/Hydrograph_Versus_Seatek_Sensors_Project --squash --delete-branch
+```
+
+### Human security review (email-security-pipeline)
+
+Review and merge in order: **#1008** (T1 Zip Slip draft) → **#1021** → **#1023** → **#1024** / **#1022** (resolve conflicts). Close **#1006** if superseded by workflow on `main`.
+
+### Draft session artifacts (personal-config)
+
+Merge or close **#1155**, **#1154**, **#1151** after reconciling `tasks/pr-*.md` conflicts manually.

@@ -1,5 +1,10 @@
 # Lessons Learned
 
+## Lesson 0cd: Seatek merge burst → close duplicate pairs before rebasing tail (2026-06-03)
+
+**Pattern:** After merging 9+ Seatek PRs in one session, sibling PRs with overlapping files (`test-clean_vals`, `read_file_safe`, `execute_tasks_parallel`) flip to CONFLICTING; `update-branch` API returns 422 when conflicts are intrinsic.
+**Rule:** Close obvious duplicate pairs first (keep higher-value PR), then rebase remaining tail locally. Do not attempt `update-branch` on PRs that overlap already-merged changes.
+
 ## Lesson 0: Multi-repo automated PR merges need sequential re-validation
 
 **Pattern:** After squash-merging one automation PR, sibling PRs from the same bot often become **CONFLICTING** with `main`.
