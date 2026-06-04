@@ -18,6 +18,7 @@ runtimes:
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
   enabled:
+    - prettier@3.8.3
     - trufflehog-git@3.95.5
     - grype@0.113.0
     - actionlint@1.7.12
@@ -39,7 +40,6 @@ lint:
     - yamllint@1.38.0
   disabled:
     - markdownlint
-    - prettier
 actions:
   disabled:
     - trunk-check-pre-push-always
