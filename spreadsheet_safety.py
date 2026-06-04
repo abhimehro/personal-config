@@ -4,7 +4,7 @@
 # SECURITY: Values starting with these characters may execute as formulas when a
 # markdown/CSV table is opened in Excel, LibreOffice Calc, or Google Sheets
 # (CWE-1236). Prefix with a single quote to force literal interpretation.
-_FORMULA_PREFIX_CHARS = ("=", "+", "-", "@", "\t", "\r")
+_FORMULA_PREFIX_CHARS = "=+-@\t\r"  # ⚡ Bolt Optimization: Use string for O(1)-like C-level character lookup
 
 
 def escape_spreadsheet_formula(value: str) -> str:
