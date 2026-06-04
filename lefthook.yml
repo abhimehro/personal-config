@@ -59,7 +59,7 @@ pre-commit:
       glob: "*.py"
       run: ./scripts/my_check.sh
 
-  pre-push:
-    # Example 4: Run tests before pushing
-    run-tests:
-      run: npm test
+pre-push:
+  commands:
+    case-collision-check:
+      run: ./scripts/check_case_collisions.sh

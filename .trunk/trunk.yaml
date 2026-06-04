@@ -18,24 +18,24 @@ runtimes:
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
   enabled:
-    - trufflehog-git@3.95.4
-    - grype@0.112.0
+    - trufflehog-git@3.95.5
+    - grype@0.113.0
     - actionlint@1.7.12
     - bandit@1.9.4
     - black@26.5.1
-    - checkov@3.2.532
+    - checkov@3.2.533
     - dotenv-linter@4.0.0
     - git-diff-check
     - hadolint@2.14.0
     - isort@8.0.1
     - osv-scanner@2.3.8
     - oxipng@10.1.1
-    - ruff@0.15.15
+    - ruff@0.15.16
     - shellcheck@0.11.0
     - shfmt@3.6.0
     - svgo@4.0.1
     - taplo@0.10.0
-    - trufflehog@3.95.4
+    - trufflehog@3.95.5
     - yamllint@1.38.0
   disabled:
     - markdownlint
@@ -54,3 +54,7 @@ actions:
     - trufflehog-pre-commit
     - trunk-announce
     - trunk-upgrade-available
+tools:
+  enabled:
+    - prettier@3.8.3
+  disabled:
