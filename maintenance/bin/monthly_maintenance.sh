@@ -112,6 +112,13 @@ run_task "editor_cleanup.sh"
 # 3) Deep system analysis and recommendations
 run_task "deep_cleaner.sh"
 
+# 4) Purge accumulated systemstats analytics history (keeps the analysis pass
+#    cheap; App Tamer AutoSlow handles live throttling). Needs root to delete
+#    /private/var/db/systemstats -- soft-fails when run as the user LaunchAgent.
+#    For a guaranteed purge, install the root LaunchDaemon:
+#    maintenance/launchd/com.abhimehrotra.maintenance.systemstats-purge.plist
+run_task "systemstats_purge.sh"
+
 # Summary
 log_info "=== MONTHLY MAINTENANCE SUMMARY ==="
 log_info "Tasks completed: $TASKS_COMPLETED"

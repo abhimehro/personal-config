@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.abhimehrotra.maintenance.systemstats-purge</string>
+
+    <!--
+      Runs as a LaunchDAEMON (root) because purging /private/var/db/systemstats
+      requires root. Install into /Library/LaunchDaemons (NOT ~/Library/LaunchAgents):
+
+        sudo cp com.abhimehrotra.maintenance.systemstats-purge.plist /Library/LaunchDaemons/
+        sudo chown root:wheel /Library/LaunchDaemons/com.abhimehrotra.maintenance.systemstats-purge.plist
+        sudo chmod 644       /Library/LaunchDaemons/com.abhimehrotra.maintenance.systemstats-purge.plist
+        sudo launchctl bootstrap system /Library/LaunchDaemons/com.abhimehrotra.maintenance.systemstats-purge.plist
+
+      Schedule: weekly, Monday 09:05 (just after the user weekly job at 09:00).
+    -->
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>AUTOMATED_RUN</key>
+        <string>1</string>
+        <!-- Set to 1 to also `killall systemstats` after purging. -->
+        <key>SYSTEMSTATS_KICK_DAEMON</key>
+        <string>0</string>
+    </dict>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/speedybee/Library/Maintenance/bin/systemstats_purge.sh</string>
+    </array>
+
+    <key>StandardOutPath</key>
+    <string>/Users/speedybee/Library/Logs/maintenance/systemstats_purge.out</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/speedybee/Library/Logs/maintenance/systemstats_purge.err</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>5</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>KeepAlive</key>
+    <false/>
+</dict>
+</plist>
