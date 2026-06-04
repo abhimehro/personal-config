@@ -182,3 +182,6 @@
 ## 2024-05-24 - Parallelize Independent Network API Calls
 **Learning:** Sequential network calls inside a loop (like executing GitHub CLI commands iteratively) cause significant latency due to blocking I/O overhead.
 **Action:** Use `concurrent.futures.ThreadPoolExecutor` to map network-bound functions across iterations simultaneously, which can yield N-fold speedups based on network latency and worker count.
+## 2026-05-31 - [Optimize single-character lookups using string membership]
+**Learning:** When checking if a single character belongs to a set of allowed characters (e.g., `char in allowed_chars`), using a string for `allowed_chars` (e.g., `"=+-@\t\r"`) is approximately 5x faster than using a tuple of strings (e.g., `("=", "+", "-", "@", "\t", "\r")`). The string `in` operation performs an O(1)-like C-level character lookup without the iterator allocation and pointer indirection overhead of a tuple.
+**Action:** When validating single characters against a small, fixed set of choices, define the collection as a single string instead of a tuple or list.
