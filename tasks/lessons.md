@@ -319,4 +319,10 @@
 **Rule:** When the substantive fix is a single script, salvage **only that file** unless workflow changes are required for the optimization to work. Document omitted paths in the salvage PR body.
 **Detection cost:** Low — inspect `gh pr view --json files` before checkout.
 
+## Lesson 0ce: Sentinel PRs can duplicate an in-flight salvage draft (2026-06-04)
+
+**Pattern:** ESP #1031 (Jules Sentinel Zip Slip) opened while draft salvage #1008 already carried the same fix plus `.jules/sentinel.md` journal entry and a fuller `media_analyzer.py` refactor. Both were MERGEABLE; #1031 failed pytest.
+**Rule:** Before triaging a new Sentinel/security bot PR, grep open PRs for the same CWE keyword and an existing `cursor-agent/salvage-*` branch. Close the thinner duplicate in favor of the salvage draft; never merge two PRs touching the same security surface.
+**Detection cost:** Low — `gh pr list --search "Zip Slip"` or title keyword match in inventory pass.
+
 - **Bash Eval Injection in Subshells**: When running traps inside a subshell instead of `eval`, the trap must explicitly use `$BASHPID` instead of `$$` if it wants to signal itself properly, because `$$` refers to the parent process. Also, ensure the subshell's trap explicitly handles signal propagation (e.g. `trap - INT; kill -INT $BASHPID`) so that the subshell terminates correctly, and then the parent script's wait mechanism triggers properly (WCE).

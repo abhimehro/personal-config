@@ -1,43 +1,38 @@
-# PR Triage — 2026-06-01 (Salvage 17:00)
+# PR Triage — 2026-06-04 (Salvage 17:00)
 
 **Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · DEFER · CLOSE-SUPERSEDED · ESCALATE · SALVAGE-DRAFT
+**Disposition key:** MERGE · DEFER · CLOSE-SUPERSEDED · CLOSE-NO-OP · SALVAGE-DRAFT
 
 ## Duplicate & overlap analysis
 
 | Group | Keeper | Action on others | Rationale |
 | --- | --- | --- | --- |
-| run_merges Bolt parallel | **Salvage #1145** | Close #1132, #1125 | Same `run_merges.py` intent; #1125 subset of #1132 |
-| scratch_triage Bolt | **Salvage #1147** | Close #1117 | Rebuilt from main |
-| scratch_inventory Bolt | **Salvage #1146** | Close #1142 | Rebuilt from main |
-| ESP tarfile Zip Slip | **Salvage #1008** | Close #999 | T1 security; conflicted original |
-| Seatek TODO scanner | **Salvage #239** | Close #237 | Single-file salvage; omitted workflow-only churn |
-| Session doc artifacts | **Salvage branch commit** | Supersede #1143 | Same-day `tasks/pr-*` on conflicted draft |
+| ESP Zip Slip (Sentinel vs salvage) | **Draft #1008** | Close #1031 | Salvage includes journal entry + fuller guard; #1031 had pytest fail |
+| Session doc artifacts (2026-06-02) | **#1160 / #1161** | Close #1151, #1155 | Newer session reports supersede conflicted/stale drafts |
+| Jules zero-diff perf | — | Close #262 | Lesson 0b — no files changed |
 
 ## Session dispositions (executed)
 
 | Disposition | PRs | Executed |
 | --- | --- | --- |
-| **MERGE** | pc #1139, #1113, #1144; sc #92, #90; sa #238 | Squash-merged |
-| **SALVAGE-DRAFT** | pc #1145–#1147; esp #1008; sa #239 | Opened draft; originals closed with cross-link |
-| **CLOSE-SUPERSEDED** | pc #1132, #1125, #1117, #1142; esp #999; sa #237 | Closed with salvage comment |
-| **DEFER** | esp #972, #973, #982, #984, #989, #996 | Comment posted; rebuild-from-main queue |
-| **MERGE-AFTER-FIX** | esp #1006 | bandit failing — human + Lesson 0z |
-| **MERGE when CLEAN** | esp #992, #1003 | UNSTABLE advisory checks |
+| **MERGE** | sa #260; sc #97; pc #1163 | Squash-merged (all checks green) |
+| **CLOSE-SUPERSEDED** | pc #1151, #1155; esp #1031 | Closed with cross-link comment |
+| **CLOSE-NO-OP** | sa #262 | Zero-diff Jules PR closed |
+| **DEFER** | esp #1030, #1006 | Comment posted; blocked on pytest / bandit |
+| **SALVAGE-DRAFT (unchanged)** | pc #1154; esp #1008, #1021, #1023; sa #261; hg #227 | Awaiting human merge |
 
 ## Security notes
 
 | PR | Tier | Assessment |
 | --- | --- | --- |
-| pc #1139, #1113 | T1 | Eval/injection hardening — merged |
-| sc #92 | T1 | CSV injection — merged |
-| esp #1008 | T1 | Zip Slip tarfile guard — draft salvage |
-| esp #1006 | CI/INFRA | Workflow consolidation; bandit gate blocked |
+| esp #1008 | T1 | Zip Slip tarfile guard — draft salvage; merge before T3 batch |
+| esp #1023 | T1 | NLP eval false positive — draft, CI green |
+| esp #1006 | CI/INFRA | Workflow consolidation; bandit blocked (Lesson 0z) |
+| esp #1030 | DEFER | Refactor OK but tests stale vs main API |
 
 ## Ready-to-execute human actions
 
-1. **Merge T1:** [esp#1008](https://github.com/abhimehro/email-security-pipeline/pull/1008) after CI green.  
-2. **Merge T3 salvages:** [pc#1145](https://github.com/abhimehro/personal-config/pull/1145), [#1146](https://github.com/abhimehro/personal-config/pull/1146), [#1147](https://github.com/abhimehro/personal-config/pull/1147), [sa#239](https://github.com/abhimehro/Seatek_Analysis/pull/239).  
-3. **Fix then merge:** [esp#1006](https://github.com/abhimehro/email-security-pipeline/pull/1006) (bandit).  
-4. **ESP test batch:** Rebuild #972–#996 from `main` in a follow-up salvage cycle (do not use Update branch).  
-5. **Close** [pc#1143](https://github.com/abhimehro/personal-config/pull/1143) after merging session doc commit from salvage branch.
+1. **Merge T1:** [esp#1008](https://github.com/abhimehro/email-security-pipeline/pull/1008), then [esp#1023](https://github.com/abhimehro/email-security-pipeline/pull/1023).  
+2. **Merge T3 salvages:** [pc#1154](https://github.com/abhimehro/personal-config/pull/1154), [esp#1021](https://github.com/abhimehro/email-security-pipeline/pull/1021), [sa#261](https://github.com/abhimehro/Seatek_Analysis/pull/261), [hg#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227).  
+3. **Fix then merge:** [esp#1006](https://github.com/abhimehro/email-security-pipeline/pull/1006) (bandit), [esp#1030](https://github.com/abhimehro/email-security-pipeline/pull/1030) (adapt tests for removed `_set_secure_permissions`).  
+4. **Merge session docs:** [pc#1160](https://github.com/abhimehro/personal-config/pull/1160), [#1161](https://github.com/abhimehro/personal-config/pull/1161), then this cycle's artifact PR.

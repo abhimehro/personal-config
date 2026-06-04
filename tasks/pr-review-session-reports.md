@@ -2,7 +2,21 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-31 (salvage 17:00).
+> **Latest execution:** 2026-06-04 (salvage 17:00).
+
+## Run — 2026-06-04 (cron salvage 17:00)
+
+**Report:** `tasks/pr-review-2026-06-04.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 3 |
+| Closed (superseded/no-op) | 4 |
+| New salvage drafts | 0 |
+| Open tail | 10 |
+
+**Highlights:** Merged sa #260, sc #97, pc #1163. Closed conflicted pc #1151, stale pc #1155, zero-diff sa #262, duplicate esp #1031. Zero CONFLICTING PRs remain. Deferred esp #1030 (pytest), #1006 (bandit). Lesson 0ce added.
 
 ## Run — 2026-05-31 (cron salvage 17:00)
 
