@@ -2,7 +2,21 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-31 (salvage 17:00).
+> **Latest execution:** 2026-06-05 (review 13:00).
+
+## Run — 2026-06-05 (cron review-and-merge 13:00)
+
+**Report:** `tasks/pr-review-2026-06-05.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 2 |
+| Closed (superseded docs) | 3 |
+| Escalated | 2 |
+| Open tail | 9 |
+
+**Highlights:** Merged pc #1166 (windscribe spinner injection fix), esp #1034 (config fd permissions). Escalated pc #1169 and sa #263 (automation toolchain). Closed stale session-doc PRs #1160–#1164.
 
 ## Run — 2026-05-31 (cron salvage 17:00)
 

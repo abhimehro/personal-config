@@ -320,3 +320,9 @@
 **Detection cost:** Low — inspect `gh pr view --json files` before checkout.
 
 - **Bash Eval Injection in Subshells**: When running traps inside a subshell instead of `eval`, the trap must explicitly use `$BASHPID` instead of `$$` if it wants to signal itself properly, because `$$` refers to the parent process. Also, ensure the subshell's trap explicitly handles signal propagation (e.g. `trap - INT; kill -INT $BASHPID`) so that the subshell terminates correctly, and then the parent script's wait mechanism triggers properly (WCE).
+
+## Lesson 0ce: Close stacked session-doc PRs when cron lands newer artifacts (2026-06-05)
+
+**Pattern:** Three open draft PRs (#1160, #1161, #1164) each updated `tasks/pr-*` from prior review/salvage runs while the daily review branch (`cursor-agent/automated-pr-workflow-d2f3`) carries the canonical snapshot for the current date.
+**Rule:** After writing fresh `tasks/pr-inventory.md`, `tasks/pr-triage.md`, and `tasks/pr-review-YYYY-MM-DD.md` on the active automation branch, **close** older session-doc PRs with a superseded comment rather than merging stale snapshots. Keep one open PR per automation branch per day.
+**Detection cost:** Low — grep open PRs for `docs(pr-review)` / `docs(pr-salvage)` titles.

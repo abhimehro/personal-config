@@ -1,50 +1,48 @@
-# PR Inventory — 2026-06-01
+# PR Inventory — 2026-06-05
 
 **Preflight:** PASS (6/6 repos)  
-**Session:** Salvage `0 17 * * *` (cron automation)  
-**Branch:** `cursor-agent/automated-pr-salvage-workflow-17fb`  
-**Config:** `tasks/pr-review-agent.config.yaml`
+**Session:** Review cron `0 13 * * *`  
+**Branch:** `cursor-agent/automated-pr-workflow-d2f3`  
+**Config:** `tasks/pr-review-agent.config.yaml`  
+**Mode:** review-and-merge
 
-## Scope summary (end of salvage)
+## Scope summary
 
-| Repo | Open in-scope (EOD) | CONFLICTING / DIRTY |
-| --- | ---: | ---: |
-| personal-config | 4 | 0 (originals closed → draft salvages) |
-| ctrld-sync | 0 | 0 |
-| email-security-pipeline | 10 | 6 |
-| Seatek_Analysis | 1 | 0 |
-| Hydrograph_Versus_Seatek_Sensors_Project | 0 | 0 |
-| series_correction_project_updated | 0 | 0 |
+| Repo | Open in-scope | Notes |
+| --- | ---: | --- |
+| personal-config | 7 | Jules + Cursor session docs + salvage drafts |
+| ctrld-sync | 0 | — |
+| email-security-pipeline | 6 | Salvage tail + health-check fix |
+| Seatek_Analysis | 2 | Sentinel security + perf salvage draft |
+| Hydrograph_Versus_Seatek_Sensors_Project | 1 | Bolt perf salvage draft |
+| series_correction_project_updated | 0 | — |
 
-## Merged this session (CLEAN squash)
+**Total in-scope:** 16 PRs (none stale >30d)
+
+## Full inventory
+
+| Repo | PR | Author | Branch pattern | Category | CI | Conflicts | Age (d) | Status |
+| --- | ---: | --- | --- | --- | --- | --- | ---: | --- |
+| personal-config | [#1169](https://github.com/abhimehro/personal-config/pull/1169) | abhimehro | `jules-*` | PERFORMANCE | green | CLEAN | 0 | OPEN |
+| personal-config | [#1166](https://github.com/abhimehro/personal-config/pull/1166) | abhimehro | `jules-*` | SECURITY | green | CLEAN | 1 | OPEN |
+| personal-config | [#1165](https://github.com/abhimehro/personal-config/pull/1165) | abhimehro | `jules-*` | UI | green | **DIRTY** | 1 | OPEN |
+| personal-config | [#1164](https://github.com/abhimehro/personal-config/pull/1164) | app/cursor | `cursor-agent/automated-pr-salvage-*` | CI/INFRA | green | CLEAN | 1 | draft |
+| personal-config | [#1161](https://github.com/abhimehro/personal-config/pull/1161) | app/cursor | `cursor-agent/automated-pr-salvage-*` | CI/INFRA | green | CLEAN | 2 | draft |
+| personal-config | [#1160](https://github.com/abhimehro/personal-config/pull/1160) | app/cursor | `cursor-agent/automated-pr-workflow-*` | CI/INFRA | green | CLEAN | 2 | draft |
+| personal-config | [#1154](https://github.com/abhimehro/personal-config/pull/1154) | abhimehro | `cursor-agent/salvage-*` | PERFORMANCE | **fail** Shellcheck | UNSTABLE | 3 | draft |
+| email-security-pipeline | [#1034](https://github.com/abhimehro/email-security-pipeline/pull/1034) | abhimehro | `cursor-agent/repository-health-check-*` | SECURITY | green | CLEAN | 0 | OPEN |
+| email-security-pipeline | [#1030](https://github.com/abhimehro/email-security-pipeline/pull/1030) | abhimehro | `cursor-agent/salvage-*` | REFACTOR | **fail** pytest | UNKNOWN | 2 | OPEN |
+| email-security-pipeline | [#1023](https://github.com/abhimehro/email-security-pipeline/pull/1023) | abhimehro | `cursor-agent/salvage-*` | SECURITY | green | UNKNOWN | 3 | draft |
+| email-security-pipeline | [#1021](https://github.com/abhimehro/email-security-pipeline/pull/1021) | abhimehro | `cursor-agent/salvage-*` | REFACTOR | green | UNKNOWN | 3 | draft |
+| email-security-pipeline | [#1008](https://github.com/abhimehro/email-security-pipeline/pull/1008) | abhimehro | `cursor-agent/salvage-*` | SECURITY | **fail** CodeScene | UNKNOWN | 4 | draft |
+| email-security-pipeline | [#1006](https://github.com/abhimehro/email-security-pipeline/pull/1006) | abhimehro | `automation-workflow-*` | CI/INFRA | **fail** bandit | UNKNOWN | 4 | OPEN |
+| Seatek_Analysis | [#263](https://github.com/abhimehro/Seatek_Analysis/pull/263) | abhimehro | `security-fix-*` | SECURITY | green | CLEAN | 1 | OPEN |
+| Seatek_Analysis | [#261](https://github.com/abhimehro/Seatek_Analysis/pull/261) | abhimehro | `cursor-agent/salvage-*` | PERFORMANCE | **fail** CodeScene | UNKNOWN | 2 | draft |
+| Hydrograph_Versus_Seatek_Sensors_Project | [#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227) | abhimehro | `cursor-agent/salvage-*` | PERFORMANCE | **fail** CodeScene | UNSTABLE | 2 | draft |
+
+## Merged this session
 
 | Repo | PR | Category | Title |
 | --- | ---: | --- | --- |
-| personal-config | [#1139](https://github.com/abhimehro/personal-config/pull/1139) | SECURITY | Fix bash eval injection in smart scheduler |
-| personal-config | [#1113](https://github.com/abhimehro/personal-config/pull/1113) | SECURITY | Remove unexecuted eval string from log output |
-| personal-config | [#1144](https://github.com/abhimehro/personal-config/pull/1144) | CI/TEST | fix shellcheck SC2016 in test_repo_credential_hygiene |
-| series_correction | [#92](https://github.com/abhimehro/series_correction_project_updated/pull/92) | SECURITY | CSV/Formula injection categorical column fix |
-| series_correction | [#90](https://github.com/abhimehro/series_correction_project_updated/pull/90) | PERFORMANCE | Vectorize DataFrame creation in correct_gaps |
-| Seatek_Analysis | [#238](https://github.com/abhimehro/Seatek_Analysis/pull/238) | PERFORMANCE | Optimize weekly retrospective network requests |
-
-## Closed superseded (conflicted originals)
-
-| Repo | Old PR | Salvage draft | Notes |
-| --- | ---: | ---: | --- |
-| personal-config | #1132, #1125 | [#1145](https://github.com/abhimehro/personal-config/pull/1145) | run_merges parallelization cluster |
-| personal-config | #1117 | [#1147](https://github.com/abhimehro/personal-config/pull/1147) | scratch_triage parallel API |
-| personal-config | #1142 | [#1146](https://github.com/abhimehro/personal-config/pull/1146) | scratch_inventory any() → or chains |
-| email-security-pipeline | #999 | [#1008](https://github.com/abhimehro/email-security-pipeline/pull/1008) | T1 tarfile Zip Slip |
-| Seatek_Analysis | #237 | [#239](https://github.com/abhimehro/Seatek_Analysis/pull/239) | code_health_scanner TODO perf |
-
-## Open tail (human review)
-
-| Repo | PR | State | Disposition |
-| --- | ---: | --- | --- |
-| personal-config | [#1145](https://github.com/abhimehro/personal-config/pull/1145) | draft, UNSTABLE | MERGE when CI green (T3) |
-| personal-config | [#1146](https://github.com/abhimehro/personal-config/pull/1146) | draft, UNSTABLE | MERGE when CI green (T3) |
-| personal-config | [#1147](https://github.com/abhimehro/personal-config/pull/1147) | draft, UNSTABLE | MERGE when CI green (T3) |
-| personal-config | [#1143](https://github.com/abhimehro/personal-config/pull/1143) | draft, DIRTY | CLOSE after session artifacts land on salvage branch |
-| email-security-pipeline | [#1008](https://github.com/abhimehro/email-security-pipeline/pull/1008) | draft, UNSTABLE | MERGE first (T1 security) |
-| email-security-pipeline | #972–#996, #1003, #1006 | mixed | DEFER / MERGE-AFTER-FIX (see triage) |
-| Seatek_Analysis | [#239](https://github.com/abhimehro/Seatek_Analysis/pull/239) | draft, UNSTABLE | MERGE when CI green (T3) |
+| personal-config | [#1166](https://github.com/abhimehro/personal-config/pull/1166) | SECURITY | Fix command injection in `spinner_wait` (subshell traps) |
+| email-security-pipeline | [#1034](https://github.com/abhimehro/email-security-pipeline/pull/1034) | SECURITY | Restore `_set_secure_permissions` on config fd |
