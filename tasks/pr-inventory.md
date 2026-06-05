@@ -1,8 +1,8 @@
-# PR Inventory — 2026-06-01
+# PR Inventory — 2026-06-05
 
 **Preflight:** PASS (6/6 repos)  
-**Session:** Salvage `0 17 * * *` (cron automation)  
-**Branch:** `cursor-agent/automated-pr-salvage-workflow-17fb`  
+**Session:** Salvage cron `0 17 * * *`  
+**Branch:** `cursor-agent/automated-pr-salvage-workflow-9f39`  
 **Config:** `tasks/pr-review-agent.config.yaml`
 
 ## Scope summary (end of salvage)
@@ -11,40 +11,46 @@
 | --- | ---: | ---: |
 | personal-config | 4 | 0 (originals closed → draft salvages) |
 | ctrld-sync | 0 | 0 |
-| email-security-pipeline | 10 | 6 |
+| email-security-pipeline | 5 | 0 |
 | Seatek_Analysis | 1 | 0 |
-| Hydrograph_Versus_Seatek_Sensors_Project | 0 | 0 |
+| Hydrograph_Versus_Seatek_Sensors_Project | 1 | 0 |
 | series_correction_project_updated | 0 | 0 |
 
 ## Merged this session (CLEAN squash)
 
 | Repo | PR | Category | Title |
 | --- | ---: | --- | --- |
-| personal-config | [#1139](https://github.com/abhimehro/personal-config/pull/1139) | SECURITY | Fix bash eval injection in smart scheduler |
-| personal-config | [#1113](https://github.com/abhimehro/personal-config/pull/1113) | SECURITY | Remove unexecuted eval string from log output |
-| personal-config | [#1144](https://github.com/abhimehro/personal-config/pull/1144) | CI/TEST | fix shellcheck SC2016 in test_repo_credential_hygiene |
-| series_correction | [#92](https://github.com/abhimehro/series_correction_project_updated/pull/92) | SECURITY | CSV/Formula injection categorical column fix |
-| series_correction | [#90](https://github.com/abhimehro/series_correction_project_updated/pull/90) | PERFORMANCE | Vectorize DataFrame creation in correct_gaps |
-| Seatek_Analysis | [#238](https://github.com/abhimehro/Seatek_Analysis/pull/238) | PERFORMANCE | Optimize weekly retrospective network requests |
+| personal-config | [#1169](https://github.com/abhimehro/personal-config/pull/1169) | PERFORMANCE | Bolt: optimize chained or/all() conditions |
+| Seatek_Analysis | [#263](https://github.com/abhimehro/Seatek_Analysis/pull/263) | SECURITY | Sentinel: subprocess environment denylist (HIGH) |
 
-## Closed superseded (conflicted originals)
+## Closed superseded (conflicted or broken salvage)
 
 | Repo | Old PR | Salvage draft | Notes |
 | --- | ---: | ---: | --- |
-| personal-config | #1132, #1125 | [#1145](https://github.com/abhimehro/personal-config/pull/1145) | run_merges parallelization cluster |
-| personal-config | #1117 | [#1147](https://github.com/abhimehro/personal-config/pull/1147) | scratch_triage parallel API |
-| personal-config | #1142 | [#1146](https://github.com/abhimehro/personal-config/pull/1146) | scratch_inventory any() → or chains |
-| email-security-pipeline | #999 | [#1008](https://github.com/abhimehro/email-security-pipeline/pull/1008) | T1 tarfile Zip Slip |
-| Seatek_Analysis | #237 | [#239](https://github.com/abhimehro/Seatek_Analysis/pull/239) | code_health_scanner TODO perf |
+| personal-config | [#1165](https://github.com/abhimehro/personal-config/pull/1165) | [#1172](https://github.com/abhimehro/personal-config/pull/1172) | Palette perf-report WCAG/HTML meta |
+| email-security-pipeline | [#1030](https://github.com/abhimehro/email-security-pipeline/pull/1030) | [#1036](https://github.com/abhimehro/email-security-pipeline/pull/1036) | v3 dropped `_set_secure_permissions`; v4 rebuild |
+| email-security-pipeline | [#1021](https://github.com/abhimehro/email-security-pipeline/pull/1021) | [#1037](https://github.com/abhimehro/email-security-pipeline/pull/1037) | CONFLICTING v2 → import-os v3 from main |
 
 ## Open tail (human review)
 
 | Repo | PR | State | Disposition |
 | --- | ---: | --- | --- |
-| personal-config | [#1145](https://github.com/abhimehro/personal-config/pull/1145) | draft, UNSTABLE | MERGE when CI green (T3) |
-| personal-config | [#1146](https://github.com/abhimehro/personal-config/pull/1146) | draft, UNSTABLE | MERGE when CI green (T3) |
-| personal-config | [#1147](https://github.com/abhimehro/personal-config/pull/1147) | draft, UNSTABLE | MERGE when CI green (T3) |
-| personal-config | [#1143](https://github.com/abhimehro/personal-config/pull/1143) | draft, DIRTY | CLOSE after session artifacts land on salvage branch |
-| email-security-pipeline | [#1008](https://github.com/abhimehro/email-security-pipeline/pull/1008) | draft, UNSTABLE | MERGE first (T1 security) |
-| email-security-pipeline | #972–#996, #1003, #1006 | mixed | DEFER / MERGE-AFTER-FIX (see triage) |
-| Seatek_Analysis | [#239](https://github.com/abhimehro/Seatek_Analysis/pull/239) | draft, UNSTABLE | MERGE when CI green (T3) |
+| personal-config | [#1171](https://github.com/abhimehro/personal-config/pull/1171) | MERGEABLE UNSTABLE | MERGE when CI green (Palette ARIA) |
+| personal-config | [#1172](https://github.com/abhimehro/personal-config/pull/1172) | draft, UNSTABLE | MERGE when CI green (salvage #1165) |
+| personal-config | [#1154](https://github.com/abhimehro/personal-config/pull/1154) | draft, UNSTABLE | MERGE when CI green (run_merges v3) |
+| personal-config | [#1170](https://github.com/abhimehro/personal-config/pull/1170) | draft | Session docs — merge after artifact land |
+| email-security-pipeline | [#1008](https://github.com/abhimehro/email-security-pipeline/pull/1008) | draft T1 | MERGE first (Zip Slip); CodeScene advisory fail |
+| email-security-pipeline | [#1023](https://github.com/abhimehro/email-security-pipeline/pull/1023) | ready, UNSTABLE | MERGE when CI green (NLP eval security) |
+| email-security-pipeline | [#1036](https://github.com/abhimehro/email-security-pipeline/pull/1036) | draft | MERGE when CI green (threat metrics #972) |
+| email-security-pipeline | [#1037](https://github.com/abhimehro/email-security-pipeline/pull/1037) | draft | MERGE when CI green (import os #996) |
+| email-security-pipeline | [#1006](https://github.com/abhimehro/email-security-pipeline/pull/1006) | UNSTABLE | MERGE-AFTER-FIX (bandit) |
+| Seatek_Analysis | [#261](https://github.com/abhimehro/Seatek_Analysis/pull/261) | draft, UNSTABLE | MERGE when CI green (scanner perf) |
+| Hydrograph | [#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227) | draft, UNSTABLE | MERGE when CI green (Bolt perf); CodeScene advisory |
+
+## Live inventory snapshot (gh)
+
+See `scripts/get_prs.sh` output in session branch commit or regenerate:
+
+```bash
+./scripts/get_prs.sh --config tasks/pr-review-agent.config.yaml
+```

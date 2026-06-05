@@ -319,4 +319,10 @@
 **Rule:** When the substantive fix is a single script, salvage **only that file** unless workflow changes are required for the optimization to work. Document omitted paths in the salvage PR body.
 **Detection cost:** Low — inspect `gh pr view --json files` before checkout.
 
+## Lesson 0ce: Multi-file salvage branches can drop security helpers (2026-06-05)
+
+**Pattern:** ESP salvage v3 for #972 (`#1030`) changed `src/main.py` but also removed `_set_secure_permissions` from `app_runner.py` (38 lines deleted). Pytest failed with `AttributeError` on five `test_set_secure_permissions_*` cases.
+**Rule:** After any salvage push, diff against `origin/main` per file. If `app_runner.py` (or other security-critical modules) shrinks, stop and rebuild from `main` with **intent files only**. Verify `pytest tests/test_app_runner.py` before opening the draft PR.
+**Detection cost:** Low — `git diff --stat origin/main` on the salvage branch.
+
 - **Bash Eval Injection in Subshells**: When running traps inside a subshell instead of `eval`, the trap must explicitly use `$BASHPID` instead of `$$` if it wants to signal itself properly, because `$$` refers to the parent process. Also, ensure the subshell's trap explicitly handles signal propagation (e.g. `trap - INT; kill -INT $BASHPID`) so that the subshell terminates correctly, and then the parent script's wait mechanism triggers properly (WCE).
