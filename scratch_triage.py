@@ -19,14 +19,21 @@ def run_cmd(cmd):
     return res.returncode == 0, res.stdout, res.stderr
 
 
+def _contains_all_keywords(title_lower, lower_kws):
+    for kw in lower_kws:
+        if kw not in title_lower:
+            return False
+    return True
+
+
 def _find_matching_prs(all_prs, repo, title_keywords):
     lower_kws = tuple(kw.lower() for kw in title_keywords)
     matches = []
     for p in all_prs:
-        if p["repo"] == repo:
-            title_lower = p["title"].lower()
-            if all(kw in title_lower for kw in lower_kws):
-                matches.append(p)
+        if p["repo"] != repo:
+            continue
+        if _contains_all_keywords(p["title"].lower(), lower_kws):
+            matches.append(p)
     return matches
 
 

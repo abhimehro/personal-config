@@ -1,8 +1,8 @@
+import concurrent.futures
 import json
 import os
 import subprocess
 from functools import lru_cache
-import concurrent.futures
 
 
 def _parse_env_line(line, env_dict):
@@ -31,6 +31,7 @@ def _get_parsed_env_vars():
     except FileNotFoundError:
         pass
     return parsed_vars
+
 
 def _load_gh_token_env():
     env = os.environ.copy()
@@ -84,6 +85,7 @@ categorized = {
     "PERFORMANCE/REFACTOR/UI/FEATURE": [],
 }
 
+
 def fetch_pr_info(pr):
     # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
     repo, _, pr_id = pr.partition("#")
@@ -101,6 +103,7 @@ def fetch_pr_info(pr):
     )
     return pr, info
 
+
 with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
     # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls while preserving order using map()
     results = executor.map(fetch_pr_info, ready_prs)
@@ -116,18 +119,20 @@ for pr, info in results:
 
     title = info.get("title", "").lower()
     cat = "PERFORMANCE/REFACTOR/UI/FEATURE"
-    if "sentinel" in title or "security" in title or "cve" in title or "xxe" in title:
-        cat = "SECURITY"
-    elif "dependabot" in title or "renovate" in title:
-        cat = "DEPENDENCY"
-    elif (
-        "chore" in title
-        or "ci" in title
-        or "automation" in title
-        or "action" in title
-        or "trunk" in title
-    ):
-        cat = "CI/INFRA"
+    for sec_kw in ("sentinel", "security", "cve", "xxe"):
+        if sec_kw in title:
+            cat = "SECURITY"
+            break
+    if cat == "PERFORMANCE/REFACTOR/UI/FEATURE":
+        for dep_kw in ("dependabot", "renovate"):
+            if dep_kw in title:
+                cat = "DEPENDENCY"
+                break
+    if cat == "PERFORMANCE/REFACTOR/UI/FEATURE":
+        for ci_kw in ("chore", "ci", "automation", "action", "trunk"):
+            if ci_kw in title:
+                cat = "CI/INFRA"
+                break
 
     categorized[cat].append((pr, info.get("title")))
 
