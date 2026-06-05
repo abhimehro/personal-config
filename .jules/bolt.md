@@ -104,6 +104,7 @@
 **Action:** When a function requires a date for calculations and is called repeatedly in a loop, parse the date outside the loop and pass the `datetime.date` object as an argument instead of the raw string.
 
 ## 2026-04-04 - strptime vs fromisoformat overhead
+
 **Learning:** In Python, parsing ISO-8601 timestamp strings using `datetime.strptime` involves format string processing overhead that can be significantly slow inside loops. `datetime.fromisoformat()` is implemented in C and optimized for ISO strings, executing 20x-40x faster.
 **Action:** When parsing standard ISO timestamps (e.g., from APIs or configuration files), use `datetime.fromisoformat()` instead of `strptime`. For strings ending with `"Z"` (UTC), use `.replace("Z", "+00:00")` before parsing to maintain compatibility with Python versions older than 3.11.
 
@@ -123,10 +124,12 @@
 **Action:** Do not use the `-quit` flag in `find` commands within macOS-specific scripts. If early exit behavior is needed on the first match, use `find ... | head -n 1` or `grep -q .`.
 
 ## 2024-05-18 - Fast String Searching for PR Exclusions
+
 **Learning:** In PR automation scripts like `detect_duplicates.py`, repeatedly evaluating `lines[: index]` and slicing lists inside a generator expression for exclusion filtering (`if not any(pr in l for l in lines[: index])`) introduces O(N*M) overhead.
-**Action:** When filtering a list of substrings against a prefix/slice of file lines, `"".join()` the target slice into a single string *once* outside the loop, and use the fast C-level `in` operator (`pr not in pre_joined_string`). This simple hoist-and-join strategy eliminates list slicing and Python loop overhead, yielding ~88% performance improvement on medium-sized lists.
+**Action:** When filtering a list of substrings against a prefix/slice of file lines, `"".join()` the target slice into a single string *once\* outside the loop, and use the fast C-level `in` operator (`pr not in pre_joined_string`). This simple hoist-and-join strategy eliminates list slicing and Python loop overhead, yielding ~88% performance improvement on medium-sized lists.
 
 ## 2026-06-25 - [List Comprehensions with Direct Dict Lookups]
+
 **Learning:** In Python data parsing scripts, combining list comprehensions with `type(dict) is dict` and direct dictionary lookups (`"key" in dict and dict["key"] == val`) provides a ~15-20% performance boost over using generator expressions with `isinstance()` and `.get()` calls by avoiding function overhead.
 **Action:** When extracting data from large JSON arrays based on nested conditions, prefer list comprehensions over generator expressions and use direct `in` checks combined with `type() is dict` instead of `.get()` and `isinstance()`.
 
@@ -134,54 +137,83 @@
 
 **Learning:** In Python data parsing scripts, replacing `.get()` calls inside generator expressions with explicit `key in dict` + direct `dict[key]` lookups gives a small but consistent speedup (~10-15%) when iterating over large lists of dicts (e.g. AdGuard rule lists with thousands of entries). The win comes from avoiding `.get()`'s default-value branching and the small per-call overhead of method dispatch.
 **Action:** When extracting fields from large JSON arrays inside a list comprehension, prefer `if "key" in d and d["key"] == val` over `if d.get("key") == val`, and use `[ ... for d in data ]` (list comprehension) instead of `( ... for d in data )` (generator) when the result is immediately materialized (e.g. passed to `set.update` or returned from a function).
+
 ## 2026-03-10 - Cached Environment parsing in iterative scripts
+
 **Learning:** Repetitive file IO (e.g., parsing `.env` files) inside helper functions that are called in loops (like API wrappers across a large queue) creates a massive performance bottleneck.
 **Action:** Use Python's `functools.lru_cache` to cache environment or configuration file parsing that runs repeatedly but remains static during execution.
 
 ## 2026-03-10 - [Memory Efficiency and PEP-8 in Data Extraction]
+
 **Learning:** Using `type() is dict` violates PEP-8 conventions. Furthermore, passing list comprehensions (e.g., `[x for x in data]`) to aggregate functions like `set.update()` forces the entire filtered sequence into memory at once, creating unnecessary memory spikes during large JSON extractions.
 **Action:** When extracting data based on type, always use `isinstance()`. When passing filtered sequences to aggregate functions that accept iterables (like `.update()`), preserve memory efficiency by using generator expressions `(...)` instead of list comprehensions `[...]`.
 
 ## 2026-05-24 - [Avoid re.match and split overhead for simple parsing]
+
 **Learning:** Using `re.match` for simple prefix string extractions (like `## repo/name`) is up to ~3x slower than `str.startswith()` combined with list slicing. Similarly, breaking strings on a single character using `str.split("=", 1)` or extracting suffix/prefix with `split("/")[-1]` introduces unnecessary list allocation overhead. The `str.partition()` and `str.rpartition()` methods are implemented in C and provide ~30-40% faster string splitting without allocating new lists.
 **Action:** For simple string prefix extractions, prefer `startswith` + slicing over regular expressions. When splitting a string on a single separator, use `partition` or `rpartition` instead of `split`.
+
 ## 2026-05-14 - [Optimize N+1 API Calls with ThreadPoolExecutor]
 
 **Learning:** Making independent network API requests sequentially inside a loop creates an N+1 performance bottleneck. By utilizing Python's `concurrent.futures.ThreadPoolExecutor`, these independent IO-bound tasks can be executed concurrently, achieving significant speedups (e.g., ~8.9x reduction in execution time for 100ms latency simulated API requests).
 **Action:** Identify loops executing sequential independent network or IO-bound operations and refactor them using `concurrent.futures.ThreadPoolExecutor` to execute the operations in parallel. Ensure shared state (like appending to a dictionary or list) is handled safely outside the parallel execution or by using thread-safe data structures.
 
 ## 2026-11-20 - [Avoid unnecessary .split() list allocation in simple string formatting]
+
 **Learning:** When extracting substrings from a string separated by a known delimiter inside a loop or comprehension (e.g. `pr.split()[0]`), repeatedly calling `.split()` allocates new lists each time, causing a performance overhead.
 **Action:** When you only need to split once on the first delimiter and want to avoid unnecessary list allocation, use `str.partition()` instead of `str.split()`. It returns a tuple directly in C and doesn't allocate an arbitrary-length list. If doing inline formatting or transformations inside comprehensions, prefer doing the partition/split once and binding the results rather than repeating `.split()` multiple times on the same item.
 
 ## 2026-11-20 - [Avoid Repeated String Lowering in List Comprehensions]
+
 **Learning:** When evaluating nested loop conditions like `all(kw.lower() in p["title"].lower() for kw in keywords)` inside a list comprehension, Python repeatedly evaluates `.lower()` on both the keyword and the title for every iteration. This redundant string conversion overhead significantly slows down list filtering.
 **Action:** Pre-calculate `kw.lower()` outside the comprehension. To avoid repeatedly evaluating `p["title"].lower()` for each keyword during the `all()` check, use a single-element tuple in a `for` clause (e.g., `for title_lower in (p["title"].lower(),)`) to bind the value once per item.
+
 ## 2026-11-20 - [Avoid Redundant title.lower() in Security Audits]
+
 **Learning:** Checking a series of hardcoded substrings sequentially against `.lower()` of a string (`"auth" in title.lower() or "payment" in title.lower()`) inside loops creates unnecessary CPU overhead when the keyword doesn't match and the `or` falls through. In Python, doing `title.lower()` redundantly repeatedly inside an `if` block executes the C-level lowercase string allocation `N` times.
 **Action:** When performing `in` checks against multiple strings using an `or` operation, declare a temporary lowercase string variable (`title_lower = title.lower()`) before the `if` block and compare against it directly to halve the overhead.
+
 ## 2026-05-24 - Optimize duplicate lookup array algorithm in `_generate_ready_section`
+
 **Learning:** Checking for list membership (`item not in list`) within a loop creates an O(N^2) time complexity which causes massive delays for lists containing thousands of items.
 **Action:** When filtering one list based on membership in another, convert the filter list to a set (`filter_set = set(filter_list)`) before the loop to reduce lookup complexity to O(1), making the overall algorithm O(N).
+
 ## 2026-05-26 - [Avoid N+1 CLI invocations using ThreadPoolExecutor in Python Scripts]
+
 **Learning:** Sequential execution of CLI commands like `gh` over a list of items causes significant N+1 performance bottlenecks due to network latency and subprocess startup overhead.
 **Action:** When a script needs to run independent read-only CLI commands in a loop, refactor the logic into a pure function and use `concurrent.futures.ThreadPoolExecutor` with `executor.map()` to parallelize the calls safely. Ensure results are returned to the main thread to avoid mutating shared state from worker threads.
 
 ## 2024-05-27 - [Avoid N+1 CLI invocations using ThreadPoolExecutor in scratch automation scripts]
+
 **Learning:** In sequential read-only data fetching scripts like `scratch_inventory.py` and `scratch_triage.py`, running `gh` CLI commands sequentially for a list of repositories creates massive N+1 performance bottlenecks due to network latency and subprocess startup overhead.
 **Action:** Always parallelize independent read-only IO-bound operations by extracting the subprocess loop body into a helper function and using `concurrent.futures.ThreadPoolExecutor().map()`. This pattern safely preserves list order while dramatically improving execution time.
+
 ## 2026-03-10 - [Avoid N+1 CLI invocations using ThreadPoolExecutor in review summarization scripts]
+
 **Learning:** In PR summarization scripts like `scripts/get_prs_summarize.py`, executing sequential `gh` CLI commands to fetch details for a list of PRs creates a severe N+1 performance bottleneck due to network latency.
 **Action:** Use `concurrent.futures.ThreadPoolExecutor().map()` to parallelize these independent read-only IO-bound API calls. This preserves the original presentation order while dramatically reducing execution time.
+
 ## 2026-05-29 - [GitHub Actions Dependency Pinning]
+
 **Learning:** CI linters or repository policies may enforce pinning GitHub Actions to full-length commit SHAs instead of tags (e.g., `actions/setup-python@v6.2.0` -> `actions/setup-python@<sha> # v6.2.0`) to prevent supply chain attacks via mutable tags.
 **Action:** Always pin GitHub Actions to full commit SHAs, even for official actions. Use `git ls-remote` to quickly find the commit hash for a specific tag.
+
 ## 2026-05-31 - [Avoid Redundant title.lower() in conditionals]
+
 **Learning:** Checking a series of hardcoded substrings sequentially against `.lower()` of a string (`"auth" in title.lower() or "payment" in title.lower()`) inside loops creates unnecessary CPU overhead when the keyword doesn't match and the `or` falls through. In Python, doing `title.lower()` redundantly repeatedly inside an `if` block executes the C-level lowercase string allocation `N` times.
 **Action:** When performing `in` checks against multiple strings using an `or` operation, declare a temporary lowercase string variable (`title_lower = title.lower()`) before the `if` block and compare against it directly to halve the overhead.
+
 ## 2024-05-24 - Parallelize Independent Network API Calls
+
 **Learning:** Sequential network calls inside a loop (like executing GitHub CLI commands iteratively) cause significant latency due to blocking I/O overhead.
 **Action:** Use `concurrent.futures.ThreadPoolExecutor` to map network-bound functions across iterations simultaneously, which can yield N-fold speedups based on network latency and worker count.
+
 ## 2026-05-31 - [Optimize single-character lookups using string membership]
+
 **Learning:** When checking if a single character belongs to a set of allowed characters (e.g., `char in allowed_chars`), using a string for `allowed_chars` (e.g., `"=+-@\t\r"`) is approximately 5x faster than using a tuple of strings (e.g., `("=", "+", "-", "@", "\t", "\r")`). The string `in` operation performs an O(1)-like C-level character lookup without the iterator allocation and pointer indirection overhead of a tuple.
 **Action:** When validating single characters against a small, fixed set of choices, define the collection as a single string instead of a tuple or list.
+
+## 2026-06-05 - [Avoid long 'or' condition chains and all() generators]
+
+**Learning:** Checking a long series of hardcoded substrings sequentially using `or` operations (e.g., `kw in string or kw2 in string`), or using `all()` with a generator expression inside a loop, negatively impacts Code Health (cyclomatic complexity) and incurs iterator allocation overhead in CPython.
+**Action:** Replace long chained `or` substring checks and `all()` generator expressions with explicit `for` loops iterating over a defined tuple of strings, combined with an early `break` or boolean flag. This balances performance by avoiding iterator allocation while simultaneously reducing nested conditional complexity.

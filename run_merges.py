@@ -184,13 +184,11 @@ for repo, pr, title in queue:
     escalate = False
     reasons = []
 
-    if (
-        "eval(" in diff_lower
-        or "exec(" in diff_lower
-        or "dangerouslysetinnerhtml" in diff_lower
-    ):
-        escalate = True
-        reasons.append("Dangerous evaluation function detected.")
+    for dangerous in ("eval(", "exec(", "dangerouslysetinnerhtml"):
+        if dangerous in diff_lower:
+            escalate = True
+            reasons.append("Dangerous evaluation function detected.")
+            break
     if "pull_request_target" in diff_lower and "checkout" in diff_lower:
         escalate = True
         reasons.append("Dangerous GitHub Actions workflow detected.")
@@ -203,14 +201,11 @@ for repo, pr, title in queue:
 
     # ⚡ Bolt Optimization: Cache title.lower() to prevent redundant C-level string allocations during multiple sequential "in" checks
     title_lower = title.lower()
-    if (
-        "auth" in title_lower
-        or "payment" in title_lower
-        or "migration" in title_lower
-        or "sql" in title_lower
-    ):
-        escalate = True
-        reasons.append("Touches sensitive domain (auth/payments/db).")
+    for sensitive in ("auth", "payment", "migration", "sql"):
+        if sensitive in title_lower:
+            escalate = True
+            reasons.append("Touches sensitive domain (auth/payments/db).")
+            break
 
     if escalate:
         print(f"ESCALATING {repo}#{pr}: {', '.join(reasons)}")

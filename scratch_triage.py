@@ -25,7 +25,12 @@ def _find_matching_prs(all_prs, repo, title_keywords):
     for p in all_prs:
         if p["repo"] == repo:
             title_lower = p["title"].lower()
-            if all(kw in title_lower for kw in lower_kws):
+            match = True
+            for kw in lower_kws:
+                if kw not in title_lower:
+                    match = False
+                    break
+            if match:
                 matches.append(p)
     return matches
 
