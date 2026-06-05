@@ -32,35 +32,30 @@ spinner_wait() {
 	local msg="${2:-Working}"
 
 	if [[ -t 1 && -z ${CI-} ]]; then
-		local i=1
-		local sp="/-\|"
-		local iterations
-		iterations=$((duration * 10))
-		local c=0
+		(
+			local i=1
+			local sp="/-\|"
+			local iterations
+			iterations=$((duration * 10))
+			local c=0
 
-		# Hide cursor gracefully in TTY
-		if [ -t 1 ] && [ -z "${CI-}" ]; then tput civis 2>/dev/null || true; fi
+			# Hide cursor gracefully in TTY
+			tput civis 2>/dev/null || true
 
-		# Save original traps and set temporary ones
-		local old_int_trap
-		old_int_trap=$(trap -p INT)
-		trap 'if [ -t 1 ] && [ -z "${CI-}" ]; then tput cnorm 2>/dev/null || true; fi; printf "\r\033[K"; '"${old_int_trap:-trap - INT}"'; kill -INT "$$"' INT
+			# Set temporary traps within subshell to avoid polluting parent
+			trap 'tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - INT; kill -INT $BASHPID' INT
+			trap 'tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - TERM; kill -TERM $BASHPID' TERM
 
-		local old_term_trap
-		old_term_trap=$(trap -p TERM)
-		trap 'if [ -t 1 ] && [ -z "${CI-}" ]; then tput cnorm 2>/dev/null || true; fi; printf "\r\033[K"; '"${old_term_trap:-trap - TERM}"'; kill -TERM "$$"' TERM
+			while [[ $c -lt $iterations ]]; do
+				printf "\r${BLUE}[%c]${NC} %s..." "${sp:i++%${#sp}:1}" "$msg"
+				sleep 0.1
+				c=$((c + 1))
+			done
+			printf "\r\033[K" # Clear line
 
-		while [[ $c -lt $iterations ]]; do
-			printf "\r${BLUE}[%c]${NC} %s..." "${sp:i++%${#sp}:1}" "$msg"
-			sleep 0.1
-			c=$((c + 1))
-		done
-		printf "\r\033[K" # Clear line
-
-		# Restore cursor and original traps
-		if [ -t 1 ] && [ -z "${CI-}" ]; then tput cnorm 2>/dev/null || true; fi
-		if [ -n "${old_int_trap-}" ]; then eval "$old_int_trap"; else trap - INT; fi
-		if [ -n "${old_term_trap-}" ]; then eval "$old_term_trap"; else trap - TERM; fi
+			# Restore cursor
+			tput cnorm 2>/dev/null || true
+		)
 	else
 		# Fallback for non-TTY environments (CI, screen readers)
 		log "$msg (waiting ${duration}s)..."
