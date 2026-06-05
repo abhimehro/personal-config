@@ -443,17 +443,19 @@ generate_performance_report() {
 
 	cat >"$report_file" <<EOF
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Performance Report - $(date +%Y-%m-%d)</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .header { background-color: #f0f0f0; padding: 10px; border-radius: 5px; }
         .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
         .metric { margin: 5px 0; }
-        .good { color: green; }
-        .warning { color: orange; }
-        .critical { color: red; }
+        .good { color: #057A55; }
+        .warning { color: #B45309; }
+        .critical { color: #DC2626; }
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         th { background-color: #f0f0f0; }
