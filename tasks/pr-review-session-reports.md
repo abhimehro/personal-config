@@ -11,13 +11,13 @@
 | Metric | Count |
 | --- | ---: |
 | Repos | 6 |
-| Merged | 9 |
+| Merged | 10 |
 | Closed | 3 |
 | Deferred | 3 |
 | Escalated | 0 |
 | Open tail | 3 |
 
-**Highlights:** Merged pc Sentinel #1174, Palette #1171, a11y #1172; esp Zip Slip #1008, NLP #1023, refactors #1036/#1037; sa Bolt #266; ctrld QA #871. Closed pc #1154 (DIRTY), session doc PRs #1170/#1173. Deferred esp #1006 (bandit), sa #261 and hg #227 (CodeScene).
+**Highlights:** Merged pc Sentinel #1174, Palette #1171, a11y #1172; esp Zip Slip #1008, NLP #1023, refactors #1036/#1037, Jules QA #1039; sa Bolt #266; ctrld QA #871. Closed pc #1154 (DIRTY), session doc PRs #1170/#1173. Deferred esp #1006 (bandit), sa #261 and hg #227 (CodeScene).
 
 ## Run — 2026-05-31 (cron salvage 17:00)
 

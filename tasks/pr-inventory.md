@@ -11,7 +11,7 @@
 | --- | ---: | ---: | ---: | ---: | ---: |
 | personal-config | 6 | 3 | 3 | 0 | 0 |
 | ctrld-sync | 1 | 1 | 0 | 0 | 0 |
-| email-security-pipeline | 5 | 4 | 0 | 1 | 0 |
+| email-security-pipeline | 6 | 5 | 0 | 1 | 0 |
 | Seatek_Analysis | 2 | 1 | 0 | 1 | 0 |
 | Hydrograph_Versus_Seatek_Sensors_Project | 1 | 0 | 0 | 1 | 0 |
 | series_correction_project_updated | 0 | 0 | 0 | 0 | 0 |
@@ -49,6 +49,7 @@
 | email-security-pipeline | [#1037](https://github.com/abhimehro/email-security-pipeline/pull/1037) | REFACTOR | move import os to top (salvages #996, v3) |
 | email-security-pipeline | [#1036](https://github.com/abhimehro/email-security-pipeline/pull/1036) | REFACTOR | flatten _record_threat_metrics (salvages #972, v4) |
 | ctrld-sync | [#871](https://github.com/abhimehro/ctrld-sync/pull/871) | CI/INFRA | Daily QA notes 2026-06-06 |
+| email-security-pipeline | [#1039](https://github.com/abhimehro/email-security-pipeline/pull/1039) | REFACTOR | Jules Daily QA formatting (ui.py) |
 
 ## Closed (not merged)
 
