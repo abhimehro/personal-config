@@ -367,7 +367,7 @@ opt_sqlite_vacuum() {
     local -a check_apps=("Mail" "Safari" "Messages")
     local app
     for app in "${check_apps[@]}"; do
-        if pgrep -x "$app" > /dev/null 2>&1; then
+        if pgrep -x -- "$app" > /dev/null 2>&1; then
             busy_apps+=("$app")
         fi
     done
@@ -556,7 +556,7 @@ browser_family_is_running() {
             pgrep -if "Zen Browser|org\\.mozilla\\.zen|Zen Browser Helper|zen .*contentproc" > /dev/null 2>&1
             ;;
         *)
-            pgrep -ix "$browser_name" > /dev/null 2>&1
+            pgrep -ix -- "$browser_name" > /dev/null 2>&1
             ;;
     esac
 }
@@ -790,7 +790,7 @@ opt_bluetooth_reset() {
             if system_profiler SPBluetoothDataType 2> /dev/null | grep -q "Connected: Yes"; then
                 local -a media_apps=("Music" "Spotify" "VLC" "QuickTime Player" "TV" "Podcasts" "Safari" "Google Chrome" "Chrome" "Firefox" "Arc" "IINA" "mpv")
                 for app in "${media_apps[@]}"; do
-                    if pgrep -x "$app" > /dev/null 2>&1; then
+                    if pgrep -x -- "$app" > /dev/null 2>&1; then
                         bt_audio_active=true
                         break
                     fi
