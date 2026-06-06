@@ -2,7 +2,22 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-06-06 (review-and-merge 13:00).
+> **Latest execution:** 2026-06-06 (salvage 17:00).
+
+## Run — 2026-06-06 (cron salvage 17:00)
+
+**Report:** `tasks/pr-review-2026-06-06.md` (Addendum section)
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Deep-dived | 4 |
+| Merged | 1 |
+| Closed | 1 |
+| Human-merge candidates | 2 |
+| CONFLICTING | 0 |
+
+**Highlights:** Merged esp Jules QA #1041. Closed esp #1006 (SHA→tag workflow regression, Lesson 0z). Commented on sa #261 and hg #227 for human merge (CodeScene advisory). Zero conflicted bot PRs across all six repos.
 
 ## Run — 2026-06-06 (cron review-and-merge 13:00)
 

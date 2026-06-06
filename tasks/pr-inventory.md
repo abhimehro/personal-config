@@ -59,10 +59,29 @@
 | personal-config | [#1170](https://github.com/abhimehro/personal-config/pull/1170) | Session doc artifacts superseded by 2026-06-06 report |
 | personal-config | [#1173](https://github.com/abhimehro/personal-config/pull/1173) | Salvage session doc artifacts superseded by 2026-06-06 report |
 
-## Open tail (deferred)
+## Salvage session (cron `0 17 * * *`, branch `cursor-agent/automated-pr-salvage-workflow-c9e6`)
+
+| Repo | Action | PR | Notes |
+| --- | --- | ---: | --- |
+| email-security-pipeline | **MERGED** | [#1041](https://github.com/abhimehro/email-security-pipeline/pull/1041) | Jules Daily QA; all gates green |
+| email-security-pipeline | **CLOSED** | [#1006](https://github.com/abhimehro/email-security-pipeline/pull/1006) | SHA→tag regression (Lesson 0z) |
+| Seatek_Analysis | **HUMAN-MERGE** | [#261](https://github.com/abhimehro/Seatek_Analysis/pull/261) | CodeScene advisory only |
+| Hydrograph_Versus_Seatek_Sensors_Project | **HUMAN-MERGE** | [#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227) | CodeScene advisory only |
+
+## Scope summary (end of day 2026-06-06)
+
+| Repo | Open in-scope EOD | CONFLICTING |
+| --- | ---: | ---: |
+| personal-config | 0 | 0 |
+| ctrld-sync | 0 | 0 |
+| email-security-pipeline | 0 | 0 |
+| Seatek_Analysis | 1 | 0 |
+| Hydrograph_Versus_Seatek_Sensors_Project | 1 | 0 |
+| series_correction_project_updated | 0 | 0 |
+
+## Open tail (human review)
 
 | Repo | PR | Blocker | Next action |
 | --- | ---: | --- | --- |
-| email-security-pipeline | [#1006](https://github.com/abhimehro/email-security-pipeline/pull/1006) | bandit fail | Human fix workflow consolidation |
-| Seatek_Analysis | [#261](https://github.com/abhimehro/Seatek_Analysis/pull/261) | CodeScene advisory | Human merge when delta acceptable |
-| Hydrograph_Versus_Seatek_Sensors_Project | [#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227) | CodeScene advisory | Re-evaluate after main advances |
+| Seatek_Analysis | [#261](https://github.com/abhimehro/Seatek_Analysis/pull/261) | CodeScene advisory | Human squash-merge when delta acceptable |
+| Hydrograph_Versus_Seatek_Sensors_Project | [#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227) | CodeScene advisory | Human squash-merge when delta acceptable |

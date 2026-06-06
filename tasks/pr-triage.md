@@ -46,3 +46,18 @@ Not triggered — no 4+ PRs sharing the same required-check failure pattern on `
 1. **Fix bandit then merge:** [esp#1006](https://github.com/abhimehro/email-security-pipeline/pull/1006) (workflow consolidation).  
 2. **Merge when CodeScene acceptable:** [sa#261](https://github.com/abhimehro/Seatek_Analysis/pull/261), [hg#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227).  
 3. **Rebuild if needed:** `run_merges.py` parallelization from current `main` (supersedes closed #1154).
+
+---
+
+## Salvage addendum (cron `0 17 * * *`)
+
+| Disposition | PRs | Executed |
+| --- | --- | --- |
+| **MERGE** | esp #1041 | Jules QA formatting — all security gates green |
+| **CLOSE-REGRESSION** | esp #1006 | Lesson 0z: unpinned action tags in workflow files |
+| **HUMAN-MERGE** | sa #261, hg #227 | Commented; draft salvages — no autonomous merge |
+
+**Updated human actions:**
+
+1. **Merge when CodeScene acceptable:** [sa#261](https://github.com/abhimehro/Seatek_Analysis/pull/261), [hg#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227).  
+2. **Do not reopen** esp #1006 — rewrite workflow consolidation with full SHA pins if still needed.

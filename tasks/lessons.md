@@ -325,4 +325,10 @@
 **Rule:** When the substantive fix is a single script, salvage **only that file** unless workflow changes are required for the optimization to work. Document omitted paths in the salvage PR body.
 **Detection cost:** Low — inspect `gh pr view --json files` before checkout.
 
+## Lesson 0ce: Salvage tail can clear same-day without new draft PRs (2026-06-06)
+
+**Pattern:** Morning review deferred esp #1006 (bandit), sa #261 and hg #227 (CodeScene). Evening salvage closed #1006 as Lesson 0z regression, merged late-arriving Jules QA #1041, and left two perf drafts for human merge — no new salvage branches required.
+**Rule:** Re-fetch open PRs at salvage start; Jules may open CLEAN PRs after the morning inventory. Close SHA-regression workflow PRs rather than attempting pin-fix on a stale branch.
+**Detection cost:** Low — `gh pr list` + `gh run view --log-failed` on bandit job.
+
 - **Bash Eval Injection in Subshells**: When running traps inside a subshell instead of `eval`, the trap must explicitly use `$BASHPID` instead of `$$` if it wants to signal itself properly, because `$$` refers to the parent process. Also, ensure the subshell's trap explicitly handles signal propagation (e.g. `trap - INT; kill -INT $BASHPID`) so that the subshell terminates correctly, and then the parent script's wait mechanism triggers properly (WCE).
