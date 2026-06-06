@@ -313,6 +313,12 @@
 **Related:** Lesson 0y (nested unpinned actions inside composites).
 **Detection cost:** Low — bandit workflow fails before pytest on workflow-only diffs.
 
+## Lesson 0ce: T1 security merges with CodeScene-only failure (2026-06-06)
+
+**Pattern:** ESP #1008 had `mergeStateStatus: UNSTABLE` solely because CodeScene Code Health Review failed; bandit, CodeQL, pytest, Snyk, and GitGuardian were all green.
+**Rule:** CodeScene is advisory unless branch protection marks it required. For T1 security salvages, merge when the full security test suite passes and the diff addresses the vulnerability — do not defer solely on CodeScene delta.
+**Contrast:** Defer perf salvages (#261, #227) where CodeScene is the only failure and the change is not security-critical.
+
 ## Lesson 0cd: Salvage workflow-heavy Bolt PRs with minimal file set (2026-06-01)
 
 **Pattern:** Seatek #237 touched eight workflow YAML files plus `code_health_scanner.py`; rebasing the full branch risked unrelated CI churn.

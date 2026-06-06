@@ -2,7 +2,22 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-05-31 (salvage 17:00).
+> **Latest execution:** 2026-06-06 (review-and-merge 13:00).
+
+## Run — 2026-06-06 (cron review-and-merge 13:00)
+
+**Report:** `tasks/pr-review-2026-06-06.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 10 |
+| Closed | 3 |
+| Deferred | 3 |
+| Escalated | 0 |
+| Open tail | 3 |
+
+**Highlights:** Merged pc Sentinel #1174, Palette #1171, a11y #1172; esp Zip Slip #1008, NLP #1023, refactors #1036/#1037, Jules QA #1039; sa Bolt #266; ctrld QA #871. Closed pc #1154 (DIRTY), session doc PRs #1170/#1173. Deferred esp #1006 (bandit), sa #261 and hg #227 (CodeScene).
 
 ## Run — 2026-05-31 (cron salvage 17:00)
 
