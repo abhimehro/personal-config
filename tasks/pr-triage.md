@@ -1,43 +1,48 @@
-# PR Triage — 2026-06-01 (Salvage 17:00)
+# PR Triage — 2026-06-06
 
 **Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · DEFER · CLOSE-SUPERSEDED · ESCALATE · SALVAGE-DRAFT
+**Disposition key:** MERGE · DEFER · CLOSE-SUPERSEDED · ESCALATE
 
 ## Duplicate & overlap analysis
 
 | Group | Keeper | Action on others | Rationale |
 | --- | --- | --- | --- |
-| run_merges Bolt parallel | **Salvage #1145** | Close #1132, #1125 | Same `run_merges.py` intent; #1125 subset of #1132 |
-| scratch_triage Bolt | **Salvage #1147** | Close #1117 | Rebuilt from main |
-| scratch_inventory Bolt | **Salvage #1146** | Close #1142 | Rebuilt from main |
-| ESP tarfile Zip Slip | **Salvage #1008** | Close #999 | T1 security; conflicted original |
-| Seatek TODO scanner | **Salvage #239** | Close #237 | Single-file salvage; omitted workflow-only churn |
-| Session doc artifacts | **Salvage branch commit** | Supersede #1143 | Same-day `tasks/pr-*` on conflicted draft |
+| Session doc artifacts (2026-06-05) | **This session branch** | Close #1170, #1173 | Overlapping `tasks/pr-*` files; consolidated into 2026-06-06 report |
+| run_merges parallel salvage | **None (rebuild)** | Close #1154 | CONFLICTING (DIRTY) after #1147+ merges; v3 stale |
+| ESP tarfile Zip Slip | **#1008** | (original #999 already closed) | T1 security salvage — merged |
+| ESP refactor salvages | **#1036, #1037** | (originals #972, #996 closed) | Independent files; both merged |
+
+No new semantic duplicates detected among open PRs at session start.
 
 ## Session dispositions (executed)
 
-| Disposition | PRs | Executed |
-| --- | --- | --- |
-| **MERGE** | pc #1139, #1113, #1144; sc #92, #90; sa #238 | Squash-merged |
-| **SALVAGE-DRAFT** | pc #1145–#1147; esp #1008; sa #239 | Opened draft; originals closed with cross-link |
-| **CLOSE-SUPERSEDED** | pc #1132, #1125, #1117, #1142; esp #999; sa #237 | Closed with salvage comment |
-| **DEFER** | esp #972, #973, #982, #984, #989, #996 | Comment posted; rebuild-from-main queue |
-| **MERGE-AFTER-FIX** | esp #1006 | bandit failing — human + Lesson 0z |
-| **MERGE when CLEAN** | esp #992, #1003 | UNSTABLE advisory checks |
+| Disposition | PRs | Count |
+| --- | --- | ---: |
+| **MERGE** | pc #1174, #1171, #1172; esp #1008, #1023, #1036, #1037; sa #266; ctrld #871 | 9 |
+| **CLOSE-SUPERSEDED** | pc #1154, #1170, #1173 | 3 |
+| **DEFER** | esp #1006; sa #261; hg #227 | 3 |
+| **ESCALATE** | — | 0 |
 
-## Security notes
+## Security gate review
 
-| PR | Tier | Assessment |
-| --- | --- | --- |
-| pc #1139, #1113 | T1 | Eval/injection hardening — merged |
-| sc #92 | T1 | CSV injection — merged |
-| esp #1008 | T1 | Zip Slip tarfile guard — draft salvage |
-| esp #1006 | CI/INFRA | Workflow consolidation; bandit gate blocked |
+| PR | Tier | Gate 2 result | Notes |
+| --- | --- | --- | --- |
+| pc #1174 | T1 | PASS | `pgrep`/`pkill` `--` terminator prevents CWE-88 option injection |
+| esp #1008 | T1 | PASS | PEP-706 data filter + explicit `..` / absolute path guards on tar members |
+| esp #1023 | T2 | PASS | `model.eval()` → `model.train(False)` equivalent; test formatting only |
+| esp #1006 | CI/INFRA | DEFER | Workflow trust boundary + bandit failure — human required |
+
+## CodeScene advisory failures (not security blockers)
+
+Merged #1008 despite CodeScene fail: pytest, bandit, CodeQL, Snyk, GitGuardian all green.  
+Deferred #261, #227: salvage perf PRs where CodeScene is sole failure.
+
+## Infra-broken main check (Lesson 0t)
+
+Not triggered — no 4+ PRs sharing the same required-check failure pattern on `main`.
 
 ## Ready-to-execute human actions
 
-1. **Merge T1:** [esp#1008](https://github.com/abhimehro/email-security-pipeline/pull/1008) after CI green.  
-2. **Merge T3 salvages:** [pc#1145](https://github.com/abhimehro/personal-config/pull/1145), [#1146](https://github.com/abhimehro/personal-config/pull/1146), [#1147](https://github.com/abhimehro/personal-config/pull/1147), [sa#239](https://github.com/abhimehro/Seatek_Analysis/pull/239).  
-3. **Fix then merge:** [esp#1006](https://github.com/abhimehro/email-security-pipeline/pull/1006) (bandit).  
-4. **ESP test batch:** Rebuild #972–#996 from `main` in a follow-up salvage cycle (do not use Update branch).  
-5. **Close** [pc#1143](https://github.com/abhimehro/personal-config/pull/1143) after merging session doc commit from salvage branch.
+1. **Fix bandit then merge:** [esp#1006](https://github.com/abhimehro/email-security-pipeline/pull/1006) (workflow consolidation).  
+2. **Merge when CodeScene acceptable:** [sa#261](https://github.com/abhimehro/Seatek_Analysis/pull/261), [hg#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227).  
+3. **Rebuild if needed:** `run_merges.py` parallelization from current `main` (supersedes closed #1154).
