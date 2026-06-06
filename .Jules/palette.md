@@ -1,0 +1,3 @@
+## 2025-06-05 - Added ARIA labels to directory listing links
+**Learning:** Screen readers reading generated HTML directory structures (like from `infuse-media-server.py`) can encounter redundant emoji announcements (📁, 🎬, 📄) without context of whether the link represents a directory or a specific file type.
+**Action:** Always add descriptive `aria-label` attributes to anchor tags in generated HTML listings to clarify the file type and avoid redundant emoji reading. When doing so, ensure `html.escape()` is used correctly to prevent XSS vectors. Ensure unit tests checking these generated strings are updated simultaneously.
