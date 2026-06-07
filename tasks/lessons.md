@@ -313,6 +313,12 @@
 **Related:** Lesson 0y (nested unpinned actions inside composites).
 **Detection cost:** Low — bandit workflow fails before pytest on workflow-only diffs.
 
+## Lesson 0cg: Deferred workflow PRs may be superseded by a fresh green sibling (2026-06-07)
+
+**Pattern:** ESP #1006 was deferred on 2026-06-06 for bandit failure on workflow consolidation. A new PR #1046 with the same intent opened next day with full security suite green; #1006 was already closed.
+**Rule:** At Phase 2 start, re-fetch live PR state — do not salvage a closed deferred PR if a newer sibling PR already landed the fix. Merge the green sibling when bandit/pytest/CodeQL/Snyk pass; close overlapping session-doc drafts rather than stacking them.
+**Detection cost:** Low — `gh pr view <n> --json state` + compare titles/file lists on same-day workflow PRs.
+
 ## Lesson 0cf: Jules agentic QA zero-diff PRs are routine closures (2026-06-07)
 
 **Pattern:** personal-config #1183 opened same day with title "chore: automated agentic QA review", `changedFiles == 0`, CI fully green — Jules completed QA with no pending code changes after prior session merges.

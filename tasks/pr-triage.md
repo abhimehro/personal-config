@@ -1,43 +1,51 @@
-# PR Triage — 2026-06-07
+# PR Triage — 2026-06-07 (Salvage session)
 
 **Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · CLOSE-ZERO-DIFF · DEFER · ESCALATE
+**Disposition key:** MERGE · CLOSE-SUPERSEDED · REFRESH · DEFER · ESCALATE
+
+## Phase 2 input reconciliation
+
+| Prior remainder PR | Live state at salvage start | Action |
+| --- | --- | --- |
+| pc #1178 (salvage draft) | OPEN, CLEAN | Close — superseded by #1184 + this session |
+| esp #1006 (bandit fail) | CLOSED 2026-06-06 | Drop — replaced by #1046 |
+| sa #261 (CodeScene) | OPEN, UNSTABLE | Refresh branch; defer for human |
+| hg #227 (CodeScene) | OPEN, UNSTABLE | Refresh branch; defer for human |
 
 ## Duplicate & overlap analysis
 
 | Group | Keeper | Action on others | Rationale |
 | --- | --- | --- | --- |
-| Palette ARIA (personal-config) | **#1179** | (none) | Distinct from merged #1171 (directory links) — metric-card grouping is new scope |
-| Jules QA zero-diff (personal-config) | **none** | Close #1183 | `changedFiles == 0`; QA completed with no pending code |
-| Salvage session docs (personal-config) | **This session branch** | Defer #1178 | Overlapping `tasks/pr-*` artifacts; consolidated into 2026-06-07 report |
-| ESP Palette vs Jules QA | **Both** | Merge #1042, #1045 | Independent files (`main.py` vs `media_analyzer.py`/tests) |
-| Perf salvage drafts (sa/hg) | **None** | Defer #261, #227 | Carried from 2026-06-06; CodeScene sole failure |
+| ESP workflow consolidation | **#1046** | (closed #1006) | Same title/intent; #1046 has bandit green |
+| Session doc artifacts (pc) | **#1184 + salvage branch** | Close #1178 | Overlapping `tasks/pr-*` files |
+| Perf salvage drafts | **None (human)** | Defer #261, #227 | T3 drafts — Salvage Agent does not auto-merge |
 
-No semantic duplicates among merge candidates.
+No conflicted (DIRTY) bot PRs detected across the six configured repos.
 
 ## Session dispositions (executed)
 
 | Disposition | PRs | Count |
 | --- | --- | ---: |
-| **MERGE** | pc #1179; esp #1045, #1042; ctrld #874 | 4 |
-| **CLOSE-ZERO-DIFF** | pc #1183 | 1 |
-| **DEFER** | pc #1178; sa #261; hg #227 | 3 |
+| **MERGE** | esp #1046; pc #1184 | 2 |
+| **CLOSE-SUPERSEDED** | pc #1178 | 1 |
+| **REFRESH** | sa #261; hg #227 | 2 |
+| **DEFER** | sa #261; hg #227 | 2 |
 | **ESCALATE** | — | 0 |
 
 ## Security gate review
 
 | PR | Tier | Gate 2 result | Notes |
 | --- | --- | --- | --- |
-| pc #1179 | UI | PASS | `aria-label`/`aria-hidden` on generated HTML; no new user input paths |
-| esp #1042 | UI | PASS | Console color refactor only; no auth/secrets |
-| esp #1045 | REFACTOR | PASS | Whitespace/formatting in tar inspection loop; security comments preserved |
-| ctrld #874 | CI/INFRA | PASS | Docs-only QA matrix update |
-| pc #1183 | CI/INFRA | N/A | Zero-diff — closed without merge |
-
-## CodeScene advisory failures (not security blockers)
-
-Deferred #261, #227: salvage perf PRs where CodeScene is sole failure (unchanged from 2026-06-06).
+| esp #1046 | CI/INFRA | PASS | Workflow pin/tag changes only; bandit, pytest, CodeQL, Snyk, GitGuardian green |
+| pc #1184 | CI/INFRA | PASS | Docs-only session artifacts |
+| sa #261 | T3 | PASS (security) | lint-and-test, validate, CodeQL, Snyk green; CodeScene advisory fail |
+| hg #227 | T3 | PASS (security) | CodeQL, Snyk green; CodeScene advisory fail |
 
 ## Infra-broken main check (Lesson 0t)
 
-No repo-wide infra breakage detected. All merge candidates had green required security/test gates.
+Not triggered — no 4+ PRs sharing the same required-check failure on `main`.
+
+## Ready-to-execute human actions
+
+1. **Merge when CodeScene acceptable:** [sa#261](https://github.com/abhimehro/Seatek_Analysis/pull/261), [hg#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227).
+2. **Review salvage session PR** on `cursor-agent/automated-pr-salvage-workflow-9701` for audit trail.

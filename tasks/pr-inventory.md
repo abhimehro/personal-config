@@ -1,53 +1,57 @@
-# PR Inventory — 2026-06-07
+# PR Inventory — 2026-06-07 (Salvage session)
 
 **Preflight:** PASS (6/6 repos)  
-**Session:** cron `0 13 * * *` (review-and-merge)  
-**Branch:** `cursor-agent/automated-pr-workflow-6175`  
-**Config:** `tasks/pr-review-agent.config.yaml`
+**Session:** cron `0 17 * * *` (salvage-and-cleanup)  
+**Branch:** `cursor-agent/automated-pr-salvage-workflow-9701`  
+**Config:** `tasks/pr-review-agent.config.yaml`  
+**Phase 1 input:** `tasks/pr-review-2026-06-07.md` (morning review-and-merge)
 
-## Scope summary (end of session)
+## Scope summary (end of salvage session)
 
-| Repo | Open at start | Merged | Closed | Deferred | Open EOD |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| personal-config | 3 | 1 | 1 | 1 | 1 |
-| ctrld-sync | 1 | 1 | 0 | 0 | 0 |
-| email-security-pipeline | 2 | 2 | 0 | 0 | 0 |
-| Seatek_Analysis | 1 | 0 | 0 | 1 | 1 |
-| Hydrograph_Versus_Seatek_Sensors_Project | 1 | 0 | 0 | 1 | 1 |
-| series_correction_project_updated | 0 | 0 | 0 | 0 | 0 |
+| Repo | Open at start | Merged | Closed | Refreshed | Deferred | Open EOD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| personal-config | 2 | 1 | 1 | 0 | 0 | 0 |
+| ctrld-sync | 0 | 0 | 0 | 0 | 0 | 0 |
+| email-security-pipeline | 1 | 1 | 0 | 0 | 0 | 0 |
+| Seatek_Analysis | 1 | 0 | 0 | 1 | 1 | 1 |
+| Hydrograph_Versus_Seatek_Sensors_Project | 1 | 0 | 0 | 1 | 1 | 1 |
+| series_correction_project_updated | 0 | 0 | 0 | 0 | 0 | 0 |
 
-## Full inventory at session start
+**Conflicted (DIRTY) bot PRs at start:** 0 — no rebuild salvages required this cycle.
+
+## Full inventory at salvage session start
 
 | Repo | PR | Draft | Author | Category | Merge | CI | Age | Disposition |
 | --- | ---: | --- | --- | --- | --- | --- | ---: | --- |
-| personal-config | [#1183](https://github.com/abhimehro/personal-config/pull/1183) | no | abhimehro (Jules) | CI/INFRA | CLEAN | green | 0d | **CLOSED-ZERO-DIFF** |
-| personal-config | [#1179](https://github.com/abhimehro/personal-config/pull/1179) | no | abhimehro (Palette) | UI | CLEAN | green | 0d | **MERGED** |
-| personal-config | [#1178](https://github.com/abhimehro/personal-config/pull/1178) | yes | app/cursor | CI/INFRA | CLEAN | green | 0d | **DEFER** |
-| ctrld-sync | [#874](https://github.com/abhimehro/ctrld-sync/pull/874) | yes | app/cursor | CI/INFRA | CLEAN | green | 0d | **MERGED** |
-| email-security-pipeline | [#1045](https://github.com/abhimehro/email-security-pipeline/pull/1045) | no | abhimehro (Jules) | REFACTOR | CLEAN | green | 0d | **MERGED** |
-| email-security-pipeline | [#1042](https://github.com/abhimehro/email-security-pipeline/pull/1042) | no | abhimehro (Palette) | UI | CLEAN | green | 0d | **MERGED** |
-| Seatek_Analysis | [#261](https://github.com/abhimehro/Seatek_Analysis/pull/261) | yes | abhimehro | PERFORMANCE | UNSTABLE | CodeScene fail | 3d | **DEFER** |
-| Hydrograph_Versus_Seatek_Sensors_Project | [#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227) | yes | abhimehro | PERFORMANCE | UNSTABLE | CodeScene fail | 3d | **DEFER** |
+| personal-config | [#1184](https://github.com/abhimehro/personal-config/pull/1184) | yes | app/cursor | CI/INFRA | CLEAN | green | 0d | **MERGED** |
+| personal-config | [#1178](https://github.com/abhimehro/personal-config/pull/1178) | yes | app/cursor | CI/INFRA | CLEAN | green | 1d | **CLOSED-SUPERSEDED** |
+| email-security-pipeline | [#1046](https://github.com/abhimehro/email-security-pipeline/pull/1046) | no | abhimehro | CI/INFRA | CLEAN | green | 0d | **MERGED** |
+| Seatek_Analysis | [#261](https://github.com/abhimehro/Seatek_Analysis/pull/261) | yes | abhimehro | PERFORMANCE | UNSTABLE | CodeScene fail | 4d | **DEFER** |
+| Hydrograph_Versus_Seatek_Sensors_Project | [#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227) | yes | abhimehro | PERFORMANCE | UNSTABLE | CodeScene fail | 4d | **DEFER** |
 
-## Merged this session (squash, security-first order)
+## Merged this session
 
-| Repo | PR | Category | Title |
+| Repo | PR | Category | Title | Notes |
+| --- | ---: | --- | --- | --- |
+| email-security-pipeline | [#1046](https://github.com/abhimehro/email-security-pipeline/pull/1046) | CI/INFRA | chore(actions): consolidate workflow automation | Supersedes closed #1006; bandit + full security suite green |
+| personal-config | [#1184](https://github.com/abhimehro/personal-config/pull/1184) | CI/INFRA | docs(pr-review): 2026-06-07 automated PR review session | Morning review artifacts landed on `main` |
+
+## Closed (not merged)
+
+| Repo | PR | Reason |
+| --- | ---: | --- |
+| personal-config | [#1178](https://github.com/abhimehro/personal-config/pull/1178) | Superseded by #1184 + evening salvage session artifacts |
+
+## Refreshed (update-branch, CI re-run)
+
+| Repo | PR | Action | Notes |
 | --- | ---: | --- | --- |
-| personal-config | [#1179](https://github.com/abhimehro/personal-config/pull/1179) | UI | Palette: Group screen reader announcements for metric cards |
-| email-security-pipeline | [#1045](https://github.com/abhimehro/email-security-pipeline/pull/1045) | REFACTOR | Jules Daily QA formatting cleanup |
-| email-security-pipeline | [#1042](https://github.com/abhimehro/email-security-pipeline/pull/1042) | UI | Palette: Colors.colorize for configuration summary |
-| ctrld-sync | [#874](https://github.com/abhimehro/ctrld-sync/pull/874) | CI/INFRA | Daily QA notes 2026-06-07 |
+| Seatek_Analysis | [#261](https://github.com/abhimehro/Seatek_Analysis/pull/261) | `update-branch` | Synced with `main`; pytest/CodeQL/Snyk green; CodeScene pending at session end |
+| Hydrograph_Versus_Seatek_Sensors_Project | [#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227) | `update-branch` | Synced with `main`; CodeQL/Snyk green; CodeScene pending at session end |
 
-## Closed
+## Open tail (deferred for human)
 
-| Repo | PR | Reason |
-| --- | ---: | --- |
-| personal-config | [#1183](https://github.com/abhimehro/personal-config/pull/1183) | ZERO-DIFF — Jules QA session with no effective changes vs `main` (Lesson 0b) |
-
-## Deferred (open EOD)
-
-| Repo | PR | Reason |
-| --- | ---: | --- |
-| personal-config | [#1178](https://github.com/abhimehro/personal-config/pull/1178) | Salvage-session draft artifacts — Phase 2 Salvage Agent |
-| Seatek_Analysis | [#261](https://github.com/abhimehro/Seatek_Analysis/pull/261) | CodeScene advisory fail on scanner perf salvage draft |
-| Hydrograph_Versus_Seatek_Sensors_Project | [#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227) | CodeScene advisory fail on Bolt perf salvage draft |
+| Repo | PR | Blocker | Next action |
+| --- | ---: | --- | --- |
+| Seatek_Analysis | [#261](https://github.com/abhimehro/Seatek_Analysis/pull/261) | CodeScene advisory | Human merge when delta acceptable (T3 salvage draft) |
+| Hydrograph_Versus_Seatek_Sensors_Project | [#227](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/227) | CodeScene advisory | Human merge when delta acceptable (T3 salvage draft) |

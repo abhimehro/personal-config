@@ -2,7 +2,23 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-06-07 (review-and-merge 13:00).
+> **Latest execution:** 2026-06-07 (salvage 17:00).
+
+## Run — 2026-06-07 (cron salvage 17:00)
+
+**Report:** `tasks/pr-review-2026-06-07.md` (Addendum section)
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 2 |
+| Closed | 1 |
+| Refreshed | 2 |
+| Deferred | 2 |
+| Escalated | 0 |
+| Open tail | 2 |
+
+**Highlights:** Merged esp #1046 (workflow consolidation, supersedes closed #1006) and pc #1184 (morning review docs). Closed pc #1178 (superseded salvage draft). Refreshed sa #261 and hg #227 via `update-branch`; both remain CodeScene-deferred for human merge. Zero conflicted bot PRs across scope.
 
 ## Run — 2026-06-07 (cron review-and-merge 13:00)
 
