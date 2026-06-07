@@ -313,6 +313,11 @@
 **Related:** Lesson 0y (nested unpinned actions inside composites).
 **Detection cost:** Low — bandit workflow fails before pytest on workflow-only diffs.
 
+## Lesson 0cf: Jules agentic QA zero-diff PRs are routine closures (2026-06-07)
+
+**Pattern:** personal-config #1183 opened same day with title "chore: automated agentic QA review", `changedFiles == 0`, CI fully green — Jules completed QA with no pending code changes after prior session merges.
+**Rule:** Close immediately with Lesson 0b comment; do not squash-merge empty commits. Expect one per repo per Jules daily QA cycle when `main` is already healthy.
+
 ## Lesson 0ce: T1 security merges with CodeScene-only failure (2026-06-06)
 
 **Pattern:** ESP #1008 had `mergeStateStatus: UNSTABLE` solely because CodeScene Code Health Review failed; bandit, CodeQL, pytest, Snyk, and GitGuardian were all green.
