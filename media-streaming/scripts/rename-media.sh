@@ -36,6 +36,38 @@ notify() {
 }
 ensure_dirs() { mkdir -p "$STAGING_DIR" "$PROCESSED_DIR" "$FAILED_DIR" "$REVIEW_DIR" "$(dirname "$LOG_FILE")"; }
 is_video_file() { [[ $1 =~ \.(mp4|mkv|avi|mov|m4v)$ ]]; }
+
+# Bash-compatible timeout function (macOS doesn't have GNU timeout)
+# Usage: run_with_timeout <timeout_seconds> <log_file> <command> [args...]
+# Example: run_with_timeout 1800 "$LOG_FILE" rclone move "file.mp4" "remote:"
+run_with_timeout() {
+	local timeout_secs=$1
+	local log_file=$2
+	shift 2
+
+	# Run command in background with all args preserved (handles spaces in filenames)
+	"$@" >>"$log_file" 2>&1 &
+	local cmd_pid=$!
+
+	# Wait for command or timeout
+	local start_time
+	start_time=$(date +%s)
+	while kill -0 $cmd_pid 2>/dev/null; do
+		local current_time
+		current_time=$(date +%s)
+		local elapsed=$((current_time - start_time))
+		if ((elapsed >= timeout_secs)); then
+			kill -TERM $cmd_pid 2>/dev/null
+			wait $cmd_pid 2>/dev/null
+			return 1
+		fi
+		sleep 1
+	done
+
+	# Get exit status of the command
+	wait $cmd_pid 2>/dev/null
+	return $?
+}
 detect_type() {
 	local f="$1"
 	if [[ $f =~ [Ss][0-9]+[Ee][0-9]+ ]]; then echo tv; else echo movie; fi
@@ -148,7 +180,7 @@ PY
 
 	touch "$LOCK_FILE"
 	log "Uploading approved file: $proposed_name -> $target_remote"
-	if timeout 300 rclone move "$proposed_path" "$target_remote" --transfers=4 --checkers=8 >>"$LOG_FILE" 2>&1; then
+	if run_with_timeout 1800 "$LOG_FILE" rclone move "$proposed_path" "$target_remote" --transfers=4 --checkers=8; then
 		rm -f "$sidecar"
 		log "Upload successful: $target_remote"
 		notify "Media Uploaded" "$proposed_name"
@@ -273,13 +305,13 @@ process_file() {
 				log "⏸️  File too large for upload (${file_size_gb}GB > ${MAX_UPLOAD_SIZE_GB}GB): ${final_path##*/}. Moved to failed queue."
 				mv "$final_path" "$FAILED_DIR/" 2>/dev/null || true
 				notify "Upload Skipped" "${final_path##*/} too large (${file_size_gb}GB)"
-				continue
+				return 1
 			fi
 
 			# Happy path: clean rename, upload immediately with timeout.
 			touch "$LOCK_FILE"
 			log "Uploading: ${final_path##*/} -> $target_remote"
-			if timeout 300 rclone move "$final_path" "$target_remote" --transfers=4 --checkers=8 >>"$LOG_FILE" 2>&1; then
+			if run_with_timeout 1800 "$LOG_FILE" rclone move "$final_path" "$target_remote" --transfers=4 --checkers=8; then
 				log "Upload successful: ${final_path##*/}"
 				notify "Media Uploaded" "${final_path##*/}"
 				rm -f "$LOCK_FILE" || true
