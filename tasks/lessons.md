@@ -318,6 +318,12 @@
 **Pattern:** personal-config #1183 opened same day with title "chore: automated agentic QA review", `changedFiles == 0`, CI fully green — Jules completed QA with no pending code changes after prior session merges.
 **Rule:** Close immediately with Lesson 0b comment; do not squash-merge empty commits. Expect one per repo per Jules daily QA cycle when `main` is already healthy.
 
+## Lesson 0cg: Fleet-wide conflict clearance — salvage focuses on hygiene (2026-06-08)
+
+**Pattern:** Evening salvage cron found zero `CONFLICTING` / `DIRTY` bot PRs across all six configured repos; work shifted to duplicate closure (#1053), zero-diff QA (#1189), and superseded doc drafts (#1185).
+**Rule:** When the conflict queue is empty, Phase 2 should still run: close semantic duplicates, zero-diff Jules QA, and superseded salvage-doc PRs; route CLEAN code PRs to Phase 1 rather than merging from salvage.
+**Detection cost:** Low — `gh pr list --json mergeable,mergeStateStatus` per repo.
+
 ## Lesson 0ce: T1 security merges with CodeScene-only failure (2026-06-06)
 
 **Pattern:** ESP #1008 had `mergeStateStatus: UNSTABLE` solely because CodeScene Code Health Review failed; bandit, CodeQL, pytest, Snyk, and GitGuardian were all green.
