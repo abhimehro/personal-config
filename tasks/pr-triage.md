@@ -1,43 +1,46 @@
-# PR Triage — 2026-06-07
+# PR Triage — 2026-06-08
 
 **Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · CLOSE-ZERO-DIFF · DEFER · ESCALATE
+**Disposition key:** MERGE · CLOSE-DUPLICATE · DEFER · ESCALATE
 
 ## Duplicate & overlap analysis
 
 | Group | Keeper | Action on others | Rationale |
 | --- | --- | --- | --- |
-| Palette ARIA (personal-config) | **#1179** | (none) | Distinct from merged #1171 (directory links) — metric-card grouping is new scope |
-| Jules QA zero-diff (personal-config) | **none** | Close #1183 | `changedFiles == 0`; QA completed with no pending code |
-| Salvage session docs (personal-config) | **This session branch** | Defer #1178 | Overlapping `tasks/pr-*` artifacts; consolidated into 2026-06-07 report |
-| ESP Palette vs Jules QA | **Both** | Merge #1042, #1045 | Independent files (`main.py` vs `media_analyzer.py`/tests) |
-| Perf salvage drafts (sa/hg) | **None** | Defer #261, #227 | Carried from 2026-06-06; CodeScene sole failure |
+| Palette EOF (email-security-pipeline) | **#1050** | Close #1049 | Byte-identical diff (`app_runner.py`, `setup_wizard.py`, `ui.py`, `.jules/palette.md`); #1050 is newer Jules session branch |
+| Bolt perf (ctrld-sync) | **#877** | (none) | Single open Bolt PR; no overlap with #875 (docs-only QA) |
+| Salvage session docs (personal-config) | **This session branch** | Defer #1185 | Overlapping `tasks/pr-*` artifacts; Salvage Agent owns draft salvage PRs |
+| Perf salvage drafts (sa/hg) | **None** | Defer #261, #227 | Carried from prior sessions; CodeScene sole failure |
 
-No semantic duplicates among merge candidates.
+No other semantic duplicates among merge candidates.
 
 ## Session dispositions (executed)
 
 | Disposition | PRs | Count |
 | --- | --- | ---: |
-| **MERGE** | pc #1179; esp #1045, #1042; ctrld #874 | 4 |
-| **CLOSE-ZERO-DIFF** | pc #1183 | 1 |
-| **DEFER** | pc #1178; sa #261; hg #227 | 3 |
+| **MERGE** | ctrld #875, #877; esp #1050, #1052 | 4 |
+| **CLOSE-DUPLICATE** | esp #1049 | 1 |
+| **DEFER** | pc #1185; sa #261; hg #227 | 3 |
 | **ESCALATE** | — | 0 |
 
 ## Security gate review
 
 | PR | Tier | Gate 2 result | Notes |
 | --- | --- | --- | --- |
-| pc #1179 | UI | PASS | `aria-label`/`aria-hidden` on generated HTML; no new user input paths |
-| esp #1042 | UI | PASS | Console color refactor only; no auth/secrets |
-| esp #1045 | REFACTOR | PASS | Whitespace/formatting in tar inspection loop; security comments preserved |
-| ctrld #874 | CI/INFRA | PASS | Docs-only QA matrix update |
-| pc #1183 | CI/INFRA | N/A | Zero-diff — closed without merge |
+| ctrld #875 | CI/INFRA | PASS | Docs-only QA matrix update |
+| ctrld #877 | PERFORMANCE | PASS | Counting optimization in plan builder; no auth/API changes |
+| esp #1050 | UI | PASS | EOF→KeyboardInterrupt translation; terminal reset in `finally`; no secrets |
+| esp #1052 | PERFORMANCE | PASS | Pre-lowercase + case-sensitive regex; preserves ReDoS-safe patterns; spam scoring path only |
+| esp #1049 | UI | N/A | Closed as duplicate before merge |
 
 ## CodeScene advisory failures (not security blockers)
 
-Deferred #261, #227: salvage perf PRs where CodeScene is sole failure (unchanged from 2026-06-06).
+Deferred #261, #227: salvage perf PRs where CodeScene is sole failure (unchanged tail, fourth consecutive session).
 
 ## Infra-broken main check (Lesson 0t)
 
 No repo-wide infra breakage detected. All merge candidates had green required security/test gates.
+
+## Merge sequencing notes
+
+- #1052 first merge attempt failed with **Base branch was modified** after #1050 merged; resolved via `update-branch` + CI re-run (Lesson 0c).

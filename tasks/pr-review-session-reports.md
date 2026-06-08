@@ -2,7 +2,22 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
-> **Latest execution:** 2026-06-07 (review-and-merge 13:00).
+> **Latest execution:** 2026-06-08 (review-and-merge 13:00).
+
+## Run — 2026-06-08 (cron review-and-merge 13:00)
+
+**Report:** `tasks/pr-review-2026-06-08.md`
+
+| Metric | Count |
+| --- | ---: |
+| Repos | 6 |
+| Merged | 4 |
+| Closed | 1 |
+| Deferred | 3 |
+| Escalated | 0 |
+| Open tail | 3 |
+
+**Highlights:** Merged ctrld QA #875 and Bolt #877; esp Palette EOF #1050 and Bolt regex #1052. Closed esp #1049 (duplicate of #1050). Deferred pc salvage draft #1185, sa #261 and hg #227 (CodeScene advisory).
 
 ## Run — 2026-06-07 (cron review-and-merge 13:00)
 
