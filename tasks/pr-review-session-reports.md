@@ -2,6 +2,11 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
+> **Latest execution:** 2026-06-09 (review-and-merge 13:00).
+
+## Run — 2026-06-09 (cron review-and-merge 13:00)
+
+**Report:** `tasks/pr-review-2026-06-09.md`
 > **Latest execution:** 2026-06-08 (review-and-merge 13:00).
 
 ## Run — 2026-06-08 (cron review-and-merge 13:00)
@@ -11,6 +16,13 @@
 | Metric | Count |
 | --- | ---: |
 | Repos | 6 |
+| Merged | 10 |
+| Closed | 0 |
+| Deferred | 4 |
+| Escalated | 1 |
+| Open tail | 5 |
+
+**Highlights:** Merged Sentinel security fixes (sc #102, hg #237), cleared esp queue (#1054–#1060), pc Palette/Bolt (#1190, #1195), sa Bolt #270, ctrld QA #879. Escalated pc #1193 (workflow automation trust boundary). Deferred salvage tail sa #261, hg #227 and pc draft artifacts #1188, #1191.
 | Merged | 4 |
 | Closed | 1 |
 | Deferred | 3 |

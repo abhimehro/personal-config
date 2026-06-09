@@ -12,6 +12,14 @@
 
 | Group | Keeper | Action on others | Rationale |
 | --- | --- | --- | --- |
+| ESP spam/UI cluster | **#1054 → #1056 → #1058 → #1060** | Merge all in order | Shared files (`spam_analyzer.py`, `setup_wizard.py`, `test_ui_palette.py`) but distinct intents: lint, Palette colorize, URL Counter perf, Jules QA formatting/timeouts |
+| Sentinel security (hg/sc) | **#237, #102** | (none) | Independent repos; both defense-in-depth hardening |
+| Bolt perf (pc/sa) | **#1195, #270** | (none) | Independent files (`scratch_inventory.py` vs `code_health_scanner.py`) |
+| Salvage perf drafts (sa/hg) | **None** | Defer #261, #227 | Carried from prior sessions; CodeScene sole failure |
+| Session report drafts (pc) | **This session** | Defer #1188, #1191 | Cursor-agent draft artifacts; consolidated into 2026-06-09 report |
+| Workflow automation (pc) | **None** | Escalate #1193 | Trust boundary on PR automation toolchain |
+
+No zero-diff PRs detected. No stale (>30d) PRs in scope.
 | Hydrograph Bolt perf salvage | **#241** (v2 draft) | Close #227 | #227 went `DIRTY` after `main` gained `_create_chart_metadata` / `_save_generated_chart`; v2 uses intent files only (Lesson 0cd) |
 | Session doc artifacts (personal-config) | **This session branch** | Defer #1196, #1191, #1188 | Overlapping `tasks/pr-*` files; consolidated into 2026-06-09 report |
 | Seatek scanner perf salvage | **#261** | (none) | Carried tail; CodeScene sole failure — human merge decision |
@@ -29,6 +37,10 @@ No other semantic duplicates among merge candidates.
 
 | Disposition | PRs | Count |
 | --- | --- | ---: |
+| **MERGE** | sc #102; hg #237; esp #1054, #1056, #1058, #1060; pc #1190, #1195; sa #270; ctrld #879 | 10 |
+| **CLOSE-ZERO-DIFF** | — | 0 |
+| **DEFER** | pc #1191, #1188; sa #261; hg #227 | 4 |
+| **ESCALATE** | pc #1193 | 1 |
 | **SALVAGE** (new draft) | hg #241 | 1 |
 | **CLOSE-SUPERSEDED** | hg #227 | 1 |
 | **DEFER** | pc #1197; pc #1196, #1191, #1188; sa #261 | 5 |
@@ -41,6 +53,20 @@ No other semantic duplicates among merge candidates.
 
 | PR | Tier | Gate result | Notes |
 | --- | --- | --- | --- |
+| sc #102 | SECURITY | PASS | Removes `traceback.print_exc()` — reduces info disclosure; no new attack surface |
+| hg #237 | SECURITY | PASS | Adds `sanitize_filename()` on `river_mile` path component; defense-in-depth |
+| esp #1058 | PERFORMANCE | PASS | `Counter` dedup in spam URL scoring; preserves score semantics via `count` multiplier |
+| esp #1056 | UI | PASS | `Colors.colorize()` replaces raw ANSI escapes; no auth/secrets |
+| esp #1060 | REFACTOR | PASS | Request timeouts on CodeScene API calls; formatting only in threat-detection paths |
+| pc #1190 | UI | PASS | Status color contrast in analytics dashboard shell script |
+| pc #1195 | PERFORMANCE | PASS | Hoists `datetime.strptime` out of loop; no input-path changes |
+| sa #270 | PERFORMANCE | PASS | Pre-compiles regex patterns in scanner; no logic change |
+| ctrld #879 | CI/INFRA | PASS | Docs-only QA matrix update |
+| pc #1193 | CI/INFRA | DEFER | Workflow pin on automation toolchain — human review required |
+
+## CodeScene advisory failures (not security blockers)
+
+Deferred #261, #227: salvage perf PRs where CodeScene is sole failure (unchanged tail from 2026-06-06/07).
 | hg #241 | T3 perf salvage | PASS (local) | `data_loader.py` / `processor.py` only; pytest subset 26/26 green; GitGuardian green on push |
 | hg #227 | — | N/A | Closed — conflicted branch superseded |
 | sa #261 | T3 perf salvage | PASS (security) | lint-and-test, CodeQL, GitGuardian green; CodeScene advisory only |
