@@ -1,43 +1,51 @@
-# PR Triage — 2026-06-07
+# PR Triage — 2026-06-09
 
 **Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · CLOSE-ZERO-DIFF · DEFER · ESCALATE
+**Mode:** salvage-and-cleanup (Phase 2)  
+**Disposition key:** SALVAGE · CLOSE-SUPERSEDED · DEFER · ESCALATE
 
 ## Duplicate & overlap analysis
 
 | Group | Keeper | Action on others | Rationale |
 | --- | --- | --- | --- |
-| Palette ARIA (personal-config) | **#1179** | (none) | Distinct from merged #1171 (directory links) — metric-card grouping is new scope |
-| Jules QA zero-diff (personal-config) | **none** | Close #1183 | `changedFiles == 0`; QA completed with no pending code |
-| Salvage session docs (personal-config) | **This session branch** | Defer #1178 | Overlapping `tasks/pr-*` artifacts; consolidated into 2026-06-07 report |
-| ESP Palette vs Jules QA | **Both** | Merge #1042, #1045 | Independent files (`main.py` vs `media_analyzer.py`/tests) |
-| Perf salvage drafts (sa/hg) | **None** | Defer #261, #227 | Carried from 2026-06-06; CodeScene sole failure |
+| Hydrograph Bolt perf salvage | **#241** (v2 draft) | Close #227 | #227 went `DIRTY` after `main` gained `_create_chart_metadata` / `_save_generated_chart`; v2 uses intent files only (Lesson 0cd) |
+| Session doc artifacts (personal-config) | **This session branch** | Defer #1196, #1191, #1188 | Overlapping `tasks/pr-*` files; consolidated into 2026-06-09 report |
+| Seatek scanner perf salvage | **#261** | (none) | Carried tail; CodeScene sole failure — human merge decision |
+| Jules Palette spinner (personal-config) | **#1197** | Defer to Phase 1 | Not conflicted; MERGEABLE with substantive checks green |
 
-No semantic duplicates among merge candidates.
+No semantic duplicates among active bot queues. ctrld-sync, email-security-pipeline, and series_correction have zero open PRs.
 
 ## Session dispositions (executed)
 
 | Disposition | PRs | Count |
 | --- | --- | ---: |
-| **MERGE** | pc #1179; esp #1045, #1042; ctrld #874 | 4 |
-| **CLOSE-ZERO-DIFF** | pc #1183 | 1 |
-| **DEFER** | pc #1178; sa #261; hg #227 | 3 |
+| **SALVAGE** (new draft) | hg #241 | 1 |
+| **CLOSE-SUPERSEDED** | hg #227 | 1 |
+| **DEFER** | pc #1197; pc #1196, #1191, #1188; sa #261 | 5 |
 | **ESCALATE** | — | 0 |
 
 ## Security gate review
 
-| PR | Tier | Gate 2 result | Notes |
+| PR | Tier | Gate result | Notes |
 | --- | --- | --- | --- |
-| pc #1179 | UI | PASS | `aria-label`/`aria-hidden` on generated HTML; no new user input paths |
-| esp #1042 | UI | PASS | Console color refactor only; no auth/secrets |
-| esp #1045 | REFACTOR | PASS | Whitespace/formatting in tar inspection loop; security comments preserved |
-| ctrld #874 | CI/INFRA | PASS | Docs-only QA matrix update |
-| pc #1183 | CI/INFRA | N/A | Zero-diff — closed without merge |
+| hg #241 | T3 perf salvage | PASS (local) | `data_loader.py` / `processor.py` only; pytest subset 26/26 green; GitGuardian green on push |
+| hg #227 | — | N/A | Closed — conflicted branch superseded |
+| sa #261 | T3 perf salvage | PASS (security) | lint-and-test, CodeQL, GitGuardian green; CodeScene advisory only |
+| pc #1197 | UI | PASS | Spinner UX in non-TTY; tests green; no secrets/auth surface |
 
 ## CodeScene advisory failures (not security blockers)
 
-Deferred #261, #227: salvage perf PRs where CodeScene is sole failure (unchanged from 2026-06-06).
+- **sa #261**: scanner perf salvage — sole CodeScene failure (unchanged 5d tail).
+- **hg #241**: awaiting CI; prior #227 had same pattern (Lesson 0ce contrast for perf vs security).
 
 ## Infra-broken main check (Lesson 0t)
 
-No repo-wide infra breakage detected. All merge candidates had green required security/test gates.
+No repo-wide infra breakage detected. Four repos have zero open PRs. Hydrograph conflict was branch drift on a stale salvage base, not `main` CI failure.
+
+## Salvage decision tree outcomes
+
+| Repo | PR | Tree outcome | Action |
+| --- | ---: | --- | --- |
+| Hydrograph | #227 | Conflict + valuable diff on intent files | v2 salvage branch; close original |
+| Seatek | #261 | MERGEABLE; value retained; advisory CI | Defer for human review |
+| personal-config | #1197 | Not in salvage queue (clean, not conflicted) | Hand off to Phase 1 |

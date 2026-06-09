@@ -330,4 +330,10 @@
 **Rule:** When the substantive fix is a single script, salvage **only that file** unless workflow changes are required for the optimization to work. Document omitted paths in the salvage PR body.
 **Detection cost:** Low — inspect `gh pr view --json files` before checkout.
 
+## Lesson 0cg: Salvage PRs go DIRTY when main refactors overlap intent files (2026-06-09)
+
+**Pattern:** Hydrograph #227 was MERGEABLE with CodeScene-only failure on 2026-06-07; by 2026-06-09 it was `CONFLICTING`/`DIRTY` because `main` gained `_create_chart_metadata` / `_save_generated_chart` while the salvage branch inlined/reverted that refactor in `app.py`.
+**Rule:** Before `update-branch` on a deferred salvage, diff `main` against salvage intent files. If `main` already refactored the same surface, rebuild v2 from `main` with **intent files only** — never fight an app-level refactor in the salvage branch.
+**Detection cost:** Low — `mergeStateStatus: DIRTY` on a PR that was previously MERGEABLE.
+
 - **Bash Eval Injection in Subshells**: When running traps inside a subshell instead of `eval`, the trap must explicitly use `$BASHPID` instead of `$$` if it wants to signal itself properly, because `$$` refers to the parent process. Also, ensure the subshell's trap explicitly handles signal propagation (e.g. `trap - INT; kill -INT $BASHPID`) so that the subshell terminates correctly, and then the parent script's wait mechanism triggers properly (WCE).
