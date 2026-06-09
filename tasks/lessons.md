@@ -313,6 +313,11 @@
 **Related:** Lesson 0y (nested unpinned actions inside composites).
 **Detection cost:** Low — bandit workflow fails before pytest on workflow-only diffs.
 
+## Lesson 0cg: Jules Palette branches can duplicate with session-id suffix (2026-06-08)
+
+**Pattern:** ESP #1049 (`ux/fix-eof-crash`) and #1050 (`ux/fix-eof-crash-<sessionId>`) had byte-identical diffs opened minutes apart.
+**Rule:** `diff <(gh pr diff A) <(gh pr diff B)` on same-title Palette PRs; keep the session-id branch (newer Jules run), close the shorter branch with a linked explanation. Merge before attempting sibling Bolt PRs in the same repo to avoid Lesson 0c retries.
+
 ## Lesson 0cf: Jules agentic QA zero-diff PRs are routine closures (2026-06-07)
 
 **Pattern:** personal-config #1183 opened same day with title "chore: automated agentic QA review", `changedFiles == 0`, CI fully green — Jules completed QA with no pending code changes after prior session merges.
