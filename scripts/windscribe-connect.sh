@@ -40,11 +40,11 @@ spinner_wait() {
 			local c=0
 
 			# Hide cursor gracefully in TTY
-			tput civis 2>/dev/null || true
+			[ -t 1 ] && [ -z "${CI-}" ] && tput civis 2>/dev/null || true
 
 			# Set temporary traps within subshell to avoid polluting parent
-			trap 'tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - INT; kill -INT $BASHPID' INT
-			trap 'tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - TERM; kill -TERM $BASHPID' TERM
+			trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - INT; kill -INT $BASHPID' INT
+			trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - TERM; kill -TERM $BASHPID' TERM
 
 			while [[ $c -lt $iterations ]]; do
 				printf "\r${BLUE}[%c]${NC} %s..." "${sp:i++%${#sp}:1}" "$msg"
@@ -54,7 +54,7 @@ spinner_wait() {
 			printf "\r\033[K" # Clear line
 
 			# Restore cursor
-			tput cnorm 2>/dev/null || true
+			[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true
 		)
 	else
 		# Fallback for non-TTY environments (CI, screen readers)
