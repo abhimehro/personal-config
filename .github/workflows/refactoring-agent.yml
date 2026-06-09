@@ -13,10 +13,12 @@ jobs:
       pull-requests: write
       issues: write
     steps:
-      - uses: codescene-oss/pr-refactoring-agent@v1
+      - uses: codescene-oss/pr-refactoring-agent@3cff36e4c847e0ecd98dbdabd297c44ea4f7e151 # v1.0.1
+        env:
+          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         with:
           pr_number: ${{ github.event.issue.number }}
           command: ${{ github.event.comment.body }}
-          model: 'google/gemini-flash-latest'
+          model: 'gemini-flash-latest'
           codescene_token: ${{ secrets.CODESCENE_ACCESS_TOKEN }}
           google_api_key: ${{ secrets.GOOGLE_API_KEY }}
