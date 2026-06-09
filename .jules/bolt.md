@@ -217,3 +217,8 @@
 
 **Learning:** Checking a long series of hardcoded substrings sequentially using `or` operations (e.g., `kw in string or kw2 in string`), or using `all()` with a generator expression inside a loop, negatively impacts Code Health (cyclomatic complexity) and incurs iterator allocation overhead in CPython. However, simply replacing it with a nested loop can cause "Deep, Nested Complexity" issues in static analysis.
 **Action:** Replace long chained `or` substring checks and `all()` generator expressions with explicit `for` loops iterating over a defined tuple of strings. To avoid deep nesting, extract the loop into a separate helper function (e.g., `_contains_all_keywords`) or use guard clauses (`if condition: continue`) to flatten the structure. This balances performance by avoiding iterator allocation while simultaneously reducing nested conditional complexity.
+
+## 2026-11-20 - [Avoid redundant datetime.date.today().isoformat() parsing overhead]
+
+**Learning:** When calculating the current date string `datetime.date.today().isoformat()` inside a loop or comprehension, Python repeatedly calls the method, generating a new object each time. This creates unnecessary CPU overhead when the output is a constant for the duration of the loop.
+**Action:** Always hoist method calls that generate static strings (like `today().isoformat()`) outside of tight loops to evaluate them once and reuse the value.

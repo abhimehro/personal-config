@@ -394,9 +394,9 @@ generate_dashboard() {
         .section { margin-bottom: 40px; }
         .section h2 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .insights-box { background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #007bff; }
-        .status-good { color: #28a745; }
-        .status-warning { color: #ffc107; }
-        .status-critical { color: #dc3545; }
+        .status-good { color: #1E7E34; } /* WCAG AA accessible */
+        .status-warning { color: #B45309; } /* WCAG AA accessible */
+        .status-critical { color: #DC2626; } /* WCAG AA accessible */
         .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 0.9em; }
     </style>
 </head>
