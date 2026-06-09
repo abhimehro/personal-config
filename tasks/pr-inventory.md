@@ -9,7 +9,7 @@
 
 | Repo | Open at start | Salvaged | Closed | Deferred | Escalated | Open EOD |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| personal-config | 4 | 0 | 0 | 1 | 0 | 4 |
+| personal-config | 4 | 0 | 0 | 4 | 0 | 4 |
 | ctrld-sync | 0 | 0 | 0 | 0 | 0 | 0 |
 | email-security-pipeline | 0 | 0 | 0 | 0 | 0 | 0 |
 | Seatek_Analysis | 1 | 0 | 0 | 1 | 0 | 1 |
