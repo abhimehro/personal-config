@@ -13,12 +13,21 @@ jobs:
       pull-requests: write
       issues: write
     steps:
-      - uses: codescene-oss/pr-refactoring-agent@3cff36e4c847e0ecd98dbdabd297c44ea4f7e151 # v1.0.1
+      - name: Prepare command
+        id: prepare-command
+        run: |
+          COMMAND="${{ github.event.comment.body }}"
+          if [[ "$COMMAND" == "/cs-agent skill:"* ]]; then
+            COMMAND="/cs-agent ${COMMAND#/cs-agent skill:}"
+          fi
+          echo "command=$COMMAND" >> $GITHUB_OUTPUT
+
+      - uses: codescene-oss/pr-refactoring-agent@3cff36e4c847e0ecd98dbdabd297c44ea4f7e151
         env:
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         with:
           pr_number: ${{ github.event.issue.number }}
-          command: ${{ replace(github.event.comment.body, '/cs-agent skill:', '/cs-agent ') }}
+          command: ${{ steps.prepare-command.outputs.command }}
           model: 'gemini-flash-latest'
           codescene_token: ${{ secrets.CODESCENE_ACCESS_TOKEN }}
           google_api_key: ${{ secrets.GOOGLE_API_KEY }}
