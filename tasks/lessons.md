@@ -1,5 +1,10 @@
 # Lessons Learned
 
+## Lesson 0x: ESP overlapping-file cluster — merge lint → UI → perf → QA (2026-06-09)
+
+**Pattern:** Four email-security-pipeline PRs (#1054–#1060) touched overlapping files (`spam_analyzer.py`, `setup_wizard.py`, `test_ui_palette.py`) with distinct intents (lint, Palette colorize, URL Counter perf, Jules QA formatting).
+**Rule:** Merge in ascending scope order: trivial lint first, then UI/Palette, then substantive perf logic, then umbrella QA/formatting last. Re-check mergeability after each squash-merge (Lesson 0).
+
 ## Lesson 0: Multi-repo automated PR merges need sequential re-validation
 
 **Pattern:** After squash-merging one automation PR, sibling PRs from the same bot often become **CONFLICTING** with `main`.

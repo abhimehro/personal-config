@@ -1,4 +1,4 @@
-# PR Triage — 2026-06-07
+# PR Triage — 2026-06-09
 
 **Preflight:** PASS (6/6)  
 **Disposition key:** MERGE · CLOSE-ZERO-DIFF · DEFER · ESCALATE
@@ -7,36 +7,42 @@
 
 | Group | Keeper | Action on others | Rationale |
 | --- | --- | --- | --- |
-| Palette ARIA (personal-config) | **#1179** | (none) | Distinct from merged #1171 (directory links) — metric-card grouping is new scope |
-| Jules QA zero-diff (personal-config) | **none** | Close #1183 | `changedFiles == 0`; QA completed with no pending code |
-| Salvage session docs (personal-config) | **This session branch** | Defer #1178 | Overlapping `tasks/pr-*` artifacts; consolidated into 2026-06-07 report |
-| ESP Palette vs Jules QA | **Both** | Merge #1042, #1045 | Independent files (`main.py` vs `media_analyzer.py`/tests) |
-| Perf salvage drafts (sa/hg) | **None** | Defer #261, #227 | Carried from 2026-06-06; CodeScene sole failure |
+| ESP spam/UI cluster | **#1054 → #1056 → #1058 → #1060** | Merge all in order | Shared files (`spam_analyzer.py`, `setup_wizard.py`, `test_ui_palette.py`) but distinct intents: lint, Palette colorize, URL Counter perf, Jules QA formatting/timeouts |
+| Sentinel security (hg/sc) | **#237, #102** | (none) | Independent repos; both defense-in-depth hardening |
+| Bolt perf (pc/sa) | **#1195, #270** | (none) | Independent files (`scratch_inventory.py` vs `code_health_scanner.py`) |
+| Salvage perf drafts (sa/hg) | **None** | Defer #261, #227 | Carried from prior sessions; CodeScene sole failure |
+| Session report drafts (pc) | **This session** | Defer #1188, #1191 | Cursor-agent draft artifacts; consolidated into 2026-06-09 report |
+| Workflow automation (pc) | **None** | Escalate #1193 | Trust boundary on PR automation toolchain |
 
-No semantic duplicates among merge candidates.
+No zero-diff PRs detected. No stale (>30d) PRs in scope.
 
 ## Session dispositions (executed)
 
 | Disposition | PRs | Count |
 | --- | --- | ---: |
-| **MERGE** | pc #1179; esp #1045, #1042; ctrld #874 | 4 |
-| **CLOSE-ZERO-DIFF** | pc #1183 | 1 |
-| **DEFER** | pc #1178; sa #261; hg #227 | 3 |
-| **ESCALATE** | — | 0 |
+| **MERGE** | sc #102; hg #237; esp #1054, #1056, #1058, #1060; pc #1190, #1195; sa #270; ctrld #879 | 11 |
+| **CLOSE-ZERO-DIFF** | — | 0 |
+| **DEFER** | pc #1191, #1188; sa #261; hg #227 | 4 |
+| **ESCALATE** | pc #1193 | 1 |
 
 ## Security gate review
 
 | PR | Tier | Gate 2 result | Notes |
 | --- | --- | --- | --- |
-| pc #1179 | UI | PASS | `aria-label`/`aria-hidden` on generated HTML; no new user input paths |
-| esp #1042 | UI | PASS | Console color refactor only; no auth/secrets |
-| esp #1045 | REFACTOR | PASS | Whitespace/formatting in tar inspection loop; security comments preserved |
-| ctrld #874 | CI/INFRA | PASS | Docs-only QA matrix update |
-| pc #1183 | CI/INFRA | N/A | Zero-diff — closed without merge |
+| sc #102 | SECURITY | PASS | Removes `traceback.print_exc()` — reduces info disclosure; no new attack surface |
+| hg #237 | SECURITY | PASS | Adds `sanitize_filename()` on `river_mile` path component; defense-in-depth |
+| esp #1058 | PERFORMANCE | PASS | `Counter` dedup in spam URL scoring; preserves score semantics via `count` multiplier |
+| esp #1056 | UI | PASS | `Colors.colorize()` replaces raw ANSI escapes; no auth/secrets |
+| esp #1060 | REFACTOR | PASS | Request timeouts on CodeScene API calls; formatting only in threat-detection paths |
+| pc #1190 | UI | PASS | Status color contrast in analytics dashboard shell script |
+| pc #1195 | PERFORMANCE | PASS | Hoists `datetime.strptime` out of loop; no input-path changes |
+| sa #270 | PERFORMANCE | PASS | Pre-compiles regex patterns in scanner; no logic change |
+| ctrld #879 | CI/INFRA | PASS | Docs-only QA matrix update |
+| pc #1193 | CI/INFRA | DEFER | Workflow pin on automation toolchain — human review required |
 
 ## CodeScene advisory failures (not security blockers)
 
-Deferred #261, #227: salvage perf PRs where CodeScene is sole failure (unchanged from 2026-06-06).
+Deferred #261, #227: salvage perf PRs where CodeScene is sole failure (unchanged tail from 2026-06-06/07).
 
 ## Infra-broken main check (Lesson 0t)
 
