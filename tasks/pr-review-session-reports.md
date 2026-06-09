@@ -2,6 +2,9 @@
 
 > **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
 >
+> **Latest execution:** 2026-06-08 (salvage 17:00).
+
+## Run — 2026-06-08 (cron salvage 17:00)
 > **Latest execution:** 2026-06-09 (review-and-merge 13:00).
 
 ## Run — 2026-06-09 (cron review-and-merge 13:00)
@@ -16,6 +19,14 @@
 | Metric | Count |
 | --- | ---: |
 | Repos | 6 |
+| Closed | 3 |
+| Deferred | 2 |
+| Phase 1 handoff | 3 |
+| Salvage drafts opened | 0 |
+| Escalated | 0 |
+| Open tail | 5 |
+
+**Highlights:** Zero conflicted bot PRs fleet-wide. Closed esp #1053 (duplicate), pc #1189 (zero-diff), pc #1185 (superseded salvage docs). Deferred sa #261 and hg #227 (CodeScene advisory, 5th session). Routed esp #1054, scp #102 (T1 Sentinel), pc #1190 to Phase 1.
 | Merged | 10 |
 | Closed | 0 |
 | Deferred | 4 |

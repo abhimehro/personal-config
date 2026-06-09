@@ -1,3 +1,8 @@
+# PR Triage — 2026-06-08
+
+**Preflight:** PASS (6/6)  
+**Mode:** Phase 2 salvage (no autonomous merge of code PRs)  
+**Disposition key:** CLOSE-DUPLICATE · CLOSE-ZERO-DIFF · CLOSE-SUPERSEDED · DEFER · PHASE1-HANDOFF · ESCALATE
 # PR Triage — 2026-06-09
 
 **Preflight:** PASS (6/6)  
@@ -12,6 +17,13 @@
 
 | Group | Keeper | Action on others | Rationale |
 | --- | --- | --- | --- |
+| Jules lint fix (ESP) | **#1054** | Close #1053 | Identical `tests/test_ui_palette.py` diff; #1054 newer (Lesson 0ds) |
+| Jules QA zero-diff (personal-config) | **none** | Close #1189 | `changedFiles == 0` (Lesson 0cf) |
+| Salvage session docs (personal-config) | **This session branch** | Close #1185 | Supersedes 2026-06-07 evening salvage draft |
+| Perf salvage drafts (sa/hg) | **None** | Defer #261, #227 | Fifth consecutive session; CodeScene sole failure |
+| Sentinel stack trace (scp) | **#102** | Phase 1 merge | T1 security; all gates green — salvage policy defers merge to Phase 1 / human |
+
+No semantic duplicates among remaining open PRs.
 | ESP spam/UI cluster | **#1054 → #1056 → #1058 → #1060** | Merge all in order | Shared files (`spam_analyzer.py`, `setup_wizard.py`, `test_ui_palette.py`) but distinct intents: lint, Palette colorize, URL Counter perf, Jules QA formatting/timeouts |
 | Sentinel security (hg/sc) | **#237, #102** | (none) | Independent repos; both defense-in-depth hardening |
 | Bolt perf (pc/sa) | **#1195, #270** | (none) | Independent files (`scratch_inventory.py` vs `code_health_scanner.py`) |
@@ -37,6 +49,11 @@ No other semantic duplicates among merge candidates.
 
 | Disposition | PRs | Count |
 | --- | --- | ---: |
+| **CLOSE-DUPLICATE** | esp #1053 | 1 |
+| **CLOSE-ZERO-DIFF** | pc #1189 | 1 |
+| **CLOSE-SUPERSEDED** | pc #1185 | 1 |
+| **DEFER** | sa #261; hg #227 | 2 |
+| **PHASE1-HANDOFF** | esp #1054; scp #102; pc #1190 | 3 |
 | **MERGE** | sc #102; hg #237; esp #1054, #1056, #1058, #1060; pc #1190, #1195; sa #270; ctrld #879 | 10 |
 | **CLOSE-ZERO-DIFF** | — | 0 |
 | **DEFER** | pc #1191, #1188; sa #261; hg #227 | 4 |
@@ -53,6 +70,18 @@ No other semantic duplicates among merge candidates.
 
 | PR | Tier | Gate result | Notes |
 | --- | --- | --- | --- |
+| scp #102 | T1 SECURITY | PASS | Removes `traceback.format_exc()` from user-facing output in `generate_overview_table.py` |
+| esp #1054 | T3 REFACTOR | PASS | Test-only unused import removal |
+| pc #1190 | T3 UI | PASS (pending Swift) | CSS contrast tokens only; security suite green except in-progress Swift CodeQL |
+| pc #1189 | CI/INFRA | N/A | Zero-diff — closed without merge |
+
+## CodeScene advisory failures (not security blockers)
+
+Deferred #261, #227: salvage perf PRs where CodeScene is sole failure (unchanged since 2026-06-03).
+
+## Infra-broken main check (Lesson 0t)
+
+No repo-wide infra breakage detected. ctrld-sync queue is empty. No `CONFLICTING` bot PRs remain.
 | sc #102 | SECURITY | PASS | Removes `traceback.print_exc()` — reduces info disclosure; no new attack surface |
 | hg #237 | SECURITY | PASS | Adds `sanitize_filename()` on `river_mile` path component; defense-in-depth |
 | esp #1058 | PERFORMANCE | PASS | `Counter` dedup in spam URL scoring; preserves score semantics via `count` multiplier |
