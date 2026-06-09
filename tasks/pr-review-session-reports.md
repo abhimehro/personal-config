@@ -11,7 +11,7 @@
 | Metric | Count |
 | --- | ---: |
 | Repos | 6 |
-| Merged | 11 |
+| Merged | 10 |
 | Closed | 0 |
 | Deferred | 4 |
 | Escalated | 1 |
