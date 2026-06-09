@@ -68,6 +68,7 @@ def generate_markdown(all_prs):
         "fix": "REFACTOR",
     }
 
+    today_iso = datetime.date.today().isoformat()
     for pr in sorted(all_prs, key=lambda x: (x["repo"], -x["number"])):
         cat = get_category(pr["title"], pr["headRefName"])
 
@@ -81,7 +82,8 @@ def generate_markdown(all_prs):
                 ci = "?"
 
         conflicts = "yes" if pr["mergeStateStatus"] == "DIRTY" else "none"
-        date_str = pr.get("createdAt", datetime.date.today().isoformat())[:10]
+        # ⚡ Bolt Optimization: Hoisted datetime.date.today().isoformat() out of loop to avoid redundant string parsing overhead
+        date_str = pr.get("createdAt", today_iso)[:10]
 
         # SECURITY: PR metadata is untrusted; escape formula injection if the
         # inventory table is opened in Excel/Sheets (CWE-1236).

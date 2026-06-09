@@ -35,12 +35,8 @@ LOCK_FILE="$HOME/.media_upload.lock"
 MIN_SPACE_GB=20
 MAX_APPROVAL_FILES=1
 MAX_DOWNLOADING_FILES=1
-# Prevent system stress from large files: skip files > 15GB
 MAX_FILE_SIZE_GB=15
-# Max retries per file before skipping to next
-MAX_RETRY_COUNT=3
 # Track retry counts per file identity
-declare -A RETRY_COUNT
 REQUIRE_WINDSCRIBE=true
 VPN_INTERFACE_PREFIX="utun"
 TEMP_DOWNLOAD_DIR="${APPROVAL_DIR}/.downloading"
@@ -104,22 +100,20 @@ count_visible_files() {
 	find "$dir" -maxdepth 1 -type f ! -name ".*" -print0 | grep -cz . || true
 }
 
-# Check if file exceeds maximum size limit
+# Check if file exceeds maximum size limit (bash 3.2 compatible)
 check_file_size() {
 	local file="$1"
-	# Use rclone to get file size without downloading
 	local file_size_gb
-	file_size_gb=$(rclone size "$ALLDEBRID_REMOTE/$file" --json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['total']/1024/1024/1024)" 2>/dev/null || echo "0")
+	file_size_gb=$(rclone size "$ALLDEBRID_REMOTE/$file" --json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['bytes']/1024/1024/1024)" 2>/dev/null || echo "0")
 
-	if (($(echo "$file_size_gb > $MAX_FILE_SIZE_GB" | bc -l))); then
+	# Use awk for floating point comparison (bash 3.2 compatible)
+	if awk -v fs="$file_size_gb" -v max="$MAX_FILE_SIZE_GB" 'BEGIN { exit (fs > max) ? 0 : 1 }'; then
 		log "⏸️  File too large (${file_size_gb:.2f}GB > ${MAX_FILE_SIZE_GB}GB): $file. Skipping to avoid system stress."
-		# Add to ignore list to prevent retries
 		echo "$file" >>"$IGNORE_FILE"
 		return 1
 	fi
 	return 0
 }
-
 check_vpn() {
 	if [[ $REQUIRE_WINDSCRIBE != "true" ]]; then
 		return 0
