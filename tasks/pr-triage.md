@@ -20,7 +20,7 @@ No zero-diff PRs detected. No stale (>30d) PRs in scope.
 
 | Disposition | PRs | Count |
 | --- | --- | ---: |
-| **MERGE** | sc #102; hg #237; esp #1054, #1056, #1058, #1060; pc #1190, #1195; sa #270; ctrld #879 | 11 |
+| **MERGE** | sc #102; hg #237; esp #1054, #1056, #1058, #1060; pc #1190, #1195; sa #270; ctrld #879 | 10 |
 | **CLOSE-ZERO-DIFF** | — | 0 |
 | **DEFER** | pc #1191, #1188; sa #261; hg #227 | 4 |
 | **ESCALATE** | pc #1193 | 1 |
