@@ -318,6 +318,11 @@
 **Related:** Lesson 0y (nested unpinned actions inside composites).
 **Detection cost:** Low — bandit workflow fails before pytest on workflow-only diffs.
 
+## Lesson 0cg: Jules Palette branches can duplicate with session-id suffix (2026-06-08)
+
+**Pattern:** ESP #1049 (`ux/fix-eof-crash`) and #1050 (`ux/fix-eof-crash-<sessionId>`) had byte-identical diffs opened minutes apart.
+**Rule:** `diff <(gh pr diff A) <(gh pr diff B)` on same-title Palette PRs; keep the session-id branch (newer Jules run), close the shorter branch with a linked explanation. Merge before attempting sibling Bolt PRs in the same repo to avoid Lesson 0c retries.
+
 ## Lesson 0cf: Jules agentic QA zero-diff PRs are routine closures (2026-06-07)
 
 **Pattern:** personal-config #1183 opened same day with title "chore: automated agentic QA review", `changedFiles == 0`, CI fully green — Jules completed QA with no pending code changes after prior session merges.
@@ -334,5 +339,11 @@
 **Pattern:** Seatek #237 touched eight workflow YAML files plus `code_health_scanner.py`; rebasing the full branch risked unrelated CI churn.
 **Rule:** When the substantive fix is a single script, salvage **only that file** unless workflow changes are required for the optimization to work. Document omitted paths in the salvage PR body.
 **Detection cost:** Low — inspect `gh pr view --json files` before checkout.
+
+## Lesson 0cg: Salvage PRs go DIRTY when main refactors overlap intent files (2026-06-09)
+
+**Pattern:** Hydrograph #227 was MERGEABLE with CodeScene-only failure on 2026-06-07; by 2026-06-09 it was `CONFLICTING`/`DIRTY` because `main` gained `_create_chart_metadata` / `_save_generated_chart` while the salvage branch inlined/reverted that refactor in `app.py`.
+**Rule:** Before `update-branch` on a deferred salvage, diff `main` against salvage intent files. If `main` already refactored the same surface, rebuild v2 from `main` with **intent files only** — never fight an app-level refactor in the salvage branch.
+**Detection cost:** Low — `mergeStateStatus: DIRTY` on a PR that was previously MERGEABLE.
 
 - **Bash Eval Injection in Subshells**: When running traps inside a subshell instead of `eval`, the trap must explicitly use `$BASHPID` instead of `$$` if it wants to signal itself properly, because `$$` refers to the parent process. Also, ensure the subshell's trap explicitly handles signal propagation (e.g. `trap - INT; kill -INT $BASHPID`) so that the subshell terminates correctly, and then the parent script's wait mechanism triggers properly (WCE).

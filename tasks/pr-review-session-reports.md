@@ -7,6 +7,11 @@
 ## Run — 2026-06-09 (cron review-and-merge 13:00)
 
 **Report:** `tasks/pr-review-2026-06-09.md`
+> **Latest execution:** 2026-06-08 (review-and-merge 13:00).
+
+## Run — 2026-06-08 (cron review-and-merge 13:00)
+
+**Report:** `tasks/pr-review-2026-06-08.md`
 
 | Metric | Count |
 | --- | ---: |
@@ -18,6 +23,13 @@
 | Open tail | 5 |
 
 **Highlights:** Merged Sentinel security fixes (sc #102, hg #237), cleared esp queue (#1054–#1060), pc Palette/Bolt (#1190, #1195), sa Bolt #270, ctrld QA #879. Escalated pc #1193 (workflow automation trust boundary). Deferred salvage tail sa #261, hg #227 and pc draft artifacts #1188, #1191.
+| Merged | 4 |
+| Closed | 1 |
+| Deferred | 3 |
+| Escalated | 0 |
+| Open tail | 3 |
+
+**Highlights:** Merged ctrld QA #875 and Bolt #877; esp Palette EOF #1050 and Bolt regex #1052. Closed esp #1049 (duplicate of #1050). Deferred pc salvage draft #1185, sa #261 and hg #227 (CodeScene advisory).
 
 ## Run — 2026-06-07 (cron review-and-merge 13:00)
 
