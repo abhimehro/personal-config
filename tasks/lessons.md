@@ -1,5 +1,10 @@
 # Lessons Learned
 
+## Lesson 0x: ESP overlapping-file cluster — merge lint → UI → perf → QA (2026-06-09)
+
+**Pattern:** Four email-security-pipeline PRs (#1054–#1060) touched overlapping files (`spam_analyzer.py`, `setup_wizard.py`, `test_ui_palette.py`) with distinct intents (lint, Palette colorize, URL Counter perf, Jules QA formatting).
+**Rule:** Merge in ascending scope order: trivial lint first, then UI/Palette, then substantive perf logic, then umbrella QA/formatting last. Re-check mergeability after each squash-merge (Lesson 0).
+
 ## Lesson 0: Multi-repo automated PR merges need sequential re-validation
 
 **Pattern:** After squash-merging one automation PR, sibling PRs from the same bot often become **CONFLICTING** with `main`.
@@ -323,6 +328,12 @@
 **Pattern:** personal-config #1183 opened same day with title "chore: automated agentic QA review", `changedFiles == 0`, CI fully green — Jules completed QA with no pending code changes after prior session merges.
 **Rule:** Close immediately with Lesson 0b comment; do not squash-merge empty commits. Expect one per repo per Jules daily QA cycle when `main` is already healthy.
 
+## Lesson 0cg: Fleet-wide conflict clearance — salvage focuses on hygiene (2026-06-08)
+
+**Pattern:** Evening salvage cron found zero `CONFLICTING` / `DIRTY` bot PRs across all six configured repos; work shifted to duplicate closure (#1053), zero-diff QA (#1189), and superseded doc drafts (#1185).
+**Rule:** When the conflict queue is empty, Phase 2 should still run: close semantic duplicates, zero-diff Jules QA, and superseded salvage-doc PRs; route CLEAN code PRs to Phase 1 rather than merging from salvage.
+**Detection cost:** Low — `gh pr list --json mergeable,mergeStateStatus` per repo.
+
 ## Lesson 0ce: T1 security merges with CodeScene-only failure (2026-06-06)
 
 **Pattern:** ESP #1008 had `mergeStateStatus: UNSTABLE` solely because CodeScene Code Health Review failed; bandit, CodeQL, pytest, Snyk, and GitGuardian were all green.
@@ -334,5 +345,11 @@
 **Pattern:** Seatek #237 touched eight workflow YAML files plus `code_health_scanner.py`; rebasing the full branch risked unrelated CI churn.
 **Rule:** When the substantive fix is a single script, salvage **only that file** unless workflow changes are required for the optimization to work. Document omitted paths in the salvage PR body.
 **Detection cost:** Low — inspect `gh pr view --json files` before checkout.
+
+## Lesson 0cg: Salvage PRs go DIRTY when main refactors overlap intent files (2026-06-09)
+
+**Pattern:** Hydrograph #227 was MERGEABLE with CodeScene-only failure on 2026-06-07; by 2026-06-09 it was `CONFLICTING`/`DIRTY` because `main` gained `_create_chart_metadata` / `_save_generated_chart` while the salvage branch inlined/reverted that refactor in `app.py`.
+**Rule:** Before `update-branch` on a deferred salvage, diff `main` against salvage intent files. If `main` already refactored the same surface, rebuild v2 from `main` with **intent files only** — never fight an app-level refactor in the salvage branch.
+**Detection cost:** Low — `mergeStateStatus: DIRTY` on a PR that was previously MERGEABLE.
 
 - **Bash Eval Injection in Subshells**: When running traps inside a subshell instead of `eval`, the trap must explicitly use `$BASHPID` instead of `$$` if it wants to signal itself properly, because `$$` refers to the parent process. Also, ensure the subshell's trap explicitly handles signal propagation (e.g. `trap - INT; kill -INT $BASHPID`) so that the subshell terminates correctly, and then the parent script's wait mechanism triggers properly (WCE).
