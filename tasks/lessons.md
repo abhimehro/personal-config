@@ -1,5 +1,15 @@
 # Lessons Learned
 
+## Lesson 0y: Bolt `sum(generator)` → `sum([list])` is an anti-pattern (2026-06-10)
+
+**Pattern:** Jules Bolt PR ctrld-sync #881 replaced `sum(x for x in ...)` with `sum([...])`, causing 1.5–2× benchmark regression. The Performance Tests workflow correctly failed with `fail-on-alert: true`.
+**Rule:** Never merge Bolt changes that materialize generators into lists for `sum()`/`any()`/`all()` unless benchmarks prove improvement. DEFER when benchmark CI fails due to PR changes — do not dismiss as flaky.
+
+## Lesson 0z: Salvage perf drafts may drop security helpers (2026-06-10)
+
+**Pattern:** Seatek #261 salvage removed `read_file_safe()`, `MAX_FILE_SIZE`, and `CWD_REALPATH` guards while simplifying `code_health_scanner.py` for CodeScene complexity.
+**Rule:** Gate 2 (security) blocks merge even when CodeScene is green. Salvage Agent must preserve filesystem boundary checks when rebuilding perf intent.
+
 ## Lesson 0x: ESP overlapping-file cluster — merge lint → UI → perf → QA (2026-06-09)
 
 **Pattern:** Four email-security-pipeline PRs (#1054–#1060) touched overlapping files (`spam_analyzer.py`, `setup_wizard.py`, `test_ui_palette.py`) with distinct intents (lint, Palette colorize, URL Counter perf, Jules QA formatting).
