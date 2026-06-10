@@ -353,3 +353,16 @@
 **Detection cost:** Low — `mergeStateStatus: DIRTY` on a PR that was previously MERGEABLE.
 
 - **Bash Eval Injection in Subshells**: When running traps inside a subshell instead of `eval`, the trap must explicitly use `$BASHPID` instead of `$$` if it wants to signal itself properly, because `$$` refers to the parent process. Also, ensure the subshell's trap explicitly handles signal propagation (e.g. `trap - INT; kill -INT $BASHPID`) so that the subshell terminates correctly, and then the parent script's wait mechanism triggers properly (WCE).
+
+## Lesson 0ch: Bolt sum([list]) materialization causes real benchmark regression (2026-06-10)
+
+**Pattern:** ctrld-sync #881 replaced `sum(genexpr)` with `sum([list comp])` in four hot paths. All functional checks passed but benchmark reported ~1.5–2× slowdown — list materialization allocates before summing.
+**Rule:** When a Bolt PR converts generators to list comprehensions inside `sum()`, treat benchmark failure as substantive unless the hot path is cold. Prefer keeping generator expressions or use `math.fsum` on an iterator. Do not apply Lesson 0dr flake waiver when the PR touches benchmarked summation loops.
+**Detection cost:** Low — `benchmark=FAILURE` on a Bolt diff that adds `[` inside `sum(`.
+
+## Lesson 0ci: CodeScene PASS does not override security control removal (2026-06-10)
+
+**Pattern:** Seatek #261 salvage draft achieved CodeScene SUCCESS after five sessions of advisory failure, but the diff removed `read_file_safe`, `MAX_FILE_SIZE`, and associated security tests.
+**Rule:** Gate 2 (security) blocks merge even when CodeScene is green. Before recommending human merge on a perf salvage, verify intent files did not drop path-traversal, size-limit, or auth helpers present on `main`.
+**Contrast:** Lesson 0ce (merge T1 security when CodeScene-only fail) — opposite direction; security wins over advisory green.
+**Detection cost:** Low — `gh pr diff` shows deletion of `read_file_safe` or `MAX_FILE_SIZE`.
