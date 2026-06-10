@@ -1,6 +1,7 @@
 # Escalation tail — salvage plan for human / Phase-2 agents (2026-05-03)
 
 **Companion docs:** [Automated PR Salvage & Recovery Agent](../docs/automated-pr-salvage-agent.md) (Phase 2 — draft PRs only, no autonomous merge), [Automated PR Review Agent](../docs/automated-pr-review-agent.md), `tasks/lessons.md` (0cc burst cascade, 0x `media_analyzer`, 0y journals).
+**Session logs:** review activity in `tasks/review-session-reports.md`; salvage activity in `tasks/salvage-session-reports.md`.
 
 **Live state:** Always re-fetch with `gh pr list --repo <owner/repo> --state open --json …` before acting; numbers and mergeability drift quickly after `main` moves.
 

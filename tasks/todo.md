@@ -76,7 +76,7 @@
 - [x] Salvage `personal-config#856` → draft #918 (check_summary tests merged into existing module, /tmp clone).
 - [x] Close-superseded `ctrld-sync#771` (main now has dedicated `pluralize()` helper).
 - [x] Close-stale `series_correction#11` (refactor PR; salvage aborted with 6 conflicts vs PR #10 tests).
-- [x] Update `tasks/pr-review-session-reports.md` with 2026-05-10 final cleanup section.
+- [x] Update legacy archive `tasks/pr-review-session-reports.md` with 2026-05-10 final cleanup section (active logs now split: `tasks/review-session-reports.md` + `tasks/salvage-session-reports.md`).
 - [x] Write `tasks/pr-final-cleanup-2026-05-10.json` action log.
 
 ---

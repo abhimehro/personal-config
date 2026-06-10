@@ -69,7 +69,7 @@ Assign each PR one disposition:
 
 ## Phase 4 — Reporting & Learning
 
-- Write session report by appending to `tasks/pr-review-session-reports.md` (repos processed, actions taken, escalations, consolidations, patterns, metrics). Optionally also add a point-in-time snapshot as `tasks/pr-review-YYYY-MM-DD.md` when a standalone dated file is needed.
+- Write session report by appending to `tasks/review-session-reports.md` (repos processed, actions taken, escalations, consolidations, patterns, metrics). Optionally also add a point-in-time snapshot as `tasks/pr-review-YYYY-MM-DD.md` when a standalone dated file is needed.
 - Update `tasks/lessons.md` with new patterns (bot behaviors, repo quirks, effective heuristics). Optionally reflect material lessons in [Review heuristics](#review-heuristics) below.
 
 ## Configuration

@@ -30,6 +30,7 @@ Reduce PR accumulation from automated agents by triaging, reviewing, consolidati
 Apply in order:
 
 - **Gate 1 — CI health:** Passing → proceed. Failing due to flaky/unrelated test → note and proceed with caution. Failing due to PR changes → attempt auto-fix if applicable; else request changes.
+- **CodeScene remediation trigger:** If the failing check includes CodeScene code health, post `/cs-agent skill:fix-code-health-degradations` on that PR before deferring. Re-check status after the CodeScene refactoring run completes and then continue Gate 1 triage.
 - **Gate 2 — Security (all PRs):** No secrets/tokens added; no `eval`/`exec`/`dangerouslySetInnerHTML`/raw SQL/unsanitized paths; no permission escalation in CI; no dependency with known CVE; no weakened `.gitignore`/`.env.example`. Never merge if this gate fails.
 - **Gate 3 — Code quality:** Minimal scoped changes, no dead code/debug artifacts, consistent style, tests present or coverage maintained.
 - **Gate 4 — Category-specific:** e.g. SECURITY → verify CVE and fix; DEPENDENCY → semver and changelog; CI/INFRA → least-privilege permissions, no `pull_request_target` with checkout of PR head.
@@ -56,16 +57,24 @@ Assign each PR one disposition:
 
 ## Phase 4 — Reporting & Learning
 
-- Write session report by appending to `tasks/pr-review-session-reports.md` (repos processed, actions taken, escalations, consolidations, patterns, metrics). Optionally also add a point-in-time snapshot as `tasks/pr-review-YYYY-MM-DD.md` when a standalone dated file is needed.
+- Write session report by appending to `tasks/review-session-reports.md` (repos processed, actions taken, escalations, consolidations, patterns, metrics). Optionally also add a point-in-time snapshot as `tasks/pr-review-YYYY-MM-DD.md` when a standalone dated file is needed.
 - Update `tasks/lessons.md` with new patterns (bot behaviors, repo quirks, effective heuristics). Optionally reflect material lessons in [Review heuristics](#review-heuristics) below.
+
+### Conflict-proofing write boundaries
+
+- Review automation writes only to `tasks/review-session-reports.md`.
+- Review automation must not write to `tasks/salvage-session-reports.md`.
+- Canonical policy docs are read-mostly; only update for policy/version changes.
 
 ## Phase 5 — Hand off the deferred / escalated tail to the Salvage Agent
 
 Phase 1 (this skill) is throughput-optimized: it merges what's clean, closes what's redundant, and surfaces the rest. The deferred / escalated tail is **explicitly out of scope here** — those PRs go to the [Automated PR Salvage & Recovery Agent](automated-pr-salvage-agent.md) (Phase 2).
 
-When this skill finishes a run, the dated session report (`tasks/pr-review-YYYY-MM-DD.md`) becomes Phase 2's input. To make that handoff machine-readable, the report's "Post-session remainder" section should be a YAML-style list with `repo`, `pr`, and `reason` fields per row. Trigger Phase 2 when **any** of: ≥1 PR is `ESCALATE`, ≥1 PR has been `DEFER`'d for >24 h, or 4+ PRs in the same repo share the same failing required check (suspected `main`-side infra breakage).
+When this skill finishes a run, the deferred/escalated tail feeds Phase 2 input. Record the run in `tasks/review-session-reports.md`, and when needed also emit a dated snapshot (`tasks/pr-review-YYYY-MM-DD.md`) whose "Post-session remainder" section is YAML-style with `repo`, `pr`, and `reason` fields per row. Trigger Phase 2 when **any** of: ≥1 PR is `ESCALATE`, ≥1 PR has been `DEFER`'d for >24 h, or 4+ PRs in the same repo share the same failing required check (suspected `main`-side infra breakage).
 
 Phase 2 will produce one or more **draft** salvage / infra-fix PRs and close the originals with cross-links. Phase 2 never merges autonomously.
+Review automation must not write to `tasks/salvage-session-reports.md`.
+If a deferred PR is blocked by CodeScene code health, Phase 2 must confirm `/cs-agent skill:fix-code-health-degradations` was posted (or post it) before making final salvage/closure disposition.
 
 ## Local Git, `gh`, and Jujitsu (jj)
 

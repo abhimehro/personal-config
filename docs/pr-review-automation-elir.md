@@ -46,5 +46,6 @@ Reduce bot PR backlog across configured repositories by triaging, reviewing, mer
 | `tasks/pr-review-agent.config.yaml`          | Repos, bot authors, thresholds                                                        |
 | `tasks/pr-inventory.md`                      | Current session inventory (table)                                                     |
 | `tasks/pr-triage.md`                         | Duplicates, conflicts, ready-to-execute commands                                      |
-| `tasks/pr-review-session-reports.md`         | Rolling session report log (optional dated `tasks/pr-review-YYYY-MM-DD.md` snapshots) |
+| `tasks/review-session-reports.md`            | Review-agent rolling session log (optional dated `tasks/pr-review-YYYY-MM-DD.md` snapshots) |
+| `tasks/salvage-session-reports.md`           | Salvage-agent rolling session log                                                     |
 | `tasks/lessons.md`                           | Recurring patterns and process improvements                                           |

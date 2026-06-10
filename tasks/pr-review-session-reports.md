@@ -1,6 +1,8 @@
-# PR review session reports (rolling log)
+# PR review session reports (legacy rolling log)
 
-> **Path:** `tasks/pr-review-session-reports.md` — append a new `## Run — YYYY-MM-DD` section per session. (Renamed from `tasks/pr-review-2026-03-10.md` when this file became a multi-session log.)
+> **Path:** `tasks/pr-review-session-reports.md` — historical archive only.
+> New review entries must go to `tasks/review-session-reports.md`.
+> New salvage entries must go to `tasks/salvage-session-reports.md`.
 >
 > **Latest execution:** 2026-06-08 (salvage 17:00).
 

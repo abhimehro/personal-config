@@ -40,7 +40,7 @@ These workflows are powered by [GitHub Agentic Workflows (gh-aw)](https://github
 
 #### On-Demand Workflows
 
-- **PR Review Agent** — Triage and resolve bot-authored PRs across multiple repos (personal-config, email-security-pipeline, ctrld-sync). Run on-demand via human or agent; see `docs/automated-pr-review-agent.md` and `scripts/run-pr-review-session.sh`. A future scheduled workflow may be added after permission parity and a validated orchestrator exist.
+- **PR Review Agent** — Triage and resolve bot-authored PRs across multiple repos (personal-config, email-security-pipeline, ctrld-sync). Run on-demand via human or agent; see `docs/automated-pr-review-agent.md` and `scripts/run-pr-review-session.sh`. A future scheduled workflow may be added after permission parity and a validated orchestrator exist. During review/salvage sessions, when CodeScene fails on a PR, trigger `/cs-agent skill:fix-code-health-degradations` before final defer/salvage disposition.
 
 - **plan.md** - Generates project plans and task breakdowns when invoked with `/plan` command in issues or PRs. Analyzes an issue or discussion and breaks it down into a sequence of actionable work items that can be assigned to GitHub Copilot agents. Creates sub-issues grouped under a parent issue.
 

@@ -1,17 +1,8 @@
 # PR Triage — 2026-06-08
 
 **Preflight:** PASS (6/6)  
-**Mode:** Phase 2 salvage (no autonomous merge of code PRs)  
-**Disposition key:** CLOSE-DUPLICATE · CLOSE-ZERO-DIFF · CLOSE-SUPERSEDED · DEFER · PHASE1-HANDOFF · ESCALATE
-# PR Triage — 2026-06-09
-
-**Preflight:** PASS (6/6)  
-**Mode:** salvage-and-cleanup (Phase 2)  
-**Disposition key:** SALVAGE · CLOSE-SUPERSEDED · DEFER · ESCALATE
-# PR Triage — 2026-06-08
-
-**Preflight:** PASS (6/6)  
-**Disposition key:** MERGE · CLOSE-DUPLICATE · DEFER · ESCALATE
+**Disposition key:** MERGE · CLOSE-ZERO-DIFF · DEFER · ESCALATE
+**Session logs:** review writes to `tasks/review-session-reports.md`; salvage writes to `tasks/salvage-session-reports.md`.
 
 ## Duplicate & overlap analysis
 

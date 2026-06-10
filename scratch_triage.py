@@ -1,7 +1,6 @@
 import concurrent.futures
 import datetime
 import json
-import re
 import subprocess
 
 repos = [
@@ -268,7 +267,7 @@ if __name__ == "__main__":
             f"- https://github.com/{p['full_repo']}/pull/{p['number']} — {p['mergeStateStatus']}"
         )
 
-    with open("tasks/pr-review-session-reports.md", "a") as f:
+    with open("tasks/review-session-reports.md", "a") as f:
         f.write("\n".join(report_md) + "\n")
 
     print(

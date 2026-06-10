@@ -64,8 +64,14 @@ Run the Salvage Agent when **any** of the following are true after a Phase 1 cyc
 | Salvage PRs (one per recoverable original) | New branches `cursor-agent/salvage-<repo>-<old_pr>-<short_label>-<suffix>` on each affected repo, opened as **draft** | `gh pr create --draft` |
 | Infra-fix PRs (one per repo whose `main` needs unblocking) | Same naming pattern: `cursor-agent/fix-<short_label>-<suffix>` | `gh pr create --draft` |
 | Closure comments on superseded / blocked-by originals | Inline PR comments with cross-link to either the salvage PR or the existing-on-main commit | `gh pr close --comment "..."` or `gh pr comment` |
-| Phase 2 addendum to the Phase 1 report | Append to `tasks/pr-review-YYYY-MM-DD.md` under a `## Addendum — YYYY-MM-DD deep-dive on deferred / escalated PRs` heading | Markdown table with `Repo`, `Old PR`, `Disposition`, `New PR`, `Notes` columns + a counts summary + new patterns observed |
+| Salvage session report | Append to `tasks/salvage-session-reports.md` under a `## Run — YYYY-MM-DD` heading | Markdown table with `Repo`, `Old PR`, `Disposition`, `New PR`, `Notes` columns + a counts summary + new patterns observed |
 | New lessons | Append to `tasks/lessons.md` | One numbered lesson per new pattern (Pattern → Rule → Detection cost) |
+
+### Conflict-proofing write boundaries
+
+- Salvage automation writes only to `tasks/salvage-session-reports.md`.
+- Salvage automation must not write to `tasks/review-session-reports.md`.
+- Canonical policy docs are read-mostly; only update for policy/version changes.
 
 ## Handoff points
 
@@ -129,6 +135,8 @@ Goal: locate the single change on `main` that broke the required check, and prop
 
 For each surviving PR in the queue (after infra-broken repos are paused), run this decision tree:
 
+Before applying the tree, if CodeScene code health is a failing check on the PR, post `/cs-agent skill:fix-code-health-degradations` (if not already present in the thread) and wait for that run's result. Then continue with the salvage decision based on the updated check state and diff.
+
 ```
 read PR title, body, file list, and full diff
 │
@@ -173,13 +181,15 @@ read PR title, body, file list, and full diff
 └── done
 ```
 
-### Step 5 — Document the addendum
+### Step 5 — Document the salvage run
 
-Append a section to `tasks/pr-review-YYYY-MM-DD.md` (the Phase 1 report being followed up). Required content:
+Append a section to `tasks/salvage-session-reports.md`. Optionally link the corresponding Phase 1 snapshot (`tasks/pr-review-YYYY-MM-DD.md`) as input context. Required content:
 
 - A salvage-results table: `Repo | Old PR | Disposition | New PR | Notes`.
 - Counts: deep-dived, salvaged, new infra-fix PR, closed as superseded / no-op, cross-linked blocked-by, net new draft PRs awaiting human review.
 - New patterns observed → file each as a numbered lesson in `tasks/lessons.md` (one Pattern → Rule → Detection cost block per lesson).
+
+Salvage automation must not write to `tasks/review-session-reports.md`.
 
 ---
 
@@ -229,6 +239,7 @@ For repos classified as security-sensitive in `tasks/pr-review-agent.config.yaml
 1. Never bypass a broken pytest gate even when the failure is on `main` and unrelated to the PR (Lesson 0bb).
 2. Treat all salvage PRs as draft regardless of how trivial the change looks.
 3. Surface the infra-fix PR as the **top** escalation for the next session.
+4. When CodeScene fails, trigger `/cs-agent skill:fix-code-health-degradations` before drafting salvage changes so the remediation attempt is captured in PR history.
 
 ### S7 — Provenance preservation on cherry-picks
 

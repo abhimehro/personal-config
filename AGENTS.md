@@ -169,6 +169,18 @@ Before running a bot PR triage/review session, preflight must pass. See `docs/au
 ./scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml
 ```
 
+### CodeScene failure remediation during PR sessions
+
+When PR triage/review/salvage runs encounter a CodeScene failure, post this command on the affected PR before final defer/salvage decisions:
+
+```bash
+/cs-agent skill:fix-code-health-degradations
+```
+
+Canonical policy references:
+- `docs/automated-pr-review-agent.md`
+- `docs/automated-pr-salvage-agent.md`
+
 ## Big-picture architecture (how the pieces fit)
 
 ### 1) Config-as-code via symlink orchestration

@@ -18,6 +18,7 @@
 **Session:** cron `0 13 * * *` (review-and-merge)  
 **Branch:** `cursor-agent/automated-pr-workflow-d6de`  
 **Config:** `tasks/pr-review-agent.config.yaml`
+**Session logs:** review writes to `tasks/review-session-reports.md`; salvage writes to `tasks/salvage-session-reports.md`.
 
 ## Scope summary (end of session)
 

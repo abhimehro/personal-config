@@ -73,6 +73,16 @@ make lint-errors
 make lint-fix
 ```
 
+### CodeScene PR remediation
+
+When a PR is blocked by CodeScene code health checks during review/salvage sessions, comment the following on that PR:
+
+```bash
+/cs-agent skill:fix-code-health-degradations
+```
+
+For canonical triage/salvage policy, see `docs/automated-pr-review-agent.md` and `docs/automated-pr-salvage-agent.md`.
+
 ### Automated Maintenance System (NEW!)
 
 ```bash
