@@ -1,3 +1,7 @@
-🎯 **What:** The PR categorization logic in `categorize_ready.py` was previously an inline loop, making it difficult to verify all code paths. Missing parsing tests for this file have now been addressed.
-📊 **Coverage:** The logic has been extracted into a testable `get_category_from_title` function, with tests covering the scenarios for SECURITY, DEPENDENCY, CI/INFRA, and the default PERFORMANCE/REFACTOR/UI/FEATURE categories.
-✨ **Result:** Improved test coverage, ensuring PRs are correctly categorized and catching regressions during modifications.
+🎯 **What:** Fixed CI failures related to code health checking logic.
+- Refactored `get_category_from_title` in `categorize_ready.py` to use a mapping-based structure instead of nested loops, addressing the Code Health "Bumpy Road Ahead" failure.
+- Refactored test assertions in `test_categorize_ready.py` to utilize a `_assert_fetch_pr_info` helper method, addressing the Code Duplication failure.
+
+📊 **Coverage:** The test suite continues to pass as expected, and test duplication was significantly reduced without removing any coverage.
+
+✨ **Result:** Improved code readability and adherence to internal health metric thresholds.

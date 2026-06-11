@@ -81,17 +81,19 @@ ready_prs = [
 
 def get_category_from_title(title: str) -> str:
     title = title.lower()
-    cat = "PERFORMANCE/REFACTOR/UI/FEATURE"
-    for sec_kw in ("sentinel", "security", "cve", "xxe"):
-        if sec_kw in title:
-            return "SECURITY"
-    for dep_kw in ("dependabot", "renovate"):
-        if dep_kw in title:
-            return "DEPENDENCY"
-    for ci_kw in ("chore", "ci", "automation", "action", "trunk"):
-        if ci_kw in title:
-            return "CI/INFRA"
-    return cat
+
+    categories = {
+        "SECURITY": ("sentinel", "security", "cve", "xxe"),
+        "DEPENDENCY": ("dependabot", "renovate"),
+        "CI/INFRA": ("chore", "ci", "automation", "action", "trunk"),
+    }
+
+    for cat_name, keywords in categories.items():
+        for kw in keywords:
+            if kw in title:
+                return cat_name
+
+    return "PERFORMANCE/REFACTOR/UI/FEATURE"
 
 
 categorized = {

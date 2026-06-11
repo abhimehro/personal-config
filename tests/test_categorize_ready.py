@@ -53,10 +53,8 @@ class TestCategorizeReady(unittest.TestCase):
 
         self.assertEqual(result, {"title": "test", "state": "open"})
 
-    def test_fetch_pr_info_success(self):
-        self.mod.run_gh = MagicMock(
-            return_value={"title": "Test PR", "mergeStateStatus": "CLEAN"}
-        )
+    def _assert_fetch_pr_info(self, mock_return_value, expected_info):
+        self.mod.run_gh = MagicMock(return_value=mock_return_value)
         pr_string = "owner/repo#123"
         pr, info = self.mod.fetch_pr_info(pr_string)
 
@@ -74,28 +72,16 @@ class TestCategorizeReady(unittest.TestCase):
         )
 
         self.assertEqual(pr, pr_string)
-        self.assertEqual(info, {"title": "Test PR", "mergeStateStatus": "CLEAN"})
+        self.assertEqual(info, expected_info)
+
+    def test_fetch_pr_info_success(self):
+        self._assert_fetch_pr_info(
+            {"title": "Test PR", "mergeStateStatus": "CLEAN"},
+            {"title": "Test PR", "mergeStateStatus": "CLEAN"},
+        )
 
     def test_fetch_pr_info_failure(self):
-        self.mod.run_gh = MagicMock(return_value=None)
-        pr_string = "owner/repo#123"
-        pr, info = self.mod.fetch_pr_info(pr_string)
-
-        self.mod.run_gh.assert_called_once_with(
-            [
-                "gh",
-                "pr",
-                "view",
-                "123",
-                "-R",
-                "owner/repo",
-                "--json",
-                "title,mergeStateStatus",
-            ]
-        )
-
-        self.assertEqual(pr, pr_string)
-        self.assertIsNone(info)
+        self._assert_fetch_pr_info(None, None)
 
     def test_get_category_from_title_security(self):
         self.assertEqual(
