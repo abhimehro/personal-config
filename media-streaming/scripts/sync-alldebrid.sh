@@ -97,8 +97,15 @@ check_disk_space() {
 	if ((free_space < MIN_SPACE_GB)); then
 		log "⚠️  Low Disk Space: ${free_space}GB free (Min: ${MIN_SPACE_GB}GB). Stopping downloads."
 		notify "Download Paused" "Low disk space (${free_space}GB)"
-		exit 0
+		return 1
 	fi
+	return 0
+}
+
+check_disk_space_quiet() {
+	local free_space
+	free_space=$(df -g / | awk 'NR==2 {print $4}') # Available in GB
+	((free_space >= MIN_SPACE_GB))
 }
 
 count_visible_files() {
@@ -114,7 +121,7 @@ check_file_size() {
 
 	# Use awk for floating point comparison (bash 3.2 compatible)
 	if awk -v fs="$file_size_gb" -v max="$MAX_FILE_SIZE_GB" 'BEGIN { exit (fs > max) ? 0 : 1 }'; then
-		log "⏸️  File too large (${file_size_gb:.2f}GB > ${MAX_FILE_SIZE_GB}GB): $file. Skipping to avoid system stress."
+		log "⏸️  File too large ($(printf "%.2f" "$file_size_gb")GB > ${MAX_FILE_SIZE_GB}GB): $file. Skipping to avoid system stress."
 		echo "$file" >>"$IGNORE_FILE"
 		return 1
 	fi
@@ -215,7 +222,9 @@ process_approved_candidates() {
 
 		# Re-check constraints before downloading
 		check_vpn
-		check_disk_space
+		if ! check_disk_space; then
+			exit 0
+		fi
 		check_containment
 
 		# Extract just the filename from the full path
@@ -282,7 +291,7 @@ log "Dry run: $DRY_RUN"
 
 # Hard safety gates. These prevent runaway downloads from a large Alldebrid backlog.
 check_vpn
-check_disk_space
+# Note: check_disk_space is called later, only before actual downloads, not during candidate selection
 check_containment
 
 # Check if alldebrid remote exists
@@ -358,11 +367,13 @@ fi
 file_size_gb=$(rclone size "$ALLDEBRID_REMOTE/$file" --json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['bytes']/1024/1024/1024)" 2>/dev/null || echo "0")
 
 log "----------------------------------------"
-log "Candidate selected: $file (${file_size_gb:.2f} GB)"
+log "Candidate selected: $file ($(printf "%.2f" "$file_size_gb") GB)"
 
 # Threshold gate: auto-approve small files (under AUTO_APPROVE_UNDER_GB)
+# Check disk space before auto-approving to avoid queuing downloads that can't proceed
 if [[ $THRESHOLD_GATE_ENABLED == "true" ]] &&
 	awk -v fs="$file_size_gb" -v max="$AUTO_APPROVE_UNDER_GB" 'BEGIN { exit (fs <= max) ? 0 : 1 }' 2>/dev/null; then
+	check_disk_space
 	log "Auto-approved (under ${AUTO_APPROVE_UNDER_GB}GB threshold): $file"
 
 	# Create and immediately approve
@@ -384,14 +395,21 @@ if ! check_file_size "$file"; then
 	exit 0
 fi
 
+# Check disk space before creating candidate - avoid queuing files that can't be downloaded
+# This is a soft check; we still allow candidate creation for manual review
+# but warn if disk space is low
+if ! check_disk_space_quiet; then
+	log "⚠️  Low Disk Space: Creating candidate for manual review, but download will be blocked"
+fi
+
 # Create candidate metadata file (atomic write)
 create_candidate "$file" "$file_size_gb"
 
 # Notify user that a download is pending approval
-notify "Download Pending Approval" "New candidate: ${file} (${file_size_gb:.2f} GB). Run 'approve-download --list' or move file to .approved/"
+notify "Download Pending Approval" "New candidate: ${file} ($(printf "%.2f" "$file_size_gb") GB). Run 'approve-download --list' or move file to .approved/"
 
 log "Candidate queued for approval: $file"
-log "   Size: ${file_size_gb:.2f} GB"
+log "   Size: $(printf "%.2f" "$file_size_gb") GB"
 log "   To approve: approve-download ${file////_} or move $PENDING_DIR/${file////_}.candidate.json to $APPROVED_DIR/"
 
 log "=== Alldebrid Sync Complete (Approval Required) ==="
