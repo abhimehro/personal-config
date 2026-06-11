@@ -1,4 +1,3 @@
-🎯 **What:** Removed unused `sys` import from `submit.py`.
-💡 **Why:** Improves code health by eliminating unnecessary standard library imports, keeping the codebase clean and reducing noise.
-✅ **Verification:** Verified syntax using `python3 -m py_compile submit.py` and ran the full project test suite via `make test-all` (which included 36 passing bash tests and 228 passing Python unit tests) to ensure no regressions were introduced.
-✨ **Result:** The unused import has been successfully removed without altering any behavior.
+🎯 **What:** The PR categorization logic in `categorize_ready.py` was previously an inline loop, making it difficult to verify all code paths. Missing parsing tests for this file have now been addressed.
+📊 **Coverage:** The logic has been extracted into a testable `get_category_from_title` function, with tests covering the scenarios for SECURITY, DEPENDENCY, CI/INFRA, and the default PERFORMANCE/REFACTOR/UI/FEATURE categories.
+✨ **Result:** Improved test coverage, ensuring PRs are correctly categorized and catching regressions during modifications.

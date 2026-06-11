@@ -78,6 +78,22 @@ ready_prs = [
     "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#102",
 ]
 
+
+def get_category_from_title(title: str) -> str:
+    title = title.lower()
+    cat = "PERFORMANCE/REFACTOR/UI/FEATURE"
+    for sec_kw in ("sentinel", "security", "cve", "xxe"):
+        if sec_kw in title:
+            return "SECURITY"
+    for dep_kw in ("dependabot", "renovate"):
+        if dep_kw in title:
+            return "DEPENDENCY"
+    for ci_kw in ("chore", "ci", "automation", "action", "trunk"):
+        if ci_kw in title:
+            return "CI/INFRA"
+    return cat
+
+
 categorized = {
     "SECURITY": [],
     "DEPENDENCY": [],
@@ -117,22 +133,8 @@ for pr, info in results:
         print(f"Skipping {pr} because it is {info.get('mergeStateStatus')}")
         continue
 
-    title = info.get("title", "").lower()
-    cat = "PERFORMANCE/REFACTOR/UI/FEATURE"
-    for sec_kw in ("sentinel", "security", "cve", "xxe"):
-        if sec_kw in title:
-            cat = "SECURITY"
-            break
-    if cat == "PERFORMANCE/REFACTOR/UI/FEATURE":
-        for dep_kw in ("dependabot", "renovate"):
-            if dep_kw in title:
-                cat = "DEPENDENCY"
-                break
-    if cat == "PERFORMANCE/REFACTOR/UI/FEATURE":
-        for ci_kw in ("chore", "ci", "automation", "action", "trunk"):
-            if ci_kw in title:
-                cat = "CI/INFRA"
-                break
+    title = info.get("title", "")
+    cat = get_category_from_title(title)
 
     categorized[cat].append((pr, info.get("title")))
 
