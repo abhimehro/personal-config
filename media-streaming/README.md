@@ -88,6 +88,37 @@ Files are flagged as suspicious if they match:
 - **Temp/Partial files**: `.part`, `temp`, `partial` in filename
 - **Hidden files**: Starting with `.` (except `.DS_Store`)
 
+### 🛡️ Stale Mount Safeguards
+
+To prevent the stale mount issue that caused false disk usage reporting:
+
+1. **Enhanced mount-media.sh** with multiple safeguards:
+   - Validates mount point is empty before mounting
+   - Cleans up stale directory entries from previous failed mounts
+   - Verifies successful unmount before proceeding
+   - Retries operations up to 3 times if files are busy
+
+2. **New check-stale-mounts.sh** script:
+   - Monitors for stale fuse mounts
+   - Checks common mount points for directory entries without active mounts
+   - Can attempt automatic cleanup with `--fix` flag
+
+3. **Watchdog LaunchAgent** (`com.speedybee.media.mount-watchdog.plist`):
+   - Runs every hour (3600 seconds)
+   - Automatically checks and cleans stale mounts
+   - Logs to `~/Library/Logs/stale-mount-watchdog.log`
+
+**Manual Check**:
+```bash
+# Check for stale mounts
+bash ~/dev/personal-config/media-streaming/scripts/check-stale-mounts.sh
+
+# Check and attempt to fix
+bash ~/dev/personal-config/media-streaming/scripts/check-stale-mounts.sh --fix
+```
+
+**Note**: The mount script now refuses to mount if the mount point is not empty, preventing directory entry corruption.
+
 ### Quality Marker Exclusion
 
 Files containing `_hd -`, `_shd.`, `_shd -`, or `_hd.` are **excluded** from suspicious detection as these are legitimate quality indicators for media files.
