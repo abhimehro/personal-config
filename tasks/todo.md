@@ -180,3 +180,5 @@ _(Blocked by Section 1: Proceed only after fetching actionable log data)_
 - [x] Implement subshell isolation to remove the insecure `eval` usages entirely.
 - [x] Write/confirm unit tests pass to prevent regressions.
 - [x] Review: Subshell effectively mitigates trap vulnerability.
+
+- [x] Fixed code health failures and refactored PR categorization.
