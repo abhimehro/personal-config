@@ -1,5 +1,20 @@
 # Lessons Learned
 
+## Lesson 0y: Seatek security-wave conflict cascade (2026-06-11)
+
+**Pattern:** Merging security PR #293 (remove insecure shell execution) updated `code_health_scanner.py` before sibling #283 (enforce `shell=False`) could merge. #283 became CONFLICTING; `gh api update-branch` returned 422.
+**Rule:** When multiple security PRs touch the same module, merge the **behavior-changing** fix first only if the **follow-up hardening** PR can be salvaged immediately afterward. Otherwise merge hardening first or batch into one PR. Always re-check mergeability after each security merge; conflicting security tails go to Phase 2 Salvage with ordinary merge commits (never force-push).
+
+## Lesson 0z: ESP large-queue clear order — QA zero-diff → lint/tests → Palette → Bolt (2026-06-11)
+
+**Pattern:** Eleven email-security-pipeline PRs cleared in one session when ordered: daily QA zero-diff (#1079) → lint/test cluster (#1078–#1070) → Palette (#1068) → Bolt perf (#1076).
+**Rule:** Extends Lesson 0x: for bursts of 5+ overlapping-file PRs, start with zero-diff umbrella QA, then ascending scope (lint → UI → perf). Re-validate mergeability after every squash-merge.
+
+## Lesson 0aa: `gh pr checks --json` may return null — use tab output (2026-06-11)
+
+**Pattern:** `gh pr checks <n> --json name,state,conclusion` returned null in Cloud Agent environment; plain `gh pr checks <n>` tab-separated output was reliable for PASS/FAIL gating.
+**Rule:** Prefer `gh pr checks <pr> | awk` or grep for CI gating in automation scripts; treat JSON mode as best-effort and fall back before deferring or merging.
+
 ## Lesson 0x: ESP overlapping-file cluster — merge lint → UI → perf → QA (2026-06-09)
 
 **Pattern:** Four email-security-pipeline PRs (#1054–#1060) touched overlapping files (`spam_analyzer.py`, `setup_wizard.py`, `test_ui_palette.py`) with distinct intents (lint, Palette colorize, URL Counter perf, Jules QA formatting).
