@@ -1,0 +1,204 @@
+#!/bin/bash
+#
+# approve-download - Approve a pending Alldebrid download candidate
+#
+# Usage:
+#   approve-download                         # List pending candidates
+#   approve-download <filename>             # Approve by filename
+#   approve-download <candidate-id>         # Approve by candidate ID
+#   approve-download --list                 # List pending candidates
+#   approve-download --fetch                # Approve all and trigger immediate sync
+#   approve-download --fetch <filename>     # Approve and trigger immediate sync
+#   approve-download --status               # Show counts: pending, approved, auto-approved, rejected
+#
+# Files:
+#   Pending candidates:  ~/CloudMedia/approval_needed/.pending/<name>.candidate.json
+#   Approved candidates: ~/CloudMedia/approval_needed/.approved/<name>.candidate.json
+#   Rejected candidates: ~/CloudMedia/approval_needed/.alldebrid_ignore
+#
+
+set -euo pipefail
+
+PENDING_DIR="$HOME/CloudMedia/approval_needed/.pending"
+APPROVED_DIR="$HOME/CloudMedia/approval_needed/.approved"
+REJECTED_FILE="$HOME/CloudMedia/approval_needed/.alldebrid_ignore"
+SYNC_SCRIPT="$HOME/dev/personal-config/media-streaming/scripts/sync-alldebrid.sh"
+LOG_FILE="$HOME/Library/Logs/alldebrid-sync.log"
+
+mkdir -p "$PENDING_DIR" "$APPROVED_DIR"
+
+log() {
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+}
+
+notify() {
+	local title="$1"
+	local message="$2"
+	if command -v terminal-notifier &>/dev/null; then
+		terminal-notifier -title "$title" -message "$message" -sound default
+	elif command -v osascript &>/dev/null; then
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "$message" "$title" 2>/dev/null || true
+	fi
+}
+
+count_candidates() {
+	local dir="$1"
+	local count=0
+	for f in "$dir"/*.candidate.json; do
+		[[ -f $f ]] && count=$((count + 1))
+	done
+	echo "$count"
+}
+
+count_rejected() {
+	[[ -f $REJECTED_FILE ]] && wc -l <"$REJECTED_FILE" || echo "0"
+}
+
+list_pending() {
+	log "Pending Download Candidates:"
+	log "============================"
+
+	local count=0
+	for candidate in "$PENDING_DIR"/*.candidate.json; do
+		[[ -f $candidate ]] || continue
+		count=$((count + 1))
+
+		local filename
+		filename=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['filename'])" "$candidate" 2>/dev/null || echo "unknown")
+		local size_human
+		size_human=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['size_human'])" "$candidate" 2>/dev/null || echo "unknown")
+		local queued_at
+		queued_at=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['queued_at'])" "$candidate" 2>/dev/null || echo "unknown")
+		local candidate_id="${candidate##*/}"
+
+		log "  [$count] $candidate_id"
+		log "      Filename: $filename"
+		log "      Size:    $size_human"
+		log "      Queued:  $queued_at"
+		log ""
+	done
+
+	if ((count == 0)); then
+		log "No pending candidates."
+	fi
+}
+
+show_status() {
+	local pending_count approved_count rejected_count
+	pending_count=$(count_candidates "$PENDING_DIR")
+	approved_count=$(count_candidates "$APPROVED_DIR")
+	rejected_count=$(count_rejected)
+
+	log "=== Approval Status ==="
+	log "Pending:      $pending_count"
+	log "Approved:     $approved_count"
+	log "Rejected:     $rejected_count"
+	log "========================"
+}
+
+approve_by_filename() {
+	local filename="$1"
+	local candidate_file=""
+
+	for f in "$PENDING_DIR"/*.candidate.json; do
+		[[ -f $f ]] || continue
+		local candidate_filename
+		candidate_filename=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['filename'])" "$f" 2>/dev/null)
+		if [[ $candidate_filename == "$filename" ]]; then
+			candidate_file="$f"
+			break
+		fi
+	done
+
+	if [[ -z $candidate_file ]]; then
+		log "Error: No pending candidate found with filename: $filename"
+		return 1
+	fi
+
+	approve_candidate "$candidate_file"
+}
+
+approve_candidate() {
+	local candidate="$1"
+	local candidate_id="${candidate##*/}"
+	local filename
+	filename=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['filename'])" "$candidate" 2>/dev/null || echo "unknown")
+
+	local tmp_file="$APPROVED_DIR/${candidate_id}.tmp"
+	cp "$candidate" "$tmp_file" && mv "$tmp_file" "$APPROVED_DIR/$candidate_id"
+
+	rm -f "$candidate"
+
+	log "Approved: $filename"
+	notify "Download Approved" "$filename approved and queued for download"
+}
+
+trigger_sync() {
+	log "Triggering immediate sync..."
+	bash "$SYNC_SCRIPT" >>"$LOG_FILE" 2>&1 &
+	log "Sync started in background (PID: $!)"
+	notify "Sync Triggered" "Immediate download sync started"
+}
+
+ACTION=""
+FETCH=false
+TARGET=""
+
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+	--list)
+		ACTION="list"
+		;;
+	--fetch)
+		FETCH=true
+		shift
+		if [[ $# -gt 0 ]]; then
+			TARGET="$1"
+		fi
+		;;
+	--status)
+		ACTION="status"
+		;;
+	--help | -h)
+		echo "Usage: approve-download [--list] [--fetch] [--status] [<filename>]"
+		echo "  --list              List pending candidates"
+		echo "  --fetch             Approve and trigger immediate sync"
+		echo "  --status            Show counts: pending, approved, rejected"
+		echo "  <filename>          Approve candidate by filename"
+		exit 0
+		;;
+	*)
+		if [[ -z $TARGET ]]; then
+			TARGET="$1"
+		fi
+		;;
+	esac
+	shift
+done
+
+if [[ $ACTION == "list" ]]; then
+	list_pending
+elif [[ $ACTION == "status" ]]; then
+	show_status
+elif [[ $FETCH == "true" && -z $TARGET ]]; then
+	log "Approving all pending candidates..."
+	for candidate in "$PENDING_DIR"/*.candidate.json; do
+		[[ -f $candidate ]] || continue
+		approve_candidate "$candidate"
+	done
+	trigger_sync
+elif [[ -n $TARGET ]]; then
+	if [[ -f "$PENDING_DIR/${TARGET}.candidate.json" ]]; then
+		approve_candidate "$PENDING_DIR/${TARGET}.candidate.json"
+	elif [[ -f "$PENDING_DIR/$TARGET" ]]; then
+		approve_candidate "$PENDING_DIR/$TARGET"
+	else
+		approve_by_filename "$TARGET"
+	fi
+
+	if [[ $FETCH == "true" ]]; then
+		trigger_sync
+	fi
+else
+	list_pending
+fi

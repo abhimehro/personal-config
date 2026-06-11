@@ -8,10 +8,13 @@ This setup provides a high-performance, autonomous media pipeline that bridges c
 
 ## 🏗️ **Architecture: The Hybrid Bridge**
 
-1.  **🚀 Sync (Alldebrid Fetcher)**
+1.  **🚀 Sync (Alldebrid Fetcher with Pre-Approval Gate)**
     - **Script**: `sync-alldebrid.sh`
     - **Agent**: `com.speedybee.alldebrid.sync` (Hourly)
-    - **Action**: Fetches new video links from AllDebrid, stages them for approval in `~/CloudMedia/approval_needed`.
+    - **Action**: Fetches new video links from AllDebrid, creates candidate metadata in `~/CloudMedia/approval_needed/.pending/`. Files are categorized by size:
+      - **< 2GB**: Auto-approved, moved to `.approved/` for immediate download
+      - **2GB - 15GB**: Requires manual approval via `approve-download` script
+      - **> 15GB**: Rejected and logged to `.alldebrid_ignore`
 
 2.  **🎞️ Convert (Permute HEVC Transcoder - MANUAL STEP)**
     - **App**: Permute 4
@@ -37,12 +40,16 @@ This setup provides a high-performance, autonomous media pipeline that bridges c
 
 ```
 ~/CloudMedia/
-├── approval_needed/   # New downloads waiting for approval
-├── permute_input/     # MANUAL: Files awaiting Permute 4 HEVC conversion
-├── staging/           # HEVC output from Permute (auto-monitored for completion)
-├── processed/         # Finished Permute files ready for FileBot
-├── upload_stage/      # Files successfully renamed and queued for upload
-└── mounted/           # THE SOURCE OF TRUTH (Direct FSKit Mount)
+├── approval_needed/          # Pre-download approval system
+│   ├── .pending/              # Candidates awaiting your approval
+│   ├── .approved/             # Approved for download
+│   ├── .downloading/          # Currently downloading
+│   └── .alldebrid_ignore      # Rejected files (> 15GB)
+├── permute_input/            # MANUAL: Files awaiting Permute 4 HEVC conversion
+├── staging/                  # HEVC output from Permute (auto-monitored for completion)
+├── processed/                # Finished Permute files ready for FileBot
+├── upload_stage/             # Files successfully renamed and queued for upload
+└── mounted/                  # THE SOURCE OF TRUTH (Direct FSKit Mount)
     ├── Movies/
     └── TV Shows/
 ```
@@ -58,6 +65,41 @@ Use these shortcuts in your terminal (Fish shell required):
 | `media-restart` | Full restart of the media infrastructure (server, mount, renamer) |
 | `list-uploads` | Show files pending approval |
 | `approve-uploads` | Process and upload pending files |
+
+**Note**: Pre-approval gate active. Use `approve-download --list` to see pending candidates, `approve-download --status` for counts, or `approve-download <filename>` to approve specific files.
+
+## 🧹 **Remote Storage Cleanup**
+
+The cleanup system identifies and helps remove problematic files from remote storage (incomplete uploads, duplicates, files with suspicious names like UUID hashes).
+
+### Commands
+
+| Command | Description |
+| :--- | :--- |
+| `audit-remote-uploads [Movies\|TV Shows]` | Scan remote and generate manifest of problematic files |
+| `cleanup-remote [Movies\|TV Shows]` | Dry-run: show manifest, ask for confirmation to delete ALL |
+| `cleanup-remote --select [Movies\|TV Shows]` | Interactive: select specific files by number to delete |
+
+### Suspicious File Patterns
+
+Files are flagged as suspicious if they match:
+- **UUID/Hash patterns**: Pure hex strings like `0a72807b7623e46a762d3bfed395cae7`
+- **Small size**: Files under 100MB (excluding `_hd` and `_shd` quality markers)
+- **Temp/Partial files**: `.part`, `temp`, `partial` in filename
+- **Hidden files**: Starting with `.` (except `.DS_Store`)
+
+### Quality Marker Exclusion
+
+Files containing `_hd -`, `_shd.`, `_shd -`, or `_hd.` are **excluded** from suspicious detection as these are legitimate quality indicators for media files.
+
+### Workflow
+
+1. **Audit first**: Run `audit-remote-uploads Movies` to see what would be flagged
+2. **Review**: Check the manifest for false positives
+3. **Selective cleanup**: Use `cleanup-remote --select Movies` to pick specific files
+4. **Confirm**: Type `yes` when prompted to permanently delete selected files
+
+**Safety**: All cleanup operations require explicit user confirmation before any deletion occurs.
 
 ## 🛠️ **Troubleshooting & Logs**
 
