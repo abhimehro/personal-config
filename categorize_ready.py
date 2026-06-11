@@ -1,4 +1,4 @@
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 import subprocess
@@ -104,7 +104,7 @@ def fetch_pr_info(pr):
     return pr, info
 
 
-with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+with ThreadPoolExecutor(max_workers=10) as executor:
     # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls while preserving order using map()
     results = executor.map(fetch_pr_info, ready_prs)
 

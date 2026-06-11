@@ -57,5 +57,11 @@ class TestGenerateReport(unittest.TestCase):
         self.assertIn("[repo#2]", content)
         self.assertIn("[repo#3]", content)
 
+    def test_format_lists_missing_fields(self):
+        # Missing title in merged_data tuple triggers unpacking ValueError
+        merged_data = [("repo1", "123")]
+        with self.assertRaises(ValueError):
+            generate_report.format_lists(merged_data, [], [])
+
 if __name__ == '__main__':
     unittest.main()
