@@ -14,6 +14,7 @@ from parse_inventory import (
     _get_pr_category,
     _is_checks_failing,
     run_gh,
+    _load_inventory_lines,
 )
 
 class TestParseInventory(unittest.TestCase):
@@ -119,6 +120,10 @@ class TestParseInventory(unittest.TestCase):
 
     def test_is_pr_stale_none(self):
         self.assertFalse(_is_pr_stale(None))
+
+    def test_load_inventory_lines_file_not_found(self):
+        lines = _load_inventory_lines("nonexistent_file_xyz_123.txt")
+        self.assertEqual(lines, [])
 
     # --- _is_checks_failing ---
 
