@@ -581,9 +581,8 @@ def html_ul(items: Iterable[str]) -> str:
 def _render_heading(level: int, title: str) -> str:
     safe_title = sanitize_text(title)
 
-    # Safely target emojis specifically by checking unicode ranges where emojis reside
-    # rather than all non-ASCII characters. This includes Emoticons, Misc Symbols,
-    # Dingbats, and the large Supplementary Multilingual Plane blocks.
+    # Match a leading emoji icon run (SMP + misc symbols/dingbats) including U+FE0F
+    # variation selectors used by titles like "🏛️ LA Illuminator" in FEEDS.
     emoji_pattern = re.compile(
         r"^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF\uFE0F]+)\s+(.*)$"
     )

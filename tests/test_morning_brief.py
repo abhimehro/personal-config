@@ -180,6 +180,20 @@ class TestHtmlHelpers(unittest.TestCase):
         assert '<span aria-hidden="true">🌅</span>' in result
         assert "Good Morning</h3>" in result
 
+    def test_html_section_with_emoji_variation_selector(self):
+        # FEEDS titles like 🏛️ pair a base emoji with U+FE0F before the space.
+        result = mb.html_section("🏛️ LA Illuminator", "<p>body</p>")
+        assert '<h3 aria-label="LA Illuminator">' in result
+        assert '<span aria-hidden="true">🏛️</span>' in result
+        assert "LA Illuminator</h3>" in result
+
+    def test_html_section_feed_titles_have_accessible_labels(self):
+        for title in mb.FEEDS:
+            result = mb.html_section(title, "<p>body</p>")
+            _, label = title.split(" ", 1)
+            assert f'aria-label="{label}"' in result, title
+            assert 'aria-hidden="true"' in result, title
+
     def test_html_section_non_ascii_text(self):
         result = mb.html_section("Café Menu", "<p>body</p>")
         assert 'aria-label' not in result
