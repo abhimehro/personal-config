@@ -19,6 +19,11 @@ class TestCategorizeReady(unittest.TestCase):
                 "get_category_from_title",
             },
         )
+        self.mod._CATEGORIES = (
+            ("SECURITY", ("sentinel", "security", "cve", "xxe")),
+            ("DEPENDENCY", ("dependabot", "renovate")),
+            ("CI/INFRA", ("chore", "ci", "automation", "action", "trunk")),
+        )
 
     @patch("subprocess.run")
     def test_run_gh_invalid_json(self, mock_run):
