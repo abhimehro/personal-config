@@ -1,5 +1,0 @@
-# Prettier friendly markdownlint config (all formatting rules disabled)
-extends: markdownlint/style/prettier
-
-# Disable line length rule - we use prettier for formatting
-MD013: false
