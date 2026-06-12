@@ -360,6 +360,18 @@
 
 - **Bash Eval Injection in Subshells**: When running traps inside a subshell instead of `eval`, the trap must explicitly use `$BASHPID` instead of `$$` if it wants to signal itself properly, because `$$` refers to the parent process. Also, ensure the subshell's trap explicitly handles signal propagation (e.g. `trap - INT; kill -INT $BASHPID`) so that the subshell terminates correctly, and then the parent script's wait mechanism triggers properly (WCE).
 
+## Lesson 0cj: ctrld-sync main ruff F821 blocks unrelated Palette PR CI (2026-06-12)
+
+**Pattern:** Palette #886 (emoji alignment in `main.py` only) failed ruff/test because `.github/scripts/repository_automation_common.py` on `main` references undefined names (`writes_allowed`, `ensure_gh_token`, `create_or_update_issue`). Same 10 F821 errors reproduce on a clean local `main` checkout.
+**Rule:** When MERGEABLE PRs fail ruff on files outside the PR diff, run ruff on `main` first. If `main` is red, open a T0 infra-fix draft before deferring individual bot PRs as "PR failures."
+**Detection cost:** Low — `uv run ruff check .github/scripts/repository_automation_common.py` on `main`.
+
+## Lesson 0ck: Seatek micro-conflicts yield to intent-file salvage (2026-06-12)
+
+**Pattern:** After a six-PR Seatek conflict cascade, #276 (1-line import) and #291 (append-only R tests) rebuilt cleanly from `main` while #283 (15-file security) and Bolt PRs #282/#278 remained DIRTY.
+**Rule:** Triage conflict batches by file count and tier: salvage 1–2 intent files immediately; batch-defer multi-file T1/security and Bolt perf until `main` stabilizes or v2 salvage is scoped per file.
+**Detection cost:** Low — `gh pr view --json files` file count + title tier.
+
 ## Lesson 0ch: Bolt sum([list]) materialization causes real benchmark regression (2026-06-10)
 
 **Pattern:** ctrld-sync #881 replaced `sum(genexpr)` with `sum([list comp])` in four hot paths. All functional checks passed but benchmark reported ~1.5–2× slowdown — list materialization allocates before summing.

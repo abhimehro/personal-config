@@ -1,4 +1,4 @@
-# PR Triage — 2026-06-10
+# PR Triage — 2026-06-12
 
 **Preflight:** PASS (6/6)  
 **Mode:** salvage-and-cleanup (Phase 2)  
@@ -8,123 +8,78 @@
 
 | Group | Keeper | Action on others | Rationale |
 | --- | --- | --- | --- |
-| Session doc drafts (personal-config) | **This salvage branch** | Close #1203 | Phase-1 morning draft superseded by 2026-06-10 salvage report |
-| Workflow automation (pc/esp/sa) | **None** | Escalate #1201, #1066, #273 | Trust-boundary pin changes; same class as merged #1193 |
-| Bolt sum optimization (ctrld-sync) | **None** | Defer #881 | Benchmark shows ~1.5–2× regression from list materialization |
-| Seatek scanner salvage | **None** | Defer #261 | CodeScene green but diff drops `read_file_safe` guards |
+| Seatek pytest import (#276 vs salvage #303) | **#303** (draft) | Close #276 | Intent-file rebuild from `main` |
+| Seatek parallel tests (#291 vs salvage #302) | **#302** (draft) | Close #291 | Append-only R test salvage |
+| ESP setup wizard test (#1075 vs #1088) | **#1088** (draft) | Close #1075 | Test-only salvage; omit conflicting utility churn |
+| ctrld benchmark (#881 closed) | **#885** (merged) | — | Prior Bolt defer resolved by benchmark re-baseline on main |
+| Session doc (#1228) | **This salvage branch** | — | Phase-1 morning draft; separate from code salvage |
 
-No semantic duplicates among active code PRs. Hydrograph and series_correction queues are empty.
+No semantic duplicates among remaining open code PRs.
 
 ## Session dispositions (executed)
 
 | Disposition | PRs | Count |
 | --- | --- | ---: |
-| **CLOSE-SUPERSEDED** | pc #1203 | 1 |
-| **ESCALATE** | pc #1201; esp #1066; sa #273 | 3 |
-| **DEFER** | ctrld #881; sa #261 | 2 |
-| **PHASE1-HANDOFF** | pc #1204; esp #1068 | 2 |
-| **SALVAGE** (new draft) | — | 0 |
+| **SALVAGE** (draft opened + original closed) | sa #276→#303; sa #291→#302; esp #1075→#1088 | 3 |
+| **DEFER** | sa #283, #282, #278, #261; ctrld #882, #886; scpu #114 | 7 |
+| **CLOSE-SUPERSEDED** | sa #276, #291; esp #1075 | 3 |
 | **MERGE** | — | 0 |
+| **ESCALATE** | — | 0 |
 
 ## Per-PR notes
 
-### personal-config #1204 — PHASE1-HANDOFF
+### Seatek_Analysis #276 → SALVAGE #303
 
-Jules Palette UX: adds `aria-hidden="true"` on decorative Infuse listing text. Substantive checks green; Swift CodeQL still in progress. Route to Phase 1 once CodeQL completes.
+One-line hygiene: remove unused `pytest` import. Rebuilt from `main`; `py_compile` verified locally.
 
-### personal-config #1201 — ESCALATE
+### Seatek_Analysis #291 → SALVAGE #302
 
-Single-line change bumps `codescene-oss/pr-refactoring-agent` from commit pin `bc0d8b91` to tag `@v1.0.1`. Trust-boundary workflow automation — human review required (Lesson 0z pattern).
+Append-only `tests/testthat/test-execute_tasks_parallel.R` (+94 lines). Tripwire: 75→169 lines vs main.
 
-### ctrld-sync #881 — DEFER
+### email-security-pipeline #1075 → SALVAGE #1088
 
-Bolt replaces `sum(genexpr)` with `sum([list comp])` in four `main.py` locations. All tests/ruff/mypy/bandit/CodeScene pass; **benchmark** fails with ~1.5–2× regression. List materialization defeats the optimization intent. Close or revert to generators.
+Intent-file-only: `tests/test_setup_wizard.py`. Main already exposes `OUTLOOK_AUTH_ERROR_TIP` / `_test_connection`. Full suite: **628 passed** locally.
 
-### email-security-pipeline #1066 — ESCALATE
+### Seatek_Analysis #283 — DEFER (T1)
 
-Workflow automation: refactoring-agent pin bump + changelog checkout comment. All checks green. Trust-boundary — human review required.
+15-file Sentinel `shell=False` hardening. Requires v2 intent-file salvage or human conflict resolution — too large for blind checkout.
 
-### email-security-pipeline #1068 — PHASE1-HANDOFF
+### Seatek_Analysis #282, #278, #261 — DEFER
 
-Palette: refactor ANSI string concatenations for non-TTY accessibility. CodeQL in progress; no substantive failures yet.
+Bolt perf (#282, #278) and prior scanner salvage (#261) remain `CONFLICTING` after `main` automation landed. `/cs-agent` markers already present.
 
-### Seatek_Analysis #273 — ESCALATE
+### ctrld-sync #882 — DEFER
 
-Nine workflow YAML files with pin/version comment updates. All checks green. Trust-boundary — human review required.
+MERGEABLE; benchmark-only failure (Lesson 0ch). Palette placeholder-leak fix is substantive but blocked on perf gate.
 
-### Seatek_Analysis #261 — DEFER
+### ctrld-sync #886 — DEFER
 
-Salvage draft for scanner perf (#247). CodeScene now PASS, but diff **removes** `read_file_safe`, `MAX_FILE_SIZE`, and path-traversal/OOM tests. Do not merge; rebuild salvage preserving security helpers (Gate 2 failure despite green CodeScene).
+MERGEABLE; **ruff/test fail on `repository_automation_common.py` undefined names** — same errors reproduce on local `main` (infra on main, not PR diff). PR touches only `main.py` + `.jules/palette.md`.
 
-## Security gate review
+### series_correction_project_updated #114 — DEFER
 
-- **Trust-boundary (T2):** #1201, #1066, #273 — workflow action pin changes require maintainer approval.
-- **Gate 2 regression:** #261 removes file-read security controls — blocks merge regardless of CodeScene.
-- **Perf gate:** #881 benchmark failure is substantive, not flake (contrast Lesson 0dr when PR is unrelated).
-# PR Triage — 2026-06-11
+MERGEABLE; CodeScene-only failure on Bolt vectorization. Advisory per Lesson 0ce contrast (not T1 security).
 
-**Mode:** salvage-and-cleanup (Phase 2)  
-**Preflight:** PASS  
-**Input:** Prior deferred tail from `tasks/pr-review-2026-06-09.md` + live GitHub state
+## Remaining conflict queue (EOD)
 
-## Triage matrix
+```yaml
+open_followups:
+  - repo: abhimehro/Seatek_Analysis
+    pr: 283
+    reason: T1 security — 15-file DIRTY; needs v2 intent-file salvage
+  - repo: abhimehro/Seatek_Analysis
+    prs: [282, 278, 261]
+    reason: Bolt/salvage batch still CONFLICTING after main movement
+  - repo: abhimehro/ctrld-sync
+    prs: [882, 886]
+    reason: benchmark (#882) + main infra ruff breakage affecting CI (#886)
+  - repo: abhimehro/series_correction_project_updated
+    pr: 114
+    reason: CodeScene advisory on Bolt vectorization
+```
 
-| Disposition | Count | Action |
-| --- | ---: | --- |
-| SALVAGE (draft opened) | 5 | Human review required; originals closed |
-| CLOSE-SUPERSEDED | 5 | Cross-linked to new draft PRs |
-| PHASE1-HANDOFF | 5 | Re-run Phase 1 review-and-merge |
-| DEFER | 13 | Seatek conflict batch (8) + ctrld benchmark (2) + ESP CodeScene (#1075) + session-doc overlap (#1205/#1216) |
-| ESCALATE | 0 | — |
-| MERGE (salvage policy) | 0 | Salvage never auto-merges |
+## Human review priority
 
-## Conflict queue triage (priority order)
-
-### Tier T1 — Security (deferred, needs v2 salvage)
-
-| Repo | PR | Reason | Next step |
-| --- | ---: | --- | --- |
-| Seatek_Analysis | [#283](https://github.com/abhimehro/Seatek_Analysis/pull/283) | `shell=False` enforcement; 15-file Jules PR DIRTY | Rebuild v2 from `main` with security files only; cs-agent posted |
-
-### Tier T2 — Trust-adjacent tooling (salvaged)
-
-| Repo | Old | New draft | Status |
-| --- | ---: | ---: | --- |
-| personal-config | #1215 | [#1217](https://github.com/abhimehro/personal-config/pull/1217) | Closed #1215; 9 pytest pass |
-| personal-config | #1211 | [#1218](https://github.com/abhimehro/personal-config/pull/1218) | Closed #1211; intent-file-only test salvage |
-
-### Tier T3 — Routine perf/test (salvaged)
-
-| Repo | Old | New draft | Verification |
-| --- | ---: | ---: | --- |
-| series_correction | #109 | [#112](https://github.com/abhimehro/series_correction_project_updated/pull/112) | 6 pytest (append, not replace) |
-| Hydrograph | #245 | [#252](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/252) | 6 pytest |
-| email-security-pipeline | #1071 | [#1081](https://github.com/abhimehro/email-security-pipeline/pull/1081) | 628 pytest |
-
-### Tier DEFER — Seatek batch conflict cascade
-
-All eight remaining `CONFLICTING`/`DIRTY` Seatek PRs share root cause: `main` moved under overlapping Jules/Bolt automation. Posted `/cs-agent skill:fix-code-health-degradations` on #276, #278, #282–#284, #286, #291 (#261 already had marker).
-
-**Do not** use `update-branch` on these — rebuild v2 per Lesson 0cc / 0cg.
-
-### Tier DEFER — ctrld-sync benchmark
-
-| Repo | PR | Blocker |
-| --- | ---: | --- |
-| ctrld-sync | #881, #882 | `benchmark` check fail; all security gates green |
-
-### Tier PHASE1 — CLEAN handoff
-
-Merge candidates for next Phase 1 cycle (security-first order):
-
-1. `email-security-pipeline#1066`, `Seatek#273`, `personal-config#1201` — workflow consolidation (trust boundary; human review)
-2. `personal-config#1210` — Jules unit test
-3. `Seatek#277` — Bolt perf (merge before conflicting siblings)
-
-## Human follow-up (priority)
-
-1. Review and merge draft salvages: [#112](https://github.com/abhimehro/series_correction_project_updated/pull/112), [#252](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/252), [#1081](https://github.com/abhimehro/email-security-pipeline/pull/1081)
-2. Review T2 tooling salvages: [#1217](https://github.com/abhimehro/personal-config/pull/1217), [#1218](https://github.com/abhimehro/personal-config/pull/1218)
-3. Plan Seatek #283 security v2 salvage (T1)
-4. Phase 1 merge CLEAN handoffs listed above
-5. Investigate ctrld-sync benchmark regression on #881/#882
+1. **T3 routine salvage:** #303, #302, #1088 (draft, CI pending)
+2. **T1 deferred:** #283 when ready for security review
+3. **Infra note:** ctrld `repository_automation_common.py` ruff F821 on `main` — fix before merging unrelated Palette PRs

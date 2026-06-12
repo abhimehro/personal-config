@@ -25,6 +25,41 @@
 - Maintainer actions required:
 - Cross-links to PRs and comments:
 
+## Run — 2026-06-12
+
+### Input tail
+- Source report/snapshot: `tasks/pr-review-2026-06-11.md` deferred tail (Seatek batch, esp #1075, ctrld benchmark pair)
+- PRs investigated: 11 open across 5 repos
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+| --- | ---: | --- | ---: | --- |
+| Seatek_Analysis | 276 | SALVAGE + CLOSE | 303 | pytest import hygiene |
+| Seatek_Analysis | 291 | SALVAGE + CLOSE | 302 | append-only R tests |
+| email-security-pipeline | 1075 | SALVAGE + CLOSE | 1088 | test-only; 628 pytest local |
+| Seatek_Analysis | 283 | DEFER | — | T1 15-file security |
+| Seatek_Analysis | 282, 278, 261 | DEFER | — | conflict batch remainder |
+| ctrld-sync | 882, 886 | DEFER | — | benchmark + main ruff infra |
+| series_correction_project_updated | 114 | DEFER | — | CodeScene advisory |
+
+- Salvage draft PRs opened: 3 (#302, #303, #1088)
+- Infra-fix draft PRs opened: 0 (ctrld `repository_automation_common.py` F821 noted for next session)
+- Originals closed as superseded: 3 (#276, #291, #1075)
+
+### Verification status
+- ESP salvage: `python3 -m pytest tests/ -q` → 628 passed
+- Seatek #276: `py_compile` on test module
+- Seatek #291: append tripwire 75→169 lines
+- CodeScene remediation: prior `/cs-agent` markers on sa #282–#283, #278, #261
+
+### Handoff
+- Maintainer actions required:
+  1. Review draft salvages #302, #303, #1088 (squash merge when CI green)
+  2. Plan v2 salvage for sa #283 (T1 security)
+  3. Open ctrld infra-fix for `repository_automation_common.py` F821 before Palette merges
+- Cross-links: [Session report](tasks/pr-review-2026-06-12.md)
+
 ## Run — 2026-06-10
 
 ### Input tail
