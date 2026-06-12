@@ -230,7 +230,7 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
             </style>
         </head>
         <body>
-            <h1>📁 Media Library: /{safe_path}</h1>
+            <h1 aria-label="Media Library: {safe_path}"><span aria-hidden="true">📁</span> Media Library: /{safe_path}</h1>
         """]
 
         # Add parent directory link if not root
