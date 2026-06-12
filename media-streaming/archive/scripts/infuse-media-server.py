@@ -213,7 +213,6 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
     def generate_directory_listing(self, files, current_path):
         """Generate HTML directory listing"""
         safe_path = html.escape(current_path)
-        aria_path = "/" if current_path == "/" else f"/{safe_path}"
 
         html_parts = [f"""
         <!DOCTYPE html>
@@ -231,7 +230,7 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
             </style>
         </head>
         <body>
-            <h1 aria-label="Media Library: {aria_path}"><span aria-hidden="true">📁</span> Media Library: /{safe_path}</h1>
+            <h1 aria-label="Media Library: {safe_path}"><span aria-hidden="true">📁</span> Media Library: /{safe_path}</h1>
         """]
 
         # Add parent directory link if not root
