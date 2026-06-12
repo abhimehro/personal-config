@@ -139,3 +139,7 @@
 
 **Learning:** Shell scripts generating HTML dashboard need better ARIA support. Visual health indicators are only conveyed through CSS classes or unicode characters, and metric cards lack screen reader context.
 **Action:** Add explicit `aria-label` to dashboard metric cards and ensure ARIA grouping of values/labels. Add `aria-hidden="true"` to inner decorative text.
+
+## 2026-06-12 - Accessible HTML structure
+**Learning:** This repo has shell and python scripts that generate HTML string. It follows standard HTML structure and uses standard accessibility practices like aria-label and aria-hidden on inner emojis. Also, note that color contrasts standard must follow WCAG AA guidelines.
+**Action:** When adding HTML in scripts, stick to accessibility best practices.
