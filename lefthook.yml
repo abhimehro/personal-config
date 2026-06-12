@@ -44,6 +44,9 @@
 pre-commit:
   parallel: true
   commands:
+    case-collision-check:
+      run: ./scripts/check_case_collisions.sh
+
     # Example 1: Run a linter only on staged JavaScript/TypeScript files
     eslint:
       glob: "*.{js,ts,jsx,tsx}"
