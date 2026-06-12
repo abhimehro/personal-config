@@ -132,3 +132,7 @@
 ## 2026-05-29 - Improve Interactive Prompts and Spinner UX
 **Learning:** Using `read -p` without the `-r` flag allows backslashes to escape characters, which can lead to unexpected behavior in interactive prompts. Additionally, using `tput civis` and `tput cnorm` to hide/show the cursor during spinners without checking if the output is an interactive terminal (`[ -t 1 ]`) or if it's running in CI (`[ -z "${CI-}" ]`) causes unnecessary log pollution and cursor state bugs in automated environments.
 **Action:** Always use `read -r -p` for interactive confirmations, and guard cursor manipulation commands with `[ -t 1 ] && [ -z "${CI-}" ] && tput civis 2>/dev/null || true`.
+
+## 2024-06-10 - Dashboard HTML Accessibility
+**Learning:** Shell scripts generating HTML dashboard need better ARIA support. Visual health indicators are only conveyed through CSS classes or unicode characters, and metric cards lack screen reader context.
+**Action:** Add explicit `aria-label` to dashboard metric cards and ensure ARIA grouping of values/labels. Add `aria-hidden="true"` to inner decorative text.
