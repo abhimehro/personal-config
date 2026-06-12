@@ -41,6 +41,12 @@ REQUIRE_WINDSCRIBE=true
 VPN_INTERFACE_PREFIX="utun"
 TEMP_DOWNLOAD_DIR="${APPROVAL_DIR}/.downloading"
 
+# Pre-download approval system
+PENDING_DIR="${APPROVAL_DIR}/.pending"
+APPROVED_DIR="${APPROVAL_DIR}/.approved"
+AUTO_APPROVE_UNDER_GB=2
+THRESHOLD_GATE_ENABLED=true
+
 for arg in "$@"; do
 	case $arg in
 	--dry-run) DRY_RUN=true ;;
@@ -91,8 +97,15 @@ check_disk_space() {
 	if ((free_space < MIN_SPACE_GB)); then
 		log "⚠️  Low Disk Space: ${free_space}GB free (Min: ${MIN_SPACE_GB}GB). Stopping downloads."
 		notify "Download Paused" "Low disk space (${free_space}GB)"
-		exit 0
+		return 1
 	fi
+	return 0
+}
+
+check_disk_space_quiet() {
+	local free_space
+	free_space=$(df -g / | awk 'NR==2 {print $4}') # Available in GB
+	((free_space >= MIN_SPACE_GB))
 }
 
 count_visible_files() {
@@ -108,7 +121,7 @@ check_file_size() {
 
 	# Use awk for floating point comparison (bash 3.2 compatible)
 	if awk -v fs="$file_size_gb" -v max="$MAX_FILE_SIZE_GB" 'BEGIN { exit (fs > max) ? 0 : 1 }'; then
-		log "⏸️  File too large (${file_size_gb:.2f}GB > ${MAX_FILE_SIZE_GB}GB): $file. Skipping to avoid system stress."
+		log "⏸️  File too large ($(printf "%.2f" "$file_size_gb")GB > ${MAX_FILE_SIZE_GB}GB): $file. Skipping to avoid system stress."
 		echo "$file" >>"$IGNORE_FILE"
 		return 1
 	fi
@@ -144,8 +157,132 @@ check_containment() {
 	fi
 }
 
+# Human-readable bytes
+bytes_to_human() {
+	local bytes=$1
+	awk -v b="$bytes" 'BEGIN { printf "%.2f GB", b/1024/1024/1024 }'
+}
+
+# Create candidate metadata file with atomic write
+create_candidate() {
+	local file="$1"
+	local file_size_gb="$2"
+
+	# Get file size in bytes
+	local file_size_bytes
+	file_size_bytes=$(rclone size "$ALLDEBRID_REMOTE/$file" --json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['bytes'])" 2>/dev/null || echo "0")
+
+	local size_human
+	size_human=$(bytes_to_human "$file_size_bytes")
+	local queued_at
+	queued_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+	local safe_filename
+	safe_filename="${file//\//_}" # Replace slashes for filename
+	local candidate_id="${safe_filename}.candidate.json"
+	local candidate_file="$PENDING_DIR/$candidate_id"
+	local tmp_file="$PENDING_DIR/${candidate_id}.tmp"
+
+	# Create metadata JSON
+	cat >"$tmp_file" <<EOF
+{
+  "filename": "$file",
+  "size_bytes": $file_size_bytes,
+  "size_human": "$size_human",
+  "size_gb": $file_size_gb,
+  "alldebrid_path": "$ALLDEBRID_REMOTE/$file",
+  "queued_at": "$queued_at",
+  "status": "pending"
+}
+EOF
+
+	# Atomic write: tmp -> final
+	mv "$tmp_file" "$candidate_file"
+
+	log "✓ Candidate created: $candidate_file"
+	return 0
+}
+
+# Process approved candidates (download files that have been approved)
+process_approved_candidates() {
+	local downloaded_count=0
+
+	# Check for approved candidates
+	for approved_file in "$APPROVED_DIR"/*.candidate.json; do
+		[[ -f $approved_file ]] || continue
+
+		local filename
+		filename=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['filename'])" "$approved_file" 2>/dev/null)
+		local alldebrid_path
+		alldebrid_path=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['alldebrid_path'])" "$approved_file" 2>/dev/null)
+		local candidate_id
+		candidate_id="${approved_file##*/}"
+
+		log "----------------------------------------"
+		log "Processing approved candidate: $filename"
+
+		# Re-check constraints before downloading
+		check_vpn
+		if ! check_disk_space; then
+			exit 0
+		fi
+		check_containment
+
+		# Extract just the filename from the full path
+		local basename="${filename##*/}"
+
+		while check_lock; do
+			sleep 60
+		done
+
+		# Download the file
+		if rclone copy "$alldebrid_path" "$TEMP_DOWNLOAD_DIR/" "${RCLONE_FLAGS[@]}" --progress 2>&1 | tee -a "$LOG_FILE"; then
+			log "✓ Downloaded to temp: $basename"
+
+			# Ensure it is a file before attempting to move
+			if [[ -f "$TEMP_DOWNLOAD_DIR/$basename" ]]; then
+				if mv "$TEMP_DOWNLOAD_DIR/$basename" "$APPROVAL_DIR/"; then
+					log "➜ Moved to Approval Folder: $basename"
+
+					# Clean up approved candidate file
+					rm -f "$approved_file"
+					log "✓ Removed approved candidate: $candidate_id"
+
+					# Persist to ledger
+					PENDING_SELECTION="$APPROVAL_DIR/.alldebrid_candidate_pending.tsv"
+					SELECTED_LEDGER="$APPROVAL_DIR/.alldebrid_selected.tsv"
+					if [[ -s $PENDING_SELECTION ]]; then
+						if [[ ! -s $SELECTED_LEDGER ]]; then
+							head -n 1 "$PENDING_SELECTION" >"$SELECTED_LEDGER"
+						fi
+						if tail -n +2 "$PENDING_SELECTION" >>"$SELECTED_LEDGER"; then
+							rm -f "$PENDING_SELECTION"
+							log "✓ Persisted selected identity to ledger"
+						else
+							log "✗ ERROR: Failed to append to ledger. PENDING_SELECTION preserved."
+						fi
+					fi
+
+					downloaded_count=$((downloaded_count + 1))
+				else
+					log "✗ ERROR: Failed to move $basename to Approval Folder!"
+					exit 1
+				fi
+			else
+				log "✗ Error: Downloaded item is not a file: $basename"
+			fi
+		else
+			log "✗ Download failed: $basename"
+			# Clean up approved candidate file even on failure
+			rm -f "$approved_file"
+		fi
+	done
+
+	log "Processed $downloaded_count approved candidate(s)"
+	return 0
+}
+
 # === Main ===
-mkdir -p "$DOWNLOAD_DIR" "$APPROVAL_DIR" "$TEMP_DOWNLOAD_DIR" "$(dirname "$LOG_FILE")"
+mkdir -p "$DOWNLOAD_DIR" "$APPROVAL_DIR" "$TEMP_DOWNLOAD_DIR" "$PENDING_DIR" "$APPROVED_DIR" "$(dirname "$LOG_FILE")"
 
 log "=== Alldebrid Sync Started ==="
 log "Source: $ALLDEBRID_REMOTE"
@@ -154,15 +291,34 @@ log "Dry run: $DRY_RUN"
 
 # Hard safety gates. These prevent runaway downloads from a large Alldebrid backlog.
 check_vpn
-check_disk_space
+# Note: check_disk_space is called later, only before actual downloads, not during candidate selection
 check_containment
 
 # Check if alldebrid remote exists
-if ! rclone listremotes | grep -q "^alldebrid:$"; then
+if ! rclone listremotes | grep -q "^alldebrid:"; then
 	log "ERROR: 'alldebrid' remote not configured"
 	exit 1
 fi
 
+# ============================================================================
+# PHASE 1: Process any already-approved candidates (download them)
+# ============================================================================
+log "Checking for approved candidates..."
+process_approved_candidates
+
+# ============================================================================
+# PHASE 2: If we have pending candidates, don't queue more
+# ============================================================================
+if [[ -n "$(ls -A "$PENDING_DIR"/*.candidate.json 2>/dev/null)" ]]; then
+	log "Pending candidates already exist. Not queuing new ones until approval."
+	log "   Run 'approve-download --list' to see pending candidates."
+	log "=== Alldebrid Sync Complete (Pending Approval) ==="
+	exit 0
+fi
+
+# ============================================================================
+# PHASE 3: Select and queue new candidates for approval
+# ============================================================================
 # List files
 log "Scanning Alldebrid for video files..."
 files_list=$(rclone lsf "$ALLDEBRID_REMOTE" --files-only "${RCLONE_FLAGS[@]}" 2>/dev/null | grep -iE '\.(mp4|mkv|avi|m4v|mov)$' || true)
@@ -207,63 +363,53 @@ if [[ $file == */ ]]; then
 	exit 0
 fi
 
+# Get file size for threshold gate and size check
+file_size_gb=$(rclone size "$ALLDEBRID_REMOTE/$file" --json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['bytes']/1024/1024/1024)" 2>/dev/null || echo "0")
+
 log "----------------------------------------"
-log "Downloading: $file"
+log "Candidate selected: $file ($(printf "%.2f" "$file_size_gb") GB)"
 
-# Re-check constraints immediately before transferring bytes.
-check_vpn
-check_disk_space
-check_containment
-check_file_size "$file"
+# Threshold gate: auto-approve small files (under AUTO_APPROVE_UNDER_GB)
+# Check disk space before auto-approving to avoid queuing downloads that can't proceed
+if [[ $THRESHOLD_GATE_ENABLED == "true" ]] &&
+	awk -v fs="$file_size_gb" -v max="$AUTO_APPROVE_UNDER_GB" 'BEGIN { exit (fs <= max) ? 0 : 1 }' 2>/dev/null; then
+	check_disk_space
+	log "Auto-approved (under ${AUTO_APPROVE_UNDER_GB}GB threshold): $file"
 
-while check_lock; do
-	sleep 60
-done
+	# Create and immediately approve
+	create_candidate "$file" "$file_size_gb"
 
-# Atomic Download Strategy:
-# 1. Download to .downloading/filename
-# 2. Move to approval_needed/filename
+	# Move to approved (atomic)
+	candidate_id="${file////_}.candidate.json"
+	mv "$PENDING_DIR/$candidate_id" "$APPROVED_DIR/$candidate_id"
 
-rclone copy "$ALLDEBRID_REMOTE/$file" "$TEMP_DOWNLOAD_DIR/" "${RCLONE_FLAGS[@]}" --progress 2>&1 | tee -a "$LOG_FILE"
-if [[ ${PIPESTATUS[0]} -eq 0 ]]; then
-	log "✓ Downloaded to temp: $file"
-
-	# Ensure it is a file before attempting to move
-	if [[ -f "$TEMP_DOWNLOAD_DIR/$file" ]]; then
-		# Atomic move to Approval Folder
-		if mv "$TEMP_DOWNLOAD_DIR/$file" "$APPROVAL_DIR/"; then
-			log "➜ Moved to Approval Folder: $file"
-
-			# Persist the selected canonical identity only after the file safely lands
-			# in approval_needed. This avoids marking failed downloads as processed.
-			PENDING_SELECTION="$APPROVAL_DIR/.alldebrid_candidate_pending.tsv"
-			SELECTED_LEDGER="$APPROVAL_DIR/.alldebrid_selected.tsv"
-			if [[ -s $PENDING_SELECTION ]]; then
-				if [[ ! -s $SELECTED_LEDGER ]]; then
-					head -n 1 "$PENDING_SELECTION" >"$SELECTED_LEDGER"
-				fi
-				if tail -n +2 "$PENDING_SELECTION" >>"$SELECTED_LEDGER"; then
-					rm -f "$PENDING_SELECTION"
-					log "✓ Persisted selected identity to ledger: $SELECTED_LEDGER"
-				else
-					log "✗ ERROR: Failed to append to ledger $SELECTED_LEDGER. PENDING_SELECTION preserved."
-				fi
-			fi
-
-			# Do not delete from Alldebrid automatically. The local ledger prevents
-			# repeat processing while keeping the remote library non-destructive.
-			log "ℹ️  Remote file preserved in Alldebrid; local ledger prevents duplicate processing."
-
-			notify "Video Needs Approval" "Review $file in CloudMedia/approval_needed"
-		else
-			log "✗ ERROR: Failed to move $file to Approval Folder! Remote file preserved."
-			exit 1
-		fi
-	else
-		log "✗ Error: Downloaded item is not a file: $file"
-	fi
-else
-	log "✗ Download failed due to network or rclone error: $file"
+	log "Candidate auto-approved and queued for download"
+	log "=== Alldebrid Sync Complete (Auto-Approved) ==="
+	exit 0
 fi
 
-log "=== Alldebrid Sync Complete ==="
+# Check file size limit (user requested approval for large files)
+if ! check_file_size "$file"; then
+	# File was too large, already logged and added to ignore
+	log "=== Alldebrid Sync Complete (File Too Large) ==="
+	exit 0
+fi
+
+# Check disk space before creating candidate - avoid queuing files that can't be downloaded
+# This is a soft check; we still allow candidate creation for manual review
+# but warn if disk space is low
+if ! check_disk_space_quiet; then
+	log "⚠️  Low Disk Space: Creating candidate for manual review, but download will be blocked"
+fi
+
+# Create candidate metadata file (atomic write)
+create_candidate "$file" "$file_size_gb"
+
+# Notify user that a download is pending approval
+notify "Download Pending Approval" "New candidate: ${file} ($(printf "%.2f" "$file_size_gb") GB). Run 'approve-download --list' or move file to .approved/"
+
+log "Candidate queued for approval: $file"
+log "   Size: $(printf "%.2f" "$file_size_gb") GB"
+log "   To approve: approve-download ${file////_} or move $PENDING_DIR/${file////_}.candidate.json to $APPROVED_DIR/"
+
+log "=== Alldebrid Sync Complete (Approval Required) ==="

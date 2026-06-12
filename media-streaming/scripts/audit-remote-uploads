@@ -1,0 +1,161 @@
+#!/bin/bash
+# audit-remote-uploads - Generate manifest of problematic files on remote storage
+#
+# Usage: audit-remote-uploads [--output FILE] [--dry-run] [directory]
+#
+# Generates a manifest of files that may be incomplete, duplicates, or have
+# suspicious names. User can review the manifest before any cleanup action.
+#
+# Output format: FILENAME | SIZE | LAST-MODIFIED | REASON
+#
+
+set -euo pipefail
+
+CLOUD_REMOTE="media"
+TARGET_DIR=""
+OUTPUT_FILE=""
+
+format_size() {
+	local bytes=$1
+	if ((bytes >= 1073741824)); then
+		printf "%.2f GB" "$(echo "scale=2; $bytes / 1073741824" | bc)"
+	elif ((bytes >= 1048576)); then
+		printf "%.2f MB" "$(echo "scale=2; $bytes / 1048576" | bc)"
+	else
+		printf "%d B" "$bytes"
+	fi
+}
+
+format_date() {
+	local timestamp=$1
+	# Convert Unix timestamp to readable date
+	date -r "$timestamp" "+%Y-%m-%d %H:%M:%S" 2>/dev/null || echo "$timestamp"
+}
+
+is_suspicious() {
+	local filename="$1"
+	# Exclude _hd and _shd patterns from suspicious detection
+	# These are legitimate quality markers in media filenames
+	if echo "$filename" | grep -qE '_hd -|_shd\.|_shd -|_hd\.'; then
+		return 1
+	fi
+	if echo "$filename" | grep -qE '^[0-9a-f]{32,}|^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|^\.|temp|partial|\.part$'; then
+		return 0
+	fi
+	return 1
+}
+
+total_issues=0
+
+scan_directory() {
+	local dir="$1"
+	local remote_path="${CLOUD_REMOTE}:${dir}"
+
+	local files_with_info
+	files_with_info=$(rclone lsjson "$remote_path" 2>/dev/null | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    for item in data:
+        if 'Path' in item and 'Size' in item and 'ModTime' in item and item.get('IsDir') == False:
+            print(f\"{item['Size']} {item['ModTime']} {item['Path']}\")
+except:
+    pass
+")
+
+	[[ -z $files_with_info ]] && return
+
+	while IFS= read -r line; do
+		[[ -z $line ]] && continue
+		local size modtime filename
+		size=$(echo "$line" | awk '{print $1}')
+		modtime=$(echo "$line" | awk '{print $2}')
+		filename=$(echo "$line" | cut -d' ' -f3-)
+		local reason=""
+		local is_issue=false
+
+		# Skip small size check for _hd and _shd files (legitimate quality markers)
+		local is_quality_file=false
+		if echo "$filename" | grep -qE '_hd -|_shd\.|_shd -|_hd\.'; then
+			is_quality_file=true
+		fi
+
+		if is_suspicious "$filename"; then
+			reason="suspicious name"
+			is_issue=true
+		fi
+
+		if ((size < 104857600)) && [[ $is_quality_file == "false" ]]; then
+			if [[ -n $reason ]]; then
+				reason="$reason, small size"
+			else
+				reason="small size (< 100MB)"
+			fi
+			is_issue=true
+		fi
+
+		if echo "$filename" | grep -qE '\.(log|txt|json)$'; then
+			if [[ -n $reason ]]; then
+				reason="$reason, metadata"
+			else
+				reason="metadata file"
+			fi
+			is_issue=true
+		fi
+
+		if [[ $is_issue == "true" ]]; then
+			local size_human modtime_formatted display_filename
+			size_human=$(format_size "$size")
+			modtime_formatted=$(format_date "$modtime")
+			# Truncate filename to 50 chars if too long
+			display_filename="$filename"
+			if [[ ${#display_filename} -gt 50 ]]; then
+				display_filename="${filename:0:47}..."
+			fi
+			printf "%-50s | %-12s | %-20s | %s\n" "$display_filename" "$size_human" "$modtime_formatted" "$reason" >>"$MANIFEST_FILE"
+			total_issues=$((total_issues + 1))
+		fi
+	done <<<"$files_with_info"
+}
+
+# Parse arguments first
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+	--output)
+		OUTPUT_FILE="$2"
+		shift 2
+		;;
+	--dry-run)
+		shift
+		;;
+	-*)
+		echo "Unknown option: $1"
+		exit 1
+		;;
+	*)
+		TARGET_DIR="$1"
+		shift
+		;;
+	esac
+done
+
+# Set up manifest file
+MANIFEST_FILE="${OUTPUT_FILE:-$(mktemp)}"
+printf "%-50s | %-12s | %-20s | %s\n" "FILENAME" "SIZE" "LAST-MODIFIED" "REASON" >"$MANIFEST_FILE"
+printf "%-50s | %-12s | %-20s | %s\n" "--------------------------------------------------" "" "" "" >>"$MANIFEST_FILE"
+
+if [[ -z $TARGET_DIR ]]; then
+	for dir in $(rclone lsd "$CLOUD_REMOTE:" 2>/dev/null | awk 'NR>1 {print $2}'); do
+		scan_directory "$dir"
+	done
+else
+	scan_directory "$TARGET_DIR"
+fi
+
+cat "$MANIFEST_FILE"
+echo ""
+echo "Total issues found: $total_issues"
+# Only remove temp file if it was auto-generated
+if [[ -z $OUTPUT_FILE ]]; then
+	rm -f "$MANIFEST_FILE"
+fi

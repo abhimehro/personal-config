@@ -352,6 +352,12 @@
 **Rule:** Before `update-branch` on a deferred salvage, diff `main` against salvage intent files. If `main` already refactored the same surface, rebuild v2 from `main` with **intent files only** — never fight an app-level refactor in the salvage branch.
 **Detection cost:** Low — `mergeStateStatus: DIRTY` on a PR that was previously MERGEABLE.
 
+## Lesson 0ci: Salvage test checkout must append, not replace (2026-06-11)
+
+**Pattern:** series_correction #109 salvage initially ran `git checkout pr-109 -- scripts/tests/test_processor.py`, replacing 58 lines of existing `detect_outliers` tests with 22 lines from the Jules branch.
+**Rule:** Before committing a test-file salvage, compare line counts: `main` vs PR vs staged. If staged file is **shorter** than `main`, abort and **append** the new test functions instead of wholesale checkout (Lesson 0dt).
+**Detection cost:** Low — `git diff --stat` net-negative on a test file is a tripwire.
+
 - **Bash Eval Injection in Subshells**: When running traps inside a subshell instead of `eval`, the trap must explicitly use `$BASHPID` instead of `$$` if it wants to signal itself properly, because `$$` refers to the parent process. Also, ensure the subshell's trap explicitly handles signal propagation (e.g. `trap - INT; kill -INT $BASHPID`) so that the subshell terminates correctly, and then the parent script's wait mechanism triggers properly (WCE).
 
 ## Lesson 0ch: Bolt sum([list]) materialization causes real benchmark regression (2026-06-10)
