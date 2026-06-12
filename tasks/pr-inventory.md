@@ -9,9 +9,9 @@
 
 | Repo | Open start | Salvaged | Closed superseded | Deferred | Open EOD |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| personal-config | 6 | 2 | 2 | 0 | 7 |
+| personal-config | 6 | 2 | 2 | 2 | 7 |
 | ctrld-sync | 2 | 0 | 0 | 2 | 2 |
-| email-security-pipeline | 3 | 1 | 1 | 0 | 3 |
+| email-security-pipeline | 3 | 1 | 1 | 1 | 3 |
 | Seatek_Analysis | 10 | 0 | 0 | 8 | 10 |
 | Hydrograph_Versus_Seatek_Sensors_Project | 1 | 1 | 1 | 0 | 1 |
 | series_correction_project_updated | 1 | 1 | 1 | 0 | 1 |

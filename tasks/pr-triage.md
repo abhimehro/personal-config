@@ -11,7 +11,7 @@
 | SALVAGE (draft opened) | 5 | Human review required; originals closed |
 | CLOSE-SUPERSEDED | 5 | Cross-linked to new draft PRs |
 | PHASE1-HANDOFF | 5 | Re-run Phase 1 review-and-merge |
-| DEFER | 10 | Seatek conflict batch + ctrld benchmark + doc overlap |
+| DEFER | 13 | Seatek conflict batch (8) + ctrld benchmark (2) + ESP CodeScene (#1075) + session-doc overlap (#1205/#1216) |
 | ESCALATE | 0 | — |
 | MERGE (salvage policy) | 0 | Salvage never auto-merges |
 
