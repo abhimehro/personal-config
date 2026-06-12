@@ -5,7 +5,9 @@ import os
 # Ensure the project root is in the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from scratch_inventory import generate_markdown, get_category
+from scratch_inventory import generate_markdown, get_category, _fetch_repo_prs
+from unittest.mock import patch, MagicMock
+import json
 
 class TestScratchInventory(unittest.TestCase):
     def test_get_category_security(self):
@@ -68,5 +70,45 @@ class TestScratchInventory(unittest.TestCase):
         self.assertIn("'=HYPERLINK", md)
 
 
+
+    @patch('scratch_inventory.subprocess.run')
+    def test_fetch_repo_prs_success(self, mock_run):
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = json.dumps([
+            {"number": 1, "title": "Test PR", "author": {"login": "testuser"}, "headRefName": "main", "mergeStateStatus": "CLEAN", "state": "OPEN", "createdAt": "2023-01-01T00:00:00Z"}
+        ])
+        mock_run.return_value = mock_result
+
+        repo = "abhimehro/test-repo"
+        prs = _fetch_repo_prs(repo)
+
+        self.assertEqual(len(prs), 1)
+        self.assertEqual(prs[0]["repo"], "test-repo")
+        self.assertEqual(prs[0]["number"], 1)
+
+        # Verify subprocess.run was called correctly
+        mock_run.assert_called_once()
+        args, kwargs = mock_run.call_args
+        self.assertIn("gh", args[0])
+        self.assertIn(repo, args[0])
+        self.assertEqual(kwargs.get("capture_output"), True)
+        self.assertEqual(kwargs.get("text"), True)
+
+    @patch('scratch_inventory.subprocess.run')
+    def test_fetch_repo_prs_failure(self, mock_run):
+        mock_result = MagicMock()
+        mock_result.returncode = 1
+        mock_result.stdout = "Error"
+        mock_result.stderr = "Command failed"
+        mock_run.return_value = mock_result
+
+        repo = "abhimehro/test-repo"
+        prs = _fetch_repo_prs(repo)
+
+        self.assertEqual(prs, [])
+        mock_run.assert_called_once()
+
 if __name__ == '__main__':
+
     unittest.main()

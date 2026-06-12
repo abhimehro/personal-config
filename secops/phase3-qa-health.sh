@@ -31,7 +31,7 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >>"$LOG_FILE"; }
 
 notify() {
 	local msg="$1"
-	osascript -e "display notification \"${msg}\" with title \"SecOps Autopilot\"" 2>/dev/null || true
+	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "$msg" "SecOps Autopilot" 2>/dev/null || true
 }
 
 # Decide and run the repo's OWN declared test command.

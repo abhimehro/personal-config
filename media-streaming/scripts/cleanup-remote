@@ -1,0 +1,392 @@
+#!/bin/bash
+# cleanup-remote - Clean up problematic files on remote storage
+#
+# Usage: cleanup-remote [--dry-run] [--manifest FILE] [--select] [directory]
+#
+# Workflow:
+#   1. Generate manifest of problematic files (incomplete, duplicates, suspicious names)
+#   2. Present manifest to user for review
+#   3. Ask for explicit approval before deleting anything
+#
+# Modes:
+#   Default (no flags): Dry-run, shows manifest, asks confirm for ALL files
+#   --select: Interactive mode - lets you pick which files to delete by number
+#   --manifest FILE: Use a pre-generated manifest file
+#   --dry-run: Preview only, no deletion (implied by --select)
+#
+# Safety: Only deletes files that match known patterns (small size, suspicious names)
+#         Never deletes without user confirmation
+#
+
+set -euo pipefail
+
+CLOUD_REMOTE="media"
+TARGET_DIR=""
+DRY_RUN=true
+MANIFEST_FILE=""
+AUDIT_SCRIPT="$HOME/scripts/audit-remote-uploads"
+SELECT_MODE=false
+
+log() {
+	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+}
+
+notify() {
+	local title="$1"
+	local message="$2"
+	if command -v terminal-notifier &>/dev/null; then
+		terminal-notifier -title "$title" -message "$message" -sound default
+	elif command -v osascript &>/dev/null; then
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "$message" "$title" 2>/dev/null || true
+	fi
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+	--dry-run)
+		DRY_RUN=true
+		shift
+		;;
+	--manifest)
+		MANIFEST_FILE="$2"
+		shift 2
+		;;
+	--select)
+		SELECT_MODE=true
+		DRY_RUN=true
+		shift
+		;;
+	--help | -h)
+		echo "Usage: cleanup-remote [--dry-run] [--manifest FILE] [--select] [directory]"
+		echo ""
+		echo "Modes:"
+		echo "  --dry-run          Preview only, no deletion (default)"
+		echo "  --select           Interactive: pick files by number to delete"
+		echo "  --manifest FILE    Use a pre-generated manifest file"
+		echo ""
+		echo "Without flags: Generates manifest, shows it, asks confirm for ALL files."
+		echo "With --select: Shows numbered list, lets you select which to delete."
+		echo ""
+		echo "Manifest columns: FILENAME | SIZE | LAST-MODIFIED | REASON"
+		exit 0
+		;;
+	-*)
+		echo "Unknown option: $1"
+		exit 1
+		;;
+	*)
+		if [[ -z $TARGET_DIR ]]; then
+			TARGET_DIR="$1"
+		fi
+		shift
+		;;
+	esac
+done
+
+# Generate manifest
+generate_manifest() {
+	local target="${1-}"
+	local manifest="${MANIFEST_FILE:-$(mktemp)}"
+
+	bash "$AUDIT_SCRIPT" --output "$manifest" "$target" >/dev/null 2>&1
+
+	echo "$manifest"
+}
+
+# Filter out non-data lines from manifest (headers, separators, empty, totals)
+filter_manifest_lines() {
+	local manifest="$1"
+	grep -vE '^FILENAME|^--------------------------------|^Total issues|^$' "$manifest"
+}
+
+# Count lines in manifest
+count_manifest_lines() {
+	local manifest="$1"
+	filter_manifest_lines "$manifest" | wc -l | tr -d ' '
+}
+
+# Select files interactively
+# Returns selected lines via stdout
+select_files_interactive() {
+	local manifest="$1"
+	local tmp_file
+	tmp_file=$(mktemp)
+
+	# Write non-header lines to temp file
+	filter_manifest_lines "$manifest" >"$tmp_file"
+
+	local line_count
+	line_count=$(wc -l <"$tmp_file" | tr -d ' ')
+
+	if [[ $line_count -eq 0 ]]; then
+		log "No files to select from."
+		rm -f "$tmp_file"
+		return 1
+	fi
+
+	# Display numbered list (to stderr to avoid capture)
+	echo "" >&2
+	echo "=== SELECT FILES TO DELETE ===" >&2
+	echo "" >&2
+	echo "Enter line numbers to delete (e.g., 1 3 5-10, or 'all', or 'quit'):" >&2
+	echo "" >&2
+
+	local i=1
+	while IFS= read -r line; do
+		local display_name
+		display_name=$(echo "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/, "", $1); print $1}')
+		if [[ ${#display_name} -gt 45 ]]; then
+			display_name="${display_name:0:42}..."
+		fi
+		printf "  [%2d] %s\n" "$i" "$line" >&2
+		i=$((i + 1))
+	done <"$tmp_file"
+
+	echo "" >&2
+	echo "Total files: $line_count" >&2
+
+	# Get user selection
+	while true; do
+		if ! read -r -p "Select files to delete [1-$line_count]: " selection; then
+			# Handle EOF (Ctrl+D or pipe end)
+			echo "Input cancelled." >&2
+			rm -f "$tmp_file"
+			return 1
+		fi
+
+		# Handle quit
+		if [[ $selection == "quit" || $selection == "q" || $selection == "exit" ]]; then
+			echo "Selection cancelled." >&2
+			rm -f "$tmp_file"
+			return 1
+		fi
+
+		# Handle all
+		if [[ $selection == "all" ]]; then
+			cat "$tmp_file"
+			rm -f "$tmp_file"
+			return 0
+		fi
+
+		# Validate and expand selection
+		local selected_lines=""
+		local valid=true
+
+		# Handle empty selection
+		if [[ -z $selection ]]; then
+			valid=false
+		else
+			IFS=' ' read -ra parts <<<"$selection"
+			for part in "${parts[@]}"; do
+				if [[ $part == *-* ]]; then
+					# Range: 1-5
+					IFS='-' read -ra range_parts <<<"$part"
+					local start=${range_parts[0]}
+					local end=${range_parts[1]}
+
+					if ! [[ $start =~ ^[0-9]+$ && $end =~ ^[0-9]+$ ]]; then
+						valid=false
+						break
+					fi
+
+					if ((start < 1 || end > line_count || start > end)); then
+						valid=false
+						break
+					fi
+
+					for ((j = start; j <= end; j++)); do
+						selected_lines="$selected_lines $j"
+					done
+				elif [[ $part =~ ^[0-9]+$ ]]; then
+					if ((part >= 1 && part <= line_count)); then
+						selected_lines="$selected_lines $part"
+					else
+						valid=false
+						break
+					fi
+				else
+					valid=false
+					break
+				fi
+			done
+		fi
+
+		if [[ $valid == "false" ]]; then
+			echo "Invalid selection. Please enter numbers 1-$line_count, ranges like 1-5, or 'all'." >&2
+			continue
+		fi
+
+		# Sort and deduplicate
+		selected_lines=$(echo "$selected_lines" | tr ' ' '\n' | sort -u | tr '\n' ' ' | sed 's/ *$//')
+
+		# Output selected lines
+		for idx in $selected_lines; do
+			sed -n "${idx}p" "$tmp_file"
+		done
+
+		rm -f "$tmp_file"
+		return 0
+	done
+}
+
+confirm_cleanup() {
+	local manifest="$1"
+
+	log ""
+	log "=== PROPOSED CLEANUP ACTIONS ==="
+	log ""
+	cat "$manifest"
+	log ""
+
+	local total_issues
+	total_issues=$(count_manifest_lines "$manifest")
+
+	if [[ $total_issues -eq 0 ]]; then
+		log "No issues found. Nothing to clean up."
+		return 1
+	fi
+
+	log ""
+	log "Total files to be removed: $total_issues"
+	log ""
+	log "WARNING: This will PERMANENTLY DELETE files from remote storage!"
+	log ""
+
+	read -r -p "Do you want to proceed with cleanup? (yes/NO): " response
+	if [[ $response != "yes" ]]; then
+		log "Cleanup cancelled."
+		return 1
+	fi
+
+	return 0
+}
+
+perform_cleanup() {
+	local remote_path="${CLOUD_REMOTE}:${TARGET_DIR}"
+	local deleted_count=0
+	local failed_count=0
+
+	log "Starting cleanup..."
+
+	while IFS= read -r line; do
+		[[ -z $line ]] && continue
+
+		local filename
+		filename=$(echo "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/, "", $1); print $1}')
+		# Trim trailing whitespace safely
+		filename=$(echo "$filename" | sed 's/^[ \t]*//;s/[ \t]*$//')
+
+		[[ -z $filename ]] && continue
+
+		local full_path="${remote_path}/${filename}"
+
+		log "Deleting: $filename"
+		if [[ $DRY_RUN == "true" ]]; then
+			log "  [DRY-RUN] Would delete: $full_path"
+			deleted_count=$((deleted_count + 1))
+		else
+			if rclone delete "$full_path" 2>/dev/null; then
+				log "  Deleted successfully"
+				deleted_count=$((deleted_count + 1))
+			else
+				log "  ERROR: Failed to delete $full_path"
+				failed_count=$((failed_count + 1))
+			fi
+		fi
+	done
+
+	log ""
+	log "Cleanup complete: $deleted_count deleted, $failed_count failed"
+
+	if [[ $deleted_count -gt 0 ]]; then
+		notify "Remote Cleanup" "Deleted $deleted_count problematic files"
+	fi
+
+	return 0
+}
+
+perform_selected_cleanup() {
+	local manifest="$1"
+
+	log "Starting selective cleanup..."
+	log ""
+
+	# Get user selection
+	local selected_lines
+	selected_lines=$(select_files_interactive "$manifest")
+
+	if [[ -z $selected_lines ]]; then
+		log "No files selected. Aborting."
+		return 1
+	fi
+
+	# Count selections
+	local selection_count
+	selection_count=$(echo "$selected_lines" | grep -c .)
+
+	log ""
+	log "You selected $selection_count file(s) for deletion."
+	log ""
+
+	# Show what will be deleted
+	log "Selected files:"
+	echo "$selected_lines" | while IFS= read -r line; do
+		local fn
+		fn=$(echo "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/, "", $1); print $1}')
+		# Trim safely
+		fn=$(echo "$fn" | sed 's/^[ \t]*//;s/[ \t]*$//')
+		log "  - $fn"
+	done
+	log ""
+
+	# Ask for final confirmation
+	read -r -p "Are you SURE you want to delete these $selection_count files? (yes/NO): " response
+	if [[ $response != "yes" ]]; then
+		log "Selective cleanup cancelled."
+		return 1
+	fi
+
+	# Now actually delete the selected files
+	DRY_RUN=false
+	echo "$selected_lines" | perform_cleanup
+}
+
+# Main execution
+log "=== Remote Storage Cleanup ==="
+log "Target: ${TARGET_DIR:-all directories}"
+
+if [[ -n $MANIFEST_FILE ]]; then
+	log "Using provided manifest: $MANIFEST_FILE"
+else
+	log "Generating manifest of problematic files..."
+fi
+manifest=$(generate_manifest "$TARGET_DIR")
+
+if [[ $SELECT_MODE == "true" ]]; then
+	# Interactive selection mode - skip the initial confirm, go straight to selection
+	perform_selected_cleanup "$manifest"
+elif [[ $DRY_RUN == "true" ]]; then
+	log ""
+	log "=== DRY RUN - No files will be deleted ==="
+	log ""
+	cat "$manifest"
+
+	if [[ ! -f $manifest ]]; then
+		rm -f "$manifest"
+	fi
+
+	log ""
+	log "To perform actual cleanup, run: cleanup-remote [directory]"
+	log "For interactive selection, run: cleanup-remote --select [directory]"
+else
+	if confirm_cleanup "$manifest"; then
+		perform_cleanup
+	fi
+
+	if [[ ! -f $manifest ]]; then
+		rm -f "$manifest"
+	fi
+fi
+
+log "=== Cleanup Complete ==="

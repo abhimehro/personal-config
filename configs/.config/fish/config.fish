@@ -215,3 +215,4 @@ alias setup-media "$NM_ROOT/media-streaming/scripts/setup-media-library.sh"
 # History Setup
 set -g fish_history_limit 10000
 set -U fish_user_paths $fish_user_paths /Users/speedybee/.local/bin
+fish_add_path /Users/speedybee/scripts
