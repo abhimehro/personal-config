@@ -143,3 +143,6 @@
 ## 2026-06-12 - Accessible HTML structure
 **Learning:** This repo has shell and python scripts that generate HTML string. It follows standard HTML structure and uses standard accessibility practices like aria-label and aria-hidden on inner emojis. Also, note that color contrasts standard must follow WCAG AA guidelines.
 **Action:** When adding HTML in scripts, stick to accessibility best practices.
+## 2026-06-12 - Dashboard ARIA Labels
+**Learning:** Adding explicit aria-labels on container elements where the inner text content is perfectly adequate creates redundant, annoying output for screen reader users.
+**Action:** Ensure we only use aria-label when the visual text is inadequate or missing (like an icon-only button), not just to duplicate existing text content.
