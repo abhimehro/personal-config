@@ -1,21 +1,22 @@
-import unittest
-import sys
 import os
-from datetime import datetime, timezone, timedelta
-from unittest.mock import patch, MagicMock
+import sys
+import unittest
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock, patch
 
 # Ensure the project root is in the path so we can import parse_inventory
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from parse_inventory import (
-    _parse_env_line,
-    parse_inventory_lines,
-    _is_pr_stale,
     _get_pr_category,
     _is_checks_failing,
-    run_gh,
+    _is_pr_stale,
     _load_inventory_lines,
+    _parse_env_line,
+    parse_inventory_lines,
+    run_gh,
 )
+
 
 class TestParseInventory(unittest.TestCase):
     @staticmethod
@@ -46,7 +47,7 @@ class TestParseInventory(unittest.TestCase):
 
     def test_parse_env_line_with_quotes(self):
         env = {}
-        _parse_env_line("export FOO=\"bar\"", env)
+        _parse_env_line('export FOO="bar"', env)
         self.assertEqual(env, {"FOO": "bar"})
 
         env = {}
@@ -182,7 +183,9 @@ class TestParseInventory(unittest.TestCase):
     def test_run_gh_success(self, mock_run, _mock_env):
         mock_result = MagicMock()
         mock_result.returncode = 0
-        mock_result.stdout = '{"files": [{"filename": "foo.py"}], "updatedAt": "2026-05-03T00:00:00Z"}'
+        mock_result.stdout = (
+            '{"files": [{"filename": "foo.py"}], "updatedAt": "2026-05-03T00:00:00Z"}'
+        )
         mock_run.return_value = mock_result
         result = run_gh("repoA", 123)
         self.assertIsNotNone(result)
@@ -206,8 +209,6 @@ class TestParseInventory(unittest.TestCase):
         mock_run.return_value = mock_result
         self.assertIsNone(run_gh("repoA", 123))
 
-
-
     @patch("parse_inventory._load_gh_token_env", return_value={})
     @patch("parse_inventory.subprocess.run")
     def test_run_gh_returncode_not_zero(self, mock_run, _mock_env):
@@ -218,5 +219,5 @@ class TestParseInventory(unittest.TestCase):
         self.assertIsNone(run_gh("repoA", 123))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
