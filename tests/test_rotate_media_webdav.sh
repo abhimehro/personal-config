@@ -70,7 +70,7 @@ document)
 esac
 exit 1
 MOCK
-sed -i "s|OP_LOG_PLACEHOLDER|$OP_LOG|g" "$MOCK_BIN/op" 2>/dev/null || \
+sed -i "s|OP_LOG_PLACEHOLDER|$OP_LOG|g" "$MOCK_BIN/op" 2>/dev/null ||
 	sed -i '' "s|OP_LOG_PLACEHOLDER|$OP_LOG|g" "$MOCK_BIN/op"
 chmod +x "$MOCK_BIN/op"
 
@@ -86,7 +86,7 @@ fi
 exit 1
 MOCK
 LAUNCH_LOG="$TEST_DIR/launchctl.log"
-sed -i "s|LAUNCH_LOG_PLACEHOLDER|$LAUNCH_LOG|g" "$MOCK_BIN/launchctl" 2>/dev/null || \
+sed -i "s|LAUNCH_LOG_PLACEHOLDER|$LAUNCH_LOG|g" "$MOCK_BIN/launchctl" 2>/dev/null ||
 	sed -i '' "s|LAUNCH_LOG_PLACEHOLDER|$LAUNCH_LOG|g" "$MOCK_BIN/launchctl"
 chmod +x "$MOCK_BIN/launchctl"
 

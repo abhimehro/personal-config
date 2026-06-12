@@ -1,13 +1,15 @@
-import unittest
-import sys
 import os
+import sys
+import unittest
 
 # Ensure the project root is in the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from scratch_inventory import generate_markdown, get_category, _fetch_repo_prs
-from unittest.mock import patch, MagicMock
 import json
+from unittest.mock import MagicMock, patch
+
+from scratch_inventory import _fetch_repo_prs, generate_markdown, get_category
+
 
 class TestScratchInventory(unittest.TestCase):
     def test_get_category_security(self):
@@ -49,7 +51,9 @@ class TestScratchInventory(unittest.TestCase):
 
     def test_get_category_feature(self):
         self.assertEqual(get_category("Add new widget", "main"), "FEATURE")
-        self.assertEqual(get_category("Implement dark mode", "feature/dark-mode"), "FEATURE")
+        self.assertEqual(
+            get_category("Implement dark mode", "feature/dark-mode"), "FEATURE"
+        )
         self.assertEqual(get_category("", ""), "FEATURE")
 
     def test_generate_markdown_escapes_formula_injection(self):
@@ -59,7 +63,7 @@ class TestScratchInventory(unittest.TestCase):
                 "number": 1,
                 "author": {"login": "+evil"},
                 "headRefName": "=branch",
-                "title": "=HYPERLINK(\"http://evil\")",
+                "title": '=HYPERLINK("http://evil")',
                 "mergeStateStatus": "CLEAN",
                 "createdAt": "2026-05-24T00:00:00Z",
             }
@@ -69,15 +73,23 @@ class TestScratchInventory(unittest.TestCase):
         self.assertIn("'=branch", md)
         self.assertIn("'=HYPERLINK", md)
 
-
-
-    @patch('scratch_inventory.subprocess.run')
+    @patch("scratch_inventory.subprocess.run")
     def test_fetch_repo_prs_success(self, mock_run):
         mock_result = MagicMock()
         mock_result.returncode = 0
-        mock_result.stdout = json.dumps([
-            {"number": 1, "title": "Test PR", "author": {"login": "testuser"}, "headRefName": "main", "mergeStateStatus": "CLEAN", "state": "OPEN", "createdAt": "2023-01-01T00:00:00Z"}
-        ])
+        mock_result.stdout = json.dumps(
+            [
+                {
+                    "number": 1,
+                    "title": "Test PR",
+                    "author": {"login": "testuser"},
+                    "headRefName": "main",
+                    "mergeStateStatus": "CLEAN",
+                    "state": "OPEN",
+                    "createdAt": "2023-01-01T00:00:00Z",
+                }
+            ]
+        )
         mock_run.return_value = mock_result
 
         repo = "abhimehro/test-repo"
@@ -95,7 +107,7 @@ class TestScratchInventory(unittest.TestCase):
         self.assertEqual(kwargs.get("capture_output"), True)
         self.assertEqual(kwargs.get("text"), True)
 
-    @patch('scratch_inventory.subprocess.run')
+    @patch("scratch_inventory.subprocess.run")
     def test_fetch_repo_prs_failure(self, mock_run):
         mock_result = MagicMock()
         mock_result.returncode = 1
@@ -109,6 +121,7 @@ class TestScratchInventory(unittest.TestCase):
         self.assertEqual(prs, [])
         mock_run.assert_called_once()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     unittest.main()
