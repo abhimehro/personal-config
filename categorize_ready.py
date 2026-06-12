@@ -79,16 +79,19 @@ ready_prs = [
 ]
 
 
+_CATEGORIES = (
+    ("SECURITY", ("sentinel", "security", "cve", "xxe")),
+    ("DEPENDENCY", ("dependabot", "renovate")),
+    ("CI/INFRA", ("chore", "ci", "automation", "action", "trunk")),
+)
+
+
 def get_category_from_title(title: str) -> str:
     title = title.lower()
 
-    categories = {
-        "SECURITY": ("sentinel", "security", "cve", "xxe"),
-        "DEPENDENCY": ("dependabot", "renovate"),
-        "CI/INFRA": ("chore", "ci", "automation", "action", "trunk"),
-    }
-
-    for cat_name, keywords in categories.items():
+    # ⚡ Bolt Optimization: Iterate over a predefined tuple of categories to avoid
+    # dictionary and iterator allocation overhead on every function call.
+    for cat_name, keywords in _CATEGORIES:
         for kw in keywords:
             if kw in title:
                 return cat_name

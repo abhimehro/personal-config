@@ -222,3 +222,7 @@
 
 **Learning:** When calculating the current date string `datetime.date.today().isoformat()` inside a loop or comprehension, Python repeatedly calls the method, generating a new object each time. This creates unnecessary CPU overhead when the output is a constant for the duration of the loop.
 **Action:** Always hoist method calls that generate static strings (like `today().isoformat()`) outside of tight loops to evaluate them once and reuse the value.
+## 2026-06-12 - [Hoist static dictionaries to module scope]
+
+**Learning:** Declaring static dictionaries or collections inside frequently called functions (e.g., `categories = {...}`) causes Python to allocate memory and recreate the object structure on every single function call. When combined with a loop (e.g., `.items()`), this adds unnecessary iterator allocation overhead, degrading performance during high-volume operations.
+**Action:** When a function relies on a static mapping for lookups or iteration, hoist the structure to the module level as a constant (preferably a tuple of tuples to ensure immutability and avoid mutable default issues). When testing with the custom `_load_function_only()` utility, remember to dynamically inject the hoisted constant into the returned mock module to prevent `NameError` exceptions.
