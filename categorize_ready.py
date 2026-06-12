@@ -1,4 +1,4 @@
-from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
 import json
 import os
 import subprocess
@@ -78,6 +78,24 @@ ready_prs = [
     "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#102",
 ]
 
+
+def get_category_from_title(title: str) -> str:
+    title = title.lower()
+
+    categories = {
+        "SECURITY": ("sentinel", "security", "cve", "xxe"),
+        "DEPENDENCY": ("dependabot", "renovate"),
+        "CI/INFRA": ("chore", "ci", "automation", "action", "trunk"),
+    }
+
+    for cat_name, keywords in categories.items():
+        for kw in keywords:
+            if kw in title:
+                return cat_name
+
+    return "PERFORMANCE/REFACTOR/UI/FEATURE"
+
+
 categorized = {
     "SECURITY": [],
     "DEPENDENCY": [],
@@ -104,7 +122,7 @@ def fetch_pr_info(pr):
     return pr, info
 
 
-with ThreadPoolExecutor(max_workers=10) as executor:
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
     # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls while preserving order using map()
     results = executor.map(fetch_pr_info, ready_prs)
 
@@ -117,22 +135,8 @@ for pr, info in results:
         print(f"Skipping {pr} because it is {info.get('mergeStateStatus')}")
         continue
 
-    title = info.get("title", "").lower()
-    cat = "PERFORMANCE/REFACTOR/UI/FEATURE"
-    for sec_kw in ("sentinel", "security", "cve", "xxe"):
-        if sec_kw in title:
-            cat = "SECURITY"
-            break
-    if cat == "PERFORMANCE/REFACTOR/UI/FEATURE":
-        for dep_kw in ("dependabot", "renovate"):
-            if dep_kw in title:
-                cat = "DEPENDENCY"
-                break
-    if cat == "PERFORMANCE/REFACTOR/UI/FEATURE":
-        for ci_kw in ("chore", "ci", "automation", "action", "trunk"):
-            if ci_kw in title:
-                cat = "CI/INFRA"
-                break
+    title = info.get("title", "")
+    cat = get_category_from_title(title)
 
     categorized[cat].append((pr, info.get("title")))
 
