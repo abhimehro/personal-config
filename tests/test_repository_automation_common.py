@@ -56,5 +56,53 @@ class TestTruncate(unittest.TestCase):
         self.assertLessEqual(len(result), 4000)
 
 
+class TestRepositoryAutomationHelpers(unittest.TestCase):
+    def test_stable_tags_from_json(self):
+        tags = [
+            {"name": "v1.2.3"},
+            {"name": "v2.0"},
+            {"name": "v3.0.0-beta1"},  # Not a fullmatch stable pattern
+            {"name": "1.0.0"},
+            {"name": "latest"},
+        ]
+        res = rac._stable_tags_from_json(tags)
+        expected = [
+            ((1, 2, 3), "v1.2.3"),
+            ((2, 0, 0), "v2.0"),
+            ((1, 0, 0), "1.0.0"),
+        ]
+        self.assertEqual(res, expected)
+
+    def test_latest_tag_via_mcp_disabled(self):
+        # By default USE_MCP_GITHUB is false, so it should return empty string.
+        rac.USE_MCP_GITHUB = False
+        self.assertEqual(rac._latest_tag_via_mcp("owner/repo"), "")
+
+    def test_write_result_unpacks_tuple(self):
+        from unittest.mock import patch
+        from pathlib import Path
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            temp_path = Path(tmpdir)
+            with patch.object(rac, "task_dir", return_value=temp_path), \
+                 patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": ""}):
+                res = rac.write_result(
+                    "test-task",
+                    ("success", "Task completed"),
+                    "Report body",
+                    {"some_extra": 42}
+                )
+                self.assertEqual(res["task"], "test-task")
+                self.assertEqual(res["status"], "success")
+                self.assertEqual(res["summary"], "Task completed")
+                self.assertEqual(res["some_extra"], 42)
+                
+                # Check written files
+                self.assertTrue((temp_path / "report.md").exists())
+                self.assertEqual((temp_path / "report.md").read_text(), "Report body\n")
+                self.assertTrue((temp_path / "result.json").exists())
+
+
 if __name__ == "__main__":
     unittest.main()

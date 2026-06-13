@@ -189,8 +189,9 @@ def build_result(
 
 
 def write_result(
-    task: str, status: str, summary: str, body: str, extra: dict[str, Any] | None = None
+    task: str, status_summary: tuple[str, str], body: str, extra: dict[str, Any] | None = None
 ) -> dict[str, Any]:
+    status, summary = status_summary
     result = build_result(task, status, summary, extra)
     directory = task_dir(task)
     (directory / "report.md").write_text(body.rstrip() + "\n")
@@ -393,27 +394,26 @@ def create_pr_for_current_changes(
     )
 
 
-def latest_tag_for_action(repo_id: str) -> str:
-    # Use MCP if available, otherwise fall back to gh CLI
-    if MCP_AVAILABLE and USE_MCP_GITHUB:
-        try:
-            owner, repo = repo_id.split("/")
-            releases = gh_json(
-                ["api", f"repos/{owner}/{repo}/releases?per_page=1"], default=[]
-            )
-            if releases:
-                latest = releases[0].get("tag_name", "")
-                if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
-                    return latest
-        except Exception:
-            pass  # Fall back to gh CLI on error
+def _latest_tag_via_mcp(repo_id: str) -> str:
+    if not (MCP_AVAILABLE and USE_MCP_GITHUB):
+        return ""
+    try:
+        owner, repo = repo_id.split("/")
+        releases = gh_json(
+            ["api", f"repos/{owner}/{repo}/releases?per_page=1"], default=[]
+        )
+        if releases:
+            latest = releases[0].get("tag_name", "")
+            if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
+                return latest
+    except Exception:
+        pass
+    return ""
 
-    # Original gh CLI implementation
-    latest = gh_text(["api", f"repos/{repo_id}/releases/latest", "--jq", ".tag_name"])
-    if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
-        return latest
 
-    tags_json = gh_json(["api", f"repos/{repo_id}/tags?per_page=100"], default=[])
+def _stable_tags_from_json(
+    tags_json: list[dict[str, Any]]
+) -> list[tuple[tuple[int, int, int], str]]:
     stable_tags = []
     for t in tags_json:
         name = t.get("name", "")
@@ -421,6 +421,21 @@ def latest_tag_for_action(repo_id: str) -> str:
             parsed = numeric_version(name)
             if parsed:
                 stable_tags.append((parsed, name))
+    return stable_tags
+
+
+def latest_tag_for_action(repo_id: str) -> str:
+    mcp_tag = _latest_tag_via_mcp(repo_id)
+    if mcp_tag:
+        return mcp_tag
+
+    # Original gh CLI implementation
+    latest = gh_text(["api", f"repos/{repo_id}/releases/latest", "--jq", ".tag_name"])
+    if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
+        return latest
+
+    tags_json = gh_json(["api", f"repos/{repo_id}/tags?per_page=100"], default=[])
+    stable_tags = _stable_tags_from_json(tags_json)
 
     if stable_tags:
         stable_tags.sort(key=lambda x: x[0], reverse=True)
