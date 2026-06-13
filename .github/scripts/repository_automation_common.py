@@ -44,7 +44,7 @@ def append_publication_result(
     body: str,
     *,
     title: str,
-    labels: list[Any],
+    labels: list[str],
     noun: str,
 ) -> tuple[str, str, str | None]:
     if not writes_allowed():
