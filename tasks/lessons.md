@@ -372,3 +372,9 @@
 **Rule:** Gate 2 (security) blocks merge even when CodeScene is green. Before recommending human merge on a perf salvage, verify intent files did not drop path-traversal, size-limit, or auth helpers present on `main`.
 **Contrast:** Lesson 0ce (merge T1 security when CodeScene-only fail) — opposite direction; security wins over advisory green.
 **Detection cost:** Low — `gh pr diff` shows deletion of `read_file_safe` or `MAX_FILE_SIZE`.
+
+## Lesson 0cj: Duplicate same-day Bolt hoists — close the noisier branch (2026-06-12)
+
+**Pattern:** personal-config #1226 and #1227 both hoisted `_CATEGORIES` in `categorize_ready.py` on the same day. #1226 added `.jules/bolt.md` churn; #1227 was the cleaner intent-only diff with matching test updates.
+**Rule:** When two Bolt PRs target the same refactor, compare `changedFiles` and diff noise (session docs, `.jules/*`, scratch fixtures). Close the duplicate with a comment linking the winner; squash-merge the minimal diff. Do not merge both.
+**Detection cost:** Low — identical titles or overlapping `categorize_ready.py` / test file paths in inventory.

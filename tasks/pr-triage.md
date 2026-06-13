@@ -1,130 +1,88 @@
-# PR Triage — 2026-06-10
+# PR Triage — 2026-06-12
 
-**Preflight:** PASS (6/6)  
-**Mode:** salvage-and-cleanup (Phase 2)  
-**Disposition key:** MERGE · CLOSE-SUPERSEDED · DEFER · ESCALATE · PHASE1-HANDOFF · SALVAGE
-
-## Duplicate & overlap analysis
-
-| Group | Keeper | Action on others | Rationale |
-| --- | --- | --- | --- |
-| Session doc drafts (personal-config) | **This salvage branch** | Close #1203 | Phase-1 morning draft superseded by 2026-06-10 salvage report |
-| Workflow automation (pc/esp/sa) | **None** | Escalate #1201, #1066, #273 | Trust-boundary pin changes; same class as merged #1193 |
-| Bolt sum optimization (ctrld-sync) | **None** | Defer #881 | Benchmark shows ~1.5–2× regression from list materialization |
-| Seatek scanner salvage | **None** | Defer #261 | CodeScene green but diff drops `read_file_safe` guards |
-
-No semantic duplicates among active code PRs. Hydrograph and series_correction queues are empty.
-
-## Session dispositions (executed)
-
-| Disposition | PRs | Count |
-| --- | --- | ---: |
-| **CLOSE-SUPERSEDED** | pc #1203 | 1 |
-| **ESCALATE** | pc #1201; esp #1066; sa #273 | 3 |
-| **DEFER** | ctrld #881; sa #261 | 2 |
-| **PHASE1-HANDOFF** | pc #1204; esp #1068 | 2 |
-| **SALVAGE** (new draft) | — | 0 |
-| **MERGE** | — | 0 |
-
-## Per-PR notes
-
-### personal-config #1204 — PHASE1-HANDOFF
-
-Jules Palette UX: adds `aria-hidden="true"` on decorative Infuse listing text. Substantive checks green; Swift CodeQL still in progress. Route to Phase 1 once CodeQL completes.
-
-### personal-config #1201 — ESCALATE
-
-Single-line change bumps `codescene-oss/pr-refactoring-agent` from commit pin `bc0d8b91` to tag `@v1.0.1`. Trust-boundary workflow automation — human review required (Lesson 0z pattern).
-
-### ctrld-sync #881 — DEFER
-
-Bolt replaces `sum(genexpr)` with `sum([list comp])` in four `main.py` locations. All tests/ruff/mypy/bandit/CodeScene pass; **benchmark** fails with ~1.5–2× regression. List materialization defeats the optimization intent. Close or revert to generators.
-
-### email-security-pipeline #1066 — ESCALATE
-
-Workflow automation: refactoring-agent pin bump + changelog checkout comment. All checks green. Trust-boundary — human review required.
-
-### email-security-pipeline #1068 — PHASE1-HANDOFF
-
-Palette: refactor ANSI string concatenations for non-TTY accessibility. CodeQL in progress; no substantive failures yet.
-
-### Seatek_Analysis #273 — ESCALATE
-
-Nine workflow YAML files with pin/version comment updates. All checks green. Trust-boundary — human review required.
-
-### Seatek_Analysis #261 — DEFER
-
-Salvage draft for scanner perf (#247). CodeScene now PASS, but diff **removes** `read_file_safe`, `MAX_FILE_SIZE`, and path-traversal/OOM tests. Do not merge; rebuild salvage preserving security helpers (Gate 2 failure despite green CodeScene).
-
-## Security gate review
-
-- **Trust-boundary (T2):** #1201, #1066, #273 — workflow action pin changes require maintainer approval.
-- **Gate 2 regression:** #261 removes file-read security controls — blocks merge regardless of CodeScene.
-- **Perf gate:** #881 benchmark failure is substantive, not flake (contrast Lesson 0dr when PR is unrelated).
-# PR Triage — 2026-06-11
-
-**Mode:** salvage-and-cleanup (Phase 2)  
-**Preflight:** PASS  
-**Input:** Prior deferred tail from `tasks/pr-review-2026-06-09.md` + live GitHub state
+**Mode:** review-and-merge (Phase 1)
+**Preflight:** PASS
+**Input:** Live GitHub state + prior deferred tail from `tasks/pr-review-2026-06-11.md`
 
 ## Triage matrix
 
 | Disposition | Count | Action |
 | --- | ---: | --- |
-| SALVAGE (draft opened) | 5 | Human review required; originals closed |
-| CLOSE-SUPERSEDED | 5 | Cross-linked to new draft PRs |
-| PHASE1-HANDOFF | 5 | Re-run Phase 1 review-and-merge |
-| DEFER | 13 | Seatek conflict batch (8) + ctrld benchmark (2) + ESP CodeScene (#1075) + session-doc overlap (#1205/#1216) |
+| MERGE | 14 | Squash-merged with branch delete |
+| CLOSE-DUPLICATE | 1 | #1226 superseded by #1227 |
+| CLOSE-SUPERSEDED | 1 | #1216 superseded by merged #1219 |
+| DEFER | 9 | Salvage / infra / CodeScene / benchmark |
 | ESCALATE | 0 | — |
-| MERGE (salvage policy) | 0 | Salvage never auto-merges |
 
-## Conflict queue triage (priority order)
+## Duplicate & overlap analysis
 
-### Tier T1 — Security (deferred, needs v2 salvage)
+| Group | Keeper | Action on others | Rationale |
+| --- | --- | --- | --- |
+| Bolt category hoist (personal-config) | **#1227** | Close #1226 | Same `_CATEGORIES` tuple refactor; #1227 omits `.jules/bolt.md` churn |
+| Session doc drafts (personal-config) | **#1219** (merged) | Close #1216 | Conflicting cursor-agent draft superseded by merged salvage report |
+| ESP alert perf | **#1081** | — | No file overlap with #1084 or #1082 |
+| Seatek `Updated_Seatek_Analysis.R` | **#296** then **#297** | Merge #296 first | Both touched analysis script; sequential merge succeeded |
 
-| Repo | PR | Reason | Next step |
-| --- | ---: | --- | --- |
-| Seatek_Analysis | [#283](https://github.com/abhimehro/Seatek_Analysis/pull/283) | `shell=False` enforcement; 15-file Jules PR DIRTY | Rebuild v2 from `main` with security files only; cs-agent posted |
+No other semantic duplicates detected.
 
-### Tier T2 — Trust-adjacent tooling (salvaged)
+## Per-PR notes
 
-| Repo | Old | New draft | Status |
-| --- | ---: | ---: | --- |
-| personal-config | #1215 | [#1217](https://github.com/abhimehro/personal-config/pull/1217) | Closed #1215; 9 pytest pass |
-| personal-config | #1211 | [#1218](https://github.com/abhimehro/personal-config/pull/1218) | Closed #1211; intent-file-only test salvage |
+### personal-config #1210 — MERGE
 
-### Tier T3 — Routine perf/test (salvaged)
+Jules test: `FileNotFoundError` path in `parse_inventory._load_inventory_lines`. All gates green.
 
-| Repo | Old | New draft | Verification |
-| --- | ---: | ---: | --- |
-| series_correction | #109 | [#112](https://github.com/abhimehro/series_correction_project_updated/pull/112) | 6 pytest (append, not replace) |
-| Hydrograph | #245 | [#252](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/252) | 6 pytest |
-| email-security-pipeline | #1071 | [#1081](https://github.com/abhimehro/email-security-pipeline/pull/1081) | 628 pytest |
+### personal-config #1227 — MERGE (keeper)
 
-### Tier DEFER — Seatek batch conflict cascade
+Bolt perf: hoist `_CATEGORIES` tuple in `categorize_ready.py`. Closed duplicate #1226.
 
-All eight remaining `CONFLICTING`/`DIRTY` Seatek PRs share root cause: `main` moved under overlapping Jules/Bolt automation. Posted `/cs-agent skill:fix-code-health-degradations` on #276, #278, #282–#284, #286, #291 (#261 already had marker).
+### personal-config #1225 — MERGE
 
-**Do not** use `update-branch` on these — rebuild v2 per Lesson 0cc / 0cg.
+Daily QA: six test-file lint/format fixes only. No production code.
 
-### Tier DEFER — ctrld-sync benchmark
+### personal-config #1221 — MERGE
 
-| Repo | PR | Blocker |
-| --- | ---: | --- |
-| ctrld-sync | #881, #882 | `benchmark` check fail; all security gates green |
+Palette: `aria-hidden` on decorative emoji in media-server listings. Accessibility-only.
 
-### Tier PHASE1 — CLEAN handoff
+### personal-config #1216 — CLOSE-SUPERSEDED
 
-Merge candidates for next Phase 1 cycle (security-first order):
+Conflicting session-doc PR; #1219 already merged 2026-06-12.
 
-1. `email-security-pipeline#1066`, `Seatek#273`, `personal-config#1201` — workflow consolidation (trust boundary; human review)
-2. `personal-config#1210` — Jules unit test
-3. `Seatek#277` — Bolt perf (merge before conflicting siblings)
+### ctrld-sync #882 — DEFER
 
-## Human follow-up (priority)
+Palette UX fix only (+5/-1). Benchmark check still failing (shared infra issue from #881 era). Security gates green.
 
-1. Review and merge draft salvages: [#112](https://github.com/abhimehro/series_correction_project_updated/pull/112), [#252](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/252), [#1081](https://github.com/abhimehro/email-security-pipeline/pull/1081)
-2. Review T2 tooling salvages: [#1217](https://github.com/abhimehro/personal-config/pull/1217), [#1218](https://github.com/abhimehro/personal-config/pull/1218)
-3. Plan Seatek #283 security v2 salvage (T1)
-4. Phase 1 merge CLEAN handoffs listed above
-5. Investigate ctrld-sync benchmark regression on #881/#882
+### email-security-pipeline #1081/#1084/#1082 — MERGE
+
+- #1081: parallel external alert dispatch (salvages #1071)
+- #1084: remove `re.IGNORECASE` penalty; case-fold at search time
+- #1082: de-emphasize secondary terminal hints
+
+Merged in order: perf salvage → regex perf → Palette UI (no file overlap).
+
+### email-security-pipeline #1075 — DEFER
+
+Conflicting Jules test PR for setup wizard. Route to Phase 2 salvage.
+
+### Seatek_Analysis #296/#297/#286/#284/#277 — MERGE
+
+Routine test additions and Bolt perf on disjoint or sequentially mergeable files. #296 merged before #297 (shared `Updated_Seatek_Analysis.R`).
+
+### Seatek_Analysis #283/#261/#282/#278/#276/#291 — DEFER
+
+- #283: T1 security (`shell=False`) — 15-file DIRTY PR; needs intent-file salvage v2
+- #261: prior perf salvage; Gate 2 risk (Lesson 0ci)
+- Remaining: conflict batch from main movement
+
+### series_correction #114 — DEFER
+
+CodeScene code health failing. Posted `/cs-agent skill:fix-code-health-degradations` before defer.
+
+### repoprompt-ce #2/#3 — MERGE
+
+Bolt DateFormatter reuse + Palette copy-button `aria-label`s. Bugbot-only CI (no macOS build gate in repo).
+
+## Security gate review
+
+- **Gate 2 pass:** All merged PRs — no secrets, no auth changes, no subprocess weakening
+- **Gate 2 block (deferred):** #283 (security intent, needs human-reviewed salvage), #261 (control removal risk)
+- **Substantive CI block:** #882 benchmark, #114 CodeScene

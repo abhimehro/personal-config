@@ -1,42 +1,455 @@
-def release_url(tag_name: str) -> str:
-    slug = repository_slug()
-    if not slug or not tag_name:
-        return ""
-    return f"https://github.com/{slug}/releases/tag/{tag_name}"
+from __future__ import annotations
+
+import datetime as dt
+import fnmatch
+import functools
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+# MCP GitHub compatibility flag
+USE_MCP_GITHUB = os.environ.get("USE_MCP_GITHUB", "false").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
+try:
+    if USE_MCP_GITHUB:
+        import importlib.util
+
+        MCP_AVAILABLE = importlib.util.find_spec("mcp") is not None
+    else:
+        MCP_AVAILABLE = False
+except Exception:
+    MCP_AVAILABLE = False
+
+ROOT = Path(__file__).resolve().parents[2]
+CONFIG_PATH = ROOT / ".github" / "repository-automation.yml"
+OUTPUT_ROOT = ROOT / ".automation-output"
+DAILY_WORKFLOW_NAME = "Repository Automation - Daily"
+
+BASH_BIN = shutil.which("bash") or "/bin/bash"
+GH_BIN = shutil.which("gh") or "gh"
+GIT_BIN = shutil.which("git") or "git"
+
+ALLOWED_STATUSES = {"success", "warning", "failure", "needs_review", "skipped"}
+
+VERSION_PATTERN = re.compile(r"v?(\d+)(?:\.(\d+))?(?:\.(\d+))?")
+
+
+def command_env() -> dict[str, str]:
+    return {**os.environ, "GH_PAGER": "cat"}
+
+
+def now_utc() -> dt.datetime:
+    return dt.datetime.now(dt.timezone.utc)
+
+
+def iso_day(value: dt.datetime | None = None) -> str:
+    return (value or now_utc()).date().isoformat()
+
+
+def load_config() -> dict[str, Any]:
+    data = yaml.safe_load(CONFIG_PATH.read_text())
+    return data.get("automation", {})
+
+
+def task_dir(task: str) -> Path:
+    path = OUTPUT_ROOT / task
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+TRUNCATION_SUFFIX = "\n... [truncated]"
+
+
+def truncate(text: str, limit: int = 4000) -> str:
+    if len(text) <= limit:
+        return text
+    suffix_len = len(TRUNCATION_SUFFIX)
+    # If the limit is too small to fit the suffix, just hard-truncate the text
+    # so the output never exceeds the requested limit.
+    if limit <= suffix_len:
+        return text[:limit]
+    return text[: limit - suffix_len] + TRUNCATION_SUFFIX
+
+
+def run_process(
+    command: list[str],
+    *,
+    input_text: str | None = None,
+    timeout: int | None = None,
+    check: bool = False,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        command,
+        cwd=ROOT,
+        check=check,
+        capture_output=True,
+        text=True,
+        input=input_text,
+        timeout=timeout,
+        env=command_env(),
+    )
+
+
+def run_shell_command(command: str, timeout: int = 1800) -> dict[str, Any]:
+    # Commands originate from repository-controlled configuration, not user input.
+    proc = run_process([BASH_BIN, "-lc", command], timeout=timeout)
+    return {
+        "command": command,
+        "exit_code": proc.returncode,
+        "stdout": truncate(proc.stdout),
+        "stderr": truncate(proc.stderr),
+    }
+
+
+def run_checked(command: list[str]) -> subprocess.CompletedProcess[str]:
+    return run_process(command, check=True)
+
+
+def warn_on_default(
+    tool: str, args: list[str], proc: subprocess.CompletedProcess[str]
+) -> None:
+    error_text = proc.stderr.strip() or proc.stdout.strip()
+    print(
+        f"Warning: `{tool} {' '.join(args)}` failed with exit code {proc.returncode}. {error_text}",
+        file=sys.stderr,
+    )
+
+
+def gh_json(args: list[str], default=None):
+    proc = run_process([GH_BIN, *args])
+    if proc.returncode != 0:
+        if default is not None:
+            warn_on_default("gh", args, proc)
+            return default
+        raise RuntimeError(proc.stderr.strip() or proc.stdout.strip())
+    output = proc.stdout.strip()
+    if not output:
+        return default
+    return json.loads(output)
+
+
+def gh_text(args: list[str], default: str = "") -> str:
+    proc = run_process([GH_BIN, *args])
+    if proc.returncode != 0:
+        warn_on_default("gh", args, proc)
+        return default
+    return proc.stdout.strip()
+
+
+# MCP GitHub compatibility layer (placeholder for future MCP integration)
+def mcp_json(args: list[str], default=None):
+    """MCP compatibility layer for gh_json calls."""
+    # Currently MCP integration is not available, always use gh CLI
+    return gh_json(args, default)
+
+
+def mcp_text(args: list[str], default: str = "") -> str:
+    """MCP compatibility layer for gh_text calls."""
+    # Currently MCP integration is not available, always use gh CLI
+    return gh_text(args, default)
+
+
+def writes_allowed() -> bool:
+    raw = os.environ.get("AUTOMATION_ALLOW_WRITES", "false").lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
+def ensure_gh_token() -> bool:
+    return bool(os.environ.get("GH_TOKEN"))
+
+
+def normalise_status(status: str) -> str:
+    return status if status in ALLOWED_STATUSES else "warning"
+
+
+def build_result(
+    task: str, status: str, summary: str, extra: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    result = {
+        "task": task,
+        "status": normalise_status(status),
+        "summary": summary,
+        "generated_at": now_utc().isoformat(),
+    }
+    if extra:
+        result.update(extra)
+    return result
+
+
+def write_result(
+    task: str, status: str, summary: str, body: str, extra: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    result = build_result(task, status, summary, extra)
+    directory = task_dir(task)
+    (directory / "report.md").write_text(body.rstrip() + "\n")
+    (directory / "result.json").write_text(
+        json.dumps(result, indent=2, sort_keys=True) + "\n"
+    )
+    print(body)
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_path:
+        with open(summary_path, "a", encoding="utf-8") as handle:
+            handle.write(body.rstrip() + "\n\n")
+    return result
+
+
+def enforce_result(path_str: str) -> int:
+    path = Path(path_str)
+    if not path.exists():
+        print(f"Missing task result: {path}")
+        return 1
+    data = json.loads(path.read_text())
+    return 1 if data.get("status") in {"failure", "needs_review"} else 0
+
+
+def command_block(entry: dict[str, Any]) -> str:
+    pieces = [f"- **{entry['name']}** -> exit `{entry['exit_code']}`"]
+    if entry.get("stdout"):
+        pieces.append("```text\n" + entry["stdout"].strip() + "\n```")
+    if entry.get("stderr"):
+        pieces.append("```text\n" + entry["stderr"].strip() + "\n```")
+    return "\n".join(pieces)
+
+
+@functools.lru_cache(maxsize=128)
+def _compile_patterns(patterns_tuple: tuple[str, ...]) -> re.Pattern:
+    # Use explicit normcase to match fnmatch's behavior internally
+    translated = [fnmatch.translate(os.path.normcase(p)) for p in patterns_tuple]
+    return re.compile("|".join(translated))
+
+
+@functools.lru_cache(maxsize=1024)
+def _matches_any_impl(path_str: str, patterns_tuple: tuple[str, ...]) -> bool:
+    compiled = _compile_patterns(patterns_tuple)
+    return bool(compiled.match(os.path.normcase(path_str)))
+
+
+def matches_any(path_str: str, patterns: list[str]) -> bool:
+    if not patterns:
+        return False
+    # NOTE: Normalize before crossing the cached boundary so semantically
+    # equivalent paths share a cache key on case-insensitive platforms.
+    normalized_path_str = os.path.normcase(path_str)
+    return _matches_any_impl(normalized_path_str, tuple(patterns))
+
+
+def git_output(*args: str) -> str:
+    return run_checked([GIT_BIN, *args]).stdout.strip()
+
+
+def safe_pr_body(title: str, updates: list[dict[str, str]], notes: list[str]) -> str:
+    lines = [
+        f"## {title}",
+        "",
+        "This draft PR was created by the consolidated repository automation workflow.",
+        "",
+    ]
+    if updates:
+        lines.extend(
+            [
+                "### Updates",
+                "| File | Action reference | Previous | Proposed |",
+                "| --- | --- | --- | --- |",
+            ]
+        )
+        for item in updates:
+            lines.append(
+                f"| `{item['file']}` | `{item['action']}` | `{item['current']}` | `{item['target']}` |"
+            )
+    if notes:
+        lines.extend(["", "### Guardrails"])
+        lines.extend(f"- {note}" for note in notes)
+    lines.extend(
+        [
+            "",
+            "### Safety notes",
+            "- Draft PR only",
+            "- No force-pushes",
+            "- No automatic merges",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def normalize_label_specs(labels: list) -> list[dict[str, str]]:
+    if not labels:
+        return []
+    specs = []
+    for entry in labels:
+        if isinstance(entry, str):
+            specs.append({"name": entry, "color": "1d76db", "description": ""})
+        elif isinstance(entry, dict) and entry.get("name"):
+            specs.append(
+                {
+                    "name": str(entry["name"]),
+                    "color": str(entry.get("color", "1d76db")),
+                    "description": str(entry.get("description", "")),
+                }
+            )
+    return specs
+
+
+def ensure_label_exists(spec: dict[str, str], known_labels: set[str]) -> None:
+    name = spec["name"]
+    if name in known_labels or not writes_allowed():
+        return
+    args = [GH_BIN, "label", "create", name, "--color", spec["color"]]
+    if spec["description"]:
+        args.extend(["--description", spec["description"]])
+    proc = run_process(args)
+    if proc.returncode != 0:
+        warn_on_default("gh", args[1:], proc)
+        return
+    known_labels.add(name)
+
+
+def filter_existing_labels(labels: list) -> list[str]:
+    specs = normalize_label_specs(labels)
+    if not specs:
+        return []
+    label_rows = gh_json(
+        ["label", "list", "--limit", "100", "--json", "name"], default=[]
+    )
+    known = {row.get("name") for row in label_rows}
+    for spec in specs:
+        ensure_label_exists(spec, known)
+    return [spec["name"] for spec in specs if spec["name"] in known]
+
+
+def gh_with_body(args: list[str], body: str) -> str:
+    proc = run_process([GH_BIN, *args], input_text=body)
+    if proc.returncode != 0:
+        raise RuntimeError(proc.stderr.strip() or proc.stdout.strip())
+    return proc.stdout.strip()
+
+
+def create_or_update_issue(title: str, body: str, labels: list) -> str:
+    search = gh_json(
+        [
+            "issue",
+            "list",
+            "--state",
+            "all",
+            "--limit",
+            "100",
+            "--json",
+            "number,title,url",
+        ],
+        default=[],
+    )
+    existing = next((item for item in search if item.get("title") == title), None)
+    existing_labels = filter_existing_labels(labels)
+    if existing:
+        command = ["issue", "edit", str(existing["number"]), "--body-file", "-"]
+        if existing_labels:
+            command.extend(["--add-label", ",".join(existing_labels)])
+        gh_with_body(command, body)
+        return existing["url"]
+    create_command = ["issue", "create", "--title", title, "--body-file", "-"]
+    for label in existing_labels:
+        create_command.extend(["--label", label])
+    return gh_with_body(create_command, body)
+
+
+def create_pr_for_current_changes(
+    branch_prefix: str, commit_message: str, pr_title: str, pr_body: str
+) -> str:
+    existing = gh_json(
+        ["pr", "list", "--state", "open", "--json", "title,url"], default=[]
+    )
+    existing_match = next(
+        (item for item in existing if item.get("title") == pr_title), None
+    )
+    if existing_match:
+        return existing_match["url"]
+    branch_name = f"{branch_prefix.replace('/', '-')}-{now_utc().strftime('%Y%m%d')}-{os.environ.get('GITHUB_RUN_ATTEMPT', '1')}"
+    run_checked([GIT_BIN, "config", "user.name", "repository-automation[bot]"])
+    run_checked(
+        [
+            GIT_BIN,
+            "config",
+            "user.email",
+            "repository-automation[bot]@users.noreply.github.com",
+        ]
+    )
+    run_checked([GIT_BIN, "checkout", "-b", branch_name])
+    run_checked([GIT_BIN, "add", "-A"])
+    run_checked([GIT_BIN, "commit", "-m", commit_message])
+    run_checked([GIT_BIN, "push", "--set-upstream", "origin", branch_name])
+    return gh_with_body(
+        ["pr", "create", "--draft", "--title", pr_title, "--body-file", "-"], pr_body
+    )
 
 
 def latest_tag_for_action(repo_id: str) -> str:
+    # Use MCP if available, otherwise fall back to gh CLI
+    if MCP_AVAILABLE and USE_MCP_GITHUB:
+        try:
+            owner, repo = repo_id.split("/")
+            releases = gh_json(
+                ["api", f"repos/{owner}/{repo}/releases?per_page=1"], default=[]
+            )
+            if releases:
+                latest = releases[0].get("tag_name", "")
+                if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
+                    return latest
+        except Exception:
+            pass  # Fall back to gh CLI on error
+
+    # Original gh CLI implementation
     latest = gh_text(["api", f"repos/{repo_id}/releases/latest", "--jq", ".tag_name"])
-    if latest:
+    if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
         return latest
-    return gh_text(["api", f"repos/{repo_id}/tags?per_page=1", "--jq", ".[0].name"])
+
+    tags_json = gh_json(["api", f"repos/{repo_id}/tags?per_page=100"], default=[])
+    stable_tags = []
+    for t in tags_json:
+        name = t.get("name", "")
+        if re.fullmatch(r"v?\d+(?:\.\d+)*", name):
+            parsed = numeric_version(name)
+            if parsed:
+                stable_tags.append((parsed, name))
+
+    if stable_tags:
+        stable_tags.sort(key=lambda x: x[0], reverse=True)
+        return stable_tags[0][1]
+
+    return ""
 
 
-def is_commit_sha(ref: str) -> bool:
-    return bool(re.fullmatch(r"[0-9a-fA-F]{40}", ref))
-
-
+@functools.lru_cache(maxsize=1024)
 def numeric_version(text: str) -> tuple[int, int, int] | None:
-    if is_commit_sha(text):
-        return None
-    match = re.search(r"v?(\d+)(?:\.(\d+))?(?:\.(\d+))?", text)
+    match = VERSION_PATTERN.search(text)
     if not match:
         return None
     return tuple(int(group or 0) for group in match.groups())
 
 
+def tag_exists(repo_id: str, tag: str) -> bool:
+    proc = run_process([GH_BIN, "api", f"repos/{repo_id}/git/ref/tags/{tag}"])
+    return proc.returncode == 0
+
+
 def target_ref(current: str, latest: str) -> str | None:
-    if is_commit_sha(current):
-        return None
     current_v = numeric_version(current)
     latest_v = numeric_version(latest)
     if not current_v or not latest_v:
         return None
     if latest_v <= current_v:
         return None
-    if re.fullmatch(r"v?\d+", current):
-        prefix = "v" if current.startswith("v") or latest.startswith("v") else ""
-        return f"{prefix}{latest_v[0]}"
+    # Always return the full latest version to ensure the tag exists
     return latest
 
 
@@ -44,7 +457,7 @@ def append_publication_result(
     body: str,
     *,
     title: str,
-    labels: list[Any],
+    labels: list,
     noun: str,
 ) -> tuple[str, str, str | None]:
     if not writes_allowed():
@@ -58,5 +471,5 @@ def append_publication_result(
         body += f"\n## Published issue\n- {issue_url}\n"
         return body, issue_url, None
     except Exception as exc:  # pragma: no cover - runtime integration
-        body += f"\n## Publishing failure\n- {type(exc).__name__}\n"
-        return body, "", type(exc).__name__
+        body += f"\n## Publishing failure\n- {exc}\n"
+        return body, "", str(exc)
