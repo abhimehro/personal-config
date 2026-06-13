@@ -53,6 +53,7 @@ import hashlib
 import html
 import json
 import logging
+import re
 import os
 import sys
 import tempfile
@@ -71,6 +72,19 @@ from urllib3.util.retry import Retry
 # ============================================================
 # Constants
 # ============================================================
+
+EMOJI_PATTERN = re.compile(
+    r'('
+    r'[😀-🙏]'
+    r'|[🌀-🗿]'
+    r'|[🚀-🛿]'
+    r'|[🇠-🇿]'
+    r'|[☀-⛿]️?'
+    r'|[✀-➿]️?'
+    r'|[🤀-🧿]'
+    r'|[🩰-🫿]'
+    r')️?'
+)
 
 APP_NAME = "morning-brief"
 APP_VERSION = "3.0"
@@ -578,11 +592,13 @@ def html_ul(items: Iterable[str]) -> str:
 
 
 def html_section(title: str, body: str) -> str:
-    return f"<h3>{sanitize_text(title)}</h3>{body}"
+    decorated_title = EMOJI_PATTERN.sub(r'<span aria-hidden="true">\1</span>', sanitize_text(title))
+    return f'<h3>{decorated_title}</h3>{body}'
 
 
 def html_subsection(title: str, body: str) -> str:
-    return f"<h4>{sanitize_text(title)}</h4>{body}"
+    decorated_title = EMOJI_PATTERN.sub(r'<span aria-hidden="true">\1</span>', sanitize_text(title))
+    return f'<h4>{decorated_title}</h4>{body}'
 
 
 # ============================================================
