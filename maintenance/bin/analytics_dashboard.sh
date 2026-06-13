@@ -403,7 +403,7 @@ generate_dashboard() {
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔧 System Maintenance Dashboard</h1>
+            <h1><span aria-hidden="true">🔧</span> System Maintenance Dashboard</h1>
             <div class="date">$(date "+%B %d, %Y at %H:%M") - ${cap_period} Report</div>
         </div>
         
@@ -443,14 +443,14 @@ EOF
         </div>
         
         <div class="section">
-            <h2>📊 System Insights</h2>
+            <h2><span aria-hidden="true">📊</span> System Insights</h2>
             <div class="insights-box">
                 <pre>$(cat "$insights_file" 2>/dev/null || echo "Insights not available")</pre>
             </div>
         </div>
         
         <div class="section">
-            <h2>🔄 Recent Activity</h2>
+            <h2><span aria-hidden="true">🔄</span> Recent Activity</h2>
             <div class="insights-box">
                 <p>Latest maintenance tasks and system activities:</p>
                 <ul>
