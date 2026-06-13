@@ -38,11 +38,11 @@ actions:
   disabled:
     - trufflehog-pre-commit
     - commitlint
-    - trunk-check-pre-push
-  enabled:
     - trunk-check-pre-commit
-    - trunk-announce
     - trunk-fmt-pre-commit
+  enabled:
+    - trunk-check-pre-push
+    - trunk-announce
     - trunk-upgrade-available
 plugins:
   sources:

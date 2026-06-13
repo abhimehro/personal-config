@@ -36,6 +36,7 @@ MIN_SPACE_GB=20
 MAX_APPROVAL_FILES=1
 MAX_DOWNLOADING_FILES=1
 MAX_FILE_SIZE_GB=15
+MAX_PENDING_CANDIDATES=5
 # Track retry counts per file identity
 REQUIRE_WINDSCRIBE=true
 VPN_INTERFACE_PREFIX="utun"
@@ -113,6 +114,10 @@ count_visible_files() {
 	find "$dir" -maxdepth 1 -type f ! -name ".*" -print0 | grep -cz . || true
 }
 
+count_pending_candidates() {
+	count_visible_files "$PENDING_DIR"
+}
+
 # Check if file exceeds maximum size limit (bash 3.2 compatible)
 check_file_size() {
 	local file="$1"
@@ -142,9 +147,10 @@ check_vpn() {
 }
 
 check_containment() {
-	local approval_count downloading_count
+	local approval_count downloading_count pending_count
 	approval_count=$(count_visible_files "$APPROVAL_DIR")
 	downloading_count=$(count_visible_files "$TEMP_DOWNLOAD_DIR")
+	pending_count=$(count_pending_candidates)
 
 	if ((approval_count >= MAX_APPROVAL_FILES)); then
 		log "⏸️  Approval gate active: $approval_count file(s) already waiting in $APPROVAL_DIR."
@@ -154,6 +160,42 @@ check_containment() {
 	if ((downloading_count >= MAX_DOWNLOADING_FILES)); then
 		log "⏸️  Download gate active: $downloading_count file(s) already in $TEMP_DOWNLOAD_DIR."
 		exit 0
+	fi
+
+	if ((pending_count >= MAX_PENDING_CANDIDATES)); then
+		log "⏸️  Pending gate active: $pending_count candidate(s) already waiting for approval (max: $MAX_PENDING_CANDIDATES)."
+		log "   Run 'approve-download --list' to see and approve pending candidates."
+		exit 0
+	fi
+}
+
+check_stale_pending() {
+	# Check if any pending candidates are older than 24 hours and notify
+	local stale_found=false
+	local now
+	now=$(date +%s)
+	
+	for candidate in "$PENDING_DIR"/*.candidate.json; do
+		[[ -f "$candidate" ]] || continue
+		
+		local candidate_age_secs
+		if [[ "$(uname)" == "Darwin" ]]; then
+			candidate_age_secs=$(($(date +%s) - $(stat -f %m "$candidate")))
+		else
+			candidate_age_secs=$(($(date +%s) - $(stat -c %Y "$candidate")))
+		fi
+		
+		# 86400 seconds = 24 hours
+		if ((candidate_age_secs > 86400)); then
+			local filename
+			filename=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['filename'])" "$candidate" 2>/dev/null || echo "unknown")
+			log "⚠️  Stale pending candidate (${candidate_age_secs}s old): $filename"
+			stale_found=true
+		fi
+	done
+	
+	if [[ "$stale_found" == "true" ]]; then
+		notify "Stale Download Candidates" "You have pending candidates older than 24 hours. Run 'approve-download --list' to review."
 	fi
 }
 
@@ -289,10 +331,17 @@ log "Source: $ALLDEBRID_REMOTE"
 log "Destination: $APPROVAL_DIR (Approval Folder)"
 log "Dry run: $DRY_RUN"
 
+# Log current state
+pending_count=$(count_pending_candidates)
+approved_count=$(count_visible_files "$APPROVED_DIR")
+downloading_count=$(count_visible_files "$TEMP_DOWNLOAD_DIR")
+log "Status: $pending_count pending, $approved_count approved, $downloading_count downloading"
+
 # Hard safety gates. These prevent runaway downloads from a large Alldebrid backlog.
 check_vpn
 # Note: check_disk_space is called later, only before actual downloads, not during candidate selection
 check_containment
+check_stale_pending
 
 # Check if alldebrid remote exists
 if ! rclone listremotes | grep -q "^alldebrid:"; then
@@ -307,18 +356,21 @@ log "Checking for approved candidates..."
 process_approved_candidates
 
 # ============================================================================
-# PHASE 2: If we have pending candidates, don't queue more
+# PHASE 2: Check if we have room for more candidates
 # ============================================================================
-if [[ -n "$(ls -A "$PENDING_DIR"/*.candidate.json 2>/dev/null)" ]]; then
-	log "Pending candidates already exist. Not queuing new ones until approval."
-	log "   Run 'approve-download --list' to see pending candidates."
-	log "=== Alldebrid Sync Complete (Pending Approval) ==="
-	exit 0
-fi
+# Note: check_containment already verified we haven't hit MAX_PENDING_CANDIDATES,
+# so we can proceed to scan for new files. The containment check will catch
+# it if we hit the limit during processing.
 
 # ============================================================================
 # PHASE 3: Select and queue new candidates for approval
 # ============================================================================
+# If we have pending candidates but haven't hit the limit, remind user to review them
+pending_count=$(count_pending_candidates)
+if ((pending_count > 0)); then
+	log "ℹ️  Reminder: You have $pending_count candidate(s) pending approval. Run 'approve-download --list' to review."
+fi
+
 # List files
 log "Scanning Alldebrid for video files..."
 files_list=$(rclone lsf "$ALLDEBRID_REMOTE" --files-only "${RCLONE_FLAGS[@]}" 2>/dev/null | grep -iE '\.(mp4|mkv|avi|m4v|mov)$' || true)

@@ -193,24 +193,68 @@ abbr -a nmvb nm-vpn browsing
 abbr -a nmr  nm-regress
 abbr -a nmcs nm-cd-status
 
-# Media Workflow
-alias rename-media.sh "$NM_ROOT/media-streaming/scripts/rename-media.sh"
+# ============================================
+# Media Pipeline - Alldebrid Download Phase (NEW)
+# ============================================
+# These commands manage downloading files from Alldebrid into the media pipeline.
+# The NEW pre-download approval system uses candidate files for safety.
+# Usage: alldebrid-sync -> approve-download -> files appear in approval_needed/
+
+abbr -a alldebrid-sync       "$NM_ROOT/media-streaming/scripts/sync-alldebrid.sh"
+abbr -a alldebrid-sync-dry   "$NM_ROOT/media-streaming/scripts/sync-alldebrid.sh --dry-run"
+abbr -a ad-approve           "$NM_ROOT/media-streaming/scripts/approve-download"
+abbr -a ad-list              "$NM_ROOT/media-streaming/scripts/approve-download --list"
+abbr -a ad-status            "$NM_ROOT/media-streaming/scripts/approve-download --status"
+abbr -a ad-fetch             "$NM_ROOT/media-streaming/scripts/approve-download --fetch"
+
+# ============================================
+# Media Pipeline - Processing Phase
+# ============================================
+# These commands process files after they've been downloaded.
+
+# Mount and server management
+alias mmount    "$NM_ROOT/media-streaming/scripts/mount-media.sh"
+alias mserver   "$NM_ROOT/media-streaming/scripts/media-server-daemon.sh"
+alias finalize "$NM_ROOT/media-streaming/scripts/final-media-server.sh"
+
+# File processing and renaming
+alias rename-media "$NM_ROOT/media-streaming/scripts/rename-media.sh"
+abbr -a rm-approve   "$NM_ROOT/media-streaming/scripts/rename-media.sh --approve-ready"
+abbr -a rm-pending   "$NM_ROOT/media-streaming/scripts/rename-media.sh --list-pending"
+
+# WebDAV rotation
+abbr -a rotate-webdav "$NM_ROOT/media-streaming/scripts/rotate-media-webdav.sh"
+
+# ============================================
+# Media Pipeline - Setup
+# ============================================
+alias setup-gdrive "$NM_ROOT/media-streaming/scripts/setup-gdrive.sh"
+alias setup-media  "$NM_ROOT/media-streaming/scripts/setup-media-library.sh"
+
+# ============================================
+# Media Pipeline - Legacy (Deprecated)
+# ============================================
+# OLD post-download approval system: moves files from approval_needed/ to permute_input/
+# NOTE: This is the LEGACY system for manual Permute 4 HEVC conversion.
+#       The NEW system (approve-download) handles pre-download approval.
+#       Keep this for backwards compatibility if needed.
 alias approve-downloads "$NM_ROOT/media-streaming/scripts/approve-downloads.sh"
 abbr -a list-downloads "$NM_ROOT/media-streaming/scripts/approve-downloads.sh --list"
-abbr -a approve-uploads "$NM_ROOT/media-streaming/scripts/rename-media.sh --approve-ready"
-abbr -a list-uploads "$NM_ROOT/media-streaming/scripts/rename-media.sh --list-pending"
 
-# Media Pipeline Scripts
-abbr -a sync-alldebrid "$NM_ROOT/media-streaming/scripts/sync-alldebrid.sh"
-abbr -a sync-alldebrid-dry "$NM_ROOT/media-streaming/scripts/sync-alldebrid.sh --dry-run"
-alias mount-media "$NM_ROOT/media-streaming/scripts/mount-media.sh"
-alias media-server "$NM_ROOT/media-streaming/scripts/media-server-daemon.sh"
-abbr -a rotate-webdav "$NM_ROOT/media-streaming/scripts/rotate-media-webdav.sh"
-alias final-media "$NM_ROOT/media-streaming/scripts/final-media-server.sh"
+# ============================================
+# Media Pipeline - Utility
+# ============================================
+# Check stale mounts
+alias check-stale "$NM_ROOT/media-streaming/scripts/check-stale-mounts.sh"
 
-# Media Setup Scripts
-alias setup-gdrive "$NM_ROOT/media-streaming/scripts/setup-gdrive.sh"
-alias setup-media "$NM_ROOT/media-streaming/scripts/setup-media-library.sh"
+# Sync LaunchAgents for media services
+alias sync-media-agents "$NM_ROOT/media-streaming/scripts/sync-launchagents.sh"
+
+# Bulk rename files in cloud storage
+alias bulk-rename "$NM_ROOT/media-streaming/scripts/bulk-rename-cloud.sh"
+
+# Media status and restart functions (defined in functions/media-*.fish)
+# Usage: media-status, media-restart, media-logs
 
 # History Setup
 set -g fish_history_limit 10000
