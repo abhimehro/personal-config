@@ -372,3 +372,9 @@
 **Rule:** Gate 2 (security) blocks merge even when CodeScene is green. Before recommending human merge on a perf salvage, verify intent files did not drop path-traversal, size-limit, or auth helpers present on `main`.
 **Contrast:** Lesson 0ce (merge T1 security when CodeScene-only fail) — opposite direction; security wins over advisory green.
 **Detection cost:** Low — `gh pr diff` shows deletion of `read_file_safe` or `MAX_FILE_SIZE`.
+
+## Lesson 0cj: ESP 14-PR merge burst — close identical duplicates before refactor chain (2026-06-13)
+
+**Pattern:** Seventeen open ESP bot PRs included two 100%/98.7% duplicate pairs (#1098/#1100, #1101/#1102). Merging 14 PRs in security→lint→test→refactor order left #1096 and #1103 DIRTY; a late Black-formatting PR (#1106) appeared mid-session with green pytest/CodeScene.
+**Rule:** Before a merge burst in a repo with overlapping files, diff-similarity-scan duplicate pairs and close extras first. Merge refactors in dependency order (#1097 before #1100 before #1096). After burst, expect DIRTY siblings — defer to salvage rather than `update-branch` spam.
+**Detection cost:** Low — `difflib.SequenceMatcher` on `gh pr diff` pairs sharing filenames.
