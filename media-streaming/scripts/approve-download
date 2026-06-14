@@ -66,7 +66,7 @@ list_pending() {
 		# Extract all fields in a single Python call for performance
 		local all_fields
 		all_fields=$(get_candidate_all_fields "$candidate")
-		IFS='|' read -r filename size_human queued_at <<< "$all_fields"
+		IFS='|' read -r filename size_human queued_at <<<"$all_fields"
 
 		# Use defaults if fields are empty
 		filename="${filename:-unknown}"
@@ -109,9 +109,9 @@ approve_by_filename() {
 		local candidate_filename
 		candidate_filename=$(get_candidate_filename "$f") || continue
 		# Use fuzzy matching: exact match OR candidate contains target OR target contains candidate
-		if [[ $candidate_filename == "$filename" ]] || \
-		   [[ $candidate_filename == *"$filename"* ]] || \
-		   [[ $filename == *"$candidate_filename"* ]]; then
+		if [[ $candidate_filename == "$filename" ]] ||
+			[[ $candidate_filename == *"$filename"* ]] ||
+			[[ $filename == *"$candidate_filename"* ]]; then
 			candidate_file="$f"
 			break
 		fi
@@ -182,11 +182,11 @@ get_candidate_queued() {
 find_candidate_by_filename() {
 	local target="$1"
 	for candidate in "$PENDING_DIR"/*.candidate.json; do
-		[[ -f "$candidate" ]] || continue
+		[[ -f $candidate ]] || continue
 		local candidate_filename
 		candidate_filename=$(get_candidate_filename "$candidate") || continue
 		# Match if filename contains the target (handles partial matches and with/without extension)
-		if [[ "$candidate_filename" == *"$target"* ]] || [[ "$target" == *"$candidate_filename"* ]]; then
+		if [[ $candidate_filename == *"$target"* ]] || [[ $target == *"$candidate_filename"* ]]; then
 			echo "$candidate"
 			return 0
 		fi
@@ -202,12 +202,12 @@ reject_candidate() {
 	filename=$(get_candidate_filename "$candidate")
 
 	# If we can't get the filename, don't add to ignore list - just remove the candidate
-	if [[ -z "$filename" ]]; then
+	if [[ -z $filename ]]; then
 		log "Error: Could not extract filename from candidate $candidate_id, skipping ignore list addition"
 		filename="<unknown>"
 	else
 		# Add to ignore list (prevents re-selection) - use printf for hyphen safety
-		printf '%s\n' "$filename" >> "$REJECTED_FILE"
+		printf '%s\n' "$filename" >>"$REJECTED_FILE"
 	fi
 
 	# Remove the candidate file
@@ -224,17 +224,17 @@ reject_filename() {
 	local identity="${filename##*/}"
 
 	# Validate that filename is not empty
-	if [[ -z "$filename" ]]; then
+	if [[ -z $filename ]]; then
 		log "Error: Cannot reject empty filename"
 		return 1
 	fi
 
 	# Add to ignore list - use printf for hyphen safety
-	printf '%s\n' "$filename" >> "$REJECTED_FILE"
+	printf '%s\n' "$filename" >>"$REJECTED_FILE"
 
 	# Also add identity if it's different from filename
-	if [[ "$identity" != "$filename" ]]; then
-		printf '%s\n' "$identity" >> "$REJECTED_FILE"
+	if [[ $identity != "$filename" ]]; then
+		printf '%s\n' "$identity" >>"$REJECTED_FILE"
 	fi
 
 	log "Rejected: $filename (added to ignore list)"
@@ -248,12 +248,12 @@ unreject() {
 	local identity="${filename##*/}"
 
 	# Remove exact matches and identity from ignore list
-	if [[ -f "$REJECTED_FILE" ]]; then
+	if [[ -f $REJECTED_FILE ]]; then
 		# Use grep with -x for exact line matching (not substring) and -F for fixed strings
 		# Use temp file with process ID to avoid race conditions
 		# Use || true to prevent grep exit status 1 (no match) from breaking the && chain
 		local tmp_file="${REJECTED_FILE}.tmp.$$"
-		grep -v -x -F -e "$filename" -e "$identity" "$REJECTED_FILE" > "$tmp_file" 2>/dev/null || true
+		grep -v -x -F -e "$filename" -e "$identity" "$REJECTED_FILE" >"$tmp_file" 2>/dev/null || true
 		mv "$tmp_file" "$REJECTED_FILE"
 
 		log "Unrejected: $filename (removed from ignore list)"
@@ -267,7 +267,7 @@ unreject() {
 list_rejected() {
 	log "Rejected Files (in ignore list):"
 	log "================================"
-	if [[ -f "$REJECTED_FILE" ]] && [[ -s "$REJECTED_FILE" ]]; then
+	if [[ -f $REJECTED_FILE ]] && [[ -s $REJECTED_FILE ]]; then
 		nl -ba "$REJECTED_FILE"
 	else
 		log "No rejected files."
@@ -333,8 +333,8 @@ while [[ $# -gt 0 ]]; do
 		echo ""
 		echo "Examples:"
 		echo "  approve-download --list"
-		echo "  approve-download --reject \"Movie.mkv\""
-		echo "  approve-download \"Movie.mkv\""
+		echo '  approve-download --reject "Movie.mkv"'
+		echo '  approve-download "Movie.mkv"'
 		exit 0
 		;;
 	*)
@@ -360,7 +360,7 @@ elif [[ $FETCH == "true" && -z $TARGET ]]; then
 	done
 	trigger_sync
 elif [[ $REJECT == "true" ]]; then
-	if [[ -n "$TARGET" ]]; then
+	if [[ -n $TARGET ]]; then
 		# Try to reject by candidate file first (exact match)
 		if [[ -f "$PENDING_DIR/${TARGET}.candidate.json" ]]; then
 			reject_candidate "$PENDING_DIR/${TARGET}.candidate.json"
@@ -369,7 +369,7 @@ elif [[ $REJECT == "true" ]]; then
 		else
 			# Try to find candidate by matching filename content
 			found_candidate=$(find_candidate_by_filename "$TARGET")
-			if [[ -n "$found_candidate" ]]; then
+			if [[ -n $found_candidate ]]; then
 				reject_candidate "$found_candidate"
 			else
 				# Reject by filename (not yet a candidate)
@@ -382,7 +382,7 @@ elif [[ $REJECT == "true" ]]; then
 		exit 1
 	fi
 elif [[ $UNREJECT == "true" ]]; then
-	if [[ -n "$TARGET" ]]; then
+	if [[ -n $TARGET ]]; then
 		unreject "$TARGET"
 	else
 		log "Error: No filename specified for --unreject"
