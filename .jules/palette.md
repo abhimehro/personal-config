@@ -143,3 +143,7 @@
 ## 2026-06-12 - Accessible HTML structure
 **Learning:** This repo has shell and python scripts that generate HTML string. It follows standard HTML structure and uses standard accessibility practices like aria-label and aria-hidden on inner emojis. Also, note that color contrasts standard must follow WCAG AA guidelines.
 **Action:** When adding HTML in scripts, stick to accessibility best practices.
+
+## 2024-06-14 - Accessible Emojis in Text Headers
+**Learning:** When text-containing elements like headers include decorative emojis, screen readers will audibly announce the emoji name, which disrupts reading flow. Wrapping only the emoji in `<span aria-hidden="true">` prevents this.
+**Action:** Avoid duplicate `aria-label` on the parent text element; wrap just the emoji in `<span aria-hidden="true">` so the native inner text continues to be read naturally.
