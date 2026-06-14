@@ -373,6 +373,12 @@
 **Contrast:** Lesson 0ce (merge T1 security when CodeScene-only fail) — opposite direction; security wins over advisory green.
 **Detection cost:** Low — `gh pr diff` shows deletion of `read_file_safe` or `MAX_FILE_SIZE`.
 
+## Lesson 0ck: Truncated `repository_automation_common.py` blocks entire personal-config bot queue (2026-06-14)
+
+**Pattern:** `main` shipped a ~42-line fragment of `.github/scripts/repository_automation_common.py` (starts at `release_url`). Every PR running `make test-all` fails with `NameError: name 'Any' is not defined` even when the PR diff is unrelated.
+**Rule:** Treat as **main-side infra breakage** (Lesson 0t). Restore PRs (#1240, #1231) are in-scope infra fixes but hit **toolchain trust-boundary escalation** — human must merge the restore before bot throughput resumes. Defer unrelated bot PRs with a comment linking the restore PR.
+**Detection cost:** Low — CI log shows import from truncated file; `gh api .../contents/...common.py?ref=main` returns mid-file content.
+
 ## Lesson 0cj: Duplicate same-day Bolt hoists — close the noisier branch (2026-06-12)
 
 **Pattern:** personal-config #1226 and #1227 both hoisted `_CATEGORIES` in `categorize_ready.py` on the same day. #1226 added `.jules/bolt.md` churn; #1227 was the cleaner intent-only diff with matching test updates.
