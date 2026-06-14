@@ -260,3 +260,6 @@ alias bulk-rename "$NM_ROOT/media-streaming/scripts/bulk-rename-cloud.sh"
 set -g fish_history_limit 10000
 set -U fish_user_paths $fish_user_paths /Users/speedybee/.local/bin
 fish_add_path /Users/speedybee/scripts
+
+# Added by Antigravity IDE
+fish_add_path /Users/speedybee/.antigravity-ide/antigravity-ide/bin
