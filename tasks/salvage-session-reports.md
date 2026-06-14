@@ -6,6 +6,25 @@
 
 ## Entry template
 
+## Run — 2026-06-14
+
+### Input tail
+- Source report/snapshot: `tasks/pr-review-2026-06-13.md`
+- PRs investigated: 16 across 7 repos (3 DIRTY at start)
+
+### Outcomes
+- Salvage draft PRs opened: ctrld-sync [#899](https://github.com/abhimehro/ctrld-sync/pull/899) (from #898)
+- Infra-fix draft PRs opened: 0 (consolidated to existing pc#1240)
+- Originals closed as superseded/no-op/Gate 2: pc#1244, pc#1231, pc#1245, esp#1109, ctrld#898, sa#261
+
+### Verification status
+- Blocking checks: pc `main` still has `NameError: Any` — T0 #1240 pending human merge
+- CodeScene remediation commands posted: ctrld #899 (`/cs-agent`); hg#257 and sc#119 already had cs-agent from prior sessions
+
+### Handoff
+- Maintainer actions required: **Merge pc#1240 first**, then Phase 1 on pc#1234/#1235/#1242/#1243 and esp#1107/#1111/#1112; review ctrld#899 draft
+- Cross-links: see `tasks/pr-review-2026-06-14.md`
+
 ## Run — YYYY-MM-DD
 
 ### Input tail
