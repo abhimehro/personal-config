@@ -63,12 +63,16 @@ list_pending() {
 		[[ -f $candidate ]] || continue
 		count=$((count + 1))
 
-		local filename
-		filename=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['filename'])" "$candidate" 2>/dev/null || echo "unknown")
-		local size_human
-		size_human=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['size_human'])" "$candidate" 2>/dev/null || echo "unknown")
-		local queued_at
-		queued_at=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['queued_at'])" "$candidate" 2>/dev/null || echo "unknown")
+		# Extract all fields in a single Python call for performance
+		local all_fields
+		all_fields=$(get_candidate_all_fields "$candidate")
+		IFS='|' read -r filename size_human queued_at <<<"$all_fields"
+
+		# Use defaults if fields are empty
+		filename="${filename:-unknown}"
+		size_human="${size_human:-unknown}"
+		queued_at="${queued_at:-unknown}"
+
 		local candidate_id="${candidate##*/}"
 
 		log "  [$count] $candidate_id"
@@ -103,8 +107,11 @@ approve_by_filename() {
 	for f in "$PENDING_DIR"/*.candidate.json; do
 		[[ -f $f ]] || continue
 		local candidate_filename
-		candidate_filename=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['filename'])" "$f" 2>/dev/null)
-		if [[ $candidate_filename == "$filename" ]]; then
+		candidate_filename=$(get_candidate_filename "$f") || continue
+		# Use fuzzy matching: exact match OR candidate contains target OR target contains candidate
+		if [[ $candidate_filename == "$filename" ]] ||
+			[[ $candidate_filename == *"$filename"* ]] ||
+			[[ $filename == *"$candidate_filename"* ]]; then
 			candidate_file="$f"
 			break
 		fi
@@ -133,6 +140,140 @@ approve_candidate() {
 	notify "Download Approved" "$filename approved and queued for download"
 }
 
+# Extract multiple fields from a candidate JSON file in a single Python call
+# Usage: get_candidate_fields <candidate_file>
+# Outputs: filename|size_human|queued_at (pipe-delimited)
+get_candidate_all_fields() {
+	local candidate="$1"
+	python3 -c "
+import json, sys
+try:
+    data = json.load(open(sys.argv[1]))
+    filename = data.get('filename', '')
+    size_human = data.get('size_human', '')
+    queued_at = data.get('queued_at', '')
+    print(filename + '|' + size_human + '|' + queued_at)
+except Exception:
+    print('|')
+" "$candidate" 2>/dev/null
+}
+
+# Extract individual fields (calls Python once per candidate)
+get_candidate_field() {
+	local candidate="$1"
+	local field="$2"
+	python3 -c "import json,sys; data=json.load(open(sys.argv[1])); print(data.get(sys.argv[2],''))" "$candidate" "$field" 2>/dev/null
+}
+
+# Backward-compatible wrapper functions
+get_candidate_filename() {
+	get_candidate_field "$1" "filename"
+}
+
+get_candidate_size() {
+	get_candidate_field "$1" "size_human"
+}
+
+get_candidate_queued() {
+	get_candidate_field "$1" "queued_at"
+}
+
+# Find candidate file by matching filename
+find_candidate_by_filename() {
+	local target="$1"
+	for candidate in "$PENDING_DIR"/*.candidate.json; do
+		[[ -f $candidate ]] || continue
+		local candidate_filename
+		candidate_filename=$(get_candidate_filename "$candidate") || continue
+		# Match if filename contains the target (handles partial matches and with/without extension)
+		if [[ $candidate_filename == *"$target"* ]] || [[ $target == *"$candidate_filename"* ]]; then
+			echo "$candidate"
+			return 0
+		fi
+	done
+	return 1
+}
+
+# Reject a candidate by adding its filename to the ignore list
+reject_candidate() {
+	local candidate="$1"
+	local candidate_id="${candidate##*/}"
+	local filename
+	filename=$(get_candidate_filename "$candidate")
+
+	# If we can't get the filename, don't add to ignore list - just remove the candidate
+	if [[ -z $filename ]]; then
+		log "Error: Could not extract filename from candidate $candidate_id, skipping ignore list addition"
+		filename="<unknown>"
+	else
+		# Add to ignore list (prevents re-selection) - use printf for hyphen safety
+		printf '%s\n' "$filename" >>"$REJECTED_FILE"
+	fi
+
+	# Remove the candidate file
+	rm -f "$candidate"
+
+	log "Rejected: $filename (added to ignore list)"
+	notify "Download Rejected" "$filename rejected and will not be offered again"
+}
+
+# Reject by filename (for files not yet candidates)
+reject_filename() {
+	local filename="$1"
+	# Use shell parameter expansion instead of Python for basename
+	local identity="${filename##*/}"
+
+	# Validate that filename is not empty
+	if [[ -z $filename ]]; then
+		log "Error: Cannot reject empty filename"
+		return 1
+	fi
+
+	# Add to ignore list - use printf for hyphen safety
+	printf '%s\n' "$filename" >>"$REJECTED_FILE"
+
+	# Also add identity if it's different from filename
+	if [[ $identity != "$filename" ]]; then
+		printf '%s\n' "$identity" >>"$REJECTED_FILE"
+	fi
+
+	log "Rejected: $filename (added to ignore list)"
+	notify "Download Rejected" "$filename rejected and will not be offered again"
+}
+
+# Unreject: remove a file from the ignore list
+unreject() {
+	local filename="$1"
+	# Use shell parameter expansion instead of Python for basename
+	local identity="${filename##*/}"
+
+	# Remove exact matches and identity from ignore list
+	if [[ -f $REJECTED_FILE ]]; then
+		# Use grep with -x for exact line matching (not substring) and -F for fixed strings
+		# Use temp file with process ID to avoid race conditions
+		# Use || true to prevent grep exit status 1 (no match) from breaking the && chain
+		local tmp_file="${REJECTED_FILE}.tmp.$$"
+		grep -v -x -F -e "$filename" -e "$identity" "$REJECTED_FILE" >"$tmp_file" 2>/dev/null || true
+		mv "$tmp_file" "$REJECTED_FILE"
+
+		log "Unrejected: $filename (removed from ignore list)"
+		notify "Download Unrejected" "$filename can now be selected for approval"
+	else
+		log "No ignore file found at $REJECTED_FILE"
+	fi
+}
+
+# List rejected files
+list_rejected() {
+	log "Rejected Files (in ignore list):"
+	log "================================"
+	if [[ -f $REJECTED_FILE ]] && [[ -s $REJECTED_FILE ]]; then
+		nl -ba "$REJECTED_FILE"
+	else
+		log "No rejected files."
+	fi
+}
+
 trigger_sync() {
 	log "Triggering immediate sync..."
 	bash "$SYNC_SCRIPT" >>"$LOG_FILE" 2>&1 &
@@ -142,6 +283,8 @@ trigger_sync() {
 
 ACTION=""
 FETCH=false
+REJECT=false
+UNREJECT=false
 TARGET=""
 
 while [[ $# -gt 0 ]]; do
@@ -156,15 +299,42 @@ while [[ $# -gt 0 ]]; do
 			TARGET="$1"
 		fi
 		;;
+	--reject)
+		REJECT=true
+		shift
+		if [[ $# -gt 0 ]]; then
+			TARGET="$1"
+		fi
+		;;
+	--unreject)
+		UNREJECT=true
+		shift
+		if [[ $# -gt 0 ]]; then
+			TARGET="$1"
+		fi
+		;;
+	--list-rejected)
+		ACTION="list-rejected"
+		;;
 	--status)
 		ACTION="status"
 		;;
 	--help | -h)
-		echo "Usage: approve-download [--list] [--fetch] [--status] [<filename>]"
+		echo "Usage: approve-download [OPTIONS] [<filename>]"
+		echo ""
+		echo "Options:"
 		echo "  --list              List pending candidates"
+		echo "  --list-rejected     List rejected files (ignore list)"
 		echo "  --fetch             Approve and trigger immediate sync"
+		echo "  --reject <file>     Reject a pending candidate or filename"
+		echo "  --unreject <file>   Remove a file from reject list (allows re-selection)"
 		echo "  --status            Show counts: pending, approved, rejected"
 		echo "  <filename>          Approve candidate by filename"
+		echo ""
+		echo "Examples:"
+		echo "  approve-download --list"
+		echo '  approve-download --reject "Movie.mkv"'
+		echo '  approve-download "Movie.mkv"'
 		exit 0
 		;;
 	*)
@@ -178,6 +348,8 @@ done
 
 if [[ $ACTION == "list" ]]; then
 	list_pending
+elif [[ $ACTION == "list-rejected" ]]; then
+	list_rejected
 elif [[ $ACTION == "status" ]]; then
 	show_status
 elif [[ $FETCH == "true" && -z $TARGET ]]; then
@@ -187,6 +359,36 @@ elif [[ $FETCH == "true" && -z $TARGET ]]; then
 		approve_candidate "$candidate"
 	done
 	trigger_sync
+elif [[ $REJECT == "true" ]]; then
+	if [[ -n $TARGET ]]; then
+		# Try to reject by candidate file first (exact match)
+		if [[ -f "$PENDING_DIR/${TARGET}.candidate.json" ]]; then
+			reject_candidate "$PENDING_DIR/${TARGET}.candidate.json"
+		elif [[ -f "$PENDING_DIR/$TARGET" ]]; then
+			reject_candidate "$PENDING_DIR/$TARGET"
+		else
+			# Try to find candidate by matching filename content
+			found_candidate=$(find_candidate_by_filename "$TARGET")
+			if [[ -n $found_candidate ]]; then
+				reject_candidate "$found_candidate"
+			else
+				# Reject by filename (not yet a candidate)
+				reject_filename "$TARGET"
+			fi
+		fi
+	else
+		log "Error: No filename specified for --reject"
+		log "Usage: approve-download --reject <filename>"
+		exit 1
+	fi
+elif [[ $UNREJECT == "true" ]]; then
+	if [[ -n $TARGET ]]; then
+		unreject "$TARGET"
+	else
+		log "Error: No filename specified for --unreject"
+		log "Usage: approve-download --unreject <filename>"
+		exit 1
+	fi
 elif [[ -n $TARGET ]]; then
 	if [[ -f "$PENDING_DIR/${TARGET}.candidate.json" ]]; then
 		approve_candidate "$PENDING_DIR/${TARGET}.candidate.json"

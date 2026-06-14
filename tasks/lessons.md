@@ -372,3 +372,21 @@
 **Rule:** Gate 2 (security) blocks merge even when CodeScene is green. Before recommending human merge on a perf salvage, verify intent files did not drop path-traversal, size-limit, or auth helpers present on `main`.
 **Contrast:** Lesson 0ce (merge T1 security when CodeScene-only fail) — opposite direction; security wins over advisory green.
 **Detection cost:** Low — `gh pr diff` shows deletion of `read_file_safe` or `MAX_FILE_SIZE`.
+
+## Lesson 0cj: Duplicate same-day Bolt hoists — close the noisier branch (2026-06-12)
+
+**Pattern:** personal-config #1226 and #1227 both hoisted `_CATEGORIES` in `categorize_ready.py` on the same day. #1226 added `.jules/bolt.md` churn; #1227 was the cleaner intent-only diff with matching test updates.
+**Rule:** When two Bolt PRs target the same refactor, compare `changedFiles` and diff noise (session docs, `.jules/*`, scratch fixtures). Close the duplicate with a comment linking the winner; squash-merge the minimal diff. Do not merge both.
+**Detection cost:** Low — identical titles or overlapping `categorize_ready.py` / test file paths in inventory.
+
+## Lesson 0ck: Truncated automation common module blocks unrelated PR CI (2026-06-13)
+
+**Pattern:** personal-config `main` lost `DAILY_WORKFLOW_NAME` in `repository_automation_common.py`, causing `ImportError` in `test_repository_automation_tasks` and failing `Run All Tests` on unrelated Bolt/Palette PRs (#1234, #1235).
+**Rule:** When multiple green MERGEABLE PRs share the same failing test import, check `main` first for infra breakage before deferring each PR individually. Open or escalate a T0 infra-fix draft (#1231 pattern) before Phase 1 merge burst.
+**Detection cost:** Low — identical `ImportError` across PR branches with no overlapping changed files.
+
+## Lesson 0cl: Stale Seatek Bolt branches can delete merged tests (2026-06-13)
+
+**Pattern:** Seatek #278 and #282 were `DIRTY` but a full `git diff main..branch --stat` showed net deletion of six `tests/testthat/*` files merged on `main` since 2026-06-11.
+**Rule:** Before salvaging a `DIRTY` R perf PR, run `git diff main..branch --stat` on `tests/`. If net-negative on test files, close as stale — do not cherry-pick the branch wholesale.
+**Detection cost:** Low — one `git diff --stat` per deferred Seatek PR.
