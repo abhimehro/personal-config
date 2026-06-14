@@ -57,3 +57,38 @@
   3. Close or fix ctrld #881 Bolt list-comp change
   4. Phase 1: merge pc #1204 / esp #1068 once CodeQL completes
 - Cross-links: [Session report](tasks/pr-review-2026-06-10.md)
+
+## Run — 2026-06-13
+
+### Input tail
+- Source report/snapshot: `tasks/pr-review-2026-06-12.md` deferred tail + live GitHub re-fetch
+- PRs investigated: 16 across 6 repos (pc 5, ctrld 3, esp 2, sa 4, hg 1, sc 1)
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+| --- | ---: | --- | ---: | --- |
+| personal-config | 1230 | SALVAGE | 1237 | analytics_dashboard ARIA |
+| email-security-pipeline | 1096 | SALVAGE | 1107 | ConnectionConfig refactor |
+| email-security-pipeline | 1103 | SALVAGE | 1108 | media_analyzer parallel |
+| ctrld-sync | 886 | CLOSE-SUPERSEDED | 893 | emoji alignment duplicate |
+| Seatek_Analysis | 283 | CLOSE-SUPERSEDED | — | shell=False on main |
+| Seatek_Analysis | 278 | CLOSE-STALE | — | deletes merged tests |
+| Seatek_Analysis | 282 | CLOSE-STALE | — | broad conflict |
+| Seatek_Analysis | 261 | DEFER | — | Gate 2 security |
+
+- Salvage draft PRs opened: 3 (#1237, #1107, #1108)
+- Infra-fix draft PRs opened: 0 (existing #1231 flagged T0)
+- Originals closed as superseded/no-op: 8
+
+### Verification status
+- Blocking checks: pc main test import failure; hg #257 / sc #114 CodeScene
+- CodeScene remediation: posted `/cs-agent` on esp #1108
+
+### Handoff
+- Maintainer actions required:
+  1. **Merge pc #1231 first** (T0 infra-fix)
+  2. Review draft salvages #1237, #1107, #1108
+  3. Phase 1 merge ctrld #892/#893, pc #1234/#1235 after infra fix
+  4. Do not merge sa #261 without Gate 2 audit
+- Cross-links: [Session report](tasks/pr-review-2026-06-13.md)
