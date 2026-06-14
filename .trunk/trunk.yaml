@@ -13,6 +13,7 @@ runtimes:
 lint:
   disabled:
     - markdownlint
+    - prettier
   enabled:
     - grype@0.114.0
     - pinact@4.1.0
@@ -20,12 +21,12 @@ lint:
     - bandit@1.9.4
     - black@26.5.1
     - checkov@3.3.1
+    - deno@2.8.3
     - dotenv-linter@4.0.0
     - git-diff-check
     - hadolint@2.14.0
     - isort@8.0.1
     - osv-scanner@2.3.8
-    - prettier@3.8.4
     - ruff@0.15.17
     - shellcheck@0.11.0
     - shfmt@3.6.0
@@ -38,11 +39,11 @@ actions:
   disabled:
     - trufflehog-pre-commit
     - commitlint
-    - trunk-check-pre-push
-  enabled:
     - trunk-check-pre-commit
-    - trunk-announce
     - trunk-fmt-pre-commit
+  enabled:
+    - trunk-check-pre-push
+    - trunk-announce
     - trunk-upgrade-available
 plugins:
   sources:
