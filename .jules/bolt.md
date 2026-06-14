@@ -222,3 +222,8 @@
 
 **Learning:** When calculating the current date string `datetime.date.today().isoformat()` inside a loop or comprehension, Python repeatedly calls the method, generating a new object each time. This creates unnecessary CPU overhead when the output is a constant for the duration of the loop.
 **Action:** Always hoist method calls that generate static strings (like `today().isoformat()`) outside of tight loops to evaluate them once and reuse the value.
+
+## 2026-06-14 - [Avoid eager evaluation in `.get()` fallbacks]
+
+**Learning:** When using Python's `dict.get(key, default)` method, the `default` argument is evaluated eagerly before the method is called. If the fallback value is computationally expensive or allocates new objects (like `p["title"].lower()`), this evaluation happens on every iteration, negating any performance benefits of hoisting or memoization.
+**Action:** When a fallback value in a `.get()` lookup is expensive to compute, retrieve the value without a default (`value = p.get("key")`) and conditionally compute the fallback using an `if value is None:` block.
