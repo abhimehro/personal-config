@@ -52,6 +52,7 @@ import datetime as dt
 import hashlib
 import html
 import json
+import re
 import logging
 import os
 import sys
@@ -578,7 +579,13 @@ def html_ul(items: Iterable[str]) -> str:
 
 
 def html_section(title: str, body: str) -> str:
-    return f"<h3>{sanitize_text(title)}</h3>{body}"
+    sanitized_title = sanitize_text(title)
+    accessible_title = re.sub(
+        r'([\U0001f300-\U0001f5ff\U0001f900-\U0001f9ff\U0001f600-\U0001f64f\U0001f680-\U0001f6ff\u2600-\u26ff\u2700-\u27bf\U0001f1e6-\U0001f1ff\U0001f191-\U0001f251]+)',
+        r'<span aria-hidden="true">\1</span>',
+        sanitized_title
+    )
+    return f"<h3>{accessible_title}</h3>{body}"
 
 
 def html_subsection(title: str, body: str) -> str:

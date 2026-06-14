@@ -174,6 +174,11 @@ class TestHtmlHelpers(unittest.TestCase):
         assert "<script>" not in result
         assert "&lt;script&gt;" in result
 
+    def test_html_section_accessibility_emojis(self):
+        result = mb.html_section("🚀 Focus", "<p>body</p>")
+        assert "<h3><span aria-hidden=\"true\">🚀</span> Focus</h3>" in result
+        assert "<p>body</p>" in result
+
 
 # ============================================================
 # Date Helpers
