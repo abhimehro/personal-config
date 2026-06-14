@@ -390,3 +390,15 @@
 **Pattern:** Seatek #278 and #282 were `DIRTY` but a full `git diff main..branch --stat` showed net deletion of six `tests/testthat/*` files merged on `main` since 2026-06-11.
 **Rule:** Before salvaging a `DIRTY` R perf PR, run `git diff main..branch --stat` on `tests/`. If net-negative on test files, close as stale — do not cherry-pick the branch wholesale.
 **Detection cost:** Low — one `git diff --stat` per deferred Seatek PR.
+
+## Lesson 0cm: Duplicate T0 infra-fix drafts — keep newest (2026-06-14)
+
+**Pattern:** personal-config #1231 and #1240 both restored truncated `repository_automation_common.py` as draft infra-fix PRs opened a day apart.
+**Rule:** When multiple draft infra-fix PRs target the same broken `main` file, close the older draft and escalate the newest for human merge. Do not leave parallel T0 drafts open.
+**Detection cost:** Low — same title prefix and identical primary file path in inventory.
+
+## Lesson 0cn: Sibling Bolt merge makes follow-up DIRTY (2026-06-14)
+
+**Pattern:** ctrld #892 merged `_parse_and_cache_response` refactor; sibling #898 (Content-Type unroll) went `DIRTY` and picked up unrelated `repository_automation_common.py` diff noise.
+**Rule:** After a sibling Bolt PR merges, rebuild follow-up optimizations from current `main` with intent files only — do not rebase the original DIRTY branch.
+**Detection cost:** Low — `mergeStateStatus: DIRTY` on a PR whose title matches a recently merged sibling optimization.
