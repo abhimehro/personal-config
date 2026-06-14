@@ -1,88 +1,62 @@
-# PR Triage — 2026-06-12
+# PR Triage — 2026-06-13
 
-**Mode:** review-and-merge (Phase 1)  
+**Mode:** salvage-and-cleanup (Phase 2)  
 **Preflight:** PASS  
-**Input:** Live GitHub state + prior deferred tail from `tasks/pr-review-2026-06-11.md`
+**Input:** Live GitHub state + deferred tail from `tasks/pr-review-2026-06-12.md`
 
 ## Triage matrix
 
 | Disposition | Count | Action |
 | --- | ---: | --- |
-| MERGE | 14 | Squash-merged with branch delete |
-| CLOSE-DUPLICATE | 1 | #1226 superseded by #1227 |
-| CLOSE-SUPERSEDED | 1 | #1216 superseded by merged #1219 |
-| DEFER | 9 | Salvage / infra / CodeScene / benchmark |
-| ESCALATE | 0 | — |
+| SALVAGE (new draft PR) | 3 | Rebuilt from `main`, originals closed |
+| CLOSE-SUPERSEDED | 5 | #886→#893, #283 on main, #278/#282 stale |
+| CLOSE (original after salvage) | 3 | #1230, #1096, #1103 |
+| DEFER | 8 | Infra, CodeScene, Gate 2, Phase 1 clean |
+| ESCALATE T0 | 1 | personal-config #1231 infra-fix |
+
+## Infra detection
+
+**personal-config is infra-broken on `main`.** `repository_automation_common.py` is truncated — `DAILY_WORKFLOW_NAME` missing — causing `Run All Tests (shell + Python)` failures on unrelated PRs (#1234, #1235). Draft [#1231](https://github.com/abhimehro/personal-config/pull/1231) restores the file with green CI. **Merge #1231 before Phase 1 merges on personal-config.**
 
 ## Duplicate & overlap analysis
 
 | Group | Keeper | Action on others | Rationale |
 | --- | --- | --- | --- |
-| Bolt category hoist (personal-config) | **#1227** | Close #1226 | Same `_CATEGORIES` tuple refactor; #1227 omits `.jules/bolt.md` churn |
-| Session doc drafts (personal-config) | **#1219** (merged) | Close #1216 | Conflicting cursor-agent draft superseded by merged salvage report |
-| ESP alert perf | **#1081** | — | No file overlap with #1084 or #1082 |
-| Seatek `Updated_Seatek_Analysis.R` | **#296** then **#297** | Merge #296 first | Both touched analysis script; sequential merge succeeded |
-
-No other semantic duplicates detected.
+| ctrld CLI emoji alignment | **#893** | Closed #886 | Same `main.py` surface; #893 mergeable with benchmark green |
+| PC analytics ARIA | **#1237** (draft) | Closed #1230 | #1230 had 15+ unrelated files; salvage is intent-only |
+| Seatek shell=False | **main** | Closed #283 | `shell=False` already explicit on `main` |
+| Seatek R perf (#278/#282) | — | Closed both | Branches delete tests merged since 2026-06-11 |
 
 ## Per-PR notes
 
-### personal-config #1210 — MERGE
+### personal-config #1231 — ESCALATE T0
 
-Jules test: `FileNotFoundError` path in `parse_inventory._load_inventory_lines`. All gates green.
+Restores truncated `repository_automation_common.py`. All security gates green. Human merge required before #1234/#1235 can pass tests.
 
-### personal-config #1227 — MERGE (keeper)
+### personal-config #1237 — SALVAGE (draft)
 
-Bolt perf: hoist `_CATEGORIES` tuple in `categorize_ready.py`. Closed duplicate #1226.
+Salvages #1230 `aria-hidden` emoji spans in `analytics_dashboard.sh`. Awaiting human review.
 
-### personal-config #1225 — MERGE
+### personal-config #1235 / #1234 — DEFER
 
-Daily QA: six test-file lint/format fixes only. No production code.
+Bolt hoist and Palette morning-brief ARIA. CI failure is **infra on base**, not PR-specific. Re-triage after #1231 merges.
 
-### personal-config #1221 — MERGE
+### personal-config #1236 — DEFER
 
-Palette: `aria-hidden` on decorative emoji in media-server listings. Accessibility-only.
+Phase 1 session doc draft; `DIRTY`. Superseded by this salvage session report on branch `cursor-agent/pr-salvage-and-cleanup-2e02`.
 
-### personal-config #1216 — CLOSE-SUPERSEDED
+### ctrld-sync #893 / #892 — DEFER (Phase 1)
 
-Conflicting session-doc PR; #1219 already merged 2026-06-12.
+Both `MERGEABLE` with green functional CI. Route to Phase 1 review-and-merge — not salvage scope.
 
-### ctrld-sync #882 — DEFER
+### email-security-pipeline #1107 / #1108 — SALVAGE (draft)
 
-Palette UX fix only (+5/-1). Benchmark check still failing (shared infra issue from #881 era). Security gates green.
+Rebuilt from `main`. Posted `/cs-agent` on #1108. Human merge required.
 
-### email-security-pipeline #1081/#1084/#1082 — MERGE
+### Seatek_Analysis #261 — DEFER (Gate 2)
 
-- #1081: parallel external alert dispatch (salvages #1071)
-- #1084: remove `re.IGNORECASE` penalty; case-fold at search time
-- #1082: de-emphasize secondary terminal hints
+Prior salvage removed security controls (Lesson 0ci). Do not rebuild without preserving `read_file_safe` / `MAX_FILE_SIZE`.
 
-Merged in order: perf salvage → regex perf → Palette UI (no file overlap).
+### Hydrograph #257 / series_correction #114 — DEFER
 
-### email-security-pipeline #1075 — DEFER
-
-Conflicting Jules test PR for setup wizard. Route to Phase 2 salvage.
-
-### Seatek_Analysis #296/#297/#286/#284/#277 — MERGE
-
-Routine test additions and Bolt perf on disjoint or sequentially mergeable files. #296 merged before #297 (shared `Updated_Seatek_Analysis.R`).
-
-### Seatek_Analysis #283/#261/#282/#278/#276/#291 — DEFER
-
-- #283: T1 security (`shell=False`) — 15-file DIRTY PR; needs intent-file salvage v2
-- #261: prior perf salvage; Gate 2 risk (Lesson 0ci)
-- Remaining: conflict batch from main movement
-
-### series_correction #114 — DEFER
-
-CodeScene code health failing. Posted `/cs-agent skill:fix-code-health-degradations` before defer.
-
-### repoprompt-ce #2/#3 — MERGE
-
-Bolt DateFormatter reuse + Palette copy-button `aria-label`s. Bugbot-only CI (no macOS build gate in repo).
-
-## Security gate review
-
-- **Gate 2 pass:** All merged PRs — no secrets, no auth changes, no subprocess weakening
-- **Gate 2 block (deferred):** #283 (security intent, needs human-reviewed salvage), #261 (control removal risk)
-- **Substantive CI block:** #882 benchmark, #114 CodeScene
+CodeScene-only failure; cs-agent already posted. Human review after CodeScene remediation.
