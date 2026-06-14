@@ -10,6 +10,9 @@ This document lists all available fish shell commands for the media pipeline.
 | `alldebrid-sync-dry` |              | sync-alldebrid.sh --dry-run     | Preview what would be synced                     |
 | `ad-approve`         |              | approve-download                | Approve a pending Alldebrid download candidate   |
 | `ad-list`            |              | approve-download --list         | List pending download candidates                 |
+| `ad-reject`          |              | approve-download --reject       | **Reject** a pending candidate (permanent)        |
+| `ad-rejected`        |              | approve-download --list-rejected| List all rejected files                          |
+| `ad-unreject`        |              | approve-download --unreject     | **Unreject** a file (allows re-selection)        |
 | `ad-status`          |              | approve-download --status       | Show approval status (pending/approved/rejected) |
 | `ad-fetch`           |              | approve-download --fetch        | Approve all pending and trigger sync             |
 | `mmount`             |              | mount-media.sh                  | Mount media drives                               |
@@ -26,6 +29,66 @@ This document lists all available fish shell commands for the media pipeline.
 | `bulk-rename`        |              | bulk-rename-cloud.sh            | Bulk rename files in cloud storage               |
 | `approve-downloads`  |              | approve-downloads.sh            | **LEGACY**: Move files to permute_input          |
 | `list-downloads`     |              | approve-downloads.sh --list     | **LEGACY**: List files for permute               |
+
+---
+
+## Rejection Workflow (Permanent Denial)
+
+The system provides **permanent rejection** to ensure denied files are never re-queued.
+
+### How Rejection Works
+
+1. **Reject a pending candidate**: The filename is added to `~/CloudMedia/approval_needed/.alldebrid_ignore`
+2. **Reject by filename**: Any file (even not yet queued) can be added to the ignore list
+3. **Filtering**: The `sync-alldebrid.sh` script filters out all files in the ignore list before selection
+4. **Permanent**: Once in the ignore list, a file will **NEVER** be selected again, even if it appears in Alldebrid
+
+### Rejection Commands
+
+```fish
+# Reject a pending candidate (by candidate ID or filename)
+ad-reject "Movie.Name.2024.mkv"
+
+# List all rejected files
+ad-rejected
+
+# Unreject a file (allows it to be selected again)
+ad-unreject "Movie.Name.2024.mkv"
+
+# Reject multiple files at once
+ad-reject "Movie1.mkv"
+ad-reject "Movie2.mkv"
+ad-reject "Movie3.mkv"
+```
+
+### Answers to Your Specific Questions
+
+**Q: Are there commands/aliases for denying or rejecting downloads?**
+A: **Yes!** `ad-reject`, `ad-rejected`, and `ad-unreject`
+
+**Q: What happens when I deny a download candidate?**
+A: The filename is added to `.alldebrid_ignore`, the candidate file is removed from pending, and you get a notification.
+
+**Q: Does the workflow advance to the next item awaiting approval?**
+A: **Yes!** After rejecting, the script removes the candidate and the next sync will select a new candidate (from the remaining non-ignored files).
+
+**Q: Is the denied item recorded somewhere so it won't be presented for approval again?**
+A: **Yes!** All rejected files are stored in `~/CloudMedia/approval_needed/.alldebrid_ignore`. The `sync-alldebrid.sh` script filters these out before candidate selection (in the `IGNORE_FILE` filtering section).
+
+**Q: How do we prevent re-pulling, re-queuing, or reprocessing of denied videos?**
+A: The rejection is **permanent by design**:
+   - The python selector script (`select-best-alldebrid-candidate.py`) checks the ignore list before scoring candidates
+   - Any file matching the ignore list (by filename OR identity) is skipped during candidate selection
+   - Files that are too large (>15GB) are automatically added to the ignore list
+   - The ignore list persists across reboots and script runs
+
+### Important Notes
+
+- **Rejection is permanent** until you explicitly `ad-unreject` the file
+- **Identity-based matching**: The system also matches by "identity" (e.g., `euphoria-s02e05`) to catch files with slightly different names
+- **Auto-rejection**: Files over 15GB are automatically rejected to prevent system stress
+- **View rejected files**: Use `ad-rejected` or `cat ~/CloudMedia/approval_needed/.alldebrid_ignore`
+- **Unreject to retry**: If you change your mind, use `ad-unreject` to remove from the ignore list
 
 ---
 

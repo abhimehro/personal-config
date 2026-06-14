@@ -198,7 +198,13 @@ abbr -a nmcs nm-cd-status
 # ============================================
 # These commands manage downloading files from Alldebrid into the media pipeline.
 # The NEW pre-download approval system uses candidate files for safety.
-# Usage: alldebrid-sync -> approve-download -> files appear in approval_needed/
+# 
+# Rejection Workflow:
+#   - Rejected files are added to ~/.alldebrid_ignore and WILL NOT be re-queued
+#   - Use ad-reject to permanently reject a candidate
+#   - Use ad-unreject to allow a file to be selected again
+#   - Use ad-rejected to list all rejected files
+# Usage: alldebrid-sync -> ad-list -> ad-approve OR ad-reject
 
 abbr -a alldebrid-sync       "$NM_ROOT/media-streaming/scripts/sync-alldebrid.sh"
 abbr -a alldebrid-sync-dry   "$NM_ROOT/media-streaming/scripts/sync-alldebrid.sh --dry-run"
@@ -206,6 +212,9 @@ abbr -a ad-approve           "$NM_ROOT/media-streaming/scripts/approve-download"
 abbr -a ad-list              "$NM_ROOT/media-streaming/scripts/approve-download --list"
 abbr -a ad-status            "$NM_ROOT/media-streaming/scripts/approve-download --status"
 abbr -a ad-fetch             "$NM_ROOT/media-streaming/scripts/approve-download --fetch"
+abbr -a ad-reject            "$NM_ROOT/media-streaming/scripts/approve-download --reject"
+abbr -a ad-rejected          "$NM_ROOT/media-streaming/scripts/approve-download --list-rejected"
+abbr -a ad-unreject          "$NM_ROOT/media-streaming/scripts/approve-download --unreject"
 
 # ============================================
 # Media Pipeline - Processing Phase
