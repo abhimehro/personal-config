@@ -463,12 +463,12 @@ generate_performance_report() {
 </head>
 <body>
     <div class="header">
-        <h1>Performance Report</h1>
+        <h1><span aria-hidden="true">🚀</span> Performance Report</h1>
         <p>Generated: $(date)</p>
     </div>
     
     <div class="section">
-        <h2>System Information</h2>
+        <h2><span aria-hidden="true">💻</span> System Information</h2>
         <div class="metric">System: $system_info</div>
         <div class="metric">CPU: $cpu_info</div>
         <div class="metric">Memory: ${memory_info} GB</div>
@@ -476,8 +476,8 @@ generate_performance_report() {
     </div>
     
     <div class="section">
-        <h2>Current Performance Metrics</h2>
-        <table>
+        <h2><span aria-hidden="true">📊</span> Current Performance Metrics</h2>
+        <table aria-label="Performance Metrics">
             <tr><th>Metric</th><th>Value</th><th>Status</th></tr>
 EOF
 
@@ -504,7 +504,7 @@ EOF
     </div>
     
     <div class="section">
-        <h2>Optimization Recommendations</h2>
+        <h2><span aria-hidden="true">💡</span> Optimization Recommendations</h2>
         <ul>
 EOF
 
@@ -518,7 +518,7 @@ EOF
     </div>
     
     <div class="section">
-        <h2>Recent Optimizations</h2>
+        <h2><span aria-hidden="true">🔄</span> Recent Optimizations</h2>
         <p>Last optimization run: $(tail -1 "$PERFORMANCE_LOG" 2>/dev/null || echo "Never")</p>
     </div>
 </body>
