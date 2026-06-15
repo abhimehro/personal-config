@@ -136,6 +136,24 @@ LINEAR_LABEL_BONUSES: dict[str, int] = {
     "p1": 20,
 }
 
+LINEAR_LABEL_BONUSES_ITEMS = tuple(LINEAR_LABEL_BONUSES.items())
+LINEAR_PRIORITY_SCORES = {1: 80, 2: 60, 3: 30, 4: 10}
+
+CALENDAR_ADMIN_KEYWORDS = (
+    ("maintenance", 6),
+    ("cleanup", 6),
+    ("health check", 5),
+    ("report", 5),
+    ("review", 4),
+    ("admin", 4),
+    ("system", 3),
+    ("monitor", 3),
+    ("schedule", 3),
+    ("planning", 3),
+    ("homebrew", 3),
+    ("deals", 1),
+)
+
 HOROSCOPE_ENDPOINTS_TEMPLATE = [
     {
         "name": "horoscope-app-api.vercel.app",
@@ -677,15 +695,14 @@ def score_linear_issue(
         score += 20
 
     # Priority contribution
-    priority_scores = {1: 80, 2: 60, 3: 30, 4: 10}
-    score += priority_scores.get(priority, 0)
+    score += LINEAR_PRIORITY_SCORES.get(priority, 0)
 
     # State-type contribution
     score += LINEAR_STATE_WEIGHTS.get(state_type, 0)
 
     # Label bonuses
     for label in label_names:
-        for keyword, bonus in LINEAR_LABEL_BONUSES.items():
+        for keyword, bonus in LINEAR_LABEL_BONUSES_ITEMS:
             if keyword in label:
                 score += bonus
 
@@ -703,21 +720,7 @@ def score_linear_issue(
 
 def calendar_admin_score(title: str, description: str = "") -> int:
     text = f"{title} {description}".lower()
-    keyword_weights = {
-        "maintenance": 6,
-        "cleanup": 6,
-        "health check": 5,
-        "report": 5,
-        "review": 4,
-        "admin": 4,
-        "system": 3,
-        "monitor": 3,
-        "schedule": 3,
-        "planning": 3,
-        "homebrew": 3,
-        "deals": 1,
-    }
-    return sum(weight for kw, weight in keyword_weights.items() if kw in text)
+    return sum(weight for kw, weight in CALENDAR_ADMIN_KEYWORDS if kw in text)
 
 
 def build_focus_meta_parts(item: FocusItem, today_iso: str) -> list[str]:
