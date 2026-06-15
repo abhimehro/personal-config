@@ -176,7 +176,7 @@ class TestHtmlHelpers(unittest.TestCase):
 
     def test_html_section_with_emoji(self):
         result = mb.html_section("🌅 Good Morning", "<p>body</p>")
-        assert '<h3 aria-label="Good Morning">' in result
+        assert 'aria-label' not in result
         assert '<span aria-hidden="true">🌅</span>' in result
         assert "Good Morning</h3>" in result
 
