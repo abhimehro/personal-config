@@ -1,5 +1,10 @@
 # Lessons Learned
 
+## Lesson 0y: Post-#1240 Phase 1 merge cascade closes superseded siblings (2026-06-15)
+
+**Pattern:** After T0 infra-fix #1240 merged, a burst of personal-config Bolt/Palette PRs merged sequentially. Sibling PRs with overlapping intent (`#1248` inline emoji regex vs merged `#1242` `_render_heading()`; `#1251` `_PRIORITY_SCORES` vs merged `#1235` `LINEAR_PRIORITY_SCORES`) became CONFLICTING but no longer added unique value.
+**Rule:** After each merge burst, diff remaining open PRs against `main` — if the intent is already on `main` under a different constant/helper name, close as superseded instead of conflict-resolving. Reserve conflict resolution for PRs with net-new logic only.
+
 ## Lesson 0x: ESP overlapping-file cluster — merge lint → UI → perf → QA (2026-06-09)
 
 **Pattern:** Four email-security-pipeline PRs (#1054–#1060) touched overlapping files (`spam_analyzer.py`, `setup_wizard.py`, `test_ui_palette.py`) with distinct intents (lint, Palette colorize, URL Counter perf, Jules QA formatting).

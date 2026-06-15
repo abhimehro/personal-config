@@ -1,58 +1,31 @@
-# PR Inventory — 2026-06-14
+# PR Inventory — 2026-06-15
 
-**Preflight:** PASS (6/6 configured repos; repoprompt-ce checked ad hoc — 0 open PRs)  
-**Session:** cron `0 17 * * *` (Phase 2 salvage-and-cleanup)  
-**Branch:** `cursor-agent/pr-salvage-and-cleanup-e035`  
-**Config:** `tasks/pr-review-agent.config.yaml`
+**Session:** cron `0 13 * * *` | **Mode:** review-and-merge | **Preflight:** PASS (6/6)
 
-## Scope summary (session start → end)
+| Repo | PR | Author | Branch | Category | CI | Mergeable | Age | Disposition |
+| --- | ---: | --- | --- | --- | --- | --- | --- | --- |
+| personal-config | [1252](https://github.com/abhimehro/personal-config/pull/1252) | abhimehro | bolt/triage-hoist-date-* | PERFORMANCE | GREEN | YES | 0d | MERGE |
+| personal-config | [1251](https://github.com/abhimehro/personal-config/pull/1251) | abhimehro | bolt-optimization-hoist-dict-* | PERFORMANCE | GREEN | YES | 0d | MERGE |
+| personal-config | [1249](https://github.com/abhimehro/personal-config/pull/1249) | abhimehro | automation-workflow-updates-* | CI/INFRA | GREEN* | YES | 0d | ESCALATE |
+| personal-config | [1248](https://github.com/abhimehro/personal-config/pull/1248) | abhimehro | jules-* | UI | GREEN | YES | 1d | MERGE |
+| personal-config | [1243](https://github.com/abhimehro/personal-config/pull/1243) | abhimehro | bolt-hoist-title-lower-* | PERFORMANCE | GREEN | YES | 1d | MERGE |
+| personal-config | [1242](https://github.com/abhimehro/personal-config/pull/1242) | abhimehro | palette-a11y-emoji-* | UI | GREEN | YES | 2d | MERGE |
+| personal-config | [1235](https://github.com/abhimehro/personal-config/pull/1235) | abhimehro | bolt/performance-optimization-* | PERFORMANCE | GREEN | YES | 2d | MERGE |
+| personal-config | [1234](https://github.com/abhimehro/personal-config/pull/1234) | abhimehro | jules-* | UI | GREEN | YES | 3d | MERGE |
+| ctrld-sync | [901](https://github.com/abhimehro/ctrld-sync/pull/901) | abhimehro | jules-* | PERFORMANCE | CodeScene FAIL | YES | 0d | DEFER |
+| ctrld-sync | [899](https://github.com/abhimehro/ctrld-sync/pull/899) | abhimehro | cursor-agent/salvage-* | PERFORMANCE | ruff FAIL | YES | 1d | CLOSE-DUP |
+| email-security-pipeline | [1114](https://github.com/abhimehro/email-security-pipeline/pull/1114) | abhimehro | jules-* | PERFORMANCE | GREEN | YES | 0d | MERGE |
+| email-security-pipeline | [1112](https://github.com/abhimehro/email-security-pipeline/pull/1112) | abhimehro | palette-terminal-* | UI | GREEN | YES | 1d | MERGE |
+| email-security-pipeline | [1111](https://github.com/abhimehro/email-security-pipeline/pull/1111) | abhimehro | daily-qa-review-* | REFACTOR | GREEN | YES | 1d | MERGE |
+| Seatek_Analysis | [315](https://github.com/abhimehro/Seatek_Analysis/pull/315) | abhimehro | jules-qa-fixes-* | REFACTOR | GREEN | YES | 1d | MERGE |
+| Hydrograph_Versus_Seatek_Sensors_Project | [261](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/261) | abhimehro | jules-daily-qa-* | REFACTOR | GREEN | YES | 1d | MERGE |
+| Hydrograph_Versus_Seatek_Sensors_Project | [257](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/257) | abhimehro | test/app-process-data-* | FEATURE | CodeScene FAIL | YES | 2d | DEFER |
+| series_correction_project_updated | [121](https://github.com/abhimehro/series_correction_project_updated/pull/121) | abhimehro | bolt-perf-vectorize-* | PERFORMANCE | CodeScene FAIL | YES | 0d | DEFER |
+| series_correction_project_updated | [119](https://github.com/abhimehro/series_correction_project_updated/pull/119) | abhimehro | bolt-vectorize-outlier-* | PERFORMANCE | CodeScene FAIL | YES | 1d | CLOSE-SUPERSEDED |
+| repoprompt-ce | [9](https://github.com/abhimehro/repoprompt-ce/pull/9) | abhimehro | bolt-dateformatter-* | PERFORMANCE | Devin only | YES | 0d | MERGE |
+| repoprompt-ce | [8](https://github.com/abhimehro/repoprompt-ce/pull/8) | abhimehro | palette-ux-* | UI | Devin only | YES | 1d | MERGE |
+| repoprompt-ce | [7](https://github.com/abhimehro/repoprompt-ce/pull/7) | abhimehro | agentic-qa-review-* | REFACTOR | Devin only | YES | 1d | MERGE |
 
-| Repo | Open at start | Salvaged (draft) | Closed superseded/stale/duplicate | Deferred EOD | Open EOD |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| personal-config | 8 | 0 | 3 | 4 | 5 |
-| ctrld-sync | 1 | 1 | 1 | 0 | 1 |
-| email-security-pipeline | 4 | 0 | 1 | 3 | 3 |
-| Seatek_Analysis | 1 | 0 | 1 | 0 | 0 |
-| Hydrograph_Versus_Seatek_Sensors_Project | 1 | 0 | 0 | 1 | 1 |
-| series_correction_project_updated | 1 | 0 | 0 | 1 | 1 |
-| repoprompt-ce | 0 | 0 | 0 | 0 | 0 |
+\* #1249: required CI green; Devin Review advisory FAIL only. Escalated for CI/INFRA trust boundary (workflow action pin).
 
-**Conflicted at start:** 3 (`DIRTY` / `CONFLICTING`) — pc#1244, ctrld#898, sa#261  
-**Conflicted at end:** 0
-
-## Full inventory at session start
-
-| Repo | PR | Author | Merge | CI | Disposition |
-| --- | ---: | --- | --- | --- | --- |
-| personal-config | [#1244](https://github.com/abhimehro/personal-config/pull/1244) | app/cursor | DIRTY | green | **CLOSE** (session doc) |
-| personal-config | [#1245](https://github.com/abhimehro/personal-config/pull/1245) | abhimehro (Palette) | MERGEABLE | test fail (infra) | **CLOSE** (dup #1242) |
-| personal-config | [#1243](https://github.com/abhimehro/personal-config/pull/1243) | abhimehro (Bolt) | MERGEABLE | test fail (infra) | **DEFER** (Phase 1) |
-| personal-config | [#1242](https://github.com/abhimehro/personal-config/pull/1242) | abhimehro (Palette) | MERGEABLE | test fail (infra) | **DEFER** (Phase 1) |
-| personal-config | [#1240](https://github.com/abhimehro/personal-config/pull/1240) | app/cursor | MERGEABLE | green | **ESCALATE T0** (infra-fix) |
-| personal-config | [#1235](https://github.com/abhimehro/personal-config/pull/1235) | abhimehro (Bolt) | MERGEABLE | test fail (infra) | **DEFER** (Phase 1) |
-| personal-config | [#1234](https://github.com/abhimehro/personal-config/pull/1234) | abhimehro (Palette) | MERGEABLE | test fail (infra) | **DEFER** (Phase 1) |
-| personal-config | [#1231](https://github.com/abhimehro/personal-config/pull/1231) | app/cursor | MERGEABLE | green | **CLOSE** (dup #1240) |
-| ctrld-sync | [#898](https://github.com/abhimehro/ctrld-sync/pull/898) | abhimehro (Bolt) | DIRTY | CodeScene fail | **SALVAGE → #899** |
-| email-security-pipeline | [#1112](https://github.com/abhimehro/email-security-pipeline/pull/1112) | abhimehro (Palette) | MERGEABLE | green | **DEFER** (Phase 1) |
-| email-security-pipeline | [#1111](https://github.com/abhimehro/email-security-pipeline/pull/1111) | abhimehro (Jules QA) | CLEAN | green | **DEFER** (Phase 1) |
-| email-security-pipeline | [#1109](https://github.com/abhimehro/email-security-pipeline/pull/1109) | abhimehro (Palette) | CLEAN | green | **CLOSE** (dup #1112) |
-| email-security-pipeline | [#1107](https://github.com/abhimehro/email-security-pipeline/pull/1107) | abhimehro (salvage) | MERGEABLE | green | **DEFER** (human merge) |
-| Seatek_Analysis | [#261](https://github.com/abhimehro/Seatek_Analysis/pull/261) | abhimehro (salvage) | DIRTY | green | **CLOSE** (Gate 2) |
-| Hydrograph_Versus_Seatek_Sensors_Project | [#257](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/257) | abhimehro (Jules) | MERGEABLE | CodeScene fail | **DEFER** |
-| series_correction_project_updated | [#119](https://github.com/abhimehro/series_correction_project_updated/pull/119) | abhimehro (Bolt) | MERGEABLE | CodeScene fail | **DEFER** |
-
-## Prior tail reconciliation (from 2026-06-13)
-
-| PR | Prior status | Current outcome |
-| --- | --- | --- |
-| pc #1237 | draft salvage | **CLOSED** (dup #1242) |
-| pc #1236 | DEFER session doc | **CLOSED** |
-| ctrld #892, #893 | Phase 1 merge | **#892 MERGED**; #893 closed |
-| esp #1108 | draft salvage | **MERGED** |
-| sc #114 | DEFER CodeScene | **CLOSED**; superseded by #119 |
-
-## New salvage PR opened this session
-
-| Repo | Old PR | New draft PR | Notes |
-| --- | ---: | ---: | --- |
-| ctrld-sync | #898 | [#899](https://github.com/abhimehro/ctrld-sync/pull/899) | Content-Type `any()` unroll on post-#892 `main` |
+**Prior session note:** T0 infra-fix [#1240](https://github.com/abhimehro/personal-config/pull/1240) merged 2026-06-14 — `Run All Tests` gate unblocked.
