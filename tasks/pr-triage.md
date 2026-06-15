@@ -1,58 +1,61 @@
-# PR Triage — 2026-06-14
+# PR Triage — 2026-06-15
 
 **Mode:** salvage-and-cleanup (Phase 2)  
 **Preflight:** PASS  
-**Input:** Live GitHub state + deferred tail from `tasks/pr-review-2026-06-13.md`
+**Input:** Live GitHub state + deferred tail from `tasks/pr-review-2026-06-14.md`
 
 ## Triage matrix
 
 | Disposition | Count | Action |
 | --- | ---: | --- |
-| SALVAGE (new draft PR) | 1 | ctrld #898 → #899 |
-| CLOSE-SUPERSEDED / DUPLICATE | 5 | #1231→#1240, #1245→#1242, #1109→#1112, #1244 session doc |
-| CLOSE (Gate 2 security) | 1 | Seatek #261 |
-| DEFER (Phase 1 / human merge) | 9 | See remainder below |
-| ESCALATE T0 | 1 | personal-config #1240 infra-fix |
+| SALVAGE (new draft PR) | 1 | hg #257 → #262 |
+| CLOSE-SUPERSEDED / DUPLICATE | 1 | hg #257 (DIRTY + agent artifact noise) |
+| DEFER (Phase 1 / human merge) | 7 | See remainder below |
+| ESCALATE T0 | 0 | — (pc #1240 merged since prior session) |
 
 ## Infra detection
 
-**personal-config `main` is still infra-broken.** `repository_automation_common.py` lacks `from typing import Any`, causing `NameError` on unrelated PR test runs (#1243, #1245, #1234, #1235). Draft [#1240](https://github.com/abhimehro/personal-config/pull/1240) restores the module with green security CI. Closed duplicate [#1231](https://github.com/abhimehro/personal-config/pull/1231). **Human merge #1240 before Phase 1 burst.**
+**No whole-repo infra breakage detected.** personal-config `main` is healthy after #1240 merge; prior `NameError: Any` cascade resolved.
 
 ## Duplicate & overlap analysis
 
-| Group | Keeper | Closed | Rationale |
+| Group | Keeper | Closed / Notes | Rationale |
 | --- | --- | --- | --- |
-| PC infra-fix drafts | **#1240** | #1231 | Same restore intent; #1240 newer with cs-agent remediation |
-| PC analytics ARIA | **#1242** | #1245, #1237 (prior) | #1242 is superset (dashboard + infuse + tests) |
-| ESP terminal color reset | **#1112** | #1109 | Same files; #1112 newer |
-| ctrld Content-Type unroll | **#899** (salvage) | #898 | #898 DIRTY after #892 merge |
+| ctrld Content-Type unroll | **#901** | #899 closed 2026-06-15 | #899 salvage superseded by live Bolt branch |
+| sc vectorize perf | **#121** | #119 closed 2026-06-15 | Same Bolt intent; #121 is successor |
+| pc ARIA headings | **#1254** | — (not duplicate) | Intentional correction: removes redundant `aria-label` added by merged #1242 |
+| hg Application.process_data tests | **#262** (salvage) | #257 | Original mixed tests with trunk/tasks agent files |
 
 ## Per-PR notes
 
-### personal-config #1240 — ESCALATE T0
+### Hydrograph #262 — SALVAGE (draft)
 
-Single infra-fix draft after closing #1231. All security gates green. Unblocks `Run All Tests` on Bolt/Palette PRs once merged.
+Rebuilt from #257 with **only** `tests/test_app.py` on current `main`. Local `pytest tests/test_app.py` — 13 passed. Awaiting CodeScene on clean diff.
 
-### ctrld-sync #899 — SALVAGE (draft)
+### personal-config #1254 — DEFER (Phase 1)
 
-Rebuilt Content-Type unroll from #898 on current `main`. Local `uv run pytest` — 341 passed. `/cs-agent` posted; awaiting CodeScene.
+Removes redundant `aria-label` on emoji headings (follow-up to merged #1242). All functional + CodeScene checks green.
 
-### Seatek_Analysis #261 — CLOSE (Gate 2)
+### personal-config #1249 — DEFER
 
-`DIRTY` and would delete `read_file_safe` / `MAX_FILE_SIZE` vs current `main`. Lesson 0ci applies — do not salvage without preserving security controls.
+Workflow automation pin bump (`refactoring-agent.yml` → `v1.0.1`). Security-gated; draft-style automation PR.
 
-### email-security-pipeline #1107 — DEFER
+### personal-config #1253 — DEFER
 
-Prior salvage from 2026-06-13; all functional CI green. Awaiting human merge.
+Phase 1 session doc draft from morning cron. Coexists with this salvage session artifacts on agent branch.
 
-### email-security-pipeline #1111 / #1112 — DEFER (Phase 1)
+### ctrld-sync #901 — DEFER
 
-Both CLEAN/UNSTABLE with green pytest/bandit. #1111 is broad Jules QA formatting; #1112 is focused Palette terminal reset.
+Bolt Content-Type unroll. Functional CI green; CodeScene Complex Conditional advisory fail. `/cs-agent` already posted.
 
-### Hydrograph #257 / series_correction #119 — DEFER
+### ctrld-sync #902 — DEFER (Phase 1)
 
-CodeScene-only failures; `/cs-agent` already posted on both. #119 replaced closed #114.
+Palette emoji alignment. CLEAN with all checks green.
 
-### personal-config #1234 / #1235 / #1242 / #1243 — DEFER (Phase 1)
+### email-security-pipeline #1115 — DEFER (Phase 1)
 
-MERGEABLE but `Run All Tests` fails on truncated `main` base — not PR-specific. Re-triage after #1240 merges.
+Palette terminal hint de-emphasis. CLEAN with all checks green.
+
+### series_correction #121 — DEFER
+
+Bolt vectorize Z-score/jump detection (successor to closed #119). CodeScene hotspot decline; `/cs-agent` posted.
