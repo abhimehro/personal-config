@@ -14,7 +14,7 @@ from detect_duplicates import (
     _generate_ready_section,
 )
 
-from detect_duplicates import _extract_duplicates_from_groups, _group_prs_by_files
+from detect_duplicates import _group_prs_by_files
 
 class TestDetectDuplicates(unittest.TestCase):
     def test_extract_duplicates_from_groups_multiple_prs(self):
