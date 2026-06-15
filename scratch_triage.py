@@ -184,8 +184,11 @@ if __name__ == "__main__":
     closed = []
     escalated = []
 
+    # ⚡ Bolt Optimization: Hoisted datetime.date.today().isoformat() out of formatting blocks to avoid redundant parsing overhead
+    today_iso = datetime.date.today().isoformat()
+
     triage_md = [
-        f"# PR triage — backlog cleanup test ({datetime.date.today().isoformat()})\n",
+        f"# PR triage — backlog cleanup test ({today_iso})\n",
         "**Policy:** squash merge, stale_days 30, auto-fix enabled, mode review-and-merge. **No force-push.**\n",
         "## Duplicate / supersede groups\n",
         "| Keep (canonical) | Close as duplicate / superseded | Rationale |",
@@ -231,7 +234,7 @@ if __name__ == "__main__":
 
     # Session Report
     report_md = [
-        f"\n## Run — {datetime.date.today().isoformat()} (backlog cleanup E2E, review-and-merge)\n",
+        f"\n## Run — {today_iso} (backlog cleanup E2E, review-and-merge)\n",
         "### Repos processed\n",
     ]
     for i, r in enumerate(repos, 1):

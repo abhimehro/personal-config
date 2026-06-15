@@ -222,3 +222,7 @@
 
 **Learning:** When calculating the current date string `datetime.date.today().isoformat()` inside a loop or comprehension, Python repeatedly calls the method, generating a new object each time. This creates unnecessary CPU overhead when the output is a constant for the duration of the loop.
 **Action:** Always hoist method calls that generate static strings (like `today().isoformat()`) outside of tight loops to evaluate them once and reuse the value.
+## 2026-11-20 - [Avoid redundant datetime.date.today().isoformat() parsing overhead]
+
+**Learning:** When calculating the current date string `datetime.date.today().isoformat()` inside multiple string formats or loops, Python repeatedly calls the method, generating a new object and formatting string each time. This creates unnecessary CPU overhead when the output is a constant for the duration of the script.
+**Action:** Always hoist method calls that generate static strings (like `today().isoformat()`) outside of multiple usage sites to evaluate them once and reuse the cached string value.
