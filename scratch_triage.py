@@ -31,7 +31,10 @@ def _find_matching_prs(all_prs, repo, title_keywords):
     for p in all_prs:
         if p["repo"] != repo:
             continue
-        if _contains_all_keywords(p["title"].lower(), lower_kws):
+        title_lower = p.get("title_lower")
+        if title_lower is None:
+            title_lower = p["title"].lower()
+        if _contains_all_keywords(title_lower, lower_kws):
             matches.append(p)
     return matches
 
@@ -127,6 +130,8 @@ def _fetch_repo_prs(repo):
             # ⚡ Bolt Optimization: Use rpartition() over split() to avoid intermediate list allocation overhead
             pr["repo"] = repo.rpartition("/")[2]
             pr["full_repo"] = repo
+            # ⚡ Bolt Optimization: Hoist title lowering out of filtering loops to prevent redundant C-level string allocations
+            pr["title_lower"] = pr["title"].lower()
             repo_prs.append(pr)
     return repo_prs
 
