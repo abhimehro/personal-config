@@ -47,6 +47,7 @@ Cache control:
 
 from __future__ import annotations
 
+import re
 import concurrent.futures
 import datetime as dt
 import hashlib
@@ -134,6 +135,24 @@ LINEAR_LABEL_BONUSES: dict[str, int] = {
     "p0": 40,
     "p1": 20,
 }
+
+LINEAR_LABEL_BONUSES_ITEMS = tuple(LINEAR_LABEL_BONUSES.items())
+LINEAR_PRIORITY_SCORES = {1: 80, 2: 60, 3: 30, 4: 10}
+
+CALENDAR_ADMIN_KEYWORDS = (
+    ("maintenance", 6),
+    ("cleanup", 6),
+    ("health check", 5),
+    ("report", 5),
+    ("review", 4),
+    ("admin", 4),
+    ("system", 3),
+    ("monitor", 3),
+    ("schedule", 3),
+    ("planning", 3),
+    ("homebrew", 3),
+    ("deals", 1),
+)
 
 HOROSCOPE_ENDPOINTS_TEMPLATE = [
     {
@@ -577,12 +596,28 @@ def html_ul(items: Iterable[str]) -> str:
     return f"<ul>{''.join(items)}</ul>"
 
 
+def _render_heading(level: int, title: str) -> str:
+    safe_title = sanitize_text(title)
+
+    # Safely target emojis specifically by checking unicode ranges where emojis reside
+    # rather than all non-ASCII characters. This includes Emoticons, Misc Symbols,
+    # Dingbats, and the large Supplementary Multilingual Plane blocks.
+    emoji_pattern = re.compile(r"^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$")
+    match = emoji_pattern.match(safe_title)
+    if match:
+        icon = match.group(1)
+        clean_title = match.group(2)
+        return f'<h{level} aria-label="{clean_title}"><span aria-hidden="true">{icon}</span> {clean_title}</h{level}>'
+
+    return f"<h{level}>{safe_title}</h{level}>"
+
+
 def html_section(title: str, body: str) -> str:
-    return f"<h3>{sanitize_text(title)}</h3>{body}"
+    return f"{_render_heading(3, title)}{body}"
 
 
 def html_subsection(title: str, body: str) -> str:
-    return f"<h4>{sanitize_text(title)}</h4>{body}"
+    return f"{_render_heading(4, title)}{body}"
 
 
 # ============================================================
@@ -660,15 +695,14 @@ def score_linear_issue(
         score += 20
 
     # Priority contribution
-    priority_scores = {1: 80, 2: 60, 3: 30, 4: 10}
-    score += priority_scores.get(priority, 0)
+    score += LINEAR_PRIORITY_SCORES.get(priority, 0)
 
     # State-type contribution
     score += LINEAR_STATE_WEIGHTS.get(state_type, 0)
 
     # Label bonuses
     for label in label_names:
-        for keyword, bonus in LINEAR_LABEL_BONUSES.items():
+        for keyword, bonus in LINEAR_LABEL_BONUSES_ITEMS:
             if keyword in label:
                 score += bonus
 
@@ -686,21 +720,7 @@ def score_linear_issue(
 
 def calendar_admin_score(title: str, description: str = "") -> int:
     text = f"{title} {description}".lower()
-    keyword_weights = {
-        "maintenance": 6,
-        "cleanup": 6,
-        "health check": 5,
-        "report": 5,
-        "review": 4,
-        "admin": 4,
-        "system": 3,
-        "monitor": 3,
-        "schedule": 3,
-        "planning": 3,
-        "homebrew": 3,
-        "deals": 1,
-    }
-    return sum(weight for kw, weight in keyword_weights.items() if kw in text)
+    return sum(weight for kw, weight in CALENDAR_ADMIN_KEYWORDS if kw in text)
 
 
 def build_focus_meta_parts(item: FocusItem, today_iso: str) -> list[str]:

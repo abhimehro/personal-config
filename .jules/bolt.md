@@ -227,3 +227,7 @@
 
 **Learning:** When using Python's `dict.get(key, default)` method, the `default` argument is evaluated eagerly before the method is called. If the fallback value is computationally expensive or allocates new objects (like `p["title"].lower()`), this evaluation happens on every iteration, negating any performance benefits of hoisting or memoization.
 **Action:** When a fallback value in a `.get()` lookup is expensive to compute, retrieve the value without a default (`value = p.get("key")`) and conditionally compute the fallback using an `if value is None:` block.
+
+## 2026-06-13 - [Hoist dictionary and tuple instantiation from hot execution paths]
+**Learning:** Instantiating dictionaries or casting `dict.items()` to a tuple inside a hot function (like one used for scoring items iteratively) creates significant allocation and iterator overhead for each call.
+**Action:** Always hoist static lookup dictionaries and tuple conversions of dictionaries to the global/module scope. Accessing a global constant is significantly faster than re-evaluating the dictionary literal or executing `dict.items()` on every invocation.
