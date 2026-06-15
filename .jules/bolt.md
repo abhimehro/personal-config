@@ -222,3 +222,7 @@
 
 **Learning:** When calculating the current date string `datetime.date.today().isoformat()` inside a loop or comprehension, Python repeatedly calls the method, generating a new object each time. This creates unnecessary CPU overhead when the output is a constant for the duration of the loop.
 **Action:** Always hoist method calls that generate static strings (like `today().isoformat()`) outside of tight loops to evaluate them once and reuse the value.
+
+## 2024-06-13 - [Hoist dictionary and tuple instantiation from hot execution paths]
+**Learning:** Instantiating dictionaries or casting `dict.items()` to a tuple inside a hot function (like one used for scoring items iteratively) creates significant allocation and iterator overhead for each call.
+**Action:** Always hoist static lookup dictionaries and tuple conversions of dictionaries to the global/module scope. Accessing a global constant is significantly faster than re-evaluating the dictionary literal or executing `dict.items()` on every invocation.
