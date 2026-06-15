@@ -47,6 +47,7 @@ Cache control:
 
 from __future__ import annotations
 
+import re
 import concurrent.futures
 import datetime as dt
 import hashlib
@@ -577,12 +578,28 @@ def html_ul(items: Iterable[str]) -> str:
     return f"<ul>{''.join(items)}</ul>"
 
 
+def _render_heading(level: int, title: str) -> str:
+    safe_title = sanitize_text(title)
+
+    # Safely target emojis specifically by checking unicode ranges where emojis reside
+    # rather than all non-ASCII characters. This includes Emoticons, Misc Symbols,
+    # Dingbats, and the large Supplementary Multilingual Plane blocks.
+    emoji_pattern = re.compile(r"^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$")
+    match = emoji_pattern.match(safe_title)
+    if match:
+        icon = match.group(1)
+        clean_title = match.group(2)
+        return f'<h{level} aria-label="{clean_title}"><span aria-hidden="true">{icon}</span> {clean_title}</h{level}>'
+
+    return f"<h{level}>{safe_title}</h{level}>"
+
+
 def html_section(title: str, body: str) -> str:
-    return f"<h3>{sanitize_text(title)}</h3>{body}"
+    return f"{_render_heading(3, title)}{body}"
 
 
 def html_subsection(title: str, body: str) -> str:
-    return f"<h4>{sanitize_text(title)}</h4>{body}"
+    return f"{_render_heading(4, title)}{body}"
 
 
 # ============================================================
