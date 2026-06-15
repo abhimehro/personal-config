@@ -125,6 +125,8 @@ LINEAR_STATE_WEIGHTS: dict[str, int] = {
     "triage": 5,
 }
 
+_PRIORITY_SCORES: dict[int, int] = {1: 80, 2: 60, 3: 30, 4: 10}
+
 # Linear label bonuses
 LINEAR_LABEL_BONUSES: dict[str, int] = {
     "bug": 25,
@@ -660,8 +662,8 @@ def score_linear_issue(
         score += 20
 
     # Priority contribution
-    priority_scores = {1: 80, 2: 60, 3: 30, 4: 10}
-    score += priority_scores.get(priority, 0)
+    # ⚡ Bolt Optimization: Hoisted priority_scores to module level constant to avoid dictionary allocation overhead on every function call
+    score += _PRIORITY_SCORES.get(priority, 0)
 
     # State-type contribution
     score += LINEAR_STATE_WEIGHTS.get(state_type, 0)

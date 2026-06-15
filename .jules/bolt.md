@@ -222,3 +222,7 @@
 
 **Learning:** When calculating the current date string `datetime.date.today().isoformat()` inside a loop or comprehension, Python repeatedly calls the method, generating a new object each time. This creates unnecessary CPU overhead when the output is a constant for the duration of the loop.
 **Action:** Always hoist method calls that generate static strings (like `today().isoformat()`) outside of tight loops to evaluate them once and reuse the value.
+
+## 2026-06-14 - [Avoid Redundant Dictionary Allocations]
+**Learning:** Python allocates a new dictionary every time a dictionary literal is evaluated inside a function. This creates unnecessary C-level object allocations, memory spikes, and garbage collection pauses when the function is called frequently.
+**Action:** Always hoist static configuration dictionaries and mappings out of functions and define them as module-level constants (e.g., `_PRIORITY_SCORES`).
