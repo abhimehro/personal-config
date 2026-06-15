@@ -74,7 +74,7 @@ jobs:
 
       # Pin bc0d8b91: fixes spurious skill:github-pr-comment prepend in earlier tags.
       # trunk-ignore(pinact/parse-error)
-      - uses: codescene-oss/pr-refactoring-agent@bc0d8b91c0a1a88154fb1dfb82124f8f43733d65 # untagged-fix-commit
+      - uses: codescene-oss/pr-refactoring-agent@v1.0.1 # untagged-fix-commit
         env:
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
