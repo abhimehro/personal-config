@@ -1,5 +1,10 @@
 # Lessons Learned
 
+## Lesson 0y: ctrld journal PRs conflict after Bolt/Sentinel burst (2026-06-16)
+
+**Pattern:** After squash-merging ctrld #905, #906, and #902 on the same day, documentation-only #904 (`bolt journal` rule) and performance #901 flipped to **DIRTY** even though both were green at session start.
+**Rule:** Merge journal/docs-only Bolt PRs **before** or **immediately rebase** after a sibling performance merge burst on `main.py`. Defer with a comment rather than force-push; journal content is low-risk to recreate.
+
 ## Lesson 0x: ESP overlapping-file cluster — merge lint → UI → perf → QA (2026-06-09)
 
 **Pattern:** Four email-security-pipeline PRs (#1054–#1060) touched overlapping files (`spam_analyzer.py`, `setup_wizard.py`, `test_ui_palette.py`) with distinct intents (lint, Palette colorize, URL Counter perf, Jules QA formatting).
@@ -403,8 +408,8 @@
 **Rule:** After a sibling Bolt PR merges, rebuild follow-up optimizations from current `main` with intent files only — do not rebase the original DIRTY branch.
 **Detection cost:** Low — `mergeStateStatus: DIRTY` on a PR whose title matches a recently merged sibling optimization.
 
-## Lesson 0co: DIRTY test PRs may bundle agent artifacts — salvage intent files only (2026-06-15)
+## Lesson 0cp: Combine DIRTY code + journal salvage; drop duplicate journal entries (2026-06-16)
 
-**Pattern:** Hydrograph #257 was `DIRTY` after `main` advanced (#261 flake8, trunk config). The branch mixed valuable `tests/test_app.py` coverage with `tasks/lessons.md`, `tasks/todo.md`, and `.trunk/trunk.yaml` churn from agent sessions.
-**Rule:** On salvage of a deferred test PR, diff against `main` and cherry-pick **only** production/test intent paths. Exclude `tasks/*`, session docs, and unrelated config churn unless the PR's stated purpose is config-only.
-**Detection cost:** Low — `gh pr diff --name-only` shows `tasks/` or `.trunk/` alongside `tests/` on a test-titled PR.
+**Pattern:** ctrld #901 (main.py refactor) and #904 (anti-micro journal) both went `DIRTY` after the same merge burst (#905/#906/#902). #901's journal entry duplicated content already on `main` from an earlier merge.
+**Rule:** When salvaging sibling DIRTY PRs from the same burst, open one draft branch from current `main`: take production code from the code PR, append-only journal from the doc PR, and skip journal lines already present on `main`.
+**Detection cost:** Low — two open PRs on the same repo with overlapping `.jules/bolt.md` paths and `DIRTY` status after a burst merge.
