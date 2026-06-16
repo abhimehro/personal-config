@@ -607,7 +607,7 @@ def _render_heading(level: int, title: str) -> str:
     if match:
         icon = match.group(1)
         clean_title = match.group(2)
-        return f'<h{level} aria-label="{clean_title}"><span aria-hidden="true">{icon}</span> {clean_title}</h{level}>'
+        return f'<h{level}><span aria-hidden="true">{icon}</span> {clean_title}</h{level}>'
 
     return f"<h{level}>{safe_title}</h{level}>"
 
