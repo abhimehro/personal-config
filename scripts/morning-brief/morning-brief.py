@@ -47,7 +47,6 @@ Cache control:
 
 from __future__ import annotations
 
-import re
 import concurrent.futures
 import datetime as dt
 import hashlib
@@ -55,6 +54,7 @@ import html
 import json
 import logging
 import os
+import re
 import sys
 import tempfile
 import time
@@ -602,7 +602,9 @@ def _render_heading(level: int, title: str) -> str:
     # Safely target emojis specifically by checking unicode ranges where emojis reside
     # rather than all non-ASCII characters. This includes Emoticons, Misc Symbols,
     # Dingbats, and the large Supplementary Multilingual Plane blocks.
-    emoji_pattern = re.compile(r"^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$")
+    emoji_pattern = re.compile(
+        r"^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$"
+    )
     match = emoji_pattern.match(safe_title)
     if match:
         icon = match.group(1)
@@ -679,11 +681,14 @@ def score_linear_issue(
     """
     priority = issue.get("priority") or 0
     due_date = issue.get("dueDate") or ""
-    state_type = (issue.get("state", {}).get("type") or "").lower().replace("_", "")
+    _state_type = issue.get("state", {}).get("type")
+    state_type = _state_type.lower().replace("_", "") if _state_type is not None else ""
     labels_raw = issue.get("labels", {}).get("nodes", [])
-    label_names = [
-        (lbl.get("name") or "").lower() for lbl in labels_raw if isinstance(lbl, dict)
-    ]
+    label_names = []
+    for lbl in labels_raw:
+        if isinstance(lbl, dict):
+            _name = lbl.get("name")
+            label_names.append(_name.lower() if _name is not None else "")
     updated_at = issue.get("updatedAt") or ""
 
     score = 0
@@ -946,7 +951,8 @@ def fetch_linear_focus_items(
         items: list[FocusItem] = []
         for issue in nodes:
             state = issue.get("state", {})
-            state_type = (state.get("type") or "").lower()
+            _state_type = state.get("type")
+            state_type = _state_type.lower() if _state_type is not None else ""
             if state_type in {"completed", "canceled", "cancelled"}:
                 continue
 
@@ -1032,7 +1038,8 @@ def fetch_linear_queue_snapshot(
         seen_notifications: set[str] = set()
 
         for node in unread_nodes:
-            category = (node.get("category") or "").lower()
+            _category = node.get("category")
+            category = _category.lower() if _category is not None else ""
             title = node.get("title") or "Untitled notification"
             subtitle = truncate_text(node.get("subtitle") or "", 140)
             url = node.get("inboxUrl") or node.get("url") or "#"
@@ -1221,7 +1228,9 @@ def fetch_podcast_section(llm: PerplexityClient, *, limit: int = 3) -> SectionRe
                 "llm_summary": summary_,
             }
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=min(limit, 5)) as executor:
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=min(limit, 5)
+        ) as executor:
             processed_entries = list(executor.map(process_entry, feed.entries[:limit]))
 
         for entry_data in processed_entries:
