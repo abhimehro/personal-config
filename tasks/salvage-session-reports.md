@@ -6,6 +6,26 @@
 
 ## Entry template
 
+## Run — 2026-06-15
+
+### Input tail
+- Source report/snapshot: `tasks/pr-review-2026-06-14.md`
+- PRs investigated: 9 across 7 repos (1 DIRTY at start: hg#257)
+
+### Outcomes
+- Salvage draft PRs opened: Hydrograph [#262](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/262) (from #257)
+- Infra-fix draft PRs opened: 0
+- Originals closed as superseded/no-op: hg#257
+
+### Verification status
+- Blocking checks: none on `main` (pc #1240 merged since prior session)
+- Local verify: `pytest tests/test_app.py` — 13 passed on salvage branch
+- CodeScene remediation: hg#257 had prior `/cs-agent`; #262 awaiting fresh CodeScene run
+
+### Handoff
+- Maintainer actions required: review hg#262 draft; Phase 1 on pc#1254/#1249, ctrld#902, esp#1115; CodeScene tail on ctrld#901, sc#121
+- Cross-links: see `tasks/pr-review-2026-06-15.md`
+
 ## Run — 2026-06-14
 
 ### Input tail
