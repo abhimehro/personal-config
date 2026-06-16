@@ -197,9 +197,9 @@ kill_lingering_for_label() {
     [[ -z "$prog_args" ]] && return 0
     while IFS= read -r script; do
         [[ -n "$script" ]] || continue
-        if pgrep -fl "$script" >/dev/null 2>&1; then
+        if pgrep -fl -- "$script" >/dev/null 2>&1; then
             dbg "killing lingering processes for $script"
-            pkill -f "$script" 2>/dev/null || true
+            pkill -f -- "$script" 2>/dev/null || true
         fi
     done <<< "$prog_args"
     return 0
