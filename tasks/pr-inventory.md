@@ -1,58 +1,82 @@
-# PR Inventory — 2026-06-14
+# PR Inventory — 2026-06-16
 
-**Preflight:** PASS (6/6 configured repos; repoprompt-ce checked ad hoc — 0 open PRs)  
-**Session:** cron `0 17 * * *` (Phase 2 salvage-and-cleanup)  
-**Branch:** `cursor-agent/pr-salvage-and-cleanup-e035`  
+**Preflight:** PASS (6/6 configured repos; repoprompt-ce checked ad hoc)  
+**Session:** cron `0 13 * * *` (review-and-merge)  
+**Branch:** `cursor-agent/automated-pr-workflow-fde6`  
 **Config:** `tasks/pr-review-agent.config.yaml`
 
 ## Scope summary (session start → end)
 
-| Repo | Open at start | Salvaged (draft) | Closed superseded/stale/duplicate | Deferred EOD | Open EOD |
+| Repo | Open at start | Merged | Closed | Deferred EOD | Open EOD |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| personal-config | 8 | 0 | 3 | 4 | 5 |
-| ctrld-sync | 1 | 1 | 1 | 0 | 1 |
-| email-security-pipeline | 4 | 0 | 1 | 3 | 3 |
-| Seatek_Analysis | 1 | 0 | 1 | 0 | 0 |
-| Hydrograph_Versus_Seatek_Sensors_Project | 1 | 0 | 0 | 1 | 1 |
+| personal-config | 8 | 5 | 1 | 2 | 2 |
+| ctrld-sync | 5 | 3 | 0 | 2 | 2 |
+| email-security-pipeline | 2 | 2 | 0 | 0 | 0 |
+| Seatek_Analysis | 2 | 2 | 0 | 0 | 0 |
+| Hydrograph_Versus_Seatek_Sensors_Project | 3 | 2 | 0 | 1 | 1 |
 | series_correction_project_updated | 1 | 0 | 0 | 1 | 1 |
-| repoprompt-ce | 0 | 0 | 0 | 0 | 0 |
+| repoprompt-ce | 2 | 2 | 0 | 0 | 0 |
 
-**Conflicted at start:** 3 (`DIRTY` / `CONFLICTING`) — pc#1244, ctrld#898, sa#261  
-**Conflicted at end:** 0
+**Total open at start:** 23 bot/automation PRs  
+**Total squash-merges:** 16  
+**Total closes:** 1 (duplicate session doc)
 
 ## Full inventory at session start
 
-| Repo | PR | Author | Merge | CI | Disposition |
-| --- | ---: | --- | --- | --- | --- |
-| personal-config | [#1244](https://github.com/abhimehro/personal-config/pull/1244) | app/cursor | DIRTY | green | **CLOSE** (session doc) |
-| personal-config | [#1245](https://github.com/abhimehro/personal-config/pull/1245) | abhimehro (Palette) | MERGEABLE | test fail (infra) | **CLOSE** (dup #1242) |
-| personal-config | [#1243](https://github.com/abhimehro/personal-config/pull/1243) | abhimehro (Bolt) | MERGEABLE | test fail (infra) | **DEFER** (Phase 1) |
-| personal-config | [#1242](https://github.com/abhimehro/personal-config/pull/1242) | abhimehro (Palette) | MERGEABLE | test fail (infra) | **DEFER** (Phase 1) |
-| personal-config | [#1240](https://github.com/abhimehro/personal-config/pull/1240) | app/cursor | MERGEABLE | green | **ESCALATE T0** (infra-fix) |
-| personal-config | [#1235](https://github.com/abhimehro/personal-config/pull/1235) | abhimehro (Bolt) | MERGEABLE | test fail (infra) | **DEFER** (Phase 1) |
-| personal-config | [#1234](https://github.com/abhimehro/personal-config/pull/1234) | abhimehro (Palette) | MERGEABLE | test fail (infra) | **DEFER** (Phase 1) |
-| personal-config | [#1231](https://github.com/abhimehro/personal-config/pull/1231) | app/cursor | MERGEABLE | green | **CLOSE** (dup #1240) |
-| ctrld-sync | [#898](https://github.com/abhimehro/ctrld-sync/pull/898) | abhimehro (Bolt) | DIRTY | CodeScene fail | **SALVAGE → #899** |
-| email-security-pipeline | [#1112](https://github.com/abhimehro/email-security-pipeline/pull/1112) | abhimehro (Palette) | MERGEABLE | green | **DEFER** (Phase 1) |
-| email-security-pipeline | [#1111](https://github.com/abhimehro/email-security-pipeline/pull/1111) | abhimehro (Jules QA) | CLEAN | green | **DEFER** (Phase 1) |
-| email-security-pipeline | [#1109](https://github.com/abhimehro/email-security-pipeline/pull/1109) | abhimehro (Palette) | CLEAN | green | **CLOSE** (dup #1112) |
-| email-security-pipeline | [#1107](https://github.com/abhimehro/email-security-pipeline/pull/1107) | abhimehro (salvage) | MERGEABLE | green | **DEFER** (human merge) |
-| Seatek_Analysis | [#261](https://github.com/abhimehro/Seatek_Analysis/pull/261) | abhimehro (salvage) | DIRTY | green | **CLOSE** (Gate 2) |
-| Hydrograph_Versus_Seatek_Sensors_Project | [#257](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/257) | abhimehro (Jules) | MERGEABLE | CodeScene fail | **DEFER** |
-| series_correction_project_updated | [#119](https://github.com/abhimehro/series_correction_project_updated/pull/119) | abhimehro (Bolt) | MERGEABLE | CodeScene fail | **DEFER** |
+| Repo | PR | Author | Category | CI | Merge | Disposition |
+| --- | ---: | --- | --- | --- | --- | --- |
+| personal-config | [#1261](https://github.com/abhimehro/personal-config/pull/1261) | abhimehro (Bolt) | PERFORMANCE | CodeScene fail | MERGEABLE | **DEFER** |
+| personal-config | [#1259](https://github.com/abhimehro/personal-config/pull/1259) | abhimehro (Palette) | UI | green | MERGEABLE | **MERGE** |
+| personal-config | [#1258](https://github.com/abhimehro/personal-config/pull/1258) | abhimehro (Sentinel) | SECURITY | green | MERGEABLE | **MERGE** |
+| personal-config | [#1257](https://github.com/abhimehro/personal-config/pull/1257) | abhimehro (Jules QA) | CI/INFRA | green | MERGEABLE | **MERGE** |
+| personal-config | [#1255](https://github.com/abhimehro/personal-config/pull/1255) | app/cursor | CI/INFRA | green | MERGEABLE | **MERGE** |
+| personal-config | [#1254](https://github.com/abhimehro/personal-config/pull/1254) | abhimehro (Palette) | UI | green | MERGEABLE | **MERGE** |
+| personal-config | [#1253](https://github.com/abhimehro/personal-config/pull/1253) | app/cursor | CI/INFRA | green | MERGEABLE | **CLOSE-DUP** (#1255) |
+| personal-config | [#1249](https://github.com/abhimehro/personal-config/pull/1249) | abhimehro (automation) | CI/INFRA | green (Devin advisory) | MERGEABLE | **ESCALATE** |
+| ctrld-sync | [#906](https://github.com/abhimehro/ctrld-sync/pull/906) | abhimehro (Bolt) | PERFORMANCE | green | MERGEABLE | **MERGE** |
+| ctrld-sync | [#905](https://github.com/abhimehro/ctrld-sync/pull/905) | abhimehro (Sentinel) | SECURITY | green | MERGEABLE | **MERGE** |
+| ctrld-sync | [#904](https://github.com/abhimehro/ctrld-sync/pull/904) | abhimehro (Jules) | CI/INFRA | green (Devin advisory) | MERGEABLE | **DEFER** → DIRTY |
+| ctrld-sync | [#902](https://github.com/abhimehro/ctrld-sync/pull/902) | abhimehro (Palette) | UI | green | MERGEABLE | **MERGE** |
+| ctrld-sync | [#901](https://github.com/abhimehro/ctrld-sync/pull/901) | abhimehro (Bolt) | PERFORMANCE | CodeScene fail | MERGEABLE | **DEFER** → DIRTY |
+| email-security-pipeline | [#1117](https://github.com/abhimehro/email-security-pipeline/pull/1117) | abhimehro (Bolt) | PERFORMANCE | green | MERGEABLE | **MERGE** |
+| email-security-pipeline | [#1115](https://github.com/abhimehro/email-security-pipeline/pull/1115) | abhimehro (Palette) | UI | green | MERGEABLE | **MERGE** |
+| Seatek_Analysis | [#319](https://github.com/abhimehro/Seatek_Analysis/pull/319) | abhimehro (Jules QA) | CI/INFRA | green | MERGEABLE | **MERGE** |
+| Seatek_Analysis | [#318](https://github.com/abhimehro/Seatek_Analysis/pull/318) | dependabot[bot] | DEPENDENCY | green | MERGEABLE | **MERGE** |
+| Hydrograph | [#265](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/265) | abhimehro (Bolt) | PERFORMANCE | green | MERGEABLE | **MERGE** |
+| Hydrograph | [#264](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/264) | abhimehro (autofix) | CI/INFRA | green | MERGEABLE | **MERGE** |
+| Hydrograph | [#262](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/262) | app/cursor | REFACTOR | CodeScene fail | MERGEABLE | **DEFER** (draft salvage) |
+| series_correction | [#121](https://github.com/abhimehro/series_correction_project_updated/pull/121) | abhimehro (Bolt) | PERFORMANCE | CodeScene fail | MERGEABLE | **DEFER** |
+| repoprompt-ce | [#11](https://github.com/abhimehro/repoprompt-ce/pull/11) | abhimehro (Bolt) | PERFORMANCE | green (Devin only) | MERGEABLE | **MERGE** |
+| repoprompt-ce | [#10](https://github.com/abhimehro/repoprompt-ce/pull/10) | abhimehro (Palette) | UI | Devin advisory fail | MERGEABLE | **MERGE** |
 
-## Prior tail reconciliation (from 2026-06-13)
+## Merges executed (squash)
 
-| PR | Prior status | Current outcome |
-| --- | --- | --- |
-| pc #1237 | draft salvage | **CLOSED** (dup #1242) |
-| pc #1236 | DEFER session doc | **CLOSED** |
-| ctrld #892, #893 | Phase 1 merge | **#892 MERGED**; #893 closed |
-| esp #1108 | draft salvage | **MERGED** |
-| sc #114 | DEFER CodeScene | **CLOSED**; superseded by #119 |
+| Repo | PR | Title |
+| --- | ---: | --- |
+| personal-config | 1258 | Sentinel CWE-88 option injection fix |
+| personal-config | 1257 | Daily QA redefinitions |
+| personal-config | 1254 | Palette aria-label on headings |
+| personal-config | 1259 | Palette performance report a11y |
+| personal-config | 1255 | Salvage session report 2026-06-15 |
+| ctrld-sync | 905 | Sentinel exception log sanitization |
+| ctrld-sync | 906 | Bolt list comprehension `_display_len` |
+| ctrld-sync | 902 | Palette plan details emoji alignment |
+| email-security-pipeline | 1115 | Palette terminal prompt de-emphasis |
+| email-security-pipeline | 1117 | Bolt fast string count |
+| Seatek_Analysis | 318 | dependabot codescene action bump |
+| Seatek_Analysis | 319 | Jules daily QA healthy |
+| Hydrograph | 264 | autofix pre-commit style |
+| Hydrograph | 265 | Bolt dropna optimization |
+| repoprompt-ce | 10 | Palette icon button a11y labels |
+| repoprompt-ce | 11 | Bolt DateFormatter cache |
 
-## New salvage PR opened this session
+## Remainder (EOD)
 
-| Repo | Old PR | New draft PR | Notes |
-| --- | ---: | ---: | --- |
-| ctrld-sync | #898 | [#899](https://github.com/abhimehro/ctrld-sync/pull/899) | Content-Type `any()` unroll on post-#892 `main` |
+| Repo | PR | Reason |
+| --- | ---: | --- |
+| personal-config | 1261 | CodeScene fail; `/cs-agent` posted |
+| personal-config | 1249 | ESCALATE — workflow action pin |
+| ctrld-sync | 901 | CodeScene fail + DIRTY after burst |
+| ctrld-sync | 904 | DIRTY after burst (journal-only) |
+| series_correction | 121 | CodeScene fail; `/cs-agent` posted |
+| Hydrograph | 262 | Draft salvage; CodeScene fail |

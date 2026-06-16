@@ -1,58 +1,70 @@
-# PR Triage — 2026-06-14
+# PR Triage — 2026-06-16
 
-**Mode:** salvage-and-cleanup (Phase 2)  
-**Preflight:** PASS  
-**Input:** Live GitHub state + deferred tail from `tasks/pr-review-2026-06-13.md`
+**Mode:** review-and-merge (Phase 1)  
+**Preflight:** PASS (6/6)  
+**Input:** Live GitHub state + deferred tail from 2026-06-15 session
 
 ## Triage matrix
 
 | Disposition | Count | Action |
 | --- | ---: | --- |
-| SALVAGE (new draft PR) | 1 | ctrld #898 → #899 |
-| CLOSE-SUPERSEDED / DUPLICATE | 5 | #1231→#1240, #1245→#1242, #1109→#1112, #1244 session doc |
-| CLOSE (Gate 2 security) | 1 | Seatek #261 |
-| DEFER (Phase 1 / human merge) | 9 | See remainder below |
-| ESCALATE T0 | 1 | personal-config #1240 infra-fix |
-
-## Infra detection
-
-**personal-config `main` is still infra-broken.** `repository_automation_common.py` lacks `from typing import Any`, causing `NameError` on unrelated PR test runs (#1243, #1245, #1234, #1235). Draft [#1240](https://github.com/abhimehro/personal-config/pull/1240) restores the module with green security CI. Closed duplicate [#1231](https://github.com/abhimehro/personal-config/pull/1231). **Human merge #1240 before Phase 1 burst.**
+| MERGE | 16 | Squash-merge with green functional + CodeScene CI |
+| CLOSE-DUPLICATE | 1 | #1253 superseded by #1255 |
+| DEFER | 5 | CodeScene fail or post-merge DIRTY |
+| ESCALATE | 1 | #1249 workflow action pin |
 
 ## Duplicate & overlap analysis
 
 | Group | Keeper | Closed | Rationale |
 | --- | --- | --- | --- |
-| PC infra-fix drafts | **#1240** | #1231 | Same restore intent; #1240 newer with cs-agent remediation |
-| PC analytics ARIA | **#1242** | #1245, #1237 (prior) | #1242 is superset (dashboard + infuse + tests) |
-| ESP terminal color reset | **#1112** | #1109 | Same files; #1112 newer |
-| ctrld Content-Type unroll | **#899** (salvage) | #898 | #898 DIRTY after #892 merge |
+| PC session docs (2026-06-15) | **#1255** | #1253 | Identical task files; #1255 adds `salvage-session-reports.md` |
+| PC Palette a11y | **#1254 + #1259** | — | Non-overlapping files (`morning-brief.py` vs `performance_optimizer.sh`) |
+| ctrld Bolt journal | — | — | #904 journal-only; became DIRTY after #905/#906/#902 merges |
+
+## Gate outcomes
+
+### Gate 1 — CI health
+
+- **Merge:** 16 PRs with green required functional checks (pytest, bandit, shell tests, CodeScene where required).
+- **Defer:** #1261, #901, #121, #262 — CodeScene Code Health Review failing.
+- **Advisory only:** Devin Review fail on #904, #1249, #10 did not block merge when all other checks green.
+
+### Gate 2 — Security
+
+- **#1258 (Sentinel CWE-88):** Option injection hardening in shell scripts — merged first.
+- **#905 (Sentinel):** Exception log sanitization in rate-limit parser — merged.
+- **#1249:** Workflow action version pin — **ESCALATE** (trust boundary; no autonomous merge).
+
+### Post-merge conflict cascade (Lesson 0)
+
+After merging ctrld #905, #906, #902, sibling **#904** flipped to **DIRTY**. **#901** also became **CONFLICTING** (was MERGEABLE at session start). Both deferred with PR comments; no force-push.
 
 ## Per-PR notes
 
-### personal-config #1240 — ESCALATE T0
+### personal-config #1249 — ESCALATE
 
-Single infra-fix draft after closing #1231. All security gates green. Unblocks `Run All Tests` on Bolt/Palette PRs once merged.
+Pins `codescene-oss/pr-refactoring-agent` to `v1.0.1`. Functional CI green. Requires human approval per CI/INFRA policy.
 
-### ctrld-sync #899 — SALVAGE (draft)
+### personal-config #1261 — DEFER
 
-Rebuilt Content-Type unroll from #898 on current `main`. Local `uv run pytest` — 341 passed. `/cs-agent` posted; awaiting CodeScene.
+Bolt dictionary fallback optimization. CodeScene reports hotspot decline. `/cs-agent skill:fix-code-health-degradations` posted 2026-06-16.
 
-### Seatek_Analysis #261 — CLOSE (Gate 2)
+### ctrld-sync #901 / #904 — DEFER
 
-`DIRTY` and would delete `read_file_safe` / `MAX_FILE_SIZE` vs current `main`. Lesson 0ci applies — do not salvage without preserving security controls.
+#901: longstanding CodeScene fail on Content-Type `any()` unroll; now DIRTY.  
+#904: anti-micro-optimization journal entry; DIRTY after sibling merges.
 
-### email-security-pipeline #1107 — DEFER
+### series_correction #121 — DEFER
 
-Prior salvage from 2026-06-13; all functional CI green. Awaiting human merge.
+Vectorized Z-score/jump detection. CodeScene hotspot rules fail. `/cs-agent` posted.
 
-### email-security-pipeline #1111 / #1112 — DEFER (Phase 1)
+### Hydrograph #262 — DEFER (Phase 2 salvage)
 
-Both CLEAN/UNSTABLE with green pytest/bandit. #1111 is broad Jules QA formatting; #1112 is focused Palette terminal reset.
+Draft salvage for #257 test coverage. CodeScene code duplication advisory fail. Awaiting salvage agent or human review.
 
-### Hydrograph #257 / series_correction #119 — DEFER
+## Merge ordering applied
 
-CodeScene-only failures; `/cs-agent` already posted on both. #119 replaced closed #114.
-
-### personal-config #1234 / #1235 / #1242 / #1243 — DEFER (Phase 1)
-
-MERGEABLE but `Run All Tests` fails on truncated `main` base — not PR-specific. Re-triage after #1240 merges.
+1. Security (pc#1258, sa#318 dependabot, ctrld#905)
+2. QA / autofix / routine green
+3. Performance / UI / docs
+4. Close duplicate session doc before merging superset (#1255)
