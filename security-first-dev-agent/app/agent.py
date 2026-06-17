@@ -47,7 +47,7 @@ def get_current_time(query: str) -> str:
     """Simulates getting the current time for a city.
 
     Args:
-        city: The name of the city to get the current time for.
+        query: The name of the city to get the current time for.
 
     Returns:
         A string with the current time information.
