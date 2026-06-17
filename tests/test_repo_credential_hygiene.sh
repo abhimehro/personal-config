@@ -46,7 +46,7 @@ fi
 
 # Legacy hardcoded WebDAV curl examples (literal password in quotes)
 if git grep -nE 'curl -u "infuse:[^$"\{]+"' media-streaming "${exclude_dirs[@]}" 2>/dev/null |
-	grep -v "\${MEDIA_WEBDAV_PASS}" |
+	grep -v '${MEDIA_WEBDAV_PASS}' |
 	grep -v "generated-secret" |
 	grep -v '<set in'; then
 	echo "✗ Found hardcoded curl -u infuse:password examples"

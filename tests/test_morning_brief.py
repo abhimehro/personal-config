@@ -174,6 +174,18 @@ class TestHtmlHelpers(unittest.TestCase):
         assert "<script>" not in result
         assert "&lt;script&gt;" in result
 
+    def test_html_section_with_emoji(self):
+        result = mb.html_section("🌅 Good Morning", "<p>body</p>")
+        assert 'aria-label' not in result
+        assert '<span aria-hidden="true">🌅</span>' in result
+        assert "Good Morning</h3>" in result
+
+    def test_html_section_non_ascii_text(self):
+        result = mb.html_section("Café Menu", "<p>body</p>")
+        assert 'aria-label' not in result
+        assert '<span aria-hidden="true">' not in result
+        assert '<h3>Café Menu</h3>' in result
+
 
 # ============================================================
 # Date Helpers

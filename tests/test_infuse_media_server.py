@@ -138,7 +138,7 @@ class TestMediaServerHandler(unittest.TestCase):
         html_root = self.handler.generate_directory_listing(files, "/")
 
         self.assertIn("<title>Media Library - /</title>", html_root)
-        self.assertIn("<h1 aria-label=\"Media Library: /\"><span aria-hidden=\"true\">\U0001f4c1</span> Media Library: //</h1>", html_root)
+        self.assertIn("<h1><span aria-hidden=\"true\">\U0001f4c1</span> Media Library: //</h1>", html_root)
         self.assertNotIn(".. (Parent Directory)", html_root)
 
         # File checks with escaped characters

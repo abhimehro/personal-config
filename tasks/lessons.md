@@ -402,3 +402,9 @@
 **Pattern:** ctrld #892 merged `_parse_and_cache_response` refactor; sibling #898 (Content-Type unroll) went `DIRTY` and picked up unrelated `repository_automation_common.py` diff noise.
 **Rule:** After a sibling Bolt PR merges, rebuild follow-up optimizations from current `main` with intent files only — do not rebase the original DIRTY branch.
 **Detection cost:** Low — `mergeStateStatus: DIRTY` on a PR whose title matches a recently merged sibling optimization.
+
+## Lesson 0co: DIRTY test PRs may bundle agent artifacts — salvage intent files only (2026-06-15)
+
+**Pattern:** Hydrograph #257 was `DIRTY` after `main` advanced (#261 flake8, trunk config). The branch mixed valuable `tests/test_app.py` coverage with `tasks/lessons.md`, `tasks/todo.md`, and `.trunk/trunk.yaml` churn from agent sessions.
+**Rule:** On salvage of a deferred test PR, diff against `main` and cherry-pick **only** production/test intent paths. Exclude `tasks/*`, session docs, and unrelated config churn unless the PR's stated purpose is config-only.
+**Detection cost:** Low — `gh pr diff --name-only` shows `tasks/` or `.trunk/` alongside `tests/` on a test-titled PR.
