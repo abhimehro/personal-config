@@ -118,29 +118,29 @@ resource "google_cloud_run_v2_service" "app" {
   project             = var.project_id
   deletion_protection = false
   ingress             = "INGRESS_TRAFFIC_ALL"
-  labels = {
-    "created-by"                  = "adk"
-  }
+  labels              = { "created-by" = "adk" }
 
   template {
     containers {
       image = "us-docker.pkg.dev/cloudrun/container/hello"
       resources {
-        limits = {
-          cpu    = "1"
-          memory = "4Gi"
-        }
+        limits = { cpu = "1", memory = "4Gi" }
       }
-      # Mount the volume
-      volume_mounts {
-        name       = "cloudsql"
-        mount_path = "/cloudsql"
-      }
+      volume_mounts { name = "cloudsql", mount_path = "/cloudsql" }
 
       # Environment variables
-      env {
-        name  = "INSTANCE_CONNECTION_NAME"
-        value = google_sql_database_instance.session_db.connection_name
+      dynamic "env" {
+        for_each = [
+          { name = "INSTANCE_CONNECTION_NAME", value = google_sql_database_instance.session_db.connection_name },
+          { name = "DB_NAME", value = var.project_name },
+          { name = "DB_USER", value = var.project_name },
+          { name = "LOGS_BUCKET_NAME", value = google_storage_bucket.logs_data_bucket.name },
+          { name = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", value = "NO_CONTENT" }
+        ]
+        content {
+          name  = env.value.name
+          value = env.value.value
+        }
       }
 
       env {
@@ -152,43 +152,19 @@ resource "google_cloud_run_v2_service" "app" {
           }
         }
       }
-
-      env {
-        name  = "DB_NAME"
-        value = var.project_name
-      }
-
-      env {
-        name  = "DB_USER"
-        value = var.project_name
-      }
-
-      env {
-        name  = "LOGS_BUCKET_NAME"
-        value = google_storage_bucket.logs_data_bucket.name
-      }
-
-      env {
-        name  = "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"
-        value = "NO_CONTENT"
-      }
     }
 
-    service_account = google_service_account.app_sa.email
+    service_account                  = google_service_account.app_sa.email
     max_instance_request_concurrency = 8
-
     scaling {
       min_instance_count = 1
       max_instance_count = 10
     }
+    session_affinity                 = true
 
-    session_affinity = true
-    # Cloud SQL volume
     volumes {
       name = "cloudsql"
-      cloud_sql_instance {
-        instances = [google_sql_database_instance.session_db.connection_name]
-      }
+      cloud_sql_instance { instances = [google_sql_database_instance.session_db.connection_name] }
     }
   }
 
@@ -199,16 +175,8 @@ resource "google_cloud_run_v2_service" "app" {
 
   # This lifecycle block prevents Terraform from overwriting the container image when it's
   # updated by Cloud Run deployments outside of Terraform (e.g., via CI/CD pipelines)
-  lifecycle {
-    ignore_changes = [
-      template[0].containers[0].image,
-    ]
-  }
+  lifecycle { ignore_changes = [template[0].containers[0].image] }
 
   # Make dependencies conditional to avoid errors.
-  depends_on = [
-    resource.google_project_service.services,
-    google_sql_user.db_user,
-    google_secret_manager_secret_version.db_password,
-  ]
+  depends_on = [resource.google_project_service.services, google_sql_user.db_user, google_secret_manager_secret_version.db_password]
 }

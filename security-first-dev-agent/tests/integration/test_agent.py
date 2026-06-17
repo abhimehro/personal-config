@@ -47,11 +47,11 @@ def test_agent_stream() -> None:
 
     has_text_content = False
     for event in events:
-        if (
-            event.content
-            and event.content.parts
-            and any(part.text for part in event.content.parts)
-        ):
+        if not event.content:
+            continue
+        if not event.content.parts:
+            continue
+        if any(part.text for part in event.content.parts):
             has_text_content = True
             break
     assert has_text_content, "Expected at least one message with text content"

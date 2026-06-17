@@ -112,6 +112,33 @@ def server_fixture(request: Any) -> Iterator[subprocess.Popen[str]]:
     yield server_process
 
 
+def _parse_sse_events(response: requests.Response) -> list[dict]:
+    """Parse SSE events from response."""
+    events = []
+    for line in response.iter_lines():
+        if not line:
+            continue
+        line_str = line.decode("utf-8")
+        if line_str.startswith("data: "):
+            event_json = line_str[6:]  # Remove "data: " prefix
+            events.append(json.loads(event_json))
+    return events
+
+
+def _has_text_content(events: list[dict]) -> bool:
+    """Check for valid text content in the events."""
+    for event in events:
+        content = event.get("content")
+        if content is None:
+            continue
+        parts = content.get("parts")
+        if not parts:
+            continue
+        if any(part.get("text") for part in parts):
+            return True
+    return False
+
+
 def test_chat_stream(server_fixture: subprocess.Popen[str]) -> None:
     """Test the chat stream functionality."""
     logger.info("Starting chat stream test")
@@ -147,28 +174,11 @@ def test_chat_stream(server_fixture: subprocess.Popen[str]) -> None:
     assert response.status_code == 200
 
     # Parse SSE events from response
-    events = []
-    for line in response.iter_lines():
-        if line:
-            # SSE format is "data: {json}"
-            line_str = line.decode("utf-8")
-            if line_str.startswith("data: "):
-                event_json = line_str[6:]  # Remove "data: " prefix
-                event = json.loads(event_json)
-                events.append(event)
+    events = _parse_sse_events(response)
 
     assert events, "No events received from stream"
     # Check for valid content in the response
-    has_text_content = False
-    for event in events:
-        content = event.get("content")
-        if (
-            content is not None
-            and content.get("parts")
-            and any(part.get("text") for part in content["parts"])
-        ):
-            has_text_content = True
-            break
+    has_text_content = _has_text_content(events)
 
     assert has_text_content, "Expected at least one event with text content"
 
