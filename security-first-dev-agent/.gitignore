@@ -142,9 +142,12 @@ dmypy.json
 .idea
 
 # User-specific files
+*.tfstate
+*.tfstate.backup
 .terraform/
 .Terraform/
-
+.terraform*
+.Terraform*
 
 tmp*
 .agents-cli-scripts/
