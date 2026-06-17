@@ -664,14 +664,19 @@ def overall_status(results: list[dict[str, Any]]) -> str:
     return "success"
 
 
+# ⚡ Bolt Optimization: Hoisted status dictionary to module level to avoid re-allocating
+# the dictionary and its contents on every invocation inside reporting loops.
+STATUS_ICONS = {
+    "success": "SUCCESS",
+    "warning": "WARNING",
+    "failure": "FAILURE",
+    "needs_review": "REVIEW",
+    "skipped": "SKIPPED",
+}
+
+
 def status_icon(status: str) -> str:
-    return {
-        "success": "SUCCESS",
-        "warning": "WARNING",
-        "failure": "FAILURE",
-        "needs_review": "REVIEW",
-        "skipped": "SKIPPED",
-    }.get(status, status.upper())
+    return STATUS_ICONS.get(status, status.upper())
 
 
 def daily_report_lines(
