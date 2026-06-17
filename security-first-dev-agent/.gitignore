@@ -143,13 +143,12 @@ dmypy.json
 
 # User-specific files
 *.tfstate
+*.tfstate.*
 *.tfstate.backup
 .terraform/
 .Terraform/
 .terraform*
 .Terraform*
-*.tfstate
-*.tfstate.*
 
 tmp*
 .agents-cli-scripts/
@@ -200,6 +199,7 @@ tests/load_test/.results/*.html
 tests/load_test/.results/*.csv
 .locust_env
 my_env.tfvars
+vars/env.tfvars
 .saved_chats
 .env
 .requirements.txt
