@@ -231,3 +231,6 @@
 ## 2026-06-13 - [Hoist dictionary and tuple instantiation from hot execution paths]
 **Learning:** Instantiating dictionaries or casting `dict.items()` to a tuple inside a hot function (like one used for scoring items iteratively) creates significant allocation and iterator overhead for each call.
 **Action:** Always hoist static lookup dictionaries and tuple conversions of dictionaries to the global/module scope. Accessing a global constant is significantly faster than re-evaluating the dictionary literal or executing `dict.items()` on every invocation.
+## 2026-06-16 - [Avoid eager evaluation in `.get()` fallbacks with `.lower()`]
+**Learning:** When assigning dictionary `.get()` results and chaining `.lower()` on fallbacks, the `.lower()` executes eagerly if evaluated inline (e.g. `(p.get("title") or "").lower()`), creating unnecessary allocations when the key exists.
+**Action:** When accessing a string value that requires `.lower()`, assign the `.get()` result first, check if it is `not None`, and then apply `.lower()`. This avoids the eager fallback evaluation and redundant C-level string allocations.

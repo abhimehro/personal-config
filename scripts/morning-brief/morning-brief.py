@@ -47,7 +47,6 @@ Cache control:
 
 from __future__ import annotations
 
-import re
 import concurrent.futures
 import datetime as dt
 import hashlib
@@ -55,6 +54,7 @@ import html
 import json
 import logging
 import os
+import re
 import sys
 import tempfile
 import time
@@ -602,7 +602,9 @@ def _render_heading(level: int, title: str) -> str:
     # Safely target emojis specifically by checking unicode ranges where emojis reside
     # rather than all non-ASCII characters. This includes Emoticons, Misc Symbols,
     # Dingbats, and the large Supplementary Multilingual Plane blocks.
-    emoji_pattern = re.compile(r"^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$")
+    emoji_pattern = re.compile(
+        r"^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$"
+    )
     match = emoji_pattern.match(safe_title)
     if match:
         icon = match.group(1)
@@ -668,6 +670,26 @@ def staleness_days(updated_at: str, today_date: dt.date) -> int:
         return 0
 
 
+def _extract_label_names(labels_raw: list[Any]) -> list[str]:
+    label_names = []
+    for lbl in labels_raw:
+        if isinstance(lbl, dict):
+            _name = lbl.get("name")
+            label_names.append(_name.lower() if _name is not None else "")
+    return label_names
+
+
+def _calculate_base_score(priority: int, due_date: str, state_type: str, today_iso: str) -> int:
+    score = 0
+    if is_due_today(due_date, today_iso):
+        score += 100
+    elif due_date:
+        score += 20
+    score += LINEAR_PRIORITY_SCORES.get(priority, 0)
+    score += LINEAR_STATE_WEIGHTS.get(state_type, 0)
+    return score
+
+
 def score_linear_issue(
     issue: dict[str, Any], today_iso: str, today_date: dt.date
 ) -> int:
@@ -679,26 +701,12 @@ def score_linear_issue(
     """
     priority = issue.get("priority") or 0
     due_date = issue.get("dueDate") or ""
-    state_type = (issue.get("state", {}).get("type") or "").lower().replace("_", "")
-    labels_raw = issue.get("labels", {}).get("nodes", [])
-    label_names = [
-        (lbl.get("name") or "").lower() for lbl in labels_raw if isinstance(lbl, dict)
-    ]
+    _state_type = issue.get("state", {}).get("type")
+    state_type = _state_type.lower().replace("_", "") if _state_type is not None else ""
+    label_names = _extract_label_names(issue.get("labels", {}).get("nodes", []))
     updated_at = issue.get("updatedAt") or ""
 
-    score = 0
-
-    # Due-date contribution
-    if is_due_today(due_date, today_iso):
-        score += 100
-    elif due_date:
-        score += 20
-
-    # Priority contribution
-    score += LINEAR_PRIORITY_SCORES.get(priority, 0)
-
-    # State-type contribution
-    score += LINEAR_STATE_WEIGHTS.get(state_type, 0)
+    score = _calculate_base_score(priority, due_date, state_type, today_iso)
 
     # Label bonuses
     for label in label_names:
@@ -946,7 +954,8 @@ def fetch_linear_focus_items(
         items: list[FocusItem] = []
         for issue in nodes:
             state = issue.get("state", {})
-            state_type = (state.get("type") or "").lower()
+            _state_type = state.get("type")
+            state_type = _state_type.lower() if _state_type is not None else ""
             if state_type in {"completed", "canceled", "cancelled"}:
                 continue
 
@@ -981,6 +990,47 @@ def fetch_linear_focus_items(
     except Exception as exc:
         logger.error("Linear focus error: %s", exc)
         return []
+
+
+def _parse_linear_notification_node(node: dict[str, Any]) -> tuple[str, str, FocusItem]:
+    _category = node.get("category")
+    category = _category.lower() if _category is not None else ""
+    title = node.get("title") or "Untitled notification"
+    subtitle = truncate_text(node.get("subtitle") or "", 140)
+    url = node.get("inboxUrl") or node.get("url") or "#"
+    dedupe_key = url or title
+
+    item = FocusItem(
+        kind="linear-notification",
+        identifier="Review" if category == "reviews" else "Inbox",
+        title=title,
+        url=url,
+        badge=category or "notification",
+        score=0,
+        updated_at=node.get("updatedAt") or "",
+        description=subtitle,
+    )
+    return category, dedupe_key, item
+
+
+def _process_unread_linear_notifications(unread_nodes: list[dict[str, Any]]) -> tuple[list[FocusItem], list[FocusItem]]:
+    review_items = []
+    seen_reviews: set[str] = set()
+    notification_items = []
+    seen_notifications: set[str] = set()
+
+    for node in unread_nodes:
+        category, dedupe_key, item = _parse_linear_notification_node(node)
+
+        if category == "reviews":
+            if dedupe_key not in seen_reviews:
+                seen_reviews.add(dedupe_key)
+                review_items.append(item)
+        elif dedupe_key not in seen_notifications:
+            seen_notifications.add(dedupe_key)
+            notification_items.append(item)
+
+    return review_items, notification_items
 
 
 def fetch_linear_queue_snapshot(
@@ -1026,40 +1076,7 @@ def fetch_linear_queue_snapshot(
         nodes = payload.get("notifications", {}).get("nodes", [])
         unread_nodes = [node for node in nodes if not node.get("readAt")]
 
-        review_items: list[FocusItem] = []
-        seen_reviews: set[str] = set()
-        notification_items: list[FocusItem] = []
-        seen_notifications: set[str] = set()
-
-        for node in unread_nodes:
-            category = (node.get("category") or "").lower()
-            title = node.get("title") or "Untitled notification"
-            subtitle = truncate_text(node.get("subtitle") or "", 140)
-            url = node.get("inboxUrl") or node.get("url") or "#"
-            dedupe_key = url or title
-
-            item = FocusItem(
-                kind="linear-notification",
-                identifier="Review" if category == "reviews" else "Inbox",
-                title=title,
-                url=url,
-                badge=category or "notification",
-                score=0,
-                updated_at=node.get("updatedAt") or "",
-                description=subtitle,
-            )
-
-            if category == "reviews":
-                if dedupe_key in seen_reviews:
-                    continue
-                seen_reviews.add(dedupe_key)
-                review_items.append(item)
-                continue
-
-            if dedupe_key in seen_notifications:
-                continue
-            seen_notifications.add(dedupe_key)
-            notification_items.append(item)
+        review_items, notification_items = _process_unread_linear_notifications(unread_nodes)
 
         return LinearQueueSnapshot(
             unread_count=unread_count,
@@ -1221,7 +1238,9 @@ def fetch_podcast_section(llm: PerplexityClient, *, limit: int = 3) -> SectionRe
                 "llm_summary": summary_,
             }
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=min(limit, 5)) as executor:
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=min(limit, 5)
+        ) as executor:
             processed_entries = list(executor.map(process_entry, feed.entries[:limit]))
 
         for entry_data in processed_entries:
