@@ -148,6 +148,8 @@ dmypy.json
 .Terraform/
 .terraform*
 .Terraform*
+*.tfstate
+*.tfstate.*
 
 tmp*
 .agents-cli-scripts/
