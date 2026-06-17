@@ -7,11 +7,11 @@ The second argument is include_details ("true" / "false").
 
 from __future__ import annotations
 
+import concurrent.futures
 import json
 import os
 import subprocess
 import sys
-import concurrent.futures
 
 FAIL_CONCLUSIONS = frozenset(
     {
@@ -54,9 +54,12 @@ def automation_hints(pr: dict) -> str:
     login = author.get("login") or ""
     if login.endswith("[bot]"):
         hints.append("bot_login")
-    branch = (pr.get("headRefName") or "").lower()
-    title_l = (pr.get("title") or "").lower()
-    body_l = (pr.get("body") or "").lower()
+    _branch = pr.get("headRefName")
+    branch = _branch.lower() if _branch is not None else ""
+    _title = pr.get("title")
+    title_l = _title.lower() if _title is not None else ""
+    _body = pr.get("body")
+    body_l = _body.lower() if _body is not None else ""
 
     branch_signals = (
         "jules",

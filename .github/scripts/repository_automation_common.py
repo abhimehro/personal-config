@@ -15,7 +15,9 @@ from typing import Any
 import yaml
 
 # MCP GitHub compatibility flag
-USE_MCP_GITHUB = os.environ.get("USE_MCP_GITHUB", "false").lower() in {
+_mcp_env = os.environ.get("USE_MCP_GITHUB")
+_mcp_raw = _mcp_env.lower() if _mcp_env is not None else "false"
+USE_MCP_GITHUB = _mcp_raw in {
     "1",
     "true",
     "yes",
@@ -162,7 +164,8 @@ def mcp_text(args: list[str], default: str = "") -> str:
 
 
 def writes_allowed() -> bool:
-    raw = os.environ.get("AUTOMATION_ALLOW_WRITES", "false").lower()
+    _raw_env = os.environ.get("AUTOMATION_ALLOW_WRITES")
+    raw = _raw_env.lower() if _raw_env is not None else "false"
     return raw in {"1", "true", "yes", "on"}
 
 
