@@ -142,8 +142,8 @@ dmypy.json
 .idea
 
 # User-specific files
-.terraform*
-.Terraform*
+.terraform/
+.Terraform/
 
 
 tmp*
