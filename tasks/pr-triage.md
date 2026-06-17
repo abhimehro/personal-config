@@ -1,61 +1,54 @@
-# PR Triage — 2026-06-15
+# PR Triage — 2026-06-17
 
-**Mode:** salvage-and-cleanup (Phase 2)  
+**Mode:** salvage-and-cleanup (Phase 1 + Phase 2)  
 **Preflight:** PASS  
-**Input:** Live GitHub state + deferred tail from `tasks/pr-review-2026-06-14.md`
+**Input:** Live GitHub state + deferred tail from 2026-06-15/16 sessions
 
 ## Triage matrix
 
 | Disposition | Count | Action |
 | --- | ---: | --- |
-| SALVAGE (new draft PR) | 1 | hg #257 → #262 |
-| CLOSE-SUPERSEDED / DUPLICATE | 1 | hg #257 (DIRTY + agent artifact noise) |
-| DEFER (Phase 1 / human merge) | 7 | See remainder below |
-| ESCALATE T0 | 0 | — (pc #1240 merged since prior session) |
+| MERGE (Phase 1) | 1 | pc #1263 |
+| SALVAGE (new draft PR) | 1 | hg #262 → #269 |
+| CLOSE-SUPERSEDED | 1 | hg #262 |
+| DEFER (Phase 1 / human merge) | 3 | pc #1270, esp #1120, ctrld #908 |
+| DEFER (CodeScene tail) | 1 | sc #121 |
+| ESCALATE T0 | 0 | — |
 
 ## Infra detection
 
-**No whole-repo infra breakage detected.** personal-config `main` is healthy after #1240 merge; prior `NameError: Any` cascade resolved.
+**No whole-repo infra breakage detected.** All configured repos have healthy `main` CI baselines.
 
 ## Duplicate & overlap analysis
 
 | Group | Keeper | Closed / Notes | Rationale |
 | --- | --- | --- | --- |
-| ctrld Content-Type unroll | **#901** | #899 closed 2026-06-15 | #899 salvage superseded by live Bolt branch |
-| sc vectorize perf | **#121** | #119 closed 2026-06-15 | Same Bolt intent; #121 is successor |
-| pc ARIA headings | **#1254** | — (not duplicate) | Intentional correction: removes redundant `aria-label` added by merged #1242 |
-| hg Application.process_data tests | **#262** (salvage) | #257 | Original mixed tests with trunk/tasks agent files |
+| hg process_data tests | **#269** (salvage) | #262 closed | #262 went DIRTY; tests-only rebuild from `main` |
+| pc session docs | **#1263** merged | #1253 closed earlier | Bot session report superseded chain |
+| ctrld API refactor | **#908** (draft) | #901 closed 2026-06-16 | Salvage successor to Bolt Content-Type work |
 
 ## Per-PR notes
 
-### Hydrograph #262 — SALVAGE (draft)
+### personal-config #1263 — MERGED
 
-Rebuilt from #257 with **only** `tests/test_app.py` on current `main`. Local `pytest tests/test_app.py` — 13 passed. Awaiting CodeScene on clean diff.
+Bot-authored (`app/cursor`) session doc from 2026-06-16 salvage run. All checks green; squash-merged.
 
-### personal-config #1254 — DEFER (Phase 1)
+### personal-config #1270 — DEFER (Phase 1)
 
-Removes redundant `aria-label` on emoji headings (follow-up to merged #1242). All functional + CodeScene checks green.
+Palette WCAG AA metric card contrast. **CLEAN**, all functional checks green. Human-authored automation PR — escalate for maintainer merge.
 
-### personal-config #1249 — DEFER
+### ctrld-sync #908 — DEFER (draft salvage)
 
-Workflow automation pin bump (`refactoring-agent.yml` → `v1.0.1`). Security-gated; draft-style automation PR.
+Salvage of #901/#904 API parsing helpers. Converted to **draft** this session. All CI green including CodeScene. Awaiting human review per salvage policy (no autonomous merge).
 
-### personal-config #1253 — DEFER
+### email-security-pipeline #1120 — DEFER (Phase 1)
 
-Phase 1 session doc draft from morning cron. Coexists with this salvage session artifacts on agent branch.
+Palette ANSI prompt leakage fix. **CLEAN**, pytest + security gates green. Human-authored — maintainer merge.
 
-### ctrld-sync #901 — DEFER
+### Hydrograph #269 — SALVAGE (draft)
 
-Bolt Content-Type unroll. Functional CI green; CodeScene Complex Conditional advisory fail. `/cs-agent` already posted.
+Rebuilt from #262 with **only** `tests/test_app.py`. Local `pytest tests/test_app.py` — 13 passed. CI pending at session end.
 
-### ctrld-sync #902 — DEFER (Phase 1)
+### series_correction #121 — DEFER (CodeScene)
 
-Palette emoji alignment. CLEAN with all checks green.
-
-### email-security-pipeline #1115 — DEFER (Phase 1)
-
-Palette terminal hint de-emphasis. CLEAN with all checks green.
-
-### series_correction #121 — DEFER
-
-Bolt vectorize Z-score/jump detection (successor to closed #119). CodeScene hotspot decline; `/cs-agent` posted.
+Bolt vectorize Z-score/jump detection. CodeScene hotspot/function-size gates failing. `/cs-agent` already posted multiple cycles; defer for human disposition.
