@@ -1,6 +1,6 @@
 # Lessons Learned
 
-## Lesson 0y: ctrld journal PRs conflict after Bolt/Sentinel burst (2026-06-16)
+## Lesson 0cq: ctrld journal PRs conflict after Bolt/Sentinel burst (2026-06-16)
 
 **Pattern:** After squash-merging ctrld #905, #906, and #902 on the same day, documentation-only #904 (`bolt journal` rule) and performance #901 flipped to **DIRTY** even though both were green at session start.
 **Rule:** Merge journal/docs-only Bolt PRs **before** or **immediately rebase** after a sibling performance merge burst on `main.py`. Defer with a comment rather than force-push; journal content is low-risk to recreate.
