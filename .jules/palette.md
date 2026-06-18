@@ -152,3 +152,7 @@
 ## 2026-03-10 - Screen reader accessible emoji headings
 **Learning:** When using emojis in headings as visual icons, they can cause screen readers to read the unicode description of the emoji, breaking the flow of the section title. We must never use `not isascii()` to detect emoji as that would incorrectly hide valid non-ASCII text like 'Café'.
 **Action:** Added a reusable helper that splits emojis from the text using a strict emoji-range regex `^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$`, applies an `aria-label` to the heading tag containing just the text, and wraps the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
+
+## 2026-06-18 - WCAG Accessible Metric Card Backgrounds
+**Learning:** When designing UI elements (like metric cards) with white text, using light background gradients (e.g., light blue, pink, cyan) often fails WCAG AA contrast guidelines, making the metrics unreadable for many users. The contrast ratios can be as low as 1.3:1 or 2.4:1 when they need to be at least 4.5:1.
+**Action:** Replace low-contrast gradients with WCAG AA compliant solid, dark colors (e.g., dark purple `#44337A`, dark green `#276749`, dark orange `#9C4221`, dark red `#9B2C2C`) to ensure proper readability while retaining the semantic color meaning.
