@@ -601,13 +601,17 @@ def run_backlog_manager(config: dict[str, Any]) -> dict[str, Any]:
         ],
         default=[],
     )
-    issues = sorted(issues, key=lambda item: item.get("updatedAt", ""))
-    prs = sorted(prs, key=lambda item: item.get("updatedAt", ""))
+    # \342\232\241 Bolt Optimization: Use dict bracket access in sort key to avoid .get() fallback evaluation overhead
+    issues = sorted(issues, key=lambda item: item["updatedAt"])
+    prs = sorted(prs, key=lambda item: item["updatedAt"])
     stale_days = int(section.get("stale_days", 14))
+    # \342\232\241 Bolt Optimization: Hoist cutoff threshold computation outside of list comprehensions
+    # to avoid evaluating `now_utc()` redundantly for every issue and PR
+    cutoff_threshold = now_utc() - dt.timedelta(days=stale_days)
     stale_issues = [
-        item for item in issues if age_days(item["updatedAt"]) >= stale_days
+        item for item in issues if parse_timestamp(item["updatedAt"]) <= cutoff_threshold
     ]
-    stale_prs = [item for item in prs if age_days(item["updatedAt"]) >= stale_days]
+    stale_prs = [item for item in prs if parse_timestamp(item["updatedAt"]) <= cutoff_threshold]
     status = "warning" if stale_issues or stale_prs else "success"
     summary = f"Backlog scan found {len(issues)} open issues and {len(prs)} open PRs in the sampled set."
     lines = [
