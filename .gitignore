@@ -302,3 +302,12 @@ GH_TOKEN.env
 patch_*.sh
 resolve_*.sh
 venv/
+
+# =============================================================================
+# TERRAFORM - Provider binaries and state
+# =============================================================================
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.*
