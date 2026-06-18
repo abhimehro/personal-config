@@ -6,6 +6,26 @@
 
 ## Entry template
 
+## Run — 2026-06-16
+
+### Input tail
+- Source report/snapshot: `tasks/pr-review-2026-06-16.md` (Phase 1 morning)
+- PRs investigated: 8 across 5 repos (3 DIRTY at start: pc#1262, ctrld#901, ctrld#904)
+
+### Outcomes
+- Salvage draft PRs opened: ctrld-sync [#908](https://github.com/abhimehro/ctrld-sync/pull/908) (from #901 + #904)
+- Infra-fix draft PRs opened: 0
+- Originals closed as superseded/no-op: ctrld#901, ctrld#904, pc#1262
+
+### Verification status
+- Blocking checks: none on `main`
+- Local verify: `uv run pytest tests/ -q` — 341 passed on ctrld salvage branch
+- CodeScene remediation: `/cs-agent` posted on #908; sc#121 cs-agent completed earlier; hg#262 still failing
+
+### Handoff
+- Maintainer actions required: review ctrld#908 draft; Phase 1 merge pc#1261 (now green); T1 review pc#1249; CodeScene tail on sc#121, hg#262
+- Cross-links: see `tasks/pr-review-2026-06-16.md`
+
 ## Run — 2026-06-15
 
 ### Input tail
