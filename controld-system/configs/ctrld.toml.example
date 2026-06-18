@@ -1,6 +1,11 @@
 # Control D Configuration - System Level
 # Hardened for network resilience
 # This file should be deployed to /etc/controld/ctrld.toml
+#
+# IMPORTANT: Only use ONE ctrld.toml (system OR user level), not both.
+# Both bind to port 53 on 127.0.0.1, which will cause conflicts.
+# - Use this system-level config if ctrld runs as a system service
+# - Use the user-level config if ctrld runs as a user service
 
 [listener]
   [listener.0]

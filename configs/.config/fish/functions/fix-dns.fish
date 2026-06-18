@@ -7,7 +7,8 @@ function fix-dns
     sudo launchctl unload /Library/LaunchDaemons/ctrld.plist 2>/dev/null
     
     # Dynamically get all network services and clear DNS on each
-    for iface in (networksetup -listallnetworkservices | tail -n +2 | awk '{print $NF}')
+    # Uses same pattern as scripts/lib/network-utils.sh
+    for iface in (networksetup -listallnetworkservices | grep -v "^An asterisk")
         sudo networksetup -setdnsservers "$iface" Empty 2>/dev/null
     end
     
