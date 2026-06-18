@@ -273,6 +273,7 @@ configs/.config/fish/functions/*
 !configs/.config/fish/RESTORE_CUSTOMIZATIONS.md
 !configs/.config/fish/functions/nm-*.fish
 !configs/.config/fish/functions/__ensure_dracula_theme.fish
+!configs/.config/fish/functions/fix-dns.fish
 !configs/.config/fish/functions/__run_editor.fish
 !configs/.config/fish/functions/fish_greeting.fish
 !configs/.config/fish/functions/git-mirror-clean.fish
