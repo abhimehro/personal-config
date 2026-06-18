@@ -269,3 +269,7 @@ reusable helper that splits emojis from the text using a strict emoji-range
 regex `^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$`,
 applies an `aria-label` to the heading tag containing just the text, and wraps
 the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
+
+## $(date "+%Y-%m-%d") - WCAG AA Contrast for Dashboard Metric Cards
+**Learning:** Light background gradients (like light blue to cyan or pink to red) paired with white text often fail to meet the WCAG AA minimum contrast ratio (4.5:1), making them difficult to read for many users. The visual appeal of gradients does not outweigh the necessity of readability.
+**Action:** Replace low-contrast background gradients on metric cards or similar UI elements with solid, dark colors (e.g., dark purple, dark green, dark orange, dark red) to ensure sufficient contrast with white text.
