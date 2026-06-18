@@ -6,6 +6,32 @@
 
 ## Entry template
 
+## Run — 2026-06-18
+
+### Input tail
+- Source report/snapshot: `tasks/pr-review-2026-06-17.md`
+- PRs investigated: 6 across 4 repos (1 DIRTY at start: ctrld#908)
+
+### Outcomes
+| Repo | Old PR | Disposition | New PR | Notes |
+| --- | ---: | --- | ---: | --- |
+| personal-config | #1278 | Phase 1 MERGE | — | Bolt perf |
+| ctrld-sync | #908 | SALVAGE + CLOSE | [#915](https://github.com/abhimehro/ctrld-sync/pull/915) | Rebuilt from main |
+
+- Salvage draft PRs opened: 1 (ctrld#915)
+- Infra-fix draft PRs opened: 0
+- Originals closed as superseded/no-op: ctrld#908
+- Phase 1 merges: pc#1278
+
+### Verification status
+- Blocking checks: none on `main`
+- Local verify: `uv run pytest tests/ -q` — 341 passed on ctrld salvage branch
+- Prior tail auto-resolved: pc#1270, esp#1120, hg#269
+
+### Handoff
+- Maintainer actions: T1 review pc#1279, hg#272; T2 review pc#1275; draft review ctrld#915; CodeScene tail sc#121
+- Cross-links: see `tasks/pr-review-2026-06-18.md`
+
 ## Run — 2026-06-16
 
 ### Input tail

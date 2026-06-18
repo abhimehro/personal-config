@@ -1,5 +1,10 @@
 # Lessons Learned
 
+## Lesson 0cr: Salvage DIRTY rebuild pattern confirmed on ctrld#908 (2026-06-18)
+
+**Pattern:** Draft salvage ctrld#908 went **DIRTY** two days after opening when `main` advanced via unrelated merges. `update-branch` would 422 on merge conflict.
+**Rule:** Rebuild salvage from fresh `main` branch (`cursor-agent/salvage-*-<suffix>`), run full pytest, open new draft PR, close stale salvage with cross-link. Never interactive-rebase the original conflicted salvage branch.
+
 ## Lesson 0cq: ctrld journal PRs conflict after Bolt/Sentinel burst (2026-06-16)
 
 **Pattern:** After squash-merging ctrld #905, #906, and #902 on the same day, documentation-only #904 (`bolt journal` rule) and performance #901 flipped to **DIRTY** even though both were green at session start.
