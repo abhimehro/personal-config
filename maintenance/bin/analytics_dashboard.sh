@@ -385,10 +385,10 @@ generate_dashboard() {
         .header h1 { color: #333; margin-bottom: 10px; }
         .header .date { color: #666; font-size: 14px; }
         .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px; }
-        .metric-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; }
-        .metric-card.success { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-        .metric-card.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-        .metric-card.critical { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
+        .metric-card { background: #44337A; color: white; padding: 20px; border-radius: 8px; text-align: center; }
+        .metric-card.success { background: #276749; }
+        .metric-card.warning { background: #9C4221; }
+        .metric-card.critical { background: #9B2C2C; }
         .metric-value { font-size: 2em; font-weight: bold; margin-bottom: 10px; }
         .metric-label { font-size: 0.9em; opacity: 0.9; }
         .section { margin-bottom: 40px; }

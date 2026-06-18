@@ -410,6 +410,15 @@
 
 ## Lesson 0cp: Combine DIRTY code + journal salvage; drop duplicate journal entries (2026-06-16)
 
+**Pattern:** Hydrograph #257 was `DIRTY` after `main` advanced (#261 flake8, trunk config). The branch mixed valuable `tests/test_app.py` coverage with `tasks/lessons.md`, `tasks/todo.md`, and `.trunk/trunk.yaml` churn from agent sessions.
+**Rule:** On salvage of a deferred test PR, diff against `main` and cherry-pick **only** production/test intent paths. Exclude `tasks/*`, session docs, and unrelated config churn unless the PR's stated purpose is config-only.
+**Detection cost:** Low — `gh pr diff --name-only` shows `tasks/` or `.trunk/` alongside `tests/` on a test-titled PR.
+
+## Lesson 0cp: Salvage PRs re-DIRTY after main advances — rebuild, don't rebase (2026-06-17)
+
+**Pattern:** Hydrograph #262 (tests-only salvage from #257) went `DIRTY` when `main` changed `chart_generator.py` and `validate_data.py` while the salvage branch still carried stale conflict markers from an earlier combined diff.
+**Rule:** When a salvage PR flips to `DIRTY`, close it and open a fresh draft from current `main` with the same intent-only file set. Do not interactive-rebase the old salvage branch.
+**Detection cost:** Low — `mergeStateStatus: DIRTY` on a `cursor-agent/salvage-*` branch with `changedFiles` outside the stated salvage scope.
 **Pattern:** ctrld #901 (main.py refactor) and #904 (anti-micro journal) both went `DIRTY` after the same merge burst (#905/#906/#902). #901's journal entry duplicated content already on `main` from an earlier merge.
 **Rule:** When salvaging sibling DIRTY PRs from the same burst, open one draft branch from current `main`: take production code from the code PR, append-only journal from the doc PR, and skip journal lines already present on `main`.
 **Detection cost:** Low — two open PRs on the same repo with overlapping `.jules/bolt.md` paths and `DIRTY` status after a burst merge.
