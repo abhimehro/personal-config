@@ -234,6 +234,7 @@
 ## 2026-06-16 - [Avoid eager evaluation in `.get()` fallbacks with `.lower()`]
 **Learning:** When assigning dictionary `.get()` results and chaining `.lower()` on fallbacks, the `.lower()` executes eagerly if evaluated inline (e.g. `(p.get("title") or "").lower()`), creating unnecessary allocations when the key exists.
 **Action:** When accessing a string value that requires `.lower()`, assign the `.get()` result first, check if it is `not None`, and then apply `.lower()`. This avoids the eager fallback evaluation and redundant C-level string allocations.
-## 2026-11-25 - [Avoid redundant `now_utc()` evaluations in age threshold loops]
-**Learning:** When filtering lists based on an age threshold using a function like `age_days()` that internally calls `now_utc()`, computing `now_utc()` on every iteration creates massive performance overhead for large datasets.
-**Action:** Pre-calculate a fixed cutoff datetime (`cutoff = now_utc() - timedelta`) outside the loop, and only perform the timestamp parsing (`parse_timestamp(item) <= cutoff`) during iteration. This reduces runtime complexity by more than 2x.
+
+## 2026-11-25 - [Avoid unnecessary `.split()` list allocation in simple string formatting]
+**Learning:** When extracting substrings from a string separated by a known delimiter inside a loop (e.g. `line.split("=", 1)`), repeatedly calling `.split()` allocates new lists each time, causing a performance overhead.
+**Action:** When you only need to split once on the first delimiter and want to avoid unnecessary list allocation, use `str.partition()`. It returns a tuple directly in C and doesn't allocate an arbitrary-length list.

@@ -571,9 +571,10 @@ def render_pr_rows(prs: list[dict[str, Any]]) -> list[str]:
     return rows
 
 
-def _fetch_backlog_items(
-    max_issues: int, max_prs: int
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def run_backlog_manager(config: dict[str, Any]) -> dict[str, Any]:
+    section = config.get("backlog_manager", {})
+    max_issues = int(section.get("max_issues", 10))
+    max_prs = int(section.get("max_pull_requests", 10))
     issues = gh_json(
         [
             "issue",
@@ -600,36 +601,40 @@ def _fetch_backlog_items(
         ],
         default=[],
     )
-    return issues, prs
-
-
-def run_backlog_manager(config: dict[str, Any]) -> dict[str, Any]:
-    section = config.get("backlog_manager", {})
-    max_issues = int(section.get("max_issues", 10))
-    max_prs = int(section.get("max_pull_requests", 10))
-    issues, prs = _fetch_backlog_items(max_issues, max_prs)
-    # \342\232\241 Bolt Optimization: Use dict bracket access in sort key to avoid .get() fallback evaluation overhead
-    # \342\232\241 Bolt Optimization: Revert to .get() in sort key to avoid KeyError if updatedAt is missing
     issues = sorted(issues, key=lambda item: item.get("updatedAt", ""))
     prs = sorted(prs, key=lambda item: item.get("updatedAt", ""))
     stale_days = int(section.get("stale_days", 14))
-    # \342\232\241 Bolt Optimization: Hoist cutoff threshold computation outside of list comprehensions
-    # to avoid evaluating `now_utc()` redundantly for every issue and PR
-    cutoff_threshold = now_utc() - dt.timedelta(days=stale_days)
     stale_issues = [
-        item
-        for item in issues
-        if item.get("updatedAt")
-        and parse_timestamp(item["updatedAt"]) <= cutoff_threshold
+        item for item in issues if age_days(item["updatedAt"]) >= stale_days
     ]
-    stale_prs = [
-        item
-        for item in prs
-        if item.get("updatedAt")
-        and parse_timestamp(item["updatedAt"]) <= cutoff_threshold
-    ]
+    stale_prs = [item for item in prs if age_days(item["updatedAt"]) >= stale_days]
     status = "warning" if stale_issues or stale_prs else "success"
     summary = f"Backlog scan found {len(issues)} open issues and {len(prs)} open PRs in the sampled set."
+    lines = _build_backlog_report(
+        status, summary, stale_days, issues, prs, stale_issues, stale_prs
+    )
+    return write_result(
+        "backlog-manager",
+        (status, summary),
+        "\n".join(lines) + "\n",
+        {
+            "issues": issues,
+            "pull_requests": prs,
+            "stale_issues": stale_issues,
+            "stale_pull_requests": stale_prs,
+        },
+    )
+
+
+def _build_backlog_report(
+    status: str,
+    summary: str,
+    stale_days: int,
+    issues: list[dict[str, Any]],
+    prs: list[dict[str, Any]],
+    stale_issues: list[dict[str, Any]],
+    stale_prs: list[dict[str, Any]],
+) -> list[str]:
     lines = [
         "# Backlog manager",
         "",
@@ -650,17 +655,7 @@ def run_backlog_manager(config: dict[str, Any]) -> dict[str, Any]:
             lines.append(
                 f"- PR #{item['number']} has been quiet for {age_days(item['updatedAt'])} days: {item['title']}"
             )
-    return write_result(
-        "backlog-manager",
-        (status, summary),
-        "\n".join(lines) + "\n",
-        {
-            "issues": issues,
-            "pull_requests": prs,
-            "stale_issues": stale_issues,
-            "stale_pull_requests": stale_prs,
-        },
-    )
+    return lines
 
 
 def load_task_results() -> list[dict[str, Any]]:
@@ -786,7 +781,8 @@ def extract_status_markers(issue_body: str) -> dict[str, str]:
     markers = {}
     for line in match.group(1).splitlines():
         if "=" in line:
-            key, value = line.split("=", 1)
+            # â¡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
+            key, sep, value = line.partition("=")
             markers[key.strip()] = value.strip()
     return markers
 
