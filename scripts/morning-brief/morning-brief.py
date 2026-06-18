@@ -1268,7 +1268,7 @@ def fetch_podcast_section(llm: PerplexityClient, *, limit: int = 3) -> SectionRe
     except Exception as exc:
         logger.error("Podcast error: %s", exc)
         return SectionResult(
-            "<h3>🎧 Latest from America Adapts</h3><p><em>Could not fetch episodes today.</em></p>",
+            html_section("🎧 Latest from America Adapts", "<p><em>Could not fetch episodes today.</em></p>"),
             [],
         )
 
