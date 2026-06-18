@@ -18,7 +18,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 ```
 
 ## Writing Data
@@ -34,7 +33,7 @@ import { doc, setDoc } from "firebase/firestore";
 await setDoc(doc(db, "cities", "LA"), {
   name: "Los Angeles",
   state: "CA",
-  country: "USA"
+  country: "USA",
 });
 
 // To merge with existing data instead of overwriting:
@@ -46,11 +45,11 @@ await setDoc(doc(db, "cities", "LA"), { population: 3900000 }, { merge: true });
 Use when you don't care about the document ID.
 
 ```javascript
-import { collection, addDoc } from "firebase/firestore";
+import { addDoc, collection } from "firebase/firestore";
 
 const docRef = await addDoc(collection(db, "cities"), {
   name: "Tokyo",
-  country: "Japan"
+  country: "Japan",
 });
 console.log("Document written with ID: ", docRef.id);
 ```
@@ -66,7 +65,7 @@ import { doc, updateDoc } from "firebase/firestore";
 const laRef = doc(db, "cities", "LA");
 
 await updateDoc(laRef, {
-  capital: true
+  capital: true,
 });
 ```
 
@@ -75,7 +74,7 @@ await updateDoc(laRef, {
 Perform an atomic read-modify-write operation.
 
 ```javascript
-import { runTransaction, doc } from "firebase/firestore";
+import { doc, runTransaction } from "firebase/firestore";
 
 const sfDocRef = doc(db, "cities", "SF");
 
@@ -134,7 +133,7 @@ querySnapshot.forEach((doc) => {
 import { doc, onSnapshot } from "firebase/firestore";
 
 const unsub = onSnapshot(doc(db, "cities", "SF"), (doc) => {
-    console.log("Current data: ", doc.data());
+  console.log("Current data: ", doc.data());
 });
 
 // Stop listening
@@ -144,19 +143,19 @@ const unsub = onSnapshot(doc(db, "cities", "SF"), (doc) => {
 ### Handle Changes (Added/Modified/Removed)
 
 ```javascript
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 
 const q = query(collection(db, "cities"), where("state", "==", "CA"));
 const unsubscribe = onSnapshot(q, (snapshot) => {
   snapshot.docChanges().forEach((change) => {
     if (change.type === "added") {
-        console.log("New city: ", change.doc.data());
+      console.log("New city: ", change.doc.data());
     }
     if (change.type === "modified") {
-        console.log("Modified city: ", change.doc.data());
+      console.log("Modified city: ", change.doc.data());
     }
     if (change.type === "removed") {
-        console.log("Removed city: ", change.doc.data());
+      console.log("Removed city: ", change.doc.data());
     }
   });
 });
@@ -169,7 +168,7 @@ const unsubscribe = onSnapshot(q, (snapshot) => {
 Use `query()` to combine filters.
 
 ```javascript
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 const citiesRef = collection(db, "cities");
 
@@ -178,7 +177,11 @@ const q1 = query(citiesRef, where("state", "==", "CA"));
 
 // Compound (AND)
 // Note: Requires an index if filtering on different fields
-const q2 = query(citiesRef, where("state", "==", "CA"), where("population", ">", 1000000));
+const q2 = query(
+  citiesRef,
+  where("state", "==", "CA"),
+  where("population", ">", 1000000),
+);
 ```
 
 ### Order and Limit
@@ -186,7 +189,7 @@ const q2 = query(citiesRef, where("state", "==", "CA"), where("population", ">",
 Sort and limit results.
 
 ```javascript
-import { orderBy, limit } from "firebase/firestore";
+import { limit, orderBy } from "firebase/firestore";
 
 const q = query(citiesRef, orderBy("name"), limit(3));
 ```

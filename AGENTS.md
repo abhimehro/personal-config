@@ -1,12 +1,17 @@
 # AGENTS.md
 
-This file provides guidance to WARP (warp.dev) when working with code in this repository.
+This file provides guidance to WARP (warp.dev) when working with code in this
+repository.
 
 ## Repository intent (what this repo is)
 
-`personal-config` is an “infrastructure as code” repo for a macOS workstation: dotfiles + automation scripts + launchd agents that manage networking (Control D/Windscribe), SSH setup, maintenance jobs, and a media pipeline.
+`personal-config` is an “infrastructure as code” repo for a macOS workstation:
+dotfiles + automation scripts + launchd agents that manage networking (Control
+D/Windscribe), SSH setup, maintenance jobs, and a media pipeline.
 
-Many scripts intentionally modify system state (symlinks in `$HOME`, `launchctl` agents, DNS/IPv6 settings, services). Prefer reading scripts first and using the repo’s verify/test scripts after changes.
+Many scripts intentionally modify system state (symlinks in `$HOME`, `launchctl`
+agents, DNS/IPv6 settings, services). Prefer reading scripts first and using the
+repo’s verify/test scripts after changes.
 
 ## Common commands (local development)
 
@@ -80,7 +85,8 @@ launchctl list | grep maintenance
 
 ### Media streaming pipeline
 
-High-level docs live in `media-streaming/README.md`. Setup is staged by `setup.sh` (templates + LaunchAgents).
+High-level docs live in `media-streaming/README.md`. Setup is staged by
+`setup.sh` (templates + LaunchAgents).
 
 ```bash
 # Verify media automation agents (names vary; grep is the easiest entrypoint)
@@ -89,7 +95,8 @@ launchctl list | grep -E '(media|alldebrid|speedybee)'
 
 ### Lint / formatting (Trunk)
 
-This repo is wired for Trunk via `.trunk/trunk.yaml` (shellcheck, shfmt, ruff, black, prettier, trufflehog, etc.).
+This repo is wired for Trunk via `.trunk/trunk.yaml` (shellcheck, shfmt, ruff,
+black, prettier, trufflehog, etc.).
 
 ```bash
 # Run all configured linters
@@ -106,12 +113,16 @@ trunk check --all
 trunk fmt
 ```
 
-> **ShellCheck dual-config note:** Local `shellcheck` uses `.shellcheckrc` (defaults, disables SC1091/SC1090) while Trunk/CI uses `.trunk/configs/.shellcheckrc` (`enable=all`, disables SC2154/SC1091/SC1090), so CI will report more issues than direct `shellcheck`.
-> To match CI behavior locally, run `trunk check <file>` instead of calling `shellcheck` directly.
+> **ShellCheck dual-config note:** Local `shellcheck` uses `.shellcheckrc`
+> (defaults, disables SC1091/SC1090) while Trunk/CI uses
+> `.trunk/configs/.shellcheckrc` (`enable=all`, disables SC2154/SC1091/SC1090),
+> so CI will report more issues than direct `shellcheck`. To match CI behavior
+> locally, run `trunk check <file>` instead of calling `shellcheck` directly.
 
 ### Tests
 
-There isn’t a single “test runner” script; most tests are directly executable shell scripts under `tests/`.
+There isn’t a single “test runner” script; most tests are directly executable
+shell scripts under `tests/`.
 
 Run a single shell test:
 
@@ -156,7 +167,9 @@ make benchmark
 
 ### PR Review Agent (preflight gate)
 
-Before running a bot PR triage/review session, preflight must pass. See `docs/automated-pr-review-agent.md` and `docs/github-app-pr-automation-checklist.md`.
+Before running a bot PR triage/review session, preflight must pass. See
+`docs/automated-pr-review-agent.md` and
+`docs/github-app-pr-automation-checklist.md`.
 
 ```bash
 # Run preflight gate and print next steps (uses tasks/pr-review-agent.config.yaml if present)
@@ -171,13 +184,15 @@ Before running a bot PR triage/review session, preflight must pass. See `docs/au
 
 ### CodeScene failure remediation during PR sessions
 
-When PR triage/review/salvage runs encounter a CodeScene failure, post this command on the affected PR before final defer/salvage decisions:
+When PR triage/review/salvage runs encounter a CodeScene failure, post this
+command on the affected PR before final defer/salvage decisions:
 
 ```bash
 /cs-agent skill:fix-code-health-degradations
 ```
 
 Canonical policy references:
+
 - `docs/automated-pr-review-agent.md`
 - `docs/automated-pr-salvage-agent.md`
 
@@ -185,28 +200,37 @@ Canonical policy references:
 
 ### 1) Config-as-code via symlink orchestration
 
-Core pattern: keep authoritative config files in-repo and symlink them into the real locations.
+Core pattern: keep authoritative config files in-repo and symlink them into the
+real locations.
 
 Key entrypoints:
 
-- `scripts/sync_all_configs.sh`: creates/updates symlinks and backups when appropriate.
-- `scripts/verify_all_configs.sh`: verifies links/targets and checks a few invariants (e.g., SSH perms, fish functions presence).
+- `scripts/sync_all_configs.sh`: creates/updates symlinks and backups when
+  appropriate.
+- `scripts/verify_all_configs.sh`: verifies links/targets and checks a few
+  invariants (e.g., SSH perms, fish functions presence).
 
 This is the backbone that makes “git pull” translate into a live system update.
 
 ### 2) Network mode manager (DNS + VPN state machine)
 
-The networking subsystem is intentionally centralized so that “mode switching” is not a series of manual steps.
+The networking subsystem is intentionally centralized so that “mode switching”
+is not a series of manual steps.
 
 Key components:
 
 - `scripts/network-mode-manager.sh`: orchestrates the state transition.
-- `scripts/network-mode-verify.sh`: asserts the machine is in the expected state (Control D active vs Windscribe ready), including DNS resolver checks and some profile/DoH3 assertions.
-- `scripts/network-mode-regression.sh` + `Makefile`: repeatable end-to-end regression to catch drift.
-- `controld-system/scripts/controld-manager`: low-level Control D profile management; `network-mode-manager.sh` delegates to this.
+- `scripts/network-mode-verify.sh`: asserts the machine is in the expected state
+  (Control D active vs Windscribe ready), including DNS resolver checks and some
+  profile/DoH3 assertions.
+- `scripts/network-mode-regression.sh` + `Makefile`: repeatable end-to-end
+  regression to catch drift.
+- `controld-system/scripts/controld-manager`: low-level Control D profile
+  management; `network-mode-manager.sh` delegates to this.
 - `scripts/macos/ipv6-manager.sh`: toggled as part of mode switching.
 
-If you’re debugging a network issue, start from the manager → verify script outputs before changing anything.
+If you’re debugging a network issue, start from the manager → verify script
+outputs before changing anything.
 
 ### 3) Automated maintenance (launchd + modular scripts)
 
@@ -214,9 +238,11 @@ Maintenance is structured as:
 
 - `maintenance/bin/*`: task scripts and orchestrators.
 - `maintenance/install.sh` (invoked by `setup.sh`): installs/boots LaunchAgents.
-- Logs are written under `~/Library/Logs/maintenance/` (see `maintenance/README.md`).
+- Logs are written under `~/Library/Logs/maintenance/` (see
+  `maintenance/README.md`).
 
-The important architectural idea: tasks are meant to be launchd-driven and observable via logs and `launchctl`.
+The important architectural idea: tasks are meant to be launchd-driven and
+observable via logs and `launchctl`.
 
 ### 4) Media streaming pipeline (agents + scripts)
 
@@ -224,35 +250,59 @@ The media pipeline is split into:
 
 - Setup + configuration templates (e.g., rclone template seeded by `setup.sh`).
 - Automation via LaunchAgents (installed if present).
-- Operational scripts in `media-streaming/scripts/` (sync, rename/finalize, repair).
+- Operational scripts in `media-streaming/scripts/` (sync, rename/finalize,
+  repair).
 
-The docs in `media-streaming/README.md` describe the intended “zero-click” flow and the responsibilities of each agent/script.
+The docs in `media-streaming/README.md` describe the intended “zero-click” flow
+and the responsibilities of each agent/script.
 
 ### 5) Code quality + automation workflows
 
 - Trunk is the “local lint hub” (`.trunk/trunk.yaml`).
-- CI additionally runs complexity checks (ShellCheck + radon) and a Trunk check (see `.github/workflows/code-quality.yml`).
-- `.github/workflows/README.md` documents additional agentic workflows and notes that `.md` workflow sources compile to `.lock.yml` (compiled files should not be edited by hand).
+- CI additionally runs complexity checks (ShellCheck + radon) and a Trunk check
+  (see `.github/workflows/code-quality.yml`).
+- `.github/workflows/README.md` documents additional agentic workflows and notes
+  that `.md` workflow sources compile to `.lock.yml` (compiled files should not
+  be edited by hand).
 
 ## Repo-specific agent behavior (important excerpts from existing rules)
 
 If you are operating as an agent in this repo, align with:
 
-- `.cursorrules`: security-first collaboration style (state approach before coding, comment _why_, provide a handoff summary after changes) + hard boundaries (don’t implement auth/payment/db schema changes without explicit user approval; don’t run destructive commands without confirmation).
-- `.github/copilot-instructions.md`: “development partner” protocol (before/while/after coding rhythm).
+- `.cursorrules`: security-first collaboration style (state approach before
+  coding, comment _why_, provide a handoff summary after changes) + hard
+  boundaries (don’t implement auth/payment/db schema changes without explicit
+  user approval; don’t run destructive commands without confirmation).
+- `.github/copilot-instructions.md`: “development partner” protocol
+  (before/while/after coding rhythm).
 
 ## Writing Tests
 
-Detailed patterns, mock recipes, and a copy-paste test skeleton live in [`docs/TESTING.md`](docs/TESTING.md). The key points:
+Detailed patterns, mock recipes, and a copy-paste test skeleton live in
+[`docs/TESTING.md`](docs/TESTING.md). The key points:
 
-- **`$MOCK_BIN` / PATH injection** — create a temp dir of fake executables and prepend it to `PATH` before running the script under test. Most shell unit tests in `tests/` use this pattern.
-- **Log-file assertion** — write mock binaries that record their invocations to a file in `$TEST_DIR`, then `grep` that file to assert the right command and arguments were used.
-- **Mock `HOME` isolation** — set `HOME="$TEST_DIR/home"` so scripts that write to `~/Library/Logs/` don't touch real user data and don't collide between parallel runs.
-- **Script-patching via `sed`** — when a script hardcodes a dependency path (e.g. `IPV6_MANAGER=…`), copy the script to `$TEST_DIR` and patch with `sed`. Branch on `$(uname -s)` for `sed -i ''` (macOS) vs `sed -i` (Linux).
-- **Capturing expected-failure output under `set -e`** — use `$(cmd 2>&1 || true)` or capture the exit code with `|| actual=$?` to prevent `set -euo pipefail` from aborting the test on a deliberately failing command.
-- **Credential file parsing** — use `parse_cred_value()` from `tests/lib/test_helpers.sh` when reading values from media-server credential files (`KEY='value'` format); never use raw `cut -d'=' -f2-` on a credential line (it returns quoted values like `'infuse'` instead of `infuse`).
+- **`$MOCK_BIN` / PATH injection** — create a temp dir of fake executables and
+  prepend it to `PATH` before running the script under test. Most shell unit
+  tests in `tests/` use this pattern.
+- **Log-file assertion** — write mock binaries that record their invocations to
+  a file in `$TEST_DIR`, then `grep` that file to assert the right command and
+  arguments were used.
+- **Mock `HOME` isolation** — set `HOME="$TEST_DIR/home"` so scripts that write
+  to `~/Library/Logs/` don't touch real user data and don't collide between
+  parallel runs.
+- **Script-patching via `sed`** — when a script hardcodes a dependency path
+  (e.g. `IPV6_MANAGER=…`), copy the script to `$TEST_DIR` and patch with `sed`.
+  Branch on `$(uname -s)` for `sed -i ''` (macOS) vs `sed -i` (Linux).
+- **Capturing expected-failure output under `set -e`** — use
+  `$(cmd 2>&1 || true)` or capture the exit code with `|| actual=$?` to prevent
+  `set -euo pipefail` from aborting the test on a deliberately failing command.
+- **Credential file parsing** — use `parse_cred_value()` from
+  `tests/lib/test_helpers.sh` when reading values from media-server credential
+  files (`KEY='value'` format); never use raw `cut -d'=' -f2-` on a credential
+  line (it returns quoted values like `'infuse'` instead of `infuse`).
 
-**Tests that skip on Linux/CI** (not bugs — each file contains an early-exit skip guard that prints `SKIP:` and exits 77):
+**Tests that skip on Linux/CI** (not bugs — each file contains an early-exit
+skip guard that prints `SKIP:` and exits 77):
 
 | Test                               | Skip Reason                       | Guard                |
 | ---------------------------------- | --------------------------------- | -------------------- |
@@ -260,37 +310,68 @@ Detailed patterns, mock recipes, and a copy-paste test skeleton live in [`docs/T
 | `test_ssh_config.sh`               | Needs 1Password agent socket      | `uname -s == Darwin` |
 | `test_security_manager_restore.sh` | Uses BSD `sed -i ''` (macOS only) | `uname -s == Darwin` |
 
-See [`docs/TESTING.md`](docs/TESTING.md) for the full guide including a copy-paste test skeleton and a known-limitations table.
+See [`docs/TESTING.md`](docs/TESTING.md) for the full guide including a
+copy-paste test skeleton and a known-limitations table.
 
 ## Cursor Cloud specific instructions
 
-This is a macOS-focused dotfiles/IaC repo. There are no web services or databases to start. The dev workflow is: edit scripts, lint, and run tests.
+This is a macOS-focused dotfiles/IaC repo. There are no web services or
+databases to start. The dev workflow is: edit scripts, lint, and run tests.
 
 ### Key services and how to run them
 
-| What                       | Command                                          | Notes                                                                                                                |
-| -------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| What                       | Command                                          | Notes                                                                                                                                                                                                            |
+| -------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Cursor Cloud hook sync     | `make cursor-cloud-hooks`                        | Copies `scripts/cursor_cloud_agent_*.sh` into `~/.cursor/agent-hooks/*` when **both** `pre-commit.cursor` and `commit-msg.cursor` exist as regular files; refuses symlink hook paths (`install(1)`, TOCTOU-safe) |
-| Shell tests only           | `make test`                                      | Fastest full suite; 31 tests, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                          |
-| Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                            |
-| All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI. |
-| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install pyyaml`                    |
-| Python tests only          | `make test-python`                               | Mostly stdlib; install `pyyaml` (`pip install pyyaml`) for the full suite                                            |
-| Lint (all)                 | `make lint`                                      | Trunk downloads its own tool versions on first run                                                                   |
-| Lint (correctness gate)    | `make lint-errors`                               | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate.                                              |
-| Format                     | `make lint-fix`                                  | Auto-fixes where supported                                                                                           |
+| Shell tests only           | `make test`                                      | Fastest full suite; 31 tests, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                                                                                                                      |
+| Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                                                                                                                        |
+| All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI.                                                                                             |
+| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install pyyaml`                                                                                                                |
+| Python tests only          | `make test-python`                               | Mostly stdlib; install `pyyaml` (`pip install pyyaml`) for the full suite                                                                                                                                        |
+| Lint (all)                 | `make lint`                                      | Trunk downloads its own tool versions on first run                                                                                                                                                               |
+| Lint (correctness gate)    | `make lint-errors`                               | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate.                                                                                                                                          |
+| Format                     | `make lint-fix`                                  | Auto-fixes where supported                                                                                                                                                                                       |
 
 ### Non-obvious caveats
 
-- **`make test` vs `make test-all`**: `make test` runs shell tests only (faster for iteration). `make test-all` additionally runs Python tests. Use `make test-quick` for pre-commit smoke checks.
-- **Trunk first-run latency**: The first `trunk check` or `trunk fmt` invocation downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`. Subsequent runs are fast. The update script installs the Trunk launcher, but tool downloads happen lazily.
-- **No `requirements.txt`**: Python tests and scripts are mostly standard library. The full test suite needs `pyyaml` (`pip install pyyaml`) — used by `tests/test_repository_automation_common.py` which exercises `.github/scripts/repository_automation_common.py`.
-- **`package.json` is empty**: The root `package.json` is `{}` — it exists as a Trunk runtime anchor for Node-based linters (prettier, markdownlint). Do not run `npm install`.
-- **macOS-specific test skips on Linux**: `test_config_fish.sh`, `test_ssh_config.sh`, and `test_security_manager_restore.sh` emit a `SKIP:` message and exit with code 77 on Linux/CI. The test runner treats this as a skip, not a failure.
-- **`setup.sh` is macOS-only**: Do not run `./setup.sh` on Linux — it calls `launchctl`, Homebrew, and macOS system utilities.
+- **`make test` vs `make test-all`**: `make test` runs shell tests only (faster
+  for iteration). `make test-all` additionally runs Python tests. Use
+  `make test-quick` for pre-commit smoke checks.
+- **Trunk first-run latency**: The first `trunk check` or `trunk fmt` invocation
+  downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`.
+  Subsequent runs are fast. The update script installs the Trunk launcher, but
+  tool downloads happen lazily.
+- **No `requirements.txt`**: Python tests and scripts are mostly standard
+  library. The full test suite needs `pyyaml` (`pip install pyyaml`) — used by
+  `tests/test_repository_automation_common.py` which exercises
+  `.github/scripts/repository_automation_common.py`.
+- **`package.json` is empty**: The root `package.json` is `{}` — it exists as a
+  Trunk runtime anchor for Node-based linters (prettier, markdownlint). Do not
+  run `npm install`.
+- **macOS-specific test skips on Linux**: `test_config_fish.sh`,
+  `test_ssh_config.sh`, and `test_security_manager_restore.sh` emit a `SKIP:`
+  message and exit with code 77 on Linux/CI. The test runner treats this as a
+  skip, not a failure.
+- **`setup.sh` is macOS-only**: Do not run `./setup.sh` on Linux — it calls
+  `launchctl`, Homebrew, and macOS system utilities.
 
 ### Cursor Cloud pre-commit secret scan
 
-Cursor injects `pre-commit.cursor` and `commit-msg.cursor` (under `~/.cursor/agent-hooks/<workspace-hash>/`) to scan staged diffs and the commit message for values of secrets listed in `CLOUD_AGENT_INJECTED_SECRET_NAMES`. Secret **labels** may include spaces (e.g. `GitHub SSH Key`); both hooks must use `printenv` for lookup, not bash `${!var}` indirect expansion (which errors with `invalid variable name`). Canonical copies: `scripts/cursor_cloud_agent_pre_commit.sh` and `scripts/cursor_cloud_agent_commit_msg.sh` — keep them aligned with the injected hooks when debugging Cloud Agent commits.
+Cursor injects `pre-commit.cursor` and `commit-msg.cursor` (under
+`~/.cursor/agent-hooks/<workspace-hash>/`) to scan staged diffs and the commit
+message for values of secrets listed in `CLOUD_AGENT_INJECTED_SECRET_NAMES`.
+Secret **labels** may include spaces (e.g. `GitHub SSH Key`); both hooks must
+use `printenv` for lookup, not bash `${!var}` indirect expansion (which errors
+with `invalid variable name`). Canonical copies:
+`scripts/cursor_cloud_agent_pre_commit.sh` and
+`scripts/cursor_cloud_agent_commit_msg.sh` — keep them aligned with the injected
+hooks when debugging Cloud Agent commits.
 
-**Fresh Cloud workspaces** may ship older injected copies. After clone, run **`make cursor-cloud-hooks`** (or `./scripts/install_cursor_cloud_agent_hooks.sh`) once per session to overwrite the injected hooks with the canonical scripts from this repo. The installer only updates a directory when **both** hook files are already present as **regular** (non-symlink) files—matching Cursor’s layout—and uses `install -m 0755` so symlink destinations are never followed. To target one hash directory: `CURSOR_AGENT_HOOKS_DIR=~/.cursor/agent-hooks/<hash> ./scripts/install_cursor_cloud_agent_hooks.sh`.
+**Fresh Cloud workspaces** may ship older injected copies. After clone, run
+**`make cursor-cloud-hooks`** (or
+`./scripts/install_cursor_cloud_agent_hooks.sh`) once per session to overwrite
+the injected hooks with the canonical scripts from this repo. The installer only
+updates a directory when **both** hook files are already present as **regular**
+(non-symlink) files—matching Cursor’s layout—and uses `install -m 0755` so
+symlink destinations are never followed. To target one hash directory:
+`CURSOR_AGENT_HOOKS_DIR=~/.cursor/agent-hooks/<hash> ./scripts/install_cursor_cloud_agent_hooks.sh`.

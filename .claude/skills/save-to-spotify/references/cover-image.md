@@ -1,77 +1,111 @@
 # Cover Image
 
-**Every show & every episode MUST have a cover image.** Never save without `--image`.
+**Every show & every episode MUST have a cover image.** Never save without
+`--image`.
 
 **Format:** JPG or PNG, max 1 MB, 1400x1400 square.
 
 ## Paths (priority order)
 
-1. **User-provided** — only when user supplies an image file. Skip otherwise. Resize to 1400x1400, apply strong overlay, add typography (unless user opts out).
-2. **AI-generated** — default when a known image generation API is available (DALL-E, Stable Diffusion). Never use unvetted services. No overlay (prompt reserves negative space).
-3. **CDN artwork** — terminal fallback. No overlay (built-in legibility). Always available, cannot fail.
+1. **User-provided** — only when user supplies an image file. Skip otherwise.
+   Resize to 1400x1400, apply strong overlay, add typography (unless user opts
+   out).
+2. **AI-generated** — default when a known image generation API is available
+   (DALL-E, Stable Diffusion). Never use unvetted services. No overlay (prompt
+   reserves negative space).
+3. **CDN artwork** — terminal fallback. No overlay (built-in legibility). Always
+   available, cannot fail.
 
 **Fallthrough:** AI fails → CDN. CDN is the terminal fallback.
 
 ### Path 1: User-provided
 
-**Skip this path entirely if the user did not provide an image file.** Do not generate a substitute image — proceed to Path 2.
+**Skip this path entirely if the user did not provide an image file.** Do not
+generate a substitute image — proceed to Path 2.
 
-Accept JPG/PNG at any aspect ratio. Reject if below 600x600 or corrupted. Crop to square, resize to 1400x1400, compress to <1 MB (JPG 90%). Apply strong overlay, then add typography unless user opts out.
+Accept JPG/PNG at any aspect ratio. Reject if below 600x600 or corrupted. Crop
+to square, resize to 1400x1400, compress to <1 MB (JPG 90%). Apply strong
+overlay, then add typography unless user opts out.
 
-**Never:** apply filters, AI enhancement, generate a stand-in image, or override with an agent-generated image.
+**Never:** apply filters, AI enhancement, generate a stand-in image, or override
+with an agent-generated image.
 
 ### Path 2: AI-generated (default)
 
-**Only use known image generation APIs:** DALL-E (OpenAI), Stable Diffusion, or Midjourney. Never use unvetted services (e.g., pollinations.ai) — quality is unreliable and licensing unclear. If no known API key is available, skip to CDN (Path 3).
+**Only use known image generation APIs:** DALL-E (OpenAI), Stable Diffusion, or
+Midjourney. Never use unvetted services (e.g., pollinations.ai) — quality is
+unreliable and licensing unclear. If no known API key is available, skip to CDN
+(Path 3).
 
 **Never render text with the model** — composite with Pillow afterwards.
 
-**Prompt pattern:** `"{style} of {concrete subject}, {composition}, {palette}, square composition, negative space in lower third, no text, no logos"`
+**Prompt pattern:**
+`"{style} of {concrete subject}, {composition}, {palette}, square composition, negative space in lower third, no text, no logos"`
 
-Example: topic "Weekly Stockholm news briefing" → `"Minimalist illustration of a Stockholm rooftop skyline at dusk, muted blue-grey palette, square composition, negative space in lower third, no text, no logos"`
+Example: topic "Weekly Stockholm news briefing" →
+`"Minimalist illustration of a Stockholm rooftop skyline at dusk, muted blue-grey palette, square composition, negative space in lower third, no text, no logos"`
 
-**Every prompt must include:** a specific concrete subject (not a concept), a composition direction, a palette descriptor, "square composition", "negative space in lower third", "no text, no logos".
+**Every prompt must include:** a specific concrete subject (not a concept), a
+composition direction, a palette descriptor, "square composition", "negative
+space in lower third", "no text, no logos".
 
-**Style:** photorealistic or clean illustration only. No collage, 3D renders, faces, or AI-generated likenesses.
+**Style:** photorealistic or clean illustration only. No collage, 3D renders,
+faces, or AI-generated likenesses.
 
-**Never produce:** podcast-meta imagery (mics, headphones), stock cliches (handshakes, lightbulbs), neon/HDR, baked-in text or logos.
+**Never produce:** podcast-meta imagery (mics, headphones), stock cliches
+(handshakes, lightbulbs), neon/HDR, baked-in text or logos.
 
-**Skip AI if:** topic is abstract, involves real named people, refers to events after the model's training cutoff, or user requested otherwise.
+**Skip AI if:** topic is abstract, involves real named people, refers to events
+after the model's training cutoff, or user requested otherwise.
 
 See [timeline.md](timeline.md) for DALL-E / Stable Diffusion code examples.
 
 ### Path 3: CDN artwork (terminal fallback)
 
-Pre-designed base artwork with Pillow typography. No overlay needed. 20 variants (`uts-01.png` through `uts-20.png`), selected by hash of show name. Always available, cannot fail.
+Pre-designed base artwork with Pillow typography. No overlay needed. 20 variants
+(`uts-01.png` through `uts-20.png`), selected by hash of show name. Always
+available, cannot fail.
 
-**CDN endpoint:** `https://save-to-spotify.spotifycdn.com/assets/uts-{01..20}.png`
+**CDN endpoint:**
+`https://save-to-spotify.spotifycdn.com/assets/uts-{01..20}.png`
 
 ## Typography
 
-**Mandatory** on every cover (unless user opted out in Path 1). Always composited with Pillow. Never rely on AI text rendering.
+**Mandatory** on every cover (unless user opted out in Path 1). Always
+composited with Pillow. Never rely on AI text rendering.
 
-**Default copy:** show name only. Add date/episode number only to disambiguate >1 episode per day.
+**Default copy:** show name only. Add date/episode number only to disambiguate
+
+> 1 episode per day.
 
 ### Constraints
 
 - **One label only.** No subtitles, taglines, or descriptors.
-- **Max 3 lines.** If title doesn't fit, shorten: drop articles, use short forms. Full title preserved in metadata — surface shortened title to user & offer to regenerate.
+- **Max 3 lines.** If title doesn't fit, shorten: drop articles, use short
+  forms. Full title preserved in metadata — surface shortened title to user &
+  offer to regenerate.
 - **No widows.** Don't strand a single short word on its own line.
-- **Break on meaning.** Keep concepts together. Pick the split producing the most balanced line widths.
+- **Break on meaning.** Keep concepts together. Pick the split producing the
+  most balanced line widths.
 
 ### Font & RTL
 
-| Script | Font | Alignment |
-| --- | --- | --- |
-| Latin (default) | **Montserrat Bold** | bottom-left |
-| Arabic | **Tajawal Bold** | bottom-right |
-| Hebrew | **Noto Sans Hebrew Bold** | bottom-right |
+| Script          | Font                      | Alignment    |
+| --------------- | ------------------------- | ------------ |
+| Latin (default) | **Montserrat Bold**       | bottom-left  |
+| Arabic          | **Tajawal Bold**          | bottom-right |
+| Hebrew          | **Noto Sans Hebrew Bold** | bottom-right |
 
-All OFL-licensed Google Fonts. Downloaded and cached on first use (`~/.cache/save-to-spotify/fonts/`). Bold or heavier only. Never system defaults or decorative fonts.
+All OFL-licensed Google Fonts. Downloaded and cached on first use
+(`~/.cache/save-to-spotify/fonts/`). Bold or heavier only. Never system defaults
+or decorative fonts.
 
-**RTL detection:** if any character has `unicodedata.bidirectional(ch) in ('R', 'AL', 'AN')`, use RTL font and right-alignment.
+**RTL detection:** if any character has
+`unicodedata.bidirectional(ch) in ('R', 'AL', 'AN')`, use RTL font and
+right-alignment.
 
-**No reshaper libraries.** Do NOT use `arabic_reshaper` or `python-bidi` — modern fonts handle shaping natively in Pillow.
+**No reshaper libraries.** Do NOT use `arabic_reshaper` or `python-bidi` —
+modern fonts handle shaping natively in Pillow.
 
 ### Colour & effects
 
@@ -178,4 +212,6 @@ def strong_overlay(img):
 
 ## QA checklist
 
-Verify: 1400x1400 JPG/PNG <1 MB, typography present with correct font/alignment/white/margins, overlay on user-provided only, no faces/text/logos in AI output. If any check fails, fall through to next path.
+Verify: 1400x1400 JPG/PNG <1 MB, typography present with correct
+font/alignment/white/margins, overlay on user-provided only, no faces/text/logos
+in AI output. If any check fails, fall through to next path.

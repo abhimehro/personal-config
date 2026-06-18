@@ -239,7 +239,7 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
             # Parent path is constructed safely from split, but escaping is good hygiene
             safe_parent = html.escape(parent)
             html_parts.append(
-            f'<a href="/{safe_parent}" class="file directory" aria-label="Parent Directory"><span aria-hidden="true">📁 .. (Parent Directory)</span></a>\n'
+                f'<a href="/{safe_parent}" class="file directory" aria-label="Parent Directory"><span aria-hidden="true">📁 .. (Parent Directory)</span></a>\n'
             )
 
         # ⚡ Performance: tuple for fast C-level endswith checking

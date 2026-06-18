@@ -176,15 +176,15 @@ class TestHtmlHelpers(unittest.TestCase):
 
     def test_html_section_with_emoji(self):
         result = mb.html_section("🌅 Good Morning", "<p>body</p>")
-        assert 'aria-label' not in result
+        assert "aria-label" not in result
         assert '<span aria-hidden="true">🌅</span>' in result
         assert "Good Morning</h3>" in result
 
     def test_html_section_non_ascii_text(self):
         result = mb.html_section("Café Menu", "<p>body</p>")
-        assert 'aria-label' not in result
+        assert "aria-label" not in result
         assert '<span aria-hidden="true">' not in result
-        assert '<h3>Café Menu</h3>' in result
+        assert "<h3>Café Menu</h3>" in result
 
 
 # ============================================================
@@ -246,7 +246,9 @@ class TestExtractHoroscopeText(unittest.TestCase):
         assert mb.extract_horoscope_text({"horoscope": "   "}) is None
 
     def test_flat_horoscope_data(self):
-        assert mb.extract_horoscope_text({"horoscope_data": "Flat data."}) == "Flat data."
+        assert (
+            mb.extract_horoscope_text({"horoscope_data": "Flat data."}) == "Flat data."
+        )
 
     def test_priority_order(self):
         payload = {

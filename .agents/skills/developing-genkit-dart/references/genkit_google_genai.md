@@ -1,6 +1,7 @@
 # Genkit Google GenAI Plugin (`genkit_google_genai`)
 
-The Google AI plugin provides an interface against the official Google AI Gemini API.
+The Google AI plugin provides an interface against the official Google AI Gemini
+API.
 
 ## Usage
 
@@ -35,7 +36,8 @@ final embeddings = await ai.embedMany(
 
 ## Image Generation
 
-The plugin also supports image generation models such as `gemini-2.5-flash-image`.
+The plugin also supports image generation models such as
+`gemini-2.5-flash-image`.
 
 ### Example (Nano Banana)
 
@@ -58,11 +60,13 @@ ai.defineFlow(
 );
 ```
 
-The media (url field) contain base64 encoded data uri. You can decode it and save it as a file.
+The media (url field) contain base64 encoded data uri. You can decode it and
+save it as a file.
 
 ## Text-to-Speech (TTS)
 
-You can use text-to-speech models to generate audio from text. The generated `Media` object will contain base64 encoded PCM audio in its data URI.
+You can use text-to-speech models to generate audio from text. The generated
+`Media` object will contain base64 encoded PCM audio in its data URI.
 
 ```dart
 // Define a TTS flow
@@ -92,4 +96,5 @@ ai.defineFlow(
 );
 ```
 
-Google AI also supports multi-speaker TTS by configuring a `MultiSpeakerVoiceConfig` inside `SpeechConfig`.
+Google AI also supports multi-speaker TTS by configuring a
+`MultiSpeakerVoiceConfig` inside `SpeechConfig`.

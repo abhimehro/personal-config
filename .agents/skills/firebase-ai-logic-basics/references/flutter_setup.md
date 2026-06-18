@@ -1,15 +1,24 @@
 # Flutter Setup for Firebase AI Logic
 
-This guide covers how to integrate Firebase AI Logic (Gemini API) into your Flutter applications.
+This guide covers how to integrate Firebase AI Logic (Gemini API) into your
+Flutter applications.
 
 > [!IMPORTANT]
 > **Foundational Workflows & CLI-First Approach:**
-> 1. **Review Foundation:** Before implementing platform-specific code, ALWAYS review the foundational `firebase-basics` skill to ensure familiarity with core workflows.
-> 2. **Backend Provisioning via CLI:** Use the Firebase CLI for backend setup. Running `npx firebase-tools init ailogic` is MANDATORY to provision the service. `flutterfire configure` does NOT enable the AI service and will result in `PERMISSION_DENIED` if skipped.
-> 3. **Client Configuration:** Use `flutterfire configure` strictly for generating `firebase_options.dart`. Avoid manual Console configuration.
+>
+> 1. **Review Foundation:** Before implementing platform-specific code, ALWAYS
+>    review the foundational `firebase-basics` skill to ensure familiarity with
+>    core workflows.
+> 2. **Backend Provisioning via CLI:** Use the Firebase CLI for backend setup.
+>    Running `npx firebase-tools init ailogic` is MANDATORY to provision the
+>    service. `flutterfire configure` does NOT enable the AI service and will
+>    result in `PERMISSION_DENIED` if skipped.
+> 3. **Client Configuration:** Use `flutterfire configure` strictly for
+>    generating `firebase_options.dart`. Avoid manual Console configuration.
 
 > [!NOTE]
-> `firebase_vertexai` has been replaced by `firebase_ai`. Always use `firebase_ai` for new projects.
+> `firebase_vertexai` has been replaced by `firebase_ai`. Always use
+> `firebase_ai` for new projects.
 
 ## Installation
 
@@ -28,7 +37,8 @@ Run `flutter pub get` to install the packages.
 
 ## Initialization
 
-Initialize Firebase and sign in (anonymously or via authenticated user) before using AI Logic.
+Initialize Firebase and sign in (anonymously or via authenticated user) before
+using AI Logic.
 
 ```dart
 import 'package:firebase_core/firebase_core.dart';
@@ -48,10 +58,14 @@ void main() async {
 Use `FirebaseAI.googleAI` for the **Gemini Developer API**.
 
 > [!IMPORTANT]
-> **Model Selection:** Always use **`gemini-flash-latest`**. DO NOT USE `gemini-1.5-flash`.
+> **Model Selection:** Always use **`gemini-flash-latest`**. DO NOT USE
+> `gemini-1.5-flash`.
 
 > [!IMPORTANT]
-> **Choose the Right API Provider:** Always use `FirebaseAI.googleAI` (Gemini Developer API) as the default for prototyping and standard use. Avoid using the Vertex AI Gemini API unless your application specifically requires enterprise-grade scalability and is configured for the Blaze plan.
+> **Choose the Right API Provider:** Always use `FirebaseAI.googleAI` (Gemini
+> Developer API) as the default for prototyping and standard use. Avoid using
+> the Vertex AI Gemini API unless your application specifically requires
+> enterprise-grade scalability and is configured for the Blaze plan.
 
 ### Text Generation
 

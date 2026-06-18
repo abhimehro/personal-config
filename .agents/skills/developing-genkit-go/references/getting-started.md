@@ -8,13 +8,16 @@ go mod init my-genkit-app
 go get github.com/genkit-ai/genkit/go@latest
 ```
 
-Provider plugins ship in the same module under `plugins/`, so they don't need to be fetched separately. Just import the ones you want and run `go mod tidy` afterwards. The available plugins include:
+Provider plugins ship in the same module under `plugins/`, so they don't need to
+be fetched separately. Just import the ones you want and run `go mod tidy`
+afterwards. The available plugins include:
 
 - `plugins/googlegenai` for Google AI and Vertex AI
 - `plugins/anthropic` for Anthropic Claude
 - `plugins/compat_oai` for OpenAI-compatible APIs (OpenAI, Groq, xAI, etc.)
 - `plugins/ollama` for local Ollama models
-- `plugins/middleware` for the built-in middleware bundle (`Retry`, `Fallback`, `ToolApproval`, `Filesystem`, `Skills`)
+- `plugins/middleware` for the built-in middleware bundle (`Retry`, `Fallback`,
+  `ToolApproval`, `Filesystem`, `Skills`)
 
 ## Initialization
 
@@ -35,7 +38,8 @@ g := genkit.Init(ctx,
 
 ### The `*Genkit` Instance
 
-The `*Genkit` value `g` is the central registry. Pass it to every Genkit function:
+The `*Genkit` value `g` is the central registry. Pass it to every Genkit
+function:
 
 ```go
 // Defining resources
@@ -48,7 +52,8 @@ genkit.GenerateText(ctx, g, ...)
 genkit.Generate(ctx, g, ...)
 ```
 
-Do not store `g` in a global variable. Pass it explicitly through your call chain.
+Do not store `g` in a global variable. Pass it explicitly through your call
+chain.
 
 ### Init Options
 
@@ -84,14 +89,17 @@ g := genkit.Init(ctx,
 
 ## Genkit CLI
 
-The Genkit CLI provides a local Developer UI for running flows, tracing executions, and inspecting model interactions.
+The Genkit CLI provides a local Developer UI for running flows, tracing
+executions, and inspecting model interactions.
 
 **Install:**
+
 ```bash
 curl -sL cli.genkit.dev | bash
 ```
 
 **Verify:**
+
 ```bash
 genkit --version
 ```
@@ -105,16 +113,19 @@ genkit start -- go run .
 ```
 
 This launches:
+
 - Your app (with tracing enabled)
 - The Developer UI at `http://localhost:4000`
 - A telemetry API at `http://localhost:4033`
 
 Add `-o` to auto-open the UI in your browser:
+
 ```bash
 genkit start -o -- go run .
 ```
 
 The Developer UI lets you:
+
 - Run and test flows interactively
 - View traces for each generation call (inputs, outputs, latency, token usage)
 - Inspect prompt rendering and tool calls

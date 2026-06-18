@@ -1,17 +1,24 @@
 # PR Review Automation — ELIR Handoff
 
-**Explain Like I'm Reviewing** — maintenance summary for the automated PR review system.
+**Explain Like I'm Reviewing** — maintenance summary for the automated PR review
+system.
 
 ## Purpose
 
-Reduce bot PR backlog across configured repositories by triaging, reviewing, merging the good, fixing the fixable, and closing duplicates/stale. Security and accuracy are top priorities. Only bot-authored PRs are in scope.
+Reduce bot PR backlog across configured repositories by triaging, reviewing,
+merging the good, fixing the fixable, and closing duplicates/stale. Security and
+accuracy are top priorities. Only bot-authored PRs are in scope.
 
 ## Security
 
-- **No merge** on security gate failure (secrets, eval/exec, permission escalation, CVE deps, weakened .gitignore).
+- **No merge** on security gate failure (secrets, eval/exec, permission
+  escalation, CVE deps, weakened .gitignore).
 - **No merge** on failing CI unless proven unrelated (e.g. flaky test).
-- **No autonomous merge** of auth, payment, or database migration logic—human approval required.
-- Token and permissions follow [GitHub App Permission Checklist](github-app-pr-automation-checklist.md). Preflight validates capabilities before any triage or write actions.
+- **No autonomous merge** of auth, payment, or database migration logic—human
+  approval required.
+- Token and permissions follow
+  [GitHub App Permission Checklist](github-app-pr-automation-checklist.md).
+  Preflight validates capabilities before any triage or write actions.
 
 ## Failure modes
 
@@ -25,27 +32,35 @@ Reduce bot PR backlog across configured repositories by triaging, reviewing, mer
 ## Review checklist (before accepting a session)
 
 - [ ] Preflight completed successfully (read-only or write-probes as intended).
-- [ ] Inventory written to `tasks/pr-inventory.md`; triage to `tasks/pr-triage.md`.
+- [ ] Inventory written to `tasks/pr-inventory.md`; triage to
+      `tasks/pr-triage.md`.
 - [ ] Disposition per decision matrix (MERGE, CLOSE-\*, ESCALATE, etc.).
-- [ ] Escalations and ready-to-execute commands documented in session report and/or triage.
+- [ ] Escalations and ready-to-execute commands documented in session report
+      and/or triage.
 
 ## Maintenance
 
-- **After each session:** Update `tasks/lessons.md`; reflect material lessons in [Automated PR Review Agent](automated-pr-review-agent.md) heuristics subsection.
-- **Permissions:** Keep checklist and preflight in sync with GitHub App permissions. If scope changes, run preflight with `--require-write-probes` and probe PRs to confirm.
-- **After permission escalation:** Run close queue then merge queue in the order given in `tasks/pr-triage.md` ("Ready-to-Execute Human Actions"). Re-check mergeable state after each merge.
+- **After each session:** Update `tasks/lessons.md`; reflect material lessons in
+  [Automated PR Review Agent](automated-pr-review-agent.md) heuristics
+  subsection.
+- **Permissions:** Keep checklist and preflight in sync with GitHub App
+  permissions. If scope changes, run preflight with `--require-write-probes` and
+  probe PRs to confirm.
+- **After permission escalation:** Run close queue then merge queue in the order
+  given in `tasks/pr-triage.md` ("Ready-to-Execute Human Actions"). Re-check
+  mergeable state after each merge.
 
 ## Key files
 
-| File                                         | Role                                                                                  |
-| -------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `docs/automated-pr-review-agent.md`          | Canonical agent spec (phases, gates, matrix)                                          |
-| `docs/github-app-pr-automation-checklist.md` | App permissions, preflight usage, runbook                                             |
-| `scripts/preflight-gh-pr-automation.sh`      | Fail-fast auth/repo/PR/checks validation                                              |
-| `scripts/run-pr-review-session.sh`           | Runs preflight; prints next steps                                                     |
-| `tasks/pr-review-agent.config.yaml`          | Repos, bot authors, thresholds                                                        |
-| `tasks/pr-inventory.md`                      | Current session inventory (table)                                                     |
-| `tasks/pr-triage.md`                         | Duplicates, conflicts, ready-to-execute commands                                      |
+| File                                         | Role                                                                                        |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `docs/automated-pr-review-agent.md`          | Canonical agent spec (phases, gates, matrix)                                                |
+| `docs/github-app-pr-automation-checklist.md` | App permissions, preflight usage, runbook                                                   |
+| `scripts/preflight-gh-pr-automation.sh`      | Fail-fast auth/repo/PR/checks validation                                                    |
+| `scripts/run-pr-review-session.sh`           | Runs preflight; prints next steps                                                           |
+| `tasks/pr-review-agent.config.yaml`          | Repos, bot authors, thresholds                                                              |
+| `tasks/pr-inventory.md`                      | Current session inventory (table)                                                           |
+| `tasks/pr-triage.md`                         | Duplicates, conflicts, ready-to-execute commands                                            |
 | `tasks/review-session-reports.md`            | Review-agent rolling session log (optional dated `tasks/pr-review-YYYY-MM-DD.md` snapshots) |
-| `tasks/salvage-session-reports.md`           | Salvage-agent rolling session log                                                     |
-| `tasks/lessons.md`                           | Recurring patterns and process improvements                                           |
+| `tasks/salvage-session-reports.md`           | Salvage-agent rolling session log                                                           |
+| `tasks/lessons.md`                           | Recurring patterns and process improvements                                                 |

@@ -174,17 +174,17 @@ check_stale_pending() {
 	local stale_found=false
 	local now
 	now=$(date +%s)
-	
+
 	for candidate in "$PENDING_DIR"/*.candidate.json; do
-		[[ -f "$candidate" ]] || continue
-		
+		[[ -f $candidate ]] || continue
+
 		local candidate_age_secs
 		if [[ "$(uname)" == "Darwin" ]]; then
 			candidate_age_secs=$(($(date +%s) - $(stat -f %m "$candidate")))
 		else
 			candidate_age_secs=$(($(date +%s) - $(stat -c %Y "$candidate")))
 		fi
-		
+
 		# 86400 seconds = 24 hours
 		if ((candidate_age_secs > 86400)); then
 			local filename
@@ -193,8 +193,8 @@ check_stale_pending() {
 			stale_found=true
 		fi
 	done
-	
-	if [[ "$stale_found" == "true" ]]; then
+
+	if [[ $stale_found == "true" ]]; then
 		notify "Stale Download Candidates" "You have pending candidates older than 24 hours. Run 'approve-download --list' to review."
 	fi
 }

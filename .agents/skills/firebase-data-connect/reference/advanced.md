@@ -1,6 +1,7 @@
 # Advanced Features Reference
 
 ## Contents
+
 - [Vector Similarity Search](#vector-similarity-search)
 - [Full-Text Search](#full-text-search)
 - [Cloud Functions Integration](#cloud-functions-integration)
@@ -64,14 +65,14 @@ query SearchMovies($query: String!) @auth(level: PUBLIC) {
 
 ### Similarity Parameters
 
-| Parameter | Description |
-|-----------|-------------|
-| `compare` | Raw Vector to compare against |
-| `compare_embed` | Generate embedding from text via Vertex AI |
-| `method` | Distance function: `L2`, `COSINE`, `INNER_PRODUCT` |
-| `within` | Max distance (results further are excluded) |
-| `where` | Additional filters |
-| `limit` | Max results to return |
+| Parameter       | Description                                        |
+| --------------- | -------------------------------------------------- |
+| `compare`       | Raw Vector to compare against                      |
+| `compare_embed` | Generate embedding from text via Vertex AI         |
+| `method`        | Distance function: `L2`, `COSINE`, `INNER_PRODUCT` |
+| `within`        | Max distance (results further are excluded)        |
+| `where`         | Additional filters                                 |
+| `limit`         | Max results to return                              |
 
 ### Custom Embeddings
 
@@ -126,12 +127,12 @@ query SearchMovies($query: String!) @auth(level: PUBLIC) {
 
 ### Query Formats
 
-| Format | Description |
-|--------|-------------|
-| `QUERY` | Web-style (default): quotes, AND, OR supported |
-| `PLAIN` | Match all words, any order |
-| `PHRASE` | Match exact phrase |
-| `ADVANCED` | Full tsquery syntax |
+| Format     | Description                                    |
+| ---------- | ---------------------------------------------- |
+| `QUERY`    | Web-style (default): quotes, AND, OR supported |
+| `PLAIN`    | Match all words, any order                     |
+| `PHRASE`   | Match exact phrase                             |
+| `ADVANCED` | Full tsquery syntax                            |
 
 ### Tuning Results
 
@@ -148,7 +149,9 @@ query SearchWithThreshold($query: String!) @auth(level: PUBLIC) {
 
 ### Supported Languages
 
-`english` (default), `french`, `german`, `spanish`, `italian`, `portuguese`, `dutch`, `danish`, `finnish`, `norwegian`, `swedish`, `russian`, `arabic`, `hindi`, `simple`
+`english` (default), `french`, `german`, `spanish`, `italian`, `portuguese`,
+`dutch`, `danish`, `finnish`, `norwegian`, `swedish`, `russian`, `arabic`,
+`hindi`, `simple`
 
 ---
 
@@ -211,7 +214,7 @@ def on_user_create(event: dataconnect_fn.Event):
 // Trigger on all User* mutations
 export const onUserMutation = onMutationExecuted(
   { operation: "User*" },
-  (event) => { /* ... */ }
+  (event) => {/* ... */},
 );
 
 // Capture operation name
@@ -219,7 +222,7 @@ export const onAnyMutation = onMutationExecuted(
   { service: "myService", operation: "{operationName}" },
   (event) => {
     console.log("Operation:", event.params.operationName);
-  }
+  },
 );
 ```
 
@@ -230,7 +233,8 @@ export const onAnyMutation = onMutationExecuted(
 - **Async workflows**: Image processing, data aggregation
 - **Audit logging**: Track all data changes
 
-> ⚠️ **Avoid infinite loops**: Don't trigger mutations that would fire the same trigger. Use filters to exclude self-triggered events.
+> ⚠️ **Avoid infinite loops**: Don't trigger mutations that would fire the same
+> trigger. Use filters to exclude self-triggered events.
 
 ---
 
@@ -270,15 +274,15 @@ mutation ClearMovies {
 ### Production: Admin SDK Bulk Operations
 
 ```typescript
-import { initializeApp } from 'firebase-admin/app';
-import { getDataConnect } from 'firebase-admin/data-connect';
+import { initializeApp } from "firebase-admin/app";
+import { getDataConnect } from "firebase-admin/data-connect";
 
 const app = initializeApp();
 const dc = getDataConnect({ location: "us-central1", serviceId: "my-service" });
 
 const movies = [
   { id: "uuid-1", title: "Movie 1", genre: "Action" },
-  { id: "uuid-2", title: "Movie 2", genre: "Drama" }
+  { id: "uuid-2", title: "Movie 2", genre: "Drama" },
 ];
 
 // Bulk insert

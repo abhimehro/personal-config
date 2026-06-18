@@ -138,7 +138,10 @@ class TestMediaServerHandler(unittest.TestCase):
         html_root = self.handler.generate_directory_listing(files, "/")
 
         self.assertIn("<title>Media Library - /</title>", html_root)
-        self.assertIn("<h1><span aria-hidden=\"true\">\U0001f4c1</span> Media Library: //</h1>", html_root)
+        self.assertIn(
+            '<h1><span aria-hidden="true">\U0001f4c1</span> Media Library: //</h1>',
+            html_root,
+        )
         self.assertNotIn(".. (Parent Directory)", html_root)
 
         # File checks with escaped characters
@@ -173,7 +176,10 @@ class TestMediaServerHandler(unittest.TestCase):
         # Note: actually current_path does NOT get escaped before computing parent?
         # Let's check code: parent = "/".join(current_path.rstrip("/").split("/")[:-1]) -> "/Movies & TV"
         # safe_parent = html.escape(parent) -> "/Movies &amp; TV"
-        self.assertIn('<a href="//Movies &amp; TV" class="file directory" aria-label="Parent Directory"><span aria-hidden="true">', html_sub)
+        self.assertIn(
+            '<a href="//Movies &amp; TV" class="file directory" aria-label="Parent Directory"><span aria-hidden="true">',
+            html_sub,
+        )
 
         # Check files in subdirectory (href should append to the escaped base_path)
         self.assertIn(

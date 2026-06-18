@@ -7,13 +7,13 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${ROOT}/scripts/ensure_gh_token.sh"
 
 if ! command -v gh >/dev/null 2>&1; then
-  echo "error: GitHub CLI (gh) is not installed." >&2
-  exit 1
+	echo "error: GitHub CLI (gh) is not installed." >&2
+	exit 1
 fi
 
 echo "Checking GitHub authentication (no token values printed)..."
 gh auth status -h github.com
 gh api user -q '.login' | {
-  read -r login
-  echo "API check OK for user: ${login}"
+	read -r login
+	echo "API check OK for user: ${login}"
 }

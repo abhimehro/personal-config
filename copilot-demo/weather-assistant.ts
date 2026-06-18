@@ -37,10 +37,9 @@ function handleRealtimeError(error: OpenAIRealtimeError): void {
     typeof safeError.message === "string" && safeError.message.length > 0
       ? safeError.message
       : "Unknown realtime error";
-  const code =
-    typeof safeError.code === "string" && safeError.code.length > 0
-      ? safeError.code
-      : "UNKNOWN";
+  const code = typeof safeError.code === "string" && safeError.code.length > 0
+    ? safeError.code
+    : "UNKNOWN";
 
   console.error(`[realtime:error] code=${code} message=${message}`);
 }
@@ -181,8 +180,9 @@ async function main() {
 }
 
 main().catch((error: unknown) => {
-  const message =
-    error instanceof Error ? error.message : "Unknown startup failure";
+  const message = error instanceof Error
+    ? error.message
+    : "Unknown startup failure";
   console.error(`[startup:error] ${message}`);
   process.exitCode = 1;
 });

@@ -1,9 +1,10 @@
 # GitHub Actions Workflows
 
-This repository uses several GitHub Actions workflows for automation and code quality.
+This repository uses several GitHub Actions workflows for automation and code
+quality.
 
-> **Consolidation note:** Scheduled agentic workflows have been consolidated into
-> `repository-automation-daily.yml` and `repository-automation-weekly.yml`.
+> **Consolidation note:** Scheduled agentic workflows have been consolidated
+> into `repository-automation-daily.yml` and `repository-automation-weekly.yml`.
 > Legacy agentic workflows remain available for manual dispatch, but their
 > schedules were removed so the consolidated orchestration owns the cadence.
 > Those consolidated workflows are Copilot-independent; legacy gh-aw lockfiles
@@ -17,45 +18,101 @@ This repository uses several GitHub Actions workflows for automation and code qu
 - **label.yml** - Automatically labels pull requests based on changed files
 - **stale.yml** - Manages stale issues and pull requests
 - **summary.yml** - Generates PR summaries
-- **code-quality.yml** - Code quality and complexity checks for shell scripts and Python files
-- **copilot-setup-steps.yml** - Adds Development Partner workflow for PRs and issues. This workflow sets up a Development Partner protocol that triggers on pull requests and issues, allowing for specific requests and automatic comments on PRs. **Security:** `workflow_dispatch` input is bound via `env.REQUEST` and read with `process.env.REQUEST` (CWE-94); see `docs/AI_AGENT_SECURITY_REMEDIATION_GUIDE.md` and `tests/test_copilot_setup_workflow.py`.
+- **code-quality.yml** - Code quality and complexity checks for shell scripts
+  and Python files
+- **copilot-setup-steps.yml** - Adds Development Partner workflow for PRs and
+  issues. This workflow sets up a Development Partner protocol that triggers on
+  pull requests and issues, allowing for specific requests and automatic
+  comments on PRs. **Security:** `workflow_dispatch` input is bound via
+  `env.REQUEST` and read with `process.env.REQUEST` (CWE-94); see
+  `docs/AI_AGENT_SECURITY_REMEDIATION_GUIDE.md` and
+  `tests/test_copilot_setup_workflow.py`.
 
 ### GitHub Agentic Workflows
 
-These workflows are powered by [GitHub Agentic Workflows (gh-aw)](https://github.com/github/gh-aw), which allows defining AI-powered automation workflows in natural language using markdown files. Each workflow is defined in a `.md` file and compiled to a `.lock.yml` file that runs in GitHub Actions.
+These workflows are powered by
+[GitHub Agentic Workflows (gh-aw)](https://github.com/github/gh-aw), which
+allows defining AI-powered automation workflows in natural language using
+markdown files. Each workflow is defined in a `.md` file and compiled to a
+`.lock.yml` file that runs in GitHub Actions.
 
 #### Scheduled Workflows
 
-- **daily-backlog-burner.md** - Performs systematic backlog management by working through issues and pull requests. Operates in two phases: research entire backlog to categorize and prioritize items, then systematically close, resolve, or advance selected items. Creates discussions to track progress and gather maintainer feedback, helping reduce technical debt. Runs daily.
+- **daily-backlog-burner.md** - Performs systematic backlog management by
+  working through issues and pull requests. Operates in two phases: research
+  entire backlog to categorize and prioritize items, then systematically close,
+  resolve, or advance selected items. Creates discussions to track progress and
+  gather maintainer feedback, helping reduce technical debt. Runs daily.
 
-- **daily-perf-improver.md** - Makes performance optimizations by identifying and improving application bottlenecks. Builds the project and analyzes performance metrics to find optimization opportunities. Operates in three phases: research performance landscape and create plan, infer build steps and create performance engineering guides, then implement optimizations and measure impact. Creates discussions to coordinate and draft PRs with improvements. Runs daily.
+- **daily-perf-improver.md** - Makes performance optimizations by identifying
+  and improving application bottlenecks. Builds the project and analyzes
+  performance metrics to find optimization opportunities. Operates in three
+  phases: research performance landscape and create plan, infer build steps and
+  create performance engineering guides, then implement optimizations and
+  measure impact. Creates discussions to coordinate and draft PRs with
+  improvements. Runs daily.
 
-- **daily-qa.md** - Performs ad hoc quality assurance by validating project health daily. Checks that code builds and runs, tests pass, documentation is clear, and code is well-structured. Creates discussions for findings and can submit draft PRs with improvements. Provides continuous quality monitoring throughout development. Runs daily.
+- **daily-qa.md** - Performs ad hoc quality assurance by validating project
+  health daily. Checks that code builds and runs, tests pass, documentation is
+  clear, and code is well-structured. Creates discussions for findings and can
+  submit draft PRs with improvements. Provides continuous quality monitoring
+  throughout development. Runs daily.
 
-- **daily-repo-status.md** - Creates daily repository status reports. Gathers recent repository activity (issues, PRs, discussions, releases, code changes) and generates engaging GitHub issues with productivity insights, community highlights, and project recommendations. Runs daily.
+- **daily-repo-status.md** - Creates daily repository status reports. Gathers
+  recent repository activity (issues, PRs, discussions, releases, code changes)
+  and generates engaging GitHub issues with productivity insights, community
+  highlights, and project recommendations. Runs daily.
 
-- **daily-workflow-updater.md** - Automatically updates GitHub Actions versions and creates a PR if changes are detected. Keeps workflow dependencies up to date. Runs daily.
+- **daily-workflow-updater.md** - Automatically updates GitHub Actions versions
+  and creates a PR if changes are detected. Keeps workflow dependencies up to
+  date. Runs daily.
 
-- **discussion-task-miner.md** - Scans AI-generated discussions to extract actionable code quality improvement tasks. Mines recent discussions (last 7 days) from AI agents to identify concrete, actionable code quality improvements and converts them into trackable GitHub issues with appropriate labels. Creates parent issues to group related tasks (max 64 per parent). Focuses on refactoring, testing, documentation, performance, security, maintainability, technical debt, and tooling improvements. Runs every 4 hours.
+- **discussion-task-miner.md** - Scans AI-generated discussions to extract
+  actionable code quality improvement tasks. Mines recent discussions (last 7
+  days) from AI agents to identify concrete, actionable code quality
+  improvements and converts them into trackable GitHub issues with appropriate
+  labels. Creates parent issues to group related tasks (max 64 per parent).
+  Focuses on refactoring, testing, documentation, performance, security,
+  maintainability, technical debt, and tooling improvements. Runs every 4 hours.
 
 #### On-Demand Workflows
 
-- **PR Review Agent** — Triage and resolve bot-authored PRs across multiple repos (personal-config, email-security-pipeline, ctrld-sync). Run on-demand via human or agent; see `docs/automated-pr-review-agent.md` and `scripts/run-pr-review-session.sh`. A future scheduled workflow may be added after permission parity and a validated orchestrator exist. During review/salvage sessions, when CodeScene fails on a PR, trigger `/cs-agent skill:fix-code-health-degradations` before final defer/salvage disposition.
+- **PR Review Agent** — Triage and resolve bot-authored PRs across multiple
+  repos (personal-config, email-security-pipeline, ctrld-sync). Run on-demand
+  via human or agent; see `docs/automated-pr-review-agent.md` and
+  `scripts/run-pr-review-session.sh`. A future scheduled workflow may be added
+  after permission parity and a validated orchestrator exist. During
+  review/salvage sessions, when CodeScene fails on a PR, trigger
+  `/cs-agent skill:fix-code-health-degradations` before final defer/salvage
+  disposition.
 
-- **plan.md** - Generates project plans and task breakdowns when invoked with `/plan` command in issues or PRs. Analyzes an issue or discussion and breaks it down into a sequence of actionable work items that can be assigned to GitHub Copilot agents. Creates sub-issues grouped under a parent issue.
+- **plan.md** - Generates project plans and task breakdowns when invoked with
+  `/plan` command in issues or PRs. Analyzes an issue or discussion and breaks
+  it down into a sequence of actionable work items that can be assigned to
+  GitHub Copilot agents. Creates sub-issues grouped under a parent issue.
 
-- **pr-fix.md** - Makes fixes to pull requests on-demand via the `/pr-fix` command. Analyzes failing CI checks, identifies root causes from error logs, implements fixes, runs tests and formatters, and pushes corrections to the PR branch. Provides detailed comments explaining changes made. Helps rapidly resolve PR blockers and keep development flowing.
+- **pr-fix.md** - Makes fixes to pull requests on-demand via the `/pr-fix`
+  command. Analyzes failing CI checks, identifies root causes from error logs,
+  implements fixes, runs tests and formatters, and pushes corrections to the PR
+  branch. Provides detailed comments explaining changes made. Helps rapidly
+  resolve PR blockers and keep development flowing.
 
 #### Understanding Agentic Workflows
 
-- **Source Files**: `.md` files in `.github/workflows/` define workflows in natural language
-- **Compiled Files**: `.lock.yml` files are auto-generated and should not be edited manually
-- **Compilation**: Run `gh aw compile` to regenerate lock files after editing `.md` files
-- **Documentation**: See [gh-aw documentation](https://github.com/github/gh-aw) for more details
+- **Source Files**: `.md` files in `.github/workflows/` define workflows in
+  natural language
+- **Compiled Files**: `.lock.yml` files are auto-generated and should not be
+  edited manually
+- **Compilation**: Run `gh aw compile` to regenerate lock files after editing
+  `.md` files
+- **Documentation**: See [gh-aw documentation](https://github.com/github/gh-aw)
+  for more details
 
 ### Gemini AI Workflows (Optional)
 
-The following workflows use Google's Gemini AI for automated code review, issue triage, and general assistance. These workflows are **optional** and will only run if authentication is properly configured.
+The following workflows use Google's Gemini AI for automated code review, issue
+triage, and general assistance. These workflows are **optional** and will only
+run if authentication is properly configured.
 
 - **gemini-dispatch.yml** - Routes Gemini requests to appropriate workflows
 - **gemini-review.yml** - Provides AI-powered code reviews on pull requests
@@ -65,11 +122,14 @@ The following workflows use Google's Gemini AI for automated code review, issue 
 
 ## Gemini Workflow Setup (Optional)
 
-To enable the Gemini AI workflows, you need to configure at least one authentication method. These workflows will automatically skip if no authentication is configured.
+To enable the Gemini AI workflows, you need to configure at least one
+authentication method. These workflows will automatically skip if no
+authentication is configured.
 
 ### Option 1: Gemini API Key (Recommended for personal use)
 
-1. Get a Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+1. Get a Gemini API key from
+   [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Add it as a repository secret:
    - Go to repository **Settings** → **Secrets and variables** → **Actions**
    - Click **New repository secret**
@@ -106,7 +166,8 @@ Additional variables you can configure:
 
 ## Workflow Behavior
 
-- **Without Authentication**: Gemini workflows will automatically skip (status: skipped)
+- **Without Authentication**: Gemini workflows will automatically skip (status:
+  skipped)
 - **With Authentication**: Gemini workflows will run automatically on:
   - New pull requests (review)
   - New/reopened issues (triage)
@@ -124,7 +185,8 @@ After configuring authentication, you can test the workflows by:
 
 ## Disabling Gemini Workflows
 
-Gemini workflows automatically skip when authentication is not configured, so no action is needed to disable them. If you want to completely remove them:
+Gemini workflows automatically skip when authentication is not configured, so no
+action is needed to disable them. If you want to completely remove them:
 
 ```bash
 rm .github/workflows/gemini-*.yml
@@ -134,7 +196,8 @@ rm .github/workflows/gemini-*.yml
 
 ### Workflows are skipped
 
-This is expected behavior when authentication is not configured. The workflows will show as "skipped" rather than "failed".
+This is expected behavior when authentication is not configured. The workflows
+will show as "skipped" rather than "failed".
 
 ### Authentication errors
 
@@ -153,15 +216,19 @@ Check that:
 
 ## Code Quality Workflow
 
-The **code-quality.yml** workflow performs automated code quality and complexity checks to prevent overly complex methods and scripts. This workflow was added to prevent issues similar to those found by CodeFactor in other repositories.
+The **code-quality.yml** workflow performs automated code quality and complexity
+checks to prevent overly complex methods and scripts. This workflow was added to
+prevent issues similar to those found by CodeFactor in other repositories.
 
 ### What It Checks
 
 #### Shell Scripts (`.sh`, `.bash`)
 
-1. **ShellCheck Analysis** - Runs ShellCheck on all shell scripts to find bugs and potential issues
+1. **ShellCheck Analysis** - Runs ShellCheck on all shell scripts to find bugs
+   and potential issues
 2. **Script Length** - Warns when scripts exceed 200 lines
-3. **Complexity** - Encourages refactoring large scripts into smaller, more maintainable functions
+3. **Complexity** - Encourages refactoring large scripts into smaller, more
+   maintainable functions
 
 #### Python Files (`.py`)
 
@@ -176,13 +243,15 @@ The **code-quality.yml** workflow performs automated code quality and complexity
 
 ### When It Runs
 
-- **Pull Requests** - Automatically on PRs that modify `.sh`, `.py`, or files in `scripts/`, `tests/`, `controld-system/`, `windscribe-controld/`
+- **Pull Requests** - Automatically on PRs that modify `.sh`, `.py`, or files in
+  `scripts/`, `tests/`, `controld-system/`, `windscribe-controld/`
 - **Push to main** - On commits to main/master branch
 - **Manual** - Can be triggered manually via workflow_dispatch
 
 ### Understanding Results
 
-The workflow provides **warnings**, not errors. These are suggestions to improve code quality:
+The workflow provides **warnings**, not errors. These are suggestions to improve
+code quality:
 
 - **Green checkmark (✅)** - No issues found or only minor warnings
 - **Warnings** - Code that exceeds thresholds but doesn't fail the build
@@ -244,17 +313,21 @@ def complex_function(data):
 | Python maintainability index | <20        | Warning  |
 | Python file length           | >300 lines | Warning  |
 
-These thresholds are based on industry best practices and can be adjusted in `.github/workflows/code-quality.yml`.
+These thresholds are based on industry best practices and can be adjusted in
+`.github/workflows/code-quality.yml`.
 
 ### Related Tools
 
-- **Radon** - Python complexity analysis ([documentation](https://radon.readthedocs.io/))
-- **ShellCheck** - Shell script static analysis ([documentation](https://www.shellcheck.net/))
+- **Radon** - Python complexity analysis
+  ([documentation](https://radon.readthedocs.io/))
+- **ShellCheck** - Shell script static analysis
+  ([documentation](https://www.shellcheck.net/))
 - **Trunk** - Unified linter runner ([documentation](https://docs.trunk.io/))
 
 ### References
 
-This workflow was added to prevent complex method issues similar to those found in CodeFactor analysis of related repositories. For more information, see:
+This workflow was added to prevent complex method issues similar to those found
+in CodeFactor analysis of related repositories. For more information, see:
 
 - [CodeFactor Complex Method Detection](https://www.codefactor.io/docs/issues/complexity)
 - [Cyclomatic Complexity Explanation](https://en.wikipedia.org/wiki/Cyclomatic_complexity)

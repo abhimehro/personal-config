@@ -9,10 +9,13 @@ metadata:
 
 ## Prerequisites
 
-- **Runtime**: Python **3.14+**, **`uv`** for deps ([install](https://docs.astral.sh/uv/getting-started/installation/)).
-- **CLI**: `genkit --version` — install via `npm install -g genkit-cli` if missing.
+- **Runtime**: Python **3.14+**, **`uv`** for deps
+  ([install](https://docs.astral.sh/uv/getting-started/installation/)).
+- **CLI**: `genkit --version` — install via `npm install -g genkit-cli` if
+  missing.
 
-**New projects:** [Setup](references/setup.md) (bootstrap + env). **Patterns and code samples:** [Examples](references/examples.md).
+**New projects:** [Setup](references/setup.md) (bootstrap + env). **Patterns and
+code samples:** [Examples](references/examples.md).
 
 ## Hello World
 
@@ -35,22 +38,32 @@ if __name__ == '__main__':
 
 ## Critical: Do Not Trust Internal Knowledge
 
-The Python SDK changes often — verify imports and APIs against the references here or upstream docs. On **any** error, read [Common Errors](references/common-errors.md) first.
+The Python SDK changes often — verify imports and APIs against the references
+here or upstream docs. On **any** error, read
+[Common Errors](references/common-errors.md) first.
 
 ## Development Workflow
 
-1. Default provider: **Google AI** (`GoogleAI()`), **`GEMINI_API_KEY`** in the environment.
-2. Model IDs: always prefixed, e.g. **`googleai/gemini-flash-latest`** (always-on-latest Flash alias; same pattern as other skills).
-3. Entrypoint: **`ai.run_main(main())`** for Genkit-driven apps (not `asyncio.run()` for long-lived servers started with `genkit start` — see [Common Errors](references/common-errors.md)).
-4. After generating code, follow [Dev Workflow](references/dev-workflow.md) for `genkit start` and the Dev UI.
+1. Default provider: **Google AI** (`GoogleAI()`), **`GEMINI_API_KEY`** in the
+   environment.
+2. Model IDs: always prefixed, e.g. **`googleai/gemini-flash-latest`**
+   (always-on-latest Flash alias; same pattern as other skills).
+3. Entrypoint: **`ai.run_main(main())`** for Genkit-driven apps (not
+   `asyncio.run()` for long-lived servers started with `genkit start` — see
+   [Common Errors](references/common-errors.md)).
+4. After generating code, follow [Dev Workflow](references/dev-workflow.md) for
+   `genkit start` and the Dev UI.
 5. On errors: step 1 is always [Common Errors](references/common-errors.md).
 
 ## References
 
-- [Examples](references/examples.md): Structured output, streaming, flows, tools, embeddings.
+- [Examples](references/examples.md): Structured output, streaming, flows,
+  tools, embeddings.
 - [Setup](references/setup.md): New project bootstrap and plugins.
-- [Common Errors](references/common-errors.md): Read first when something breaks.
-- [FastAPI](references/fastapi.md): HTTP, `genkit_fastapi_handler`, parallel flows.
+- [Common Errors](references/common-errors.md): Read first when something
+  breaks.
+- [FastAPI](references/fastapi.md): HTTP, `genkit_fastapi_handler`, parallel
+  flows.
 - [Dotprompt](references/dotprompt.md): `.prompt` files and helpers.
 - [Evals](references/evals.md): Evaluators and datasets.
 - [Dev Workflow](references/dev-workflow.md): `genkit start`, Dev UI, checklist.

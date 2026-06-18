@@ -47,12 +47,12 @@ spinner_wait() {
 			trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - INT; kill -INT $BASHPID' INT
 			trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - TERM; kill -TERM $BASHPID' TERM
 
-		while [[ $c -lt $iterations ]]; do
-			printf "\r\033[0;34m[%c]\033[0m %s..." "${sp:i++%${#sp}:1}" "$msg"
-			sleep 0.1
-			c=$((c + 1))
-		done
-		printf "\r\033[K" # Clear line
+			while [[ $c -lt $iterations ]]; do
+				printf "\r\033[0;34m[%c]\033[0m %s..." "${sp:i++%${#sp}:1}" "$msg"
+				sleep 0.1
+				c=$((c + 1))
+			done
+			printf "\r\033[K" # Clear line
 			[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true
 		)
 	else

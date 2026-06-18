@@ -25,7 +25,7 @@ class TestGhTokenEnv(unittest.TestCase):
 
     def test_parse_env_line_with_export_and_quotes(self):
         env: dict[str, str] = {}
-        parse_env_line("export FOO=\"bar\"", env)
+        parse_env_line('export FOO="bar"', env)
         self.assertEqual(env, {"FOO": "bar"})
         parse_env_line("export BAZ='qux'", env)
         self.assertEqual(env["BAZ"], "qux")
@@ -46,7 +46,9 @@ class TestGhTokenEnv(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             env_file = Path(tmp) / "GH_TOKEN.env"
             env_file.write_text("export GH_TOKEN=file_token\n", encoding="utf-8")
-            with patch.dict(os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True):
+            with patch.dict(
+                os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True
+            ):
                 os.environ.pop("GH_TOKEN", None)
                 merged = load_gh_token_env()
         self.assertEqual(merged["GH_TOKEN"], "file_token")
@@ -55,7 +57,9 @@ class TestGhTokenEnv(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             env_file = Path(tmp) / "custom.env"
             env_file.write_text("GH_TOKEN=x\n", encoding="utf-8")
-            with patch.dict(os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True):
+            with patch.dict(
+                os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True
+            ):
                 self.assertEqual(resolve_gh_token_env_file(), env_file)
 
     def test_missing_message_mentions_runbook(self):

@@ -4,29 +4,29 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-if [[ -n "${GH_TOKEN:-}" ]]; then
-  exit 0
+if [[ -n ${GH_TOKEN-} ]]; then
+	exit 0
 fi
 
 if command -v gh >/dev/null 2>&1 && gh auth status -h github.com >/dev/null 2>&1; then
-  export GH_TOKEN
-  GH_TOKEN="$(gh auth token)"
-  exit 0
+	export GH_TOKEN
+	GH_TOKEN="$(gh auth token)"
+	exit 0
 fi
 
 if command -v python3 >/dev/null 2>&1; then
-  token="$(
-    cd "${ROOT}" && python3 - <<'PY'
+	token="$(
+		cd "${ROOT}" && python3 - <<'PY'
 from gh_token_env import load_gh_token_env
 
 env = load_gh_token_env()
 print(env.get("GH_TOKEN", ""))
 PY
-  )"
-  if [[ -n "${token}" ]]; then
-    export GH_TOKEN="${token}"
-    exit 0
-  fi
+	)"
+	if [[ -n ${token} ]]; then
+		export GH_TOKEN="${token}"
+		exit 0
+	fi
 fi
 
 echo "error: GH_TOKEN is not configured." >&2

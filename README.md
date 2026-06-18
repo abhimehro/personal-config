@@ -8,17 +8,25 @@
 [![CodeScene System Mastery](https://codescene.io/projects/80825/status-badges/system-mastery)](https://codescene.io/projects/80825)
 [![CodeScene Missed Goals](https://codescene.io/projects/80825/status-badges/missed-goals)](https://codescene.io/projects/80825)
 
-A comprehensive repository for personal system configurations, scripts, and documentation to make my macOS development and gaming setup reproducible and backed up.
+A comprehensive repository for personal system configurations, scripts, and
+documentation to make my macOS development and gaming setup reproducible and
+backed up.
 
 ## Overview
 
-This repository contains configuration files, automation scripts, and detailed documentation for my personal computing environment. Key features:
+This repository contains configuration files, automation scripts, and detailed
+documentation for my personal computing environment. Key features:
 
-- **🔐 Secure SSH Configuration** - 1Password and [Proton Pass (NEW!)] integration with dynamic network support
-- **🌐 Enhanced VPN + DNS Integration** - Windscribe VPN with Control D privacy filtering
-- **🛡️ Dual Protection System** - VPN encryption + DNS privacy filtering with real-time logging
-- **🛠️ Automated Maintenance System** - Comprehensive system health monitoring and cleanup (NEW!)
-- **⚙️ Development Tools** - Optimized configurations for Cursor IDE and terminal workflows
+- **🔐 Secure SSH Configuration** - 1Password and [Proton Pass (NEW!)]
+  integration with dynamic network support
+- **🌐 Enhanced VPN + DNS Integration** - Windscribe VPN with Control D privacy
+  filtering
+- **🛡️ Dual Protection System** - VPN encryption + DNS privacy filtering with
+  real-time logging
+- **🛠️ Automated Maintenance System** - Comprehensive system health monitoring
+  and cleanup (NEW!)
+- **⚙️ Development Tools** - Optimized configurations for Cursor IDE and
+  terminal workflows
 - **🎮 Gaming Optimization** - Specialized DNS profiles for gaming performance
 - **📱 Network Automation** - VPN-aware configurations with automatic failover
 
@@ -42,7 +50,8 @@ By keeping these configurations in version control, I can:
 ./scripts/protondrive_backup.sh --run
 ```
 
-Edit `./scripts/protondrive_backup.exclude` to tune exclusions (git repos, build artifacts, caches, etc.).
+Edit `./scripts/protondrive_backup.exclude` to tune exclusions (git repos, build
+artifacts, caches, etc.).
 
 ### Bootstrap this Mac (idempotent)
 
@@ -60,7 +69,8 @@ cd ~/dev/personal-config
 
 ### Linting and Formatting
 
-> **Requires:** [Trunk CLI](https://docs.trunk.io/check/usage) — install with `brew install trunk-io` or `curl https://get.trunk.io -fsSL | bash`
+> **Requires:** [Trunk CLI](https://docs.trunk.io/check/usage) — install with
+> `brew install trunk-io` or `curl https://get.trunk.io -fsSL | bash`
 
 ```bash
 # Run all linters (full Trunk pass: style + correctness)
@@ -75,13 +85,15 @@ make lint-fix
 
 ### CodeScene PR remediation
 
-When a PR is blocked by CodeScene code health checks during review/salvage sessions, comment the following on that PR:
+When a PR is blocked by CodeScene code health checks during review/salvage
+sessions, comment the following on that PR:
 
 ```bash
 /cs-agent skill:fix-code-health-degradations
 ```
 
-For canonical triage/salvage policy, see `docs/automated-pr-review-agent.md` and `docs/automated-pr-salvage-agent.md`.
+For canonical triage/salvage policy, see `docs/automated-pr-review-agent.md` and
+`docs/automated-pr-salvage-agent.md`.
 
 ### Automated Maintenance System (NEW!)
 
@@ -125,9 +137,10 @@ nm-cd-status       # Check Control D daemon status
 ./scripts/network-mode-regression.sh browsing
 ```
 
-Under the hood, `controld-system/scripts/controld-manager` remains the engine that
-starts `ctrld` and applies the correct Control D profile; `network-mode-manager.sh`
-wraps this with IPv6 management, DNS routing, and verification.
+Under the hood, `controld-system/scripts/controld-manager` remains the engine
+that starts `ctrld` and applies the correct Control D profile;
+`network-mode-manager.sh` wraps this with IPv6 management, DNS routing, and
+verification.
 
 ### SSH Configuration
 
@@ -290,7 +303,8 @@ nm-status          # Check network status
 
 ### Configuration Management (Symlink-Based)
 
-This repository uses a **symlink-based configuration** model where repository files are linked to your home directory. This ensures:
+This repository uses a **symlink-based configuration** model where repository
+files are linked to your home directory. This ensures:
 
 - ✅ Repository updates automatically reflect in your home directory
 - ✅ Single source of truth for all configurations
@@ -368,20 +382,34 @@ export CTRLD_GAMING_PROFILE=<Gaming-Profile-ID>
 
 ### Media automation (Infuse + Alldebrid + cloud union)
 
-- **Data roots**: iCloud Desktop/Documents (`~/Library/Mobile Documents/com~apple~CloudDocs/Media`) via rclone union of `gdrive:Media` + `onedrive:Media` (no local duplication).
-- **WebDAV server**: LaunchAgent `com.<your-home-folder>.media.webdav` runs `/Users/<your-home-folder>/Library/Media/bin/start-media-server.sh` on port **8088** (read-only).
-- **Alldebrid helper**: LaunchAgent `com.<your-home-folder>.media.alldebrid` mounts to `/Users/<your-home-folder>/mnt/alldebrid` and serves on **8080**.
+- **Data roots**: iCloud Desktop/Documents
+  (`~/Library/Mobile Documents/com~apple~CloudDocs/Media`) via rclone union of
+  `gdrive:Media` + `onedrive:Media` (no local duplication).
+- **WebDAV server**: LaunchAgent `com.<your-home-folder>.media.webdav` runs
+  `/Users/<your-home-folder>/Library/Media/bin/start-media-server.sh` on port
+  **8088** (read-only).
+- **Alldebrid helper**: LaunchAgent `com.<your-home-folder>.media.alldebrid`
+  mounts to `/Users/<your-home-folder>/mnt/alldebrid` and serves on **8080**.
 - **Secrets**:
-  - `~/.config/rclone/rclone.conf` (seed from `media-streaming/configs/rclone.conf.template`, fill via `op inject`).
-  - `~/.config/media-server/credentials (optional fallback only in the current 1Password-first setup)` (untracked; copy `media-streaming/configs/media-credentials.example` and inject creds with 1Password).
-- **Cache & logs**: `~/Library/Application Support/MediaCache` (kept out of iCloud) and `~/Library/Logs/media/*.out|*.err`.
-- **Control**: `launchctl list | grep media` to verify; manual start: `~/Library/Media/bin/start-media-server.sh`.
+  - `~/.config/rclone/rclone.conf` (seed from
+    `media-streaming/configs/rclone.conf.template`, fill via `op inject`).
+  - `~/.config/media-server/credentials (optional fallback only in the current 1Password-first setup)`
+    (untracked; copy `media-streaming/configs/media-credentials.example` and
+    inject creds with 1Password).
+- **Cache & logs**: `~/Library/Application Support/MediaCache` (kept out of
+  iCloud) and `~/Library/Logs/media/*.out|*.err`.
+- **Control**: `launchctl list | grep media` to verify; manual start:
+  `~/Library/Media/bin/start-media-server.sh`.
 
 ### MCP tooling
 
-- Templates live in `mcp-configs/README.md` and `mcp-configs/mcp-servers.template.json`.
-- Copy the template to a local `servers.local.json`, fill keys from 1Password, and keep it gitignored (patterns already in `.gitignore`).
-- When running commands that need secrets resolved from 1Password, use `op run -- <command>` (e.g., `op run -- uv run python main.py --dry-run --profiles dummy`).
+- Templates live in `mcp-configs/README.md` and
+  `mcp-configs/mcp-servers.template.json`.
+- Copy the template to a local `servers.local.json`, fill keys from 1Password,
+  and keep it gitignored (patterns already in `.gitignore`).
+- When running commands that need secrets resolved from 1Password, use
+  `op run -- <command>` (e.g.,
+  `op run -- uv run python main.py --dry-run --profiles dummy`).
 
 ### VPN Integration
 
@@ -399,7 +427,8 @@ export CTRLD_GAMING_PROFILE=<Gaming-Profile-ID>
 
 ### Running Tests
 
-This repository includes a comprehensive test suite. The shell tests run in parallel by default for maximum performance.
+This repository includes a comprehensive test suite. The shell tests run in
+parallel by default for maximum performance.
 
 ```bash
 # Run all shell tests in parallel (automatically ignores known macOS-specific failures)
@@ -449,7 +478,8 @@ scutil --dns | head -20
 
 ## ⚡ Performance Benchmarking
 
-This repository includes a performance benchmarking infrastructure for tracking script execution speed and detecting performance regressions.
+This repository includes a performance benchmarking infrastructure for tracking
+script execution speed and detecting performance regressions.
 
 ### Quick Start
 
@@ -551,7 +581,8 @@ done
 
 ## 🔒 Security & Privacy
 
-- **🔐 Secrets Management**: Uses 1Password for SSH keys, environment variables for configs
+- **🔐 Secrets Management**: Uses 1Password for SSH keys, environment variables
+  for configs
 - **🌐 DNS Leak Protection**: Built-in firewall integration prevents leaks
 - **🛡️ Profile Isolation**: Separate DNS policies for different use cases
 - **📊 Verification**: Real-time testing ensures configuration integrity
@@ -585,9 +616,12 @@ done
 
 ### Support Resources
 
-- **[DNS Setup Guide](dns-setup/scripts/README.md)** - Complete DNS documentation
-- **[SSH Configuration Guide](docs/ssh/ssh_configuration_guide.md)** - SSH setup instructions
-- **[Deployment Summary](dns-setup/DEPLOYMENT_SUMMARY.md)** - Technical implementation details
+- **[DNS Setup Guide](dns-setup/scripts/README.md)** - Complete DNS
+  documentation
+- **[SSH Configuration Guide](docs/ssh/ssh_configuration_guide.md)** - SSH setup
+  instructions
+- **[Deployment Summary](dns-setup/DEPLOYMENT_SUMMARY.md)** - Technical
+  implementation details
 
 ## 🚧 Future Enhancements
 
@@ -600,24 +634,25 @@ done
 
 ## 📈 Version History
 
-- **v4.1** (November 2025) - Network mode manager + regression harness; refined verification & docs; archived legacy Windscribe glue.
-- **v4.0** (October 2025) - Enhanced VPN + DNS Integration with Windscribe + Control D
+- **v4.1** (November 2025) - Network mode manager + regression harness; refined
+  verification & docs; archived legacy Windscribe glue.
+- **v4.0** (October 2025) - Enhanced VPN + DNS Integration with Windscribe +
+  Control D
 - **v3.0** (September 2025) - Dynamic DNS Management System
 - **v2.0** (August 2025) - SSH Configuration with 1Password
 - **v1.0** (April 2025) - Initial repository structure
 
 ## 📄 License
 
-Personal use configurations. Feel free to adapt and use any parts that are helpful for your own setup.
+Personal use configurations. Feel free to adapt and use any parts that are
+helpful for your own setup.
 
 ---
 
 **🎉 Your complete development and gaming network is now perfectly automated!**
 
-_Last Updated: November 19, 2025_
-_VPN + DNS Integration: v4.1_
-_DNS Management System: v3.0_
-_SSH Configuration: v2.0_
+_Last Updated: November 19, 2025_ _VPN + DNS Integration: v4.1_ _DNS Management
+System: v3.0_ _SSH Configuration: v2.0_
 
 ## 🔧 Configuration Details
 
@@ -631,7 +666,8 @@ _SSH Configuration: v2.0_
   - `~/.ssh/agent.toml` → `~/dev/personal-config/configs/ssh/agent.toml`
 - 1Password integration:
   - Include `~/.ssh/1Password/config`
-  - IdentityAgent: `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`
+  - IdentityAgent:
+    `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`
 - Multiplexing control dir:
   - `~/.ssh/control` (700)
 
@@ -651,19 +687,24 @@ _SSH Configuration: v2.0_
   - `Personal` (general items)
   - `SSH Keys` (dedicated vault for SSH keys)
 - Helper scripts (all under `scripts/ssh/`):
-  - `op_to_proton_import.sh` – paste a private key from 1Password → import into Proton (`SSH Keys` vault) with a secure temp file workflow.
+  - `op_to_proton_import.sh` – paste a private key from 1Password → import into
+    Proton (`SSH Keys` vault) with a secure temp file workflow.
   - `proton_ssh_helpers.sh` – wrapper for:
     - `start-agent` – `pass-cli ssh-agent start --vault-name "SSH Keys"`
     - `load-into-agent` – `pass-cli ssh-agent load --vault-name "SSH Keys"`
     - `import-key` – calls `op_to_proton_import.sh`.
-- Fish functions (auto-loaded from `~/.config/fish/conf.d/proton_pass_ssh.fish`):
+- Fish functions (auto-loaded from
+  `~/.config/fish/conf.d/proton_pass_ssh.fish`):
   - `pp_ssh_agent_start` – start Proton SSH agent for `SSH Keys` vault.
   - `pp_use_proton_agent` – point current shell at Proton’s agent socket.
-  - `pp_load_proton_into_agent` – load Proton keys into whatever agent `SSH_AUTH_SOCK` points at.
+  - `pp_load_proton_into_agent` – load Proton keys into whatever agent
+    `SSH_AUTH_SOCK` points at.
   - `pp_which_agent` – show active agent + listed keys.
-  - Abbreviations: `pp-start`, `pp-load`, `pp-import` (wrappers around the above).
+  - Abbreviations: `pp-start`, `pp-load`, `pp-import` (wrappers around the
+    above).
 - SSH host aliases (in `configs/ssh/config`):
-  - `github-proton` – same as `github.com` but bound to Proton’s `IdentityAgent`.
+  - `github-proton` – same as `github.com` but bound to Proton’s
+    `IdentityAgent`.
   - `proton-*` – any host matching this pattern prefers Proton’s agent.
 
 **Usage examples:**
@@ -682,60 +723,68 @@ pp-use-proton    # then: ssh -T git@github-proton
 
 ### Fish Shell Configuration
 
-The Fish setup in this repo is meant to stay practical, reproducible, and easy to recover after a rebuild.
+The Fish setup in this repo is meant to stay practical, reproducible, and easy
+to recover after a rebuild.
 
 **Source of truth:**
 
-* `~/dev/personal-config/configs/.config/fish/config.fish`
-* `~/.config/fish/` should be symlinked to `configs/.config/fish/`
+- `~/dev/personal-config/configs/.config/fish/config.fish`
+- `~/.config/fish/` should be symlinked to `configs/.config/fish/`
 
 **What the Fish config does:**
 
-* sets up core PATH entries and shell defaults
-* configures `NM_ROOT` as `~/dev/personal-config`
-* prefers the 1Password SSH agent and falls back to the macOS native agent when needed
-* initializes interactive tools such as `chruby-fish`, `fnm`, `zoxide`, and `fzf`
-* keeps a Dracula-aligned experience across Fish syntax colors, Tide, `fzf`, and `bat`
-* provides aliases, abbreviations, autoloaded helper functions, and a time-based greeting
+- sets up core PATH entries and shell defaults
+- configures `NM_ROOT` as `~/dev/personal-config`
+- prefers the 1Password SSH agent and falls back to the macOS native agent when
+  needed
+- initializes interactive tools such as `chruby-fish`, `fnm`, `zoxide`, and
+  `fzf`
+- keeps a Dracula-aligned experience across Fish syntax colors, Tide, `fzf`, and
+  `bat`
+- provides aliases, abbreviations, autoloaded helper functions, and a time-based
+  greeting
 
 **Theme layering:**
 
-* **Ghostty** provides the terminal color theme
-* **Tide** manages prompt styling via universal variables
-* **Fish syntax highlighting** is repaired on interactive startup by `__ensure_dracula_theme`, which re-runs `fish_config theme choose "Dracula Official"` only when drift is detected
-* **fzf** uses Dracula colors with the `full` style preset via `FZF_DEFAULT_OPTS`
+- **Ghostty** provides the terminal color theme
+- **Tide** manages prompt styling via universal variables
+- **Fish syntax highlighting** is repaired on interactive startup by
+  `__ensure_dracula_theme`, which re-runs
+  `fish_config theme choose "Dracula Official"` only when drift is detected
+- **fzf** uses Dracula colors with the `full` style preset via
+  `FZF_DEFAULT_OPTS`
 
 **Control D network mode functions:**
 
 After reloading Fish with `exec fish`, these helpers are available:
 
-| Function | Description |
-| --- | --- |
-| `nm-status` | Check current network status (Control D vs Windscribe) |
-| `nm-browse` | Switch to Control D browsing mode (balanced privacy) |
-| `nm-privacy` | Switch to Control D privacy mode (maximum security) |
-| `nm-gaming` | Switch to Control D gaming mode (minimal filtering) |
-| `nm-vpn` | Switch to Windscribe VPN mode (disables Control D) |
-| `nm-regress` | Run full regression test (Control D → Windscribe) |
-| `nm-cd-status` | Check Control D daemon status |
+| Function       | Description                                            |
+| -------------- | ------------------------------------------------------ |
+| `nm-status`    | Check current network status (Control D vs Windscribe) |
+| `nm-browse`    | Switch to Control D browsing mode (balanced privacy)   |
+| `nm-privacy`   | Switch to Control D privacy mode (maximum security)    |
+| `nm-gaming`    | Switch to Control D gaming mode (minimal filtering)    |
+| `nm-vpn`       | Switch to Windscribe VPN mode (disables Control D)     |
+| `nm-regress`   | Run full regression test (Control D → Windscribe)      |
+| `nm-cd-status` | Check Control D daemon status                          |
 
 **Safe files to edit manually:**
 
-* `configs/.config/fish/config.fish`
-* `configs/.config/fish/fish_plugins`
-* `configs/.config/fish/RESTORE_CUSTOMIZATIONS.md`
-* `configs/.config/fish/functions/__ensure_dracula_theme.fish`
-* `configs/.config/fish/functions/fish_greeting.fish`
-* `configs/.config/fish/functions/git-mirror-clean.fish`
-* `configs/.config/fish/functions/vibe.fish`
-* `configs/.config/fish/functions/__run_editor.fish`
+- `configs/.config/fish/config.fish`
+- `configs/.config/fish/fish_plugins`
+- `configs/.config/fish/RESTORE_CUSTOMIZATIONS.md`
+- `configs/.config/fish/functions/__ensure_dracula_theme.fish`
+- `configs/.config/fish/functions/fish_greeting.fish`
+- `configs/.config/fish/functions/git-mirror-clean.fish`
+- `configs/.config/fish/functions/vibe.fish`
+- `configs/.config/fish/functions/__run_editor.fish`
 
 **Usually plugin-managed or machine-generated:**
 
-* `configs/.config/fish/conf.d/*.fish`
-* `configs/.config/fish/functions/_fzf_*`
-* `configs/.config/fish/functions/_tide_*`
-* `configs/.config/fish/fish_variables`
+- `configs/.config/fish/conf.d/*.fish`
+- `configs/.config/fish/functions/_fzf_*`
+- `configs/.config/fish/functions/_tide_*`
+- `configs/.config/fish/fish_variables`
 
 **Useful commands:**
 

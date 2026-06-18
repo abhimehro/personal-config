@@ -1,8 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 import subprocess
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 
 

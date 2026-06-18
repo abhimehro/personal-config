@@ -1,10 +1,13 @@
 # Infuse Connection Recovery Guide
 
-> Note: Current media auth is 1Password-first. References in this guide to the media-server credentials file describe the optional fallback path, not a required file for normal operation.
+> Note: Current media auth is 1Password-first. References in this guide to the
+> media-server credentials file describe the optional fallback path, not a
+> required file for normal operation.
 
 ## 🔍 Problem Identified
 
-**Root Cause**: Your rclone configuration file (`~/.config/rclone/rclone.conf`) is missing.
+**Root Cause**: Your rclone configuration file (`~/.config/rclone/rclone.conf`)
+is missing.
 
 This file contains:
 
@@ -196,8 +199,10 @@ If you see folders in Google Drive but not in the union:
 
 **Common causes:**
 
-1. **Folder paths don't match** - Check both `gdrive:Media` and `onedrive:Media` exist
-2. **One remote not working** - Test with `rclone about gdrive:` and `rclone about onedrive:`
+1. **Folder paths don't match** - Check both `gdrive:Media` and `onedrive:Media`
+   exist
+2. **One remote not working** - Test with `rclone about gdrive:` and
+   `rclone about onedrive:`
 3. **Union misconfigured** - Check with `rclone config show media`
 
 **Fix:**
@@ -255,7 +260,8 @@ After setup, verify everything:
 - [ ] `rclone lsd onedrive:Media` shows folders
 - [ ] `rclone lsd media:` shows folders (union)
 - [ ] WebDAV server running: `lsof -nP -i:8088 | grep rclone`
-- [ ] Local test works: `curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" http://localhost:8088/`
+- [ ] Local test works:
+      `curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" http://localhost:8088/`
 - [ ] Infuse can connect and see folders
 
 ## 🎯 Quick Diagnostic
@@ -271,14 +277,16 @@ This will check all components and tell you exactly what's wrong.
 
 ## 💡 Important Notes
 
-1. **Folder Structure Must Match**: For the union to work properly, both Google Drive and OneDrive should have the same folder structure under `Media/`
+1. **Folder Structure Must Match**: For the union to work properly, both Google
+   Drive and OneDrive should have the same folder structure under `Media/`
 
 2. **Union Policies**:
    - `action_policy = epall` - Shows files from all upstreams
    - `create_policy = epmfs` - Creates files in upstream with most free space
    - `search_policy = ff` - Searches first upstream first
 
-3. **OAuth Tokens**: These are stored in `~/.config/rclone/rclone.conf` and auto-refresh. If they expire, use `rclone config reconnect`
+3. **OAuth Tokens**: These are stored in `~/.config/rclone/rclone.conf` and
+   auto-refresh. If they expire, use `rclone config reconnect`
 
 4. **Backup Your Config**: After setup, backup your config:
    ```bash
@@ -287,4 +295,5 @@ This will check all components and tell you exactly what's wrong.
 
 ---
 
-**Next Steps**: Run `./media-streaming/archive/setup-media-library.sh` to restore your configuration!
+**Next Steps**: Run `./media-streaming/archive/setup-media-library.sh` to
+restore your configuration!

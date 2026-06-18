@@ -28,7 +28,7 @@ resolve_trufflehog() {
 		command -v trufflehog
 		return 0
 	fi
-	if [[ -x "${TRUFFLEHOG_BIN:-}" ]]; then
+	if [[ -x ${TRUFFLEHOG_BIN-} ]]; then
 		printf '%s\n' "$TRUFFLEHOG_BIN"
 		return 0
 	fi
@@ -37,7 +37,7 @@ resolve_trufflehog() {
 
 install_trufflehog_hint() {
 	error "trufflehog not found. Install one of:"
-	error "  curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b \"\$HOME/.local/bin\""
+	error '  curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b "$HOME/.local/bin"'
 	error "  trunk init && trunk run trufflehog --help"
 	error "Or set TRUFFLEHOG_BIN to the trufflehog binary path."
 }
@@ -102,11 +102,11 @@ run_password_grep() {
 		[[ -z $line ]] && continue
 		case "$line" in
 		*docs/SECURITY_PATTERNS.md* | \
-		*media-streaming/configs/media-credentials.example* | \
-		*media-streaming/archive/scripts/start-media-server*.sh* | \
-		*media-streaming/archive/scripts/start-media-server-fast.sh* | \
-		*media-streaming/BACKUP_RECOVERY.md* | \
-		*.agents/skills/firebase-auth-basics/*)
+			*media-streaming/configs/media-credentials.example* | \
+			*media-streaming/archive/scripts/start-media-server*.sh* | \
+			*media-streaming/archive/scripts/start-media-server-fast.sh* | \
+			*media-streaming/BACKUP_RECOVERY.md* | \
+			*.agents/skills/firebase-auth-basics/*)
 			continue
 			;;
 		esac

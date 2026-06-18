@@ -1,7 +1,7 @@
 import datetime
-from concurrent.futures import ThreadPoolExecutor
 import json
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 
 from spreadsheet_safety import escape_spreadsheet_formula
 
@@ -32,6 +32,7 @@ def _fetch_repo_prs(repo):
             pr["repo"] = repo.rpartition("/")[2]
             repo_prs.append(pr)
     return repo_prs
+
 
 def fetch_prs(repos):
     all_prs = []
@@ -122,6 +123,7 @@ _CATEGORIES = (
     ("REFACTOR", ("refactor", "import", "clean")),
 )
 
+
 def get_category(title, branch):
     l = (title + branch).lower()
 
@@ -135,5 +137,5 @@ def get_category(title, branch):
     return "FEATURE"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

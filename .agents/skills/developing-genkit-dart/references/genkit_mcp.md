@@ -3,7 +3,9 @@
 MCP (Model Context Protocol) integration for Genkit Dart.
 
 ## MCP Host (Recommended)
-Connect to one or more MCP servers and aggregate their capabilities into the Genkit registry automatically.
+
+Connect to one or more MCP servers and aggregate their capabilities into the
+Genkit registry automatically.
 
 ```dart
 import 'package:genkit/genkit.dart';
@@ -42,7 +44,11 @@ void main() async {
 ```
 
 ## MCP Client (Advanced / Single Server)
-Connecting to a single MCP server with a client object is an advanced usecase for when you need manual control over the client lifecycle. Standalone clients do not automatically register tools into the registry, so they must be passed into `generate` or `defineDynamicActionProvider` manually.
+
+Connecting to a single MCP server with a client object is an advanced usecase
+for when you need manual control over the client lifecycle. Standalone clients
+do not automatically register tools into the registry, so they must be passed
+into `generate` or `defineDynamicActionProvider` manually.
 
 ```dart
 import 'package:genkit/genkit.dart';
@@ -75,6 +81,7 @@ void main() async {
 ```
 
 ## MCP Server
+
 Expose Genkit actions (tools, prompts, resources) over MCP.
 
 ```dart
@@ -104,6 +111,7 @@ void main() async {
 ```
 
 ### Streamable HTTP Transport
+
 ```dart
 import 'dart:io';
 

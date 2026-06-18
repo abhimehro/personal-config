@@ -10,7 +10,8 @@ g := genkit.Init(ctx, genkit.WithPlugins(&googlegenai.GoogleAI{}))
 
 **Env var:** `GEMINI_API_KEY` or `GOOGLE_API_KEY`
 
-Model names follow the format `googleai/<model-id>`. Look up the latest model IDs at https://ai.google.dev/gemini-api/docs/models.
+Model names follow the format `googleai/<model-id>`. Look up the latest model
+IDs at https://ai.google.dev/gemini-api/docs/models.
 
 ```go
 // By name string
@@ -35,11 +36,13 @@ import "github.com/genkit-ai/genkit/go/plugins/googlegenai"
 g := genkit.Init(ctx, genkit.WithPlugins(&googlegenai.VertexAI{}))
 ```
 
-**Env vars:** `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` (or `GOOGLE_CLOUD_REGION`)
+**Env vars:** `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION` (or
+`GOOGLE_CLOUD_REGION`)
 
 Uses Application Default Credentials (`gcloud auth application-default login`).
 
-Model names follow the format `vertexai/<model-id>`. Same model IDs as Google AI.
+Model names follow the format `vertexai/<model-id>`. Same model IDs as Google
+AI.
 
 ```go
 ai.WithModelName("vertexai/gemini-flash-latest")
@@ -58,7 +61,8 @@ g := genkit.Init(ctx, genkit.WithPlugins(&ant.Anthropic{}))
 
 **Env var:** `ANTHROPIC_API_KEY`
 
-Model names follow the format `anthropic/<model-id>`. Look up the latest model IDs at https://docs.anthropic.com/en/docs/about-claude/models.
+Model names follow the format `anthropic/<model-id>`. Look up the latest model
+IDs at https://docs.anthropic.com/en/docs/about-claude/models.
 
 ```go
 // By name
@@ -98,6 +102,7 @@ model := openaiPlugin.DefineModel("openai", "gpt-4o", compat_oai.ModelOptions{})
 ```
 
 Use with:
+
 ```go
 ai.WithModel(model)
 ```
@@ -127,6 +132,7 @@ model := ollamaPlugin.DefineModel(g,
 ```
 
 Use with:
+
 ```go
 ai.WithModel(model)
 ```

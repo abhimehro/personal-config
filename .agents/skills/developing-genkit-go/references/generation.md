@@ -89,7 +89,8 @@ for result, err := range stream {
 
 ### Callback-Based Streaming
 
-Use `ai.WithStreaming` with `Generate` for callback-style streaming. The callback receives `*ai.ModelResponseChunk`:
+Use `ai.WithStreaming` with `Generate` for callback-style streaming. The
+callback receives `*ai.ModelResponseChunk`:
 
 ```go
 resp, err := genkit.Generate(ctx, g,

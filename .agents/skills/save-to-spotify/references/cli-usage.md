@@ -2,7 +2,8 @@
 
 ## CLI Usage
 
-Reference for the `save-to-spotify` binary: installation, authentication, commands, flags, JSON mode, error handling, and common agent workflows.
+Reference for the `save-to-spotify` binary: installation, authentication,
+commands, flags, JSON mode, error handling, and common agent workflows.
 
 ## Installation
 
@@ -12,7 +13,9 @@ Reference for the `save-to-spotify` binary: installation, authentication, comman
 curl -fsSL https://saveto.spotify.com/install.sh | bash
 ```
 
-Detects OS and architecture, downloads the binary from GitHub Releases, verifies the SHA256 checksum, and installs to `/usr/local/bin` (or `~/.local/bin` if not writable).
+Detects OS and architecture, downloads the binary from GitHub Releases, verifies
+the SHA256 checksum, and installs to `/usr/local/bin` (or `~/.local/bin` if not
+writable).
 
 Pin a version or change the install directory:
 
@@ -30,7 +33,8 @@ SAVE_TO_SPOTIFY_VERSION=0.1.1 SAVE_TO_SPOTIFY_INSTALL_DIR=~/.local/bin \
 
 ### Download a binary manually
 
-Grab the latest release for the platform from [releases](https://github.com/spotify/save-to-spotify/releases):
+Grab the latest release for the platform from
+[releases](https://github.com/spotify/save-to-spotify/releases):
 
 ```shell
 # macOS Apple Silicon
@@ -68,7 +72,8 @@ save-to-spotify version
 
 ## Authentication
 
-The user must authenticate once before any save. The CLI uses OAuth 2.0 with PKCE -- no client secret needed.
+The user must authenticate once before any save. The CLI uses OAuth 2.0 with
+PKCE -- no client secret needed.
 
 ### Interactive (user has a browser)
 
@@ -76,7 +81,8 @@ The user must authenticate once before any save. The CLI uses OAuth 2.0 with PKC
 save-to-spotify auth login
 ```
 
-This opens the browser, the user approves, and a token is saved to `~/.config/save-to-spotify/token.json`.
+This opens the browser, the user approves, and a token is saved to
+`~/.config/save-to-spotify/token.json`.
 
 ### Headless (remote server, CI, or agent environment)
 
@@ -84,17 +90,22 @@ This opens the browser, the user approves, and a token is saved to `~/.config/sa
 save-to-spotify auth login --no-browser
 ```
 
-This prints an authorization URL. The user visits it in any browser, approves, and pastes the redirect URL back into the terminal. The redirect URL will look like `http://127.0.0.1:8085/callback?code=...&state=...` -- it's fine if the page shows a connection error, the URL itself is what matters.
+This prints an authorization URL. The user visits it in any browser, approves,
+and pastes the redirect URL back into the terminal. The redirect URL will look
+like `http://127.0.0.1:8085/callback?code=...&state=...` -- it's fine if the
+page shows a connection error, the URL itself is what matters.
 
 ### Environment token (skip OAuth entirely)
 
-If the user already has a Spotify access token (e.g. from another tool or CI secret):
+If the user already has a Spotify access token (e.g. from another tool or CI
+secret):
 
 ```shell
 export SAVE_TO_SPOTIFY_AUTH_TOKEN="BQD..."
 ```
 
-When this env var is set, the CLI uses it directly with no file I/O and no token refresh. The token must be kept fresh externally.
+When this env var is set, the CLI uses it directly with no file I/O and no token
+refresh. The token must be kept fresh externally.
 
 ### Check auth status
 
@@ -102,9 +113,12 @@ When this env var is set, the CLI uses it directly with no file I/O and no token
 save-to-spotify --json auth status
 ```
 
-Returns `{"authenticated": true, "token_valid": true, ...}` or `{"authenticated": false}`.
+Returns `{"authenticated": true, "token_valid": true, ...}` or
+`{"authenticated": false}`.
 
-Token refresh is automatic -- if the saved token is expired, the CLI refreshes it silently on the next command. No action needed unless the refresh token itself is revoked, in which case the user must `auth login` again.
+Token refresh is automatic -- if the saved token is expired, the CLI refreshes
+it silently on the next command. No action needed unless the refresh token
+itself is revoked, in which case the user must `auth login` again.
 
 ### Print the access token
 
@@ -112,15 +126,23 @@ Token refresh is automatic -- if the saved token is expired, the CLI refreshes i
 save-to-spotify token
 ```
 
-Prints the current access token to stdout -- directly usable as a **Spotify Web API bearer** for requests against `api.spotify.com`. Useful for catalog lookups (searching album/track URIs, fetching release metadata) from inside recipes. Exits non-zero and prints a diagnostic to stderr when the stored token cannot be refreshed. Always check the exit code before piping into an `Authorization` header -- otherwise an empty token produces a misleading HTTP 400 from Spotify rather than a clean auth error.
+Prints the current access token to stdout -- directly usable as a **Spotify Web
+API bearer** for requests against `api.spotify.com`. Useful for catalog lookups
+(searching album/track URIs, fetching release metadata) from inside recipes.
+Exits non-zero and prints a diagnostic to stderr when the stored token cannot be
+refreshed. Always check the exit code before piping into an `Authorization`
+header -- otherwise an empty token produces a misleading HTTP 400 from Spotify
+rather than a clean auth error.
 
-See [spotify-api.md](spotify-api.md) for the official `developer.spotify.com` references, OpenAPI spec URL, endpoint patterns, and URI-resolution helpers.
+See [spotify-api.md](spotify-api.md) for the official `developer.spotify.com`
+references, OpenAPI spec URL, endpoint patterns, and URI-resolution helpers.
 
 ## Saving media
 
 ### Quick save (recommended for most cases)
 
-The `upload` command is the simplest path -- one command to create an episode and save the file:
+The `upload` command is the simplest path -- one command to create an episode
+and save the file:
 
 ```shell
 save-to-spotify --json upload recording.mp3 \
@@ -130,8 +152,13 @@ save-to-spotify --json upload recording.mp3 \
 ```
 
 Output:
+
 ```json
-{"episode_uri": "spotify:episode:abc123", "title": "My Recording", "status": "PROCESSING"}
+{
+  "episode_uri": "spotify:episode:abc123",
+  "title": "My Recording",
+  "status": "PROCESSING"
+}
 ```
 
 If the user has no shows yet, one is auto-created as "My Podcast".
@@ -174,22 +201,24 @@ save-to-spotify --json episodes create \
   --language en
 ```
 
-The difference: `episodes create` requires `--summary` and `--file` as explicit flags (not positional), and does not support `--new-show`.
+The difference: `episodes create` requires `--summary` and `--file` as explicit
+flags (not positional), and does not support `--new-show`.
 
 ## Supported file formats
 
-| Extension | Type | MIME |
-|-----------|------|------|
-| `.mp3` | Audio | `audio/mpeg` |
-| `.m4a` | Audio | `audio/mp4` |
-| `.wav` | Audio | `audio/wav` |
-| `.ogg` | Audio | `audio/ogg` |
+| Extension | Type  | MIME         |
+| --------- | ----- | ------------ |
+| `.mp3`    | Audio | `audio/mpeg` |
+| `.m4a`    | Audio | `audio/mp4`  |
+| `.wav`    | Audio | `audio/wav`  |
+| `.ogg`    | Audio | `audio/ogg`  |
 
 **Maximum file size: 1 GB.**
 
 ## Managing shows
 
-Shows are folders that group episodes. Every episode belongs to exactly one show.
+Shows are folders that group episodes. Every episode belongs to exactly one
+show.
 
 ```shell
 # List all shows
@@ -205,7 +234,8 @@ save-to-spotify --json shows get <show_id>
 save-to-spotify --json shows delete <show_id>
 ```
 
-`save-to-spotify --json shows` should be the first show-management command you run. Check what already exists before creating a new show.
+`save-to-spotify --json shows` should be the first show-management command you
+run. Check what already exists before creating a new show.
 
 ## Managing episodes
 
@@ -220,7 +250,8 @@ save-to-spotify --json episodes status <episode_id>
 save-to-spotify --json episodes delete <episode_id>
 ```
 
-Show and episode metadata is immutable after creation. To change a title or description, delete and re-create.
+Show and episode metadata is immutable after creation. To change a title or
+description, delete and re-create.
 
 ### Episode readiness
 
@@ -231,20 +262,26 @@ save-to-spotify --json episodes status <EPISODE_ID>
 ```
 
 Output:
+
 ```json
-{"episode_uri": "spotify:episode:abc123", "readiness": "READY"}
+{ "episode_uri": "spotify:episode:abc123", "readiness": "READY" }
 ```
 
 Readiness values:
+
 - `READY` -- playable on Spotify
 - `PROCESSING` -- still being processed (wait and retry)
-- `FAILED` -- processing failed; check the episode metadata and re-save if needed
+- `FAILED` -- processing failed; check the episode metadata and re-save if
+  needed
 
-Most episodes are ready within 1-2 minutes. For large files, allow up to 5 minutes.
+Most episodes are ready within 1-2 minutes. For large files, allow up to 5
+minutes.
 
 ## IDs and URIs
 
-The CLI accepts both bare IDs and full Spotify URIs interchangeably, but agents should prefer the full Spotify URI form whenever possible:
+The CLI accepts both bare IDs and full Spotify URIs interchangeably, but agents
+should prefer the full Spotify URI form whenever possible:
+
 - `abc123def456` (bare ID)
 - `spotify:show:abc123def456` (full URI)
 
@@ -252,13 +289,15 @@ JSON output always includes the full URI form.
 
 ## JSON mode
 
-**Always use `--json` when operating as an agent.** It must appear before the command:
+**Always use `--json` when operating as an agent.** It must appear before the
+command:
 
 ```shell
 save-to-spotify --json <command> [flags]
 ```
 
 In JSON mode:
+
 - All output is valid JSON on stdout
 - Errors are `{"error": "message"}` on stdout with exit code 1
 - Progress bars and activity indicators are suppressed
@@ -268,13 +307,16 @@ Without `--json`, output is human-readable text.
 
 ## Timeout control
 
-The default API timeout is 30 seconds. For large file uploads, the upload itself has no timeout (separate HTTP client), but the episode creation API call does. Override if needed:
+The default API timeout is 30 seconds. For large file uploads, the upload itself
+has no timeout (separate HTTP client), but the episode creation API call does.
+Override if needed:
 
 ```shell
 save-to-spotify --json --timeout 2m upload large-recording.mp3 --title "Long Episode" --image cover.jpg
 ```
 
 Or via environment variable:
+
 ```shell
 export SAVE_TO_SPOTIFY_TIMEOUT=2m
 ```
@@ -336,7 +378,9 @@ done
 
 ## Error handling
 
-With `--json`, every command returns exit code 0 on success and exit code 1 on error. Errors are returned as `{"error": "message"}`. **Always check for errors after each command.**
+With `--json`, every command returns exit code 0 on success and exit code 1 on
+error. Errors are returned as `{"error": "message"}`. **Always check for errors
+after each command.**
 
 ```bash
 RESULT=$(save-to-spotify --json upload episode.mp3 --title "My Episode" --image cover.jpg)
@@ -358,41 +402,56 @@ done
 
 Common errors:
 
-| Error | Cause | Action |
-|-------|-------|--------|
-| `not authenticated` | No token file | Run `auth login` |
-| `token refresh failed` | Refresh token revoked | Run `auth login` again |
-| `unsupported file extension` | Wrong file type | Convert to a supported format |
-| `file too large` | Over 1 GB | Compress or split the file |
-| `image too large` | Over 1 MB | Resize the image |
-| `API error (429)` | Rate limited | Wait and retry after a delay |
-| `API error (401)` | Token expired mid-request | Retry (auto-refresh will kick in) |
-| `API error (403)` | Insufficient permissions | Re-authenticate with `auth login` |
-| `--new-show and --show-id are mutually exclusive` | Conflicting flags | Use one or the other |
+| Error                                             | Cause                     | Action                            |
+| ------------------------------------------------- | ------------------------- | --------------------------------- |
+| `not authenticated`                               | No token file             | Run `auth login`                  |
+| `token refresh failed`                            | Refresh token revoked     | Run `auth login` again            |
+| `unsupported file extension`                      | Wrong file type           | Convert to a supported format     |
+| `file too large`                                  | Over 1 GB                 | Compress or split the file        |
+| `image too large`                                 | Over 1 MB                 | Resize the image                  |
+| `API error (429)`                                 | Rate limited              | Wait and retry after a delay      |
+| `API error (401)`                                 | Token expired mid-request | Retry (auto-refresh will kick in) |
+| `API error (403)`                                 | Insufficient permissions  | Re-authenticate with `auth login` |
+| `--new-show and --show-id are mutually exclusive` | Conflicting flags         | Use one or the other              |
 
 ## Troubleshooting
 
 ### Episode not appearing after saving
-Use `episodes status <id>` to check readiness. Processing can take a few minutes after the save completes.
+
+Use `episodes status <id>` to check readiness. Processing can take a few minutes
+after the save completes.
 
 ### Image upload fails
-Images must be `.jpg`, `.jpeg`, or `.png`, max 1 MB, with valid magic bytes (actual JPEG/PNG content, not just a renamed file).
+
+Images must be `.jpg`, `.jpeg`, or `.png`, max 1 MB, with valid magic bytes
+(actual JPEG/PNG content, not just a renamed file).
 
 ### "unsupported file extension" error
-Only `.mp3`, `.m4a`, `.wav`, and `.ogg` are supported. Convert other formats first (e.g., `ffmpeg -i input.webm output.mp3`).
+
+Only `.mp3`, `.m4a`, `.wav`, and `.ogg` are supported. Convert other formats
+first (e.g., `ffmpeg -i input.webm output.mp3`).
 
 ## Environment variables reference
 
-| Variable | Purpose |
-|----------|---------|
-| `SAVE_TO_SPOTIFY_AUTH_TOKEN` | Bearer token; skips OAuth entirely (no refresh, no expiry tracking) |
-| `SAVE_TO_SPOTIFY_BACKEND_URL` | Override backend URL |
-| `SAVE_TO_SPOTIFY_TIMEOUT` | API timeout duration (e.g. `30s`, `2m`) |
+| Variable                      | Purpose                                                             |
+| ----------------------------- | ------------------------------------------------------------------- |
+| `SAVE_TO_SPOTIFY_AUTH_TOKEN`  | Bearer token; skips OAuth entirely (no refresh, no expiry tracking) |
+| `SAVE_TO_SPOTIFY_BACKEND_URL` | Override backend URL                                                |
+| `SAVE_TO_SPOTIFY_TIMEOUT`     | API timeout duration (e.g. `30s`, `2m`)                             |
 
 ## Content policy
 
-- **No copyrighted music:** Content that is classified as music by Spotify's moderation system will be taken down.
-- **Moderation applies:** Standard Spotify podcast moderation policies apply. Content that violates policies will be removed and the user will be notified via email.
-- **No sensitive data:** Do not save content containing passwords, credentials, PII of others, or confidential business information. The content is stored on Spotify's servers.
-- **Save limits apply:** There are per-user rate limits on saves (per hour and per week). If a limit is hit, the API returns an error -- wait and retry later.
-- **Never fabricate URLs:** Every source link in episode descriptions must come from actual content sourcing. If a URL isn't found, omit the link -- never invent one.
+- **No copyrighted music:** Content that is classified as music by Spotify's
+  moderation system will be taken down.
+- **Moderation applies:** Standard Spotify podcast moderation policies apply.
+  Content that violates policies will be removed and the user will be notified
+  via email.
+- **No sensitive data:** Do not save content containing passwords, credentials,
+  PII of others, or confidential business information. The content is stored on
+  Spotify's servers.
+- **Save limits apply:** There are per-user rate limits on saves (per hour and
+  per week). If a limit is hit, the API returns an error -- wait and retry
+  later.
+- **Never fabricate URLs:** Every source link in episode descriptions must come
+  from actual content sourcing. If a URL isn't found, omit the link -- never
+  invent one.

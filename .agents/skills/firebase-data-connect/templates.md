@@ -235,10 +235,13 @@ npx -y firebase-tools@latest deploy --only dataconnect
 
 ```typescript
 // lib/firebase.ts
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getDataConnect, connectDataConnectEmulator } from 'firebase/data-connect';
-import { connectorConfig } from '@myapp/dataconnect';
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import {
+  connectDataConnectEmulator,
+  getDataConnect,
+} from "firebase/data-connect";
+import { connectorConfig } from "@myapp/dataconnect";
 
 const firebaseConfig = {
   apiKey: "...",
@@ -252,20 +255,20 @@ export const dataConnect = getDataConnect(app, connectorConfig);
 
 // Connect to emulator in development
 if (import.meta.env.DEV) {
-  connectDataConnectEmulator(dataConnect, 'localhost', 9399);
+  connectDataConnectEmulator(dataConnect, "localhost", 9399);
 }
 ```
 
 ```typescript
 // Example usage
-import { listItems, createItem } from '@myapp/dataconnect';
+import { createItem, listItems } from "@myapp/dataconnect";
 
 // List items
 const { data } = await listItems();
 console.log(data.items);
 
 // Create item (requires auth)
-await createItem({ name: 'New Item', description: 'Description' });
+await createItem({ name: "New Item", description: "Description" });
 ```
 
 ---
@@ -302,15 +305,15 @@ query ItemList($categoryId: UUID!)
 ### Client Subscribe (Web)
 
 ```typescript
-import { liveDashboardRef } from '@myapp/dataconnect';
-import { subscribe } from 'firebase/data-connect';
+import { liveDashboardRef } from "@myapp/dataconnect";
+import { subscribe } from "firebase/data-connect";
 
 const unsubscribe = subscribe(liveDashboardRef(), {
   onNext: (result) => {
     // Called immediately with current data, then on each refresh
     renderDashboard(result.data.items);
   },
-  onError: (error) => console.error('Subscription error:', error)
+  onError: (error) => console.error("Subscription error:", error),
 });
 
 // Cleanup when done

@@ -1,40 +1,52 @@
 # 🎬 Ultimate Autonomous Media Streaming Pipeline
 
-> **Status**: ✅ **FULLY OPTIMIZED** - Updated June 2026
-> **Architecture**: Hybrid WebDAV + Native macOS FSKit Mount
-> **Performance**: 10GB Bounded VFS Cache (Zero-Memory Bloat)
+> **Status**: ✅ **FULLY OPTIMIZED** - Updated June 2026 **Architecture**:
+> Hybrid WebDAV + Native macOS FSKit Mount **Performance**: 10GB Bounded VFS
+> Cache (Zero-Memory Bloat)
 
-This setup provides a high-performance, autonomous media pipeline that bridges cloud storage (Google Drive + OneDrive) to Plex and Infuse without consuming excessive local disk or memory.
+This setup provides a high-performance, autonomous media pipeline that bridges
+cloud storage (Google Drive + OneDrive) to Plex and Infuse without consuming
+excessive local disk or memory.
 
 ## 🏗️ **Architecture: The Hybrid Bridge**
 
-1.  **🚀 Sync (Alldebrid Fetcher with Pre-Approval Gate)**
-    - **Script**: `sync-alldebrid.sh`
-    - **Agent**: `com.speedybee.alldebrid.sync` (Hourly)
-    - **Action**: Fetches new video links from AllDebrid, creates candidate metadata in `~/CloudMedia/approval_needed/.pending/`. Files are categorized by size:
-      - **< 2GB**: Auto-approved, moved to `.approved/` for immediate download
-      - **2GB - 15GB**: Requires manual approval via `approve-download` script
-      - **> 15GB**: Rejected and logged to `.alldebrid_ignore`
+1. **🚀 Sync (Alldebrid Fetcher with Pre-Approval Gate)**
+   - **Script**: `sync-alldebrid.sh`
+   - **Agent**: `com.speedybee.alldebrid.sync` (Hourly)
+   - **Action**: Fetches new video links from AllDebrid, creates candidate
+     metadata in `~/CloudMedia/approval_needed/.pending/`. Files are categorized
+     by size:
+     - **< 2GB**: Auto-approved, moved to `.approved/` for immediate download
+     - **2GB - 15GB**: Requires manual approval via `approve-download` script
+     - **> 15GB**: Rejected and logged to `.alldebrid_ignore`
 
-2.  **🎞️ Convert (Permute HEVC Transcoder - MANUAL STEP)**
-    - **App**: Permute 4
-    - **Input**: `~/CloudMedia/permute_input/` (drag files here manually)
-    - **Output**: `~/CloudMedia/staging/` (HEVC/H.265)
-    - **Action**: **MANUAL**: You must open Permute 4, drag files from permute_input/, set output to staging/, and start conversion. Once complete, files auto-progress to rename/upload.
+2. **🎞️ Convert (Permute HEVC Transcoder - MANUAL STEP)**
+   - **App**: Permute 4
+   - **Input**: `~/CloudMedia/permute_input/` (drag files here manually)
+   - **Output**: `~/CloudMedia/staging/` (HEVC/H.265)
+   - **Action**: **MANUAL**: You must open Permute 4, drag files from
+     permute_input/, set output to staging/, and start conversion. Once
+     complete, files auto-progress to rename/upload.
 
-3.  **🏷️ Finalize (Renamer & Uploader)**
-    - **Script**: `rename-media.sh`
-    - **Agent**: `com.speedybee.media.renamer` (Watchdog)
-    - **Action**: Safely processes HEVC files from `staging` into `processed` once finished, then uses FileBot to rename and handle duplicate conflicts against the live mount, queuing them in `upload_stage`.
+3. **🏷️ Finalize (Renamer & Uploader)**
+   - **Script**: `rename-media.sh`
+   - **Agent**: `com.speedybee.media.renamer` (Watchdog)
+   - **Action**: Safely processes HEVC files from `staging` into `processed`
+     once finished, then uses FileBot to rename and handle duplicate conflicts
+     against the live mount, queuing them in `upload_stage`.
 
-3.  **📡 Serve (WebDAV Daemon)**
-    - **WebDAV**: `media-server-daemon.sh` serves on port **8080** for **Infuse** (iOS/tvOS).
-    - **VFS Cache**: Dedicated 10GB bounded cache folder.
+4. **📡 Serve (WebDAV Daemon)**
+   - **WebDAV**: `media-server-daemon.sh` serves on port **8080** for **Infuse**
+     (iOS/tvOS).
+   - **VFS Cache**: Dedicated 10GB bounded cache folder.
 
-4.  **🔌 Mount (Native macOS FSKit Filesystem)**
-    - **Script**: `mount-media.sh`
-    - **Agent**: `com.speedybee.media.mount` (KeepAlive Daemon)
-    - **Action**: Mounts the remote using `rclone mount` directly to `~/CloudMedia/mounted/` via macOS's native kernel-free FSKit API. This completely bypasses the legacy NFS loopback protocol, avoiding hangs and local loopback server dependencies. Plex scans this local path directly.
+5. **🔌 Mount (Native macOS FSKit Filesystem)**
+   - **Script**: `mount-media.sh`
+   - **Agent**: `com.speedybee.media.mount` (KeepAlive Daemon)
+   - **Action**: Mounts the remote using `rclone mount` directly to
+     `~/CloudMedia/mounted/` via macOS's native kernel-free FSKit API. This
+     completely bypasses the legacy NFS loopback protocol, avoiding hangs and
+     local loopback server dependencies. Plex scans this local path directly.
 
 ## 📁 **Library Structure**
 
@@ -58,32 +70,38 @@ This setup provides a high-performance, autonomous media pipeline that bridges c
 
 Use these shortcuts in your terminal (Fish shell required):
 
-| Shortcut | Description |
-| :--- | :--- |
-| `media-status` | Check if all 3 media agents are running (server, mount, renamer) |
-| `media-logs` | Stream logs for server and mount |
-| `media-restart` | Full restart of the media infrastructure (server, mount, renamer) |
-| `list-uploads` | Show files pending approval |
-| `approve-uploads` | Process and upload pending files |
+| Shortcut          | Description                                                       |
+| :---------------- | :---------------------------------------------------------------- |
+| `media-status`    | Check if all 3 media agents are running (server, mount, renamer)  |
+| `media-logs`      | Stream logs for server and mount                                  |
+| `media-restart`   | Full restart of the media infrastructure (server, mount, renamer) |
+| `list-uploads`    | Show files pending approval                                       |
+| `approve-uploads` | Process and upload pending files                                  |
 
-**Note**: Pre-approval gate active. Use `approve-download --list` to see pending candidates, `approve-download --status` for counts, or `approve-download <filename>` to approve specific files.
+**Note**: Pre-approval gate active. Use `approve-download --list` to see pending
+candidates, `approve-download --status` for counts, or
+`approve-download <filename>` to approve specific files.
 
 ## 🧹 **Remote Storage Cleanup**
 
-The cleanup system identifies and helps remove problematic files from remote storage (incomplete uploads, duplicates, files with suspicious names like UUID hashes).
+The cleanup system identifies and helps remove problematic files from remote
+storage (incomplete uploads, duplicates, files with suspicious names like UUID
+hashes).
 
 ### Commands
 
-| Command | Description |
-| :--- | :--- |
-| `audit-remote-uploads [Movies\|TV Shows]` | Scan remote and generate manifest of problematic files |
-| `cleanup-remote [Movies\|TV Shows]` | Dry-run: show manifest, ask for confirmation to delete ALL |
-| `cleanup-remote --select [Movies\|TV Shows]` | Interactive: select specific files by number to delete |
+| Command                                      | Description                                                |
+| :------------------------------------------- | :--------------------------------------------------------- |
+| `audit-remote-uploads [Movies\|TV Shows]`    | Scan remote and generate manifest of problematic files     |
+| `cleanup-remote [Movies\|TV Shows]`          | Dry-run: show manifest, ask for confirmation to delete ALL |
+| `cleanup-remote --select [Movies\|TV Shows]` | Interactive: select specific files by number to delete     |
 
 ### Suspicious File Patterns
 
 Files are flagged as suspicious if they match:
-- **UUID/Hash patterns**: Pure hex strings like `0a72807b7623e46a762d3bfed395cae7`
+
+- **UUID/Hash patterns**: Pure hex strings like
+  `0a72807b7623e46a762d3bfed395cae7`
 - **Small size**: Files under 100MB (excluding `_hd` and `_shd` quality markers)
 - **Temp/Partial files**: `.part`, `temp`, `partial` in filename
 - **Hidden files**: Starting with `.` (except `.DS_Store`)
@@ -109,6 +127,7 @@ To prevent the stale mount issue that caused false disk usage reporting:
    - Logs to `~/Library/Logs/stale-mount-watchdog.log`
 
 **Manual Check**:
+
 ```bash
 # Check for stale mounts
 bash ~/dev/personal-config/media-streaming/scripts/check-stale-mounts.sh
@@ -117,20 +136,25 @@ bash ~/dev/personal-config/media-streaming/scripts/check-stale-mounts.sh
 bash ~/dev/personal-config/media-streaming/scripts/check-stale-mounts.sh --fix
 ```
 
-**Note**: The mount script now refuses to mount if the mount point is not empty, preventing directory entry corruption.
+**Note**: The mount script now refuses to mount if the mount point is not empty,
+preventing directory entry corruption.
 
 ### Quality Marker Exclusion
 
-Files containing `_hd -`, `_shd.`, `_shd -`, or `_hd.` are **excluded** from suspicious detection as these are legitimate quality indicators for media files.
+Files containing `_hd -`, `_shd.`, `_shd -`, or `_hd.` are **excluded** from
+suspicious detection as these are legitimate quality indicators for media files.
 
 ### Workflow
 
-1. **Audit first**: Run `audit-remote-uploads Movies` to see what would be flagged
+1. **Audit first**: Run `audit-remote-uploads Movies` to see what would be
+   flagged
 2. **Review**: Check the manifest for false positives
-3. **Selective cleanup**: Use `cleanup-remote --select Movies` to pick specific files
+3. **Selective cleanup**: Use `cleanup-remote --select Movies` to pick specific
+   files
 4. **Confirm**: Type `yes` when prompted to permanently delete selected files
 
-**Safety**: All cleanup operations require explicit user confirmation before any deletion occurs.
+**Safety**: All cleanup operations require explicit user confirmation before any
+deletion occurs.
 
 ## 🛠️ **Troubleshooting & Logs**
 
@@ -141,8 +165,10 @@ Files containing `_hd -`, `_shd.`, `_shd -`, or `_hd.` are **excluded** from sus
 ## 🔐 **Security Note**
 
 - **WebDAV** is password-protected via 1Password (Item: `MediaServer`).
-- **Password rotation**: `./scripts/rotate-media-webdav.sh` (see `docs/CREDENTIAL_ROTATION.md`).
-- **Port Forwarding**: Only forward **8080** (WebDAV) and **32400** (Plex) via Windscribe for remote access.
+- **Password rotation**: `./scripts/rotate-media-webdav.sh` (see
+  `docs/CREDENTIAL_ROTATION.md`).
+- **Port Forwarding**: Only forward **8080** (WebDAV) and **32400** (Plex) via
+  Windscribe for remote access.
 
 ---
 

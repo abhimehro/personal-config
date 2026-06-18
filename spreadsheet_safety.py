@@ -1,6 +1,5 @@
 """Defenses against spreadsheet formula injection in exported tabular data."""
 
-
 # SECURITY: Values starting with these characters may execute as formulas when a
 # markdown/CSV table is opened in Excel, LibreOffice Calc, or Google Sheets
 # (CWE-1236). Prefix with a single quote to force literal interpretation.

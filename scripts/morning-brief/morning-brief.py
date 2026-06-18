@@ -609,7 +609,9 @@ def _render_heading(level: int, title: str) -> str:
     if match:
         icon = match.group(1)
         clean_title = match.group(2)
-        return f'<h{level}><span aria-hidden="true">{icon}</span> {clean_title}</h{level}>'
+        return (
+            f'<h{level}><span aria-hidden="true">{icon}</span> {clean_title}</h{level}>'
+        )
 
     return f"<h{level}>{safe_title}</h{level}>"
 
@@ -679,7 +681,9 @@ def _extract_label_names(labels_raw: list[Any]) -> list[str]:
     return label_names
 
 
-def _calculate_base_score(priority: int, due_date: str, state_type: str, today_iso: str) -> int:
+def _calculate_base_score(
+    priority: int, due_date: str, state_type: str, today_iso: str
+) -> int:
     score = 0
     if is_due_today(due_date, today_iso):
         score += 100
@@ -1013,7 +1017,9 @@ def _parse_linear_notification_node(node: dict[str, Any]) -> tuple[str, str, Foc
     return category, dedupe_key, item
 
 
-def _process_unread_linear_notifications(unread_nodes: list[dict[str, Any]]) -> tuple[list[FocusItem], list[FocusItem]]:
+def _process_unread_linear_notifications(
+    unread_nodes: list[dict[str, Any]],
+) -> tuple[list[FocusItem], list[FocusItem]]:
     review_items = []
     seen_reviews: set[str] = set()
     notification_items = []
@@ -1076,7 +1082,9 @@ def fetch_linear_queue_snapshot(
         nodes = payload.get("notifications", {}).get("nodes", [])
         unread_nodes = [node for node in nodes if not node.get("readAt")]
 
-        review_items, notification_items = _process_unread_linear_notifications(unread_nodes)
+        review_items, notification_items = _process_unread_linear_notifications(
+            unread_nodes
+        )
 
         return LinearQueueSnapshot(
             unread_count=unread_count,

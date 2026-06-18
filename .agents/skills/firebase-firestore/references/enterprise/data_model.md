@@ -15,7 +15,8 @@ values. Each document is identified by a name. A document can contain complex
 nested objects in addition to basic data types like strings, numbers, and
 booleans. Documents are limited to a maximum size of 1 MiB.
 
-Example document (e.g., in a `users` collection): `json { "first": "Ada",
+Example document (e.g., in a `users` collection):
+`json { "first": "Ada",
 "last": "Lovelace", "born": 1815 }`
 
 ### Collections
@@ -52,15 +53,16 @@ subcollections that share the same organizational structure.
 
 For example, imagine an app with a `landmarks` collection where each landmark
 has a `reviews` subcollection. If you want to find all 5-star reviews across
-*all* landmarks, it would involve checking many separate `reviews`
+_all_ landmarks, it would involve checking many separate `reviews`
 subcollections. With a collection group, you can perform a single query against
 the `reviews` collection group.
 
 ### Examples
 
 **Standard Query** (Single Collection): Find all 5-star reviews for a specific
-landmark. `javascript
+landmark.
+`javascript
 db.collection('landmarks/golden_gate_bridge/reviews').where('rating', '==', 5)`
 
-**Collection Group Query**: Find all 5-star reviews across *all* landmarks.
+**Collection Group Query**: Find all 5-star reviews across _all_ landmarks.
 `javascript db.collectionGroup('reviews').where('rating', '==', 5)`

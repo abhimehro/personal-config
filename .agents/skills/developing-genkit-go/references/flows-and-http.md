@@ -27,7 +27,9 @@ Flows that stream chunks back to the caller. Two common patterns:
 
 ### Pattern 1: Passthrough Streaming
 
-Pass the stream callback directly through to `WithStreaming`. The callback type is `ai.ModelStreamCallback` = `func(context.Context, *ai.ModelResponseChunk) error`:
+Pass the stream callback directly through to `WithStreaming`. The callback type
+is `ai.ModelStreamCallback` =
+`func(context.Context, *ai.ModelResponseChunk) error`:
 
 ```go
 genkit.DefineStreamingFlow(g, "streamingJokeFlow",
@@ -132,6 +134,7 @@ log.Fatal(server.Start(ctx, "127.0.0.1:8080", mux))
 ### Request/Response Format
 
 **Non-streaming request:**
+
 ```bash
 curl -X POST http://localhost:8080/jokeFlow \
   -H "Content-Type: application/json" \
@@ -141,6 +144,7 @@ curl -X POST http://localhost:8080/jokeFlow \
 Response: `{"result": "Why did the banana go to the doctor?..."}`
 
 **Streaming request:**
+
 ```bash
 curl -N -X POST http://localhost:8080/streamingJokeFlow \
   -H "Content-Type: application/json" \

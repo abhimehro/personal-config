@@ -1,21 +1,23 @@
 # 🔐 Media Streaming Backup & Recovery Guide
 
-**Last Updated**: December 20, 2025  
+**Last Updated**: December 20, 2025\
 **Recovery Time**: ~5 minutes
 
-> Note: Current media auth is 1Password-first. Restoring the media-server credentials file is only needed if you intentionally use the fallback file-based path.
+> Note: Current media auth is 1Password-first. Restoring the media-server
+> credentials file is only needed if you intentionally use the fallback
+> file-based path.
 
 ---
 
 ## 📦 What's Backed Up
 
-| Component              | Location                                      | Type           |
-| ---------------------- | --------------------------------------------- | -------------- |
-| **rclone config**      | 1Password → "Rclone Config Backup"            | Secure vault   |
-| **WebDAV credentials** | 1Password Login → `MediaServer` (`op://Personal/MediaServer/...`) | Secure vault   |
-| **WebDAV credentials (legacy doc)** | 1Password document → "Media Server WebDAV Credentials" | Optional backup |
-| **Setup scripts**      | `media-streaming/scripts/`                    | Git repository |
-| **Documentation**      | `media-streaming/docs/`                       | Git repository |
+| Component                           | Location                                                          | Type            |
+| ----------------------------------- | ----------------------------------------------------------------- | --------------- |
+| **rclone config**                   | 1Password → "Rclone Config Backup"                                | Secure vault    |
+| **WebDAV credentials**              | 1Password Login → `MediaServer` (`op://Personal/MediaServer/...`) | Secure vault    |
+| **WebDAV credentials (legacy doc)** | 1Password document → "Media Server WebDAV Credentials"            | Optional backup |
+| **Setup scripts**                   | `media-streaming/scripts/`                                        | Git repository  |
+| **Documentation**                   | `media-streaming/docs/`                                           | Git repository  |
 
 ---
 
@@ -224,7 +226,8 @@ op document edit "Rclone Config Backup" ~/.config/rclone/rclone.conf --vault Per
 
 ### After Changing WebDAV Password:
 
-Prefer the rotation helper (generates a new password in 1Password; never prints it):
+Prefer the rotation helper (generates a new password in 1Password; never prints
+it):
 
 ```bash
 ./media-streaming/scripts/rotate-media-webdav.sh --sync-legacy-document
@@ -289,11 +292,11 @@ op document edit "Media Server WebDAV Credentials" ~/.config/media-server/creden
 
 All sensitive configurations are stored in your **Personal vault**:
 
-| Document Name                       | Contains                     | UUID                       |
-| ----------------------------------- | ---------------------------- | -------------------------- |
-| **Rclone Config Backup**            | OAuth tokens, remote configs | opgr52y2brbsfmzzk56p4qrkzu |
-| **MediaServer** (Login)             | Username & password (primary) | Personal vault item name   |
-| **Media Server WebDAV Credentials** | Legacy document backup       | Optional; use `--sync-legacy-document` when rotating |
+| Document Name                       | Contains                      | UUID                                                 |
+| ----------------------------------- | ----------------------------- | ---------------------------------------------------- |
+| **Rclone Config Backup**            | OAuth tokens, remote configs  | opgr52y2brbsfmzzk56p4qrkzu                           |
+| **MediaServer** (Login)             | Username & password (primary) | Personal vault item name                             |
+| **Media Server WebDAV Credentials** | Legacy document backup        | Optional; use `--sync-legacy-document` when rotating |
 
 ---
 
@@ -309,11 +312,12 @@ You'll know recovery is complete when:
 
 ---
 
-**Recovery Time**: 5-10 minutes  
-**Difficulty**: Easy (copy-paste commands)  
+**Recovery Time**: 5-10 minutes\
+**Difficulty**: Easy (copy-paste commands)\
 **Prerequisites**: 1Password CLI access, git repository cloned
 
-_Last tested: December 20, 2025 - ✅ Successful recovery from OneDrive sync incident_
+_Last tested: December 20, 2025 - ✅ Successful recovery from OneDrive sync
+incident_
 
 ---
 

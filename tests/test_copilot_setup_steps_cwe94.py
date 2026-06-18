@@ -107,7 +107,9 @@ class TestMaliciousPayloadBehavior(unittest.TestCase):
             r"const request = '';\s*const \{execSync\}",
         )
 
-    @unittest.skipUnless(shutil.which("node"), "node required for env-binding simulation")
+    @unittest.skipUnless(
+        shutil.which("node"), "node required for env-binding simulation"
+    )
     def test_env_binding_treats_payload_as_literal_string(self) -> None:
         """Mirrors the workflow: REQUEST env → process.env.REQUEST (no code exec)."""
         marker_path = os.path.join(tempfile.gettempdir(), "cwe94-injection-marker")

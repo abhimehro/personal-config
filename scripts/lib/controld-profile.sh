@@ -113,7 +113,7 @@ generate_profile_config() {
         # Remove this temporary RETURN trap so it does not affect other functions.
         trap - RETURN
         # Restore any previously configured RETURN trap, if one existed.
-        ${previous_return_trap:-}
+        ${previous_return_trap-}
     " RETURN
 	local ctrld_pid
 	if [[ $protocol == "doh3" ]]; then

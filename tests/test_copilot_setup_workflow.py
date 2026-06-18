@@ -18,7 +18,7 @@ WORKFLOW = Path(".github/workflows/copilot-setup-steps.yml")
 MALICIOUS_PAYLOADS = [
     '"; require("child_process").execSync("id"); //',
     "'\nprocess.exit(1)\n//",
-    '${{ github.run_id }}',
+    "${{ github.run_id }}",
 ]
 
 
@@ -75,9 +75,14 @@ def test_malicious_payload_would_not_embed(step: str) -> None:
     for payload in MALICIOUS_PAYLOADS:
         simulated_vulnerable = f"const request = '{payload}';"
         # Vulnerable pattern: attacker-controlled chars inside single-quoted JS literal
-        if simulated_vulnerable.count("'") >= 2 and "process.env" not in simulated_vulnerable:
+        if (
+            simulated_vulnerable.count("'") >= 2
+            and "process.env" not in simulated_vulnerable
+        ):
             pass  # documents why env binding matters
-        assert payload not in script_body, "Payload must not appear literally in workflow"
+        assert (
+            payload not in script_body
+        ), "Payload must not appear literally in workflow"
 
 
 def main() -> int:

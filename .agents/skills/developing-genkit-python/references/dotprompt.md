@@ -2,7 +2,8 @@
 
 ## What it is
 
-`.prompt` files combine YAML frontmatter (model config, schemas) with Handlebars templates. Keeps prompt logic out of Python code and makes variants easy.
+`.prompt` files combine YAML frontmatter (model config, schemas) with Handlebars
+templates. Keeps prompt logic out of Python code and makes variants easy.
 
 ## File format
 
@@ -76,7 +77,8 @@ async def tell_story(subject: str, ctx: ActionRunContext) -> str:
     return full
 ```
 
-Note: `.stream(input={...})` not `ai.generate_stream(...)` — different call shape for prompts.
+Note: `.stream(input={...})` not `ai.generate_stream(...)` — different call
+shape for prompts.
 
 ## Render without generating (for LLM-judge evals)
 
@@ -88,6 +90,7 @@ response = await ai.generate(model='googleai/gemini-flash-latest', messages=rend
 ## Helpers
 
 Register Python functions callable inside Handlebars templates:
+
 ```python
 def list_helper(data: object, *args, **kwargs) -> str:
     if not isinstance(data, list):
@@ -101,9 +104,10 @@ Then use `{{list ingredients}}` in your `.prompt` file.
 
 ## Variants
 
-Name the file `<name>.<variant>.prompt` — e.g. `recipe.robot.prompt`.
-Call with `ai.prompt('recipe', variant='robot')`.
+Name the file `<name>.<variant>.prompt` — e.g. `recipe.robot.prompt`. Call with
+`ai.prompt('recipe', variant='robot')`.
 
 ## Partials
 
-Use `{{>partial_name param=value}}` in templates. Partial files are named `_partial_name.prompt`.
+Use `{{>partial_name param=value}}` in templates. Partial files are named
+`_partial_name.prompt`.

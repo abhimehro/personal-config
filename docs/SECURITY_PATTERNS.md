@@ -1,6 +1,8 @@
 # Security Patterns and Best Practices
 
-This document outlines security patterns and defensive coding practices used throughout this repository. These patterns help prevent common vulnerabilities and provide defense-in-depth.
+This document outlines security patterns and defensive coding practices used
+throughout this repository. These patterns help prevent common vulnerabilities
+and provide defense-in-depth.
 
 ## Table of Contents
 
@@ -18,7 +20,10 @@ This document outlines security patterns and defensive coding practices used thr
 
 ### Problem: [CWE-59](https://cwe.mitre.org/data/definitions/59.html) - Improper Link Resolution Before File Access
 
-Symlink attacks occur when an attacker creates a symbolic link at a location where a privileged script expects to create or modify a file. If the script follows the symlink, it may overwrite or change permissions on an unintended target file.
+Symlink attacks occur when an attacker creates a symbolic link at a location
+where a privileged script expects to create or modify a file. If the script
+follows the symlink, it may overwrite or change permissions on an unintended
+target file.
 
 ### Vulnerable Pattern ❌
 
@@ -36,8 +41,10 @@ chmod 700 /etc/app/profiles
 **Attack scenario:**
 
 1. Script runs `rm -f /etc/app/config.conf`
-2. **Attacker quickly creates symlink:** `ln -s /etc/passwd /etc/app/config.conf`
-3. Script runs `cp new_config.conf /etc/app/config.conf` → overwrites `/etc/passwd`!
+2. **Attacker quickly creates symlink:**
+   `ln -s /etc/passwd /etc/app/config.conf`
+3. Script runs `cp new_config.conf /etc/app/config.conf` → overwrites
+   `/etc/passwd`!
 
 ### Secure Pattern ✅
 
@@ -103,7 +110,9 @@ This test demonstrates:
 
 ### Problem: [CWE-362](https://cwe.mitre.org/data/definitions/362.html) - Race Condition
 
-Time-of-Check-Time-of-Use (TOCTOU) vulnerabilities occur when there's a gap between checking a condition and using the result. An attacker can change the state during this gap.
+Time-of-Check-Time-of-Use (TOCTOU) vulnerabilities occur when there's a gap
+between checking a condition and using the result. An attacker can change the
+state during this gap.
 
 ### Vulnerable Pattern ❌
 
@@ -149,7 +158,8 @@ fi
 
 ### Problem: [CWE-732](https://cwe.mitre.org/data/definitions/732.html) - Incorrect Permission Assignment
 
-Sensitive files must have restrictive permissions from creation. Default permissions may be too permissive.
+Sensitive files must have restrictive permissions from creation. Default
+permissions may be too permissive.
 
 ### Vulnerable Pattern ❌
 
@@ -193,7 +203,8 @@ install -m 600 source.conf /etc/app/private/config.conf
 
 ### Problem: [CWE-78](https://cwe.mitre.org/data/definitions/78.html) - OS Command Injection
 
-Occurs when untrusted input is used to construct shell commands without proper sanitization.
+Occurs when untrusted input is used to construct shell commands without proper
+sanitization.
 
 ### Vulnerable Pattern ❌
 
@@ -239,7 +250,8 @@ find /var/log "${args[@]}"
 
 ### Problem: [CWE-22](https://cwe.mitre.org/data/definitions/22.html) - Path Traversal
 
-Occurs when user input is used to construct file paths without validation, allowing access outside intended directories.
+Occurs when user input is used to construct file paths without validation,
+allowing access outside intended directories.
 
 ### Vulnerable Pattern ❌
 
@@ -293,7 +305,8 @@ fi
 
 ### Problem: [CWE-214](https://cwe.mitre.org/data/definitions/214.html) - Information Exposure Through Process Environment
 
-Credentials passed as command-line arguments are visible in process listings (`ps`, `/proc`).
+Credentials passed as command-line arguments are visible in process listings
+(`ps`, `/proc`).
 
 ### Vulnerable Pattern ❌
 
@@ -335,7 +348,10 @@ source /etc/app/secrets.env
 
 ### Problem: [CWE-1236](https://cwe.mitre.org/data/definitions/1236.html) - Improper Neutralization of Formula Elements in CSV Files
 
-When tabular exports (CSV, or markdown tables copied into Excel) contain attacker-controlled text that begins with `=`, `+`, `-`, `@`, tab, or carriage return, spreadsheet software may interpret the cell as a formula and reach out to external resources or execute logic.
+When tabular exports (CSV, or markdown tables copied into Excel) contain
+attacker-controlled text that begins with `=`, `+`, `-`, `@`, tab, or carriage
+return, spreadsheet software may interpret the cell as a formula and reach out
+to external resources or execute logic.
 
 ### Vulnerable Pattern ❌
 
@@ -359,7 +375,8 @@ writer.writerow([
 
 1. Treat all GitHub metadata (titles, branch names, labels) as untrusted.
 2. Escape before writing any export that may be opened in a spreadsheet.
-3. Prefer `csv.writer` with proper quoting; still prefix dangerous leading characters.
+3. Prefer `csv.writer` with proper quoting; still prefix dangerous leading
+   characters.
 
 ---
 
@@ -460,10 +477,14 @@ python3 ./tests/test_path_validation.py
 
 ## Additional Resources
 
-- Internal Security Journal: `.jules/sentinel.md` - Documents all security vulnerabilities found and fixed
+- Internal Security Journal: `.jules/sentinel.md` - Documents all security
+  vulnerabilities found and fixed
 - Security Audit: `SECURITY_AUDIT.md` - Repository-wide security assessment
-- Security Incident Response: `SECURITY_INCIDENT_RESPONSE.md` - Incident handling procedures
+- Security Incident Response: `SECURITY_INCIDENT_RESPONSE.md` - Incident
+  handling procedures
 
 ---
 
-_This document is a living guide. When you discover new security patterns or vulnerabilities, please update both this document and the sentinel journal (`.jules/sentinel.md`)._
+_This document is a living guide. When you discover new security patterns or
+vulnerabilities, please update both this document and the sentinel journal
+(`.jules/sentinel.md`)._

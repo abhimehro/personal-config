@@ -1,10 +1,14 @@
 # Genkit Python Examples
 
-Minimal patterns for common Genkit APIs. Examples use **Google AI** (`GoogleAI`, `googleai/...`); other providers use the same patterns with the right plugin and model prefix.
+Minimal patterns for common Genkit APIs. Examples use **Google AI** (`GoogleAI`,
+`googleai/...`); other providers use the same patterns with the right plugin and
+model prefix.
 
 ## Public imports
 
-Use **`genkit`**, **`genkit.plugins.*`**, **`genkit.embedder`**, **`genkit.evaluator`**, and **`genkit.model`** (and similar public modules) only — not internal packages (`genkit._core`, etc.).
+Use **`genkit`**, **`genkit.plugins.*`**, **`genkit.embedder`**,
+**`genkit.evaluator`**, and **`genkit.model`** (and similar public modules) only
+— not internal packages (`genkit._core`, etc.).
 
 ```python
 from genkit import Genkit, ActionRunContext
@@ -138,7 +142,8 @@ async def stream_story(subject: str, ctx: ActionRunContext) -> str:
 
 ## Tools
 
-Parameters must be a **Pydantic `BaseModel`** (bare scalars → 400 from Gemini). Use **`@ai.tool()`**, not `@ai.define_tool()`.
+Parameters must be a **Pydantic `BaseModel`** (bare scalars → 400 from Gemini).
+Use **`@ai.tool()`**, not `@ai.define_tool()`.
 
 ```python
 class WeatherInput(BaseModel):
@@ -168,4 +173,5 @@ embeddings = await ai.embed_many(
 )
 ```
 
-Common embedders: `googleai/gemini-embedding-001`, `googleai/gemini-embedding-exp-03-07`.
+Common embedders: `googleai/gemini-embedding-001`,
+`googleai/gemini-embedding-exp-03-07`.

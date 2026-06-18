@@ -46,14 +46,14 @@ spinner_wait() {
 			trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - INT; kill -INT $BASHPID' INT
 			trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - TERM; kill -TERM $BASHPID' TERM
 
-		local interval=0.5
-		iterations=$(echo "$duration / $interval" | bc -l | cut -d. -f1)
-		while [[ $c -lt $iterations ]]; do
-			printf "\r\033[0;34m[%c]\033[0m %s..." "${sp:i++%${#sp}:1}" "$msg"
-			sleep $interval
-			c=$((c + 1))
-		done
-		printf "\r\033[K" # Clear line
+			local interval=0.5
+			iterations=$(echo "$duration / $interval" | bc -l | cut -d. -f1)
+			while [[ $c -lt $iterations ]]; do
+				printf "\r\033[0;34m[%c]\033[0m %s..." "${sp:i++%${#sp}:1}" "$msg"
+				sleep $interval
+				c=$((c + 1))
+			done
+			printf "\r\033[K" # Clear line
 			[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true
 		)
 	else

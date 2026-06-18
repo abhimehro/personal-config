@@ -10,10 +10,12 @@ uv add genkit-plugin-fastapi fastapi uvicorn
 
 ## Streaming by default
 
-The `genkit_fastapi_handler` decorator auto-streams when the client sends `Accept: text/event-stream`.
-No extra setup — just add the header on the frontend and it works.
+The `genkit_fastapi_handler` decorator auto-streams when the client sends
+`Accept: text/event-stream`. No extra setup — just add the header on the
+frontend and it works.
 
 **Wire format (SSE):**
+
 ```
 data: {"message": "<chunk text>"}   ← one per ctx.send_chunk() call
 data: {"message": "<chunk text>"}
@@ -21,17 +23,22 @@ data: {"result": <final output>}    ← sent once when flow completes
 ```
 
 **Frontend (JS EventSource):**
+
 ```js
-const res = await fetch('/flow/chat', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
-  body: JSON.stringify({ data: { topic: 'quantum computing' } }),
+const res = await fetch("/flow/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Accept": "text/event-stream",
+  },
+  body: JSON.stringify({ data: { topic: "quantum computing" } }),
 });
 const reader = res.body.getReader();
 // decode and parse each `data: {...}` line
 ```
 
 **curl test:**
+
 ```bash
 curl -N -X POST http://localhost:8080/flow/chat \
   -H 'Content-Type: application/json' \
@@ -74,8 +81,9 @@ if __name__ == '__main__':
     uvicorn.run(app, host='0.0.0.0', port=8080)
 ```
 
-**Key:** flow must accept `ctx: ActionRunContext` and call `ctx.send_chunk(text)` to emit SSE chunks.
-Without `ctx.send_chunk`, the flow runs but streams nothing — client waits for the final result.
+**Key:** flow must accept `ctx: ActionRunContext` and call
+`ctx.send_chunk(text)` to emit SSE chunks. Without `ctx.send_chunk`, the flow
+runs but streams nothing — client waits for the final result.
 
 ---
 
@@ -83,7 +91,8 @@ Without `ctx.send_chunk`, the flow runs but streams nothing — client waits for
 
 ### Fine-grained control over flow streaming
 
-Complex apps chain flows — a parent orchestrates children. Chunks propagate upward by **passing `ctx` to child flows**.
+Complex apps chain flows — a parent orchestrates children. Chunks propagate
+upward by **passing `ctx` to child flows**.
 
 ```python
 class ResearchInput(BaseModel):
@@ -130,14 +139,17 @@ async def report(input: ReportInput, ctx: ActionRunContext) -> str:
 ```
 
 **Rules for nested streaming:**
+
 - Child flows that should stream must also accept `ctx: ActionRunContext`
 - Pass the parent's `ctx` when calling child flows: `await child(input, ctx)`
 - Non-streaming child flows don't need `ctx` — just `await` them normally
-- A child that doesn't call `ctx.send_chunk` contributes nothing to the stream (fine for parallel data fetching)
+- A child that doesn't call `ctx.send_chunk` contributes nothing to the stream
+  (fine for parallel data fetching)
 
 ### Executing flows in parallel
 
-Use `asyncio.gather` to run multiple flows concurrently. Only makes sense when children don't need to stream.
+Use `asyncio.gather` to run multiple flows concurrently. Only makes sense when
+children don't need to stream.
 
 ```python
 import asyncio
@@ -215,7 +227,8 @@ async def sentiment(input: AnalysisInput) -> SentimentResult:
     return response.output
 ```
 
-Client calls this without `Accept: text/event-stream` — gets `{"result": {...}}` back.
+Client calls this without `Accept: text/event-stream` — gets `{"result": {...}}`
+back.
 
 ---
 

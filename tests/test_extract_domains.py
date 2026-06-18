@@ -12,7 +12,11 @@ from unittest.mock import patch
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
-from adguard.scripts.extract_domains import extract_domains_from_file, extract_allowlist_domains_from_file, _is_allowlist_rule
+from adguard.scripts.extract_domains import (
+    _is_allowlist_rule,
+    extract_allowlist_domains_from_file,
+    extract_domains_from_file,
+)
 
 
 class TestExtractDomainsFromFile(unittest.TestCase):
@@ -133,8 +137,6 @@ class TestExtractDomainsFromFile(unittest.TestCase):
             os.remove(temp_path)
 
 
-
-
 class TestIsAllowlistRule(unittest.TestCase):
     def test_valid_allowlist_rule(self):
         rule = {"PK": "example.com", "action": {"do": 1}}
@@ -166,14 +168,18 @@ class TestIsAllowlistRule(unittest.TestCase):
 
 class TestExtractAllowlistDomainsFromFile(unittest.TestCase):
     def test_happy_path(self):
-        json_data = json.dumps({
-            "rules": [
-                {"PK": "example.com", "action": {"do": 1}},
-                {"PK": "test.com", "action": {"do": 0}},
-                {"PK": "anotherexample.com", "action": {"do": 1}}
-            ]
-        })
-        with tempfile.NamedTemporaryFile(mode="w", delete=False, encoding="utf-8") as tf:
+        json_data = json.dumps(
+            {
+                "rules": [
+                    {"PK": "example.com", "action": {"do": 1}},
+                    {"PK": "test.com", "action": {"do": 0}},
+                    {"PK": "anotherexample.com", "action": {"do": 1}},
+                ]
+            }
+        )
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=False, encoding="utf-8"
+        ) as tf:
             tf.write(json_data)
             temp_path = tf.name
 
@@ -194,7 +200,9 @@ class TestExtractAllowlistDomainsFromFile(unittest.TestCase):
     @patch("builtins.print")
     def test_invalid_json(self, mock_print):
         invalid_json = "this is not json"
-        with tempfile.NamedTemporaryFile(mode="w", delete=False, encoding="utf-8") as tf:
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=False, encoding="utf-8"
+        ) as tf:
             tf.write(invalid_json)
             temp_path = tf.name
 

@@ -1,6 +1,7 @@
 # Genkit OpenAI Plugin (`genkit_openai`)
 
-OpenAI-compatible API plugin for Genkit Dart. Supports OpenAI models and other compatible APIs (xAI, DeepSeek, Together AI, Groq, etc.).
+OpenAI-compatible API plugin for Genkit Dart. Supports OpenAI models and other
+compatible APIs (xAI, DeepSeek, Together AI, Groq, etc.).
 
 ## Basic Usage
 
@@ -23,12 +24,13 @@ void main() async {
 
 ## Options
 
-`OpenAIOptions` allows configuring sampling temperature, nucleus sampling, token generation, seed, etc:
-`config: OpenAIOptions(temperature: 0.7, maxTokens: 100)`
+`OpenAIOptions` allows configuring sampling temperature, nucleus sampling, token
+generation, seed, etc: `config: OpenAIOptions(temperature: 0.7, maxTokens: 100)`
 
 ## Groq API override
 
-Specify custom `baseUrl` and custom models to integrate with third-party providers.
+Specify custom `baseUrl` and custom models to integrate with third-party
+providers.
 
 ```dart
 final ai = Genkit(plugins: [
