@@ -6,6 +6,32 @@
 
 ## Entry template
 
+## Run — 2026-06-19
+
+### Input tail
+
+- Source report/snapshot: `tasks/pr-review-2026-06-16.md` (deferred tail) + live GitHub
+- PRs investigated: 5 across 2 repos (3 DIRTY at start: pc#1279, pc#1281, pc#1280)
+
+### Outcomes
+
+- Salvage draft PRs opened: personal-config
+  [#1287](https://github.com/abhimehro/personal-config/pull/1287) (from #1279),
+  [#1288](https://github.com/abhimehro/personal-config/pull/1288) (from #1281)
+- Infra-fix draft PRs opened: 0
+- Originals closed as superseded/no-op: pc#1279, pc#1281, pc#1280
+
+### Verification status
+
+- Blocking checks: none on `main`
+- Local verify: `bash -n configs/.config/mole/lib/core/sudo.sh`; `python3 -m py_compile scripts/morning-brief/morning-brief.py`
+- CodeScene remediation: sc#121 cs-agent posted earlier; no new posts this run
+
+### Handoff
+
+- Maintainer actions required: T1 review pc#1287; T2 review pc#1284 (CLEAN); T3 review pc#1288; CodeScene tail on sc#121
+- Cross-links: see `tasks/pr-review-2026-06-19.md`
+
 ## Run — 2026-06-16
 
 ### Input tail

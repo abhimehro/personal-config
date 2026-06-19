@@ -788,15 +788,8 @@ optimization.
 
 ## Lesson 0cp: Combine DIRTY code + journal salvage; drop duplicate journal entries (2026-06-16)
 
-# <<<<<<< Updated upstream **Pattern:** ctrld #901 (main.py refactor) and #904 (anti-micro journal) both went `DIRTY` after the same merge burst (#905/#906/#902). #901's journal entry duplicated content already on `main` from an earlier merge. **Rule:** When salvaging sibling DIRTY PRs from the same burst, open one draft branch from current `main`: take production code from the code PR, append-only journal from the doc PR, and skip journal lines already present on `main`. **Detection cost:** Low — two open PRs on the same repo with overlapping `.jules/bolt.md` paths and `DIRTY` status after a burst merge.
+**Pattern:** ctrld #901 (main.py refactor) and #904 (anti-micro journal) both went `DIRTY` after the same merge burst (#905/#906/#902). #901's journal entry duplicated content already on `main` from an earlier merge. **Rule:** When salvaging sibling DIRTY PRs from the same burst, open one draft branch from current `main`: take production code from the code PR, append-only journal from the doc PR, and skip journal lines already present on `main`. **Detection cost:** Low — two open PRs on the same repo with overlapping `.jules/bolt.md` paths and `DIRTY` status after a burst merge.
 
-**Pattern:** Hydrograph #257 was `DIRTY` after `main` advanced (#261 flake8,
-trunk config). The branch mixed valuable `tests/test_app.py` coverage with
-`tasks/lessons.md`, `tasks/todo.md`, and `.trunk/trunk.yaml` churn from agent
-sessions. **Rule:** On salvage of a deferred test PR, diff against `main` and
-cherry-pick **only** production/test intent paths. Exclude `tasks/*`, session
-docs, and unrelated config churn unless the PR's stated purpose is config-only.
-**Detection cost:** Low — `gh pr diff --name-only` shows `tasks/` or `.trunk/`
-alongside `tests/` on a test-titled PR.
+## Lesson 0cr: Salvage one-line fixes from DIRTY Jules PRs; omit CodeScene refactors (2026-06-19)
 
->>>>>>> Stashed changes
+**Pattern:** pc #1281 bundled a one-line podcast error-path `html_section()` a11y fix with CodeScene-driven `_parse_linear_focus_node` inlining that conflicted with `main`. **Rule:** When a DIRTY bot PR's stated intent is a small functional fix but the diff includes unrelated complexity refactors, salvage only the functional lines onto a fresh `main` branch. **Detection cost:** Low — `gh pr diff --stat` shows large churn in unrelated functions alongside a one-line stated fix in the PR title.
