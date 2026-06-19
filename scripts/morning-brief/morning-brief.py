@@ -677,7 +677,10 @@ def _extract_label_names(labels_raw: list[Any]) -> list[str]:
     for lbl in labels_raw:
         if isinstance(lbl, dict):
             _name = lbl.get("name")
-            label_names.append(_name.lower() if _name is not None else "")
+            if _name is not None:
+                label_names.append(_name.lower())
+            else:
+                label_names.append("")
     return label_names
 
 
@@ -706,7 +709,10 @@ def score_linear_issue(
     priority = issue.get("priority") or 0
     due_date = issue.get("dueDate") or ""
     _state_type = issue.get("state", {}).get("type")
-    state_type = _state_type.lower().replace("_", "") if _state_type is not None else ""
+    if _state_type is not None:
+        state_type = _state_type.lower().replace("_", "")
+    else:
+        state_type = ""
     label_names = _extract_label_names(issue.get("labels", {}).get("nodes", []))
     updated_at = issue.get("updatedAt") or ""
 
@@ -959,7 +965,10 @@ def fetch_linear_focus_items(
         for issue in nodes:
             state = issue.get("state", {})
             _state_type = state.get("type")
-            state_type = _state_type.lower() if _state_type is not None else ""
+            if _state_type is not None:
+                state_type = _state_type.lower()
+            else:
+                state_type = ""
             if state_type in {"completed", "canceled", "cancelled"}:
                 continue
 
@@ -998,7 +1007,10 @@ def fetch_linear_focus_items(
 
 def _parse_linear_notification_node(node: dict[str, Any]) -> tuple[str, str, FocusItem]:
     _category = node.get("category")
-    category = _category.lower() if _category is not None else ""
+    if _category is not None:
+        category = _category.lower()
+    else:
+        category = ""
     title = node.get("title") or "Untitled notification"
     subtitle = truncate_text(node.get("subtitle") or "", 140)
     url = node.get("inboxUrl") or node.get("url") or "#"
