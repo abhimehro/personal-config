@@ -677,10 +677,7 @@ def _extract_label_names(labels_raw: list[Any]) -> list[str]:
     for lbl in labels_raw:
         if isinstance(lbl, dict):
             _name = lbl.get("name")
-            if _name is not None:
-                label_names.append(_name.lower())
-            else:
-                label_names.append("")
+            label_names.append(_name.lower() if _name is not None else "")
     return label_names
 
 
@@ -709,10 +706,7 @@ def score_linear_issue(
     priority = issue.get("priority") or 0
     due_date = issue.get("dueDate") or ""
     _state_type = issue.get("state", {}).get("type")
-    if _state_type is not None:
-        state_type = _state_type.lower().replace("_", "")
-    else:
-        state_type = ""
+    state_type = _state_type.lower().replace("_", "") if _state_type is not None else ""
     label_names = _extract_label_names(issue.get("labels", {}).get("nodes", []))
     updated_at = issue.get("updatedAt") or ""
 
@@ -963,37 +957,9 @@ def fetch_linear_focus_items(
 
         items: list[FocusItem] = []
         for issue in nodes:
-            state = issue.get("state", {})
-            _state_type = state.get("type")
-            if _state_type is not None:
-                state_type = _state_type.lower()
-            else:
-                state_type = ""
-            if state_type in {"completed", "canceled", "cancelled"}:
-                continue
-
-            label_nodes = issue.get("labels", {}).get("nodes", [])
-            label_names = tuple(
-                (lbl.get("name") or "").strip()
-                for lbl in label_nodes
-                if isinstance(lbl, dict) and lbl.get("name")
-            )
-
-            items.append(
-                FocusItem(
-                    kind="linear",
-                    identifier=issue.get("identifier", "Linear"),
-                    title=issue.get("title", "Untitled issue"),
-                    url=issue.get("url", "#"),
-                    state=state.get("name", "Open"),
-                    state_type=state.get("type", ""),
-                    due_date=issue.get("dueDate") or "",
-                    badge=priority_labels.get(issue.get("priority") or 0, ""),
-                    score=score_linear_issue(issue, daily.today_iso, daily.today),
-                    labels=label_names,
-                    updated_at=issue.get("updatedAt") or "",
-                )
-            )
+            item = _parse_linear_focus_node(issue, priority_labels, daily)
+            if item is not None:
+                items.append(item)
 
         items.sort(key=lambda i: (-i.score, i.due_date or "9999-12-31", i.title))
         filtered = items[: config.focus_max_items]
@@ -1005,12 +971,40 @@ def fetch_linear_focus_items(
         return []
 
 
+def _parse_linear_focus_node(
+    issue: dict[str, Any], priority_labels: dict[int, str], daily: DailyContext
+) -> FocusItem | None:
+    state = issue.get("state", {})
+    _state_type = state.get("type")
+    state_type = _state_type.lower() if _state_type is not None else ""
+    if state_type in {"completed", "canceled", "cancelled"}:
+        return None
+
+    label_nodes = issue.get("labels", {}).get("nodes", [])
+    label_names = tuple(
+        (lbl.get("name") or "").strip()
+        for lbl in label_nodes
+        if isinstance(lbl, dict) and lbl.get("name")
+    )
+
+    return FocusItem(
+        kind="linear",
+        identifier=issue.get("identifier", "Linear"),
+        title=issue.get("title", "Untitled issue"),
+        url=issue.get("url", "#"),
+        state=state.get("name", "Open"),
+        state_type=state.get("type", ""),
+        due_date=issue.get("dueDate") or "",
+        badge=priority_labels.get(issue.get("priority") or 0, ""),
+        score=score_linear_issue(issue, daily.today_iso, daily.today),
+        labels=label_names,
+        updated_at=issue.get("updatedAt") or "",
+    )
+
+
 def _parse_linear_notification_node(node: dict[str, Any]) -> tuple[str, str, FocusItem]:
     _category = node.get("category")
-    if _category is not None:
-        category = _category.lower()
-    else:
-        category = ""
+    category = _category.lower() if _category is not None else ""
     title = node.get("title") or "Untitled notification"
     subtitle = truncate_text(node.get("subtitle") or "", 140)
     url = node.get("inboxUrl") or node.get("url") or "#"
