@@ -679,9 +679,7 @@ def status_icon(status: str) -> str:
     return STATUS_ICONS.get(status, status.upper())
 
 
-def daily_report_lines(
-    config: dict[str, Any], results: list[dict[str, Any]]
-) -> list[str]:
+def _fetch_daily_metrics() -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     # ⚡ Bolt Optimization: Parallelize independent read-only API calls using ThreadPoolExecutor to significantly reduce execution latency
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         futures = [
@@ -690,6 +688,13 @@ def daily_report_lines(
             executor.submit(gh_json, ["release", "list", "--limit", "5", "--json", "name,publishedAt,tagName"], default=[]),
         ]
         open_issues, open_prs, releases = [f.result() for f in futures]
+    return open_issues, open_prs, releases
+
+
+def daily_report_lines(
+    config: dict[str, Any], results: list[dict[str, Any]]
+) -> list[str]:
+    open_issues, open_prs, releases = _fetch_daily_metrics()
     overall = overall_status(results)
     lines = [
         f"# Daily Repository Automation Report - {iso_day()}",
