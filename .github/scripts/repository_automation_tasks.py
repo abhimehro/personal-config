@@ -679,21 +679,22 @@ def status_icon(status: str) -> str:
     return STATUS_ICONS.get(status, status.upper())
 
 
+def _fetch_daily_metrics() -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    # ⚡ Bolt Optimization: Parallelize independent read-only API calls using ThreadPoolExecutor to significantly reduce execution latency
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [
+            executor.submit(gh_json, ["issue", "list", "--state", "open", "--limit", "200", "--json", "number"], default=[]),
+            executor.submit(gh_json, ["pr", "list", "--state", "open", "--limit", "200", "--json", "number"], default=[]),
+            executor.submit(gh_json, ["release", "list", "--limit", "5", "--json", "name,publishedAt,tagName"], default=[]),
+        ]
+        open_issues, open_prs, releases = [f.result() for f in futures]
+    return open_issues, open_prs, releases
+
+
 def daily_report_lines(
     config: dict[str, Any], results: list[dict[str, Any]]
 ) -> list[str]:
-    open_issues = gh_json(
-        ["issue", "list", "--state", "open", "--limit", "200", "--json", "number"],
-        default=[],
-    )
-    open_prs = gh_json(
-        ["pr", "list", "--state", "open", "--limit", "200", "--json", "number"],
-        default=[],
-    )
-    releases = gh_json(
-        ["release", "list", "--limit", "5", "--json", "name,publishedAt,tagName"],
-        default=[],
-    )
+    open_issues, open_prs, releases = _fetch_daily_metrics()
     overall = overall_status(results)
     lines = [
         f"# Daily Repository Automation Report - {iso_day()}",
