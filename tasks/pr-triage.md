@@ -1,45 +1,51 @@
-# PR Triage — 2026-06-19
+# PR Triage — 2026-06-20
 
-**Mode:** salvage-and-cleanup (Phase 2)\
-**Preflight:** PASS\
-**Input:** Live GitHub state + deferred tail from `tasks/pr-review-2026-06-16.md`
+**Session:** Phase 1 review-and-merge (cron `0 13 * * *`)
 
-## Triage matrix (Phase 2)
+## Disposition counts
 
-| Disposition | Count | Action |
+| Disposition | Count | PRs |
 | --- | ---: | --- |
-| SALVAGE (new draft PR) | 2 | pc #1279 → #1287; pc #1281 → #1288 |
-| CLOSE-SUPERSEDED | 3 | pc #1279, #1281, #1280 |
-| DEFER (Phase 1 / human merge) | 2 | pc #1284; sc #121 |
-| ESCALATE T0 | 0 | — |
-
-## Infra detection
-
-**No whole-repo infra breakage detected.** All configured repos readable; five repos have zero open PRs.
+| MERGE | 11 | pc#1298, ctrld#922, ctrld#919, esp#1133, esp#1132, esp#1125, esp#1134, esp#1135, Seatek#339, hg#276, hg#280 |
+| CLOSE-DUPLICATE | 1 | ctrld#921 (dup of merged #919) |
+| ESCALATE | 2 | pc#1287 (T1 security salvage), pc#1288 (T3 a11y salvage) |
+| DEFER | 6 | sc#121, sc#132, rpce#19–22 |
 
 ## Duplicate & overlap analysis
 
-| Group | Keeper | Closed | Rationale |
-| --- | --- | --- | --- |
-| pc Sentinel AppleScript fix | **#1287** (salvage) | #1279 | DIRTY after session-file merges; one-line `--` fix only |
-| pc Palette podcast a11y | **#1288** (salvage) | #1281 | DIRTY; CodeScene refactors omitted, a11y one-liner kept |
-| pc session docs | **salvage branch** | #1280 | DIRTY draft session report superseded by 2026-06-19 run |
-| sc vectorize perf | **#121** | — | CodeScene tail; cs-agent already invoked |
+### ctrld #919 vs #921 — DUPLICATE (resolved)
 
-## Per-PR notes
+- **Overlap:** Identical `main.py` diff (`_display_len` / `_pad_string` for emoji alignment).
+- **Winner:** #919 (all checks green, includes `.jules/palette.md` learning note).
+- **Loser:** #921 closed — benchmark gate failed on unrelated `validate_hostname` threshold (1.69×), not caused by alignment change.
 
-### personal-config #1287 — SALVAGE (draft, T1)
+### series_correction #121 vs #132 — OVERLAP (both deferred)
 
-Rebuilt from #1279 with only `configs/.config/mole/lib/core/sudo.sh` on current `main`. Adds `--` before `MOLE_SUDO_PROMPT` in osascript ASKPASS to block CWE-74 injection. Local `bash -n` passed.
+- **Overlap:** Both touch `scripts/processor.py` with vectorization intent.
+- **Action:** #132 is newer/smaller scope; cs-agent posted on #132. #121 has exhausted cs-agent cycles. Prefer human disposition on #132 first; close #121 as superseded once #132 lands.
 
-### personal-config #1288 — SALVAGE (draft, T3)
+### repoprompt-ce #19–21 — CONFLICT CLUSTER (deferred to salvage)
 
-Rebuilt from #1281 with only the podcast error-path `html_section()` change in `scripts/morning-brief/morning-brief.py`. Intentionally omitted CodeScene-driven `_parse_linear_focus_node` inlining from the original PR.
+- All three DIRTY with large overlapping diffs (~46–48 files).
+- Likely post-merge cascade from concurrent Bolt/Palette/Sentinel PRs on `main`.
+- Route to Phase 2 salvage; prioritize #19 (CRITICAL Keychain security).
 
-### personal-config #1284 — DEFER (Phase 1)
+## Security gate notes
 
-`chore(actions): consolidate workflow automation` — CLEAN, all checks green including CodeScene. Trust-boundary change (`.github/workflows/*`); human merge recommended.
+| PR | Gate | Notes |
+| --- | --- | --- |
+| ctrld#922 | PASS | Exception chaining — prevents data leakage |
+| hg#276 | PASS | ExcelFile DoS mitigation |
+| pc#1287 | PASS (CI) | AppleScript injection fix — **escalated** per salvage trust boundary |
+| rpce#19 | n/a (DIRTY) | Keychain accessibility — escalate via salvage |
 
-### series_correction #121 — DEFER
+## Merge ordering applied
 
-MERGEABLE but CodeScene failing. `/cs-agent skill:fix-code-health-degradations` already posted 2026-06-15; no new salvage branch opened.
+1. Security: ctrld#922, hg#276
+2. CI/infra: esp#1133
+3. Dependencies: esp#1134, esp#1135 (arrived mid-session)
+4. Performance/UI/refactor: pc#1298, ctrld#919, esp#1132, esp#1125, Seatek#339, hg#280
+
+## Stale check
+
+No PRs exceeded 30-day threshold. sc#121 at 5 days remains within policy.

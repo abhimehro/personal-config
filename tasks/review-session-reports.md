@@ -31,6 +31,37 @@
 - Commands/comments to run next:
 - Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
 
+## Run — 2026-06-20
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron `0 13 * * *`; preflight PASS (6/6); branch
+  `cursor-agent/automated-pr-workflow-a170`
+
+### Metrics
+
+- PRs inventoried: 18 (+2 mid-session Dependabot)
+- PRs merged: 11
+- PRs closed: 1
+- PRs escalated/deferred: 8
+
+### Actions
+
+- Merged: pc #1298; ctrld #922, #919; esp #1133, #1132, #1125, #1134, #1135;
+  Seatek #339; hg #276, #280
+- Closed: ctrld #921 (duplicate of #919)
+- Escalated: pc #1287 (T1 security salvage), pc #1288 (T3 a11y salvage)
+- Deferred: sc #121, #132 (CodeScene); rpce #19–22 (DIRTY cluster + style fail)
+
+### Follow-ups
+
+- Commands/comments to run next: Phase 2 salvage on rpce DIRTY cluster;
+  human merge pc #1287/#1288; monitor cs-agent on sc #132
+- Cross-links: `tasks/pr-review-2026-06-20.md`
+
 ## Run — 2026-06-12
 
 ### Scope

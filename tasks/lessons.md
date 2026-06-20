@@ -793,3 +793,11 @@ optimization.
 ## Lesson 0cr: Salvage one-line fixes from DIRTY Jules PRs; omit CodeScene refactors (2026-06-19)
 
 **Pattern:** pc #1281 bundled a one-line podcast error-path `html_section()` a11y fix with CodeScene-driven `_parse_linear_focus_node` inlining that conflicted with `main`. **Rule:** When a DIRTY bot PR's stated intent is a small functional fix but the diff includes unrelated complexity refactors, salvage only the functional lines onto a fresh `main` branch. **Detection cost:** Low — `gh pr diff --stat` shows large churn in unrelated functions alongside a one-line stated fix in the PR title.
+
+## Lesson 0cs: Identical main.py diff — merge green sibling, close benchmark-fail duplicate (2026-06-20)
+
+**Pattern:** ctrld #919 and #921 had byte-identical `main.py` alignment fixes; #919 was CLEAN while #921 failed the `benchmark` gate on `validate_hostname` (1.69× threshold), unrelated to the display-width change. **Rule:** When two Palette PRs share the same production diff, merge the all-green sibling and close the duplicate with an explicit benchmark-unrelatedness note. Do not defer both. **Detection cost:** Low — `gh pr diff` comparison on overlapping files.
+
+## Lesson 0ct: Dependabot PRs can open mid-session after bot merge burst (2026-06-20)
+
+**Pattern:** After merging three ESP bot PRs, Dependabot immediately opened #1134 and #1135 (workflow action bumps). **Rule:** Re-poll `gh pr list` after each repo's merge batch; wait for CI on late-arriving Dependabot PRs before closing the session. **Detection cost:** Low — author `app/dependabot` with `chore(deps):` title prefix.
