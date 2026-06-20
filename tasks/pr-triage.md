@@ -1,45 +1,71 @@
-# PR Triage — 2026-06-19
+# PR Triage — 2026-06-20
 
 **Mode:** salvage-and-cleanup (Phase 2)\
 **Preflight:** PASS\
-**Input:** Live GitHub state + deferred tail from `tasks/pr-review-2026-06-16.md`
+**Input:** Live GitHub state + deferred tail from `tasks/pr-review-2026-06-19.md`
 
 ## Triage matrix (Phase 2)
 
 | Disposition | Count | Action |
 | --- | ---: | --- |
-| SALVAGE (new draft PR) | 2 | pc #1279 → #1287; pc #1281 → #1288 |
-| CLOSE-SUPERSEDED | 3 | pc #1279, #1281, #1280 |
-| DEFER (Phase 1 / human merge) | 2 | pc #1284; sc #121 |
+| SALVAGE (new draft PR) | 3 | rp #19→#23; #20→#24; #21→#25 |
+| CLOSE-SUPERSEDED | 4 | pc #1299; rp #19, #20, #21 |
+| CLOSE-DUPLICATE | 1 | sc #132 (overlaps #121) |
+| DEFER (Phase 1 / human) | 9 | pc #1287, #1288; cs #928; esp #1136; hg #281–284; sc #121; rp #22 |
 | ESCALATE T0 | 0 | — |
 
 ## Infra detection
 
-**No whole-repo infra breakage detected.** All configured repos readable; five repos have zero open PRs.
+**No whole-repo infra breakage detected.** Benchmark alert on ctrld#928 is a per-PR performance regression gate (1.59× on dedup benchmark), not a shared `main` failure across 4+ PRs.
 
 ## Duplicate & overlap analysis
 
 | Group | Keeper | Closed | Rationale |
 | --- | --- | --- | --- |
-| pc Sentinel AppleScript fix | **#1287** (salvage) | #1279 | DIRTY after session-file merges; one-line `--` fix only |
-| pc Palette podcast a11y | **#1288** (salvage) | #1281 | DIRTY; CodeScene refactors omitted, a11y one-liner kept |
-| pc session docs | **salvage branch** | #1280 | DIRTY draft session report superseded by 2026-06-19 run |
-| sc vectorize perf | **#121** | — | CodeScene tail; cs-agent already invoked |
+| rp Sentinel Keychain fix | **#23** (salvage) | #19 | DIRTY; one-line accessibility constant only |
+| rp Linux test portability | **#24** (salvage) | #20 | DIRTY; Scripts/ changes only |
+| rp Palette a11y labels | **#25** (salvage) | #21 | DIRTY; five UI component files only |
+| sc Bolt vectorize perf | **#121** | #132 | Overlapping processor.py vectorization; #121 has cs-agent history |
+| pc session docs | **agent branch** | #1299 | Draft session-report PR superseded |
 
 ## Per-PR notes
 
-### personal-config #1287 — SALVAGE (draft, T1)
+### repoprompt-ce #23 — SALVAGE (draft, T1)
 
-Rebuilt from #1279 with only `configs/.config/mole/lib/core/sudo.sh` on current `main`. Adds `--` before `MOLE_SUDO_PROMPT` in osascript ASKPASS to block CWE-74 injection. Local `bash -n` passed.
+Rebuilt from #19 with only `KeychainService.swift` on current `main`. Replaces `kSecAttrAccessibleAfterFirstUnlock` with `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`.
 
-### personal-config #1288 — SALVAGE (draft, T3)
+### repoprompt-ce #24 — SALVAGE (draft, T3)
 
-Rebuilt from #1281 with only the podcast error-path `html_section()` change in `scripts/morning-brief/morning-brief.py`. Intentionally omitted CodeScene-driven `_parse_linear_focus_node` inlining from the original PR.
+Rebuilt from #20 with only `Scripts/promote_release.sh`, `Scripts/test_local_production_installer.py`, `Scripts/test_release_tooling.py`. Portable zip sizing and Swift skip guards for Linux CI.
 
-### personal-config #1284 — DEFER (Phase 1)
+### repoprompt-ce #25 — SALVAGE (draft, T3)
 
-`chore(actions): consolidate workflow automation` — CLEAN, all checks green including CodeScene. Trust-boundary change (`.github/workflows/*`); human merge recommended.
+Rebuilt from #21 with accessibility labels on five icon-button components. Omitted bundled trunk/jules/workflow noise from original PR.
+
+### personal-config #1287, #1288 — DEFER
+
+Prior-session salvages remain open. All functional checks green; `UNSTABLE` is Trunk Merge Queue checkbox policy, not test failure.
+
+### personal-config #1284 — AUTO-RESOLVED
+
+Closed without merge since 2026-06-19 deferral. No further action.
+
+### ctrld-sync #928 — DEFER
+
+Palette EOF/Ctrl+C handling is MERGEABLE; `benchmark` check failed on 1.59× perf alert vs baseline. Human disposition — may merge with benchmark waiver or re-run.
+
+### email-security-pipeline #1136 — DEFER (Phase 1)
+
+CLEAN, all checks green. Palette styling on config template output. Phase 1 merge candidate (salvage agent does not merge).
+
+### Hydrograph #281–284 — DEFER (Phase 1)
+
+Four CLEAN dependabot GitHub Actions bumps. Phase 1 merge candidates.
 
 ### series_correction #121 — DEFER
 
-MERGEABLE but CodeScene failing. `/cs-agent skill:fix-code-health-degradations` already posted 2026-06-15; no new salvage branch opened.
+Canonical Bolt vectorization PR. CodeScene still failing after multiple cs-agent cycles. No new salvage branch.
+
+### repoprompt-ce #22 — DEFER
+
+Bolt ISO8601DateFormatter cache. Style + dependency-review failing; not DIRTY. Await CI or human fix.

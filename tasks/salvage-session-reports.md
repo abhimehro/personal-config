@@ -6,6 +6,33 @@
 
 ## Entry template
 
+## Run — 2026-06-20
+
+### Input tail
+
+- Source report/snapshot: `tasks/pr-review-2026-06-19.md` (deferred tail) + live GitHub
+- PRs investigated: 15 across 6 repos (3 DIRTY at start: rp#19, rp#20, rp#21)
+
+### Outcomes
+
+- Salvage draft PRs opened: repoprompt-ce
+  [#23](https://github.com/abhimehro/repoprompt-ce/pull/23) (from #19),
+  [#24](https://github.com/abhimehro/repoprompt-ce/pull/24) (from #20),
+  [#25](https://github.com/abhimehro/repoprompt-ce/pull/25) (from #21)
+- Infra-fix draft PRs opened: 0
+- Originals closed as superseded/no-op/duplicate: rp#19, rp#20, rp#21; pc#1299; sc#132
+
+### Verification status
+
+- Blocking checks: none on `main`
+- Local verify: repoprompt salvage branches created from `origin/main` with minimal file checkout
+- CodeScene remediation: sc#121 deferred; sc#132 closed as duplicate
+
+### Handoff
+
+- Maintainer actions required: T1 review rp#23 + pc#1287; T3 review rp#24, rp#25, pc#1288; Phase 1 merges esp#1136 + hg#281–284; benchmark disposition ctrld#928; CodeScene tail sc#121
+- Cross-links: see `tasks/pr-review-2026-06-20.md`
+
 ## Run — 2026-06-19
 
 ### Input tail

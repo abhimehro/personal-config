@@ -793,3 +793,7 @@ optimization.
 ## Lesson 0cr: Salvage one-line fixes from DIRTY Jules PRs; omit CodeScene refactors (2026-06-19)
 
 **Pattern:** pc #1281 bundled a one-line podcast error-path `html_section()` a11y fix with CodeScene-driven `_parse_linear_focus_node` inlining that conflicted with `main`. **Rule:** When a DIRTY bot PR's stated intent is a small functional fix but the diff includes unrelated complexity refactors, salvage only the functional lines onto a fresh `main` branch. **Detection cost:** Low — `gh pr diff --stat` shows large churn in unrelated functions alongside a one-line stated fix in the PR title.
+
+## Lesson 0cs: repoprompt-ce parallel bot PRs bundle trunk/jules noise (2026-06-20)
+
+**Pattern:** Four simultaneous Jules/Bolt/Sentinel PRs on repoprompt-ce (#19–#22) each bundled `.trunk/*`, `.jules/*`, and dozens of unrelated Swift files; three went `DIRTY` after `main` moved. **Rule:** Salvage only the files matching the PR title intent (e.g., `KeychainService.swift`, `Scripts/test_*.py`, a11y component files). Never `git checkout pr_branch --` on journal or trunk config files. Close overlapping perf PRs (#132 vs #121) as duplicates when both touch the same hotspot. **Detection cost:** Low — `gh pr view --json files` shows 40+ files when title implies a one-file fix.
