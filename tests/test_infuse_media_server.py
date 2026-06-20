@@ -146,19 +146,19 @@ class TestMediaServerHandler(unittest.TestCase):
 
         # File checks with escaped characters
         self.assertIn(
-            '<a href="/video.mp4" class="file video" aria-label="File: video.mp4"><span aria-hidden="true">\U0001f3ac video.mp4</span></a>',
+            '<a href="/video.mp4" class="file video"><span aria-hidden="true">\U0001f3ac</span> video.mp4</a>',
             html_root,
         )
         self.assertIn(
-            '<a href="/folder with &lt;tag&gt;/" class="file directory" aria-label="Directory: folder with &lt;tag&gt;"><span aria-hidden="true">\U0001f4c1 folder with &lt;tag&gt;</span></a>',
+            '<a href="/folder with &lt;tag&gt;/" class="file directory"><span aria-hidden="true">\U0001f4c1</span> folder with &lt;tag&gt;</a>',
             html_root,
         )
         self.assertIn(
-            '<a href="/document &amp; file.txt" class="file video" aria-label="File: document &amp; file.txt"><span aria-hidden="true">\U0001f4c4 document &amp; file.txt</span></a>',
+            '<a href="/document &amp; file.txt" class="file video"><span aria-hidden="true">\U0001f4c4</span> document &amp; file.txt</a>',
             html_root,
         )
         self.assertIn(
-            '<a href="/&lt;script&gt;alert(1)&lt;/script&gt;.avi" class="file video" aria-label="File: &lt;script&gt;alert(1)&lt;/script&gt;.avi"><span aria-hidden="true">\U0001f3ac &lt;script&gt;alert(1)&lt;/script&gt;.avi</span></a>',
+            '<a href="/&lt;script&gt;alert(1)&lt;/script&gt;.avi" class="file video"><span aria-hidden="true">\U0001f3ac</span> &lt;script&gt;alert(1)&lt;/script&gt;.avi</a>',
             html_root,
         )
 
@@ -177,17 +177,17 @@ class TestMediaServerHandler(unittest.TestCase):
         # Let's check code: parent = "/".join(current_path.rstrip("/").split("/")[:-1]) -> "/Movies & TV"
         # safe_parent = html.escape(parent) -> "/Movies &amp; TV"
         self.assertIn(
-            '<a href="//Movies &amp; TV" class="file directory" aria-label="Parent Directory"><span aria-hidden="true">',
+            '<a href="//Movies &amp; TV" class="file directory"><span aria-hidden="true">\U0001f4c1</span> .. (Parent Directory)</a>',
             html_sub,
         )
 
         # Check files in subdirectory (href should append to the escaped base_path)
         self.assertIn(
-            '<a href="//Movies &amp; TV/Action &lt;Sci-Fi&gt;/video.mp4" class="file video" aria-label="File: video.mp4"><span aria-hidden="true">\U0001f3ac video.mp4</span></a>',
+            '<a href="//Movies &amp; TV/Action &lt;Sci-Fi&gt;/video.mp4" class="file video"><span aria-hidden="true">\U0001f3ac</span> video.mp4</a>',
             html_sub,
         )
         self.assertIn(
-            '<a href="//Movies &amp; TV/Action &lt;Sci-Fi&gt;/folder with &lt;tag&gt;/" class="file directory" aria-label="Directory: folder with &lt;tag&gt;"><span aria-hidden="true">\U0001f4c1 folder with &lt;tag&gt;</span></a>',
+            '<a href="//Movies &amp; TV/Action &lt;Sci-Fi&gt;/folder with &lt;tag&gt;/" class="file directory"><span aria-hidden="true">\U0001f4c1</span> folder with &lt;tag&gt;</a>',
             html_sub,
         )
 
