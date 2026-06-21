@@ -105,7 +105,7 @@ request_sudo_access() {
 
         cat << 'ASKPASS_EOF' > "$askpass_script"
 #!/bin/bash
-osascript -e 'on run argv' -e 'display dialog (item 1 of argv) default answer "" with title "Mole" with icon caution with hidden answer' -e 'text returned of result' -e 'end run' "${MOLE_SUDO_PROMPT:-Admin access required}" 2> /dev/null
+osascript -e 'on run argv' -e 'display dialog (item 1 of argv) default answer "" with title "Mole" with icon caution with hidden answer' -e 'text returned of result' -e 'end run' -- "${MOLE_SUDO_PROMPT:-Admin access required}" 2> /dev/null
 ASKPASS_EOF
 
         local sudo_success=false
