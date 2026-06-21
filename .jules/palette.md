@@ -273,3 +273,8 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## $(date "+%Y-%m-%d") - WCAG AA Contrast for Dashboard Metric Cards
 **Learning:** Light background gradients (like light blue to cyan or pink to red) paired with white text often fail to meet the WCAG AA minimum contrast ratio (4.5:1), making them difficult to read for many users. The visual appeal of gradients does not outweigh the necessity of readability.
 **Action:** Replace low-contrast background gradients on metric cards or similar UI elements with solid, dark colors (e.g., dark purple, dark green, dark orange, dark red) to ensure sufficient contrast with white text.
+
+## 2024-06-20 - HTML Accessibility: Avoid redundant aria-labels
+
+**Learning:** When hiding decorative emojis within text-containing elements (like `<a>`), applying a duplicate `aria-label` to the parent tag unnecessarily overrides the native inner text for screen readers.
+**Action:** Wrap only the decorative emoji in `<span aria-hidden="true">` and remove the redundant `aria-label` from the parent element to rely on its natural text content.
