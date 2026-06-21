@@ -571,10 +571,7 @@ def render_pr_rows(prs: list[dict[str, Any]]) -> list[str]:
     return rows
 
 
-def run_backlog_manager(config: dict[str, Any]) -> dict[str, Any]:
-    section = config.get("backlog_manager", {})
-    max_issues = int(section.get("max_issues", 10))
-    max_prs = int(section.get("max_pull_requests", 10))
+def _fetch_backlog_items(max_issues: int, max_prs: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         f_issues = executor.submit(
             gh_json,
@@ -604,8 +601,14 @@ def run_backlog_manager(config: dict[str, Any]) -> dict[str, Any]:
             ],
             default=[],
         )
-        issues = f_issues.result()
-        prs = f_prs.result()
+        return f_issues.result(), f_prs.result()
+
+
+def run_backlog_manager(config: dict[str, Any]) -> dict[str, Any]:
+    section = config.get("backlog_manager", {})
+    max_issues = int(section.get("max_issues", 10))
+    max_prs = int(section.get("max_pull_requests", 10))
+    issues, prs = _fetch_backlog_items(max_issues, max_prs)
     issues = sorted(issues, key=lambda item: item.get("updatedAt", ""))
     prs = sorted(prs, key=lambda item: item.get("updatedAt", ""))
     stale_days = int(section.get("stale_days", 14))

@@ -514,3 +514,9 @@ invocation.
 ## 2026-11-20 - [Parallelize independent gh_json calls using ThreadPoolExecutor]
 **Learning:** Sequential read-only API calls (gh_json) in scripts create a significant N+1 performance bottleneck due to network latency and blocking I/O overhead. This specifically impacts automation workflows making sequential GitHub API requests.
 **Action:** Always use `concurrent.futures.ThreadPoolExecutor` to parallelize independent gh_json calls (like fetching issues and PRs simultaneously) rather than executing them sequentially. This drastically reduces execution latency.
+## 2026-11-20 - [Avoid Large Method hotspots when extracting code]
+**Learning:** When adding  logic into an existing large function, it can easily trip static analysis tools (like CodeScene Code Health) causing a 'Large Method' hotspot violation.
+**Action:** Proactively extract the multi-line thread pool submission logic into a private helper function to keep the primary method concise and maintain code health baseline scores.
+## 2026-11-20 - [Avoid Large Method hotspots when extracting code]
+**Learning:** When adding concurrent.futures.ThreadPoolExecutor logic into an existing large function, it can easily trip static analysis tools (like CodeScene Code Health) causing a 'Large Method' hotspot violation.
+**Action:** Proactively extract the multi-line thread pool submission logic into a private helper function to keep the primary method concise and maintain code health baseline scores.
