@@ -508,3 +508,7 @@ re-evaluating the dictionary literal or executing `dict.items()` on every
 invocation.
 
 >>>>>>> Stashed changes
+
+## 2025-11-20 - [Performance Optimization for system_metrics.sh]
+**Learning:** Found several spots where the system_metrics script spawns multiple heavy subprocesses in quick succession (e.g. `uptime` 3 times, `ps aux` 3 times, `launchctl list` 2 times) to parse different values from the same output. In a shell script, avoiding repeated execution of external commands and pipelining by doing it in a single pass (e.g., using a single `awk` statement and `read -r`) can yield significant performance gains, especially when these commands can be relatively slow and are run periodically.
+**Action:** Always prefer parsing a single invocation of an external command with `awk` to extract multiple metrics at once, rather than spawning the command multiple times.
