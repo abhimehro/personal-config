@@ -38,9 +38,11 @@ fi
 log_info "System metrics collection started"
 
 # CPU and Load Metrics
-LOAD_1MIN=$(uptime | awk -F'load averages:' '{print $2}' | awk '{print $1}' | tr -d ',' || echo "0")
-LOAD_5MIN=$(uptime | awk -F'load averages:' '{print $2}' | awk '{print $2}' | tr -d ',' || echo "0")
-LOAD_15MIN=$(uptime | awk -F'load averages:' '{print $2}' | awk '{print $3}' | tr -d ',' || echo "0")
+# Read uptime once to avoid spawning multiple processes
+read -r LOAD_1MIN LOAD_5MIN LOAD_15MIN <<< "$(uptime | awk -F'load averages:' '{print $2}' | tr -d ',' | awk '{print $1, $2, $3}')"
+LOAD_1MIN=${LOAD_1MIN:-0}
+LOAD_5MIN=${LOAD_5MIN:-0}
+LOAD_15MIN=${LOAD_15MIN:-0}
 CPU_COUNT=$(sysctl -n hw.ncpu 2>/dev/null || echo "1")
 
 log_metric "load_1min" "$LOAD_1MIN" "avg"
@@ -134,18 +136,38 @@ if command -v pmset >/dev/null 2>&1; then
 fi
 
 # Process and System Load Analysis
-PROCESS_COUNT=$(ps aux | wc -l)
-HIGH_CPU_PROCESSES=$(ps aux | awk '$3 > 10.0 {count++} END {print count+0}')
-HIGH_MEM_PROCESSES=$(ps aux | awk '$4 > 5.0 {count++} END {print count+0}')
+# Read ps aux once to avoid spawning multiple processes
+read -r PROCESS_COUNT HIGH_CPU_PROCESSES HIGH_MEM_PROCESSES <<< "$(ps aux | awk '
+  NR>1 {
+    count++
+    if ($3 > 10.0) cpu++
+    if ($4 > 5.0) mem++
+  }
+  END {
+    print count+1, cpu+0, mem+0
+  }
+')"
+PROCESS_COUNT=${PROCESS_COUNT:-0}
+HIGH_CPU_PROCESSES=${HIGH_CPU_PROCESSES:-0}
+HIGH_MEM_PROCESSES=${HIGH_MEM_PROCESSES:-0}
 
 log_metric "process_count" "$PROCESS_COUNT" "count"
 log_metric "high_cpu_processes" "$HIGH_CPU_PROCESSES" "count"
 log_metric "high_memory_processes" "$HIGH_MEM_PROCESSES" "count"
 
 # Maintenance System Health
-# shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
-MAINTENANCE_AGENTS=$(launchctl list | grep "com.abhimehrotra.maintenance" | wc -l | tr -d ' ')
-FAILED_AGENTS=$(launchctl list | grep "com.abhimehrotra.maintenance" | awk '$3 != "0" {count++} END {print count+0}')
+# Read launchctl list once to avoid spawning multiple processes
+read -r MAINTENANCE_AGENTS FAILED_AGENTS <<< "$(launchctl list | awk '
+  /com\.abhimehrotra\.maintenance/ {
+    count++
+    if ($3 != "0") failed++
+  }
+  END {
+    print count+0, failed+0
+  }
+')"
+MAINTENANCE_AGENTS=${MAINTENANCE_AGENTS:-0}
+FAILED_AGENTS=${FAILED_AGENTS:-0}
 
 log_metric "maintenance_agents_total" "$MAINTENANCE_AGENTS" "count"
 log_metric "maintenance_agents_failed" "$FAILED_AGENTS" "count"
