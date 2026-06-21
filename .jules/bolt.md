@@ -508,3 +508,9 @@ re-evaluating the dictionary literal or executing `dict.items()` on every
 invocation.
 
 >>>>>>> Stashed changes
+## 2026-11-20 - [Parallelize independent gh_json calls using ThreadPoolExecutor]
+**Learning:** Sequential read-only API calls () in scripts create a significant N+1 performance bottleneck due to network latency and blocking I/O overhead. This specifically impacts automation workflows making sequential GitHub API requests.
+**Action:** Always use `concurrent.futures.ThreadPoolExecutor` to parallelize independent `gh_json` calls (like fetching issues and PRs simultaneously) rather than executing them sequentially. This drastically reduces execution latency.
+## 2026-11-20 - [Parallelize independent gh_json calls using ThreadPoolExecutor]
+**Learning:** Sequential read-only API calls (gh_json) in scripts create a significant N+1 performance bottleneck due to network latency and blocking I/O overhead. This specifically impacts automation workflows making sequential GitHub API requests.
+**Action:** Always use `concurrent.futures.ThreadPoolExecutor` to parallelize independent gh_json calls (like fetching issues and PRs simultaneously) rather than executing them sequentially. This drastically reduces execution latency.
