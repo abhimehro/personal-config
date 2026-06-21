@@ -43,16 +43,23 @@ PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me 2>/dev/null || echo "unknown")
 
 log "Network: LAN=$PRIMARY_IP, Public=$PUBLIC_IP"
 
-# Find available port
-AVAILABLE_PORT=8080
-for port in 8080 8081 8082 8083; do
-	if ! lsof -nP -i:$port 2>/dev/null | grep -q LISTEN; then
-		AVAILABLE_PORT=$port
-		break
-	fi
-done
+# WebDAV must use a stable internal port for Windscribe forwarding.
+# Default mapping: External 8088 -> Internal 8080/TCP.
+# The LaunchAgent already killed any previous rclone WebDAV process above; if
+# port 8080 is still occupied by another service, fail loudly instead of
+# silently moving to 8081-8083 and breaking remote access.
+MEDIA_WEBDAV_PORT="${MEDIA_WEBDAV_PORT:-8080}"
+AVAILABLE_PORT="$MEDIA_WEBDAV_PORT"
 
-log "Using port: $AVAILABLE_PORT"
+if lsof -nP -iTCP:"$MEDIA_WEBDAV_PORT" -sTCP:LISTEN 2>/dev/null | grep -q LISTEN; then
+	log "ERROR: Required WebDAV port $MEDIA_WEBDAV_PORT is already in use."
+	log "Windscribe forwarding expects a stable internal port: $MEDIA_WEBDAV_PORT/TCP."
+	log "Free port $MEDIA_WEBDAV_PORT and restart com.speedybee.media.server."
+	lsof -nP -iTCP:"$MEDIA_WEBDAV_PORT" -sTCP:LISTEN 2>/dev/null || true
+	exit 1
+fi
+
+log "Using stable WebDAV internal port: $AVAILABLE_PORT"
 
 # Check rclone remote
 if ! rclone listremotes 2>/dev/null | grep -q "media:"; then

@@ -94,15 +94,15 @@ rclone lsd media:
 ### Step 4: Start Media Server
 
 ```bash
-# Start WebDAV server
-~/dev/personal-config/media-streaming/scripts/start-media-server-fast.sh
+# Start/restart the LaunchAgent-managed WebDAV backup server
+launchctl kickstart -k gui/$(id -u)/com.speedybee.media.server
 
-# Verify server is running
-lsof -nP -i:8088 | grep rclone
+# Verify server is running on the stable internal port
+lsof -nP -iTCP:8080 -sTCP:LISTEN | grep rclone
 
 # Test local connection
 curl -u infuse:$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2) \
-     http://localhost:8088/
+     http://localhost:8080/
 ```
 
 ---
@@ -119,10 +119,20 @@ ipconfig getifaddr en0
 
 ```
 Protocol: WebDAV
-Address: http://YOUR_LOCAL_IP:8088
+Address: http://YOUR_LOCAL_IP:8080
 Username: infuse
 Password: [from credentials file]
 Path: /
+
+Remote backup access through Windscribe uses the external port:
+
+```
+Protocol: WebDAV
+Address: http://82.21.151.194:8088
+Username: infuse
+Password: [from credentials file]
+Path: /
+```
 ```
 
 ---
@@ -185,11 +195,11 @@ op document edit "Rclone Config Backup" ~/.config/rclone/rclone.conf --vault Per
 # Kill any existing rclone processes
 pkill -9 rclone
 
-# Check if port 8088 is in use
-lsof -nP -i:8088
+# Check if the stable internal WebDAV port is in use
+lsof -nP -iTCP:8080 -sTCP:LISTEN
 
 # Restart server
-~/dev/personal-config/media-streaming/scripts/start-media-server-fast.sh
+launchctl kickstart -k gui/$(id -u)/com.speedybee.media.server
 ```
 
 ---
@@ -248,8 +258,8 @@ After recovery, verify everything works:
 
 - [ ] `rclone listremotes` shows: gdrive:, onedrive:, media:
 - [ ] `rclone lsd media:` shows folder structure
-- [ ] `lsof -nP -i:8088` shows rclone listening
-- [ ] `curl http://localhost:8088/` returns authentication prompt
+- [ ] `lsof -nP -iTCP:8080 -sTCP:LISTEN` shows rclone listening
+- [ ] `curl http://localhost:8080/` returns authentication prompt
 - [ ] Infuse can browse media library
 - [ ] Can play a test video in Infuse
 

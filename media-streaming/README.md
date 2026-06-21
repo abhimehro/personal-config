@@ -35,9 +35,14 @@ excessive local disk or memory.
      once finished, then uses FileBot to rename and handle duplicate conflicts
      against the live mount, queuing them in `upload_stage`.
 
-4. **📡 Serve (WebDAV Daemon)**
-   - **WebDAV**: `media-server-daemon.sh` serves on port **8080** for **Infuse**
-     (iOS/tvOS).
+4. **📡 Serve (Primary Plex + Backup WebDAV)**
+   - **Plex**: Primary media server. Remote access uses TCP **32400** internally
+     and externally through Windscribe.
+   - **WebDAV**: Backup Infuse-compatible server. `media-server-daemon.sh`
+     serves on stable internal TCP port **8080** by default.
+   - **Windscribe WebDAV mapping**: External TCP **8088** -> internal TCP
+     **8080**. If Windscribe assigns a different external port, keep the
+     internal port at **8080** and update the client-side external port only.
    - **VFS Cache**: Dedicated 10GB bounded cache folder.
 
 5. **🔌 Mount (Native macOS FSKit Filesystem)**
@@ -167,8 +172,13 @@ deletion occurs.
 - **WebDAV** is password-protected via 1Password (Item: `MediaServer`).
 - **Password rotation**: `./scripts/rotate-media-webdav.sh` (see
   `docs/CREDENTIAL_ROTATION.md`).
-- **Port Forwarding**: Only forward **8080** (WebDAV) and **32400** (Plex) via
-  Windscribe for remote access.
+- **Port Forwarding**: Use stable TCP mappings via Windscribe:
+  - **Plex**: External **32400** -> internal **32400**. Plex is the primary
+    remote media server.
+  - **WebDAV backup**: External **8088** -> internal **8080**. Do not forward
+    dynamic fallback ports (`8081-8083`) for remote access. If Windscribe assigns
+    a different external port, keep the internal port fixed at **8080** and
+    update Infuse/client settings to the assigned external port.
 
 ---
 

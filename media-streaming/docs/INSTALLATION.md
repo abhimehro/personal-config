@@ -137,8 +137,7 @@ rclone tree onedrive:Media --level 2
 
 ```bash
 # Check what's using our ports
-lsof -nP -i:8088  # Unified server
-lsof -nP -i:8080  # Alldebrid server
+lsof -nP -iTCP:8080 -sTCP:LISTEN  # WebDAV server (stable internal port)
 
 # Stop all rclone servers
 pkill -f "rclone serve"
@@ -177,7 +176,7 @@ ipconfig getifaddr en0
 
 ```
 Protocol: WebDAV
-Address: http://YOUR_LOCAL_IP:8088
+Address: http://YOUR_LOCAL_IP:8080
 Username: infuse
 Password: [from ~/.config/media-server/credentials]
 Path: /
@@ -201,7 +200,7 @@ rclone listremotes  # Check what exists
 ### **Port Already in Use:**
 
 ```bash
-lsof -nP -i:8088  # Check what's using the port
+lsof -nP -iTCP:8080 -sTCP:LISTEN  # Check what's using the port
 pkill -f "rclone serve"  # Kill existing servers
 ```
 
@@ -213,7 +212,7 @@ rclone lsd media:
 rclone ls media: | head -10
 
 # Verify server is running
-curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" http://localhost:8088/
+curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" http://localhost:8080/
 ```
 
 ---

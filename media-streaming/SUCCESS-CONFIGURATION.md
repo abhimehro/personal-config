@@ -94,20 +94,20 @@ Perfect Infuse-compatible folder structure
 ~/final-media-server.sh
 
 # Manual start
-rclone serve webdav media: --addr "0.0.0.0:8088" --user infuse --pass "$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" --read-only
+rclone serve webdav media: --addr "0.0.0.0:8080" --user infuse --pass "$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" --read-only
 ```
 
 ### **Server Status Check:**
 
 ```bash
 # Check if running
-lsof -nP -i:8088
+lsof -nP -iTCP:8080 -sTCP:LISTEN
 
 # View logs
 tail -f ~/media-server.log
 
 # Test connectivity
-curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" http://localhost:8088/
+curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cut -d"'" -f2)" http://localhost:8080/
 ```
 
 ### **Stopping Services:**

@@ -80,16 +80,19 @@ fi
 
 echo
 
-# Find available port
-echo "🔌 Finding available port..."
-AVAILABLE_PORT=8080
-for port in 8080 8081 8082 8083; do
-	if ! lsof -nP -i:$port | grep -q LISTEN; then
-		AVAILABLE_PORT=$port
-		break
-	fi
-done
-echo "   ✅ Using Port: $AVAILABLE_PORT"
+# WebDAV must use a stable internal port for Windscribe forwarding.
+echo "🔌 Checking stable WebDAV port..."
+MEDIA_WEBDAV_PORT="${MEDIA_WEBDAV_PORT:-8080}"
+AVAILABLE_PORT="$MEDIA_WEBDAV_PORT"
+
+if lsof -nP -iTCP:"$MEDIA_WEBDAV_PORT" -sTCP:LISTEN 2>/dev/null | grep -q LISTEN; then
+	echo "   ❌ Required WebDAV port $MEDIA_WEBDAV_PORT is already in use."
+	echo "   Windscribe forwarding expects a stable internal port: $MEDIA_WEBDAV_PORT/TCP."
+	echo "   Free the port and restart the WebDAV server."
+	lsof -nP -iTCP:"$MEDIA_WEBDAV_PORT" -sTCP:LISTEN 2>/dev/null || true
+	exit 1
+fi
+echo "   ✅ Using stable WebDAV internal port: $AVAILABLE_PORT"
 
 # Check rclone
 echo "📡 Checking rclone configuration..."
@@ -200,16 +203,15 @@ if [[ $VPN_CONNECTED == true ]]; then
 	echo "─────────────────────────────────────────────────────────────"
 	echo "   Protocol:  WebDAV (HTTP)"
 	echo "   Address:   82.21.151.194"
-	echo "   Port:      22650  (⚠️ PORT FORWARD MAY NEED CONFIGURATION)"
+	echo "   Port:      8088  (Windscribe external WebDAV port)"
 	echo "   Username:  $WEB_USER"
 	echo "   Password:  (from 1Password MediaServer)"
 	echo
-	echo "⚠️  WINDSCRIBE PORT FORWARD STATUS: UNKNOWN"
-	echo "   The external connection requires Windscribe Static IP"
-	echo "   port forwarding to be configured:"
-	echo "     External: 82.21.151.194:22650 → Internal: $PRIMARY_IP:$AVAILABLE_PORT"
-	echo
-	echo "   If external access fails, check Windscribe settings."
+	echo "ℹ️  WINDSCRIBE PORT FORWARDING"
+	echo "   Configure one stable TCP mapping:"
+	echo "     External: 82.21.151.194:8088 -> Internal: $PRIMARY_IP:$AVAILABLE_PORT"
+	echo "   If Windscribe assigns a different external port, keep the internal port at $AVAILABLE_PORT"
+	echo "   and use the assigned external port in Infuse."
 else
 	echo "ℹ️  External/VPN Access: NOT AVAILABLE"
 	echo "   Connect to Windscribe VPN with static IP to enable remote access"

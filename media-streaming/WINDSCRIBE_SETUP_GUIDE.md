@@ -20,7 +20,7 @@ When you select your **MacBook Air** as the device in Windscribe's port forwardi
 | **Name**          | MediaServer                    |
 | **Protocol**      | **TCP** (WebDAV uses TCP only) |
 | **Device**        | MacBook Air (from device list) |
-| **External Port** | 22650                          |
+| **External Port** | 8088                           |
 | **Internal Port** | 8080                           |
 
 ### For SSH:
@@ -31,7 +31,7 @@ When you select your **MacBook Air** as the device in Windscribe's port forwardi
 | **Name**          | SSH                            |
 | **Protocol**      | **TCP** (SSH uses TCP only)    |
 | **Device**        | MacBook Air (from device list) |
-| **External Port** | 35008                          |
+| **External Port** | 36555                          |
 | **Internal Port** | 22                             |
 
 ---
@@ -42,7 +42,7 @@ When you configure port forwarding in Windscribe:
 
 1. You select your **device** (MacBook Air) from the list
 2. Windscribe associates that device with your **VPN tunnel IP** (100.125.56.240)
-3. When external traffic arrives at `82.21.151.194:22650`:
+3. When external traffic arrives at `82.21.151.194:8088`:
    - Windscribe routes it to your VPN tunnel: `100.125.56.240:8080`
    - Your Mac's `utun420` interface receives the traffic
    - rclone server (listening on `*:8080`) accepts the connection
@@ -67,7 +67,7 @@ After creating or modifying a port forward:
 You **cannot test** the external connection from your own Mac. This is a limitation of NAT:
 
 - Your Mac is "inside" the VPN tunnel
-- Traffic to 82.21.151.194:22650 from your Mac tries to loop back through Windscribe
+- Traffic to 82.21.151.194:8088 from your Mac tries to loop back through Windscribe
 - Most VPN providers (including Windscribe) don't support hairpin NAT
 
 **Testing must be done from an external device:**
@@ -131,7 +131,7 @@ Expected: `82.21.151.194`
 **MUST BE DONE FROM EXTERNAL DEVICE (phone on cellular, NOT WiFi):**
 
 ```bash
-curl -u "infuse:${MEDIA_WEBDAV_PASS}" http://82.21.151.194:22650/
+curl -u "infuse:${MEDIA_WEBDAV_PASS}" http://82.21.151.194:8088/
 ```
 
 Expected: HTTP 200 OK with HTML response
@@ -139,7 +139,7 @@ Expected: HTTP 200 OK with HTML response
 Or simply open in mobile browser:
 
 ```
-http://82.21.151.194:22650/
+http://82.21.151.194:8088/
 ```
 
 (Will prompt for username/password)
@@ -204,7 +204,7 @@ If after all these steps external access still fails:
 - Best performance, no VPN overhead
 - No re-caching needed when switching between devices on same network
 
-### Secondary: Remote (82.21.151.194:22650)
+### Secondary: Remote (82.21.151.194:8088)
 
 ⏳ **Needs external testing to confirm**
 
@@ -226,20 +226,20 @@ If after all these steps external access still fails:
 Current SSH setup (from your description):
 
 ```
-External: 82.21.151.194:35008 → Internal: MacBook Air:22
+External: 82.21.151.194:36555 -> Internal: MacBook Air:22
 ```
 
 This is correctly configured! The same principles apply:
 
 - Windscribe maps the device to the VPN tunnel IP automatically
-- External SSH access: `ssh user@82.21.151.194 -p 35008`
+- External SSH access: `ssh user@82.21.151.194 -p 36555`
 - Cannot be tested from your own Mac (hairpin NAT limitation)
 
 **To test SSH externally:**
 
 ```bash
 # From external device (phone, cloud server, etc.)
-ssh speedybee@82.21.151.194 -p 35008
+ssh speedybee@82.21.151.194 -p 36555
 ```
 
 ---
@@ -256,21 +256,22 @@ ssh speedybee@82.21.151.194 -p 35008
 
 ### ⏳ What Needs External Testing
 
-- Port forward 22650 → 8080 (requires testing from cellular/external network)
-- Port forward 35008 → 22 (SSH, same requirement)
+- Port forward 8088 -> 8080 (requires testing from cellular/external network)
+- Port forward 36555 -> 22 (SSH, same requirement)
 
 ### 🎯 Your Action Items
 
 1. Ensure Windscribe port forwards are configured:
-   - MediaServer: TCP, MacBook Air, External 22650 → Internal 8080
-   - SSH: TCP, MacBook Air, External 35008 → Internal 22
+   - MediaServer WebDAV backup: TCP, MacBook Air, External 8088 -> Internal 8080
+   - Plex primary: TCP, MacBook Air, External 32400 -> Internal 32400
+   - SSH: TCP, MacBook Air, External 36555 -> Internal 22
 
 2. **Disconnect and reconnect** Windscribe (critical!)
 
 3. Test from external device (iPhone on cellular):
 
    ```
-   http://82.21.151.194:22650/
+   http://82.21.151.194:8088/
    ```
 
 4. If it works: Configure secondary connection in Infuse!
@@ -279,5 +280,5 @@ ssh speedybee@82.21.151.194 -p 35008
 
 ---
 
-**Last Updated**: January 29, 2026
-**Status**: LAN connection fully operational, external connection awaiting verification
+**Last Updated**: June 20, 2026
+**Status**: LAN WebDAV operational, Plex primary remote access documented, WebDAV backup mapping standardized
