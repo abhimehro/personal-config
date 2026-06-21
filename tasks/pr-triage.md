@@ -1,45 +1,87 @@
-# PR Triage — 2026-06-19
+# PR Triage — 2026-06-21
 
-**Mode:** salvage-and-cleanup (Phase 2)\
-**Preflight:** PASS\
-**Input:** Live GitHub state + deferred tail from `tasks/pr-review-2026-06-16.md`
+## Duplicate & overlap groups
 
-## Triage matrix (Phase 2)
-
-| Disposition | Count | Action |
-| --- | ---: | --- |
-| SALVAGE (new draft PR) | 2 | pc #1279 → #1287; pc #1281 → #1288 |
-| CLOSE-SUPERSEDED | 3 | pc #1279, #1281, #1280 |
-| DEFER (Phase 1 / human merge) | 2 | pc #1284; sc #121 |
-| ESCALATE T0 | 0 | — |
-
-## Infra detection
-
-**No whole-repo infra breakage detected.** All configured repos readable; five repos have zero open PRs.
-
-## Duplicate & overlap analysis
-
-| Group | Keeper | Closed | Rationale |
+### Group A — personal-config infuse-media-server a11y
+| PR | Files | Keeper | Action |
 | --- | --- | --- | --- |
-| pc Sentinel AppleScript fix | **#1287** (salvage) | #1279 | DIRTY after session-file merges; one-line `--` fix only |
-| pc Palette podcast a11y | **#1288** (salvage) | #1281 | DIRTY; CodeScene refactors omitted, a11y one-liner kept |
-| pc session docs | **salvage branch** | #1280 | DIRTY draft session report superseded by 2026-06-19 run |
-| sc vectorize perf | **#121** | — | CodeScene tail; cs-agent already invoked |
+| #1303 | `infuse-media-server.py`, tests, palette.md | **#1303** | MERGED |
+| #1301 | same core files | — | CLOSED → superseded by #1303 |
 
-## Per-PR notes
+### Group B — ctrld-sync restart prompt EOF handling
+| PR | Files | Keeper | Action |
+| --- | --- | --- | --- |
+| #930 | `main.py` only | **#930** | MERGED |
+| #928 | `main.py`, bolt.md | — | CLOSED → duplicate of #930 |
 
-### personal-config #1287 — SALVAGE (draft, T1)
+### Group C — series_correction vectorize processor.py
+| PR | Files | Keeper | Action |
+| --- | --- | --- | --- |
+| #135 | `processor.py` (outlier loop) | **#135** | DEFER (CodeScene) |
+| #121 | `processor.py` (z-score/jump) | — | CLOSED → superseded by #135 |
 
-Rebuilt from #1279 with only `configs/.config/mole/lib/core/sudo.sh` on current `main`. Adds `--` before `MOLE_SUDO_PROMPT` in osascript ASKPASS to block CWE-74 injection. Local `bash -n` passed.
+### Group D — repoprompt-ce Changelog DateFormatter
+| PR | Files | Keeper | Action |
+| --- | --- | --- | --- |
+| #27 | Changelog.swift + workflow | **#27** | DEFER (Style) |
+| #22 | Changelog.swift, bolt.md | — | CLOSED → superseded by #27 |
 
-### personal-config #1288 — SALVAGE (draft, T3)
+### Group E — repoprompt-ce icon button a11y
+| PR | Files | Keeper | Action |
+| --- | --- | --- | --- |
+| #25 (salvage) | focused salvage | **#25** | DEFER (Style) |
+| #26 (Palette) | broader Palette churn | — | CLOSED → superseded by #25 |
 
-Rebuilt from #1281 with only the podcast error-path `html_section()` change in `scripts/morning-brief/morning-brief.py`. Intentionally omitted CodeScene-driven `_parse_linear_focus_node` inlining from the original PR.
+## Superseded / zero-diff
 
-### personal-config #1284 — DEFER (Phase 1)
+| PR | Reason |
+| --- | --- |
+| Seatek #342 | Zero-diff daily QA PR (0 bytes changed) |
+| personal-config #1300 | Draft session-report PR; canonical reports live on agent branch |
 
-`chore(actions): consolidate workflow automation` — CLEAN, all checks green including CodeScene. Trust-boundary change (`.github/workflows/*`); human merge recommended.
+## Security gate review
 
-### series_correction #121 — DEFER
+| PR | Gate | Result |
+| --- | --- | --- |
+| Seatek #343 | Null-byte check before `realpath` | **PASS → MERGED** |
+| personal-config #1287 | AppleScript `--` separator (CWE-74) | **PASS → MERGED** |
+| personal-config #1304 | Workflow YAML corruption + tag pinning | **FAIL → ESCALATE** |
+| repoprompt-ce #23 | Keychain accessibility tighten | **PASS logic; CI fail → DEFER salvage** |
 
-MERGEABLE but CodeScene failing. `/cs-agent skill:fix-code-health-degradations` already posted 2026-06-15; no new salvage branch opened.
+## CodeScene remediation
+
+Posted `/cs-agent skill:fix-code-health-degradations` on:
+- series_correction #121 (before close)
+- series_correction #134
+- series_correction #135
+
+## Merge ordering applied
+
+1. Security: Seatek #343, personal-config #1287
+2. Routine CLEAN: esp #1136, pc #1307, pc #1303, pc #1288, ctrld #930, sc #134
+3. Auto-fix: pc #1308 (bolt.md conflict after #1307 merge)
+4. Closes: duplicates and zero-diff after keeper merged
+
+## Deferred tail → Salvage Agent
+
+```yaml
+open_followups:
+  - repo: abhimehro/personal-config
+    pr: 1304
+    reason: ESCALATE — corrupted workflow YAML + action pin regression
+  - repo: abhimehro/series_correction_project_updated
+    pr: 135
+    reason: CodeScene fail after cs-agent; perf vectorize
+  - repo: abhimehro/repoprompt-ce
+    pr: 23
+    reason: T1 security salvage — Keychain; Style+Build fail
+  - repo: abhimehro/repoprompt-ce
+    pr: 24
+    reason: T3 salvage — Linux release tests; Style fail
+  - repo: abhimehro/repoprompt-ce
+    pr: 25
+    reason: T3 salvage — a11y labels; Style fail
+  - repo: abhimehro/repoprompt-ce
+    pr: 27
+    reason: Bolt perf — Style + dependency-review fail
+```
