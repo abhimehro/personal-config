@@ -30,23 +30,20 @@ spinner_wait() {
 
 		if [ -t 1 ] && [ -z "${CI-}" ]; then tput civis 2>/dev/null || true; fi
 
-		local old_int_trap old_term_trap
-		old_int_trap=$(trap -p INT)
-		trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; eval "${old_int_trap:-trap - INT}"; kill -INT "$$"' INT
-		old_term_trap=$(trap -p TERM)
-		trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; eval "${old_term_trap:-trap - TERM}"; kill -TERM "$$"' TERM
+		(
+			# Run in a subshell to avoid eval and trap restoration issues
+			trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - INT; kill -INT $BASHPID' INT
+			trap '[ -t 1 ] && [ -z "${CI-}" ] && tput cnorm 2>/dev/null || true; printf "\r\033[K"; trap - TERM; kill -TERM $BASHPID' TERM
 
-		while [[ $c -lt $iterations ]]; do
-			printf "\r   %s [%c]" "$msg" "${sp:i++%${#sp}:1}"
-			sleep 0.1
-			c=$((c + 1))
-		done
-		printf "\r\033[K"
+			while [[ $c -lt $iterations ]]; do
+				printf "\r   %s [%c]" "$msg" "${sp:i++%${#sp}:1}"
+				sleep 0.1
+				c=$((c + 1))
+			done
+			printf "\r\033[K"
 
-		if [ -t 1 ] && [ -z "${CI-}" ]; then tput cnorm 2>/dev/null || true; fi
-		# SECURITY: false positive, trap -p output is safely escaped
-		eval "${old_int_trap:-trap - INT}"
-		eval "${old_term_trap:-trap - TERM}"
+			if [ -t 1 ] && [ -z "${CI-}" ]; then tput cnorm 2>/dev/null || true; fi
+		)
 	else
 		echo "   $msg (waiting ${duration}s)..."
 		sleep "$duration"
