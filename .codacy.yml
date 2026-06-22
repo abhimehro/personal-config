@@ -5,3 +5,5 @@ exclude_paths:
   - "copilot-demo/**"
   - "adguard/**"
   - "maintenance/config/**"
+  - "docs/**"
+  - "archive/**"
