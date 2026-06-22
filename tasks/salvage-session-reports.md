@@ -6,6 +6,34 @@
 
 ## Entry template
 
+## Run — 2026-06-21
+
+### Input tail
+
+- Source report/snapshot: `tasks/pr-review-2026-06-21.md` (Phase 1 deferred tail) + live GitHub
+- PRs investigated: 8 across 4 repos (0 DIRTY at start)
+
+### Outcomes
+
+- Infra-fix draft PRs opened: personal-config
+  [#1311](https://github.com/abhimehro/personal-config/pull/1311) (from #1304),
+  repoprompt-ce
+  [#29](https://github.com/abhimehro/repoprompt-ce/pull/29) (dependency-review.yml)
+- Salvage v2 draft PRs opened: repoprompt-ce
+  [#28](https://github.com/abhimehro/repoprompt-ce/pull/28) (from #23)
+- Originals closed as superseded/no-op: pc#1304, rp#23
+
+### Verification status
+
+- Blocking checks: mashed workflow YAML on `main` (pc + rp); not pytest-blocked
+- Local verify: `rg 'uses:.*uses:' .github/workflows/` → 0 matches after fix branches
+- CodeScene remediation: `/cs-agent` posted on ctrld#932; sc#135 cs-agent from Phase 1
+
+### Handoff
+
+- Maintainer actions required: merge T0 drafts pc#1311 + rp#29 first; T1 review pc#1310 + rp#28; update-branch rp#24/#25/#27 after rp#29; Phase 1 merge esp#1138
+- Cross-links: see `tasks/pr-review-2026-06-21.md` Phase 2 section
+
 ## Run — 2026-06-19
 
 ### Input tail

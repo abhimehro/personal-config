@@ -1,5 +1,21 @@
 # Lessons Learned
 
+## Lesson 0ct: Security salvage must update test constants (2026-06-21)
+
+**Pattern:** repoprompt-ce #23 (Keychain accessibility hardening) failed Build because `KeychainServiceTests` still asserted `kSecAttrAccessibleAfterFirstUnlock` while the salvage changed production code to `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`. **Rule:** When salvaging security PRs that change Keychain/crypto constants, grep tests for the old constant and adapt assertions in the same salvage commit (S4). Open `-v2` salvage branch rather than force-pushing. **Detection cost:** Low — CI Build log shows `XCTAssertEqual` mismatch on accessibility string.
+
+## Lesson 0cu: Mashed workflow YAML spreads across repos (2026-06-21)
+
+**Pattern:** personal-config `main` had mashed duplicate `uses:` lines in six workflows; repoprompt-ce `dependency-review.yml` had the same defect, causing dependency-review failures on all open salvage PRs. pc #1304 attempted SHA→tag regression on top of existing corruption. **Rule:** On any workflow corruption ESCALATE, scan **all configured repos** for `uses:.*uses:` before closing the incident; open paired T0 infra-fix drafts per affected repo. **Detection cost:** Low — `rg 'uses:.*uses:' .github/workflows/` per repo.
+
+## Lesson 0cr: automation-workflow-updates YAML corruption (2026-06-21)
+
+**Pattern:** `automation-workflow-updates-*` branches from daily workflow consolidation can produce mashed duplicate `uses:` lines in YAML (e.g. `dependency-review.yml`, `stale.yml`) and regress SHA pins to mutable tags. CI may still pass if workflows are not exercised on the PR branch. **Rule:** Always run a YAML integrity scan on workflow-only PRs before merge; treat any duplicated `uses:` line or SHA→tag regression as **ESCALATE**, never auto-merge.
+
+## Lesson 0cs: personal-config Bolt journal conflicts after sibling merge (2026-06-21)
+
+**Pattern:** Squash-merging pc #1307 (`system_metrics.sh` + bolt.md journal) left pc #1308 (`repository_automation_tasks.py` + bolt.md) **CONFLICTING** on `.jules/bolt.md` only. **Rule:** After merging one Bolt PR that touches `bolt.md`, immediately merge `origin/main` into the next sibling Bolt PR before attempting squash-merge; resolve journal conflicts by taking `main` bolt.md and appending the PR's single learning entry (deduplicated).
+
 ## Lesson 0cq: ctrld journal PRs conflict after Bolt/Sentinel burst (2026-06-16)
 
 **Pattern:** After squash-merging ctrld #905, #906, and #902 on the same day,
