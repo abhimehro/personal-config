@@ -487,7 +487,7 @@ default (`value = p.get("key")`) and conditionally compute the fallback using an
 
 ## 2026-06-13 - [Hoist dictionary and tuple instantiation from hot execution paths]
 
-<<<<<<< Updated upstream **Learning:** Instantiating dictionaries or casting
+**Learning:** Instantiating dictionaries or casting
 `dict.items()` to a tuple inside a hot function (like one used for scoring items
 iteratively) creates significant allocation and iterator overhead for each call.
 **Action:** Always hoist static lookup dictionaries and tuple conversions of
@@ -507,8 +507,6 @@ global/module scope. Accessing a global constant is significantly faster than
 re-evaluating the dictionary literal or executing `dict.items()` on every
 invocation.
 
->>>>>>> Stashed changes
-
 ## 2025-11-20 - [Performance Optimization for system_metrics.sh]
 **Learning:** Found several spots where the system_metrics script spawns multiple heavy subprocesses in quick succession (e.g. `uptime` 3 times, `ps aux` 3 times, `launchctl list` 2 times) to parse different values from the same output. In a shell script, avoiding repeated execution of external commands and pipelining by doing it in a single pass (e.g., using a single `awk` statement and `read -r`) can yield significant performance gains, especially when these commands can be relatively slow and are run periodically.
 **Action:** Always prefer parsing a single invocation of an external command with `awk` to extract multiple metrics at once, rather than spawning the command multiple times.
@@ -524,3 +522,7 @@ invocation.
 **Learning:** When adding `concurrent.futures.ThreadPoolExecutor` logic into an existing large function, it can easily trip static analysis tools (like CodeScene Code Health) causing a 'Large Method' hotspot violation.
 
 **Action:** Proactively extract the multi-line thread pool submission logic into a private helper function to keep the primary method concise and maintain code health baseline scores.
+
+## 2026-06-22 - [Avoid unnecessary .split() list allocation in simple string formatting]
+
+**Learning:** When extracting substrings from a string separated by a known delimiter inside a loop or comprehension (e.g. `line.split("=", 1)`), repeatedly calling `.split()` allocates new lists each time, causing a performance overhead. **Action:** When you only need to split once on the first delimiter and want to avoid unnecessary list allocation, use `str.partition()` instead of `str.split()`. It returns a tuple directly in C and doesn't allocate an arbitrary-length list.
