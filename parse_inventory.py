@@ -63,13 +63,11 @@ def run_gh(repo, pr):
 
 
 def _should_skip_table_row(line):
-    if not line.startswith("|"):
+    # ⚡ Bolt Optimization: Use fast index checking to avoid function overhead for lines not starting with |,
+    # and use a tuple with .startswith() to collapse sequential checks and avoid redundant allocations
+    if not line or line[0] != "|":
         return True
-    if line.startswith("| # |"):
-        return True
-    if line.startswith("| ---"):
-        return True
-    return False
+    return line.startswith(("| # |", "| ---"))
 
 
 def _parse_repo_name(line):

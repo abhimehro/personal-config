@@ -524,3 +524,6 @@ invocation.
 **Learning:** When adding `concurrent.futures.ThreadPoolExecutor` logic into an existing large function, it can easily trip static analysis tools (like CodeScene Code Health) causing a 'Large Method' hotspot violation.
 
 **Action:** Proactively extract the multi-line thread pool submission logic into a private helper function to keep the primary method concise and maintain code health baseline scores.
+## 2026-06-22 - [Optimize sequential startswith() checks]
+**Learning:** Checking a string against multiple prefixes using multiple `.startswith("prefix")` statements creates unnecessary Python function call overhead and intermediate string allocations.
+**Action:** Replace multiple sequential `.startswith()` checks with a single `.startswith((tuple, of, prefixes))` to evaluate at the C-level. To further optimize for hot loops, short-circuit the tuple check with a fast index string lookup for a common starting character (e.g., `if not line or line[0] != "|":`).
