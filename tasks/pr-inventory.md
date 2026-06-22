@@ -1,8 +1,8 @@
 # PR Inventory — 2026-06-21
 
 **Preflight:** PASS (6/6 configured repos; repoprompt-ce checked ad hoc)\
-**Session:** cron `0 13 * * *` (review-and-merge)\
-**Branch:** `cursor-agent/automated-pr-workflow-2684`\
+**Phase 1:** cron `0 13 * * *` — review-and-merge (`cursor-agent/automated-pr-workflow-2684`)\
+**Phase 2:** cron `0 17 * * *` — salvage-and-cleanup (`cursor-agent/pr-salvage-and-cleanup-c5b9`)\
 **Config:** `tasks/pr-review-agent.config.yaml`
 
 ## Scope summary
@@ -56,3 +56,44 @@
 | repoprompt-ce | [#24](https://github.com/abhimehro/repoprompt-ce/pull/24) | DEFER — salvage; Style fail |
 | repoprompt-ce | [#25](https://github.com/abhimehro/repoprompt-ce/pull/25) | DEFER — salvage; Style fail |
 | repoprompt-ce | [#27](https://github.com/abhimehro/repoprompt-ce/pull/27) | DEFER — Style + dependency-review fail |
+
+---
+
+## Phase 2 salvage — 2026-06-21 evening
+
+| Metric | Count |
+| --- | ---: |
+| Repos processed | 7 |
+| Conflict queue at start | **0 DIRTY** |
+| Phase 1 tail reconciled | 6 |
+| Infra-fix drafts opened | 2 |
+| Salvage v2 drafts opened | 1 |
+| Closed superseded | 2 |
+| cs-agent posted | 1 (ctrld #932) |
+| Autonomous merges | 0 |
+
+**New bot PRs since Phase 1:** pc #1310, ctrld #932, esp #1138
+
+### Phase 2 actions
+
+| Repo | Old PR | Disposition | New PR | Notes |
+| --- | ---: | --- | ---: | --- |
+| personal-config | #1304 | CLOSE-SUPERSEDED | [#1311](https://github.com/abhimehro/personal-config/pull/1311) | T0 infra-fix: dedupe mashed `uses:` in 6 workflows |
+| repoprompt-ce | #23 | CLOSE-SUPERSEDED | [#28](https://github.com/abhimehro/repoprompt-ce/pull/28) | T1 v2 salvage: Keychain + test assertion fix |
+| repoprompt-ce | — | INFRA-FIX | [#29](https://github.com/abhimehro/repoprompt-ce/pull/29) | T0: dependency-review.yml dedupe on `main` |
+
+### Open at Phase 2 EOD
+
+| Repo | PR | Tier | Reason |
+| --- | ---: | --- | --- |
+| personal-config | [#1311](https://github.com/abhimehro/personal-config/pull/1311) | T0 | Infra-fix draft — human merge first |
+| personal-config | [#1310](https://github.com/abhimehro/personal-config/pull/1310) | T1 | Sentinel CWE-78 eval-in-trap; all checks green |
+| personal-config | [#1309](https://github.com/abhimehro/personal-config/pull/1309) | — | Phase 1 session report draft |
+| ctrld-sync | [#932](https://github.com/abhimehro/ctrld-sync/pull/932) | T3 | Palette CLI colors; CodeScene fail; cs-agent posted |
+| email-security-pipeline | [#1138](https://github.com/abhimehro/email-security-pipeline/pull/1138) | T3 | CLEAN — Phase 1 merge candidate |
+| series_correction | [#135](https://github.com/abhimehro/series_correction_project_updated/pull/135) | T3 | CodeScene fail; cs-agent posted earlier |
+| repoprompt-ce | [#29](https://github.com/abhimehro/repoprompt-ce/pull/29) | T0 | Infra-fix draft — merge before salvage CI re-run |
+| repoprompt-ce | [#28](https://github.com/abhimehro/repoprompt-ce/pull/28) | T1 | Keychain salvage v2 draft |
+| repoprompt-ce | [#24](https://github.com/abhimehro/repoprompt-ce/pull/24) | T3 | Await #29 merge + update-branch |
+| repoprompt-ce | [#25](https://github.com/abhimehro/repoprompt-ce/pull/25) | T3 | Await #29 merge + update-branch |
+| repoprompt-ce | [#27](https://github.com/abhimehro/repoprompt-ce/pull/27) | T3 | Await #29 merge + update-branch |

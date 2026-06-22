@@ -85,3 +85,30 @@ open_followups:
     pr: 27
     reason: Bolt perf — Style + dependency-review fail
 ```
+
+---
+
+## Phase 2 salvage triage — 2026-06-21 evening
+
+### Reconciliation
+
+| Prior tail PR | Phase 2 outcome |
+| --- | --- |
+| pc #1304 | **CLOSED** → infra-fix [#1311](https://github.com/abhimehro/personal-config/pull/1311) |
+| sc #135 | **OPEN** — CodeScene still failing; cs-agent already posted |
+| rp #23 | **CLOSED** → v2 salvage [#28](https://github.com/abhimehro/repoprompt-ce/pull/28) |
+| rp #24, #25, #27 | **OPEN** — blocked by mashed `dependency-review.yml` on `main`; infra-fix [#29](https://github.com/abhimehro/repoprompt-ce/pull/29) |
+
+### New arrivals (post–Phase 1)
+
+| PR | Disposition |
+| --- | --- |
+| pc [#1310](https://github.com/abhimehro/personal-config/pull/1310) | T1 human review — CWE-78; CI green |
+| ctrld [#932](https://github.com/abhimehro/ctrld-sync/pull/932) | DEFER — CodeScene; cs-agent posted this session |
+| esp [#1138](https://github.com/abhimehro/email-security-pipeline/pull/1138) | Phase 1 merge candidate — CLEAN |
+
+### Human review queue (priority)
+
+1. **T0:** pc [#1311](https://github.com/abhimehro/personal-config/pull/1311), rp [#29](https://github.com/abhimehro/repoprompt-ce/pull/29)
+2. **T1:** pc [#1310](https://github.com/abhimehro/personal-config/pull/1310), rp [#28](https://github.com/abhimehro/repoprompt-ce/pull/28)
+3. **T3:** esp [#1138](https://github.com/abhimehro/email-security-pipeline/pull/1138), ctrld [#932](https://github.com/abhimehro/ctrld-sync/pull/932), sc [#135](https://github.com/abhimehro/series_correction_project_updated/pull/135), rp [#24](https://github.com/abhimehro/repoprompt-ce/pull/24)/[#25](https://github.com/abhimehro/repoprompt-ce/pull/25)/[#27](https://github.com/abhimehro/repoprompt-ce/pull/27)

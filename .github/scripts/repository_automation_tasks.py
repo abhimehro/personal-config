@@ -571,36 +571,44 @@ def render_pr_rows(prs: list[dict[str, Any]]) -> list[str]:
     return rows
 
 
+def _fetch_backlog_items(max_issues: int, max_prs: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        f_issues = executor.submit(
+            gh_json,
+            [
+                "issue",
+                "list",
+                "--state",
+                "open",
+                "--limit",
+                str(max_issues),
+                "--json",
+                "number,title,updatedAt,url,labels",
+            ],
+            default=[],
+        )
+        f_prs = executor.submit(
+            gh_json,
+            [
+                "pr",
+                "list",
+                "--state",
+                "open",
+                "--limit",
+                str(max_prs),
+                "--json",
+                "number,title,updatedAt,url,isDraft,reviewDecision,mergeStateStatus",
+            ],
+            default=[],
+        )
+        return f_issues.result(), f_prs.result()
+
+
 def run_backlog_manager(config: dict[str, Any]) -> dict[str, Any]:
     section = config.get("backlog_manager", {})
     max_issues = int(section.get("max_issues", 10))
     max_prs = int(section.get("max_pull_requests", 10))
-    issues = gh_json(
-        [
-            "issue",
-            "list",
-            "--state",
-            "open",
-            "--limit",
-            str(max_issues),
-            "--json",
-            "number,title,updatedAt,url,labels",
-        ],
-        default=[],
-    )
-    prs = gh_json(
-        [
-            "pr",
-            "list",
-            "--state",
-            "open",
-            "--limit",
-            str(max_prs),
-            "--json",
-            "number,title,updatedAt,url,isDraft,reviewDecision,mergeStateStatus",
-        ],
-        default=[],
-    )
+    issues, prs = _fetch_backlog_items(max_issues, max_prs)
     issues = sorted(issues, key=lambda item: item.get("updatedAt", ""))
     prs = sorted(prs, key=lambda item: item.get("updatedAt", ""))
     stale_days = int(section.get("stale_days", 14))
