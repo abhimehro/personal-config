@@ -4,3 +4,4 @@ exclude_paths:
   - "media-streaming/**"
   - "copilot-demo/**"
   - "adguard/**"
+  - "maintenance/config/**"
