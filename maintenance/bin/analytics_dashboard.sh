@@ -407,10 +407,10 @@ generate_dashboard() {
             <div class="date">$(date "+%B %d, %Y at %H:%M") - ${cap_period} Report</div>
         </div>
         
-        <div class="metrics-grid">
-            <div class="metric-card success">
-                <div class="metric-value">${current_health}</div>
-                <div class="metric-label">Health Score</div>
+        <div class="metrics-grid" role="group" aria-label="System Metrics">
+            <div class="metric-card success" role="group" aria-label="Health Score: ${current_health}, Status: success">
+                <div class="metric-value" aria-hidden="true">${current_health}</div>
+                <div class="metric-label" aria-hidden="true">Health Score</div>
             </div>
 EOF
 
@@ -424,17 +424,17 @@ EOF
 		total_warnings=$(jq -r '.summary.total_warnings // 0' "$metrics_report")
 
 		cat >>"$dashboard_file" <<EOF
-            <div class="metric-card">
-                <div class="metric-value">${avg_performance}</div>
-                <div class="metric-label">Performance Score</div>
+            <div class="metric-card" role="group" aria-label="Performance Score: ${avg_performance}">
+                <div class="metric-value" aria-hidden="true">${avg_performance}</div>
+                <div class="metric-label" aria-hidden="true">Performance Score</div>
             </div>
-            <div class="metric-card $([ "${avg_disk:-0}" -gt 85 ] && echo "warning" || echo "success")">
-                <div class="metric-value">${avg_disk}%</div>
-                <div class="metric-label">Disk Usage</div>
+            <div class="metric-card $([ "${avg_disk:-0}" -gt 85 ] && echo "warning" || echo "success")" role="group" aria-label="Disk Usage: ${avg_disk}%">
+                <div class="metric-value" aria-hidden="true">${avg_disk}%</div>
+                <div class="metric-label" aria-hidden="true">Disk Usage</div>
             </div>
-            <div class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")">
-                <div class="metric-value">${total_warnings}</div>
-                <div class="metric-label">Total Warnings</div>
+            <div class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" role="group" aria-label="Total Warnings: ${total_warnings}">
+                <div class="metric-value" aria-hidden="true">${total_warnings}</div>
+                <div class="metric-label" aria-hidden="true">Total Warnings</div>
             </div>
 EOF
 	fi
