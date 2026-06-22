@@ -523,6 +523,11 @@ invocation.
 
 **Action:** Proactively extract the multi-line thread pool submission logic into a private helper function to keep the primary method concise and maintain code health baseline scores.
 
+## 2026-06-22 - [Optimize sequential startswith() checks]
+
+**Learning:** Checking a string against multiple prefixes using multiple `.startswith("prefix")` statements creates unnecessary Python function call overhead and intermediate string allocations.
+**Action:** Replace multiple sequential `.startswith()` checks with a single `.startswith((tuple, of, prefixes))` to evaluate at the C-level. To further optimize for hot loops, short-circuit the tuple check with a fast index string lookup for a common starting character (e.g., `if not line or line[0] != "|":`).
+
 ## 2026-06-22 - [Avoid unnecessary .split() list allocation in simple string formatting]
 
 **Learning:** When extracting substrings from a string separated by a known delimiter inside a loop or comprehension (e.g. `line.split("=", 1)`), repeatedly calling `.split()` allocates new lists each time, causing a performance overhead. **Action:** When you only need to split once on the first delimiter and want to avoid unnecessary list allocation, use `str.partition()` instead of `str.split()`. It returns a tuple directly in C and doesn't allocate an arbitrary-length list.

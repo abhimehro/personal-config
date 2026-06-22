@@ -2,3 +2,6 @@
 exclude_paths:
   - "tests/**"
   - "media-streaming/**"
+  - "copilot-demo/**"
+  - "adguard/**"
+  - "maintenance/config/**"
