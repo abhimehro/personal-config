@@ -1,5 +1,13 @@
 # Lessons Learned
 
+## Lesson 0cv: Codacy CLI infra failures are not security findings (2026-06-22)
+
+**Pattern:** personal-config #1322/#1323 failed only `Codacy Security Scan` with a Scala CLI stack trace and Node 20 deprecation warnings; all substantive checks (CodeQL, tests, CodeScene, GitGuardian, Snyk) passed. **Rule:** When Codacy fails with tool/runtime errors and no actionable finding in logs, classify as **infra flake** and proceed with caution if all other gates pass. Do not block security or perf merges solely on Codacy CLI crashes. **Detection cost:** Low — inspect failed job log for exception stack vs. reported vulnerability.
+
+## Lesson 0cw: pc #1304 resolved by paired salvage #1311 (2026-06-22)
+
+**Pattern:** Escalated pc #1304 (mashed workflow YAML + SHA→tag regression) was superseded by merged salvage #1311 (`cursor-agent/fix-workflow-mashed-uses-c5b9`) without needing a separate close action on #1304. **Rule:** After merging a workflow-corruption salvage PR, verify the original ESCALATE PR is auto-closed or explicitly close with link; scan sibling repos for the same `uses:.*uses:` pattern before marking incident resolved.
+
 ## Lesson 0ct: Security salvage must update test constants (2026-06-21)
 
 **Pattern:** repoprompt-ce #23 (Keychain accessibility hardening) failed Build because `KeychainServiceTests` still asserted `kSecAttrAccessibleAfterFirstUnlock` while the salvage changed production code to `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`. **Rule:** When salvaging security PRs that change Keychain/crypto constants, grep tests for the old constant and adapt assertions in the same salvage commit (S4). Open `-v2` salvage branch rather than force-pushing. **Detection cost:** Low — CI Build log shows `XCTAssertEqual` mismatch on accessibility string.
