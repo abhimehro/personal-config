@@ -775,7 +775,8 @@ def extract_status_markers(issue_body: str) -> dict[str, str]:
     markers = {}
     for line in match.group(1).splitlines():
         if "=" in line:
-            key, value = line.split("=", 1)
+            # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
+            key, sep, value = line.partition("=")
             markers[key.strip()] = value.strip()
     return markers
 
