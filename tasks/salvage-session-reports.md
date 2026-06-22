@@ -6,6 +6,33 @@
 
 ## Entry template
 
+## Run — 2026-06-22
+
+### Input tail
+
+- Source report/snapshot: `tasks/pr-review-2026-06-22.md` (Phase 1 deferred tail) + live GitHub
+- PRs investigated: 5 across 2 repos (1 DIRTY at start: rp#28)
+
+### Outcomes
+
+- Salvage v3 draft PR opened: repoprompt-ce
+  [#41](https://github.com/abhimehro/repoprompt-ce/pull/41) (from #28)
+- Original closed as superseded: rp#28
+- update-branch sync: rp#24, rp#25 (cleared Style + dependency-review)
+- Escalated: rp#39 (trust boundary — deleted Codacy workflow)
+- Deferred: sc#142 (CodeScene; cs-agent already posted)
+
+### Verification status
+
+- Blocking checks: rp#28 DIRTY due to workflow conflict with merged #29
+- Local verify: Keychain v3 branch contains only 2 source files (no workflow edits)
+- CodeScene remediation: sc#142 cs-agent posted in Phase 1
+
+### Handoff
+
+- Maintainer actions required: T1 review rp#41; T2 review rp#39 (do not merge as-is); T3 rp#24/#25 when snyk acceptable; CodeScene tail sc#142
+- Cross-links: see `tasks/pr-review-2026-06-22.md` Phase 2 section
+
 ## Run — 2026-06-21
 
 ### Input tail

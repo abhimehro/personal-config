@@ -1,5 +1,9 @@
 # Lessons Learned
 
+## Lesson 0cv: Salvage branches must not re-edit workflows after infra-fix merges (2026-06-22)
+
+**Pattern:** repoprompt-ce #28 (Keychain v2 salvage) went **DIRTY** after infra-fix #29 merged because v2 still carried a `dependency-review.yml` dedupe that conflicted with #29's identical fix on `main`. **Rule:** After a T0 infra-fix workflow PR merges, re-salvage **source files only** on a fresh `v3+` branch; never include `.github/workflows/` in security/perf salvages unless the workflow change is the sole intent. **Detection cost:** Low — `gh pr view` shows CONFLICTING + diff includes workflow files alongside source.
+
 ## Lesson 0ct: Security salvage must update test constants (2026-06-21)
 
 **Pattern:** repoprompt-ce #23 (Keychain accessibility hardening) failed Build because `KeychainServiceTests` still asserted `kSecAttrAccessibleAfterFirstUnlock` while the salvage changed production code to `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`. **Rule:** When salvaging security PRs that change Keychain/crypto constants, grep tests for the old constant and adapt assertions in the same salvage commit (S4). Open `-v2` salvage branch rather than force-pushing. **Detection cost:** Low — CI Build log shows `XCTAssertEqual` mismatch on accessibility string.
