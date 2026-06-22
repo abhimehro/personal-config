@@ -487,7 +487,7 @@ default (`value = p.get("key")`) and conditionally compute the fallback using an
 
 ## 2026-06-13 - [Hoist dictionary and tuple instantiation from hot execution paths]
 
-<<<<<<< Updated upstream **Learning:** Instantiating dictionaries or casting
+**Learning:** Instantiating dictionaries or casting
 `dict.items()` to a tuple inside a hot function (like one used for scoring items
 iteratively) creates significant allocation and iterator overhead for each call.
 **Action:** Always hoist static lookup dictionaries and tuple conversions of
@@ -506,8 +506,6 @@ hoist static lookup dictionaries and tuple conversions of dictionaries to the
 global/module scope. Accessing a global constant is significantly faster than
 re-evaluating the dictionary literal or executing `dict.items()` on every
 invocation.
-
->>>>>>> Stashed changes
 
 ## 2025-11-20 - [Performance Optimization for system_metrics.sh]
 **Learning:** Found several spots where the system_metrics script spawns multiple heavy subprocesses in quick succession (e.g. `uptime` 3 times, `ps aux` 3 times, `launchctl list` 2 times) to parse different values from the same output. In a shell script, avoiding repeated execution of external commands and pipelining by doing it in a single pass (e.g., using a single `awk` statement and `read -r`) can yield significant performance gains, especially when these commands can be relatively slow and are run periodically.
