@@ -278,3 +278,6 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 
 **Learning:** When hiding decorative emojis within text-containing elements (like `<a>`), applying a duplicate `aria-label` to the parent tag unnecessarily overrides the native inner text for screen readers.
 **Action:** Wrap only the decorative emoji in `<span aria-hidden="true">` and remove the redundant `aria-label` from the parent element to rely on its natural text content.
+## 2026-06-22 - [HTML Accessibility Pattern: Avoid duplicate announcements with aria-labelledby]
+**Learning:** When adding ARIA labels to a container (like `role="group"`) that already contains visible label text, do not use a hardcoded `aria-label` that duplicates the text, as it causes screen readers to announce it redundantly.
+**Action:** Assign an `id` to the visible text element and reference it using `aria-labelledby` on the container.
