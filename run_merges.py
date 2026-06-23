@@ -1,3 +1,4 @@
+import concurrent.futures
 import json
 import os
 import subprocess
@@ -53,6 +54,24 @@ def run_gh(cmd_list):
 def get_diff(repo, pr):
     res = run_gh(["gh", "pr", "diff", str(pr), "-R", str(repo)])
     return res if isinstance(res, str) else ""
+
+
+def _fetch_pr_data(item):
+    repo, pr, title = item
+    info = run_gh(
+        ["gh", "pr", "view", str(pr), "-R", str(repo), "--json", "mergeStateStatus"]
+    )
+    diff = ""
+    if info and info.get("mergeStateStatus") not in ["DIRTY", "CONFLICTING"]:
+        diff = get_diff(repo, pr)
+    return repo, pr, title, info, diff
+
+
+def _fetch_all_pr_data_parallel(queue_items):
+    # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls using map() to significantly speed up PR data fetching
+    # This mitigates network latency and execution time by querying github concurrently
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        return list(executor.map(_fetch_pr_data, queue_items))
 
 
 queue = [
@@ -160,13 +179,9 @@ queue = [
 
 results = {"merged": [], "escalated": [], "conflicting": []}
 
-for repo, pr, title in queue:
+for repo, pr, title, info, diff in _fetch_all_pr_data_parallel(queue):
     print(f"\nProcessing {repo}#{pr}: {title}")
 
-    # Re-check status
-    info = run_gh(
-        ["gh", "pr", "view", str(pr), "-R", str(repo), "--json", "mergeStateStatus"]
-    )
     if not info:
         print("Failed to get info")
         continue
@@ -177,7 +192,6 @@ for repo, pr, title in queue:
         results["conflicting"].append((repo, pr, title))
         continue
 
-    diff = get_diff(repo, pr)
     diff_lower = diff.lower()
 
     # Gate 2: Security check
