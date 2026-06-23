@@ -144,6 +144,44 @@
   pc#1234/#1235/#1242/#1243 and esp#1107/#1111/#1112; review ctrld#899 draft
 - Cross-links: see `tasks/pr-review-2026-06-14.md`
 
+## Run — 2026-06-23
+
+### Input tail
+
+- Source report/snapshot: `tasks/pr-review-2026-06-21.md` deferred tail + automation memory (2026-06-22)
+- PRs investigated: 33 open bot/automation PRs across 7 repos; **0 DIRTY/CONFLICTING**
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+| --- | ---: | --- | ---: | --- |
+| personal-config | 1329 | CLOSE-DUPLICATE | — | Keeper #1326 dashboard a11y |
+| personal-config | 1324, 1325 | CLOSE-SUPERSEDED | — | Session-report drafts |
+| ctrld-sync | 936 | CLOSE-SUPERSEDED | — | Keeper #943 CLEAN green |
+| Seatek_Analysis | 351 | CLOSE-INCOMPATIBLE | — | numpy>=2.5.0 needs Python 3.12+ |
+| repoprompt-ce | 39 | CLOSE-SUPERSEDED | — | Keeper #49 DateFormatter |
+| repoprompt-ce | 48 | CLOSE-DUPLICATE | — | Keeper salvage #25 |
+| repoprompt-ce | 47 | CLOSE-DUPLICATE | — | Keeper salvage #24 |
+
+- Salvage draft PRs opened: 0
+- Infra-fix draft PRs opened: 0 (prior #29 already merged)
+- Originals closed as superseded/duplicate/incompatible: 8
+- Prior tail auto-resolved (already merged/closed): pc#1304/#1311, sc#135/#142, rp#23/#28/#29/#27
+
+### Verification status
+
+- Blocking checks: ctrld `main` ruff/mypy; repoprompt `main` Style/snyk/build
+- CodeScene remediation: not posted (no new CodeScene failures this run)
+
+### Handoff
+
+- Maintainer actions required:
+  1. **Merge ctrld #943** (T0)
+  2. **Merge repoprompt #41** (T1 Keychain)
+  3. Phase 1 merge esp #1144, sc #144
+  4. Cherry-pick repoprompt #49 Changelog.swift only
+- Cross-links: [Session report](tasks/pr-review-2026-06-23.md)
+
 ## Run — YYYY-MM-DD
 
 ### Input tail
