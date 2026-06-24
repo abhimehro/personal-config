@@ -278,3 +278,7 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 
 **Learning:** When hiding decorative emojis within text-containing elements (like `<a>`), applying a duplicate `aria-label` to the parent tag unnecessarily overrides the native inner text for screen readers.
 **Action:** Wrap only the decorative emoji in `<span aria-hidden="true">` and remove the redundant `aria-label` from the parent element to rely on its natural text content.
+
+## $(date "+%Y-%m-%d") - ARIA Grouping for Metric Cards
+**Learning:** Metric cards structured as generic `<div>` containers with multiple child text elements (e.g., a value and a label) are not inherently accessible as a unified component by screen readers. A generic container lacks a semantic role, so adding an `aria-label` or relying on inner text order doesn't always provide the best experience.
+**Action:** When building metric cards or similar UI widgets, explicitly assign `role="group"` to the parent container. To associate the visible text label with the group, add an `id` to the label element and reference it in the parent using `aria-labelledby="[id]"`. This ensures screen readers announce the container as a distinct, labeled group.
