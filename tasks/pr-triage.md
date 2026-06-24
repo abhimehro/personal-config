@@ -1,114 +1,102 @@
-# PR Triage — 2026-06-21
+# PR Triage — 2026-06-24
 
 ## Duplicate & overlap groups
 
-### Group A — personal-config infuse-media-server a11y
+### Group A — repoprompt-ce Changelog DateFormatter
 | PR | Files | Keeper | Action |
 | --- | --- | --- | --- |
-| #1303 | `infuse-media-server.py`, tests, palette.md | **#1303** | MERGED |
-| #1301 | same core files | — | CLOSED → superseded by #1303 |
+| #52 | `Changelog.swift`, `PromptPackagingService.swift` | **#52** | DEFER (Style) |
+| #49 | `Changelog.swift`, workflows | — | **CLOSED** → superseded by #52 |
 
-### Group B — ctrld-sync restart prompt EOF handling
+### Group B — repoprompt-ce cross-platform release tests
 | PR | Files | Keeper | Action |
 | --- | --- | --- | --- |
-| #930 | `main.py` only | **#930** | MERGED |
-| #928 | `main.py`, bolt.md | — | CLOSED → duplicate of #930 |
+| #50 | `promote_release.sh`, test scripts, workflows | **#50** | DEFER (Style) |
+| #24 (salvage) | `Scripts/promote_release.sh`, test files | — | **CLOSED** → superseded by #50 |
 
-### Group C — series_correction vectorize processor.py
+### Group C — repoprompt-ce agent message a11y
 | PR | Files | Keeper | Action |
 | --- | --- | --- | --- |
-| #135 | `processor.py` (outlier loop) | **#135** | DEFER (CodeScene) |
-| #121 | `processor.py` (z-score/jump) | — | CLOSED → superseded by #135 |
+| #51 | `AgentMessageBubble.swift`, workflows | **#51** | DEFER (Style) |
+| #25 (salvage) | icon button components | — | **CLOSED** → superseded by #51 |
 
-### Group D — repoprompt-ce Changelog DateFormatter
-| PR | Files | Keeper | Action |
-| --- | --- | --- | --- |
-| #27 | Changelog.swift + workflow | **#27** | DEFER (Style) |
-| #22 | Changelog.swift, bolt.md | — | CLOSED → superseded by #27 |
+## Infra detection
 
-### Group E — repoprompt-ce icon button a11y
-| PR | Files | Keeper | Action |
-| --- | --- | --- | --- |
-| #25 (salvage) | focused salvage | **#25** | DEFER (Style) |
-| #26 (Palette) | broader Palette churn | — | CLOSED → superseded by #25 |
+### personal-config — Codacy Security Scan (repo-wide)
+- **Signal:** 10/10 open PRs show `Codacy Security Scan` failure; branches are `MERGEABLE` (not conflicted).
+- **Classification:** Suspected `main`-side infra breakage (Lesson 0t pattern).
+- **Action:** DEFER entire queue; no salvage drafts opened. Escalate for human Codacy triage.
 
-## Superseded / zero-diff
+### repoprompt-ce — Style check cluster
+- **Signal:** 9/9 open PRs fail `Style` (+ ancillary Codacy/snyk/build).
+- **Note:** T0 infra-fix #29 merged 2026-06-23; `update-branch` returns benign 422 (branches current).
+- **Action:** DEFER; dedupe complete. T1 #41 awaits Style fix on `main` or formatter run.
 
-| PR | Reason |
-| --- | --- |
-| Seatek #342 | Zero-diff daily QA PR (0 bytes changed) |
-| personal-config #1300 | Draft session-report PR; canonical reports live on agent branch |
+### Hydrograph — submit-pypi
+- **Signal:** dependabot #292 fails `submit-pypi` only.
+- **Action:** DEFER; not a merge conflict.
 
 ## Security gate review
 
 | PR | Gate | Result |
 | --- | --- | --- |
-| Seatek #343 | Null-byte check before `realpath` | **PASS → MERGED** |
-| personal-config #1287 | AppleScript `--` separator (CWE-74) | **PASS → MERGED** |
-| personal-config #1304 | Workflow YAML corruption + tag pinning | **FAIL → ESCALATE** |
-| repoprompt-ce #23 | Keychain accessibility tighten | **PASS logic; CI fail → DEFER salvage** |
+| repoprompt-ce #41 | Keychain accessibility tighten | **PASS logic** — draft salvage; Style blocked |
+| personal-config dependabot cluster | Gate 4 CI/INFRA | **PASS** — version bumps only; blocked by Codacy infra |
 
-## CodeScene remediation
+## Phase 2 actions taken
 
-Posted `/cs-agent skill:fix-code-health-degradations` on:
-- series_correction #121 (before close)
-- series_correction #134
-- series_correction #135
+| Repo | Old PR | Disposition | Notes |
+| --- | ---: | --- | --- |
+| repoprompt-ce | #49 | CLOSE-DUPLICATE | Superseded by #52 |
+| repoprompt-ce | #24 | CLOSE-DUPLICATE | Superseded by #50 |
+| repoprompt-ce | #25 | CLOSE-DUPLICATE | Superseded by #51 |
 
-## Merge ordering applied
-
-1. Security: Seatek #343, personal-config #1287
-2. Routine CLEAN: esp #1136, pc #1307, pc #1303, pc #1288, ctrld #930, sc #134
-3. Auto-fix: pc #1308 (bolt.md conflict after #1307 merge)
-4. Closes: duplicates and zero-diff after keeper merged
-
-## Deferred tail → Salvage Agent
+## Deferred tail → next session
 
 ```yaml
 open_followups:
   - repo: abhimehro/personal-config
-    pr: 1304
-    reason: ESCALATE — corrupted workflow YAML + action pin regression
-  - repo: abhimehro/series_correction_project_updated
-    pr: 135
-    reason: CodeScene fail after cs-agent; perf vectorize
+    pr: all-open
+    reason: T0 — Codacy Security Scan failing on every open PR
   - repo: abhimehro/repoprompt-ce
-    pr: 23
-    reason: T1 security salvage — Keychain; Style+Build fail
+    pr: 41
+    reason: T1 — Keychain salvage v3; Style blocked
   - repo: abhimehro/repoprompt-ce
-    pr: 24
-    reason: T3 salvage — Linux release tests; Style fail
+    pr: 50
+    reason: T3 — cross-platform test salvage; Style blocked
   - repo: abhimehro/repoprompt-ce
-    pr: 25
-    reason: T3 salvage — a11y labels; Style fail
+    pr: 51
+    reason: T3 — Palette a11y; Style blocked
   - repo: abhimehro/repoprompt-ce
-    pr: 27
-    reason: Bolt perf — Style + dependency-review fail
+    pr: 52
+    reason: T3 — Bolt DateFormatter; Style blocked
+  - repo: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+    pr: 292
+    reason: submit-pypi check failing
 ```
 
----
+## Ready-to-Execute Human Actions
 
-## Phase 2 salvage triage — 2026-06-21 evening
+### Phase 1 merge burst (CLEAN dependabot — not executed by salvage per S1)
 
-### Reconciliation
+```bash
+# ctrld-sync (5 PRs, all CLEAN)
+gh pr merge 938 --repo abhimehro/ctrld-sync --squash --delete-branch
+gh pr merge 939 --repo abhimehro/ctrld-sync --squash --delete-branch
+gh pr merge 940 --repo abhimehro/ctrld-sync --squash --delete-branch
+gh pr merge 941 --repo abhimehro/ctrld-sync --squash --delete-branch
+gh pr merge 942 --repo abhimehro/ctrld-sync --squash --delete-branch
 
-| Prior tail PR | Phase 2 outcome |
-| --- | --- |
-| pc #1304 | **CLOSED** → infra-fix [#1311](https://github.com/abhimehro/personal-config/pull/1311) |
-| sc #135 | **OPEN** — CodeScene still failing; cs-agent already posted |
-| rp #23 | **CLOSED** → v2 salvage [#28](https://github.com/abhimehro/repoprompt-ce/pull/28) |
-| rp #24, #25, #27 | **OPEN** — blocked by mashed `dependency-review.yml` on `main`; infra-fix [#29](https://github.com/abhimehro/repoprompt-ce/pull/29) |
+# email-security-pipeline
+gh pr merge 1146 --repo abhimehro/email-security-pipeline --squash --delete-branch
+gh pr merge 1147 --repo abhimehro/email-security-pipeline --squash --delete-branch
 
-### New arrivals (post–Phase 1)
+# Seatek_Analysis + series_correction
+gh pr merge 360 --repo abhimehro/Seatek_Analysis --squash --delete-branch
+gh pr merge 149 --repo abhimehro/series_correction_project_updated --squash --delete-branch
+```
 
-| PR | Disposition |
-| --- | --- |
-| pc [#1310](https://github.com/abhimehro/personal-config/pull/1310) | T1 human review — CWE-78; CI green |
-| ctrld [#932](https://github.com/abhimehro/ctrld-sync/pull/932) | DEFER — CodeScene; cs-agent posted this session |
-| esp [#1138](https://github.com/abhimehro/email-security-pipeline/pull/1138) | Phase 1 merge candidate — CLEAN |
+### Infra triage (before merging personal-config / repoprompt-ce bot PRs)
 
-### Human review queue (priority)
-
-1. **T0:** pc [#1311](https://github.com/abhimehro/personal-config/pull/1311), rp [#29](https://github.com/abhimehro/repoprompt-ce/pull/29)
-2. **T1:** pc [#1310](https://github.com/abhimehro/personal-config/pull/1310), rp [#28](https://github.com/abhimehro/repoprompt-ce/pull/28)
-3. **T3:** esp [#1138](https://github.com/abhimehro/email-security-pipeline/pull/1138), ctrld [#932](https://github.com/abhimehro/ctrld-sync/pull/932), sc [#135](https://github.com/abhimehro/series_correction_project_updated/pull/135), rp [#24](https://github.com/abhimehro/repoprompt-ce/pull/24)/[#25](https://github.com/abhimehro/repoprompt-ce/pull/25)/[#27](https://github.com/abhimehro/repoprompt-ce/pull/27)
+1. Investigate **Codacy Security Scan** on `abhimehro/personal-config` `main`.
+2. Run `make dev-format-check` / `make dev-lint` on repoprompt-ce `main`; open T0 infra-fix if Style is red on `main`.

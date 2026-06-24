@@ -6,6 +6,41 @@
 
 ## Entry template
 
+## Run — 2026-06-24
+
+### Input tail
+
+- Source report/snapshot: `tasks/pr-review-2026-06-23.md` deferred tail + live GitHub re-fetch
+- PRs investigated: 32 across 7 repos (**0 DIRTY / CONFLICTING** at start)
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+| --- | ---: | --- | ---: | --- |
+| repoprompt-ce | 49 | CLOSE-DUPLICATE | — | Superseded by #52 |
+| repoprompt-ce | 24 | CLOSE-DUPLICATE | — | Superseded by #50 |
+| repoprompt-ce | 25 | CLOSE-DUPLICATE | — | Superseded by #51 |
+
+- Salvage draft PRs opened: 0
+- Infra-fix draft PRs opened: 0
+- Originals closed as superseded: 3
+- Prior T0 infra-fixes reconciled: pc#1311, rp#29, ctrld#943 **MERGED**
+
+### Verification status
+
+- Blocking checks: pc Codacy Security Scan (10/10 PRs); rp Style (9/9 PRs); hg submit-pypi (1 PR)
+- `update-branch` on rp#24/#25/#41: benign 422 (branches current)
+- CodeScene remediation: not triggered (no CodeScene failures this session)
+
+### Handoff
+
+- Maintainer actions required:
+  1. Fix Codacy Security Scan on personal-config `main` (T0)
+  2. Fix Style on repoprompt-ce `main` (T0)
+  3. Phase 1 merge burst: ctrld#938–942, esp#1146–1147, Seatek#360, sc#149
+  4. Review T1 repoprompt-ce #41 (Keychain salvage v3)
+- Cross-links: [Session report](tasks/pr-review-2026-06-24.md)
+
 ## Run — 2026-06-21
 
 ### Input tail

@@ -809,3 +809,7 @@ optimization.
 ## Lesson 0cr: Salvage one-line fixes from DIRTY Jules PRs; omit CodeScene refactors (2026-06-19)
 
 **Pattern:** pc #1281 bundled a one-line podcast error-path `html_section()` a11y fix with CodeScene-driven `_parse_linear_focus_node` inlining that conflicted with `main`. **Rule:** When a DIRTY bot PR's stated intent is a small functional fix but the diff includes unrelated complexity refactors, salvage only the functional lines onto a fresh `main` branch. **Detection cost:** Low — `gh pr diff --stat` shows large churn in unrelated functions alongside a one-line stated fix in the PR title.
+
+## Lesson 0cs: Zero-conflict salvage sessions still need dedup + infra triage (2026-06-24)
+
+**Pattern:** Phase 2 salvage on 2026-06-24 found **0 DIRTY/CONFLICTING** PRs across 7 repos, but 32 open bot PRs remained — blocked by repo-wide Codacy (personal-config) and Style (repoprompt-ce) failures, plus overlapping Bolt/Palette/salvage branches (#49/#52, #24/#50, #25/#51). **Rule:** A clean conflict queue does not mean salvage is a no-op. Always (1) re-fetch live PR state, (2) close semantic duplicates even when MERGEABLE, (3) classify repo-wide check failures as T0 infra before opening salvage drafts. **Detection cost:** Low — same failing check name on 4+ open PRs with `mergeable: MERGEABLE`.
