@@ -2,7 +2,8 @@
 
 ## Summary
 
-This guide documents the successful configuration of Windscribe VPN with Control D DNS privacy filtering on macOS.
+This guide documents the successful configuration of Windscribe VPN with Control
+D DNS privacy filtering on macOS.
 
 ## Final Working Configuration
 
@@ -21,17 +22,19 @@ This guide documents the successful configuration of Windscribe VPN with Control
 
 ## Key Technical Solution
 
-The critical breakthrough was modifying Control D's configuration to listen on all interfaces (`0.0.0.0:53`) instead of just localhost (`127.0.0.1:53`).
+The critical breakthrough was modifying Control D's configuration to listen on
+all interfaces (`0.0.0.0:53`) instead of just localhost (`127.0.0.1:53`).
 
-**Before**: Control D only accessible locally, Windscribe couldn't reach it through VPN tunnel
-**After**: Control D accessible through VPN tunnel, enabling "Local DNS" to work properly
+**Before**: Control D only accessible locally, Windscribe couldn't reach it
+through VPN tunnel **After**: Control D accessible through VPN tunnel, enabling
+"Local DNS" to work properly
 
 ## Configuration Files
 
 ### Control D Privacy Profile
 
-Location: `/etc/controld/ctrld.privacy.toml`
-Key change: `ip = '0.0.0.0'` instead of `ip = '127.0.0.1'`
+Location: `/etc/controld/ctrld.privacy.toml` Key change: `ip = '0.0.0.0'`
+instead of `ip = '127.0.0.1'`
 
 ### Setup Script
 
@@ -57,10 +60,12 @@ sudo lsof -nP -iTCP:53  # Should show *:53 not 127.0.0.1:53
 
 ## How It Works
 
-1. **DNS Query Flow**: App → Windscribe VPN → Control D (0.0.0.0:53) → Filtered results → VPN tunnel → App
+1. **DNS Query Flow**: App → Windscribe VPN → Control D (0.0.0.0:53) → Filtered
+   results → VPN tunnel → App
 2. **Traffic Protection**: All traffic routed through Windscribe VPN servers
 3. **DNS Privacy**: All DNS queries filtered by Control D privacy rules
-4. **Ad Blocking**: Advertising domains blocked (e.g., doubleclick.net → 127.0.0.1)
+4. **Ad Blocking**: Advertising domains blocked (e.g., doubleclick.net →
+   127.0.0.1)
 
 ## Verification
 
@@ -82,7 +87,8 @@ scutil --dns | head -10         # Should show Windscribe VPN in resolver #1
 - Other apps bypassed VPN (no filtering)
 - Created connection/disconnection loops
 
-**Solution**: Disable split tunneling for consistent DNS behavior across all applications
+**Solution**: Disable split tunneling for consistent DNS behavior across all
+applications
 
 ## Expected Results
 
