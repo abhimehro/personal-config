@@ -1,5 +1,13 @@
 # Lessons Learned
 
+## Lesson 0cv: ctrld Bolt perf conflicts after QA merge on main.py (2026-06-24)
+
+**Pattern:** Squash-merging ctrld #943 (`prop_map` / `error_messages` refactor in `main.py`) left Bolt #947 **CONFLICTING** on `_get_action_text` even though #947's intent was `_display_len` fast-path only. **Rule:** After merging a QA/lint PR touching `main.py`, immediately merge `origin/main` into sibling Bolt PRs before squash-merge; prefer `prop_map.get(...)` from main over chained `.get` on dict literals. **Detection cost:** Low — `mergeStateStatus: DIRTY` after sibling merge.
+
+## Lesson 0cw: Sentinel PR can supersede cursor salvage draft (2026-06-24)
+
+**Pattern:** Hydrograph #295 (Sentinel path guard) included pyproject.toml duplicate-key cleanup that cursor draft #293 targeted separately. #293 was still open as draft when #295 merged. **Rule:** When a security PR touches the same config file as an open salvage/infra draft, close the draft with link to the security PR rather than merging both. **Detection cost:** Low — file overlap in triage table.
+
 ## Lesson 0ct: Security salvage must update test constants (2026-06-21)
 
 **Pattern:** repoprompt-ce #23 (Keychain accessibility hardening) failed Build because `KeychainServiceTests` still asserted `kSecAttrAccessibleAfterFirstUnlock` while the salvage changed production code to `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`. **Rule:** When salvaging security PRs that change Keychain/crypto constants, grep tests for the old constant and adapt assertions in the same salvage commit (S4). Open `-v2` salvage branch rather than force-pushing. **Detection cost:** Low — CI Build log shows `XCTAssertEqual` mismatch on accessibility string.
