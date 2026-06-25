@@ -478,7 +478,7 @@ generate_performance_report() {
     <div class="section">
         <h2><span aria-hidden="true">📊</span> Current Performance Metrics</h2>
         <table aria-label="Performance Metrics">
-            <tr><th>Metric</th><th>Value</th><th>Status</th></tr>
+            <tr><th scope="col">Metric</th><th scope="col">Value</th><th scope="col">Status</th></tr>
 EOF
 
 	# Add current metrics
