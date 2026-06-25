@@ -1,5 +1,9 @@
 # Lessons Learned
 
+## Lesson 0cv: Palette dashboard ARIA cluster — merge newest keeper first (2026-06-25)
+
+**Pattern:** Three personal-config Palette PRs (#1340, #1345, #1350) overlapped on `analytics_dashboard.sh` ARIA grouping with different `id` naming conventions. Squash-merging #1350 first left #1340 **CONFLICTING** on the dashboard file only; unique value in #1340 was `performance_optimizer.sh` `scope="col"` headers. **Rule:** For Palette duplicate clusters on the same file, merge the newest focused keeper first, close strict duplicates (#1345), then autofix the sibling by taking `main`'s merged ARIA ids and preserving unique file changes. **Detection cost:** Low — compare `gh pr diff --name-only` across cluster.
+
 ## Lesson 0ct: Security salvage must update test constants (2026-06-21)
 
 **Pattern:** repoprompt-ce #23 (Keychain accessibility hardening) failed Build because `KeychainServiceTests` still asserted `kSecAttrAccessibleAfterFirstUnlock` while the salvage changed production code to `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`. **Rule:** When salvaging security PRs that change Keychain/crypto constants, grep tests for the old constant and adapt assertions in the same salvage commit (S4). Open `-v2` salvage branch rather than force-pushing. **Detection cost:** Low — CI Build log shows `XCTAssertEqual` mismatch on accessibility string.
