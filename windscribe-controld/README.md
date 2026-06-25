@@ -2,7 +2,9 @@
 
 ## Overview
 
-This directory contains the complete setup and configuration for integrating Windscribe VPN with Control D DNS privacy filtering, providing dual protection: VPN encryption + DNS privacy filtering.
+This directory contains the complete setup and configuration for integrating
+Windscribe VPN with Control D DNS privacy filtering, providing dual protection:
+VPN encryption + DNS privacy filtering.
 
 ## ✅ Current Active Configuration
 
@@ -16,7 +18,9 @@ This directory contains the complete setup and configuration for integrating Win
 
 ### Key Achievement
 
-**Dual Protection System**: VPN tunnel encryption + DNS privacy filtering working simultaneously through a sophisticated integration that routes DNS queries through the VPN tunnel to a local Control D resolver.
+**Dual Protection System**: VPN tunnel encryption + DNS privacy filtering
+working simultaneously through a sophisticated integration that routes DNS
+queries through the VPN tunnel to a local Control D resolver.
 
 ## 🚀 Quick Usage
 
@@ -69,7 +73,8 @@ curl -s https://ipinfo.io/json | grep -E '(city|region|country|org)'
 
 ## 📁 Files
 
-- **`windscribe-controld-setup.sh`** - Automated setup verification and troubleshooting
+- **`windscribe-controld-setup.sh`** - Automated setup verification and
+  troubleshooting
 - **`setup-guide.md`** - Complete technical documentation
 - **`ctrld.toml.backup`** - Backup of original Control D configuration
 - **`README.md`** - This file
@@ -143,7 +148,8 @@ Application Receives Response
 
 - **Raycast**: Shows "Control D not connected" (this is expected)
 - **IP Location**: Miami instead of Windscribe server (this is correct)
-- **DNS Resolution**: Appears to use Windscribe DNS (technically true at network level)
+- **DNS Resolution**: Appears to use Windscribe DNS (technically true at network
+  level)
 
 ## 🧪 Troubleshooting
 
@@ -263,6 +269,6 @@ sudo controld-manager switch gaming doh
 
 ---
 
-**Status**: ✅ Active and working perfectly  
-**Last Verified**: October 2025  
+**Status**: ✅ Active and working perfectly\
+**Last Verified**: October 2025\
 **Setup Validation**: Run `bash windscribe-controld-setup.sh`

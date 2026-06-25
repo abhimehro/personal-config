@@ -86,4 +86,5 @@ curl -s https://ipinfo.io/json
 
 ---
 
-**For detailed documentation**: `~/Documents/dev/personal-config/windscribe-controld/README.md`
+**For detailed documentation**:
+`~/Documents/dev/personal-config/windscribe-controld/README.md`

@@ -22,8 +22,9 @@ bash ~/Documents/dev/personal-config/windscribe-controld/verify-integration.sh
 - DNS queries not being filtered
 - Ad domains resolve instead of being blocked
 
-**Root Cause:**
-Control D is configured to listen on `127.0.0.1:53` (localhost only) instead of `0.0.0.0:53` (all interfaces), preventing Windscribe from accessing it.
+**Root Cause:** Control D is configured to listen on `127.0.0.1:53` (localhost
+only) instead of `0.0.0.0:53` (all interfaces), preventing Windscribe from
+accessing it.
 
 **Fix:**
 
@@ -42,11 +43,12 @@ sudo ~/Documents/dev/personal-config/windscribe-controld/fix-controld-config.sh
 
 **Symptoms:**
 
-- `dig doubleclick.net +short` returns IP addresses (should return `0.0.0.0` or nothing)
-- System DNS points to Windscribe servers (100.64.0.x) instead of Control D (127.0.0.1)
+- `dig doubleclick.net +short` returns IP addresses (should return `0.0.0.0` or
+  nothing)
+- System DNS points to Windscribe servers (100.64.0.x) instead of Control D
+  (127.0.0.1)
 
-**Root Cause:**
-Windscribe DNS mode is not set to "Local DNS"
+**Root Cause:** Windscribe DNS mode is not set to "Local DNS"
 
 **Fix:**
 
@@ -77,14 +79,13 @@ dig google.com +short
 - Updates work when disconnected from Windscribe
 - Updates work when using Control D alone (without VPN)
 
-**Root Cause:**
-This is likely caused by one of two issues:
+**Root Cause:** This is likely caused by one of two issues:
 
 1. **Split Tunneling**: If enabled, can cause inconsistent DNS behavior
-2. **VPN Routing**: Some update servers may be blocked or unreachable through VPN tunnel
+2. **VPN Routing**: Some update servers may be blocked or unreachable through
+   VPN tunnel
 
-**Diagnosis:**
-Check if split tunneling is enabled:
+**Diagnosis:** Check if split tunneling is enabled:
 
 1. Open Windscribe app
 2. Go to **Preferences → Connection**
@@ -96,8 +97,8 @@ Check if split tunneling is enabled:
 - All traffic uses VPN + Control D filtering
 - May fix update issues by ensuring proper routing
 
-**Fix Option 2: Add App to Split Tunnel Exceptions**
-If you must use split tunneling:
+**Fix Option 2: Add App to Split Tunnel Exceptions** If you must use split
+tunneling:
 
 1. Go to **Preferences → Connection → Split Tunneling**
 2. Add the failing app (e.g., BetterDisplay) to the exception list
@@ -150,12 +151,17 @@ sudo launchctl load /Library/LaunchDaemons/ctrld.plist
 
 **Root Cause:**
 
-1. **Corrupted Script:** The `controld-manager` script contained masked IP placeholders (`*********`) instead of real IPs, causing configuration generation to fail.
-2. **IPv6 Leak:** Control D might be advertising IPv6 support (`::/0`) or AAAA records, which Windscribe (IPv4-only tunnel) drops, causing connection timeouts for apps preferring IPv6.
+1. **Corrupted Script:** The `controld-manager` script contained masked IP
+   placeholders (`*********`) instead of real IPs, causing configuration
+   generation to fail.
+2. **IPv6 Leak:** Control D might be advertising IPv6 support (`::/0`) or AAAA
+   records, which Windscribe (IPv4-only tunnel) drops, causing connection
+   timeouts for apps preferring IPv6.
 
-**Fix:**
-The `controld-manager` script has been patched to use correct IPs.
-Additionally, IPv6 has been disabled system-wide using `ipv6-manager.sh` which now uses `sysctl` to ignore Router Advertisements, preventing VPNs from assigning IPv6 addresses.
+**Fix:** The `controld-manager` script has been patched to use correct IPs.
+Additionally, IPv6 has been disabled system-wide using `ipv6-manager.sh` which
+now uses `sysctl` to ignore Router Advertisements, preventing VPNs from
+assigning IPv6 addresses.
 
 **Action Required:**
 
@@ -300,6 +306,9 @@ ls -lt /etc/controld/ctrld.toml.backup* | head -5
 
 - **Control D Docs**: https://docs.controld.com/
 - **Windscribe Support**: https://windscribe.com/support
-- **Your Setup Guide**: `~/Documents/dev/personal-config/windscribe-controld/setup-guide.md`
-- **Verification Script**: `~/Documents/dev/personal-config/windscribe-controld/verify-integration.sh`
-- **Fix Script**: `~/Documents/dev/personal-config/windscribe-controld/fix-controld-config.sh`
+- **Your Setup Guide**:
+  `~/Documents/dev/personal-config/windscribe-controld/setup-guide.md`
+- **Verification Script**:
+  `~/Documents/dev/personal-config/windscribe-controld/verify-integration.sh`
+- **Fix Script**:
+  `~/Documents/dev/personal-config/windscribe-controld/fix-controld-config.sh`

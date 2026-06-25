@@ -408,9 +408,9 @@ generate_dashboard() {
         </div>
         
         <div class="metrics-grid">
-            <div class="metric-card success" role="group" aria-labelledby="label-health">
+            <div class="metric-card success" role="group" aria-labelledby="health-score-label">
                 <div class="metric-value">${current_health}</div>
-                <div class="metric-label" id="label-health">Health Score</div>
+                <div class="metric-label" id="health-score-label">Health Score</div>
             </div>
 EOF
 
@@ -424,17 +424,17 @@ EOF
 		total_warnings=$(jq -r '.summary.total_warnings // 0' "$metrics_report")
 
 		cat >>"$dashboard_file" <<EOF
-            <div class="metric-card" role="group" aria-labelledby="label-perf">
+            <div class="metric-card" role="group" aria-labelledby="performance-score-label">
                 <div class="metric-value">${avg_performance}</div>
-                <div class="metric-label" id="label-perf">Performance Score</div>
+                <div class="metric-label" id="performance-score-label">Performance Score</div>
             </div>
-            <div class="metric-card $([ "${avg_disk:-0}" -gt 85 ] && echo "warning" || echo "success")" role="group" aria-labelledby="label-disk">
+            <div class="metric-card $([ "${avg_disk:-0}" -gt 85 ] && echo "warning" || echo "success")" role="group" aria-labelledby="disk-usage-label">
                 <div class="metric-value">${avg_disk}%</div>
-                <div class="metric-label" id="label-disk">Disk Usage</div>
+                <div class="metric-label" id="disk-usage-label">Disk Usage</div>
             </div>
-            <div class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" role="group" aria-labelledby="label-warn">
+            <div class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" role="group" aria-labelledby="total-warnings-label">
                 <div class="metric-value">${total_warnings}</div>
-                <div class="metric-label" id="label-warn">Total Warnings</div>
+                <div class="metric-label" id="total-warnings-label">Total Warnings</div>
             </div>
 EOF
 	fi
