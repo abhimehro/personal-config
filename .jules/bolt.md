@@ -531,3 +531,6 @@ invocation.
 ## 2026-06-22 - [Avoid unnecessary .split() list allocation in simple string formatting]
 
 **Learning:** When extracting substrings from a string separated by a known delimiter inside a loop or comprehension (e.g. `line.split("=", 1)`), repeatedly calling `.split()` allocates new lists each time, causing a performance overhead. **Action:** When you only need to split once on the first delimiter and want to avoid unnecessary list allocation, use `str.partition()` instead of `str.split()`. It returns a tuple directly in C and doesn't allocate an arbitrary-length list.
+## 2026-06-25 - Python str.startswith() Performance
+**Learning:** Python's C-implemented `.startswith()` is faster than short-circuiting with Python-level character indexing and set allocations.
+**Action:** Do not manually check the first character of strings in Python bytecode when `.startswith()` can handle it natively in C.
