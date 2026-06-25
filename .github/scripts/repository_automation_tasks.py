@@ -571,7 +571,9 @@ def render_pr_rows(prs: list[dict[str, Any]]) -> list[str]:
     return rows
 
 
-def _fetch_backlog_items(max_issues: int, max_prs: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def _fetch_backlog_items(
+    max_issues: int, max_prs: int
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         f_issues = executor.submit(
             gh_json,
@@ -687,13 +689,43 @@ def status_icon(status: str) -> str:
     return STATUS_ICONS.get(status, status.upper())
 
 
-def _fetch_daily_metrics() -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+def _fetch_daily_metrics() -> (
+    tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]
+):
     # ⚡ Bolt Optimization: Parallelize independent read-only API calls using ThreadPoolExecutor to significantly reduce execution latency
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         futures = [
-            executor.submit(gh_json, ["issue", "list", "--state", "open", "--limit", "200", "--json", "number"], default=[]),
-            executor.submit(gh_json, ["pr", "list", "--state", "open", "--limit", "200", "--json", "number"], default=[]),
-            executor.submit(gh_json, ["release", "list", "--limit", "5", "--json", "name,publishedAt,tagName"], default=[]),
+            executor.submit(
+                gh_json,
+                [
+                    "issue",
+                    "list",
+                    "--state",
+                    "open",
+                    "--limit",
+                    "200",
+                    "--json",
+                    "number",
+                ],
+                default=[],
+            ),
+            executor.submit(
+                gh_json,
+                ["pr", "list", "--state", "open", "--limit", "200", "--json", "number"],
+                default=[],
+            ),
+            executor.submit(
+                gh_json,
+                [
+                    "release",
+                    "list",
+                    "--limit",
+                    "5",
+                    "--json",
+                    "name,publishedAt,tagName",
+                ],
+                default=[],
+            ),
         ]
         open_issues, open_prs, releases = [f.result() for f in futures]
     return open_issues, open_prs, releases
@@ -928,12 +960,19 @@ def weekly_report_lines(
 
 def run_weekly_retrospective(config: dict[str, Any]) -> dict[str, Any]:
     section = config.get("weekly_retrospective", {})
-    runs = recent_daily_runs()
-    markers = weekly_markers(
-        config.get("reporting", {}).get(
-            "daily_issue_prefix", "[repo-automation] Daily Status Report"
+
+    # ⚡ Bolt Optimization: Parallelize independent read-only API calls using ThreadPoolExecutor to significantly reduce execution latency
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        f_runs = executor.submit(recent_daily_runs)
+        f_markers = executor.submit(
+            weekly_markers,
+            config.get("reporting", {}).get(
+                "daily_issue_prefix", "[repo-automation] Daily Status Report"
+            ),
         )
-    )
+        runs = f_runs.result()
+        markers = f_markers.result()
+
     safe_changes = []
     safe_pr_url = ""
     if ensure_gh_token():
