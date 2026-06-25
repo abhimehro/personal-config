@@ -6,6 +6,33 @@
 
 ## Entry template
 
+## Run — 2026-06-25
+
+### Input tail
+
+- Source report/snapshot: automation memory 2026-06-23 + live GitHub
+- PRs investigated: 11 across 4 repos (3 DIRTY at start: esp#1152, rp#50, rp#44)
+
+### Outcomes
+
+- Salvage draft PRs opened: email-security-pipeline
+  [#1153](https://github.com/abhimehro/email-security-pipeline/pull/1153) (from #1152),
+  repoprompt-ce
+  [#56](https://github.com/abhimehro/repoprompt-ce/pull/56) (from #50)
+- Infra-fix draft PRs opened: 0
+- Originals closed as superseded/no-op: esp#1152, rp#50, rp#44
+
+### Verification status
+
+- Blocking checks: none on `main` (Hydrograph submit-pypi green on main)
+- Local verify: esp salvage `pytest` 641 passed; rp#50 salvage ledger deletions excluded
+- CodeScene remediation: not required this run (all green or Style-only deferrals)
+
+### Handoff
+
+- Maintainer actions required: T1 review esp#1153; T3 review rp#56; T1 review rp#41; Style tail on rp#42/#53; Hydrograph #292 submit-pypi on PR branch
+- Cross-links: see `tasks/pr-review-2026-06-25.md`
+
 ## Run — 2026-06-21
 
 ### Input tail

@@ -809,3 +809,7 @@ optimization.
 ## Lesson 0cr: Salvage one-line fixes from DIRTY Jules PRs; omit CodeScene refactors (2026-06-19)
 
 **Pattern:** pc #1281 bundled a one-line podcast error-path `html_section()` a11y fix with CodeScene-driven `_parse_linear_focus_node` inlining that conflicted with `main`. **Rule:** When a DIRTY bot PR's stated intent is a small functional fix but the diff includes unrelated complexity refactors, salvage only the functional lines onto a fresh `main` branch. **Detection cost:** Low — `gh pr diff --stat` shows large churn in unrelated functions alongside a one-line stated fix in the PR title.
+
+## Lesson 0cs: Stale ledger deletions in DIRTY tooling PRs (2026-06-25)
+
+**Pattern:** repoprompt-ce #50 went `DIRTY` and its branch deleted five `test-suite-contract-ledger.tsv` rows that `main` had added since the branch was cut. **Rule:** Never `git checkout <stale_branch> -- Scripts/Fixtures/test-suite-contract-ledger.tsv` during salvage. Diff the ledger against `main` and drop net-negative ledger hunks even when the rest of the tooling diff is valuable. **Detection cost:** Low — `git diff main..branch --stat` on `*ledger*` shows net-negative line count.
