@@ -7,13 +7,14 @@
 
 ## Current Status
 
-✅ **Control D Service**: Running with VPN-compatible binding (`*:53`)  
-✅ **Windscribe VPN**: Connected (Dallas, US)  
+✅ **Control D Service**: Running with VPN-compatible binding (`*:53`)\
+✅ **Windscribe VPN**: Connected (Dallas, US)\
 ❌ **DNS Filtering**: Not active (VPN overriding Control D DNS)
 
 ## Problem Diagnosis
 
-Windscribe VPN is using its own DNS servers (`1.1.1.1`) instead of Control D (`127.0.0.1`), preventing ad blocking and privacy filtering.
+Windscribe VPN is using its own DNS servers (`1.1.1.1`) instead of Control D
+(`127.0.0.1`), preventing ad blocking and privacy filtering.
 
 ## Solution Options
 

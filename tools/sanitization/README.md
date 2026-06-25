@@ -1,6 +1,7 @@
 # Repo Sanitization
 
-1. Copy `sensitive-paths.txt.sample` to `sensitive-paths.txt` and edit as needed.
+1. Copy `sensitive-paths.txt.sample` to `sensitive-paths.txt` and edit as
+   needed.
 2. Run `git-filter-repo` using that list to purge history.
 
 Example `sensitive-paths.txt`:
