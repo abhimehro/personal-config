@@ -1,114 +1,46 @@
-# PR Triage — 2026-06-21
+# PR Triage — 2026-06-23
 
-## Duplicate & overlap groups
+## Duplicate & overlap analysis
 
-### Group A — personal-config infuse-media-server a11y
-| PR | Files | Keeper | Action |
-| --- | --- | --- | --- |
-| #1303 | `infuse-media-server.py`, tests, palette.md | **#1303** | MERGED |
-| #1301 | same core files | — | CLOSED → superseded by #1303 |
+### Closed as duplicate
 
-### Group B — ctrld-sync restart prompt EOF handling
-| PR | Files | Keeper | Action |
-| --- | --- | --- | --- |
-| #930 | `main.py` only | **#930** | MERGED |
-| #928 | `main.py`, bolt.md | — | CLOSED → duplicate of #930 |
+| Keeper | Closed | Overlap | Rationale |
+|--------|--------|---------|-----------|
+| hg #291 (merged) | hg #290 | `processor.py` np.where optimization | #291 included tests + pyproject; #290 was subset |
+| sc #145 (merged) | sc #142 | `scripts/processor.py` Z-score vectorization | #145 had green CI; #142 blocked on CodeScene |
 
-### Group C — series_correction vectorize processor.py
-| PR | Files | Keeper | Action |
-| --- | --- | --- | --- |
-| #135 | `processor.py` (outlier loop) | **#135** | DEFER (CodeScene) |
-| #121 | `processor.py` (z-score/jump) | — | CLOSED → superseded by #135 |
+### Related clusters (not closed — distinct intent)
 
-### Group D — repoprompt-ce Changelog DateFormatter
-| PR | Files | Keeper | Action |
-| --- | --- | --- | --- |
-| #27 | Changelog.swift + workflow | **#27** | DEFER (Style) |
-| #22 | Changelog.swift, bolt.md | — | CLOSED → superseded by #27 |
+| Cluster | PRs | Notes |
+|---------|-----|-------|
+| personal-config Palette a11y | #1326, #1329 | #1326 adds `.codacy.yml` + ARIA; #1329 focuses screen-reader grouping. Merge sequentially after Codacy infra fix. |
+| repoprompt-ce Changelog perf | #39, #49 | Both touch `Changelog.swift`; #39 extracts DateFormatter, #49 optimizes usage. Not >90% overlap — defer to salvage for ordering. |
+| Hydrograph Bolt np.where | #290, #291 | Resolved: kept #291. |
+| series_correction Bolt Z-score | #142, #145 | Resolved: kept #145. |
 
-### Group E — repoprompt-ce icon button a11y
-| PR | Files | Keeper | Action |
-| --- | --- | --- | --- |
-| #25 (salvage) | focused salvage | **#25** | DEFER (Style) |
-| #26 (Palette) | broader Palette churn | — | CLOSED → superseded by #25 |
+### Superseded
 
-## Superseded / zero-diff
-
-| PR | Reason |
-| --- | --- |
-| Seatek #342 | Zero-diff daily QA PR (0 bytes changed) |
-| personal-config #1300 | Draft session-report PR; canonical reports live on agent branch |
-
-## Security gate review
-
-| PR | Gate | Result |
-| --- | --- | --- |
-| Seatek #343 | Null-byte check before `realpath` | **PASS → MERGED** |
-| personal-config #1287 | AppleScript `--` separator (CWE-74) | **PASS → MERGED** |
-| personal-config #1304 | Workflow YAML corruption + tag pinning | **FAIL → ESCALATE** |
-| repoprompt-ce #23 | Keychain accessibility tighten | **PASS logic; CI fail → DEFER salvage** |
-
-## CodeScene remediation
-
-Posted `/cs-agent skill:fix-code-health-degradations` on:
-- series_correction #121 (before close)
-- series_correction #134
-- series_correction #135
+None identified beyond the two closures above. No stale (>30d) bot PRs in scope.
 
 ## Merge ordering applied
 
-1. Security: Seatek #343, personal-config #1287
-2. Routine CLEAN: esp #1136, pc #1307, pc #1303, pc #1288, ctrld #930, sc #134
-3. Auto-fix: pc #1308 (bolt.md conflict after #1307 merge)
-4. Closes: duplicates and zero-diff after keeper merged
+1. **Dependencies** — esp, Seatek, hg, sc, pc (#1331 codacy-action first)
+2. **CI/QA fixes** — hg #289
+3. **Performance/UI** — hg #291, sc #145, Seatek #358, esp #1140, Seatek #357
+4. **Re-validate siblings** after each merge (Lesson 0cs)
 
-## Deferred tail → Salvage Agent
+## Blockers identified
 
-```yaml
-open_followups:
-  - repo: abhimehro/personal-config
-    pr: 1304
-    reason: ESCALATE — corrupted workflow YAML + action pin regression
-  - repo: abhimehro/series_correction_project_updated
-    pr: 135
-    reason: CodeScene fail after cs-agent; perf vectorize
-  - repo: abhimehro/repoprompt-ce
-    pr: 23
-    reason: T1 security salvage — Keychain; Style+Build fail
-  - repo: abhimehro/repoprompt-ce
-    pr: 24
-    reason: T3 salvage — Linux release tests; Style fail
-  - repo: abhimehro/repoprompt-ce
-    pr: 25
-    reason: T3 salvage — a11y labels; Style fail
-  - repo: abhimehro/repoprompt-ce
-    pr: 27
-    reason: Bolt perf — Style + dependency-review fail
-```
+| Blocker | Affected PRs | Type | Next step |
+|---------|--------------|------|-----------|
+| Codacy Security Scan fail | pc #1330–1337, #1324–1329 | main-side infra | ESCALATE: codacy-action bumped (#1331) but scan still fails on open PRs; investigate Codacy project config |
+| CodeScene code health | ctrld #943 | PR-specific | `/cs-agent` posted; merge #943 then re-run dependabot cluster |
+| mypy/ruff on main (pre-#943) | ctrld #938–942 | blocked by #943 | Merge #943 after CodeScene green |
+| validate (numpy) | Seatek #351 | dependency constraint | DEFER — validate job fails on numpy >=2.5.0 bump |
+| Style / build cluster | rpce #24–49 | salvage tail | Hand off to Phase 2 salvage agent |
 
----
+## Security gate notes
 
-## Phase 2 salvage triage — 2026-06-21 evening
-
-### Reconciliation
-
-| Prior tail PR | Phase 2 outcome |
-| --- | --- |
-| pc #1304 | **CLOSED** → infra-fix [#1311](https://github.com/abhimehro/personal-config/pull/1311) |
-| sc #135 | **OPEN** — CodeScene still failing; cs-agent already posted |
-| rp #23 | **CLOSED** → v2 salvage [#28](https://github.com/abhimehro/repoprompt-ce/pull/28) |
-| rp #24, #25, #27 | **OPEN** — blocked by mashed `dependency-review.yml` on `main`; infra-fix [#29](https://github.com/abhimehro/repoprompt-ce/pull/29) |
-
-### New arrivals (post–Phase 1)
-
-| PR | Disposition |
-| --- | --- |
-| pc [#1310](https://github.com/abhimehro/personal-config/pull/1310) | T1 human review — CWE-78; CI green |
-| ctrld [#932](https://github.com/abhimehro/ctrld-sync/pull/932) | DEFER — CodeScene; cs-agent posted this session |
-| esp [#1138](https://github.com/abhimehro/email-security-pipeline/pull/1138) | Phase 1 merge candidate — CLEAN |
-
-### Human review queue (priority)
-
-1. **T0:** pc [#1311](https://github.com/abhimehro/personal-config/pull/1311), rp [#29](https://github.com/abhimehro/repoprompt-ce/pull/29)
-2. **T1:** pc [#1310](https://github.com/abhimehro/personal-config/pull/1310), rp [#28](https://github.com/abhimehro/repoprompt-ce/pull/28)
-3. **T3:** esp [#1138](https://github.com/abhimehro/email-security-pipeline/pull/1138), ctrld [#932](https://github.com/abhimehro/ctrld-sync/pull/932), sc [#135](https://github.com/abhimehro/series_correction_project_updated/pull/135), rp [#24](https://github.com/abhimehro/repoprompt-ce/pull/24)/[#25](https://github.com/abhimehro/repoprompt-ce/pull/25)/[#27](https://github.com/abhimehro/repoprompt-ce/pull/27)
+- No secrets, permission escalation, or CVE regressions detected in merged PRs.
+- rpce #41 (Keychain accessibility salvage) remains **ESCALATE** — security-sensitive; draft salvage PR.
+- pc #1334 (workflow consolidation) **ESCALATE** — trust boundary (CI/INFRA); blocked on Codacy but warrants human review of workflow YAML integrity per Lesson 0cu.

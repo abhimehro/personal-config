@@ -1,5 +1,17 @@
 # Lessons Learned
 
+## Lesson 0cv: Codacy action bump ≠ Codacy scan green (2026-06-23)
+
+**Pattern:** personal-config #1331 (codacy-analysis-cli-action 1.1.0 → 4.4.7) merged with passing CI, but **all** sibling open PRs still fail `Codacy Security Scan` on re-run. Other gates (CodeQL, Snyk, CodeScene, dependency-review) pass. **Rule:** Treat Codacy failures after an action bump as **ESCALATE** (project token, API config, or org-level Codacy settings)—not auto-fixable by further dependabot bumps alone. **Detection cost:** Low — single failing required check across entire PR queue.
+
+## Lesson 0cw: ctrld dependabot cluster blocked by QA fix PR (2026-06-23)
+
+**Pattern:** ctrld #938–#942 (workflow-only dependabot) fail `mypy`/`ruff` while #943 (Jules QA lint/type fixes) passes those jobs but fails CodeScene. Dependabot branches are already up-to-date with `main`. **Rule:** Merge order is #943 first (post CodeScene `/cs-agent`), then re-run CI on dependabot cluster—workflow bumps inherit lint state from `main`, not from their diffs. **Detection cost:** Low — mypy/ruff fail on zero-Python-file PRs.
+
+## Lesson 0cx: Duplicate Bolt perf PRs — close younger subset (2026-06-23)
+
+**Pattern:** hg #290/#291 and sc #142/#145 were same-intent Bolt optimizations opened hours apart; newer PR had broader diff + green CI. **Rule:** When two Bolt branches touch the same production file with >70% intent overlap, merge the PR with passing CI and more complete diff; close the other with link. **Detection cost:** Low — `gh pr diff --name-only` + title keyword match.
+
 ## Lesson 0ct: Security salvage must update test constants (2026-06-21)
 
 **Pattern:** repoprompt-ce #23 (Keychain accessibility hardening) failed Build because `KeychainServiceTests` still asserted `kSecAttrAccessibleAfterFirstUnlock` while the salvage changed production code to `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`. **Rule:** When salvaging security PRs that change Keychain/crypto constants, grep tests for the old constant and adapt assertions in the same salvage commit (S4). Open `-v2` salvage branch rather than force-pushing. **Detection cost:** Low — CI Build log shows `XCTAssertEqual` mismatch on accessibility string.
