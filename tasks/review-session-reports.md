@@ -66,3 +66,40 @@
   CodeScene still red
 - Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
   `tasks/pr-review-2026-06-12.md`
+
+---
+
+## 2026-06-26 — review-and-merge (cron 13:00 UTC)
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron `0 13 * * *`; preflight PASS (6/6); branch
+  `cursor-agent/automated-pr-workflow-ad02`
+
+### Metrics
+
+- PRs inventoried: 28
+- PRs merged: 21
+- PRs closed: 4
+- PRs escalated: 1
+- PRs deferred: 2
+- Open EOD: 3 (pc #1352, hg #292, rpce #57)
+- Zero-open repos EOD: ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  series_correction_project_updated
+
+### Actions
+
+- Security merges: esp #1153, pc #1356, rpce #41
+- Dependency merges: release-drafter bumps (7), ctrld #950, rpce #42
+- Routine merges: Bolt/Palette/QA/salvage across hg, Seatek, esp, sc, rpce
+- Closed: rpce #53 (superseded by #60); pc #1339/#1346/#1355 (conflicting salvage docs)
+- Escalated: pc #1352 (SHA→tag workflow pin regression)
+- Deferred: hg #292 (submit-pypi); rpce #57 (Style; dependabot rebase posted)
+
+### Follow-ups
+
+- Human decision on pc #1352 tag-vs-SHA policy
+- Salvage agent: hg #292 PyPI path; rpce #57 Style after rebase
+- Snapshot: `tasks/pr-review-2026-06-26.md`
+

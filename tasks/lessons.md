@@ -1,5 +1,9 @@
 # Lessons Learned
 
+## Lesson 0cv: repoprompt-ce Palette PRs can bloat with workflow/Trunk churn (2026-06-26)
+
+**Pattern:** rpce #53 targeted Notifications a11y but changed 72 files (+1123/-6887) including CI workflows, Trunk dirs, and contract ledger — Style failed. Sibling #60 changed 2 files with the same Palette intent and green CI. **Rule:** When a Palette/Bolt PR touches more than ~5 files outside its stated feature path, compare against a newer sibling PR; close the bloated branch and merge the focused keeper. **Detection cost:** Low — `gh pr view --json files,additions,deletions`.
+
 ## Lesson 0ct: Security salvage must update test constants (2026-06-21)
 
 **Pattern:** repoprompt-ce #23 (Keychain accessibility hardening) failed Build because `KeychainServiceTests` still asserted `kSecAttrAccessibleAfterFirstUnlock` while the salvage changed production code to `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`. **Rule:** When salvaging security PRs that change Keychain/crypto constants, grep tests for the old constant and adapt assertions in the same salvage commit (S4). Open `-v2` salvage branch rather than force-pushing. **Detection cost:** Low — CI Build log shows `XCTAssertEqual` mismatch on accessibility string.
