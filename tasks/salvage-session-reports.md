@@ -245,3 +245,39 @@
   3. Phase 1 merge ctrld #892/#893, pc #1234/#1235 after infra fix
   4. Do not merge sa #261 without Gate 2 audit
 - Cross-links: [Session report](tasks/pr-review-2026-06-13.md)
+
+## Run — 2026-06-26
+
+### Input tail
+
+- Source report/snapshot: Live GitHub re-fetch + automation memory (2026-06-25 evening)
+- PRs investigated: 6 across 4 repos (3 CONFLICTING at start: pc#1361, pc#1352, rp#57)
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+| --- | ---: | --- | ---: | --- |
+| repoprompt-ce | 57 | SALVAGE | 62 | SHA-pinned checkout v7; skipped removed ci.yml |
+| personal-config | 1361 | CLOSE-SUPERSEDED | — | Conflicted Phase 1 session-report draft |
+| personal-config | 1352 | ESCALATE | — | SHA→tag workflow pin regression |
+| email-security-pipeline | 1157 | CLOSE-NOOP | — | Zero-diff Jules QA |
+| email-security-pipeline | 1158 | AUTO-RESOLVED | — | CLEAN; Phase 1 merge candidate |
+| Hydrograph_Versus_Seatek_Sensors_Project | 292 | DEFER | — | submit-pypi fail on PR branch |
+
+- Salvage draft PRs opened: 1 (#62)
+- Infra-fix draft PRs opened: 0
+- Originals closed as superseded/no-op/escalate: 4
+
+### Verification status
+
+- Blocking checks: hg #292 submit-pypi on PR branch only; rp #57 Style fail (historical)
+- Local verify: rp salvage `rg actions/checkout` — all SHA-pinned v7 on touched files
+- CodeScene remediation: not required this run
+
+### Handoff
+
+- Maintainer actions required:
+  1. **T3 review** rpce [#62](https://github.com/abhimehro/repoprompt-ce/pull/62) (checkout salvage)
+  2. **Phase 1 merge** esp [#1158](https://github.com/abhimehro/email-security-pipeline/pull/1158)
+  3. **DEFER** hg [#292](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/292)
+- Cross-links: [Session report](tasks/pr-review-2026-06-26.md)

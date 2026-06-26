@@ -1,5 +1,9 @@
 # Lessons Learned
 
+## Lesson 0cy: dependabot checkout salvage when ci.yml removed on main (2026-06-26)
+
+**Pattern:** repoprompt-ce #57 (dependabot checkout 4.2.2→7.0.0) was CONFLICTING because `main` removed `.github/workflows/ci.yml` while the dependabot branch still modified it; dependabot also used mutable `@v7.0.0` tags in ci.yml. **Rule:** Salvage checkout bumps onto fresh `main`: apply SHA-pinned v7 ref (`9c091bb… # v7.0.0`) to surviving workflow files only; do not re-add deleted workflows from the conflicted branch. **Detection cost:** Low — `git merge-tree` shows `removed in local` for deleted files.
+
 ## Lesson 0cv: Codacy action bump ≠ Codacy scan green (2026-06-23)
 
 **Pattern:** personal-config #1331 (codacy-analysis-cli-action 1.1.0 → 4.4.7) merged with passing CI, but **all** sibling open PRs still fail `Codacy Security Scan` on re-run. Other gates (CodeQL, Snyk, CodeScene, dependency-review) pass. **Rule:** Treat Codacy failures after an action bump as **ESCALATE** (project token, API config, or org-level Codacy settings)—not auto-fixable by further dependabot bumps alone. **Detection cost:** Low — single failing required check across entire PR queue.

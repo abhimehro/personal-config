@@ -1,46 +1,44 @@
-# PR Triage — 2026-06-23
+# PR Triage — 2026-06-26
+
+**Session:** Phase 2 salvage-and-cleanup  
+**Input:** Live GitHub re-fetch + memory from 2026-06-25 evening run
+
+## Queue reconciliation
+
+Prior deferred tail (esp#1153, rp#41, rp#56, rp#53, ctrld cluster, pc Codacy queue) **auto-resolved** — those PRs are no longer open. Today's queue is a thin tail of 6 PRs across 4 repos.
+
+## Disposition summary
+
+| Disposition | Count | PRs |
+|-------------|-------|-----|
+| SALVAGE (draft opened) | 1 | rpce #57 → #62 |
+| CLOSE-SUPERSEDED | 2 | pc #1361, rpce #57 |
+| CLOSE-NOOP | 1 | esp #1157 |
+| ESCALATE (closed with rationale) | 1 | pc #1352 |
+| DEFER | 1 | hg #292 |
+| Phase 1 ready (not conflicted) | 1 | esp #1158 |
 
 ## Duplicate & overlap analysis
 
-### Closed as duplicate
-
-| Keeper | Closed | Overlap | Rationale |
-|--------|--------|---------|-----------|
-| hg #291 (merged) | hg #290 | `processor.py` np.where optimization | #291 included tests + pyproject; #290 was subset |
-| sc #145 (merged) | sc #142 | `scripts/processor.py` Z-score vectorization | #145 had green CI; #142 blocked on CodeScene |
-
-### Related clusters (not closed — distinct intent)
-
-| Cluster | PRs | Notes |
-|---------|-----|-------|
-| personal-config Palette a11y | #1326, #1329 | #1326 adds `.codacy.yml` + ARIA; #1329 focuses screen-reader grouping. Merge sequentially after Codacy infra fix. |
-| repoprompt-ce Changelog perf | #39, #49 | Both touch `Changelog.swift`; #39 extracts DateFormatter, #49 optimizes usage. Not >90% overlap — defer to salvage for ordering. |
-| Hydrograph Bolt np.where | #290, #291 | Resolved: kept #291. |
-| series_correction Bolt Z-score | #142, #145 | Resolved: kept #145. |
-
-### Superseded
-
-None identified beyond the two closures above. No stale (>30d) bot PRs in scope.
-
-## Merge ordering applied
-
-1. **Dependencies** — esp, Seatek, hg, sc, pc (#1331 codacy-action first)
-2. **CI/QA fixes** — hg #289
-3. **Performance/UI** — hg #291, sc #145, Seatek #358, esp #1140, Seatek #357
-4. **Re-validate siblings** after each merge (Lesson 0cs)
+No duplicate clusters identified this session. Prior Bolt/perf duplicate policy (Lesson 0cx) already cleared hg/sc queues.
 
 ## Blockers identified
 
 | Blocker | Affected PRs | Type | Next step |
 |---------|--------------|------|-----------|
-| Codacy Security Scan fail | pc #1330–1337, #1324–1329 | main-side infra | ESCALATE: codacy-action bumped (#1331) but scan still fails on open PRs; investigate Codacy project config |
-| CodeScene code health | ctrld #943 | PR-specific | `/cs-agent` posted; merge #943 then re-run dependabot cluster |
-| mypy/ruff on main (pre-#943) | ctrld #938–942 | blocked by #943 | Merge #943 after CodeScene green |
-| validate (numpy) | Seatek #351 | dependency constraint | DEFER — validate job fails on numpy >=2.5.0 bump |
-| Style / build cluster | rpce #24–49 | salvage tail | Hand off to Phase 2 salvage agent |
+| SHA→tag workflow pin regression | pc #1352 | trust boundary | Do not salvage; require SHA-pinned re-roll if consolidation needed |
+| submit-pypi failure on PR branch | hg #292 | infra (PR-only) | DEFER — `main` not blocked; investigate if failure persists on re-run |
+| Style gate (historical) | rpce #57 | resolved in salvage | #62 uses SHA pins; await CI on draft |
 
 ## Security gate notes
 
-- No secrets, permission escalation, or CVE regressions detected in merged PRs.
-- rpce #41 (Keychain accessibility salvage) remains **ESCALATE** — security-sensitive; draft salvage PR.
-- pc #1334 (workflow consolidation) **ESCALATE** — trust boundary (CI/INFRA); blocked on Codacy but warrants human review of workflow YAML integrity per Lesson 0cu.
+- pc #1352 closed under ESCALATE: moving `actions/github-script` and siblings from immutable SHA to `@v9.0.0` tags violates supply-chain pinning policy (Lesson 0cr).
+- rpce #62 salvage preserves SHA pinning (`9c091bb… # v7.0.0`).
+- esp #1158 Palette change is low-risk UI styling; pytest/bandit/CodeQL green — ready for Phase 1 merge.
+- No secrets, auth, or permission escalation detected in salvage diff.
+
+## Merge ordering (maintainer handoff)
+
+1. **T3 review:** rpce [#62](https://github.com/abhimehro/repoprompt-ce/pull/62) (checkout bump salvage)
+2. **Phase 1 merge:** esp [#1158](https://github.com/abhimehro/email-security-pipeline/pull/1158) (Palette validation styling)
+3. **DEFER:** hg [#292](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/292) until submit-pypi root cause confirmed
