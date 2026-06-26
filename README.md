@@ -634,7 +634,7 @@ rather than by hand.
 
 | Formula  | Version | Pinned (date) | Disable date |
 | -------- | ------- | ------------- | ------------ |
-| redshift | 1.12_1 | 2026-06-25 | 2027-06-21 |
+| redshift | 1.12_1  | 2026-06-25    | 2027-06-21   |
 
 <!-- PINNED-FORMULAE:END -->
 
