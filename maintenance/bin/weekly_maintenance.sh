@@ -128,7 +128,7 @@ fi
 
 # Notification
 if command -v osascript >/dev/null 2>&1; then
-	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "$STATUS" "Weekly Maintenance" 2>/dev/null || true
+	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "$STATUS" "Weekly Maintenance" 2>/dev/null || true
 fi
 
 log_info "Weekly maintenance finished: $STATUS"
@@ -157,7 +157,7 @@ if command -v terminal-notifier >/dev/null 2>&1; then
 	fi
 elif command -v osascript >/dev/null 2>&1; then
 	# Fallback to osascript
-	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "$STATUS" "Weekly Maintenance" 2>/dev/null || true
+	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "$STATUS" "Weekly Maintenance" 2>/dev/null || true
 fi
 
 echo "Weekly maintenance completed!"

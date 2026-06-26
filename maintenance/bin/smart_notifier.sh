@@ -237,7 +237,7 @@ smart_notify() {
 			script_body="$script_body buttons {(item 5 of argv), \"OK\"} default button \"OK\""
 		fi
 
-		osascript -e "on run argv" -e "$script_body" -e "end run" "$message" "$title" "$subtitle" "$sound" "$action" 2>/dev/null || notify_log "Failed to send notification: $title"
+		osascript -e "on run argv" -e "$script_body" -e "end run" -- "$message" "$title" "$subtitle" "$sound" "$action" 2>/dev/null || notify_log "Failed to send notification: $title"
 		notify_log "Sent notification [$priority]: $title - $message"
 	else
 		notify_log "osascript not available - notification: $title - $message"

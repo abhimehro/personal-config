@@ -174,7 +174,7 @@ if command -v terminal-notifier >/dev/null 2>&1; then
 		-execute "$HOME/Library/Maintenance/bin/view_logs.sh quick_cleanup" 2>/dev/null || true
 elif command -v osascript >/dev/null 2>&1; then
 	# Fallback to osascript
-	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "Cleaned ${CLEANED} items | Disk: ${DISK_USE}%" "Quick Cleanup" 2>/dev/null || true
+	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "Cleaned ${CLEANED} items | Disk: ${DISK_USE}%" "Quick Cleanup" 2>/dev/null || true
 fi
 
 log_info "Quick cleanup completed: ${CLEANED} items cleaned"

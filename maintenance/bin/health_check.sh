@@ -406,7 +406,7 @@ elif command -v osascript >/dev/null 2>&1; then
 	if ((PANIC_COUNT > 0)) && [[ -n $PANIC_DETAILS ]]; then
 		NOTIFICATION_TEXT+=$'\n'"${PANIC_DETAILS}"
 	fi
-	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "${NOTIFICATION_TEXT}" "Health Check" 2>/dev/null || true
+	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "${NOTIFICATION_TEXT}" "Health Check" 2>/dev/null || true
 fi
 
 log_info "Health check complete: ${HEALTH_STATUS}"

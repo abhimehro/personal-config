@@ -119,7 +119,7 @@ if command -v terminal-notifier >/dev/null 2>&1; then
 elif command -v osascript >/dev/null 2>&1; then
 	# Fallback to osascript
 	if [[ $ONEDRIVE_STATUS != "Running" ]] || [[ $SYNC_STATUS == *"No recent activity"* ]]; then
-		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "$STATUS_MSG" "OneDrive Monitor - Issues Detected" 2>/dev/null || true
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "$STATUS_MSG" "OneDrive Monitor - Issues Detected" 2>/dev/null || true
 		log_warn "OneDrive monitoring detected potential issues"
 	else
 		log_info "OneDrive appears to be working normally"
