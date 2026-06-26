@@ -20,20 +20,20 @@ lint:
     - actionlint@1.7.12
     - bandit@1.9.4
     - black@26.5.1
-    - checkov@3.3.1
-    - deno@2.8.3
+    - checkov@3.3.2
+    - deno@2.9.0
     - dotenv-linter@4.0.0
     - git-diff-check
     - hadolint@2.14.0
     - isort@8.0.1
-    - osv-scanner@2.3.8
-    - ruff@0.15.17
+    - osv-scanner@2.4.0
+    - ruff@0.15.20
     - shellcheck@0.11.0
     - shfmt@3.6.0
     - taplo@0.10.0
     - terrascan@1.19.9
-    - trivy@0.71.1
-    - trufflehog@3.95.5
+    - trivy@0.71.2
+    - trufflehog@3.95.6
     - yamllint@1.38.0
 actions:
   disabled:
@@ -55,5 +55,5 @@ tools:
     - ruby
   enabled:
     - snyk@1.1295.0
-    - trivy@0.71.1
-    - trufflehog@3.95.5
+    - trivy@0.71.2
+    - trufflehog@3.95.6

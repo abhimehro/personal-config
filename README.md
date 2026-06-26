@@ -623,6 +623,64 @@ done
 - **[Deployment Summary](dns-setup/DEPLOYMENT_SUMMARY.md)** - Technical
   implementation details
 
+## 📌 Pinned Formulae (Homebrew)
+
+Some Homebrew formulae are pinned to protect a working install from
+`brew upgrade`. `scripts/pin-redshift.sh` manages the `redshift` entry below;
+the block between the markers is auto-generated, so update it via the script
+rather than by hand.
+
+<!-- PINNED-FORMULAE:START -->
+
+| Formula  | Version | Pinned (date) | Disable date |
+| -------- | ------- | ------------- | ------------ |
+| redshift | 1.12_1  | 2026-06-25    | 2027-06-21   |
+
+<!-- PINNED-FORMULAE:END -->
+
+**Why redshift is pinned:** the core formula is _deprecated_ (upstream is
+unmaintained; last release was 1.12), and Homebrew has it scheduled for
+_disable_ on **June 21, 2027**. Pinning keeps the current build from being
+upgraded/reinstalled out from under the True Tone + manual-elevation config in
+`configs/.config/redshift/redshift.conf`. Pinning protects through the
+deprecation window only; it does **not** survive the disable date, see the
+escape hatch below.
+
+**Manage the pin:**
+
+```bash
+./scripts/pin-redshift.sh           # pin redshift + refresh the block above
+./scripts/pin-redshift.sh --fetch   # also cache the bottle and record its path
+brew list --pinned                  # confirm what is pinned
+brew unpin redshift                 # release the pin when migrating
+```
+
+### Escape hatch after the disable date (source build)
+
+When `redshift` is disabled, a cached bottle is **not** a reliable long-term
+fallback: a bottle is a frozen binary compiled against today's macOS SDK and
+today's `glib`/`gettext`, so an OS bump or a dependency upgrade can break its
+linkage with no way to rebuild it. The durable path is a **from-source build**,
+vendored into a personal tap so `brew` keeps managing it and recompiles against
+whatever libraries are current at the time:
+
+```bash
+brew tap-new "$USER/local"
+brew extract --version=1.12 redshift "$USER/local"
+brew install --build-from-source "$USER/local/redshift@1.12"
+```
+
+A cached bottle is still worth keeping as a _convenience snapshot_ for a quick
+same-OS reinstall, but treat it as disposable, not as the guarantee. Its
+resolved location (populated by `--fetch`) lives outside this repo:
+
+<!-- REDSHIFT-CACHE-PATH:START -->
+
+- Cached bottle artifact (lives **outside** this repo — do not commit):
+  `/Users/speedybee/Library/Caches/Homebrew/downloads/623d419163f0150768b1328191f9fb4095d89066e4452abf965ff39f3abf095a--redshift--1.12_1.arm64_tahoe.bottle.1.tar.gz`
+
+<!-- REDSHIFT-CACHE-PATH:END -->
+
 ## 🚧 Future Enhancements
 
 - [ ] **Automated VPN Detection** - Dynamic VPN provider switching
