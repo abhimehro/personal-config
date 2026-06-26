@@ -211,7 +211,7 @@ if command -v terminal-notifier >/dev/null 2>&1; then
 elif command -v osascript >/dev/null 2>&1; then
 	# Fallback to osascript
 	if [[ $GDRIVE_STATUS != "Running" ]] || [[ $SYNC_STATUS == *"No recent activity"* ]] || [[ $SYNC_STATUS == *"errors"* ]]; then
-		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "$STATUS_MSG
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "$STATUS_MSG
 $BACKUP_MSG" "Google Drive Monitor - Issues Detected" 2>/dev/null || true
 		log_warn "Google Drive monitoring detected potential issues"
 	else

@@ -39,7 +39,7 @@ log_info "System metrics collection started"
 
 # CPU and Load Metrics
 # Read uptime once to avoid spawning multiple processes
-read -r LOAD_1MIN LOAD_5MIN LOAD_15MIN <<< "$(uptime | awk -F'load averages:' '{print $2}' | tr -d ',' | awk '{print $1, $2, $3}')"
+read -r LOAD_1MIN LOAD_5MIN LOAD_15MIN <<<"$(uptime | awk -F'load averages:' '{print $2}' | tr -d ',' | awk '{print $1, $2, $3}')"
 LOAD_1MIN=${LOAD_1MIN:-0}
 LOAD_5MIN=${LOAD_5MIN:-0}
 LOAD_15MIN=${LOAD_15MIN:-0}
@@ -137,7 +137,7 @@ fi
 
 # Process and System Load Analysis
 # Read ps aux once to avoid spawning multiple processes
-read -r PROCESS_COUNT HIGH_CPU_PROCESSES HIGH_MEM_PROCESSES <<< "$(ps aux | awk '
+read -r PROCESS_COUNT HIGH_CPU_PROCESSES HIGH_MEM_PROCESSES <<<"$(ps aux | awk '
   NR>1 {
     count++
     if ($3 > 10.0) cpu++
@@ -157,7 +157,7 @@ log_metric "high_memory_processes" "$HIGH_MEM_PROCESSES" "count"
 
 # Maintenance System Health
 # Read launchctl list once to avoid spawning multiple processes
-read -r MAINTENANCE_AGENTS FAILED_AGENTS <<< "$(launchctl list | awk '
+read -r MAINTENANCE_AGENTS FAILED_AGENTS <<<"$(launchctl list | awk '
   /com\.abhimehrotra\.maintenance/ {
     count++
     if ($3 != "0") failed++
@@ -291,7 +291,7 @@ if [[ $OVERALL_HEALTH == "critical" ]]; then
 			-sound "Basso" \
 			-group "maintenance" 2>/dev/null || true
 	elif command -v osascript >/dev/null 2>&1; then
-		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv) sound name "Basso"' -e 'end run' "System health is critical! Check metrics for details." "System Alert" 2>/dev/null || true
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv) sound name "Basso"' -e 'end run' -- "System health is critical! Check metrics for details." "System Alert" 2>/dev/null || true
 	fi
 fi
 

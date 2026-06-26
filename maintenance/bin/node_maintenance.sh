@@ -221,7 +221,7 @@ if command -v terminal-notifier >/dev/null 2>&1; then
 	fi
 elif command -v osascript >/dev/null 2>&1; then
 	# Fallback to osascript
-	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "$STATUS_MSG" "Node.js Maintenance" 2>/dev/null || true
+	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "$STATUS_MSG" "Node.js Maintenance" 2>/dev/null || true
 fi
 
 log_info "Node.js maintenance complete: $STATUS_MSG"

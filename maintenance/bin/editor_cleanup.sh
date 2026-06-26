@@ -160,10 +160,10 @@ total_freed_mb=$((total_freed / 1024))
 # Notification
 if command -v osascript >/dev/null 2>&1; then
 	if [[ $total_freed_mb -gt 0 ]]; then
-		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "Completed - Freed ${total_freed_mb}MB" "Editor Cleanup" 2>/dev/null || true
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "Completed - Freed ${total_freed_mb}MB" "Editor Cleanup" 2>/dev/null || true
 		log_info "Editor cache cleanup freed ${total_freed_mb}MB total"
 	else
-		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "Completed - Caches already clean" "Editor Cleanup" 2>/dev/null || true
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "Completed - Caches already clean" "Editor Cleanup" 2>/dev/null || true
 		log_info "Editor caches were already clean"
 	fi
 fi
