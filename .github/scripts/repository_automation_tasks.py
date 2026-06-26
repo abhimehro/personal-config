@@ -198,7 +198,8 @@ def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
 
 
 def _extract_repo_id(action_ref: str) -> str | None:
-    if action_ref.startswith("./") or action_ref.startswith("docker://"):
+    # ⚡ Bolt Optimization: Use tuple check to evaluate multiple startswith strings simultaneously at the C-level
+    if action_ref.startswith(("./", "docker://")):
         return None
     parts = action_ref.split("/")
     if len(parts) < 2:
@@ -367,8 +368,10 @@ def close_invalid_prs(branch_prefix: str) -> None:
         ["pr", "list", "--state", "open", "--json", "number,headRefName,body"],
         default=[],
     )
+    # ⚡ Bolt Optimization: Hoist loop-invariant string replacement out of the iteration to prevent redundant allocations
+    prefix = branch_prefix.replace("/", "-")
     for pr in open_prs:
-        if not pr.get("headRefName", "").startswith(branch_prefix.replace("/", "-")):
+        if not pr.get("headRefName", "").startswith(prefix):
             continue
         if _pr_has_invalid_tags(pr.get("body", "")):
             print(

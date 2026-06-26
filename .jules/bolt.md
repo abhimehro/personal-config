@@ -534,3 +534,7 @@ invocation.
 ## 2026-06-25 - Python str.startswith() Performance
 **Learning:** Python's C-implemented `.startswith()` is faster than short-circuiting with Python-level character indexing and set allocations.
 **Action:** Do not manually check the first character of strings in Python bytecode when `.startswith()` can handle it natively in C.
+## 2026-03-10 - [Avoid redundant string replacements inside loops and multiple startswith strings calls]
+
+**Learning:** Evaluating loop-invariant string operations like `replace("/", "-")` inside a loop iterations causes unnecessary allocations. Similarly, calling `startswith()` sequentially inside a tight loop causes unecessary python overhead.
+**Action:** Hoist the string operations out of the loop and use a single tuple in `.startswith(("string1", "string2"))` to ensure operations evaluate at the C-level.
