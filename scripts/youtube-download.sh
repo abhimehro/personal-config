@@ -150,5 +150,5 @@ info "Video saved to ~/Downloads"
 if command -v terminal-notifier >/dev/null 2>&1; then
 	terminal-notifier -title "Download Complete" -message "Video saved to Downloads"
 elif [[ $(uname) == "Darwin" ]] && command -v osascript >/dev/null 2>&1; then
-	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "Video saved to Downloads" "Download Complete"
+	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "Video saved to Downloads" "Download Complete"
 fi

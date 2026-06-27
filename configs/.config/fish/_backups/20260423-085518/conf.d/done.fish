@@ -282,9 +282,9 @@ if set -q __done_enabled
 
 
                 if test "$__done_notify_sound" -eq 1
-                    osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv) sound name "Glass"' -e 'end run' "$message" "$title"
+                    osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv) sound name "Glass"' -e 'end run' -- "$message" "$title"
                 else
-                    osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "$message" "$title"
+                    osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "$message" "$title"
                 end
 
             else if type -q notify-send # Linux notify-send

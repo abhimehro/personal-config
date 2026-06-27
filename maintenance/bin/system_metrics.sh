@@ -291,7 +291,7 @@ if [[ $OVERALL_HEALTH == "critical" ]]; then
 			-sound "Basso" \
 			-group "maintenance" 2>/dev/null || true
 	elif command -v osascript >/dev/null 2>&1; then
-		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv) sound name "Basso"' -e 'end run' "System health is critical! Check metrics for details." "System Alert" 2>/dev/null || true
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv) sound name "Basso"' -e 'end run' -- "System health is critical! Check metrics for details." "System Alert" 2>/dev/null || true
 	fi
 fi
 

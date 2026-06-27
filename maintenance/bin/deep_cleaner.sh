@@ -326,7 +326,7 @@ log_info "Deep cleaning analysis complete"
 
 # Notification
 if command -v osascript >/dev/null 2>&1; then
-	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "Analysis complete. Check report for cleanup recommendations." "Deep Cleaner" 2>/dev/null || true
+	osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "Analysis complete. Check report for cleanup recommendations." "Deep Cleaner" 2>/dev/null || true
 fi
 
 echo ""
