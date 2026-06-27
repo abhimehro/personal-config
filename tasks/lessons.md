@@ -1,5 +1,9 @@
 # Lessons Learned
 
+## Lesson 0cy: Sentinel osascript duplicate cluster — merge broader fix (2026-06-27)
+
+**Pattern:** personal-config #1363 and #1366 both fix AppleScript option injection via `osascript --` delimiter, opened same day. #1366 touches 20 files (includes archive scripts, fish backup, smart_notifier) vs #1363's 16. **Rule:** When multiple Sentinel PRs share >90% file overlap on the same vulnerability class, merge the CRITICAL/HIGH-labelled PR with the broader diff; close the subset with link. Merge security fixes before dependency/workflow PRs. **Detection cost:** Low — `gh pr diff --name-only` + Sentinel title prefix.
+
 ## Lesson 0cv: Codacy action bump ≠ Codacy scan green (2026-06-23)
 
 **Pattern:** personal-config #1331 (codacy-analysis-cli-action 1.1.0 → 4.4.7) merged with passing CI, but **all** sibling open PRs still fail `Codacy Security Scan` on re-run. Other gates (CodeQL, Snyk, CodeScene, dependency-review) pass. **Rule:** Treat Codacy failures after an action bump as **ESCALATE** (project token, API config, or org-level Codacy settings)—not auto-fixable by further dependabot bumps alone. **Detection cost:** Low — single failing required check across entire PR queue.

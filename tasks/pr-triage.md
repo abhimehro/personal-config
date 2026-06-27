@@ -1,46 +1,44 @@
-# PR Triage — 2026-06-23
+# PR Triage — 2026-06-27
 
 ## Duplicate & overlap analysis
 
-### Closed as duplicate
+### Closed as duplicate / superseded
 
 | Keeper | Closed | Overlap | Rationale |
 |--------|--------|---------|-----------|
-| hg #291 (merged) | hg #290 | `processor.py` np.where optimization | #291 included tests + pyproject; #290 was subset |
-| sc #145 (merged) | sc #142 | `scripts/processor.py` Z-score vectorization | #145 had green CI; #142 blocked on CodeScene |
+| pc #1366 (merged) | pc #1363 | 16/20 maintenance scripts — osascript `--` delimiter | #1366 is CRITICAL/HIGH, broader file set (archive, fish backup, smart_notifier) |
+| — | Seatek #374 | 0 files | Zero-diff QA summary only; no code changes |
 
-### Related clusters (not closed — distinct intent)
+### Related clusters (resolved)
 
-| Cluster | PRs | Notes |
-|---------|-----|-------|
-| personal-config Palette a11y | #1326, #1329 | #1326 adds `.codacy.yml` + ARIA; #1329 focuses screen-reader grouping. Merge sequentially after Codacy infra fix. |
-| repoprompt-ce Changelog perf | #39, #49 | Both touch `Changelog.swift`; #39 extracts DateFormatter, #49 optimizes usage. Not >90% overlap — defer to salvage for ordering. |
-| Hydrograph Bolt np.where | #290, #291 | Resolved: kept #291. |
-| series_correction Bolt Z-score | #142, #145 | Resolved: kept #145. |
+| Cluster | PRs | Resolution |
+|---------|-----|------------|
+| personal-config Sentinel osascript | #1363, #1366 | Merged #1366; closed #1363 |
+| repoprompt-ce dependabot cache | #63, #62 | Both merged (distinct actions) |
+| series_correction Bolt perf | #157, #158 | Both merged (distinct files/intent) |
 
-### Superseded
+### Superseded / stale
 
-None identified beyond the two closures above. No stale (>30d) bot PRs in scope.
+- No stale (>30d) bot PRs in scope.
+- hg #292 remains open (3d old) — blocked on CI, not stale.
 
 ## Merge ordering applied
 
-1. **Dependencies** — esp, Seatek, hg, sc, pc (#1331 codacy-action first)
-2. **CI/QA fixes** — hg #289
-3. **Performance/UI** — hg #291, sc #145, Seatek #358, esp #1140, Seatek #357
-4. **Re-validate siblings** after each merge (Lesson 0cs)
+1. **Security** — pc #1366 (Sentinel osascript option injection)
+2. **Dependencies** — ctrld #953, esp #1160, rpce #63, rpce #62
+3. **UI / perf / refactor** — esp #1158, sc #157, sc #158, hg #301, rpce #67, #66, #65
 
 ## Blockers identified
 
 | Blocker | Affected PRs | Type | Next step |
 |---------|--------------|------|-----------|
-| Codacy Security Scan fail | pc #1330–1337, #1324–1329 | main-side infra | ESCALATE: codacy-action bumped (#1331) but scan still fails on open PRs; investigate Codacy project config |
-| CodeScene code health | ctrld #943 | PR-specific | `/cs-agent` posted; merge #943 then re-run dependabot cluster |
-| mypy/ruff on main (pre-#943) | ctrld #938–942 | blocked by #943 | Merge #943 after CodeScene green |
-| validate (numpy) | Seatek #351 | dependency constraint | DEFER — validate job fails on numpy >=2.5.0 bump |
-| Style / build cluster | rpce #24–49 | salvage tail | Hand off to Phase 2 salvage agent |
+| SHA→tag workflow pin regression | pc #1367 | CI/INFRA trust boundary | ESCALATE — restore commit SHA pins or human approval for tag policy |
+| submit-pypi failing | hg #292 | recurring CI infra | DEFER — investigate PyPI publish workflow (since 2026-06-23) |
+| Draft salvage report | pc #1362 | Phase 2 handoff | DEFER — Salvage Agent |
 
 ## Security gate notes
 
-- No secrets, permission escalation, or CVE regressions detected in merged PRs.
-- rpce #41 (Keychain accessibility salvage) remains **ESCALATE** — security-sensitive; draft salvage PR.
-- pc #1334 (workflow consolidation) **ESCALATE** — trust boundary (CI/INFRA); blocked on Codacy but warrants human review of workflow YAML integrity per Lesson 0cu.
+- **Merged #1366:** Adds `osascript ... --` delimiter before user-controlled notification args — defense-in-depth against AppleScript option injection. All gates passed.
+- **Blocked #1367:** Regresses pinned SHAs to mutable `@v*` tags across 7 workflow files — violates supply-chain pinning policy (Lesson 0cr).
+- No secrets, permission escalation, or CVE regressions in merged PRs.
+- rpce security salvage cluster cleared — #62 merged checkout bump; no open security PRs remain.
