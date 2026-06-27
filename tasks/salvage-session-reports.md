@@ -6,6 +6,38 @@
 
 ## Entry template
 
+## Run — 2026-06-27
+
+### Input tail
+
+- Source report/snapshot: `tasks/pr-review-2026-06-27.md` (Phase 1 deferred tail) + live GitHub
+- PRs investigated: 4 across 2 repos (0 DIRTY/CONFLICTING at start)
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | #1367 | ESCALATE-CLOSE | — | SHA→tag workflow pin regression |
+| personal-config | #1362 | CLOSE-SUPERSEDED | — | Draft salvage docs from 2026-06-26 |
+| Hydrograph_Versus_Seatek_Sensors_Project | #292 | AUTO-RESOLVED | — | `update-branch` cleared stale submit-pypi |
+| email-security-pipeline | #1161 | PHASE-1-MERGE | — | Post-Phase-1 Jules formatting PR |
+
+- Salvage draft PRs opened: 0
+- Infra-fix draft PRs opened: 0
+- Originals closed: pc#1367, pc#1362
+- Cross-linked: hg#292, esp#1161
+
+### Verification status
+
+- Blocking checks: none after `update-branch` on hg#292
+- Local verify: preflight PASS 6/6; `rg 'uses:.*uses:'` on pc#1367 diff → no mashed YAML (SHA→tag only)
+- CodeScene remediation: not required this run
+
+### Handoff
+
+- Maintainer actions required: Phase 1 squash-merge **hg#292** and **esp#1161** (both all-green)
+- Cross-links: `tasks/pr-review-2026-06-27.md` Phase 2 section
+
 ## Run — 2026-06-21
 
 ### Input tail

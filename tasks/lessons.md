@@ -1,5 +1,9 @@
 # Lessons Learned
 
+## Lesson 0cz: Stale submit-pypi on old dependabot branches (2026-06-27)
+
+**Pattern:** hg #292 showed `submit-pypi` FAILURE with `Cannot overwrite a value (at line 48, column 30)` in `pyproject.toml` from a 2026-06-23 CI run, but current `main` submit-pypi passes and `pyproject.toml` parses locally. After `gh api …/pulls/292/update-branch`, all checks including submit-pypi went green without code changes. **Rule:** Before DEFER-ing dependabot PRs for submit-pypi failures, sync with `update-branch` and re-run CI — stale branch state can surface transient parse errors that `main` no longer has. **Detection cost:** Low — failure date older than latest `main` green submit-pypi run.
+
 ## Lesson 0cv: Codacy action bump ≠ Codacy scan green (2026-06-23)
 
 **Pattern:** personal-config #1331 (codacy-analysis-cli-action 1.1.0 → 4.4.7) merged with passing CI, but **all** sibling open PRs still fail `Codacy Security Scan` on re-run. Other gates (CodeQL, Snyk, CodeScene, dependency-review) pass. **Rule:** Treat Codacy failures after an action bump as **ESCALATE** (project token, API config, or org-level Codacy settings)—not auto-fixable by further dependabot bumps alone. **Detection cost:** Low — single failing required check across entire PR queue.

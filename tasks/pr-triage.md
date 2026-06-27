@@ -1,46 +1,44 @@
-# PR Triage — 2026-06-23
+# PR Triage — 2026-06-27 (Phase 2 salvage)
+
+## Input tail (from Phase 1 morning)
+
+| Repo | PR | Phase 1 disposition | Phase 2 outcome |
+|------|-----|---------------------|-----------------|
+| personal-config | #1367 | ESCALATE (SHA→tag) | **CLOSED** — escalate-close |
+| personal-config | #1362 | DEFER (draft salvage docs) | **CLOSED** — superseded |
+| Hydrograph_Versus_Seatek_Sensors_Project | #292 | DEFER (submit-pypi) | **AUTO-RESOLVED** — update-branch + CI green |
+
+## Post-Phase-1 arrivals
+
+| Repo | PR | Notes |
+|------|-----|-------|
+| email-security-pipeline | #1161 | Jules Palette black/isort formatting; 641 pytest pass; no salvage needed |
 
 ## Duplicate & overlap analysis
 
-### Closed as duplicate
+No duplicate clusters identified. Zero CONFLICTING PRs in scope.
 
-| Keeper | Closed | Overlap | Rationale |
-|--------|--------|---------|-----------|
-| hg #291 (merged) | hg #290 | `processor.py` np.where optimization | #291 included tests + pyproject; #290 was subset |
-| sc #145 (merged) | sc #142 | `scripts/processor.py` Z-score vectorization | #145 had green CI; #142 blocked on CodeScene |
+## Blockers resolved
 
-### Related clusters (not closed — distinct intent)
+| Blocker | PR | Resolution |
+|---------|-----|------------|
+| submit-pypi stale failure | hg #292 | `gh api …/update-branch` synced with `main`; submit-pypi now passes |
+| SHA→tag workflow regression | pc #1367 | Closed with escalate comment; not salvageable per Lesson 0cr |
 
-| Cluster | PRs | Notes |
-|---------|-----|-------|
-| personal-config Palette a11y | #1326, #1329 | #1326 adds `.codacy.yml` + ARIA; #1329 focuses screen-reader grouping. Merge sequentially after Codacy infra fix. |
-| repoprompt-ce Changelog perf | #39, #49 | Both touch `Changelog.swift`; #39 extracts DateFormatter, #49 optimizes usage. Not >90% overlap — defer to salvage for ordering. |
-| Hydrograph Bolt np.where | #290, #291 | Resolved: kept #291. |
-| series_correction Bolt Z-score | #142, #145 | Resolved: kept #145. |
+## Remaining blockers
 
-### Superseded
+None for salvage. Two PRs await **Phase 1 merge** only:
 
-None identified beyond the two closures above. No stale (>30d) bot PRs in scope.
-
-## Merge ordering applied
-
-1. **Dependencies** — esp, Seatek, hg, sc, pc (#1331 codacy-action first)
-2. **CI/QA fixes** — hg #289
-3. **Performance/UI** — hg #291, sc #145, Seatek #358, esp #1140, Seatek #357
-4. **Re-validate siblings** after each merge (Lesson 0cs)
-
-## Blockers identified
-
-| Blocker | Affected PRs | Type | Next step |
-|---------|--------------|------|-----------|
-| Codacy Security Scan fail | pc #1330–1337, #1324–1329 | main-side infra | ESCALATE: codacy-action bumped (#1331) but scan still fails on open PRs; investigate Codacy project config |
-| CodeScene code health | ctrld #943 | PR-specific | `/cs-agent` posted; merge #943 then re-run dependabot cluster |
-| mypy/ruff on main (pre-#943) | ctrld #938–942 | blocked by #943 | Merge #943 after CodeScene green |
-| validate (numpy) | Seatek #351 | dependency constraint | DEFER — validate job fails on numpy >=2.5.0 bump |
-| Style / build cluster | rpce #24–49 | salvage tail | Hand off to Phase 2 salvage agent |
+1. esp #1161 — formatting-only, all green
+2. hg #292 — dependabot `actions/cache` 5.0.5 → 6.0.0, all green after sync
 
 ## Security gate notes
 
-- No secrets, permission escalation, or CVE regressions detected in merged PRs.
-- rpce #41 (Keychain accessibility salvage) remains **ESCALATE** — security-sensitive; draft salvage PR.
-- pc #1334 (workflow consolidation) **ESCALATE** — trust boundary (CI/INFRA); blocked on Codacy but warrants human review of workflow YAML integrity per Lesson 0cu.
+- No secrets, auth, or trust-boundary changes in salvage actions.
+- pc #1367 touched workflow YAML but was closed (not merged) due to pin regression.
+- esp #1161 is formatting-only; bandit/CodeQL/Snyk all pass.
+
+## Merge ordering (Phase 1 handoff)
+
+1. hg #292 — dependency bump (workflow-only)
+2. esp #1161 — formatting (large diff but zero functional intent)
