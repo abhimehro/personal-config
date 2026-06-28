@@ -1,65 +1,66 @@
-# PR Inventory — 2026-06-23
+# PR Inventory — 2026-06-28
 
-**Session:** Automated PR review-and-merge (cron)  
-**Preflight:** PASS 6/6 configured repos  
+**Session:** Automated PR review-and-merge (cron `0 13 * * *`)  
+**Preflight:** PASS 6/6 configured repos (+ repoprompt-ce processed)  
 **Mode:** review-and-merge (squash)  
 **Stale threshold:** 30 days
 
 ## Summary
 
-| Repo | Open (in-scope) | Merged this session | Closed | Remainder |
-|------|-----------------|---------------------|--------|-----------|
-| personal-config | 10 | 1 (#1331) | 0 | 10 |
-| ctrld-sync | 7 | 0 | 0 | 7 |
-| email-security-pipeline | 0 | 3 | 0 | **0** |
-| Seatek_Analysis | 1 | 7 | 0 | 1 |
-| Hydrograph_Versus_Seatek_Sensors_Project | 0 | 3 | 1 (#290) | **0** |
-| series_correction_project_updated | 1 | 1 | 1 (#142) | 1 |
-| repoprompt-ce | 13 | 0 | 0 | 13 |
+| Repo | Open (start) | Merged | Closed | Deferred/Escalated | Remainder |
+|------|--------------|--------|--------|-------------------|-----------|
+| personal-config | 3 | 0 | 1 (#1372) | 2 (#1369, #1370 draft) | 2 |
+| ctrld-sync | 0 | 0 | 0 | 0 | **0** |
+| email-security-pipeline | 1 | 1 (#1161) | 0 | 0 | **0** |
+| Seatek_Analysis | 1 | 0 | 1 (#377) | 0 | **0** |
+| Hydrograph_Versus_Seatek_Sensors_Project | 1 | 1 (#292) | 0 | 0 | **0** |
+| series_correction_project_updated | 0 | 0 | 0 | 0 | **0** |
+| repoprompt-ce | 3 | 1 (#71) | 1 (#69) | 1 (#70) | 1 |
 
-## Inventory (post-session remainder)
+**Totals:** 9 in-scope PRs → 3 merged, 3 closed, 3 deferred/escalated.
 
-| Repo | PR | Author | Category | CI | Conflicts | Age (d) | Status |
-|------|-----|--------|----------|-----|-----------|---------|--------|
-| personal-config | [#1337](https://github.com/abhimehro/personal-config/pull/1337) | abhimehro | PERFORMANCE | FAIL (Codacy) | MERGEABLE | 0 | DEFER |
-| personal-config | [#1336](https://github.com/abhimehro/personal-config/pull/1336) | abhimehro | PERFORMANCE | FAIL (Codacy) | MERGEABLE | 0 | DEFER |
-| personal-config | [#1334](https://github.com/abhimehro/personal-config/pull/1334) | abhimehro | CI/INFRA | FAIL (Codacy) | MERGEABLE | 0 | ESCALATE |
-| personal-config | [#1333](https://github.com/abhimehro/personal-config/pull/1333) | dependabot | DEPENDENCY | FAIL (Codacy) | MERGEABLE | 0 | DEFER |
-| personal-config | [#1332](https://github.com/abhimehro/personal-config/pull/1332) | dependabot | DEPENDENCY | FAIL (Codacy) | MERGEABLE | 0 | DEFER |
-| personal-config | [#1330](https://github.com/abhimehro/personal-config/pull/1330) | dependabot | DEPENDENCY | FAIL (Codacy) | MERGEABLE | 0 | DEFER |
-| personal-config | [#1329](https://github.com/abhimehro/personal-config/pull/1329) | abhimehro | UI | FAIL (Codacy) | MERGEABLE | 0 | DEFER |
-| personal-config | [#1326](https://github.com/abhimehro/personal-config/pull/1326) | abhimehro | UI | FAIL (Codacy) | MERGEABLE | 0 | DEFER |
-| personal-config | [#1325](https://github.com/abhimehro/personal-config/pull/1325) | cursor | CI/INFRA | FAIL (Codacy) | MERGEABLE | 0 | DEFER (draft) |
-| personal-config | [#1324](https://github.com/abhimehro/personal-config/pull/1324) | cursor | CI/INFRA | FAIL (Codacy) | MERGEABLE | 1 | DEFER (draft) |
-| ctrld-sync | [#943](https://github.com/abhimehro/ctrld-sync/pull/943) | abhimehro | REFACTOR | FAIL (CodeScene) | MERGEABLE | 0 | DEFER (cs-agent posted) |
-| ctrld-sync | [#942–938](https://github.com/abhimehro/ctrld-sync/pull/942) | dependabot | DEPENDENCY | FAIL (mypy/ruff) | MERGEABLE | 0 | DEFER (blocked by #943) |
-| ctrld-sync | [#936](https://github.com/abhimehro/ctrld-sync/pull/936) | cursor | REFACTOR | FAIL (mypy) | MERGEABLE | 0 | DEFER (draft) |
-| Seatek_Analysis | [#351](https://github.com/abhimehro/Seatek_Analysis/pull/351) | dependabot | DEPENDENCY | FAIL (validate) | MERGEABLE | 0 | DEFER |
-| series_correction_project_updated | [#144](https://github.com/abhimehro/series_correction_project_updated/pull/144) | abhimehro | REFACTOR | PENDING | MERGEABLE | 0 | DEFER (cs-agent posted) |
-| repoprompt-ce | [#49](https://github.com/abhimehro/repoprompt-ce/pull/49) | abhimehro | PERFORMANCE | FAIL (Style) | MERGEABLE | 0 | DEFER |
-| repoprompt-ce | [#48](https://github.com/abhimehro/repoprompt-ce/pull/48) | abhimehro | UI | FAIL | MERGEABLE | 0 | DEFER |
-| repoprompt-ce | [#47](https://github.com/abhimehro/repoprompt-ce/pull/47) | abhimehro | REFACTOR | FAIL | MERGEABLE | 0 | DEFER |
-| repoprompt-ce | [#46–42](https://github.com/abhimehro/repoprompt-ce/pull/46) | dependabot | DEPENDENCY | FAIL (Style) | MERGEABLE | 0 | DEFER |
-| repoprompt-ce | [#41](https://github.com/abhimehro/repoprompt-ce/pull/41) | abhimehro | SECURITY | FAIL | MERGEABLE | 0 | ESCALATE (draft salvage) |
-| repoprompt-ce | [#39](https://github.com/abhimehro/repoprompt-ce/pull/39) | abhimehro | PERFORMANCE | FAIL (Style) | MERGEABLE | 1 | DEFER |
-| repoprompt-ce | [#25](https://github.com/abhimehro/repoprompt-ce/pull/25) | abhimehro | UI | FAIL (Style) | MERGEABLE | 2 | DEFER (salvage) |
-| repoprompt-ce | [#24](https://github.com/abhimehro/repoprompt-ce/pull/24) | abhimehro | REFACTOR | FAIL (Style) | MERGEABLE | 2 | DEFER (salvage) |
+## Inventory (session start)
+
+| Repo | PR | Author | Category | CI | Conflicts | Age (d) | Disposition |
+|------|-----|--------|----------|-----|-----------|---------|-------------|
+| personal-config | [#1372](https://github.com/abhimehro/personal-config/pull/1372) | abhimehro | CI/INFRA | PASS | CLEAN | 0 | **CLOSED** (SHA→tag escalation) |
+| personal-config | [#1370](https://github.com/abhimehro/personal-config/pull/1370) | app/cursor | DOCS | PASS | CLEAN | 0 | DEFER (draft salvage) |
+| personal-config | [#1369](https://github.com/abhimehro/personal-config/pull/1369) | app/cursor | DOCS | PASS | CLEAN | 0 | DEFER (draft Phase 1 report) |
+| email-security-pipeline | [#1161](https://github.com/abhimehro/email-security-pipeline/pull/1161) | abhimehro (Jules) | CI/QA | PASS | CLEAN | 0 | MERGED |
+| Seatek_Analysis | [#377](https://github.com/abhimehro/Seatek_Analysis/pull/377) | abhimehro (Jules) | CI/QA | PASS | CLEAN | 0 | CLOSED (zero-diff) |
+| Hydrograph_Versus_Seatek_Sensors_Project | [#292](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/292) | dependabot | DEPENDENCY | PASS | CLEAN | 4 | MERGED |
+| repoprompt-ce | [#71](https://github.com/abhimehro/repoprompt-ce/pull/71) | abhimehro (Bolt) | PERFORMANCE | PASS | CLEAN | 0 | MERGED |
+| repoprompt-ce | [#70](https://github.com/abhimehro/repoprompt-ce/pull/70) | abhimehro (Palette) | UI/LICENSE | PASS | CLEAN | 0 | **ESCALATE** |
+| repoprompt-ce | [#69](https://github.com/abhimehro/repoprompt-ce/pull/69) | abhimehro (Jules) | CI/QA | PASS | CLEAN | 0 | CLOSED (zero-diff) |
+
+## Remainder (post-session)
+
+| Repo | PR | Status |
+|------|-----|--------|
+| personal-config | [#1369](https://github.com/abhimehro/personal-config/pull/1369) | DEFER — draft Phase 1 session report |
+| personal-config | [#1370](https://github.com/abhimehro/personal-config/pull/1370) | DEFER — draft Phase 2 salvage report |
+| repoprompt-ce | [#70](https://github.com/abhimehro/repoprompt-ce/pull/70) | ESCALATE — Apache→MIT license change + README churn bundled with 4-line a11y fix |
+
+## Repos at 0 actionable open EOD
+
+- abhimehro/ctrld-sync
+- abhimehro/email-security-pipeline
+- abhimehro/Seatek_Analysis
+- abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+- abhimehro/series_correction_project_updated
 
 ## Merged this session
 
 | Repo | PR | Title |
 |------|-----|-------|
-| personal-config | #1331 | codacy/codacy-analysis-cli-action 1.1.0 → 4.4.7 |
-| email-security-pipeline | #1143 | ruby/setup-ruby 1.313.0 → 1.314.0 |
-| email-security-pipeline | #1142 | github/gh-aw 0.80.5 → 0.80.9 |
-| email-security-pipeline | #1140 | Palette error message visual separation |
-| Seatek_Analysis | #355, #354, #353, #352, #350, #358, #357 | deps + Bolt + Sentinel |
-| Hydrograph_Versus_Seatek_Sensors_Project | #287, #289, #291 | dep + QA + Bolt np.where |
-| series_correction_project_updated | #145 | Bolt vectorize Z-score |
+| Hydrograph_Versus_Seatek_Sensors_Project | #292 | chore(deps): bump actions/cache 5.0.5 → 6.0.0 |
+| email-security-pipeline | #1161 | Palette: format codebase with black and isort |
+| repoprompt-ce | #71 | Bolt: Extract DateFormatters in hot paths |
 
 ## Closed this session
 
 | Repo | PR | Reason |
 |------|-----|--------|
-| Hydrograph_Versus_Seatek_Sensors_Project | #290 | Duplicate/superseded by merged #291 |
-| series_correction_project_updated | #142 | Duplicate/superseded by merged #145 |
+| personal-config | #1372 | ESCALATE-CLOSE — SHA→tag workflow pin regression (Lesson 0cr) |
+| Seatek_Analysis | #377 | Zero-diff Sentinel QA PR |
+| repoprompt-ce | #69 | Zero-diff QA Review Summary |
