@@ -1,46 +1,48 @@
-# PR Triage — 2026-06-23
+# PR Triage — 2026-06-28 (Phase 2 Salvage)
+
+## Conflict status
+
+**No CONFLICTING or DIRTY PRs** across all 7 configured repos at session start. Phase 2 focused on deferred/escalated remainder from Phase 1 morning run plus newly opened bot PRs.
+
+## Actions taken
+
+### Salvaged
+
+| Old PR | New PR | Rationale |
+|--------|--------|-----------|
+| [rpce #70](https://github.com/abhimehro/repoprompt-ce/pull/70) | [rpce #72](https://github.com/abhimehro/repoprompt-ce/pull/72) (draft) | Extract 4 `.accessibilityLabel()` lines; reject Apache→MIT LICENSE + README churn |
+
+### Closed
+
+| PR | Reason |
+|----|--------|
+| [esp #1163](https://github.com/abhimehro/email-security-pipeline/pull/1163) | Zero-diff Jules Daily QA (same pattern as Seatek #377, rpce #69) |
+| [rpce #70](https://github.com/abhimehro/repoprompt-ce/pull/70) | Superseded by salvage draft #72 |
+
+### Deferred
+
+| PR | Blocker | Next step |
+|----|---------|-----------|
+| [ctrld #956](https://github.com/abhimehro/ctrld-sync/pull/956) | CodeScene code health FAIL | `/cs-agent` posted; await remediation or human review |
+| pc #1369, #1370, #1375 | Draft session-report PRs | Maintainer consolidates or merges docs |
 
 ## Duplicate & overlap analysis
 
-### Closed as duplicate
-
-| Keeper | Closed | Overlap | Rationale |
-|--------|--------|---------|-----------|
-| hg #291 (merged) | hg #290 | `processor.py` np.where optimization | #291 included tests + pyproject; #290 was subset |
-| sc #145 (merged) | sc #142 | `scripts/processor.py` Z-score vectorization | #145 had green CI; #142 blocked on CodeScene |
-
-### Related clusters (not closed — distinct intent)
-
-| Cluster | PRs | Notes |
-|---------|-----|-------|
-| personal-config Palette a11y | #1326, #1329 | #1326 adds `.codacy.yml` + ARIA; #1329 focuses screen-reader grouping. Merge sequentially after Codacy infra fix. |
-| repoprompt-ce Changelog perf | #39, #49 | Both touch `Changelog.swift`; #39 extracts DateFormatter, #49 optimizes usage. Not >90% overlap — defer to salvage for ordering. |
-| Hydrograph Bolt np.where | #290, #291 | Resolved: kept #291. |
-| series_correction Bolt Z-score | #142, #145 | Resolved: kept #145. |
-
-### Superseded
-
-None identified beyond the two closures above. No stale (>30d) bot PRs in scope.
-
-## Merge ordering applied
-
-1. **Dependencies** — esp, Seatek, hg, sc, pc (#1331 codacy-action first)
-2. **CI/QA fixes** — hg #289
-3. **Performance/UI** — hg #291, sc #145, Seatek #358, esp #1140, Seatek #357
-4. **Re-validate siblings** after each merge (Lesson 0cs)
-
-## Blockers identified
-
-| Blocker | Affected PRs | Type | Next step |
-|---------|--------------|------|-----------|
-| Codacy Security Scan fail | pc #1330–1337, #1324–1329 | main-side infra | ESCALATE: codacy-action bumped (#1331) but scan still fails on open PRs; investigate Codacy project config |
-| CodeScene code health | ctrld #943 | PR-specific | `/cs-agent` posted; merge #943 then re-run dependabot cluster |
-| mypy/ruff on main (pre-#943) | ctrld #938–942 | blocked by #943 | Merge #943 after CodeScene green |
-| validate (numpy) | Seatek #351 | dependency constraint | DEFER — validate job fails on numpy >=2.5.0 bump |
-| Style / build cluster | rpce #24–49 | salvage tail | Hand off to Phase 2 salvage agent |
+| Cluster | PRs | Resolution |
+|---------|-----|------------|
+| rpce Palette a11y + license | #70, #72 | #70 closed; #72 draft has a11y only |
+| pc session reports | #1369, #1370, #1375 | Three draft docs PRs; consolidate to one published report |
 
 ## Security gate notes
 
-- No secrets, permission escalation, or CVE regressions detected in merged PRs.
-- rpce #41 (Keychain accessibility salvage) remains **ESCALATE** — security-sensitive; draft salvage PR.
-- pc #1334 (workflow consolidation) **ESCALATE** — trust boundary (CI/INFRA); blocked on Codacy but warrants human review of workflow YAML integrity per Lesson 0cu.
+- rpce #70 LICENSE Apache→MIT change **rejected** — not salvaged (trust boundary / license policy).
+- rpce #72 contains no LICENSE, README, auth, or secrets changes.
+- ctrld #956 single-file terminal ANSI fix — no security concerns; CodeScene advisory only.
+
+## Phase 1 handoff (not Phase 2 merge scope)
+
+Salvage agent does not autonomously merge. After human review:
+
+1. **rpce #72** — T3 routine salvage; merge when CI green
+2. **ctrld #956** — merge after CodeScene green or waiver
+3. **pc docs PRs** — merge one consolidated session report

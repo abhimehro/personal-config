@@ -245,3 +245,39 @@
   3. Phase 1 merge ctrld #892/#893, pc #1234/#1235 after infra fix
   4. Do not merge sa #261 without Gate 2 audit
 - Cross-links: [Session report](tasks/pr-review-2026-06-13.md)
+
+## Run — 2026-06-28 (evening)
+
+### Input tail
+
+- Source: Phase 1 morning report ([pc #1375](https://github.com/abhimehro/personal-config/pull/1375)) + live GitHub re-fetch
+- PRs investigated: 7 across 7 repos
+- Conflicted at start: **0**
+
+### Outcomes
+
+| Repo                    | Old PR | Disposition      | New PR | Notes                              |
+| ----------------------- | -----: | ---------------- | -----: | ---------------------------------- |
+| repoprompt-ce           |     70 | SALVAGE          |     72 | a11y-only; LICENSE/README omitted  |
+| repoprompt-ce           |     70 | CLOSE-SUPERSEDED |     72 | closed after draft opened          |
+| email-security-pipeline |   1163 | CLOSE-NOOP       |      — | zero-diff Daily QA                 |
+| ctrld-sync              |    956 | DEFER            |      — | CodeScene fail; cs-agent posted    |
+| personal-config         | 1369-1375 | DEFER         |      — | draft session-report PRs           |
+
+- Salvage draft PRs opened: 1 ([rpce #72](https://github.com/abhimehro/repoprompt-ce/pull/72))
+- Infra-fix draft PRs opened: 0
+- Originals closed: 2 (#1163 no-op, #70 superseded)
+- Autonomous merges: 0 (policy)
+
+### Verification status
+
+- rpce #72: CI pending at session end
+- ctrld #956: CodeScene FAILURE; all other checks green
+
+### Handoff
+
+- Maintainer actions:
+  1. Merge [rpce #72](https://github.com/abhimehro/repoprompt-ce/pull/72) after CI green
+  2. Review [ctrld #956](https://github.com/abhimehro/ctrld-sync/pull/956) after CodeScene remediation
+  3. Consolidate pc #1369/#1370/#1375 session-report drafts
+- Cross-links: [Phase 2 report](tasks/pr-review-2026-06-28.md)

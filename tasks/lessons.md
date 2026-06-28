@@ -821,3 +821,11 @@ optimization.
 ## Lesson 0cr: Salvage one-line fixes from DIRTY Jules PRs; omit CodeScene refactors (2026-06-19)
 
 **Pattern:** pc #1281 bundled a one-line podcast error-path `html_section()` a11y fix with CodeScene-driven `_parse_linear_focus_node` inlining that conflicted with `main`. **Rule:** When a DIRTY bot PR's stated intent is a small functional fix but the diff includes unrelated complexity refactors, salvage only the functional lines onto a fresh `main` branch. **Detection cost:** Low — `gh pr diff --stat` shows large churn in unrelated functions alongside a one-line stated fix in the PR title.
+
+## Lesson 0cy: Palette a11y PRs may bundle LICENSE changes — salvage intent only (2026-06-28)
+
+**Pattern:** rpce #70 titled "Add accessibility labels to icon-only buttons" also replaced Apache 2.0 LICENSE with MIT and rewrote README. Phase 1 escalated; Phase 2 salvaged four `.accessibilityLabel()` lines onto #72 and closed #70. **Rule:** When a Palette/UI PR touches `LICENSE`, `README`, or legal headers alongside functional UI changes, salvage only the functional diff onto a fresh branch. Never autonomously merge license changes. **Detection cost:** Low — `gh pr diff --name-only` includes `LICENSE` or `README.md`.
+
+## Lesson 0cz: Zero-diff Jules Daily QA PRs — close, do not defer (2026-06-28)
+
+**Pattern:** esp #1163 opened after Phase 1 cleared the repo; 0 files changed, CI green. Same class as Seatek #377 and rpce #69 closed earlier today. **Rule:** When a Jules Daily QA PR has `changedFiles: 0`, close immediately with no-op comment — do not leave in deferred tail. **Detection cost:** Trivial — `gh pr view --json changedFiles,additions,deletions`.
