@@ -52,8 +52,9 @@ system_dns_has_localhost() {
 }
 
 get_active_profile_name() {
-	local active_profile_file="/etc/controld/active_profile"
-	local config_link="/etc/controld/ctrld.toml"
+	local controld_dir="${CONTROLD_DIR:-/etc/controld}"
+	local active_profile_file="$controld_dir/active_profile"
+	local config_link="$controld_dir/ctrld.toml"
 	local profile_name="Unknown"
 
 	if sudo test -f "$active_profile_file"; then
