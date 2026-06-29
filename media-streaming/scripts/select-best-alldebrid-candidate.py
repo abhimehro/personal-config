@@ -38,6 +38,11 @@ BAD_MARKERS = {
     "xbet": -40,
 }
 
+BAD_MARKERS_RE = {
+    token: (re.compile(rf"(?i)(^|[^a-z0-9]){re.escape(token)}([^a-z0-9]|$)"), points)
+    for token, points in BAD_MARKERS.items()
+}
+
 RESOLUTION = {
     "4320p": 80,
     "2160p": 60,
@@ -182,8 +187,8 @@ def score_candidate(filename: str) -> tuple[int, list[str]]:
     score += apply_token_scores(text, compact, RELEASE, reasons, stop_after_first=True)
     score += apply_token_scores(text, compact, CODEC, reasons, stop_after_first=True)
 
-    for token, points in BAD_MARKERS.items():
-        if re.search(rf"(?i)(^|[^a-z0-9]){re.escape(token)}([^a-z0-9]|$)", filename):
+    for token, (regex, points) in BAD_MARKERS_RE.items():
+        if regex.search(filename):
             score += points
             reasons.append(f"bad:{token}")
 
