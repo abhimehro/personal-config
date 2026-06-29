@@ -135,7 +135,7 @@ restart_with_config() {
 	ln -sf "$config_file" "$controld_dir/ctrld.toml"
 
 	# Start service
-	ctrld start --config="$controld_dir/ctrld.toml" --iface lo0 --skip_self_checks
+	ctrld start --config="$controld_dir/ctrld.toml" --iface en0 --skip_self_checks
 
 	local system_dns_ip="$listener_ip"
 	if [[ $system_dns_ip == "0.0.0.0" ]]; then
@@ -218,9 +218,9 @@ restart_with_native_profile() {
 	start_err_log=$(mktemp "${TMPDIR:-/tmp}/ctrld_err.XXXXXX")
 
 	if [[ $protocol == "doh3" ]]; then
-		ctrld start --cd "$profile_id" --proto doh3 --listen "${listener_ip}:53" --iface lo0 --skip_self_checks >"$start_err_log" 2>&1 || true
+		ctrld start --cd "$profile_id" --proto doh3 --listen "${listener_ip}:53" --iface en0 --skip_self_checks >"$start_err_log" 2>&1 || true
 	else
-		ctrld start --cd "$profile_id" --proto doh --listen "${listener_ip}:53" --iface lo0 --skip_self_checks >"$start_err_log" 2>&1 || true
+		ctrld start --cd "$profile_id" --proto doh --listen "${listener_ip}:53" --iface en0 --skip_self_checks >"$start_err_log" 2>&1 || true
 	fi
 
 	# Print out any messages from start for transparency
