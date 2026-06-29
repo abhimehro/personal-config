@@ -626,3 +626,87 @@ class TestSectionToggles(unittest.TestCase):
     def test_partial(self):
         t = mb.SectionToggles(greeting=False, focus=False, news=True, podcast=False)
         assert t.any_enabled is True
+
+
+# ============================================================
+# Weather
+# ============================================================
+
+
+class TestFetchWeather(unittest.TestCase):
+    def setUp(self):
+        from unittest.mock import Mock
+
+        self.config = Mock()
+        self.config.lat = 40.7128
+        self.config.lon = -74.0060
+        self.config.weather_cache_ttl = 3600
+        self.cache = Mock()
+        self.session = Mock()
+
+    def test_cache_hit(self):
+        self.cache.get.return_value = {
+            "current_temp": "65.5",
+            "high_temp": "72.1",
+            "rain_probability": "15",
+            "narrative": "Cached narrative."
+        }
+
+        result = mb.fetch_weather(self.session, self.config, self.cache)
+
+        assert result.current_temp == "65.5"
+        assert result.high_temp == "72.1"
+        assert result.rain_probability == "15"
+        assert result.narrative == "Cached narrative."
+        self.session.get.assert_not_called()
+
+    def test_fetch_success(self):
+        from unittest.mock import Mock
+
+        self.cache.get.return_value = None
+
+        response = Mock()
+        response.json.return_value = {
+            "current_weather": {"temperature": 65.5},
+            "daily": {
+                "temperature_2m_max": [72.1],
+                "precipitation_probability_max": [15]
+            }
+        }
+        self.session.get.return_value = response
+
+        result = mb.fetch_weather(self.session, self.config, self.cache)
+
+        assert result.current_temp == "65.5"
+        assert result.high_temp == "72.1"
+        assert result.rain_probability == "15"
+        assert "65.5F" in result.narrative
+
+        self.cache.set.assert_called_once()
+
+    def test_fetch_timeout(self):
+        self.cache.get.return_value = None
+        self.session.get.side_effect = Exception("Connection timed out")
+
+        result = mb.fetch_weather(self.session, self.config, self.cache)
+
+        assert result.current_temp == "N/A"
+        assert result.high_temp == "N/A"
+        assert result.rain_probability == "N/A"
+        assert result.narrative == "Weather data unavailable."
+
+    def test_fetch_http_error(self):
+        from unittest.mock import Mock
+
+        self.cache.get.return_value = None
+
+        response = Mock()
+        response.raise_for_status.side_effect = Exception("404 Client Error")
+        self.session.get.return_value = response
+
+        result = mb.fetch_weather(self.session, self.config, self.cache)
+
+        assert result.current_temp == "N/A"
+        assert result.high_temp == "N/A"
+        assert result.rain_probability == "N/A"
+        assert result.narrative == "Weather data unavailable."
