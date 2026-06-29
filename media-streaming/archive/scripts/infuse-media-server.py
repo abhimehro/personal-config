@@ -4,7 +4,6 @@ import argparse
 import base64
 import html
 import http.server
-import json
 import os
 import secrets
 import socketserver
