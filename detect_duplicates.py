@@ -48,26 +48,6 @@ def run_gh(cmd_list):
         return None
 
 
-def fetch_pr_info(pr):
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    repo, _, pr_id = pr.partition("#")
-    info = run_gh(
-        [
-            "gh",
-            "pr",
-            "view",
-            str(pr_id),
-            "-R",
-            str(repo),
-            "--json",
-            "files,title,number",
-        ]
-    )
-    if info:
-        return repo, info
-    return None
-
-
 def _process_pr_result(res, file_groups):
     if not res:
         return
@@ -79,10 +59,51 @@ def _process_pr_result(res, file_groups):
 
 def _group_prs_by_files(ready_only):
     file_groups = defaultdict(list)
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(fetch_pr_info, pr) for pr in ready_only]
-        for future in as_completed(futures):
-            _process_pr_result(future.result(), file_groups)
+    chunk_size = 50
+
+    for i in range(0, len(ready_only), chunk_size):
+        chunk = ready_only[i:i + chunk_size]
+        query_parts = []
+        for j, pr in enumerate(chunk):
+            repo, _, pr_id = pr.partition("#")
+            try:
+                owner, name = repo.split("/")
+            except ValueError:
+                continue
+            query_parts.append(f"""
+            pr{j}: repository(owner: "{owner}", name: "{name}") {{
+                pullRequest(number: {pr_id}) {{
+                    number
+                    title
+                    files(first: 100) {{
+                        nodes {{
+                            path
+                        }}
+                    }}
+                }}
+            }}
+            """)
+
+        if not query_parts:
+            continue
+
+        query = "query { " + " ".join(query_parts) + " }"
+
+        result = run_gh(["gh", "api", "graphql", "-f", f"query={query}"])
+        if result and "data" in result and result["data"]:
+            for j, pr in enumerate(chunk):
+                alias = f"pr{j}"
+                repo, _, _ = pr.partition("#")
+                if alias in result["data"] and result["data"][alias] and result["data"][alias].get("pullRequest"):
+                    pr_data = result["data"][alias]["pullRequest"]
+                    files = [{"path": node["path"]} for node in pr_data.get("files", {}).get("nodes", [])]
+                    res = (repo, {
+                        "number": pr_data["number"],
+                        "title": pr_data["title"],
+                        "files": files
+                    })
+                    _process_pr_result(res, file_groups)
+
     return file_groups
 
 
