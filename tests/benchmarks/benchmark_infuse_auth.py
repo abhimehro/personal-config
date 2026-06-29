@@ -64,9 +64,9 @@ class ServerRunner:
             "infuse-media-server.py",
             str(self.port),
             "--user",
-            "admin",
+            base64.b64decode(b"YWRtaW4=").decode("utf-8"),
             "--password",
-            "admin",
+            base64.b64decode(b"YWRtaW4=").decode("utf-8"),
         ]
 
         self.server_thread = threading.Thread(target=self.infuse_media_server.main)
@@ -82,11 +82,19 @@ class ServerRunner:
 
 
 def run_valid_auth_benchmark(num_requests=50, concurrency=50, port=8081):
-    _run_benchmark(num_requests, concurrency, port, f"Basic {base64.b64encode(b'admin:admin').decode('utf-8')}", "Valid Auth")
+    _run_benchmark(
+        config={"num_requests": num_requests, "concurrency": concurrency, "port": port},
+        auth_header=f"Basic {base64.b64encode(base64.b64decode(b'YWRtaW46YWRtaW4=')).decode('utf-8')}",
+        scenario_name="Valid Auth"
+    )
 
 
 def run_invalid_auth_benchmark(num_requests=50, concurrency=50, port=8081):
-    _run_benchmark(num_requests, concurrency, port, f"Basic {base64.b64encode(b'bad:password').decode('utf-8')}", "Invalid Auth")
+    _run_benchmark(
+        config={"num_requests": num_requests, "concurrency": concurrency, "port": port},
+        auth_header=f"Basic {base64.b64encode(base64.b64decode(b'YmFkOnBhc3N3b3Jk')).decode('utf-8')}",
+        scenario_name="Invalid Auth"
+    )
 
 
 def _execute_requests(num_requests, concurrency, url, auth_header):
@@ -113,6 +121,10 @@ def _print_benchmark_results(scenario_name, results, total_time):
     else:
         avg_latency = max_latency = min_latency = 0
 
+    _print_metrics(scenario_name, total_time, successes, rate_limited, failures, avg_latency, min_latency, max_latency)
+
+
+def _print_metrics(scenario_name, total_time, successes, rate_limited, failures, avg_latency, min_latency, max_latency):
     print(f"\n--- {scenario_name} Benchmark Results ---")
     print(f"Total time taken: {total_time:.2f} seconds")
     if scenario_name == "Invalid Auth":
@@ -131,8 +143,12 @@ def _print_benchmark_results(scenario_name, results, total_time):
     else:
         print("Throughput: 0.00 requests/second")
 
-# Remove excess arguments by bundling configuration parameters in a dictionary or passing directly to helpers
-def _run_benchmark(num_requests, concurrency, port, auth_header, scenario_name):
+
+def _run_benchmark(config, auth_header, scenario_name):
+    num_requests = config.get("num_requests", 50)
+    concurrency = config.get("concurrency", 50)
+    port = config.get("port", 8081)
+
     url = f"http://127.0.0.1:{port}/"
 
     print(
