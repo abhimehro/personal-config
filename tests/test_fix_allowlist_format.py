@@ -126,6 +126,41 @@ class TestExtractAllowlistDomainsFromFile(unittest.TestCase):
             result = extract_allowlist_domains_from_file("dummy.json")
         self.assertEqual(result, [])
 
+    @patch("fix_allowlist_format.environ")
+    @patch("fix_allowlist_format.Path.exists")
+    @patch("fix_allowlist_format.extract_allowlist_domains_from_file")
+    @patch("builtins.open", new_callable=mock_open)
+    @patch("builtins.print")
+    def test_main_both_files_exist(self, mock_print, mock_file, mock_extract, mock_exists, mock_environ):
+        import fix_allowlist_format
+        mock_environ.get.return_value = "/mock/dir"
+        mock_exists.return_value = True
+        mock_extract.side_effect = [
+            ["bypass1.com", "bypass2.com"],
+            ["tld1.com", "tld2.com"]
+        ]
+
+        fix_allowlist_format.main()
+
+        mock_file.assert_called_once_with(Path("/mock/dir/Consolidated-Allowlist-Fixed.txt"), "w", encoding="utf-8")
+        handle = mock_file()
+        handle.write.assert_any_call("\n".join(sorted(["bypass1.com", "bypass2.com", "tld1.com", "tld2.com"])) + "\n")
+
+    @patch("fix_allowlist_format.environ")
+    @patch("fix_allowlist_format.Path.exists")
+    @patch("fix_allowlist_format.extract_allowlist_domains_from_file")
+    @patch("builtins.open", new_callable=mock_open)
+    @patch("builtins.print")
+    def test_main_files_not_exist(self, mock_print, mock_file, mock_extract, mock_exists, mock_environ):
+        import fix_allowlist_format
+        mock_environ.get.return_value = "/mock/dir"
+        mock_exists.return_value = False
+
+        fix_allowlist_format.main()
+
+        mock_file.assert_called_once_with(Path("/mock/dir/Consolidated-Allowlist-Fixed.txt"), "w", encoding="utf-8")
+        mock_extract.assert_not_called()
+
     # Integration Test
     def test_integration_with_tempfile(self):
         json_data = json.dumps({"rules": [{"PK": "temp.com", "action": {"do": 1}}]})
