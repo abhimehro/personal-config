@@ -1,46 +1,49 @@
-# PR Triage — 2026-06-23
+# PR Triage — 2026-06-29
 
 ## Duplicate & overlap analysis
 
-### Closed as duplicate
+| Group | PRs | Decision | Rationale |
+|-------|-----|----------|-----------|
+| rpce a11y labels | #72, #73 | Close #73; merge #72 | Same `AgentMessageBubble` labels; #72 adds `AgentRuntimeExportCard` labels and explicitly omits Apache→MIT LICENSE from escalated #70 |
+| esp daily QA | #1167 | Close | Zero file diff; health report only |
+| pc session reports | #1369, #1370, #1375, #1376 | Defer | Draft `app/cursor` session-report PRs; not throughput targets |
 
-| Keeper | Closed | Overlap | Rationale |
-|--------|--------|---------|-----------|
-| hg #291 (merged) | hg #290 | `processor.py` np.where optimization | #291 included tests + pyproject; #290 was subset |
-| sc #145 (merged) | sc #142 | `scripts/processor.py` Z-score vectorization | #145 had green CI; #142 blocked on CodeScene |
-
-### Related clusters (not closed — distinct intent)
-
-| Cluster | PRs | Notes |
-|---------|-----|-------|
-| personal-config Palette a11y | #1326, #1329 | #1326 adds `.codacy.yml` + ARIA; #1329 focuses screen-reader grouping. Merge sequentially after Codacy infra fix. |
-| repoprompt-ce Changelog perf | #39, #49 | Both touch `Changelog.swift`; #39 extracts DateFormatter, #49 optimizes usage. Not >90% overlap — defer to salvage for ordering. |
-| Hydrograph Bolt np.where | #290, #291 | Resolved: kept #291. |
-| series_correction Bolt Z-score | #142, #145 | Resolved: kept #145. |
-
-### Superseded
-
-None identified beyond the two closures above. No stale (>30d) bot PRs in scope.
-
-## Merge ordering applied
-
-1. **Dependencies** — esp, Seatek, hg, sc, pc (#1331 codacy-action first)
-2. **CI/QA fixes** — hg #289
-3. **Performance/UI** — hg #291, sc #145, Seatek #358, esp #1140, Seatek #357
-4. **Re-validate siblings** after each merge (Lesson 0cs)
-
-## Blockers identified
-
-| Blocker | Affected PRs | Type | Next step |
-|---------|--------------|------|-----------|
-| Codacy Security Scan fail | pc #1330–1337, #1324–1329 | main-side infra | ESCALATE: codacy-action bumped (#1331) but scan still fails on open PRs; investigate Codacy project config |
-| CodeScene code health | ctrld #943 | PR-specific | `/cs-agent` posted; merge #943 then re-run dependabot cluster |
-| mypy/ruff on main (pre-#943) | ctrld #938–942 | blocked by #943 | Merge #943 after CodeScene green |
-| validate (numpy) | Seatek #351 | dependency constraint | DEFER — validate job fails on numpy >=2.5.0 bump |
-| Style / build cluster | rpce #24–49 | salvage tail | Hand off to Phase 2 salvage agent |
+No other >90% file-overlap duplicates detected.
 
 ## Security gate notes
 
-- No secrets, permission escalation, or CVE regressions detected in merged PRs.
-- rpce #41 (Keychain accessibility salvage) remains **ESCALATE** — security-sensitive; draft salvage PR.
-- pc #1334 (workflow consolidation) **ESCALATE** — trust boundary (CI/INFRA); blocked on Codacy but warrants human review of workflow YAML integrity per Lesson 0cu.
+| PR | Gate | Result |
+|----|------|--------|
+| pc #1379 | CI/INFRA least-privilege | **FAIL** — SHA pins replaced with mutable `@v*` tags across 7 workflows |
+| pc #1381 | Trust boundary (DNS/VPN) | **ESCALATE** — `ctrld` bind `0.0.0.0` in combined Windscribe mode; human review required |
+| esp #1166 | Threat-detection logic | **PASS** — `MASTER_SPAM_PATTERN` uses pre-lowercased keywords; matching already uses `subject_lower` |
+| rpce #72 | License boundary | **PASS** — salvage excludes LICENSE/README changes from #70 |
+| sc #161 | Dependency review | **PASS** — `actions/cache` 6.0.0 → 6.1.0 only |
+
+## CodeScene
+
+| PR | CodeScene | Action |
+|----|-----------|--------|
+| pc #1381 | FAILURE | Posted `/cs-agent skill:fix-code-health-degradations`; merge blocked |
+| All others reviewed | SUCCESS or N/A | Proceeded |
+
+## Disposition summary
+
+| Disposition | Count | PRs |
+|-------------|-------|-----|
+| MERGE | 7 | ctrld #956; esp #1164, #1166; hg #304; sc #161; rpce #72, #74 |
+| CLOSE | 2 | esp #1167 (zero-diff); rpce #73 (superseded) |
+| ESCALATE | 2 | pc #1379 (SHA→tag); pc #1381 (CodeScene + network) |
+| DEFER | 4 | pc #1369, #1370, #1375, #1376 (draft reports) |
+
+## End-of-day open queue
+
+| Repo | Open in-scope |
+|------|----------------|
+| personal-config | 6 (#1379, #1381 + 4 draft reports) |
+| ctrld-sync | 0 |
+| email-security-pipeline | 0 |
+| Seatek_Analysis | 0 |
+| Hydrograph_Versus_Seatek_Sensors_Project | 0 |
+| series_correction_project_updated | 0 |
+| repoprompt-ce | 0 |

@@ -818,6 +818,10 @@ optimization.
 
 **Pattern:** ctrld #901 (main.py refactor) and #904 (anti-micro journal) both went `DIRTY` after the same merge burst (#905/#906/#902). #901's journal entry duplicated content already on `main` from an earlier merge. **Rule:** When salvaging sibling DIRTY PRs from the same burst, open one draft branch from current `main`: take production code from the code PR, append-only journal from the doc PR, and skip journal lines already present on `main`. **Detection cost:** Low — two open PRs on the same repo with overlapping `.jules/bolt.md` paths and `DIRTY` status after a burst merge.
 
+## Lesson 0cy: rpce Palette a11y duplicate — prefer LICENSE-safe salvage (2026-06-29)
+
+**Pattern:** repoprompt-ce #73 (Palette, `AgentMessageBubble` only) and #72 (salvage of escalated #70, two files, no LICENSE change) overlapped on the same a11y labels. **Rule:** When an escalated PR bundles license changes with functional fixes, merge the salvage branch that omits license/README churn; close narrower Palette duplicates that cover a subset of the same labels. **Detection cost:** Low — same file path + `accessibilityLabel` in diff; compare against escalated PR thread.
+
 ## Lesson 0cr: Salvage one-line fixes from DIRTY Jules PRs; omit CodeScene refactors (2026-06-19)
 
 **Pattern:** pc #1281 bundled a one-line podcast error-path `html_section()` a11y fix with CodeScene-driven `_parse_linear_focus_node` inlining that conflicted with `main`. **Rule:** When a DIRTY bot PR's stated intent is a small functional fix but the diff includes unrelated complexity refactors, salvage only the functional lines onto a fresh `main` branch. **Detection cost:** Low — `gh pr diff --stat` shows large churn in unrelated functions alongside a one-line stated fix in the PR title.
