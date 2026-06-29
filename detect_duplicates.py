@@ -82,6 +82,23 @@ def _build_graphql_query(chunk):
     return "query { " + " ".join(query_parts) + " }"
 
 
+def _extract_pr_data(repo, pr_result):
+    if not pr_result:
+        return None
+    pr_data = pr_result.get("pullRequest") or {}
+    if not pr_data:
+        return None
+
+    files_data = pr_data.get("files", {}) or {}
+    nodes = files_data.get("nodes", []) or []
+    files = [{"path": node["path"]} for node in nodes if "path" in node]
+
+    return (repo, {
+        "number": pr_data.get("number"),
+        "title": pr_data.get("title"),
+        "files": files
+    })
+
 def _process_graphql_response(result, chunk, file_groups):
     if not result:
         return
@@ -90,28 +107,11 @@ def _process_graphql_response(result, chunk, file_groups):
         return
     for j, pr in enumerate(chunk):
         repo, _, _ = pr.partition("#")
-
         pr_result = data.get(f"pr{j}", {})
-        if not pr_result:
-            continue
 
-        pr_data = pr_result.get("pullRequest") or {}
-        if not pr_data:
-            continue
-
-        files_data = pr_data.get("files", {}) or {}
-        nodes = files_data.get("nodes", []) or []
-        files = [{"path": node["path"]} for node in nodes if "path" in node]
-
-        res = (
-            repo,
-            {
-                "number": pr_data.get("number"),
-                "title": pr_data.get("title"),
-                "files": files,
-            },
-        )
-        _process_pr_result(res, file_groups)
+        res = _extract_pr_data(repo, pr_result)
+        if res:
+            _process_pr_result(res, file_groups)
 
 
 def _group_prs_by_files(ready_only):
