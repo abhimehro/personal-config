@@ -81,60 +81,91 @@ class ServerRunner:
 
 
 def run_valid_auth_benchmark(num_requests=50, concurrency=50, port=8081):
-    _run_benchmark(num_requests, concurrency, port, "Basic YWRtaW46YWRtaW4=", "Valid Auth")
+    _run_benchmark(num_requests, concurrency, port, ("Basic YWRtaW46YWRtaW4=", "Valid Auth"))
 
 
 def run_invalid_auth_benchmark(num_requests=50, concurrency=50, port=8081):
-    _run_benchmark(num_requests, concurrency, port, "Basic YmFkOnBhc3N3b3Jk", "Invalid Auth")
+    _run_benchmark(num_requests, concurrency, port, ("Basic YmFkOnBhc3N3b3Jk", "Invalid Auth"))
 
 
-def _run_benchmark(num_requests, concurrency, port, auth_header, scenario_name):
+def _execute_requests(num_requests, concurrency, url, auth_header):
+    results = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:
+        futures = [executor.submit(worker, url, i, auth_header) for i in range(num_requests)]
+        for future in concurrent.futures.as_completed(futures):
+            results.append(future.result())
+    return results
+
+
+def _calculate_metrics(results):
+    successes = []
+    rate_limited = []
+    failures = []
+    latencies = []
+    for r in results:
+        status = r[2]
+        if status in (200, 401):
+            successes.append(r)
+            latencies.append(r[1])
+        elif status == 429:
+            rate_limited.append(r)
+            latencies.append(r[1])
+        else:
+            failures.append(r)
+
+    if latencies:
+        avg_latency = sum(latencies) / len(latencies)
+        max_latency = max(latencies)
+        min_latency = min(latencies)
+    else:
+        avg_latency = max_latency = min_latency = 0
+
+    return {
+        "success_count": len(successes),
+        "rate_limited_count": len(rate_limited),
+        "failure_count": len(failures),
+        "avg_latency": avg_latency,
+        "max_latency": max_latency,
+        "min_latency": min_latency,
+        "valid_count": len(successes) + len(rate_limited),
+    }
+
+
+def _print_results(scenario_name, total_time, metrics):
+    print(f"\n--- {scenario_name} Benchmark Results ---")
+    print(f"Total time taken: {total_time:.2f} seconds")
+    if scenario_name == "Invalid Auth":
+        print(f"401 Unauthorized responses: {metrics['success_count']}")
+    else:
+        print(f"200 OK responses: {metrics['success_count']}")
+    print(f"429 Too Many Requests responses: {metrics['rate_limited_count']}")
+    print(f"Failed requests (timeout/error): {metrics['failure_count']}")
+    print(f"Average latency per request: {metrics['avg_latency']:.2f} seconds")
+    print(f"Min latency: {metrics['min_latency']:.2f} seconds")
+    print(f"Max latency: {metrics['max_latency']:.2f} seconds")
+    if total_time > 0:
+        print(
+            f"Throughput: {metrics['valid_count'] / total_time:.2f} requests/second"
+        )
+    else:
+        print("Throughput: 0.00 requests/second")
+
+
+def _run_benchmark(num_requests, concurrency, port, auth_info):
+    auth_header, scenario_name = auth_info
     url = f"http://127.0.0.1:{port}/"
 
     print(
         f"\nStarting {scenario_name} benchmark with {num_requests} total requests, concurrency {concurrency}"
     )
 
-    results = []
     start_time_total = time.time()
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:
-        futures = [executor.submit(worker, url, i, auth_header) for i in range(num_requests)]
-        for future in concurrent.futures.as_completed(futures):
-            results.append(future.result())
-
+    results = _execute_requests(num_requests, concurrency, url, auth_header)
     end_time_total = time.time()
+
     total_time = end_time_total - start_time_total
-
-    successes = [r for r in results if isinstance(r[2], int) and r[2] in (200, 401)]
-    rate_limited = [r for r in results if isinstance(r[2], int) and r[2] == 429]
-    failures = [r for r in results if r not in successes and r not in rate_limited]
-
-    if successes or rate_limited:
-        valid_responses = successes + rate_limited
-        avg_latency = sum(r[1] for r in valid_responses) / len(valid_responses)
-        max_latency = max(r[1] for r in valid_responses)
-        min_latency = min(r[1] for r in valid_responses)
-    else:
-        avg_latency = max_latency = min_latency = 0
-
-    print(f"\n--- {scenario_name} Benchmark Results ---")
-    print(f"Total time taken: {total_time:.2f} seconds")
-    if scenario_name == "Invalid Auth":
-        print(f"401 Unauthorized responses: {len(successes)}")
-    else:
-        print(f"200 OK responses: {len(successes)}")
-    print(f"429 Too Many Requests responses: {len(rate_limited)}")
-    print(f"Failed requests (timeout/error): {len(failures)}")
-    print(f"Average latency per request: {avg_latency:.2f} seconds")
-    print(f"Min latency: {min_latency:.2f} seconds")
-    print(f"Max latency: {max_latency:.2f} seconds")
-    if total_time > 0:
-        print(
-            f"Throughput: {(len(successes) + len(rate_limited)) / total_time:.2f} requests/second"
-        )
-    else:
-        print("Throughput: 0.00 requests/second")
+    metrics = _calculate_metrics(results)
+    _print_results(scenario_name, total_time, metrics)
 
 
 def run_benchmark(num_requests=50, concurrency=50):
