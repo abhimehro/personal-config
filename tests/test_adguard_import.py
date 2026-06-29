@@ -15,56 +15,27 @@ spec.loader.exec_module(test_adguard_import)
 
 class TestValidateLine(unittest.TestCase):
 
-    def test_empty_line(self):
-        is_valid, msg = test_adguard_import.validate_line("", 1, "denylist")
-        self.assertTrue(is_valid)
-        self.assertIsNone(msg)
+    def test_validate_line_cases(self):
+        test_cases = [
+            # (line, line_num, file_type, expected_valid, expected_msg)
+            ("", 1, "denylist", True, None),
+            ("   \n", 2, "allowlist", True, None),
+            ("# This is a comment", 1, "denylist", True, None),
+            ("  # Indented comment", 2, "allowlist", True, None),
+            ("example.com", 1, "denylist", True, None),
+            ("example", 1, "denylist", False, "Line 1: Invalid domain format - 'example'"),
+            ("@@example.com", 2, "denylist", False, "Line 2: Invalid domain format - '@@example.com'"),
+            ("@@example.com", 1, "allowlist", True, None),
+            ("example.com", 1, "allowlist", False, "Line 1: Invalid allowlist format - 'example.com'"),
+            ("@@example", 2, "allowlist", False, "Line 2: Invalid allowlist format - '@@example'"),
+            ("example.com", 1, "unknown_type", False, "Line 1: Unknown format - 'example.com'")
+        ]
 
-        is_valid, msg = test_adguard_import.validate_line("   \n", 2, "allowlist")
-        self.assertTrue(is_valid)
-        self.assertIsNone(msg)
-
-    def test_comment_line(self):
-        is_valid, msg = test_adguard_import.validate_line("# This is a comment", 1, "denylist")
-        self.assertTrue(is_valid)
-        self.assertIsNone(msg)
-
-        is_valid, msg = test_adguard_import.validate_line("  # Indented comment", 2, "allowlist")
-        self.assertTrue(is_valid)
-        self.assertIsNone(msg)
-
-    def test_denylist_valid(self):
-        is_valid, msg = test_adguard_import.validate_line("example.com", 1, "denylist")
-        self.assertTrue(is_valid)
-        self.assertIsNone(msg)
-
-    def test_denylist_invalid(self):
-        is_valid, msg = test_adguard_import.validate_line("example", 1, "denylist")
-        self.assertFalse(is_valid)
-        self.assertEqual(msg, "Line 1: Invalid domain format - 'example'")
-
-        is_valid, msg = test_adguard_import.validate_line("@@example.com", 2, "denylist")
-        self.assertFalse(is_valid)
-        self.assertEqual(msg, "Line 2: Invalid domain format - '@@example.com'")
-
-    def test_allowlist_valid(self):
-        is_valid, msg = test_adguard_import.validate_line("@@example.com", 1, "allowlist")
-        self.assertTrue(is_valid)
-        self.assertIsNone(msg)
-
-    def test_allowlist_invalid(self):
-        is_valid, msg = test_adguard_import.validate_line("example.com", 1, "allowlist")
-        self.assertFalse(is_valid)
-        self.assertEqual(msg, "Line 1: Invalid allowlist format - 'example.com'")
-
-        is_valid, msg = test_adguard_import.validate_line("@@example", 2, "allowlist")
-        self.assertFalse(is_valid)
-        self.assertEqual(msg, "Line 2: Invalid allowlist format - '@@example'")
-
-    def test_unknown_format(self):
-        is_valid, msg = test_adguard_import.validate_line("example.com", 1, "unknown_type")
-        self.assertFalse(is_valid)
-        self.assertEqual(msg, "Line 1: Unknown format - 'example.com'")
+        for line, line_num, file_type, exp_valid, exp_msg in test_cases:
+            with self.subTest(line=line, file_type=file_type):
+                is_valid, msg = test_adguard_import.validate_line(line, line_num, file_type)
+                self.assertEqual(is_valid, exp_valid)
+                self.assertEqual(msg, exp_msg)
 
 
 class TestCountLineTypes(unittest.TestCase):
