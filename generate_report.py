@@ -72,8 +72,8 @@ def generate_report_content(results, closed_data, escalated_data):
     )
 
 
-if __name__ == "__main__":
-    with open("tasks/pr-merge-results.json") as f:
+def main(input_path="tasks/pr-merge-results.json", output_path="tasks/pr-review-2026-03-10.md"):
+    with open(input_path) as f:
         results = json.load(f)
 
     # Adjust for draft PRs fixed manually
@@ -110,5 +110,9 @@ if __name__ == "__main__":
     results = process_draft_fixes(results, draft_fixes)
     report = generate_report_content(results, closed, escalated)
 
-    with open("tasks/pr-review-2026-03-10.md", "w") as f:
+    with open(output_path, "w") as f:
         f.write(report)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+from unittest.mock import patch, mock_open
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import generate_report
@@ -66,6 +67,18 @@ class TestGenerateReport(unittest.TestCase):
         merged_data = [("repo1", "123")]
         with self.assertRaises(ValueError):
             generate_report.format_lists(merged_data, [], [])
+
+    @patch("builtins.open", new_callable=mock_open, read_data='{"merged": [], "escalated": []}')
+    def test_main(self, mock_file):
+        generate_report.main("dummy_input.json", "dummy_output.md")
+
+        # Verify open was called correctly
+        mock_file.assert_any_call("dummy_input.json")
+        mock_file.assert_any_call("dummy_output.md", "w")
+
+        # Verify writing occurred
+        handle = mock_file()
+        self.assertTrue(handle.write.called)
 
 
 if __name__ == "__main__":
