@@ -209,6 +209,10 @@ restart_with_native_profile() {
 	# Clear old symbolic link if it exists to avoid confusion
 	rm -f "$controld_dir/ctrld.toml" 2>/dev/null || true
 
+	# Temporarily set system DNS to public resolvers to bootstrap fetching the profile configuration
+	networksetup -setdnsservers Wi-Fi 1.1.1.1 8.8.8.8 2>/dev/null || true
+	networksetup -setdnsservers "USB 10/100/1000 LAN" 1.1.1.1 8.8.8.8 2>/dev/null || true
+
 	# Start service natively and catch stderr
 	local start_err_log
 	start_err_log=$(mktemp "${TMPDIR:-/tmp}/ctrld_err.XXXXXX")
