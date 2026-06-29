@@ -13,6 +13,7 @@ from parse_inventory import (
     _is_pr_stale,
     _load_inventory_lines,
     _parse_env_line,
+    main,
     parse_inventory_lines,
     run_gh,
 )
@@ -213,6 +214,52 @@ class TestParseInventory(unittest.TestCase):
         mock_result.stdout = '{"files": []}'
         mock_run.return_value = mock_result
         self.assertIsNone(run_gh("repoA", 123))
+
+    # --- main ---
+
+    @patch("parse_inventory._write_triage_report")
+    @patch("parse_inventory._load_inventory_lines")
+    def test_main_empty_inventory(self, mock_load, mock_write):
+        mock_load.return_value = []
+        main()
+        mock_write.assert_not_called()
+
+    @patch("parse_inventory._write_triage_report")
+    @patch("parse_inventory._categorize_pr_task")
+    @patch("parse_inventory._load_inventory_lines")
+    def test_main_processes_inventory(self, mock_load, mock_categorize, mock_write):
+        lines = [
+            "| Repo | PR | Author (API) | Branch (head) | Category | CI rollup | Conflicts | Age (created→) | Notes |\n",
+            "| ---------------------------------------- | --- | ------------ | ----------- | ------- | --------- | --------- | -------------- | ----- |\n",
+            "| repoA | 123 | some_user[bot] | branch | cat | C | none | 2026-05-03 | |\n",
+            "| repoB | 456 | human | branch | cat | FAIL | none | 2026-05-03 | has-hints |\n",
+        ]
+        mock_load.return_value = lines
+
+        def fake_categorize(args):
+            repo, pr_info = args
+            if repo == "repoA" and pr_info["pr"] == "123":
+                return "READY", "repoA#123"
+            if repo == "repoB" and pr_info["pr"] == "456":
+                return "STALE", "repoB#456"
+            return None
+
+        mock_categorize.side_effect = fake_categorize
+
+        main()
+
+        mock_load.assert_called_once_with("tasks/pr-inventory.md")
+
+        self.assertEqual(mock_write.call_count, 1)
+
+        call_args = mock_write.call_args[0]
+        self.assertEqual(call_args[0], "tasks/pr-triage.md")
+
+        triage = call_args[1]
+        self.assertEqual(triage["READY"], ["repoA#123"])
+        self.assertEqual(triage["STALE"], ["repoB#456"])
+        self.assertEqual(triage["SUPERSEDED"], [])
+        self.assertEqual(triage["CONFLICTING"], [])
 
 
 if __name__ == "__main__":
