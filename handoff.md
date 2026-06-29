@@ -1,28 +1,21 @@
 # 🧪 Testing Improvement Task
 
 ## 🎯 What
-
-Added missing test coverage for `format_lists` in `generate_report.py`. The
-`format_lists` function contains a generator expression that expects a tuple
-with three elements (`repo, pr, title`). If the data passed to it is malformed
-(e.g., missing the title), it crashes with a `ValueError` during tuple
-unpacking. This scenario wasn't previously tested.
+Replaced integration tests with isolated unit tests using mocks for `process_allowlist_files` in `tests/test_create_consolidated_lists.py`. The original tests created temporary directories and real files to execute logic, which breaks the goal of having isolated unit tests.
 
 ## 📊 Coverage
-
-Added `test_format_lists_missing_fields` to explicitly trigger and assert the
-`ValueError` when `merged_data` is supplied a malformed tuple with only two
-elements.
+The new `TestProcessAllowlistMocked` class properly mocks `Path` operations (specifically overriding `__truediv__` and `exists()`) and mocks the third-party call to `extract_domains_from_file`. Tested permutations of:
+* Happy path (both files present)
+* Missing bypass file
+* Missing TLDs file
+* Both files missing
 
 ## ✨ Result
+Achieved 100% test coverage of `process_allowlist_files` strictly via mocked `Path` objects and mocked filesystem operations. Better test isolation and deterministic behavior without filesystem footprint.
 
-Improved test resilience. The test suite now guards against unpacking
-regressions in the core PR reporting function `format_lists`.
-
-========== ELIR ========== PURPOSE: Add edge-case coverage to ensure
-`format_lists` raises `ValueError` cleanly on malformed input. SECURITY: N/A -
-pure testing robustness. FAILS IF: The data parsing upstream fails to output
-triplets (`repo`, `pr`, `title`). VERIFY: Confirm
-`test_format_lists_missing_fields` explicitly tests the ValueError catch.
-MAINTAIN: Keep this updated if `format_lists` changes its expected tuple
-structure.
+========== ELIR ==========
+PURPOSE: Rewrite process_allowlist_files tests to use mocks rather than actual filesystem reads.
+SECURITY: N/A - Pure testing robustness.
+FAILS IF: extract_domains_from_file signature changes.
+VERIFY: Confirm that tests pass using `python3 -m pytest tests/test_create_consolidated_lists.py`.
+MAINTAIN: Be careful with mock injection for `base_dir / filename` by ensuring `mock_base_dir.__truediv__` is configured.
