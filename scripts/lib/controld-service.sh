@@ -135,11 +135,7 @@ restart_with_config() {
 	ln -sf "$config_file" "$controld_dir/ctrld.toml"
 
 	# Start service
-	if [[ $protocol == "doh3" ]]; then
-		ctrld start --config="$controld_dir/ctrld.toml" --skip_self_checks
-	else
-		ctrld start --config="$controld_dir/ctrld.toml" --skip_self_checks
-	fi
+	ctrld start --config="$controld_dir/ctrld.toml" --skip_self_checks
 
 	local system_dns_ip="$listener_ip"
 	if [[ $system_dns_ip == "0.0.0.0" ]]; then

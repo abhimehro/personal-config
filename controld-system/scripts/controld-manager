@@ -137,7 +137,11 @@ switch_profile() {
 		active_proto=$(grep "^PROTOCOL=" "$CONTROLD_DIR/active_profile" 2>/dev/null | cut -d= -f2)
 		active_listener=$(grep "^LISTENER_IP=" "$CONTROLD_DIR/active_profile" 2>/dev/null | cut -d= -f2 || echo "127.0.0.1")
 		if [[ $active_prof == "$profile_name" ]] && [[ $active_proto == "$protocol" ]] && [[ $active_listener == "$LISTENER_IP" ]]; then
-			if dig @127.0.0.1 google.com +short +time=1 >/dev/null 2>&1; then
+			local check_ip="$LISTENER_IP"
+			if [[ $check_ip == "0.0.0.0" ]]; then
+				check_ip="127.0.0.1"
+			fi
+			if dig @"$check_ip" google.com +short +time=1 >/dev/null 2>&1; then
 				log_success "Already running $profile_name profile with $protocol on $LISTENER_IP. No change needed."
 				return 0
 			fi
