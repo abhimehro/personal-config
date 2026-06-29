@@ -206,11 +206,12 @@ test_profile_connection() {
 }
 
 # Generate a robust static DO fallback configuration when the Control D API is unreachable.
-# Usage: generate_fallback_config <profile_name> <profile_id> <profiles_dir>
+# Usage: generate_fallback_config <profile_name> <profile_id> <profiles_dir> [listener_ip]
 generate_fallback_config() {
 	local profile_name="$1"
 	local profile_id="$2"
 	local profiles_dir="$3"
+	local listener_ip="${4:-127.0.0.1}"
 	local config_file="$profiles_dir/ctrld.$profile_name.fallback.toml"
 
 	mkdir -p "$profiles_dir"
@@ -220,7 +221,7 @@ generate_fallback_config() {
 # AUTO-GENERATED FALLBACK VIA NM-VPN - BYPASSES CONTROL D API
 [listener]
   [listener.0]
-    ip = '127.0.0.1'
+    ip = '${listener_ip}'
     port = 53
 
 [network]

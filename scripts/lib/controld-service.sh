@@ -258,7 +258,7 @@ restart_with_native_profile() {
 		if command -v generate_fallback_config >/dev/null 2>&1; then
 			echo -e "\n\033[1;33m[WARN]\033[0m Native Control D API failed (likely maintenance). Attempting static fallback..." >&2
 			local profiles_dir="$controld_dir/profiles"
-			if generate_fallback_config "$profile_name" "$profile_id" "$profiles_dir"; then
+			if generate_fallback_config "$profile_name" "$profile_id" "$profiles_dir" "$listener_ip"; then
 				# Fallback to config file
 				local fallback_file="$profiles_dir/ctrld.$profile_name.fallback.toml"
 				restart_with_config "$fallback_file" "$controld_dir" "doh" "$listener_ip"
