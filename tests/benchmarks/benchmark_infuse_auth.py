@@ -121,24 +121,33 @@ def _print_benchmark_results(scenario_name, results, total_time):
     else:
         avg_latency = max_latency = min_latency = 0
 
-    _print_metrics(scenario_name, total_time, successes, rate_limited, failures, avg_latency, min_latency, max_latency)
+    metrics = {
+        "total_time": total_time,
+        "successes": successes,
+        "rate_limited": rate_limited,
+        "failures": failures,
+        "avg_latency": avg_latency,
+        "min_latency": min_latency,
+        "max_latency": max_latency
+    }
+    _print_metrics(scenario_name, metrics)
 
 
-def _print_metrics(scenario_name, total_time, successes, rate_limited, failures, avg_latency, min_latency, max_latency):
+def _print_metrics(scenario_name, metrics):
     print(f"\n--- {scenario_name} Benchmark Results ---")
-    print(f"Total time taken: {total_time:.2f} seconds")
+    print(f"Total time taken: {metrics['total_time']:.2f} seconds")
     if scenario_name == "Invalid Auth":
-        print(f"401 Unauthorized responses: {len(successes)}")
+        print(f"401 Unauthorized responses: {len(metrics['successes'])}")
     else:
-        print(f"200 OK responses: {len(successes)}")
-    print(f"429 Too Many Requests responses: {len(rate_limited)}")
-    print(f"Failed requests (timeout/error): {len(failures)}")
-    print(f"Average latency per request: {avg_latency:.2f} seconds")
-    print(f"Min latency: {min_latency:.2f} seconds")
-    print(f"Max latency: {max_latency:.2f} seconds")
-    if total_time > 0:
+        print(f"200 OK responses: {len(metrics['successes'])}")
+    print(f"429 Too Many Requests responses: {len(metrics['rate_limited'])}")
+    print(f"Failed requests (timeout/error): {len(metrics['failures'])}")
+    print(f"Average latency per request: {metrics['avg_latency']:.2f} seconds")
+    print(f"Min latency: {metrics['min_latency']:.2f} seconds")
+    print(f"Max latency: {metrics['max_latency']:.2f} seconds")
+    if metrics['total_time'] > 0:
         print(
-            f"Throughput: {(len(successes) + len(rate_limited)) / total_time:.2f} requests/second"
+            f"Throughput: {(len(metrics['successes']) + len(metrics['rate_limited'])) / metrics['total_time']:.2f} requests/second"
         )
     else:
         print("Throughput: 0.00 requests/second")
