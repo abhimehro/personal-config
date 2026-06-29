@@ -24,74 +24,10 @@ def generate_test_data(num_rules):
     return {"rules": rules}
 
 
-# Full end-to-end setups (including JSON parsing)
-SETUP_E2E_OLD = """
-import json
-def extract(filepath):
-    domains = []
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            if 'rules' in data:
-                for rule in data['rules']:
-                    if 'PK' in rule:
-                        domains.append(rule['PK'])
-    except Exception as e:
-        pass
-    return domains
-"""
-
-SETUP_E2E_NEW = """
-import json
-def extract(filepath):
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            if 'rules' in data:
-                return [rule['PK'] for rule in data['rules'] if 'PK' in rule]
-    except Exception as e:
-        pass
-    return []
-"""
-
-SETUP_E2E_ALLOW_OLD = """
-import json
-def extract(filepath):
-    domains = []
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            if 'rules' in data:
-                for rule in data['rules']:
-                    if 'PK' in rule and rule.get('action', {}).get('do') == 1:
-                        domains.append(rule['PK'])
-    except Exception as e:
-        pass
-    return domains
-"""
-
-# Using the optimized dictionary access rather than get().get()
-SETUP_E2E_ALLOW_NEW = """
-import json
-def extract(filepath):
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            if 'rules' in data:
-                return [
-                    rule['PK']
-                    for rule in data['rules']
-                    if 'PK' in rule and 'action' in rule and rule['action'].get('do') == 1
-                ]
-    except Exception as e:
-        pass
-    return []
-"""
-
-
-def run_benchmark(name, setups, temp_filepath, iterations):
+def run_benchmark(name, setups, context):
     """Run timing loops and print formatted output for a given setup."""
     setup_old, setup_new = setups
+    temp_filepath, iterations = context
     globals_dict = {"temp_filepath": temp_filepath}
 
     old_time = timeit.timeit(
@@ -126,21 +62,85 @@ def main():
         temp_filepath = f.name
 
     try:
+        # Full end-to-end setups (including JSON parsing)
+        setup_e2e_old = f"""
+import json
+def extract(filepath):
+    domains = []
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            if 'rules' in data:
+                for rule in data['rules']:
+                    if 'PK' in rule:
+                        domains.append(rule['PK'])
+    except Exception as e:
+        pass
+    return domains
+"""
+
+        setup_e2e_new = f"""
+import json
+def extract(filepath):
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            if 'rules' in data:
+                return [rule['PK'] for rule in data['rules'] if 'PK' in rule]
+    except Exception as e:
+        pass
+    return []
+"""
+
+        setup_e2e_allow_old = f"""
+import json
+def extract(filepath):
+    domains = []
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            if 'rules' in data:
+                for rule in data['rules']:
+                    if 'PK' in rule and rule.get('action', {{}}).get('do') == 1:
+                        domains.append(rule['PK'])
+    except Exception as e:
+        pass
+    return domains
+"""
+
+        # Using the optimized dictionary access rather than get().get()
+        setup_e2e_allow_new = f"""
+import json
+def extract(filepath):
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            if 'rules' in data:
+                return [
+                    rule['PK']
+                    for rule in data['rules']
+                    if 'PK' in rule and 'action' in rule and rule['action'].get('do') == 1
+                ]
+    except Exception as e:
+        pass
+    return []
+"""
+
         print(f"\nBenchmarking end-to-end (including file read and JSON parsing)")
         print(f"Dataset size: {num_rules} rules. Iterations: {iterations}")
 
+        context = (temp_filepath, iterations)
+
         run_benchmark(
             "extract_domains",
-            (SETUP_E2E_OLD, SETUP_E2E_NEW),
-            temp_filepath,
-            iterations,
+            (setup_e2e_old, setup_e2e_new),
+            context,
         )
 
         run_benchmark(
             "extract_allowlist_domains",
-            (SETUP_E2E_ALLOW_OLD, SETUP_E2E_ALLOW_NEW),
-            temp_filepath,
-            iterations,
+            (setup_e2e_allow_old, setup_e2e_allow_new),
+            context,
         )
 
     finally:
