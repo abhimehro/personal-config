@@ -24,6 +24,30 @@ def generate_test_data(num_rules):
     return {"rules": rules}
 
 
+def run_benchmark(name, setup_old, setup_new, temp_filepath, iterations):
+    """Run timing loops and print formatted output for a given setup."""
+    globals_dict = {"temp_filepath": temp_filepath}
+
+    old_time = timeit.timeit(
+        "extract(temp_filepath)",
+        setup=setup_old,
+        globals=globals_dict,
+        number=iterations,
+    )
+    new_time = timeit.timeit(
+        "extract(temp_filepath)",
+        setup=setup_new,
+        globals=globals_dict,
+        number=iterations,
+    )
+
+    print(f"\n{name} (end-to-end):")
+    print(f"Old approach (for loop + append): {old_time:.4f} seconds")
+    print(f"New approach (list comprehension): {new_time:.4f} seconds")
+    print(f"Speedup: {old_time / new_time:.2f}x faster")
+    print(f"Time saved: {old_time - new_time:.4f} seconds")
+
+
 def main():
     num_rules = 500000
     iterations = 50
@@ -103,47 +127,21 @@ def extract(filepath):
         print(f"\nBenchmarking end-to-end (including file read and JSON parsing)")
         print(f"Dataset size: {num_rules} rules. Iterations: {iterations}")
 
-        globals_dict = {"temp_filepath": temp_filepath}
-
-        # Test extract_domains
-        old_time = timeit.timeit(
-            "extract(temp_filepath)",
-            setup=setup_e2e_old,
-            globals=globals_dict,
-            number=iterations,
-        )
-        new_time = timeit.timeit(
-            "extract(temp_filepath)",
-            setup=setup_e2e_new,
-            globals=globals_dict,
-            number=iterations,
+        run_benchmark(
+            "extract_domains",
+            setup_e2e_old,
+            setup_e2e_new,
+            temp_filepath,
+            iterations,
         )
 
-        print("\nextract_domains (end-to-end):")
-        print(f"Old approach (for loop + append): {old_time:.4f} seconds")
-        print(f"New approach (list comprehension): {new_time:.4f} seconds")
-        print(f"Speedup: {old_time / new_time:.2f}x faster")
-        print(f"Time saved: {old_time - new_time:.4f} seconds")
-
-        # Test extract_allowlist_domains
-        old_allow_time = timeit.timeit(
-            "extract(temp_filepath)",
-            setup=setup_e2e_allow_old,
-            globals=globals_dict,
-            number=iterations,
+        run_benchmark(
+            "extract_allowlist_domains",
+            setup_e2e_allow_old,
+            setup_e2e_allow_new,
+            temp_filepath,
+            iterations,
         )
-        new_allow_time = timeit.timeit(
-            "extract(temp_filepath)",
-            setup=setup_e2e_allow_new,
-            globals=globals_dict,
-            number=iterations,
-        )
-
-        print("\nextract_allowlist_domains (end-to-end):")
-        print(f"Old approach (for loop + append): {old_allow_time:.4f} seconds")
-        print(f"New approach (list comprehension): {new_allow_time:.4f} seconds")
-        print(f"Speedup: {old_allow_time / new_allow_time:.2f}x faster")
-        print(f"Time saved: {old_allow_time - new_allow_time:.4f} seconds")
 
     finally:
         os.unlink(temp_filepath)
