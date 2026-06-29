@@ -130,14 +130,15 @@ switch_profile() {
 	local config_file="$PROFILES_DIR/ctrld.$profile_name.toml"
 	log "Switching to $profile_name profile with $protocol protocol..."
 
-	# Optimization: Early exit if already running the desired profile/protocol
+	# Optimization: Early exit if already running the desired profile/protocol/listener_ip
 	if pgrep -x "ctrld" >/dev/null && [[ -f "$CONTROLD_DIR/active_profile" ]]; then
-		local active_prof active_proto
+		local active_prof active_proto active_listener
 		active_prof=$(grep "^PROFILE_NAME=" "$CONTROLD_DIR/active_profile" 2>/dev/null | cut -d= -f2)
 		active_proto=$(grep "^PROTOCOL=" "$CONTROLD_DIR/active_profile" 2>/dev/null | cut -d= -f2)
-		if [[ $active_prof == "$profile_name" ]] && [[ $active_proto == "$protocol" ]]; then
+		active_listener=$(grep "^LISTENER_IP=" "$CONTROLD_DIR/active_profile" 2>/dev/null | cut -d= -f2 || echo "127.0.0.1")
+		if [[ $active_prof == "$profile_name" ]] && [[ $active_proto == "$protocol" ]] && [[ $active_listener == "$LISTENER_IP" ]]; then
 			if dig @127.0.0.1 google.com +short +time=1 >/dev/null 2>&1; then
-				log_success "Already running $profile_name profile with $protocol. No change needed."
+				log_success "Already running $profile_name profile with $protocol on $LISTENER_IP. No change needed."
 				return 0
 			fi
 			log_warning "Profile matches but health check failed. Restarting service..."
