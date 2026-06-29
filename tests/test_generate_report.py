@@ -67,6 +67,27 @@ class TestGenerateReport(unittest.TestCase):
         with self.assertRaises(ValueError):
             generate_report.format_lists(merged_data, [], [])
 
+    def test_format_lists_extra_fields(self):
+        # Extra fields in merged_data tuple triggers unpacking ValueError
+        merged_data = [("repo1", "123", "title", "extra")]
+        with self.assertRaises(ValueError):
+            generate_report.format_lists(merged_data, [], [])
+
+    def test_format_lists_invalid_closed_data(self):
+        # Invalid elements in closed_data trigger AttributeError
+        with self.assertRaises(AttributeError):
+            generate_report.format_lists([], [123], [])
+
+    def test_format_lists_invalid_escalated_data(self):
+        # Invalid elements in escalated_data trigger AttributeError
+        with self.assertRaises(AttributeError):
+            generate_report.format_lists([], [], [123])
+
+    def test_format_lists_none_inputs(self):
+        # Passing None instead of iterable triggers TypeError
+        with self.assertRaises(TypeError):
+            generate_report.format_lists(None, [], [])
+
 
 if __name__ == "__main__":
     unittest.main()
