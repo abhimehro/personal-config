@@ -36,5 +36,38 @@ class TestRunCmd(unittest.TestCase):
         self.assertEqual(err, "not found")
 
 
+
+class TestFindMatchingPRs(unittest.TestCase):
+    def setUp(self):
+        self.prs = [
+            {"repo": "repo1", "title": "Fix bug 1", "number": 1},
+            {"repo": "repo1", "title": "Update README", "number": 2},
+            {"repo": "repo2", "title": "Fix bug 2", "number": 3},
+            {"repo": "repo1", "title_lower": "some pre-lowered title", "title": "SOME PRE-LOWERED TITLE", "number": 4},
+        ]
+
+    def test_match_single_keyword(self):
+        matches = scratch_triage._find_matching_prs(self.prs, "repo1", ["bug"])
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]["number"], 1)
+
+    def test_match_multiple_keywords(self):
+        matches = scratch_triage._find_matching_prs(self.prs, "repo1", ["fix", "bug"])
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]["number"], 1)
+
+    def test_wrong_repo(self):
+        matches = scratch_triage._find_matching_prs(self.prs, "repo1", ["bug 2"])
+        self.assertEqual(len(matches), 0)
+
+    def test_title_lower_fallback(self):
+        matches = scratch_triage._find_matching_prs(self.prs, "repo1", ["pre-lowered"])
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]["number"], 4)
+
+    def test_empty_keywords(self):
+        matches = scratch_triage._find_matching_prs(self.prs, "repo1", [])
+        self.assertEqual(len(matches), 3)
+
 if __name__ == "__main__":
     unittest.main()
