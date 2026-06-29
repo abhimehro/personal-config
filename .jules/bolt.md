@@ -538,3 +538,7 @@ invocation.
 
 **Learning:** Evaluating loop-invariant string operations like `replace("/", "-")` inside a loop iterations causes unnecessary allocations. Similarly, calling `startswith()` sequentially inside a tight loop causes unecessary python overhead.
 **Action:** Hoist the string operations out of the loop and use a single tuple in `.startswith(("string1", "string2"))` to ensure operations evaluate at the C-level.
+
+## 2023-10-25 - Code Health Check
+**Action:** Removed unused `from __future__ import annotations` from `tests/test_morning_brief.py`.
+**Insight:** Code clarity and readability can be improved by pruning unused imports.
