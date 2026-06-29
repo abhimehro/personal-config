@@ -128,6 +128,16 @@ reconcile_network_state() {
 		return 0
 	fi
 
+	local ipv6_state
+	ipv6_state=$(networksetup -getinfo "Wi-Fi" 2>/dev/null || echo "")
+	if pgrep -x "ctrld" >/dev/null 2>&1 && [[ $ipv6_state != *"IPv6: Automatic"* ]]; then
+		warn "Detected Control D running with IPv6 disabled and no VPN. Re-enabling IPv6 and switching to standalone Control D ($profile)."
+		set_ipv6 "enable"
+		start_controld "$profile" ""
+		print_status
+		return 0
+	fi
+
 	log "No reconciliation needed."
 	print_status
 }
