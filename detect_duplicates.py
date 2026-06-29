@@ -2,7 +2,6 @@ import json
 import os
 import subprocess
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 
 
@@ -84,27 +83,34 @@ def _build_graphql_query(chunk):
 
 
 def _process_graphql_response(result, chunk, file_groups):
-    if not result or "data" not in result or not result["data"]:
+    if not result:
         return
-    data = result["data"]
+    data = result.get("data", {})
+    if not data:
+        return
     for j, pr in enumerate(chunk):
-        alias = f"pr{j}"
         repo, _, _ = pr.partition("#")
 
-        pr_result = data.get(alias)
+        pr_result = data.get(f"pr{j}", {})
         if not pr_result:
             continue
 
-        pr_data = pr_result.get("pullRequest")
+        pr_data = pr_result.get("pullRequest") or {}
         if not pr_data:
             continue
 
-        files = [{"path": node["path"]} for node in pr_data.get("files", {}).get("nodes", [])]
-        res = (repo, {
-            "number": pr_data["number"],
-            "title": pr_data["title"],
-            "files": files
-        })
+        files_data = pr_data.get("files", {}) or {}
+        nodes = files_data.get("nodes", []) or []
+        files = [{"path": node["path"]} for node in nodes if "path" in node]
+
+        res = (
+            repo,
+            {
+                "number": pr_data.get("number"),
+                "title": pr_data.get("title"),
+                "files": files,
+            },
+        )
         _process_pr_result(res, file_groups)
 
 
@@ -112,7 +118,7 @@ def _group_prs_by_files(ready_only):
     file_groups = defaultdict(list)
     chunk_size = 50
     for i in range(0, len(ready_only), chunk_size):
-        chunk = ready_only[i:i + chunk_size]
+        chunk = ready_only[i : i + chunk_size]
         query = _build_graphql_query(chunk)
         if not query:
             continue
