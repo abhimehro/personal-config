@@ -228,7 +228,7 @@ restart_with_native_profile() {
 
 	# Record the active profile state
 	echo -e "PROFILE_NAME=$profile_name\nPROFILE_ID=$profile_id\nPROTOCOL=$protocol\nLISTENER_IP=$listener_ip" >"$ACTIVE_PROFILE_FILE"
-	chmod 600 "$ACTIVE_PROFILE_FILE" 2>/dev/null || true
+	chmod 644 "$ACTIVE_PROFILE_FILE" 2>/dev/null || true
 
 	local system_dns_ip="$listener_ip"
 	if [[ $system_dns_ip == "0.0.0.0" ]]; then

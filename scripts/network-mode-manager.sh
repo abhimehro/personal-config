@@ -115,19 +115,37 @@ print_status() {
 	if pgrep -x "ctrld" >/dev/null 2>&1; then
 		local config_link="/etc/controld/ctrld.toml"
 		local profile_name="Unknown"
-		if sudo test -L "$config_link"; then
+		local active_profile_file="/etc/controld/active_profile"
+		if [[ -f $active_profile_file ]]; then
+			profile_name=$(grep "^PROFILE_NAME=" "$active_profile_file" 2>/dev/null | cut -d= -f2 || echo "Unknown")
+		fi
+		if [[ $profile_name == "Unknown" ]] && sudo test -L "$config_link"; then
 			local target
 			target=$(sudo readlink "$config_link" || echo "")
 			local extracted_name="${target##*/}"
 			extracted_name="${extracted_name#ctrld.}"
 			extracted_name="${extracted_name%.toml}"
-			case "$extracted_name" in
-			"privacy") profile_name="Privacy" ;;
-			"browsing") profile_name="Browsing" ;;
-			"gaming") profile_name="Gaming" ;;
-			*) profile_name="$extracted_name" ;;
-			esac
+			profile_name="$extracted_name"
 		fi
+		# Check if fallback config is active
+		if sudo test -L "$config_link"; then
+			local target
+			target=$(sudo readlink "$config_link" || echo "")
+			if [[ $target == *".fallback.toml" ]]; then
+				if [[ $profile_name != *".fallback" ]]; then
+					profile_name="${profile_name}.fallback"
+				fi
+			fi
+		fi
+		# Capitalize nicely if standard
+		case "$profile_name" in
+		[pP][rR][iI][vV][aA][cC][yY]) profile_name="Privacy" ;;
+		[bB][rR][oO][wW][sS][iI][nN][gG]) profile_name="Browsing" ;;
+		[gG][aA][mM][iI][nN][gG]) profile_name="Gaming" ;;
+		[pP][rR][iI][vV][aA][cC][yY].[fF][aA][lL][lL][bB][aA][cC][kK]) profile_name="Privacy (Fallback)" ;;
+		[bB][rR][oO][wW][sS][iI][nN][gG].[fF][aA][lL][lL][bB][aA][cC][kK]) profile_name="Browsing (Fallback)" ;;
+		[gG][aA][mM][iI][nN][gG].[fF][aA][lL][lL][bB][aA][cC][kK]) profile_name="Gaming (Fallback)" ;;
+		esac
 		cd_display="${GREEN}● ACTIVE${NC} (${YELLOW}$profile_name${NC})"
 	else
 		cd_display="${RED}○ STOPPED${NC}"
@@ -141,38 +159,36 @@ print_status() {
 	fi
 	printf "   %s  %-13s %b\n" "🔐" "VPN Tunnel" "$vpn_status"
 
-	# Network Info (Parallel)
-	local dns_temp
-	dns_temp=$(mktemp -t 'nmm_dns.XXXXXX')
-	local info_temp
-	info_temp=$(mktemp -t 'nmm_info.XXXXXX')
-	(networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "Unknown") >"$dns_temp" &
-	local pid1=$!
-	(networksetup -getinfo "Wi-Fi" 2>/dev/null || echo "") >"$info_temp" &
-	local pid2=$!
-	wait $pid1 $pid2
-
-	local dns_servers
-	dns_servers=$(cat "$dns_temp")
-	local wifi_info
-	wifi_info=$(cat "$info_temp")
-	rm -f "$dns_temp" "$info_temp"
-
 	# DNS Status
-	local dns_status
-	if [[ $dns_servers == *"There aren't any DNS Servers"* ]]; then
-		dns_status="${YELLOW}DHCP (ISP/Router)${NC}"
-	elif [[ $dns_servers == *"127.0.0.1"* ]]; then
+	local primary_dns
+	primary_dns=$(scutil --dns 2>/dev/null | awk '/nameserver\[0\]/ {print $3; exit}' || echo "")
+	local wifi_dns lan_dns
+	wifi_dns=$(networksetup -getdnsservers "Wi-Fi" 2>/dev/null || echo "")
+	lan_dns=$(networksetup -getdnsservers "USB 10/100/1000 LAN" 2>/dev/null || echo "")
+
+	local dns_status="${YELLOW}DHCP (ISP/Router)${NC}"
+	if [[ $wifi_dns == *"127.0.0.1"* ]] || [[ $lan_dns == *"127.0.0.1"* ]] || [[ $primary_dns == "127.0.0.1" ]]; then
 		dns_status="${GREEN}127.0.0.1 (Localhost)${NC}"
 	else
-		local cleaner_dns="${dns_servers//$'\n'/, }"
-		dns_status="${RED}${cleaner_dns%, }${NC}"
+		if [[ -n $wifi_dns && $wifi_dns != *"There aren't any DNS"* ]]; then
+			local cleaner_dns="${wifi_dns//$'\n'/, }"
+			dns_status="${RED}${cleaner_dns%, }${NC}"
+		elif [[ -n $lan_dns && $lan_dns != *"There aren't any DNS"* ]]; then
+			local cleaner_dns="${lan_dns//$'\n'/, }"
+			dns_status="${RED}${cleaner_dns%, }${NC}"
+		elif [[ -n $primary_dns ]]; then
+			dns_status="${RED}${primary_dns}${NC}"
+		fi
 	fi
 	printf "   %s  %-13s %b\n" "📡" "System DNS" "$dns_status"
 
 	# IPv6 Status
+	local wifi_info lan_info
+	wifi_info=$(networksetup -getinfo "Wi-Fi" 2>/dev/null || echo "")
+	lan_info=$(networksetup -getinfo "USB 10/100/1000 LAN" 2>/dev/null || echo "")
+
 	local ipv6_status="${RED}DISABLED${NC}"
-	if [[ $wifi_info == *"IPv6: Automatic"* ]]; then
+	if [[ $wifi_info == *"IPv6: Automatic"* ]] || [[ $lan_info == *"IPv6: Automatic"* ]]; then
 		ipv6_status="${GREEN}ENABLED${NC} (Automatic)"
 	fi
 	printf "   %s  %-13s %b\n" "🌐" "IPv6 Mode" "$ipv6_status"
