@@ -180,7 +180,10 @@ def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
     for root, dirs, files in os.walk(ROOT):
         # ⚡ Bolt: Prune ignored directories in-place to prevent os.walk from
         # traversing them entirely, massively reducing I/O compared to Path.rglob().
-        dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
+        ignored = IGNORED_DIRS.intersection(dirs)
+        if ignored:
+            for d in ignored:
+                dirs.remove(d)
 
         root_path = Path(root)
         for file in files:
