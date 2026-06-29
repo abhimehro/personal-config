@@ -636,6 +636,8 @@ def main():
     parser_run.add_argument("--dry-run", action="store_true", help="Execute in dry-run mode.")
     parser_run.add_argument("--no-llm", action="store_true", help="Skip LLM diagnostic logs.")
     parser_run.add_argument("--init-scaffold", action="store_true", help="Auto-initialize scaffolding if missing.")
+    parser_run.add_argument("--max-tasks", type=int, default=3, help="Max new tasks appended to todo.md.")
+    parser_run.add_argument("--max-retries", type=int, default=1, help="Max push retries on conflicts.")
 
     args = parser.parse_args()
     
