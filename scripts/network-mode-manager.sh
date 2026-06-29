@@ -99,6 +99,19 @@ reconcile_network_state() {
 
 	if is_vpn_connected; then
 		log "VPN is connected; preserving Windscribe-compatible mode."
+
+		# Guard: never lock DNS to localhost if the resolver is not actually running.
+		# Doing so would point system DNS at a dead address and break all resolution.
+		if ! pgrep -x "ctrld" >/dev/null 2>&1; then
+			warn "VPN is connected but Control D (ctrld) is not running. Restarting Control D ($profile) in Windscribe-compatible mode (DoH)."
+			start_controld "$profile" "doh"
+			if ! pgrep -x "ctrld" >/dev/null 2>&1; then
+				error "Control D failed to start while VPN is connected. Leaving DNS unchanged to preserve connectivity. Restart Control D manually or run: ./scripts/network-mode-manager.sh windscribe $profile"
+				print_status
+				return 1
+			fi
+		fi
+
 		if ! system_dns_has_localhost; then
 			warn "System DNS is not locked to 127.0.0.1 while VPN is connected. Re-applying localhost DNS."
 			sudo networksetup -setdnsservers Wi-Fi 127.0.0.1 2>/dev/null || true
@@ -278,7 +291,15 @@ print_status() {
 		ctrld_running="true"
 	fi
 	if [[ ${NMM_SUPPRESS_RECONCILE_HINT:-0} != "1" ]] && check_reconcile_needed "$vpn_connected" "$ctrld_running" "$ipv6_enabled"; then
-		printf "   %s  %-13s %b\n" "⚠️" "Reconcile" "${YELLOW}Recommended: ./scripts/network-mode-manager.sh reconcile privacy${NC}"
+		local hint_profile
+		hint_profile=$(get_active_profile_name)
+		case "$hint_profile" in
+		Privacy) hint_profile="privacy" ;;
+		Browsing) hint_profile="browsing" ;;
+		Gaming) hint_profile="gaming" ;;
+		*) hint_profile="privacy" ;;
+		esac
+		printf "   %s  %-13s %b\n" "⚠️" "Reconcile" "${YELLOW}Recommended: ./scripts/network-mode-manager.sh reconcile ${hint_profile}${NC}"
 	fi
 	echo -e "\n"
 }
@@ -363,7 +384,7 @@ main() {
 			stop_controld
 		fi
 		set_ipv6 "disable"
-		NMM_SUPPRESS_RECONCILE_HINT=1 print_status
+		(NMM_SUPPRESS_RECONCILE_HINT=1 print_status)
 		;;
 	controld)
 		local proto="${3-}"
