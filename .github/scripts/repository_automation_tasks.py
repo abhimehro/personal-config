@@ -175,13 +175,17 @@ def _count_file_lines(path: Path) -> int:
         return -1
 
 
+def _prune_ignored(dirs: list[str]) -> None:
+    for d in IGNORED_DIRS.intersection(dirs):
+        dirs.remove(d)
+
+
 def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
     candidates = []
     for root, dirs, files in os.walk(ROOT):
         # ⚡ Bolt: Prune ignored directories in-place to prevent os.walk from
         # traversing them entirely, massively reducing I/O compared to Path.rglob().
-        for d in IGNORED_DIRS.intersection(dirs):
-            dirs.remove(d)
+        _prune_ignored(dirs)
 
         root_path = Path(root)
         for file in files:
