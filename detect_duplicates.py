@@ -57,53 +57,67 @@ def _process_pr_result(res, file_groups):
     file_groups[(repo, files)].append(info)
 
 
-def _group_prs_by_files(ready_only):
-    file_groups = defaultdict(list)
-    chunk_size = 50
-
-    for i in range(0, len(ready_only), chunk_size):
-        chunk = ready_only[i:i + chunk_size]
-        query_parts = []
-        for j, pr in enumerate(chunk):
-            repo, _, pr_id = pr.partition("#")
-            try:
-                owner, name = repo.split("/")
-            except ValueError:
-                continue
-            query_parts.append(f"""
-            pr{j}: repository(owner: "{owner}", name: "{name}") {{
-                pullRequest(number: {pr_id}) {{
-                    number
-                    title
-                    files(first: 100) {{
-                        nodes {{
-                            path
-                        }}
+def _build_graphql_query(chunk):
+    query_parts = []
+    for j, pr in enumerate(chunk):
+        repo, _, pr_id = pr.partition("#")
+        try:
+            owner, name = repo.split("/")
+        except ValueError:
+            continue
+        query_parts.append(f"""
+        pr{j}: repository(owner: "{owner}", name: "{name}") {{
+            pullRequest(number: {pr_id}) {{
+                number
+                title
+                files(first: 100) {{
+                    nodes {{
+                        path
                     }}
                 }}
             }}
-            """)
+        }}
+        """)
+    if not query_parts:
+        return None
+    return "query { " + " ".join(query_parts) + " }"
 
-        if not query_parts:
+
+def _process_graphql_response(result, chunk, file_groups):
+    if not result or "data" not in result or not result["data"]:
+        return
+    data = result["data"]
+    for j, pr in enumerate(chunk):
+        alias = f"pr{j}"
+        repo, _, _ = pr.partition("#")
+
+        pr_result = data.get(alias)
+        if not pr_result:
             continue
 
-        query = "query { " + " ".join(query_parts) + " }"
+        pr_data = pr_result.get("pullRequest")
+        if not pr_data:
+            continue
 
+        files = [{"path": node["path"]} for node in pr_data.get("files", {}).get("nodes", [])]
+        res = (repo, {
+            "number": pr_data["number"],
+            "title": pr_data["title"],
+            "files": files
+        })
+        _process_pr_result(res, file_groups)
+
+
+def _group_prs_by_files(ready_only):
+    file_groups = defaultdict(list)
+    chunk_size = 50
+    for i in range(0, len(ready_only), chunk_size):
+        chunk = ready_only[i:i + chunk_size]
+        query = _build_graphql_query(chunk)
+        if not query:
+            continue
         result = run_gh(["gh", "api", "graphql", "-f", f"query={query}"])
-        if result and "data" in result and result["data"]:
-            for j, pr in enumerate(chunk):
-                alias = f"pr{j}"
-                repo, _, _ = pr.partition("#")
-                if alias in result["data"] and result["data"][alias] and result["data"][alias].get("pullRequest"):
-                    pr_data = result["data"][alias]["pullRequest"]
-                    files = [{"path": node["path"]} for node in pr_data.get("files", {}).get("nodes", [])]
-                    res = (repo, {
-                        "number": pr_data["number"],
-                        "title": pr_data["title"],
-                        "files": files
-                    })
-                    _process_pr_result(res, file_groups)
-
+        _process_graphql_response(result, chunk, file_groups)
     return file_groups
 
 
