@@ -1,5 +1,17 @@
 # Lessons Learned
 
+## Lesson 0cy: Palette a11y PRs may bundle LICENSE — salvage intent only (2026-06-28)
+
+**Pattern:** Jules Palette PRs for icon-button a11y labels sometimes include an unrelated `LICENSE` file change alongside the stated UI fix. **Rule:** When salvaging Palette a11y PRs, cherry-pick only the accessibility intent files; omit LICENSE and other bundled churn unless explicitly requested. **Detection cost:** Low — `gh pr diff --stat` shows `LICENSE` alongside Swift/UI files in a Palette-titled PR.
+
+## Lesson 0cz: Jules zero-diff Daily QA PRs — close immediately (2026-06-28)
+
+**Pattern:** Jules agentic QA runs open PRs with empty or zero net diff (e.g. esp #1163). **Rule:** Close zero-diff QA PRs immediately with a superseded/no-op comment; do not defer to salvage. **Detection cost:** Low — `additions == 0 && deletions == 0` or identical tree to base.
+
+## Lesson 0da: Sibling palette isatty follow-up after merge — route CLEAN to Phase 1 (2026-06-29)
+
+**Pattern:** ctrld #956 merged isatty guards in three input paths; sibling #958 opened hours later with one remaining `USE_COLORS`-only guard plus journal entry. Both CLEAN, not DIRTY. **Rule:** When a sibling Palette PR lands on `main` and a follow-up PR targets the same theme with a minimal incremental diff, verify overlap with `git diff main..branch` — if incremental and green CI, route to Phase 1 merge; do not open a salvage draft. **Detection cost:** Low — same repo, same Palette prefix, follow-up within 24h of sibling merge.
+
 ## Lesson 0cv: Codacy action bump ≠ Codacy scan green (2026-06-23)
 
 **Pattern:** personal-config #1331 (codacy-analysis-cli-action 1.1.0 → 4.4.7) merged with passing CI, but **all** sibling open PRs still fail `Codacy Security Scan` on re-run. Other gates (CodeQL, Snyk, CodeScene, dependency-review) pass. **Rule:** Treat Codacy failures after an action bump as **ESCALATE** (project token, API config, or org-level Codacy settings)—not auto-fixable by further dependabot bumps alone. **Detection cost:** Low — single failing required check across entire PR queue.

@@ -245,3 +245,44 @@
   3. Phase 1 merge ctrld #892/#893, pc #1234/#1235 after infra fix
   4. Do not merge sa #261 without Gate 2 audit
 - Cross-links: [Session report](tasks/pr-review-2026-06-13.md)
+
+## Run — 2026-06-29
+
+### Input tail
+
+- Source report/snapshot: automation memory (2026-06-28 evening) + live GitHub re-fetch
+- PRs investigated: 6 open across 2 repos (pc 5 session docs, ctrld 1); 0 DIRTY at start
+
+### Outcomes
+
+| Repo            | Old PR | Disposition        | New PR | Notes                                      |
+| --------------- | -----: | ------------------ | -----: | ------------------------------------------ |
+| ctrld-sync      |    958 | MERGE-CANDIDATE    |      — | CLEAN; sibling follow-up to merged #956     |
+| personal-config |   1382 | HANDOFF            |      — | Phase 1 review report 2026-06-29           |
+| personal-config |   1376 | HANDOFF            |      — | Salvage report 2026-06-28 evening          |
+| personal-config | 1369–1375 | HANDOFF         |      — | Older session docs — consolidate           |
+
+- Salvage draft PRs opened: 0
+- Infra-fix draft PRs opened: 0
+- Originals closed as superseded: 0
+
+### Prior tail reconciliation
+
+| Item                         | State                                      |
+| ---------------------------- | ------------------------------------------ |
+| rpce #72 a11y salvage        | MERGED 2026-06-29                          |
+| ctrld #956 CodeScene defer   | MERGED 2026-06-29                          |
+| esp #1163 zero-diff QA       | CLOSED (prior session)                     |
+
+### Verification status
+
+- Blocking checks: none
+- Local verify: `uv run pytest tests/ -q` on ctrld#958 branch — 341 passed
+
+### Handoff
+
+- Maintainer actions required:
+  1. Phase 1 squash-merge [ctrld#958](https://github.com/abhimehro/ctrld-sync/pull/958)
+  2. Merge pc#1382 then pc#1376; consolidate older session-doc PRs
+  3. Re-run Phase 1 — code queues otherwise clear
+- Cross-links: [Session report](tasks/pr-review-2026-06-29.md)
