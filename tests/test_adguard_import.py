@@ -69,6 +69,17 @@ class TestValidateLine(unittest.TestCase):
 
 class TestCountLineTypes(unittest.TestCase):
 
+    def _assert_stats_and_issues(self, stats, issues, expected_issues):
+        self.assertEqual(stats["total"], 6)
+        self.assertEqual(stats["comments"], 1)
+        self.assertEqual(stats["empty"], 1)
+        self.assertEqual(stats["valid"], 2)
+        self.assertEqual(stats["invalid"], 2)
+
+        self.assertEqual(len(issues), len(expected_issues))
+        for i, expected_issue in enumerate(expected_issues):
+            self.assertEqual(issues[i], expected_issue)
+
     def test_denylist_counts(self):
         lines = [
             "# Header comment",
@@ -80,15 +91,11 @@ class TestCountLineTypes(unittest.TestCase):
         ]
         stats, issues = test_adguard_import.count_line_types(lines, "denylist")
 
-        self.assertEqual(stats["total"], 6)
-        self.assertEqual(stats["comments"], 1)
-        self.assertEqual(stats["empty"], 1)
-        self.assertEqual(stats["valid"], 2)
-        self.assertEqual(stats["invalid"], 2)
-
-        self.assertEqual(len(issues), 2)
-        self.assertEqual(issues[0], "Line 5: Invalid domain format - 'invalid_domain'")
-        self.assertEqual(issues[1], "Line 6: Invalid domain format - '@@not-allowed.com'")
+        expected_issues = [
+            "Line 5: Invalid domain format - 'invalid_domain'",
+            "Line 6: Invalid domain format - '@@not-allowed.com'"
+        ]
+        self._assert_stats_and_issues(stats, issues, expected_issues)
 
     def test_allowlist_counts(self):
         lines = [
@@ -101,15 +108,11 @@ class TestCountLineTypes(unittest.TestCase):
         ]
         stats, issues = test_adguard_import.count_line_types(lines, "allowlist")
 
-        self.assertEqual(stats["total"], 6)
-        self.assertEqual(stats["comments"], 1)
-        self.assertEqual(stats["empty"], 1)
-        self.assertEqual(stats["valid"], 2)
-        self.assertEqual(stats["invalid"], 2)
-
-        self.assertEqual(len(issues), 2)
-        self.assertEqual(issues[0], "Line 5: Invalid allowlist format - 'example.com'")
-        self.assertEqual(issues[1], "Line 6: Invalid allowlist format - '@@invalid'")
+        expected_issues = [
+            "Line 5: Invalid allowlist format - 'example.com'",
+            "Line 6: Invalid allowlist format - '@@invalid'"
+        ]
+        self._assert_stats_and_issues(stats, issues, expected_issues)
 
     def test_empty_list(self):
         lines = []
