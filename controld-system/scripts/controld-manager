@@ -34,7 +34,7 @@ PROFILES_DIR="$CONTROLD_DIR/profiles"
 BACKUP_DIR="$CONTROLD_DIR/backup"
 LOG_FILE="${LOG_FILE:-/var/log/controld_manager.log}"
 ENV_FILE="$CONTROLD_DIR/controld.env"
-LISTENER_IP="127.0.0.1" # localhost - where ctrld listens for DNS queries
+LISTENER_IP="${LISTENER_IP:-127.0.0.1}" # localhost - where ctrld listens for DNS queries
 
 # Load environment variables if present
 if [[ -f $ENV_FILE ]]; then

@@ -141,25 +141,30 @@ restart_with_config() {
 		ctrld start --config="$controld_dir/ctrld.toml" --skip_self_checks
 	fi
 
+	local system_dns_ip="$listener_ip"
+	if [[ $system_dns_ip == "0.0.0.0" ]]; then
+		system_dns_ip="127.0.0.1"
+	fi
+
 	# Wait for service to initialize
 	local retry=0
-	while ! dig @"$listener_ip" google.com +short +time=1 >/dev/null 2>&1 && [[ $retry -lt 30 ]]; do
+	while ! dig @"$system_dns_ip" google.com +short +time=1 >/dev/null 2>&1 && [[ $retry -lt 30 ]]; do
 		sleep 0.1
 		retry=$((retry + 1))
 	done
 
 	# Configure system DNS for Wi-Fi and wired Ethernet
-	networksetup -setdnsservers Wi-Fi "$listener_ip" 2>/dev/null || true
-	networksetup -setdnsservers "USB 10/100/1000 LAN" "$listener_ip" 2>/dev/null || true
+	networksetup -setdnsservers Wi-Fi "$system_dns_ip" 2>/dev/null || true
+	networksetup -setdnsservers "USB 10/100/1000 LAN" "$system_dns_ip" 2>/dev/null || true
 
 	# Validate DNS configuration
 	sleep 0.2
 	local configured_dns
 	configured_dns=$(networksetup -getdnsservers Wi-Fi 2>/dev/null || echo "")
-	if ! echo "$configured_dns" | grep -q "$listener_ip"; then
+	if ! echo "$configured_dns" | grep -q "$system_dns_ip"; then
 		sleep 0.5
-		networksetup -setdnsservers Wi-Fi "$listener_ip" 2>/dev/null || true
-		networksetup -setdnsservers "USB 10/100/1000 LAN" "$listener_ip" 2>/dev/null || true
+		networksetup -setdnsservers Wi-Fi "$system_dns_ip" 2>/dev/null || true
+		networksetup -setdnsservers "USB 10/100/1000 LAN" "$system_dns_ip" 2>/dev/null || true
 	fi
 
 	# Flush DNS cache
@@ -213,9 +218,9 @@ restart_with_native_profile() {
 	start_err_log=$(mktemp "${TMPDIR:-/tmp}/ctrld_err.XXXXXX")
 
 	if [[ $protocol == "doh3" ]]; then
-		ctrld start --cd "$profile_id" --proto doh3 --skip_self_checks >"$start_err_log" 2>&1 || true
+		ctrld start --cd "$profile_id" --proto doh3 --listen "${listener_ip}:53" --skip_self_checks >"$start_err_log" 2>&1 || true
 	else
-		ctrld start --cd "$profile_id" --proto doh --skip_self_checks >"$start_err_log" 2>&1 || true
+		ctrld start --cd "$profile_id" --proto doh --listen "${listener_ip}:53" --skip_self_checks >"$start_err_log" 2>&1 || true
 	fi
 
 	# Print out any messages from start for transparency
@@ -225,6 +230,11 @@ restart_with_native_profile() {
 	echo -e "PROFILE_NAME=$profile_name\nPROFILE_ID=$profile_id\nPROTOCOL=$protocol" >"$ACTIVE_PROFILE_FILE"
 	chmod 600 "$ACTIVE_PROFILE_FILE" 2>/dev/null || true
 
+	local system_dns_ip="$listener_ip"
+	if [[ $system_dns_ip == "0.0.0.0" ]]; then
+		system_dns_ip="127.0.0.1"
+	fi
+
 	# Wait for service to initialize
 	local retry=0
 	local fallback_needed=0
@@ -233,7 +243,7 @@ restart_with_native_profile() {
 	if grep -qi "Maintenance is in progress\|failed to fetch resolver config" "$start_err_log" 2>/dev/null; then
 		fallback_needed=1
 	else
-		while ! dig @"$listener_ip" google.com +short +time=1 >/dev/null 2>&1 && [[ $retry -lt 30 ]]; do
+		while ! dig @"$system_dns_ip" google.com +short +time=1 >/dev/null 2>&1 && [[ $retry -lt 30 ]]; do
 			sleep 0.1
 			retry=$((retry + 1))
 		done
@@ -260,17 +270,17 @@ restart_with_native_profile() {
 	fi
 
 	# Configure system DNS
-	networksetup -setdnsservers Wi-Fi "$listener_ip" 2>/dev/null || true
-	networksetup -setdnsservers "USB 10/100/1000 LAN" "$listener_ip" 2>/dev/null || true
+	networksetup -setdnsservers Wi-Fi "$system_dns_ip" 2>/dev/null || true
+	networksetup -setdnsservers "USB 10/100/1000 LAN" "$system_dns_ip" 2>/dev/null || true
 
 	# Validate DNS configuration
 	sleep 0.2
 	local configured_dns
 	configured_dns=$(networksetup -getdnsservers Wi-Fi 2>/dev/null || echo "")
-	if ! echo "$configured_dns" | grep -q "$listener_ip"; then
+	if ! echo "$configured_dns" | grep -q "$system_dns_ip"; then
 		sleep 0.5
-		networksetup -setdnsservers Wi-Fi "$listener_ip" 2>/dev/null || true
-		networksetup -setdnsservers "USB 10/100/1000 LAN" "$listener_ip" 2>/dev/null || true
+		networksetup -setdnsservers Wi-Fi "$system_dns_ip" 2>/dev/null || true
+		networksetup -setdnsservers "USB 10/100/1000 LAN" "$system_dns_ip" 2>/dev/null || true
 	fi
 
 	# Flush DNS cache

@@ -253,6 +253,7 @@ main() {
 		local profile="${2-}"
 		if [[ -n $profile ]]; then
 			log "Switching to WINDSCRIBE + CONTROL D ($profile) MODE..."
+			export LISTENER_IP="0.0.0.0"
 			start_controld "$profile" "doh"
 		else
 			log "Switching to STANDALONE WINDSCRIBE (VPN) MODE..."
@@ -266,6 +267,7 @@ main() {
 		validate_protocol "$proto"
 		log "Switching to CONTROL D (DNS) MODE..."
 		set_ipv6 "enable"
+		export LISTENER_IP="127.0.0.1"
 		start_controld "$profile" "$proto"
 		print_status
 		;;
