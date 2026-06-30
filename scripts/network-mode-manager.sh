@@ -39,6 +39,123 @@ IPV6_MANAGER="$SCRIPT_DIR/macos/ipv6-manager.sh"
 
 # --- Logic ---
 
+get_service_dns() {
+	local service="$1"
+	networksetup -getdnsservers "$service" 2>/dev/null || true
+}
+
+system_dns_has_localhost() {
+	local wifi_dns lan_dns
+	wifi_dns=$(get_service_dns "Wi-Fi")
+	lan_dns=$(get_service_dns "USB 10/100/1000 LAN")
+	[[ $wifi_dns == *"127.0.0.1"* ]] || [[ $lan_dns == *"127.0.0.1"* ]]
+}
+
+get_active_profile_name() {
+	local controld_dir="${CONTROLD_DIR:-/etc/controld}"
+	local active_profile_file="$controld_dir/active_profile"
+	local config_link="$controld_dir/ctrld.toml"
+	local profile_name="Unknown"
+
+	if sudo test -f "$active_profile_file"; then
+		profile_name=$(sudo awk -F= '$1 == "PROFILE_NAME" {print $2; exit}' "$active_profile_file" 2>/dev/null || echo "")
+	fi
+
+	if [[ -z $profile_name || $profile_name == "Unknown" ]] && sudo test -L "$config_link"; then
+		local target extracted_name
+		target=$(sudo readlink "$config_link" || echo "")
+		extracted_name="${target##*/}"
+		extracted_name="${extracted_name#ctrld.}"
+		extracted_name="${extracted_name%.toml}"
+		extracted_name="${extracted_name%.fallback}"
+		profile_name="$extracted_name"
+	fi
+
+	case "$profile_name" in
+	privacy) echo "Privacy" ;;
+	browsing) echo "Browsing" ;;
+	gaming) echo "Gaming" ;;
+	"" | Unknown) echo "Unknown" ;;
+	*) echo "$profile_name" ;;
+	esac
+}
+
+check_reconcile_needed() {
+	local vpn_connected="$1"
+	local ctrld_running="$2"
+	local ipv6_enabled="$3"
+
+	if [[ $vpn_connected != "true" && $ctrld_running == "true" && $ipv6_enabled != "true" ]]; then
+		return 0
+	fi
+	if [[ $ctrld_running != "true" ]] && system_dns_has_localhost; then
+		return 0
+	fi
+	return 1
+}
+
+reconcile_network_state() {
+	local profile="${1:-privacy}"
+	log "Reconciling network state..."
+
+	if is_vpn_connected; then
+		log "VPN is connected; preserving Windscribe-compatible mode."
+
+		# Guard: never lock DNS to localhost if the resolver is not actually running.
+		# Doing so would point system DNS at a dead address and break all resolution.
+		if ! pgrep -x "ctrld" >/dev/null 2>&1; then
+			warn "VPN is connected but Control D (ctrld) is not running. Restarting Control D ($profile) in Windscribe-compatible mode (DoH)."
+			start_controld "$profile" "doh"
+			if ! pgrep -x "ctrld" >/dev/null 2>&1; then
+				error "Control D failed to start while VPN is connected. Leaving DNS unchanged to preserve connectivity. Restart Control D manually or run: ./scripts/network-mode-manager.sh windscribe $profile"
+				print_status
+				return 1
+			fi
+		fi
+
+		if ! system_dns_has_localhost; then
+			warn "System DNS is not locked to 127.0.0.1 while VPN is connected. Re-applying localhost DNS."
+			sudo networksetup -setdnsservers Wi-Fi 127.0.0.1 2>/dev/null || true
+			sudo networksetup -setdnsservers "USB 10/100/1000 LAN" 127.0.0.1 2>/dev/null || true
+			sudo dscacheutil -flushcache 2>/dev/null || true
+			sudo killall -HUP mDNSResponder 2>/dev/null || true
+		fi
+		print_status
+		return 0
+	fi
+
+	if pgrep -x "ctrld" >/dev/null 2>&1 && system_dns_has_localhost; then
+		warn "Detected Control D localhost DNS while VPN is disconnected. Switching back to standalone Control D ($profile)."
+		set_ipv6 "enable"
+		start_controld "$profile" ""
+		print_status
+		return 0
+	fi
+
+	if ! pgrep -x "ctrld" >/dev/null 2>&1 && system_dns_has_localhost; then
+		warn "Detected localhost DNS but Control D is stopped. Restoring DNS to DHCP."
+		reset_system_dns
+		set_ipv6 "enable"
+		sudo dscacheutil -flushcache 2>/dev/null || true
+		sudo killall -HUP mDNSResponder 2>/dev/null || true
+		print_status
+		return 0
+	fi
+
+	local ipv6_state
+	ipv6_state=$(networksetup -getinfo "Wi-Fi" 2>/dev/null || echo "")
+	if pgrep -x "ctrld" >/dev/null 2>&1 && [[ $ipv6_state != *"IPv6: Automatic"* ]]; then
+		warn "Detected Control D running with IPv6 disabled and no VPN. Re-enabling IPv6 and switching to standalone Control D ($profile)."
+		set_ipv6 "enable"
+		start_controld "$profile" ""
+		print_status
+		return 0
+	fi
+
+	log "No reconciliation needed."
+	print_status
+}
+
 validate_protocol() {
 	case "$1" in
 	"" | doh | doh3) return 0 ;;
@@ -113,21 +230,8 @@ print_status() {
 	# Control D
 	local cd_display
 	if pgrep -x "ctrld" >/dev/null 2>&1; then
-		local config_link="/etc/controld/ctrld.toml"
-		local profile_name="Unknown"
-		if sudo test -L "$config_link"; then
-			local target
-			target=$(sudo readlink "$config_link" || echo "")
-			local extracted_name="${target##*/}"
-			extracted_name="${extracted_name#ctrld.}"
-			extracted_name="${extracted_name%.toml}"
-			case "$extracted_name" in
-			"privacy") profile_name="Privacy" ;;
-			"browsing") profile_name="Browsing" ;;
-			"gaming") profile_name="Gaming" ;;
-			*) profile_name="$extracted_name" ;;
-			esac
-		fi
+		local profile_name
+		profile_name=$(get_active_profile_name)
 		cd_display="${GREEN}● ACTIVE${NC} (${YELLOW}$profile_name${NC})"
 	else
 		cd_display="${RED}○ STOPPED${NC}"
@@ -171,11 +275,33 @@ print_status() {
 	printf "   %s  %-13s %b\n" "📡" "System DNS" "$dns_status"
 
 	# IPv6 Status
+	local ipv6_enabled="false"
 	local ipv6_status="${RED}DISABLED${NC}"
 	if [[ $wifi_info == *"IPv6: Automatic"* ]]; then
+		ipv6_enabled="true"
 		ipv6_status="${GREEN}ENABLED${NC} (Automatic)"
 	fi
 	printf "   %s  %-13s %b\n" "🌐" "IPv6 Mode" "$ipv6_status"
+
+	local vpn_connected="false"
+	local ctrld_running="false"
+	if is_vpn_connected; then
+		vpn_connected="true"
+	fi
+	if pgrep -x "ctrld" >/dev/null 2>&1; then
+		ctrld_running="true"
+	fi
+	if [[ ${NMM_SUPPRESS_RECONCILE_HINT:-0} != "1" ]] && check_reconcile_needed "$vpn_connected" "$ctrld_running" "$ipv6_enabled"; then
+		local hint_profile
+		hint_profile=$(get_active_profile_name)
+		case "$hint_profile" in
+		Privacy) hint_profile="privacy" ;;
+		Browsing) hint_profile="browsing" ;;
+		Gaming) hint_profile="gaming" ;;
+		*) hint_profile="privacy" ;;
+		esac
+		printf "   %s  %-13s %b\n" "⚠️" "Reconcile" "${YELLOW}Recommended: ./scripts/network-mode-manager.sh reconcile ${hint_profile}${NC}"
+	fi
 	echo -e "\n"
 }
 
@@ -236,7 +362,7 @@ main() {
 	local profile="${2:-$DEFAULT_PROFILE}"
 
 	if [[ $mode == "-h" || $mode == "--help" || $mode == "help" ]]; then
-		echo "Usage: $0 {controld|windscribe|status} [profile]"
+		echo "Usage: $0 {controld|windscribe|status|reconcile} [profile]"
 		exit 0
 	fi
 
@@ -259,7 +385,7 @@ main() {
 			stop_controld
 		fi
 		set_ipv6 "disable"
-		print_status
+		(NMM_SUPPRESS_RECONCILE_HINT=1 print_status)
 		;;
 	controld)
 		local proto="${3-}"
@@ -271,6 +397,9 @@ main() {
 		;;
 	status)
 		print_status
+		;;
+	reconcile)
+		reconcile_network_state "$profile"
 		;;
 	*)
 		error "Invalid mode '$mode'"
