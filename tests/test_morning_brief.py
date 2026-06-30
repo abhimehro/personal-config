@@ -7,7 +7,6 @@ Run with:
     # or: python3 -m pytest test_morning_brief.py -v  (optional dev dependency)
 """
 
-from __future__ import annotations
 
 import datetime as dt
 import importlib.util
