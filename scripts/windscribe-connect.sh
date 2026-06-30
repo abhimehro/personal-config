@@ -78,6 +78,19 @@ else
 	exit 1
 fi
 
+if [[ $PROFILE == "disconnect" ]]; then
+	# In disconnect mode the second positional argument is the profile to
+	# reconcile to (not a location). Use a dedicated variable to avoid relying
+	# on LOCATION, which was set from $2 for the connect path.
+	DISCONNECT_PROFILE="${2:-privacy}"
+	log "Disconnecting Windscribe and reconciling back to standalone Control D ($DISCONNECT_PROFILE)..."
+	"$WINDSCRIBE_BIN" disconnect || true
+	spinner_wait 3 "Waiting for VPN disconnect"
+	cd "$REPO_ROOT"
+	./scripts/network-mode-manager.sh reconcile "$DISCONNECT_PROFILE"
+	exit 0
+fi
+
 echo
 log "Windscribe + Control D Connection Sequence"
 log "Using Windscribe CLI: $WINDSCRIBE_BIN"
@@ -161,4 +174,4 @@ fi
 
 echo
 success "Combined Windscribe + Control D mode active"
-log "Disconnect path: $WINDSCRIBE_BIN disconnect && ./scripts/network-mode-manager.sh controld $PROFILE"
+log "Disconnect path: ./scripts/windscribe-connect.sh disconnect $PROFILE"
