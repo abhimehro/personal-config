@@ -120,10 +120,10 @@ class TestMediaServerHandler(unittest.TestCase):
             "WWW-Authenticate", 'Basic realm="Infuse Media Server"'
         )
 
-    def test_generate_directory_listing(self):
+    def test_generate_directory_listing_root(self):
         """
         Test that generate_directory_listing produces correct HTML output,
-        handles proper paths, and escapes file and directory names.
+        handles proper paths, and escapes file and directory names for the root path.
         """
         # Include files and directories with characters needing escaping like < > &
         files = [
@@ -134,7 +134,6 @@ class TestMediaServerHandler(unittest.TestCase):
             "<script>alert(1)</script>.avi",
         ]
 
-        # Test 1: Root path
         html_root = self.handler.generate_directory_listing(files, "/")
 
         self.assertIn("<title>Media Library - /</title>", html_root)
@@ -162,8 +161,19 @@ class TestMediaServerHandler(unittest.TestCase):
             html_root,
         )
 
-        # Test 2: Subdirectory with escaping - matching a realistic path shape
-        # The server script typically hosts from a specific media directory, so we'll use a realistic relative path
+    def test_generate_directory_listing_subdirectory(self):
+        """
+        Test that generate_directory_listing produces correct HTML output,
+        handles proper paths, and escapes file and directory names for subdirectories.
+        """
+        files = [
+            "video.mp4",
+            "movie.MKV",
+            "folder with <tag>/",
+            "document & file.txt",
+            "<script>alert(1)</script>.avi",
+        ]
+
         current_path = "/Movies & TV/Action <Sci-Fi>"
         html_sub = self.handler.generate_directory_listing(files, current_path)
 
