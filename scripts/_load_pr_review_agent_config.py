@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Emit repos and bot_authors from tasks/pr-review-agent.config.yaml for get_prs.sh.
+r"""Emit repos and bot_authors from tasks/pr-review-agent.config.yaml for get_prs.sh.
 
 Uses PyYAML when installed (same as repository automation). Exits 2 if PyYAML is
 missing so the caller can fall back to bash line parsing.
@@ -8,8 +8,6 @@ Output format (machine lines for bash):
   repo\towner/name
   bot\tdependabot[bot]
 """
-
-from __future__ import annotations
 
 import sys
 from pathlib import Path

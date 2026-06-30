@@ -11,7 +11,6 @@ State:
   ~/CloudMedia/approval_needed/.alldebrid_candidate_pending.tsv, latest pending selection
 """
 
-from __future__ import annotations
 
 import os
 import re

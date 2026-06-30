@@ -16,3 +16,4 @@ spec.loader.exec_module(fix_allowlist_format)
 extract_allowlist_domains_from_file = (
     fix_allowlist_format.extract_allowlist_domains_from_file
 )
+main = fix_allowlist_format.main

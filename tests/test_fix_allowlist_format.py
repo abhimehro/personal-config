@@ -14,6 +14,7 @@ sys.path.append(str(project_root))
 
 from adguard.scripts.import_fix_allowlist_format import (
     extract_allowlist_domains_from_file,
+    main,
 )
 
 
@@ -126,6 +127,45 @@ class TestExtractAllowlistDomainsFromFile(unittest.TestCase):
             result = extract_allowlist_domains_from_file("dummy.json")
         self.assertEqual(result, [])
 
+    @patch("fix_allowlist_format.extract_allowlist_domains_from_file")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_main_both_files_exist(self, mock_file, mock_extract):
+        import fix_allowlist_format
+
+        with patch("fix_allowlist_format.environ") as mock_environ, \
+             patch("fix_allowlist_format.Path.exists") as mock_exists, \
+             patch("builtins.print"):
+
+            mock_environ.get.return_value = "/mock/dir"
+            mock_exists.return_value = True
+            mock_extract.side_effect = [
+                ["bypass1.com", "bypass2.com"],
+                ["tld1.com", "tld2.com"]
+            ]
+
+            fix_allowlist_format.main()
+
+            mock_file.assert_called_once_with(Path("/mock/dir/Consolidated-Allowlist-Fixed.txt"), "w", encoding="utf-8")
+            handle = mock_file()
+            handle.write.assert_any_call("\n".join(sorted(["bypass1.com", "bypass2.com", "tld1.com", "tld2.com"])) + "\n")
+
+    @patch("fix_allowlist_format.extract_allowlist_domains_from_file")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_main_files_not_exist(self, mock_file, mock_extract):
+        import fix_allowlist_format
+
+        with patch("fix_allowlist_format.environ") as mock_environ, \
+             patch("fix_allowlist_format.Path.exists") as mock_exists, \
+             patch("builtins.print"):
+
+            mock_environ.get.return_value = "/mock/dir"
+            mock_exists.return_value = False
+
+            fix_allowlist_format.main()
+
+            mock_file.assert_called_once_with(Path("/mock/dir/Consolidated-Allowlist-Fixed.txt"), "w", encoding="utf-8")
+            mock_extract.assert_not_called()
+
     # Integration Test
     def test_integration_with_tempfile(self):
         json_data = json.dumps({"rules": [{"PK": "temp.com", "action": {"do": 1}}]})
@@ -141,6 +181,47 @@ class TestExtractAllowlistDomainsFromFile(unittest.TestCase):
             self.assertEqual(result, ["temp.com"])
         finally:
             os.remove(temp_path)
+
+
+class TestMain(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_path = Path(self.temp_dir.name)
+        self.env_patcher = patch.dict(os.environ, {"ADGUARD_LISTS_DIR": str(self.temp_path)})
+        self.env_patcher.start()
+
+    def tearDown(self):
+        self.env_patcher.stop()
+        self.temp_dir.cleanup()
+
+    def test_main_both_files_exist(self):
+        bypass_data = {"rules": [{"PK": "bypass.com", "action": {"do": 1}}]}
+        tld_data = {"rules": [{"PK": "tld.com", "action": {"do": 1}}]}
+
+        with open(self.temp_path / "CD-Control-D-Bypass.json", "w") as f:
+            json.dump(bypass_data, f)
+
+        with open(self.temp_path / "CD-Most-Abused-TLDs.json", "w") as f:
+            json.dump(tld_data, f)
+
+        with patch('builtins.print'):
+            main()
+
+        out_file = self.temp_path / "Consolidated-Allowlist-Fixed.txt"
+        self.assertTrue(out_file.exists())
+        content = out_file.read_text()
+        self.assertIn("bypass.com", content)
+        self.assertIn("tld.com", content)
+
+    def test_main_no_files_exist(self):
+        with patch('builtins.print'):
+            main()
+
+        out_file = self.temp_path / "Consolidated-Allowlist-Fixed.txt"
+        self.assertTrue(out_file.exists())
+        content = out_file.read_text()
+        self.assertNotIn("bypass.com", content)
+        self.assertIn("# Total domains: 0", content)
 
 
 if __name__ == "__main__":
