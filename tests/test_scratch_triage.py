@@ -38,3 +38,85 @@ class TestRunCmd(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestGroupPRs(unittest.TestCase):
+    def test_group_prs_basic(self):
+        all_prs = [
+            {
+                "repo": "personal-config",
+                "number": 101,
+                "title": "fix eval CWE-78 issue",
+                "title_lower": "fix eval cwe-78 issue",
+            },
+            {
+                "repo": "personal-config",
+                "number": 100,
+                "title": "address cwe-78 with eval",
+                "title_lower": "address cwe-78 with eval",
+            },
+            {
+                "repo": "personal-config",
+                "number": 102,
+                "title": "unrelated",
+                "title_lower": "unrelated",
+            },
+            {
+                "repo": "other-repo",
+                "number": 103,
+                "title": "fix eval cwe-78 issue",
+                "title_lower": "fix eval cwe-78 issue",
+            },
+        ]
+
+        triage_md = ["# Initial Header\n"]
+        scratch_triage.group_prs(all_prs, triage_md)
+
+        self.assertEqual(all_prs[0].get("status_action"), "KEEP")
+        self.assertEqual(all_prs[1].get("status_action"), "CLOSE")
+        self.assertIsNone(all_prs[2].get("status_action"))
+        self.assertIsNone(all_prs[3].get("status_action"))
+
+        self.assertEqual(len(triage_md), 2)
+        self.assertIn(
+            "personal-config **#101** | **#100** | Same CWE-78 eval injection theme; keep newest",
+            triage_md[1],
+        )
+
+    def test_group_prs_multiple_groups(self):
+        all_prs = [
+            {
+                "repo": "personal-config",
+                "number": 201,
+                "title": "Palette prompt updates",
+                "title_lower": "palette prompt updates",
+            },
+            {
+                "repo": "personal-config",
+                "number": 200,
+                "title": "Old palette prompt",
+                "title_lower": "old palette prompt",
+            },
+            {
+                "repo": "email-security-pipeline",
+                "number": 301,
+                "title": "empty state layout",
+                "title_lower": "empty state layout",
+            },
+            {
+                "repo": "email-security-pipeline",
+                "number": 300,
+                "title": "empty state visual",
+                "title_lower": "empty state visual",
+            },
+        ]
+
+        triage_md = []
+        scratch_triage.group_prs(all_prs, triage_md)
+
+        self.assertEqual(all_prs[0].get("status_action"), "KEEP")
+        self.assertEqual(all_prs[1].get("status_action"), "CLOSE")
+        self.assertEqual(all_prs[2].get("status_action"), "KEEP")
+        self.assertEqual(all_prs[3].get("status_action"), "CLOSE")
+
+        self.assertEqual(len(triage_md), 2)
