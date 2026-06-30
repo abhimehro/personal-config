@@ -2,7 +2,6 @@ import json
 import os
 import subprocess
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 
 
@@ -48,26 +47,6 @@ def run_gh(cmd_list):
         return None
 
 
-def fetch_pr_info(pr):
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    repo, _, pr_id = pr.partition("#")
-    info = run_gh(
-        [
-            "gh",
-            "pr",
-            "view",
-            str(pr_id),
-            "-R",
-            str(repo),
-            "--json",
-            "files,title,number",
-        ]
-    )
-    if info:
-        return repo, info
-    return None
-
-
 def _process_pr_result(res, file_groups):
     if not res:
         return
@@ -77,12 +56,74 @@ def _process_pr_result(res, file_groups):
     file_groups[(repo, files)].append(info)
 
 
+def _build_graphql_query(chunk):
+    query_parts = []
+    for j, pr in enumerate(chunk):
+        repo, _, pr_id = pr.partition("#")
+        try:
+            owner, name = repo.split("/")
+        except ValueError:
+            continue
+        query_parts.append(f"""
+        pr{j}: repository(owner: "{owner}", name: "{name}") {{
+            pullRequest(number: {pr_id}) {{
+                number
+                title
+                files(first: 100) {{
+                    nodes {{
+                        path
+                    }}
+                }}
+            }}
+        }}
+        """)
+    if not query_parts:
+        return None
+    return "query { " + " ".join(query_parts) + " }"
+
+
+def _extract_pr_data(repo, pr_result):
+    if not pr_result:
+        return None
+    pr_data = pr_result.get("pullRequest") or {}
+    if not pr_data:
+        return None
+
+    files_data = pr_data.get("files", {}) or {}
+    nodes = files_data.get("nodes", []) or []
+    files = [{"path": node["path"]} for node in nodes if "path" in node]
+
+    return (repo, {
+        "number": pr_data.get("number"),
+        "title": pr_data.get("title"),
+        "files": files
+    })
+
+def _process_graphql_response(result, chunk, file_groups):
+    if not result:
+        return
+    data = result.get("data", {})
+    if not data:
+        return
+    for j, pr in enumerate(chunk):
+        repo, _, _ = pr.partition("#")
+        pr_result = data.get(f"pr{j}", {})
+
+        res = _extract_pr_data(repo, pr_result)
+        if res:
+            _process_pr_result(res, file_groups)
+
+
 def _group_prs_by_files(ready_only):
     file_groups = defaultdict(list)
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(fetch_pr_info, pr) for pr in ready_only]
-        for future in as_completed(futures):
-            _process_pr_result(future.result(), file_groups)
+    chunk_size = 50
+    for i in range(0, len(ready_only), chunk_size):
+        chunk = ready_only[i : i + chunk_size]
+        query = _build_graphql_query(chunk)
+        if not query:
+            continue
+        result = run_gh(["gh", "api", "graphql", "-f", f"query={query}"])
+        _process_graphql_response(result, chunk, file_groups)
     return file_groups
 
 
