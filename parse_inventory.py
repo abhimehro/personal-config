@@ -1,4 +1,5 @@
 import json
+import re
 import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
@@ -71,6 +72,11 @@ def _should_skip_table_row(line):
 
 
 def _parse_repo_name(line):
+    if line.startswith("### "):
+        match = re.search(r'\[(.*?)\]\(.*?\)', line)
+        if match:
+            return match.group(1).strip()
+        return None
     return line[3:].strip() if line.startswith("## ") else None
 
 

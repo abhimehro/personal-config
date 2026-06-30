@@ -13,6 +13,7 @@ from parse_inventory import (
     _is_pr_stale,
     _load_inventory_lines,
     _parse_env_line,
+    _parse_repo_name,
     parse_inventory_lines,
     run_gh,
 )
@@ -106,6 +107,31 @@ class TestParseInventory(unittest.TestCase):
         ]
         repos = parse_inventory_lines(lines)
         self.assertEqual(repos["repoA"], [])
+
+    # --- _parse_repo_name ---
+
+    def test_parse_repo_name_valid(self):
+        self.assertEqual(_parse_repo_name("## repo-name"), "repo-name")
+
+    def test_parse_repo_name_with_extra_spaces(self):
+        self.assertEqual(_parse_repo_name("##    repo-name   "), "repo-name")
+
+    def test_parse_repo_name_link_format(self):
+        self.assertEqual(_parse_repo_name("### [repo-name](https://github.com/org/repo-name)"), "repo-name")
+
+    def test_parse_repo_name_link_format_with_spaces(self):
+        self.assertEqual(_parse_repo_name("### [  repo-name  ](url)"), "repo-name")
+
+    def test_parse_repo_name_invalid_link_format(self):
+        self.assertIsNone(_parse_repo_name("### no-link"))
+
+    def test_parse_repo_name_invalid_prefix(self):
+        self.assertIsNone(_parse_repo_name("# repo-name"))
+        self.assertIsNone(_parse_repo_name("repo-name"))
+
+    def test_parse_repo_name_empty(self):
+        self.assertIsNone(_parse_repo_name(""))
+        self.assertIsNone(_parse_repo_name("   "))
 
     # --- _load_inventory_lines ---
 
