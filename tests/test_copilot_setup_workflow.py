@@ -7,8 +7,6 @@ process.env in github-script, not interpolated into the script body.
 Related: ABHI-929, ABHI-963, ABHI-955, ABHI-956 (malicious payload cases).
 """
 
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 
