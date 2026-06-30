@@ -104,8 +104,8 @@ apply_vpn_binding_fix() {
 		print_status "Applying VPN-compatible binding to $config_file"
 		local tmp_file
 		tmp_file=$(mktemp)
-		sed 's/ip = '\''127\.0\.0\.1'\''/ip = '\''0\.0\.0\.0'\''/g' "$config_file" > "$tmp_file"
-		cat "$tmp_file" > "$config_file"
+		sed 's/ip = '\''127\.0\.0\.1'\''/ip = '\''0\.0\.0\.0'\''/g' "$config_file" >"$tmp_file"
+		cat "$tmp_file" >"$config_file"
 		rm -f "$tmp_file"
 		print_success "VPN binding fix applied"
 	else
