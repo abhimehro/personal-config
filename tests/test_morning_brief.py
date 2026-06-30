@@ -536,6 +536,27 @@ class TestEnvBool(unittest.TestCase):
     def test_defaults_true(self):
         assert mb._env_bool("NONEXISTENT_KEY_XYZ_123", True) is True
 
+    def test_defaults_false(self):
+        assert mb._env_bool("NONEXISTENT_KEY_XYZ_123", False) is False
+
+    def test_empty_string(self):
+        os.environ["_TEST_BOOL"] = ""
+        assert mb._env_bool("_TEST_BOOL", True) is True
+        assert mb._env_bool("_TEST_BOOL", False) is False
+        del os.environ["_TEST_BOOL"]
+
+    def test_whitespace_string(self):
+        os.environ["_TEST_BOOL"] = "   "
+        assert mb._env_bool("_TEST_BOOL", True) is True
+        assert mb._env_bool("_TEST_BOOL", False) is False
+        del os.environ["_TEST_BOOL"]
+
+    def test_unrecognized_value(self):
+        os.environ["_TEST_BOOL"] = "unknown"
+        # Anything not explicitly false is true.
+        assert mb._env_bool("_TEST_BOOL", False) is True
+        del os.environ["_TEST_BOOL"]
+
     def test_false_values(self):
         for val in ("0", "false", "no", "off", "disabled"):
             os.environ["_TEST_BOOL"] = val
@@ -553,6 +574,31 @@ class TestSafeInt(unittest.TestCase):
     def test_valid(self):
         os.environ["_TEST_INT"] = "42"
         assert mb._safe_int("_TEST_INT", 10) == 42
+        del os.environ["_TEST_INT"]
+
+    def test_negative(self):
+        os.environ["_TEST_INT"] = "-42"
+        assert mb._safe_int("_TEST_INT", 10) == -42
+        del os.environ["_TEST_INT"]
+
+    def test_padded_int(self):
+        os.environ["_TEST_INT"] = "  42  "
+        assert mb._safe_int("_TEST_INT", 10) == 42
+        del os.environ["_TEST_INT"]
+
+    def test_empty_string(self):
+        os.environ["_TEST_INT"] = ""
+        assert mb._safe_int("_TEST_INT", 10) == 10
+        del os.environ["_TEST_INT"]
+
+    def test_whitespace_string(self):
+        os.environ["_TEST_INT"] = "   "
+        assert mb._safe_int("_TEST_INT", 10) == 10
+        del os.environ["_TEST_INT"]
+
+    def test_float_fallback(self):
+        os.environ["_TEST_INT"] = "3.14"
+        assert mb._safe_int("_TEST_INT", 10) == 10
         del os.environ["_TEST_INT"]
 
     def test_invalid(self):
