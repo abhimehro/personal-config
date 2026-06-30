@@ -7,7 +7,6 @@ blocks as JavaScript string literals. Binding via step ``env:`` and reading
 Merged fix: PR #980 (commit 4972970). Related: email-security-pipeline#881.
 """
 
-from __future__ import annotations
 
 import re
 import unittest

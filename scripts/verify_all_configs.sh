@@ -97,8 +97,12 @@ verify_file_link() {
 			warn "$name target file permissions are $actual_perms (expected $expected_perms)"
 			# Try to fix permissions
 			log "Attempting to fix permissions on target file..."
-			# shellcheck disable=SC2015
-			chmod "$expected_perms" "$expected_target" 2>/dev/null && success "Fixed permissions" || warn "Could not fix permissions (may need manual intervention)"
+			if chmod "$expected_perms" "$expected_target" 2>/dev/null; then
+				success "Fixed permissions"
+			else
+				warn "Could not fix permissions (may need manual intervention)"
+				fail=1
+			fi
 		else
 			success "$name permissions are correct ($expected_perms)"
 		fi

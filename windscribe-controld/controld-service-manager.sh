@@ -102,7 +102,11 @@ apply_vpn_binding_fix() {
 	local config_file="$1"
 	if [[ -f $config_file ]]; then
 		print_status "Applying VPN-compatible binding to $config_file"
-		sed -i '' 's/ip = '\''127\.0\.0\.1'\''/ip = '\''0\.0\.0\.0'\''/g' "$config_file"
+		local tmp_file
+		tmp_file=$(mktemp)
+		sed 's/ip = '\''127\.0\.0\.1'\''/ip = '\''0\.0\.0\.0'\''/g' "$config_file" >"$tmp_file"
+		cat "$tmp_file" >"$config_file"
+		rm -f "$tmp_file"
 		print_success "VPN binding fix applied"
 	else
 		print_warning "Config file not found: $config_file"
