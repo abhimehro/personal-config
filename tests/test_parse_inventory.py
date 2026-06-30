@@ -117,7 +117,10 @@ class TestParseInventory(unittest.TestCase):
         self.assertEqual(_parse_repo_name("##    repo-name   "), "repo-name")
 
     def test_parse_repo_name_link_format(self):
-        self.assertEqual(_parse_repo_name("### [repo-name](https://github.com/org/repo-name)"), "repo-name")
+        self.assertEqual(
+            _parse_repo_name("### [repo-name](https://github.com/org/repo-name)"),
+            "repo-name",
+        )
 
     def test_parse_repo_name_link_format_with_spaces(self):
         self.assertEqual(_parse_repo_name("### [  repo-name  ](url)"), "repo-name")

@@ -1,6 +1,6 @@
 """Unit tests for scratch_triage (salvages #992)."""
 
-import subprocess
+import subprocess  # nosec B404
 import sys
 import unittest
 from unittest.mock import patch
