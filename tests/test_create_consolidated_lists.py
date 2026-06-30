@@ -9,8 +9,27 @@ from unittest.mock import patch
 # Ensure the module can be found
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from adguard.scripts.create_consolidated_lists import process_allowlist_files
+from adguard.scripts.create_consolidated_lists import extract_domains_from_file, process_allowlist_files
 
+
+class TestExtractDomainsFromFile(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.base_dir = Path(self.temp_dir.name)
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    @patch("json.load")
+    @patch("builtins.print")
+    def test_json_decode_error(self, mock_print, mock_json_load):
+        """Test extract_domains_from_file when json.load raises JSONDecodeError."""
+        filepath = self.base_dir / "dummy.json"
+        with open(filepath, "w") as f:
+            f.write("dummy")
+        mock_json_load.side_effect = json.JSONDecodeError("Expecting value", "", 0)
+        result = extract_domains_from_file(filepath)
+        self.assertEqual(result, [])
 
 class TestProcessAllowlistFiles(unittest.TestCase):
 

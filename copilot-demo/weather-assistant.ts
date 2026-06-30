@@ -99,6 +99,9 @@ async function main() {
   // Handle graceful exit
   process.on("SIGINT", () => {
     stopSpinner();
+    if (process.stdout.isTTY) {
+      process.stdout.write("\r\x1B[K\x1B[?25h");
+    }
     console.log("\n👋 Cancelled by user. Goodbye!");
     process.exit(130);
   });

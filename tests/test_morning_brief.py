@@ -7,7 +7,6 @@ Run with:
     # or: python3 -m pytest test_morning_brief.py -v  (optional dev dependency)
 """
 
-from __future__ import annotations
 
 import datetime as dt
 import importlib.util
@@ -215,6 +214,15 @@ class TestFormatTimeLabel(unittest.TestCase):
 
     def test_empty(self):
         assert mb.format_time_label("") == "Anytime"
+
+    def test_none(self):
+        assert mb.format_time_label(None) == "Anytime"
+
+    def test_whitespace(self):
+        assert mb.format_time_label("   ") == "All day"
+
+    def test_short_string_with_t(self):
+        assert mb.format_time_label("T") == ""
 
 
 # ============================================================
@@ -528,6 +536,27 @@ class TestEnvBool(unittest.TestCase):
     def test_defaults_true(self):
         assert mb._env_bool("NONEXISTENT_KEY_XYZ_123", True) is True
 
+    def test_defaults_false(self):
+        assert mb._env_bool("NONEXISTENT_KEY_XYZ_123", False) is False
+
+    def test_empty_string(self):
+        os.environ["_TEST_BOOL"] = ""
+        assert mb._env_bool("_TEST_BOOL", True) is True
+        assert mb._env_bool("_TEST_BOOL", False) is False
+        del os.environ["_TEST_BOOL"]
+
+    def test_whitespace_string(self):
+        os.environ["_TEST_BOOL"] = "   "
+        assert mb._env_bool("_TEST_BOOL", True) is True
+        assert mb._env_bool("_TEST_BOOL", False) is False
+        del os.environ["_TEST_BOOL"]
+
+    def test_unrecognized_value(self):
+        os.environ["_TEST_BOOL"] = "unknown"
+        # Anything not explicitly false is true.
+        assert mb._env_bool("_TEST_BOOL", False) is True
+        del os.environ["_TEST_BOOL"]
+
     def test_false_values(self):
         for val in ("0", "false", "no", "off", "disabled"):
             os.environ["_TEST_BOOL"] = val
@@ -545,6 +574,31 @@ class TestSafeInt(unittest.TestCase):
     def test_valid(self):
         os.environ["_TEST_INT"] = "42"
         assert mb._safe_int("_TEST_INT", 10) == 42
+        del os.environ["_TEST_INT"]
+
+    def test_negative(self):
+        os.environ["_TEST_INT"] = "-42"
+        assert mb._safe_int("_TEST_INT", 10) == -42
+        del os.environ["_TEST_INT"]
+
+    def test_padded_int(self):
+        os.environ["_TEST_INT"] = "  42  "
+        assert mb._safe_int("_TEST_INT", 10) == 42
+        del os.environ["_TEST_INT"]
+
+    def test_empty_string(self):
+        os.environ["_TEST_INT"] = ""
+        assert mb._safe_int("_TEST_INT", 10) == 10
+        del os.environ["_TEST_INT"]
+
+    def test_whitespace_string(self):
+        os.environ["_TEST_INT"] = "   "
+        assert mb._safe_int("_TEST_INT", 10) == 10
+        del os.environ["_TEST_INT"]
+
+    def test_float_fallback(self):
+        os.environ["_TEST_INT"] = "3.14"
+        assert mb._safe_int("_TEST_INT", 10) == 10
         del os.environ["_TEST_INT"]
 
     def test_invalid(self):
@@ -626,3 +680,87 @@ class TestSectionToggles(unittest.TestCase):
     def test_partial(self):
         t = mb.SectionToggles(greeting=False, focus=False, news=True, podcast=False)
         assert t.any_enabled is True
+
+
+# ============================================================
+# Weather
+# ============================================================
+
+
+class TestFetchWeather(unittest.TestCase):
+    def setUp(self):
+        from unittest.mock import Mock
+
+        self.config = Mock()
+        self.config.lat = 40.7128
+        self.config.lon = -74.0060
+        self.config.weather_cache_ttl = 3600
+        self.cache = Mock()
+        self.session = Mock()
+
+    def test_cache_hit(self):
+        self.cache.get.return_value = {
+            "current_temp": "65.5",
+            "high_temp": "72.1",
+            "rain_probability": "15",
+            "narrative": "Cached narrative."
+        }
+
+        result = mb.fetch_weather(self.session, self.config, self.cache)
+
+        assert result.current_temp == "65.5"
+        assert result.high_temp == "72.1"
+        assert result.rain_probability == "15"
+        assert result.narrative == "Cached narrative."
+        self.session.get.assert_not_called()
+
+    def test_fetch_success(self):
+        from unittest.mock import Mock
+
+        self.cache.get.return_value = None
+
+        response = Mock()
+        response.json.return_value = {
+            "current_weather": {"temperature": 65.5},
+            "daily": {
+                "temperature_2m_max": [72.1],
+                "precipitation_probability_max": [15]
+            }
+        }
+        self.session.get.return_value = response
+
+        result = mb.fetch_weather(self.session, self.config, self.cache)
+
+        assert result.current_temp == "65.5"
+        assert result.high_temp == "72.1"
+        assert result.rain_probability == "15"
+        assert "65.5F" in result.narrative
+
+        self.cache.set.assert_called_once()
+
+    def test_fetch_timeout(self):
+        self.cache.get.return_value = None
+        self.session.get.side_effect = Exception("Connection timed out")
+
+        result = mb.fetch_weather(self.session, self.config, self.cache)
+
+        assert result.current_temp == "N/A"
+        assert result.high_temp == "N/A"
+        assert result.rain_probability == "N/A"
+        assert result.narrative == "Weather data unavailable."
+
+    def test_fetch_http_error(self):
+        from unittest.mock import Mock
+
+        self.cache.get.return_value = None
+
+        response = Mock()
+        response.raise_for_status.side_effect = Exception("404 Client Error")
+        self.session.get.return_value = response
+
+        result = mb.fetch_weather(self.session, self.config, self.cache)
+
+        assert result.current_temp == "N/A"
+        assert result.high_temp == "N/A"
+        assert result.rain_probability == "N/A"
+        assert result.narrative == "Weather data unavailable."

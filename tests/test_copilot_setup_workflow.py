@@ -7,8 +7,6 @@ process.env in github-script, not interpolated into the script body.
 Related: ABHI-929, ABHI-963, ABHI-955, ABHI-956 (malicious payload cases).
 """
 
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 
@@ -38,18 +36,23 @@ def extract_development_partner_step(content: str) -> str:
     return content[start:end]
 
 
-def test_yaml_structure(content: str) -> None:
+def test_yaml_structure() -> None:
+    content = read_workflow()
     assert "workflow_dispatch:" in content
     assert "request:" in content
     assert "copilot-setup-steps:" in content
 
 
-def test_env_binding(step: str) -> None:
+def test_env_binding() -> None:
+    content = read_workflow()
+    step = extract_development_partner_step(content)
     assert "env:" in step
     assert "REQUEST: ${{ github.event.inputs.request }}" in step
 
 
-def test_no_direct_input_interpolation_in_script(step: str) -> None:
+def test_no_direct_input_interpolation_in_script() -> None:
+    content = read_workflow()
+    step = extract_development_partner_step(content)
     script_start = step.find("script: |")
     assert script_start != -1, "github-script block not found"
     script_body = step[script_start:]
@@ -68,7 +71,9 @@ def test_no_direct_input_interpolation_in_script(step: str) -> None:
     assert "process.env.REQUEST" in script_body
 
 
-def test_malicious_payload_would_not_embed(step: str) -> None:
+def test_malicious_payload_would_not_embed() -> None:
+    content = read_workflow()
+    step = extract_development_partner_step(content)
     """If request were inlined in JS quotes, these payloads could break out."""
     script_start = step.find("script: |")
     script_body = step[script_start:] if script_start != -1 else ""
@@ -88,17 +93,17 @@ def test_malicious_payload_would_not_embed(step: str) -> None:
 def main() -> int:
     print(f"=== CWE-94 static analysis: {WORKFLOW} ===\n")
     content = read_workflow()
-    test_yaml_structure(content)
+    test_yaml_structure()
     print("✓ workflow_dispatch and job structure present")
 
     step = extract_development_partner_step(content)
-    test_env_binding(step)
+    test_env_binding()
     print("✓ REQUEST bound via env from github.event.inputs.request")
 
-    test_no_direct_input_interpolation_in_script(step)
+    test_no_direct_input_interpolation_in_script()
     print("✓ script uses process.env.REQUEST (no direct input interpolation)")
 
-    test_malicious_payload_would_not_embed(step)
+    test_malicious_payload_would_not_embed()
     print("✓ malicious payload patterns absent from script (env-binding model)")
 
     print("\n=== All copilot-setup-steps security checks passed ===")
