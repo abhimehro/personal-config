@@ -1,5 +1,13 @@
 # Lessons Learned
 
+## Lesson 0cy: ESP path-traversal triplets — merge test-bearing PR (2026-06-30)
+
+**Pattern:** email-security-pipeline #1185/#1187/#1188 all hardened `media_analyzer.py` zip/tar traversal checks with near-identical helpers; only #1185 included `tests/test_archive_path_traversal.py`. **Rule:** When ≥3 automation PRs touch the same security-sensitive function, merge the branch with tests + broadest normalization (here: backslash + Windows drive), close younger semantic dupes with link. Still post ESCALATE on adjacent trust-boundary PRs (#1189 webhook). **Detection cost:** Low — `gh pr diff --name-only` + title keyword `path traversal`.
+
+## Lesson 0cz: Palette journal conflicts after sibling merge (2026-06-30)
+
+**Pattern:** Squash-merging ctrld #958 left #960 **CONFLICTING** on `.jules/palette.md` only (`main.py` auto-merged). **Rule:** After merging one Palette PR, merge `origin/main` into the next sibling and append both journal entries (dedupe headings). Same pattern as Lesson 0cs for Bolt journals. **Detection cost:** Low — `gh pr merge` GraphQL conflict on palette.md.
+
 ## Lesson 0cv: Codacy action bump ≠ Codacy scan green (2026-06-23)
 
 **Pattern:** personal-config #1331 (codacy-analysis-cli-action 1.1.0 → 4.4.7) merged with passing CI, but **all** sibling open PRs still fail `Codacy Security Scan` on re-run. Other gates (CodeQL, Snyk, CodeScene, dependency-review) pass. **Rule:** Treat Codacy failures after an action bump as **ESCALATE** (project token, API config, or org-level Codacy settings)—not auto-fixable by further dependabot bumps alone. **Detection cost:** Low — single failing required check across entire PR queue.
