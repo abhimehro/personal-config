@@ -48,10 +48,7 @@ def extract_allowlist_domains_from_file(filepath):
     return domains
 
 
-def main():
-    # Base directory
-    base_dir = os.environ.get("ADGUARD_LISTS_DIR", str(Path.home() / "Downloads"))
-
+def process_denylist_files(base_dir):
     # Tracker files for denylist
     tracker_files = [
         "CD-Microsoft-Tracker.json",
@@ -91,7 +88,9 @@ def main():
                 print(f"{os.path.basename(filepath)} generated an exception: {exc}")
 
     print(f"\nTotal denylist domains: {len(denylist_domains)}")
+    return denylist_domains
 
+def process_allowlist_files(base_dir):
     # Extract allowlist domains
     print("\nExtracting allowlist domains...")
     allowlist_domains = set()
@@ -111,7 +110,9 @@ def main():
         print(f"CD-Most-Abused-TLDs.json: {len(domains)} domains")
 
     print(f"\nTotal allowlist domains: {len(allowlist_domains)}")
+    return allowlist_domains
 
+def write_lists(base_dir, denylist_domains, allowlist_domains):
     # Write denylist
     if os.path.exists(base_dir):
         with open(os.path.join(base_dir, "Consolidated-Denylist.txt"), "w") as f:
@@ -131,6 +132,12 @@ def main():
         print(f"\nFiles created:")
         print(f"- Consolidated-Denylist.txt ({len(denylist_domains)} domains)")
         print(f"- Consolidated-Allowlist.txt ({len(allowlist_domains)} domains)")
+
+def main():
+    base_dir = os.environ.get("ADGUARD_LISTS_DIR", str(Path.home() / "Downloads"))
+    denylist_domains = process_denylist_files(base_dir)
+    allowlist_domains = process_allowlist_files(base_dir)
+    write_lists(base_dir, denylist_domains, allowlist_domains)
 
 if __name__ == "__main__":
     main()
