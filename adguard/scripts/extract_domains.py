@@ -48,44 +48,7 @@ def extract_allowlist_domains_from_file(filepath):
     return domains
 
 
-def extract_all_denylist_domains(base_dir, tracker_files):
-    """Extract denylist domains using a ProcessPoolExecutor."""
-    denylist_domains = set()
-    filepaths = [
-        os.path.join(base_dir, f)
-        for f in tracker_files
-        if os.path.exists(os.path.join(base_dir, f))
-    ]
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        future_to_file = {
-            executor.submit(extract_domains_from_file, path): path for path in filepaths
-        }
-        for future in concurrent.futures.as_completed(future_to_file):
-            filepath = future_to_file[future]
-            try:
-                domains = future.result()
-                denylist_domains.update(domains)
-                print(f"{os.path.basename(filepath)}: {len(domains)} domains")
-            except Exception as exc:
-                print(f"{os.path.basename(filepath)} generated an exception: {exc}")
-    return denylist_domains
-
-
-def extract_all_allowlist_domains(base_dir):
-    """Extract all allowlist domains from specific files in base_dir."""
-    allowlist_domains = set()
-    allowlist_files = ["CD-Control-D-Bypass.json", "CD-Most-Abused-TLDs.json"]
-    for filename in allowlist_files:
-        filepath = os.path.join(base_dir, filename)
-        if os.path.exists(filepath):
-            domains = extract_allowlist_domains_from_file(filepath)
-            allowlist_domains.update(domains)
-            print(f"{filename}: {len(domains)} domains")
-    return allowlist_domains
-
-
 def main():
-    """Main function to orchestrate domain extraction."""
     # Base directory
     base_dir = os.environ.get("ADGUARD_LISTS_DIR", str(Path.home() / "Downloads"))
 
@@ -107,12 +70,46 @@ def main():
     ]
 
     print("Extracting denylist domains...")
-    denylist_domains = extract_all_denylist_domains(base_dir, tracker_files)
+    denylist_domains = set()
+
+    filepaths = [
+        os.path.join(base_dir, f)
+        for f in tracker_files
+        if os.path.exists(os.path.join(base_dir, f))
+    ]
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        future_to_file = {
+            executor.submit(extract_domains_from_file, path): path for path in filepaths
+        }
+        for future in concurrent.futures.as_completed(future_to_file):
+            filepath = future_to_file[future]
+            try:
+                domains = future.result()
+                denylist_domains.update(domains)
+                print(f"{os.path.basename(filepath)}: {len(domains)} domains")
+            except Exception as exc:
+                print(f"{os.path.basename(filepath)} generated an exception: {exc}")
+
     print(f"\nTotal denylist domains: {len(denylist_domains)}")
 
     # Extract allowlist domains
     print("\nExtracting allowlist domains...")
-    allowlist_domains = extract_all_allowlist_domains(base_dir)
+    allowlist_domains = set()
+
+    # Control D Bypass
+    bypass_file = os.path.join(base_dir, "CD-Control-D-Bypass.json")
+    if os.path.exists(bypass_file):
+        domains = extract_allowlist_domains_from_file(bypass_file)
+        allowlist_domains.update(domains)
+        print(f"CD-Control-D-Bypass.json: {len(domains)} domains")
+
+    # Most Abused TLDs (only allowlist entries)
+    tlds_file = os.path.join(base_dir, "CD-Most-Abused-TLDs.json")
+    if os.path.exists(tlds_file):
+        domains = extract_allowlist_domains_from_file(tlds_file)
+        allowlist_domains.update(domains)
+        print(f"CD-Most-Abused-TLDs.json: {len(domains)} domains")
+
     print(f"\nTotal allowlist domains: {len(allowlist_domains)}")
 
     # Write denylist
@@ -134,7 +131,6 @@ def main():
         print(f"\nFiles created:")
         print(f"- Consolidated-Denylist.txt ({len(denylist_domains)} domains)")
         print(f"- Consolidated-Allowlist.txt ({len(allowlist_domains)} domains)")
-
 
 if __name__ == "__main__":
     main()
