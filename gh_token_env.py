@@ -9,8 +9,6 @@ Precedence for ``GH_TOKEN``:
 2. Optional file from ``GH_TOKEN_ENV_FILE`` or well-known paths (legacy fallback)
 """
 
-from __future__ import annotations
-
 import os
 from functools import lru_cache
 from pathlib import Path
