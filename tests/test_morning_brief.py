@@ -215,6 +215,15 @@ class TestFormatTimeLabel(unittest.TestCase):
     def test_empty(self):
         assert mb.format_time_label("") == "Anytime"
 
+    def test_none(self):
+        assert mb.format_time_label(None) == "Anytime"
+
+    def test_whitespace(self):
+        assert mb.format_time_label("   ") == "All day"
+
+    def test_short_string_with_t(self):
+        assert mb.format_time_label("T") == ""
+
 
 # ============================================================
 # Horoscope Extraction
