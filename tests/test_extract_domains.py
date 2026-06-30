@@ -16,6 +16,8 @@ from adguard.scripts.extract_domains import (
     _is_allowlist_rule,
     extract_allowlist_domains_from_file,
     extract_domains_from_file,
+    extract_all_denylist_domains,
+    extract_all_allowlist_domains,
 )
 
 
@@ -213,6 +215,44 @@ class TestExtractAllowlistDomainsFromFile(unittest.TestCase):
             self.assertIn(f"Error reading {temp_path}", mock_print.call_args[0][0])
         finally:
             os.remove(temp_path)
+
+
+class TestExtractAllDenylistDomains(unittest.TestCase):
+    @patch("adguard.scripts.extract_domains.extract_domains_from_file")
+    @patch("concurrent.futures.as_completed")
+    @patch("concurrent.futures.ProcessPoolExecutor")
+    @patch("os.path.exists")
+    def test_extract_all_denylist_domains(self, mock_exists, mock_executor_cls, mock_as_completed, mock_extract):
+        mock_exists.side_effect = lambda path: True
+        mock_extract.side_effect = lambda path: [f"domain-{os.path.basename(path)}"]
+
+        # Set up mock executor
+        mock_executor = mock_executor_cls.return_value
+        mock_executor.__enter__.return_value = mock_executor
+
+        class MockFuture:
+            def __init__(self, path):
+                self.path = path
+            def result(self):
+                return [f"domain-{os.path.basename(self.path)}"]
+
+        mock_executor.submit.side_effect = lambda fn, path: MockFuture(path)
+        mock_as_completed.side_effect = lambda future_map: list(future_map.keys())
+
+        tracker_files = ["file1.json", "file2.json"]
+        result = extract_all_denylist_domains("/mock_dir", tracker_files)
+        self.assertEqual(result, {"domain-file1.json", "domain-file2.json"})
+
+
+class TestExtractAllAllowlistDomains(unittest.TestCase):
+    @patch("adguard.scripts.extract_domains.extract_allowlist_domains_from_file")
+    @patch("os.path.exists")
+    def test_extract_all_allowlist_domains(self, mock_exists, mock_extract):
+        mock_exists.side_effect = lambda path: "CD-Control-D-Bypass.json" in path
+        mock_extract.return_value = ["allowed.com"]
+
+        result = extract_all_allowlist_domains("/mock_dir")
+        self.assertEqual(result, {"allowed.com"})
 
 
 if __name__ == "__main__":
