@@ -5,7 +5,6 @@ Invoked as: python3 get_prs_summarize.py <true|false> <path-to-json>
 The second argument is include_details ("true" / "false").
 """
 
-from __future__ import annotations
 
 import concurrent.futures
 import json
