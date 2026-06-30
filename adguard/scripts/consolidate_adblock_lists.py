@@ -181,6 +181,41 @@ def print_summary(denylist_domains, allowlist_domains, output_dir):
     print("  3. Test your configuration to ensure proper functionality")
 
 
+def run_consolidation(input_dir, output_dir):
+    """Execute the core logic of consolidating tracker and allowlist files."""
+    tracker_files = [
+        "CD-Microsoft-Tracker.json",
+        "CD-No-Safesearch-Support.json",
+        "CD-OPPO_Realme-Tracker.json",
+        "CD-Roku-Tracker.json",
+        "CD-Samsung-Tracker.json",
+        "CD-Tiktok-Tracker---aggressive.json",
+        "CD-Vivo-Tracker.json",
+        "CD-Xiaomi-Tracker.json",
+        "CD-Amazon-Tracker.json",
+        "CD-Apple-Tracker.json",
+        "CD-Badware-Hoster.json",
+        "CD-LG-webOS-Tracker.json",
+        "CD-Huawei-Tracker.json",
+    ]
+
+    print("🔍 Consolidating Ad-Blocking Lists...")
+    print(f"Input Directory: {input_dir}")
+    print(f"Output Directory: {output_dir}")
+    print("=" * 50)
+
+    # Process files
+    denylist_domains = process_tracker_files(input_dir, tracker_files)
+    allowlist_domains = process_allowlist_files(input_dir)
+
+    # Write output files
+    write_json_files(output_dir, denylist_domains, allowlist_domains)
+    write_text_files(output_dir, denylist_domains, allowlist_domains)
+
+    # Print summary
+    print_summary(denylist_domains, allowlist_domains, output_dir)
+
+
 def main():
     """Main consolidation workflow."""
     parser = argparse.ArgumentParser(description="Consolidate AdGuard blocklists.")
@@ -215,37 +250,7 @@ def main():
             print(f"Error: Could not create output directory '{output_dir}': {e}")
             sys.exit(1)
 
-    tracker_files = [
-        "CD-Microsoft-Tracker.json",
-        "CD-No-Safesearch-Support.json",
-        "CD-OPPO_Realme-Tracker.json",
-        "CD-Roku-Tracker.json",
-        "CD-Samsung-Tracker.json",
-        "CD-Tiktok-Tracker---aggressive.json",
-        "CD-Vivo-Tracker.json",
-        "CD-Xiaomi-Tracker.json",
-        "CD-Amazon-Tracker.json",
-        "CD-Apple-Tracker.json",
-        "CD-Badware-Hoster.json",
-        "CD-LG-webOS-Tracker.json",
-        "CD-Huawei-Tracker.json",
-    ]
-
-    print("🔍 Consolidating Ad-Blocking Lists...")
-    print(f"Input Directory: {input_dir}")
-    print(f"Output Directory: {output_dir}")
-    print("=" * 50)
-
-    # Process files
-    denylist_domains = process_tracker_files(input_dir, tracker_files)
-    allowlist_domains = process_allowlist_files(input_dir)
-
-    # Write output files
-    write_json_files(output_dir, denylist_domains, allowlist_domains)
-    write_text_files(output_dir, denylist_domains, allowlist_domains)
-
-    # Print summary
-    print_summary(denylist_domains, allowlist_domains, output_dir)
+    run_consolidation(input_dir, output_dir)
 
 
 if __name__ == "__main__":
