@@ -821,5 +821,9 @@ optimization.
 ## Lesson 0cr: Salvage one-line fixes from DIRTY Jules PRs; omit CodeScene refactors (2026-06-19)
 
 **Pattern:** pc #1281 bundled a one-line podcast error-path `html_section()` a11y fix with CodeScene-driven `_parse_linear_focus_node` inlining that conflicted with `main`. **Rule:** When a DIRTY bot PR's stated intent is a small functional fix but the diff includes unrelated complexity refactors, salvage only the functional lines onto a fresh `main` branch. **Detection cost:** Low — `gh pr diff --stat` shows large churn in unrelated functions alongside a one-line stated fix in the PR title.
+## Lesson 0db: Large Phase 1 merge bursts predictably cascade DIRTY test PRs (2026-06-30)
+
+**Pattern:** After squash-merging 22 personal-config PRs in one session, nine sibling test PRs flipped to `DIRTY` (all touching overlapping `tests/*` files). CI was green on each before the burst; conflicts appeared only at merge time. **Rule:** When planning a merge burst on repos with dense Jules test PR clusters, pre-identify file-path overlap and either (a) merge the largest test-file PR first then immediately salvage DIRTY siblings from current `main`, or (b) batch-salvage before closing originals. Do not attempt `update-branch` retries indefinitely — switch to salvage-from-main after one 422 conflict response. **Detection cost:** Low — multiple open PRs sharing the same `tests/test_*.py` basename in inventory.
+
 ## Add testing for missing edge cases
 When testing parsing/formatting logic, always consider unexpected data types, out of bound values and common malformed shapes.

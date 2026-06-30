@@ -1,46 +1,54 @@
-# PR Triage — 2026-06-23
+# PR Triage — 2026-06-30
 
 ## Duplicate & overlap analysis
 
-### Closed as duplicate
+### Closed as superseded (session-doc consolidation)
 
-| Keeper | Closed | Overlap | Rationale |
-|--------|--------|---------|-----------|
-| hg #291 (merged) | hg #290 | `processor.py` np.where optimization | #291 included tests + pyproject; #290 was subset |
-| sc #145 (merged) | sc #142 | `scripts/processor.py` Z-score vectorization | #145 had green CI; #142 blocked on CodeScene |
+| Closed | Reason |
+|--------|--------|
+| pc #1369, #1370, #1375, #1376, #1382, #1383 | Stale cursor-agent session-report drafts consolidated into 2026-06-30 run |
 
-### Related clusters (not closed — distinct intent)
+### Closed → salvage replacement (DIRTY after merge burst)
+
+| Old PR | Salvage draft | Overlap |
+|--------|---------------|---------|
+| pc #1402 | #1433 | parse_inventory main() tests |
+| pc #1424 | #1434 | get_duplicates tests |
+| pc #1397 | #1435 | _find_matching_prs tests |
+| pc #1393 | #1436 | create_denylist tests |
+| pc #1391 | #1437 | format_lists error paths |
+| pc #1407 | #1438 | process_allowlist_files mocks |
+| esp #1168 | #1192 | Palette fallback instructions |
+| esp #1175 | #1193 | NLP transformer core tests |
+| esp #1191 | #1194 | forgiving CLI provider selection |
+
+### Related clusters (not closed)
 
 | Cluster | PRs | Notes |
 |---------|-----|-------|
-| personal-config Palette a11y | #1326, #1329 | #1326 adds `.codacy.yml` + ARIA; #1329 focuses screen-reader grouping. Merge sequentially after Codacy infra fix. |
-| repoprompt-ce Changelog perf | #39, #49 | Both touch `Changelog.swift`; #39 extracts DateFormatter, #49 optimizes usage. Not >90% overlap — defer to salvage for ordering. |
-| Hydrograph Bolt np.where | #290, #291 | Resolved: kept #291. |
-| series_correction Bolt Z-score | #142, #145 | Resolved: kept #145. |
-
-### Superseded
-
-None identified beyond the two closures above. No stale (>30d) bot PRs in scope.
+| pc test_create_consolidated_lists | #1393 (salvaged #1436), #1407 (salvaged #1438) | Both touch same test file; salvaged separately — review for overlap before merging both |
+| esp Palette UX | #1192, #1194 | Distinct files (app_runner vs setup_wizard); merge sequentially |
 
 ## Merge ordering applied
 
-1. **Dependencies** — esp, Seatek, hg, sc, pc (#1331 codacy-action first)
-2. **CI/QA fixes** — hg #289
-3. **Performance/UI** — hg #291, sc #145, Seatek #358, esp #1140, Seatek #357
-4. **Re-validate siblings** after each merge (Lesson 0cs)
+1. **Security** — pc #1416 (Sentinel)
+2. **Code health / logging** — esp #1177, #1173
+3. **Tests** — esp #1172, #1174, #1176; then pc test/refactor cluster (#1387–#1421)
+4. **Performance** — pc #1409, #1425–#1427
+5. **UI** — pc #1428
+6. **Re-validate siblings** after each merge (Lesson 0cs) — cascade produced 9 DIRTY PRs salvaged
 
 ## Blockers identified
 
 | Blocker | Affected PRs | Type | Next step |
 |---------|--------------|------|-----------|
-| Codacy Security Scan fail | pc #1330–1337, #1324–1329 | main-side infra | ESCALATE: codacy-action bumped (#1331) but scan still fails on open PRs; investigate Codacy project config |
-| CodeScene code health | ctrld #943 | PR-specific | `/cs-agent` posted; merge #943 then re-run dependabot cluster |
-| mypy/ruff on main (pre-#943) | ctrld #938–942 | blocked by #943 | Merge #943 after CodeScene green |
-| validate (numpy) | Seatek #351 | dependency constraint | DEFER — validate job fails on numpy >=2.5.0 bump |
-| Style / build cluster | rpce #24–49 | salvage tail | Hand off to Phase 2 salvage agent |
+| CodeScene code health | pc #1422, esp #1179 | PR-specific | `/cs-agent` posted; re-check after remediation |
+| GitGuardian Security Checks | pc #1398 | security scan | DEFER — investigate flagged content before merge |
+| Trunk Merge Queue | pc #1432, esp #1180, #1190 | infra/MQ | DEFER — not blocking salvage drafts |
+| DIRTY conflict | esp #1179 | merge conflict | Salvage after CodeScene remediation or manual rebase |
 
 ## Security gate notes
 
-- No secrets, permission escalation, or CVE regressions detected in merged PRs.
-- rpce #41 (Keychain accessibility salvage) remains **ESCALATE** — security-sensitive; draft salvage PR.
-- pc #1334 (workflow consolidation) **ESCALATE** — trust boundary (CI/INFRA); blocked on Codacy but warrants human review of workflow YAML integrity per Lesson 0cu.
+- 27 merges passed Gate 2 (no secrets, no permission escalation detected in diffs).
+- esp salvage drafts (#1192–#1194) are **draft** per security-classified repo policy (Lesson 0bb).
+- pc #1398 GitGuardian failure requires human review before any merge.
