@@ -33,7 +33,8 @@ def _find_matching_prs(all_prs, repo, title_keywords):
             continue
         title_lower = p.get("title_lower")
         if title_lower is None:
-            title_lower = p["title"].lower()
+            p["title_lower"] = title_lower = p["title"].lower()
+
         if _contains_all_keywords(title_lower, lower_kws):
             matches.append(p)
     return matches
