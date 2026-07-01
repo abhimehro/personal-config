@@ -542,3 +542,7 @@ invocation.
 ## 2023-10-25 - Code Health Check
 **Action:** Removed unused `from __future__ import annotations` from `tests/test_morning_brief.py`.
 **Insight:** Code clarity and readability can be improved by pruning unused imports.
+
+## 2026-07-01 - [Avoid N+1 process spawning with ps aux pipelines]
+**Learning:** In shell scripts, executing multiple sequential `ps aux | grep ...` commands to check the status of different background processes is highly inefficient because it spawns new subprocesses for every check.
+**Action:** Consolidate multiple process checks into a single `ps aux` pipeline parsed by a unified `awk` script (e.g., `awk '/proc1/ {p1++} /proc2/ {p2++} END {print p1+0, p2+0}'`) and capture the output simultaneously using `read -r`. This drastically reduces system call overhead.
