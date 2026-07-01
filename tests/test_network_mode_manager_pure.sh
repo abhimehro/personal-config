@@ -82,7 +82,7 @@ assert_true() {
 # Helper: assert string equality.
 assert_eq() {
 	local name="$1" expected="$2" actual="$3"
-	if [[ "$expected" == "$actual" ]]; then
+	if [[ $expected == "$actual" ]]; then
 		echo "PASS: $name"
 	else
 		echo "FAIL: $name expected '$expected', got '$actual'"
