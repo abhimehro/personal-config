@@ -1,3 +1,5 @@
+import concurrent.futures
+from pathlib import Path
 import json
 import os
 
@@ -46,10 +48,7 @@ def extract_allowlist_domains_from_file(filepath):
     return domains
 
 
-if __name__ == "__main__":
-    # Base directory
-    base_dir = os.environ.get("ADGUARD_LISTS_DIR", str(Path.home() / "Downloads"))
-
+def process_denylist_files(base_dir):
     # Tracker files for denylist
     tracker_files = [
         "CD-Microsoft-Tracker.json",
@@ -70,15 +69,28 @@ if __name__ == "__main__":
     print("Extracting denylist domains...")
     denylist_domains = set()
 
-    for filename in tracker_files:
-        filepath = os.path.join(base_dir, filename)
-        if os.path.exists(filepath):
-            domains = extract_domains_from_file(filepath)
-            denylist_domains.update(domains)
-            print(f"{filename}: {len(domains)} domains")
+    filepaths = [
+        os.path.join(base_dir, f)
+        for f in tracker_files
+        if os.path.exists(os.path.join(base_dir, f))
+    ]
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        future_to_file = {
+            executor.submit(extract_domains_from_file, path): path for path in filepaths
+        }
+        for future in concurrent.futures.as_completed(future_to_file):
+            filepath = future_to_file[future]
+            try:
+                domains = future.result()
+                denylist_domains.update(domains)
+                print(f"{os.path.basename(filepath)}: {len(domains)} domains")
+            except Exception as exc:
+                print(f"{os.path.basename(filepath)} generated an exception: {exc}")
 
     print(f"\nTotal denylist domains: {len(denylist_domains)}")
+    return denylist_domains
 
+def process_allowlist_files(base_dir):
     # Extract allowlist domains
     print("\nExtracting allowlist domains...")
     allowlist_domains = set()
@@ -98,7 +110,9 @@ if __name__ == "__main__":
         print(f"CD-Most-Abused-TLDs.json: {len(domains)} domains")
 
     print(f"\nTotal allowlist domains: {len(allowlist_domains)}")
+    return allowlist_domains
 
+def write_lists(base_dir, denylist_domains, allowlist_domains):
     # Write denylist
     if os.path.exists(base_dir):
         with open(os.path.join(base_dir, "Consolidated-Denylist.txt"), "w") as f:
@@ -118,3 +132,12 @@ if __name__ == "__main__":
         print(f"\nFiles created:")
         print(f"- Consolidated-Denylist.txt ({len(denylist_domains)} domains)")
         print(f"- Consolidated-Allowlist.txt ({len(allowlist_domains)} domains)")
+
+def main():
+    base_dir = os.environ.get("ADGUARD_LISTS_DIR", str(Path.home() / "Downloads"))
+    denylist_domains = process_denylist_files(base_dir)
+    allowlist_domains = process_allowlist_files(base_dir)
+    write_lists(base_dir, denylist_domains, allowlist_domains)
+
+if __name__ == "__main__":
+    main()
