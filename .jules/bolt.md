@@ -545,3 +545,8 @@ invocation.
 ## 2025-07-01 - Optimizing directory traversal with find -prune
 **Learning:** When using `find` to search for specific directory names like `node_modules` (which contain heavily nested structures), omitting `-prune` causes `find` to unnecessarily traverse the entire deep directory tree inside matches, leading to significant I/O and CPU overhead.
 **Action:** Always use `-prune` when searching for directories whose contents you don't need to traverse, such as `node_modules` or build directories.
+
+## 2026-07-01 - [Avoid N+1 process spawning with ps aux pipelines]
+**Learning:** In shell scripts, executing multiple sequential `ps aux | grep ...` commands to check the status of different background processes is highly inefficient because it spawns new subprocesses for every check.
+**Action:** Consolidate multiple process checks into a single `ps aux` pipeline parsed by a unified `awk` script (e.g., `awk '/proc1/ {p1++} /proc2/ {p2++} END {print p1+0, p2+0}'`) and capture the output simultaneously using `read -r`. This drastically reduces system call overhead.
+
