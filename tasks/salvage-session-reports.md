@@ -144,6 +144,47 @@
   pc#1234/#1235/#1242/#1243 and esp#1107/#1111/#1112; review ctrld#899 draft
 - Cross-links: see `tasks/pr-review-2026-06-14.md`
 
+## Run — 2026-06-30
+
+### Input tail
+
+- Source report/snapshot: prior memory (2026-06-29 run) + live GitHub re-fetch
+- PRs investigated: 48 in-scope open at start; 4 conflicted (pc #1402, #1376; esp #1168, #1175); cascade grew to 9 DIRTY during Phase 1 merge burst
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | 1402 | SALVAGE | 1433 | parse_inventory tests |
+| personal-config | 1424 | SALVAGE | 1434 | get_duplicates tests |
+| personal-config | 1397 | SALVAGE | 1435 | _find_matching_prs tests |
+| personal-config | 1393 | SALVAGE | 1436 | create_denylist tests |
+| personal-config | 1391 | SALVAGE | 1437 | format_lists error paths |
+| personal-config | 1407 | SALVAGE | 1438 | allowlist mocks + .jules/testing.md |
+| personal-config | 1369–1383 | CLOSE-SUPERSEDED | — | stale session-doc drafts |
+| email-security-pipeline | 1168 | SALVAGE | 1192 | Palette fallback |
+| email-security-pipeline | 1175 | SALVAGE | 1193 | NLP transformer tests |
+| email-security-pipeline | 1191 | SALVAGE | 1194 | forgiving CLI selection |
+
+- Salvage draft PRs opened: 9
+- Infra-fix draft PRs opened: 0
+- Originals closed as superseded/no-op: 15
+- Phase 1 merges (same session): 27
+
+### Verification status
+
+- Blocking checks: pc #1398 GitGuardian; pc #1422 CodeScene; esp #1179 DIRTY+CodeScene
+- CodeScene remediation commands posted: pc #1422, esp #1179
+
+### Handoff
+
+- Maintainer actions required:
+  1. Review draft salvages pc #1433–#1438 and esp #1192–#1194
+  2. Investigate pc #1398 GitGuardian before merge
+  3. Re-run Phase 1 after CodeScene remediation on #1422
+  4. Salvage or close esp #1179 after cs-agent cycle
+- Cross-links: [Session report](tasks/pr-review-2026-06-30.md)
+
 ## Run — YYYY-MM-DD
 
 ### Input tail
@@ -245,3 +286,44 @@
   3. Phase 1 merge ctrld #892/#893, pc #1234/#1235 after infra fix
   4. Do not merge sa #261 without Gate 2 audit
 - Cross-links: [Session report](tasks/pr-review-2026-06-13.md)
+
+## Run — 2026-06-30
+
+### Input tail
+
+- Source report/snapshot: prior memory (2026-06-29 run) + live GitHub re-fetch
+- PRs investigated: 48 in-scope open at start; cascade to 9 DIRTY during Phase 1 merge burst
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | 1402 | SALVAGE | 1433 | parse_inventory tests |
+| personal-config | 1424 | SALVAGE | 1434 | get_duplicates tests |
+| personal-config | 1397 | SALVAGE | 1435 | _find_matching_prs tests |
+| personal-config | 1393 | SALVAGE | 1436 | create_denylist tests |
+| personal-config | 1391 | SALVAGE | 1437 | format_lists error paths |
+| personal-config | 1407 | SALVAGE | 1438 | allowlist mocks |
+| personal-config | 1369–1383 | CLOSE-SUPERSEDED | — | stale session-doc drafts |
+| email-security-pipeline | 1168 | SALVAGE | 1192 | Palette fallback |
+| email-security-pipeline | 1175 | SALVAGE | 1193 | NLP transformer tests |
+| email-security-pipeline | 1191 | SALVAGE | 1194 | forgiving CLI selection |
+
+- Salvage draft PRs opened: 9
+- Infra-fix draft PRs opened: 0
+- Originals closed as superseded: 15
+- Phase 1 merges (same session): 27
+
+### Verification status
+
+- Blocking checks: pc #1398 GitGuardian; pc #1422 CodeScene; esp #1179 DIRTY+CodeScene
+- CodeScene remediation commands posted: pc #1422, esp #1179
+
+### Handoff
+
+- Maintainer actions required:
+  1. Review draft salvages pc #1433–#1438 and esp #1192–#1194
+  2. Investigate pc #1398 GitGuardian before merge
+  3. Re-run Phase 1 after CodeScene remediation on #1422
+  4. Salvage or close esp #1179 after cs-agent cycle
+- Cross-links: [Session report](tasks/pr-review-2026-06-30.md)
