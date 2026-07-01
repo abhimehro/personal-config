@@ -542,3 +542,6 @@ invocation.
 ## 2023-10-25 - Code Health Check
 **Action:** Removed unused `from __future__ import annotations` from `tests/test_morning_brief.py`.
 **Insight:** Code clarity and readability can be improved by pruning unused imports.
+## 2025-07-01 - Optimizing directory traversal with find -prune
+**Learning:** When using `find` to search for specific directory names like `node_modules` (which contain heavily nested structures), omitting `-prune` causes `find` to unnecessarily traverse the entire deep directory tree inside matches, leading to significant I/O and CPU overhead.
+**Action:** Always use `-prune` when searching for directories whose contents you don't need to traverse, such as `node_modules` or build directories.

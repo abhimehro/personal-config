@@ -148,7 +148,8 @@ if [[ -n ${REPO_SEARCH_PATHS-} ]] && [[ ${NODE_MODULES_MAX_GB:-0} -gt 0 ]]; then
 						fi
 					fi
 				fi
-			done < <(find "$search_path" -name "node_modules" -type d -mtime +"${NODE_MODULES_MAX_AGE_DAYS:-90}" -print0 2>/dev/null)
+			# Use -prune to prevent find from traversing deeply nested dependency trees inside node_modules directories, significantly reducing I/O and CPU overhead
+			done < <(find "$search_path" -name "node_modules" -type d -prune -mtime +"${NODE_MODULES_MAX_AGE_DAYS:-90}" -print0 2>/dev/null)
 
 			# Get cleaned count (limited by shell scope)
 			if [[ -f $CLEANED_DIRS_FILE ]]; then
