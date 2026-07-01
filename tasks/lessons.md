@@ -1,5 +1,13 @@
 # Lessons Learned
 
+## Lesson 0cy: Post-salvage conflict wave on personal-config + esp (2026-07-01)
+
+**Pattern:** After squash-merging 8 personal-config salvage PRs (#1433–#1437, #1439) plus 6 esp merges (#1192–#1196, #1201, #1180), sibling PRs #1438/#1442/#1446 (pc) and #1179/#1200 (esp) flipped to **CONFLICTING**; `gh pr update-branch` returned "Cannot update due to conflicts". **Rule:** Expect a second-pass salvage session after any ≥5-PR merge burst touching `tests/` or `src/`; defer conflicting siblings with comments rather than force-push. Merge journal/docs-only Bolt PRs before performance siblings when both touch `.jules/*.md`. **Detection cost:** Low — `gh pr view --json mergeable` after each batch.
+
+## Lesson 0cz: automation-workflow-updates SHA→tag persists (2026-07-01)
+
+**Pattern:** pc #1443 (`automation-workflow-updates-20260701-1`) replaced SHA-pinned `actions/github-script@3a2844b7…` with `@v9.0.0` across 7 workflow files while CI stayed green. Same regression class as #1430/#1379/#1367. **Rule:** Any `automation-workflow-updates-*` PR must be diff-scanned for SHA→tag before merge; auto-ESCALATE even when CodeQL/dependency-review pass. **Detection cost:** Low — `rg '@v[0-9]' .github/workflows/` on PR diff.
+
 ## Lesson 0cv: Codacy action bump ≠ Codacy scan green (2026-06-23)
 
 **Pattern:** personal-config #1331 (codacy-analysis-cli-action 1.1.0 → 4.4.7) merged with passing CI, but **all** sibling open PRs still fail `Codacy Security Scan` on re-run. Other gates (CodeQL, Snyk, CodeScene, dependency-review) pass. **Rule:** Treat Codacy failures after an action bump as **ESCALATE** (project token, API config, or org-level Codacy settings)—not auto-fixable by further dependabot bumps alone. **Detection cost:** Low — single failing required check across entire PR queue.

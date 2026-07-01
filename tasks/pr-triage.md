@@ -1,46 +1,56 @@
-# PR Triage — 2026-06-23
+# PR Triage — 2026-07-01
 
-## Duplicate & overlap analysis
+## Duplicate & overlap groups
 
-### Closed as duplicate
+### Group A — ctrld Palette ANSI isatty guards
+| PR | Status | Action |
+|----|--------|--------|
+| #963 | CLOSED | Duplicate of #965; older approach |
+| #965 | OPEN | DEFER — CI failing; salvage after main settles |
 
-| Keeper | Closed | Overlap | Rationale |
-|--------|--------|---------|-----------|
-| hg #291 (merged) | hg #290 | `processor.py` np.where optimization | #291 included tests + pyproject; #290 was subset |
-| sc #145 (merged) | sc #142 | `scripts/processor.py` Z-score vectorization | #145 had green CI; #142 blocked on CodeScene |
+### Group B — personal-config parse_inventory tests
+| PR | Status | Action |
+|----|--------|--------|
+| #1440 | CLOSED | Superseded by merged #1433 |
+| #1433 | MERGED | Canonical salvage |
 
-### Related clusters (not closed — distinct intent)
+### Group C — email-security-pipeline zero-diff Sentinel
+| PR | Status | Action |
+|----|--------|--------|
+| #1199 | CLOSED | Zero-diff; no file changes vs main |
 
-| Cluster | PRs | Notes |
-|---------|-----|-------|
-| personal-config Palette a11y | #1326, #1329 | #1326 adds `.codacy.yml` + ARIA; #1329 focuses screen-reader grouping. Merge sequentially after Codacy infra fix. |
-| repoprompt-ce Changelog perf | #39, #49 | Both touch `Changelog.swift`; #39 extracts DateFormatter, #49 optimizes usage. Not >90% overlap — defer to salvage for ordering. |
-| Hydrograph Bolt np.where | #290, #291 | Resolved: kept #291. |
-| series_correction Bolt Z-score | #142, #145 | Resolved: kept #145. |
+### Group D — Seatek daily QA no-op
+| PR | Status | Action |
+|----|--------|--------|
+| #389 | CLOSED | Zero-diff QA review |
 
-### Superseded
+### Group E — dependabot ruby/setup-ruby cluster (5 repos)
+All independent workflow bumps; merged in batch: ctrld #966, esp #1198, Seatek #387, hg #308, sc #165.
 
-None identified beyond the two closures above. No stale (>30d) bot PRs in scope.
+## Escalations
+
+| Repo | PR | Reason |
+|------|---:|--------|
+| personal-config | 1443 | SHA→tag workflow pin regression (`actions/github-script@…` → `@v9.0.0`) |
+| email-security-pipeline | 1190 | 28-file Daily QA bundle; gh-aw **downgrade** v0.81.6→v0.80.9; merge conflicts |
+
+## Deferred tail (salvage agent)
+
+| Repo | PR | Blocker |
+|------|---:|---------|
+| personal-config | 1434 | `Run All Tests` failing |
+| personal-config | 1438, 1442, 1446 | Merge conflicts after session merges |
+| ctrld-sync | 965 | CI failing (Palette) |
+| email-security-pipeline | 1178, 1179, 1200 | Merge conflicts |
+| email-security-pipeline | 1195 | CI failing (workflow permissions) |
+| series_correction_project_updated | 166 | CI failing |
 
 ## Merge ordering applied
 
-1. **Dependencies** — esp, Seatek, hg, sc, pc (#1331 codacy-action first)
-2. **CI/QA fixes** — hg #289
-3. **Performance/UI** — hg #291, sc #145, Seatek #358, esp #1140, Seatek #357
-4. **Re-validate siblings** after each merge (Lesson 0cs)
+1. Dependabot DEPENDENCY (5 repos)
+2. SECURITY fix ctrld #967
+3. email-security-pipeline salvage + formatting (#1192–#1196, #1201, #1180)
+4. personal-config salvage cluster (#1433–#1437, #1439, #1422–#1423, #1445)
+5. Hydrograph + repoprompt-ce performance/UI
 
-## Blockers identified
-
-| Blocker | Affected PRs | Type | Next step |
-|---------|--------------|------|-----------|
-| Codacy Security Scan fail | pc #1330–1337, #1324–1329 | main-side infra | ESCALATE: codacy-action bumped (#1331) but scan still fails on open PRs; investigate Codacy project config |
-| CodeScene code health | ctrld #943 | PR-specific | `/cs-agent` posted; merge #943 then re-run dependabot cluster |
-| mypy/ruff on main (pre-#943) | ctrld #938–942 | blocked by #943 | Merge #943 after CodeScene green |
-| validate (numpy) | Seatek #351 | dependency constraint | DEFER — validate job fails on numpy >=2.5.0 bump |
-| Style / build cluster | rpce #24–49 | salvage tail | Hand off to Phase 2 salvage agent |
-
-## Security gate notes
-
-- No secrets, permission escalation, or CVE regressions detected in merged PRs.
-- rpce #41 (Keychain accessibility salvage) remains **ESCALATE** — security-sensitive; draft salvage PR.
-- pc #1334 (workflow consolidation) **ESCALATE** — trust boundary (CI/INFRA); blocked on Codacy but warrants human review of workflow YAML integrity per Lesson 0cu.
+Re-validated mergeability after each batch per Lesson 0.
