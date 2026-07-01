@@ -9,27 +9,11 @@ from unittest.mock import patch
 # Ensure the module can be found
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from adguard.scripts.create_consolidated_lists import extract_domains_from_file, process_allowlist_files
+from adguard.scripts.create_consolidated_lists import (
+    process_allowlist_files,
+    create_denylist,
+)
 
-
-class TestExtractDomainsFromFile(unittest.TestCase):
-    def setUp(self):
-        self.temp_dir = tempfile.TemporaryDirectory()
-        self.base_dir = Path(self.temp_dir.name)
-
-    def tearDown(self):
-        self.temp_dir.cleanup()
-
-    @patch("json.load")
-    @patch("builtins.print")
-    def test_json_decode_error(self, mock_print, mock_json_load):
-        """Test extract_domains_from_file when json.load raises JSONDecodeError."""
-        filepath = self.base_dir / "dummy.json"
-        with open(filepath, "w") as f:
-            f.write("dummy")
-        mock_json_load.side_effect = json.JSONDecodeError("Expecting value", "", 0)
-        result = extract_domains_from_file(filepath)
-        self.assertEqual(result, [])
 
 class TestProcessAllowlistFiles(unittest.TestCase):
 
@@ -167,6 +151,91 @@ class TestProcessAllowlistFiles(unittest.TestCase):
 
         expected_domains = {"duplicate.com", "bypass1.com", "tld1.org"}
         self.assertEqual(result, expected_domains)
+
+
+class TestCreateDenylist(unittest.TestCase):
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.base_dir = Path(self.temp_dir.name)
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def create_json_file(self, filename, data):
+        filepath = self.base_dir / filename
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        return filepath
+
+    @patch("builtins.print")
+    def test_happy_path(self, mock_print):
+        # Tracker file 1 (Microsoft)
+        ms_data = {
+            "rules": [
+                {"PK": "block.microsoft.com", "action": {"do": 0}},
+                {"PK": "ignore.microsoft.com", "action": {"do": 1}},
+            ]
+        }
+        # Tracker file 2 (Amazon)
+        amz_data = {"rules": [{"PK": "block.amazon.com", "action": {"do": 0}}]}
+        self.create_json_file("CD-Microsoft-Tracker.json", ms_data)
+        self.create_json_file("CD-Amazon-Tracker.json", amz_data)
+
+        result = create_denylist(self.base_dir)
+        self.assertEqual(result, {"block.microsoft.com", "block.amazon.com"})
+
+    @patch("builtins.print")
+    def test_missing_files(self, mock_print):
+        # Provide only one file out of the many expected
+        amz_data = {"rules": [{"PK": "block.amazon.com", "action": {"do": 0}}]}
+        self.create_json_file("CD-Amazon-Tracker.json", amz_data)
+
+        result = create_denylist(self.base_dir)
+        self.assertEqual(result, {"block.amazon.com"})
+
+    @patch("builtins.print")
+    def test_all_files_missing(self, mock_print):
+        result = create_denylist(self.base_dir)
+        self.assertEqual(result, set())
+
+    @patch("builtins.print")
+    def test_invalid_json(self, mock_print):
+        # Invalid file
+        filepath = self.base_dir / "CD-Microsoft-Tracker.json"
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write("{ invalid }")
+
+        # Valid file
+        amz_data = {"rules": [{"PK": "block.amazon.com", "action": {"do": 0}}]}
+        self.create_json_file("CD-Amazon-Tracker.json", amz_data)
+
+        result = create_denylist(self.base_dir)
+        self.assertEqual(result, {"block.amazon.com"})
+
+    @patch("builtins.print")
+    def test_empty_tracker_file(self, mock_print):
+        empty_data = {"rules": []}
+        self.create_json_file("CD-Microsoft-Tracker.json", empty_data)
+
+        result = create_denylist(self.base_dir)
+        self.assertEqual(result, set())
+
+    @patch("builtins.print")
+    def test_deduplication(self, mock_print):
+        # Both files contain the same block rule
+        ms_data = {"rules": [{"PK": "shared-tracker.com", "action": {"do": 0}}]}
+        amz_data = {
+            "rules": [
+                {"PK": "shared-tracker.com", "action": {"do": 0}},
+                {"PK": "other-tracker.com", "action": {"do": 0}},
+            ]
+        }
+        self.create_json_file("CD-Microsoft-Tracker.json", ms_data)
+        self.create_json_file("CD-Amazon-Tracker.json", amz_data)
+
+        result = create_denylist(self.base_dir)
+        self.assertEqual(result, {"shared-tracker.com", "other-tracker.com"})
 
 
 if __name__ == "__main__":
