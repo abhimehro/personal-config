@@ -1,5 +1,13 @@
 # Lessons Learned
 
+## Lesson 0cy: Stale salvage branches diff session artifacts (2026-07-01)
+
+**Pattern:** personal-config salvage branches from 2026-06-30 (#1434, #1438) showed 20+ file diffs against current `main` because they included stale `tasks/pr-*` session docs and workflow files from pre-merge state. **Rule:** Phase 2 salvage must always branch from current `main` and apply **file-scoped** checkouts of valuable source/tests only — never `git merge` or wholesale checkout from a stale salvage branch. **Detection cost:** Low — `git diff --stat main..salvage_branch` >5 files on a single-test salvage is a tripwire.
+
+## Lesson 0cz: Inherited test mocks may reference removed APIs (2026-07-01)
+
+**Pattern:** pc #1434 salvage tests mocked `detect_duplicates.fetch_pr_info` but `main` uses `run_gh` + GraphQL chunking. CI failed with `AttributeError` on import. **Rule:** Before committing a test salvage, grep the production module for the mocked symbol; if absent, adapt tests to the current API (Lesson 0z) and run `python3 -m unittest` locally. **Detection cost:** Low — one local test run catches it.
+
 ## Lesson 0cv: Codacy action bump ≠ Codacy scan green (2026-06-23)
 
 **Pattern:** personal-config #1331 (codacy-analysis-cli-action 1.1.0 → 4.4.7) merged with passing CI, but **all** sibling open PRs still fail `Codacy Security Scan` on re-run. Other gates (CodeQL, Snyk, CodeScene, dependency-review) pass. **Rule:** Treat Codacy failures after an action bump as **ESCALATE** (project token, API config, or org-level Codacy settings)—not auto-fixable by further dependabot bumps alone. **Detection cost:** Low — single failing required check across entire PR queue.

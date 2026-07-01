@@ -1,54 +1,59 @@
-# PR Triage — 2026-06-30
+# PR Triage — 2026-07-01
 
-## Duplicate & overlap analysis
+**Session:** cron `0 17 * * *` salvage & cleanup  
+**Input:** Live GitHub re-fetch + `tasks/pr-review-2026-06-30.md` deferred tail
 
-### Closed as superseded (session-doc consolidation)
+## Triage matrix
 
-| Closed | Reason |
-|--------|--------|
-| pc #1369, #1370, #1375, #1376, #1382, #1383 | Stale cursor-agent session-report drafts consolidated into 2026-06-30 run |
+| Repo | PR | Author | Merge state | CI | Disposition | Rationale |
+|------|-----|--------|-------------|-----|-------------|-----------|
+| personal-config | #1443 | abhimehro | CLEAN | green | **MERGE** | Workflow consolidation; all gates pass |
+| personal-config | #1447 | cursor | DIRTY | n/a | **CLOSE** | Session-doc draft; supersede with dated run |
+| personal-config | #1446 | abhimehro | DIRTY | n/a | **SALVAGE** → #1448 | ps aux awk optimization |
+| personal-config | #1442 | abhimehro | DIRTY | n/a | **SALVAGE** → #1449 | Test-only format/coverage |
+| personal-config | #1434 | abhimehro | UNSTABLE | fail tests | **SALVAGE** → #1450 | Adapt get_duplicates test to run_gh API |
+| personal-config | #1438 | abhimehro | DIRTY | n/a | **SALVAGE** → #1451 | allowlist mocks test file only |
+| email-security-pipeline | #1195 | abhimehro | CLEAN | green | **MERGE** | Code scanning permissions fix |
+| email-security-pipeline | #1200 | abhimehro | DIRTY | n/a | **SALVAGE** → #1202 | T1 URL redaction perf |
+| email-security-pipeline | #1178 | abhimehro | DIRTY | n/a | **SALVAGE** → #1203 | IMAP SIZE regex |
+| email-security-pipeline | #1179 | abhimehro | DIRTY | n/a | **SALVAGE** → #1204 | setup_wizard tests only |
+| email-security-pipeline | #1190 | abhimehro | DIRTY | n/a | **DEFER** | Stale Daily QA (28 files, March date) |
+| ctrld-sync | #965 | abhimehro | UNSTABLE | CodeScene fail | **DEFER** | cs-agent posted |
+| series_correction_project_updated | #166 | abhimehro | UNSTABLE | CodeScene fail | **DEFER** | cs-agent posted |
 
-### Closed → salvage replacement (DIRTY after merge burst)
+## Disposition counts
 
-| Old PR | Salvage draft | Overlap |
-|--------|---------------|---------|
-| pc #1402 | #1433 | parse_inventory main() tests |
-| pc #1424 | #1434 | get_duplicates tests |
-| pc #1397 | #1435 | _find_matching_prs tests |
-| pc #1393 | #1436 | create_denylist tests |
-| pc #1391 | #1437 | format_lists error paths |
-| pc #1407 | #1438 | process_allowlist_files mocks |
-| esp #1168 | #1192 | Palette fallback instructions |
-| esp #1175 | #1193 | NLP transformer core tests |
-| esp #1191 | #1194 | forgiving CLI provider selection |
+| Disposition | Count |
+|-------------|-------|
+| MERGE | 2 |
+| CLOSE (superseded) | 1 |
+| SALVAGE (new draft) | 7 |
+| CLOSE (superseded original) | 7 |
+| DEFER | 3 |
 
-### Related clusters (not closed)
+## Patterns applied
 
-| Cluster | PRs | Notes |
-|---------|-----|-------|
-| pc test_create_consolidated_lists | #1393 (salvaged #1436), #1407 (salvaged #1438) | Both touch same test file; salvaged separately — review for overlap before merging both |
-| esp Palette UX | #1192, #1194 | Distinct files (app_runner vs setup_wizard); merge sequentially |
+1. **Merge-burst DIRTY cascade** — 7 conflicted originals from post-2026-06-30 merges; salvage-from-main with file-scoped checkout (not wholesale branch merge).
+2. **Test API adaptation (Lesson 0z)** — #1434 salvage rewrote mocks from `fetch_pr_info` to `run_gh` to match current `detect_duplicates.py`.
+3. **Journal append-only (S2)** — bolt.md entries appended by title dedup, never `git checkout pr -- .jules/bolt.md`.
+4. **Session-doc hygiene** — #1447 closed; artifacts live on `cursor-agent/pr-salvage-and-cleanup-2628` only.
 
-## Merge ordering applied
+## open_followups
 
-1. **Security** — pc #1416 (Sentinel)
-2. **Code health / logging** — esp #1177, #1173
-3. **Tests** — esp #1172, #1174, #1176; then pc test/refactor cluster (#1387–#1421)
-4. **Performance** — pc #1409, #1425–#1427
-5. **UI** — pc #1428
-6. **Re-validate siblings** after each merge (Lesson 0cs) — cascade produced 9 DIRTY PRs salvaged
-
-## Blockers identified
-
-| Blocker | Affected PRs | Type | Next step |
-|---------|--------------|------|-----------|
-| CodeScene code health | pc #1422, esp #1179 | PR-specific | `/cs-agent` posted; re-check after remediation |
-| GitGuardian Security Checks | pc #1398 | security scan | DEFER — investigate flagged content before merge |
-| Trunk Merge Queue | pc #1432, esp #1180, #1190 | infra/MQ | DEFER — not blocking salvage drafts |
-| DIRTY conflict | esp #1179 | merge conflict | Salvage after CodeScene remediation or manual rebase |
-
-## Security gate notes
-
-- 27 merges passed Gate 2 (no secrets, no permission escalation detected in diffs).
-- esp salvage drafts (#1192–#1194) are **draft** per security-classified repo policy (Lesson 0bb).
-- pc #1398 GitGuardian failure requires human review before any merge.
+```yaml
+- repo: abhimehro/personal-config
+  pr: 1448-1451
+  reason: DRAFT-SALVAGE — human review required
+- repo: abhimehro/ctrld-sync
+  pr: 965
+  reason: DEFER — CodeScene fail; cs-agent posted
+- repo: abhimehro/email-security-pipeline
+  pr: 1190
+  reason: DEFER — stale Daily QA DIRTY
+- repo: abhimehro/email-security-pipeline
+  pr: 1202-1204
+  reason: DRAFT-SALVAGE — security-classified repo
+- repo: abhimehro/series_correction_project_updated
+  pr: 166
+  reason: DEFER — CodeScene fail; cs-agent posted
+```

@@ -1,96 +1,66 @@
-# PR Inventory — 2026-06-30
+# PR Inventory — 2026-07-01
 
 **Session:** Automated PR salvage & cleanup (cron 17:00 UTC)  
 **Preflight:** PASS 6/6 configured repos + repoprompt-ce read access  
 **Mode:** review-and-merge + Phase 2 salvage  
-**Stale threshold:** 30 days
+**Branch:** `cursor-agent/pr-salvage-and-cleanup-2628`
 
 ## Summary
 
 | Repo | Open (in-scope) | Merged | Closed | Salvage drafts | Remainder |
 |------|-----------------|--------|--------|----------------|-----------|
-| personal-config | 9 | 22 | 12 | 6 | 9 |
-| ctrld-sync | 0 | 0 | 0 | 0 | **0** |
-| email-security-pipeline | 6 | 5 | 3 | 3 | 6 |
+| personal-config | 4 | 1 | 5 | 4 | 4 draft salvages |
+| ctrld-sync | 1 | 0 | 0 | 0 | 1 DEFER (CodeScene) |
+| email-security-pipeline | 4 | 1 | 3 | 3 | 1 DEFER + 3 draft salvages |
 | Seatek_Analysis | 0 | 0 | 0 | 0 | **0** |
 | Hydrograph_Versus_Seatek_Sensors_Project | 0 | 0 | 0 | 0 | **0** |
-| series_correction_project_updated | 0 | 0 | 0 | 0 | **0** |
+| series_correction_project_updated | 1 | 0 | 0 | 0 | 1 DEFER (CodeScene) |
 | repoprompt-ce | 0 | 0 | 0 | 0 | **0** |
 
-## Merged this session (27 squash)
+## Merged this session (2 squash)
 
-### personal-config (22)
+| Repo | PR | Title |
+|------|-----|-------|
+| personal-config | [#1443](https://github.com/abhimehro/personal-config/pull/1443) | chore(actions): consolidate workflow automation |
+| email-security-pipeline | [#1195](https://github.com/abhimehro/email-security-pipeline/pull/1195) | Code scanning alert fix (workflow permissions) |
 
-- [#1416](https://github.com/abhimehro/personal-config/pull/1416) Sentinel symlink false-positive fix
-- [#1409](https://github.com/abhimehro/personal-config/pull/1409) Bolt triage title_lower cache
-- [#1425](https://github.com/abhimehro/personal-config/pull/1425) Bolt bulk GraphQL PR metadata
-- [#1426](https://github.com/abhimehro/personal-config/pull/1426) Bolt os.walk directory pruning
-- [#1427](https://github.com/abhimehro/personal-config/pull/1427) Bolt permission-fix fail-fast
-- [#1428](https://github.com/abhimehro/personal-config/pull/1428) Palette TTY spinner cleanup
-- [#1421](https://github.com/abhimehro/personal-config/pull/1421) test fix-allowlist-format main
-- [#1419](https://github.com/abhimehro/personal-config/pull/1419) Code health main refactor
-- [#1414](https://github.com/abhimehro/personal-config/pull/1414) test _read_env_file coverage
-- [#1413](https://github.com/abhimehro/personal-config/pull/1413) benchmark timing helper
-- [#1412](https://github.com/abhimehro/personal-config/pull/1412) split test_generate_directory_listing
-- [#1411](https://github.com/abhimehro/personal-config/pull/1411) test extract_domains_from_file errors
-- [#1406](https://github.com/abhimehro/personal-config/pull/1406) test group_prs integration
-- [#1399](https://github.com/abhimehro/personal-config/pull/1399) test _contains_all_keywords
-- [#1396](https://github.com/abhimehro/personal-config/pull/1396) test _process_pr_group
-- [#1395](https://github.com/abhimehro/personal-config/pull/1395) remove unused annotations (alldebrid)
-- [#1394](https://github.com/abhimehro/personal-config/pull/1394) test test-adguard-import
-- [#1392](https://github.com/abhimehro/personal-config/pull/1392) remove unused annotations
-- [#1390](https://github.com/abhimehro/personal-config/pull/1390) remove unused json import
-- [#1389](https://github.com/abhimehro/personal-config/pull/1389) env parsing edge-case tests
-- [#1388](https://github.com/abhimehro/personal-config/pull/1388) consolidate_adblock_lists refactor
-- [#1387](https://github.com/abhimehro/personal-config/pull/1387) fetch_weather error tests
-
-### email-security-pipeline (5)
-
-- [#1177](https://github.com/abhimehro/email-security-pipeline/pull/1177) remove silent KeyboardInterrupt catch
-- [#1176](https://github.com/abhimehro/email-security-pipeline/pull/1176) sanitize_for_logging truncation tests
-- [#1174](https://github.com/abhimehro/email-security-pipeline/pull/1174) ui.py missing tests
-- [#1173](https://github.com/abhimehro/email-security-pipeline/pull/1173) email ingestion logging
-- [#1172](https://github.com/abhimehro/email-security-pipeline/pull/1172) inverted threshold tests
-
-## Closed this session (15)
+## Closed this session (5)
 
 | Repo | PR | Reason |
 |------|-----|--------|
-| personal-config | #1369–#1383 | Session-doc drafts superseded by 2026-06-30 run |
-| personal-config | #1402, #1424, #1397, #1393, #1391, #1407 | DIRTY → salvage drafts #1433–#1438 |
-| email-security-pipeline | #1168, #1175, #1191 | DIRTY → salvage drafts #1192–#1194 |
+| personal-config | [#1447](https://github.com/abhimehro/personal-config/pull/1447) | Session-doc draft superseded by this run |
+| personal-config | [#1446](https://github.com/abhimehro/personal-config/pull/1446) | DIRTY → salvage [#1448](https://github.com/abhimehro/personal-config/pull/1448) |
+| personal-config | [#1442](https://github.com/abhimehro/personal-config/pull/1442) | DIRTY → salvage [#1449](https://github.com/abhimehro/personal-config/pull/1449) |
+| personal-config | [#1434](https://github.com/abhimehro/personal-config/pull/1434) | UNSTABLE → salvage [#1450](https://github.com/abhimehro/personal-config/pull/1450) |
+| personal-config | [#1438](https://github.com/abhimehro/personal-config/pull/1438) | DIRTY → salvage [#1451](https://github.com/abhimehro/personal-config/pull/1451) |
+| email-security-pipeline | [#1200](https://github.com/abhimehro/email-security-pipeline/pull/1200) | DIRTY → salvage [#1202](https://github.com/abhimehro/email-security-pipeline/pull/1202) |
+| email-security-pipeline | [#1178](https://github.com/abhimehro/email-security-pipeline/pull/1178) | DIRTY → salvage [#1203](https://github.com/abhimehro/email-security-pipeline/pull/1203) |
+| email-security-pipeline | [#1179](https://github.com/abhimehro/email-security-pipeline/pull/1179) | DIRTY → salvage [#1204](https://github.com/abhimehro/email-security-pipeline/pull/1204) |
 
-## Salvage drafts opened (9)
+## Salvage drafts opened (7)
 
 | Repo | Old PR | New draft PR |
 |------|--------|--------------|
-| personal-config | #1402 | [#1433](https://github.com/abhimehro/personal-config/pull/1433) |
-| personal-config | #1424 | [#1434](https://github.com/abhimehro/personal-config/pull/1434) |
-| personal-config | #1397 | [#1435](https://github.com/abhimehro/personal-config/pull/1435) |
-| personal-config | #1393 | [#1436](https://github.com/abhimehro/personal-config/pull/1436) |
-| personal-config | #1391 | [#1437](https://github.com/abhimehro/personal-config/pull/1437) |
-| personal-config | #1407 | [#1438](https://github.com/abhimehro/personal-config/pull/1438) |
-| email-security-pipeline | #1168 | [#1192](https://github.com/abhimehro/email-security-pipeline/pull/1192) |
-| email-security-pipeline | #1175 | [#1193](https://github.com/abhimehro/email-security-pipeline/pull/1193) |
-| email-security-pipeline | #1191 | [#1194](https://github.com/abhimehro/email-security-pipeline/pull/1194) |
+| personal-config | #1446 | [#1448](https://github.com/abhimehro/personal-config/pull/1448) |
+| personal-config | #1442 | [#1449](https://github.com/abhimehro/personal-config/pull/1449) |
+| personal-config | #1434 | [#1450](https://github.com/abhimehro/personal-config/pull/1450) |
+| personal-config | #1438 | [#1451](https://github.com/abhimehro/personal-config/pull/1451) |
+| email-security-pipeline | #1200 | [#1202](https://github.com/abhimehro/email-security-pipeline/pull/1202) |
+| email-security-pipeline | #1178 | [#1203](https://github.com/abhimehro/email-security-pipeline/pull/1203) |
+| email-security-pipeline | #1179 | [#1204](https://github.com/abhimehro/email-security-pipeline/pull/1204) |
 
 ## Post-session remainder
 
 | Repo | PR | CI | Conflicts | Status |
 |------|-----|-----|-----------|--------|
-| personal-config | [#1398](https://github.com/abhimehro/personal-config/pull/1398) | FAIL GitGuardian | MERGEABLE | DEFER |
-| personal-config | [#1422](https://github.com/abhimehro/personal-config/pull/1422) | FAIL CodeScene | MERGEABLE | DEFER (cs-agent posted) |
-| personal-config | [#1432](https://github.com/abhimehro/personal-config/pull/1432) | FAIL Trunk MQ | MERGEABLE | session doc (this run) |
-| personal-config | [#1433–1438](https://github.com/abhimehro/personal-config/pull/1433) | pending | MERGEABLE | DRAFT salvage — human review |
-| email-security-pipeline | [#1179](https://github.com/abhimehro/email-security-pipeline/pull/1179) | FAIL CodeScene | DIRTY | DEFER (cs-agent posted) |
-| email-security-pipeline | [#1180](https://github.com/abhimehro/email-security-pipeline/pull/1180) | FAIL Trunk MQ | MERGEABLE | DEFER |
-| email-security-pipeline | [#1190](https://github.com/abhimehro/email-security-pipeline/pull/1190) | FAIL Trunk MQ | MERGEABLE | DEFER (Daily QA — not zero-diff) |
-| email-security-pipeline | [#1192–1194](https://github.com/abhimehro/email-security-pipeline/pull/1192) | pending | MERGEABLE | DRAFT salvage — human review |
+| personal-config | [#1448–1451](https://github.com/abhimehro/personal-config/pull/1448) | pending | MERGEABLE | DRAFT salvage — human review |
+| ctrld-sync | [#965](https://github.com/abhimehro/ctrld-sync/pull/965) | FAIL CodeScene | MERGEABLE | DEFER (cs-agent posted) |
+| email-security-pipeline | [#1190](https://github.com/abhimehro/email-security-pipeline/pull/1190) | unknown | DIRTY | DEFER — stale Daily QA (2026-03-25) |
+| email-security-pipeline | [#1202–1204](https://github.com/abhimehro/email-security-pipeline/pull/1202) | pending | MERGEABLE | DRAFT salvage — security-classified |
+| series_correction_project_updated | [#166](https://github.com/abhimehro/series_correction_project_updated/pull/166) | FAIL CodeScene | MERGEABLE | DEFER (cs-agent posted) |
 
 ## Repos at zero open in-scope PRs
 
-- `ctrld-sync`
 - `Seatek_Analysis`
 - `Hydrograph_Versus_Seatek_Sensors_Project`
-- `series_correction_project_updated`
 - `repoprompt-ce`

@@ -6,6 +6,49 @@
 
 ## Entry template
 
+## Run — 2026-07-01
+
+### Input tail
+
+- Source report: `tasks/pr-review-2026-06-30.md` deferred tail + live GitHub re-fetch
+- PRs investigated: 13 across 4 repos (8 DIRTY/UNSTABLE at start)
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | #1446 | SALVAGE | [#1448](https://github.com/abhimehro/personal-config/pull/1448) | ps aux awk |
+| personal-config | #1442 | SALVAGE | [#1449](https://github.com/abhimehro/personal-config/pull/1449) | test-only |
+| personal-config | #1434 | SALVAGE | [#1450](https://github.com/abhimehro/personal-config/pull/1450) | get_duplicates adapted |
+| personal-config | #1438 | SALVAGE | [#1451](https://github.com/abhimehro/personal-config/pull/1451) | allowlist mocks |
+| personal-config | #1447 | CLOSE | — | session-doc superseded |
+| email-security-pipeline | #1200 | SALVAGE | [#1202](https://github.com/abhimehro/email-security-pipeline/pull/1202) | T1 alert redaction |
+| email-security-pipeline | #1178 | SALVAGE | [#1203](https://github.com/abhimehro/email-security-pipeline/pull/1203) | IMAP SIZE regex |
+| email-security-pipeline | #1179 | SALVAGE | [#1204](https://github.com/abhimehro/email-security-pipeline/pull/1204) | setup_wizard tests |
+| ctrld-sync | #965 | DEFER | — | CodeScene; cs-agent posted |
+| email-security-pipeline | #1190 | DEFER | — | stale Daily QA |
+| series_correction_project_updated | #166 | DEFER | — | CodeScene; cs-agent posted |
+
+### Counts
+
+- Phase 1 merges: 2 (pc #1443, esp #1195)
+- Salvage drafts: 7
+- Closed superseded: 8
+- Deferred: 3
+- Net new draft PRs awaiting human review: 7
+
+### Verification status
+
+- Local: `unittest` / `pytest` / `py_compile` on all salvage commits before push
+- CodeScene: `/cs-agent` posted on cs#965, sc#166
+
+### Handoff
+
+- Review T1 first: esp [#1202](https://github.com/abhimehro/email-security-pipeline/pull/1202)
+- Then pc draft salvages [#1448–1451](https://github.com/abhimehro/personal-config/pull/1448)
+- esp [#1203–1204](https://github.com/abhimehro/email-security-pipeline/pull/1203) after T1
+- Re-triage esp #1190 Daily QA manually or close as stale
+
 ## Run — 2026-06-21
 
 ### Input tail
