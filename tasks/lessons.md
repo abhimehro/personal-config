@@ -825,5 +825,13 @@ optimization.
 
 **Pattern:** After squash-merging 22 personal-config PRs in one session, nine sibling test PRs flipped to `DIRTY` (all touching overlapping `tests/*` files). CI was green on each before the burst; conflicts appeared only at merge time. **Rule:** When planning a merge burst on repos with dense Jules test PR clusters, pre-identify file-path overlap and either (a) merge the largest test-file PR first then immediately salvage DIRTY siblings from current `main`, or (b) batch-salvage before closing originals. Do not attempt `update-branch` retries indefinitely — switch to salvage-from-main after one 422 conflict response. **Detection cost:** Low — multiple open PRs sharing the same `tests/test_*.py` basename in inventory.
 
+## Lesson 0dc: Same-file Bolt duplicates — close older failing branch (2026-07-02)
+
+**Pattern:** sc #166 and #169 both optimized jump-window extraction in `scripts/processor.py`; pc #1448 and #1455 both consolidated `service_monitor.sh` ps-aux calls. The newer branch had CLEAN merge state and passing CI while the older had CodeScene failure or draft status. **Rule:** When two Bolt branches share production file + intent keywords, merge the CLEAN/ready PR and close the other with an explicit superset link — do not merge both. **Detection cost:** Low — `gh pr diff --name-only` + title keyword match.
+
+## Lesson 0dd: esp alert_system.py perf PRs need ordered merge (2026-07-02)
+
+**Pattern:** esp #1207 (keyword regex IGNORECASE) merged cleanly; sibling #1202 (URL redaction regex) immediately flipped DIRTY despite touching different line ranges. `update-branch` returned 422. **Rule:** For multiple open perf PRs on `alert_system.py`, merge in inventory order and expect the second to require salvage-from-main (not `update-branch` alone). **Detection cost:** Low — shared `alert_system.py` in diff names.
+
 ## Add testing for missing edge cases
 When testing parsing/formatting logic, always consider unexpected data types, out of bound values and common malformed shapes.

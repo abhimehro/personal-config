@@ -1,54 +1,73 @@
-# PR Triage — 2026-06-30
+# PR Triage — 2026-07-02
+
+**Session:** Automated PR review (cron 13:00 UTC)  
+**Mode:** review-and-merge
 
 ## Duplicate & overlap analysis
 
-### Closed as superseded (session-doc consolidation)
+### series_correction_project_updated #166 vs #169
 
-| Closed | Reason |
-|--------|--------|
-| pc #1369, #1370, #1375, #1376, #1382, #1383 | Stale cursor-agent session-report drafts consolidated into 2026-06-30 run |
+- **Overlap:** Both touch `scripts/processor.py` + `.jules/bolt.md` with same Bolt intent (jump-window extraction).
+- **Decision:** Keep #169 (CLEAN, passing CI). Close #166 (CodeScene failure, older branch).
+- **Action:** Closed #166 with link to #169.
 
-### Closed → salvage replacement (DIRTY after merge burst)
+### personal-config #1448 vs #1455
 
-| Old PR | Salvage draft | Overlap |
-|--------|---------------|---------|
-| pc #1402 | #1433 | parse_inventory main() tests |
-| pc #1424 | #1434 | get_duplicates tests |
-| pc #1397 | #1435 | _find_matching_prs tests |
-| pc #1393 | #1436 | create_denylist tests |
-| pc #1391 | #1437 | format_lists error paths |
-| pc #1407 | #1438 | process_allowlist_files mocks |
-| esp #1168 | #1192 | Palette fallback instructions |
-| esp #1175 | #1193 | NLP transformer core tests |
-| esp #1191 | #1194 | forgiving CLI provider selection |
+- **Overlap:** Both consolidate `maintenance/bin/service_monitor.sh` ps-aux polling into single awk pass.
+- **Decision:** Keep #1455 (ready, non-draft Bolt branch). Close #1448 (draft salvage of #1446).
+- **Action:** Closed #1448 with link to #1455.
 
-### Related clusters (not closed)
+### email-security-pipeline #1207 vs #1202
 
-| Cluster | PRs | Notes |
-|---------|-----|-------|
-| pc test_create_consolidated_lists | #1393 (salvaged #1436), #1407 (salvaged #1438) | Both touch same test file; salvaged separately — review for overlap before merging both |
-| esp Palette UX | #1192, #1194 | Distinct files (app_runner vs setup_wizard); merge sequentially |
+- **Overlap:** Both touch `src/modules/alert_system.py` but different regions (#1207 keyword patterns ~L66; #1202 URL redaction ~L645).
+- **Decision:** Merge #1207 first (security-adjacent perf). #1202 went DIRTY after #1207 merge — defer per Lesson 0 cascade.
+- **Action:** Merged #1207; deferred #1202 for rebase/salvage.
+
+### Seatek_Analysis #393
+
+- **Type:** Zero-diff Daily QA (`changedFiles: 0`).
+- **Decision:** Close — no effective changes vs `main`.
+- **Action:** Closed #393.
+
+### personal-config #1452
+
+- **Type:** Session-doc draft from prior cursor-agent salvage run.
+- **Decision:** Close — superseded by this session's consolidated report on `cursor-agent/automated-pr-workflow-2874`.
+- **Action:** Closed #1452.
+
+## Stale check (30-day threshold)
+
+No in-scope PR exceeded 30 days. Oldest open at start was ctrld #965 and esp #1190 (~1 day).
+
+## Security gate results
+
+| PR | Gate | Notes |
+|----|------|-------|
+| esp #1206 | PASS | URL parsing hardening; no secrets, minimal scope |
+| ctrld #969 | PASS | Sentinel security improvement; 4-line addition |
+| hg #312 | PASS | Removes ineffective test assertions (security theater) |
+| esp #1207 | PASS | Regex perf only; pre-compiled patterns |
+| pc #1455 | PASS | Shell perf; no privilege escalation |
+| rpce #82 | PASS | Static DateFormatter extraction; no Keychain changes |
+
+No security gate failures this session.
+
+## CI infra observations
+
+- **CodeScene:** ctrld #965 and sc #168 fail CodeScene Code Health — posted `/cs-agent skill:fix-code-health-degradations` on both.
+- **Merge cascade:** esp #1202 conflict after #1207 is expected hot-file cascade (Lesson 0), not infra breakage on `main`.
+- **Daily QA:** esp #1190 remains DIRTY umbrella PR — escalate to human (28 files, not zero-diff).
 
 ## Merge ordering applied
 
-1. **Security** — pc #1416 (Sentinel)
-2. **Code health / logging** — esp #1177, #1173
-3. **Tests** — esp #1172, #1174, #1176; then pc test/refactor cluster (#1387–#1421)
-4. **Performance** — pc #1409, #1425–#1427
-5. **UI** — pc #1428
-6. **Re-validate siblings** after each merge (Lesson 0cs) — cascade produced 9 DIRTY PRs salvaged
+1. Security: esp #1206 → ctrld #969 → hg #312  
+2. Perf: esp #1207 → esp #1203 → esp #1202 (failed — cascade)  
+3. Tests/salvage: esp #1204 → pc #1450/#1451/#1449  
+4. Perf/docs: pc #1455 → pc #1456 → sc #169 → rpce #82  
 
-## Blockers identified
+## Repos at zero open in-scope PRs (post-session)
 
-| Blocker | Affected PRs | Type | Next step |
-|---------|--------------|------|-----------|
-| CodeScene code health | pc #1422, esp #1179 | PR-specific | `/cs-agent` posted; re-check after remediation |
-| GitGuardian Security Checks | pc #1398 | security scan | DEFER — investigate flagged content before merge |
-| Trunk Merge Queue | pc #1432, esp #1180, #1190 | infra/MQ | DEFER — not blocking salvage drafts |
-| DIRTY conflict | esp #1179 | merge conflict | Salvage after CodeScene remediation or manual rebase |
-
-## Security gate notes
-
-- 27 merges passed Gate 2 (no secrets, no permission escalation detected in diffs).
-- esp salvage drafts (#1192–#1194) are **draft** per security-classified repo policy (Lesson 0bb).
-- pc #1398 GitGuardian failure requires human review before any merge.
+- personal-config
+- Seatek_Analysis
+- Hydrograph_Versus_Seatek_Sensors_Project
+- repoprompt-ce
