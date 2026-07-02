@@ -1,0 +1,276 @@
+# Gitleaks Configuration for personal-config repository
+# This configuration defines patterns to detect secrets and sensitive data
+# that should never be committed to the repository.
+
+[extend]
+useDefault = true
+
+# Custom patterns for this repository
+[[rules]]
+id = "personal-config-1password"
+description = "1Password CLI token"
+regex = '''(?i)(op://|1password://|1p[\-_]?token[\-_]?[:=])['"]?[a-zA-Z0-9\-_]{30,}['"]?'''
+tags = ["1password", "secret", "token"]
+
+[[rules]]
+id = "personal-config-proton-pass"
+description = "Proton Pass token"
+regex = '''(?i)(proton[\-_]?pass[\-_]?token|pp[\-_]?token)[\-_:=]?['"]?[a-zA-Z0-9\-_]{30,}['"]?'''
+tags = ["proton", "pass", "secret", "token"]
+
+[[rules]]
+id = "personal-config-windscribe"
+description = "Windscribe API key or token"
+regex = '''(?i)(windscribe[\-_]?api[\-_]?key|windscribe[\-_]?token|ws[\-_]?key)[\-_:=]?['"]?[a-zA-Z0-9\-_]{20,}['"]?'''
+tags = ["windscribe", "vpn", "secret", "api-key"]
+
+[[rules]]
+id = "personal-config-control-d"
+description = "Control D API key or token"
+regex = '''(?i)(controld[\-_]?api[\-_]?key|controld[\-_]?token|cd[\-_]?key)[\-_:=]?['"]?[a-zA-Z0-9\-_]{20,}['"]?'''
+tags = ["controld", "dns", "secret", "api-key"]
+
+[[rules]]
+id = "personal-config-ssh-key"
+description = "SSH private key"
+regex = '''-----BEGIN (RSA |DSA |EC |OPENSSH )?PRIVATE KEY-----(.*?)-----END (RSA |DSA |EC |OPENSSH )?PRIVATE KEY-----'''
+tags = ["ssh", "private-key", "secret"]
+
+[[rules]]
+id = "personal-config-ssh-config"
+description = "SSH config with embedded private key"
+regex = '''Host[\s]+[^\s]+[\s]*IdentityFile[\s]+[^\s]+[\s]*'''
+tags = ["ssh", "config", "identity"]
+
+[[rules]]
+id = "personal-config-github-token"
+description = "GitHub personal access token"
+regex = '''(?i)(ghp_[a-zA-Z0-9]{36}|github[\-_]?token[\-_:=]?['"]?[a-zA-Z0-9\-_]{40,}['"]?)'''
+tags = ["github", "token", "secret"]
+
+[[rules]]
+id = "personal-config-gitlab-token"
+description = "GitLab personal access token"
+regex = '''(?i)(glpat-[a-zA-Z0-9\-_]{20,}|gitlab[\-_]?token[\-_:=]?['"]?[a-zA-Z0-9\-_]{20,}['"]?)'''
+tags = ["gitlab", "token", "secret"]
+
+[[rules]]
+id = "personal-config-aws-keys"
+description = "AWS access keys"
+regex = '''(?i)(AKIA[0-9A-Z]{16}|aws[\-_]?access[\-_]?key[\-_:=]?['"]?[A-Z0-9]{20,}['"]?)'''
+tags = ["aws", "access-key", "secret"]
+
+[[rules]]
+id = "personal-config-aws-secret"
+description = "AWS secret access key"
+regex = '''(?i)(aws[\-_]?secret[\-_]?access[\-_]?key|aws[\-_]?secret[\-_:=]?['"]?[A-Za-z0-9/+=]{40,}['"]?)'''
+tags = ["aws", "secret-key", "secret"]
+
+[[rules]]
+id = "personal-config-google-api"
+description = "Google API key"
+regex = '''(?i)(AIza[0-9A-Za-z\-_]{35}|google[\-_]?api[\-_]?key[\-_:=]?['"]?[a-zA-Z0-9\-_]{30,}['"]?)'''
+tags = ["google", "api-key", "secret"]
+
+[[rules]]
+id = "personal-config-google-oauth"
+description = "Google OAuth token"
+regex = '''(?i)(ya29\.[a-zA-Z0-9\-_]+|google[\-_]?oauth[\-_]?token[\-_:=]?['"]?[a-zA-Z0-9\-_.]+['"]?)'''
+tags = ["google", "oauth", "token", "secret"]
+
+[[rules]]
+id = "personal-config-azure"
+description = "Azure credentials"
+regex = '''(?i)(azure[\-_]?client[\-_]?id|azure[\-_]?client[\-_]?secret)[\-_:=]?['"]?[a-zA-Z0-9\-_]{30,}['"]?'''
+tags = ["azure", "client-id", "client-secret", "secret"]
+
+[[rules]]
+id = "personal-config-heroku"
+description = "Heroku API key"
+regex = '''(?i)(heroku[\-_]?api[\-_]?key|heroku[\-_]?token)[\-_:=]?['"]?[a-f0-9\-]{36,}['"]?'''
+tags = ["heroku", "api-key", "token", "secret"]
+
+[[rules]]
+id = "personal-config-slack"
+description = "Slack token"
+regex = '''(?i)(xox[baprs]-[0-9a-zA-Z\-]{10,}|slack[\-_]?token[\-_:=]?['"]?[a-zA-Z0-9\-]+['"]?)'''
+tags = ["slack", "token", "secret"]
+
+[[rules]]
+id = "personal-config-stripe"
+description = "Stripe API key"
+regex = '''(?i)(sk_live_[0-9a-zA-Z]{24,}|stripe[\-_]?api[\-_]?key[\-_:=]?['"]?[a-zA-Z0-9\-_]{20,}['"]?)'''
+tags = ["stripe", "api-key", "secret"]
+
+[[rules]]
+id = "personal-config-twilio"
+description = "Twilio API key"
+regex = '''(?i)(SK[a-f0-9]{32}|twilio[\-_]?api[\-_]?key[\-_:=]?['"]?[a-f0-9]{32,}['"]?)'''
+tags = ["twilio", "api-key", "secret"]
+
+[[rules]]
+id = "personal-config-sendgrid"
+description = "SendGrid API key"
+regex = '''(?i)(SG\.[a-zA-Z0-9\-_]{22}\.[a-zA-Z0-9\-_]{43}|sendgrid[\-_]?api[\-_]?key[\-_:=]?['"]?[a-zA-Z0-9\-_.]+['"]?)'''
+tags = ["sendgrid", "api-key", "secret"]
+
+[[rules]]
+id = "personal-config-mailgun"
+description = "Mailgun API key"
+regex = '''(?i)(key-[a-zA-Z0-9\-]{32}|mailgun[\-_]?api[\-_]?key[\-_:=]?['"]?[a-zA-Z0-9\-]+['"]?)'''
+tags = ["mailgun", "api-key", "secret"]
+
+# Database connection strings
+[[rules]]
+id = "personal-config-db-connection"
+description = "Database connection string with credentials"
+regex = '''(?i)(mysql://|postgres://|postgresql://|mongodb://|redis://|amqp://)[^\s]*://[^:]+:[^@]+@[^\s]+'''
+tags = ["database", "connection-string", "credentials", "secret"]
+
+# Generic API keys
+[[rules]]
+id = "personal-config-generic-api"
+description = "Generic API key pattern"
+regex = '''(?i)(api[\-_]?key|apikey)[\-_:=]?['"]?[a-zA-Z0-9\-_]{16,}['"]?'''
+tags = ["api-key", "secret"]
+
+# Generic tokens
+[[rules]]
+id = "personal-config-generic-token"
+description = "Generic token pattern"
+regex = '''(?i)(access[\-_]?token|auth[\-_]?token|bearer[\-_]?token|api[\-_]?token)[\-_:=]?['"]?[a-zA-Z0-9\-_.]{16,}['"]?'''
+tags = ["token", "secret"]
+
+# Generic secrets
+[[rules]]
+id = "personal-config-generic-secret"
+description = "Generic secret pattern"
+regex = '''(?i)(secret|password|passwd|pwd)[\-_:=]?['"]?[a-zA-Z0-9\-_.!@#$%^&*]{8,}['"]?'''
+tags = ["secret", "password", "credentials"]
+
+# Private keys in various formats
+[[rules]]
+id = "personal-config-private-key"
+description = "Private key in PEM format"
+regex = '''-----BEGIN (RSA |DSA |EC |OPENSSH )?PRIVATE KEY-----'''
+tags = ["private-key", "pem", "secret"]
+
+# Certificate signing requests
+[[rules]]
+id = "personal-config-csr"
+description = "Certificate signing request"
+regex = '''-----BEGIN CERTIFICATE REQUEST-----'''
+tags = ["csr", "certificate", "secret"]
+
+# Configuration files that might contain secrets
+[[rules]]
+id = "personal-config-config-secret"
+description = "Configuration file with potential secrets"
+regex = '''(?i)(config\.(json|yaml|yml|toml|ini|conf|cfg))$'''
+tags = ["config", "configuration"]
+
+# Environment files
+[[rules]]
+id = "personal-config-env-file"
+description = "Environment file"
+regex = '''(?i)(\.env(|\.[a-zA-Z0-9]+))$'''
+tags = ["env", "environment", "secret"]
+
+# Exclude patterns - files that are known to contain test/fake secrets
+[allowlist]
+paths = [
+    '''(?i)test''',
+    '''(?i)mock''',
+    '''(?i)example''',
+    '''(?i)sample''',
+    '''(?i)fixture''',
+    '''(?i)template''',
+    '''(?i)dummy''',
+    '''(?i)placeholder''',
+    '''(?i)test_''',
+    '''_test\.''',
+    '''(?i)\.(example|sample|template|dist|bak|backup|old|orig)$''',
+    '''(?i)README''',
+    '''(?i)CHANGELOG''',
+    '''(?i)LICENSE''',
+    '''(?i)CODE_OF_CONDUCT''',
+    '''(?i)CONTRIBUTING''',
+    '''(?i)validate_repo_structure\.sh$''',
+    '''(?i)scripts/lib/.*\.sh$''',
+]
+
+# Exclude specific test patterns
+[[allowlist.rules]]
+id = "test-patterns"
+regex = '''(?i)(test|mock|example|sample|dummy|placeholder|fake|stub)'''
+paths = [
+    '''(?i)tests/''',
+    '''(?i)test/''',
+    '''(?i)mock/''',
+    '''(?i)fixtures/''',
+]
+
+# Exclude documentation files
+[[allowlist.rules]]
+id = "documentation"
+regex = '''(?i)'''
+paths = [
+    '''(?i)docs/''',
+    '''(?i)doc/''',
+    '''(?i)\.(md|markdown|txt|rst)$''',
+]
+
+# Exclude configuration templates
+[[allowlist.rules]]
+id = "templates"
+regex = '''(?i)(template|example|sample)'''
+paths = [
+    '''(?i)configs/.*\.(template|example|sample|dist)$''',
+    '''(?i)templates/''',
+    '''(?i)examples/''',
+]
+
+# Exclude known safe files
+[[allowlist.rules]]
+id = "safe-files"
+paths = [
+    '''(?i)\.(gitignore|gitattributes|gitmodules)$''',
+    '''(?i)Makefile$''',
+    '''(?i)Dockerfile$''',
+    '''(?i)docker-compose\.yml$''',
+    '''(?i)package\.json$''',
+    '''(?i)requirements\.txt$''',
+    '''(?i)setup\.py$''',
+    '''(?i)pyproject\.toml$''',
+]
+
+# Configuration for the scan
+
+    "(?i)scripts/validate_repo_structure\\.sh$",
+    "(?i)scripts/lib/.*\\.sh$",
+]
+[gitleaks]
+# Enable verbose logging
+verbose = false
+# Number of concurrent workers
+workers = 4
+# Exit code when secrets are found
+exitCode = 1
+# Log level (debug, info, warn, error)
+logLevel = "info"
+# Enable redacted output
+redact = true
+# Source code encoding
+sourceCodeEncoding = "utf-8"
+# Disable default rules
+useDefault = true
+# Path to custom config (this file)
+configPath = ".github/gitleaks.toml"
+# Exclude security-related scripts that contain detection patterns
+[[allowlist.rules]]
+id = "security-scripts"
+regex = '''(?i)(pattern|regex|detect|scan|validate|check)'''
+paths = [
+    '''(?i)scripts/validate_repo_structure\.sh$''',
+    '''(?i)scripts/lib/.*\.sh$''',
+]
