@@ -87,10 +87,15 @@ done
 validate_shell_scripts() {
     log_header "Shell Script Validation"
     
-    local scripts_found=0
-    local scripts_with_issues=0
-    local scripts_without_error_handling=0
-    local scripts_without_shebang=0
+    local scripts_found
+    
+    scripts_found=0
+    local scripts_with_issues
+    scripts_with_issues=0
+    local scripts_without_error_handling
+    scripts_without_error_handling=0
+    local scripts_without_shebang
+    scripts_without_shebang=0
     
     # Find all shell scripts
     local scripts
@@ -146,7 +151,9 @@ validate_shell_scripts() {
 validate_file_permissions() {
     log_header "File Permissions Validation"
     
-    local files_with_issues=0
+    local files_with_issues
+    
+    files_with_issues=0
     
     # Check for executable scripts without execute permission
     local scripts
@@ -174,7 +181,8 @@ validate_file_permissions() {
     done <<< "$scripts"
     
     # Check for sensitive files with wrong permissions
-    local sensitive_files=(
+    local sensitive_files
+    sensitive_files=(
         ".env*"
         "*.key"
         "*.pem"
@@ -219,8 +227,11 @@ validate_file_permissions() {
 validate_symlinks() {
     log_header "Symlink Validation"
     
-    local symlinks_found=0
-    local broken_symlinks=0
+    local symlinks_found
+    
+    symlinks_found=0
+    local broken_symlinks
+    broken_symlinks=0
     
     # Find all symlinks in the repository
     local symlinks
@@ -272,8 +283,11 @@ validate_symlinks() {
 validate_json_files() {
     log_header "JSON Validation"
     
-    local json_files_found=0
-    local invalid_json_files=0
+    local json_files_found
+    
+    json_files_found=0
+    local invalid_json_files
+    invalid_json_files=0
     
     # Find all JSON files
     local json_files
@@ -314,8 +328,11 @@ validate_json_files() {
 validate_yaml_files() {
     log_header "YAML Validation"
     
-    local yaml_files_found=0
-    local invalid_yaml_files=0
+    local yaml_files_found
+    
+    yaml_files_found=0
+    local invalid_yaml_files
+    invalid_yaml_files=0
     
     # Find all YAML files
     local yaml_files
@@ -356,8 +373,11 @@ validate_yaml_files() {
 check_large_files() {
     log_header "Large Files Check"
     
-    local large_files_found=0
-    local MAX_FILE_SIZE=$((10 * 1024 * 1024))  # 10MB
+    local large_files_found
+    
+    large_files_found=0
+    local MAX_FILE_SIZE
+    MAX_FILE_SIZE=$((10 * 1024 * 1024))  # 10MB
     
     # Find large files (excluding .git)
     local large_files
@@ -386,7 +406,9 @@ check_large_files() {
 check_duplicate_files() {
     log_header "Duplicate Files Check"
     
-    local duplicates_found=0
+    local duplicates_found
+    
+    duplicates_found=0
     
     # Find potential duplicates by checking for files with same content
     # This is a simple check and might have false positives
@@ -416,7 +438,8 @@ check_duplicate_files() {
         # Calculate checksum
         local checksum
         checksum=$(md5sum "$file" | awk '{print $1}')
-        local checksum_file="$tmp_dir/$checksum"
+        local checksum_file
+        checksum_file="$tmp_dir/$checksum"
         
         if [[ -f "$checksum_file" ]]; then
             local existing_files
@@ -447,10 +470,13 @@ check_duplicate_files() {
 check_security_issues() {
     log_header "Security Check"
     
-    local security_issues=0
+    local security_issues
+    
+    security_issues=0
     
     # Check for hardcoded passwords
-    local password_patterns=(
+    local password_patterns
+    password_patterns=(
         "password[\-_:=]".*[^\s]+
         "passwd[\-_:=]".*[^\s]+
         "pwd[\-_:=]".*[^\s]+
@@ -482,7 +508,8 @@ check_security_issues() {
     done
     
     # Check for files that should be in .gitignore
-    local sensitive_extensions=(
+    local sensitive_extensions
+    sensitive_extensions=(
         ".env"
         ".key"
         ".pem"

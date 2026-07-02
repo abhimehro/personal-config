@@ -111,9 +111,12 @@ log_hr() {
 # Global error handler - called on any error
 # This provides consistent error messages with line numbers
 handle_error() {
-    local exit_code=$1
-    local line_number=$2
-    local command=$3
+    local exit_code
+    exit_code=$1
+    local line_number
+    line_number=$2
+    local command
+    command=$3
     
     log_err "Error at line ${line_number}: ${command}"
     log_err "Exit code: ${exit_code}"
@@ -128,7 +131,8 @@ handle_error() {
 
 # Global cleanup handler - called on script exit
 handle_cleanup() {
-    local exit_code=$1
+    local exit_code
+    exit_code=$1
     
     # Add any cleanup logic here
     # For example: remove temp files, stop services, etc.
@@ -163,8 +167,10 @@ setup_error_handling() {
 # Usage: require_cmd "command_name" ["install_hint"]
 # Returns: 0 if command exists, 1 otherwise
 require_cmd() {
-    local cmd="$1"
-    local install_hint="${2:-}"
+    local cmd
+    cmd="$1"
+    local install_hint
+    install_hint="${2:-}"
     
     if ! command -v "$cmd" >/dev/null 2>&1; then
         log_err "Required command not found: ${cmd}"
@@ -182,8 +188,10 @@ require_cmd() {
 # Usage: require_file "path/to/file" ["description"]
 # Returns: 0 if file exists and is readable, 1 otherwise
 require_file() {
-    local file_path="$1"
-    local description="${2:-file}"
+    local file_path
+    file_path="$1"
+    local description
+    description="${2:-file}"
     
     if [[ ! -f "$file_path" ]]; then
         log_err "Required ${description} not found: ${file_path}"
@@ -203,8 +211,10 @@ require_file() {
 # Usage: require_dir "path/to/dir" ["description"]
 # Returns: 0 if directory exists, 1 otherwise
 require_dir() {
-    local dir_path="$1"
-    local description="${2:-directory}"
+    local dir_path
+    dir_path="$1"
+    local description
+    description="${2:-directory}"
     
     if [[ ! -d "$dir_path" ]]; then
         log_err "Required ${description} not found: ${dir_path}"
@@ -219,9 +229,12 @@ require_dir() {
 # Usage: require_var "VAR_NAME" ["description"]
 # Returns: 0 if variable is set and not empty, 1 otherwise
 require_var() {
-    local var_name="$1"
-    local description="${2:-variable}"
-    local var_value="${!var_name:-}"
+    local var_name
+    var_name="$1"
+    local description
+    description="${2:-variable}"
+    local var_value
+    var_value="${!var_name:-}"
     
     if [[ -z "$var_value" ]]; then
         log_err "Required ${description} is not set: ${var_name}"
@@ -236,7 +249,8 @@ require_var() {
 # Usage: ensure_macos ["message"]
 # Returns: 0 if on macOS, 1 otherwise
 ensure_macos() {
-    local message="${1:-This script requires macOS}"
+    local message
+    message="${1:-This script requires macOS}"
     
     if [[ "$(uname -s)" != "Darwin" ]]; then
         log_err "${message}"
@@ -251,7 +265,8 @@ ensure_macos() {
 # Usage: ensure_not_root ["message"]
 # Returns: 0 if not root, 1 if root
 ensure_not_root() {
-    local message="${1:-This script should not be run as root}"
+    local message
+    message="${1:-This script should not be run as root}"
     
     if [[ $EUID -eq 0 ]]; then
         log_err "${message}"
@@ -284,7 +299,8 @@ print_kv() {
 # Usage: string_in_list "needle" "haystack1" "haystack2" "haystack3"
 # Returns: 0 if needle is in list, 1 otherwise
 string_in_list() {
-    local needle="$1"
+    local needle
+    needle="$1"
     shift
     
     for item in "$@"; do
@@ -299,11 +315,15 @@ string_in_list() {
 # Join array elements with a delimiter
 # Usage: join_array "delimiter" "${array[@]}"
 join_array() {
-    local delimiter="$1"
+    local delimiter
+    delimiter="$1"
     shift
     
-    local first=true
-    local result=""
+    local first
+    
+    first=true
+    local result
+    result=""
     
     for item in "$@"; do
         if [[ "$first" == true ]]; then
@@ -320,7 +340,8 @@ join_array() {
 # Get the absolute path of a file or directory
 # Usage: get_abs_path "path/to/file"
 get_abs_path() {
-    local path="$1"
+    local path
+    path="$1"
     
     if [[ -d "$path" ]]; then
         (cd "$path" && pwd)
@@ -374,7 +395,8 @@ get_timestamp_iso() {
 # Usage: time_command "description" "command" [args...]
 # Example: time_command "Running tests" make test
 time_command() {
-    local description="$1"
+    local description
+    description="$1"
     shift
     
     local start_time
@@ -384,7 +406,8 @@ time_command() {
     
     # Execute the command
     "$@"
-    local exit_code=$?
+    local exit_code
+    exit_code=$?
     
     local end_time
     end_time=$(date +%s.%N)
@@ -408,7 +431,8 @@ time_command() {
 # Create a directory if it doesn't exist
 # Usage: ensure_dir "path/to/dir"
 ensure_dir() {
-    local dir_path="$1"
+    local dir_path
+    dir_path="$1"
     
     if [[ ! -d "$dir_path" ]]; then
         mkdir -p "$dir_path"
@@ -420,8 +444,10 @@ ensure_dir() {
 # Usage: backup_file "path/to/file"
 # Returns: path to backup file
 backup_file() {
-    local file_path="$1"
-    local backup_path="${file_path}.bak.$(get_timestamp | tr ' :' '_')"
+    local file_path
+    file_path="$1"
+    local backup_path
+    backup_path="${file_path}.bak.$(get_timestamp | tr ' :' '_')"
     
     if [[ -f "$file_path" ]]; then
         cp "$file_path" "$backup_path"
@@ -435,8 +461,10 @@ backup_file() {
 # Usage: file_changed "path/to/file" "md5_sum"
 # Returns: 0 if file has changed, 1 otherwise
 file_changed() {
-    local file_path="$1"
-    local old_md5="$2"
+    local file_path
+    file_path="$1"
+    local old_md5
+    old_md5="$2"
     
     if [[ ! -f "$file_path" ]]; then
         return 1
@@ -459,8 +487,10 @@ file_changed() {
 # Initialize the library - call this at the start of your script
 # Usage: init_script "script_name" ["description"]
 init_script() {
-    local script_name="$1"
-    local description="${2:-}"
+    local script_name
+    script_name="$1"
+    local description
+    description="${2:-}"
     
     # Setup error handling
     setup_error_handling

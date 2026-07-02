@@ -31,8 +31,10 @@ fi
 # Usage: find_files "pattern" ["directory"]
 # Example: files=($(find_files "*.sh" "scripts/"))
 find_files() {
-    local pattern="$1"
-    local directory="${2:-.}"
+    local pattern
+    pattern="$1"
+    local directory
+    directory="${2:-.}"
     
     find "$directory" -name "$pattern" -type f 2>/dev/null | sort
 }
@@ -40,14 +42,16 @@ find_files() {
 # Find all shell scripts in a directory
 # Usage: find_shell_scripts ["directory"]
 find_shell_scripts() {
-    local directory="${1:-.}"
+    local directory
+    directory="${1:-.}"
     find_files "*.sh" "$directory"
 }
 
 # Find all Python files in a directory
 # Usage: find_python_files ["directory"]
 find_python_files() {
-    local directory="${1:-.}"
+    local directory
+    directory="${1:-.}"
     find_files "*.py" "$directory"
 }
 
@@ -55,8 +59,10 @@ find_python_files() {
 # Usage: file_contains "file_path" "pattern"
 # Returns: 0 if pattern found, 1 otherwise
 file_contains() {
-    local file_path="$1"
-    local pattern="$2"
+    local file_path
+    file_path="$1"
+    local pattern
+    pattern="$2"
     
     if [[ ! -f "$file_path" ]]; then
         return 1
@@ -72,7 +78,8 @@ file_contains() {
 # Count lines in a file
 # Usage: count_lines "file_path"
 count_lines() {
-    local file_path="$1"
+    local file_path
+    file_path="$1"
     
     if [[ ! -f "$file_path" ]]; then
         echo 0
@@ -85,7 +92,8 @@ count_lines() {
 # Get file size in bytes
 # Usage: get_file_size "file_path"
 get_file_size() {
-    local file_path="$1"
+    local file_path
+    file_path="$1"
     
     if [[ ! -f "$file_path" ]]; then
         echo 0
@@ -98,14 +106,16 @@ get_file_size() {
 # Get file extension
 # Usage: get_extension "filename"
 get_extension() {
-    local filename="$1"
+    local filename
+    filename="$1"
     echo "${filename##*.}"
 }
 
 # Get filename without extension
 # Usage: get_basename "filename"
 get_basename() {
-    local filename="$1"
+    local filename
+    filename="$1"
     echo "${filename%.*}"
 }
 
@@ -128,21 +138,24 @@ to_uppercase() {
 # Trim whitespace from both ends
 # Usage: trim "string"
 trim() {
-    local str="$1"
+    local str
+    str="$1"
     echo "${str#"${str%%[![:space:]]*}"}" | awk '{$1=$1};1'
 }
 
 # Trim whitespace from left
 # Usage: ltrim "string"
 ltrim() {
-    local str="$1"
+    local str
+    str="$1"
     echo "${str#"${str%%[![:space:]]*}"}"
 }
 
 # Trim whitespace from right
 # Usage: rtrim "string"
 rtrim() {
-    local str="$1"
+    local str
+    str="$1"
     echo "${str%"${str##*[![:space:]]} "}"
 }
 
@@ -150,8 +163,10 @@ rtrim() {
 # Usage: starts_with "string" "prefix"
 # Returns: 0 if string starts with prefix, 1 otherwise
 starts_with() {
-    local string="$1"
-    local prefix="$2"
+    local string
+    string="$1"
+    local prefix
+    prefix="$2"
     
     [[ "$string" == "$prefix"* ]]
 }
@@ -160,8 +175,10 @@ starts_with() {
 # Usage: ends_with "string" "suffix"
 # Returns: 0 if string ends with suffix, 1 otherwise
 ends_with() {
-    local string="$1"
-    local suffix="$2"
+    local string
+    string="$1"
+    local suffix
+    suffix="$2"
     
     [[ "$string" == *"$suffix" ]]
 }
@@ -170,8 +187,10 @@ ends_with() {
 # Usage: contains "string" "substring"
 # Returns: 0 if string contains substring, 1 otherwise
 contains() {
-    local string="$1"
-    local substring="$2"
+    local string
+    string="$1"
+    local substring
+    substring="$2"
     
     [[ "$string" == *"$substring"* ]]
 }
@@ -179,9 +198,12 @@ contains() {
 # Replace all occurrences of a substring
 # Usage: replace_all "string" "old" "new"
 replace_all() {
-    local string="$1"
-    local old="$2"
-    local new="$3"
+    local string
+    string="$1"
+    local old
+    old="$2"
+    local new
+    new="$3"
     
     echo "${string//$old/$new}"
 }
@@ -189,9 +211,12 @@ replace_all() {
 # Replace first occurrence of a substring
 # Usage: replace_first "string" "old" "new"
 replace_first() {
-    local string="$1"
-    local old="$2"
-    local new="$3"
+    local string
+    string="$1"
+    local old
+    old="$2"
+    local new
+    new="$3"
     
     echo "${string/$old/$new}"
 }
@@ -200,8 +225,10 @@ replace_first() {
 # Usage: split "string" "delimiter"
 # Returns: array of parts
 split() {
-    local string="$1"
-    local delimiter="$2"
+    local string
+    string="$1"
+    local delimiter
+    delimiter="$2"
     
     IFS="$delimiter" read -ra parts <<< "$string"
     echo "${parts[@]}"
@@ -215,7 +242,8 @@ split() {
 # Usage: array_contains "element" "${array[@]}"
 # Returns: 0 if element is in array, 1 otherwise
 array_contains() {
-    local element="$1"
+    local element
+    element="$1"
     shift
     
     local item
@@ -237,11 +265,15 @@ array_length() {
 # Join array elements with delimiter
 # Usage: array_join "delimiter" "${array[@]}"
 array_join() {
-    local delimiter="$1"
+    local delimiter
+    delimiter="$1"
     shift
     
-    local result=""
-    local first=true
+    local result
+    
+    result=""
+    local first
+    first=true
     
     for item in "$@"; do
         if [[ "$first" == true ]]; then
@@ -328,9 +360,12 @@ get_total_memory() {
 # Check if host is reachable
 # Usage: is_reachable "hostname" ["port"] ["timeout"]
 is_reachable() {
-    local host="$1"
-    local port="${2:-80}"
-    local timeout="${3:-2}"
+    local host
+    host="$1"
+    local port
+    port="${2:-80}"
+    local timeout
+    timeout="${3:-2}"
     
     if command -v nc >/dev/null 2>&1; then
         nc -z -w "$timeout" "$host" "$port" 2>/dev/null
@@ -407,7 +442,8 @@ is_git_repo() {
 # Usage: is_process_running "process_name"
 # Returns: 0 if running, 1 otherwise
 is_process_running() {
-    local process_name="$1"
+    local process_name
+    process_name="$1"
     
     if command -v pgrep >/dev/null 2>&1; then
         pgrep -f "$process_name" >/dev/null 2>&1
@@ -422,7 +458,8 @@ is_process_running() {
 # Usage: get_pid "process_name"
 # Returns: PID or empty string
 get_pid() {
-    local process_name="$1"
+    local process_name
+    process_name="$1"
     
     if command -v pgrep >/dev/null 2>&1; then
         pgrep -f "$process_name" | head -1
@@ -436,8 +473,10 @@ get_pid() {
 # Kill process by name
 # Usage: kill_process "process_name" ["signal"]
 kill_process() {
-    local process_name="$1"
-    local signal="${2:-TERM}"
+    local process_name
+    process_name="$1"
+    local signal
+    signal="${2:-TERM}"
     
     local pid
     pid=$(get_pid "$process_name")
@@ -485,7 +524,8 @@ timestamp_epoch() {
 # Convert epoch to human-readable
 # Usage: epoch_to_human "epoch"
 epoch_to_human() {
-    local epoch="$1"
+    local epoch
+    epoch="$1"
     date -d "@$epoch" +"%Y-%m-%d %H:%M:%S" 2>/dev/null || date -r "$epoch" +"%Y-%m-%d %H:%M:%S" 2>/dev/null
 }
 
@@ -497,7 +537,8 @@ epoch_to_human() {
 # Usage: is_executable "file_path"
 # Returns: 0 if executable, 1 otherwise
 is_executable() {
-    local file_path="$1"
+    local file_path
+    file_path="$1"
     [[ -x "$file_path" ]]
 }
 
@@ -505,7 +546,8 @@ is_executable() {
 # Usage: is_readable "file_path"
 # Returns: 0 if readable, 1 otherwise
 is_readable() {
-    local file_path="$1"
+    local file_path
+    file_path="$1"
     [[ -r "$file_path" ]]
 }
 
@@ -513,7 +555,8 @@ is_readable() {
 # Usage: is_writable "file_path"
 # Returns: 0 if writable, 1 otherwise
 is_writable() {
-    local file_path="$1"
+    local file_path
+    file_path="$1"
     [[ -w "$file_path" ]]
 }
 
@@ -521,8 +564,10 @@ is_writable() {
 # Usage: set_permissions "file_path" "permissions"
 # Example: set_permissions "/path/to/file" "755"
 set_permissions() {
-    local file_path="$1"
-    local permissions="$2"
+    local file_path
+    file_path="$1"
+    local permissions
+    permissions="$2"
     
     if [[ -f "$file_path" ]] || [[ -d "$file_path" ]]; then
         chmod "$permissions" "$file_path"
@@ -541,8 +586,10 @@ set_permissions() {
 # Usage: create_symlink "source" "target"
 # Returns: 0 on success, 1 on failure
 create_symlink() {
-    local source="$1"
-    local target="$2"
+    local source
+    source="$1"
+    local target
+    target="$2"
     
     # Check if source exists
     if [[ ! -e "$source" ]]; then
@@ -595,8 +642,10 @@ create_symlink() {
 # Usage: verify_symlink "target" "expected_source"
 # Returns: 0 if symlink is correct, 1 otherwise
 verify_symlink() {
-    local target="$1"
-    local expected_source="$2"
+    local target
+    target="$1"
+    local expected_source
+    expected_source="$2"
     
     if [[ ! -L "$target" ]]; then
         log_err "Not a symlink: ${target}"

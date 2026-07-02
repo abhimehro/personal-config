@@ -195,6 +195,8 @@ paths = [
     '''(?i)LICENSE''',
     '''(?i)CODE_OF_CONDUCT''',
     '''(?i)CONTRIBUTING''',
+    '''(?i)validate_repo_structure\.sh$''',
+    '''(?i)scripts/lib/.*\.sh$''',
 ]
 
 # Exclude specific test patterns
@@ -243,6 +245,15 @@ paths = [
 ]
 
 # Configuration for the scan
+
+# Exclude security-related scripts that contain detection patterns
+[[allowlist.rules]]
+id = "security-scripts"
+regex = "(?i)(pattern|regex|detect|scan|validate|check)"
+paths = [
+    "(?i)scripts/validate_repo_structure\\.sh$",
+    "(?i)scripts/lib/.*\\.sh$",
+]
 [gitleaks]
 # Enable verbose logging
 verbose = false
