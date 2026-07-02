@@ -1,54 +1,47 @@
-# PR Triage — 2026-06-30
+# PR Triage — 2026-07-02
+
+## Starting state (5 in-scope open)
+
+| Repo | PR | State | Action |
+|------|-----|-------|--------|
+| personal-config | #1457 | CLEAN DRAFT | CLOSE — supersede session doc |
+| ctrld-sync | #965 | DIRTY + CodeScene fail | SALVAGE file-scoped |
+| email-security-pipeline | #1202 | DIRTY salvage | CLOSE — superseded on `main` |
+| email-security-pipeline | #1208 | CLEAN zero-diff | CLOSE — no-op |
+| series_correction_project_updated | #168 | CLEAN all green | MERGE |
 
 ## Duplicate & overlap analysis
 
-### Closed as superseded (session-doc consolidation)
+### Closed as superseded
 
 | Closed | Reason |
 |--------|--------|
-| pc #1369, #1370, #1375, #1376, #1382, #1383 | Stale cursor-agent session-report drafts consolidated into 2026-06-30 run |
+| pc #1457 | Prior cron session-doc draft; consolidated into 2026-07-02 salvage run |
+| esp #1202 | `REDACTED_URL_PATTERN` pre-compile already landed on `main` via earlier merge |
+| cs #965 | 412-line DIRTY conflict; isatty guards salvaged to #970 |
 
-### Closed → salvage replacement (DIRTY after merge burst)
+### Closed as no-op
 
-| Old PR | Salvage draft | Overlap |
-|--------|---------------|---------|
-| pc #1402 | #1433 | parse_inventory main() tests |
-| pc #1424 | #1434 | get_duplicates tests |
-| pc #1397 | #1435 | _find_matching_prs tests |
-| pc #1393 | #1436 | create_denylist tests |
-| pc #1391 | #1437 | format_lists error paths |
-| pc #1407 | #1438 | process_allowlist_files mocks |
-| esp #1168 | #1192 | Palette fallback instructions |
-| esp #1175 | #1193 | NLP transformer core tests |
-| esp #1191 | #1194 | forgiving CLI provider selection |
-
-### Related clusters (not closed)
-
-| Cluster | PRs | Notes |
-|---------|-----|-------|
-| pc test_create_consolidated_lists | #1393 (salvaged #1436), #1407 (salvaged #1438) | Both touch same test file; salvaged separately — review for overlap before merging both |
-| esp Palette UX | #1192, #1194 | Distinct files (app_runner vs setup_wizard); merge sequentially |
+| Closed | Reason |
+|--------|--------|
+| esp #1208 | Zero-diff Jules Daily QA branch |
 
 ## Merge ordering applied
 
-1. **Security** — pc #1416 (Sentinel)
-2. **Code health / logging** — esp #1177, #1173
-3. **Tests** — esp #1172, #1174, #1176; then pc test/refactor cluster (#1387–#1421)
-4. **Performance** — pc #1409, #1425–#1427
-5. **UI** — pc #1428
-6. **Re-validate siblings** after each merge (Lesson 0cs) — cascade produced 9 DIRTY PRs salvaged
+1. **Style/format** — sc #168 (black formatting, all CI green)
+2. **Closures** — esp #1208 (no-op), esp #1202 (superseded), pc #1457 (session doc)
+3. **Salvage** — cs #965 → draft #970 (isatty guards only)
 
 ## Blockers identified
 
-| Blocker | Affected PRs | Type | Next step |
-|---------|--------------|------|-----------|
-| CodeScene code health | pc #1422, esp #1179 | PR-specific | `/cs-agent` posted; re-check after remediation |
-| GitGuardian Security Checks | pc #1398 | security scan | DEFER — investigate flagged content before merge |
-| Trunk Merge Queue | pc #1432, esp #1180, #1190 | infra/MQ | DEFER — not blocking salvage drafts |
-| DIRTY conflict | esp #1179 | merge conflict | Salvage after CodeScene remediation or manual rebase |
+| Blocker | Affected PRs | Type | Resolution |
+|---------|--------------|------|------------|
+| DIRTY merge conflict | cs #965 | cascade/refactor noise | File-scoped salvage #970 |
+| CodeScene code health | cs #965 | PR-specific | cs-agent already posted; salvage is minimal diff |
+| Already on main | esp #1202 | superseded | Closed without new draft |
 
 ## Security gate notes
 
-- 27 merges passed Gate 2 (no secrets, no permission escalation detected in diffs).
-- esp salvage drafts (#1192–#1194) are **draft** per security-classified repo policy (Lesson 0bb).
-- pc #1398 GitGuardian failure requires human review before any merge.
+- sc #168 passed GitGuardian, CodeScene, dependency-review before merge.
+- esp closures were display/perf paths already validated on `main`.
+- cs salvage #970 is T3 UX-only (no auth/secrets); opened as **draft** per salvage policy.
