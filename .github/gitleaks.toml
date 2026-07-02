@@ -246,11 +246,6 @@ paths = [
 
 # Configuration for the scan
 
-# Exclude security-related scripts that contain detection patterns
-[[allowlist.rules]]
-id = "security-scripts"
-regex = "(?i)(pattern|regex|detect|scan|validate|check)"
-paths = [
     "(?i)scripts/validate_repo_structure\\.sh$",
     "(?i)scripts/lib/.*\\.sh$",
 ]
@@ -271,3 +266,11 @@ sourceCodeEncoding = "utf-8"
 useDefault = true
 # Path to custom config (this file)
 configPath = ".github/gitleaks.toml"
+# Exclude security-related scripts that contain detection patterns
+[[allowlist.rules]]
+id = "security-scripts"
+regex = '''(?i)(pattern|regex|detect|scan|validate|check)'''
+paths = [
+    '''(?i)scripts/validate_repo_structure\.sh$''',
+    '''(?i)scripts/lib/.*\.sh$''',
+]
