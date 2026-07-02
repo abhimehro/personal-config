@@ -243,12 +243,6 @@ paths = [
     '''(?i)setup\.py$''',
     '''(?i)pyproject\.toml$''',
 ]
-
-# Configuration for the scan
-
-    "(?i)scripts/validate_repo_structure\\.sh$",
-    "(?i)scripts/lib/.*\\.sh$",
-]
 [gitleaks]
 # Enable verbose logging
 verbose = false
