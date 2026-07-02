@@ -825,5 +825,13 @@ optimization.
 
 **Pattern:** After squash-merging 22 personal-config PRs in one session, nine sibling test PRs flipped to `DIRTY` (all touching overlapping `tests/*` files). CI was green on each before the burst; conflicts appeared only at merge time. **Rule:** When planning a merge burst on repos with dense Jules test PR clusters, pre-identify file-path overlap and either (a) merge the largest test-file PR first then immediately salvage DIRTY siblings from current `main`, or (b) batch-salvage before closing originals. Do not attempt `update-branch` retries indefinitely — switch to salvage-from-main after one 422 conflict response. **Detection cost:** Low — multiple open PRs sharing the same `tests/test_*.py` basename in inventory.
 
+## Lesson 0dc: Salvage PRs can themselves go DIRTY — verify value still missing on main (2026-07-02)
+
+**Pattern:** esp #1202 was a prior-session salvage draft that became `DIRTY` while `main` had already absorbed the functional change (`REDACTED_URL_PATTERN` at class level). **Rule:** Before re-salvaging a conflicted salvage PR, diff its intent against current `main`. If the change is already present (even with a different implementation), close as superseded — do not open another draft. **Detection cost:** Low — `git diff main..branch -- <intent_file>` or grep for the stated symbol on `main`.
+
+## Lesson 0dd: Jules UX PRs with refactor churn — salvage isatty guards only (2026-07-02)
+
+**Pattern:** ctrld #965 mixed valuable `stderr.isatty()` guards with 400+ lines of unrelated refactors (nested functions, folder parsing moves), causing `DIRTY` + CodeScene failure. **Rule:** For Palette/Jules UX PRs where the title states an isatty/ANSI guard, salvage only those guard lines and matching tests onto fresh `main`; discard bundled refactors. **Detection cost:** Low — PR title mentions isatty/ANSI while `git diff --stat` shows >100 lines outside `countdown_timer`/`render_progress_bar`.
+
 ## Add testing for missing edge cases
 When testing parsing/formatting logic, always consider unexpected data types, out of bound values and common malformed shapes.
