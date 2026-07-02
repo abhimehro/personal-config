@@ -222,6 +222,32 @@ scheduled workflow may be added after permission parity and a validated
 orchestrator exist. See
 [.github/workflows/README.md](../.github/workflows/README.md).
 
+### Daily Automation Chain
+
+This agent operates within a broader daily automation workflow. The following
+scheduled tasks run automatically each day on all seven priority repositories:
+
+1. **6:00 AM** - [GitHub PR Summarizer](https://github.com/abhimehro/personal-config/tree/main/skills/github-pr-summarizer)
+   - Creates daily PR summary reports in Notion's "GitHub PRs Daily Reports" database
+   - Provides foundational context for all downstream agents
+   - Runs before all other automations to ensure fresh documentation
+
+2. **8:00 AM** - Proactive issue creation task
+
+3. **8:15 AM** - [Repository Health Triage](https://github.com/abhimehro/personal-config/tree/main/skills/repo-health-triage)
+   - Scans for security issues, risky code patterns, dependency problems
+   - Creates issue candidates in Notion's "Repo Issue Candidates" database
+   - Analyzes all seven repositories: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis, Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated, repoprompt-ce
+
+4. **9:00 AM** - PR automation test
+
+5. **1:00 PM** - Salvaging task
+
+**Note:** This PR Review Agent (Phase 1) and the Salvage Agent (Phase 2) are
+separate from the scheduled daily automations. The scheduled tasks provide
+input documents and issue candidates that these agents can reference during
+triage and salvage operations.
+
 ## Related docs
 
 - [Automated PR Salvage & Recovery Agent](automated-pr-salvage-agent.md) — Phase
@@ -231,3 +257,7 @@ orchestrator exist. See
   Permissions, preflight, probe PRs, runbook.
 - [PR Review Automation ELIR](pr-review-automation-elir.md) — Handoff summary
   for maintainers.
+- [Repository Health Triage Skill](../../skills/repo-health-triage/SKILL.md) —
+  Daily repo health scanning and issue triage.
+- [GitHub PR Summarizer Skill](../../skills/github-pr-summarizer/SKILL.md) —
+  Daily PR summary generation for non-technical audiences.
