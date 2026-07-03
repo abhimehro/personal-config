@@ -2,4 +2,4 @@
 - [x] Remove the smallest safe set of redundant or test-only workflows.
 - [x] Refresh workflow documentation so every remaining workflow has a clear purpose.
 - [x] Add focused validation to keep the workflow inventory documentation in sync.
-- [ ] Run targeted tests, secret scanning, and final security review.
+- [x] Run targeted tests, secret scanning, and final security review.
