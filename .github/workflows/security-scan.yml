@@ -178,6 +178,7 @@ jobs:
   summary:
     name: Security Summary
     runs-on: ubuntu-latest
+    permissions: {}
     needs: [trufflehog-secrets, gitleaks-secrets, shellcheck-security, dependency-scan, codeql-analysis, sbom-generation]
     if: always()
 
