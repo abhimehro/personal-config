@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 source ../email-security-pipeline/GH_TOKEN.env
 
 close_pr() {
@@ -12,4 +14,3 @@ close_pr "abhimehro/ctrld-sync" "702" "Semantic duplicate of a newer automated P
 close_pr "abhimehro/ctrld-sync" "697" "Semantic duplicate of a newer automated PR (#706)"
 close_pr "abhimehro/personal-config" "732" "Semantic duplicate of a newer automated PR (#744)"
 close_pr "abhimehro/personal-config" "724" "Semantic duplicate of a newer automated PR (#744)"
-
