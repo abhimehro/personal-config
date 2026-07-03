@@ -90,6 +90,11 @@ fi
 exit 0
 MOCK
 chmod +x "$MOCK_BIN/brew"
+cat >"$MOCK_BIN/pgrep" <<'MOCK'
+#!/bin/bash
+exit 0
+MOCK
+chmod +x "$MOCK_BIN/pgrep"
 
 # ---- helper: create an isolated home with required log dirs ----
 make_mock_home() {

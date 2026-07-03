@@ -286,8 +286,8 @@ if ((DIAGNOSTIC_REPORTS > 5)); then
 fi
 
 # 10) Background service monitoring
-# shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
-WIDGET_COUNT=$(ps aux | grep -E "\.appex/Contents/MacOS" | grep -v grep | wc -l | count_clean || echo "0")
+# ⚡ Bolt Optimization: Use pgrep to avoid ps aux and multiple process spawns overhead
+WIDGET_COUNT=$(pgrep -f "\.appex/Contents/MacOS" | wc -l | tr -d ' ')
 WIDGET_COUNT=$(to_int "$WIDGET_COUNT")
 append "Widget extensions running: ${WIDGET_COUNT}"
 if ((WIDGET_COUNT > 60)); then
