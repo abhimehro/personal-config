@@ -545,3 +545,7 @@ invocation.
 ## 2025-07-01 - Optimizing directory traversal with find -prune
 **Learning:** When using `find` to search for specific directory names like `node_modules` (which contain heavily nested structures), omitting `-prune` causes `find` to unnecessarily traverse the entire deep directory tree inside matches, leading to significant I/O and CPU overhead.
 **Action:** Always use `-prune` when searching for directories whose contents you don't need to traverse, such as `node_modules` or build directories.
+
+## 2026-07-03 - [Optimize ps aux shell pattern gracefully across platforms]
+**Learning:** Replacing `ps aux | grep pattern | grep -v grep | wc -l` with `pgrep -fc pattern` is a great shell optimization to prevent spawning multiple sub-processes. However, on BSD-based systems like macOS, `pgrep` does not support the `-c` flag.
+**Action:** When optimizing process counting in cross-platform or macOS shell scripts, use `pgrep -f "pattern" | wc -l` (and potentially strip whitespace with `tr -d ' '`) instead of `pgrep -fc`.

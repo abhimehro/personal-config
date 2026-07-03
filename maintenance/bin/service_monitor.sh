@@ -120,12 +120,14 @@ check_disabled_status() {
 
 check_process_running() {
 	local process=$1
-	ps aux | grep -i -- "$process" | grep -v grep >/dev/null 2>&1
+	# ⚡ Bolt Optimization: Use pgrep to avoid ps aux and multiple process spawns overhead
+	pgrep -if -- "$process" >/dev/null 2>&1
 }
 
 count_widget_extensions() {
-	# shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
-	ps aux | grep -E "\.appex/Contents/MacOS" | grep -v grep | wc -l | tr -d ' '
+	# ⚡ Bolt Optimization: Use pgrep to avoid ps aux and multiple process spawns overhead
+	# Note: macOS pgrep doesn't support -c, so we pipe to wc -l
+	pgrep -f "\.appex/Contents/MacOS" | wc -l | tr -d ' '
 }
 
 count_diagnostic_reports() {
