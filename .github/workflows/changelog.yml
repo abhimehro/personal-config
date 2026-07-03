@@ -1,7 +1,0 @@
-name: Disabled Changelog
-on: []
-jobs:
-  disabled:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Disabled per modernization plan. Tracked centrally via release-drafter."
