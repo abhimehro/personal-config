@@ -1,7 +1,0 @@
-name: Disabled Greetings
-on: []
-jobs:
-  disabled:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Disabled per modernization plan. Functionality fully shifted to agentic PR reviewers."
