@@ -63,7 +63,6 @@ if [[ -d "$HOME/Library/Caches" ]]; then
 					else
 						log_warn "Could not clean some files in ${cache_dir##*/} (permission denied)"
 					fi
-					# shellcheck disable=SC2086  # intentional word splitting or dynamic args
 				else
 					if find "$cache_dir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -delete 2>/dev/null; then
 						((CLEANED++))

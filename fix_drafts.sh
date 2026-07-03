@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 source ../email-security-pipeline/GH_TOKEN.env
 
 fix_and_merge() {
@@ -11,4 +13,3 @@ fix_and_merge() {
 fix_and_merge "abhimehro/email-security-pipeline" "632"
 fix_and_merge "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project" "102"
 fix_and_merge "abhimehro/personal-config" "743"
-
