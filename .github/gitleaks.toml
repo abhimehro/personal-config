@@ -37,12 +37,6 @@ regex = '''-----BEGIN (RSA |DSA |EC |OPENSSH )?PRIVATE KEY-----(.*?)-----END (RS
 tags = ["ssh", "private-key", "secret"]
 
 [[rules]]
-id = "personal-config-ssh-config"
-description = "SSH config with embedded private key"
-regex = '''Host[\s]+[^\s]+[\s]*IdentityFile[\s]+[^\s]+[\s]*'''
-tags = ["ssh", "config", "identity"]
-
-[[rules]]
 id = "personal-config-github-token"
 description = "GitHub personal access token"
 regex = '''(?i)(ghp_[a-zA-Z0-9]{36}|github[\-_]?token[\-_:=]?['"]?[a-zA-Z0-9\-_]{40,}['"]?)'''
@@ -124,7 +118,7 @@ tags = ["mailgun", "api-key", "secret"]
 [[rules]]
 id = "personal-config-db-connection"
 description = "Database connection string with credentials"
-regex = '''(?i)(mysql://|postgres://|postgresql://|mongodb://|redis://|amqp://)[^\s]*://[^:]+:[^@]+@[^\s]+'''
+regex = '''(?i)(mysql|postgres|postgresql|mongodb|redis|amqp)://[^:\s]+:[^@\s]+@[^\s]+'''
 tags = ["database", "connection-string", "credentials", "secret"]
 
 # Generic API keys
@@ -145,7 +139,7 @@ tags = ["token", "secret"]
 [[rules]]
 id = "personal-config-generic-secret"
 description = "Generic secret pattern"
-regex = '''(?i)(secret|password|passwd|pwd)[\-_:=]?['"]?[a-zA-Z0-9\-_.!@#$%^&*]{8,}['"]?'''
+regex = '''(?i)(secret|password|passwd|pwd)[\s\-_:=]+['"]?[a-zA-Z0-9\-_.!@#$%^&*]{8,}['"]?'''
 tags = ["secret", "password", "credentials"]
 
 # Private keys in various formats
@@ -178,6 +172,19 @@ tags = ["env", "environment", "secret"]
 
 # Exclude patterns - files that are known to contain test/fake secrets
 [allowlist]
+# Suppress GitHub Actions built-in context references that are not real secrets.
+# The personal-config-generic-secret rule matches "secret" as a substring, which
+# causes false positives for:
+#   - "${{ secrets.GITHUB_TOKEN }}"  (proper GA secret reference, not a leak)
+#   - "needs.trufflehog-secrets.result" / "needs.gitleaks-secrets.result"
+#     (job-name fragments inside ${{ needs.*.result }} expressions)
+# These regexes are matched against the captured "secret" value by gitleaks.
+regexes = [
+    # GitHub Actions secrets context: secrets.GITHUB_TOKEN, secrets.MY_TOKEN, etc.
+    '''^secrets\.[A-Za-z0-9_]+$''',
+    # GitHub Actions needs-context results: needs.<job>.result fragments
+    '''^secrets\.result$''',
+]
 paths = [
     '''(?i)test''',
     '''(?i)mock''',

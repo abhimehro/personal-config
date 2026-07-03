@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 source ../email-security-pipeline/GH_TOKEN.env
 
 close_pr() {
@@ -25,4 +27,3 @@ close_pr "abhimehro/personal-config" "735" "Semantic duplicate of a newer automa
 close_pr "abhimehro/email-security-pipeline" "635" "Semantic duplicate of a newer automated PR (#642)"
 close_pr "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project" "105" "Semantic duplicate of a newer automated PR (#108)"
 close_pr "abhimehro/Hydrograph_Versus_Seatek_Sensors_Project" "101" "Semantic duplicate of a newer automated PR (#108)"
-

@@ -9,7 +9,8 @@ repositories with least privilege.
 - [ ] Install the app on every target repository.
 - [ ] Use one app installation per trust domain:
   - Personal projects: `personal-config`, `email-security-pipeline`,
-    `ctrld-sync`
+    `ctrld-sync`, `Seatek_Analysis`, `Hydrograph_Versus_Seatek_Sensors_Project`,
+    `series_correction_project_updated`, `repoprompt-ce`
   - Academic/research repos: separate installation (recommended)
 - [ ] Keep personal and research installations isolated (separate tokens,
       separate operational logs, separate policy defaults).
@@ -73,7 +74,11 @@ Or with explicit repos:
 bash scripts/preflight-gh-pr-automation.sh \
   --repo abhimehro/personal-config \
   --repo abhimehro/email-security-pipeline \
-  --repo abhimehro/ctrld-sync
+  --repo abhimehro/ctrld-sync \
+  --repo abhimehro/Seatek_Analysis \
+  --repo abhimehro/Hydrograph_Versus_Seatek_Sensors_Project \
+  --repo abhimehro/series_correction_project_updated \
+  --repo abhimehro/repoprompt-ce
 ```
 
 For full write-path verification (recommended), use dedicated probe PRs and
@@ -84,10 +89,18 @@ bash scripts/preflight-gh-pr-automation.sh \
   --repo abhimehro/personal-config \
   --repo abhimehro/email-security-pipeline \
   --repo abhimehro/ctrld-sync \
+  --repo abhimehro/Seatek_Analysis \
+  --repo abhimehro/Hydrograph_Versus_Seatek_Sensors_Project \
+  --repo abhimehro/series_correction_project_updated \
+  --repo abhimehro/repoprompt-ce \
   --require-write-probes \
   --probe-pr abhimehro/personal-config#<open_probe_pr_number> \
   --probe-pr abhimehro/email-security-pipeline#<open_probe_pr_number> \
-  --probe-pr abhimehro/ctrld-sync#<open_probe_pr_number>
+  --probe-pr abhimehro/ctrld-sync#<open_probe_pr_number> \
+  --probe-pr abhimehro/Seatek_Analysis#<open_probe_pr_number> \
+  --probe-pr abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#<open_probe_pr_number> \
+  --probe-pr abhimehro/series_correction_project_updated#<open_probe_pr_number> \
+  --probe-pr abhimehro/repoprompt-ce#<open_probe_pr_number>
 ```
 
 ## 6) Probe PR Guidance
@@ -113,12 +126,14 @@ bash scripts/preflight-gh-pr-automation.sh \
 When elevating permissions to run close/merge queues on all repos:
 
 1. **Grant permissions:** Give the integration write access (Pull requests: Read
-   & write, Contents: Read & write) on `ctrld-sync` and
-   `email-security-pipeline` per sections 1–2 above.
+   & write, Contents: Read & write) on all seven priority repositories:
+   `personal-config`, `ctrld-sync`, `email-security-pipeline`, `Seatek_Analysis`,
+   `Hydrograph_Versus_Seatek_Sensors_Project`, `series_correction_project_updated`,
+   `repoprompt-ce` per sections 1–2 above.
 2. **Verify:** Run preflight with `--require-write-probes` and probe PRs to
    confirm close/comment/review.
 3. **Close queue:** Execute the close commands in `tasks/pr-triage.md` under
-   "Ready-to-Execute Human Actions" (ctrld-sync then email-security-pipeline).
+   "Ready-to-Execute Human Actions" for all repositories.
 4. **Merge queue:** Execute the merge commands in the same section in the
    recommended order (security/dependency first, then CI/infra, then refactors).
 5. **Re-check:** After each merge, re-check remaining approved PRs for new
@@ -131,3 +146,19 @@ When elevating permissions to run close/merge queues on all repos:
 After each session, update `tasks/lessons.md` and reflect material lessons in
 the [Automated PR Review Agent](automated-pr-review-agent.md) heuristics
 subsection.
+
+## 9) Daily Automation Workflow Integration
+
+This checklist supports the broader daily automation chain. The following scheduled
+tasks run automatically and may reference or depend on the permissions configured
+here:
+
+- **6:00 AM** - GitHub PR Summarizer: Creates daily PR summary reports in Notion's
+  "GitHub PRs Daily Reports" database. Requires read access to all repositories.
+- **8:15 AM** - Repository Health Triage: Scans all seven repositories for security
+  issues, risky code, dependency problems, and maintenance signals. Creates entries
+  in Notion's "Repo Issue Candidates" database. Requires read access to all
+  repositories.
+
+Both scheduled tasks analyze the same seven repositories listed in Section 1.
+

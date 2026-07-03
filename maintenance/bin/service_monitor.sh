@@ -237,14 +237,14 @@ append ""
 # Check for key background services that shouldn't be running persistently
 append "Background Services Check:"
 append "--------------------------"
-# shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
-CHRONOD_RUNNING=$(ps aux | grep -E "chronod" | grep -v grep | wc -l | tr -d ' ')
-# shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
-DUET_RUNNING=$(ps aux | grep -E "duetexpertd" | grep -v grep | wc -l | tr -d ' ')
-# shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
-SUGGESTD_RUNNING=$(ps aux | grep -E "suggestd" | grep -v grep | wc -l | tr -d ' ')
-# shellcheck disable=SC2126  # explicit grep | wc -l preferred for clarity
-PROACTIVED_RUNNING=$(ps aux | grep -E "proactived" | grep -v grep | wc -l | tr -d ' ')
+# ⚡ Performance Optimization: Consolidate ps aux into a single awk pass
+read -r CHRONOD_RUNNING DUET_RUNNING SUGGESTD_RUNNING PROACTIVED_RUNNING <<< "$(ps aux | awk '
+	/chronod/ && !/awk/ { c++ }
+	/duetexpertd/ && !/awk/ { d++ }
+	/suggestd/ && !/awk/ { s++ }
+	/proactived/ && !/awk/ { p++ }
+	END { print c+0, d+0, s+0, p+0 }
+')"
 
 append "chronod instances: $CHRONOD_RUNNING"
 append "duetexpertd instances: $DUET_RUNNING"

@@ -13,6 +13,7 @@ from detect_duplicates import (
     _generate_ready_section,
     _generate_superseded_section,
     _group_prs_by_files,
+    get_duplicates,
 )
 
 
@@ -205,6 +206,18 @@ class TestDetectDuplicates(unittest.TestCase):
         self.assertIn(key, result)
         self.assertEqual(len(result[key]), 1)
         self.assertEqual(result[key][0]["number"], 1)
+
+
+    @patch("detect_duplicates._extract_duplicates_from_groups")
+    @patch("detect_duplicates._group_prs_by_files")
+    def test_get_duplicates(self, mock_group, mock_extract):
+        mock_group.return_value = {"group1": ["pr1"]}
+        mock_extract.return_value = ["dup1", "dup2"]
+        ready_only = ["pr1", "pr2"]
+        result = get_duplicates(ready_only)
+        mock_group.assert_called_once_with(ready_only)
+        mock_extract.assert_called_once_with({"group1": ["pr1"]})
+        self.assertEqual(result, ["dup1", "dup2"])
 
 
 if __name__ == "__main__":

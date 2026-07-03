@@ -33,7 +33,7 @@ jobs:
           fetch-depth: 0  # Full history for better scanning
 
       - name: TruffleHog OSS
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@00155c9dc586f34d189adc83d3ac2698c2ec551f # v3.95.8
         with:
           path: ./
           base: main
@@ -87,7 +87,7 @@ jobs:
             \( -path "./.git" -o -path "./.trunk" -o -path "./configs/.config/mole" -o -path "./mole.*" -o -path "*/archive" -o -path "./node_modules" \) -prune -o \
             -name "*.sh" -type f -print0 | while IFS= read -r -d '' script; do
             echo "Scanning: $script"
-            shellcheck --severity=error --format=gcc "$script" || true
+            shellcheck --severity=error --format=gcc "$script"
           done
           echo "✅ ShellCheck security scan complete"
 
@@ -178,6 +178,7 @@ jobs:
   summary:
     name: Security Summary
     runs-on: ubuntu-latest
+    permissions: {}
     needs: [trufflehog-secrets, gitleaks-secrets, shellcheck-security, dependency-scan, codeql-analysis, sbom-generation]
     if: always()
 
@@ -205,7 +206,9 @@ jobs:
           if [[ "${{ needs.trufflehog-secrets.result }}" == "success" && \
                 "${{ needs.gitleaks-secrets.result }}" == "success" && \
                 "${{ needs.shellcheck-security.result }}" == "success" && \
-                "${{ needs.dependency-scan.result }}" == "success" ]]; then
+                "${{ needs.dependency-scan.result }}" == "success" && \
+                "${{ needs.codeql-analysis.result }}" == "success" && \
+                "${{ needs.sbom-generation.result }}" == "success" ]]; then
             echo "## ✅ All security scans passed" >> security-report.md
           else
             echo "## ⚠️  Some security scans failed" >> security-report.md

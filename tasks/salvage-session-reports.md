@@ -327,3 +327,36 @@
   3. Re-run Phase 1 after CodeScene remediation on #1422
   4. Salvage or close esp #1179 after cs-agent cycle
 - Cross-links: [Session report](tasks/pr-review-2026-06-30.md)
+
+## Run — 2026-07-02
+
+### Input tail
+
+- Source report/snapshot: automation memory (2026-07-01 run) + live GitHub re-fetch
+- PRs investigated: 5 in-scope open at start (2 DIRTY, 3 CLEAN)
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| series_correction_project_updated | 168 | MERGE | — | black formatting; all CI green |
+| personal-config | 1457 | CLOSE-SUPERSEDED | — | session-doc draft |
+| email-security-pipeline | 1208 | CLOSE-NOOP | — | zero-diff Daily QA |
+| email-security-pipeline | 1202 | CLOSE-SUPERSEDED | — | REDACTED_URL_PATTERN already on main |
+| ctrld-sync | 965 | SALVAGE | 970 | isatty guards only |
+
+- Salvage draft PRs opened: 1 (#970)
+- Infra-fix draft PRs opened: 0
+- Phase 1 merges: 1 (sc#168)
+- Originals closed: 4
+
+### Verification status
+
+- Blocking checks: none on `main`
+- Local verify: `uv run pytest tests/test_ux.py -q` — 36 passed on cs salvage branch
+- CodeScene remediation: cs#965 had prior `/cs-agent` posts; salvage diff is minimal
+
+### Handoff
+
+- Maintainer actions required: review draft cs#970 (T3 UX)
+- Cross-links: [Session report](tasks/pr-review-2026-07-02.md)
