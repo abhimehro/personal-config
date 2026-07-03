@@ -1,7 +1,6 @@
 # mac-audit
 
 ![Mac Audit](https://github.com/<your-username>/<your-repo>/actions/workflows/mac-audit.yml/badge.svg)
-![ShellCheck](https://github.com/<your-username>/<your-repo>/actions/workflows/shellcheck.yml/badge.svg)
 
 A reusable, shellcheck-clean Mac system audit tool. Checks launch agent sprawl,
 Homebrew drift, and risky `defaults` settings. Reruns after every system change
@@ -19,8 +18,7 @@ mac-audit/
 │   └── defaults_audit.sh          # macOS security defaults
 ├── .github/
 │   └── workflows/
-│       ├── mac-audit.yml           # Full audit on macOS runners
-│       └── shellcheck.yml         # Lint-only (fast, ubuntu)
+│       └── mac-audit.yml           # Full audit + ShellCheck gate
 ├── reports/                        # Gitignored timestamped reports
 └── .gitignore
 ```
@@ -49,12 +47,11 @@ Flags:
 
 ## GitHub Actions
 
-Two workflows are included:
+One workflow is included:
 
 | Workflow | Trigger | Runner | Purpose |
 |---|---|---|---|
-| `shellcheck.yml` | Every push/PR | ubuntu-latest | Lint all scripts |
-| `mac-audit.yml` | Push, PR, weekly Mon | macos-14 + macos-15 | Full audit |
+| `mac-audit.yml` | Push, PR, weekly Mon | ubuntu-latest + macos-14 + macos-15 | ShellCheck gate plus full audit |
 
 ### CI vs. Local checks
 

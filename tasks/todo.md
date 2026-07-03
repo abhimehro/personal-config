@@ -1,8 +1,5 @@
-- [x] Analyze `generate_report.py:40` for missing error test in `format_lists`.
-- [x] Write `test_format_lists_missing_fields` to cover the exact `ValueError`
-      unpacking scenario.
-- [x] Inject the new test correctly into `tests/test_generate_report.py`.
-- [x] Run `make test-all` and ensure no regressions.
-- [x] Analyze `gh_token_env.py` for missing OSError test in `_read_env_file`.
-- [x] Write `test_read_env_file_oserror` to cover `FileNotFoundError` and `PermissionError` paths.
-- [x] Run full tests to ensure no regressions.
+- [x] Audit every workflow file in `.github/workflows/` and check which ones are redundant or obsolete.
+- [x] Remove the smallest safe set of redundant or test-only workflows.
+- [x] Refresh workflow documentation so every remaining workflow has a clear purpose.
+- [x] Add focused validation to keep the workflow inventory documentation in sync.
+- [ ] Run targeted tests, secret scanning, and final security review.
