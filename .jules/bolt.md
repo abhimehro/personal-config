@@ -549,3 +549,8 @@ invocation.
 ## 2026-07-03 - [Optimize ps aux shell pattern gracefully across platforms]
 **Learning:** Replacing `ps aux | grep pattern | grep -v grep | wc -l` with `pgrep -fc pattern` is a great shell optimization to prevent spawning multiple sub-processes. However, on BSD-based systems like macOS, `pgrep` does not support the `-c` flag.
 **Action:** When optimizing process counting in cross-platform or macOS shell scripts, use `pgrep -f "pattern" | wc -l` (and potentially strip whitespace with `tr -d ' '`) instead of `pgrep -fc`.
+
+## 2026-07-03 - [Optimize system_metrics.sh parsing]
+
+**Learning:** Found several spots where the system_metrics script spawns multiple heavy subprocesses in quick succession (e.g. `vm_stat`, `df -h`) to parse different values from the same output. In a shell script, avoiding repeated execution of external commands and pipelining by doing it in a single pass (e.g., using a single `awk` statement and `read -r`) can yield significant performance gains, especially when these commands can be relatively slow and are run periodically.
+**Action:** Always prefer parsing a single invocation of an external command with `awk` to extract multiple metrics at once, rather than spawning the command multiple times.
