@@ -545,3 +545,8 @@ invocation.
 ## 2025-07-01 - Optimizing directory traversal with find -prune
 **Learning:** When using `find` to search for specific directory names like `node_modules` (which contain heavily nested structures), omitting `-prune` causes `find` to unnecessarily traverse the entire deep directory tree inside matches, leading to significant I/O and CPU overhead.
 **Action:** Always use `-prune` when searching for directories whose contents you don't need to traverse, such as `node_modules` or build directories.
+
+## 2026-07-03 - [Optimize system_metrics.sh parsing]
+
+**Learning:** Found several spots where the system_metrics script spawns multiple heavy subprocesses in quick succession (e.g. `vm_stat`, `df -h`) to parse different values from the same output. In a shell script, avoiding repeated execution of external commands and pipelining by doing it in a single pass (e.g., using a single `awk` statement and `read -r`) can yield significant performance gains, especially when these commands can be relatively slow and are run periodically.
+**Action:** Always prefer parsing a single invocation of an external command with `awk` to extract multiple metrics at once, rather than spawning the command multiple times.
