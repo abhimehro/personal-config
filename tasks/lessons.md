@@ -1,5 +1,9 @@
 # Lessons Learned
 
+## Lesson 0cy: Bolt `get_repo_vars.sh` gh one-liner needs shebang (2026-07-03)
+
+**Pattern:** pc #1466 added `get_repo_vars.sh` as a bare `gh api` one-liner without `#!/usr/bin/env bash`. ShellCheck Security Scan fails SC2148 while all other gates pass. **Rule:** Any new shell script in personal-config — even single-command wrappers — must include a shebang before merge; autofix is trivial. **Detection cost:** Low — ShellCheck log names the file.
+
 ## Lesson 0cv: Codacy action bump ≠ Codacy scan green (2026-06-23)
 
 **Pattern:** personal-config #1331 (codacy-analysis-cli-action 1.1.0 → 4.4.7) merged with passing CI, but **all** sibling open PRs still fail `Codacy Security Scan` on re-run. Other gates (CodeQL, Snyk, CodeScene, dependency-review) pass. **Rule:** Treat Codacy failures after an action bump as **ESCALATE** (project token, API config, or org-level Codacy settings)—not auto-fixable by further dependabot bumps alone. **Detection cost:** Low — single failing required check across entire PR queue.
