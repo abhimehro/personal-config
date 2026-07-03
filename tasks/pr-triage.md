@@ -1,14 +1,15 @@
-# PR Triage — 2026-07-02
+# PR Triage — 2026-07-03
 
-## Starting state (5 in-scope open)
+## Starting state (6 in-scope open)
 
 | Repo | PR | State | Action |
 |------|-----|-------|--------|
-| personal-config | #1457 | CLEAN DRAFT | CLOSE — supersede session doc |
-| ctrld-sync | #965 | DIRTY + CodeScene fail | SALVAGE file-scoped |
-| email-security-pipeline | #1202 | DIRTY salvage | CLOSE — superseded on `main` |
-| email-security-pipeline | #1208 | CLEAN zero-diff | CLOSE — no-op |
-| series_correction_project_updated | #168 | CLEAN all green | MERGE |
+| email-security-pipeline | #1212 | CLEAN all green | MERGE |
+| personal-config | #1464 | UNSTABLE (Trunk MQ) but security green | MERGE |
+| personal-config | #1470 | UNSTABLE (Gitleaks) + scope creep | CLOSE |
+| personal-config | #1468 | UNSTABLE session doc | CLOSE — supersede |
+| personal-config | #1466 | DIRTY + trust-boundary noise | SALVAGE file-scoped |
+| ctrld-sync | #973 | DIRTY + CodeScene fail | SALVAGE file-scoped |
 
 ## Duplicate & overlap analysis
 
@@ -16,32 +17,35 @@
 
 | Closed | Reason |
 |--------|--------|
-| pc #1457 | Prior cron session-doc draft; consolidated into 2026-07-02 salvage run |
-| esp #1202 | `REDACTED_URL_PATTERN` pre-compile already landed on `main` via earlier merge |
-| cs #965 | 412-line DIRTY conflict; isatty guards salvaged to #970 |
+| pc #1468 | Prior cron session-doc draft; consolidated into 2026-07-03 salvage run |
+| cs #973 | Core isatty guards on `main` via #970; remaining newline/ANSI cleanup salvaged to #974 |
+| pc #1466 | DIRTY conflict + `get_repo_vars.sh` excluded; metrics optimization salvaged to #1471 |
 
-### Closed as no-op
+### Closed as not salvageable
 
 | Closed | Reason |
 |--------|--------|
-| esp #1208 | Zero-diff Jules Daily QA branch |
+| pc #1470 | Gitleaks fail on `tasks/todo.md` false positive; includes `.adk/session.db` binaries and unrelated files |
 
 ## Merge ordering applied
 
-1. **Style/format** — sc #168 (black formatting, all CI green)
-2. **Closures** — esp #1208 (no-op), esp #1202 (superseded), pc #1457 (session doc)
-3. **Salvage** — cs #965 → draft #970 (isatty guards only)
+1. **Dependency** — esp #1212 (opencv pin, all CI green)
+2. **CI/infra** — pc #1464 (action SHA bumps, Gitleaks green)
+3. **Closures** — pc #1468 (session doc), pc #1470 (security gate)
+4. **Salvage** — cs #973 → draft #974; pc #1466 → draft #1471
 
 ## Blockers identified
 
 | Blocker | Affected PRs | Type | Resolution |
 |---------|--------------|------|------------|
-| DIRTY merge conflict | cs #965 | cascade/refactor noise | File-scoped salvage #970 |
-| CodeScene code health | cs #965 | PR-specific | cs-agent already posted; salvage is minimal diff |
-| Already on main | esp #1202 | superseded | Closed without new draft |
+| Gitleaks + session.db artifacts | pc #1470 | security gate | Closed — needs human-focused PR |
+| DIRTY after #970 merge | cs #973 | cascade | File-scoped salvage #974 |
+| DIRTY + trust-boundary files | pc #1466 | conflict/noise | Salvage metrics only to #1471 |
+| CodeScene code health | cs #973 | PR-specific | `/cs-agent` posted before close |
 
 ## Security gate notes
 
-- sc #168 passed GitGuardian, CodeScene, dependency-review before merge.
-- esp closures were display/perf paths already validated on `main`.
-- cs salvage #970 is T3 UX-only (no auth/secrets); opened as **draft** per salvage policy.
+- esp #1212 passed GitGuardian, CodeScene, pytest, Snyk before merge.
+- pc #1464 passed Gitleaks/TruffleHog before merge; action SHA pins only.
+- pc #1470 failed Gitleaks — closed without merge.
+- Salvage drafts are T3 only (display/perf); opened as **draft** per salvage policy.
