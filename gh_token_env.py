@@ -86,11 +86,6 @@ def load_gh_token_env(base: Mapping[str, str] | None = None) -> dict[str, str]:
     return env
 
 
-def clear_gh_token_cache() -> None:
-    """Clear cached file reads (for tests after changing GH_TOKEN_ENV_FILE)."""
-    _get_parsed_env_vars_from_file.cache_clear()
-
-
 def gh_token_configured() -> bool:
     """True when GH_TOKEN is available from the environment or a config file."""
     if os.environ.get("GH_TOKEN"):
