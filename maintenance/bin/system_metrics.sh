@@ -38,8 +38,19 @@ fi
 log_info "System metrics collection started"
 
 # CPU and Load Metrics
-# Read uptime once to avoid spawning multiple processes
-read -r LOAD_1MIN LOAD_5MIN LOAD_15MIN <<< "$(uptime | awk -F'load averages:' '{print $2}' | tr -d ',' | awk '{print $1, $2, $3}')"
+# Read uptime once to avoid spawning multiple processes and extract load + days together
+read -r LOAD_1MIN LOAD_5MIN LOAD_15MIN UPTIME_DAYS <<< "$(uptime | awk '{
+	l15=$NF; l5=$(NF-1); l1=$(NF-2);
+	gsub(/,/, "", l15); gsub(/,/, "", l5); gsub(/,/, "", l1);
+	days="0";
+	for (i=1; i<=NF; i++) {
+		if ($i ~ /^days?,?$/) {
+			days=$(i-1);
+			break;
+		}
+	}
+	print l1, l5, l15, days;
+}')"
 LOAD_1MIN=${LOAD_1MIN:-0}
 LOAD_5MIN=${LOAD_5MIN:-0}
 LOAD_15MIN=${LOAD_15MIN:-0}
@@ -200,7 +211,6 @@ if command -v brew >/dev/null 2>&1; then
 fi
 
 # System Uptime
-UPTIME_DAYS=$(uptime | awk -F'up ' '{print $2}' | awk '{print $1}' | grep -o '[0-9]\+' | head -1 || echo "0")
 log_metric "system_uptime_days" "${UPTIME_DAYS:-0}" "days"
 
 # Temperature Monitoring (if available)
