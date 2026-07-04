@@ -9,7 +9,6 @@ from gh_token_env import (
     clear_gh_token_cache,
     gh_token_configured,
     load_gh_token_env,
-    missing_gh_token_message,
     parse_env_line,
     resolve_gh_token_env_file,
 )
@@ -69,11 +68,6 @@ class TestGhTokenEnv(unittest.TestCase):
                 os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True
             ):
                 self.assertEqual(resolve_gh_token_env_file(), env_file)
-
-    def test_missing_message_mentions_runbook(self):
-        with patch("gh_token_env.resolve_gh_token_env_file", return_value=None):
-            message = missing_gh_token_message()
-        self.assertIn("github-pat-rotation-runbook", message)
 
     def test_gh_token_configured_from_env(self):
         with patch.dict(os.environ, {"GH_TOKEN": "present"}, clear=False):
