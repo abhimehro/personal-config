@@ -146,13 +146,13 @@ optimize_memory_usage() {
 	log_info "Starting memory optimization..."
 
 	# Get memory statistics
-	local memory_stats
-	memory_stats=$(vm_stat)
 	local pages_free pages_inactive pages_speculative page_size
-	pages_free=$(echo "$memory_stats" | grep "Pages free" | awk '{print $3}' | tr -d '.')
-	pages_inactive=$(echo "$memory_stats" | grep "Pages inactive" | awk '{print $3}' | tr -d '.')
-	pages_speculative=$(echo "$memory_stats" | grep "Pages speculative" | awk '{print $3}' | tr -d '.')
-	page_size=$(vm_stat | grep "page size" | awk '{print $8}')
+	read -r pages_free pages_inactive pages_speculative page_size <<< "$(vm_stat | awk '
+		/page size of/ { size = $8 }
+		/Pages free:/ { free = $3; sub(/\./, "", free) }
+		/Pages inactive:/ { inactive = $3; sub(/\./, "", inactive) }
+		/Pages speculative:/ { spec = $3; sub(/\./, "", spec) }
+		END { print free, inactive, spec, size }')"
 
 	# Calculate available memory percentage
 	local total_memory available_memory memory_percent
