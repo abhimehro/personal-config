@@ -8,7 +8,7 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=lib/ai_engine.sh
+# shellcheck source=secops/lib/ai_engine.sh
 source "$SCRIPT_DIR/lib/ai_engine.sh" # provides run_timeout
 
 DEV_ROOT="$HOME/dev"
