@@ -12,7 +12,6 @@ from parse_inventory import (
     _is_checks_failing,
     _is_pr_stale,
     _load_inventory_lines,
-    _parse_env_line,
     _parse_repo_name,
     parse_inventory_lines,
     run_gh,
@@ -35,33 +34,6 @@ class TestParseInventory(unittest.TestCase):
             "mergeStateStatus": merge_state,
             "updatedAt": updated_at,
         }
-
-    def test_parse_env_line_basic(self):
-        env = {}
-        _parse_env_line("FOO=bar", env)
-        self.assertEqual(env, {"FOO": "bar"})
-
-    def test_parse_env_line_with_export(self):
-        env = {}
-        _parse_env_line("export FOO=bar", env)
-        self.assertEqual(env, {"FOO": "bar"})
-
-    def test_parse_env_line_with_quotes(self):
-        env = {}
-        _parse_env_line('export FOO="bar"', env)
-        self.assertEqual(env, {"FOO": "bar"})
-
-        env = {}
-        _parse_env_line("export FOO='bar'", env)
-        self.assertEqual(env, {"FOO": "bar"})
-
-    def test_parse_env_line_comments_and_empty(self):
-        env = {"FOO": "bar"}
-        _parse_env_line("# export BAZ=qux", env)
-        self.assertEqual(env, {"FOO": "bar"})
-
-        _parse_env_line("   ", env)
-        self.assertEqual(env, {"FOO": "bar"})
 
     def test_parse_inventory_lines(self):
         # Flat-table format matching tasks/pr-inventory.md (no ## section headers)
@@ -203,7 +175,7 @@ class TestParseInventory(unittest.TestCase):
 
     # --- run_gh ---
 
-    @patch("parse_inventory._load_gh_token_env", return_value={})
+    @patch("parse_inventory.load_gh_token_env", return_value={})
     @patch("parse_inventory.subprocess.run")
     def test_run_gh_success(self, mock_run, _mock_env):
         mock_result = MagicMock()
@@ -216,7 +188,7 @@ class TestParseInventory(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(result["files"][0]["filename"], "foo.py")
 
-    @patch("parse_inventory._load_gh_token_env", return_value={})
+    @patch("parse_inventory.load_gh_token_env", return_value={})
     @patch("parse_inventory.subprocess.run")
     def test_run_gh_nonzero(self, mock_run, _mock_env):
         mock_result = MagicMock()
@@ -225,7 +197,7 @@ class TestParseInventory(unittest.TestCase):
         mock_run.return_value = mock_result
         self.assertIsNone(run_gh("repoA", 123))
 
-    @patch("parse_inventory._load_gh_token_env", return_value={})
+    @patch("parse_inventory.load_gh_token_env", return_value={})
     @patch("parse_inventory.subprocess.run")
     def test_run_gh_invalid_json(self, mock_run, _mock_env):
         mock_result = MagicMock()
@@ -234,7 +206,7 @@ class TestParseInventory(unittest.TestCase):
         mock_run.return_value = mock_result
         self.assertIsNone(run_gh("repoA", 123))
 
-    @patch("parse_inventory._load_gh_token_env", return_value={})
+    @patch("parse_inventory.load_gh_token_env", return_value={})
     @patch("parse_inventory.subprocess.run")
     def test_run_gh_returncode_not_zero(self, mock_run, _mock_env):
         mock_result = MagicMock()

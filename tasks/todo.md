@@ -1,8 +1,5 @@
-- [x] Analyze `generate_report.py:40` for missing error test in `format_lists`.
-- [x] Write `test_format_lists_missing_fields` to cover the exact `ValueError`
-      unpacking scenario.
-- [x] Inject the new test correctly into `tests/test_generate_report.py`.
-- [x] Run `make test-all` and ensure no regressions.
-- [x] Analyze `gh_token_env.py` for missing OSError test in `_read_env_file`.
-- [x] Write `test_read_env_file_oserror` to cover `FileNotFoundError` and `PermissionError` paths.
-- [x] Run full tests to ensure no regressions.
+- [x] Fix the code health issue regarding the unused `load_gh_token_env` function by refactoring dependent scripts to use it instead of their duplicated logic.
+- [x] Remove the duplicated environment loading logic from `categorize_ready.py`, `detect_duplicates.py`, `parse_inventory.py`, and `run_merges.py`.
+- [x] Update test files `test_categorize_ready.py`, `test_parse_inventory.py`, and `test_vulnerability_fix.py` to match the new architecture.
+- [x] Confirm fix by running `make test-all`.
+- [x] Create `handoff.md` with ELIR summary.

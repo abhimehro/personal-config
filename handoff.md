@@ -1,28 +1,6 @@
-# 🧪 Testing Improvement Task
-
-## 🎯 What
-
-Added missing test coverage for `format_lists` in `generate_report.py`. The
-`format_lists` function contains a generator expression that expects a tuple
-with three elements (`repo, pr, title`). If the data passed to it is malformed
-(e.g., missing the title), it crashes with a `ValueError` during tuple
-unpacking. This scenario wasn't previously tested.
-
-## 📊 Coverage
-
-Added `test_format_lists_missing_fields` to explicitly trigger and assert the
-`ValueError` when `merged_data` is supplied a malformed tuple with only two
-elements.
-
-## ✨ Result
-
-Improved test resilience. The test suite now guards against unpacking
-regressions in the core PR reporting function `format_lists`.
-
-========== ELIR ========== PURPOSE: Add edge-case coverage to ensure
-`format_lists` raises `ValueError` cleanly on malformed input. SECURITY: N/A -
-pure testing robustness. FAILS IF: The data parsing upstream fails to output
-triplets (`repo`, `pr`, `title`). VERIFY: Confirm
-`test_format_lists_missing_fields` explicitly tests the ValueError catch.
-MAINTAIN: Keep this updated if `format_lists` changes its expected tuple
-structure.
+========== ELIR ==========
+PURPOSE: Removed unused `_load_gh_token_env` functions across scripts (`categorize_ready.py`, `detect_duplicates.py`, `parse_inventory.py`, `run_merges.py`) and standardizes them to import and use the central `load_gh_token_env` from `gh_token_env.py`.
+SECURITY: Reduces the attack surface of environment parsing logic by consolidating to a single, well-tested module. Ensures token loading maintains safe practices (does not use `source` in shell).
+FAILS IF: `gh_token_env.py` has import errors or behaves differently from the legacy duplicate code (but our tests verify behavioral equivalence).
+VERIFY: Ensure all automated tests (`make test-all`) pass and that scripts no longer redefine `_load_gh_token_env`.
+MAINTAIN: Going forward, any new Python script that needs a GH_TOKEN for subprocess calls MUST import and use `load_gh_token_env` from `gh_token_env.py`.

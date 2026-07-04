@@ -14,7 +14,6 @@ class TestCategorizeReady(unittest.TestCase):
             "categorize_ready.py",
             {
                 "run_gh",
-                "_load_gh_token_env",
                 "fetch_pr_info",
                 "get_category_from_title",
             },

@@ -1,47 +1,14 @@
 import concurrent.futures
 import json
+from gh_token_env import load_gh_token_env
 import os
 import subprocess
 import time
 from functools import lru_cache
 
 
-def _parse_env_line(line, env_dict):
-    line = line.strip()
-    if not line:
-        return
-    if line.startswith("#"):
-        return
-    if line.startswith("export "):
-        line = line[7:].strip()
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    key, sep, val = line.partition("=")
-    if not sep:
-        return
-    env_dict[key] = val.strip("'\"")
-
-
-@lru_cache(maxsize=None)
-def _get_parsed_env_vars():
-    # ⚡ Bolt Optimization: Cache only the parsed variables from the file to prevent redundant IO reads, while keeping it safe from mutable dictionary cache poisoning
-    parsed_vars = {}
-    try:
-        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
-            for line in f:
-                _parse_env_line(line, parsed_vars)
-    except FileNotFoundError:
-        pass
-    return parsed_vars
-
-
-def _load_gh_token_env():
-    env = os.environ.copy()
-    env.update(_get_parsed_env_vars())
-    return env
-
-
 def run_gh(cmd_list):
-    env = _load_gh_token_env()
+    env = load_gh_token_env()
     result = subprocess.run(cmd_list, capture_output=True, text=True, env=env)
     if result.returncode != 0:
         return None
@@ -227,7 +194,7 @@ for repo, pr, title, info, diff in _fetch_all_pr_data_parallel(queue):
         continue
 
     print(f"Gate 2 passed. Merging...")
-    env = _load_gh_token_env()
+    env = load_gh_token_env()
     res = subprocess.run(
         ["gh", "pr", "merge", str(pr), "-R", str(repo), "--squash", "--delete-branch"],
         capture_output=True,
