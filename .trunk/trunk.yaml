@@ -21,7 +21,7 @@ lint:
     - bandit@1.9.4
     - black@26.5.1
     - checkov@3.3.6
-    - deno@2.9.0
+    - deno@2.9.1
     - dotenv-linter@4.0.0
     - git-diff-check
     - hadolint@2.14.0
@@ -42,6 +42,7 @@ actions:
     - trunk-check-pre-commit
     - trunk-fmt-pre-commit
   enabled:
+    - git-lfs
     - trunk-check-pre-push
     - trunk-announce
     - trunk-upgrade-available
