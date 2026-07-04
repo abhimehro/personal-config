@@ -98,15 +98,3 @@ def gh_token_configured() -> bool:
     return "GH_TOKEN" in _get_parsed_env_vars_from_file()
 
 
-def missing_gh_token_message() -> str:
-    """User-facing hint when GH_TOKEN is absent (no secret values)."""
-    path = resolve_gh_token_env_file()
-    if path is not None:
-        return (
-            f"GH_TOKEN is not set. After rotating your PAT, update {path} "
-            f"or export GH_TOKEN. See {_RUNBOOK}."
-        )
-    return (
-        "GH_TOKEN is not set. Export GH_TOKEN, use `gh auth login`, or set "
-        f"GH_TOKEN_ENV_FILE. See {_RUNBOOK}."
-    )
