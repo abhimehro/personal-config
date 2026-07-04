@@ -14,6 +14,7 @@ from detect_duplicates import (
     _generate_superseded_section,
     _group_prs_by_files,
     get_duplicates,
+    rewrite_triage_file,
 )
 
 
@@ -218,6 +219,38 @@ class TestDetectDuplicates(unittest.TestCase):
         mock_group.assert_called_once_with(ready_only)
         mock_extract.assert_called_once_with({"group1": ["pr1"]})
         self.assertEqual(result, ["dup1", "dup2"])
+
+    @patch("builtins.open", new_callable=unittest.mock.mock_open)
+    def test_rewrite_triage_file(self, mock_file):
+        lines = [
+            "## SUPERSEDED\n",
+            "- org/repo#1\n",
+            "## STALE\n",
+            "## READY\n",
+        ]
+        ready_prs = ["org/repo#1", "org/repo#2"]
+        duplicates = ["org/repo#3"]
+        ready_only = ["org/repo#2", "org/repo#4"]
+
+        rewrite_triage_file(lines, ready_prs, duplicates, ready_only)
+
+        mock_file.assert_called_once_with("tasks/pr-triage.md", "w")
+        handle = mock_file()
+
+        expected_content = (
+            "# PR Triage\n\n"
+            "## SUPERSEDED\n"
+            "- org/repo#1\n"
+            "## STALE\n"
+            "## CONFLICTING\n"
+            "- abhimehro/personal-config#725\n"
+            "## DUPLICATE\n"
+            "- org/repo#3\n"
+            "## READY\n"
+            "- org/repo#2\n"
+            "- org/repo#4\n"
+        )
+        handle.write.assert_called_once_with(expected_content)
 
 
 if __name__ == "__main__":
