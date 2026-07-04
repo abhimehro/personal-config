@@ -399,3 +399,45 @@
 
 - Maintainer actions required: review drafts pc#1471 (T3 perf) + cs#974 (T3 UX)
 - Cross-links: [Session report](tasks/pr-review-2026-07-03.md)
+
+## Run — 2026-07-04
+
+### Input tail
+
+- Source: Fresh Jules/Code Health burst (60 open PRs) after maintainer merged prior drafts pc#1471 + cs#974
+- PRs investigated: 60 at start; 10 flipped DIRTY mid-session (merge cascade)
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| series_correction_project_updated | #184 | SALVAGE draft | [#195](https://github.com/abhimehro/series_correction_project_updated/pull/195) | T1 Sentinel CLI exception sanitization |
+| personal-config | #1488 | SALVAGE draft | [#1496](https://github.com/abhimehro/personal-config/pull/1496) | T3 `gh_token_configured` removal |
+| personal-config | #1485 | CLOSE duplicate | — | Superseded by #1489 |
+| personal-config | #1480 | CLOSE session-doc | — | Superseded by 5069 run artifacts |
+
+### Phase 1 merges (same session)
+
+42 squash merges across personal-config (12), email-security-pipeline (7), Seatek_Analysis (11), series_correction_project_updated (12). See `tasks/pr-inventory.md`.
+
+### Counts
+
+- Deep-dived: 60
+- Salvaged: 2
+- Infra-fix PRs: 0
+- Closed superseded/no-op/duplicate: 4
+- Deferred DIRTY (Phase 2 queue): 10
+- Deferred trust-boundary: 4
+- Deferred UNSTABLE: 3
+- Net new draft PRs awaiting human review: 2
+
+### Verification status
+
+- Local verify: `python3 -m py_compile` on salvaged files — OK
+- CodeScene remediation: `/cs-agent` posted on esp#1215, sc#178
+
+### Handoff
+
+- Maintainer: review drafts sc#195 (T1) + pc#1496 (T3)
+- Next pass: batch salvage 9 DIRTY PRs on processor/setup_wizard clusters
+- Cross-links: [Session report](tasks/pr-review-2026-07-04.md)

@@ -1,5 +1,9 @@
 # Lessons Learned
 
+## Lesson 0e0: Jules burst merge cascade at 60-PR scale (2026-07-04)
+
+**Pattern:** A single cron session opened with 60 green CI Jules/Code Health PRs and zero `DIRTY` flags. After 42 squash merges, 10 siblings flipped `DIRTY` on hot files (`setup_wizard.py`, `processor.py`, `export_comparison_sheets.py`, `gh_token_env.py`). `update-branch` returned 422 for all 10. **Rule:** At >30 PR breadth, merge security/UI winners first, then **pause per hot-file cluster** to salvage or merge cluster members before continuing breadth merges. File-scope salvage (Lesson 0dc) remains mandatory for security items. **Detection cost:** Low — `gh pr list --json mergeStateStatus` after every 5 merges in the same repo.
+
 ## Lesson 0cv: Codacy action bump ≠ Codacy scan green (2026-06-23)
 
 **Pattern:** personal-config #1331 (codacy-analysis-cli-action 1.1.0 → 4.4.7) merged with passing CI, but **all** sibling open PRs still fail `Codacy Security Scan` on re-run. Other gates (CodeQL, Snyk, CodeScene, dependency-review) pass. **Rule:** Treat Codacy failures after an action bump as **ESCALATE** (project token, API config, or org-level Codacy settings)—not auto-fixable by further dependabot bumps alone. **Detection cost:** Low — single failing required check across entire PR queue.
