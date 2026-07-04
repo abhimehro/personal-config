@@ -21,13 +21,13 @@ E_INFO="ℹ️"
 E_IPV6="🌐"
 
 # Helpers
-log() { echo -e "${BLUE}${E_INFO} [INFO]${NC}" "$@"; }
-success() { echo -e "${GREEN}${E_PASS} [OK]${NC}" "$@"; }
+log() { printf "%b %s\n" "${BLUE}${E_INFO} [INFO]${NC}" "$*"; }
+success() { printf "%b %s\n" "${GREEN}${E_PASS} [OK]${NC}" "$*"; }
 error() {
-	echo -e "${RED}${E_FAIL} [ERR]${NC}" "$@" >&2
+	printf "%b %s\n" "${RED}${E_FAIL} [ERR]${NC}" "$*" >&2
 	exit 1
 }
-warn() { echo -e "${YELLOW}${E_WARN} [WARN]${NC}" "$@"; }
+warn() { printf "%b %s\n" "${YELLOW}${E_WARN} [WARN]${NC}" "$*"; }
 header() {
 	# Print a blank line, then a bold blue header built from all arguments.
 	# We avoid $* to preserve argument boundaries and any embedded whitespace.

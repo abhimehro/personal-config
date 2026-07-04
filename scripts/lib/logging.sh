@@ -63,45 +63,45 @@ fi
 # Log an informational message
 # Usage: log_info "message"
 log_info() {
-    echo -e "${BLUE}[INFO]${NC} $*"
+    printf "%b %s\n" "${BLUE}[INFO]${NC}" "$*"
 }
 
 # Log a success message
 # Usage: log_ok "message"
 log_ok() {
-    echo -e "${GREEN}[OK]${NC} $*"
+    printf "%b %s\n" "${GREEN}[OK]${NC}" "$*"
 }
 
 # Log a warning message
 # Usage: log_warn "message"
 log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $*" >&2
+    printf "%b %s\n" "${YELLOW}[WARN]${NC}" "$*" >&2
 }
 
 # Log an error message
 # Usage: log_err "message"
 log_err() {
-    echo -e "${RED}[ERR]${NC} $*" >&2
+    printf "%b %s\n" "${RED}[ERR]${NC}" "$*" >&2
 }
 
 # Log a debug message (only if DEBUG is set)
 # Usage: log_debug "message"
 log_debug() {
     if [[ -n "${DEBUG:-}" ]]; then
-        echo -e "${CYAN}[DEBUG]${NC} $*"
+        printf "%b %s\n" "${CYAN}[DEBUG]${NC}" "$*"
     fi
 }
 
 # Log a header/section title
 # Usage: log_header "Section Title"
 log_header() {
-    echo -e "\n${BOLD}${BLUE}=== $* ===${NC}"
+    printf "\n%b %s %b\n" "${BOLD}${BLUE}===" "$*" "===${NC}"
 }
 
 # Log a horizontal rule
 # Usage: log_hr
 log_hr() {
-    echo -e "${BLUE}────────────────────────────────────────────────────────────────${NC}"
+    printf "%b\n" "${BLUE}────────────────────────────────────────────────────────────────${NC}"
 }
 
 # =============================================================================
