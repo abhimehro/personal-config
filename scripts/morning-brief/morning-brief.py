@@ -139,20 +139,7 @@ LINEAR_LABEL_BONUSES: dict[str, int] = {
 LINEAR_LABEL_BONUSES_ITEMS = tuple(LINEAR_LABEL_BONUSES.items())
 LINEAR_PRIORITY_SCORES = {1: 80, 2: 60, 3: 30, 4: 10}
 
-CALENDAR_ADMIN_KEYWORDS = (
-    ("maintenance", 6),
-    ("cleanup", 6),
-    ("health check", 5),
-    ("report", 5),
-    ("review", 4),
-    ("admin", 4),
-    ("system", 3),
-    ("monitor", 3),
-    ("schedule", 3),
-    ("planning", 3),
-    ("homebrew", 3),
-    ("deals", 1),
-)
+
 
 HOROSCOPE_ENDPOINTS_TEMPLATE = [
     {
@@ -215,9 +202,6 @@ class AppConfig:
     readwise_token: str
     perplexity_api_key: str = ""
     linear_api_key: str = ""
-    google_calendar_api_key: str = ""
-    google_calendar_email: str = ""
-    google_calendar_timezone: str = "America/Chicago"
     timezone_offset: str = "-05:00"
     focus_max_items: int = DEFAULT_FOCUS_MAX_ITEMS
     lat: float = DEFAULT_LAT
@@ -267,11 +251,6 @@ class AppConfig:
                 os.getenv("LINEAR_API_KEY", "").strip()
                 or os.getenv("LINEAR_TOKEN", "").strip()
             ),
-            google_calendar_api_key=os.getenv("GOOGLE_CALENDAR_API_KEY", "").strip(),
-            google_calendar_email=os.getenv("GOOGLE_CALENDAR_EMAIL", "").strip(),
-            google_calendar_timezone=os.getenv(
-                "GOOGLE_CALENDAR_TIMEZONE", "America/Chicago"
-            ).strip(),
             timezone_offset=os.getenv("MORNING_BRIEF_TZ_OFFSET", "-05:00").strip(),
             focus_max_items=_safe_int(
                 "MORNING_BRIEF_FOCUS_MAX_ITEMS", DEFAULT_FOCUS_MAX_ITEMS
@@ -346,8 +325,6 @@ class LinearQueueSnapshot:
 class DailyContext:
     today: dt.date
     today_iso: str
-    calendar_time_min: str
-    calendar_time_max: str
 
     @classmethod
     def build(cls, timezone_offset: str) -> "DailyContext":
@@ -356,8 +333,6 @@ class DailyContext:
         return cls(
             today=today,
             today_iso=today_iso,
-            calendar_time_min=f"{today_iso}T00:00:00{timezone_offset}",
-            calendar_time_max=f"{today_iso}T23:59:59{timezone_offset}",
         )
 
 
@@ -633,12 +608,6 @@ def is_due_today(date_str: str, today_iso: str) -> bool:
     return bool(date_str) and date_str == today_iso
 
 
-def format_time_label(start_raw: str) -> str:
-    if not start_raw:
-        return "Anytime"
-    return start_raw[11:16] if "T" in start_raw else "All day"
-
-
 def extract_horoscope_text(data: dict[str, Any]) -> str | None:
     if not isinstance(data, dict):
         return None
@@ -728,11 +697,6 @@ def score_linear_issue(
         score += 15
 
     return max(score, 0)
-
-
-def calendar_admin_score(title: str, description: str = "") -> int:
-    text = f"{title} {description}".lower()
-    return sum(weight for kw, weight in CALENDAR_ADMIN_KEYWORDS if kw in text)
 
 
 def build_focus_meta_parts(item: FocusItem, today_iso: str) -> list[str]:
@@ -1100,64 +1064,6 @@ def fetch_linear_queue_snapshot(
     except Exception as exc:
         logger.error("Linear queue snapshot error: %s", exc)
         return LinearQueueSnapshot()
-
-
-def fetch_calendar_focus_items(
-    session: requests.Session,
-    config: AppConfig,
-    daily: DailyContext,
-) -> list[FocusItem]:
-    if not config.google_calendar_api_key or not config.google_calendar_email:
-        return []
-    if config.google_calendar_api_key.startswith("GOCSPX-"):
-        logger.warning("GOOGLE_CALENDAR_API_KEY is an OAuth secret; skipping calendar.")
-        return []
-
-    encoded = requests.utils.quote(config.google_calendar_email, safe="")
-    url = f"https://www.googleapis.com/calendar/v3/calendars/{encoded}/events"
-    params = {
-        "key": config.google_calendar_api_key,
-        "timeMin": daily.calendar_time_min,
-        "timeMax": daily.calendar_time_max,
-        "singleEvents": "true",
-        "orderBy": "startTime",
-        "maxResults": "10",
-        "timeZone": config.google_calendar_timezone,
-    }
-
-    try:
-        response = session.get(url, params=params, timeout=DEFAULT_TIMEOUT)
-        response.raise_for_status()
-        events = response.json().get("items", [])
-
-        items: list[FocusItem] = []
-        for event in events:
-            title = event.get("summary", "Calendar event")
-            desc = event.get("description", "")
-            start_raw = (
-                event.get("start", {}).get("dateTime")
-                or event.get("start", {}).get("date")
-                or ""
-            )
-
-            items.append(
-                FocusItem(
-                    kind="calendar",
-                    identifier="Calendar",
-                    title=title,
-                    url=event.get("htmlLink", "#"),
-                    time_label=format_time_label(start_raw),
-                    badge="admin",
-                    score=calendar_admin_score(title, desc),
-                    description=desc,
-                )
-            )
-
-        items.sort(key=lambda i: (-i.score, i.time_label or "99:99", i.title))
-        return items[: config.focus_max_items]
-    except Exception as exc:
-        logger.error("Calendar focus error: %s", exc)
-        return []
 
 
 def fetch_single_feed(

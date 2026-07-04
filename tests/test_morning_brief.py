@@ -205,26 +205,6 @@ class TestIsDueToday(unittest.TestCase):
         assert mb.is_due_today(None, "2026-03-25") is False
 
 
-class TestFormatTimeLabel(unittest.TestCase):
-    def test_datetime(self):
-        assert mb.format_time_label("2026-03-25T09:30:00-05:00") == "09:30"
-
-    def test_date_only(self):
-        assert mb.format_time_label("2026-03-25") == "All day"
-
-    def test_empty(self):
-        assert mb.format_time_label("") == "Anytime"
-
-    def test_none(self):
-        assert mb.format_time_label(None) == "Anytime"
-
-    def test_whitespace(self):
-        assert mb.format_time_label("   ") == "All day"
-
-    def test_short_string_with_t(self):
-        assert mb.format_time_label("T") == ""
-
-
 # ============================================================
 # Horoscope Extraction
 # ============================================================
@@ -387,21 +367,6 @@ class TestScoreLinearIssue(unittest.TestCase):
 # ============================================================
 # Calendar Admin Scoring
 # ============================================================
-
-
-class TestCalendarAdminScore(unittest.TestCase):
-    def test_strong_keywords(self):
-        assert mb.calendar_admin_score("System Maintenance") > 0
-
-    def test_no_keywords(self):
-        assert mb.calendar_admin_score("Coffee with Sarah") == 0
-
-    def test_description_included(self):
-        assert mb.calendar_admin_score("Meeting", "health check on servers") > 0
-
-    def test_multiple_keywords(self):
-        score = mb.calendar_admin_score("Admin Review and Cleanup")
-        assert score >= 14  # admin(4) + review(4) + cleanup(6)
 
 
 # ============================================================
@@ -659,8 +624,6 @@ class TestDailyContext(unittest.TestCase):
     def test_build(self):
         ctx = mb.DailyContext.build("-05:00")
         assert ctx.today == dt.date.today()
-        assert "-05:00" in ctx.calendar_time_min
-        assert "-05:00" in ctx.calendar_time_max
 
 
 # ============================================================
