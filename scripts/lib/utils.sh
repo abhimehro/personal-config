@@ -446,7 +446,7 @@ is_process_running() {
     process_name="$1"
     
     if command -v pgrep >/dev/null 2>&1; then
-        pgrep -f "$process_name" >/dev/null 2>&1
+        pgrep -f -- "$process_name" >/dev/null 2>&1
     elif [[ "$(uname)" == "Darwin" ]]; then
         ps aux | grep -v grep | grep -q "$process_name"
     else
@@ -462,7 +462,7 @@ get_pid() {
     process_name="$1"
     
     if command -v pgrep >/dev/null 2>&1; then
-        pgrep -f "$process_name" | head -1
+        pgrep -f -- "$process_name" | head -1
     elif [[ "$(uname)" == "Darwin" ]]; then
         ps aux | grep -v grep | grep "$process_name" | awk '{print $2}' | head -1
     else
