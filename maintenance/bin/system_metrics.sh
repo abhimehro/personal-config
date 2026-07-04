@@ -57,13 +57,17 @@ if command -v vm_stat >/dev/null 2>&1; then
 	VM_STAT=$(vm_stat)
 
 	# Extract memory stats
-	FREE_PAGES=$(echo "$VM_STAT" | awk '/Pages free:/ {print $3}' | tr -d '.' || echo "0")
-	ACTIVE_PAGES=$(echo "$VM_STAT" | awk '/Pages active:/ {print $3}' | tr -d '.' || echo "0")
-	INACTIVE_PAGES=$(echo "$VM_STAT" | awk '/Pages inactive:/ {print $3}' | tr -d '.' || echo "0")
-	WIRED_PAGES=$(echo "$VM_STAT" | awk '/Pages wired down:/ {print $4}' | tr -d '.' || echo "0")
-	COMPRESSED_PAGES=$(echo "$VM_STAT" | awk '/Pages stored in compressor:/ {print $5}' | tr -d '.' || echo "0")
-
-	PAGE_SIZE=$(echo "$VM_STAT" | awk '/page size of/ {print $8}' || echo "4096")
+	read -r FREE_PAGES ACTIVE_PAGES INACTIVE_PAGES WIRED_PAGES COMPRESSED_PAGES PAGE_SIZE <<< "$(echo "$VM_STAT" | awk '
+		/Pages free:/ { free=$3; sub(/\./, "", free) }
+		/Pages active:/ { active=$3; sub(/\./, "", active) }
+		/Pages inactive:/ { inactive=$3; sub(/\./, "", inactive) }
+		/Pages wired down:/ { wired=$4; sub(/\./, "", wired) }
+		/Pages stored in compressor:/ { comp=$5; sub(/\./, "", comp) }
+		/page size of/ { size=$8 }
+		END {
+			print (free==""?0:free), (active==""?0:active), (inactive==""?0:inactive), (wired==""?0:wired), (comp==""?0:comp), (size==""?4096:size)
+		}
+	')"
 
 	# Convert to MB
 	FREE_MB=$(((FREE_PAGES * PAGE_SIZE) / 1024 / 1024))
@@ -91,9 +95,12 @@ if command -v vm_stat >/dev/null 2>&1; then
 fi
 
 # Disk Usage Metrics (enhanced)
-ROOT_USAGE=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%')
-ROOT_AVAILABLE_GB=$(df -h / | awk 'NR==2 {print $4}' | sed 's/Gi*//')
-ROOT_USED_GB=$(df -h / | awk 'NR==2 {print $3}' | sed 's/Gi*//')
+read -r ROOT_USED_GB ROOT_AVAILABLE_GB ROOT_USAGE <<< "$(df -h / | awk 'NR==2 {
+	used=$3; sub(/Gi*/, "", used); sub(/Mi*/, "", used); sub(/B/, "", used)
+	avail=$4; sub(/Gi*/, "", avail); sub(/Mi*/, "", avail); sub(/B/, "", avail)
+	usage=$5; sub(/%/, "", usage)
+	print used, avail, usage
+}')"
 
 log_metric "disk_usage_percent" "$ROOT_USAGE" "percent"
 log_metric "disk_available" "$ROOT_AVAILABLE_GB" "GB"
