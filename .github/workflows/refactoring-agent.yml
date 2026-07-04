@@ -37,35 +37,84 @@ jobs:
           echo "Final command: $COMMAND"
           echo "command=$COMMAND" >> "$GITHUB_OUTPUT"
 
-      - name: Configure OpenCode Google auth
+      - name: Resolve providers and model
+        id: providers
         env:
-          GOOGLE_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          ENABLE_GOOGLE_VAR: ${{ vars.ENABLE_GOOGLE }}
+          ENABLE_MISTRAL_VAR: ${{ vars.ENABLE_MISTRAL }}
+          MODEL_OVERRIDE: ${{ vars.CS_AGENT_MODEL }}
         run: |
           set -euo pipefail
 
-          if [ -z "${GOOGLE_KEY}" ]; then
-            echo "::error::Secret GOOGLE_API_KEY is empty in this workflow run."
-            echo "::error::Add it under Settings -> Secrets and variables -> Actions -> Secrets (not Variables)."
+          # Default: Google on, Mistral off, unless overridden via repo/org Variables.
+          ENABLE_GOOGLE="${ENABLE_GOOGLE_VAR:-true}"
+          ENABLE_MISTRAL="${ENABLE_MISTRAL_VAR:-false}"
+
+          if [[ "$ENABLE_GOOGLE" != "true" && "$ENABLE_MISTRAL" != "true" ]]; then
+            echo "::error::Both ENABLE_GOOGLE and ENABLE_MISTRAL are disabled. Enable at least one via repo Variables."
             exit 1
           fi
 
-          GOOGLE_KEY="$(printf '%s' "${GOOGLE_KEY}" | tr -d '\n\r')"
-          mkdir -p "${HOME}/.local/share/opencode"
-          jq -n --arg key "${GOOGLE_KEY}" '{"google":{"type":"api","key":$key}}' > "${HOME}/.local/share/opencode/auth.json"
-          chmod 600 "${HOME}/.local/share/opencode/auth.json"
+          if [[ -n "${MODEL_OVERRIDE:-}" ]]; then
+            MODEL="$MODEL_OVERRIDE"
+          elif [[ "$ENABLE_GOOGLE" == "true" ]]; then
+            MODEL="google/gemini-3.5-flash"
+          else
+            MODEL="mistral/devstral-medium-latest"
+          fi
 
-          echo "GOOGLE_GENERATIVE_AI_API_KEY=${GOOGLE_KEY}" >> "$GITHUB_ENV"
-          echo "GOOGLE_API_KEY=${GOOGLE_KEY}" >> "$GITHUB_ENV"
-          echo "GEMINI_API_KEY=${GOOGLE_KEY}" >> "$GITHUB_ENV"
+          echo "enable_google=${ENABLE_GOOGLE}" >> "$GITHUB_OUTPUT"
+          echo "enable_mistral=${ENABLE_MISTRAL}" >> "$GITHUB_OUTPUT"
+          echo "model=${MODEL}" >> "$GITHUB_OUTPUT"
+
+          echo "Google enabled: ${ENABLE_GOOGLE}"
+          echo "Mistral enabled: ${ENABLE_MISTRAL}"
+          echo "Model: ${MODEL}"
+
+      - name: Configure OpenCode auth
+        env:
+          ENABLE_GOOGLE: ${{ steps.providers.outputs.enable_google }}
+          ENABLE_MISTRAL: ${{ steps.providers.outputs.enable_mistral }}
+          GOOGLE_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          MISTRAL_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p "${HOME}/.local/share/opencode"
+          AUTH_JSON='{}'
+
+          if [[ "$ENABLE_GOOGLE" == "true" ]]; then
+            if [ -z "${GOOGLE_KEY}" ]; then
+              echo "::error::ENABLE_GOOGLE is true but secret GOOGLE_API_KEY is empty."
+              exit 1
+            fi
+            GOOGLE_KEY="$(printf '%s' "${GOOGLE_KEY}" | tr -d '\n\r')"
+            AUTH_JSON="$(jq -c --arg key "${GOOGLE_KEY}" '. + {"google":{"type":"api","key":$key}}' <<< "$AUTH_JSON")"
+
+            echo "GOOGLE_GENERATIVE_AI_API_KEY=${GOOGLE_KEY}" >> "$GITHUB_ENV"
+            echo "GOOGLE_API_KEY=${GOOGLE_KEY}" >> "$GITHUB_ENV"
+            echo "GEMINI_API_KEY=${GOOGLE_KEY}" >> "$GITHUB_ENV"
+          fi
+
+          if [[ "$ENABLE_MISTRAL" == "true" ]]; then
+            if [ -z "${MISTRAL_KEY}" ]; then
+              echo "::error::ENABLE_MISTRAL is true but secret MISTRAL_API_KEY is empty."
+              exit 1
+            fi
+            MISTRAL_KEY="$(printf '%s' "${MISTRAL_KEY}" | tr -d '\n\r')"
+            AUTH_JSON="$(jq -c --arg key "${MISTRAL_KEY}" '. + {"mistral":{"type":"api","key":$key}}' <<< "$AUTH_JSON")"
+
+            echo "MISTRAL_API_KEY=${MISTRAL_KEY}" >> "$GITHUB_ENV"
+          fi
+
+          printf '%s' "$AUTH_JSON" > "${HOME}/.local/share/opencode/auth.json"
+          chmod 600 "${HOME}/.local/share/opencode/auth.json"
 
       - name: Build OpenCode auth JSON for agent config
         id: opencode-auth
-        env:
-          GOOGLE_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           set -euo pipefail
-          GOOGLE_KEY="$(printf '%s' "${GOOGLE_KEY}" | tr -d '\n\r')"
-          AUTH_JSON="$(jq -nc --arg key "${GOOGLE_KEY}" '{"google":{"type":"api","key":$key}}')"
+          AUTH_JSON="$(cat "${HOME}/.local/share/opencode/auth.json")"
           {
             echo "json<<EOF"
             echo "${AUTH_JSON}"
@@ -79,10 +128,11 @@ jobs:
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         with:
           pr_number: ${{ github.event.issue.number }}
           command: ${{ steps.prepare-command.outputs.command }}
-          model: google/gemini-3.5-flash
+          model: ${{ steps.providers.outputs.model }}
           version: v1.0.3
           codescene_token: ${{ secrets.CODESCENE_ACCESS_TOKEN }}
           google_api_key: ${{ secrets.GOOGLE_API_KEY }}

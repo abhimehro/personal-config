@@ -5,6 +5,8 @@
 # (CWE-1236). Prefix with a single quote to force literal interpretation.
 _FORMULA_PREFIX_CHARS = "=+-@\t\r"  # ⚡ Bolt Optimization: Use string for O(1)-like C-level character lookup
 
+__all__ = ["escape_spreadsheet_formula"]
+
 
 def escape_spreadsheet_formula(value: str) -> str:
     """Return *value* safe for spreadsheet cells sourced from untrusted text.
