@@ -2,7 +2,7 @@ import os
 import sys
 import unittest
 from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, mock_open, patch
 
 # Ensure the project root is in the path so we can import parse_inventory
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -14,6 +14,7 @@ from parse_inventory import (
     _load_inventory_lines,
     _parse_env_line,
     _parse_repo_name,
+    _write_triage_report,
     parse_inventory_lines,
     run_gh,
 )
@@ -242,6 +243,39 @@ class TestParseInventory(unittest.TestCase):
         mock_result.stdout = '{"files": []}'
         mock_run.return_value = mock_result
         self.assertIsNone(run_gh("repoA", 123))
+
+    # --- _write_triage_report ---
+
+    def test_write_triage_report_populated(self):
+        m_open = mock_open()
+        with patch("builtins.open", m_open):
+            triage = {
+                "STALE": ["repoA#123", "repoB#456"],
+                "READY": ["repoC#789"],
+            }
+            _write_triage_report("dummy.md", triage)
+
+        m_open.assert_called_once_with("dummy.md", "w")
+        handle = m_open()
+
+        expected_calls = [
+            call("# PR Triage\n\n"),
+            call("## STALE\n"),
+            call("- repoA#123\n"),
+            call("- repoB#456\n"),
+            call("## READY\n"),
+            call("- repoC#789\n"),
+        ]
+        handle.write.assert_has_calls(expected_calls, any_order=False)
+
+    def test_write_triage_report_empty(self):
+        m_open = mock_open()
+        with patch("builtins.open", m_open):
+            _write_triage_report("dummy.md", {})
+
+        m_open.assert_called_once_with("dummy.md", "w")
+        handle = m_open()
+        handle.write.assert_called_once_with("# PR Triage\n\n")
 
 
 if __name__ == "__main__":
