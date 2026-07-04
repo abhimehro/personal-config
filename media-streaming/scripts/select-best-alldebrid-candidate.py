@@ -11,7 +11,6 @@ State:
   ~/CloudMedia/approval_needed/.alldebrid_candidate_pending.tsv, latest pending selection
 """
 
-
 import os
 import re
 import sys
@@ -197,21 +196,19 @@ def score_candidate(filename: str) -> tuple[int, list[str]]:
 def read_lines(path: Path) -> set[str]:
     if not path.exists():
         return set()
-    return {
-        line.strip()
-        for line in path.read_text(encoding="utf-8", errors="ignore").splitlines()
-        if line.strip()
-    }
+    with path.open("r", encoding="utf-8", errors="ignore") as f:
+        return {line.strip() for line in f if line.strip()}
 
 
 def read_processed_identities(selected_path: Path) -> set[str]:
     identities: set[str] = set()
     if not selected_path.exists():
         return identities
-    for line in selected_path.read_text(encoding="utf-8", errors="ignore").splitlines():
-        if not line.strip() or line.startswith("identity\t"):
-            continue
-        identities.add(line.split("\t", 1)[0])
+    with selected_path.open("r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            if not line.strip() or line.startswith("identity\t"):
+                continue
+            identities.add(line.split("\t", 1)[0])
     return identities
 
 
