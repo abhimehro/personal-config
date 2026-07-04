@@ -41,10 +41,11 @@ def validate_line(line, line_num, file_type):
 
 def count_line_types(lines, file_type):
     """Count and categorize lines, collecting validation issues."""
-    stats = {"total": len(lines), "comments": 0, "empty": 0, "valid": 0, "invalid": 0}
+    stats = {"total": 0, "comments": 0, "empty": 0, "valid": 0, "invalid": 0}
     issues = []
 
     for i, line in enumerate(lines, 1):
+        stats["total"] += 1
         stripped = line.strip()
 
         if not stripped:
@@ -88,9 +89,8 @@ def verify_file_format(filepath, file_type):
 
     try:
         with open(filepath, "r", encoding="utf-8") as f:
-            lines = f.readlines()
+            stats, issues = count_line_types(f, file_type)
 
-        stats, issues = count_line_types(lines, file_type)
         print_file_analysis(file_type, stats, issues)
 
         return issues
