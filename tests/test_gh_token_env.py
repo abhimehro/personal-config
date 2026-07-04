@@ -7,7 +7,6 @@ from unittest.mock import patch
 from gh_token_env import (
     _read_env_file,
     clear_gh_token_cache,
-    gh_token_configured,
     load_gh_token_env,
     missing_gh_token_message,
     parse_env_line,
@@ -74,10 +73,6 @@ class TestGhTokenEnv(unittest.TestCase):
         with patch("gh_token_env.resolve_gh_token_env_file", return_value=None):
             message = missing_gh_token_message()
         self.assertIn("github-pat-rotation-runbook", message)
-
-    def test_gh_token_configured_from_env(self):
-        with patch.dict(os.environ, {"GH_TOKEN": "present"}, clear=False):
-            self.assertTrue(gh_token_configured())
 
 
 if __name__ == "__main__":

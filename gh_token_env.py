@@ -91,13 +91,6 @@ def clear_gh_token_cache() -> None:
     _get_parsed_env_vars_from_file.cache_clear()
 
 
-def gh_token_configured() -> bool:
-    """True when GH_TOKEN is available from the environment or a config file."""
-    if os.environ.get("GH_TOKEN"):
-        return True
-    return "GH_TOKEN" in _get_parsed_env_vars_from_file()
-
-
 def missing_gh_token_message() -> str:
     """User-facing hint when GH_TOKEN is absent (no secret values)."""
     path = resolve_gh_token_env_file()
