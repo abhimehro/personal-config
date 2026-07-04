@@ -360,3 +360,42 @@
 
 - Maintainer actions required: review draft cs#970 (T3 UX)
 - Cross-links: [Session report](tasks/pr-review-2026-07-02.md)
+
+## Run — 2026-07-03
+
+### Input tail
+
+- Source report/snapshot: `tasks/pr-review-2026-07-02.md` (prior remainder cs#970 merged) + live GitHub
+- PRs investigated: 6 across 3 repos
+
+### Salvage results
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| ctrld-sync | #973 | SALVAGE draft | [#974](https://github.com/abhimehro/ctrld-sync/pull/974) | Remaining isatty/newline cleanup after #970 |
+| personal-config | #1466 | SALVAGE draft | [#1471](https://github.com/abhimehro/personal-config/pull/1471) | system_metrics.sh only; excluded get_repo_vars.sh |
+| personal-config | #1470 | CLOSE | — | Gitleaks + session.db artifacts |
+| personal-config | #1468 | CLOSE | — | Session doc superseded |
+
+### Phase 1 merges (same session)
+
+- esp [#1212](https://github.com/abhimehro/email-security-pipeline/pull/1212) — opencv pin
+- pc [#1464](https://github.com/abhimehro/personal-config/pull/1464) — action SHA bumps
+
+### Counts
+
+- Deep-dived: 6
+- Salvaged: 2
+- Infra-fix PRs: 0 (pc#1464 merged directly)
+- Closed superseded/no-op: 4
+- Net new draft PRs awaiting human review: 2
+
+### Verification status
+
+- Local verify: `uv run pytest tests/test_ux.py -q` — 36 passed; `bash -n maintenance/bin/system_metrics.sh` — OK
+- CodeScene remediation: `/cs-agent` posted on cs#973 before salvage close
+
+### Handoff
+
+- Maintainer actions required: review drafts pc#1471 (T3 perf) + cs#974 (T3 UX)
+- Cross-links: [Session report](tasks/pr-review-2026-07-03.md)

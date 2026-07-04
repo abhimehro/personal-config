@@ -833,5 +833,13 @@ optimization.
 
 **Pattern:** ctrld #965 mixed valuable `stderr.isatty()` guards with 400+ lines of unrelated refactors (nested functions, folder parsing moves), causing `DIRTY` + CodeScene failure. **Rule:** For Palette/Jules UX PRs where the title states an isatty/ANSI guard, salvage only those guard lines and matching tests onto fresh `main`; discard bundled refactors. **Detection cost:** Low — PR title mentions isatty/ANSI while `git diff --stat` shows >100 lines outside `countdown_timer`/`render_progress_bar`.
 
+## Lesson 0de: Copilot workflow PRs with session.db artifacts fail security gates (2026-07-03)
+
+**Pattern:** pc #1470 bundled valuable workflow consolidation with `.adk/session.db` binaries, `all.patch`, and `tasks/todo.md` text that triggered Gitleaks `personal-config-generic-secret`. **Rule:** Close PRs that mix CI/workflow changes with session DB binaries or journal false-positives; if the workflow work is still wanted, open a focused PR touching only `.github/workflows/` + docs. **Detection cost:** Low — `git diff --name-only` includes `*.session.db` or `.adk/` paths alongside workflow files.
+
+## Lesson 0df: Exclude trust-boundary files from Bolt salvage (2026-07-03)
+
+**Pattern:** pc #1466 mixed a legitimate `system_metrics.sh` awk optimization with `get_repo_vars.sh` (GitHub API probe) and `gemini-review.yml` secret-line removal. **Rule:** When salvaging DIRTY Bolt/Jules perf PRs, take only the stated performance file + journal entry; drop API probe scripts and workflow credential edits. **Detection cost:** Low — salvage diff includes new shell scripts calling `gh api` or workflow files removing `secrets.*` lines.
+
 ## Add testing for missing edge cases
 When testing parsing/formatting logic, always consider unexpected data types, out of bound values and common malformed shapes.
