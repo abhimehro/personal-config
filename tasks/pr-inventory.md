@@ -1,68 +1,26 @@
-# PR Inventory — 2026-07-03
+# PR Inventory — 2026-07-04
 
-**Session:** Automated PR salvage & cleanup (cron 17:00 UTC)  
-**Branch:** `cursor-agent/pr-salvage-and-cleanup-d880`  
-**Preflight:** PASS 6/6 configured repos + repoprompt-ce read access  
-**Mode:** review-and-merge + Phase 2 salvage  
-**Stale threshold:** 30 days
+**Session:** Cron review-and-merge (`0 13 * * *`)  
+**Mode:** review-and-merge  
+**Preflight:** PASS  
+**Repos scanned:** 7
 
-## Summary
+| Repo | PR | Author | Branch | Category | CI | Conflicts | Age (d) | Title |
+|------|---:|--------|--------|----------|----|-----------|--------:|-------|
+| personal-config | 1479 | abhimehro (Bolt) | `bolt/uptime-awk-optimization-*` | PERFORMANCE | ✅ | MERGEABLE | 0 | ⚡ Bolt: Combine uptime parsing |
+| personal-config | 1478 | abhimehro (Bolt) | `bolt-optimize-vm-stat-*` | PERFORMANCE | ✅ | MERGEABLE | 0 | ⚡ Bolt: Optimize memory statistics extraction |
+| personal-config | 1476 | abhimehro (Jules) | `jules-qa-report-*` | CI/INFRA | ✅ | MERGEABLE | 0 | Jules Daily QA Report |
+| ctrld-sync | 978 | abhimehro (Sentinel) | `sentinel-bandit-fixes-*` | SECURITY | ✅ | MERGEABLE | 0 | 🛡️ Sentinel: Fix Bandit warnings (B108, B104) |
+| ctrld-sync | 977 | abhimehro (Palette) | `palette-cancel-newline-ux-*` | UI | ✅ | MERGEABLE | 0 | 🎨 Palette: Remove extraneous blank line on cancel |
+| email-security-pipeline | 1213 | abhimehro (Palette) | `jules-*` | UI | ✅ | MERGEABLE | 0 | 🎨 Palette: Unify error status icons |
+| Seatek_Analysis | 402 | abhimehro (Jules QA) | `agentic-qa-review-lint-fix-*` | CI/INFRA | ✅ | MERGEABLE | 0 | Jules Daily QA & Agentic Review - Lint Fix |
+| Seatek_Analysis | 400 | dependabot[bot] | `dependabot/github_actions/ruby/setup-ruby-1.316.0` | DEPENDENCY | ✅ | MERGEABLE | 0 | chore(deps): bump ruby/setup-ruby 1.315.0 → 1.316.0 |
+| Hydrograph_Versus_Seatek_Sensors_Project | 318 | abhimehro (Jules QA) | `jules-qa-cleanup-*` | REFACTOR | ✅ | MERGEABLE | 0 | 🛠️ QA: Clean up debris scripts and fix linting errors |
+| Hydrograph_Versus_Seatek_Sensors_Project | 316 | dependabot[bot] | `dependabot/github_actions/ruby/setup-ruby-1.316.0` | DEPENDENCY | ✅ | MERGEABLE | 0 | chore(deps): bump ruby/setup-ruby 1.315.0 → 1.316.0 |
+| repoprompt-ce | 89 | abhimehro (Bolt) | `bolt/string-allocation-opt-*` | PERFORMANCE | ✅ | MERGEABLE | 0 | ⚡ Bolt: Optimize String.fileExtension array allocation |
+| repoprompt-ce | 88 | abhimehro (Palette) | `jules-*` | UI | ✅ | MERGEABLE | 0 | 🎨 Palette: Add accessibility label to reload workflows button |
+| series_correction_project_updated | — | — | — | — | — | — | — | *(no open in-scope PRs)* |
 
-| Repo | Open (in-scope) at start | Merged | Closed | Salvage drafts | Remainder |
-|------|--------------------------|--------|--------|----------------|-----------|
-| personal-config | 4 | 1 | 3 | 1 | 1 draft |
-| ctrld-sync | 1 | 0 | 1 | 1 | 1 draft |
-| email-security-pipeline | 1 | 1 | 0 | 0 | **0** |
-| Seatek_Analysis | 0 | 0 | 0 | 0 | **0** |
-| Hydrograph_Versus_Seatek_Sensors_Project | 0 | 0 | 0 | 0 | **0** |
-| series_correction_project_updated | 0 | 0 | 0 | 0 | **0** |
-| repoprompt-ce | 0 | 0 | 0 | 0 | **0** |
+**Prior-session merges (already on main):** personal-config #1471, ctrld-sync #974
 
-## Starting inventory (6 in-scope open)
-
-| Repo | PR | Author | Category | CI | Conflicts | Status |
-|------|-----|--------|----------|-----|-----------|--------|
-| personal-config | [#1470](https://github.com/abhimehro/personal-config/pull/1470) | app/copilot-swe-agent | CI/INFRA | UNSTABLE (Gitleaks) | MERGEABLE | OPEN |
-| personal-config | [#1468](https://github.com/abhimehro/personal-config/pull/1468) | app/cursor | CI/INFRA | UNSTABLE (review) | MERGEABLE | OPEN |
-| personal-config | [#1466](https://github.com/abhimehro/personal-config/pull/1466) | abhimehro (Bolt) | PERFORMANCE | UNKNOWN | **DIRTY** | OPEN |
-| personal-config | [#1464](https://github.com/abhimehro/personal-config/pull/1464) | abhimehro (automation) | CI/INFRA | UNSTABLE (Trunk MQ) | MERGEABLE | OPEN |
-| ctrld-sync | [#973](https://github.com/abhimehro/ctrld-sync/pull/973) | abhimehro (Palette) | UI | UNSTABLE (CodeScene) | **DIRTY** | OPEN |
-| email-security-pipeline | [#1212](https://github.com/abhimehro/email-security-pipeline/pull/1212) | abhimehro | DEPENDENCY | **CLEAN** | MERGEABLE | OPEN |
-
-## Merged this session (2 squash)
-
-| Repo | PR | Title |
-|------|-----|-------|
-| email-security-pipeline | [#1212](https://github.com/abhimehro/email-security-pipeline/pull/1212) | Fix opencv-python-headless version inconsistency |
-| personal-config | [#1464](https://github.com/abhimehro/personal-config/pull/1464) | chore(actions): consolidate workflow automation |
-
-## Closed this session (4)
-
-| Repo | PR | Reason |
-|------|-----|--------|
-| personal-config | [#1470](https://github.com/abhimehro/personal-config/pull/1470) | Gitleaks fail + session.db artifacts + scope creep — not salvageable |
-| personal-config | [#1468](https://github.com/abhimehro/personal-config/pull/1468) | Session-doc draft superseded by this salvage run |
-| personal-config | [#1466](https://github.com/abhimehro/personal-config/pull/1466) | DIRTY → file-scoped salvage draft [#1471](https://github.com/abhimehro/personal-config/pull/1471) |
-| ctrld-sync | [#973](https://github.com/abhimehro/ctrld-sync/pull/973) | DIRTY → file-scoped salvage draft [#974](https://github.com/abhimehro/ctrld-sync/pull/974) |
-
-## Salvage drafts opened (2)
-
-| Repo | Old PR | New draft PR | Tier |
-|------|--------|--------------|------|
-| personal-config | #1466 | [#1471](https://github.com/abhimehro/personal-config/pull/1471) | T3 perf |
-| ctrld-sync | #973 | [#974](https://github.com/abhimehro/ctrld-sync/pull/974) | T3 UX |
-
-## Post-session remainder
-
-| Repo | PR | CI | Status |
-|------|-----|-----|--------|
-| personal-config | [#1471](https://github.com/abhimehro/personal-config/pull/1471) | pending | DRAFT salvage — human review |
-| ctrld-sync | [#974](https://github.com/abhimehro/ctrld-sync/pull/974) | pending | DRAFT salvage — human review |
-
-## Repos at zero open in-scope PRs
-
-- `email-security-pipeline`
-- `Seatek_Analysis`
-- `Hydrograph_Versus_Seatek_Sensors_Project`
-- `series_correction_project_updated`
-- `repoprompt-ce`
+**Total in-scope open at start:** 12

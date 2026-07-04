@@ -841,5 +841,9 @@ optimization.
 
 **Pattern:** pc #1466 mixed a legitimate `system_metrics.sh` awk optimization with `get_repo_vars.sh` (GitHub API probe) and `gemini-review.yml` secret-line removal. **Rule:** When salvaging DIRTY Bolt/Jules perf PRs, take only the stated performance file + journal entry; drop API probe scripts and workflow credential edits. **Detection cost:** Low — salvage diff includes new shell scripts calling `gh api` or workflow files removing `secrets.*` lines.
 
+## Lesson 0dg: Palette cancel-newline PRs supersede after salvage merge (2026-07-04)
+
+**Pattern:** ctrld #977 (remove leading `\n` from cancel message) was still open after salvage #974 merged the same `main.py` hunk plus broader `isatty()` guards. `main` already had the newline fix; only a `.jules/palette.md` journal entry remained. **Rule:** After merging a salvage PR that includes a Palette cancel/ANSI fix, close younger single-hunk duplicates without merging — link to the salvage PR in the close comment. **Detection cost:** Low — `gh api .../contents/main.py` shows target state while open PR diff still shows `\n` removal from an older base.
+
 ## Add testing for missing edge cases
 When testing parsing/formatting logic, always consider unexpected data types, out of bound values and common malformed shapes.

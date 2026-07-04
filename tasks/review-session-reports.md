@@ -31,6 +31,34 @@
 - Commands/comments to run next:
 - Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
 
+## Run — 2026-07-04
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron `0 13 * * *`; preflight PASS (6/6); branch
+  `cursor-agent/automated-pr-workflow-ff9b`
+
+### Metrics
+
+- PRs inventoried: 12
+- PRs merged: 10
+- PRs closed: 2
+- PRs escalated/deferred: 0
+
+### Actions
+
+- Merged: ctrld-sync #978; Seatek_Analysis #400/#402; Hydrograph #316/#318;
+  email-security-pipeline #1213; personal-config #1478/#1479; repoprompt-ce #88/#89
+- Closed: personal-config #1476 (zero-diff QA), ctrld-sync #977 (superseded #974)
+
+### Follow-ups
+
+- Commands/comments to run next: none — all repos at zero open in-scope PRs
+- Cross-links: `tasks/pr-review-2026-07-04.md`
+
 ## Run — 2026-06-12
 
 ### Scope
