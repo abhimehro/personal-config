@@ -5,8 +5,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from gh_token_env import (
+    _get_parsed_env_vars_from_file,
     _read_env_file,
-    clear_gh_token_cache,
     gh_token_configured,
     load_gh_token_env,
     missing_gh_token_message,
@@ -17,7 +17,7 @@ from gh_token_env import (
 
 class TestGhTokenEnv(unittest.TestCase):
     def setUp(self):
-        clear_gh_token_cache()
+        _get_parsed_env_vars_from_file.cache_clear()
 
     def test_parse_env_line_basic(self):
         env: dict[str, str] = {}
@@ -34,9 +34,10 @@ class TestGhTokenEnv(unittest.TestCase):
     def test_read_env_file_oserror(self):
         self.assertEqual(_read_env_file(Path("/does/not/exist/ever.env")), {})
 
-        with patch.object(Path, "open", side_effect=PermissionError("Permission denied")):
+        with patch.object(
+            Path, "open", side_effect=PermissionError("Permission denied")
+        ):
             self.assertEqual(_read_env_file(Path("some_file.env")), {})
-
 
     def test_env_var_takes_precedence_over_file(self):
         with tempfile.TemporaryDirectory() as tmp:
