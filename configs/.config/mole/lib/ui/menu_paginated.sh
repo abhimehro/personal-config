@@ -874,7 +874,6 @@ paginated_multi_select() {
 			;;
 		"ENTER")
 			# Allow empty selection - don't auto-select cursor position
-			# This fixes the bug where unselecting all items would still select the last cursor position
 			local -a selected_indices=()
 			for ((i = 0; i < total_items; i++)); do
 				if [[ ${selected[i]} == true ]]; then
