@@ -5,6 +5,10 @@
 
 set -euo pipefail
 
+# Fix locale issues.
+export LC_ALL=C
+export LANG=C
+
 # Determine script location and source common functions
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_DIR="$(cd "$SCRIPT_DIR/../lib" && pwd)"

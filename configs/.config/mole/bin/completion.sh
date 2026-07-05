@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Fix locale issues.
+export LC_ALL=C
+export LANG=C
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
