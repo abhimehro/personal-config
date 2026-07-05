@@ -133,7 +133,7 @@ perform_auto_fix() {
         fi
     fi
 
-    # Fix Firewall
+    # Enable Firewall
     if [[ -n "${FIREWALL_DISABLED:-}" && "${FIREWALL_DISABLED}" == "true" ]]; then
         echo -e "${BLUE}Enabling Firewall...${NC}"
         if sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on > /dev/null 2>&1; then
@@ -146,7 +146,7 @@ perform_auto_fix() {
         echo ""
     fi
 
-    # Fix Touch ID
+    # Configure Touch ID
     if [[ -n "${TOUCHID_NOT_CONFIGURED:-}" && "${TOUCHID_NOT_CONFIGURED}" == "true" ]]; then
         echo -e "${BLUE}${ICON_ARROW}${NC} Configuring Touch ID for sudo..."
         local pam_file="/etc/pam.d/sudo"
