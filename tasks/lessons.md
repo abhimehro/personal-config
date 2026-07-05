@@ -1,5 +1,13 @@
 # Lessons Learned
 
+## Lesson 0cy: Two-cron day — evening salvage reads merged morning artifacts (2026-07-05)
+
+**Pattern:** Morning Phase 1 (13:00 UTC) cleared 27/31 PRs and opened session-doc PR #1504; evening salvage (17:00 UTC) started with only 9 open PRs. Merging #1504 landed morning artifacts before writing evening addendum. **Rule:** Evening salvage must re-fetch live GitHub state (Step 1) and merge any pending session-doc PR from the morning run before appending evening salvage reports — never overwrite unmerged morning artifacts on a working branch. **Detection cost:** Low — check if `tasks/pr-review-YYYY-MM-DD.md` exists on `main` vs open session-doc PR.
+
+## Lesson 0cz: Palette cancel-residue PRs stack on TTY guards (2026-07-05)
+
+**Pattern:** ctrld #979/#981 (merged morning) added `isatty()` guards; #983 (evening) added stderr routing and prompt spacing on the same cancel paths. CodeScene blocked #983 despite green pytest. **Rule:** Treat post-TTY-guard Palette PRs as incremental UX salvages — file-scope onto fresh `main`, verify with `test_ux.py`, and open draft if CodeScene fails. **Detection cost:** Low — small diff in `main.py` cancel handlers + `test_ux.py` assertion changes.
+
 ## Lesson 0cv: Codacy action bump ≠ Codacy scan green (2026-06-23)
 
 **Pattern:** personal-config #1331 (codacy-analysis-cli-action 1.1.0 → 4.4.7) merged with passing CI, but **all** sibling open PRs still fail `Codacy Security Scan` on re-run. Other gates (CodeQL, Snyk, CodeScene, dependency-review) pass. **Rule:** Treat Codacy failures after an action bump as **ESCALATE** (project token, API config, or org-level Codacy settings)—not auto-fixable by further dependabot bumps alone. **Detection cost:** Low — single failing required check across entire PR queue.
