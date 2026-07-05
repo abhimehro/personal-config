@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-# Fix locale issues.
+# Prevent locale issues.
 export LC_ALL=C
 export LANG=C
 

@@ -620,3 +620,7 @@ treated strictly as patterns and not parsed as command-line options.
 **Vulnerability:** AppleScript Option Injection (CWE-88 variant). In `configs/.config/mole/lib/uninstall/batch.sh` and `configs/.config/mole/lib/core/file_ops.sh`, `osascript - "$variable"` is used without the `--` delimiter before the positional arguments (e.g. `osascript - "$clean_name" <<-'EOF'`). If the variable starts with a hyphen, it might be interpreted as a flag, leading to Option Injection.
 **Learning:** When passing dynamic variables as positional arguments to `osascript` using heredocs (`<<`), a `--` separator is still required before the variables.
 **Prevention:** Always use the `--` argument delimiter before positional arguments when using `osascript` with external variables (e.g., `osascript - -- "$VAR" <<-'EOF'`).
+## 2025-07-05 - False Positive Tasks in Comments
+**Vulnerability:** Comments containing `Fix` followed by a description of an issue can be falsely identified as active tasks or issues by issue trackers or automation tools.
+**Learning:** Comments describing *applied* fixes should use phrasing that clarifies the fix is already implemented and its purpose is preventive, rather than using an imperative verb that suggests a task needs to be done.
+**Prevention:** Use words like `Prevent` or `Address` instead of `Fix` when describing the rationale behind a configuration change in comments.

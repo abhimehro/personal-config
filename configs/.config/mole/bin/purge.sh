@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-# Fix locale issues (avoid Perl warnings on non-English systems)
+# Prevent locale issues (avoid Perl warnings on non-English systems)
 export LC_ALL=C
 export LANG=C
 

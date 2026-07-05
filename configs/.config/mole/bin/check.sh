@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# Fix locale issues (similar to Issue #83)
+# Prevent locale issues (similar to Issue #83)
 export LC_ALL=C
 export LANG=C
 

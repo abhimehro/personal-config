@@ -9,7 +9,7 @@ set -euo pipefail
 readonly MOLE_UNINSTALL_USER_LC_ALL="${LC_ALL:-}"
 readonly MOLE_UNINSTALL_USER_LANG="${LANG:-}"
 
-# Fix locale issues on non-English systems.
+# Prevent locale issues on non-English systems.
 export LC_ALL=C
 export LANG=C
 
