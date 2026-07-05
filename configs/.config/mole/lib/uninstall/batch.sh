@@ -230,7 +230,7 @@ remove_login_item() {
 	if [[ -n $clean_name ]]; then
 		# Skip AppleScript during tests to avoid permission dialogs
 		if [[ ${MOLE_TEST_MODE:-0} != "1" && ${MOLE_TEST_NO_AUTH:-0} != "1" ]]; then
-			osascript - "$clean_name" <<-'EOF' >/dev/null 2>&1 || true
+			osascript -- - "$clean_name" <<-'EOF' >/dev/null 2>&1 || true
 				on run argv
 				    set targetName to item 1 of argv
 				    tell application "System Events"
