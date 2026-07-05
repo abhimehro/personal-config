@@ -278,3 +278,7 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 
 **Learning:** When hiding decorative emojis within text-containing elements (like `<a>`), applying a duplicate `aria-label` to the parent tag unnecessarily overrides the native inner text for screen readers.
 **Action:** Wrap only the decorative emoji in `<span aria-hidden="true">` and remove the redundant `aria-label` from the parent element to rely on its natural text content.
+
+## 2024-07-04 - [CLI Spinner Fallbacks]
+**Learning:** Terminal spinners (like the one in `weather-assistant.ts`) need clear text equivalents for users with screen readers or simplified console interfaces. Emitting rapid ANSI sequence changes and hiding the cursor (`\x1B[?25l`) without standard error fallbacks leaves users without context on crash.
+**Action:** Always ensure clear start states and safe fallback error messages with standard formatting (emojis/colors) when implementing CLI interactive feedback.
