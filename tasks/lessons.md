@@ -7,6 +7,13 @@
 ## Lesson 0cz: Palette cancel-residue PRs stack on TTY guards (2026-07-05)
 
 **Pattern:** ctrld #979/#981 (merged morning) added `isatty()` guards; #983 (evening) added stderr routing and prompt spacing on the same cancel paths. CodeScene blocked #983 despite green pytest. **Rule:** Treat post-TTY-guard Palette PRs as incremental UX salvages — file-scope onto fresh `main`, verify with `test_ux.py`, and open draft if CodeScene fails. **Detection cost:** Low — small diff in `main.py` cancel handlers + `test_ux.py` assertion changes.
+## Lesson 0cy: Sentinel security PR CI fail from stale branch test import (2026-07-05)
+
+**Pattern:** personal-config #1500 (pgrep option injection fix) failed `Run All Tests` because the PR branch still had `tests/test_refactoring_agent_workflow.py` importing `pytest`, while `main` had already migrated the test to stdlib `unittest`/`yaml`. Security diff was only 4 shell files. **Rule:** Before deferring a security PR on unrelated CI failure, merge `origin/main` into the branch and re-run checks; if the failure is pre-existing drift on the branch, autofix-merge is safe. **Detection cost:** Low — CI log shows `ModuleNotFoundError: pytest` with zero pytest changes in PR diff.
+
+## Lesson 0cz: repoprompt Style gate requires macOS SwiftFormat (2026-07-05)
+
+**Pattern:** repoprompt-ce #91/#92 pass Build and Test but fail `Style` (SwiftFormat). Cloud Linux agent cannot run `make install-format-tools` (Homebrew required). **Rule:** DEFER Palette/Bolt Swift UI PRs with Style-only failures to macOS salvage (`make dev-format` / `make dev-lint`); do not merge with Style red. **Detection cost:** Low — Style fail + Build pass + `install_format_tools.sh` Homebrew error.
 
 ## Lesson 0cv: Codacy action bump ≠ Codacy scan green (2026-06-23)
 
