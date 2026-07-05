@@ -1,5 +1,13 @@
 # Lessons Learned
 
+## Lesson 0cy: Sentinel security PR CI fail from stale branch test import (2026-07-05)
+
+**Pattern:** personal-config #1500 (pgrep option injection fix) failed `Run All Tests` because the PR branch still had `tests/test_refactoring_agent_workflow.py` importing `pytest`, while `main` had already migrated the test to stdlib `unittest`/`yaml`. Security diff was only 4 shell files. **Rule:** Before deferring a security PR on unrelated CI failure, merge `origin/main` into the branch and re-run checks; if the failure is pre-existing drift on the branch, autofix-merge is safe. **Detection cost:** Low — CI log shows `ModuleNotFoundError: pytest` with zero pytest changes in PR diff.
+
+## Lesson 0cz: repoprompt Style gate requires macOS SwiftFormat (2026-07-05)
+
+**Pattern:** repoprompt-ce #91/#92 pass Build and Test but fail `Style` (SwiftFormat). Cloud Linux agent cannot run `make install-format-tools` (Homebrew required). **Rule:** DEFER Palette/Bolt Swift UI PRs with Style-only failures to macOS salvage (`make dev-format` / `make dev-lint`); do not merge with Style red. **Detection cost:** Low — Style fail + Build pass + `install_format_tools.sh` Homebrew error.
+
 ## Lesson 0cv: Codacy action bump ≠ Codacy scan green (2026-06-23)
 
 **Pattern:** personal-config #1331 (codacy-analysis-cli-action 1.1.0 → 4.4.7) merged with passing CI, but **all** sibling open PRs still fail `Codacy Security Scan` on re-run. Other gates (CodeQL, Snyk, CodeScene, dependency-review) pass. **Rule:** Treat Codacy failures after an action bump as **ESCALATE** (project token, API config, or org-level Codacy settings)—not auto-fixable by further dependabot bumps alone. **Detection cost:** Low — single failing required check across entire PR queue.

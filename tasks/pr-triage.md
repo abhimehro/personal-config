@@ -1,51 +1,45 @@
-# PR Triage — 2026-07-03
+# PR Triage — 2026-07-05
 
-## Starting state (6 in-scope open)
-
-| Repo | PR | State | Action |
-|------|-----|-------|--------|
-| email-security-pipeline | #1212 | CLEAN all green | MERGE |
-| personal-config | #1464 | UNSTABLE (Trunk MQ) but security green | MERGE |
-| personal-config | #1470 | UNSTABLE (Gitleaks) + scope creep | CLOSE |
-| personal-config | #1468 | UNSTABLE session doc | CLOSE — supersede |
-| personal-config | #1466 | DIRTY + trust-boundary noise | SALVAGE file-scoped |
-| ctrld-sync | #973 | DIRTY + CodeScene fail | SALVAGE file-scoped |
+**Session:** Automated PR review & cleanup (cron 13:00 UTC)  
+**Mode:** review-and-merge
 
 ## Duplicate & overlap analysis
 
-### Closed as superseded
+| Group | PRs | Decision | Rationale |
+|-------|-----|----------|-----------|
+| GH token dedup | pc #1495, #1496 | Merge #1496; close #1495 | #1496 is narrower salvage already green; #1495 became DIRTY after perf merges |
+| ESP setup wizard refactor | esp #1215, #1219, #1222 | Merge #1215; close #1219/#1222 | #1215 umbrella QA merge; siblings DIRTY |
+| ctrld Palette TTY | cs #979, #981 | Merge both sequentially | #981 conflicted after #979; resolved via merge-main + `_clear_current_line()` |
+| sc bot backlog | #175–#189 (7 DIRTY) | Close all | Stale conflicts from burst; reopen from fresh main if needed |
+| Session doc | pc #1497 | Close | Superseded by this session report |
 
-| Closed | Reason |
-|--------|--------|
-| pc #1468 | Prior cron session-doc draft; consolidated into 2026-07-03 salvage run |
-| cs #973 | Core isatty guards on `main` via #970; remaining newline/ANSI cleanup salvaged to #974 |
-| pc #1466 | DIRTY conflict + `get_repo_vars.sh` excluded; metrics optimization salvaged to #1471 |
+## Security gate review
 
-### Closed as not salvageable
+| PR | Gate | Result |
+|----|------|--------|
+| hg #320 | Path traversal in config-driven `data_dir` | **MERGE** — Sentinel fix, CI green |
+| Seatek #418 | `subprocess.run` shell=False | **MERGE** — CI green |
+| pc #1500 | pgrep option injection (CWE-88) | **MERGE-AFTER-FIX** — merged main to fix unrelated pytest import CI failure |
+| sc #195 | CLI exception output sanitization | **DEFER** — CodeScene red; cs-agent posted |
 
-| Closed | Reason |
-|--------|--------|
-| pc #1470 | Gitleaks fail on `tasks/todo.md` false positive; includes `.adk/session.db` binaries and unrelated files |
+## CI triage notes
 
-## Merge ordering applied
+- **pc #1500:** Initial FAIL was `test_refactoring_agent_workflow` importing `pytest` on branch stale vs main. Merging `main` fixed CI; security diff unchanged.
+- **cs #981:** Became DIRTY after #979 squash-merge; conflict resolution kept `_clear_current_line()` helper.
+- **rpce #91/#92:** Style job fails; Build and Test pass. Cloud Linux agent cannot install SwiftFormat (Homebrew required).
 
-1. **Dependency** — esp #1212 (opencv pin, all CI green)
-2. **CI/infra** — pc #1464 (action SHA bumps, Gitleaks green)
-3. **Closures** — pc #1468 (session doc), pc #1470 (security gate)
-4. **Salvage** — cs #973 → draft #974; pc #1466 → draft #1471
+## Disposition summary
 
-## Blockers identified
+| Disposition | Count |
+|-------------|-------|
+| MERGE | 13 |
+| MERGE-AFTER-FIX | 2 (#1500, #981) |
+| CLOSE-DUPLICATE/SUPERSEDED | 12 |
+| DEFER (CodeScene) | 2 |
+| DEFER (Style/macOS tooling) | 2 |
 
-| Blocker | Affected PRs | Type | Resolution |
-|---------|--------------|------|------------|
-| Gitleaks + session.db artifacts | pc #1470 | security gate | Closed — needs human-focused PR |
-| DIRTY after #970 merge | cs #973 | cascade | File-scoped salvage #974 |
-| DIRTY + trust-boundary files | pc #1466 | conflict/noise | Salvage metrics only to #1471 |
-| CodeScene code health | cs #973 | PR-specific | `/cs-agent` posted before close |
+## Next session priorities
 
-## Security gate notes
-
-- esp #1212 passed GitGuardian, CodeScene, pytest, Snyk before merge.
-- pc #1464 passed Gitleaks/TruffleHog before merge; action SHA pins only.
-- pc #1470 failed Gitleaks — closed without merge.
-- Salvage drafts are T3 only (display/perf); opened as **draft** per salvage policy.
+1. Re-check sc #195 / #178 after CodeScene cs-agent run completes.
+2. Salvage or close rpce #91/#92 after macOS `make dev-format` pass.
+3. Monitor for new bot PR burst on `series_correction_project_updated` after backlog close.
