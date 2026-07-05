@@ -561,3 +561,6 @@ invocation.
 ## 2026-07-05 - [Hoist static structures and avoid eager empty allocations in get_prs_summarize]
 **Learning:** Defining static tuples (like `branch_signals`) inside a function or using constructs like `pr.get("author") or {}` causes Python to allocate new objects on every function call. In scripts processing large batches of data iteratively, these redundant allocations quickly compound into measurable CPU overhead.
 **Action:** Always hoist static tuples and dictionaries to the module level as global constants. Replace eager empty fallback allocations (`or {}`, `or ""`) with standard `if value:` conditional checks to optimize memory usage and execution speed.
+## 2026-07-05 - [Replace pytest with unittest to resolve CI failure]
+**Learning:** A newly added test file `tests/test_refactoring_agent_workflow.py` was written using `pytest`, but the CI environment enforces the execution of Python tests via `python3 -m unittest discover`. This caused an `ImportError: No module named 'pytest'` during CI execution.
+**Action:** Always ensure that new test files strictly use the built-in `unittest` framework (by subclassing `unittest.TestCase`) instead of relying on external dependencies like `pytest` when the repository dictates standard `unittest` usage for its CI pipelines.
