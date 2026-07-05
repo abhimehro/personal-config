@@ -95,7 +95,7 @@ verify_file_link() {
 
 		if [[ $actual_perms_normalized != "$expected_perms_normalized" ]]; then
 			warn "$name target file permissions are $actual_perms (expected $expected_perms)"
-			# Try to fix permissions
+			# Automatically correct permissions
 			log "Attempting to fix permissions on target file..."
 			if chmod "$expected_perms" "$expected_target" 2>/dev/null; then
 				success "Fixed permissions"
