@@ -71,9 +71,11 @@ def _should_skip_table_row(line):
     return line.startswith(("| # |", "| ---"))
 
 
+_REPO_LINK_PATTERN = re.compile(r'\[(.*?)\]\(.*?\)')
+
 def _parse_repo_name(line):
     if line.startswith("### "):
-        match = re.search(r'\[(.*?)\]\(.*?\)', line)
+        match = _REPO_LINK_PATTERN.search(line)
         if match:
             return match.group(1).strip()
         return None

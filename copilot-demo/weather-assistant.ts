@@ -15,7 +15,7 @@ function getRequiredEnvVar(name: RequiredEnvVar): string {
   const value = process.env[name]?.trim();
   if (!value) {
     throw new Error(
-      `Missing required environment variable: ${name}. Set AZURE_OPENAI_ENDPOINT and AZURE_DEPLOYMENT_NAME before running this demo.`,
+      `\n\x1b[31m❌ Missing required environment variable: \x1b[33m${name}\x1b[0m\n\n💡 Please set both \x1b[33mAZURE_OPENAI_ENDPOINT\x1b[0m and \x1b[33mAZURE_DEPLOYMENT_NAME\x1b[0m before running this demo.\n`,
     );
   }
 
@@ -41,7 +41,7 @@ function handleRealtimeError(error: OpenAIRealtimeError): void {
     ? safeError.code
     : "UNKNOWN";
 
-  console.error(`[realtime:error] code=${code} message=${message}`);
+  console.error(`\n\x1b[31m⚠️  Realtime Error (${code}):\x1b[0m ${message}\n`);
 }
 
 async function main() {
@@ -186,6 +186,6 @@ main().catch((error: unknown) => {
   const message = error instanceof Error
     ? error.message
     : "Unknown startup failure";
-  console.error(`[startup:error] ${message}`);
+  console.error(`\n\x1b[31m❌ Startup failed:\x1b[0m ${message}`);
   process.exitCode = 1;
 });

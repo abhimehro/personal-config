@@ -5,10 +5,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 from gh_token_env import (
-    _get_parsed_env_vars_from_file,
     _read_env_file,
-    gh_token_configured,
+    clear_gh_token_cache,
     load_gh_token_env,
+    missing_gh_token_message,
     parse_env_line,
     resolve_gh_token_env_file,
 )
@@ -16,7 +16,7 @@ from gh_token_env import (
 
 class TestGhTokenEnv(unittest.TestCase):
     def setUp(self):
-        _get_parsed_env_vars_from_file.cache_clear()
+        clear_gh_token_cache()
 
     def test_parse_env_line_basic(self):
         env: dict[str, str] = {}
@@ -33,10 +33,9 @@ class TestGhTokenEnv(unittest.TestCase):
     def test_read_env_file_oserror(self):
         self.assertEqual(_read_env_file(Path("/does/not/exist/ever.env")), {})
 
-        with patch.object(
-            Path, "open", side_effect=PermissionError("Permission denied")
-        ):
+        with patch.object(Path, "open", side_effect=PermissionError("Permission denied")):
             self.assertEqual(_read_env_file(Path("some_file.env")), {})
+
 
     def test_env_var_takes_precedence_over_file(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -70,9 +69,10 @@ class TestGhTokenEnv(unittest.TestCase):
             ):
                 self.assertEqual(resolve_gh_token_env_file(), env_file)
 
-    def test_gh_token_configured_from_env(self):
-        with patch.dict(os.environ, {"GH_TOKEN": "present"}, clear=False):
-            self.assertTrue(gh_token_configured())
+    def test_missing_message_mentions_runbook(self):
+        with patch("gh_token_env.resolve_gh_token_env_file", return_value=None):
+            message = missing_gh_token_message()
+        self.assertIn("github-pat-rotation-runbook", message)
 
 
 if __name__ == "__main__":

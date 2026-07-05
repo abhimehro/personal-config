@@ -806,10 +806,11 @@ def run_daily_status_report(config: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+_STATUS_MARKER_RE = re.compile(r"<!-- repository-automation:task-status\n(.*?)\n-->", re.S)
+
+
 def extract_status_markers(issue_body: str) -> dict[str, str]:
-    match = re.search(
-        r"<!-- repository-automation:task-status\n(.*?)\n-->", issue_body, re.S
-    )
+    match = _STATUS_MARKER_RE.search(issue_body)
     if not match:
         return {}
     markers = {}
