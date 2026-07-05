@@ -45,14 +45,50 @@ def check_summary(rollup: list | None) -> str:
     return "COMPLETED_OK"
 
 
+BRANCH_SIGNALS = (
+    "jules",
+    "sentinel",
+    "bolt/",
+    "palette/",
+    "automation-",
+    "daily-qa",
+    "chore/jules",
+    "cursor-agent/",
+    "renovate/",
+    "dependabot/",
+    "renovate",
+    "copilot",
+)
+
+TITLE_KW = (
+    "jules",
+    "sentinel",
+    "dependabot",
+    "renovate",
+    "autofix",
+    "bolt",
+    "palette",
+    "automation",
+)
+
+BODY_MARKERS = (
+    "jules.google.com",
+    "created automatically by jules",
+    "pull request was automatically",
+    "signed-off-by: dependabot",
+)
+
+
 def automation_hints(pr: dict) -> str:
     hints: list[str] = []
-    author = pr.get("author") or {}
-    if author.get("is_bot"):
-        hints.append("author_is_bot")
-    login = author.get("login") or ""
-    if login.endswith("[bot]"):
-        hints.append("bot_login")
+    author = pr.get("author")
+    if author:
+        if author.get("is_bot"):
+            hints.append("author_is_bot")
+        login = author.get("login")
+        if login and login.endswith("[bot]"):
+            hints.append("bot_login")
+
     _branch = pr.get("headRefName")
     branch = _branch.lower() if _branch is not None else ""
     _title = pr.get("title")
@@ -60,47 +96,17 @@ def automation_hints(pr: dict) -> str:
     _body = pr.get("body")
     body_l = _body.lower() if _body is not None else ""
 
-    branch_signals = (
-        "jules",
-        "sentinel",
-        "bolt/",
-        "palette/",
-        "automation-",
-        "daily-qa",
-        "chore/jules",
-        "cursor-agent/",
-        "renovate/",
-        "dependabot/",
-        "renovate",
-        "copilot",
-    )
-    for sig in branch_signals:
+    for sig in BRANCH_SIGNALS:
         if sig in branch:
             hints.append(f"branch:{sig.rstrip('/')}")
             break
 
-    title_kw = (
-        "jules",
-        "sentinel",
-        "dependabot",
-        "renovate",
-        "autofix",
-        "bolt",
-        "palette",
-        "automation",
-    )
-    for kw in title_kw:
+    for kw in TITLE_KW:
         if kw in title_l:
             hints.append(f"title:{kw}")
             break
 
-    body_markers = (
-        "jules.google.com",
-        "created automatically by jules",
-        "pull request was automatically",
-        "signed-off-by: dependabot",
-    )
-    for m in body_markers:
+    for m in BODY_MARKERS:
         if m in body_l:
             hints.append("body:automation_marker")
             break
