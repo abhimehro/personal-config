@@ -21,7 +21,10 @@ FINDINGS=""
 IFS=',' read -ra SECRET_NAMES <<<"$CLOUD_AGENT_INJECTED_SECRET_NAMES"
 
 for raw_name in "${SECRET_NAMES[@]}"; do
-	# NOTE: Trim whitespace; labels may contain spaces — use printenv, not ${!var}.
+	# NOTE: Comma-split entries may include leading/trailing whitespace; trim so
+	# lookup matches the actual environment variable name.
+	# SECURITY: Bash indirect expansion (${!var}) only allows identifier-shaped names.
+	# Injected secret labels may contain spaces (e.g. "GitHub SSH Key"); use printenv.
 	SECRET_NAME="$(printf '%s' "$raw_name" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 	if [ -z "$SECRET_NAME" ]; then
 		continue
