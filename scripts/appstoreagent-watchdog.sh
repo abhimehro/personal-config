@@ -33,7 +33,7 @@ log() {
 }
 
 get_pid() {
-	pgrep -x "$PROCESS_NAME" 2>/dev/null | head -n1
+	pgrep -x -- "$PROCESS_NAME" 2>/dev/null | head -n1
 }
 
 get_cpu_percent() {

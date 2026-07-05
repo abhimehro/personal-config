@@ -613,3 +613,10 @@ treated strictly as patterns and not parsed as command-line options.
 **Vulnerability:** AppleScript Option Injection (CWE-74/CWE-88 variant). Even when passing dynamic variables safely to `osascript` using `-e 'on run argv'`, the variables were passed directly after the script string without the `--` delimiter (e.g. `osascript -e 'on run argv' ... -e 'end run' "$msg" "$title"`). If an attacker controls the variable and starts it with a hyphen, `osascript` may interpret the variable as a command-line flag rather than a positional argument, leading to option injection or unintended execution.
 **Learning:** When invoking `osascript` with dynamic variables from bash, you must explicitly separate options from arguments using the `--` delimiter before positional arguments to prevent them from being parsed as flags.
 **Prevention:** Always use the `--` argument delimiter before positional arguments when using `osascript` with external variables (e.g., `osascript -e 'on run argv' ... -- "$VAR"`).
+
+
+## 2026-06-27 - AppleScript Option Injection in Batch Uninstaller
+
+**Vulnerability:** AppleScript Option Injection (CWE-88 variant). In `configs/.config/mole/lib/uninstall/batch.sh` and `configs/.config/mole/lib/core/file_ops.sh`, `osascript - "$variable"` is used without the `--` delimiter before the positional arguments (e.g. `osascript - "$clean_name" <<-'EOF'`). If the variable starts with a hyphen, it might be interpreted as a flag, leading to Option Injection.
+**Learning:** When passing dynamic variables as positional arguments to `osascript` using heredocs (`<<`), a `--` separator is still required before the variables.
+**Prevention:** Always use the `--` argument delimiter before positional arguments when using `osascript` with external variables (e.g., `osascript - -- "$VAR" <<-'EOF'`).

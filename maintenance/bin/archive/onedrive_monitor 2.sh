@@ -16,7 +16,7 @@ fi
 log_info "OneDrive root: $ONEDRIVE_ROOT"
 
 # Check if OneDrive process is running
-ONEDRIVE_PID=$(pgrep -f "/OneDrive$" 2>/dev/null)
+ONEDRIVE_PID=$(pgrep -f -- "/OneDrive$" 2>/dev/null)
 if [[ -n $ONEDRIVE_PID ]]; then
 	log_info "OneDrive process running (PID: $ONEDRIVE_PID)"
 	process_running=true
@@ -118,7 +118,7 @@ if [[ $process_running == "false" ]] || [[ $recent_activity == "false" && $netwo
 			sleep 5
 
 			# Verify process started
-			if pgrep -f "/OneDrive$" >/dev/null 2>&1; then
+			if pgrep -f -- "/OneDrive$" >/dev/null 2>&1; then
 				log_info "OneDrive process started successfully"
 				process_running=true
 				((issues--)) # Reduce issue count since we fixed process
