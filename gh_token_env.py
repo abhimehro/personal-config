@@ -86,10 +86,20 @@ def load_gh_token_env(base: Mapping[str, str] | None = None) -> dict[str, str]:
     return env
 
 
-def gh_token_configured() -> bool:
-    """True when GH_TOKEN is available from the environment or a config file."""
-    if os.environ.get("GH_TOKEN"):
-        return True
-    return "GH_TOKEN" in _get_parsed_env_vars_from_file()
+def clear_gh_token_cache() -> None:
+    """Clear cached file reads (for tests after changing GH_TOKEN_ENV_FILE)."""
+    _get_parsed_env_vars_from_file.cache_clear()
 
 
+def missing_gh_token_message() -> str:
+    """User-facing hint when GH_TOKEN is absent (no secret values)."""
+    path = resolve_gh_token_env_file()
+    if path is not None:
+        return (
+            f"GH_TOKEN is not set. After rotating your PAT, update {path} "
+            f"or export GH_TOKEN. See {_RUNBOOK}."
+        )
+    return (
+        "GH_TOKEN is not set. Export GH_TOKEN, use `gh auth login`, or set "
+        f"GH_TOKEN_ENV_FILE. See {_RUNBOOK}."
+    )
