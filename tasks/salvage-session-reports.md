@@ -399,3 +399,42 @@
 
 - Maintainer actions required: review drafts pc#1471 (T3 perf) + cs#974 (T3 UX)
 - Cross-links: [Session report](tasks/pr-review-2026-07-03.md)
+
+## Run — 2026-07-05 (evening salvage)
+
+### Input tail
+
+- Source report/snapshot: morning Phase 1 via merged [#1504](https://github.com/abhimehro/personal-config/pull/1504) + live GitHub re-fetch
+- PRs investigated: 9 across 5 repos (1 DIRTY, 2 new Palette, 2 deferred rpce, 1 T1 salvage draft)
+
+### Salvage results
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| series_correction_project_updated | #178 | SALVAGE draft | [#197](https://github.com/abhimehro/series_correction_project_updated/pull/197) | Gap-analysis helper extraction; excluded tasks/todo.md |
+| ctrld-sync | #983 | SALVAGE draft | [#984](https://github.com/abhimehro/ctrld-sync/pull/984) | stderr cancel routing after #979/#981 |
+
+### Phase 1 merges (same evening pass)
+
+- esp [#1229](https://github.com/abhimehro/email-security-pipeline/pull/1229) — zero-diff Daily QA
+- pc [#1504](https://github.com/abhimehro/personal-config/pull/1504) — morning session artifacts
+
+### Counts
+
+- Deep-dived: 9
+- Salvaged: 2
+- Infra-fix PRs: 0
+- Closed superseded: 2
+- Phase 1 merges: 2
+- Net new draft PRs awaiting human review: 2
+- Deferred unchanged: 4 (pc#1505, sc#195, rpce#91, rpce#92)
+
+### Verification status
+
+- Local verify: `python3 -m pytest scripts/tests/ -q` — 58 passed (sc#197); `uv run pytest tests/test_ux.py -q` — 36 passed (cs#984)
+- CodeScene remediation: `/cs-agent` posted on cs#983 and sc#178
+
+### Handoff
+
+- Maintainer actions required: T1 review sc#195; T3 review sc#197 + cs#984; merge pc#1505 when swift green; macOS format lane for rpce#91/#92
+- Cross-links: [Session report](tasks/pr-review-2026-07-05.md)

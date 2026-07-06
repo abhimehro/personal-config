@@ -3,7 +3,7 @@ import importlib.util
 import sys
 from pathlib import Path
 
-# Get absolute path to fix-allowlist-format.py
+# Get absolute path to the target script
 current_dir = Path(__file__).resolve().parent
 script_path = current_dir / "fix-allowlist-format.py"
 

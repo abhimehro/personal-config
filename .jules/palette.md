@@ -282,3 +282,7 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## 2024-07-04 - [CLI Spinner Fallbacks]
 **Learning:** Terminal spinners (like the one in `weather-assistant.ts`) need clear text equivalents for users with screen readers or simplified console interfaces. Emitting rapid ANSI sequence changes and hiding the cursor (`\x1B[?25l`) without standard error fallbacks leaves users without context on crash.
 **Action:** Always ensure clear start states and safe fallback error messages with standard formatting (emojis/colors) when implementing CLI interactive feedback.
+
+## 2026-06-13 - Add semantic landmarks to HTML reports
+**Learning:** Shell scripts generating HTML dashboard need better ARIA/semantic support. Adding semantic landmarks (`<header>`, `<main>`, `<section>`, `<footer>`) to dynamically generated HTML improves screen reader navigation significantly without requiring CSS changes.
+**Action:** Always use semantic HTML5 elements when writing bash scripts that generate HTML reports.

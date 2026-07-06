@@ -551,7 +551,7 @@ _mole_move_to_trash() {
 
     # AppleScript fallback. Pass the path via argv so special chars (quotes,
     # backslashes) cannot break out of the quoted string.
-    osascript - "$path" > /dev/null 2>&1 << 'APPLESCRIPT'
+    osascript -- - "$path" > /dev/null 2>&1 << 'APPLESCRIPT'
 on run argv
     set p to POSIX file (item 1 of argv)
     tell application "Finder"
@@ -591,7 +591,7 @@ _mole_move_to_trash_batch() {
     fi
 
     # AppleScript fallback: build one POSIX-file list and tell Finder once.
-    osascript - "${paths[@]}" > /dev/null 2>&1 << 'APPLESCRIPT'
+    osascript -- - "${paths[@]}" > /dev/null 2>&1 << 'APPLESCRIPT'
 on run argv
     set posixList to {}
     repeat with a in argv

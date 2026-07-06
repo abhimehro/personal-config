@@ -6,3 +6,4 @@
 - [x] Analyze `gh_token_env.py` for missing OSError test in `_read_env_file`.
 - [x] Write `test_read_env_file_oserror` to cover `FileNotFoundError` and `PermissionError` paths.
 - [x] Run full tests to ensure no regressions.
+- [x] Replace `# Try to fix permissions` with `# Automatically correct permissions` in `scripts/verify_all_configs.sh`.
