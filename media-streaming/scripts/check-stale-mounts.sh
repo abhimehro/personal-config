@@ -92,9 +92,11 @@ check_mount_point() {
 			else
 				log "   ❌ Cleanup failed - manual intervention required"
 				log "      Run: rm -rf \"$mount_point\""
+				return 1
 			fi
 		else
 			log "   💡 Run with --fix to attempt cleanup"
+			return 1
 		fi
 	else
 		log "✅ $mount_point: Empty directory (safe)"
@@ -108,12 +110,17 @@ cleanup_stale_mount() {
 	local max_retries=3
 	local retry_delay=2
 
+	# First try to force unmount in case it's a hung FUSE mount
+	umount -f "$mount_point" 2>/dev/null || diskutil unmount force "$mount_point" 2>/dev/null || fusermount -uz "$mount_point" 2>/dev/null || true
+
 	for ((retry = 0; retry < max_retries; retry++)); do
 		if rm -rf "$mount_point" 2>/dev/null; then
 			mkdir -p "$mount_point"
 			return 0
 		else
 			log "   ⚠️  Attempt $((retry + 1))/$max_retries: Could not remove (files may be busy)"
+			# Try unmounting again just in case
+			umount -f "$mount_point" 2>/dev/null || diskutil unmount force "$mount_point" 2>/dev/null || fusermount -uz "$mount_point" 2>/dev/null || true
 			sleep $retry_delay
 		fi
 	done
