@@ -1,45 +1,47 @@
-# PR Triage — 2026-07-05
+# PR Triage — 2026-07-06
 
-**Session:** Automated PR review & cleanup (cron 13:00 UTC)  
-**Mode:** review-and-merge
+## Duplicate & overlap groups
 
-## Duplicate & overlap analysis
+### repoprompt-ce accessibility (resolved)
+- **Keep:** #100 (session row buttons, 8 files)
+- **Close:** #91 — subset of #100's accessibility label work
 
-| Group | PRs | Decision | Rationale |
-|-------|-----|----------|-----------|
-| GH token dedup | pc #1495, #1496 | Merge #1496; close #1495 | #1496 is narrower salvage already green; #1495 became DIRTY after perf merges |
-| ESP setup wizard refactor | esp #1215, #1219, #1222 | Merge #1215; close #1219/#1222 | #1215 umbrella QA merge; siblings DIRTY |
-| ctrld Palette TTY | cs #979, #981 | Merge both sequentially | #981 conflicted after #979; resolved via merge-main + `_clear_current_line()` |
-| sc bot backlog | #175–#189 (7 DIRTY) | Close all | Stale conflicts from burst; reopen from fresh main if needed |
-| Session doc | pc #1497 | Close | Superseded by this session report |
+### repoprompt-ce Changelog DateFormatter (resolved)
+- **Keep:** #101 (updated CI matrix, 2 files)
+- **Close:** #92 — same `Changelog.swift` extraction, older branch
 
-## Security gate review
+### personal-config locale LC_ALL (resolved)
+- **Keep:** #1522 (5 files, comprehensive locale fix)
+- **Close:** #1520 — subset of #1522 bin script changes
+- **Close:** #1521 — comment-only reword superseded by merged locale work
 
-| PR | Gate | Result |
-|----|------|--------|
-| hg #320 | Path traversal in config-driven `data_dir` | **MERGE** — Sentinel fix, CI green |
-| Seatek #418 | `subprocess.run` shell=False | **MERGE** — CI green |
-| pc #1500 | pgrep option injection (CWE-88) | **MERGE-AFTER-FIX** — merged main to fix unrelated pytest import CI failure |
-| sc #195 | CLI exception output sanitization | **DEFER** — CodeScene red; cs-agent posted |
+### Zero-diff / no-op (resolved)
+- **Close:** pc #1509, #1512, #1519 — no file changes vs base
+- **Close:** Seatek #422 — daily QA summary artifact, no diff
 
-## CI triage notes
+## Security-first merge order (executed)
 
-- **pc #1500:** Initial FAIL was `test_refactoring_agent_workflow` importing `pytest` on branch stale vs main. Merging `main` fixed CI; security diff unchanged.
-- **cs #981:** Became DIRTY after #979 squash-merge; conflict resolution kept `_clear_current_line()` helper.
-- **rpce #91/#92:** Style job fails; Build and Test pass. Cloud Linux agent cannot install SwiftFormat (Homebrew required).
+1. [personal-config #1507](https://github.com/abhimehro/personal-config/pull/1507) — CWE-88 osascript `--` delimiter
+2. [ctrld-sync #989](https://github.com/abhimehro/ctrld-sync/pull/989) — TOCTOU cache mkdir mode
+3. [series_correction #195](https://github.com/abhimehro/series_correction_project_updated/pull/195) — CLI exception output sanitization
+4. Remaining green-CI PRs in dependency/perf/refactor order
 
-## Disposition summary
+## Autofix actions
 
-| Disposition | Count |
-|-------------|-------|
-| MERGE | 13 |
-| MERGE-AFTER-FIX | 2 (#1500, #981) |
-| CLOSE-DUPLICATE/SUPERSEDED | 12 |
-| DEFER (CodeScene) | 2 |
-| DEFER (Style/macOS tooling) | 2 |
+| PR | Action | Outcome |
+|----|--------|---------|
+| pc #1526 | Merged `origin/main`; kept both bolt.md learnings | MERGED |
+| sc #197 | Merged `origin/main`; kept main's security-sanitized `export_comparison_sheets.py` | MERGED |
+| cs #990 | Rebased on main; updated `cache/benchmark-data.json` | benchmark still FAIL (compares vs pre-SSRF main commit `abc4e246`) |
 
-## Next session priorities
+## Deferred tail (salvage handoff)
 
-1. Re-check sc #195 / #178 after CodeScene cs-agent run completes.
-2. Salvage or close rpce #91/#92 after macOS `make dev-format` pass.
-3. Monitor for new bot PR burst on `series_correction_project_updated` after backlog close.
+| PR | Blocker | Recommended follow-up |
+|----|---------|----------------------|
+| cs #990 | `benchmark` required check — 1.89× regression from domain allowlist validation | Merge with benchmark threshold exception OR update gh-pages baseline post-merge on macOS/CI admin |
+| rpce #100 | `Build and Test` + `Style` | `make dev-format` on macOS; re-run CI |
+| rpce #101 | `Build and Test` + `Style` | Same as #100; likely shares Changelog formatter conflict with merged main |
+
+## Stale check
+
+No PRs exceeded 30-day stale threshold. All in-scope PRs were <1 day old.

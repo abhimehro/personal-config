@@ -1,5 +1,16 @@
 # Lessons Learned
 
+## Lesson 0da: ctrld benchmark gate compares against main history, not PR file (2026-07-06)
+
+**Pattern:** ctrld-sync #990 (SSRF domain allowlist) passes all security/quality gates but fails `benchmark` because `github-action-benchmark` compares the PR run against commit `abc4e246` on main (pre-SSRF baseline), showing ~1.9× regression. Updating `cache/benchmark-data.json` on the PR branch does not satisfy the gate. **Rule:** DEFER security PRs blocked solely by benchmark regression when the regression is an expected cost of the security control; escalate for gh-pages baseline update or workflow threshold adjustment — do not merge with benchmark red. **Detection cost:** Low — benchmark comment shows `Previous: <main-sha>` distinct from PR head.
+
+## Lesson 0cy: Two-cron day — evening salvage reads merged morning artifacts (2026-07-05)
+
+**Pattern:** Morning Phase 1 (13:00 UTC) cleared 27/31 PRs and opened session-doc PR #1504; evening salvage (17:00 UTC) started with only 9 open PRs. Merging #1504 landed morning artifacts before writing evening addendum. **Rule:** Evening salvage must re-fetch live GitHub state (Step 1) and merge any pending session-doc PR from the morning run before appending evening salvage reports — never overwrite unmerged morning artifacts on a working branch. **Detection cost:** Low — check if `tasks/pr-review-YYYY-MM-DD.md` exists on `main` vs open session-doc PR.
+
+## Lesson 0cz: Palette cancel-residue PRs stack on TTY guards (2026-07-05)
+
+**Pattern:** ctrld #979/#981 (merged morning) added `isatty()` guards; #983 (evening) added stderr routing and prompt spacing on the same cancel paths. CodeScene blocked #983 despite green pytest. **Rule:** Treat post-TTY-guard Palette PRs as incremental UX salvages — file-scope onto fresh `main`, verify with `test_ux.py`, and open draft if CodeScene fails. **Detection cost:** Low — small diff in `main.py` cancel handlers + `test_ux.py` assertion changes.
 ## Lesson 0cy: Sentinel security PR CI fail from stale branch test import (2026-07-05)
 
 **Pattern:** personal-config #1500 (pgrep option injection fix) failed `Run All Tests` because the PR branch still had `tests/test_refactoring_agent_workflow.py` importing `pytest`, while `main` had already migrated the test to stdlib `unittest`/`yaml`. Security diff was only 4 shell files. **Rule:** Before deferring a security PR on unrelated CI failure, merge `origin/main` into the branch and re-run checks; if the failure is pre-existing drift on the branch, autofix-merge is safe. **Detection cost:** Low — CI log shows `ModuleNotFoundError: pytest` with zero pytest changes in PR diff.
