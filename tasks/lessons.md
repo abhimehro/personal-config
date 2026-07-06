@@ -1,5 +1,9 @@
 # Lessons Learned
 
+## Lesson 0d0: SSRF allowlist PR merge corruption leaves orphaned duplicate block (2026-07-06)
+
+**Pattern:** ctrld-sync #990 (`fix/ssrf-domain-allowlist-ABHI-1348`) failed all Python CI with `IndentationError: unexpected indent` at `main.py:1074`. The `_load_allowed_blocklist_domains` function contained a duplicate orphaned block and the `_validate_allowed_blocklist_domains` definition was missing its `def` line — classic bad-merge residue after refactoring `load_config` → `_read_config_yaml`. **Rule:** On security PRs that refactor config loading, run `python -m py_compile main.py` before triage; if syntax fails, file-scope repair onto the PR branch (not a new salvage draft) when the diff intent is clear. After syntax fix, still defer merge if benchmark alert fires — SSRF checks add expected overhead. **Detection cost:** Low — CI conftest import fails with `IndentationError`; local `uv run python -m py_compile main.py` reproduces instantly.
+
 ## Lesson 0cy: Two-cron day — evening salvage reads merged morning artifacts (2026-07-05)
 
 **Pattern:** Morning Phase 1 (13:00 UTC) cleared 27/31 PRs and opened session-doc PR #1504; evening salvage (17:00 UTC) started with only 9 open PRs. Merging #1504 landed morning artifacts before writing evening addendum. **Rule:** Evening salvage must re-fetch live GitHub state (Step 1) and merge any pending session-doc PR from the morning run before appending evening salvage reports — never overwrite unmerged morning artifacts on a working branch. **Detection cost:** Low — check if `tasks/pr-review-YYYY-MM-DD.md` exists on `main` vs open session-doc PR.
