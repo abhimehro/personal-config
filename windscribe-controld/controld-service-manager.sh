@@ -180,7 +180,7 @@ EOF
 start_vpn_compatible_service() {
 	print_status "Starting VPN-compatible Control D service..."
 
-	# Apply VPN binding fix to current config
+	# Apply VPN-compatible binding to current config
 	apply_vpn_binding_fix "$CONTROLD_CONFIG"
 
 	# Load the VPN-compatible daemon
