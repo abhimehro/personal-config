@@ -438,3 +438,37 @@
 
 - Maintainer actions required: T1 review sc#195; T3 review sc#197 + cs#984; merge pc#1505 when swift green; macOS format lane for rpce#91/#92
 - Cross-links: [Session report](tasks/pr-review-2026-07-05.md)
+
+## Run — 2026-07-06 (evening salvage)
+
+### Input tail
+
+- Source report/snapshot: [2026-07-05 remainder](tasks/pr-review-2026-07-05.md) (all 6 follow-ups resolved) + live GitHub re-fetch
+- PRs investigated: 4 across 3 repos (0 DIRTY; 1 syntax-broken security PR)
+
+### Salvage results
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| ctrld-sync | #990 | AUTOFIX on branch | — | Merge corruption repair `10829b1`; not a new draft |
+
+### Counts
+
+- Deep-dived: 4
+- Autofix commits pushed: 1
+- Salvaged (new draft): 0
+- Infra-fix PRs: 0
+- Closed superseded: 0
+- Phase 1 merges: 0
+- Deferred: 4 (pc#1527, cs#990 post-autofix, rpce#100, rpce#101)
+
+### Verification status
+
+- Local verify: `uv run python -m py_compile main.py` + `uv run pytest tests/ -q` → 352 passed (cs#990 autofix)
+- CI post-autofix: test/ruff/mypy/bandit green; benchmark alert 1.68× (expected SSRF overhead)
+- CodeScene remediation: not required
+
+### Handoff
+
+- Maintainer actions required: T1 review cs#990 benchmark tradeoff; merge pc#1527 when swift green; macOS format lane for rpce#100/#101
+- Cross-links: [Session report](tasks/pr-review-2026-07-06.md); artifacts PR [#1528](https://github.com/abhimehro/personal-config/pull/1528)
