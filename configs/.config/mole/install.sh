@@ -5,6 +5,10 @@
 
 set -euo pipefail
 
+# Fix locale issues (similar to Issue #83)
+export LC_ALL=C
+export LANG=C
+
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
