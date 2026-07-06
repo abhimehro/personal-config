@@ -564,3 +564,6 @@ invocation.
 ## 2026-07-05 - [Replace pytest with unittest to resolve CI failure]
 **Learning:** A newly added test file `tests/test_refactoring_agent_workflow.py` was written using `pytest`, but the CI environment enforces the execution of Python tests via `python3 -m unittest discover`. This caused an `ImportError: No module named 'pytest'` during CI execution.
 **Action:** Always ensure that new test files strictly use the built-in `unittest` framework (by subclassing `unittest.TestCase`) instead of relying on external dependencies like `pytest` when the repository dictates standard `unittest` usage for its CI pipelines.
+## 2026-07-06 - [Optimize directory traversal with find -prune]
+**Learning:** When using 'find' to exclude large, deeply nested directories (e.g., '.git' or 'node_modules'), never use '-not -path' as it forces recursive traversal of every file before filtering.
+**Action:** Always use '-prune' (e.g., `find . \( -name ".git" -o -name "node_modules" \) -prune -o -type f -print`) to prevent traversal entirely and massively speed up execution.

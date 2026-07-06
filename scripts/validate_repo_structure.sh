@@ -381,7 +381,7 @@ check_large_files() {
     
     # Find large files (excluding .git)
     local large_files
-    large_files=$(find "$REPO_ROOT" -type f -size +${MAX_FILE_SIZE}c -not -path "*\.git*" 2>/dev/null)
+    large_files=$(find "$REPO_ROOT" -name ".git" -prune -o -type f -size +${MAX_FILE_SIZE}c -print 2>/dev/null)
     
     while IFS= read -r file; do
         local file_size
@@ -413,7 +413,7 @@ check_duplicate_files() {
     # Find potential duplicates by checking for files with same content
     # This is a simple check and might have false positives
     local files
-    files=$(find "$REPO_ROOT" -type f -not -path "*\.git*" -not -path "*node_modules*" 2>/dev/null)
+    files=$(find "$REPO_ROOT" \( -name ".git" -o -name "node_modules" \) -prune -o -type f -print 2>/dev/null)
     
     # Use a temporary directory for checksums
     local tmp_dir
