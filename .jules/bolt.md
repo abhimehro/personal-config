@@ -564,3 +564,6 @@ invocation.
 ## 2026-07-05 - [Replace pytest with unittest to resolve CI failure]
 **Learning:** A newly added test file `tests/test_refactoring_agent_workflow.py` was written using `pytest`, but the CI environment enforces the execution of Python tests via `python3 -m unittest discover`. This caused an `ImportError: No module named 'pytest'` during CI execution.
 **Action:** Always ensure that new test files strictly use the built-in `unittest` framework (by subclassing `unittest.TestCase`) instead of relying on external dependencies like `pytest` when the repository dictates standard `unittest` usage for its CI pipelines.
+## 2026-07-06 - [Avoid eager empty dict allocations in .get() chains]
+**Learning:** Chaining `.get("key") or {}` inside tight loops causes Python to allocate new empty dictionary objects on every iteration when the key is missing, leading to unnecessary memory overhead.
+**Action:** Replace `(obj.get("key") or {}).get("sub_key")` with a multi-step check: `val = obj.get("key"); sub = val.get("sub_key") if val else default` to prevent redundant object allocations.

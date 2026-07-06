@@ -152,12 +152,14 @@ def fetch_details(repo: str, num: int) -> str:
     lines.append(f"- review threads: {len(reviews)} raw / {len(latest)} latest")
     lines.append(f"- issue comments: {len(comments)}")
     for r in latest[:3]:
-        who = (r.get("author") or {}).get("login") or "?"
+        author = r.get("author")
+        who = (author.get("login") if author else None) or "?"
         state = r.get("state") or "?"
         snippet = (r.get("body") or "")[:200].replace("\n", " ")
         lines.append(f"  - {who} [{state}]: {snippet}")
     for c in comments[-2:]:
-        who = (c.get("author") or {}).get("login") or "?"
+        author = c.get("author")
+        who = (author.get("login") if author else None) or "?"
         snippet = (c.get("body") or "")[:200].replace("\n", " ")
         lines.append(f"  - comment {who}: {snippet}")
     return "\n".join(lines)
@@ -178,8 +180,8 @@ def print_table(data: list, include_details: bool) -> None:
     )
     print("| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
     for pr in data:
-        author = pr.get("author") or {}
-        login = author.get("login") or "?"
+        author = pr.get("author")
+        login = (author.get("login") if author else None) or "?"
         draft = "yes" if pr.get("isDraft") else "no"
         checks = check_summary(pr.get("statusCheckRollup") or [])
         merge = f"{pr.get('mergeable') or '?'}"
