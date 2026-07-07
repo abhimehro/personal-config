@@ -438,3 +438,41 @@
 
 - Maintainer actions required: T1 review sc#195; T3 review sc#197 + cs#984; merge pc#1505 when swift green; macOS format lane for rpce#91/#92
 - Cross-links: [Session report](tasks/pr-review-2026-07-05.md)
+
+## Run — 2026-07-07 (evening salvage)
+
+### Input tail
+
+- Source report/snapshot: morning Phase 1 via merged [#1538](https://github.com/abhimehro/personal-config/pull/1538) + live GitHub re-fetch
+- PRs investigated: 10 across 6 repos (0 DIRTY; 1 new Palette #1539; 1 new Jules QA #1238)
+
+### Salvage results
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| Seatek_Analysis | #426 | CLOSE incompatible | — | numpy 2.5.1 needs Python ≥3.12; validate uses 3.11 |
+
+### Phase 1 merges (same evening pass)
+
+- pc [#1538](https://github.com/abhimehro/personal-config/pull/1538) — morning session artifacts
+- esp [#1238](https://github.com/abhimehro/email-security-pipeline/pull/1238) — Jules Daily QA (CLEAN)
+
+### Counts
+
+- Deep-dived: 10
+- Salvaged: 0
+- Infra-fix PRs: 0
+- Closed incompatible: 1
+- Phase 1 merges: 2
+- Net new draft PRs: 0
+- Deferred unchanged/new: 7
+
+### Verification status
+
+- Prior remainder reconciled: pc#1527, cs#984, sc#195/#197 merged; rpce#91/#92 closed
+- CodeScene remediation: `/cs-agent` re-posted on sc#201
+
+### Handoff
+
+- Maintainer actions required: T1 review cs#990; merge pc#1539 when swift green; macOS format lane rpce#100–#103
+- Cross-links: [Session report](tasks/pr-review-2026-07-07.md)

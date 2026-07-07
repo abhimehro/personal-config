@@ -1,4 +1,49 @@
-# PR Triage — 2026-07-07
+# PR Triage — 2026-07-07 (evening salvage)
+
+**Session:** Automated PR salvage & cleanup (cron 17:00 UTC)  
+**Mode:** Phase 2 salvage  
+**Preflight:** PASS 6/6 + repoprompt-ce
+
+## Context
+
+Morning Phase 1 merged 13 PRs and deferred 7; artifacts landed via [#1538](https://github.com/abhimehro/personal-config/pull/1538). Evening salvage re-fetched live state, merged morning session doc + one CLEAN Jules QA PR, closed one incompatible dependabot bump, and re-posted CodeScene remediation on sc #201.
+
+## Decision matrix
+
+| Decision | Count | PRs |
+|----------|------:|-----|
+| MERGE | 2 | pc #1538 (session doc), esp #1238 (Jules QA) |
+| CLOSE (no-op / incompatible) | 1 | Seatek #426 (numpy 2.5.1 vs Python 3.11 CI) |
+| DEFER | 7 | pc #1539; cs #990; sc #201; rpce #100–#103 |
+
+## Security gates
+
+| PR | Gate | Result |
+|----|------|--------|
+| cs #990 | T1 SSRF allowlist + benchmark regression | **DEFER** — never autonomous merge (S1) |
+| esp #1238 | Security-classified repo; deps reorder + whitespace only | **MERGE** — all CI green, no functional security change |
+| Seatek #426 | Dependency bump | **CLOSE** — CI Python version mismatch, not a security issue |
+
+## Disposition summary
+
+| Blocker | Affected PRs | Resolution |
+|---------|--------------|------------|
+| benchmark vs SSRF baseline | cs #990 | Human review; accept regression or re-baseline |
+| numpy requires Python 3.12 | Seatek #426 | Closed with remediation options in PR comment |
+| CodeScene code health | sc #201 | `/cs-agent` posted evening |
+| Swift Analyze pending | pc #1539 | Defer until green |
+| SwiftFormat Style + Build shard 2 | rpce #100–#103 | macOS format lane (lesson 0cz) |
+
+## Next session priorities
+
+1. **T1:** Review [cs #990](https://github.com/abhimehro/ctrld-sync/pull/990) SSRF allowlist — benchmark alert is defer gate, not bypass.
+2. **When green:** Merge [pc #1539](https://github.com/abhimehro/personal-config/pull/1539) (Palette `role="region"`).
+3. **macOS lane:** `make dev-format` + `make dev-lint` on rpce #100–#103.
+4. **After cs-agent:** Re-check sc #201 CodeScene gate.
+
+---
+
+# PR Triage — 2026-07-07 (morning Phase 1)
 
 **Session:** Automated PR review & cleanup (cron 13:00 UTC)  
 **Mode:** review-and-merge  

@@ -1,5 +1,9 @@
 # Lessons Learned
 
+## Lesson 0db: Dependabot numpy bump vs CI Python version (2026-07-07)
+
+**Pattern:** Seatek #426 bumped `numpy` to `>=2.5.1` in `Series_27/Analysis/requirements.txt`, but the `validate` workflow installs deps with Python 3.11. PyPI reports numpy 2.5.x requires Python >=3.12 — CI fails with `No matching distribution found`. **Rule:** Before deferring a dependabot deps PR on validate/pip install failure, read the job log for `Requires-Python` mismatches; close with explicit Python-version remediation steps rather than leaving a permanently red PR open. **Detection cost:** Low — validate log shows ignored versions with `Requires-Python >=3.12`.
+
 ## Lesson 0da: Palette siblings on palette.md — merge order matters (2026-07-07)
 
 **Pattern:** pc #1530 (ARIA landmarks) and #1527 (performance report a11y) both touched `.jules/palette.md` and `performance_optimizer.sh`. Squash-merging #1530 first left #1527 CONFLICTING despite green CI at triage time. **Rule:** When multiple Palette PRs share `palette.md`, merge the broader dashboard PR first or immediately merge `origin/main` into the sibling before squash-merge. Journal conflicts: keep **both** learning entries (dedupe by date/title). **Detection cost:** Low — `gh pr diff --name-only` shows shared `.jules/palette.md`.
