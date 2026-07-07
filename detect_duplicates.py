@@ -51,8 +51,8 @@ def _process_pr_result(res, file_groups):
     if not res:
         return
     repo, info = res
-    # ⚡ Bolt Optimization: Use generator expression inside sorted() instead of list comprehension to avoid unnecessary memory spikes
-    files = tuple(sorted(f["path"] for f in info.get("files", [])))
+    # ⚡ Bolt Optimization: Removed intermediate dictionary wrappers to allow direct sorting of strings
+    files = tuple(sorted(info.get("files", [])))
     file_groups[(repo, files)].append(info)
 
 
@@ -91,7 +91,7 @@ def _extract_pr_data(repo, pr_result):
 
     files_data = pr_data.get("files", {}) or {}
     nodes = files_data.get("nodes", []) or []
-    files = [{"path": node["path"]} for node in nodes if "path" in node]
+    files = [node["path"] for node in nodes if "path" in node]
 
     return (repo, {
         "number": pr_data.get("number"),
