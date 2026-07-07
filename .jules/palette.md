@@ -289,3 +289,7 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## 2026-07-06 - Improve accessibility for HTML generated scripts
 **Learning:** Shell scripts that generate HTML (like analytics_dashboard.sh) often miss standard accessibility attributes like lang tags or semantic structures for layout. When generating metrics cards or sections, adding `role="region"`, `role="status"` or `aria-labelledby` ensures screen readers can correctly associate values with their labels.
 **Action:** Always add semantic HTML tags and proper ARIA labels to dynamically generated HTML within shell scripts.
+
+## 2024-07-07 - ARIA Landmarks for Dashboard Sections
+**Learning:** Screen reader users benefit significantly when discrete content areas are marked as landmarks. Using `<section role="region" aria-labelledby="heading-id">` provides clear navigational targets and announces the section's name contextually.
+**Action:** When adding HTML `<section>` elements in scripts, ensure they include `role="region"` and are labelled by their associated heading using `aria-labelledby` and `id`.
