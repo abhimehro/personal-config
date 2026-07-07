@@ -570,3 +570,6 @@ invocation.
 ## 2026-07-06 - [Avoid eager empty dict allocations in .get() chains]
 **Learning:** Chaining `.get("key") or {}` inside tight loops causes Python to allocate new empty dictionary objects on every iteration when the key is missing, leading to unnecessary memory overhead.
 **Action:** Replace `(obj.get("key") or {}).get("sub_key")` with a multi-step check: `val = obj.get("key"); sub = val.get("sub_key") if val else default` to prevent redundant object allocations.
+## 2026-07-06 - [Avoid unnecessary dictionary wrappers for intermediate string collections]
+**Learning:** Extracting string values into intermediate dictionaries (e.g., `{"path": val}`) and later unpacking them via list comprehensions or generators (e.g., `f["path"] for f in...`) causes redundant object allocations. When extracting millions of nodes for sorting, this pattern significantly degrades CPU and memory performance.
+**Action:** Extract the primitive values directly into a list (e.g., `[node["path"] for...]`) and process the list of primitives directly, skipping the unnecessary dictionary wrapper entirely.
