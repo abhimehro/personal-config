@@ -1,5 +1,9 @@
 # Lessons Learned
 
+## Lesson 0da: Palette siblings on palette.md — merge order matters (2026-07-07)
+
+**Pattern:** pc #1530 (ARIA landmarks) and #1527 (performance report a11y) both touched `.jules/palette.md` and `performance_optimizer.sh`. Squash-merging #1530 first left #1527 CONFLICTING despite green CI at triage time. **Rule:** When multiple Palette PRs share `palette.md`, merge the broader dashboard PR first or immediately merge `origin/main` into the sibling before squash-merge. Journal conflicts: keep **both** learning entries (dedupe by date/title). **Detection cost:** Low — `gh pr diff --name-only` shows shared `.jules/palette.md`.
+
 ## Lesson 0cy: Two-cron day — evening salvage reads merged morning artifacts (2026-07-05)
 
 **Pattern:** Morning Phase 1 (13:00 UTC) cleared 27/31 PRs and opened session-doc PR #1504; evening salvage (17:00 UTC) started with only 9 open PRs. Merging #1504 landed morning artifacts before writing evening addendum. **Rule:** Evening salvage must re-fetch live GitHub state (Step 1) and merge any pending session-doc PR from the morning run before appending evening salvage reports — never overwrite unmerged morning artifacts on a working branch. **Detection cost:** Low — check if `tasks/pr-review-YYYY-MM-DD.md` exists on `main` vs open session-doc PR.
