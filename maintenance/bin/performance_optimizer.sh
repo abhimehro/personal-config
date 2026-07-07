@@ -462,21 +462,22 @@ generate_performance_report() {
     </style>
 </head>
 <body>
-    <div class="header">
+    <header class="header">
         <h1><span aria-hidden="true">🚀</span> Performance Report</h1>
         <p>Generated: $(date)</p>
-    </div>
+    </header>
     
-    <div class="section">
-        <h2><span aria-hidden="true">💻</span> System Information</h2>
+    <main>
+    <section class="section" aria-labelledby="sys-info-heading">
+        <h2 id="sys-info-heading"><span aria-hidden="true">💻</span> System Information</h2>
         <div class="metric">System: $system_info</div>
         <div class="metric">CPU: $cpu_info</div>
         <div class="metric">Memory: ${memory_info} GB</div>
         <div class="metric">Disk: $disk_info</div>
-    </div>
+    </section>
     
-    <div class="section">
-        <h2><span aria-hidden="true">📊</span> Current Performance Metrics</h2>
+    <section class="section" aria-labelledby="perf-metrics-heading">
+        <h2 id="perf-metrics-heading"><span aria-hidden="true">📊</span> Current Performance Metrics</h2>
         <table aria-label="Performance Metrics">
             <tr><th scope="col">Metric</th><th scope="col">Value</th><th scope="col">Status</th></tr>
 EOF
@@ -499,12 +500,12 @@ EOF
 	cat >>"$report_file" <<EOF
             <tr><td>CPU Load</td><td>$cpu_load</td><td class="$cpu_status">$(echo $cpu_status | tr '[:lower:]' '[:upper:]')</td></tr>
             <tr><td>Memory Free Pages</td><td>$memory_usage</td><td class="good">GOOD</td></tr>
-            <tr><td>Disk Usage</td><td>${disk_usage}%</td><td class="$disk_status">$(echo $disk_status | tr '[:lower:]' '[:upper:]')</td></tr>
+            <tr><td>Disk Usage</td><td>${disk_usage}%</td><td class="$disk_status">$(echo "$disk_status" | tr '[:lower:]' '[:upper:]')</td></tr>
         </table>
-    </div>
+    </section>
     
-    <div class="section">
-        <h2><span aria-hidden="true">💡</span> Optimization Recommendations</h2>
+    <section class="section" aria-labelledby="opt-recs-heading">
+        <h2 id="opt-recs-heading"><span aria-hidden="true">💡</span> Optimization Recommendations</h2>
         <ul>
 EOF
 
@@ -515,12 +516,13 @@ EOF
 
 	cat >>"$report_file" <<EOF
         </ul>
-    </div>
+    </section>
     
-    <div class="section">
-        <h2><span aria-hidden="true">🔄</span> Recent Optimizations</h2>
+    <section class="section" aria-labelledby="recent-opts-heading">
+        <h2 id="recent-opts-heading"><span aria-hidden="true">🔄</span> Recent Optimizations</h2>
         <p>Last optimization run: $(tail -1 "$PERFORMANCE_LOG" 2>/dev/null || echo "Never")</p>
-    </div>
+    </section>
+    </main>
 </body>
 </html>
 EOF
