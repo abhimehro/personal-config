@@ -443,15 +443,15 @@ EOF
 	cat >>"$dashboard_file" <<EOF
         </div>
         
-        <section class="section">
-            <h2><span aria-hidden="true">📊</span> System Insights</h2>
+        <section class="section" aria-labelledby="insights-heading" role="region">
+            <h2 id="insights-heading"><span aria-hidden="true">📊</span> System Insights</h2>
             <div class="insights-box">
                 <pre>$(cat "$insights_file" 2>/dev/null || echo "Insights not available")</pre>
             </div>
         </section>
         
-        <section class="section">
-            <h2><span aria-hidden="true">🔄</span> Recent Activity</h2>
+        <section class="section" aria-labelledby="activity-heading" role="region">
+            <h2 id="activity-heading"><span aria-hidden="true">🔄</span> Recent Activity</h2>
             <div class="insights-box">
                 <p>Latest maintenance tasks and system activities:</p>
                 <ul>
