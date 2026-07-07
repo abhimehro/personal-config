@@ -468,7 +468,7 @@ generate_performance_report() {
     </header>
     
     <main>
-    <section class="section" aria-labelledby="sys-info-heading">
+    <section class="section" aria-labelledby="sys-info-heading" role="region">
         <h2 id="sys-info-heading"><span aria-hidden="true">💻</span> System Information</h2>
         <div class="metric">System: $system_info</div>
         <div class="metric">CPU: $cpu_info</div>
@@ -476,7 +476,7 @@ generate_performance_report() {
         <div class="metric">Disk: $disk_info</div>
     </section>
     
-    <section class="section" aria-labelledby="perf-metrics-heading">
+    <section class="section" aria-labelledby="perf-metrics-heading" role="region">
         <h2 id="perf-metrics-heading"><span aria-hidden="true">📊</span> Current Performance Metrics</h2>
         <table aria-label="Performance Metrics">
             <tr><th scope="col">Metric</th><th scope="col">Value</th><th scope="col">Status</th></tr>
@@ -504,7 +504,7 @@ EOF
         </table>
     </section>
     
-    <section class="section" aria-labelledby="opt-recs-heading">
+    <section class="section" aria-labelledby="opt-recs-heading" role="region">
         <h2 id="opt-recs-heading"><span aria-hidden="true">💡</span> Optimization Recommendations</h2>
         <ul>
 EOF
@@ -518,7 +518,7 @@ EOF
         </ul>
     </section>
     
-    <section class="section" aria-labelledby="recent-opts-heading">
+    <section class="section" aria-labelledby="recent-opts-heading" role="region">
         <h2 id="recent-opts-heading"><span aria-hidden="true">🔄</span> Recent Optimizations</h2>
         <p>Last optimization run: $(tail -1 "$PERFORMANCE_LOG" 2>/dev/null || echo "Never")</p>
     </section>
