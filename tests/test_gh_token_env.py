@@ -30,6 +30,11 @@ class TestGhTokenEnv(unittest.TestCase):
         parse_env_line("export BAZ='qux'", env)
         self.assertEqual(env["BAZ"], "qux")
 
+    def test_parse_env_line_rejects_command_substitution(self):
+        env: dict[str, str] = {}
+        parse_env_line("GH_TOKEN=$(id)", env)
+        self.assertEqual(env, {})
+
     def test_read_env_file_oserror(self):
         self.assertEqual(_read_env_file(Path("/does/not/exist/ever.env")), {})
 
