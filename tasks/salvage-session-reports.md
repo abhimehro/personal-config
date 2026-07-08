@@ -400,6 +400,44 @@
 - Maintainer actions required: review drafts pc#1471 (T3 perf) + cs#974 (T3 UX)
 - Cross-links: [Session report](tasks/pr-review-2026-07-03.md)
 
+## Run — 2026-07-08 (evening salvage)
+
+### Input tail
+
+- Source report: morning Phase 1 merged via [#1546](https://github.com/abhimehro/personal-config/pull/1546) + live GitHub re-fetch
+- PRs investigated: 11 across 5 repos (1 DIRTY Bolt, 3 escalated security, 4 rpce macOS, 1 new Palette)
+
+### Salvage results
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| series_correction_project_updated | #204 | SALVAGE draft | [#206](https://github.com/abhimehro/series_correction_project_updated/pull/206) | MAD rolling_median reuse; dropped processor.py refactor |
+
+### Phase 1 merges (same evening pass)
+
+- pc [#1546](https://github.com/abhimehro/personal-config/pull/1546) — morning session artifacts (draft → ready → squash)
+
+### Counts
+
+- Deep-dived: 11
+- Salvaged: 1
+- Infra-fix PRs: 0
+- Closed superseded: 1 (sc#204)
+- Phase 1 merges: 1
+- Net new draft PRs awaiting human review: 1
+- Escalated unchanged: 3
+- Deferred carry-forward: 6
+
+### Verification status
+
+- Local verify: `python3 -m pytest scripts/tests/ -v` — 58 passed (sc#206)
+- CodeScene remediation: `/cs-agent` posted on sc#205
+
+### Handoff
+
+- Maintainer actions: T1 review cs#990 benchmark; T2 review pc#1544 + esp#1240; T3 merge sc#206 when CI green; macOS lane for rpce#100–#102/#105
+- Cross-links: [Session report](tasks/pr-review-2026-07-08.md)
+
 ## Run — 2026-07-05 (evening salvage)
 
 ### Input tail

@@ -1,5 +1,9 @@
 # Lessons Learned
 
+## Lesson 0dg: DIRTY Bolt MAD — salvage perf lines only, drop processor refactor (2026-07-08)
+
+**Pattern:** sc #204 bundled a 7-line MAD `rolling_median` optimization with a 500-line `processor.py` reformat/refactor; branch went `DIRTY` after #201 black-format merge on `main`. **Rule:** When a Bolt perf PR's `git diff --stat` shows massive churn in unrelated modules alongside a small stated optimization, salvage only the perf lines onto fresh `main` (here: `export_comparison_sheets.py` + `discontinuity_utils.py`), verify with pytest, open draft, close original as superseded. **Detection cost:** Low — `git diff --stat` line ratio >50:1 between processor.py and the stated target files.
+
 ## Lesson 0db: CodeScene can flip green on deferred format sweeps (2026-07-08)
 
 **Pattern:** sc #201 (black auto-format) was deferred on 2026-07-07 for CodeScene FAIL; on 2026-07-08 the same PR showed CodeScene SUCCESS with no new commits. **Rule:** Re-triage deferred CodeScene-blocked PRs at the start of each session before carrying forward DEFER status — formatting-only sweeps may clear without agent intervention. **Detection cost:** Low — `gh pr checks` on session start.
