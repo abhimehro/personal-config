@@ -573,3 +573,7 @@ invocation.
 ## 2026-07-06 - [Avoid unnecessary dictionary wrappers for intermediate string collections]
 **Learning:** Extracting string values into intermediate dictionaries (e.g., `{"path": val}`) and later unpacking them via list comprehensions or generators (e.g., `f["path"] for f in...`) causes redundant object allocations. When extracting millions of nodes for sorting, this pattern significantly degrades CPU and memory performance.
 **Action:** Extract the primitive values directly into a list (e.g., `[node["path"] for...]`) and process the list of primitives directly, skipping the unnecessary dictionary wrapper entirely.
+
+## 2026-11-20 - [Avoid eager empty dict allocations in chained .get() loops in detect_duplicates]
+**Learning:** Chaining `.get("key", {}) or {}` inside processing loops allocates new empty dictionary objects on every iteration when the key is missing or the value is falsy, leading to measurable memory allocation overhead on the fast path.
+**Action:** Replace `val.get("key", {}) or {}` with `val.get("key")` and handle `None` checking directly before iterating to prevent redundant dict allocations.
