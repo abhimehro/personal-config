@@ -296,3 +296,6 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## $(date "+%Y-%m-%d") - ARIA landmarks on semantic HTML elements
 **Learning:** While named `<section>` elements with an `aria-labelledby` attribute implicitly have the `region` role in modern browsers according to W3C HTML5/ARIA specifications, explicitly defining `role="region"` is a valid, harmless practice that can improve compatibility with older screen readers. However, it's technically redundant in modern contexts and should be weighed against reducing HTML bloat.
 **Action:** When adding semantic HTML elements like `<section>`, prioritize `aria-labelledby` for clear naming. Only add explicit `role="region"` if compatibility with older assistive technologies is a stated requirement for the project.
+## 2026-04-02 - Add Empty State for Directory Listings
+**Learning:** Dynamically generated HTML views for directory structures (like media servers) can leave users confused when folders are empty, as the page appears broken or unpopulated. Providing an explicit empty state with an accessible icon and text confirms the directory is intentionally empty, improving confidence.
+**Action:** Always include a visual empty state (e.g., "📭 This folder is empty") when rendering dynamic lists or directories that contain 0 items.

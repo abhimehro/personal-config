@@ -267,16 +267,7 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
             for item in files
             if item
         ]
-
-        if items_html:
-            html_parts.extend(items_html)
-        else:
-            html_parts.append(
-                '<div style="text-align: center; padding: 40px 20px; color: #666; background: #f9f9f9; border-radius: 8px; margin-top: 20px;">\n'
-                '    <span aria-hidden="true" style="font-size: 2.5em; display: block; margin-bottom: 10px;">📭</span>\n'
-                '    <p style="margin: 0; font-size: 1.1em;">This folder is empty</p>\n'
-                '</div>\n'
-            )
+        html_parts.extend(items_html)
 
         html_parts.append("""
         </body>
