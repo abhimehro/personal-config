@@ -296,3 +296,6 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## $(date "+%Y-%m-%d") - ARIA landmarks on semantic HTML elements
 **Learning:** While named `<section>` elements with an `aria-labelledby` attribute implicitly have the `region` role in modern browsers according to W3C HTML5/ARIA specifications, explicitly defining `role="region"` is a valid, harmless practice that can improve compatibility with older screen readers. However, it's technically redundant in modern contexts and should be weighed against reducing HTML bloat.
 **Action:** When adding semantic HTML elements like `<section>`, prioritize `aria-labelledby` for clear naming. Only add explicit `role="region"` if compatibility with older assistive technologies is a stated requirement for the project.
+## $(date +%Y-%m-%d) - Semantic Lists for Grouped Data
+**Learning:** When displaying grouped key-value data (like system specs) in bash-generated HTML reports, using generic `<div>` elements causes screen readers to read them as disconnected text nodes. This creates a fragmented audio experience.
+**Action:** Convert sequential `<div>` data blocks into semantic `<ul>` and `<li>` lists to provide screen readers with grouping context and item counts.

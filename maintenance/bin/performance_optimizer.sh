@@ -470,10 +470,12 @@ generate_performance_report() {
     <main>
     <section class="section" aria-labelledby="sys-info-heading" role="region">
         <h2 id="sys-info-heading"><span aria-hidden="true">💻</span> System Information</h2>
-        <div class="metric">System: $system_info</div>
-        <div class="metric">CPU: $cpu_info</div>
-        <div class="metric">Memory: ${memory_info} GB</div>
-        <div class="metric">Disk: $disk_info</div>
+        <ul aria-labelledby="sys-info-heading">
+            <li class="metric"><strong>System:</strong> $system_info</li>
+            <li class="metric"><strong>CPU:</strong> $cpu_info</li>
+            <li class="metric"><strong>Memory:</strong> ${memory_info} GB</li>
+            <li class="metric"><strong>Disk:</strong> $disk_info</li>
+        </ul>
     </section>
     
     <section class="section" aria-labelledby="perf-metrics-heading" role="region">
