@@ -1,5 +1,13 @@
 # Lessons Learned
 
+## Lesson 0db: CodeScene can flip green on deferred format sweeps (2026-07-08)
+
+**Pattern:** sc #201 (black auto-format) was deferred on 2026-07-07 for CodeScene FAIL; on 2026-07-08 the same PR showed CodeScene SUCCESS with no new commits. **Rule:** Re-triage deferred CodeScene-blocked PRs at the start of each session before carrying forward DEFER status — formatting-only sweeps may clear without agent intervention. **Detection cost:** Low — `gh pr checks` on session start.
+
+## Lesson 0dc: Security hardening PRs split by trust-boundary type (2026-07-08)
+
+**Pattern:** hg #330 (Sentinel path-traversal fix, production code hardening) merged with green CI; pc #1544 and esp #1240 (PR automation script injection fixes) escalated despite green CI. **Rule:** Distinguish **application hardening** (merge when CI green and diff reduces attack surface) from **automation trust-boundary** changes (always escalate for human approval even when CI passes). **Detection cost:** Low — branch prefix `cursor-agent/fix-*-injection` or title contains `security(ABHI-*`.
+
 ## Lesson 0da: Palette siblings on palette.md — merge order matters (2026-07-07)
 
 **Pattern:** pc #1530 (ARIA landmarks) and #1527 (performance report a11y) both touched `.jules/palette.md` and `performance_optimizer.sh`. Squash-merging #1530 first left #1527 CONFLICTING despite green CI at triage time. **Rule:** When multiple Palette PRs share `palette.md`, merge the broader dashboard PR first or immediately merge `origin/main` into the sibling before squash-merge. Journal conflicts: keep **both** learning entries (dedupe by date/title). **Detection cost:** Low — `gh pr diff --name-only` shows shared `.jules/palette.md`.
