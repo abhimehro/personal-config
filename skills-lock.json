@@ -85,6 +85,12 @@
       "skillPath": "skills/firebase-security-rules-auditor/SKILL.md",
       "computedHash": "5a90e991bb9acfd3e43bfb570498dee60b9cef94cbb80cfb99257c7e4f61c1a0"
     },
+    "windscribe-vpn": {
+      "source": "Windscribe/Desktop-App",
+      "sourceType": "github",
+      "skillPath": "skills/windscribe-cli/SKILL.md",
+      "computedHash": "c6222c01ab4bf4fa623b9c1e3f0a4a3fe8e2250b0a86b67f65bbff937d586f1a"
+    },
     "xcode-project-setup": {
       "source": "firebase/agent-skills",
       "sourceType": "github",

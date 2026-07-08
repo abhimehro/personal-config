@@ -58,6 +58,9 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+my-agent/swe_benchmark_agent/.adk/session.db 
+security-first-dev-agent/app/.adk/session.db 
+all.patch
 
 # =============================================================================
 # DEVELOPMENT
@@ -311,3 +314,4 @@ venv/
 *.tfstate.*
 *.tfvars
 *.tfvars.*
+
