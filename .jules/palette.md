@@ -293,3 +293,6 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## 2024-07-07 - ARIA Landmarks for Dashboard Sections
 **Learning:** Screen reader users benefit significantly when discrete content areas are marked as landmarks. Using `<section role="region" aria-labelledby="heading-id">` provides clear navigational targets and announces the section's name contextually.
 **Action:** When adding HTML `<section>` elements in scripts, ensure they include `role="region"` and are labelled by their associated heading using `aria-labelledby` and `id`.
+## $(date "+%Y-%m-%d") - ARIA landmarks on semantic HTML elements
+**Learning:** While named `<section>` elements with an `aria-labelledby` attribute implicitly have the `region` role in modern browsers according to W3C HTML5/ARIA specifications, explicitly defining `role="region"` is a valid, harmless practice that can improve compatibility with older screen readers. However, it's technically redundant in modern contexts and should be weighed against reducing HTML bloat.
+**Action:** When adding semantic HTML elements like `<section>`, prioritize `aria-labelledby` for clear naming. Only add explicit `role="region"` if compatibility with older assistive technologies is a stated requirement for the project.
