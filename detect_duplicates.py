@@ -85,13 +85,13 @@ def _build_graphql_query(chunk):
 def _extract_pr_data(repo, pr_result):
     if not pr_result:
         return None
-    pr_data = pr_result.get("pullRequest") or {}
+    pr_data = pr_result.get("pullRequest")
     if not pr_data:
         return None
 
-    files_data = pr_data.get("files", {}) or {}
-    nodes = files_data.get("nodes", []) or []
-    files = [node["path"] for node in nodes if "path" in node]
+    files_data = pr_data.get("files")
+    nodes = files_data.get("nodes") if files_data else None
+    files = [node["path"] for node in nodes if "path" in node] if nodes else []
 
     return (repo, {
         "number": pr_data.get("number"),
