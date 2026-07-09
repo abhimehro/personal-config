@@ -20,3 +20,9 @@ fix-dns() {
   sudo killall -HUP mDNSResponder
   echo "DNS restored to DHCP on all interfaces"
 }
+
+# 1Password CLI shell plugins (agent/CI/non-TTY gated inside plugins.sh)
+# SECURITY: Do not bypass OP_AGENT_SKIP / CURSOR_AGENT gates in plugins.sh.
+if [[ -f "$HOME/.config/op/plugins.sh" ]]; then
+  source "$HOME/.config/op/plugins.sh"
+fi

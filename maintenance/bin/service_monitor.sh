@@ -76,11 +76,14 @@ USER_SERVICES=(
 	"com.apple.photolibraryd"
 )
 
-# Problem services that should not be running (or should be killed if found)
+# Problem services that should not be running (or should be killed if found).
+# Keep at least one inert placeholder: macOS /bin/bash (3.2) + set -u treats an
+# empty "${ARRAY[@]}" as unbound and aborts the LaunchAgent mid-run.
 PROBLEM_PROCESSES=(
 	# Disabled to prevent kill-restart loops
 	# "CalendarWidgetExtension"
 	# "PodcastsWidget"
+	"__service_monitor_no_problem_processes__"
 )
 
 # =============================================================================
@@ -210,6 +213,8 @@ append ""
 append "Problematic Processes:"
 append "----------------------"
 for process in "${PROBLEM_PROCESSES[@]}"; do
+	# Skip inert placeholder used to keep the array non-empty under bash 3.2 + set -u
+	[[ $process == __service_monitor_no_problem_processes__ ]] && continue
 	if check_process_running "$process"; then
 		append "⚠️  $process: RUNNING (should not be)"
 		log_warn "$process is running - killing process"

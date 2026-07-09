@@ -137,6 +137,8 @@ nm-cd-status       # Check Control D daemon status
 ./scripts/network-mode-regression.sh browsing
 ```
 
+**Control D (2026-07-09):** Expect **WORKING / local_fallback** (profile-aware Local Config, brew ctrld v1.5.3). Check with `./scripts/controld-status.sh`. CD Mode is upstream-broken; see `AGENTS.md`.
+
 Under the hood, `controld-system/scripts/controld-manager` remains the engine
 that starts `ctrld` and applies the correct Control D profile;
 `network-mode-manager.sh` wraps this with IPv6 management, DNS routing, and

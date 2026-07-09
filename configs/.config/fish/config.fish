@@ -73,8 +73,28 @@ end
 # ============================================
 # Prefer the 1Password SSH agent when available, and fall back to the
 # macOS agent when its socket is not present.
+# SECURITY: Skip 1Password SSH agent in Cursor/CI/non-interactive shells so
+# biometric/GUI prompts cannot block agent automation. Interactive human
+# shells keep full 1Password SSH UX. Override: OP_AGENT_SKIP=0 forces 1P;
+# OP_AGENT_SKIP=1 forces skip.
+set -l _op_skip_ssh 0
+if set -q OP_AGENT_SKIP
+    switch "$OP_AGENT_SKIP"
+        case 1 true TRUE yes YES
+            set _op_skip_ssh 1
+        case 0 false FALSE no NO
+            set _op_skip_ssh 0
+        case '*'
+            set _op_skip_ssh 0
+    end
+else if set -q CURSOR_AGENT; or set -q CI; or set -q GITHUB_ACTIONS
+    set _op_skip_ssh 1
+else if not status is-interactive
+    set _op_skip_ssh 1
+end
+
 set -l op_sock "$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
-if test -S $op_sock
+if test $_op_skip_ssh -eq 0; and test -S $op_sock
     set -gx SSH_AUTH_SOCK $op_sock
 else
     set -l mac_sock (command launchctl getenv SSH_AUTH_SOCK 2>/dev/null)
