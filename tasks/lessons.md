@@ -1,5 +1,17 @@
 # Lessons Learned
 
+## Lesson 0dg: Jules `.orig` backup artifacts block Palette merges (2026-07-09)
+
+**Pattern:** pc #1547 (Palette empty-state UX) was `DIRTY` and carried `*.py.orig` backup files alongside the real change. CI was green but merge was blocked by conflict + artifact hygiene. **Rule:** When salvaging Palette/Jules PRs, take only the production file + test + append-only journal entry; never checkout `*.orig` files. Close the original with a link to the clean salvage draft. **Detection cost:** Low — `gh pr diff --name-only` includes `*.orig` paths.
+
+## Lesson 0dh: Bolt PRs with ephemeral root fix scripts are no-ops (2026-07-09)
+
+**Pattern:** sc #209 mixed a valid `rolling_median` optimization with root-level `fix_processor.py`, `fix_lint_again.py`, etc. The optimization was already salvaged cleanly on #206. **Rule:** Reject salvage of PRs that add ephemeral one-off fix scripts at repo root; close as superseded when a clean salvage branch already exists. **Detection cost:** Low — `git diff --name-only` shows new `fix_*.py` at repo root outside `scripts/`.
+
+## Lesson 0di: Sentinel security salvage — take only the security lines (2026-07-09)
+
+**Pattern:** sc #205 bundled exception sanitization in `generate_overview_table.py` with a large `processor.py` refactor that made the branch `DIRTY`. **Rule:** For Sentinel PRs on conflicted branches, salvage only the security-relevant file changes + tests onto fresh `main`; discard bundled refactors. **Detection cost:** Low — PR title states security fix but `git diff --stat` shows >50 lines in unrelated modules.
+
 ## Lesson 0db: CodeScene can flip green on deferred format sweeps (2026-07-08)
 
 **Pattern:** sc #201 (black auto-format) was deferred on 2026-07-07 for CodeScene FAIL; on 2026-07-08 the same PR showed CodeScene SUCCESS with no new commits. **Rule:** Re-triage deferred CodeScene-blocked PRs at the start of each session before carrying forward DEFER status — formatting-only sweeps may clear without agent intervention. **Detection cost:** Low — `gh pr checks` on session start.

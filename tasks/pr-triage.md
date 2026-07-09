@@ -1,3 +1,88 @@
+# PR Triage — 2026-07-09 (Phase 2 Salvage)
+
+**Session:** Automated PR salvage & cleanup (cron 17:00 UTC)  
+**Mode:** salvage-only (no autonomous merges)  
+**Preflight:** PASS  
+**Input:** Phase 1 deferred tail from `tasks/pr-review-2026-07-09.md`
+
+## Decision matrix
+
+| Decision | Count | PRs |
+|----------|------:|-----|
+| SALVAGE (draft opened) | 2 | pc #1547 → #1559; sc #205 → #210 |
+| CLOSE-SUPERSEDED | 3 | sc #205, sc #209; pc #1547 |
+| ESCALATE (unchanged) | 5 | pc #1544; cs #990; esp #1240, #1244; rpce #105, #112 |
+| DEFER (unchanged) | 9 | pc #1554, #1557, #1548; cs #997; sc #206; rpce #110, #102, #108 |
+
+## Security gates
+
+| PR | Gate | Rationale |
+|----|------|-----------|
+| sc #210 (salvage) | **T1 draft** | Sentinel exception sanitization — reduces info leak; human merge required |
+| pc #1559 (salvage) | **T3 draft** | Palette empty-state UX — no trust-boundary changes |
+| sc #209 | **CLOSE** | Superseded by clean salvage #206; ephemeral root fix scripts rejected |
+| pc #1544 | **ESCALATE** | PR automation trust boundary — unchanged |
+| esp #1240, #1244 | **ESCALATE** | Security-sensitive — unchanged |
+| cs #990 | **ESCALATE** | SSRF allowlist — unchanged |
+| rpce #105, #112 | **ESCALATE** | Sentinel URLSession / token leak — human review |
+
+## Salvage verification
+
+| Draft PR | Local verify | CI |
+|----------|--------------|-----|
+| pc #1559 | `python3 -m unittest tests.test_infuse_media_server -v` — 6 passed | pending |
+| sc #210 | `python3 -m pytest scripts/tests/test_generate_overview_table.py -v` — 3 passed | CodeScene green |
+
+## Deferred follow-ups
+
+```yaml
+open_followups:
+  - repo: abhimehro/personal-config
+    pr: 1559
+    reason: SALVAGE draft — empty-state UX (review + merge)
+  - repo: abhimehro/series_correction_project_updated
+    pr: 210
+    reason: SALVAGE draft — exception sanitization (T1 review)
+  - repo: abhimehro/series_correction_project_updated
+    pr: 206
+    reason: SALVAGE draft — MAD perf optimization (prior session)
+  - repo: abhimehro/personal-config
+    pr: 1544
+    reason: ESCALATE — PR automation security
+  - repo: abhimehro/ctrld-sync
+    pr: 990
+    reason: ESCALATE — SSRF allowlist + benchmark fail
+  - repo: abhimehro/email-security-pipeline
+    pr: 1240
+    reason: ESCALATE — command injection fix
+  - repo: abhimehro/email-security-pipeline
+    pr: 1244
+    reason: ESCALATE — setup.sh password exposure
+  - repo: abhimehro/repoprompt-ce
+    pr: 105
+    reason: ESCALATE — URLSession hardening + Style/Build
+  - repo: abhimehro/repoprompt-ce
+    pr: 112
+    reason: ESCALATE — Sentinel token leak (new)
+  - repo: abhimehro/repoprompt-ce
+    pr: 110
+    reason: DEFER — macOS SwiftFormat Style gate
+  - repo: abhimehro/repoprompt-ce
+    pr: 102
+    reason: DEFER — dependabot + Style/Build
+  - repo: abhimehro/repoprompt-ce
+    pr: 108
+    reason: DEFER — dependabot + Style/Build
+  - repo: abhimehro/ctrld-sync
+    pr: 997
+    reason: DEFER — CodeScene FAIL
+  - repo: abhimehro/personal-config
+    pr: 1554
+    reason: DEFER — workflow Gate CI
+```
+
+---
+
 # PR Triage — 2026-07-08
 
 **Session:** Automated PR review & cleanup (cron 13:00 UTC)  
@@ -31,7 +116,7 @@ Deferred on 2026-07-07 for CodeScene red; re-triaged green on 2026-07-08 and mer
 
 ### Jules no-op closure
 
-esp #1241 had zero file changes (“No findings”) — closed rather than merged.
+esp #1241 had zero file changes ("No findings") — closed rather than merged.
 
 ### Superseded session doc
 
@@ -66,81 +151,3 @@ open_followups:
     pr: 105
     reason: DEFER — Sentinel URLSession + Style/Build red
 ```
-
----
-
-# PR Triage — 2026-07-07
-
-**Session:** Automated PR review & cleanup (cron 13:00 UTC)  
-**Mode:** review-and-merge  
-**Preflight:** PASS 6/6
-
-## Decision matrix
-
-| Decision | Count | PRs |
-|----------|------:|-----|
-| MERGE | 12 | pc #1531, #1530, #1537, #1527; cs #992; esp #1235, #1233; Seatek #425, #427; hg #326, #327; sc #202 |
-| AUTO-FIX → MERGE | 1 | pc #1527 (palette.md conflict after #1530) |
-| CLOSE | 1 | pc #1528 (superseded draft salvage report) |
-| DEFER | 7 | cs #990; Seatek #426; sc #201; rpce #100–#103 |
-
-## Security gates
-
-| PR | Gate | Rationale |
-|----|------|-----------|
-| cs #990 | **ESCALATE** | SSRF domain allowlist — trust-boundary change; benchmark CI red unrelated to deps |
-| sc #201 | DEFER + cs-agent | CodeScene health degradation on black format sweep |
-| All merged PRs | PASS | No auth/payment/schema changes; security scans green |
-
-## Duplicate & overlap analysis
-
-### Palette journal conflict (resolved)
-
-| Merged first | Blocked | Resolution |
-|--------------|---------|------------|
-| pc #1530 (ARIA landmarks + palette.md) | pc #1527 (performance report a11y) | Merged `origin/main` into #1527; kept both palette.md learning entries |
-
-### Superseded draft
-
-| Closed | Reason |
-|--------|--------|
-| pc #1528 | Evening salvage report draft from 2026-07-06 superseded by this session |
-
-### Dependabot codescene-agent cluster
-
-Same SHA bump (`841e34c7` → `bbc72fbfb8`) across 6 repos — all merged where CI green. repoprompt-ce copies deferred on Style/Build failures (macOS gate).
-
-## Deferred follow-ups
-
-```yaml
-open_followups:
-  - repo: abhimehro/ctrld-sync
-    pr: 990
-    reason: ESCALATE — SSRF allowlist + benchmark fail; human security review
-  - repo: abhimehro/Seatek_Analysis
-    pr: 426
-    reason: DEFER — validate check on numpy >=2.5.1 bump
-  - repo: abhimehro/series_correction_project_updated
-    pr: 201
-    reason: DEFER — CodeScene red; cs-agent posted
-  - repo: abhimehro/repoprompt-ce
-    pr: 100
-    reason: DEFER — SwiftFormat Style (macOS salvage)
-  - repo: abhimehro/repoprompt-ce
-    pr: 101
-    reason: DEFER — Style + Build shard 2
-  - repo: abhimehro/repoprompt-ce
-    pr: 102
-    reason: DEFER — Style + Build shard 2
-  - repo: abhimehro/repoprompt-ce
-    pr: 103
-    reason: DEFER — Style + Build shard 2
-```
-
----
-
-# PR Triage — 2026-07-05 (evening salvage)
-
-## Context
-
-Morning Phase 1 (cron 13:00 UTC) cleared 27/31 PRs; artifacts merged via [#1504](https://github.com/abhimehro/personal-config/pull/1504). This evening salvage pass (cron 17:00 UTC) processes the 9-PR tail plus any new bot PRs opened during the day.

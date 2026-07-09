@@ -4,6 +4,46 @@
 > writer: salvage automation only. Do not edit review entries here; review
 > writes to `tasks/review-session-reports.md`.
 
+## Run — 2026-07-09
+
+### Input tail
+
+- Source report/snapshot: `tasks/pr-review-2026-07-09.md` (Phase 1 deferred tail via PR [#1557](https://github.com/abhimehro/personal-config/pull/1557)) + live GitHub re-fetch
+- PRs investigated: 6 across 2 repos (3 DIRTY at start: pc #1547, sc #205, sc #209)
+
+### Salvage results
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | [#1547](https://github.com/abhimehro/personal-config/pull/1547) | SALVAGE draft | [#1559](https://github.com/abhimehro/personal-config/pull/1559) | Empty-state UX; `.orig` excluded |
+| series_correction_project_updated | [#205](https://github.com/abhimehro/series_correction_project_updated/pull/205) | SALVAGE draft | [#210](https://github.com/abhimehro/series_correction_project_updated/pull/210) | Exception sanitization; CodeScene green |
+| series_correction_project_updated | [#209](https://github.com/abhimehro/series_correction_project_updated/pull/209) | CLOSE-SUPERSEDED | — | Superseded by #206; ephemeral fix scripts |
+
+### Counts
+
+- Deep-dived: 6
+- Salvaged: 2
+- Infra-fix PRs: 0
+- Closed superseded/no-op: 3
+- Net new draft PRs awaiting human review: 2
+- Autonomous merges: 0
+
+### Verification status
+
+- Local verify: pc `unittest tests.test_infuse_media_server` — 6 passed; sc `pytest scripts/tests/test_generate_overview_table.py` — 3 passed
+- CI: sc #210 CodeScene SUCCESS; pc #1559 CI pending at session end
+- CodeScene remediation: not required on sc #210 (green on first run)
+
+### Handoff
+
+- Maintainer actions required:
+  1. **T1 review** sc [#210](https://github.com/abhimehro/series_correction_project_updated/pull/210) (exception sanitization)
+  2. **T3 review** pc [#1559](https://github.com/abhimehro/personal-config/pull/1559) (empty-state UX)
+  3. **T3 review** sc [#206](https://github.com/abhimehro/series_correction_project_updated/pull/206) (prior MAD perf salvage)
+  4. Security escalations unchanged: pc #1544, cs #990, esp #1240/#1244, rpce #105/#112
+  5. macOS Style salvage for rpce #110/#102/#108
+- Cross-links: [Session report](tasks/pr-review-2026-07-09.md)
+
 ## Entry template
 
 ## Run — 2026-06-21
