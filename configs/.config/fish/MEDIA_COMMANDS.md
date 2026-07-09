@@ -26,6 +26,8 @@ This document lists all available fish shell commands for the media pipeline.
 | `setup-media`        |              | setup-media-library.sh           | Setup media library                              |
 | `check-stale`        |              | check-stale-mounts.sh            | Check for stale media mounts                     |
 | `sync-media-agents`  |              | sync-launchagents.sh             | Sync LaunchAgents for media services             |
+| (manual)             |              | setup-jellyfin-native.sh         | Install LaunchAgent for native Jellyfin          |
+| (manual)             |              | validate-jellyfin.sh             | Validate Jellyfin + CloudMedia mount access      |
 | `bulk-rename`        |              | bulk-rename-cloud.sh             | Bulk rename files in cloud storage               |
 | `approve-downloads`  |              | approve-downloads.sh             | **LEGACY**: Move files to permute_input          |
 | `list-downloads`     |              | approve-downloads.sh --list      | **LEGACY**: List files for permute               |

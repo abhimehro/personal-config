@@ -1,12 +1,14 @@
 # 🎬 Ultimate Autonomous Media Streaming Pipeline
 
-> **Status**: ✅ **FULLY OPTIMIZED** - Updated June 2026 **Architecture**:
-> Hybrid WebDAV + Native macOS FSKit Mount **Performance**: 10GB Bounded VFS
-> Cache (Zero-Memory Bloat)
+> **Status**: ✅ **HYBRID PIPELINE** - Updated July 2026 **Architecture**:
+> Hybrid WebDAV + Native macOS FSKit Mount + **Jellyfin (native, Phase 1 LIVE)**  
+> **Performance**: 10GB Bounded VFS Cache (Zero-Memory Bloat)
 
 This setup provides a high-performance, autonomous media pipeline that bridges
-cloud storage (Google Drive + OneDrive) to Plex and Infuse without consuming
-excessive local disk or memory.
+cloud storage (Google Drive + OneDrive) to **Jellyfin** (primary on LAN
+**8096**) and Infuse (WebDAV backup) without consuming excessive local disk or
+memory. Plex remains a legacy/optional path; it is not required for day-to-day
+playback once Jellyfin is verified.
 
 ## 🏗️ **Architecture: The Hybrid Bridge**
 
@@ -35,9 +37,13 @@ excessive local disk or memory.
      once finished, then uses FileBot to rename and handle duplicate conflicts
      against the live mount, queuing them in `upload_stage`.
 
-4. **📡 Serve (Primary Plex + Backup WebDAV)**
-   - **Plex**: Primary media server. Remote access uses TCP **32400** internally
-     and externally through Windscribe.
+4. **📡 Serve (Primary Jellyfin + Backup WebDAV; Plex legacy)**
+   - **Jellyfin**: Primary media server (native macOS, LAN **8096**). Reads
+     `~/CloudMedia/mounted` directly. See `jellyfin/README.md` and
+     `scripts/setup-jellyfin-native.sh`. Public/Windscribe exposure is
+     **opt-in** after LAN validation.
+   - **Plex**: Legacy server on **32400** until Jellyfin playback is verified;
+     then optional retirement.
    - **WebDAV**: Backup Infuse-compatible server. `media-server-daemon.sh`
      serves on stable internal TCP port **8080** by default.
    - **Windscribe WebDAV mapping**: External TCP **8088** -> internal TCP
@@ -173,8 +179,9 @@ deletion occurs.
 - **Password rotation**: `./scripts/rotate-media-webdav.sh` (see
   `docs/CREDENTIAL_ROTATION.md`).
 - **Port Forwarding**: Use stable TCP mappings via Windscribe:
-  - **Plex**: External **32400** -> internal **32400**. Plex is the primary
-    remote media server.
+  - **Jellyfin** (after explicit approval): External **8096** -> internal
+    **8096**. Do not enable until LAN library + auth are verified.
+  - **Plex** (legacy): External **32400** -> internal **32400**.
   - **WebDAV backup**: External **8088** -> internal **8080**. Do not forward
     dynamic fallback ports (`8081-8083`) for remote access. If Windscribe assigns
     a different external port, keep the internal port fixed at **8080** and
