@@ -205,19 +205,28 @@ test_profile_connection() {
 	return 0
 }
 
-# Generate a robust static DO fallback configuration when the Control D API is unreachable.
+# Generate a robust static DOH fallback when the Control D API is unreachable
+# or returns a schema incompatible with the installed ctrld binary.
 # Usage: generate_fallback_config <profile_name> <profile_id> <profiles_dir>
+# SECURITY: endpoint is always https://dns.controld.com/<profile_id> — NEVER /free.
 generate_fallback_config() {
 	local profile_name="$1"
 	local profile_id="$2"
 	local profiles_dir="$3"
 	local config_file="$profiles_dir/ctrld.$profile_name.fallback.toml"
+	local bootstrap_ip="${CONTROLD_BOOTSTRAP_IP:-76.76.2.22}"
+
+	if [[ -z $profile_id || $profile_id == "free" || $profile_id == *'/'* || $profile_id == *'..'* ]]; then
+		echo "ERROR: refuse generate_fallback_config with invalid/free profile_id" >&2
+		return 1
+	fi
 
 	mkdir -p "$profiles_dir"
 
-	# We use DoH unconditionally for maximum stability during a fallback situation
+	# DoH + real profile endpoint + bootstrap (historical working shape).
 	cat <<EOF >"$config_file"
-# AUTO-GENERATED FALLBACK VIA NM-VPN - BYPASSES CONTROL D API
+# TEMPORARY profile-aware Local Config — bypasses Control D CD Mode API fetch.
+# endpoint uses REAL profile id (NOT free DNS). Prefer CD Mode once ctrld is fixed.
 [listener]
   [listener.0]
     ip = '127.0.0.1'
@@ -233,13 +242,18 @@ generate_fallback_config() {
     name = 'Control D Fallback ($profile_name)'
     type = 'doh'
     endpoint = 'https://dns.controld.com/${profile_id}'
+    bootstrap_ip = '${bootstrap_ip}'
     timeout = 5000
 EOF
 
 	chmod 600 "$config_file" 2>/dev/null || true
 
-	# Verify the file was created
+	# Verify the file was created and is not free-DNS
 	if [[ ! -f $config_file ]]; then
+		return 1
+	fi
+	if grep -qE "dns\.controld\.com/free|freedns\.controld\.com/free" "$config_file"; then
+		rm -f "$config_file"
 		return 1
 	fi
 	return 0

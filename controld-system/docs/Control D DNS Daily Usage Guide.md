@@ -3,7 +3,10 @@
 ## TL;DR – 3 Commands You Need Most
 
 ```bash
-# 1) Use Control D DNS (browsing profile)
+# 0) One-screen health (expect WORKING / local_fallback while CD Mode API is broken)
+./scripts/controld-status.sh
+
+# 1) Use Control D DNS (browsing profile) — Local Config with real profile IDs
 ./scripts/network-mode-manager.sh controld browsing
 
 # 2) Prepare system for Windscribe VPN
@@ -12,6 +15,8 @@
 # 3) Full regression (Control D → Windscribe)
 ./scripts/network-mode-regression.sh browsing
 ```
+
+Stable path note (2026-07-09): CD Mode `--cd` fails on numeric `exclude` even on ctrld v1.5.3. Profile-aware Local Config is intentional and healthy — not free DNS.
 
 If you’re not sure what state you’re in, run:
 

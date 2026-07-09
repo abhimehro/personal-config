@@ -210,6 +210,146 @@ test_switch_profile_invalid_protocol() {
 	return 0
 }
 
+# ── Test: profile_protocol_already_active (pure short-circuit helper) ────────
+test_profile_protocol_already_active() {
+	local ap="$CONTROLD_DIR/active_profile"
+	mkdir -p "$CONTROLD_DIR"
+
+	cat >"$ap" <<'EOF'
+PROFILE_NAME=privacy
+PROTOCOL=doh3
+INTENDED_PROTOCOL=doh3
+EOF
+	if ! profile_protocol_already_active "$ap" "privacy" "doh3" 1; then
+		echo "Fail: exact profile+protocol+dig_ok should short-circuit"
+		return 1
+	fi
+
+	# doh3 → doh must NOT short-circuit
+	if profile_protocol_already_active "$ap" "privacy" "doh" 1; then
+		echo "Fail: doh3→doh must force restart (no short-circuit)"
+		return 1
+	fi
+
+	# dig unhealthy
+	if profile_protocol_already_active "$ap" "privacy" "doh3" 0; then
+		echo "Fail: dig_ok=0 must not short-circuit"
+		return 1
+	fi
+
+	# FALLBACK=1 rewrote PROTOCOL=doh but intended doh3
+	cat >"$ap" <<'EOF'
+PROFILE_NAME=privacy
+PROTOCOL=doh
+INTENDED_PROTOCOL=doh3
+FALLBACK=1
+EOF
+	if profile_protocol_already_active "$ap" "privacy" "doh" 1; then
+		echo "Fail: FALLBACK=1 must never short-circuit"
+		return 1
+	fi
+	if profile_protocol_already_active "$ap" "privacy" "doh3" 1; then
+		echo "Fail: FALLBACK=1 + intended doh3 must not match doh3 short-circuit"
+		return 1
+	fi
+
+	# Profile mismatch
+	cat >"$ap" <<'EOF'
+PROFILE_NAME=privacy
+PROTOCOL=doh3
+INTENDED_PROTOCOL=doh3
+EOF
+	if profile_protocol_already_active "$ap" "browsing" "doh3" 1; then
+		echo "Fail: profile mismatch must not short-circuit"
+		return 1
+	fi
+
+	return 0
+}
+
+# ── Test: switch_profile forces restart on doh3→doh (no false short-circuit) ─
+test_switch_profile_protocol_mismatch_restarts() {
+	export CTR_PROFILE_PRIVACY_ID="test1234"
+	mkdir -p "$CONTROLD_DIR"
+	cat >"$CONTROLD_DIR/active_profile" <<'EOF'
+PROFILE_NAME=privacy
+PROTOCOL=doh3
+INTENDED_PROTOCOL=doh3
+EOF
+
+	# Override pgrep/dig for this test only (ctrld "running", dig healthy).
+	# NOTE: command substitution runs in a subshell — assert via output, not locals.
+	pgrep() { return 0; }
+	dig() { return 0; }
+	restart_with_native_profile() {
+		echo "mock_restart_with_native_profile"
+		return 0
+	}
+
+	local output
+	output=$(switch_profile "privacy" "doh" 2>&1)
+
+	# Restore mocks used by other tests
+	pgrep() { return 1; }
+	unset -f dig 2>/dev/null || true
+	restart_with_native_profile() {
+		echo "mock_restart_with_native_profile"
+		return 0
+	}
+
+	if echo "$output" | grep -q "Already running"; then
+		echo "Fail: doh3→doh incorrectly short-circuited. Output:"
+		echo "$output"
+		return 1
+	fi
+	if ! echo "$output" | grep -q "mock_restart_with_native_profile"; then
+		echo "Fail: doh3→doh should call restart_with_native_profile. Output:"
+		echo "$output"
+		return 1
+	fi
+	return 0
+}
+
+# ── Test: switch_profile short-circuits only on exact profile+protocol ───────
+test_switch_profile_exact_match_short_circuits() {
+	export CTR_PROFILE_PRIVACY_ID="test1234"
+	mkdir -p "$CONTROLD_DIR"
+	cat >"$CONTROLD_DIR/active_profile" <<'EOF'
+PROFILE_NAME=privacy
+PROTOCOL=doh3
+INTENDED_PROTOCOL=doh3
+EOF
+
+	pgrep() { return 0; }
+	dig() { return 0; }
+	restart_with_native_profile() {
+		echo "mock_restart_with_native_profile"
+		return 0
+	}
+
+	local output
+	output=$(switch_profile "privacy" "doh3" 2>&1)
+
+	pgrep() { return 1; }
+	unset -f dig 2>/dev/null || true
+	restart_with_native_profile() {
+		echo "mock_restart_with_native_profile"
+		return 0
+	}
+
+	if ! echo "$output" | grep -q "Already running privacy profile with doh3"; then
+		echo "Fail: exact match should short-circuit. Output:"
+		echo "$output"
+		return 1
+	fi
+	if echo "$output" | grep -q "mock_restart_with_native_profile"; then
+		echo "Fail: exact match should not restart. Output:"
+		echo "$output"
+		return 1
+	fi
+	return 0
+}
+
 # ── Test: main status + stop commands ────────────────────────────────────────
 test_main_commands() {
 	local output
@@ -359,6 +499,18 @@ if ! test_switch_profile_doh_protocol; then
 fi
 if ! test_switch_profile_invalid_protocol; then
 	echo "test_switch_profile_invalid_protocol failed"
+	test_failed=1
+fi
+if ! test_profile_protocol_already_active; then
+	echo "test_profile_protocol_already_active failed"
+	test_failed=1
+fi
+if ! test_switch_profile_protocol_mismatch_restarts; then
+	echo "test_switch_profile_protocol_mismatch_restarts failed"
+	test_failed=1
+fi
+if ! test_switch_profile_exact_match_short_circuits; then
+	echo "test_switch_profile_exact_match_short_circuits failed"
 	test_failed=1
 fi
 if ! test_main_commands; then

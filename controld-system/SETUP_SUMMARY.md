@@ -1,5 +1,8 @@
 # Control D Setup Summary
 
+> **Superseded for ops (2026-07-09):** Live system is `/etc/controld` + network-mode-manager; status **WORKING / local_fallback**; brew **ctrld v1.5.3**. This file documents an older v1.4.7 / `~/.config/controld` snapshot — keep for history, do not follow free-DNS paths.
+
+
 **Date**: November 18, 2025  
 **System**: macOS  
 **ctrld Version**: v1.4.7

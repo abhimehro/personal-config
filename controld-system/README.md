@@ -1,5 +1,9 @@
 # Control D Setup Guide
 
+> **Current (2026-07-09):** Live DNS is **WORKING / local_fallback** — profile-aware Local Config at `/etc/controld/ctrld.toml` with `https://dns.controld.com/<profile_id>` (never free DNS). Binary: Homebrew **ctrld v1.5.3** (`/opt/homebrew/bin/ctrld`; `/usr/local/bin/ctrld` should be a symlink — `sudo ./scripts/controld-dedupe-binary.sh`). CD Mode (`--cd`) is broken until Control D fixes numeric `exclude` JSON; repair defaults to Local Config (`--cd-mode` to force). Day-to-day: `./scripts/network-mode-manager.sh`, `./scripts/controld-status.sh`, `./scripts/repair-controld-keepalive.sh`. See root `AGENTS.md` (Control D section) and Lessons 0dh–0ds.
+>
+> **Historical note:** Sections below that describe `~/.config/controld`, ctrld **v1.4.7**, or static free-DNS toml are from an earlier standalone setup. Prefer `/etc/controld` + network-mode-manager. Do not restore free-DNS configs.
+
 ## Overview
 
 This setup provides three resolver profiles for different use cases:
@@ -10,7 +14,7 @@ This setup provides three resolver profiles for different use cases:
 
 ## Installation Status
 
-✅ `ctrld` installed via Homebrew (v1.4.7)  
+✅ `ctrld` installed via Homebrew (v1.5.3) — see banner above for live path  
 ✅ Configuration file created at `~/.config/controld/ctrld.toml`  
 ✅ Profile switcher script at `~/bin/ctrld-switch`  
 ✅ Service configured for auto-start on boot with `--skip_self_checks`  

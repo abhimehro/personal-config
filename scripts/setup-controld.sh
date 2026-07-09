@@ -84,8 +84,10 @@ if [[ -e "/etc/controld" && ! -d "/etc/controld" ]]; then
 fi
 
 # 🛡️ Sentinel: Use atomic directory creation to prevent TOCTOU race conditions
-# install -d sets permissions/owner atomically upon creation
-sudo install -d -m 700 -o root -g wheel "/etc/controld"
+# install -d sets permissions/owner atomically upon creation.
+# Mode 755 on /etc/controld so LaunchDaemon can write ctrld.toml; keep profiles 700.
+sudo install -d -m 755 -o root -g wheel "/etc/controld"
+sudo install -d -m 700 -o root -g wheel "/etc/controld/profiles" "/etc/controld/backup"
 
 # 🛡️ Sentinel: Post-creation verification to catch TOCTOU symlink swaps
 if [[ -L "/etc/controld" ]]; then
@@ -109,11 +111,26 @@ else
 	log "Configuration file already exists at $ENV_DEST"
 fi
 
+# Ensure CONTROLD_REPO points at this checkout so /usr/local/bin/controld-manager
+# can source scripts/lib (Lesson 0do — installed manager cannot use relative ../..).
+if sudo test -f "$ENV_DEST"; then
+	if ! sudo grep -qE '^[[:space:]]*CONTROLD_REPO=' "$ENV_DEST" 2>/dev/null; then
+		echo "CONTROLD_REPO=\"$REPO_ROOT\"" | sudo tee -a "$ENV_DEST" >/dev/null
+		success "Appended CONTROLD_REPO=$REPO_ROOT to $ENV_DEST"
+	else
+		# Refresh path to this checkout (idempotent).
+		sudo sed -i.bak "s|^[[:space:]]*CONTROLD_REPO=.*|CONTROLD_REPO=\"$REPO_ROOT\"|" "$ENV_DEST"
+		sudo rm -f "${ENV_DEST}.bak"
+		log "CONTROLD_REPO set to $REPO_ROOT"
+	fi
+fi
+
 success "Setup complete!"
 echo ""
 log "Next steps:"
-echo "  1. Start Control D with browsing profile:"
+echo "  1. Prefer repo scripts (always sources latest libs):"
 echo "     cd \"$REPO_ROOT\""
+echo "     sudo ./scripts/repair-controld-keepalive.sh --restart privacy"
 echo "     ./scripts/network-mode-manager.sh controld browsing"
 echo ""
 echo "  2. Or use your Fish aliases:"
@@ -130,4 +147,6 @@ echo "     # Combined Mode (VPN + Control D Filtering):"
 echo "     nm-vpn privacy   # or: nmvp"
 echo "     nm-vpn gaming    # or: nmvg"
 echo "     nm-vpn browsing  # or: nmvb"
+echo ""
+echo "  DO NOT: pass --listen with --cd; restore static free-DNS toml; thrash uninstall."
 echo ""

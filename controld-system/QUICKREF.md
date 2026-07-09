@@ -1,5 +1,20 @@
 # Control D Quick Reference
 
+> **2026-07-09:** Prefer repo scripts. Live state should be **WORKING / local_fallback** (brew ctrld v1.5.3).
+
+```bash
+./scripts/controld-status.sh
+./scripts/network-mode-manager.sh status
+./scripts/network-mode-manager.sh controld privacy
+# If BROKEN only:
+#   sudo ./scripts/repair-controld-keepalive.sh --restart privacy
+#   sudo ./scripts/controld-dedupe-binary.sh   # once; leaves healthy listener alone
+```
+
+Historical `~/.config/controld` commands below are legacy — use `/etc/controld` + network-mode-manager.
+
+---
+
 ## Daily Commands
 
 ```bash

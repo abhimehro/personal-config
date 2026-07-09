@@ -96,7 +96,7 @@ EXIT_CODE=0
 # check_reconcile_needed tests
 # ---------------------------------------------------------------------------
 
-# VPN disconnected, ctrld running, IPv6 disabled => reconcile needed
+# VPN disconnected, ctrld running, IPv6 disabled, unknown mode => reconcile needed
 assert_true "check_reconcile_needed: disconnected + ctrld + IPv6 disabled" \
 	check_reconcile_needed "false" "true" "false" || EXIT_CODE=1
 
@@ -104,8 +104,28 @@ assert_true "check_reconcile_needed: disconnected + ctrld + IPv6 disabled" \
 assert_false "check_reconcile_needed: disconnected + ctrld + IPv6 enabled" \
 	check_reconcile_needed "false" "true" "true" || EXIT_CODE=1
 
-# VPN connected, ctrld running, IPv6 disabled => no reconcile
-assert_false "check_reconcile_needed: connected + ctrld + IPv6 disabled" \
+# Intentional standalone doh-ipv4 (no VPN, IPv6 off) => no reconcile
+assert_false "check_reconcile_needed: disconnected + ctrld + IPv6 disabled + doh-ipv4" \
+	check_reconcile_needed "false" "true" "false" "doh-ipv4" || EXIT_CODE=1
+
+# VPN connected, ctrld running, IPv6 disabled, doh-ipv4 => no reconcile
+assert_false "check_reconcile_needed: connected + ctrld + IPv6 disabled + doh-ipv4" \
+	check_reconcile_needed "true" "true" "false" "doh-ipv4" || EXIT_CODE=1
+
+# VPN connected, ctrld running, IPv6 disabled, doh-ipv6 => reconcile needed
+assert_true "check_reconcile_needed: connected + ctrld + IPv6 disabled + doh-ipv6" \
+	check_reconcile_needed "true" "true" "false" "doh-ipv6" || EXIT_CODE=1
+
+# VPN connected, ctrld running, IPv6 enabled, doh-ipv4 => reconcile needed
+assert_true "check_reconcile_needed: connected + ctrld + IPv6 enabled + doh-ipv4" \
+	check_reconcile_needed "true" "true" "true" "doh-ipv4" || EXIT_CODE=1
+
+# VPN connected, ctrld running, IPv6 enabled, doh-ipv6 => no reconcile
+assert_false "check_reconcile_needed: connected + ctrld + IPv6 enabled + doh-ipv6" \
+	check_reconcile_needed "true" "true" "true" "doh-ipv6" || EXIT_CODE=1
+
+# VPN connected, ctrld running, IPv6 disabled (legacy 3-arg) => no reconcile
+assert_false "check_reconcile_needed: connected + ctrld + IPv6 disabled (legacy)" \
 	check_reconcile_needed "true" "true" "false" || EXIT_CODE=1
 
 # ctrld stopped, DNS localhost => reconcile needed.
@@ -130,6 +150,27 @@ EOF
 chmod +x "$MOCK_BIN/networksetup"
 assert_false "check_reconcile_needed: ctrld stopped + DNS DHCP" \
 	check_reconcile_needed "false" "false" "true" || EXIT_CODE=1
+
+# ---------------------------------------------------------------------------
+# resolve_network_profile_mode tests (from network-core.sh)
+# ---------------------------------------------------------------------------
+assert_eq "resolve_network_profile_mode: doh+disable => doh-ipv4" \
+	"doh-ipv4" "$(resolve_network_profile_mode doh disable)" || EXIT_CODE=1
+assert_eq "resolve_network_profile_mode: doh+enable => doh-ipv6" \
+	"doh-ipv6" "$(resolve_network_profile_mode doh enable)" || EXIT_CODE=1
+assert_eq "resolve_network_profile_mode: doh3+enable => doh3-ipv6" \
+	"doh3-ipv6" "$(resolve_network_profile_mode doh3 enable)" || EXIT_CODE=1
+assert_eq "resolve_network_profile_mode: doh3+disable => doh3-ipv6 (DoH3 keeps IPv6 mode label)" \
+	"doh3-ipv6" "$(resolve_network_profile_mode doh3 disable)" || EXIT_CODE=1
+
+# ---------------------------------------------------------------------------
+# vpn_supports_ipv6 override tests
+# ---------------------------------------------------------------------------
+WINDSCRIBE_IPV6=1
+assert_true "vpn_supports_ipv6: WINDSCRIBE_IPV6=1 forces true" vpn_supports_ipv6 || EXIT_CODE=1
+WINDSCRIBE_IPV6=0
+assert_false "vpn_supports_ipv6: WINDSCRIBE_IPV6=0 forces false" vpn_supports_ipv6 || EXIT_CODE=1
+unset WINDSCRIBE_IPV6
 
 # ---------------------------------------------------------------------------
 # get_active_profile_name tests

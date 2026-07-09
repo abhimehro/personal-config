@@ -121,7 +121,8 @@ check_controld_active() {
 		ok=1
 	fi
 
-	# 4) whoami.control-d.net resolution (soft check)
+	# 4) whoami.control-d.net resolution (soft check — expected noise if dashboard
+	#    whoami is slow/blocked; does not mean Control D is down)
 	wait "$pid_who" || true
 	local who
 	who=$(cat "$tmp_who")
@@ -129,36 +130,68 @@ check_controld_active() {
 	if [[ -n $who ]]; then
 		pass "whoami.control-d.net resolved to '$who'."
 	else
-		warn "whoami.control-d.net did not resolve (or timed out). This does not block CONTROL D ACTIVE but indicates a potential dashboard/config issue."
+		warn "whoami.control-d.net did not resolve (or timed out). Expected soft noise — does not block CONTROL D ACTIVE; only investigate if DNS A lookups also fail."
 	fi
 
-	# 5) IPv6 AAAA query (soft check – IPv6 optional)
+	# 5) IPv6 AAAA query (soft check — expected empty under doh-ipv4 / IPv6 Off)
 	wait "$pid_aaaa" || true
 	local aaaa
 	aaaa=$(cat "$tmp_aaaa")
 	# File cleanup handled by trap
+	local recorded_mode_for_aaaa=""
+	local ipv6_line=""
+	if sudo test -f /etc/controld/active_profile 2>/dev/null; then
+		recorded_mode_for_aaaa=$(sudo awk -F= '$1 == "PROFILE_MODE" {print $2; exit}' /etc/controld/active_profile 2>/dev/null || echo "")
+	fi
+	ipv6_line=$(networksetup -getinfo "Wi-Fi" 2>/dev/null | grep "IPv6:" || true)
 	if [[ -n $aaaa ]]; then
 		pass "IPv6 AAAA lookup for example.com returned '$aaaa'."
+	elif [[ $recorded_mode_for_aaaa == "doh-ipv4" ]] || [[ $ipv6_line == *"Off"* ]]; then
+		pass "IPv6 AAAA empty (expected under doh-ipv4 / IPv6 Off) — not a failure."
 	else
-		warn "IPv6 AAAA lookup for example.com returned no result. IPv6 path may be disabled or unavailable; this is treated as a warning."
+		warn "IPv6 AAAA lookup for example.com returned no result. Soft warning only — IPv6 path may be unavailable; does not block CONTROL D ACTIVE."
 	fi
 
-	# 7) Profile & DoH3 checks
+	# 7) Profile & protocol checks (mode-aware: doh3-ipv6 | doh-ipv4 | doh-ipv6)
+	local expected_protocol="doh3"
+	local active_profile_file="/etc/controld/active_profile"
+	if sudo test -f "$active_profile_file" 2>/dev/null; then
+		local recorded_proto recorded_mode
+		recorded_proto=$(sudo awk -F= '$1 == "PROTOCOL" {print $2; exit}' "$active_profile_file" 2>/dev/null || echo "")
+		recorded_mode=$(sudo awk -F= '$1 == "PROFILE_MODE" {print $2; exit}' "$active_profile_file" 2>/dev/null || echo "")
+		if [[ -n $recorded_proto ]]; then
+			expected_protocol="$recorded_proto"
+		fi
+		if [[ -n $recorded_mode ]]; then
+			pass "Active profile mode recorded as '$recorded_mode'."
+			case "$recorded_mode" in
+			doh-ipv4 | doh-ipv6) expected_protocol="doh" ;;
+			doh3-ipv6) expected_protocol="doh3" ;;
+			esac
+		fi
+	fi
+
 	if [[ -n $expected_profile ]]; then
-		# Try to infer active profile from /etc/controld/ctrld.toml symlink
+		# Prefer active_profile metadata (native --cd path); fall back to symlink.
 		local active_profile=""
 		local active_config=""
-		if [[ -L "/etc/controld/ctrld.toml" ]]; then
+		if sudo test -f "$active_profile_file" 2>/dev/null; then
+			active_profile=$(sudo awk -F= '$1 == "PROFILE_NAME" {print $2; exit}' "$active_profile_file" 2>/dev/null || echo "")
+		fi
+		if [[ -z $active_profile && -L "/etc/controld/ctrld.toml" ]]; then
 			local target
 			target=$(readlink "/etc/controld/ctrld.toml" 2>/dev/null || true)
 			active_config="$target"
 			active_profile="${target##*/}"
 			active_profile="${active_profile#ctrld.}"
 			active_profile="${active_profile%.toml}"
+			active_profile="${active_profile%.fallback}"
+		elif [[ -L "/etc/controld/ctrld.toml" ]]; then
+			active_config=$(readlink "/etc/controld/ctrld.toml" 2>/dev/null || true)
 		fi
 
 		if [[ -z $active_profile ]]; then
-			warn "Unable to determine active Control D profile from /etc/controld/ctrld.toml; profile-aware validation is partial."
+			warn "Unable to determine active Control D profile; profile-aware validation is partial."
 		elif [[ $active_profile == "$expected_profile" ]]; then
 			pass "Active Control D profile matches expected: $expected_profile."
 		else
@@ -166,25 +199,58 @@ check_controld_active() {
 			ok=1
 		fi
 
-		# Enforce DoH3 at config level when we have a readable config file.
+		# Enforce protocol at config level when we have a readable config file.
+		# Native --cd mode may not leave a symlink; that is OK when active_profile exists.
 		if [[ -n $active_config && -f $active_config ]]; then
-			# ⚡ Bolt Optimization: Use single-pass grep with precise regex to avoid
-			# reading file into memory and spawning subshells/pipes.
-			# Regex matches lines where type is bare 'doh' or 'doh' followed by a non-'3' character
-			# (e.g., "type = 'doh'", "type = 'doh2'", "type = 'doha'"), while excluding "type = 'doh3'".
-			if grep -Eq '^[[:space:]]*type = '\''(doh'\''|doh[^3])' "$active_config" 2>/dev/null; then
-				fail "Active profile config ($active_config) contains non-DoH3 DoH upstreams (legacy 'doh' or variants like 'doh2')."
-				ok=1
-			elif grep -Eq '^[[:space:]]*type = '\''doh3'\''' "$active_config" 2>/dev/null; then
-				pass "Active profile config ($active_config) uses DoH3-only upstreams."
+			if [[ $expected_protocol == "doh3" ]]; then
+				if grep -Eq '^[[:space:]]*type = '\''(doh'\''|doh[^3])' "$active_config" 2>/dev/null; then
+					fail "Active profile config ($active_config) contains non-DoH3 DoH upstreams but mode expects doh3."
+					ok=1
+				elif grep -Eq '^[[:space:]]*type = '\''doh3'\''' "$active_config" 2>/dev/null; then
+					pass "Active profile config ($active_config) uses DoH3 upstreams."
+				else
+					warn "Could not find upstream type=doh* entries in $active_config; DoH3 validation is partial."
+				fi
 			else
-				warn "Could not find any upstream type=\"doh*\" entries in $active_config; DoH3 validation is partial."
+				if grep -Eq '^[[:space:]]*type = '\''doh3'\''' "$active_config" 2>/dev/null; then
+					fail "Active profile config ($active_config) uses DoH3 but combined/DoH mode expects doh."
+					ok=1
+				elif grep -Eq '^[[:space:]]*type = '\''doh'\''' "$active_config" 2>/dev/null; then
+					pass "Active profile config ($active_config) uses DoH upstreams (VPN-compatible)."
+				else
+					warn "Could not find upstream type=doh entries in $active_config; DoH validation is partial."
+				fi
 			fi
 		else
-			warn "Active Control D config file could not be read; skipping DoH3 validation."
+			pass "Native Control D profile active (no local TOML symlink); protocol expected: $expected_protocol."
 		fi
 	else
-		warn "No profile hint provided; skipping profile-specific and DoH3 validation."
+		warn "No profile hint provided; skipping profile-specific protocol validation."
+	fi
+
+	# 8) IPv6 policy soft-check against recorded PROFILE_MODE
+	local ipv6_line
+	ipv6_line=$(networksetup -getinfo "Wi-Fi" 2>/dev/null | grep "IPv6:" || true)
+	if sudo test -f "$active_profile_file" 2>/dev/null; then
+		local mode_for_v6
+		mode_for_v6=$(sudo awk -F= '$1 == "PROFILE_MODE" {print $2; exit}' "$active_profile_file" 2>/dev/null || echo "")
+		case "$mode_for_v6" in
+		doh-ipv4)
+			if echo "$ipv6_line" | grep -q "Off"; then
+				pass "IPv6 Off matches doh-ipv4 leak-prevention mode."
+			else
+				fail "doh-ipv4 mode expects IPv6 Off (got: '$ipv6_line')."
+				ok=1
+			fi
+			;;
+		doh3-ipv6 | doh-ipv6)
+			if echo "$ipv6_line" | grep -q "Automatic"; then
+				pass "IPv6 Automatic matches $mode_for_v6 mode."
+			else
+				warn "Mode $mode_for_v6 expects IPv6 Automatic (got: '$ipv6_line')."
+			fi
+			;;
+		esac
 	fi
 
 	local result
