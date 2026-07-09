@@ -201,6 +201,16 @@ class TestMediaServerHandler(unittest.TestCase):
             html_sub,
         )
 
+    def test_generate_directory_listing_empty(self):
+        """
+        Test that generate_directory_listing produces a helpful empty state when
+        no files are present in the directory.
+        """
+        html_empty = self.handler.generate_directory_listing([], "/empty-dir")
+
+        self.assertIn("This folder is empty", html_empty)
+        self.assertIn('<span aria-hidden="true"', html_empty)
+
 
 if __name__ == "__main__":
     unittest.main()
