@@ -577,3 +577,7 @@ invocation.
 ## 2026-11-20 - [Avoid eager empty dict allocations in chained .get() loops in detect_duplicates]
 **Learning:** Chaining `.get("key", {}) or {}` inside processing loops allocates new empty dictionary objects on every iteration when the key is missing or the value is falsy, leading to measurable memory allocation overhead on the fast path.
 **Action:** Replace `val.get("key", {}) or {}` with `val.get("key")` and handle `None` checking directly before iterating to prevent redundant dict allocations.
+
+## 2026-11-20 - [Avoid eager empty dict and list allocations in chained .get() loops across multiple domains]
+**Learning:** Chaining `.get("key", {}).get("sub_key", [])` inside processing loops allocates new empty dictionary and list objects on every iteration when the key is missing or the value is falsy. This leads to measurable memory allocation overhead on the fast path, especially when dealing with complex nested JSON payloads (like those from GraphQL APIs or large webhook structures).
+**Action:** Replace `val.get("key", {}).get("sub_key", [])` with multi-step `None` checks like `_key = val.get("key"); _sub_key = _key.get("sub_key") if _key else ()` to prevent redundant dictionary and list allocations entirely.
