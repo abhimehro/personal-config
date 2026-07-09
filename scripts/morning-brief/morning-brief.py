@@ -477,12 +477,10 @@ class PerplexityClient:
             )
             response.raise_for_status()
             data = response.json()
-            return (
-                data.get("choices", [{}])[0]
-                .get("message", {})
-                .get("content", "")
-                .strip()
-            )
+            _choices = data.get("choices")
+            _first_choice = _choices[0] if _choices else {}
+            _message = _first_choice.get("message")
+            return (_message.get("content", "") if _message else "").strip()
         except Exception as exc:
             logger.error("Perplexity API error: %s", exc)
             return ""
@@ -674,9 +672,12 @@ def score_linear_issue(
     """
     priority = issue.get("priority") or 0
     due_date = issue.get("dueDate") or ""
-    _state_type = issue.get("state", {}).get("type")
+    _state = issue.get("state")
+    _state_type = _state.get("type") if _state else None
     state_type = _state_type.lower().replace("_", "") if _state_type is not None else ""
-    label_names = _extract_label_names(issue.get("labels", {}).get("nodes", []))
+    _labels = issue.get("labels")
+    _nodes = _labels.get("nodes") if _labels else ()
+    label_names = _extract_label_names(_nodes)
     updated_at = issue.get("updatedAt") or ""
 
     score = _calculate_base_score(priority, due_date, state_type, today_iso)
@@ -817,19 +818,23 @@ def fetch_weather(
         response.raise_for_status()
         data = response.json()
 
-        current = data.get("current_weather", {})
-        daily = data.get("daily", {})
+        current = data.get("current_weather")
+        daily = data.get("daily")
+
+        _current_temp = current.get("temperature", "N/A") if current else "N/A"
+        _daily_tmax = daily.get("temperature_2m_max") if daily else None
+        _high_temp = _daily_tmax[0] if _daily_tmax else "N/A"
+        _daily_pmax = daily.get("precipitation_probability_max") if daily else None
+        _rain_prob = _daily_pmax[0] if _daily_pmax else "N/A"
 
         snap = WeatherSnapshot(
-            current_temp=str(current.get("temperature", "N/A")),
-            high_temp=str(daily.get("temperature_2m_max", ["N/A"])[0]),
-            rain_probability=str(
-                daily.get("precipitation_probability_max", ["N/A"])[0]
-            ),
+            current_temp=str(_current_temp),
+            high_temp=str(_high_temp),
+            rain_probability=str(_rain_prob),
             narrative=(
-                f"Current temp is {current.get('temperature', 'N/A')}F, "
-                f"high today is {daily.get('temperature_2m_max', ['N/A'])[0]}F, "
-                f"rain chance is {daily.get('precipitation_probability_max', ['N/A'])[0]}%."
+                f"Current temp is {_current_temp}F, "
+                f"high today is {_high_temp}F, "
+                f"rain chance is {_rain_prob}%."
             ),
         )
         cache.set(
@@ -911,13 +916,10 @@ def fetch_linear_focus_items(
             timeout=DEFAULT_TIMEOUT,
         )
         response.raise_for_status()
-        nodes = (
-            response.json()
-            .get("data", {})
-            .get("viewer", {})
-            .get("assignedIssues", {})
-            .get("nodes", [])
-        )
+        _data = response.json().get("data")
+        _viewer = _data.get("viewer") if _data else None
+        _assigned = _viewer.get("assignedIssues") if _viewer else None
+        nodes = _assigned.get("nodes") if _assigned else ()
 
         items: list[FocusItem] = []
         for issue in nodes:
@@ -938,13 +940,14 @@ def fetch_linear_focus_items(
 def _parse_linear_focus_node(
     issue: dict[str, Any], priority_labels: dict[int, str], daily: DailyContext
 ) -> FocusItem | None:
-    state = issue.get("state", {})
-    _state_type = state.get("type")
+    state = issue.get("state")
+    _state_type = state.get("type") if state else None
     state_type = _state_type.lower() if _state_type is not None else ""
     if state_type in {"completed", "canceled", "cancelled"}:
         return None
 
-    label_nodes = issue.get("labels", {}).get("nodes", [])
+    _labels = issue.get("labels")
+    label_nodes = _labels.get("nodes") if _labels else ()
     label_names = tuple(
         (lbl.get("name") or "").strip()
         for lbl in label_nodes
@@ -956,8 +959,8 @@ def _parse_linear_focus_node(
         identifier=issue.get("identifier", "Linear"),
         title=issue.get("title", "Untitled issue"),
         url=issue.get("url", "#"),
-        state=state.get("name", "Open"),
-        state_type=state.get("type", ""),
+        state=state.get("name", "Open") if state else "Open",
+        state_type=state.get("type", "") if state else "",
         due_date=issue.get("dueDate") or "",
         badge=priority_labels.get(issue.get("priority") or 0, ""),
         score=score_linear_issue(issue, daily.today_iso, daily.today),
@@ -1047,9 +1050,10 @@ def fetch_linear_queue_snapshot(
             timeout=DEFAULT_TIMEOUT,
         )
         response.raise_for_status()
-        payload = response.json().get("data", {})
+        payload = response.json().get("data") or {}
         unread_count = payload.get("notificationsUnreadCount", 0)
-        nodes = payload.get("notifications", {}).get("nodes", [])
+        _notifications = payload.get("notifications")
+        nodes = _notifications.get("nodes") if _notifications else ()
         unread_nodes = [node for node in nodes if not node.get("readAt")]
 
         review_items, notification_items = _process_unread_linear_notifications(
