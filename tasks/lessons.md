@@ -1,5 +1,13 @@
 # Lessons Learned
 
+## Lesson 0dd: Bolt PRs with ephemeral root fix scripts must not merge (2026-07-09)
+
+**Pattern:** sc #209 (z-score median optimization) had green CI but included root-level `fix_lint_again.py`, `fix_processor.py`, `fix_processor_imports.py`, and `update_processor.py` alongside the real `scripts/` changes. **Rule:** Before merging any Bolt perf PR, scan `gh pr diff --name-only` for root-level `fix_*.py` / `update_*.py` artifacts; REQUEST_CHANGES and defer until only production-path files remain. **Detection cost:** Low — file list review at triage.
+
+## Lesson 0de: Palette PRs must not ship `.orig` backup files (2026-07-09)
+
+**Pattern:** pc #1547 (media-server empty state) was green CI but added `infuse-media-server.py.orig` and `test_infuse_media_server.py.orig` (+644 lines). **Rule:** Treat any `.orig` / backup suffix in a Palette or test PR as a hygiene block — request removal before merge even when CI passes. **Detection cost:** Low — `gh pr diff --name-only | rg '\\.orig$'`.
+
 ## Lesson 0db: CodeScene can flip green on deferred format sweeps (2026-07-08)
 
 **Pattern:** sc #201 (black auto-format) was deferred on 2026-07-07 for CodeScene FAIL; on 2026-07-08 the same PR showed CodeScene SUCCESS with no new commits. **Rule:** Re-triage deferred CodeScene-blocked PRs at the start of each session before carrying forward DEFER status — formatting-only sweeps may clear without agent intervention. **Detection cost:** Low — `gh pr checks` on session start.

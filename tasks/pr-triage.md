@@ -1,146 +1,93 @@
-# PR Triage — 2026-07-08
+# PR Triage — 2026-07-09
 
-**Session:** Automated PR review & cleanup (cron 13:00 UTC)  
-**Mode:** review-and-merge  
-**Preflight:** PASS 6/6
-
-## Decision matrix
-
-| Decision | Count | PRs |
-|----------|------:|-----|
-| MERGE | 7 | pc #1542, #1539, #1545; Seatek #430; hg #330; sc #201 |
-| CLOSE | 2 | pc #1540 (superseded draft); esp #1241 (no-op QA) |
-| ESCALATE | 3 | pc #1544; cs #990; esp #1240 |
-| DEFER | 5 | sc #204; rpce #100–#102, #105 |
-
-## Security gates
-
-| PR | Gate | Rationale |
-|----|------|-----------|
-| pc #1544 | **ESCALATE** | PR automation trust boundary — GH_TOKEN sourcing / injection hardening |
-| esp #1240 | **ESCALATE** | Command injection fix in PR automation scripts |
-| cs #990 | **ESCALATE** | SSRF domain allowlist + benchmark CI red |
-| hg #330 | **MERGE** | Sentinel path-traversal hardening; `is_safe_path` + trusted `Path.cwd()` base; all CI green |
-| All other merged PRs | PASS | No auth/payment/schema weakening; security scans green |
-
-## Notable resolutions
-
-### sc #201 unblocked
-
-Deferred on 2026-07-07 for CodeScene red; re-triaged green on 2026-07-08 and merged.
-
-### Jules no-op closure
-
-esp #1241 had zero file changes (“No findings”) — closed rather than merged.
-
-### Superseded session doc
-
-pc #1540 draft salvage report superseded by `tasks/pr-review-2026-07-07.md` on `main`.
-
-## Deferred follow-ups
-
-```yaml
-open_followups:
-  - repo: abhimehro/personal-config
-    pr: 1544
-    reason: ESCALATE — PR automation security; human approval
-  - repo: abhimehro/ctrld-sync
-    pr: 990
-    reason: ESCALATE — SSRF allowlist + benchmark fail
-  - repo: abhimehro/email-security-pipeline
-    pr: 1240
-    reason: ESCALATE — command injection fix; human approval
-  - repo: abhimehro/series_correction_project_updated
-    pr: 204
-    reason: DEFER — CodeScene red; cs-agent posted
-  - repo: abhimehro/repoprompt-ce
-    pr: 100
-    reason: DEFER — SwiftFormat Style (macOS salvage)
-  - repo: abhimehro/repoprompt-ce
-    pr: 101
-    reason: DEFER — Style + Build shard 2
-  - repo: abhimehro/repoprompt-ce
-    pr: 102
-    reason: DEFER — Style + Build shard 2
-  - repo: abhimehro/repoprompt-ce
-    pr: 105
-    reason: DEFER — Sentinel URLSession + Style/Build red
-```
+**Session:** Cron Phase 1 `0 13 * * *`  
+**Agent branch:** `cursor-agent/automated-pr-workflow-a965`
 
 ---
 
-# PR Triage — 2026-07-07
+## Disposition summary
 
-**Session:** Automated PR review & cleanup (cron 13:00 UTC)  
-**Mode:** review-and-merge  
-**Preflight:** PASS 6/6
-
-## Decision matrix
-
-| Decision | Count | PRs |
-|----------|------:|-----|
-| MERGE | 12 | pc #1531, #1530, #1537, #1527; cs #992; esp #1235, #1233; Seatek #425, #427; hg #326, #327; sc #202 |
-| AUTO-FIX → MERGE | 1 | pc #1527 (palette.md conflict after #1530) |
-| CLOSE | 1 | pc #1528 (superseded draft salvage report) |
-| DEFER | 7 | cs #990; Seatek #426; sc #201; rpce #100–#103 |
-
-## Security gates
-
-| PR | Gate | Rationale |
-|----|------|-----------|
-| cs #990 | **ESCALATE** | SSRF domain allowlist — trust-boundary change; benchmark CI red unrelated to deps |
-| sc #201 | DEFER + cs-agent | CodeScene health degradation on black format sweep |
-| All merged PRs | PASS | No auth/payment/schema changes; security scans green |
+| Disposition | Count | PRs |
+|-------------|------:|-----|
+| MERGE | 11 | pc #1556/#1553/#1552/#1551; esp #1243; Seatek #435/#434; hg #334/#333; sc #208; rpce #111 |
+| CLOSE | 4 | pc #1550; Seatek #433; rpce #100/#101 |
+| ESCALATE | 5 | pc #1544; cs #990; esp #1240/#1244; rpce #105 |
+| DEFER | 10 | pc #1554/#1548/#1547; cs #997; sc #209/#206/#205; rpce #110/#108/#102 |
 
 ## Duplicate & overlap analysis
 
-### Palette journal conflict (resolved)
+| Group | Keep | Close / defer | Rationale |
+|-------|------|---------------|-----------|
+| rpce Changelog DateFormatter | #111 (merged) | #101 (closed) | Same `Changelog.swift` optimization; #111 had green CI |
+| rpce session-row a11y | #110 (defer Style) | #100 (closed) | #110 is narrower scope (2 files vs 8) |
+| sc MAD / z-score perf | #206 (salvage, defer gates) | #209 (defer temp scripts) | #206 explicitly salvages closed #204; #209 has root-level fix scripts |
+| Jules Daily QA no-ops | — | pc #1550, Seatek #433 | 0 file changes |
 
-| Merged first | Blocked | Resolution |
-|--------------|---------|------------|
-| pc #1530 (ARIA landmarks + palette.md) | pc #1527 (performance report a11y) | Merged `origin/main` into #1527; kept both palette.md learning entries |
+## Security gate decisions
 
-### Superseded draft
+| PR | Gate | Decision |
+|----|------|----------|
+| pc #1551 | Sentinel pkill CWE-88 fix | **MERGE** — application hardening, green CI |
+| Seatek #434 | Sentinel env secret heuristic | **MERGE** — application hardening, green CI |
+| hg #334 | Bolt perf only | **MERGE** |
+| pc #1544 | PR automation GH_TOKEN sourcing | **ESCALATE** — trust boundary |
+| esp #1240 | PR automation command injection | **ESCALATE** — trust boundary |
+| esp #1244 | setup.sh password exposure | **ESCALATE** — credential handling |
+| cs #990 | SSRF allowlist | **ESCALATE** — trust boundary + benchmark fail |
+| rpce #105 | URLSession hardening | **ESCALATE** — CRITICAL/HIGH + Style/Build red |
 
-| Closed | Reason |
-|--------|--------|
-| pc #1528 | Evening salvage report draft from 2026-07-06 superseded by this session |
+## CodeScene remediation posted
 
-### Dependabot codescene-agent cluster
+- cs #997 — `/cs-agent skill:fix-code-health-degradations`
+- sc #205 — `/cs-agent skill:fix-code-health-degradations`
 
-Same SHA bump (`841e34c7` → `bbc72fbfb8`) across 6 repos — all merged where CI green. repoprompt-ce copies deferred on Style/Build failures (macOS gate).
+## Stale threshold (30 days)
 
-## Deferred follow-ups
+No in-scope PRs exceeded the 30-day stale threshold.
+
+## Post-session remainder (Phase 2 input)
 
 ```yaml
-open_followups:
-  - repo: abhimehro/ctrld-sync
-    pr: 990
-    reason: ESCALATE — SSRF allowlist + benchmark fail; human security review
-  - repo: abhimehro/Seatek_Analysis
-    pr: 426
-    reason: DEFER — validate check on numpy >=2.5.1 bump
-  - repo: abhimehro/series_correction_project_updated
-    pr: 201
-    reason: DEFER — CodeScene red; cs-agent posted
-  - repo: abhimehro/repoprompt-ce
-    pr: 100
-    reason: DEFER — SwiftFormat Style (macOS salvage)
-  - repo: abhimehro/repoprompt-ce
-    pr: 101
-    reason: DEFER — Style + Build shard 2
-  - repo: abhimehro/repoprompt-ce
-    pr: 102
-    reason: DEFER — Style + Build shard 2
-  - repo: abhimehro/repoprompt-ce
-    pr: 103
-    reason: DEFER — Style + Build shard 2
+- repo: personal-config
+  pr: 1544
+  reason: ESCALATE — PR automation trust boundary; Trunk MQ fail
+- repo: personal-config
+  pr: 1554
+  reason: DEFER — Gate + visual recap CI fail
+- repo: personal-config
+  pr: 1547
+  reason: DEFER — .orig backup artifacts in diff
+- repo: ctrld-sync
+  pr: 990
+  reason: ESCALATE — SSRF allowlist + benchmark fail
+- repo: ctrld-sync
+  pr: 997
+  reason: DEFER — CodeScene fail (cs-agent posted)
+- repo: email-security-pipeline
+  pr: 1240
+  reason: ESCALATE — command injection fix trust boundary
+- repo: email-security-pipeline
+  pr: 1244
+  reason: ESCALATE — password exposure in setup.sh
+- repo: series_correction_project_updated
+  pr: 205
+  reason: DEFER — CodeScene fail (cs-agent posted)
+- repo: series_correction_project_updated
+  pr: 206
+  reason: DEFER — salvage gate + visual recap fail
+- repo: series_correction_project_updated
+  pr: 209
+  reason: DEFER — ephemeral root fix scripts in diff
+- repo: repoprompt-ce
+  pr: 105
+  reason: ESCALATE — URLSession security + Style/Build fail
+- repo: repoprompt-ce
+  pr: 110
+  reason: DEFER — Style fail (macOS salvage)
+- repo: repoprompt-ce
+  pr: 102
+  reason: DEFER — dependabot blocked by Style/Build baseline
+- repo: repoprompt-ce
+  pr: 108
+  reason: DEFER — dependabot blocked by Style/Build baseline
 ```
-
----
-
-# PR Triage — 2026-07-05 (evening salvage)
-
-## Context
-
-Morning Phase 1 (cron 13:00 UTC) cleared 27/31 PRs; artifacts merged via [#1504](https://github.com/abhimehro/personal-config/pull/1504). This evening salvage pass (cron 17:00 UTC) processes the 9-PR tail plus any new bot PRs opened during the day.
