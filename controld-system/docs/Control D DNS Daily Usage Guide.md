@@ -16,7 +16,9 @@
 ./scripts/network-mode-regression.sh browsing
 ```
 
-Stable path note (2026-07-09): CD Mode `--cd` fails on numeric `exclude` even on ctrld v1.5.3. Profile-aware Local Config is intentional and healthy — not free DNS.
+Stable path note (2026-07-09): CD Mode `--cd` fails on numeric `exclude` even on
+ctrld v1.5.3. Profile-aware Local Config is intentional and healthy — not free
+DNS.
 
 If you’re not sure what state you’re in, run:
 
@@ -26,14 +28,17 @@ If you’re not sure what state you’re in, run:
 
 ---
 
-This guide summarizes the day-to-day workflows for using the Control D + Windscribe "Separation Strategy" on macOS. It assumes the Phase 1 implementation is in place, including:
+This guide summarizes the day-to-day workflows for using the Control D +
+Windscribe "Separation Strategy" on macOS. It assumes the Phase 1 implementation
+is in place, including:
 
 - `scripts/network-mode-manager.sh`
 - `scripts/network-mode-verify.sh`
 - `scripts/network-mode-regression.sh`
 - Updated maintenance scripts under `controld-system/` and `scripts/macos/`.
 
-The core idea: **Control D DNS mode** and **Windscribe VPN mode** are mutually exclusive and each is optimized to work independently.
+The core idea: **Control D DNS mode** and **Windscribe VPN mode** are mutually
+exclusive and each is optimized to work independently.
 
 - **Control D Mode (DNS Mode)**
   - `ctrld` is the only DNS controller.
@@ -49,7 +54,8 @@ The core idea: **Control D DNS mode** and **Windscribe VPN mode** are mutually e
 
 ## Profiles and When to Use Them
 
-Profiles are defined in `scripts/network-mode-manager.sh` and mapped to Control D resolver IDs:
+Profiles are defined in `scripts/network-mode-manager.sh` and mapped to Control
+D resolver IDs:
 
 - `privacy` → `6m971e9jaf`
   - Maximum privacy/security, more aggressive blocking.
@@ -91,8 +97,8 @@ This is the primary entry point for switching modes.
 - Delegates to `controld-system/scripts/controld-manager switch <profile>`,
   which:
   - Generates/uses per-profile configs under `/etc/controld/profiles`.
-  - Enforces **DoH3/QUIC** as the default protocol for all profiles
-    (with an optional DoH/TCP fallback when explicitly requested).
+  - Enforces **DoH3/QUIC** as the default protocol for all profiles (with an
+    optional DoH/TCP fallback when explicitly requested).
   - Leaves filtering logic and categories under Control D dashboard control.
 - Binds the listener to `*********` and sets Wi-Fi DNS to `*********`.
 - Flushes DNS caches.
@@ -107,17 +113,20 @@ This is the primary entry point for switching modes.
 - Disables IPv6 for all relevant network services via `ipv6-manager.sh disable`.
 - Flushes DNS caches.
 - Prints a status snapshot.
-- Automatically runs `scripts/network-mode-verify.sh windscribe` to validate the "Windscribe Ready" checklist.
+- Automatically runs `scripts/network-mode-verify.sh windscribe` to validate the
+  "Windscribe Ready" checklist.
 
 #### When to use these commands
 
-- **Use `controld <profile>`** when you want encrypted, filtered DNS via Control D without a VPN:
+- **Use `controld <profile>`** when you want encrypted, filtered DNS via Control
+  D without a VPN:
   - `controld browsing` → default daily browsing.
   - `controld privacy` → high-security tasks (banking, sensitive work).
   - `controld gaming` → gaming/streaming sessions.
 
 - **Use `windscribe`** when you want Windscribe to own routing + DNS:
-  - Before connecting Windscribe, run `./scripts/network-mode-manager.sh windscribe`.
+  - Before connecting Windscribe, run
+    `./scripts/network-mode-manager.sh windscribe`.
   - Then open the Windscribe app and connect.
 
 - **Use `status`** any time you want a quick view of:
@@ -132,7 +141,8 @@ This is the primary entry point for switching modes.
 
 **Script:** `scripts/network-mode-verify.sh`
 
-This script runs the tight checklists for each mode and prints both human-readable results and a machine-friendly `SUMMARY` line.
+This script runs the tight checklists for each mode and prints both
+human-readable results and a machine-friendly `SUMMARY` line.
 
 ```bash
 # Verify Control D Active state
@@ -148,7 +158,8 @@ This script runs the tight checklists for each mode and prints both human-readab
 - Confirms `ctrld` is bound to port 53 (`lsof -nPi :53 | grep ctrld`).
 - Confirms resolver #1 nameserver matches the local listener IP (127.0.0.1).
 - Resolves `whoami.control-d.net`.
-- Performs an IPv6 AAAA lookup for `example.com` (sanity check that IPv6 resolution is working).
+- Performs an IPv6 AAAA lookup for `example.com` (sanity check that IPv6
+  resolution is working).
 - Prints:
 
   ```text
@@ -191,7 +202,8 @@ make control-d-regression
 
 This runs a full sequence:
 
-1. Switch to Control D DNS mode using the specified profile (`browsing` by default).
+1. Switch to Control D DNS mode using the specified profile (`browsing` by
+   default).
 2. Run `network-mode-verify.sh controld`.
 3. Switch to Windscribe VPN mode.
 4. Run `network-mode-verify.sh windscribe`.
@@ -212,7 +224,8 @@ This runs a full sequence:
 
 ### 4. Maintenance and Health Scripts
 
-These are Separation-Strategy aware and delegate to the unified verification logic.
+These are Separation-Strategy aware and delegate to the unified verification
+logic.
 
 #### `controld-system/health-check.sh`
 
@@ -258,7 +271,8 @@ Result: Baseline verification FAILED ✗
 SUMMARY TS=... MODE=baseline-test RESULT=FAIL
 ```
 
-Use this as a **quick baseline test** (e.g. before/after changes, or part of manual checklists).
+Use this as a **quick baseline test** (e.g. before/after changes, or part of
+manual checklists).
 
 ---
 
@@ -266,7 +280,8 @@ Use this as a **quick baseline test** (e.g. before/after changes, or part of man
 
 **Script:** `scripts/macos/controld-ensure.sh`
 
-This script is designed to run at login via a LaunchAgent and is now Separation-Strategy aware:
+This script is designed to run at login via a LaunchAgent and is now
+Separation-Strategy aware:
 
 - Ensures the system is in Control D DNS mode using the `browsing` profile:
 
@@ -280,7 +295,8 @@ This script is designed to run at login via a LaunchAgent and is now Separation-
 
 - Logs to: `~/Library/Logs/controld-ensure.log`.
 
-You typically do **not** need to run this manually, but it’s a safe way to re-enforce Control D mode after login if needed.
+You typically do **not** need to run this manually, but it’s a safe way to
+re-enforce Control D mode after login if needed.
 
 ---
 
@@ -383,4 +399,6 @@ These will tell you whether the system state matches your expectations.
 - Use `health-check.sh` and `baseline-test.sh` as quick maintenance endpoints.
 - Let `controld-ensure.sh` keep Control D mode correct at login.
 
-This setup gives you a clean, auditable separation between **DNS Mode** (Control D) and **VPN Mode** (Windscribe), with clear commands and checklists for every common scenario.
+This setup gives you a clean, auditable separation between **DNS Mode** (Control
+D) and **VPN Mode** (Windscribe), with clear commands and checklists for every
+common scenario.

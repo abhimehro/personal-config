@@ -2,110 +2,398 @@
 
 ## Lesson 0ds: Dual ctrld + CD thrash felt "broken" while Local Config already worked (2026-07-09 ~18:20)
 
-**Pattern:** User log showed `[OK] dig … FALLBACK=1` with real profile endpoint + Google IPs, but CD Mode `--cd` still died and `which -a ctrld` showed two binaries (`/usr/local/bin` = `dev-570d43a`, brew = `v1.5.3`). `cat /etc/controld/active_profile` → fish/bat Permission denied. Felt broken despite DNS working. **Root cause:** (1) LaunchDaemon already ran brew 1.5.3 Local Config successfully; CD Mode API schema still fails on both binaries. (2) PATH preferred shadowed `/usr/local/bin/ctrld`. (3) Repair always attempted CD Mode first (~45s DEAD theater) then fell back. (4) `active_profile` mode 600. **Rule:** (1) Tell the user clearly: dig OK + FALLBACK=1 = Control D **is working**. (2) Keep one binary (brew); quarantine `/usr/local/bin/ctrld` → symlink to brew. (3) Default repair skips CD Mode (`CONTROLD_SKIP_CD_DEFAULT=1`); `--cd-mode` to force. (4) World-readable `/etc/controld/status` + `chmod 644 active_profile`. (5) `./scripts/controld-status.sh` one-screen WORKING/BROKEN. Do not uninstall Control D app; do not reintroduce free DNS. **Follow-up (same day):** `sudo ./scripts/controld-dedupe-binary.sh` reported already-symlink to brew v1.5.3, wrote `/etc/controld/status` **WORKING / local_fallback**, dig OK, **did not restart** DNS — correct stopping point. **Detection cost:** Low — `which -a ctrld` + status script + dig.
+**Pattern:** User log showed `[OK] dig … FALLBACK=1` with real profile
+endpoint + Google IPs, but CD Mode `--cd` still died and `which -a ctrld` showed
+two binaries (`/usr/local/bin` = `dev-570d43a`, brew = `v1.5.3`).
+`cat /etc/controld/active_profile` → fish/bat Permission denied. Felt broken
+despite DNS working. **Root cause:** (1) LaunchDaemon already ran brew 1.5.3
+Local Config successfully; CD Mode API schema still fails on both binaries. (2)
+PATH preferred shadowed `/usr/local/bin/ctrld`. (3) Repair always attempted CD
+Mode first (~45s DEAD theater) then fell back. (4) `active_profile` mode 600.
+**Rule:** (1) Tell the user clearly: dig OK + FALLBACK=1 = Control D **is
+working**. (2) Keep one binary (brew); quarantine `/usr/local/bin/ctrld` →
+symlink to brew. (3) Default repair skips CD Mode
+(`CONTROLD_SKIP_CD_DEFAULT=1`); `--cd-mode` to force. (4) World-readable
+`/etc/controld/status` + `chmod 644 active_profile`. (5)
+`./scripts/controld-status.sh` one-screen WORKING/BROKEN. Do not uninstall
+Control D app; do not reintroduce free DNS. **Follow-up (same day):**
+`sudo ./scripts/controld-dedupe-binary.sh` reported already-symlink to brew
+v1.5.3, wrote `/etc/controld/status` **WORKING / local_fallback**, dig OK, **did
+not restart** DNS — correct stopping point. **Detection cost:** Low —
+`which -a ctrld` + status script + dig.
 
 ## Lesson 0dr: API `exclude` schema crash-loop + bash 3.2 `$var…` unbound (2026-07-09 ~18:00)
 
-**Pattern:** Repair logged correct CD Mode argv + `NTC Service started`, then dig @127.0.0.1 timed out; `/etc/controld/ctrld.toml` missing; process DEAD / KeepAlive thrash; MallocStackLogging spam. Separately, repair aborted mid-wait with `controld-service.sh: line 361: listener_ip: unbound variable`. **Root cause (daemon):** `/etc/controld/ctrld.log` shows `json: cannot unmarshal number into Go struct field ResolverConfig.body.resolver.exclude of type string` → `fatal: failed to fetch resolver config` every ~10s. Installed binary `ctrld dev-570d43a` (and stable v1.5.3) type `Exclude []string`; when the Control D utility API returns a numeric `exclude` (or otherwise schema-skewed payload), CD Mode never writes toml and LaunchDaemon crash-loops. CLI "Service started" only means the installer returned — not that fetch succeeded. Live probe of `api.controld.com/utility` may still return string arrays intermittently; trust the daemon log as ground truth. Gaming/privacy/browsing share the same fetch path — all profiles affected. **Root cause (wrapper):** macOS `/bin/bash` 3.2 + `set -u` treats `$listener_ip` + Unicode U+2026 (ellipsis) as one identifier → unbound variable on the dig-wait progress line. **Rule:** (1) On dig-not-ready after "Service started", `sudo tail /etc/controld/ctrld.log` for unmarshal/schema fatals — not more uninstall thrash. (2) Prefer `sudo ctrld upgrade` (or brew `ctrld` 1.5.3+) when a binary that accepts the live schema exists; document approval. (3) If CD Mode still fails: **TEMPORARY** profile-aware Local Config with `https://dns.controld.com/<profile_id>` + doh/doh3 + bootstrap — **never** free DNS / generic endpoints. Stop KeepAlive before writing. (4) Never juxtapose `$var` with Unicode ellipsis under bash 3.2; use ASCII `...`. (5) Classifiers must scan recent daemon log, not only CLI start stderr. **Detection cost:** Low — unmarshal line in ctrld.log + missing toml after Service started.
+**Pattern:** Repair logged correct CD Mode argv + `NTC Service started`, then
+dig @127.0.0.1 timed out; `/etc/controld/ctrld.toml` missing; process DEAD /
+KeepAlive thrash; MallocStackLogging spam. Separately, repair aborted mid-wait
+with `controld-service.sh: line 361: listener_ip: unbound variable`. **Root
+cause (daemon):** `/etc/controld/ctrld.log` shows
+`json: cannot unmarshal number into Go struct field ResolverConfig.body.resolver.exclude of type string`
+→ `fatal: failed to fetch resolver config` every ~10s. Installed binary
+`ctrld dev-570d43a` (and stable v1.5.3) type `Exclude []string`; when the
+Control D utility API returns a numeric `exclude` (or otherwise schema-skewed
+payload), CD Mode never writes toml and LaunchDaemon crash-loops. CLI "Service
+started" only means the installer returned — not that fetch succeeded. Live
+probe of `api.controld.com/utility` may still return string arrays
+intermittently; trust the daemon log as ground truth. Gaming/privacy/browsing
+share the same fetch path — all profiles affected. **Root cause (wrapper):**
+macOS `/bin/bash` 3.2 + `set -u` treats `$listener_ip` + Unicode U+2026
+(ellipsis) as one identifier → unbound variable on the dig-wait progress line.
+**Rule:** (1) On dig-not-ready after "Service started",
+`sudo tail /etc/controld/ctrld.log` for unmarshal/schema fatals — not more
+uninstall thrash. (2) Prefer `sudo ctrld upgrade` (or brew `ctrld` 1.5.3+) when
+a binary that accepts the live schema exists; document approval. (3) If CD Mode
+still fails: **TEMPORARY** profile-aware Local Config with
+`https://dns.controld.com/<profile_id>` + doh/doh3 + bootstrap — **never** free
+DNS / generic endpoints. Stop KeepAlive before writing. (4) Never juxtapose
+`$var` with Unicode ellipsis under bash 3.2; use ASCII `...`. (5) Classifiers
+must scan recent daemon log, not only CLI start stderr. **Detection cost:** Low
+— unmarshal line in ctrld.log + missing toml after Service started.
 
 ## Lesson 0dp: "Service started" ≠ listener — silent dig-wait hang (2026-07-09 ~17:40)
 
-**Pattern:** Repair logged correct CD Mode argv (no `--listen`), `NTC Service started`, then **no further output** for a long time. Live check: `dig @127.0.0.1 … +time=2` → timeout; `pgrep -x ctrld` empty; `/etc/controld/ctrld.toml` **missing**; `launchctl` has **no** loaded `ctrld` job (orphan plist may remain); Wi-Fi still DHCP (safe). Colima running but `:53` empty (override OK). **Root cause (two layers):** (1) CLI "Service started" only means the installer wrote/returned — not that LaunchDaemon stayed up or CD Mode wrote toml. (2) `_wait_for_dns_ready` burned ~45–300s of `dig +time=1` loops **with zero progress logs**, so a dead post-start looked like a hang. **Rule:** (1) After start, snapshot process/launchd/toml/:53 before dig-wait. (2) Wall-clock budget (`CONTROLD_DNS_READY_BUDGET_S=45`) + progress every ~3s. (3) Fail fast (~8s) if toml never appears **and** process never stays alive. (4) Ctrl-C is safe while on DHCP — trap resets Empty; do **not** assume Control D works if dig fails. (5) Next debug: `sudo tail` `/usr/local/var/log/ctrld.err.log` + `/etc/controld/ctrld.log` (why daemon exited). Still no `--listen` with `--cd`; no static free DNS. **Detection cost:** Low — dig timeout + missing toml after "Service started".
+**Pattern:** Repair logged correct CD Mode argv (no `--listen`),
+`NTC Service started`, then **no further output** for a long time. Live check:
+`dig @127.0.0.1 … +time=2` → timeout; `pgrep -x ctrld` empty;
+`/etc/controld/ctrld.toml` **missing**; `launchctl` has **no** loaded `ctrld`
+job (orphan plist may remain); Wi-Fi still DHCP (safe). Colima running but `:53`
+empty (override OK). **Root cause (two layers):** (1) CLI "Service started" only
+means the installer wrote/returned — not that LaunchDaemon stayed up or CD Mode
+wrote toml. (2) `_wait_for_dns_ready` burned ~45–300s of `dig +time=1` loops
+**with zero progress logs**, so a dead post-start looked like a hang. **Rule:**
+(1) After start, snapshot process/launchd/toml/:53 before dig-wait. (2)
+Wall-clock budget (`CONTROLD_DNS_READY_BUDGET_S=45`) + progress every ~3s. (3)
+Fail fast (~8s) if toml never appears **and** process never stays alive. (4)
+Ctrl-C is safe while on DHCP — trap resets Empty; do **not** assume Control D
+works if dig fails. (5) Next debug: `sudo tail`
+`/usr/local/var/log/ctrld.err.log` + `/etc/controld/ctrld.log` (why daemon
+exited). Still no `--listen` with `--cd`; no static free DNS. **Detection
+cost:** Low — dig timeout + missing toml after "Service started".
 
 ## Lesson 0do: `--listen` + `--cd` = no-config-mode fatal (false "relative toml") (2026-07-09 ~17:15)
 
-**Pattern:** After abs `--config` "fix", repair still logged `NTC Generating controld config: ctrld.toml` then `<no log output…>` + `Service uninstalled` in ~1s. DNS fail-safe worked; service never installed. **Root cause (ctrld source):** `isNoConfigStart()` treats `--listen` as "no config mode". LaunchDaemon `run` then fatals with `"listen" and "primary_upstream" flags must be set in no config mode` *before* CD Mode can fetch/write `/etc/controld/ctrld.toml`. The relative `ctrld.toml` notice is a **false positive** — `noticeWritingControlDConfig` logs stale `defaultConfigFile` when the abs `--config` path does not exist yet; `writeConfigFile` would still use `configPath`. Separately: repair handed off to `network-mode-manager` (fine if repo manager) but `/usr/local/bin/controld-manager` (Mar 13) cannot source `scripts/lib` via `../..` from `/usr/local/bin`. **Rule:** (1) CD Mode argv = `ctrld service start --cd <id> --proto doh|doh3 --config=/etc/controld/ctrld.toml --skip_self_checks` — **never `--listen`**. (2) Repair must privileged-start as root and dig-prove before localhost DNS. (3) Do not treat relative Generating notice alone as failure. (4) Set `CONTROLD_REPO` in `/etc/controld/controld.env`; re-run `setup-controld.sh` after lib changes. (5) Still no static free-DNS toml; no uninstall thrash. **Detection cost:** Low — start log has no-config-mode fatal or argv contains `--listen`; working historical start had no `--listen`.
+**Pattern:** After abs `--config` "fix", repair still logged
+`NTC Generating controld config: ctrld.toml` then `<no log output…>` +
+`Service uninstalled` in ~1s. DNS fail-safe worked; service never installed.
+**Root cause (ctrld source):** `isNoConfigStart()` treats `--listen` as "no
+config mode". LaunchDaemon `run` then fatals with
+`"listen" and "primary_upstream" flags must be set in no config mode` _before_
+CD Mode can fetch/write `/etc/controld/ctrld.toml`. The relative `ctrld.toml`
+notice is a **false positive** — `noticeWritingControlDConfig` logs stale
+`defaultConfigFile` when the abs `--config` path does not exist yet;
+`writeConfigFile` would still use `configPath`. Separately: repair handed off to
+`network-mode-manager` (fine if repo manager) but
+`/usr/local/bin/controld-manager` (Mar 13) cannot source `scripts/lib` via
+`../..` from `/usr/local/bin`. **Rule:** (1) CD Mode argv =
+`ctrld service start --cd <id> --proto doh|doh3 --config=/etc/controld/ctrld.toml --skip_self_checks`
+— **never `--listen`**. (2) Repair must privileged-start as root and dig-prove
+before localhost DNS. (3) Do not treat relative Generating notice alone as
+failure. (4) Set `CONTROLD_REPO` in `/etc/controld/controld.env`; re-run
+`setup-controld.sh` after lib changes. (5) Still no static free-DNS toml; no
+uninstall thrash. **Detection cost:** Low — start log has no-config-mode fatal
+or argv contains `--listen`; working historical start had no `--listen`.
 
 ## Lesson 0dn: Relative ctrld.toml + force-uninstall thrash = no logs / self-uninstall (2026-07-09)
 
-**Pattern:** After repair uninstall (~64s KeepAlive clear), start logged `Generating controld config: ctrld.toml` (relative, not `/etc/controld/ctrld.toml`), then `ERR … <no log output is obtained from ctrld process>` and `Service uninstalled`. dig @127.0.0.1 timed out; LaunchDaemon gone; Wi-Fi left on dead 127.0.0.1. Earlier the same day with :53 free, start said "Service started" then listener-not-ready — different failure mode. **Root cause:** `_force_reinstall_ctrld_native` always `service uninstall` then `service start --cd … --listen` **without** absolute `--config`. Combined with `rm -f /etc/controld/ctrld.toml` before start, ctrld's `writeConfigFile` used relative `ctrld.toml` in CWD; LaunchDaemon `run` had no usable config/logs and self-uninstalled. Separately, `~/.config/controld/ctrld.toml` was the old static free-DNS antipattern (`dns.controld.com/free`) that bypasses `--cd` profile IDs. **Rule:** (1) CD Mode start = `ctrld service start --cd <id> --proto doh|doh3 --config=/etc/controld/ctrld.toml --skip_self_checks` — absolute `--config` with `--cd` is still CD Mode (file gets `AUTO-GENERATED VIA CD FLAG`), not Local Config Mode / static free DNS. **Never add `--listen`** (see Lesson 0do — that was the real 17:15 killer). (2) Never delete the CD-generated toml before start; only remove a *symlink* antipattern. (3) Uninstall only when process still alive after stop — never thrash uninstall on every switch. (4) On no-log / self-uninstall signals: DHCP fail-safe immediately; do not pin 127.0.0.1. Relative `Generating …: ctrld.toml` alone is a false positive when abs `--config` is new. (5) Quarantine `~/.config/controld/ctrld.toml` static free configs. (6) Do not vendor-reinstall Control D until this path is proven once. **Detection cost:** Low — start log shows bare `ctrld.toml` vs `/etc/controld/ctrld.toml`; working `/tmp/ctrld_start_out.txt` from 13:36 showed absolute path.
+**Pattern:** After repair uninstall (~64s KeepAlive clear), start logged
+`Generating controld config: ctrld.toml` (relative, not
+`/etc/controld/ctrld.toml`), then
+`ERR … <no log output is obtained from ctrld process>` and
+`Service uninstalled`. dig @127.0.0.1 timed out; LaunchDaemon gone; Wi-Fi left
+on dead 127.0.0.1. Earlier the same day with :53 free, start said "Service
+started" then listener-not-ready — different failure mode. **Root cause:**
+`_force_reinstall_ctrld_native` always `service uninstall` then
+`service start --cd … --listen` **without** absolute `--config`. Combined with
+`rm -f /etc/controld/ctrld.toml` before start, ctrld's `writeConfigFile` used
+relative `ctrld.toml` in CWD; LaunchDaemon `run` had no usable config/logs and
+self-uninstalled. Separately, `~/.config/controld/ctrld.toml` was the old static
+free-DNS antipattern (`dns.controld.com/free`) that bypasses `--cd` profile IDs.
+**Rule:** (1) CD Mode start =
+`ctrld service start --cd <id> --proto doh|doh3 --config=/etc/controld/ctrld.toml --skip_self_checks`
+— absolute `--config` with `--cd` is still CD Mode (file gets
+`AUTO-GENERATED VIA CD FLAG`), not Local Config Mode / static free DNS. **Never
+add `--listen`** (see Lesson 0do — that was the real 17:15 killer). (2) Never
+delete the CD-generated toml before start; only remove a _symlink_ antipattern.
+(3) Uninstall only when process still alive after stop — never thrash uninstall
+on every switch. (4) On no-log / self-uninstall signals: DHCP fail-safe
+immediately; do not pin 127.0.0.1. Relative `Generating …: ctrld.toml` alone is
+a false positive when abs `--config` is new. (5) Quarantine
+`~/.config/controld/ctrld.toml` static free configs. (6) Do not vendor-reinstall
+Control D until this path is proven once. **Detection cost:** Low — start log
+shows bare `ctrld.toml` vs `/etc/controld/ctrld.toml`; working
+`/tmp/ctrld_start_out.txt` from 13:36 showed absolute path.
 
 ## Lesson 0dm: LaunchAgent audit — empty bash arrays, missing agent stubs, bad scutil (2026-07-09)
 
-**Pattern:** Four "failing" agents had different root causes: (1) `service_monitor.sh` empty `PROBLEM_PROCESSES=()` + `set -u` → unbound variable mid-run on bash 3.2. (2) SecOps phase1/2/3 rewritten to `uv run …/secops-autopilot/scripts/secops_agent.py` but skill never landed → exit 2 / LastExitStatus 512 daily. (3) `ctrld-network-watch` used invalid `scutil --watch` → KeepAlive `runs` 1352+ and fought Control D DNS. (4) `media.permute` KeepAlive on non-executable script → exit 126. **Rule:** (1) Never leave empty arrays under `set -u` on macOS bash — use a placeholder. (2) Do not point LaunchAgents at skills/binaries that are not in-repo and verified. (3) Prefer archive+README over hard delete for DNS/security agents. (4) `sync-launchagents` only covers `media-streaming/launchd` + `launch-agents` — maintenance plists are a separate install path. **Detection cost:** Low — `launchctl print` runs/exit + script stderr.
+**Pattern:** Four "failing" agents had different root causes: (1)
+`service_monitor.sh` empty `PROBLEM_PROCESSES=()` + `set -u` → unbound variable
+mid-run on bash 3.2. (2) SecOps phase1/2/3 rewritten to
+`uv run …/secops-autopilot/scripts/secops_agent.py` but skill never landed →
+exit 2 / LastExitStatus 512 daily. (3) `ctrld-network-watch` used invalid
+`scutil --watch` → KeepAlive `runs` 1352+ and fought Control D DNS. (4)
+`media.permute` KeepAlive on non-executable script → exit 126. **Rule:** (1)
+Never leave empty arrays under `set -u` on macOS bash — use a placeholder. (2)
+Do not point LaunchAgents at skills/binaries that are not in-repo and verified.
+(3) Prefer archive+README over hard delete for DNS/security agents. (4)
+`sync-launchagents` only covers `media-streaming/launchd` + `launch-agents` —
+maintenance plists are a separate install path. **Detection cost:** Low —
+`launchctl print` runs/exit + script stderr.
 
 ## Lesson 0dl: Free :53 ≠ ready — readiness abort + wrong Colima patch path (2026-07-09)
 
-**Pattern:** With Colima stopped (`lsof :53` empty), switches still logged `Service started` then `listener not ready` in **~1.7s** (far under the 30s budget) then recovery `service is already stopped` + DHCP reset. Gaming sometimes "succeeded" mid-run while privacy/browsing failed. Root causes stacked: (1) `_wait_for_dns_ready` treated a **single** `pgrep` miss as death — KeepAlive respawn gaps / post-install settle aborted the wait after one dig timeout; recovery then **stop-thrashed** a unit still coming up. (2) Prior `--patch-colima-ignore` appended `portForwards` to `~/.colima/default/colima.yaml`, which does **not** reliably rewrite generated Lima forwards; live `lima.yaml` still auto-forwarded `127.0.0.1:53` → limactl TCP *:53. Correct path is `~/.colima/_lima/_config/override.yaml` with `guestIPMustBeZero: false` (Lima 2.x — lima#4403). (3) `com.personal.ctrld-network-watch` used invalid `scutil --watch` → KeepAlive crash-loop (`runs` 1300+). (4) Gaming "success" was luck/timing (or earlier false static fallback), not a different code path. **Rule:** (1) Grace + dead-streak before declaring process death; never stop a still-alive unit mid-boot. (2) Reinstall with new flags via stop→`service start --cd … --config=/etc/controld/ctrld.toml` (v1.3.8+ applies new flags); **never `--listen` with `--cd`** (Lesson 0do); uninstall only if KeepAlive zombie remains. (3) Patch Lima **override.yaml**, not only colima.yaml; prove with `Not forwarding TCP 127.0.0.1:53` + empty `lsof :53` after `colima start`. (4) Fix network-watch to `scutil -w`. Still never classify dig timeout as API/static DoH fallback. **Detection cost:** Low — wall-clock from `Service started`→recovery ≪ budget; ha.stderr `Forwarding TCP from 127.0.0.1:53`.
+**Pattern:** With Colima stopped (`lsof :53` empty), switches still logged
+`Service started` then `listener not ready` in **~1.7s** (far under the 30s
+budget) then recovery `service is already stopped` + DHCP reset. Gaming
+sometimes "succeeded" mid-run while privacy/browsing failed. Root causes
+stacked: (1) `_wait_for_dns_ready` treated a **single** `pgrep` miss as death —
+KeepAlive respawn gaps / post-install settle aborted the wait after one dig
+timeout; recovery then **stop-thrashed** a unit still coming up. (2) Prior
+`--patch-colima-ignore` appended `portForwards` to
+`~/.colima/default/colima.yaml`, which does **not** reliably rewrite generated
+Lima forwards; live `lima.yaml` still auto-forwarded `127.0.0.1:53` → limactl
+TCP *:53. Correct path is `~/.colima/_lima/_config/override.yaml` with
+`guestIPMustBeZero: false` (Lima 2.x — lima#4403). (3)
+`com.personal.ctrld-network-watch` used invalid `scutil --watch` → KeepAlive
+crash-loop (`runs` 1300+). (4) Gaming "success" was luck/timing (or earlier
+false static fallback), not a different code path. **Rule:** (1) Grace +
+dead-streak before declaring process death; never stop a still-alive unit
+mid-boot. (2) Reinstall with new flags via
+stop→`service start --cd … --config=/etc/controld/ctrld.toml` (v1.3.8+ applies
+new flags); **never `--listen` with `--cd`** (Lesson 0do); uninstall only if
+KeepAlive zombie remains. (3) Patch Lima **override.yaml**, not only
+colima.yaml; prove with `Not forwarding TCP 127.0.0.1:53` + empty `lsof :53`
+after `colima start`. (4) Fix network-watch to `scutil -w`. Still never classify
+dig timeout as API/static DoH fallback. **Detection cost:** Low — wall-clock
+from `Service started`→recovery ≪ budget; ha.stderr
+`Forwarding TCP from 127.0.0.1:53`.
 
 ## Lesson 0dk: Colima limactl steals host :53 — Control D never becomes ready (2026-07-09)
 
-**Pattern:** After the false-API-fallback fix, switches logged `Service started` then `DNS listener is not ready; attempting recovery` then `WRN service is already stopped` and failed — dig @127.0.0.1 timed out while `pgrep ctrld` sometimes succeeded and `launchctl` `runs` climbed. Live `lsof -nP -iTCP:53` showed **limactl** (Colima/Lima) LISTENing on TCP *:53 because Lima auto-forwards guest DNS (`127.0.0.1:53` / `::1:53`) to the host. ctrld cannot bind; KeepAlive respawns a dead unit. Recovery `_stop` + restart thrashed against the same conflict. "Leaving system DNS unchanged" left Wi-Fi on 127.0.0.1 from an earlier success → broken DNS. Gaming succeeding once was luck (brief window before limactl reclaimed / race). **Rule:** (1) Before readiness wait, detect foreign :53 holders; fail fast on limactl/Colima — do not burn 30s×2. (2) On listener-not-ready failure: stop ctrld **and** `_reset_system_dns_to_dhcp` (Empty) — never leave 127.0.0.1 pinned. (3) Free :53 with `./scripts/free-port53-for-controld.sh --stop-colima` (or `--patch-colima-ignore` + colima restart) before `repair-controld-keepalive.sh --restart privacy`. (4) Still never classify dig timeout as API failure / static DoH fallback. **Detection cost:** Low — `lsof -nP -iUDP:53 -iTCP:53` shows limactl not ctrld.
+**Pattern:** After the false-API-fallback fix, switches logged `Service started`
+then `DNS listener is not ready; attempting recovery` then
+`WRN service is already stopped` and failed — dig @127.0.0.1 timed out while
+`pgrep ctrld` sometimes succeeded and `launchctl` `runs` climbed. Live
+`lsof -nP -iTCP:53` showed **limactl** (Colima/Lima) LISTENing on TCP *:53
+because Lima auto-forwards guest DNS (`127.0.0.1:53` / `::1:53`) to the host.
+ctrld cannot bind; KeepAlive respawns a dead unit. Recovery `_stop` + restart
+thrashed against the same conflict. "Leaving system DNS unchanged" left Wi-Fi on
+127.0.0.1 from an earlier success → broken DNS. Gaming succeeding once was luck
+(brief window before limactl reclaimed / race). **Rule:** (1) Before readiness
+wait, detect foreign :53 holders; fail fast on limactl/Colima — do not burn
+30s×2. (2) On listener-not-ready failure: stop ctrld **and**
+`_reset_system_dns_to_dhcp` (Empty) — never leave 127.0.0.1 pinned. (3) Free :53
+with `./scripts/free-port53-for-controld.sh --stop-colima` (or
+`--patch-colima-ignore` + colima restart) before
+`repair-controld-keepalive.sh --restart privacy`. (4) Still never classify dig
+timeout as API failure / static DoH fallback. **Detection cost:** Low —
+`lsof -nP -iUDP:53 -iTCP:53` shows limactl not ctrld.
 
 ## Lesson 0dj: Control D false API fallback + protocol short-circuit poison (2026-07-09)
 
-**Pattern:** Nearly every `doh3` switch logged `DNS listener is not ready` then `Native Control D API failed (likely maintenance)` and static-fell back to DoH — even when the API was fine. Fallback rewrote `PROTOCOL=doh`, so the next Mode 2 switch (`… doh`) short-circuited with `Already running … with doh` after Mode 1 had requested doh3. Separately, `check_reconcile_needed` treated intentional standalone `doh-ipv4` (IPv6 Off, no VPN) as unhealthy. **Rule:** (1) Static fallback ONLY on real API/maintenance strings via `_should_static_api_fallback` — never on dig timeout / listener-not-ready. (2) Wait ~30s for DNS readiness; on timeout do one native recovery restart, then fail without rewriting PROTOCOL. (3) Short-circuit via `profile_protocol_already_active` requires profile AND protocol match, dig healthy, and no `FALLBACK=1`. (4) Intentional `doh-ipv4` is healthy without VPN. **Detection cost:** Low — Mode 1→2 in `validate-controld-ipv6-modes.sh` + absence of `FALLBACK=1` / false API warn.
+**Pattern:** Nearly every `doh3` switch logged `DNS listener is not ready` then
+`Native Control D API failed (likely maintenance)` and static-fell back to DoH —
+even when the API was fine. Fallback rewrote `PROTOCOL=doh`, so the next Mode 2
+switch (`… doh`) short-circuited with `Already running … with doh` after Mode 1
+had requested doh3. Separately, `check_reconcile_needed` treated intentional
+standalone `doh-ipv4` (IPv6 Off, no VPN) as unhealthy. **Rule:** (1) Static
+fallback ONLY on real API/maintenance strings via `_should_static_api_fallback`
+— never on dig timeout / listener-not-ready. (2) Wait ~30s for DNS readiness; on
+timeout do one native recovery restart, then fail without rewriting PROTOCOL.
+(3) Short-circuit via `profile_protocol_already_active` requires profile AND
+protocol match, dig healthy, and no `FALLBACK=1`. (4) Intentional `doh-ipv4` is
+healthy without VPN. **Detection cost:** Low — Mode 1→2 in
+`validate-controld-ipv6-modes.sh` + absence of `FALLBACK=1` / false API warn.
 
 ## Lesson 0di: Jellyfin macOS cask needs --webdir; Colima fuse-t works but stay native first (2026-07-09)
 
-**Pattern:** Homebrew cask `jellyfin` 10.11.11 installs the server binary under `Contents/MacOS/` but ships the web UI in `Contents/Resources/jellyfin-web`. Launching without `--webdir` crash-loops (`content directory is either invalid or empty`). Separately, Colima virtiofs *can* read the host fuse-t mount (alpine probe + byte read), but native Jellyfin still wins for Phase 1 (no shared-VM CPU/RAM fight with email-security-pipeline). Wizard API: POST `/Startup/User` with non-empty `Password` (GET `/Startup/FirstUser` is read-only; empty password → 400). **Rule:** `jellyfin-daemon.sh` must pass `--service --webdir …/Contents/Resources/jellyfin-web`; keep rclone/WebDAV untouched; do not Windscribe-forward 8096 until LAN playback + auth review. **Detection cost:** Low — jellyfin.log webclient error + `validate-jellyfin.sh`.
+**Pattern:** Homebrew cask `jellyfin` 10.11.11 installs the server binary under
+`Contents/MacOS/` but ships the web UI in `Contents/Resources/jellyfin-web`.
+Launching without `--webdir` crash-loops
+(`content directory is either invalid or empty`). Separately, Colima virtiofs
+_can_ read the host fuse-t mount (alpine probe + byte read), but native Jellyfin
+still wins for Phase 1 (no shared-VM CPU/RAM fight with
+email-security-pipeline). Wizard API: POST `/Startup/User` with non-empty
+`Password` (GET `/Startup/FirstUser` is read-only; empty password → 400).
+**Rule:** `jellyfin-daemon.sh` must pass
+`--service --webdir …/Contents/Resources/jellyfin-web`; keep rclone/WebDAV
+untouched; do not Windscribe-forward 8096 until LAN playback + auth review.
+**Detection cost:** Low — jellyfin.log webclient error + `validate-jellyfin.sh`.
 
 ## Lesson 0dh: Control D KeepAlive crash-loop + dead 127.0.0.1 DNS (2026-07-09)
 
-**Pattern:** Profile switches / partial stops left `ctrld` LaunchDaemon with `KeepAlive=true` while `/etc/controld` was empty. `pgrep -x ctrld` succeeded, `launchctl` `runs` climbed (46→71+), `dig @127.0.0.1` timed out, and Wi-Fi DNS stayed pinned to `127.0.0.1`. Blind `pkill` while KeepAlive is on just respawns the broken unit. Treating "process alive but dig timeout" as slow-success then calling `_apply_localhost_dns` locks the host onto a dead listener. **Rule:** (1) Stop with `ctrld service stop` *before* any kill; uninstall only as last resort to clear KeepAlive. (2) Never set system DNS to 127.0.0.1 unless `dig @127.0.0.1` succeeds. (3) Reconcile must treat zombie listener (process up, dig fail) like "ctrld down". Repair: `sudo ./scripts/repair-controld-keepalive.sh --restart privacy`. **Detection cost:** Low — `launchctl print system/ctrld | grep runs` + `dig @127.0.0.1`.
+**Pattern:** Profile switches / partial stops left `ctrld` LaunchDaemon with
+`KeepAlive=true` while `/etc/controld` was empty. `pgrep -x ctrld` succeeded,
+`launchctl` `runs` climbed (46→71+), `dig @127.0.0.1` timed out, and Wi-Fi DNS
+stayed pinned to `127.0.0.1`. Blind `pkill` while KeepAlive is on just respawns
+the broken unit. Treating "process alive but dig timeout" as slow-success then
+calling `_apply_localhost_dns` locks the host onto a dead listener. **Rule:**
+(1) Stop with `ctrld service stop` _before_ any kill; uninstall only as last
+resort to clear KeepAlive. (2) Never set system DNS to 127.0.0.1 unless
+`dig @127.0.0.1` succeeds. (3) Reconcile must treat zombie listener (process up,
+dig fail) like "ctrld down". Repair:
+`sudo ./scripts/repair-controld-keepalive.sh --restart privacy`. **Detection
+cost:** Low — `launchctl print system/ctrld | grep runs` + `dig @127.0.0.1`.
 
 ## Lesson 0de: Control D switch reliability — service install race + false API fallback (2026-07-09)
 
-**Pattern:** Profile switches logged `WRN service not installed` then `[WARN] Native Control D API failed` and fell back to static DoH even when the API was fine. Root cause: `restart_with_native_profile` used a ~3s dig wait and treated any timeout as API failure; `ctrld start` also reinstalls the LaunchDaemon every switch. **Rule:** Prefer `ctrld service start` with `ctrld start` only as install fallback; wait ~15s for DNS readiness; only trigger static fallback on real API error strings — never on "service not installed" chatter. **Caveat (see 0dh):** "process alive after dig timeout" is *not* success — do not apply localhost DNS until dig succeeds. **Detection cost:** Medium — reproduce with rapid `controld-manager switch` while watching `/var/log/controld_manager.log`.
+**Pattern:** Profile switches logged `WRN service not installed` then
+`[WARN] Native Control D API failed` and fell back to static DoH even when the
+API was fine. Root cause: `restart_with_native_profile` used a ~3s dig wait and
+treated any timeout as API failure; `ctrld start` also reinstalls the
+LaunchDaemon every switch. **Rule:** Prefer `ctrld service start` with
+`ctrld start` only as install fallback; wait ~15s for DNS readiness; only
+trigger static fallback on real API error strings — never on "service not
+installed" chatter. **Caveat (see 0dh):** "process alive after dig timeout" is
+_not_ success — do not apply localhost DNS until dig succeeds. **Detection
+cost:** Medium — reproduce with rapid `controld-manager switch` while watching
+`/var/log/controld_manager.log`.
 
 ## Lesson 0dd: Jellyfin stays native while Colima is unhealthy (2026-07-09)
 
-**Pattern:** Stream 3 preferred Colima for Jellyfin, but email-security-pipeline logs showed repeated `Colima/Docker did not become ready within 180 seconds`, and the library is already on a host fuse-t/FSKit rclone mount. **Rule:** Prefer native Jellyfin reading `~/CloudMedia/mounted` until Colima is proven healthy *and* a throwaway container can `ls` the host mount; keep WebDAV/rclone as-is; never half-cut Plex before Jellyfin playback works. **Detection cost:** Low — `pipeline.err` Colima timeouts + `mount | grep CloudMedia`.
+**Pattern:** Stream 3 preferred Colima for Jellyfin, but email-security-pipeline
+logs showed repeated `Colima/Docker did not become ready within 180 seconds`,
+and the library is already on a host fuse-t/FSKit rclone mount. **Rule:** Prefer
+native Jellyfin reading `~/CloudMedia/mounted` until Colima is proven healthy
+_and_ a throwaway container can `ls` the host mount; keep WebDAV/rclone as-is;
+never half-cut Plex before Jellyfin playback works. **Detection cost:** Low —
+`pipeline.err` Colima timeouts + `mount | grep CloudMedia`.
 
 ## Lesson 0db: CodeScene can flip green on deferred format sweeps (2026-07-08)
 
-**Pattern:** sc #201 (black auto-format) was deferred on 2026-07-07 for CodeScene FAIL; on 2026-07-08 the same PR showed CodeScene SUCCESS with no new commits. **Rule:** Re-triage deferred CodeScene-blocked PRs at the start of each session before carrying forward DEFER status — formatting-only sweeps may clear without agent intervention. **Detection cost:** Low — `gh pr checks` on session start.
+**Pattern:** sc #201 (black auto-format) was deferred on 2026-07-07 for
+CodeScene FAIL; on 2026-07-08 the same PR showed CodeScene SUCCESS with no new
+commits. **Rule:** Re-triage deferred CodeScene-blocked PRs at the start of each
+session before carrying forward DEFER status — formatting-only sweeps may clear
+without agent intervention. **Detection cost:** Low — `gh pr checks` on session
+start.
 
 ## Lesson 0dc: Security hardening PRs split by trust-boundary type (2026-07-08)
 
-**Pattern:** hg #330 (Sentinel path-traversal fix, production code hardening) merged with green CI; pc #1544 and esp #1240 (PR automation script injection fixes) escalated despite green CI. **Rule:** Distinguish **application hardening** (merge when CI green and diff reduces attack surface) from **automation trust-boundary** changes (always escalate for human approval even when CI passes). **Detection cost:** Low — branch prefix `cursor-agent/fix-*-injection` or title contains `security(ABHI-*`.
+**Pattern:** hg #330 (Sentinel path-traversal fix, production code hardening)
+merged with green CI; pc #1544 and esp #1240 (PR automation script injection
+fixes) escalated despite green CI. **Rule:** Distinguish **application
+hardening** (merge when CI green and diff reduces attack surface) from
+**automation trust-boundary** changes (always escalate for human approval even
+when CI passes). **Detection cost:** Low — branch prefix
+`cursor-agent/fix-*-injection` or title contains `security(ABHI-*`.
 
 ## Lesson 0da: Palette siblings on palette.md — merge order matters (2026-07-07)
 
-**Pattern:** pc #1530 (ARIA landmarks) and #1527 (performance report a11y) both touched `.jules/palette.md` and `performance_optimizer.sh`. Squash-merging #1530 first left #1527 CONFLICTING despite green CI at triage time. **Rule:** When multiple Palette PRs share `palette.md`, merge the broader dashboard PR first or immediately merge `origin/main` into the sibling before squash-merge. Journal conflicts: keep **both** learning entries (dedupe by date/title). **Detection cost:** Low — `gh pr diff --name-only` shows shared `.jules/palette.md`.
+**Pattern:** pc #1530 (ARIA landmarks) and #1527 (performance report a11y) both
+touched `.jules/palette.md` and `performance_optimizer.sh`. Squash-merging #1530
+first left #1527 CONFLICTING despite green CI at triage time. **Rule:** When
+multiple Palette PRs share `palette.md`, merge the broader dashboard PR first or
+immediately merge `origin/main` into the sibling before squash-merge. Journal
+conflicts: keep **both** learning entries (dedupe by date/title). **Detection
+cost:** Low — `gh pr diff --name-only` shows shared `.jules/palette.md`.
 
 ## Lesson 0cy: Two-cron day — evening salvage reads merged morning artifacts (2026-07-05)
 
-**Pattern:** Morning Phase 1 (13:00 UTC) cleared 27/31 PRs and opened session-doc PR #1504; evening salvage (17:00 UTC) started with only 9 open PRs. Merging #1504 landed morning artifacts before writing evening addendum. **Rule:** Evening salvage must re-fetch live GitHub state (Step 1) and merge any pending session-doc PR from the morning run before appending evening salvage reports — never overwrite unmerged morning artifacts on a working branch. **Detection cost:** Low — check if `tasks/pr-review-YYYY-MM-DD.md` exists on `main` vs open session-doc PR.
+**Pattern:** Morning Phase 1 (13:00 UTC) cleared 27/31 PRs and opened
+session-doc PR #1504; evening salvage (17:00 UTC) started with only 9 open PRs.
+Merging #1504 landed morning artifacts before writing evening addendum.
+**Rule:** Evening salvage must re-fetch live GitHub state (Step 1) and merge any
+pending session-doc PR from the morning run before appending evening salvage
+reports — never overwrite unmerged morning artifacts on a working branch.
+**Detection cost:** Low — check if `tasks/pr-review-YYYY-MM-DD.md` exists on
+`main` vs open session-doc PR.
 
 ## Lesson 0cz: Palette cancel-residue PRs stack on TTY guards (2026-07-05)
 
-**Pattern:** ctrld #979/#981 (merged morning) added `isatty()` guards; #983 (evening) added stderr routing and prompt spacing on the same cancel paths. CodeScene blocked #983 despite green pytest. **Rule:** Treat post-TTY-guard Palette PRs as incremental UX salvages — file-scope onto fresh `main`, verify with `test_ux.py`, and open draft if CodeScene fails. **Detection cost:** Low — small diff in `main.py` cancel handlers + `test_ux.py` assertion changes.
+**Pattern:** ctrld #979/#981 (merged morning) added `isatty()` guards; #983
+(evening) added stderr routing and prompt spacing on the same cancel paths.
+CodeScene blocked #983 despite green pytest. **Rule:** Treat post-TTY-guard
+Palette PRs as incremental UX salvages — file-scope onto fresh `main`, verify
+with `test_ux.py`, and open draft if CodeScene fails. **Detection cost:** Low —
+small diff in `main.py` cancel handlers + `test_ux.py` assertion changes.
+
 ## Lesson 0cy: Sentinel security PR CI fail from stale branch test import (2026-07-05)
 
-**Pattern:** personal-config #1500 (pgrep option injection fix) failed `Run All Tests` because the PR branch still had `tests/test_refactoring_agent_workflow.py` importing `pytest`, while `main` had already migrated the test to stdlib `unittest`/`yaml`. Security diff was only 4 shell files. **Rule:** Before deferring a security PR on unrelated CI failure, merge `origin/main` into the branch and re-run checks; if the failure is pre-existing drift on the branch, autofix-merge is safe. **Detection cost:** Low — CI log shows `ModuleNotFoundError: pytest` with zero pytest changes in PR diff.
+**Pattern:** personal-config #1500 (pgrep option injection fix) failed
+`Run All Tests` because the PR branch still had
+`tests/test_refactoring_agent_workflow.py` importing `pytest`, while `main` had
+already migrated the test to stdlib `unittest`/`yaml`. Security diff was only 4
+shell files. **Rule:** Before deferring a security PR on unrelated CI failure,
+merge `origin/main` into the branch and re-run checks; if the failure is
+pre-existing drift on the branch, autofix-merge is safe. **Detection cost:** Low
+— CI log shows `ModuleNotFoundError: pytest` with zero pytest changes in PR
+diff.
 
 ## Lesson 0cz: repoprompt Style gate requires macOS SwiftFormat (2026-07-05)
 
-**Pattern:** repoprompt-ce #91/#92 pass Build and Test but fail `Style` (SwiftFormat). Cloud Linux agent cannot run `make install-format-tools` (Homebrew required). **Rule:** DEFER Palette/Bolt Swift UI PRs with Style-only failures to macOS salvage (`make dev-format` / `make dev-lint`); do not merge with Style red. **Detection cost:** Low — Style fail + Build pass + `install_format_tools.sh` Homebrew error.
+**Pattern:** repoprompt-ce #91/#92 pass Build and Test but fail `Style`
+(SwiftFormat). Cloud Linux agent cannot run `make install-format-tools`
+(Homebrew required). **Rule:** DEFER Palette/Bolt Swift UI PRs with Style-only
+failures to macOS salvage (`make dev-format` / `make dev-lint`); do not merge
+with Style red. **Detection cost:** Low — Style fail + Build pass +
+`install_format_tools.sh` Homebrew error.
 
 ## Lesson 0cv: Codacy action bump ≠ Codacy scan green (2026-06-23)
 
-**Pattern:** personal-config #1331 (codacy-analysis-cli-action 1.1.0 → 4.4.7) merged with passing CI, but **all** sibling open PRs still fail `Codacy Security Scan` on re-run. Other gates (CodeQL, Snyk, CodeScene, dependency-review) pass. **Rule:** Treat Codacy failures after an action bump as **ESCALATE** (project token, API config, or org-level Codacy settings)—not auto-fixable by further dependabot bumps alone. **Detection cost:** Low — single failing required check across entire PR queue.
+**Pattern:** personal-config #1331 (codacy-analysis-cli-action 1.1.0 → 4.4.7)
+merged with passing CI, but **all** sibling open PRs still fail
+`Codacy Security Scan` on re-run. Other gates (CodeQL, Snyk, CodeScene,
+dependency-review) pass. **Rule:** Treat Codacy failures after an action bump as
+**ESCALATE** (project token, API config, or org-level Codacy settings)—not
+auto-fixable by further dependabot bumps alone. **Detection cost:** Low — single
+failing required check across entire PR queue.
 
 ## Lesson 0cw: ctrld dependabot cluster blocked by QA fix PR (2026-06-23)
 
-**Pattern:** ctrld #938–#942 (workflow-only dependabot) fail `mypy`/`ruff` while #943 (Jules QA lint/type fixes) passes those jobs but fails CodeScene. Dependabot branches are already up-to-date with `main`. **Rule:** Merge order is #943 first (post CodeScene `/cs-agent`), then re-run CI on dependabot cluster—workflow bumps inherit lint state from `main`, not from their diffs. **Detection cost:** Low — mypy/ruff fail on zero-Python-file PRs.
+**Pattern:** ctrld #938–#942 (workflow-only dependabot) fail `mypy`/`ruff` while
+#943 (Jules QA lint/type fixes) passes those jobs but fails CodeScene.
+Dependabot branches are already up-to-date with `main`. **Rule:** Merge order is
+#943 first (post CodeScene `/cs-agent`), then re-run CI on dependabot
+cluster—workflow bumps inherit lint state from `main`, not from their diffs.
+**Detection cost:** Low — mypy/ruff fail on zero-Python-file PRs.
 
 ## Lesson 0cx: Duplicate Bolt perf PRs — close younger subset (2026-06-23)
 
-**Pattern:** hg #290/#291 and sc #142/#145 were same-intent Bolt optimizations opened hours apart; newer PR had broader diff + green CI. **Rule:** When two Bolt branches touch the same production file with >70% intent overlap, merge the PR with passing CI and more complete diff; close the other with link. **Detection cost:** Low — `gh pr diff --name-only` + title keyword match.
+**Pattern:** hg #290/#291 and sc #142/#145 were same-intent Bolt optimizations
+opened hours apart; newer PR had broader diff + green CI. **Rule:** When two
+Bolt branches touch the same production file with >70% intent overlap, merge the
+PR with passing CI and more complete diff; close the other with link.
+**Detection cost:** Low — `gh pr diff --name-only` + title keyword match.
 
 ## Lesson 0ct: Security salvage must update test constants (2026-06-21)
 
-**Pattern:** repoprompt-ce #23 (Keychain accessibility hardening) failed Build because `KeychainServiceTests` still asserted `kSecAttrAccessibleAfterFirstUnlock` while the salvage changed production code to `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`. **Rule:** When salvaging security PRs that change Keychain/crypto constants, grep tests for the old constant and adapt assertions in the same salvage commit (S4). Open `-v2` salvage branch rather than force-pushing. **Detection cost:** Low — CI Build log shows `XCTAssertEqual` mismatch on accessibility string.
+**Pattern:** repoprompt-ce #23 (Keychain accessibility hardening) failed Build
+because `KeychainServiceTests` still asserted
+`kSecAttrAccessibleAfterFirstUnlock` while the salvage changed production code
+to `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`. **Rule:** When salvaging
+security PRs that change Keychain/crypto constants, grep tests for the old
+constant and adapt assertions in the same salvage commit (S4). Open `-v2`
+salvage branch rather than force-pushing. **Detection cost:** Low — CI Build log
+shows `XCTAssertEqual` mismatch on accessibility string.
 
 ## Lesson 0cu: Mashed workflow YAML spreads across repos (2026-06-21)
 
-**Pattern:** personal-config `main` had mashed duplicate `uses:` lines in six workflows; repoprompt-ce `dependency-review.yml` had the same defect, causing dependency-review failures on all open salvage PRs. pc #1304 attempted SHA→tag regression on top of existing corruption. **Rule:** On any workflow corruption ESCALATE, scan **all configured repos** for `uses:.*uses:` before closing the incident; open paired T0 infra-fix drafts per affected repo. **Detection cost:** Low — `rg 'uses:.*uses:' .github/workflows/` per repo.
+**Pattern:** personal-config `main` had mashed duplicate `uses:` lines in six
+workflows; repoprompt-ce `dependency-review.yml` had the same defect, causing
+dependency-review failures on all open salvage PRs. pc #1304 attempted SHA→tag
+regression on top of existing corruption. **Rule:** On any workflow corruption
+ESCALATE, scan **all configured repos** for `uses:.*uses:` before closing the
+incident; open paired T0 infra-fix drafts per affected repo. **Detection cost:**
+Low — `rg 'uses:.*uses:' .github/workflows/` per repo.
 
 ## Lesson 0cr: automation-workflow-updates YAML corruption (2026-06-21)
 
-**Pattern:** `automation-workflow-updates-*` branches from daily workflow consolidation can produce mashed duplicate `uses:` lines in YAML (e.g. `dependency-review.yml`, `stale.yml`) and regress SHA pins to mutable tags. CI may still pass if workflows are not exercised on the PR branch. **Rule:** Always run a YAML integrity scan on workflow-only PRs before merge; treat any duplicated `uses:` line or SHA→tag regression as **ESCALATE**, never auto-merge.
+**Pattern:** `automation-workflow-updates-*` branches from daily workflow
+consolidation can produce mashed duplicate `uses:` lines in YAML (e.g.
+`dependency-review.yml`, `stale.yml`) and regress SHA pins to mutable tags. CI
+may still pass if workflows are not exercised on the PR branch. **Rule:** Always
+run a YAML integrity scan on workflow-only PRs before merge; treat any
+duplicated `uses:` line or SHA→tag regression as **ESCALATE**, never auto-merge.
 
 ## Lesson 0cs: personal-config Bolt journal conflicts after sibling merge (2026-06-21)
 
-**Pattern:** Squash-merging pc #1307 (`system_metrics.sh` + bolt.md journal) left pc #1308 (`repository_automation_tasks.py` + bolt.md) **CONFLICTING** on `.jules/bolt.md` only. **Rule:** After merging one Bolt PR that touches `bolt.md`, immediately merge `origin/main` into the next sibling Bolt PR before attempting squash-merge; resolve journal conflicts by taking `main` bolt.md and appending the PR's single learning entry (deduplicated).
+**Pattern:** Squash-merging pc #1307 (`system_metrics.sh` + bolt.md journal)
+left pc #1308 (`repository_automation_tasks.py` + bolt.md) **CONFLICTING** on
+`.jules/bolt.md` only. **Rule:** After merging one Bolt PR that touches
+`bolt.md`, immediately merge `origin/main` into the next sibling Bolt PR before
+attempting squash-merge; resolve journal conflicts by taking `main` bolt.md and
+appending the PR's single learning entry (deduplicated).
 
 ## Lesson 0cq: ctrld journal PRs conflict after Bolt/Sentinel burst (2026-06-16)
 
@@ -895,36 +1183,89 @@ optimization.
 
 ## Lesson 0cp: Combine DIRTY code + journal salvage; drop duplicate journal entries (2026-06-16)
 
-**Pattern:** ctrld #901 (main.py refactor) and #904 (anti-micro journal) both went `DIRTY` after the same merge burst (#905/#906/#902). #901's journal entry duplicated content already on `main` from an earlier merge. **Rule:** When salvaging sibling DIRTY PRs from the same burst, open one draft branch from current `main`: take production code from the code PR, append-only journal from the doc PR, and skip journal lines already present on `main`. **Detection cost:** Low — two open PRs on the same repo with overlapping `.jules/bolt.md` paths and `DIRTY` status after a burst merge.
+**Pattern:** ctrld #901 (main.py refactor) and #904 (anti-micro journal) both
+went `DIRTY` after the same merge burst (#905/#906/#902). #901's journal entry
+duplicated content already on `main` from an earlier merge. **Rule:** When
+salvaging sibling DIRTY PRs from the same burst, open one draft branch from
+current `main`: take production code from the code PR, append-only journal from
+the doc PR, and skip journal lines already present on `main`. **Detection
+cost:** Low — two open PRs on the same repo with overlapping `.jules/bolt.md`
+paths and `DIRTY` status after a burst merge.
 
 ## Lesson 0cr: Salvage one-line fixes from DIRTY Jules PRs; omit CodeScene refactors (2026-06-19)
 
-**Pattern:** pc #1281 bundled a one-line podcast error-path `html_section()` a11y fix with CodeScene-driven `_parse_linear_focus_node` inlining that conflicted with `main`. **Rule:** When a DIRTY bot PR's stated intent is a small functional fix but the diff includes unrelated complexity refactors, salvage only the functional lines onto a fresh `main` branch. **Detection cost:** Low — `gh pr diff --stat` shows large churn in unrelated functions alongside a one-line stated fix in the PR title.
+**Pattern:** pc #1281 bundled a one-line podcast error-path `html_section()`
+a11y fix with CodeScene-driven `_parse_linear_focus_node` inlining that
+conflicted with `main`. **Rule:** When a DIRTY bot PR's stated intent is a small
+functional fix but the diff includes unrelated complexity refactors, salvage
+only the functional lines onto a fresh `main` branch. **Detection cost:** Low —
+`gh pr diff --stat` shows large churn in unrelated functions alongside a
+one-line stated fix in the PR title.
+
 ## Lesson 0db: Large Phase 1 merge bursts predictably cascade DIRTY test PRs (2026-06-30)
 
-**Pattern:** After squash-merging 22 personal-config PRs in one session, nine sibling test PRs flipped to `DIRTY` (all touching overlapping `tests/*` files). CI was green on each before the burst; conflicts appeared only at merge time. **Rule:** When planning a merge burst on repos with dense Jules test PR clusters, pre-identify file-path overlap and either (a) merge the largest test-file PR first then immediately salvage DIRTY siblings from current `main`, or (b) batch-salvage before closing originals. Do not attempt `update-branch` retries indefinitely — switch to salvage-from-main after one 422 conflict response. **Detection cost:** Low — multiple open PRs sharing the same `tests/test_*.py` basename in inventory.
+**Pattern:** After squash-merging 22 personal-config PRs in one session, nine
+sibling test PRs flipped to `DIRTY` (all touching overlapping `tests/*` files).
+CI was green on each before the burst; conflicts appeared only at merge time.
+**Rule:** When planning a merge burst on repos with dense Jules test PR
+clusters, pre-identify file-path overlap and either (a) merge the largest
+test-file PR first then immediately salvage DIRTY siblings from current `main`,
+or (b) batch-salvage before closing originals. Do not attempt `update-branch`
+retries indefinitely — switch to salvage-from-main after one 422 conflict
+response. **Detection cost:** Low — multiple open PRs sharing the same
+`tests/test_*.py` basename in inventory.
 
 ## Lesson 0dc: Salvage PRs can themselves go DIRTY — verify value still missing on main (2026-07-02)
 
-**Pattern:** esp #1202 was a prior-session salvage draft that became `DIRTY` while `main` had already absorbed the functional change (`REDACTED_URL_PATTERN` at class level). **Rule:** Before re-salvaging a conflicted salvage PR, diff its intent against current `main`. If the change is already present (even with a different implementation), close as superseded — do not open another draft. **Detection cost:** Low — `git diff main..branch -- <intent_file>` or grep for the stated symbol on `main`.
+**Pattern:** esp #1202 was a prior-session salvage draft that became `DIRTY`
+while `main` had already absorbed the functional change (`REDACTED_URL_PATTERN`
+at class level). **Rule:** Before re-salvaging a conflicted salvage PR, diff its
+intent against current `main`. If the change is already present (even with a
+different implementation), close as superseded — do not open another draft.
+**Detection cost:** Low — `git diff main..branch -- <intent_file>` or grep for
+the stated symbol on `main`.
 
 ## Lesson 0dd: Jules UX PRs with refactor churn — salvage isatty guards only (2026-07-02)
 
-**Pattern:** ctrld #965 mixed valuable `stderr.isatty()` guards with 400+ lines of unrelated refactors (nested functions, folder parsing moves), causing `DIRTY` + CodeScene failure. **Rule:** For Palette/Jules UX PRs where the title states an isatty/ANSI guard, salvage only those guard lines and matching tests onto fresh `main`; discard bundled refactors. **Detection cost:** Low — PR title mentions isatty/ANSI while `git diff --stat` shows >100 lines outside `countdown_timer`/`render_progress_bar`.
+**Pattern:** ctrld #965 mixed valuable `stderr.isatty()` guards with 400+ lines
+of unrelated refactors (nested functions, folder parsing moves), causing
+`DIRTY` + CodeScene failure. **Rule:** For Palette/Jules UX PRs where the title
+states an isatty/ANSI guard, salvage only those guard lines and matching tests
+onto fresh `main`; discard bundled refactors. **Detection cost:** Low — PR title
+mentions isatty/ANSI while `git diff --stat` shows >100 lines outside
+`countdown_timer`/`render_progress_bar`.
 
 ## Lesson 0de: Copilot workflow PRs with session.db artifacts fail security gates (2026-07-03)
 
-**Pattern:** pc #1470 bundled valuable workflow consolidation with `.adk/session.db` binaries, `all.patch`, and `tasks/todo.md` text that triggered Gitleaks `personal-config-generic-secret`. **Rule:** Close PRs that mix CI/workflow changes with session DB binaries or journal false-positives; if the workflow work is still wanted, open a focused PR touching only `.github/workflows/` + docs. **Detection cost:** Low — `git diff --name-only` includes `*.session.db` or `.adk/` paths alongside workflow files.
+**Pattern:** pc #1470 bundled valuable workflow consolidation with
+`.adk/session.db` binaries, `all.patch`, and `tasks/todo.md` text that triggered
+Gitleaks `personal-config-generic-secret`. **Rule:** Close PRs that mix
+CI/workflow changes with session DB binaries or journal false-positives; if the
+workflow work is still wanted, open a focused PR touching only
+`.github/workflows/` + docs. **Detection cost:** Low — `git diff --name-only`
+includes `*.session.db` or `.adk/` paths alongside workflow files.
 
 ## Lesson 0df: Exclude trust-boundary files from Bolt salvage (2026-07-03)
 
-**Pattern:** pc #1466 mixed a legitimate `system_metrics.sh` awk optimization with `get_repo_vars.sh` (GitHub API probe) and `gemini-review.yml` secret-line removal. **Rule:** When salvaging DIRTY Bolt/Jules perf PRs, take only the stated performance file + journal entry; drop API probe scripts and workflow credential edits. **Detection cost:** Low — salvage diff includes new shell scripts calling `gh api` or workflow files removing `secrets.*` lines.
+**Pattern:** pc #1466 mixed a legitimate `system_metrics.sh` awk optimization
+with `get_repo_vars.sh` (GitHub API probe) and `gemini-review.yml` secret-line
+removal. **Rule:** When salvaging DIRTY Bolt/Jules perf PRs, take only the
+stated performance file + journal entry; drop API probe scripts and workflow
+credential edits. **Detection cost:** Low — salvage diff includes new shell
+scripts calling `gh api` or workflow files removing `secrets.*` lines.
 
 ## Add testing for missing edge cases
-When testing parsing/formatting logic, always consider unexpected data types, out of bound values and common malformed shapes.
+
+When testing parsing/formatting logic, always consider unexpected data types,
+out of bound values and common malformed shapes.
 
 ## Lesson: Cursor agent shell blocked by 1Password Environments hook + SSH agent (2026-07-09)
 
-**Pattern:** Multi-repo workspace + 1Password Cursor plugin default mode denies Shell when any mount under the tree is a non-FIFO; fish setting `SSH_AUTH_SOCK` to 1Password can hang agents on Touch ID.
+**Pattern:** Multi-repo workspace + 1Password Cursor plugin default mode denies
+Shell when any mount under the tree is a non-FIFO; fish setting `SSH_AUTH_SOCK`
+to 1Password can hang agents on Touch ID.
 
-**Rule:** Gate `op` plugin aliases and 1Password SSH sock on `CURSOR_AGENT`/`CI`/non-interactive (`OP_AGENT_SKIP`); for multi-repo workspace roots use `.1password/environments.toml` with `mount_paths = []` so validation is configured-mode skip without disabling interactive 1Password.
+**Rule:** Gate `op` plugin aliases and 1Password SSH sock on
+`CURSOR_AGENT`/`CI`/non-interactive (`OP_AGENT_SKIP`); for multi-repo workspace
+roots use `.1password/environments.toml` with `mount_paths = []` so validation
+is configured-mode skip without disabling interactive 1Password.

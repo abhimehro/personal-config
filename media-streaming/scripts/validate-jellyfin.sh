@@ -11,7 +11,7 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
 BASE_URL="${JELLYFIN_URL:-http://127.0.0.1:8096}"
 MOUNT_POINT="${JELLYFIN_MEDIA_ROOT:-$HOME/CloudMedia/mounted}"
-API_KEY="${JELLYFIN_API_KEY:-}" # optional; never commit real keys
+API_KEY="${JELLYFIN_API_KEY-}" # optional; never commit real keys
 TMP_BODY="$(mktemp)"
 TMP_INFO="$(mktemp)"
 trap 'rm -f "$TMP_BODY" "$TMP_INFO"' EXIT
@@ -20,9 +20,18 @@ pass=0
 fail=0
 soft=0
 
-ok() { echo "✅ $*"; pass=$((pass + 1)); }
-bad() { echo "❌ $*"; fail=$((fail + 1)); }
-warn() { echo "⚠️  $*"; soft=$((soft + 1)); }
+ok() {
+	echo "✅ $*"
+	pass=$((pass + 1))
+}
+bad() {
+	echo "❌ $*"
+	fail=$((fail + 1))
+}
+warn() {
+	echo "⚠️  $*"
+	soft=$((soft + 1))
+}
 
 echo "=== Jellyfin validation ==="
 echo "URL:   $BASE_URL"

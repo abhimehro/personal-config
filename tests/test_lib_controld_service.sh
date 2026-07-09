@@ -233,18 +233,18 @@ echo ""
 echo "-- bash 3.2 ellipsis / set -u (Lesson 0dr) --"
 if command -v rg >/dev/null 2>&1; then
 	if rg -n '\$listener_ip…' "$REPO_ROOT/scripts/lib/controld-service.sh" >/dev/null 2>&1; then
-		echo "FAIL: \$listener_ip followed by Unicode ellipsis still present"
+		echo 'FAIL: $listener_ip followed by Unicode ellipsis still present'
 		FAIL=$((FAIL + 1))
 	else
-		echo "PASS: no \$listener_ip… Unicode ellipsis in controld-service.sh"
+		echo 'PASS: no $listener_ip… Unicode ellipsis in controld-service.sh'
 		PASS=$((PASS + 1))
 	fi
 else
 	if grep -n $'\$listener_ip…' "$REPO_ROOT/scripts/lib/controld-service.sh" >/dev/null 2>&1; then
-		echo "FAIL: \$listener_ip followed by Unicode ellipsis still present"
+		echo 'FAIL: $listener_ip followed by Unicode ellipsis still present'
 		FAIL=$((FAIL + 1))
 	else
-		echo "PASS: no \$listener_ip… Unicode ellipsis in controld-service.sh"
+		echo 'PASS: no $listener_ip… Unicode ellipsis in controld-service.sh'
 		PASS=$((PASS + 1))
 	fi
 fi

@@ -23,7 +23,10 @@ resolve_bin() {
 	)
 	local c
 	for c in "${candidates[@]}"; do
-		[[ -x $c ]] && { echo "$c"; return 0; }
+		[[ -x $c ]] && {
+			echo "$c"
+			return 0
+		}
 	done
 	return 1
 }
@@ -35,7 +38,10 @@ resolve_ffmpeg() {
 	fi
 	local c
 	for c in /opt/homebrew/bin/ffmpeg /usr/local/bin/ffmpeg; do
-		[[ -x $c ]] && { echo "$c"; return 0; }
+		[[ -x $c ]] && {
+			echo "$c"
+			return 0
+		}
 	done
 	return 1
 }

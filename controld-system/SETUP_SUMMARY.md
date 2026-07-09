@@ -1,20 +1,20 @@
 # Control D Setup Summary
 
-> **Superseded for ops (2026-07-09):** Live system is `/etc/controld` + network-mode-manager; status **WORKING / local_fallback**; brew **ctrld v1.5.3**. This file documents an older v1.4.7 / `~/.config/controld` snapshot — keep for history, do not follow free-DNS paths.
+> **Superseded for ops (2026-07-09):** Live system is `/etc/controld` +
+> network-mode-manager; status **WORKING / local_fallback**; brew **ctrld
+> v1.5.3**. This file documents an older v1.4.7 / `~/.config/controld` snapshot
+> — keep for history, do not follow free-DNS paths.
 
-
-**Date**: November 18, 2025  
-**System**: macOS  
+**Date**: November 18, 2025\
+**System**: macOS\
 **ctrld Version**: v1.4.7
 
-> **Current Implementation Note (v4.1+):** This file describes the
-> original standalone `~/.config/controld` setup using DoH/TCP. The
-> production system now uses DoH3 by default via
-> `/etc/controld` + `controld-manager`, with mode switching handled by
-> `scripts/network-mode-manager.sh`. The data-flow diagrams and
-> reasoning below still apply conceptually; treat specific protocol and
-> path references as historical where they differ from the v4.1+
-> architecture.
+> **Current Implementation Note (v4.1+):** This file describes the original
+> standalone `~/.config/controld` setup using DoH/TCP. The production system now
+> uses DoH3 by default via `/etc/controld` + `controld-manager`, with mode
+> switching handled by `scripts/network-mode-manager.sh`. The data-flow diagrams
+> and reasoning below still apply conceptually; treat specific protocol and path
+> references as historical where they differ from the v4.1+ architecture.
 
 ## At a Glance: Data Flow
 
@@ -133,7 +133,8 @@ Three Control D resolver profiles configured:
 ### 4. Bootstrap IPs
 
 - All upstreams use: `76.76.2.22`
-- This is Control D's primary bootstrap IP for establishing initial DoH connections
+- This is Control D's primary bootstrap IP for establishing initial DoH
+  connections
 
 ## The "Connection Refused" Problem
 
@@ -145,7 +146,8 @@ During startup, ctrld runs self-checks that attempt to:
 2. Verify DoH endpoints are reachable
 3. Perform test DNS queries
 
-**The Issue**: macOS firewall blocks these initial connections during the self-check phase, causing "connection refused" errors even though:
+**The Issue**: macOS firewall blocks these initial connections during the
+self-check phase, causing "connection refused" errors even though:
 
 - The firewall exception is present
 - The connections work fine during normal operation
@@ -259,9 +261,11 @@ After a system reboot, verify:
 Professional systems must choose:
 
 - **Fail-secure**: Refuse to start if any check fails (prevents misconfig)
-- **Fail-operational**: Start anyway, detect issues at runtime (better availability)
+- **Fail-operational**: Start anyway, detect issues at runtime (better
+  availability)
 
-Our choice: Fail-operational because the self-checks provide validation but not security.
+Our choice: Fail-operational because the self-checks provide validation but not
+security.
 
 ### 2. Defense in Depth
 

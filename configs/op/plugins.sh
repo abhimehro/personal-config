@@ -10,20 +10,20 @@ export OP_PLUGIN_ALIASES_SOURCED=1
 
 _op_skip_plugin_aliases=0
 case "${OP_AGENT_SKIP-}" in
-  1|true|TRUE|yes|YES) _op_skip_plugin_aliases=1 ;;
-  0|false|FALSE|no|NO) _op_skip_plugin_aliases=0 ;;
-  *)
-    if [ -n "${CURSOR_AGENT-}" ] || [ -n "${CI-}" ] || [ -n "${GITHUB_ACTIONS-}" ] \
-      || [ -n "${CLAUDECODE-}" ] || [ -n "${CODEX_CI-}" ] || [ -n "${AGENT_TOOL-}" ]; then
-      _op_skip_plugin_aliases=1
-    elif [ ! -t 0 ] && [ ! -t 1 ]; then
-      # Non-interactive (no TTY on stdin/stdout): avoid hanging on auth UI
-      _op_skip_plugin_aliases=1
-    fi
-    ;;
+1 | true | TRUE | yes | YES) _op_skip_plugin_aliases=1 ;;
+0 | false | FALSE | no | NO) _op_skip_plugin_aliases=0 ;;
+*)
+	if [ -n "${CURSOR_AGENT-}" ] || [ -n "${CI-}" ] || [ -n "${GITHUB_ACTIONS-}" ] ||
+		[ -n "${CLAUDECODE-}" ] || [ -n "${CODEX_CI-}" ] || [ -n "${AGENT_TOOL-}" ]; then
+		_op_skip_plugin_aliases=1
+	elif [ ! -t 0 ] && [ ! -t 1 ]; then
+		# Non-interactive (no TTY on stdin/stdout): avoid hanging on auth UI
+		_op_skip_plugin_aliases=1
+	fi
+	;;
 esac
 
 if [ "$_op_skip_plugin_aliases" -eq 0 ]; then
-  alias brew="op plugin run -- brew"
+	alias brew="op plugin run -- brew"
 fi
 unset _op_skip_plugin_aliases

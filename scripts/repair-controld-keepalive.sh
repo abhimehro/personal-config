@@ -59,7 +59,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ${EUID} -ne 0 ]]; then
-	echo "Run with sudo: sudo $0 ${*:-}" >&2
+	echo "Run with sudo: sudo $0 ${*-}" >&2
 	exit 1
 fi
 

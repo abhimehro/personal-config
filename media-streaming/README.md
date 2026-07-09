@@ -1,7 +1,8 @@
 # 🎬 Ultimate Autonomous Media Streaming Pipeline
 
 > **Status**: ✅ **HYBRID PIPELINE** - Updated July 2026 **Architecture**:
-> Hybrid WebDAV + Native macOS FSKit Mount + **Jellyfin (native, Phase 1 LIVE)**  
+> Hybrid WebDAV + Native macOS FSKit Mount + **Jellyfin (native, Phase 1
+> LIVE)**\
 > **Performance**: 10GB Bounded VFS Cache (Zero-Memory Bloat)
 
 This setup provides a high-performance, autonomous media pipeline that bridges
@@ -183,9 +184,9 @@ deletion occurs.
     **8096**. Do not enable until LAN library + auth are verified.
   - **Plex** (legacy): External **32400** -> internal **32400**.
   - **WebDAV backup**: External **8088** -> internal **8080**. Do not forward
-    dynamic fallback ports (`8081-8083`) for remote access. If Windscribe assigns
-    a different external port, keep the internal port fixed at **8080** and
-    update Infuse/client settings to the assigned external port.
+    dynamic fallback ports (`8081-8083`) for remote access. If Windscribe
+    assigns a different external port, keep the internal port fixed at **8080**
+    and update Infuse/client settings to the assigned external port.
 
 ---
 

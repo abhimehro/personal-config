@@ -18,7 +18,10 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 pass() { echo -e "${GREEN}[PASS]${NC} $*"; }
-fail() { echo -e "${RED}[FAIL]${NC} $*"; FAILURES=$((FAILURES + 1)); }
+fail() {
+	echo -e "${RED}[FAIL]${NC} $*"
+	FAILURES=$((FAILURES + 1))
+}
 warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 info() { echo -e "${BLUE}[INFO]${NC} $*"; }
 

@@ -56,7 +56,7 @@ if [[ -r /etc/controld/active_profile ]]; then
 fi
 PROF=${PROFILE_NAME:-$PROF}
 PROTO=${PROTOCOL:-$PROTO}
-FB=${FALLBACK:-}
+FB=${FALLBACK-}
 
 MODE=local_fallback
 if [[ -f /etc/controld/ctrld.toml ]] && head -1 /etc/controld/ctrld.toml | grep -q 'AUTO-GENERATED VIA CD FLAG'; then

@@ -24,11 +24,11 @@ already work; Jellyfin is a new consumer of the same mount.
 
 ## Why native macOS (not Colima) for Phase 1
 
-| Option | Verdict |
-| ------ | ------- |
-| **Native Jellyfin** (`.app` / cask) | **Preferred / live.** Reads host fuse-t mount directly. LaunchAgent `com.speedybee.jellyfin`. |
-| **Colima + Docker** | Optional Phase 2. Colima is healthy and bind-mount of `~/CloudMedia/mounted` works, but shares CPU/RAM with email-security-pipeline. |
-| **rclone serve** as Jellyfin library | Avoid. Double-hop hurts seeking. |
+| Option                               | Verdict                                                                                                                              |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Native Jellyfin** (`.app` / cask)  | **Preferred / live.** Reads host fuse-t mount directly. LaunchAgent `com.speedybee.jellyfin`.                                        |
+| **Colima + Docker**                  | Optional Phase 2. Colima is healthy and bind-mount of `~/CloudMedia/mounted` works, but shares CPU/RAM with email-security-pipeline. |
+| **rclone serve** as Jellyfin library | Avoid. Double-hop hurts seeking.                                                                                                     |
 
 ### macOS cask gotcha
 
@@ -38,13 +38,13 @@ server crash-loops looking for `Contents/MacOS/jellyfin-web`.
 
 ## Ports / coexistence
 
-| Service | Port | Notes |
-| ------- | ---- | ----- |
-| Jellyfin HTTP | **8096** | Built-in auth; RemoteAccess disabled in wizard |
-| Jellyfin HTTPS | 8920 | Leave closed |
-| WebDAV (Infuse) | 8080 | Unchanged |
-| Plex (legacy) | 32400 | Not listening on this host; data preserved |
-| email-security-pipeline | (Colima bridge) | No host port conflict with 8096 |
+| Service                 | Port            | Notes                                          |
+| ----------------------- | --------------- | ---------------------------------------------- |
+| Jellyfin HTTP           | **8096**        | Built-in auth; RemoteAccess disabled in wizard |
+| Jellyfin HTTPS          | 8920            | Leave closed                                   |
+| WebDAV (Infuse)         | 8080            | Unchanged                                      |
+| Plex (legacy)           | 32400           | Not listening on this host; data preserved     |
+| email-security-pipeline | (Colima bridge) | No host port conflict with 8096                |
 
 **SECURITY:** Do not add Windscribe public forward for 8096 until you explicitly
 approve remote exposure. Rotate admin password into 1Password item `MediaServer`
@@ -53,7 +53,8 @@ approve remote exposure. Rotate admin password into 1Password item `MediaServer`
 ## Library settings for fuse-t / rclone mounts
 
 - Prefer **scheduled** scans over real-time watchers (FUSE watchers are flaky).
-- Mount is **read-only** — keep artwork in Jellyfin metadata DB / cache, not media folders.
+- Mount is **read-only** — keep artwork in Jellyfin metadata DB / cache, not
+  media folders.
 - First scan is slow; subsequent plays use the existing 10GB VFS cache.
 
 ## Ops
@@ -72,17 +73,17 @@ python3 ~/dev/personal-config/media-streaming/scripts/bootstrap-jellyfin-local.p
 launchctl kickstart -k "gui/$(id -u)/com.speedybee.jellyfin"
 ```
 
-
 ## Transcoding
 
-Prefer Homebrew `ffmpeg` on PATH (VideoToolbox). `jellyfin-daemon.sh` passes `--ffmpeg` to that binary. **Do not** install `jellyfin-ffmpeg` for Phase 1.
+Prefer Homebrew `ffmpeg` on PATH (VideoToolbox). `jellyfin-daemon.sh` passes
+`--ffmpeg` to that binary. **Do not** install `jellyfin-ffmpeg` for Phase 1.
 
 ## Rollback
 
 1. `launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.speedybee.jellyfin.plist`
 2. Mount + WebDAV agents remain — Infuse/WebDAV clients keep working
-3. Optional: remove `~/Library/Application Support/jellyfin` only for a clean re-wizard
-   (destructive to Jellyfin config, not media)
+3. Optional: remove `~/Library/Application Support/jellyfin` only for a clean
+   re-wizard (destructive to Jellyfin config, not media)
 
 ## Phase 2 (Colima) — later
 

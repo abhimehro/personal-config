@@ -245,7 +245,7 @@ append ""
 append "Background Services Check:"
 append "--------------------------"
 # ⚡ Performance Optimization: Consolidate ps aux into a single awk pass
-read -r CHRONOD_RUNNING DUET_RUNNING SUGGESTD_RUNNING PROACTIVED_RUNNING <<< "$(ps aux | awk '
+read -r CHRONOD_RUNNING DUET_RUNNING SUGGESTD_RUNNING PROACTIVED_RUNNING <<<"$(ps aux | awk '
 	/chronod/ && !/awk/ { c++ }
 	/duetexpertd/ && !/awk/ { d++ }
 	/suggestd/ && !/awk/ { s++ }

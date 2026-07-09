@@ -1,4 +1,6 @@
-> **2026-07-09:** Prefer `./scripts/network-mode-manager.sh` and `./scripts/controld-status.sh`. Do not start from `~/.config/controld` free-DNS toml.
+> **2026-07-09:** Prefer `./scripts/network-mode-manager.sh` and
+> `./scripts/controld-status.sh`. Do not start from `~/.config/controld`
+> free-DNS toml.
 
 # Control D Quick Start
 

@@ -71,7 +71,7 @@ if [[ -r $ACTIVE_FILE ]]; then
 	source "$ACTIVE_FILE" 2>/dev/null || true
 	profile="${PROFILE_NAME:-$profile}"
 	protocol="${PROTOCOL:-$protocol}"
-	fallback="${FALLBACK:-}"
+	fallback="${FALLBACK-}"
 fi
 
 if [[ $mode == "unknown" ]]; then

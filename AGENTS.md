@@ -44,19 +44,32 @@ Primary entrypoint is `scripts/network-mode-manager.sh`.
 
 Profile modes (protocol × IPv6 policy):
 
-| Mode | Protocol | IPv6 | When |
-|------|----------|------|------|
-| `doh-ipv4` | DoH | Off | Windscribe IPv4-only / static IP (leak prevention) |
-| `doh3-ipv6` | DoH3 | On | Standalone Control D (default) |
-| `doh-ipv6` | DoH | On | Windscribe IPv6-capable WireGuard locations |
+| Mode        | Protocol | IPv6 | When                                               |
+| ----------- | -------- | ---- | -------------------------------------------------- |
+| `doh-ipv4`  | DoH      | Off  | Windscribe IPv4-only / static IP (leak prevention) |
+| `doh3-ipv6` | DoH3     | On   | Standalone Control D (default)                     |
+| `doh-ipv6`  | DoH      | On   | Windscribe IPv6-capable WireGuard locations        |
 
-**Stable path (as of 2026-07-09):** Control D CD Mode API returns numeric `exclude`; ctrld v1.5.3 still cannot unmarshal it. **Intentional temporary architecture:** profile-aware Local Config with `https://dns.controld.com/<profile_id>` (NOT free DNS / `/free`). This is not an antipattern — it uses real profile IDs. CD Mode (`--cd`) stays broken until upstream fixes the API or ships flexible JSON. Repair defaults to Local Config (no 45s CD thrash); force a CD retry with `--cd-mode`.
+**Stable path (as of 2026-07-09):** Control D CD Mode API returns numeric
+`exclude`; ctrld v1.5.3 still cannot unmarshal it. **Intentional temporary
+architecture:** profile-aware Local Config with
+`https://dns.controld.com/<profile_id>` (NOT free DNS / `/free`). This is not an
+antipattern — it uses real profile IDs. CD Mode (`--cd`) stays broken until
+upstream fixes the API or ships flexible JSON. Repair defaults to Local Config
+(no 45s CD thrash); force a CD retry with `--cd-mode`.
 
-**CD Mode (optional / broken until upstream):** `ctrld service start --cd <profile_id> --proto doh|doh3 --config=/etc/controld/ctrld.toml --skip_self_checks`. Never pass `--listen` with `--cd` (Lesson 0do). Never use static free-DNS toml.
+**CD Mode (optional / broken until upstream):**
+`ctrld service start --cd <profile_id> --proto doh|doh3 --config=/etc/controld/ctrld.toml --skip_self_checks`.
+Never pass `--listen` with `--cd` (Lesson 0do). Never use static free-DNS toml.
 
-**API schema (Lesson 0dr):** `/etc/controld/ctrld.log` → `cannot unmarshal … exclude` / `failed to fetch resolver config` → CD Mode KeepAlive thrash. Prefer Local Config; set `FALLBACK=1`. `CONTROLD_PREFER_LOCAL=1` or default `CONTROLD_SKIP_CD_DEFAULT=1` skips CD Mode.
+**API schema (Lesson 0dr):** `/etc/controld/ctrld.log` →
+`cannot unmarshal … exclude` / `failed to fetch resolver config` → CD Mode
+KeepAlive thrash. Prefer Local Config; set `FALLBACK=1`.
+`CONTROLD_PREFER_LOCAL=1` or default `CONTROLD_SKIP_CD_DEFAULT=1` skips CD Mode.
 
-**One binary:** Keep Homebrew `/opt/homebrew/bin/ctrld` (v1.5.3). LaunchDaemon already points there. Quarantine shadowed `/usr/local/bin/ctrld` (dev builds): `sudo ./scripts/controld-dedupe-binary.sh`.
+**One binary:** Keep Homebrew `/opt/homebrew/bin/ctrld` (v1.5.3). LaunchDaemon
+already points there. Quarantine shadowed `/usr/local/bin/ctrld` (dev builds):
+`sudo ./scripts/controld-dedupe-binary.sh`.
 
 **Repair / status:**
 
@@ -78,12 +91,25 @@ dig @127.0.0.1 google.com +short +time=2
 # cat /etc/controld/status   # world-readable; active_profile may need sudo until chmod 644
 ```
 
-**Live status (confirmed 2026-07-09 after `sudo ./scripts/controld-dedupe-binary.sh`):** `/etc/controld/status` = **WORKING / local_fallback**; dig @127.0.0.1 resolves; single brew **v1.5.3** (`/opt/homebrew/bin/ctrld`, `/usr/local/bin/ctrld` → symlink). Dedupe left the healthy listener alone (no DNS restart). CD Mode remains broken upstream; Local Config with real profile IDs is the stable path.
+**Live status (confirmed 2026-07-09 after
+`sudo ./scripts/controld-dedupe-binary.sh`):** `/etc/controld/status` =
+**WORKING / local_fallback**; dig @127.0.0.1 resolves; single brew **v1.5.3**
+(`/opt/homebrew/bin/ctrld`, `/usr/local/bin/ctrld` → symlink). Dedupe left the
+healthy listener alone (no DNS restart). CD Mode remains broken upstream; Local
+Config with real profile IDs is the stable path.
 
-**Binary note:** brew `ctrld` 1.5.3 is fine for Local Config. Upgrade alone does **not** fix CD Mode numeric `exclude` until Control D ships flexible JSON.
-**Colima + Control D coexistence:** patch `~/.colima/_lima/_config/override.yaml` (`guestIPMustBeZero: false` for guest DNS) via `--patch-colima-ignore`. Do **not** rely on appending `portForwards` only to `~/.colima/default/colima.yaml`.
+**Binary note:** brew `ctrld` 1.5.3 is fine for Local Config. Upgrade alone does
+**not** fix CD Mode numeric `exclude` until Control D ships flexible JSON.
+**Colima + Control D coexistence:** patch
+`~/.colima/_lima/_config/override.yaml` (`guestIPMustBeZero: false` for guest
+DNS) via `--patch-colima-ignore`. Do **not** rely on appending `portForwards`
+only to `~/.colima/default/colima.yaml`.
 
-**Installed manager:** `/usr/local/bin/controld-manager` must have `CONTROLD_REPO` in `/etc/controld/controld.env` (set by `scripts/setup-controld.sh`). Prefer repo paths: `./scripts/network-mode-manager.sh` and `./controld-system/scripts/controld-manager`.
+**Installed manager:** `/usr/local/bin/controld-manager` must have
+`CONTROLD_REPO` in `/etc/controld/controld.env` (set by
+`scripts/setup-controld.sh`). Prefer repo paths:
+`./scripts/network-mode-manager.sh` and
+`./controld-system/scripts/controld-manager`.
 
 ```bash
 # Show current status
@@ -119,8 +145,10 @@ env WINDSCRIBE_IPV6=0 ./scripts/network-mode-manager.sh windscribe privacy
 
 Soft verify noise (expected, not failures):
 
-- `whoami.control-d.net` timeout/empty — soft check only; Control D can still be ACTIVE.
-- `AAAA example.com` empty — expected when mode is `doh-ipv4` (IPv6 Off) or the path has no IPv6; warning only.
+- `whoami.control-d.net` timeout/empty — soft check only; Control D can still be
+  ACTIVE.
+- `AAAA example.com` empty — expected when mode is `doh-ipv4` (IPv6 Off) or the
+  path has no IPv6; warning only.
 
 Verification/regression:
 
@@ -139,18 +167,28 @@ Verification/regression:
 make control-d-regression
 ```
 
-Fish aliases (`nm-privacy`, `nm-browse`, `nm-gaming`, `nm-status`, `nm-vpn`) `cd` to the repo and call `network-mode-manager.sh` — they use the fixed libs.
+Fish aliases (`nm-privacy`, `nm-browse`, `nm-gaming`, `nm-status`, `nm-vpn`)
+`cd` to the repo and call `network-mode-manager.sh` — they use the fixed libs.
 
 ### LaunchAgents (2026-07-09 audit)
 
-- Archived (do not re-enable without review): `launch-agents/archived/com.personal.ctrld-network-watch.plist` (was invalid `scutil --watch` crash-loop), permute agent.
+- Archived (do not re-enable without review):
+  `launch-agents/archived/com.personal.ctrld-network-watch.plist` (was invalid
+  `scutil --watch` crash-loop), permute agent.
 - SecOps agents restored to in-repo stubs where skill paths were missing.
-- `sync-launchagents` only covers `media-streaming/launchd` + `launch-agents` — maintenance plists are a separate install path (`maintenance/install.sh`).
-- Historical monitor log: `~/Public/Scripts/controld_monitor.log`; LaunchDaemon is vendor `system/ctrld` (not a custom `/Library/LaunchDaemons/ctrld.plist` we maintain long-term).
+- `sync-launchagents` only covers `media-streaming/launchd` + `launch-agents` —
+  maintenance plists are a separate install path (`maintenance/install.sh`).
+- Historical monitor log: `~/Public/Scripts/controld_monitor.log`; LaunchDaemon
+  is vendor `system/ctrld` (not a custom `/Library/LaunchDaemons/ctrld.plist` we
+  maintain long-term).
 
 ### Media streaming / Jellyfin
 
-See `media-streaming/jellyfin/MIGRATION_PLAN.md`. Phase 1 = **native** Homebrew cask + LaunchAgent; credentials from local bootstrap; VideoToolbox via Homebrew `ffmpeg` (not `jellyfin-ffmpeg`) — **do not** `brew install jellyfin-ffmpeg`. API key soft-skip in `validate-jellyfin.sh` when unset. Colima Jellyfin deferred (email-security-pipeline shares the VM).
+See `media-streaming/jellyfin/MIGRATION_PLAN.md`. Phase 1 = **native** Homebrew
+cask + LaunchAgent; credentials from local bootstrap; VideoToolbox via Homebrew
+`ffmpeg` (not `jellyfin-ffmpeg`) — **do not** `brew install jellyfin-ffmpeg`.
+API key soft-skip in `validate-jellyfin.sh` when unset. Colima Jellyfin deferred
+(email-security-pipeline shares the VM).
 
 ### Maintenance system (manual run + status)
 

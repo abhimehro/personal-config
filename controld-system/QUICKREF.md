@@ -1,6 +1,7 @@
 # Control D Quick Reference
 
-> **2026-07-09:** Prefer repo scripts. Live state should be **WORKING / local_fallback** (brew ctrld v1.5.3).
+> **2026-07-09:** Prefer repo scripts. Live state should be **WORKING /
+> local_fallback** (brew ctrld v1.5.3).
 
 ```bash
 ./scripts/controld-status.sh
@@ -11,7 +12,8 @@
 #   sudo ./scripts/controld-dedupe-binary.sh   # once; leaves healthy listener alone
 ```
 
-Historical `~/.config/controld` commands below are legacy — use `/etc/controld` + network-mode-manager.
+Historical `~/.config/controld` commands below are legacy — use
+`/etc/controld` + network-mode-manager.
 
 ---
 
@@ -118,10 +120,10 @@ sudo ctrld service stop
 ./scripts/network-mode-regression.sh browsing
 ```
 
-> The network-mode-manager script (with network-mode-verify and network-mode-regression)
-> is the recommended entrypoint for day-to-day use. It uses the underlying
-> `controld-manager` script to apply Control D profiles while managing IPv6 and
-> DNS routing on your behalf.
+> The network-mode-manager script (with network-mode-verify and
+> network-mode-regression) is the recommended entrypoint for day-to-day use. It
+> uses the underlying `controld-manager` script to apply Control D profiles
+> while managing IPv6 and DNS routing on your behalf.
 
 ## Files to Backup
 

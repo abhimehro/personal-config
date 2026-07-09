@@ -1,8 +1,20 @@
 # Control D Setup Guide
 
-> **Current (2026-07-09):** Live DNS is **WORKING / local_fallback** — profile-aware Local Config at `/etc/controld/ctrld.toml` with `https://dns.controld.com/<profile_id>` (never free DNS). Binary: Homebrew **ctrld v1.5.3** (`/opt/homebrew/bin/ctrld`; `/usr/local/bin/ctrld` should be a symlink — `sudo ./scripts/controld-dedupe-binary.sh`). CD Mode (`--cd`) is broken until Control D fixes numeric `exclude` JSON; repair defaults to Local Config (`--cd-mode` to force). Day-to-day: `./scripts/network-mode-manager.sh`, `./scripts/controld-status.sh`, `./scripts/repair-controld-keepalive.sh`. See root `AGENTS.md` (Control D section) and Lessons 0dh–0ds.
+> **Current (2026-07-09):** Live DNS is **WORKING / local_fallback** —
+> profile-aware Local Config at `/etc/controld/ctrld.toml` with
+> `https://dns.controld.com/<profile_id>` (never free DNS). Binary: Homebrew
+> **ctrld v1.5.3** (`/opt/homebrew/bin/ctrld`; `/usr/local/bin/ctrld` should be
+> a symlink — `sudo ./scripts/controld-dedupe-binary.sh`). CD Mode (`--cd`) is
+> broken until Control D fixes numeric `exclude` JSON; repair defaults to Local
+> Config (`--cd-mode` to force). Day-to-day:
+> `./scripts/network-mode-manager.sh`, `./scripts/controld-status.sh`,
+> `./scripts/repair-controld-keepalive.sh`. See root `AGENTS.md` (Control D
+> section) and Lessons 0dh–0ds.
 >
-> **Historical note:** Sections below that describe `~/.config/controld`, ctrld **v1.4.7**, or static free-DNS toml are from an earlier standalone setup. Prefer `/etc/controld` + network-mode-manager. Do not restore free-DNS configs.
+> **Historical note:** Sections below that describe `~/.config/controld`, ctrld
+> **v1.4.7**, or static free-DNS toml are from an earlier standalone setup.
+> Prefer `/etc/controld` + network-mode-manager. Do not restore free-DNS
+> configs.
 
 ## Overview
 
@@ -10,19 +22,21 @@ This setup provides three resolver profiles for different use cases:
 
 1. **Privacy Enhanced** (`6m971e9jaf`) - Maximum privacy/security filtering
 2. **Browsing Privacy** (`rcnz7qgvwg`) - Balanced privacy for general browsing
-3. **Gaming Optimized** (`1xfy57w34t7`) - Minimal rules for optimal gaming performance
+3. **Gaming Optimized** (`1xfy57w34t7`) - Minimal rules for optimal gaming
+   performance
 
 ## Installation Status
 
-✅ `ctrld` installed via Homebrew (v1.5.3) — see banner above for live path  
-✅ Configuration file created at `~/.config/controld/ctrld.toml`  
-✅ Profile switcher script at `~/bin/ctrld-switch`  
-✅ Service configured for auto-start on boot with `--skip_self_checks`  
+✅ `ctrld` installed via Homebrew (v1.5.3) — see banner above for live path\
+✅ Configuration file created at `~/.config/controld/ctrld.toml`\
+✅ Profile switcher script at `~/bin/ctrld-switch`\
+✅ Service configured for auto-start on boot with `--skip_self_checks`\
 ✅ Firewall exception added for `/opt/homebrew/bin/ctrld`
 
 ## Service Management (Auto-Start Enabled)
 
-The service is now installed as a Launch Daemon and will **automatically start on boot**.
+The service is now installed as a Launch Daemon and will **automatically start
+on boot**.
 
 ### Check Service Status
 
@@ -93,7 +107,8 @@ sudo ctrld start --cd 1xfy57w34t7  # Gaming
 
 ### Why `--skip_self_checks` is Required
 
-The service is configured with the `--skip_self_checks` flag to bypass startup validation tests.
+The service is configured with the `--skip_self_checks` flag to bypass startup
+validation tests.
 
 **The Problem:**
 
@@ -138,8 +153,8 @@ The service is configured with the `--skip_self_checks` flag to bypass startup v
    - Reduces maintenance burden (no firewall rule management for changing IPs)
    - Aligns with "infrastructure should self-heal" principle
 
-**Alternative (Not Recommended):**
-You _could_ add firewall exceptions for bootstrap IPs, but:
+**Alternative (Not Recommended):** You _could_ add firewall exceptions for
+bootstrap IPs, but:
 
 - Bootstrap IPs may change without notice from Control D
 - Requires ongoing firewall rule maintenance
@@ -177,8 +192,7 @@ sudo ctrld service uninstall   # Remove service
 sudo ctrld service status
 ```
 
-**If NO** → Go to Step 2
-**If YES** → Go to Step 3
+**If NO** → Go to Step 2 **If YES** → Go to Step 3
 
 #### Step 2: Service not running
 
@@ -212,7 +226,8 @@ sudo tail -50 /var/log/ctrld.log | grep upstream
 **Common causes:**
 
 - Upstream marked as down → Check internet connection
-- Bootstrap IP unreachable → Check firewall: `sudo /usr/libexec/ApplicationFirewall/socketfilterfw --listapps | grep ctrld`
+- Bootstrap IP unreachable → Check firewall:
+  `sudo /usr/libexec/ApplicationFirewall/socketfilterfw --listapps | grep ctrld`
 - Wrong listener IP → Verify `listener.0` in config is 127.0.0.1
 
 #### Step 4: Emergency DNS restoration
@@ -320,9 +335,12 @@ rm -rf ~/.config/controld/
 
 ### WHY This Matters
 
-- **Local DNS Proxy**: ctrld runs locally and forwards DNS queries to Control D's encrypted resolvers
-- **DoH (DNS over HTTPS)**: All DNS queries are encrypted, preventing ISP snooping
-- **Profile-Based Filtering**: Different profiles block different categories of threats/content
+- **Local DNS Proxy**: ctrld runs locally and forwards DNS queries to Control
+  D's encrypted resolvers
+- **DoH (DNS over HTTPS)**: All DNS queries are encrypted, preventing ISP
+  snooping
+- **Profile-Based Filtering**: Different profiles block different categories of
+  threats/content
 
 ### Attack Prevention
 
@@ -332,9 +350,12 @@ rm -rf ~/.config/controld/
 
 ### What Could Go Wrong
 
-- **Service Conflicts**: If another DNS service (like dnsmasq) uses port 53, ctrld will fail
-- **Sudo Required**: Service management requires root permissions for system DNS configuration
-- **Profile Mismatch**: Using gaming profile may allow more connections (less filtering)
+- **Service Conflicts**: If another DNS service (like dnsmasq) uses port 53,
+  ctrld will fail
+- **Sudo Required**: Service management requires root permissions for system DNS
+  configuration
+- **Profile Mismatch**: Using gaming profile may allow more connections (less
+  filtering)
 
 ## Backup & Restore
 
@@ -397,7 +418,10 @@ compatibility) by passing `doh` as an explicit protocol override, e.g.
 
 ## Network Mode Management (v4.0 Separation Strategy)
 
-We have consolidated network state management into a single script to reliably switch between "DNS Mode" (Control D) and "VPN Mode" (Windscribe). This aligns with the Infrastructure-as-Code model: the Control D dashboard is the source of truth for resolver behavior, while this script manages macOS network state.
+We have consolidated network state management into a single script to reliably
+switch between "DNS Mode" (Control D) and "VPN Mode" (Windscribe). This aligns
+with the Infrastructure-as-Code model: the Control D dashboard is the source of
+truth for resolver behavior, while this script manages macOS network state.
 
 **Location:** `scripts/network-mode-manager.sh`
 
@@ -427,11 +451,11 @@ We have consolidated network state management into a single script to reliably s
   ./scripts/network-mode-regression.sh browsing
   ```
 
-> **Note:** For day-to-day use, prefer `scripts/network-mode-manager.sh`, which orchestrates
-> Control D and Windscribe modes and internally delegates Control D activation to
-> `controld-system/scripts/controld-manager switch <profile>`. You can still call
-> `controld-manager` directly for low-level debugging, but avoid mixing manual
-> calls with `network-mode-manager` in the same session.
+> **Note:** For day-to-day use, prefer `scripts/network-mode-manager.sh`, which
+> orchestrates Control D and Windscribe modes and internally delegates Control D
+> activation to `controld-system/scripts/controld-manager switch <profile>`. You
+> can still call `controld-manager` directly for low-level debugging, but avoid
+> mixing manual calls with `network-mode-manager` in the same session.
 
 ## Teaching Moments
 

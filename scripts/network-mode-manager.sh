@@ -91,7 +91,7 @@ check_reconcile_needed() {
 	local vpn_connected="$1"
 	local ctrld_running="$2"
 	local ipv6_enabled="$3"
-	local profile_mode="${4:-}"
+	local profile_mode="${4-}"
 
 	# Intentional doh-ipv4 (DoH + IPv6 off) is healthy whether or not VPN is up.
 	# Standalone `controld … doh` and combined Windscribe IPv4-only both use it.
@@ -286,7 +286,7 @@ stop_controld() {
 start_controld() {
 	local profile_key=$1
 	local force_proto=$2
-	local ipv6_policy="${3:-}" # enable|disable|auto|empty
+	local ipv6_policy="${3-}" # enable|disable|auto|empty
 
 	case "$profile_key" in
 	"privacy") log "Selecting ${E_PRIVACY} PRIVACY profile..." ;;
@@ -296,7 +296,7 @@ start_controld() {
 	esac
 
 	# Resolve protocol default before IPv6 policy so mode labeling is accurate.
-	local effective_proto="${force_proto:-}"
+	local effective_proto="${force_proto-}"
 	if [[ -z $effective_proto ]]; then
 		if command -v get_profile_protocol >/dev/null 2>&1; then
 			effective_proto=$(get_profile_protocol "$profile_key")

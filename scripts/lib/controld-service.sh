@@ -511,11 +511,11 @@ _ctrld_installed_version() {
 CONTROLD_STATUS_FILE="${CONTROLD_STATUS_FILE:-/etc/controld/status}"
 
 _write_controld_status_file() {
-	local state="$1"   # WORKING|BROKEN|UNKNOWN
-	local mode="$2"    # cd_mode|local_fallback|stopped
-	local profile="${3:-}"
-	local protocol="${4:-}"
-	local extra="${5:-}"
+	local state="$1" # WORKING|BROKEN|UNKNOWN
+	local mode="$2"  # cd_mode|local_fallback|stopped
+	local profile="${3-}"
+	local protocol="${4-}"
+	local extra="${5-}"
 	local bin ver dig_ok="no" holder="none" status_file
 	status_file="$CONTROLD_STATUS_FILE"
 	bin=$(_resolve_ctrld_bin)
@@ -687,7 +687,7 @@ _start_profile_local_fallback() {
 	local protocol="$3"
 	local controld_dir="$4"
 	local listener_ip="$5"
-	local start_err_log="${6:-}"
+	local start_err_log="${6-}"
 	local config_abs="$controld_dir/ctrld.toml"
 	local ver
 	local own_log=0
@@ -765,7 +765,7 @@ _force_reinstall_ctrld_native() {
 	local protocol="$2"
 	local start_err_log="$3"
 	# $4 was historically listen_addr — IGNORED (passing --listen breaks CD Mode).
-	local _ignored_listen="${4:-}"
+	local _ignored_listen="${4-}"
 	local config_abs="${5:-/etc/controld/ctrld.toml}"
 	local controld_dir
 	controld_dir=$(dirname "$config_abs")

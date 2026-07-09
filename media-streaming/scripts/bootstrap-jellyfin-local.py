@@ -126,11 +126,16 @@ def reset_wizard_flag() -> None:
         check=False,
     )
     # If kickstart fails (label not loaded), try bootstrap
-    if subprocess.run(
-        ["launchctl", "print", f"gui/{uid}/com.speedybee.jellyfin"],
-        capture_output=True,
-    ).returncode != 0:
-        subprocess.run(["launchctl", "bootstrap", f"gui/{uid}", str(plist)], check=False)
+    if (
+        subprocess.run(
+            ["launchctl", "print", f"gui/{uid}/com.speedybee.jellyfin"],
+            capture_output=True,
+        ).returncode
+        != 0
+    ):
+        subprocess.run(
+            ["launchctl", "bootstrap", f"gui/{uid}", str(plist)], check=False
+        )
         subprocess.run(
             ["launchctl", "kickstart", "-k", f"gui/{uid}/com.speedybee.jellyfin"],
             check=False,
@@ -150,7 +155,9 @@ def reset_wizard_flag() -> None:
 def ensure_admin(user: str, passwd: str) -> str:
     code, users = http("GET", "/Users/Public")
     if code == 200 and isinstance(users, list) and users:
-        print(f"Public users already exist: {[u.get('Name') for u in users if isinstance(u, dict)]}")
+        print(
+            f"Public users already exist: {[u.get('Name') for u in users if isinstance(u, dict)]}"
+        )
     else:
         info = public_info()
         if info.get("StartupWizardCompleted") is True:
