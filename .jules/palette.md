@@ -299,6 +299,11 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## $(date +%Y-%m-%d) - Semantic Lists for Grouped Data
 **Learning:** When displaying grouped key-value data (like system specs) in bash-generated HTML reports, using generic `<div>` elements causes screen readers to read them as disconnected text nodes. This creates a fragmented audio experience.
 **Action:** Convert sequential `<div>` data blocks into semantic `<ul>` and `<li>` lists to provide screen readers with grouping context and item counts.
-## $(date +%Y-%m-%d) - Semantic Lists for Grouped Data
-**Learning:** When displaying grouped key-value data (like system specs) in bash-generated HTML reports, using generic `<div>` elements causes screen readers to read them as disconnected text nodes. This creates a fragmented audio experience.
-**Action:** Convert sequential `<div>` data blocks into semantic `<ul>` and `<li>` lists to provide screen readers with grouping context and item counts.
+
+## 2026-07-09 - Semantic HTML for Directory Listings
+**Learning:** When generating directory or file listings in HTML (like in python scripts generating directory trees), consecutive `<a>` tags lack grouping and context for screen reader users. Screen readers won't announce the number of files in the directory.
+**Action:** Wrap sequential file links in semantic `<ul>` and `<li>` tags and use `<nav>` with `aria-label` to give screen readers proper context and item count announcements for directory structures.
+
+## 2026-07-09 - Add Empty State for Directory Listings
+**Learning:** Dynamically generated HTML views for directory structures (like media servers) can leave users confused when folders are empty, as the page appears broken or unpopulated. Providing an explicit empty state with an accessible icon and text confirms the directory is intentionally empty, improving confidence.
+**Action:** Always include a visual empty state (e.g., "📭 This folder is empty") when rendering dynamic lists or directories that contain 0 items.

@@ -145,19 +145,19 @@ class TestMediaServerHandler(unittest.TestCase):
 
         # File checks with escaped characters
         self.assertIn(
-            '<a href="/video.mp4" class="file video"><span aria-hidden="true">\U0001f3ac</span> video.mp4</a>',
+            '<li><a href="/video.mp4" class="file video"><span aria-hidden="true">\U0001f3ac</span> video.mp4</a></li>',
             html_root,
         )
         self.assertIn(
-            '<a href="/folder with &lt;tag&gt;/" class="file directory"><span aria-hidden="true">\U0001f4c1</span> folder with &lt;tag&gt;</a>',
+            '<li><a href="/folder with &lt;tag&gt;/" class="file directory"><span aria-hidden="true">\U0001f4c1</span> folder with &lt;tag&gt;</a></li>',
             html_root,
         )
         self.assertIn(
-            '<a href="/document &amp; file.txt" class="file video"><span aria-hidden="true">\U0001f4c4</span> document &amp; file.txt</a>',
+            '<li><a href="/document &amp; file.txt" class="file video"><span aria-hidden="true">\U0001f4c4</span> document &amp; file.txt</a></li>',
             html_root,
         )
         self.assertIn(
-            '<a href="/&lt;script&gt;alert(1)&lt;/script&gt;.avi" class="file video"><span aria-hidden="true">\U0001f3ac</span> &lt;script&gt;alert(1)&lt;/script&gt;.avi</a>',
+            '<li><a href="/&lt;script&gt;alert(1)&lt;/script&gt;.avi" class="file video"><span aria-hidden="true">\U0001f3ac</span> &lt;script&gt;alert(1)&lt;/script&gt;.avi</a></li>',
             html_root,
         )
 
@@ -187,19 +187,29 @@ class TestMediaServerHandler(unittest.TestCase):
         # Let's check code: parent = "/".join(current_path.rstrip("/").split("/")[:-1]) -> "/Movies & TV"
         # safe_parent = html.escape(parent) -> "/Movies &amp; TV"
         self.assertIn(
-            '<a href="//Movies &amp; TV" class="file directory"><span aria-hidden="true">',
+            '<li><a href="//Movies &amp; TV" class="file directory"><span aria-hidden="true">',
             html_sub,
         )
 
         # Check files in subdirectory (href should append to the escaped base_path)
         self.assertIn(
-            '<a href="//Movies &amp; TV/Action &lt;Sci-Fi&gt;/video.mp4" class="file video"><span aria-hidden="true">\U0001f3ac</span> video.mp4</a>',
+            '<li><a href="//Movies &amp; TV/Action &lt;Sci-Fi&gt;/video.mp4" class="file video"><span aria-hidden="true">\U0001f3ac</span> video.mp4</a></li>',
             html_sub,
         )
         self.assertIn(
-            '<a href="//Movies &amp; TV/Action &lt;Sci-Fi&gt;/folder with &lt;tag&gt;/" class="file directory"><span aria-hidden="true">\U0001f4c1</span> folder with &lt;tag&gt;</a>',
+            '<li><a href="//Movies &amp; TV/Action &lt;Sci-Fi&gt;/folder with &lt;tag&gt;/" class="file directory"><span aria-hidden="true">\U0001f4c1</span> folder with &lt;tag&gt;</a></li>',
             html_sub,
         )
+
+    def test_generate_directory_listing_empty(self):
+        """
+        Test that generate_directory_listing produces a helpful empty state when
+        no files are present in the directory.
+        """
+        html_empty = self.handler.generate_directory_listing([], "/empty-dir")
+
+        self.assertIn("This folder is empty", html_empty)
+        self.assertIn('<span aria-hidden="true"', html_empty)
 
 
 if __name__ == "__main__":

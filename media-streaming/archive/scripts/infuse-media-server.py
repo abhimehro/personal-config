@@ -226,10 +226,17 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
                 .file:hover, .file:focus-visible {{ background: #f0f0f0; outline: 2px solid #0066cc; outline-offset: -2px; }}
                 .directory {{ font-weight: bold; color: #0066cc; }}
                 .video {{ color: #c04c00; }}
+                ul {{ list-style-type: none; padding-left: 0; margin: 0; }}
+                li {{ margin: 0; padding: 0; }}
             </style>
         </head>
         <body>
-            <h1><span aria-hidden="true">📁</span> Media Library: /{safe_path}</h1>
+            <header>
+                <h1><span aria-hidden="true">📁</span> Media Library: /{safe_path}</h1>
+            </header>
+            <main>
+                <nav aria-label="Directory listing">
+                    <ul>
         """]
 
         # Add parent directory link if not root
@@ -238,7 +245,7 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
             # Parent path is constructed safely from split, but escaping is good hygiene
             safe_parent = html.escape(parent)
             html_parts.append(
-                f'<a href="/{safe_parent}" class="file directory"><span aria-hidden="true">\U0001f4c1</span> .. (Parent Directory)</a>\n'
+                f'                        <li><a href="/{safe_parent}" class="file directory"><span aria-hidden="true">\U0001f4c1</span> .. (Parent Directory)</a></li>\n'
             )
 
         # ⚡ Performance: tuple for fast C-level endswith checking
@@ -255,21 +262,32 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         items_html = [
             (
                 (
-                    f'<a href="/{safe_base_path}{html.escape(item)}" class="file directory">'
-                    f'<span aria-hidden="true">\U0001f4c1</span> {html.escape(item)[:-1]}</a>\n'
+                    f'                        <li><a href="/{safe_base_path}{html.escape(item)}" class="file directory">'
+                    f'<span aria-hidden="true">\U0001f4c1</span> {html.escape(item)[:-1]}</a></li>\n'
                 )
                 if item.endswith("/")
                 else (
-                    f'<a href="/{safe_base_path}{html.escape(item)}" class="file video">'
-                    f'<span aria-hidden="true">{"\U0001f3ac" if item.lower().endswith(video_exts) else "\U0001f4c4"}</span> {html.escape(item)}</a>\n'
+                    f'                        <li><a href="/{safe_base_path}{html.escape(item)}" class="file video">'
+                    f'<span aria-hidden="true">{"\U0001f3ac" if item.lower().endswith(video_exts) else "\U0001f4c4"}</span> {html.escape(item)}</a></li>\n'
                 )
             )
             for item in files
             if item
         ]
-        html_parts.extend(items_html)
+        if items_html:
+            html_parts.extend(items_html)
+        else:
+            html_parts.append(
+                '<div style="text-align: center; padding: 40px 20px; color: #666; background: #f9f9f9; border-radius: 8px; margin-top: 20px;">\n'
+                '    <span aria-hidden="true" style="font-size: 2.5em; display: block; margin-bottom: 10px;">📭</span>\n'
+                '    <p style="margin: 0; font-size: 1.1em;">This folder is empty</p>\n'
+                '</div>\n'
+            )
 
         html_parts.append("""
+                    </ul>
+                </nav>
+            </main>
         </body>
         </html>
         """)
