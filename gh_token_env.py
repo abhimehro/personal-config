@@ -9,6 +9,8 @@ Precedence for ``GH_TOKEN``:
 2. Optional file from ``GH_TOKEN_ENV_FILE`` or well-known paths (legacy fallback)
 """
 
+import re
+
 import os
 from functools import lru_cache
 from pathlib import Path
@@ -16,6 +18,9 @@ from typing import Mapping
 
 # Legacy path referenced in ABHI-954 / TruffleHog finding (gitignored, out of repo).
 _LEGACY_RELATIVE_ENV = Path("../email-security-pipeline/GH_TOKEN.env")
+
+# SECURITY: reject command substitution in parsed values.
+_COMMAND_SUBSTITUTION = re.compile(r"\$\(|`")
 
 _RUNBOOK = "docs/github-pat-rotation-runbook.md"
 
@@ -30,7 +35,10 @@ def parse_env_line(line: str, env_dict: dict[str, str]) -> None:
     key, sep, val = line.partition("=")
     if not sep:
         return
-    env_dict[key] = val.strip("'\"")
+    value = val.strip().strip("'\"")
+    if _COMMAND_SUBSTITUTION.search(value):
+        return
+    env_dict[key] = value
 
 
 def _read_env_file(path: Path) -> dict[str, str]:

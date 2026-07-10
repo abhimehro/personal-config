@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
+# Close additional duplicate pull requests using a safely loaded GH_TOKEN.
+set -euo pipefail
 
-source ../email-security-pipeline/GH_TOKEN.env
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/ensure_gh_token.sh
+source "${SCRIPT_DIR}/scripts/ensure_gh_token.sh"
 
 close_pr() {
-  local repo=$1
-  local pr=$2
-  local reason=$3
-  echo "Closing $repo#$pr ($reason)..."
-  gh pr close $pr -R $repo -c "Automated triage: $reason"
+  local repo="$1"
+  local pr="$2"
+  local reason="$3"
+  echo "Closing ${repo}#${pr} (${reason})..."
+  gh pr close "${pr}" --repo "${repo}" --comment "Automated triage: ${reason}"
 }
 
 close_pr "abhimehro/ctrld-sync" "702" "Semantic duplicate of a newer automated PR (#707)"
