@@ -12,6 +12,10 @@ LOG_FILE="$(mktemp)"
 LIB_FILE="$(mktemp)"
 cp controld-system/scripts/controld-manager "$LIB_FILE"
 
+# controld-manager resolves scripts/lib via CONTROLD_REPO when sourced outside the repo tree.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export CONTROLD_REPO="$REPO_ROOT"
+
 mkdir -p "$CONTROLD_DIR/profiles" "$CONTROLD_DIR/backup"
 
 # Mock external commands
