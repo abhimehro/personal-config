@@ -13,8 +13,9 @@ from __future__ import annotations
 import json
 import os
 import secrets
+import shutil
 import string
-import subprocess
+import subprocess  # nosec B404 — used only for fixed launchctl argv (no shell)
 import sys
 import time
 import urllib.error
@@ -50,8 +51,13 @@ def http(
     )
     if token:
         req.add_header("Authorization", f"MediaBrowser Token={token}")
+    # SECURITY: BASE is loopback by default; reject non-http(s) schemes.
+    if not BASE.startswith(("http://", "https://")):
+        raise ValueError(f"Refusing non-http(s) JELLYFIN_URL: {BASE!r}")
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with urllib.request.urlopen(
+            req, timeout=timeout
+        ) as resp:  # nosec B310 — http(s) only via BASE gate
             raw = resp.read()
             code = resp.getcode()
             if not raw:
@@ -69,6 +75,17 @@ def http(
         return e.code, payload
 
 
+def _launchctl_bin() -> str:
+    """Resolve absolute launchctl path (bandit B607)."""
+    for candidate in ("/bin/launchctl", "/usr/bin/launchctl"):
+        if Path(candidate).is_file():
+            return candidate
+    found = shutil.which("launchctl")
+    if found:
+        return found
+    raise RuntimeError("launchctl not found")
+
+
 def public_info() -> dict:
     code, payload = http("GET", "/System/Info/Public")
     if code != 200 or not isinstance(payload, dict):
@@ -78,7 +95,7 @@ def public_info() -> dict:
 
 def load_or_create_creds() -> tuple[str, str]:
     if CREDS.exists():
-        user = passwd = ""
+        user = passwd = ""  # nosec B105 — empty until credential file lines are parsed
         for line in CREDS.read_text().splitlines():
             if line.startswith("JELLYFIN_USER="):
                 user = line.split("=", 1)[1]
@@ -121,25 +138,23 @@ def reset_wizard_flag() -> None:
     print("Reset IsStartupWizardCompleted=false in system.xml")
     uid = os.getuid()
     plist = Path.home() / "Library/LaunchAgents/com.speedybee.jellyfin.plist"
-    subprocess.run(
-        ["launchctl", "kickstart", "-k", f"gui/{uid}/com.speedybee.jellyfin"],
-        check=False,
-    )
+    # SECURITY: absolute launchctl + constant argv; never shell=True / user input.
+    lc = _launchctl_bin()
+    label = f"gui/{uid}/com.speedybee.jellyfin"
+
+    def _lc_run(
+        args: list[str], *, capture: bool = False
+    ) -> subprocess.CompletedProcess[bytes]:
+        # nosec B603 — fixed /bin/launchctl argv only
+        if capture:
+            return subprocess.run(args, capture_output=True)  # nosec B603
+        return subprocess.run(args, check=False)  # nosec B603
+
+    _lc_run([lc, "kickstart", "-k", label])
     # If kickstart fails (label not loaded), try bootstrap
-    if (
-        subprocess.run(
-            ["launchctl", "print", f"gui/{uid}/com.speedybee.jellyfin"],
-            capture_output=True,
-        ).returncode
-        != 0
-    ):
-        subprocess.run(
-            ["launchctl", "bootstrap", f"gui/{uid}", str(plist)], check=False
-        )
-        subprocess.run(
-            ["launchctl", "kickstart", "-k", f"gui/{uid}/com.speedybee.jellyfin"],
-            check=False,
-        )
+    if _lc_run([lc, "print", label], capture=True).returncode != 0:
+        _lc_run([lc, "bootstrap", f"gui/{uid}", str(plist)])
+        _lc_run([lc, "kickstart", "-k", label])
     for i in range(60):
         try:
             info = public_info()

@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # 1Password CLI shell plugins
 # SECURITY: Skip plugin aliases in agent/CI/non-TTY shells so biometric/GUI
 # prompts cannot block automation. Interactive human shells keep full UX.

@@ -167,9 +167,9 @@ reconcile_network_state() {
 				start_controld "$profile" "doh" "disable"
 			fi
 			if ! ctrld_listener_ready; then
-				error "Control D DNS listener failed while VPN is connected. Leaving DNS unchanged to preserve connectivity. Restart Control D manually or run: ./scripts/network-mode-manager.sh windscribe $profile"
+				# error() exits; print status first so operator sees DNS/VPN state.
 				print_status
-				return 1
+				error "Control D DNS listener failed while VPN is connected. Leaving DNS unchanged to preserve connectivity. Restart Control D manually or run: ./scripts/network-mode-manager.sh windscribe $profile"
 			fi
 		fi
 

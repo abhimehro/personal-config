@@ -289,9 +289,11 @@ EOF
 	local output
 	output=$(switch_profile "privacy" "doh" 2>&1)
 
-	# Restore mocks used by other tests
+	# Restore mocks used by other tests (side effects on function table; not called here).
+	# shellcheck disable=SC2329 # redefines mocks for subsequent tests
 	pgrep() { return 1; }
 	unset -f dig 2>/dev/null || true
+	# shellcheck disable=SC2329 # redefines mocks for subsequent tests
 	restart_with_native_profile() {
 		echo "mock_restart_with_native_profile"
 		return 0

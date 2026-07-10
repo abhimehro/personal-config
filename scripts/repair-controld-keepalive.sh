@@ -162,6 +162,7 @@ if [[ -n $RESTART_PROFILE ]]; then
 	fi
 
 	# SECURITY: Ctrl-C / kill during dig-wait must leave DHCP (never pin 127.0.0.1).
+	# shellcheck disable=SC2329 # invoked via trap INT TERM below
 	_repair_interrupt() {
 		echo "" >&2
 		echo "[WARN] Interrupted — leaving Wi-Fi/LAN on DHCP (safe). Control D was NOT pinned." >&2

@@ -195,7 +195,6 @@ switch_profile() {
 		return 1
 	fi
 
-	local config_file="$PROFILES_DIR/ctrld.$profile_name.toml"
 	log "Switching to $profile_name profile with $protocol protocol..."
 
 	# Optimization: Early exit only when profile AND protocol already match.

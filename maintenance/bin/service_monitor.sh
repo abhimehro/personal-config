@@ -139,8 +139,8 @@ count_diagnostic_reports() {
 
 get_top_crash_reports() {
 	if [[ -d "$HOME/Library/Logs/DiagnosticReports" ]]; then
-		ls "$HOME/Library/Logs/DiagnosticReports" 2>/dev/null |
-			sed 's/-[0-9].*$//' | sort | uniq -c | sort -rn | head -5
+		find "$HOME/Library/Logs/DiagnosticReports" -maxdepth 1 -type f -print 2>/dev/null |
+			sed 's|.*/||; s/-[0-9].*$//' | sort | uniq -c | sort -rn | head -5
 	fi
 }
 

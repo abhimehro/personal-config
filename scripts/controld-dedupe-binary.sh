@@ -71,6 +71,7 @@ STATE=WORKING
 	echo "MODE=$MODE"
 	echo "PROFILE=$PROF"
 	echo "PROTOCOL=$PROTO"
+	echo "FALLBACK=${FB:-0}"
 	echo "DIG_OK=$DIG"
 	echo "BINARY=$BIN"
 	echo "VERSION=$VER"

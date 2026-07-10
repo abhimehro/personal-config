@@ -39,9 +39,9 @@ echo "Mount: $MOUNT_POINT"
 echo
 
 # 1) Mount readable
-if [[ -d $MOUNT_POINT ]] && [[ -n "$(ls -A "$MOUNT_POINT" 2>/dev/null || true)" ]]; then
+if [[ -d $MOUNT_POINT ]] && [[ -n "$(find "$MOUNT_POINT" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null || true)" ]]; then
 	ok "CloudMedia mount has entries"
-	ls "$MOUNT_POINT" | head -20 | sed 's/^/    /'
+	find "$MOUNT_POINT" -mindepth 1 -maxdepth 1 -print 2>/dev/null | head -20 | sed 's/^/    /'
 else
 	bad "CloudMedia mount empty or missing — Jellyfin cannot see library files"
 fi

@@ -228,22 +228,27 @@ fi
 check_false "_write_profile_local_config refuses free id" \
 	_write_profile_local_config "privacy" "free" "$FB_CFG" "doh"
 
+# shellcheck disable=SC2016 # intentional literal $listener_ip in PASS/FAIL strings
 # --- bash 3.2: progress line must not use Unicode ellipsis after $listener_ip ---
 echo ""
 echo "-- bash 3.2 ellipsis / set -u (Lesson 0dr) --"
 if command -v rg >/dev/null 2>&1; then
 	if rg -n '\$listener_ip…' "$REPO_ROOT/scripts/lib/controld-service.sh" >/dev/null 2>&1; then
+		# shellcheck disable=SC2016 # intentional literal $listener_ip in test message
 		echo 'FAIL: $listener_ip followed by Unicode ellipsis still present'
 		FAIL=$((FAIL + 1))
 	else
+		# shellcheck disable=SC2016 # intentional literal $listener_ip in test message
 		echo 'PASS: no $listener_ip… Unicode ellipsis in controld-service.sh'
 		PASS=$((PASS + 1))
 	fi
 else
 	if grep -n $'\$listener_ip…' "$REPO_ROOT/scripts/lib/controld-service.sh" >/dev/null 2>&1; then
+		# shellcheck disable=SC2016 # intentional literal $listener_ip in test message
 		echo 'FAIL: $listener_ip followed by Unicode ellipsis still present'
 		FAIL=$((FAIL + 1))
 	else
+		# shellcheck disable=SC2016 # intentional literal $listener_ip in test message
 		echo 'PASS: no $listener_ip… Unicode ellipsis in controld-service.sh'
 		PASS=$((PASS + 1))
 	fi
@@ -376,14 +381,14 @@ rm -f "$MOCK_BIN/lsof"
 echo ""
 echo "-- readiness dead-streak --"
 # dig always fails; pgrep fails once then succeeds — must NOT abort early.
-DIG_CALLS=0
+# DIG_CALLS unused; dig mock always fails via exit 1 (file log used instead).
 cat >"$MOCK_BIN/dig" <<MOCK
 #!/bin/bash
 echo "dig \$*" >> "$TEST_DIR/dig.log"
 exit 1
 MOCK
 chmod +x "$MOCK_BIN/dig"
-PGREP_N=0
+# PGREP_N unused; pgrep mock uses $TEST_DIR/pgrep.count instead.
 cat >"$MOCK_BIN/pgrep" <<MOCK
 #!/bin/bash
 # First call: miss (KeepAlive gap). Subsequent: alive.

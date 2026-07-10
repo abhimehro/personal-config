@@ -32,7 +32,9 @@ require_mount() {
 		log "WARN: no directories visible under $MOUNT_POINT — library scan will be empty."
 	else
 		log "Mount sample paths:"
-		echo "$sample" | sed 's/^/  /'
+		while IFS= read -r sample_line; do
+			printf '  %s\n' "$sample_line"
+		done <<<"$sample"
 	fi
 }
 
