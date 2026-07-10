@@ -581,3 +581,6 @@ invocation.
 ## 2026-11-20 - [Avoid eager empty dict and list allocations in chained .get() loops across multiple domains]
 **Learning:** Chaining `.get("key", {}).get("sub_key", [])` inside processing loops allocates new empty dictionary and list objects on every iteration when the key is missing or the value is falsy. This leads to measurable memory allocation overhead on the fast path, especially when dealing with complex nested JSON payloads (like those from GraphQL APIs or large webhook structures).
 **Action:** Replace `val.get("key", {}).get("sub_key", [])` with multi-step `None` checks like `_key = val.get("key"); _sub_key = _key.get("sub_key") if _key else ()` to prevent redundant dictionary and list allocations entirely.
+## 2026-03-10 - Short-Circuit Expensive Datetime Parsing
+**Learning:** Eager evaluation of `datetime.fromisoformat()` and timezone manipulations inside frequently called functions (like PR categorization loops) creates a massive performance bottleneck due to unnecessary object allocation and parsing overhead.
+**Action:** Always short-circuit expensive datetime operations by placing them behind faster boolean checks (like simple string matching) so they only execute when absolutely required.

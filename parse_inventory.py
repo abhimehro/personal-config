@@ -168,10 +168,10 @@ def _get_pr_category(info, checks):
         return "SUPERSEDED"
 
     merge_status = info.get("mergeStateStatus", "")
-    is_stale = _is_pr_stale(info.get("updatedAt", ""))
+    # ⚡ Bolt Optimization: Delay expensive datetime parsing by short-circuiting behind checks_failing
     checks_failing = _is_checks_failing(checks)
 
-    if is_stale and checks_failing:
+    if checks_failing and _is_pr_stale(info.get("updatedAt", "")):
         return "STALE"
 
     if merge_status in ["DIRTY", "CONFLICTING"]:
