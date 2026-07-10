@@ -9,6 +9,9 @@ CONTROLD_DIR="$(mktemp -d)"
 export LOG_FILE
 LOG_FILE="$(mktemp)"
 
+export CONTROLD_REPO
+CONTROLD_REPO="$(pwd)"
+
 LIB_FILE="$(mktemp)"
 cp controld-system/scripts/controld-manager "$LIB_FILE"
 
