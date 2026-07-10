@@ -10,7 +10,7 @@ echo "🧪 Testing Windscribe + Control D Integration"
 echo "=============================================="
 
 # Check if Control D is running
-if pgrep -f "ctrld run" >/dev/null; then
+if pgrep -f -- "ctrld run" >/dev/null; then
 	echo "✅ Control D service: RUNNING"
 else
 	echo "❌ Control D service: NOT RUNNING"
@@ -65,7 +65,7 @@ fi
 
 echo
 echo "🎯 Integration Test Summary:"
-if pgrep -f "ctrld run" >/dev/null && [[ $blocked_result == "127.0.0.1" ]]; then
+if pgrep -f -- "ctrld run" >/dev/null && [[ $blocked_result == "127.0.0.1" ]]; then
 	if [[ -n $vpn_interface ]]; then
 		echo "🟢 PERFECT! Windscribe + Control D working together"
 		echo "   - VPN encryption: ✅"

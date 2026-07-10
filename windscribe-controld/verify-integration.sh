@@ -17,7 +17,7 @@ echo
 
 # 1. Check Control D service
 echo -e "${YELLOW}[1/6]${NC} Checking Control D service..."
-if pgrep -f ctrld >/dev/null; then
+if pgrep -f -- ctrld >/dev/null; then
 	echo -e "  ${GREEN}✓${NC} Control D is running"
 else
 	echo -e "  ${RED}✗${NC} Control D is not running"
