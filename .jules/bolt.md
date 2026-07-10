@@ -581,3 +581,6 @@ invocation.
 ## 2026-11-20 - [Avoid eager empty dict and list allocations in chained .get() loops across multiple domains]
 **Learning:** Chaining `.get("key", {}).get("sub_key", [])` inside processing loops allocates new empty dictionary and list objects on every iteration when the key is missing or the value is falsy. This leads to measurable memory allocation overhead on the fast path, especially when dealing with complex nested JSON payloads (like those from GraphQL APIs or large webhook structures).
 **Action:** Replace `val.get("key", {}).get("sub_key", [])` with multi-step `None` checks like `_key = val.get("key"); _sub_key = _key.get("sub_key") if _key else ()` to prevent redundant dictionary and list allocations entirely.
+## 2026-07-10 - Eliminate ThreadPoolExecutor batching latency
+**Learning:** `concurrent.futures.ThreadPoolExecutor` defaults to `min(32, os.cpu_count() + 4)` workers. For I/O-bound tasks like shelling out multiple concurrent processes, this low default artificial limits concurrency and adds batching latency (e.g. if you have 40 shell commands to run, it takes multiple batches).
+**Action:** Always explicitly set `max_workers` on `ThreadPoolExecutor` for pure I/O or shell dispatch tasks to exactly match the number of jobs (or a high ceiling like 100) to ensure immediate dispatch without batching latency.
