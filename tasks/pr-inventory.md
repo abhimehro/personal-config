@@ -1,3 +1,55 @@
+# PR Inventory — 2026-07-10 (evening salvage)
+
+**Session:** Automated PR salvage & cleanup (cron 17:00 UTC)  
+**Branch:** `cursor-agent/pr-salvage-and-cleanup-8580`  
+**Preflight:** PASS 6/6 configured repos + cursor-cloud-hooks  
+**Mode:** Phase 2 salvage (follows morning Phase 1 via [#1569](https://github.com/abhimehro/personal-config/pull/1569))  
+**Input:** `tasks/pr-review-2026-07-10.md` deferred tail + live GitHub re-fetch
+
+## Summary
+
+| Repo | Open at start | Salvaged | Closed superseded | Escalated (unchanged) | Remainder |
+|------|---------------|----------|-------------------|----------------------|-----------|
+| personal-config | 4 | 2 drafts | 3 | 0 | **3** |
+| ctrld-sync | 1 | 0 | 0 | 1 | **1** |
+| email-security-pipeline | 1 | 0 | 0 | 0 | **1** |
+| Seatek_Analysis | 1 | 0 | 0 | 1 | **1** |
+| Hydrograph_Versus_Seatek_Sensors_Project | 0 | 0 | 0 | 0 | **0** |
+| series_correction_project_updated | 1 | 0 | 0 | 1 | **1** |
+| repoprompt-ce | 3 | 0 | 2 | 1 | **1** |
+| **Total** | **11** | **2** | **5** | **4** | **8** |
+
+## Starting inventory (11 in-scope open)
+
+| Repo | PR | Author | Category | CI | Conflicts | Status |
+|------|-----|--------|----------|-----|-----------|--------|
+| personal-config | [#1559](https://github.com/abhimehro/personal-config/pull/1559) | abhimehro (salvage) | A11Y | CLEAN | DIRTY | SALVAGE → #1570 |
+| personal-config | [#1563](https://github.com/abhimehro/personal-config/pull/1563) | abhimehro (Palette) | A11Y | CLEAN | DIRTY | SALVAGE → #1570 |
+| personal-config | [#1568](https://github.com/abhimehro/personal-config/pull/1568) | abhimehro (Bolt) | PERF | CLEAN | DIRTY | SALVAGE → #1571 |
+| personal-config | [#1569](https://github.com/abhimehro/personal-config/pull/1569) | app/cursor | SESSION-DOC | CLEAN | — | OPEN (draft) |
+| ctrld-sync | [#990](https://github.com/abhimehro/ctrld-sync/pull/990) | abhimehro | SECURITY/SSRF | FAIL (benchmark) | MERGEABLE | ESCALATE |
+| email-security-pipeline | [#1249](https://github.com/abhimehro/email-security-pipeline/pull/1249) | abhimehro (Palette) | UX | CLEAN | MERGEABLE | PHASE1-CANDIDATE |
+| Seatek_Analysis | [#439](https://github.com/abhimehro/Seatek_Analysis/pull/439) | abhimehro (Sentinel) | SECURITY-TOOLING | CLEAN | MERGEABLE | ESCALATE |
+| series_correction_project_updated | [#210](https://github.com/abhimehro/series_correction_project_updated/pull/210) | abhimehro (salvage) | SECURITY-FIX | CLEAN | MERGEABLE | ESCALATE |
+| repoprompt-ce | [#105](https://github.com/abhimehro/repoprompt-ce/pull/105) | abhimehro (Sentinel) | SECURITY | FAIL (Style+Build) | MERGEABLE | CLOSE-SUPERSEDED |
+| repoprompt-ce | [#112](https://github.com/abhimehro/repoprompt-ce/pull/112) | abhimehro (Sentinel) | SECURITY | CLEAN | MERGEABLE | ESCALATE |
+| repoprompt-ce | [#115](https://github.com/abhimehro/repoprompt-ce/pull/115) | abhimehro (Sentinel) | SECURITY | FAIL (Build) | MERGEABLE | CLOSE-SUPERSEDED |
+
+## Post-session remainder (8 open)
+
+| Repo | PR | Reason |
+|------|-----|--------|
+| personal-config | [#1569](https://github.com/abhimehro/personal-config/pull/1569) | Phase 1 session doc draft |
+| personal-config | [#1570](https://github.com/abhimehro/personal-config/pull/1570) | T3 salvage draft — media server a11y (salvages #1559, #1563) |
+| personal-config | [#1571](https://github.com/abhimehro/personal-config/pull/1571) | T2 salvage draft — ThreadPoolExecutor perf (salvages #1568) |
+| ctrld-sync | [#990](https://github.com/abhimehro/ctrld-sync/pull/990) | T1 ESCALATE — SSRF allowlist + benchmark fail |
+| email-security-pipeline | [#1249](https://github.com/abhimehro/email-security-pipeline/pull/1249) | T3 merge-eligible — Palette empty state; opened after Phase 1 |
+| Seatek_Analysis | [#439](https://github.com/abhimehro/Seatek_Analysis/pull/439) | T1 ESCALATE — bandit pre-commit tooling |
+| series_correction_project_updated | [#210](https://github.com/abhimehro/series_correction_project_updated/pull/210) | T1 ESCALATE — CLI exception sanitization salvage |
+| repoprompt-ce | [#112](https://github.com/abhimehro/repoprompt-ce/pull/112) | T1 ESCALATE — ephemeral URLSession / token leak (all CI green) |
+
+---
+
 # PR Inventory — 2026-07-08
 
 **Session:** Automated PR review & cleanup (cron 13:00 UTC)  

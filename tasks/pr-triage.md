@@ -1,3 +1,73 @@
+# PR Triage — 2026-07-10 (evening salvage)
+
+**Session:** Automated PR salvage & cleanup (cron 17:00 UTC)  
+**Mode:** Phase 2 salvage  
+**Preflight:** PASS 6/6 + cursor-cloud-hooks  
+**Input:** Phase 1 report 2026-07-10 + live re-fetch
+
+## Decision matrix
+
+| Decision | Count | PRs |
+|----------|------:|-----|
+| SALVAGE (draft) | 2 | pc #1570 (from #1559+#1563), pc #1571 (from #1568) |
+| CLOSE-SUPERSEDED | 5 | pc #1559, #1563, #1568; rpce #105, #115 |
+| ESCALATE (unchanged) | 4 | cs #990; Seatek #439; sc #210; rpce #112 |
+| PHASE1-CANDIDATE | 1 | esp #1249 (CLEAN, opened after morning Phase 1) |
+
+## Security gates
+
+| PR | Gate | Rationale |
+|----|------|-----------|
+| cs #990 | **ESCALATE** | SSRF domain allowlist trust boundary; benchmark CI red |
+| Seatek #439 | **ESCALATE** | Bandit pre-commit tooling — dev workflow + rule profile approval |
+| sc #210 | **ESCALATE** | CLI exception sanitization — verify no path/filesystem leakage |
+| rpce #112 | **ESCALATE** | Ephemeral URLSession / token leak fix — all CI green; human security review |
+| pc #1571 | **T2 REVIEW** | Trust-boundary file `.github/scripts/repository_automation_tasks.py` |
+| rpce #105, #115 | **CLOSE** | Superseded by #112 (same URLSession fix, green CI) |
+
+## Salvage actions
+
+### Combined Palette media-server salvage (#1559 + #1563 → #1570)
+
+Both PRs touched `infuse-media-server.py` with complementary a11y changes (semantic landmarks + empty state). Combined onto fresh `main` branch; originals closed.
+
+### Bolt ThreadPoolExecutor salvage (#1568 → #1571)
+
+Conflict with merged #1567. Re-applied `max_workers=min(len(commands), 32)` only; excluded unrelated `test_controld_validation.sh` env change.
+
+### repoprompt-ce Sentinel deduplication
+
+Three PRs (#105, #112, #115) all switched URLSession to ephemeral. #112 has all CI green + tests; closed #105 and #115 as superseded.
+
+## Deferred follow-ups
+
+```yaml
+open_followups:
+  - repo: abhimehro/personal-config
+    pr: 1570
+    reason: T3 salvage draft — media server a11y; human review
+  - repo: abhimehro/personal-config
+    pr: 1571
+    reason: T2 salvage draft — PR automation ThreadPoolExecutor; trust boundary
+  - repo: abhimehro/ctrld-sync
+    pr: 990
+    reason: T1 ESCALATE — SSRF allowlist + benchmark baseline
+  - repo: abhimehro/email-security-pipeline
+    pr: 1249
+    reason: T3 merge-eligible — Palette UX; next Phase 1 cycle
+  - repo: abhimehro/Seatek_Analysis
+    pr: 439
+    reason: T1 ESCALATE — bandit pre-commit profile
+  - repo: abhimehro/series_correction_project_updated
+    pr: 210
+    reason: T1 ESCALATE — exception sanitization salvage
+  - repo: abhimehro/repoprompt-ce
+    pr: 112
+    reason: T1 ESCALATE — URLSession ephemeral hardening (CI green)
+```
+
+---
+
 # PR Triage — 2026-07-08
 
 **Session:** Automated PR review & cleanup (cron 13:00 UTC)  

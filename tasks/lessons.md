@@ -1269,3 +1269,12 @@ to 1Password can hang agents on Touch ID.
 `CURSOR_AGENT`/`CI`/non-interactive (`OP_AGENT_SKIP`); for multi-repo workspace
 roots use `.1password/environments.toml` with `mount_paths = []` so validation
 is configured-mode skip without disabling interactive 1Password.
+
+## Lesson 0du: Combine same-file Palette salvages into one draft (2026-07-10)
+
+**Pattern:** pc #1559 (empty state) and #1563 (semantic landmarks) both touched
+`infuse-media-server.py` and became `DIRTY` after concurrent Phase 1 merges.
+**Rule:** When multiple conflicted Palette PRs modify the same source file with
+complementary UX changes, salvage them onto a single fresh branch rather than
+opening separate drafts that will conflict again. **Detection cost:** Low —
+salvage queue shows 2+ DIRTY PRs sharing the same primary `.py` path.

@@ -4,6 +4,45 @@
 > writer: salvage automation only. Do not edit review entries here; review
 > writes to `tasks/review-session-reports.md`.
 
+## Run — 2026-07-10 (evening salvage)
+
+### Input tail
+
+- Source report/snapshot: Phase 1 `tasks/pr-review-2026-07-10.md` deferred tail + live GitHub re-fetch
+- PRs investigated: 11 across 5 repos (3 DIRTY personal-config, 2 duplicate rpce Sentinel)
+
+### Salvage results
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | #1559, #1563 | SALVAGE draft | [#1570](https://github.com/abhimehro/personal-config/pull/1570) | Combined semantic listing + empty state on same file |
+| personal-config | #1568 | SALVAGE draft | [#1571](https://github.com/abhimehro/personal-config/pull/1571) | ThreadPoolExecutor max_workers; excluded unrelated test env change |
+| repoprompt-ce | #105, #115 | CLOSE-SUPERSEDED | — | Duplicate URLSession fixes; #112 all CI green |
+
+### Counts
+
+- Deep-dived: 11
+- Salvaged: 2
+- Infra-fix PRs: 0
+- Closed superseded: 5
+- Autonomous merges: 0
+- Net new draft PRs awaiting human review: 2
+- Unchanged escalations: 4 (cs#990, Seatek#439, sc#210, rpce#112)
+
+### Verification status
+
+- Local verify: `python3 -m unittest tests.test_infuse_media_server -v` — 6 passed; `python3 -m py_compile .github/scripts/repository_automation_tasks.py` — OK
+- CodeScene remediation: not required this run
+
+### Handoff
+
+- Maintainer actions required:
+  1. **T1 review:** cs#990, Seatek#439, sc#210, rpce#112
+  2. **T2 review:** pc#1571 (trust-boundary PR automation script)
+  3. **T3 review:** pc#1570 (media server a11y salvage)
+  4. **Phase 1 merge:** esp#1249 (CLEAN Palette UX, opened after morning session)
+- Cross-links: [Session report](tasks/pr-review-2026-07-10.md)
+
 ## Entry template
 
 ## Run — 2026-06-21
