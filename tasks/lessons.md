@@ -1259,6 +1259,21 @@ scripts calling `gh api` or workflow files removing `secrets.*` lines.
 When testing parsing/formatting logic, always consider unexpected data types,
 out of bound values and common malformed shapes.
 
+## Lesson 0dt: Concurrent personal-config merges cause downstream PR conflicts (2026-07-10)
+
+**Pattern:** Morning cron merged pc #1558 (palette), #1567 (bolt date parsing),
+and dependabot bumps in one session. Three remaining green PRs (#1559 a11y
+salvage, #1563 palette landmarks, #1568 bolt ThreadPoolExecutor) then showed
+`CONFLICTING` / `gh pr update-branch --rebase` failed.
+
+**Rule:** (1) Merge high-churn files first or batch personal-config merges with
+a final rebase pass for sibling PRs touching `.jules/*.md`,
+`.github/scripts/`, or shared HTML templates. (2) Defer (not close) conflicted
+green PRs to evening salvage. (3) Post deferral review on each conflicted PR
+with the specific overlapping merge that caused the conflict.
+
+**Detection cost:** Low — `mergeable=CONFLICTING` after session merges.
+
 ## Lesson: Cursor agent shell blocked by 1Password Environments hook + SSH agent (2026-07-09)
 
 **Pattern:** Multi-repo workspace + 1Password Cursor plugin default mode denies
