@@ -384,7 +384,7 @@ generate_dashboard() {
         .header { text-align: center; margin-bottom: 40px; }
         .header h1 { color: #333; margin-bottom: 10px; }
         .header .date { color: #666; font-size: 14px; }
-        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px; list-style: none; padding: 0; }
         .metric-card { background: #44337A; color: white; padding: 20px; border-radius: 8px; text-align: center; }
         .metric-card.success { background: #276749; }
         .metric-card.warning { background: #9C4221; }
@@ -408,11 +408,11 @@ generate_dashboard() {
         </header>
         
         <main>
-        <div class="metrics-grid">
-            <div class="metric-card success" role="group" aria-labelledby="health-score-label">
+        <ul class="metrics-grid">
+            <li class="metric-card success" role="group" aria-labelledby="health-score-label">
                 <div class="metric-value">${current_health}</div>
                 <div class="metric-label" id="health-score-label">Health Score</div>
-            </div>
+            </li>
 EOF
 
 	# Add more metric cards based on available data
@@ -425,23 +425,23 @@ EOF
 		total_warnings=$(jq -r '.summary.total_warnings // 0' "$metrics_report")
 
 		cat >>"$dashboard_file" <<EOF
-            <div class="metric-card" role="group" aria-labelledby="performance-score-label">
+            <li class="metric-card" role="group" aria-labelledby="performance-score-label">
                 <div class="metric-value">${avg_performance}</div>
                 <div class="metric-label" id="performance-score-label">Performance Score</div>
-            </div>
-            <div class="metric-card $([ "${avg_disk:-0}" -gt 85 ] && echo "warning" || echo "success")" role="group" aria-labelledby="disk-usage-label">
+            </li>
+            <li class="metric-card $([ "${avg_disk:-0}" -gt 85 ] && echo "warning" || echo "success")" role="group" aria-labelledby="disk-usage-label">
                 <div class="metric-value">${avg_disk}%</div>
                 <div class="metric-label" id="disk-usage-label">Disk Usage</div>
-            </div>
-            <div class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" role="group" aria-labelledby="total-warnings-label">
+            </li>
+            <li class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" role="group" aria-labelledby="total-warnings-label">
                 <div class="metric-value">${total_warnings}</div>
                 <div class="metric-label" id="total-warnings-label">Total Warnings</div>
-            </div>
+            </li>
 EOF
 	fi
 
 	cat >>"$dashboard_file" <<EOF
-        </div>
+        </ul>
         
         <section class="section" aria-labelledby="insights-heading" role="region">
             <h2 id="insights-heading"><span aria-hidden="true">📊</span> System Insights</h2>

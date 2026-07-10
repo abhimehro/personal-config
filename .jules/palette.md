@@ -299,3 +299,6 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## $(date +%Y-%m-%d) - Semantic Lists for Grouped Data
 **Learning:** When displaying grouped key-value data (like system specs) in bash-generated HTML reports, using generic `<div>` elements causes screen readers to read them as disconnected text nodes. This creates a fragmented audio experience.
 **Action:** Convert sequential `<div>` data blocks into semantic `<ul>` and `<li>` lists to provide screen readers with grouping context and item counts.
+## $(date +%Y-%m-%d) - Semantic Lists for Grouped Data
+**Learning:** When displaying grouped key-value data (like system specs) in bash-generated HTML reports, using generic `<div>` elements causes screen readers to read them as disconnected text nodes. This creates a fragmented audio experience.
+**Action:** Convert sequential `<div>` data blocks into semantic `<ul>` and `<li>` lists to provide screen readers with grouping context and item counts.
