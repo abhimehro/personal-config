@@ -14,6 +14,8 @@ cp controld-system/scripts/controld-manager "$LIB_FILE"
 
 mkdir -p "$CONTROLD_DIR/profiles" "$CONTROLD_DIR/backup"
 
+export CONTROLD_REPO="$PWD"
+
 # Mock external commands
 ctrld() { echo "ctrld called with $*"; }
 networksetup() { echo "networksetup called with $*"; }
