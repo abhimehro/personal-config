@@ -202,14 +202,32 @@ abbr -a scm ssh cursor-mdns
 abbr -a sca ssh cursor-auto
 
 # Network Mode Manager
+# nmp/nmb/nmg     → standalone Control D (default doh3-ipv6)
+# nmpd/nmbd/nmgd  → standalone DoH + IPv6 off (doh-ipv4)
+# nmp6/nmb6/nmg6  → standalone DoH + IPv6 on  (doh-ipv6)
+# nmvp/nmvb/nmvg  → Windscribe+Control D (auto IPv6 after connect)
+# nmvp4/…         → force WINDSCRIBE_IPV6=0 (doh-ipv4); pass location e.g. nmvp4 Atlanta
+# nmvp6/…         → force WINDSCRIBE_IPV6=1 (doh-ipv6)
 abbr -a nms  nm-status
 abbr -a nmb  nm-browse
 abbr -a nmp  nm-privacy
 abbr -a nmg  nm-gaming
+abbr -a nmpd nm-doh privacy
+abbr -a nmbd nm-doh browsing
+abbr -a nmgd nm-doh gaming
+abbr -a nmp6 nm-doh6 privacy
+abbr -a nmb6 nm-doh6 browsing
+abbr -a nmg6 nm-doh6 gaming
 abbr -a nmv  nm-vpn
 abbr -a nmvp nm-vpn privacy
 abbr -a nmvg nm-vpn gaming
 abbr -a nmvb nm-vpn browsing
+abbr -a nmvp4 nm-vpn4 privacy
+abbr -a nmvb4 nm-vpn4 browsing
+abbr -a nmvg4 nm-vpn4 gaming
+abbr -a nmvp6 nm-vpn6 privacy
+abbr -a nmvb6 nm-vpn6 browsing
+abbr -a nmvg6 nm-vpn6 gaming
 abbr -a nmr  nm-regress
 abbr -a nmcs nm-cd-status
 

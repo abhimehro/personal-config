@@ -167,8 +167,19 @@ Verification/regression:
 make control-d-regression
 ```
 
-Fish aliases (`nm-privacy`, `nm-browse`, `nm-gaming`, `nm-status`, `nm-vpn`)
-`cd` to the repo and call `network-mode-manager.sh` — they use the fixed libs.
+Fish helpers (`configs/.config/fish/functions/nm-*.fish`, abbrs in `config.fish`)
+`cd` to the repo and call `network-mode-manager.sh` / `windscribe-connect.sh`:
+
+| Abbr | Behavior |
+| ---- | -------- |
+| `nmp` / `nmb` / `nmg` | Standalone Control D (default `doh3-ipv6`) |
+| `nmpd` / `nmbd` / `nmgd` | DoH + IPv6 off (`doh-ipv4`) |
+| `nmp6` / `nmb6` / `nmg6` | DoH + IPv6 on (`doh-ipv6` via `CONTROLD_IPV6=enable`) |
+| `nmvp` / `nmvb` / `nmvg` | Windscribe + Control D (auto IPv6) |
+| `nmvp4` / `nmvb4` / `nmvg4` | Same, force `WINDSCRIBE_IPV6=0` |
+| `nmvp6` / `nmvb6` / `nmvg6` | Same, force `WINDSCRIBE_IPV6=1` |
+
+Pass location for VPN abbrs (e.g. `nmvp6 Atlanta`). Reload with `exec fish`.
 
 ### LaunchAgents (2026-07-09 audit)
 

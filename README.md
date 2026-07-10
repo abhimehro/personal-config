@@ -820,15 +820,21 @@ to recover after a rebuild.
 
 After reloading Fish with `exec fish`, these helpers are available:
 
-| Function       | Description                                            |
-| -------------- | ------------------------------------------------------ |
-| `nm-status`    | Check current network status (Control D vs Windscribe) |
-| `nm-browse`    | Switch to Control D browsing mode (balanced privacy)   |
-| `nm-privacy`   | Switch to Control D privacy mode (maximum security)    |
-| `nm-gaming`    | Switch to Control D gaming mode (minimal filtering)    |
-| `nm-vpn`       | Switch to Windscribe VPN mode (disables Control D)     |
-| `nm-regress`   | Run full regression test (Control D → Windscribe)      |
-| `nm-cd-status` | Check Control D daemon status                          |
+| Function / abbr | Description |
+| --------------- | ----------- |
+| `nm-status` (`nms`) | Check current network status (Control D vs Windscribe) |
+| `nm-browse` (`nmb`) | Standalone Control D browsing (default `doh3-ipv6`) |
+| `nm-privacy` (`nmp`) | Standalone Control D privacy (default `doh3-ipv6`) |
+| `nm-gaming` (`nmg`) | Standalone Control D gaming (default `doh3-ipv6`) |
+| `nm-doh` (`nmpd`/`nmbd`/`nmgd`) | Standalone DoH + IPv6 off (`doh-ipv4`) |
+| `nm-doh6` (`nmp6`/`nmb6`/`nmg6`) | Standalone DoH + IPv6 on (`doh-ipv6`) |
+| `nm-vpn` (`nmv`/`nmvp`/`nmvb`/`nmvg`) | Windscribe + Control D (auto IPv6) |
+| `nm-vpn4` (`nmvp4`/`nmvb4`/`nmvg4`) | Windscribe + Control D, force IPv6 off |
+| `nm-vpn6` (`nmvp6`/`nmvb6`/`nmvg6`) | Windscribe + Control D, force IPv6 on |
+| `nm-regress` (`nmr`) | Run full regression test (Control D → Windscribe) |
+| `nm-cd-status` (`nmcs`) | Check Control D daemon status |
+
+VPN abbrs accept a location (e.g. `nmvp6 Atlanta`).
 
 **Safe files to edit manually:**
 
