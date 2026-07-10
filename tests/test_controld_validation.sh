@@ -6,6 +6,8 @@ set -euo pipefail
 
 export CONTROLD_DIR
 CONTROLD_DIR="$(mktemp -d)"
+export CONTROLD_REPO
+CONTROLD_REPO="$(pwd)"
 export LOG_FILE
 LOG_FILE="$(mktemp)"
 
