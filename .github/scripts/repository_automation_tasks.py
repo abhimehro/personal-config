@@ -68,9 +68,14 @@ def execute_configured_commands(
     setup_entries = []
     command_entries = []
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    commands = list(configured_commands(section))
+    if not commands:
+        return setup_entries, command_entries
+
+    # ⚡ Bolt Optimization: Increase max_workers to the number of commands (up to a safe limit of 32) to eliminate batching latency without exhausting runner resources
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(commands), 32)) as executor:
         futures = []
-        for bucket_name, item in configured_commands(section):
+        for bucket_name, item in commands:
             timeout = int(item.get("timeout_seconds", 1800))
             future = executor.submit(run_shell_command, item["run"], timeout)
             futures.append((bucket_name, item, future))

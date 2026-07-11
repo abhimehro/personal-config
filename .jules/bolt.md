@@ -584,3 +584,7 @@ invocation.
 ## 2026-03-10 - Short-Circuit Expensive Datetime Parsing
 **Learning:** Eager evaluation of `datetime.fromisoformat()` and timezone manipulations inside frequently called functions (like PR categorization loops) creates a massive performance bottleneck due to unnecessary object allocation and parsing overhead.
 **Action:** Always short-circuit expensive datetime operations by placing them behind faster boolean checks (like simple string matching) so they only execute when absolutely required.
+
+## 2026-07-10 - Eliminate ThreadPoolExecutor batching latency
+**Learning:** `concurrent.futures.ThreadPoolExecutor` defaults to `min(32, os.cpu_count() + 4)` workers. For I/O-bound tasks like shelling out multiple concurrent processes, this low default artificial limits concurrency and adds batching latency (e.g. if you have 40 shell commands to run, it takes multiple batches).
+**Action:** Always explicitly set `max_workers` on `ThreadPoolExecutor` for pure I/O or shell dispatch tasks to exactly match the number of jobs (or a high ceiling like 100) to ensure immediate dispatch without batching latency.
