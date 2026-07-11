@@ -594,3 +594,7 @@ invocation.
 ## 2026-07-11 - [Optimize directory traversal paths]
 **Learning:** Hardcoding multi-level parent directory traversals like `../..` can cause scripts to fail when executed from unexpected deep directories during testing or CI runs.
 **Action:** Use single-level references or bounded path expansions when looking for root repository directories to prevent directory traversal failures in dynamic environments.
+
+## 2026-07-10 - Eliminate ThreadPoolExecutor batching latency
+**Learning:** `concurrent.futures.ThreadPoolExecutor` defaults to `min(32, os.cpu_count() + 4)` workers. For I/O-bound tasks like shelling out multiple concurrent processes, this low default artificial limits concurrency and adds batching latency (e.g. if you have 40 shell commands to run, it takes multiple batches).
+**Action:** Always explicitly set `max_workers` on `ThreadPoolExecutor` for pure I/O or shell dispatch tasks to exactly match the number of jobs (or a high ceiling like 100) to ensure immediate dispatch without batching latency.
