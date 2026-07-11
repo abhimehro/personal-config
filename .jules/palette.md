@@ -306,3 +306,6 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## 2026-03-10 - Semantic Lists for Grouped Data
 **Learning:** When generating HTML directory or file listings, using consecutive `<a>` tags causes them to be read as disconnected links by screen readers, lacking grouping context.
 **Action:** Wrap sequential file links in semantic `<ul>` and `<li>` tags (removing default list styling via CSS) and enclose them in a `<nav>` element to provide proper item count announcements and structural context.
+## $(date "+%Y-%m-%d") - ARIA aria-labelledby on Grouped Data Needs Both Label and Value
+**Learning:** When using `aria-labelledby` on a parent element (like a metric card), screen readers will *only* announce the elements explicitly referenced by ID. If you only reference the label's ID, the screen reader will skip reading the actual data value entirely, resulting in an inaccessible experience.
+**Action:** Always ensure that `aria-labelledby` references *both* the label's ID and the value's ID (e.g., `aria-labelledby="label-id value-id"`) when describing grouped UI components that contain a key and a value.
