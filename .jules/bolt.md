@@ -590,3 +590,7 @@ invocation.
 ## 2026-07-11 - [Avoid redundant datetime.now() calls in iteration blocks without module state]
 **Learning:** Calling `datetime.now(timezone.utc)` repeatedly inside a function that is executed iteratively over large collections adds measurable overhead. However, hoisting dynamic time evaluations to module-level constants pins the evaluated time to when the module is imported, creating a dangerous stale state in long-running processes.
 **Action:** Compute the time once at the entry point (e.g., in `main()`) and pass it down through function arguments (e.g., `now=None`) to avoid redundant recomputation while preventing unsafe module-level state.
+
+## 2026-07-11 - [Optimize directory traversal paths]
+**Learning:** Hardcoding multi-level parent directory traversals like `../..` can cause scripts to fail when executed from unexpected deep directories during testing or CI runs.
+**Action:** Use single-level references or bounded path expansions when looking for root repository directories to prevent directory traversal failures in dynamic environments.
