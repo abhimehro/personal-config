@@ -302,3 +302,7 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## $(date +%Y-%m-%d) - Semantic Lists for Grouped Data
 **Learning:** When displaying grouped key-value data (like system specs) in bash-generated HTML reports, using generic `<div>` elements causes screen readers to read them as disconnected text nodes. This creates a fragmented audio experience.
 **Action:** Convert sequential `<div>` data blocks into semantic `<ul>` and `<li>` lists to provide screen readers with grouping context and item counts.
+
+## 2026-03-10 - Semantic Lists for Grouped Data
+**Learning:** When generating HTML directory or file listings, using consecutive `<a>` tags causes them to be read as disconnected links by screen readers, lacking grouping context.
+**Action:** Wrap sequential file links in semantic `<ul>` and `<li>` tags (removing default list styling via CSS) and enclose them in a `<nav>` element to provide proper item count announcements and structural context.

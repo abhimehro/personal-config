@@ -16,6 +16,7 @@ CONTROLD_REPO="$(pwd)"
 
 LIB_FILE="$(mktemp)"
 cp controld-system/scripts/controld-manager "$LIB_FILE"
+echo "CONTROLD_REPO="$(pwd)"" > "$CONTROLD_DIR/controld.env"
 
 mkdir -p "$CONTROLD_DIR/profiles" "$CONTROLD_DIR/backup"
 
