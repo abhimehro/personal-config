@@ -587,3 +587,6 @@ invocation.
 ## 2026-07-11 - [Avoid redundant datetime.now() calls in iteration blocks]
 **Learning:** Calling `datetime.now(timezone.utc)` repeatedly inside a function that is executed iteratively over large collections adds measurable overhead.
 **Action:** Hoist the baseline execution time to a global or module-level constant (e.g., `_NOW = datetime.now(timezone.utc)`) to avoid recomputing it on every function call.
+## 2026-07-11 - [Avoid redundant datetime.now() calls in iteration blocks without module state]
+**Learning:** Calling `datetime.now(timezone.utc)` repeatedly inside a function that is executed iteratively over large collections adds measurable overhead. However, hoisting dynamic time evaluations to module-level constants pins the evaluated time to when the module is imported, creating a dangerous stale state in long-running processes.
+**Action:** Compute the time once at the entry point (e.g., in `main()`) and pass it down through function arguments (e.g., `now=None`) to avoid redundant recomputation while preventing unsafe module-level state.
