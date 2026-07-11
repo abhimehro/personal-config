@@ -11,12 +11,9 @@ CONTROLD_DIR="$(mktemp -d)"
 export LOG_FILE
 LOG_FILE="$(mktemp)"
 
-export CONTROLD_REPO
-CONTROLD_REPO="$(pwd)"
-
 LIB_FILE="$(mktemp)"
 cp controld-system/scripts/controld-manager "$LIB_FILE"
-echo "CONTROLD_REPO="$(pwd)"" > "$CONTROLD_DIR/controld.env"
+echo "CONTROLD_REPO=$(pwd)" > "$CONTROLD_DIR/controld.env"
 
 mkdir -p "$CONTROLD_DIR/profiles" "$CONTROLD_DIR/backup"
 

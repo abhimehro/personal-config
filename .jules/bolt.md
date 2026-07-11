@@ -584,6 +584,16 @@ invocation.
 ## 2026-03-10 - Short-Circuit Expensive Datetime Parsing
 **Learning:** Eager evaluation of `datetime.fromisoformat()` and timezone manipulations inside frequently called functions (like PR categorization loops) creates a massive performance bottleneck due to unnecessary object allocation and parsing overhead.
 **Action:** Always short-circuit expensive datetime operations by placing them behind faster boolean checks (like simple string matching) so they only execute when absolutely required.
+## 2026-07-11 - [Avoid redundant datetime.now() calls in iteration blocks]
+**Learning:** Calling `datetime.now(timezone.utc)` repeatedly inside a function that is executed iteratively over large collections adds measurable overhead.
+**Action:** Hoist the baseline execution time to a global or module-level constant (e.g., `_NOW = datetime.now(timezone.utc)`) to avoid recomputing it on every function call.
+## 2026-07-11 - [Avoid redundant datetime.now() calls in iteration blocks without module state]
+**Learning:** Calling `datetime.now(timezone.utc)` repeatedly inside a function that is executed iteratively over large collections adds measurable overhead. However, hoisting dynamic time evaluations to module-level constants pins the evaluated time to when the module is imported, creating a dangerous stale state in long-running processes.
+**Action:** Compute the time once at the entry point (e.g., in `main()`) and pass it down through function arguments (e.g., `now=None`) to avoid redundant recomputation while preventing unsafe module-level state.
+
+## 2026-07-11 - [Optimize directory traversal paths]
+**Learning:** Hardcoding multi-level parent directory traversals like `../..` can cause scripts to fail when executed from unexpected deep directories during testing or CI runs.
+**Action:** Use single-level references or bounded path expansions when looking for root repository directories to prevent directory traversal failures in dynamic environments.
 
 ## 2026-07-10 - Eliminate ThreadPoolExecutor batching latency
 **Learning:** `concurrent.futures.ThreadPoolExecutor` defaults to `min(32, os.cpu_count() + 4)` workers. For I/O-bound tasks like shelling out multiple concurrent processes, this low default artificial limits concurrency and adds batching latency (e.g. if you have 40 shell commands to run, it takes multiple batches).
