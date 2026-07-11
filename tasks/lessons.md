@@ -1,5 +1,33 @@
 # Lessons Learned
 
+## Lesson: CONTROLD_REPO harness cascade blocks parallel Bolt/salvage PRs (2026-07-11)
+
+**Pattern:** Merging #1576 added `CONTROLD_REPO` setup to
+`tests/test_controld_validation.sh`. Salvage branches (#1570, #1571, #1581)
+opened before that merge failed `Run All Tests` with
+`controld-manager cannot find scripts/lib`. #1581 additionally failed
+`make lint-errors` (SC2155) when branches used `export CONTROLD_REPO="$(pwd)"`
+on one line.
+
+**Rule:** (1) Land shared test-harness fixes on `main` before merging
+overlapping Palette/Bolt/salvage PRs. (2) Use split declare/assign:
+`CONTROLD_REPO="$(pwd)"` then `export CONTROLD_REPO` — never
+`export VAR="$(cmd)"` under the SC2155 gate. (3) After harness merges, autofix
+remaining branches with `git merge origin/main` + harness conflict resolution
+before deferring. (4) Close duplicate harness PRs (#1574 draft) instead of
+merging both variants.
+
+## Lesson 0dt: Same-day cs-agent unblock between Phase 1 and salvage (2026-07-11)
+
+**Pattern:** Phase 1 at 13:00 UTC deferred sc#214 for CodeScene FAIL and posted
+`/cs-agent skill:fix-code-health-degradations`. By the 17:00 UTC salvage run,
+cs-agent had completed (quality gate ✅, Bumpy Road finding resolved) and all
+PR checks were green — but Phase 1's deferred tail still listed the PR as
+blocked. **Rule:** Salvage Step 1 must always re-fetch live check state; when
+cs-agent completes between phases, disposition is AUTO-RESOLVED (no new salvage
+branch) and the PR should be flagged merge-eligible for the next Phase 1 cycle.
+**Detection cost:** Low — read latest cs-agent status comment + `statusCheckRollup`.
+
 ## Lesson 0ds: Dual ctrld + CD thrash felt "broken" while Local Config already worked (2026-07-09 ~18:20)
 
 **Pattern:** User log showed `[OK] dig … FALLBACK=1` with real profile

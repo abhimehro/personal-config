@@ -4,6 +4,42 @@
 > writer: salvage automation only. Do not edit review entries here; review
 > writes to `tasks/review-session-reports.md`.
 
+## Run — 2026-07-11
+
+### Input tail
+
+- Source report/snapshot: `tasks/pr-review-2026-07-11.md` Phase 1 remainder + live GitHub re-fetch
+- PRs investigated: 5 across 4 repos (0 DIRTY/conflicted at start)
+
+### Salvage results
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| series_correction_project_updated | #214 | AUTO-RESOLVED | — | cs-agent completed 13:07 UTC; all CI green; merge-eligible |
+
+### Counts
+
+- Deep-dived: 5
+- Auto-resolved in place: 1
+- Salvage draft PRs opened: 0
+- Infra-fix PRs opened: 0
+- Held escalated (security): 4 (pc#1578, cs#990, sc#210, rpce#112)
+- Conflicted PRs: 0
+- Post-session arrivals noted: 2 (pc#1583 draft, pc#1584 Palette)
+
+### Verification status
+
+- `gh api PUT .../pulls/214/update-branch` → 422 benign ("no new commits on base")
+- sc#214 `statusCheckRollup`: all SUCCESS (CodeScene, CodeQL, Snyk, GitGuardian)
+- Conflict scan: 0 `mergeable:conflicting` across all 7 repos
+
+### Handoff
+
+- Maintainer actions required: T1 security review on pc#1578, cs#990, sc#210, rpce#112
+- Phase 1 re-run: merge sc#214; triage pc#1584
+- Merge pc#1583 (draft session artifacts) after salvage docs land
+- Cross-links: [Session report](tasks/pr-review-2026-07-11.md) Phase 2 section
+
 ## Entry template
 
 ## Run — 2026-06-21
