@@ -4,7 +4,8 @@ set -euo pipefail
 # Test script for controld-manager protocol validation
 # Usage: ./tests/test_controld_validation.sh
 
-export CONTROLD_REPO="$(pwd)"
+export CONTROLD_REPO
+CONTROLD_REPO="$(pwd)"
 export CONTROLD_DIR
 CONTROLD_DIR="$(mktemp -d)"
 export LOG_FILE
