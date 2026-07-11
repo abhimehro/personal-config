@@ -548,6 +548,8 @@ def run_quality_assurance(config: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+# ⚡ Bolt Optimization: Cache parse_timestamp to significantly reduce datetime parsing overhead when calculating ages for repetitive timestamps
+@functools.lru_cache(maxsize=1024)
 def parse_timestamp(value: str) -> dt.datetime:
     return dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
 
