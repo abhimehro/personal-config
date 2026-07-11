@@ -4,6 +4,8 @@ set -euo pipefail
 # Test script for controld-manager protocol validation
 # Usage: ./tests/test_controld_validation.sh
 
+export CONTROLD_REPO
+CONTROLD_REPO="$(pwd)"
 export CONTROLD_DIR
 CONTROLD_DIR="$(mktemp -d)"
 export LOG_FILE
@@ -11,7 +13,7 @@ LOG_FILE="$(mktemp)"
 
 LIB_FILE="$(mktemp)"
 cp controld-system/scripts/controld-manager "$LIB_FILE"
-export CONTROLD_REPO="$(pwd)"
+echo "CONTROLD_REPO=$(pwd)" > "$CONTROLD_DIR/controld.env"
 
 mkdir -p "$CONTROLD_DIR/profiles" "$CONTROLD_DIR/backup"
 
