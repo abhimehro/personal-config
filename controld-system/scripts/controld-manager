@@ -22,7 +22,7 @@ _CTRLD_SCRIPTS_LIB=""
 _CTRLD_REPO_ROOT=""
 for _cand in \
 	"${CONTROLD_REPO-}" \
-	"$(cd "$_CTRLD_MGR_DIR/.." 2>/dev/null && pwd)" \
+	"$(cd "$_CTRLD_MGR_DIR/../.." 2>/dev/null && pwd)" \
 	"${HOME}/dev/personal-config"; do
 	if [[ -n ${_cand-} && -f $_cand/scripts/lib/controld-service.sh ]]; then
 		_CTRLD_REPO_ROOT="$_cand"

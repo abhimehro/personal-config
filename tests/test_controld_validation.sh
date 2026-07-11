@@ -11,6 +11,7 @@ LOG_FILE="$(mktemp)"
 
 LIB_FILE="$(mktemp)"
 cp controld-system/scripts/controld-manager "$LIB_FILE"
+export CONTROLD_REPO="$(pwd)"
 
 mkdir -p "$CONTROLD_DIR/profiles" "$CONTROLD_DIR/backup"
 
