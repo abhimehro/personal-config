@@ -1,5 +1,22 @@
 # Lessons Learned
 
+## Lesson: CONTROLD_REPO harness cascade blocks parallel Bolt/salvage PRs (2026-07-11)
+
+**Pattern:** Merging #1576 added `CONTROLD_REPO` setup to
+`tests/test_controld_validation.sh`. Salvage branches (#1570, #1571, #1581)
+opened before that merge failed `Run All Tests` with
+`controld-manager cannot find scripts/lib`. #1581 additionally failed
+`make lint-errors` (SC2155) when branches used `export CONTROLD_REPO="$(pwd)"`
+on one line.
+
+**Rule:** (1) Land shared test-harness fixes on `main` before merging
+overlapping Palette/Bolt/salvage PRs. (2) Use split declare/assign:
+`CONTROLD_REPO="$(pwd)"` then `export CONTROLD_REPO` — never
+`export VAR="$(cmd)"` under the SC2155 gate. (3) After harness merges, autofix
+remaining branches with `git merge origin/main` + harness conflict resolution
+before deferring. (4) Close duplicate harness PRs (#1574 draft) instead of
+merging both variants.
+
 ## Lesson 0ds: Dual ctrld + CD thrash felt "broken" while Local Config already worked (2026-07-09 ~18:20)
 
 **Pattern:** User log showed `[OK] dig … FALLBACK=1` with real profile
