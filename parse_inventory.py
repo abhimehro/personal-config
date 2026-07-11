@@ -145,11 +145,12 @@ def parse_inventory_lines(lines):
     return repos
 
 
-def _is_pr_stale(updated_at):
+def _is_pr_stale(updated_at, now=None):
     if not updated_at:
         return False
     dt = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
-    now = datetime.now(timezone.utc)
+    if now is None:
+        now = datetime.now(timezone.utc)
     return (now - dt).days > 30
 
 
@@ -163,7 +164,7 @@ def _is_checks_failing(checks):
     return checks.strip(" *_") == "U"
 
 
-def _get_pr_category(info, checks):
+def _get_pr_category(info, checks, now=None):
     if not info.get("files", []):
         return "SUPERSEDED"
 
@@ -171,7 +172,7 @@ def _get_pr_category(info, checks):
     # ⚡ Bolt Optimization: Delay expensive datetime parsing by short-circuiting behind checks_failing
     checks_failing = _is_checks_failing(checks)
 
-    if checks_failing and _is_pr_stale(info.get("updatedAt", "")):
+    if checks_failing and _is_pr_stale(info.get("updatedAt", ""), now):
         return "STALE"
 
     if merge_status in ["DIRTY", "CONFLICTING"]:
@@ -184,7 +185,7 @@ def _get_pr_category(info, checks):
 
 
 def _categorize_pr_task(args):
-    repo, pr_info = args
+    repo, pr_info, now = args
     pr = pr_info["pr"]
     checks = pr_info["checks"]
     print(f"Checking {repo}#{pr}")
@@ -194,7 +195,7 @@ def _categorize_pr_task(args):
         print(f"Failed to fetch {repo}#{pr}")
         return None
 
-    category = _get_pr_category(info, checks)
+    category = _get_pr_category(info, checks, now)
     if category:
         return category, f"{repo}#{pr}"
     return None
@@ -226,7 +227,9 @@ def main():
     triage = {"SUPERSEDED": [], "STALE": [], "CONFLICTING": [], "READY": []}
 
     # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls using map() to significantly speed up categorization
-    tasks = [(repo, pr_info) for repo, prs in repos.items() for pr_info in prs]
+    # Also pass a pre-computed UTC 'now' object to avoid allocating the time on every task.
+    now = datetime.now(timezone.utc)
+    tasks = [(repo, pr_info, now) for repo, prs in repos.items() for pr_info in prs]
 
     with ThreadPoolExecutor(max_workers=10) as executor:
         for result in executor.map(_categorize_pr_task, tasks):

@@ -584,3 +584,6 @@ invocation.
 ## 2026-03-10 - Short-Circuit Expensive Datetime Parsing
 **Learning:** Eager evaluation of `datetime.fromisoformat()` and timezone manipulations inside frequently called functions (like PR categorization loops) creates a massive performance bottleneck due to unnecessary object allocation and parsing overhead.
 **Action:** Always short-circuit expensive datetime operations by placing them behind faster boolean checks (like simple string matching) so they only execute when absolutely required.
+## 2026-07-11 - [Avoid redundant datetime.now() calls in iteration blocks]
+**Learning:** Calling `datetime.now(timezone.utc)` repeatedly inside a function that is executed iteratively over large collections adds measurable overhead.
+**Action:** Hoist the baseline execution time to a global or module-level constant (e.g., `_NOW = datetime.now(timezone.utc)`) to avoid recomputing it on every function call.
