@@ -113,7 +113,13 @@ if [[ -L /etc/controld/ctrld.toml ]]; then
 fi
 
 # Quarantine user-level static free-DNS config that bypasses profile IDs.
-USER_HOME="${SUDO_USER:+$(eval echo "~$SUDO_USER")}"
+# SECURITY: avoid eval command injection.
+if [[ -n "${SUDO_USER:-}" ]]; then
+	USER_HOME=$(dscl . -read "/Users/$SUDO_USER" NFSHomeDirectory 2>/dev/null | awk '{print $2}' | head -1 || true)
+	if [[ -z "$USER_HOME" ]]; then
+		USER_HOME=$(id -P "$SUDO_USER" 2>/dev/null | cut -d: -f9 || true)
+	fi
+fi
 USER_HOME="${USER_HOME:-$HOME}"
 STATIC_USER_TOML="$USER_HOME/.config/controld/ctrld.toml"
 if [[ -f $STATIC_USER_TOML ]]; then

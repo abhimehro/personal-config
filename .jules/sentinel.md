@@ -641,3 +641,8 @@ treated strictly as patterns and not parsed as command-line options.
 **Vulnerability:** Option Injection (CWE-88 variant). Found that some scripts using `pkill` for process management did not include the `--` delimiter before the process name argument when other flags were present. For instance, `pkill -f "ctrld"` was changed to `pkill -f -- "ctrld"`. If an attacker controls the variable and starts it with a hyphen, `pkill` may interpret the variable as a command-line flag rather than a positional argument, leading to option injection or unintended execution.
 **Learning:** When invoking `pkill` with dynamic variables from bash, you must explicitly separate options from arguments using the `--` delimiter before positional arguments to prevent them from being parsed as flags.
 **Prevention:** Always use the `--` argument delimiter before positional arguments when using `pkill` with external variables (e.g., `pkill -f -- "ctrld"`).
+
+## 2026-07-15 - Command Injection Risk via eval in Home Directory Resolution
+**Vulnerability:** Found `USER_HOME="${SUDO_USER:+$(eval echo "~$SUDO_USER")}"` in `scripts/repair-controld-keepalive.sh`. This pattern evaluates `SUDO_USER`, allowing arbitrary command execution if an attacker controls `SUDO_USER`.
+**Learning:** Evaluating environment variables like `SUDO_USER` using `eval` for home directory resolution is an unsafe pattern that can lead to arbitrary code execution.
+**Prevention:** Use standard OS tools like `dscl` or `id -P` which do not execute strings directly to resolve paths.
