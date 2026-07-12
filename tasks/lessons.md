@@ -1,5 +1,15 @@
 # Lessons Learned
 
+## Lesson 0dt: Palette aria-labelledby duplicates — merge superset, close subset (2026-07-12)
+
+**Pattern:** Two automation PRs (#1584, #1588) touched the same
+`analytics_dashboard.sh` + `.jules/palette.md` files with identical metric-card
+fixes; the newer PR also cleaned `$(date …)` placeholders in the journal.
+
+**Rule:** When file overlap exceeds 90% and intent is the same, compare diffs.
+Merge the superset PR; close the subset with an explicit cross-link. Do not merge
+both — post-merge conflict cascade is likely on `palette.md`.
+
 ## Lesson 0ds: Dual ctrld + CD thrash felt "broken" while Local Config already worked (2026-07-09 ~18:20)
 
 **Pattern:** User log showed `[OK] dig … FALLBACK=1` with real profile

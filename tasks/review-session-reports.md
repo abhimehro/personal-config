@@ -4,6 +4,35 @@
 > automation only. Do not edit salvage entries here; salvage writes to
 > `tasks/salvage-session-reports.md`.
 
+## Run — 2026-07-12
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron `0 13 * * *`; preflight PASS (6/6); branch
+  `cursor-agent/automated-pr-workflow-e06b`
+
+### Metrics
+
+- PRs inventoried: 22
+- PRs merged: 10
+- PRs closed: 5
+- PRs escalated/deferred: 5
+
+### Actions
+
+- Merged: pc #1578/#1588/#1591; esp #1253; Seatek #446; hg #343/#345; sc #214/#216; rpce #119
+- Closed: pc #1583/#1584/#1585/#1587; esp #1255 (zero-diff / superseded / duplicate)
+- Deferred/escalated: cs #990; sc #210/#217; hg #344; rpce #112
+
+### Follow-ups
+
+- Phase 2 salvage for sc #217 (merge conflict) and hg #344 (CodeScene)
+- Human security review: cs #990, sc #210, rpce #112
+- Snapshot: `tasks/pr-review-2026-07-12.md`
+
 ## Entry template
 
 ## Run — YYYY-MM-DD
