@@ -270,7 +270,7 @@ regex `^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$`,
 applies an `aria-label` to the heading tag containing just the text, and wraps
 the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 
-## $(date "+%Y-%m-%d") - WCAG AA Contrast for Dashboard Metric Cards
+## 2026-07-11 - WCAG AA Contrast for Dashboard Metric Cards
 **Learning:** Light background gradients (like light blue to cyan or pink to red) paired with white text often fail to meet the WCAG AA minimum contrast ratio (4.5:1), making them difficult to read for many users. The visual appeal of gradients does not outweigh the necessity of readability.
 **Action:** Replace low-contrast background gradients on metric cards or similar UI elements with solid, dark colors (e.g., dark purple, dark green, dark orange, dark red) to ensure sufficient contrast with white text.
 
@@ -293,7 +293,7 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## 2024-07-07 - ARIA Landmarks for Dashboard Sections
 **Learning:** Screen reader users benefit significantly when discrete content areas are marked as landmarks. Using `<section role="region" aria-labelledby="heading-id">` provides clear navigational targets and announces the section's name contextually.
 **Action:** When adding HTML `<section>` elements in scripts, ensure they include `role="region"` and are labelled by their associated heading using `aria-labelledby` and `id`.
-## $(date "+%Y-%m-%d") - ARIA landmarks on semantic HTML elements
+## 2026-07-11 - ARIA landmarks on semantic HTML elements
 **Learning:** While named `<section>` elements with an `aria-labelledby` attribute implicitly have the `region` role in modern browsers according to W3C HTML5/ARIA specifications, explicitly defining `role="region"` is a valid, harmless practice that can improve compatibility with older screen readers. However, it's technically redundant in modern contexts and should be weighed against reducing HTML bloat.
 **Action:** When adding semantic HTML elements like `<section>`, prioritize `aria-labelledby` for clear naming. Only add explicit `role="region"` if compatibility with older assistive technologies is a stated requirement for the project.
 ## $(date +%Y-%m-%d) - Semantic Lists for Grouped Data
@@ -306,3 +306,7 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## 2026-03-10 - Semantic Lists for Grouped Data
 **Learning:** When generating HTML directory or file listings, using consecutive `<a>` tags causes them to be read as disconnected links by screen readers, lacking grouping context.
 **Action:** Wrap sequential file links in semantic `<ul>` and `<li>` tags (removing default list styling via CSS) and enclose them in a `<nav>` element to provide proper item count announcements and structural context.
+
+## 2026-07-11 - aria-labelledby on composite UI elements
+**Learning:** When using `aria-labelledby` on a composite UI element (such as a metric card) that contains both a textual label and a dynamically generated value, the attribute must reference the IDs of both the label and the value (e.g., `aria-labelledby="label-id value-id"`). Referencing only the label causes screen readers to skip announcing the actual value, breaking accessibility.
+**Action:** Always verify that `aria-labelledby` attributes point to all relevant text and value IDs within composite components so that screen readers announce the full context.
