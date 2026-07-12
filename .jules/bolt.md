@@ -598,3 +598,7 @@ invocation.
 ## 2026-07-10 - Eliminate ThreadPoolExecutor batching latency
 **Learning:** `concurrent.futures.ThreadPoolExecutor` defaults to `min(32, os.cpu_count() + 4)` workers. For I/O-bound tasks like shelling out multiple concurrent processes, this low default artificial limits concurrency and adds batching latency (e.g. if you have 40 shell commands to run, it takes multiple batches).
 **Action:** Always explicitly set `max_workers` on `ThreadPoolExecutor` for pure I/O or shell dispatch tasks to exactly match the number of jobs (or a high ceiling like 100) to ensure immediate dispatch without batching latency.
+
+## 2024-07-12 - Eliminate repetitive datetime evaluations inside mapping loops
+**Learning:** Calling `now_utc()` repeatedly inside a mapping loop or list comprehension (such as during PR triage categorization) creates an accumulated bottleneck due to repetitive object allocation and time generation.
+**Action:** Replace `now_utc()` calls inside list comprehensions and iterative generators with a hoisted variable evaluation before the loop (e.g. `_now = now_utc()`) and pass `_now` as an argument to downstream filters to prevent redundant datetime allocations.
