@@ -569,8 +569,9 @@ def html_ul(items: Iterable[str]) -> str:
     return f"<ul>{''.join(items)}</ul>"
 
 
-def _render_heading(level: int, title: str) -> str:
+def _render_heading(level: int, title: str, id_attr: str = "") -> str:
     safe_title = sanitize_text(title)
+    id_str = f' id="{id_attr}"' if id_attr else ""
 
     # Safely target emojis specifically by checking unicode ranges where emojis reside
     # rather than all non-ASCII characters. This includes Emoticons, Misc Symbols,
@@ -583,18 +584,24 @@ def _render_heading(level: int, title: str) -> str:
         icon = match.group(1)
         clean_title = match.group(2)
         return (
-            f'<h{level}><span aria-hidden="true">{icon}</span> {clean_title}</h{level}>'
+            f'<h{level}{id_str}><span aria-hidden="true">{icon}</span> {clean_title}</h{level}>'
         )
 
-    return f"<h{level}>{safe_title}</h{level}>"
+    return f"<h{level}{id_str}>{safe_title}</h{level}>"
 
 
 def html_section(title: str, body: str) -> str:
-    return f"{_render_heading(3, title)}{body}"
+    section_id = re.sub(r'[^a-z0-9]+', '-', sanitize_text(title).lower()).strip('-')
+    if not section_id:
+        section_id = "section"
+    return f'<section role="region" aria-labelledby="{section_id}">\n{_render_heading(3, title, section_id)}\n{body}\n</section>'
 
 
 def html_subsection(title: str, body: str) -> str:
-    return f"{_render_heading(4, title)}{body}"
+    section_id = re.sub(r'[^a-z0-9]+', '-', sanitize_text(title).lower()).strip('-')
+    if not section_id:
+        section_id = "subsection"
+    return f'<section role="region" aria-labelledby="{section_id}">\n{_render_heading(4, title, section_id)}\n{body}\n</section>'
 
 
 # ============================================================

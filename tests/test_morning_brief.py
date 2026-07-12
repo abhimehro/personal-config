@@ -165,25 +165,28 @@ class TestHtmlHelpers(unittest.TestCase):
 
     def test_html_section(self):
         result = mb.html_section("Title", "<p>body</p>")
-        assert "<h3>Title</h3>" in result
+        assert '<section role="region" aria-labelledby="title">' in result
+        assert '<h3 id="title">Title</h3>' in result
         assert "<p>body</p>" in result
 
     def test_html_section_escapes_title(self):
         result = mb.html_section("<script>", "<p>safe</p>")
         assert "<script>" not in result
         assert "&lt;script&gt;" in result
+        assert '<section role="region" aria-labelledby="lt-script-gt">' in result
 
     def test_html_section_with_emoji(self):
         result = mb.html_section("🌅 Good Morning", "<p>body</p>")
-        assert "aria-label" not in result
+        assert "aria-label=" not in result
         assert '<span aria-hidden="true">🌅</span>' in result
+        assert 'id="good-morning"' in result
         assert "Good Morning</h3>" in result
 
     def test_html_section_non_ascii_text(self):
         result = mb.html_section("Café Menu", "<p>body</p>")
-        assert "aria-label" not in result
+        assert "aria-label=" not in result
         assert '<span aria-hidden="true">' not in result
-        assert "<h3>Café Menu</h3>" in result
+        assert '<h3 id="caf-menu">Café Menu</h3>' in result
 
 
 # ============================================================
