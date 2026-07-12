@@ -1,3 +1,65 @@
+# PR Triage — 2026-07-12 (evening salvage)
+
+**Session:** Automated PR salvage & cleanup (cron 17:00 UTC)  
+**Mode:** salvage-and-recovery  
+**Preflight:** PASS 6/6
+
+## Decision matrix
+
+| Decision | Count | PRs |
+|----------|------:|-----|
+| SALVAGE | 1 | sc #217 → [#218](https://github.com/abhimehro/series_correction_project_updated/pull/218) |
+| CLOSE | 2 | sc #217 (superseded); rpce #120 (dup of #112) |
+| ESCALATE | 3 | pc #1593; cs #990; rpce #112 |
+| DEFER | 1 | hg #344 (CodeScene) |
+| READY | 1 | sc #210 (prior salvage, CI green) |
+
+## Security gates
+
+| PR | Gate | Rationale |
+|----|------|-----------|
+| pc #1593 | **ESCALATE T1** | Sentinel CWE-78 command injection in repair script; all CI green |
+| cs #990 | **ESCALATE T1** | SSRF domain allowlist; benchmark still failing |
+| rpce #112 | **ESCALATE T1** | Ephemeral URLSession for AI providers; all CI green |
+| sc #210 | **READY** | CLI exception sanitization salvage; all CI green |
+| sc #218 | **DRAFT** | Routine Bolt perf salvage; no security surface |
+
+## Notable resolutions
+
+### sc #217 conflict salvage
+
+Sibling #216 merged on `main` causing DIRTY state on #217. Applied read_csv C-engine changes onto fresh branch from `main`; `python3 -m pytest scripts/tests/ -q` — 58 passed. Original closed as superseded by #218.
+
+### rpce #120 duplicate closure
+
+#120 and #112 have identical URLSession ephemeral changes. #112 is older, includes XCTSkip guard for flaky cloud test, and was already queued for T1 review. Closed #120 as superseded.
+
+## Deferred follow-ups
+
+```yaml
+open_followups:
+  - repo: abhimehro/personal-config
+    pr: 1593
+    reason: ESCALATE — Sentinel CWE-78; human security review
+  - repo: abhimehro/ctrld-sync
+    pr: 990
+    reason: ESCALATE — SSRF allowlist + benchmark fail
+  - repo: abhimehro/repoprompt-ce
+    pr: 112
+    reason: ESCALATE — URLSession ephemeral hardening
+  - repo: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+    pr: 344
+    reason: DEFER — CodeScene red; cs-agent posted
+  - repo: abhimehro/series_correction_project_updated
+    pr: 210
+    reason: READY — prior salvage draft
+  - repo: abhimehro/series_correction_project_updated
+    pr: 218
+    reason: SALVAGE DRAFT — read_csv C engine
+```
+
+---
+
 # PR Triage — 2026-07-08
 
 **Session:** Automated PR review & cleanup (cron 13:00 UTC)  

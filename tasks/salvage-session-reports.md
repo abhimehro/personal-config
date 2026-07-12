@@ -4,6 +4,41 @@
 > writer: salvage automation only. Do not edit review entries here; review
 > writes to `tasks/review-session-reports.md`.
 
+## Run — 2026-07-12 (evening salvage)
+
+### Input tail
+
+- Source report/snapshot: Phase 1 draft [#1592](https://github.com/abhimehro/personal-config/pull/1592) + live GitHub re-fetch
+- PRs investigated: 9 across 5 repos (1 CONFLICTING, 1 duplicate Sentinel, 3 T1 escalations)
+
+### Salvage results
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| series_correction_project_updated | #217 | SALVAGE draft | [#218](https://github.com/abhimehro/series_correction_project_updated/pull/218) | read_csv C engine; conflict after #216 merge |
+| repoprompt-ce | #120 | CLOSE superseded | — | Duplicate of #112 URLSession ephemeral |
+
+### Counts
+
+- Deep-dived: 9
+- Salvaged: 1
+- Infra-fix PRs: 0
+- Closed superseded: 2
+- Escalated unchanged: 3
+- Deferred unchanged: 1
+- Net new draft PRs awaiting human review: 1
+- Autonomous merges: 0
+
+### Verification status
+
+- Local verify: `python3 -m pytest scripts/tests/ -q` — 58 passed (sc#218)
+- CodeScene remediation: `/cs-agent` posted on hg#344
+
+### Handoff
+
+- Maintainer actions required: T1 review pc#1593, cs#990, rpce#112; merge sc#210 + review sc#218 draft; await cs-agent on hg#344
+- Cross-links: [Session report](tasks/pr-review-2026-07-12.md)
+
 ## Entry template
 
 ## Run — 2026-06-21

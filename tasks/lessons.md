@@ -1,5 +1,19 @@
 # Lessons Learned
 
+## Lesson 0du: Duplicate Sentinel URLSession PRs — close newer, keep canonical (2026-07-12)
+
+**Pattern:** rpce #120 and #112 both changed `URLSessionConfiguration.default` →
+`.ephemeral` across the same four Swift files. #112 is older, has identical code
+diff, includes an XCTSkip guard for a flaky cloud test, and was already queued
+for T1 review.
+
+**Rule:** When two Sentinel PRs have >90% file overlap and identical security
+intent, keep the older canonical PR (or the one with additional test guards).
+Close the duplicate with an explicit supersede link. Do not open a third salvage
+draft.
+
+**Detection cost:** Low — compare `gh pr diff` headers for matching file lists.
+
 ## Lesson 0ds: Dual ctrld + CD thrash felt "broken" while Local Config already worked (2026-07-09 ~18:20)
 
 **Pattern:** User log showed `[OK] dig … FALLBACK=1` with real profile

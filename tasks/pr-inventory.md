@@ -1,3 +1,51 @@
+# PR Inventory — 2026-07-12 (evening salvage)
+
+**Session:** Automated PR salvage & cleanup (cron 17:00 UTC)  
+**Branch:** `cursor-agent/pr-salvage-and-cleanup-84ba`  
+**Preflight:** PASS 6/6 configured repos (+ repoprompt-ce scanned)  
+**Mode:** salvage-and-recovery  
+**Input:** Phase 1 draft [#1592](https://github.com/abhimehro/personal-config/pull/1592) + live re-fetch
+
+## Summary
+
+| Repo | Open at start | Salvaged | Closed | Escalated | Deferred | Remainder |
+|------|---------------|----------|--------|-----------|----------|-----------|
+| personal-config | 2 | 0 | 0 | 1 | 0 | **1** |
+| ctrld-sync | 1 | 0 | 0 | 1 | 0 | **1** |
+| email-security-pipeline | 0 | 0 | 0 | 0 | 0 | **0** |
+| Seatek_Analysis | 0 | 0 | 0 | 0 | 0 | **0** |
+| Hydrograph_Versus_Seatek_Sensors_Project | 1 | 0 | 0 | 0 | 1 | **1** |
+| series_correction_project_updated | 2 | 1 | 1 | 0 | 0 | **2** |
+| repoprompt-ce | 2 | 0 | 1 | 1 | 0 | **1** |
+| **Total** | **9** | **1** | **2** | **3** | **1** | **6** |
+
+## Salvage queue at start (9 open)
+
+| Repo | PR | Author | Category | CI | Conflicts | Salvage disposition |
+|------|-----|--------|----------|-----|-----------|---------------------|
+| personal-config | [#1593](https://github.com/abhimehro/personal-config/pull/1593) | abhimehro (Sentinel) | SECURITY | CLEAN | MERGEABLE | ESCALATE |
+| personal-config | [#1592](https://github.com/abhimehro/personal-config/pull/1592) | app/cursor | SESSION-DOC | CLEAN | MERGEABLE | OPEN (draft) |
+| ctrld-sync | [#990](https://github.com/abhimehro/ctrld-sync/pull/990) | abhimehro | SECURITY/SSRF | FAIL (benchmark) | MERGEABLE | ESCALATE |
+| Hydrograph_Versus_Seatek_Sensors_Project | [#344](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/344) | abhimehro (Bolt) | PERF | FAIL (CodeScene) | MERGEABLE | DEFER |
+| series_correction_project_updated | [#217](https://github.com/abhimehro/series_correction_project_updated/pull/217) | google-labs-jules[bot] | PERF | CLEAN | **CONFLICTING** | SALVAGED → [#218](https://github.com/abhimehro/series_correction_project_updated/pull/218) |
+| series_correction_project_updated | [#210](https://github.com/abhimehro/series_correction_project_updated/pull/210) | abhimehro (cursor-agent) | SECURITY | CLEAN | MERGEABLE | READY |
+| repoprompt-ce | [#120](https://github.com/abhimehro/repoprompt-ce/pull/120) | abhimehro (Sentinel) | SECURITY | CLEAN | MERGEABLE | CLOSED (dup of #112) |
+| repoprompt-ce | [#112](https://github.com/abhimehro/repoprompt-ce/pull/112) | abhimehro (Sentinel) | SECURITY | CLEAN | MERGEABLE | ESCALATE |
+
+## Post-salvage remainder (6 actionable + 1 session doc)
+
+| Repo | PR | Reason |
+|------|-----|--------|
+| personal-config | [#1593](https://github.com/abhimehro/personal-config/pull/1593) | ESCALATE — Sentinel CWE-78 |
+| personal-config | [#1592](https://github.com/abhimehro/personal-config/pull/1592) | Draft Phase 1 session doc |
+| ctrld-sync | [#990](https://github.com/abhimehro/ctrld-sync/pull/990) | ESCALATE — SSRF + benchmark |
+| Hydrograph_Versus_Seatek_Sensors_Project | [#344](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/344) | DEFER — CodeScene |
+| series_correction_project_updated | [#210](https://github.com/abhimehro/series_correction_project_updated/pull/210) | READY — prior salvage |
+| series_correction_project_updated | [#218](https://github.com/abhimehro/series_correction_project_updated/pull/218) | SALVAGE DRAFT — read_csv C engine |
+| repoprompt-ce | [#112](https://github.com/abhimehro/repoprompt-ce/pull/112) | ESCALATE — URLSession hardening |
+
+---
+
 # PR Inventory — 2026-07-08
 
 **Session:** Automated PR review & cleanup (cron 13:00 UTC)  
