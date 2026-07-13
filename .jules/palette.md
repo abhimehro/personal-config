@@ -310,3 +310,7 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## 2026-07-11 - aria-labelledby on composite UI elements
 **Learning:** When using `aria-labelledby` on a composite UI element (such as a metric card) that contains both a textual label and a dynamically generated value, the attribute must reference the IDs of both the label and the value (e.g., `aria-labelledby="label-id value-id"`). Referencing only the label causes screen readers to skip announcing the actual value, breaking accessibility.
 **Action:** Always verify that `aria-labelledby` attributes point to all relevant text and value IDs within composite components so that screen readers announce the full context.
+
+## $(date +%Y-%m-%d) - HTML List Role Overrides
+**Learning:** Applying `role="group"` to `<li>` elements within a `<ul>` list is a common mistake when trying to associate ARIA labels with the entire list item. Doing so overrides the implicit `listitem` role, creating an invalid semantic structure for the parent `<ul>` and breaking standard list navigation for screen readers.
+**Action:** Do not use `role="group"` on `<li>` tags. Allow them to use their implicit `listitem` role to maintain proper list semantics.
