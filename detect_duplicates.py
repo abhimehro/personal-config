@@ -60,9 +60,9 @@ def _build_graphql_query(chunk):
     query_parts = []
     for j, pr in enumerate(chunk):
         repo, _, pr_id = pr.partition("#")
-        try:
-            owner, name = repo.split("/")
-        except ValueError:
+        # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
+        owner, _, name = repo.partition("/")
+        if not name:
             continue
         query_parts.append(f"""
         pr{j}: repository(owner: "{owner}", name: "{name}") {{
@@ -102,12 +102,16 @@ def _extract_pr_data(repo, pr_result):
 def _process_graphql_response(result, chunk, file_groups):
     if not result:
         return
-    data = result.get("data", {})
+    # ⚡ Bolt Optimization: Avoid eager empty dictionary allocation
+    data = result.get("data")
     if not data:
         return
     for j, pr in enumerate(chunk):
         repo, _, _ = pr.partition("#")
-        pr_result = data.get(f"pr{j}", {})
+        # ⚡ Bolt Optimization: Avoid eager empty dictionary allocation
+        pr_result = data.get(f"pr{j}")
+        if not pr_result:
+            continue
 
         res = _extract_pr_data(repo, pr_result)
         if res:
