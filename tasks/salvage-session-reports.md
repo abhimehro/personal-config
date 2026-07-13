@@ -185,6 +185,42 @@
   4. Salvage or close esp #1179 after cs-agent cycle
 - Cross-links: [Session report](tasks/pr-review-2026-06-30.md)
 
+## Run — 2026-07-13 (evening salvage)
+
+### Input tail
+
+- Source report/snapshot: `tasks/pr-review-2026-07-13.md` Phase 1 remainder + live GitHub re-fetch
+- PRs investigated: 7 (5 Phase 1 tail + 2 new since Phase 1)
+
+### Salvage results
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| repoprompt-ce | #123 | CLOSE-SUPERSEDED | — | Duplicate of canonical #112 (has tests, CI green) |
+| personal-config | #1601 | CLOSE-SUPERSEDED | — | Draft Phase 1 session doc |
+
+### Counts
+
+- Deep-dived: 7
+- Salvaged: 0
+- Infra-fix PRs: 0
+- Closed superseded/duplicate: 2
+- Autonomous merges: 0 (policy S1)
+- Net new draft PRs: 0
+
+### Verification status
+
+- Blocking checks: cs #990 benchmark FAIL (unchanged); hg #344 CodeScene FAIL (unchanged)
+- CodeScene remediation: `/cs-agent` already posted on hg #344; no new posts
+
+### Handoff
+
+- Maintainer actions required:
+  1. **T1 human review:** pc #1593 (Sentinel CWE-78), cs #990 (SSRF), sc #210 (CLI sanitization), rpce #112 (URLSession)
+  2. **DEFER:** hg #344 — await cs-agent remediation
+  3. **Phase 1 merge:** pc #1602 when Analyze swift completes
+- Cross-links: [Session report](tasks/pr-review-2026-07-13.md)
+
 ## Run — YYYY-MM-DD
 
 ### Input tail
