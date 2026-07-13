@@ -310,3 +310,6 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## 2026-07-11 - aria-labelledby on composite UI elements
 **Learning:** When using `aria-labelledby` on a composite UI element (such as a metric card) that contains both a textual label and a dynamically generated value, the attribute must reference the IDs of both the label and the value (e.g., `aria-labelledby="label-id value-id"`). Referencing only the label causes screen readers to skip announcing the actual value, breaking accessibility.
 **Action:** Always verify that `aria-labelledby` attributes point to all relevant text and value IDs within composite components so that screen readers announce the full context.
+## 2026-03-31 - Graceful fallback for non-TTY animations
+**Learning:** Hardcoded ANSI color strings (`\x1b[31m`) in CLI tools degrade to unreadable noise in environments without a TTY or in screen readers. This makes CLI error messages and standard output inaccessible.
+**Action:** Always conditionally apply ANSI color formatting by checking if standard output (`process.stdout.isTTY`) or standard error (`process.stderr.isTTY`) supports it. Provide clean, uncolored string fallbacks for screen reader and CI environments.
