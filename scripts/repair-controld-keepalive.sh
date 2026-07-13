@@ -118,7 +118,7 @@ if [[ -n "${SUDO_USER:-}" ]]; then
 	if command -v dscl >/dev/null 2>&1; then
 		USER_HOME="$(dscl . -read /Users/"$SUDO_USER" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
 	elif command -v getent >/dev/null 2>&1; then
-		USER_HOME="$(getent passwd "$SUDO_USER" 2>/dev/null | cut -d: -f6)"
+		USER_HOME="$(getent passwd "$SUDO_USER" 2>/dev/null | cut -d: -f6)" # gitleaks:allow
 	fi
 fi
 USER_HOME="${USER_HOME:-$HOME}"
