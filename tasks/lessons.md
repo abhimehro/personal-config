@@ -1259,6 +1259,16 @@ scripts calling `gh api` or workflow files removing `secrets.*` lines.
 When testing parsing/formatting logic, always consider unexpected data types,
 out of bound values and common malformed shapes.
 
+## Lesson 0dt: Hydrograph Bolt min/max cluster — keep one canonical + cs-agent (2026-07-13)
+
+**Pattern:** Three open Bolt PRs (#344, #351, #352) all targeted numpy
+`nanmin`/`nanmax` in `validator.py` and `chart_generator.py`; #351/#352 were
+newer but all had CodeScene FAIL. **Rule:** Close semantic duplicates with
+FAILing CodeScene; keep the oldest branch with `/cs-agent` already posted (#344).
+Merge the newest only when CodeScene is green (as with sc #222 superseding
+#218). **Detection cost:** Low — same file paths + bolt title prefix across
+multiple open PRs.
+
 ## Lesson: Cursor agent shell blocked by 1Password Environments hook + SSH agent (2026-07-09)
 
 **Pattern:** Multi-repo workspace + 1Password Cursor plugin default mode denies

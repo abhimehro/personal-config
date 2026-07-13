@@ -66,3 +66,37 @@
   CodeScene still red
 - Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
   `tasks/pr-review-2026-06-12.md`
+
+## Run — 2026-07-13
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron `0 13 * * *`; preflight PASS (6/6); branch
+  `cursor-agent/automated-pr-workflow-bbeb`
+
+### Metrics
+
+- PRs inventoried: 18
+- PRs merged: 5
+- PRs closed: 8
+- PRs escalated/deferred: 5
+
+### Actions
+
+- Merged: personal-config #1600, #1598; ctrld-sync #1005, #1004;
+  series_correction_project_updated #222
+- Closed: personal-config #1597, #1594, #1592; Hydrograph #349, #351, #352;
+  series_correction #221, #218
+- Deferred/escalated: personal-config #1593 (ESCALATE); ctrld-sync #990
+  (ESCALATE); series_correction #210 (ESCALATE); repoprompt-ce #112 (ESCALATE);
+  Hydrograph #344 (DEFER CodeScene)
+
+### Follow-ups
+
+- Commands/comments to run next: human security review on 4 escalated PRs;
+  re-triage Hydrograph #344 after cs-agent remediation
+- Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
+  `tasks/pr-review-2026-07-13.md`
