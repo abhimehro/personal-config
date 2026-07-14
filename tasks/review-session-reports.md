@@ -66,3 +66,34 @@
   CodeScene still red
 - Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
   `tasks/pr-review-2026-06-12.md`
+
+## Run — 2026-07-14
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron `0 13 * * *`; preflight PASS (6/6); branch
+  `cursor-agent/automated-pr-workflow-8096`
+
+### Metrics
+
+- PRs inventoried: 19
+- PRs merged: 10
+- PRs closed: 9
+- PRs escalated/deferred: 3 escalated, 0 deferred
+
+### Actions
+
+- Merged: pc #1605, #1606, #1602; cs #1008, #1007, #1009; hg #355
+- Closed: pc #1604, #1603, #1593; esp #1258; Seatek #451; sc #223; cs #1006;
+  hg #344, #354
+- Escalated: cs #990; sc #210; rpce #112
+- Auto-fix: pc #1602 palette.md merge conflict after #1606
+
+### Follow-ups
+
+- Phase 2 salvage on escalated tail (#990, #210, #112)
+- `/cs-agent skill:fix-code-health-degradations` posted on cs #990
+- Cross-links: `tasks/pr-review-2026-07-14.md`
