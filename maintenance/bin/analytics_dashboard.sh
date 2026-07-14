@@ -409,7 +409,7 @@ generate_dashboard() {
         
         <main>
         <ul class="metrics-grid">
-            <li class="metric-card success" role="group" aria-labelledby="health-score-label health-score-value">
+            <li class="metric-card success" aria-labelledby="health-score-label health-score-value">
                 <div class="metric-value" id="health-score-value">${current_health}</div>
                 <div class="metric-label" id="health-score-label">Health Score</div>
             </li>
@@ -425,15 +425,15 @@ EOF
 		total_warnings=$(jq -r '.summary.total_warnings // 0' "$metrics_report")
 
 		cat >>"$dashboard_file" <<EOF
-            <li class="metric-card" role="group" aria-labelledby="performance-score-label performance-score-value">
+            <li class="metric-card" aria-labelledby="performance-score-label performance-score-value">
                 <div class="metric-value" id="performance-score-value">${avg_performance}</div>
                 <div class="metric-label" id="performance-score-label">Performance Score</div>
             </li>
-            <li class="metric-card $([ "${avg_disk:-0}" -gt 85 ] && echo "warning" || echo "success")" role="group" aria-labelledby="disk-usage-label disk-usage-value">
+            <li class="metric-card $([ "${avg_disk:-0}" -gt 85 ] && echo "warning" || echo "success")" aria-labelledby="disk-usage-label disk-usage-value">
                 <div class="metric-value" id="disk-usage-value">${avg_disk}%</div>
                 <div class="metric-label" id="disk-usage-label">Disk Usage</div>
             </li>
-            <li class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" role="group" aria-labelledby="total-warnings-label total-warnings-value">
+            <li class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" aria-labelledby="total-warnings-label total-warnings-value">
                 <div class="metric-value" id="total-warnings-value">${total_warnings}</div>
                 <div class="metric-label" id="total-warnings-label">Total Warnings</div>
             </li>
