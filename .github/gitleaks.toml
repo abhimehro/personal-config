@@ -203,6 +203,7 @@ paths = [
     '''(?i)CODE_OF_CONDUCT''',
     '''(?i)CONTRIBUTING''',
     '''(?i)validate_repo_structure\.sh$''',
+    '''(?i)scripts/repair-controld-keepalive\.sh$''',
     '''(?i)scripts/lib/.*\.sh$''',
 ]
 
