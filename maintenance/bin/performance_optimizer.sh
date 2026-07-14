@@ -13,6 +13,12 @@ METRICS_DIR="$LOG_DIR/metrics"
 CONFIG_DIR="$SCRIPT_DIR/../config"
 PERF_CONFIG="$CONFIG_DIR/performance_config.json"
 
+# Load shared state-tracking library
+if [[ -f "$SCRIPT_DIR/../lib/state.sh" ]]; then
+	# shellcheck disable=SC1091
+	source "$SCRIPT_DIR/../lib/state.sh"
+fi
+
 # Ensure directories exist
 mkdir -p "$LOG_DIR" "$METRICS_DIR" "$CONFIG_DIR"
 
@@ -102,6 +108,20 @@ EOF
 	fi
 }
 
+# Helper: return 0 if any directory in the list has been modified since the
+# last run for the given state key. Respects FORCE_RUN=1.
+any_dir_modified() {
+	local state_name="$1"
+	shift
+	local dir
+	for dir in "$@"; do
+		if [[ -e $dir ]] && is_modified_since_last_run "$dir" "$state_name"; then
+			return 0
+		fi
+	done
+	return 1
+}
+
 # CPU optimization functions
 optimize_cpu_usage() {
 	log_info "Starting CPU optimization..."
@@ -122,7 +142,7 @@ optimize_cpu_usage() {
 
 		# Reduce priority of non-essential processes
 		local background_procs
-		background_procs=$(ps -eo pid,nice,comm | grep -E "(Spotlight|mds|mdworker)" | awk '$2 == 0 {print $1}')
+		background_procs=$(ps -eo pid,nice,comm | grep -E "(Spotlight|mds|mdworker)" | awk '$2 == 0 {print $1}' || true)
 
 		if [[ -n $background_procs ]]; then
 			echo "$background_procs" | while read -r pid; do
@@ -147,7 +167,7 @@ optimize_memory_usage() {
 
 	# Get memory statistics
 	local pages_free pages_inactive pages_speculative page_size
-	read -r pages_free pages_inactive pages_speculative page_size <<< "$(vm_stat | awk '
+	read -r pages_free pages_inactive pages_speculative page_size <<<"$(vm_stat | awk '
 		/page size of/ { size = $8 }
 		/Pages free:/ { free = $3; sub(/\./, "", free) }
 		/Pages inactive:/ { inactive = $3; sub(/\./, "", inactive) }
@@ -177,7 +197,7 @@ optimize_memory_usage() {
 
 		# Kill memory-heavy inactive applications
 		local memory_hogs
-		memory_hogs=$(ps -axo pid,rss,comm | sort -k2 -nr | head -10 | awk '$2 > 100000 && $3 !~ /(kernel|launchd|WindowServer|loginwindow)/ {print $1}')
+		memory_hogs=$(ps -axo pid,rss,comm | sort -k2 -nr | head -10 | awk '$2 > 100000 && $3 !~ /(kernel|launchd|WindowServer|loginwindow)/ {print $1}' || true)
 
 		if [[ -n $memory_hogs ]]; then
 			echo "$memory_hogs" | head -3 | while read -r pid; do
@@ -223,29 +243,38 @@ optimize_disk_usage() {
 			"$HOME/.Trash"
 		)
 
-		for cache_dir in "${cache_dirs[@]}"; do
-			if [[ -d $cache_dir ]]; then
-				local cache_size_before
-				cache_size_before=$(du -sm "$cache_dir" 2>/dev/null | awk '{print $1}' || echo "0")
+		if any_dir_modified "performance_optimizer_cache" "${cache_dirs[@]}"; then
+			for cache_dir in "${cache_dirs[@]}"; do
+				if [[ -d $cache_dir ]]; then
+					local cache_size_before
+					cache_size_before=$(du -sm "$cache_dir" 2>/dev/null | awk '{print $1}' || echo "0")
 
-				# Clean old cache files (older than 7 days)
-				find "$cache_dir" -type f -mtime +7 -delete 2>/dev/null || true
+					# Clean old cache files (older than 7 days)
+					if [[ ${DRY_RUN:-0} == "1" ]]; then
+						log_info "[DRY RUN] Would clean files in $cache_dir older than 7 days"
+					else
+						find "$cache_dir" -type f -mtime +7 -delete 2>/dev/null || true
+					fi
 
-				local cache_size_after
-				cache_size_after=$(du -sm "$cache_dir" 2>/dev/null | awk '{print $1}' || echo "0")
-				local freed
-				freed=$((cache_size_before - cache_size_after))
+					local cache_size_after
+					cache_size_after=$(du -sm "$cache_dir" 2>/dev/null | awk '{print $1}' || echo "0")
+					local freed
+					freed=$((cache_size_before - cache_size_after))
 
-				if [[ $freed -gt 0 ]]; then
-					log_info "Cleaned $cache_dir: freed ${freed}MB"
+					if [[ $freed -gt 0 ]]; then
+						log_info "Cleaned $cache_dir: freed ${freed}MB"
+					fi
 				fi
-			fi
-		done
+			done
+			state_set_last_run "performance_optimizer_cache"
+		else
+			log_info "Cache directories unchanged; skipping disk cache cleanup"
+		fi
 	fi
 
 	# Optimize Spotlight indexing
 	local spotlight_status
-	spotlight_status=$(mdutil -s / | grep "Indexing enabled")
+	spotlight_status=$(mdutil -s / | grep "Indexing enabled" || true)
 	if [[ $spotlight_status == *"enabled"* ]]; then
 		# Exclude common development directories from Spotlight
 		local exclude_dirs=(
@@ -314,7 +343,7 @@ optimize_applications() {
 
 	# Optimize launch agents and daemons
 	local inactive_agents
-	inactive_agents=$(launchctl list | grep -E "^-.*\.(plist|agent)" | awk '{print $3}')
+	inactive_agents=$(launchctl list | grep -E "^-.*\.(plist|agent)" | awk '{print $3}' || true)
 
 	if [[ -n $inactive_agents ]]; then
 		echo "$inactive_agents" | while read -r agent; do
@@ -334,13 +363,22 @@ optimize_applications() {
 		"/var/tmp"
 	)
 
-	for temp_dir in "${temp_dirs[@]}"; do
-		if [[ -d $temp_dir ]]; then
-			# Clean files older than 1 day
-			find "$temp_dir" -type f -mtime +1 -delete 2>/dev/null || true
-			log_info "Cleaned temporary files from $temp_dir"
-		fi
-	done
+	if any_dir_modified "performance_optimizer_temp" "${temp_dirs[@]}"; then
+		for temp_dir in "${temp_dirs[@]}"; do
+			if [[ -d $temp_dir ]]; then
+				# Clean files older than 1 day
+				if [[ ${DRY_RUN:-0} == "1" ]]; then
+					log_info "[DRY RUN] Would clean files in $temp_dir older than 1 day"
+				else
+					find "$temp_dir" -type f -mtime +1 -delete 2>/dev/null || true
+					log_info "Cleaned temporary files from $temp_dir"
+				fi
+			fi
+		done
+		state_set_last_run "performance_optimizer_temp"
+	else
+		log_info "Temp directories unchanged; skipping temp file cleanup"
+	fi
 
 	log_info "Application optimization completed"
 }
@@ -537,6 +575,17 @@ EOF
 
 # Main execution
 main() {
+	# Parse --force into FORCE_RUN before state checks
+	local args=()
+	for arg in "$@"; do
+		if [[ $arg == "--force" ]]; then
+			export FORCE_RUN=1
+		else
+			args+=("$arg")
+		fi
+	done
+	set -- "${args[@]}"
+
 	local action="${1:-help}"
 
 	# Initialize configuration
