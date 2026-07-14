@@ -279,7 +279,7 @@ stop_controld() {
 	log "Stopping Control D service and cleaning up DNS configuration..."
 	reset_system_dns
 	sudo ctrld service stop 2>/dev/null || true
-	sudo pkill -f "ctrld" 2>/dev/null || true
+	sudo pkill -f -- "ctrld" 2>/dev/null || true
 	success "Control D stopped and system DNS reset to DHCP."
 }
 
