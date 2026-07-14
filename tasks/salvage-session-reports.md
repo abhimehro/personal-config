@@ -6,6 +6,42 @@
 
 ## Entry template
 
+## Run — 2026-07-14
+
+### Input tail
+
+- Source report: `tasks/pr-review-2026-07-14.md` Phase 1 remainder + live GitHub
+- PRs investigated: 3 tail + 6 new bot PRs (0 DIRTY at start)
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| ctrld-sync | #990 | ESCALATE (carry) | — | CodeScene green; ruff+benchmark still red |
+| series_correction_project_updated | #210 | ESCALATE (carry) | — | Salvage draft; CI green |
+| repoprompt-ce | #112 | ESCALATE (carry) | — | Sentinel URLSession; CI green |
+| personal-config | #1593 | DROP | — | Closed superseded by #1605 (Phase 1) |
+| personal-config | #1602 | DROP | — | Merged (Phase 1) |
+| Hydrograph | #344 | DROP | — | Closed superseded by #355 (Phase 1) |
+
+- Salvage draft PRs opened: **0**
+- Infra-fix draft PRs opened: **0**
+- Closed this run: **0** (Phase 1 already closed superseded PRs)
+- New bot PRs inventoried: pc #1609/#1610, cs #1011, esp #1259/#1260, hg #357
+
+### Verification status
+
+- Conflict scan: 0 DIRTY/CONFLICTING across scope
+- cs #990: ruff 1× whitespace; benchmark 1.80×/1.64× regression on push_rules
+- Policy S1: zero autonomous merges
+
+### Handoff
+
+- **T1 human review:** cs #990, sc #210, rpce #112, esp #1259
+- **Phase 1 merge candidates (CI green):** pc #1609, cs #1011, esp #1260, hg #357
+- **Phase 1 defer:** pc #1610 (Swift CodeQL pending)
+- Session doc: pc branch `cursor-agent/pr-salvage-and-cleanup-a9dd`
+
 ## Run — 2026-06-21
 
 ### Input tail

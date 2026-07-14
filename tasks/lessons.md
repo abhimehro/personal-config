@@ -1,5 +1,35 @@
 # Lessons Learned
 
+## Lesson 0df: Evening salvage with zero DIRTY PRs is reconcile-only (2026-07-14)
+
+**Pattern:** Phase 2 evening cron found 0 CONFLICTING/DIRTY PRs across seven
+repos; Phase 1 had already merged 10 and closed 9 (including all superseded
+Sentinel/Bolt duplicates). **Rule:** When the deferred tail is exclusively
+ESCALATE dispositions with MERGEABLE branches and no merge conflicts, skip
+salvage-branch creation — re-fetch live state, refresh blocker analysis, inventory
+new bot PRs for the next Phase 1 cycle, and document. Only open salvage drafts
+when DIRTY/UNSTABLE-with-conflict or valuable work is absent from `main`.
+**Detection cost:** Low — `mergeStateStatus` scan across open PR list.
+
+## Lesson 0de: Sentinel production-script fixes merge; URLSession/token PRs escalate (2026-07-14)
+
+**Pattern:** pc #1605 (remove `eval` from `repair-controld-keepalive.sh`) merged
+with green CI; rpce #112 (ephemeral URLSession) and sc #210 (CLI exception
+sanitization) escalated despite green CI. Extends Lesson 0dc. **Rule:**
+Shell/Python **eval removal** and path-traversal hardening in operational scripts
+→ merge when CI green. Networking credential persistence and exception-output
+filtering at trust boundaries → escalate. **Detection cost:** Low — file paths
+under `scripts/` vs `Sources/.../Networking/` or `generate_overview_table.py`.
+
+## Lesson 0dd: Hydrograph Bolt triplet — newest green CodeScene wins (2026-07-14)
+
+**Pattern:** hg #344, #354, and #355 all optimized pandas/numpy min/max in the
+same two files. #344 and #354 had CodeScene FAIL; #355 (newest) had green CI
+including CodeScene. **Rule:** For semantic duplicate Bolt/QA PRs on identical
+files, close older attempts and merge only the newest green CodeScene revision —
+do not defer all three. **Detection cost:** Low — shared paths in
+`validator.py` + `chart_generator.py`.
+
 ## Lesson 0ds: Dual ctrld + CD thrash felt "broken" while Local Config already worked (2026-07-09 ~18:20)
 
 **Pattern:** User log showed `[OK] dig … FALLBACK=1` with real profile
