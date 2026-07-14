@@ -25,6 +25,12 @@ if [[ -f "$SCRIPT_DIR/smart_notifier.sh" ]]; then
 	source "$SCRIPT_DIR/smart_notifier.sh"
 fi
 
+# Load shared state-tracking library
+if [[ -f "$SCRIPT_DIR/../lib/state.sh" ]]; then
+	# shellcheck disable=SC1091
+	source "$SCRIPT_DIR/../lib/state.sh"
+fi
+
 log_info "Analytics dashboard initialized"
 
 # Data aggregation functions
@@ -38,6 +44,13 @@ aggregate_metrics() {
 	output_file="$REPORTS_DIR/${period}_metrics_$(date +%Y%m%d).json"
 	local temp_file
 	temp_file=$(mktemp)
+
+	# Skip if existing report is fresh and no inputs changed
+	if [[ -f $output_file ]] && ! is_modified_since_last_run "$METRICS_DIR" "analytics_dashboard"; then
+		log_info "No metrics changes; skipping $period aggregation (report exists)"
+		echo "$output_file"
+		return 0
+	fi
 
 	# Initialize aggregated data structure
 	cat >"$temp_file" <<'EOF'
@@ -133,9 +146,11 @@ EOF
 		fi
 
 		log_info "Aggregated metrics saved to $output_file"
+		state_set_last_run "analytics_dashboard"
 		echo "$output_file"
 	else
 		log_info "jq not available - basic aggregation only"
+		state_set_last_run "analytics_dashboard"
 		echo "$temp_file"
 	fi
 }
@@ -195,6 +210,13 @@ generate_insights() {
 
 	local insights_file
 	insights_file="$REPORTS_DIR/insights_$(date +%Y%m%d).txt"
+
+	# Skip if existing insights are fresh and no inputs changed
+	if [[ -f $insights_file ]] && ! is_modified_since_last_run "$METRICS_DIR" "analytics_dashboard" && [[ -f $report_file ]]; then
+		log_info "No metrics/report changes; skipping insights generation"
+		echo "$insights_file"
+		return 0
+	fi
 
 	cat >"$insights_file" <<EOF
 System Performance Insights - $(date +"%B %d, %Y")
@@ -284,6 +306,7 @@ EOF
 	fi
 
 	log_info "Insights saved to $insights_file"
+	state_set_last_run "analytics_dashboard"
 	echo "$insights_file"
 }
 
@@ -353,6 +376,13 @@ generate_dashboard() {
 
 	local dashboard_file
 	dashboard_file="$REPORTS_DIR/dashboard_${period}_$(date +%Y%m%d).html"
+
+	# Skip if existing dashboard is fresh and no metrics inputs changed
+	if [[ -f $dashboard_file ]] && ! is_modified_since_last_run "$METRICS_DIR" "analytics_dashboard"; then
+		log_info "No metrics changes; skipping $period dashboard generation"
+		echo "$dashboard_file"
+		return 0
+	fi
 
 	# Get aggregated data
 	local metrics_report
@@ -474,6 +504,7 @@ EOF
 EOF
 
 	log_info "Dashboard generated: $dashboard_file"
+	state_set_last_run "analytics_dashboard"
 	echo "$dashboard_file"
 }
 
@@ -487,6 +518,14 @@ generate_summary_report() {
 
 	local summary_file
 	summary_file="$REPORTS_DIR/summary_${period}_$(date +%Y%m%d).txt"
+
+	# Skip if existing summary is fresh and no metrics inputs changed
+	if [[ -f $summary_file ]] && ! is_modified_since_last_run "$METRICS_DIR" "analytics_dashboard"; then
+		log_info "No metrics changes; skipping $period summary generation"
+		echo "$summary_file"
+		return 0
+	fi
+
 	local current_health
 	current_health=$(calculate_health_score)
 
@@ -524,6 +563,7 @@ EOF
 	echo "PERFORMANCE TREND: ${perf_trend%%:*} (${perf_trend##*:}% change)" >>"$summary_file"
 
 	log_info "Summary report saved to $summary_file"
+	state_set_last_run "analytics_dashboard"
 
 	# Send notification with summary
 	if command -v smart_notify >/dev/null 2>&1; then
@@ -539,6 +579,17 @@ EOF
 
 # Main dashboard command
 main() {
+	# Parse --force into FORCE_RUN before state checks
+	local args=()
+	for arg in "$@"; do
+		if [[ $arg == "--force" ]]; then
+			export FORCE_RUN=1
+		else
+			args+=("$arg")
+		fi
+	done
+	set -- "${args[@]}"
+
 	case "${1:-dashboard}" in
 	"dashboard")
 		generate_dashboard "${2:-weekly}"
