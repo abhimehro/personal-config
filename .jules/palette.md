@@ -317,3 +317,7 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## 2026-03-31 - Graceful fallback for non-TTY animations
 **Learning:** Hardcoded ANSI color strings (`\x1b[31m`) in CLI tools degrade to unreadable noise in environments without a TTY or in screen readers. This makes CLI error messages and standard output inaccessible.
 **Action:** Always conditionally apply ANSI color formatting by checking if standard output (`process.stdout.isTTY`) or standard error (`process.stderr.isTTY`) supports it. Provide clean, uncolored string fallbacks for screen reader and CI environments.
+
+## 2026-07-14 - Avoid list semantics for metric cards
+**Learning:** Wrapping a single label and its corresponding value in an unordered list (`<ul>`/`<li>`) inside composite UI elements like metric cards introduces unnecessary verbosity for screen readers and misuses list semantics.
+**Action:** Prefer `<div>` or `<span>` wrappers, or a description list (`<dl>`), for metric cards to improve screen reader accessibility.
