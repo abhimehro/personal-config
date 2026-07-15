@@ -608,3 +608,6 @@ invocation.
 ## 2026-11-20 - Ensure ThreadPoolExecutor max_workers is greater than 0
 **Learning:** Python's `ThreadPoolExecutor` strictly enforces that `max_workers` must be greater than 0. If it receives `0` (e.g., when dynamic calculation like `min(len(tasks), 32)` evaluates an empty list), it raises a `ValueError: max_workers must be greater than 0`, causing a crash.
 **Action:** When dynamically calculating `max_workers` based on the length of a list, always ensure it handles the `0` case by using an explicit fallback (e.g., `max_workers=min(len(tasks) or 1, 32)`) to safely process empty inputs without throwing exceptions.
+## 2026-11-20 - Ensure functions aren't overly complex for CodeScene
+**Learning:** The CodeScene code health checker flagged `print_table` in `scripts/get_prs_summarize.py` as having a "Complex Method". To maintain good code health, functions shouldn't have too many responsibilities.
+**Action:** When working on large functions, always try to refactor them into smaller, more focused helper functions to improve maintainability and avoid CodeScene complexity violations.
