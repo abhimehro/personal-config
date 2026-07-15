@@ -30,7 +30,8 @@ The automated PR review agent successfully processed the backlog across 5 reposi
 
 def process_draft_fixes(results, draft_fixes):
     new_escalated = []
-    for e in results.get("escalated", []):
+    # ⚡ Bolt Optimization: Use immutable empty tuple () instead of mutable empty list [] to prevent redundant memory allocations in hot paths
+    for e in results.get("escalated", ()):
         if f"{e[0]}#{e[1]}" in draft_fixes:
             results["merged"].append((e[0], e[1], e[2]))
         else:

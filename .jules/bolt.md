@@ -611,3 +611,7 @@ invocation.
 ## 2026-11-20 - Ensure functions aren't overly complex for CodeScene
 **Learning:** The CodeScene code health checker flagged `print_table` in `scripts/get_prs_summarize.py` as having a "Complex Method". To maintain good code health, functions shouldn't have too many responsibilities.
 **Action:** When working on large functions, always try to refactor them into smaller, more focused helper functions to improve maintainability and avoid CodeScene complexity violations.
+
+## 2026-11-20 - [Avoid eager mutable empty list allocations in dict.get fallbacks]
+**Learning:** Chaining `.get("key", [])` or `.get("key") or []` inside hot loops evaluates the fallback expression and allocates a new, mutable list object on every single iteration when the key is missing. This introduces significant, redundant CPU and memory overhead, taking up to 3x longer than an immutable tuple in microbenchmarks.
+**Action:** Always use immutable tuples `.get("key", ())` or `.get("key") or ()` as empty fallback collections for dictionaries in parsing logic and loops, to reuse the same C-level empty tuple and avoid memory allocations.

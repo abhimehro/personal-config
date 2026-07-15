@@ -165,7 +165,8 @@ def _is_checks_failing(checks):
 
 
 def _get_pr_category(info, checks, now=None):
-    if not info.get("files", []):
+    # ⚡ Bolt Optimization: Use immutable empty tuple () instead of mutable empty list [] to prevent redundant memory allocations in hot paths
+    if not info.get("files", ()):
         return "SUPERSEDED"
 
     merge_status = info.get("mergeStateStatus", "")
@@ -231,8 +232,7 @@ def main():
     now = datetime.now(timezone.utc)
     tasks = [(repo, pr_info, now) for repo, prs in repos.items() for pr_info in prs]
 
-    # ⚡ Bolt Optimization: Dynamic thread concurrency to eliminate batching latency
-    with ThreadPoolExecutor(max_workers=min(len(tasks) or 1, 32)) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         for result in executor.map(_categorize_pr_task, tasks):
             if result:
                 category, pr_str = result

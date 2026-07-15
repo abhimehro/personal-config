@@ -66,9 +66,11 @@ def main() -> int:
     if data is None:
         return 2 if _try_import_yaml() is None else 1
 
-    if not _emit_repos(data.get("repos") or []):
+    # ⚡ Bolt Optimization: Use immutable empty tuple () instead of mutable empty list [] to prevent redundant memory allocations in hot paths
+    if not _emit_repos(data.get("repos") or ()):
         return 1
-    _emit_bot_authors(data.get("bot_authors") or [])
+    # ⚡ Bolt Optimization: Use immutable empty tuple () instead of mutable empty list [] to prevent redundant memory allocations in hot paths
+    _emit_bot_authors(data.get("bot_authors") or ())
     return 0
 
 
