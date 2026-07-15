@@ -217,7 +217,8 @@ def print_table(data: list, include_details: bool) -> None:
     print("\n#### Review / comment context\n")
 
     tasks = [(repo, pr) for pr in data]
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    # ⚡ Bolt Optimization: Dynamic thread concurrency to eliminate batching latency
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(tasks) or 1, 32)) as executor:
         # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls while preserving PR order using map()
         results = executor.map(_fetch_task_wrapper, tasks)
 

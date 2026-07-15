@@ -602,3 +602,9 @@ invocation.
 ## 2024-07-12 - Eliminate repetitive datetime evaluations inside mapping loops
 **Learning:** Calling `now_utc()` repeatedly inside a mapping loop or list comprehension (such as during PR triage categorization) creates an accumulated bottleneck due to repetitive object allocation and time generation.
 **Action:** Replace `now_utc()` calls inside list comprehensions and iterative generators with a hoisted variable evaluation before the loop (e.g. `_now = now_utc()`) and pass `_now` as an argument to downstream filters to prevent redundant datetime allocations.
+## 2026-11-20 - Eliminate ThreadPoolExecutor batching latency (continued)
+**Learning:** `concurrent.futures.ThreadPoolExecutor` defaults to `min(32, os.cpu_count() + 4)` workers. Setting `max_workers=10` limits concurrency when tasks exceed 10. To allow for faster dispatch of I/O bound tasks, we should set `max_workers=min(len(tasks), 32)`.
+**Action:** When using `concurrent.futures.ThreadPoolExecutor` for I/O bound tasks with a variable number of items, always calculate `max_workers` using `min(len(tasks), 32)` to provide immediate dispatch up to 32 concurrent threads instead of a static smaller limit.
+## 2026-11-20 - Ensure ThreadPoolExecutor max_workers is greater than 0
+**Learning:** Python's `ThreadPoolExecutor` strictly enforces that `max_workers` must be greater than 0. If it receives `0` (e.g., when dynamic calculation like `min(len(tasks), 32)` evaluates an empty list), it raises a `ValueError: max_workers must be greater than 0`, causing a crash.
+**Action:** When dynamically calculating `max_workers` based on the length of a list, always ensure it handles the `0` case by using an explicit fallback (e.g., `max_workers=min(len(tasks) or 1, 32)`) to safely process empty inputs without throwing exceptions.
