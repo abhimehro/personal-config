@@ -1,3 +1,128 @@
+# PR Inventory — 2026-07-15 (evening salvage)
+
+**Session:** Automated PR salvage & cleanup (cron 17:00 UTC)  
+**Branch:** `cursor-agent/pr-salvage-and-cleanup-f5e7`  
+**Preflight:** PASS 6/6 configured repos (+ repoprompt-ce)  
+**Mode:** Phase 2 salvage (input: Phase 1 remainder, 9 PRs)
+
+## Summary
+
+| Repo | Tail investigated | Salvaged | Closed superseded | Unchanged | Open at end |
+|------|------------------:|---------:|------------------:|----------:|------------:|
+| personal-config | 2 | 1 → [#1623](https://github.com/abhimehro/personal-config/pull/1623) | [#1619](https://github.com/abhimehro/personal-config/pull/1619) | [#1609](https://github.com/abhimehro/personal-config/pull/1609) | **3** |
+| ctrld-sync | 1 | 0 | — | [#990](https://github.com/abhimehro/ctrld-sync/pull/990) | **1** |
+| email-security-pipeline | 2 | 0 | — | [#1259](https://github.com/abhimehro/email-security-pipeline/pull/1259), [#1264](https://github.com/abhimehro/email-security-pipeline/pull/1264)† | **2** |
+| Seatek_Analysis | 0 | 0 | — | — | **0** |
+| Hydrograph_Versus_Seatek_Sensors_Project | 2 | 1 → [#366](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/366) | [#364](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/364) | [#357](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/357) | **2** |
+| series_correction_project_updated | 1 | 0 | [#210](https://github.com/abhimehro/series_correction_project_updated/pull/210) (superseded by #224) | — | **0** |
+| repoprompt-ce | 1 | 0 | — | [#112](https://github.com/abhimehro/repoprompt-ce/pull/112) | **1** |
+| **Total** | **9** | **2 drafts** | **3** | **5 escalations + 1 defer** | **9**‡ |
+
+† [#1264](https://github.com/abhimehro/email-security-pipeline/pull/1264) CI green since Phase 1 EOD — merge candidate for next Phase 1 run.  
+‡ Includes new post-Phase 1 [#1622](https://github.com/abhimehro/personal-config/pull/1622) Palette PR.
+
+## Salvage disposition table
+
+| Repo | Old PR | Conflict | Disposition | New PR |
+|------|--------|----------|-------------|--------|
+| personal-config | [#1619](https://github.com/abhimehro/personal-config/pull/1619) | bolt.md vs #1620 | SALVAGE draft | [#1623](https://github.com/abhimehro/personal-config/pull/1623) |
+| Hydrograph | [#364](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/364) | bolt.md vs #363 | SALVAGE draft (partial) | [#366](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/366) |
+| series_correction | [#210](https://github.com/abhimehro/series_correction_project_updated/pull/210) | vs #224 on main | CLOSE-SUPERSEDED | — |
+
+## Post-salvage remainder
+
+| Repo | PR | Reason |
+|------|-----|--------|
+| personal-config | [#1623](https://github.com/abhimehro/personal-config/pull/1623) | Draft salvage — human merge |
+| personal-config | [#1622](https://github.com/abhimehro/personal-config/pull/1622) | New Palette (opened after Phase 1) |
+| personal-config | [#1609](https://github.com/abhimehro/personal-config/pull/1609) | Devin feature — deferred |
+| ctrld-sync | [#990](https://github.com/abhimehro/ctrld-sync/pull/990) | ESCALATE — SSRF |
+| email-security-pipeline | [#1264](https://github.com/abhimehro/email-security-pipeline/pull/1264) | CI green — merge candidate |
+| email-security-pipeline | [#1259](https://github.com/abhimehro/email-security-pipeline/pull/1259) | ESCALATE — supply-chain |
+| Hydrograph | [#366](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/366) | Draft salvage — human merge |
+| Hydrograph | [#357](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/357) | ESCALATE — poetry.lock |
+| repoprompt-ce | [#112](https://github.com/abhimehro/repoprompt-ce/pull/112) | ESCALATE — auth boundary |
+
+---
+# PR Inventory — 2026-07-15
+
+**Session:** Automated PR review & cleanup (cron 13:00 UTC)  
+**Branch:** `cursor-agent/automated-pr-workflow-4594`  
+**Preflight:** PASS 6/6 configured repos (+ repoprompt-ce)  
+**Mode:** review-and-merge  
+**Stale threshold:** 30 days
+
+## Summary
+
+| Repo | Open at start | Merged | Closed | Escalated | Deferred | Remainder |
+|------|---------------|--------|--------|-----------|----------|-----------|
+| personal-config | 10 | 6 | 3 | 0 | 2 | **2** |
+| ctrld-sync | 5 | 2 | 1 | 1 | 0 | **1** |
+| email-security-pipeline | 4 | 2 | 0 | 1 | 1 | **2** |
+| Seatek_Analysis | 4 | 3 | 1 | 0 | 0 | **0** |
+| Hydrograph_Versus_Seatek_Sensors_Project | 7 | 5 | 0 | 1 | 1 | **2** |
+| series_correction_project_updated | 6 | 3 | 1 | 1 | 0 | **1** |
+| repoprompt-ce | 1 | 0 | 0 | 1 | 0 | **1** |
+| **Total** | **37** | **23** | **6** | **5** | **4** | **9** |
+
+## Starting inventory (37 in-scope open)
+
+| Repo | PR | Author | Category | CI | Conflicts | Status |
+|------|-----|--------|----------|-----|-----------|--------|
+| personal-config | [#1620](https://github.com/abhimehro/personal-config/pull/1620) | abhimehro (Bolt) | PERF | CLEAN | MERGEABLE | MERGED |
+| personal-config | [#1619](https://github.com/abhimehro/personal-config/pull/1619) | abhimehro (Bolt) | PERF | CLEAN | MERGEABLE→DIRTY | DEFER |
+| personal-config | [#1617](https://github.com/abhimehro/personal-config/pull/1617) | dependabot | DEPS | CLEAN | MERGEABLE | MERGED |
+| personal-config | [#1616](https://github.com/abhimehro/personal-config/pull/1616) | abhimehro (Sentinel) | SECURITY | CLEAN | MERGEABLE | MERGED |
+| personal-config | [#1615](https://github.com/abhimehro/personal-config/pull/1615) | abhimehro (Palette) | A11Y | CLEAN | MERGEABLE | MERGED |
+| personal-config | [#1614](https://github.com/abhimehro/personal-config/pull/1614) | abhimehro (Jules) | QA-NOOP | CLEAN | MERGEABLE | CLOSED |
+| personal-config | [#1611](https://github.com/abhimehro/personal-config/pull/1611) | cursor | SESSION-DOC | CLEAN | MERGEABLE | CLOSED |
+| personal-config | [#1610](https://github.com/abhimehro/personal-config/pull/1610) | abhimehro (Palette) | A11Y | CLEAN | MERGEABLE | MERGED |
+| personal-config | [#1609](https://github.com/abhimehro/personal-config/pull/1609) | abhimehro (Devin) | FEATURE | CLEAN | MERGEABLE | DEFER |
+| personal-config | [#1608](https://github.com/abhimehro/personal-config/pull/1608) | cursor | SESSION-DOC | CLEAN | MERGEABLE | CLOSED |
+| ctrld-sync | [#1015](https://github.com/abhimehro/ctrld-sync/pull/1015) | dependabot | DEPS | CLEAN | MERGEABLE | MERGED |
+| ctrld-sync | [#1014](https://github.com/abhimehro/ctrld-sync/pull/1014) | dependabot | DEPS | CLEAN | MERGEABLE | MERGED |
+| ctrld-sync | [#1013](https://github.com/abhimehro/ctrld-sync/pull/1013) | abhimehro (Palette) | UI | CLEAN | MERGEABLE→DIRTY | CLOSED |
+| ctrld-sync | [#1011](https://github.com/abhimehro/ctrld-sync/pull/1011) | abhimehro (Palette) | UI | CLEAN | MERGEABLE | MERGED |
+| ctrld-sync | [#990](https://github.com/abhimehro/ctrld-sync/pull/990) | abhimehro | SECURITY/SSRF | FAIL | MERGEABLE | ESCALATE |
+| email-security-pipeline | [#1263](https://github.com/abhimehro/email-security-pipeline/pull/1263) | dependabot | DEPS | CLEAN | MERGEABLE | MERGED |
+| email-security-pipeline | [#1262](https://github.com/abhimehro/email-security-pipeline/pull/1262) | dependabot | DEPS | CLEAN | MERGEABLE | MERGED |
+| email-security-pipeline | [#1260](https://github.com/abhimehro/email-security-pipeline/pull/1260) | abhimehro (Palette) | UI | CLEAN | MERGEABLE | MERGED |
+| email-security-pipeline | [#1259](https://github.com/abhimehro/email-security-pipeline/pull/1259) | abhimehro (Devin) | DEPS | CLEAN | MERGEABLE | ESCALATE |
+| Seatek_Analysis | [#457](https://github.com/abhimehro/Seatek_Analysis/pull/457) | abhimehro (Bolt) | PERF | CLEAN | MERGEABLE | MERGED |
+| Seatek_Analysis | [#456](https://github.com/abhimehro/Seatek_Analysis/pull/456) | abhimehro (Jules) | QA-NOOP | CLEAN | MERGEABLE | CLOSED |
+| Seatek_Analysis | [#454](https://github.com/abhimehro/Seatek_Analysis/pull/454) | dependabot | DEPS | CLEAN | MERGEABLE | MERGED |
+| Seatek_Analysis | [#453](https://github.com/abhimehro/Seatek_Analysis/pull/453) | dependabot | DEPS | CLEAN | MERGEABLE | MERGED |
+| Hydrograph | [#364](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/364) | abhimehro (Bolt) | PERF | CLEAN | MERGEABLE→DIRTY | DEFER |
+| Hydrograph | [#363](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/363) | abhimehro (Bolt) | PERF | CLEAN | MERGEABLE | MERGED |
+| Hydrograph | [#362](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/362) | abhimehro (QA) | CI | CLEAN | MERGEABLE | MERGED |
+| Hydrograph | [#360](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/360) | dependabot | DEPS | CLEAN | MERGEABLE | MERGED |
+| Hydrograph | [#359](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/359) | dependabot | DEPS | CLEAN | MERGEABLE | MERGED |
+| Hydrograph | [#358](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/358) | abhimehro (Sentinel) | SECURITY | CLEAN | MERGEABLE | MERGED |
+| Hydrograph | [#357](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/357) | abhimehro (Devin) | DEPS | CLEAN | MERGEABLE | ESCALATE |
+| series_correction | [#229](https://github.com/abhimehro/series_correction_project_updated/pull/229) | abhimehro (Bolt) | PERF | CLEAN | MERGEABLE | MERGED |
+| series_correction | [#228](https://github.com/abhimehro/series_correction_project_updated/pull/228) | dependabot | DEPS | CLEAN | MERGEABLE | MERGED |
+| series_correction | [#227](https://github.com/abhimehro/series_correction_project_updated/pull/227) | dependabot | DEPS | CLEAN | MERGEABLE | MERGED |
+| series_correction | [#226](https://github.com/abhimehro/series_correction_project_updated/pull/226) | abhimehro (Jules) | QA-NOOP | CLEAN | MERGEABLE | CLOSED |
+| series_correction | [#224](https://github.com/abhimehro/series_correction_project_updated/pull/224) | abhimehro (Sentinel) | SECURITY | CLEAN | MERGEABLE | MERGED |
+| series_correction | [#210](https://github.com/abhimehro/series_correction_project_updated/pull/210) | abhimehro (salvage) | SECURITY | CLEAN | MERGEABLE | ESCALATE |
+| repoprompt-ce | [#112](https://github.com/abhimehro/repoprompt-ce/pull/112) | abhimehro (Sentinel) | SECURITY | CLEAN | MERGEABLE | ESCALATE |
+
+## Post-session remainder (9 open)
+
+| Repo | PR | Reason |
+|------|-----|--------|
+| personal-config | [#1619](https://github.com/abhimehro/personal-config/pull/1619) | DEFER — conflict after #1620 |
+| personal-config | [#1609](https://github.com/abhimehro/personal-config/pull/1609) | DEFER — Devin Phase 1 feature |
+| ctrld-sync | [#990](https://github.com/abhimehro/ctrld-sync/pull/990) | ESCALATE — SSRF + benchmark |
+| email-security-pipeline | [#1259](https://github.com/abhimehro/email-security-pipeline/pull/1259) | ESCALATE — supply-chain pins |
+| email-security-pipeline | [#1264](https://github.com/abhimehro/email-security-pipeline/pull/1264) | DEFER — CI pending |
+| Hydrograph | [#364](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/364) | DEFER — conflict after #363 |
+| Hydrograph | [#357](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/357) | ESCALATE — poetry.lock |
+| series_correction | [#210](https://github.com/abhimehro/series_correction_project_updated/pull/210) | ESCALATE — CLI sanitization |
+| repoprompt-ce | [#112](https://github.com/abhimehro/repoprompt-ce/pull/112) | ESCALATE — token storage |
+
+---
+
 # PR Inventory — 2026-07-08
 
 **Session:** Automated PR review & cleanup (cron 13:00 UTC)  
