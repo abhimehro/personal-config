@@ -143,9 +143,12 @@ def fetch_details(repo: str, num: int) -> str:
         return "_Could not load details_"
     data = json.loads(raw)
     lines: list[str] = []
-    reviews = data.get("reviews") or []
-    latest = data.get("latestReviews") or []
-    comments = data.get("comments") or []
+    # ⚡ Bolt Optimization: Use immutable empty tuple () instead of mutable empty list [] to prevent redundant memory allocations in hot paths
+    reviews = data.get("reviews") or ()
+    # ⚡ Bolt Optimization: Use immutable empty tuple () instead of mutable empty list [] to prevent redundant memory allocations in hot paths
+    latest = data.get("latestReviews") or ()
+    # ⚡ Bolt Optimization: Use immutable empty tuple () instead of mutable empty list [] to prevent redundant memory allocations in hot paths
+    comments = data.get("comments") or ()
     rd = data.get("reviewDecision") or ""
     if rd:
         lines.append(f"- reviewDecision: `{rd}`")
@@ -183,7 +186,8 @@ def print_table(data: list, include_details: bool) -> None:
         author = pr.get("author")
         login = (author.get("login") if author else None) or "?"
         draft = "yes" if pr.get("isDraft") else "no"
-        checks = check_summary(pr.get("statusCheckRollup") or [])
+        # ⚡ Bolt Optimization: Use immutable empty tuple () instead of mutable empty list [] to prevent redundant memory allocations in hot paths
+        checks = check_summary(pr.get("statusCheckRollup") or ())
         merge = f"{pr.get('mergeable') or '?'}"
         mss = pr.get("mergeStateStatus") or ""
         if mss and mss != "UNKNOWN":

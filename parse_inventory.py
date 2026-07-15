@@ -165,7 +165,8 @@ def _is_checks_failing(checks):
 
 
 def _get_pr_category(info, checks, now=None):
-    if not info.get("files", []):
+    # ⚡ Bolt Optimization: Use immutable empty tuple () instead of mutable empty list [] to prevent redundant memory allocations in hot paths
+    if not info.get("files", ()):
         return "SUPERSEDED"
 
     merge_status = info.get("mergeStateStatus", "")
