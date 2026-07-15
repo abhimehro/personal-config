@@ -515,9 +515,23 @@ EOF
 EOF
 
 	# Add recommendations based on current state
-	[[ $(echo "$cpu_load > 2" | bc -l) == "1" ]] && echo "            <li>Consider reducing CPU-intensive background tasks</li>" >>"$report_file"
-	[[ $disk_usage -gt 80 ]] && echo "            <li>Disk usage is high - consider cleaning up old files</li>" >>"$report_file"
-	[[ $disk_usage -le 60 ]] && echo "            <li>Disk usage is optimal</li>" >>"$report_file"
+	local has_recs=false
+	if [[ $(echo "$cpu_load > 2" | bc -l) == "1" ]]; then
+		echo "            <li>Consider reducing CPU-intensive background tasks</li>" >>"$report_file"
+		has_recs=true
+	fi
+	if [[ $disk_usage -gt 80 ]]; then
+		echo "            <li>Disk usage is high - consider cleaning up old files</li>" >>"$report_file"
+		has_recs=true
+	fi
+	if [[ $disk_usage -le 60 ]]; then
+		echo "            <li>Disk usage is optimal</li>" >>"$report_file"
+		has_recs=true
+	fi
+
+	if [[ "$has_recs" == false ]]; then
+		echo "            <li class=\"empty-state\" style=\"color: #666; font-style: italic;\">System is running smoothly. No specific recommendations at this time.</li>" >>"$report_file"
+	fi
 
 	cat >>"$report_file" <<EOF
         </ul>
