@@ -647,3 +647,8 @@ treated strictly as patterns and not parsed as command-line options.
 **Vulnerability:** Command Injection (CWE-78 variant) in `scripts/repair-controld-keepalive.sh`. The script used `USER_HOME="${SUDO_USER:+$(eval echo "~$SUDO_USER")}"` which allows for command injection if an attacker can influence the `SUDO_USER` variable.
 **Learning:** `eval echo` should never be used to resolve a user's home directory from variables, as it can execute arbitrary shell commands.
 **Prevention:** Use native OS queries such as `dscl` (macOS), `id -P`, or `getent passwd` to safely look up user home directories without using `eval`.
+
+## 2026-07-28 - Option Injection Risk via pkill
+**Vulnerability:** Option Injection (CWE-88 variant). Found remaining shell scripts using `pkill` that did not include the `--` delimiter before the process name argument when other flags were present.
+**Learning:** When invoking `pkill` with dynamic variables or even static strings that could be refactored to variables, you must explicitly separate options from arguments using the `--` delimiter to prevent them from being parsed as flags.
+**Prevention:** Always use the `--` argument delimiter before positional arguments when using `pkill`.
