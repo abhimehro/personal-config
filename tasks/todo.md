@@ -26,3 +26,21 @@
 - `/snyk-fix` + `/snyk-batch-fix`: no remediations (no vuln table / no auth).
 - docs-canvas: canvas SDK unavailable; shipped `docs/snyk-secure-at-inception.md`.
 - Journal merge: took `main`'s current `tasks/todo.md` (Bolt session checklist from #1655) and appended this SAI section; did not resurrect the pre-#1655 LaunchAgents/Control D checklist that `main` replaced.
+
+---
+
+# Session: ABHI-1134 archive remaining root docs (2026-07-16)
+
+## Context
+
+Bulk of work already done via PR #386 (merged). Named historical files already in `docs/archive/`. Remaining: one-off root reports/handoffs still cluttering root (11 md files; target <10).
+
+## Checklist
+
+- [x] Move historical root docs → `docs/archive/` (ELIR.md, handoff.md, QA_REPORT.md, report.md, review.md)
+- [x] Move active Docker guide → `docs/DOCKER_SETUP.md`
+- [x] Update `docs/archive/README.md` index (new entries + missing COMPLETE_CLEANUP.sh, handoff-controld-refactor.md)
+- [x] Verify root markdown count < 10; no broken in-repo links (root now 5: README, CHANGELOG, CODE_OF_CONDUCT, CONTRIBUTING, AGENTS)
+- [x] Run `make test-quick` (pass)
+- [ ] Commit, push, open draft PR; mark Linear Done
+

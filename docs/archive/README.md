@@ -36,10 +36,16 @@ This directory contains historical documentation files that served their purpose
 
 ### Guides & Summaries
 
-- **`HANDOFF.md`** - Project handoff documentation
+- **`HANDOFF.md`** - Project handoff documentation (uppercase; older handoff)
+- **`handoff.md`** - Session ELIR handoff (ThreadPoolExecutor → sequential map refactor)
+- **`handoff-controld-refactor.md`** - Control D refactor handoff notes
 - **`SUMMARY.md`** - Historical project summary
 - **`REPOSITORY_ORGANIZATION.md`** - Repository structure documentation (historical)
 - **`DAILY_STATUS_RESPONSE.md`** - Daily repo status response from February 15, 2026
+- **`ELIR.md`** - One-off ELIR note (comment phrasing to avoid issue-miner false positives)
+- **`QA_REPORT.md`** - Jules daily QA / agentic review snapshot
+- **`report.md`** - Salvage operation report (2026-05-05)
+- **`review.md`** - One-line code-review verdict stub
 
 ### Deployment
 
@@ -47,17 +53,26 @@ This directory contains historical documentation files that served their purpose
 
 ### AI Collaboration
 
-- **`AGENTS.md`** - Legacy AI agent documentation
+- **`AGENTS.md`** - Legacy AI agent documentation (redirect stub → root `/AGENTS.md`)
 - **`AI_COLLABORATION_PROMPT.md`** - Historical AI collaboration guidelines
 - **`GEMINI.md`** - Gemini-specific collaboration notes
-- **`WARP.md`** - Warp terminal integration notes
+- **`WARP.md`** - Warp terminal integration notes (redirect stub)
 
 ### macOS Configuration
 
 - **`macos-disabled-services.md`** - Historical list of disabled macOS services
 - **`macos-performance-optimizations.md`** - Historical performance optimization notes
 
+### One-off Scripts
+
+- **`COMPLETE_CLEANUP.sh`** - Historical one-time cleanup script (not for routine use)
+
 ---
+
+## Related
+
+- Bulk archive: [PR #386](https://github.com/abhimehro/personal-config/pull/386)
+- Tracker issues: [#267](https://github.com/abhimehro/personal-config/issues/267), [#273](https://github.com/abhimehro/personal-config/issues/273) (Linear [ABHI-1134](https://linear.app/abhis-space/issue/ABHI-1134))
 
 ## Note
 
@@ -65,6 +80,10 @@ For current, actively maintained documentation, see:
 
 - `/README.md` - Main project documentation
 - `/CHANGELOG.md` - Current change history
+- `/CONTRIBUTING.md` - Contribution guide
+- `/AGENTS.md` - Current agent / Cloud workspace guidance
+- `/docs/SETUP.md` - Current setup instructions
+- `/docs/DOCKER_SETUP.md` - Docker/devcontainer workflows (moved from root)
 - `/docs/SECURITY_PATTERNS.md` - Active security guidelines
 - `/docs/RELEASE_v1.0.0.md` - Upcoming release information
-- `/docs/SETUP.md` - Current setup instructions
+- `/docs/TESTING.md` - Test patterns and skip table
