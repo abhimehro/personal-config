@@ -1,7 +1,7 @@
 import os
 import sys
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 # Stub out the optional third-party `yaml` dependency so this test remains
 # stdlib-only (per AGENTS.md / CONTRIBUTING.md: tests must not require pip
@@ -19,6 +19,7 @@ sys.path.append(
 from repository_automation_tasks import (  # noqa: E402
     apply_workflow_updates,
     configured_commands,
+    run_quality_assurance,
 )
 
 
@@ -106,6 +107,53 @@ class TestApplyWorkflowUpdates(unittest.TestCase):
         plan["path"].unlink()
         self.assertIn("actions/checkout@v4", result)
         self.assertIn("actions/upload-artifact@v5", result)
+
+
+class TestRunQualityAssurance(unittest.TestCase):
+    @patch("repository_automation_tasks.run_command_set")
+    @patch("repository_automation_tasks.write_result")
+    def test_run_quality_assurance(self, mock_write_result, mock_run_command_set):
+        config = {"quality_assurance": {"commands": [{"run": "echo test"}]}}
+        mock_run_command_set.return_value = (
+            "success",
+            "1 passed",
+            {"body": "test output", "command_results": [{"cmd": "echo test", "exit": 0}]}
+        )
+        mock_write_result.return_value = {"status": "success"}
+
+        result = run_quality_assurance(config)
+
+        mock_run_command_set.assert_called_once_with(
+            "quality-assurance", {"commands": [{"run": "echo test"}]}
+        )
+        mock_write_result.assert_called_once_with(
+            "quality-assurance",
+            ("success", "1 passed"),
+            "test output",
+            {"command_results": [{"cmd": "echo test", "exit": 0}]}
+        )
+        self.assertEqual(result, {"status": "success"})
+
+    @patch("repository_automation_tasks.run_command_set")
+    @patch("repository_automation_tasks.write_result")
+    def test_run_quality_assurance_default_config(self, mock_write_result, mock_run_command_set):
+        mock_run_command_set.return_value = (
+            "success",
+            "1 passed",
+            {"body": "test output", "command_results": []}
+        )
+        mock_write_result.return_value = {"status": "success"}
+
+        result = run_quality_assurance({})
+
+        mock_run_command_set.assert_called_once_with("quality-assurance", {})
+        mock_write_result.assert_called_once_with(
+            "quality-assurance",
+            ("success", "1 passed"),
+            "test output",
+            {"command_results": []}
+        )
+        self.assertEqual(result, {"status": "success"})
 
 
 if __name__ == "__main__":
