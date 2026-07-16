@@ -217,8 +217,6 @@ class TestExtractAllowlistDomainsFromFile(unittest.TestCase):
 
 
 
-import concurrent.futures
-
 class TestProcessDenylistFiles(unittest.TestCase):
     def test_happy_path(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -238,21 +236,18 @@ class TestProcessDenylistFiles(unittest.TestCase):
             result = process_denylist_files(temp_dir)
             self.assertEqual(result, set())
 
-    @patch("adguard.scripts.extract_domains.concurrent.futures.ProcessPoolExecutor")
-    def test_worker_exception(self, mock_executor_class):
-        # Use a ThreadPoolExecutor so mocking works without pickle issues
-        mock_executor_class.return_value = concurrent.futures.ThreadPoolExecutor()
+    @patch("adguard.scripts.extract_domains.extract_domains_from_file")
+    def test_worker_exception(self, mock_extract):
+        # process_denylist_files is sequential; exceptions from extract are caught per file
+        mock_extract.side_effect = Exception("Mocked exception")
 
-        with patch("adguard.scripts.extract_domains.extract_domains_from_file") as mock_extract:
-            mock_extract.side_effect = Exception("Mocked exception")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file1 = os.path.join(temp_dir, "CD-Microsoft-Tracker.json")
+            with open(file1, "w", encoding="utf-8") as f:
+                f.write("mock")
 
-            with tempfile.TemporaryDirectory() as temp_dir:
-                file1 = os.path.join(temp_dir, "CD-Microsoft-Tracker.json")
-                with open(file1, "w", encoding="utf-8") as f:
-                    f.write("mock")
-
-                result = process_denylist_files(temp_dir)
-                self.assertEqual(result, set())
+            result = process_denylist_files(temp_dir)
+            self.assertEqual(result, set())
 
 
 if __name__ == "__main__":
