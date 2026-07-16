@@ -15,4 +15,5 @@ Centralize install+cache in reusable composite actions (DRY across workflows), p
 - [x] Wire into: `code-quality.yml`, `shellcheck.yml`, `mac-audit.yml`, `security-scan.yml`, `repository-automation-daily.yml`, `daily-perf-improver/build-steps`
 - [x] Align `ci-performance.md` with actual implementation
 - [x] Validate YAML; smoke-test ShellCheck install (`tests/test_setup_shellcheck_action.sh` 7/7)
-- [ ] Commit, push, open draft PR; comment on Linear ABHI-1135
+- [x] Commit, push, open draft PR; comment on Linear ABHI-1135
+  - PR: https://github.com/abhimehro/personal-config/pull/1669
