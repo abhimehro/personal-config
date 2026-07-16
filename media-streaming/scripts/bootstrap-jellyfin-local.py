@@ -102,7 +102,7 @@ def load_or_create_creds() -> tuple[str, str]:
                 if line.startswith("JELLYFIN_USER="):
                     user = line.rstrip("\n").split("=", 1)[1]
                 elif line.startswith("JELLYFIN_PASSWORD="):
-                    passwd = line.rstrip("\n").split("=", 1)[1]
+                    passwd = line.rstrip("\n").split("=", 1)[1]  # gitleaks:allow
                 if user and passwd:
                     return user, passwd
     alphabet = string.ascii_letters + string.digits
