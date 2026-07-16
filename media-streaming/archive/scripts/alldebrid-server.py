@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import base64
-import http.server
+from http.server import SimpleHTTPRequestHandler
 import os
 import secrets
 import socketserver
@@ -17,7 +17,7 @@ AUTH_PASS = None
 EXPECTED_AUTH_TOKEN = None
 
 
-class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=MOUNT_DIR, **kwargs)
 
