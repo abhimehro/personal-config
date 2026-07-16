@@ -222,7 +222,66 @@ else
 	FAIL=$((FAIL + 1))
 fi
 
-# ---- Test 14: no writes to real HOME during test run ----
+# ---- Test 14: unchanged inputs cause summary to skip ----
+HOME6="$TEST_DIR/home6"
+make_mock_home "$HOME6"
+write_fixture_metrics "$HOME6/Library/Logs/maintenance/metrics"
+REPORTS6="$HOME6/Library/Logs/maintenance/reports"
+touch "$REPORTS6/summary_weekly_$(date +%Y%m%d).txt"
+mkdir -p "$HOME6/.local/state/personal-config"
+printf '9999999999\n' >"$HOME6/.local/state/personal-config/analytics_dashboard.last_run"
+chmod 600 "$HOME6/.local/state/personal-config/analytics_dashboard.last_run"
+
+if HOME="$HOME6" bash "$SCRIPT" summary weekly >"$TEST_DIR/t14.log" 2>&1; then
+	echo "PASS: summary skips on unchanged inputs and exits 0"
+	PASS=$((PASS + 1))
+else
+	echo "FAIL: summary skip run exited non-zero"
+	cat "$TEST_DIR/t14.log"
+	FAIL=$((FAIL + 1))
+fi
+
+check_grep "summary skip message" "No metrics changes; skipping" "$TEST_DIR/t14.log"
+
+# ---- Test 15: --force bypasses the unchanged summary skip ----
+if HOME="$HOME6" bash "$SCRIPT" summary weekly --force >"$TEST_DIR/t15.log" 2>&1; then
+	echo "PASS: summary --force exits 0"
+	PASS=$((PASS + 1))
+else
+	echo "FAIL: summary --force exited non-zero"
+	cat "$TEST_DIR/t15.log"
+	FAIL=$((FAIL + 1))
+fi
+
+if grep -q "No metrics changes; skipping" "$TEST_DIR/t15.log"; then
+	echo "FAIL: --force did not bypass summary skip"
+	FAIL=$((FAIL + 1))
+else
+	echo "PASS: --force bypasses summary skip"
+	PASS=$((PASS + 1))
+fi
+
+# ---- Test 16: DRY_RUN=1 does not update the analytics state ----
+HOME7="$TEST_DIR/home7"
+make_mock_home "$HOME7"
+write_fixture_metrics "$HOME7/Library/Logs/maintenance/metrics"
+mkdir -p "$HOME7/.local/state/personal-config"
+printf '0\n' >"$HOME7/.local/state/personal-config/analytics_dashboard.last_run"
+chmod 600 "$HOME7/.local/state/personal-config/analytics_dashboard.last_run"
+
+DRY_RUN=1 HOME="$HOME7" bash "$SCRIPT" summary weekly >"$TEST_DIR/t16.log" 2>&1
+
+if grep -qx "0" "$HOME7/.local/state/personal-config/analytics_dashboard.last_run" 2>/dev/null; then
+	echo "PASS: DRY_RUN=1 preserves existing analytics state"
+	PASS=$((PASS + 1))
+else
+	echo "FAIL: DRY_RUN=1 overwrote analytics state"
+	FAIL=$((FAIL + 1))
+fi
+
+check_grep "DRY_RUN logs intended state write" "\[DRY RUN\] Would write last_run" "$TEST_DIR/t16.log"
+
+# ---- Test 17: no writes to real HOME during test run ----
 # Every test invocation above used a dedicated $TEST_DIR/homeN as HOME, so the
 # real analytics.log must not be newer than our start marker.
 REAL_ANALYTICS_LOG="${ORIG_HOME}/Library/Logs/maintenance/analytics.log"

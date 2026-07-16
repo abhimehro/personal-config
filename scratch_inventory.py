@@ -37,7 +37,8 @@ def _fetch_repo_prs(repo):
 def fetch_prs(repos):
     all_prs = []
     # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls using map() to significantly speed up PR fetching
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    # ⚡ Bolt Optimization: Dynamic thread concurrency to eliminate batching latency
+    with ThreadPoolExecutor(max_workers=min(len(repos) or 1, 32)) as executor:
         for repo_prs in executor.map(_fetch_repo_prs, repos):
             all_prs.extend(repo_prs)
     return all_prs

@@ -50,17 +50,17 @@ stop_all_services() {
 	print_status "Stopping all VPN/DNS services..."
 
 	# Stop Control D services
-	sudo pkill -f "ctrld" 2>/dev/null || true
-	sudo pkill -f "dns-monitor" 2>/dev/null || true
-	sudo pkill -f "controld" 2>/dev/null || true
+	sudo pkill -f -- "ctrld" 2>/dev/null || true
+	sudo pkill -f -- "dns-monitor" 2>/dev/null || true
+	sudo pkill -f -- "controld" 2>/dev/null || true
 
 	# Stop Windscribe
-	sudo pkill -f "Windscribe" 2>/dev/null || true
-	sudo pkill -f "windscribe" 2>/dev/null || true
+	sudo pkill -f -- "Windscribe" 2>/dev/null || true
+	sudo pkill -f -- "windscribe" 2>/dev/null || true
 
 	# Stop AdGuard
-	sudo pkill -f "AdGuard" 2>/dev/null || true
-	sudo pkill -f "adguard" 2>/dev/null || true
+	sudo pkill -f -- "AdGuard" 2>/dev/null || true
+	sudo pkill -f -- "adguard" 2>/dev/null || true
 
 	print_success "Services stopped"
 }
