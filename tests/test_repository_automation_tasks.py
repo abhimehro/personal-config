@@ -121,19 +121,19 @@ class TestRunSafeAdjustmentCommands(unittest.TestCase):
         }
 
     @patch("repository_automation_tasks.writes_allowed", return_value=False)
-    def test_writes_not_allowed(self, mock_writes):
+    def test_writes_not_allowed(self, *mocks):
         res, url = run_safe_adjustment_commands({"auto_apply_safe_changes": True})
         self.assertEqual((res, url), ([], ""))
 
     @patch("repository_automation_tasks.writes_allowed", return_value=True)
-    def test_auto_apply_disabled(self, mock_writes):
+    def test_auto_apply_disabled(self, *mocks):
         res, url = run_safe_adjustment_commands({"auto_apply_safe_changes": False})
         self.assertEqual((res, url), ([], ""))
 
     @patch("repository_automation_tasks.writes_allowed", return_value=True)
     @patch("repository_automation_tasks.run_shell_command", return_value={"exit_code": 0})
     @patch("repository_automation_tasks.git_output", return_value="")
-    def test_no_changes(self, mock_git, mock_shell, mock_writes):
+    def test_no_changes(self, *mocks):
         res, url = run_safe_adjustment_commands(self.section)
         self.assertEqual(len(res), 1)
         self.assertEqual(res[0]["name"], "cmd")
@@ -144,7 +144,7 @@ class TestRunSafeAdjustmentCommands(unittest.TestCase):
     @patch("repository_automation_tasks.git_output", return_value=" M .github/workflows/main.yml\n")
     @patch("repository_automation_tasks._cached_matches_any", return_value=True)
     @patch("repository_automation_tasks.create_pr_for_current_changes", return_value="http://pr-url")
-    def test_changes_applied(self, mock_pr, mock_matches, mock_git, mock_shell, mock_writes):
+    def test_changes_applied(self, *mocks):
         res, url = run_safe_adjustment_commands(self.section)
         self.assertEqual(len(res), 1)
         self.assertEqual(res[0]["name"], "cmd")
