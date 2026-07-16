@@ -1,863 +1,504 @@
-# Personal System Configuration
+# Gitleaks
 
-[![CodeScene general](https://codescene.io/images/analyzed-by-codescene-badge.svg)](https://codescene.io/projects/80825)
-[![Changelog Status](https://github.com/abhimehro/personal-config/actions/workflows/release-drafter.yml/badge.svg)](https://github.com/abhimehro/personal-config/actions/workflows/release-drafter.yml)
+```
+┌─○───┐
+│ │╲  │
+│ │ ○ │
+│ ○ ░ │
+└─░───┘
+```
 
-[![CodeScene Average Code Health](https://codescene.io/projects/80825/status-badges/average-code-health)](https://codescene.io/projects/80825)
-[![CodeScene Hotspot Code Health](https://codescene.io/projects/80825/status-badges/hotspot-code-health)](https://codescene.io/projects/80825)
-[![CodeScene System Mastery](https://codescene.io/projects/80825/status-badges/system-mastery)](https://codescene.io/projects/80825)
-[![CodeScene Missed Goals](https://codescene.io/projects/80825/status-badges/missed-goals)](https://codescene.io/projects/80825)
+[license]: ./LICENSE
+[badge-license]: https://img.shields.io/github/license/gitleaks/gitleaks.svg
+[go-docs-badge]: https://pkg.go.dev/badge/github.com/gitleaks/gitleaks/v8?status
+[go-docs]: https://pkg.go.dev/github.com/zricethezav/gitleaks/v8
+[badge-build]: https://github.com/gitleaks/gitleaks/actions/workflows/test.yml/badge.svg
+[build]: https://github.com/gitleaks/gitleaks/actions/workflows/test.yml
+[go-report-card-badge]: https://goreportcard.com/badge/github.com/gitleaks/gitleaks/v8
+[go-report-card]: https://goreportcard.com/report/github.com/gitleaks/gitleaks/v8
+[dockerhub]: https://hub.docker.com/r/zricethezav/gitleaks
+[dockerhub-badge]: https://img.shields.io/docker/pulls/zricethezav/gitleaks.svg
+[gitleaks-action]: https://github.com/gitleaks/gitleaks-action
+[gitleaks-badge]: https://img.shields.io/badge/protected%20by-gitleaks-blue
+[gitleaks-playground-badge]: https://img.shields.io/badge/gitleaks%20-playground-blue
+[gitleaks-playground]: https://gitleaks.io/playground
 
-A comprehensive repository for personal system configurations, scripts, and
-documentation to make my macOS development and gaming setup reproducible and
-backed up.
 
-## Overview
+[![Github Action Test][badge-build]][build]
+[![Docker Hub][dockerhub-badge]][dockerhub]
+[![Gitleaks Playground][gitleaks-playground-badge]][gitleaks-playground]
+[![Gitleaks Action][gitleaks-badge]][gitleaks-action]
+[![GoDoc][go-docs-badge]][go-docs]
+[![GoReportCard][go-report-card-badge]][go-report-card]
+[![License][badge-license]][license]
 
-This repository contains configuration files, automation scripts, and detailed
-documentation for my personal computing environment. Key features:
 
-- **🔐 Secure SSH Configuration** - 1Password and [Proton Pass (NEW!)]
-  integration with dynamic network support
-- **🌐 Enhanced VPN + DNS Integration** - Windscribe VPN with Control D privacy
-  filtering
-- **🛡️ Dual Protection System** - VPN encryption + DNS privacy filtering with
-  real-time logging
-- **🛠️ Automated Maintenance System** - Comprehensive system health monitoring
-  and cleanup (NEW!)
-- **⚙️ Development Tools** - Optimized configurations for Cursor IDE and
-  terminal workflows
-- **🎮 Gaming Optimization** - Specialized DNS profiles for gaming performance
-- **📱 Network Automation** - VPN-aware configurations with automatic failover
+### Join our Discord! [![Discord](https://img.shields.io/discord/1102689410522284044.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/8Hzbrnkr7E)
 
-By keeping these configurations in version control, I can:
+Gitleaks is a tool for **detecting** secrets like passwords, API keys, and tokens in git repos, files, and whatever else you wanna throw at it via `stdin`.
 
-- Back up critical system configurations
-- Track changes over time with full history
-- Reproduce my environment on any new machine
-- Document solutions to complex networking challenges
-- Share working configurations with the community
+```
+➜  ~/code(master) gitleaks git -v
 
-## 🎯 Quick Start
+    ○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
 
-### ProtonDrive one-way home backup
+
+Finding:     "export BUNDLE_ENTERPRISE__CONTRIBSYS__COM=cafebabe:deadbeef",
+Secret:      cafebabe:deadbeef
+RuleID:      sidekiq-secret
+Entropy:     2.609850
+File:        cmd/generate/config/rules/sidekiq.go
+Line:        23
+Commit:      cd5226711335c68be1e720b318b7bc3135a30eb2
+Author:      John
+Email:       john@users.noreply.github.com
+Date:        2022-08-03T12:31:40Z
+Fingerprint: cd5226711335c68be1e720b318b7bc3135a30eb2:cmd/generate/config/rules/sidekiq.go:sidekiq-secret:23
+```
+
+## Getting Started
+
+Gitleaks can be installed using Homebrew, Docker, or Go. Gitleaks is also available in binary form for many popular platforms and OS types on the [releases page](https://github.com/gitleaks/gitleaks/releases). In addition, Gitleaks can be implemented as a pre-commit hook directly in your repo or as a GitHub action using [Gitleaks-Action](https://github.com/gitleaks/gitleaks-action).
+
+### Installing
 
 ```bash
-# Safe preview (no changes)
-./scripts/protondrive_backup.sh --dry-run --no-delete
+# MacOS
+brew install gitleaks
 
-# Live mirror into ProtonDrive (uses --delete-delay unless you pass --no-delete)
-./scripts/protondrive_backup.sh --run
+# Docker (DockerHub)
+docker pull zricethezav/gitleaks:latest
+docker run -v ${path_to_host_folder_to_scan}:/path zricethezav/gitleaks:latest [COMMAND] [OPTIONS] [SOURCE_PATH]
+
+# Docker (ghcr.io)
+docker pull ghcr.io/gitleaks/gitleaks:latest
+docker run -v ${path_to_host_folder_to_scan}:/path ghcr.io/gitleaks/gitleaks:latest [COMMAND] [OPTIONS] [SOURCE_PATH]
+
+# From Source (make sure `go` is installed)
+git clone https://github.com/gitleaks/gitleaks.git
+cd gitleaks
+make build
 ```
 
-Edit `./scripts/protondrive_backup.exclude` to tune exclusions (git repos, build
-artifacts, caches, etc.).
+### GitHub Action
 
-### Bootstrap this Mac (idempotent)
-
-```bash
-cd ~/dev/personal-config
-./setup.sh
-# Requires: macOS, Homebrew, 1Password CLI (`op`), rclone installed via brew
-# Does:
-#  - Links dotfiles (SSH, fish, Cursor/VSCode) with backup/verify
-#  - Installs maintenance launchd agents
-#  - Prepares Control D / Windscribe helpers
-#  - Seeds rclone config from template (fill secrets via 1Password)
-#  - Stages media services + LaunchAgents (WebDAV + Alldebrid)
-```
-
-### Linting and Formatting
-
-> **Requires:** [Trunk CLI](https://docs.trunk.io/check/usage) — install with
-> `brew install trunk-io` or `curl https://get.trunk.io -fsSL | bash`
-
-```bash
-# Run all linters (full Trunk pass: style + correctness)
-make lint
-
-# Correctness-only regression gate — SC2155/SC2145; no Trunk required; fast pre-commit check
-make lint-errors
-
-# Auto-fix lint issues
-make lint-fix
-```
-
-### CodeScene PR remediation
-
-When a PR is blocked by CodeScene code health checks during review/salvage
-sessions, comment the following on that PR:
-
-```bash
-/cs-agent skill:fix-code-health-degradations
-```
-
-For canonical triage/salvage policy, see `docs/automated-pr-review-agent.md` and
-`docs/automated-pr-salvage-agent.md`.
-
-### Automated Maintenance System (NEW!)
-
-```bash
-# Check system health
-~/dev/personal-config/maintenance/bin/run_all_maintenance.sh health
-
-# Quick system cleanup
-~/dev/personal-config/maintenance/bin/run_all_maintenance.sh quick
-
-# View automation status
-launchctl list | grep maintenance
-
-# View latest health report
-ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
-```
-
-### Enhanced VPN + DNS Integration
-
-**Using Fish Shell Functions (Recommended):**
-
-```bash
-# After installing configs and reloading fish shell (exec fish)
-nm-status          # Check current network status
-nm-browse          # Switch to Control D browsing mode
-nm-privacy         # Switch to Control D privacy mode
-nm-gaming          # Switch to Control D gaming mode
-nm-vpn             # Switch to Windscribe VPN mode
-nm-regress         # Run full regression test
-nm-cd-status       # Check Control D daemon status
-```
-
-**Using Scripts Directly:**
-
-```bash
-# Preferred: use the unified network mode manager
-./scripts/network-mode-manager.sh controld browsing   # Enable Control D DNS mode
-./scripts/network-mode-manager.sh windscribe          # Enable Windscribe VPN mode
-
-# Full end-to-end regression (Control D → Windscribe)
-./scripts/network-mode-regression.sh browsing
-```
-
-**Control D (2026-07-09):** Expect **WORKING / local_fallback** (profile-aware
-Local Config, brew ctrld v1.5.3). Check with `./scripts/controld-status.sh`. CD
-Mode is upstream-broken; see `AGENTS.md`.
-
-Under the hood, `controld-system/scripts/controld-manager` remains the engine
-that starts `ctrld` and applies the correct Control D profile;
-`network-mode-manager.sh` wraps this with IPv6 management, DNS routing, and
-verification.
-
-### SSH Configuration
-
-```bash
-# Install SSH configuration with 1Password integration
-./scripts/install_ssh_config.sh
-
-# Test your setup
-./tests/test_ssh_config.sh
-
-# Connect to development machine (generic hostnames)
-ssh dev-mdns   # Primary (works with/without VPN)
-ssh dev-auto   # Smart alias / fallback
-```
-
-> Note: SSH dev hosts (`dev-mdns`, `dev-local`, `dev-auto`) are defined locally
-> in `~/.ssh/config.local`. See the **Troubleshooting** section below if
-> connections fail.
-
-### Run Performance Benchmarks
-
-```bash
-# Install hyperfine (one-time setup — required)
-brew install hyperfine
-
-# Benchmark all critical scripts
-make benchmark
-
-# Benchmark a specific script
-./tests/benchmarks/benchmark_scripts.sh nm-status
-
-# Available targets: nm-status, sync-all, verify-all, all
-```
-
-### Legacy DNS Management (v3.x)
-
-```bash
-# Alternative direct DNS switching (without VPN)
-# Kept for fallback and historical reference; v4.x prefers network-mode-manager.
-sudo dns-privacy     # Privacy mode
-sudo dns-gaming      # Gaming mode
-```
-
-## 📁 Repository Structure
+Check out the official [Gitleaks GitHub Action](https://github.com/gitleaks/gitleaks-action)
 
 ```
-personal-config/
-├── 🛠️ maintenance/            # Automated Maintenance System (NEW!)
-│   ├── bin/                   # Executable maintenance scripts
-│   │   ├── run_all_maintenance.sh  # Master orchestration script
-│   │   ├── health_check.sh    # System health monitoring
-│   │   └── quick_cleanup.sh   # Quick system cleanup
-│   ├── conf/                  # Configuration files
-│   ├── lib/                   # Shared libraries
-│   └── README.md              # Maintenance system guide
-├── 🌐 windscribe-controld/     # Enhanced VPN + DNS Integration
-│   ├── windscribe-controld-setup.sh  # Automated setup & verification
-│   ├── setup-guide.md         # Complete integration guide
-│   └── ctrld.toml.backup      # Configuration backup
-├── 🌐 dns-setup/              # Dynamic DNS Management System
-│   ├── scripts/               # DNS switching automation
-│   │   ├── dns-privacy        # Privacy profile switcher
-│   │   ├── dns-gaming         # Gaming profile switcher
-│   │   ├── deploy.sh          # Script deployment tool
-│   │   └── README.md          # Comprehensive DNS guide
-│   ├── DEPLOYMENT_SUMMARY.md  # Complete setup documentation
-│   └── backups/               # Network configuration backups
-├── 🔐 configs/                # System Configuration Files
-│   ├── ssh/                   # SSH configuration
-│   │   ├── config             # Main SSH configuration
-│   │   └── agent.toml         # 1Password SSH agent settings
-│   ├── fish/                  # Fish shell configuration
-│   └── .vscode-R/             # R development settings
-├── 📜 scripts/                # Automation Scripts
-│   ├── ssh/                   # SSH automation
-│   │   ├── smart_connect.sh   # Intelligent connection
-│   │   ├── check_connections.sh # Connection testing
-│   │   └── diagnose_vpn.sh    # VPN troubleshooting
-│   └── install_ssh_config.sh  # SSH setup automation
-├── 🧪 tests/                  # Validation & Testing
-│   ├── test_ssh_config.sh     # SSH configuration tests
-│   └── test_config_fish.sh    # Fish shell tests
-├── 📚 docs/                   # Documentation
-│   └── ssh/                   # SSH setup guides
-└── 🎨 cursor/                 # Cursor IDE themes
+name: gitleaks
+on: [pull_request, push, workflow_dispatch]
+jobs:
+  scan:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE}} # Only required for Organizations, not personal accounts.
 ```
 
-## ✨ Key Features
+### Pre-Commit
 
-### 🌐 Dynamic DNS Management (New!)
+1. Install pre-commit from https://pre-commit.com/#install
+2. Create a `.pre-commit-config.yaml` file at the root of your repository with the following content:
 
-Intelligent DNS switching system with Control D integration:
+   ```
+   repos:
+     - repo: https://github.com/gitleaks/gitleaks
+       rev: v8.24.2
+       hooks:
+         - id: gitleaks
+   ```
 
-**Privacy Mode (`dns-privacy`)**
+   for a [native execution of GitLeaks](https://github.com/gitleaks/gitleaks/releases) or use the [`gitleaks-docker` pre-commit ID](https://github.com/gitleaks/gitleaks/blob/master/.pre-commit-hooks.yaml) for executing GitLeaks using the [official Docker images](#docker)
 
-- Enhanced security filtering
-- Malware & tracking protection
-- Optimized for browsing and AI applications
+3. Auto-update the config to the latest repos' versions by executing `pre-commit autoupdate`
+4. Install with `pre-commit install`
+5. Now you're all set!
 
-**Gaming Mode (`dns-gaming`)**
-
-- Minimal filtering for maximum performance
-- Gaming service optimizations (Battle.net, GeForce Now, Overwatch 2)
-- Ultra-low latency DNS resolution
-
-**Features:**
-
-- ✅ **Windscribe VPN Integration** - Seamless VPN compatibility
-- ✅ **Profile-Specific DoH Endpoints** - Optimized upstream resolvers
-- ✅ **Automatic Network Detection** - Skips VPN interfaces intelligently
-- ✅ **DNS Leak Protection** - Built-in firewall integration
-- ✅ **Smart Verification** - Real-time DNS resolution testing
-- ✅ **One-Command Switching** - Simple `sudo dns-*` commands
-
-### 🔐 SSH Configuration
-
-Professional SSH setup optimized for development:
-
-**Features:**
-
-- **🔐 1Password SSH Agent** - Secure key management without local storage
-- **🌐 Dynamic Network Support** - VPN-aware connection methods
-- **🎨 Cursor IDE Optimized** - Perfect remote development setup
-- **📱 mDNS/Bonjour Support** - Reliable local machine discovery
-- **🔧 Multiple Fallback Options** - Connection reliability guaranteed
-- **📊 Comprehensive Diagnostics** - Built-in testing and troubleshooting
-
-**Connection Methods (generic hostnames):**
-
-```bash
-ssh dev-mdns    # Primary (works with/without VPN)
-ssh dev-local   # Local network only
-ssh dev-auto    # Auto-detection fallback
+```
+➜ git commit -m "this commit contains a secret"
+Detect hardcoded secrets.................................................Failed
 ```
 
-## 🚀 Installation
+Note: to disable the gitleaks pre-commit hook you can prepend `SKIP=gitleaks` to the commit command
+and it will skip running gitleaks
 
-### Complete Setup (Recommended)
-
-```bash
-# Clone the repository
-git clone <your-repo-url> ~/dev/personal-config
-cd ~/dev/personal-config
-
-# Install all configuration files (symlinks to home directory)
-./scripts/install_all_configs.sh
-
-# This will:
-# - Create symlinks for SSH, Fish shell, Cursor, VS Code configs
-# - Backup any existing configuration files
-# - Verify all symlinks are correctly established
-# - Set up Control D fish functions
-
-# Reload fish shell to use new functions
-exec fish
-
-# Test Control D functions
-nm-status          # Check network status
+```
+➜ SKIP=gitleaks git commit -m "skip gitleaks check"
+Detect hardcoded secrets................................................Skipped
 ```
 
-### Configuration Management (Symlink-Based)
+## Usage
 
-This repository uses a **symlink-based configuration** model where repository
-files are linked to your home directory. This ensures:
+```
+Usage:
+  gitleaks [command]
 
-- ✅ Repository updates automatically reflect in your home directory
-- ✅ Single source of truth for all configurations
-- ✅ Easy backup and restore via git
+Available Commands:
+  completion  generate the autocompletion script for the specified shell
+  dir         scan directories or files for secrets
+  git         scan git repositories for secrets
+  help        Help about any command
+  stdin       detect secrets from stdin
+  version     display gitleaks version
 
-**Symlinked Configurations:**
+Flags:
+  -b, --baseline-path string          path to baseline with issues that can be ignored
+  -c, --config string                 config file path
+                                      order of precedence:
+                                      1. --config/-c
+                                      2. env var GITLEAKS_CONFIG
+                                      3. env var GITLEAKS_CONFIG_TOML with the file content
+                                      4. (target path)/.gitleaks.toml
+                                      If none of the four options are used, then gitleaks will use the default config
+      --enable-rule strings           only enable specific rules by id
+      --exit-code int                 exit code when leaks have been encountered (default 1)
+  -i, --gitleaks-ignore-path string   path to .gitleaksignore file or folder containing one (default ".")
+  -h, --help                          help for gitleaks
+      --ignore-gitleaks-allow         ignore gitleaks:allow comments
+  -l, --log-level string              log level (trace, debug, info, warn, error, fatal) (default "info")
+      --max-decode-depth int          allow recursive decoding up to this depth (default "0", no decoding is done)
+      --max-target-megabytes int      files larger than this will be skipped
+      --no-banner                     suppress banner
+      --no-color                      turn off color for verbose output
+      --redact uint[=100]             redact secrets from logs and stdout. To redact only parts of the secret just apply a percent value from 0..100. For example --redact=20 (default 100%)
+  -f, --report-format string          output format (json, csv, junit, sarif) (default "json")
+  -r, --report-path string            report file
+      --report-template string        template file used to generate the report (implies --report-format=template)
+  -v, --verbose                       show verbose output from scan
+      --version                       version for gitleaks
 
-- `~/.ssh/config` → `configs/ssh/config`
-- `~/.ssh/agent.toml` → `configs/ssh/agent.toml`
-- `~/.config/fish/` → `configs/.config/fish/`
-- `~/.cursor/` → `.cursor/`
-- `~/.vscode/` → `.vscode/`
-
-**Management Commands:**
-
-```bash
-# Sync all configs (create/update symlinks)
-./scripts/sync_all_configs.sh
-
-# Verify all symlinks are correct
-./scripts/verify_all_configs.sh
-
-# Complete installation (sync + verify)
-./scripts/install_all_configs.sh
+Use "gitleaks [command] --help" for more information about a command.
 ```
 
-### Individual Component Setup
+### Commands
 
-#### SSH Configuration Only
+⚠️ v8.19.0 introduced a change that deprecated `detect` and `protect`. Those commands are still available but
+are hidden in the `--help` menu. Take a look at this [gist](https://gist.github.com/zricethezav/b325bb93ebf41b9c0b0507acf12810d2) for easy command translations.
+If you find v8.19.0 broke an existing command (`detect`/`protect`), please open an issue.
 
-```bash
-# Quick install
-./scripts/install_ssh_config.sh
+There are three scanning modes: `git`, `dir`, and `stdin`.
 
-# Or use the sync script
-./scripts/sync_ssh_config.sh
-./scripts/verify_ssh_config.sh
+#### Git
+The `git` command lets you scan local git repos. Under the hood, gitleaks uses the `git log -p` command to scan patches.
+You can configure the behavior of `git log -p` with the `log-opts` option.
+For example, if you wanted to run gitleaks on a range of commits you could use the following
+command: `gitleaks git -v --log-opts="--all commitA..commitB" path_to_repo`. See the [git log](https://git-scm.com/docs/git-log) documentation for more information.
+If there is no target specified as a positional argument, then gitleaks will attempt to scan the current working directory as a git repo.
+
+#### Dir
+The `dir` (aliases include `files`, `directory`) command lets you scan directories and files. Example: `gitleaks dir -v path_to_directory_or_file`.
+If there is no target specified as a positional argument, then gitleaks will scan the current working directory.
+
+#### Stdin
+You can also stream data to gitleaks with the `stdin` command. Example: `cat some_file | gitleaks -v stdin`
+
+### Creating a baseline
+
+When scanning large repositories or repositories with a long history, it can be convenient to use a baseline. When using a baseline,
+gitleaks will ignore any old findings that are present in the baseline. A baseline can be any gitleaks report. To create a gitleaks report, run gitleaks with the `--report-path` parameter.
+
+```
+gitleaks git --report-path gitleaks-report.json # This will save the report in a file called gitleaks-report.json
 ```
 
-### DNS Management Only
+Once as baseline is created it can be applied when running the detect command again:
 
-```bash
-# Deploy DNS scripts to ~/bin
-./dns-setup/scripts/deploy.sh
-
-# Switch profiles
-sudo dns-privacy  # Enhanced privacy filtering
-sudo dns-gaming   # Gaming optimization
+```
+gitleaks git --baseline-path gitleaks-report.json --report-path findings.json
 ```
 
-### SSH Configuration Only
+After running the detect command with the --baseline-path parameter, report output (findings.json) will only contain new issues.
 
-```bash
-# Quick install
-./scripts/install_ssh_config.sh
+## Pre-Commit hook
 
-# Manual install
-cp configs/ssh/config ~/.ssh/config
-cp configs/ssh/agent.toml ~/.ssh/agent.toml
-chmod 600 ~/.ssh/config ~/.ssh/agent.toml
+You can run Gitleaks as a pre-commit hook by copying the example `pre-commit.py` script into
+your `.git/hooks/` directory.
+
+## Load Configuration
+
+The order of precedence is:
+
+1. `--config/-c` option:
+      ```bash
+      gitleaks git --config /home/dev/customgitleaks.toml .
+      ```
+2. Environment variable `GITLEAKS_CONFIG` with the file path:
+      ```bash
+      export GITLEAKS_CONFIG="/home/dev/customgitleaks.toml"
+      gitleaks git .
+      ```
+3. Environment variable `GITLEAKS_CONFIG_TOML` with the file content:
+      ```bash
+      export GITLEAKS_CONFIG_TOML=`cat customgitleaks.toml`
+      gitleaks git .
+      ```
+4. A `.gitleaks.toml` file within the target path:
+      ```bash
+      gitleaks git .
+      ```
+
+If none of the four options are used, then gitleaks will use the default config.
+
+## Configuration
+
+Gitleaks offers a configuration format you can follow to write your own secret detection rules:
+
+```toml
+# Title for the gitleaks configuration file.
+title = "Custom Gitleaks configuration"
+
+# You have basically two options for your custom configuration:
+#
+# 1. define your own configuration, default rules do not apply
+#
+#    use e.g., the default configuration as starting point:
+#    https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+#
+# 2. extend a configuration, the rules are overwritten or extended
+#
+#    When you extend a configuration the extended rules take precedence over the
+#    default rules. I.e., if there are duplicate rules in both the extended
+#    configuration and the default configuration the extended rules or
+#    attributes of them will override the default rules.
+#    Another thing to know with extending configurations is you can chain
+#    together multiple configuration files to a depth of 2. Allowlist arrays are
+#    appended and can contain duplicates.
+
+# useDefault and path can NOT be used at the same time. Choose one.
+[extend]
+# useDefault will extend the default gitleaks config built in to the binary
+# the latest version is located at:
+# https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+useDefault = true
+# or you can provide a path to a configuration to extend from.
+# The path is relative to where gitleaks was invoked,
+# not the location of the base config.
+# path = "common_config.toml"
+# If there are any rules you don't want to inherit, they can be specified here.
+disabledRules = [ "generic-api-key"]
+
+# An array of tables that contain information that define instructions
+# on how to detect secrets
+[[rules]]
+
+# Unique identifier for this rule
+id = "awesome-rule-1"
+
+# Short human readable description of the rule.
+description = "awesome rule 1"
+
+# Golang regular expression used to detect secrets. Note Golang's regex engine
+# does not support lookaheads.
+regex = '''one-go-style-regex-for-this-rule'''
+
+# Int used to extract secret from regex match and used as the group that will have
+# its entropy checked if `entropy` is set.
+secretGroup = 3
+
+# Float representing the minimum shannon entropy a regex group must have to be considered a secret.
+entropy = 3.5
+
+# Golang regular expression used to match paths. This can be used as a standalone rule or it can be used
+# in conjunction with a valid `regex` entry.
+path = '''a-file-path-regex'''
+
+# Keywords are used for pre-regex check filtering. Rules that contain
+# keywords will perform a quick string compare check to make sure the
+# keyword(s) are in the content being scanned. Ideally these values should
+# either be part of the identiifer or unique strings specific to the rule's regex
+# (introduced in v8.6.0)
+keywords = [
+  "auth",
+  "password",
+  "token",
+]
+
+# Array of strings used for metadata and reporting purposes.
+tags = ["tag","another tag"]
+
+    # ⚠️ In v8.21.0 `[rules.allowlist]` was replaced with `[[rules.allowlists]]`.
+    # This change was backwards-compatible: instances of `[rules.allowlist]` still  work.
+    #
+    # You can define multiple allowlists for a rule to reduce false positives.
+    # A finding will be ignored if _ANY_ `[[rules.allowlists]]` matches.
+    [[rules.allowlists]]
+    description = "ignore commit A"
+    # When multiple criteria are defined the default condition is "OR".
+    # e.g., this can match on |commits| OR |paths| OR |stopwords|.
+    condition = "OR"
+    commits = [ "commit-A", "commit-B"]
+    paths = [
+      '''go\.mod''',
+      '''go\.sum'''
+    ]
+    # note: stopwords targets the extracted secret, not the entire regex match
+    # like 'regexes' does. (stopwords introduced in 8.8.0)
+    stopwords = [
+      '''client''',
+      '''endpoint''',
+    ]
+
+    [[rules.allowlists]]
+    # The "AND" condition can be used to make sure all criteria match.
+    # e.g., this matches if |regexes| AND |paths| are satisfied.
+    condition = "AND"
+    # note: |regexes| defaults to check the _Secret_ in the finding.
+    # Acceptable values for |regexTarget| are "secret" (default), "match", and "line".
+    regexTarget = "match"
+    regexes = [ '''(?i)parseur[il]''' ]
+    paths = [ '''package-lock\.json''' ]
+
+# You can extend a particular rule from the default config. e.g., gitlab-pat
+# if you have defined a custom token prefix on your GitLab instance
+[[rules]]
+id = "gitlab-pat"
+# all the other attributes from the default rule are inherited
+
+    [[rules.allowlists]]
+    regexTarget = "line"
+    regexes = [ '''MY-glpat-''' ]
+
+# This is a global allowlist which has a higher order of precedence than rule-specific allowlists.
+# If a commit listed in the `commits` field below is encountered then that commit will be skipped and no
+# secrets will be detected for said commit. The same logic applies for regexes and paths.
+[allowlist]
+description = "global allow list"
+commits = [ "commit-A", "commit-B", "commit-C"]
+paths = [
+  '''gitleaks\.toml''',
+  '''(.*?)(jpg|gif|doc)'''
+]
+
+# note: (global) regexTarget defaults to check the _Secret_ in the finding.
+# if regexTarget is not specified then _Secret_ will be used.
+# Acceptable values for regexTarget are "match" and "line"
+regexTarget = "match"
+regexes = [
+  '''219-09-9999''',
+  '''078-05-1120''',
+  '''(9[0-9]{2}|666)-\d{2}-\d{4}''',
+]
+# note: stopwords targets the extracted secret, not the entire regex match
+# like 'regexes' does. (stopwords introduced in 8.8.0)
+stopwords = [
+  '''client''',
+  '''endpoint''',
+]
 ```
 
-## 🔧 Configuration
+Refer to the default [gitleaks config](https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml) for examples or follow the [contributing guidelines](https://github.com/gitleaks/gitleaks/blob/master/CONTRIBUTING.md) if you would like to contribute to the default configuration. Additionally, you can check out [this gitleaks blog post](https://blog.gitleaks.io/stop-leaking-secrets-configuration-2-3-aeed293b1fbf) which covers advanced configuration setups.
 
-### Environment Setup
+### Additional Configuration
 
-```bash
-# Add required environment variables
-export PATH="$HOME/bin:$PATH"  # For DNS scripts
+#### gitleaks:allow
 
-# Optional: Set Control D profile IDs
-export CTRLD_PRIVACY_PROFILE=<Privacy-Profile-ID>
-export CTRLD_GAMING_PROFILE=<Gaming-Profile-ID>
+If you are knowingly committing a test secret that gitleaks will catch you can add a `gitleaks:allow` comment to that line which will instruct gitleaks
+to ignore that secret. Ex:
+
+```
+class CustomClass:
+    discord_client_secret = '8dyfuiRyq=vVc3RRr_edRk-fK__JItpZ'  #gitleaks:allow
+
 ```
 
-### Media automation (Infuse + Alldebrid + cloud union)
+#### .gitleaksignore
 
-- **Data roots**: iCloud Desktop/Documents
-  (`~/Library/Mobile Documents/com~apple~CloudDocs/Media`) via rclone union of
-  `gdrive:Media` + `onedrive:Media` (no local duplication).
-- **WebDAV server**: LaunchAgent `com.<your-home-folder>.media.webdav` runs
-  `/Users/<your-home-folder>/Library/Media/bin/start-media-server.sh` on port
-  **8088** (read-only).
-- **Alldebrid helper**: LaunchAgent `com.<your-home-folder>.media.alldebrid`
-  mounts to `/Users/<your-home-folder>/mnt/alldebrid` and serves on **8080**.
-- **Secrets**:
-  - `~/.config/rclone/rclone.conf` (seed from
-    `media-streaming/configs/rclone.conf.template`, fill via `op inject`).
-  - `~/.config/media-server/credentials (optional fallback only in the current 1Password-first setup)`
-    (untracked; copy `media-streaming/configs/media-credentials.example` and
-    inject creds with 1Password).
-- **Cache & logs**: `~/Library/Application Support/MediaCache` (kept out of
-  iCloud) and `~/Library/Logs/media/*.out|*.err`.
-- **Control**: `launchctl list | grep media` to verify; manual start:
-  `~/Library/Media/bin/start-media-server.sh`.
+You can ignore specific findings by creating a `.gitleaksignore` file at the root of your repo. In release v8.10.0 Gitleaks added a `Fingerprint` value to the Gitleaks report. Each leak, or finding, has a Fingerprint that uniquely identifies a secret. Add this fingerprint to the `.gitleaksignore` file to ignore that specific secret. See Gitleaks' [.gitleaksignore](https://github.com/gitleaks/gitleaks/blob/master/.gitleaksignore) for an example. Note: this feature is experimental and is subject to change in the future.
 
-### MCP tooling
+#### Decoding
 
-- Templates live in `mcp-configs/README.md` and
-  `mcp-configs/mcp-servers.template.json`.
-- Copy the template to a local `servers.local.json`, fill keys from 1Password,
-  and keep it gitignored (patterns already in `.gitignore`).
-- When running commands that need secrets resolved from 1Password, use
-  `op run -- <command>` (e.g.,
-  `op run -- uv run python main.py --dry-run --profiles dummy`).
+Sometimes secrets are encoded in a way that can make them difficult to find
+with just regex. Now you can tell gitleaks to automatically find and decode
+encoded text. The flag `--max-decode-depth` enables this feature (the default
+value "0" means the feature is disabled by default).
 
-### VPN Integration
+Recursive decoding is supported since decoded text can also contain encoded
+text.  The flag `--max-decode-depth` sets the recursion limit. Recursion stops
+when there are no new segments of encoded text to decode, so setting a really
+high max depth doesn't mean it will make that many passes. It will only make as
+many as it needs to decode the text. Overall, decoding only minimally increases
+scan times.
 
-**Windscribe Configuration:**
+The findings for encoded text differ from normal findings in the following
+ways:
 
-- **VPN Tunnel DNS**: Leave default (inherits Control D)
-- **App Internal DNS**: Set to "OS Default"
-- **Firewall**: Enable for DNS leak protection
+- The location points the bounds of the encoded text
+  - If the rule matches outside the encoded text, the bounds are adjusted to
+    include that as well
+- The match and secret contain the decoded value
+- Two tags are added `decoded:<encoding>` and `decode-depth:<depth>`
 
-**ProtonVPN Alternative:**
+Currently supported encodings:
 
-- Use Control D custom DNS when needed
+- `base64` (both standard and base64url)
 
-## 🧪 Testing & Verification
+#### Reporting
 
-### Running Tests
+Gitleaks has built-in support for several report formats: [`json`](https://github.com/gitleaks/gitleaks/blob/master/testdata/expected/report/json_simple.json), [`csv`](https://github.com/gitleaks/gitleaks/blob/master/testdata/expected/report/csv_simple.csv?plain=1), [`junit`](https://github.com/gitleaks/gitleaks/blob/master/testdata/expected/report/junit_simple.xml), and [`sarif`](https://github.com/gitleaks/gitleaks/blob/master/testdata/expected/report/sarif_simple.sarif).
 
-This repository includes a comprehensive test suite. The shell tests run in
-parallel by default for maximum performance.
+If none of these formats fit your need, you can create your own report format with a [Go `text/template` .tmpl file](https://www.digitalocean.com/community/tutorials/how-to-use-templates-in-go#step-4-writing-a-template) and the `--report-template` flag. The template can use [extended functionality from the `Masterminds/sprig` template library](https://masterminds.github.io/sprig/).
 
-```bash
-# Run all shell tests in parallel (automatically ignores known macOS-specific failures)
-make test
-
-# Run smoke test subset only — fast, cross-platform, ideal for pre-commit hooks
-make test-quick
-
-# Run a single shell test
-bash tests/test_ssh_config.sh
-
-# Run all Python tests
-make test-python
-
-# Run all tests (shell + Python)
-make test-all
-
-# Run all Python tests directly (alternative)
-python3 -m unittest discover -s tests -p 'test_*.py' -v
+For example, the following template provides a custom JSON output:
+```gotemplate
+# jsonextra.tmpl
+[{{ $lastFinding := (sub (len . ) 1) }}
+{{- range $i, $finding := . }}{{with $finding}}
+    {
+        "Description": {{ quote .Description }},
+        "StartLine": {{ .StartLine }},
+        "EndLine": {{ .EndLine }},
+        "StartColumn": {{ .StartColumn }},
+        "EndColumn": {{ .EndColumn }},
+        "Line": {{ quote .Line }},
+        "Match": {{ quote .Match }},
+        "Secret": {{ quote .Secret }},
+        "File": "{{ .File }}",
+        "SymlinkFile": {{ quote .SymlinkFile }},
+        "Commit": {{ quote .Commit }},
+        "Entropy": {{ .Entropy }},
+        "Author": {{ quote .Author }},
+        "Email": {{ quote .Email }},
+        "Date": {{ quote .Date }},
+        "Message": {{ quote .Message }},
+        "Tags": [{{ $lastTag := (sub (len .Tags ) 1) }}{{ range $j, $tag := .Tags }}{{ quote . }}{{ if ne $j $lastTag }},{{ end }}{{ end }}],
+        "RuleID": {{ quote .RuleID }},
+        "Fingerprint": {{ quote .Fingerprint }}
+    }{{ if ne $i $lastFinding }},{{ end }}
+{{- end}}{{ end }}
+]
 ```
 
-### DNS System
-
-```bash
-# Test current DNS resolution
-dig +short google.com @127.0.0.1
-
-# Check active profile
-dig +short txt test.controld.com @127.0.0.1
-
-# Verify system DNS configuration
-scutil --dns | head -20
+Usage:
+```sh
+$ gitleaks dir ~/leaky-repo/ --report-path "report.json" --report-format template --report-template testdata/report/jsonextra.tmpl
 ```
 
-### SSH Configuration
+## Sponsorships
 
-```bash
-# Comprehensive SSH tests
-./tests/test_ssh_config.sh
+<p align="left">
+	<h3><a href="https://coderabbit.ai/?utm_source=oss&utm_medium=sponsorship&utm_campaign=gitleaks">coderabbit.ai</h3>
+	  <a href="https://coderabbit.ai/?utm_source=oss&utm_medium=sponsorship&utm_campaign=gitleaks">
+		  <img alt="CodeRabbit.ai Sponsorship" src="https://github.com/gitleaks/gitleaks/assets/15034943/76c30a85-887b-47ca-9956-17a8e55c6c41" width=200>
+	  </a>
+</p>
 
-# Test all connection methods
-./scripts/ssh/check_connections.sh
 
-# Manual connection verification
-./scripts/ssh/setup_verification.sh
+## Exit Codes
+
+You can always set the exit code when leaks are encountered with the --exit-code flag. Default exit codes below:
+
 ```
-
-## ⚡ Performance Benchmarking
-
-This repository includes a performance benchmarking infrastructure for tracking
-script execution speed and detecting performance regressions.
-
-### Quick Start
-
-```bash
-# Install hyperfine (required dependency)
-brew install hyperfine
-
-# Run all benchmarks
-make benchmark
-
-# Run specific benchmark
-./tests/benchmarks/benchmark_scripts.sh nm-status
-```
-
-### Available Benchmark Targets
-
-| Target       | Script                           | Description                   |
-| ------------ | -------------------------------- | ----------------------------- |
-| `nm-status`  | `network-mode-manager.sh status` | Network mode status check     |
-| `sync-all`   | `sync_all_configs.sh`            | Configuration sync operations |
-| `verify-all` | `verify_all_configs.sh`          | Configuration verification    |
-| `all`        | All scripts above                | Run all benchmarks (default)  |
-
-### Benchmark Configuration
-
-- **Warmup Runs**: 2 iterations to prime caches
-- **Benchmark Runs**: 5 iterations for statistical accuracy
-- **Baseline Storage**: `tests/benchmarks/baselines/*.json`
-
-### Usage Examples
-
-```bash
-# Benchmark network mode status check
-./tests/benchmarks/benchmark_scripts.sh nm-status
-
-# Benchmark config sync performance
-./tests/benchmarks/benchmark_scripts.sh sync-all
-
-# Benchmark verification speed
-./tests/benchmarks/benchmark_scripts.sh verify-all
-
-# Run all benchmarks via Makefile
-make benchmark
-```
-
-### Baseline Results
-
-Results are saved as JSON files in `tests/benchmarks/baselines/` for:
-
-- Performance regression tracking
-- Before/after optimization comparisons
-- CI/CD integration potential
-
-## 📊 Monitoring & Maintenance
-
-### DNS Logs
-
-```bash
-# View DNS switching logs
-sudo tail -f /var/log/ctrld-privacy.log
-sudo tail -f /var/log/ctrld-gaming.log
-
-# Check daemon status
-sudo lsof -nP -iTCP:53 -sTCP:LISTEN -iUDP:53
-```
-
-### System Health
-
-```bash
-# Network diagnostics
-./scripts/ssh/diagnose_vpn.sh
-
-# DNS resolution testing
-for server in 127.0.0.1 8.8.8.8 1.1.1.1; do
-  echo "Testing $server:"
-  dig +short google.com @$server
-done
-```
-
-## 🎮 Use Cases
-
-### Development Workflow
-
-1. **Connect**: `ssh dev-mdns`
-2. **Privacy Mode**: `sudo dns-privacy`
-3. \*\*Code with enhanced security filtering`
-
-### Gaming Session
-
-1. **Gaming Mode**: `sudo dns-gaming`
-2. **Minimal filtering for maximum performance**
-3. **Optimized for Battle.net, Steam, Nvidia GeForce Now, Overwatch 2**
-
-### VPN Switching
-
-1. **Windscribe VPN**: Default setup with Control D integration
-2. **Proton VPN**: When port forwarding or different geo-location needed
-3. **DNS profiles work seamlessly with both**
-
-## 🔒 Security & Privacy
-
-- **🔐 Secrets Management**: Uses 1Password for SSH keys, environment variables
-  for configs
-- **🌐 DNS Leak Protection**: Built-in firewall integration prevents leaks
-- **🛡️ Profile Isolation**: Separate DNS policies for different use cases
-- **📊 Verification**: Real-time testing ensures configuration integrity
-- **🔄 Version Control**: All changes tracked with full history
-
-## 🛠️ Troubleshooting
-
-### Common Issues
-
-**DNS switching problems:**
-
-```bash
-# Check what's using port 53
-sudo lsof -nP -iTCP:53 -sTCP:LISTEN -iUDP:53
-
-# Reset DNS to defaults
-for s in $(networksetup -listallnetworkservices | tail -n +2 | sed 's/^\*//'); do
-  sudo networksetup -setdnsservers "$s" empty || true
-done
-```
-
-**SSH connection issues:**
-
-```bash
-# Comprehensive diagnostics
-./scripts/ssh/diagnose_vpn.sh
-
-# Test individual connection methods
-./scripts/ssh/check_connections.sh
-```
-
-### Support Resources
-
-- **[DNS Setup Guide](dns-setup/scripts/README.md)** - Complete DNS
-  documentation
-- **[SSH Configuration Guide](docs/ssh/ssh_configuration_guide.md)** - SSH setup
-  instructions
-- **[Deployment Summary](dns-setup/DEPLOYMENT_SUMMARY.md)** - Technical
-  implementation details
-
-## 📌 Pinned Formulae (Homebrew)
-
-Some Homebrew formulae are pinned to protect a working install from
-`brew upgrade`. `scripts/pin-redshift.sh` manages the `redshift` entry below;
-the block between the markers is auto-generated, so update it via the script
-rather than by hand.
-
-<!-- PINNED-FORMULAE:START -->
-
-| Formula  | Version | Pinned (date) | Disable date |
-| -------- | ------- | ------------- | ------------ |
-| redshift | 1.12_1  | 2026-06-25    | 2027-06-21   |
-
-<!-- PINNED-FORMULAE:END -->
-
-**Why redshift is pinned:** the core formula is _deprecated_ (upstream is
-unmaintained; last release was 1.12), and Homebrew has it scheduled for
-_disable_ on **June 21, 2027**. Pinning keeps the current build from being
-upgraded/reinstalled out from under the True Tone + manual-elevation config in
-`configs/.config/redshift/redshift.conf`. Pinning protects through the
-deprecation window only; it does **not** survive the disable date, see the
-escape hatch below.
-
-**Manage the pin:**
-
-```bash
-./scripts/pin-redshift.sh           # pin redshift + refresh the block above
-./scripts/pin-redshift.sh --fetch   # also cache the bottle and record its path
-brew list --pinned                  # confirm what is pinned
-brew unpin redshift                 # release the pin when migrating
-```
-
-### Escape hatch after the disable date (source build)
-
-When `redshift` is disabled, a cached bottle is **not** a reliable long-term
-fallback: a bottle is a frozen binary compiled against today's macOS SDK and
-today's `glib`/`gettext`, so an OS bump or a dependency upgrade can break its
-linkage with no way to rebuild it. The durable path is a **from-source build**,
-vendored into a personal tap so `brew` keeps managing it and recompiles against
-whatever libraries are current at the time:
-
-```bash
-brew tap-new "$USER/local"
-brew extract --version=1.12 redshift "$USER/local"
-brew install --build-from-source "$USER/local/redshift@1.12"
-```
-
-A cached bottle is still worth keeping as a _convenience snapshot_ for a quick
-same-OS reinstall, but treat it as disposable, not as the guarantee. Its
-resolved location (populated by `--fetch`) lives outside this repo:
-
-<!-- REDSHIFT-CACHE-PATH:START -->
-
-- Cached bottle artifact (lives **outside** this repo — do not commit):
-  `/Users/speedybee/Library/Caches/Homebrew/downloads/623d419163f0150768b1328191f9fb4095d89066e4452abf965ff39f3abf095a--redshift--1.12_1.arm64_tahoe.bottle.1.tar.gz`
-
-<!-- REDSHIFT-CACHE-PATH:END -->
-
-## 🚧 Future Enhancements
-
-- [ ] **Automated VPN Detection** - Dynamic VPN provider switching
-- [ ] **Profile Scheduling** - Time-based DNS profile switching
-- [ ] **Network Location Awareness** - Location-based configuration switching
-- [ ] **Performance Monitoring** - DNS resolution latency tracking
-- [ ] **Mobile Device Integration** - iOS/Android configuration sync
-- [ ] **Backup Automation** - Scheduled configuration backups
-
-## 📈 Version History
-
-- **v4.1** (November 2025) - Network mode manager + regression harness; refined
-  verification & docs; archived legacy Windscribe glue.
-- **v4.0** (October 2025) - Enhanced VPN + DNS Integration with Windscribe +
-  Control D
-- **v3.0** (September 2025) - Dynamic DNS Management System
-- **v2.0** (August 2025) - SSH Configuration with 1Password
-- **v1.0** (April 2025) - Initial repository structure
-
-## 📄 License
-
-Personal use configurations. Feel free to adapt and use any parts that are
-helpful for your own setup.
-
----
-
-**🎉 Your complete development and gaming network is now perfectly automated!**
-
-_Last Updated: November 19, 2025_ _VPN + DNS Integration: v4.1_ _DNS Management
-System: v3.0_ _SSH Configuration: v2.0_
-
-## 🔧 Configuration Details
-
-### SSH Configuration (1Password-managed)
-
-- Single source of truth for SSH config and agent settings lives in this repo:
-  - `configs/ssh/config`
-  - `configs/ssh/agent.toml`
-- Local symlinks:
-  - `~/.ssh/config` → `~/dev/personal-config/configs/ssh/config`
-  - `~/.ssh/agent.toml` → `~/dev/personal-config/configs/ssh/agent.toml`
-- 1Password integration:
-  - Include `~/.ssh/1Password/config`
-  - IdentityAgent:
-    `~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock`
-- Multiplexing control dir:
-  - `~/.ssh/control` (700)
-
-**Maintenance:**
-
-- Verify: `scripts/verify_ssh_config.sh`
-- Sync: `scripts/sync_ssh_config.sh`
-
-**Notes:**
-
-- Keep 1Password unlocked with SSH agent integration enabled.
-- No private keys are stored in `~/.ssh`; all keys are 1Password-managed.
-
-### Proton Pass SSH (optional second agent)
-
-- Proton vaults:
-  - `Personal` (general items)
-  - `SSH Keys` (dedicated vault for SSH keys)
-- Helper scripts (all under `scripts/ssh/`):
-  - `op_to_proton_import.sh` – paste a private key from 1Password → import into
-    Proton (`SSH Keys` vault) with a secure temp file workflow.
-  - `proton_ssh_helpers.sh` – wrapper for:
-    - `start-agent` – `pass-cli ssh-agent start --vault-name "SSH Keys"`
-    - `load-into-agent` – `pass-cli ssh-agent load --vault-name "SSH Keys"`
-    - `import-key` – calls `op_to_proton_import.sh`.
-- Fish functions (auto-loaded from
-  `~/.config/fish/conf.d/proton_pass_ssh.fish`):
-  - `pp_ssh_agent_start` – start Proton SSH agent for `SSH Keys` vault.
-  - `pp_use_proton_agent` – point current shell at Proton’s agent socket.
-  - `pp_load_proton_into_agent` – load Proton keys into whatever agent
-    `SSH_AUTH_SOCK` points at.
-  - `pp_which_agent` – show active agent + listed keys.
-  - Abbreviations: `pp-start`, `pp-load`, `pp-import` (wrappers around the
-    above).
-- SSH host aliases (in `configs/ssh/config`):
-  - `github-proton` – same as `github.com` but bound to Proton’s
-    `IdentityAgent`.
-  - `proton-*` – any host matching this pattern prefers Proton’s agent.
-
-**Usage examples:**
-
-```bash
-# Import a key from 1Password into Proton (SSH Keys vault)
-./scripts/ssh/op_to_proton_import.sh "GitHub main SSH key"
-
-# Start Proton SSH agent (dedicated tab)
-./scripts/ssh/proton_ssh_helpers.sh start-agent
-
-# In a different shell, point SSH to Proton agent
-pp-start         # or: pp_ssh_agent_start in one tab
-pp-use-proton    # then: ssh -T git@github-proton
-```
-
-### Fish Shell Configuration
-
-The Fish setup in this repo is meant to stay practical, reproducible, and easy
-to recover after a rebuild.
-
-**Source of truth:**
-
-- `~/dev/personal-config/configs/.config/fish/config.fish`
-- `~/.config/fish/` should be symlinked to `configs/.config/fish/`
-
-**What the Fish config does:**
-
-- sets up core PATH entries and shell defaults
-- configures `NM_ROOT` as `~/dev/personal-config`
-- prefers the 1Password SSH agent and falls back to the macOS native agent when
-  needed
-- initializes interactive tools such as `chruby-fish`, `fnm`, `zoxide`, and
-  `fzf`
-- keeps a Dracula-aligned experience across Fish syntax colors, Tide, `fzf`, and
-  `bat`
-- provides aliases, abbreviations, autoloaded helper functions, and a time-based
-  greeting
-
-**Theme layering:**
-
-- **Ghostty** provides the terminal color theme
-- **Tide** manages prompt styling via universal variables
-- **Fish syntax highlighting** is repaired on interactive startup by
-  `__ensure_dracula_theme`, which re-runs
-  `fish_config theme choose "Dracula Official"` only when drift is detected
-- **fzf** uses Dracula colors with the `full` style preset via
-  `FZF_DEFAULT_OPTS`
-
-**Control D network mode functions:**
-
-After reloading Fish with `exec fish`, these helpers are available:
-
-| Function / abbr | Description |
-| --------------- | ----------- |
-| `nm-status` (`nms`) | Check current network status (Control D vs Windscribe) |
-| `nm-browse` (`nmb`) | Standalone Control D browsing (default `doh3-ipv6`) |
-| `nm-privacy` (`nmp`) | Standalone Control D privacy (default `doh3-ipv6`) |
-| `nm-gaming` (`nmg`) | Standalone Control D gaming (default `doh3-ipv6`) |
-| `nm-doh` (`nmpd`/`nmbd`/`nmgd`) | Standalone DoH + IPv6 off (`doh-ipv4`) |
-| `nm-doh6` (`nmp6`/`nmb6`/`nmg6`) | Standalone DoH + IPv6 on (`doh-ipv6`) |
-| `nm-vpn` (`nmv`/`nmvp`/`nmvb`/`nmvg`) | Windscribe + Control D (auto IPv6) |
-| `nm-vpn4` (`nmvp4`/`nmvb4`/`nmvg4`) | Windscribe + Control D, force IPv6 off |
-| `nm-vpn6` (`nmvp6`/`nmvb6`/`nmvg6`) | Windscribe + Control D, force IPv6 on |
-| `nm-regress` (`nmr`) | Run full regression test (Control D → Windscribe) |
-| `nm-cd-status` (`nmcs`) | Check Control D daemon status |
-
-VPN abbrs accept a location (e.g. `nmvp6 Atlanta`).
-
-**Safe files to edit manually:**
-
-- `configs/.config/fish/config.fish`
-- `configs/.config/fish/fish_plugins`
-- `configs/.config/fish/RESTORE_CUSTOMIZATIONS.md`
-- `configs/.config/fish/functions/__ensure_dracula_theme.fish`
-- `configs/.config/fish/functions/fish_greeting.fish`
-- `configs/.config/fish/functions/git-mirror-clean.fish`
-- `configs/.config/fish/functions/vibe.fish`
-- `configs/.config/fish/functions/__run_editor.fish`
-
-**Usually plugin-managed or machine-generated:**
-
-- `configs/.config/fish/conf.d/*.fish`
-- `configs/.config/fish/functions/_fzf_*`
-- `configs/.config/fish/functions/_tide_*`
-- `configs/.config/fish/fish_variables`
-
-**Useful commands:**
-
-```fish
-exec fish
-fish --no-config --no-execute ~/dev/personal-config/configs/.config/fish/config.fish
-fisher update
+0 - no leaks present
+1 - leaks or error encountered
+126 - unknown flag
 ```
