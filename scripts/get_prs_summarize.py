@@ -176,43 +176,36 @@ def _fetch_task_wrapper(args: tuple[str, dict]) -> tuple[int, str] | None:
     return num, fetch_details(repo, int(num))
 
 
-def print_table(data: list, include_details: bool) -> None:
+def _print_pr_row(pr: dict) -> None:
+    author = pr.get("author")
+    login = (author.get("login") if author else None) or "?"
+    draft = "yes" if pr.get("isDraft") else "no"
+    # ⚡ Bolt Optimization: Use immutable empty tuple () instead of mutable empty list [] to prevent redundant memory allocations in hot paths
+    checks = check_summary(pr.get("statusCheckRollup") or ())
+    merge = f"{pr.get('mergeable') or '?'}"
+    mss = pr.get("mergeStateStatus") or ""
+    if mss and mss != "UNKNOWN":
+        merge = f"{merge} ({mss})"
     print(
-        "| # | Draft | Title | Author | Branch | Merge | Checks | "
-        "Automation hints | URL |"
-    )
-    print("| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
-    for pr in data:
-        author = pr.get("author")
-        login = (author.get("login") if author else None) or "?"
-        draft = "yes" if pr.get("isDraft") else "no"
-        # ⚡ Bolt Optimization: Use immutable empty tuple () instead of mutable empty list [] to prevent redundant memory allocations in hot paths
-        checks = check_summary(pr.get("statusCheckRollup") or ())
-        merge = f"{pr.get('mergeable') or '?'}"
-        mss = pr.get("mergeStateStatus") or ""
-        if mss and mss != "UNKNOWN":
-            merge = f"{merge} ({mss})"
-        print(
-            "| "
-            + " | ".join(
-                [
-                    str(pr.get("number")),
-                    draft,
-                    esc_cell(pr.get("title") or "", 40),
-                    esc_cell(login, 18),
-                    esc_cell(pr.get("headRefName") or "", 28),
-                    esc_cell(merge, 24),
-                    checks,
-                    esc_cell(automation_hints(pr), 56),
-                    esc_cell(pr.get("url") or "", 40),
-                ]
-            )
-            + " |"
+        "| "
+        + " | ".join(
+            [
+                str(pr.get("number")),
+                draft,
+                esc_cell(pr.get("title") or "", 40),
+                esc_cell(login, 18),
+                esc_cell(pr.get("headRefName") or "", 28),
+                esc_cell(merge, 24),
+                checks,
+                esc_cell(automation_hints(pr), 56),
+                esc_cell(pr.get("url") or "", 40),
+            ]
         )
+        + " |"
+    )
 
-    if not include_details:
-        return
 
+def _print_details_section(data: list) -> None:
     repo = os.environ.get("GH_DETAIL_REPO", "")
     if not repo:
         print("\n_Details skipped: internal error (no repo env)._")
@@ -231,6 +224,19 @@ def print_table(data: list, include_details: bool) -> None:
             print(f"**PR #{num}**\n")
             print(details)
             print()
+
+
+def print_table(data: list, include_details: bool) -> None:
+    print(
+        "| # | Draft | Title | Author | Branch | Merge | Checks | "
+        "Automation hints | URL |"
+    )
+    print("| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+    for pr in data:
+        _print_pr_row(pr)
+
+    if include_details:
+        _print_details_section(data)
 
 
 def main() -> int:
