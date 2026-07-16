@@ -199,27 +199,48 @@ def rewrite_triage_file(lines, ready_prs, duplicates, ready_only):
         f.write("\n".join(sections) + "\n")
 
 
+
 def main():
     try:
         with open("tasks/pr-triage.md", "r") as f:
-            lines = f.readlines()
+            content = f.read()
     except FileNotFoundError:
         print("tasks/pr-triage.md not found.")
         return
 
-    ready_prs = [line.strip()[2:] for line in lines if line.startswith("- abhimehro/")]
+    ready_prs = []
+    idx = 0
+    while True:
+        idx = content.find("- abhimehro/", idx)
+        if idx == -1:
+            break
+        # using chr(10) to avoid multiline string interpolation issues in my script
+        if idx > 0 and content[idx-1] != chr(10):
+            idx += 1
+            continue
+        end_idx = content.find(chr(10), idx)
+        if end_idx == -1:
+            end_idx = len(content)
+        ready_prs.append(content[idx+2:end_idx].strip())
+        idx = end_idx
 
-    try:
-        ready_idx = lines.index("## READY\n")
-        pre_ready_text = "".join(lines[:ready_idx])
-    except ValueError:
-        pre_ready_text = ""
+    ready_idx = content.find(chr(10) + "## READY" + chr(10))
+    if ready_idx != -1:
+        ready_idx += 1
+    elif content.startswith("## READY" + chr(10)):
+        ready_idx = 0
+    else:
+        ready_idx = len(content)
 
+    pre_ready_text = content[:ready_idx]
     ready_only = [pr for pr in ready_prs if pr not in pre_ready_text]
 
     duplicates = get_duplicates(ready_only)
     print("Duplicates:", duplicates)
 
+    # ⚡ Bolt Optimization: Use splitlines with keepends to emulate readlines() only when absolutely needed
+    # for rewrite_triage_file compatibility
+    lines = content.splitlines(keepends=True)
     rewrite_triage_file(lines, ready_prs, duplicates, ready_only)
     print("Done")
 
