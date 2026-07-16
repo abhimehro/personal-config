@@ -42,5 +42,5 @@ Bulk of work already done via PR #386 (merged). Named historical files already i
 - [x] Update `docs/archive/README.md` index (new entries + missing COMPLETE_CLEANUP.sh, handoff-controld-refactor.md)
 - [x] Verify root markdown count < 10; no broken in-repo links (root now 5: README, CHANGELOG, CODE_OF_CONDUCT, CONTRIBUTING, AGENTS)
 - [x] Run `make test-quick` (pass)
-- [ ] Commit, push, open draft PR; mark Linear Done
+- [x] Commit, push, open draft PR; mark Linear Done (PR #1668)
 
