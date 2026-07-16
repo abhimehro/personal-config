@@ -231,7 +231,8 @@ def main():
     now = datetime.now(timezone.utc)
     tasks = [(repo, pr_info, now) for repo, prs in repos.items() for pr_info in prs]
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    # ⚡ Bolt Optimization: Dynamic thread concurrency to eliminate batching latency
+    with ThreadPoolExecutor(max_workers=min(len(tasks) or 1, 32)) as executor:
         for result in executor.map(_categorize_pr_task, tasks):
             if result:
                 category, pr_str = result

@@ -490,7 +490,10 @@ generate_performance_report() {
         body { font-family: Arial, sans-serif; margin: 20px; }
         .header { background-color: #f0f0f0; padding: 10px; border-radius: 5px; }
         .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
-        .metric { margin: 5px 0; }
+        dl.metric-list { margin: 0; padding: 0; }
+        .metric { margin: 5px 0; display: flex; }
+        .metric dt { margin-right: 8px; }
+        .metric dd { margin: 0; }
         .good { color: #057A55; }
         .warning { color: #B45309; }
         .critical { color: #DC2626; }
@@ -508,12 +511,12 @@ generate_performance_report() {
     <main>
     <section class="section" aria-labelledby="sys-info-heading" role="region">
         <h2 id="sys-info-heading"><span aria-hidden="true">💻</span> System Information</h2>
-        <ul aria-labelledby="sys-info-heading">
-            <li class="metric"><strong>System:</strong> $system_info</li>
-            <li class="metric"><strong>CPU:</strong> $cpu_info</li>
-            <li class="metric"><strong>Memory:</strong> ${memory_info} GB</li>
-            <li class="metric"><strong>Disk:</strong> $disk_info</li>
-        </ul>
+        <dl aria-labelledby="sys-info-heading" class="metric-list">
+            <div class="metric"><dt><strong>System:</strong></dt><dd>$system_info</dd></div>
+            <div class="metric"><dt><strong>CPU:</strong></dt><dd>$cpu_info</dd></div>
+            <div class="metric"><dt><strong>Memory:</strong></dt><dd>${memory_info} GB</dd></div>
+            <div class="metric"><dt><strong>Disk:</strong></dt><dd>$disk_info</dd></div>
+        </dl>
     </section>
     
     <section class="section" aria-labelledby="perf-metrics-heading" role="region">
