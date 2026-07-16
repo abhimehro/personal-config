@@ -85,6 +85,20 @@ class TestExtractAllowlistDomainsFromFile(unittest.TestCase):
             result = extract_allowlist_domains_from_file("dummy.json")
         self.assertEqual(result, ["valid.com"])
 
+    def test_action_is_not_dict(self):
+        json_data = json.dumps(
+            {
+                "rules": [
+                    {"PK": "string-action.com", "action": "not-a-dict"},
+                    {"PK": "list-action.com", "action": [{"do": 1}]},
+                    {"PK": "valid.com", "action": {"do": 1}},
+                ]
+            }
+        )
+        with patch("builtins.open", mock_open(read_data=json_data)):
+            result = extract_allowlist_domains_from_file("dummy.json")
+        self.assertEqual(result, ["valid.com"])
+
     @patch("builtins.print")
     def test_file_not_found(self, mock_print):
         # We don't mock open here, so it actually raises FileNotFoundError
