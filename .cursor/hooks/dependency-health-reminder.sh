@@ -41,8 +41,8 @@ fi
 
 # Skip uninstall / list / help style commands. Anchor -h as a standalone flag
 # so package names like python-http-client do not accidentally trigger it.
-if [[ $command =~ (^|[[:space:];|&])(uninstall|remove|rm|outdated|list|ls|help|--help)([[:space:]]|$) ]] || \
-   [[ $command =~ (^|[[:space:]])-h([[:space:]]|$) ]]; then
+if [[ $command =~ (^|[[:space:];|&])(uninstall|remove|rm|outdated|list|ls|help|--help)([[:space:]]|$) ]] ||
+	[[ $command =~ (^|[[:space:]])-h([[:space:]]|$) ]]; then
 	printf '%s\n' '{"permission":"allow"}'
 	exit 0
 fi
