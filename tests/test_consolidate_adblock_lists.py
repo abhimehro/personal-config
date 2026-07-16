@@ -133,64 +133,40 @@ class TestCreateJsonStructure(unittest.TestCase):
         self.assertEqual(parsed_result["group"]["group"], nasty_group_name)
         self.assertEqual(parsed_result["rules"][0]["PK"], 'weird"domain.com')
 
-
-
+@patch('sys.stdout')
 class TestProcessTrackerFiles(unittest.TestCase):
 
-    @patch('consolidate_adblock_lists.load_json_file')
-    @patch('pathlib.Path.exists')
-    def test_happy_path(self, mock_exists, mock_load_json):
-        mock_exists.return_value = True
-        mock_load_json.return_value = {
-            "rules": [
-                {"PK": "tracker1.com"},
-                {"PK": "tracker2.com"}
-            ]
-        }
+    def _run_process_tracker(self, files, mock_exists_val=True, load_json_rv=None, load_json_se=None):
+        with patch('pathlib.Path.exists') as mock_exists, \
+             patch('consolidate_adblock_lists.load_json_file') as mock_load_json:
 
-        # Suppress prints
-        with patch('sys.stdout', new_callable=unittest.mock.MagicMock):
-            result = process_tracker_files(Path("/fake/dir"), ["file1.json"])
+            mock_exists.return_value = mock_exists_val
+            if load_json_rv is not None:
+                mock_load_json.return_value = load_json_rv
+            if load_json_se is not None:
+                mock_load_json.side_effect = load_json_se
 
+            return process_tracker_files(Path("/fake/dir"), files)
+
+    def test_happy_path(self, mock_stdout):
+        rv = {"rules": [{"PK": "tracker1.com"}, {"PK": "tracker2.com"}]}
+        result = self._run_process_tracker(["file1.json"], load_json_rv=rv)
         self.assertEqual(result, {"tracker1.com", "tracker2.com"})
 
-    @patch('pathlib.Path.exists')
-    def test_file_not_found(self, mock_exists):
-        mock_exists.return_value = False
-
-        # Suppress prints
-        with patch('sys.stdout', new_callable=unittest.mock.MagicMock):
-            result = process_tracker_files(Path("/fake/dir"), ["missing.json"])
-
+    def test_file_not_found(self, mock_stdout):
+        result = self._run_process_tracker(["missing.json"], mock_exists_val=False)
         self.assertEqual(result, set())
 
-    @patch('consolidate_adblock_lists.load_json_file')
-    @patch('pathlib.Path.exists')
-    def test_missing_rules_key(self, mock_exists, mock_load_json):
-        mock_exists.return_value = True
-        mock_load_json.return_value = {"other_key": "data"}
-
-        # Suppress prints
-        with patch('sys.stdout', new_callable=unittest.mock.MagicMock):
-            result = process_tracker_files(Path("/fake/dir"), ["norules.json"])
-
+    def test_missing_rules_key(self, mock_stdout):
+        result = self._run_process_tracker(["norules.json"], load_json_rv={"other_key": "data"})
         self.assertEqual(result, set())
 
-    @patch('consolidate_adblock_lists.load_json_file')
-    @patch('pathlib.Path.exists')
-    def test_multiple_files_with_duplicates(self, mock_exists, mock_load_json):
-        mock_exists.return_value = True
-
-        # Two files, one has duplicate domain
-        mock_load_json.side_effect = [
+    def test_multiple_files_with_duplicates(self, mock_stdout):
+        se = [
             {"rules": [{"PK": "tracker1.com"}]},
             {"rules": [{"PK": "tracker1.com"}, {"PK": "tracker2.com"}]}
         ]
-
-        # Suppress prints
-        with patch('sys.stdout', new_callable=unittest.mock.MagicMock):
-            result = process_tracker_files(Path("/fake/dir"), ["file1.json", "file2.json"])
-
+        result = self._run_process_tracker(["file1.json", "file2.json"], load_json_se=se)
         self.assertEqual(result, {"tracker1.com", "tracker2.com"})
 
 if __name__ == "__main__":
