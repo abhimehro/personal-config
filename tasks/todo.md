@@ -19,8 +19,8 @@ removing disabled/stub workflows over merging active security jobs.
 - [x] Remove disabled Gemini suite (`gemini-*.yml`, 6 files)
 - [x] Update `mac-audit/README.md` badge/refs
 - [x] Rewrite `.github/workflows/README.md` catalog of remaining workflows
-- [ ] Commit, push, open draft PR; update Linear ABHI-1321
-- [ ] Verify no broken refs in tests/docs; run smoke tests if needed
+- [x] Commit, push, open draft PR (#1670); update Linear ABHI-1321
+- [x] Verify no broken refs in tests/docs; run smoke tests (`test-quick` + refactoring-agent unittest)
 
 ## Removal rationale (evidence)
 
