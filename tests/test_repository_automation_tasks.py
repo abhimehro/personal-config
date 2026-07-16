@@ -1,7 +1,9 @@
 import os
 import sys
+import tempfile
 import unittest
-from unittest.mock import MagicMock
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 # Stub out the optional third-party `yaml` dependency so this test remains
 # stdlib-only (per AGENTS.md / CONTRIBUTING.md: tests must not require pip
@@ -19,7 +21,10 @@ sys.path.append(
 from repository_automation_tasks import (  # noqa: E402
     apply_workflow_updates,
     configured_commands,
+    execute_configured_commands,
     run_command_set,
+    run_quality_assurance,
+    run_safe_adjustment_commands,
 )
 
 
@@ -56,9 +61,6 @@ class TestApplyWorkflowUpdates(unittest.TestCase):
     """Regression tests for apply_workflow_updates (cascading str.replace fix)."""
 
     def _make_plan(self, text, replacements):
-        import tempfile
-        from pathlib import Path
-
         tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False)
         tmp.write(text)
         tmp.close()
@@ -108,6 +110,151 @@ class TestApplyWorkflowUpdates(unittest.TestCase):
         self.assertIn("actions/checkout@v4", result)
         self.assertIn("actions/upload-artifact@v5", result)
 
+
+class TestRunSafeAdjustmentCommands(unittest.TestCase):
+    def setUp(self):
+        self.section = {
+            "auto_apply_safe_changes": True,
+            "safe_adjustment_commands": [{"name": "cmd", "run": "echo 1"}],
+        }
+
+    @patch("repository_automation_tasks.writes_allowed", return_value=False)
+    def test_writes_not_allowed(self, _mock_writes_allowed):
+        result, url = run_safe_adjustment_commands({"auto_apply_safe_changes": True})
+        self.assertEqual((result, url), ([], ""))
+
+    @patch("repository_automation_tasks.writes_allowed", return_value=True)
+    def test_auto_apply_disabled(self, _mock_writes_allowed):
+        result, url = run_safe_adjustment_commands({"auto_apply_safe_changes": False})
+        self.assertEqual((result, url), ([], ""))
+
+    @patch("repository_automation_tasks.git_output", return_value="")
+    @patch("repository_automation_tasks.run_shell_command", return_value={"exit_code": 0})
+    @patch("repository_automation_tasks.writes_allowed", return_value=True)
+    def test_no_changes(
+        self,
+        _mock_writes_allowed,
+        _mock_run_shell_command,
+        _mock_git_output,
+    ):
+        result, url = run_safe_adjustment_commands(self.section)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["name"], "cmd")
+        self.assertEqual(url, "")
+
+    @patch(
+        "repository_automation_tasks.create_pr_for_current_changes",
+        return_value="http://pr-url",
+    )
+    @patch("repository_automation_tasks._cached_matches_any", return_value=True)
+    @patch(
+        "repository_automation_tasks.git_output",
+        return_value=" M .github/workflows/main.yml\n",
+    )
+    @patch("repository_automation_tasks.run_shell_command", return_value={"exit_code": 0})
+    @patch("repository_automation_tasks.writes_allowed", return_value=True)
+    def test_changes_applied(
+        self,
+        _mock_writes_allowed,
+        _mock_run_shell_command,
+        _mock_git_output,
+        _mock_cached_matches_any,
+        _mock_create_pr,
+    ):
+        result, url = run_safe_adjustment_commands(self.section)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["name"], "cmd")
+        self.assertEqual(url, "http://pr-url")
+
+
+class TestRunQualityAssurance(unittest.TestCase):
+    @patch("repository_automation_tasks.run_command_set")
+    @patch("repository_automation_tasks.write_result")
+    def test_run_quality_assurance_cases(self, mock_write_result, mock_run_command_set):
+        cases = [
+            (
+                "with_config",
+                {"quality_assurance": {"commands": [{"run": "echo test"}]}},
+                {"commands": [{"run": "echo test"}]},
+                [{"cmd": "echo test", "exit": 0}],
+            ),
+            (
+                "default_config",
+                {},
+                {},
+                [],
+            ),
+        ]
+
+        for name, config, expected_arg, command_results in cases:
+            with self.subTest(name=name):
+                mock_run_command_set.reset_mock()
+                mock_write_result.reset_mock()
+
+                mock_run_command_set.return_value = (
+                    "success",
+                    "1 passed",
+                    {"body": "test output", "command_results": command_results},
+                )
+                mock_write_result.return_value = {"status": "success"}
+
+                result = run_quality_assurance(config)
+
+                mock_run_command_set.assert_called_once_with(
+                    "quality-assurance",
+                    expected_arg,
+                )
+                mock_write_result.assert_called_once_with(
+                    "quality-assurance",
+                    ("success", "1 passed"),
+                    "test output",
+                    {"command_results": command_results},
+                )
+                self.assertEqual(result, {"status": "success"})
+
+
+class TestExecuteConfiguredCommands(unittest.TestCase):
+    @patch("repository_automation_tasks.run_shell_command")
+    def test_execute_configured_commands_success(self, mock_run_shell_command):
+        mock_run_shell_command.side_effect = lambda cmd, timeout: {
+            "exit_code": 0,
+            "stdout": f"ran {cmd}",
+            "stderr": "",
+        }
+
+        section = {
+            "setup_commands": [{"name": "Setup A", "run": "setup_a"}],
+            "commands": [
+                {
+                    "name": "Cmd B",
+                    "run": "cmd_b",
+                    "timeout_seconds": 60,
+                    "optional": True,
+                }
+            ],
+        }
+
+        setup_entries, command_entries = execute_configured_commands(section)
+
+        self.assertEqual(len(setup_entries), 1)
+        self.assertEqual(setup_entries[0]["name"], "Setup A")
+        self.assertEqual(setup_entries[0]["exit_code"], 0)
+        self.assertEqual(setup_entries[0]["stdout"], "ran setup_a")
+        self.assertEqual(setup_entries[0]["optional"], False)
+
+        self.assertEqual(len(command_entries), 1)
+        self.assertEqual(command_entries[0]["name"], "Cmd B")
+        self.assertEqual(command_entries[0]["exit_code"], 0)
+        self.assertEqual(command_entries[0]["stdout"], "ran cmd_b")
+        self.assertEqual(command_entries[0]["optional"], True)
+
+        mock_run_shell_command.assert_any_call("setup_a", 1800)
+        mock_run_shell_command.assert_any_call("cmd_b", 60)
+
+    def test_execute_configured_commands_empty(self):
+        setup_entries, command_entries = execute_configured_commands({})
+        self.assertEqual(setup_entries, [])
+        self.assertEqual(command_entries, [])
 
 
 class TestRunCommandSet(unittest.TestCase):
