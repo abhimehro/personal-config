@@ -8,7 +8,7 @@ from unittest.mock import mock_open, patch
 script_dir = Path(__file__).parent.parent / "adguard" / "scripts"
 sys.path.append(str(script_dir.resolve()))
 
-from consolidate_adblock_lists import create_json_structure, load_json_file
+from consolidate_adblock_lists import create_json_structure, load_json_file, process_allowlist_files
 
 
 class TestLoadJsonFile(unittest.TestCase):
@@ -134,5 +134,50 @@ class TestCreateJsonStructure(unittest.TestCase):
         self.assertEqual(parsed_result["rules"][0]["PK"], 'weird"domain.com')
 
 
+
+class TestProcessAllowlistFiles(unittest.TestCase):
+
+    @patch("consolidate_adblock_lists.extract_allowlist_from_file")
+    def test_happy_path(self, mock_extract):
+        mock_extract.side_effect = [
+            {"bypass1.com", "bypass2.com"},
+            {"tld1.com", "tld2.com"}
+        ]
+
+        base_dir = Path("/fake/dir")
+
+        with patch("sys.stdout"):
+            result = process_allowlist_files(base_dir)
+
+        self.assertEqual(result, {"bypass1.com", "bypass2.com", "tld1.com", "tld2.com"})
+
+        self.assertEqual(mock_extract.call_count, 2)
+        mock_extract.assert_any_call(base_dir / "CD-Control-D-Bypass.json", "bypass domains")
+        mock_extract.assert_any_call(base_dir / "CD-Most-Abused-TLDs.json", "legitimate TLD domains")
+
+    @patch("consolidate_adblock_lists.extract_allowlist_from_file")
+    def test_overlapping_domains(self, mock_extract):
+        mock_extract.side_effect = [
+            {"shared.com", "bypass.com"},
+            {"shared.com", "tld.com"}
+        ]
+
+        base_dir = Path("/fake/dir")
+        with patch("sys.stdout"):
+            result = process_allowlist_files(base_dir)
+
+        self.assertEqual(result, {"shared.com", "bypass.com", "tld.com"})
+
+    @patch("consolidate_adblock_lists.extract_allowlist_from_file")
+    def test_empty_results(self, mock_extract):
+        mock_extract.side_effect = [set(), set()]
+
+        base_dir = Path("/fake/dir")
+        with patch("sys.stdout"):
+            result = process_allowlist_files(base_dir)
+
+        self.assertEqual(result, set())
+
 if __name__ == "__main__":
+
     unittest.main()
