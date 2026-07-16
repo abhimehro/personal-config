@@ -16,6 +16,7 @@ from adguard.scripts.extract_domains import (
     _is_allowlist_rule,
     extract_allowlist_domains_from_file,
     extract_domains_from_file,
+    process_allowlist_files,
     process_denylist_files,
 )
 
@@ -216,8 +217,46 @@ class TestExtractAllowlistDomainsFromFile(unittest.TestCase):
             os.remove(temp_path)
 
 
+class TestProcessAllowlistFiles(unittest.TestCase):
+    @patch("builtins.print")
+    def test_process_allowlist_files_all_exist(self, _mock_print):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with open(
+                os.path.join(temp_dir, "CD-Control-D-Bypass.json"),
+                "w",
+                encoding="utf-8",
+            ) as file:
+                json.dump({"rules": [{"PK": "bypass.com", "action": {"do": 1}}]}, file)
 
-import concurrent.futures
+            with open(
+                os.path.join(temp_dir, "CD-Most-Abused-TLDs.json"),
+                "w",
+                encoding="utf-8",
+            ) as file:
+                json.dump({"rules": [{"PK": "tld.com", "action": {"do": 1}}]}, file)
+
+            result = process_allowlist_files(temp_dir)
+            self.assertEqual(result, {"bypass.com", "tld.com"})
+
+    @patch("builtins.print")
+    def test_process_allowlist_files_missing_file(self, _mock_print):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with open(
+                os.path.join(temp_dir, "CD-Control-D-Bypass.json"),
+                "w",
+                encoding="utf-8",
+            ) as file:
+                json.dump({"rules": [{"PK": "bypass.com", "action": {"do": 1}}]}, file)
+
+            result = process_allowlist_files(temp_dir)
+            self.assertEqual(result, {"bypass.com"})
+
+    @patch("builtins.print")
+    def test_process_allowlist_files_no_files(self, _mock_print):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = process_allowlist_files(temp_dir)
+            self.assertEqual(result, set())
+
 
 class TestProcessDenylistFiles(unittest.TestCase):
     def test_happy_path(self):
@@ -238,11 +277,7 @@ class TestProcessDenylistFiles(unittest.TestCase):
             result = process_denylist_files(temp_dir)
             self.assertEqual(result, set())
 
-    @patch("adguard.scripts.extract_domains.concurrent.futures.ProcessPoolExecutor")
-    def test_worker_exception(self, mock_executor_class):
-        # Use a ThreadPoolExecutor so mocking works without pickle issues
-        mock_executor_class.return_value = concurrent.futures.ThreadPoolExecutor()
-
+    def test_worker_exception(self):
         with patch("adguard.scripts.extract_domains.extract_domains_from_file") as mock_extract:
             mock_extract.side_effect = Exception("Mocked exception")
 
