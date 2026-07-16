@@ -204,9 +204,10 @@ def _categorize_pr_task(args):
 def _load_inventory_lines(filepath):
     try:
         with open(filepath, "r") as f:
-            return f.readlines()
+            # ⚡ Bolt Optimization: Use generator to yield lines lazily, avoiding full-file memory allocation overhead
+            yield from f
     except FileNotFoundError:
-        return []
+        return
 
 
 def _write_triage_report(filepath, triage):
@@ -220,10 +221,9 @@ def _write_triage_report(filepath, triage):
 
 def main():
     lines = _load_inventory_lines("tasks/pr-inventory.md")
-    if not lines:
-        return
-
     repos = parse_inventory_lines(lines)
+    if not repos:
+        return
     triage = {"SUPERSEDED": [], "STALE": [], "CONFLICTING": [], "READY": []}
 
     # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls using map() to significantly speed up categorization
