@@ -5,10 +5,10 @@
 Inventory `.github/workflows/` (25 YAML files), identify redundant/disabled/obsolete
 workflows, remove safe duplicates, and rewrite README as the canonical catalog.
 
-**Trust boundary:** Workflow YAML controls Actions permissions and secrets access.
+**Trust boundary:** Workflow YAML controls Actions permissions and credential access.
 Removals reduce attack surface; keep security gates (security-scan, dependency-review).
 
-**Security:** Do not weaken secret scanning, CodeQL, or dependency review. Prefer
+**Hardening:** Do not weaken TruffleHog/Gitleaks, CodeQL, or dependency review. Prefer
 removing disabled/stub workflows over merging active security jobs.
 
 ## Checklist
