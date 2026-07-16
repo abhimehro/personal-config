@@ -96,13 +96,15 @@ def public_info() -> dict:
 def load_or_create_creds() -> tuple[str, str]:
     if CREDS.exists():
         user = passwd = ""  # nosec B105 — empty until credential file lines are parsed
-        for line in CREDS.read_text().splitlines():
-            if line.startswith("JELLYFIN_USER="):
-                user = line.split("=", 1)[1]
-            elif line.startswith("JELLYFIN_PASSWORD="):
-                passwd = line.split("=", 1)[1]
-        if user and passwd:
-            return user, passwd
+        # ⚡ Bolt Optimization: Replace read_text().splitlines() with iterator and short-circuit to avoid allocating the entire file in memory
+        with CREDS.open(encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("JELLYFIN_USER="):
+                    user = line.rstrip("\n").split("=", 1)[1]
+                elif line.startswith("JELLYFIN_PASSWORD="):
+                    passwd = line.rstrip("\n").split("=", 1)[1]
+                if user and passwd:
+                    return user, passwd
     alphabet = string.ascii_letters + string.digits
     user = "speedybee"
     passwd = "".join(secrets.choice(alphabet) for _ in range(28))
