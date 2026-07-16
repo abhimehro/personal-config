@@ -566,7 +566,10 @@ def html_li(content: str) -> str:
 
 
 def html_ul(items: Iterable[str]) -> str:
-    return f"<ul>{''.join(items)}</ul>"
+    items_list = list(items)
+    if not items_list:
+        return '<ul><li class="empty-state" style="color: #666; font-style: italic;">No items to display.</li></ul>'
+    return f"<ul>{''.join(items_list)}</ul>"
 
 
 def _render_heading(level: int, title: str, id_attr: str = "") -> str:
