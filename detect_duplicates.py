@@ -200,14 +200,8 @@ def rewrite_triage_file(lines, ready_prs, duplicates, ready_only):
 
 
 
-def main():
-    try:
-        with open("tasks/pr-triage.md", "r") as f:
-            content = f.read()
-    except FileNotFoundError:
-        print("tasks/pr-triage.md not found.")
-        return
 
+def _extract_ready_prs(content):
     ready_prs = []
     idx = 0
     while True:
@@ -223,7 +217,9 @@ def main():
             end_idx = len(content)
         ready_prs.append(content[idx+2:end_idx].strip())
         idx = end_idx
+    return ready_prs
 
+def _get_pre_ready_text(content):
     ready_idx = content.find(chr(10) + "## READY" + chr(10))
     if ready_idx != -1:
         ready_idx += 1
@@ -231,8 +227,18 @@ def main():
         ready_idx = 0
     else:
         ready_idx = len(content)
+    return content[:ready_idx]
 
-    pre_ready_text = content[:ready_idx]
+def main():
+    try:
+        with open("tasks/pr-triage.md", "r") as f:
+            content = f.read()
+    except FileNotFoundError:
+        print("tasks/pr-triage.md not found.")
+        return
+
+    ready_prs = _extract_ready_prs(content)
+    pre_ready_text = _get_pre_ready_text(content)
     ready_only = [pr for pr in ready_prs if pr not in pre_ready_text]
 
     duplicates = get_duplicates(ready_only)
