@@ -19,6 +19,7 @@ sys.path.append(
 from repository_automation_tasks import (  # noqa: E402
     apply_workflow_updates,
     configured_commands,
+    run_command_set,
 )
 
 
@@ -107,6 +108,45 @@ class TestApplyWorkflowUpdates(unittest.TestCase):
         self.assertIn("actions/checkout@v4", result)
         self.assertIn("actions/upload-artifact@v5", result)
 
+
+
+class TestRunCommandSet(unittest.TestCase):
+    @unittest.mock.patch("repository_automation_tasks.execute_configured_commands")
+    def test_run_command_set_success(self, mock_execute):
+        mock_execute.return_value = (
+            [{"name": "setup1", "exit_code": 0}],
+            [{"name": "cmd1", "exit_code": 0}],
+        )
+        status, summary, data = run_command_set("my-task", {})
+        self.assertEqual(status, "success")
+        self.assertEqual(summary, "my-task executed 1 setup commands and 1 validation commands.")
+        self.assertIn("## Setup commands", data["body"])
+        self.assertNotIn("## Human review required", data["body"])
+        self.assertNotIn("## Optional command warnings", data["body"])
+
+    @unittest.mock.patch("repository_automation_tasks.execute_configured_commands")
+    def test_run_command_set_warning(self, mock_execute):
+        mock_execute.return_value = (
+            [],
+            [{"name": "cmd1", "exit_code": 1, "optional": True}],
+        )
+        status, summary, data = run_command_set("my-task", {})
+        self.assertEqual(status, "warning")
+        self.assertNotIn("## Human review required", data["body"])
+        self.assertIn("## Optional command warnings", data["body"])
+        self.assertIn("`cmd1` failed but is configured as optional.", data["body"])
+
+    @unittest.mock.patch("repository_automation_tasks.execute_configured_commands")
+    def test_run_command_set_failure(self, mock_execute):
+        mock_execute.return_value = (
+            [{"name": "setup1", "exit_code": 1}],
+            [{"name": "cmd1", "exit_code": 1, "optional": True}],
+        )
+        status, summary, data = run_command_set("my-task", {})
+        self.assertEqual(status, "failure")
+        self.assertIn("## Human review required", data["body"])
+        self.assertIn("`setup1` failed and is not marked optional.", data["body"])
+        self.assertNotIn("## Optional command warnings", data["body"])
 
 if __name__ == "__main__":
     unittest.main()
