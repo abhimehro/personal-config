@@ -8,7 +8,8 @@ from unittest.mock import mock_open, patch
 script_dir = Path(__file__).parent.parent / "adguard" / "scripts"
 sys.path.append(str(script_dir.resolve()))
 
-from consolidate_adblock_lists import create_json_structure, load_json_file
+from consolidate_adblock_lists import create_json_structure, load_json_file, extract_allowlist_from_file
+from unittest.mock import MagicMock
 
 
 class TestLoadJsonFile(unittest.TestCase):
@@ -134,5 +135,53 @@ class TestCreateJsonStructure(unittest.TestCase):
         self.assertEqual(parsed_result["rules"][0]["PK"], 'weird"domain.com')
 
 
+
+class TestExtractAllowlistFromFile(unittest.TestCase):
+
+    def test_file_not_found(self):
+        filepath = MagicMock()
+        filepath.exists.return_value = False
+        result = extract_allowlist_from_file(filepath, "desc")
+        self.assertEqual(result, set())
+
+    @patch("consolidate_adblock_lists.load_json_file")
+    def test_missing_or_invalid_data(self, mock_load):
+        filepath = MagicMock()
+        filepath.exists.return_value = True
+        filepath.name = "test.json"
+
+        with patch("sys.stdout", new_callable=unittest.mock.MagicMock):
+            mock_load.return_value = None
+            result = extract_allowlist_from_file(filepath, "desc")
+            self.assertEqual(result, set())
+
+            mock_load.return_value = {"other": "value"}
+            result = extract_allowlist_from_file(filepath, "desc")
+            self.assertEqual(result, set())
+
+    @patch("consolidate_adblock_lists.load_json_file")
+    def test_extract_valid_and_invalid_rules(self, mock_load):
+        filepath = MagicMock()
+        filepath.exists.return_value = True
+        filepath.name = "test.json"
+
+        mock_load.return_value = {
+            "rules": [
+                {"PK": "valid1.com", "action": {"do": 1}},
+                {"action": {"do": 1}},
+                {"PK": "invalid_no_action.com"},
+                {"PK": "invalid_action_not_dict.com", "action": "allow"},
+                {"PK": "invalid_no_do.com", "action": {"other": 1}},
+                {"PK": "invalid_do_0.com", "action": {"do": 0}},
+                {"PK": "valid2.com", "action": {"do": 1}}
+            ]
+        }
+
+        with patch("sys.stdout", new_callable=unittest.mock.MagicMock):
+            result = extract_allowlist_from_file(filepath, "desc")
+
+        self.assertEqual(result, {"valid1.com", "valid2.com"})
+
 if __name__ == "__main__":
+
     unittest.main()
