@@ -1,4 +1,22 @@
 {
   "version": 1,
-  "hooks": {}
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": ".cursor/hooks/run-snyk-sai.sh"
+      }
+    ],
+    "stop": [
+      {
+        "command": ".cursor/hooks/run-snyk-sai.sh",
+        "loop_limit": 3
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": ".cursor/hooks/dependency-health-reminder.sh",
+        "matcher": "pip|npm|yarn|pnpm|uv |cargo|composer|poetry|gem |go get|bun "
+      }
+    ]
+  }
 }
