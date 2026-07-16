@@ -1,4 +1,5 @@
 {
-  "title": "🛡️ Sentinel: [Low] Fix false positive FIX comment and improve symlink handling",
-  "description": "🚨 Severity: Low\n💡 Vulnerability: Broken symlinks were not correctly identified as existing lock files by `[[ -e $LOCK_DIR ]]`, falling through to an inaccurate error message.\n🎯 Impact: Improved robustness of the lock acquisition mechanism to properly detect broken symlink locks and display accurate error messages.\n🔧 Fix: Updated the existence check to `[[ -e $LOCK_DIR || -L $LOCK_DIR ]]` to cover broken symlinks and marked the Sentinel FIX comment as Fixed.\n✅ Verification: Tested lock creation with regular files, broken symlinks, and directory symlinks, confirming that the script now consistently identifies them and prevents execution."
+  "branch_name": "testing-improvement-allowlist-files",
+  "pr_title": "🧪 [testing improvement] Add tests for process_allowlist_files",
+  "pr_body": "* 🎯 **What:** The testing gap in process_allowlist_files within adguard/scripts/extract_domains.py was addressed.\n* 📊 **Coverage:** The scenarios covered include when both bypass and most abused TLDs files are present, when only bypass is present, and when no files are present.\n* ✨ **Result:** The test coverage was improved, ensuring that domain extracting logic handles multiple allowlist file presence properly."
 }

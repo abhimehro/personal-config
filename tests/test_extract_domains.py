@@ -16,6 +16,7 @@ from adguard.scripts.extract_domains import (
     _is_allowlist_rule,
     extract_allowlist_domains_from_file,
     extract_domains_from_file,
+    process_allowlist_files,
 )
 
 
@@ -217,3 +218,34 @@ class TestExtractAllowlistDomainsFromFile(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class TestProcessAllowlistFiles(unittest.TestCase):
+    @patch("builtins.print")
+    def test_process_allowlist_files_all_exist(self, mock_print):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            bypass_data = json.dumps({"rules": [{"PK": "bypass.com", "action": {"do": 1}}]})
+            with open(os.path.join(temp_dir, "CD-Control-D-Bypass.json"), "w") as f:
+                f.write(bypass_data)
+
+            tlds_data = json.dumps({"rules": [{"PK": "tld.com", "action": {"do": 1}}]})
+            with open(os.path.join(temp_dir, "CD-Most-Abused-TLDs.json"), "w") as f:
+                f.write(tlds_data)
+
+            result = process_allowlist_files(temp_dir)
+            self.assertEqual(result, {"bypass.com", "tld.com"})
+
+    @patch("builtins.print")
+    def test_process_allowlist_files_missing_file(self, mock_print):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            bypass_data = json.dumps({"rules": [{"PK": "bypass.com", "action": {"do": 1}}]})
+            with open(os.path.join(temp_dir, "CD-Control-D-Bypass.json"), "w") as f:
+                f.write(bypass_data)
+
+            result = process_allowlist_files(temp_dir)
+            self.assertEqual(result, {"bypass.com"})
+
+    @patch("builtins.print")
+    def test_process_allowlist_files_no_files(self, mock_print):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = process_allowlist_files(temp_dir)
+            self.assertEqual(result, set())
