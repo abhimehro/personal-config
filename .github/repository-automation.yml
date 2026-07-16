@@ -46,10 +46,12 @@ automation:
   quality_assurance:
     enabled: true
     setup_commands:
-      - name: install shellcheck
-        run: python -m pip install --upgrade shellcheck-py
+      # ShellCheck is provided by .github/actions/setup-shellcheck in the
+      # quality_assurance workflow job (cached pinned binary). Verify only.
+      - name: verify shellcheck
+        run: command -v shellcheck && shellcheck --version
         optional: false
-        timeout_seconds: 900
+        timeout_seconds: 60
     commands:
       - name: shellcheck regression gate
         run: make lint-errors

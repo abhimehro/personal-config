@@ -27,10 +27,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Install ShellCheck
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y shellcheck
+      - name: Setup ShellCheck (cached)
+        uses: ./.github/actions/setup-shellcheck
+
       - name: ShellCheck correctness gate (SC2155/SC2145)
         run: make lint-errors
 

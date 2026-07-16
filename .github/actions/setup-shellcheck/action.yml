@@ -1,0 +1,81 @@
+# SECURITY: Pins ShellCheck to a known release; validates version allowlist before
+# interpolating into the download URL (prevents URL injection via action inputs).
+# Cache restores binaries from Actions cache — treat as untrusted until we verify
+# the executable exists and is runnable. Version bumps invalidate the cache key.
+name: Setup ShellCheck
+description: Install a pinned ShellCheck binary with GitHub Actions cache
+
+inputs:
+  version:
+    description: ShellCheck release tag (e.g. v0.11.0). Must match koalaman/shellcheck releases.
+    required: false
+    # NOTE: Keep in sync with .trunk/trunk.yaml lint.shellcheck version when practical.
+    default: "v0.11.0"
+
+outputs:
+  cache-hit:
+    description: Whether the ShellCheck binary was restored from cache
+    value: ${{ steps.cache.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - name: Cache ShellCheck binary
+      id: cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.local/bin/shellcheck
+        # ASSUMES: version string is the sole install identity (OS + arch + version)
+        key: shellcheck-${{ runner.os }}-${{ runner.arch }}-${{ inputs.version }}
+
+    - name: Install ShellCheck
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        # SECURITY: Pass via env (not ${{ }} inside shell) so injection surface is explicit.
+        SHELLCHECK_VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        # SECURITY: Allowlist version tags before building the download URL.
+        if [[ ! "${SHELLCHECK_VERSION}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "::error::Invalid ShellCheck version '${SHELLCHECK_VERSION}' (expected vMAJOR.MINOR.PATCH)"
+          exit 1
+        fi
+
+        mkdir -p "${HOME}/.local/bin"
+        case "$(uname -s)-$(uname -m)" in
+          Linux-x86_64) platform="linux.x86_64" ;;
+          Linux-aarch64 | Linux-arm64) platform="linux.aarch64" ;;
+          Darwin-x86_64) platform="darwin.x86_64" ;;
+          Darwin-arm64) platform="darwin.aarch64" ;;
+          *)
+            echo "::error::Unsupported platform for ShellCheck: $(uname -s)-$(uname -m)"
+            exit 1
+            ;;
+        esac
+
+        archive="shellcheck-${SHELLCHECK_VERSION}.${platform}.tar.xz"
+        url="https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK_VERSION}/${archive}"
+        tmpdir="$(mktemp -d)"
+        # CAUTION: Cleanup must run even if download/extract fails.
+        trap 'rm -rf "${tmpdir}"' EXIT
+
+        echo "Downloading ShellCheck ${SHELLCHECK_VERSION} (${platform})..."
+        curl -fsSL "${url}" -o "${tmpdir}/${archive}"
+        tar -xJf "${tmpdir}/${archive}" -C "${tmpdir}"
+        install -m 0755 "${tmpdir}/shellcheck-${SHELLCHECK_VERSION}/shellcheck" "${HOME}/.local/bin/shellcheck"
+
+    - name: Add ShellCheck to PATH
+      shell: bash
+      run: |
+        set -euo pipefail
+        # CAUTION: Cache restore may drop the executable bit on some runners.
+        if [[ -f "${HOME}/.local/bin/shellcheck" ]]; then
+          chmod +x "${HOME}/.local/bin/shellcheck"
+        fi
+        echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+        if [[ ! -x "${HOME}/.local/bin/shellcheck" ]]; then
+          echo "::error::shellcheck binary missing after setup"
+          exit 1
+        fi
+        "${HOME}/.local/bin/shellcheck" --version
