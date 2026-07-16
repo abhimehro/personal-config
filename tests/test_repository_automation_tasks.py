@@ -108,5 +108,48 @@ class TestApplyWorkflowUpdates(unittest.TestCase):
         self.assertIn("actions/upload-artifact@v5", result)
 
 
+
+class TestExecuteConfiguredCommands(unittest.TestCase):
+    @unittest.mock.patch("repository_automation_tasks.run_shell_command")
+    def test_execute_configured_commands_success(self, mock_run_shell_command):
+        mock_run_shell_command.side_effect = lambda cmd, timeout: {
+            "exit_code": 0,
+            "stdout": f"ran {cmd}",
+            "stderr": ""
+        }
+
+        section = {
+            "setup_commands": [
+                {"name": "Setup A", "run": "setup_a"}
+            ],
+            "commands": [
+                {"name": "Cmd B", "run": "cmd_b", "timeout_seconds": 60, "optional": True}
+            ]
+        }
+
+        from repository_automation_tasks import execute_configured_commands
+        setup_entries, command_entries = execute_configured_commands(section)
+
+        self.assertEqual(len(setup_entries), 1)
+        self.assertEqual(setup_entries[0]["name"], "Setup A")
+        self.assertEqual(setup_entries[0]["exit_code"], 0)
+        self.assertEqual(setup_entries[0]["stdout"], "ran setup_a")
+        self.assertEqual(setup_entries[0]["optional"], False)
+
+        self.assertEqual(len(command_entries), 1)
+        self.assertEqual(command_entries[0]["name"], "Cmd B")
+        self.assertEqual(command_entries[0]["exit_code"], 0)
+        self.assertEqual(command_entries[0]["stdout"], "ran cmd_b")
+        self.assertEqual(command_entries[0]["optional"], True)
+
+        mock_run_shell_command.assert_any_call("setup_a", 1800)
+        mock_run_shell_command.assert_any_call("cmd_b", 60)
+
+    def test_execute_configured_commands_empty(self):
+        from repository_automation_tasks import execute_configured_commands
+        setup_entries, command_entries = execute_configured_commands({})
+        self.assertEqual(setup_entries, [])
+        self.assertEqual(command_entries, [])
+
 if __name__ == "__main__":
     unittest.main()

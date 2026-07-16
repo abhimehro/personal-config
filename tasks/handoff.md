@@ -1,6 +1,6 @@
 ========== ELIR ==========
-PURPOSE: Optimized the `extract_status_markers` function in `.github/scripts/repository_automation_tasks.py` by extracting the static regular expression and compiling it at the module level using `re.compile(..., re.S)`. This avoids redundant regex compilation on each function call.
-SECURITY: No direct security implications; strictly a performance optimization for text parsing. Assumes `issue_body` is a string (checked by type hinting).
-FAILS IF: The regex syntax was somehow altered, but it was verified to be identical to the original inline regex.
-VERIFY: Check that the compiled regex correctly extracts status markers from test data (verified via `make test-all`).
-MAINTAIN: If the marker format changes (e.g., from `<!-- repository-automation:task-status\n(.*?)\n-->`), update `_STATUS_MARKER_RE` at the module level.
+PURPOSE: Added comprehensive unit tests for `execute_configured_commands` in `repository_automation_tasks.py` which aggregates logic across multithreaded shell execution.
+SECURITY: N/A - Unit test addition. Testing ensures correct behavior of optional vs required logic handling.
+FAILS IF: Shell mocking fails or unexpected properties appear on mocked config structures.
+VERIFY: Check `tests/test_repository_automation_tasks.py` for new assertions handling timeouts and bucket assignments correctly.
+MAINTAIN: New logic branches added to `execute_configured_commands` must have corresponding test scenarios added here.
