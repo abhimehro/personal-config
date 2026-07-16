@@ -47,7 +47,7 @@ fi
 
 agent_message='Before adding a dependency, run the secure-dependency-health-check skill (or Snyk MCP snyk_package_health_check) on each candidate package. Prefer Healthy overall rating, no critical/high CVEs, and an Active/Sustainable maintenance rating. Pin an exact version from latest_version. After install, consider snyk_sca_scan on the project root.'
 
-# JSON-escape agent_message via python3 when available.
+# JSON-escape agent_message via python3 when available, fall back to jq.
 if command -v python3 >/dev/null 2>&1; then
 	python3 -c '
 import json, sys
@@ -58,6 +58,13 @@ print(json.dumps({
     "user_message": "Dependency install detected — agent should verify package health with Snyk before proceeding.",
 }))
 ' "$agent_message"
+	exit 0
+elif command -v jq >/dev/null 2>&1; then
+	jq -c -n --arg msg "$agent_message" '{
+		"permission": "allow",
+		"agent_message": $msg,
+		"user_message": "Dependency install detected — agent should verify package health with Snyk before proceeding."
+	}'
 	exit 0
 fi
 

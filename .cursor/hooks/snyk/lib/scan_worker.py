@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Scan Worker
+Scan Worker.
 ===========
 
 Background subprocess that runs a Snyk CLI scan and writes results
@@ -15,6 +15,7 @@ Environment variables (set by scan_runner):
 - SAI_LIB_DIR: Path to the lib directory (for imports)
 """
 
+import hashlib
 import json
 import os
 import re
@@ -61,7 +62,52 @@ def _safe_path(cache_dir: str, filename: str) -> str:
     return target
 
 
+def _ensure_output_paths() -> bool:
+    """Set output file paths from the environment for emergency crash reporting.
+
+    Falls back to a workspace-derived cache directory under the system temp.
+    Returns True if DONE_FILE and LOG_FILE were populated.
+    """
+    global WORKSPACE, CACHE_DIR, LIB_DIR, PID_FILE, DONE_FILE, LOG_FILE
+
+    if DONE_FILE and LOG_FILE:
+        return True
+
+    workspace = os.environ.get("SAI_WORKSPACE", "")
+    cache_dir = CACHE_DIR or os.environ.get("SAI_CACHE_DIR", "")
+    if not cache_dir and workspace:
+        workspace_hash = hashlib.sha256(workspace.encode()).hexdigest()[:8]
+        cache_dir = os.path.join(tempfile.gettempdir(), f"cursor-sai-{workspace_hash}")
+    if not cache_dir:
+        return False
+
+    resolved = os.path.realpath(cache_dir)
+    tmp_root = os.path.realpath(tempfile.gettempdir())
+    if not resolved.startswith(tmp_root + os.sep):
+        return False
+
+    if not WORKSPACE:
+        WORKSPACE = workspace
+    if not CACHE_DIR:
+        CACHE_DIR = resolved
+    if not LIB_DIR:
+        LIB_DIR = os.environ.get("SAI_LIB_DIR", str(Path(__file__).parent.resolve()))
+    if not PID_FILE:
+        PID_FILE = os.path.join(resolved, "scan.pid")
+    if not DONE_FILE:
+        DONE_FILE = os.path.join(resolved, "scan.done")
+    if not LOG_FILE:
+        LOG_FILE = os.path.join(resolved, "scan.log")
+    try:
+        os.makedirs(resolved, exist_ok=True)
+    except OSError:
+        pass
+    return True
+
+
 def log(msg):
+    if not LOG_FILE:
+        _ensure_output_paths()
     if not LOG_FILE:
         return
     try:
@@ -72,6 +118,8 @@ def log(msg):
 
 
 def finish(status, started_at=None, vulnerabilities=None, error_detail=None):
+    if not DONE_FILE:
+        _ensure_output_paths()
     if not DONE_FILE:
         return
     done_data = {
@@ -110,8 +158,7 @@ def _configure_paths_from_env() -> None:
         WORKSPACE = os.environ["SAI_WORKSPACE"]
         CACHE_DIR = os.environ["SAI_CACHE_DIR"]
     except KeyError as e:
-        print(f"[SAI scan_worker] Missing required env var: {e}", file=sys.stderr)
-        sys.exit(1)
+        raise RuntimeError(f"Missing required env var: {e}") from e
 
     LIB_DIR = os.environ.get("SAI_LIB_DIR", str(Path(__file__).parent.resolve()))
     CACHE_DIR = _validate_cache_dir(CACHE_DIR)
@@ -139,7 +186,9 @@ def _is_auth_error_output(stderr: str, stdout: str) -> bool:
     return any(pattern in combined for pattern in _AUTH_ERROR_PATTERNS)
 
 
-def _run_snyk_code_test(workspace: str) -> Tuple[Optional[int], str, str, Optional[str]]:
+def _run_snyk_code_test(
+    workspace: str,
+) -> Tuple[Optional[int], str, str, Optional[str]]:
     """Run snyk code test. Returns (exit_code, stdout, stderr, early_status)."""
     try:
         result = subprocess.run(
@@ -156,7 +205,9 @@ def _run_snyk_code_test(workspace: str) -> Tuple[Optional[int], str, str, Option
         return None, "", "", "snyk_not_found"
 
 
-def _handle_nonzero_exit(exit_code: int, stdout: str, stderr: str, started_at: str) -> bool:
+def _handle_nonzero_exit(
+    exit_code: int, stdout: str, stderr: str, started_at: str
+) -> bool:
     """Handle exit_code > 1. Returns True if finished (caller should return)."""
     if exit_code <= 1:
         return False
@@ -217,6 +268,14 @@ def main():
 if __name__ == "__main__":
     try:
         main()
+    except SystemExit:
+        raise
     except Exception as e:
         log(f"Worker crashed: {e}")
-        finish("crash")
+        finish("crash", error_detail=str(e))
+        if not DONE_FILE:
+            print(
+                f"[SAI scan_worker] Worker crashed and could not write done marker: {e}",
+                file=sys.stderr,
+            )
+        sys.exit(1)
