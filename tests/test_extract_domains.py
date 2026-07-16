@@ -238,11 +238,7 @@ class TestProcessDenylistFiles(unittest.TestCase):
             result = process_denylist_files(temp_dir)
             self.assertEqual(result, set())
 
-    @patch("adguard.scripts.extract_domains.concurrent.futures.ProcessPoolExecutor")
-    def test_worker_exception(self, mock_executor_class):
-        # Use a ThreadPoolExecutor so mocking works without pickle issues
-        mock_executor_class.return_value = concurrent.futures.ThreadPoolExecutor()
-
+    def test_worker_exception(self):
         with patch("adguard.scripts.extract_domains.extract_domains_from_file") as mock_extract:
             mock_extract.side_effect = Exception("Mocked exception")
 
