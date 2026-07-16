@@ -9,7 +9,7 @@
 - [x] SSH: example HostName comment updated; no committed hardcoded IP
 - [x] Archive audit: note historical Atlanta IP superseded
 - [x] Extend `tests/test_windscribe_connect.sh` for new defaults
-- [ ] Run relevant tests; commit + push
+- [x] Run relevant tests; commit + push
 
 ## Security notes
 
