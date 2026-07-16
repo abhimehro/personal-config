@@ -60,6 +60,7 @@ class TestTruncate(unittest.TestCase):
 
 
 
+
 class TestRunProcess(unittest.TestCase):
     def setUp(self):
         self.original_env = os.environ.copy()
@@ -68,47 +69,38 @@ class TestRunProcess(unittest.TestCase):
         os.environ.clear()
         os.environ.update(self.original_env)
 
-    @patch("subprocess.run")
-    def test_run_process_basic(self, mock_run):
+    def _assert_mock_run(self, mock_run, cmd, **kwargs):
         mock_completed = MagicMock()
         mock_run.return_value = mock_completed
 
-        result = rac.run_process(["echo", "hello"])
+        result = rac.run_process(cmd, **kwargs)
 
         self.assertEqual(result, mock_completed)
         mock_run.assert_called_once_with(
-            ["echo", "hello"],
+            cmd,
             cwd=rac.ROOT,
-            check=False,
+            check=kwargs.get('check', False),
             capture_output=True,
             text=True,
-            input=None,
-            timeout=None,
+            input=kwargs.get('input_text', None),
+            timeout=kwargs.get('timeout', None),
             env=rac.command_env(),
         )
 
     @patch("subprocess.run")
-    def test_run_process_with_args(self, mock_run):
-        mock_completed = MagicMock()
-        mock_run.return_value = mock_completed
+    def test_run_process_scenarios(self, mock_run):
+        # Basic scenario
+        self._assert_mock_run(mock_run, ["echo", "hello"])
 
-        result = rac.run_process(
+        mock_run.reset_mock()
+
+        # Scenario with extra args
+        self._assert_mock_run(
+            mock_run,
             ["cat"],
             input_text="hello world",
             timeout=10,
             check=True
-        )
-
-        self.assertEqual(result, mock_completed)
-        mock_run.assert_called_once_with(
-            ["cat"],
-            cwd=rac.ROOT,
-            check=True,
-            capture_output=True,
-            text=True,
-            input="hello world",
-            timeout=10,
-            env=rac.command_env(),
         )
 
     def test_run_process_real(self):
