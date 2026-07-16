@@ -3,7 +3,7 @@
 import argparse
 import base64
 import html
-import http.server
+from http.server import SimpleHTTPRequestHandler
 import os
 import secrets
 import socketserver
@@ -22,7 +22,7 @@ EXPECTED_AUTH_TOKEN = None
 FAILED_AUTH_ATTEMPTS = {}
 
 
-class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
+class MediaServerHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         self.rclone_remote = "media:"
         super().__init__(*args, **kwargs)
@@ -33,7 +33,6 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         super().do_HEAD()
 
     def check_auth(self):
-        global AUTH_USER, AUTH_PASS, EXPECTED_AUTH_TOKEN, FAILED_AUTH_ATTEMPTS
 
         if not AUTH_USER or not AUTH_PASS:
             return True
@@ -85,7 +84,6 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
 
     def _record_auth_failure(self, ip, now):
         """Helper to record failed auth attempts for rate limiting."""
-        global FAILED_AUTH_ATTEMPTS
         if ip not in FAILED_AUTH_ATTEMPTS:
             FAILED_AUTH_ATTEMPTS[ip] = {"count": 0, "last_attempt": now}
         FAILED_AUTH_ATTEMPTS[ip]["count"] += 1
