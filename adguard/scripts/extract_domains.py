@@ -1,4 +1,3 @@
-import concurrent.futures
 from pathlib import Path
 import json
 import os
@@ -74,18 +73,13 @@ def process_denylist_files(base_dir):
         for f in tracker_files
         if os.path.exists(os.path.join(base_dir, f))
     ]
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        future_to_file = {
-            executor.submit(extract_domains_from_file, path): path for path in filepaths
-        }
-        for future in concurrent.futures.as_completed(future_to_file):
-            filepath = future_to_file[future]
-            try:
-                domains = future.result()
-                denylist_domains.update(domains)
-                print(f"{os.path.basename(filepath)}: {len(domains)} domains")
-            except Exception as exc:
-                print(f"{os.path.basename(filepath)} generated an exception: {exc}")
+    for filepath in filepaths:
+        try:
+            domains = extract_domains_from_file(filepath)
+            denylist_domains.update(domains)
+            print(f"{os.path.basename(filepath)}: {len(domains)} domains")
+        except Exception as exc:
+            print(f"{os.path.basename(filepath)} generated an exception: {exc}")
 
     print(f"\nTotal denylist domains: {len(denylist_domains)}")
     return denylist_domains
