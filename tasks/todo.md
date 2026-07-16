@@ -44,3 +44,13 @@ Bulk of work already done via PR #386 (merged). Named historical files already i
 - [x] Run `make test-quick` (pass)
 - [x] Commit, push, open draft PR; mark Linear Done (PR #1668)
 
+
+---
+
+# Session: Fix CI on PR #1668 (ABHI-1134)
+
+- [x] Root cause: case collision `docs/archive/HANDOFF.md` vs `docs/archive/handoff.md`
+- [x] Fix: rename to `docs/archive/handoff-threadpool-sequential.md`; update archive index
+- [x] Release Drafter failure: transient GitHub Bad Request fetching config (earlier run on same PR succeeded); re-trigger via push
+- [x] Local `scripts/check_case_collisions.sh` passes
+

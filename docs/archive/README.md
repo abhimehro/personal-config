@@ -36,8 +36,8 @@ This directory contains historical documentation files that served their purpose
 
 ### Guides & Summaries
 
-- **`HANDOFF.md`** - Project handoff documentation (uppercase; older handoff)
-- **`handoff.md`** - Session ELIR handoff (ThreadPoolExecutor → sequential map refactor)
+- **`HANDOFF.md`** - Project handoff documentation (PR #144 conflict resolution)
+- **`handoff-threadpool-sequential.md`** - Session ELIR handoff (ThreadPoolExecutor → sequential map refactor; renamed to avoid case collision with `HANDOFF.md`)
 - **`handoff-controld-refactor.md`** - Control D refactor handoff notes
 - **`SUMMARY.md`** - Historical project summary
 - **`REPOSITORY_ORGANIZATION.md`** - Repository structure documentation (historical)
