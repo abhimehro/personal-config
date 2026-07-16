@@ -31,6 +31,40 @@
 - Commands/comments to run next:
 - Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
 
+## Run — 2026-07-16
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: Cron Phase 1 `0 13 * * *`; branch
+  `cursor-agent/pr-workflow-automation-36b3`; mode review-and-merge
+
+### Metrics
+
+- PRs inventoried: 87 in-scope (89 open total; rpce=0)
+- PRs merged: 53 squash
+- PRs closed: 6 (zero-diff ×3, harmful Gitleaks overwrite #1630, dup #467,
+  superseded #375)
+- PRs escalated: 4 (#233/#237 auth, #1267 GitGuardian, #1629 Snyk hooks)
+- PRs deferred: 2 CodeScene + 23 merge-conflict → Phase 2
+
+### Actions
+
+- Merged: security (#370/#461/#471/#1274), deps (#367/#371/#372), plus routine
+  refactor/test/perf across 6 repos (see `tasks/pr-review-2026-07-16.md`)
+- Closed: #1643/#1626/#1630/#1285/#467/#375
+- Deferred/escalated: CodeScene `#1658`/`#1018` (cs-agent posted); conflict
+  salvage queue; auth + secrets-scan + Snyk hooks
+
+### Follow-ups
+
+- Phase 2 salvage for ~23 CONFLICTING siblings (test-file / lockfile / bolt
+  hot-file overlaps)
+- Human review: sc `#233`/`#237`, esp `#1267`, pc `#1629`
+- Cross-link: `tasks/pr-review-2026-07-16.md`
+
 ## Run — 2026-06-12
 
 ### Scope

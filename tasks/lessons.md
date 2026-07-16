@@ -1,5 +1,19 @@
 # Lessons Learned
 
+## Lesson 0du: Bolt title ≠ Bolt diff — reject identity-destroying trees (2026-07-16)
+
+**Pattern:** `personal-config#1630` titled as a Bolt memory optimization
+(`read_text().splitlines()` in Jellyfin credential loader) but the actual diff
+replaced `README.md` and `LICENSE` with upstream **Gitleaks** project content
+(copyright Zachary Rice). Gitleaks CI failed; other scanners were green enough
+to look “almost mergeable.” **Root cause:** Agent/bot PR whose working tree
+was contaminated by an unrelated checkout; title/branch signals lied.
+**Rule:** (1) Before merge, skim `gh pr diff --name-only` — if top-level
+`README.md`/`LICENSE` appear on a routine Bolt/refactor PR, **stop and inspect**.
+(2) Close immediately as harmful/wrong-tree; do not attempt autofix.
+(3) Secrets-scan FAIL alone is escalate; identity overwrite is **CLOSE**, not
+salvage. **Detection cost:** Low — one `name-only` check on non-dep PRs.
+
 ## Lesson 0dt: Sibling Bolt/Palette PRs conflict when merged in batch order (2026-07-15)
 
 **Pattern:** Cron Phase 1 merged 23 PRs; three siblings became `DIRTY` after a
