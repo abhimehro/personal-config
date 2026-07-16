@@ -321,3 +321,7 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## 2026-07-14 - Avoid list semantics for metric cards
 **Learning:** Wrapping a single label and its corresponding value in an unordered list (`<ul>`/`<li>`) inside composite UI elements like metric cards introduces unnecessary verbosity for screen readers and misuses list semantics.
 **Action:** Prefer `<div>` or `<span>` wrappers, or a description list (`<dl>`), for metric cards to improve screen reader accessibility.
+
+## 2026-07-15 - Prevent Empty Lists for Better Accessibility
+**Learning:** Dynamically generated `<ul>` elements that conditionally render `<li>` items can result in an empty `<ul></ul>` if no conditions are met. This produces invalid HTML5 that can confuse screen readers, causing them to announce a list with zero items or skip the region ambiguously.
+**Action:** Always provide a fallback empty state `<li>` item when dynamically generating lists to ensure the HTML remains valid and users receive clear feedback that the list is intentionally empty.
