@@ -20,5 +20,5 @@
 - [x] Defer 2 CodeScene (cs#1018 flagged unsafe)
 - [x] Note 3 Phase 1 auto-resolved
 - [x] Ensure all salvages are draft (S1)
-- [ ] Commit + push session branch + open draft PR
-- [ ] Close #1659 as superseded by session PR
+- [x] Commit + push session branch + open draft PR
+- [x] Close #1659 as superseded by session PR
