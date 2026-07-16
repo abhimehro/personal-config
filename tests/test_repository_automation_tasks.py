@@ -131,40 +131,25 @@ class TestRunSafeAdjustmentCommands(unittest.TestCase):
     @patch("repository_automation_tasks.git_output", return_value="")
     @patch("repository_automation_tasks.run_shell_command", return_value={"exit_code": 0})
     @patch("repository_automation_tasks.writes_allowed", return_value=True)
-    def test_no_changes(
-        self,
-        _mock_writes_allowed,
-        _mock_run_shell_command,
-        _mock_git_output,
-    ):
+    def test_no_changes(self, _mock_writes_allowed, _mock_run_shell_command, _mock_git_output):
         result, url = run_safe_adjustment_commands(self.section)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["name"], "cmd")
         self.assertEqual(url, "")
 
-    @patch(
-        "repository_automation_tasks.create_pr_for_current_changes",
-        return_value="http://pr-url",
-    )
-    @patch("repository_automation_tasks._cached_matches_any", return_value=True)
-    @patch(
-        "repository_automation_tasks.git_output",
-        return_value=" M .github/workflows/main.yml\n",
-    )
-    @patch("repository_automation_tasks.run_shell_command", return_value={"exit_code": 0})
-    @patch("repository_automation_tasks.writes_allowed", return_value=True)
-    def test_changes_applied(
-        self,
-        _mock_writes_allowed,
-        _mock_run_shell_command,
-        _mock_git_output,
-        _mock_cached_matches_any,
-        _mock_create_pr,
-    ):
-        result, url = run_safe_adjustment_commands(self.section)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["name"], "cmd")
-        self.assertEqual(url, "http://pr-url")
+    def test_changes_applied(self):
+        with patch.multiple(
+            "repository_automation_tasks",
+            writes_allowed=MagicMock(return_value=True),
+            run_shell_command=MagicMock(return_value={"exit_code": 0}),
+            git_output=MagicMock(return_value=" M .github/workflows/main.yml\n"),
+            _cached_matches_any=MagicMock(return_value=True),
+            create_pr_for_current_changes=MagicMock(return_value="http://pr-url"),
+        ):
+            result, url = run_safe_adjustment_commands(self.section)
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result[0]["name"], "cmd")
+            self.assertEqual(url, "http://pr-url")
 
 
 class TestRunQualityAssurance(unittest.TestCase):
