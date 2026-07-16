@@ -9,6 +9,12 @@ LOG_DIR="$HOME/Library/Logs/maintenance"
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Load shared state-tracking library
+if [[ -f "$SCRIPT_DIR/../lib/state.sh" ]]; then
+	# shellcheck disable=SC1091
+	source "$SCRIPT_DIR/../lib/state.sh"
+fi
+
 # --- Colors (Defined for interactive dashboard) ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -72,6 +78,9 @@ run_with_timeout() {
 	fi
 }
 
+# Preserve environment DRY_RUN override before config.env may reset it.
+__dry_run_override="${DRY_RUN-}"
+
 # Load config
 CONFIG_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../conf" && pwd)/config.env"
 if [[ -f $CONFIG_FILE ]]; then
@@ -79,7 +88,20 @@ if [[ -f $CONFIG_FILE ]]; then
 	source "$CONFIG_FILE" 2>/dev/null || true
 fi
 
+# Restore environment DRY_RUN override if it was set before sourcing config.
+if [[ -n $__dry_run_override ]]; then
+	DRY_RUN="$__dry_run_override"
+fi
+
 log_info "Health check started"
+
+# Honor --force by exporting FORCE_RUN so state helpers bypass caching.
+for arg in "$@"; do
+	if [[ $arg == "--force" ]]; then
+		export FORCE_RUN=1
+		break
+	fi
+done
 
 REPORT=""
 append() {
@@ -174,26 +196,44 @@ if [[ -d $PANIC_DIR ]]; then
 		log_warn "Found ${PANIC_REPORTS} kernel panic reports!"
 	else
 		# Look for genuine kernel panic messages in system logs
-		# IMPORTANT: Use timeout to prevent hanging
-		log_info "Searching system logs for panic messages (this may take up to 10 seconds)..."
+		# Cache results for 24 hours (default) to avoid repeated expensive log show calls.
+		LOG_SHOW_TTL=${HEALTH_LOG_SHOW_TTL:-86400}
+		panic_from_cache=0
+		if ! state_force_run_requested && ! state_ttl_expired "$(state_get_last_run "health_check_log_show_panic")" "$LOG_SHOW_TTL"; then
+			REAL_KPANIC=$(state_get_cache "health_check_log_show_panic" | tr -d '[:space:]')
+			REAL_KPANIC=$(to_int "$REAL_KPANIC")
+			PANIC_DETAILS=$(state_get_cache "health_check_log_show_panic_details")
+			panic_from_cache=1
+			log_info "Using cached panic log search results (TTL not expired)"
+		else
+			# IMPORTANT: Use timeout to prevent hanging
+			log_info "Searching system logs for panic messages (this may take up to 10 seconds)..."
 
-		PANIC_SEARCH_CMD='log show --predicate '"'"'eventMessage CONTAINS "kernel panic" OR eventMessage CONTAINS "panic(cpu"'"'"' --last "'"${HOURS}"'h" 2>/dev/null | wc -l'
-		REAL_KPANIC=$(run_with_timeout 10 "$PANIC_SEARCH_CMD" | count_clean || echo "0")
-		REAL_KPANIC=$(to_int "$REAL_KPANIC")
+			PANIC_SEARCH_CMD='log show --predicate '"'"'eventMessage CONTAINS "kernel panic" OR eventMessage CONTAINS "panic(cpu"'"'"' --last "'"${HOURS}"'h" 2>/dev/null | wc -l'
+			REAL_KPANIC=$(run_with_timeout 10 "$PANIC_SEARCH_CMD" | count_clean || echo "0")
+			REAL_KPANIC=$(to_int "$REAL_KPANIC")
 
-		if [[ -z $REAL_KPANIC ]] || [[ $REAL_KPANIC == "0" ]]; then
-			log_info "Log search completed (or timed out) - no panic messages found"
-			REAL_KPANIC=0
+			if [[ -z $REAL_KPANIC ]] || [[ $REAL_KPANIC == "0" ]]; then
+				log_info "Log search completed (or timed out) - no panic messages found"
+				REAL_KPANIC=0
+			fi
+
+			state_set_cache "health_check_log_show_panic" "$REAL_KPANIC"
+			state_set_last_run "health_check_log_show_panic"
 		fi
 
 		if ((REAL_KPANIC > 0)); then
-			# Try to get panic details with timeout
-			PANIC_LOG_CMD='log show --predicate '"'"'eventMessage CONTAINS "kernel panic"'"'"' --last "'"${HOURS}"'h" --style compact 2>/dev/null | head -5'
-			PANIC_LOG_SAMPLE=$(run_with_timeout 5 "$PANIC_LOG_CMD" || echo "")
+			if [[ $panic_from_cache -ne 1 ]]; then
+				# Try to get panic details with timeout
+				PANIC_LOG_CMD='log show --predicate '"'"'eventMessage CONTAINS "kernel panic"'"'"' --last "'"${HOURS}"'h" --style compact 2>/dev/null | head -5'
+				PANIC_LOG_SAMPLE=$(run_with_timeout 5 "$PANIC_LOG_CMD" || echo "")
 
-			if [[ -n $PANIC_LOG_SAMPLE ]]; then
-				PANIC_TIMESTAMP=$(echo "$PANIC_LOG_SAMPLE" | head -1 | awk '{print $1, $2}' || echo "unknown")
-				PANIC_DETAILS="Panic messages in logs (timestamp: $PANIC_TIMESTAMP)"
+				if [[ -n $PANIC_LOG_SAMPLE ]]; then
+					PANIC_TIMESTAMP=$(echo "$PANIC_LOG_SAMPLE" | head -1 | awk '{print $1, $2}' || echo "unknown")
+					PANIC_DETAILS="Panic messages in logs (timestamp: $PANIC_TIMESTAMP)"
+				fi
+
+				state_set_cache "health_check_log_show_panic_details" "$PANIC_DETAILS"
 			fi
 
 			append "⚠️ Potential kernel panics in last ${HOURS}h: ${REAL_KPANIC}"
@@ -220,7 +260,17 @@ fi
 
 # 6) Homebrew check
 if command -v brew >/dev/null 2>&1; then
-	BREW_DOC=$(brew doctor 2>&1 | head -10 || true)
+	# Cache brew doctor results for 24 hours (default) to avoid repeated expensive calls.
+	BREW_TTL=${HEALTH_BREW_TTL:-86400}
+	if ! state_force_run_requested && ! state_ttl_expired "$(state_get_last_run "health_check_brew_doctor")" "$BREW_TTL"; then
+		BREW_DOC=$(state_get_cache "health_check_brew_doctor")
+		log_info "Using cached brew doctor results (TTL not expired)"
+	else
+		BREW_DOC=$(brew doctor 2>&1 | head -10 || true)
+
+		state_set_cache "health_check_brew_doctor" "$BREW_DOC"
+		state_set_last_run "health_check_brew_doctor"
+	fi
 
 	# Use rg if available for faster searching
 	HAS_ISSUES=0
