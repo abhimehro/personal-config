@@ -1,7 +1,9 @@
 # Media Server LaunchAgent & Windscribe Troubleshooting Guide
 
-**Date**: June 20, 2026
+**Date**: June 20, 2026 (static IP updated 2026-07-16: Dallas `82.23.253.53`)
 **Status**: ✅ LaunchAgent Running | ✅ Stable Windscribe Port Plan Documented
+
+> **Static IP:** Dallas `82.23.253.53` (replaces expired Atlanta `82.21.151.194`).
 
 ---
 
@@ -52,14 +54,14 @@ LOG_FILE="${HOME}/Library/Logs/media-rename.log"
 
 ### Current Status
 
-**VPN Static IP**: `82.21.151.194`
+**VPN Static IP**: `82.23.253.53`
 **Local WebDAV Server**: ✅ Stable internal port `8080`
 **Primary Remote Media Server**: ✅ Plex on `32400/TCP`
 **Backup Remote Media Server**: WebDAV on external `8088/TCP` -> internal `8080/TCP`
 
 ### Diagnosis
 
-Earlier references to external port `22650` are stale. The current supported WebDAV backup mapping is `82.21.151.194:8088` externally to the Mac's internal WebDAV port `8080/TCP`. Plex is separate and should use `32400/TCP` internally and externally.
+Earlier references to external port `22650` are stale. The current supported WebDAV backup mapping is `82.23.253.53:8088` externally to the Mac's internal WebDAV port `8080/TCP`. Plex is separate and should use `32400/TCP` internally and externally.
 
 ### Root Causes (Most Likely)
 
@@ -127,10 +129,10 @@ Use `final-media-server.sh --external` only as an interactive diagnostic helper.
 From another device (phone on cellular, NOT your WiFi):
 
 ```bash
-curl -u "infuse:${MEDIA_WEBDAV_PASS}" "http://82.21.151.194:8088/"
+curl -u "infuse:${MEDIA_WEBDAV_PASS}" "http://82.23.253.53:8088/"
 ```
 
-Or open in a browser: `http://82.21.151.194:8088/`
+Or open in a browser: `http://82.23.253.53:8088/`
 
 ---
 
@@ -151,7 +153,7 @@ Or open in a browser: `http://82.21.151.194:8088/`
 
 - **Name**: "Media (Remote)"
 - **Protocol**: WebDAV
-- **Address**: `82.21.151.194`
+- **Address**: `82.23.253.53`
 - **Port**: `8088`
 - **Username**: `infuse`
 - **Password**: `${MEDIA_WEBDAV_PASS}`
@@ -248,8 +250,8 @@ tail -f ~/Library/Logs/alldebrid-sync.log
 | LaunchAgent: alldebrid | ✅ LOADED   | Syncs hourly                         |
 | LaunchAgent: server    | ✅ RUNNING  | Serves backup WebDAV on stable 8080  |
 | LAN Access             | ✅ WORKING  | `YOUR_LAN_IP:8080`                   |
-| Plex Remote Access     | ✅ CONFIG   | `82.21.151.194:32400` -> `32400`     |
-| WebDAV VPN Access      | ✅ CONFIG   | `82.21.151.194:8088` -> `8080`       |
+| Plex Remote Access     | ✅ CONFIG   | `82.23.253.53:32400` -> `32400`     |
+| WebDAV VPN Access      | ✅ CONFIG   | `82.23.253.53:8088` -> `8080`       |
 
 ---
 

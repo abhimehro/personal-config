@@ -140,7 +140,9 @@ WINDSCRIBE_IPV6=0 ./scripts/network-mode-manager.sh windscribe privacy   # force
 env WINDSCRIBE_IPV6=1 ./scripts/network-mode-manager.sh windscribe privacy
 env WINDSCRIBE_IPV6=0 ./scripts/network-mode-manager.sh windscribe privacy
 # Same for windscribe-connect:
-#   env WINDSCRIBE_IPV6=0 ./scripts/windscribe-connect.sh privacy Atlanta
+#   IPv4/static (Dallas): env WINDSCRIBE_IPV6=0 ./scripts/windscribe-connect.sh privacy
+#   IPv6 (Atlanta/Peachtree non-static):
+#   env WINDSCRIBE_IPV6=1 ./scripts/windscribe-connect.sh privacy Atlanta
 ```
 
 Soft verify noise (expected, not failures):
@@ -179,7 +181,9 @@ Fish helpers (`configs/.config/fish/functions/nm-*.fish`, abbrs in `config.fish`
 | `nmvp4` / `nmvb4` / `nmvg4` | Same, force `WINDSCRIBE_IPV6=0` |
 | `nmvp6` / `nmvb6` / `nmvg6` | Same, force `WINDSCRIBE_IPV6=1` |
 
-Pass location for VPN abbrs (e.g. `nmvp6 Atlanta`). Reload with `exec fish`.
+Pass location for VPN abbrs: `nmvp4 Dallas` (static IPv4) or `nmvp6 Atlanta`
+(IPv6 non-static / Peachtree). Defaults: Dallas static when IPv6 is off/auto;
+Atlanta non-static when `WINDSCRIBE_IPV6=1`. Reload with `exec fish`.
 
 ### LaunchAgents (2026-07-09 audit)
 

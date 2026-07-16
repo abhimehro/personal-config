@@ -68,7 +68,7 @@ PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me 2>/dev/null || echo "unknown")
 echo "   🌐 Public IP: $PUBLIC_IP"
 
 VPN_CONNECTED=false
-if [[ $PUBLIC_IP == "82.21.151.194" ]]; then
+if [[ $PUBLIC_IP == "82.23.253.53" ]]; then
 	VPN_CONNECTED=true
 	echo "   ✅ Windscribe VPN: CONNECTED"
 else
@@ -199,14 +199,14 @@ if [[ $VPN_CONNECTED == true ]]; then
 	echo "🌐 SECONDARY (External/VPN) - Remote Access"
 	echo "─────────────────────────────────────────────────────────────"
 	echo "   Protocol:  WebDAV (HTTP)"
-	echo "   Address:   82.21.151.194"
+	echo "   Address:   82.23.253.53"
 	echo "   Port:      8088  (Windscribe external WebDAV port)"
 	echo "   Username:  $WEB_USER"
 	echo "   Password:  (from 1Password MediaServer)"
 	echo
 	echo "ℹ️  WINDSCRIBE PORT FORWARDING"
 	echo "   Configure one stable TCP mapping:"
-	echo "     External: 82.21.151.194:8088 -> Internal: $PRIMARY_IP:$AVAILABLE_PORT"
+	echo "     External: 82.23.253.53:8088 -> Internal: $PRIMARY_IP:$AVAILABLE_PORT"
 	echo "   If Windscribe assigns a different external port, keep the internal port at $AVAILABLE_PORT"
 	echo "   and use the assigned external port in Infuse."
 else

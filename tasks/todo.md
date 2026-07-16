@@ -1,3 +1,23 @@
+# Windscribe static IP: Atlanta → Dallas (2026-07-16)
+
+## Plan
+
+- [x] Update `scripts/windscribe-connect.sh`: Dallas static default (IPv4);
+      Atlanta/Peachtree non-static default when `WINDSCRIBE_IPV6=1`
+- [x] Replace old static IP `82.21.151.194` → `82.23.253.53` in media scripts/docs
+- [x] Update AGENTS.md / README / fish comments: IPv4=Dallas, IPv6=Atlanta
+- [x] SSH: example HostName comment updated; no committed hardcoded IP
+- [x] Archive audit: note historical Atlanta IP superseded
+- [x] Extend `tests/test_windscribe_connect.sh` for new defaults
+- [ ] Run relevant tests; commit + push
+
+## Security notes
+
+- Static IP is operational config (not a secret), but still machine-identifying.
+- IPv6 must not use Dallas static (IPv4-only) — default to Atlanta non-static.
+
+---
+
 # Stream LA: LaunchAgents audit (2026-07-09)
 
 ## Plan
@@ -218,17 +238,17 @@ sudo ./scripts/repair-controld-keepalive.sh --restart privacy
 # 3) Optional full regression
 ./scripts/network-mode-regression.sh browsing
 
-# 4) Combined IPv4-only / static (leak prevention)
+# 4) Combined IPv4-only / static (leak prevention) — Dallas static IP
 # bash/zsh:
-WINDSCRIBE_IPV6=0 ./scripts/windscribe-connect.sh privacy Atlanta
+WINDSCRIBE_IPV6=0 ./scripts/windscribe-connect.sh privacy
 # fish:
-env WINDSCRIBE_IPV6=0 ./scripts/windscribe-connect.sh privacy Atlanta
+env WINDSCRIBE_IPV6=0 ./scripts/windscribe-connect.sh privacy Dallas
 
-# 5) Combined IPv6-capable (or force)
+# 5) Combined IPv6-capable (Atlanta/Peachtree non-static; not Dallas static)
 # bash/zsh:
-WINDSCRIBE_IPV6=1 ./scripts/windscribe-connect.sh privacy "Toronto"
+WINDSCRIBE_IPV6=1 ./scripts/windscribe-connect.sh privacy
 # fish:
-env WINDSCRIBE_IPV6=1 ./scripts/windscribe-connect.sh privacy "Toronto"
+env WINDSCRIBE_IPV6=1 ./scripts/windscribe-connect.sh privacy Atlanta
 ```
 
 ## Second live-validation fix pass (2026-07-09 ~14:00 bugs)
