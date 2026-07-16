@@ -1,5 +1,17 @@
 # Lessons Learned
 
+## Lesson 0dt: Sibling Bolt/Palette PRs conflict when merged in batch order (2026-07-15)
+
+**Pattern:** Cron Phase 1 merged 23 PRs; three siblings became `DIRTY` after a
+related PR in the same repo landed first (`pc #1620` → `#1619`, `hg #363` →
+`#364`, `cs #1011` → `#1013`). **Root cause:** Overlapping file edits in the
+same merge window; squash-merge on `main` moves the base under the slower PR.
+**Rule:** (1) Within a repo, merge **narrow/single-concern** PRs before **broad
+Bolt** PRs when files overlap. (2) On `CONFLICTING`, do not force-merge — defer
+to Phase 2 salvage or close if truly superseded. (3) Palette ANSI fixes in
+`main.py` should be sequenced: leading-newline (#1011) before interactive
+prompt (#1013) via rebase, not parallel merge.
+
 ## Lesson 0ds: Dual ctrld + CD thrash felt "broken" while Local Config already worked (2026-07-09 ~18:20)
 
 **Pattern:** User log showed `[OK] dig … FALLBACK=1` with real profile

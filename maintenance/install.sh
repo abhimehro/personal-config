@@ -14,6 +14,7 @@ echo "🔧 Installing maintenance scripts..."
 
 # Create directories
 mkdir -p "$INSTALL_DIR/bin"
+mkdir -p "$INSTALL_DIR/lib"
 mkdir -p "$INSTALL_DIR/conf"
 mkdir -p "$LOG_DIR"
 mkdir -p "$LAUNCHAGENTS_DIR"
@@ -56,6 +57,18 @@ for script in "$SCRIPT_DIR/bin/"*; do
 		done
 	fi
 done
+
+# Copy shared libraries if exists
+if [ -d "$SCRIPT_DIR/lib" ]; then
+	echo "📦 Copying shared libraries to $INSTALL_DIR/lib..."
+	find "$SCRIPT_DIR/lib" -type f -print0 | while IFS= read -r -d '' file; do
+		# Preserve directory structure under lib/
+		relative_path="${file#"$SCRIPT_DIR/lib/"}"
+		dest_file="$INSTALL_DIR/lib/$relative_path"
+		mkdir -p "${dest_file%/*}"
+		install -m 644 "$file" "$dest_file"
+	done
+fi
 
 # Copy configuration if exists
 if [ -d "$SCRIPT_DIR/conf" ]; then
@@ -523,6 +536,7 @@ echo ""
 echo "✨ Installation complete!"
 echo ""
 echo "Installed scripts to: $INSTALL_DIR/bin/"
+echo "Installed shared libraries to: $INSTALL_DIR/lib/"
 echo "Logs will be written to: $LOG_DIR/"
 echo ""
 echo "Scheduled maintenance tasks:"
