@@ -1,3 +1,102 @@
+# PR Triage — 2026-07-15 (evening salvage)
+
+**Session:** Automated PR salvage & cleanup (cron 17:00 UTC)  
+**Mode:** Phase 2 salvage  
+**Preflight:** PASS 6/6  
+**Input:** Phase 1 remainder (9 PRs from `tasks/pr-review-2026-07-15.md`)
+
+## Decision matrix
+
+| Decision | Count | PRs |
+|----------|------:|-----|
+| SALVAGE (draft) | 2 | pc #1619 → [#1623](https://github.com/abhimehro/personal-config/pull/1623); hg #364 → [#366](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/366) |
+| CLOSE-SUPERSEDED | 3 | pc #1619, hg #364, sc #210 |
+| UNCHANGED ESCALATE | 5 | cs #990, esp #1259, hg #357, rpce #112, pc #1609 (defer feature) |
+| AUTO-RESOLVED | 1 | esp #1264 (CI green — recommend Phase 1 merge) |
+
+## Security gates
+
+| PR | Gate | Rationale |
+|----|------|-----------|
+| sc #210 | **CLOSE** | Functional CWE-209 fix already on `main` via #224; salvage adds only comments |
+| Salvage drafts #1623, #366 | **T3 routine** | Perf micro-optimizations; no trust-boundary change |
+| cs #990, esp #1259, hg #357, rpce #112 | **UNCHANGED ESCALATE** | Human security/supply-chain review still required |
+
+## Salvage technique notes
+
+- **Journal files:** append-only `.jules/bolt.md` entries; never wholesale `git checkout pr -- bolt.md` (Lesson 0y).
+- **Partial salvage:** hg #364 `chart_generator` work already on `main` via #363; only `validator.py` `dict(series)` salvaged.
+- **Superseded detection:** compare `main` file content before opening salvage branch (sc #210).
+
+## Deferred follow-ups
+
+```yaml
+open_followups:
+  - repo: personal-config
+    pr: 1623
+    reason: draft_salvage_awaiting_human_merge
+  - repo: Hydrograph_Versus_Seatek_Sensors_Project
+    pr: 366
+    reason: draft_salvage_awaiting_human_merge
+  - repo: email-security-pipeline
+    pr: 1264
+    reason: ci_green_merge_candidate
+  - repo: ctrld-sync
+    pr: 990
+    reason: escalate_ssrf_benchmark
+  - repo: email-security-pipeline
+    pr: 1259
+    reason: escalate_supply_chain
+  - repo: Hydrograph_Versus_Seatek_Sensors_Project
+    pr: 357
+    reason: escalate_poetry_lock
+  - repo: repoprompt-ce
+    pr: 112
+    reason: escalate_auth_boundary
+  - repo: personal-config
+    pr: 1609
+    reason: defer_feature_devin_phase1
+```
+
+---
+# PR Triage — 2026-07-15
+
+**Session:** Automated PR review & cleanup (cron 13:00 UTC)  
+**Mode:** review-and-merge  
+**Preflight:** PASS 6/6 (+ repoprompt-ce)
+
+## Decision matrix
+
+| Decision | Count | Notes |
+|----------|------:|-------|
+| MERGE | 23 | Security-first ordering; all had green required CI |
+| CLOSE | 6 | 3 Jules QA no-ops; 2 superseded session docs; 1 conflict close |
+| ESCALATE | 5 | Unchanged security/supply-chain tail |
+| DEFER | 4 | 2 merge conflicts; 1 Devin feature; 1 CI pending |
+
+## Security gates
+
+| PR | Gate | Rationale |
+|----|------|-----------|
+| hg #358, sc #224, pc #1616 | **MERGE** | Sentinel hardening; scoped fixes; all scans green |
+| cs #990 | **ESCALATE** | SSRF allowlist + benchmark/ruff still red |
+| esp #1259, hg #357 | **ESCALATE** | Supply-chain manifest changes need human review |
+| sc #210, rpce #112 | **ESCALATE** | Auth/CLI trust boundaries; prior CHANGES_REQUESTED |
+
+## Merge-conflict pattern (Lesson)
+
+Sibling Bolt/Palette PRs touching the same files (#1620 before #1619, #363 before #364, #1011 before #1013) caused DIRTY state when merged in dependency order. **Rule:** merge smaller/single-file Palette PRs before broader Bolt PRs in the same repo, or route conflicts to Phase 2 salvage.
+
+## Duplicate / no-op detection
+
+| Group | Kept | Closed |
+|-------|------|--------|
+| Jules Daily QA (0 files) | — | pc #1614, Seatek #456, sc #226 |
+| Session reports | today's branch commit | pc #1608, #1611 |
+| Palette ANSI in ctrld-sync | #1011 merged | #1013 closed (conflict) |
+
+---
+
 # PR Triage — 2026-07-08
 
 **Session:** Automated PR review & cleanup (cron 13:00 UTC)  

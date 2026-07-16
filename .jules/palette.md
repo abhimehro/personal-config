@@ -270,7 +270,7 @@ regex `^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$`,
 applies an `aria-label` to the heading tag containing just the text, and wraps
 the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 
-## $(date "+%Y-%m-%d") - WCAG AA Contrast for Dashboard Metric Cards
+## 2026-07-11 - WCAG AA Contrast for Dashboard Metric Cards
 **Learning:** Light background gradients (like light blue to cyan or pink to red) paired with white text often fail to meet the WCAG AA minimum contrast ratio (4.5:1), making them difficult to read for many users. The visual appeal of gradients does not outweigh the necessity of readability.
 **Action:** Replace low-contrast background gradients on metric cards or similar UI elements with solid, dark colors (e.g., dark purple, dark green, dark orange, dark red) to ensure sufficient contrast with white text.
 
@@ -293,7 +293,7 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## 2024-07-07 - ARIA Landmarks for Dashboard Sections
 **Learning:** Screen reader users benefit significantly when discrete content areas are marked as landmarks. Using `<section role="region" aria-labelledby="heading-id">` provides clear navigational targets and announces the section's name contextually.
 **Action:** When adding HTML `<section>` elements in scripts, ensure they include `role="region"` and are labelled by their associated heading using `aria-labelledby` and `id`.
-## $(date "+%Y-%m-%d") - ARIA landmarks on semantic HTML elements
+## 2026-07-11 - ARIA landmarks on semantic HTML elements
 **Learning:** While named `<section>` elements with an `aria-labelledby` attribute implicitly have the `region` role in modern browsers according to W3C HTML5/ARIA specifications, explicitly defining `role="region"` is a valid, harmless practice that can improve compatibility with older screen readers. However, it's technically redundant in modern contexts and should be weighed against reducing HTML bloat.
 **Action:** When adding semantic HTML elements like `<section>`, prioritize `aria-labelledby` for clear naming. Only add explicit `role="region"` if compatibility with older assistive technologies is a stated requirement for the project.
 ## $(date +%Y-%m-%d) - Semantic Lists for Grouped Data
@@ -302,3 +302,26 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## $(date +%Y-%m-%d) - Semantic Lists for Grouped Data
 **Learning:** When displaying grouped key-value data (like system specs) in bash-generated HTML reports, using generic `<div>` elements causes screen readers to read them as disconnected text nodes. This creates a fragmented audio experience.
 **Action:** Convert sequential `<div>` data blocks into semantic `<ul>` and `<li>` lists to provide screen readers with grouping context and item counts.
+
+## 2026-03-10 - Semantic Lists for Grouped Data
+**Learning:** When generating HTML directory or file listings, using consecutive `<a>` tags causes them to be read as disconnected links by screen readers, lacking grouping context.
+**Action:** Wrap sequential file links in semantic `<ul>` and `<li>` tags (removing default list styling via CSS) and enclose them in a `<nav>` element to provide proper item count announcements and structural context.
+
+## 2026-07-11 - aria-labelledby on composite UI elements
+**Learning:** When using `aria-labelledby` on a composite UI element (such as a metric card) that contains both a textual label and a dynamically generated value, the attribute must reference the IDs of both the label and the value (e.g., `aria-labelledby="label-id value-id"`). Referencing only the label causes screen readers to skip announcing the actual value, breaking accessibility.
+**Action:** Always verify that `aria-labelledby` attributes point to all relevant text and value IDs within composite components so that screen readers announce the full context.
+## 2026-07-13 - HTML List Role Overrides
+**Learning:** Applying `role="group"` to `<li>` elements within a `<ul>` list is a common mistake when trying to associate ARIA labels with the entire list item. Doing so overrides the implicit `listitem` role, creating an invalid semantic structure for the parent `<ul>` and breaking standard list navigation for screen readers.
+**Action:** Do not use `role="group"` on `<li>` tags. Allow them to use their implicit `listitem` role to maintain proper list semantics.
+
+## 2026-03-31 - Graceful fallback for non-TTY animations
+**Learning:** Hardcoded ANSI color strings (`\x1b[31m`) in CLI tools degrade to unreadable noise in environments without a TTY or in screen readers. This makes CLI error messages and standard output inaccessible.
+**Action:** Always conditionally apply ANSI color formatting by checking if standard output (`process.stdout.isTTY`) or standard error (`process.stderr.isTTY`) supports it. Provide clean, uncolored string fallbacks for screen reader and CI environments.
+
+## 2026-07-14 - Avoid list semantics for metric cards
+**Learning:** Wrapping a single label and its corresponding value in an unordered list (`<ul>`/`<li>`) inside composite UI elements like metric cards introduces unnecessary verbosity for screen readers and misuses list semantics.
+**Action:** Prefer `<div>` or `<span>` wrappers, or a description list (`<dl>`), for metric cards to improve screen reader accessibility.
+
+## 2026-07-15 - Prevent Empty Lists for Better Accessibility
+**Learning:** Dynamically generated `<ul>` elements that conditionally render `<li>` items can result in an empty `<ul></ul>` if no conditions are met. This produces invalid HTML5 that can confuse screen readers, causing them to announce a list with zero items or skip the region ambiguously.
+**Action:** Always provide a fallback empty state `<li>` item when dynamically generating lists to ensure the HTML remains valid and users receive clear feedback that the list is intentionally empty.

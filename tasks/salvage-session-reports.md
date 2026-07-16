@@ -438,3 +438,33 @@
 
 - Maintainer actions required: T1 review sc#195; T3 review sc#197 + cs#984; merge pc#1505 when swift green; macOS format lane for rpce#91/#92
 - Cross-links: [Session report](tasks/pr-review-2026-07-05.md)
+
+## Run — 2026-07-15 (evening salvage)
+
+### Input tail
+
+- Source report: `tasks/pr-review-2026-07-15.md` Phase 1 remainder (9 PRs)
+- PRs investigated: 9 across 6 repos (3 DIRTY conflict tails at start)
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | [#1619](https://github.com/abhimehro/personal-config/pull/1619) | SALVAGE draft | [#1623](https://github.com/abhimehro/personal-config/pull/1623) | Tuple `()` fallbacks; append-only bolt.md |
+| Hydrograph | [#364](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/364) | SALVAGE draft | [#366](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/366) | `dict(series)` only; #363 already on main |
+| series_correction | [#210](https://github.com/abhimehro/series_correction_project_updated/pull/210) | CLOSE-SUPERSEDED | — | #224 (`53058c0`) already on main |
+
+- Originals closed as superseded: pc#1619, hg#364, sc#210
+- Infra-fix draft PRs opened: 0
+- Auto-resolved for Phase 1: esp#1264 (all required CI green)
+
+### Verification status
+
+- Blocking checks: none on `main`
+- Local verify: `python3 -m py_compile` on pc salvage modules; `python3 -m pytest tests/test_validator.py -q` — 9 passed (hg#366)
+- CodeScene remediation: not required on salvage diffs (routine T3 perf)
+
+### Handoff
+
+- Maintainer actions required: review draft salvages pc#1623 + hg#366; merge esp#1264 on next Phase 1; T1 escalations unchanged (cs#990, esp#1259, hg#357, rpce#112)
+- Cross-links: [Session report](tasks/pr-review-2026-07-15.md)

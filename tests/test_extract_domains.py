@@ -16,6 +16,7 @@ from adguard.scripts.extract_domains import (
     _is_allowlist_rule,
     extract_allowlist_domains_from_file,
     extract_domains_from_file,
+    process_denylist_files,
 )
 
 
@@ -213,6 +214,41 @@ class TestExtractAllowlistDomainsFromFile(unittest.TestCase):
             self.assertIn(f"Error reading {temp_path}", mock_print.call_args[0][0])
         finally:
             os.remove(temp_path)
+
+
+
+class TestProcessDenylistFiles(unittest.TestCase):
+    def test_happy_path(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file1 = os.path.join(temp_dir, "CD-Microsoft-Tracker.json")
+            with open(file1, "w", encoding="utf-8") as f:
+                json.dump({"rules": [{"PK": "ms1.com"}, {"PK": "ms2.com"}]}, f)
+
+            file2 = os.path.join(temp_dir, "CD-Apple-Tracker.json")
+            with open(file2, "w", encoding="utf-8") as f:
+                json.dump({"rules": [{"PK": "apple1.com"}]}, f)
+
+            result = process_denylist_files(temp_dir)
+            self.assertEqual(result, {"ms1.com", "ms2.com", "apple1.com"})
+
+    def test_no_files(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = process_denylist_files(temp_dir)
+            self.assertEqual(result, set())
+
+    @patch("adguard.scripts.extract_domains.extract_domains_from_file")
+    def test_worker_exception(self, mock_extract):
+        # Sequential process_denylist_files swallows per-file exceptions.
+        mock_extract.side_effect = Exception("Mocked exception")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file1 = os.path.join(temp_dir, "CD-Microsoft-Tracker.json")
+            with open(file1, "w", encoding="utf-8") as f:
+                f.write("mock")
+
+            result = process_denylist_files(temp_dir)
+            self.assertEqual(result, set())
+            mock_extract.assert_called_once()
 
 
 if __name__ == "__main__":

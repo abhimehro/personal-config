@@ -3,7 +3,7 @@
 import argparse
 import base64
 import html
-import http.server
+from http.server import SimpleHTTPRequestHandler
 import os
 import secrets
 import socketserver
@@ -22,7 +22,7 @@ EXPECTED_AUTH_TOKEN = None
 FAILED_AUTH_ATTEMPTS = {}
 
 
-class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
+class MediaServerHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         self.rclone_remote = "media:"
         super().__init__(*args, **kwargs)
@@ -33,7 +33,6 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         super().do_HEAD()
 
     def check_auth(self):
-        global AUTH_USER, AUTH_PASS, EXPECTED_AUTH_TOKEN, FAILED_AUTH_ATTEMPTS
 
         if not AUTH_USER or not AUTH_PASS:
             return True
@@ -85,7 +84,6 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
 
     def _record_auth_failure(self, ip, now):
         """Helper to record failed auth attempts for rate limiting."""
-        global FAILED_AUTH_ATTEMPTS
         if ip not in FAILED_AUTH_ATTEMPTS:
             FAILED_AUTH_ATTEMPTS[ip] = {"count": 0, "last_attempt": now}
         FAILED_AUTH_ATTEMPTS[ip]["count"] += 1
@@ -222,6 +220,8 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
             <title>Media Library - {safe_path}</title>
             <style>
                 body {{ font-family: Arial, sans-serif; margin: 5%; }}
+                nav ul {{ list-style-type: none; padding: 0; margin: 0; }}
+                nav li {{ margin: 0; padding: 0; }}
                 .file {{ display: block; padding: 10px; text-decoration: none; color: #333; }}
                 .file:hover, .file:focus-visible {{ background: #f0f0f0; outline: 2px solid #0066cc; outline-offset: -2px; }}
                 .directory {{ font-weight: bold; color: #0066cc; }}
@@ -230,6 +230,8 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         </head>
         <body>
             <h1><span aria-hidden="true">📁</span> Media Library: /{safe_path}</h1>
+            <nav aria-label="Directory listing">
+                <ul>
         """]
 
         # Add parent directory link if not root
@@ -238,7 +240,7 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
             # Parent path is constructed safely from split, but escaping is good hygiene
             safe_parent = html.escape(parent)
             html_parts.append(
-                f'<a href="/{safe_parent}" class="file directory"><span aria-hidden="true">\U0001f4c1</span> .. (Parent Directory)</a>\n'
+                f'<li><a href="/{safe_parent}" class="file directory"><span aria-hidden="true">\U0001f4c1</span> .. (Parent Directory)</a></li>\n'
             )
 
         # ⚡ Performance: tuple for fast C-level endswith checking
@@ -255,13 +257,13 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         items_html = [
             (
                 (
-                    f'<a href="/{safe_base_path}{html.escape(item)}" class="file directory">'
-                    f'<span aria-hidden="true">\U0001f4c1</span> {html.escape(item)[:-1]}</a>\n'
+                    f'<li><a href="/{safe_base_path}{html.escape(item)}" class="file directory">'
+                    f'<span aria-hidden="true">\U0001f4c1</span> {html.escape(item)[:-1]}</a></li>\n'
                 )
                 if item.endswith("/")
                 else (
-                    f'<a href="/{safe_base_path}{html.escape(item)}" class="file video">'
-                    f'<span aria-hidden="true">{"\U0001f3ac" if item.lower().endswith(video_exts) else "\U0001f4c4"}</span> {html.escape(item)}</a>\n'
+                    f'<li><a href="/{safe_base_path}{html.escape(item)}" class="file video">'
+                    f'<span aria-hidden="true">{"\U0001f3ac" if item.lower().endswith(video_exts) else "\U0001f4c4"}</span> {html.escape(item)}</a></li>\n'
                 )
             )
             for item in files
@@ -270,6 +272,8 @@ class MediaServerHandler(http.server.SimpleHTTPRequestHandler):
         html_parts.extend(items_html)
 
         html_parts.append("""
+                </ul>
+            </nav>
         </body>
         </html>
         """)

@@ -1,4 +1,4 @@
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 import datetime
 import json
 import subprocess
@@ -182,7 +182,8 @@ def _process_pr(pr):
 if __name__ == "__main__":
     all_prs = []
     # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls using map() to significantly speed up PR fetching
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    # ⚡ Bolt Optimization: Dynamic thread concurrency to eliminate batching latency
+    with ThreadPoolExecutor(max_workers=min(len(repos) or 1, 32)) as executor:
         for repo_prs in executor.map(_fetch_repo_prs, repos):
             all_prs.extend(repo_prs)
 
@@ -204,7 +205,8 @@ if __name__ == "__main__":
     group_prs(all_prs, triage_md)
 
     # Process Actions
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    # ⚡ Bolt Optimization: Dynamic thread concurrency to eliminate batching latency
+    with ThreadPoolExecutor(max_workers=min(len(all_prs) or 1, 32)) as executor:
         for pr, action in executor.map(
             _process_pr, sorted(all_prs, key=lambda x: (x["repo"], -x["number"]))
         ):

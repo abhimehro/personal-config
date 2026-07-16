@@ -97,7 +97,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
         handler.send_header = track_headers
 
         with patch.object(
-            alldebrid_server.http.server.SimpleHTTPRequestHandler, "end_headers"
+            alldebrid_server.SimpleHTTPRequestHandler, "end_headers"
         ):
             handler.end_headers()
 
@@ -138,7 +138,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
 
         # Mock super().end_headers() to prevent actual header sending
         with patch.object(
-            alldebrid_server.http.server.SimpleHTTPRequestHandler, "end_headers"
+            alldebrid_server.SimpleHTTPRequestHandler, "end_headers"
         ):
             handler.end_headers()
 
@@ -180,7 +180,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
         handler.send_header = track_headers
 
         with patch.object(
-            alldebrid_server.http.server.SimpleHTTPRequestHandler, "end_headers"
+            alldebrid_server.SimpleHTTPRequestHandler, "end_headers"
         ):
             handler.end_headers()
 
@@ -218,7 +218,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
         handler.send_header = track_headers
 
         with patch.object(
-            alldebrid_server.http.server.SimpleHTTPRequestHandler, "end_headers"
+            alldebrid_server.SimpleHTTPRequestHandler, "end_headers"
         ):
             handler.end_headers()
 
@@ -258,7 +258,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
         handler.send_header = track_headers
 
         with patch.object(
-            alldebrid_server.http.server.SimpleHTTPRequestHandler, "end_headers"
+            alldebrid_server.SimpleHTTPRequestHandler, "end_headers"
         ):
             handler.end_headers()
 
@@ -297,7 +297,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
         handler.send_header = track_headers
 
         with patch.object(
-            alldebrid_server.http.server.SimpleHTTPRequestHandler, "end_headers"
+            alldebrid_server.SimpleHTTPRequestHandler, "end_headers"
         ):
             handler.end_headers()
 
@@ -351,7 +351,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
         handler.send_header = track_headers
 
         with patch.object(
-            alldebrid_server.http.server.SimpleHTTPRequestHandler, "end_headers"
+            alldebrid_server.SimpleHTTPRequestHandler, "end_headers"
         ):
             handler.end_headers()
 

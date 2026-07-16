@@ -18,11 +18,29 @@ When you select your **MacBook Air** as the device in Windscribe's port forwardi
 
 ## ✅ Correct Windscribe Port Forward Configuration
 
-### For WebDAV (Media Server):
+### For Jellyfin (primary media server — opt-in remote):
 
 | Setting           | Value                          |
 | ----------------- | ------------------------------ |
-| **Static IP**     | 82.23.253.53                  |
+| **Static IP**     | 82.23.253.53                   |
+| **Name**          | Jellyfin                       |
+| **Protocol**      | **TCP**                        |
+| **Device**        | MacBook Air (from device list) |
+| **External Port** | 8096                           |
+| **Internal Port** | 8096                           |
+
+> **SECURITY:** Jellyfin has no Plex-style “Remote Access” toggle that opens
+> ports for you. Remote reachability is entirely the Windscribe forward + your
+> firewall. Do **not** enable this forward until LAN playback and admin auth are
+> verified (`media-streaming/jellyfin/MIGRATION_PLAN.md` Phase 3). After
+> enabling, set **Dashboard → Networking → Published Server URIs** to
+> `http://82.23.253.53:8096` (and keep LAN URI if you use both).
+
+### For WebDAV (Infuse backup):
+
+| Setting           | Value                          |
+| ----------------- | ------------------------------ |
+| **Static IP**     | 82.23.253.53                   |
 | **Name**          | MediaServer                    |
 | **Protocol**      | **TCP** (WebDAV uses TCP only) |
 | **Device**        | MacBook Air (from device list) |
@@ -33,12 +51,18 @@ When you select your **MacBook Air** as the device in Windscribe's port forwardi
 
 | Setting           | Value                          |
 | ----------------- | ------------------------------ |
-| **Static IP**     | 82.23.253.53                  |
+| **Static IP**     | 82.23.253.53                   |
 | **Name**          | SSH                            |
 | **Protocol**      | **TCP** (SSH uses TCP only)    |
 | **Device**        | MacBook Air (from device list) |
 | **External Port** | 36555                          |
 | **Internal Port** | 22                             |
+
+### Plex (legacy — optional)
+
+Plex is no longer the primary server on this host. If you still run it, the old
+mapping was External **32400** → Internal **32400**. Prefer Jellyfin **8096**
+instead; remove the Plex forward once clients have migrated.
 
 ---
 
@@ -270,23 +294,26 @@ ssh speedybee@82.23.253.53 -p 36555
 ### 🎯 Your Action Items
 
 1. Ensure Windscribe port forwards are configured:
+   - **Jellyfin** (opt-in): TCP, MacBook Air, External 8096 -> Internal 8096
    - MediaServer WebDAV backup: TCP, MacBook Air, External 8088 -> Internal 8080
-   - Plex primary: TCP, MacBook Air, External 32400 -> Internal 32400
    - SSH: TCP, MacBook Air, External 36555 -> Internal 22
+   - Plex 32400: legacy only — remove once Jellyfin remote is preferred
 
 2. **Disconnect and reconnect** Windscribe (critical!)
 
 3. Test from external device (iPhone on cellular):
 
    ```
-   http://82.23.253.53:8088/
+   http://82.23.253.53:8096/   # Jellyfin (if forward enabled)
+   http://82.23.253.53:8088/   # WebDAV backup
    ```
 
-4. If it works: Configure secondary connection in Infuse!
+4. If WebDAV works: Configure secondary connection in Infuse!
 
 5. If it doesn't work: Check Windscribe app for port forward status or contact support
 
 ---
 
-**Last Updated**: June 20, 2026
-**Status**: LAN WebDAV operational, Plex primary remote access documented, WebDAV backup mapping standardized
+**Last Updated**: 2026-07-16
+**Status**: Jellyfin primary on LAN 8096; Windscribe static Dallas `82.23.253.53`;
+WebDAV backup `8088→8080`; Jellyfin remote forward documented as opt-in

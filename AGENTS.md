@@ -510,3 +510,13 @@ updates a directory when **both** hook files are already present as **regular**
 (non-symlink) files—matching Cursor’s layout—and uses `install -m 0755` so
 symlink destinations are never followed. To target one hash directory:
 `CURSOR_AGENT_HOOKS_DIR=~/.cursor/agent-hooks/<hash> ./scripts/install_cursor_cloud_agent_hooks.sh`.
+
+## Learned User Preferences
+
+- Phase 2 PR salvage must never autonomously merge; open draft salvage or infra-fix PRs and leave merge decisions to a human.
+- Security, auth, secrets, and trust-boundary PRs stay escalated for human review even when CI is green.
+
+## Learned Workspace Facts
+
+- Sibling Bolt/Jules PRs that both touch `.jules/bolt.md` often conflict on the journal only after one merges; salvage remaining source changes and resolve the journal by taking `main`'s `.jules/bolt.md` (Lesson 0cs).
+- Multi-repo cloud PR sessions often leave dirty tracked `seatek_series_correction.egg-info/` files under `series_correction_project_updated` after editable installs; restore or discard those changes and do not commit them.

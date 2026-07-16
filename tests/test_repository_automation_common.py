@@ -2,6 +2,7 @@ import os
 import sys
 import types
 import unittest
+from unittest.mock import patch, MagicMock
 
 # Ensure the scripts directory is in the path
 sys.path.insert(
@@ -55,6 +56,60 @@ class TestTruncate(unittest.TestCase):
         self.assertEqual(result, expected)
         self.assertLessEqual(len(result), 4000)
 
+
+
+
+
+
+class TestRunProcess(unittest.TestCase):
+    def setUp(self):
+        self.original_env = os.environ.copy()
+
+    def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self.original_env)
+
+    def _assert_mock_run(self, mock_run, cmd, **kwargs):
+        mock_completed = MagicMock()
+        mock_run.return_value = mock_completed
+
+        result = rac.run_process(cmd, **kwargs)
+
+        self.assertEqual(result, mock_completed)
+        mock_run.assert_called_once_with(
+            cmd,
+            cwd=rac.ROOT,
+            check=kwargs.get('check', False),
+            capture_output=True,
+            text=True,
+            input=kwargs.get('input_text', None),
+            timeout=kwargs.get('timeout', None),
+            env=rac.command_env(),
+        )
+
+    @patch("subprocess.run")
+    def test_run_process_scenarios(self, mock_run):
+        # Basic scenario
+        self._assert_mock_run(mock_run, ["echo", "hello"])
+
+        mock_run.reset_mock()
+
+        # Scenario with extra args
+        self._assert_mock_run(
+            mock_run,
+            ["cat"],
+            input_text="hello world",
+            timeout=10,
+            check=True
+        )
+
+    def test_run_process_real(self):
+        # Do a real call just to ensure it doesn't crash on a trivial command
+        # if the environment is somewhat sane.
+        if sys.platform != "win32":
+            result = rac.run_process(["echo", "real"])
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stdout.strip(), "real")
 
 if __name__ == "__main__":
     unittest.main()

@@ -141,22 +141,22 @@ class TestParseInventory(unittest.TestCase):
 
     def test_load_inventory_lines_file_not_found(self):
         lines = _load_inventory_lines("nonexistent_file_xyz_123.txt")
-        self.assertEqual(lines, [])
+        self.assertEqual(list(lines), [])
 
     # --- _is_pr_stale ---
 
     def test_is_pr_stale_old_date(self):
-        self.assertTrue(_is_pr_stale("2020-01-01T00:00:00Z"))
+        self.assertTrue(_is_pr_stale("2020-01-01T00:00:00Z", now=None))
 
     def test_is_pr_stale_recent_date(self):
         recent = self._recent_iso(days=5)
-        self.assertFalse(_is_pr_stale(recent))
+        self.assertFalse(_is_pr_stale(recent, now=None))
 
     def test_is_pr_stale_empty(self):
-        self.assertFalse(_is_pr_stale(""))
+        self.assertFalse(_is_pr_stale("", now=None))
 
     def test_is_pr_stale_none(self):
-        self.assertFalse(_is_pr_stale(None))
+        self.assertFalse(_is_pr_stale(None, now=None))
 
     # --- _is_checks_failing ---
 
@@ -176,31 +176,31 @@ class TestParseInventory(unittest.TestCase):
 
     def test_get_pr_category_superseded_no_files(self):
         info = self._build_info("CLEAN", self._recent_iso(), with_files=False)
-        self.assertEqual(_get_pr_category(info, "C"), "SUPERSEDED")
+        self.assertEqual(_get_pr_category(info, "C", now=None), "SUPERSEDED")
 
     def test_get_pr_category_superseded_missing_files_key(self):
-        self.assertEqual(_get_pr_category({}, "C"), "SUPERSEDED")
+        self.assertEqual(_get_pr_category({}, "C", now=None), "SUPERSEDED")
 
     def test_get_pr_category_stale(self):
         info = self._build_info("CLEAN", "2020-01-01T00:00:00Z")
-        self.assertEqual(_get_pr_category(info, "FAIL"), "STALE")
+        self.assertEqual(_get_pr_category(info, "FAIL", now=None), "STALE")
 
     def test_get_pr_category_conflicting_dirty(self):
         info = self._build_info("DIRTY", self._recent_iso())
-        self.assertEqual(_get_pr_category(info, "C"), "CONFLICTING")
+        self.assertEqual(_get_pr_category(info, "C", now=None), "CONFLICTING")
 
     def test_get_pr_category_conflicting_explicit(self):
         info = self._build_info("CONFLICTING", self._recent_iso())
-        self.assertEqual(_get_pr_category(info, "C"), "CONFLICTING")
+        self.assertEqual(_get_pr_category(info, "C", now=None), "CONFLICTING")
 
     def test_get_pr_category_ready(self):
         info = self._build_info("CLEAN", self._recent_iso())
-        self.assertEqual(_get_pr_category(info, "C"), "READY")
+        self.assertEqual(_get_pr_category(info, "C", now=None), "READY")
 
     def test_get_pr_category_none_recent_clean_failing(self):
         # Recent PR + CLEAN merge state + failing checks → no category assigned
         info = self._build_info("CLEAN", self._recent_iso())
-        self.assertIsNone(_get_pr_category(info, "FAIL"))
+        self.assertIsNone(_get_pr_category(info, "FAIL", now=None))
 
     # --- run_gh ---
 

@@ -14,8 +14,11 @@ const RESPONSE_INACTIVITY_TIMEOUT_MS = 10000;
 function getRequiredEnvVar(name: RequiredEnvVar): string {
   const value = process.env[name]?.trim();
   if (!value) {
+    const cRed = process.stderr.isTTY ? "\x1b[31m" : "";
+    const cYellow = process.stderr.isTTY ? "\x1b[33m" : "";
+    const cReset = process.stderr.isTTY ? "\x1b[0m" : "";
     throw new Error(
-      `\n\x1b[31m❌ Missing required environment variable: \x1b[33m${name}\x1b[0m\n\n💡 Please set both \x1b[33mAZURE_OPENAI_ENDPOINT\x1b[0m and \x1b[33mAZURE_DEPLOYMENT_NAME\x1b[0m before running this demo.\n`,
+      `\n${cRed}❌ Missing required environment variable: ${cYellow}${name}${cReset}\n\n💡 Please set both ${cYellow}AZURE_OPENAI_ENDPOINT${cReset} and ${cYellow}AZURE_DEPLOYMENT_NAME${cReset} before running this demo.\n`,
     );
   }
 
@@ -41,7 +44,9 @@ function handleRealtimeError(error: OpenAIRealtimeError): void {
     ? safeError.code
     : "UNKNOWN";
 
-  console.error(`\n\x1b[31m⚠️  Realtime Error (${code}):\x1b[0m ${message}\n`);
+  const cRed = process.stderr.isTTY ? "\x1b[31m" : "";
+  const cReset = process.stderr.isTTY ? "\x1b[0m" : "";
+  console.error(`\n${cRed}⚠️  Realtime Error (${code}):${cReset} ${message}\n`);
 }
 
 async function main() {
@@ -186,6 +191,8 @@ main().catch((error: unknown) => {
   const message = error instanceof Error
     ? error.message
     : "Unknown startup failure";
-  console.error(`\n\x1b[31m❌ Startup failed:\x1b[0m ${message}`);
+  const cRed = process.stderr.isTTY ? "\x1b[31m" : "";
+  const cReset = process.stderr.isTTY ? "\x1b[0m" : "";
+  console.error(`\n${cRed}❌ Startup failed:${cReset} ${message}`);
   process.exitCode = 1;
 });

@@ -61,6 +61,12 @@
 ## Phase 3 — Remote / retire Plex (approval required)
 
 - Windscribe forward `8096` only after LAN playback confidence + auth review
+- Mapping (Dallas static): External **8096** → Internal **8096** TCP on device
+  MacBook Air (`82.23.253.53`). Configure in Windscribe Port Forwarding — Jellyfin
+  has no in-app “open ports” remote-access UI like Plex.
+- After forward is live: Jellyfin Dashboard → Networking → Published Server URIs
+  = `http://82.23.253.53:8096` (keep LAN URI for home use)
 - Note: Kestrel currently listens `*:8096` (LAN-reachable). Firewall /
   Windscribe mapping still **opt-in**
-- Retire Plex clients / delete Plex data only with explicit approval
+- Retire Plex clients / delete Plex data / remove `32400` forward only with
+  explicit approval

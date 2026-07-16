@@ -48,8 +48,8 @@ stop_all_controld_services() {
 	print_status "Stopping all Control D services..."
 
 	# Kill any running processes
-	pkill -f "ctrld" 2>/dev/null
-	pkill -f "dns-monitor" 2>/dev/null
+	pkill -f -- "ctrld" 2>/dev/null
+	pkill -f -- "dns-monitor" 2>/dev/null
 
 	# Unload all launch daemons
 	for daemon in "${LAUNCH_DAEMONS[@]}"; do
@@ -191,7 +191,7 @@ start_vpn_compatible_service() {
 	sleep 3
 
 	# Verify service is running
-	if pgrep -f "ctrld run" >/dev/null; then
+	if pgrep -f -- "ctrld run" >/dev/null; then
 		print_success "Control D service started with VPN compatibility"
 		return 0
 	else
@@ -205,7 +205,7 @@ stop_vpn_compatible_service() {
 
 	launchctl unload /Library/LaunchDaemons/com.controld.vpn.dns.plist 2>/dev/null
 	launchctl remove com.controld.vpn.dns 2>/dev/null
-	pkill -f "ctrld run" 2>/dev/null
+	pkill -f -- "ctrld run" 2>/dev/null
 
 	print_success "VPN-compatible Control D service stopped"
 }
@@ -223,9 +223,9 @@ check_service_status() {
 
 	echo
 	echo -e "${BLUE}=== Process Status ===${NC}"
-	if pgrep -f "ctrld run" >/dev/null; then
+	if pgrep -f -- "ctrld run" >/dev/null; then
 		echo "✅ Control D process: RUNNING"
-		echo "   PID: $(pgrep -f "ctrld run")"
+		echo "   PID: $(pgrep -f -- "ctrld run")"
 	else
 		echo "❌ Control D process: NOT RUNNING"
 	fi
@@ -276,7 +276,7 @@ test_windscribe_compatibility() {
 	print_status "Testing Windscribe + Control D compatibility..."
 
 	# Check if Control D is running
-	if ! pgrep -f "ctrld run" >/dev/null; then
+	if ! pgrep -f -- "ctrld run" >/dev/null; then
 		print_error "Control D is not running. Start it first with: $0 start"
 		return 1
 	fi

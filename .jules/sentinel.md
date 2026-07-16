@@ -631,3 +631,24 @@ treated strictly as patterns and not parsed as command-line options.
 **Vulnerability:** Option Injection (CWE-88 variant). Found that some scripts using `pkill` for process management did not include the `--` delimiter before the process name argument when other flags were present. For instance, `pkill -f "ctrld"` was changed to `pkill -f -- "ctrld"`. If an attacker controls the variable and starts it with a hyphen, `pkill` may interpret the variable as a command-line flag rather than a positional argument, leading to option injection or unintended execution.
 **Learning:** When invoking `pkill` with dynamic variables from bash, you must explicitly separate options from arguments using the `--` delimiter before positional arguments to prevent them from being parsed as flags.
 **Prevention:** Always use the `--` argument delimiter before positional arguments when using `pkill` with external variables (e.g., `pkill -f -- "ctrld"`).
+
+## $(date +%Y-%m-%d) - AppleScript Option Injection Risk via osascript without -- delimiter
+**Vulnerability:** AppleScript Option Injection (CWE-88 variant). Even when passing dynamic variables safely to `osascript` using `-e 'on run argv'`, the variables were passed directly after the script string without the `--` delimiter. In other places, `osascript - "$variable"` was used without `--` before the positional arguments. If an attacker controls the variable and starts it with a hyphen, `osascript` may interpret the variable as a command-line flag rather than a positional argument, leading to option injection or unintended execution. Note: because BSD `getopt` halts at `-`, the `--` must appear before the `-` stdin indicator (e.g., `osascript -- - "$VAR"`).
+**Learning:** When invoking `osascript` with dynamic variables from bash, you must explicitly separate options from arguments using the `--` delimiter before any positional arguments or stdin indicators to prevent them from being parsed as flags.
+**Prevention:** Always use the `--` argument delimiter before the `-` stdin indicator or any positional arguments when using `osascript` with external variables (e.g., `osascript -- - "$VAR" <<-'EOF'`).
+
+## $(date +%Y-%m-%d) - Option Injection in pkill
+**Vulnerability:** Option Injection (CWE-88 variant). Found that some scripts using `pkill` for process management did not include the `--` delimiter before the process name argument when other flags were present. For instance, `pkill -f "ctrld"` was changed to `pkill -f -- "ctrld"`. If an attacker controls the variable and starts it with a hyphen, `pkill` may interpret the variable as a command-line flag rather than a positional argument, leading to option injection or unintended execution.
+**Learning:** When invoking `pkill` with dynamic variables from bash, you must explicitly separate options from arguments using the `--` delimiter before positional arguments to prevent them from being parsed as flags.
+**Prevention:** Always use the `--` argument delimiter before positional arguments when using `pkill` with external variables (e.g., `pkill -f -- "ctrld"`).
+
+## 2026-07-28 - Command Injection Risk via eval in Home Directory Resolution
+
+**Vulnerability:** Command Injection (CWE-78 variant) in `scripts/repair-controld-keepalive.sh`. The script used `USER_HOME="${SUDO_USER:+$(eval echo "~$SUDO_USER")}"` which allows for command injection if an attacker can influence the `SUDO_USER` variable.
+**Learning:** `eval echo` should never be used to resolve a user's home directory from variables, as it can execute arbitrary shell commands.
+**Prevention:** Use native OS queries such as `dscl` (macOS), `id -P`, or `getent passwd` to safely look up user home directories without using `eval`.
+
+## 2026-07-28 - Option Injection Risk via pkill
+**Vulnerability:** Option Injection (CWE-88 variant). Found remaining shell scripts using `pkill` that did not include the `--` delimiter before the process name argument when other flags were present.
+**Learning:** When invoking `pkill` with dynamic variables or even static strings that could be refactored to variables, you must explicitly separate options from arguments using the `--` delimiter to prevent them from being parsed as flags.
+**Prevention:** Always use the `--` argument delimiter before positional arguments when using `pkill`.

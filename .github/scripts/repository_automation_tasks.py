@@ -68,9 +68,16 @@ def execute_configured_commands(
     setup_entries = []
     command_entries = []
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    commands = list(configured_commands(section))
+    if not commands:
+        return setup_entries, command_entries
+
+    # ⚡ Bolt Optimization: Increase max_workers to the number of commands (up to a safe limit of 32) to eliminate batching latency without exhausting runner resources
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=min(len(commands), 32)
+    ) as executor:
         futures = []
-        for bucket_name, item in configured_commands(section):
+        for bucket_name, item in commands:
             timeout = int(item.get("timeout_seconds", 1800))
             future = executor.submit(run_shell_command, item["run"], timeout)
             futures.append((bucket_name, item, future))
@@ -543,12 +550,16 @@ def run_quality_assurance(config: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+# ⚡ Bolt Optimization: Cache parse_timestamp to significantly reduce datetime parsing overhead when calculating ages for repetitive timestamps
+@functools.lru_cache(maxsize=1024)
 def parse_timestamp(value: str) -> dt.datetime:
     return dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
-def age_days(timestamp: str) -> int:
-    return (now_utc() - parse_timestamp(timestamp)).days
+def age_days(timestamp: str, now: dt.datetime | None = None) -> int:
+    if now is None:
+        now = now_utc()
+    return (now - parse_timestamp(timestamp)).days
 
 
 def render_issue_rows(issues: list[dict[str, Any]]) -> list[str]:
@@ -557,10 +568,11 @@ def render_issue_rows(issues: list[dict[str, Any]]) -> list[str]:
         "| Issue | Last updated | Age (days) | Labels |",
         "| --- | --- | ---: | --- |",
     ]
+    _now = now_utc()
     for item in issues:
         labels = ", ".join(label["name"] for label in item.get("labels", []))
         rows.append(
-            f"| [#{item['number']}]({item['url']}) | {item['updatedAt'][:10]} | {age_days(item['updatedAt'])} | {labels or '-'} |"
+            f"| [#{item['number']}]({item['url']}) | {item['updatedAt'][:10]} | {age_days(item['updatedAt'], _now)} | {labels or '-'} |"
         )
     return rows
 
@@ -572,9 +584,10 @@ def render_pr_rows(prs: list[dict[str, Any]]) -> list[str]:
         "| PR | Last updated | Age (days) | Draft | Review | Merge state |",
         "| --- | --- | ---: | --- | --- | --- |",
     ]
+    _now = now_utc()
     for item in prs:
         rows.append(
-            f"| [#{item['number']}]({item['url']}) | {item['updatedAt'][:10]} | {age_days(item['updatedAt'])} | {item.get('isDraft')} | {item.get('reviewDecision') or '-'} | {item.get('mergeStateStatus') or '-'} |"
+            f"| [#{item['number']}]({item['url']}) | {item['updatedAt'][:10]} | {age_days(item['updatedAt'], _now)} | {item.get('isDraft')} | {item.get('reviewDecision') or '-'} | {item.get('mergeStateStatus') or '-'} |"
         )
     return rows
 
@@ -622,10 +635,13 @@ def run_backlog_manager(config: dict[str, Any]) -> dict[str, Any]:
     issues = sorted(issues, key=lambda item: item.get("updatedAt", ""))
     prs = sorted(prs, key=lambda item: item.get("updatedAt", ""))
     stale_days = int(section.get("stale_days", 14))
+    _now = now_utc()
     stale_issues = [
-        item for item in issues if age_days(item["updatedAt"]) >= stale_days
+        item for item in issues if age_days(item["updatedAt"], _now) >= stale_days
     ]
-    stale_prs = [item for item in prs if age_days(item["updatedAt"]) >= stale_days]
+    stale_prs = [
+        item for item in prs if age_days(item["updatedAt"], _now) >= stale_days
+    ]
     status = "warning" if stale_issues or stale_prs else "success"
     summary = f"Backlog scan found {len(issues)} open issues and {len(prs)} open PRs in the sampled set."
     lines = [
@@ -642,11 +658,11 @@ def run_backlog_manager(config: dict[str, Any]) -> dict[str, Any]:
         lines.extend(["", "## Human review candidates"])
         for item in stale_issues:
             lines.append(
-                f"- Issue #{item['number']} has been quiet for {age_days(item['updatedAt'])} days: {item['title']}"
+                f"- Issue #{item['number']} has been quiet for {age_days(item['updatedAt'], _now)} days: {item['title']}"
             )
         for item in stale_prs:
             lines.append(
-                f"- PR #{item['number']} has been quiet for {age_days(item['updatedAt'])} days: {item['title']}"
+                f"- PR #{item['number']} has been quiet for {age_days(item['updatedAt'], _now)} days: {item['title']}"
             )
     return write_result(
         "backlog-manager",
@@ -806,7 +822,9 @@ def run_daily_status_report(config: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-_STATUS_MARKER_RE = re.compile(r"<!-- repository-automation:task-status\n(.*?)\n-->", re.S)
+_STATUS_MARKER_RE = re.compile(
+    r"<!-- repository-automation:task-status\n(.*?)\n-->", re.S
+)
 
 
 def extract_status_markers(issue_body: str) -> dict[str, str]:

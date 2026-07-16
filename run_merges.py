@@ -1,4 +1,4 @@
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 import subprocess
@@ -70,7 +70,8 @@ def _fetch_pr_data(item):
 def _fetch_all_pr_data_parallel(queue_items):
     # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls using map() to significantly speed up PR data fetching
     # This mitigates network latency and execution time by querying github concurrently
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    # ⚡ Bolt Optimization: Dynamic thread concurrency to eliminate batching latency
+    with ThreadPoolExecutor(max_workers=min(len(queue_items) or 1, 32)) as executor:
         return list(executor.map(_fetch_pr_data, queue_items))
 
 
