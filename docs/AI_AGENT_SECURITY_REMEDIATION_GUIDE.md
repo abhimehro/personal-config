@@ -107,7 +107,11 @@ trufflehog filesystem . --only-verified
 | `copilot-setup-steps.yml`     | `request`             | `env.REQUEST` → `process.env.REQUEST`                                         |
 | `agentics-maintenance.yml`    | `operation`           | `env.GH_AW_OPERATION` (in `if:` only at job level)                            |
 | `repository-automation-*.yml` | `allow_write_actions` | job `env` / expression only                                                   |
-| `gemini-*.yml`                | `additional_context`  | `env.ADDITIONAL_CONTEXT` (verify consumer does not re-interpolate into shell) |
+
+> **Note (ABHI-1321):** Disabled `gemini-*.yml` workflows were removed in the
+> workflow consolidation. If restored from git history, re-verify
+> `additional_context` is bound via `env.ADDITIONAL_CONTEXT` and not
+> re-interpolated into shell.
 
 ### Infrastructure hardening
 

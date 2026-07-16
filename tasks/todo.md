@@ -1,28 +1,39 @@
-- [x] Use `run_in_bash_session` to execute a python script that will remove the unused `import concurrent.futures` and the usage of `concurrent.futures.ThreadPoolExecutor` in `scripts/get_prs_summarize.py`. The executor map will be replaced with a simple sequential `map(_fetch_task_wrapper, tasks)`.
-- [x] Use `run_in_bash_session` to run `git diff scripts/get_prs_summarize.py` to visually verify the modifications.
-- [x] Use `run_in_bash_session` to execute `flake8 scripts/get_prs_summarize.py` to verify the code passes linting.
-- [x] Use `run_in_bash_session` to install the required testing dependencies and run the full test suite to ensure no functionality is broken by the refactoring: `sudo apt-get install -y bc && pip install pyyaml pytest && make test-all`.
-- [x] Complete pre-commit steps to ensure proper testing, verification, review, and reflection are done.
-- [x] Use the `submit` tool to create the PR with the requested format.
+# ABHI-1321 — Audit and consolidate GitHub workflows
 
----
+## Approach
 
-# Session: Snyk Secure-at-Inception project hooks (2026-07-16)
+Inventory `.github/workflows/` (25 YAML files), identify redundant/disabled/obsolete
+workflows, remove safe duplicates, and rewrite README as the canonical catalog.
+
+**Trust boundary:** Workflow YAML controls Actions permissions and secrets access.
+Removals reduce attack surface; keep security gates (security-scan, dependency-review).
+
+**Security:** Do not weaken secret scanning, CodeQL, or dependency review. Prefer
+removing disabled/stub workflows over merging active security jobs.
 
 ## Checklist
 
-- [x] Vendor SAI scripts under `.cursor/hooks/snyk/`
-- [x] Add wrapper + dependency-install reminder hook
-- [x] Update `.cursor/hooks.json`
-- [x] Write design + operator docs
-- [x] Add shell smoke tests (`tests/test_cursor_snyk_hooks.sh` — 7/7)
-- [x] Commit, push, open draft PR (#1629)
-- [x] Refactor for CodeScene complexity gates (PR CI green)
-- [x] Merge latest `origin/main`; resolve `tasks/todo.md` journal conflict
+- [x] Inventory workflows + GitHub run/state evidence
+- [x] Remove redundant `shellcheck.yml` (covered by `mac-audit.yml`)
+- [x] Remove stub `test-refactoring-agent.yml` (doubles `/cs-agent` runs)
+- [x] Remove disabled Gemini suite (`gemini-*.yml`, 6 files)
+- [x] Update `mac-audit/README.md` badge/refs
+- [x] Rewrite `.github/workflows/README.md` catalog of remaining workflows
+- [ ] Commit, push, open draft PR; update Linear ABHI-1321
+- [ ] Verify no broken refs in tests/docs; run smoke tests if needed
 
-## Validation notes
+## Removal rationale (evidence)
 
-- Live Snyk CLI / MCP auth unavailable in this cloud session (`SNYK_TOKEN` unset).
-- `/snyk-fix` + `/snyk-batch-fix`: no remediations (no vuln table / no auth).
-- docs-canvas: canvas SDK unavailable; shipped `docs/snyk-secure-at-inception.md`.
-- Journal merge: took `main`'s current `tasks/todo.md` (Bolt session checklist from #1655) and appended this SAI section; did not resurrect the pre-#1655 LaunchAgents/Control D checklist that `main` replaced.
+| File | Reason |
+| --- | --- |
+| `shellcheck.yml` | Same `mac-audit/**` ShellCheck as `mac-audit.yml` job |
+| `test-refactoring-agent.yml` | Stub echo-only; fires alongside real agent on `/cs-agent` |
+| `gemini-*.yml` (6) | All `disabled_manually` since 2026-07-03; README already optional |
+
+## Result
+
+**25 → 17** workflow YAML files. Security gates retained.
+
+## Kept (documented in README)
+
+Core CI, security, repo automation, CodeScene agent, Jules, label/stale/release helpers.
