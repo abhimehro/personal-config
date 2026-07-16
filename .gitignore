@@ -315,3 +315,6 @@ venv/
 *.tfvars
 *.tfvars.*
 
+
+# Continual-learning local incremental index (do not commit)
+.cursor/hooks/state/
