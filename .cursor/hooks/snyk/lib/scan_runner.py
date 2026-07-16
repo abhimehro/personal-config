@@ -23,7 +23,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 # =============================================================================
 # CONFIGURATION
@@ -33,6 +33,8 @@ SCAN_WAIT_TIMEOUT = 90
 POLL_INTERVAL_INITIAL = 1.0
 POLL_INTERVAL_MAX = 3.0
 PID_STALENESS_TIMEOUT = 600
+
+LogFn = Callable[[object], None]
 
 
 # =============================================================================
@@ -105,56 +107,74 @@ def _cleanup_pid_file(workspace: str) -> None:
 # =============================================================================
 
 
+def _severity_from_priority_score(score: int) -> str:
+    if score >= 700:
+        return "critical"
+    if score >= 500:
+        return "high"
+    if score >= 300:
+        return "medium"
+    return "low"
+
+
+def _severity_from_sarif_result(result: Dict[str, Any]) -> str:
+    level = result.get("level", "warning")
+    severity = {"error": "high", "warning": "medium", "note": "low"}.get(level, "medium")
+    properties = result.get("properties", {})
+    if "priorityScore" not in properties:
+        return severity
+    return _severity_from_priority_score(properties["priorityScore"])
+
+
+def _cwe_from_properties(properties: Dict[str, Any]) -> Optional[str]:
+    cwe_list = properties.get("cwe", [])
+    return cwe_list[0] if cwe_list else None
+
+
+def _vuln_from_location(
+    result: Dict[str, Any],
+    loc: Dict[str, Any],
+    severity: str,
+    cwe: Optional[str],
+) -> Dict[str, Any]:
+    rule_id = result.get("ruleId", "unknown")
+    message = result.get("message", {}).get("text", "")
+    phys_loc = loc.get("physicalLocation", {})
+    artifact = phys_loc.get("artifactLocation", {})
+    region = phys_loc.get("region", {})
+    start_line = region.get("startLine", 0)
+    return {
+        "id": rule_id,
+        "title": rule_id.replace("/", " - ").replace("_", " ").title(),
+        "severity": severity,
+        "cwe": cwe,
+        "file_path": artifact.get("uri", "unknown"),
+        "start_line": start_line,
+        "end_line": region.get("endLine", start_line),
+        "message": message,
+    }
+
+
+def _vulns_from_sarif_result(result: Dict[str, Any]) -> List[Dict[str, Any]]:
+    severity = _severity_from_sarif_result(result)
+    cwe = _cwe_from_properties(result.get("properties", {}))
+    return [
+        _vuln_from_location(result, loc, severity, cwe)
+        for loc in result.get("locations", [])
+    ]
+
+
 def parse_sarif_results(json_output: str) -> List[Dict[str, Any]]:
     """Parse Snyk Code SARIF JSON output into a list of vulnerability dicts."""
-    vulnerabilities: List[Dict[str, Any]] = []
-
     try:
         data = json.loads(json_output)
     except json.JSONDecodeError:
-        return vulnerabilities
+        return []
 
+    vulnerabilities: List[Dict[str, Any]] = []
     for run in data.get("runs", []):
         for result in run.get("results", []):
-            rule_id = result.get("ruleId", "unknown")
-            message = result.get("message", {}).get("text", "")
-
-            level = result.get("level", "warning")
-            severity = {"error": "high", "warning": "medium", "note": "low"}.get(level, "medium")
-
-            properties = result.get("properties", {})
-            if "priorityScore" in properties:
-                score = properties["priorityScore"]
-                if score >= 700:
-                    severity = "critical"
-                elif score >= 500:
-                    severity = "high"
-                elif score >= 300:
-                    severity = "medium"
-                else:
-                    severity = "low"
-
-            cwe_list = properties.get("cwe", [])
-            cwe = cwe_list[0] if cwe_list else None
-
-            for loc in result.get("locations", []):
-                phys_loc = loc.get("physicalLocation", {})
-                artifact = phys_loc.get("artifactLocation", {})
-                region = phys_loc.get("region", {})
-
-                vulnerabilities.append(
-                    {
-                        "id": rule_id,
-                        "title": rule_id.replace("/", " - ").replace("_", " ").title(),
-                        "severity": severity,
-                        "cwe": cwe,
-                        "file_path": artifact.get("uri", "unknown"),
-                        "start_line": region.get("startLine", 0),
-                        "end_line": region.get("endLine", region.get("startLine", 0)),
-                        "message": message,
-                    }
-                )
-
+            vulnerabilities.extend(_vulns_from_sarif_result(result))
     return vulnerabilities
 
 
@@ -287,25 +307,26 @@ def get_scan_completion_info(workspace: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def wait_for_scan(workspace: str, timeout: float = SCAN_WAIT_TIMEOUT, log_fn=None) -> Optional[str]:
-    """Wait for a background scan to complete. Returns the status string
-    or None if the wait timed out."""
-    if log_fn is None:
+def _noop_log(_msg: object) -> None:
+    return
 
-        def log_fn(msg: object) -> None:
-            pass
 
+def _start_scan_if_needed(workspace: str) -> Optional[str]:
+    """If no scan is active, launch one. Return a terminal status if launch fails."""
+    if is_scan_running(workspace) or is_scan_complete(workspace):
+        return None
+    if launch_background_scan(workspace):
+        return None
     if is_scan_complete(workspace):
         return _read_scan_status(workspace)
+    return "unavailable"
 
-    if not is_scan_running(workspace) and not is_scan_complete(workspace):
-        if not launch_background_scan(workspace):
-            if is_scan_complete(workspace):
-                return _read_scan_status(workspace)
-            return None
 
-    log_fn("[SAI] Waiting for security scan to complete...")
-
+def _poll_until_complete(
+    workspace: str,
+    timeout: float,
+    log_fn: LogFn,
+) -> Optional[str]:
     start_time = time.time()
     poll_interval = POLL_INTERVAL_INITIAL
 
@@ -324,6 +345,28 @@ def wait_for_scan(workspace: str, timeout: float = SCAN_WAIT_TIMEOUT, log_fn=Non
 
     log_fn(f"[SAI] Scan timed out after {timeout:.0f}s")
     return None
+
+
+def wait_for_scan(
+    workspace: str,
+    timeout: float = SCAN_WAIT_TIMEOUT,
+    log_fn: Optional[LogFn] = None,
+) -> Optional[str]:
+    """Wait for a background scan to complete. Returns the status string
+    or None if the wait timed out."""
+    logger = log_fn or _noop_log
+
+    if is_scan_complete(workspace):
+        return _read_scan_status(workspace)
+
+    launch_status = _start_scan_if_needed(workspace)
+    if launch_status == "unavailable":
+        return None
+    if launch_status is not None:
+        return launch_status
+
+    logger("[SAI] Waiting for security scan to complete...")
+    return _poll_until_complete(workspace, timeout, logger)
 
 
 def clear_scan_state(workspace: str) -> None:

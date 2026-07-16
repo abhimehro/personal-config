@@ -23,6 +23,7 @@ import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from typing import Optional, Tuple
 
 WORKSPACE = ""
 CACHE_DIR = ""
@@ -32,6 +33,12 @@ DONE_FILE = ""
 LOG_FILE = ""
 
 _CACHE_DIR_PATTERN = re.compile(r"^cursor-sai-[0-9a-f]{8}$")
+_AUTH_ERROR_PATTERNS = (
+    "missingapitokenerror",
+    "not authenticated",
+    "authentication required",
+    "snyk-0005",
+)
 
 
 def _validate_cache_dir(cache_dir: str) -> str:
@@ -89,7 +96,7 @@ def finish(status, started_at=None, vulnerabilities=None, error_detail=None):
     log(f"Scan finished with status: {status}")
 
 
-def main():
+def _configure_paths_from_env() -> None:
     global WORKSPACE, CACHE_DIR, LIB_DIR, PID_FILE, DONE_FILE, LOG_FILE
 
     try:
@@ -100,11 +107,67 @@ def main():
         sys.exit(1)
 
     LIB_DIR = os.environ.get("SAI_LIB_DIR", str(Path(__file__).parent.resolve()))
-
     CACHE_DIR = _validate_cache_dir(CACHE_DIR)
     PID_FILE = _safe_path(CACHE_DIR, "scan.pid")
     DONE_FILE = _safe_path(CACHE_DIR, "scan.done")
     LOG_FILE = _safe_path(CACHE_DIR, "scan.log")
+
+
+def _has_stored_snyk_auth() -> bool:
+    if os.environ.get("SNYK_TOKEN"):
+        return True
+
+    config_dir = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
+    snyk_config_path = os.path.join(config_dir, "configstore", "snyk.json")
+    try:
+        with open(snyk_config_path) as f:
+            snyk_cfg = json.load(f)
+        return bool(snyk_cfg.get("api") or snyk_cfg.get("INTERNAL_OAUTH_TOKEN_STORAGE"))
+    except (OSError, json.JSONDecodeError, FileNotFoundError):
+        return False
+
+
+def _is_auth_error_output(stderr: str, stdout: str) -> bool:
+    combined = (stderr + stdout).lower()
+    return any(pattern in combined for pattern in _AUTH_ERROR_PATTERNS)
+
+
+def _run_snyk_code_test(workspace: str) -> Tuple[Optional[int], str, str, Optional[str]]:
+    """Run snyk code test. Returns (exit_code, stdout, stderr, early_status)."""
+    try:
+        result = subprocess.run(
+            ["snyk", "code", "test", ".", "--json"],
+            capture_output=True,
+            text=True,
+            timeout=300,
+            cwd=workspace,
+        )
+        return result.returncode, result.stdout, result.stderr, None
+    except subprocess.TimeoutExpired:
+        return None, "", "", "timeout"
+    except FileNotFoundError:
+        return None, "", "", "snyk_not_found"
+
+
+def _handle_nonzero_exit(exit_code: int, stdout: str, stderr: str, started_at: str) -> bool:
+    """Handle exit_code > 1. Returns True if finished (caller should return)."""
+    if exit_code <= 1:
+        return False
+    if _is_auth_error_output(stderr, stdout):
+        log("Snyk CLI authentication required")
+        finish(
+            "auth_required",
+            started_at=started_at,
+            error_detail="Snyk CLI is not authenticated",
+        )
+        return True
+    log(f"Scan error: {stderr[:500]}")
+    finish("error", started_at=started_at, error_detail=stderr[:500])
+    return True
+
+
+def main():
+    _configure_paths_from_env()
 
     sys.path.insert(0, LIB_DIR)
     from scan_runner import parse_sarif_results
@@ -115,73 +178,32 @@ def main():
     if os.path.exists(DONE_FILE):
         os.remove(DONE_FILE)
 
-    if not os.environ.get("SNYK_TOKEN"):
-        config_dir = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
-        snyk_config_path = os.path.join(config_dir, "configstore", "snyk.json")
-        has_stored_auth = False
-        try:
-            with open(snyk_config_path) as f:
-                snyk_cfg = json.load(f)
-            has_stored_auth = bool(
-                snyk_cfg.get("api") or snyk_cfg.get("INTERNAL_OAUTH_TOKEN_STORAGE")
-            )
-        except (OSError, json.JSONDecodeError, FileNotFoundError):
-            pass
-
-        if not has_stored_auth:
-            log("Snyk CLI not authenticated (no API key or OAuth token found)")
-            finish(
-                "auth_required",
-                started_at=started_at,
-                error_detail="Snyk CLI is not authenticated. Run 'snyk auth' in a terminal.",
-            )
-            return
-
-    try:
-        result = subprocess.run(
-            ["snyk", "code", "test", ".", "--json"],
-            capture_output=True,
-            text=True,
-            timeout=300,
-            cwd=WORKSPACE,
+    if not _has_stored_snyk_auth():
+        log("Snyk CLI not authenticated (no API key or OAuth token found)")
+        finish(
+            "auth_required",
+            started_at=started_at,
+            error_detail="Snyk CLI is not authenticated. Run 'snyk auth' in a terminal.",
         )
-        exit_code = result.returncode
-        stdout = result.stdout
-        stderr = result.stderr
-    except subprocess.TimeoutExpired:
+        return
+
+    exit_code, stdout, stderr, early_status = _run_snyk_code_test(WORKSPACE)
+    if early_status == "timeout":
         log("Scan timed out")
         finish("timeout", started_at=started_at)
         return
-    except FileNotFoundError:
+    if early_status == "snyk_not_found":
         log("Snyk CLI not found")
         finish("snyk_not_found", started_at=started_at)
         return
 
+    assert exit_code is not None
     log(f"Snyk exited with code {exit_code}")
-
-    if exit_code > 1:
-        combined_output = (stderr + stdout).lower()
-        if any(
-            pattern in combined_output
-            for pattern in [
-                "missingapitokenerror",
-                "not authenticated",
-                "authentication required",
-                "snyk-0005",
-            ]
-        ):
-            log("Snyk CLI authentication required")
-            finish(
-                "auth_required", started_at=started_at, error_detail="Snyk CLI is not authenticated"
-            )
-            return
-        log(f"Scan error: {stderr[:500]}")
-        finish("error", started_at=started_at, error_detail=stderr[:500])
+    if _handle_nonzero_exit(exit_code, stdout, stderr, started_at):
         return
 
     vulnerabilities = parse_sarif_results(stdout)
     log(f"Found {len(vulnerabilities)} vulnerabilities")
-
     finish("success", started_at=started_at, vulnerabilities=vulnerabilities)
 
 
