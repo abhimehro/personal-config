@@ -1296,3 +1296,24 @@ sc#210 was superseded because #224 already landed the CWE-209 fix. (4) Partial
 salvage is valid when sibling merge absorbed part of the Bolt diff (hg#364
 `chart_generator` via #363). **Detection cost:** Low — `mergeStateStatus: DIRTY`
 + shared `.jules/*.md` in both PR file lists.
+
+## Lesson 0dv: Cluster overlapping test PRs into one salvage (2026-07-16)
+
+**Pattern:** Jules/Copilot opened multiple DIRTY PRs that each add tests to the
+same file (`test_consolidate_adblock_lists.py`, `test_repository_automation_tasks.py`).
+Rebasing each independently produces serial conflicts.
+**Rule:** When ≥2 conflicted PRs only add tests to one shared file, open a single
+salvage branch from `main`, adapt all unique test cases once, and close the
+cluster as superseded by that one draft. Prefer cluster leads (#1637, #1642).
+**Detection cost:** Low — same `files[].path` across multiple DIRTY PRs with
+`tests/` prefixes and near-simultaneous `createdAt`.
+
+## Lesson 0dw: CodeScene defer may also hide destructive diffs (2026-07-16)
+
+**Pattern:** cs #1018 was deferred for CodeScene, but the conflicted diff also
+deleted SSRF allowlist config/docs/tests. Salvaging the "complexity refactor"
+wholesale would regress a prior T1 security merge (#990).
+**Rule:** Before any CodeScene-deferred salvage, scan the PR diff for deletions
+of security controls (allowlists, validators, auth). If present, escalate and do
+not salvage as-is — even if CodeScene remediation later turns green.
+**Detection cost:** Medium — `gh pr diff` grep for allowlist/SSRF/auth deletions.

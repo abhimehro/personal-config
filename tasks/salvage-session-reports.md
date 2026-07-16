@@ -468,3 +468,52 @@
 
 - Maintainer actions required: review draft salvages pc#1623 + hg#366; merge esp#1264 on next Phase 1; T1 escalations unchanged (cs#990, esp#1259, hg#357, rpce#112)
 - Cross-links: [Session report](tasks/pr-review-2026-07-15.md)
+
+## Run — 2026-07-16 (evening salvage)
+
+### Input tail
+
+- Source report: Phase 1 `tasks/pr-review-2026-07-16.md` via PR #1659 (23 conflict defers)
+- Live re-fetch: prior escalations mostly MERGED; 23+ conflicted bot PRs still open
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | #1627 #1645 #1656 #1649 | CLOSE | — | superseded / no-op |
+| personal-config | #1637 #1638 #1654 | SALVAGE draft | [#1661](https://github.com/abhimehro/personal-config/pull/1661) | adblock tests cluster |
+| personal-config | #1642 #1646 #1647 | SALVAGE draft | [#1662](https://github.com/abhimehro/personal-config/pull/1662) | automation tests cluster |
+| personal-config | #1636 | SALVAGE draft | [#1663](https://github.com/abhimehro/personal-config/pull/1663) | allowlist tests |
+| personal-config | #1623 | SALVAGE draft | [#1664](https://github.com/abhimehro/personal-config/pull/1664) | tuple fallbacks |
+| Seatek_Analysis | #473 | CLOSE | — | superseded |
+| Seatek_Analysis | #476 | SALVAGE draft | [#478](https://github.com/abhimehro/Seatek_Analysis/pull/478) | rollmean3 |
+| Seatek_Analysis | #472 | ESCALATE | — | path hijack T1 |
+| email-security-pipeline | #1276 | CLOSE-NOOP | — | |
+| email-security-pipeline | #1279 | SALVAGE draft | [#1287](https://github.com/abhimehro/email-security-pipeline/pull/1287) | |
+| email-security-pipeline | #1278 | SALVAGE draft | [#1288](https://github.com/abhimehro/email-security-pipeline/pull/1288) | |
+| email-security-pipeline | #1284 | SALVAGE draft | [#1289](https://github.com/abhimehro/email-security-pipeline/pull/1289) | |
+| email-security-pipeline | #1267 | ESCALATE | — | GitGuardian |
+| Hydrograph | #376 | SALVAGE draft | [#378](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/378) | fixed dup staticmethod |
+| Hydrograph | #373 #374 | AUTO-RESOLVED | — | Phase 1 candidates |
+| series_correction | #235 | SALVAGE draft | [#239](https://github.com/abhimehro/series_correction_project_updated/pull/239) | |
+| series_correction | #238 | SALVAGE draft | [#240](https://github.com/abhimehro/series_correction_project_updated/pull/240) | |
+| series_correction | #233 #237 | ESCALATE | — | auth |
+| ctrld-sync | #1018 | DEFER | — | CodeScene + SSRF delete |
+| personal-config | #1629 | ESCALATE | — | Snyk hooks |
+
+- Salvage draft PRs opened: 11
+- Infra-fix draft PRs opened: 0
+- Closed superseded/no-op: 6
+- Autonomous merges: 0
+
+### Verification status
+
+- Blocking checks on `main`: none identified
+- Local verify: see `tasks/pr-review-2026-07-16.md` verification table
+- CodeScene: `/cs-agent` already present on pc#1658 and cs#1018
+
+### Handoff
+
+- Maintainer: review T1 escalations first; then Phase 1 merge CLEAN deps/Palette; then T3 salvage drafts
+- Cross-links: [Session report](tasks/pr-review-2026-07-16.md), [Triage](tasks/pr-triage.md)
+- New lessons: 0dv (test clusters), 0dw (CodeScene + destructive security diffs)
