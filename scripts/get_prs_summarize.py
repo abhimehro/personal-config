@@ -6,7 +6,6 @@ The second argument is include_details ("true" / "false").
 """
 
 
-import concurrent.futures
 import json
 import os
 import subprocess
@@ -206,10 +205,7 @@ def _print_details_section(data: list) -> None:
     print("\n#### Review / comment context\n")
 
     tasks = [(repo, pr) for pr in data]
-    # ⚡ Bolt Optimization: Dynamic thread concurrency to eliminate batching latency
-    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(tasks) or 1, 32)) as executor:
-        # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls while preserving PR order using map()
-        results = executor.map(_fetch_task_wrapper, tasks)
+    results = map(_fetch_task_wrapper, tasks)
 
     for res in results:
         if res:

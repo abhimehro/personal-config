@@ -1,5 +1,0 @@
-Title: 🧪 [Testing] Add integration tests for group_prs in scratch_triage
-Description:
-🎯 **What:** Missing integration tests for `group_prs` in `scratch_triage.py`. Added unit tests with mock PR data.
-📊 **Coverage:** End-to-end grouping including keyword matching, repository scoping, correct assignment of `KEEP` and `CLOSE` actions, and the generation of markdown rows for `triage_md`.
-✨ **Result:** Assures regressions are caught early if the manual grouping categorization logic gets refactored or new groups are added.
