@@ -8,7 +8,26 @@ from unittest.mock import mock_open, patch
 script_dir = Path(__file__).parent.parent / "adguard" / "scripts"
 sys.path.append(str(script_dir.resolve()))
 
-from consolidate_adblock_lists import create_json_structure, load_json_file
+from consolidate_adblock_lists import create_json_structure, load_json_file, extract_domains_from_rules
+
+
+
+class TestExtractDomainsFromRules(unittest.TestCase):
+
+    def test_happy_path(self):
+        rules = [{"PK": "example.com"}, {"PK": "test.com"}]
+        result = extract_domains_from_rules(rules)
+        self.assertEqual(result, ["example.com", "test.com"])
+
+    def test_missing_pk(self):
+        rules = [{"PK": "example.com"}, {"other": "value"}, {"PK": "test.com"}]
+        result = extract_domains_from_rules(rules)
+        self.assertEqual(result, ["example.com", "test.com"])
+
+    def test_empty_rules(self):
+        rules = []
+        result = extract_domains_from_rules(rules)
+        self.assertEqual(result, [])
 
 
 class TestLoadJsonFile(unittest.TestCase):
