@@ -1,0 +1,294 @@
+#!/usr/bin/env python3
+"""
+Scan Worker.
+===========
+
+Background subprocess that runs a Snyk CLI scan and writes results
+directly to the scan.done completion marker.
+
+Launched by scan_runner.launch_background_scan() as a detached process.
+Configuration is passed via environment variables.
+
+Environment variables (set by scan_runner):
+- SAI_WORKSPACE: Path to the workspace being scanned
+- SAI_CACHE_DIR: Path to the cache directory
+- SAI_LIB_DIR: Path to the lib directory (for imports)
+"""
+
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from datetime import datetime
+from pathlib import Path
+from typing import Optional, Tuple
+
+WORKSPACE = ""
+CACHE_DIR = ""
+LIB_DIR = str(Path(__file__).parent.resolve())
+PID_FILE = ""
+DONE_FILE = ""
+LOG_FILE = ""
+
+_CACHE_DIR_PATTERN = re.compile(r"^cursor-sai-[0-9a-f]{8}$")
+_AUTH_ERROR_PATTERNS = (
+    "missingapitokenerror",
+    "not authenticated",
+    "authentication required",
+    "snyk-0005",
+)
+
+
+def _validate_cache_dir(cache_dir: str) -> str:
+    """Resolve and validate that cache_dir is a cursor-sai-* directory inside the system temp."""
+    resolved = os.path.realpath(cache_dir)
+    tmp_root = os.path.realpath(tempfile.gettempdir())
+    if not resolved.startswith(tmp_root + os.sep):
+        raise ValueError(f"Cache dir is not under temp directory: {resolved}")
+    dir_name = os.path.basename(resolved)
+    if not _CACHE_DIR_PATTERN.match(dir_name):
+        raise ValueError(f"Cache dir does not match expected pattern: {dir_name}")
+    return resolved
+
+
+def _safe_path(cache_dir: str, filename: str) -> str:
+    """Build a file path and verify it stays within the validated cache directory."""
+    target = os.path.realpath(os.path.join(cache_dir, filename))
+    if not target.startswith(os.path.realpath(cache_dir) + os.sep):
+        raise ValueError(f"Path escapes cache directory: {target}")
+    return target
+
+
+def _fallback_cache_dir() -> str:
+    """Determine a cache directory from globals or environment."""
+    cache_dir = CACHE_DIR or os.environ.get("SAI_CACHE_DIR", "")
+    if cache_dir:
+        return cache_dir
+    workspace = os.environ.get("SAI_WORKSPACE", "")
+    if workspace:
+        workspace_hash = hashlib.sha256(workspace.encode()).hexdigest()[:8]
+        return os.path.join(tempfile.gettempdir(), f"cursor-sai-{workspace_hash}")
+    return ""
+
+
+def _resolve_cache_dir(cache_dir: str) -> Optional[str]:
+    """Return the realpath if it lies under the system temp directory."""
+    resolved = os.path.realpath(cache_dir)
+    tmp_root = os.path.realpath(tempfile.gettempdir())
+    if resolved.startswith(tmp_root + os.sep):
+        return resolved
+    return None
+
+
+def _set_output_paths(cache_dir: str) -> None:
+    """Populate global output file paths from a cache directory."""
+    global WORKSPACE, CACHE_DIR, LIB_DIR, PID_FILE, DONE_FILE, LOG_FILE
+    if not WORKSPACE:
+        WORKSPACE = os.environ.get("SAI_WORKSPACE", "")
+    CACHE_DIR = cache_dir
+    if not LIB_DIR:
+        LIB_DIR = os.environ.get("SAI_LIB_DIR", str(Path(__file__).parent.resolve()))
+    PID_FILE = PID_FILE or os.path.join(cache_dir, "scan.pid")
+    DONE_FILE = DONE_FILE or os.path.join(cache_dir, "scan.done")
+    LOG_FILE = LOG_FILE or os.path.join(cache_dir, "scan.log")
+
+
+def _ensure_output_paths() -> bool:
+    """Set output file paths from the environment for emergency crash reporting.
+
+    Falls back to a workspace-derived cache directory under the system temp.
+    Returns True if DONE_FILE and LOG_FILE were populated.
+    """
+    if DONE_FILE and LOG_FILE:
+        return True
+
+    cache_dir = _fallback_cache_dir()
+    resolved = _resolve_cache_dir(cache_dir)
+    if not resolved:
+        return False
+
+    _set_output_paths(resolved)
+    try:
+        os.makedirs(resolved, exist_ok=True)
+    except OSError:
+        pass
+    return True
+
+
+def log(msg):
+    if not LOG_FILE:
+        _ensure_output_paths()
+    if not LOG_FILE:
+        return
+    try:
+        with open(LOG_FILE, "a") as f:
+            f.write(f"[{datetime.now().isoformat()}] {msg}\n")
+    except Exception:
+        pass
+
+
+def finish(status, started_at=None, vulnerabilities=None, error_detail=None):
+    if not DONE_FILE:
+        _ensure_output_paths()
+    if not DONE_FILE:
+        return
+    done_data = {
+        "status": status,
+        "completed_at": datetime.now().isoformat(),
+    }
+    _attach_optional_done_fields(done_data, started_at, vulnerabilities, error_detail)
+    with open(DONE_FILE, "w") as f:
+        json.dump(done_data, f)
+    _remove_pid_file()
+    log(f"Scan finished with status: {status}")
+
+
+def _attach_optional_done_fields(done_data, started_at, vulnerabilities, error_detail):
+    if started_at:
+        done_data["started_at"] = started_at
+    if vulnerabilities is not None:
+        done_data["vulnerabilities"] = vulnerabilities
+    if error_detail:
+        done_data["error_detail"] = error_detail
+
+
+def _remove_pid_file():
+    if not PID_FILE or not os.path.exists(PID_FILE):
+        return
+    try:
+        os.remove(PID_FILE)
+    except OSError:
+        pass
+
+
+def _configure_paths_from_env() -> None:
+    global WORKSPACE, CACHE_DIR, LIB_DIR, PID_FILE, DONE_FILE, LOG_FILE
+
+    try:
+        WORKSPACE = os.environ["SAI_WORKSPACE"]
+        CACHE_DIR = os.environ["SAI_CACHE_DIR"]
+    except KeyError as e:
+        raise RuntimeError(f"Missing required env var: {e}") from e
+
+    LIB_DIR = os.environ.get("SAI_LIB_DIR", str(Path(__file__).parent.resolve()))
+    CACHE_DIR = _validate_cache_dir(CACHE_DIR)
+    PID_FILE = _safe_path(CACHE_DIR, "scan.pid")
+    DONE_FILE = _safe_path(CACHE_DIR, "scan.done")
+    LOG_FILE = _safe_path(CACHE_DIR, "scan.log")
+
+
+def _has_stored_snyk_auth() -> bool:
+    if os.environ.get("SNYK_TOKEN"):
+        return True
+
+    config_dir = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
+    snyk_config_path = os.path.join(config_dir, "configstore", "snyk.json")
+    try:
+        with open(snyk_config_path) as f:
+            snyk_cfg = json.load(f)
+        return bool(snyk_cfg.get("api") or snyk_cfg.get("INTERNAL_OAUTH_TOKEN_STORAGE"))
+    except (OSError, json.JSONDecodeError, FileNotFoundError):
+        return False
+
+
+def _is_auth_error_output(stderr: str, stdout: str) -> bool:
+    combined = (stderr + stdout).lower()
+    return any(pattern in combined for pattern in _AUTH_ERROR_PATTERNS)
+
+
+def _run_snyk_code_test(
+    workspace: str,
+) -> Tuple[Optional[int], str, str, Optional[str]]:
+    """Run snyk code test. Returns (exit_code, stdout, stderr, early_status)."""
+    try:
+        result = subprocess.run(
+            ["snyk", "code", "test", ".", "--json"],
+            capture_output=True,
+            text=True,
+            timeout=300,
+            cwd=workspace,
+        )
+        return result.returncode, result.stdout, result.stderr, None
+    except subprocess.TimeoutExpired:
+        return None, "", "", "timeout"
+    except FileNotFoundError:
+        return None, "", "", "snyk_not_found"
+
+
+def _handle_nonzero_exit(
+    exit_code: int, stdout: str, stderr: str, started_at: str
+) -> bool:
+    """Handle exit_code > 1. Returns True if finished (caller should return)."""
+    if exit_code <= 1:
+        return False
+    if _is_auth_error_output(stderr, stdout):
+        log("Snyk CLI authentication required")
+        finish(
+            "auth_required",
+            started_at=started_at,
+            error_detail="Snyk CLI is not authenticated",
+        )
+        return True
+    log(f"Scan error: {stderr[:500]}")
+    finish("error", started_at=started_at, error_detail=stderr[:500])
+    return True
+
+
+def main():
+    _configure_paths_from_env()
+
+    sys.path.insert(0, LIB_DIR)
+    from scan_runner import parse_sarif_results
+
+    started_at = datetime.now().isoformat()
+    log("Scan worker started")
+
+    if os.path.exists(DONE_FILE):
+        os.remove(DONE_FILE)
+
+    if not _has_stored_snyk_auth():
+        log("Snyk CLI not authenticated (no API key or OAuth token found)")
+        finish(
+            "auth_required",
+            started_at=started_at,
+            error_detail="Snyk CLI is not authenticated. Run 'snyk auth' in a terminal.",
+        )
+        return
+
+    exit_code, stdout, stderr, early_status = _run_snyk_code_test(WORKSPACE)
+    if early_status == "timeout":
+        log("Scan timed out")
+        finish("timeout", started_at=started_at)
+        return
+    if early_status == "snyk_not_found":
+        log("Snyk CLI not found")
+        finish("snyk_not_found", started_at=started_at)
+        return
+
+    assert exit_code is not None
+    log(f"Snyk exited with code {exit_code}")
+    if _handle_nonzero_exit(exit_code, stdout, stderr, started_at):
+        return
+
+    vulnerabilities = parse_sarif_results(stdout)
+    log(f"Found {len(vulnerabilities)} vulnerabilities")
+    finish("success", started_at=started_at, vulnerabilities=vulnerabilities)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except SystemExit:
+        raise
+    except Exception as e:
+        log(f"Worker crashed: {e}")
+        finish("crash", error_detail=str(e))
+        if not DONE_FILE:
+            print(
+                f"[SAI scan_worker] Worker crashed and could not write done marker: {e}",
+                file=sys.stderr,
+            )
+        sys.exit(1)
