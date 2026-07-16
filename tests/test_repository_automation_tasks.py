@@ -112,48 +112,44 @@ class TestApplyWorkflowUpdates(unittest.TestCase):
 class TestRunQualityAssurance(unittest.TestCase):
     @patch("repository_automation_tasks.run_command_set")
     @patch("repository_automation_tasks.write_result")
-    def test_run_quality_assurance(self, mock_write_result, mock_run_command_set):
-        config = {"quality_assurance": {"commands": [{"run": "echo test"}]}}
-        mock_run_command_set.return_value = (
-            "success",
-            "1 passed",
-            {"body": "test output", "command_results": [{"cmd": "echo test", "exit": 0}]}
-        )
-        mock_write_result.return_value = {"status": "success"}
+    def test_run_quality_assurance_cases(self, mock_write_result, mock_run_command_set):
+        cases = [
+            (
+                "with_config",
+                {"quality_assurance": {"commands": [{"run": "echo test"}]}},
+                {"commands": [{"run": "echo test"}]},
+                [{"cmd": "echo test", "exit": 0}],
+            ),
+            (
+                "default_config",
+                {},
+                {},
+                [],
+            ),
+        ]
 
-        result = run_quality_assurance(config)
+        for name, config, expected_arg, command_results in cases:
+            with self.subTest(name=name):
+                mock_run_command_set.reset_mock()
+                mock_write_result.reset_mock()
 
-        mock_run_command_set.assert_called_once_with(
-            "quality-assurance", {"commands": [{"run": "echo test"}]}
-        )
-        mock_write_result.assert_called_once_with(
-            "quality-assurance",
-            ("success", "1 passed"),
-            "test output",
-            {"command_results": [{"cmd": "echo test", "exit": 0}]}
-        )
-        self.assertEqual(result, {"status": "success"})
+                mock_run_command_set.return_value = (
+                    "success",
+                    "1 passed",
+                    {"body": "test output", "command_results": command_results}
+                )
+                mock_write_result.return_value = {"status": "success"}
 
-    @patch("repository_automation_tasks.run_command_set")
-    @patch("repository_automation_tasks.write_result")
-    def test_run_quality_assurance_default_config(self, mock_write_result, mock_run_command_set):
-        mock_run_command_set.return_value = (
-            "success",
-            "1 passed",
-            {"body": "test output", "command_results": []}
-        )
-        mock_write_result.return_value = {"status": "success"}
+                result = run_quality_assurance(config)
 
-        result = run_quality_assurance({})
-
-        mock_run_command_set.assert_called_once_with("quality-assurance", {})
-        mock_write_result.assert_called_once_with(
-            "quality-assurance",
-            ("success", "1 passed"),
-            "test output",
-            {"command_results": []}
-        )
-        self.assertEqual(result, {"status": "success"})
+                mock_run_command_set.assert_called_once_with("quality-assurance", expected_arg)
+                mock_write_result.assert_called_once_with(
+                    "quality-assurance",
+                    ("success", "1 passed"),
+                    "test output",
+                    {"command_results": command_results}
+                )
+                self.assertEqual(result, {"status": "success"})
 
 
 if __name__ == "__main__":
