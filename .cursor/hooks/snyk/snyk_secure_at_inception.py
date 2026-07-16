@@ -624,6 +624,21 @@ def _build_batch_fix_followup(
     return "\n".join(message_parts)
 
 
+def _log_each_vuln(new_vulns: List[Dict[str, Any]]) -> None:
+    for vuln in new_vulns:
+        log_to_panel(
+            f"    - {vuln['severity'].upper()}: {vuln['title']} "
+            f"at {vuln['file_path']}:{vuln['start_line']}"
+        )
+
+
+def _log_named_file_list(label: str, paths: List[str]) -> None:
+    if not paths:
+        return
+    names = [Path(f).name for f in paths]
+    log_to_panel(f"  {label}: {names}")
+
+
 def _log_security_findings(
     new_vulns: List[Dict[str, Any]],
     dirty_file_paths: List[str],
@@ -635,17 +650,9 @@ def _log_security_findings(
     log_to_panel("=" * 70)
     if new_vulns:
         log_to_panel(f"  Code vulnerabilities: {len(new_vulns)}")
-        for vuln in new_vulns:
-            log_to_panel(
-                f"    - {vuln['severity'].upper()}: {vuln['title']} "
-                f"at {vuln['file_path']}:{vuln['start_line']}"
-            )
-    if dirty_file_paths:
-        names = [Path(f).name for f in dirty_file_paths]
-        log_to_panel(f"  Files with vulns (kept in state): {names}")
-    if unevaluated_file_paths:
-        names = [Path(f).name for f in unevaluated_file_paths]
-        log_to_panel(f"  Unevaluated files (kept in state): {names}")
+        _log_each_vuln(new_vulns)
+    _log_named_file_list("Files with vulns (kept in state)", dirty_file_paths)
+    _log_named_file_list("Unevaluated files (kept in state)", unevaluated_file_paths)
     if manifest_files:
         log_to_panel(f"  Manifest files changed: {len(manifest_files)}")
     log_to_panel("=" * 70)

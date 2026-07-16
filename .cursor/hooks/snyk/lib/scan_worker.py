@@ -78,22 +78,29 @@ def finish(status, started_at=None, vulnerabilities=None, error_detail=None):
         "status": status,
         "completed_at": datetime.now().isoformat(),
     }
+    _attach_optional_done_fields(done_data, started_at, vulnerabilities, error_detail)
+    with open(DONE_FILE, "w") as f:
+        json.dump(done_data, f)
+    _remove_pid_file()
+    log(f"Scan finished with status: {status}")
+
+
+def _attach_optional_done_fields(done_data, started_at, vulnerabilities, error_detail):
     if started_at:
         done_data["started_at"] = started_at
     if vulnerabilities is not None:
         done_data["vulnerabilities"] = vulnerabilities
     if error_detail:
         done_data["error_detail"] = error_detail
-    with open(DONE_FILE, "w") as f:
-        json.dump(done_data, f)
 
-    if PID_FILE and os.path.exists(PID_FILE):
-        try:
-            os.remove(PID_FILE)
-        except OSError:
-            pass
 
-    log(f"Scan finished with status: {status}")
+def _remove_pid_file():
+    if not PID_FILE or not os.path.exists(PID_FILE):
+        return
+    try:
+        os.remove(PID_FILE)
+    except OSError:
+        pass
 
 
 def _configure_paths_from_env() -> None:
