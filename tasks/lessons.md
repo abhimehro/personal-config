@@ -1281,3 +1281,18 @@ to 1Password can hang agents on Touch ID.
 `CURSOR_AGENT`/`CI`/non-interactive (`OP_AGENT_SKIP`); for multi-repo workspace
 roots use `.1password/environments.toml` with `mount_paths = []` so validation
 is configured-mode skip without disabling interactive 1Password.
+
+## Lesson 0dt: Sibling Bolt PR merge order causes journal conflicts (2026-07-15)
+
+**Pattern:** Phase 1 merged narrower/sibling PRs first (#1620 before #1619, #363
+before #364, #1011 before #1013). Each pair touched `.jules/bolt.md` (or
+overlapping source). The later PR went DIRTY even though source hunks were
+compatible — conflict was almost entirely in append-only journal files.
+**Rule:** (1) In Phase 1, merge journal-touching Palette/small PRs before broader
+Bolt PRs in the same repo, or defer the Bolt PR to Phase 2 immediately. (2) In
+Phase 2, never `git checkout pr -- <journal>`; append only the new `##` entry
+from the PR diff. (3) Before salvaging, diff `main` vs PR for functional delta —
+sc#210 was superseded because #224 already landed the CWE-209 fix. (4) Partial
+salvage is valid when sibling merge absorbed part of the Bolt diff (hg#364
+`chart_generator` via #363). **Detection cost:** Low — `mergeStateStatus: DIRTY`
++ shared `.jules/*.md` in both PR file lists.

@@ -1,3 +1,49 @@
+# PR Inventory — 2026-07-15 (evening salvage)
+
+**Session:** Automated PR salvage & cleanup (cron 17:00 UTC)  
+**Branch:** `cursor-agent/pr-salvage-and-cleanup-f5e7`  
+**Preflight:** PASS 6/6 configured repos (+ repoprompt-ce)  
+**Mode:** Phase 2 salvage (input: Phase 1 remainder, 9 PRs)
+
+## Summary
+
+| Repo | Tail investigated | Salvaged | Closed superseded | Unchanged | Open at end |
+|------|------------------:|---------:|------------------:|----------:|------------:|
+| personal-config | 2 | 1 → [#1623](https://github.com/abhimehro/personal-config/pull/1623) | [#1619](https://github.com/abhimehro/personal-config/pull/1619) | [#1609](https://github.com/abhimehro/personal-config/pull/1609) | **3** |
+| ctrld-sync | 1 | 0 | — | [#990](https://github.com/abhimehro/ctrld-sync/pull/990) | **1** |
+| email-security-pipeline | 2 | 0 | — | [#1259](https://github.com/abhimehro/email-security-pipeline/pull/1259), [#1264](https://github.com/abhimehro/email-security-pipeline/pull/1264)† | **2** |
+| Seatek_Analysis | 0 | 0 | — | — | **0** |
+| Hydrograph_Versus_Seatek_Sensors_Project | 2 | 1 → [#366](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/366) | [#364](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/364) | [#357](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/357) | **2** |
+| series_correction_project_updated | 1 | 0 | [#210](https://github.com/abhimehro/series_correction_project_updated/pull/210) (superseded by #224) | — | **0** |
+| repoprompt-ce | 1 | 0 | — | [#112](https://github.com/abhimehro/repoprompt-ce/pull/112) | **1** |
+| **Total** | **9** | **2 drafts** | **3** | **5 escalations + 1 defer** | **9**‡ |
+
+† [#1264](https://github.com/abhimehro/email-security-pipeline/pull/1264) CI green since Phase 1 EOD — merge candidate for next Phase 1 run.  
+‡ Includes new post-Phase 1 [#1622](https://github.com/abhimehro/personal-config/pull/1622) Palette PR.
+
+## Salvage disposition table
+
+| Repo | Old PR | Conflict | Disposition | New PR |
+|------|--------|----------|-------------|--------|
+| personal-config | [#1619](https://github.com/abhimehro/personal-config/pull/1619) | bolt.md vs #1620 | SALVAGE draft | [#1623](https://github.com/abhimehro/personal-config/pull/1623) |
+| Hydrograph | [#364](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/364) | bolt.md vs #363 | SALVAGE draft (partial) | [#366](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/366) |
+| series_correction | [#210](https://github.com/abhimehro/series_correction_project_updated/pull/210) | vs #224 on main | CLOSE-SUPERSEDED | — |
+
+## Post-salvage remainder
+
+| Repo | PR | Reason |
+|------|-----|--------|
+| personal-config | [#1623](https://github.com/abhimehro/personal-config/pull/1623) | Draft salvage — human merge |
+| personal-config | [#1622](https://github.com/abhimehro/personal-config/pull/1622) | New Palette (opened after Phase 1) |
+| personal-config | [#1609](https://github.com/abhimehro/personal-config/pull/1609) | Devin feature — deferred |
+| ctrld-sync | [#990](https://github.com/abhimehro/ctrld-sync/pull/990) | ESCALATE — SSRF |
+| email-security-pipeline | [#1264](https://github.com/abhimehro/email-security-pipeline/pull/1264) | CI green — merge candidate |
+| email-security-pipeline | [#1259](https://github.com/abhimehro/email-security-pipeline/pull/1259) | ESCALATE — supply-chain |
+| Hydrograph | [#366](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/366) | Draft salvage — human merge |
+| Hydrograph | [#357](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/357) | ESCALATE — poetry.lock |
+| repoprompt-ce | [#112](https://github.com/abhimehro/repoprompt-ce/pull/112) | ESCALATE — auth boundary |
+
+---
 # PR Inventory — 2026-07-15
 
 **Session:** Automated PR review & cleanup (cron 13:00 UTC)  
