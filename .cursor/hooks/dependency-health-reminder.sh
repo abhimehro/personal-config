@@ -34,7 +34,7 @@ if [[ ! $command =~ (^|[[:space:];|&])(pip3?|pipx|uv|npm|pnpm|yarn|bun|cargo|go|
 	exit 0
 fi
 
-if [[ ! $command =~ (install|add|get) ]]; then
+if [[ ! $command =~ (^|[[:space:]])(install|add|get)([[:space:]]|$) ]]; then
 	printf '%s\n' '{"permission":"allow"}'
 	exit 0
 fi
