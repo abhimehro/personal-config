@@ -90,11 +90,17 @@ def automation_hints(pr: dict) -> str:
             hints.append("bot_login")
 
     _branch = pr.get("headRefName")
-    branch = _branch.lower() if _branch is not None else ""
+    branch = ""
+    if _branch is not None:
+        branch = _branch.lower()
     _title = pr.get("title")
-    title_l = _title.lower() if _title is not None else ""
+    title_l = ""
+    if _title is not None:
+        title_l = _title.lower()
     _body = pr.get("body")
-    body_l = _body.lower() if _body is not None else ""
+    body_l = ""
+    if _body is not None:
+        body_l = _body.lower()
 
     for sig in BRANCH_SIGNALS:
         if sig in branch:

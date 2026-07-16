@@ -681,7 +681,9 @@ def score_linear_issue(
     due_date = issue.get("dueDate") or ""
     _state = issue.get("state")
     _state_type = _state.get("type") if _state else None
-    state_type = _state_type.lower().replace("_", "") if _state_type is not None else ""
+    state_type = ""
+    if _state_type is not None:
+        state_type = _state_type.lower().replace("_", "")
     _labels = issue.get("labels")
     _nodes = _labels.get("nodes") if _labels else ()
     label_names = _extract_label_names(_nodes)
@@ -949,7 +951,9 @@ def _parse_linear_focus_node(
 ) -> FocusItem | None:
     state = issue.get("state")
     _state_type = state.get("type") if state else None
-    state_type = _state_type.lower() if _state_type is not None else ""
+    state_type = ""
+    if _state_type is not None:
+        state_type = _state_type.lower()
     if state_type in {"completed", "canceled", "cancelled"}:
         return None
 
@@ -978,7 +982,9 @@ def _parse_linear_focus_node(
 
 def _parse_linear_notification_node(node: dict[str, Any]) -> tuple[str, str, FocusItem]:
     _category = node.get("category")
-    category = _category.lower() if _category is not None else ""
+    category = ""
+    if _category is not None:
+        category = _category.lower()
     title = node.get("title") or "Untitled notification"
     subtitle = truncate_text(node.get("subtitle") or "", 140)
     url = node.get("inboxUrl") or node.get("url") or "#"
