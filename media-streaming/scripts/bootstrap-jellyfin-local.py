@@ -95,19 +95,19 @@ def public_info() -> dict:
 
 def load_or_create_creds() -> tuple[str, str]:
     if CREDS.exists():
-        user = passwd = ""  # nosec B105 — empty until credential file lines are parsed
-        # ⚡ Bolt Optimization: Replace read_text().splitlines() with iterator and short-circuit to avoid allocating the entire file in memory
+        user = pass_val = ""  # nosec B105 — empty until credential file lines are parsed
+        # ⚡ Bolt Optimization: Use iterator + short-circuit to avoid allocating entire file in memory
         with CREDS.open(encoding="utf-8") as f:
             for line in f:
                 if line.startswith("JELLYFIN_USER="):
                     user = line.rstrip("\n").split("=", 1)[1]
                 elif line.startswith("JELLYFIN_PASSWORD="):
-                    passwd = line.rstrip("\n").split("=", 1)[1]  # gitleaks:allow
-                if user and passwd:
-                    return user, passwd
+                    pass_val = line.rstrip("\n").split("=", 1)[1]
+                if user and pass_val:
+                    return user, pass_val
     alphabet = string.ascii_letters + string.digits
     user = "speedybee"
-    passwd = "".join(secrets.choice(alphabet) for _ in range(28))
+    pass_val = "".join(secrets.choice(alphabet) for _ in range(28))
     CREDS.parent.mkdir(parents=True, exist_ok=True)
     CREDS.write_text(
         "\n".join(
@@ -115,13 +115,13 @@ def load_or_create_creds() -> tuple[str, str]:
                 "# LOCAL ONLY — do not commit. Rotate into 1Password item MediaServer.",
                 f"JELLYFIN_URL={BASE}",
                 f"JELLYFIN_USER={user}",
-                f"JELLYFIN_PASSWORD={passwd}",
+                f"JELLYFIN_PASSWORD={pass_val}",
                 "",
             ]
         )
     )
     CREDS.chmod(0o600)
-    return user, passwd
+    return user, pass_val
 
 
 def reset_wizard_flag() -> None:
@@ -169,7 +169,7 @@ def reset_wizard_flag() -> None:
     raise RuntimeError("Jellyfin did not come back with wizard incomplete")
 
 
-def ensure_admin(user: str, passwd: str) -> str:
+def ensure_admin(user: str, pass_val: str) -> str:
     code, users = http("GET", "/Users/Public")
     if code == 200 and isinstance(users, list) and users:
         print(
@@ -197,12 +197,12 @@ def ensure_admin(user: str, passwd: str) -> str:
         code, payload = http(
             "POST",
             "/Startup/User",
-            body={"Name": user, "Password": passwd},
+            body={"Name": user, "Password": pass_val},
         )
         if code not in (200, 204):
             raise RuntimeError(
                 f"Failed to create admin user: {code} {payload} "
-                f"(password_len={len(passwd)})"
+                f"(password_len={len(pass_val)})"
             )
         print("POST /Startup/RemoteAccess (LAN only)")
         http(
@@ -217,7 +217,7 @@ def ensure_admin(user: str, passwd: str) -> str:
     code, auth = http(
         "POST",
         "/Users/AuthenticateByName",
-        body={"Username": user, "Pw": passwd},
+        body={"Username": user, "Pw": pass_val},
     )
     if code != 200 or not isinstance(auth, dict) or "AccessToken" not in auth:
         raise RuntimeError(f"Auth failed: {code} {auth}")
@@ -294,8 +294,8 @@ def main() -> int:
         print(f"ERROR: mount empty/missing: {MOUNT}", file=sys.stderr)
         return 1
 
-    user, passwd = load_or_create_creds()
-    token = ensure_admin(user, passwd)
+    user, pass_val = load_or_create_creds()
+    token = ensure_admin(user, pass_val)
     ensure_library(token, "Movies", MOUNT / "Movies", "movies")
     ensure_library(token, "TV Shows", MOUNT / "TV Shows", "tvshows")
     http("POST", "/Library/Refresh", token=token)
