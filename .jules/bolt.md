@@ -611,3 +611,7 @@ invocation.
 ## 2026-11-20 - Ensure functions aren't overly complex for CodeScene
 **Learning:** The CodeScene code health checker flagged `print_table` in `scripts/get_prs_summarize.py` as having a "Complex Method". To maintain good code health, functions shouldn't have too many responsibilities.
 **Action:** When working on large functions, always try to refactor them into smaller, more focused helper functions to improve maintainability and avoid CodeScene complexity violations.
+
+## 2026-07-16 - Lazy Generator File Loading
+**Learning:** Calling `.readlines()` on file objects materializes the entire file content as a list in memory, which is inefficient for iterative parsing over large files.
+**Action:** Always prefer `yield from f` or a simple `for line in f:` loop inside the generator to return a lazily evaluated generator, saving significant memory allocation overhead. Note: This may require adjusting callers to handle truthiness (e.g. `if not list(gen)` or checking the downstream processed result instead).

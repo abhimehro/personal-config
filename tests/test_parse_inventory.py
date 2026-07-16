@@ -140,7 +140,7 @@ class TestParseInventory(unittest.TestCase):
     # --- _load_inventory_lines ---
 
     def test_load_inventory_lines_file_not_found(self):
-        lines = _load_inventory_lines("nonexistent_file_xyz_123.txt")
+        lines = list(_load_inventory_lines("nonexistent_file_xyz_123.txt"))
         self.assertEqual(lines, [])
 
     # --- _is_pr_stale ---

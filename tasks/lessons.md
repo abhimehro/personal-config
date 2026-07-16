@@ -1296,3 +1296,7 @@ sc#210 was superseded because #224 already landed the CWE-209 fix. (4) Partial
 salvage is valid when sibling merge absorbed part of the Bolt diff (hg#364
 `chart_generator` via #363). **Detection cost:** Low — `mergeStateStatus: DIRTY`
 + shared `.jules/*.md` in both PR file lists.
+
+## 2026-07-16 - Lazy Generator File Loading
+* Calling `.readlines()` on file objects materializes the entire file content as a list in memory, which is inefficient for iterative parsing over large files.
+* Always prefer `yield from f` or a simple `for line in f:` loop inside the generator to return a lazily evaluated generator, saving significant memory allocation overhead. Note: This may require adjusting callers to handle truthiness (e.g. `if not list(gen)` or checking the downstream processed result instead).
