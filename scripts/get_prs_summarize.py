@@ -142,9 +142,9 @@ def fetch_details(repo: str, num: int) -> str:
         return "_Could not load details_"
     data = json.loads(raw)
     lines: list[str] = []
-    reviews = data.get("reviews") or []
-    latest = data.get("latestReviews") or []
-    comments = data.get("comments") or []
+    reviews = data.get("reviews") or ()
+    latest = data.get("latestReviews") or ()
+    comments = data.get("comments") or ()
     rd = data.get("reviewDecision") or ""
     if rd:
         lines.append(f"- reviewDecision: `{rd}`")
@@ -176,7 +176,7 @@ def _format_pr_row(pr: dict) -> str:
     author = pr.get("author")
     login = (author.get("login") if author else None) or "?"
     draft = "yes" if pr.get("isDraft") else "no"
-    checks = check_summary(pr.get("statusCheckRollup") or [])
+    checks = check_summary(pr.get("statusCheckRollup") or ())
     merge = f"{pr.get('mergeable') or '?'}"
     mss = pr.get("mergeStateStatus") or ""
     if mss and mss != "UNKNOWN":

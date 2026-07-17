@@ -165,7 +165,7 @@ def _is_checks_failing(checks):
 
 
 def _get_pr_category(info, checks, now=None):
-    if not info.get("files", []):
+    if not info.get("files", ()):
         return "SUPERSEDED"
 
     merge_status = info.get("mergeStateStatus", "")
