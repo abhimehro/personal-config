@@ -15,6 +15,9 @@ Vibe deferred (billing not a differentiator). Antigravity stays Phase 2.
 - [x] Wire agent-summary / usage / artifacts for `opencode-*` logs
 - [x] Update design doc + workflows README; commit + push PR #1670
 
+- [x] Fix Gitleaks CI FP: rule first-capture was Secret=`secret`; use
+      `(?:keyword)` + `(?P<secret>value)` + prose stopword allowlist (Lesson 0du)
+
 ## Security notes
 
 - Trust boundary: agent runs on PR-checked-out tree with secrets.

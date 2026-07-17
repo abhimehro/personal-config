@@ -136,10 +136,13 @@ regex = '''(?i)(access[\-_]?token|auth[\-_]?token|bearer[\-_]?token|api[\-_]?tok
 tags = ["token", "secret"]
 
 # Generic secrets
+# CAUTION: Do not put a capturing group around the keyword alone — gitleaks
+# treats the first capture as Secret, which made Secret="secret" and broke
+# stopword allowlists (ABHI-1321 / PR #1670, prose "secret presence" FP).
 [[rules]]
 id = "personal-config-generic-secret"
 description = "Generic secret pattern"
-regex = '''(?i)(secret|password|passwd|pwd)[\s\-_:=]+['"]?[a-zA-Z0-9\-_.!@#$%^&*]{8,}['"]?'''
+regex = '''(?i)(?:secret|password|passwd|pwd)[\s\-_:=]+['"]?(?P<secret>[a-zA-Z0-9\-_.!@#$%^&*]{8,})['"]?'''
 tags = ["secret", "password", "credentials"]
 
 # Private keys in various formats
@@ -184,6 +187,9 @@ regexes = [
     '''^secrets\.[A-Za-z0-9_]+$''',
     # GitHub Actions needs-context results: needs.<job>.result fragments
     '''^secrets\.result$''',
+    # Prose stopwords after "secret|password|…" (?P<secret> value). Real
+    # credentials are never a single English stopword like these.
+    '''(?i)^(presence|scanning|false-positive|allowlist|detection|validation|management|injection|exfiltration)$''',
 ]
 paths = [
     '''(?i)test''',
