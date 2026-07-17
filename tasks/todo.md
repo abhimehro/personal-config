@@ -1,3 +1,7 @@
+
+- [x] Visual recap: drop per-push (`synchronize`); refresh via label `visual-recap`
+- [x] Document visual recap for Phase 1 review + Phase 2 salvage agents
+
 # ABHI-1321 — Visual recap OpenCode + Mistral (Phase 1)
 
 **Route:** T1+S+H  

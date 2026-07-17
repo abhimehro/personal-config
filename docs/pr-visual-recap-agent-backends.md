@@ -62,11 +62,28 @@ Self-modifying guard also skips (on forks / public PRs) when the PR touches
 | Mistral Vibe (`VISUAL_RECAP_AGENT=vibe`) | Optional later — not needed for Pro quota |
 | Antigravity (`agy`) | Phase 2 spike only (CI/non-TTY sharp edges) |
 
+## Triggers (API cost)
+
+Does **not** run on every push. Default events:
+
+| Event | Runs agent? |
+| --- | --- |
+| `opened` / `ready_for_review` / `reopened` | Yes (once per lifecycle event) |
+| `synchronize` (push) | **No** — removed to protect Mistral/API quota |
+| `labeled` with `visual-recap` or `recap` | Yes — explicit refresh |
+| `closed` without merge | Skip |
+| `closed` + merged | Yes (final sticky update) |
+
+Force a refresh without new commits: add label `visual-recap`, or use Actions →
+Re-run jobs on a prior run.
+
 ## Operator checklist
 
 1. Confirm secrets: `MISTRAL_API_KEY`, `PLAN_RECAP_TOKEN`
 2. Optional repo vars: `VISUAL_RECAP_AGENT=opencode`,
    `VISUAL_RECAP_MODEL=mistral/mistral-medium-latest`
-3. Open a non-draft PR (or push to this one) and confirm the sticky recap comment
-- Agent (esp. OpenCode) may emit raw newlines inside JSON string literals —
-  workflow sanitizes those before publish; still prefer strict JSON from the model
+3. Open / ready-for-review a non-draft PR and confirm the sticky recap comment
+4. On failure, download `pr-visual-recap-source-*` artifact (`opencode-events.jsonl`,
+   `opencode-stderr.log`)
+5. Agent may emit raw newlines inside JSON string literals — workflow sanitizes
+   those before publish; still prefer strict JSON from the model

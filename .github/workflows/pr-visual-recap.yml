@@ -3,10 +3,14 @@ name: PR Visual Recap
 # Visual code review: a coding agent runs the repo's visual-recap skill over the
 # PR diff, publishes a plan, and upserts one sticky comment with a screenshot.
 # Plain `pull_request` (NOT `pull_request_target`) so fork code never sees secrets.
+#
+# Cost control: do NOT run on every push (synchronize). Default triggers are
+# once per PR lifecycle. Force a refresh by adding label `visual-recap`, or by
+# re-running the workflow from the Actions UI.
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, closed]
+    types: [opened, ready_for_review, reopened, closed, labeled]
 
 permissions:
   contents: read
@@ -54,6 +58,15 @@ jobs:
             if (pr && pr.draft) reasons.push('draft PR');
             if (pr && context.payload.action === 'closed' && !pr.merged) {
               reasons.push('closed without merge');
+            }
+
+            // Label-triggered refresh: only the explicit recap labels re-run the
+            // agent (replaces per-push synchronize to protect Mistral/API quota).
+            if (context.payload.action === 'labeled') {
+              const label = ((context.payload.label && context.payload.label.name) || '').toLowerCase();
+              if (label !== 'visual-recap' && label !== 'recap') {
+                reasons.push(`label "${label || '(empty)'}" is not a visual-recap trigger (use label visual-recap)`);
+              }
             }
 
             // Fork PRs only receive repo secrets when the org/repo opts into
