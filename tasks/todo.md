@@ -18,6 +18,9 @@ Vibe deferred (billing not a differentiator). Antigravity stays Phase 2.
 - [x] Fix Gitleaks CI FP: rule first-capture was Secret=`secret`; use
       `(?:keyword)` + `(?P<secret>value)` + prose stopword allowlist (Lesson 0du)
 
+- [x] Fix visual-recap publish: sanitize unescaped controls in recap-source.json
+      (OpenCode/Mistral left raw newline in MDX JSON string); strict-JSON prompt hint
+
 ## Security notes
 
 - Trust boundary: agent runs on PR-checked-out tree with secrets.

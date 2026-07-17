@@ -68,5 +68,5 @@ Self-modifying guard also skips (on forks / public PRs) when the PR touches
 2. Optional repo vars: `VISUAL_RECAP_AGENT=opencode`,
    `VISUAL_RECAP_MODEL=mistral/mistral-medium-latest`
 3. Open a non-draft PR (or push to this one) and confirm the sticky recap comment
-4. On failure, download `pr-visual-recap-source-*` artifact (`opencode-events.jsonl`,
-   `opencode-stderr.log`)
+- Agent (esp. OpenCode) may emit raw newlines inside JSON string literals —
+  workflow sanitizes those before publish; still prefer strict JSON from the model

@@ -539,12 +539,18 @@ jobs:
             set +e
             # --auto only approves non-denied permissions; deny rules above still bind.
             # ASSUMES: recap-prompt.md was built by trusted RECAP_CLI (not PR-head code).
+            # NOTE: Append a strict-JSON reminder — Mistral occasionally writes raw
+            # newlines inside MDX string literals, which breaks JSON.parse.
+            {
+              cat recap-prompt.md
+              printf '\n\n%s\n' "CRITICAL: Write ./recap-source.json as strict RFC 8259 JSON only. Escape every newline inside string values as \\n (never insert a raw line break between quotes). Do not wrap the file in markdown fences."
+            } > recap-prompt.opencode.md
             "$OPENCODE_BIN" run \
               -m "$OPENCODE_MODEL" \
               --format json \
               --auto \
               --title "pr-visual-recap-${PR_NUMBER}" \
-              "$(cat recap-prompt.md)" \
+              "$(cat recap-prompt.opencode.md)" \
               > opencode-events.jsonl 2> opencode-stderr.log
             OPENCODE_STATUS="$?"
             set -e
@@ -627,9 +633,108 @@ jobs:
             run_codex
           fi
 
+      # Agents (esp. OpenCode/Mistral) sometimes leave raw newlines/tabs inside
+      # JSON string literals in recap-source.json. Publisher requires strict JSON.
+      # Repair only unescaped controls inside strings; fail closed if still invalid.
+      - name: Sanitize recap-source.json
+        id: sanitize
+        if: steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          if [ ! -s recap-source.json ]; then
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "reason=recap-source.json missing after agent run" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          node <<'NODE'
+          const fs = require("fs");
+          const path = "recap-source.json";
+          const raw = fs.readFileSync(path, "utf8");
+          const emit = (ok, reason, repaired) => {
+            const out = process.env.GITHUB_OUTPUT;
+            if (out) {
+              fs.appendFileSync(out, `ok=${ok}\n`);
+              fs.appendFileSync(out, `repaired=${repaired ? "true" : "false"}\n`);
+              fs.appendFileSync(out, `reason<<__RECAP_SANITIZE_EOF__\n${reason}\n__RECAP_SANITIZE_EOF__\n`);
+            }
+            if (!ok) console.error(reason);
+            else if (repaired) console.warn(reason);
+            else console.log(reason);
+          };
+          const tryParse = (text) => {
+            try {
+              JSON.parse(text);
+              return null;
+            } catch (e) {
+              return e instanceof Error ? e.message : String(e);
+            }
+          };
+          // Escape raw U+0000–U+001F inside JSON strings only (leave structure alone).
+          const escapeControlsInStrings = (text) => {
+            let out = "";
+            let inStr = false;
+            let escape = false;
+            let repaired = 0;
+            for (const ch of text) {
+              if (!inStr) {
+                if (ch === '"') inStr = true;
+                out += ch;
+                continue;
+              }
+              if (escape) {
+                out += ch;
+                escape = false;
+                continue;
+              }
+              if (ch === "\\") {
+                out += ch;
+                escape = true;
+                continue;
+              }
+              if (ch === '"') {
+                out += ch;
+                inStr = false;
+                continue;
+              }
+              const code = ch.codePointAt(0) ?? 0;
+              if (code < 32) {
+                repaired += 1;
+                if (ch === "\n") out += "\\n";
+                else if (ch === "\r") out += "\\r";
+                else if (ch === "\t") out += "\\t";
+                else out += `\\u${code.toString(16).padStart(4, "0")}`;
+                continue;
+              }
+              out += ch;
+            }
+            return { text: out, repaired };
+          };
+
+          let err = tryParse(raw);
+          if (!err) {
+            emit(true, "recap-source.json is valid JSON", false);
+            process.exit(0);
+          }
+          const fixed = escapeControlsInStrings(raw);
+          err = tryParse(fixed.text);
+          if (err) {
+            emit(false, `recap-source.json was not valid JSON after sanitize: ${err}`, false);
+            // Keep the original file for the artifact; write reason for comment path.
+            fs.writeFileSync("recap-url-reason.txt", `recap-source.json was not valid JSON: ${err}\n`);
+            process.exit(0);
+          }
+          fs.writeFileSync(path, fixed.text);
+          emit(
+            true,
+            `repaired ${fixed.repaired} unescaped control character(s) in recap-source.json string literals`,
+            true,
+          );
+          NODE
+
       - name: Publish recap source
         id: publish
-        if: steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
+        if: steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true' && steps.sanitize.outputs.ok == 'true'
         continue-on-error: true
         env:
           PREV_PLAN_ID: ${{ steps.prev.outputs.plan_id }}
@@ -724,6 +829,8 @@ jobs:
           RECAP_AGENT: ${{ needs.gate.outputs.agent }}
           RECAP_BLOCK_REFERENCE_SUMMARY: ${{ steps.block_reference.outputs.summary }}
           RECAP_PUBLISH_REASON: ${{ steps.publish.outputs.reason }}
+          RECAP_SANITIZE_OK: ${{ steps.sanitize.outputs.ok }}
+          RECAP_SANITIZE_REASON: ${{ steps.sanitize.outputs.reason }}
         run: |
           set -uo pipefail
           if [ -n "${RECAP_BLOCK_REFERENCE_SUMMARY:-}" ]; then
@@ -733,6 +840,15 @@ jobs:
               echo '__RECAP_BLOCK_REFERENCE_SUMMARY_EOF__'
             } >> "$GITHUB_OUTPUT"
             node -e 'process.stdout.write(JSON.stringify({ ok: true, summary: process.env.RECAP_BLOCK_REFERENCE_SUMMARY || "" }) + "\n")'
+            exit 0
+          fi
+          if [ -n "${RECAP_SANITIZE_REASON:-}" ] && [ "${RECAP_SANITIZE_OK:-}" != "true" ]; then
+            {
+              echo 'summary<<__RECAP_SANITIZE_SUMMARY_EOF__'
+              echo "$RECAP_SANITIZE_REASON"
+              echo '__RECAP_SANITIZE_SUMMARY_EOF__'
+            } >> "$GITHUB_OUTPUT"
+            node -e 'process.stdout.write(JSON.stringify({ ok: true, summary: process.env.RECAP_SANITIZE_REASON || "" }) + "\n")'
             exit 0
           fi
           if [ -n "${RECAP_PUBLISH_REASON:-}" ]; then
