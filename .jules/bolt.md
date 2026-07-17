@@ -611,3 +611,7 @@ invocation.
 ## 2026-11-20 - Ensure functions aren't overly complex for CodeScene
 **Learning:** The CodeScene code health checker flagged `print_table` in `scripts/get_prs_summarize.py` as having a "Complex Method". To maintain good code health, functions shouldn't have too many responsibilities.
 **Action:** When working on large functions, always try to refactor them into smaller, more focused helper functions to improve maintainability and avoid CodeScene complexity violations.
+
+## 2026-12-05 - [Avoid Eager `.lower()` on Optional Values in Hot Paths]
+**Learning:** Chaining `.lower()` on values that are conditionally assigned (e.g., via `dict.get()`) using inline `if ... else ...` expressions (`var = val.lower() if val is not None else ""`) evaluates the C-level string allocation on every single invocation when the value exists, which adds up inside large loops parsing thousands of records. This is particularly wasteful if the fallback path is rarely taken.
+**Action:** When extracting optional string fields inside parsing loops, explicitly break apart the conditional fallback evaluation: assign `var = ""` (the cheap default), use a standard `if val is not None:` block, and apply `.lower()` only when the value is known to be valid. This reduces instruction overhead and unnecessary string allocations when processing large API payloads.
