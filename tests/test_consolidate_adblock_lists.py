@@ -2,13 +2,37 @@ import json
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import mock_open, patch
+from unittest.mock import MagicMock, mock_open, patch
 
 # Explicitly add the script directory to sys.path so we can import it
 script_dir = Path(__file__).parent.parent / "adguard" / "scripts"
 sys.path.append(str(script_dir.resolve()))
 
-from consolidate_adblock_lists import create_json_structure, load_json_file, process_allowlist_files
+from consolidate_adblock_lists import (
+    create_json_structure,
+    extract_allowlist_from_file,
+    extract_domains_from_rules,
+    load_json_file,
+    process_allowlist_files,
+    process_tracker_files,
+)
+
+
+class TestExtractDomainsFromRules(unittest.TestCase):
+
+    def test_happy_path(self):
+        rules = [{"PK": "example.com"}, {"PK": "test.com"}]
+        result = extract_domains_from_rules(rules)
+        self.assertEqual(result, ["example.com", "test.com"])
+
+    def test_missing_pk(self):
+        rules = [{"PK": "example.com"}, {"other": "value"}, {"PK": "test.com"}]
+        result = extract_domains_from_rules(rules)
+        self.assertEqual(result, ["example.com", "test.com"])
+
+    def test_empty_rules(self):
+        result = extract_domains_from_rules([])
+        self.assertEqual(result, [])
 
 
 class TestLoadJsonFile(unittest.TestCase):
@@ -133,6 +157,102 @@ class TestCreateJsonStructure(unittest.TestCase):
         self.assertEqual(parsed_result["group"]["group"], nasty_group_name)
         self.assertEqual(parsed_result["rules"][0]["PK"], 'weird"domain.com')
 
+
+class TestProcessTrackerFiles(unittest.TestCase):
+
+    def _run_process_tracker(
+        self,
+        files,
+        mock_exists_val=True,
+        load_json_rv=None,
+        load_json_se=None,
+    ):
+        with (
+            patch("pathlib.Path.exists") as mock_exists,
+            patch("consolidate_adblock_lists.load_json_file") as mock_load_json,
+            patch("sys.stdout", new_callable=unittest.mock.MagicMock),
+        ):
+            mock_exists.return_value = mock_exists_val
+            if load_json_rv is not None:
+                mock_load_json.return_value = load_json_rv
+            if load_json_se is not None:
+                mock_load_json.side_effect = load_json_se
+
+            return process_tracker_files(Path("/fake/dir"), files)
+
+    def test_happy_path(self):
+        data = {"rules": [{"PK": "tracker1.com"}, {"PK": "tracker2.com"}]}
+        result = self._run_process_tracker(["file1.json"], load_json_rv=data)
+        self.assertEqual(result, {"tracker1.com", "tracker2.com"})
+
+    def test_file_not_found(self):
+        result = self._run_process_tracker(["missing.json"], mock_exists_val=False)
+        self.assertEqual(result, set())
+
+    def test_missing_rules_key(self):
+        result = self._run_process_tracker(
+            ["norules.json"],
+            load_json_rv={"other_key": "data"},
+        )
+        self.assertEqual(result, set())
+
+    def test_multiple_files_with_duplicates(self):
+        load_results = [
+            {"rules": [{"PK": "tracker1.com"}]},
+            {"rules": [{"PK": "tracker1.com"}, {"PK": "tracker2.com"}]},
+        ]
+        result = self._run_process_tracker(
+            ["file1.json", "file2.json"],
+            load_json_se=load_results,
+        )
+        self.assertEqual(result, {"tracker1.com", "tracker2.com"})
+
+
+class TestExtractAllowlistFromFile(unittest.TestCase):
+
+    def test_file_not_found(self):
+        filepath = MagicMock()
+        filepath.exists.return_value = False
+        result = extract_allowlist_from_file(filepath, "desc")
+        self.assertEqual(result, set())
+
+    @patch("consolidate_adblock_lists.load_json_file")
+    def test_missing_or_invalid_data(self, mock_load):
+        filepath = MagicMock()
+        filepath.exists.return_value = True
+        filepath.name = "test.json"
+
+        with patch("sys.stdout", new_callable=unittest.mock.MagicMock):
+            mock_load.return_value = None
+            result = extract_allowlist_from_file(filepath, "desc")
+            self.assertEqual(result, set())
+
+            mock_load.return_value = {"other": "value"}
+            result = extract_allowlist_from_file(filepath, "desc")
+            self.assertEqual(result, set())
+
+    @patch("consolidate_adblock_lists.load_json_file")
+    def test_extract_valid_and_invalid_rules(self, mock_load):
+        filepath = MagicMock()
+        filepath.exists.return_value = True
+        filepath.name = "test.json"
+
+        mock_load.return_value = {
+            "rules": [
+                {"PK": "valid1.com", "action": {"do": 1}},
+                {"action": {"do": 1}},
+                {"PK": "invalid_no_action.com"},
+                {"PK": "invalid_action_not_dict.com", "action": "allow"},
+                {"PK": "invalid_no_do.com", "action": {"other": 1}},
+                {"PK": "invalid_do_0.com", "action": {"do": 0}},
+                {"PK": "valid2.com", "action": {"do": 1}},
+            ]
+        }
+
+        with patch("sys.stdout", new_callable=unittest.mock.MagicMock):
+            result = extract_allowlist_from_file(filepath, "desc")
+
+        self.assertEqual(result, {"valid1.com", "valid2.com"})
 
 
 class TestProcessAllowlistFiles(unittest.TestCase):
