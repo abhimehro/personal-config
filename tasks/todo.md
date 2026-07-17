@@ -3,13 +3,16 @@
 - [x] Narrow gitleaks allowlist: removed broad `^tasks/`; keep only
       `tasks/todo.md` with documented FP rationale (prose "secret scanning"
       vs `personal-config-generic-secret`). Other `tasks/*` remain scanned.
-- [x] Re-enable Jules workflow (was `disabled_manually` → `active`); schedule intact
+- [x] Re-enable Jules briefly for retest, then **disable again (final)**: Jules
+      only replies on Jules-initiated PRs; Actions Daily QA issues are a dead
+      end. Cron removed; UI `disabled_manually`. Daily Jules QA stays in Jules
+      product scheduled tasks.
 - [x] Keep Gemini deleted (confirmed; README updated)
 - [x] PR #1670 ready-for-review; macOS audit jobs green
 - [x] Dispatch Jules smoke retest; update Linear
   - Dispatch run: https://github.com/abhimehro/personal-config/actions/runs/29608663848 (success, 6/6 matrix)
   - Sample issue: https://github.com/abhimehro/personal-config/issues/1683
-  - Watch whether Jules bot comments on those issues (known gap to retest)
+  - Confirmed: no Jules bot replies (only Linear linkback) — matches product limit
 - [x] Merge `origin/main`; resolve `tasks/todo.md` journal conflict
 
 ---
