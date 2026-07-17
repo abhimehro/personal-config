@@ -566,17 +566,18 @@ jobs:
             # strict JSON via JSON.stringify after the agent exits.
             {
               cat recap-prompt.md
+              # Keep heredoc body indented with the run:| block (column-0 lines
+              # terminate the YAML scalar and break workflow parsing).
               cat <<'EOF'
-
-CRITICAL OUTPUT CONTRACT (OpenCode / Mistral):
-Do NOT put large MDX inside recap-source.json string literals.
-Instead write these files in the workspace root:
-  1) recap-meta.json — small strict JSON only: {"title":"...","brief":"..."}
-  2) recap-plan.mdx — full plan MDX (raw markdown/MDX, not JSON-escaped)
-  3) recap-canvas.mdx — canvas MDX (or empty file)
-  4) recap-prototype.mdx — prototype MDX (or empty file)
-The CI job will assemble these into valid recap-source.json for you.
-EOF
+          CRITICAL OUTPUT CONTRACT (OpenCode / Mistral):
+          Do NOT put large MDX inside recap-source.json string literals.
+          Instead write these files in the workspace root:
+            1) recap-meta.json — small strict JSON only: {"title":"...","brief":"..."}
+            2) recap-plan.mdx — full plan MDX (raw markdown/MDX, not JSON-escaped)
+            3) recap-canvas.mdx — canvas MDX (or empty file)
+            4) recap-prototype.mdx — prototype MDX (or empty file)
+          The CI job will assemble these into valid recap-source.json for you.
+          EOF
             } > recap-prompt.opencode.md
             "$OPENCODE_BIN" run \
               -m "$OPENCODE_MODEL" \
