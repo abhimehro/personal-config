@@ -30,7 +30,7 @@ hunting through the directory.
 | `label.yml` | `pull_request_target` | Auto-label PRs from changed paths |
 | `summary.yml` | Issue opened | Summarize new issues |
 | `release-drafter.yml` | Push main + `pull_request_target` | Maintain draft release notes |
-| `pr-visual-recap.yml` | PR lifecycle events | Visual/recap comment on PRs. Agents today: `claude` / `codex`. Alternate backends draft: `docs/pr-visual-recap-agent-backends.md` (OpenCode/Mistral preferred). |
+| `pr-visual-recap.yml` | PR lifecycle events | Visual/recap comment on PRs. Default agent: **OpenCode + Mistral** (`VISUAL_RECAP_AGENT=opencode`); also `claude` / `codex`. See `docs/pr-visual-recap-agent-backends.md`. |
 | `stale.yml` | `workflow_dispatch` only | Mark stale issues/PRs (manual; schedule removed) |
 | `main.yml` | `workflow_dispatch` | Clean stale remote branches (manual) |
 

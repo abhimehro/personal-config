@@ -1,3 +1,29 @@
+# ABHI-1321 — Visual recap OpenCode + Mistral (Phase 1)
+
+**Route:** T1+S+H  
+**Decision (2026-07-17):** User confirmed Pro plan quota covers the same
+`MISTRAL_API_KEY` used by CodeScene. Phase 1 = OpenCode + Mistral only.
+Vibe deferred (billing not a differentiator). Antigravity stays Phase 2.
+
+## Plan
+
+- [x] Gate: allow `opencode`; `HAS_MISTRAL`; model regex for `provider/model`
+- [x] Default `VISUAL_RECAP_AGENT` → `opencode`
+- [x] Install pinned `opencode-ai@1.18.3`; write trusted auth + permission config
+- [x] Run step with `--auto --format json`; retry if `recap-source.json` missing
+- [x] SECURITY: strip PR-head `opencode.json`/`.opencode` before writing ours
+- [x] Wire agent-summary / usage / artifacts for `opencode-*` logs
+- [x] Update design doc + workflows README; commit + push PR #1670
+
+## Security notes
+
+- Trust boundary: agent runs on PR-checked-out tree with secrets.
+- Deny bash/webfetch/websearch; allow edit only for `recap-source.json`.
+- Never log `MISTRAL_API_KEY`; presence-only in gate.
+- `PLAN_RECAP_TOKEN` still required for publish/screenshot.
+
+---
+
 # ABHI-1321 follow-ups (user feedback 2026-07-17)
 
 - [x] Narrow gitleaks allowlist: removed broad `^tasks/`; keep only

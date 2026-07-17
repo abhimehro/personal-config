@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  VISUAL_RECAP_AGENT: ${{ vars.VISUAL_RECAP_AGENT || 'claude' }}
+  VISUAL_RECAP_AGENT: ${{ vars.VISUAL_RECAP_AGENT || 'opencode' }}
   VISUAL_RECAP_SKILL_SOURCE: ${{ vars.VISUAL_RECAP_SKILL_SOURCE || 'auto' }}
   VISUAL_RECAP_SECRET_SCAN: ${{ vars.VISUAL_RECAP_SECRET_SCAN || 'high-confidence' }}
 
@@ -40,6 +40,7 @@ jobs:
           HAS_PLAN: ${{ secrets.PLAN_RECAP_TOKEN != '' }}
           HAS_ANTHROPIC: ${{ secrets.ANTHROPIC_API_KEY != '' }}
           HAS_OPENAI: ${{ secrets.OPENAI_API_KEY != '' }}
+          HAS_MISTRAL: ${{ secrets.MISTRAL_API_KEY != '' }}
           AGENT: ${{ env.VISUAL_RECAP_AGENT }}
           VISUAL_RECAP_MODEL: ${{ vars.VISUAL_RECAP_MODEL }}
           VISUAL_RECAP_SKILL_SOURCE: ${{ env.VISUAL_RECAP_SKILL_SOURCE }}
@@ -76,19 +77,30 @@ jobs:
 
             // Normalize + validate the agent so a mis-cased value can't pass the
             // gate and then match neither agent step below.
-            const agent = (process.env.AGENT || 'claude').toLowerCase();
-            if (agent !== 'claude' && agent !== 'codex') {
-              reasons.push(`unsupported VISUAL_RECAP_AGENT "${process.env.AGENT}" (expected "claude" or "codex")`);
+            const agent = (process.env.AGENT || 'opencode').toLowerCase();
+            if (agent !== 'claude' && agent !== 'codex' && agent !== 'opencode') {
+              reasons.push(`unsupported VISUAL_RECAP_AGENT "${process.env.AGENT}" (expected "opencode", "claude", or "codex")`);
             } else if (agent === 'codex') {
               if (process.env.HAS_OPENAI !== 'true') reasons.push('OPENAI_API_KEY not configured (codex backend)');
+            } else if (agent === 'opencode') {
+              if (process.env.HAS_MISTRAL !== 'true') reasons.push('MISTRAL_API_KEY not configured (opencode backend)');
             } else {
               if (process.env.HAS_ANTHROPIC !== 'true') reasons.push('ANTHROPIC_API_KEY not configured (claude backend)');
             }
 
             // Validate the model before it reaches the agent CLI.
+            // OpenCode uses provider/model (e.g. mistral/mistral-medium-latest);
+            // Claude/Codex use bare model ids.
             const model = process.env.VISUAL_RECAP_MODEL || '';
-            if (model && !/^[a-zA-Z0-9._-]{1,80}$/.test(model)) {
-              reasons.push(`invalid VISUAL_RECAP_MODEL value (must match [a-zA-Z0-9._-]{1,80})`);
+            if (model) {
+              const modelOk = agent === 'opencode'
+                ? /^[a-zA-Z0-9._-]{1,40}\/[a-zA-Z0-9._-]{1,80}$/.test(model)
+                : /^[a-zA-Z0-9._-]{1,80}$/.test(model);
+              if (!modelOk) {
+                reasons.push(agent === 'opencode'
+                  ? 'invalid VISUAL_RECAP_MODEL value (expected provider/model, e.g. mistral/mistral-medium-latest)'
+                  : 'invalid VISUAL_RECAP_MODEL value (must match [a-zA-Z0-9._-]{1,80})');
+              }
             }
 
             const skillSource = (process.env.VISUAL_RECAP_SKILL_SOURCE || 'auto').toLowerCase();
@@ -123,7 +135,9 @@ jobs:
                   /(^|\/)\.claude\//.test(p) ||
                   /(^|\/)CLAUDE\.md$/.test(p) ||
                   /(^|\/)AGENTS\.md$/.test(p) ||
-                  /(^|\/)\.mcp\.json$/.test(p);
+                  /(^|\/)\.mcp\.json$/.test(p) ||
+                  /(^|\/)opencode\.jsonc?$/.test(p) ||
+                  /(^|\/)\.opencode\//.test(p);
                 const hits = files.map((f) => f.filename).filter(isSensitive);
                 if (hits.length) {
                   reasons.push(`PR modifies recap-control files (${hits.slice(0, 3).join(', ')}${hits.length > 3 ? ', …' : ''}) — skipping so untrusted PR code never runs with secrets`);
@@ -426,6 +440,125 @@ jobs:
           if [ -n "${PREV_PLAN_ID:-}" ]; then ARGS+=(--prev-plan-id "$PREV_PLAN_ID"); fi
           $RECAP_CLI recap build-prompt "${ARGS[@]}"
 
+      - name: Resolve OpenCode model
+        id: opencode_model
+        if: needs.gate.outputs.agent == 'opencode' && steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
+        env:
+          MODEL_OVERRIDE: ${{ vars.VISUAL_RECAP_MODEL }}
+        run: |
+          set -euo pipefail
+          # Mirror CodeScene: prefer explicit model var, else Mistral medium.
+          if [[ -n "${MODEL_OVERRIDE:-}" ]]; then
+            MODEL="$MODEL_OVERRIDE"
+          else
+            MODEL="mistral/mistral-medium-latest"
+          fi
+          # Defense in depth — gate already validated, but re-check before argv.
+          if [[ ! "$MODEL" =~ ^[a-zA-Z0-9._-]{1,40}/[a-zA-Z0-9._-]{1,80}$ ]]; then
+            echo "::error::Invalid OpenCode model '$MODEL' (expected provider/model)."
+            exit 1
+          fi
+          echo "model=${MODEL}" >> "$GITHUB_OUTPUT"
+          echo "Using OpenCode model: ${MODEL}"
+
+      - name: Install OpenCode
+        if: needs.gate.outputs.agent == 'opencode' && steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
+        run: |
+          set -euo pipefail
+          # DEPENDENCY: opencode-ai@1.18.3 — headless agent CLI (same stack as
+          # CodeScene PR refactoring) — pinned 2026-07-17
+          for attempt in 1 2 3; do
+            if npm install --prefix "$RUNNER_TEMP/opencode" --no-audit --no-fund "opencode-ai@1.18.3"; then
+              break
+            fi
+            if [ "$attempt" = "3" ]; then exit 1; fi
+            sleep $((attempt * 5))
+          done
+          echo "OPENCODE_BIN=$RUNNER_TEMP/opencode/node_modules/.bin/opencode" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/opencode/node_modules/.bin/opencode" --version
+
+      - name: Configure OpenCode auth
+        if: needs.gate.outputs.agent == 'opencode' && steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
+        env:
+          MISTRAL_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${MISTRAL_KEY}" ]; then
+            echo "::error::MISTRAL_API_KEY is empty (gate should have skipped)."
+            exit 1
+          fi
+          mkdir -p "${HOME}/.local/share/opencode"
+          MISTRAL_KEY="$(printf '%s' "${MISTRAL_KEY}" | tr -d '\n\r')"
+          # SECURITY: write credentials only to the runner-local auth.json (mode 600).
+          # Never echo the key; same shape as refactoring-agent.yml.
+          AUTH_JSON="$(jq -cn --arg key "${MISTRAL_KEY}" '{"mistral":{"type":"api","key":$key}}')"
+          printf '%s' "$AUTH_JSON" > "${HOME}/.local/share/opencode/auth.json"
+          chmod 600 "${HOME}/.local/share/opencode/auth.json"
+          echo "MISTRAL_API_KEY=${MISTRAL_KEY}" >> "$GITHUB_ENV"
+
+      - name: Run agent (OpenCode + Mistral)
+        id: opencode
+        if: needs.gate.outputs.agent == 'opencode' && steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
+        continue-on-error: true
+        env:
+          OPENCODE_MODEL: ${{ steps.opencode_model.outputs.model }}
+        run: |
+          set -uo pipefail
+          # SECURITY: PR-head opencode.json / .opencode would override OPENCODE_CONFIG
+          # (project config wins). Strip untrusted project agent config, then write a
+          # trusted least-privilege permission file outside the workspace.
+          rm -f opencode.json opencode.jsonc
+          rm -rf .opencode
+          TRUSTED_CFG="$RUNNER_TEMP/visual-recap-opencode.json"
+          # SECURITY: jq avoids YAML-heredoc indent footguns; deny everything except
+          # read/search + write of recap-source.json (publisher contract).
+          jq -n '{
+            "$schema": "https://opencode.ai/config.json",
+            "permission": {
+              "*": "deny",
+              "read": "allow",
+              "glob": "allow",
+              "grep": "allow",
+              "edit": { "*": "deny", "recap-source.json": "allow" },
+              "bash": "deny",
+              "webfetch": "deny",
+              "websearch": "deny",
+              "task": "deny",
+              "skill": "deny",
+              "external_directory": "deny",
+              "doom_loop": "deny"
+            }
+          }' > "$TRUSTED_CFG"
+          # Project opencode.json wins over OPENCODE_CONFIG — keep both identical
+          # after stripping any PR-head copy.
+          cp "$TRUSTED_CFG" opencode.json
+          export OPENCODE_CONFIG="$TRUSTED_CFG"
+
+          rm -f recap-source.json recap-url.txt recap-url-reason.txt opencode-events.jsonl opencode-stderr.log opencode-exit-code.txt
+          run_opencode() {
+            set +e
+            # --auto only approves non-denied permissions; deny rules above still bind.
+            # ASSUMES: recap-prompt.md was built by trusted RECAP_CLI (not PR-head code).
+            "$OPENCODE_BIN" run \
+              -m "$OPENCODE_MODEL" \
+              --format json \
+              --auto \
+              --title "pr-visual-recap-${PR_NUMBER}" \
+              "$(cat recap-prompt.md)" \
+              > opencode-events.jsonl 2> opencode-stderr.log
+            OPENCODE_STATUS="$?"
+            set -e
+            echo "$OPENCODE_STATUS" > opencode-exit-code.txt
+          }
+          run_opencode
+          # Retry once if the agent exited without writing recap-source.json
+          # (same contract as Claude/Codex — publisher needs that file).
+          if [ ! -s recap-source.json ]; then
+            echo "::warning::recap-source.json missing after the agent run; retrying the agent once."
+            sleep 5
+            run_opencode
+          fi
+
       - name: Run agent (Claude Code)
         id: claude
         if: needs.gate.outputs.agent == 'claude' && steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
@@ -618,6 +751,10 @@ jobs:
             RESULT=codex-events.jsonl
             STDERR=codex-stderr.log
             EXIT_CODE=codex-exit-code.txt
+          elif [ "$RECAP_AGENT" = "opencode" ]; then
+            RESULT=opencode-events.jsonl
+            STDERR=opencode-stderr.log
+            EXIT_CODE=opencode-exit-code.txt
           fi
           $RECAP_CLI recap agent-summary --agent "$RECAP_AGENT" --result-file "$RESULT" --stderr-file "$STDERR" --exit-code-file "$EXIT_CODE" || true
 
@@ -632,6 +769,7 @@ jobs:
           set -uo pipefail
           RESULT=claude-result.json
           if [ "$RECAP_AGENT" = "codex" ]; then RESULT=codex-events.jsonl; fi
+          if [ "$RECAP_AGENT" = "opencode" ]; then RESULT=opencode-events.jsonl; fi
           if [ -f "$RESULT" ]; then $RECAP_CLI recap usage --plan-url "$PLAN_URL" --agent "$RECAP_AGENT" --result-file "$RESULT" --model "${VISUAL_RECAP_MODEL:-}" --app-url "$PLAN_RECAP_APP_URL" --token "$PLAN_RECAP_TOKEN" || true; fi
 
       - name: Cache Playwright browsers
@@ -701,6 +839,9 @@ jobs:
             claude-stderr.log
             codex-events.jsonl
             codex-stderr.log
+            opencode-events.jsonl
+            opencode-stderr.log
+            opencode-exit-code.txt
           if-no-files-found: ignore
           retention-days: 14
 
