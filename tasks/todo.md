@@ -12,13 +12,16 @@
 - [x] Run relevant tests; commit + push
 - [x] Merge `origin/main`; resolve `tasks/todo.md` journal conflict
 - [x] Update Windscribe media docs for Jellyfin primary (8096) vs Plex legacy
+- [x] Promote Jellyfin `8096` remote forward to default path (user-enabled
+      2026-07-17: Windscribe + Published Server URI)
 
 ## Security notes
 
 - Static IP is operational config (not a secret), but still machine-identifying.
 - IPv6 must not use Dallas static (IPv4-only) — default to Atlanta non-static.
-- Jellyfin remote (8096) is opt-in: Windscribe forward only after LAN + auth review
-  (see `media-streaming/jellyfin/MIGRATION_PLAN.md` Phase 3).
+- Jellyfin remote (8096) is the **default** remote path (Dallas static +
+  Windscribe forward + Published Server URI `http://82.23.253.53:8096`).
+  Protect with a strong admin password; Plex `32400` remains legacy.
 
 ## Live connect examples
 

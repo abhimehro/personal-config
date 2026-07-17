@@ -38,21 +38,23 @@ server crash-loops looking for `Contents/MacOS/jellyfin-web`.
 
 ## Ports / coexistence
 
-| Service                 | Port            | Notes                                          |
-| ----------------------- | --------------- | ---------------------------------------------- |
-| Jellyfin HTTP           | **8096**        | Built-in auth; RemoteAccess disabled in wizard |
-| Jellyfin HTTPS          | 8920            | Leave closed                                   |
-| WebDAV (Infuse)         | 8080            | Unchanged                                      |
-| Plex (legacy)           | 32400           | Not listening on this host; data preserved     |
-| email-security-pipeline | (Colima bridge) | No host port conflict with 8096                |
+| Service                 | Port            | Notes                                                      |
+| ----------------------- | --------------- | ---------------------------------------------------------- |
+| Jellyfin HTTP           | **8096**        | Built-in auth; LAN + Windscribe remote (default path)      |
+| Jellyfin HTTPS          | 8920            | Leave closed                                               |
+| WebDAV (Infuse)         | 8080            | Unchanged                                                  |
+| Plex (legacy)           | 32400           | Not listening on this host; data preserved                 |
+| email-security-pipeline | (Colima bridge) | No host port conflict with 8096                            |
 
-**SECURITY:** Do not add Windscribe public forward for 8096 until you explicitly
-approve remote exposure. When approved: Windscribe mapping
-`82.23.253.53:8096` → host `8096/TCP` (Jellyfin has no Plex-style remote-access
-wizard — forwarding is entirely on the Windscribe side). Then set Dashboard →
-Networking → Published Server URIs. Rotate admin password into 1Password item
-`MediaServer` (local file:
-`~/Library/Application Support/jellyfin/local-admin.credentials`).
+**Remote (default path, enabled 2026-07-17):** Windscribe maps
+`82.23.253.53:8096` → host `8096/TCP`. Published Server URI:
+`http://82.23.253.53:8096` (keep a LAN URI for home). Forwarding is on the
+Windscribe side — Jellyfin has no Plex-style remote-access wizard.
+
+**SECURITY:** Strong admin password required (1Password item `MediaServer`;
+local file: `~/Library/Application Support/jellyfin/local-admin.credentials`).
+HTTP over the static IP is intentional for the current VPN forward; harden with
+HTTPS reverse proxy later if needed.
 
 ## Library settings for fuse-t / rclone mounts
 

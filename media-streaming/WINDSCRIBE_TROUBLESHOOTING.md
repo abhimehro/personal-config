@@ -56,13 +56,13 @@ LOG_FILE="${HOME}/Library/Logs/media-rename.log"
 
 **VPN Static IP**: `82.23.253.53` (Dallas)
 **Local WebDAV Server**: ✅ Stable internal port `8080`
-**Primary Media Server**: ✅ Jellyfin on LAN `8096/TCP` (remote forward **opt-in**)
+**Primary Media Server**: ✅ Jellyfin on `8096/TCP` (LAN + **default remote** via Windscribe)
 **Backup Remote Media Server**: WebDAV on external `8088/TCP` -> internal `8080/TCP`
 **Plex**: Legacy only (`32400`); not required once Jellyfin is verified
 
 ### Diagnosis
 
-Earlier references to external port `22650` are stale. The current supported WebDAV backup mapping is `82.23.253.53:8088` externally to the Mac's internal WebDAV port `8080/TCP`. Jellyfin remote (when approved) uses `8096/TCP` internally and externally — configured in **Windscribe**, not in a Plex-style in-app remote-access wizard.
+Earlier references to external port `22650` are stale. The current supported WebDAV backup mapping is `82.23.253.53:8088` externally to the Mac's internal WebDAV port `8080/TCP`. Jellyfin remote (default path) uses `8096/TCP` internally and externally — configured in **Windscribe**, plus Published Server URI `http://82.23.253.53:8096` in Jellyfin Networking.
 
 ### Root Causes (Most Likely)
 
@@ -88,7 +88,7 @@ Earlier references to external port `22650` are stale. The current supported Web
 2. Go to **Preferences -> Connection -> Port Forwarding**
 3. Verify the stable mappings:
    ```
-   Jellyfin (opt-in remote):
+   Jellyfin (default remote):
      External Port: 8096
      Internal Port: 8096
      Protocol: TCP
@@ -236,10 +236,11 @@ tail -f ~/Library/Logs/alldebrid-sync.log
 
 ## 📋 Next Steps Checklist
 
-- [ ] (Opt-in) Confirm Windscribe Jellyfin mapping: external `8096/TCP` -> internal `8096/TCP`
+- [x] Confirm Windscribe Jellyfin mapping: external `8096/TCP` -> internal `8096/TCP`
+- [x] Jellyfin Published Server URI: `http://82.23.253.53:8096`
 - [ ] Confirm Windscribe WebDAV backup mapping: external `8088/TCP` -> internal `8080/TCP`
 - [ ] Disconnect and reconnect Windscribe VPN after changing mappings
-- [ ] (Opt-in) Test Jellyfin remote: `http://82.23.253.53:8096/` + set Published Server URI
+- [ ] Test Jellyfin remote from cellular: `http://82.23.253.53:8096/`
 - [ ] Test WebDAV external connectivity from a cellular device
 - [ ] Confirm the media server LaunchAgent is running
 - [ ] Confirm Jellyfin LaunchAgent: `launchctl list | grep jellyfin`
@@ -260,10 +261,10 @@ tail -f ~/Library/Logs/alldebrid-sync.log
 | LaunchAgent: server    | ✅ RUNNING  | Serves backup WebDAV on stable 8080  |
 | LaunchAgent: jellyfin  | ✅ PHASE 1  | Native Jellyfin LAN `8096`           |
 | LAN Access             | ✅ WORKING  | WebDAV `LAN:8080` / Jellyfin `LAN:8096` |
-| Jellyfin Remote        | ⏳ OPT-IN   | `82.23.253.53:8096` -> `8096` (Windscribe) |
+| Jellyfin Remote        | ✅ DEFAULT  | `82.23.253.53:8096` -> `8096` (Windscribe) |
 | WebDAV VPN Access      | ✅ CONFIG   | `82.23.253.53:8088` -> `8080`       |
 | Plex Remote            | ⚠️ LEGACY   | `32400` — retire after Jellyfin cutover |
 
 ---
 
-**Updated**: 2026-07-16 (Dallas static IP + Jellyfin primary)
+**Updated**: 2026-07-17 (Jellyfin remote enabled as default path)
