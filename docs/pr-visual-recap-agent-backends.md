@@ -62,6 +62,15 @@ Self-modifying guard also skips (on forks / public PRs) when the PR touches
 | Mistral Vibe (`VISUAL_RECAP_AGENT=vibe`) | Optional later — not needed for Pro quota |
 | Antigravity (`agy`) | Phase 2 spike only (CI/non-TTY sharp edges) |
 
+
+## Self-modifying guard
+
+- **Forks:** skip if PR touches `AGENTS.md`, `CLAUDE.md`, `.claude/`, `.mcp.json`,
+  `opencode.json`, `.opencode/`, or (when skill source is `repo`) visual skill paths.
+- **Same-repo:** skip only for runner-loaded configs (`.claude/`, `.mcp.json`,
+  `opencode.json`, `.opencode/`, repo skills) — not `AGENTS.md`/`CLAUDE.md` docs
+  edits, which false-skipped owner PRs on public repos.
+
 ## Triggers (API cost)
 
 Does **not** run on every push. Default events:

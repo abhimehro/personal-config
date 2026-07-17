@@ -122,19 +122,12 @@ jobs:
             }
             const usesRepoSkill = skillSource === 'repo';
 
-            // Self-modifying guard, evaluated in the trusted gate (runs NO
-            // PR-checked-out code): skip the ENTIRE job if the PR touches the
-            // repo-pinned skill instructions or any agent config the runner
-            // loads, so a PR can't rewrite what the agent loads and exfiltrate
-            // secrets. With the default bundled skill source, visual skill and
-            // recap workflow files are reviewed content, not instructions loaded
-            // by the runner.
-            // Keep this guard for forks AND all public-repo PRs: a fork or a
-            // public same-repo author could rewrite loaded instruction files
-            // (AGENTS.md/CLAUDE.md/.claude/.mcp.json) and exfiltrate the
-            // secret-backed agent run. Skip it ONLY for private-repo same-repo
-            // PRs, where the author is a trusted org member — a deliberate owner
-            // risk acceptance so legit instruction edits don't false-skip recaps.
+            // Self-modifying guard (trusted gate; runs NO PR-checked-out code).
+            // Forks: full allowlist of instruction/agent-config paths.
+            // Same-repo: only configs the runner may load (opencode/.claude/.mcp /
+            // repo-pinned skills). AGENTS.md / CLAUDE.md edits on same-repo PRs
+            // are documentation the author already can push — guarding them on
+            // public repos false-skipped owner PRs (e.g. #1670 label refresh).
             if (pr && (isFork || !isPrivate)) {
               try {
                 const files = await github.paginate(github.rest.pulls.listFiles, {
@@ -143,14 +136,22 @@ jobs:
                   pull_number: pr.number,
                   per_page: 100,
                 });
-                const isSensitive = (p) =>
-                  (usesRepoSkill && /(^|\/)skills\/visual-(recap|plan|plans)\//.test(p)) ||
-                  /(^|\/)\.claude\//.test(p) ||
-                  /(^|\/)CLAUDE\.md$/.test(p) ||
-                  /(^|\/)AGENTS\.md$/.test(p) ||
-                  /(^|\/)\.mcp\.json$/.test(p) ||
-                  /(^|\/)opencode\.jsonc?$/.test(p) ||
-                  /(^|\/)\.opencode\//.test(p);
+                const isSensitive = (p) => {
+                  const runnerConfig =
+                    (usesRepoSkill && /(^|\/)skills\/visual-(recap|plan|plans)\//.test(p)) ||
+                    /(^|\/)\.claude\//.test(p) ||
+                    /(^|\/)\.mcp\.json$/.test(p) ||
+                    /(^|\/)opencode\.jsonc?$/.test(p) ||
+                    /(^|\/)\.opencode\//.test(p);
+                  if (isFork) {
+                    return (
+                      runnerConfig ||
+                      /(^|\/)CLAUDE\.md$/.test(p) ||
+                      /(^|\/)AGENTS\.md$/.test(p)
+                    );
+                  }
+                  return runnerConfig;
+                };
                 const hits = files.map((f) => f.filename).filter(isSensitive);
                 if (hits.length) {
                   reasons.push(`PR modifies recap-control files (${hits.slice(0, 3).join(', ')}${hits.length > 3 ? ', …' : ''}) — skipping so untrusted PR code never runs with secrets`);
@@ -566,18 +567,17 @@ jobs:
             # strict JSON via JSON.stringify after the agent exits.
             {
               cat recap-prompt.md
-              # Keep heredoc body indented with the run:| block (column-0 lines
-              # terminate the YAML scalar and break workflow parsing).
-              cat <<'EOF'
-          CRITICAL OUTPUT CONTRACT (OpenCode / Mistral):
-          Do NOT put large MDX inside recap-source.json string literals.
-          Instead write these files in the workspace root:
-            1) recap-meta.json — small strict JSON only: {"title":"...","brief":"..."}
-            2) recap-plan.mdx — full plan MDX (raw markdown/MDX, not JSON-escaped)
-            3) recap-canvas.mdx — canvas MDX (or empty file)
-            4) recap-prototype.mdx — prototype MDX (or empty file)
-          The CI job will assemble these into valid recap-source.json for you.
-          EOF
+              # Avoid YAML heredoc footguns (colons / braces / indent). printf only.
+              printf '%s\n' \
+                '' \
+                'CRITICAL OUTPUT CONTRACT (OpenCode / Mistral):' \
+                'Do NOT put large MDX inside recap-source.json string literals.' \
+                'Instead write these files in the workspace root:' \
+                '  1) recap-meta.json - small strict JSON only with title and brief keys' \
+                '  2) recap-plan.mdx - full plan MDX (raw markdown/MDX, not JSON-escaped)' \
+                '  3) recap-canvas.mdx - canvas MDX (or empty file)' \
+                '  4) recap-prototype.mdx - prototype MDX (or empty file)' \
+                'The CI job will assemble these into valid recap-source.json for you.'
             } > recap-prompt.opencode.md
             "$OPENCODE_BIN" run \
               -m "$OPENCODE_MODEL" \
