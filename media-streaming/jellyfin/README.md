@@ -1,8 +1,9 @@
 # Jellyfin Migration (Plex → Jellyfin)
 
-**Status (2026-07-09):** Phase 1 **live**. Native Jellyfin 10.11.11 serves
-`~/CloudMedia/mounted` on LAN **8096**. Colima hosting remains Phase 2
-(optional). Plex/WebDAV untouched for rollback.
+**Status (2026-07-17):** Phase 1 **live** + **remote default enabled**. Native
+Jellyfin serves `~/CloudMedia/mounted` on LAN **8096** and via Windscribe
+`http://82.23.253.53:8096`. Colima hosting remains Phase 2 (optional). Plex is
+legacy; WebDAV remains Infuse backup.
 
 ## Architecture (keep)
 
