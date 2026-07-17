@@ -14,7 +14,7 @@ already pay for (Mistral Pro / Vibe, and optionally Google Antigravity).
 
 The agent step is a black box. Everything around it stays:
 
-1. Gate (draft/bot/fork/secret presence, `VISUAL_RECAP_AGENT` allowlist)
+1. Gate (draft/bot/fork/credential presence, `VISUAL_RECAP_AGENT` allowlist)
 2. Trusted `@agent-native/core` CLI builds `recap-prompt.md`
 3. **Agent** must leave a non-empty `recap-source.json` in the workspace
 4. Deterministic `recap publish` → Plan URL → screenshot → sticky comment
@@ -67,7 +67,7 @@ Extend (do not break) existing vars:
 | `ENABLE_MISTRAL` / `ENABLE_GOOGLE` | reuse from CodeScene | Gate OpenCode providers |
 | Secrets | `MISTRAL_API_KEY`, `PLAN_RECAP_TOKEN` (+ optional `GOOGLE_API_KEY`) | `PLAN_RECAP_TOKEN` still required regardless of agent |
 
-Gate changes (presence-only, never log secret values):
+Gate changes (presence-only, never log credential values):
 
 ```text
 HAS_MISTRAL  = secrets.MISTRAL_API_KEY != ''
