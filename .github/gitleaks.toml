@@ -202,9 +202,12 @@ paths = [
     '''(?i)LICENSE''',
     '''(?i)CODE_OF_CONDUCT''',
     '''(?i)CONTRIBUTING''',
-    # Planning/session journals — prose often trips generic-secret on
-    # phrases like "secret scanning" (separator + 8+ letter word).
-    '''(?i)^tasks/''',
+    # ABHI-1321 / PR #1670 — NARROW path allowlist (not all of tasks/).
+    # Rationale: personal-config-generic-secret false-positive on prose
+    # "secret scanning" (keyword + whitespace + 8+ alnum) in the session
+    # journal. Do not expand to tasks/** — other journals may discuss real
+    # credential handling and must stay scanned.
+    '''(?i)^tasks/todo\.md$''',
     '''(?i)validate_repo_structure\.sh$''',
     '''(?i)scripts/repair-controld-keepalive\.sh$''',
     '''(?i)scripts/lib/.*\.sh$''',

@@ -41,7 +41,7 @@ hunting through the directory.
 | `repository-automation-daily.yml` | Daily cron + dispatch | Workflow updater, perf, QA, backlog, status report |
 | `repository-automation-weekly.yml` | Weekly cron + dispatch | Weekly retrospective (writes gated by input) |
 | `agentics-maintenance.yml` | `workflow_dispatch` | gh-aw maintenance (disable/enable/update/upgrade) |
-| `jules-daily-qa.yml` | Daily cron + dispatch | Multi-repo Jules QA prompts — **verify integration** (no runs since 2026-03-28) |
+| `jules-daily-qa.yml` | Daily cron + dispatch | Multi-repo Jules QA issue prompts (`@google-labs-jules`). Re-enabled 2026-07-17 after long `disabled_manually` pause; schedule `0 10 * * *` UTC. |
 | `refactoring-agent.yml` | Issue comment `/cs-agent` | CodeScene PR refactoring agent |
 | `copilot-setup-steps.yml` | PR/issues + dispatch | Development Partner setup comments (**CWE-94:** bind `request` via `env.REQUEST`) |
 
@@ -69,10 +69,14 @@ actionlint .github/workflows/*.yml
 make test-quick
 ```
 
-## Optional: re-enable Gemini CLI workflows
+## Gemini CLI workflows (removed — keep deleted)
 
-Gemini workflows were removed while disabled. To restore:
+The `gemini-*.yml` suite was removed in ABHI-1321 after a long
+`disabled_manually` period. **Do not restore** unless there is a fresh,
+explicit use case. Gemini CLI availability is shifting toward enterprise, and
+Google Antigravity compatibility for these Actions is unproven — treat any
+restore as a new design, not a rollback.
 
-1. Recover `gemini-*.yml` from git history before this consolidation commit.
-2. Configure `GEMINI_API_KEY` (or Vertex / WIF) per prior README guidance.
-3. Re-enable the workflows in the Actions UI after validating auth.
+Companion prompts under `.github/commands/gemini-*.toml` are dormant reference
+only. YAML history remains in git if a redesign is ever warranted.
+
