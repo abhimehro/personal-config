@@ -207,6 +207,8 @@ paths = [
     # "secret scanning" (keyword + whitespace + 8+ alnum) in the session
     # journal. Do not expand to tasks/** — other journals may discuss real
     # credential handling and must stay scanned.
+    # Verified: PR-range gitleaks detect is clean; full-history dispatch may
+    # still flag unrelated pre-existing FPs elsewhere in the tree.
     '''(?i)^tasks/todo\.md$''',
     '''(?i)validate_repo_structure\.sh$''',
     '''(?i)scripts/repair-controld-keepalive\.sh$''',
