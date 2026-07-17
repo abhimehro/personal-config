@@ -1,5 +1,11 @@
 # Windscribe Port Forwarding - Complete Setup Guide
 
+> **Static IP (2026-07):** Dallas `82.23.253.53` (replaces expired Atlanta
+> `82.21.151.194`). Connect with
+> `./scripts/windscribe-connect.sh privacy` (defaults to `connect static Dallas`).
+> For IPv6, use Atlanta/Peachtree non-static:
+> `WINDSCRIBE_IPV6=1 ./scripts/windscribe-connect.sh privacy`.
+
 ## 🎉 Good News: Windscribe Auto-Configures Internal IP!
 
 After further investigation, I need to clarify how Windscribe port forwarding works:
@@ -12,11 +18,32 @@ When you select your **MacBook Air** as the device in Windscribe's port forwardi
 
 ## ✅ Correct Windscribe Port Forward Configuration
 
-### For WebDAV (Media Server):
+### For Jellyfin (primary media server — default remote path):
 
 | Setting           | Value                          |
 | ----------------- | ------------------------------ |
-| **Static IP**     | 82.21.151.194                  |
+| **Static IP**     | 82.23.253.53                   |
+| **Name**          | Jellyfin                       |
+| **Protocol**      | **TCP**                        |
+| **Device**        | MacBook Air (from device list) |
+| **External Port** | 8096                           |
+| **Internal Port** | 8096                           |
+
+> **Enabled (2026-07-17):** Default remote URL is
+> `http://82.23.253.53:8096`. Windscribe maps External **8096** → Internal
+> **8096**. Jellyfin Dashboard → Networking → Published Server URIs includes
+> that URI (keep a LAN URI for home use). Jellyfin has no Plex-style “open
+> ports” wizard — the forward lives entirely in Windscribe.
+>
+> **SECURITY:** Protect with a strong admin password (1Password `MediaServer`).
+> Prefer clients over HTTPS reverse proxy later if you harden further; HTTP on
+> the static IP is intentional for the current VPN forward.
+
+### For WebDAV (Infuse backup):
+
+| Setting           | Value                          |
+| ----------------- | ------------------------------ |
+| **Static IP**     | 82.23.253.53                   |
 | **Name**          | MediaServer                    |
 | **Protocol**      | **TCP** (WebDAV uses TCP only) |
 | **Device**        | MacBook Air (from device list) |
@@ -27,12 +54,18 @@ When you select your **MacBook Air** as the device in Windscribe's port forwardi
 
 | Setting           | Value                          |
 | ----------------- | ------------------------------ |
-| **Static IP**     | 82.21.151.194                  |
+| **Static IP**     | 82.23.253.53                   |
 | **Name**          | SSH                            |
 | **Protocol**      | **TCP** (SSH uses TCP only)    |
 | **Device**        | MacBook Air (from device list) |
 | **External Port** | 36555                          |
 | **Internal Port** | 22                             |
+
+### Plex (legacy — optional)
+
+Plex is no longer the primary server on this host. If you still run it, the old
+mapping was External **32400** → Internal **32400**. Prefer Jellyfin **8096**
+instead; remove the Plex forward once clients have migrated.
 
 ---
 
@@ -42,7 +75,7 @@ When you configure port forwarding in Windscribe:
 
 1. You select your **device** (MacBook Air) from the list
 2. Windscribe associates that device with your **VPN tunnel IP** (100.125.56.240)
-3. When external traffic arrives at `82.21.151.194:8088`:
+3. When external traffic arrives at `82.23.253.53:8088`:
    - Windscribe routes it to your VPN tunnel: `100.125.56.240:8080`
    - Your Mac's `utun420` interface receives the traffic
    - rclone server (listening on `*:8080`) accepts the connection
@@ -67,7 +100,7 @@ After creating or modifying a port forward:
 You **cannot test** the external connection from your own Mac. This is a limitation of NAT:
 
 - Your Mac is "inside" the VPN tunnel
-- Traffic to 82.21.151.194:8088 from your Mac tries to loop back through Windscribe
+- Traffic to 82.23.253.53:8088 from your Mac tries to loop back through Windscribe
 - Most VPN providers (including Windscribe) don't support hairpin NAT
 
 **Testing must be done from an external device:**
@@ -124,14 +157,14 @@ Expected: HTTP 200 OK
 curl -s ifconfig.me
 ```
 
-Expected: `82.21.151.194`
+Expected: `82.23.253.53`
 
 ### Step 4: Test External Port Forward
 
 **MUST BE DONE FROM EXTERNAL DEVICE (phone on cellular, NOT WiFi):**
 
 ```bash
-curl -u "infuse:${MEDIA_WEBDAV_PASS}" http://82.21.151.194:8088/
+curl -u "infuse:${MEDIA_WEBDAV_PASS}" http://82.23.253.53:8088/
 ```
 
 Expected: HTTP 200 OK with HTML response
@@ -139,7 +172,7 @@ Expected: HTTP 200 OK with HTML response
 Or simply open in mobile browser:
 
 ```
-http://82.21.151.194:8088/
+http://82.23.253.53:8088/
 ```
 
 (Will prompt for username/password)
@@ -181,7 +214,9 @@ killall Windscribe
 # Relaunch Windscribe
 open -a Windscribe
 
-# Reconnect to VPN with static IP
+# Reconnect to VPN with static IP (Dallas):
+#   ./scripts/windscribe-connect.sh privacy
+#   # or: windscribe-cli connect static Dallas
 ```
 
 ### 5. Contact Windscribe Support
@@ -204,7 +239,7 @@ If after all these steps external access still fails:
 - Best performance, no VPN overhead
 - No re-caching needed when switching between devices on same network
 
-### Secondary: Remote (82.21.151.194:8088)
+### Secondary: Remote (82.23.253.53:8088)
 
 ⏳ **Needs external testing to confirm**
 
@@ -226,20 +261,20 @@ If after all these steps external access still fails:
 Current SSH setup (from your description):
 
 ```
-External: 82.21.151.194:36555 -> Internal: MacBook Air:22
+External: 82.23.253.53:36555 -> Internal: MacBook Air:22
 ```
 
 This is correctly configured! The same principles apply:
 
 - Windscribe maps the device to the VPN tunnel IP automatically
-- External SSH access: `ssh user@82.21.151.194 -p 36555`
+- External SSH access: `ssh user@82.23.253.53 -p 36555`
 - Cannot be tested from your own Mac (hairpin NAT limitation)
 
 **To test SSH externally:**
 
 ```bash
 # From external device (phone, cloud server, etc.)
-ssh speedybee@82.21.151.194 -p 36555
+ssh speedybee@82.23.253.53 -p 36555
 ```
 
 ---
@@ -250,7 +285,7 @@ ssh speedybee@82.21.151.194 -p 36555
 
 - Local media server (127.0.0.1:8080) ✓
 - LAN access (192.168.0.111:8080) ✓
-- Windscribe VPN connected (82.21.151.194) ✓
+- Windscribe VPN connected (82.23.253.53) ✓
 - Server listening on all interfaces (\*:8080) ✓
 - LaunchAgents properly configured ✓
 
@@ -262,23 +297,26 @@ ssh speedybee@82.21.151.194 -p 36555
 ### 🎯 Your Action Items
 
 1. Ensure Windscribe port forwards are configured:
+   - **Jellyfin** (default remote): TCP, MacBook Air, External 8096 -> Internal 8096
    - MediaServer WebDAV backup: TCP, MacBook Air, External 8088 -> Internal 8080
-   - Plex primary: TCP, MacBook Air, External 32400 -> Internal 32400
    - SSH: TCP, MacBook Air, External 36555 -> Internal 22
+   - Plex 32400: legacy only — remove once unused
 
 2. **Disconnect and reconnect** Windscribe (critical!)
 
 3. Test from external device (iPhone on cellular):
 
    ```
-   http://82.21.151.194:8088/
+   http://82.23.253.53:8096/   # Jellyfin (default remote)
+   http://82.23.253.53:8088/   # WebDAV backup
    ```
 
-4. If it works: Configure secondary connection in Infuse!
+4. If WebDAV works: Configure secondary connection in Infuse!
 
 5. If it doesn't work: Check Windscribe app for port forward status or contact support
 
 ---
 
-**Last Updated**: June 20, 2026
-**Status**: LAN WebDAV operational, Plex primary remote access documented, WebDAV backup mapping standardized
+**Last Updated**: 2026-07-17
+**Status**: Jellyfin primary remote on Dallas `82.23.253.53:8096` (default path);
+WebDAV backup `8088→8080`; Plex `32400` legacy

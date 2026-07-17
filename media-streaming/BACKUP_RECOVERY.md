@@ -128,7 +128,7 @@ Remote backup access through Windscribe uses the external port:
 
 ```
 Protocol: WebDAV
-Address: http://82.21.151.194:8088
+Address: http://82.23.253.53:8088
 Username: infuse
 Password: [from credentials file]
 Path: /

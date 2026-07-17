@@ -206,8 +206,8 @@ abbr -a sca ssh cursor-auto
 # nmpd/nmbd/nmgd  → standalone DoH + IPv6 off (doh-ipv4)
 # nmp6/nmb6/nmg6  → standalone DoH + IPv6 on  (doh-ipv6)
 # nmvp/nmvb/nmvg  → Windscribe+Control D (auto IPv6 after connect)
-# nmvp4/…         → force WINDSCRIBE_IPV6=0 (doh-ipv4); pass location e.g. nmvp4 Atlanta
-# nmvp6/…         → force WINDSCRIBE_IPV6=1 (doh-ipv6)
+# nmvp4/…         → force WINDSCRIBE_IPV6=0 (doh-ipv4); default Dallas static; e.g. nmvp4 Dallas
+# nmvp6/…         → force WINDSCRIBE_IPV6=1 (doh-ipv6); default Atlanta non-static; e.g. nmvp6 Atlanta
 abbr -a nms  nm-status
 abbr -a nmb  nm-browse
 abbr -a nmp  nm-privacy

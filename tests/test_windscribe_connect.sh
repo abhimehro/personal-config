@@ -214,6 +214,57 @@ else
 	exit 1
 fi
 
+# Test 9: Location defaults — Dallas static (IPv4) / Atlanta non-static (IPv6)
+echo ""
+echo "Test 9: Dallas static + Atlanta IPv6 defaults"
+echo "---"
+
+if grep -q 'DEFAULT_STATIC_LOCATION="Dallas"' "$SCRIPT"; then
+	echo "✅ PASS: DEFAULT_STATIC_LOCATION is Dallas"
+else
+	echo "❌ FAIL: DEFAULT_STATIC_LOCATION is not Dallas"
+	exit 1
+fi
+
+if grep -q 'DEFAULT_IPV6_LOCATION="Atlanta"' "$SCRIPT"; then
+	echo "✅ PASS: DEFAULT_IPV6_LOCATION is Atlanta"
+else
+	echo "❌ FAIL: DEFAULT_IPV6_LOCATION is not Atlanta"
+	exit 1
+fi
+
+# Old Atlanta static default must be gone
+if grep -E 'LOCATION="\$\{2:-\s*Atlanta\}"|LOCATION="\$\{2:-Atlanta\}"' "$SCRIPT" >/dev/null 2>&1; then
+	echo "❌ FAIL: Legacy LOCATION default Atlanta still present"
+	exit 1
+fi
+echo "✅ PASS: Legacy Atlanta-as-static default removed"
+
+# IPv6 path must default WINDSCRIBE_CONNECT_STATIC to 0
+if grep -A5 'DEFAULT_IPV6_LOCATION' "$SCRIPT" | grep -q 'WINDSCRIBE_CONNECT_STATIC:-0' ||
+	grep -B2 -A8 'WINDSCRIBE_IPV6=1' "$SCRIPT" | grep -q 'WINDSCRIBE_CONNECT_STATIC:-0' ||
+	grep -q 'WINDSCRIBE_CONNECT_STATIC:-0' "$SCRIPT"; then
+	echo "✅ PASS: IPv6 path can disable static connect (WINDSCRIBE_CONNECT_STATIC:-0)"
+else
+	echo "❌ FAIL: Missing WINDSCRIBE_CONNECT_STATIC:-0 for IPv6 path"
+	exit 1
+fi
+
+# Static IPv4 path should still default static=1
+if grep -q 'WINDSCRIBE_CONNECT_STATIC:-1' "$SCRIPT"; then
+	echo "✅ PASS: IPv4/static path defaults WINDSCRIBE_CONNECT_STATIC:-1"
+else
+	echo "❌ FAIL: Missing WINDSCRIBE_CONNECT_STATIC:-1 for static path"
+	exit 1
+fi
+
+# Old media static IP must not appear in this script
+if grep -q '82.21.151.194' "$SCRIPT"; then
+	echo "❌ FAIL: Old Atlanta static IP still referenced in windscribe-connect.sh"
+	exit 1
+fi
+echo "✅ PASS: No old Atlanta static IP in windscribe-connect.sh"
+
 echo ""
 echo "=========================================="
 echo "✅ All tests passed!"

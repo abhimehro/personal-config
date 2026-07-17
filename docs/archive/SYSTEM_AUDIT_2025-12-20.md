@@ -157,6 +157,7 @@ All critical configuration symlinks are **correctly established**:
 - Binds to 0.0.0.0 (all interfaces)
 - Supports local network access
 - Supports remote access via static IP (82.21.151.194)
+  _(historical 2025-12-20; superseded 2026-07 by Dallas `82.23.253.53`)_
 - Auto-detects VPN status
 - LAN traffic compatibility
 
@@ -219,6 +220,7 @@ All critical configuration symlinks are **correctly established**:
 - Ethernet (en1): Not connected
 
 **Static IP**: 82.21.151.194 (Atlanta server)
+_(historical 2025-12-20; superseded 2026-07 by Dallas `82.23.253.53`)_
 
 **VPN Status**: Available (Windscribe)
 

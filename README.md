@@ -834,7 +834,9 @@ After reloading Fish with `exec fish`, these helpers are available:
 | `nm-regress` (`nmr`) | Run full regression test (Control D → Windscribe) |
 | `nm-cd-status` (`nmcs`) | Check Control D daemon status |
 
-VPN abbrs accept a location (e.g. `nmvp6 Atlanta`).
+VPN abbrs accept a location: `nmvp4 Dallas` (static IPv4) or `nmvp6 Atlanta`
+(IPv6 non-static). Defaults match `windscribe-connect.sh` (Dallas static /
+Atlanta when forcing IPv6).
 
 **Safe files to edit manually:**
 
