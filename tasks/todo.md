@@ -14,6 +14,9 @@
   - Sample issue: https://github.com/abhimehro/personal-config/issues/1683
   - Confirmed: no Jules bot replies (only Linear linkback) — matches product limit
 - [x] Merge `origin/main`; resolve `tasks/todo.md` journal conflict
+- [x] Draft visual-recap alternate backends design
+      (`docs/pr-visual-recap-agent-backends.md`) — OpenCode/Mistral Phase 1;
+      Vibe optional; Antigravity Phase 2 spike only
 
 ---
 
