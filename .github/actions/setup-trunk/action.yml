@@ -1,0 +1,59 @@
+# SECURITY: Caches Trunk CLI launcher + tool downloads. Cache keys include
+# hashFiles('.trunk/trunk.yaml') so CLI/linter version bumps invalidate the cache.
+# The trunk.io launcher URL is fixed (not user-controlled); restored cache contents
+# are untrusted blobs until trunk itself verifies tool digests on use.
+name: Setup Trunk
+description: Install Trunk CLI launcher and cache ~/.cache/trunk tool downloads
+
+inputs:
+  cache-tools:
+    description: Whether to restore/save the Trunk tool cache under ~/.cache/trunk
+    required: false
+    default: "true"
+
+outputs:
+  cache-hit:
+    description: Whether the Trunk cache was restored
+    value: ${{ steps.cache.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - name: Cache Trunk tools and launcher
+      id: cache
+      if: inputs.cache-tools == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.cache/trunk
+          ~/.local/bin/trunk
+        # NOTE: Invalidates when trunk.yaml changes (CLI version, linters, plugins).
+        key: trunk-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.trunk/trunk.yaml') }}
+        restore-keys: |
+          trunk-${{ runner.os }}-${{ runner.arch }}-
+
+    - name: Install Trunk CLI launcher
+      shell: bash
+      run: |
+        set -euo pipefail
+        mkdir -p "${HOME}/.local/bin" "${HOME}/.cache/trunk"
+        if [[ -x "${HOME}/.local/bin/trunk" ]]; then
+          echo "Trunk launcher restored from cache"
+          chmod +x "${HOME}/.local/bin/trunk"
+        else
+          echo "Downloading Trunk CLI launcher..."
+          # ASSUMES: https://trunk.io/releases/trunk is the official launcher endpoint.
+          curl -fsSL https://trunk.io/releases/trunk -o "${HOME}/.local/bin/trunk"
+          chmod +x "${HOME}/.local/bin/trunk"
+        fi
+        echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+        "${HOME}/.local/bin/trunk" version || "${HOME}/.local/bin/trunk" --help >/dev/null
+
+    - name: Prefetch Trunk tools (cache miss)
+      if: inputs.cache-tools == 'true' && steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Populate ~/.cache/trunk so subsequent jobs/runs hit a warm cache.
+        # Non-fatal if install is slow or partially fails — trunk check will retry.
+        "${HOME}/.local/bin/trunk" install || echo "::warning::trunk install returned non-zero; tools may download on first check"
