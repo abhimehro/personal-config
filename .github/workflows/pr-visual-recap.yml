@@ -532,7 +532,15 @@ jobs:
               "read": "allow",
               "glob": "allow",
               "grep": "allow",
-              "edit": { "*": "deny", "recap-source.json": "allow" },
+              "edit": {
+                "*": "deny",
+                "recap-source.json": "allow",
+                "recap-meta.json": "allow",
+                "recap-plan.mdx": "allow",
+                "recap-canvas.mdx": "allow",
+                "recap-prototype.mdx": "allow",
+                "recap-plan-state.json": "allow"
+              },
               "bash": "deny",
               "webfetch": "deny",
               "websearch": "deny",
@@ -547,16 +555,28 @@ jobs:
           cp "$TRUSTED_CFG" opencode.json
           export OPENCODE_CONFIG="$TRUSTED_CFG"
 
-          rm -f recap-source.json recap-url.txt recap-url-reason.txt opencode-events.jsonl opencode-stderr.log opencode-exit-code.txt
+          rm -f recap-source.json recap-meta.json recap-plan.mdx recap-canvas.mdx recap-prototype.mdx recap-plan-state.json \
+            recap-url.txt recap-url-reason.txt opencode-events.jsonl opencode-stderr.log opencode-exit-code.txt
           run_opencode() {
             set +e
             # --auto only approves non-denied permissions; deny rules above still bind.
             # ASSUMES: recap-prompt.md was built by trusted RECAP_CLI (not PR-head code).
-            # NOTE: Append a strict-JSON reminder — Mistral occasionally writes raw
-            # newlines inside MDX string literals, which breaks JSON.parse.
+            # SECURITY/NOTE: Prefer sidecar MDX files over a hand-escaped JSON blob —
+            # Mistral often leaves raw newlines/quotes inside JSON strings. We assemble
+            # strict JSON via JSON.stringify after the agent exits.
             {
               cat recap-prompt.md
-              printf '\n\n%s\n' "CRITICAL: Write ./recap-source.json as strict RFC 8259 JSON only. Escape every newline inside string values as \\n (never insert a raw line break between quotes). Do not wrap the file in markdown fences."
+              cat <<'EOF'
+
+CRITICAL OUTPUT CONTRACT (OpenCode / Mistral):
+Do NOT put large MDX inside recap-source.json string literals.
+Instead write these files in the workspace root:
+  1) recap-meta.json — small strict JSON only: {"title":"...","brief":"..."}
+  2) recap-plan.mdx — full plan MDX (raw markdown/MDX, not JSON-escaped)
+  3) recap-canvas.mdx — canvas MDX (or empty file)
+  4) recap-prototype.mdx — prototype MDX (or empty file)
+The CI job will assemble these into valid recap-source.json for you.
+EOF
             } > recap-prompt.opencode.md
             "$OPENCODE_BIN" run \
               -m "$OPENCODE_MODEL" \
@@ -570,10 +590,9 @@ jobs:
             echo "$OPENCODE_STATUS" > opencode-exit-code.txt
           }
           run_opencode
-          # Retry once if the agent exited without writing recap-source.json
-          # (same contract as Claude/Codex — publisher needs that file).
-          if [ ! -s recap-source.json ]; then
-            echo "::warning::recap-source.json missing after the agent run; retrying the agent once."
+          # Retry once if neither sidecar plan MDX nor recap-source.json exists.
+          if [ ! -s recap-plan.mdx ] && [ ! -s recap-source.json ]; then
+            echo "::warning::recap outputs missing after the agent run; retrying the agent once."
             sleep 5
             run_opencode
           fi
@@ -646,24 +665,19 @@ jobs:
             run_codex
           fi
 
-      # Agents (esp. OpenCode/Mistral) sometimes leave raw newlines/tabs inside
-      # JSON string literals in recap-source.json. Publisher requires strict JSON.
-      # Repair only unescaped controls inside strings; fail closed if still invalid.
+      # Assemble OpenCode sidecar MDX files into strict JSON when present, then
+      # sanitize any agent-written recap-source.json (raw controls in strings).
       - name: Sanitize recap-source.json
         id: sanitize
         if: steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
         continue-on-error: true
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -uo pipefail
-          if [ ! -s recap-source.json ]; then
-            echo "ok=false" >> "$GITHUB_OUTPUT"
-            echo "reason=recap-source.json missing after agent run" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
           node <<'NODE'
           const fs = require("fs");
           const path = "recap-source.json";
-          const raw = fs.readFileSync(path, "utf8");
           const emit = (ok, reason, repaired) => {
             const out = process.env.GITHUB_OUTPUT;
             if (out) {
@@ -683,7 +697,7 @@ jobs:
               return e instanceof Error ? e.message : String(e);
             }
           };
-          // Escape raw U+0000–U+001F inside JSON strings only (leave structure alone).
+          const readOptional = (p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "");
           const escapeControlsInStrings = (text) => {
             let out = "";
             let inStr = false;
@@ -724,6 +738,45 @@ jobs:
             return { text: out, repaired };
           };
 
+          // Preferred path: assemble from sidecar files (OpenCode contract).
+          const planMdx = readOptional("recap-plan.mdx");
+          const canvasMdx = readOptional("recap-canvas.mdx");
+          const prototypeMdx = readOptional("recap-prototype.mdx");
+          const planState = readOptional("recap-plan-state.json");
+          if (planMdx.trim()) {
+            let meta = {};
+            const metaRaw = readOptional("recap-meta.json");
+            if (metaRaw) {
+              const metaErr = tryParse(metaRaw);
+              if (metaErr) {
+                emit(false, `recap-meta.json was not valid JSON: ${metaErr}`, false);
+                fs.writeFileSync("recap-url-reason.txt", `recap-meta.json was not valid JSON: ${metaErr}\n`);
+                process.exit(0);
+              }
+              meta = JSON.parse(metaRaw);
+            }
+            const title =
+              typeof meta.title === "string" && meta.title.trim()
+                ? meta.title.trim()
+                : `PR #${process.env.PR_NUMBER || "?"} visual recap`;
+            const brief = typeof meta.brief === "string" ? meta.brief : "";
+            const mdx = {
+              "plan.mdx": planMdx,
+              "canvas.mdx": canvasMdx,
+              "prototype.mdx": prototypeMdx,
+            };
+            if (planState.trim()) mdx[".plan-state.json"] = planState;
+            fs.writeFileSync(path, JSON.stringify({ title, brief, mdx }, null, 2) + "\n");
+            emit(true, "assembled recap-source.json from sidecar MDX files via JSON.stringify", true);
+            process.exit(0);
+          }
+
+          if (!fs.existsSync(path) || !fs.statSync(path).size) {
+            emit(false, "recap-source.json missing after agent run (and no recap-plan.mdx sidecar)", false);
+            process.exit(0);
+          }
+
+          const raw = fs.readFileSync(path, "utf8");
           let err = tryParse(raw);
           if (!err) {
             emit(true, "recap-source.json is valid JSON", false);
@@ -732,8 +785,11 @@ jobs:
           const fixed = escapeControlsInStrings(raw);
           err = tryParse(fixed.text);
           if (err) {
-            emit(false, `recap-source.json was not valid JSON after sanitize: ${err}`, false);
-            // Keep the original file for the artifact; write reason for comment path.
+            emit(
+              false,
+              `recap-source.json was not valid JSON after sanitize: ${err}. Prefer sidecar files (recap-plan.mdx + recap-meta.json).`,
+              false,
+            );
             fs.writeFileSync("recap-url-reason.txt", `recap-source.json was not valid JSON: ${err}\n`);
             process.exit(0);
           }
@@ -964,6 +1020,10 @@ jobs:
           name: pr-visual-recap-source-${{ github.event.pull_request.number }}
           path: |
             recap-source.json
+            recap-meta.json
+            recap-plan.mdx
+            recap-canvas.mdx
+            recap-prototype.mdx
             claude-result.json
             claude-stderr.log
             codex-events.jsonl

@@ -85,5 +85,7 @@ Re-run jobs on a prior run.
 3. Open / ready-for-review a non-draft PR and confirm the sticky recap comment
 4. On failure, download `pr-visual-recap-source-*` artifact (`opencode-events.jsonl`,
    `opencode-stderr.log`)
-5. Agent may emit raw newlines inside JSON string literals — workflow sanitizes
-   those before publish; still prefer strict JSON from the model
+5. Agent may emit raw newlines inside JSON string literals — workflow prefers
+   OpenCode **sidecar files** (`recap-meta.json` + `recap-plan.mdx`, …) and
+   assembles strict JSON via `JSON.stringify`; control-char sanitize remains a
+   fallback for Claude/Codex single-file output.
