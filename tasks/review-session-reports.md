@@ -66,3 +66,38 @@
   CodeScene still red
 - Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
   `tasks/pr-review-2026-06-12.md`
+
+## Run — 2026-07-17
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron `0 13 * * *`; preflight PASS (7/7); branch
+  `cursor-agent/pr-workflow-automation-3e29`
+
+### Metrics
+
+- PRs inventoried: 41 in-scope (+1 out-of-scope)
+- PRs merged: 24
+- PRs closed: 6
+- PRs escalated: 5
+- PRs deferred: 6 (+1 out-of-scope left alone)
+
+### Actions
+
+- Merged security: Seatek #472, sc #241
+- Merged deps: pc #1673; esp #1292/#1291; Seatek #479; hg #379/#373; sc #243
+- Merged salvages/routine: hg #378; Seatek #478; esp #1289/#1288/#1287/#1286;
+  sc #239/#240/#244; pc #1672/#1671/#1664/#1662/#1661/#1658
+- Closed: Seatek #482/#483; esp #1293; sc #237; pc #1674/#1660
+- Escalated: sc #233 (auth); hg #374 (numpy 2.x); pc #1670 (gemini workflows);
+  rpce #126/#127 (artifact majors)
+- Deferred: pc #1669/#1668/#1666/#1665/#1663; hg #381 (CodeScene + cs-agent)
+
+### Follow-ups
+
+- Phase 2 salvage on DIRTY pc PRs and hg #381 after CodeScene remediation
+- Human review on escalations (auth, numpy major, tip-release artifacts, gemini)
+- Cross-links: `tasks/pr-review-2026-07-17.md`
