@@ -566,7 +566,10 @@ def html_li(content: str) -> str:
 
 
 def html_ul(items: Iterable[str]) -> str:
-    return f"<ul>{''.join(items)}</ul>"
+    item_list = list(items)
+    if not item_list:
+        return "<ul><li class=\"empty-state\">No items</li></ul>"
+    return f"<ul>{''.join(item_list)}</ul>"
 
 
 def _render_heading(level: int, title: str, id_attr: str = "") -> str:
@@ -658,14 +661,29 @@ def _extract_label_names(labels_raw: list[Any]) -> list[str]:
 def _calculate_base_score(
     priority: int, due_date: str, state_type: str, today_iso: str
 ) -> int:
-    score = 0
+    score = LINEAR_PRIORITY_SCORES.get(priority, 0)
+    score += LINEAR_STATE_WEIGHTS.get(state_type, 0)
     if is_due_today(due_date, today_iso):
         score += 100
     elif due_date:
         score += 20
-    score += LINEAR_PRIORITY_SCORES.get(priority, 0)
-    score += LINEAR_STATE_WEIGHTS.get(state_type, 0)
     return score
+
+
+def _calculate_label_bonuses(label_names: list[str]) -> int:
+    bonus = 0
+    for label in label_names:
+        for keyword, points in LINEAR_LABEL_BONUSES_ITEMS:
+            if keyword in label:
+                bonus += points
+    return bonus
+
+
+def _calculate_staleness_penalty(updated_at: str, today_date: dt.date) -> int:
+    stale = staleness_days(updated_at, today_date)
+    if stale > 14:
+        return -min(stale - 14, 30)
+    return 0
 
 
 def score_linear_issue(
@@ -681,27 +699,17 @@ def score_linear_issue(
     due_date = issue.get("dueDate") or ""
     _state = issue.get("state")
     _state_type = _state.get("type") if _state else None
-    state_type = _state_type.lower().replace("_", "") if _state_type is not None else ""
+    state_type = _state_type.lower().replace("_", "") if _state_type else ""
     _labels = issue.get("labels")
     _nodes = _labels.get("nodes") if _labels else ()
     label_names = _extract_label_names(_nodes)
     updated_at = issue.get("updatedAt") or ""
+    has_cycle = bool(issue.get("cycle"))
 
     score = _calculate_base_score(priority, due_date, state_type, today_iso)
-
-    # Label bonuses
-    for label in label_names:
-        for keyword, bonus in LINEAR_LABEL_BONUSES_ITEMS:
-            if keyword in label:
-                score += bonus
-
-    # Staleness penalty (issues untouched > 14 days get penalized)
-    stale = staleness_days(updated_at, today_date)
-    if stale > 14:
-        score -= min(stale - 14, 30)
-
-    # Cycle membership bonus
-    if issue.get("cycle"):
+    score += _calculate_label_bonuses(label_names)
+    score += _calculate_staleness_penalty(updated_at, today_date)
+    if has_cycle:
         score += 15
 
     return max(score, 0)
@@ -949,25 +957,23 @@ def _parse_linear_focus_node(
 ) -> FocusItem | None:
     state = issue.get("state")
     _state_type = state.get("type") if state else None
-    state_type = _state_type.lower() if _state_type is not None else ""
+    state_type = _state_type.lower() if _state_type else ""
     if state_type in {"completed", "canceled", "cancelled"}:
         return None
 
     _labels = issue.get("labels")
     label_nodes = _labels.get("nodes") if _labels else ()
-    label_names = tuple(
-        (lbl.get("name") or "").strip()
-        for lbl in label_nodes
-        if isinstance(lbl, dict) and lbl.get("name")
-    )
+    label_names = _extract_focus_label_names(label_nodes)
+    state_name = state.get("name", "Open") if state else "Open"
+    state_type_val = state.get("type", "") if state else ""
 
     return FocusItem(
         kind="linear",
         identifier=issue.get("identifier", "Linear"),
         title=issue.get("title", "Untitled issue"),
         url=issue.get("url", "#"),
-        state=state.get("name", "Open") if state else "Open",
-        state_type=state.get("type", "") if state else "",
+        state=state_name,
+        state_type=state_type_val,
         due_date=issue.get("dueDate") or "",
         badge=priority_labels.get(issue.get("priority") or 0, ""),
         score=score_linear_issue(issue, daily.today_iso, daily.today),
@@ -976,17 +982,26 @@ def _parse_linear_focus_node(
     )
 
 
+def _extract_focus_label_names(label_nodes: tuple) -> tuple[str, ...]:
+    return tuple(
+        (lbl.get("name") or "").strip()
+        for lbl in label_nodes
+        if isinstance(lbl, dict) and lbl.get("name")
+    )
+
+
 def _parse_linear_notification_node(node: dict[str, Any]) -> tuple[str, str, FocusItem]:
-    _category = node.get("category")
-    category = _category.lower() if _category is not None else ""
+    raw_category = node.get("category")
+    category = raw_category.lower() if raw_category else ""
     title = node.get("title") or "Untitled notification"
     subtitle = truncate_text(node.get("subtitle") or "", 140)
     url = node.get("inboxUrl") or node.get("url") or "#"
     dedupe_key = url or title
+    identifier = "Review" if category == "reviews" else "Inbox"
 
     item = FocusItem(
         kind="linear-notification",
-        identifier="Review" if category == "reviews" else "Inbox",
+        identifier=identifier,
         title=title,
         url=url,
         badge=category or "notification",

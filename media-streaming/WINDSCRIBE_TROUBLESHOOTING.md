@@ -1,7 +1,9 @@
 # Media Server LaunchAgent & Windscribe Troubleshooting Guide
 
-**Date**: June 20, 2026
+**Date**: June 20, 2026 (static IP updated 2026-07-16: Dallas `82.23.253.53`)
 **Status**: ✅ LaunchAgent Running | ✅ Stable Windscribe Port Plan Documented
+
+> **Static IP:** Dallas `82.23.253.53` (replaces expired Atlanta `82.21.151.194`).
 
 ---
 
@@ -52,14 +54,15 @@ LOG_FILE="${HOME}/Library/Logs/media-rename.log"
 
 ### Current Status
 
-**VPN Static IP**: `82.21.151.194`
+**VPN Static IP**: `82.23.253.53` (Dallas)
 **Local WebDAV Server**: ✅ Stable internal port `8080`
-**Primary Remote Media Server**: ✅ Plex on `32400/TCP`
+**Primary Media Server**: ✅ Jellyfin on `8096/TCP` (LAN + **default remote** via Windscribe)
 **Backup Remote Media Server**: WebDAV on external `8088/TCP` -> internal `8080/TCP`
+**Plex**: Legacy only (`32400`); not required once Jellyfin is verified
 
 ### Diagnosis
 
-Earlier references to external port `22650` are stale. The current supported WebDAV backup mapping is `82.21.151.194:8088` externally to the Mac's internal WebDAV port `8080/TCP`. Plex is separate and should use `32400/TCP` internally and externally.
+Earlier references to external port `22650` are stale. The current supported WebDAV backup mapping is `82.23.253.53:8088` externally to the Mac's internal WebDAV port `8080/TCP`. Jellyfin remote (default path) uses `8096/TCP` internally and externally — configured in **Windscribe**, plus Published Server URI `http://82.23.253.53:8096` in Jellyfin Networking.
 
 ### Root Causes (Most Likely)
 
@@ -85,16 +88,22 @@ Earlier references to external port `22650` are stale. The current supported Web
 2. Go to **Preferences -> Connection -> Port Forwarding**
 3. Verify the stable mappings:
    ```
-   Plex:
-     External Port: 32400
-     Internal Port: 32400
+   Jellyfin (default remote):
+     External Port: 8096
+     Internal Port: 8096
      Protocol: TCP
 
    WebDAV backup:
      External Port: 8088
      Internal Port: 8080
      Protocol: TCP
+
+   SSH:
+     External Port: 36555
+     Internal Port: 22
+     Protocol: TCP
    ```
+   (Optional legacy) Plex `32400→32400` only if you still run Plex remotely.
 
 ### Step 2: Keep WebDAV Internal Port Stable
 
@@ -127,10 +136,10 @@ Use `final-media-server.sh --external` only as an interactive diagnostic helper.
 From another device (phone on cellular, NOT your WiFi):
 
 ```bash
-curl -u "infuse:${MEDIA_WEBDAV_PASS}" "http://82.21.151.194:8088/"
+curl -u "infuse:${MEDIA_WEBDAV_PASS}" "http://82.23.253.53:8088/"
 ```
 
-Or open in a browser: `http://82.21.151.194:8088/`
+Or open in a browser: `http://82.23.253.53:8088/`
 
 ---
 
@@ -151,7 +160,7 @@ Or open in a browser: `http://82.21.151.194:8088/`
 
 - **Name**: "Media (Remote)"
 - **Protocol**: WebDAV
-- **Address**: `82.21.151.194`
+- **Address**: `82.23.253.53`
 - **Port**: `8088`
 - **Username**: `infuse`
 - **Password**: `${MEDIA_WEBDAV_PASS}`
@@ -227,13 +236,16 @@ tail -f ~/Library/Logs/alldebrid-sync.log
 
 ## 📋 Next Steps Checklist
 
-- [ ] Confirm Windscribe Plex mapping: external `32400/TCP` -> internal `32400/TCP`
+- [x] Confirm Windscribe Jellyfin mapping: external `8096/TCP` -> internal `8096/TCP`
+- [x] Jellyfin Published Server URI: `http://82.23.253.53:8096`
 - [ ] Confirm Windscribe WebDAV backup mapping: external `8088/TCP` -> internal `8080/TCP`
 - [ ] Disconnect and reconnect Windscribe VPN after changing mappings
-- [ ] Test Plex remote access
+- [ ] Test Jellyfin remote from cellular: `http://82.23.253.53:8096/`
 - [ ] Test WebDAV external connectivity from a cellular device
 - [ ] Confirm the media server LaunchAgent is running
+- [ ] Confirm Jellyfin LaunchAgent: `launchctl list | grep jellyfin`
 - [ ] Configure Infuse backup connections for LAN `8080` and remote `8088`
+- [ ] Remove legacy Plex `32400` forward once unused
 
 ---
 
@@ -247,10 +259,12 @@ tail -f ~/Library/Logs/alldebrid-sync.log
 | LaunchAgent: renamer   | ✅ RUNNING  | Watch mode active                    |
 | LaunchAgent: alldebrid | ✅ LOADED   | Syncs hourly                         |
 | LaunchAgent: server    | ✅ RUNNING  | Serves backup WebDAV on stable 8080  |
-| LAN Access             | ✅ WORKING  | `YOUR_LAN_IP:8080`                   |
-| Plex Remote Access     | ✅ CONFIG   | `82.21.151.194:32400` -> `32400`     |
-| WebDAV VPN Access      | ✅ CONFIG   | `82.21.151.194:8088` -> `8080`       |
+| LaunchAgent: jellyfin  | ✅ PHASE 1  | Native Jellyfin LAN `8096`           |
+| LAN Access             | ✅ WORKING  | WebDAV `LAN:8080` / Jellyfin `LAN:8096` |
+| Jellyfin Remote        | ✅ DEFAULT  | `82.23.253.53:8096` -> `8096` (Windscribe) |
+| WebDAV VPN Access      | ✅ CONFIG   | `82.23.253.53:8088` -> `8080`       |
+| Plex Remote            | ⚠️ LEGACY   | `32400` — retire after Jellyfin cutover |
 
 ---
 
-**Updated**: 2026-06-20 by Raycast AI
+**Updated**: 2026-07-17 (Jellyfin remote enabled as default path)

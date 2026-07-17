@@ -80,39 +80,56 @@ BODY_MARKERS = (
 
 def automation_hints(pr: dict) -> str:
     hints: list[str] = []
-    author = pr.get("author")
-    if author:
-        if author.get("is_bot"):
-            hints.append("author_is_bot")
-        login = author.get("login")
-        if login and login.endswith("[bot]"):
-            hints.append("bot_login")
-
-    _branch = pr.get("headRefName")
-    branch = _branch.lower() if _branch is not None else ""
-    _title = pr.get("title")
-    title_l = _title.lower() if _title is not None else ""
-    _body = pr.get("body")
-    body_l = _body.lower() if _body is not None else ""
-
-    for sig in BRANCH_SIGNALS:
-        if sig in branch:
-            hints.append(f"branch:{sig.rstrip('/')}")
-            break
-
-    for kw in TITLE_KW:
-        if kw in title_l:
-            hints.append(f"title:{kw}")
-            break
-
-    for m in BODY_MARKERS:
-        if m in body_l:
-            hints.append("body:automation_marker")
-            break
+    hints.extend(_get_author_hints(pr.get("author")))
+    hints.extend(_get_branch_hints(pr.get("headRefName")))
+    hints.extend(_get_title_hints(pr.get("title")))
+    hints.extend(_get_body_hints(pr.get("body")))
 
     if not hints:
         return "(none — treat as human unless reviews say otherwise)"
     return "; ".join(sorted(set(hints)))
+
+
+def _get_author_hints(author: dict | None) -> list[str]:
+    hints: list[str] = []
+    if not author:
+        return hints
+    if author.get("is_bot"):
+        hints.append("author_is_bot")
+    login = author.get("login")
+    if login and login.endswith("[bot]"):
+        hints.append("bot_login")
+    return hints
+
+
+def _get_branch_hints(branch: str | None) -> list[str]:
+    if not branch:
+        return []
+    branch_lower = branch.lower()
+    for sig in BRANCH_SIGNALS:
+        if sig in branch_lower:
+            return [f"branch:{sig.rstrip('/')}"]
+    return []
+
+
+def _get_title_hints(title: str | None) -> list[str]:
+    if not title:
+        return []
+    title_lower = title.lower()
+    for kw in TITLE_KW:
+        if kw in title_lower:
+            return [f"title:{kw}"]
+    return []
+
+
+def _get_body_hints(body: str | None) -> list[str]:
+    if not body:
+        return []
+    body_lower = body.lower()
+    for m in BODY_MARKERS:
+        if m in body_lower:
+            return ["body:automation_marker"]
+    return []
 
 
 def esc_cell(s: str, maxlen: int = 48) -> str:
@@ -142,9 +159,9 @@ def fetch_details(repo: str, num: int) -> str:
         return "_Could not load details_"
     data = json.loads(raw)
     lines: list[str] = []
-    reviews = data.get("reviews") or []
-    latest = data.get("latestReviews") or []
-    comments = data.get("comments") or []
+    reviews = data.get("reviews") or ()
+    latest = data.get("latestReviews") or ()
+    comments = data.get("comments") or ()
     rd = data.get("reviewDecision") or ""
     if rd:
         lines.append(f"- reviewDecision: `{rd}`")
@@ -176,7 +193,7 @@ def _format_pr_row(pr: dict) -> str:
     author = pr.get("author")
     login = (author.get("login") if author else None) or "?"
     draft = "yes" if pr.get("isDraft") else "no"
-    checks = check_summary(pr.get("statusCheckRollup") or [])
+    checks = check_summary(pr.get("statusCheckRollup") or ())
     merge = f"{pr.get('mergeable') or '?'}"
     mss = pr.get("mergeStateStatus") or ""
     if mss and mss != "UNKNOWN":

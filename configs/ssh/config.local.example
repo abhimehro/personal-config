@@ -7,8 +7,10 @@
 
 # VPN ON: static IP / VPN / remote port forward
 # Example Windscribe mapping: External 36555 -> Internal 22/TCP
+# Current static IP (Dallas, 2026-07): 82.23.253.53 — set HostName to that IP
+# when connecting over the forwarded SSH port.
 Host dev-vpn
-    HostName VPN-IP-OR-REMOTE-HOST      # e.g. 203.0.113.10 or vpn.example.com
+    HostName VPN-IP-OR-REMOTE-HOST      # e.g. 82.23.253.53 (Dallas static)
     Port 36555                          # replace with your forwarded SSH port
     User YOUR-USERNAME                  # local account on the remote host
     IdentityFile "~/.ssh/Personal SSH Key.pub"

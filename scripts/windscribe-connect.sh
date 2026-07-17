@@ -1,8 +1,15 @@
 #!/bin/bash
 
 # Windscribe + Control D Connection Script
-# Combined mode: start Control D on DoH/TCP, then connect Windscribe static IP,
+# Combined mode: start Control D on DoH/TCP, then connect Windscribe,
 # then re-enforce localhost DNS to avoid DNS drift.
+#
+# Location defaults (2026-07):
+#   - IPv4 / static IP path (default, WINDSCRIBE_IPV6 unset|0): Dallas static
+#     (current static IP slot; IPv4-only).
+#   - IPv6 path (WINDSCRIBE_IPV6=1): Atlanta / Peachtree non-static
+#     (Dallas static has no IPv6; Atlanta reserved as IPv6-capable default).
+# Override with positional location, or WINDSCRIBE_CONNECT_STATIC=0|1.
 
 set -euo pipefail
 
@@ -17,12 +24,16 @@ NC='\033[0m'
 trap 'echo -e "\n\033[1;33m[WARN]\033[0m Interrupted by user. Exiting gracefully..."; exit 130' SIGINT
 
 PROFILE="${1:-browsing}"
-LOCATION="${2:-Atlanta}"
+LOCATION_ARG="${2:-}"
 PROTOCOL="${3:-wireguard:443}"
 # Optional 4th arg or WINDSCRIBE_IPV6 env: auto|1|0
 # auto (default) = detect IPv6 on tunnel after connect and reconcile.
 IPV6_MODE="${4:-${WINDSCRIBE_IPV6:-auto}}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# NOTE: Dallas = static IPv4 slot; Atlanta (Peachtree) = IPv6-capable non-static.
+DEFAULT_STATIC_LOCATION="Dallas"
+DEFAULT_IPV6_LOCATION="Atlanta"
 
 log() { echo -e "${BLUE}[INFO]${NC} $*"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
@@ -107,12 +118,27 @@ if [[ $PROFILE == "disconnect" ]]; then
 	exit 0
 fi
 
+# Resolve location + static-vs-dynamic after IPv6 mode is known.
+# SECURITY: Dallas static is IPv4-only; forcing IPv6 must not use that slot.
+case "${WINDSCRIBE_IPV6-}" in
+1 | true | TRUE | yes | YES | on | ON)
+	LOCATION="${LOCATION_ARG:-$DEFAULT_IPV6_LOCATION}"
+	# ASSUMES: IPv6-capable cities (Atlanta/Peachtree, Dallas/BBQ) are non-static.
+	export WINDSCRIBE_CONNECT_STATIC="${WINDSCRIBE_CONNECT_STATIC:-0}"
+	;;
+*)
+	LOCATION="${LOCATION_ARG:-$DEFAULT_STATIC_LOCATION}"
+	export WINDSCRIBE_CONNECT_STATIC="${WINDSCRIBE_CONNECT_STATIC:-1}"
+	;;
+esac
+
 echo
 log "Windscribe + Control D Connection Sequence"
 log "Using Windscribe CLI: $WINDSCRIBE_BIN"
 log "Profile:  $PROFILE"
 log "Location: $LOCATION"
 log "Protocol: $PROTOCOL"
+log "Static:   ${WINDSCRIBE_CONNECT_STATIC} (1=static IP slot, 0=normal location)"
 log "IPv6:     ${WINDSCRIBE_IPV6:-auto (detect after connect)}"
 echo
 
@@ -124,14 +150,13 @@ cd "$REPO_ROOT"
 spinner_wait 2 "Starting service"
 
 log "Step 2: Connecting Windscribe..."
-# Prefer static IP when LOCATION looks like a static slot; otherwise normal connect.
-# Callers can pass a city/nickname; static is used when explicitly requested via
-# LOCATION prefixed with "static:" or when PROTOCOL path historically used static.
+# Prefer static IP when LOCATION is prefixed with "static:", or when
+# WINDSCRIBE_CONNECT_STATIC=1 (default for IPv4/Dallas static path).
+# IPv6 path defaults WINDSCRIBE_CONNECT_STATIC=0 (Atlanta non-static).
 if [[ $LOCATION == static:* ]]; then
 	LOCATION="${LOCATION#static:}"
 	"$WINDSCRIBE_BIN" connect static "$LOCATION" "$PROTOCOL"
-elif [[ ${WINDSCRIBE_CONNECT_STATIC:-1} == "1" ]]; then
-	# Default remains static for backward compatibility with existing callers.
+elif [[ ${WINDSCRIBE_CONNECT_STATIC} == "1" ]]; then
 	"$WINDSCRIBE_BIN" connect static "$LOCATION" "$PROTOCOL"
 else
 	"$WINDSCRIBE_BIN" connect "$LOCATION" "$PROTOCOL"

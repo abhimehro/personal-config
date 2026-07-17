@@ -163,6 +163,9 @@ class TestHtmlHelpers(unittest.TestCase):
         items = ["<li>a</li>", "<li>b</li>"]
         assert mb.html_ul(items) == "<ul><li>a</li><li>b</li></ul>"
 
+    def test_html_ul_empty(self):
+        assert mb.html_ul([]) == '<ul><li class="empty-state">No items</li></ul>'
+
     def test_html_section(self):
         result = mb.html_section("Title", "<p>body</p>")
         assert '<section role="region" aria-labelledby="title">' in result

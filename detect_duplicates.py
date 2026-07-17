@@ -52,7 +52,7 @@ def _process_pr_result(res, file_groups):
         return
     repo, info = res
     # ⚡ Bolt Optimization: Removed intermediate dictionary wrappers to allow direct sorting of strings
-    files = tuple(sorted(info.get("files", [])))
+    files = tuple(sorted(info.get("files", ())))
     file_groups[(repo, files)].append(info)
 
 
