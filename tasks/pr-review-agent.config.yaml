@@ -1,8 +1,8 @@
 # Automated PR Review Agent — Configuration
-# Session: backlog cleanup test (review-and-merge), schedule: none (2026-05-09)
+# Session: cron Phase 1 2026-07-17 (review-and-merge)
 
 mode: review-and-merge
-schedule: none
+schedule: "0 13 * * *"
 
 repos:
   - abhimehro/personal-config
@@ -11,6 +11,7 @@ repos:
   - abhimehro/Seatek_Analysis
   - abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   - abhimehro/series_correction_project_updated
+  - abhimehro/repoprompt-ce
 
 bot_authors:
   - dependabot[bot]
@@ -26,3 +27,4 @@ stale_threshold_days: 30
 merge_strategy: squash
 auto_fix_enabled: true
 human_escalation_channel: github-review-request
+
