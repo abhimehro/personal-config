@@ -1,8 +1,15 @@
+# Jules Daily QA via GitHub Actions — INTENTIONALLY DISABLED
+#
+# Jules only engages on pull requests that Jules itself initiated. Opening
+# "@google-labs-jules" Daily QA *issues* from Actions does not get replies, so
+# this workflow cannot fulfill its purpose. Daily Jules quality checks live in
+# Jules product scheduled tasks instead (not this Actions workflow).
+#
+# Actions UI: disabled_manually. Schedule removed so a casual re-enable cannot
+# spam multi-repo issues. workflow_dispatch retained for rare experiments only.
 name: Jules Daily QA & Agentic Review
 
 on:
-  schedule:
-    - cron: "0 10 * * *" # Daily at 10:00 UTC
   workflow_dispatch:
 
 permissions:

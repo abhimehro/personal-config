@@ -41,7 +41,7 @@ hunting through the directory.
 | `repository-automation-daily.yml` | Daily cron + dispatch | Workflow updater, perf, QA, backlog, status report |
 | `repository-automation-weekly.yml` | Weekly cron + dispatch | Weekly retrospective (writes gated by input) |
 | `agentics-maintenance.yml` | `workflow_dispatch` | gh-aw maintenance (disable/enable/update/upgrade) |
-| `jules-daily-qa.yml` | Daily cron + dispatch | Multi-repo Jules QA issue prompts (`@google-labs-jules`). Re-enabled 2026-07-17 after long `disabled_manually` pause; schedule `0 10 * * *` UTC. |
+| `jules-daily-qa.yml` | `workflow_dispatch` only (UI disabled) | **Disabled by design.** Jules only replies on Jules-initiated PRs; Actions-created Daily QA issues get no bot engagement. Daily Jules QA runs via Jules product scheduled tasks instead. Cron removed so re-enable cannot spam repos. |
 | `refactoring-agent.yml` | Issue comment `/cs-agent` | CodeScene PR refactoring agent |
 | `copilot-setup-steps.yml` | PR/issues + dispatch | Development Partner setup comments (**CWE-94:** bind `request` via `env.REQUEST`) |
 
