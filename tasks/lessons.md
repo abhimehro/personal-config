@@ -1311,3 +1311,47 @@ sc#210 was superseded because #224 already landed the CWE-209 fix. (4) Partial
 salvage is valid when sibling merge absorbed part of the Bolt diff (hg#364
 `chart_generator` via #363). **Detection cost:** Low — `mergeStateStatus: DIRTY`
 + shared `.jules/*.md` in both PR file lists.
+
+## Lesson 0du: Harmful content-swap PRs masquerading as docs (2026-07-16)
+
+**Pattern:** A bot PR replaced README/LICENSE with unrelated Gitleaks template
+content while retaining a benign-looking title. **Rule:** Diff title vs primary
+file intent; if README/LICENSE body is wholesale-replaced with scanner/tooling
+boilerplate, CLOSE as harmful — do not merge. **Detection cost:** Low —
+`gh pr diff --name-only` includes README/LICENSE with large deletions.
+
+## Lesson 0dv: Identical Dependabot + human "consolidate" twins (2026-07-17)
+
+**Pattern:** pc #1673 (Dependabot codeql-action bump) and #1674 ("consolidate
+workflow automation") had byte-identical diffs on `security-scan.yml`.
+**Rule:** When two open PRs share the same single-file patch, keep the
+Dependabot PR and close the duplicate with a link — do not merge both.
+**Detection cost:** Low — compare `gh pr diff` hashes or unified diffs.
+
+## Lesson 0dw: Tip-release artifact major bumps need human review (2026-07-17)
+
+**Pattern:** rpce #126/#127 bump `download-artifact` v4→v8 and `upload-artifact`
+v4→v7 on `main-tip.yml` with breaking Node 24 / digest-mismatch defaults.
+**Rule:** Semver-major Actions bumps on release/tip pipelines escalate even when
+CI is green — tip signing/smoke may not exercise digest failure modes in PR
+checks. **Detection cost:** Low — Dependabot `update-type: version-update:semver-major`
+on `actions/*-artifact` in tip/release workflows.
+
+## Lesson 0dx: Salvage rollmean/tail supersedes follow-up Bolt (2026-07-17)
+
+**Pattern:** Seatek #478 salvage landed `v_val[(n-2):n]` indexing; sibling Bolt
+#483 proposed the same indexing via `mean(...)` and went DIRTY. **Rule:** After
+merging a salvage that rewrites a hot expression, diff remaining Bolt PRs
+against `main` for that symbol; close as superseded when functionally
+equivalent. **Detection cost:** Low — same file + same expression neighborhood.
+
+## Lesson 0dy: Bolt inlining that undoes helper extraction (2026-07-17)
+
+**Pattern:** hg #381 re-inlined NumPy fractional-deviation math into
+`_add_hydrograph` / `_format_plot`, deleting `_format_hydrograph_axis` helpers
+already landed by salvage #378 — CodeScene flagged Complex Method. **Rule:**
+When a Bolt PR conflicts after a salvage that extracted a helper, three-dot
+diff against `main` (not the PR's old base). If the PR removes helpers and
+re-inlines equivalent math, CLOSE as superseded / complexity regression — do
+not salvage the inline form. **Detection cost:** Low — `git diff main...pr`
+shows deleted helper methods + CodeScene Complex Method on the callers.
