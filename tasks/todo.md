@@ -13,4 +13,4 @@
 - [x] Squash-merge green CLEAN routine/dependency/perf/UI/security-fix PRs (24)
 - [x] Defer DIRTY / CI-fail for Phase 2 salvage
 - [x] Write `pr-review-2026-07-17.md`, append session report, update `lessons.md`
-- [ ] Commit + push reports; open docs PR
+- [x] Commit + push reports; open docs PR
