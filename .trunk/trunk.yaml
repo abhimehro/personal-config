@@ -15,7 +15,7 @@ lint:
     - markdownlint
     - prettier
   enabled:
-    - grype@0.115.0
+    - grype@0.116.0
     - pinact@4.1.0
     - actionlint@1.7.12
     - bandit@1.9.4
@@ -27,7 +27,7 @@ lint:
     - hadolint@2.14.0
     - isort@8.0.1
     - osv-scanner@2.4.0
-    - ruff@0.15.21
+    - ruff@0.15.22
     - shellcheck@0.11.0
     - shfmt@3.6.0
     - taplo@0.10.0
