@@ -1340,3 +1340,20 @@ diff against `main` (not the PR's old base). If the PR removes helpers and
 re-inlines equivalent math, CLOSE as superseded / complexity regression — do
 not salvage the inline form. **Detection cost:** Low — `git diff main...pr`
 shows deleted helper methods + CodeScene Complex Method on the callers.
+
+## Lesson 0dz: `pull_request_target` greeting chicken-egg (2026-07-18)
+
+**Pattern:** Dependabot bump of `actions/first-interaction` (esp #1296) kept
+failing the `greeting` check even after the PR head was corrected to `@v3` +
+kebab-case inputs. Logs still showed `first-interaction@v1` with underscore
+names. **Root cause:** `on: pull_request_target` runs the **base-branch
+(`main`)** workflow file, not the PR head — so the fix cannot self-validate
+until merged. Underscore inputs (`repo_token`) are ignored by current action
+images → empty messages → `Action must have at least one of issue-message or
+pr-message set`. **Rule:** (1) For PRs that only fix a `pull_request_target`
+workflow on `main`, treat a red check that re-runs the broken base workflow as
+**expected Gate 1 noise**, not a merge blocker — document in the merge comment.
+(2) Always ship kebab-case inputs with `@v3`. (3) Prefer moving greetings off
+`pull_request_target` long-term (agent already owns first-interaction).
+**Detection cost:** Low — log line `Run actions/first-interaction@v1` while PR
+diff shows `@v3`.

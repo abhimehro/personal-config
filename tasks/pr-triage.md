@@ -1,35 +1,41 @@
-# PR Triage — 2026-07-17 (Phase 2 salvage)
+# PR Triage — 2026-07-18 (FINAL)
 
-## Disposition counts
+## Duplicate / overlap
 
-| Disposition | Count |
-|-------------|------:|
-| SALVAGE (new draft) | 3 |
-| CLOSE-SUPERSEDED / NO-OP | 3 |
-| CLOSE (session docs folded) | 2 |
-| ESCALATE (unchanged) | 5 |
-| Autonomous merge | 0 |
+- None exact. Mid-session: Jules Daily QA #1297 appeared as ad-hoc root script — closed (not a duplicate of a fix PR; quality reject).
 
-## Salvage map
+## Stale (>30d)
 
-| Old | New draft | Tier |
-|-----|-----------|------|
-| pc #1663 | [#1677](https://github.com/abhimehro/personal-config/pull/1677) | T3 tests |
-| pc #1668 | [#1678](https://github.com/abhimehro/personal-config/pull/1678) | T3 docs |
-| pc #1669 | [#1679](https://github.com/abhimehro/personal-config/pull/1679) | T3 CI perf |
+None.
 
-## Escalations (human)
+## Cascade after merges
 
-| Tier | PR | Why |
-|------|-----|-----|
-| T1 | [sc #233](https://github.com/abhimehro/series_correction_project_updated/pull/233) | Auth implementation |
-| T1 | [esp #1267](https://github.com/abhimehro/email-security-pipeline/pull/1267) | GitGuardian credential fixtures |
-| T2 | [pc #1670](https://github.com/abhimehro/personal-config/pull/1670) | Gemini workflow consolidation |
-| T2 | [hg #374](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/374) | numpy major |
-| T2 | [rpce #126](https://github.com/abhimehro/repoprompt-ce/pull/126) / [#127](https://github.com/abhimehro/repoprompt-ce/pull/127) | tip-release artifact majors |
+- **pc#1670** flipped `MERGEABLE` → `CONFLICTING` after #1679 (CI cache salvage) landed overlapping `.github/workflows/*` / actions. Remains ESCALATE; Phase 2 must rebase or close if superseded by cache work.
 
-## Overlap / supersede notes
+## Dispositions executed
 
-- pc #1666 fully absorbed by `main` sequential exception test — closed
-- pc #1663 clustered with #1666; salvaged allowlist tests only (Lesson 0dv)
-- hg #381 re-inlined helpers already extracted by #378 — closed (Lesson 0dy)
+### MERGED (9)
+
+1. esp#1267 — GG cleared test refactor
+2. hg#383 — colorlog 6.10.1→6.11.0
+3. pc#1678 — docs archive salvage
+4. pc#1681 — Palette HTML
+5. cs#1023 — Palette emoji + safer ANSI strip
+6. sc#247 — Bolt np.median optimization
+7. pc#1679 — ShellCheck/Trunk CI cache salvage
+8. pc#1677 — allowlist tests (Analyze swift flake ignored)
+9. esp#1296 — first-interaction@v3 + kebab-case autofix
+
+### CLOSED (1)
+
+- esp#1297 — ad-hoc Jules Daily QA repro script (not mergeable)
+
+### ESCALATE (5, carried)
+
+| PR | Reason |
+|----|--------|
+| pc#1670 | Gemini/gitleaks workflow consolidation — CI trust boundary; now CONFLICTING vs #1679 |
+| hg#374 | numpy 1.x→2.x major |
+| sc#233 | Auth/password hashing |
+| rpce#126 | download-artifact major 4→8 |
+| rpce#127 | upload-artifact major 4→7 |
