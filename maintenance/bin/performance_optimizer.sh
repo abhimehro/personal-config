@@ -511,7 +511,7 @@ generate_performance_report() {
     <main>
     <section class="section" aria-labelledby="sys-info-heading" role="region">
         <h2 id="sys-info-heading"><span aria-hidden="true">💻</span> System Information</h2>
-        <dl aria-labelledby="sys-info-heading" class="metric-list">
+        <dl class="metric-list">
             <div class="metric"><dt><strong>System:</strong></dt><dd>$system_info</dd></div>
             <div class="metric"><dt><strong>CPU:</strong></dt><dd>$cpu_info</dd></div>
             <div class="metric"><dt><strong>Memory:</strong></dt><dd>${memory_info} GB</dd></div>
@@ -549,7 +549,7 @@ EOF
     
     <section class="section" aria-labelledby="opt-recs-heading" role="region">
         <h2 id="opt-recs-heading"><span aria-hidden="true">💡</span> Optimization Recommendations</h2>
-        <ul>
+        <ul aria-labelledby="opt-recs-heading">
 EOF
 
 	# Add recommendations based on current state
