@@ -1238,12 +1238,10 @@ def render_focus_item(label: str, item: FocusItem, today_iso: str) -> str:
 def render_greeting_section(weather: WeatherSnapshot, greeting_paragraph: str) -> str:
     body = (
         f"<p>{sanitize_text(greeting_paragraph)}</p>"
-        f"<ul>"
-        f"<li><strong>Baton Rouge Weather:</strong> "
+        f"<div><strong>Baton Rouge Weather:</strong> "
         f"{sanitize_text(weather.high_temp)}°F High / "
         f"{sanitize_text(weather.current_temp)}°F Current "
-        f"(Rain: {sanitize_text(weather.rain_probability)}%)</li>"
-        f"</ul>"
+        f"(Rain: {sanitize_text(weather.rain_probability)}%)</div>"
     )
     return html_section("🌅 Good Morning, Abhi", body)
 
@@ -1279,31 +1277,15 @@ def render_linear_queue_focus_section(
         html_subsection("Unread notifications", notification_body),
         html_subsection(
             "Why this was chosen",
-            html_ul(
-                [
-                    html_li(
-                        sanitize_text(
-                            f"No active Linear issues were available, so the brief surfaced your current queue instead: {queue.unread_count} unread notifications and {len(queue.review_items)} highlighted reviews."
-                        )
-                    )
-                ]
-            ),
+            f"<p>{sanitize_text(f'No active Linear issues were available, so the brief surfaced your current queue instead: {queue.unread_count} unread notifications and {len(queue.review_items)} highlighted reviews.')}</p>",
         ),
         html_subsection(
             "PR / GitHub Context",
-            html_ul(
-                [
-                    html_li(
-                        sanitize_text(
-                            "Start with pending reviews first, then clear the highest-signal unread notifications. This keeps merge and feedback loops moving even when no active issue is assigned."
-                        )
-                    )
-                ]
-            ),
+            f"<p>{sanitize_text('Start with pending reviews first, then clear the highest-signal unread notifications. This keeps merge and feedback loops moving even when no active issue is assigned.')}</p>",
         ),
         html_subsection(
             "Time-aware selection",
-            html_ul([html_li(sanitize_text(get_time_aware_guidance()))]),
+            f"<p>{sanitize_text(get_time_aware_guidance())}</p>",
         ),
     ]
 
@@ -1338,40 +1320,15 @@ def render_focus_section(
     subsections = [
         html_subsection(
             "Why this was chosen",
-            html_ul(
-                [
-                    html_li(
-                        sanitize_text(
-                            build_selection_reason(
-                                "deep work", deep_item, daily.today_iso
-                            )
-                        )
-                    ),
-                    html_li(
-                        sanitize_text(
-                            build_selection_reason("admin", admin_item, daily.today_iso)
-                        )
-                    ),
-                ]
-            ),
+            f"<div><p>{sanitize_text(build_selection_reason('deep work', deep_item, daily.today_iso))}</p><p>{sanitize_text(build_selection_reason('admin', admin_item, daily.today_iso))}</p></div>",
         ),
         html_subsection(
             "PR / GitHub Context",
-            html_ul(
-                [
-                    html_li(
-                        sanitize_text(build_github_context_note(deep_item, admin_item))
-                    ),
-                ]
-            ),
+            f"<p>{sanitize_text(build_github_context_note(deep_item, admin_item))}</p>",
         ),
         html_subsection(
             "Time-aware selection",
-            html_ul(
-                [
-                    html_li(sanitize_text(get_time_aware_guidance())),
-                ]
-            ),
+            f"<p>{sanitize_text(get_time_aware_guidance())}</p>",
         ),
     ]
 
