@@ -20,4 +20,4 @@
 - [x] Fold Phase 1 artifacts from #1685
 - [x] Append Phase 2 addendum + salvage-session-reports
 - [x] Lesson 0ea (modify/delete after CI cache salvage)
-- [ ] Open draft docs PR; close #1685 as superseded
+- [x] Open draft docs PR; close #1685 as superseded
