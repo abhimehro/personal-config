@@ -1,5 +1,5 @@
 # Automated PR Review Agent — Configuration
-# Session: cron Phase 1 2026-07-17 (review-and-merge)
+# Session: cron Phase 2 2026-07-18 (salvage reconcile-only)
 
 mode: review-and-merge
 schedule: "0 13 * * *"

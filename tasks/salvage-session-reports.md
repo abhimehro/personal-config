@@ -554,3 +554,38 @@
 - Maintainer: T1 sc#233 + esp#1267; T2 pc#1670 + hg#374 + rpce artifacts; T3 drafts #1677/#1678/#1679
 - Cross-links: [Session report](tasks/pr-review-2026-07-17.md), [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md)
 - New lesson: 0dy (Bolt inlining undoes helper extraction)
+
+## Run — 2026-07-18 (evening salvage)
+
+### Input tail
+
+- Source report: `tasks/pr-review-2026-07-18.md` Phase 1 remainder (via draft [#1685](https://github.com/abhimehro/personal-config/pull/1685))
+- Live re-fetch: 6 open in-scope PRs (ctrld-sync, email-security-pipeline, Seatek at zero); only [#1670](https://github.com/abhimehro/personal-config/pull/1670) CONFLICTING
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | [#1670](https://github.com/abhimehro/personal-config/pull/1670) | ESCALATE | — | modify/delete shellcheck vs #1679; Gemini/gitleaks gate |
+| personal-config | [#1685](https://github.com/abhimehro/personal-config/pull/1685) | CLOSE→session | this session PR | folded Phase 1 docs |
+| Hydrograph | [#374](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/374) | ESCALATE | — | numpy major |
+| series_correction | [#233](https://github.com/abhimehro/series_correction_project_updated/pull/233) | ESCALATE | — | auth |
+| repoprompt-ce | [#126](https://github.com/abhimehro/repoprompt-ce/pull/126)/[#127](https://github.com/abhimehro/repoprompt-ce/pull/127) | ESCALATE | — | tip-release artifact majors |
+
+- Salvage draft PRs opened: 0
+- Infra-fix draft PRs opened: 0
+- Closed superseded/no-op: 1 (docs fold)
+- Autonomous merges: 0
+- Escalations carried: 5
+
+### Verification status
+
+- Blocking checks on `main`: none identified
+- Local probe: merge of #1670 into `main` → sole conflict `shellcheck.yml` modify/delete
+- CodeScene: no new FAIL requiring `/cs-agent` on open escalations (hg#374 / sc#233 green)
+
+### Handoff
+
+- Maintainer: **T1** sc#233 (auth); **T2** pc#1670 (keep ShellCheck vs ABHI-1321 delete + Gemini/gitleaks), hg#374, rpce#126/#127
+- Cross-links: [Session report](tasks/pr-review-2026-07-18.md), [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md)
+- New lesson: 0ea (CI-cache salvage vs workflow-delete consolidation)
