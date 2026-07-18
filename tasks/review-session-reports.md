@@ -101,3 +101,35 @@
 - Phase 2 salvage on DIRTY pc PRs and hg #381 after CodeScene remediation
 - Human review on escalations (auth, numpy major, tip-release artifacts, gemini)
 - Cross-links: `tasks/pr-review-2026-07-17.md`
+
+## Run — 2026-07-18
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron `0 13 * * *`; preflight PASS (7/7); branch
+  `cursor-agent/pr-workflow-automation-2ad3`
+
+### Metrics
+
+- PRs inventoried: 15 in-scope (14 start + 1 mid-session Jules QA)
+- PRs merged: 9
+- PRs closed: 1
+- PRs escalated: 5
+- PRs deferred: 0 new
+
+### Actions
+
+- Merged: esp #1267/#1296; hg #383; pc #1678/#1681/#1679/#1677; cs #1023; sc #247
+- Autofix: esp #1296 kebab-case first-interaction@v3 inputs
+- Closed: esp #1297 (ad-hoc Daily QA repro script)
+- Escalated: pc #1670 (now CONFLICTING); hg #374; sc #233; rpce #126/#127
+- Lesson: 0dz pull_request_target greeting chicken-egg
+
+### Follow-ups
+
+- Phase 2: rebase/close pc #1670 after CI-cache overlap with #1679
+- Human: auth #233, numpy #374, artifact majors #126/#127
+- Cross-links: `tasks/pr-review-2026-07-18.md`
