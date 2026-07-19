@@ -10,4 +10,4 @@
 - [x] Autofix pc#1694 + esp#1299 (×2)
 - [x] Merge 9 / close 4 / escalate 5
 - [x] Write inventory / triage / review / lessons / session report
-- [ ] Commit + push + open docs PR
+- [x] Commit + push + open docs PR
