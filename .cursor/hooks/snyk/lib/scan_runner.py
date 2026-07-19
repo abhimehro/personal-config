@@ -127,7 +127,7 @@ def _severity_from_sarif_result(result: Dict[str, Any]) -> str:
 
 
 def _cwe_from_properties(properties: Dict[str, Any]) -> Optional[str]:
-    cwe_list = properties.get("cwe", [])
+    cwe_list = properties.get("cwe", ())
     return cwe_list[0] if cwe_list else None
 
 
@@ -160,7 +160,7 @@ def _vulns_from_sarif_result(result: Dict[str, Any]) -> List[Dict[str, Any]]:
     cwe = _cwe_from_properties(result.get("properties", {}))
     return [
         _vuln_from_location(result, loc, severity, cwe)
-        for loc in result.get("locations", [])
+        for loc in result.get("locations", ())
     ]
 
 
@@ -172,8 +172,8 @@ def parse_sarif_results(json_output: str) -> List[Dict[str, Any]]:
         return []
 
     vulnerabilities: List[Dict[str, Any]] = []
-    for run in data.get("runs", []):
-        for result in run.get("results", []):
+    for run in data.get("runs", ()):
+        for result in run.get("results", ()):
             vulnerabilities.extend(_vulns_from_sarif_result(result))
     return vulnerabilities
 
