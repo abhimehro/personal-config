@@ -101,3 +101,34 @@
 - Phase 2 salvage on DIRTY pc PRs and hg #381 after CodeScene remediation
 - Human review on escalations (auth, numpy major, tip-release artifacts, gemini)
 - Cross-links: `tasks/pr-review-2026-07-17.md`
+
+## Run — 2026-07-19
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron `0 13 * * *`; preflight PASS (7/7); branch
+  `cursor-agent/pr-workflow-automation-4a7f`
+
+### Metrics
+
+- PRs inventoried: 17
+- PRs merged: 9
+- PRs closed: 4
+- PRs escalated: 5
+- Autofix cycles: 3
+
+### Actions
+
+- Merged: pc #1687/#1690/#1691/#1694; cs #1028; esp #1300/#1299; Seatek #490
+- Closed: cs #1027 (superseded); Seatek #489; sc #249; pc #1686 (fold)
+- Escalated: pc #1670; hg #374; sc #233; rpce #126/#127
+- Autofix: pc #1694 (drop stray script); esp #1299 (kebab-case + conflict)
+
+### Follow-ups
+
+- Phase 2 on pc #1670 keep-vs-delete (Lesson 0ea)
+- Human review: auth (#233), numpy 2.x (#374), tip artifact majors (#126/#127)
+- Cross-links: `tasks/pr-review-2026-07-19.md`; lessons 0dz/0ea/0eb
