@@ -438,11 +438,11 @@ generate_dashboard() {
         </header>
         
         <main>
-        <div class="metrics-grid">
-            <div class="metric-card success" aria-labelledby="health-score-label health-score-value">
+        <ul class="metrics-grid">
+            <li class="metric-card success" aria-labelledby="health-score-label health-score-value">
                 <div class="metric-value" id="health-score-value">${current_health}</div>
                 <div class="metric-label" id="health-score-label">Health Score</div>
-            </div>
+            </li>
 EOF
 
 	# Add more metric cards based on available data
@@ -455,23 +455,23 @@ EOF
 		total_warnings=$(jq -r '.summary.total_warnings // 0' "$metrics_report")
 
 		cat >>"$dashboard_file" <<EOF
-            <div class="metric-card" aria-labelledby="performance-score-label performance-score-value">
+            <li class="metric-card" aria-labelledby="performance-score-label performance-score-value">
                 <div class="metric-value" id="performance-score-value">${avg_performance}</div>
                 <div class="metric-label" id="performance-score-label">Performance Score</div>
-            </div>
-            <div class="metric-card $([ "${avg_disk:-0}" -gt 85 ] && echo "warning" || echo "success")" aria-labelledby="disk-usage-label disk-usage-value">
+            </li>
+            <li class="metric-card $([ "${avg_disk:-0}" -gt 85 ] && echo "warning" || echo "success")" aria-labelledby="disk-usage-label disk-usage-value">
                 <div class="metric-value" id="disk-usage-value">${avg_disk}%</div>
                 <div class="metric-label" id="disk-usage-label">Disk Usage</div>
-            </div>
-            <div class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" aria-labelledby="total-warnings-label total-warnings-value">
+            </li>
+            <li class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" aria-labelledby="total-warnings-label total-warnings-value">
                 <div class="metric-value" id="total-warnings-value">${total_warnings}</div>
                 <div class="metric-label" id="total-warnings-label">Total Warnings</div>
-            </div>
+            </li>
 EOF
 	fi
 
 	cat >>"$dashboard_file" <<EOF
-        </div>
+        </ul>
         
         <section class="section" aria-labelledby="insights-heading" role="region">
             <h2 id="insights-heading"><span aria-hidden="true">📊</span> System Insights</h2>
@@ -483,8 +483,8 @@ EOF
         <section class="section" aria-labelledby="activity-heading" role="region">
             <h2 id="activity-heading"><span aria-hidden="true">🔄</span> Recent Activity</h2>
             <div class="insights-box">
-                <p>Latest maintenance tasks and system activities:</p>
-                <ul>
+                <p id="activity-desc">Latest maintenance tasks and system activities:</p>
+                <ul aria-labelledby="activity-desc">
                     <li>Daily health check - $(date "+%H:%M")</li>
                     <li>System cleanup - Completed successfully</li>
                     <li>Homebrew maintenance - Up to date</li>
