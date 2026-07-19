@@ -161,6 +161,14 @@ class TestMediaServerHandler(unittest.TestCase):
             html_root,
         )
 
+    def test_generate_directory_listing_empty(self):
+        """
+        Test that generate_directory_listing produces a fallback empty state
+        list item when the directory contains no files.
+        """
+        html_empty = self.handler.generate_directory_listing([], "/empty_folder")
+        self.assertIn('<li><span class="file" style="color: #666;"><em>Directory is empty</em></span></li>', html_empty)
+
     def test_generate_directory_listing_subdirectory(self):
         """
         Test that generate_directory_listing produces correct HTML output,
