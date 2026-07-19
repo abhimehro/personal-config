@@ -5,7 +5,7 @@
 | Disposition | Count |
 |-------------|------:|
 | SALVAGE (new draft) | 1 |
-| CLOSE-SUPERSEDED | 1 (#1030) |
+| CLOSE-SUPERSEDED | 2 (#1030/#1032) |
 | CLOSE (session docs folded) | 1 (#1695) |
 | ESCALATE (unchanged) | 5 |
 | Autonomous merge | 0 |
@@ -28,5 +28,6 @@
 ## Overlap / supersede notes
 
 - ctrld-sync #1030 Jules if/else raised CodeScene Complex Method 9→11; salvage extracts `_print_bold_header` (Lesson 0ec)
+- ctrld-sync #1032 same Jules branch re-opened after #1030 close → closed superseded by #1031 (Lesson 0ed)
 - Prior evening salvage drafts #1677/#1678/#1679 already MERGED before this run
 - esp #1267 already MERGED (no longer in queue)

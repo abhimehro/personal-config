@@ -567,6 +567,7 @@
 | Repo | Old PR | Disposition | New PR | Notes |
 |------|--------|-------------|--------|-------|
 | ctrld-sync | [#1030](https://github.com/abhimehro/ctrld-sync/pull/1030) | SALVAGE draft | [#1031](https://github.com/abhimehro/ctrld-sync/pull/1031) | `_print_bold_header`; cs-agent posted |
+| ctrld-sync | [#1032](https://github.com/abhimehro/ctrld-sync/pull/1032) | CLOSE-SUPERSEDED | [#1031](https://github.com/abhimehro/ctrld-sync/pull/1031) | Jules re-open of same branch |
 | personal-config | [#1670](https://github.com/abhimehro/personal-config/pull/1670) | ESCALATE | — | 0ea shellcheck modify/delete |
 | series_correction | [#233](https://github.com/abhimehro/series_correction_project_updated/pull/233) | ESCALATE | — | auth |
 | Hydrograph | [#374](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/374) | ESCALATE | — | numpy major |
@@ -575,7 +576,7 @@
 
 - Salvage draft PRs opened: 1
 - Infra-fix draft PRs opened: 0
-- Closed superseded/no-op: 1 (+ 1 session-doc fold)
+- Closed superseded/no-op: 2 (#1030/#1032) (+ 1 session-doc fold)
 - Autonomous merges: 0
 - Escalations left open: 5
 
@@ -589,4 +590,4 @@
 
 - Maintainer: merge draft [#1031](https://github.com/abhimehro/ctrld-sync/pull/1031) after CI; then T1 sc#233; T2 pc#1670 + hg#374 + rpce#126/#127
 - Cross-links: [Session report](tasks/pr-review-2026-07-19.md), [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md)
-- New lesson: 0ec (USE_COLORS helper isolation)
+- New lessons: 0ec (USE_COLORS helper isolation), 0ed (Jules re-open twin)

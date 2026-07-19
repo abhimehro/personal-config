@@ -1401,3 +1401,15 @@ salvage as a **draft** and close the original as superseded.
 **Detection cost:** Low — CodeScene review comment names the method +
 threshold; three-dot diff shows a new `if USE_COLORS` inside an already-complex
 display function.
+
+## Lesson 0ed: Jules may re-open the same branch after salvage close (2026-07-19)
+
+**Pattern:** After Phase 2 closed ctrld-sync #1030 as superseded by salvage #1031,
+Jules re-opened the **same head branch** (`jules-…-6dc812c7`) as #1032 with the
+identical CodeScene-failing inline `if USE_COLORS` diff.
+**Rule:** After closing a Jules/Palette PR as superseded by a salvage draft,
+watch for an immediate twin re-open of the same `headRefName`. Close the twin
+with a link to the salvage draft and an explicit "do not re-open" note. Do not
+re-salvage.
+**Detection cost:** Low — new open PR with same `headRefName` / title within
+minutes of the close.

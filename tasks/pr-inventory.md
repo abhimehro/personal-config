@@ -12,6 +12,7 @@
 | personal-config | [1695](https://github.com/abhimehro/personal-config/pull/1695) | CLEAN draft | CLOSE→session | Phase 1 docs; folded into this PR |
 | personal-config | [1670](https://github.com/abhimehro/personal-config/pull/1670) | DIRTY | ESCALATE | Gemini/gitleaks + shellcheck modify/delete (0ea) |
 | ctrld-sync | [1030](https://github.com/abhimehro/ctrld-sync/pull/1030) | UNSTABLE | SALVAGE | → [#1031](https://github.com/abhimehro/ctrld-sync/pull/1031) draft |
+| ctrld-sync | [1032](https://github.com/abhimehro/ctrld-sync/pull/1032) | UNSTABLE | CLOSE-SUPERSEDED | Jules re-open of #1030 branch; closed → #1031 |
 | Hydrograph_Versus_Seatek_Sensors_Project | [374](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/374) | CLEAN | ESCALATE | numpy 2.x major |
 | series_correction_project_updated | [233](https://github.com/abhimehro/series_correction_project_updated/pull/233) | CLEAN | ESCALATE | Auth logic |
 | repoprompt-ce | [126](https://github.com/abhimehro/repoprompt-ce/pull/126) | CLEAN | ESCALATE | download-artifact major (0dw) |
@@ -29,6 +30,6 @@
 |--------|------:|
 | Investigated | 7 |
 | Salvage drafts opened | 1 (#1031) |
-| Closed superseded / no-op | 1 (#1030) + 1 session-doc fold (#1695) |
+| Closed superseded / no-op | 2 (#1030/#1032) + 1 session-doc fold (#1695) |
 | Escalations left open | 5 |
 | Autonomous merges | **0** |
