@@ -6,6 +6,7 @@ The second argument is include_details ("true" / "false").
 """
 
 
+import concurrent.futures
 import json
 import os
 import subprocess
@@ -222,7 +223,10 @@ def _print_details_section(data: list) -> None:
     print("\n#### Review / comment context\n")
 
     tasks = [(repo, pr) for pr in data]
-    results = map(_fetch_task_wrapper, tasks)
+
+    # ⚡ Bolt Optimization: Use ThreadPoolExecutor for concurrent I/O-bound GitHub API calls
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(tasks) or 1, 32)) as executor:
+        results = list(executor.map(_fetch_task_wrapper, tasks))
 
     for res in results:
         if res:
