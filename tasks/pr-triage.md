@@ -1,33 +1,31 @@
-# PR Triage — 2026-07-19 (Phase 2 salvage)
+# PR Triage — 2026-07-20
 
-## Disposition counts
+## Duplicate / overlap
 
-| Disposition | Count |
-|-------------|------:|
-| SALVAGE (new draft) | 1 |
-| CLOSE-SUPERSEDED | 2 (#1030/#1032) |
-| CLOSE (session docs folded) | 1 (#1695) |
-| ESCALATE (unchanged) | 5 |
-| Autonomous merge | 0 |
+| Group | Keep | Close | Reason |
+|-------|------|-------|--------|
+| release-drafter 7.6.0 (pc) | #1702 | #1701 | Identical pin; prefer green twin |
+| Seatek GG path-traversal | #494 | #493 | Clean history salvage (Lesson 0ee) |
 
-## Salvage map
+## Security escalate (unchanged)
 
-| Old | New draft | Tier |
-|-----|-----------|------|
-| ctrld-sync #1030 | [#1031](https://github.com/abhimehro/ctrld-sync/pull/1031) | T3 CLI UX / CodeScene |
+| PR | Reason |
+|----|--------|
+| sc #233 | Auth / session tokens |
+| hg #374 | numpy 1→2 major |
+| pc #1670 | Gemini + PR-automation toolchain; CONFLICTING |
+| rpce #126/#127 | Tip-release artifact majors (Lesson 0dw) |
 
-## Escalations (human)
+## Deferred
 
-| Tier | PR | Why |
-|------|-----|-----|
-| T1 | [sc #233](https://github.com/abhimehro/series_correction_project_updated/pull/233) | Auth implementation |
-| T2 | [pc #1670](https://github.com/abhimehro/personal-config/pull/1670) | Gemini/gitleaks + shellcheck delete vs #1679 |
-| T2 | [hg #374](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/374) | numpy major |
-| T2 | [rpce #126](https://github.com/abhimehro/repoprompt-ce/pull/126) / [#127](https://github.com/abhimehro/repoprompt-ce/pull/127) | tip-release artifact majors |
+| PR | Reason |
+|----|--------|
+| ctrld #1036 | CodeScene FAIL — `/cs-agent` posted |
+| rpce #132 | Style + Build shard 2 (needs macOS) |
 
-## Overlap / supersede notes
+## Merge order executed
 
-- ctrld-sync #1030 Jules if/else raised CodeScene Complex Method 9→11; salvage extracts `_print_bold_header` (Lesson 0ec)
-- ctrld-sync #1032 same Jules branch re-opened after #1030 close → closed superseded by #1031 (Lesson 0ed)
-- Prior evening salvage drafts #1677/#1678/#1679 already MERGED before this run
-- esp #1267 already MERGED (no longer in queue)
+1. Deps: pc #1702 → #1700 (after Gitleaks 503 rerun); sc #252; ctrld #1034
+2. Docs/salvage: pc #1696; ctrld #1031
+3. Perf/UI: pc #1704; ctrld #1037; esp #1301 → #1303 → #1304
+4. Security fix: Seatek #494 (clean salvage of #493)
