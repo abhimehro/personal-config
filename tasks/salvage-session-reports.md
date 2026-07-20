@@ -554,3 +554,40 @@
 - Maintainer: T1 sc#233 + esp#1267; T2 pc#1670 + hg#374 + rpce artifacts; T3 drafts #1677/#1678/#1679
 - Cross-links: [Session report](tasks/pr-review-2026-07-17.md), [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md)
 - New lesson: 0dy (Bolt inlining undoes helper extraction)
+
+## Run — 2026-07-19 (evening salvage)
+
+### Input tail
+
+- Source report: `tasks/pr-review-2026-07-19.md` Phase 1 remainder (via draft [#1695](https://github.com/abhimehro/personal-config/pull/1695))
+- Live re-fetch: 7 open in-scope PRs (esp + Seatek at zero; new ctrld-sync #1030 post-Phase-1)
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| ctrld-sync | [#1030](https://github.com/abhimehro/ctrld-sync/pull/1030) | SALVAGE draft | [#1031](https://github.com/abhimehro/ctrld-sync/pull/1031) | `_print_bold_header`; cs-agent posted |
+| ctrld-sync | [#1032](https://github.com/abhimehro/ctrld-sync/pull/1032) | CLOSE-SUPERSEDED | [#1031](https://github.com/abhimehro/ctrld-sync/pull/1031) | Jules re-open of same branch |
+| personal-config | [#1670](https://github.com/abhimehro/personal-config/pull/1670) | ESCALATE | — | 0ea shellcheck modify/delete |
+| series_correction | [#233](https://github.com/abhimehro/series_correction_project_updated/pull/233) | ESCALATE | — | auth |
+| Hydrograph | [#374](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/374) | ESCALATE | — | numpy major |
+| repoprompt-ce | [#126](https://github.com/abhimehro/repoprompt-ce/pull/126) / [#127](https://github.com/abhimehro/repoprompt-ce/pull/127) | ESCALATE | — | 0dw tip artifacts |
+| personal-config | [#1695](https://github.com/abhimehro/personal-config/pull/1695) | CLOSE→session | this session PR | Phase 1 docs folded |
+
+- Salvage draft PRs opened: 1
+- Infra-fix draft PRs opened: 0
+- Closed superseded/no-op: 2 (#1030/#1032) (+ 1 session-doc fold)
+- Autonomous merges: 0
+- Escalations left open: 5
+
+### Verification status
+
+- Blocking checks on `main`: none identified
+- Local verify (ctrld-sync): py_compile + ruff + pytest 364 passed
+- CodeScene: `/cs-agent` posted on #1030; remediation via helper extraction in #1031
+
+### Handoff
+
+- Maintainer: merge draft [#1031](https://github.com/abhimehro/ctrld-sync/pull/1031) after CI; then T1 sc#233; T2 pc#1670 + hg#374 + rpce#126/#127
+- Cross-links: [Session report](tasks/pr-review-2026-07-19.md), [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md)
+- New lessons: 0ec (USE_COLORS helper isolation), 0ed (Jules re-open twin)
