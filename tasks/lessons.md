@@ -1413,3 +1413,14 @@ with a link to the salvage draft and an explicit "do not re-open" note. Do not
 re-salvage.
 **Detection cost:** Low — new open PR with same `headRefName` / title within
 minutes of the close.
+
+## Lesson 0ee: GitGuardian PR scans intermediate commits (2026-07-20)
+
+**Pattern:** Seatek #493 tip was cleaned of `etc/passwd` path-traversal
+fixtures, but GG kept failing on intermediate commit `55cd44ba` (Generic
+Password FP). Autofix on tip alone cannot clear a historical-commit finding.
+**Rule:** (1) Never force-push to scrub. (2) Open a **clean-history** salvage PR
+from `main` with tip file contents only; merge that; close the poisoned-history
+PR as superseded. (3) Prefer path-traversal fixtures that do not contain the
+substring `passwd` / `password` (e.g. `outside/traversal_target`). **Detection
+cost:** Low — GG comment cites the old commit SHA; tip `rg passwd` is empty.

@@ -1,12 +1,10 @@
-# PR Salvage Session — 2026-07-19 (Phase 2) — DONE
+# PR Review Session Plan — 2026-07-20
 
-**Mode:** salvage-only (S1)  
-**Branch:** `cursor-agent/automated-pr-salvage-1a69`  
-**Preflight:** PASS 7/7
-
-- [x] Preflight gate + cursor-cloud-hooks
-- [x] Live re-fetch Phase 1 remainder + new opens
-- [x] Salvage ctrld-sync #1030 → draft #1031
-- [x] Escalate comments on #1670 / #233 / #374 / #126 / #127
-- [x] Write inventory / triage / review addendum / lessons / salvage report
-- [x] Fold Phase 1 docs #1695; commit + push + open session PR
+- [x] Preflight gate (7/7 PASS)
+- [x] Inventory open bot/automation PRs
+- [x] Close zero-diff QA PRs (#1699, #1035, #251) + dupe #1701
+- [x] Merge clean PRs (14 squash-merges)
+- [x] Autofix: pc #1700 CI rerun; Seatek #494 clean salvage
+- [x] Escalate auth/major-dep/trust-boundary; cs-agent on #1036
+- [x] Write pr-inventory, pr-triage, pr-review-2026-07-20, lessons
+- [ ] Commit/push session docs on cursor-agent/pr-workflow-automation-1a5f
