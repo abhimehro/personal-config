@@ -12,17 +12,17 @@
 
 ## Queue decisions
 
-- [ ] ctrld #1036 — CodeScene now green; verify UNSTABLE cause; ready-for-merge comment or salvage
-- [ ] rpce #132 — Style FAIL only (builds green); attempt style autofix salvage draft
-- [ ] pc #1670 — reconfirm ESCALATE (Lesson 0ea trust boundary + CONFLICTING)
-- [ ] sc #233 — reconfirm ESCALATE auth
-- [ ] hg #374 — reconfirm ESCALATE numpy major
-- [ ] rpce #126/#127 — reconfirm ESCALATE tip-release majors (0dw)
+- [x] ctrld #1036 — CodeScene green; READY human merge (commented)
+- [x] rpce #132 — Style salvage draft #133; closed #132
+- [x] pc #1670 — ESCALATE (Lesson 0ea)
+- [x] sc #233 — ESCALATE auth
+- [x] hg #374 — ESCALATE numpy major
+- [x] rpce #126/#127 — ESCALATE tip-release majors (0dw)
 
 ## Deliverables
 
-- [ ] Update `tasks/pr-inventory.md`, `tasks/pr-triage.md`
-- [ ] Append Phase 2 to `tasks/pr-review-2026-07-20.md`
-- [ ] Append `tasks/salvage-session-reports.md`
-- [ ] Lessons if new patterns
-- [ ] Commit + push + open/update session docs PR via automation tools
+- [x] Update `tasks/pr-inventory.md`, `tasks/pr-triage.md`
+- [x] Append Phase 2 to `tasks/pr-review-2026-07-20.md`
+- [x] Append `tasks/salvage-session-reports.md`
+- [x] Lesson 0ef
+- [x] Commit + push + open session docs PR ([#1706](https://github.com/abhimehro/personal-config/pull/1706))
