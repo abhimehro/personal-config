@@ -591,3 +591,40 @@
 - Maintainer: merge draft [#1031](https://github.com/abhimehro/ctrld-sync/pull/1031) after CI; then T1 sc#233; T2 pc#1670 + hg#374 + rpce#126/#127
 - Cross-links: [Session report](tasks/pr-review-2026-07-19.md), [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md)
 - New lessons: 0ec (USE_COLORS helper isolation), 0ed (Jules re-open twin)
+
+## Run — 2026-07-20 (evening salvage)
+
+### Input tail
+
+- Source report: `tasks/pr-review-2026-07-20.md` Phase 1 remainder (7 PRs)
+- Live re-fetch: same 7 still open at start; esp + Seatek remain zero-open
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| repoprompt-ce | [#132](https://github.com/abhimehro/repoprompt-ce/pull/132) | SALVAGE draft | [#133](https://github.com/abhimehro/repoprompt-ce/pull/133) | SwiftFormat 4-file Style fix |
+| ctrld-sync | [#1036](https://github.com/abhimehro/ctrld-sync/pull/1036) | READY human merge | — | CodeScene remediates; no draft |
+| personal-config | [#1670](https://github.com/abhimehro/personal-config/pull/1670) | ESCALATE | — | 0ea shellcheck modify/delete |
+| series_correction | [#233](https://github.com/abhimehro/series_correction_project_updated/pull/233) | ESCALATE | — | auth |
+| Hydrograph | [#374](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/374) | ESCALATE | — | numpy major |
+| repoprompt-ce | [#126](https://github.com/abhimehro/repoprompt-ce/pull/126) / [#127](https://github.com/abhimehro/repoprompt-ce/pull/127) | ESCALATE | — | 0dw tip artifacts |
+
+- Salvage draft PRs opened: 1
+- Infra-fix draft PRs opened: 0
+- Closed superseded/no-op: 1 (#132)
+- Autonomous merges: 0
+- Escalations left open: 5
+- Ready-for-human (comment only): 1 (#1036)
+
+### Verification status
+
+- Blocking checks on `main`: none identified
+- Local verify (rpce #133): SwiftFormat 0.61.1 `--lint` on 31 touched files → `0/31 require formatting`
+- CodeScene: #1036 quality gate passed after Phase 1 `/cs-agent`
+
+### Handoff
+
+- Maintainer: review draft [#133](https://github.com/abhimehro/repoprompt-ce/pull/133); merge [#1036](https://github.com/abhimehro/ctrld-sync/pull/1036); then T1 sc#233; T2 pc#1670 + hg#374 + rpce#126/#127
+- Cross-links: [Session report](tasks/pr-review-2026-07-20.md), [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md)
+- New lesson: 0ef (Linux SwiftFormat for Style salvage)

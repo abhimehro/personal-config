@@ -1424,3 +1424,19 @@ from `main` with tip file contents only; merge that; close the poisoned-history
 PR as superseded. (3) Prefer path-traversal fixtures that do not contain the
 substring `passwd` / `password` (e.g. `outside/traversal_target`). **Detection
 cost:** Low — GG comment cites the old commit SHA; tip `rg passwd` is empty.
+
+## Lesson 0ef: Linux SwiftFormat unblocks Style salvage (2026-07-20)
+
+**Pattern:** repoprompt-ce Bolt [#132](https://github.com/abhimehro/repoprompt-ce/pull/132)
+had all Build shards green but Style failed with
+`4/1456 files require formatting` (redundantReturn / consecutiveBlankLines /
+indent). Cloud Linux agents cannot use the macOS `swiftformat.zip` pinned by
+`Scripts/install_format_tools.sh`, so format-fix looked blocked.
+**Rule:** For Style-only salvage, download the matching
+`swiftformat_linux.zip` (or `swiftformat_linux_aarch64.zip`) from the same
+SwiftFormat release tag the repo pins (e.g. 0.61.1), run it with
+`.swiftformat` on the PR's touched files, open a **draft** salvage from
+`main`, and close the original as superseded. Do not skip format-check or
+weaken `make lint`.
+**Detection cost:** Low — Style job log contains `N/M files require
+formatting`; check annotations name at least one of the drifted files.

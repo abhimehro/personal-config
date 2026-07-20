@@ -1,31 +1,31 @@
-# PR Triage — 2026-07-20
+# PR Triage — 2026-07-20 Phase 2 Salvage
 
-## Duplicate / overlap
+## Salvage / close
 
 | Group | Keep | Close | Reason |
 |-------|------|-------|--------|
-| release-drafter 7.6.0 (pc) | #1702 | #1701 | Identical pin; prefer green twin |
-| Seatek GG path-traversal | #494 | #493 | Clean history salvage (Lesson 0ee) |
+| rpce DateFormatter statics | [#133](https://github.com/abhimehro/repoprompt-ce/pull/133) draft | [#132](https://github.com/abhimehro/repoprompt-ce/pull/132) | Style: 4 files needed SwiftFormat (Lesson 0ef) |
 
-## Security escalate (unchanged)
-
-| PR | Reason |
-|----|--------|
-| sc #233 | Auth / session tokens |
-| hg #374 | numpy 1→2 major |
-| pc #1670 | Gemini + PR-automation toolchain; CONFLICTING |
-| rpce #126/#127 | Tip-release artifact majors (Lesson 0dw) |
-
-## Deferred
+## Ready for human merge (Phase 2 does not merge)
 
 | PR | Reason |
 |----|--------|
-| ctrld #1036 | CodeScene FAIL — `/cs-agent` posted |
-| rpce #132 | Style + Build shard 2 (needs macOS) |
+| [ctrld #1036](https://github.com/abhimehro/ctrld-sync/pull/1036) | CodeScene remediates post-`/cs-agent`; all CI green; Trunk checkbox soft-UNSTABLE |
 
-## Merge order executed
+## Security / trust escalate (unchanged)
 
-1. Deps: pc #1702 → #1700 (after Gitleaks 503 rerun); sc #252; ctrld #1034
-2. Docs/salvage: pc #1696; ctrld #1031
-3. Perf/UI: pc #1704; ctrld #1037; esp #1301 → #1303 → #1304
-4. Security fix: Seatek #494 (clean salvage of #493)
+| PR | Reason |
+|----|--------|
+| [sc #233](https://github.com/abhimehro/series_correction_project_updated/pull/233) | Auth / session tokens |
+| [hg #374](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/374) | numpy 1→2 major |
+| [pc #1670](https://github.com/abhimehro/personal-config/pull/1670) | Gemini + PR-automation toolchain; CONFLICTING (0ea) |
+| [rpce #126](https://github.com/abhimehro/repoprompt-ce/pull/126)/[#127](https://github.com/abhimehro/repoprompt-ce/pull/127) | Tip-release artifact majors (0dw) |
+
+## Maintainer priority
+
+1. **T3 draft:** [rpce #133](https://github.com/abhimehro/repoprompt-ce/pull/133) after Style/Build green
+2. **Human merge:** [ctrld #1036](https://github.com/abhimehro/ctrld-sync/pull/1036)
+3. **T1:** sc #233 (auth)
+4. **T2:** pc #1670 (keep ShellCheck vs delete + Gemini/gitleaks)
+5. **T2:** hg #374 (numpy major)
+6. **T2:** rpce #126/#127 (tip artifact majors)
