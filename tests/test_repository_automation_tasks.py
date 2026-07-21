@@ -25,6 +25,7 @@ from repository_automation_tasks import (  # noqa: E402
     run_command_set,
     run_quality_assurance,
     run_safe_adjustment_commands,
+    run_backlog_manager,
 )
 
 
@@ -278,6 +279,72 @@ class TestRunCommandSet(unittest.TestCase):
         self.assertIn("## Human review required", data["body"])
         self.assertIn("`setup1` failed and is not marked optional.", data["body"])
         self.assertNotIn("## Optional command warnings", data["body"])
+
+
+class TestRunBacklogManager(unittest.TestCase):
+    @patch("repository_automation_tasks.write_result")
+    @patch("repository_automation_tasks.now_utc")
+    @patch("repository_automation_tasks._fetch_backlog_items")
+    def test_run_backlog_manager_success(self, mock_fetch, mock_now_utc, mock_write_result):
+        # Setup mocks
+        from datetime import datetime, timezone
+        mock_now_utc.return_value = datetime(2023, 10, 15, tzinfo=timezone.utc)
+
+        # All items are recent (less than 14 days old relative to 2023-10-15)
+        issues = [
+            {"number": 1, "title": "Issue 1", "updatedAt": "2023-10-10T00:00:00Z", "url": "url1"}
+        ]
+        prs = [
+            {"number": 10, "title": "PR 1", "updatedAt": "2023-10-12T00:00:00Z", "url": "url2", "isDraft": False}
+        ]
+        mock_fetch.return_value = (issues, prs)
+        mock_write_result.return_value = {"status": "success"}
+
+        config = {"backlog_manager": {"stale_days": 14}}
+        result = run_backlog_manager(config)
+
+        mock_write_result.assert_called_once()
+        args, kwargs = mock_write_result.call_args
+        self.assertEqual(args[0], "backlog-manager")
+        self.assertEqual(args[1][0], "success")  # status
+        self.assertIn("found 1 open issues and 1 open PRs", args[1][1])  # summary
+
+        self.assertEqual(result, {"status": "success"})
+
+    @patch("repository_automation_tasks.write_result")
+    @patch("repository_automation_tasks.now_utc")
+    @patch("repository_automation_tasks._fetch_backlog_items")
+    def test_run_backlog_manager_warning(self, mock_fetch, mock_now_utc, mock_write_result):
+        from datetime import datetime, timezone
+        mock_now_utc.return_value = datetime(2023, 10, 15, tzinfo=timezone.utc)
+
+        # Items are older than 14 days
+        issues = [
+            {"number": 1, "title": "Old Issue", "updatedAt": "2023-09-01T00:00:00Z", "url": "url1"}
+        ]
+        prs = [
+            {"number": 10, "title": "Old PR", "updatedAt": "2023-09-15T00:00:00Z", "url": "url2", "isDraft": False}
+        ]
+        mock_fetch.return_value = (issues, prs)
+        mock_write_result.return_value = {"status": "success"}
+
+        config = {"backlog_manager": {"stale_days": 14}}
+        result = run_backlog_manager(config)
+
+        mock_write_result.assert_called_once()
+        args, kwargs = mock_write_result.call_args
+        self.assertEqual(args[0], "backlog-manager")
+        self.assertEqual(args[1][0], "warning")  # status
+
+        body = args[2]
+        self.assertIn("## Human review candidates", body)
+        self.assertIn("- Issue #1 has been quiet for", body)
+        self.assertIn("- PR #10 has been quiet for", body)
+
+        data = args[3]
+        self.assertEqual(len(data["stale_issues"]), 1)
+        self.assertEqual(len(data["stale_pull_requests"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
