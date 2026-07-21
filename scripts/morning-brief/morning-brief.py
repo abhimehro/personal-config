@@ -895,29 +895,18 @@ def fetch_horoscope(session: requests.Session, zodiac_sign: str) -> str:
         for i, tmpl in enumerate(HOROSCOPE_ENDPOINTS_TEMPLATE):
             futures.append(executor.submit(fetch_endpoint, tmpl))
 
-            # Wait a short time for the current endpoint before triggering the fallback.
-            # Don't wait after the last endpoint is submitted.
-            if i < len(HOROSCOPE_ENDPOINTS_TEMPLATE) - 1:
-                try:
-                    # Wait up to 1.5 seconds for the current request
-                    done, _ = concurrent.futures.wait(futures, timeout=1.5, return_when=concurrent.futures.FIRST_COMPLETED)
-                    # Check if any completed future resulted in a successful string
-                    success_found = False
-                    for future in done:
-                        result = future.result()
-                        if result:
-                            success_found = True
-                            return result
+            if i == len(HOROSCOPE_ENDPOINTS_TEMPLATE) - 1:
+                continue
 
-                    if success_found:
-                        break
-                except concurrent.futures.TimeoutError:
-                    pass
+            done, _ = concurrent.futures.wait(
+                futures, timeout=1.5, return_when=concurrent.futures.FIRST_COMPLETED
+            )
 
-        # If we exhausted all endpoints and wait thresholds without a successful return,
-        # wait for any of the remaining pending requests to finish.
+            if any(future.result() for future in done if not future.exception()):
+                break
+
         for future in concurrent.futures.as_completed(futures):
-            result = future.result()
+            result = future.exception() is None and future.result()
             if result:
                 return result
 
