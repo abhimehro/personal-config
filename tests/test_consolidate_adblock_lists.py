@@ -15,6 +15,7 @@ from consolidate_adblock_lists import (
     load_json_file,
     process_allowlist_files,
     process_tracker_files,
+    run_consolidation,
 )
 
 
@@ -298,6 +299,53 @@ class TestProcessAllowlistFiles(unittest.TestCase):
 
         self.assertEqual(result, set())
 
-if __name__ == "__main__":
 
+class TestRunConsolidation(unittest.TestCase):
+    def test_run_consolidation(self):
+        input_dir = Path("/fake/input")
+        output_dir = Path("/fake/output")
+
+        with (
+            patch("consolidate_adblock_lists.process_tracker_files") as mock_process_tracker,
+            patch("consolidate_adblock_lists.process_allowlist_files") as mock_process_allowlist,
+            patch("consolidate_adblock_lists.write_json_files") as mock_write_json,
+            patch("consolidate_adblock_lists.write_text_files") as mock_write_text,
+            patch("consolidate_adblock_lists.print_summary") as mock_print_summary,
+            patch("sys.stdout"),
+        ):
+            mock_process_tracker.return_value = {"tracker.com"}
+            mock_process_allowlist.return_value = {"allow.com"}
+
+            run_consolidation(input_dir, output_dir)
+
+            mock_process_tracker.assert_called_once_with(
+                input_dir,
+                [
+                    "CD-Microsoft-Tracker.json",
+                    "CD-No-Safesearch-Support.json",
+                    "CD-OPPO_Realme-Tracker.json",
+                    "CD-Roku-Tracker.json",
+                    "CD-Samsung-Tracker.json",
+                    "CD-Tiktok-Tracker---aggressive.json",
+                    "CD-Vivo-Tracker.json",
+                    "CD-Xiaomi-Tracker.json",
+                    "CD-Amazon-Tracker.json",
+                    "CD-Apple-Tracker.json",
+                    "CD-Badware-Hoster.json",
+                    "CD-LG-webOS-Tracker.json",
+                    "CD-Huawei-Tracker.json",
+                ],
+            )
+            mock_process_allowlist.assert_called_once_with(input_dir)
+            mock_write_json.assert_called_once_with(
+                output_dir, {"tracker.com"}, {"allow.com"}
+            )
+            mock_write_text.assert_called_once_with(
+                output_dir, {"tracker.com"}, {"allow.com"}
+            )
+            mock_print_summary.assert_called_once_with(
+                {"tracker.com"}, {"allow.com"}, output_dir
+            )
+
+if __name__ == "__main__":
     unittest.main()

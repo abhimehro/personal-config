@@ -111,5 +111,17 @@ class TestRunProcess(unittest.TestCase):
             self.assertEqual(result.returncode, 0)
             self.assertEqual(result.stdout.strip(), "real")
 
+
+class TestRunChecked(unittest.TestCase):
+    @patch("repository_automation_common.run_process")
+    def test_run_checked(self, mock_run_process):
+        mock_completed = MagicMock()
+        mock_run_process.return_value = mock_completed
+
+        result = rac.run_checked(["echo", "hello"])
+
+        self.assertEqual(result, mock_completed)
+        mock_run_process.assert_called_once_with(["echo", "hello"], check=True)
+
 if __name__ == "__main__":
     unittest.main()
