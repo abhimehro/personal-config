@@ -267,13 +267,89 @@ function fixDiffJsxStringAttrs(mdx) {
 }
 
 /**
+ * Rewrite bare JSX array attrs (`columns=[…]`) to expression form (`columns={[…]}`).
+ *
+ * @param {string} mdx
+ * @returns {{ text: string, fixed: number }}
+ */
+function fixBareArrayAttrs(mdx) {
+  const keys = "columns|rows|annotations|items|data|options|tabs";
+  let text = mdx;
+  let fixed = 0;
+  for (let n = 0; n < 64; n += 1) {
+    const match = new RegExp(`(\\s)(${keys})=\\[`).exec(text);
+    if (!match) break;
+    const openIdx = match.index + match[0].length - 1; // index of '['
+    let i = openIdx + 1;
+    let depth = 1;
+    let inStr = /** @type {string | null} */ (null);
+    let escape = false;
+    for (; i < text.length && depth > 0; i += 1) {
+      const ch = text[i];
+      if (inStr) {
+        if (escape) {
+          escape = false;
+          continue;
+        }
+        if (ch === "\\") {
+          escape = true;
+          continue;
+        }
+        if (ch === inStr) inStr = null;
+        continue;
+      }
+      if (ch === '"' || ch === "'" || ch === "`") {
+        inStr = ch;
+        continue;
+      }
+      if (ch === "[") depth += 1;
+      else if (ch === "]") depth -= 1;
+    }
+    if (depth !== 0) break;
+    let replacement;
+    if (text[i] === "}") {
+      // Already has a closing brace (`rows=[…]}`) — only insert `{` after `=`.
+      replacement = `${match[1]}${match[2]}={${text.slice(openIdx, i)}`;
+      text = text.slice(0, match.index) + replacement + text.slice(i);
+    } else {
+      replacement = `${match[1]}${match[2]}={${text.slice(openIdx, i)}}`;
+      text = text.slice(0, match.index) + replacement + text.slice(i);
+    }
+    fixed += 1;
+  }
+  return { text, fixed };
+}
+
+/**
+ * Remove illegal commas between JSX attributes (`columns={…},` → `columns={…}`).
+ *
+ * @param {string} mdx
+ * @returns {{ text: string, fixed: number }}
+ */
+function fixJsxAttrTrailingCommas(mdx) {
+  let fixed = 0;
+  const text = mdx.replace(/(["}\]])(,)(\s*\n\s*[A-Za-z_][\w-]*=)/g, (_, end, _comma, next) => {
+    fixed += 1;
+    return `${end}${next}`;
+  });
+  return { text, fixed };
+}
+
+/**
  * Apply all deterministic MDX hardeners.
  *
  * @param {string} mdx
  * @returns {{ text: string, fixed: number, details: Record<string, number> }}
  */
 function fixMdxContent(mdx) {
-  const details = { diff: 0, jsxAttr: 0, isolate: 0, balance: 0 };
+  const details = {
+    diff: 0,
+    jsxAttr: 0,
+    arrayAttr: 0,
+    attrComma: 0,
+    isolate: 0,
+    balance: 0,
+  };
   let text = mdx;
   // Prose Callout isolation first (skip attr / deeply-indented lines).
   // NOTE: do not auto-balance tags — code samples often contain Callout markup
@@ -281,14 +357,26 @@ function fixMdxContent(mdx) {
   const isolated = isolateBlockElements(text);
   text = isolated.text;
   details.isolate = isolated.fixed;
+  const arrays = fixBareArrayAttrs(text);
+  text = arrays.text;
+  details.arrayAttr = arrays.fixed;
+  const commas = fixJsxAttrTrailingCommas(text);
+  text = commas.text;
+  details.attrComma = commas.fixed;
   const diff = fixDiffQuotedProps(text);
   text = diff.text;
   details.diff = diff.fixed;
-  // JSX attr rewrite last so JSON.stringify payloads stay opaque.
+  // JSX string attr rewrite last so JSON.stringify payloads stay opaque.
   const jsx = fixDiffJsxStringAttrs(text);
   text = jsx.text;
   details.jsxAttr = jsx.fixed;
-  const fixed = details.diff + details.jsxAttr + details.isolate + details.balance;
+  const fixed =
+    details.diff +
+    details.jsxAttr +
+    details.arrayAttr +
+    details.attrComma +
+    details.isolate +
+    details.balance;
   return { text, fixed, details };
 }
 
@@ -299,7 +387,14 @@ function fixMdxContent(mdx) {
  * @returns {{ payload: unknown, fixed: number, details: Record<string, number> }}
  */
 function fixRecapSourcePayload(payload) {
-  const emptyDetails = { diff: 0, jsxAttr: 0, isolate: 0, balance: 0 };
+  const emptyDetails = {
+    diff: 0,
+    jsxAttr: 0,
+    arrayAttr: 0,
+    attrComma: 0,
+    isolate: 0,
+    balance: 0,
+  };
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
     return { payload, fixed: 0, details: emptyDetails };
   }
@@ -307,7 +402,14 @@ function fixRecapSourcePayload(payload) {
   if (!mdx || typeof mdx !== "object" || Array.isArray(mdx)) {
     return { payload, fixed: 0, details: emptyDetails };
   }
-  const details = { diff: 0, jsxAttr: 0, isolate: 0, balance: 0 };
+  const details = {
+    diff: 0,
+    jsxAttr: 0,
+    arrayAttr: 0,
+    attrComma: 0,
+    isolate: 0,
+    balance: 0,
+  };
   let fixed = 0;
   const nextMdx = { ...mdx };
   for (const key of Object.keys(nextMdx)) {
@@ -318,6 +420,8 @@ function fixRecapSourcePayload(payload) {
       fixed += result.fixed;
       details.diff += result.details.diff;
       details.jsxAttr += result.details.jsxAttr;
+      details.arrayAttr += result.details.arrayAttr;
+      details.attrComma += result.details.attrComma;
       details.isolate += result.details.isolate;
       details.balance += result.details.balance;
     }
@@ -332,6 +436,8 @@ module.exports = {
   lenientUnescape,
   fixDiffQuotedProps,
   fixDiffJsxStringAttrs,
+  fixBareArrayAttrs,
+  fixJsxAttrTrailingCommas,
   isolateBlockElements,
   balanceBlockTags,
   fixMdxContent,

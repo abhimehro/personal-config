@@ -745,7 +745,19 @@ jobs:
           };
           const readOptional = (p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "");
           const fixAndMaybeWriteMdx = (filePath, text) => {
-            if (!text) return { text: "", fixed: 0, details: { diff: 0, jsxAttr: 0, isolate: 0, balance: 0 } };
+            if (!text)
+              return {
+                text: "",
+                fixed: 0,
+                details: {
+                  diff: 0,
+                  jsxAttr: 0,
+                  arrayAttr: 0,
+                  attrComma: 0,
+                  isolate: 0,
+                  balance: 0,
+                },
+              };
             const result = fixMdxContent(text);
             if (result.fixed > 0 && filePath) {
               fs.writeFileSync(filePath, result.text);
@@ -756,6 +768,8 @@ jobs:
             const parts = [];
             if (details.diff) parts.push(`${details.diff} Diff colon prop(s)`);
             if (details.jsxAttr) parts.push(`${details.jsxAttr} Diff JSX attr(s)`);
+            if (details.arrayAttr) parts.push(`${details.arrayAttr} bare array attr(s)`);
+            if (details.attrComma) parts.push(`${details.attrComma} JSX attr comma(s)`);
             if (details.isolate) parts.push(`${details.isolate} block-tag isolation(s)`);
             if (details.balance) parts.push(`${details.balance} missing closer(s)`);
             return parts.join(", ");
@@ -836,6 +850,14 @@ jobs:
               diff: plan.details.diff + canvas.details.diff + prototype.details.diff,
               jsxAttr:
                 plan.details.jsxAttr + canvas.details.jsxAttr + prototype.details.jsxAttr,
+              arrayAttr:
+                plan.details.arrayAttr +
+                canvas.details.arrayAttr +
+                prototype.details.arrayAttr,
+              attrComma:
+                plan.details.attrComma +
+                canvas.details.attrComma +
+                prototype.details.attrComma,
               isolate:
                 plan.details.isolate + canvas.details.isolate + prototype.details.isolate,
               balance:

@@ -186,6 +186,91 @@ NODE
   fi
 fi
 
+# Case 10: bare columns=[…] must become columns={[…]}.
+cat >"$TEST_DIR/bare-array.mdx" <<'MDX'
+<Table
+  columns=[{"key":"a","label":"A"},{"key":"b","label":"B"}]
+  rows=[{"a":"1","b":"2"}]
+/>
+MDX
+node -e '
+const { fixBareArrayAttrs, fixMdxContent } = require(process.argv[1]);
+const fs = require("fs");
+const raw = fs.readFileSync(process.argv[2], "utf8");
+const { text, fixed } = fixBareArrayAttrs(raw);
+if (fixed !== 2) { console.error("expected 2 array fixes, got", fixed); process.exit(2); }
+if (!/columns=\{\[/.test(text) || !/rows=\{\[/.test(text)) process.exit(3);
+if (/columns=\[/.test(text) || /rows=\[/.test(text)) process.exit(4);
+const again = fixBareArrayAttrs(text);
+if (again.fixed !== 0) process.exit(5);
+const full = fixMdxContent(raw);
+if (full.details.arrayAttr !== 2) process.exit(6);
+' "$FIXER" "$TEST_DIR/bare-array.mdx"
+check "rewrites bare columns=/rows= array attrs" true
+
+# Case 11: illegal commas between JSX attrs are stripped.
+# NOTE: the pattern targets `…},` / `…],` / `…",` before the next attr line.
+cat >"$TEST_DIR/attr-comma.mdx" <<'MDX'
+<Table
+  columns={[{"key":"a"}]},
+  rows={[{"a":"1"}]}
+/>
+MDX
+node -e '
+const { fixJsxAttrTrailingCommas } = require(process.argv[1]);
+const fs = require("fs");
+const raw = fs.readFileSync(process.argv[2], "utf8");
+const { text, fixed } = fixJsxAttrTrailingCommas(raw);
+if (fixed !== 1) { console.error("expected 1 comma fix, got", fixed, text); process.exit(2); }
+if (/}\s*,\s*\n/.test(text)) process.exit(3);
+if (!/columns=\{\[{"key":"a"\}\]\}\s*\n\s*rows=/.test(text)) process.exit(4);
+' "$FIXER" "$TEST_DIR/attr-comma.mdx"
+check "strips illegal commas between JSX attrs" true
+
+# Case 12: rows=[…]} (stray closing brace) only inserts opening `{`.
+cat >"$TEST_DIR/half-brace.mdx" <<'MDX'
+  rows=[{"a":1}]}
+MDX
+node -e '
+const { fixBareArrayAttrs } = require(process.argv[1]);
+const fs = require("fs");
+const raw = fs.readFileSync(process.argv[2], "utf8");
+const { text, fixed } = fixBareArrayAttrs(raw);
+if (fixed !== 1) process.exit(2);
+if (!/rows=\{\[{"a":1\}\]\}/.test(text)) { console.error(text); process.exit(3); }
+if (/rows=\{\[.*\]\}\}/.test(text)) process.exit(4);
+' "$FIXER" "$TEST_DIR/half-brace.mdx"
+check "half-braced rows=[…]} only inserts opening brace" true
+
+# Case 13: live artifact from run with bare array attrs (vr-art2).
+if [[ -f /tmp/vr-art2/recap-plan.mdx ]]; then
+  node -e '
+const { fixMdxContent } = require(process.argv[1]);
+const fs = require("fs");
+const raw = fs.readFileSync("/tmp/vr-art2/recap-plan.mdx", "utf8");
+const { text, fixed, details } = fixMdxContent(raw);
+if (fixed < 1 || details.arrayAttr < 1) { console.error(details); process.exit(2); }
+const again = fixMdxContent(text);
+if (again.fixed !== 0) { console.error("not idempotent", again.details); process.exit(3); }
+fs.writeFileSync("/tmp/vr-art2/recap-plan.fixed-arrays.mdx", text);
+' "$FIXER"
+  check "artifact bare array attrs rewrite" true
+  if [[ -d /tmp/recap-fail-1733/node_modules/@mdx-js/mdx ]]; then
+    node <<'NODE'
+    const fs = require("fs");
+    (async () => {
+      const { compile } = await import("/tmp/recap-fail-1733/node_modules/@mdx-js/mdx/index.js");
+      try {
+        await compile(fs.readFileSync("/tmp/vr-art2/recap-plan.mdx", "utf8"));
+        process.exit(2);
+      } catch { /* expected raw fail */ }
+      await compile(fs.readFileSync("/tmp/vr-art2/recap-plan.fixed-arrays.mdx", "utf8"));
+    })().catch((e) => { console.error(e.message); process.exit(1); });
+NODE
+    check "artifact MDX compiles after array-attr fix" true
+  fi
+fi
+
 echo ""
 echo "Passed: $PASS  Failed: $FAIL"
 if [[ "$FAIL" -gt 0 ]]; then exit 1; fi

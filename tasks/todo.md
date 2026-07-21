@@ -43,6 +43,21 @@
 
 ---
 
+# Harden Plan MDX bare array attrs (2026-07-21)
+
+**Route:** T3+S
+**Symptom:** After JSX string-attr rewrite, publish still 422s with
+`Unexpected character \`[\` before attribute value` (`columns=[…]` / `rows=[…]`)
+plus illegal commas between JSX attrs.
+
+## Plan
+- [x] `fixBareArrayAttrs` + `fixJsxAttrTrailingCommas` in deterministic fixer
+- [x] Workflow sanitize diagnostics include `arrayAttr` / `attrComma` counts
+- [x] Unit tests + verify against `/tmp/vr-art2` artifact (`MDX_OK`)
+- [x] Lesson 0ej follow-on + operator docs; commit, push, re-label visual-recap
+
+---
+
 # PR Review Session 2026-07-21 — todo
 
 - [x] Preflight gate — PASS 7/7

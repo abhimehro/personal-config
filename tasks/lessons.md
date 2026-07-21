@@ -12,17 +12,25 @@ JSON envelope.
 **Follow-on:** After Diff colon-props are fixed, agents may still emit JSX
 `after="…"` / `code={"…` multi-line attrs. In JSX, `"` ends the attribute
 (`\"` is not an escape) → 422 "Unexpected character `\\` in attribute name".
-Rewrite those to `after={JSON.stringify(...)}`. OpenCode one-shot repair can
-hang — prefer deterministic re-publish; cap agent repair at ~6 minutes.
-Do not auto-balance Callout tags (code samples contain decoy markup).
+Rewrite those to `after={JSON.stringify(...)}`. Next failure mode: bare array
+attrs (`columns=[…]`, `rows=[…]`) → 422 "Unexpected character `[` before
+attribute value"; also illegal commas between JSX attrs (`columns={…},`).
+Rewrite to `columns={[…]}` and strip trailing commas. For `rows=[…]}` (stray
+`}` already present), only insert `{` after `=` — do not double-close.
+OpenCode one-shot repair can hang — prefer deterministic re-publish; cap agent
+repair at ~6 minutes. Do not auto-balance Callout tags (code samples contain
+decoy markup).
 **Rule:** (1) Before publish, rewrite Diff `before`/`after`/`code` lines whose
 bodies are not valid JSON-string payloads via
 `scripts/fix-recap-mdx-diff-strings.js` (`JSON.stringify` after lenient
-unescape). (2) Isolate Callout/Note/… block tags onto their own lines and
-balance missing closers in the same pass. (3) On `repairable=true`, re-run the
-deterministic fixer and re-publish before any agent repair; cap agent repair at
-~6 minutes. (4) Prompt agents that Diff string props must be JS-string-safe.
-(5) Do not treat a 422 acorn/MDX error as an auth/token problem.
+unescape). (2) Isolate Callout/Note/… block tags onto their own lines (do not
+auto-balance — decoys in samples). (3) Rewrite Diff JSX string attrs to
+`{JSON.stringify(...)}`; rewrite bare array attrs to `{[…]}`; strip illegal
+commas between attrs. (4) On `repairable=true`, re-run the deterministic fixer
+and re-publish before any agent repair; cap agent repair at ~6 minutes.
+(5) Prompt agents that Diff string props must be JS-string-safe and JSX array
+attrs must use expression form. (6) Do not treat a 422 acorn/MDX error as an
+auth/token problem.
 
 ## Lesson 0ei: PLAN_RECAP_TOKEN newlines break publish AND leak JWT into comments (2026-07-21)
 
