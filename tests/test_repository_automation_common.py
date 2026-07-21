@@ -112,16 +112,56 @@ class TestRunProcess(unittest.TestCase):
             self.assertEqual(result.stdout.strip(), "real")
 
 
-class TestRunChecked(unittest.TestCase):
+class TestRunShellCommand(unittest.TestCase):
     @patch("repository_automation_common.run_process")
-    def test_run_checked(self, mock_run_process):
-        mock_completed = MagicMock()
-        mock_run_process.return_value = mock_completed
+    def test_run_shell_command_basic(self, mock_run_process):
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+        mock_proc.stdout = "output\n"
+        mock_proc.stderr = "error\n"
+        mock_run_process.return_value = mock_proc
 
-        result = rac.run_checked(["echo", "hello"])
+        result = rac.run_shell_command("echo hello")
 
-        self.assertEqual(result, mock_completed)
-        mock_run_process.assert_called_once_with(["echo", "hello"], check=True)
+        mock_run_process.assert_called_once_with(
+            [rac.BASH_BIN, "-lc", "echo hello"], timeout=1800
+        )
+
+        self.assertEqual(result["command"], "echo hello")
+        self.assertEqual(result["exit_code"], 0)
+        self.assertEqual(result["stdout"], "output\n")
+        self.assertEqual(result["stderr"], "error\n")
+
+    @patch("repository_automation_common.run_process")
+    def test_run_shell_command_timeout(self, mock_run_process):
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+        mock_proc.stdout = "output\n"
+        mock_proc.stderr = ""
+        mock_run_process.return_value = mock_proc
+
+        result = rac.run_shell_command("sleep 10", timeout=5)
+
+        mock_run_process.assert_called_once_with(
+            [rac.BASH_BIN, "-lc", "sleep 10"], timeout=5
+        )
+        self.assertEqual(result["exit_code"], 0)
+
+    @patch("repository_automation_common.run_process")
+    def test_run_shell_command_truncation(self, mock_run_process):
+        mock_proc = MagicMock()
+        mock_proc.returncode = 1
+        long_output = "a" * 5000
+        mock_proc.stdout = long_output
+        mock_proc.stderr = long_output
+        mock_run_process.return_value = mock_proc
+
+        result = rac.run_shell_command("echo long")
+
+        self.assertLess(len(result["stdout"]), len(long_output))
+        self.assertLess(len(result["stderr"]), len(long_output))
+        self.assertTrue(result["stdout"].endswith("... [truncated]"))
+        self.assertTrue(result["stderr"].endswith("... [truncated]"))
 
 if __name__ == "__main__":
     unittest.main()
