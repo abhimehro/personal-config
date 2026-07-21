@@ -4,13 +4,26 @@
 **Symptom:** Non-skip runs fail at Collect bounded diff with `spawn tsx ENOENT`.
 
 ## Root cause
-- `@agent-native/core` bin falls back to `spawn(\"tsx\")` when npm extract makes src newer than dist.
+- `@agent-native/core` bin falls back to `spawn("tsx")` when npm extract makes src newer than dist.
 - #1715 installed `tsx` but did not put `node_modules/.bin` on PATH → still ENOENT.
 - Correct consumer package: `@agent-native/recap-cli` (built dist, no tsx).
 
 ## Plan
 - [x] Switch install to `@agent-native/recap-cli`
 - [x] Verify locally; update docs/lesson; commit + PR
+
+---
+
+# Fix PLAN_RECAP_TOKEN newline / JWT leak in sticky comment (2026-07-21)
+
+**Route:** T3+S
+**Symptom:** Sticky comment `Visual recap — generation failed` with
+`Headers.append: "Bearer [redacted] <jwt-remainder>" is an invalid header value`.
+
+- [x] Sanitize token at job start (strip all whitespace / Bearer prefix)
+- [x] Scrub diagnostics before sticky comment / check complete
+- [x] Lesson 0ei + operator docs; warn to rotate exposed token
+- [ ] Commit, push, re-run visual-recap on PR
 
 ---
 

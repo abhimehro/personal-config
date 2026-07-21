@@ -253,6 +253,29 @@ jobs:
           # in .git/config (it uses GH_TOKEN for gh API calls, never git push).
           persist-credentials: false
 
+      # SECURITY: GitHub Secrets paste often embeds CR/LF mid-JWT. undici then
+      # rejects Authorization via Headers.append ("invalid header value"), and
+      # recap-cli's Bearer redact only matches one [A-Za-z0-9._-]+ run — the JWT
+      # remainder after the break leaks into the sticky comment (Lesson 0ei).
+      - name: Sanitize PLAN_RECAP_TOKEN
+        env:
+          RAW_PLAN_RECAP_TOKEN: ${{ secrets.PLAN_RECAP_TOKEN }}
+        run: |
+          set -euo pipefail
+          CLEAN="$(printf '%s' "${RAW_PLAN_RECAP_TOKEN:-}" | tr -d '[:space:]')"
+          CLEAN="$(printf '%s' "$CLEAN" | sed -E 's/^[Bb][Ee][Aa][Rr][Ee][Rr]//')"
+          if [ -z "$CLEAN" ]; then
+            echo "::error::PLAN_RECAP_TOKEN is empty after whitespace sanitize"
+            exit 1
+          fi
+          if ! printf '%s' "$CLEAN" | grep -Eq '^[A-Za-z0-9._-]+$'; then
+            echo "::error::PLAN_RECAP_TOKEN has non-token characters after sanitize — re-mint and paste as one line (no wraps)"
+            exit 1
+          fi
+          # Mask before exporting so later logs cannot print the cleaned value.
+          echo "::add-mask::$CLEAN"
+          printf 'PLAN_RECAP_TOKEN=%s\n' "$CLEAN" >> "$GITHUB_ENV"
+
       # Dogfood trusted base-branch source inside this monorepo, else install the
       # published package once. Never execute PR-head recap CLI code.
       - name: Resolve recap CLI
@@ -898,7 +921,12 @@ jobs:
           fi
           {
             echo 'reason<<__RECAP_URL_REASON_EOF__'
-            echo "$URL_REASON"
+            # SECURITY: scrub JWT fragments before they reach sticky comments
+            # (recap-cli redact misses mid-token newline splits — Lesson 0ei).
+            printf '%s\n' "$URL_REASON" | sed -E \
+              -e 's/[Bb]earer[[:space:]]+[^[:space:]"]+/Bearer [redacted]/g' \
+              -e 's/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/[jwt redacted]/g' \
+              -e 's/[A-Za-z0-9_-]{40,}/[redacted]/g'
             echo '__RECAP_URL_REASON_EOF__'
           } >> "$GITHUB_OUTPUT"
 
@@ -933,12 +961,16 @@ jobs:
             exit 0
           fi
           if [ -n "${RECAP_PUBLISH_REASON:-}" ]; then
+            SCRUBBED="$(printf '%s' "$RECAP_PUBLISH_REASON" | sed -E \
+              -e 's/[Bb]earer[[:space:]]+[^[:space:]"]+/Bearer [redacted]/g' \
+              -e 's/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/[jwt redacted]/g' \
+              -e 's/[A-Za-z0-9_-]{40,}/[redacted]/g')"
             {
               echo 'summary<<__RECAP_PUBLISH_SUMMARY_EOF__'
-              echo "$RECAP_PUBLISH_REASON"
+              printf '%s\n' "$SCRUBBED"
               echo '__RECAP_PUBLISH_SUMMARY_EOF__'
             } >> "$GITHUB_OUTPUT"
-            node -e 'process.stdout.write(JSON.stringify({ ok: true, summary: process.env.RECAP_PUBLISH_REASON || "" }) + "\n")'
+            RECAP_PUBLISH_REASON="$SCRUBBED" node -e 'process.stdout.write(JSON.stringify({ ok: true, summary: process.env.RECAP_PUBLISH_REASON || "" }) + "\n")'
             exit 0
           fi
           RESULT=claude-result.json
@@ -1067,6 +1099,16 @@ jobs:
           RECAP_URL_REASON: ${{ steps.route_health.outputs.reason || steps.url.outputs.reason }}
         run: |
           set -euo pipefail
+          # SECURITY: defense-in-depth scrub before sticky comment (Lesson 0ei).
+          scrub_diag() {
+            printf '%s' "${1:-}" | sed -E \
+              -e 's/[Bb]earer[[:space:]]+[^[:space:]"]+/Bearer [redacted]/g' \
+              -e 's/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/[jwt redacted]/g' \
+              -e 's/[A-Za-z0-9_-]{40,}/[redacted]/g'
+          }
+          RECAP_AGENT_SUMMARY="$(scrub_diag "${RECAP_AGENT_SUMMARY:-}")"
+          RECAP_URL_REASON="$(scrub_diag "${RECAP_URL_REASON:-}")"
+          export RECAP_AGENT_SUMMARY RECAP_URL_REASON
           $RECAP_CLI recap comment upsert --repo "$GITHUB_REPOSITORY" --issue "$PR_NUMBER" --token "$GH_TOKEN" --head-sha "$HEAD_SHA"
 
       - name: Complete visual recap check
@@ -1086,6 +1128,14 @@ jobs:
           RECAP_URL_REASON: ${{ steps.route_health.outputs.reason || steps.url.outputs.reason }}
         run: |
           set -uo pipefail
+          scrub_diag() {
+            printf '%s' "${1:-}" | sed -E \
+              -e 's/[Bb]earer[[:space:]]+[^[:space:]"]+/Bearer [redacted]/g' \
+              -e 's/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/[jwt redacted]/g' \
+              -e 's/[A-Za-z0-9_-]{40,}/[redacted]/g'
+          }
+          RECAP_AGENT_SUMMARY="$(scrub_diag "${RECAP_AGENT_SUMMARY:-}")"
+          RECAP_URL_REASON="$(scrub_diag "${RECAP_URL_REASON:-}")"
           $RECAP_CLI recap check complete \
             --check-run-id "$CHECK_RUN_ID" \
             --plan-ok "$PLAN_OK" \

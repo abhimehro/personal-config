@@ -89,16 +89,21 @@ Re-run jobs on a prior run.
 
 ## Operator checklist
 
-1. Confirm secrets: `MISTRAL_API_KEY`, `PLAN_RECAP_TOKEN`
+1. Confirm secrets: `MISTRAL_API_KEY`, `PLAN_RECAP_TOKEN` (paste as **one
+   line** — embedded newlines make publish fail with `Headers.append … invalid
+   header value` and can leak JWT fragments into the sticky comment; Lesson 0ei)
 2. Optional repo vars: `VISUAL_RECAP_AGENT=opencode`,
    `VISUAL_RECAP_MODEL=mistral/mistral-medium-latest`,
    `RECAP_CLI_VERSION` (pins `@agent-native/recap-cli`, not core)
 3. Open / ready-for-review a non-draft PR and confirm the sticky recap comment
 4. On failure at **Collect bounded diff** with `spawn tsx ENOENT`: workflow is
    still on `@agent-native/core` — must use `@agent-native/recap-cli` (Lesson 0eh)
-5. On agent failure, download `pr-visual-recap-source-*` artifact
+5. On `Headers.append` / `Bearer [redacted] <fragment>` in the sticky comment:
+   re-paste `PLAN_RECAP_TOKEN` as one line (workflow now strips whitespace) and
+   **rotate** the token if any JWT fragment was posted
+6. On agent failure, download `pr-visual-recap-source-*` artifact
    (`opencode-events.jsonl`, `opencode-stderr.log`)
-6. Agent may emit raw newlines inside JSON string literals — workflow prefers
+7. Agent may emit raw newlines inside JSON string literals — workflow prefers
    OpenCode **sidecar files** (`recap-meta.json` + `recap-plan.mdx`, …) and
    assembles strict JSON via `JSON.stringify`; control-char sanitize remains a
    fallback for Claude/Codex single-file output.

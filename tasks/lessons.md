@@ -1,6 +1,26 @@
 # Lessons Learned
 
+## Lesson 0ei: PLAN_RECAP_TOKEN newlines break publish AND leak JWT into comments (2026-07-21)
+
+**Pattern:** Visual recap sticky comment showed `Headers.append: "Bearer
+[redacted] <jwt-remainder>" is an invalid header value` instead of a plan
+link. Publish never produced a URL. **Root cause:** (1) `PLAN_RECAP_TOKEN`
+GitHub secret contained embedded CR/LF (wrapped paste). undici rejects
+`Authorization` values with control chars. (2) `@agent-native/recap-cli`
+`sanitizeAgentFailureSummary` only redacts `Bearer\s+[A-Za-z0-9._-]{8,}` —
+a mid-token newline ends that match early, so the JWT payload/signature after
+the break is posted to the PR. `.trim()` on the token does **not** remove
+internal whitespace.
+**Rule:** (1) Strip **all** whitespace from `PLAN_RECAP_TOKEN` at job start
+(`tr -d '[:space:]'`), drop accidental `Bearer` prefix, `::add-mask::`, then
+export via `GITHUB_ENV`. (2) Scrub sticky-comment diagnostics for Bearer /
+JWT / long base64url runs before upsert. (3) Paste secrets as a single line;
+if a JWT fragment ever lands in a PR comment, **rotate** the org service
+token immediately. (4) Do not rely on recap-cli redact alone for newline-split
+tokens.
+
 ## Lesson 0eh: PR Visual Recap must use `@agent-native/recap-cli`, not core+tsx (2026-07-21)
+
 
 **Pattern:** Non-skip `pr-visual-recap` runs failed at **Collect bounded diff**
 with `agent-native CLI build output is missing and the source fallback failed:
