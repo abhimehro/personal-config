@@ -24,6 +24,7 @@ from repository_automation_tasks import (  # noqa: E402
     execute_configured_commands,
     run_command_set,
     run_quality_assurance,
+    run_performance_optimizer,
     run_safe_adjustment_commands,
 )
 
@@ -194,6 +195,81 @@ class TestRunQualityAssurance(unittest.TestCase):
                     ("success", "1 passed"),
                     "test output",
                     {"command_results": command_results},
+                )
+                self.assertEqual(result, {"status": "success"})
+
+
+class TestRunPerformanceOptimizer(unittest.TestCase):
+    @patch("repository_automation_tasks.discover_hotspots")
+    @patch("repository_automation_tasks.run_command_set")
+    @patch("repository_automation_tasks.write_result")
+    def test_run_performance_optimizer_cases(self, mock_write_result, mock_run_command_set, mock_discover_hotspots):
+        cases = [
+            (
+                "with_config",
+                {
+                    "performance_optimizer": {
+                        "setup_commands": [{"run": "setup"}],
+                        "commands": [{"run": "bench"}],
+                        "suggestions": ["suggestion1", "suggestion2"],
+                    }
+                },
+                {"setup_commands": [{"run": "setup"}], "commands": [{"run": "bench"}]},
+                [{"cmd": "bench", "exit": 0}],
+                [("file1.py", 100), ("file2.py", 50)],
+                [
+                    "test output",
+                    "## Static hotspots",
+                    "| File | Approximate lines |",
+                    "| --- | ---: |",
+                    "| `file1.py` | 100 |",
+                    "| `file2.py` | 50 |",
+                    "",
+                    "## Suggestions",
+                    "- suggestion1",
+                    "- suggestion2",
+                ],
+            ),
+            (
+                "default_config",
+                {},
+                {"setup_commands": [], "commands": []},
+                [],
+                [],
+                [
+                    "test output",
+                    "## Static hotspots",
+                    "| File | Approximate lines |",
+                    "| --- | ---: |",
+                ],
+            ),
+        ]
+
+        for name, config, expected_arg, command_results, hotspots, expected_lines in cases:
+            with self.subTest(name=name):
+                mock_run_command_set.reset_mock()
+                mock_write_result.reset_mock()
+                mock_discover_hotspots.reset_mock()
+
+                mock_run_command_set.return_value = (
+                    "success",
+                    "1 passed",
+                    {"body": "test output\n", "command_results": command_results},
+                )
+                mock_discover_hotspots.return_value = hotspots
+                mock_write_result.return_value = {"status": "success"}
+
+                result = run_performance_optimizer(config)
+
+                mock_run_command_set.assert_called_once_with(
+                    "performance-optimizer",
+                    expected_arg,
+                )
+                mock_write_result.assert_called_once_with(
+                    "performance-optimizer",
+                    ("success", "1 passed"),
+                    "\n".join(expected_lines) + "\n",
+                    {"hotspots": hotspots, "command_results": command_results},
                 )
                 self.assertEqual(result, {"status": "success"})
 
