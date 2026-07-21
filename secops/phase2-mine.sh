@@ -25,7 +25,7 @@ echo "Starting Phase 2: Backlog Miner & Triage Orchestrator"
 echo "=============================================================================="
 log "START - Phase 2 run begin."
 
-# This script can serve as the kickoff agent. It checks the presence of 'todo.md' or 'lessons.md'
+# This script can serve as the kickoff agent. It checks the presence of the active task tracker or 'lessons.md'
 # across all repositories and logs a status update of your technical debt files.
 
 for repo in "${REPOS[@]}"; do
