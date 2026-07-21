@@ -1,3 +1,15 @@
+# Clear PR #1733 CI gates (Gitleaks + CodeScene) — 2026-07-21
+
+**Route:** T3+S
+**Context:** Visual-recap MDX harden verified live; remaining red checks block merge.
+
+## Plan
+- [ ] Gitleaks: FP `secret contained` in Lesson 0ei (commit range scan) → stopword + rephrase
+- [ ] CodeScene: refactor `scripts/fix-recap-mdx-diff-strings.js` complexity; post `/cs-agent`
+- [ ] Re-run tests; commit; push; confirm checks
+
+---
+
 # Fix PR Visual Recap CLI failures (2026-07-21)
 
 **Route:** T3+S

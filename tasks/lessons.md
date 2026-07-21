@@ -37,7 +37,7 @@ auth/token problem.
 **Pattern:** Visual recap sticky comment showed `Headers.append: "Bearer
 [redacted] <jwt-remainder>" is an invalid header value` instead of a plan
 link. Publish never produced a URL. **Root cause:** (1) `PLAN_RECAP_TOKEN`
-GitHub secret contained embedded CR/LF (wrapped paste). undici rejects
+org credential had embedded CR/LF (wrapped paste). undici rejects
 `Authorization` values with control chars. (2) `@agent-native/recap-cli`
 `sanitizeAgentFailureSummary` only redacts `Bearer\s+[A-Za-z0-9._-]{8,}` —
 a mid-token newline ends that match early, so the JWT payload/signature after

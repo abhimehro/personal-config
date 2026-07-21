@@ -189,7 +189,7 @@ regexes = [
     '''^secrets\.result$''',
     # Prose stopwords after "secret|password|…" (?P<secret> value). Real
     # credentials are never a single English stopword like these.
-    '''(?i)^(presence|scanning|false-positive|allowlist|detection|validation|management|injection|exfiltration)$''',
+    '''(?i)^(presence|scanning|false-positive|allowlist|detection|validation|management|injection|exfiltration|contained|embedded)$''',
 ]
 paths = [
     '''(?i)test''',
