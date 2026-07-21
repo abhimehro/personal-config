@@ -304,12 +304,13 @@ jobs:
             VERSION="$(npm view @agent-native/core@latest version)"
           fi
           for attempt in 1 2 3; do
-            if npm install --prefix "$RUNNER_TEMP/recap-cli" --no-audit --no-fund "@agent-native/core@$VERSION"; then
+            if npm install --prefix "$RUNNER_TEMP/recap-cli" --no-audit --no-fund "@agent-native/core@$VERSION" tsx; then
               break
             fi
             if [ "$attempt" = "3" ]; then exit 1; fi
             sleep $((attempt * 10))
           done
+          npm install --prefix "$RUNNER_TEMP/recap-cli" --no-audit --no-fund tsx
           echo "RECAP_CLI=$RUNNER_TEMP/recap-cli/node_modules/.bin/agent-native" >> "$GITHUB_ENV"
           echo "RECAP_PLAYWRIGHT=$RUNNER_TEMP/recap-cli/node_modules/.bin/playwright" >> "$GITHUB_ENV"
 
