@@ -10,11 +10,18 @@
  *    block elements → 422 "Expected the closing tag </Callout> either after…"
  * 3) Unbalanced Callout-like tags: append missing closers.
  * 4) JSX string attrs with embedded `"` → `{JSON.stringify(...)}`.
- * 5) Bare array attrs (`columns=[…]`) → `columns={[…]}`; strip illegal commas.
+ * 5) Bare array attrs (`columns=[…]`) → `columns={[…]}`; strip illegal commas
+ *    (delegated to ./lib/fix-recap-mdx-arrays.js).
  *
  * SECURITY: only rewrites text; does not execute MDX.
  * Trust boundary: agent-written MDX is untrusted input; we normalize structure.
  */
+
+const path = require("path");
+const {
+  fixBareArrayAttrs,
+  fixJsxAttrTrailingCommas,
+} = require(path.join(__dirname, "lib", "fix-recap-mdx-arrays.js"));
 
 /** @type {readonly string[]} */
 const BLOCK_TAGS = Object.freeze([
@@ -36,6 +43,10 @@ const SIMPLE_ESCAPES = Object.freeze({
   "\\": "\\",
   "/": "/",
 });
+
+/** Attr terminator for Diff/AnnotatedCode string values (exactly two spaces). */
+const JSX_ATTR_TERM_RE =
+  /\n  (?:before|after|code|summary|language|mode|annotations|filename|id)\s*=|\n\/>|\n<\/(?:Diff|AnnotatedCode)>/;
 
 /** @returns {Record<string, number>} */
 function emptyFixDetails() {
@@ -76,6 +87,14 @@ function sumFixDetails(details) {
     details.isolate +
     details.balance
   );
+}
+
+/**
+ * @param {unknown} value
+ * @returns {value is Record<string, unknown>}
+ */
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 /**
@@ -222,9 +241,19 @@ function balanceBlockTags(mdx) {
   return { text, fixed };
 }
 
-/** Attr terminator for Diff/AnnotatedCode string values (exactly two spaces). */
-const JSX_ATTR_TERM_RE =
-  /\n  (?:before|after|code|summary|language|mode|annotations|filename|id)\s*=|\n\/>|\n<\/(?:Diff|AnnotatedCode)>/;
+/**
+ * @param {string} rest
+ * @returns {{ rawValue: string, consumed: number } | null}
+ */
+function findQuotedAttrEndOnLine(rest) {
+  const eol = rest.search(/\n/);
+  const line = eol >= 0 ? rest.slice(0, eol) : rest;
+  const endQuote = line.indexOf('"');
+  if (endQuote < 0) return null;
+  const rawValue = line.slice(0, endQuote);
+  if (rawValue === "" || tryParseJsonStringBody(rawValue)) return null;
+  return { rawValue, consumed: endQuote + 1 };
+}
 
 /**
  * Locate the end of a JSX string attr value starting at `rest`.
@@ -245,16 +274,8 @@ function findJsxStringAttrEnd(rest, kind) {
   if (term >= 0) {
     return { rawValue: rest.slice(0, term), consumed: term };
   }
-
   if (kind !== "quote") return null;
-
-  const eol = rest.search(/\n/);
-  const line = eol >= 0 ? rest.slice(0, eol) : rest;
-  const endQuote = line.indexOf('"');
-  if (endQuote < 0) return null;
-  const rawValue = line.slice(0, endQuote);
-  if (rawValue === "" || tryParseJsonStringBody(rawValue)) return null;
-  return { rawValue, consumed: endQuote + 1 };
+  return findQuotedAttrEndOnLine(rest);
 }
 
 /**
@@ -304,10 +325,6 @@ function rewriteOneJsxStringAttr(body, key, kind) {
 /**
  * Rewrite Diff/AnnotatedCode string props to `key={JSON.stringify(...)}` form.
  *
- * Handles both:
- * - `after="…"` (JSX/HTML attr — embedded `"` ends the value early)
- * - `code={"…` multi-line (invalid JS string — raw newlines)
- *
  * @param {string} mdx
  * @returns {{ text: string, fixed: number }}
  */
@@ -328,107 +345,6 @@ function fixDiffJsxStringAttrs(mdx) {
     if (passFixed === 0) break;
     fixed += passFixed;
   }
-  return { text, fixed };
-}
-
-/**
- * Advance past a JSON-ish array starting at `openIdx` (index of `[`).
- *
- * @param {string} text
- * @param {number} openIdx
- * @returns {number} index just past the matching `]`, or -1 if unbalanced
- */
-function findMatchingArrayEnd(text, openIdx) {
-  let i = openIdx + 1;
-  let depth = 1;
-  let inStr = /** @type {string | null} */ (null);
-  let escape = false;
-  for (; i < text.length && depth > 0; i += 1) {
-    const ch = text[i];
-    if (inStr) {
-      if (escape) {
-        escape = false;
-        continue;
-      }
-      if (ch === "\\") {
-        escape = true;
-        continue;
-      }
-      if (ch === inStr) inStr = null;
-      continue;
-    }
-    if (ch === '"' || ch === "'" || ch === "`") {
-      inStr = ch;
-      continue;
-    }
-    if (ch === "[") depth += 1;
-    else if (ch === "]") depth -= 1;
-  }
-  return depth === 0 ? i : -1;
-}
-
-/**
- * Build `key={[…]}` replacement; for `rows=[…]}` only insert the opening `{`.
- *
- * @param {string} prefix whitespace before the attr name
- * @param {string} key
- * @param {string} text
- * @param {number} openIdx
- * @param {number} endIdx index just past `]`
- * @returns {string}
- */
-function bareArrayReplacement(prefix, key, text, openIdx, endIdx) {
-  const arraySlice = text.slice(openIdx, endIdx);
-  if (text[endIdx] === "}") {
-    return `${prefix}${key}={${arraySlice}`;
-  }
-  return `${prefix}${key}={${arraySlice}}`;
-}
-
-/**
- * Rewrite bare JSX array attrs (`columns=[…]`) to expression form (`columns={[…]}`).
- *
- * @param {string} mdx
- * @returns {{ text: string, fixed: number }}
- */
-function fixBareArrayAttrs(mdx) {
-  const keys = "columns|rows|annotations|items|data|options|tabs";
-  let text = mdx;
-  let fixed = 0;
-  for (let n = 0; n < 64; n += 1) {
-    const match = new RegExp(`(\\s)(${keys})=\\[`).exec(text);
-    if (!match) break;
-    const openIdx = match.index + match[0].length - 1;
-    const endIdx = findMatchingArrayEnd(text, openIdx);
-    if (endIdx < 0) break;
-    const replacement = bareArrayReplacement(
-      match[1],
-      match[2],
-      text,
-      openIdx,
-      endIdx,
-    );
-    const sliceEnd = text[endIdx] === "}" ? endIdx : endIdx;
-    // When stray `}` is already present, replacement omits it from the slice
-    // start…endIdx and we keep text[endIdx] (`}`) in place via slice(endIdx).
-    text = text.slice(0, match.index) + replacement + text.slice(sliceEnd);
-    fixed += 1;
-  }
-  return { text, fixed };
-}
-
-/**
- * Remove illegal commas between JSX attributes (`columns={…},` → `columns={…}`).
- *
- * @param {string} mdx
- * @returns {{ text: string, fixed: number }}
- */
-function fixJsxAttrTrailingCommas(mdx) {
-  let fixed = 0;
-  const text = mdx.replace(/(["}\]])(,)(\s*\n\s*[A-Za-z_][\w-]*=)/g, (_, end, _comma, next) => {
-    fixed += 1;
-    return `${end}${next}`;
-  });
   return { text, fixed };
 }
 
@@ -464,20 +380,10 @@ function fixMdxContent(mdx) {
 }
 
 /**
- * Fix MDX files inside a recap-source.json payload.
- *
- * @param {unknown} payload
- * @returns {{ payload: unknown, fixed: number, details: Record<string, number> }}
+ * @param {Record<string, unknown>} mdx
+ * @returns {{ nextMdx: Record<string, unknown>, fixed: number, details: Record<string, number> }}
  */
-function fixRecapSourcePayload(payload) {
-  const emptyDetails = emptyFixDetails();
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    return { payload, fixed: 0, details: emptyDetails };
-  }
-  const mdx = /** @type {Record<string, unknown>} */ (payload).mdx;
-  if (!mdx || typeof mdx !== "object" || Array.isArray(mdx)) {
-    return { payload, fixed: 0, details: emptyDetails };
-  }
+function fixMdxMapEntries(mdx) {
   const details = emptyFixDetails();
   let fixed = 0;
   const nextMdx = { ...mdx };
@@ -489,6 +395,25 @@ function fixRecapSourcePayload(payload) {
     fixed += result.fixed;
     addFixDetails(details, result.details);
   }
+  return { nextMdx, fixed, details };
+}
+
+/**
+ * Fix MDX files inside a recap-source.json payload.
+ *
+ * @param {unknown} payload
+ * @returns {{ payload: unknown, fixed: number, details: Record<string, number> }}
+ */
+function fixRecapSourcePayload(payload) {
+  const emptyDetails = emptyFixDetails();
+  if (!isPlainObject(payload)) {
+    return { payload, fixed: 0, details: emptyDetails };
+  }
+  const mdx = payload.mdx;
+  if (!isPlainObject(mdx)) {
+    return { payload, fixed: 0, details: emptyDetails };
+  }
+  const { nextMdx, fixed, details } = fixMdxMapEntries(mdx);
   if (fixed === 0) return { payload, fixed: 0, details };
   return { payload: { ...payload, mdx: nextMdx }, fixed, details };
 }
