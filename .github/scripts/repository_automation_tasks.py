@@ -201,7 +201,14 @@ def discover_hotspots(limit: int = 5) -> list[tuple[str, int]]:
 
             path = root_path / file
             try:
-                line_count = path.read_text(encoding="utf-8").count("\n") + 1
+                line_count = 0
+                with path.open(encoding="utf-8") as f:
+                    while True:
+                        buf = f.read(65536)
+                        if not buf:
+                            break
+                        line_count += buf.count("\n")
+                line_count += 1
             except (UnicodeDecodeError, OSError):
                 continue
             candidates.append((str(path.relative_to(ROOT)), line_count))
