@@ -591,3 +591,47 @@
 - Maintainer: merge draft [#1031](https://github.com/abhimehro/ctrld-sync/pull/1031) after CI; then T1 sc#233; T2 pc#1670 + hg#374 + rpce#126/#127
 - Cross-links: [Session report](tasks/pr-review-2026-07-19.md), [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md)
 - New lessons: 0ec (USE_COLORS helper isolation), 0ed (Jules re-open twin)
+
+## Run — 2026-07-21 (evening salvage)
+
+### Input tail
+
+- Source report: `tasks/pr-review-2026-07-21.md` Phase 1 remainder (23 PRs)
+- Live re-fetch: hg #374 MERGED; pc #1724 + esp #1320 auto-resolved CLEAN; conflict clusters salvaged
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | #1716 #1717 #1723 | SALVAGE draft | [#1734](https://github.com/abhimehro/personal-config/pull/1734) | automation tests cluster; no workflow smuggle |
+| personal-config | #1726 | SALVAGE draft | [#1735](https://github.com/abhimehro/personal-config/pull/1735) | shell-command tests + junk deletes |
+| personal-config | #1718 | SALVAGE draft | [#1736](https://github.com/abhimehro/personal-config/pull/1736) | workflow_updater helpers |
+| personal-config | #1706 | CLOSE-SUPERSEDED | this session | prior Phase 2 docs |
+| personal-config | #1721 | ESCALATE | — | GH_TOKEN.env lru_cache |
+| personal-config | #1724 | AUTO-RESOLVED | — | next Phase 1 |
+| email-security-pipeline | #1331 | SALVAGE draft | [#1334](https://github.com/abhimehro/email-security-pipeline/pull/1334) | imap size list-comp; append bolt |
+| email-security-pipeline | #1314 | SALVAGE draft | [#1335](https://github.com/abhimehro/email-security-pipeline/pull/1335) | extend+comprehension; append bolt |
+| email-security-pipeline | #1328 #1324 #1319 | ESCALATE | — | secrets/auth |
+| email-security-pipeline | #1327 #1330 #1311 | DEFER | — | CodeScene; cs-agent posted |
+| email-security-pipeline | #1320 | AUTO-RESOLVED | — | next Phase 1 |
+| Hydrograph | #374 | DROP (MERGED) | — | numpy major landed |
+| series_correction | #275 #276 #268 | ESCALATE | — | auth dummy_todos (0ef) |
+| repoprompt-ce | #126 #127 | ESCALATE | — | tip artifact majors (0dw) |
+
+- Salvage draft PRs opened: **5**
+- Infra-fix draft PRs opened: **0**
+- Closed superseded/no-op: **8**
+- Autonomous merges: **0**
+- Escalations left open: **10** (+ 3 CodeScene defers)
+
+### Verification status
+
+- Blocking checks on `main`: none identified
+- Local verify: pc focused unit tests; esp 713 pytest passed on #1334 branch
+- CodeScene: `/cs-agent` posted on esp #1330/#1311; already present on #1327
+
+### Handoff
+
+- Maintainer: merge drafts #1734/#1735/#1736 then esp #1334/#1335; Phase 1 for #1724/#1320; T1 auth/secrets escalations
+- Cross-links: [Session report](tasks/pr-review-2026-07-21.md), [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md)
+- New lesson: **0eh** (pr-visual-recap.yml smuggling in test PRs)
