@@ -1355,3 +1355,87 @@ diff against `main` (not the PR's old base). If the PR removes helpers and
 re-inlines equivalent math, CLOSE as superseded / complexity regression — do
 not salvage the inline form. **Detection cost:** Low — `git diff main...pr`
 shows deleted helper methods + CodeScene Complex Method on the callers.
+
+## Lesson 0dz: `pull_request_target` greeting chicken-egg (2026-07-18)
+
+**Pattern:** Dependabot bump of `actions/first-interaction` (esp #1296) kept
+failing the `greeting` check even after the PR head was corrected to `@v3` +
+kebab-case inputs. Logs still showed `first-interaction@v1` with underscore
+names. **Root cause:** `on: pull_request_target` runs the **base-branch
+(`main`)** workflow file, not the PR head — so the fix cannot self-validate
+until merged. Underscore inputs (`repo_token`) are ignored by current action
+images → empty messages → `Action must have at least one of issue-message or
+pr-message set`. **Rule:** (1) For PRs that only fix a `pull_request_target`
+workflow on `main`, treat a red check that re-runs the broken base workflow as
+**expected Gate 1 noise**, not a merge blocker — document in the merge comment.
+(2) Always ship kebab-case inputs with `@v3`. (3) Prefer moving greetings off
+`pull_request_target` long-term (agent already owns first-interaction).
+**Detection cost:** Low — log line `Run actions/first-interaction@v1` while PR
+diff shows `@v3`.
+
+## Lesson 0ea: CI-cache salvage vs workflow-delete consolidation (2026-07-18)
+
+**Pattern:** Salvage [#1679](https://github.com/abhimehro/personal-config/pull/1679)
+kept and enhanced `.github/workflows/shellcheck.yml` (cached
+`setup-shellcheck`). Sibling consolidation [#1670](https://github.com/abhimehro/personal-config/pull/1670)
+(ABHI-1321) **deletes** the same workflow as redundant with `mac-audit.yml` /
+`code-quality.yml`, producing a Git **modify/delete** conflict — and the same
+PR also removes `gemini-*.yml` + edits `gitleaks.toml`. **Rule:** When a DIRTY
+PR's only conflict is modify/delete on a workflow that a recent salvage
+intentionally kept, do **not** auto-resolve by taking the deletion if the PR
+also touches CI trust-boundary surfaces (Gemini agents, credential scanners).
+Leave ESCALATE with an explicit keep-vs-delete note for the maintainer.
+**Detection cost:** Low — `git merge-tree` / `git merge --no-commit` shows
+`CONFLICT (modify/delete): …/shellcheck.yml`.
+
+## Lesson 0eb: Setup-security PRs that regress greetings.yml (2026-07-19)
+
+**Pattern:** esp #1299 correctly moved IMAP password handling out of shell
+variables into the Python setup wizard, but also flipped
+`.github/workflows/greetings.yml` inputs from kebab-case back to underscores —
+undoing Lesson 0dz. After sibling #1300 merged, `setup_wizard.py` went DIRTY
+on formatting-only hunks. **Rule:** (1) Diff workflow files in every
+setup/security PR even when the title is password-exposure; reject/autofix
+underscore `first-interaction` inputs. (2) Merge lint/Jules PRs touching the
+same Python module *after* the security PR, or expect a formatting conflict
+cycle. **Detection cost:** Low — `gh pr diff` on `greetings.yml` shows
+`repo_token` / `issue_message`.
+
+## Lesson 0ec: Isolate USE_COLORS branches to avoid CodeScene Complex Method (2026-07-19)
+
+**Pattern:** Jules Palette [#1030](https://github.com/abhimehro/ctrld-sync/pull/1030)
+added an inline `if USE_COLORS: … else: …` inside
+`display_rate_limit_status`, which was already at CodeScene's cyclomatic
+threshold (9). The check failed with Complex Method 9→11 even though tests,
+ruff, and mypy were green.
+**Rule:** When a Palette/UX PR only needs a color fallback, extract a tiny
+helper (e.g. `_print_bold_header`, mirroring `_print_hint`) so the call site
+does not gain a decision branch. Post
+`/cs-agent skill:fix-code-health-degradations`, then ship the helper-based
+salvage as a **draft** and close the original as superseded.
+**Detection cost:** Low — CodeScene review comment names the method +
+threshold; three-dot diff shows a new `if USE_COLORS` inside an already-complex
+display function.
+
+## Lesson 0ed: Jules may re-open the same branch after salvage close (2026-07-19)
+
+**Pattern:** After Phase 2 closed ctrld-sync #1030 as superseded by salvage #1031,
+Jules re-opened the **same head branch** (`jules-…-6dc812c7`) as #1032 with the
+identical CodeScene-failing inline `if USE_COLORS` diff.
+**Rule:** After closing a Jules/Palette PR as superseded by a salvage draft,
+watch for an immediate twin re-open of the same `headRefName`. Close the twin
+with a link to the salvage draft and an explicit "do not re-open" note. Do not
+re-salvage.
+**Detection cost:** Low — new open PR with same `headRefName` / title within
+minutes of the close.
+
+## Lesson 0ee: GitGuardian PR scans intermediate commits (2026-07-20)
+
+**Pattern:** Seatek #493 tip was cleaned of `etc/passwd` path-traversal
+fixtures, but GG kept failing on intermediate commit `55cd44ba` (Generic
+Password FP). Autofix on tip alone cannot clear a historical-commit finding.
+**Rule:** (1) Never force-push to scrub. (2) Open a **clean-history** salvage PR
+from `main` with tip file contents only; merge that; close the poisoned-history
+PR as superseded. (3) Prefer path-traversal fixtures that do not contain the
+substring `passwd` / `password` (e.g. `outside/traversal_target`). **Detection
+cost:** Low — GG comment cites the old commit SHA; tip `rg passwd` is empty.

@@ -328,3 +328,7 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## 2026-07-16 - Prevent Empty Lists for Better Accessibility (Reiteration)
 **Learning:** Dynamically generated `<ul>` elements without `<li>` children are invalid HTML5 and confuse screen readers, causing them to ambiguously skip regions or misreport empty lists.
 **Action:** When creating HTML list generators (e.g., `html_ul`), explicitly evaluate the iterable before formatting. If the list is empty, inject a fallback empty state list item (like `<li class="empty-state">No items</li>`) instead of returning `<ul></ul>`.
+
+## 2026-03-10 - Empty Lists Accessibility
+**Learning:** When dynamically generating HTML lists (e.g., `<ul>`), rendering an empty list (e.g., `<ul></ul>`) creates an invalid HTML5 structure and disrupts screen reader experiences. Always providing a fallback empty state list item (`<li>`) is necessary to maintain proper list semantics.
+**Action:** Add a fallback empty state `<li>` whenever conditional list items are absent.

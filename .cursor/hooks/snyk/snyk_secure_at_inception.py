@@ -152,7 +152,7 @@ def get_state_file_path(workspace: str) -> str:
 
 
 def get_workspace(data: Dict[str, Any]) -> str:
-    workspace_roots = data.get("workspace_roots", [])
+    workspace_roots = data.get("workspace_roots", ())
     if workspace_roots:
         return workspace_roots[0]
 
@@ -222,7 +222,7 @@ def _merge_ranges(ranges: List[Dict[str, int]]) -> List[Dict[str, int]]:
 def _accumulate_ranges(
     existing: List[Dict[str, int]], new: List[Dict[str, int]]
 ) -> List[Dict[str, int]]:
-    return _merge_ranges(existing + new)
+    return _merge_ranges(list(existing) + list(new))
 
 
 # =============================================================================
@@ -287,7 +287,7 @@ def _evaluate_files(
     """
     per_file: Dict[str, List[Dict[str, Any]]] = {}
     for file_path, file_info in tracked_files.items():
-        modified_ranges = file_info.get("modified_ranges", [])
+        modified_ranges = file_info.get("modified_ranges", ())
         if not modified_ranges:
             per_file[file_path] = []
             continue
@@ -389,7 +389,8 @@ def _track_code_file_edit(workspace: str, file_path: str, edits: List[Dict[str, 
 
         new_ranges = compute_modified_ranges(file_content, edits)
         code_files = state.get("code_files", {})
-        existing = code_files.get(file_path, {}).get("modified_ranges", [])
+        _cf = code_files.get(file_path, {})
+        existing = _cf.get("modified_ranges", ())
         code_files[file_path] = {
             "modified_ranges": _accumulate_ranges(existing, new_ranges),
             "last_edit": datetime.now().isoformat(),
@@ -413,7 +414,7 @@ def _track_manifest_file_edit(workspace: str, file_path: str) -> None:
 def handle_after_file_edit(data: Dict[str, Any], workspace: str) -> None:
     """Track file edits and launch background scans."""
     file_path = data.get("file_path", "")
-    edits = data.get("edits", [])
+    edits = data.get("edits", ())
 
     if is_code_file(file_path):
         range_count = _track_code_file_edit(workspace, file_path, edits)
@@ -502,7 +503,7 @@ def _classify_scan_results(
 ) -> Tuple[List[Dict[str, Any]], List[str], List[str], List[str]]:
     """Return (new_vulns, clean, dirty, unevaluated) from a successful scan."""
     scan_info = get_scan_completion_info(workspace)
-    all_vulns = scan_info.get("vulnerabilities", []) if scan_info else []
+    all_vulns = scan_info.get("vulnerabilities", ()) if scan_info else []
     results_by_file = _group_vulns_by_file(all_vulns)
     per_file_results = _evaluate_files(code_files, results_by_file)
 
@@ -680,7 +681,7 @@ def handle_stop(data: Dict[str, Any], workspace: str) -> None:
         return
 
     code_files = state.get("code_files", {})
-    manifest_files = state.get("manifest_files", [])
+    manifest_files = state.get("manifest_files", ())
     new_vulns: List[Dict[str, Any]] = []
     clean_file_paths: List[str] = []
     dirty_file_paths: List[str] = []

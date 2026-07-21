@@ -1,3 +1,22 @@
+# PR Review Session Plan — 2026-07-20
+
+- [x] Preflight gate (7/7 PASS)
+- [x] Inventory open bot/automation PRs
+- [x] Close zero-diff QA PRs (#1699, #1035, #251) + dupe #1701
+- [x] Merge clean PRs (14 squash-merges)
+- [x] Autofix: pc #1700 CI rerun; Seatek #494 clean salvage
+- [x] Escalate auth/major-dep/trust-boundary; cs-agent on #1036
+- [x] Write pr-inventory, pr-triage, pr-review-2026-07-20, lessons
+- [ ] Commit/push session docs on cursor-agent/pr-workflow-automation-1a5f
+
+---
+
+- 2026-07-21: Merged `origin/main` into ABHI-1321 branch; journal kept
+  main tip (2026-07-20 review session) + this branch's ABHI-1321 /
+  visual-recap work. Reconfirmed: `shellcheck.yml` stays deleted
+  (duplicate of `mac-audit.yml` ShellCheck; main's cache wiring already
+  lands in `mac-audit.yml` via auto-merge).
+
 
 - [x] Visual recap: drop per-push (`synchronize`); refresh via label `visual-recap`
 - [x] Document visual recap for Phase 1 review + Phase 2 salvage agents
