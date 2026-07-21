@@ -26,6 +26,7 @@ from repository_automation_tasks import (  # noqa: E402
     run_quality_assurance,
     run_performance_optimizer,
     run_safe_adjustment_commands,
+    run_weekly_retrospective,
 )
 
 
@@ -354,6 +355,110 @@ class TestRunCommandSet(unittest.TestCase):
         self.assertIn("## Human review required", data["body"])
         self.assertIn("`setup1` failed and is not marked optional.", data["body"])
         self.assertNotIn("## Optional command warnings", data["body"])
+
+
+class TestRunWeeklyRetrospective(unittest.TestCase):
+    def setUp(self):
+        self.mock_recent_daily_runs = patch("repository_automation_tasks.recent_daily_runs").start()
+        self.mock_weekly_markers = patch("repository_automation_tasks.weekly_markers").start()
+        self.mock_ensure_gh_token = patch("repository_automation_tasks.ensure_gh_token").start()
+        self.mock_run_safe_adjustment_commands = patch(
+            "repository_automation_tasks.run_safe_adjustment_commands"
+        ).start()
+        self.mock_weekly_report_lines = patch(
+            "repository_automation_tasks.weekly_report_lines"
+        ).start()
+        self.mock_append_publication_result = patch(
+            "repository_automation_tasks.append_publication_result"
+        ).start()
+        self.mock_write_result = patch("repository_automation_tasks.write_result").start()
+        self.addCleanup(patch.stopall)
+
+    def test_run_weekly_retrospective_success(self):
+        self.mock_recent_daily_runs.return_value = ["run1", "run2"]
+        self.mock_weekly_markers.return_value = ["marker1"]
+        self.mock_ensure_gh_token.return_value = True
+        self.mock_run_safe_adjustment_commands.return_value = (
+            [{"name": "safe_cmd", "exit_code": 0}],
+            "http://safe_pr",
+        )
+        self.mock_weekly_report_lines.return_value = ("success", ["line1", "line2"])
+        self.mock_append_publication_result.return_value = (
+            "appended_body",
+            "http://issue",
+            False,
+        )
+        self.mock_write_result.return_value = {"status": "success"}
+
+        config = {
+            "weekly_retrospective": {"labels": ["weekly"]},
+            "reporting": {"daily_issue_prefix": "[test] Daily", "weekly_issue_prefix": "[test] Weekly"}
+        }
+
+        result = run_weekly_retrospective(config)
+
+        self.mock_recent_daily_runs.assert_called_once()
+        self.mock_weekly_markers.assert_called_once_with("[test] Daily")
+        self.mock_ensure_gh_token.assert_called_once()
+        self.mock_run_safe_adjustment_commands.assert_called_once_with({"labels": ["weekly"]})
+        self.mock_weekly_report_lines.assert_called_once_with(
+            config,
+            ["run1", "run2"],
+            ["marker1"],
+            [{"name": "safe_cmd", "exit_code": 0}],
+            "http://safe_pr",
+        )
+        self.mock_write_result.assert_called_once()
+
+        self.assertEqual(result, {"status": "success"})
+
+    def test_run_weekly_retrospective_no_gh_token(self):
+        self.mock_recent_daily_runs.return_value = ["run1", "run2"]
+        self.mock_weekly_markers.return_value = ["marker1"]
+        self.mock_ensure_gh_token.return_value = False
+        self.mock_weekly_report_lines.return_value = ("success", ["line1", "line2"])
+        self.mock_append_publication_result.return_value = (
+            "appended_body",
+            "http://issue",
+            False,
+        )
+        self.mock_write_result.return_value = {"status": "success"}
+
+        config = {}
+        result = run_weekly_retrospective(config)
+
+        self.mock_run_safe_adjustment_commands.assert_not_called()
+        self.mock_weekly_report_lines.assert_called_once_with(
+            config, ["run1", "run2"], ["marker1"], [], ""
+        )
+        self.assertEqual(result, {"status": "success"})
+
+    def test_run_weekly_retrospective_publication_error(self):
+        self.mock_recent_daily_runs.return_value = ["run1", "run2"]
+        self.mock_weekly_markers.return_value = ["marker1"]
+        self.mock_ensure_gh_token.return_value = True
+        self.mock_run_safe_adjustment_commands.return_value = ([], "")
+        self.mock_weekly_report_lines.return_value = ("success", ["line1", "line2"])
+        # error returned by append_publication_result is True
+        self.mock_append_publication_result.return_value = (
+            "appended_body",
+            "http://issue",
+            True,
+        )
+        self.mock_write_result.return_value = {"status": "failure"}
+
+        config = {}
+        result = run_weekly_retrospective(config)
+
+        # check that write_result is called with status "failure" because error=True
+        self.mock_write_result.assert_called_once_with(
+            "weekly-retrospective",
+            ("failure", "Reviewed 2 daily workflow runs from the last 7 days."),
+            "appended_body",
+            {"runs": ["run1", "run2"], "issue_url": "http://issue", "safe_pr_url": ""}
+        )
+        self.assertEqual(result, {"status": "failure"})
+
 
 if __name__ == "__main__":
     unittest.main()
