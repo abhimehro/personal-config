@@ -25,4 +25,4 @@
 ## Deliverables
 - [x] pr-inventory.md, pr-triage.md, pr-review-2026-07-21.md Phase 2
 - [x] salvage-session-reports.md + lessons.md (0eh)
-- [ ] Commit + push session branch; open draft session PR
+- [x] Commit + push session branch; open draft session PR
