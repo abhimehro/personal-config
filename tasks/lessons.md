@@ -1,6 +1,21 @@
 # Lessons Learned
 
+## Lesson 0eh: PR Visual Recap must use `@agent-native/recap-cli`, not core+tsx (2026-07-21)
+
+**Pattern:** Non-skip `pr-visual-recap` runs failed at **Collect bounded diff**
+with `agent-native CLI build output is missing and the source fallback failed:
+spawn tsx ENOENT`. Installing `tsx` next to `@agent-native/core` (#1715) did
+**not** fix it: core's `bin/agent-native.js` does `spawn("tsx", …)` looking up
+`PATH`, not `node_modules/.bin`. npm extract also often leaves `src/` mtime >
+`dist/`, forcing that fallback even when `dist/cli/index.js` exists.
+**Rule:** (1) Consumer workflows install `@agent-native/recap-cli` (built
+`dist/cli.js`, no tsx). (2) Never treat "npm install tsx" as sufficient unless
+`PATH` includes that prefix's `.bin` **and** you intentionally want the core
+source fallback. (3) Smoke-test `$RECAP_CLI recap --help` right after install.
+(4) `RECAP_CLI_VERSION` pins **recap-cli** versions (0.4.x), not core (0.11x).
+
 ## Lesson 0du: Gitleaks first capture group becomes Secret (2026-07-17)
+
 
 **Pattern:** `personal-config-generic-secret` used `(secret|password|…)[\s\-_:=]+…`
 as the regex. Gitleaks treats the **first capturing group** as `Secret`, so every

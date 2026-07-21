@@ -258,8 +258,9 @@ jobs:
       - name: Resolve recap CLI
         id: cli
         env:
-          # Optional: pin the consumer CLI version (e.g. "1.2.3"). Defaults to
+          # Optional: pin @agent-native/recap-cli (e.g. "0.4.7"). Defaults to
           # "latest" when unset. Set via repository variable RECAP_CLI_VERSION.
+          # Do not pin @agent-native/core versions here (Lesson 0eh).
           RECAP_CLI_VERSION: ${{ vars.RECAP_CLI_VERSION || 'latest' }}
         run: |
           if [ "$GITHUB_REPOSITORY" = "BuilderIO/agent-native" ] && [ -f packages/core/src/cli/index.ts ]; then
@@ -296,23 +297,32 @@ jobs:
       - name: Install published recap CLI
         if: steps.cli.outputs.local != 'true'
         env:
+          # Pins @agent-native/recap-cli (NOT @agent-native/core). Core's
+          # published bin falls back to spawn("tsx") when npm extract makes
+          # src/ newer than dist/ — and tsx is not on PATH → ENOENT (Lesson 0eh).
           RECAP_CLI_VERSION: ${{ vars.RECAP_CLI_VERSION || 'latest' }}
         run: |
           set -euo pipefail
           VERSION="$RECAP_CLI_VERSION"
           if [ "$VERSION" = "latest" ]; then
-            VERSION="$(npm view @agent-native/core@latest version)"
+            VERSION="$(npm view @agent-native/recap-cli@latest version)"
           fi
           for attempt in 1 2 3; do
-            if npm install --prefix "$RUNNER_TEMP/recap-cli" --no-audit --no-fund "@agent-native/core@$VERSION" tsx; then
+            # DEPENDENCY: @agent-native/recap-cli — lightweight built CLI for
+            # PR visual recap (dist/cli.js). Do not substitute @agent-native/core.
+            if npm install --prefix "$RUNNER_TEMP/recap-cli" --no-audit --no-fund "@agent-native/recap-cli@$VERSION"; then
               break
             fi
             if [ "$attempt" = "3" ]; then exit 1; fi
             sleep $((attempt * 10))
           done
-          npm install --prefix "$RUNNER_TEMP/recap-cli" --no-audit --no-fund tsx
-          echo "RECAP_CLI=$RUNNER_TEMP/recap-cli/node_modules/.bin/agent-native" >> "$GITHUB_ENV"
-          echo "RECAP_PLAYWRIGHT=$RUNNER_TEMP/recap-cli/node_modules/.bin/playwright" >> "$GITHUB_ENV"
+          RECAP_BIN_DIR="$RUNNER_TEMP/recap-cli/node_modules/.bin"
+          test -x "$RECAP_BIN_DIR/agent-native"
+          # Smoke: fail the job early if the binary cannot start (avoids opaque
+          # collect-diff failures later).
+          "$RECAP_BIN_DIR/agent-native" recap --help >/dev/null
+          echo "RECAP_CLI=$RECAP_BIN_DIR/agent-native" >> "$GITHUB_ENV"
+          echo "RECAP_PLAYWRIGHT=$RECAP_BIN_DIR/playwright" >> "$GITHUB_ENV"
 
       - name: Start visual recap check
         id: recap_check

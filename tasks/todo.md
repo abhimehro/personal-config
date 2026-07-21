@@ -1,3 +1,19 @@
+# Fix PR Visual Recap CLI failures (2026-07-21)
+
+**Route:** T3+S
+**Symptom:** Non-skip runs fail at Collect bounded diff with `spawn tsx ENOENT`.
+
+## Root cause
+- `@agent-native/core` bin falls back to `spawn(\"tsx\")` when npm extract makes src newer than dist.
+- #1715 installed `tsx` but did not put `node_modules/.bin` on PATH → still ENOENT.
+- Correct consumer package: `@agent-native/recap-cli` (built dist, no tsx).
+
+## Plan
+- [x] Switch install to `@agent-native/recap-cli`
+- [x] Verify locally; update docs/lesson; commit + PR
+
+---
+
 # PR Review Session 2026-07-21 — todo
 
 - [x] Preflight gate — PASS 7/7
