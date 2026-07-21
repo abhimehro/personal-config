@@ -1439,3 +1439,26 @@ from `main` with tip file contents only; merge that; close the poisoned-history
 PR as superseded. (3) Prefer path-traversal fixtures that do not contain the
 substring `passwd` / `password` (e.g. `outside/traversal_target`). **Detection
 cost:** Low — GG comment cites the old commit SHA; tip `rg passwd` is empty.
+
+## Lesson 0ef: Auth demos in `dummy_todos.py` are still auth surfaces (2026-07-21)
+
+**Pattern:** series_correction Jules/Sentinel PRs (#275/#276/#268) titled as
+DoS/JSON fixes still edit `authenticate()` / PBKDF2 / session tokens inside
+`dummy_todos.py`, or delete auth stubs. Even "demo" modules are trust-boundary
+code under the Phase 1 escalate rule.
+**Rule:** Any PR that creates/modifies/removes password hashing, `authenticate`,
+or session-token issuance → **ESCALATE**, regardless of filename or "dummy"
+prefix. Prefer extracting DoS-only helpers to a non-auth module before merge.
+**Detection cost:** Low — `gh pr diff --name-only` includes `dummy_todos.py` or
+diff hunks mention `pbkdf2` / `hmac.compare_digest` / `authenticate`.
+
+## Lesson 0eg: Mass Jules flood — merge tests before shared-module refactors (2026-07-21)
+
+**Pattern:** A single cron window opened ~96 automation PRs (esp 28, sc 25,
+pc 20). Merging shared-module refactors first made sibling test PRs DIRTY.
+**Rule:** In a same-day flood, merge order = (1) Dependabot patches, (2)
+isolated tests, (3) single-file perf, (4) shared-module refactors last. Close
+weaker duplicates early. Cap ingestion/parser multi-file refactors as DEFER
+when ≥3 PRs touch the same hotspot.
+**Detection cost:** Low — inventory `changedFiles` + path overlap matrix before
+Phase 3.
