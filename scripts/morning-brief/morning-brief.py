@@ -882,6 +882,22 @@ def _process_horoscope_endpoint(session: requests.Session, zodiac_sign: str, tmp
     return None
 
 
+def _has_successful_result(futures: list) -> bool:
+    """Check if any future in the list succeeded with a non-None result."""
+    for future in futures:
+        if not future.exception() and future.result():
+            return True
+    return False
+
+
+def _get_first_successful_result(futures: list) -> Optional[str]:
+    """Return the first successful result from completed futures."""
+    for future in concurrent.futures.as_completed(futures):
+        if not future.exception() and future.result():
+            return future.result()
+    return None
+
+
 def fetch_horoscope(session: requests.Session, zodiac_sign: str) -> str:
     """Fetch horoscope using a hedged concurrent request strategy."""
     default_text = "Trust your instincts and prioritize tasks that reduce future stress."
@@ -893,14 +909,11 @@ def fetch_horoscope(session: requests.Session, zodiac_sign: str) -> str:
 
     try:
         for i, tmpl in enumerate(HOROSCOPE_ENDPOINTS_TEMPLATE):
-            # Submit the next fallback endpoint
             futures.append(executor.submit(_process_horoscope_endpoint, session, zodiac_sign, tmpl))
 
-            # If this is the last endpoint, no need to wait before firing the next
             if i == len(HOROSCOPE_ENDPOINTS_TEMPLATE) - 1:
                 break
 
-            # Wait up to 1.5s for ONLY pending requests to finish before firing the fallback
             pending = [f for f in futures if not f.done()]
             if not pending:
                 continue
@@ -909,20 +922,12 @@ def fetch_horoscope(session: requests.Session, zodiac_sign: str) -> str:
                 pending, timeout=1.5, return_when=concurrent.futures.FIRST_COMPLETED
             )
 
-            # If any finished and succeeded, we can stop submitting fallbacks
-            success_found = False
-            for future in done:
-                if not future.exception() and future.result():
-                    success_found = True
-                    break
-
-            if success_found:
+            if _has_successful_result(done):
                 break
 
-        # Wait for whichever pending request succeeds first
-        for future in concurrent.futures.as_completed(futures):
-            if not future.exception() and future.result():
-                return future.result()
+        result = _get_first_successful_result(futures)
+        if result:
+            return result
 
     finally:
         executor.shutdown(wait=False, cancel_futures=True)
