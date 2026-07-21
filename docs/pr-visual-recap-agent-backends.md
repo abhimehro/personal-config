@@ -107,3 +107,8 @@ Re-run jobs on a prior run.
    OpenCode **sidecar files** (`recap-meta.json` + `recap-plan.mdx`, …) and
    assembles strict JSON via `JSON.stringify`; control-char sanitize remains a
    fallback for Claude/Codex single-file output.
+8. On `422 … Could not parse expression with acorn` (often Diff
+   `before`/`after`/`code` with shell `\"` inside JS strings): workflow rewrites
+   those props via `scripts/fix-recap-mdx-diff-strings.js` before publish, and
+   runs a one-shot agent repair when `repairable=true` (Lesson 0ej). Not a token
+   issue — rotate `PLAN_RECAP_TOKEN` only for auth / JWT-leak cases (0ei).

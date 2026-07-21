@@ -1,5 +1,22 @@
 # Lessons Learned
 
+## Lesson 0ej: Diff before/after/code with unescaped `\"` breaks Plan MDX (2026-07-21)
+
+**Pattern:** Visual recap publish returns `422 Unprocessable Entity` with
+`plan.mdx:N:M: Could not parse expression with acorn` after auth succeeds.
+**Root cause:** Agent embeds shell sed character classes like
+`[^[:space:]\"]` inside Diff `after: "..."` JS string props. In JS, `\\"`
+ends the string early; acorn then sees Unexpected token. Sidecar assembly via
+`JSON.stringify` does **not** fix inner MDX expression syntax — only the outer
+JSON envelope.
+**Rule:** (1) Before publish, rewrite Diff `before`/`after`/`code` lines whose
+bodies are not valid JSON-string payloads via
+`scripts/fix-recap-mdx-diff-strings.js` (`JSON.stringify` after lenient
+unescape). (2) Keep stock one-shot repair (`repairable` → repair-prompt →
+agent → validate-repair → publish) for residual acorn failures. (3) Prompt
+agents that Diff string props must be JS-string-safe. (4) Do not treat a 422
+acorn error as an auth/token problem.
+
 ## Lesson 0ei: PLAN_RECAP_TOKEN newlines break publish AND leak JWT into comments (2026-07-21)
 
 **Pattern:** Visual recap sticky comment showed `Headers.append: "Bearer

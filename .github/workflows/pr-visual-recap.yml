@@ -611,7 +611,12 @@ jobs:
                 '  2) recap-plan.mdx - full plan MDX (raw markdown/MDX, not JSON-escaped)' \
                 '  3) recap-canvas.mdx - canvas MDX (or empty file)' \
                 '  4) recap-prototype.mdx - prototype MDX (or empty file)' \
-                'The CI job will assemble these into valid recap-source.json for you.'
+                'The CI job will assemble these into valid recap-source.json for you.' \
+                '' \
+                'Diff block tip: before/after/code string values must be valid JS' \
+                'string literals (JSON.stringify-safe). Shell character classes that' \
+                'contain a backslash-quote sequence will break Plan MDX/acorn parse;' \
+                'double-escape backslashes inside those quoted Diff props.'
             } > recap-prompt.opencode.md
             "$OPENCODE_BIN" run \
               -m "$OPENCODE_MODEL" \
@@ -702,6 +707,8 @@ jobs:
 
       # Assemble OpenCode sidecar MDX files into strict JSON when present, then
       # sanitize any agent-written recap-source.json (raw controls in strings).
+      # Also rewrite Diff before/after/code props that break Plan MDX/acorn
+      # (Lesson 0ej — shell \\" inside JS strings).
       - name: Sanitize recap-source.json
         id: sanitize
         if: steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
@@ -713,6 +720,10 @@ jobs:
           node <<'NODE'
           const fs = require("fs");
           const path = "recap-source.json";
+          const {
+            fixDiffQuotedProps,
+            fixRecapSourcePayload,
+          } = require("./scripts/fix-recap-mdx-diff-strings.js");
           const emit = (ok, reason, repaired) => {
             const out = process.env.GITHUB_OUTPUT;
             if (out) {
@@ -733,6 +744,14 @@ jobs:
             }
           };
           const readOptional = (p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "");
+          const fixAndMaybeWriteMdx = (filePath, text) => {
+            if (!text) return { text: "", fixed: 0 };
+            const result = fixDiffQuotedProps(text);
+            if (result.fixed > 0 && filePath) {
+              fs.writeFileSync(filePath, result.text);
+            }
+            return result;
+          };
           const escapeControlsInStrings = (text) => {
             let out = "";
             let inStr = false;
@@ -774,11 +793,11 @@ jobs:
           };
 
           // Preferred path: assemble from sidecar files (OpenCode contract).
-          const planMdx = readOptional("recap-plan.mdx");
-          const canvasMdx = readOptional("recap-canvas.mdx");
-          const prototypeMdx = readOptional("recap-prototype.mdx");
+          const planRaw = readOptional("recap-plan.mdx");
+          const canvasRaw = readOptional("recap-canvas.mdx");
+          const prototypeRaw = readOptional("recap-prototype.mdx");
           const planState = readOptional("recap-plan-state.json");
-          if (planMdx.trim()) {
+          if (planRaw.trim()) {
             let meta = {};
             const metaRaw = readOptional("recap-meta.json");
             if (metaRaw) {
@@ -795,14 +814,28 @@ jobs:
                 ? meta.title.trim()
                 : `PR #${process.env.PR_NUMBER || "?"} visual recap`;
             const brief = typeof meta.brief === "string" ? meta.brief : "";
+            const plan = fixAndMaybeWriteMdx("recap-plan.mdx", planRaw);
+            const canvas = fixAndMaybeWriteMdx(
+              canvasRaw ? "recap-canvas.mdx" : "",
+              canvasRaw,
+            );
+            const prototype = fixAndMaybeWriteMdx(
+              prototypeRaw ? "recap-prototype.mdx" : "",
+              prototypeRaw,
+            );
+            const mdxFixed = plan.fixed + canvas.fixed + prototype.fixed;
             const mdx = {
-              "plan.mdx": planMdx,
-              "canvas.mdx": canvasMdx,
-              "prototype.mdx": prototypeMdx,
+              "plan.mdx": plan.text || planRaw,
+              "canvas.mdx": canvas.text || canvasRaw,
+              "prototype.mdx": prototype.text || prototypeRaw,
             };
             if (planState.trim()) mdx[".plan-state.json"] = planState;
             fs.writeFileSync(path, JSON.stringify({ title, brief, mdx }, null, 2) + "\n");
-            emit(true, "assembled recap-source.json from sidecar MDX files via JSON.stringify", true);
+            const reason =
+              mdxFixed > 0
+                ? `assembled recap-source.json from sidecar MDX; rewrote ${mdxFixed} Diff string prop(s) for acorn-safe escaping`
+                : "assembled recap-source.json from sidecar MDX files via JSON.stringify";
+            emit(true, reason, true);
             process.exit(0);
           }
 
@@ -813,32 +846,182 @@ jobs:
 
           const raw = fs.readFileSync(path, "utf8");
           let err = tryParse(raw);
-          if (!err) {
-            emit(true, "recap-source.json is valid JSON", false);
-            process.exit(0);
-          }
-          const fixed = escapeControlsInStrings(raw);
-          err = tryParse(fixed.text);
+          let text = raw;
+          let controlRepaired = 0;
           if (err) {
-            emit(
-              false,
-              `recap-source.json was not valid JSON after sanitize: ${err}. Prefer sidecar files (recap-plan.mdx + recap-meta.json).`,
-              false,
-            );
-            fs.writeFileSync("recap-url-reason.txt", `recap-source.json was not valid JSON: ${err}\n`);
+            const fixed = escapeControlsInStrings(raw);
+            err = tryParse(fixed.text);
+            if (err) {
+              emit(
+                false,
+                `recap-source.json was not valid JSON after sanitize: ${err}. Prefer sidecar files (recap-plan.mdx + recap-meta.json).`,
+                false,
+              );
+              fs.writeFileSync("recap-url-reason.txt", `recap-source.json was not valid JSON: ${err}\n`);
+              process.exit(0);
+            }
+            text = fixed.text;
+            controlRepaired = fixed.repaired;
+          }
+
+          const parsed = JSON.parse(text);
+          const { payload, fixed: mdxFixed } = fixRecapSourcePayload(parsed);
+          const notes = [];
+          if (controlRepaired > 0) {
+            notes.push(`repaired ${controlRepaired} unescaped control character(s)`);
+          }
+          if (mdxFixed > 0) {
+            notes.push(`rewrote ${mdxFixed} Diff string prop(s) for acorn-safe escaping`);
+          }
+          if (notes.length > 0) {
+            fs.writeFileSync(path, JSON.stringify(payload, null, 2) + "\n");
+            emit(true, notes.join("; "), true);
             process.exit(0);
           }
-          fs.writeFileSync(path, fixed.text);
-          emit(
-            true,
-            `repaired ${fixed.repaired} unescaped control character(s) in recap-source.json string literals`,
-            true,
-          );
+          if (controlRepaired === 0 && text !== raw) {
+            fs.writeFileSync(path, text);
+          }
+          emit(true, "recap-source.json is valid JSON", false);
           NODE
 
       - name: Publish recap source
         id: publish
         if: steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true' && steps.sanitize.outputs.ok == 'true'
+        continue-on-error: true
+        env:
+          PREV_PLAN_ID: ${{ steps.prev.outputs.plan_id }}
+        run: |
+          set -uo pipefail
+          ARGS=(--source recap-source.json --out recap-url.txt --repo "$GITHUB_REPOSITORY" --pr "$PR_NUMBER" --app-url "$PLAN_RECAP_APP_URL" --token "$PLAN_RECAP_TOKEN")
+          if [ -n "${PREV_PLAN_ID:-}" ]; then ARGS+=(--prev-plan-id "$PREV_PLAN_ID"); fi
+          ARGS+=(--source-type pull-request --source-repo "$GITHUB_REPOSITORY" --source-pr-number "$PR_NUMBER")
+          if [ "${PR_MERGED:-false}" = "true" ] || [ -n "${PR_MERGED_AT:-}" ]; then
+            ARGS+=(--source-pr-state merged)
+          elif [ -n "${PR_STATE:-}" ]; then
+            ARGS+=(--source-pr-state "$PR_STATE")
+          fi
+          if [ -n "${PR_MERGED_AT:-}" ]; then ARGS+=(--source-pr-merged-at "$PR_MERGED_AT"); fi
+          $RECAP_CLI recap publish "${ARGS[@]}"
+
+      # One-shot repair when Plan rejects MDX with a line:col acorn diagnostic
+      # (stock recap-cli contract). Deterministic Diff-string sanitize above
+      # should catch the common case; this covers residual parse failures.
+      - name: Build one-shot recap repair prompt
+        id: repair_prompt
+        if: steps.publish.outputs.repairable == 'true'
+        run: |
+          set -euo pipefail
+          cp recap-source.json recap-source.initial.json
+          $RECAP_CLI recap repair-prompt --source recap-source.json --reason-file recap-url-reason.txt --out recap-repair-prompt.md
+
+      - name: Repair recap source (OpenCode + Mistral)
+        id: opencode_repair
+        if: steps.publish.outputs.repairable == 'true' && needs.gate.outputs.agent == 'opencode'
+        continue-on-error: true
+        env:
+          OPENCODE_MODEL: ${{ steps.opencode_model.outputs.model }}
+        run: |
+          set -uo pipefail
+          TRUSTED_CFG="$RUNNER_TEMP/visual-recap-opencode.json"
+          if [ ! -f "$TRUSTED_CFG" ]; then
+            echo "::error::Trusted OpenCode config missing for repair; refusing to run."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          export OPENCODE_CONFIG="$TRUSTED_CFG"
+          cp "$TRUSTED_CFG" opencode.json
+          rm -f opencode-repair-events.jsonl opencode-repair-stderr.log opencode-repair-exit-code.txt
+          set +e
+          "$OPENCODE_BIN" run \
+            -m "$OPENCODE_MODEL" \
+            --format json \
+            --auto \
+            --title "pr-visual-recap-repair-${PR_NUMBER}" \
+            "$(cat recap-repair-prompt.md)" \
+            > opencode-repair-events.jsonl 2> opencode-repair-stderr.log
+          OPENCODE_REPAIR_STATUS="$?"
+          set -e
+          echo "$OPENCODE_REPAIR_STATUS" > opencode-repair-exit-code.txt
+          if [ "$OPENCODE_REPAIR_STATUS" -eq 0 ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Repair recap source (Claude Code)
+        id: claude_repair
+        if: steps.publish.outputs.repairable == 'true' && needs.gate.outputs.agent == 'claude'
+        continue-on-error: true
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set -uo pipefail
+          CLAUDE_ALLOWED_TOOLS="Read,Write"
+          CLAUDE_ARGS=(-p "$(cat recap-repair-prompt.md)" --allowedTools "$CLAUDE_ALLOWED_TOOLS" --permission-mode dontAsk --output-format json)
+          if [ -n "${VISUAL_RECAP_MODEL:-}" ]; then CLAUDE_ARGS+=(--model "$VISUAL_RECAP_MODEL"); fi
+          rm -f claude-repair-result.json claude-repair-stderr.log
+          set +e
+          npx -y @anthropic-ai/claude-code@2 "${CLAUDE_ARGS[@]}" > claude-repair-result.json 2> claude-repair-stderr.log
+          CLAUDE_REPAIR_STATUS="$?"
+          set -e
+          echo "$CLAUDE_REPAIR_STATUS" > claude-repair-exit-code.txt
+          if [ "$CLAUDE_REPAIR_STATUS" -eq 0 ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Repair recap source (Codex)
+        id: codex_repair
+        if: steps.publish.outputs.repairable == 'true' && needs.gate.outputs.agent == 'codex'
+        continue-on-error: true
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -uo pipefail
+          printenv OPENAI_API_KEY | npx -y @openai/codex@0 login --with-api-key || true
+          CODEX_ARGS=(exec --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check)
+          if [ -n "${VISUAL_RECAP_MODEL:-}" ]; then CODEX_ARGS+=(--model "$VISUAL_RECAP_MODEL"); fi
+          case "${VISUAL_RECAP_REASONING:-}" in
+            none|minimal|low|medium|high|xhigh)
+              CODEX_ARGS+=(-c "model_reasoning_effort=\"$VISUAL_RECAP_REASONING\"") ;;
+            "") ;;
+            *) echo "Ignoring invalid VISUAL_RECAP_REASONING: $VISUAL_RECAP_REASONING" ;;
+          esac
+          rm -f codex-repair-events.jsonl codex-repair-stderr.log
+          set +e
+          npx -y @openai/codex@0 "${CODEX_ARGS[@]}" --json "$(cat recap-repair-prompt.md)" 2> codex-repair-stderr.log | tee codex-repair-events.jsonl
+          CODEX_REPAIR_STATUS="${PIPESTATUS[0]}"
+          set -e
+          echo "$CODEX_REPAIR_STATUS" > codex-repair-exit-code.txt
+          if [ "$CODEX_REPAIR_STATUS" -eq 0 ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Validate repaired recap source
+        id: repaired_source
+        if: steps.publish.outputs.repairable == 'true'
+        env:
+          REPAIR_AGENT_OK: ${{ steps.opencode_repair.outputs.ok || steps.claude_repair.outputs.ok || steps.codex_repair.outputs.ok }}
+        run: |
+          set -uo pipefail
+          REPAIR_REASON=""
+          if [ "${REPAIR_AGENT_OK:-false}" != "true" ]; then
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            REPAIR_REASON="Repair agent exited unsuccessfully; repaired source was not published."
+          else
+            # Re-run Diff-string sanitize on whatever the repair agent wrote.
+            node scripts/fix-recap-mdx-diff-strings.js recap-source.json --write || true
+            VALIDATION_JSON="$(GITHUB_OUTPUT=/dev/null $RECAP_CLI recap validate-repair --original recap-source.initial.json --source recap-source.json --reason-file recap-url-reason.txt || true)"
+            REPAIR_OK="$(node -e 'try{process.stdout.write(JSON.parse(process.argv[1]).ok===true?"true":"false")}catch{process.stdout.write("false")}' "$VALIDATION_JSON")"
+            REPAIR_REASON="$(node -e 'try{process.stdout.write(JSON.parse(process.argv[1]).reason||"")}catch{process.stdout.write("Repair validation returned invalid output.")}' "$VALIDATION_JSON")"
+            echo "ok=$REPAIR_OK" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -n "$REPAIR_REASON" ]; then
+            echo "$REPAIR_REASON" > recap-url-reason.txt
+          fi
+          {
+            echo 'reason<<__RECAP_REPAIR_REASON_EOF__'
+            printf '%s\n' "$REPAIR_REASON" | sed -E \
+              -e 's/[Bb]earer[[:space:]]+[^[:space:]"]+/Bearer [redacted]/g' \
+              -e 's/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/[jwt redacted]/g' \
+              -e 's/[A-Za-z0-9_-]{40,}/[redacted]/g'
+            echo '__RECAP_REPAIR_REASON_EOF__'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish repaired recap source
+        id: publish_repair
+        if: steps.repaired_source.outputs.ok == 'true'
         continue-on-error: true
         env:
           PREV_PLAN_ID: ${{ steps.prev.outputs.plan_id }}
@@ -937,7 +1120,7 @@ jobs:
         env:
           RECAP_AGENT: ${{ needs.gate.outputs.agent }}
           RECAP_BLOCK_REFERENCE_SUMMARY: ${{ steps.block_reference.outputs.summary }}
-          RECAP_PUBLISH_REASON: ${{ steps.publish.outputs.reason }}
+          RECAP_PUBLISH_REASON: ${{ steps.repaired_source.outputs.reason || steps.publish_repair.outputs.reason || steps.publish.outputs.reason }}
           RECAP_SANITIZE_OK: ${{ steps.sanitize.outputs.ok }}
           RECAP_SANITIZE_REASON: ${{ steps.sanitize.outputs.reason }}
         run: |
@@ -1064,17 +1247,29 @@ jobs:
           name: pr-visual-recap-source-${{ github.event.pull_request.number }}
           path: |
             recap-source.json
+            recap-source.initial.json
             recap-meta.json
             recap-plan.mdx
             recap-canvas.mdx
             recap-prototype.mdx
+            recap-url-reason.txt
+            recap-repair-prompt.md
             claude-result.json
             claude-stderr.log
+            claude-repair-result.json
+            claude-repair-stderr.log
+            claude-repair-exit-code.txt
             codex-events.jsonl
             codex-stderr.log
+            codex-repair-events.jsonl
+            codex-repair-stderr.log
+            codex-repair-exit-code.txt
             opencode-events.jsonl
             opencode-stderr.log
             opencode-exit-code.txt
+            opencode-repair-events.jsonl
+            opencode-repair-stderr.log
+            opencode-repair-exit-code.txt
           if-no-files-found: ignore
           retention-days: 14
 

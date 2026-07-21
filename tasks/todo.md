@@ -27,6 +27,22 @@
 
 ---
 
+# Harden Plan MDX Diff strings / acorn 422 (2026-07-21)
+
+**Route:** T3+S
+**Symptom:** After auth fix, publish returns
+`422 … plan.mdx:N:M: Could not parse expression with acorn`
+(Diff `after:` embeds shell `[^[:space:]\"]` which ends the JS string early).
+
+## Plan
+- [x] Deterministic Diff `before`/`after`/`code` string fixer in sanitize (before publish)
+- [x] One-shot OpenCode (+ claude/codex) repair loop when `repairable=true`
+- [x] Lesson 0ej + operator docs note
+- [x] Unit test for fixer; verify against failing artifact
+- [ ] Commit, push, update PR #1733
+
+---
+
 # PR Review Session 2026-07-21 — todo
 
 - [x] Preflight gate — PASS 7/7
