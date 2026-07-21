@@ -5,6 +5,17 @@
  * Split from fix-recap-mdx-diff-strings.js to keep per-module complexity low.
  */
 
+/** @type {ReadonlySet<string>} */
+const QUOTE_CHARS = Object.freeze(new Set(['"', "'", "`"]));
+
+/**
+ * @param {string} ch
+ * @returns {boolean}
+ */
+function isQuoteChar(ch) {
+  return QUOTE_CHARS.has(ch);
+}
+
 /**
  * @param {string | null} quote
  * @param {boolean} escape
@@ -30,6 +41,25 @@ function adjustArrayDepth(ch, depth) {
 }
 
 /**
+ * @param {{ i: number, depth: number, quote: string | null, escape: boolean }} state
+ * @param {string} ch
+ * @returns {void}
+ */
+function advanceArrayScanState(state, ch) {
+  if (state.quote) {
+    const next = stepQuotedChar(state.quote, state.escape, ch);
+    state.quote = next.quote;
+    state.escape = next.escape;
+    return;
+  }
+  if (isQuoteChar(ch)) {
+    state.quote = ch;
+    return;
+  }
+  state.depth = adjustArrayDepth(ch, state.depth);
+}
+
+/**
  * Advance past a JSON-ish array starting at `openIdx` (index of `[`).
  *
  * @param {string} text
@@ -37,24 +67,19 @@ function adjustArrayDepth(ch, depth) {
  * @returns {number} index just past the matching `]`, or -1 if unbalanced
  */
 function findMatchingArrayEnd(text, openIdx) {
-  let i = openIdx + 1;
-  let depth = 1;
-  let quote = /** @type {string | null} */ (null);
-  let escape = false;
-  while (i < text.length && depth > 0) {
-    const ch = text[i];
-    i += 1;
-    if (quote) {
-      ({ quote, escape } = stepQuotedChar(quote, escape, ch));
-      continue;
-    }
-    if (ch === '"' || ch === "'" || ch === "`") {
-      quote = ch;
-      continue;
-    }
-    depth = adjustArrayDepth(ch, depth);
+  const state = {
+    i: openIdx + 1,
+    depth: 1,
+    quote: /** @type {string | null} */ (null),
+    escape: false,
+  };
+  while (state.i < text.length) {
+    if (state.depth === 0) break;
+    const ch = text[state.i];
+    state.i += 1;
+    advanceArrayScanState(state, ch);
   }
-  return depth === 0 ? i : -1;
+  return state.depth === 0 ? state.i : -1;
 }
 
 /**
