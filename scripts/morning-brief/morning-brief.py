@@ -61,7 +61,7 @@ import time
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Optional
 
 import feedparser
 import requests
@@ -866,8 +866,6 @@ def fetch_weather(
         logger.error("Weather fetch error: %s", exc)
         return WeatherSnapshot("N/A", "N/A", "N/A", "Weather data unavailable.")
 
-
-from typing import Optional
 
 def _process_horoscope_endpoint(session: requests.Session, zodiac_sign: str, tmpl: dict) -> Optional[str]:
     """Helper to process a single horoscope endpoint."""
