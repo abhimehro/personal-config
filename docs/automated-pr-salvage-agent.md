@@ -336,8 +336,16 @@ agent must:
 4. When CodeScene fails, trigger `/cs-agent skill:fix-code-health-degradations`
    before drafting salvage changes so the remediation attempt is captured in PR
    history.
+5. **PR Visual Recap (optional):** If the original PR has a sticky
+   `<!-- pr-visual-recap -->` comment / plan URL, use it as a map of intent when
+   deciding CLOSE-SUPERSEDED vs salvage and when writing the draft salvage PR
+   body. Prefer consuming an existing recap over burning API quota. Only add
+   label `visual-recap` (or re-run the workflow) when the sticky is missing and
+   the salvage is large/ambiguous. See
+   `docs/pr-visual-recap-agent-backends.md` and
+   `.github/workflows/pr-visual-recap.yml`.
 
-### S7 â Provenance preservation on cherry-picks
+### S7 — Provenance preservation on cherry-picks
 
 When salvaging via `git cherry-pick <commit>`, do not strip the original author.
 The salvage commit message should mention `Refs: #<old_pr> (salvage source)` so

@@ -1,5 +1,20 @@
 # Lessons Learned
 
+## Lesson 0du: Gitleaks first capture group becomes Secret (2026-07-17)
+
+**Pattern:** `personal-config-generic-secret` used `(secret|password|…)[\s\-_:=]+…`
+as the regex. Gitleaks treats the **first capturing group** as `Secret`, so every
+hit reported `Secret: secret` (entropy ~2.25) — including prose like
+`secret presence` in `docs/pr-visual-recap-agent-backends.md`. Tip wording fixes
+do not clear CI because gitleaks scans the **whole PR commit range**. Regex
+allowlists matching `^secret$` would neuter the rule.
+**Rule:** (1) Use a non-capturing keyword group `(?:secret|…)` and
+`(?P<secret>…)` for the value. (2) Allowlist English stopwords on the *value*
+(`presence`, `scanning`, …), not the keyword. (3) Prefer rephrasing new docs to
+`credential …` / avoid `secret <word>` prose. (4) Do not broaden path allowlists
+when a rule-capture fix will clear historical FPs.
+
+
 ## Lesson 0dt: Sibling Bolt/Palette PRs conflict when merged in batch order (2026-07-15)
 
 **Pattern:** Cron Phase 1 merged 23 PRs; three siblings became `DIRTY` after a

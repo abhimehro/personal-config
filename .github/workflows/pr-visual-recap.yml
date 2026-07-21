@@ -3,10 +3,14 @@ name: PR Visual Recap
 # Visual code review: a coding agent runs the repo's visual-recap skill over the
 # PR diff, publishes a plan, and upserts one sticky comment with a screenshot.
 # Plain `pull_request` (NOT `pull_request_target`) so fork code never sees secrets.
+#
+# Cost control: do NOT run on every push (synchronize). Default triggers are
+# once per PR lifecycle. Force a refresh by adding label `visual-recap`, or by
+# re-running the workflow from the Actions UI.
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, closed]
+    types: [opened, ready_for_review, reopened, closed, labeled]
 
 permissions:
   contents: read
@@ -16,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  VISUAL_RECAP_AGENT: ${{ vars.VISUAL_RECAP_AGENT || 'claude' }}
+  VISUAL_RECAP_AGENT: ${{ vars.VISUAL_RECAP_AGENT || 'opencode' }}
   VISUAL_RECAP_SKILL_SOURCE: ${{ vars.VISUAL_RECAP_SKILL_SOURCE || 'auto' }}
   VISUAL_RECAP_SECRET_SCAN: ${{ vars.VISUAL_RECAP_SECRET_SCAN || 'high-confidence' }}
 
@@ -40,6 +44,7 @@ jobs:
           HAS_PLAN: ${{ secrets.PLAN_RECAP_TOKEN != '' }}
           HAS_ANTHROPIC: ${{ secrets.ANTHROPIC_API_KEY != '' }}
           HAS_OPENAI: ${{ secrets.OPENAI_API_KEY != '' }}
+          HAS_MISTRAL: ${{ secrets.MISTRAL_API_KEY != '' }}
           AGENT: ${{ env.VISUAL_RECAP_AGENT }}
           VISUAL_RECAP_MODEL: ${{ vars.VISUAL_RECAP_MODEL }}
           VISUAL_RECAP_SKILL_SOURCE: ${{ env.VISUAL_RECAP_SKILL_SOURCE }}
@@ -53,6 +58,15 @@ jobs:
             if (pr && pr.draft) reasons.push('draft PR');
             if (pr && context.payload.action === 'closed' && !pr.merged) {
               reasons.push('closed without merge');
+            }
+
+            // Label-triggered refresh: only the explicit recap labels re-run the
+            // agent (replaces per-push synchronize to protect Mistral/API quota).
+            if (context.payload.action === 'labeled') {
+              const label = ((context.payload.label && context.payload.label.name) || '').toLowerCase();
+              if (label !== 'visual-recap' && label !== 'recap') {
+                reasons.push(`label "${label || '(empty)'}" is not a visual-recap trigger (use label visual-recap)`);
+              }
             }
 
             // Fork PRs only receive repo secrets when the org/repo opts into
@@ -76,19 +90,30 @@ jobs:
 
             // Normalize + validate the agent so a mis-cased value can't pass the
             // gate and then match neither agent step below.
-            const agent = (process.env.AGENT || 'claude').toLowerCase();
-            if (agent !== 'claude' && agent !== 'codex') {
-              reasons.push(`unsupported VISUAL_RECAP_AGENT "${process.env.AGENT}" (expected "claude" or "codex")`);
+            const agent = (process.env.AGENT || 'opencode').toLowerCase();
+            if (agent !== 'claude' && agent !== 'codex' && agent !== 'opencode') {
+              reasons.push(`unsupported VISUAL_RECAP_AGENT "${process.env.AGENT}" (expected "opencode", "claude", or "codex")`);
             } else if (agent === 'codex') {
               if (process.env.HAS_OPENAI !== 'true') reasons.push('OPENAI_API_KEY not configured (codex backend)');
+            } else if (agent === 'opencode') {
+              if (process.env.HAS_MISTRAL !== 'true') reasons.push('MISTRAL_API_KEY not configured (opencode backend)');
             } else {
               if (process.env.HAS_ANTHROPIC !== 'true') reasons.push('ANTHROPIC_API_KEY not configured (claude backend)');
             }
 
             // Validate the model before it reaches the agent CLI.
+            // OpenCode uses provider/model (e.g. mistral/mistral-medium-latest);
+            // Claude/Codex use bare model ids.
             const model = process.env.VISUAL_RECAP_MODEL || '';
-            if (model && !/^[a-zA-Z0-9._-]{1,80}$/.test(model)) {
-              reasons.push(`invalid VISUAL_RECAP_MODEL value (must match [a-zA-Z0-9._-]{1,80})`);
+            if (model) {
+              const modelOk = agent === 'opencode'
+                ? /^[a-zA-Z0-9._-]{1,40}\/[a-zA-Z0-9._-]{1,80}$/.test(model)
+                : /^[a-zA-Z0-9._-]{1,80}$/.test(model);
+              if (!modelOk) {
+                reasons.push(agent === 'opencode'
+                  ? 'invalid VISUAL_RECAP_MODEL value (expected provider/model, e.g. mistral/mistral-medium-latest)'
+                  : 'invalid VISUAL_RECAP_MODEL value (must match [a-zA-Z0-9._-]{1,80})');
+              }
             }
 
             const skillSource = (process.env.VISUAL_RECAP_SKILL_SOURCE || 'auto').toLowerCase();
@@ -97,19 +122,12 @@ jobs:
             }
             const usesRepoSkill = skillSource === 'repo';
 
-            // Self-modifying guard, evaluated in the trusted gate (runs NO
-            // PR-checked-out code): skip the ENTIRE job if the PR touches the
-            // repo-pinned skill instructions or any agent config the runner
-            // loads, so a PR can't rewrite what the agent loads and exfiltrate
-            // secrets. With the default bundled skill source, visual skill and
-            // recap workflow files are reviewed content, not instructions loaded
-            // by the runner.
-            // Keep this guard for forks AND all public-repo PRs: a fork or a
-            // public same-repo author could rewrite loaded instruction files
-            // (AGENTS.md/CLAUDE.md/.claude/.mcp.json) and exfiltrate the
-            // secret-backed agent run. Skip it ONLY for private-repo same-repo
-            // PRs, where the author is a trusted org member — a deliberate owner
-            // risk acceptance so legit instruction edits don't false-skip recaps.
+            // Self-modifying guard (trusted gate; runs NO PR-checked-out code).
+            // Forks: full allowlist of instruction/agent-config paths.
+            // Same-repo: only configs the runner may load (opencode/.claude/.mcp /
+            // repo-pinned skills). AGENTS.md / CLAUDE.md edits on same-repo PRs
+            // are documentation the author already can push — guarding them on
+            // public repos false-skipped owner PRs (e.g. #1670 label refresh).
             if (pr && (isFork || !isPrivate)) {
               try {
                 const files = await github.paginate(github.rest.pulls.listFiles, {
@@ -118,12 +136,22 @@ jobs:
                   pull_number: pr.number,
                   per_page: 100,
                 });
-                const isSensitive = (p) =>
-                  (usesRepoSkill && /(^|\/)skills\/visual-(recap|plan|plans)\//.test(p)) ||
-                  /(^|\/)\.claude\//.test(p) ||
-                  /(^|\/)CLAUDE\.md$/.test(p) ||
-                  /(^|\/)AGENTS\.md$/.test(p) ||
-                  /(^|\/)\.mcp\.json$/.test(p);
+                const isSensitive = (p) => {
+                  const runnerConfig =
+                    (usesRepoSkill && /(^|\/)skills\/visual-(recap|plan|plans)\//.test(p)) ||
+                    /(^|\/)\.claude\//.test(p) ||
+                    /(^|\/)\.mcp\.json$/.test(p) ||
+                    /(^|\/)opencode\.jsonc?$/.test(p) ||
+                    /(^|\/)\.opencode\//.test(p);
+                  if (isFork) {
+                    return (
+                      runnerConfig ||
+                      /(^|\/)CLAUDE\.md$/.test(p) ||
+                      /(^|\/)AGENTS\.md$/.test(p)
+                    );
+                  }
+                  return runnerConfig;
+                };
                 const hits = files.map((f) => f.filename).filter(isSensitive);
                 if (hits.length) {
                   reasons.push(`PR modifies recap-control files (${hits.slice(0, 3).join(', ')}${hits.length > 3 ? ', …' : ''}) — skipping so untrusted PR code never runs with secrets`);
@@ -426,6 +454,150 @@ jobs:
           if [ -n "${PREV_PLAN_ID:-}" ]; then ARGS+=(--prev-plan-id "$PREV_PLAN_ID"); fi
           $RECAP_CLI recap build-prompt "${ARGS[@]}"
 
+      - name: Resolve OpenCode model
+        id: opencode_model
+        if: needs.gate.outputs.agent == 'opencode' && steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
+        env:
+          MODEL_OVERRIDE: ${{ vars.VISUAL_RECAP_MODEL }}
+        run: |
+          set -euo pipefail
+          # Mirror CodeScene: prefer explicit model var, else Mistral medium.
+          if [[ -n "${MODEL_OVERRIDE:-}" ]]; then
+            MODEL="$MODEL_OVERRIDE"
+          else
+            MODEL="mistral/mistral-medium-latest"
+          fi
+          # Defense in depth — gate already validated, but re-check before argv.
+          if [[ ! "$MODEL" =~ ^[a-zA-Z0-9._-]{1,40}/[a-zA-Z0-9._-]{1,80}$ ]]; then
+            echo "::error::Invalid OpenCode model '$MODEL' (expected provider/model)."
+            exit 1
+          fi
+          echo "model=${MODEL}" >> "$GITHUB_OUTPUT"
+          echo "Using OpenCode model: ${MODEL}"
+
+      - name: Install OpenCode
+        if: needs.gate.outputs.agent == 'opencode' && steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
+        run: |
+          set -euo pipefail
+          # DEPENDENCY: opencode-ai@1.18.3 — headless agent CLI (same stack as
+          # CodeScene PR refactoring) — pinned 2026-07-17
+          for attempt in 1 2 3; do
+            if npm install --prefix "$RUNNER_TEMP/opencode" --no-audit --no-fund "opencode-ai@1.18.3"; then
+              break
+            fi
+            if [ "$attempt" = "3" ]; then exit 1; fi
+            sleep $((attempt * 5))
+          done
+          echo "OPENCODE_BIN=$RUNNER_TEMP/opencode/node_modules/.bin/opencode" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/opencode/node_modules/.bin/opencode" --version
+
+      - name: Configure OpenCode auth
+        if: needs.gate.outputs.agent == 'opencode' && steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
+        env:
+          MISTRAL_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${MISTRAL_KEY}" ]; then
+            echo "::error::MISTRAL_API_KEY is empty (gate should have skipped)."
+            exit 1
+          fi
+          mkdir -p "${HOME}/.local/share/opencode"
+          MISTRAL_KEY="$(printf '%s' "${MISTRAL_KEY}" | tr -d '\n\r')"
+          # SECURITY: write credentials only to the runner-local auth.json (mode 600).
+          # Never echo the key; same shape as refactoring-agent.yml.
+          AUTH_JSON="$(jq -cn --arg key "${MISTRAL_KEY}" '{"mistral":{"type":"api","key":$key}}')"
+          printf '%s' "$AUTH_JSON" > "${HOME}/.local/share/opencode/auth.json"
+          chmod 600 "${HOME}/.local/share/opencode/auth.json"
+          echo "MISTRAL_API_KEY=${MISTRAL_KEY}" >> "$GITHUB_ENV"
+
+      - name: Run agent (OpenCode + Mistral)
+        id: opencode
+        if: needs.gate.outputs.agent == 'opencode' && steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
+        continue-on-error: true
+        env:
+          OPENCODE_MODEL: ${{ steps.opencode_model.outputs.model }}
+        run: |
+          set -uo pipefail
+          # SECURITY: PR-head opencode.json / .opencode would override OPENCODE_CONFIG
+          # (project config wins). Strip untrusted project agent config, then write a
+          # trusted least-privilege permission file outside the workspace.
+          rm -f opencode.json opencode.jsonc
+          rm -rf .opencode
+          TRUSTED_CFG="$RUNNER_TEMP/visual-recap-opencode.json"
+          # SECURITY: jq avoids YAML-heredoc indent footguns; deny everything except
+          # read/search + write of recap-source.json (publisher contract).
+          jq -n '{
+            "$schema": "https://opencode.ai/config.json",
+            "permission": {
+              "*": "deny",
+              "read": "allow",
+              "glob": "allow",
+              "grep": "allow",
+              "edit": {
+                "*": "deny",
+                "recap-source.json": "allow",
+                "recap-meta.json": "allow",
+                "recap-plan.mdx": "allow",
+                "recap-canvas.mdx": "allow",
+                "recap-prototype.mdx": "allow",
+                "recap-plan-state.json": "allow"
+              },
+              "bash": "deny",
+              "webfetch": "deny",
+              "websearch": "deny",
+              "task": "deny",
+              "skill": "deny",
+              "external_directory": "deny",
+              "doom_loop": "deny"
+            }
+          }' > "$TRUSTED_CFG"
+          # Project opencode.json wins over OPENCODE_CONFIG — keep both identical
+          # after stripping any PR-head copy.
+          cp "$TRUSTED_CFG" opencode.json
+          export OPENCODE_CONFIG="$TRUSTED_CFG"
+
+          rm -f recap-source.json recap-meta.json recap-plan.mdx recap-canvas.mdx recap-prototype.mdx recap-plan-state.json \
+            recap-url.txt recap-url-reason.txt opencode-events.jsonl opencode-stderr.log opencode-exit-code.txt
+          run_opencode() {
+            set +e
+            # --auto only approves non-denied permissions; deny rules above still bind.
+            # ASSUMES: recap-prompt.md was built by trusted RECAP_CLI (not PR-head code).
+            # SECURITY/NOTE: Prefer sidecar MDX files over a hand-escaped JSON blob —
+            # Mistral often leaves raw newlines/quotes inside JSON strings. We assemble
+            # strict JSON via JSON.stringify after the agent exits.
+            {
+              cat recap-prompt.md
+              # Avoid YAML heredoc footguns (colons / braces / indent). printf only.
+              printf '%s\n' \
+                '' \
+                'CRITICAL OUTPUT CONTRACT (OpenCode / Mistral):' \
+                'Do NOT put large MDX inside recap-source.json string literals.' \
+                'Instead write these files in the workspace root:' \
+                '  1) recap-meta.json - small strict JSON only with title and brief keys' \
+                '  2) recap-plan.mdx - full plan MDX (raw markdown/MDX, not JSON-escaped)' \
+                '  3) recap-canvas.mdx - canvas MDX (or empty file)' \
+                '  4) recap-prototype.mdx - prototype MDX (or empty file)' \
+                'The CI job will assemble these into valid recap-source.json for you.'
+            } > recap-prompt.opencode.md
+            "$OPENCODE_BIN" run \
+              -m "$OPENCODE_MODEL" \
+              --format json \
+              --auto \
+              --title "pr-visual-recap-${PR_NUMBER}" \
+              "$(cat recap-prompt.opencode.md)" \
+              > opencode-events.jsonl 2> opencode-stderr.log
+            OPENCODE_STATUS="$?"
+            set -e
+            echo "$OPENCODE_STATUS" > opencode-exit-code.txt
+          }
+          run_opencode
+          # Retry once if neither sidecar plan MDX nor recap-source.json exists.
+          if [ ! -s recap-plan.mdx ] && [ ! -s recap-source.json ]; then
+            echo "::warning::recap outputs missing after the agent run; retrying the agent once."
+            sleep 5
+            run_opencode
+          fi
+
       - name: Run agent (Claude Code)
         id: claude
         if: needs.gate.outputs.agent == 'claude' && steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
@@ -494,9 +666,145 @@ jobs:
             run_codex
           fi
 
+      # Assemble OpenCode sidecar MDX files into strict JSON when present, then
+      # sanitize any agent-written recap-source.json (raw controls in strings).
+      - name: Sanitize recap-source.json
+        id: sanitize
+        if: steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
+        continue-on-error: true
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -uo pipefail
+          node <<'NODE'
+          const fs = require("fs");
+          const path = "recap-source.json";
+          const emit = (ok, reason, repaired) => {
+            const out = process.env.GITHUB_OUTPUT;
+            if (out) {
+              fs.appendFileSync(out, `ok=${ok}\n`);
+              fs.appendFileSync(out, `repaired=${repaired ? "true" : "false"}\n`);
+              fs.appendFileSync(out, `reason<<__RECAP_SANITIZE_EOF__\n${reason}\n__RECAP_SANITIZE_EOF__\n`);
+            }
+            if (!ok) console.error(reason);
+            else if (repaired) console.warn(reason);
+            else console.log(reason);
+          };
+          const tryParse = (text) => {
+            try {
+              JSON.parse(text);
+              return null;
+            } catch (e) {
+              return e instanceof Error ? e.message : String(e);
+            }
+          };
+          const readOptional = (p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "");
+          const escapeControlsInStrings = (text) => {
+            let out = "";
+            let inStr = false;
+            let escape = false;
+            let repaired = 0;
+            for (const ch of text) {
+              if (!inStr) {
+                if (ch === '"') inStr = true;
+                out += ch;
+                continue;
+              }
+              if (escape) {
+                out += ch;
+                escape = false;
+                continue;
+              }
+              if (ch === "\\") {
+                out += ch;
+                escape = true;
+                continue;
+              }
+              if (ch === '"') {
+                out += ch;
+                inStr = false;
+                continue;
+              }
+              const code = ch.codePointAt(0) ?? 0;
+              if (code < 32) {
+                repaired += 1;
+                if (ch === "\n") out += "\\n";
+                else if (ch === "\r") out += "\\r";
+                else if (ch === "\t") out += "\\t";
+                else out += `\\u${code.toString(16).padStart(4, "0")}`;
+                continue;
+              }
+              out += ch;
+            }
+            return { text: out, repaired };
+          };
+
+          // Preferred path: assemble from sidecar files (OpenCode contract).
+          const planMdx = readOptional("recap-plan.mdx");
+          const canvasMdx = readOptional("recap-canvas.mdx");
+          const prototypeMdx = readOptional("recap-prototype.mdx");
+          const planState = readOptional("recap-plan-state.json");
+          if (planMdx.trim()) {
+            let meta = {};
+            const metaRaw = readOptional("recap-meta.json");
+            if (metaRaw) {
+              const metaErr = tryParse(metaRaw);
+              if (metaErr) {
+                emit(false, `recap-meta.json was not valid JSON: ${metaErr}`, false);
+                fs.writeFileSync("recap-url-reason.txt", `recap-meta.json was not valid JSON: ${metaErr}\n`);
+                process.exit(0);
+              }
+              meta = JSON.parse(metaRaw);
+            }
+            const title =
+              typeof meta.title === "string" && meta.title.trim()
+                ? meta.title.trim()
+                : `PR #${process.env.PR_NUMBER || "?"} visual recap`;
+            const brief = typeof meta.brief === "string" ? meta.brief : "";
+            const mdx = {
+              "plan.mdx": planMdx,
+              "canvas.mdx": canvasMdx,
+              "prototype.mdx": prototypeMdx,
+            };
+            if (planState.trim()) mdx[".plan-state.json"] = planState;
+            fs.writeFileSync(path, JSON.stringify({ title, brief, mdx }, null, 2) + "\n");
+            emit(true, "assembled recap-source.json from sidecar MDX files via JSON.stringify", true);
+            process.exit(0);
+          }
+
+          if (!fs.existsSync(path) || !fs.statSync(path).size) {
+            emit(false, "recap-source.json missing after agent run (and no recap-plan.mdx sidecar)", false);
+            process.exit(0);
+          }
+
+          const raw = fs.readFileSync(path, "utf8");
+          let err = tryParse(raw);
+          if (!err) {
+            emit(true, "recap-source.json is valid JSON", false);
+            process.exit(0);
+          }
+          const fixed = escapeControlsInStrings(raw);
+          err = tryParse(fixed.text);
+          if (err) {
+            emit(
+              false,
+              `recap-source.json was not valid JSON after sanitize: ${err}. Prefer sidecar files (recap-plan.mdx + recap-meta.json).`,
+              false,
+            );
+            fs.writeFileSync("recap-url-reason.txt", `recap-source.json was not valid JSON: ${err}\n`);
+            process.exit(0);
+          }
+          fs.writeFileSync(path, fixed.text);
+          emit(
+            true,
+            `repaired ${fixed.repaired} unescaped control character(s) in recap-source.json string literals`,
+            true,
+          );
+          NODE
+
       - name: Publish recap source
         id: publish
-        if: steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
+        if: steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true' && steps.sanitize.outputs.ok == 'true'
         continue-on-error: true
         env:
           PREV_PLAN_ID: ${{ steps.prev.outputs.plan_id }}
@@ -591,6 +899,8 @@ jobs:
           RECAP_AGENT: ${{ needs.gate.outputs.agent }}
           RECAP_BLOCK_REFERENCE_SUMMARY: ${{ steps.block_reference.outputs.summary }}
           RECAP_PUBLISH_REASON: ${{ steps.publish.outputs.reason }}
+          RECAP_SANITIZE_OK: ${{ steps.sanitize.outputs.ok }}
+          RECAP_SANITIZE_REASON: ${{ steps.sanitize.outputs.reason }}
         run: |
           set -uo pipefail
           if [ -n "${RECAP_BLOCK_REFERENCE_SUMMARY:-}" ]; then
@@ -600,6 +910,15 @@ jobs:
               echo '__RECAP_BLOCK_REFERENCE_SUMMARY_EOF__'
             } >> "$GITHUB_OUTPUT"
             node -e 'process.stdout.write(JSON.stringify({ ok: true, summary: process.env.RECAP_BLOCK_REFERENCE_SUMMARY || "" }) + "\n")'
+            exit 0
+          fi
+          if [ -n "${RECAP_SANITIZE_REASON:-}" ] && [ "${RECAP_SANITIZE_OK:-}" != "true" ]; then
+            {
+              echo 'summary<<__RECAP_SANITIZE_SUMMARY_EOF__'
+              echo "$RECAP_SANITIZE_REASON"
+              echo '__RECAP_SANITIZE_SUMMARY_EOF__'
+            } >> "$GITHUB_OUTPUT"
+            node -e 'process.stdout.write(JSON.stringify({ ok: true, summary: process.env.RECAP_SANITIZE_REASON || "" }) + "\n")'
             exit 0
           fi
           if [ -n "${RECAP_PUBLISH_REASON:-}" ]; then
@@ -618,6 +937,10 @@ jobs:
             RESULT=codex-events.jsonl
             STDERR=codex-stderr.log
             EXIT_CODE=codex-exit-code.txt
+          elif [ "$RECAP_AGENT" = "opencode" ]; then
+            RESULT=opencode-events.jsonl
+            STDERR=opencode-stderr.log
+            EXIT_CODE=opencode-exit-code.txt
           fi
           $RECAP_CLI recap agent-summary --agent "$RECAP_AGENT" --result-file "$RESULT" --stderr-file "$STDERR" --exit-code-file "$EXIT_CODE" || true
 
@@ -632,6 +955,7 @@ jobs:
           set -uo pipefail
           RESULT=claude-result.json
           if [ "$RECAP_AGENT" = "codex" ]; then RESULT=codex-events.jsonl; fi
+          if [ "$RECAP_AGENT" = "opencode" ]; then RESULT=opencode-events.jsonl; fi
           if [ -f "$RESULT" ]; then $RECAP_CLI recap usage --plan-url "$PLAN_URL" --agent "$RECAP_AGENT" --result-file "$RESULT" --model "${VISUAL_RECAP_MODEL:-}" --app-url "$PLAN_RECAP_APP_URL" --token "$PLAN_RECAP_TOKEN" || true; fi
 
       - name: Cache Playwright browsers
@@ -697,10 +1021,17 @@ jobs:
           name: pr-visual-recap-source-${{ github.event.pull_request.number }}
           path: |
             recap-source.json
+            recap-meta.json
+            recap-plan.mdx
+            recap-canvas.mdx
+            recap-prototype.mdx
             claude-result.json
             claude-stderr.log
             codex-events.jsonl
             codex-stderr.log
+            opencode-events.jsonl
+            opencode-stderr.log
+            opencode-exit-code.txt
           if-no-files-found: ignore
           retention-days: 14
 

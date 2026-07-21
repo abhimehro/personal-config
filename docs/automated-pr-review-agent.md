@@ -164,6 +164,16 @@ Use `tasks/pr-review-agent.config.yaml` (or override via CLI). Key fields:
 
 Apply these during classification and review (see also `tasks/lessons.md`):
 
+- **PR Visual Recap (optional enrichment):** When a sticky comment marked
+  `<!-- pr-visual-recap -->` (or titled “Visual recap”) exists, read it and the
+  linked plan URL / screenshots as a **high-level change summary** during Gate 1–3
+  review. Useful for large diffs, UI/docs-heavy PRs, and explaining intent in
+  consolidation comments. **Do not** trigger or re-label `visual-recap` on every
+  inventory PR — that burns Mistral/API quota. Only request a refresh (label
+  `visual-recap` or Actions re-run) for a complex ESCALATE/DEFER case when the
+  sticky is missing/stale and budget allows. Workflow:
+  `.github/workflows/pr-visual-recap.yml`; backends:
+  `docs/pr-visual-recap-agent-backends.md`.
 - **Zero-diff / superseded:** Detect early (`changed_files_count == 0` or no
   effective diff); route to closure. Merge-only token can still squash-merge
   zero-diff PRs to clear queue. Draft PRs can be marked ready then merged.

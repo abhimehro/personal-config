@@ -330,6 +330,10 @@ Canonical policy references:
 
 - `docs/automated-pr-review-agent.md`
 - `docs/automated-pr-salvage-agent.md`
+- `docs/pr-visual-recap-agent-backends.md` — optional sticky visual/plan summary
+  on PRs (OpenCode + Mistral). Agents should **read** an existing recap when
+  present; do not re-trigger on every triage (quota). Refresh via label
+  `visual-recap` only when needed.
 
 ## Big-picture architecture (how the pieces fit)
 
