@@ -411,30 +411,25 @@ def close_invalid_prs(branch_prefix: str) -> None:
                 )
 
 
-def run_workflow_updater(config: dict[str, Any]) -> dict[str, Any]:
-    section = config.get("workflow_updater", {})
-    plans = workflow_file_plans()
-    updates = flattened_updates(plans)
-    if not updates:
-        body = "# Workflow updater\n\n- Status: **success**\n- Summary: No GitHub Action updates were detected.\n"
-        return write_result(
-            "workflow-updater",
-            ("success", "No GitHub Action updates were detected."),
-            body,
-            {"updates": []},
-        )
+def _format_no_updates() -> dict[str, Any]:
+    """Return the result block when no updates are found."""
+    body = "# Workflow updater\n\n- Status: **success**\n- Summary: No GitHub Action updates were detected.\n"
+    return write_result(
+        "workflow-updater",
+        ("success", "No GitHub Action updates were detected."),
+        body,
+        {"updates": []},
+    )
 
-    status = "warning"
-    summary = f"Detected {len(updates)} workflow action updates."
-    body_parts = [
-        "# Workflow updater",
-        "",
-        f"- Status: **{status}**",
-        f"- Summary: {summary}",
-        "",
-    ]
-    body_parts.extend(render_update_table(updates))
 
+def _check_write_gate(
+    section: dict[str, Any],
+    updates: list[dict[str, Any]],
+    body_parts: list[str],
+    status: str,
+    summary: str,
+) -> dict[str, Any] | None:
+    """Check if writing is allowed and return early result if not. Closes invalid PRs if allowed."""
     can_write = (
         writes_allowed() and ensure_gh_token() and section.get("create_draft_pr", False)
     )
@@ -454,7 +449,16 @@ def run_workflow_updater(config: dict[str, Any]) -> dict[str, Any]:
             "\n".join(body_parts),
             {"updates": updates, "pull_request_url": ""},
         )
+    return None
 
+
+def _check_allow_list(
+    section: dict[str, Any],
+    updates: list[dict[str, Any]],
+    body_parts: list[str],
+    summary: str,
+) -> dict[str, Any] | None:
+    """Check if all updates are in allowed paths and return early result if not."""
     allowed_paths = section.get(
         "allowed_paths", [".github/workflows/*.yml", ".github/workflows/*.yaml"]
     )
@@ -472,8 +476,13 @@ def run_workflow_updater(config: dict[str, Any]) -> dict[str, Any]:
             "\n".join(body_parts),
             {"updates": updates, "pull_request_url": ""},
         )
+    return None
 
-    pr_url = ""
+
+def _attempt_workflow_updates(
+    section: dict[str, Any], plans: list[dict[str, Any]], updates: list[dict[str, Any]]
+) -> tuple[str, str, str, str]:
+    """Apply workflow updates and create a PR. Returns (status, summary, pr_url, error)."""
     try:
         apply_workflow_updates(plans)
         pr_body = safe_pr_body(
@@ -492,15 +501,49 @@ def run_workflow_updater(config: dict[str, Any]) -> dict[str, Any]:
             section.get("pr_title", "chore(actions): update workflow dependencies"),
             pr_body,
         )
-        status = "success"
         summary = (
             f"Detected {len(updates)} workflow action updates and prepared a draft PR."
         )
-        body_parts.extend(["## Draft PR", f"- {pr_url}", ""])
+        return "success", summary, pr_url, ""
     except Exception as exc:  # pragma: no cover - runtime integration
         restore_workflow_updates(plans)
-        status = "failure"
-        body_parts.extend(["## Draft PR failure", f"- {exc}", ""])
+        summary = f"Detected {len(updates)} workflow action updates."
+        return "failure", summary, "", str(exc)
+
+
+def run_workflow_updater(config: dict[str, Any]) -> dict[str, Any]:
+    section = config.get("workflow_updater", {})
+    plans = workflow_file_plans()
+    updates = flattened_updates(plans)
+
+    if not updates:
+        return _format_no_updates()
+
+    status = "warning"
+    summary = f"Detected {len(updates)} workflow action updates."
+    body_parts = [
+        "# Workflow updater",
+        "",
+        f"- Status: **{status}**",
+        f"- Summary: {summary}",
+        "",
+    ]
+    body_parts.extend(render_update_table(updates))
+
+    gate_result = _check_write_gate(section, updates, body_parts, status, summary)
+    if gate_result:
+        return gate_result
+
+    allow_result = _check_allow_list(section, updates, body_parts, summary)
+    if allow_result:
+        return allow_result
+
+    status, summary, pr_url, error = _attempt_workflow_updates(section, plans, updates)
+    if error:
+        body_parts.extend(["## Draft PR failure", f"- {error}", ""])
+    else:
+        body_parts.extend(["## Draft PR", f"- {pr_url}", ""])
+
     return write_result(
         "workflow-updater",
         (status, summary),
