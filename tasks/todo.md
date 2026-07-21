@@ -39,7 +39,7 @@
 - [x] One-shot OpenCode (+ claude/codex) repair loop when `repairable=true`
 - [x] Lesson 0ej + operator docs note
 - [x] Unit test for fixer; verify against failing artifact
-- [ ] Commit, push, update PR #1733
+- [x] Commit, push, update PR #1733
 
 ---
 
