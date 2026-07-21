@@ -9,13 +9,18 @@
 ends the string early; acorn then sees Unexpected token. Sidecar assembly via
 `JSON.stringify` does **not** fix inner MDX expression syntax — only the outer
 JSON envelope.
+**Follow-on:** After Diff strings are fixed, Plan may still 422 on MDX structure
+(e.g. `<Callout>` mid-paragraph: "Expected the closing tag `</Callout>`…").
+OpenCode one-shot repair can hang for the full job timeout — prefer
+deterministic Callout isolation + a short agent-repair timeout.
 **Rule:** (1) Before publish, rewrite Diff `before`/`after`/`code` lines whose
 bodies are not valid JSON-string payloads via
 `scripts/fix-recap-mdx-diff-strings.js` (`JSON.stringify` after lenient
-unescape). (2) Keep stock one-shot repair (`repairable` → repair-prompt →
-agent → validate-repair → publish) for residual acorn failures. (3) Prompt
-agents that Diff string props must be JS-string-safe. (4) Do not treat a 422
-acorn error as an auth/token problem.
+unescape). (2) Isolate Callout/Note/… block tags onto their own lines and
+balance missing closers in the same pass. (3) On `repairable=true`, re-run the
+deterministic fixer and re-publish before any agent repair; cap agent repair at
+~6 minutes. (4) Prompt agents that Diff string props must be JS-string-safe.
+(5) Do not treat a 422 acorn/MDX error as an auth/token problem.
 
 ## Lesson 0ei: PLAN_RECAP_TOKEN newlines break publish AND leak JWT into comments (2026-07-21)
 

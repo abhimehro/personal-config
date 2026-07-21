@@ -101,14 +101,14 @@ if [[ -d /tmp/recap-fail-1733/node_modules/@mdx-js/mdx ]]; then
     cd /tmp/recap-fail-1733
     node <<'NODE'
     const fs = require("fs");
-    const { fixDiffQuotedProps } = require("/workspace/scripts/fix-recap-mdx-diff-strings.js");
+    const { fixMdxContent } = require("/workspace/scripts/fix-recap-mdx-diff-strings.js");
     (async () => {
       const { compile } = await import("@mdx-js/mdx");
       const raw = fs.readFileSync("recap-plan.mdx", "utf8");
       let rawFailed = false;
       try { await compile(raw); } catch { rawFailed = true; }
       if (!rawFailed) process.exit(2);
-      const { text, fixed } = fixDiffQuotedProps(raw);
+      const { text, fixed } = fixMdxContent(raw);
       if (fixed < 1) process.exit(3);
       await compile(text);
     })().catch((e) => { console.error(e); process.exit(1); });
@@ -116,6 +116,28 @@ NODE
   )
   check "artifact MDX compiles after fix" true
 fi
+
+# Case 6: Callout mid-paragraph must be isolated onto its own lines.
+cat >"$TEST_DIR/callout.mdx" <<'MDX'
+Intro text <Callout kind="info">Heads up</Callout> trailing text
+MDX
+node -e '
+const { fixMdxContent } = require(process.argv[1]);
+const fs = require("fs");
+const raw = fs.readFileSync(process.argv[2], "utf8");
+const { text, fixed } = fixMdxContent(raw);
+if (fixed < 1) process.exit(2);
+if (!text.includes("\n\n<Callout") || !text.includes("</Callout>\n\n")) process.exit(3);
+' "$FIXER" "$TEST_DIR/callout.mdx"
+check "isolates Callout out of a paragraph" true
+
+# Case 7: missing Callout closer is appended.
+node -e '
+const { balanceBlockTags } = require(process.argv[1]);
+const { text, fixed } = balanceBlockTags("<Callout>hi\n");
+if (fixed !== 1 || !text.includes("</Callout>")) process.exit(2);
+' "$FIXER"
+check "balances missing Callout closer" true
 
 echo ""
 echo "Passed: $PASS  Failed: $FAIL"
