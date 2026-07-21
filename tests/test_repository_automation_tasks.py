@@ -3,7 +3,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import DEFAULT, MagicMock, patch
 
 # Stub out the optional third-party `yaml` dependency so this test remains
 # stdlib-only (per AGENTS.md / CONTRIBUTING.md: tests must not require pip
@@ -22,11 +22,14 @@ from repository_automation_tasks import (  # noqa: E402
     apply_workflow_updates,
     configured_commands,
     execute_configured_commands,
+    run_backlog_manager,
     run_command_set,
+    run_daily_status_report,
     run_quality_assurance,
     run_performance_optimizer,
     run_safe_adjustment_commands,
     run_weekly_retrospective,
+    run_workflow_updater,
 )
 
 
@@ -458,6 +461,222 @@ class TestRunWeeklyRetrospective(unittest.TestCase):
             {"runs": ["run1", "run2"], "issue_url": "http://issue", "safe_pr_url": ""}
         )
         self.assertEqual(result, {"status": "failure"})
+
+
+
+class TestRunBacklogManager(unittest.TestCase):
+    @patch("repository_automation_tasks.write_result")
+    @patch("repository_automation_tasks.now_utc")
+    @patch("repository_automation_tasks._fetch_backlog_items")
+    def test_run_backlog_manager_success(self, mock_fetch, mock_now_utc, mock_write_result):
+        from datetime import datetime, timezone
+
+        mock_now_utc.return_value = datetime(2023, 10, 15, tzinfo=timezone.utc)
+        issues = [
+            {"number": 1, "title": "Issue 1", "updatedAt": "2023-10-10T00:00:00Z", "url": "url1"}
+        ]
+        prs = [
+            {
+                "number": 10,
+                "title": "PR 1",
+                "updatedAt": "2023-10-12T00:00:00Z",
+                "url": "url2",
+                "isDraft": False,
+            }
+        ]
+        mock_fetch.return_value = (issues, prs)
+        mock_write_result.return_value = {"status": "success"}
+
+        config = {"backlog_manager": {"stale_days": 14}}
+        result = run_backlog_manager(config)
+
+        mock_write_result.assert_called_once()
+        args, _kwargs = mock_write_result.call_args
+        self.assertEqual(args[0], "backlog-manager")
+        self.assertEqual(args[1][0], "success")
+        self.assertIn("found 1 open issues and 1 open PRs", args[1][1])
+        self.assertEqual(result, {"status": "success"})
+
+    @patch("repository_automation_tasks.write_result")
+    @patch("repository_automation_tasks.now_utc")
+    @patch("repository_automation_tasks._fetch_backlog_items")
+    def test_run_backlog_manager_warning(self, mock_fetch, mock_now_utc, mock_write_result):
+        from datetime import datetime, timezone
+
+        mock_now_utc.return_value = datetime(2023, 10, 15, tzinfo=timezone.utc)
+        issues = [
+            {"number": 1, "title": "Old Issue", "updatedAt": "2023-09-01T00:00:00Z", "url": "url1"}
+        ]
+        prs = [
+            {
+                "number": 10,
+                "title": "Old PR",
+                "updatedAt": "2023-09-15T00:00:00Z",
+                "url": "url2",
+                "isDraft": False,
+            }
+        ]
+        mock_fetch.return_value = (issues, prs)
+        mock_write_result.return_value = {"status": "success"}
+
+        config = {"backlog_manager": {"stale_days": 14}}
+        result = run_backlog_manager(config)
+
+        mock_write_result.assert_called_once()
+        args, _kwargs = mock_write_result.call_args
+        self.assertEqual(args[0], "backlog-manager")
+        self.assertEqual(args[1][0], "warning")
+        body = args[2]
+        self.assertIn("## Human review candidates", body)
+        self.assertIn("- Issue #1 has been quiet for", body)
+        self.assertIn("- PR #10 has been quiet for", body)
+        data = args[3]
+        self.assertEqual(len(data["stale_issues"]), 1)
+        self.assertEqual(len(data["stale_pull_requests"]), 1)
+        self.assertEqual(result, {"status": "success"})
+
+
+class TestRunDailyStatusReport(unittest.TestCase):
+    def setUp(self):
+        self.mock_load_results = patch("repository_automation_tasks.load_task_results").start()
+        self.mock_iso_day = patch("repository_automation_tasks.iso_day").start()
+        self.mock_report_lines = patch("repository_automation_tasks.daily_report_lines").start()
+        self.mock_append = patch("repository_automation_tasks.append_publication_result").start()
+        self.mock_write = patch("repository_automation_tasks.write_result").start()
+        self.mock_overall_status = patch("repository_automation_tasks.overall_status").start()
+        self.addCleanup(patch.stopall)
+
+    def test_run_daily_status_report_success(self):
+        self.mock_load_results.return_value = [{"task": "foo", "status": "success"}]
+        self.mock_iso_day.return_value = "2023-10-27"
+        self.mock_report_lines.return_value = ["line 1", "line 2"]
+        self.mock_append.return_value = ("appended body", "http://issue/1", None)
+        self.mock_write.return_value = {"status": "success"}
+        self.mock_overall_status.return_value = "success"
+
+        config = {
+            "reporting": {"daily_issue_prefix": "[test-prefix]"},
+            "status_report": {"labels": ["l1", "l2"]},
+        }
+        result = run_daily_status_report(config)
+
+        self.mock_load_results.assert_called_once()
+        self.mock_append.assert_called_once_with(
+            "line 1\nline 2",
+            title="[test-prefix] - 2023-10-27",
+            labels=["l1", "l2"],
+            noun="daily issue",
+        )
+        self.mock_write.assert_called_once_with(
+            "daily-status-report",
+            ("success", "Daily automation completed with overall status success."),
+            "appended body",
+            {
+                "issue_url": "http://issue/1",
+                "task_results": [{"task": "foo", "status": "success"}],
+            },
+        )
+        self.assertEqual(result, {"status": "success"})
+
+    def test_run_daily_status_report_failure(self):
+        self.mock_load_results.return_value = [{"task": "foo", "status": "success"}]
+        self.mock_iso_day.return_value = "2023-10-27"
+        self.mock_report_lines.return_value = ["line 1"]
+        self.mock_append.return_value = ("appended body", None, "some error")
+        self.mock_write.return_value = {"status": "failure"}
+        self.mock_overall_status.return_value = "success"
+
+        result = run_daily_status_report({})
+        self.mock_write.assert_called_once_with(
+            "daily-status-report",
+            ("failure", "Daily automation completed with overall status success."),
+            "appended body",
+            {"issue_url": None, "task_results": [{"task": "foo", "status": "success"}]},
+        )
+        self.assertEqual(result, {"status": "failure"})
+
+
+class TestRunWorkflowUpdater(unittest.TestCase):
+    def setUp(self):
+        self.patcher = patch.multiple(
+            "repository_automation_tasks",
+            workflow_file_plans=DEFAULT,
+            flattened_updates=DEFAULT,
+            write_result=DEFAULT,
+            writes_allowed=DEFAULT,
+            ensure_gh_token=DEFAULT,
+            close_invalid_prs=DEFAULT,
+            allowed_workflow_updates=DEFAULT,
+            apply_workflow_updates=DEFAULT,
+            create_pr_for_current_changes=DEFAULT,
+            create=True,
+        )
+        self.mocks = self.patcher.start()
+
+    def tearDown(self):
+        self.patcher.stop()
+
+    def test_run_workflow_updater_no_updates(self):
+        self.mocks["flattened_updates"].return_value = []
+        self.mocks["write_result"].return_value = {"status": "success"}
+
+        result = run_workflow_updater({})
+        self.assertEqual(result, {"status": "success"})
+        self.mocks["write_result"].assert_called_once()
+        args, _kwargs = self.mocks["write_result"].call_args
+        self.assertEqual(args[0], "workflow-updater")
+        self.assertEqual(args[1], ("success", "No GitHub Action updates were detected."))
+        self.assertEqual(args[3], {"updates": []})
+
+    def test_run_workflow_updater_writes_disabled(self):
+        self.mocks["flattened_updates"].return_value = [
+            {
+                "file": "main.yml",
+                "action": "actions/checkout",
+                "current": "v1",
+                "target": "v2",
+                "old": "uses: actions/checkout@v1",
+                "new": "uses: actions/checkout@v2",
+            }
+        ]
+        self.mocks["writes_allowed"].return_value = False
+        self.mocks["ensure_gh_token"].return_value = True
+        self.mocks["write_result"].return_value = {"status": "warning"}
+
+        result = run_workflow_updater({})
+        self.assertEqual(result, {"status": "warning"})
+        args, _kwargs = self.mocks["write_result"].call_args
+        self.assertEqual(args[0], "workflow-updater")
+        self.assertEqual(args[1][0], "warning")
+        self.assertIn("Draft PR creation is disabled or writes are not allowed", args[2])
+
+    def test_run_workflow_updater_success(self):
+        self.mocks["flattened_updates"].return_value = [
+            {
+                "file": "main.yml",
+                "action": "actions/checkout",
+                "current": "v1",
+                "target": "v2",
+                "old": "uses: actions/checkout@v1",
+                "new": "uses: actions/checkout@v2",
+            }
+        ]
+        self.mocks["writes_allowed"].return_value = True
+        self.mocks["ensure_gh_token"].return_value = True
+        self.mocks["allowed_workflow_updates"].return_value = True
+        self.mocks["create_pr_for_current_changes"].return_value = "http://pr-url"
+        self.mocks["write_result"].return_value = {"status": "success"}
+
+        config = {"workflow_updater": {"create_draft_pr": True}}
+        result = run_workflow_updater(config)
+        self.assertEqual(result, {"status": "success"})
+        args, _kwargs = self.mocks["write_result"].call_args
+        self.assertEqual(args[0], "workflow-updater")
+        self.assertEqual(args[1][0], "success")
+        self.assertEqual(args[3]["pull_request_url"], "http://pr-url")
+        self.mocks["apply_workflow_updates"].assert_called_once()
+        self.mocks["create_pr_for_current_changes"].assert_called_once()
+
 
 
 if __name__ == "__main__":
