@@ -1,36 +1,29 @@
-# PR Inventory — 2026-07-20
+# PR Inventory — 2026-07-21
 
 **Preflight:** PASS 7/7  
 **Mode:** review-and-merge (squash)  
 **Stale threshold:** 30 days  
-**Agent branch:** `cursor-agent/pr-workflow-automation-1a5f`
+**Open total:** 96 (all classified in-scope via bot author / automation branch / title signals)
 
-| Repo | PR | Author | Title | Category | CI | Conflicts | Age | Files | Disposition |
-|------|---:|--------|-------|----------|----|-----------|-----|------:|-------------|
-| personal-config | 1704 | Bolt | Speed up PR details fetching | PERFORMANCE | GREEN | CLEAN | <1d | 1 | MERGED |
-| personal-config | 1702 | automation | release-drafter 7.6.0 consolidate | DEPENDENCY | GREEN | CLEAN | <1d | 1 | MERGED |
-| personal-config | 1701 | dependabot | release-drafter 7.6.0 | DEPENDENCY | FAIL flake | CLEAN | <1d | 1 | CLOSED dupe of #1702 |
-| personal-config | 1700 | dependabot | gh-aw/actions/setup 0.82.13 | DEPENDENCY | GREEN after rerun | CLEAN | <1d | 1 | MERGED |
-| personal-config | 1699 | Jules QA | daily qa | CI/INFRA | GREEN | CLEAN | 1d | 0 | CLOSED noop |
-| personal-config | 1696 | cursor | Phase 2 salvage docs | CI/INFRA | GREEN | CLEAN | 1d | 7 | MERGED |
-| personal-config | 1670 | cursor | workflow consolidate ABHI-1321 | CI/INFRA | — | DIRTY | 4d | 21 | ESCALATE |
-| ctrld-sync | 1037 | Bolt | optimize domain validation | PERFORMANCE | GREEN | CLEAN | 1d | 2 | MERGED |
-| ctrld-sync | 1036 | Palette | `_print_hint()` empty states | UI | FAIL CodeScene | CLEAN | 1d | 2 | DEFER + cs-agent |
-| ctrld-sync | 1035 | Jules QA | daily QA | CI/INFRA | GREEN | CLEAN | 1d | 0 | CLOSED noop |
-| ctrld-sync | 1034 | cursor | requirements floors sync | DEPENDENCY | GREEN | CLEAN | 1d | 2 | MERGED |
-| ctrld-sync | 1031 | salvage | USE_COLORS rate-limit | UI | GREEN | CLEAN | 1d | 2 | MERGED |
-| email-security-pipeline | 1304 | Jules | F541 Flake8 | REFACTOR | GREEN | CLEAN | <1d | 1 | MERGED |
-| email-security-pipeline | 1303 | Bolt | NLP pattern scan | PERFORMANCE | GREEN | CLEAN | <1d | 1 | MERGED |
-| email-security-pipeline | 1301 | Palette | CLI error hierarchy | UI | GREEN | CLEAN | 1d | 3 | MERGED |
-| Seatek_Analysis | 493 | Jules | path traversal / GG FP | SECURITY | FAIL GG history | CLEAN | 1d | 2→3 | CLOSED superseded by #494 |
-| Seatek_Analysis | 494 | cursor salvage | clean-history GG FP fix | SECURITY | GREEN | CLEAN | <1d | 3 | MERGED |
-| Hydrograph… | 374 | dependabot | numpy 2.2.6 | DEPENDENCY | GREEN | CLEAN | 4d | 2 | ESCALATE major |
-| series_correction… | 252 | dependabot | release-drafter 7.6.0 | DEPENDENCY | GREEN | CLEAN | <1d | 1 | MERGED |
-| series_correction… | 251 | Jules QA | Daily QA | CI/INFRA | GREEN | CLEAN | 1d | 0 | CLOSED noop |
-| series_correction… | 233 | Jules | user authentication | SECURITY | GREEN | CLEAN | 4d | 1 | ESCALATE auth |
-| repoprompt-ce | 132 | Bolt | DateFormatter static | PERFORMANCE | FAIL Style+Build | CLEAN | <1d | 22 | DEFER |
-| repoprompt-ce | 127 | dependabot | upload-artifact major | DEPENDENCY | GREEN | CLEAN | 4d | 1 | ESCALATE tip |
-| repoprompt-ce | 126 | dependabot | download-artifact major | DEPENDENCY | GREEN | CLEAN | 4d | 1 | ESCALATE tip |
+| Repo | Open | Dependabot | Security-titled | Perf/Bolt | Code health / test | Zero-diff | Failing/DIRTY |
+|------|-----:|-----------:|----------------:|----------:|-------------------:|----------:|--------------:|
+| personal-config | 20 | 3 | 0 | 5 | 9 | 0 | 4 |
+| ctrld-sync | 7 | 5 | 0 | 1 | 1 | 0 | 0 |
+| email-security-pipeline | 28 | 4 | 3 | 9 | 11 | 1 | 1 |
+| Seatek_Analysis | 6 | 4 | 1 | 0 | 0 | 1 | 0 |
+| Hydrograph… | 6 | 4 | 1 (Pillow OSV draft) | 1 | 0 | 0 | 1 UNSTABLE |
+| series_correction… | 25 | 2 | 8 | 4 | 9 | 1 | 0 |
+| repoprompt-ce | 4 | 2 | 0 | 1 | 0 (+1 salvage) | 0 | 1 |
 
-**In-scope at start:** 23 (+1 salvage #494 opened mid-session)  
-**Out-of-scope human:** none
+## Notable carry-forward from 2026-07-20
+
+| Prior remainder | Status today |
+|-----------------|--------------|
+| pc #1670 Gemini trust boundary | **Gone** (not open) |
+| ctrld #1036 CodeScene | **Gone** (not open) |
+| hg #374 numpy 2.x | Still open — ESCALATE |
+| sc #233 auth | **Gone**; new auth surface #275 |
+| rpce #126/#127 artifact majors | Still open — ESCALATE |
+| rpce #132 Style/Build | Superseded by salvage **#133** (green) |
+
+Full machine inventory: `/tmp/pr-inventory-raw.jsonl` (session scratch).

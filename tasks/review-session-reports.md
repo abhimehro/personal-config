@@ -165,3 +165,33 @@
 - Phase 2 salvage on ctrld #1036 after CodeScene; rpce #132 on macOS agent
 - Human review on escalations (auth, numpy major, tip artifacts, gemini)
 - Cross-links: `tasks/pr-review-2026-07-20.md`
+
+## Run — 2026-07-21
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: Cron Phase 1 `0 13 * * *` review-and-merge
+
+### Metrics
+
+- PRs inventoried: 96
+- PRs merged: 60
+- PRs closed: 13
+- PRs escalated: 10
+- PRs deferred: 13
+- Open at end: 23
+
+### Actions
+
+- Merged: 21 deps + 8 security + 31 salvage/a11y/perf/tests (see `tasks/pr-review-2026-07-21.md`)
+- Closed: zero-diff QA + duplicates/supersedes
+- Deferred/escalated: auth/secrets/numpy/artifact majors; CodeScene; conflicts
+
+### Follow-ups
+
+- Phase 2 salvage: pc conflict cluster (#1716–#1726), esp DIRTY Bolts, sc auth human review
+- Tip-release majors rpce #126/#127 remain escalated (Lesson 0dw)
+- Snapshot: `tasks/pr-review-2026-07-21.md`

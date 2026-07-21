@@ -1,31 +1,47 @@
-# PR Triage — 2026-07-20
+# PR Triage — 2026-07-21
 
-## Duplicate / overlap
+**Preflight:** PASS 7/7 · **Mode:** review-and-merge (squash) · **Start open:** 96
 
-| Group | Keep | Close | Reason |
-|-------|------|-------|--------|
-| release-drafter 7.6.0 (pc) | #1702 | #1701 | Identical pin; prefer green twin |
-| Seatek GG path-traversal | #494 | #493 | Clean history salvage (Lesson 0ee) |
+## Duplicate / supersede groups
 
-## Security escalate (unchanged)
+| Keep | Close | Reason |
+|------|-------|--------|
+| esp #1333 | #1312 | Identical `_is_ip_safe` short-circuit |
+| sc #270 | #267, #259 | Same `run_analysis.py` absolute-path fix |
+| sc #271 | #261 | Stronger unused `data_loader` cleanup |
+| sc #262 | #260 | Same `detect_outliers_series` split (+ junk file on #260) |
+| sc #272 | #266 | Same O(1) year-index loop; #272 extracts helper |
+| rpce #133 | #135 | Salvage supersedes Bolt DateFormatter PR |
+| pc #1720 | #1725 | Todo-scanner fix without visual-recap `tsx` smuggle |
+
+## Zero-diff closes
+
+- Seatek #501, sc #255, esp #1321
+
+## Escalate (auth / secrets / majors / tip-release)
 
 | PR | Reason |
 |----|--------|
-| sc #233 | Auth / session tokens |
-| hg #374 | numpy 1→2 major |
-| pc #1670 | Gemini + PR-automation toolchain; CONFLICTING |
-| rpce #126/#127 | Tip-release artifact majors (Lesson 0dw) |
+| sc #275/#276/#268 | `dummy_todos.py` authenticate/PBKDF2 surface |
+| esp #1328 | TOCTOU/chmod config secrets |
+| esp #1324 | Auth-Results scoring |
+| esp #1319 | `gh_token_cli.py` token writes |
+| pc #1721 | `GH_TOKEN.env` cache + workflow rewrite |
+| hg #374 | numpy 2.x major |
+| rpce #126/#127 | artifact tip majors (Lesson 0dw) |
 
-## Deferred
+## Defer
 
 | PR | Reason |
 |----|--------|
-| ctrld #1036 | CodeScene FAIL — `/cs-agent` posted |
-| rpce #132 | Style + Build shard 2 (needs macOS) |
+| pc #1724/#1723 | CodeScene FAIL (`/cs-agent` posted) |
+| pc #1717/#1716/#1718/#1726 | Conflicts after sibling merges |
+| pc #1706 | DIRTY salvage docs |
+| esp #1327 | CodeScene (`/cs-agent` posted) |
+| esp #1330/#1311/#1320/#1331/#1314 | Ingestion/parser hotspots or DIRTY |
 
-## Merge order executed
+## Conflict hotspots observed
 
-1. Deps: pc #1702 → #1700 (after Gitleaks 503 rerun); sc #252; ctrld #1034
-2. Docs/salvage: pc #1696; ctrld #1031
-3. Perf/UI: pc #1704; ctrld #1037; esp #1301 → #1303 → #1304
-4. Security fix: Seatek #494 (clean salvage of #493)
+- `pr-visual-recap.yml` + `test_repository_automation_*.py` (personal-config)
+- `email_ingestion.py` / `email_parser.py` / `.jules/bolt.md` (esp)
+- `dummy_todos.py` (sc auth cluster)
