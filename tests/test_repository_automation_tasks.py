@@ -25,6 +25,7 @@ from repository_automation_tasks import (  # noqa: E402
     run_command_set,
     run_quality_assurance,
     run_safe_adjustment_commands,
+    run_workflow_updater,
 )
 
 
@@ -278,6 +279,96 @@ class TestRunCommandSet(unittest.TestCase):
         self.assertIn("## Human review required", data["body"])
         self.assertIn("`setup1` failed and is not marked optional.", data["body"])
         self.assertNotIn("## Optional command warnings", data["body"])
+
+
+class TestRunWorkflowUpdater(unittest.TestCase):
+    @patch("repository_automation_tasks.workflow_file_plans")
+    @patch("repository_automation_tasks.flattened_updates")
+    @patch("repository_automation_tasks.write_result")
+    def test_run_workflow_updater_no_updates(
+        self, mock_write_result, mock_flattened_updates, mock_workflow_file_plans
+    ):
+        mock_flattened_updates.return_value = []
+
+        # We need a return value from write_result so the function returns correctly
+        mock_write_result.return_value = {"status": "success"}
+
+        result = run_workflow_updater({})
+        self.assertEqual(result, {"status": "success"})
+        mock_write_result.assert_called_once()
+        args, kwargs = mock_write_result.call_args
+        self.assertEqual(args[0], "workflow-updater")
+        self.assertEqual(args[1], ("success", "No GitHub Action updates were detected."))
+        self.assertEqual(args[3], {"updates": []})
+
+    @patch("repository_automation_tasks.workflow_file_plans")
+    @patch("repository_automation_tasks.flattened_updates")
+    @patch("repository_automation_tasks.write_result")
+    @patch("repository_automation_tasks.writes_allowed")
+    @patch("repository_automation_tasks.ensure_gh_token")
+    def test_run_workflow_updater_writes_disabled(
+        self,
+        mock_ensure_gh_token,
+        mock_writes_allowed,
+        mock_write_result,
+        mock_flattened_updates,
+        mock_workflow_file_plans,
+    ):
+        mock_flattened_updates.return_value = [{"file": "main.yml", "action": "actions/checkout", "current": "v1", "target": "v2", "old": "uses: actions/checkout@v1", "new": "uses: actions/checkout@v2"}]
+        mock_writes_allowed.return_value = False
+        mock_ensure_gh_token.return_value = True
+
+        mock_write_result.return_value = {"status": "warning"}
+
+        result = run_workflow_updater({})
+        self.assertEqual(result, {"status": "warning"})
+        mock_write_result.assert_called_once()
+        args, kwargs = mock_write_result.call_args
+        self.assertEqual(args[0], "workflow-updater")
+        self.assertEqual(args[1][0], "warning")
+        self.assertIn("Draft PR creation is disabled or writes are not allowed", args[2])
+        self.assertEqual(args[3]["updates"], [{"file": "main.yml", "action": "actions/checkout", "current": "v1", "target": "v2", "old": "uses: actions/checkout@v1", "new": "uses: actions/checkout@v2"}])
+
+    @patch("repository_automation_tasks.workflow_file_plans")
+    @patch("repository_automation_tasks.flattened_updates")
+    @patch("repository_automation_tasks.write_result")
+    @patch("repository_automation_tasks.writes_allowed")
+    @patch("repository_automation_tasks.ensure_gh_token")
+    @patch("repository_automation_tasks.close_invalid_prs")
+    @patch("repository_automation_tasks.allowed_workflow_updates")
+    @patch("repository_automation_tasks.apply_workflow_updates")
+    @patch("repository_automation_tasks.create_pr_for_current_changes")
+    def test_run_workflow_updater_success(
+        self,
+        mock_create_pr,
+        mock_apply,
+        mock_allowed,
+        mock_close,
+        mock_ensure_gh_token,
+        mock_writes_allowed,
+        mock_write_result,
+        mock_flattened_updates,
+        mock_workflow_file_plans,
+    ):
+        mock_flattened_updates.return_value = [{"file": "main.yml", "action": "actions/checkout", "current": "v1", "target": "v2", "old": "uses: actions/checkout@v1", "new": "uses: actions/checkout@v2"}]
+        mock_writes_allowed.return_value = True
+        mock_ensure_gh_token.return_value = True
+        mock_allowed.return_value = True
+        mock_create_pr.return_value = "http://pr-url"
+
+        mock_write_result.return_value = {"status": "success"}
+
+        config = {"workflow_updater": {"create_draft_pr": True}}
+        result = run_workflow_updater(config)
+        self.assertEqual(result, {"status": "success"})
+        mock_write_result.assert_called_once()
+        args, kwargs = mock_write_result.call_args
+        self.assertEqual(args[0], "workflow-updater")
+        self.assertEqual(args[1][0], "success")
+        self.assertEqual(args[3]["pull_request_url"], "http://pr-url")
+        mock_apply.assert_called_once()
+        mock_create_pr.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()
