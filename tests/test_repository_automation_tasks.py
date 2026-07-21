@@ -279,5 +279,65 @@ class TestRunCommandSet(unittest.TestCase):
         self.assertIn("`setup1` failed and is not marked optional.", data["body"])
         self.assertNotIn("## Optional command warnings", data["body"])
 
+class TestRunDailyStatusReport(unittest.TestCase):
+    @patch("repository_automation_tasks.load_task_results")
+    @patch("repository_automation_tasks.iso_day")
+    @patch("repository_automation_tasks.daily_report_lines")
+    @patch("repository_automation_tasks.append_publication_result")
+    @patch("repository_automation_tasks.write_result")
+    @patch("repository_automation_tasks.overall_status")
+    def test_run_daily_status_report_success(self, mock_overall_status, mock_write, mock_append, mock_report_lines, mock_iso_day, mock_load_results):
+        mock_load_results.return_value = [{"task": "foo", "status": "success"}]
+        mock_iso_day.return_value = "2023-10-27"
+        mock_report_lines.return_value = ["line 1", "line 2"]
+        mock_append.return_value = ("appended body", "http://issue/1", None)
+        mock_write.return_value = {"status": "success"}
+        mock_overall_status.return_value = "success"
+
+        config = {
+            "reporting": {"daily_issue_prefix": "[test-prefix]"},
+            "status_report": {"labels": ["l1", "l2"]}
+        }
+
+        from repository_automation_tasks import run_daily_status_report
+        result = run_daily_status_report(config)
+
+        mock_load_results.assert_called_once()
+        mock_append.assert_called_once_with("line 1\nline 2", title="[test-prefix] - 2023-10-27", labels=["l1", "l2"], noun="daily issue")
+        mock_write.assert_called_once_with(
+            "daily-status-report",
+            ("success", "Daily automation completed with overall status success."),
+            "appended body",
+            {"issue_url": "http://issue/1", "task_results": [{"task": "foo", "status": "success"}]}
+        )
+        self.assertEqual(result, {"status": "success"})
+
+    @patch("repository_automation_tasks.load_task_results")
+    @patch("repository_automation_tasks.iso_day")
+    @patch("repository_automation_tasks.daily_report_lines")
+    @patch("repository_automation_tasks.append_publication_result")
+    @patch("repository_automation_tasks.write_result")
+    @patch("repository_automation_tasks.overall_status")
+    def test_run_daily_status_report_failure(self, mock_overall_status, mock_write, mock_append, mock_report_lines, mock_iso_day, mock_load_results):
+        mock_load_results.return_value = [{"task": "foo", "status": "success"}]
+        mock_iso_day.return_value = "2023-10-27"
+        mock_report_lines.return_value = ["line 1"]
+        mock_append.return_value = ("appended body", None, "some error")
+        mock_write.return_value = {"status": "failure"}
+        mock_overall_status.return_value = "success"
+
+        config = {}
+
+        from repository_automation_tasks import run_daily_status_report
+        result = run_daily_status_report(config)
+
+        mock_write.assert_called_once_with(
+            "daily-status-report",
+            ("failure", "Daily automation completed with overall status success."),
+            "appended body",
+            {"issue_url": None, "task_results": [{"task": "foo", "status": "success"}]}
+        )
+        self.assertEqual(result, {"status": "failure"})
+
 if __name__ == "__main__":
     unittest.main()
