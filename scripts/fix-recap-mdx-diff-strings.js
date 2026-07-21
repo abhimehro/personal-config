@@ -116,30 +116,44 @@ function fixDiffQuotedProps(mdx) {
 
 /**
  * Ensure common Plan block JSX tags are not stuck inside a markdown paragraph.
+ * Skips JSX attribute lines and heavily-indented code-sample lines so we do
+ * not corrupt Diff/AnnotatedCode string payloads.
  *
  * @param {string} mdx
  * @returns {{ text: string, fixed: number }}
  */
 function isolateBlockElements(mdx) {
-  let text = mdx;
   let fixed = 0;
-  for (const tag of BLOCK_TAGS) {
-    const openRe = new RegExp(`([^\\n])(<${tag}\\b[^>]*>)`, "g");
-    text = text.replace(openRe, (_, prev, open) => {
-      fixed += 1;
-      return `${prev}\n\n${open}`;
-    });
-    const closeRe = new RegExp(`(<\\/${tag}>)([^\\n])`, "g");
-    text = text.replace(closeRe, (_, close, next) => {
-      fixed += 1;
-      return `${close}\n\n${next}`;
-    });
-  }
-  return { text, fixed };
+  const out = mdx.split("\n").map((line) => {
+    if (
+      /^\s*(?:before|after|code|summary|language|mode|annotations|filename|id)\s*=/.test(
+        line,
+      ) ||
+      /^\s{4,}/.test(line)
+    ) {
+      return line;
+    }
+    let next = line;
+    for (const tag of BLOCK_TAGS) {
+      const openRe = new RegExp(`([^\\n])(<${tag}\\b[^>]*>)`, "g");
+      next = next.replace(openRe, (_, prev, open) => {
+        fixed += 1;
+        return `${prev}\n\n${open}`;
+      });
+      const closeRe = new RegExp(`(<\\/${tag}>)([^\\n])`, "g");
+      next = next.replace(closeRe, (_, close, nextChar) => {
+        fixed += 1;
+        return `${close}\n\n${nextChar}`;
+      });
+    }
+    return next;
+  });
+  return { text: out.join("\n"), fixed };
 }
 
 /**
- * Append missing closers for unbalanced Callout-like tags (open > close).
+ * Append missing closers for unbalanced Callout-like tags at prose indent only
+ * (open > close). Ignores tags buried in code samples / attr payloads.
  *
  * @param {string} mdx
  * @returns {{ text: string, fixed: number }}
@@ -148,13 +162,106 @@ function balanceBlockTags(mdx) {
   let text = mdx;
   let fixed = 0;
   for (const tag of BLOCK_TAGS) {
-    const open = (text.match(new RegExp(`<${tag}\\b[^>]*>`, "g")) || []).length;
-    const close = (text.match(new RegExp(`</${tag}>`, "g")) || []).length;
+    const open = (text.match(new RegExp(`^\\s{0,2}<${tag}\\b[^>]*>`, "gm")) || [])
+      .length;
+    const close = (text.match(new RegExp(`^\\s{0,2}</${tag}>`, "gm")) || []).length;
     if (open > close) {
       const missing = open - close;
       text = `${text}\n${`</${tag}>`.repeat(missing)}\n`;
       fixed += missing;
     }
+  }
+  return { text, fixed };
+}
+
+/**
+ * Rewrite Diff/AnnotatedCode string props to `key={JSON.stringify(...)}` form.
+ *
+ * Handles both:
+ * - `after="…"` (JSX/HTML attr — embedded `"` ends the value early)
+ * - `code={"…` multi-line (invalid JS string — raw newlines)
+ *
+ * @param {string} mdx
+ * @returns {{ text: string, fixed: number }}
+ */
+function fixDiffJsxStringAttrs(mdx) {
+  const keys = ["before", "after", "code", "summary"];
+  // ASSUMES: Diff/AnnotatedCode props are indented with exactly two spaces.
+  // Deeper indent (embedded examples) must NOT terminate the value early.
+  const termRe =
+    /\n  (?:before|after|code|summary|language|mode|annotations|filename|id)\s*=|\n\/>|\n<\/(?:Diff|AnnotatedCode)>/;
+  let text = mdx;
+  let fixed = 0;
+
+  /**
+   * @param {string} body
+   * @param {string} key
+   * @param {"quote" | "expr"} kind
+   * @returns {{ body: string, fixed: number }}
+   */
+  const rewriteOne = (body, key, kind) => {
+    const startRe =
+      kind === "quote"
+        ? new RegExp(`(\\s)(${key})="`, "g")
+        : new RegExp(`(\\s)(${key})=\\{"`, "g");
+    let match;
+    while ((match = startRe.exec(body))) {
+      const valueStart = match.index + match[0].length;
+      const rest = body.slice(valueStart);
+
+      if (kind === "expr") {
+        const firstNl = rest.indexOf("\n");
+        const firstLine = firstNl < 0 ? rest : rest.slice(0, firstNl);
+        // Already a single-line JS string expression (including prior rewrites).
+        if (firstLine.includes('"}')) {
+          continue;
+        }
+      }
+
+      const term = rest.search(termRe);
+      let rawValue;
+      let consumed;
+      if (term >= 0) {
+        rawValue = rest.slice(0, term);
+        consumed = term;
+      } else {
+        const eol = rest.search(/\n/);
+        const line = eol >= 0 ? rest.slice(0, eol) : rest;
+        if (kind === "quote") {
+          const endQuote = line.indexOf('"');
+          if (endQuote < 0) continue;
+          rawValue = line.slice(0, endQuote);
+          consumed = endQuote + 1;
+          if (rawValue === "") continue;
+          if (tryParseJsonStringBody(rawValue)) continue;
+        } else {
+          continue;
+        }
+      }
+      if (kind === "expr") {
+        rawValue = rawValue.replace(/"\}\s*$/, "").replace(/"\s*$/, "");
+      } else if (rawValue.endsWith('"')) {
+        rawValue = rawValue.slice(0, -1);
+      }
+      const content = lenientUnescape(rawValue.replace(/\r\n/g, "\n"));
+      const expr = `${match[1]}${key}={${JSON.stringify(content)}}`;
+      const next = body.slice(0, match.index) + expr + body.slice(valueStart + consumed);
+      return { body: next, fixed: 1 };
+    }
+    return { body, fixed: 0 };
+  };
+
+  for (let pass = 0; pass < 64; pass += 1) {
+    let passFixed = 0;
+    for (const key of keys) {
+      for (const kind of /** @type {const} */ (["quote", "expr"])) {
+        const result = rewriteOne(text, key, kind);
+        text = result.body;
+        passFixed += result.fixed;
+      }
+    }
+    if (passFixed === 0) break;
+    fixed += passFixed;
   }
   return { text, fixed };
 }
@@ -166,18 +273,22 @@ function balanceBlockTags(mdx) {
  * @returns {{ text: string, fixed: number, details: Record<string, number> }}
  */
 function fixMdxContent(mdx) {
-  const details = { diff: 0, isolate: 0, balance: 0 };
+  const details = { diff: 0, jsxAttr: 0, isolate: 0, balance: 0 };
   let text = mdx;
-  const diff = fixDiffQuotedProps(text);
-  text = diff.text;
-  details.diff = diff.fixed;
+  // Prose Callout isolation first (skip attr / deeply-indented lines).
+  // NOTE: do not auto-balance tags — code samples often contain Callout markup
+  // that is not real MDX structure (Lesson 0ej follow-on).
   const isolated = isolateBlockElements(text);
   text = isolated.text;
   details.isolate = isolated.fixed;
-  const balanced = balanceBlockTags(text);
-  text = balanced.text;
-  details.balance = balanced.fixed;
-  const fixed = details.diff + details.isolate + details.balance;
+  const diff = fixDiffQuotedProps(text);
+  text = diff.text;
+  details.diff = diff.fixed;
+  // JSX attr rewrite last so JSON.stringify payloads stay opaque.
+  const jsx = fixDiffJsxStringAttrs(text);
+  text = jsx.text;
+  details.jsxAttr = jsx.fixed;
+  const fixed = details.diff + details.jsxAttr + details.isolate + details.balance;
   return { text, fixed, details };
 }
 
@@ -188,7 +299,7 @@ function fixMdxContent(mdx) {
  * @returns {{ payload: unknown, fixed: number, details: Record<string, number> }}
  */
 function fixRecapSourcePayload(payload) {
-  const emptyDetails = { diff: 0, isolate: 0, balance: 0 };
+  const emptyDetails = { diff: 0, jsxAttr: 0, isolate: 0, balance: 0 };
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
     return { payload, fixed: 0, details: emptyDetails };
   }
@@ -196,7 +307,7 @@ function fixRecapSourcePayload(payload) {
   if (!mdx || typeof mdx !== "object" || Array.isArray(mdx)) {
     return { payload, fixed: 0, details: emptyDetails };
   }
-  const details = { diff: 0, isolate: 0, balance: 0 };
+  const details = { diff: 0, jsxAttr: 0, isolate: 0, balance: 0 };
   let fixed = 0;
   const nextMdx = { ...mdx };
   for (const key of Object.keys(nextMdx)) {
@@ -206,6 +317,7 @@ function fixRecapSourcePayload(payload) {
       nextMdx[key] = result.text;
       fixed += result.fixed;
       details.diff += result.details.diff;
+      details.jsxAttr += result.details.jsxAttr;
       details.isolate += result.details.isolate;
       details.balance += result.details.balance;
     }
@@ -219,6 +331,7 @@ module.exports = {
   tryParseJsonStringBody,
   lenientUnescape,
   fixDiffQuotedProps,
+  fixDiffJsxStringAttrs,
   isolateBlockElements,
   balanceBlockTags,
   fixMdxContent,

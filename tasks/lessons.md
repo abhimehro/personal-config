@@ -9,10 +9,12 @@
 ends the string early; acorn then sees Unexpected token. Sidecar assembly via
 `JSON.stringify` does **not** fix inner MDX expression syntax — only the outer
 JSON envelope.
-**Follow-on:** After Diff strings are fixed, Plan may still 422 on MDX structure
-(e.g. `<Callout>` mid-paragraph: "Expected the closing tag `</Callout>`…").
-OpenCode one-shot repair can hang for the full job timeout — prefer
-deterministic Callout isolation + a short agent-repair timeout.
+**Follow-on:** After Diff colon-props are fixed, agents may still emit JSX
+`after="…"` / `code={"…` multi-line attrs. In JSX, `"` ends the attribute
+(`\"` is not an escape) → 422 "Unexpected character `\\` in attribute name".
+Rewrite those to `after={JSON.stringify(...)}`. OpenCode one-shot repair can
+hang — prefer deterministic re-publish; cap agent repair at ~6 minutes.
+Do not auto-balance Callout tags (code samples contain decoy markup).
 **Rule:** (1) Before publish, rewrite Diff `before`/`after`/`code` lines whose
 bodies are not valid JSON-string payloads via
 `scripts/fix-recap-mdx-diff-strings.js` (`JSON.stringify` after lenient

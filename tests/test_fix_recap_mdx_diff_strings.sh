@@ -139,6 +139,53 @@ if (fixed !== 1 || !text.includes("</Callout>")) process.exit(2);
 ' "$FIXER"
 check "balances missing Callout closer" true
 
+# Case 8: JSX after="..." with embedded \" must become after={...}.
+cat >"$TEST_DIR/jsx-attr.mdx" <<'MDX'
+<Diff
+  summary="demo"
+  before=""
+  after="        # rejects Authorization via Headers.append (\"invalid header value\"), and
+        # more"
+  annotations={[]}
+/>
+MDX
+node -e '
+const { fixMdxContent } = require(process.argv[1]);
+const fs = require("fs");
+const raw = fs.readFileSync(process.argv[2], "utf8");
+const { text, fixed, details } = fixMdxContent(raw);
+if (details.jsxAttr < 1) { console.error(details); process.exit(2); }
+if (!/after=\{/.test(text)) process.exit(3);
+if (/after="/.test(text)) process.exit(4);
+JSON.parse(text.match(/after=\{([\s\S]*?)\}/)[1]);
+' "$FIXER" "$TEST_DIR/jsx-attr.mdx"
+check "rewrites Diff JSX after= attrs to expressions" true
+
+# Case 9: live artifact from run 29853720898 — JSX attrs + code={ multiline.
+if [[ -f /tmp/vr-art/recap-plan.mdx ]]; then
+  node -e '
+const { fixMdxContent } = require(process.argv[1]);
+const fs = require("fs");
+const raw = fs.readFileSync("/tmp/vr-art/recap-plan.mdx", "utf8");
+const { text, fixed, details } = fixMdxContent(raw);
+if (fixed < 1 || details.jsxAttr < 1) { console.error(details); process.exit(2); }
+const again = fixMdxContent(text);
+if (again.fixed !== 0) { console.error("not idempotent", again.details); process.exit(3); }
+fs.writeFileSync("/tmp/vr-art/recap-plan.fixed-final.mdx", text);
+' "$FIXER"
+  check "artifact JSX Diff/AnnotatedCode attrs rewrite" true
+  if [[ -d /tmp/recap-fail-1733/node_modules/@mdx-js/mdx ]]; then
+    node <<'NODE'
+    const fs = require("fs");
+    (async () => {
+      const { compile } = await import("/tmp/recap-fail-1733/node_modules/@mdx-js/mdx/index.js");
+      await compile(fs.readFileSync("/tmp/vr-art/recap-plan.fixed-final.mdx", "utf8"));
+    })().catch((e) => { console.error(e.message); process.exit(1); });
+NODE
+    check "artifact MDX compiles after JSX attr fix" true
+  fi
+fi
+
 echo ""
 echo "Passed: $PASS  Failed: $FAIL"
 if [[ "$FAIL" -gt 0 ]]; then exit 1; fi

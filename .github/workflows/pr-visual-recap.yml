@@ -745,7 +745,7 @@ jobs:
           };
           const readOptional = (p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "");
           const fixAndMaybeWriteMdx = (filePath, text) => {
-            if (!text) return { text: "", fixed: 0, details: { diff: 0, isolate: 0, balance: 0 } };
+            if (!text) return { text: "", fixed: 0, details: { diff: 0, jsxAttr: 0, isolate: 0, balance: 0 } };
             const result = fixMdxContent(text);
             if (result.fixed > 0 && filePath) {
               fs.writeFileSync(filePath, result.text);
@@ -754,7 +754,8 @@ jobs:
           };
           const summarizeMdxFixes = (details) => {
             const parts = [];
-            if (details.diff) parts.push(`${details.diff} Diff string prop(s)`);
+            if (details.diff) parts.push(`${details.diff} Diff colon prop(s)`);
+            if (details.jsxAttr) parts.push(`${details.jsxAttr} Diff JSX attr(s)`);
             if (details.isolate) parts.push(`${details.isolate} block-tag isolation(s)`);
             if (details.balance) parts.push(`${details.balance} missing closer(s)`);
             return parts.join(", ");
@@ -833,6 +834,8 @@ jobs:
             const mdxFixed = plan.fixed + canvas.fixed + prototype.fixed;
             const details = {
               diff: plan.details.diff + canvas.details.diff + prototype.details.diff,
+              jsxAttr:
+                plan.details.jsxAttr + canvas.details.jsxAttr + prototype.details.jsxAttr,
               isolate:
                 plan.details.isolate + canvas.details.isolate + prototype.details.isolate,
               balance:
