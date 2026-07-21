@@ -23,7 +23,7 @@
 - [x] Sanitize token at job start (strip all whitespace / Bearer prefix)
 - [x] Scrub diagnostics before sticky comment / check complete
 - [x] Lesson 0ei + operator docs; warn to rotate exposed token
-- [ ] Commit, push, re-run visual-recap on PR
+- [x] Commit, push, re-run visual-recap on PR (auth fixed; residual 422 = bad MDX from agent)
 
 ---
 
