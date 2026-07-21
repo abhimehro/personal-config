@@ -4,9 +4,9 @@
 **Context:** Visual-recap MDX harden verified live; remaining red checks block merge.
 
 ## Plan
-- [ ] Gitleaks: FP `secret contained` in Lesson 0ei (commit range scan) → stopword + rephrase
-- [ ] CodeScene: refactor `scripts/fix-recap-mdx-diff-strings.js` complexity; post `/cs-agent`
-- [ ] Re-run tests; commit; push; confirm checks
+- [x] Gitleaks: FP `secret contained` in Lesson 0ei (commit range scan) → stopword + rephrase
+- [x] CodeScene: refactor `scripts/fix-recap-mdx-diff-strings.js` complexity; post `/cs-agent`
+- [x] Re-run tests; commit; push; confirm checks
 
 ---
 
