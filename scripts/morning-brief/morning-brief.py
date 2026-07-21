@@ -867,48 +867,64 @@ def fetch_weather(
         return WeatherSnapshot("N/A", "N/A", "N/A", "Weather data unavailable.")
 
 
-def fetch_horoscope(session: requests.Session, zodiac_sign: str) -> str:
-    default_text = (
-        "Trust your instincts and prioritize tasks that reduce future stress."
-    )
+from typing import Optional
 
-    def fetch_endpoint(tmpl: dict[str, Any]) -> str | None:
-        url = tmpl.get("url") or tmpl["url_fn"](zodiac_sign)
-        params = tmpl["params_fn"](zodiac_sign)
-        try:
-            response = session.get(url, params=params, timeout=HOROSCOPE_TIMEOUT)
-            response.raise_for_status()
-            extracted = extract_horoscope_text(response.json())
-            if extracted:
-                return extracted
-        except Exception as exc:
-            logger.warning("Horoscope failed from %s: %s", tmpl["name"], exc)
-        return None
+def _process_horoscope_endpoint(session: requests.Session, zodiac_sign: str, tmpl: dict) -> Optional[str]:
+    """Helper to process a single horoscope endpoint."""
+    url = tmpl.get("url") or tmpl["url_fn"](zodiac_sign)
+    params = tmpl["params_fn"](zodiac_sign)
+    try:
+        response = session.get(url, params=params, timeout=HOROSCOPE_TIMEOUT)
+        response.raise_for_status()
+        extracted = extract_horoscope_text(response.json())
+        if extracted:
+            return extracted
+    except Exception as exc:
+        logger.warning("Horoscope failed from %s: %s", tmpl["name"], exc)
+    return None
+
+
+def fetch_horoscope(session: requests.Session, zodiac_sign: str) -> str:
+    """Fetch horoscope using a hedged concurrent request strategy."""
+    default_text = "Trust your instincts and prioritize tasks that reduce future stress."
 
     executor = concurrent.futures.ThreadPoolExecutor(
         max_workers=min(len(HOROSCOPE_ENDPOINTS_TEMPLATE) or 1, 32)
     )
-
     futures = []
 
     try:
         for i, tmpl in enumerate(HOROSCOPE_ENDPOINTS_TEMPLATE):
-            futures.append(executor.submit(fetch_endpoint, tmpl))
+            # Submit the next fallback endpoint
+            futures.append(executor.submit(_process_horoscope_endpoint, session, zodiac_sign, tmpl))
 
+            # If this is the last endpoint, no need to wait before firing the next
             if i == len(HOROSCOPE_ENDPOINTS_TEMPLATE) - 1:
+                break
+
+            # Wait up to 1.5s for ONLY pending requests to finish before firing the fallback
+            pending = [f for f in futures if not f.done()]
+            if not pending:
                 continue
 
             done, _ = concurrent.futures.wait(
-                futures, timeout=1.5, return_when=concurrent.futures.FIRST_COMPLETED
+                pending, timeout=1.5, return_when=concurrent.futures.FIRST_COMPLETED
             )
 
-            if any(future.result() for future in done if not future.exception()):
+            # If any finished and succeeded, we can stop submitting fallbacks
+            success_found = False
+            for future in done:
+                if not future.exception() and future.result():
+                    success_found = True
+                    break
+
+            if success_found:
                 break
 
+        # Wait for whichever pending request succeeds first
         for future in concurrent.futures.as_completed(futures):
-            result = future.exception() is None and future.result()
-            if result:
-                return result
+            if not future.exception() and future.result():
+                return future.result()
 
     finally:
         executor.shutdown(wait=False, cancel_futures=True)
