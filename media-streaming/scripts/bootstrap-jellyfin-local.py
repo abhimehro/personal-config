@@ -260,6 +260,7 @@ def ensure_library(token: str, name: str, path: Path, collection_type: str) -> N
 def wait_for_items(token: str, timeout_s: int = 180) -> int:
     deadline = time.time() + timeout_s
     last = 0
+    sleep_interval = 0.5
     while time.time() < deadline:
         code, payload = http(
             "GET",
@@ -281,7 +282,8 @@ def wait_for_items(token: str, timeout_s: int = 180) -> int:
             print(f"Items poll -> {code} {payload}")
         # nudge refresh
         http("POST", "/Library/Refresh", token=token)
-        time.sleep(5)
+        time.sleep(sleep_interval)
+        sleep_interval = min(5.0, sleep_interval * 1.5)
     return last
 
 

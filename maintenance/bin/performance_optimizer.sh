@@ -488,6 +488,8 @@ generate_performance_report() {
     <title>Performance Report - $(date +%Y-%m-%d)</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
+        .skip-link { position: absolute; top: -40px; left: 0; background: #000; color: white; padding: 8px; z-index: 100; text-decoration: none; transition: top 0.2s; }
+        .skip-link:focus { top: 0; }
         .header { background-color: #f0f0f0; padding: 10px; border-radius: 5px; }
         .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
         dl.metric-list { margin: 0; padding: 0; }
@@ -503,12 +505,13 @@ generate_performance_report() {
     </style>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <header class="header">
         <h1><span aria-hidden="true">🚀</span> Performance Report</h1>
         <p>Generated: $(date)</p>
     </header>
     
-    <main>
+    <main id="main-content">
     <section class="section" aria-labelledby="sys-info-heading" role="region">
         <h2 id="sys-info-heading"><span aria-hidden="true">💻</span> System Information</h2>
         <dl class="metric-list">

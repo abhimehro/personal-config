@@ -332,3 +332,9 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## 2026-03-10 - Empty Lists Accessibility
 **Learning:** When dynamically generating HTML lists (e.g., `<ul>`), rendering an empty list (e.g., `<ul></ul>`) creates an invalid HTML5 structure and disrupts screen reader experiences. Always providing a fallback empty state list item (`<li>`) is necessary to maintain proper list semantics.
 **Action:** Add a fallback empty state `<li>` whenever conditional list items are absent.
+## $(date +%Y-%m-%d) - Skip-to-content links for generated HTML
+**Learning:** Shell scripts that generate static HTML reports often omit essential keyboard accessibility features like skip-to-content links, making navigation tedious for keyboard and screen reader users.
+**Action:** Always include a visually hidden, focusable skip link (`<a href="#main-content" class="skip-link">Skip to main content</a>`) at the top of the `<body>` and ensure the `<main>` tag has a matching `id="main-content"`.
+## $(date +%Y-%m-%d) - Preserve list semantics for groups
+**Learning:** When grouping multiple related UI elements (such as a grid of metric cards), replacing the unordered list container (`<ul>`) with a generic `<div>` degrades accessibility by preventing screen readers from announcing the group context and item count.
+**Action:** Always use `<ul>` and `<li>` to group related repeating UI elements. Do not flatten them into generic `<div>` tags in the name of simplicity.
