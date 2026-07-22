@@ -1475,3 +1475,20 @@ clustered salvage draft per test-file hotspot (Lesson 0dv) over re-opening
 each bot PR.
 **Detection cost:** Low — `gh pr diff --name-only` includes both
 `tests/test_*.py` and `pr-visual-recap.yml`.
+
+## Lesson 0ek: Re-salvage conflicted salvage drafts with -v2; adapt past sibling refactors (2026-07-22)
+
+**Pattern:** A prior Phase 2 salvage (esp #1335) itself went `CONFLICTING` after
+later Phase 1 merges on the same hotspot file. A second Jules refactor (#1330)
+conflicted specifically because #1311 introduced `FetchContext` while #1330
+still rewrote IMAPClient construction against the pre-FetchContext shape.
+Also: pushing a salvage branch name that already exists remotely fails with
+`cannot lock ref` / already exists — do not force-push.
+**Rule:** (1) When a *salvage* PR conflicts, open `…-v2-<suffix>` from current
+`main`, re-apply only the unique source hunks, close the prior salvage as
+superseded. (2) When adapting init/signature refactors onto main, preserve
+newer structural APIs (e.g. `FetchContext`) and rewrite call sites — never
+`git checkout pr -- <hotspot>` wholesale. (3) On remote branch name collision,
+rename locally to `-v2` and push; never `--force`.
+**Detection cost:** Low — salvage PR title contains `(salvages #N)` and
+`mergeable=CONFLICTING`; `git merge-tree` shows "changed in both" on the hotspot.

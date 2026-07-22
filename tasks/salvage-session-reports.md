@@ -635,3 +635,46 @@
 - Maintainer: merge drafts #1734/#1735/#1736 then esp #1334/#1335; Phase 1 for #1724/#1320; T1 auth/secrets escalations
 - Cross-links: [Session report](tasks/pr-review-2026-07-21.md), [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md)
 - New lesson: **0eh** (pr-visual-recap.yml smuggling in test PRs)
+
+## Run — 2026-07-22
+
+- Trigger: cron Phase 2 `0 17 * * *`
+- Agent branch: `cursor-agent/automated-pr-salvage-6463`
+- Preflight: PASS 7/7 (+ cursor-cloud-hooks)
+- Source report: `tasks/pr-review-2026-07-22.md` Phase 1 remainder (17 PRs)
+- Live re-fetch: conflict cascades on pc #1733, esp #1335/#1330; escalations unchanged
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | #1733 | SALVAGE draft | [#1748](https://github.com/abhimehro/personal-config/pull/1748) | recap-cli + token sanitize + MDX; lessons 0ei/0ej append-only |
+| personal-config | #1744 | ESCALATE | — | Actions SHA→floating tag |
+| personal-config | #1721 | ESCALATE | — | GH_TOKEN/env cache + workflow noise |
+| email-security-pipeline | #1335 | RE-SALVAGE draft | [#1341](https://github.com/abhimehro/email-security-pipeline/pull/1341) | extend+comprehension; closed prior salvage |
+| email-security-pipeline | #1330 | SALVAGE adapted | [#1342](https://github.com/abhimehro/email-security-pipeline/pull/1342) | IMAPClient config; kept FetchContext |
+| email-security-pipeline | #1327 | DEFER | — | CodeScene fail; cs-agent already posted |
+| email-security-pipeline | #1320 | DEFER | — | weakened test assertion |
+| email-security-pipeline | #1328 #1324 #1319 | ESCALATE | — | secrets/auth/token CLI |
+| series_correction | #275 #276 #268 | ESCALATE | — | auth dummy_todos (0ef) |
+| Seatek_Analysis | #507 #511 | ESCALATE | — | subprocess env / security refactor |
+| repoprompt-ce | #126 #127 | ESCALATE | — | tip artifact majors (0dw) |
+| ctrld-sync / Hydrograph | — | — | — | zero open |
+
+- Salvage draft PRs opened: **3**
+- Infra-fix draft PRs opened: **0**
+- Closed superseded: **3**
+- Autonomous merges: **0**
+- Escalations left open: **11** (+ 2 defers)
+
+### Verification status
+
+- Local: `py_compile` on ESP salvages; `bash -n` + `node --check` on visual-recap scripts
+- Blocking checks on `main`: none identified as whole-repo infra-broken
+- CodeScene: no new `/cs-agent` (already present on #1327)
+
+### Handoff
+
+- Maintainer: merge drafts #1748 → #1341 → #1342; then T1 security escalations
+- Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-07-22.md)
+- New lesson: **0ek** (re-salvage conflicted salvage drafts; adapt past sibling refactors)
