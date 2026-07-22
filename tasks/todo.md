@@ -9,4 +9,4 @@ Mode: review-and-merge | Stale: 30d | Strategy: squash | Auto-fix: on
 - [x] Actions: MERGE / CLOSE / ESCALATE / DEFER (no force-push)
 - [x] Append `tasks/review-session-reports.md` + `tasks/pr-review-2026-07-22.md`
 - [x] Update `tasks/lessons.md` + automation memory
-- [ ] Commit/push docs on `cursor-agent/pr-workflow-automation-644b`
+- [x] Commit/push docs on `cursor-agent/pr-workflow-automation-644b`
