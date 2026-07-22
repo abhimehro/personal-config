@@ -57,7 +57,8 @@ def configured_commands(section: dict[str, Any]) -> list[tuple[str, dict[str, An
         ("command", "commands"),
         ("security", "security_commands"),
     ):
-        for item in section.get(key, []):
+        # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+        for item in section.get(key, ()):
             buckets.append((bucket_name, item))
     return buckets
 
@@ -516,8 +517,10 @@ def run_performance_optimizer(config: dict[str, Any]) -> dict[str, Any]:
     status, summary, details = run_command_set(
         "performance-optimizer",
         {
-            "setup_commands": section.get("setup_commands", []),
-            "commands": section.get("commands", []),
+            # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+            "setup_commands": section.get("setup_commands", ()),
+            # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+            "commands": section.get("commands", ()),
         },
     )
     hotspots = discover_hotspots()
@@ -529,7 +532,8 @@ def run_performance_optimizer(config: dict[str, Any]) -> dict[str, Any]:
     ]
     for file_name, count in hotspots:
         lines.append(f"| `{file_name}` | {count} |")
-    suggestions = section.get("suggestions", [])
+    # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+    suggestions = section.get("suggestions", ())
     if suggestions:
         lines.extend(["", "## Suggestions"])
         lines.extend(f"- {item}" for item in suggestions)
@@ -572,7 +576,8 @@ def render_issue_rows(issues: list[dict[str, Any]]) -> list[str]:
     ]
     _now = now_utc()
     for item in issues:
-        labels = ", ".join(label["name"] for label in item.get("labels", []))
+        # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+        labels = ", ".join(label["name"] for label in item.get("labels", ()))
         rows.append(
             f"| [#{item['number']}]({item['url']}) | {item['updatedAt'][:10]} | {age_days(item['updatedAt'], _now)} | {labels or '-'} |"
         )
@@ -813,7 +818,8 @@ def run_daily_status_report(config: dict[str, Any]) -> dict[str, Any]:
     title = f"{config.get('reporting', {}).get('daily_issue_prefix', '[repo-automation] Daily Status Report')} - {iso_day()}"
     body = "\n".join(daily_report_lines(config, results))
     body, issue_url, error = append_publication_result(
-        body, title=title, labels=section.get("labels", []), noun="daily issue"
+        body, title=title, # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+        labels=section.get("labels", ()), noun="daily issue"
     )
     status = "failure" if error else overall_status(results)
     return write_result(
@@ -848,7 +854,8 @@ def run_safe_adjustment_commands(
     if not writes_allowed() or not section.get("auto_apply_safe_changes"):
         return [], ""
     command_results = []
-    for item in section.get("safe_adjustment_commands", []):
+    # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+    for item in section.get("safe_adjustment_commands", ()):
         command_results.append(
             {
                 "name": item["name"],
@@ -1023,7 +1030,8 @@ def run_weekly_retrospective(config: dict[str, Any]) -> dict[str, Any]:
     title = f"{config.get('reporting', {}).get('weekly_issue_prefix', '[repo-automation] Weekly Retrospective')} - {iso_day()}"
     body = "\n".join(lines) + "\n"
     body, issue_url, error = append_publication_result(
-        body, title=title, labels=section.get("labels", []), noun="weekly issue"
+        body, title=title, # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+        labels=section.get("labels", ()), noun="weekly issue"
     )
     if error:
         status = "failure"

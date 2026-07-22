@@ -234,7 +234,7 @@ class TestRunPerformanceOptimizer(unittest.TestCase):
             (
                 "default_config",
                 {},
-                {"setup_commands": [], "commands": []},
+                {"setup_commands": (), "commands": ()},
                 [],
                 [],
                 [
