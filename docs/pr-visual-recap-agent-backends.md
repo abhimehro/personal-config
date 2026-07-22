@@ -19,7 +19,8 @@ billing differentiator. Vibe stays optional; Antigravity stays Phase 2 only.
 ## Hard contract (unchanged)
 
 1. Gate (draft/bot/fork/credential presence, `VISUAL_RECAP_AGENT` allowlist)
-2. Trusted `@agent-native/core` CLI builds `recap-prompt.md`
+2. Trusted `@agent-native/recap-cli` builds `recap-prompt.md` (not
+   `@agent-native/core` — core's published bin can `spawn tsx` and fail in CI)
 3. **Agent** must leave a non-empty `recap-source.json` in the workspace
 4. Deterministic `recap publish` → Plan URL → screenshot → sticky comment
 
@@ -88,13 +89,29 @@ Re-run jobs on a prior run.
 
 ## Operator checklist
 
-1. Confirm secrets: `MISTRAL_API_KEY`, `PLAN_RECAP_TOKEN`
+1. Confirm secrets: `MISTRAL_API_KEY`, `PLAN_RECAP_TOKEN` (paste as **one
+   line** — embedded newlines make publish fail with `Headers.append … invalid
+   header value` and can leak JWT fragments into the sticky comment; Lesson 0ei)
 2. Optional repo vars: `VISUAL_RECAP_AGENT=opencode`,
-   `VISUAL_RECAP_MODEL=mistral/mistral-medium-latest`
+   `VISUAL_RECAP_MODEL=mistral/mistral-medium-latest`,
+   `RECAP_CLI_VERSION` (pins `@agent-native/recap-cli`, not core)
 3. Open / ready-for-review a non-draft PR and confirm the sticky recap comment
-4. On failure, download `pr-visual-recap-source-*` artifact (`opencode-events.jsonl`,
-   `opencode-stderr.log`)
-5. Agent may emit raw newlines inside JSON string literals — workflow prefers
+4. On failure at **Collect bounded diff** with `spawn tsx ENOENT`: workflow is
+   still on `@agent-native/core` — must use `@agent-native/recap-cli` (Lesson 0eh)
+5. On `Headers.append` / `Bearer [redacted] <fragment>` in the sticky comment:
+   re-paste `PLAN_RECAP_TOKEN` as one line (workflow now strips whitespace) and
+   **rotate** the token if any JWT fragment was posted
+6. On agent failure, download `pr-visual-recap-source-*` artifact
+   (`opencode-events.jsonl`, `opencode-stderr.log`)
+7. Agent may emit raw newlines inside JSON string literals — workflow prefers
    OpenCode **sidecar files** (`recap-meta.json` + `recap-plan.mdx`, …) and
    assembles strict JSON via `JSON.stringify`; control-char sanitize remains a
    fallback for Claude/Codex single-file output.
+8. On `422 … Could not parse expression with acorn`, Callout/MDX structure
+   errors, or `Unexpected character \`[\` before attribute value`: workflow
+   rewrites Diff props, Diff JSX string attrs, bare `columns=`/`rows=` arrays,
+   illegal attr commas, and isolates Callout/Note blocks via
+   `scripts/fix-recap-mdx-diff-strings.js` before publish; re-publishes once
+   after a deterministic repair; then optionally runs a **time-capped** agent
+   repair when `repairable=true` (Lesson 0ej). Not a token issue — rotate
+   `PLAN_RECAP_TOKEN` only for auth / JWT-leak cases (0ei).
