@@ -1,10 +1,40 @@
 # Mole Whitelist - Protected paths won't be deleted
-# Default protections: Playwright browsers, HuggingFace models, Maven repo, Ollama models, Surge Mac, R renv, Finder metadata
+# Protected development workspaces, virtual environments, critical configs, and caches.
 # Add one pattern per line to keep items safe.
 
-/Users/speedybee/.cache/huggingface*
-/Users/speedybee/Library/Caches/JetBrains*
-/Users/speedybee/Library/Caches/com.jetbrains.toolbox*
-/Users/speedybee/Library/Caches/com.apple.finder
+# Development Workspaces & Virtual Environments
+/Users/speedybee/dev
+/Users/speedybee/dev/*
 /Users/speedybee/dev/**/venv*
 /Users/speedybee/dev/**/.venv*
+/Users/speedybee/dev/**/renv*
+/Users/speedybee/secops
+/Users/speedybee/secops/*
+
+# Critical User Configuration & Credentials
+/Users/speedybee/.config
+/Users/speedybee/.config/*
+/Users/speedybee/.ssh
+/Users/speedybee/.ssh/*
+/Users/speedybee/.cursor
+/Users/speedybee/.cursor/*
+/Users/speedybee/.vscode
+/Users/speedybee/.vscode/*
+/Users/speedybee/.agents
+/Users/speedybee/.agents/*
+/Users/speedybee/.gemini
+/Users/speedybee/.gemini/*
+
+# AI / IDE / Build / System Caches
+/Users/speedybee/.cache/huggingface*
+/Users/speedybee/.gradle/caches/*
+/Users/speedybee/Library/Caches/pypoetry/virtualenvs*
+/Users/speedybee/Library/Caches/JetBrains*
+/Users/speedybee/Library/Caches/com.jetbrains.toolbox*
+/Users/speedybee/Library/Application Support/JetBrains*
+/Users/speedybee/Library/Caches/com.apple.finder
+/Users/speedybee/Library/Mobile Documents*
+/Users/speedybee/Library/Caches/com.apple.FontRegistry*
+/Users/speedybee/Library/Caches/com.apple.spotlight*
+/Users/speedybee/Library/Caches/com.apple.Spotlight*
+/Users/speedybee/Library/Caches/CloudKit*
