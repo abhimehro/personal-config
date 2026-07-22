@@ -1,29 +1,34 @@
-# PR Inventory — 2026-07-21
+# PR Inventory — 2026-07-21 (Phase 2 Salvage)
 
-**Preflight:** PASS 7/7  
-**Mode:** review-and-merge (squash)  
-**Stale threshold:** 30 days  
-**Open total:** 96 (all classified in-scope via bot author / automation branch / title signals)
+**Preflight:** PASS 7/7 (+ `make cursor-cloud-hooks`)  
+**Mode:** salvage (draft-only; never auto-merge)  
+**Input:** Phase 1 remainder from `tasks/pr-review-2026-07-21.md` (23 PRs)  
+**Live re-fetch:** 23 → survivors classified below
 
-| Repo | Open | Dependabot | Security-titled | Perf/Bolt | Code health / test | Zero-diff | Failing/DIRTY |
-|------|-----:|-----------:|----------------:|----------:|-------------------:|----------:|--------------:|
-| personal-config | 20 | 3 | 0 | 5 | 9 | 0 | 4 |
-| ctrld-sync | 7 | 5 | 0 | 1 | 1 | 0 | 0 |
-| email-security-pipeline | 28 | 4 | 3 | 9 | 11 | 1 | 1 |
-| Seatek_Analysis | 6 | 4 | 1 | 0 | 0 | 1 | 0 |
-| Hydrograph… | 6 | 4 | 1 (Pillow OSV draft) | 1 | 0 | 0 | 1 UNSTABLE |
-| series_correction… | 25 | 2 | 8 | 4 | 9 | 1 | 0 |
-| repoprompt-ce | 4 | 2 | 0 | 1 | 0 (+1 salvage) | 0 | 1 |
+| Repo | Open (EOD Phase 2) | Notes |
+|------|-------------------:|-------|
+| personal-config | 6 | 3 new salvage drafts + escalations/Phase-1 candidates |
+| ctrld-sync | 0 | — |
+| email-security-pipeline | 9 | 2 new salvage drafts + escalations/CodeScene defers |
+| Seatek_Analysis | 0 | — |
+| Hydrograph… | 0 | #374 numpy major **MERGED** since Phase 1 |
+| series_correction… | 3 | auth cluster escalated |
+| repoprompt-ce | 2 | tip artifact majors escalated |
 
-## Notable carry-forward from 2026-07-20
+## Phase 1 remainder disposition (live)
 
-| Prior remainder | Status today |
-|-----------------|--------------|
-| pc #1670 Gemini trust boundary | **Gone** (not open) |
-| ctrld #1036 CodeScene | **Gone** (not open) |
-| hg #374 numpy 2.x | Still open — ESCALATE |
-| sc #233 auth | **Gone**; new auth surface #275 |
-| rpce #126/#127 artifact majors | Still open — ESCALATE |
-| rpce #132 Style/Build | Superseded by salvage **#133** (green) |
-
-Full machine inventory: `/tmp/pr-inventory-raw.jsonl` (session scratch).
+| Prior | Live state | Phase 2 action |
+|-------|------------|----------------|
+| pc #1724 | CLEAN (CodeScene green) | AUTO-RESOLVED → next Phase 1 |
+| pc #1723/#1717/#1716 | DIRTY | SALVAGE → draft [#1734](https://github.com/abhimehro/personal-config/pull/1734) |
+| pc #1726 | DIRTY | SALVAGE → draft [#1735](https://github.com/abhimehro/personal-config/pull/1735) |
+| pc #1718 | DIRTY | SALVAGE → draft [#1736](https://github.com/abhimehro/personal-config/pull/1736) |
+| pc #1721 | DIRTY | ESCALATE (GH_TOKEN.env cache) |
+| pc #1706 | DIRTY docs | CLOSE-SUPERSEDED (this session) |
+| esp #1320 | CLEAN | AUTO-RESOLVED → next Phase 1 |
+| esp #1331/#1314 | DIRTY | SALVAGE → drafts [#1334](https://github.com/abhimehro/email-security-pipeline/pull/1334)/[#1335](https://github.com/abhimehro/email-security-pipeline/pull/1335) |
+| esp #1328/#1324/#1319 | CLEAN | ESCALATE (secrets/auth) |
+| esp #1327/#1330/#1311 | UNSTABLE | DEFER (+ `/cs-agent` posted on #1330/#1311) |
+| hg #374 | MERGED | DROP |
+| sc #275/#276/#268 | OPEN | ESCALATE (auth `dummy_todos.py`) |
+| rpce #126/#127 | CLEAN | ESCALATE (Lesson 0dw tip artifacts) |

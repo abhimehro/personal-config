@@ -1462,3 +1462,16 @@ weaker duplicates early. Cap ingestion/parser multi-file refactors as DEFER
 when ≥3 PRs touch the same hotspot.
 **Detection cost:** Low — inventory `changedFiles` + path overlap matrix before
 Phase 3.
+
+## Lesson 0eh: Test PRs smuggling `pr-visual-recap.yml` become systematic DIRTY (2026-07-21)
+
+**Pattern:** Palette/Bolt/Jules test PRs (#1716/#1723/#1726 and siblings) append
+tiny workflow edits to `.github/workflows/pr-visual-recap.yml` alongside real
+test additions. After any sibling merges that touch the same workflow, the
+entire test PR goes DIRTY even when the test file would apply cleanly.
+**Rule:** When salvaging, **never** checkout `pr-visual-recap.yml` from the
+conflicted PR. Re-apply only the test/source files onto `main`. Prefer one
+clustered salvage draft per test-file hotspot (Lesson 0dv) over re-opening
+each bot PR.
+**Detection cost:** Low — `gh pr diff --name-only` includes both
+`tests/test_*.py` and `pr-visual-recap.yml`.
