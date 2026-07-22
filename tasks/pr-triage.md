@@ -1,47 +1,46 @@
-# PR Triage — 2026-07-21
+# PR Triage — 2026-07-22
 
-**Preflight:** PASS 7/7 · **Mode:** review-and-merge (squash) · **Start open:** 96
+## Duplicate / overlap groups
 
-## Duplicate / supersede groups
+| Group | Keep | Close | Reason |
+|-------|------|-------|--------|
+| ctrld Bolt inline validation | #1050 | #1051 | Same `main.py` + `.jules/bolt.md`; near-identical intent |
+| sc dummy_todos auth/DoS cohort | — | — | #268/#275/#276 all escalate (Lesson 0ef); #275 DIRTY |
 
-| Keep | Close | Reason |
-|------|-------|--------|
-| esp #1333 | #1312 | Identical `_is_ip_safe` short-circuit |
-| sc #270 | #267, #259 | Same `run_analysis.py` absolute-path fix |
-| sc #271 | #261 | Stronger unused `data_loader` cleanup |
-| sc #262 | #260 | Same `detect_outliers_series` split (+ junk file on #260) |
-| sc #272 | #266 | Same O(1) year-index loop; #272 extracts helper |
-| rpce #133 | #135 | Salvage supersedes Bolt DateFormatter PR |
-| pc #1720 | #1725 | Todo-scanner fix without visual-recap `tsx` smuggle |
+## Disposition plan
 
-## Zero-diff closes
+### MERGE (squash) — safe deps / QA / salvage / perf
 
-- Seatek #501, sc #255, esp #1321
+- **Deps:** ctrld #1047,#1048; esp #1337,#1338; hg #398; sc #283; Seatek #504,#510
+- **Zero-diff QA:** pc #1741; sc #282; Seatek #506
+- **Docs/salvage/tests:** pc #1737,#1734,#1735,#1736,#1740; Seatek #509
+- **Perf/refactor (non-security):** pc #1724,#1746; ctrld #1049,#1050; esp #1334,#1335,#1339,#1340; Seatek #512
+- **Hardening (reviewed):** hg #400 (logger path sanitize via existing helpers); pc #1733 (visual-recap/gitleaks hardeners, CI green)
 
-## Escalate (auth / secrets / majors / tip-release)
+### CLOSE
 
-| PR | Reason |
-|----|--------|
-| sc #275/#276/#268 | `dummy_todos.py` authenticate/PBKDF2 surface |
-| esp #1328 | TOCTOU/chmod config secrets |
-| esp #1324 | Auth-Results scoring |
-| esp #1319 | `gh_token_cli.py` token writes |
-| pc #1721 | `GH_TOKEN.env` cache + workflow rewrite |
-| hg #374 | numpy 2.x major |
-| rpce #126/#127 | artifact tip majors (Lesson 0dw) |
+- ctrld #1051 — duplicate of #1050
 
-## Defer
+### ESCALATE
 
 | PR | Reason |
 |----|--------|
-| pc #1724/#1723 | CodeScene FAIL (`/cs-agent` posted) |
-| pc #1717/#1716/#1718/#1726 | Conflicts after sibling merges |
-| pc #1706 | DIRTY salvage docs |
-| esp #1327 | CodeScene (`/cs-agent` posted) |
-| esp #1330/#1311/#1320/#1331/#1314 | Ingestion/parser hotspots or DIRTY |
+| sc #268/#275/#276 | `dummy_todos.py` auth/DoS (Lesson 0ef) |
+| esp #1324 | Auth-Results scoring behavior change |
+| esp #1319 | `gh_token_cli` token export surface |
+| pc #1721 | CONFLICTING + env-cache near GH_TOKEN |
+| pc #1744 | Unpins Actions SHAs → floating tags (supply-chain regression) |
+| Seatek #507 | Subprocess env filter order (trust boundary) |
+| Seatek #511 | Security-titled path/IO refactor across analysis + automation |
+| rpce #126/#127 | Artifact action tip majors (Lesson 0dw) |
 
-## Conflict hotspots observed
+### DEFER
 
-- `pr-visual-recap.yml` + `test_repository_automation_*.py` (personal-config)
-- `email_ingestion.py` / `email_parser.py` / `.jules/bolt.md` (esp)
-- `dummy_todos.py` (sc auth cluster)
+| PR | Reason |
+|----|--------|
+| esp #1327 | CodeScene failing (`/cs-agent` if not already posted) |
+| pc #1742/#1743 | Gate CANCELLED — re-run then reassess |
+
+## Merge order (within repo)
+
+deps → zero-diff → tests/docs → perf → shared refactors; re-check mergeable after each merge.

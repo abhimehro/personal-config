@@ -195,3 +195,35 @@
 - Phase 2 salvage: pc conflict cluster (#1716–#1726), esp DIRTY Bolts, sc auth human review
 - Tip-release majors rpce #126/#127 remain escalated (Lesson 0dw)
 - Snapshot: `tasks/pr-review-2026-07-21.md`
+
+## Run — 2026-07-22
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: Cron Phase 1 `0 13 * * *` review-and-merge
+
+### Metrics
+
+- PRs inventoried: 43 (+4 second-pass emoji automation)
+- PRs merged: 29
+- PRs closed: 1
+- PRs escalated: 12
+- PRs deferred: 5
+- Open at end: 17
+
+### Actions
+
+- Merged: 10 deps + 1 security harden + 18 salvage/QA/perf (see `tasks/pr-review-2026-07-22.md`)
+- Closed: ctrld #1051 duplicate of #1050
+- Escalated: dummy_todos auth; auth-results; gh_token; TOCTOU; Action SHA unpin; artifact majors
+- Deferred: conflict cascades; CodeScene; weakened test
+
+### Follow-ups
+
+- Phase 2 salvage: pc #1733, esp #1335/#1330 conflicts
+- Human: pc #1744 SHA unpin; sc auth cohort; rpce artifact majors
+- Snapshot: `tasks/pr-review-2026-07-22.md`
+- Lessons: 0eh (SHA unpin), 0ei (emoji inventory pass)

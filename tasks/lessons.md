@@ -1,5 +1,26 @@
 # Lessons Learned
 
+## Lesson 0eh: Action SHA→tag unpinning is a supply-chain escalate (2026-07-22)
+
+**Pattern:** `personal-config` #1744 “consolidate workflow automation” replaced
+pinned `actions/checkout@<sha> # v7.0.1` (and similar) with floating
+`actions/checkout@v7.0.1` across 13 workflows. CI was green and the diff looked
+mechanical.
+**Rule:** Treat unpinning of GitHub Actions SHAs as a **CI trust-boundary
+regression** — ESCALATE, do not squash-merge. Prefer Dependabot SHA bumps that
+keep digests. Comment with the SHA→tag evidence so Phase 2 does not “salvage
+merge” the unpin.
+
+## Lesson 0ei: Inventory filters miss emoji-only automation PRs (2026-07-22)
+
+**Pattern:** Initial inventory (43) missed esp #1311/#1320/#1328/#1330 because
+branch/title heuristics underweighted 🧹/🔒 Jules-style PRs without
+`bolt`/`jules`/`cursor`/`dependabot` tokens in the branch name.
+**Rule:** After the primary bot/automation filter, run a second pass on
+`author=abhimehro` open PRs whose titles start with security/refactor emoji
+(🔒🧹⚡🎨🛡️) or whose bodies mention Jules/Bolt/Sentinel. Merge/triage those in
+the same session.
+
 ## Lesson 0du: Gitleaks first capture group becomes Secret (2026-07-17)
 
 **Pattern:** `personal-config-generic-secret` used `(secret|password|…)[\s\-_:=]+…`
