@@ -338,3 +338,7 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## $(date +%Y-%m-%d) - Preserve list semantics for groups
 **Learning:** When grouping multiple related UI elements (such as a grid of metric cards), replacing the unordered list container (`<ul>`) with a generic `<div>` degrades accessibility by preventing screen readers from announcing the group context and item count.
 **Action:** Always use `<ul>` and `<li>` to group related repeating UI elements. Do not flatten them into generic `<div>` tags in the name of simplicity.
+
+## 2026-07-22 - Accessible Data Tables
+**Learning:** When creating data tables for performance reports, screen readers struggle to associate data cells with their row identifiers if they are marked as simple `<td>` elements.
+**Action:** Always use `<th scope="row">` for the first column in data-heavy tables to ensure proper row-level header associations for screen reader users.
