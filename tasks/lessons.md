@@ -1475,3 +1475,26 @@ clustered salvage draft per test-file hotspot (Lesson 0dv) over re-opening
 each bot PR.
 **Detection cost:** Low — `gh pr diff --name-only` includes both
 `tests/test_*.py` and `pr-visual-recap.yml`.
+
+## Lesson 0ej: Sibling Sentinel env-filter PRs — escalate both, prefer newer (2026-07-23)
+
+**Pattern:** Seatek #507 and #518 both rewrite `filter_env_securely` order
+(custom_env merge vs heuristic denylist) with divergent journal rewrites in
+`.jules/sentinel.md`. Auto-merging either without human comparison risks
+dropping the stricter PATH/token denylist ordering from the other.
+**Rule:** (1) Treat overlapping Sentinel subprocess-env PRs as one cluster —
+ESCALATE all. (2) Prefer the newer PR only after a human confirms the final
+order: base → allowlist → heuristic → custom_env → strict token denylist.
+(3) Do not CLOSE-DUPLICATE the older sibling until the chosen PR is merged.
+**Detection cost:** Low — same path `.github/scripts/repository_automation_common.py`
++ Sentinel emoji title.
+
+## Lesson 0ek: Dependabot title vs constraint widen (2026-07-23)
+
+**Pattern:** Hydrograph #402 titled "bump pre-commit 4.6.0→4.6.1" but the diff
+only changed `requirements-ci.txt` upper bound `<4.0.0`→`<5.0.0` (no lockfile
+pin to 4.6.1). Title suggests patch; change is major-range allowance.
+**Rule:** For Dependabot PRs, read the constraint diff — if upper bound jumps a
+major for a **CI-only** tool, MERGE is OK after Gate 2; if runtime/prod
+dependency (pandas/numpy), ESCALATE. Never trust the PR title alone.
+**Detection cost:** Low — `gh pr diff` on requirements*.txt.

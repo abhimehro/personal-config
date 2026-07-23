@@ -195,3 +195,37 @@
 - Phase 2 salvage: pc conflict cluster (#1716–#1726), esp DIRTY Bolts, sc auth human review
 - Tip-release majors rpce #126/#127 remain escalated (Lesson 0dw)
 - Snapshot: `tasks/pr-review-2026-07-21.md`
+
+## Run — 2026-07-23
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: Cron Phase 1 `0 13 * * *` review-and-merge; branch
+  `cursor-agent/pr-workflow-automation-f2ab`; preflight PASS 7/7
+
+### Metrics
+
+- PRs inventoried: 31
+- PRs merged: 8
+- PRs closed: 2
+- PRs escalated: 16
+- PRs deferred: 5
+- Open at end: 21
+
+### Actions
+
+- Merged: sc #286; pc #1753/#1752; hg #402/#404; Seatek #515; rpce #138; esp #1344
+- Closed: pc #1751; Seatek #517 (zero-diff QA)
+- Escalated: pc #1744/#1721; esp #1328/#1324/#1319/#1327; Seatek #518/#507/#514/#511;
+  sc #285/#276/#275/#268; rpce #126/#127
+- Deferred: pc #1749/#1748; esp #1342/#1341/#1320
+- CodeScene: `/cs-agent` on sc #285
+
+### Follow-ups
+
+- Phase 2: Seatek Sentinel cluster (#518 vs #507); sc dummy_todos auth cluster;
+  pc SHA-unpin #1744; tip artifact majors rpce #126/#127
+- Snapshot: `tasks/pr-review-2026-07-23.md`; lessons 0ej/0ek

@@ -1,50 +1,59 @@
-# PR Triage — 2026-07-21 (Phase 2 Salvage)
+# PR Triage — 2026-07-23
 
-**Preflight:** PASS 7/7 · **Mode:** salvage (draft-only) · **Remainder in:** 23
+## MERGE (squash, delete branch)
 
-## Salvage clusters
+Order: deps → UI/a11y → routine perf → then re-check siblings.
 
-| Keep (draft) | Close originals | Reason |
-|--------------|-----------------|--------|
-| pc [#1734](https://github.com/abhimehro/personal-config/pull/1734) | #1716 #1717 #1723 | Automation-task tests; drop `pr-visual-recap.yml` smuggling |
-| pc [#1735](https://github.com/abhimehro/personal-config/pull/1735) | #1726 | `run_shell_command` tests + junk submit stub deletes |
-| pc [#1736](https://github.com/abhimehro/personal-config/pull/1736) | #1718 | `run_workflow_updater` helper extraction |
-| esp [#1334](https://github.com/abhimehro/email-security-pipeline/pull/1334) | #1331 | IMAP size-parse list-comp; append-only bolt.md |
-| esp [#1335](https://github.com/abhimehro/email-security-pipeline/pull/1335) | #1314 | ingestion `extend`+comprehension; append-only bolt.md |
+| Repo | PR | Rationale |
+|------|-----|-----------|
+| personal-config | 1753 | Patch bump codeql-action floating tags (already unpinned style); CI green |
+| personal-config | 1752 | Palette a11y `th scope=row`; no logic risk |
+| Hydrograph… | 402 | pre-commit CI upper-bound widen; CI green |
+| Hydrograph… | 404 | Private helper Series→dict; single caller updated |
+| series_correction… | 286 | ruby/setup-ruby SHA pin refresh (keeps pin) |
+| Seatek_Analysis | 515 | matplotlib floor raise only (optional Series_27) |
+| email-security-pipeline | 1344 | Fast-path `'http' in` before `https?://` regex; lowercased text |
+| repoprompt-ce | 138 | accessibilityLabel on icon buttons only |
 
-## Close-superseded (docs)
+## CLOSE
 
-| PR | Reason |
-|----|--------|
-| pc #1706 | Prior Phase 2 docs conflicted; replaced by this session |
+| Repo | PR | Reason |
+|------|-----|--------|
+| personal-config | 1751 | Zero-diff QA Check |
+| Seatek_Analysis | 517 | Zero-diff Jules Daily QA |
 
-## Auto-resolved (next Phase 1)
+## ESCALATE (human; do not merge)
 
-| PR | Reason |
-|----|--------|
-| pc #1724 | MERGEABLE/CLEAN + CodeScene green |
-| esp #1320 | MERGEABLE/CLEAN |
+| Repo | PR | Reason |
+|------|-----|--------|
+| personal-config | 1744 | CONFLICTING; Action SHA→floating tag unpin (0eh) |
+| personal-config | 1721 | CONFLICTING; GH_TOKEN/env cache near detect_duplicates |
+| email-security-pipeline | 1328 | Secrets TOCTOU/chmod (prior escalate) |
+| email-security-pipeline | 1324 | Auth-Results scoring surface |
+| email-security-pipeline | 1319 | gh_token_cli write path |
+| email-security-pipeline | 1327 | CONFLICTING + CodeScene; broad SPF Bolt |
+| Seatek_Analysis | 518 | Subprocess env filter trust boundary (new Sentinel) |
+| Seatek_Analysis | 507 | Same surface as #518 (overlap); prior escalate |
+| Seatek_Analysis | 514 | pandas 2→3 major |
+| Seatek_Analysis | 511 | Path/IO security refactor + Trunk fail |
+| series_correction… | 285 | dummy_todos + CodeScene fail (0ef) → post cs-agent |
+| series_correction… | 276 | dummy_todos DoS (0ef) |
+| series_correction… | 275 | auth+DoS + CONFLICTING (0ef) |
+| series_correction… | 268 | dummy_todos cluster (0ef) |
+| repoprompt-ce | 126 | download-artifact tip major (0dw) |
+| repoprompt-ce | 127 | upload-artifact tip major (0dw) |
 
-## Escalate (leave open)
+## DEFER
 
-| PR | Reason |
-|----|--------|
-| pc #1721 | `lru_cache` on GH token env loader |
-| esp #1328 | TOCTOU/chmod config secrets |
-| esp #1324 | Auth-Results scoring |
-| esp #1319 | `gh_token_cli` token writes |
-| sc #275/#276/#268 | `dummy_todos.py` auth/PBKDF2/DoS (Lesson 0ef) |
-| rpce #126/#127 | tip-release artifact majors (Lesson 0dw) |
+| Repo | PR | Reason |
+|------|-----|--------|
+| personal-config | 1749 | Draft Phase 2 docs salvage — human merge only |
+| personal-config | 1748 | Draft visual-recap salvage (token sanitize) — human |
+| email-security-pipeline | 1342 | Draft Phase 2 salvage #1330 |
+| email-security-pipeline | 1341 | Draft Phase 2 salvage #1335/#1314 |
+| email-security-pipeline | 1320 | Prior REQUEST-CHANGES: test reduced to `pass` |
 
-## Defer (CodeScene)
+## Overlaps
 
-| PR | Reason |
-|----|--------|
-| esp #1327 | `/cs-agent` already posted; still pending |
-| esp #1330/#1311 | `/cs-agent` posted this run; await remediation |
-
-## Dropped
-
-| PR | Reason |
-|----|--------|
-| hg #374 | MERGED since Phase 1 |
+- Seatek #518 ≈ #507 (both reorder `filter_env_securely` custom_env merge). Prefer human pick of #518 (newer/simpler) or consolidated salvage; do not auto-close #507 without human ack.
+- series_correction #268/#275/#276/#285 share `dummy_todos.py` — leave cluster for Phase 2/human.

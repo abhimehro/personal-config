@@ -1,34 +1,43 @@
-# PR Inventory — 2026-07-21 (Phase 2 Salvage)
+# PR Inventory — 2026-07-23 (Phase 1 cron)
 
-**Preflight:** PASS 7/7 (+ `make cursor-cloud-hooks`)  
-**Mode:** salvage (draft-only; never auto-merge)  
-**Input:** Phase 1 remainder from `tasks/pr-review-2026-07-21.md` (23 PRs)  
-**Live re-fetch:** 23 → survivors classified below
+Preflight: **PASS 7/7**. Mode: `review-and-merge`. Stale threshold: 30d.
+Branch: `cursor-agent/pr-workflow-automation-f2ab`.
 
-| Repo | Open (EOD Phase 2) | Notes |
-|------|-------------------:|-------|
-| personal-config | 6 | 3 new salvage drafts + escalations/Phase-1 candidates |
-| ctrld-sync | 0 | — |
-| email-security-pipeline | 9 | 2 new salvage drafts + escalations/CodeScene defers |
-| Seatek_Analysis | 0 | — |
-| Hydrograph… | 0 | #374 numpy major **MERGED** since Phase 1 |
-| series_correction… | 3 | auth cluster escalated |
-| repoprompt-ce | 2 | tip artifact majors escalated |
+In-scope: bot authors + automation-driven human PRs (Jules/Bolt/Palette/Sentinel/Dependabot/Cursor salvage/QA).
 
-## Phase 1 remainder disposition (live)
+| Repo | PR | Author | Category | CI | Conflicts | Age | Draft | Files | Title |
+|------|-----|--------|----------|----|-----------|-----|-------|-------|-------|
+| personal-config | 1753 | dependabot | DEPENDENCY | OK | MERGEABLE | 0 | N | 1 | chore(deps): bump github/codeql-action 4.37.2→4.37.3 |
+| personal-config | 1752 | abhimehro | UI | OK | MERGEABLE | 0 | N | 2 | 🎨 Palette: accessible data tables |
+| personal-config | 1751 | abhimehro | CI/INFRA | OK | MERGEABLE | 0 | N | 0 | QA Check (zero-diff) |
+| personal-config | 1749 | app/cursor | FEATURE | OK | MERGEABLE | 0 | Y | 6 | docs(pr-salvage): Phase 2 session 2026-07-22 |
+| personal-config | 1748 | abhimehro | FEATURE | OK | MERGEABLE | 0 | Y | 7 | fix(visual-recap): salvage #1733 |
+| personal-config | 1744 | abhimehro | CI/INFRA | OK | CONFLICTING | 1 | N | 13 | chore(actions): consolidate workflow automation |
+| personal-config | 1721 | abhimehro | PERFORMANCE | OK | CONFLICTING | 2 | N | 2 | ⚡ Bolt: cache env vars in detect_duplicates.py |
+| ctrld-sync | — | — | — | — | — | — | — | — | **no open PRs** |
+| email-security-pipeline | 1344 | abhimehro | PERFORMANCE | OK | MERGEABLE | 0 | N | 2 | ⚡ Bolt: fast-path URL extraction regex |
+| email-security-pipeline | 1342 | abhimehro | REFACTOR | OK | MERGEABLE | 0 | Y | 1 | refactor(ingestion): IMAPClient config (salvage #1330) |
+| email-security-pipeline | 1341 | abhimehro | PERFORMANCE | OK | MERGEABLE | 0 | Y | 1 | perf(ingestion): extend+comprehension (salvage #1335) |
+| email-security-pipeline | 1328 | abhimehro | SECURITY | OK | MERGEABLE | 2 | N | 1 | 🔒 Fix TOCTOU in config permission setup |
+| email-security-pipeline | 1327 | abhimehro | PERFORMANCE | FAIL CS | CONFLICTING | 2 | N | 21 | ⚡ Bolt: Optimize SPF substring checks |
+| email-security-pipeline | 1324 | abhimehro | SECURITY | OK | MERGEABLE | 2 | N | 2 | ⚡ Bolt: Optimize _check_auth_results |
+| email-security-pipeline | 1320 | abhimehro | REFACTOR | OK | MERGEABLE | 2 | N | 2 | 🧹 Use validate_subject_length |
+| email-security-pipeline | 1319 | abhimehro | PERFORMANCE | OK | MERGEABLE | 2 | N | 1 | ⚡ Bolt: Optimize gh_token_cli writes |
+| Seatek_Analysis | 518 | abhimehro | SECURITY | OK | MERGEABLE | 0 | N | 2 | 🛡️ Sentinel: env denylist in subprocess wrappers |
+| Seatek_Analysis | 517 | abhimehro | CI/INFRA | OK | MERGEABLE | 0 | N | 0 | Jules Daily QA — no issues (zero-diff) |
+| Seatek_Analysis | 515 | dependabot | DEPENDENCY | OK | MERGEABLE | 0 | N | 1 | matplotlib floor ≥3.8→≥3.11.1 |
+| Seatek_Analysis | 514 | dependabot | DEPENDENCY | OK | MERGEABLE | 0 | N | 1 | pandas 2.x→3.x major |
+| Seatek_Analysis | 511 | abhimehro | REFACTOR | FAIL Trunk | MERGEABLE | 1 | N | 5 | path-traversal / IO refactor |
+| Seatek_Analysis | 507 | abhimehro | SECURITY | OK | MERGEABLE | 1 | N | 2 | 🛡️ Sentinel: subprocess env exfiltration |
+| Hydrograph… | 404 | abhimehro | PERFORMANCE | OK | MERGEABLE | 0 | N | 3 | ⚡ Bolt: dict instantiation in validation |
+| Hydrograph… | 402 | dependabot | DEPENDENCY | OK | MERGEABLE | 0 | N | 1 | pre-commit upper bound →&lt;5 |
+| series_correction… | 286 | dependabot | DEPENDENCY | OK | MERGEABLE | 0 | N | 1 | ruby/setup-ruby SHA pin bump |
+| series_correction… | 285 | abhimehro | SECURITY | FAIL CS | MERGEABLE | 0 | N | 1 | 🔒 memory leak dummy_todos.py |
+| series_correction… | 276 | abhimehro | SECURITY | OK | MERGEABLE | 2 | N | 2 | 🔒 DoS infinite loop dummy_todos |
+| series_correction… | 275 | abhimehro | SECURITY | OK | CONFLICTING | 2 | N | 4 | 🔒 secure auth + DoS JSON |
+| series_correction… | 268 | abhimehro | REFACTOR | OK | MERGEABLE | 2 | N | 1 | 🧹 infinite loop json parsing |
+| repoprompt-ce | 138 | abhimehro | UI | OK | MERGEABLE | 0 | N | 1 | 🎨 Palette: a11y labels on icon buttons |
+| repoprompt-ce | 127 | dependabot | DEPENDENCY | OK | MERGEABLE | 6 | N | 1 | upload-artifact 4→7 tip major |
+| repoprompt-ce | 126 | dependabot | DEPENDENCY | OK | MERGEABLE | 6 | N | 1 | download-artifact 4→8 tip major |
 
-| Prior | Live state | Phase 2 action |
-|-------|------------|----------------|
-| pc #1724 | CLEAN (CodeScene green) | AUTO-RESOLVED → next Phase 1 |
-| pc #1723/#1717/#1716 | DIRTY | SALVAGE → draft [#1734](https://github.com/abhimehro/personal-config/pull/1734) |
-| pc #1726 | DIRTY | SALVAGE → draft [#1735](https://github.com/abhimehro/personal-config/pull/1735) |
-| pc #1718 | DIRTY | SALVAGE → draft [#1736](https://github.com/abhimehro/personal-config/pull/1736) |
-| pc #1721 | DIRTY | ESCALATE (GH_TOKEN.env cache) |
-| pc #1706 | DIRTY docs | CLOSE-SUPERSEDED (this session) |
-| esp #1320 | CLEAN | AUTO-RESOLVED → next Phase 1 |
-| esp #1331/#1314 | DIRTY | SALVAGE → drafts [#1334](https://github.com/abhimehro/email-security-pipeline/pull/1334)/[#1335](https://github.com/abhimehro/email-security-pipeline/pull/1335) |
-| esp #1328/#1324/#1319 | CLEAN | ESCALATE (secrets/auth) |
-| esp #1327/#1330/#1311 | UNSTABLE | DEFER (+ `/cs-agent` posted on #1330/#1311) |
-| hg #374 | MERGED | DROP |
-| sc #275/#276/#268 | OPEN | ESCALATE (auth `dummy_todos.py`) |
-| rpce #126/#127 | CLEAN | ESCALATE (Lesson 0dw tip artifacts) |
+**Total in-scope: 31** (ctrld-sync empty).
