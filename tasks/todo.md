@@ -7,4 +7,4 @@
 - [x] Reaffirm escalations; CodeScene cs-agent on sc#285
 - [x] Close zero-diff QA PRs (2)
 - [x] Write pr-review-2026-07-23.md + lessons + session report
-- [ ] Commit/push docs branch + open PR
+- [x] Commit/push docs branch + open PR
