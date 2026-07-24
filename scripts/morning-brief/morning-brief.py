@@ -572,6 +572,10 @@ def html_ul(items: Iterable[str]) -> str:
     return f"<ul>{''.join(item_list)}</ul>"
 
 
+_EMOJI_HEADING_PATTERN = re.compile(
+    r"^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$"
+)
+
 def _render_heading(level: int, title: str, id_attr: str = "") -> str:
     safe_title = sanitize_text(title)
     id_str = f' id="{id_attr}"' if id_attr else ""
@@ -579,10 +583,7 @@ def _render_heading(level: int, title: str, id_attr: str = "") -> str:
     # Safely target emojis specifically by checking unicode ranges where emojis reside
     # rather than all non-ASCII characters. This includes Emoticons, Misc Symbols,
     # Dingbats, and the large Supplementary Multilingual Plane blocks.
-    emoji_pattern = re.compile(
-        r"^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$"
-    )
-    match = emoji_pattern.match(safe_title)
+    match = _EMOJI_HEADING_PATTERN.match(safe_title)
     if match:
         icon = match.group(1)
         clean_title = match.group(2)
