@@ -1475,3 +1475,35 @@ clustered salvage draft per test-file hotspot (Lesson 0dv) over re-opening
 each bot PR.
 **Detection cost:** Low — `gh pr diff --name-only` includes both
 `tests/test_*.py` and `pr-visual-recap.yml`.
+
+## Lesson 0ej: Sibling Sentinel env-filter PRs — escalate both (2026-07-23/24)
+
+**Pattern:** Multiple Sentinel PRs (#507/#518/#525) rewrite
+`filter_env_securely` / subprocess env merging with incompatible orderings
+(denylist vs allowlist-first vs custom_env last). CI can be green on all.
+**Rule:** Escalate the whole sibling set; do not merge the "newest green" alone.
+Human picks one ordering. Prefer allowlist base → heuristic strip → explicit
+`custom_env` overrides → hard denylist last.
+**Detection cost:** Low — title contains Sentinel + env / subprocess; same file
+overlap in `.github/scripts/repository_automation_common.py`.
+
+## Lesson 0ek: Dependabot title may lie — read the constraint diff (2026-07-23/24)
+
+**Pattern:** Titles like "update pandas requirement from X to Y" can be a
+**major** floor bump (`>=2.2,<3` → `>=3.0.5,<4`) while sounding routine.
+**Rule:** Always `gh pr diff` requirements/lockfiles before DEPENDENCY MERGE.
+Majors and constraint widenings → ESCALATE even when CI is green on a narrow
+optional path (e.g. Series_27 only).
+**Detection cost:** Low — one-line requirements diff.
+
+## Lesson 0el: bolt.md journal conflicts after sibling Bolt merges (2026-07-24)
+
+**Pattern:** esp #1346 (SPF helper + bolt.md append) went DIRTY after #1354
+merged another bolt.md append. `update-branch` returns 422; CodeScene/CI were
+fine on the code file.
+**Rule:** Autofix = merge main into PR head, take **main's** `.jules/bolt.md`,
+re-append this PR's learning if missing, keep source-file changes, push to the
+**existing** head ref (never a guessed new branch name). Then wait for checks
+before squash-merge.
+**Detection cost:** Low — `files` includes `.jules/bolt.md` + one module; sibling
+Bolt merged same day.
