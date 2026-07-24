@@ -59,3 +59,10 @@
 - ESP `spam_analyzer.py`: #1346 merge; #1324 stays escalated.
 - Seatek `requirements.txt`: #522 (pillow) before any pandas decision on #521.
 - bolt.md journal siblings: expect DIRTY journal-only after first merge (0cs).
+
+## Final disposition (executed)
+
+- **MERGED:** 20 (incl. #1346 after autofix)
+- **CLOSED:** cs #1055, Seatek #524
+- **ESCALATED:** 18 (comments posted)
+- **DEFERRED:** pc #1756, esp #1348

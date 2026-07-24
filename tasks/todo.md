@@ -3,20 +3,19 @@
 ## Preflight
 - [x] `./scripts/preflight-gh-pr-automation.sh` PASS 7/7
 - [x] `make cursor-cloud-hooks`
-- [ ] Branch `cursor-agent/pr-workflow-automation-95f6` pushed
+- [x] Branch `cursor-agent/pr-workflow-automation-95f6` pushed
 
 ## Phase 1
-- [ ] Live inventory → `tasks/pr-inventory.md`
-- [ ] Triage → `tasks/pr-triage.md`
-- [ ] Review gates (CI / security / quality)
-- [ ] Merge green safe PRs (squash)
-- [ ] Close duplicates / superseded / stale (>30d)
-- [ ] Escalate auth/secrets/trust-boundary / tip majors
-- [ ] Auto-fix only routine safe issues
-- [ ] CodeScene `/cs-agent` where red before defer
+- [x] Live inventory → `tasks/pr-inventory.md`
+- [x] Triage → `tasks/pr-triage.md`
+- [x] Review gates (CI / security / quality)
+- [x] Merge green safe PRs (squash) — 20 merged
+- [x] Close duplicates / superseded / stale — 2 closed
+- [x] Escalate auth/secrets/trust-boundary / tip majors — 18
+- [x] Autofix esp #1346 bolt.md (Lesson 0el)
+- [x] CodeScene `/cs-agent` on sc #285
 
 ## Deliverables
-- [ ] `pr-inventory.md`, `pr-triage.md`, `pr-review-2026-07-24.md`
-- [ ] Append `review-session-reports.md`; update `lessons.md`
-- [ ] Commit + push session docs on workflow branch
-- [ ] Open session PR via automation tools
+- [x] `pr-inventory.md`, `pr-triage.md`, `pr-review-2026-07-24.md`
+- [x] Append `review-session-reports.md`; update `lessons.md` (0ej/0ek/0el)
+- [ ] Commit + push session docs; open session PR
