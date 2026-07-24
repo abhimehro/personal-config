@@ -1,28 +1,22 @@
-# Phase 2 Salvage — 2026-07-21
+# Phase 1 PR Review — 2026-07-24
 
 ## Preflight
-- [x] gh auth + 7-repo preflight PASS
+- [x] `./scripts/preflight-gh-pr-automation.sh` PASS 7/7
 - [x] `make cursor-cloud-hooks`
-- [x] Branch `cursor-agent/automated-pr-salvage-557b`
+- [ ] Branch `cursor-agent/pr-workflow-automation-95f6` pushed
 
-## Live re-fetch
-- [x] Drop hg #374 (MERGED)
-- [x] Note pc #1724 + esp #1320 CLEAN (Phase 1 candidates)
-- [x] Classify remainder
-
-## Salvage (draft only)
-- [x] pc #1734 ← #1716/#1717/#1723
-- [x] pc #1735 ← #1726
-- [x] pc #1736 ← #1718
-- [x] esp #1334 ← #1331
-- [x] esp #1335 ← #1314
-- [x] Close pc #1706 docs
-
-## Escalate / defer
-- [x] pc #1721; esp #1328/#1324/#1319; sc #275/#276/#268; rpce #126/#127
-- [x] `/cs-agent` on esp #1330/#1311; defer #1327
+## Phase 1
+- [ ] Live inventory → `tasks/pr-inventory.md`
+- [ ] Triage → `tasks/pr-triage.md`
+- [ ] Review gates (CI / security / quality)
+- [ ] Merge green safe PRs (squash)
+- [ ] Close duplicates / superseded / stale (>30d)
+- [ ] Escalate auth/secrets/trust-boundary / tip majors
+- [ ] Auto-fix only routine safe issues
+- [ ] CodeScene `/cs-agent` where red before defer
 
 ## Deliverables
-- [x] pr-inventory.md, pr-triage.md, pr-review-2026-07-21.md Phase 2
-- [x] salvage-session-reports.md + lessons.md (0eh)
-- [x] Commit + push session branch; open draft session PR
+- [ ] `pr-inventory.md`, `pr-triage.md`, `pr-review-2026-07-24.md`
+- [ ] Append `review-session-reports.md`; update `lessons.md`
+- [ ] Commit + push session docs on workflow branch
+- [ ] Open session PR via automation tools
