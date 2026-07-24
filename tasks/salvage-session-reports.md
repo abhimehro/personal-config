@@ -635,3 +635,93 @@
 - Maintainer: merge drafts #1734/#1735/#1736 then esp #1334/#1335; Phase 1 for #1724/#1320; T1 auth/secrets escalations
 - Cross-links: [Session report](tasks/pr-review-2026-07-21.md), [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md)
 - New lesson: **0eh** (pr-visual-recap.yml smuggling in test PRs)
+
+## Run — 2026-07-22
+
+- Trigger: cron Phase 2 `0 17 * * *`
+- Agent branch: `cursor-agent/automated-pr-salvage-6463`
+- Preflight: PASS 7/7 (+ cursor-cloud-hooks)
+- Source report: `tasks/pr-review-2026-07-22.md` Phase 1 remainder (17 PRs)
+- Live re-fetch: conflict cascades on pc #1733, esp #1335/#1330; escalations unchanged
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | #1733 | SALVAGE draft | [#1748](https://github.com/abhimehro/personal-config/pull/1748) | recap-cli + token sanitize + MDX; lessons 0ei/0ej append-only |
+| personal-config | #1744 | ESCALATE | — | Actions SHA→floating tag |
+| personal-config | #1721 | ESCALATE | — | GH_TOKEN/env cache + workflow noise |
+| email-security-pipeline | #1335 | RE-SALVAGE draft | [#1341](https://github.com/abhimehro/email-security-pipeline/pull/1341) | extend+comprehension; closed prior salvage |
+| email-security-pipeline | #1330 | SALVAGE adapted | [#1342](https://github.com/abhimehro/email-security-pipeline/pull/1342) | IMAPClient config; kept FetchContext |
+| email-security-pipeline | #1327 | DEFER | — | CodeScene fail; cs-agent already posted |
+| email-security-pipeline | #1320 | DEFER | — | weakened test assertion |
+| email-security-pipeline | #1328 #1324 #1319 | ESCALATE | — | secrets/auth/token CLI |
+| series_correction | #275 #276 #268 | ESCALATE | — | auth dummy_todos (0ef) |
+| Seatek_Analysis | #507 #511 | ESCALATE | — | subprocess env / security refactor |
+| repoprompt-ce | #126 #127 | ESCALATE | — | tip artifact majors (0dw) |
+| ctrld-sync / Hydrograph | — | — | — | zero open |
+
+- Salvage draft PRs opened: **3**
+- Infra-fix draft PRs opened: **0**
+- Closed superseded: **3**
+- Autonomous merges: **0**
+- Escalations left open: **11** (+ 2 defers)
+
+### Verification status
+
+- Local: `py_compile` on ESP salvages; `bash -n` + `node --check` on visual-recap scripts
+- Blocking checks on `main`: none identified as whole-repo infra-broken
+- CodeScene: no new `/cs-agent` (already present on #1327)
+
+### Handoff
+
+- Maintainer: merge drafts #1748 → #1341 → #1342; then T1 security escalations
+- Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-07-22.md)
+- New lesson: **0ek** (re-salvage conflicted salvage drafts; adapt past sibling refactors)
+
+## Run — 2026-07-23
+
+- Trigger: cron Phase 2 `0 17 * * *`
+- Agent branch: `cursor-agent/automated-pr-salvage-031d`
+- Preflight: PASS 7/7 (+ cursor-cloud-hooks)
+- Source report: `tasks/pr-review-2026-07-23.md` Phase 1 remainder (via draft [#1755](https://github.com/abhimehro/personal-config/pull/1755)) + live re-fetch
+- Live extras: esp [#1345](https://github.com/abhimehro/email-security-pipeline/pull/1345) Jules blank-line QA (post–Phase 1)
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| email-security-pipeline | [#1327](https://github.com/abhimehro/email-security-pipeline/pull/1327) | SALVAGE draft | [#1346](https://github.com/abhimehro/email-security-pipeline/pull/1346) | SPF helper only; drop workflow churn; cs-agent posted |
+| email-security-pipeline | [#1320](https://github.com/abhimehro/email-security-pipeline/pull/1320) | SALVAGE draft | [#1347](https://github.com/abhimehro/email-security-pipeline/pull/1347) | validate_subject_length + restored warning assert |
+| email-security-pipeline | [#1345](https://github.com/abhimehro/email-security-pipeline/pull/1345) | CLOSE no-op | — | single blank-line delete |
+| personal-config | [#1721](https://github.com/abhimehro/personal-config/pull/1721) | ESCALATE | — | CONFLICTING + GH_TOKEN lru_cache |
+| personal-config | [#1744](https://github.com/abhimehro/personal-config/pull/1744) | ESCALATE | — | Action SHA unpin (0z) |
+| personal-config | [#1748](https://github.com/abhimehro/personal-config/pull/1748)/[#1749](https://github.com/abhimehro/personal-config/pull/1749)/[#1755](https://github.com/abhimehro/personal-config/pull/1755) | DEFER human | — | prior draft salvages / Phase 1 docs |
+| email-security-pipeline | [#1328](https://github.com/abhimehro/email-security-pipeline/pull/1328)/[#1324](https://github.com/abhimehro/email-security-pipeline/pull/1324)/[#1319](https://github.com/abhimehro/email-security-pipeline/pull/1319) | ESCALATE | — | secrets/auth/token |
+| email-security-pipeline | [#1341](https://github.com/abhimehro/email-security-pipeline/pull/1341)/[#1342](https://github.com/abhimehro/email-security-pipeline/pull/1342) | DEFER human | — | prior Phase 2 drafts |
+| Seatek_Analysis | [#518](https://github.com/abhimehro/Seatek_Analysis/pull/518)/[#507](https://github.com/abhimehro/Seatek_Analysis/pull/507)/[#511](https://github.com/abhimehro/Seatek_Analysis/pull/511)/[#514](https://github.com/abhimehro/Seatek_Analysis/pull/514) | ESCALATE | — | env filter / path-IO / pandas major |
+| series_correction | [#285](https://github.com/abhimehro/series_correction_project_updated/pull/285)/[#276](https://github.com/abhimehro/series_correction_project_updated/pull/276)/[#275](https://github.com/abhimehro/series_correction_project_updated/pull/275)/[#268](https://github.com/abhimehro/series_correction_project_updated/pull/268) | ESCALATE | — | dummy_todos auth cluster (0ef) |
+| repoprompt-ce | [#126](https://github.com/abhimehro/repoprompt-ce/pull/126)/[#127](https://github.com/abhimehro/repoprompt-ce/pull/127) | ESCALATE | — | tip artifact majors (0dw) |
+| ctrld-sync / Hydrograph | — | — | — | zero open |
+
+- Salvage draft PRs opened: **2**
+- Infra-fix draft PRs opened: **0**
+- Closed superseded / no-op: **3** (#1327, #1320, #1345)
+- Autonomous merges: **0**
+- Escalations left open: **16** (+ prior human drafts deferred)
+
+### Verification status
+
+- Local: esp #1346 focused SPF/spam filter **13 passed**; #1347 `TestHeaderSizeLimits` **7 passed**
+- Blocking checks on `main`: none identified as whole-repo infra-broken
+- CodeScene: `/cs-agent` posted on salvage [#1346](https://github.com/abhimehro/email-security-pipeline/pull/1346); already present on sc #285
+
+### Handoff
+
+1. Merge drafts: esp [#1346](https://github.com/abhimehro/email-security-pipeline/pull/1346) → [#1347](https://github.com/abhimehro/email-security-pipeline/pull/1347); then prior [#1341](https://github.com/abhimehro/email-security-pipeline/pull/1341)/[#1342](https://github.com/abhimehro/email-security-pipeline/pull/1342); pc [#1748](https://github.com/abhimehro/personal-config/pull/1748)
+2. T1 human: esp #1328/#1324/#1319; sc #275/#276/#268/#285; Seatek #518/#507/#511
+3. T2 human: pc #1721/#1744; Seatek #514; rpce #126/#127
+4. Fold/close stale docs drafts #1749/#1755 after this session PR lands
+
+- Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-07-23.md)
+- New lessons: **0ek** (backfill re-salvage), **0el** (Sentinel siblings), **0em** (Dependabot title), **0en** (restore warning assert)
