@@ -18,4 +18,4 @@
 ## Deliverables
 - [x] `pr-inventory.md`, `pr-triage.md`, `pr-review-2026-07-24.md`
 - [x] Append `review-session-reports.md`; update `lessons.md` (0ej/0ek/0el)
-- [ ] Commit + push session docs; open session PR
+- [x] Commit + push session docs; open session PR (#1764)
