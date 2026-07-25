@@ -1,50 +1,37 @@
-# PR Triage — 2026-07-21 (Phase 2 Salvage)
+# PR Triage — 2026-07-23 (Phase 2 Salvage)
 
-**Preflight:** PASS 7/7 · **Mode:** salvage (draft-only) · **Remainder in:** 23
+## SALVAGE (draft opened; original closed)
 
-## Salvage clusters
+| Repo | Old → New | Notes |
+|------|-----------|-------|
+| email-security-pipeline | #1327 → [#1346](https://github.com/abhimehro/email-security-pipeline/pull/1346) | SPF `_evaluate_spf_headers` only; bolt append-only; `/cs-agent` posted |
+| email-security-pipeline | #1320 → [#1347](https://github.com/abhimehro/email-security-pipeline/pull/1347) | `validate_subject_length` + restored warning assert (Lesson 0en) |
 
-| Keep (draft) | Close originals | Reason |
-|--------------|-----------------|--------|
-| pc [#1734](https://github.com/abhimehro/personal-config/pull/1734) | #1716 #1717 #1723 | Automation-task tests; drop `pr-visual-recap.yml` smuggling |
-| pc [#1735](https://github.com/abhimehro/personal-config/pull/1735) | #1726 | `run_shell_command` tests + junk submit stub deletes |
-| pc [#1736](https://github.com/abhimehro/personal-config/pull/1736) | #1718 | `run_workflow_updater` helper extraction |
-| esp [#1334](https://github.com/abhimehro/email-security-pipeline/pull/1334) | #1331 | IMAP size-parse list-comp; append-only bolt.md |
-| esp [#1335](https://github.com/abhimehro/email-security-pipeline/pull/1335) | #1314 | ingestion `extend`+comprehension; append-only bolt.md |
+## CLOSE
 
-## Close-superseded (docs)
+| Repo | PR | Reason |
+|------|-----|--------|
+| email-security-pipeline | 1345 | No-op single blank-line between dataclasses |
 
-| PR | Reason |
-|----|--------|
-| pc #1706 | Prior Phase 2 docs conflicted; replaced by this session |
+## ESCALATE (left open; comments refreshed)
 
-## Auto-resolved (next Phase 1)
+| Repo | PRs | Reason |
+|------|-----|--------|
+| personal-config | 1721, 1744 | GH_TOKEN/env cache DIRTY; Action SHA unpin |
+| email-security-pipeline | 1328, 1324, 1319 | secrets TOCTOU / auth-results / token CLI |
+| Seatek_Analysis | 518, 507, 511, 514 | env filter cluster / path-IO / pandas major |
+| series_correction… | 285, 276, 275, 268 | dummy_todos auth cluster (0ef) |
+| repoprompt-ce | 126, 127 | tip artifact majors (0dw) |
 
-| PR | Reason |
-|----|--------|
-| pc #1724 | MERGEABLE/CLEAN + CodeScene green |
-| esp #1320 | MERGEABLE/CLEAN |
+## DEFER (human merge of prior drafts / docs)
 
-## Escalate (leave open)
+| Repo | PRs | Reason |
+|------|-----|--------|
+| personal-config | 1748, 1749, 1755 | Prior salvages + Phase 1/2 docs drafts |
+| email-security-pipeline | 1341, 1342 | Prior Phase 2 salvages still awaiting human |
 
-| PR | Reason |
-|----|--------|
-| pc #1721 | `lru_cache` on GH token env loader |
-| esp #1328 | TOCTOU/chmod config secrets |
-| esp #1324 | Auth-Results scoring |
-| esp #1319 | `gh_token_cli` token writes |
-| sc #275/#276/#268 | `dummy_todos.py` auth/PBKDF2/DoS (Lesson 0ef) |
-| rpce #126/#127 | tip-release artifact majors (Lesson 0dw) |
+## Maintainer priority
 
-## Defer (CodeScene)
-
-| PR | Reason |
-|----|--------|
-| esp #1327 | `/cs-agent` already posted; still pending |
-| esp #1330/#1311 | `/cs-agent` posted this run; await remediation |
-
-## Dropped
-
-| PR | Reason |
-|----|--------|
-| hg #374 | MERGED since Phase 1 |
+1. **T3 drafts:** esp #1346 → #1347 → #1341 → #1342; pc #1748  
+2. **T1 security:** esp #1328/#1324/#1319; sc cluster; Seatek #518/#507/#511  
+3. **T2 trust/deps:** pc #1721/#1744; Seatek #514; rpce #126/#127  
