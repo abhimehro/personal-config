@@ -353,11 +353,11 @@ def _method_shortcut(method: str) -> str | None:
 def _send_one_request(
     session: requests.Session,
     method: str,
-    short: str | None,
     url: str,
     request_kwargs: dict[str, Any],
 ) -> requests.Response:
     """Send a single request without following redirects."""
+    short = _method_shortcut(method)
     if short is None:
         return session.request(method, url, allow_redirects=False, **request_kwargs)
     return getattr(session, short)(url, allow_redirects=False, **request_kwargs)
@@ -407,31 +407,6 @@ def _sanitize_redirect_kwargs(
         request_kwargs.pop("json", None)
 
 
-def _request_with_redirects(
-    session: requests.Session,
-    method: str,
-    short: str | None,
-    current_url: str,
-    request_kwargs: dict[str, Any],
-    options: dict[str, Any],
-    remaining: int,
-) -> requests.Response:
-    """Follow redirects manually while re-validating each hop."""
-    response = _send_one_request(session, method, short, current_url, request_kwargs)
-    if _is_redirect_response(response):
-        if remaining <= 0:
-            raise TooManyRedirectsError(
-                f"Maximum redirect hops ({options['max_redirects']}) exceeded starting from {current_url!r}"
-            )
-        new_url = _extract_redirect_url(current_url, response)
-        validate_url(new_url, **options)
-        _sanitize_redirect_kwargs(request_kwargs, current_url, new_url, options)
-        return _request_with_redirects(
-            session, method, short, new_url, request_kwargs, options, remaining - 1
-        )
-    return response
-
-
 def safe_request(
     method: str,
     url: str,
@@ -458,10 +433,23 @@ def safe_request(
         kwargs["headers"] = dict(kwargs["headers"])
 
     method = method.upper()
-    short = _method_shortcut(method)
     validate_url(url, **options)
-    return _request_with_redirects(
-        session, method, short, url, kwargs, options, options["max_redirects"]
+    original_url = url
+    current_url = url
+    max_redirects = options["max_redirects"]
+    for hop in range(max_redirects + 1):
+        response = _send_one_request(session, method, current_url, kwargs)
+        if not _is_redirect_response(response):
+            return response
+        if hop == max_redirects:
+            raise TooManyRedirectsError(
+                f"Maximum redirect hops ({max_redirects}) exceeded starting from {original_url!r}"
+            )
+        current_url = _extract_redirect_url(current_url, response)
+        validate_url(current_url, **options)
+        _sanitize_redirect_kwargs(kwargs, original_url, current_url, options)
+    raise TooManyRedirectsError(
+        f"Maximum redirect hops ({max_redirects}) exceeded starting from {original_url!r}"
     )
 
 
@@ -501,8 +489,13 @@ class _ValidatingRedirectHandler(urllib.request.HTTPRedirectHandler):
         self._options = _extract_safety_options(safety_kwargs)
         self.max_redirections = self._options["max_redirects"]
 
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        """Validate the redirect and build a sanitized follow-up request."""
+    def redirect_request(self, *args):
+        """Validate the redirect and build a sanitized follow-up request.
+
+        ``*args`` is used because the parent-class signature has six positional
+        parameters (``req, fp, code, msg, headers, newurl``).
+        """
+        req, fp, code, msg, headers, newurl = args
         parsed = urllib.parse.urlsplit(newurl)
         if not _is_allowed_scheme(parsed.scheme):
             raise urllib.error.HTTPError(
@@ -580,19 +573,23 @@ def _make_safe_response(resp: Any, body: bytes, max_bytes: int) -> SafeResponse:
 def safe_urlopen(
     url: str,
     *,
-    data: bytes | None = None,
-    headers: Mapping[str, str] | None = None,
-    method: str | None = None,
     timeout: float | tuple[float, float] = DEFAULT_TIMEOUT,
     context: ssl.SSLContext | None = None,
-    **safety_kwargs: Any,
+    **kwargs: Any,
 ) -> SafeResponse:
     """Open ``url`` safely with ``urllib`` and return a read-once response.
 
     Redirects are validated hop-by-hop, auth headers are stripped on
     cross-host hops, and the response body is bounded by ``max_bytes``.
+
+    Request parameters may be passed as keyword arguments:
+    ``data``, ``headers``, ``method``. Remaining keyword arguments are
+    treated as safety options.
     """
-    options = _extract_safety_options(safety_kwargs)
+    data = kwargs.pop("data", None)
+    headers = kwargs.pop("headers", None)
+    method = kwargs.pop("method", None)
+    options = _extract_safety_options(kwargs)
     timeout = _collapse_timeout(timeout)
     validate_url(url, **options)
 
@@ -649,11 +646,11 @@ def safe_download(
     destination: str | BinaryIO,
     *,
     timeout: float | tuple[float, float] = DEFAULT_TIMEOUT,
-    expected_types: Iterable[str] | None = None,
-    **safety_kwargs: Any,
+    **kwargs: Any,
 ) -> None:
     """Stream a remote resource to ``destination`` with size and host checks."""
-    options = _extract_safety_options(safety_kwargs)
+    expected_types = kwargs.pop("expected_types", None)
+    options = _extract_safety_options(kwargs)
     resp = safe_urlopen(url, timeout=timeout, **options)
     max_bytes = options["max_bytes"]
     if expected_types:
@@ -676,23 +673,6 @@ def build_safe_session(
         total_retries=total_retries,
         backoff_factor=backoff_factor,
     )
-
-
-def _safety_flags(
-    allow_loopback: bool,
-    allow_private: bool,
-    allow_link_local: bool,
-    allow_cgnat: bool,
-    require_https: bool,
-) -> dict[str, bool]:
-    """Bundle the boolean safety flags for CLI callers."""
-    return {
-        "allow_loopback": allow_loopback,
-        "allow_private": allow_private,
-        "allow_link_local": allow_link_local,
-        "allow_cgnat": allow_cgnat,
-        "require_https": require_https,
-    }
 
 
 if __name__ == "__main__":
@@ -734,13 +714,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     allowed_hosts = [h.strip() for h in args.allowed_hosts.split(",") if h.strip()]
-    flags = _safety_flags(
-        args.allow_loopback,
-        args.allow_private,
-        args.allow_link_local,
-        args.allow_cgnat,
-        args.require_https,
-    )
+    flags = {
+        "allow_loopback": args.allow_loopback,
+        "allow_private": args.allow_private,
+        "allow_link_local": args.allow_link_local,
+        "allow_cgnat": args.allow_cgnat,
+        "require_https": args.require_https,
+    }
     try:
         validate_url(
             args.check_url,
