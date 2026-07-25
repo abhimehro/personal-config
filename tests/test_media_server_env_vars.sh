@@ -118,7 +118,7 @@ wait_for_log_marker() {
 	local timeout_ms="${3:-2000}"
 	local waited=0
 	while ((waited < timeout_ms)); do
-		[[ -f "$file" ]] && grep -q "$marker" "$file" 2>/dev/null && return 0
+		[[ -f $file ]] && grep -q "$marker" "$file" 2>/dev/null && return 0
 		sleep 0.05
 		waited=$((waited + 50))
 	done
