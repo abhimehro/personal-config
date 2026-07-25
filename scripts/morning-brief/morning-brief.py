@@ -936,19 +936,28 @@ def _process_horoscope_endpoint(
     return None
 
 
-def _has_successful_result(futures: list) -> bool:
-    """Check if any future in the list succeeded with a non-None result."""
-    for future in futures:
-        if not future.exception() and future.result():
-            return True
-    return False
+def _submit_horoscope_calls(
+    executor: concurrent.futures.ThreadPoolExecutor,
+    session: requests.Session,
+    zodiac_sign: str,
+) -> list[concurrent.futures.Future]:
+    """Submit a horoscope request for every configured endpoint."""
+    return [
+        executor.submit(_process_horoscope_endpoint, session, zodiac_sign, tmpl)
+        for tmpl in HOROSCOPE_ENDPOINTS_TEMPLATE
+    ]
 
 
-def _get_first_successful_result(futures: list) -> Optional[str]:
-    """Return the first successful result from completed futures."""
-    for future in concurrent.futures.as_completed(futures):
-        if not future.exception() and future.result():
-            return future.result()
+def _first_horoscope_result(
+    futures: list[concurrent.futures.Future], timeout: float
+) -> str | None:
+    """Return the first successful future result within ``timeout`` seconds."""
+    try:
+        for future in concurrent.futures.as_completed(futures, timeout=timeout):
+            if not future.exception() and future.result():
+                return future.result()
+    except concurrent.futures.TimeoutError:
+        pass
     return None
 
 
@@ -962,35 +971,13 @@ def fetch_horoscope(session: requests.Session, zodiac_sign: str) -> str:
         logger.warning("Invalid zodiac sign %r; using default", zodiac_sign)
         return default_text
 
-    executor = concurrent.futures.ThreadPoolExecutor(
-        max_workers=min(len(HOROSCOPE_ENDPOINTS_TEMPLATE) or 1, 32)
-    )
-    futures = []
-
+    max_workers = min(len(HOROSCOPE_ENDPOINTS_TEMPLATE) or 1, 32)
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
     try:
-        for i, tmpl in enumerate(HOROSCOPE_ENDPOINTS_TEMPLATE):
-            futures.append(
-                executor.submit(_process_horoscope_endpoint, session, zodiac_sign, tmpl)
-            )
-
-            if i == len(HOROSCOPE_ENDPOINTS_TEMPLATE) - 1:
-                break
-
-            pending = [f for f in futures if not f.done()]
-            if not pending:
-                continue
-
-            done, _ = concurrent.futures.wait(
-                pending, timeout=1.5, return_when=concurrent.futures.FIRST_COMPLETED
-            )
-
-            if _has_successful_result(done):
-                break
-
-        result = _get_first_successful_result(futures)
+        futures = _submit_horoscope_calls(executor, session, zodiac_sign)
+        result = _first_horoscope_result(futures, HOROSCOPE_TIMEOUT)
         if result:
             return result
-
     finally:
         executor.shutdown(wait=False, cancel_futures=True)
 

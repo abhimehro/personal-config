@@ -65,6 +65,54 @@ def _body_has_password(body: dict | None) -> bool:
     return bool(keys & {"password", "pw"})
 
 
+def _request_headers(token: str | None) -> dict[str, str]:
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": CLIENT_HDR,
+    }
+    if token:
+        headers["Authorization"] = f"MediaBrowser Token={token}"
+    return headers
+
+
+def _encode_body(body: dict | None) -> bytes | None:
+    if body is None:
+        return None
+    return json.dumps(body).encode()
+
+
+def _parse_response_body(raw: bytes) -> object:
+    if not raw:
+        return None
+    try:
+        return json.loads(raw.decode())
+    except json.JSONDecodeError:
+        return raw.decode(errors="replace")
+
+
+def _parse_http_error(exc: urllib.error.HTTPError) -> tuple[int, object]:
+    raw = exc.read()
+    if not raw:
+        return exc.code, None
+    try:
+        return exc.code, json.loads(raw.decode())
+    except json.JSONDecodeError:
+        return exc.code, raw.decode(errors="replace")
+
+
+def _https_required_for_credentials(
+    host: str, token: str | None, body: dict | None
+) -> bool:
+    has_credentials = token is not None or _body_has_password(body)
+    return (
+        has_credentials and not _is_loopback_host(host) and not JELLYFIN_ALLOW_INSECURE
+    )
+
+
+def _non_loopback_allowed() -> bool:
+    return bool(JELLYFIN_ALLOWED_HOSTS - _LOOPBACK_HOSTS)
+
+
 def http(
     method: str,
     path: str,
@@ -76,53 +124,29 @@ def http(
     full_url = f"{BASE}{path}"
     parsed = urllib.parse.urlsplit(BASE)
     host = (parsed.hostname or "").lower()
-    has_credentials = token is not None or _body_has_password(body)
-    require_https = (
-        has_credentials and not _is_loopback_host(host) and not JELLYFIN_ALLOW_INSECURE
-    )
-
-    has_non_loopback_allowed = bool(JELLYFIN_ALLOWED_HOSTS - _LOOPBACK_HOSTS)
-
-    data = None if body is None else json.dumps(body).encode()
-    headers: dict[str, str] = {
-        "Content-Type": "application/json",
-        "Authorization": CLIENT_HDR,
-    }
-    if token:
-        headers["Authorization"] = f"MediaBrowser Token={token}"
+    require_https = _https_required_for_credentials(host, token, body)
+    allow_private = _non_loopback_allowed()
 
     try:
         resp = safe_urlopen(
             full_url,
-            data=data,
-            headers=headers,
+            data=_encode_body(body),
+            headers=_request_headers(token),
             method=method,
             timeout=timeout,
             allowed_hosts=JELLYFIN_ALLOWED_HOSTS,
             allow_loopback=True,
-            allow_private=has_non_loopback_allowed,
-            allow_link_local=has_non_loopback_allowed,
-            allow_cgnat=has_non_loopback_allowed,
+            allow_private=allow_private,
+            allow_link_local=allow_private,
+            allow_cgnat=allow_private,
             require_https=require_https,
         )
     except UnsafeURLError as exc:
         raise ValueError(f"Unsafe JELLYFIN_URL or redirect: {exc}") from exc
-    except urllib.error.HTTPError as e:
-        raw = e.read()
-        try:
-            payload: object = json.loads(raw.decode()) if raw else None
-        except json.JSONDecodeError:
-            payload = raw.decode(errors="replace") if raw else None
-        return e.code, payload
+    except urllib.error.HTTPError as exc:
+        return _parse_http_error(exc)
 
-    code = resp.status
-    raw = resp.body
-    if not raw:
-        return code, None
-    try:
-        return code, json.loads(raw.decode())
-    except json.JSONDecodeError:
-        return code, raw.decode(errors="replace")
+    return resp.status, _parse_response_body(resp.body)
 
 
 def _launchctl_bin() -> str:

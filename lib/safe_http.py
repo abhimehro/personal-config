@@ -45,6 +45,12 @@ _AUTH_HEADERS = frozenset(
     }
 )
 
+# HTTP methods that can use the convenience methods on ``requests.Session``.
+_SHORT_METHODS = frozenset({"get", "post", "put", "patch", "delete", "head", "options"})
+
+# HTTP methods that may carry a request body.
+_BODY_METHODS = frozenset({"POST", "PUT", "PATCH"})
+
 
 class UnsafeURLError(ValueError):
     """Raised when a URL fails SSRF validation."""
@@ -86,33 +92,20 @@ def _normalize_host(host: str) -> str:
     """Lower-case and IDNA-encode a hostname, rejecting obvious homoglyphs."""
     if not host:
         raise UnsafeURLError("URL host is required")
-
-    # Reject non-ASCII hostnames by default. If a legitimate IDN is ever
-    # needed, convert via idna first and keep the Punycode form in allowlists.
     if not host.isascii():
         raise UnsafeURLError(f"Non-ASCII hostnames are not allowed: {host!r}")
-
-    try:
-        host = host.lower().rstrip(".")
-    except Exception as exc:
-        raise UnsafeURLError(f"Invalid hostname: {host!r}") from exc
-
     if re.search(r"\s", host):
         raise UnsafeURLError(f"Invalid hostname: {host!r}")
-
-    return host
+    return host.lower().rstrip(".")
 
 
 def _host_key(host: str) -> str | None:
     """Return the normalized hostname from an allowlist entry that may include a port."""
     if not host:
         return None
-    # urlsplit requires a netloc; prepend // for bare host[:port] entries.
-    if "://" not in host:
-        host = "//" + host
+    netloc = host if "://" in host else "//" + host
     try:
-        parsed = urllib.parse.urlsplit(host)
-        hostname = parsed.hostname
+        hostname = urllib.parse.urlsplit(netloc).hostname
     except ValueError:
         hostname = None
     if hostname:
@@ -124,19 +117,36 @@ def _is_allowed_host(host: str, allowed_hosts: Iterable[str] | None) -> bool:
     """Check whether ``host`` is in the allowlist (exact or subdomain match)."""
     if allowed_hosts is None:
         return True
-
-    allowed = frozenset(_host_key(h) for h in allowed_hosts if _host_key(h))
-    if not allowed:
+    allowed = {_host_key(h) for h in allowed_hosts if _host_key(h)}
+    if not allowed or host in allowed:
         return True
+    return any(host.endswith(f".{a}") for a in allowed)
 
-    if host in allowed:
-        return True
 
-    for a in allowed:
-        if host.endswith(f".{a}"):
-            return True
+def _parse_addr_info(
+    addr_info: list,
+) -> set[ipaddress.IPv4Address | ipaddress.IPv6Address]:
+    """Convert the result of ``getaddrinfo`` into a set of IP addresses."""
+    ips: set[ipaddress.IPv4Address | ipaddress.IPv6Address] = set()
+    for res in addr_info:
+        ip = _parse_addr_entry(res)
+        if ip is not None:
+            ips.add(ip)
+    return ips
 
-    return False
+
+def _parse_addr_entry(
+    res: tuple,
+) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
+    """Parse a single ``getaddrinfo`` result tuple into an IP address."""
+    ip_str = res[4][0]
+    try:
+        ip = ipaddress.ip_address(ip_str)
+    except ValueError:
+        return None
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+        ip = ip.ipv4_mapped
+    return ip
 
 
 def _resolve_ips(
@@ -147,23 +157,29 @@ def _resolve_ips(
         addr_info = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)
     except (socket.gaierror, OSError, ValueError) as exc:
         raise UnsafeURLError(f"Could not resolve {host!r}: {exc}") from exc
-
-    ips: set[ipaddress.IPv4Address | ipaddress.IPv6Address] = set()
-    for res in addr_info:
-        ip_str = res[4][0]
-        try:
-            ip = ipaddress.ip_address(ip_str)
-        except ValueError:
-            continue
-        # Treat IPv4-mapped IPv6 as IPv4 for policy checks.
-        if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
-            ip = ip.ipv4_mapped
-        ips.add(ip)
-
+    ips = _parse_addr_info(addr_info)
     if not ips:
         raise UnsafeURLError(f"No IP addresses resolved for {host!r}")
-
     return ips
+
+
+def _is_cgnat(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """Return True if ``ip`` is in the Tailscale CGNAT range."""
+    return isinstance(ip, ipaddress.IPv4Address) and ip in _CGNAT_NETWORK
+
+
+def _maybe_allow(
+    is_category: bool,
+    allowed: bool,
+    label: str,
+    ip: ipaddress.IPv4Address | ipaddress.IPv6Address,
+) -> bool:
+    """Return True if an IP category is allowed, raise if it is not."""
+    if not is_category:
+        return False
+    if allowed:
+        return True
+    raise UnsafeURLError(f"{label} is not allowed: {ip}")
 
 
 def _check_ip_safety(
@@ -175,31 +191,74 @@ def _check_ip_safety(
     allow_cgnat: bool = False,
 ) -> None:
     """Raise ``UnsafeURLError`` if ``ip`` is not permitted."""
-    if ip.is_loopback:
-        if allow_loopback:
-            return
-        raise UnsafeURLError(f"Loopback address is not allowed: {ip}")
-
     if ip.is_global:
         return
-
-    if ip.is_link_local:
-        if allow_link_local:
-            return
-        raise UnsafeURLError(f"Link-local address is not allowed: {ip}")
-
-    if isinstance(ip, ipaddress.IPv4Address) and ip in _CGNAT_NETWORK:
-        if allow_cgnat:
-            return
-        raise UnsafeURLError(f"CGNAT address is not allowed: {ip}")
-
-    if ip.is_private:
-        if allow_private:
-            return
-        raise UnsafeURLError(f"Private address is not allowed: {ip}")
-
-    # Multicast, reserved, unspecified, etc.
+    if _maybe_allow(ip.is_loopback, allow_loopback, "Loopback address", ip):
+        return
+    if _maybe_allow(ip.is_link_local, allow_link_local, "Link-local address", ip):
+        return
+    if _maybe_allow(ip.is_private, allow_private, "Private address", ip):
+        return
+    if _is_cgnat(ip) and _maybe_allow(True, allow_cgnat, "CGNAT address", ip):
+        return
     raise UnsafeURLError(f"Non-public address is not allowed: {ip}")
+
+
+def _check_ip_set(
+    ips: set[ipaddress.IPv4Address | ipaddress.IPv6Address],
+    *,
+    allow_loopback: bool = False,
+    allow_private: bool = False,
+    allow_link_local: bool = False,
+    allow_cgnat: bool = False,
+) -> None:
+    """Validate every resolved IP against the safety policy."""
+    for ip in ips:
+        _check_ip_safety(
+            ip,
+            allow_loopback=allow_loopback,
+            allow_private=allow_private,
+            allow_link_local=allow_link_local,
+            allow_cgnat=allow_cgnat,
+        )
+
+
+def _validate_url_string(url: Any) -> urllib.parse.SplitResult:
+    """Ensure ``url`` is a non-empty string and parse it."""
+    if not url or not isinstance(url, str):
+        raise UnsafeURLError("URL must be a non-empty string")
+    return urllib.parse.urlsplit(url)
+
+
+def _validate_scheme(scheme: str, require_https: bool) -> str:
+    """Validate and normalize the URL scheme."""
+    scheme = scheme.lower()
+    if scheme not in ALLOWED_SCHEMES:
+        raise UnsafeURLError(f"Unsupported URL scheme: {scheme!r}")
+    if require_https and scheme != "https":
+        raise UnsafeURLError("HTTPS is required for this URL")
+    return scheme
+
+
+def _validate_userinfo(parts: urllib.parse.SplitResult) -> None:
+    """Reject URLs that contain username or password components."""
+    if parts.username is not None or parts.password is not None:
+        raise UnsafeURLError("URL userinfo is not allowed")
+
+
+def _resolve_port(scheme: str, explicit_port: int | None) -> int:
+    """Return the port, using scheme defaults when omitted."""
+    if explicit_port is not None:
+        return explicit_port
+    return 443 if scheme == "https" else 80
+
+
+def _validate_host(host: str, allowed_hosts: Iterable[str] | None) -> str:
+    """Normalize and allowlist-check a hostname."""
+    host = _normalize_host(host)
+    if not _is_allowed_host(host, allowed_hosts):
+        raise UnsafeURLError(f"Host is not allowlisted: {host}")
+    return host
 
 
 def validate_url(
@@ -218,39 +277,21 @@ def validate_url(
     Returns the normalized hostname, port, and resolved IP set.
     Raises ``UnsafeURLError`` on any problem.
     """
-    if not url or not isinstance(url, str):
-        raise UnsafeURLError("URL must be a non-empty string")
-
-    parts = urllib.parse.urlsplit(url)
-    scheme = (parts.scheme or "").lower()
-    if scheme not in ALLOWED_SCHEMES:
-        raise UnsafeURLError(f"Unsupported URL scheme: {parts.scheme!r}")
-
-    if require_https and scheme != "https":
-        raise UnsafeURLError("HTTPS is required for this URL")
-
-    if parts.username is not None or parts.password is not None:
-        raise UnsafeURLError("URL userinfo is not allowed")
-
-    host = _normalize_host(parts.hostname or "")
-    if not _is_allowed_host(host, allowed_hosts):
-        raise UnsafeURLError(f"Host is not allowlisted: {host}")
-
-    port = parts.port or (443 if scheme == "https" else 80)
-
+    parts = _validate_url_string(url)
+    scheme = _validate_scheme(parts.scheme or "", require_https)
+    _validate_userinfo(parts)
+    host = _validate_host(parts.hostname or "", allowed_hosts)
+    port = _resolve_port(scheme, parts.port)
     if not resolve:
         return host, port, set()
-
     ips = _resolve_ips(host, port)
-    for ip in ips:
-        _check_ip_safety(
-            ip,
-            allow_loopback=allow_loopback,
-            allow_private=allow_private,
-            allow_link_local=allow_link_local,
-            allow_cgnat=allow_cgnat,
-        )
-
+    _check_ip_set(
+        ips,
+        allow_loopback=allow_loopback,
+        allow_private=allow_private,
+        allow_link_local=allow_link_local,
+        allow_cgnat=allow_cgnat,
+    )
     return host, port, ips
 
 
@@ -258,18 +299,14 @@ def _strip_auth_headers(
     headers: Mapping[str, str], old_host: str, new_host: str
 ) -> dict[str, str]:
     """Remove sensitive headers when a redirect crosses hosts."""
-    old = old_host.lower()
-    new = new_host.lower()
-    if old == new:
+    if old_host.lower() == new_host.lower():
         return dict(headers)
-
     cleaned: dict[str, str] = {}
     for key, value in headers.items():
         if key.lower() in _AUTH_HEADERS:
             logger.debug("Dropping %s header on cross-host redirect", key)
             continue
         cleaned[key] = value
-
     return cleaned
 
 
@@ -280,21 +317,92 @@ def _build_requests_session(
     """Create a ``requests`` session that ignores proxy env vars by default."""
     session = requests.Session()
     session.trust_env = False
-    if total_retries > 0:
-        retry = Retry(
-            total=total_retries,
-            connect=total_retries,
-            read=total_retries,
-            backoff_factor=backoff_factor,
-            status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=frozenset(
-                ["GET", "POST", "HEAD", "PUT", "DELETE", "OPTIONS"]
-            ),
-        )
-        adapter = HTTPAdapter(max_retries=retry)
-        session.mount("http://", adapter)
-        session.mount("https://", adapter)
+    if total_retries <= 0:
+        return session
+    retry = Retry(
+        total=total_retries,
+        connect=total_retries,
+        read=total_retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=frozenset(["GET", "POST", "HEAD", "PUT", "DELETE", "OPTIONS"]),
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
     return session
+
+
+def _method_shortcut(method: str) -> str | None:
+    """Return the lowercase method name if it maps to a Session helper."""
+    short = method.lower()
+    return short if short in _SHORT_METHODS else None
+
+
+def _send_request(
+    session: requests.Session,
+    method: str,
+    short: str | None,
+    url: str,
+    headers: dict[str, str],
+    **kwargs: Any,
+) -> requests.Response:
+    """Send a single request without following redirects."""
+    if short is None:
+        return session.request(
+            method, url, headers=headers, allow_redirects=False, **kwargs
+        )
+    return getattr(session, short)(
+        url, headers=headers, allow_redirects=False, **kwargs
+    )
+
+
+def _is_redirect_response(response: requests.Response) -> bool:
+    """Return True if the response is an HTTP redirect and status is numeric."""
+    status = response.status_code
+    return isinstance(status, int) and 300 <= status < 400
+
+
+def _extract_redirect_url(current_url: str, response: requests.Response) -> str:
+    """Resolve the Location header into an absolute URL."""
+    location = response.headers.get("Location") or response.headers.get("location")
+    if not location:
+        raise UnsafeRedirectError("Redirect response missing Location header")
+    return urllib.parse.urljoin(current_url, location)
+
+
+def _prepare_redirect(
+    current_url: str,
+    new_url: str,
+    headers: dict[str, str],
+    kwargs: dict[str, Any],
+    strip_auth: bool,
+) -> tuple[str, dict[str, str], dict[str, Any]]:
+    """Validate a redirect target and strip auth/body if the host changes."""
+    old_host = urllib.parse.urlsplit(current_url).hostname or ""
+    new_host = urllib.parse.urlsplit(new_url).hostname or ""
+    if strip_auth and old_host.lower() != new_host.lower():
+        headers = _strip_auth_headers(headers, old_host, new_host)
+        kwargs.pop("data", None)
+        kwargs.pop("json", None)
+    return new_url, headers, kwargs
+
+
+def _safety_flags(
+    allow_loopback: bool,
+    allow_private: bool,
+    allow_link_local: bool,
+    allow_cgnat: bool,
+    require_https: bool,
+) -> dict[str, bool]:
+    """Bundle the safety policy flags into a dict for ``validate_url``."""
+    return {
+        "allow_loopback": allow_loopback,
+        "allow_private": allow_private,
+        "allow_link_local": allow_link_local,
+        "allow_cgnat": allow_cgnat,
+        "require_https": require_https,
+    }
 
 
 def safe_request(
@@ -326,89 +434,29 @@ def safe_request(
         kwargs["timeout"] = DEFAULT_TIMEOUT
 
     method = method.upper()
-    short_method = method.lower()
-    use_shortcut = short_method in {
-        "get",
-        "post",
-        "put",
-        "patch",
-        "delete",
-        "head",
-        "options",
-    }
-    validate_url(
-        url,
-        allowed_hosts=allowed_hosts,
-        allow_loopback=allow_loopback,
-        allow_private=allow_private,
-        allow_link_local=allow_link_local,
-        allow_cgnat=allow_cgnat,
-        require_https=require_https,
+    short = _method_shortcut(method)
+    flags = _safety_flags(
+        allow_loopback, allow_private, allow_link_local, allow_cgnat, require_https
     )
+    validate_url(url, allowed_hosts=allowed_hosts, **flags)
 
     current_url = url
     headers = dict(kwargs.pop("headers", {}) or {})
 
     for hop in range(max_redirects + 1):
-        if use_shortcut:
-            session_method = getattr(session, short_method, session.request)
-        else:
-            session_method = session.request
-
-        if session_method is session.request:
-            response = session_method(
-                method,
-                current_url,
-                headers=headers,
-                allow_redirects=False,
-                **kwargs,
-            )
-        else:
-            response = session_method(
-                current_url,
-                headers=headers,
-                allow_redirects=False,
-                **kwargs,
-            )
-
-        # Real responses have int status_code; mocked or unusual responses are
-        # returned as-is so callers can raise_for_status / parse themselves.
-        status_code = response.status_code
-        if not isinstance(status_code, int):
+        response = _send_request(session, method, short, current_url, headers, **kwargs)
+        if not _is_redirect_response(response):
             return response
-        if not (300 <= status_code < 400):
-            return response
-
         if hop == max_redirects:
             raise TooManyRedirectsError(
                 f"Maximum redirect hops ({max_redirects}) exceeded starting from {url!r}"
             )
 
-        location = response.headers.get("Location") or response.headers.get("location")
-        if not location:
-            raise UnsafeRedirectError("Redirect response missing Location header")
-
-        new_url = urllib.parse.urljoin(current_url, location)
-        old_host = urllib.parse.urlsplit(current_url).hostname or ""
-        new_host = urllib.parse.urlsplit(new_url).hostname or ""
-
-        validate_url(
-            new_url,
-            allowed_hosts=allowed_hosts,
-            allow_loopback=allow_loopback,
-            allow_private=allow_private,
-            allow_link_local=allow_link_local,
-            allow_cgnat=allow_cgnat,
-            require_https=require_https,
+        new_url = _extract_redirect_url(current_url, response)
+        validate_url(new_url, allowed_hosts=allowed_hosts, **flags)
+        current_url, headers, kwargs = _prepare_redirect(
+            current_url, new_url, headers, kwargs, strip_auth_on_redirect
         )
-
-        if strip_auth_on_redirect and old_host.lower() != new_host.lower():
-            headers = _strip_auth_headers(headers, old_host, new_host)
-            # POST data should not be replayed to a different host on a redirect.
-            kwargs.pop("data", None)
-            kwargs.pop("json", None)
-
-        current_url = new_url
 
     raise TooManyRedirectsError(
         f"Maximum redirect hops ({max_redirects}) exceeded starting from {url!r}"
@@ -430,15 +478,13 @@ class _ValidatingRedirectHandler(urllib.request.HTTPRedirectHandler):
         max_redirects: int = MAX_REDIRECTS,
     ):
         self._allowed_hosts = allowed_hosts
-        self._allow_loopback = allow_loopback
-        self._allow_private = allow_private
-        self._allow_link_local = allow_link_local
-        self._allow_cgnat = allow_cgnat
-        self._require_https = require_https
+        self._flags = _safety_flags(
+            allow_loopback, allow_private, allow_link_local, allow_cgnat, require_https
+        )
         self.max_redirections = max_redirects
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        # Reject non-HTTP(S) schemes before the default handler re-encodes them.
+        """Validate the redirect and build a sanitized follow-up request."""
         parsed = urllib.parse.urlsplit(newurl)
         if parsed.scheme and parsed.scheme.lower() not in ALLOWED_SCHEMES:
             raise urllib.error.HTTPError(
@@ -449,28 +495,14 @@ class _ValidatingRedirectHandler(urllib.request.HTTPRedirectHandler):
                 fp,
             )
 
-        validate_url(
-            newurl,
-            allowed_hosts=self._allowed_hosts,
-            allow_loopback=self._allow_loopback,
-            allow_private=self._allow_private,
-            allow_link_local=self._allow_link_local,
-            allow_cgnat=self._allow_cgnat,
-            require_https=self._require_https,
-        )
+        validate_url(newurl, allowed_hosts=self._allowed_hosts, **self._flags)
 
         old_host = urllib.parse.urlsplit(req.full_url).hostname or ""
         new_host = parsed.hostname or ""
-        new_headers = {
-            k: v
-            for k, v in req.headers.items()
-            if k.lower() not in _AUTH_HEADERS or old_host.lower() == new_host.lower()
-        }
+        new_headers = self._filter_headers(req.headers, old_host, new_host)
 
-        # Remove content headers on method-changing redirects; otherwise preserve
-        # the original request body so POST data can follow 307/308 safely.
         method = req.get_method()
-        data = req.data if method in ("POST", "PUT", "PATCH") else None
+        data = req.data if method in _BODY_METHODS else None
         return urllib.request.Request(
             newurl,
             data=data,
@@ -479,6 +511,62 @@ class _ValidatingRedirectHandler(urllib.request.HTTPRedirectHandler):
             origin_req_host=req.origin_req_host,
             unverifiable=True,
         )
+
+    def _filter_headers(
+        self, headers: dict[str, str], old_host: str, new_host: str
+    ) -> dict[str, str]:
+        """Preserve auth headers only when the redirect stays on the same host."""
+        keep_auth = old_host.lower() == new_host.lower()
+        return {
+            k: v
+            for k, v in headers.items()
+            if k.lower() not in _AUTH_HEADERS or keep_auth
+        }
+
+
+def _collapse_timeout(timeout: float | tuple[float, float]) -> float:
+    """Collapse a (connect, read) tuple into a single numeric timeout."""
+    if isinstance(timeout, tuple):
+        return timeout[0] + timeout[1]
+    return timeout
+
+
+def _build_safe_opener(
+    redirect_handler: urllib.request.HTTPRedirectHandler,
+    context: ssl.SSLContext | None,
+) -> urllib.request.OpenerDirector:
+    """Assemble an opener that ignores proxies and uses the validating handler."""
+    return urllib.request.build_opener(
+        urllib.request.ProxyHandler({}),
+        urllib.request.HTTPHandler,
+        urllib.request.HTTPSHandler(context=context),
+        redirect_handler,
+        urllib.request.HTTPErrorProcessor,
+    )
+
+
+def _read_body(
+    opener: urllib.request.OpenerDirector,
+    req: urllib.request.Request,
+    timeout: float,
+    max_bytes: int,
+) -> tuple[Any, bytes]:
+    """Open the request and read up to ``max_bytes + 1`` bytes."""
+    with opener.open(req, timeout=timeout) as resp:  # nosec B310
+        body = resp.read(max_bytes + 1)
+    return resp, body
+
+
+def _make_safe_response(resp: Any, body: bytes, max_bytes: int) -> SafeResponse:
+    """Build a ``SafeResponse`` and enforce the size limit."""
+    if len(body) > max_bytes:
+        raise UnsafeURLError(f"Response exceeds maximum size of {max_bytes} bytes")
+    return SafeResponse(
+        status=getattr(resp, "code", resp.getcode()),
+        url=resp.geturl(),
+        headers=dict(resp.headers or {}),
+        body=body,
+    )
 
 
 def safe_urlopen(
@@ -503,20 +591,11 @@ def safe_urlopen(
     Redirects are validated hop-by-hop, auth headers are stripped on
     cross-host hops, and the response body is bounded by ``max_bytes``.
     """
-    # urllib.request only accepts a single numeric timeout; collapse
-    # (connect, read) tuples into a total ceiling.
-    if isinstance(timeout, tuple):
-        timeout = timeout[0] + timeout[1]
-
-    validate_url(
-        url,
-        allowed_hosts=allowed_hosts,
-        allow_loopback=allow_loopback,
-        allow_private=allow_private,
-        allow_link_local=allow_link_local,
-        allow_cgnat=allow_cgnat,
-        require_https=require_https,
+    timeout = _collapse_timeout(timeout)
+    flags = _safety_flags(
+        allow_loopback, allow_private, allow_link_local, allow_cgnat, require_https
     )
+    validate_url(url, allowed_hosts=allowed_hosts, **flags)
 
     req = urllib.request.Request(
         url,
@@ -534,32 +613,49 @@ def safe_urlopen(
         require_https=require_https,
         max_redirects=max_redirects,
     )
-    opener = urllib.request.build_opener(
-        urllib.request.ProxyHandler({}),
-        urllib.request.HTTPHandler,
-        urllib.request.HTTPSHandler(context=context),
-        redirect_handler,
-        urllib.request.HTTPErrorProcessor,
-    )
+    opener = _build_safe_opener(redirect_handler, context)
 
     try:
-        with opener.open(req, timeout=timeout) as resp:  # nosec B310
-            body = resp.read(max_bytes + 1)
+        resp, body = _read_body(opener, req, timeout, max_bytes)
     except urllib.error.HTTPError as exc:
-        # Re-raise as UnsafeURLError only for validation-triggered errors.
         if isinstance(exc, UnsafeURLError):
             raise
         raise
 
-    if len(body) > max_bytes:
-        raise UnsafeURLError(f"Response exceeds maximum size of {max_bytes} bytes")
+    return _make_safe_response(resp, body, max_bytes)
 
-    return SafeResponse(
-        status=getattr(resp, "code", resp.getcode()),
-        url=resp.geturl(),
-        headers=dict(resp.headers or {}),
-        body=body,
-    )
+
+def _check_content_type(
+    headers: dict[str, str], expected_types: Iterable[str], url: str
+) -> None:
+    """Raise if the response Content-Type is not in the expected set."""
+    content_type = headers.get("Content-Type", "").lower()
+    if not any(t in content_type for t in expected_types):
+        raise UnsafeURLError(f"Unexpected Content-Type for {url!r}: {content_type!r}")
+
+
+def _check_content_length(headers: dict[str, str], max_bytes: int) -> None:
+    """Raise if the declared Content-Length exceeds the maximum."""
+    raw = headers.get("Content-Length")
+    if raw is None:
+        return
+    try:
+        length = int(raw)
+    except ValueError:
+        return
+    if length > max_bytes:
+        raise UnsafeURLError(f"Content-Length {length} exceeds maximum {max_bytes}")
+
+
+def _write_destination(destination: str | BinaryIO, body: bytes) -> None:
+    """Write the downloaded body to a path or file-like object."""
+    if isinstance(destination, str):
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(body)
+            tmp_path = tmp.name
+        shutil.move(tmp_path, destination)
+    else:
+        destination.write(body)
 
 
 def safe_download(
@@ -578,15 +674,10 @@ def safe_download(
     **kwargs: Any,
 ) -> None:
     """Stream a remote resource to ``destination`` with size and host checks."""
-    validate_url(
-        url,
-        allowed_hosts=allowed_hosts,
-        allow_loopback=allow_loopback,
-        allow_private=allow_private,
-        allow_link_local=allow_link_local,
-        allow_cgnat=allow_cgnat,
-        require_https=require_https,
+    flags = _safety_flags(
+        allow_loopback, allow_private, allow_link_local, allow_cgnat, require_https
     )
+    validate_url(url, allowed_hosts=allowed_hosts, **flags)
 
     resp = safe_urlopen(
         url,
@@ -602,27 +693,9 @@ def safe_download(
     )
 
     if expected_types:
-        content_type = resp.headers.get("Content-Type", "").lower()
-        if not any(t in content_type for t in expected_types):
-            raise UnsafeURLError(
-                f"Unexpected Content-Type for {url!r}: {content_type!r}"
-            )
-
-    if "Content-Length" in resp.headers:
-        try:
-            length = int(resp.headers["Content-Length"])
-        except ValueError:
-            length = None
-        if length is not None and length > max_bytes:
-            raise UnsafeURLError(f"Content-Length {length} exceeds maximum {max_bytes}")
-
-    if isinstance(destination, str):
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(resp.body)
-            tmp_path = tmp.name
-        shutil.move(tmp_path, destination)
-    else:
-        destination.write(resp.body)
+        _check_content_type(resp.headers, expected_types, url)
+    _check_content_length(resp.headers, max_bytes)
+    _write_destination(destination, resp.body)
 
 
 def build_safe_session(
@@ -680,15 +753,18 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     allowed_hosts = [h.strip() for h in args.allowed_hosts.split(",") if h.strip()]
+    flags = _safety_flags(
+        args.allow_loopback,
+        args.allow_private,
+        args.allow_link_local,
+        args.allow_cgnat,
+        args.require_https,
+    )
     try:
         validate_url(
             args.check_url,
             allowed_hosts=allowed_hosts or None,
-            allow_loopback=args.allow_loopback,
-            allow_private=args.allow_private,
-            allow_link_local=args.allow_link_local,
-            allow_cgnat=args.allow_cgnat,
-            require_https=args.require_https,
+            **flags,
         )
     except UnsafeURLError as exc:
         print(f"Unsafe URL: {exc}", file=sys.stderr)

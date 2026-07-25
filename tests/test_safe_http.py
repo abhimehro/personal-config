@@ -13,42 +13,35 @@ from unittest.mock import MagicMock, patch
 
 from lib import safe_http
 
+_HOST_IPS = {
+    "127.0.0.1": ["127.0.0.1"],
+    "localhost": ["127.0.0.1"],
+    "::1": ["::1"],
+    "example.com": ["1.1.1.1"],
+    "other.example.com": ["1.1.1.1"],
+    "sub.example.com": ["1.1.1.1"],
+    "private.example.com": ["192.168.1.5"],
+    "metadata.example.com": ["169.254.169.254"],
+    "cgnat.example.com": ["100.64.0.5"],
+    "mapped.example.com": ["::ffff:127.0.0.1"],
+}
+
+
+def _addr_record(ip_str: str, port: int) -> tuple:
+    """Build a single ``getaddrinfo``-style tuple for an IP string."""
+    ip = ipaddress.ip_address(ip_str)
+    if isinstance(ip, ipaddress.IPv6Address):
+        return (socket.AF_INET6, socket.SOCK_STREAM, 0, "", (str(ip), port, 0, 0))
+    return (socket.AF_INET, socket.SOCK_STREAM, 0, "", (str(ip), port))
+
 
 def _getaddrinfo_stub(host: str, port: int, *_, **__):
     """Deterministic resolver for tests."""
-    loopback_v4 = (socket.AF_INET, socket.SOCK_STREAM, 0, "", ("127.0.0.1", port))
-    loopback_v6 = (socket.AF_INET6, socket.SOCK_STREAM, 0, "", ("::1", port, 0, 0))
-    public = (socket.AF_INET, socket.SOCK_STREAM, 0, "", ("1.1.1.1", port))
-    private = (socket.AF_INET, socket.SOCK_STREAM, 0, "", ("192.168.1.5", port))
-    metadata = (socket.AF_INET, socket.SOCK_STREAM, 0, "", ("169.254.169.254", port))
-    cgnat = (socket.AF_INET, socket.SOCK_STREAM, 0, "", ("100.64.0.5", port))
-    mapped = (
-        socket.AF_INET6,
-        socket.SOCK_STREAM,
-        0,
-        "",
-        ("::ffff:127.0.0.1", port, 0, 0),
-    )
-
-    if host in ("127.0.0.1", "localhost"):
-        return [loopback_v4]
-    if host == "::1":
-        return [loopback_v6]
-    if host in ("example.com", "other.example.com", "sub.example.com"):
-        return [public]
-    if host == "private.example.com":
-        return [private]
-    if host == "metadata.example.com":
-        return [metadata]
-    if host == "cgnat.example.com":
-        return [cgnat]
-    if host == "mapped.example.com":
-        return [mapped]
+    ip_strs = _HOST_IPS.get(host)
+    if ip_strs is not None:
+        return [_addr_record(ip, port) for ip in ip_strs]
     try:
-        ip = ipaddress.ip_address(host)
-        if isinstance(ip, ipaddress.IPv6Address):
-            return [(socket.AF_INET6, socket.SOCK_STREAM, 0, "", (str(ip), port, 0, 0))]
-        return [(socket.AF_INET, socket.SOCK_STREAM, 0, "", (str(ip), port))]
+        return [_addr_record(host, port)]
     except ValueError:
         return []
 
