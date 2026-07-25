@@ -483,7 +483,7 @@ jobs:
           # DEPENDENCY: opencode-ai@1.18.3 — headless agent CLI (same stack as
           # CodeScene PR refactoring) — pinned 2026-07-17
           for attempt in 1 2 3; do
-            if npm install --prefix "$RUNNER_TEMP/opencode" --no-audit --no-fund "opencode-ai@1.18.3"; then
+            if npm install --prefix "$RUNNER_TEMP/opencode" --no-audit --no-fund "opencode-ai@1.18.3" tsx; then
               break
             fi
             if [ "$attempt" = "3" ]; then exit 1; fi

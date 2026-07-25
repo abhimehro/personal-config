@@ -61,7 +61,7 @@ import time
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Optional
 
 import feedparser
 import requests
@@ -572,6 +572,10 @@ def html_ul(items: Iterable[str]) -> str:
     return f"<ul>{''.join(item_list)}</ul>"
 
 
+_EMOJI_HEADING_PATTERN = re.compile(
+    r"^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$"
+)
+
 def _render_heading(level: int, title: str, id_attr: str = "") -> str:
     safe_title = sanitize_text(title)
     id_str = f' id="{id_attr}"' if id_attr else ""
@@ -579,10 +583,7 @@ def _render_heading(level: int, title: str, id_attr: str = "") -> str:
     # Safely target emojis specifically by checking unicode ranges where emojis reside
     # rather than all non-ASCII characters. This includes Emoticons, Misc Symbols,
     # Dingbats, and the large Supplementary Multilingual Plane blocks.
-    emoji_pattern = re.compile(
-        r"^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$"
-    )
-    match = emoji_pattern.match(safe_title)
+    match = _EMOJI_HEADING_PATTERN.match(safe_title)
     if match:
         icon = match.group(1)
         clean_title = match.group(2)
@@ -867,21 +868,71 @@ def fetch_weather(
         return WeatherSnapshot("N/A", "N/A", "N/A", "Weather data unavailable.")
 
 
+def _process_horoscope_endpoint(session: requests.Session, zodiac_sign: str, tmpl: dict) -> Optional[str]:
+    """Helper to process a single horoscope endpoint."""
+    url = tmpl.get("url") or tmpl["url_fn"](zodiac_sign)
+    params = tmpl["params_fn"](zodiac_sign)
+    try:
+        response = session.get(url, params=params, timeout=HOROSCOPE_TIMEOUT)
+        response.raise_for_status()
+        extracted = extract_horoscope_text(response.json())
+        if extracted:
+            return extracted
+    except Exception as exc:
+        logger.warning("Horoscope failed from %s: %s", tmpl["name"], exc)
+    return None
+
+
+def _has_successful_result(futures: list) -> bool:
+    """Check if any future in the list succeeded with a non-None result."""
+    for future in futures:
+        if not future.exception() and future.result():
+            return True
+    return False
+
+
+def _get_first_successful_result(futures: list) -> Optional[str]:
+    """Return the first successful result from completed futures."""
+    for future in concurrent.futures.as_completed(futures):
+        if not future.exception() and future.result():
+            return future.result()
+    return None
+
+
 def fetch_horoscope(session: requests.Session, zodiac_sign: str) -> str:
-    default_text = (
-        "Trust your instincts and prioritize tasks that reduce future stress."
+    """Fetch horoscope using a hedged concurrent request strategy."""
+    default_text = "Trust your instincts and prioritize tasks that reduce future stress."
+
+    executor = concurrent.futures.ThreadPoolExecutor(
+        max_workers=min(len(HOROSCOPE_ENDPOINTS_TEMPLATE) or 1, 32)
     )
-    for tmpl in HOROSCOPE_ENDPOINTS_TEMPLATE:
-        url = tmpl.get("url") or tmpl["url_fn"](zodiac_sign)
-        params = tmpl["params_fn"](zodiac_sign)
-        try:
-            response = session.get(url, params=params, timeout=HOROSCOPE_TIMEOUT)
-            response.raise_for_status()
-            extracted = extract_horoscope_text(response.json())
-            if extracted:
-                return extracted
-        except Exception as exc:
-            logger.warning("Horoscope failed from %s: %s", tmpl["name"], exc)
+    futures = []
+
+    try:
+        for i, tmpl in enumerate(HOROSCOPE_ENDPOINTS_TEMPLATE):
+            futures.append(executor.submit(_process_horoscope_endpoint, session, zodiac_sign, tmpl))
+
+            if i == len(HOROSCOPE_ENDPOINTS_TEMPLATE) - 1:
+                break
+
+            pending = [f for f in futures if not f.done()]
+            if not pending:
+                continue
+
+            done, _ = concurrent.futures.wait(
+                pending, timeout=1.5, return_when=concurrent.futures.FIRST_COMPLETED
+            )
+
+            if _has_successful_result(done):
+                break
+
+        result = _get_first_successful_result(futures)
+        if result:
+            return result
+
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
+
     return default_text
 
 
