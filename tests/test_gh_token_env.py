@@ -1,4 +1,5 @@
 import os
+import stat
 import tempfile
 import unittest
 from pathlib import Path
@@ -60,6 +61,28 @@ class TestGhTokenEnv(unittest.TestCase):
             symlink.symlink_to(real_file)
             with self.assertRaises(PermissionError):
                 _read_env_file(symlink)
+
+    def test_load_rejects_group_or_world_writable_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / "GH_TOKEN.env"
+            env_file.write_text("GH_TOKEN=file_token\n", encoding="utf-8")
+            env_file.chmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
+            with patch.dict(
+                os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True
+            ):
+                with self.assertRaises(PermissionError):
+                    load_gh_token_env()
+
+    def test_load_rejects_file_not_owned_by_current_user(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / "GH_TOKEN.env"
+            _write_secure_env_file(env_file, "GH_TOKEN=file_token\n")
+            with patch("gh_token_env.os.getuid", return_value=os.getuid() + 1):
+                with patch.dict(
+                    os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True
+                ):
+                    with self.assertRaises(PermissionError):
+                        load_gh_token_env()
 
     def test_env_var_takes_precedence_over_file(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -89,6 +89,61 @@ class TestPrAutomationScripts(unittest.TestCase):
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
+    def test_fix_drafts_accepts_repo_pr_pairs(self) -> None:
+        """Stub gh and prove fix_drafts.sh processes REPO PR pairs."""
+        tmp = tempfile.mkdtemp()
+        try:
+            log = Path(tmp) / "gh_calls.log"
+            bin_dir = Path(tmp) / "bin"
+            bin_dir.mkdir()
+            (bin_dir / "gh").write_text(
+                "#!/usr/bin/env bash\n"
+                f'GH_STUB_LOG="{log}"\n'
+                'printf "%s " "gh" >> "$GH_STUB_LOG"\n'
+                'for arg in "$@"; do\n'
+                '  printf "%s " "$arg" >> "$GH_STUB_LOG"\n'
+                "done\n"
+                'printf "\\n" >> "$GH_STUB_LOG"\n',
+                encoding="utf-8",
+            )
+            (bin_dir / "gh").chmod(0o755)
+
+            env = os.environ.copy()
+            env.pop("BASH_ENV", None)
+            env["PATH"] = f"{bin_dir}:{env.get('PATH', '')}"
+            env["GH_TOKEN"] = "test-token"
+
+            result = subprocess.run(
+                [
+                    "bash",
+                    str(ROOT / "fix_drafts.sh"),
+                    "owner/repo",
+                    "123",
+                    "owner/repo2",
+                    "456",
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+
+            if result.returncode != 0 or not log.exists():
+                raise AssertionError(
+                    f"rc={result.returncode} PATH={env['PATH']!r} "
+                    f"BASH_ENV={env.get('BASH_ENV')!r} "
+                    f"log_exists={log.exists()}"
+                )
+            calls = log.read_text(encoding="utf-8")
+            self.assertEqual(calls.count("pr ready "), 2)
+            self.assertEqual(calls.count("pr merge "), 2)
+            self.assertIn("pr ready 123 --repo owner/repo", calls)
+            self.assertIn(
+                "pr merge 456 --repo owner/repo2 --squash --delete-branch", calls
+            )
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
 
 if __name__ == "__main__":
     unittest.main()
