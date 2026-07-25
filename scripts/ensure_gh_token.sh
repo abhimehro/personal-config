@@ -1,17 +1,33 @@
 #!/usr/bin/env bash
-# SECURITY: Do not `source` GH_TOKEN.env — export GH_TOKEN or use gh auth instead.
+# SECURITY: This helper must be executed, not sourced.
+# It prints a resolved GH_TOKEN to stdout and exits 0, or prints an error to
+# stderr and exits 1. Callers should capture it with:
+#   GH_TOKEN="$(bash "${SCRIPT_DIR}/scripts/ensure_gh_token.sh")"
+
+# Guard must run before set -e so a sourced return 1 does not kill the caller.
+if [[ ${BASH_SOURCE[0]} != "$0" ]]; then
+	echo "error: ensure_gh_token.sh must be executed, not sourced." >&2
+	# shellcheck disable=SC2059
+	printf '       use: GH_TOKEN="$(bash %q)"\n' "${BASH_SOURCE[0]}" >&2
+	return 1 2>/dev/null || exit 1
+fi
+
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-if [[ -n ${GH_TOKEN-} ]]; then
+if [[ -n ${GH_TOKEN:-} ]]; then
+	printf '%s\n' "${GH_TOKEN}"
 	exit 0
 fi
 
 if command -v gh >/dev/null 2>&1 && gh auth status -h github.com >/dev/null 2>&1; then
-	export GH_TOKEN
-	GH_TOKEN="$(gh auth token)"
-	exit 0
+	token="$(gh auth token 2>/dev/null || true)"
+	token="${token//[[:space:]]/}"
+	if [[ -n ${token} ]]; then
+		printf '%s\n' "${token}"
+		exit 0
+	fi
 fi
 
 if command -v python3 >/dev/null 2>&1; then
@@ -24,7 +40,7 @@ print(env.get("GH_TOKEN", ""))
 PY
 	)"
 	if [[ -n ${token} ]]; then
-		export GH_TOKEN="${token}"
+		printf '%s\n' "${token}"
 		exit 0
 	fi
 fi
