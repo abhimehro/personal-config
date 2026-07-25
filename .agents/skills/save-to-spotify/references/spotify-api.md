@@ -89,10 +89,21 @@ Minimal dependency-free Python wrapper:
 ```python
 import json
 import subprocess
+import sys
+from pathlib import Path
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+
+# Make the shared safe_http helper importable from any script location.
+_repo_root = Path(__file__).resolve().parents[2]
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
+
+from lib.safe_http import safe_request
 
 API = "https://api.spotify.com/v1"
+
+# Allowed Spotify Web API and CDN hosts. Update if Spotify changes endpoints.
+SPOTIFY_ALLOWED_HOSTS = {"api.spotify.com", "i.scdn.co", "mosaic.scdn.co", "spotifycdn.com"}
 
 def spotify_token():
     return subprocess.run(
@@ -104,9 +115,14 @@ def spotify_token():
 
 def spotify_get(path, params):
     url = f"{API}{path}?{urlencode(params)}"
-    req = Request(url, headers={"Authorization": f"Bearer {spotify_token()}"})
-    with urlopen(req, timeout=20) as resp:
-        return json.load(resp)
+    resp = safe_request(
+        "GET",
+        url,
+        allowed_hosts=SPOTIFY_ALLOWED_HOSTS,
+        headers={"Authorization": f"Bearer {spotify_token()}"},
+        timeout=20,
+    )
+    return resp.json()
 
 def spotify_search(query, entity_type, limit=5):
     data = spotify_get("/search", {"q": query, "type": entity_type, "limit": limit})
