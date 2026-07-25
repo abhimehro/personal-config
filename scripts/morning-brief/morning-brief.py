@@ -594,15 +594,17 @@ def _render_heading(level: int, title: str, id_attr: str = "") -> str:
     return f"<h{level}{id_str}>{safe_title}</h{level}>"
 
 
+_SECTION_ID_PATTERN = re.compile(r'[^a-z0-9]+')
+
 def html_section(title: str, body: str) -> str:
-    section_id = re.sub(r'[^a-z0-9]+', '-', sanitize_text(title).lower()).strip('-')
+    section_id = _SECTION_ID_PATTERN.sub('-', sanitize_text(title).lower()).strip('-')
     if not section_id:
         section_id = "section"
     return f'<section role="region" aria-labelledby="{section_id}">\n{_render_heading(3, title, section_id)}\n{body}\n</section>'
 
 
 def html_subsection(title: str, body: str) -> str:
-    section_id = re.sub(r'[^a-z0-9]+', '-', sanitize_text(title).lower()).strip('-')
+    section_id = _SECTION_ID_PATTERN.sub('-', sanitize_text(title).lower()).strip('-')
     if not section_id:
         section_id = "subsection"
     return f'<section role="region" aria-labelledby="{section_id}">\n{_render_heading(4, title, section_id)}\n{body}\n</section>'
