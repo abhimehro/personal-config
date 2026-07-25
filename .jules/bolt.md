@@ -618,3 +618,6 @@ invocation.
 ## 2026-11-20 - [Avoid Crash When Optimizing Default `.get()` Iterables]
 **Learning:** Refactoring `.get("key", [])` to `.get("key", ())` is a standard micro-optimization to avoid empty list allocations. However, blind replacement without checking how the result is used can cause crashes. If the target dictionary key is missing, `.get()` will return an empty tuple `()`. If the code subsequently attempts to mutate that value (e.g., `manifests.append(file_path)`), it will raise an `AttributeError` because tuples are immutable.
 **Action:** Before changing a fallback from an empty list `[]` to an empty tuple `()`, verify the call site to ensure the returned sequence is only iterated over or passed to functions that do not mutate it. If the sequence might be mutated, leave it as an empty list or explicitly instantiate a list.
+## 2026-12-07 - [Pre-compile regular expressions]
+**Learning:** Re-compiling the identical regular expression inside functions that are called frequently (like `html_section` parsing thousands of HTML strings) adds unnecessary overhead due to repeated evaluation.
+**Action:** Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module level when they are static and used repeatedly inside loops or frequently called functions.

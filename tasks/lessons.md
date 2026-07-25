@@ -1475,3 +1475,85 @@ clustered salvage draft per test-file hotspot (Lesson 0dv) over re-opening
 each bot PR.
 **Detection cost:** Low — `gh pr diff --name-only` includes both
 `tests/test_*.py` and `pr-visual-recap.yml`.
+
+## Lesson 0ej: Sibling Sentinel env-filter PRs — escalate both (2026-07-23/24)
+
+**Pattern:** Multiple Sentinel PRs (#507/#518/#525) rewrite
+`filter_env_securely` / subprocess env merging with incompatible orderings
+(denylist vs allowlist-first vs custom_env last). CI can be green on all.
+**Rule:** Escalate the whole sibling set; do not merge the "newest green" alone.
+Human picks one ordering. Prefer allowlist base → heuristic strip → explicit
+`custom_env` overrides → hard denylist last.
+**Detection cost:** Low — title contains Sentinel + env / subprocess; same file
+overlap in `.github/scripts/repository_automation_common.py`.
+
+## Lesson 0ek: Dependabot title may lie — read the constraint diff (2026-07-23/24)
+
+**Pattern:** Titles like "update pandas requirement from X to Y" can be a
+**major** floor bump (`>=2.2,<3` → `>=3.0.5,<4`) while sounding routine.
+**Rule:** Always `gh pr diff` requirements/lockfiles before DEPENDENCY MERGE.
+Majors and constraint widenings → ESCALATE even when CI is green on a narrow
+optional path (e.g. Series_27 only).
+**Detection cost:** Low — one-line requirements diff.
+
+## Lesson 0el: bolt.md journal conflicts after sibling Bolt merges (2026-07-24)
+
+**Pattern:** esp #1346 (SPF helper + bolt.md append) went DIRTY after #1354
+merged another bolt.md append. `update-branch` returns 422; CodeScene/CI were
+fine on the code file.
+**Rule:** Autofix = merge main into PR head, take **main's** `.jules/bolt.md`,
+re-append this PR's learning if missing, keep source-file changes, push to the
+**existing** head ref (never a guessed new branch name). Then wait for checks
+before squash-merge.
+**Detection cost:** Low — `files` includes `.jules/bolt.md` + one module; sibling
+Bolt merged same day.
+## Lesson 0ek: Re-salvage conflicted salvage drafts with -v2; adapt past sibling refactors (2026-07-22)
+
+**Pattern:** A prior Phase 2 salvage (esp #1335) itself went `CONFLICTING` after
+later Phase 1 merges on the same hotspot file. A second Jules refactor (#1330)
+conflicted specifically because #1311 introduced `FetchContext` while #1330
+still rewrote IMAPClient construction against the pre-FetchContext shape.
+Also: pushing a salvage branch name that already exists remotely fails with
+`cannot lock ref` / already exists — do not force-push.
+**Rule:** (1) When a *salvage* PR conflicts, open `…-v2-<suffix>` from current
+`main`, re-apply only the unique source hunks, close the prior salvage as
+superseded. (2) When adapting init/signature refactors onto main, preserve
+newer structural APIs (e.g. `FetchContext`) and rewrite call sites — never
+`git checkout pr -- <hotspot>` wholesale. (3) On remote branch name collision,
+rename locally to `-v2` and push; never `--force`.
+**Detection cost:** Low — salvage PR title contains `(salvages #N)` and
+`mergeable=CONFLICTING`; `git merge-tree` shows "changed in both" on the hotspot.
+
+## Lesson 0el: Sibling Sentinel env-filter PRs — escalate both, prefer newer (2026-07-23)
+
+**Pattern:** Seatek #507 and #518 both rewrite `filter_env_securely` order
+(custom_env merge vs heuristic denylist) with divergent journal rewrites in
+`.jules/sentinel.md`. Auto-merging either without human comparison risks
+dropping the stricter PATH/token denylist ordering from the other.
+**Rule:** (1) Treat overlapping Sentinel subprocess-env PRs as one cluster —
+ESCALATE all. (2) Prefer the newer PR only after a human confirms the final
+order: base → allowlist → heuristic → custom_env → strict token denylist.
+(3) Do not CLOSE-DUPLICATE the older sibling until the chosen PR is merged.
+**Detection cost:** Low — same path `.github/scripts/repository_automation_common.py`
++ Sentinel emoji title.
+
+## Lesson 0em: Dependabot title vs constraint widen (2026-07-23)
+
+**Pattern:** Hydrograph #402 titled "bump pre-commit 4.6.0→4.6.1" but the diff
+only changed `requirements-ci.txt` upper bound `<4.0.0`→`<5.0.0` (no lockfile
+pin to 4.6.1). Title suggests patch; change is major-range allowance.
+**Rule:** For Dependabot PRs, read the constraint diff — if upper bound jumps a
+major for a **CI-only** tool, MERGE is OK after Gate 2; if runtime/prod
+dependency (pandas/numpy), ESCALATE. Never trust the PR title alone.
+**Detection cost:** Low — `gh pr diff` on requirements*.txt.
+
+## Lesson 0en: Restore logger-targeted assertion when moving truncate helpers (2026-07-23)
+
+**Pattern:** Jules #1320 switched `email_parser` to `validate_subject_length` but
+replaced `test_oversized_subject_logs_warning` with `pass` because the warning
+now logs from `security_validators.logger`, not `parser.logger`.
+**Rule:** When salvaging helper extractions that relocate logging, keep a real
+assertion by `patch`ing the module that owns the logger. Never accept `pass` as
+a substitute for a DoS/truncation warning regression test.
+**Detection cost:** Low — PR diff shows `pass` under a `logs_warning` test name
+plus an import of `validate_*` helpers.
