@@ -31,14 +31,20 @@ if command -v gh >/dev/null 2>&1 && gh auth status -h github.com >/dev/null 2>&1
 fi
 
 if command -v python3 >/dev/null 2>&1; then
+	py_rc=0
 	token="$(
-		cd "${ROOT}" && python3 - <<'PY'
+		cd "${ROOT}" && python3 - <<'PY' 2>/dev/null
 from gh_token_env import load_gh_token_env
 
 env = load_gh_token_env()
 print(env.get("GH_TOKEN", ""))
 PY
-	)"
+	)" || py_rc=$?
+	if [[ ${py_rc} -ne 0 ]]; then
+		echo "error: GH_TOKEN env file failed security validation." >&2
+		echo "Ensure the env file is owned by you and has mode 0600." >&2
+		exit 1
+	fi
 	if [[ -n ${token} ]]; then
 		printf '%s\n' "${token}"
 		exit 0

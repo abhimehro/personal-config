@@ -72,6 +72,9 @@ def _read_env_file(path: Path) -> dict[str, str]:
             _parse_env_lines(handle, parsed)
     except FileNotFoundError:
         return {}
+    except PermissionError:
+        # Preserve the specific, user-friendly message from fd validation.
+        raise
     except OSError as exc:
         # SECURITY: ownership, permission, or symlink (ELOOP) failures must
         # not silently fall back to an empty token.
