@@ -195,3 +195,40 @@
 - Phase 2 salvage: pc conflict cluster (#1716–#1726), esp DIRTY Bolts, sc auth human review
 - Tip-release majors rpce #126/#127 remain escalated (Lesson 0dw)
 - Snapshot: `tasks/pr-review-2026-07-21.md`
+
+## Run — 2026-07-24
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: Cron Phase 1 `0 13 * * *` review-and-merge; preflight PASS 7/7;
+  branch `cursor-agent/pr-workflow-automation-95f6`
+
+### Metrics
+
+- PRs inventoried: 41 in-scope
+- PRs merged: 20
+- PRs closed: 2
+- PRs escalated: 18
+- PRs deferred: 2
+- Autofix: 1 (esp #1346)
+- Open at end: 21
+
+### Actions
+
+- Merged: pc #1758/#1763; cs #1058/#1057/#1056/#1053; esp #1350–#1352/#1355/#1341/#1354/#1347/#1346;
+  Seatek #520/#522; hg #406/#407/#408; sc #288
+- Closed: cs #1055; Seatek #524 (zero-diff)
+- Escalated: pc #1744/#1721/#1748; esp #1353/#1328/#1324/#1319/#1342; Seatek #525/#518/#507/#521/#511;
+  sc #285/#276/#275/#268; rpce #126/#127
+- Deferred: pc #1756; esp #1348
+- CodeScene: `/cs-agent skill:fix-code-health-degradations` on sc #285
+
+### Follow-ups
+
+- Phase 2: Sentinel env-filter cluster (Seatek), TOCTOU pair (esp), dummy_todos auth (sc),
+  tip artifact majors (rpce), visual-recap salvage (pc #1748)
+- Snapshot: `tasks/pr-review-2026-07-24.md`
+- Lessons: 0ej/0ek recorded; 0el bolt.md after sibling Bolt merge
