@@ -6,5 +6,5 @@
 - [x] Escalate security clusters + CodeScene triggers
 - [x] Write pr-inventory.md, pr-triage.md, pr-review-2026-07-25.md
 - [x] Update lessons.md + review-session-reports.md
-- [ ] Commit/push docs branch + open PR
-- [ ] Update automation memory
+- [x] Commit/push docs branch + open PR (#1771)
+- [x] Update automation memory
