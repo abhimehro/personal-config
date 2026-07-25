@@ -59,6 +59,7 @@ class TestGhTokenEnv(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             env_file = Path(tmp) / "GH_TOKEN.env"
             env_file.write_text("export GH_TOKEN=file_token\n", encoding="utf-8")
+            env_file.chmod(stat.S_IRUSR | stat.S_IWUSR)
             with patch.dict(
                 os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True
             ):

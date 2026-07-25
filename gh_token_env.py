@@ -34,9 +34,14 @@ def _validate_env_file_permissions(path: Path) -> None:
     except OSError:
         return
     if st.st_uid != os.getuid():
-        raise PermissionError(f"env file {path} is not owned by the current user")
+        raise PermissionError(
+            f"env file {path} is not owned by the current user; refuse to load"
+        )
     if st.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
-        raise PermissionError(f"env file {path} is writable by group or others")
+        raise PermissionError(
+            f"env file {path} must not be group- or world-writable "
+            f"(chmod 600 {path})"
+        )
 
 
 def parse_env_line(line: str, env_dict: dict[str, str]) -> None:

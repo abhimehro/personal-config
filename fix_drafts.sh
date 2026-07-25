@@ -24,6 +24,11 @@ if [[ $# -lt 2 || $(( $# % 2 )) -ne 0 ]]; then
   exit 2
 fi
 
+if ! command -v gh >/dev/null 2>&1; then
+  echo "error: gh CLI is required but not installed" >&2
+  exit 1
+fi
+
 GH_TOKEN="$(
   cd "${SCRIPT_DIR}" && python3 - <<'PY'
 import sys
@@ -42,11 +47,6 @@ print(token)
 PY
 )" || exit 1
 export GH_TOKEN
-
-if ! command -v gh >/dev/null 2>&1; then
-  echo "error: gh CLI is required but not installed" >&2
-  exit 1
-fi
 
 fix_and_merge() {
   local repo="$1"
