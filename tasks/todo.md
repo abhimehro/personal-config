@@ -40,3 +40,10 @@
 - [x] pr-inventory.md, pr-triage.md, pr-review-2026-07-23.md Phase 2
 - [x] salvage-session-reports.md + lessons.md (0ek–0en)
 - [x] Commit + push session branch; open draft session PR
+
+
+# Daily QA 2026-07-25 — personal-config
+
+- [x] Harden `performance_optimizer.sh` against missing `bc` (Linux/CI)
+- [x] Mock `bc` in `tests/test_performance_optimizer.sh`
+- [x] Re-run `bash tests/test_performance_optimizer.sh` (11/11)

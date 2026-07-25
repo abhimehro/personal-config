@@ -126,6 +126,33 @@ exit 0
 MOCK
 chmod +x "$MOCK_BIN/renice"
 
+# bc mock: keep unit tests independent of host having GNU/bc installed.
+# Supports scale=N; expr and simple comparisons used by performance_optimizer.
+cat >"$MOCK_BIN/bc" <<'MOCK'
+#!/bin/bash
+# Consume optional -l; evaluate stdin with awk.
+expr=$(cat)
+[[ "$1" == "-l" || "$expr" == *scale=* ]] || true
+cleaned="$expr"
+if [[ $cleaned == scale=*\;* ]]; then
+	cleaned="${cleaned#*; }"
+fi
+# Comparison forms: "a > b", "a < b", etc.
+if [[ $cleaned =~ ^[[:space:]]*(-?[0-9.]+)[[:space:]]*(>=|<=|==|>|<)[[:space:]]*(-?[0-9.]+)[[:space:]]*$ ]]; then
+	awk -v l="${BASH_REMATCH[1]}" -v op="${BASH_REMATCH[2]}" -v r="${BASH_REMATCH[3]}" 'BEGIN {
+		if (op == ">")  { print (l > r)  ? 1 : 0; exit }
+		if (op == ">=") { print (l >= r) ? 1 : 0; exit }
+		if (op == "<")  { print (l < r)  ? 1 : 0; exit }
+		if (op == "<=") { print (l <= r) ? 1 : 0; exit }
+		if (op == "==") { print (l == r) ? 1 : 0; exit }
+		print 0
+	}'
+	exit 0
+fi
+awk "BEGIN { printf \"%.1f\\n\", ($cleaned) }"
+MOCK
+chmod +x "$MOCK_BIN/bc"
+
 cat >"$MOCK_BIN/dscacheutil" <<'MOCK'
 #!/bin/bash
 exit 0
