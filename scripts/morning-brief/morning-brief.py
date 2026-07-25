@@ -47,6 +47,13 @@ Cache control:
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 import concurrent.futures
 import datetime as dt
 import hashlib
@@ -55,19 +62,15 @@ import json
 import logging
 import os
 import re
-import sys
 import tempfile
 import time
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
-from pathlib import Path
 from typing import Any, Iterable, Optional
 
 import feedparser
 import requests
 from dotenv import load_dotenv
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 # ============================================================
 # Constants
@@ -75,6 +78,42 @@ from urllib3.util.retry import Retry
 
 APP_NAME = "morning-brief"
 APP_VERSION = "3.0"
+
+from lib.safe_http import build_safe_session, safe_request
+
+MORNING_BRIEF_ALLOWED_HOSTS = frozenset(
+    {
+        "api.perplexity.ai",
+        "api.linear.app",
+        "api.open-meteo.com",
+        "readwise.io",
+        "horoscope-app-api.vercel.app",
+        "ohmanda.com",
+        "americaadapts.libsyn.com",
+        "thelensnola.org",
+        "lailluminator.com",
+        "www.wrkf.org",
+        "veritenews.org",
+        "thecurrentla.com",
+    }
+)
+
+VALID_ZODIAC_SIGNS = frozenset(
+    {
+        "aries",
+        "taurus",
+        "gemini",
+        "cancer",
+        "leo",
+        "virgo",
+        "libra",
+        "scorpio",
+        "sagittarius",
+        "capricorn",
+        "aquarius",
+        "pisces",
+    }
+)
 
 READWISE_SAVE_URL = "https://readwise.io/api/v3/save"
 PERPLEXITY_CHAT_URL = "https://api.perplexity.ai/chat/completions"
@@ -138,7 +177,6 @@ LINEAR_LABEL_BONUSES: dict[str, int] = {
 
 LINEAR_LABEL_BONUSES_ITEMS = tuple(LINEAR_LABEL_BONUSES.items())
 LINEAR_PRIORITY_SCORES = {1: 80, 2: 60, 3: 30, 4: 10}
-
 
 
 HOROSCOPE_ENDPOINTS_TEMPLATE = [
@@ -410,19 +448,8 @@ def build_retry_session(
     total: int = 3,
     backoff_factor: float = 1.0,
 ) -> requests.Session:
-    """Create a requests session with retry logic."""
-    session = requests.Session()
-    retry = Retry(
-        total=total,
-        connect=total,
-        read=total,
-        backoff_factor=backoff_factor,
-        status_forcelist=[429, 500, 502, 503, 504],
-        allowed_methods=frozenset(["GET", "POST"]),
-    )
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
+    """Create a requests session with retry logic and disabled proxy env vars."""
+    session = build_safe_session(total_retries=total, backoff_factor=backoff_factor)
     session.headers.update(
         {
             "User-Agent": f"MorningBrief/{APP_VERSION} (+https://internal-brief.local)",
@@ -466,8 +493,11 @@ class PerplexityClient:
         }
 
         try:
-            response = working.post(
+            response = safe_request(
+                "POST",
                 PERPLEXITY_CHAT_URL,
+                session=working,
+                allowed_hosts={"api.perplexity.ai"},
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json",
@@ -568,13 +598,14 @@ def html_li(content: str) -> str:
 def html_ul(items: Iterable[str]) -> str:
     item_list = list(items)
     if not item_list:
-        return "<ul><li class=\"empty-state\">No items</li></ul>"
+        return '<ul><li class="empty-state">No items</li></ul>'
     return f"<ul>{''.join(item_list)}</ul>"
 
 
 _EMOJI_HEADING_PATTERN = re.compile(
     r"^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$"
 )
+
 
 def _render_heading(level: int, title: str, id_attr: str = "") -> str:
     safe_title = sanitize_text(title)
@@ -587,24 +618,23 @@ def _render_heading(level: int, title: str, id_attr: str = "") -> str:
     if match:
         icon = match.group(1)
         clean_title = match.group(2)
-        return (
-            f'<h{level}{id_str}><span aria-hidden="true">{icon}</span> {clean_title}</h{level}>'
-        )
+        return f'<h{level}{id_str}><span aria-hidden="true">{icon}</span> {clean_title}</h{level}>'
 
     return f"<h{level}{id_str}>{safe_title}</h{level}>"
 
 
-_SECTION_ID_PATTERN = re.compile(r'[^a-z0-9]+')
+_SECTION_ID_PATTERN = re.compile(r"[^a-z0-9]+")
+
 
 def html_section(title: str, body: str) -> str:
-    section_id = _SECTION_ID_PATTERN.sub('-', sanitize_text(title).lower()).strip('-')
+    section_id = _SECTION_ID_PATTERN.sub("-", sanitize_text(title).lower()).strip("-")
     if not section_id:
         section_id = "section"
     return f'<section role="region" aria-labelledby="{section_id}">\n{_render_heading(3, title, section_id)}\n{body}\n</section>'
 
 
 def html_subsection(title: str, body: str) -> str:
-    section_id = _SECTION_ID_PATTERN.sub('-', sanitize_text(title).lower()).strip('-')
+    section_id = _SECTION_ID_PATTERN.sub("-", sanitize_text(title).lower()).strip("-")
     if not section_id:
         section_id = "subsection"
     return f'<section role="region" aria-labelledby="{section_id}">\n{_render_heading(4, title, section_id)}\n{body}\n</section>'
@@ -827,12 +857,23 @@ def fetch_weather(
         return WeatherSnapshot(**cached)
 
     try:
+        lat = float(config.lat)
+        lon = float(config.lon)
+        if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+            raise ValueError(f"invalid coordinates lat={lat} lon={lon}")
+
         url = (
-            f"https://api.open-meteo.com/v1/forecast?latitude={config.lat}&longitude={config.lon}"
+            f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
             "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max"
             "&current_weather=true&temperature_unit=fahrenheit&timezone=auto"
         )
-        response = session.get(url, timeout=DEFAULT_TIMEOUT)
+        response = safe_request(
+            "GET",
+            url,
+            session=session,
+            allowed_hosts={"api.open-meteo.com"},
+            timeout=DEFAULT_TIMEOUT,
+        )
         response.raise_for_status()
         data = response.json()
 
@@ -870,12 +911,25 @@ def fetch_weather(
         return WeatherSnapshot("N/A", "N/A", "N/A", "Weather data unavailable.")
 
 
-def _process_horoscope_endpoint(session: requests.Session, zodiac_sign: str, tmpl: dict) -> Optional[str]:
+def _process_horoscope_endpoint(
+    session: requests.Session, zodiac_sign: str, tmpl: dict
+) -> Optional[str]:
     """Helper to process a single horoscope endpoint."""
+    if zodiac_sign.lower() not in VALID_ZODIAC_SIGNS:
+        logger.warning("Invalid zodiac sign %r", zodiac_sign)
+        return None
+
     url = tmpl.get("url") or tmpl["url_fn"](zodiac_sign)
     params = tmpl["params_fn"](zodiac_sign)
     try:
-        response = session.get(url, params=params, timeout=HOROSCOPE_TIMEOUT)
+        response = safe_request(
+            "GET",
+            url,
+            session=session,
+            allowed_hosts={"horoscope-app-api.vercel.app", "ohmanda.com"},
+            params=params,
+            timeout=HOROSCOPE_TIMEOUT,
+        )
         response.raise_for_status()
         extracted = extract_horoscope_text(response.json())
         if extracted:
@@ -885,57 +939,51 @@ def _process_horoscope_endpoint(session: requests.Session, zodiac_sign: str, tmp
     return None
 
 
-def _has_successful_result(futures: list) -> bool:
-    """Check if any future in the list succeeded with a non-None result."""
-    for future in futures:
-        if not future.exception() and future.result():
-            return True
-    return False
+def _submit_horoscope_calls(
+    executor: concurrent.futures.ThreadPoolExecutor,
+    session: requests.Session,
+    zodiac_sign: str,
+) -> list[concurrent.futures.Future]:
+    """Submit a horoscope request for every configured endpoint."""
+    return [
+        executor.submit(_process_horoscope_endpoint, session, zodiac_sign, tmpl)
+        for tmpl in HOROSCOPE_ENDPOINTS_TEMPLATE
+    ]
 
 
-def _get_first_successful_result(futures: list) -> Optional[str]:
-    """Return the first successful result from completed futures."""
-    for future in concurrent.futures.as_completed(futures):
-        if not future.exception() and future.result():
-            return future.result()
-    return None
+def _first_horoscope_result(
+    futures: list[concurrent.futures.Future], timeout: float, default_text: str
+) -> str:
+    """Return the first successful future result within ``timeout`` seconds."""
+    try:
+        for future in concurrent.futures.as_completed(futures, timeout=timeout):
+            if future.exception():
+                continue
+            if future.result():
+                return future.result()
+    except concurrent.futures.TimeoutError:
+        pass
+    return default_text
 
 
 def fetch_horoscope(session: requests.Session, zodiac_sign: str) -> str:
     """Fetch horoscope using a hedged concurrent request strategy."""
-    default_text = "Trust your instincts and prioritize tasks that reduce future stress."
-
-    executor = concurrent.futures.ThreadPoolExecutor(
-        max_workers=min(len(HOROSCOPE_ENDPOINTS_TEMPLATE) or 1, 32)
+    default_text = (
+        "Trust your instincts and prioritize tasks that reduce future stress."
     )
-    futures = []
 
+    if zodiac_sign.lower() not in VALID_ZODIAC_SIGNS:
+        logger.warning("Invalid zodiac sign %r; using default", zodiac_sign)
+        return default_text
+
+    template_count = len(HOROSCOPE_ENDPOINTS_TEMPLATE)
+    max_workers = max(1, min(template_count, 32))
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
     try:
-        for i, tmpl in enumerate(HOROSCOPE_ENDPOINTS_TEMPLATE):
-            futures.append(executor.submit(_process_horoscope_endpoint, session, zodiac_sign, tmpl))
-
-            if i == len(HOROSCOPE_ENDPOINTS_TEMPLATE) - 1:
-                break
-
-            pending = [f for f in futures if not f.done()]
-            if not pending:
-                continue
-
-            done, _ = concurrent.futures.wait(
-                pending, timeout=1.5, return_when=concurrent.futures.FIRST_COMPLETED
-            )
-
-            if _has_successful_result(done):
-                break
-
-        result = _get_first_successful_result(futures)
-        if result:
-            return result
-
+        futures = _submit_horoscope_calls(executor, session, zodiac_sign)
+        return _first_horoscope_result(futures, HOROSCOPE_TIMEOUT, default_text)
     finally:
         executor.shutdown(wait=False, cancel_futures=True)
-
-    return default_text
 
 
 def fetch_linear_focus_items(
@@ -974,8 +1022,11 @@ def fetch_linear_focus_items(
     }
 
     try:
-        response = session.post(
+        response = safe_request(
+            "POST",
             LINEAR_GRAPHQL_URL,
+            session=session,
+            allowed_hosts={"api.linear.app"},
             headers={
                 "Authorization": config.linear_api_key,
                 "Content-Type": "application/json",
@@ -1115,8 +1166,11 @@ def fetch_linear_queue_snapshot(
     """
 
     try:
-        response = session.post(
+        response = safe_request(
+            "POST",
             LINEAR_GRAPHQL_URL,
+            session=session,
+            allowed_hosts={"api.linear.app"},
             headers={
                 "Authorization": config.linear_api_key,
                 "Content-Type": "application/json",
@@ -1164,7 +1218,13 @@ def fetch_single_feed(
     session = build_retry_session(total=2, backoff_factor=0.5)
 
     try:
-        response = session.get(url, timeout=DEFAULT_TIMEOUT)
+        response = safe_request(
+            "GET",
+            url,
+            session=session,
+            allowed_hosts=MORNING_BRIEF_ALLOWED_HOSTS,
+            timeout=DEFAULT_TIMEOUT,
+        )
         response.raise_for_status()
         feed = feedparser.parse(response.content)
 
@@ -1212,7 +1272,13 @@ def fetch_podcast_section(llm: PerplexityClient, *, limit: int = 3) -> SectionRe
     session = build_retry_session(total=2, backoff_factor=0.5)
 
     try:
-        response = session.get(AMERICA_ADAPTS_RSS_URL, timeout=DEFAULT_TIMEOUT)
+        response = safe_request(
+            "GET",
+            AMERICA_ADAPTS_RSS_URL,
+            session=session,
+            allowed_hosts=MORNING_BRIEF_ALLOWED_HOSTS,
+            timeout=DEFAULT_TIMEOUT,
+        )
         response.raise_for_status()
         feed = feedparser.parse(response.content)
 
@@ -1267,7 +1333,10 @@ def fetch_podcast_section(llm: PerplexityClient, *, limit: int = 3) -> SectionRe
     except Exception as exc:
         logger.error("Podcast error: %s", exc)
         return SectionResult(
-            html_section("🎧 Latest from America Adapts", "<p><em>Could not fetch episodes today.</em></p>"),
+            html_section(
+                "🎧 Latest from America Adapts",
+                "<p><em>Could not fetch episodes today.</em></p>",
+            ),
             [],
         )
 
@@ -1455,8 +1524,11 @@ def save_to_reader(
     tags = sorted(set(["morning-routine", "dashboard"] + (extra_tags or [])))
 
     try:
-        response = session.post(
+        response = safe_request(
+            "POST",
             READWISE_SAVE_URL,
+            session=session,
+            allowed_hosts={"readwise.io"},
             headers={"Authorization": f"Token {config.readwise_token}"},
             json={
                 "url": f"https://internal-brief.local/daily-{unique_id}",
