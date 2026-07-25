@@ -1,4 +1,5 @@
 import os
+import stat
 import tempfile
 import unittest
 from pathlib import Path
@@ -78,6 +79,25 @@ class TestGhTokenEnv(unittest.TestCase):
         with patch("gh_token_env.resolve_gh_token_env_file", return_value=None):
             message = missing_gh_token_message()
         self.assertIn("github-pat-rotation-runbook", message)
+
+    def test_env_file_rejected_when_group_or_world_writable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / "GH_TOKEN.env"
+            env_file.write_text("GH_TOKEN=file_token\n", encoding="utf-8")
+            env_file.chmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
+            with patch.dict(os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True):
+                with self.assertRaises(PermissionError):
+                    load_gh_token_env()
+
+    def test_env_file_rejected_when_not_owned_by_current_user(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / "GH_TOKEN.env"
+            env_file.write_text("GH_TOKEN=file_token\n", encoding="utf-8")
+            env_file.chmod(stat.S_IRUSR | stat.S_IWUSR)
+            with patch("gh_token_env.os.getuid", return_value=os.getuid() + 1):
+                with patch.dict(os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True):
+                    with self.assertRaises(PermissionError):
+                        load_gh_token_env()
 
 
 if __name__ == "__main__":

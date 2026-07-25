@@ -9,9 +9,9 @@ Precedence for ``GH_TOKEN``:
 2. Optional file from ``GH_TOKEN_ENV_FILE`` or well-known paths (legacy fallback)
 """
 
-import re
-
 import os
+import re
+import stat
 from functools import lru_cache
 from pathlib import Path
 from typing import Mapping
@@ -23,6 +23,20 @@ _LEGACY_RELATIVE_ENV = Path("../email-security-pipeline/GH_TOKEN.env")
 _COMMAND_SUBSTITUTION = re.compile(r"\$\(|`")
 
 _RUNBOOK = "docs/github-pat-rotation-runbook.md"
+
+
+def _validate_env_file_permissions(path: Path) -> None:
+    """Fail closed if the env file could be tampered with by another user."""
+    if not hasattr(os, "getuid"):
+        return
+    try:
+        st = path.stat()
+    except OSError:
+        return
+    if st.st_uid != os.getuid():
+        raise PermissionError(f"env file {path} is not owned by the current user")
+    if st.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+        raise PermissionError(f"env file {path} is writable by group or others")
 
 
 def parse_env_line(line: str, env_dict: dict[str, str]) -> None:
@@ -82,6 +96,7 @@ def _get_parsed_env_vars_from_file() -> dict[str, str]:
     path = resolve_gh_token_env_file()
     if path is None:
         return {}
+    _validate_env_file_permissions(path)
     return _read_env_file(path)
 
 
