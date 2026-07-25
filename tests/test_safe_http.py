@@ -35,15 +35,23 @@ def _addr_record(ip_str: str, port: int) -> tuple:
     return (socket.AF_INET, socket.SOCK_STREAM, 0, "", (str(ip), port))
 
 
+def _is_ip(addr: str) -> bool:
+    """Return True when ``addr`` is already a valid IP string."""
+    try:
+        ipaddress.ip_address(addr)
+        return True
+    except ValueError:
+        return False
+
+
 def _getaddrinfo_stub(host: str, port: int, *_, **__):
     """Deterministic resolver for tests."""
     ip_strs = _HOST_IPS.get(host)
     if ip_strs is not None:
         return [_addr_record(ip, port) for ip in ip_strs]
-    try:
+    if _is_ip(host):
         return [_addr_record(host, port)]
-    except ValueError:
-        return []
+    return []
 
 
 @patch("lib.safe_http.socket.getaddrinfo", new=_getaddrinfo_stub)

@@ -949,16 +949,18 @@ def _submit_horoscope_calls(
 
 
 def _first_horoscope_result(
-    futures: list[concurrent.futures.Future], timeout: float
-) -> str | None:
+    futures: list[concurrent.futures.Future], timeout: float, default_text: str
+) -> str:
     """Return the first successful future result within ``timeout`` seconds."""
     try:
         for future in concurrent.futures.as_completed(futures, timeout=timeout):
-            if not future.exception() and future.result():
+            if future.exception():
+                continue
+            if future.result():
                 return future.result()
     except concurrent.futures.TimeoutError:
         pass
-    return None
+    return default_text
 
 
 def fetch_horoscope(session: requests.Session, zodiac_sign: str) -> str:
@@ -971,17 +973,14 @@ def fetch_horoscope(session: requests.Session, zodiac_sign: str) -> str:
         logger.warning("Invalid zodiac sign %r; using default", zodiac_sign)
         return default_text
 
-    max_workers = min(len(HOROSCOPE_ENDPOINTS_TEMPLATE) or 1, 32)
+    template_count = len(HOROSCOPE_ENDPOINTS_TEMPLATE)
+    max_workers = max(1, min(template_count, 32))
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
     try:
         futures = _submit_horoscope_calls(executor, session, zodiac_sign)
-        result = _first_horoscope_result(futures, HOROSCOPE_TIMEOUT)
-        if result:
-            return result
+        return _first_horoscope_result(futures, HOROSCOPE_TIMEOUT, default_text)
     finally:
         executor.shutdown(wait=False, cancel_futures=True)
-
-    return default_text
 
 
 def fetch_linear_focus_items(
