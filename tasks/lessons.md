@@ -1,5 +1,31 @@
 # Lessons Learned
 
+## Lesson 0eo: Invalid env GH_TOKEN shadows hosts.yml Cursor token (2026-07-25)
+
+**Pattern:** Cloud Agent injects `GH_TOKEN=github_pat_…` that returns **401 Bad
+credentials**. `gh` prefers the env var over `~/.config/gh/hosts.yml`, so
+preflight/`gh pr list` fail until `unset GH_TOKEN`. With env cleared, the Cursor
+GitHub App token can **squash-merge** and inventory, but GraphQL `addComment`
+is still denied — use Cursor Automation MCP `post_review_comment_on_pr` for
+review trail. Flattened OpenSSH private keys in secrets (no newlines) need
+PEM re-wrapping before `ssh-keygen`/`git@github.com` works.
+**Rule:** (1) On 401, `unset GH_TOKEN GITHUB_TOKEN` and re-run preflight. (2)
+Do not print token values; log prefix/len only. (3) Rotate the injected PAT.
+(4) Reconstruct single-line OPENSSH keys to standard PEM wrapping for SSH
+pushes/autofix. (5) Prefer MCP reviews when `gh pr comment` 403s.
+**Detection cost:** Low — `gh auth status` shows invalid GH_TOKEN + active
+hosts.yml account.
+
+## Lesson 0ep: Mid-session Bolt merge dirties SSRF siblings via bolt.md (2026-07-25)
+
+**Pattern:** After squash-merging pc #1770 (Bolt + `.jules/bolt.md` append),
+open pc #1766 (SSRF `safe_http`, also touching bolt-adjacent trees) flipped
+`MERGEABLE` → `CONFLICTING` in the same session.
+**Rule:** When merging Bolt journals, re-check remaining PRs that share
+`.jules/bolt.md` or broad skill trees before calling the session clean. Expect
+SSRF/security salvage PRs to need Phase 2 rebase after routine Bolt merges.
+**Detection cost:** Low — post-merge `gh pr list --json mergeable` sweep.
+
 ## Lesson 0du: Gitleaks first capture group becomes Secret (2026-07-17)
 
 **Pattern:** `personal-config-generic-secret` used `(secret|password|…)[\s\-_:=]+…`
