@@ -7,6 +7,10 @@
 #   2 = soft: server up but wizard/auth not finished (expected pre-HITL)
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+export PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}"
+
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
 BASE_URL="${JELLYFIN_URL:-http://127.0.0.1:8096}"
@@ -38,6 +42,31 @@ echo "URL:   $BASE_URL"
 echo "Mount: $MOUNT_POINT"
 echo
 
+# SSRF guard: validate JELLYFIN_URL before any curl sends credentials to it.
+host="$(python3 -c "import urllib.parse, sys; print(urllib.parse.urlsplit(sys.argv[1]).hostname or '')" "$BASE_URL")"
+is_loopback=0
+case "$host" in
+127.0.0.1 | localhost | ::1) is_loopback=1 ;;
+esac
+
+ssrf_args=("--check-url" "$BASE_URL")
+if [[ $is_loopback -eq 1 ]]; then
+	ssrf_args+=("--allow-loopback")
+fi
+if [[ -n ${JELLYFIN_ALLOWED_HOSTS-} ]]; then
+	ssrf_args+=("--allowed-hosts" "$JELLYFIN_ALLOWED_HOSTS")
+	ssrf_args+=("--allow-private" "--allow-link-local" "--allow-cgnat")
+fi
+if [[ $is_loopback -eq 0 && ${JELLYFIN_ALLOW_INSECURE:-0} != "1" ]]; then
+	ssrf_args+=("--require-https")
+fi
+if ! python3 -m lib.safe_http "${ssrf_args[@]}" >/dev/null 2>&1; then
+	bad "JELLYFIN_URL failed SSRF validation (host=$host; check JELLYFIN_ALLOWED_HOSTS / JELLYFIN_ALLOW_INSECURE)"
+	echo "Summary: pass=$pass soft=$soft fail=$fail"
+	exit 1
+fi
+ok "JELLYFIN_URL passed SSRF validation"
+
 # 1) Mount readable
 if [[ -d $MOUNT_POINT ]] && [[ -n "$(find "$MOUNT_POINT" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null || true)" ]]; then
 	ok "CloudMedia mount has entries"
@@ -61,11 +90,11 @@ else
 fi
 
 # 2) HTTP health / startup
-http_code="$(curl -sS -o "$TMP_BODY" -w '%{http_code}' --max-time 5 "$BASE_URL/health" 2>/dev/null || echo '000')"
+http_code="$(curl -sS -o "$TMP_BODY" -w '%{http_code}' --connect-timeout 5 --max-time 5 --proto '=http,https' --max-redirs 0 "$BASE_URL/health" 2>/dev/null || echo '000')"
 if [[ $http_code == 200 ]]; then
 	ok "GET /health → 200"
 elif [[ $http_code == 000 ]]; then
-	http_code="$(curl -sS -o "$TMP_BODY" -w '%{http_code}' --max-time 5 "$BASE_URL/" 2>/dev/null || echo '000')"
+	http_code="$(curl -sS -o "$TMP_BODY" -w '%{http_code}' --connect-timeout 5 --max-time 5 --proto '=http,https' --max-redirs 0 "$BASE_URL/" 2>/dev/null || echo '000')"
 	if [[ $http_code == 2* || $http_code == 3* ]]; then
 		warn "Server responds on / (HTTP $http_code) but /health not ready — finish wizard?"
 	else
@@ -76,7 +105,7 @@ else
 fi
 
 # 3) Public system info (no auth)
-if curl -fsS --max-time 5 "$BASE_URL/System/Info/Public" -o "$TMP_INFO" 2>/dev/null; then
+if curl -fsS --connect-timeout 5 --max-time 5 --proto '=http,https' --max-redirs 0 "$BASE_URL/System/Info/Public" -o "$TMP_INFO" 2>/dev/null; then
 	ok "System/Info/Public reachable"
 	if command -v python3 >/dev/null 2>&1; then
 		set +e
@@ -102,7 +131,7 @@ fi
 
 # 4) Optional authenticated Items count
 if [[ -n $API_KEY ]]; then
-	items_json="$(curl -fsS --max-time 15 \
+	items_json="$(curl -fsS --connect-timeout 5 --max-time 15 --proto '=http,https' --max-redirs 0 \
 		-H "Authorization: MediaBrowser Token=$API_KEY" \
 		"$BASE_URL/Items?Recursive=true&IncludeItemTypes=Movie,Episode&Limit=5" 2>/dev/null || true)"
 	if [[ -n $items_json ]] && echo "$items_json" | grep -q '"Items"'; then
