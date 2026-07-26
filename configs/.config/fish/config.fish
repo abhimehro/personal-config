@@ -310,3 +310,9 @@ fish_add_path /Users/speedybee/scripts
 
 # Added by Antigravity IDE
 fish_add_path /Users/speedybee/.antigravity-ide/antigravity-ide/bin
+
+# >>>> BEGIN MANAGED DEVIN BLOCK >>>>
+if test -x "/Users/speedybee/.local/bin/devin"
+  "/Users/speedybee/.local/bin/devin" shell init fish --stage post | source
+end
+# <<<< END MANAGED DEVIN BLOCK <<<<

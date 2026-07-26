@@ -85,6 +85,18 @@
       "skillPath": "skills/firebase-security-rules-auditor/SKILL.md",
       "computedHash": "5a90e991bb9acfd3e43bfb570498dee60b9cef94cbb80cfb99257c7e4f61c1a0"
     },
+    "migrate-sonar-to-agent-api": {
+      "source": "perplexityai/api-platform-developers",
+      "sourceType": "github",
+      "skillPath": "skills/migrate-sonar-to-agent-api/SKILL.md",
+      "computedHash": "83e4c39d8f7d56e9647f8286d08b05e75bee05c809dc34d32bc16775527d9fda"
+    },
+    "pplx-cli": {
+      "source": "perplexityai/api-platform-developers",
+      "sourceType": "github",
+      "skillPath": "skills/pplx-cli/SKILL.md",
+      "computedHash": "b71fd641d204f41ca4f2535c093d60b1de55b95b611527f297179f155c72d701"
+    },
     "windscribe-vpn": {
       "source": "Windscribe/Desktop-App",
       "sourceType": "github",
