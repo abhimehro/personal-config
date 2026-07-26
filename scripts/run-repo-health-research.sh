@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
-# Runner script for weekly repository health review (Research Repos)
-# Scheduled by launchd: com.speedybee.repo-health.research (Tuesdays 09:00)
+# Local stub for weekly repository health review (Research Repos).
+# Authoritative schedule: Cursor Automations Option A — Monday 10:00
+# (see docs/cursor-automations/weekly-repo-health.md).
+# launchd label com.speedybee.repo-health.research is optional / non-authoritative.
 
 set -Eeuo pipefail
 
