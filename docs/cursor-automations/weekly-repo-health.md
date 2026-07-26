@@ -57,12 +57,12 @@ daily). Start each as a fresh weekly schedule.
 
 1. Run each automation **once manually** from the dashboard to validate env + MCP + report format.
 2. Confirm the run used the multi-repo environment (all seven clones present; prompt scopes which ones to touch).
-3. Copy each automation’s UUID/URL into the table below for later `get-automation` lookups.
+3. UUIDs/URLs below are filled for `get-automation` lookups (update if recreated).
 
-| Automation | UUID | URL |
-| ---------- | ---- | --- |
-| Research | _fill after create_ | |
-| General | _fill after create_ | |
+| Automation | UUID | URL | Enabled |
+| ---------- | ---- | --- | ------- |
+| Research | `5d3f67b4-88af-11f1-b532-320a589b8025` | https://cursor.com/automations/5d3f67b4-88af-11f1-b532-320a589b8025 | yes |
+| General | `7115cfdc-88b0-11f1-b532-320a589b8025` | https://cursor.com/automations/7115cfdc-88b0-11f1-b532-320a589b8025 | yes |
 
 ## Relationship to local launchd stubs
 
