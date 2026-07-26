@@ -33,6 +33,49 @@ log_info() { log_message "INFO" "$@"; }
 log_warn() { log_message "WARN" "$@"; }
 log_error() { log_message "ERROR" "$@"; }
 
+# Floating-point helper. Prefer bc; fall back to awk when bc is absent
+# (Linux/CI hosts). Expressions may include a leading "scale=N; " prefix
+# (bc syntax); awk ignores that prefix.
+# ASSUMES: expr is a trusted internal arithmetic string (never user input).
+bc_float() {
+	local expr="$1"
+	local fallback="${2:-0}"
+	if command -v bc >/dev/null 2>&1; then
+		echo "$expr" | bc -l 2>/dev/null || echo "$fallback"
+		return 0
+	fi
+	local cleaned="$expr"
+	if [[ $cleaned == scale=*\;* ]]; then
+		cleaned="${cleaned#*; }"
+	fi
+	# NOTE: awk printf keeps one decimal place to match historical bc scale=1 usage.
+	awk -v fb="$fallback" "BEGIN {
+		r = ($cleaned)
+		if (r != r) { print fb; exit }
+		printf \"%.1f\\n\", r
+	}" 2>/dev/null || echo "$fallback"
+}
+
+# Boolean comparison via bc/awk; prints 1 or 0 for use in (( )).
+# ASSUMES: left/right/op are trusted internal values.
+bc_cmp() {
+	local left="$1"
+	local op="$2"
+	local right="$3"
+	if command -v bc >/dev/null 2>&1; then
+		echo "$left $op $right" | bc -l 2>/dev/null || echo 0
+		return 0
+	fi
+	awk -v l="$left" -v r="$right" -v op="$op" 'BEGIN {
+		if (op == ">")  { print (l > r)  ? 1 : 0; exit }
+		if (op == ">=") { print (l >= r) ? 1 : 0; exit }
+		if (op == "<")  { print (l < r)  ? 1 : 0; exit }
+		if (op == "<=") { print (l <= r) ? 1 : 0; exit }
+		if (op == "==") { print (l == r) ? 1 : 0; exit }
+		print 0
+	}' 2>/dev/null || echo 0
+}
+
 # Accessible Spinner
 spinner_wait() {
 	local duration=$1
@@ -132,12 +175,12 @@ optimize_cpu_usage() {
 	local cpu_count
 	cpu_count=$(sysctl -n hw.ncpu)
 	local cpu_percent
-	cpu_percent=$(echo "scale=1; $cpu_load / $cpu_count * 100" | bc -l)
+	cpu_percent=$(bc_float "scale=1; $cpu_load / $cpu_count * 100" "0")
 
 	log_info "Current CPU load: ${cpu_percent}%"
 
 	# If CPU load is high, optimize background processes
-	if (($(echo "$cpu_percent > 70" | bc -l))); then
+	if (($(bc_cmp "$cpu_percent" ">" "70"))); then
 		log_info "High CPU load detected, optimizing background processes"
 
 		# Reduce priority of non-essential processes
@@ -178,12 +221,12 @@ optimize_memory_usage() {
 	local total_memory available_memory memory_percent
 	total_memory=$(sysctl -n hw.memsize)
 	available_memory=$(((pages_free + pages_inactive + pages_speculative) * page_size))
-	memory_percent=$(echo "scale=1; $available_memory / $total_memory * 100" | bc -l)
+	memory_percent=$(bc_float "scale=1; $available_memory / $total_memory * 100" "100")
 
 	log_info "Available memory: ${memory_percent}%"
 
 	# If memory is low, perform cleanup
-	if (($(echo "$memory_percent < 20" | bc -l))); then
+	if (($(bc_cmp "$memory_percent" "<" "20"))); then
 		log_info "Low memory detected, performing memory cleanup"
 
 		# Purge inactive memory
@@ -433,7 +476,7 @@ run_benchmark() {
 	spinner_wait 10 "Benchmarking CPU"
 	kill $cpu_pid >/dev/null 2>&1
 	cpu_end=$(date +%s.%3N)
-	cpu_time=$(echo "scale=3; $cpu_end - $cpu_start" | bc -l)
+	cpu_time=$(bc_float "scale=3; $cpu_end - $cpu_start" "0")
 	echo "CPU Test: ${cpu_time}s" >>"$benchmark_file"
 
 	# Memory benchmark
@@ -458,7 +501,7 @@ print(f'Memory allocation test: {time.time() - start:.3f}s')
 	sync
 	io_end=$(date +%s.%3N)
 	rm -f "$io_test_file"
-	io_time=$(echo "scale=3; $io_end - $io_start" | bc -l)
+	io_time=$(bc_float "scale=3; $io_end - $io_start" "0")
 	echo "Disk I/O Test: ${io_time}s" >>"$benchmark_file"
 
 	log_info "Performance benchmark completed, results saved to $benchmark_file"
@@ -476,7 +519,7 @@ generate_performance_report() {
 	local system_info cpu_info memory_info disk_info
 	system_info=$(system_profiler SPSoftwareDataType | grep "System Version" | awk -F: '{print $2}' | xargs)
 	cpu_info=$(sysctl -n machdep.cpu.brand_string)
-	memory_info=$(echo "$(sysctl -n hw.memsize) / 1024 / 1024 / 1024" | bc) # GB
+	memory_info=$(bc_float "$(sysctl -n hw.memsize) / 1024 / 1024 / 1024" "0") # GB
 	disk_info=$(df -h / | tail -1 | awk '{print $2}')
 
 	cat >"$report_file" <<EOF
@@ -536,8 +579,8 @@ EOF
 
 	# Determine status colors
 	local cpu_status="good"
-	[[ $(echo "$cpu_load > 2" | bc -l) == "1" ]] && cpu_status="warning"
-	[[ $(echo "$cpu_load > 4" | bc -l) == "1" ]] && cpu_status="critical"
+	[[ $(bc_cmp "$cpu_load" ">" "2") == "1" ]] && cpu_status="warning"
+	[[ $(bc_cmp "$cpu_load" ">" "4") == "1" ]] && cpu_status="critical"
 
 	local disk_status="good"
 	[[ $disk_usage -gt 70 ]] && disk_status="warning"
@@ -557,7 +600,7 @@ EOF
 
 	# Add recommendations based on current state
 	local has_recs=false
-	if [[ $(echo "$cpu_load > 2" | bc -l) == "1" ]]; then
+	if [[ $(bc_cmp "$cpu_load" ">" "2") == "1" ]]; then
 		echo "            <li>Consider reducing CPU-intensive background tasks</li>" >>"$report_file"
 		has_recs=true
 	fi
