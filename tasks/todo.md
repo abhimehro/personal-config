@@ -1,3 +1,13 @@
+# PR Review Session TODO — 2026-07-25
+
+- [x] Preflight 7/7
+- [x] Inventory + triage
+- [x] Merge safe PRs / autofix hg #414
+- [x] Escalate security clusters + CodeScene triggers
+- [x] Write pr-inventory.md, pr-triage.md, pr-review-2026-07-25.md
+- [x] Update lessons.md + review-session-reports.md
+- [x] Commit/push docs branch + open PR (#1771)
+- [x] Update automation memory
 # Phase 2 Salvage — 2026-07-25
 
 - [x] Preflight (`gh` via unset GH_TOKEN + hosts.yml; `make cursor-cloud-hooks`)
