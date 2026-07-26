@@ -69,6 +69,9 @@ available, cannot fail.
 **CDN endpoint:**
 `https://save-to-spotify.spotifycdn.com/assets/uts-{01..20}.png`
 
+Only download cover artwork from approved Spotify CDN hosts such as `i.scdn.co`,
+`mosaic.scdn.co`, and `spotifycdn.com`.
+
 ## Typography
 
 **Mandatory** on every cover (unless user opted out in Path 1). Always
@@ -118,7 +121,15 @@ Constants and thresholds are authoritative — see code below for exact values.
 
 ```python
 from PIL import Image, ImageDraw, ImageFont
-import os, hashlib, unicodedata, urllib.request
+import os, hashlib, unicodedata, sys
+from pathlib import Path
+
+# Make the shared safe_http helper importable from any script location.
+_repo_root = Path(__file__).resolve().parents[2]
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
+
+from lib.safe_http import safe_download
 
 CANVAS = 1400
 MARGIN = 64
@@ -146,7 +157,14 @@ def load_font(size, title=""):
     fname, url = FONTS[detect_script(title)]
     path = os.path.join(FONT_CACHE, fname)
     if not os.path.exists(path):
-        urllib.request.urlretrieve(url, path)
+        # Only download fonts from approved hosts (raw.githubusercontent.com for the OFL mirrors used here).
+        safe_download(
+            url,
+            path,
+            allowed_hosts={"raw.githubusercontent.com"},
+            max_bytes=5 * 1024 * 1024,
+            timeout=30,
+        )
     return ImageFont.truetype(path, size)
 
 def measure_line(font, text):
