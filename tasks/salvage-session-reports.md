@@ -725,3 +725,51 @@
 
 - Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-07-23.md)
 - New lessons: **0ek** (backfill re-salvage), **0el** (Sentinel siblings), **0em** (Dependabot title), **0en** (restore warning assert)
+
+## Run — 2026-07-25
+
+- Trigger: cron Phase 2 `0 17 * * *`
+- Agent branch: `cursor-agent/automated-pr-salvage-a2fb`
+- Preflight: PASS 7/7 (+ cursor-cloud-hooks)
+- Source report: `tasks/pr-review-2026-07-25.md` Phase 1 remainder (via draft [#1771](https://github.com/abhimehro/personal-config/pull/1771)) + live re-fetch
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR / Branch | Notes |
+|------|--------|-------------|-----------------|-------|
+| personal-config | [#1748](https://github.com/abhimehro/personal-config/pull/1748) | SALVAGE branch pushed | `cursor-agent/salvage-pc-1748-visual-recap-v2-a2fb` @ a2208a73 | Journal-only conflict; Lesson 0ei append; MDX 9/9; draft PR create blocked (0eq) |
+| personal-config | [#1721](https://github.com/abhimehro/personal-config/pull/1721) | ESCALATE | — | lru_cache on GH_TOKEN env loader |
+| personal-config | [#1766](https://github.com/abhimehro/personal-config/pull/1766)/[#1767](https://github.com/abhimehro/personal-config/pull/1767)/[#1769](https://github.com/abhimehro/personal-config/pull/1769) | ESCALATE | — | SSRF / token helpers (1766 now CLEAN) |
+| ctrld-sync | [#1060](https://github.com/abhimehro/ctrld-sync/pull/1060) | ESCALATE | — | Sentinel exception chaining |
+| email-security-pipeline | [#1360](https://github.com/abhimehro/email-security-pipeline/pull/1360) | CLOSE-CANDIDATE no-op | — | zero-diff Jules QA; close blocked |
+| email-security-pipeline | [#1353](https://github.com/abhimehro/email-security-pipeline/pull/1353)/[#1328](https://github.com/abhimehro/email-security-pipeline/pull/1328)/[#1324](https://github.com/abhimehro/email-security-pipeline/pull/1324)/[#1359](https://github.com/abhimehro/email-security-pipeline/pull/1359)/[#1319](https://github.com/abhimehro/email-security-pipeline/pull/1319) | ESCALATE | — | TOCTOU / Auth-Results / gh_token_cli |
+| email-security-pipeline | [#1342](https://github.com/abhimehro/email-security-pipeline/pull/1342) | DEFER human | — | prior salvage draft CLEAN |
+| Seatek_Analysis | [#525](https://github.com/abhimehro/Seatek_Analysis/pull/525)/[#518](https://github.com/abhimehro/Seatek_Analysis/pull/518)/[#507](https://github.com/abhimehro/Seatek_Analysis/pull/507)/[#521](https://github.com/abhimehro/Seatek_Analysis/pull/521)/[#511](https://github.com/abhimehro/Seatek_Analysis/pull/511) | ESCALATE | — | Sentinel siblings / pandas / Devin |
+| Hydrograph… | [#413](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/413) | ESCALATE | — | Sentinel DoS + CodeScene; cs-agent already posted |
+| series_correction… | [#285](https://github.com/abhimehro/series_correction_project_updated/pull/285)/[#276](https://github.com/abhimehro/series_correction_project_updated/pull/276)/[#275](https://github.com/abhimehro/series_correction_project_updated/pull/275)/[#268](https://github.com/abhimehro/series_correction_project_updated/pull/268) | ESCALATE | — | dummy_todos 0ef |
+| repoprompt-ce | [#126](https://github.com/abhimehro/repoprompt-ce/pull/126)/[#127](https://github.com/abhimehro/repoprompt-ce/pull/127) | ESCALATE | — | tip artifact majors CONFLICTING 0dw |
+
+- Salvage draft PRs opened via API: **0** (permission)
+- Salvage branches pushed: **1**
+- Infra-fix draft PRs opened: **0**
+- Closed superseded / no-op via API: **0**
+- Autonomous merges: **0**
+- Escalations left open: **23** (+ 1 close-candidate)
+
+### Verification status
+
+- Local: `bash tests/test_fix_recap_mdx_diff_strings.sh` → 9 passed; `node --check` on MDX helpers
+- Blocking checks on `main`: none identified as whole-repo infra-broken
+- CodeScene: `/cs-agent` already present on hg #413 and sc #285; no new posts needed
+
+### Handoff
+
+1. **Open draft** from https://github.com/abhimehro/personal-config/compare/main...cursor-agent/salvage-pc-1748-visual-recap-v2-a2fb?quick_pull=1 then close #1748 as superseded
+2. Close esp [#1360](https://github.com/abhimehro/email-security-pipeline/pull/1360) (zero-diff)
+3. Merge prior drafts when ready: esp [#1342](https://github.com/abhimehro/email-security-pipeline/pull/1342); pc visual-recap draft after step 1
+4. T1 human: pc #1766/#1767/#1769; esp TOCTOU/Auth; Seatek Sentinel siblings; sc dummy_todos; hg #413
+5. T2 human: pc #1721; rpce #126/#127; Seatek #521
+6. Rotate expired `GH_TOKEN` PAT (Phase 1 Lesson 0eo) so future sessions can `gh pr create/close/comment`
+
+- Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-07-25.md)
+- New lesson: **0eq** (Cursor app token push-ok / PR-write blocked for salvage branches)

@@ -25,6 +25,11 @@ open pc #1766 (SSRF `safe_http`, also touching bolt-adjacent trees) flipped
 `.jules/bolt.md` or broad skill trees before calling the session clean. Expect
 SSRF/security salvage PRs to need Phase 2 rebase after routine Bolt merges.
 **Detection cost:** Low — post-merge `gh pr list --json mergeable` sweep.
+## Lesson 0eq: Cursor app token can push salvage branches but cannot open/close PRs (2026-07-25)
+
+**Pattern:** Phase 2 pushed `cursor-agent/salvage-pc-1748-visual-recap-v2-a2fb` successfully, then `gh pr create` / `gh pr close` / `gh pr comment` all failed with GraphQL/REST `Resource not accessible by integration`. `open_git_pr` MCP only accepts the automation **designated** branch (`cursor-agent/automated-pr-salvage-a2fb`), not per-PR salvage branches. Env `GH_TOKEN` PAT is expired (401) — Phase 1 Lesson 0eo.
+**Rule:** (1) Always push salvage branches even when PR create is blocked. (2) Record the compare/`quick_pull` URL in inventory + salvage-session-reports for the maintainer to open a **draft**. (3) Use Cursor Automation MCP `post_review_comment_on_pr` for escalation notes on existing PRs. (4) Use `open_git_pr` only for the designated session-docs branch. (5) Rotate the injected PAT before relying on `gh` write for closes/comments.
+**Detection cost:** Low — first `createPullRequest` 403 in a session.
 
 ## Lesson 0du: Gitleaks first capture group becomes Secret (2026-07-17)
 
