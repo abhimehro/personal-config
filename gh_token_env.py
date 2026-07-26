@@ -9,9 +9,9 @@ Precedence for ``GH_TOKEN``:
 2. Optional file from ``GH_TOKEN_ENV_FILE`` or well-known paths (legacy fallback)
 """
 
-import re
-
 import os
+import re
+import stat
 from functools import lru_cache
 from pathlib import Path
 from typing import Mapping
@@ -41,14 +41,47 @@ def parse_env_line(line: str, env_dict: dict[str, str]) -> None:
     env_dict[key] = value
 
 
+def _validate_env_fd(fd: int, path: Path) -> None:
+    """Validate ownership and permissions of an already-open env file."""
+    st = os.fstat(fd)
+    if not stat.S_ISREG(st.st_mode):
+        raise PermissionError(f"{path}: not a regular file")
+    if st.st_uid != os.getuid():
+        raise PermissionError(f"{path}: not owned by current user")
+    if st.st_mode & 0o077:
+        raise PermissionError(f"{path}: permissions too open (want 0600)")
+
+
+def _parse_env_lines(handle, parsed: dict[str, str]) -> None:
+    """Read a dotenv-style file handle into ``parsed``."""
+    for line in handle:
+        parse_env_line(line, parsed)
+
+
 def _read_env_file(path: Path) -> dict[str, str]:
+    """Parse a dotenv-style file with fd-based TOCTOU-safe ownership checks."""
     parsed: dict[str, str] = {}
+    fd = -1
     try:
-        with path.open(encoding="utf-8") as handle:
-            for line in handle:
-                parse_env_line(line, parsed)
-    except OSError:
+        # SECURITY: O_NOFOLLOW prevents symlink hijacking; fstat validates the
+        # fd we actually read, not a path that may have changed since resolve().
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+        _validate_env_fd(fd, path)
+        with os.fdopen(fd, encoding="utf-8") as handle:
+            fd = -1  # ownership transferred; avoid double-close
+            _parse_env_lines(handle, parsed)
+    except FileNotFoundError:
         return {}
+    except PermissionError:
+        # Preserve the specific, user-friendly message from fd validation.
+        raise
+    except OSError as exc:
+        # SECURITY: ownership, permission, or symlink (ELOOP) failures must
+        # not silently fall back to an empty token.
+        raise PermissionError(f"{path}: refusing to load env file ({exc})") from exc
+    finally:
+        if fd >= 0:
+            os.close(fd)
     return parsed
 
 
