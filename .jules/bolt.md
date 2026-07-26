@@ -621,3 +621,6 @@ invocation.
 ## 2026-12-07 - [Pre-compile regular expressions]
 **Learning:** Re-compiling the identical regular expression inside functions that are called frequently (like `html_section` parsing thousands of HTML strings) adds unnecessary overhead due to repeated evaluation.
 **Action:** Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module level when they are static and used repeatedly inside loops or frequently called functions.
+## 2026-12-07 - [Pre-compile regular expressions]
+**Learning:** Re-compiling the identical regular expression inside functions that are called frequently (like string parsing loops in `select-best-alldebrid-candidate.py`) adds unnecessary overhead due to repeated evaluation in `re.sub()`.
+**Action:** Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module level when they are static and used repeatedly inside loops or frequently called functions.
