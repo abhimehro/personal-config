@@ -65,6 +65,21 @@ spawn tsx ENOENT`. Installing `tsx` next to `@agent-native/core` (#1715) did
 `PATH` includes that prefix's `.bin` **and** you intentionally want the core
 source fallback. (3) Smoke-test `$RECAP_CLI recap --help` right after install.
 (4) `RECAP_CLI_VERSION` pins **recap-cli** versions (0.4.x), not core (0.11x).
+## Lesson 0er: “Consolidate workflow” PRs may bump download-artifact major alone (2026-07-26)
+
+**Pattern:** esp #1366 titled as checkout consolidation also changed
+`actions/download-artifact` to **v8.0.1** while producer jobs kept
+`actions/upload-artifact@v7`. PR CI stayed green (checkout jobs only); the
+skew would break daily automation summary jobs that download sibling
+artifacts. Adversarial review caught it; Phase 1 issued REQUEST_CHANGES.
+**Rule:** (1) Diff-grep every `upload-artifact` / `download-artifact` pin in
+workflow-consolidation PRs. (2) Require matching majors (or bump both). (3)
+Treat tip-major artifact bumps as ESCALATE / REQUEST_CHANGES even when
+checkout-only CI is green (extends Lesson 0dw). (4) Prefer closing or
+fixing before merge — do not squash-merge skewed pairs.
+**Detection cost:** Low — `rg 'upload-artifact|download-artifact'` on PR
+diff.
+
 ## Lesson 0eo: Invalid env GH_TOKEN shadows hosts.yml Cursor token (2026-07-25)
 
 **Pattern:** Cloud Agent injects `GH_TOKEN=github_pat_…` that returns **401 Bad
