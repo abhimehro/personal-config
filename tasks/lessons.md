@@ -18,6 +18,36 @@ JWT / long base64url runs before upsert. (3) Paste secrets as a single line;
 if a JWT fragment ever lands in a PR comment, **rotate** the org service
 token immediately. (4) Do not rely on recap-cli redact alone for newline-split
 tokens.
+## Lesson 0eo: Invalid env GH_TOKEN shadows hosts.yml Cursor token (2026-07-25)
+
+**Pattern:** Cloud Agent injects `GH_TOKEN=github_pat_…` that returns **401 Bad
+credentials**. `gh` prefers the env var over `~/.config/gh/hosts.yml`, so
+preflight/`gh pr list` fail until `unset GH_TOKEN`. With env cleared, the Cursor
+GitHub App token can **squash-merge** and inventory, but GraphQL `addComment`
+is still denied — use Cursor Automation MCP `post_review_comment_on_pr` for
+review trail. Flattened OpenSSH private keys in secrets (no newlines) need
+PEM re-wrapping before `ssh-keygen`/`git@github.com` works.
+**Rule:** (1) On 401, `unset GH_TOKEN GITHUB_TOKEN` and re-run preflight. (2)
+Do not print token values; log prefix/len only. (3) Rotate the injected PAT.
+(4) Reconstruct single-line OPENSSH keys to standard PEM wrapping for SSH
+pushes/autofix. (5) Prefer MCP reviews when `gh pr comment` 403s.
+**Detection cost:** Low — `gh auth status` shows invalid GH_TOKEN + active
+hosts.yml account.
+
+## Lesson 0ep: Mid-session Bolt merge dirties SSRF siblings via bolt.md (2026-07-25)
+
+**Pattern:** After squash-merging pc #1770 (Bolt + `.jules/bolt.md` append),
+open pc #1766 (SSRF `safe_http`, also touching bolt-adjacent trees) flipped
+`MERGEABLE` → `CONFLICTING` in the same session.
+**Rule:** When merging Bolt journals, re-check remaining PRs that share
+`.jules/bolt.md` or broad skill trees before calling the session clean. Expect
+SSRF/security salvage PRs to need Phase 2 rebase after routine Bolt merges.
+**Detection cost:** Low — post-merge `gh pr list --json mergeable` sweep.
+## Lesson 0eq: Cursor app token can push salvage branches but cannot open/close PRs (2026-07-25)
+
+**Pattern:** Phase 2 pushed `cursor-agent/salvage-pc-1748-visual-recap-v2-a2fb` successfully, then `gh pr create` / `gh pr close` / `gh pr comment` all failed with GraphQL/REST `Resource not accessible by integration`. `open_git_pr` MCP only accepts the automation **designated** branch (`cursor-agent/automated-pr-salvage-a2fb`), not per-PR salvage branches. Env `GH_TOKEN` PAT is expired (401) — Phase 1 Lesson 0eo.
+**Rule:** (1) Always push salvage branches even when PR create is blocked. (2) Record the compare/`quick_pull` URL in inventory + salvage-session-reports for the maintainer to open a **draft**. (3) Use Cursor Automation MCP `post_review_comment_on_pr` for escalation notes on existing PRs. (4) Use `open_git_pr` only for the designated session-docs branch. (5) Rotate the injected PAT before relying on `gh` write for closes/comments.
+**Detection cost:** Low — first `createPullRequest` 403 in a session.
 
 ## Lesson 0du: Gitleaks first capture group becomes Secret (2026-07-17)
 
