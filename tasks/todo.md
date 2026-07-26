@@ -7,5 +7,5 @@
 - [x] Squash-merge 6 safe PRs
 - [x] REQUEST_CHANGES esp #1366; escalate remaining 7 via MCP
 - [x] Write pr-review-2026-07-26.md + review-session-reports + lesson 0er
-- [ ] Commit/push docs branch + open_git_pr
-- [ ] Update automation memory
+- [x] Commit/push docs branch + open_git_pr
+- [x] Update automation memory
