@@ -214,8 +214,22 @@ response = client.images.generate(
     quality="standard",
     n=1,
 )
-import urllib.request
-urllib.request.urlretrieve(response.data[0].url, "img.png")
+import sys
+from pathlib import Path
+
+_repo_root = Path(__file__).resolve().parents[2]
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
+
+from lib.safe_http import safe_download
+
+safe_download(
+    response.data[0].url,
+    "img.png",
+    allowed_hosts={"oaidalleapiprodscus.blob.core.windows.net"},
+    max_bytes=5 * 1024 * 1024,
+    timeout=60,
+)
 ```
 
 ### Stable Diffusion (local)
@@ -244,7 +258,14 @@ match what the timeline builder expects: `img_<chapter_index>_<slot>.jpg` (slots
 
 ```python
 from openai import OpenAI
-import urllib.request, subprocess, string
+import subprocess, string, sys
+from pathlib import Path
+
+_repo_root = Path(__file__).resolve().parents[2]
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
+
+from lib.safe_http import safe_download
 
 client = OpenAI()
 
@@ -266,7 +287,13 @@ for idx, (_, prompts) in enumerate(chapter_images):
         resp = client.images.generate(model="dall-e-3", prompt=prompt,
                                       size="1024x1024", quality="standard", n=1)
         tmp = f"/tmp/raw_{idx}_{slot_letter}.png"
-        urllib.request.urlretrieve(resp.data[0].url, tmp)
+        safe_download(
+            resp.data[0].url,
+            tmp,
+            allowed_hosts={"oaidalleapiprodscus.blob.core.windows.net"},
+            max_bytes=5 * 1024 * 1024,
+            timeout=60,
+        )
         out = f"img_{idx:02d}_{slot_letter}.jpg"
         # Downsize + re-encode to guarantee <= 1 MB, <= 4096x4096, .jpg
         subprocess.check_call([

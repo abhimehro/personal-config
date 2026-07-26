@@ -3,8 +3,14 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck disable=SC1091
-source "${ROOT}/scripts/ensure_gh_token.sh"
+
+# SECURITY: execute the token helper and capture stdout; do not source it.
+GH_TOKEN="$(bash "${ROOT}/scripts/ensure_gh_token.sh")"
+if [[ -z ${GH_TOKEN} ]]; then
+	echo "error: ensure_gh_token.sh returned an empty token" >&2
+	exit 1
+fi
+export GH_TOKEN
 
 if ! command -v gh >/dev/null 2>&1; then
 	echo "error: GitHub CLI (gh) is not installed." >&2

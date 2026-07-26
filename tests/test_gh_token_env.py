@@ -1,4 +1,5 @@
 import os
+import stat
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,6 +13,12 @@ from gh_token_env import (
     parse_env_line,
     resolve_gh_token_env_file,
 )
+
+
+def _write_secure_env_file(path: Path, content: str) -> None:
+    """Write an env file with owner-only permissions for the parser tests."""
+    path.write_text(content, encoding="utf-8")
+    os.chmod(path, 0o600)
 
 
 class TestGhTokenEnv(unittest.TestCase):
@@ -35,17 +42,52 @@ class TestGhTokenEnv(unittest.TestCase):
         parse_env_line("GH_TOKEN=$(id)", env)
         self.assertEqual(env, {})
 
-    def test_read_env_file_oserror(self):
+    def test_read_env_file_missing(self):
         self.assertEqual(_read_env_file(Path("/does/not/exist/ever.env")), {})
 
-        with patch.object(Path, "open", side_effect=PermissionError("Permission denied")):
-            self.assertEqual(_read_env_file(Path("some_file.env")), {})
+    def test_read_env_file_rejects_too_permissive(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / "GH_TOKEN.env"
+            _write_secure_env_file(env_file, "GH_TOKEN=secret\n")
+            os.chmod(env_file, 0o644)
+            with self.assertRaises(PermissionError):
+                _read_env_file(env_file)
 
+    def test_read_env_file_rejects_symlink(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            real_file = Path(tmp) / "real.env"
+            _write_secure_env_file(real_file, "GH_TOKEN=secret\n")
+            symlink = Path(tmp) / "GH_TOKEN.env"
+            symlink.symlink_to(real_file)
+            with self.assertRaises(PermissionError):
+                _read_env_file(symlink)
+
+    def test_load_rejects_group_or_world_writable_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / "GH_TOKEN.env"
+            env_file.write_text("GH_TOKEN=file_token\n", encoding="utf-8")
+            env_file.chmod(stat.S_IRUSR | stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
+            with patch.dict(
+                os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True
+            ):
+                with self.assertRaises(PermissionError):
+                    load_gh_token_env()
+
+    def test_load_rejects_file_not_owned_by_current_user(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / "GH_TOKEN.env"
+            _write_secure_env_file(env_file, "GH_TOKEN=file_token\n")
+            with patch("gh_token_env.os.getuid", return_value=os.getuid() + 1):
+                with patch.dict(
+                    os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True
+                ):
+                    with self.assertRaises(PermissionError):
+                        load_gh_token_env()
 
     def test_env_var_takes_precedence_over_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             env_file = Path(tmp) / "GH_TOKEN.env"
-            env_file.write_text("GH_TOKEN=file_token\n", encoding="utf-8")
+            _write_secure_env_file(env_file, "GH_TOKEN=file_token\n")
             with patch.dict(
                 os.environ,
                 {"GH_TOKEN": "env_token", "GH_TOKEN_ENV_FILE": str(env_file)},
@@ -57,7 +99,7 @@ class TestGhTokenEnv(unittest.TestCase):
     def test_load_from_file_when_env_unset(self):
         with tempfile.TemporaryDirectory() as tmp:
             env_file = Path(tmp) / "GH_TOKEN.env"
-            env_file.write_text("export GH_TOKEN=file_token\n", encoding="utf-8")
+            _write_secure_env_file(env_file, "export GH_TOKEN=file_token\n")
             with patch.dict(
                 os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True
             ):
@@ -68,7 +110,7 @@ class TestGhTokenEnv(unittest.TestCase):
     def test_resolve_gh_token_env_file_override(self):
         with tempfile.TemporaryDirectory() as tmp:
             env_file = Path(tmp) / "custom.env"
-            env_file.write_text("GH_TOKEN=x\n", encoding="utf-8")
+            _write_secure_env_file(env_file, "GH_TOKEN=x\n")
             with patch.dict(
                 os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True
             ):
