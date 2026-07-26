@@ -7,6 +7,7 @@ import json
 import os
 import re
 import sys
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -225,54 +226,69 @@ def _extract_repo_id(action_ref: str) -> str | None:
     return "/".join(parts[:2])
 
 
+@dataclass
+class _PinCaches:
+    """Shared lookup caches for workflow action pin resolution."""
+
+    latest: dict[str, str] = field(default_factory=dict)
+    exists: dict[tuple[str, str], bool] = field(default_factory=dict)
+    sha: dict[tuple[str, str], str] = field(default_factory=dict)
+
+
+def _latest_tag(repo_id: str, caches: _PinCaches) -> str:
+    cached = caches.latest.get(repo_id)
+    if cached is not None:
+        return cached
+    latest = latest_tag_for_action(repo_id)
+    caches.latest[repo_id] = latest
+    return latest
+
+
+def _tag_sha(repo_id: str, tag: str, caches: _PinCaches) -> str | None:
+    cache_key = (repo_id, tag)
+    exists = caches.exists.get(cache_key)
+    if exists is None:
+        exists = tag_exists(repo_id, tag)
+        caches.exists[cache_key] = exists
+    if not exists:
+        print(
+            f"Warning: Proposed tag {tag} for {repo_id} does not exist. Skipping update."
+        )
+        return None
+    sha = caches.sha.get(cache_key)
+    if sha is None:
+        sha = sha_for_tag(repo_id, tag)
+        caches.sha[cache_key] = sha
+    if not sha or not is_commit_sha(sha):
+        print(
+            f"Warning: Could not resolve commit SHA for {repo_id}@{tag}. Skipping."
+        )
+        return None
+    return sha
+
+
 def _resolve_proposed_pin(
     repo_id: str,
     current: str,
     version_hint: str | None,
-    latest_cache: dict[str, str],
-    exists_cache: dict[tuple[str, str], bool],
-    sha_cache: dict[tuple[str, str], str],
+    caches: _PinCaches,
 ) -> tuple[str, str] | None:
     """
     Return (pin_ref_with_comment, tag_name) for a SHA-only workflow update.
 
     Never returns a floating tag as the write target (Lesson 0z / supply-chain).
     """
-    latest = latest_cache.get(repo_id)
-    if latest is None:
-        latest = latest_tag_for_action(repo_id)
-        latest_cache[repo_id] = latest
+    latest = _latest_tag(repo_id, caches)
     if not latest:
         return None
-
     proposed_tag = target_ref(current, latest, version_hint=version_hint)
     if not proposed_tag:
         return None
-
-    cache_key = (repo_id, proposed_tag)
-    exists = exists_cache.get(cache_key)
-    if exists is None:
-        exists = tag_exists(repo_id, proposed_tag)
-        exists_cache[cache_key] = exists
-    if not exists:
-        print(
-            f"Warning: Proposed tag {proposed_tag} for {repo_id} does not exist. Skipping update."
-        )
+    sha = _tag_sha(repo_id, proposed_tag, caches)
+    if not sha:
         return None
-
-    sha = sha_cache.get(cache_key)
-    if sha is None:
-        sha = sha_for_tag(repo_id, proposed_tag)
-        sha_cache[cache_key] = sha
-    if not sha or not is_commit_sha(sha):
-        print(
-            f"Warning: Could not resolve commit SHA for {repo_id}@{proposed_tag}. Skipping."
-        )
-        return None
-
     if is_commit_sha(current) and current.lower() == sha.lower():
         return None
-
     return f"{sha} # {proposed_tag}", proposed_tag
 
 
@@ -287,9 +303,7 @@ def _is_major_bump(current: str, proposed: str) -> bool:
 def evaluate_action_update(
     match: re.Match[str],
     file_path: Path,
-    latest_cache: dict[str, str],
-    exists_cache: dict[tuple[str, str], bool],
-    sha_cache: dict[tuple[str, str], str],
+    caches: _PinCaches,
 ) -> dict[str, Any] | None:
     action_ref = match.group(2)
     current = match.group(3)
@@ -299,9 +313,7 @@ def evaluate_action_update(
     if not repo_id:
         return None
 
-    resolved = _resolve_proposed_pin(
-        repo_id, current, version_hint, latest_cache, exists_cache, sha_cache
-    )
+    resolved = _resolve_proposed_pin(repo_id, current, version_hint, caches)
     if not resolved:
         return None
     proposed_pin, proposed_tag = resolved
@@ -320,17 +332,13 @@ def evaluate_action_update(
 
 
 def workflow_file_plans() -> list[dict[str, Any]]:
-    latest_cache: dict[str, str] = {}
-    exists_cache: dict[tuple[str, str], bool] = {}
-    sha_cache: dict[tuple[str, str], str] = {}
+    caches = _PinCaches()
     plans = []
     for file_path in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
         text = file_path.read_text()
         replacements = []
         for match in WORKFLOW_PATTERN.finditer(text):
-            update = evaluate_action_update(
-                match, file_path, latest_cache, exists_cache, sha_cache
-            )
+            update = evaluate_action_update(match, file_path, caches)
             if update:
                 replacements.append(update)
         if replacements:

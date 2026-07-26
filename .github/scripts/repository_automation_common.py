@@ -486,6 +486,15 @@ def sha_for_tag(repo_id: str, tag: str) -> str:
     return ""
 
 
+def _pin_version(
+    current: str, version_hint: str | None
+) -> tuple[int, int, int] | None:
+    """Comparable version for a workflow pin (tag body or `# vX.Y.Z` hint)."""
+    if is_commit_sha(current):
+        return numeric_version(version_hint) if version_hint else None
+    return numeric_version(current)
+
+
 def target_ref(
     current: str, latest: str, *, version_hint: str | None = None
 ) -> str | None:
@@ -496,23 +505,16 @@ def target_ref(
     Commit SHA pins are never treated as version numbers; pass the trailing
     `# vX.Y.Z` comment as version_hint when comparing SHA pins.
     """
-    if is_commit_sha(current):
-        current_v = numeric_version(version_hint) if version_hint else None
-    else:
-        current_v = numeric_version(current)
     latest_v = numeric_version(latest)
     if not latest_v:
         return None
-    if current_v is not None and latest_v <= current_v:
-        return None
-    # SHA pin with no version comment: allow caller to SHA-compare against latest.
-    if current_v is None and not is_commit_sha(current):
-        return None
-    if current_v is None and is_commit_sha(current) and not version_hint:
+    current_v = _pin_version(current, version_hint)
+    if current_v is not None:
+        return latest if latest_v > current_v else None
+    # SHA pin with no usable version comment: caller SHA-compares after resolve.
+    if is_commit_sha(current) and not version_hint:
         return latest
-    if current_v is None:
-        return None
-    return latest
+    return None
 
 
 def append_publication_result(
