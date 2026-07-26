@@ -234,7 +234,7 @@ class TestRunPerformanceOptimizer(unittest.TestCase):
             (
                 "default_config",
                 {},
-                {"setup_commands": [], "commands": []},
+                {"setup_commands": (), "commands": ()},
                 [],
                 [],
                 [
@@ -458,6 +458,7 @@ class TestRunWeeklyRetrospective(unittest.TestCase):
             {"runs": ["run1", "run2"], "issue_url": "http://issue", "safe_pr_url": ""}
         )
         self.assertEqual(result, {"status": "failure"})
+
 
 
 if __name__ == "__main__":

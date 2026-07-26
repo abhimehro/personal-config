@@ -65,6 +65,36 @@ spawn tsx ENOENT`. Installing `tsx` next to `@agent-native/core` (#1715) did
 `PATH` includes that prefix's `.bin` **and** you intentionally want the core
 source fallback. (3) Smoke-test `$RECAP_CLI recap --help` right after install.
 (4) `RECAP_CLI_VERSION` pins **recap-cli** versions (0.4.x), not core (0.11x).
+## Lesson 0eo: Invalid env GH_TOKEN shadows hosts.yml Cursor token (2026-07-25)
+
+**Pattern:** Cloud Agent injects `GH_TOKEN=github_pat_…` that returns **401 Bad
+credentials**. `gh` prefers the env var over `~/.config/gh/hosts.yml`, so
+preflight/`gh pr list` fail until `unset GH_TOKEN`. With env cleared, the Cursor
+GitHub App token can **squash-merge** and inventory, but GraphQL `addComment`
+is still denied — use Cursor Automation MCP `post_review_comment_on_pr` for
+review trail. Flattened OpenSSH private keys in secrets (no newlines) need
+PEM re-wrapping before `ssh-keygen`/`git@github.com` works.
+**Rule:** (1) On 401, `unset GH_TOKEN GITHUB_TOKEN` and re-run preflight. (2)
+Do not print token values; log prefix/len only. (3) Rotate the injected PAT.
+(4) Reconstruct single-line OPENSSH keys to standard PEM wrapping for SSH
+pushes/autofix. (5) Prefer MCP reviews when `gh pr comment` 403s.
+**Detection cost:** Low — `gh auth status` shows invalid GH_TOKEN + active
+hosts.yml account.
+
+## Lesson 0ep: Mid-session Bolt merge dirties SSRF siblings via bolt.md (2026-07-25)
+
+**Pattern:** After squash-merging pc #1770 (Bolt + `.jules/bolt.md` append),
+open pc #1766 (SSRF `safe_http`, also touching bolt-adjacent trees) flipped
+`MERGEABLE` → `CONFLICTING` in the same session.
+**Rule:** When merging Bolt journals, re-check remaining PRs that share
+`.jules/bolt.md` or broad skill trees before calling the session clean. Expect
+SSRF/security salvage PRs to need Phase 2 rebase after routine Bolt merges.
+**Detection cost:** Low — post-merge `gh pr list --json mergeable` sweep.
+## Lesson 0eq: Cursor app token can push salvage branches but cannot open/close PRs (2026-07-25)
+
+**Pattern:** Phase 2 pushed `cursor-agent/salvage-pc-1748-visual-recap-v2-a2fb` successfully, then `gh pr create` / `gh pr close` / `gh pr comment` all failed with GraphQL/REST `Resource not accessible by integration`. `open_git_pr` MCP only accepts the automation **designated** branch (`cursor-agent/automated-pr-salvage-a2fb`), not per-PR salvage branches. Env `GH_TOKEN` PAT is expired (401) — Phase 1 Lesson 0eo.
+**Rule:** (1) Always push salvage branches even when PR create is blocked. (2) Record the compare/`quick_pull` URL in inventory + salvage-session-reports for the maintainer to open a **draft**. (3) Use Cursor Automation MCP `post_review_comment_on_pr` for escalation notes on existing PRs. (4) Use `open_git_pr` only for the designated session-docs branch. (5) Rotate the injected PAT before relying on `gh` write for closes/comments.
+**Detection cost:** Low — first `createPullRequest` 403 in a session.
 
 ## Lesson 0du: Gitleaks first capture group becomes Secret (2026-07-17)
 
@@ -1128,6 +1158,17 @@ upload), never downgrade SHA → tag. Close or rewrite the PR before re-triage.
 **Related:** Lesson 0y (nested unpinned actions inside composites). **Detection
 cost:** Low — bandit workflow fails before pytest on workflow-only diffs.
 
+## Lesson 0ei: Workflow updater `numeric_version` must ignore commit SHAs (2026-07-26)
+
+**Pattern:** Daily `workflow-updater` opened pc #1777 converting
+`actions/checkout@<40-char-sha> # v7.0.1` → `actions/checkout@v7.0.1` because
+`numeric_version()` ran `VERSION_PATTERN.search` on the SHA and matched leading
+hex digits as a “version” older than the latest tag. **Rule:** (1) `is_commit_sha`
+short-circuits version parsing; (2) updater writes only `sha # tag` pins; (3)
+compare SHA pins via the trailing `# vX.Y.Z` hint, never via the hex itself.
+**Related:** Lesson 0z. **Detection cost:** Low — any automation PR that replaces
+`@[0-9a-f]{40}` with `@v` is an instant escalate/close.
+
 ## Lesson 0cg: Jules Palette branches can duplicate with session-id suffix (2026-06-08)
 
 **Pattern:** ESP #1049 (`ux/fix-eof-crash`) and #1050
@@ -1529,3 +1570,98 @@ weaker duplicates early. Cap ingestion/parser multi-file refactors as DEFER
 when ≥3 PRs touch the same hotspot.
 **Detection cost:** Low — inventory `changedFiles` + path overlap matrix before
 Phase 3.
+
+## Lesson 0eh: Test PRs smuggling `pr-visual-recap.yml` become systematic DIRTY (2026-07-21)
+
+**Pattern:** Palette/Bolt/Jules test PRs (#1716/#1723/#1726 and siblings) append
+tiny workflow edits to `.github/workflows/pr-visual-recap.yml` alongside real
+test additions. After any sibling merges that touch the same workflow, the
+entire test PR goes DIRTY even when the test file would apply cleanly.
+**Rule:** When salvaging, **never** checkout `pr-visual-recap.yml` from the
+conflicted PR. Re-apply only the test/source files onto `main`. Prefer one
+clustered salvage draft per test-file hotspot (Lesson 0dv) over re-opening
+each bot PR.
+**Detection cost:** Low — `gh pr diff --name-only` includes both
+`tests/test_*.py` and `pr-visual-recap.yml`.
+
+## Lesson 0ej: Sibling Sentinel env-filter PRs — escalate both (2026-07-23/24)
+
+**Pattern:** Multiple Sentinel PRs (#507/#518/#525) rewrite
+`filter_env_securely` / subprocess env merging with incompatible orderings
+(denylist vs allowlist-first vs custom_env last). CI can be green on all.
+**Rule:** Escalate the whole sibling set; do not merge the "newest green" alone.
+Human picks one ordering. Prefer allowlist base → heuristic strip → explicit
+`custom_env` overrides → hard denylist last.
+**Detection cost:** Low — title contains Sentinel + env / subprocess; same file
+overlap in `.github/scripts/repository_automation_common.py`.
+
+## Lesson 0ek: Dependabot title may lie — read the constraint diff (2026-07-23/24)
+
+**Pattern:** Titles like "update pandas requirement from X to Y" can be a
+**major** floor bump (`>=2.2,<3` → `>=3.0.5,<4`) while sounding routine.
+**Rule:** Always `gh pr diff` requirements/lockfiles before DEPENDENCY MERGE.
+Majors and constraint widenings → ESCALATE even when CI is green on a narrow
+optional path (e.g. Series_27 only).
+**Detection cost:** Low — one-line requirements diff.
+
+## Lesson 0el: bolt.md journal conflicts after sibling Bolt merges (2026-07-24)
+
+**Pattern:** esp #1346 (SPF helper + bolt.md append) went DIRTY after #1354
+merged another bolt.md append. `update-branch` returns 422; CodeScene/CI were
+fine on the code file.
+**Rule:** Autofix = merge main into PR head, take **main's** `.jules/bolt.md`,
+re-append this PR's learning if missing, keep source-file changes, push to the
+**existing** head ref (never a guessed new branch name). Then wait for checks
+before squash-merge.
+**Detection cost:** Low — `files` includes `.jules/bolt.md` + one module; sibling
+Bolt merged same day.
+## Lesson 0ek: Re-salvage conflicted salvage drafts with -v2; adapt past sibling refactors (2026-07-22)
+
+**Pattern:** A prior Phase 2 salvage (esp #1335) itself went `CONFLICTING` after
+later Phase 1 merges on the same hotspot file. A second Jules refactor (#1330)
+conflicted specifically because #1311 introduced `FetchContext` while #1330
+still rewrote IMAPClient construction against the pre-FetchContext shape.
+Also: pushing a salvage branch name that already exists remotely fails with
+`cannot lock ref` / already exists — do not force-push.
+**Rule:** (1) When a *salvage* PR conflicts, open `…-v2-<suffix>` from current
+`main`, re-apply only the unique source hunks, close the prior salvage as
+superseded. (2) When adapting init/signature refactors onto main, preserve
+newer structural APIs (e.g. `FetchContext`) and rewrite call sites — never
+`git checkout pr -- <hotspot>` wholesale. (3) On remote branch name collision,
+rename locally to `-v2` and push; never `--force`.
+**Detection cost:** Low — salvage PR title contains `(salvages #N)` and
+`mergeable=CONFLICTING`; `git merge-tree` shows "changed in both" on the hotspot.
+
+## Lesson 0el: Sibling Sentinel env-filter PRs — escalate both, prefer newer (2026-07-23)
+
+**Pattern:** Seatek #507 and #518 both rewrite `filter_env_securely` order
+(custom_env merge vs heuristic denylist) with divergent journal rewrites in
+`.jules/sentinel.md`. Auto-merging either without human comparison risks
+dropping the stricter PATH/token denylist ordering from the other.
+**Rule:** (1) Treat overlapping Sentinel subprocess-env PRs as one cluster —
+ESCALATE all. (2) Prefer the newer PR only after a human confirms the final
+order: base → allowlist → heuristic → custom_env → strict token denylist.
+(3) Do not CLOSE-DUPLICATE the older sibling until the chosen PR is merged.
+**Detection cost:** Low — same path `.github/scripts/repository_automation_common.py`
++ Sentinel emoji title.
+
+## Lesson 0em: Dependabot title vs constraint widen (2026-07-23)
+
+**Pattern:** Hydrograph #402 titled "bump pre-commit 4.6.0→4.6.1" but the diff
+only changed `requirements-ci.txt` upper bound `<4.0.0`→`<5.0.0` (no lockfile
+pin to 4.6.1). Title suggests patch; change is major-range allowance.
+**Rule:** For Dependabot PRs, read the constraint diff — if upper bound jumps a
+major for a **CI-only** tool, MERGE is OK after Gate 2; if runtime/prod
+dependency (pandas/numpy), ESCALATE. Never trust the PR title alone.
+**Detection cost:** Low — `gh pr diff` on requirements*.txt.
+
+## Lesson 0en: Restore logger-targeted assertion when moving truncate helpers (2026-07-23)
+
+**Pattern:** Jules #1320 switched `email_parser` to `validate_subject_length` but
+replaced `test_oversized_subject_logs_warning` with `pass` because the warning
+now logs from `security_validators.logger`, not `parser.logger`.
+**Rule:** When salvaging helper extractions that relocate logging, keep a real
+assertion by `patch`ing the module that owns the logger. Never accept `pass` as
+a substitute for a DoS/truncation warning regression test.
+**Detection cost:** Low — PR diff shows `pass` under a `logs_warning` test name
+plus an import of `validate_*` helpers.

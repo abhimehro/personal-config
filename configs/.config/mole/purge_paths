@@ -2,9 +2,15 @@
 # Edit this file to customize, or run: mo purge --paths
 # Add one path per line (supports ~ for home directory)
 
+# IMPORTANT: NEVER add active project or workspace roots here:
+#   REMOVED: ~/dev / ~/dev/* (Contains active project code, venvs, LaunchAgent scripts)
+#   REMOVED: ~/.config       (Contains active configuration files!)
+#   REMOVED: ~/.ssh          (NEVER purge SSH keys or configs!)
+#   REMOVED: ~/.cursor / ~/.vscode (IDE state and settings)
+#   REMOVED: ~/.agents / ~/.gemini (Agent settings & storage)
+#   REMOVED: ~/secops        (Contains SecOps scripts and plists)
 
-# --- SAFE MOLE CONFIG ---
-# Development caches (Keep these)
+# --- SAFE CACHE PURGE PATHS ---
 ~/.cache/lm-studio
 ~/.cache/Playwright
 ~/.cache/huggingface
@@ -14,28 +20,8 @@
 ~/.rustup
 ~/.npm
 ~/Library/Caches/Homebrew
-~/.cache
-# REMOVED: ~/.config (Contains your actual config files!)
-# REMOVED: ~/.ssh (NEVER purge this!)
-# REMOVED: ~/.vscode, ~/.warp (Contains preferences)
 
-# Version control
+# Version control & runtime package caches
 ~/.git-templates
-
-# Python environments (Only keep if you want these WIPED globally)
-# If you manage these manually, REMOVE them.
-~/.pyenv
-~/.conda
-~/.virtualenvs
-
-# Ruby/Node (Caches are fine)
 ~/.gem
 ~/.yarn
-
-# REMOVED: ~/Documents/dev (This was the killer. Never list your source root here.)
-
-# REMOVED: ~/Library/CloudStorage (Dangerous to automate deletion here)
-
-# REMOVED: ~/.local/share/fish (Deletes shell history)
-# REMOVED: ~/.local/share/nvim (Deletes plugins/state)
-

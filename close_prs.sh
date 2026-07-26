@@ -2,9 +2,21 @@
 # Close superseded or duplicate pull requests using a safely loaded GH_TOKEN.
 set -euo pipefail
 
+if [[ ${1-} != "--yes" ]]; then
+	echo "This script closes 12 hardcoded PRs from an April 2026 triage run." >&2
+	echo "Re-run with --yes if that is still what you want." >&2
+	exit 1
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=scripts/ensure_gh_token.sh
-source "${SCRIPT_DIR}/scripts/ensure_gh_token.sh"
+
+# SECURITY: execute the token helper and capture stdout; do not source it.
+GH_TOKEN="$(bash "${SCRIPT_DIR}/scripts/ensure_gh_token.sh")"
+if [[ -z ${GH_TOKEN} ]]; then
+	echo "error: ensure_gh_token.sh returned an empty token" >&2
+	exit 1
+fi
+export GH_TOKEN
 
 close_pr() {
   local repo="$1"

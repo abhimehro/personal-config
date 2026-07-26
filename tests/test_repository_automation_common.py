@@ -112,16 +112,89 @@ class TestRunProcess(unittest.TestCase):
             self.assertEqual(result.stdout.strip(), "real")
 
 
-class TestRunChecked(unittest.TestCase):
+class TestRunShellCommand(unittest.TestCase):
     @patch("repository_automation_common.run_process")
-    def test_run_checked(self, mock_run_process):
-        mock_completed = MagicMock()
-        mock_run_process.return_value = mock_completed
+    def test_run_shell_command_basic(self, mock_run_process):
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+        mock_proc.stdout = "output\n"
+        mock_proc.stderr = "error\n"
+        mock_run_process.return_value = mock_proc
 
-        result = rac.run_checked(["echo", "hello"])
+        result = rac.run_shell_command("echo hello")
 
-        self.assertEqual(result, mock_completed)
-        mock_run_process.assert_called_once_with(["echo", "hello"], check=True)
+        mock_run_process.assert_called_once_with(
+            [rac.BASH_BIN, "-lc", "echo hello"], timeout=1800
+        )
+
+        self.assertEqual(result["command"], "echo hello")
+        self.assertEqual(result["exit_code"], 0)
+        self.assertEqual(result["stdout"], "output\n")
+        self.assertEqual(result["stderr"], "error\n")
+
+    @patch("repository_automation_common.run_process")
+    def test_run_shell_command_timeout(self, mock_run_process):
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+        mock_proc.stdout = "output\n"
+        mock_proc.stderr = ""
+        mock_run_process.return_value = mock_proc
+
+        result = rac.run_shell_command("sleep 10", timeout=5)
+
+        mock_run_process.assert_called_once_with(
+            [rac.BASH_BIN, "-lc", "sleep 10"], timeout=5
+        )
+        self.assertEqual(result["exit_code"], 0)
+
+    @patch("repository_automation_common.run_process")
+    def test_run_shell_command_truncation(self, mock_run_process):
+        mock_proc = MagicMock()
+        mock_proc.returncode = 1
+        long_output = "a" * 5000
+        mock_proc.stdout = long_output
+        mock_proc.stderr = long_output
+        mock_run_process.return_value = mock_proc
+
+        result = rac.run_shell_command("echo long")
+
+        self.assertLess(len(result["stdout"]), len(long_output))
+        self.assertLess(len(result["stderr"]), len(long_output))
+        self.assertTrue(result["stdout"].endswith("... [truncated]"))
+        self.assertTrue(result["stderr"].endswith("... [truncated]"))
+
+
+class TestActionRefPinning(unittest.TestCase):
+    """Lesson 0z / supply-chain: never treat commit SHAs as version numbers."""
+
+    CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
+
+    def test_is_commit_sha(self):
+        self.assertTrue(rac.is_commit_sha(self.CHECKOUT_SHA))
+        self.assertFalse(rac.is_commit_sha("v7.0.1"))
+        self.assertFalse(rac.is_commit_sha("3d3c42e"))  # short SHA
+
+    def test_numeric_version_ignores_commit_sha(self):
+        # Regression: VERSION_PATTERN used to match hex digits inside SHAs
+        # (e.g. leading "3"), which made SHA pins look older than tag v7.
+        self.assertIsNone(rac.numeric_version(self.CHECKOUT_SHA))
+        self.assertEqual(rac.numeric_version("v7.0.1"), (7, 0, 1))
+
+    def test_target_ref_does_not_unpin_matching_sha(self):
+        self.assertIsNone(
+            rac.target_ref(self.CHECKOUT_SHA, "v7.0.1", version_hint="v7.0.1")
+        )
+
+    def test_target_ref_allows_sha_bump_when_hint_older(self):
+        self.assertEqual(
+            rac.target_ref(self.CHECKOUT_SHA, "v8.0.0", version_hint="v7.0.1"),
+            "v8.0.0",
+        )
+
+    def test_target_ref_tag_to_newer_tag_name(self):
+        # Caller must still resolve this tag name to a commit SHA before writing.
+        self.assertEqual(rac.target_ref("v4", "v5.0.0"), "v5.0.0")
+
 
 if __name__ == "__main__":
     unittest.main()

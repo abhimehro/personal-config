@@ -1,6 +1,5 @@
 ---
 description: Automated PR Review & Consolidation Agent
-auto_execution_mode: 3
 ---
 
 # Automated PR Review & Consolidation Agent

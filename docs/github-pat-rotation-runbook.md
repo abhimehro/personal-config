@@ -92,7 +92,6 @@ when avoidable.
 From `personal-config` repo root:
 
 ```bash
-chmod +x scripts/ensure_gh_token.sh scripts/verify_gh_auth.sh
 ./scripts/verify_gh_auth.sh
 ```
 
@@ -113,13 +112,13 @@ must be rotated separately (Step 1).
       `~/.config/personal-config/GH_TOKEN.env`
 - [ ] `secrets.GH_TOKEN` updated if it shared the same value
 - [ ] `./scripts/verify_gh_auth.sh` succeeds
-- [ ] No scripts use `source …/GH_TOKEN.env` (use `scripts/ensure_gh_token.sh`
-      instead)
+- [ ] No scripts use `source` to load `GH_TOKEN` (execute
+      `scripts/ensure_gh_token.sh` and capture `GH_TOKEN="$(...)"` instead)
 
 ## Code references
 
 - `gh_token_env.py` — safe env-file parsing for Python automation
-- `scripts/ensure_gh_token.sh` — shell entrypoint without `source`
+- `scripts/ensure_gh_token.sh` — executable token resolver; must not be `source`d
 - `.gitignore` — `GH_TOKEN.env` at repo root
 - `tasks/security-remediation-plan-2026-05-01.md` — Issue 1 tracking
 
