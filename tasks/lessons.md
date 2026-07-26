@@ -1,5 +1,37 @@
 # Lessons Learned
 
+## Lesson 0ej: Diff before/after/code with unescaped `\"` breaks Plan MDX (2026-07-21)
+
+**Pattern:** Visual recap publish returns `422 Unprocessable Entity` with
+`plan.mdx:N:M: Could not parse expression with acorn` after auth succeeds.
+**Root cause:** Agent embeds shell sed character classes like
+`[^[:space:]\"]` inside Diff `after: "..."` JS string props. In JS, `\\"`
+ends the string early; acorn then sees Unexpected token. Sidecar assembly via
+`JSON.stringify` does **not** fix inner MDX expression syntax — only the outer
+JSON envelope.
+**Follow-on:** After Diff colon-props are fixed, agents may still emit JSX
+`after="…"` / `code={"…` multi-line attrs. In JSX, `"` ends the attribute
+(`\"` is not an escape) → 422 "Unexpected character `\\` in attribute name".
+Rewrite those to `after={JSON.stringify(...)}`. Next failure mode: bare array
+attrs (`columns=[…]`, `rows=[…]`) → 422 "Unexpected character `[` before
+attribute value"; also illegal commas between JSX attrs (`columns={…},`).
+Rewrite to `columns={[…]}` and strip trailing commas. For `rows=[…]}` (stray
+`}` already present), only insert `{` after `=` — do not double-close.
+OpenCode one-shot repair can hang — prefer deterministic re-publish; cap agent
+repair at ~6 minutes. Do not auto-balance Callout tags (code samples contain
+decoy markup).
+**Rule:** (1) Before publish, rewrite Diff `before`/`after`/`code` lines whose
+bodies are not valid JSON-string payloads via
+`scripts/fix-recap-mdx-diff-strings.js` (`JSON.stringify` after lenient
+unescape). (2) Isolate Callout/Note/… block tags onto their own lines (do not
+auto-balance — decoys in samples). (3) Rewrite Diff JSX string attrs to
+`{JSON.stringify(...)}`; rewrite bare array attrs to `{[…]}`; strip illegal
+commas between attrs. (4) On `repairable=true`, re-run the deterministic fixer
+and re-publish before any agent repair; cap agent repair at ~6 minutes.
+(5) Prompt agents that Diff string props must be JS-string-safe and JSX array
+attrs must use expression form. (6) Do not treat a 422 acorn/MDX error as an
+auth/token problem.
+
 ## Lesson 0ei: PLAN_RECAP_TOKEN newlines break publish AND leak JWT into comments (2026-07-21)
 
 **Pattern:** Visual recap sticky comment showed `Headers.append: "Bearer
@@ -18,6 +50,21 @@ JWT / long base64url runs before upsert. (3) Paste secrets as a single line;
 if a JWT fragment ever lands in a PR comment, **rotate** the org service
 token immediately. (4) Do not rely on recap-cli redact alone for newline-split
 tokens.
+
+## Lesson 0eh: PR Visual Recap must use `@agent-native/recap-cli`, not core+tsx (2026-07-21)
+
+
+**Pattern:** Non-skip `pr-visual-recap` runs failed at **Collect bounded diff**
+with `agent-native CLI build output is missing and the source fallback failed:
+spawn tsx ENOENT`. Installing `tsx` next to `@agent-native/core` (#1715) did
+**not** fix it: core's `bin/agent-native.js` does `spawn("tsx", …)` looking up
+`PATH`, not `node_modules/.bin`. npm extract also often leaves `src/` mtime >
+`dist/`, forcing that fallback even when `dist/cli/index.js` exists.
+**Rule:** (1) Consumer workflows install `@agent-native/recap-cli` (built
+`dist/cli.js`, no tsx). (2) Never treat "npm install tsx" as sufficient unless
+`PATH` includes that prefix's `.bin` **and** you intentionally want the core
+source fallback. (3) Smoke-test `$RECAP_CLI recap --help` right after install.
+(4) `RECAP_CLI_VERSION` pins **recap-cli** versions (0.4.x), not core (0.11x).
 ## Lesson 0eo: Invalid env GH_TOKEN shadows hosts.yml Cursor token (2026-07-25)
 
 **Pattern:** Cloud Agent injects `GH_TOKEN=github_pat_…` that returns **401 Bad
@@ -50,6 +97,7 @@ SSRF/security salvage PRs to need Phase 2 rebase after routine Bolt merges.
 **Detection cost:** Low — first `createPullRequest` 403 in a session.
 
 ## Lesson 0du: Gitleaks first capture group becomes Secret (2026-07-17)
+
 
 **Pattern:** `personal-config-generic-secret` used `(secret|password|…)[\s\-_:=]+…`
 as the regex. Gitleaks treats the **first capturing group** as `Secret`, so every

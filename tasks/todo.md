@@ -1,3 +1,76 @@
+# Clear PR #1733 CI gates (Gitleaks + CodeScene) — 2026-07-21
+
+**Route:** T3+S
+**Context:** Visual-recap MDX harden verified live; remaining red checks block merge.
+
+## Plan
+- [x] Gitleaks: FP `secret contained` in Lesson 0ei (commit range scan) → stopword + rephrase
+- [x] CodeScene: refactor `scripts/fix-recap-mdx-diff-strings.js` complexity; post `/cs-agent`
+- [x] Re-run tests; commit; push; confirm checks
+
+---
+
+# Fix PR Visual Recap CLI failures (2026-07-21)
+
+**Route:** T3+S
+**Symptom:** Non-skip runs fail at Collect bounded diff with `spawn tsx ENOENT`.
+
+## Root cause
+- `@agent-native/core` bin falls back to `spawn("tsx")` when npm extract makes src newer than dist.
+- #1715 installed `tsx` but did not put `node_modules/.bin` on PATH → still ENOENT.
+- Correct consumer package: `@agent-native/recap-cli` (built dist, no tsx).
+
+## Plan
+- [x] Switch install to `@agent-native/recap-cli`
+- [x] Verify locally; update docs/lesson; commit + PR
+
+---
+
+# Fix PLAN_RECAP_TOKEN newline / JWT leak in sticky comment (2026-07-21)
+
+**Route:** T3+S
+**Symptom:** Sticky comment `Visual recap — generation failed` with
+`Headers.append: "Bearer [redacted] <jwt-remainder>" is an invalid header value`.
+
+- [x] Sanitize token at job start (strip all whitespace / Bearer prefix)
+- [x] Scrub diagnostics before sticky comment / check complete
+- [x] Lesson 0ei + operator docs; warn to rotate exposed token
+- [x] Commit, push, re-run visual-recap on PR (auth fixed; residual 422 = bad MDX from agent)
+
+---
+
+# Harden Plan MDX Diff strings / acorn 422 (2026-07-21)
+
+**Route:** T3+S
+**Symptom:** After auth fix, publish returns
+`422 … plan.mdx:N:M: Could not parse expression with acorn`
+(Diff `after:` embeds shell `[^[:space:]\"]` which ends the JS string early).
+
+## Plan
+- [x] Deterministic Diff `before`/`after`/`code` string fixer in sanitize (before publish)
+- [x] One-shot OpenCode (+ claude/codex) repair loop when `repairable=true`
+- [x] Lesson 0ej + operator docs note
+- [x] Unit test for fixer; verify against failing artifact
+- [x] Commit, push, update PR #1733
+
+---
+
+# Harden Plan MDX bare array attrs (2026-07-21)
+
+**Route:** T3+S
+**Symptom:** After JSX string-attr rewrite, publish still 422s with
+`Unexpected character \`[\` before attribute value` (`columns=[…]` / `rows=[…]`)
+plus illegal commas between JSX attrs.
+
+## Plan
+- [x] `fixBareArrayAttrs` + `fixJsxAttrTrailingCommas` in deterministic fixer
+- [x] Workflow sanitize diagnostics include `arrayAttr` / `attrComma` counts
+- [x] Unit tests + verify against `/tmp/vr-art2` artifact (`MDX_OK`)
+- [x] Lesson 0ej follow-on + operator docs; commit, push, re-label visual-recap
+
+---
+
+# PR Review Session 2026-07-21 — todo
 # PR Review Session TODO — 2026-07-25
 
 - [x] Preflight 7/7
