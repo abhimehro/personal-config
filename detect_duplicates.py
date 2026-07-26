@@ -30,6 +30,7 @@ def _get_parsed_env_vars():
     return parsed_vars
 
 
+@lru_cache(maxsize=None)
 def _load_gh_token_env():
     env = os.environ.copy()
     env.update(_get_parsed_env_vars())

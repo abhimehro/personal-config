@@ -522,8 +522,8 @@ jobs:
             if [ "$attempt" = "3" ]; then exit 1; fi
             sleep $((attempt * 5))
           done
-          echo "OPENCODE_BIN=$RUNNER_TEMP/opencode/node_modules/.bin/opencode" >> "$GITHUB_ENV"
-          "$RUNNER_TEMP/opencode/node_modules/.bin/opencode" --version
+          echo "OPENCODE_BIN=${{ runner.temp }}/opencode/node_modules/.bin/opencode" >> "$GITHUB_ENV"
+          "${{ runner.temp }}/opencode/node_modules/.bin/opencode" --version
 
       - name: Configure OpenCode auth
         if: needs.gate.outputs.agent == 'opencode' && steps.diff.outputs.tiny != 'true' && steps.scan.outputs.suppressed != 'true'
@@ -557,7 +557,7 @@ jobs:
           # trusted least-privilege permission file outside the workspace.
           rm -f opencode.json opencode.jsonc
           rm -rf .opencode
-          TRUSTED_CFG="$RUNNER_TEMP/visual-recap-opencode.json"
+          TRUSTED_CFG="${{ runner.temp }}/visual-recap-opencode.json"
           # SECURITY: jq avoids YAML-heredoc indent footguns; deny everything except
           # read/search + write of recap-source.json (publisher contract).
           jq -n '{
