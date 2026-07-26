@@ -449,8 +449,17 @@ def latest_tag_for_action(repo_id: str) -> str:
     return _latest_tag_via_tags(repo_id)
 
 
+def is_commit_sha(ref: str) -> bool:
+    """True for full-length git commit SHAs used to pin Actions (Lesson 0z)."""
+    return bool(re.fullmatch(r"[0-9a-fA-F]{40}", ref))
+
+
 @functools.lru_cache(maxsize=1024)
 def numeric_version(text: str) -> tuple[int, int, int] | None:
+    # SECURITY: never parse commit SHAs as versions — hex digits match VERSION_PATTERN
+    # and previously caused SHA→floating-tag "upgrades" (Lesson 0z / supply-chain).
+    if is_commit_sha(text):
+        return None
     match = VERSION_PATTERN.search(text)
     if not match:
         return None
@@ -462,14 +471,47 @@ def tag_exists(repo_id: str, tag: str) -> bool:
     return proc.returncode == 0
 
 
-def target_ref(current: str, latest: str) -> str | None:
-    current_v = numeric_version(current)
+def sha_for_tag(repo_id: str, tag: str) -> str:
+    """Resolve a git tag to a full commit SHA (peel annotated tags)."""
+    data = gh_json(["api", f"repos/{repo_id}/git/ref/tags/{tag}"], default={})
+    obj = data.get("object") or {}
+    obj_type = obj.get("type")
+    sha = obj.get("sha") or ""
+    if obj_type == "commit":
+        return sha if is_commit_sha(sha) else ""
+    if obj_type == "tag" and sha:
+        tag_obj = gh_json(["api", f"repos/{repo_id}/git/tags/{sha}"], default={})
+        commit_sha = (tag_obj.get("object") or {}).get("sha") or ""
+        return commit_sha if is_commit_sha(commit_sha) else ""
+    return ""
+
+
+def target_ref(
+    current: str, latest: str, *, version_hint: str | None = None
+) -> str | None:
+    """
+    Return the latest *tag name* when an update is warranted.
+
+    Callers must resolve the tag to a commit SHA before writing workflow files.
+    Commit SHA pins are never treated as version numbers; pass the trailing
+    `# vX.Y.Z` comment as version_hint when comparing SHA pins.
+    """
+    if is_commit_sha(current):
+        current_v = numeric_version(version_hint) if version_hint else None
+    else:
+        current_v = numeric_version(current)
     latest_v = numeric_version(latest)
-    if not current_v or not latest_v:
+    if not latest_v:
         return None
-    if latest_v <= current_v:
+    if current_v is not None and latest_v <= current_v:
         return None
-    # Always return the full latest version to ensure the tag exists
+    # SHA pin with no version comment: allow caller to SHA-compare against latest.
+    if current_v is None and not is_commit_sha(current):
+        return None
+    if current_v is None and is_commit_sha(current) and not version_hint:
+        return latest
+    if current_v is None:
+        return None
     return latest
 
 

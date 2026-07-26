@@ -21,6 +21,7 @@ from repository_automation_common import (
     ensure_gh_token,
     gh_json,
     git_output,
+    is_commit_sha,
     iso_day,
     latest_tag_for_action,
     matches_any,
@@ -29,13 +30,17 @@ from repository_automation_common import (
     run_process,
     run_shell_command,
     safe_pr_body,
+    sha_for_tag,
     tag_exists,
     target_ref,
     write_result,
     writes_allowed,
 )
 
-WORKFLOW_PATTERN = re.compile(r"(uses:\s*)([^@\s]+)@([^\s#]+)")
+# Optional trailing `# vX.Y.Z` comment is the version hint for SHA pins (Lesson 0z).
+WORKFLOW_PATTERN = re.compile(
+    r"(uses:\s*)([^@\s]+)@([^\s#]+)(?:[ \t]+#[ \t]*([^\n]*))?"
+)
 
 
 # ⚡ Bolt Optimization: Cache regex compilation and normalisation overhead for multiple checks inside loops.
@@ -220,34 +225,55 @@ def _extract_repo_id(action_ref: str) -> str | None:
     return "/".join(parts[:2])
 
 
-def _resolve_proposed_tag(
+def _resolve_proposed_pin(
     repo_id: str,
     current: str,
+    version_hint: str | None,
     latest_cache: dict[str, str],
     exists_cache: dict[tuple[str, str], bool],
-) -> str | None:
+    sha_cache: dict[tuple[str, str], str],
+) -> tuple[str, str] | None:
+    """
+    Return (pin_ref_with_comment, tag_name) for a SHA-only workflow update.
+
+    Never returns a floating tag as the write target (Lesson 0z / supply-chain).
+    """
     latest = latest_cache.get(repo_id)
     if latest is None:
         latest = latest_tag_for_action(repo_id)
         latest_cache[repo_id] = latest
-
-    proposed = target_ref(current, latest)
-    if not proposed or proposed == current:
+    if not latest:
         return None
 
-    cache_key = (repo_id, proposed)
+    proposed_tag = target_ref(current, latest, version_hint=version_hint)
+    if not proposed_tag:
+        return None
+
+    cache_key = (repo_id, proposed_tag)
     exists = exists_cache.get(cache_key)
     if exists is None:
-        exists = tag_exists(repo_id, proposed)
+        exists = tag_exists(repo_id, proposed_tag)
         exists_cache[cache_key] = exists
-
     if not exists:
         print(
-            f"Warning: Proposed tag {proposed} for {repo_id} does not exist. Skipping update."
+            f"Warning: Proposed tag {proposed_tag} for {repo_id} does not exist. Skipping update."
         )
         return None
 
-    return proposed
+    sha = sha_cache.get(cache_key)
+    if sha is None:
+        sha = sha_for_tag(repo_id, proposed_tag)
+        sha_cache[cache_key] = sha
+    if not sha or not is_commit_sha(sha):
+        print(
+            f"Warning: Could not resolve commit SHA for {repo_id}@{proposed_tag}. Skipping."
+        )
+        return None
+
+    if is_commit_sha(current) and current.lower() == sha.lower():
+        return None
+
+    return f"{sha} # {proposed_tag}", proposed_tag
 
 
 @functools.lru_cache(maxsize=512)
@@ -263,39 +289,47 @@ def evaluate_action_update(
     file_path: Path,
     latest_cache: dict[str, str],
     exists_cache: dict[tuple[str, str], bool],
+    sha_cache: dict[tuple[str, str], str],
 ) -> dict[str, Any] | None:
     action_ref = match.group(2)
     current = match.group(3)
+    version_hint = (match.group(4) or "").strip() or None
 
     repo_id = _extract_repo_id(action_ref)
     if not repo_id:
         return None
 
-    proposed = _resolve_proposed_tag(repo_id, current, latest_cache, exists_cache)
-    if not proposed:
+    resolved = _resolve_proposed_pin(
+        repo_id, current, version_hint, latest_cache, exists_cache, sha_cache
+    )
+    if not resolved:
         return None
+    proposed_pin, proposed_tag = resolved
+    compare_from = version_hint or current
 
     return {
         "old": match.group(0),
-        "new": f"{match.group(1)}{action_ref}@{proposed}",
+        "new": f"{match.group(1)}{action_ref}@{proposed_pin}",
         "file": str(file_path.relative_to(ROOT)),
         "action": action_ref,
         "current": current,
-        "target": proposed,
-        "major_bump": _is_major_bump(current, proposed),
+        "target": proposed_pin,
+        "target_tag": proposed_tag,
+        "major_bump": _is_major_bump(compare_from, proposed_tag),
     }
 
 
 def workflow_file_plans() -> list[dict[str, Any]]:
     latest_cache: dict[str, str] = {}
     exists_cache: dict[tuple[str, str], bool] = {}
+    sha_cache: dict[tuple[str, str], str] = {}
     plans = []
     for file_path in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
         text = file_path.read_text()
         replacements = []
         for match in WORKFLOW_PATTERN.finditer(text):
             update = evaluate_action_update(
-                match, file_path, latest_cache, exists_cache
+                match, file_path, latest_cache, exists_cache, sha_cache
             )
             if update:
                 replacements.append(update)
