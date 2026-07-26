@@ -96,10 +96,10 @@ if pgrep -x ctrld >/dev/null 2>&1; then
 	echo "[WARN] Process still alive; uninstalling LaunchDaemon ONCE to clear KeepAlive..."
 	_ctrld service uninstall 2>/dev/null || true
 	sleep 1
-	pkill -x ctrld 2>/dev/null || true
+	pkill -x -- ctrld 2>/dev/null || true
 	sleep 1
 	if pgrep -x ctrld >/dev/null 2>&1; then
-		pkill -9 -x ctrld 2>/dev/null || true
+		pkill -9 -x -- ctrld 2>/dev/null || true
 	fi
 fi
 
