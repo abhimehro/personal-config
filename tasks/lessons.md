@@ -1110,6 +1110,17 @@ upload), never downgrade SHA → tag. Close or rewrite the PR before re-triage.
 **Related:** Lesson 0y (nested unpinned actions inside composites). **Detection
 cost:** Low — bandit workflow fails before pytest on workflow-only diffs.
 
+## Lesson 0ei: Workflow updater `numeric_version` must ignore commit SHAs (2026-07-26)
+
+**Pattern:** Daily `workflow-updater` opened pc #1777 converting
+`actions/checkout@<40-char-sha> # v7.0.1` → `actions/checkout@v7.0.1` because
+`numeric_version()` ran `VERSION_PATTERN.search` on the SHA and matched leading
+hex digits as a “version” older than the latest tag. **Rule:** (1) `is_commit_sha`
+short-circuits version parsing; (2) updater writes only `sha # tag` pins; (3)
+compare SHA pins via the trailing `# vX.Y.Z` hint, never via the hex itself.
+**Related:** Lesson 0z. **Detection cost:** Low — any automation PR that replaces
+`@[0-9a-f]{40}` with `@v` is an instant escalate/close.
+
 ## Lesson 0cg: Jules Palette branches can duplicate with session-id suffix (2026-06-08)
 
 **Pattern:** ESP #1049 (`ux/fix-eof-crash`) and #1050
