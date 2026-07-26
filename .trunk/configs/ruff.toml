@@ -1,5 +1,12 @@
 # Generic, formatter-friendly config.
-select = ["B", "D3", "D4", "E", "F"]
+select = ["B", "D3", "D4", "E", "F", "S310"]
 
 # Never enforce `E501` (line length violations). This should be handled by formatters.
 ignore = ["E501"]
+
+[per-file-ignores]
+# urllib.urlopen is intentionally wrapped inside safe_http; direct use elsewhere is forbidden.
+"lib/safe_http.py" = ["S310"]
+# Scripts add the repo root to sys.path before importing the shared lib helper.
+"scripts/morning-brief/morning-brief.py" = ["E402"]
+"media-streaming/scripts/bootstrap-jellyfin-local.py" = ["E402"]

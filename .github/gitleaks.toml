@@ -175,6 +175,11 @@ tags = ["env", "environment", "secret"]
 
 # Exclude patterns - files that are known to contain test/fake secrets
 [allowlist]
+# Suppress false positive in lib/safe_http.py docstring that contained the
+# word "password" followed by prose ("components"). The commit was part of
+# PR #1766 and has since been corrected; this suppresses the historical FP.
+commits = ["ab406fd5d21d059451b7aa3dcfd01a0eb7fd11eb"]
+
 # Suppress GitHub Actions built-in context references that are not real secrets.
 # The personal-config-generic-secret rule matches "secret" as a substring, which
 # causes false positives for:
@@ -183,42 +188,42 @@ tags = ["env", "environment", "secret"]
 #     (job-name fragments inside ${{ needs.*.result }} expressions)
 # These regexes are matched against the captured "secret" value by gitleaks.
 regexes = [
-    # GitHub Actions secrets context: secrets.GITHUB_TOKEN, secrets.MY_TOKEN, etc.
-    '''^secrets\.[A-Za-z0-9_]+$''',
-    # GitHub Actions needs-context results: needs.<job>.result fragments
-    '''^secrets\.result$''',
-    # Prose stopwords after "secret|password|…" (?P<secret> value). Real
-    # credentials are never a single English stopword like these.
-    '''(?i)^(presence|scanning|false-positive|allowlist|detection|validation|management|injection|exfiltration)$''',
+  # GitHub Actions secrets context: secrets.GITHUB_TOKEN, secrets.MY_TOKEN, etc.
+  '''^secrets\.[A-Za-z0-9_]+$''',
+  # GitHub Actions needs-context results: needs.<job>.result fragments
+  '''^secrets\.result$''',
+  # Prose stopwords after "secret|password|…" (?P<secret> value). Real
+  # credentials are never a single English stopword like these.
+  '''(?i)^(presence|scanning|false-positive|allowlist|detection|validation|management|injection|exfiltration)$''',
 ]
 paths = [
-    '''(?i)test''',
-    '''(?i)mock''',
-    '''(?i)example''',
-    '''(?i)sample''',
-    '''(?i)fixture''',
-    '''(?i)template''',
-    '''(?i)dummy''',
-    '''(?i)placeholder''',
-    '''(?i)test_''',
-    '''_test\.''',
-    '''(?i)\.(example|sample|template|dist|bak|backup|old|orig)$''',
-    '''(?i)README''',
-    '''(?i)CHANGELOG''',
-    '''(?i)LICENSE''',
-    '''(?i)CODE_OF_CONDUCT''',
-    '''(?i)CONTRIBUTING''',
-    # ABHI-1321 / PR #1670 — NARROW path allowlist (not all of tasks/).
-    # Rationale: personal-config-generic-secret false-positive on prose
-    # "secret scanning" (keyword + whitespace + 8+ alnum) in the session
-    # journal. Do not expand to tasks/** — other journals may discuss real
-    # credential handling and must stay scanned.
-    # Verified: PR-range gitleaks detect is clean; full-history dispatch may
-    # still flag unrelated pre-existing FPs elsewhere in the tree.
-    '''(?i)^tasks/todo\.md$''',
-    '''(?i)validate_repo_structure\.sh$''',
-    '''(?i)scripts/repair-controld-keepalive\.sh$''',
-    '''(?i)scripts/lib/.*\.sh$''',
+  '''(?i)test''',
+  '''(?i)mock''',
+  '''(?i)example''',
+  '''(?i)sample''',
+  '''(?i)fixture''',
+  '''(?i)template''',
+  '''(?i)dummy''',
+  '''(?i)placeholder''',
+  '''(?i)test_''',
+  '''_test\.''',
+  '''(?i)\.(example|sample|template|dist|bak|backup|old|orig)$''',
+  '''(?i)README''',
+  '''(?i)CHANGELOG''',
+  '''(?i)LICENSE''',
+  '''(?i)CODE_OF_CONDUCT''',
+  '''(?i)CONTRIBUTING''',
+  # ABHI-1321 / PR #1670 — NARROW path allowlist (not all of tasks/).
+  # Rationale: personal-config-generic-secret false-positive on prose
+  # "secret scanning" (keyword + whitespace + 8+ alnum) in the session
+  # journal. Do not expand to tasks/** — other journals may discuss real
+  # credential handling and must stay scanned.
+  # Verified: PR-range gitleaks detect is clean; full-history dispatch may
+  # still flag unrelated pre-existing FPs elsewhere in the tree.
+  '''(?i)^tasks/todo\.md$''',
+  '''(?i)validate_repo_structure\.sh$''',
+  '''(?i)scripts/repair-controld-keepalive\.sh$''',
+  '''(?i)scripts/lib/.*\.sh$''',
 ]
 
 # Exclude specific test patterns
@@ -226,44 +231,40 @@ paths = [
 id = "test-patterns"
 regex = '''(?i)(test|mock|example|sample|dummy|placeholder|fake|stub)'''
 paths = [
-    '''(?i)tests/''',
-    '''(?i)test/''',
-    '''(?i)mock/''',
-    '''(?i)fixtures/''',
+  '''(?i)tests/''',
+  '''(?i)test/''',
+  '''(?i)mock/''',
+  '''(?i)fixtures/''',
 ]
 
 # Exclude documentation files
 [[allowlist.rules]]
 id = "documentation"
 regex = '''(?i)'''
-paths = [
-    '''(?i)docs/''',
-    '''(?i)doc/''',
-    '''(?i)\.(md|markdown|txt|rst)$''',
-]
+paths = ['''(?i)docs/''', '''(?i)doc/''', '''(?i)\.(md|markdown|txt|rst)$''']
 
 # Exclude configuration templates
 [[allowlist.rules]]
 id = "templates"
 regex = '''(?i)(template|example|sample)'''
 paths = [
-    '''(?i)configs/.*\.(template|example|sample|dist)$''',
-    '''(?i)templates/''',
-    '''(?i)examples/''',
+  '''(?i)configs/.*\.(template|example|sample|dist)$''',
+  '''(?i)templates/''',
+  '''(?i)examples/''',
 ]
 
 # Exclude known safe files
 [[allowlist.rules]]
 id = "safe-files"
 paths = [
-    '''(?i)\.(gitignore|gitattributes|gitmodules)$''',
-    '''(?i)Makefile$''',
-    '''(?i)Dockerfile$''',
-    '''(?i)docker-compose\.yml$''',
-    '''(?i)package\.json$''',
-    '''(?i)requirements\.txt$''',
-    '''(?i)setup\.py$''',
-    '''(?i)pyproject\.toml$''',
+  '''(?i)\.(gitignore|gitattributes|gitmodules)$''',
+  '''(?i)Makefile$''',
+  '''(?i)Dockerfile$''',
+  '''(?i)docker-compose\.yml$''',
+  '''(?i)package\.json$''',
+  '''(?i)requirements\.txt$''',
+  '''(?i)setup\.py$''',
+  '''(?i)pyproject\.toml$''',
 ]
 [gitleaks]
 # Enable verbose logging
@@ -287,6 +288,6 @@ configPath = ".github/gitleaks.toml"
 id = "security-scripts"
 regex = '''(?i)(pattern|regex|detect|scan|validate|check)'''
 paths = [
-    '''(?i)scripts/validate_repo_structure\.sh$''',
-    '''(?i)scripts/lib/.*\.sh$''',
+  '''(?i)scripts/validate_repo_structure\.sh$''',
+  '''(?i)scripts/lib/.*\.sh$''',
 ]

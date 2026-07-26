@@ -57,7 +57,8 @@ def configured_commands(section: dict[str, Any]) -> list[tuple[str, dict[str, An
         ("command", "commands"),
         ("security", "security_commands"),
     ):
-        for item in section.get(key, []):
+        # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+        for item in section.get(key, ()):
             buckets.append((bucket_name, item))
     return buckets
 
@@ -411,30 +412,25 @@ def close_invalid_prs(branch_prefix: str) -> None:
                 )
 
 
-def run_workflow_updater(config: dict[str, Any]) -> dict[str, Any]:
-    section = config.get("workflow_updater", {})
-    plans = workflow_file_plans()
-    updates = flattened_updates(plans)
-    if not updates:
-        body = "# Workflow updater\n\n- Status: **success**\n- Summary: No GitHub Action updates were detected.\n"
-        return write_result(
-            "workflow-updater",
-            ("success", "No GitHub Action updates were detected."),
-            body,
-            {"updates": []},
-        )
+def _format_no_updates() -> dict[str, Any]:
+    """Return the result block when no updates are found."""
+    body = "# Workflow updater\n\n- Status: **success**\n- Summary: No GitHub Action updates were detected.\n"
+    return write_result(
+        "workflow-updater",
+        ("success", "No GitHub Action updates were detected."),
+        body,
+        {"updates": []},
+    )
 
-    status = "warning"
-    summary = f"Detected {len(updates)} workflow action updates."
-    body_parts = [
-        "# Workflow updater",
-        "",
-        f"- Status: **{status}**",
-        f"- Summary: {summary}",
-        "",
-    ]
-    body_parts.extend(render_update_table(updates))
 
+def _check_write_gate(
+    section: dict[str, Any],
+    updates: list[dict[str, Any]],
+    body_parts: list[str],
+    status: str,
+    summary: str,
+) -> dict[str, Any] | None:
+    """Check if writing is allowed and return early result if not. Closes invalid PRs if allowed."""
     can_write = (
         writes_allowed() and ensure_gh_token() and section.get("create_draft_pr", False)
     )
@@ -454,7 +450,16 @@ def run_workflow_updater(config: dict[str, Any]) -> dict[str, Any]:
             "\n".join(body_parts),
             {"updates": updates, "pull_request_url": ""},
         )
+    return None
 
+
+def _check_allow_list(
+    section: dict[str, Any],
+    updates: list[dict[str, Any]],
+    body_parts: list[str],
+    summary: str,
+) -> dict[str, Any] | None:
+    """Check if all updates are in allowed paths and return early result if not."""
     allowed_paths = section.get(
         "allowed_paths", [".github/workflows/*.yml", ".github/workflows/*.yaml"]
     )
@@ -472,8 +477,13 @@ def run_workflow_updater(config: dict[str, Any]) -> dict[str, Any]:
             "\n".join(body_parts),
             {"updates": updates, "pull_request_url": ""},
         )
+    return None
 
-    pr_url = ""
+
+def _attempt_workflow_updates(
+    section: dict[str, Any], plans: list[dict[str, Any]], updates: list[dict[str, Any]]
+) -> tuple[str, str, str, str]:
+    """Apply workflow updates and create a PR. Returns (status, summary, pr_url, error)."""
     try:
         apply_workflow_updates(plans)
         pr_body = safe_pr_body(
@@ -492,15 +502,49 @@ def run_workflow_updater(config: dict[str, Any]) -> dict[str, Any]:
             section.get("pr_title", "chore(actions): update workflow dependencies"),
             pr_body,
         )
-        status = "success"
         summary = (
             f"Detected {len(updates)} workflow action updates and prepared a draft PR."
         )
-        body_parts.extend(["## Draft PR", f"- {pr_url}", ""])
+        return "success", summary, pr_url, ""
     except Exception as exc:  # pragma: no cover - runtime integration
         restore_workflow_updates(plans)
-        status = "failure"
-        body_parts.extend(["## Draft PR failure", f"- {exc}", ""])
+        summary = f"Detected {len(updates)} workflow action updates."
+        return "failure", summary, "", str(exc)
+
+
+def run_workflow_updater(config: dict[str, Any]) -> dict[str, Any]:
+    section = config.get("workflow_updater", {})
+    plans = workflow_file_plans()
+    updates = flattened_updates(plans)
+
+    if not updates:
+        return _format_no_updates()
+
+    status = "warning"
+    summary = f"Detected {len(updates)} workflow action updates."
+    body_parts = [
+        "# Workflow updater",
+        "",
+        f"- Status: **{status}**",
+        f"- Summary: {summary}",
+        "",
+    ]
+    body_parts.extend(render_update_table(updates))
+
+    gate_result = _check_write_gate(section, updates, body_parts, status, summary)
+    if gate_result:
+        return gate_result
+
+    allow_result = _check_allow_list(section, updates, body_parts, summary)
+    if allow_result:
+        return allow_result
+
+    status, summary, pr_url, error = _attempt_workflow_updates(section, plans, updates)
+    if error:
+        body_parts.extend(["## Draft PR failure", f"- {error}", ""])
+    else:
+        body_parts.extend(["## Draft PR", f"- {pr_url}", ""])
+
     return write_result(
         "workflow-updater",
         (status, summary),
@@ -514,8 +558,10 @@ def run_performance_optimizer(config: dict[str, Any]) -> dict[str, Any]:
     status, summary, details = run_command_set(
         "performance-optimizer",
         {
-            "setup_commands": section.get("setup_commands", []),
-            "commands": section.get("commands", []),
+            # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+            "setup_commands": section.get("setup_commands", ()),
+            # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+            "commands": section.get("commands", ()),
         },
     )
     hotspots = discover_hotspots()
@@ -527,7 +573,8 @@ def run_performance_optimizer(config: dict[str, Any]) -> dict[str, Any]:
     ]
     for file_name, count in hotspots:
         lines.append(f"| `{file_name}` | {count} |")
-    suggestions = section.get("suggestions", [])
+    # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+    suggestions = section.get("suggestions", ())
     if suggestions:
         lines.extend(["", "## Suggestions"])
         lines.extend(f"- {item}" for item in suggestions)
@@ -570,7 +617,8 @@ def render_issue_rows(issues: list[dict[str, Any]]) -> list[str]:
     ]
     _now = now_utc()
     for item in issues:
-        labels = ", ".join(label["name"] for label in item.get("labels", []))
+        # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+        labels = ", ".join(label["name"] for label in item.get("labels", ()))
         rows.append(
             f"| [#{item['number']}]({item['url']}) | {item['updatedAt'][:10]} | {age_days(item['updatedAt'], _now)} | {labels or '-'} |"
         )
@@ -811,7 +859,8 @@ def run_daily_status_report(config: dict[str, Any]) -> dict[str, Any]:
     title = f"{config.get('reporting', {}).get('daily_issue_prefix', '[repo-automation] Daily Status Report')} - {iso_day()}"
     body = "\n".join(daily_report_lines(config, results))
     body, issue_url, error = append_publication_result(
-        body, title=title, labels=section.get("labels", []), noun="daily issue"
+        body, title=title, # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+        labels=section.get("labels", ()), noun="daily issue"
     )
     status = "failure" if error else overall_status(results)
     return write_result(
@@ -846,7 +895,8 @@ def run_safe_adjustment_commands(
     if not writes_allowed() or not section.get("auto_apply_safe_changes"):
         return [], ""
     command_results = []
-    for item in section.get("safe_adjustment_commands", []):
+    # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+    for item in section.get("safe_adjustment_commands", ()):
         command_results.append(
             {
                 "name": item["name"],
@@ -1021,7 +1071,8 @@ def run_weekly_retrospective(config: dict[str, Any]) -> dict[str, Any]:
     title = f"{config.get('reporting', {}).get('weekly_issue_prefix', '[repo-automation] Weekly Retrospective')} - {iso_day()}"
     body = "\n".join(lines) + "\n"
     body, issue_url, error = append_publication_result(
-        body, title=title, labels=section.get("labels", []), noun="weekly issue"
+        body, title=title, # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+        labels=section.get("labels", ()), noun="weekly issue"
     )
     if error:
         status = "failure"

@@ -12,18 +12,38 @@ from __future__ import annotations
 
 import json
 import os
+import sys
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 import secrets
 import shutil
 import string
 import subprocess  # nosec B404 — used only for fixed launchctl argv (no shell)
-import sys
 import time
 import urllib.error
 import urllib.parse
-import urllib.request
-from pathlib import Path
+
+from lib.safe_http import UnsafeURLError, safe_urlopen
 
 BASE = os.environ.get("JELLYFIN_URL", "http://127.0.0.1:8096").rstrip("/")
+
+_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
+_USER_ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.environ.get("JELLYFIN_ALLOWED_HOSTS", "").split(",")
+    if h.strip()
+]
+JELLYFIN_ALLOWED_HOSTS = set(_LOOPBACK_HOSTS) | set(_USER_ALLOWED_HOSTS)
+JELLYFIN_ALLOW_INSECURE = os.environ.get("JELLYFIN_ALLOW_INSECURE", "0").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
 MOUNT = Path(os.environ.get("JELLYFIN_MEDIA_ROOT", Path.home() / "CloudMedia/mounted"))
 JF_DIR = Path.home() / "Library/Application Support/jellyfin"
 CREDS = JF_DIR / "local-admin.credentials"
@@ -34,6 +54,65 @@ CLIENT_HDR = (
 )
 
 
+def _is_loopback_host(host: str) -> bool:
+    return host.lower() in _LOOPBACK_HOSTS
+
+
+def _body_has_password(body: dict | None) -> bool:
+    if not isinstance(body, dict):
+        return False
+    keys = {k.lower() for k in body}
+    return bool(keys & {"password", "pw"})
+
+
+def _request_headers(token: str | None) -> dict[str, str]:
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": CLIENT_HDR,
+    }
+    if token:
+        headers["Authorization"] = f"MediaBrowser Token={token}"
+    return headers
+
+
+def _encode_body(body: dict | None) -> bytes | None:
+    if body is None:
+        return None
+    return json.dumps(body).encode()
+
+
+def _parse_response_body(raw: bytes) -> object:
+    if not raw:
+        return None
+    try:
+        return json.loads(raw.decode())
+    except json.JSONDecodeError:
+        return raw.decode(errors="replace")
+
+
+def _parse_http_error(exc: urllib.error.HTTPError) -> tuple[int, object]:
+    raw = exc.read()
+    if not raw:
+        return exc.code, None
+    try:
+        return exc.code, json.loads(raw.decode())
+    except json.JSONDecodeError:
+        return exc.code, raw.decode(errors="replace")
+
+
+def _https_required_for_credentials(
+    host: str, token: str | None, body: dict | None
+) -> bool:
+    has_credentials = token is not None or _body_has_password(body)
+    return (
+        has_credentials and not _is_loopback_host(host) and not JELLYFIN_ALLOW_INSECURE
+    )
+
+
+def _non_loopback_allowed() -> bool:
+    return bool(JELLYFIN_ALLOWED_HOSTS - _LOOPBACK_HOSTS)
+
+
 def http(
     method: str,
     path: str,
@@ -42,37 +121,32 @@ def http(
     token: str | None = None,
     timeout: float = 30.0,
 ) -> tuple[int, object]:
-    data = None if body is None else json.dumps(body).encode()
-    req = urllib.request.Request(
-        f"{BASE}{path}",
-        data=data,
-        method=method,
-        headers={"Content-Type": "application/json", "Authorization": CLIENT_HDR},
-    )
-    if token:
-        req.add_header("Authorization", f"MediaBrowser Token={token}")
-    # SECURITY: BASE is loopback by default; reject non-http(s) schemes.
-    if not BASE.startswith(("http://", "https://")):
-        raise ValueError(f"Refusing non-http(s) JELLYFIN_URL: {BASE!r}")
+    full_url = f"{BASE}{path}"
+    parsed = urllib.parse.urlsplit(BASE)
+    host = (parsed.hostname or "").lower()
+    require_https = _https_required_for_credentials(host, token, body)
+    allow_private = _non_loopback_allowed()
+
     try:
-        with urllib.request.urlopen(
-            req, timeout=timeout
-        ) as resp:  # nosec B310 — http(s) only via BASE gate
-            raw = resp.read()
-            code = resp.getcode()
-            if not raw:
-                return code, None
-            try:
-                return code, json.loads(raw.decode())
-            except json.JSONDecodeError:
-                return code, raw.decode(errors="replace")
-    except urllib.error.HTTPError as e:
-        raw = e.read()
-        try:
-            payload: object = json.loads(raw.decode()) if raw else None
-        except json.JSONDecodeError:
-            payload = raw.decode(errors="replace") if raw else None
-        return e.code, payload
+        resp = safe_urlopen(
+            full_url,
+            data=_encode_body(body),
+            headers=_request_headers(token),
+            method=method,
+            timeout=timeout,
+            allowed_hosts=JELLYFIN_ALLOWED_HOSTS,
+            allow_loopback=True,
+            allow_private=allow_private,
+            allow_link_local=allow_private,
+            allow_cgnat=allow_private,
+            require_https=require_https,
+        )
+    except UnsafeURLError as exc:
+        raise ValueError(f"Unsafe JELLYFIN_URL or redirect: {exc}") from exc
+    except urllib.error.HTTPError as exc:
+        return _parse_http_error(exc)
+
+    return resp.status, _parse_response_body(resp.body)
 
 
 def _launchctl_bin() -> str:
@@ -260,6 +334,7 @@ def ensure_library(token: str, name: str, path: Path, collection_type: str) -> N
 def wait_for_items(token: str, timeout_s: int = 180) -> int:
     deadline = time.time() + timeout_s
     last = 0
+    sleep_interval = 0.5
     while time.time() < deadline:
         code, payload = http(
             "GET",
@@ -281,7 +356,8 @@ def wait_for_items(token: str, timeout_s: int = 180) -> int:
             print(f"Items poll -> {code} {payload}")
         # nudge refresh
         http("POST", "/Library/Refresh", token=token)
-        time.sleep(5)
+        time.sleep(sleep_interval)
+        sleep_interval = min(5.0, sleep_interval * 1.5)
     return last
 
 

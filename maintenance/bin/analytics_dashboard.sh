@@ -410,6 +410,8 @@ generate_dashboard() {
     <title>System Maintenance Dashboard - ${cap_period}</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .skip-link { position: absolute; top: -40px; left: 0; background: #000; color: white; padding: 8px; z-index: 100; text-decoration: none; transition: top 0.2s; }
+        .skip-link:focus { top: 0; }
         .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .header { text-align: center; margin-bottom: 40px; }
         .header h1 { color: #333; margin-bottom: 10px; }
@@ -431,13 +433,14 @@ generate_dashboard() {
     </style>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <div class="container">
         <header class="header">
             <h1><span aria-hidden="true">🔧</span> System Maintenance Dashboard</h1>
             <div class="date">$(date "+%B %d, %Y at %H:%M") - ${cap_period} Report</div>
         </header>
         
-        <main>
+        <main id="main-content">
         <ul class="metrics-grid">
             <li class="metric-card success" aria-labelledby="health-score-label health-score-value">
                 <div class="metric-value" id="health-score-value">${current_health}</div>
