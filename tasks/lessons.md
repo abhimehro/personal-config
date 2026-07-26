@@ -1,5 +1,54 @@
 # Lessons Learned
 
+## Lesson 0ei: PLAN_RECAP_TOKEN newlines break publish AND leak JWT into comments (2026-07-21)
+
+**Pattern:** Visual recap sticky comment showed `Headers.append: "Bearer
+[redacted] <jwt-remainder>" is an invalid header value` instead of a plan
+link. Publish never produced a URL. **Root cause:** (1) `PLAN_RECAP_TOKEN`
+org credential had embedded CR/LF (wrapped paste). undici rejects
+`Authorization` values with control chars. (2) `@agent-native/recap-cli`
+`sanitizeAgentFailureSummary` only redacts `Bearer\s+[A-Za-z0-9._-]{8,}` —
+a mid-token newline ends that match early, so the JWT payload/signature after
+the break is posted to the PR. `.trim()` on the token does **not** remove
+internal whitespace.
+**Rule:** (1) Strip **all** whitespace from `PLAN_RECAP_TOKEN` at job start
+(`tr -d '[:space:]'`), drop accidental `Bearer` prefix, `::add-mask::`, then
+export via `GITHUB_ENV`. (2) Scrub sticky-comment diagnostics for Bearer /
+JWT / long base64url runs before upsert. (3) Paste secrets as a single line;
+if a JWT fragment ever lands in a PR comment, **rotate** the org service
+token immediately. (4) Do not rely on recap-cli redact alone for newline-split
+tokens.
+## Lesson 0eo: Invalid env GH_TOKEN shadows hosts.yml Cursor token (2026-07-25)
+
+**Pattern:** Cloud Agent injects `GH_TOKEN=github_pat_…` that returns **401 Bad
+credentials**. `gh` prefers the env var over `~/.config/gh/hosts.yml`, so
+preflight/`gh pr list` fail until `unset GH_TOKEN`. With env cleared, the Cursor
+GitHub App token can **squash-merge** and inventory, but GraphQL `addComment`
+is still denied — use Cursor Automation MCP `post_review_comment_on_pr` for
+review trail. Flattened OpenSSH private keys in secrets (no newlines) need
+PEM re-wrapping before `ssh-keygen`/`git@github.com` works.
+**Rule:** (1) On 401, `unset GH_TOKEN GITHUB_TOKEN` and re-run preflight. (2)
+Do not print token values; log prefix/len only. (3) Rotate the injected PAT.
+(4) Reconstruct single-line OPENSSH keys to standard PEM wrapping for SSH
+pushes/autofix. (5) Prefer MCP reviews when `gh pr comment` 403s.
+**Detection cost:** Low — `gh auth status` shows invalid GH_TOKEN + active
+hosts.yml account.
+
+## Lesson 0ep: Mid-session Bolt merge dirties SSRF siblings via bolt.md (2026-07-25)
+
+**Pattern:** After squash-merging pc #1770 (Bolt + `.jules/bolt.md` append),
+open pc #1766 (SSRF `safe_http`, also touching bolt-adjacent trees) flipped
+`MERGEABLE` → `CONFLICTING` in the same session.
+**Rule:** When merging Bolt journals, re-check remaining PRs that share
+`.jules/bolt.md` or broad skill trees before calling the session clean. Expect
+SSRF/security salvage PRs to need Phase 2 rebase after routine Bolt merges.
+**Detection cost:** Low — post-merge `gh pr list --json mergeable` sweep.
+## Lesson 0eq: Cursor app token can push salvage branches but cannot open/close PRs (2026-07-25)
+
+**Pattern:** Phase 2 pushed `cursor-agent/salvage-pc-1748-visual-recap-v2-a2fb` successfully, then `gh pr create` / `gh pr close` / `gh pr comment` all failed with GraphQL/REST `Resource not accessible by integration`. `open_git_pr` MCP only accepts the automation **designated** branch (`cursor-agent/automated-pr-salvage-a2fb`), not per-PR salvage branches. Env `GH_TOKEN` PAT is expired (401) — Phase 1 Lesson 0eo.
+**Rule:** (1) Always push salvage branches even when PR create is blocked. (2) Record the compare/`quick_pull` URL in inventory + salvage-session-reports for the maintainer to open a **draft**. (3) Use Cursor Automation MCP `post_review_comment_on_pr` for escalation notes on existing PRs. (4) Use `open_git_pr` only for the designated session-docs branch. (5) Rotate the injected PAT before relying on `gh` write for closes/comments.
+**Detection cost:** Low — first `createPullRequest` 403 in a session.
+
 ## Lesson 0du: Gitleaks first capture group becomes Secret (2026-07-17)
 
 **Pattern:** `personal-config-generic-secret` used `(secret|password|…)[\s\-_:=]+…`
@@ -1060,6 +1109,17 @@ repos. Required fixes must pin **every** action reference (including SARIF
 upload), never downgrade SHA → tag. Close or rewrite the PR before re-triage.
 **Related:** Lesson 0y (nested unpinned actions inside composites). **Detection
 cost:** Low — bandit workflow fails before pytest on workflow-only diffs.
+
+## Lesson 0ei: Workflow updater `numeric_version` must ignore commit SHAs (2026-07-26)
+
+**Pattern:** Daily `workflow-updater` opened pc #1777 converting
+`actions/checkout@<40-char-sha> # v7.0.1` → `actions/checkout@v7.0.1` because
+`numeric_version()` ran `VERSION_PATTERN.search` on the SHA and matched leading
+hex digits as a “version” older than the latest tag. **Rule:** (1) `is_commit_sha`
+short-circuits version parsing; (2) updater writes only `sha # tag` pins; (3)
+compare SHA pins via the trailing `# vX.Y.Z` hint, never via the hex itself.
+**Related:** Lesson 0z. **Detection cost:** Low — any automation PR that replaces
+`@[0-9a-f]{40}` with `@v` is an instant escalate/close.
 
 ## Lesson 0cg: Jules Palette branches can duplicate with session-id suffix (2026-06-08)
 

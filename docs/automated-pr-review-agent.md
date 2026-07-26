@@ -258,6 +258,13 @@ separate from the scheduled daily automations. The scheduled tasks provide
 input documents and issue candidates that these agents can reference during
 triage and salvage operations.
 
+### Weekly health & housekeeping (non-overlapping)
+
+Separate Cursor Automations cover repository health, docs, and upkeep twice
+weekly (Research repos Monday 10:00; General repos Thursday 10:00). Those runs
+explicitly exclude security triage and PR review/salvage. Spec:
+[docs/cursor-automations/weekly-repo-health.md](cursor-automations/weekly-repo-health.md).
+
 ## Related docs
 
 - [Automated PR Salvage & Recovery Agent](automated-pr-salvage-agent.md) — Phase

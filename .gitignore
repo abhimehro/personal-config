@@ -281,6 +281,9 @@ configs/.config/fish/functions/*
 !configs/.config/fish/functions/fish_greeting.fish
 !configs/.config/fish/functions/git-mirror-clean.fish
 !configs/.config/fish/functions/vibe.fish
+!configs/.config/fish/functions/media-restart.fish
+!configs/.config/fish/functions/media-status.fish
+!configs/.config/fish/functions/media-logs.fish
 !configs/.config/fish/functions/*.backup
 
 # Local-only / machine-generated files

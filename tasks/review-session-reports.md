@@ -31,6 +31,37 @@
 - Commands/comments to run next:
 - Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
 
+
+## Run — 2026-07-25
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron Phase 1 `0 13 * * *` review-and-merge
+
+### Metrics
+
+- PRs inventoried: 31
+- PRs merged: 7 (1 autofix)
+- PRs closed: 0
+- PRs escalated/deferred: 24 escalate / 0 defer
+
+### Actions
+
+- Merged: pc #1770/#1768; esp #1356/#1348; hg #411/#414; sc #290
+- Autofix: hg #414 remove `test_perf.py`
+- Deferred/escalated: security clusters + tip majors + CONFLICTING (see
+  `tasks/pr-review-2026-07-25.md`)
+- Auth: unset expired env `GH_TOKEN`; MCP reviews; CodeScene cmds on #413/#285
+
+### Follow-ups
+
+- Rotate injected `GH_TOKEN` PAT (Lesson 0eo)
+- Phase 2 salvage remainder YAML in dated snapshot
+- Cross-link: `tasks/pr-review-2026-07-25.md`
+
 ## Run — 2026-06-12
 
 ### Scope

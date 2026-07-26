@@ -163,5 +163,38 @@ class TestRunShellCommand(unittest.TestCase):
         self.assertTrue(result["stdout"].endswith("... [truncated]"))
         self.assertTrue(result["stderr"].endswith("... [truncated]"))
 
+
+class TestActionRefPinning(unittest.TestCase):
+    """Lesson 0z / supply-chain: never treat commit SHAs as version numbers."""
+
+    CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"
+
+    def test_is_commit_sha(self):
+        self.assertTrue(rac.is_commit_sha(self.CHECKOUT_SHA))
+        self.assertFalse(rac.is_commit_sha("v7.0.1"))
+        self.assertFalse(rac.is_commit_sha("3d3c42e"))  # short SHA
+
+    def test_numeric_version_ignores_commit_sha(self):
+        # Regression: VERSION_PATTERN used to match hex digits inside SHAs
+        # (e.g. leading "3"), which made SHA pins look older than tag v7.
+        self.assertIsNone(rac.numeric_version(self.CHECKOUT_SHA))
+        self.assertEqual(rac.numeric_version("v7.0.1"), (7, 0, 1))
+
+    def test_target_ref_does_not_unpin_matching_sha(self):
+        self.assertIsNone(
+            rac.target_ref(self.CHECKOUT_SHA, "v7.0.1", version_hint="v7.0.1")
+        )
+
+    def test_target_ref_allows_sha_bump_when_hint_older(self):
+        self.assertEqual(
+            rac.target_ref(self.CHECKOUT_SHA, "v8.0.0", version_hint="v7.0.1"),
+            "v8.0.0",
+        )
+
+    def test_target_ref_tag_to_newer_tag_name(self):
+        # Caller must still resolve this tag name to a commit SHA before writing.
+        self.assertEqual(rac.target_ref("v4", "v5.0.0"), "v5.0.0")
+
+
 if __name__ == "__main__":
     unittest.main()
