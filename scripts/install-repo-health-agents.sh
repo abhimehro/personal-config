@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 #
-# Install and register LaunchAgents for Weekly Repository Health Reviews
-# Plists installed:
-#   com.speedybee.repo-health.research.plist (Tuesdays 09:00)
-#   com.speedybee.repo-health.general.plist  (Thursdays 09:00)
+# Install optional local LaunchAgents for Weekly Repository Health Reviews.
+# These stubs only log readiness — they do NOT spawn Cursor agents.
+# Authoritative runtime: Cursor Automations (docs/cursor-automations/weekly-repo-health.md)
+#   Research: Monday 10:00 | General: Thursday 10:00
+# Plists installed (local reminders only):
+#   com.speedybee.repo-health.research.plist
+#   com.speedybee.repo-health.general.plist
 
 set -Eeuo pipefail
 
