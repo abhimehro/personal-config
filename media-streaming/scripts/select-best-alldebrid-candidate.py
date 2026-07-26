@@ -101,20 +101,29 @@ class Candidate:
     reasons: list[str]
 
 
+# ⚡ Bolt Optimization: Pre-compile regular expressions to avoid repeated compilation overhead in string operations
+_CLEAN_QUOTES_RE = re.compile(r"&#0*39;")
+_CLEAN_BRACKETS_RE = re.compile(r"\[[^\]]*\]")
+_CLEAN_PARENS_RE = re.compile(r"\([^)]*\)")
+_CLEAN_PUNCT_RE = re.compile(r"[._\-]+")
+_CLEAN_SPACE_RE = re.compile(r"\s+")
+_SLUG_RE = re.compile(r"[^a-z0-9]+")
+
+
 def clean_title(value: str) -> str:
     value = VIDEO_RE.sub("", value)
-    value = re.sub(r"&#0*39;", "'", value)
-    value = re.sub(r"\[[^\]]*\]", " ", value)
-    value = re.sub(r"\([^)]*\)", " ", value)
-    value = re.sub(r"[._\-]+", " ", value)
-    value = re.sub(r"\s+", " ", value).strip()
+    value = _CLEAN_QUOTES_RE.sub("'", value)
+    value = _CLEAN_BRACKETS_RE.sub(" ", value)
+    value = _CLEAN_PARENS_RE.sub(" ", value)
+    value = _CLEAN_PUNCT_RE.sub(" ", value)
+    value = _CLEAN_SPACE_RE.sub(" ", value).strip()
     return value
 
 
 def slug(value: str) -> str:
     value = value.lower()
     value = value.replace("&", "and")
-    value = re.sub(r"[^a-z0-9]+", "-", value)
+    value = _SLUG_RE.sub("-", value)
     return value.strip("-")
 
 
@@ -136,9 +145,13 @@ def identity_for(filename: str) -> str:
     return slug(clean_title(stem))
 
 
+_COMPACT_RE = re.compile(r"[^a-z0-9]+")
+_COMPACT_PLUS_RE = re.compile(r"[^a-z0-9+]+")
+
+
 def compact_token(value: str, keep_plus: bool = False) -> str:
-    allowed = r"[^a-z0-9+]+" if keep_plus else r"[^a-z0-9]+"
-    return re.sub(allowed, "", value.lower())
+    regex = _COMPACT_PLUS_RE if keep_plus else _COMPACT_RE
+    return regex.sub("", value.lower())
 
 
 def apply_token_scores(
