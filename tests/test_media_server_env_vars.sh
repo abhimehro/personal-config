@@ -2,10 +2,11 @@
 set -euo pipefail
 
 # Setup Mock Environment
-HOME=$(mktemp -d)
-export HOME
+MOCK_HOME=$(mktemp -d)
+export HOME="$MOCK_HOME"
 MOCK_BIN=$(mktemp -d)
 mkdir -p "$HOME/Library/Logs"
+trap 'rm -rf "$MOCK_BIN" "$MOCK_HOME"' EXIT
 
 # Mock pkill to prevent killing real processes
 cat >"$MOCK_BIN/pkill" <<'EOF'
@@ -86,27 +87,43 @@ echo "1.2.3.4"
 EOF
 chmod +x "$MOCK_BIN/curl"
 
-# Create mock pkill to avoid killing real processes during tests
-cat >"$MOCK_BIN/pkill" <<'EOF'
-#!/bin/bash
-# This mock intentionally does nothing and always succeeds.
-# It prevents tests from terminating real processes on the host.
-exit 0
-EOF
-chmod +x "$MOCK_BIN/pkill"
-
-# Create mock ps to avoid depending on the host process table
+# Mock ps always succeeds so final-media-server.sh's `ps -p $SERVER_PID`
+# check passes even when the mock rclone exits immediately.
 cat >"$MOCK_BIN/ps" <<'EOF'
 #!/bin/bash
-# Minimal mock of ps: prints no processes and exits successfully.
-# Adjust as needed if tests rely on specific ps output.
 exit 0
 EOF
 chmod +x "$MOCK_BIN/ps"
+
+# Mock sleep to collapse long cosmetic delays (spinner_wait, daemon startup
+# grace periods) while still allowing sub-second polling sleeps to pass
+# through to the real /bin/sleep.
+cat >"$MOCK_BIN/sleep" <<'EOF'
+#!/bin/bash
+case "${1:-0}" in
+    0.*) exec /bin/sleep "$1" ;;
+    *)   exit 0 ;;
+esac
+EOF
+chmod +x "$MOCK_BIN/sleep"
+
 export PATH="$MOCK_BIN:$PATH"
 
-# Setup dummy LOGS
-mkdir -p "$HOME/Library/Logs"
+# Poll a file until a marker string appears or a timeout is reached.
+# Useful for tests that start a background process and must wait for it to
+# write expected output before asserting.
+wait_for_log_marker() {
+	local file="$1"
+	local marker="$2"
+	local timeout_ms="${3:-2000}"
+	local waited=0
+	while ((waited < timeout_ms)); do
+		[[ -f $file ]] && grep -q "$marker" "$file" 2>/dev/null && return 0
+		sleep 0.05
+		waited=$((waited + 50))
+	done
+	return 1
+}
 
 # Test 1: media-server-daemon.sh
 echo "Test 1: media-server-daemon.sh"
@@ -133,13 +150,13 @@ fi
 
 # Test 2: final-media-server.sh
 echo "Test 2: final-media-server.sh"
-# This script uses nohup and & so we need to be careful.
-# But since our mock rclone exits, it should be fine?
-# Wait, final-media-server.sh checks `ps -p $SERVER_PID`.
-# If mock rclone exits immediately, ps will fail and script will say failed.
-# We need mock rclone to sleep a bit.
+# Execute the real script. The $MOCK_BIN/sleep shim collapses cosmetic
+# spinner delays, and the $MOCK_BIN/ps mock lets the script proceed even
+# though the mock rclone exits immediately.
 
-# Update mock rclone to sleep
+# Update mock rclone: write env vars (with <UNSET> diagnostics) and arg
+# checks, then exit immediately. The `ps` mock always succeeds, so we don't
+# need a long-lived background process.
 cat >"$MOCK_BIN/rclone" <<'EOF'
 #!/bin/bash
 if [[ "$1" == "listremotes" ]]; then
@@ -147,9 +164,10 @@ if [[ "$1" == "listremotes" ]]; then
     exit 0
 fi
 if [[ "$1" == "serve" ]]; then
-    echo "MOCK RCLONE SERVE CALLED" > "$HOME/Library/Logs/media-server.log"
-    echo "ENV_RCLONE_USER=$RCLONE_USER" >> "$HOME/Library/Logs/media-server.log"
-    echo "ENV_RCLONE_PASS=$RCLONE_PASS" >> "$HOME/Library/Logs/media-server.log"
+    : > "$HOME/Library/Logs/media-server.log"
+    echo "MOCK RCLONE SERVE CALLED" >> "$HOME/Library/Logs/media-server.log"
+    echo "ENV_RCLONE_USER=${RCLONE_USER-<UNSET>}" >> "$HOME/Library/Logs/media-server.log"
+    echo "ENV_RCLONE_PASS=${RCLONE_PASS-<UNSET>}" >> "$HOME/Library/Logs/media-server.log"
 
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -166,7 +184,6 @@ if [[ "$1" == "serve" ]]; then
                 ;;
         esac
     done
-    sleep 2
     exit 0
 fi
 EOF
@@ -180,9 +197,10 @@ chmod +x "$MOCK_BIN/rclone"
 # But final-media-server.sh uses ~/Library/Logs which expands to $HOME/Library/Logs.
 LOG_FILE="$HOME/Library/Logs/media-server.log"
 
-# Fail fast with a clear message if the log file was not created
-if [[ ! -f $LOG_FILE ]]; then
-	echo "FAIL: expected log file not found: $LOG_FILE"
+# Wait for the background rclone to flush its credential markers to the log
+# before asserting. This avoids fixed-sleep races.
+if ! wait_for_log_marker "$LOG_FILE" "ENV_RCLONE_PASS=" 2000; then
+	echo "FAIL: expected log file not found or missing credential marker: $LOG_FILE"
 	echo "Hint: final-media-server.sh may have failed before writing the log."
 	exit 1
 fi
@@ -210,5 +228,4 @@ else
 	echo "PASS: final-media-server.sh no args"
 fi
 
-rm -rf "$MOCK_BIN" "$HOME"
 echo "ALL TESTS PASSED"
