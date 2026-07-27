@@ -657,7 +657,7 @@ treated strictly as patterns and not parsed as command-line options.
 
 **Vulnerability:** The PR automation scripts (`parse_inventory.py`, `categorize_ready.py`, `detect_duplicates.py`, `run_merges.py`) previously invoked `gh` via `subprocess.run(..., shell=True)` with user-controlled `repo`/`pr` strings parsed from Markdown inventory files.
 
-**Changes made (baseline commit `106cd316b111f44536d1a25c82c8a48a2259d734`, changes in working tree):**
+**Changes made (audited commit `ff9ec673aa9ad7d5444c41e87ae49b7c05ddbfa5`, baseline `106cd316b111f44536d1a25c82c8a48a2259d734`):**
 - Added a shared, typed PR-reference validator in `pr_reference.py` that parses `owner/name#number` once, rejects whitespace/control characters, extra path segments, leading `-`, empty components, and non-positive/non-decimal PR numbers. Invalid rows in batch processing emit a filename/line-number diagnostic and are skipped; a strict mode is available for fail-fast callers.
 - Rewrote `detect_duplicates.py` to use a static GraphQL document with declared variables and pass `owner`, `name`, and PR number separately through `gh api graphql` `-f`/`-F` fields, eliminating string interpolation in the query.
 - Consolidated token loading across `parse_inventory.py`, `categorize_ready.py`, `detect_duplicates.py`, and `run_merges.py` by importing `gh_token_env.load_gh_token_env`. `gh_token_env.py` now resolves the legacy `GH_TOKEN.env` path relative to `Path(__file__).resolve().parent`, only injects `GH_TOKEN` into the child environment, and emits a `DeprecationWarning` when the legacy path is used.
@@ -670,7 +670,7 @@ treated strictly as patterns and not parsed as command-line options.
 
 **Verification commands and results:**
 - `make lint-errors` — passed (no SC2155/SC2145 violations).
-- `python3 -m unittest discover -s tests -p 'test_*.py'` — 451 tests passed.
+- `python3 -m unittest discover -s tests -p 'test_*.py'` — 452 tests passed.
 - `uvx ruff check --select S602,S605 .` — passed.
 - `uvx bandit -r . -t B602,B605 -ll` — no issues identified.
 - `trunk check <changed files>` — no new issues.
