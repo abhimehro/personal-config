@@ -12,9 +12,6 @@ on:
   pull_request:
     types: [opened, ready_for_review, reopened, closed, labeled]
 
-permissions:
-  contents: read
-
 concurrency:
   group: pr-visual-recap-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -30,15 +27,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: read
-      issues: write
       pull-requests: write
     outputs:
       run: ${{ steps.decide.outputs.run }}
       agent: ${{ steps.decide.outputs.agent }}
     steps:
       - id: decide
-        uses: actions/github-script@v9.0.0 # v9.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           # Presence-only signals — never expose secret VALUES to the gate.
           HAS_PLAN: ${{ secrets.PLAN_RECAP_TOKEN != '' }}
@@ -227,10 +222,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      actions: write
       checks: write
       contents: read
-      issues: write
       pull-requests: write
     env:
       PLAN_RECAP_APP_URL: ${{ secrets.PLAN_RECAP_APP_URL || 'https://plan.agent-native.com' }}
@@ -300,7 +293,7 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - uses: pnpm/action-setup@v6.0.9 # v6.0.9
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         if: steps.cli.outputs.local == 'true'
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0

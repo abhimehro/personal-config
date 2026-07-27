@@ -1,11 +1,11 @@
-# Session plan — 2026-07-26 (complete)
+# Session plan — ABHI-1517: Pin GitHub Actions & Tighten Permissions
 
-- [x] Preflight gate PASS 7/7
-- [x] Inventory 14 automation PRs
-- [x] Write pr-inventory.md + pr-triage.md
-- [x] Adversarial parallel review (merge + escalate sets)
-- [x] Squash-merge 6 safe PRs
-- [x] REQUEST_CHANGES esp #1366; escalate remaining 7 via MCP
-- [x] Write pr-review-2026-07-26.md + review-session-reports + lesson 0er
-- [x] Commit/push docs branch + open_git_pr
-- [x] Update automation memory
+- [x] Audit all 17 active workflow files for unpinned actions, over-broad `permissions`, `pull_request_target`, PAT/App-token exposure, implicit `github.token`, and attacker-controlled interpolation
+- [x] Independently re-resolve every floating tag to a verified 40-character commit SHA
+- [x] Pin all remote `uses:` references to full SHAs and clean mismatched/duplicate version comments
+- [x] Apply least-privilege, job-level `permissions` and top-level defaults where needed
+- [x] Audit `persist-credentials` on checkout steps; set `false` unless the job pushes
+- [x] Add fail-closed `.github/scripts/validate_workflow_pins.py` gate and wire it into CI
+- [x] Validate with YAML parsing, `actionlint`, `pinact --no-fix`, `make test-quick`/`make test`/`make test-python`, and targeted `trunk check`
+- [ ] Open PR with ELIR handoff and post-merge repository default `GITHUB_TOKEN` guidance
+- [ ] Update Linear ABHI-1517 status and comment
