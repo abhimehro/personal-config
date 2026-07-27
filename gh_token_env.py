@@ -91,31 +91,50 @@ def _read_env_file(path: Path) -> dict[str, str]:
     return parsed
 
 
+def _override_env_path() -> Path | None:
+    """Return the env file from ``GH_TOKEN_ENV_FILE`` if configured and valid."""
+    override = os.environ.get("GH_TOKEN_ENV_FILE", "").strip()
+    if not override:
+        return None
+    candidate = Path(override).expanduser()
+    if candidate.is_file():
+        return candidate
+    raise FileNotFoundError(
+        f"GH_TOKEN_ENV_FILE does not exist or is not a file: {candidate}"
+    )
+
+
+def _xdg_env_path() -> Path | None:
+    """Return the XDG config path if it exists."""
+    xdg = os.environ.get("XDG_CONFIG_HOME", "").strip()
+    if not xdg:
+        return None
+    candidate = Path(xdg).expanduser() / "personal-config" / "GH_TOKEN.env"
+    return candidate if candidate.is_file() else None
+
+
+def _home_env_path() -> Path | None:
+    """Return the home config path if it exists."""
+    candidate = Path.home() / ".config" / "personal-config" / "GH_TOKEN.env"
+    return candidate if candidate.is_file() else None
+
+
+def _legacy_env_path() -> Path | None:
+    """Return the script-relative legacy path if it exists."""
+    return _LEGACY_RELATIVE_ENV if _LEGACY_RELATIVE_ENV.is_file() else None
+
+
 def resolve_gh_token_env_file() -> Path | None:
     """Return the first existing GH_TOKEN env file path, or None."""
-    override = os.environ.get("GH_TOKEN_ENV_FILE", "").strip()
-    if override:
-        candidate = Path(override).expanduser()
-        if candidate.is_file():
-            return candidate
-        raise FileNotFoundError(
-            f"GH_TOKEN_ENV_FILE does not exist or is not a file: {candidate}"
-        )
-
-    xdg = os.environ.get("XDG_CONFIG_HOME", "").strip()
-    if xdg:
-        xdg_path = Path(xdg).expanduser() / "personal-config" / "GH_TOKEN.env"
-        if xdg_path.is_file():
-            return xdg_path
-
-    home_config = Path.home() / ".config" / "personal-config" / "GH_TOKEN.env"
-    if home_config.is_file():
-        return home_config
-
-    legacy = _LEGACY_RELATIVE_ENV
-    if legacy.is_file():
-        return legacy
-
+    for candidate_fn in (
+        _override_env_path,
+        _xdg_env_path,
+        _home_env_path,
+        _legacy_env_path,
+    ):
+        path = candidate_fn()
+        if path is not None:
+            return path
     return None
 
 
@@ -124,6 +143,13 @@ def _get_parsed_env_vars_from_file() -> dict[str, str]:
     path = resolve_gh_token_env_file()
     if path is None:
         return {}
+    if path == _LEGACY_RELATIVE_ENV:
+        warnings.warn(
+            f"legacy GH_TOKEN.env path is deprecated: {_LEGACY_RELATIVE_ENV}; "
+            "set GH_TOKEN or GH_TOKEN_ENV_FILE instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     return _read_env_file(path)
 
 
@@ -134,20 +160,11 @@ def load_gh_token_env(base: Mapping[str, str] | None = None) -> dict[str, str]:
     1. ``GH_TOKEN`` already present in ``base``/``os.environ``.
     2. ``GH_TOKEN`` read from ``GH_TOKEN_ENV_FILE`` or a well-known path.
     """
-    env = dict(base if base is not None else os.environ)
+    if base is None:
+        base = os.environ
+    env = dict(base)
     if env.get("GH_TOKEN"):
         return env
-
-    used_path = resolve_gh_token_env_file()
-    if used_path is None:
-        return env
-    if used_path == _LEGACY_RELATIVE_ENV:
-        warnings.warn(
-            f"legacy GH_TOKEN.env path is deprecated: {_LEGACY_RELATIVE_ENV}; "
-            "set GH_TOKEN or GH_TOKEN_ENV_FILE instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
 
     file_vars = _get_parsed_env_vars_from_file()
     # Only the token value is required for ``gh``; do not inject unrelated keys.
