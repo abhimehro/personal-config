@@ -15,7 +15,10 @@ export CONTROLD_REPO
 CONTROLD_REPO="$(pwd)"
 LIB_FILE="$(mktemp)"
 cp controld-system/scripts/controld-manager "$LIB_FILE"
-echo "CONTROLD_REPO=$(pwd)" > "$CONTROLD_DIR/controld.env"
+# controld-manager now sources a strict env loader from its own directory.
+cp scripts/lib/controld-env.sh "$(dirname "$LIB_FILE")/controld-env.sh"
+echo "CONTROLD_REPO=$(pwd)" >"$CONTROLD_DIR/controld.env"
+chmod 600 "$CONTROLD_DIR/controld.env"
 
 mkdir -p "$CONTROLD_DIR/profiles" "$CONTROLD_DIR/backup"
 

@@ -10,6 +10,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONTROLD_MANAGER_SRC="$REPO_ROOT/controld-system/scripts/controld-manager"
 CONTROLD_MANAGER_DEST="/usr/local/bin/controld-manager"
+CONTROLD_ENV_SRC="$REPO_ROOT/scripts/lib/controld-env.sh"
+CONTROLD_ENV_DEST="/usr/local/bin/controld-env.sh"
 ENV_EXAMPLE_SRC="$REPO_ROOT/controld-system/controld.env.example"
 ENV_DEST="/etc/controld/controld.env"
 
@@ -64,6 +66,15 @@ else
 	sudo install -m 755 -o root -g wheel "$CONTROLD_MANAGER_SRC" "$CONTROLD_MANAGER_DEST"
 	success "controld-manager installed"
 fi
+
+# Install the strict env loader alongside the manager so the installed manager can
+# source it without requiring a full copy of the repo libraries.
+log "Installing controld-env helper..."
+if [[ -L $CONTROLD_ENV_DEST ]]; then
+	error "Security Alert: $CONTROLD_ENV_DEST is a symbolic link. Aborting to prevent hijack."
+fi
+sudo install -m 755 -o root -g wheel "$CONTROLD_ENV_SRC" "$CONTROLD_ENV_DEST"
+success "controld-env helper installed"
 
 # Verify installation
 if ! command -v controld-manager >/dev/null 2>&1; then

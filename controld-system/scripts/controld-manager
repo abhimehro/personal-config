@@ -8,15 +8,32 @@
 
 set -e
 
-# Determine script location to optionally load shared libraries.
+# Determine script location.
 # When copied to /usr/local/bin, dirname is NOT the repo — discover via
-# CONTROLD_REPO (env or /etc/controld/controld.env) or adjacent repo layout.
+# CONTROLD_REPO (loaded from /etc/controld/controld.env) or the installed copy
+# of the env loader.
 _CTRLD_MGR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENV_FILE="${CONTROLD_DIR:-/etc/controld}/controld.env"
-if [[ -f $ENV_FILE ]]; then
-	# shellcheck source=/dev/null
-	source "$ENV_FILE"
+
+# Source the strict env loader first.  The installed manager copies it alongside
+# itself; for repo runs fall back to scripts/lib.
+if [[ -f $_CTRLD_MGR_DIR/controld-env.sh ]]; then
+	# shellcheck source=scripts/lib/controld-env.sh
+	source "$_CTRLD_MGR_DIR/controld-env.sh"
+elif [[ -f $_CTRLD_MGR_DIR/../../scripts/lib/controld-env.sh ]]; then
+	# shellcheck source=scripts/lib/controld-env.sh
+	source "$_CTRLD_MGR_DIR/../../scripts/lib/controld-env.sh"
+else
+	echo "[ERROR] controld-manager cannot find controld-env.sh" >&2
+	exit 1
 fi
+
+# Load configuration from /etc/controld/controld.env using the strict loader.
+# This sets CONTROLD_DIR, CONTROLD_REPO, profile IDs, etc.  No consumer sources
+# the env file directly.
+load_controld_env || {
+	echo "[ERROR] Failed to load Control D configuration." >&2
+	exit 1
+}
 
 _CTRLD_SCRIPTS_LIB=""
 _CTRLD_REPO_ROOT=""
@@ -33,7 +50,7 @@ done
 
 # Source shared libraries when available (required for CD Mode native start).
 if [[ -z $_CTRLD_SCRIPTS_LIB ]]; then
-	echo "[ERROR] controld-manager cannot find scripts/lib (set CONTROLD_REPO in $ENV_FILE)." >&2
+	echo "[ERROR] controld-manager cannot find scripts/lib (set CONTROLD_REPO in ${CONTROLD_DIR:-/etc/controld}/controld.env)." >&2
 	echo "        Re-run: $HOME/dev/personal-config/scripts/setup-controld.sh" >&2
 	exit 1
 fi
@@ -54,19 +71,12 @@ for _lib in \
 done
 unset _lib _cand _CTRLD_SCRIPTS_LIB _CTRLD_REPO_ROOT _CTRLD_MGR_DIR
 
-# Configuration
+# Configuration defaults (env file values take precedence where loaded).
 CONTROLD_DIR="${CONTROLD_DIR:-/etc/controld}"
 PROFILES_DIR="$CONTROLD_DIR/profiles"
 BACKUP_DIR="$CONTROLD_DIR/backup"
 LOG_FILE="${LOG_FILE:-/var/log/controld_manager.log}"
-ENV_FILE="$CONTROLD_DIR/controld.env"
 LISTENER_IP="127.0.0.1" # localhost - where ctrld listens for DNS queries
-
-# Re-load env after CONTROLD_DIR is finalized (profile IDs, etc.)
-if [[ -f $ENV_FILE ]]; then
-	# shellcheck source=/dev/null
-	source "$ENV_FILE"
-fi
 
 # Color codes
 RED='\033[0;31m'

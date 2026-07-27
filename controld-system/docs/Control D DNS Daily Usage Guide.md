@@ -57,12 +57,12 @@ exclusive and each is optimized to work independently.
 Profiles are defined in `scripts/network-mode-manager.sh` and mapped to Control
 D resolver IDs:
 
-- `privacy` → `6m971e9jaf`
+- `privacy` → `<CONTROL_D_PRIVACY_RESOLVER_ID>`
   - Maximum privacy/security, more aggressive blocking.
-- `browsing` → `rcnz7qgvwg`
+- `browsing` → `<CONTROL_D_BROWSING_RESOLVER_ID>`
   - Balanced privacy vs compatibility.
   - Recommended default for most day-to-day browsing.
-- `gaming` → `1xfy57w34t7`
+- `gaming` → `<CONTROL_D_GAMING_RESOLVER_ID>`
   - Minimal filtering, tuned for low latency and fewer false positives.
 
 These profile names are what you pass to the manager and regression scripts.
