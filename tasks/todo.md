@@ -30,6 +30,6 @@
 - [x] `tasks/pr-review-2026-07-27.md`
 - [x] Append `tasks/salvage-session-reports.md`
 - [x] Lesson 0es in `tasks/lessons.md`
-- [ ] Commit+push session docs on `cursor-agent/automated-pr-salvage-workflow-3074`
-- [ ] `open_git_pr` for session docs
-- [ ] Memory + Notion audit trail
+- [x] Commit+push session docs on `cursor-agent/automated-pr-salvage-workflow-3074`
+- [x] `open_git_pr` → https://github.com/abhimehro/personal-config/pull/1793
+- [x] Memory + Notion audit trail
