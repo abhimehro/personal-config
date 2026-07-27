@@ -7,5 +7,6 @@
 - [x] Audit `persist-credentials` on checkout steps; set `false` unless the job pushes
 - [x] Add fail-closed `.github/scripts/validate_workflow_pins.py` gate and wire it into CI
 - [x] Validate with YAML parsing, `actionlint`, `pinact --no-fix`, `make test-quick`/`make test`/`make test-python`, and targeted `trunk check`
-- [ ] Open PR with ELIR handoff and post-merge repository default `GITHUB_TOKEN` guidance
-- [ ] Update Linear ABHI-1517 status and comment
+- [x] Resolve CI / CodeScene code-health failures on `validate_workflow_pins.py`
+- [x] Open PR with ELIR handoff and post-merge repository default `GITHUB_TOKEN` guidance
+- [x] Update Linear ABHI-1517 with implementation summary and status
