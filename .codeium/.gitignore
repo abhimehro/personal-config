@@ -1,3 +1,5 @@
 # Live MCP configs hold resolved secrets — never commit them.
+# Committed *.template files use op:// 1Password refs only (not live keys).
+# See docs/MCP_SECRETS_MANAGEMENT.md and mcp-configs/README.md.
 */mcp_config.json
 !*/mcp_config.json.template
