@@ -1,52 +1,35 @@
-from concurrent.futures import ThreadPoolExecutor
 import json
-import os
 import subprocess
-from functools import lru_cache
+import sys
+from concurrent.futures import ThreadPoolExecutor
 
-
-def _parse_env_line(line, env_dict):
-    line = line.strip()
-    if not line:
-        return
-    if line.startswith("#"):
-        return
-    if line.startswith("export "):
-        line = line[7:].strip()
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    key, sep, val = line.partition("=")
-    if not sep:
-        return
-    env_dict[key] = val.strip("'\"")
-
-
-@lru_cache(maxsize=None)
-def _get_parsed_env_vars():
-    # ⚡ Bolt Optimization: Cache only the parsed variables from the file to prevent redundant IO reads, while keeping it safe from mutable dictionary cache poisoning
-    parsed_vars = {}
-    try:
-        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
-            for line in f:
-                _parse_env_line(line, parsed_vars)
-    except FileNotFoundError:
-        pass
-    return parsed_vars
-
-
-def _load_gh_token_env():
-    env = os.environ.copy()
-    env.update(_get_parsed_env_vars())
-    return env
+from gh_token_env import load_gh_token_env
+from pr_reference import PRReference
 
 
 def run_gh(cmd_list):
-    env = _load_gh_token_env()
-    result = subprocess.run(cmd_list, capture_output=True, text=True, env=env)
+    """Call ``gh`` and return parsed JSON, or None on failure/timeout."""
+    env = load_gh_token_env()
+    try:
+        result = subprocess.run(
+            cmd_list,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=120,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        print(
+            f"gh command timed out: {cmd_list[0] if cmd_list else cmd_list}",
+            file=sys.stderr,
+        )
+        return None
     if result.returncode != 0:
         return None
     try:
         return json.loads(result.stdout)
-    except:
+    except json.JSONDecodeError:
         return None
 
 
@@ -88,14 +71,10 @@ _CATEGORIES = (
 
 def get_category_from_title(title: str) -> str:
     title = title.lower()
-
-    # ⚡ Bolt Optimization: Iterate over a predefined tuple of categories to avoid
-    # dictionary allocation overhead on every function call
     for cat_name, keywords in _CATEGORIES:
         for kw in keywords:
             if kw in title:
                 return cat_name
-
     return "PERFORMANCE/REFACTOR/UI/FEATURE"
 
 
@@ -108,16 +87,15 @@ categorized = {
 
 
 def fetch_pr_info(pr):
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    repo, _, pr_id = pr.partition("#")
+    ref = PRReference.from_string(pr)
     info = run_gh(
         [
             "gh",
             "pr",
             "view",
-            str(pr_id),
+            str(ref.number),
             "-R",
-            str(repo),
+            ref.repo,
             "--json",
             "title,mergeStateStatus",
         ]
@@ -125,16 +103,13 @@ def fetch_pr_info(pr):
     return pr, info
 
 
-    # ⚡ Bolt Optimization: Dynamic thread concurrency to eliminate batching latency
 with ThreadPoolExecutor(max_workers=min(len(ready_prs) or 1, 32)) as executor:
-    # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls while preserving order using map()
     results = executor.map(fetch_pr_info, ready_prs)
 
 for pr, info in results:
     if not info:
         continue
 
-    # Exclude unstable/dirty
     if info.get("mergeStateStatus") in ["DIRTY", "CONFLICTING"]:
         print(f"Skipping {pr} because it is {info.get('mergeStateStatus')}")
         continue
@@ -142,7 +117,7 @@ for pr, info in results:
     title = info.get("title", "")
     cat = get_category_from_title(title)
 
-    categorized[cat].append((pr, info.get("title")))
+    categorized[cat].append((pr, title))
 
 for cat, items in categorized.items():
     print(f"\n{cat}:")
