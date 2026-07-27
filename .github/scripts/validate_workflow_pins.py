@@ -8,6 +8,7 @@ placeholder text, floating tag, or abbreviated ref causes a non-zero exit.
 from __future__ import annotations
 
 import argparse
+import itertools
 import re
 from pathlib import Path
 
@@ -77,8 +78,8 @@ def validate_file(path: Path) -> list[str]:
     return violations
 
 
-def _yaml_files_under(path: Path) -> list[Path]:
-    """Return all YAML files directly under a path, or the path itself if it is a file."""
+def _yaml_files(path: Path) -> list[Path]:
+    """Return all YAML files for a single file or directory path."""
     if path.is_file() and path.suffix in {".yml", ".yaml"}:
         return [path]
     if path.is_dir():
@@ -88,15 +89,12 @@ def _yaml_files_under(path: Path) -> list[Path]:
 
 def validate_paths(paths: list[Path]) -> int:
     """Scan the given paths and print violations. Return 0 only if clean."""
-    violations: list[str] = []
-    for path in paths:
-        for file_path in _yaml_files_under(path):
-            violations.extend(validate_file(file_path))
+    files = list(itertools.chain.from_iterable(_yaml_files(p) for p in paths))
+    violations = list(itertools.chain.from_iterable(validate_file(f) for f in files))
 
     if violations:
         print("Workflow action pin violations found:")
-        for violation in violations:
-            print(f"  - {violation}")
+        print("  - " + "\n  - ".join(violations))
         return 1
 
     print("All remote GitHub Actions references are pinned to full commit SHAs.")
