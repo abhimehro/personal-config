@@ -8,7 +8,6 @@ placeholder text, floating tag, or abbreviated ref causes a non-zero exit.
 from __future__ import annotations
 
 import argparse
-import itertools
 import re
 from pathlib import Path
 
@@ -89,8 +88,13 @@ def _yaml_files(path: Path) -> list[Path]:
 
 def validate_paths(paths: list[Path]) -> int:
     """Scan the given paths and print violations. Return 0 only if clean."""
-    files = list(itertools.chain.from_iterable(_yaml_files(p) for p in paths))
-    violations = list(itertools.chain.from_iterable(validate_file(f) for f in files))
+    files: list[Path] = []
+    for path in paths:
+        files.extend(_yaml_files(path))
+
+    violations: list[str] = []
+    for file_path in files:
+        violations.extend(validate_file(file_path))
 
     if violations:
         print("Workflow action pin violations found:")
