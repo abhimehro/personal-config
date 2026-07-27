@@ -678,3 +678,9 @@ treated strictly as patterns and not parsed as command-line options.
 **Accepted exclusions:**
 - `tests/test_vulnerability_fix.py` intentionally uses `exec(code, mod.__dict__)` to load isolated AST nodes for regression testing; the input AST is built from the repository's own source, not attacker-controlled.
 - `scratch_inventory.py` / `scratch_triage.py` are out of scope for this fix; they do not load `GH_TOKEN.env` and operate on hardcoded repo lists, but should be hardened with timeouts and the shared env loader in a follow-up.
+
+## 2026-07-28 - Missing Timeouts and Auth Loader in Subprocess
+
+**Vulnerability:** `scratch_inventory.py` and `scratch_triage.py` invoked `gh` via `subprocess.run` without timeouts or the standardized `gh_token_env` loader, risking indefinite hangs on network requests (DoS) and potential inconsistent execution environments.
+**Learning:** Even in utility/scratch scripts, all network-bound subprocess calls should have strict timeouts and utilize consistent authentication loading mechanisms to avoid stalling or failing silently.
+**Prevention:** Always add a `timeout` argument to `subprocess.run` when calling external APIs, and consistently use the common `load_gh_token_env` utility for GitHub authentication context.
