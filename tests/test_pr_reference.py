@@ -86,7 +86,7 @@ class TestPRReference(unittest.TestCase):
         old_stderr = sys.stderr
         sys.stderr = captured
         try:
-            result = parse_repo_name("bad-name", source="tasks/test.md", line=3)
+            result = parse_repo_name("bad-name", loc=("tasks/test.md", 3))
         finally:
             sys.stderr = old_stderr
         self.assertIsNone(result)

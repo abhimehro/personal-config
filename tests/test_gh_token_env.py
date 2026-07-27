@@ -25,6 +25,30 @@ class TestGhTokenEnv(unittest.TestCase):
     def setUp(self):
         clear_gh_token_cache()
 
+    def _load_from_file(
+        self,
+        content: str,
+        env_vars: dict | None = None,
+        pop_gh_token: bool = True,
+    ) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+        """Load GH_TOKEN from a secure temp env file.
+
+        Returns ``(merged_env, original_env, env_after_load)`` so callers can
+        verify that ``load_gh_token_env`` does not mutate ``os.environ``.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / "GH_TOKEN.env"
+            _write_secure_env_file(env_file, content)
+            patched = dict(env_vars) if env_vars else {}
+            patched["GH_TOKEN_ENV_FILE"] = str(env_file)
+            with patch.dict(os.environ, patched, clear=True):
+                if pop_gh_token:
+                    os.environ.pop("GH_TOKEN", None)
+                original = os.environ.copy()
+                merged = load_gh_token_env()
+                after = os.environ.copy()
+                return merged, original, after
+
     def test_parse_env_line_basic(self):
         env: dict[str, str] = {}
         parse_env_line("FOO=bar", env)
@@ -97,14 +121,7 @@ class TestGhTokenEnv(unittest.TestCase):
         self.assertEqual(merged["GH_TOKEN"], "env_token")
 
     def test_load_from_file_when_env_unset(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            env_file = Path(tmp) / "GH_TOKEN.env"
-            _write_secure_env_file(env_file, "export GH_TOKEN=file_token\n")
-            with patch.dict(
-                os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True
-            ):
-                os.environ.pop("GH_TOKEN", None)
-                merged = load_gh_token_env()
+        merged, _, _ = self._load_from_file("export GH_TOKEN=file_token\n")
         self.assertEqual(merged["GH_TOKEN"], "file_token")
 
     def test_resolve_gh_token_env_file_override(self):
@@ -131,29 +148,15 @@ class TestGhTokenEnv(unittest.TestCase):
         self.assertIn("github-pat-rotation-runbook", message)
 
     def test_load_from_file_only_injects_gh_token(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            env_file = Path(tmp) / "GH_TOKEN.env"
-            _write_secure_env_file(
-                env_file, "GH_TOKEN=file_token\nOTHER_VAR=do_not_inject\n"
-            )
-            with patch.dict(
-                os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True
-            ):
-                os.environ.pop("GH_TOKEN", None)
-                merged = load_gh_token_env()
+        merged, _, _ = self._load_from_file(
+            "GH_TOKEN=file_token\nOTHER_VAR=do_not_inject\n"
+        )
         self.assertEqual(merged["GH_TOKEN"], "file_token")
         self.assertNotIn("OTHER_VAR", merged)
 
     def test_load_gh_token_env_does_not_mutate_global_environ(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            env_file = Path(tmp) / "GH_TOKEN.env"
-            _write_secure_env_file(env_file, "GH_TOKEN=file_token\n")
-            with patch.dict(
-                os.environ, {"GH_TOKEN_ENV_FILE": str(env_file)}, clear=True
-            ):
-                original = os.environ.copy()
-                load_gh_token_env()
-                self.assertEqual(os.environ, original)
+        _, original, after = self._load_from_file("GH_TOKEN=file_token\n")
+        self.assertEqual(after, original)
 
     def test_legacy_path_is_script_relative(self):
         import gh_token_env as gte

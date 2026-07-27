@@ -5,6 +5,9 @@ from __future__ import annotations
 import re
 import sys
 from dataclasses import dataclass
+from typing import Callable, TypeVar
+
+T = TypeVar("T")
 
 
 class InvalidPrReferenceError(ValueError):
@@ -20,24 +23,28 @@ _CONTROL_OR_SPACE_RE = re.compile(r"[\s\0-\x1f\x7f]")
 _PR_NUMBER_RE = re.compile(r"^[1-9][0-9]*$")
 
 
-def _check_component(component: str, kind: str) -> None:
-    if not component:
+def _format_location(source: str | None, line: int | None) -> str:
+    return f"{source or '<unknown>'}:{line or '?' }"
+
+
+def _validate_component(value: str, kind: str, regex: re.Pattern | None = None) -> None:
+    """Validate a single value and raise a descriptive error if it is unsafe."""
+    if not value:
         raise InvalidPrReferenceError(f"{kind} is empty")
-    if component[0] == "-":
+    if value[0] == "-":
         raise InvalidPrReferenceError(
-            f"{kind} starts with an option-like '-': {component!r}"
+            f"{kind} starts with an option-like '-': {value!r}"
         )
-    if _CONTROL_OR_SPACE_RE.search(component):
+    if _CONTROL_OR_SPACE_RE.search(value):
         raise InvalidPrReferenceError(
-            f"{kind} contains whitespace/control characters: {component!r}"
+            f"{kind} contains whitespace/control characters: {value!r}"
         )
-    if not _OWNER_NAME_RE.match(component):
-        raise InvalidPrReferenceError(
-            f"{kind} contains invalid characters: {component!r}"
-        )
+    if regex is not None and not regex.match(value):
+        raise InvalidPrReferenceError(f"{kind} contains invalid characters: {value!r}")
 
 
 def _split_repo(repo: str) -> tuple[str, str]:
+    """Split and validate an ``owner/name`` string."""
     repo = repo.strip()
     if not repo:
         raise InvalidPrReferenceError("repo reference is empty")
@@ -45,34 +52,40 @@ def _split_repo(repo: str) -> tuple[str, str]:
         raise InvalidPrReferenceError(
             f"repo reference contains whitespace/control characters: {repo!r}"
         )
-    slash_count = repo.count("/")
-    if slash_count != 1:
+    if repo.count("/") != 1:
         raise InvalidPrReferenceError(
-            f"repo must be exactly owner/name (got {slash_count} '/'): {repo!r}"
+            f"repo must be exactly owner/name (got {repo.count('/')} '/'): {repo!r}"
         )
     owner, name = repo.split("/", 1)
-    _check_component(owner, "owner")
-    _check_component(name, "repo name")
+    _validate_component(owner, "owner", _OWNER_NAME_RE)
+    _validate_component(name, "repo name", _OWNER_NAME_RE)
     return owner, name
 
 
 def _parse_pr_number(pr: str) -> int:
+    """Validate and parse a positive decimal PR number."""
     pr = pr.strip()
-    if not pr:
-        raise InvalidPrReferenceError("PR number is empty")
-    if _CONTROL_OR_SPACE_RE.search(pr):
-        raise InvalidPrReferenceError(
-            f"PR number contains whitespace/control characters: {pr!r}"
-        )
-    if pr[0] == "-":
-        raise InvalidPrReferenceError(
-            f"PR number starts with an option-like '-': {pr!r}"
-        )
-    if not _PR_NUMBER_RE.match(pr):
-        raise InvalidPrReferenceError(
-            f"PR number must be a positive decimal integer: {pr!r}"
-        )
+    _validate_component(pr, "PR number", _PR_NUMBER_RE)
     return int(pr)
+
+
+def _run_parser(
+    parser: Callable[..., T],
+    *args: object,
+    source: str | None,
+    line: int | None,
+    strict: bool,
+    label: str,
+) -> T | None:
+    """Run a parser, printing a diagnostic or raising on invalid input."""
+    try:
+        return parser(*args)
+    except InvalidPrReferenceError as exc:
+        location = _format_location(source, line)
+        if strict:
+            raise InvalidPrReferenceError(f"{location}: {exc}") from exc
+        print(f"skipping invalid {label} at {location}: {exc}", file=sys.stderr)
+        return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -108,43 +121,37 @@ class PRReference:
         return cls.from_parts(repo, pr)
 
 
-def _format_location(source: str | None, line: int | None) -> str:
-    return f"{source or '<unknown>'}:{line or '?'}"
-
-
 def parse_repo_name(
     repo: str,
     *,
-    source: str | None = None,
-    line: int | None = None,
+    loc: tuple[str, int] | None = None,
     strict: bool = False,
 ) -> str | None:
     """Validate a repo name and return ``owner/name``, or skip with a diagnostic."""
-    try:
-        owner, name = _split_repo(repo)
-        return f"{owner}/{name}"
-    except InvalidPrReferenceError as exc:
-        location = _format_location(source, line)
-        if strict:
-            raise InvalidPrReferenceError(f"{location}: {exc}") from exc
-        print(f"skipping invalid repo name at {location}: {exc}", file=sys.stderr)
-        return None
+    source, line = loc if loc else (None, None)
+    result = _run_parser(
+        _split_repo, repo, source=source, line=line, strict=strict, label="repo name"
+    )
+    return f"{result[0]}/{result[1]}" if result else None
 
 
 def parse_pr_reference(
     repo: str,
     pr: str,
     *,
-    source: str | None = None,
-    line: int | None = None,
+    loc: tuple[str, int] | None = None,
     strict: bool = False,
 ) -> PRReference | None:
     """Validate a ``repo`` + ``pr`` pair and return a typed value, or skip with a diagnostic."""
-    try:
-        return PRReference.from_parts(repo, pr)
-    except InvalidPrReferenceError as exc:
-        location = _format_location(source, line)
-        if strict:
-            raise InvalidPrReferenceError(f"{location}: {exc}") from exc
-        print(f"skipping invalid PR reference at {location}: {exc}", file=sys.stderr)
+    source, line = loc if loc else (None, None)
+    owner_name = _run_parser(
+        _split_repo, repo, source=source, line=line, strict=strict, label="repo name"
+    )
+    if owner_name is None:
         return None
+    number = _run_parser(
+        _parse_pr_number, pr, source=source, line=line, strict=strict, label="PR number"
+    )
+    if number is None:
+        return None
+    return PRReference(owner_name[0], owner_name[1], number)

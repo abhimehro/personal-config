@@ -56,11 +56,11 @@ def _parse_repo_name(line):
         match = _REPO_LINK_PATTERN.search(line)
         if match:
             return parse_repo_name(
-                match.group(1).strip(), source="tasks/pr-inventory.md"
+                match.group(1).strip(), loc=("tasks/pr-inventory.md", None)
             )
         return None
     if line.startswith("## "):
-        return parse_repo_name(line[3:].strip(), source="tasks/pr-inventory.md")
+        return parse_repo_name(line[3:].strip(), loc=("tasks/pr-inventory.md", None))
     return None
 
 
@@ -91,7 +91,7 @@ def _parse_row_record(line, current_repo, line_number):
     repo_col, pr_id, author, checks, hints = _extract_pr_row_fields(parts)
     if repo_col:
         effective_repo = parse_repo_name(
-            repo_col, source="tasks/pr-inventory.md", line=line_number
+            repo_col, loc=("tasks/pr-inventory.md", line_number)
         )
     else:
         effective_repo = current_repo
@@ -100,7 +100,7 @@ def _parse_row_record(line, current_repo, line_number):
     if not _is_valid_pr_row(author, hints):
         return None
     ref = parse_pr_reference(
-        effective_repo, pr_id, source="tasks/pr-inventory.md", line=line_number
+        effective_repo, pr_id, loc=("tasks/pr-inventory.md", line_number)
     )
     if ref is None:
         return None
