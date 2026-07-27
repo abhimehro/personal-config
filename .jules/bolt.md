@@ -624,3 +624,6 @@ invocation.
 ## 2026-12-07 - [Pre-compile regular expressions]
 **Learning:** Re-compiling the identical regular expression inside functions that are called frequently (like string parsing loops in `select-best-alldebrid-candidate.py`) adds unnecessary overhead due to repeated evaluation in `re.sub()`.
 **Action:** Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module level when they are static and used repeatedly inside loops or frequently called functions.
+## 2026-05-15 - [Pre-compile Regex in tight loops]
+**Learning:** `re.fullmatch()` and similar functions compile the regex on the fly. Doing this inside a tight loop like scanning PRs or commits is a huge performance hit.
+**Action:** Always pre-compile regexes at the module level using `re.compile()` and use the compiled object's methods instead of the module-level functions.
