@@ -2,8 +2,8 @@
 
 ## 📋 Purpose
 
-Standardize committed secret placeholders so scanners and humans cannot confuse
-templates with live credentials. MCP templates keep `op://` 1Password refs;
+Standardize committed placeholder markers so scanners and humans cannot confuse
+templates with live credentials. MCP templates keep `op://` 1Password CLI refs;
 `.env.example`-style files use `REPLACE_WITH_*` markers; docs no longer say
 `your_actual_…`.
 
@@ -11,7 +11,7 @@ templates with live credentials. MCP templates keep `op://` 1Password refs;
 
 - **Threats addressed:** Ambiguous placeholders mistaken for real keys; legacy
   `YOUR_*_API_KEY` MCP template diverging from the canonical `op://` source of
-  truth; docs implying filled secrets belong in-repo.
+  truth; docs implying filled credentials belong in-repo.
 - **Assumptions:** No live keys were present in the flagged files (confirmed by
   audit). Windsurf `op://` values are intentional secure refs.
 - **Trust boundary:** Committed templates vs generated/local configs outside
@@ -21,7 +21,7 @@ templates with live credentials. MCP templates keep `op://` 1Password refs;
 
 | Break                                      | Consequence                         | Mitigation                                      |
 | ------------------------------------------ | ----------------------------------- | ----------------------------------------------- |
-| Someone pastes a live key into a template  | Secret committed                    | Generator + hygiene test; regenerate with `op`  |
+| Someone pastes a live key into a template  | Key lands in git                    | Generator + hygiene test; regenerate with `op`  |
 | Legacy template drifts from canonical JSON | Conflicting docs / scanner noise    | Legacy file now mirrors `.template.json`        |
 | Scanner still flags `op://`                | False positive                      | Documented as secure-storage refs in MCP docs   |
 
