@@ -12,7 +12,6 @@ from parse_inventory import (
     _is_checks_failing,
     _is_pr_stale,
     _load_inventory_lines,
-    _parse_env_line,
     _parse_repo_name,
     _write_triage_report,
     parse_inventory_lines,
@@ -37,60 +36,33 @@ class TestParseInventory(unittest.TestCase):
             "updatedAt": updated_at,
         }
 
-    def test_parse_env_line_basic(self):
-        env = {}
-        _parse_env_line("FOO=bar", env)
-        self.assertEqual(env, {"FOO": "bar"})
-
-    def test_parse_env_line_with_export(self):
-        env = {}
-        _parse_env_line("export FOO=bar", env)
-        self.assertEqual(env, {"FOO": "bar"})
-
-    def test_parse_env_line_with_quotes(self):
-        env = {}
-        _parse_env_line('export FOO="bar"', env)
-        self.assertEqual(env, {"FOO": "bar"})
-
-        env = {}
-        _parse_env_line("export FOO='bar'", env)
-        self.assertEqual(env, {"FOO": "bar"})
-
-    def test_parse_env_line_comments_and_empty(self):
-        env = {"FOO": "bar"}
-        _parse_env_line("# export BAZ=qux", env)
-        self.assertEqual(env, {"FOO": "bar"})
-
-        _parse_env_line("   ", env)
-        self.assertEqual(env, {"FOO": "bar"})
-
     def test_parse_inventory_lines(self):
         # Flat-table format matching tasks/pr-inventory.md (no ## section headers)
         lines = [
             "| Repo | PR | Author (API) | Branch (head) | Category | CI rollup | Conflicts | Age (created→) | Notes |\n",
             "| ---------------------------------------- | --- | ------------ | ----------- | ------- | --------- | --------- | -------------- | ----- |\n",
-            "| repoA | 123 | some_user[bot] | branch | cat | C | none | 2026-05-03 | |\n",
-            "| repoA | 456 | human | branch | cat | FAIL | none | 2026-05-03 | has-hints |\n",
-            "| repoA | 789 | human | branch | cat | C | none | 2026-05-03 | |\n",
-            "| repoB | 101 | another[bot] | branch | cat | C | none | 2026-05-03 | |\n",
+            "| owner/repoA | 123 | some_user[bot] | branch | cat | C | none | 2026-05-03 | |\n",
+            "| owner/repoA | 456 | human | branch | cat | FAIL | none | 2026-05-03 | has-hints |\n",
+            "| owner/repoA | 789 | human | branch | cat | C | none | 2026-05-03 | |\n",
+            "| owner/repoB | 101 | another[bot] | branch | cat | C | none | 2026-05-03 | |\n",
         ]
         repos = parse_inventory_lines(lines)
 
-        self.assertIn("repoA", repos)
-        self.assertIn("repoB", repos)
+        self.assertIn("owner/repoA", repos)
+        self.assertIn("owner/repoB", repos)
 
         # repoA: 123 (bot) and 456 (human with hints), not 789 (human, no hints)
-        self.assertEqual(len(repos["repoA"]), 2)
-        self.assertEqual(repos["repoA"][0]["pr"], "123")
-        self.assertEqual(repos["repoA"][0]["checks"], "C")
+        self.assertEqual(len(repos["owner/repoA"]), 2)
+        self.assertEqual(repos["owner/repoA"][0]["pr"], "123")
+        self.assertEqual(repos["owner/repoA"][0]["checks"], "C")
 
-        self.assertEqual(repos["repoA"][1]["pr"], "456")
-        self.assertEqual(repos["repoA"][1]["checks"], "FAIL")
+        self.assertEqual(repos["owner/repoA"][1]["pr"], "456")
+        self.assertEqual(repos["owner/repoA"][1]["checks"], "FAIL")
 
         # repoB: 101 (bot)
-        self.assertEqual(len(repos["repoB"]), 1)
-        self.assertEqual(repos["repoB"][0]["pr"], "101")
-        self.assertEqual(repos["repoB"][0]["checks"], "C")
+        self.assertEqual(len(repos["owner/repoB"]), 1)
+        self.assertEqual(repos["owner/repoB"][0]["pr"], "101")
+        self.assertEqual(repos["owner/repoB"][0]["checks"], "C")
 
     def test_parse_inventory_lines_missing_repo(self):
         # Flat-table row with empty repo column and no section header: should be skipped
@@ -103,39 +75,46 @@ class TestParseInventory(unittest.TestCase):
     def test_parse_inventory_lines_malformed(self):
         # Section-header establishes repo; row with too few columns is silently skipped
         lines = [
-            "## repoA\n",
-            "| repoA | 123 | bot[bot] | \n",  # Too few columns
+            "## owner/repoA\n",
+            "| owner/repoA | 123 | bot[bot] | \n",  # Too few columns
         ]
         repos = parse_inventory_lines(lines)
-        self.assertEqual(repos["repoA"], [])
+        self.assertEqual(repos["owner/repoA"], [])
 
     # --- _parse_repo_name ---
 
     def test_parse_repo_name_valid(self):
-        self.assertEqual(_parse_repo_name("## repo-name"), "repo-name")
+        self.assertEqual(_parse_repo_name("## owner/repo-name"), "owner/repo-name")
 
     def test_parse_repo_name_with_extra_spaces(self):
-        self.assertEqual(_parse_repo_name("##    repo-name   "), "repo-name")
+        self.assertEqual(
+            _parse_repo_name("##    owner/repo-name   "), "owner/repo-name"
+        )
 
     def test_parse_repo_name_link_format(self):
         self.assertEqual(
-            _parse_repo_name("### [repo-name](https://github.com/org/repo-name)"),
-            "repo-name",
+            _parse_repo_name("### [owner/repo-name](https://github.com/org/repo-name)"),
+            "owner/repo-name",
         )
 
     def test_parse_repo_name_link_format_with_spaces(self):
-        self.assertEqual(_parse_repo_name("### [  repo-name  ](url)"), "repo-name")
+        self.assertEqual(
+            _parse_repo_name("### [  owner/repo-name  ](url)"), "owner/repo-name"
+        )
 
     def test_parse_repo_name_invalid_link_format(self):
         self.assertIsNone(_parse_repo_name("### no-link"))
 
     def test_parse_repo_name_invalid_prefix(self):
-        self.assertIsNone(_parse_repo_name("# repo-name"))
-        self.assertIsNone(_parse_repo_name("repo-name"))
+        self.assertIsNone(_parse_repo_name("# owner/repo-name"))
+        self.assertIsNone(_parse_repo_name("owner/repo-name"))
 
     def test_parse_repo_name_empty(self):
         self.assertIsNone(_parse_repo_name(""))
         self.assertIsNone(_parse_repo_name("   "))
+
+    def test_parse_repo_name_invalid_repo(self):
+        self.assertIsNone(_parse_repo_name("## invalid-name"))
 
     # --- _load_inventory_lines ---
 
@@ -204,7 +183,7 @@ class TestParseInventory(unittest.TestCase):
 
     # --- run_gh ---
 
-    @patch("parse_inventory._load_gh_token_env", return_value={})
+    @patch("parse_inventory.load_gh_token_env", return_value={})
     @patch("parse_inventory.subprocess.run")
     def test_run_gh_success(self, mock_run, _mock_env):
         mock_result = MagicMock()
@@ -217,7 +196,7 @@ class TestParseInventory(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(result["files"][0]["filename"], "foo.py")
 
-    @patch("parse_inventory._load_gh_token_env", return_value={})
+    @patch("parse_inventory.load_gh_token_env", return_value={})
     @patch("parse_inventory.subprocess.run")
     def test_run_gh_nonzero(self, mock_run, _mock_env):
         mock_result = MagicMock()
@@ -226,7 +205,7 @@ class TestParseInventory(unittest.TestCase):
         mock_run.return_value = mock_result
         self.assertIsNone(run_gh("repoA", 123))
 
-    @patch("parse_inventory._load_gh_token_env", return_value={})
+    @patch("parse_inventory.load_gh_token_env", return_value={})
     @patch("parse_inventory.subprocess.run")
     def test_run_gh_invalid_json(self, mock_run, _mock_env):
         mock_result = MagicMock()
@@ -235,7 +214,7 @@ class TestParseInventory(unittest.TestCase):
         mock_run.return_value = mock_result
         self.assertIsNone(run_gh("repoA", 123))
 
-    @patch("parse_inventory._load_gh_token_env", return_value={})
+    @patch("parse_inventory.load_gh_token_env", return_value={})
     @patch("parse_inventory.subprocess.run")
     def test_run_gh_returncode_not_zero(self, mock_run, _mock_env):
         mock_result = MagicMock()

@@ -12,12 +12,18 @@ Precedence for ``GH_TOKEN``:
 import os
 import re
 import stat
+import warnings
 from functools import lru_cache
 from pathlib import Path
 from typing import Mapping
 
 # Legacy path referenced in ABHI-954 / TruffleHog finding (gitignored, out of repo).
-_LEGACY_RELATIVE_ENV = Path("../email-security-pipeline/GH_TOKEN.env")
+# Resolved relative to this source file so it is stable regardless of the process
+# working directory.
+_BASE_DIR = Path(__file__).resolve().parent
+_LEGACY_RELATIVE_ENV = (
+    _BASE_DIR.parent / "email-security-pipeline" / "GH_TOKEN.env"
+).resolve()
 
 # SECURITY: reject command substitution in parsed values.
 _COMMAND_SUBSTITUTION = re.compile(r"\$\(|`")
@@ -92,6 +98,9 @@ def resolve_gh_token_env_file() -> Path | None:
         candidate = Path(override).expanduser()
         if candidate.is_file():
             return candidate
+        raise FileNotFoundError(
+            f"GH_TOKEN_ENV_FILE does not exist or is not a file: {candidate}"
+        )
 
     xdg = os.environ.get("XDG_CONFIG_HOME", "").strip()
     if xdg:
@@ -119,11 +128,31 @@ def _get_parsed_env_vars_from_file() -> dict[str, str]:
 
 
 def load_gh_token_env(base: Mapping[str, str] | None = None) -> dict[str, str]:
-    """Build an environment dict for ``gh`` subprocess calls."""
+    """Build an environment dict for ``gh`` subprocess calls.
+
+    Precedence:
+    1. ``GH_TOKEN`` already present in ``base``/``os.environ``.
+    2. ``GH_TOKEN`` read from ``GH_TOKEN_ENV_FILE`` or a well-known path.
+    """
     env = dict(base if base is not None else os.environ)
     if env.get("GH_TOKEN"):
         return env
-    env.update(_get_parsed_env_vars_from_file())
+
+    used_path = resolve_gh_token_env_file()
+    if used_path is None:
+        return env
+    if used_path == _LEGACY_RELATIVE_ENV:
+        warnings.warn(
+            f"legacy GH_TOKEN.env path is deprecated: {_LEGACY_RELATIVE_ENV}; "
+            "set GH_TOKEN or GH_TOKEN_ENV_FILE instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    file_vars = _get_parsed_env_vars_from_file()
+    # Only the token value is required for ``gh``; do not inject unrelated keys.
+    if "GH_TOKEN" in file_vars:
+        env["GH_TOKEN"] = file_vars["GH_TOKEN"]
     return env
 
 
