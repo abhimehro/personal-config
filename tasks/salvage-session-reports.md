@@ -6,6 +6,36 @@
 
 ## Entry template
 
+
+## Run — 2026-07-27
+
+### Input tail
+
+- Source report/snapshot: `tasks/pr-review-2026-07-26.md` (Phase 1 escalated remainder) + live GitHub re-fetch
+- PRs investigated: 8 Phase-1 remainder + 2 live CONFLICTING (esp#1362, hg#413)
+- Dropped: Seatek #521 (merged since Phase 1)
+
+### Outcomes
+
+- Salvage draft PRs opened: **0** (unique security value already on preferred CLEAN twins / main)
+- Infra-fix draft PRs opened: **0**
+- Originals marked CLOSE-SUPERSEDED (MCP review; API close blocked 0eq): esp [#1362](https://github.com/abhimehro/email-security-pipeline/pull/1362) → prefer [#1370](https://github.com/abhimehro/email-security-pipeline/pull/1370) + main #1353; hg [#413](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/413) → prefer [#418](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/418)
+- REQUEST_CHANGES: esp [#1366](https://github.com/abhimehro/email-security-pipeline/pull/1366) artifact skew (0er)
+- ESCALATE left open: cs #1060; Seatek #507/#518/#525; preferred twins #1370/#418 for human T1
+- CodeScene: `/cs-agent` posted via MCP on ctrld [#1066](https://github.com/abhimehro/ctrld-sync/pull/1066)
+
+### Verification status
+
+- Local verify: compared PR diffs vs `origin/main` for app_runner/setup_wizard (esp) and utils/security.py (hg); confirmed #1353 already landed app_runner fd-only path
+- Close API: `closePullRequest` 403 for Cursor app token (Lesson 0eq) — human must close
+- request_reviewers: cannot request author `abhimehro` on bot-authored PRs
+
+### Handoff
+
+- Maintainer: close #1362 and #413; T1 review #1370 + #418; fix/close #1366; pick one Seatek env-filter PR; ack cs#1060
+- Session docs: `tasks/pr-inventory.md`, `pr-triage.md`, `pr-review-2026-07-27.md`
+- Cross-links: Phase 1 `tasks/pr-review-2026-07-26.md`
+
 ## Run — 2026-06-21
 
 ### Input tail

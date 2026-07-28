@@ -20,8 +20,8 @@
 
 ### **Configurations**
 
-- Gaming profile (DOH) - ID: 1xfy57w34t7
-- Privacy profile (DOH) - ID: 6m971e9jaf
+- Gaming profile (DOH) - ID: <CONTROL_D_GAMING_RESOLVER_ID>
+- Privacy profile (DOH) - ID: <CONTROL_D_PRIVACY_RESOLVER_ID>
 - Active configuration backup
 - Historical configuration backups
 
