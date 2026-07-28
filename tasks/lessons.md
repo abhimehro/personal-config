@@ -16,6 +16,21 @@ landed). (3) Do not salvage a conflicted bundle that regresses deps.
 auto-merges.
 **Detection cost:** Low — same title family + one CONFLICTING + one CLEAN;
 `gh pr diff --name-only` comparison.
+## Lesson 0es: Cursor App token can squash-merge but cannot close PRs (2026-07-28)
+
+**Pattern:** Phase 1 squash-merges succeed with hosts.yml Cursor token, but
+`gh pr close`, GraphQL `closePullRequest`, and REST `PATCH .../issues/{n}`
+all return **Resource not accessible by integration**. `gh pr comment` also
+denied; MCP `post_review_comment_on_pr` works. `request_reviewers` fails when
+the target is already the PR author (abhimehro).
+**Rule:** (1) Treat CLOSE dispositions as **recommend-close via MCP review**
+when close API is denied; hand the list to Phase 2 salvage (which must close
+duplicates). (2) Do not burn retries on GraphQL/REST close with the same App
+token. (3) Prefer Dependabot-authored PRs when requesting reviewers. (4)
+Document close-recommended PRs in `pr-review-YYYY-MM-DD.md` Post-session
+remainder with `CLOSE-DUPLICATE` reason.
+**Detection cost:** Low — one failed `gh pr close` is enough.
+
 
 ## Lesson 0ej: Diff before/after/code with unescaped `\"` breaks Plan MDX (2026-07-21)
 
