@@ -8,5 +8,5 @@
 - [x] MCP CLOSE-SUPERSEDED / REQUEST_CHANGES / ESCALATE reviews
 - [x] Request reviewers on salvage drafts
 - [x] Write pr-inventory.md, pr-triage.md, Phase 2 addendum, lessons 0et
-- [ ] Commit/push session docs + open_git_pr for docs branch
-- [ ] Notion audit page + automation memory update
+- [x] Commit/push session docs + open_git_pr for docs branch
+- [x] Notion audit page + automation memory update
