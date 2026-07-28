@@ -1,13 +1,14 @@
 # rclone Configuration Template
-# Copy to ~/.config/rclone/rclone.conf (chmod 600) and inject secrets via 1Password:
+# SECURITY: Placeholders below are NOT secrets. Copy to ~/.config/rclone/rclone.conf
+# (chmod 600) and inject secrets via 1Password:
 #   op inject -i /path/to/rclone.conf.template -o ~/.config/rclone/rclone.conf
 
 [alldebrid]
 type = webdav
 url = https://webdav.debrid.it/
 vendor = other
-user = YOUR_ALLDEBRID_WEBDAV_USERNAME
-pass = YOUR_OBSCURED_PASSWORD  # Use: rclone obscure "your_password"
+user = REPLACE_WITH_YOUR_ALLDEBRID_WEBDAV_USERNAME
+pass = REPLACE_WITH_YOUR_OBSCURED_PASSWORD  # Use: rclone obscure "<password>"
 
 [gdrive]
 type = drive
@@ -22,7 +23,7 @@ team_drive =
 [onedrive]
 type = onedrive
 token = {"access_token":"","token_type":"","refresh_token":"","expiry":""}
-drive_id = YOUR_DRIVE_ID
+drive_id = REPLACE_WITH_YOUR_DRIVE_ID
 drive_type = personal
 
 [media]

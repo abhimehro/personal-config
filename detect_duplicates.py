@@ -1,50 +1,32 @@
 import json
-import os
 import subprocess
+import sys
 from collections import defaultdict
-from functools import lru_cache
 
-
-def _parse_env_line(line, env_dict):
-    line = line.strip()
-    if not line or line.startswith("#"):
-        return
-    if line.startswith("export "):
-        line = line[7:].strip()
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    key, sep, val = line.partition("=")
-    if not sep:
-        return
-    env_dict[key] = val.strip("'\"")
-
-
-@lru_cache(maxsize=None)
-def _get_parsed_env_vars():
-    parsed_vars = {}
-    try:
-        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
-            for line in f:
-                _parse_env_line(line, parsed_vars)
-    except FileNotFoundError:
-        pass
-    return parsed_vars
-
-
-@lru_cache(maxsize=None)
-def _load_gh_token_env():
-    env = os.environ.copy()
-    env.update(_get_parsed_env_vars())
-    return env
+from gh_token_env import load_gh_token_env
+from pr_reference import PRReference
 
 
 def run_gh(cmd_list):
-    env = _load_gh_token_env()
-    result = subprocess.run(cmd_list, capture_output=True, text=True, env=env)
+    """Call ``gh`` and return parsed JSON, or None on failure/timeout."""
+    env = load_gh_token_env()
+    try:
+        result = subprocess.run(
+            cmd_list,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=120,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        print(f"gh command timed out: {cmd_list[0]}", file=sys.stderr)
+        return None
     if result.returncode != 0:
         return None
     try:
         return json.loads(result.stdout)
-    except Exception:
+    except json.JSONDecodeError:
         return None
 
 
@@ -52,22 +34,20 @@ def _process_pr_result(res, file_groups):
     if not res:
         return
     repo, info = res
-    # ⚡ Bolt Optimization: Removed intermediate dictionary wrappers to allow direct sorting of strings
     files = tuple(sorted(info.get("files", ())))
     file_groups[(repo, files)].append(info)
 
 
-def _build_graphql_query(chunk):
+def _build_graphql_query(refs):
+    """Build a static GraphQL query with declared variables for the given PRs."""
+    var_decls = []
     query_parts = []
-    for j, pr in enumerate(chunk):
-        repo, _, pr_id = pr.partition("#")
-        # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-        owner, _, name = repo.partition("/")
-        if not name:
-            continue
+    fields = []
+    for j, ref in enumerate(refs):
+        var_decls.append(f"$owner{j}: String!, $name{j}: String!, $pr{j}: Int!")
         query_parts.append(f"""
-        pr{j}: repository(owner: "{owner}", name: "{name}") {{
-            pullRequest(number: {pr_id}) {{
+        pr{j}: repository(owner: $owner{j}, name: $name{j}) {{
+            pullRequest(number: $pr{j}) {{
                 number
                 title
                 files(first: 100) {{
@@ -78,9 +58,20 @@ def _build_graphql_query(chunk):
             }}
         }}
         """)
+        fields.extend(
+            [
+                "-f",
+                f"owner{j}={ref.owner}",
+                "-f",
+                f"name{j}={ref.name}",
+                "-F",
+                f"pr{j}={ref.number}",
+            ]
+        )
     if not query_parts:
-        return None
-    return "query { " + " ".join(query_parts) + " }"
+        return None, None
+    query = "query (" + ", ".join(var_decls) + ") { " + " ".join(query_parts) + " }"
+    return query, fields
 
 
 def _extract_pr_data(repo, pr_result):
@@ -94,27 +85,28 @@ def _extract_pr_data(repo, pr_result):
     nodes = files_data.get("nodes") if files_data else None
     files = [node["path"] for node in nodes if "path" in node] if nodes else []
 
-    return (repo, {
-        "number": pr_data.get("number"),
-        "title": pr_data.get("title"),
-        "files": files
-    })
+    return (
+        repo,
+        {
+            "number": pr_data.get("number"),
+            "title": pr_data.get("title"),
+            "files": files,
+        },
+    )
 
-def _process_graphql_response(result, chunk, file_groups):
+
+def _process_graphql_response(result, refs, file_groups):
     if not result:
         return
-    # ⚡ Bolt Optimization: Avoid eager empty dictionary allocation
     data = result.get("data")
     if not data:
         return
-    for j, pr in enumerate(chunk):
-        repo, _, _ = pr.partition("#")
-        # ⚡ Bolt Optimization: Avoid eager empty dictionary allocation
+    for j, ref in enumerate(refs):
         pr_result = data.get(f"pr{j}")
         if not pr_result:
             continue
 
-        res = _extract_pr_data(repo, pr_result)
+        res = _extract_pr_data(ref.repo, pr_result)
         if res:
             _process_pr_result(res, file_groups)
 
@@ -122,13 +114,29 @@ def _process_graphql_response(result, chunk, file_groups):
 def _group_prs_by_files(ready_only):
     file_groups = defaultdict(list)
     chunk_size = 50
+    source = "tasks/pr-triage.md"
     for i in range(0, len(ready_only), chunk_size):
         chunk = ready_only[i : i + chunk_size]
-        query = _build_graphql_query(chunk)
+        refs = []
+        for offset, pr in enumerate(chunk):
+            line_number = i + offset + 1
+            try:
+                ref = PRReference.from_string(pr)
+            except ValueError as exc:
+                print(
+                    f"skipping invalid PR reference at {source}:{line_number}: {exc}",
+                    file=sys.stderr,
+                )
+                continue
+            refs.append(ref)
+        if not refs:
+            continue
+        query, fields = _build_graphql_query(refs)
         if not query:
             continue
-        result = run_gh(["gh", "api", "graphql", "-f", f"query={query}"])
-        _process_graphql_response(result, chunk, file_groups)
+        cmd = ["gh", "api", "graphql", "-f", f"query={query}", *fields]
+        result = run_gh(cmd)
+        _process_graphql_response(result, refs, file_groups)
     return file_groups
 
 
@@ -200,8 +208,6 @@ def rewrite_triage_file(lines, ready_prs, duplicates, ready_only):
         f.write("\n".join(sections) + "\n")
 
 
-
-
 def _extract_ready_prs(content):
     ready_prs = []
     idx = 0
@@ -209,16 +215,16 @@ def _extract_ready_prs(content):
         idx = content.find("- abhimehro/", idx)
         if idx == -1:
             break
-        # using chr(10) to avoid multiline string interpolation issues in my script
-        if idx > 0 and content[idx-1] != chr(10):
+        if idx > 0 and content[idx - 1] != chr(10):
             idx += 1
             continue
         end_idx = content.find(chr(10), idx)
         if end_idx == -1:
             end_idx = len(content)
-        ready_prs.append(content[idx+2:end_idx].strip())
+        ready_prs.append(content[idx + 2 : end_idx].strip())
         idx = end_idx
     return ready_prs
+
 
 def _get_pre_ready_text(content):
     ready_idx = content.find(chr(10) + "## READY" + chr(10))
@@ -229,6 +235,7 @@ def _get_pre_ready_text(content):
     else:
         ready_idx = len(content)
     return content[:ready_idx]
+
 
 def main():
     try:
@@ -245,8 +252,6 @@ def main():
     duplicates = get_duplicates(ready_only)
     print("Duplicates:", duplicates)
 
-    # ⚡ Bolt Optimization: Use splitlines with keepends to emulate readlines() only when absolutely needed
-    # for rewrite_triage_file compatibility
     lines = content.splitlines(keepends=True)
     rewrite_triage_file(lines, ready_prs, duplicates, ready_only)
     print("Done")

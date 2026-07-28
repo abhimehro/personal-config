@@ -180,6 +180,46 @@ class TestDetectDuplicates(unittest.TestCase):
         mock_run_gh.assert_not_called()
 
     @patch("detect_duplicates.run_gh")
+    def test_group_prs_by_files_uses_graphql_variables(self, mock_run_gh):
+        """Test that the query uses declared variables and separate -f/-F fields."""
+        mock_run_gh.return_value = {
+            "data": {
+                "pr0": {
+                    "pullRequest": {
+                        "number": 1,
+                        "title": "PR 1",
+                        "files": {"nodes": [{"path": "file1.py"}]},
+                    }
+                }
+            }
+        }
+
+        _group_prs_by_files(["repoA/projectA#1"])
+
+        mock_run_gh.assert_called_once()
+        args, _ = mock_run_gh.call_args
+        cmd = args[0]
+        self.assertIsInstance(cmd, list)
+        self.assertEqual(cmd[0], "gh")
+        self.assertEqual(cmd[1], "api")
+        self.assertEqual(cmd[2], "graphql")
+        self.assertIn("-f", cmd)
+        self.assertIn("query=", " ".join(cmd))
+        self.assertIn("owner0=repoA", cmd)
+        self.assertIn("name0=projectA", cmd)
+        self.assertIn("-F", cmd)
+        self.assertIn("pr0=1", cmd)
+
+    @patch("detect_duplicates.run_gh")
+    def test_group_prs_by_files_skips_invalid_reference(self, mock_run_gh):
+        """Invalid PR references are skipped rather than aborting batch processing."""
+        mock_run_gh.return_value = None
+        file_groups = _group_prs_by_files(["bad-reference", "repoA/projectA#1"])
+        # Only one valid PR should be queried.
+        self.assertEqual(mock_run_gh.call_count, 1)
+        self.assertEqual(len(file_groups), 0)
+
+    @patch("detect_duplicates.run_gh")
     def test_group_prs_by_files_api_failure(self, mock_run_gh):
         """Test when graphql query returns None (e.g., API error)."""
         mock_run_gh.return_value = None
@@ -207,7 +247,6 @@ class TestDetectDuplicates(unittest.TestCase):
         self.assertIn(key, result)
         self.assertEqual(len(result[key]), 1)
         self.assertEqual(result[key][0]["number"], 1)
-
 
     @patch("detect_duplicates._extract_duplicates_from_groups")
     @patch("detect_duplicates._group_prs_by_files")

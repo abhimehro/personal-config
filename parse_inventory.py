@@ -1,48 +1,17 @@
 import json
 import re
-import os
 import subprocess
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from functools import lru_cache
 
-
-def _parse_env_line(line, env_dict):
-    line = line.strip()
-    if not line:
-        return
-    if line.startswith("#"):
-        return
-    if line.startswith("export "):
-        line = line[7:].strip()
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    key, sep, val = line.partition("=")
-    if not sep:
-        return
-    env_dict[key] = val.strip("'\"")
-
-
-@lru_cache(maxsize=None)
-def _get_parsed_env_vars():
-    # ⚡ Bolt Optimization: Cache only the parsed variables from the file to prevent redundant IO reads, while keeping it safe from mutable dictionary cache poisoning
-    parsed_vars = {}
-    try:
-        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
-            for line in f:
-                _parse_env_line(line, parsed_vars)
-    except FileNotFoundError:
-        pass
-    return parsed_vars
-
-
-def _load_gh_token_env():
-    env = os.environ.copy()
-    env.update(_get_parsed_env_vars())
-    return env
+from gh_token_env import load_gh_token_env
+from pr_reference import parse_pr_reference, parse_repo_name
 
 
 def run_gh(repo, pr):
-    env = _load_gh_token_env()
+    """Call ``gh pr view`` and return JSON, or None on failure/timeout."""
+    env = load_gh_token_env()
     cmd = [
         "gh",
         "pr",
@@ -53,8 +22,18 @@ def run_gh(repo, pr):
         "--json",
         "files,updatedAt,mergeStateStatus",
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, env=env)
-
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=120,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        print(f"gh pr view timed out for {repo}#{pr}", file=sys.stderr)
+        return None
     if result.returncode != 0:
         return None
     try:
@@ -64,41 +43,40 @@ def run_gh(repo, pr):
 
 
 def _should_skip_table_row(line):
-    # ⚡ Bolt Optimization: Use fast index checking to avoid function overhead for lines not starting with |,
-    # and use a tuple with .startswith() to collapse sequential checks and avoid redundant allocations
     if not line or line[0] != "|":
         return True
     return line.startswith(("| # |", "| ---"))
 
 
-_REPO_LINK_PATTERN = re.compile(r'\[(.*?)\]\(.*?\)')
+_REPO_LINK_PATTERN = re.compile(r"\[(.*?)\]\(.*?\)")
+
 
 def _parse_repo_name(line):
     if line.startswith("### "):
         match = _REPO_LINK_PATTERN.search(line)
         if match:
-            return match.group(1).strip()
+            return parse_repo_name(
+                match.group(1).strip(), loc=("tasks/pr-inventory.md", None)
+            )
         return None
-    return line[3:].strip() if line.startswith("## ") else None
+    if line.startswith("## "):
+        return parse_repo_name(line[3:].strip(), loc=("tasks/pr-inventory.md", None))
+    return None
 
 
-def _is_valid_pr_row(pr_id, author, hints):
-    if not pr_id.isdigit():
-        return False
+def _is_valid_pr_row(author, hints):
     return author.endswith("[bot]") or hints
 
 
 def _extract_pr_row_fields(parts):
     repo_col = parts[1].strip()
-    if repo_col:
-        return (
-            repo_col,
-            parts[2].strip(),
-            parts[3].strip(),
-            parts[6].strip(),
-            parts[9].strip(),
-        )
-    return "", parts[2].strip(), parts[3].strip(), parts[6].strip(), parts[9].strip()
+    return (
+        repo_col,
+        parts[2].strip(),
+        parts[3].strip(),
+        parts[6].strip(),
+        parts[9].strip(),
+    )
 
 
 def _ensure_repo_bucket(repo_name, repos):
@@ -106,20 +84,30 @@ def _ensure_repo_bucket(repo_name, repos):
         repos[repo_name] = []
 
 
-def _parse_row_record(line, current_repo):
+def _parse_row_record(line, current_repo, line_number):
     parts = line.split("|")
     if len(parts) <= 9:
         return None
     repo_col, pr_id, author, checks, hints = _extract_pr_row_fields(parts)
-    effective_repo = repo_col or current_repo
+    if repo_col:
+        effective_repo = parse_repo_name(
+            repo_col, loc=("tasks/pr-inventory.md", line_number)
+        )
+    else:
+        effective_repo = current_repo
     if effective_repo is None:
         return None
-    if not _is_valid_pr_row(pr_id, author, hints):
+    if not _is_valid_pr_row(author, hints):
         return None
-    return effective_repo, {"pr": pr_id, "checks": checks}
+    ref = parse_pr_reference(
+        effective_repo, pr_id, loc=("tasks/pr-inventory.md", line_number)
+    )
+    if ref is None:
+        return None
+    return ref.repo, {"pr": str(ref.number), "checks": checks}
 
 
-def _process_inventory_line(line, current_repo, repos):
+def _process_inventory_line(line, current_repo, repos, line_number):
     repo_name = _parse_repo_name(line)
     if repo_name:
         _ensure_repo_bucket(repo_name, repos)
@@ -128,7 +116,7 @@ def _process_inventory_line(line, current_repo, repos):
     if _should_skip_table_row(line):
         return current_repo
 
-    row_record = _parse_row_record(line, current_repo)
+    row_record = _parse_row_record(line, current_repo, line_number)
     if row_record:
         effective_repo, payload = row_record
         _ensure_repo_bucket(effective_repo, repos)
@@ -137,11 +125,11 @@ def _process_inventory_line(line, current_repo, repos):
     return current_repo
 
 
-def parse_inventory_lines(lines):
+def parse_inventory_lines(lines, *, source="tasks/pr-inventory.md"):
     repos = {}
     current_repo = None
-    for line in lines:
-        current_repo = _process_inventory_line(line, current_repo, repos)
+    for line_number, line in enumerate(lines, start=1):
+        current_repo = _process_inventory_line(line, current_repo, repos, line_number)
     return repos
 
 
@@ -169,7 +157,7 @@ def _get_pr_category(info, checks, now=None):
         return "SUPERSEDED"
 
     merge_status = info.get("mergeStateStatus", "")
-    # ⚡ Bolt Optimization: Delay expensive datetime parsing by short-circuiting behind checks_failing
+    # Delay expensive datetime parsing by short-circuiting behind checks_failing
     checks_failing = _is_checks_failing(checks)
 
     if checks_failing and _is_pr_stale(info.get("updatedAt", ""), now):
@@ -204,7 +192,6 @@ def _categorize_pr_task(args):
 def _load_inventory_lines(filepath):
     try:
         with open(filepath, "r") as f:
-            # ⚡ Bolt Optimization: Use generator to yield lines lazily, avoiding full-file memory allocation overhead
             yield from f
     except FileNotFoundError:
         return
@@ -226,12 +213,9 @@ def main():
         return
     triage = {"SUPERSEDED": [], "STALE": [], "CONFLICTING": [], "READY": []}
 
-    # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls using map() to significantly speed up categorization
-    # Also pass a pre-computed UTC 'now' object to avoid allocating the time on every task.
     now = datetime.now(timezone.utc)
     tasks = [(repo, pr_info, now) for repo, prs in repos.items() for pr_info in prs]
 
-    # ⚡ Bolt Optimization: Dynamic thread concurrency to eliminate batching latency
     with ThreadPoolExecutor(max_workers=min(len(tasks) or 1, 32)) as executor:
         for result in executor.map(_categorize_pr_task, tasks):
             if result:
