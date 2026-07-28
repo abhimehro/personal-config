@@ -34,6 +34,10 @@ vpn.conf
 # DNS configuration with potential IPs/domains
 ctrld.toml
 *.dns
+windscribe-controld/*.backup
+windscribe-controld/ctrld.toml.backup
+configs/.config/controld/*.backup
+controld-system/*.backup
 
 # =============================================================================
 # SYSTEM FILES

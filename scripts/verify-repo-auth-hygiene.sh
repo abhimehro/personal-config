@@ -142,6 +142,45 @@ run_curl_basic_auth_grep() {
 	return 1
 }
 
+# Detect real Control D resolver IDs in endpoint URLs.  Placeholders, the public
+# /free endpoint, source-code variable interpolation, and test fixtures are
+# allowed.
+run_controld_resolver_grep() {
+	log "Checking for hardcoded Control D resolver IDs in endpoint URLs"
+
+	local matches
+	matches="$(
+		LC_ALL=C grep -rIEn --exclude-dir=.git --exclude-dir=.trunk --exclude-dir=node_modules \
+			--exclude='*.backup' --exclude='*.bak' \
+			'https?://(dns|freedns)\.controld\.com/[a-z0-9]{6,}' . 2>/dev/null |
+			grep -vE 'dns\.controld\.com/free|freedns\.controld\.com/free' ||
+			true
+	)"
+
+	# Filter out known-safe patterns (placeholders / variable interpolation).
+	local filtered=""
+	while IFS= read -r line; do
+		[[ -z $line ]] && continue
+		# shellcheck disable=SC2016
+		case "$line" in
+		*'/free'* | *'<CONTROL_D_'* | *'<resolver_id>'* | *'${profile_id}'* | *'YOUR_RESOLVER_ID'* | *'test-privacy-id'* | *'testprivacyid'* | *'testgamingid'* | *'testbrowsingid'*)
+			continue
+			;;
+		esac
+		filtered+="${line}"$'\n'
+	done <<<"$matches"
+
+	if [[ -z $filtered ]]; then
+		success "No hardcoded Control D resolver IDs found in endpoint URLs"
+		return 0
+	fi
+
+	error "Found hardcoded Control D resolver endpoint(s):"
+	# Redact the actual ID while keeping the path/file visible.
+	printf '%s' "$filtered" | sed -E 's|(https?://(dns|freedns)\.controld\.com/)[a-z0-9]{6,}|\1<REDACTED>|g' >&2
+	return 1
+}
+
 main() {
 	log "Credential verification (ABHI-964) in ${REPO_ROOT}"
 
@@ -154,6 +193,10 @@ main() {
 	fi
 
 	if ! run_curl_basic_auth_grep; then
+		fail=1
+	fi
+
+	if ! run_controld_resolver_grep; then
 		fail=1
 	fi
 

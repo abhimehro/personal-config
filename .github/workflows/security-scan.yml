@@ -19,6 +19,34 @@ on:
   workflow_dispatch:
 
 jobs:
+  workflow-integrity:
+    name: Workflow Integrity
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Validate action pins
+        run: python .github/scripts/validate_workflow_pins.py
+
+      - name: Set up Trunk
+        uses: ./.github/actions/setup-trunk
+
+      - name: Check action pins with pinact
+        run: trunk check --filter=pinact --no-fix .github/workflows .github/actions
+
+      - name: Check workflow syntax with actionlint
+        run: trunk check --filter=actionlint --no-fix .github/workflows .github/actions
+
   trufflehog-secrets:
     name: TruffleHog Secrets Scan
     runs-on: ubuntu-latest
@@ -31,6 +59,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0  # Full history for better scanning
+          persist-credentials: false
 
       - name: TruffleHog OSS
         uses: trufflesecurity/trufflehog@6f3c981e7b77f235fd2702dd74af25fc4b72bf11 # v3.96.0
@@ -58,9 +87,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Gitleaks
-        uses: gitleaks/gitleaks-action@v3.0.0
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: .github/gitleaks.toml
@@ -74,6 +104,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup ShellCheck (cached)
         uses: ./.github/actions/setup-shellcheck
@@ -98,6 +130,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -132,18 +166,20 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4.37.3
+        uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
         with:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v4.37.3
+        uses: github/codeql-action/autobuild@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
 
       - name: Perform CodeQL Analysis
         continue-on-error: true
-        uses: github/codeql-action/analyze@v4.37.3
+        uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
         with:
           category: "/language:${{ matrix.language }}"
 
@@ -152,14 +188,15 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Generate SBOM
-        uses: anchore/sbom-action@v0.24.0
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         id: sbom
         with:
           image: .
@@ -167,7 +204,7 @@ jobs:
           output-file: sbom.spdx.json
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sbom
           path: sbom.spdx.json
@@ -177,7 +214,7 @@ jobs:
     name: Security Summary
     runs-on: ubuntu-latest
     permissions: {}
-    needs: [trufflehog-secrets, gitleaks-secrets, shellcheck-security, dependency-scan, codeql-analysis, sbom-generation]
+    needs: [workflow-integrity, trufflehog-secrets, gitleaks-secrets, shellcheck-security, dependency-scan, codeql-analysis, sbom-generation]
     if: always()
 
     steps:
@@ -192,6 +229,7 @@ jobs:
           echo "|------|--------|---------|" >> security-report.md
           
           # Check each job status
+          echo "| Workflow Integrity | ${{ needs.workflow-integrity.result }} | Action pins & lint |" >> security-report.md
           echo "| TruffleHog | ${{ needs.trufflehog-secrets.result }} | Secrets detection |" >> security-report.md
           echo "| Gitleaks | ${{ needs.gitleaks-secrets.result }} | Git secrets scanning |" >> security-report.md
           echo "| ShellCheck | ${{ needs.shellcheck-security.result }} | Shell script security |" >> security-report.md
@@ -201,7 +239,8 @@ jobs:
           echo "" >> security-report.md
           
           # Overall status
-          if [[ "${{ needs.trufflehog-secrets.result }}" == "success" && \
+          if [[ "${{ needs.workflow-integrity.result }}" == "success" && \
+                "${{ needs.trufflehog-secrets.result }}" == "success" && \
                 "${{ needs.gitleaks-secrets.result }}" == "success" && \
                 "${{ needs.shellcheck-security.result }}" == "success" && \
                 "${{ needs.dependency-scan.result }}" == "success" && \
@@ -216,7 +255,7 @@ jobs:
           cat security-report.md
           
       - name: Upload Security Report
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: security-report

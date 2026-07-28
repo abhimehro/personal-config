@@ -31,6 +31,16 @@ regex = '''(?i)(controld[\-_]?api[\-_]?key|controld[\-_]?token|cd[\-_]?key)[\-_:
 tags = ["controld", "dns", "secret", "api-key"]
 
 [[rules]]
+id = "personal-config-control-d-resolver"
+description = "Control D resolver/profile ID embedded in a DoH endpoint URL"
+# Matches https://dns.controld.com/<id> or https://freedns.controld.com/<id>
+# where <id> is a lowercase alphanumeric ID.  Excludes the public /free endpoint
+# and placeholders such as <CONTROL_D_*_RESOLVER_ID> or ${profile_id}.
+regex = '''https?://(?:dns|freedns)\.controld\.com/[a-z0-9]{6,}'''
+tags = ["controld", "dns", "resolver-id", "secret"]
+entropy = 0.0
+
+[[rules]]
 id = "personal-config-ssh-key"
 description = "SSH private key"
 regex = '''-----BEGIN (RSA |DSA |EC |OPENSSH )?PRIVATE KEY-----(.*?)-----END (RSA |DSA |EC |OPENSSH )?PRIVATE KEY-----'''
