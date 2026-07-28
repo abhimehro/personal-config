@@ -10,4 +10,4 @@
 - [x] Defer draft Phase-2 / CONFLICTING bolt.md siblings
 - [x] Post MCP reviews (close API unavailable — 0es)
 - [x] Write `pr-review-2026-07-28.md`, update lessons + review-session-reports
-- [ ] Commit/push docs on `cursor-agent/automated-pr-workflow-3d54` + open PR
+- [x] Commit/push docs on `cursor-agent/automated-pr-workflow-3d54` + open PR (#1802)
