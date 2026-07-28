@@ -1,5 +1,21 @@
 # Lessons Learned
 
+## Lesson 0es: Prefer CLEAN twin over CONFLICTING Sentinel bundle (2026-07-27)
+
+**Pattern:** After a Phase 1 merge, an older Sentinel PR goes `CONFLICTING`
+while a newer sibling lands CLEAN with a **subset** of the security fix
+(esp #1362 vs #1370; hg #413 vs #418). The dirty PR often also carries
+harmful extras (numpy regression, Bolt/CHANGELOG/journal churn) or is
+already partially absorbed on `main` (e.g. app_runner via #1353).
+**Rule:** (1) Diff both siblings against current `main` before opening a
+salvage branch. (2) If the CLEAN twin covers the remaining security
+surface and the dirty PR's unique delta is journal/noise/regression →
+**CLOSE-SUPERSEDED** pointing at the twin (and any main PR that already
+landed). (3) Do not salvage a conflicted bundle that regresses deps.
+(4) Escalate the preferred twin for human T1 merge; Phase 2 still never
+auto-merges.
+**Detection cost:** Low — same title family + one CONFLICTING + one CLEAN;
+`gh pr diff --name-only` comparison.
 ## Lesson 0es: Cursor App token can squash-merge but cannot close PRs (2026-07-28)
 
 **Pattern:** Phase 1 squash-merges succeed with hosts.yml Cursor token, but
