@@ -58,9 +58,13 @@ class TestRunCmd(unittest.TestCase):
         self.assertTrue(ok)
         self.assertEqual(out, '{"ok": true}')
         self.assertEqual(err, "")
-        mock_run.assert_called_once_with(
-            ["gh", "version"], capture_output=True, text=True
-        )
+        mock_run.assert_called_once()
+        args, kwargs = mock_run.call_args
+        self.assertEqual(args[0], ["gh", "version"])
+        self.assertTrue(kwargs.get("capture_output"))
+        self.assertTrue(kwargs.get("text"))
+        self.assertEqual(kwargs.get("timeout"), 120)
+        self.assertIn("GH_TOKEN", kwargs.get("env", {}))
 
     @patch("scratch_triage.subprocess.run")
     def test_run_cmd_failure(self, mock_run):

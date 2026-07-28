@@ -678,3 +678,8 @@ treated strictly as patterns and not parsed as command-line options.
 **Accepted exclusions:**
 - `tests/test_vulnerability_fix.py` intentionally uses `exec(code, mod.__dict__)` to load isolated AST nodes for regression testing; the input AST is built from the repository's own source, not attacker-controlled.
 - `scratch_inventory.py` / `scratch_triage.py` are out of scope for this fix; they do not load `GH_TOKEN.env` and operate on hardcoded repo lists, but should be hardened with timeouts and the shared env loader in a follow-up.
+
+## 2026-08-01 - Prevent Indefinite Hangs in PR Automation Scripts
+**Vulnerability:** The scripts `scratch_inventory.py` and `scratch_triage.py` invoked `subprocess.run` without specifying a `timeout` and explicitly loading the GH_TOKEN environment variable using the centralized method. This could lead to indefinite hangs and missing authentication.
+**Learning:** Always use `timeout` and explicitly pass required environment variables using `load_gh_token_env` when invoking `subprocess.run` for network-bound external commands like `gh`.
+**Prevention:** Apply `timeout=120`, `env=load_gh_token_env()`, and `check=False` to all `subprocess.run` calls making network requests, and catch `subprocess.TimeoutExpired`.

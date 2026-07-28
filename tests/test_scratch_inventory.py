@@ -106,6 +106,8 @@ class TestScratchInventory(unittest.TestCase):
         self.assertIn(repo, args[0])
         self.assertEqual(kwargs.get("capture_output"), True)
         self.assertEqual(kwargs.get("text"), True)
+        self.assertEqual(kwargs.get("timeout"), 120)
+        self.assertIn("GH_TOKEN", kwargs.get("env", {}))
 
     @patch("scratch_inventory.subprocess.run")
     def test_fetch_repo_prs_failure(self, mock_run):

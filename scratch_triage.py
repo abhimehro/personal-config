@@ -2,6 +2,9 @@ from concurrent.futures import ThreadPoolExecutor
 import datetime
 import json
 import subprocess
+import sys
+
+from gh_token_env import load_gh_token_env
 
 repos = [
     "abhimehro/personal-config",
@@ -14,8 +17,13 @@ repos = [
 
 
 def run_cmd(cmd):
-    res = subprocess.run(cmd, capture_output=True, text=True)
-    return res.returncode == 0, res.stdout, res.stderr
+    env = load_gh_token_env()
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=120, check=False)
+        return res.returncode == 0, res.stdout, res.stderr
+    except subprocess.TimeoutExpired:
+        print(f"gh command timed out: {cmd}", file=sys.stderr)
+        return False, "", "TimeoutExpired"
 
 
 def _contains_all_keywords(title_lower, lower_kws):
