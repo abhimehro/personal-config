@@ -624,3 +624,6 @@ invocation.
 ## 2026-12-07 - [Pre-compile regular expressions]
 **Learning:** Re-compiling the identical regular expression inside functions that are called frequently (like string parsing loops in `select-best-alldebrid-candidate.py`) adds unnecessary overhead due to repeated evaluation in `re.sub()`.
 **Action:** Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module level when they are static and used repeatedly inside loops or frequently called functions.
+## 2026-12-07 - [Avoid eager empty dict and list allocations in chained .get() loops across multiple domains]
+**Learning:** Chaining `.get("key", {}).get("sub_key", [])` inside processing loops allocates new empty dictionary and list objects on every iteration when the key is missing or the value is falsy. This leads to measurable memory allocation overhead on the fast path, especially when dealing with complex nested JSON payloads.
+**Action:** Replace `val.get("key", {}).get("sub_key", [])` with multi-step `None` checks like `_key = val.get("key"); _sub_key = _key.get("sub_key") if _key else ()` to prevent redundant dictionary and list allocations entirely.
