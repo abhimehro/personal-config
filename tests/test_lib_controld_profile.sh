@@ -19,6 +19,11 @@ export PATH="$MOCK_BIN:$PATH"
 export HOME="$TEST_DIR/home"
 mkdir -p "$HOME"
 
+# SECURITY: isolate from host/CI secret injection (Cloud Agent / controld.env).
+# Fail-closed and load-from-file assertions must not see pre-set profile IDs.
+unset CTR_PROFILE_PRIVACY_ID CTR_PROFILE_GAMING_ID CTR_PROFILE_BROWSING_ID \
+	CTRLD_PRIVACY_PROFILE CTRLD_GAMING_PROFILE CTRLD_BROWSING_PROFILE
+
 # Source network-common.sh first so validate_profile_id is available.
 # shellcheck source=scripts/lib/network-common.sh
 source "$REPO_ROOT/scripts/lib/network-common.sh"

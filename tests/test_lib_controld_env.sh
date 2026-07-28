@@ -9,6 +9,12 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEST_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'test-lib-controld-env')
 trap 'rm -rf "$TEST_DIR"' EXIT
 
+# SECURITY: isolate from host/CI secret injection (Cloud Agent / controld.env).
+# load_controld_env skips keys already set in the environment (file loses).
+unset CTR_PROFILE_PRIVACY_ID CTR_PROFILE_GAMING_ID CTR_PROFILE_BROWSING_ID \
+	CTRLD_PRIVACY_PROFILE CTRLD_GAMING_PROFILE CTRLD_BROWSING_PROFILE \
+	CONTROLD_DIR CONTROLD_REPO CONTROLD_BOOTSTRAP_IP
+
 # shellcheck source=scripts/lib/network-common.sh
 source "$REPO_ROOT/scripts/lib/network-common.sh"
 # shellcheck source=scripts/lib/controld-env.sh
