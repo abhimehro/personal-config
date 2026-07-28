@@ -1,77 +1,58 @@
-# PR Triage — 2026-07-27 (Phase 2)
+# PR Triage — 2026-07-28 (Phase 2)
 
 Decision tree applied per `docs/automated-pr-salvage-agent.md` Step 4. **No autonomous merges (S1).**
 
-## CLOSE-SUPERSEDED
+## SALVAGE (draft PRs opened)
 
-### esp #1362 → main (#1353) + preferred twin #1370
+| Old PR | New draft | Residual kept | Journals |
+|--------|----------:|---------------|----------|
+| pc [#1800](https://github.com/abhimehro/personal-config/pull/1800) | [#1804](https://github.com/abhimehro/personal-config/pull/1804) | `repository_automation_tasks.py` chained-get cache | skipped bolt.md (S2/0cs) |
+| pc [#1791](https://github.com/abhimehro/personal-config/pull/1791) | [#1803](https://github.com/abhimehro/personal-config/pull/1803) | `TAG_PATTERN`/`SHA_PATTERN` | skipped bolt.md |
+| cs [#1064](https://github.com/abhimehro/ctrld-sync/pull/1064) | [#1072](https://github.com/abhimehro/ctrld-sync/pull/1072) | `_prompt_for_missing_config` + bold headers | skipped palette.md; kept #1067 partial-success |
 
-- `src/app_runner.py` path-chmod fallback already removed on `main` via [#1353](https://github.com/abhimehro/email-security-pipeline/pull/1353).
-- `setup_wizard.py` still needs fd-only fix; CLEAN sibling [#1370](https://github.com/abhimehro/email-security-pipeline/pull/1370) is the preferred carrier (narrower, no journal conflict).
-- Unique residual in #1362 = journal append + stale tests against pre-#1353 API → not worth a salvage branch.
+## CLOSE-SUPERSEDED (MCP review; API close blocked 0eq)
 
-### hg #413 → preferred twin #418
-
-- #413 bundles DoS fix with **numpy regression** (`<3` → `<2`), Bolt validator churn, CHANGELOG/bolt journal (Lesson 0cs risk).
-- [#418](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/418) is CLEAN MERGEABLE with DoS-only (`utils/security.py` + tests + sentinel). Prefer #418 for human T1 merge.
+| PR | Canonical |
+|----|-----------|
+| cs #1069, #1066 | [#1067](https://github.com/abhimehro/ctrld-sync/pull/1067) on main |
+| esp #1362 | Prefer [#1370](https://github.com/abhimehro/email-security-pipeline/pull/1370) (+ main #1353 app_runner) |
+| hg #413 | Prefer [#418](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/418) |
+| hg #427, #420 | [#428](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/428) on main |
+| sc #293 | [#299](https://github.com/abhimehro/series_correction_project_updated/pull/299) on main |
 
 ## REQUEST_CHANGES
 
-### esp #1366 (Lesson 0er)
+| PR | Reason |
+|----|--------|
+| esp [#1366](https://github.com/abhimehro/email-security-pipeline/pull/1366) | download-artifact v8 vs upload v7 (Lesson **0er**) |
+| pc [#1792](https://github.com/abhimehro/personal-config/pull/1792) | Recent Activity `<dl>` still uses div wrappers vs #1795 |
 
-Single tip-major bump: `actions/download-artifact` → **v8.0.1** while producers remain `upload-artifact@v7`. Fix: revert download pin to v7 **or** bump upload+download together. Do not squash-merge as-is.
-
-## ESCALATE (human)
+## ESCALATE (human security / trust-boundary)
 
 | PR | Tier | Why |
 |----|------|-----|
-| cs #1060 | T1 | Sentinel exception sanitization — security ack |
-| Seatek #525/#518/#507 | T1 | Sibling env-filter orderings (0ej) — human picks one |
-| hg #418 | T1 | Preferred DoS twin after closing #413 |
-| esp #1370 | T1 | Preferred TOCTOU twin after closing #1362 |
-| pc #1789/#1787/#1786/#1784 | T1/T2 | Security/trust-boundary — Phase 1 next cycle |
-| series #295 | T1 | ABHI-1518 formula injection |
+| pc #1784 | T1 | CWE-88 pkill **code** fix (prefer over journal-only #1796) |
+| pc #1796 | T2 | journal-only sibling of #1784 |
+| pc #1794 | T1 | Sentinel timeout + auth token handling |
+| cs #1060 | T1 | Sentinel exception sanitization |
+| esp #1370 / #1375 | T1 | TOCTOU cluster — pick one |
+| Seatek #525/#518/#507 | T1 | env-filter orderings (0ej) |
+| hg #418 / #425 | T1 | DoS / file-size validation |
+| sc #295 | T1 | formula-injection ABHI-1518 |
+| sc #296 | T2 | Bolt NaN + patch_export cruft |
 
 ## DEFER / DROP
 
 | PR | Disposition |
 |----|-------------|
-| Seatek #521 | DROP — merged since Phase 1 |
-| ctrld #1066 | DEFER after `/cs-agent skill:fix-code-health-degradations` |
-| Cursor repo-health drafts (#535/#422/#297) | DEFER — human draft review |
-| Palette/Bolt CLEAN chore | Next Phase 1 |
+| pc #1789/#1787/#1786 | DROP — merged since Phase 1 |
+| Seatek #535 | DEFER — Analyze FAIL + large repo-health |
+| sc #297 | DEFER — draft repo-health |
+| sc #301 | Inventory — new Sentinel CWE-209 (next Phase 1) |
 
 ## CodeScene
 
 | PR | Action |
 |----|--------|
-| ctrld #1066 | Post `/cs-agent skill:fix-code-health-degradations` before disposition |
-# PR Triage — 2026-07-28 (Phase 1)
-
-## Duplicate / overlap groups
-
-| Group | PRs | Keep | Action |
-|-------|-----|------|--------|
-| Hydrograph Bolt NumPy scalar | #428, #427, #420 | #428 (superset; #427 byte-identical; #420 subset) | Merged #428; recommend close #427/#420 |
-| ctrld Palette partial-success | #1069, #1067, #1066 | #1067 (tests) | Merged #1067; recommend close #1069/#1066 |
-| series_correction QA/lint | #299, #293 | #299 (superset) | Merged #299; recommend close #293 |
-| personal-config Bolt + bolt.md | #1801, #1800, #1791 | #1801 first | Merged #1801; #1800/#1791 CONFLICTING → DEFER rebase |
-| personal-config Sentinel pkill CWE-88 | #1796, #1784 | human pick | ESCALATE both |
-| esp Sentinel TOCTOU | #1375, #1370, #1362 | human pick (+ salvage #1362) | ESCALATE |
-| Seatek Sentinel env-filter (0ej) | #525, #518, #507 | human pick | ESCALATE |
-
-## Stale (>30d)
-
-None in this inventory (oldest ~6d).
-
-## Capability notes
-
-- Squash-merge works with Cursor hosts.yml token.
-- `closePullRequest` / REST issue close / `gh pr comment` GraphQL **denied** → CLOSE dispositions recorded via MCP reviews only; Phase 2 must close.
-- `request_reviewers` fails when `abhimehro` is already the PR author (expected).
-
-## Merge order executed
-
-1. Zero-diff QA: cs #1068, esp #1376, Seatek #537, Seatek #533
-2. Dependabot patches: cs #1070, cs #1071, esp #1373, sc #294
-3. Safe CI/UI/Perf: pc #1798, pc #1795, cs #1067, esp #1372, hg #428, hg #422, sc #299, pc #1801
+| cs #1066 | Cleared to PASS since yesterday; still CLOSE-DUP |
+| cs #1072 | Posted `/cs-agent` trigger (codescene MCP unavailable this run) |
