@@ -1,29 +1,29 @@
-# PR Triage — 2026-07-26 (final)
+# PR Triage — 2026-07-28 (Phase 1)
 
-## Duplicate / overlap clusters
+## Duplicate / overlap groups
 
-### Seatek Sentinel env-filter siblings (Lesson 0ej)
-- #507, #518, #525 — overlapping subprocess env denylist / filtering order
-- Prefer #525 (least churn) if human confirms denylist; avoid #518 if it deletes sentinel history
-- Escalate all; Phase 2 consolidates
+| Group | PRs | Keep | Action |
+|-------|-----|------|--------|
+| Hydrograph Bolt NumPy scalar | #428, #427, #420 | #428 (superset; #427 byte-identical; #420 subset) | Merged #428; recommend close #427/#420 |
+| ctrld Palette partial-success | #1069, #1067, #1066 | #1067 (tests) | Merged #1067; recommend close #1069/#1066 |
+| series_correction QA/lint | #299, #293 | #299 (superset) | Merged #299; recommend close #293 |
+| personal-config Bolt + bolt.md | #1801, #1800, #1791 | #1801 first | Merged #1801; #1800/#1791 CONFLICTING → DEFER rebase |
+| personal-config Sentinel pkill CWE-88 | #1796, #1784 | human pick | ESCALATE both |
+| esp Sentinel TOCTOU | #1375, #1370, #1362 | human pick (+ salvage #1362) | ESCALATE |
+| Seatek Sentinel env-filter (0ej) | #525, #518, #507 | human pick | ESCALATE |
 
-### Hydrograph validator.py collision
-- Merged #416 Bolt `isna` optimize
-- #413 became CONFLICTING; also regresses numpy `<2.0` and reverts Bolt — salvage DoS check only
+## Stale (>30d)
 
-### ctrld-sync
-- Merged #1062 Palette; #1060 remains MERGEABLE CLEAN (escalate security)
+None in this inventory (oldest ~6d).
 
-### email-security
-- Merged #1365 zero-diff
-- #1366 REQUEST_CHANGES (artifact skew 0er)
-- #1362 CONFLICTING TOCTOU → Phase 2
+## Capability notes
 
-## Disposition final
+- Squash-merge works with Cursor hosts.yml token.
+- `closePullRequest` / REST issue close / `gh pr comment` GraphQL **denied** → CLOSE dispositions recorded via MCP reviews only; Phase 2 must close.
+- `request_reviewers` fails when `abhimehro` is already the PR author (expected).
 
-| Disposition | Count | PRs |
-|-------------|------:|-----|
-| MERGE | 6 | pc #1780/#1782, cs #1062, esp #1365, Seatek #530, hg #416 |
-| REQUEST-CHANGES | 1 | esp #1366 |
-| ESCALATE | 7 | cs #1060, esp #1362, Seatek #507/#518/#525/#521, hg #413 |
-| CLOSE | 0 | — |
+## Merge order executed
+
+1. Zero-diff QA: cs #1068, esp #1376, Seatek #537, Seatek #533
+2. Dependabot patches: cs #1070, cs #1071, esp #1373, sc #294
+3. Safe CI/UI/Perf: pc #1798, pc #1795, cs #1067, esp #1372, hg #428, hg #422, sc #299, pc #1801
