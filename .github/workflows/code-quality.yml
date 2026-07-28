@@ -115,6 +115,33 @@ jobs:
           bandit -r . -x ./.git -x ./node_modules -x ./configs/.config/mole -x ./archive -x 'mole.*' --skip B101 -ll -q || true
           echo "✅ Python linting complete"
 
+  security-gate:
+    name: CWE-78 Security Gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install security scanners
+        run: pip install ruff bandit
+
+      - name: Ruff shell/subprocess rules (S602, S605)
+        run: ruff check . --select S602,S605
+
+      - name: Bandit shell/subprocess rules (B602, B605)
+        run: bandit -r . -t B602,B605 -ll
+
+      - name: Verify AST regression test passes
+        run: python3 -m unittest tests.test_vulnerability_fix -v
+
   test:
     name: Run All Tests (shell + Python)
     runs-on: ubuntu-latest

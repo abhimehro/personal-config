@@ -652,3 +652,29 @@ treated strictly as patterns and not parsed as command-line options.
 **Vulnerability:** Option Injection (CWE-88 variant). Found remaining shell scripts using `pkill` that did not include the `--` delimiter before the process name argument when other flags were present.
 **Learning:** When invoking `pkill` with dynamic variables or even static strings that could be refactored to variables, you must explicitly separate options from arguments using the `--` delimiter to prevent them from being parsed as flags.
 **Prevention:** Always use the `--` argument delimiter before positional arguments when using `pkill`.
+
+## 2026-07-27 - CWE-78 Command Injection Remediation in PR Automation Scripts
+
+**Vulnerability:** The PR automation scripts (`parse_inventory.py`, `categorize_ready.py`, `detect_duplicates.py`, `run_merges.py`) previously invoked `gh` via `subprocess.run(..., shell=True)` with user-controlled `repo`/`pr` strings parsed from Markdown inventory files.
+
+**Changes made (audited commit `ff9ec673aa9ad7d5444c41e87ae49b7c05ddbfa5`, baseline `106cd316b111f44536d1a25c82c8a48a2259d734`):**
+- Added a shared, typed PR-reference validator in `pr_reference.py` that parses `owner/name#number` once, rejects whitespace/control characters, extra path segments, leading `-`, empty components, and non-positive/non-decimal PR numbers. Invalid rows in batch processing emit a filename/line-number diagnostic and are skipped; a strict mode is available for fail-fast callers.
+- Rewrote `detect_duplicates.py` to use a static GraphQL document with declared variables and pass `owner`, `name`, and PR number separately through `gh api graphql` `-f`/`-F` fields, eliminating string interpolation in the query.
+- Consolidated token loading across `parse_inventory.py`, `categorize_ready.py`, `detect_duplicates.py`, and `run_merges.py` by importing `gh_token_env.load_gh_token_env`. `gh_token_env.py` now resolves the legacy `GH_TOKEN.env` path relative to `Path(__file__).resolve().parent`, only injects `GH_TOKEN` into the child environment, and emits a `DeprecationWarning` when the legacy path is used.
+- All `gh` subprocess wrappers now use an argument list, omit `shell`, set `timeout=120`, capture output, and avoid printing `GH_TOKEN` or the full environment in error messages.
+
+**Audit scope and findings:**
+- Searched `*.py` for `subprocess\.`, `os\.system`, `os\.popen`, `commands\.`, `eval\s*\(`, and `exec\s*\(`. No `shell=True` or shell-based execution was found in production Python. The only `exec` is in `tests/test_vulnerability_fix.py` operating on a self-constructed AST (`# nosec B102`).
+- `scratch_inventory.py` and `scratch_triage.py` use list-based `subprocess.run` with hardcoded repo lists and do not consume the same Markdown inventory data; they were left unchanged per the ticket's scope guidance, with a follow-up recommended for timeout/env-loader consistency.
+- GitHub Actions workflows do not directly interpolate untrusted PR metadata into `run:` blocks for these scripts. `pr-visual-recap.yml` binds numeric/boolean/SHA PR fields and sanitized secrets via `env:` before use.
+
+**Verification commands and results:**
+- `make lint-errors` — passed (no SC2155/SC2145 violations).
+- `python3 -m unittest discover -s tests -p 'test_*.py'` — 452 tests passed.
+- `uvx ruff check --select S602,S605 .` — passed.
+- `uvx bandit -r . -t B602,B605 -ll` — no issues identified.
+- `trunk check <changed files>` — no new issues.
+
+**Accepted exclusions:**
+- `tests/test_vulnerability_fix.py` intentionally uses `exec(code, mod.__dict__)` to load isolated AST nodes for regression testing; the input AST is built from the repository's own source, not attacker-controlled.
+- `scratch_inventory.py` / `scratch_triage.py` are out of scope for this fix; they do not load `GH_TOKEN.env` and operate on hardcoded repo lists, but should be hardened with timeouts and the shared env loader in a follow-up.
