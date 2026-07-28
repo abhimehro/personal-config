@@ -102,7 +102,7 @@ class TestScratchInventory(unittest.TestCase):
         # Verify subprocess.run was called correctly
         mock_run.assert_called_once()
         args, kwargs = mock_run.call_args
-        self.assertIn("gh", args[0])
+        self.assertEqual(args[0][0], "gh")
         self.assertIn(repo, args[0])
         self.assertEqual(kwargs.get("capture_output"), True)
         self.assertEqual(kwargs.get("text"), True)
