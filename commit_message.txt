@@ -1,7 +1,0 @@
-🛡️ Sentinel: [security improvement]
-
-* 🚨 Severity: MEDIUM
-* 💡 Vulnerability: Missing timeout and environment variable isolation in subprocess calls
-* 🎯 Impact: Indefinite hangs and potential missing authentication
-* 🔧 Fix: Use load_gh_token_env and apply timeout to subprocess calls
-* ✅ Verification: Unit tests verify subprocess.run arguments
