@@ -112,9 +112,9 @@ sudo ctrld service stop
 
 # 2. Configure Windscribe with Control D endpoints
 # Use Control D's DNS-over-HTTPS endpoints:
-# Privacy Enhanced: https://freedns.controld.com/<CONTROL_D_PRIVACY_RESOLVER_ID>
-# Browsing Privacy: https://freedns.controld.com/<CONTROL_D_BROWSING_RESOLVER_ID>
-# Gaming: https://freedns.controld.com/<CONTROL_D_GAMING_RESOLVER_ID>
+# Privacy Enhanced: https://freedns.controld.com/6m971e9jaf
+# Browsing Privacy: https://freedns.controld.com/rcnz7qgvwg
+# Gaming: https://freedns.controld.com/1xfy57w34t7
 
 # 3. Connect VPN
 windscribe connect

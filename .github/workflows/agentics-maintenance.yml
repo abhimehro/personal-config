@@ -39,8 +39,14 @@ on:
       operation:
         description: "Optional maintenance operation to run"
         required: false
-        type: string
+        type: choice
         default: ""
+        options:
+          - ""
+          - "disable"
+          - "enable"
+          - "update"
+          - "upgrade"
 
 permissions: {}
 
@@ -54,12 +60,12 @@ jobs:
       pull-requests: write
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw/actions/setup@bbb8042878459948333b15b66f27113f4b5c1b9a # v0.83.4
+        uses: github/gh-aw/actions/setup@6268b9870d9f3bd9ce7526cb9d9cac988ffcfa35 # v0.83.1
         with:
           destination: /opt/gh-aw/actions
 
       - name: Close expired discussions
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        uses: actions/github-script@v9.0.0 # v9.0.0
         with:
           script: |
             const { setupGlobals } = require('/opt/gh-aw/actions/setup_globals.cjs');
@@ -68,7 +74,7 @@ jobs:
             await main();
 
       - name: Close expired issues
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        uses: actions/github-script@v9.0.0 # v9.0.0
         with:
           script: |
             const { setupGlobals } = require('/opt/gh-aw/actions/setup_globals.cjs');
@@ -77,7 +83,7 @@ jobs:
             await main();
 
       - name: Close expired pull requests
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        uses: actions/github-script@v9.0.0 # v9.0.0
         with:
           script: |
             const { setupGlobals } = require('/opt/gh-aw/actions/setup_globals.cjs');
@@ -99,12 +105,12 @@ jobs:
           persist-credentials: false
 
       - name: Setup Scripts
-        uses: github/gh-aw/actions/setup@bbb8042878459948333b15b66f27113f4b5c1b9a # v0.83.4
+        uses: github/gh-aw/actions/setup@6268b9870d9f3bd9ce7526cb9d9cac988ffcfa35 # v0.83.1
         with:
           destination: /opt/gh-aw/actions
 
       - name: Check admin/maintainer permissions
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        uses: actions/github-script@v9.0.0 # v9.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -114,12 +120,12 @@ jobs:
             await main();
 
       - name: Install gh-aw
-        uses: github/gh-aw/actions/setup-cli@d688a4a5fa8aa96ad18fa13f0b187c38548a275c # v0.66.1
+        uses: github/gh-aw/actions/setup-cli@<FULL_40_CHAR_COMMIT_SHA_FOR_V0.66.1> # v0.66.1
         with:
           version: v0.55.0
 
       - name: Run operation
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        uses: actions/github-script@v9.0.0 # v9.0.0
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_AW_OPERATION: ${{ github.event.inputs.operation }}

@@ -3,7 +3,7 @@
     "command": "npx",
     "args": ["-y", "@modelcontextprotocol/server-brave-search"],
     "env": {
-      "BRAVE_API_KEY": "op://Personal/BRAVE_API_KEY/credential"
+      "BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"
     }
   },
   "Context7": {
@@ -20,21 +20,25 @@
   },
   "Exa": {
     "command": "npx",
-    "args": ["-y", "exa-mcp-server"],
+    "args": ["exa-mcp-server"],
     "env": {
-      "EXA_API_KEY": "op://Personal/EXA_API_KEY/credential"
+      "EXA_API_KEY": "YOUR_EXA_API_KEY"
     }
   },
   "Filesystem": {
     "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-filesystem", "~/dev/"],
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-filesystem",
+      "~/Documents/dev/"
+    ],
     "env": {}
   },
   "firecrawl-mcp": {
     "command": "npx",
     "args": ["-y", "firecrawl-mcp"],
     "env": {
-      "FIRECRAWL_API_KEY": "op://Personal/FIRECRAWL_API_KEY/credential"
+      "FIRECRAWL_API_KEY": "YOUR_FIRECRAWL_API_KEY"
     }
   },
   "gen-pdf": {
@@ -54,12 +58,12 @@
     "command": "npx",
     "args": ["-y", "server-perplexity-ask"],
     "env": {
-      "PERPLEXITY_API_KEY": "op://Personal/PERPLEXITY_RAYCAST_API_KEY/credential"
+      "PERPLEXITY_API_KEY": "YOUR_PERPLEXITY_API_KEY"
     }
   },
   "Playwright": {
     "command": "npx",
-    "args": ["-y", "@playwright/mcp@latest"],
+    "args": ["@playwright/mcp@latest"],
     "env": {}
   },
   "prisma": {
@@ -67,36 +71,31 @@
     "args": ["-y", "mcp-remote", "https://mcp.prisma.io/mcp"],
     "env": {}
   },
-  "Sequential_thinking": {
+  },
+  "Sequential thinking": {
     "command": "npx",
     "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
     "env": {}
   },
-  "Tavily_Expert": {
+  "Tavily Expert": {
     "url": "https://tavily.api.tadata.com/mcp/tavily/cohort-jasmine-dialect-r8wdqh"
   },
   "Tavily": {
     "command": "npx",
     "args": ["-y", "tavily-mcp"],
     "env": {
-      "TAVILY_API_KEY": "op://Personal/TAVILY_API_KEY/credential"
+      "TAVILY_API_KEY": "YOUR_TAVILY_API_KEY"
     }
   },
   "applescript_execute": {
     "command": "npx",
-    "args": ["-y", "@peakmojo/applescript-mcp"],
+    "args": ["@peakmojo/applescript-mcp"],
     "env": {}
   },
-  "paste": {
-    "url": "http://127.0.0.1:39725/mcp"
-  },
-  "deepwiki": {
-    "url": "https://mcp.deepwiki.com/mcp"
-  },
-  "devin": {
-    "url": "https://mcp.devin.ai/mcp",
-    "headers": {
-      "Authorization": "Bearer op://Personal/DEVIN_API_KEY/credential"
-    }
+  "Mem": {
+    "httpHeaders": {
+      "http": "mem"
+    },
+    "url": "https://mcp.mem.ai/mcp"
   }
 }

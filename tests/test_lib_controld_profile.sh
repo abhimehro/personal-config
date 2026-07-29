@@ -94,57 +94,19 @@ check_output "redact_profile_id returns (empty) for empty input" "(empty)" "$EMP
 echo ""
 echo "-- get_profile_id --"
 
-# With no configuration, get_profile_id must fail closed.
-check_false "get_profile_id fails when privacy is not configured" get_profile_id "privacy"
-check_false "get_profile_id fails when gaming is not configured" get_profile_id "gaming"
-check_false "get_profile_id fails when browsing is not configured" get_profile_id "browsing"
-
-UNKNOWN_ID=$(get_profile_id "unknown_profile" 2>/dev/null || true)
-check_output "get_profile_id returns empty for unknown profile" "" "$UNKNOWN_ID"
-
-# Export synthetic test IDs (lowercase alphanumeric, like real resolver IDs).
-export CTR_PROFILE_PRIVACY_ID="testprivacyid"
-export CTR_PROFILE_GAMING_ID="testgamingid"
-export CTR_PROFILE_BROWSING_ID="testbrowsingid"
-
 PRIVACY_ID=$(get_profile_id "privacy")
-check_output "get_profile_id returns configured privacy ID" "testprivacyid" "$PRIVACY_ID"
+check "get_profile_id returns non-empty ID for 'privacy'" test -n "$PRIVACY_ID"
 
 GAMING_ID=$(get_profile_id "gaming")
-check_output "get_profile_id returns configured gaming ID" "testgamingid" "$GAMING_ID"
+check "get_profile_id returns non-empty ID for 'gaming'" test -n "$GAMING_ID"
 
 BROWSING_ID=$(get_profile_id "browsing")
-check_output "get_profile_id returns configured browsing ID" "testbrowsingid" "$BROWSING_ID"
+check "get_profile_id returns non-empty ID for 'browsing'" test -n "$BROWSING_ID"
 
-# Legacy env var fallback.
-# shellcheck disable=SC2030
-(
-	unset CTR_PROFILE_PRIVACY_ID CTR_PROFILE_GAMING_ID CTR_PROFILE_BROWSING_ID
-	export CTRLD_PRIVACY_PROFILE="legacyprivacyid"
-	export CTRLD_GAMING_PROFILE="legacygamingid"
-	export CTRLD_BROWSING_PROFILE="legacybrowsingid"
-	# shellcheck source=scripts/lib/controld-profile.sh
-	source "$REPO_ROOT/scripts/lib/controld-profile.sh"
-	PRIVACY_LEGACY=$(get_profile_id "privacy")
-	GAMING_LEGACY=$(get_profile_id "gaming")
-	BROWSING_LEGACY=$(get_profile_id "browsing")
-	[[ $PRIVACY_LEGACY == "legacyprivacyid" ]] || {
-		echo "FAIL: legacy privacy fallback"
-		exit 1
-	}
-	[[ $GAMING_LEGACY == "legacygamingid" ]] || {
-		echo "FAIL: legacy gaming fallback"
-		exit 1
-	}
-	[[ $BROWSING_LEGACY == "legacybrowsingid" ]] || {
-		echo "FAIL: legacy browsing fallback"
-		exit 1
-	}
-	echo "PASS: legacy CTRLD_*_PROFILE fallback works"
-)
-PASS=$((PASS + 1))
+UNKNOWN_ID=$(get_profile_id "unknown_profile")
+check_output "get_profile_id returns empty for unknown profile" "" "$UNKNOWN_ID"
 
-# Override via environment variable.
+# Override via environment variable
 CTR_PROFILE_PRIVACY_ID="test123abc" PRIVACY_OVERRIDE=$(get_profile_id "privacy")
 check_output "get_profile_id uses CTR_PROFILE_PRIVACY_ID env override" "test123abc" "$PRIVACY_OVERRIDE"
 

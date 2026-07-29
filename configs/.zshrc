@@ -5,7 +5,7 @@ export PATH="$HOME/.local/bin:$PATH"
 # Force-kills ctrld, clears static DNS entries on ALL interfaces, and flushes DNS cache
 # Uses dynamic interface detection to work with any network configuration
 fix-dns() {
-  sudo pkill -9 -f -- "ctrld run" 2>/dev/null
+  sudo pkill -9 -f "ctrld run" 2>/dev/null
   sudo launchctl unload /Library/LaunchDaemons/ctrld.plist 2>/dev/null
   # Dynamically get all network services and clear DNS on each
   # Uses same pattern as scripts/lib/network-utils.sh

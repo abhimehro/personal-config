@@ -87,7 +87,7 @@ sudo ./scripts/repair-controld-keepalive.sh --restart privacy
 
 ./scripts/controld-status.sh          # WORKING / BROKEN, one screen
 dig @127.0.0.1 google.com +short +time=2
-# privacy expect: endpoint = 'https://dns.controld.com/<CONTROL_D_PRIVACY_RESOLVER_ID>' (never /free)
+# privacy expect: endpoint = 'https://dns.controld.com/6m971e9jaf' (never /free)
 # cat /etc/controld/status   # world-readable; active_profile may need sudo until chmod 644
 ```
 

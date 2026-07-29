@@ -1,8 +1,5 @@
-# Control D Privacy Profile Configuration - EXAMPLE
+# Control D Privacy Profile Configuration - BACKUP
 # Enhanced privacy and ad-blocking
-#
-# Replace <CONTROL_D_PRIVACY_RESOLVER_ID> with your real resolver ID from
-# the Control D dashboard. Do not commit the ID to version control.
 
 [listener]
   [listener.0]
@@ -29,6 +26,6 @@
   [upstream.0]
     name = 'Control D Privacy Profile'
     type = 'doh'
-    endpoint = 'https://dns.controld.com/<CONTROL_D_PRIVACY_RESOLVER_ID>'
+    endpoint = 'https://dns.controld.com/6m971e9jaf'
     bootstrap_ip = '76.76.2.0'
     timeout = 3000

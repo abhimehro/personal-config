@@ -46,8 +46,6 @@ GIT_BIN = shutil.which("git") or "git"
 ALLOWED_STATUSES = {"success", "warning", "failure", "needs_review", "skipped"}
 
 VERSION_PATTERN = re.compile(r"v?(\d+)(?:\.(\d+))?(?:\.(\d+))?")
-TAG_PATTERN = re.compile(r"v?\d+(?:\.\d+)*")
-SHA_PATTERN = re.compile(r"[0-9a-fA-F]{40}")
 
 
 def command_env() -> dict[str, str]:
@@ -413,7 +411,7 @@ def _latest_tag_via_mcp(repo_id: str) -> str | None:
         if not releases:
             return None
         latest = releases[0].get("tag_name", "")
-        if latest and TAG_PATTERN.fullmatch(latest):
+        if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
             return latest
     except Exception:
         pass
@@ -425,7 +423,7 @@ def _latest_tag_via_tags(repo_id: str) -> str:
     stable_tags = []
     for t in tags_json:
         name = t.get("name", "")
-        if not TAG_PATTERN.fullmatch(name):
+        if not re.fullmatch(r"v?\d+(?:\.\d+)*", name):
             continue
         parsed = numeric_version(name)
         if not parsed:
@@ -445,7 +443,7 @@ def latest_tag_for_action(repo_id: str) -> str:
 
     # Original gh CLI implementation
     latest = gh_text(["api", f"repos/{repo_id}/releases/latest", "--jq", ".tag_name"])
-    if latest and TAG_PATTERN.fullmatch(latest):
+    if latest and re.fullmatch(r"v?\d+(?:\.\d+)*", latest):
         return latest
 
     return _latest_tag_via_tags(repo_id)
@@ -453,7 +451,7 @@ def latest_tag_for_action(repo_id: str) -> str:
 
 def is_commit_sha(ref: str) -> bool:
     """True for full-length git commit SHAs used to pin Actions (Lesson 0z)."""
-    return bool(SHA_PATTERN.fullmatch(ref))
+    return bool(re.fullmatch(r"[0-9a-fA-F]{40}", ref))
 
 
 @functools.lru_cache(maxsize=1024)

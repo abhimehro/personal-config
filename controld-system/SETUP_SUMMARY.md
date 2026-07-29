@@ -115,13 +115,13 @@
 
 Three Control D resolver profiles configured:
 
-1. **privacy_enhanced** (<CONTROL_D_PRIVACY_RESOLVER_ID>) - Default, active
+1. **privacy_enhanced** (6m971e9jaf) - Default, active
    - Maximum privacy/security filtering
    - Blocks trackers, ads, malware
 
-2. **browsing_privacy** (<CONTROL_D_BROWSING_RESOLVER_ID>)
+2. **browsing_privacy** (rcnz7qgvwg)
    - Balanced privacy for general use
-3. **gaming_optimized** (<CONTROL_D_GAMING_RESOLVER_ID>)
+3. **gaming_optimized** (1xfy57w34t7)
    - Minimal filtering for lower latency
 
 ### 3. Firewall Configuration

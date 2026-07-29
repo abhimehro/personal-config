@@ -250,7 +250,7 @@ like aria-label and aria-hidden on inner emojis. Also, note that color contrasts
 standard must follow WCAG AA guidelines. **Action:** When adding HTML in
 scripts, stick to accessibility best practices.
 
-## 2026-06-17 - Hide decorative emojis properly
+## 2026-03-07 - Hide decorative emojis properly
 
 **Learning:** When hiding decorative emojis within text-containing elements
 (e.g., `<h3>`), wrap only the emoji in `<span aria-hidden="true">`. Applying a
@@ -259,7 +259,7 @@ native inner text for screen readers. **Action:** Only wrap the emoji in
 `<span aria-hidden="true">` and remove redundant `aria-label` from parent if it
 duplicates the visible text.
 
-## 2026-06-20 - Screen reader accessible emoji headings
+## 2026-03-10 - Screen reader accessible emoji headings
 
 **Learning:** When using emojis in headings as visual icons, they can cause
 screen readers to read the unicode description of the emoji, breaking the flow
@@ -270,112 +270,79 @@ regex `^([\U0001F000-\U0001FAFF\U00002600-\U000027BF\u2600-\u27BF]+)\s+(.*)$`,
 applies an `aria-label` to the heading tag containing just the text, and wraps
 the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 
-## 2026-07-01 - WCAG AA Contrast for Dashboard Metric Cards
-
+## 2026-07-11 - WCAG AA Contrast for Dashboard Metric Cards
 **Learning:** Light background gradients (like light blue to cyan or pink to red) paired with white text often fail to meet the WCAG AA minimum contrast ratio (4.5:1), making them difficult to read for many users. The visual appeal of gradients does not outweigh the necessity of readability.
 **Action:** Replace low-contrast background gradients on metric cards or similar UI elements with solid, dark colors (e.g., dark purple, dark green, dark orange, dark red) to ensure sufficient contrast with white text.
 
-## 2024-07-02 - HTML Accessibility: Avoid redundant aria-labels
+## 2024-06-20 - HTML Accessibility: Avoid redundant aria-labels
 
 **Learning:** When hiding decorative emojis within text-containing elements (like `<a>`), applying a duplicate `aria-label` to the parent tag unnecessarily overrides the native inner text for screen readers.
 **Action:** Wrap only the decorative emoji in `<span aria-hidden="true">` and remove the redundant `aria-label` from the parent element to rely on its natural text content.
 
 ## 2024-07-04 - [CLI Spinner Fallbacks]
-
 **Learning:** Terminal spinners (like the one in `weather-assistant.ts`) need clear text equivalents for users with screen readers or simplified console interfaces. Emitting rapid ANSI sequence changes and hiding the cursor (`\x1B[?25l`) without standard error fallbacks leaves users without context on crash.
 **Action:** Always ensure clear start states and safe fallback error messages with standard formatting (emojis/colors) when implementing CLI interactive feedback.
 
-## 2026-07-05 - Add semantic landmarks to HTML reports
-
+## 2026-06-13 - Add semantic landmarks to HTML reports
 **Learning:** Shell scripts generating HTML dashboard need better ARIA/semantic support. Adding semantic landmarks (`<header>`, `<main>`, `<section>`, `<footer>`) to dynamically generated HTML improves screen reader navigation significantly without requiring CSS changes.
 **Action:** Always use semantic HTML5 elements when writing bash scripts that generate HTML reports.
-
 ## 2026-07-06 - Improve accessibility for HTML generated scripts
-
 **Learning:** Shell scripts that generate HTML (like analytics_dashboard.sh) often miss standard accessibility attributes like lang tags or semantic structures for layout. When generating metrics cards or sections, adding `role="region"`, `role="status"` or `aria-labelledby` ensures screen readers can correctly associate values with their labels.
 **Action:** Always add semantic HTML tags and proper ARIA labels to dynamically generated HTML within shell scripts.
 
 ## 2024-07-07 - ARIA Landmarks for Dashboard Sections
-
 **Learning:** Screen reader users benefit significantly when discrete content areas are marked as landmarks. Using `<section role="region" aria-labelledby="heading-id">` provides clear navigational targets and announces the section's name contextually.
 **Action:** When adding HTML `<section>` elements in scripts, ensure they include `role="region"` and are labelled by their associated heading using `aria-labelledby` and `id`.
-
-## 2026-07-10 - ARIA landmarks on semantic HTML elements
-
+## 2026-07-11 - ARIA landmarks on semantic HTML elements
 **Learning:** While named `<section>` elements with an `aria-labelledby` attribute implicitly have the `region` role in modern browsers according to W3C HTML5/ARIA specifications, explicitly defining `role="region"` is a valid, harmless practice that can improve compatibility with older screen readers. However, it's technically redundant in modern contexts and should be weighed against reducing HTML bloat.
 **Action:** When adding semantic HTML elements like `<section>`, prioritize `aria-labelledby` for clear naming. Only add explicit `role="region"` if compatibility with older assistive technologies is a stated requirement for the project.
-
-## 2026-07-10 - Semantic Lists for Grouped Data
-
+## $(date +%Y-%m-%d) - Semantic Lists for Grouped Data
+**Learning:** When displaying grouped key-value data (like system specs) in bash-generated HTML reports, using generic `<div>` elements causes screen readers to read them as disconnected text nodes. This creates a fragmented audio experience.
+**Action:** Convert sequential `<div>` data blocks into semantic `<ul>` and `<li>` lists to provide screen readers with grouping context and item counts.
+## $(date +%Y-%m-%d) - Semantic Lists for Grouped Data
 **Learning:** When displaying grouped key-value data (like system specs) in bash-generated HTML reports, using generic `<div>` elements causes screen readers to read them as disconnected text nodes. This creates a fragmented audio experience.
 **Action:** Convert sequential `<div>` data blocks into semantic `<ul>` and `<li>` lists to provide screen readers with grouping context and item counts.
 
-## 2026-07-10 - Semantic Lists for Grouped Data
-
-**Learning:** When displaying grouped key-value data (like system specs) in bash-generated HTML reports, using generic `<div>` elements causes screen readers to read them as disconnected text nodes. This creates a fragmented audio experience.
-**Action:** Convert sequential `<div>` data blocks into semantic `<ul>` and `<li>` lists to provide screen readers with grouping context and item counts.
-
-## 2026-07-10 - Semantic Lists for Grouped Data
-
+## 2026-03-10 - Semantic Lists for Grouped Data
 **Learning:** When generating HTML directory or file listings, using consecutive `<a>` tags causes them to be read as disconnected links by screen readers, lacking grouping context.
 **Action:** Wrap sequential file links in semantic `<ul>` and `<li>` tags (removing default list styling via CSS) and enclose them in a `<nav>` element to provide proper item count announcements and structural context.
 
 ## 2026-07-11 - aria-labelledby on composite UI elements
-
 **Learning:** When using `aria-labelledby` on a composite UI element (such as a metric card) that contains both a textual label and a dynamically generated value, the attribute must reference the IDs of both the label and the value (e.g., `aria-labelledby="label-id value-id"`). Referencing only the label causes screen readers to skip announcing the actual value, breaking accessibility.
 **Action:** Always verify that `aria-labelledby` attributes point to all relevant text and value IDs within composite components so that screen readers announce the full context.
-
 ## 2026-07-13 - HTML List Role Overrides
-
 **Learning:** Applying `role="group"` to `<li>` elements within a `<ul>` list is a common mistake when trying to associate ARIA labels with the entire list item. Doing so overrides the implicit `listitem` role, creating an invalid semantic structure for the parent `<ul>` and breaking standard list navigation for screen readers.
 **Action:** Do not use `role="group"` on `<li>` tags. Allow them to use their implicit `listitem` role to maintain proper list semantics.
 
-## 2026-07-13 - Graceful fallback for non-TTY animations
-
+## 2026-03-31 - Graceful fallback for non-TTY animations
 **Learning:** Hardcoded ANSI color strings (`\x1b[31m`) in CLI tools degrade to unreadable noise in environments without a TTY or in screen readers. This makes CLI error messages and standard output inaccessible.
 **Action:** Always conditionally apply ANSI color formatting by checking if standard output (`process.stdout.isTTY`) or standard error (`process.stderr.isTTY`) supports it. Provide clean, uncolored string fallbacks for screen reader and CI environments.
 
 ## 2026-07-14 - Avoid list semantics for metric cards
-
 **Learning:** Wrapping a single label and its corresponding value in an unordered list (`<ul>`/`<li>`) inside composite UI elements like metric cards introduces unnecessary verbosity for screen readers and misuses list semantics.
 **Action:** Prefer `<div>` or `<span>` wrappers, or a description list (`<dl>`), for metric cards to improve screen reader accessibility.
 
 ## 2026-07-15 - Prevent Empty Lists for Better Accessibility
-
 **Learning:** Dynamically generated `<ul>` elements that conditionally render `<li>` items can result in an empty `<ul></ul>` if no conditions are met. This produces invalid HTML5 that can confuse screen readers, causing them to announce a list with zero items or skip the region ambiguously.
 **Action:** Always provide a fallback empty state `<li>` item when dynamically generating lists to ensure the HTML remains valid and users receive clear feedback that the list is intentionally empty.
-
 ## 2026-07-16 - Prevent Empty Lists for Better Accessibility (Reiteration)
-
 **Learning:** Dynamically generated `<ul>` elements without `<li>` children are invalid HTML5 and confuse screen readers, causing them to ambiguously skip regions or misreport empty lists.
 **Action:** When creating HTML list generators (e.g., `html_ul`), explicitly evaluate the iterable before formatting. If the list is empty, inject a fallback empty state list item (like `<li class="empty-state">No items</li>`) instead of returning `<ul></ul>`.
 
-## 2026-07-18 - Empty Lists Accessibility
-
+## 2026-03-10 - Empty Lists Accessibility
 **Learning:** When dynamically generating HTML lists (e.g., `<ul>`), rendering an empty list (e.g., `<ul></ul>`) creates an invalid HTML5 structure and disrupts screen reader experiences. Always providing a fallback empty state list item (`<li>`) is necessary to maintain proper list semantics.
 **Action:** Add a fallback empty state `<li>` whenever conditional list items are absent.
-
-## 2026-07-19 - Skip-to-content links for generated HTML
-
+## $(date +%Y-%m-%d) - Skip-to-content links for generated HTML
 **Learning:** Shell scripts that generate static HTML reports often omit essential keyboard accessibility features like skip-to-content links, making navigation tedious for keyboard and screen reader users.
 **Action:** Always include a visually hidden, focusable skip link (`<a href="#main-content" class="skip-link">Skip to main content</a>`) at the top of the `<body>` and ensure the `<main>` tag has a matching `id="main-content"`.
-
-## 2026-07-20 - Preserve list semantics for groups
-
+## $(date +%Y-%m-%d) - Preserve list semantics for groups
 **Learning:** When grouping multiple related UI elements (such as a grid of metric cards), replacing the unordered list container (`<ul>`) with a generic `<div>` degrades accessibility by preventing screen readers from announcing the group context and item count.
 **Action:** Always use `<ul>` and `<li>` to group related repeating UI elements. Do not flatten them into generic `<div>` tags in the name of simplicity.
 
 ## 2026-07-22 - Accessible Data Tables
-
 **Learning:** When creating data tables for performance reports, screen readers struggle to associate data cells with their row identifiers if they are marked as simple `<td>` elements.
 **Action:** Always use `<th scope="row">` for the first column in data-heavy tables to ensure proper row-level header associations for screen reader users.
 
 ## 2026-07-27 - Semantic HTML for Key-Value Pairs
-
 **Learning:** For presenting key-value pairs (e.g., system metrics or system activities), a description list (`<dl>`, `<dt>`, `<dd>`) is semantically more correct and accessible than an unordered list (`<ul>`, `<li>`).
 **Action:** Use description lists for key-value pair data to ensure proper semantic structure and accessibility, instead of unordered lists.
-
-## 2026-07-28 - HTML Description Lists
-
-**Learning:** Using generic `<div>` tags directly inside a `<dl>` element creates invalid HTML markup, which can confuse screen readers and disrupt the reading flow of grouped key-value data. Standard HTML `<dl>` lists only allow `<dt>` and `<dd>` as direct children.
-**Action:** Always ensure `<dl>` elements strictly contain valid `<dt>` and `<dd>` elements, and use CSS grid or flexbox on the `<dl>` itself if complex alignment is needed.

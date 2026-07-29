@@ -297,12 +297,3 @@
   tip artifact majors (rpce), visual-recap salvage (pc #1748)
 - Snapshot: `tasks/pr-review-2026-07-24.md`
 - Lessons: 0ej/0ek recorded; 0el bolt.md after sibling Bolt merge
-
-## 2026-07-28 Phase 1 (cron)
-
-- Preflight PASS 7/7; inventoried **47**; **16** squash-merges; **0** closes (token lacks closePullRequest — Lesson **0es**); **5** close-recommended via MCP; **3** REQUEST_CHANGES; **17** escalate; **5** defer.
-- Merged: pc #1801/#1798/#1795; cs #1071/#1070/#1068/#1067; esp #1376/#1373/#1372; Seatek #537/#533; hg #428/#422; sc #299/#294.
-- Auth: unset GH_TOKEN (0eo); MCP reviews; adversarial parallel review (opus + gpt-5.5).
-- Cascade: bolt.md #1800/#1791 CONFLICTING after #1801; #1064 after #1067.
-- Docs: `tasks/pr-review-2026-07-28.md`; branch `cursor-agent/automated-pr-workflow-3d54`.
-- Open EOD: **31** (close gap leaves 5 dups open for Phase 2).

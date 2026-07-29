@@ -624,6 +624,3 @@ invocation.
 ## 2026-12-07 - [Pre-compile regular expressions]
 **Learning:** Re-compiling the identical regular expression inside functions that are called frequently (like string parsing loops in `select-best-alldebrid-candidate.py`) adds unnecessary overhead due to repeated evaluation in `re.sub()`.
 **Action:** Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module level when they are static and used repeatedly inside loops or frequently called functions.
-## 2025-02-27 - Python Dictionary Allocation Overhead
-**Learning:** Chaining `.get("key", {}).get("sub_key", [])` inside loops causes measurable memory allocation overhead on the fast path because Python instantiates new empty dictionaries and lists on every iteration when keys are missing.
-**Action:** Replace this with multi-step `None` checks (e.g., `_key = val.get("key"); _sub = _key.get("sub_key") if _key else []`) to prevent redundant object allocations in critical paths.

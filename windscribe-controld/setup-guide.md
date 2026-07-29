@@ -9,7 +9,7 @@ D DNS privacy filtering on macOS.
 
 ### Control D Settings
 
-- **Profile**: Privacy profile (<CONTROL_D_PRIVACY_RESOLVER_ID>)
+- **Profile**: Privacy profile (6m971e9jaf)
 - **Protocol**: DNS-over-HTTPS (DoH)
 - **Listener**: `0.0.0.0:53` (all interfaces) - **KEY CHANGE**
 - **Manager**: Custom controld-manager with profile switching

@@ -183,7 +183,7 @@ mkdir -p "$CONTROLD_DIR/profiles"
 # Case 1: active_profile file exists and names a profile.
 cat >"$CONTROLD_DIR/active_profile" <<'EOF'
 PROFILE_NAME=privacy
-PROFILE_ID=testprivacyid
+PROFILE_ID=6m971e9jaf
 PROTOCOL=doh3
 LISTENER_IP=127.0.0.1
 EOF

@@ -11,7 +11,7 @@ VPN encryption + DNS privacy filtering.
 ### System Status
 
 - **VPN**: Windscribe connected with Local DNS setting
-- **DNS Privacy**: Control D Privacy Profile (<CONTROL_D_PRIVACY_RESOLVER_ID>) with DOH encryption
+- **DNS Privacy**: Control D Privacy Profile (6m971e9jaf) with DOH encryption
 - **Geographic Routing**: Miami, FL (NetActuate, Inc) - Control D proxy
 - **Ad Blocking**: 500+ domains blocked (doubleclick.net → 127.0.0.1)
 - **Real-time Logging**: DNS queries visible in Control D dashboard

@@ -67,15 +67,15 @@ Resolver ID
 Default protocol
 Intended use
 ⁠privacy
-⁠<CONTROL_D_PRIVACY_RESOLVER_ID>
+⁠6m971e9jaf
 DoH3/QUIC
 Maximum privacy & security
 ⁠browsing
-⁠<CONTROL_D_BROWSING_RESOLVER_ID>
+⁠rcnz7qgvwg
 DoH3/QUIC
 Everyday balanced browsing
 ⁠gaming
-⁠<CONTROL_D_GAMING_RESOLVER_ID>
+⁠1xfy57w34t7
 DoH3/QUIC
 Low-latency gaming sessions
 Typical flows:

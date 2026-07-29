@@ -20,9 +20,9 @@
 
 This setup provides three resolver profiles for different use cases:
 
-1. **Privacy Enhanced** (`<CONTROL_D_PRIVACY_RESOLVER_ID>`) - Maximum privacy/security filtering
-2. **Browsing Privacy** (`<CONTROL_D_BROWSING_RESOLVER_ID>`) - Balanced privacy for general browsing
-3. **Gaming Optimized** (`<CONTROL_D_GAMING_RESOLVER_ID>`) - Minimal rules for optimal gaming
+1. **Privacy Enhanced** (`6m971e9jaf`) - Maximum privacy/security filtering
+2. **Browsing Privacy** (`rcnz7qgvwg`) - Balanced privacy for general browsing
+3. **Gaming Optimized** (`1xfy57w34t7`) - Minimal rules for optimal gaming
    performance
 
 ## Installation Status
@@ -98,9 +98,9 @@ If you prefer manual control:
 
 ```bash
 # Start directly with a specific resolver
-sudo ctrld start --cd <CONTROL_D_PRIVACY_RESOLVER_ID>   # Privacy
-sudo ctrld start --cd <CONTROL_D_BROWSING_RESOLVER_ID>   # Browsing
-sudo ctrld start --cd <CONTROL_D_GAMING_RESOLVER_ID>  # Gaming
+sudo ctrld start --cd 6m971e9jaf   # Privacy
+sudo ctrld start --cd rcnz7qgvwg   # Browsing
+sudo ctrld start --cd 1xfy57w34t7  # Gaming
 ```
 
 ## Important: Skip Self-Checks Configuration

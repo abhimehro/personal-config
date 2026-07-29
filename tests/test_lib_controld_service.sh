@@ -196,7 +196,7 @@ check "_is_native_api_failure accepts schema incompat" \
 echo "NTC Service started" >"$API_FAIL_LOG"
 DAEMON_LOG="$TEST_DIR/ctrld_daemon.log"
 printf '%s\n' \
-	'fetching Controld D configuration from API: test-privacy-id' \
+	'fetching Controld D configuration from API: 6m971e9jaf' \
 	'error: json: cannot unmarshal number into Go struct field ResolverConfig.body.resolver.exclude of type string' \
 	'fatal: failed to fetch resolver config' >"$DAEMON_LOG"
 check "_is_ctrld_api_schema_incompat reads daemon log" \
@@ -214,8 +214,8 @@ mkdir -p "$FB_DIR/profiles"
 # shellcheck source=scripts/lib/controld-profile.sh
 source "$REPO_ROOT/scripts/lib/controld-profile.sh"
 check "_write_profile_local_config writes doh3 profile endpoint" \
-	_write_profile_local_config "privacy" "test-privacy-id" "$FB_CFG" "doh3"
-check_grep "local config has profile endpoint" "https://dns.controld.com/test-privacy-id" "$FB_CFG"
+	_write_profile_local_config "privacy" "6m971e9jaf" "$FB_CFG" "doh3"
+check_grep "local config has profile endpoint" "https://dns.controld.com/6m971e9jaf" "$FB_CFG"
 check_grep "local config uses doh3" "type = 'doh3'" "$FB_CFG"
 check_grep "local config has bootstrap_ip" "bootstrap_ip" "$FB_CFG"
 if grep -qE 'dns\.controld\.com/free' "$FB_CFG"; then

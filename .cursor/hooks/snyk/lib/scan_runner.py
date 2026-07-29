@@ -120,10 +120,10 @@ def _severity_from_priority_score(score: int) -> str:
 def _severity_from_sarif_result(result: Dict[str, Any]) -> str:
     level = result.get("level", "warning")
     severity = {"error": "high", "warning": "medium", "note": "low"}.get(level, "medium")
-    _props = result.get("properties")
-    if not _props or "priorityScore" not in _props:
+    properties = result.get("properties", {})
+    if "priorityScore" not in properties:
         return severity
-    return _severity_from_priority_score(_props["priorityScore"])
+    return _severity_from_priority_score(properties["priorityScore"])
 
 
 def _cwe_from_properties(properties: Dict[str, Any]) -> Optional[str]:
@@ -138,35 +138,26 @@ def _vuln_from_location(
     cwe: Optional[str],
 ) -> Dict[str, Any]:
     rule_id = result.get("ruleId", "unknown")
-
-    # ⚡ Bolt Optimization: Replace chained .get("key", {}).get("sub_key", default) with multi-step None checks
-    # to avoid redundant empty dictionary allocations in fast paths
-    _msg_obj = result.get("message")
-    message = _msg_obj.get("text", "") if _msg_obj else ""
-
-    _phys_loc = loc.get("physicalLocation")
-    _artifact = _phys_loc.get("artifactLocation") if _phys_loc else None
-    _region = _phys_loc.get("region") if _phys_loc else None
-
-    start_line = _region.get("startLine", 0) if _region else 0
-    end_line = _region.get("endLine", start_line) if _region else start_line
-
+    message = result.get("message", {}).get("text", "")
+    phys_loc = loc.get("physicalLocation", {})
+    artifact = phys_loc.get("artifactLocation", {})
+    region = phys_loc.get("region", {})
+    start_line = region.get("startLine", 0)
     return {
         "id": rule_id,
         "title": rule_id.replace("/", " - ").replace("_", " ").title(),
         "severity": severity,
         "cwe": cwe,
-        "file_path": _artifact.get("uri", "unknown") if _artifact else "unknown",
+        "file_path": artifact.get("uri", "unknown"),
         "start_line": start_line,
-        "end_line": end_line,
+        "end_line": region.get("endLine", start_line),
         "message": message,
     }
 
 
 def _vulns_from_sarif_result(result: Dict[str, Any]) -> List[Dict[str, Any]]:
     severity = _severity_from_sarif_result(result)
-    _props = result.get("properties")
-    cwe = _cwe_from_properties(_props) if _props else None
+    cwe = _cwe_from_properties(result.get("properties", {}))
     return [
         _vuln_from_location(result, loc, severity, cwe)
         for loc in result.get("locations", ())
