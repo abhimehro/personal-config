@@ -464,3 +464,7 @@ reading flow of grouped key-value data. Standard HTML `<dl>` lists only allow
 `<dt>` and `<dd>` as direct children. **Action:** Always ensure `<dl>` elements
 strictly contain valid `<dt>` and `<dd>` elements, and use CSS grid or flexbox
 on the `<dl>` itself if complex alignment is needed.
+## $(date +%Y-%m-%d) - ARIA aria-labelledby on Composite UI Elements
+
+**Learning:** When using `aria-labelledby` on a composite UI element (such as a metric card) that contains both a textual label and a dynamically generated value, the attribute must reference the IDs of both the label and the value (e.g., `aria-labelledby="label-id value-id"`). Referencing only the label causes screen readers to skip announcing the actual value, breaking accessibility.
+**Action:** Always verify that `aria-labelledby` attributes point to all relevant text and value IDs within composite components so that screen readers announce the full context.
