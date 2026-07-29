@@ -1779,6 +1779,17 @@ but replaced `test_oversized_subject_logs_warning` with `pass` because the
 warning now logs from `security_validators.logger`, not `parser.logger`.
 **Rule:** When salvaging helper extractions that relocate logging, keep a real
 assertion by `patch`ing the module that owns the logger. Never accept `pass` as
-a substitute for a DoS/truncation warning regression test. **Detection cost:**
-Low — PR diff shows `pass` under a `logs_warning` test name plus an import of
-`validate_*` helpers.
+a substitute for a DoS/truncation warning regression test.
+**Detection cost:** Low — PR diff shows `pass` under a `logs_warning` test name
+plus an import of `validate_*` helpers.
+
+## Lesson 0et: Isolate CTR_PROFILE_* in unit tests (2026-07-28)
+
+**Pattern:** Cloud Agent / CI injects `CTR_PROFILE_{PRIVACY,GAMING,BROWSING}_ID`
+as secrets. `load_controld_env` skips already-set keys, and `get_profile_id`
+succeeds when env is populated — so fail-closed and load-from-file tests fail
+unless the suite unsets those vars (and legacy `CTRLD_*_PROFILE`) at start.
+
+**Rule:** Any test asserting unset/fail-closed Control D profile behavior must
+`unset CTR_PROFILE_* CTRLD_*_PROFILE` (and related `CONTROLD_*` keys when
+asserting file load) before sourcing or calling the loader.
