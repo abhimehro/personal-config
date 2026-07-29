@@ -1,5 +1,30 @@
 # Lessons Learned
 
+## Lesson 0eu: upload@v7 + download@v8 is the intended pair (2026-07-29)
+
+**Pattern:** Prior Phase-1 reviews blocked esp #1366 citing Lesson 0er
+("upload/download major skew"). Live GitHub tags (2026-07-29):
+`actions/upload-artifact` latest is **v7.0.1** (no v8); `actions/download-artifact`
+latest is **v8.0.1**. GitHub's changelog documents v8 download as the compatible
+consumer of v7 upload (incl. optional `archive: false`). **Rule:** (1) Before
+REQUEST_CHANGES on artifact majors, verify tags via
+`gh api repos/actions/{upload,download}-artifact/releases/latest`. (2) Do not
+require matching majors when upstream versions diverge by design. (3) Prefer
+SHA pins annotated with `# vX.Y.Z`. **Detection cost:** Low — one API call per
+action.
+
+## Lesson 0ev: Two-dot check automation twins opened after merge (2026-07-29)
+
+**Pattern:** esp #1381 opened ~20s after #1366 squash-merge with the same title.
+Three-dot UI showed a large checkout bump diff; two-dot `main..PR` showed only
+release-drafter bump + CHANGELOG deletions + **re-add of unused import**
+(regressed #1380). **Rule:** (1) After merging a workflow-consolidation PR,
+immediately two-dot-diff any same-title twin (`git diff origin/main..pr-ref`).
+(2) CLOSE-SUPERSEDED if unique delta is changelog churn / regressions; keep only
+true residual bumps as focused PRs. **Detection cost:** Low — createdAt within
+minutes of sibling merge + identical title.
+
+
 ## Lesson 0et: Surgical salvage when merge-tree shows changed-in-both after sibling merge (2026-07-28)
 
 **Pattern:** ctrld #1064 CONFLICTING after #1067: `git merge-tree` reports
