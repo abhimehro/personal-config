@@ -1,6 +1,6 @@
 # macOS Network Configuration
 
-**Last Updated**: October 10, 2025  
+**Last Updated**: October 10, 2025\
 **Status**: ✅ Active and Optimized
 
 ## Current Configuration
@@ -81,7 +81,8 @@ Final Response (Filtered & Private)
 
 **Quick Fixes**:
 
-1. Run automation script: `bash ~/Documents/dev/personal-config/scripts/macos/controld-ensure.sh`
+1. Run automation script:
+   `bash ~/Documents/dev/personal-config/scripts/macos/controld-ensure.sh`
 2. Check Control D is running: `sudo lsof -i :53`
 3. Verify AdGuard DNS setting: Should be "System default"
 4. Test resolution: `dig +short verify.controld.com`
@@ -103,4 +104,5 @@ Final Response (Filtered & Private)
 
 ---
 
-_This configuration provides enterprise-grade DNS privacy and content filtering on macOS with zero conflicts and full automation._
+_This configuration provides enterprise-grade DNS privacy and content filtering
+on macOS with zero conflicts and full automation._

@@ -1,13 +1,15 @@
 # Migration Guide: iCloud → OneDrive Transition
 
-**Date**: November 18, 2025  
+**Date**: November 18, 2025\
 **Reason**: Switched from iCloud backup to OneDrive continuous backup
 
 ---
 
 ## Overview
 
-This guide documents the reconfiguration process after transitioning from iCloud-backed Desktop/Documents to OneDrive continuous backup. The transition broke path references throughout the system.
+This guide documents the reconfiguration process after transitioning from
+iCloud-backed Desktop/Documents to OneDrive continuous backup. The transition
+broke path references throughout the system.
 
 ## Path Changes
 
@@ -307,7 +309,8 @@ personal-config/
 
 ### Issue: Git conflicts with OneDrive
 
-**Solution**: OneDrive should sync files, git handles versions. If conflicts arise, git is source of truth.
+**Solution**: OneDrive should sync files, git handles versions. If conflicts
+arise, git is source of truth.
 
 ### Issue: Hard-coded paths in scripts
 
@@ -319,7 +322,8 @@ REPO_ROOT="${HOME}/Documents/dev/personal-config"
 
 ### Issue: OneDrive sync lag
 
-**Solution**: Force sync or work directly from `~/Documents/dev/` (OneDrive will catch up)
+**Solution**: Force sync or work directly from `~/Documents/dev/` (OneDrive will
+catch up)
 
 ---
 

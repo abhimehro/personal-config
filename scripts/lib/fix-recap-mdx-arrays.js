@@ -146,10 +146,13 @@ function fixBareArrayAttrs(mdx) {
  */
 function fixJsxAttrTrailingCommas(mdx) {
   let fixed = 0;
-  const text = mdx.replace(/(["}\]])(,)(\s*\n\s*[A-Za-z_][\w-]*=)/g, (_, end, _comma, next) => {
-    fixed += 1;
-    return `${end}${next}`;
-  });
+  const text = mdx.replace(
+    /(["}\]])(,)(\s*\n\s*[A-Za-z_][\w-]*=)/g,
+    (_, end, _comma, next) => {
+      fixed += 1;
+      return `${end}${next}`;
+    },
+  );
   return { text, fixed };
 }
 

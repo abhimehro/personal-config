@@ -1,7 +1,7 @@
 # Optimization Verification Report
 
-**Date:** October 12, 2025  
-**Time:** 7:22 PM  
+**Date:** October 12, 2025\
+**Time:** 7:22 PM\
 **Status:** ✅ VERIFIED
 
 ---
@@ -10,7 +10,9 @@
 
 **All your optimizations are working correctly!** ✅
 
-The services you see running (`duetexpertd`, `suggestd`, `proactived`) are **disabled from auto-start** but have been **launched on-demand** by other system services. This is expected behavior and they're using minimal resources.
+The services you see running (`duetexpertd`, `suggestd`, `proactived`) are
+**disabled from auto-start** but have been **launched on-demand** by other
+system services. This is expected behavior and they're using minimal resources.
 
 ---
 
@@ -110,14 +112,16 @@ ActivityReceivingAllowed: Not set
 useractivityd: Running (1 instance)
 ```
 
-**Issue:** The defaults aren't showing disabled status. Let me check if Handoff is actually disabled:
+**Issue:** The defaults aren't showing disabled status. Let me check if Handoff
+is actually disabled:
 
 **Recommendation:** Verify in System Settings:
 
 1. System Settings → General → AirDrop & Handoff
 2. Ensure "Allow Handoff between this Mac and your iCloud devices" is **OFF**
 
-If it's off in settings but `useractivityd` is running, that's normal - it handles other continuity features too.
+If it's off in settings but `useractivityd` is running, that's normal - it
+handles other continuity features too.
 
 ---
 
@@ -129,7 +133,7 @@ If it's off in settings but `useractivityd` is running, that's normal - it handl
 
 ### What is `duetexpertd`?
 
-**Full Name:** Duet Expert Daemon  
+**Full Name:** Duet Expert Daemon\
 **Purpose:** Predictive intelligence system that learns app usage patterns
 
 **What it does:**
@@ -173,7 +177,8 @@ Even though you **disabled** `duetexpertd`, it's running because:
 - ✅ Limited functionality when running
 - ✅ Uses minimal resources
 
-**The key benefit:** It won't **auto-start** consuming resources on every boot, and it won't be constantly active.
+**The key benefit:** It won't **auto-start** consuming resources on every boot,
+and it won't be constantly active.
 
 ---
 
@@ -320,7 +325,7 @@ Services should **not** be running immediately after boot if truly disabled.
 - Handoff: Disabled
 - Motion/Transparency: Reduced
 
-**Estimated memory saved:** ~200-300MB  
+**Estimated memory saved:** ~200-300MB\
 **Estimated CPU cycles saved:** ~5-10% idle CPU
 
 ---
@@ -358,7 +363,10 @@ Services should **not** be running immediately after boot if truly disabled.
 - Crash Auto-Submit: **Disabled**
 - Third-Party Data: **Disabled**
 
-**They are NOT running in background for their intended purpose.** The services you see (`suggestd`, `proactived`) are disabled from auto-start and are only running because another service requested them. They're essentially "neutered" - running but not providing suggestions or analytics.
+**They are NOT running in background for their intended purpose.** The services
+you see (`suggestd`, `proactived`) are disabled from auto-start and are only
+running because another service requested them. They're essentially "neutered" -
+running but not providing suggestions or analytics.
 
 ---
 
@@ -366,14 +374,16 @@ Services should **not** be running immediately after boot if truly disabled.
 
 **Answer: YES, ABSOLUTELY** ✅
 
-`duetexpertd` is **exactly** one of those notorious "sticky" background processes:
+`duetexpertd` is **exactly** one of those notorious "sticky" background
+processes:
 
 - **Disabled:** ✅ Won't auto-start at boot
 - **On-demand:** ⚠️ Gets launched by Spotlight/Dock/Siri
 - **Sticky:** ⚠️ Stays resident once launched
 - **Resource usage:** ✅ Currently minimal (0.0% CPU, 21MB)
 
-**This is expected behavior.** The important thing is it won't auto-start on boot.
+**This is expected behavior.** The important thing is it won't auto-start on
+boot.
 
 ---
 
@@ -403,7 +413,8 @@ Services should **not** be running immediately after boot if truly disabled.
 2. OR: Add to service_monitor.sh kill list if memory > 100MB
 3. Efficiency cores: Only helps on Apple Silicon, minimal benefit
 
-**My advice: Give it a week of monitoring via your service_monitor.sh, then decide.**
+**My advice: Give it a week of monitoring via your service_monitor.sh, then
+decide.**
 
 ---
 
@@ -453,16 +464,21 @@ Services should **not** be running immediately after boot if truly disabled.
 
 - **Siri Suggestions:** ✅ Fully disabled
 - **Analytics:** ✅ Fully disabled
-- **duetexpertd:** ✅ Disabled from auto-start, minimal resource use when running
+- **duetexpertd:** ✅ Disabled from auto-start, minimal resource use when
+  running
 - **Handoff:** ⚠️ Verify with command above
 
-The services you see running (`duetexpertd`, `suggestd`, `proactived`) are disabled from auto-starting but have been launched on-demand. This is **expected and acceptable behavior** given:
+The services you see running (`duetexpertd`, `suggestd`, `proactived`) are
+disabled from auto-starting but have been launched on-demand. This is **expected
+and acceptable behavior** given:
 
 1. They won't auto-start on boot
 2. They're using minimal resources
-3. They won't provide their intended functionality (suggestions/predictions) since disabled
+3. They won't provide their intended functionality (suggestions/predictions)
+   since disabled
 
-**Bottom line: Everything is working as intended. No further action needed unless you see resource spikes during monitoring.**
+**Bottom line: Everything is working as intended. No further action needed
+unless you see resource spikes during monitoring.**
 
 ---
 

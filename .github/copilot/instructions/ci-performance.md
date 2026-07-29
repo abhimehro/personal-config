@@ -2,13 +2,16 @@
 
 ## Overview
 
-This repository uses GitHub Actions for code quality checks, complexity analysis, and automated workflows. CI performance directly impacts developer productivity and GitHub Actions costs.
+This repository uses GitHub Actions for code quality checks, complexity
+analysis, and automated workflows. CI performance directly impacts developer
+productivity and GitHub Actions costs.
 
 ## Current CI Workflows
 
 ### code-quality.yml
 
-- **Shell quality:** Lint/correctness gate via cached ShellCheck (`./.github/actions/setup-shellcheck`)
+- **Shell quality:** Lint/correctness gate via cached ShellCheck
+  (`./.github/actions/setup-shellcheck`)
 - **Python quality:** Analyzes Python files with radon/ruff/bandit
 - **Tests:** `make test-all`
 - **Duration target:** <2 minutes on warm cache
@@ -16,7 +19,8 @@ This repository uses GitHub Actions for code quality checks, complexity analysis
 ### repository-automation-daily.yml (quality_assurance)
 
 - **ShellCheck:** Cached pinned binary via `setup-shellcheck`
-- **Trunk:** Cached CLI + `~/.cache/trunk` via `setup-trunk` (key includes `hashFiles('.trunk/trunk.yaml')`)
+- **Trunk:** Cached CLI + `~/.cache/trunk` via `setup-trunk` (key includes
+  `hashFiles('.trunk/trunk.yaml')`)
 - Runs `make lint-errors`, smoke tests, full suite, optional `make lint`
 
 ## Key Optimization Strategies
@@ -46,7 +50,8 @@ Reusable composite actions centralize install + cache:
 ```
 
 - Paths: `~/.cache/trunk`, `~/.local/bin/trunk`
-- Key: `trunk-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.trunk/trunk.yaml') }}`
+- Key:
+  `trunk-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.trunk/trunk.yaml') }}`
 - Invalidates when CLI/linter/plugin versions in `.trunk/trunk.yaml` change
 - On cache miss, runs `trunk install` to warm the tool cache
 
@@ -62,7 +67,8 @@ Reusable composite actions centralize install + cache:
 
 ### 2. Parallel Job Execution
 
-`code-quality.yml` runs independent jobs in parallel (`shell-quality`, `python-quality`, `test`).
+`code-quality.yml` runs independent jobs in parallel (`shell-quality`,
+`python-quality`, `test`).
 
 ### 3. Path-Based Triggering
 
@@ -91,13 +97,14 @@ gh api "repos/abhimehro/personal-config/actions/workflows/code-quality.yml/runs"
 
 ## Cache Invalidation
 
-| Tool       | Change this                         | Effect                          |
-| ---------- | ----------------------------------- | ------------------------------- |
-| ShellCheck | `version` input on setup-shellcheck | New cache key; fresh download   |
-| Trunk      | `.trunk/trunk.yaml`                 | New cache key; `trunk install`  |
+| Tool       | Change this                         | Effect                         |
+| ---------- | ----------------------------------- | ------------------------------ |
+| ShellCheck | `version` input on setup-shellcheck | New cache key; fresh download  |
+| Trunk      | `.trunk/trunk.yaml`                 | New cache key; `trunk install` |
 
 ## Success Metrics
 
 - **Cold cache (first run):** same as pre-cache baseline (download + install)
-- **Warm cache (subsequent runs):** ~30–60s faster (skip apt/curl tool downloads)
+- **Warm cache (subsequent runs):** ~30–60s faster (skip apt/curl tool
+  downloads)
 - **Cache hit rate:** >80% on repeated runs

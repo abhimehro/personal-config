@@ -96,9 +96,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
 
         handler.send_header = track_headers
 
-        with patch.object(
-            alldebrid_server.SimpleHTTPRequestHandler, "end_headers"
-        ):
+        with patch.object(alldebrid_server.SimpleHTTPRequestHandler, "end_headers"):
             handler.end_headers()
 
         cors_headers = [
@@ -137,9 +135,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
         handler.send_header = track_headers
 
         # Mock super().end_headers() to prevent actual header sending
-        with patch.object(
-            alldebrid_server.SimpleHTTPRequestHandler, "end_headers"
-        ):
+        with patch.object(alldebrid_server.SimpleHTTPRequestHandler, "end_headers"):
             handler.end_headers()
 
         # Verify that the origin was sanitized (no \r\n in the header value)
@@ -179,9 +175,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
 
         handler.send_header = track_headers
 
-        with patch.object(
-            alldebrid_server.SimpleHTTPRequestHandler, "end_headers"
-        ):
+        with patch.object(alldebrid_server.SimpleHTTPRequestHandler, "end_headers"):
             handler.end_headers()
 
         cors_headers = [
@@ -217,9 +211,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
 
         handler.send_header = track_headers
 
-        with patch.object(
-            alldebrid_server.SimpleHTTPRequestHandler, "end_headers"
-        ):
+        with patch.object(alldebrid_server.SimpleHTTPRequestHandler, "end_headers"):
             handler.end_headers()
 
         cors_headers = [
@@ -257,9 +249,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
 
         handler.send_header = track_headers
 
-        with patch.object(
-            alldebrid_server.SimpleHTTPRequestHandler, "end_headers"
-        ):
+        with patch.object(alldebrid_server.SimpleHTTPRequestHandler, "end_headers"):
             handler.end_headers()
 
         cors_headers = [
@@ -296,9 +286,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
 
         handler.send_header = track_headers
 
-        with patch.object(
-            alldebrid_server.SimpleHTTPRequestHandler, "end_headers"
-        ):
+        with patch.object(alldebrid_server.SimpleHTTPRequestHandler, "end_headers"):
             handler.end_headers()
 
         cors_headers = [
@@ -350,9 +338,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
 
         handler.send_header = track_headers
 
-        with patch.object(
-            alldebrid_server.SimpleHTTPRequestHandler, "end_headers"
-        ):
+        with patch.object(alldebrid_server.SimpleHTTPRequestHandler, "end_headers"):
             handler.end_headers()
 
         cors_headers = [

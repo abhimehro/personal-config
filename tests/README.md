@@ -1,6 +1,7 @@
 # Tests
 
-This directory contains automated tests and benchmarks for the scripts and configurations in this repository.
+This directory contains automated tests and benchmarks for the scripts and
+configurations in this repository.
 
 ## Directory Structure
 
@@ -30,8 +31,8 @@ for f in tests/test_*.sh; do bash "$f"; done
 ## 🏎️ Performance Benchmarks
 
 The `benchmarks/` subdirectory contains a benchmarking harness built on
-[hyperfine](https://github.com/sharkdp/hyperfine) that measures script
-execution time and stores baseline results for regression tracking.
+[hyperfine](https://github.com/sharkdp/hyperfine) that measures script execution
+time and stores baseline results for regression tracking.
 
 ### Setup
 
@@ -102,7 +103,8 @@ baseline to detect regressions before merging a change:
 Test scripts follow these conventions:
 
 - Use `set -euo pipefail` for strict error handling.
-- Create a temp directory with `mktemp -d` and clean it up with `trap cleanup EXIT`.
+- Create a temp directory with `mktemp -d` and clean it up with
+  `trap cleanup EXIT`.
 - Define `pass` / `fail` helper functions for consistent output.
 - Source `scripts/lib/common.sh` when you need shared helpers (`make_temp_file`,
   `is_regular_file`, etc.).

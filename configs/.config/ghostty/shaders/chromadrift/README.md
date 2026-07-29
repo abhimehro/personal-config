@@ -1,5 +1,4 @@
 ```
-
         )                      (          (       )
      ( /( (          )      )  )\ ) (  (  )\ ) ( /(
   (  )\()))(   (    (    ( /( (()/( )( )\(()/( )\())
@@ -7,24 +6,28 @@
  ((_) |(_)((_)((_)_((_))((_)_  _| | ((_|_|_) _| |_
 / _|| ' \| '_/ _ \ '  \() _` / _` || '_| ||  _|  _|
 \__||_||_|_| \___/_|_|_|\__,_\__,_||_| |_||_|  \__|
-
 ```
 
-**a digital lifestyle entanglement system for [ghostty](https://ghostty.org) terminal.**
+**a digital lifestyle entanglement system for [ghostty](https://ghostty.org)
+terminal.**
 
-chromadrift transmits a vibe system through the hypnodynamics of color variations between rectangles. it understands noise, gradient, dithering, and banding. it seeks to create something cool, present, and premium.
+chromadrift transmits a vibe system through the hypnodynamics of color
+variations between rectangles. it understands noise, gradient, dithering, and
+banding. it seeks to create something cool, present, and premium.
 
 <video src="https://github.com/user-attachments/assets/4ea0a5fa-e81d-4b56-878a-a6f91aeed98f" autoplay loop muted playsinline></video>
 
 ## getting started
 
-if you've never used ghostty shaders before, don't worry. this guide will walk you through everything step by step.
+if you've never used ghostty shaders before, don't worry. this guide will walk
+you through everything step by step.
 
 ### what you need
 
 before we begin, make sure you have:
 
-1. **ghostty terminal installed** - download from [ghostty.org](https://ghostty.org)
+1. **ghostty terminal installed** - download from
+   [ghostty.org](https://ghostty.org)
 2. **a text editor** - any editor works (textedit, vs code, nano, etc.)
 3. **terminal access** - you'll copy some files and edit a config
 
@@ -38,7 +41,8 @@ open your terminal and run:
 mkdir -p ~/.config/ghostty/shaders
 ```
 
-this creates the folder where ghostty expects to find shader files. the `-p` flag means "create parent folders if they don't exist."
+this creates the folder where ghostty expects to find shader files. the `-p`
+flag means "create parent folders if they don't exist."
 
 ### step 2: download the shader
 
@@ -50,7 +54,8 @@ that's it. one command. the shaders are now in place.
 
 ### step 3: configure ghostty
 
-ghostty's config file lives at `~/.config/ghostty/config`. if it doesn't exist, create it.
+ghostty's config file lives at `~/.config/ghostty/config`. if it doesn't exist,
+create it.
 
 add these lines to your config:
 
@@ -60,15 +65,19 @@ custom-shader = ~/.config/ghostty/shaders/chromadrift/chromadrift360-ultra-hypno
 custom-shader-animation = always
 ```
 
-**important**: the `custom-shader-animation = always` line is required. without it, the shader won't animate and you'll just see a static gradient.
+**important**: the `custom-shader-animation = always` line is required. without
+it, the shader won't animate and you'll just see a static gradient.
 
 ### step 4: restart ghostty
 
-close and reopen ghostty. you should see the chromadrift gradient flowing behind your terminal text.
+close and reopen ghostty. you should see the chromadrift gradient flowing behind
+your terminal text.
 
 ### hot-reloading shaders
 
-ghostty supports hot-reloading custom shaders, allowing for real-time updates without restarting the application. simply save changes to your `.glsl` shader file; ghostty's renderer generally updates to reflect modifications instantly.
+ghostty supports hot-reloading custom shaders, allowing for real-time updates
+without restarting the application. simply save changes to your `.glsl` shader
+file; ghostty's renderer generally updates to reflect modifications instantly.
 
 if changes do not appear, use the default configuration reload shortcut:
 
@@ -102,7 +111,8 @@ if changes do not appear, use the default configuration reload shortcut:
 
 ## mutations
 
-all other variants live in the `mutations/` folder. these are the evolutionary steps that led to the premium.
+all other variants live in the `mutations/` folder. these are the evolutionary
+steps that led to the premium.
 
 ### foundation layer
 
@@ -211,8 +221,10 @@ graph TD
 
 ### the shader isn't showing
 
-1. **check the file path** - make sure the shader file exists at the path you specified
-2. **check `custom-shader-animation`** - this must be set to `always` for animated shaders
+1. **check the file path** - make sure the shader file exists at the path you
+   specified
+2. **check `custom-shader-animation`** - this must be set to `always` for
+   animated shaders
 3. **restart ghostty** - config changes require a restart
 4. **check for typos** - the config file is case-sensitive
 
@@ -220,7 +232,8 @@ graph TD
 
 1. try a simpler variant like `chromadrift360.glsl` (less gpu intensive)
 2. close other gpu-heavy applications
-3. the gx variants with larger pixel sizes (6, 12, 1200) are lighter on resources
+3. the gx variants with larger pixel sizes (6, 12, 1200) are lighter on
+   resources
 
 ---
 
@@ -240,11 +253,12 @@ mit. drift freely.
 
 ## creds
 
-chromadrift began with [`animated-gradient-shader.glsl`](https://github.com/0xhckr/ghostty-shaders) by [0xhckr](https://github.com/0xhckr).
-ascii art generated with [taag](https://patorjk.com/software/taag/) by patrick gillespie.
+chromadrift began with
+[`animated-gradient-shader.glsl`](https://github.com/0xhckr/ghostty-shaders) by
+[0xhckr](https://github.com/0xhckr). ascii art generated with
+[taag](https://patorjk.com/software/taag/) by patrick gillespie.
 
-think, make, feel
-keep it real
+think, make, feel keep it real
 
 ---
 

@@ -17,7 +17,7 @@ fail() {
 
 # SECURITY: Same allowlist as .github/actions/setup-shellcheck/action.yml
 is_valid_shellcheck_version() {
-	[[ "$1" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+	[[ $1 =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
 }
 
 echo "=== setup-shellcheck version allowlist ==="
@@ -71,7 +71,7 @@ Darwin-arm64) platform="darwin.aarch64" ;;
 	;;
 esac
 
-if [[ -n "${platform}" ]]; then
+if [[ -n ${platform} ]]; then
 	TEST_DIR="$(mktemp -d)"
 	trap 'rm -rf "${TEST_DIR}"' EXIT
 	archive="shellcheck-${SHELLCHECK_VERSION}.${platform}.tar.xz"
@@ -79,7 +79,7 @@ if [[ -n "${platform}" ]]; then
 	if curl -fsSL --max-time 30 "${url}" -o "${TEST_DIR}/${archive}"; then
 		tar -xJf "${TEST_DIR}/${archive}" -C "${TEST_DIR}"
 		bin="${TEST_DIR}/shellcheck-${SHELLCHECK_VERSION}/shellcheck"
-		if [[ -x "${bin}" ]] && "${bin}" --version >/dev/null; then
+		if [[ -x ${bin} ]] && "${bin}" --version >/dev/null; then
 			pass "downloads and runs ShellCheck ${SHELLCHECK_VERSION} (${platform})"
 		else
 			fail "extracted binary missing or not runnable"
@@ -91,7 +91,7 @@ fi
 
 echo ""
 echo "Passed: ${PASS}  Failed: ${FAIL}"
-if [[ "${FAIL}" -gt 0 ]]; then
+if [[ ${FAIL} -gt 0 ]]; then
 	exit 1
 fi
 exit 0

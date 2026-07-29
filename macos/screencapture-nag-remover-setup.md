@@ -2,7 +2,8 @@
 
 ## Overview
 
-This document describes the setup of the `screencapture-nag-remover` tool on macOS 26.0.1 (25A362) to suppress persistent screen capture permission alerts.
+This document describes the setup of the `screencapture-nag-remover` tool on
+macOS 26.0.1 (25A362) to suppress persistent screen capture permission alerts.
 
 ## System Information
 
@@ -17,12 +18,15 @@ This document describes the setup of the `screencapture-nag-remover` tool on mac
 - **Wrapper Script**: `~/bin/screencapture-nag-remover-wrapper.sh`
 - **LaunchAgent**: `~/Library/LaunchAgents/screencapture-nag-remover.plist`
 - **Logs**: `/private/tmp/screencapture-nag-remover-wrapper.log`
-- **Target Plist**: `~/Library/Group Containers/group.com.apple.replayd/ScreenCaptureApprovals.plist`
-- **Backup**: `~/Library/Group Containers/group.com.apple.replayd/ScreenCaptureApprovals.plist.bak.*`
+- **Target Plist**:
+  `~/Library/Group Containers/group.com.apple.replayd/ScreenCaptureApprovals.plist`
+- **Backup**:
+  `~/Library/Group Containers/group.com.apple.replayd/ScreenCaptureApprovals.plist.bak.*`
 
 ## Full Disk Access Requirements
 
-The following items require Full Disk Access to modify the ScreenCaptureApprovals.plist:
+The following items require Full Disk Access to modify the
+ScreenCaptureApprovals.plist:
 
 1. **WarpPreview** (or your terminal app) - for manual runs
 2. **/bin/bash** - for LaunchAgent automated runs
@@ -38,7 +42,9 @@ The following items require Full Disk Access to modify the ScreenCaptureApproval
 
 ## How It Works
 
-The tool modifies the `ScreenCaptureApprovals.plist` file to set nag alert dates 100 years into the future (year 2125), effectively suppressing the alerts for all approved screen capture apps.
+The tool modifies the `ScreenCaptureApprovals.plist` file to set nag alert dates
+100 years into the future (year 2125), effectively suppressing the alerts for
+all approved screen capture apps.
 
 ### Apps Currently Managed (as of 2025-10-10)
 
@@ -63,7 +69,9 @@ The tool modifies the `ScreenCaptureApprovals.plist` file to set nag alert dates
 
 ## LaunchAgent Configuration
 
-The LaunchAgent runs every 24 hours (86400 seconds) to refresh the nag dates. This is essential for macOS 15.1+ which resets dates when apps are actively used.
+The LaunchAgent runs every 24 hours (86400 seconds) to refresh the nag dates.
+This is essential for macOS 15.1+ which resets dates when apps are actively
+used.
 
 ### LaunchAgent Schedule
 
@@ -153,7 +161,8 @@ cp "$HOME/Library/Group Containers/group.com.apple.replayd/ScreenCaptureApproval
 
 ### Permission Errors
 
-If you see "Operation not permitted" or "Full Disk Access permissions are missing":
+If you see "Operation not permitted" or "Full Disk Access permissions are
+missing":
 
 1. Ensure your terminal has Full Disk Access
 2. Ensure /bin/bash has Full Disk Access
@@ -172,7 +181,8 @@ launchctl bootstrap gui/$(id -u) "$HOME/Library/LaunchAgents/screencapture-nag-r
 
 ### Dates Not Updating
 
-The wrapper script uses a manual approach that's compatible with macOS 26. If dates aren't updating:
+The wrapper script uses a manual approach that's compatible with macOS 26. If
+dates aren't updating:
 
 1. Check the log file for errors
 2. Verify the plist file exists and is readable
@@ -180,9 +190,12 @@ The wrapper script uses a manual approach that's compatible with macOS 26. If da
 
 ## Notes for macOS 26.0.1
 
-- The original `screencapture-nag-remover.sh` script (v1.3.3) was designed for macOS 15.x
-- macOS 26 uses a similar plist structure but the script's built-in methods had compatibility issues
-- A custom wrapper script (`screencapture-nag-remover-wrapper.sh`) was created to use the manual update approach that works reliably on macOS 26
+- The original `screencapture-nag-remover.sh` script (v1.3.3) was designed for
+  macOS 15.x
+- macOS 26 uses a similar plist structure but the script's built-in methods had
+  compatibility issues
+- A custom wrapper script (`screencapture-nag-remover-wrapper.sh`) was created
+  to use the manual update approach that works reliably on macOS 26
 
 ## References
 

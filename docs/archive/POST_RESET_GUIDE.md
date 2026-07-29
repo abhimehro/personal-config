@@ -1,8 +1,9 @@
 # Post-Reset macOS Restoration Guide
 
-A comprehensive guide for restoring your macOS development environment after a system reset using the personal-config repository.
+A comprehensive guide for restoring your macOS development environment after a
+system reset using the personal-config repository.
 
-**Last Updated**: December 2025  
+**Last Updated**: December 2025\
 **Tested On**: macOS Sequoia 15.x
 
 ---
@@ -464,6 +465,6 @@ nm-status  # Fish function
 
 ---
 
-**Document Version**: 1.0  
-**Created**: December 2025  
+**Document Version**: 1.0\
+**Created**: December 2025\
 **Repository**: [personal-config](https://github.com/abhimehro/personal-config)

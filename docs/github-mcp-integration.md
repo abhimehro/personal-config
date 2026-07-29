@@ -1,15 +1,19 @@
 # GitHub MCP Integration for Repository Automation
 
-This document describes how to use the GitHub MCP (Model Context Protocol) server with the repository automation scripts to avoid SSH agent stalls when using the `gh` CLI.
+This document describes how to use the GitHub MCP (Model Context Protocol)
+server with the repository automation scripts to avoid SSH agent stalls when
+using the `gh` CLI.
 
 ## Overview
 
-The repository automation scripts have been updated with a compatibility layer that allows them to use either:
+The repository automation scripts have been updated with a compatibility layer
+that allows them to use either:
 
 - The traditional `gh` CLI (default)
 - The GitHub MCP server (when enabled)
 
-The MCP server provides the same functionality as the `gh` CLI but without the SSH agent dependency issues that can cause stalls in background terminals.
+The MCP server provides the same functionality as the `gh` CLI but without the
+SSH agent dependency issues that can cause stalls in background terminals.
 
 ## Enabling MCP Mode
 
@@ -81,4 +85,5 @@ Example:
   run: python .github/scripts/repository_automation.py workflow-updater
 ```
 
-Note: The `gh` CLI is still the default and recommended for most CI/CD scenarios as it's pre-installed in GitHub Actions runners.
+Note: The `gh` CLI is still the default and recommended for most CI/CD scenarios
+as it's pre-installed in GitHub Actions runners.

@@ -166,12 +166,12 @@ Apply these during classification and review (see also `tasks/lessons.md`):
 
 - **PR Visual Recap (optional enrichment):** When a sticky comment marked
   `<!-- pr-visual-recap -->` (or titled “Visual recap”) exists, read it and the
-  linked plan URL / screenshots as a **high-level change summary** during Gate 1–3
-  review. Useful for large diffs, UI/docs-heavy PRs, and explaining intent in
-  consolidation comments. **Do not** trigger or re-label `visual-recap` on every
-  inventory PR — that burns Mistral/API quota. Only request a refresh (label
-  `visual-recap` or Actions re-run) for a complex ESCALATE/DEFER case when the
-  sticky is missing/stale and budget allows. Workflow:
+  linked plan URL / screenshots as a **high-level change summary** during Gate
+  1–3 review. Useful for large diffs, UI/docs-heavy PRs, and explaining intent
+  in consolidation comments. **Do not** trigger or re-label `visual-recap` on
+  every inventory PR — that burns Mistral/API quota. Only request a refresh
+  (label `visual-recap` or Actions re-run) for a complex ESCALATE/DEFER case
+  when the sticky is missing/stale and budget allows. Workflow:
   `.github/workflows/pr-visual-recap.yml`; backends:
   `docs/pr-visual-recap-agent-backends.md`.
 - **Zero-diff / superseded:** Detect early (`changed_files_count == 0` or no
@@ -237,26 +237,32 @@ orchestrator exist. See
 This agent operates within a broader daily automation workflow. The following
 scheduled tasks run automatically each day on all seven priority repositories:
 
-1. **6:00 AM** - [GitHub PR Summarizer](https://github.com/abhimehro/personal-config/tree/main/skills/github-pr-summarizer)
-   - Creates daily PR summary reports in Notion's "GitHub PRs Daily Reports" database
+1. **6:00 AM** -
+   [GitHub PR Summarizer](https://github.com/abhimehro/personal-config/tree/main/skills/github-pr-summarizer)
+   - Creates daily PR summary reports in Notion's "GitHub PRs Daily Reports"
+     database
    - Provides foundational context for all downstream agents
    - Runs before all other automations to ensure fresh documentation
 
 2. **8:00 AM** - Proactive issue creation task
 
-3. **8:15 AM** - [Repository Health Triage](https://github.com/abhimehro/personal-config/tree/main/skills/repo-health-triage)
+3. **8:15 AM** -
+   [Repository Health Triage](https://github.com/abhimehro/personal-config/tree/main/skills/repo-health-triage)
    - Scans for security issues, risky code patterns, dependency problems
    - Creates issue candidates in Notion's "Repo Issue Candidates" database
-   - Analyzes all seven repositories: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis, Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated, repoprompt-ce
+   - Analyzes all seven repositories: personal-config, ctrld-sync,
+     email-security-pipeline, Seatek_Analysis,
+     Hydrograph_Versus_Seatek_Sensors_Project,
+     series_correction_project_updated, repoprompt-ce
 
 4. **9:00 AM** - PR automation test
 
 5. **1:00 PM** - Salvaging task
 
 **Note:** This PR Review Agent (Phase 1) and the Salvage Agent (Phase 2) are
-separate from the scheduled daily automations. The scheduled tasks provide
-input documents and issue candidates that these agents can reference during
-triage and salvage operations.
+separate from the scheduled daily automations. The scheduled tasks provide input
+documents and issue candidates that these agents can reference during triage and
+salvage operations.
 
 ### Weekly health & housekeeping (non-overlapping)
 

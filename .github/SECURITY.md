@@ -2,8 +2,10 @@
 
 ## Sensitive Data Handling
 
-- Do not commit secrets (API keys, OAuth tokens, access/refresh tokens) or personal data.
-- Use 1Password or environment variables for configuration. Provide `.env.example` only.
+- Do not commit secrets (API keys, OAuth tokens, access/refresh tokens) or
+  personal data.
+- Use 1Password or environment variables for configuration. Provide
+  `.env.example` only.
 - Set `CTRLD_PROFILE_ID` for DNS configs via environment.
 
 ## Secret Exposure Response
@@ -15,4 +17,5 @@
 
 ## Reporting a Vulnerability
 
-Open a private security advisory or contact the maintainers through the repository's private channels.
+Open a private security advisory or contact the maintainers through the
+repository's private channels.

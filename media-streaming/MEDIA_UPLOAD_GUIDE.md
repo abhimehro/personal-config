@@ -7,14 +7,16 @@ Your unified cloud library is configured correctly:
 - ✅ **Google Drive remote** (`gdrive:`) - Configured
 - ✅ **OneDrive remote** (`onedrive:`) - Configured
 - ✅ **Union remote** (`media:`) - Combines both providers
-- ✅ **Folder structure** - All folders exist (Movies, TV Shows, Documentaries, Kids, Music, 4K)
+- ✅ **Folder structure** - All folders exist (Movies, TV Shows, Documentaries,
+  Kids, Music, 4K)
 - ✅ **Infuse connection** - Working
 
 ## 📁 Where to Place New Media Files
 
 ### **Recommended: Use the Union Remote (Automatic Distribution)**
 
-**Best Practice**: Upload directly to the `media:` union remote. The union will automatically:
+**Best Practice**: Upload directly to the `media:` union remote. The union will
+automatically:
 
 - **Distribute files** based on available space (`create_policy = epmfs`)
 - **Show files from both** providers in Infuse (`action_policy = epall`)
@@ -49,14 +51,16 @@ You can also upload directly to either cloud provider:
 - Files will appear in Infuse via union remote
 - Good if: OneDrive has more free space
 
-**Important**: Make sure you upload to the `Media/` folder (not root) on both providers!
+**Important**: Make sure you upload to the `Media/` folder (not root) on both
+providers!
 
 ### **Union Remote Behavior**
 
 Your union remote uses these policies:
 
 - **`create_policy = epmfs`** (existing path, most free space)
-  - When uploading to `media:`, files go to the provider with **most free space**
+  - When uploading to `media:`, files go to the provider with **most free
+    space**
   - Automatically balances storage between Google Drive and OneDrive
 
 - **`action_policy = epall`** (existing path, all)
@@ -194,12 +198,17 @@ rclone config show media
 
 ## 💡 Pro Tips
 
-1. **Use rclone for large files**: More reliable than web uploads, shows progress
-2. **Check space first**: Upload to provider with more free space if doing manual uploads
+1. **Use rclone for large files**: More reliable than web uploads, shows
+   progress
+2. **Check space first**: Upload to provider with more free space if doing
+   manual uploads
 3. **Keep structures identical**: Makes union remote work seamlessly
 4. **Use progress flag**: `--progress` shows upload status
-5. **Test after upload**: Verify files appear in Infuse before deleting local copies
+5. **Test after upload**: Verify files appear in Infuse before deleting local
+   copies
 
 ---
 
-**Your setup is working perfectly!** Just upload files to `media:` remote or directly to either cloud provider's `Media/` folder, and they'll appear in Infuse automatically.
+**Your setup is working perfectly!** Just upload files to `media:` remote or
+directly to either cloud provider's `Media/` folder, and they'll appear in
+Infuse automatically.

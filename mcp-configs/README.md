@@ -120,5 +120,4 @@ pass-cli agent list
   rotated**.
 - **ABHI-1549:** Ambiguous doc placeholders (`your_actual_…`) were removed in
   favor of `REPLACE_WITH_*` + documented `op://` refs so scanners/humans cannot
-  confuse templates with live credentials. See
-  `docs/MCP_SECRETS_MANAGEMENT.md`.
+  confuse templates with live credentials. See `docs/MCP_SECRETS_MANAGEMENT.md`.

@@ -119,8 +119,8 @@ make lint-fix      # equivalent to: trunk fmt
 
 > **ShellCheck dual-config note:** `shellcheck` called directly uses
 > `.shellcheckrc` (root), while Trunk CI uses `.trunk/configs/.shellcheckrc`
-> (`enable=all`). To reproduce CI behaviour locally, run
-> `trunk check <file>` instead of calling `shellcheck` directly.
+> (`enable=all`). To reproduce CI behaviour locally, run `trunk check <file>`
+> instead of calling `shellcheck` directly.
 
 Trunk downloads its own tool versions on first run — subsequent runs are fast.
 
@@ -191,8 +191,8 @@ section; delete sections that genuinely do not apply.
 
 ## Secrets Policy
 
-**Never commit secrets.** This includes API keys, tokens, passwords, private
-SSH keys, and any credential that grants access to a system.
+**Never commit secrets.** This includes API keys, tokens, passwords, private SSH
+keys, and any credential that grants access to a system.
 
 | Do                                                     | Don't                             |
 | ------------------------------------------------------ | --------------------------------- |

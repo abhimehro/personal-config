@@ -12,8 +12,8 @@ boundary, or blocked by an infrastructure failure on `main`.
 
 The Review Agent (Phase 1) is optimized for _throughput_ â merge what's clean,
 close what's redundant, and surface the rest. The Salvage Agent (Phase 2) is
-optimized for _recovery_ â drive every PR in that surfaced tail to a final state
-by either:
+optimized for _recovery_ â drive every PR in that surfaced tail to a final
+state by either:
 
 - **Salvaging** the legitimate work onto a fresh branch from `main` and opening
   a clean draft PR, then closing the original; or
@@ -31,13 +31,13 @@ resolution, test adaptation, file reverts) and must not bypass human judgment.
 
 ## Why a separate skill rather than an addendum
 
-| Concern                        | Phase 1 â Review Agent                                                             | Phase 2 â Salvage Agent                                                                                         |
+| Concern                        | Phase 1 â Review Agent                                                           | Phase 2 â Salvage Agent                                                                                       |
 | ------------------------------ | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | Trigger                        | A scheduled or on-demand run over **all open PRs in scope**                        | An investigation of **a known list of deferred / escalated PRs** (e.g. from this morning's Phase-1 report)      |
 | Throughput vs depth            | Shallow per PR (read description, diff, CI rollup, decide)                         | Deep per PR (clone repo, compare against current `main`, attempt rebase, inspect history, write or adapt tests) |
 | Merge authority                | May squash-merge clean PRs autonomously                                            | **Never** merges autonomously; every output is draft                                                            |
 | Output                         | Merges, closes, escalation comments                                                | New draft PRs (salvage), supersede-closes, infra-fix PRs                                                        |
-| Failure mode if rules conflate | Routine auto-merge becomes risky; deep-dive becomes too slow to run on every cycle | â (separation removes the ambiguity)                                                                            |
+| Failure mode if rules conflate | Routine auto-merge becomes risky; deep-dive becomes too slow to run on every cycle | â (separation removes the ambiguity)                                                                          |
 | Preflight                      | Read-only `gh auth` + repo list check                                              | Same as Phase 1 + ability to clone repos and push new branches                                                  |
 
 The two skills share the same config file (`tasks/pr-review-agent.config.yaml`)
@@ -61,8 +61,8 @@ cycle:
 4. The maintainer flags a specific PR for "is this still salvageable?" review
    (e.g. via a label, a comment mentioning the agent, or a direct request).
 
-**Do not** trigger Phase 2 just because a Phase 1 cycle had merges or closures â
-that's normal Phase 1 output and doesn't require deep investigation.
+**Do not** trigger Phase 2 just because a Phase 1 cycle had merges or closures
+â that's normal Phase 1 output and doesn't require deep investigation.
 
 **Do not** trigger Phase 2 on a stale snapshot. Always re-fetch the open PR list
 from GitHub at the start of a Phase 2 run; deferred PRs may have already been
@@ -78,8 +78,8 @@ report was written.
 | Configured repos                            | `tasks/pr-review-agent.config.yaml`                                                                                                       | yes       | Same field as Phase 1.                                                                                                                                                      |
 | Bot authors / automation patterns           | `tasks/pr-review-agent.config.yaml`                                                                                                       | yes       | Same as Phase 1.                                                                                                                                                            |
 | List of PRs to investigate                  | Phase 1 report (`tasks/pr-review-YYYY-MM-DD.md` "Post-session remainder" section) **or** explicit override list passed at invocation time | yes       | If invoked without an explicit list, use the most recent dated session report's deferred/escalated tail.                                                                    |
-| Live PR state                               | GitHub API at run time                                                                                                                    | yes       | Re-fetch â never trust the snapshot in the Phase 1 report alone.                                                                                                            |
-| Repo working clones                         | Cloned at run time into a scratch directory (e.g. `/tmp/salvage/<repo>`)                                                                  | yes       | Need read **and** write access â Salvage opens new branches and pushes them.                                                                                                |
+| Live PR state                               | GitHub API at run time                                                                                                                    | yes       | Re-fetch â never trust the snapshot in the Phase 1 report alone.                                                                                                          |
+| Repo working clones                         | Cloned at run time into a scratch directory (e.g. `/tmp/salvage/<repo>`)                                                                  | yes       | Need read **and** write access â Salvage opens new branches and pushes them.                                                                                              |
 | `GH_TOKEN` with push + PR-create permission | Env var                                                                                                                                   | yes       | If `git push` would otherwise pick a read-only bot credential, override the remote URL with `https://x-access-token:${GH_TOKEN}@github.com/<owner>/<repo>.git` (Lesson 0j). |
 
 ## Outputs
@@ -89,8 +89,8 @@ report was written.
 | Salvage PRs (one per recoverable original)                 | New branches `cursor-agent/salvage-<repo>-<old_pr>-<short_label>-<suffix>` on each affected repo, opened as **draft** | `gh pr create --draft`                                                                                                    |
 | Infra-fix PRs (one per repo whose `main` needs unblocking) | Same naming pattern: `cursor-agent/fix-<short_label>-<suffix>`                                                        | `gh pr create --draft`                                                                                                    |
 | Closure comments on superseded / blocked-by originals      | Inline PR comments with cross-link to either the salvage PR or the existing-on-main commit                            | `gh pr close --comment "..."` or `gh pr comment`                                                                          |
-| Salvage session report                                     | Append to `tasks/salvage-session-reports.md` under a `## Run â YYYY-MM-DD` heading                                    | Markdown table with `Repo`, `Old PR`, `Disposition`, `New PR`, `Notes` columns + a counts summary + new patterns observed |
-| New lessons                                                | Append to `tasks/lessons.md`                                                                                          | One numbered lesson per new pattern (Pattern â Rule â Detection cost)                                                     |
+| Salvage session report                                     | Append to `tasks/salvage-session-reports.md` under a `## Run â YYYY-MM-DD` heading                                  | Markdown table with `Repo`, `Old PR`, `Disposition`, `New PR`, `Notes` columns + a counts summary + new patterns observed |
+| New lessons                                                | Append to `tasks/lessons.md`                                                                                          | One numbered lesson per new pattern (Pattern â Rule â Detection cost)                                                 |
 
 ### Conflict-proofing write boundaries
 
@@ -341,9 +341,8 @@ agent must:
    deciding CLOSE-SUPERSEDED vs salvage and when writing the draft salvage PR
    body. Prefer consuming an existing recap over burning API quota. Only add
    label `visual-recap` (or re-run the workflow) when the sticky is missing and
-   the salvage is large/ambiguous. See
-   `docs/pr-visual-recap-agent-backends.md` and
-   `.github/workflows/pr-visual-recap.yml`.
+   the salvage is large/ambiguous. See `docs/pr-visual-recap-agent-backends.md`
+   and `.github/workflows/pr-visual-recap.yml`.
 
 ### S7 — Provenance preservation on cherry-picks
 
@@ -385,8 +384,8 @@ Default rule: **all salvage PRs are draft, but the addendum and per-PR comments
 must clearly tier the urgency** so the maintainer knows what to look at first.
 Suggested tiers:
 
-| Tier                                | Examples                                                           | Maintainer review SLA                      |
-| ----------------------------------- | ------------------------------------------------------------------ | ------------------------------------------ |
+| Tier                                  | Examples                                                           | Maintainer review SLA                      |
+| ------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------ |
 | **T0 â infra-fix**                  | `esp#723`-style reverts that unblock an entire repo's CI           | Within the same review session             |
 | **T1 â security-sensitive salvage** | `sa#157`-style Sentinel fixes (info-leak, auth, secrets)           | Highest priority among salvage PRs         |
 | **T2 â trust-boundary salvage**     | `pc#826`-style changes touching the PR automation toolchain itself | Always merge by hand, never via auto-merge |
@@ -475,8 +474,8 @@ into Phase 1 too where applicable:
   exercised).
 - â Never bypass a broken pytest gate on a security-classified repo (Lesson
   0bb).
-- â Never modify `tasks/pr-review-agent.config.yaml` from inside the agent. The
-  config is human-curated.
+- â Never modify `tasks/pr-review-agent.config.yaml` from inside the agent.
+  The config is human-curated.
 
 ## Related docs
 
@@ -497,20 +496,21 @@ into Phase 1 too where applicable:
 - [Repository Health Triage Skill](../../skills/repo-health-triage/SKILL.md) —
   Daily repo health scanning and issue triage for all priority repositories.
 - [GitHub PR Summarizer Skill](../../skills/github-pr-summarizer/SKILL.md) —
-  Daily PR summary generation that provides foundational context for salvage operations.
+  Daily PR summary generation that provides foundational context for salvage
+  operations.
 
 ### Daily Automation Context
 
-This Salvage Agent (Phase 2) operates within a broader daily automation workflow.
-The following scheduled tasks run automatically each day on all seven priority
-repositories and may produce documents and issue candidates that this agent
-should reference:
+This Salvage Agent (Phase 2) operates within a broader daily automation
+workflow. The following scheduled tasks run automatically each day on all seven
+priority repositories and may produce documents and issue candidates that this
+agent should reference:
 
 - **6:00 AM** - GitHub PR Summarizer: Creates daily PR summary reports in Notion
-- **8:15 AM** - Repository Health Triage: Scans for security issues and creates issue candidates
+- **8:15 AM** - Repository Health Triage: Scans for security issues and creates
+  issue candidates
 
 Both scheduled tasks analyze the same seven repositories: personal-config,
 ctrld-sync, email-security-pipeline, Seatek_Analysis,
 Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
 repoprompt-ce.
-

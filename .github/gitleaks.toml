@@ -198,17 +198,17 @@ commits = ["ab406fd5d21d059451b7aa3dcfd01a0eb7fd11eb"]
 #     (job-name fragments inside ${{ needs.*.result }} expressions)
 # These regexes are matched against the captured "secret" value by gitleaks.
 regexes = [
-    # GitHub Actions secrets context: secrets.GITHUB_TOKEN, secrets.MY_TOKEN, etc.
-    '''^secrets\.[A-Za-z0-9_]+$''',
-    # GitHub Actions needs-context results: needs.<job>.result fragments
-    '''^secrets\.result$''',
-    # Prose stopwords after "secret|password|…" (?P<secret> value). Real
-    # credentials are never a single English stopword like these.
-    # NOTE: "1Password …" also matches the password keyword; keep short prose
-    # like "references" / "placeholders" / "committed" as stopwords (ABHI-1549).
-    # Optional trailing "." — the secret charset includes "." so "references."
-    # is a common capture when prose ends a sentence.
-    '''(?i)^(presence|scanning|false-positive|allowlist|detection|validation|management|injection|exfiltration|contained|embedded|reference|references|placeholders|committed|backends)\.?$''',
+  # GitHub Actions secrets context: secrets.GITHUB_TOKEN, secrets.MY_TOKEN, etc.
+  '''^secrets\.[A-Za-z0-9_]+$''',
+  # GitHub Actions needs-context results: needs.<job>.result fragments
+  '''^secrets\.result$''',
+  # Prose stopwords after "secret|password|…" (?P<secret> value). Real
+  # credentials are never a single English stopword like these.
+  # NOTE: "1Password …" also matches the password keyword; keep short prose
+  # like "references" / "placeholders" / "committed" as stopwords (ABHI-1549).
+  # Optional trailing "." — the secret charset includes "." so "references."
+  # is a common capture when prose ends a sentence.
+  '''(?i)^(presence|scanning|false-positive|allowlist|detection|validation|management|injection|exfiltration|contained|embedded|reference|references|placeholders|committed|backends)\.?$''',
 ]
 paths = [
   '''(?i)test''',

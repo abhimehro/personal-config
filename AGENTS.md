@@ -169,17 +169,18 @@ Verification/regression:
 make control-d-regression
 ```
 
-Fish helpers (`configs/.config/fish/functions/nm-*.fish`, abbrs in `config.fish`)
-`cd` to the repo and call `network-mode-manager.sh` / `windscribe-connect.sh`:
+Fish helpers (`configs/.config/fish/functions/nm-*.fish`, abbrs in
+`config.fish`) `cd` to the repo and call `network-mode-manager.sh` /
+`windscribe-connect.sh`:
 
-| Abbr | Behavior |
-| ---- | -------- |
-| `nmp` / `nmb` / `nmg` | Standalone Control D (default `doh3-ipv6`) |
-| `nmpd` / `nmbd` / `nmgd` | DoH + IPv6 off (`doh-ipv4`) |
-| `nmp6` / `nmb6` / `nmg6` | DoH + IPv6 on (`doh-ipv6` via `CONTROLD_IPV6=enable`) |
-| `nmvp` / `nmvb` / `nmvg` | Windscribe + Control D (auto IPv6) |
-| `nmvp4` / `nmvb4` / `nmvg4` | Same, force `WINDSCRIBE_IPV6=0` |
-| `nmvp6` / `nmvb6` / `nmvg6` | Same, force `WINDSCRIBE_IPV6=1` |
+| Abbr                        | Behavior                                              |
+| --------------------------- | ----------------------------------------------------- |
+| `nmp` / `nmb` / `nmg`       | Standalone Control D (default `doh3-ipv6`)            |
+| `nmpd` / `nmbd` / `nmgd`    | DoH + IPv6 off (`doh-ipv4`)                           |
+| `nmp6` / `nmb6` / `nmg6`    | DoH + IPv6 on (`doh-ipv6` via `CONTROLD_IPV6=enable`) |
+| `nmvp` / `nmvb` / `nmvg`    | Windscribe + Control D (auto IPv6)                    |
+| `nmvp4` / `nmvb4` / `nmvg4` | Same, force `WINDSCRIBE_IPV6=0`                       |
+| `nmvp6` / `nmvb6` / `nmvg6` | Same, force `WINDSCRIBE_IPV6=1`                       |
 
 Pass location for VPN abbrs: `nmvp4 Dallas` (static IPv4) or `nmvp6 Atlanta`
 (IPv6 non-static / Peachtree). Defaults: Dallas static when IPv6 is off/auto;
@@ -517,10 +518,17 @@ symlink destinations are never followed. To target one hash directory:
 
 ## Learned User Preferences
 
-- Phase 2 PR salvage must never autonomously merge; open draft salvage or infra-fix PRs and leave merge decisions to a human.
-- Security, auth, secrets, and trust-boundary PRs stay escalated for human review even when CI is green.
+- Phase 2 PR salvage must never autonomously merge; open draft salvage or
+  infra-fix PRs and leave merge decisions to a human.
+- Security, auth, secrets, and trust-boundary PRs stay escalated for human
+  review even when CI is green.
 
 ## Learned Workspace Facts
 
-- Sibling Bolt/Jules PRs that both touch `.jules/bolt.md` often conflict on the journal only after one merges; salvage remaining source changes and resolve the journal by taking `main`'s `.jules/bolt.md` (Lesson 0cs).
-- Multi-repo cloud PR sessions often leave dirty tracked `seatek_series_correction.egg-info/` files under `series_correction_project_updated` after editable installs; restore or discard those changes and do not commit them.
+- Sibling Bolt/Jules PRs that both touch `.jules/bolt.md` often conflict on the
+  journal only after one merges; salvage remaining source changes and resolve
+  the journal by taking `main`'s `.jules/bolt.md` (Lesson 0cs).
+- Multi-repo cloud PR sessions often leave dirty tracked
+  `seatek_series_correction.egg-info/` files under
+  `series_correction_project_updated` after editable installs; restore or
+  discard those changes and do not commit them.

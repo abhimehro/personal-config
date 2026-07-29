@@ -610,65 +610,165 @@ treated strictly as patterns and not parsed as command-line options.
 
 ## 2026-06-25 - AppleScript Option Injection Risk via osascript without -- delimiter
 
-**Vulnerability:** AppleScript Option Injection (CWE-74/CWE-88 variant). Even when passing dynamic variables safely to `osascript` using `-e 'on run argv'`, the variables were passed directly after the script string without the `--` delimiter (e.g. `osascript -e 'on run argv' ... -e 'end run' "$msg" "$title"`). If an attacker controls the variable and starts it with a hyphen, `osascript` may interpret the variable as a command-line flag rather than a positional argument, leading to option injection or unintended execution.
-**Learning:** When invoking `osascript` with dynamic variables from bash, you must explicitly separate options from arguments using the `--` delimiter before positional arguments to prevent them from being parsed as flags.
-**Prevention:** Always use the `--` argument delimiter before positional arguments when using `osascript` with external variables (e.g., `osascript -e 'on run argv' ... -- "$VAR"`).
-
+**Vulnerability:** AppleScript Option Injection (CWE-74/CWE-88 variant). Even
+when passing dynamic variables safely to `osascript` using `-e 'on run argv'`,
+the variables were passed directly after the script string without the `--`
+delimiter (e.g. `osascript -e 'on run argv' ... -e 'end run' "$msg" "$title"`).
+If an attacker controls the variable and starts it with a hyphen, `osascript`
+may interpret the variable as a command-line flag rather than a positional
+argument, leading to option injection or unintended execution. **Learning:**
+When invoking `osascript` with dynamic variables from bash, you must explicitly
+separate options from arguments using the `--` delimiter before positional
+arguments to prevent them from being parsed as flags. **Prevention:** Always use
+the `--` argument delimiter before positional arguments when using `osascript`
+with external variables (e.g., `osascript -e 'on run argv' ... -- "$VAR"`).
 
 ## 2026-06-27 - AppleScript Option Injection in Batch Uninstaller
 
-**Vulnerability:** AppleScript Option Injection (CWE-88 variant). In `configs/.config/mole/lib/uninstall/batch.sh` and `configs/.config/mole/lib/core/file_ops.sh`, `osascript - "$variable"` is used without the `--` delimiter before the positional arguments (e.g. `osascript - "$clean_name" <<-'EOF'`). If the variable starts with a hyphen, it might be interpreted as a flag, leading to Option Injection.
-**Learning:** When passing dynamic variables as positional arguments to `osascript` using heredocs (`<<`), a `--` separator is still required before the variables.
-**Prevention:** Always use the `--` argument delimiter before positional arguments when using `osascript` with external variables (e.g., `osascript - -- "$VAR" <<-'EOF'`).
+**Vulnerability:** AppleScript Option Injection (CWE-88 variant). In
+`configs/.config/mole/lib/uninstall/batch.sh` and
+`configs/.config/mole/lib/core/file_ops.sh`, `osascript - "$variable"` is used
+without the `--` delimiter before the positional arguments (e.g.
+`osascript - "$clean_name" <<-'EOF'`). If the variable starts with a hyphen, it
+might be interpreted as a flag, leading to Option Injection. **Learning:** When
+passing dynamic variables as positional arguments to `osascript` using heredocs
+(`<<`), a `--` separator is still required before the variables. **Prevention:**
+Always use the `--` argument delimiter before positional arguments when using
+`osascript` with external variables (e.g., `osascript - -- "$VAR" <<-'EOF'`).
 
 ## 2026-06-25 - AppleScript Option Injection Risk via osascript without -- delimiter
-**Vulnerability:** AppleScript Option Injection (CWE-88 variant). Even when passing dynamic variables safely to `osascript` using `-e 'on run argv'`, the variables were passed directly after the script string without the `--` delimiter. In other places, `osascript - "$variable"` was used without `--` before the positional arguments. If an attacker controls the variable and starts it with a hyphen, `osascript` may interpret the variable as a command-line flag rather than a positional argument, leading to option injection or unintended execution. Note: because BSD `getopt` halts at `-`, the `--` must appear before the `-` stdin indicator (e.g., `osascript -- - "$VAR"`).
-**Learning:** When invoking `osascript` with dynamic variables from bash, you must explicitly separate options from arguments using the `--` delimiter before any positional arguments or stdin indicators to prevent them from being parsed as flags.
-**Prevention:** Always use the `--` argument delimiter before the `-` stdin indicator or any positional arguments when using `osascript` with external variables (e.g., `osascript -- - "$VAR" <<-'EOF'`).
+
+**Vulnerability:** AppleScript Option Injection (CWE-88 variant). Even when
+passing dynamic variables safely to `osascript` using `-e 'on run argv'`, the
+variables were passed directly after the script string without the `--`
+delimiter. In other places, `osascript - "$variable"` was used without `--`
+before the positional arguments. If an attacker controls the variable and starts
+it with a hyphen, `osascript` may interpret the variable as a command-line flag
+rather than a positional argument, leading to option injection or unintended
+execution. Note: because BSD `getopt` halts at `-`, the `--` must appear before
+the `-` stdin indicator (e.g., `osascript -- - "$VAR"`). **Learning:** When
+invoking `osascript` with dynamic variables from bash, you must explicitly
+separate options from arguments using the `--` delimiter before any positional
+arguments or stdin indicators to prevent them from being parsed as flags.
+**Prevention:** Always use the `--` argument delimiter before the `-` stdin
+indicator or any positional arguments when using `osascript` with external
+variables (e.g., `osascript -- - "$VAR" <<-'EOF'`).
 
 ## 2026-07-15 - Option Injection in pkill
 
-**Vulnerability:** Option Injection (CWE-88 variant). Found that some scripts using `pkill` for process management did not include the `--` delimiter before the process name argument when other flags were present. For instance, `pkill -f "ctrld"` was changed to `pkill -f -- "ctrld"`. If an attacker controls the variable and starts it with a hyphen, `pkill` may interpret the variable as a command-line flag rather than a positional argument, leading to option injection or unintended execution.
-**Learning:** When invoking `pkill` with dynamic variables from bash, you must explicitly separate options from arguments using the `--` delimiter before positional arguments to prevent them from being parsed as flags.
-**Prevention:** Always use the `--` argument delimiter before positional arguments when using `pkill` with external variables (e.g., `pkill -f -- "ctrld"`).
+**Vulnerability:** Option Injection (CWE-88 variant). Found that some scripts
+using `pkill` for process management did not include the `--` delimiter before
+the process name argument when other flags were present. For instance,
+`pkill -f "ctrld"` was changed to `pkill -f -- "ctrld"`. If an attacker controls
+the variable and starts it with a hyphen, `pkill` may interpret the variable as
+a command-line flag rather than a positional argument, leading to option
+injection or unintended execution. **Learning:** When invoking `pkill` with
+dynamic variables from bash, you must explicitly separate options from arguments
+using the `--` delimiter before positional arguments to prevent them from being
+parsed as flags. **Prevention:** Always use the `--` argument delimiter before
+positional arguments when using `pkill` with external variables (e.g.,
+`pkill -f -- "ctrld"`).
 
 ## $(date +%Y-%m-%d) - AppleScript Option Injection Risk via osascript without -- delimiter
-**Vulnerability:** AppleScript Option Injection (CWE-88 variant). Even when passing dynamic variables safely to `osascript` using `-e 'on run argv'`, the variables were passed directly after the script string without the `--` delimiter. In other places, `osascript - "$variable"` was used without `--` before the positional arguments. If an attacker controls the variable and starts it with a hyphen, `osascript` may interpret the variable as a command-line flag rather than a positional argument, leading to option injection or unintended execution. Note: because BSD `getopt` halts at `-`, the `--` must appear before the `-` stdin indicator (e.g., `osascript -- - "$VAR"`).
-**Learning:** When invoking `osascript` with dynamic variables from bash, you must explicitly separate options from arguments using the `--` delimiter before any positional arguments or stdin indicators to prevent them from being parsed as flags.
-**Prevention:** Always use the `--` argument delimiter before the `-` stdin indicator or any positional arguments when using `osascript` with external variables (e.g., `osascript -- - "$VAR" <<-'EOF'`).
+
+**Vulnerability:** AppleScript Option Injection (CWE-88 variant). Even when
+passing dynamic variables safely to `osascript` using `-e 'on run argv'`, the
+variables were passed directly after the script string without the `--`
+delimiter. In other places, `osascript - "$variable"` was used without `--`
+before the positional arguments. If an attacker controls the variable and starts
+it with a hyphen, `osascript` may interpret the variable as a command-line flag
+rather than a positional argument, leading to option injection or unintended
+execution. Note: because BSD `getopt` halts at `-`, the `--` must appear before
+the `-` stdin indicator (e.g., `osascript -- - "$VAR"`). **Learning:** When
+invoking `osascript` with dynamic variables from bash, you must explicitly
+separate options from arguments using the `--` delimiter before any positional
+arguments or stdin indicators to prevent them from being parsed as flags.
+**Prevention:** Always use the `--` argument delimiter before the `-` stdin
+indicator or any positional arguments when using `osascript` with external
+variables (e.g., `osascript -- - "$VAR" <<-'EOF'`).
 
 ## $(date +%Y-%m-%d) - Option Injection in pkill
-**Vulnerability:** Option Injection (CWE-88 variant). Found that some scripts using `pkill` for process management did not include the `--` delimiter before the process name argument when other flags were present. For instance, `pkill -f "ctrld"` was changed to `pkill -f -- "ctrld"`. If an attacker controls the variable and starts it with a hyphen, `pkill` may interpret the variable as a command-line flag rather than a positional argument, leading to option injection or unintended execution.
-**Learning:** When invoking `pkill` with dynamic variables from bash, you must explicitly separate options from arguments using the `--` delimiter before positional arguments to prevent them from being parsed as flags.
-**Prevention:** Always use the `--` argument delimiter before positional arguments when using `pkill` with external variables (e.g., `pkill -f -- "ctrld"`).
+
+**Vulnerability:** Option Injection (CWE-88 variant). Found that some scripts
+using `pkill` for process management did not include the `--` delimiter before
+the process name argument when other flags were present. For instance,
+`pkill -f "ctrld"` was changed to `pkill -f -- "ctrld"`. If an attacker controls
+the variable and starts it with a hyphen, `pkill` may interpret the variable as
+a command-line flag rather than a positional argument, leading to option
+injection or unintended execution. **Learning:** When invoking `pkill` with
+dynamic variables from bash, you must explicitly separate options from arguments
+using the `--` delimiter before positional arguments to prevent them from being
+parsed as flags. **Prevention:** Always use the `--` argument delimiter before
+positional arguments when using `pkill` with external variables (e.g.,
+`pkill -f -- "ctrld"`).
 
 ## 2026-07-28 - Command Injection Risk via eval in Home Directory Resolution
 
-**Vulnerability:** Command Injection (CWE-78 variant) in `scripts/repair-controld-keepalive.sh`. The script used `USER_HOME="${SUDO_USER:+$(eval echo "~$SUDO_USER")}"` which allows for command injection if an attacker can influence the `SUDO_USER` variable.
-**Learning:** `eval echo` should never be used to resolve a user's home directory from variables, as it can execute arbitrary shell commands.
-**Prevention:** Use native OS queries such as `dscl` (macOS), `id -P`, or `getent passwd` to safely look up user home directories without using `eval`.
+**Vulnerability:** Command Injection (CWE-78 variant) in
+`scripts/repair-controld-keepalive.sh`. The script used
+`USER_HOME="${SUDO_USER:+$(eval echo "~$SUDO_USER")}"` which allows for command
+injection if an attacker can influence the `SUDO_USER` variable. **Learning:**
+`eval echo` should never be used to resolve a user's home directory from
+variables, as it can execute arbitrary shell commands. **Prevention:** Use
+native OS queries such as `dscl` (macOS), `id -P`, or `getent passwd` to safely
+look up user home directories without using `eval`.
 
 ## 2026-07-28 - Option Injection Risk via pkill
-**Vulnerability:** Option Injection (CWE-88 variant). Found remaining shell scripts using `pkill` that did not include the `--` delimiter before the process name argument when other flags were present.
-**Learning:** When invoking `pkill` with dynamic variables or even static strings that could be refactored to variables, you must explicitly separate options from arguments using the `--` delimiter to prevent them from being parsed as flags.
-**Prevention:** Always use the `--` argument delimiter before positional arguments when using `pkill`.
+
+**Vulnerability:** Option Injection (CWE-88 variant). Found remaining shell
+scripts using `pkill` that did not include the `--` delimiter before the process
+name argument when other flags were present. **Learning:** When invoking `pkill`
+with dynamic variables or even static strings that could be refactored to
+variables, you must explicitly separate options from arguments using the `--`
+delimiter to prevent them from being parsed as flags. **Prevention:** Always use
+the `--` argument delimiter before positional arguments when using `pkill`.
 
 ## 2026-07-27 - CWE-78 Command Injection Remediation in PR Automation Scripts
 
-**Vulnerability:** The PR automation scripts (`parse_inventory.py`, `categorize_ready.py`, `detect_duplicates.py`, `run_merges.py`) previously invoked `gh` via `subprocess.run(..., shell=True)` with user-controlled `repo`/`pr` strings parsed from Markdown inventory files.
+**Vulnerability:** The PR automation scripts (`parse_inventory.py`,
+`categorize_ready.py`, `detect_duplicates.py`, `run_merges.py`) previously
+invoked `gh` via `subprocess.run(..., shell=True)` with user-controlled
+`repo`/`pr` strings parsed from Markdown inventory files.
 
-**Changes made (audited commit `ff9ec673aa9ad7d5444c41e87ae49b7c05ddbfa5`, baseline `106cd316b111f44536d1a25c82c8a48a2259d734`):**
-- Added a shared, typed PR-reference validator in `pr_reference.py` that parses `owner/name#number` once, rejects whitespace/control characters, extra path segments, leading `-`, empty components, and non-positive/non-decimal PR numbers. Invalid rows in batch processing emit a filename/line-number diagnostic and are skipped; a strict mode is available for fail-fast callers.
-- Rewrote `detect_duplicates.py` to use a static GraphQL document with declared variables and pass `owner`, `name`, and PR number separately through `gh api graphql` `-f`/`-F` fields, eliminating string interpolation in the query.
-- Consolidated token loading across `parse_inventory.py`, `categorize_ready.py`, `detect_duplicates.py`, and `run_merges.py` by importing `gh_token_env.load_gh_token_env`. `gh_token_env.py` now resolves the legacy `GH_TOKEN.env` path relative to `Path(__file__).resolve().parent`, only injects `GH_TOKEN` into the child environment, and emits a `DeprecationWarning` when the legacy path is used.
-- All `gh` subprocess wrappers now use an argument list, omit `shell`, set `timeout=120`, capture output, and avoid printing `GH_TOKEN` or the full environment in error messages.
+**Changes made (audited commit `ff9ec673aa9ad7d5444c41e87ae49b7c05ddbfa5`,
+baseline `106cd316b111f44536d1a25c82c8a48a2259d734`):**
+
+- Added a shared, typed PR-reference validator in `pr_reference.py` that parses
+  `owner/name#number` once, rejects whitespace/control characters, extra path
+  segments, leading `-`, empty components, and non-positive/non-decimal PR
+  numbers. Invalid rows in batch processing emit a filename/line-number
+  diagnostic and are skipped; a strict mode is available for fail-fast callers.
+- Rewrote `detect_duplicates.py` to use a static GraphQL document with declared
+  variables and pass `owner`, `name`, and PR number separately through
+  `gh api graphql` `-f`/`-F` fields, eliminating string interpolation in the
+  query.
+- Consolidated token loading across `parse_inventory.py`, `categorize_ready.py`,
+  `detect_duplicates.py`, and `run_merges.py` by importing
+  `gh_token_env.load_gh_token_env`. `gh_token_env.py` now resolves the legacy
+  `GH_TOKEN.env` path relative to `Path(__file__).resolve().parent`, only
+  injects `GH_TOKEN` into the child environment, and emits a
+  `DeprecationWarning` when the legacy path is used.
+- All `gh` subprocess wrappers now use an argument list, omit `shell`, set
+  `timeout=120`, capture output, and avoid printing `GH_TOKEN` or the full
+  environment in error messages.
 
 **Audit scope and findings:**
-- Searched `*.py` for `subprocess\.`, `os\.system`, `os\.popen`, `commands\.`, `eval\s*\(`, and `exec\s*\(`. No `shell=True` or shell-based execution was found in production Python. The only `exec` is in `tests/test_vulnerability_fix.py` operating on a self-constructed AST (`# nosec B102`).
-- `scratch_inventory.py` and `scratch_triage.py` use list-based `subprocess.run` with hardcoded repo lists and do not consume the same Markdown inventory data; they were left unchanged per the ticket's scope guidance, with a follow-up recommended for timeout/env-loader consistency.
-- GitHub Actions workflows do not directly interpolate untrusted PR metadata into `run:` blocks for these scripts. `pr-visual-recap.yml` binds numeric/boolean/SHA PR fields and sanitized secrets via `env:` before use.
+
+- Searched `*.py` for `subprocess\.`, `os\.system`, `os\.popen`, `commands\.`,
+  `eval\s*\(`, and `exec\s*\(`. No `shell=True` or shell-based execution was
+  found in production Python. The only `exec` is in
+  `tests/test_vulnerability_fix.py` operating on a self-constructed AST
+  (`# nosec B102`).
+- `scratch_inventory.py` and `scratch_triage.py` use list-based `subprocess.run`
+  with hardcoded repo lists and do not consume the same Markdown inventory data;
+  they were left unchanged per the ticket's scope guidance, with a follow-up
+  recommended for timeout/env-loader consistency.
+- GitHub Actions workflows do not directly interpolate untrusted PR metadata
+  into `run:` blocks for these scripts. `pr-visual-recap.yml` binds
+  numeric/boolean/SHA PR fields and sanitized secrets via `env:` before use.
 
 **Verification commands and results:**
+
 - `make lint-errors` — passed (no SC2155/SC2145 violations).
 - `python3 -m unittest discover -s tests -p 'test_*.py'` — 452 tests passed.
 - `uvx ruff check --select S602,S605 .` — passed.
@@ -676,17 +776,38 @@ treated strictly as patterns and not parsed as command-line options.
 - `trunk check <changed files>` — no new issues.
 
 **Accepted exclusions:**
-- `tests/test_vulnerability_fix.py` intentionally uses `exec(code, mod.__dict__)` to load isolated AST nodes for regression testing; the input AST is built from the repository's own source, not attacker-controlled.
-- `scratch_inventory.py` / `scratch_triage.py` are out of scope for this fix; they do not load `GH_TOKEN.env` and operate on hardcoded repo lists, but should be hardened with timeouts and the shared env loader in a follow-up.
+
+- `tests/test_vulnerability_fix.py` intentionally uses
+  `exec(code, mod.__dict__)` to load isolated AST nodes for regression testing;
+  the input AST is built from the repository's own source, not
+  attacker-controlled.
+- `scratch_inventory.py` / `scratch_triage.py` are out of scope for this fix;
+  they do not load `GH_TOKEN.env` and operate on hardcoded repo lists, but
+  should be hardened with timeouts and the shared env loader in a follow-up.
 
 ## 2026-07-28 - Missing Timeouts and Auth Loader in Subprocess
 
-**Vulnerability:** `scratch_inventory.py` and `scratch_triage.py` invoked `gh` via `subprocess.run` without timeouts or the standardized `gh_token_env` loader, risking indefinite hangs on network requests (DoS) and potential inconsistent execution environments.
-**Learning:** Even in utility/scratch scripts, all network-bound subprocess calls should have strict timeouts and utilize consistent authentication loading mechanisms to avoid stalling or failing silently.
-**Prevention:** Always add a `timeout` argument to `subprocess.run` when calling external APIs, and consistently use the common `load_gh_token_env` utility for GitHub authentication context.
+**Vulnerability:** `scratch_inventory.py` and `scratch_triage.py` invoked `gh`
+via `subprocess.run` without timeouts or the standardized `gh_token_env` loader,
+risking indefinite hangs on network requests (DoS) and potential inconsistent
+execution environments. **Learning:** Even in utility/scratch scripts, all
+network-bound subprocess calls should have strict timeouts and utilize
+consistent authentication loading mechanisms to avoid stalling or failing
+silently. **Prevention:** Always add a `timeout` argument to `subprocess.run`
+when calling external APIs, and consistently use the common `load_gh_token_env`
+utility for GitHub authentication context.
 
 ## 2026-07-28 - Option Injection Risk via pkill and pgrep
 
-**Vulnerability:** Option Injection (CWE-88 variant). Found that some scripts using `pgrep` and `pkill` for process management did not include the `--` delimiter before the process name argument when other flags were present. For instance, `pgrep -x "ctrld"` was changed to `pgrep -x -- "ctrld"`. If an attacker controls the variable and starts it with a hyphen, `pgrep` or `pkill` may interpret the variable as a command-line flag rather than a positional argument, leading to option injection or unintended execution.
-**Learning:** When invoking `pgrep` or `pkill` with dynamic variables or even static strings that could be refactored to variables, you must explicitly separate options from arguments using the `--` delimiter to prevent them from being parsed as flags.
-**Prevention:** Always use the `--` argument delimiter before positional arguments when using `pgrep` or `pkill`.
+**Vulnerability:** Option Injection (CWE-88 variant). Found that some scripts
+using `pgrep` and `pkill` for process management did not include the `--`
+delimiter before the process name argument when other flags were present. For
+instance, `pgrep -x "ctrld"` was changed to `pgrep -x -- "ctrld"`. If an
+attacker controls the variable and starts it with a hyphen, `pgrep` or `pkill`
+may interpret the variable as a command-line flag rather than a positional
+argument, leading to option injection or unintended execution. **Learning:**
+When invoking `pgrep` or `pkill` with dynamic variables or even static strings
+that could be refactored to variables, you must explicitly separate options from
+arguments using the `--` delimiter to prevent them from being parsed as flags.
+**Prevention:** Always use the `--` argument delimiter before positional
+arguments when using `pgrep` or `pkill`.

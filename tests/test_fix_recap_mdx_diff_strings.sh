@@ -8,15 +8,15 @@ PASS=0
 FAIL=0
 
 check() {
-  local name="$1"
-  shift
-  if "$@"; then
-    echo "PASS: $name"
-    PASS=$((PASS + 1))
-  else
-    echo "FAIL: $name"
-    FAIL=$((FAIL + 1))
-  fi
+	local name="$1"
+	shift
+	if "$@"; then
+		echo "PASS: $name"
+		PASS=$((PASS + 1))
+	else
+		echo "FAIL: $name"
+		FAIL=$((FAIL + 1))
+	fi
 }
 
 TEST_DIR=$(mktemp -d)
@@ -87,19 +87,19 @@ check "fixes plan.mdx inside recap-source payload" true
 
 # Case 4: CLI --write on the real failing artifact shape (if present).
 if [[ -f /tmp/recap-fail-1733/recap-plan.mdx ]]; then
-  cp /tmp/recap-fail-1733/recap-plan.mdx "$TEST_DIR/artifact.mdx"
-  OUT=$(node "$FIXER" "$TEST_DIR/artifact.mdx" --write)
-  check "artifact fixer reports fixed>=1" node -e 'const j=JSON.parse(process.argv[1]); process.exit(j.fixed>=1?0:1)' "$OUT"
-  # Re-run: idempotent
-  OUT2=$(node "$FIXER" "$TEST_DIR/artifact.mdx" --write)
-  check "artifact fixer is idempotent" node -e 'const j=JSON.parse(process.argv[1]); process.exit(j.fixed===0?0:1)' "$OUT2"
+	cp /tmp/recap-fail-1733/recap-plan.mdx "$TEST_DIR/artifact.mdx"
+	OUT=$(node "$FIXER" "$TEST_DIR/artifact.mdx" --write)
+	check "artifact fixer reports fixed>=1" node -e 'const j=JSON.parse(process.argv[1]); process.exit(j.fixed>=1?0:1)' "$OUT"
+	# Re-run: idempotent
+	OUT2=$(node "$FIXER" "$TEST_DIR/artifact.mdx" --write)
+	check "artifact fixer is idempotent" node -e 'const j=JSON.parse(process.argv[1]); process.exit(j.fixed===0?0:1)' "$OUT2"
 fi
 
 # Case 5: MDX compile gate when @mdx-js/mdx is available.
 if [[ -d /tmp/recap-fail-1733/node_modules/@mdx-js/mdx ]]; then
-  (
-    cd /tmp/recap-fail-1733
-    node <<'NODE'
+	(
+		cd /tmp/recap-fail-1733
+		node <<'NODE'
     const fs = require("fs");
     const { fixMdxContent } = require("/workspace/scripts/fix-recap-mdx-diff-strings.js");
     (async () => {
@@ -113,8 +113,8 @@ if [[ -d /tmp/recap-fail-1733/node_modules/@mdx-js/mdx ]]; then
       await compile(text);
     })().catch((e) => { console.error(e); process.exit(1); });
 NODE
-  )
-  check "artifact MDX compiles after fix" true
+	)
+	check "artifact MDX compiles after fix" true
 fi
 
 # Case 6: Callout mid-paragraph must be isolated onto its own lines.
@@ -163,7 +163,7 @@ check "rewrites Diff JSX after= attrs to expressions" true
 
 # Case 9: live artifact from run 29853720898 — JSX attrs + code={ multiline.
 if [[ -f /tmp/vr-art/recap-plan.mdx ]]; then
-  node -e '
+	node -e '
 const { fixMdxContent } = require(process.argv[1]);
 const fs = require("fs");
 const raw = fs.readFileSync("/tmp/vr-art/recap-plan.mdx", "utf8");
@@ -173,17 +173,17 @@ const again = fixMdxContent(text);
 if (again.fixed !== 0) { console.error("not idempotent", again.details); process.exit(3); }
 fs.writeFileSync("/tmp/vr-art/recap-plan.fixed-final.mdx", text);
 ' "$FIXER"
-  check "artifact JSX Diff/AnnotatedCode attrs rewrite" true
-  if [[ -d /tmp/recap-fail-1733/node_modules/@mdx-js/mdx ]]; then
-    node <<'NODE'
+	check "artifact JSX Diff/AnnotatedCode attrs rewrite" true
+	if [[ -d /tmp/recap-fail-1733/node_modules/@mdx-js/mdx ]]; then
+		node <<'NODE'
     const fs = require("fs");
     (async () => {
       const { compile } = await import("/tmp/recap-fail-1733/node_modules/@mdx-js/mdx/index.js");
       await compile(fs.readFileSync("/tmp/vr-art/recap-plan.fixed-final.mdx", "utf8"));
     })().catch((e) => { console.error(e.message); process.exit(1); });
 NODE
-    check "artifact MDX compiles after JSX attr fix" true
-  fi
+		check "artifact MDX compiles after JSX attr fix" true
+	fi
 fi
 
 # Case 10: bare columns=[…] must become columns={[…]}.
@@ -244,7 +244,7 @@ check "half-braced rows=[…]} only inserts opening brace" true
 
 # Case 13: live artifact from run with bare array attrs (vr-art2).
 if [[ -f /tmp/vr-art2/recap-plan.mdx ]]; then
-  node -e '
+	node -e '
 const { fixMdxContent } = require(process.argv[1]);
 const fs = require("fs");
 const raw = fs.readFileSync("/tmp/vr-art2/recap-plan.mdx", "utf8");
@@ -254,9 +254,9 @@ const again = fixMdxContent(text);
 if (again.fixed !== 0) { console.error("not idempotent", again.details); process.exit(3); }
 fs.writeFileSync("/tmp/vr-art2/recap-plan.fixed-arrays.mdx", text);
 ' "$FIXER"
-  check "artifact bare array attrs rewrite" true
-  if [[ -d /tmp/recap-fail-1733/node_modules/@mdx-js/mdx ]]; then
-    node <<'NODE'
+	check "artifact bare array attrs rewrite" true
+	if [[ -d /tmp/recap-fail-1733/node_modules/@mdx-js/mdx ]]; then
+		node <<'NODE'
     const fs = require("fs");
     (async () => {
       const { compile } = await import("/tmp/recap-fail-1733/node_modules/@mdx-js/mdx/index.js");
@@ -267,10 +267,10 @@ fs.writeFileSync("/tmp/vr-art2/recap-plan.fixed-arrays.mdx", text);
       await compile(fs.readFileSync("/tmp/vr-art2/recap-plan.fixed-arrays.mdx", "utf8"));
     })().catch((e) => { console.error(e.message); process.exit(1); });
 NODE
-    check "artifact MDX compiles after array-attr fix" true
-  fi
+		check "artifact MDX compiles after array-attr fix" true
+	fi
 fi
 
 echo ""
 echo "Passed: $PASS  Failed: $FAIL"
-if [[ "$FAIL" -gt 0 ]]; then exit 1; fi
+if [[ $FAIL -gt 0 ]]; then exit 1; fi

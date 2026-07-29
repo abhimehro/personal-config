@@ -1,6 +1,7 @@
 # macOS Maintenance System
 
-A comprehensive, automated maintenance system designed to prevent system resets and keep your Mac running smoothly.
+A comprehensive, automated maintenance system designed to prevent system resets
+and keep your Mac running smoothly.
 
 ## 🎯 Purpose
 
@@ -93,7 +94,8 @@ export UPDATE_MAS_APPS="1"        # Auto-update Mac App Store apps
 ### Log Locations
 
 - **Main logs**: `~/Library/Logs/Maintenance/`
-- **Daily health reports**: `~/Library/Logs/Maintenance/health_report-YYYYMMDD-HHMM.txt`
+- **Daily health reports**:
+  `~/Library/Logs/Maintenance/health_report-YYYYMMDD-HHMM.txt`
 
 ### Log Retention
 
@@ -142,7 +144,8 @@ Run scripts manually to test:
 
 3. **Notifications not working**
    - Check `NOTIFY_MODE` in config.env
-   - Test with: `/usr/bin/osascript -e 'display notification "Test" with title "Maintenance"'`
+   - Test with:
+     `/usr/bin/osascript -e 'display notification "Test" with title "Maintenance"'`
 
 ### Health Check Interpretation
 
@@ -166,8 +169,10 @@ Based on your recent health check:
 ## 📈 Next Steps
 
 1. **Monitor daily health reports** for trends
-2. **Watch kernel panic count** - if it continues high, consider filing feedback for macOS beta
+2. **Watch kernel panic count** - if it continues high, consider filing feedback
+   for macOS beta
 3. **Consider enabling Slack notifications** for critical alerts
 4. **Review logs weekly** to understand your system's patterns
 
-The system is now actively monitoring for the conditions that typically lead to system resets!
+The system is now actively monitoring for the conditions that typically lead to
+system resets!

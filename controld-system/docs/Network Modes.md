@@ -1,6 +1,6 @@
  # Network Modes
 
-**Last Updated:** 2025-11-24  
+**Last Updated:** 2025-11-24\
 **Status:** ✅ Active (v4.1 Separation Strategy)
 
 ## Overview
@@ -12,15 +12,20 @@ This repository defines two primary network modes for macOS:
 
 Network state is coordinated by:
 
-`scripts/network-mode-manager.sh` _– top-level switch between DNS and VPN modes_ `controld-system/scripts/controld-manager` – low-level Control D profile manager
+`scripts/network-mode-manager.sh` _– top-level switch between DNS and VPN modes_
+`controld-system/scripts/controld-manager` – low-level Control D profile manager
 
 The goal is to keep **DNS mode** and **VPN mode** clearly separated:
 
-_In_ *DNS mode\*\*, Control D is responsible for DNS, IPv6 is enabled, and Windscribe should be disconnected.
-*In\* \*VPN mode\*\*, Windscribe is responsible for network routing and DNS, Control D is stopped, and IPv6 is disabled for leak protection.
+_In_ *DNS mode\*\*, Control D is responsible for DNS, IPv6 is enabled, and
+Windscribe should be disconnected. *In\* \*VPN mode\*\*, Windscribe is
+responsible for network routing and DNS, Control D is stopped, and IPv6 is
+disabled for leak protection.
 
-&gt; **Preferred entrypoint:** Use `scripts/network-mode-manager.sh` for day‑to‑day switching.  
-&gt; Use `controld-manager` directly only when debugging or doing low-level Control D work.
+&gt; **Preferred entrypoint:** Use `scripts/network-mode-manager.sh` for
+day‑to‑day switching.\
+&gt; Use `controld-manager` directly only when debugging or doing low-level
+Control D work.
 
 ---
 

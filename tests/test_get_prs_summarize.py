@@ -8,15 +8,18 @@ sys.path.append(str(scripts_dir))
 
 from get_prs_summarize import automation_hints, check_summary
 
+
 class TestAutomationHints(unittest.TestCase):
     def test_human_pr(self):
         pr = {
             "author": {"is_bot": False, "login": "alice"},
             "headRefName": "feature/new-button",
             "title": "Add new button",
-            "body": "This adds a new button to the UI."
+            "body": "This adds a new button to the UI.",
         }
-        self.assertEqual(automation_hints(pr), "(none — treat as human unless reviews say otherwise)")
+        self.assertEqual(
+            automation_hints(pr), "(none — treat as human unless reviews say otherwise)"
+        )
 
     def test_author_is_bot(self):
         pr = {"author": {"is_bot": True, "login": "bot-account"}}
@@ -81,7 +84,7 @@ class TestAutomationHints(unittest.TestCase):
             "author": {"is_bot": True, "login": "mybot[bot]"},
             "headRefName": "bolt/feature",
             "title": "Bolt: fast",
-            "body": "created automatically by jules"
+            "body": "created automatically by jules",
         }
         hints = automation_hints(pr)
         expected_hints = [
@@ -89,19 +92,16 @@ class TestAutomationHints(unittest.TestCase):
             "body:automation_marker",
             "bot_login",
             "branch:bolt",
-            "title:bolt"
+            "title:bolt",
         ]
         self.assertEqual(hints, "; ".join(expected_hints))
 
     def test_none_input_values(self):
         # PR dictionary might have missing fields or None values
-        pr = {
-            "author": None,
-            "headRefName": None,
-            "title": None,
-            "body": None
-        }
-        self.assertEqual(automation_hints(pr), "(none — treat as human unless reviews say otherwise)")
+        pr = {"author": None, "headRefName": None, "title": None, "body": None}
+        self.assertEqual(
+            automation_hints(pr), "(none — treat as human unless reviews say otherwise)"
+        )
 
 
 class TestCheckSummary(unittest.TestCase):
@@ -156,7 +156,9 @@ class TestCheckSummary(unittest.TestCase):
     def test_missing_keys(self):
         rollup = [
             {},  # pending (missing status defaults to "")
-            {"status": "COMPLETED"},  # not failed (missing conclusion is not in FAIL_CONCLUSIONS)
+            {
+                "status": "COMPLETED"
+            },  # not failed (missing conclusion is not in FAIL_CONCLUSIONS)
         ]
         self.assertEqual(check_summary(rollup), "PENDING_1")
 

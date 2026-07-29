@@ -11,9 +11,11 @@ Your allowlist import failed because of a **format mismatch**:
 
 ### The Issue:
 
-- **Denylist**: Worked perfectly (419/427 imported) because it used correct format
+- **Denylist**: Worked perfectly (419/427 imported) because it used correct
+  format
 - **Allowlist**: Failed completely (0/246 imported) because of wrong format
-- **AdGuard Expectation**: Allowlist imports expect plain domain names, not filter rules
+- **AdGuard Expectation**: Allowlist imports expect plain domain names, not
+  filter rules
 
 ### Why This Happened:
 
@@ -67,7 +69,8 @@ cd $HOME/Downloads
 python3 fix-allowlist-format.py
 ```
 
-This will create a full allowlist with all legitimate domains from your source files.
+This will create a full allowlist with all legitimate domains from your source
+files.
 
 ## 📊 **Expected Results After Fix**
 

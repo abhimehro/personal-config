@@ -487,13 +487,13 @@ default (`value = p.get("key")`) and conditionally compute the fallback using an
 
 ## 2026-06-13 - [Hoist dictionary and tuple instantiation from hot execution paths]
 
-**Learning:** Instantiating dictionaries or casting
-`dict.items()` to a tuple inside a hot function (like one used for scoring items
-iteratively) creates significant allocation and iterator overhead for each call.
-**Action:** Always hoist static lookup dictionaries and tuple conversions of
-dictionaries to the global/module scope. Accessing a global constant is
-significantly faster than re-evaluating the dictionary literal or executing
-`dict.items()` on every invocation.
+**Learning:** Instantiating dictionaries or casting `dict.items()` to a tuple
+inside a hot function (like one used for scoring items iteratively) creates
+significant allocation and iterator overhead for each call. **Action:** Always
+hoist static lookup dictionaries and tuple conversions of dictionaries to the
+global/module scope. Accessing a global constant is significantly faster than
+re-evaluating the dictionary literal or executing `dict.items()` on every
+invocation.
 
 ## 2026-06-16 - [Avoid eager evaluation in `.get()` fallbacks with `.lower()`]
 
@@ -508,122 +508,326 @@ re-evaluating the dictionary literal or executing `dict.items()` on every
 invocation.
 
 ## 2025-11-20 - [Performance Optimization for system_metrics.sh]
-**Learning:** Found several spots where the system_metrics script spawns multiple heavy subprocesses in quick succession (e.g. `uptime` 3 times, `ps aux` 3 times, `launchctl list` 2 times) to parse different values from the same output. In a shell script, avoiding repeated execution of external commands and pipelining by doing it in a single pass (e.g., using a single `awk` statement and `read -r`) can yield significant performance gains, especially when these commands can be relatively slow and are run periodically.
-**Action:** Always prefer parsing a single invocation of an external command with `awk` to extract multiple metrics at once, rather than spawning the command multiple times.
+
+**Learning:** Found several spots where the system_metrics script spawns
+multiple heavy subprocesses in quick succession (e.g. `uptime` 3 times, `ps aux`
+3 times, `launchctl list` 2 times) to parse different values from the same
+output. In a shell script, avoiding repeated execution of external commands and
+pipelining by doing it in a single pass (e.g., using a single `awk` statement
+and `read -r`) can yield significant performance gains, especially when these
+commands can be relatively slow and are run periodically. **Action:** Always
+prefer parsing a single invocation of an external command with `awk` to extract
+multiple metrics at once, rather than spawning the command multiple times.
 
 ## 2026-11-20 - [Parallelize independent gh_json calls using ThreadPoolExecutor]
 
-**Learning:** Sequential read-only API calls (`gh_json`) in scripts create a significant N+1 performance bottleneck due to network latency and blocking I/O overhead. This specifically impacts automation workflows making sequential GitHub API requests.
+**Learning:** Sequential read-only API calls (`gh_json`) in scripts create a
+significant N+1 performance bottleneck due to network latency and blocking I/O
+overhead. This specifically impacts automation workflows making sequential
+GitHub API requests.
 
-**Action:** Always use `concurrent.futures.ThreadPoolExecutor` to parallelize independent `gh_json` calls (like fetching issues and PRs simultaneously) rather than executing them sequentially. This drastically reduces execution latency.
+**Action:** Always use `concurrent.futures.ThreadPoolExecutor` to parallelize
+independent `gh_json` calls (like fetching issues and PRs simultaneously) rather
+than executing them sequentially. This drastically reduces execution latency.
 
 ## 2026-11-20 - [Avoid Large Method hotspots when extracting code]
 
-**Learning:** When adding `concurrent.futures.ThreadPoolExecutor` logic into an existing large function, it can easily trip static analysis tools (like CodeScene Code Health) causing a 'Large Method' hotspot violation.
+**Learning:** When adding `concurrent.futures.ThreadPoolExecutor` logic into an
+existing large function, it can easily trip static analysis tools (like
+CodeScene Code Health) causing a 'Large Method' hotspot violation.
 
-**Action:** Proactively extract the multi-line thread pool submission logic into a private helper function to keep the primary method concise and maintain code health baseline scores.
+**Action:** Proactively extract the multi-line thread pool submission logic into
+a private helper function to keep the primary method concise and maintain code
+health baseline scores.
 
 ## 2026-06-22 - [Optimize sequential startswith() checks]
 
-**Learning:** Checking a string against multiple prefixes using multiple `.startswith("prefix")` statements creates unnecessary Python function call overhead and intermediate string allocations.
-**Action:** Replace multiple sequential `.startswith()` checks with a single `.startswith((tuple, of, prefixes))` to evaluate at the C-level. To further optimize for hot loops, short-circuit the tuple check with a fast index string lookup for a common starting character (e.g., `if not line or line[0] != "|":`).
+**Learning:** Checking a string against multiple prefixes using multiple
+`.startswith("prefix")` statements creates unnecessary Python function call
+overhead and intermediate string allocations. **Action:** Replace multiple
+sequential `.startswith()` checks with a single
+`.startswith((tuple, of, prefixes))` to evaluate at the C-level. To further
+optimize for hot loops, short-circuit the tuple check with a fast index string
+lookup for a common starting character (e.g., `if not line or line[0] != "|":`).
 
 ## 2026-06-22 - [Avoid unnecessary .split() list allocation in simple string formatting]
 
-**Learning:** When extracting substrings from a string separated by a known delimiter inside a loop or comprehension (e.g. `line.split("=", 1)`), repeatedly calling `.split()` allocates new lists each time, causing a performance overhead. **Action:** When you only need to split once on the first delimiter and want to avoid unnecessary list allocation, use `str.partition()` instead of `str.split()`. It returns a tuple directly in C and doesn't allocate an arbitrary-length list.
+**Learning:** When extracting substrings from a string separated by a known
+delimiter inside a loop or comprehension (e.g. `line.split("=", 1)`), repeatedly
+calling `.split()` allocates new lists each time, causing a performance
+overhead. **Action:** When you only need to split once on the first delimiter
+and want to avoid unnecessary list allocation, use `str.partition()` instead of
+`str.split()`. It returns a tuple directly in C and doesn't allocate an
+arbitrary-length list.
+
 ## 2026-06-25 - Python str.startswith() Performance
-**Learning:** Python's C-implemented `.startswith()` is faster than short-circuiting with Python-level character indexing and set allocations.
-**Action:** Do not manually check the first character of strings in Python bytecode when `.startswith()` can handle it natively in C.
+
+**Learning:** Python's C-implemented `.startswith()` is faster than
+short-circuiting with Python-level character indexing and set allocations.
+**Action:** Do not manually check the first character of strings in Python
+bytecode when `.startswith()` can handle it natively in C.
+
 ## 2026-03-10 - [Avoid redundant string replacements inside loops and multiple startswith strings calls]
 
-**Learning:** Evaluating loop-invariant string operations like `replace("/", "-")` inside a loop iterations causes unnecessary allocations. Similarly, calling `startswith()` sequentially inside a tight loop causes unecessary python overhead.
-**Action:** Hoist the string operations out of the loop and use a single tuple in `.startswith(("string1", "string2"))` to ensure operations evaluate at the C-level.
+**Learning:** Evaluating loop-invariant string operations like
+`replace("/", "-")` inside a loop iterations causes unnecessary allocations.
+Similarly, calling `startswith()` sequentially inside a tight loop causes
+unecessary python overhead. **Action:** Hoist the string operations out of the
+loop and use a single tuple in `.startswith(("string1", "string2"))` to ensure
+operations evaluate at the C-level.
 
 ## 2023-10-25 - Code Health Check
-**Action:** Removed unused `from __future__ import annotations` from `tests/test_morning_brief.py`.
-**Insight:** Code clarity and readability can be improved by pruning unused imports.
+
+**Action:** Removed unused `from __future__ import annotations` from
+`tests/test_morning_brief.py`. **Insight:** Code clarity and readability can be
+improved by pruning unused imports.
+
 ## 2025-07-01 - Optimizing directory traversal with find -prune
-**Learning:** When using `find` to search for specific directory names like `node_modules` (which contain heavily nested structures), omitting `-prune` causes `find` to unnecessarily traverse the entire deep directory tree inside matches, leading to significant I/O and CPU overhead.
-**Action:** Always use `-prune` when searching for directories whose contents you don't need to traverse, such as `node_modules` or build directories.
+
+**Learning:** When using `find` to search for specific directory names like
+`node_modules` (which contain heavily nested structures), omitting `-prune`
+causes `find` to unnecessarily traverse the entire deep directory tree inside
+matches, leading to significant I/O and CPU overhead. **Action:** Always use
+`-prune` when searching for directories whose contents you don't need to
+traverse, such as `node_modules` or build directories.
 
 ## 2026-07-03 - [Optimize ps aux shell pattern gracefully across platforms]
-**Learning:** Replacing `ps aux | grep pattern | grep -v grep | wc -l` with `pgrep -fc pattern` is a great shell optimization to prevent spawning multiple sub-processes. However, on BSD-based systems like macOS, `pgrep` does not support the `-c` flag.
-**Action:** When optimizing process counting in cross-platform or macOS shell scripts, use `pgrep -f "pattern" | wc -l` (and potentially strip whitespace with `tr -d ' '`) instead of `pgrep -fc`.
+
+**Learning:** Replacing `ps aux | grep pattern | grep -v grep | wc -l` with
+`pgrep -fc pattern` is a great shell optimization to prevent spawning multiple
+sub-processes. However, on BSD-based systems like macOS, `pgrep` does not
+support the `-c` flag. **Action:** When optimizing process counting in
+cross-platform or macOS shell scripts, use `pgrep -f "pattern" | wc -l` (and
+potentially strip whitespace with `tr -d ' '`) instead of `pgrep -fc`.
 
 ## 2026-07-03 - [Optimize system_metrics.sh parsing]
 
-**Learning:** Found several spots where the system_metrics script spawns multiple heavy subprocesses in quick succession (e.g. `vm_stat`, `df -h`) to parse different values from the same output. In a shell script, avoiding repeated execution of external commands and pipelining by doing it in a single pass (e.g., using a single `awk` statement and `read -r`) can yield significant performance gains, especially when these commands can be relatively slow and are run periodically.
-**Action:** Always prefer parsing a single invocation of an external command with `awk` to extract multiple metrics at once, rather than spawning the command multiple times.
+**Learning:** Found several spots where the system_metrics script spawns
+multiple heavy subprocesses in quick succession (e.g. `vm_stat`, `df -h`) to
+parse different values from the same output. In a shell script, avoiding
+repeated execution of external commands and pipelining by doing it in a single
+pass (e.g., using a single `awk` statement and `read -r`) can yield significant
+performance gains, especially when these commands can be relatively slow and are
+run periodically. **Action:** Always prefer parsing a single invocation of an
+external command with `awk` to extract multiple metrics at once, rather than
+spawning the command multiple times.
 
 ## 2026-07-04 - [Optimize system_metrics.sh parsing further by combining uptime awk passes]
-**Learning:** Checking `uptime` twice using two different pipe chains (one for load averages, one for system uptime days) spawns multiple redundant subprocesses.
-**Action:** Extract all necessary fields (load averages and days) using a single `awk` pass over `uptime` and populate them with `read -r` to minimize execution time and subprocess counts in shell scripts.
+
+**Learning:** Checking `uptime` twice using two different pipe chains (one for
+load averages, one for system uptime days) spawns multiple redundant
+subprocesses. **Action:** Extract all necessary fields (load averages and days)
+using a single `awk` pass over `uptime` and populate them with `read -r` to
+minimize execution time and subprocess counts in shell scripts.
+
 ## 2026-07-05 - [Hoist static structures and avoid eager empty allocations in get_prs_summarize]
-**Learning:** Defining static tuples (like `branch_signals`) inside a function or using constructs like `pr.get("author") or {}` causes Python to allocate new objects on every function call. In scripts processing large batches of data iteratively, these redundant allocations quickly compound into measurable CPU overhead.
-**Action:** Always hoist static tuples and dictionaries to the module level as global constants. Replace eager empty fallback allocations (`or {}`, `or ""`) with standard `if value:` conditional checks to optimize memory usage and execution speed.
+
+**Learning:** Defining static tuples (like `branch_signals`) inside a function
+or using constructs like `pr.get("author") or {}` causes Python to allocate new
+objects on every function call. In scripts processing large batches of data
+iteratively, these redundant allocations quickly compound into measurable CPU
+overhead. **Action:** Always hoist static tuples and dictionaries to the module
+level as global constants. Replace eager empty fallback allocations (`or {}`,
+`or ""`) with standard `if value:` conditional checks to optimize memory usage
+and execution speed.
+
 ## 2026-07-05 - [Replace pytest with unittest to resolve CI failure]
-**Learning:** A newly added test file `tests/test_refactoring_agent_workflow.py` was written using `pytest`, but the CI environment enforces the execution of Python tests via `python3 -m unittest discover`. This caused an `ImportError: No module named 'pytest'` during CI execution.
-**Action:** Always ensure that new test files strictly use the built-in `unittest` framework (by subclassing `unittest.TestCase`) instead of relying on external dependencies like `pytest` when the repository dictates standard `unittest` usage for its CI pipelines.
+
+**Learning:** A newly added test file `tests/test_refactoring_agent_workflow.py`
+was written using `pytest`, but the CI environment enforces the execution of
+Python tests via `python3 -m unittest discover`. This caused an
+`ImportError: No module named 'pytest'` during CI execution. **Action:** Always
+ensure that new test files strictly use the built-in `unittest` framework (by
+subclassing `unittest.TestCase`) instead of relying on external dependencies
+like `pytest` when the repository dictates standard `unittest` usage for its CI
+pipelines.
+
 ## 2026-07-06 - [Optimize directory traversal with find -prune]
-**Learning:** When using 'find' to exclude large, deeply nested directories (e.g., '.git' or 'node_modules'), never use '-not -path' as it forces recursive traversal of every file before filtering.
-**Action:** Always use '-prune' (e.g., `find . \( -name ".git" -o -name "node_modules" \) -prune -o -type f -print`) to prevent traversal entirely and massively speed up execution.
+
+**Learning:** When using 'find' to exclude large, deeply nested directories
+(e.g., '.git' or 'node_modules'), never use '-not -path' as it forces recursive
+traversal of every file before filtering. **Action:** Always use '-prune' (e.g.,
+`find . \( -name ".git" -o -name "node_modules" \) -prune -o -type f -print`) to
+prevent traversal entirely and massively speed up execution.
+
 ## 2026-07-06 - [Avoid eager empty dict allocations in .get() chains]
-**Learning:** Chaining `.get("key") or {}` inside tight loops causes Python to allocate new empty dictionary objects on every iteration when the key is missing, leading to unnecessary memory overhead.
-**Action:** Replace `(obj.get("key") or {}).get("sub_key")` with a multi-step check: `val = obj.get("key"); sub = val.get("sub_key") if val else default` to prevent redundant object allocations.
+
+**Learning:** Chaining `.get("key") or {}` inside tight loops causes Python to
+allocate new empty dictionary objects on every iteration when the key is
+missing, leading to unnecessary memory overhead. **Action:** Replace
+`(obj.get("key") or {}).get("sub_key")` with a multi-step check:
+`val = obj.get("key"); sub = val.get("sub_key") if val else default` to prevent
+redundant object allocations.
+
 ## 2026-07-06 - [Avoid unnecessary dictionary wrappers for intermediate string collections]
-**Learning:** Extracting string values into intermediate dictionaries (e.g., `{"path": val}`) and later unpacking them via list comprehensions or generators (e.g., `f["path"] for f in...`) causes redundant object allocations. When extracting millions of nodes for sorting, this pattern significantly degrades CPU and memory performance.
-**Action:** Extract the primitive values directly into a list (e.g., `[node["path"] for...]`) and process the list of primitives directly, skipping the unnecessary dictionary wrapper entirely.
+
+**Learning:** Extracting string values into intermediate dictionaries (e.g.,
+`{"path": val}`) and later unpacking them via list comprehensions or generators
+(e.g., `f["path"] for f in...`) causes redundant object allocations. When
+extracting millions of nodes for sorting, this pattern significantly degrades
+CPU and memory performance. **Action:** Extract the primitive values directly
+into a list (e.g., `[node["path"] for...]`) and process the list of primitives
+directly, skipping the unnecessary dictionary wrapper entirely.
 
 ## 2026-11-20 - [Avoid eager empty dict allocations in chained .get() loops in detect_duplicates]
-**Learning:** Chaining `.get("key", {}) or {}` inside processing loops allocates new empty dictionary objects on every iteration when the key is missing or the value is falsy, leading to measurable memory allocation overhead on the fast path.
-**Action:** Replace `val.get("key", {}) or {}` with `val.get("key")` and handle `None` checking directly before iterating to prevent redundant dict allocations.
+
+**Learning:** Chaining `.get("key", {}) or {}` inside processing loops allocates
+new empty dictionary objects on every iteration when the key is missing or the
+value is falsy, leading to measurable memory allocation overhead on the fast
+path. **Action:** Replace `val.get("key", {}) or {}` with `val.get("key")` and
+handle `None` checking directly before iterating to prevent redundant dict
+allocations.
 
 ## 2026-11-20 - [Avoid eager empty dict and list allocations in chained .get() loops across multiple domains]
-**Learning:** Chaining `.get("key", {}).get("sub_key", [])` inside processing loops allocates new empty dictionary and list objects on every iteration when the key is missing or the value is falsy. This leads to measurable memory allocation overhead on the fast path, especially when dealing with complex nested JSON payloads (like those from GraphQL APIs or large webhook structures).
-**Action:** Replace `val.get("key", {}).get("sub_key", [])` with multi-step `None` checks like `_key = val.get("key"); _sub_key = _key.get("sub_key") if _key else ()` to prevent redundant dictionary and list allocations entirely.
+
+**Learning:** Chaining `.get("key", {}).get("sub_key", [])` inside processing
+loops allocates new empty dictionary and list objects on every iteration when
+the key is missing or the value is falsy. This leads to measurable memory
+allocation overhead on the fast path, especially when dealing with complex
+nested JSON payloads (like those from GraphQL APIs or large webhook structures).
+**Action:** Replace `val.get("key", {}).get("sub_key", [])` with multi-step
+`None` checks like
+`_key = val.get("key"); _sub_key = _key.get("sub_key") if _key else ()` to
+prevent redundant dictionary and list allocations entirely.
+
 ## 2026-03-10 - Short-Circuit Expensive Datetime Parsing
-**Learning:** Eager evaluation of `datetime.fromisoformat()` and timezone manipulations inside frequently called functions (like PR categorization loops) creates a massive performance bottleneck due to unnecessary object allocation and parsing overhead.
-**Action:** Always short-circuit expensive datetime operations by placing them behind faster boolean checks (like simple string matching) so they only execute when absolutely required.
+
+**Learning:** Eager evaluation of `datetime.fromisoformat()` and timezone
+manipulations inside frequently called functions (like PR categorization loops)
+creates a massive performance bottleneck due to unnecessary object allocation
+and parsing overhead. **Action:** Always short-circuit expensive datetime
+operations by placing them behind faster boolean checks (like simple string
+matching) so they only execute when absolutely required.
+
 ## 2026-07-11 - [Avoid redundant datetime.now() calls in iteration blocks]
-**Learning:** Calling `datetime.now(timezone.utc)` repeatedly inside a function that is executed iteratively over large collections adds measurable overhead.
-**Action:** Hoist the baseline execution time to a global or module-level constant (e.g., `_NOW = datetime.now(timezone.utc)`) to avoid recomputing it on every function call.
+
+**Learning:** Calling `datetime.now(timezone.utc)` repeatedly inside a function
+that is executed iteratively over large collections adds measurable overhead.
+**Action:** Hoist the baseline execution time to a global or module-level
+constant (e.g., `_NOW = datetime.now(timezone.utc)`) to avoid recomputing it on
+every function call.
+
 ## 2026-07-11 - [Avoid redundant datetime.now() calls in iteration blocks without module state]
-**Learning:** Calling `datetime.now(timezone.utc)` repeatedly inside a function that is executed iteratively over large collections adds measurable overhead. However, hoisting dynamic time evaluations to module-level constants pins the evaluated time to when the module is imported, creating a dangerous stale state in long-running processes.
-**Action:** Compute the time once at the entry point (e.g., in `main()`) and pass it down through function arguments (e.g., `now=None`) to avoid redundant recomputation while preventing unsafe module-level state.
+
+**Learning:** Calling `datetime.now(timezone.utc)` repeatedly inside a function
+that is executed iteratively over large collections adds measurable overhead.
+However, hoisting dynamic time evaluations to module-level constants pins the
+evaluated time to when the module is imported, creating a dangerous stale state
+in long-running processes. **Action:** Compute the time once at the entry point
+(e.g., in `main()`) and pass it down through function arguments (e.g.,
+`now=None`) to avoid redundant recomputation while preventing unsafe
+module-level state.
 
 ## 2026-07-11 - [Optimize directory traversal paths]
-**Learning:** Hardcoding multi-level parent directory traversals like `../..` can cause scripts to fail when executed from unexpected deep directories during testing or CI runs.
-**Action:** Use single-level references or bounded path expansions when looking for root repository directories to prevent directory traversal failures in dynamic environments.
+
+**Learning:** Hardcoding multi-level parent directory traversals like `../..`
+can cause scripts to fail when executed from unexpected deep directories during
+testing or CI runs. **Action:** Use single-level references or bounded path
+expansions when looking for root repository directories to prevent directory
+traversal failures in dynamic environments.
 
 ## 2026-07-10 - Eliminate ThreadPoolExecutor batching latency
-**Learning:** `concurrent.futures.ThreadPoolExecutor` defaults to `min(32, os.cpu_count() + 4)` workers. For I/O-bound tasks like shelling out multiple concurrent processes, this low default artificial limits concurrency and adds batching latency (e.g. if you have 40 shell commands to run, it takes multiple batches).
-**Action:** Always explicitly set `max_workers` on `ThreadPoolExecutor` for pure I/O or shell dispatch tasks to exactly match the number of jobs (or a high ceiling like 100) to ensure immediate dispatch without batching latency.
+
+**Learning:** `concurrent.futures.ThreadPoolExecutor` defaults to
+`min(32, os.cpu_count() + 4)` workers. For I/O-bound tasks like shelling out
+multiple concurrent processes, this low default artificial limits concurrency
+and adds batching latency (e.g. if you have 40 shell commands to run, it takes
+multiple batches). **Action:** Always explicitly set `max_workers` on
+`ThreadPoolExecutor` for pure I/O or shell dispatch tasks to exactly match the
+number of jobs (or a high ceiling like 100) to ensure immediate dispatch without
+batching latency.
 
 ## 2024-07-12 - Eliminate repetitive datetime evaluations inside mapping loops
-**Learning:** Calling `now_utc()` repeatedly inside a mapping loop or list comprehension (such as during PR triage categorization) creates an accumulated bottleneck due to repetitive object allocation and time generation.
-**Action:** Replace `now_utc()` calls inside list comprehensions and iterative generators with a hoisted variable evaluation before the loop (e.g. `_now = now_utc()`) and pass `_now` as an argument to downstream filters to prevent redundant datetime allocations.
+
+**Learning:** Calling `now_utc()` repeatedly inside a mapping loop or list
+comprehension (such as during PR triage categorization) creates an accumulated
+bottleneck due to repetitive object allocation and time generation. **Action:**
+Replace `now_utc()` calls inside list comprehensions and iterative generators
+with a hoisted variable evaluation before the loop (e.g. `_now = now_utc()`) and
+pass `_now` as an argument to downstream filters to prevent redundant datetime
+allocations.
+
 ## 2026-11-20 - Eliminate ThreadPoolExecutor batching latency (continued)
-**Learning:** `concurrent.futures.ThreadPoolExecutor` defaults to `min(32, os.cpu_count() + 4)` workers. Setting `max_workers=10` limits concurrency when tasks exceed 10. To allow for faster dispatch of I/O bound tasks, we should set `max_workers=min(len(tasks), 32)`.
-**Action:** When using `concurrent.futures.ThreadPoolExecutor` for I/O bound tasks with a variable number of items, always calculate `max_workers` using `min(len(tasks), 32)` to provide immediate dispatch up to 32 concurrent threads instead of a static smaller limit.
+
+**Learning:** `concurrent.futures.ThreadPoolExecutor` defaults to
+`min(32, os.cpu_count() + 4)` workers. Setting `max_workers=10` limits
+concurrency when tasks exceed 10. To allow for faster dispatch of I/O bound
+tasks, we should set `max_workers=min(len(tasks), 32)`. **Action:** When using
+`concurrent.futures.ThreadPoolExecutor` for I/O bound tasks with a variable
+number of items, always calculate `max_workers` using `min(len(tasks), 32)` to
+provide immediate dispatch up to 32 concurrent threads instead of a static
+smaller limit.
+
 ## 2026-11-20 - Ensure ThreadPoolExecutor max_workers is greater than 0
-**Learning:** Python's `ThreadPoolExecutor` strictly enforces that `max_workers` must be greater than 0. If it receives `0` (e.g., when dynamic calculation like `min(len(tasks), 32)` evaluates an empty list), it raises a `ValueError: max_workers must be greater than 0`, causing a crash.
-**Action:** When dynamically calculating `max_workers` based on the length of a list, always ensure it handles the `0` case by using an explicit fallback (e.g., `max_workers=min(len(tasks) or 1, 32)`) to safely process empty inputs without throwing exceptions.
+
+**Learning:** Python's `ThreadPoolExecutor` strictly enforces that `max_workers`
+must be greater than 0. If it receives `0` (e.g., when dynamic calculation like
+`min(len(tasks), 32)` evaluates an empty list), it raises a
+`ValueError: max_workers must be greater than 0`, causing a crash. **Action:**
+When dynamically calculating `max_workers` based on the length of a list, always
+ensure it handles the `0` case by using an explicit fallback (e.g.,
+`max_workers=min(len(tasks) or 1, 32)`) to safely process empty inputs without
+throwing exceptions.
+
 ## 2026-11-20 - Ensure functions aren't overly complex for CodeScene
-**Learning:** The CodeScene code health checker flagged `print_table` in `scripts/get_prs_summarize.py` as having a "Complex Method". To maintain good code health, functions shouldn't have too many responsibilities.
-**Action:** When working on large functions, always try to refactor them into smaller, more focused helper functions to improve maintainability and avoid CodeScene complexity violations.
+
+**Learning:** The CodeScene code health checker flagged `print_table` in
+`scripts/get_prs_summarize.py` as having a "Complex Method". To maintain good
+code health, functions shouldn't have too many responsibilities. **Action:**
+When working on large functions, always try to refactor them into smaller, more
+focused helper functions to improve maintainability and avoid CodeScene
+complexity violations.
 
 ## 2026-12-05 - [Avoid Eager `.lower()` on Optional Values in Hot Paths]
-**Learning:** Chaining `.lower()` on values that are conditionally assigned (e.g., via `dict.get()`) using inline `if ... else ...` expressions (`var = val.lower() if val is not None else ""`) evaluates the C-level string allocation on every single invocation when the value exists, which adds up inside large loops parsing thousands of records. This is particularly wasteful if the fallback path is rarely taken.
-**Action:** When extracting optional string fields inside parsing loops, explicitly break apart the conditional fallback evaluation: assign `var = ""` (the cheap default), use a standard `if val is not None:` block, and apply `.lower()` only when the value is known to be valid. This reduces instruction overhead and unnecessary string allocations when processing large API payloads.
+
+**Learning:** Chaining `.lower()` on values that are conditionally assigned
+(e.g., via `dict.get()`) using inline `if ... else ...` expressions
+(`var = val.lower() if val is not None else ""`) evaluates the C-level string
+allocation on every single invocation when the value exists, which adds up
+inside large loops parsing thousands of records. This is particularly wasteful
+if the fallback path is rarely taken. **Action:** When extracting optional
+string fields inside parsing loops, explicitly break apart the conditional
+fallback evaluation: assign `var = ""` (the cheap default), use a standard
+`if val is not None:` block, and apply `.lower()` only when the value is known
+to be valid. This reduces instruction overhead and unnecessary string
+allocations when processing large API payloads.
+
 ## 2026-11-20 - [Avoid Crash When Optimizing Default `.get()` Iterables]
-**Learning:** Refactoring `.get("key", [])` to `.get("key", ())` is a standard micro-optimization to avoid empty list allocations. However, blind replacement without checking how the result is used can cause crashes. If the target dictionary key is missing, `.get()` will return an empty tuple `()`. If the code subsequently attempts to mutate that value (e.g., `manifests.append(file_path)`), it will raise an `AttributeError` because tuples are immutable.
-**Action:** Before changing a fallback from an empty list `[]` to an empty tuple `()`, verify the call site to ensure the returned sequence is only iterated over or passed to functions that do not mutate it. If the sequence might be mutated, leave it as an empty list or explicitly instantiate a list.
+
+**Learning:** Refactoring `.get("key", [])` to `.get("key", ())` is a standard
+micro-optimization to avoid empty list allocations. However, blind replacement
+without checking how the result is used can cause crashes. If the target
+dictionary key is missing, `.get()` will return an empty tuple `()`. If the code
+subsequently attempts to mutate that value (e.g.,
+`manifests.append(file_path)`), it will raise an `AttributeError` because tuples
+are immutable. **Action:** Before changing a fallback from an empty list `[]` to
+an empty tuple `()`, verify the call site to ensure the returned sequence is
+only iterated over or passed to functions that do not mutate it. If the sequence
+might be mutated, leave it as an empty list or explicitly instantiate a list.
+
 ## 2026-12-07 - [Pre-compile regular expressions]
-**Learning:** Re-compiling the identical regular expression inside functions that are called frequently (like `html_section` parsing thousands of HTML strings) adds unnecessary overhead due to repeated evaluation.
-**Action:** Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module level when they are static and used repeatedly inside loops or frequently called functions.
+
+**Learning:** Re-compiling the identical regular expression inside functions
+that are called frequently (like `html_section` parsing thousands of HTML
+strings) adds unnecessary overhead due to repeated evaluation. **Action:**
+Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module
+level when they are static and used repeatedly inside loops or frequently called
+functions.
+
 ## 2026-12-07 - [Pre-compile regular expressions]
-**Learning:** Re-compiling the identical regular expression inside functions that are called frequently (like string parsing loops in `select-best-alldebrid-candidate.py`) adds unnecessary overhead due to repeated evaluation in `re.sub()`.
-**Action:** Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module level when they are static and used repeatedly inside loops or frequently called functions.
+
+**Learning:** Re-compiling the identical regular expression inside functions
+that are called frequently (like string parsing loops in
+`select-best-alldebrid-candidate.py`) adds unnecessary overhead due to repeated
+evaluation in `re.sub()`. **Action:** Always pre-compile regular expressions
+(e.g. `re.compile(...)`) at the module level when they are static and used
+repeatedly inside loops or frequently called functions.
+
 ## 2025-02-27 - Python Dictionary Allocation Overhead
-**Learning:** Chaining `.get("key", {}).get("sub_key", [])` inside loops causes measurable memory allocation overhead on the fast path because Python instantiates new empty dictionaries and lists on every iteration when keys are missing.
-**Action:** Replace this with multi-step `None` checks (e.g., `_key = val.get("key"); _sub = _key.get("sub_key") if _key else []`) to prevent redundant object allocations in critical paths.
+
+**Learning:** Chaining `.get("key", {}).get("sub_key", [])` inside loops causes
+measurable memory allocation overhead on the fast path because Python
+instantiates new empty dictionaries and lists on every iteration when keys are
+missing. **Action:** Replace this with multi-step `None` checks (e.g.,
+`_key = val.get("key"); _sub = _key.get("sub_key") if _key else []`) to prevent
+redundant object allocations in critical paths.

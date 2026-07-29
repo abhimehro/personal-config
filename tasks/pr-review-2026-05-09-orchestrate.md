@@ -1,6 +1,14 @@
 # PR review handoff — backlog cleanup orchestrate (2026-05-09)
 
-This run exercised the `builtin-orchestrate` workflow across six repos after decisions Q1–Q3 (rebase-and-merge for the config bridge, full Phase-2 salvage intent, and an email-security-pipeline `main` CI probe). Phase-1 actions delivered three merges, four duplicate-style closures, four trust-boundary escalation comments, three `update-branch` attempts that stopped on HTTP 422 conflicts, and a tail of PRs deferred for salvage or red gates. Phase-2 salvage produced one open draft PR on `series_correction_project_updated` and a Hydrograph recommendation to close superseded work after `#172` landed the overlapping intent on `main`.
+This run exercised the `builtin-orchestrate` workflow across six repos after
+decisions Q1–Q3 (rebase-and-merge for the config bridge, full Phase-2 salvage
+intent, and an email-security-pipeline `main` CI probe). Phase-1 actions
+delivered three merges, four duplicate-style closures, four trust-boundary
+escalation comments, three `update-branch` attempts that stopped on HTTP 422
+conflicts, and a tail of PRs deferred for salvage or red gates. Phase-2 salvage
+produced one open draft PR on `series_correction_project_updated` and a
+Hydrograph recommendation to close superseded work after `#172` landed the
+overlapping intent on `main`.
 
 ```yaml
 run: backlog-cleanup-orchestrate-2026-05-09

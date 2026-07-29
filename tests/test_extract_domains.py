@@ -217,9 +217,6 @@ class TestExtractAllowlistDomainsFromFile(unittest.TestCase):
             os.remove(temp_path)
 
 
-
-
-
 class TestProcessAllowlistFiles(unittest.TestCase):
     @patch("builtins.print")
     def test_process_allowlist_files_all_exist(self, _mock_print):

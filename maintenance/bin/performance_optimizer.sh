@@ -612,8 +612,8 @@ EOF
 		has_recs=true
 	fi
 
-	if [[ "$has_recs" == false ]]; then
-		echo "            <li class=\"empty-state\" style=\"color: #666; font-style: italic;\">System is running smoothly. No specific recommendations at this time.</li>" >>"$report_file"
+	if [[ $has_recs == false ]]; then
+		echo '            <li class="empty-state" style="color: #666; font-style: italic;">System is running smoothly. No specific recommendations at this time.</li>' >>"$report_file"
 	fi
 
 	cat >>"$report_file" <<EOF

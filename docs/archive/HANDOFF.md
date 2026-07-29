@@ -2,7 +2,8 @@
 
 ## 🎯 Mission Accomplished
 
-All merge conflicts blocking PR #144 have been resolved. This branch contains the complete, tested, and documented solution.
+All merge conflicts blocking PR #144 have been resolved. This branch contains
+the complete, tested, and documented solution.
 
 ## 📊 Status Dashboard
 
@@ -29,7 +30,9 @@ All merge conflicts blocking PR #144 have been resolved. This branch contains th
   (Learning entry from PR #144)
 ```
 
-**Why:** Both entries teach valuable lessons. Main's entry covers error handling patterns, PR #144's covers performance optimization. Both are relevant and complementary.
+**Why:** Both entries teach valuable lessons. Main's entry covers error handling
+patterns, PR #144's covers performance optimization. Both are relevant and
+complementary.
 
 ### `scripts/network-mode-verify.sh`
 
@@ -98,7 +101,8 @@ if grep -Eq '^[[:space:]]*type = '\''(doh'\''|doh[^3])' "$config"; then
 - Bare legacy 'doh' protocol (without version suffix)
 - Non-standard variants ('doh2', 'doha', etc.)
 
-**Defense:** Regex explicitly detects bare 'doh' (via `doh'`) AND any 'doh' variant except 'doh3' (via `doh[^3]`), failing validation immediately.
+**Defense:** Regex explicitly detects bare 'doh' (via `doh'`) AND any 'doh'
+variant except 'doh3' (via `doh[^3]`), failing validation immediately.
 
 ## 📚 Documentation Created
 
@@ -180,19 +184,23 @@ If you have access to update PR #144:
 
 ### 1. Both Changes Matter
 
-Initially might think "just pick one" - but both learning entries teach valuable, non-overlapping lessons. Keeping both enriches the documentation.
+Initially might think "just pick one" - but both learning entries teach
+valuable, non-overlapping lessons. Keeping both enriches the documentation.
 
 ### 2. Performance Optimizations Are Objective
 
-The grep optimization isn't subjective - it's measurably better. When you can reduce process forks by 50% with zero downside, do it.
+The grep optimization isn't subjective - it's measurably better. When you can
+reduce process forks by 50% with zero downside, do it.
 
 ### 3. Security Through Precision
 
-The regex isn't just faster - it's more precise. Precision = security. A single-pass precise regex beats a multi-step fuzzy check every time.
+The regex isn't just faster - it's more precise. Precision = security. A
+single-pass precise regex beats a multi-step fuzzy check every time.
 
 ### 4. Document Everything
 
-Future developers (including future you) will thank present you for clear documentation. This conflict took 3 files to fully explain - and that's okay.
+Future developers (including future you) will thank present you for clear
+documentation. This conflict took 3 files to fully explain - and that's okay.
 
 ## ✅ Checklist for Completion
 
@@ -217,13 +225,15 @@ This resolution is:
 - ✅ **Secure** - Security analysis done
 - ✅ **Ready** - Can be applied immediately
 
-**The ball is now in the repository maintainer's court** to choose an application method and merge this resolution.
+**The ball is now in the repository maintainer's court** to choose an
+application method and merge this resolution.
 
 ---
 
-**Resolved by:** Copilot SWE Agent  
-**Date:** January 22, 2026  
-**Branch:** `copilot/fix-merge-conflicts-pr-144`  
+**Resolved by:** Copilot SWE Agent\
+**Date:** January 22, 2026\
+**Branch:** `copilot/fix-merge-conflicts-pr-144`\
 **Commits:** 6cb4e33, 06af9c1, efe8b42, d8a8452
 
-**Need more details?** See `PR144_RESOLUTION_GUIDE.md` and `RESOLUTION_SUMMARY.md`
+**Need more details?** See `PR144_RESOLUTION_GUIDE.md` and
+`RESOLUTION_SUMMARY.md`

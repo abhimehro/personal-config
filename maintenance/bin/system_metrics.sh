@@ -39,7 +39,7 @@ log_info "System metrics collection started"
 
 # CPU and Load Metrics
 # Read uptime once to avoid spawning multiple processes and extract load + days together
-read -r LOAD_1MIN LOAD_5MIN LOAD_15MIN UPTIME_DAYS <<< "$(uptime | awk '{
+read -r LOAD_1MIN LOAD_5MIN LOAD_15MIN UPTIME_DAYS <<<"$(uptime | awk '{
 	l15=$NF; l5=$(NF-1); l1=$(NF-2);
 	gsub(/,/, "", l15); gsub(/,/, "", l5); gsub(/,/, "", l1);
 	days="0";
@@ -68,7 +68,7 @@ if command -v vm_stat >/dev/null 2>&1; then
 	VM_STAT=$(vm_stat)
 
 	# Extract memory stats
-	read -r FREE_PAGES ACTIVE_PAGES INACTIVE_PAGES WIRED_PAGES COMPRESSED_PAGES PAGE_SIZE <<< "$(echo "$VM_STAT" | awk '
+	read -r FREE_PAGES ACTIVE_PAGES INACTIVE_PAGES WIRED_PAGES COMPRESSED_PAGES PAGE_SIZE <<<"$(echo "$VM_STAT" | awk '
 		/Pages free:/ { free=$3; sub(/\./, "", free) }
 		/Pages active:/ { active=$3; sub(/\./, "", active) }
 		/Pages inactive:/ { inactive=$3; sub(/\./, "", inactive) }
@@ -106,7 +106,7 @@ if command -v vm_stat >/dev/null 2>&1; then
 fi
 
 # Disk Usage Metrics (enhanced)
-read -r ROOT_USED_GB ROOT_AVAILABLE_GB ROOT_USAGE <<< "$(df -h / | awk 'NR==2 {
+read -r ROOT_USED_GB ROOT_AVAILABLE_GB ROOT_USAGE <<<"$(df -h / | awk 'NR==2 {
 	used=$3; sub(/Gi*/, "", used); sub(/Mi*/, "", used); sub(/B/, "", used)
 	avail=$4; sub(/Gi*/, "", avail); sub(/Mi*/, "", avail); sub(/B/, "", avail)
 	usage=$5; sub(/%/, "", usage)
@@ -155,7 +155,7 @@ fi
 
 # Process and System Load Analysis
 # Read ps aux once to avoid spawning multiple processes
-read -r PROCESS_COUNT HIGH_CPU_PROCESSES HIGH_MEM_PROCESSES <<< "$(ps aux | awk '
+read -r PROCESS_COUNT HIGH_CPU_PROCESSES HIGH_MEM_PROCESSES <<<"$(ps aux | awk '
   NR>1 {
     count++
     if ($3 > 10.0) cpu++
@@ -175,7 +175,7 @@ log_metric "high_memory_processes" "$HIGH_MEM_PROCESSES" "count"
 
 # Maintenance System Health
 # Read launchctl list once to avoid spawning multiple processes
-read -r MAINTENANCE_AGENTS FAILED_AGENTS <<< "$(launchctl list | awk '
+read -r MAINTENANCE_AGENTS FAILED_AGENTS <<<"$(launchctl list | awk '
   /com\.abhimehrotra\.maintenance/ {
     count++
     if ($3 != "0") failed++

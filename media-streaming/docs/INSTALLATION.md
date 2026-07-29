@@ -1,6 +1,8 @@
-#
+# 
 
-> Note: Current media auth is 1Password-first. References below to the media-server credentials file are optional fallback only. 🚀 Installation & Recovery Guide
+> Note: Current media auth is 1Password-first. References below to the
+> media-server credentials file are optional fallback only. 🚀 Installation &
+> Recovery Guide
 
 ## 📥 **Fresh Installation**
 
@@ -217,4 +219,5 @@ curl -u infuse:"$(grep MEDIA_WEBDAV_PASS ~/.config/media-server/credentials | cu
 
 ---
 
-_💡 **Pro Tip**: Keep this documentation in sync with any configuration changes!_
+_💡 **Pro Tip**: Keep this documentation in sync with any configuration
+changes!_

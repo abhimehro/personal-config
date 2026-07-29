@@ -1,8 +1,8 @@
 # PR Visual Recap — alternate agent backends
 
-**Status:** Phase 1 implemented (OpenCode + Mistral)  
+**Status:** Phase 1 implemented (OpenCode + Mistral)\
 **Related:** ABHI-1321 / PR #1670, `.github/workflows/pr-visual-recap.yml`,
-`.github/workflows/refactoring-agent.yml`  
+`.github/workflows/refactoring-agent.yml`\
 **Date:** 2026-07-17 (updated)
 
 ## Goal
@@ -26,12 +26,12 @@ billing differentiator. Vibe stays optional; Antigravity stays Phase 2 only.
 
 ## Configuration
 
-| Name | Values | Notes |
-| --- | --- | --- |
-| `VISUAL_RECAP_AGENT` | **`opencode`** (default) \| `claude` \| `codex` | Set repo var to override |
-| `VISUAL_RECAP_MODEL` | e.g. `mistral/mistral-medium-latest` | OpenCode `provider/model`; defaults to Mistral medium when unset |
-| Secrets | `MISTRAL_API_KEY`, `PLAN_RECAP_TOKEN` | Plan token still required for publish |
-| Optional | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | Only if you switch agent back to claude/codex |
+| Name                 | Values                                          | Notes                                                            |
+| -------------------- | ----------------------------------------------- | ---------------------------------------------------------------- |
+| `VISUAL_RECAP_AGENT` | **`opencode`** (default) \| `claude` \| `codex` | Set repo var to override                                         |
+| `VISUAL_RECAP_MODEL` | e.g. `mistral/mistral-medium-latest`            | OpenCode `provider/model`; defaults to Mistral medium when unset |
+| Secrets              | `MISTRAL_API_KEY`, `PLAN_RECAP_TOKEN`           | Plan token still required for publish                            |
+| Optional             | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`          | Only if you switch agent back to claude/codex                    |
 
 Gate (presence-only):
 
@@ -47,8 +47,9 @@ Mirrors CodeScene’s OpenCode auth pattern:
 1. Resolve model (`VISUAL_RECAP_MODEL` or `mistral/mistral-medium-latest`)
 2. Install pinned `opencode-ai@1.18.3`
 3. Write `~/.local/share/opencode/auth.json` (mode 600) from `MISTRAL_API_KEY`
-4. **SECURITY:** strip PR-head `opencode.json` / `.opencode`, write least-privilege
-   permission config (edit only `recap-source.json`; deny bash/webfetch/websearch)
+4. **SECURITY:** strip PR-head `opencode.json` / `.opencode`, write
+   least-privilege permission config (edit only `recap-source.json`; deny
+   bash/webfetch/websearch)
 5. `opencode run -m … --format json --auto` with one retry if
    `recap-source.json` is missing
 6. Publisher / screenshot / sticky comment unchanged
@@ -58,16 +59,16 @@ Self-modifying guard also skips (on forks / public PRs) when the PR touches
 
 ## Deferred
 
-| Backend | Status |
-| --- | --- |
-| Mistral Vibe (`VISUAL_RECAP_AGENT=vibe`) | Optional later — not needed for Pro quota |
-| Antigravity (`agy`) | Phase 2 spike only (CI/non-TTY sharp edges) |
-
+| Backend                                  | Status                                      |
+| ---------------------------------------- | ------------------------------------------- |
+| Mistral Vibe (`VISUAL_RECAP_AGENT=vibe`) | Optional later — not needed for Pro quota   |
+| Antigravity (`agy`)                      | Phase 2 spike only (CI/non-TTY sharp edges) |
 
 ## Self-modifying guard
 
-- **Forks:** skip if PR touches `AGENTS.md`, `CLAUDE.md`, `.claude/`, `.mcp.json`,
-  `opencode.json`, `.opencode/`, or (when skill source is `repo`) visual skill paths.
+- **Forks:** skip if PR touches `AGENTS.md`, `CLAUDE.md`, `.claude/`,
+  `.mcp.json`, `opencode.json`, `.opencode/`, or (when skill source is `repo`)
+  visual skill paths.
 - **Same-repo:** skip only for runner-loaded configs (`.claude/`, `.mcp.json`,
   `opencode.json`, `.opencode/`, repo skills) — not `AGENTS.md`/`CLAUDE.md` docs
   edits, which false-skipped owner PRs on public repos.
@@ -76,28 +77,31 @@ Self-modifying guard also skips (on forks / public PRs) when the PR touches
 
 Does **not** run on every push. Default events:
 
-| Event | Runs agent? |
-| --- | --- |
-| `opened` / `ready_for_review` / `reopened` | Yes (once per lifecycle event) |
-| `synchronize` (push) | **No** — removed to protect Mistral/API quota |
-| `labeled` with `visual-recap` or `recap` | Yes — explicit refresh |
-| `closed` without merge | Skip |
-| `closed` + merged | Yes (final sticky update) |
+| Event                                      | Runs agent?                                   |
+| ------------------------------------------ | --------------------------------------------- |
+| `opened` / `ready_for_review` / `reopened` | Yes (once per lifecycle event)                |
+| `synchronize` (push)                       | **No** — removed to protect Mistral/API quota |
+| `labeled` with `visual-recap` or `recap`   | Yes — explicit refresh                        |
+| `closed` without merge                     | Skip                                          |
+| `closed` + merged                          | Yes (final sticky update)                     |
 
 Force a refresh without new commits: add label `visual-recap`, or use Actions →
 Re-run jobs on a prior run.
 
 ## Operator checklist
 
-1. Confirm secrets: `MISTRAL_API_KEY`, `PLAN_RECAP_TOKEN` (paste as **one
-   line** — embedded newlines make publish fail with `Headers.append … invalid
-   header value` and can leak JWT fragments into the sticky comment; Lesson 0ei)
+1. Confirm secrets: `MISTRAL_API_KEY`, `PLAN_RECAP_TOKEN` (paste as **one line**
+   — embedded newlines make publish fail with
+   `Headers.append … invalid
+   header value` and can leak JWT fragments into
+   the sticky comment; Lesson 0ei)
 2. Optional repo vars: `VISUAL_RECAP_AGENT=opencode`,
-   `VISUAL_RECAP_MODEL=mistral/mistral-medium-latest`,
-   `RECAP_CLI_VERSION` (pins `@agent-native/recap-cli`, not core)
+   `VISUAL_RECAP_MODEL=mistral/mistral-medium-latest`, `RECAP_CLI_VERSION` (pins
+   `@agent-native/recap-cli`, not core)
 3. Open / ready-for-review a non-draft PR and confirm the sticky recap comment
 4. On failure at **Collect bounded diff** with `spawn tsx ENOENT`: workflow is
-   still on `@agent-native/core` — must use `@agent-native/recap-cli` (Lesson 0eh)
+   still on `@agent-native/core` — must use `@agent-native/recap-cli` (Lesson
+   0eh)
 5. On `Headers.append` / `Bearer [redacted] <fragment>` in the sticky comment:
    re-paste `PLAN_RECAP_TOKEN` as one line (workflow now strips whitespace) and
    **rotate** the token if any JWT fragment was posted
@@ -108,10 +112,10 @@ Re-run jobs on a prior run.
    assembles strict JSON via `JSON.stringify`; control-char sanitize remains a
    fallback for Claude/Codex single-file output.
 8. On `422 … Could not parse expression with acorn`, Callout/MDX structure
-   errors, or `Unexpected character \`[\` before attribute value`: workflow
-   rewrites Diff props, Diff JSX string attrs, bare `columns=`/`rows=` arrays,
-   illegal attr commas, and isolates Callout/Note blocks via
-   `scripts/fix-recap-mdx-diff-strings.js` before publish; re-publishes once
+   errors, or `Unexpected character \`[\` before attribute
+   value`: workflow
+   rewrites Diff props, Diff JSX string attrs, bare`columns=`/`rows=`arrays,
+   illegal attr commas, and isolates Callout/Note blocks via`scripts/fix-recap-mdx-diff-strings.js`before publish; re-publishes once
    after a deterministic repair; then optionally runs a **time-capped** agent
-   repair when `repairable=true` (Lesson 0ej). Not a token issue — rotate
-   `PLAN_RECAP_TOKEN` only for auth / JWT-leak cases (0ei).
+   repair when`repairable=true`(Lesson 0ej). Not a token issue — rotate`PLAN_RECAP_TOKEN`
+   only for auth / JWT-leak cases (0ei).

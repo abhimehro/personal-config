@@ -23,17 +23,49 @@ class TestValidateLine(unittest.TestCase):
             ("# This is a comment", 1, "denylist", True, None),
             ("  # Indented comment", 2, "allowlist", True, None),
             ("example.com", 1, "denylist", True, None),
-            ("example", 1, "denylist", False, "Line 1: Invalid domain format - 'example'"),
-            ("@@example.com", 2, "denylist", False, "Line 2: Invalid domain format - '@@example.com'"),
+            (
+                "example",
+                1,
+                "denylist",
+                False,
+                "Line 1: Invalid domain format - 'example'",
+            ),
+            (
+                "@@example.com",
+                2,
+                "denylist",
+                False,
+                "Line 2: Invalid domain format - '@@example.com'",
+            ),
             ("@@example.com", 1, "allowlist", True, None),
-            ("example.com", 1, "allowlist", False, "Line 1: Invalid allowlist format - 'example.com'"),
-            ("@@example", 2, "allowlist", False, "Line 2: Invalid allowlist format - '@@example'"),
-            ("example.com", 1, "unknown_type", False, "Line 1: Unknown format - 'example.com'")
+            (
+                "example.com",
+                1,
+                "allowlist",
+                False,
+                "Line 1: Invalid allowlist format - 'example.com'",
+            ),
+            (
+                "@@example",
+                2,
+                "allowlist",
+                False,
+                "Line 2: Invalid allowlist format - '@@example'",
+            ),
+            (
+                "example.com",
+                1,
+                "unknown_type",
+                False,
+                "Line 1: Unknown format - 'example.com'",
+            ),
         ]
 
         for line, line_num, file_type, exp_valid, exp_msg in test_cases:
             with self.subTest(line=line, file_type=file_type):
-                is_valid, msg = test_adguard_import.validate_line(line, line_num, file_type)
+                is_valid, msg = test_adguard_import.validate_line(
+                    line, line_num, file_type
+                )
                 self.assertEqual(is_valid, exp_valid)
                 self.assertEqual(msg, exp_msg)
 
@@ -58,13 +90,13 @@ class TestCountLineTypes(unittest.TestCase):
             "example.com",
             "test.com",
             "invalid_domain",
-            "@@not-allowed.com"
+            "@@not-allowed.com",
         ]
         stats, issues = test_adguard_import.count_line_types(lines, "denylist")
 
         expected_issues = [
             "Line 5: Invalid domain format - 'invalid_domain'",
-            "Line 6: Invalid domain format - '@@not-allowed.com'"
+            "Line 6: Invalid domain format - '@@not-allowed.com'",
         ]
         self._assert_stats_and_issues(stats, issues, expected_issues)
 
@@ -75,13 +107,13 @@ class TestCountLineTypes(unittest.TestCase):
             "@@example.com",
             "@@test.com",
             "example.com",
-            "@@invalid"
+            "@@invalid",
         ]
         stats, issues = test_adguard_import.count_line_types(lines, "allowlist")
 
         expected_issues = [
             "Line 5: Invalid allowlist format - 'example.com'",
-            "Line 6: Invalid allowlist format - '@@invalid'"
+            "Line 6: Invalid allowlist format - '@@invalid'",
         ]
         self._assert_stats_and_issues(stats, issues, expected_issues)
 

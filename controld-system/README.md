@@ -20,10 +20,12 @@
 
 This setup provides three resolver profiles for different use cases:
 
-1. **Privacy Enhanced** (`<CONTROL_D_PRIVACY_RESOLVER_ID>`) - Maximum privacy/security filtering
-2. **Browsing Privacy** (`<CONTROL_D_BROWSING_RESOLVER_ID>`) - Balanced privacy for general browsing
-3. **Gaming Optimized** (`<CONTROL_D_GAMING_RESOLVER_ID>`) - Minimal rules for optimal gaming
-   performance
+1. **Privacy Enhanced** (`<CONTROL_D_PRIVACY_RESOLVER_ID>`) - Maximum
+   privacy/security filtering
+2. **Browsing Privacy** (`<CONTROL_D_BROWSING_RESOLVER_ID>`) - Balanced privacy
+   for general browsing
+3. **Gaming Optimized** (`<CONTROL_D_GAMING_RESOLVER_ID>`) - Minimal rules for
+   optimal gaming performance
 
 ## Installation Status
 

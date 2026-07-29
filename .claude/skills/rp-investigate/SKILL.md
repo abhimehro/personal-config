@@ -10,51 +10,89 @@ repoprompt_variant: mcp
 
 Investigate: $ARGUMENTS
 
-You are now in deep investigation mode for the issue described above. Follow this protocol rigorously.
+You are now in deep investigation mode for the issue described above. Follow
+this protocol rigorously.
 
 ## Investigation Protocol
 
 This workflow leverages five complementary capabilities:
 
-- **You (the agent)**: Orchestrate. Triage what the task needs, dispatch explore agents for external fact-gathering, run `context_builder`, dispatch a pair investigator, curate the file selection, and synthesize the final report. Default posture: coordination, not reconnaissance.
-- **Explore agents** (`agent_run` with `model_id:"explore"`): Read-only sub-agents in a fresh context window, for narrow self-contained questions. Used in two places: (1) **before `context_builder`**, for facts outside the workspace (git archaeology, web searches, external docs — findings go to `## Background / Prior Research` in the report); (2) **spawned by the pair** for in-workspace checks.
-- **Context Builder** (`context_builder`): Populates the file selection with full files or slices relevant to the task. Feed it the report path so prior research informs the selection.
-- **Chat** (`oracle_send`): Deep analytical reasoning over the current file selection. Good for synthesis across selected files; not a lookup tool.
-- **Pair investigator** (`agent_run` with `model_id:"pair"`): Full-capability agent for the main line of inquiry. Reads files, runs git, spawns its own explore agents, and writes findings into `## Investigator Findings` in the report.
+- **You (the agent)**: Orchestrate. Triage what the task needs, dispatch explore
+  agents for external fact-gathering, run `context_builder`, dispatch a pair
+  investigator, curate the file selection, and synthesize the final report.
+  Default posture: coordination, not reconnaissance.
+- **Explore agents** (`agent_run` with `model_id:"explore"`): Read-only
+  sub-agents in a fresh context window, for narrow self-contained questions.
+  Used in two places: (1) **before `context_builder`**, for facts outside the
+  workspace (git archaeology, web searches, external docs — findings go to
+  `## Background / Prior Research` in the report); (2) **spawned by the pair**
+  for in-workspace checks.
+- **Context Builder** (`context_builder`): Populates the file selection with
+  full files or slices relevant to the task. Feed it the report path so prior
+  research informs the selection.
+- **Chat** (`oracle_send`): Deep analytical reasoning over the current file
+  selection. Good for synthesis across selected files; not a lookup tool.
+- **Pair investigator** (`agent_run` with `model_id:"pair"`): Full-capability
+  agent for the main line of inquiry. Reads files, runs git, spawns its own
+  explore agents, and writes findings into `## Investigator Findings` in the
+  report.
 
-This workflow is read-only. Output lands in the investigation report; no source code changes.
+This workflow is read-only. Output lands in the investigation report; no source
+code changes.
 
 ### How File Selection Drives the Workflow
 
-**The pair's and explores' file reads don't populate your file selection** — they run in their own sessions. Selection curation is **your** job: the chat only sees what's in the selection in your window.
+**The pair's and explores' file reads don't populate your file selection** —
+they run in their own sessions. Selection curation is **your** job: the chat
+only sees what's in the selection in your window.
 
 1. `context_builder` seeds the selection during Phase 2
-2. After the pair returns, refresh the selection to match what the investigation surfaced — add files the pair referenced, add slices of large files where only a region is relevant, remove fully unrelated files
-3. **Bias toward inclusion** — better for the chat to see a related file than miss one. Prune only files/codemaps that are clearly unrelated; when in doubt, keep them
-4. **Never `op:"clear"` or `op:"set"`** — they wipe `context_builder`'s curation. Use `op:"add"` / `op:"remove"` / slices
+2. After the pair returns, refresh the selection to match what the investigation
+   surfaced — add files the pair referenced, add slices of large files where
+   only a region is relevant, remove fully unrelated files
+3. **Bias toward inclusion** — better for the chat to see a related file than
+   miss one. Prune only files/codemaps that are clearly unrelated; when in
+   doubt, keep them
+4. **Never `op:"clear"` or `op:"set"`** — they wipe `context_builder`'s
+   curation. Use `op:"add"` / `op:"remove"` / slices
 
 ### Core Principles
+
 1. **Don't stop until confident** — pursue every lead until evidence is solid
-2. **Delegate before reading** — phases below lay out the default order (explore → `context_builder` → pair → chat). You orchestrate; the pair writes findings directly to the report.
-3. **Curate the selection between chat calls** — the pair's reads aren't visible in your selection; add files it surfaced, bias toward inclusion
-4. **Direct tool calls are for follow-up** — reserve your own `read_file` / `file_search` / `git` for user-supplied leads, verifying agent findings, and grabbing final line-number evidence
-5. **Don't duplicate in-flight work** — while agents are running, don't re-run their investigation or spin up overlapping fleets
+2. **Delegate before reading** — phases below lay out the default order (explore
+   → `context_builder` → pair → chat). You orchestrate; the pair writes findings
+   directly to the report.
+3. **Curate the selection between chat calls** — the pair's reads aren't visible
+   in your selection; add files it surfaced, bias toward inclusion
+4. **Direct tool calls are for follow-up** — reserve your own `read_file` /
+   `file_search` / `git` for user-supplied leads, verifying agent findings, and
+   grabbing final line-number evidence
+5. **Don't duplicate in-flight work** — while agents are running, don't re-run
+   their investigation or spin up overlapping fleets
 
 ### Phase 0: Workspace Verification (REQUIRED)
 
-Before any investigation, bind to the target codebase using its working directory:
+Before any investigation, bind to the target codebase using its working
+directory:
 
 ```json
-{"tool":"bind_context","args":{"op":"bind","working_dirs":["/absolute/path/to/project"]}}
+{
+  "tool": "bind_context",
+  "args": { "op": "bind", "working_dirs": ["/absolute/path/to/project"] }
+}
 ```
-This auto-resolves to the window containing your project. No need to list windows first.
 
-**If binding succeeds** → proceed to Phase 1
-**If no match** → the codebase isn't loaded. Find and open the workspace:
+This auto-resolves to the window containing your project. No need to list
+windows first.
+
+**If binding succeeds** → proceed to Phase 1 **If no match** → the codebase
+isn't loaded. Find and open the workspace:
+
 ```json
 {"tool":"manage_workspaces","args":{"action":"list"}}
 {"tool":"manage_workspaces","args":{"action":"switch","workspace":"<workspace_name>","open_in_new_window":true}}
 ```
+
 Then retry the `working_dirs` bind.
 
 ---
@@ -209,26 +247,25 @@ mcp__RepoPrompt__`oracle_send`:
 - **Eliminated hypotheses** — and the evidence that ruled them out
 - **Recommended fixes** — specific, actionable, with file locations
 - **Preventive measures** — how to avoid this recurring
-
 ---
 
 ## Role Summary
 
-| Capability | Agent (you) | Context Builder | Chat (`oracle_send`) | Pair Investigator | Explore Agents |
-|------------|-------------|-----------------|--------|-------------------|----------------|
-| Triage / orchestrate | ✅ Primary | ❌ | ❌ | ❌ | ❌ |
-| Dispatch sub-agents | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Discover files in workspace | ⚠️ Limited | ✅ Primary | ❌ | ✅ Good | ⚠️ Narrow |
-| Populate file selection | ✅ (curate) | ✅ Primary (seed) | ❌ | ❌ | ❌ |
-| Mutate selection to refocus chat | ✅ Primary | ❌ | ❌ | ❌ | ❌ |
-| Read file contents & lines | ✅ | ❌ | Sees full selected files | ✅ | ✅ |
-| Run git blame/log/diff | ✅ | ❌ | ❌ | ✅ | ✅ |
-| **Web searches / external docs** | ❌ | ❌ | ❌ | ❌ | ✅ Primary |
-| Multi-step cross-file reasoning | ⚠️ OK | ❌ | ✅ (on selection) | ✅ Primary | ❌ |
-| Synthesize patterns & architecture | ⚠️ OK | ❌ | ✅ Primary | ✅ Good | ⚠️ OK |
-| Form & refine hypotheses | ⚠️ OK | ❌ | ✅ Primary | ✅ Good | ❌ |
-| Produce line-number evidence | ✅ (verify/augment) | ❌ | ❌ | ✅ Primary | ✅ |
-| Write findings into report | ✅ (final synthesis) | ❌ | ❌ | ✅ Primary | ❌ |
+| Capability                         | Agent (you)          | Context Builder   | Chat (`oracle_send`)     | Pair Investigator | Explore Agents |
+| ---------------------------------- | -------------------- | ----------------- | ------------------------ | ----------------- | -------------- |
+| Triage / orchestrate               | ✅ Primary           | ❌                | ❌                       | ❌                | ❌             |
+| Dispatch sub-agents                | ✅                   | ❌                | ❌                       | ✅                | ❌             |
+| Discover files in workspace        | ⚠️ Limited           | ✅ Primary        | ❌                       | ✅ Good           | ⚠️ Narrow      |
+| Populate file selection            | ✅ (curate)          | ✅ Primary (seed) | ❌                       | ❌                | ❌             |
+| Mutate selection to refocus chat   | ✅ Primary           | ❌                | ❌                       | ❌                | ❌             |
+| Read file contents & lines         | ✅                   | ❌                | Sees full selected files | ✅                | ✅             |
+| Run git blame/log/diff             | ✅                   | ❌                | ❌                       | ✅                | ✅             |
+| **Web searches / external docs**   | ❌                   | ❌                | ❌                       | ❌                | ✅ Primary     |
+| Multi-step cross-file reasoning    | ⚠️ OK                | ❌                | ✅ (on selection)        | ✅ Primary        | ❌             |
+| Synthesize patterns & architecture | ⚠️ OK                | ❌                | ✅ Primary               | ✅ Good           | ⚠️ OK          |
+| Form & refine hypotheses           | ⚠️ OK                | ❌                | ✅ Primary               | ✅ Good           | ❌             |
+| Produce line-number evidence       | ✅ (verify/augment)  | ❌                | ❌                       | ✅ Primary        | ✅             |
+| Write findings into report         | ✅ (final synthesis) | ❌                | ❌                       | ✅ Primary        | ❌             |
 
 ---
 
@@ -240,17 +277,21 @@ Create a findings report as you investigate:
 # Investigation: [Title]
 
 ## Summary
+
 [1-2 sentence summary of findings]
 
 ## Symptoms
+
 - [Observed symptom 1]
 - [Observed symptom 2]
 
 ## Background / Prior Research
+
 <!-- Findings from Phase 1.5 explore agents: git archaeology, external docs, web searches.
      The agent populates this section before running the context builder. Omit if nothing outside the workspace was needed. -->
 
 ## Investigator Findings
+
 <!-- The pair investigator appends its structured analysis here (file:line refs, evidence, conclusions).
      The agent leaves this section for the pair to populate and folds it into the root cause below.
 
@@ -263,19 +304,22 @@ Create a findings report as you investigate:
 ## Investigation Log
 
 ### [Phase] - [Area Investigated]
-**Hypothesis:** [What you were testing]
-**Findings:** [What you found]
+
+**Hypothesis:** [What you were testing] **Findings:** [What you found]
 **Evidence:** [Exact file paths, line numbers, code snippets, git commits]
 **Conclusion:** [Confirmed/Eliminated/Needs more investigation]
 
 ## Root Cause
+
 [Detailed explanation with precise evidence]
 
 ## Recommendations
+
 1. [Fix 1 — specific file and location]
 2. [Fix 2 — specific file and location]
 
 ## Preventive Measures
+
 - [How to prevent this in future]
 ```
 
@@ -283,18 +327,34 @@ Create a findings report as you investigate:
 
 ## Anti-patterns to Avoid
 
-- 🚫 **Running `context_builder` with incomplete inputs** — before Phase 1.5 external research, or without the report path
+- 🚫 **Running `context_builder` with incomplete inputs** — before Phase 1.5
+  external research, or without the report path
 - 🚫 Skipping Phase 0 — confirm the target codebase is loaded first
-- 🚫 **Skipping `context_builder`** or doing broad manual reads — you'll miss context
-- 🚫 **Duplicating in-flight work** — broad reads/searches or parallel explore agents at your level while the pair is investigating. Dispatch, then orchestrate.
-- 🚫 **Stale file selection before chat calls** — the pair's reads aren't in your selection; add files it surfaced, bias toward inclusion, never `op:"clear"`/`op:"set"` (wipes `context_builder`'s curation)
-- 🚫 Asking the chat for exact line numbers or using it for lookups — it can't produce reliable line numbers and it's not a lookup tool; verify yourself or delegate to a tool call
+- 🚫 **Skipping `context_builder`** or doing broad manual reads — you'll miss
+  context
+- 🚫 **Duplicating in-flight work** — broad reads/searches or parallel explore
+  agents at your level while the pair is investigating. Dispatch, then
+  orchestrate.
+- 🚫 **Stale file selection before chat calls** — the pair's reads aren't in
+  your selection; add files it surfaced, bias toward inclusion, never
+  `op:"clear"`/`op:"set"` (wipes `context_builder`'s curation)
+- 🚫 Asking the chat for exact line numbers or using it for lookups — it can't
+  produce reliable line numbers and it's not a lookup tool; verify yourself or
+  delegate to a tool call
 - 🚫 Calling the chat without new evidence between turns
-- 🚫 **Parallel pair investigators on overlapping hypotheses** — only parallelize for genuinely disjoint paths; each pair gets its own `## Investigator Findings: <path>` sub-section
-- 🚫 Dispatching the pair without the report path — it should append findings directly
-- 🚫 Wrong tool for the job — explore agents for complex multi-step in-workspace investigation (use the pair), or broad prompts like "investigate the auth system" to explores (one specific check each)
-- 🚫 Forgetting to poll dispatched agents — they may block on permission approvals
+- 🚫 **Parallel pair investigators on overlapping hypotheses** — only
+  parallelize for genuinely disjoint paths; each pair gets its own
+  `## Investigator Findings: <path>` sub-section
+- 🚫 Dispatching the pair without the report path — it should append findings
+  directly
+- 🚫 Wrong tool for the job — explore agents for complex multi-step in-workspace
+  investigation (use the pair), or broad prompts like "investigate the auth
+  system" to explores (one specific check each)
+- 🚫 Forgetting to poll dispatched agents — they may block on permission
+  approvals
 
 ---
 
-Now begin. Follow the phases above: assess → (if needed) gather external facts → `context_builder` → pair investigator → refresh selection → chat synthesis → report. You orchestrate, they investigate.
+Now begin. Follow the phases above: assess → (if needed) gather external facts →
+`context_builder` → pair investigator → refresh selection → chat synthesis →
+report. You orchestrate, they investigate.

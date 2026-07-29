@@ -2,7 +2,9 @@
 
 ## Overview
 
-Fast tests enable rapid development cycles. This repo has shell-based tests, Python tests (unittest), and performance benchmarks. Target: full test suite under 30 seconds.
+Fast tests enable rapid development cycles. This repo has shell-based tests,
+Python tests (unittest), and performance benchmarks. Target: full test suite
+under 30 seconds.
 
 ## Current Test Structure
 
@@ -82,13 +84,16 @@ find tests -name 'test_*.py' | \
   parallel -j4 python -m unittest {}
 ```
 
-**Impact:** Significant speedup if tests are independent. Note: unittest doesn't have built-in parallel execution like pytest-xdist, so shell-level parallelization is used.
+**Impact:** Significant speedup if tests are independent. Note: unittest doesn't
+have built-in parallel execution like pytest-xdist, so shell-level
+parallelization is used.
 
 ### 3. Repeated Setup/Teardown
 
 **Problem:** Each test creates/deletes same fixtures
 
-**Solution:** Use shared setup with unittest setUpClass/tearDownClass (or equivalent)
+**Solution:** Use shared setup with unittest setUpClass/tearDownClass (or
+equivalent)
 
 ```python
 import unittest
@@ -422,4 +427,5 @@ grep "mock" tests/*.py | wc -l
 - Average test <100ms
 - Total suite <30s
 
-**Key principle:** Fast tests are run tests. Optimize for speed without sacrificing coverage or reliability. Mock external dependencies aggressively.
+**Key principle:** Fast tests are run tests. Optimize for speed without
+sacrificing coverage or reliability. Mock external dependencies aggressively.

@@ -1,10 +1,14 @@
 # Testing Patterns & Mocking Guide
 
-This guide documents the mock and test patterns used across `tests/`. Read this before writing a new test — especially for `maintenance/bin/` scripts (see issue #439) — so you don't need to reverse-engineer existing tests from scratch.
+This guide documents the mock and test patterns used across `tests/`. Read this
+before writing a new test — especially for `maintenance/bin/` scripts (see issue
+#439) — so you don't need to reverse-engineer existing tests from scratch.
 
 ## Quick reference: test helpers
 
-Most unit-style shell test files in this repo use the same small set of named helpers. For new tests, copy these verbatim into a new test file (some older or ad‑hoc tests may use custom assertions instead):
+Most unit-style shell test files in this repo use the same small set of named
+helpers. For new tests, copy these verbatim into a new test file (some older or
+ad‑hoc tests may use custom assertions instead):
 
 ```bash
 PASS=0
@@ -54,13 +58,16 @@ check_exit() {
 }
 ```
 
-Real examples: `tests/test_health_check.sh`, `tests/test_system_cleanup.sh`, `tests/test_google_drive_backup.sh`.
+Real examples: `tests/test_health_check.sh`, `tests/test_system_cleanup.sh`,
+`tests/test_google_drive_backup.sh`.
 
 ---
 
 ## Pattern 1 — `$MOCK_BIN` / PATH injection
 
-The most common pattern. Create a temporary directory of fake executables and prepend it to `PATH` so the script-under-test picks up your fakes instead of the real system tools.
+The most common pattern. Create a temporary directory of fake executables and
+prepend it to `PATH` so the script-under-test picks up your fakes instead of the
+real system tools.
 
 ```bash
 TEST_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'test-mytest')
@@ -87,19 +94,23 @@ chmod +x "$MOCK_BIN/ping"
 PATH="$MOCK_BIN:$PATH" bash "$SCRIPT" > "$TEST_DIR/out.log" 2>&1
 ```
 
-Real examples: `tests/test_health_check.sh:42–88`, `tests/test_network_mode_manager.sh:13–49`.
+Real examples: `tests/test_health_check.sh:42–88`,
+`tests/test_network_mode_manager.sh:13–49`.
 
 **Key rules:**
 
 - Always put `MOCK_BIN` _before_ the existing `$PATH`.
 - Always `chmod +x` every mock binary.
-- Use `trap 'rm -rf "$TEST_DIR"' EXIT` — not manual `rm` at the end — so cleanup runs even on error.
+- Use `trap 'rm -rf "$TEST_DIR"' EXIT` — not manual `rm` at the end — so cleanup
+  runs even on error.
 
 ---
 
 ## Pattern 2 — Log-file assertion (assert a command was called)
 
-When you need to verify that a script _invoked a specific command with specific arguments_, write the mock so it records its invocation to a log file, then assert against that file.
+When you need to verify that a script _invoked a specific command with specific
+arguments_, write the mock so it records its invocation to a log file, then
+assert against that file.
 
 ```bash
 CALL_LOG="$TEST_DIR/launchctl-calls.log"
@@ -120,13 +131,16 @@ check_grep "launchctl load was called" \
     "launchctl called: load" "$CALL_LOG"
 ```
 
-Real examples: `tests/test_media_server_env_vars.sh` (rclone log written to `$HOME/Library/Logs/media-server.log`, then asserted with `grep`).
+Real examples: `tests/test_media_server_env_vars.sh` (rclone log written to
+`$HOME/Library/Logs/media-server.log`, then asserted with `grep`).
 
 ---
 
 ## Pattern 3 — Mock `HOME` isolation
 
-Scripts that write to `~/Library/Logs/` or read from `~/.config/` need an isolated home directory so tests don't touch real user data and so multiple parallel test runs don't collide.
+Scripts that write to `~/Library/Logs/` or read from `~/.config/` need an
+isolated home directory so tests don't touch real user data and so multiple
+parallel test runs don't collide.
 
 ```bash
 MOCK_HOME="$TEST_DIR/home"
@@ -140,13 +154,16 @@ check_grep "health_check.log created" \
     "Disk usage" "$MOCK_HOME/Library/Logs/maintenance/health_check.log"
 ```
 
-Real examples: `tests/test_health_check.sh:73–78`, `tests/test_media_server_env_vars.sh:5–7`.
+Real examples: `tests/test_health_check.sh:73–78`,
+`tests/test_media_server_env_vars.sh:5–7`.
 
 ---
 
 ## Pattern 4 — Script-patching via `sed` (when PATH injection is not enough)
 
-Some scripts hardcode dependency paths (e.g. `IPV6_MANAGER="/path/to/script"`) or use `BASH_SOURCE`-relative paths that cannot be intercepted via `PATH`. In that case, copy the script to `$TEST_DIR` and patch it with `sed`.
+Some scripts hardcode dependency paths (e.g. `IPV6_MANAGER="/path/to/script"`)
+or use `BASH_SOURCE`-relative paths that cannot be intercepted via `PATH`. In
+that case, copy the script to `$TEST_DIR` and patch it with `sed`.
 
 ```bash
 # Copy script so we don't modify the repo copy
@@ -163,15 +180,20 @@ fi
 bash "$TEST_MANAGER" controld browsing > "$TEST_DIR/out.log" 2>&1
 ```
 
-Real examples: `tests/test_network_mode_manager.sh:57–71`, `tests/test_security_manager_restore.sh:39–48`.
+Real examples: `tests/test_network_mode_manager.sh:57–71`,
+`tests/test_security_manager_restore.sh:39–48`.
 
-> **Note:** `sed -i ''` (BSD/macOS) and `sed -i` (GNU/Linux) differ. Always branch on `$(uname -s)` when patching scripts in tests that run on both platforms.
+> **Note:** `sed -i ''` (BSD/macOS) and `sed -i` (GNU/Linux) differ. Always
+> branch on `$(uname -s)` when patching scripts in tests that run on both
+> platforms.
 
 ---
 
 ## Pattern 5 — Platform-skip for macOS-only assertions
 
-Some assertions can only run on macOS (e.g. `launchctl`, BSD `sed`, 1Password agent socket). Guard them with a `uname` check rather than letting the test silently pass or noisily fail.
+Some assertions can only run on macOS (e.g. `launchctl`, BSD `sed`, 1Password
+agent socket). Guard them with a `uname` check rather than letting the test
+silently pass or noisily fail.
 
 ```bash
 if [[ "$(uname -s)" == "Darwin" ]]; then
@@ -195,7 +217,9 @@ fi
 
 ## Pattern 6 — Capturing output of expected-to-fail commands under `set -e`
 
-Under `set -euo pipefail`, a command that exits non-zero aborts the test. Use `|| true` (or capture the exit code manually) when you deliberately expect failure:
+Under `set -euo pipefail`, a command that exits non-zero aborts the test. Use
+`|| true` (or capture the exit code manually) when you deliberately expect
+failure:
 
 ```bash
 # Correct: prevent set -e from aborting the test
@@ -207,15 +231,16 @@ bash "$SCRIPT" --bad-flag > "$TEST_DIR/out.log" 2>&1 || actual=$?
 [[ "$actual" -eq 2 ]] || { echo "FAIL: expected exit 2, got $actual"; FAIL=$((FAIL+1)); }
 ```
 
-Real examples: `tests/test_media_server_env_vars.sh:112`, `tests/test_lib_dns_utils.sh:135`.
+Real examples: `tests/test_media_server_env_vars.sh:112`,
+`tests/test_lib_dns_utils.sh:135`.
 
 ---
 
 ## Pattern 7 — Credential file parsing with `parse_cred_value()`
 
 Media-server credential files use shell assignment syntax (`KEY='value'`). Using
-`cut -d'=' -f2-` directly returns values with surrounding single quotes
-(e.g. `'infuse'`), causing string comparisons to fail silently.
+`cut -d'=' -f2-` directly returns values with surrounding single quotes (e.g.
+`'infuse'`), causing string comparisons to fail silently.
 
 Use the shared `parse_cred_value()` helper from `tests/lib/test_helpers.sh`
 instead:
@@ -235,7 +260,8 @@ pass=$(parse_cred_value "$(grep '^MEDIA_WEBDAV_PASS=' "$CREDS_FILE")")
 [[ "$user" == "infuse" ]] || { echo "FAIL: unexpected user '$user'"; FAIL=$((FAIL+1)); }
 ```
 
-Real example: `tests/test_media_server_auth.sh` (sources `tests/lib/test_helpers.sh`).
+Real example: `tests/test_media_server_auth.sh` (sources
+`tests/lib/test_helpers.sh`).
 
 ---
 
@@ -330,7 +356,9 @@ echo "=== Results: $PASS passed, $FAIL failed ==="
 
 ## Tests that skip on Linux/CI
 
-The following tests contain early-exit skip guards that print `SKIP:` and exit 77 on Linux/CI. They are **not failures** — `make test` will show them as `⏭️ skipped`:
+The following tests contain early-exit skip guards that print `SKIP:` and exit
+77 on Linux/CI. They are **not failures** — `make test` will show them as
+`⏭️ skipped`:
 
 | Test file                                | Skip Reason                                                                   | Guard                |
 | ---------------------------------------- | ----------------------------------------------------------------------------- | -------------------- |
@@ -339,13 +367,16 @@ The following tests contain early-exit skip guards that print `SKIP:` and exit 7
 | `tests/test_security_manager_restore.sh` | Uses BSD `sed -i ''` syntax (macOS only)                                      | `uname -s == Darwin` |
 | `tests/test_network_mode_manager.sh`     | `network-mode-manager.sh` issues `sudo` commands unavailable in CI containers | `sudo -n true`       |
 
-If you add a new test that is intentionally macOS-only, add a `uname` guard at the top (Pattern 5 above) and add an entry to this table.
+If you add a new test that is intentionally macOS-only, add a `uname` guard at
+the top (Pattern 5 above) and add an entry to this table.
 
 ---
 
 ## Smoke test subset (`make test-quick`)
 
-A curated subset of fast, cross-platform tests is wired into `make test-quick`. Use this target for quick pre-commit feedback without running the full suite (~23 tests).
+A curated subset of fast, cross-platform tests is wired into `make test-quick`.
+Use this target for quick pre-commit feedback without running the full suite
+(~23 tests).
 
 **Included tests:**
 
@@ -355,11 +386,13 @@ A curated subset of fast, cross-platform tests is wired into `make test-quick`. 
 | `tests/test_lib_dns_utils.sh`   | `scripts/lib/dns-utils.sh` — caching, health-check       |
 | `tests/test_path_validation.py` | Path validation utilities                                |
 
-All three tests run on macOS and Linux and complete in well under 10 seconds total.
+All three tests run on macOS and Linux and complete in well under 10 seconds
+total.
 
 ### Pre-commit hook example
 
-Add the following to `.git/hooks/pre-commit` to gate every commit on the smoke suite:
+Add the following to `.git/hooks/pre-commit` to gate every commit on the smoke
+suite:
 
 ```bash
 #!/bin/sh

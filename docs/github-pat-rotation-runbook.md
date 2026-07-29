@@ -118,7 +118,8 @@ must be rotated separately (Step 1).
 ## Code references
 
 - `gh_token_env.py` — safe env-file parsing for Python automation
-- `scripts/ensure_gh_token.sh` — executable token resolver; must not be `source`d
+- `scripts/ensure_gh_token.sh` — executable token resolver; must not be
+  `source`d
 - `.gitignore` — `GH_TOKEN.env` at repo root
 - `tasks/security-remediation-plan-2026-05-01.md` — Issue 1 tracking
 

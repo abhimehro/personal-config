@@ -23,12 +23,19 @@ class TestRunBacklogManager(TestCase):
     @patch("repository_automation_tasks.write_result")
     @patch("repository_automation_tasks.now_utc")
     @patch("repository_automation_tasks._fetch_backlog_items")
-    def test_run_backlog_manager_success(self, mock_fetch, mock_now_utc, mock_write_result):
+    def test_run_backlog_manager_success(
+        self, mock_fetch, mock_now_utc, mock_write_result
+    ):
         from datetime import datetime, timezone
 
         mock_now_utc.return_value = datetime(2023, 10, 15, tzinfo=timezone.utc)
         issues = [
-            {"number": 1, "title": "Issue 1", "updatedAt": "2023-10-10T00:00:00Z", "url": "url1"}
+            {
+                "number": 1,
+                "title": "Issue 1",
+                "updatedAt": "2023-10-10T00:00:00Z",
+                "url": "url1",
+            }
         ]
         prs = [
             {
@@ -55,12 +62,19 @@ class TestRunBacklogManager(TestCase):
     @patch("repository_automation_tasks.write_result")
     @patch("repository_automation_tasks.now_utc")
     @patch("repository_automation_tasks._fetch_backlog_items")
-    def test_run_backlog_manager_warning(self, mock_fetch, mock_now_utc, mock_write_result):
+    def test_run_backlog_manager_warning(
+        self, mock_fetch, mock_now_utc, mock_write_result
+    ):
         from datetime import datetime, timezone
 
         mock_now_utc.return_value = datetime(2023, 10, 15, tzinfo=timezone.utc)
         issues = [
-            {"number": 1, "title": "Old Issue", "updatedAt": "2023-09-01T00:00:00Z", "url": "url1"}
+            {
+                "number": 1,
+                "title": "Old Issue",
+                "updatedAt": "2023-09-01T00:00:00Z",
+                "url": "url1",
+            }
         ]
         prs = [
             {

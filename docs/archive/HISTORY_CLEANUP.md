@@ -2,7 +2,8 @@
 
 ## What Was Done
 
-Removed terminal history files containing OAuth tokens from entire git history using `git-filter-repo`.
+Removed terminal history files containing OAuth tokens from entire git history
+using `git-filter-repo`.
 
 ## Commands Executed
 
@@ -39,9 +40,11 @@ After cleanup:
 git push --force-with-lease origin main
 ```
 
-**Warning**: Force pushing rewrites history. If others have cloned the repository, they'll need to re-clone or reset their local copies.
+**Warning**: Force pushing rewrites history. If others have cloned the
+repository, they'll need to re-clone or reset their local copies.
 
-**Note**: The commit hash `ff6b271` no longer exists - it was rewritten. All commits after it have new hashes.
+**Note**: The commit hash `ff6b271` no longer exists - it was rewritten. All
+commits after it have new hashes.
 
 ## After Force Push
 

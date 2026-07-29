@@ -1,14 +1,15 @@
 # Control D Troubleshooting - WORKING SYSTEM
 
-This guide covers troubleshooting for the **verified working** Control D configuration.
+This guide covers troubleshooting for the **verified working** Control D
+configuration.
 
-> **Current Implementation Note (v4.1+):** The active system now uses
-> DoH3, a LaunchDaemon, and the enhanced maintenance monitor via
-> `controld-manager` + `scripts/network-mode-manager.sh`. This document
-> describes the earlier standalone setup and remains useful for
-> low-level debugging, but any references below that say "avoid DoH3",
-> "avoid LaunchDaemons", or prefer `type = 'doh'` should be read as
-> historical context, not current best practice.
+> **Current Implementation Note (v4.1+):** The active system now uses DoH3, a
+> LaunchDaemon, and the enhanced maintenance monitor via `controld-manager` +
+> `scripts/network-mode-manager.sh`. This document describes the earlier
+> standalone setup and remains useful for low-level debugging, but any
+> references below that say "avoid DoH3", "avoid LaunchDaemons", or prefer
+> `type = 'doh'` should be read as historical context, not current best
+> practice.
 
 ## 🎯 **Quick Validation Checklist**
 
@@ -39,8 +40,7 @@ controld-manager status
 ### **Issue: Raycast Shows "Disconnected"**
 
 **Symptoms**: Extension shows not connected, IP location shows real location
-**Cause**: Service not actually connecting to Control D
-**Solution**:
+**Cause**: Service not actually connecting to Control D **Solution**:
 
 ```bash
 # Restart current profile
@@ -53,8 +53,7 @@ dig @127.0.0.1 p.controld.com +short
 ### **Issue: IP Location Not Changing**
 
 **Symptoms**: Location always shows real location regardless of profile
-**Cause**: DNS not routing through Control D properly
-**Solution**:
+**Cause**: DNS not routing through Control D properly **Solution**:
 
 ```bash
 # Check system DNS configuration
@@ -84,8 +83,7 @@ sudo controld-manager switch <desired_profile>
 
 ### **Issue: DNS Resolution Slow/Failing**
 
-**Symptoms**: Websites load slowly, DNS timeouts
-**Solution**:
+**Symptoms**: Websites load slowly, DNS timeouts **Solution**:
 
 ```bash
 # Check if service is running
@@ -100,8 +98,7 @@ time dig @127.0.0.1 google.com +short
 
 ### **Issue: Ad Blocking Not Working**
 
-**Symptoms**: Ads still showing with privacy profile
-**Solution**:
+**Symptoms**: Ads still showing with privacy profile **Solution**:
 
 ```bash
 # Verify privacy profile is active
@@ -166,21 +163,19 @@ sudo ifconfig en0 down && sudo ifconfig en0 up
 
 ## ⚠️ **Legacy Pitfalls (Historical)**
 
-The bullets in this section captured an earlier, broken design where
-DoH3, a misconfigured LaunchDaemon, and ad-hoc monitoring produced
-unreliable behavior. The current v4.1+ setup has fixed these issues and
-**does** use DoH3, a LaunchDaemon, and the consolidated
-`controld_monitor.sh` checks. Keep these notes as guardrails against
-reintroducing the _old_ failure modes:
+The bullets in this section captured an earlier, broken design where DoH3, a
+misconfigured LaunchDaemon, and ad-hoc monitoring produced unreliable behavior.
+The current v4.1+ setup has fixed these issues and **does** use DoH3, a
+LaunchDaemon, and the consolidated `controld_monitor.sh` checks. Keep these
+notes as guardrails against reintroducing the _old_ failure modes:
 
 ❌ Avoid rolling your own unvalidated DoH3 configs outside the
-`controld-manager` + `network-mode-manager.sh` path.
-❌ Avoid creating additional LaunchDaemons for `ctrld` beyond the one
-installed by `ctrld service`.
-❌ Don't hand-edit live TOML files on disk without backups and tests;
-prefer regeneration via `controld-manager`.
-❌ Don't bolt on extra monitoring scripts that duplicate what
-`maintenance/controld_monitor.sh` already checks.
+`controld-manager` + `network-mode-manager.sh` path. ❌ Avoid creating
+additional LaunchDaemons for `ctrld` beyond the one installed by
+`ctrld service`. ❌ Don't hand-edit live TOML files on disk without backups and
+tests; prefer regeneration via `controld-manager`. ❌ Don't bolt on extra
+monitoring scripts that duplicate what `maintenance/controld_monitor.sh` already
+checks.
 
 ## ✅ **Verification Commands**
 
@@ -227,4 +222,5 @@ If issues persist after following this guide:
    cat verification/working_system_state.txt
    ```
 
-Remember: This system has been extensively tested and verified. Most issues are due to network changes or service conflicts, not configuration problems.
+Remember: This system has been extensively tested and verified. Most issues are
+due to network changes or service conflicts, not configuration problems.

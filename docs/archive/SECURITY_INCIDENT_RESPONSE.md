@@ -2,12 +2,14 @@
 
 ## 🚨 Critical Security Issue
 
-**Date**: November 24, 2025
-**Status**: RESOLVED - Tokens removed from repository
+**Date**: November 24, 2025 **Status**: RESOLVED - Tokens removed from
+repository
 
 ## What Happened
 
-Terminal history files (`.cursor/projects/.../terminals/7.txt`) contained Google OAuth access tokens and refresh tokens that were accidentally committed to git. GitHub's push protection correctly blocked the push.
+Terminal history files (`.cursor/projects/.../terminals/7.txt`) contained Google
+OAuth access tokens and refresh tokens that were accidentally committed to git.
+GitHub's push protection correctly blocked the push.
 
 ## Tokens Exposed
 
@@ -26,7 +28,8 @@ Terminal history files (`.cursor/projects/.../terminals/7.txt`) contained Google
 
 ### ✅ Immediate Response
 
-1. **Removed files from git tracking**: `git rm --cached` for terminal history files
+1. **Removed files from git tracking**: `git rm --cached` for terminal history
+   files
 2. **Deleted local files**: Removed terminal history files containing tokens
 3. **Fixed .gitignore**: Updated to properly exclude terminal history files
 4. **Verified no other secrets**: Scanned repository for other exposed tokens
@@ -74,8 +77,10 @@ Terminal history files (`.cursor/projects/.../terminals/7.txt`) contained Google
 
 ## Files Removed
 
-- `.cursor/projects/Users-abhimehrotra-Documents-dev-personal-config/terminals/7.txt` (contained OAuth tokens)
-- `.cursor/projects/Users-abhimehrotra-Documents-dev-personal-config/terminals/5.txt` (preventive removal)
+- `.cursor/projects/Users-abhimehrotra-Documents-dev-personal-config/terminals/7.txt`
+  (contained OAuth tokens)
+- `.cursor/projects/Users-abhimehrotra-Documents-dev-personal-config/terminals/5.txt`
+  (preventive removal)
 
 ## .gitignore Updates
 
@@ -86,7 +91,8 @@ Updated to properly exclude terminal history files:
 .cursor/**/terminals/*.txt
 ```
 
-These patterns now come AFTER the `!*.txt` exception, ensuring they're properly excluded.
+These patterns now come AFTER the `!*.txt` exception, ensuring they're properly
+excluded.
 
 ## Verification
 
@@ -131,9 +137,11 @@ git status
 
 1. **Revoke exposed tokens** (CRITICAL - do this now!)
 2. **Re-authenticate rclone** with new tokens
-3. **Commit the removal**: `git commit -m "Remove terminal history files containing OAuth tokens"`
+3. **Commit the removal**:
+   `git commit -m "Remove terminal history files containing OAuth tokens"`
 4. **Push**: `git push origin main`
 
 ---
 
-**Security Lesson**: Terminal history files can contain sensitive information. Always exclude them from version control.
+**Security Lesson**: Terminal history files can contain sensitive information.
+Always exclude them from version control.

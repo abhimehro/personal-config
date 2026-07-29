@@ -9,15 +9,19 @@ The description uses HTML `<p>` tags with timestamped entries on a single line
 (no literal newlines in the final string):
 
 ```html
-<p>Summary of today's episode themes in 1-2 sentences.</p><p>
+<p>Summary of today's episode themes in 1-2 sentences.</p>
+<p>
   (0:00) - Introduction
-</p><p>
+</p>
+<p>
   (0:18) - First segment title - <a href="https://example.com/article-1"
   >source</a>
-</p><p>
+</p>
+<p>
   (1:42) - Second segment title - <a href="https://example.com/article-2"
   >source</a>
-</p><p>(4:30) - Sign-off</p>
+</p>
+<p>(4:30) - Sign-off</p>
 ```
 
 ## Build it from the timeline

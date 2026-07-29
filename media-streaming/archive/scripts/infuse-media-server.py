@@ -3,7 +3,6 @@
 import argparse
 import base64
 import html
-from http.server import SimpleHTTPRequestHandler
 import os
 import secrets
 import socketserver
@@ -11,6 +10,7 @@ import string
 import subprocess
 import sys
 import time
+from http.server import SimpleHTTPRequestHandler
 from urllib.parse import unquote
 
 # Global auth credentials
@@ -270,7 +270,9 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
             if item
         ]
         if not items_html:
-            items_html.append('<li><span class="file" style="color: #666;"><em>Directory is empty</em></span></li>\n')
+            items_html.append(
+                '<li><span class="file" style="color: #666;"><em>Directory is empty</em></span></li>\n'
+            )
         html_parts.extend(items_html)
 
         html_parts.append("""

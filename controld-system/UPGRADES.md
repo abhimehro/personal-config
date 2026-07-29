@@ -2,11 +2,10 @@
 
 > **Current Implementation Note (v4.1+):** The active system now uses the
 > `/etc/controld` + `controld-manager` engine with DoH3 defaults and is
-> orchestrated via `scripts/network-mode-manager.sh`. This guide documents
-> the earlier `~/.config/controld`-centric setup and remains accurate for
-> managing that config, but when in doubt prefer the newer
-> `controld-manager` + network-mode scripts described in
-> `controld-system/README.md` and
+> orchestrated via `scripts/network-mode-manager.sh`. This guide documents the
+> earlier `~/.config/controld`-centric setup and remains accurate for managing
+> that config, but when in doubt prefer the newer `controld-manager` +
+> network-mode scripts described in `controld-system/README.md` and
 > `controld-system/docs/Control D DNS Daily Usage Guide.md`.
 
 ## Upgrading ctrld Binary
@@ -33,7 +32,9 @@ sudo ctrld service restart
 ~/.config/controld/health-check.sh
 ```
 
-**IMPORTANT**: The launch daemon configuration (`/Library/LaunchDaemons/ctrld.plist`) persists across upgrades. The `--skip_self_checks` flag is preserved automatically.
+**IMPORTANT**: The launch daemon configuration
+(`/Library/LaunchDaemons/ctrld.plist`) persists across upgrades. The
+`--skip_self_checks` flag is preserved automatically.
 
 ---
 
@@ -248,7 +249,8 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp /opt/homebrew/
 
 ## Protocol Changes (DoH → DoT/DoQ)
 
-If you want to switch from DoH (DNS-over-HTTPS) to DoT (DNS-over-TLS) or DoQ (DNS-over-QUIC):
+If you want to switch from DoH (DNS-over-HTTPS) to DoT (DNS-over-TLS) or DoQ
+(DNS-over-QUIC):
 
 ### For DoT
 
@@ -407,7 +409,8 @@ If a new version introduces different self-check logic:
 
 ## Known-Good Baseline Tests
 
-After major changes (macOS updates, ctrld upgrades, profile switches), run this minimal test suite to verify everything works:
+After major changes (macOS updates, ctrld upgrades, profile switches), run this
+minimal test suite to verify everything works:
 
 ### Baseline Test Script
 

@@ -2,7 +2,9 @@
 
 ## Repository Context
 
-This is a macOS system automation repository with 117+ shell scripts. Key scripts manage network switching (VPN/DNS), SSH configuration, media streaming servers, and maintenance automation via LaunchAgents.
+This is a macOS system automation repository with 117+ shell scripts. Key
+scripts manage network switching (VPN/DNS), SSH configuration, media streaming
+servers, and maintenance automation via LaunchAgents.
 
 ## Quick Performance Measurement
 
@@ -29,7 +31,8 @@ hyperfine --warmup 2 --runs 5 \
 
 ### Profiling Shell Execution
 
-Use `bash -x` to see every command executed, and prepend timestamps with built-in tools:
+Use `bash -x` to see every command executed, and prepend timestamps with
+built-in tools:
 
 ```bash
 bash -x ./script.sh 2>&1 | awk '{ print strftime("[%H:%M:%S]"), $0 }' > profile.log
@@ -39,8 +42,8 @@ bash -x ./script.sh 2>&1 | awk '{ print strftime("[%H:%M:%S]"), $0 }' > profile.
 
 ### 1. Repeated External Command Calls
 
-**Problem:** Scripts call `networksetup`, `scutil`, `defaults`, etc. multiple times
-**Impact:** Each subprocess spawn adds 10-50ms overhead
+**Problem:** Scripts call `networksetup`, `scutil`, `defaults`, etc. multiple
+times **Impact:** Each subprocess spawn adds 10-50ms overhead
 
 **Bad:**
 
@@ -67,8 +70,8 @@ fi
 
 ### 2. Inefficient Filesystem Operations
 
-**Problem:** Multiple `find` commands, recursive directory scans
-**Impact:** Can take seconds on large directories
+**Problem:** Multiple `find` commands, recursive directory scans **Impact:** Can
+take seconds on large directories
 
 **Optimization strategies:**
 
@@ -102,8 +105,8 @@ done
 
 ### 4. Network Operations Without Timeouts
 
-**Problem:** DNS lookups, curl calls can hang indefinitely
-**Impact:** Script blocks, poor user experience
+**Problem:** DNS lookups, curl calls can hang indefinitely **Impact:** Script
+blocks, poor user experience
 
 **Always use timeouts:**
 
@@ -224,4 +227,5 @@ fi
 - Already fast (<1 second)
 - Code clarity suffers significantly
 
-**Remember:** Measure first, optimize second. Profile to find real bottlenecks, don't guess.
+**Remember:** Measure first, optimize second. Profile to find real bottlenecks,
+don't guess.

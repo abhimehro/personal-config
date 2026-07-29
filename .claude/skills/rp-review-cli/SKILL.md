@@ -10,11 +10,13 @@ repoprompt_variant: cli
 
 Review: $ARGUMENTS
 
-You are a **Code Reviewer** using rp-cli. Your workflow: understand the scope of changes, gather context, and provide thorough, actionable code review feedback.
+You are a **Code Reviewer** using rp-cli. Your workflow: understand the scope of
+changes, gather context, and provide thorough, actionable code review feedback.
 
 ## Using rp-cli
 
-This workflow uses **rp-cli** (RepoPrompt CLI) instead of MCP tool calls. Run commands via:
+This workflow uses **rp-cli** (RepoPrompt CLI) instead of MCP tool calls. Run
+commands via:
 
 ```bash
 rp-cli -e '<command>'
@@ -22,28 +24,34 @@ rp-cli -e '<command>'
 
 **Quick reference:**
 
-| MCP Tool | CLI Command |
-|----------|-------------|
-| `get_file_tree` | `rp-cli -e 'tree'` |
-| `file_search` | `rp-cli -e 'search "pattern"'` |
-| `get_code_structure` | `rp-cli -e 'structure path/'` |
-| `read_file` | `rp-cli -e 'read path/file.swift'` |
-| `manage_selection` | `rp-cli -e 'select add path/'` |
-| `context_builder` | `rp-cli -e 'builder "instructions" --response-type plan'` |
-| `oracle_send` | `rp-cli -e 'chat "message" --mode plan'` |
-| `apply_edits` | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
-| `file_actions` | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'` |
+| MCP Tool             | CLI Command                                                                  |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `get_file_tree`      | `rp-cli -e 'tree'`                                                           |
+| `file_search`        | `rp-cli -e 'search "pattern"'`                                               |
+| `get_code_structure` | `rp-cli -e 'structure path/'`                                                |
+| `read_file`          | `rp-cli -e 'read path/file.swift'`                                           |
+| `manage_selection`   | `rp-cli -e 'select add path/'`                                               |
+| `context_builder`    | `rp-cli -e 'builder "instructions" --response-type plan'`                    |
+| `oracle_send`        | `rp-cli -e 'chat "message" --mode plan'`                                     |
+| `apply_edits`        | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
+| `file_actions`       | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'`             |
 
 Chain commands with `&&`:
+
 ```bash
 rp-cli -e 'select set src/ && context'
 ```
 
-Use `rp-cli -e 'describe <tool>'` for help on a specific tool, `rp-cli --tools-schema` for machine-readable JSON schemas, or `rp-cli --help` for CLI usage.
+Use `rp-cli -e 'describe <tool>'` for help on a specific tool,
+`rp-cli --tools-schema` for machine-readable JSON schemas, or `rp-cli --help`
+for CLI usage.
 
-JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected), `@file`, or `@-` (stdin). Raw newlines in strings are auto-repaired.
+JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected),
+`@file`, or `@-` (stdin). Raw newlines in strings are auto-repaired.
 
-**⚠️ TIMEOUT WARNING:** The `builder` and `chat` commands can take several minutes to complete. When invoking rp-cli, **set your command timeout to at least 2700 seconds (45 minutes)** to avoid premature termination.
+**⚠️ TIMEOUT WARNING:** The `builder` and `chat` commands can take several
+minutes to complete. When invoking rp-cli, **set your command timeout to at
+least 2700 seconds (45 minutes)** to avoid premature termination.
 
 ---
 ## Protocol
@@ -53,12 +61,12 @@ JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected), `@file`
 2. **Determine scope** – Infer the comparison scope from the user's request. Only ask for clarification if the scope is ambiguous or unspecified.
 3. **Deep review** – Run `builder` with `response_type: "review"`, explicitly specifying the confirmed comparison scope.
 4. **Fill gaps** – If the review missed areas, run focused follow-up reviews explicitly describing what was/wasn't covered.
-
 ---
 
 ## Step 0: Workspace Verification (REQUIRED)
 
-Before any git operations, bind to the target codebase using its working directory:
+Before any git operations, bind to the target codebase using its working
+directory:
 
 ```bash
 # First, list available windows to find the right one
@@ -69,11 +77,15 @@ rp-cli -w <window_id> -e 'tree --type roots'
 ```
 
 **Check the output:**
-- If your target root appears in a window → note the window ID and proceed to Step 1
+
+- If your target root appears in a window → note the window ID and proceed to
+  Step 1
 - If not → the codebase isn't loaded in any window
 
 **CLI Window Routing:**
-- CLI invocations are stateless—you MUST pass `-w <window_id>` to target the correct window
+
+- CLI invocations are stateless—you MUST pass `-w <window_id>` to target the
+  correct window
 - Use `rp-cli -e 'windows'` to list all open windows and their workspaces
 - Always include `-w <window_id>` in ALL subsequent commands
 
@@ -147,19 +159,26 @@ Not yet reviewed: <list files/areas to review now>.</context>
 
 <discovery_agent-guidelines>Focus specifically on <directories/files not yet covered>.</discovery_agent-guidelines>" --response-type review'
 ```
-
 ---
 
 ## Anti-patterns to Avoid
 
-- 🚫 Proceeding with an ambiguous scope – if the user didn't specify a comparison target and it's unclear from context, you must ask before calling `builder`
-- 🚫 Skipping `builder` and attempting to review by reading files manually – you'll miss architectural context
-- 🚫 Calling `builder` without specifying the confirmed comparison scope in the instructions
-- 🚫 Doing extensive file reading before calling `builder` – git status/log/diff is sufficient for Step 1
-- 🚫 Providing review feedback without first calling `builder` with `response_type: "review"`
+- 🚫 Proceeding with an ambiguous scope – if the user didn't specify a
+  comparison target and it's unclear from context, you must ask before calling
+  `builder`
+- 🚫 Skipping `builder` and attempting to review by reading files manually –
+  you'll miss architectural context
+- 🚫 Calling `builder` without specifying the confirmed comparison scope in the
+  instructions
+- 🚫 Doing extensive file reading before calling `builder` – git status/log/diff
+  is sufficient for Step 1
+- 🚫 Providing review feedback without first calling `builder` with
+  `response_type: "review"`
 - 🚫 Assuming the git diff alone is sufficient context for a thorough review
-- 🚫 Reading changed files manually instead of letting `builder` build proper review context
-- 🚫 **CLI:** Forgetting to pass `-w <window_id>` – CLI invocations are stateless and require explicit window targeting
+- 🚫 Reading changed files manually instead of letting `builder` build proper
+  review context
+- 🚫 **CLI:** Forgetting to pass `-w <window_id>` – CLI invocations are
+  stateless and require explicit window targeting
 
 ---
 

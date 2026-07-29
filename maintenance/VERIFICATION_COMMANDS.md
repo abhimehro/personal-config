@@ -1,6 +1,7 @@
 # 🧪 Maintenance Automation - Verification Commands
 
-Use these commands to test and verify your maintenance automation system is working correctly.
+Use these commands to test and verify your maintenance automation system is
+working correctly.
 
 ## 📋 Quick System Check
 
@@ -169,11 +170,13 @@ launchctl list com.abhimehrotra.maintenance.monthly
 
 1. **Check the log files** for error messages
 2. **Run manually** with the test commands above
-3. **Verify executable permissions**: `chmod +x ~/Documents/dev/personal-config/maintenance/bin/*.sh`
+3. **Verify executable permissions**:
+   `chmod +x ~/Documents/dev/personal-config/maintenance/bin/*.sh`
 
 ### If launch agents aren't working:
 
-1. **Check syntax**: `plutil ~/Documents/dev/personal-config/maintenance/launchd/*.plist`
+1. **Check syntax**:
+   `plutil ~/Documents/dev/personal-config/maintenance/launchd/*.plist`
 2. **Reload agents**: `launchctl unload` then `launchctl load`
 3. **Check Console app** for system-level launch agent errors
 
@@ -181,8 +184,10 @@ launchctl list com.abhimehrotra.maintenance.monthly
 
 - **Permission denied**: Run `chmod +x` on script files
 - **Path not found**: Check `$HOME` expansion in launch agents
-- **Still getting password prompts**: Verify `AUTOMATED_RUN=1` is set in environment variables
+- **Still getting password prompts**: Verify `AUTOMATED_RUN=1` is set in
+  environment variables
 
 ---
 
-**🎉 Your maintenance automation system is fully functional and ready for hands-off operation!**
+**🎉 Your maintenance automation system is fully functional and ready for
+hands-off operation!**

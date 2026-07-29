@@ -20,8 +20,8 @@ mac-audit/
 └── .gitignore
 ```
 
-CI lives in the repo root: `.github/workflows/mac-audit.yml`
-(ShellCheck on ubuntu + full audit on macos-14/15).
+CI lives in the repo root: `.github/workflows/mac-audit.yml` (ShellCheck on
+ubuntu + full audit on macos-14/15).
 
 ## Quick Start
 
@@ -49,47 +49,50 @@ Flags:
 
 One consolidated workflow (`.github/workflows/mac-audit.yml`):
 
-| Job | Trigger | Runner | Purpose |
-|---|---|---|---|
-| `shellcheck` | Push/PR (`mac-audit/**`), weekly Mon, dispatch | ubuntu-latest | Lint audit scripts |
-| `audit` | Same (after ShellCheck) | macos-14 + macos-15 | Full audit modules |
+| Job          | Trigger                                        | Runner              | Purpose            |
+| ------------ | ---------------------------------------------- | ------------------- | ------------------ |
+| `shellcheck` | Push/PR (`mac-audit/**`), weekly Mon, dispatch | ubuntu-latest       | Lint audit scripts |
+| `audit`      | Same (after ShellCheck)                        | macos-14 + macos-15 | Full audit modules |
 
 ### CI vs. Local checks
 
-| Check | Local | CI (`--ci` flag) |
-|---|---|---|
-| Launch agent scan | Full | Full |
-| Homebrew sprawl | Full | Full |
-| Gatekeeper | Full | Full |
-| Application Firewall | Full | Full |
-| SIP | Full | Full |
-| Screen saver password | Full | Full |
-| Remote SSH | Full | Full |
-| FileVault | Full | Skipped (no disk encryption on GHA runners) |
-| `systemsetup` re-check | Full | Skipped (requires interactive sudo) |
+| Check                  | Local | CI (`--ci` flag)                            |
+| ---------------------- | ----- | ------------------------------------------- |
+| Launch agent scan      | Full  | Full                                        |
+| Homebrew sprawl        | Full  | Full                                        |
+| Gatekeeper             | Full  | Full                                        |
+| Application Firewall   | Full  | Full                                        |
+| SIP                    | Full  | Full                                        |
+| Screen saver password  | Full  | Full                                        |
+| Remote SSH             | Full  | Full                                        |
+| FileVault              | Full  | Skipped (no disk encryption on GHA runners) |
+| `systemsetup` re-check | Full  | Skipped (requires interactive sudo)         |
 
 Audit reports are uploaded as **GitHub Actions artifacts** and retained 30 days.
 
 ## What Each Module Checks
 
 ### `launch` — Launch Agents & Daemons
+
 Scans all four system directories. Flags Adobe, Google Keystone, Oracle Java,
 temp-named labels, and orphaned plists (binary has been deleted).
 
 ### `brew` — Homebrew Package Sprawl
+
 Outdated formulae count (warns at >5, fails at >20), total vs. leaf installs,
 cask count (warns at >30), and a live list of running brew services.
 
 ### `defaults` — macOS Security Defaults
+
 Gatekeeper, Application Firewall, screen saver password timing, Remote SSH,
 Apple Remote Desktop, SIP, FileVault, and auto-diagnostics submission.
 
 ## Exit Codes
 
-| Code | Meaning |
-|---|---|
-| `0` | No failures detected |
-| `1` | One or more checks flagged |
+| Code | Meaning                    |
+| ---- | -------------------------- |
+| `0`  | No failures detected       |
+| `1`  | One or more checks flagged |
 
 ## Post-Install Hook (optional)
 

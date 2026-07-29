@@ -3,8 +3,8 @@ import json
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
-from spreadsheet_safety import escape_spreadsheet_formula
 from gh_token_env import load_gh_token_env
+from spreadsheet_safety import escape_spreadsheet_formula
 
 
 def _fetch_repo_prs(repo):

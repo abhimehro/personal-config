@@ -1,18 +1,21 @@
 # Windscribe Port Forwarding - Complete Setup Guide
 
 > **Static IP (2026-07):** Dallas `82.23.253.53` (replaces expired Atlanta
-> `82.21.151.194`). Connect with
-> `./scripts/windscribe-connect.sh privacy` (defaults to `connect static Dallas`).
-> For IPv6, use Atlanta/Peachtree non-static:
-> `WINDSCRIBE_IPV6=1 ./scripts/windscribe-connect.sh privacy`.
+> `82.21.151.194`). Connect with `./scripts/windscribe-connect.sh privacy`
+> (defaults to `connect static Dallas`). For IPv6, use Atlanta/Peachtree
+> non-static: `WINDSCRIBE_IPV6=1 ./scripts/windscribe-connect.sh privacy`.
 
 ## 🎉 Good News: Windscribe Auto-Configures Internal IP!
 
-After further investigation, I need to clarify how Windscribe port forwarding works:
+After further investigation, I need to clarify how Windscribe port forwarding
+works:
 
 **You DO NOT need to manually specify the VPN tunnel IP (100.125.56.240).**
 
-When you select your **MacBook Air** as the device in Windscribe's port forwarding settings, Windscribe **automatically maps** the internal port to the correct VPN tunnel IP. The device selection is the key - Windscribe knows your device's VPN tunnel IP on their end.
+When you select your **MacBook Air** as the device in Windscribe's port
+forwarding settings, Windscribe **automatically maps** the internal port to the
+correct VPN tunnel IP. The device selection is the key - Windscribe knows your
+device's VPN tunnel IP on their end.
 
 ---
 
@@ -29,11 +32,11 @@ When you select your **MacBook Air** as the device in Windscribe's port forwardi
 | **External Port** | 8096                           |
 | **Internal Port** | 8096                           |
 
-> **Enabled (2026-07-17):** Default remote URL is
-> `http://82.23.253.53:8096`. Windscribe maps External **8096** → Internal
-> **8096**. Jellyfin Dashboard → Networking → Published Server URIs includes
-> that URI (keep a LAN URI for home use). Jellyfin has no Plex-style “open
-> ports” wizard — the forward lives entirely in Windscribe.
+> **Enabled (2026-07-17):** Default remote URL is `http://82.23.253.53:8096`.
+> Windscribe maps External **8096** → Internal **8096**. Jellyfin Dashboard →
+> Networking → Published Server URIs includes that URI (keep a LAN URI for home
+> use). Jellyfin has no Plex-style “open ports” wizard — the forward lives
+> entirely in Windscribe.
 >
 > **SECURITY:** Protect with a strong admin password (1Password `MediaServer`).
 > Prefer clients over HTTPS reverse proxy later if you harden further; HTTP on
@@ -74,13 +77,15 @@ instead; remove the Plex forward once clients have migrated.
 When you configure port forwarding in Windscribe:
 
 1. You select your **device** (MacBook Air) from the list
-2. Windscribe associates that device with your **VPN tunnel IP** (100.125.56.240)
+2. Windscribe associates that device with your **VPN tunnel IP**
+   (100.125.56.240)
 3. When external traffic arrives at `82.23.253.53:8088`:
    - Windscribe routes it to your VPN tunnel: `100.125.56.240:8080`
    - Your Mac's `utun420` interface receives the traffic
    - rclone server (listening on `*:8080`) accepts the connection
 
-**You don't manually configure the VPN tunnel IP** - Windscribe handles that mapping automatically when you select the device!
+**You don't manually configure the VPN tunnel IP** - Windscribe handles that
+mapping automatically when you select the device!
 
 ---
 
@@ -97,10 +102,12 @@ After creating or modifying a port forward:
 
 ### 2. **Hairpin NAT / Loopback Issue**
 
-You **cannot test** the external connection from your own Mac. This is a limitation of NAT:
+You **cannot test** the external connection from your own Mac. This is a
+limitation of NAT:
 
 - Your Mac is "inside" the VPN tunnel
-- Traffic to 82.23.253.53:8088 from your Mac tries to loop back through Windscribe
+- Traffic to 82.23.253.53:8088 from your Mac tries to loop back through
+  Windscribe
 - Most VPN providers (including Windscribe) don't support hairpin NAT
 
 **Testing must be done from an external device:**
@@ -111,7 +118,8 @@ You **cannot test** the external connection from your own Mac. This is a limitat
 
 ### 3. **Firewall or macOS Security**
 
-Even though rclone is in the firewall rules, macOS might still block unsolicited inbound connections:
+Even though rclone is in the firewall rules, macOS might still block unsolicited
+inbound connections:
 
 **Check firewall settings:**
 
@@ -297,7 +305,8 @@ ssh speedybee@82.23.253.53 -p 36555
 ### 🎯 Your Action Items
 
 1. Ensure Windscribe port forwards are configured:
-   - **Jellyfin** (default remote): TCP, MacBook Air, External 8096 -> Internal 8096
+   - **Jellyfin** (default remote): TCP, MacBook Air, External 8096 -> Internal
+     8096
    - MediaServer WebDAV backup: TCP, MacBook Air, External 8088 -> Internal 8080
    - SSH: TCP, MacBook Air, External 36555 -> Internal 22
    - Plex 32400: legacy only — remove once unused
@@ -313,10 +322,11 @@ ssh speedybee@82.23.253.53 -p 36555
 
 4. If WebDAV works: Configure secondary connection in Infuse!
 
-5. If it doesn't work: Check Windscribe app for port forward status or contact support
+5. If it doesn't work: Check Windscribe app for port forward status or contact
+   support
 
 ---
 
-**Last Updated**: 2026-07-17
-**Status**: Jellyfin primary remote on Dallas `82.23.253.53:8096` (default path);
-WebDAV backup `8088→8080`; Plex `32400` legacy
+**Last Updated**: 2026-07-17 **Status**: Jellyfin primary remote on Dallas
+`82.23.253.53:8096` (default path); WebDAV backup `8088→8080`; Plex `32400`
+legacy

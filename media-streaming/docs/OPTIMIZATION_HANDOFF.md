@@ -1,15 +1,20 @@
 # ELIR Handoff: Media Pipeline Optimization
 
-**Date:** 2026-01-23
-**Focus:** Backpressure control, Disk Safety, and Automation "Glue"
+**Date:** 2026-01-23 **Focus:** Backpressure control, Disk Safety, and
+Automation "Glue"
 
 ## 📋 Purpose Statement
 
-This update optimizes the media pipeline by introducing **flow control** and **atomic operations**.
+This update optimizes the media pipeline by introducing **flow control** and
+**atomic operations**.
 
-- It prevents storage exhaustion by pausing new downloads while uploads are in progress.
-- It fixes the "Permute doesn't see files" issue by using atomic moves (downloading to a temp folder, then "instantly" appearing in the watch folder).
-- It removes the manual step between Permute and FileBot by auto-sweeping the `processed` folder.
+- It prevents storage exhaustion by pausing new downloads while uploads are in
+  progress.
+- It fixes the "Permute doesn't see files" issue by using atomic moves
+  (downloading to a temp folder, then "instantly" appearing in the watch
+  folder).
+- It removes the manual step between Permute and FileBot by auto-sweeping the
+  `processed` folder.
 
 ## 🛡️ Security & Safety Narrative
 
@@ -32,9 +37,12 @@ This update optimizes the media pipeline by introducing **flow control** and **a
 
 Before trusting this fully, verify:
 
-1.  **Locking**: Start an upload (or `touch ~/.media_upload.lock`) and run `./sync-alldebrid.sh`. It should say "Upload in progress... Pausing".
-2.  **Atomic Move**: Watch the `downloads` folder while a large file downloads. It should **not** appear until 100% complete.
-3.  **Flow**: Drop a file in `processed` and ensure it automatically jumps to `staging` and then gets processed.
+1. **Locking**: Start an upload (or `touch ~/.media_upload.lock`) and run
+   `./sync-alldebrid.sh`. It should say "Upload in progress... Pausing".
+2. **Atomic Move**: Watch the `downloads` folder while a large file downloads.
+   It should **not** appear until 100% complete.
+3. **Flow**: Drop a file in `processed` and ensure it automatically jumps to
+   `staging` and then gets processed.
 
 ## 🔧 Maintenance Notes
 
@@ -45,7 +53,8 @@ Before trusting this fully, verify:
 
 ## 🚀 How to Apply Changes
 
-Since `rename-media.sh` runs as a daemon, you **must** restart it to pick up the new logic:
+Since `rename-media.sh` runs as a daemon, you **must** restart it to pick up the
+new logic:
 
 ```bash
 # Unload and Reload the Renamer Service

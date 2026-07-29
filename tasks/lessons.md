@@ -8,8 +8,8 @@
 partial-success UX from #1067 while picking up the prompt-extract residual.
 **Rule:** (1) Never wholesale-checkout a hotspot file when merge-tree says
 changed-in-both after a sibling merge. (2) Extract only the unique residual
-(helper + call-site rewrite; `_print_bold_header` swaps) with a scripted
-patch onto `origin/main`. (3) Assert the sibling feature string still exists
+(helper + call-site rewrite; `_print_bold_header` swaps) with a scripted patch
+onto `origin/main`. (3) Assert the sibling feature string still exists
 post-patch (e.g. “partial success”). (4) Skip journals entirely (S2).
 **Detection cost:** Low — `git merge-tree` “changed in both” on the same path
 the sibling PR touched.
@@ -17,55 +17,50 @@ the sibling PR touched.
 ## Lesson 0es: Prefer CLEAN twin over CONFLICTING Sentinel bundle (2026-07-27)
 
 **Pattern:** After a Phase 1 merge, an older Sentinel PR goes `CONFLICTING`
-while a newer sibling lands CLEAN with a **subset** of the security fix
-(esp #1362 vs #1370; hg #413 vs #418). The dirty PR often also carries
-harmful extras (numpy regression, Bolt/CHANGELOG/journal churn) or is
-already partially absorbed on `main` (e.g. app_runner via #1353).
-**Rule:** (1) Diff both siblings against current `main` before opening a
-salvage branch. (2) If the CLEAN twin covers the remaining security
-surface and the dirty PR's unique delta is journal/noise/regression →
-**CLOSE-SUPERSEDED** pointing at the twin (and any main PR that already
-landed). (3) Do not salvage a conflicted bundle that regresses deps.
-(4) Escalate the preferred twin for human T1 merge; Phase 2 still never
-auto-merges.
-**Detection cost:** Low — same title family + one CONFLICTING + one CLEAN;
-`gh pr diff --name-only` comparison.
+while a newer sibling lands CLEAN with a **subset** of the security fix (esp
+#1362 vs #1370; hg #413 vs #418). The dirty PR often also carries harmful extras
+(numpy regression, Bolt/CHANGELOG/journal churn) or is already partially
+absorbed on `main` (e.g. app_runner via #1353). **Rule:** (1) Diff both siblings
+against current `main` before opening a salvage branch. (2) If the CLEAN twin
+covers the remaining security surface and the dirty PR's unique delta is
+journal/noise/regression → **CLOSE-SUPERSEDED** pointing at the twin (and any
+main PR that already landed). (3) Do not salvage a conflicted bundle that
+regresses deps. (4) Escalate the preferred twin for human T1 merge; Phase 2
+still never auto-merges. **Detection cost:** Low — same title family + one
+CONFLICTING + one CLEAN; `gh pr diff --name-only` comparison.
+
 ## Lesson 0es: Cursor App token can squash-merge but cannot close PRs (2026-07-28)
 
 **Pattern:** Phase 1 squash-merges succeed with hosts.yml Cursor token, but
-`gh pr close`, GraphQL `closePullRequest`, and REST `PATCH .../issues/{n}`
-all return **Resource not accessible by integration**. `gh pr comment` also
-denied; MCP `post_review_comment_on_pr` works. `request_reviewers` fails when
-the target is already the PR author (abhimehro).
-**Rule:** (1) Treat CLOSE dispositions as **recommend-close via MCP review**
-when close API is denied; hand the list to Phase 2 salvage (which must close
-duplicates). (2) Do not burn retries on GraphQL/REST close with the same App
-token. (3) Prefer Dependabot-authored PRs when requesting reviewers. (4)
-Document close-recommended PRs in `pr-review-YYYY-MM-DD.md` Post-session
-remainder with `CLOSE-DUPLICATE` reason.
+`gh pr close`, GraphQL `closePullRequest`, and REST `PATCH .../issues/{n}` all
+return **Resource not accessible by integration**. `gh pr comment` also denied;
+MCP `post_review_comment_on_pr` works. `request_reviewers` fails when the target
+is already the PR author (abhimehro). **Rule:** (1) Treat CLOSE dispositions as
+**recommend-close via MCP review** when close API is denied; hand the list to
+Phase 2 salvage (which must close duplicates). (2) Do not burn retries on
+GraphQL/REST close with the same App token. (3) Prefer Dependabot-authored PRs
+when requesting reviewers. (4) Document close-recommended PRs in
+`pr-review-YYYY-MM-DD.md` Post-session remainder with `CLOSE-DUPLICATE` reason.
 **Detection cost:** Low — one failed `gh pr close` is enough.
-
 
 ## Lesson 0ej: Diff before/after/code with unescaped `\"` breaks Plan MDX (2026-07-21)
 
 **Pattern:** Visual recap publish returns `422 Unprocessable Entity` with
 `plan.mdx:N:M: Could not parse expression with acorn` after auth succeeds.
-**Root cause:** Agent embeds shell sed character classes like
-`[^[:space:]\"]` inside Diff `after: "..."` JS string props. In JS, `\\"`
-ends the string early; acorn then sees Unexpected token. Sidecar assembly via
-`JSON.stringify` does **not** fix inner MDX expression syntax — only the outer
-JSON envelope.
+**Root cause:** Agent embeds shell sed character classes like `[^[:space:]\"]`
+inside Diff `after: "..."` JS string props. In JS, `\\"` ends the string early;
+acorn then sees Unexpected token. Sidecar assembly via `JSON.stringify` does
+**not** fix inner MDX expression syntax — only the outer JSON envelope.
 **Follow-on:** After Diff colon-props are fixed, agents may still emit JSX
-`after="…"` / `code={"…` multi-line attrs. In JSX, `"` ends the attribute
-(`\"` is not an escape) → 422 "Unexpected character `\\` in attribute name".
-Rewrite those to `after={JSON.stringify(...)}`. Next failure mode: bare array
-attrs (`columns=[…]`, `rows=[…]`) → 422 "Unexpected character `[` before
-attribute value"; also illegal commas between JSX attrs (`columns={…},`).
-Rewrite to `columns={[…]}` and strip trailing commas. For `rows=[…]}` (stray
-`}` already present), only insert `{` after `=` — do not double-close.
-OpenCode one-shot repair can hang — prefer deterministic re-publish; cap agent
-repair at ~6 minutes. Do not auto-balance Callout tags (code samples contain
-decoy markup).
+`after="…"` / `code={"…` multi-line attrs. In JSX, `"` ends the attribute (`\"`
+is not an escape) → 422 "Unexpected character `\\` in attribute name". Rewrite
+those to `after={JSON.stringify(...)}`. Next failure mode: bare array attrs
+(`columns=[…]`, `rows=[…]`) → 422 "Unexpected character `[` before attribute
+value"; also illegal commas between JSX attrs (`columns={…},`). Rewrite to
+`columns={[…]}` and strip trailing commas. For `rows=[…]}` (stray `}` already
+present), only insert `{` after `=` — do not double-close. OpenCode one-shot
+repair can hang — prefer deterministic re-publish; cap agent repair at ~6
+minutes. Do not auto-balance Callout tags (code samples contain decoy markup).
 **Rule:** (1) Before publish, rewrite Diff `before`/`after`/`code` lines whose
 bodies are not valid JSON-string payloads via
 `scripts/fix-recap-mdx-diff-strings.js` (`JSON.stringify` after lenient
@@ -73,105 +68,115 @@ unescape). (2) Isolate Callout/Note/… block tags onto their own lines (do not
 auto-balance — decoys in samples). (3) Rewrite Diff JSX string attrs to
 `{JSON.stringify(...)}`; rewrite bare array attrs to `{[…]}`; strip illegal
 commas between attrs. (4) On `repairable=true`, re-run the deterministic fixer
-and re-publish before any agent repair; cap agent repair at ~6 minutes.
-(5) Prompt agents that Diff string props must be JS-string-safe and JSX array
-attrs must use expression form. (6) Do not treat a 422 acorn/MDX error as an
+and re-publish before any agent repair; cap agent repair at ~6 minutes. (5)
+Prompt agents that Diff string props must be JS-string-safe and JSX array attrs
+must use expression form. (6) Do not treat a 422 acorn/MDX error as an
 auth/token problem.
 
 ## Lesson 0ei: PLAN_RECAP_TOKEN newlines break publish AND leak JWT into comments (2026-07-21)
 
-**Pattern:** Visual recap sticky comment showed `Headers.append: "Bearer
-[redacted] <jwt-remainder>" is an invalid header value` instead of a plan
-link. Publish never produced a URL. **Root cause:** (1) `PLAN_RECAP_TOKEN`
-org credential had embedded CR/LF (wrapped paste). undici rejects
-`Authorization` values with control chars. (2) `@agent-native/recap-cli`
-`sanitizeAgentFailureSummary` only redacts `Bearer\s+[A-Za-z0-9._-]{8,}` —
-a mid-token newline ends that match early, so the JWT payload/signature after
-the break is posted to the PR. `.trim()` on the token does **not** remove
-internal whitespace.
-**Rule:** (1) Strip **all** whitespace from `PLAN_RECAP_TOKEN` at job start
-(`tr -d '[:space:]'`), drop accidental `Bearer` prefix, `::add-mask::`, then
-export via `GITHUB_ENV`. (2) Scrub sticky-comment diagnostics for Bearer /
-JWT / long base64url runs before upsert. (3) Paste secrets as a single line;
-if a JWT fragment ever lands in a PR comment, **rotate** the org service
-token immediately. (4) Do not rely on recap-cli redact alone for newline-split
-tokens.
+**Pattern:** Visual recap sticky comment showed
+`Headers.append: "Bearer
+[redacted] <jwt-remainder>" is an invalid header value`
+instead of a plan link. Publish never produced a URL. **Root cause:** (1)
+`PLAN_RECAP_TOKEN` org credential had embedded CR/LF (wrapped paste). undici
+rejects `Authorization` values with control chars. (2) `@agent-native/recap-cli`
+`sanitizeAgentFailureSummary` only redacts `Bearer\s+[A-Za-z0-9._-]{8,}` — a
+mid-token newline ends that match early, so the JWT payload/signature after the
+break is posted to the PR. `.trim()` on the token does **not** remove internal
+whitespace. **Rule:** (1) Strip **all** whitespace from `PLAN_RECAP_TOKEN` at
+job start (`tr -d '[:space:]'`), drop accidental `Bearer` prefix,
+`::add-mask::`, then export via `GITHUB_ENV`. (2) Scrub sticky-comment
+diagnostics for Bearer / JWT / long base64url runs before upsert. (3) Paste
+secrets as a single line; if a JWT fragment ever lands in a PR comment,
+**rotate** the org service token immediately. (4) Do not rely on recap-cli
+redact alone for newline-split tokens.
 
 ## Lesson 0eh: PR Visual Recap must use `@agent-native/recap-cli`, not core+tsx (2026-07-21)
 
-
 **Pattern:** Non-skip `pr-visual-recap` runs failed at **Collect bounded diff**
-with `agent-native CLI build output is missing and the source fallback failed:
-spawn tsx ENOENT`. Installing `tsx` next to `@agent-native/core` (#1715) did
-**not** fix it: core's `bin/agent-native.js` does `spawn("tsx", …)` looking up
-`PATH`, not `node_modules/.bin`. npm extract also often leaves `src/` mtime >
-`dist/`, forcing that fallback even when `dist/cli/index.js` exists.
-**Rule:** (1) Consumer workflows install `@agent-native/recap-cli` (built
-`dist/cli.js`, no tsx). (2) Never treat "npm install tsx" as sufficient unless
-`PATH` includes that prefix's `.bin` **and** you intentionally want the core
-source fallback. (3) Smoke-test `$RECAP_CLI recap --help` right after install.
-(4) `RECAP_CLI_VERSION` pins **recap-cli** versions (0.4.x), not core (0.11x).
+with
+`agent-native CLI build output is missing and the source fallback failed:
+spawn tsx ENOENT`.
+Installing `tsx` next to `@agent-native/core` (#1715) did **not** fix it: core's
+`bin/agent-native.js` does `spawn("tsx", …)` looking up `PATH`, not
+`node_modules/.bin`. npm extract also often leaves `src/` mtime > `dist/`,
+forcing that fallback even when `dist/cli/index.js` exists. **Rule:** (1)
+Consumer workflows install `@agent-native/recap-cli` (built `dist/cli.js`, no
+tsx). (2) Never treat "npm install tsx" as sufficient unless `PATH` includes
+that prefix's `.bin` **and** you intentionally want the core source fallback.
+(3) Smoke-test `$RECAP_CLI recap --help` right after install. (4)
+`RECAP_CLI_VERSION` pins **recap-cli** versions (0.4.x), not core (0.11x).
+
 ## Lesson 0er: “Consolidate workflow” PRs may bump download-artifact major alone (2026-07-26)
 
 **Pattern:** esp #1366 titled as checkout consolidation also changed
 `actions/download-artifact` to **v8.0.1** while producer jobs kept
-`actions/upload-artifact@v7`. PR CI stayed green (checkout jobs only); the
-skew would break daily automation summary jobs that download sibling
-artifacts. Adversarial review caught it; Phase 1 issued REQUEST_CHANGES.
-**Rule:** (1) Diff-grep every `upload-artifact` / `download-artifact` pin in
+`actions/upload-artifact@v7`. PR CI stayed green (checkout jobs only); the skew
+would break daily automation summary jobs that download sibling artifacts.
+Adversarial review caught it; Phase 1 issued REQUEST_CHANGES. **Rule:** (1)
+Diff-grep every `upload-artifact` / `download-artifact` pin in
 workflow-consolidation PRs. (2) Require matching majors (or bump both). (3)
 Treat tip-major artifact bumps as ESCALATE / REQUEST_CHANGES even when
-checkout-only CI is green (extends Lesson 0dw). (4) Prefer closing or
-fixing before merge — do not squash-merge skewed pairs.
-**Detection cost:** Low — `rg 'upload-artifact|download-artifact'` on PR
-diff.
+checkout-only CI is green (extends Lesson 0dw). (4) Prefer closing or fixing
+before merge — do not squash-merge skewed pairs. **Detection cost:** Low —
+`rg 'upload-artifact|download-artifact'` on PR diff.
 
 ## Lesson 0eo: Invalid env GH_TOKEN shadows hosts.yml Cursor token (2026-07-25)
 
 **Pattern:** Cloud Agent injects `GH_TOKEN=github_pat_…` that returns **401 Bad
 credentials**. `gh` prefers the env var over `~/.config/gh/hosts.yml`, so
 preflight/`gh pr list` fail until `unset GH_TOKEN`. With env cleared, the Cursor
-GitHub App token can **squash-merge** and inventory, but GraphQL `addComment`
-is still denied — use Cursor Automation MCP `post_review_comment_on_pr` for
-review trail. Flattened OpenSSH private keys in secrets (no newlines) need
-PEM re-wrapping before `ssh-keygen`/`git@github.com` works.
-**Rule:** (1) On 401, `unset GH_TOKEN GITHUB_TOKEN` and re-run preflight. (2)
-Do not print token values; log prefix/len only. (3) Rotate the injected PAT.
-(4) Reconstruct single-line OPENSSH keys to standard PEM wrapping for SSH
-pushes/autofix. (5) Prefer MCP reviews when `gh pr comment` 403s.
-**Detection cost:** Low — `gh auth status` shows invalid GH_TOKEN + active
-hosts.yml account.
+GitHub App token can **squash-merge** and inventory, but GraphQL `addComment` is
+still denied — use Cursor Automation MCP `post_review_comment_on_pr` for review
+trail. Flattened OpenSSH private keys in secrets (no newlines) need PEM
+re-wrapping before `ssh-keygen`/`git@github.com` works. **Rule:** (1) On 401,
+`unset GH_TOKEN GITHUB_TOKEN` and re-run preflight. (2) Do not print token
+values; log prefix/len only. (3) Rotate the injected PAT. (4) Reconstruct
+single-line OPENSSH keys to standard PEM wrapping for SSH pushes/autofix. (5)
+Prefer MCP reviews when `gh pr comment` 403s. **Detection cost:** Low —
+`gh auth status` shows invalid GH_TOKEN + active hosts.yml account.
 
 ## Lesson 0ep: Mid-session Bolt merge dirties SSRF siblings via bolt.md (2026-07-25)
 
 **Pattern:** After squash-merging pc #1770 (Bolt + `.jules/bolt.md` append),
 open pc #1766 (SSRF `safe_http`, also touching bolt-adjacent trees) flipped
-`MERGEABLE` → `CONFLICTING` in the same session.
-**Rule:** When merging Bolt journals, re-check remaining PRs that share
-`.jules/bolt.md` or broad skill trees before calling the session clean. Expect
-SSRF/security salvage PRs to need Phase 2 rebase after routine Bolt merges.
-**Detection cost:** Low — post-merge `gh pr list --json mergeable` sweep.
+`MERGEABLE` → `CONFLICTING` in the same session. **Rule:** When merging Bolt
+journals, re-check remaining PRs that share `.jules/bolt.md` or broad skill
+trees before calling the session clean. Expect SSRF/security salvage PRs to need
+Phase 2 rebase after routine Bolt merges. **Detection cost:** Low — post-merge
+`gh pr list --json mergeable` sweep.
+
 ## Lesson 0eq: Cursor app token can push salvage branches but cannot open/close PRs (2026-07-25)
 
-**Pattern:** Phase 2 pushed `cursor-agent/salvage-pc-1748-visual-recap-v2-a2fb` successfully, then `gh pr create` / `gh pr close` / `gh pr comment` all failed with GraphQL/REST `Resource not accessible by integration`. `open_git_pr` MCP only accepts the automation **designated** branch (`cursor-agent/automated-pr-salvage-a2fb`), not per-PR salvage branches. Env `GH_TOKEN` PAT is expired (401) — Phase 1 Lesson 0eo.
-**Rule:** (1) Always push salvage branches even when PR create is blocked. (2) Record the compare/`quick_pull` URL in inventory + salvage-session-reports for the maintainer to open a **draft**. (3) Use Cursor Automation MCP `post_review_comment_on_pr` for escalation notes on existing PRs. (4) Use `open_git_pr` only for the designated session-docs branch. (5) Rotate the injected PAT before relying on `gh` write for closes/comments.
-**Detection cost:** Low — first `createPullRequest` 403 in a session.
+**Pattern:** Phase 2 pushed `cursor-agent/salvage-pc-1748-visual-recap-v2-a2fb`
+successfully, then `gh pr create` / `gh pr close` / `gh pr comment` all failed
+with GraphQL/REST `Resource not accessible by integration`. `open_git_pr` MCP
+only accepts the automation **designated** branch
+(`cursor-agent/automated-pr-salvage-a2fb`), not per-PR salvage branches. Env
+`GH_TOKEN` PAT is expired (401) — Phase 1 Lesson 0eo. **Rule:** (1) Always push
+salvage branches even when PR create is blocked. (2) Record the
+compare/`quick_pull` URL in inventory + salvage-session-reports for the
+maintainer to open a **draft**. (3) Use Cursor Automation MCP
+`post_review_comment_on_pr` for escalation notes on existing PRs. (4) Use
+`open_git_pr` only for the designated session-docs branch. (5) Rotate the
+injected PAT before relying on `gh` write for closes/comments. **Detection
+cost:** Low — first `createPullRequest` 403 in a session.
 
 ## Lesson 0du: Gitleaks first capture group becomes Secret (2026-07-17)
 
-
-**Pattern:** `personal-config-generic-secret` used `(secret|password|…)[\s\-_:=]+…`
-as the regex. Gitleaks treats the **first capturing group** as `Secret`, so every
-hit reported `Secret: secret` (entropy ~2.25) — including prose like
-`secret presence` in `docs/pr-visual-recap-agent-backends.md`. Tip wording fixes
-do not clear CI because gitleaks scans the **whole PR commit range**. Regex
-allowlists matching `^secret$` would neuter the rule.
-**Rule:** (1) Use a non-capturing keyword group `(?:secret|…)` and
-`(?P<secret>…)` for the value. (2) Allowlist English stopwords on the *value*
-(`presence`, `scanning`, …), not the keyword. (3) Prefer rephrasing new docs to
-`credential …` / avoid `secret <word>` prose. (4) Do not broaden path allowlists
-when a rule-capture fix will clear historical FPs.
-
+**Pattern:** `personal-config-generic-secret` used
+`(secret|password|…)[\s\-_:=]+…` as the regex. Gitleaks treats the **first
+capturing group** as `Secret`, so every hit reported `Secret: secret` (entropy
+~2.25) — including prose like `secret presence` in
+`docs/pr-visual-recap-agent-backends.md`. Tip wording fixes do not clear CI
+because gitleaks scans the **whole PR commit range**. Regex allowlists matching
+`^secret$` would neuter the rule. **Rule:** (1) Use a non-capturing keyword
+group `(?:secret|…)` and `(?P<secret>…)` for the value. (2) Allowlist English
+stopwords on the _value_ (`presence`, `scanning`, …), not the keyword. (3)
+Prefer rephrasing new docs to `credential …` / avoid `secret <word>` prose. (4)
+Do not broaden path allowlists when a rule-capture fix will clear historical
+FPs.
 
 ## Lesson 0dt: Sibling Bolt/Palette PRs conflict when merged in batch order (2026-07-15)
 
@@ -182,8 +187,8 @@ same merge window; squash-merge on `main` moves the base under the slower PR.
 **Rule:** (1) Within a repo, merge **narrow/single-concern** PRs before **broad
 Bolt** PRs when files overlap. (2) On `CONFLICTING`, do not force-merge — defer
 to Phase 2 salvage or close if truly superseded. (3) Palette ANSI fixes in
-`main.py` should be sequenced: leading-newline (#1011) before interactive
-prompt (#1013) via rebase, not parallel merge.
+`main.py` should be sequenced: leading-newline (#1011) before interactive prompt
+(#1013) via rebase, not parallel merge.
 
 ## Lesson 0ds: Dual ctrld + CD thrash felt "broken" while Local Config already worked (2026-07-09 ~18:20)
 
@@ -1224,11 +1229,12 @@ cost:** Low — bandit workflow fails before pytest on workflow-only diffs.
 **Pattern:** Daily `workflow-updater` opened pc #1777 converting
 `actions/checkout@<40-char-sha> # v7.0.1` → `actions/checkout@v7.0.1` because
 `numeric_version()` ran `VERSION_PATTERN.search` on the SHA and matched leading
-hex digits as a “version” older than the latest tag. **Rule:** (1) `is_commit_sha`
-short-circuits version parsing; (2) updater writes only `sha # tag` pins; (3)
-compare SHA pins via the trailing `# vX.Y.Z` hint, never via the hex itself.
-**Related:** Lesson 0z. **Detection cost:** Low — any automation PR that replaces
-`@[0-9a-f]{40}` with `@v` is an instant escalate/close.
+hex digits as a “version” older than the latest tag. **Rule:** (1)
+`is_commit_sha` short-circuits version parsing; (2) updater writes only
+`sha # tag` pins; (3) compare SHA pins via the trailing `# vX.Y.Z` hint, never
+via the hex itself. **Related:** Lesson 0z. **Detection cost:** Low — any
+automation PR that replaces `@[0-9a-f]{40}` with `@v` is an instant
+escalate/close.
 
 ## Lesson 0cg: Jules Palette branches can duplicate with session-id suffix (2026-06-08)
 
@@ -1472,14 +1478,16 @@ is configured-mode skip without disabling interactive 1Password.
 before #364, #1011 before #1013). Each pair touched `.jules/bolt.md` (or
 overlapping source). The later PR went DIRTY even though source hunks were
 compatible — conflict was almost entirely in append-only journal files.
-**Rule:** (1) In Phase 1, merge journal-touching Palette/small PRs before broader
-Bolt PRs in the same repo, or defer the Bolt PR to Phase 2 immediately. (2) In
-Phase 2, never `git checkout pr -- <journal>`; append only the new `##` entry
-from the PR diff. (3) Before salvaging, diff `main` vs PR for functional delta —
-sc#210 was superseded because #224 already landed the CWE-209 fix. (4) Partial
-salvage is valid when sibling merge absorbed part of the Bolt diff (hg#364
-`chart_generator` via #363). **Detection cost:** Low — `mergeStateStatus: DIRTY`
-+ shared `.jules/*.md` in both PR file lists.
+**Rule:** (1) In Phase 1, merge journal-touching Palette/small PRs before
+broader Bolt PRs in the same repo, or defer the Bolt PR to Phase 2 immediately.
+(2) In Phase 2, never `git checkout pr -- <journal>`; append only the new `##`
+entry from the PR diff. (3) Before salvaging, diff `main` vs PR for functional
+delta — sc#210 was superseded because #224 already landed the CWE-209 fix. (4)
+Partial salvage is valid when sibling merge absorbed part of the Bolt diff
+(hg#364 `chart_generator` via #363). **Detection cost:** Low —
+`mergeStateStatus: DIRTY`
+
+- shared `.jules/*.md` in both PR file lists.
 
 ## Lesson 0du: Harmful content-swap PRs masquerading as docs (2026-07-16)
 
@@ -1492,10 +1500,10 @@ boilerplate, CLOSE as harmful — do not merge. **Detection cost:** Low —
 ## Lesson 0dv: Identical Dependabot + human "consolidate" twins (2026-07-17)
 
 **Pattern:** pc #1673 (Dependabot codeql-action bump) and #1674 ("consolidate
-workflow automation") had byte-identical diffs on `security-scan.yml`.
-**Rule:** When two open PRs share the same single-file patch, keep the
-Dependabot PR and close the duplicate with a link — do not merge both.
-**Detection cost:** Low — compare `gh pr diff` hashes or unified diffs.
+workflow automation") had byte-identical diffs on `security-scan.yml`. **Rule:**
+When two open PRs share the same single-file patch, keep the Dependabot PR and
+close the duplicate with a link — do not merge both. **Detection cost:** Low —
+compare `gh pr diff` hashes or unified diffs.
 
 ## Lesson 0dw: Tip-release artifact major bumps need human review (2026-07-17)
 
@@ -1503,8 +1511,9 @@ Dependabot PR and close the duplicate with a link — do not merge both.
 v4→v7 on `main-tip.yml` with breaking Node 24 / digest-mismatch defaults.
 **Rule:** Semver-major Actions bumps on release/tip pipelines escalate even when
 CI is green — tip signing/smoke may not exercise digest failure modes in PR
-checks. **Detection cost:** Low — Dependabot `update-type: version-update:semver-major`
-on `actions/*-artifact` in tip/release workflows.
+checks. **Detection cost:** Low — Dependabot
+`update-type: version-update:semver-major` on `actions/*-artifact` in
+tip/release workflows.
 
 ## Lesson 0dx: Salvage rollmean/tail supersedes follow-up Bolt (2026-07-17)
 
@@ -1519,11 +1528,11 @@ equivalent. **Detection cost:** Low — same file + same expression neighborhood
 **Pattern:** hg #381 re-inlined NumPy fractional-deviation math into
 `_add_hydrograph` / `_format_plot`, deleting `_format_hydrograph_axis` helpers
 already landed by salvage #378 — CodeScene flagged Complex Method. **Rule:**
-When a Bolt PR conflicts after a salvage that extracted a helper, three-dot
-diff against `main` (not the PR's old base). If the PR removes helpers and
-re-inlines equivalent math, CLOSE as superseded / complexity regression — do
-not salvage the inline form. **Detection cost:** Low — `git diff main...pr`
-shows deleted helper methods + CodeScene Complex Method on the callers.
+When a Bolt PR conflicts after a salvage that extracted a helper, three-dot diff
+against `main` (not the PR's old base). If the PR removes helpers and re-inlines
+equivalent math, CLOSE as superseded / complexity regression — do not salvage
+the inline form. **Detection cost:** Low — `git diff main...pr` shows deleted
+helper methods + CodeScene Complex Method on the callers.
 
 ## Lesson 0dz: `pull_request_target` greeting chicken-egg (2026-07-18)
 
@@ -1533,28 +1542,30 @@ kebab-case inputs. Logs still showed `first-interaction@v1` with underscore
 names. **Root cause:** `on: pull_request_target` runs the **base-branch
 (`main`)** workflow file, not the PR head — so the fix cannot self-validate
 until merged. Underscore inputs (`repo_token`) are ignored by current action
-images → empty messages → `Action must have at least one of issue-message or
-pr-message set`. **Rule:** (1) For PRs that only fix a `pull_request_target`
-workflow on `main`, treat a red check that re-runs the broken base workflow as
-**expected Gate 1 noise**, not a merge blocker — document in the merge comment.
-(2) Always ship kebab-case inputs with `@v3`. (3) Prefer moving greetings off
-`pull_request_target` long-term (agent already owns first-interaction).
-**Detection cost:** Low — log line `Run actions/first-interaction@v1` while PR
-diff shows `@v3`.
+images → empty messages →
+`Action must have at least one of issue-message or
+pr-message set`. **Rule:**
+(1) For PRs that only fix a `pull_request_target` workflow on `main`, treat a
+red check that re-runs the broken base workflow as **expected Gate 1 noise**,
+not a merge blocker — document in the merge comment. (2) Always ship kebab-case
+inputs with `@v3`. (3) Prefer moving greetings off `pull_request_target`
+long-term (agent already owns first-interaction). **Detection cost:** Low — log
+line `Run actions/first-interaction@v1` while PR diff shows `@v3`.
 
 ## Lesson 0ea: CI-cache salvage vs workflow-delete consolidation (2026-07-18)
 
-**Pattern:** Salvage [#1679](https://github.com/abhimehro/personal-config/pull/1679)
-kept and enhanced `.github/workflows/shellcheck.yml` (cached
-`setup-shellcheck`). Sibling consolidation [#1670](https://github.com/abhimehro/personal-config/pull/1670)
+**Pattern:** Salvage
+[#1679](https://github.com/abhimehro/personal-config/pull/1679) kept and
+enhanced `.github/workflows/shellcheck.yml` (cached `setup-shellcheck`). Sibling
+consolidation [#1670](https://github.com/abhimehro/personal-config/pull/1670)
 (ABHI-1321) **deletes** the same workflow as redundant with `mac-audit.yml` /
-`code-quality.yml`, producing a Git **modify/delete** conflict — and the same
-PR also removes `gemini-*.yml` + edits `gitleaks.toml`. **Rule:** When a DIRTY
-PR's only conflict is modify/delete on a workflow that a recent salvage
-intentionally kept, do **not** auto-resolve by taking the deletion if the PR
-also touches CI trust-boundary surfaces (Gemini agents, credential scanners).
-Leave ESCALATE with an explicit keep-vs-delete note for the maintainer.
-**Detection cost:** Low — `git merge-tree` / `git merge --no-commit` shows
+`code-quality.yml`, producing a Git **modify/delete** conflict — and the same PR
+also removes `gemini-*.yml` + edits `gitleaks.toml`. **Rule:** When a DIRTY PR's
+only conflict is modify/delete on a workflow that a recent salvage intentionally
+kept, do **not** auto-resolve by taking the deletion if the PR also touches CI
+trust-boundary surfaces (Gemini agents, credential scanners). Leave ESCALATE
+with an explicit keep-vs-delete note for the maintainer. **Detection cost:** Low
+— `git merge-tree` / `git merge --no-commit` shows
 `CONFLICT (modify/delete): …/shellcheck.yml`.
 
 ## Lesson 0eb: Setup-security PRs that regress greetings.yml (2026-07-19)
@@ -1562,39 +1573,37 @@ Leave ESCALATE with an explicit keep-vs-delete note for the maintainer.
 **Pattern:** esp #1299 correctly moved IMAP password handling out of shell
 variables into the Python setup wizard, but also flipped
 `.github/workflows/greetings.yml` inputs from kebab-case back to underscores —
-undoing Lesson 0dz. After sibling #1300 merged, `setup_wizard.py` went DIRTY
-on formatting-only hunks. **Rule:** (1) Diff workflow files in every
-setup/security PR even when the title is password-exposure; reject/autofix
-underscore `first-interaction` inputs. (2) Merge lint/Jules PRs touching the
-same Python module *after* the security PR, or expect a formatting conflict
-cycle. **Detection cost:** Low — `gh pr diff` on `greetings.yml` shows
-`repo_token` / `issue_message`.
+undoing Lesson 0dz. After sibling #1300 merged, `setup_wizard.py` went DIRTY on
+formatting-only hunks. **Rule:** (1) Diff workflow files in every setup/security
+PR even when the title is password-exposure; reject/autofix underscore
+`first-interaction` inputs. (2) Merge lint/Jules PRs touching the same Python
+module _after_ the security PR, or expect a formatting conflict cycle.
+**Detection cost:** Low — `gh pr diff` on `greetings.yml` shows `repo_token` /
+`issue_message`.
 
 ## Lesson 0ec: Isolate USE_COLORS branches to avoid CodeScene Complex Method (2026-07-19)
 
-**Pattern:** Jules Palette [#1030](https://github.com/abhimehro/ctrld-sync/pull/1030)
-added an inline `if USE_COLORS: … else: …` inside
-`display_rate_limit_status`, which was already at CodeScene's cyclomatic
-threshold (9). The check failed with Complex Method 9→11 even though tests,
-ruff, and mypy were green.
-**Rule:** When a Palette/UX PR only needs a color fallback, extract a tiny
-helper (e.g. `_print_bold_header`, mirroring `_print_hint`) so the call site
-does not gain a decision branch. Post
-`/cs-agent skill:fix-code-health-degradations`, then ship the helper-based
-salvage as a **draft** and close the original as superseded.
-**Detection cost:** Low — CodeScene review comment names the method +
-threshold; three-dot diff shows a new `if USE_COLORS` inside an already-complex
-display function.
+**Pattern:** Jules Palette
+[#1030](https://github.com/abhimehro/ctrld-sync/pull/1030) added an inline
+`if USE_COLORS: … else: …` inside `display_rate_limit_status`, which was already
+at CodeScene's cyclomatic threshold (9). The check failed with Complex Method
+9→11 even though tests, ruff, and mypy were green. **Rule:** When a Palette/UX
+PR only needs a color fallback, extract a tiny helper (e.g.
+`_print_bold_header`, mirroring `_print_hint`) so the call site does not gain a
+decision branch. Post `/cs-agent skill:fix-code-health-degradations`, then ship
+the helper-based salvage as a **draft** and close the original as superseded.
+**Detection cost:** Low — CodeScene review comment names the method + threshold;
+three-dot diff shows a new `if USE_COLORS` inside an already-complex display
+function.
 
 ## Lesson 0ed: Jules may re-open the same branch after salvage close (2026-07-19)
 
-**Pattern:** After Phase 2 closed ctrld-sync #1030 as superseded by salvage #1031,
-Jules re-opened the **same head branch** (`jules-…-6dc812c7`) as #1032 with the
-identical CodeScene-failing inline `if USE_COLORS` diff.
-**Rule:** After closing a Jules/Palette PR as superseded by a salvage draft,
-watch for an immediate twin re-open of the same `headRefName`. Close the twin
-with a link to the salvage draft and an explicit "do not re-open" note. Do not
-re-salvage.
+**Pattern:** After Phase 2 closed ctrld-sync #1030 as superseded by salvage
+#1031, Jules re-opened the **same head branch** (`jules-…-6dc812c7`) as #1032
+with the identical CodeScene-failing inline `if USE_COLORS` diff. **Rule:**
+After closing a Jules/Palette PR as superseded by a salvage draft, watch for an
+immediate twin re-open of the same `headRefName`. Close the twin with a link to
+the salvage draft and an explicit "do not re-open" note. Do not re-salvage.
 **Detection cost:** Low — new open PR with same `headRefName` / title within
 minutes of the close.
 
@@ -1614,76 +1623,72 @@ cost:** Low — GG comment cites the old commit SHA; tip `rg passwd` is empty.
 **Pattern:** series_correction Jules/Sentinel PRs (#275/#276/#268) titled as
 DoS/JSON fixes still edit `authenticate()` / PBKDF2 / session tokens inside
 `dummy_todos.py`, or delete auth stubs. Even "demo" modules are trust-boundary
-code under the Phase 1 escalate rule.
-**Rule:** Any PR that creates/modifies/removes password hashing, `authenticate`,
-or session-token issuance → **ESCALATE**, regardless of filename or "dummy"
-prefix. Prefer extracting DoS-only helpers to a non-auth module before merge.
-**Detection cost:** Low — `gh pr diff --name-only` includes `dummy_todos.py` or
-diff hunks mention `pbkdf2` / `hmac.compare_digest` / `authenticate`.
+code under the Phase 1 escalate rule. **Rule:** Any PR that
+creates/modifies/removes password hashing, `authenticate`, or session-token
+issuance → **ESCALATE**, regardless of filename or "dummy" prefix. Prefer
+extracting DoS-only helpers to a non-auth module before merge. **Detection
+cost:** Low — `gh pr diff --name-only` includes `dummy_todos.py` or diff hunks
+mention `pbkdf2` / `hmac.compare_digest` / `authenticate`.
 
 ## Lesson 0eg: Mass Jules flood — merge tests before shared-module refactors (2026-07-21)
 
-**Pattern:** A single cron window opened ~96 automation PRs (esp 28, sc 25,
-pc 20). Merging shared-module refactors first made sibling test PRs DIRTY.
+**Pattern:** A single cron window opened ~96 automation PRs (esp 28, sc 25, pc
+20). Merging shared-module refactors first made sibling test PRs DIRTY.
 **Rule:** In a same-day flood, merge order = (1) Dependabot patches, (2)
 isolated tests, (3) single-file perf, (4) shared-module refactors last. Close
-weaker duplicates early. Cap ingestion/parser multi-file refactors as DEFER
-when ≥3 PRs touch the same hotspot.
-**Detection cost:** Low — inventory `changedFiles` + path overlap matrix before
-Phase 3.
+weaker duplicates early. Cap ingestion/parser multi-file refactors as DEFER when
+≥3 PRs touch the same hotspot. **Detection cost:** Low — inventory
+`changedFiles` + path overlap matrix before Phase 3.
 
 ## Lesson 0eh: Test PRs smuggling `pr-visual-recap.yml` become systematic DIRTY (2026-07-21)
 
 **Pattern:** Palette/Bolt/Jules test PRs (#1716/#1723/#1726 and siblings) append
 tiny workflow edits to `.github/workflows/pr-visual-recap.yml` alongside real
 test additions. After any sibling merges that touch the same workflow, the
-entire test PR goes DIRTY even when the test file would apply cleanly.
-**Rule:** When salvaging, **never** checkout `pr-visual-recap.yml` from the
-conflicted PR. Re-apply only the test/source files onto `main`. Prefer one
-clustered salvage draft per test-file hotspot (Lesson 0dv) over re-opening
-each bot PR.
+entire test PR goes DIRTY even when the test file would apply cleanly. **Rule:**
+When salvaging, **never** checkout `pr-visual-recap.yml` from the conflicted PR.
+Re-apply only the test/source files onto `main`. Prefer one clustered salvage
+draft per test-file hotspot (Lesson 0dv) over re-opening each bot PR.
 **Detection cost:** Low — `gh pr diff --name-only` includes both
 `tests/test_*.py` and `pr-visual-recap.yml`.
 
 ## Lesson 0ei: PLAN_RECAP_TOKEN newlines break publish AND leak JWT into comments (2026-07-21)
 
-**Pattern:** Visual recap sticky comment showed `Headers.append: "Bearer
-[redacted] <jwt-remainder>" is an invalid header value` instead of a plan
-link. Publish never produced a URL. **Root cause:** (1) `PLAN_RECAP_TOKEN`
-org credential had embedded CR/LF (wrapped paste). undici rejects
-`Authorization` values with control chars. (2) `@agent-native/recap-cli`
-`sanitizeAgentFailureSummary` only redacts `Bearer\s+[A-Za-z0-9._-]{8,}` —
-a mid-token newline ends that match early, so the JWT payload/signature after
-the break is posted to the PR. `.trim()` on the token does **not** remove
-internal whitespace.
-**Rule:** (1) Strip **all** whitespace from `PLAN_RECAP_TOKEN` at job start
-(`tr -d '[:space:]'`), drop accidental `Bearer` prefix, `::add-mask::`, then
-export via `GITHUB_ENV`. (2) Scrub sticky-comment diagnostics for Bearer /
-JWT / long base64url runs before upsert. (3) Paste secrets as a single line;
-if a JWT fragment ever lands in a PR comment, **rotate** the org service
-token immediately. (4) Do not rely on recap-cli redact alone for newline-split
-tokens.
+**Pattern:** Visual recap sticky comment showed
+`Headers.append: "Bearer
+[redacted] <jwt-remainder>" is an invalid header value`
+instead of a plan link. Publish never produced a URL. **Root cause:** (1)
+`PLAN_RECAP_TOKEN` org credential had embedded CR/LF (wrapped paste). undici
+rejects `Authorization` values with control chars. (2) `@agent-native/recap-cli`
+`sanitizeAgentFailureSummary` only redacts `Bearer\s+[A-Za-z0-9._-]{8,}` — a
+mid-token newline ends that match early, so the JWT payload/signature after the
+break is posted to the PR. `.trim()` on the token does **not** remove internal
+whitespace. **Rule:** (1) Strip **all** whitespace from `PLAN_RECAP_TOKEN` at
+job start (`tr -d '[:space:]'`), drop accidental `Bearer` prefix,
+`::add-mask::`, then export via `GITHUB_ENV`. (2) Scrub sticky-comment
+diagnostics for Bearer / JWT / long base64url runs before upsert. (3) Paste
+secrets as a single line; if a JWT fragment ever lands in a PR comment,
+**rotate** the org service token immediately. (4) Do not rely on recap-cli
+redact alone for newline-split tokens.
 
 ## Lesson 0ej: Diff before/after/code with unescaped `\"` breaks Plan MDX (2026-07-21)
 
 **Pattern:** Visual recap publish returns `422 Unprocessable Entity` with
 `plan.mdx:N:M: Could not parse expression with acorn` after auth succeeds.
-**Root cause:** Agent embeds shell sed character classes like
-`[^[:space:]\"]` inside Diff `after: "..."` JS string props. In JS, `\\"`
-ends the string early; acorn then sees Unexpected token. Sidecar assembly via
-`JSON.stringify` does **not** fix inner MDX expression syntax — only the outer
-JSON envelope.
+**Root cause:** Agent embeds shell sed character classes like `[^[:space:]\"]`
+inside Diff `after: "..."` JS string props. In JS, `\\"` ends the string early;
+acorn then sees Unexpected token. Sidecar assembly via `JSON.stringify` does
+**not** fix inner MDX expression syntax — only the outer JSON envelope.
 **Follow-on:** After Diff colon-props are fixed, agents may still emit JSX
-`after="…"` / `code={"…` multi-line attrs. In JSX, `"` ends the attribute
-(`\"` is not an escape) → 422 "Unexpected character `\\` in attribute name".
-Rewrite those to `after={JSON.stringify(...)}`. Next failure mode: bare array
-attrs (`columns=[…]`, `rows=[…]`) → 422 "Unexpected character `[` before
-attribute value"; also illegal commas between JSX attrs (`columns={…},`).
-Rewrite to `columns={[…]}` and strip trailing commas. For `rows=[…]}` (stray
-`}` already present), only insert `{` after `=` — do not double-close.
-OpenCode one-shot repair can hang — prefer deterministic re-publish; cap agent
-repair at ~6 minutes. Do not auto-balance Callout tags (code samples contain
-decoy markup).
+`after="…"` / `code={"…` multi-line attrs. In JSX, `"` ends the attribute (`\"`
+is not an escape) → 422 "Unexpected character `\\` in attribute name". Rewrite
+those to `after={JSON.stringify(...)}`. Next failure mode: bare array attrs
+(`columns=[…]`, `rows=[…]`) → 422 "Unexpected character `[` before attribute
+value"; also illegal commas between JSX attrs (`columns={…},`). Rewrite to
+`columns={[…]}` and strip trailing commas. For `rows=[…]}` (stray `}` already
+present), only insert `{` after `=` — do not double-close. OpenCode one-shot
+repair can hang — prefer deterministic re-publish; cap agent repair at ~6
+minutes. Do not auto-balance Callout tags (code samples contain decoy markup).
 **Rule:** (1) Before publish, rewrite Diff `before`/`after`/`code` lines whose
 bodies are not valid JSON-string payloads via
 `scripts/fix-recap-mdx-diff-strings.js` (`JSON.stringify` after lenient
@@ -1691,10 +1696,11 @@ unescape). (2) Isolate Callout/Note/… block tags onto their own lines (do not
 auto-balance — decoys in samples). (3) Rewrite Diff JSX string attrs to
 `{JSON.stringify(...)}`; rewrite bare array attrs to `{[…]}`; strip illegal
 commas between attrs. (4) On `repairable=true`, re-run the deterministic fixer
-and re-publish before any agent repair; cap agent repair at ~6 minutes.
-(5) Prompt agents that Diff string props must be JS-string-safe and JSX array
-attrs must use expression form. (6) Do not treat a 422 acorn/MDX error as an
+and re-publish before any agent repair; cap agent repair at ~6 minutes. (5)
+Prompt agents that Diff string props must be JS-string-safe and JSX array attrs
+must use expression form. (6) Do not treat a 422 acorn/MDX error as an
 auth/token problem.
+
 ## Lesson 0ej: Sibling Sentinel env-filter PRs — escalate both (2026-07-23/24)
 
 **Pattern:** Multiple Sentinel PRs (#507/#518/#525) rewrite
@@ -1702,9 +1708,9 @@ auth/token problem.
 (denylist vs allowlist-first vs custom_env last). CI can be green on all.
 **Rule:** Escalate the whole sibling set; do not merge the "newest green" alone.
 Human picks one ordering. Prefer allowlist base → heuristic strip → explicit
-`custom_env` overrides → hard denylist last.
-**Detection cost:** Low — title contains Sentinel + env / subprocess; same file
-overlap in `.github/scripts/repository_automation_common.py`.
+`custom_env` overrides → hard denylist last. **Detection cost:** Low — title
+contains Sentinel + env / subprocess; same file overlap in
+`.github/scripts/repository_automation_common.py`.
 
 ## Lesson 0ek: Dependabot title may lie — read the constraint diff (2026-07-23/24)
 
@@ -1712,67 +1718,67 @@ overlap in `.github/scripts/repository_automation_common.py`.
 **major** floor bump (`>=2.2,<3` → `>=3.0.5,<4`) while sounding routine.
 **Rule:** Always `gh pr diff` requirements/lockfiles before DEPENDENCY MERGE.
 Majors and constraint widenings → ESCALATE even when CI is green on a narrow
-optional path (e.g. Series_27 only).
-**Detection cost:** Low — one-line requirements diff.
+optional path (e.g. Series_27 only). **Detection cost:** Low — one-line
+requirements diff.
 
 ## Lesson 0el: bolt.md journal conflicts after sibling Bolt merges (2026-07-24)
 
 **Pattern:** esp #1346 (SPF helper + bolt.md append) went DIRTY after #1354
 merged another bolt.md append. `update-branch` returns 422; CodeScene/CI were
-fine on the code file.
-**Rule:** Autofix = merge main into PR head, take **main's** `.jules/bolt.md`,
-re-append this PR's learning if missing, keep source-file changes, push to the
-**existing** head ref (never a guessed new branch name). Then wait for checks
-before squash-merge.
-**Detection cost:** Low — `files` includes `.jules/bolt.md` + one module; sibling
-Bolt merged same day.
+fine on the code file. **Rule:** Autofix = merge main into PR head, take
+**main's** `.jules/bolt.md`, re-append this PR's learning if missing, keep
+source-file changes, push to the **existing** head ref (never a guessed new
+branch name). Then wait for checks before squash-merge. **Detection cost:** Low
+— `files` includes `.jules/bolt.md` + one module; sibling Bolt merged same day.
+
 ## Lesson 0ek: Re-salvage conflicted salvage drafts with -v2; adapt past sibling refactors (2026-07-22)
 
 **Pattern:** A prior Phase 2 salvage (esp #1335) itself went `CONFLICTING` after
 later Phase 1 merges on the same hotspot file. A second Jules refactor (#1330)
 conflicted specifically because #1311 introduced `FetchContext` while #1330
-still rewrote IMAPClient construction against the pre-FetchContext shape.
-Also: pushing a salvage branch name that already exists remotely fails with
-`cannot lock ref` / already exists — do not force-push.
-**Rule:** (1) When a *salvage* PR conflicts, open `…-v2-<suffix>` from current
-`main`, re-apply only the unique source hunks, close the prior salvage as
-superseded. (2) When adapting init/signature refactors onto main, preserve
-newer structural APIs (e.g. `FetchContext`) and rewrite call sites — never
+still rewrote IMAPClient construction against the pre-FetchContext shape. Also:
+pushing a salvage branch name that already exists remotely fails with
+`cannot lock ref` / already exists — do not force-push. **Rule:** (1) When a
+_salvage_ PR conflicts, open `…-v2-<suffix>` from current `main`, re-apply only
+the unique source hunks, close the prior salvage as superseded. (2) When
+adapting init/signature refactors onto main, preserve newer structural APIs
+(e.g. `FetchContext`) and rewrite call sites — never
 `git checkout pr -- <hotspot>` wholesale. (3) On remote branch name collision,
-rename locally to `-v2` and push; never `--force`.
-**Detection cost:** Low — salvage PR title contains `(salvages #N)` and
-`mergeable=CONFLICTING`; `git merge-tree` shows "changed in both" on the hotspot.
+rename locally to `-v2` and push; never `--force`. **Detection cost:** Low —
+salvage PR title contains `(salvages #N)` and `mergeable=CONFLICTING`;
+`git merge-tree` shows "changed in both" on the hotspot.
 
 ## Lesson 0el: Sibling Sentinel env-filter PRs — escalate both, prefer newer (2026-07-23)
 
 **Pattern:** Seatek #507 and #518 both rewrite `filter_env_securely` order
 (custom_env merge vs heuristic denylist) with divergent journal rewrites in
 `.jules/sentinel.md`. Auto-merging either without human comparison risks
-dropping the stricter PATH/token denylist ordering from the other.
-**Rule:** (1) Treat overlapping Sentinel subprocess-env PRs as one cluster —
-ESCALATE all. (2) Prefer the newer PR only after a human confirms the final
-order: base → allowlist → heuristic → custom_env → strict token denylist.
-(3) Do not CLOSE-DUPLICATE the older sibling until the chosen PR is merged.
-**Detection cost:** Low — same path `.github/scripts/repository_automation_common.py`
-+ Sentinel emoji title.
+dropping the stricter PATH/token denylist ordering from the other. **Rule:** (1)
+Treat overlapping Sentinel subprocess-env PRs as one cluster — ESCALATE all. (2)
+Prefer the newer PR only after a human confirms the final order: base →
+allowlist → heuristic → custom_env → strict token denylist. (3) Do not
+CLOSE-DUPLICATE the older sibling until the chosen PR is merged. **Detection
+cost:** Low — same path `.github/scripts/repository_automation_common.py`
+
+- Sentinel emoji title.
 
 ## Lesson 0em: Dependabot title vs constraint widen (2026-07-23)
 
 **Pattern:** Hydrograph #402 titled "bump pre-commit 4.6.0→4.6.1" but the diff
 only changed `requirements-ci.txt` upper bound `<4.0.0`→`<5.0.0` (no lockfile
-pin to 4.6.1). Title suggests patch; change is major-range allowance.
-**Rule:** For Dependabot PRs, read the constraint diff — if upper bound jumps a
-major for a **CI-only** tool, MERGE is OK after Gate 2; if runtime/prod
-dependency (pandas/numpy), ESCALATE. Never trust the PR title alone.
-**Detection cost:** Low — `gh pr diff` on requirements*.txt.
+pin to 4.6.1). Title suggests patch; change is major-range allowance. **Rule:**
+For Dependabot PRs, read the constraint diff — if upper bound jumps a major for
+a **CI-only** tool, MERGE is OK after Gate 2; if runtime/prod dependency
+(pandas/numpy), ESCALATE. Never trust the PR title alone. **Detection cost:**
+Low — `gh pr diff` on requirements*.txt.
 
 ## Lesson 0en: Restore logger-targeted assertion when moving truncate helpers (2026-07-23)
 
-**Pattern:** Jules #1320 switched `email_parser` to `validate_subject_length` but
-replaced `test_oversized_subject_logs_warning` with `pass` because the warning
-now logs from `security_validators.logger`, not `parser.logger`.
+**Pattern:** Jules #1320 switched `email_parser` to `validate_subject_length`
+but replaced `test_oversized_subject_logs_warning` with `pass` because the
+warning now logs from `security_validators.logger`, not `parser.logger`.
 **Rule:** When salvaging helper extractions that relocate logging, keep a real
 assertion by `patch`ing the module that owns the logger. Never accept `pass` as
-a substitute for a DoS/truncation warning regression test.
-**Detection cost:** Low — PR diff shows `pass` under a `logs_warning` test name
-plus an import of `validate_*` helpers.
+a substitute for a DoS/truncation warning regression test. **Detection cost:**
+Low — PR diff shows `pass` under a `logs_warning` test name plus an import of
+`validate_*` helpers.

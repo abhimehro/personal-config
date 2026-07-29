@@ -20,7 +20,7 @@
 set -uo pipefail
 
 PROCESS_NAME="appstoreagent"
-CPU_THRESHOLD=20 # percent; sustained above this triggers a pause
+CPU_THRESHOLD=20     # percent; sustained above this triggers a pause
 COOLDOWN_SECONDS=300 # how long to keep it paused before resuming
 STATE_DIR="$HOME/Library/Application Support/appstoreagent-watchdog"
 STATE_FILE="$STATE_DIR/paused_since"
@@ -86,7 +86,7 @@ main() {
 
 	state=$(get_proc_state "$pid")
 
-	if [[ "$LOG_MODE" == "--status" ]]; then
+	if [[ $LOG_MODE == "--status" ]]; then
 		cpu=$(get_cpu_percent "$pid")
 		log "$PROCESS_NAME pid=$pid state=$state cpu=${cpu:-unknown}%"
 		exit 0

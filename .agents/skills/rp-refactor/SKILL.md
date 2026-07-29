@@ -10,19 +10,25 @@ repoprompt_variant: mcp
 
 Refactor: $ARGUMENTS
 
-You are a **Refactoring Assistant** using RepoPrompt MCP tools. Your goal: analyze code structure, identify opportunities to reduce duplication and complexity, and suggest concrete improvements—without changing core logic unless it's broken.
+You are a **Refactoring Assistant** using RepoPrompt MCP tools. Your goal:
+analyze code structure, identify opportunities to reduce duplication and
+complexity, and suggest concrete improvements—without changing core logic unless
+it's broken.
 
 ## Goal
 
-Analyze code for redundancies and complexity, then implement improvements. **Preserve behavior** unless something is broken.
+Analyze code for redundancies and complexity, then implement improvements.
+**Preserve behavior** unless something is broken.
 
 ---
 
 ## Protocol
 
 0. **Verify workspace** – Confirm the target codebase is loaded.
-1. **Analyze** – Use `context_builder` with `response_type: "review"` to study recent changes and find refactor opportunities.
-2. **Implement** – Use `context_builder` with `response_type: "plan"` to implement the suggested refactorings.
+1. **Analyze** – Use `context_builder` with `response_type: "review"` to study
+   recent changes and find refactor opportunities.
+2. **Implement** – Use `context_builder` with `response_type: "plan"` to
+   implement the suggested refactorings.
 
 ---
 
@@ -36,7 +42,8 @@ Before any analysis, confirm the target codebase is loaded:
 
 **Check the output:**
 
-- If your target root appears in a window → bind to that window with `select_window`
+- If your target root appears in a window → bind to that window with
+  `select_window`
 - If not → the codebase isn't loaded
 
 **Bind to the correct window:**
@@ -56,27 +63,33 @@ Before any analysis, confirm the target codebase is loaded:
 
 ## Step 1: Analyze for Refactoring Opportunities (via `context_builder` - REQUIRED)
 
-⚠️ **Do NOT skip this step.** You MUST call `context_builder` with `response_type: "review"` to properly analyze the code.
+⚠️ **Do NOT skip this step.** You MUST call `context_builder` with
+`response_type: "review"` to properly analyze the code.
 
 Use XML tags to structure the instructions:
 
 ```json
-{"tool":"context_builder","args":{
-  "instructions":"<task>Analyze for refactoring opportunities. Look for: redundancies to remove, complexity to simplify, scattered logic to consolidate.</task>
+{
+  "tool": "context_builder",
+  "args": {
+    "instructions": "<task>Analyze for refactoring opportunities. Look for: redundancies to remove, complexity to simplify, scattered logic to consolidate.</task>
 
 <context>Target: <files, directory, or recent changes to analyze>.
 Goal: Preserve behavior while improving code organization.</context>
 
 <discovery_agent-guidelines>Focus on <target directories/files>.</discovery_agent-guidelines>",
-  "response_type":"review"
-}}
+    "response_type": "review"
+  }
+}
 ```
 
-Review the findings. If areas were missed, run additional focused reviews with explicit context about what was already analyzed.
+Review the findings. If areas were missed, run additional focused reviews with
+explicit context about what was already analyzed.
 
 ## Optional: Clarify Analysis
 
-After receiving analysis findings, you can ask clarifying questions in the same chat:
+After receiving analysis findings, you can ask clarifying questions in the same
+chat:
 
 ```json
 {
@@ -92,11 +105,14 @@ After receiving analysis findings, you can ask clarifying questions in the same 
 
 ## Step 2: Implement the Refactorings
 
-Once you have a clear list of refactoring opportunities, use `context_builder` with `response_type: "plan"` to implement:
+Once you have a clear list of refactoring opportunities, use `context_builder`
+with `response_type: "plan"` to implement:
 
 ```json
-{"tool":"context_builder","args":{
-  "instructions":"<task>Implement these refactorings:</task>
+{
+  "tool": "context_builder",
+  "args": {
+    "instructions": "<task>Implement these refactorings:</task>
 
 <context>Refactorings to apply:
 1. <specific refactoring with file references>
@@ -105,8 +121,9 @@ Once you have a clear list of refactoring opportunities, use `context_builder` w
 Preserve existing behavior. Make incremental changes.</context>
 
 <discovery_agent-guidelines>Focus on files involved in the refactorings.</discovery_agent-guidelines>",
-  "response_type":"plan"
-}}
+    "response_type": "plan"
+  }
+}
 ```
 
 ---
@@ -128,11 +145,18 @@ Preserve existing behavior. Make incremental changes.</context>
 
 ## Anti-patterns to Avoid
 
-- 🚫 **CRITICAL:** This workflow requires TWO `context_builder` calls – one for analysis (Step 1), one for implementation (Step 2). Do not skip either.
-- 🚫 Skipping Step 0 (Workspace Verification) – you must confirm the target codebase is loaded first
-- 🚫 Skipping Step 1's `context_builder` call with `response_type: "review"` and attempting to analyze manually
-- 🚫 Skipping Step 2's `context_builder` call with `response_type: "plan"` and implementing without a plan
-- 🚫 Doing extensive exploration (5+ tool calls) before the first `context_builder` call – let the builder do the heavy lifting
+- 🚫 **CRITICAL:** This workflow requires TWO `context_builder` calls – one for
+  analysis (Step 1), one for implementation (Step 2). Do not skip either.
+- 🚫 Skipping Step 0 (Workspace Verification) – you must confirm the target
+  codebase is loaded first
+- 🚫 Skipping Step 1's `context_builder` call with `response_type: "review"` and
+  attempting to analyze manually
+- 🚫 Skipping Step 2's `context_builder` call with `response_type: "plan"` and
+  implementing without a plan
+- 🚫 Doing extensive exploration (5+ tool calls) before the first
+  `context_builder` call – let the builder do the heavy lifting
 - 🚫 Proposing refactorings without the analysis phase via `context_builder`
-- 🚫 Implementing refactorings after only the analysis phase – you need the second `context_builder` call for implementation planning
-- 🚫 Assuming you understand the code structure without `context_builder`'s architectural analysis
+- 🚫 Implementing refactorings after only the analysis phase – you need the
+  second `context_builder` call for implementation planning
+- 🚫 Assuming you understand the code structure without `context_builder`'s
+  architectural analysis

@@ -19,11 +19,11 @@ fi
 export GH_TOKEN
 
 close_pr() {
-  local repo="$1"
-  local pr="$2"
-  local reason="$3"
-  echo "Closing ${repo}#${pr} (${reason})..."
-  gh pr close "${pr}" --repo "${repo}" --comment "Automated triage: ${reason}"
+	local repo="$1"
+	local pr="$2"
+	local reason="$3"
+	echo "Closing ${repo}#${pr} (${reason})..."
+	gh pr close "${pr}" --repo "${repo}" --comment "Automated triage: ${reason}"
 }
 
 # SUPERSEDED

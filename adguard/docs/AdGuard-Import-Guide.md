@@ -147,7 +147,8 @@
 
 ### Denylist Performance:
 
-- **Blocked Requests**: Should see significant increase in blocked tracking requests
+- **Blocked Requests**: Should see significant increase in blocked tracking
+  requests
 - **Coverage**: Comprehensive protection against all specified trackers
 - **Performance**: Minimal impact on browsing speed
 
@@ -197,4 +198,5 @@ If you encounter issues:
 
 ---
 
-**🎉 Congratulations!** You've successfully migrated from Control D DNS profiles to AdGuard with comprehensive tracking protection!
+**🎉 Congratulations!** You've successfully migrated from Control D DNS profiles
+to AdGuard with comprehensive tracking protection!

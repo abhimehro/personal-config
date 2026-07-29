@@ -5,7 +5,6 @@ Invoked as: python3 get_prs_summarize.py <true|false> <path-to-json>
 The second argument is include_details ("true" / "false").
 """
 
-
 import concurrent.futures
 import json
 import os
@@ -225,7 +224,9 @@ def _print_details_section(data: list) -> None:
     tasks = [(repo, pr) for pr in data]
 
     # ⚡ Bolt Optimization: Use ThreadPoolExecutor for concurrent I/O-bound GitHub API calls
-    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(tasks) or 1, 32)) as executor:
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=min(len(tasks) or 1, 32)
+    ) as executor:
         results = list(executor.map(_fetch_task_wrapper, tasks))
 
     for res in results:
