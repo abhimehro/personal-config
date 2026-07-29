@@ -4,27 +4,34 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
 from spreadsheet_safety import escape_spreadsheet_formula
+from gh_token_env import load_gh_token_env
 
 
 def _fetch_repo_prs(repo):
     repo_prs = []
-    res = subprocess.run(
-        [
-            "gh",
-            "pr",
-            "list",
-            "--repo",
-            repo,
-            "--state",
-            "open",
-            "--limit",
-            "100",
-            "--json",
-            "number,title,author,headRefName,mergeStateStatus,state,createdAt",
-        ],
-        capture_output=True,
-        text=True,
-    )
+    env = load_gh_token_env()
+    try:
+        res = subprocess.run(
+            [
+                "gh",
+                "pr",
+                "list",
+                "--repo",
+                repo,
+                "--state",
+                "open",
+                "--limit",
+                "100",
+                "--json",
+                "number,title,author,headRefName,mergeStateStatus,state,createdAt",
+            ],
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=120,
+        )
+    except subprocess.TimeoutExpired:
+        return []
     if res.returncode == 0:
         prs = json.loads(res.stdout)
         for pr in prs:

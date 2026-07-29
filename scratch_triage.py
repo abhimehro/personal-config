@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 import datetime
 import json
+from gh_token_env import load_gh_token_env
 import subprocess
 
 repos = [
@@ -14,8 +15,12 @@ repos = [
 
 
 def run_cmd(cmd):
-    res = subprocess.run(cmd, capture_output=True, text=True)
-    return res.returncode == 0, res.stdout, res.stderr
+    env = load_gh_token_env()
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=120)
+        return res.returncode == 0, res.stdout, res.stderr
+    except subprocess.TimeoutExpired:
+        return False, "", "Timeout expired"
 
 
 def _contains_all_keywords(title_lower, lower_kws):
