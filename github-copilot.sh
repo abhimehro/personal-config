@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # GitHub Copilot (VS Code) adapter.
 #
 # Copilot input payload (PreToolUse):
