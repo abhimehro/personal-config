@@ -1,11 +1,14 @@
 # macOS Disabled Background Services & Widgets
 
-**Date Created:** October 12, 2025  
-**Purpose:** Reduce system resource usage, memory consumption, and eliminate excessive crash reports from unwanted background processes and widget extensions.
+**Date Created:** October 12, 2025\
+**Purpose:** Reduce system resource usage, memory consumption, and eliminate
+excessive crash reports from unwanted background processes and widget
+extensions.
 
 ## Problem Context
 
-- **Issue:** macOS aggressively launches widget extensions and background services even when widgets are removed from view
+- **Issue:** macOS aggressively launches widget extensions and background
+  services even when widgets are removed from view
 - **Symptoms:**
   - CalendarWidgetExtension crashed 76 times generating diagnostic reports
   - Apps like Podcasts randomly activate without user interaction
@@ -64,7 +67,9 @@ sudo launchctl disable gui/$UID/com.apple.photolibraryd
 
 The following widget extensions were force-killed to free memory:
 
-- **Apple Widgets:** Calendar, Stocks, Weather, News, Tips, Home, FindMy, Journal, Reminders, Shortcuts, Notes, Photos, World Clock, People, Safari, Screen Time, Batteries, Accessibility Settings, Podcasts
+- **Apple Widgets:** Calendar, Stocks, Weather, News, Tips, Home, FindMy,
+  Journal, Reminders, Shortcuts, Notes, Photos, World Clock, People, Safari,
+  Screen Time, Batteries, Accessibility Settings, Podcasts
 - **Microsoft Office Widgets:** Excel, PowerPoint, Word
 - **Third-party Widgets:** Drafts, Dropover, Yoink, Shortcut for Google
 
@@ -96,8 +101,10 @@ These are intentionally left enabled as they're actively used:
 ### Known Behavior
 
 - 🔄 Some services may respawn on-demand when other apps request them
-- 🔄 The `disable` command prevents auto-launch at login but doesn't prevent on-demand activation
-- 🔄 After system updates, some services may re-enable (check and re-run disable commands)
+- 🔄 The `disable` command prevents auto-launch at login but doesn't prevent
+  on-demand activation
+- 🔄 After system updates, some services may re-enable (check and re-run disable
+  commands)
 
 ## Verification Commands
 
@@ -207,7 +214,8 @@ sudo launchctl kickstart -k gui/$UID/com.apple.peopled
 
 ## Notes
 
-- Changes persist across reboots due to `launchctl disable` (creates override in `/var/db/com.apple.xpc.launchd/`)
+- Changes persist across reboots due to `launchctl disable` (creates override in
+  `/var/db/com.apple.xpc.launchd/`)
 - System updates may occasionally re-enable services - verify after updates
 - Compatible with macOS Sequoia and later (uses modern launchctl syntax)
 - These changes are safe and fully reversible

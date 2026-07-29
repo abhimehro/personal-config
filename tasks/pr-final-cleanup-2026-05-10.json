@@ -251,25 +251,73 @@
   ],
   "open_after_run": {
     "personal-config": [
-      {"pr": 916, "state": "DRAFT", "kind": "salvage of #911"},
-      {"pr": 917, "state": "DRAFT", "kind": "salvage of #899"},
-      {"pr": 918, "state": "DRAFT", "kind": "salvage of #856"},
-      {"pr": 901, "state": "DIRTY", "kind": "trust-boundary (copilot setup.sh) — escalated"},
-      {"pr": 893, "state": "BLOCKED", "kind": "trust-boundary (security summary.yml) — escalated"}
+      { "pr": 916, "state": "DRAFT", "kind": "salvage of #911" },
+      { "pr": 917, "state": "DRAFT", "kind": "salvage of #899" },
+      { "pr": 918, "state": "DRAFT", "kind": "salvage of #856" },
+      {
+        "pr": 901,
+        "state": "DIRTY",
+        "kind": "trust-boundary (copilot setup.sh) — escalated"
+      },
+      {
+        "pr": 893,
+        "state": "BLOCKED",
+        "kind": "trust-boundary (security summary.yml) — escalated"
+      }
     ],
     "ctrld-sync": [
-      {"pr": 769, "state": "CLEAN", "kind": "trust-boundary (security summary.yml) — escalated; status flipped to CLEAN since prior session"}
+      {
+        "pr": 769,
+        "state": "CLEAN",
+        "kind": "trust-boundary (security summary.yml) — escalated; status flipped to CLEAN since prior session"
+      }
     ],
     "email-security-pipeline": [
-      {"pr": 778, "state": "CLEAN", "kind": "trust-boundary (Palette suspicious URLs display) — escalated; status flipped to CLEAN since prior session"},
-      {"pr": 780, "state": "CLEAN", "kind": "trust-boundary (security summary.yml) — escalated; status flipped to CLEAN since prior session"},
-      {"pr": 791, "state": "DIRTY", "kind": "trust-boundary (Palette CLI accessibility) — escalated"},
-      {"pr": 793, "state": "DIRTY", "kind": "trust-boundary (Bolt time.monotonic for TTLCache) — escalated"},
-      {"pr": 796, "state": "UNSTABLE", "kind": "trust-boundary (Palette NO_COLOR) — escalated; red gate (CodeQL, CodeScene)"}
+      {
+        "pr": 778,
+        "state": "CLEAN",
+        "kind": "trust-boundary (Palette suspicious URLs display) — escalated; status flipped to CLEAN since prior session"
+      },
+      {
+        "pr": 780,
+        "state": "CLEAN",
+        "kind": "trust-boundary (security summary.yml) — escalated; status flipped to CLEAN since prior session"
+      },
+      {
+        "pr": 791,
+        "state": "DIRTY",
+        "kind": "trust-boundary (Palette CLI accessibility) — escalated"
+      },
+      {
+        "pr": 793,
+        "state": "DIRTY",
+        "kind": "trust-boundary (Bolt time.monotonic for TTLCache) — escalated"
+      },
+      {
+        "pr": 796,
+        "state": "UNSTABLE",
+        "kind": "trust-boundary (Palette NO_COLOR) — escalated; red gate (CodeQL, CodeScene)"
+      }
     ],
     "Seatek_Analysis": [],
     "Hydrograph_Versus_Seatek_Sensors_Project": [],
     "series_correction_project_updated": []
   },
-  "lessons_referenced": ["0aa", "0bb", "0cc", "0de", "0dd", "0e", "0p", "0u", "0v", "0w", "0x", "0y", "0z", "0cd", "0df"]
+  "lessons_referenced": [
+    "0aa",
+    "0bb",
+    "0cc",
+    "0de",
+    "0dd",
+    "0e",
+    "0p",
+    "0u",
+    "0v",
+    "0w",
+    "0x",
+    "0y",
+    "0z",
+    "0cd",
+    "0df"
+  ]
 }

@@ -2,7 +2,8 @@
 
 ## What Was Found
 
-After reviewing your backup (`~/.config/fish.backup.20251124_023722`), it only contained:
+After reviewing your backup (`~/.config/fish.backup.20251124_023722`), it only
+contained:
 
 - Minimal `config.fish` (just PATH additions)
 - Basic `fish_variables` (default color settings, no theme)
@@ -33,13 +34,18 @@ The function randomly selects one each time you open a new fish shell session.
 
 ### ✅ Hydro Prompt (via Fisher) + Prompt Conflict Fix
 
-- Added `jorgebucaran/hydro` to `configs/.config/fish/fish_plugins` so Fisher can install it.
-- Moved any legacy prompt overrides out of the way (kept as backups) so Hydro can own `fish_prompt`/`fish_right_prompt`.
+- Added `jorgebucaran/hydro` to `configs/.config/fish/fish_plugins` so Fisher
+  can install it.
+- Moved any legacy prompt overrides out of the way (kept as backups) so Hydro
+  can own `fish_prompt`/`fish_right_prompt`.
 
 ### ✅ Cohesive Dark Theme (Dracula)
 
-- Fish colors are set in `configs/.config/fish/config.fish` using the Dracula palette (we intentionally do **not** track `fish_variables` to avoid noisy diffs).
-- `config.fish` now sets Dracula-style defaults for `fzf` and `bat` (only if you haven’t already customized them).
+- Fish colors are set in `configs/.config/fish/config.fish` using the Dracula
+  palette (we intentionally do **not** track `fish_variables` to avoid noisy
+  diffs).
+- `config.fish` now sets Dracula-style defaults for `fzf` and `bat` (only if you
+  haven’t already customized them).
 
 ## Next Steps
 
@@ -93,10 +99,13 @@ Should show:
 
 ## Important Notes
 
-1. **All customizations are now in the repository**: Since `~/.config/fish/` is symlinked to `configs/.config/fish/`, any changes you make will be tracked in git.
+1. **All customizations are now in the repository**: Since `~/.config/fish/` is
+   symlinked to `configs/.config/fish/`, any changes you make will be tracked in
+   git.
 
-2. **Theme storage**: In this setup, Fish colors are set in `config.fish` (repo-managed). Tool theming (fzf/bat)
-   is set as a default in `config.fish` without overwriting custom values.
+2. **Theme storage**: In this setup, Fish colors are set in `config.fish`
+   (repo-managed). Tool theming (fzf/bat) is set as a default in `config.fish`
+   without overwriting custom values.
 
 3. **Backup location**: Your original config is backed up at:
    `~/.config/fish.backup.20251124_023722/`

@@ -1,16 +1,14 @@
 # Control D: Final Configuration Summary
 
-**Date**: November 18, 2025  
+**Date**: November 18, 2025\
 **Configuration Status**: Production-Ready ✓
 
-> **Current Implementation Note (v4.1+):** This summary reflects the
-> original DoH/TCP-only configuration built around
-> `~/.config/controld`. Since v4.1, the live system runs via
-> `/etc/controld` + `controld-manager` with DoH3 defaults and the
-> separation strategy implemented in `scripts/network-mode-manager.sh`.
-> Use this document for historical context and operational patterns; for
-> current wiring, see `controld-system/README.md` and the v4.x
-> Separation Strategy docs.
+> **Current Implementation Note (v4.1+):** This summary reflects the original
+> DoH/TCP-only configuration built around `~/.config/controld`. Since v4.1, the
+> live system runs via `/etc/controld` + `controld-manager` with DoH3 defaults
+> and the separation strategy implemented in `scripts/network-mode-manager.sh`.
+> Use this document for historical context and operational patterns; for current
+> wiring, see `controld-system/README.md` and the v4.x Separation Strategy docs.
 
 ---
 
@@ -43,33 +41,35 @@
 
 ## Network Transition Edge Cases - SOLVED ✓
 
-Your question about "stuck" DNS states was prescient. The enhanced monitor now detects and auto-recovers from:
+Your question about "stuck" DNS states was prescient. The enhanced monitor now
+detects and auto-recovers from:
 
 ### 1. Split-Horizon DNS
 
-**Problem**: Multiple DNS resolvers active after network transitions  
-**Detection**: Counts unique nameservers in system config  
+**Problem**: Multiple DNS resolvers active after network transitions\
+**Detection**: Counts unique nameservers in system config\
 **Recovery**: Auto-flushes DNS cache if detected
 
 ### 2. mDNSResponder Cache Poisoning
 
-**Problem**: Stale DNS entries persist after network change  
-**Detection**: Tests with timestamp-based unique query  
+**Problem**: Stale DNS entries persist after network change\
+**Detection**: Tests with timestamp-based unique query\
 **Recovery**: Flushes mDNSResponder cache automatically
 
 ### 3. Control D Not Primary Resolver
 
-**Problem**: System falls back to DHCP DNS after sleep/wake  
-**Detection**: Checks if 127.0.0.1 is in resolver list  
+**Problem**: System falls back to DHCP DNS after sleep/wake\
+**Detection**: Checks if 127.0.0.1 is in resolver list\
 **Recovery**: Flags for attention (may need service restart)
 
 ### 4. VPN Reconnection Race
 
-**Problem**: VPN reconnects before Control D ready  
-**Detection**: DNS resolution test + upstream connectivity check  
+**Problem**: VPN reconnects before Control D ready\
+**Detection**: DNS resolution test + upstream connectivity check\
 **Recovery**: Service auto-restart if needed
 
-**Result**: The monitor script now runs 9 checks (up from 3), catching edge cases you might encounter during:
+**Result**: The monitor script now runs 9 checks (up from 3), catching edge
+cases you might encounter during:
 
 - Sleep/wake cycles
 - WiFi network switches
@@ -96,7 +96,7 @@ App → macOS Resolver → Control D (127.0.0.1:53)
   → VPN Tunnel → DoH (encrypted) → Control D Servers → Internet
 ```
 
-**Privacy**: DNS double-encrypted, IPs hidden from ISP  
+**Privacy**: DNS double-encrypted, IPs hidden from ISP\
 **Security**: Maximum privacy configuration ✓
 
 ---
@@ -317,7 +317,8 @@ sudo killall -HUP mDNSResponder
 
 ### Optional (Daily Check)
 
-If you want daily automated monitoring, see `UPGRADES.md` for launchd agent setup.
+If you want daily automated monitoring, see `UPGRADES.md` for launchd agent
+setup.
 
 ### When Using Windscribe
 
@@ -435,8 +436,11 @@ Before considering this complete:
 
 **You're all set!** 🎉
 
-The setup will auto-start on boot, monitor itself weekly, auto-recover from common issues, and is documented for future maintenance.
+The setup will auto-start on boot, monitor itself weekly, auto-recover from
+common issues, and is documented for future maintenance.
 
-Any configuration changes (profiles, protocols, endpoints) just require editing `ctrld.toml` and restarting the service. The `--skip_self_checks` flag remains appropriate for all configurations.
+Any configuration changes (profiles, protocols, endpoints) just require editing
+`ctrld.toml` and restarting the service. The `--skip_self_checks` flag remains
+appropriate for all configurations.
 
 Enjoy your enhanced DNS privacy and security!

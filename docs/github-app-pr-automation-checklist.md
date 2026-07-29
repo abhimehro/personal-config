@@ -127,9 +127,9 @@ When elevating permissions to run close/merge queues on all repos:
 
 1. **Grant permissions:** Give the integration write access (Pull requests: Read
    & write, Contents: Read & write) on all seven priority repositories:
-   `personal-config`, `ctrld-sync`, `email-security-pipeline`, `Seatek_Analysis`,
-   `Hydrograph_Versus_Seatek_Sensors_Project`, `series_correction_project_updated`,
-   `repoprompt-ce` per sections 1–2 above.
+   `personal-config`, `ctrld-sync`, `email-security-pipeline`,
+   `Seatek_Analysis`, `Hydrograph_Versus_Seatek_Sensors_Project`,
+   `series_correction_project_updated`, `repoprompt-ce` per sections 1–2 above.
 2. **Verify:** Run preflight with `--require-write-probes` and probe PRs to
    confirm close/comment/review.
 3. **Close queue:** Execute the close commands in `tasks/pr-triage.md` under
@@ -149,16 +149,16 @@ subsection.
 
 ## 9) Daily Automation Workflow Integration
 
-This checklist supports the broader daily automation chain. The following scheduled
-tasks run automatically and may reference or depend on the permissions configured
-here:
+This checklist supports the broader daily automation chain. The following
+scheduled tasks run automatically and may reference or depend on the permissions
+configured here:
 
-- **6:00 AM** - GitHub PR Summarizer: Creates daily PR summary reports in Notion's
-  "GitHub PRs Daily Reports" database. Requires read access to all repositories.
-- **8:15 AM** - Repository Health Triage: Scans all seven repositories for security
-  issues, risky code, dependency problems, and maintenance signals. Creates entries
-  in Notion's "Repo Issue Candidates" database. Requires read access to all
+- **6:00 AM** - GitHub PR Summarizer: Creates daily PR summary reports in
+  Notion's "GitHub PRs Daily Reports" database. Requires read access to all
   repositories.
+- **8:15 AM** - Repository Health Triage: Scans all seven repositories for
+  security issues, risky code, dependency problems, and maintenance signals.
+  Creates entries in Notion's "Repo Issue Candidates" database. Requires read
+  access to all repositories.
 
 Both scheduled tasks analyze the same seven repositories listed in Section 1.
-

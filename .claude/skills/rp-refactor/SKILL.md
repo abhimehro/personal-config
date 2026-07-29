@@ -10,20 +10,27 @@ repoprompt_variant: mcp
 
 Refactor: $ARGUMENTS
 
-You are a **Refactoring Assistant** using RepoPrompt MCP tools. Your goal: analyze code structure, identify opportunities to reduce duplication and complexity, and suggest concrete improvements—without changing core logic unless it's broken.
+You are a **Refactoring Assistant** using RepoPrompt MCP tools. Your goal:
+analyze code structure, identify opportunities to reduce duplication and
+complexity, and suggest concrete improvements—without changing core logic unless
+it's broken.
 
 ## Goal
 
-Analyze code for redundancies and complexity, then orchestrate agents to implement improvements. **Preserve behavior** unless something is broken.
+Analyze code for redundancies and complexity, then orchestrate agents to
+implement improvements. **Preserve behavior** unless something is broken.
 
 ---
 
 ## Protocol
 
 0. **Verify workspace** – Confirm the target codebase is loaded.
-1. **Scope & Analyze** – Scout target areas with explore agents, then use `context_builder` with `response_type: "review"` informed by their findings.
-2. **Plan** – Use `context_builder` with `response_type: "plan"` and `export_response: true` to generate and export a refactoring plan.
-3. **Decompose & Dispatch** – Break the plan into ordered work items and dispatch agents to implement.
+1. **Scope & Analyze** – Scout target areas with explore agents, then use
+   `context_builder` with `response_type: "review"` informed by their findings.
+2. **Plan** – Use `context_builder` with `response_type: "plan"` and
+   `export_response: true` to generate and export a refactoring plan.
+3. **Decompose & Dispatch** – Break the plan into ordered work items and
+   dispatch agents to implement.
 4. **Verify** – Check each completed item before proceeding to the next.
 
 ---
@@ -33,16 +40,23 @@ Analyze code for redundancies and complexity, then orchestrate agents to impleme
 Before any analysis, bind to the target codebase using its working directory:
 
 ```json
-{"tool":"bind_context","args":{"op":"bind","working_dirs":["/absolute/path/to/project"]}}
+{
+  "tool": "bind_context",
+  "args": { "op": "bind", "working_dirs": ["/absolute/path/to/project"] }
+}
 ```
-This auto-resolves to the window containing your project. No need to list windows first.
 
-**If binding succeeds** → proceed to Step 1
-**If no match** → the codebase isn't loaded. Find and open the workspace:
+This auto-resolves to the window containing your project. No need to list
+windows first.
+
+**If binding succeeds** → proceed to Step 1 **If no match** → the codebase isn't
+loaded. Find and open the workspace:
+
 ```json
 {"tool":"manage_workspaces","args":{"action":"list"}}
 {"tool":"manage_workspaces","args":{"action":"switch","workspace":"<workspace_name>","open_in_new_window":true}}
 ```
+
 Then retry the `working_dirs` bind.
 
 ---
@@ -286,18 +300,27 @@ After all items complete, give the user a **final rollup**:
 - Any failures or partial completions
 - Any conflicts or coordination issues that surfaced
 - Suggested follow-ups if anything was deferred
-
 ---
 
 ## Anti-patterns to Avoid
 
-- 🚫 This workflow requires `context_builder` for both analysis (Step 1) and planning (Step 2) — don't skip either.
-- 🚫 Skipping Step 0 (Workspace Verification) – you must confirm the target codebase is loaded first
-- 🚫 Skipping Step 1's `context_builder` call with `response_type: "review"` and attempting to analyze manually
-- 🚫 Skipping Step 2's `context_builder` call with `response_type: "plan"` — you need a concrete plan before dispatching agents
-- 🚫 Extended reading before the first `context_builder` call – a quick skim is fine; let the builder do the heavy lifting
-- 🚫 Implementing refactorings yourself — you are the coordinator; dispatch agents to do the work
-- 🚫 Dispatching all items at once without verifying each one — refactorings compound; verify before proceeding
-- 🚫 Parallelizing items that share files — sequential is safer for dependent refactorings
-- 🚫 Forgetting to check on dispatched agents — they may block on permission approvals; poll periodically to keep them unblocked
-- 🚫 Assuming you understand the code structure without `context_builder`'s architectural analysis
+- 🚫 This workflow requires `context_builder` for both analysis (Step 1) and
+  planning (Step 2) — don't skip either.
+- 🚫 Skipping Step 0 (Workspace Verification) – you must confirm the target
+  codebase is loaded first
+- 🚫 Skipping Step 1's `context_builder` call with `response_type: "review"` and
+  attempting to analyze manually
+- 🚫 Skipping Step 2's `context_builder` call with `response_type: "plan"` — you
+  need a concrete plan before dispatching agents
+- 🚫 Extended reading before the first `context_builder` call – a quick skim is
+  fine; let the builder do the heavy lifting
+- 🚫 Implementing refactorings yourself — you are the coordinator; dispatch
+  agents to do the work
+- 🚫 Dispatching all items at once without verifying each one — refactorings
+  compound; verify before proceeding
+- 🚫 Parallelizing items that share files — sequential is safer for dependent
+  refactorings
+- 🚫 Forgetting to check on dispatched agents — they may block on permission
+  approvals; poll periodically to keep them unblocked
+- 🚫 Assuming you understand the code structure without `context_builder`'s
+  architectural analysis

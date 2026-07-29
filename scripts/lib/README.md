@@ -1,6 +1,7 @@
 # Shared Libraries
 
-This directory contains reusable shell script libraries that provide common functionality across the personal-config repository.
+This directory contains reusable shell script libraries that provide common
+functionality across the personal-config repository.
 
 ## 📚 Available Libraries
 
@@ -9,6 +10,7 @@ This directory contains reusable shell script libraries that provide common func
 **Purpose**: Centralized logging and error handling for shell scripts.
 
 **Features**:
+
 - Color-coded logging (INFO, OK, WARN, ERROR, DEBUG)
 - Standard error handling with line numbers
 - Signal trapping for graceful exits
@@ -16,6 +18,7 @@ This directory contains reusable shell script libraries that provide common func
 - Utility functions for common operations
 
 **Usage**:
+
 ```bash
 #!/usr/bin/env bash
 source "$(dirname "${BASH_SOURCE[0]}")/../scripts/lib/logging.sh"
@@ -41,9 +44,11 @@ get_repo_root
 
 ### [`utils.sh`](utils.sh)
 
-**Purpose**: Common utility functions for file operations, string manipulation, and system interactions.
+**Purpose**: Common utility functions for file operations, string manipulation,
+and system interactions.
 
 **Features**:
+
 - File and directory operations
 - String manipulation functions
 - Array operations
@@ -56,6 +61,7 @@ get_repo_root
 - Symlink management
 
 **Usage**:
+
 ```bash
 #!/usr/bin/env bash
 source "$(dirname "${BASH_SOURCE[0]}")/../scripts/lib/logging.sh"
@@ -122,16 +128,21 @@ run_main "$@"
 
 Gradually migrate your existing scripts to use these libraries:
 
-1. **Start with error handling**: Add `set -Eeuo pipefail` and the error trapping from `logging.sh`
-2. **Replace echo statements**: Use `log_info`, `log_ok`, `log_warn`, `log_err` instead of `echo`
-3. **Use utility functions**: Replace common code patterns with functions from `utils.sh`
-4. **Add validation**: Use `require_cmd`, `require_file`, `require_dir` for input validation
+1. **Start with error handling**: Add `set -Eeuo pipefail` and the error
+   trapping from `logging.sh`
+2. **Replace echo statements**: Use `log_info`, `log_ok`, `log_warn`, `log_err`
+   instead of `echo`
+3. **Use utility functions**: Replace common code patterns with functions from
+   `utils.sh`
+4. **Add validation**: Use `require_cmd`, `require_file`, `require_dir` for
+   input validation
 
 ## 🎯 Best Practices
 
 ### 1. Always Source Logging First
 
-The `logging.sh` library should be sourced before `utils.sh` because `utils.sh` depends on the logging functions.
+The `logging.sh` library should be sourced before `utils.sh` because `utils.sh`
+depends on the logging functions.
 
 ```bash
 # ✅ Correct
@@ -145,7 +156,8 @@ source "$REPO_ROOT/scripts/lib/logging.sh"
 
 ### 2. Use Absolute Paths
 
-Always use absolute paths when sourcing the libraries to avoid issues with relative paths.
+Always use absolute paths when sourcing the libraries to avoid issues with
+relative paths.
 
 ```bash
 # ✅ Correct
@@ -159,7 +171,8 @@ source "../scripts/lib/logging.sh"
 
 ### 3. Initialize Scripts Properly
 
-Always call `init_script` at the start of your script to set up error handling and logging.
+Always call `init_script` at the start of your script to set up error handling
+and logging.
 
 ```bash
 init_script "script_name" "Description"
@@ -167,7 +180,8 @@ init_script "script_name" "Description"
 
 ### 4. Use run_main for Main Function
 
-Use the `run_main` helper to execute your main function with proper error handling.
+Use the `run_main` helper to execute your main function with proper error
+handling.
 
 ```bash
 main() {
@@ -179,7 +193,8 @@ run_main "$@"
 
 ### 5. Validate Inputs
 
-Always validate required commands, files, and directories at the start of your functions.
+Always validate required commands, files, and directories at the start of your
+functions.
 
 ```bash
 my_function() {
@@ -195,81 +210,87 @@ my_function() {
 
 ### Logging Functions (logging.sh)
 
-| Function | Description | Example |
-|----------|-------------|---------|
-| `log_info` | Log informational message | `log_info "Starting backup..."` |
-| `log_ok` | Log success message | `log_ok "Backup completed"` |
-| `log_warn` | Log warning message | `log_warn "Disk space low"` |
-| `log_err` | Log error message | `log_err "Operation failed"` |
-| `log_debug` | Log debug message (only if DEBUG=1) | `log_debug "Variable value: $var"` |
-| `log_header` | Log section header | `log_header "Configuration"` |
-| `log_hr` | Log horizontal rule | `log_hr` |
+| Function     | Description                         | Example                            |
+| ------------ | ----------------------------------- | ---------------------------------- |
+| `log_info`   | Log informational message           | `log_info "Starting backup..."`    |
+| `log_ok`     | Log success message                 | `log_ok "Backup completed"`        |
+| `log_warn`   | Log warning message                 | `log_warn "Disk space low"`        |
+| `log_err`    | Log error message                   | `log_err "Operation failed"`       |
+| `log_debug`  | Log debug message (only if DEBUG=1) | `log_debug "Variable value: $var"` |
+| `log_header` | Log section header                  | `log_header "Configuration"`       |
+| `log_hr`     | Log horizontal rule                 | `log_hr`                           |
 
 ### Validation Functions (logging.sh)
 
-| Function | Description | Example |
-|----------|-------------|---------|
-| `require_cmd` | Check if command exists | `require_cmd "git" "Install git"` |
-| `require_file` | Check if file exists and is readable | `require_file "/etc/hosts"` |
-| `require_dir` | Check if directory exists | `require_dir "/tmp"` |
-| `require_var` | Check if variable is set | `require_var "API_KEY"` |
-| `ensure_macos` | Check if running on macOS | `ensure_macos` |
-| `ensure_not_root` | Check if not running as root | `ensure_not_root` |
+| Function          | Description                          | Example                           |
+| ----------------- | ------------------------------------ | --------------------------------- |
+| `require_cmd`     | Check if command exists              | `require_cmd "git" "Install git"` |
+| `require_file`    | Check if file exists and is readable | `require_file "/etc/hosts"`       |
+| `require_dir`     | Check if directory exists            | `require_dir "/tmp"`              |
+| `require_var`     | Check if variable is set             | `require_var "API_KEY"`           |
+| `ensure_macos`    | Check if running on macOS            | `ensure_macos`                    |
+| `ensure_not_root` | Check if not running as root         | `ensure_not_root`                 |
 
 ### Utility Functions (utils.sh)
 
 #### File Operations
-| Function | Description | Example |
-|----------|-------------|---------|
-| `find_files` | Find files by pattern | `find_files "*.sh" "scripts/"` |
-| `find_shell_scripts` | Find all shell scripts | `find_shell_scripts` |
-| `find_python_files` | Find all Python files | `find_python_files` |
-| `file_contains` | Check if file contains pattern | `file_contains "file.txt" "pattern"` |
-| `count_lines` | Count lines in file | `count_lines "file.txt"` |
-| `get_file_size` | Get file size in bytes | `get_file_size "file.txt"` |
+
+| Function             | Description                    | Example                              |
+| -------------------- | ------------------------------ | ------------------------------------ |
+| `find_files`         | Find files by pattern          | `find_files "*.sh" "scripts/"`       |
+| `find_shell_scripts` | Find all shell scripts         | `find_shell_scripts`                 |
+| `find_python_files`  | Find all Python files          | `find_python_files`                  |
+| `file_contains`      | Check if file contains pattern | `file_contains "file.txt" "pattern"` |
+| `count_lines`        | Count lines in file            | `count_lines "file.txt"`             |
+| `get_file_size`      | Get file size in bytes         | `get_file_size "file.txt"`           |
 
 #### String Operations
-| Function | Description | Example |
-|----------|-------------|---------|
-| `to_lowercase` | Convert to lowercase | `to_lowercase "HELLO"` |
-| `to_uppercase` | Convert to uppercase | `to_uppercase "hello"` |
-| `trim` | Trim whitespace | `trim "  hello  "` |
-| `starts_with` | Check if string starts with prefix | `starts_with "hello" "he"` |
-| `ends_with` | Check if string ends with suffix | `ends_with "hello" "lo"` |
-| `contains` | Check if string contains substring | `contains "hello" "ell"` |
-| `replace_all` | Replace all occurrences | `replace_all "hello" "l" "x"` |
+
+| Function       | Description                        | Example                       |
+| -------------- | ---------------------------------- | ----------------------------- |
+| `to_lowercase` | Convert to lowercase               | `to_lowercase "HELLO"`        |
+| `to_uppercase` | Convert to uppercase               | `to_uppercase "hello"`        |
+| `trim`         | Trim whitespace                    | `trim "  hello  "`            |
+| `starts_with`  | Check if string starts with prefix | `starts_with "hello" "he"`    |
+| `ends_with`    | Check if string ends with suffix   | `ends_with "hello" "lo"`      |
+| `contains`     | Check if string contains substring | `contains "hello" "ell"`      |
+| `replace_all`  | Replace all occurrences            | `replace_all "hello" "l" "x"` |
 
 #### System Information
-| Function | Description | Example |
-|----------|-------------|---------|
-| `get_current_user` | Get current user | `get_current_user` |
-| `get_hostname` | Get hostname | `get_hostname` |
-| `get_os` | Get OS name | `get_os` |
-| `is_ci` | Check if in CI environment | `is_ci` |
-| `is_docker` | Check if in Docker | `is_docker` |
-| `get_cpu_count` | Get CPU count | `get_cpu_count` |
-| `get_total_memory` | Get total memory in MB | `get_total_memory` |
+
+| Function           | Description                | Example            |
+| ------------------ | -------------------------- | ------------------ |
+| `get_current_user` | Get current user           | `get_current_user` |
+| `get_hostname`     | Get hostname               | `get_hostname`     |
+| `get_os`           | Get OS name                | `get_os`           |
+| `is_ci`            | Check if in CI environment | `is_ci`            |
+| `is_docker`        | Check if in Docker         | `is_docker`        |
+| `get_cpu_count`    | Get CPU count              | `get_cpu_count`    |
+| `get_total_memory` | Get total memory in MB     | `get_total_memory` |
 
 #### Network Utilities
-| Function | Description | Example |
-|----------|-------------|---------|
-| `is_reachable` | Check if host is reachable | `is_reachable "google.com"` |
-| `is_internet_available` | Check internet connectivity | `is_internet_available` |
-| `get_public_ip` | Get public IP address | `get_public_ip` |
+
+| Function                | Description                 | Example                     |
+| ----------------------- | --------------------------- | --------------------------- |
+| `is_reachable`          | Check if host is reachable  | `is_reachable "google.com"` |
+| `is_internet_available` | Check internet connectivity | `is_internet_available`     |
+| `get_public_ip`         | Get public IP address       | `get_public_ip`             |
 
 #### Git Utilities
-| Function | Description | Example |
-|----------|-------------|---------|
-| `get_git_branch` | Get current branch | `get_git_branch` |
+
+| Function         | Description             | Example          |
+| ---------------- | ----------------------- | ---------------- |
+| `get_git_branch` | Get current branch      | `get_git_branch` |
 | `get_git_commit` | Get current commit hash | `get_git_commit` |
-| `is_git_clean` | Check if repo is clean | `is_git_clean` |
-| `get_git_root` | Get git root directory | `get_git_root` |
-| `is_git_repo` | Check if in git repo | `is_git_repo` |
+| `is_git_clean`   | Check if repo is clean  | `is_git_clean`   |
+| `get_git_root`   | Get git root directory  | `get_git_root`   |
+| `is_git_repo`    | Check if in git repo    | `is_git_repo`    |
 
 #### Symlink Management
-| Function | Description | Example |
-|----------|-------------|---------|
-| `create_symlink` | Create symlink with backup | `create_symlink "source" "target"` |
+
+| Function         | Description                              | Example                              |
+| ---------------- | ---------------------------------------- | ------------------------------------ |
+| `create_symlink` | Create symlink with backup               | `create_symlink "source" "target"`   |
 | `verify_symlink` | Verify symlink points to expected source | `verify_symlink "target" "expected"` |
 
 ## 🔧 Testing the Libraries
@@ -348,6 +369,7 @@ init_script "$(basename "$0")" "Script description"
 ### Step 2: Replace Common Patterns
 
 **Before**:
+
 ```bash
 echo "Starting..."
 if ! command -v git >/dev/null; then
@@ -357,6 +379,7 @@ fi
 ```
 
 **After**:
+
 ```bash
 log_info "Starting..."
 require_cmd "git" "Install git with: brew install git"
@@ -365,12 +388,14 @@ require_cmd "git" "Install git with: brew install git"
 ### Step 3: Add Error Handling
 
 **Before**:
+
 ```bash
 #!/usr/bin/env bash
 # No error handling
 ```
 
 **After**:
+
 ```bash
 #!/usr/bin/env bash
 set -Eeuo pipefail
@@ -382,9 +407,11 @@ setup_error_handling
 
 ### "Command not found" when sourcing libraries
 
-**Problem**: You get `command not found` errors when trying to source the libraries.
+**Problem**: You get `command not found` errors when trying to source the
+libraries.
 
-**Solution**: Make sure you're using the correct path to the libraries. Use absolute paths:
+**Solution**: Make sure you're using the correct path to the libraries. Use
+absolute paths:
 
 ```bash
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -396,7 +423,8 @@ source "$REPO_ROOT/scripts/lib/logging.sh"
 
 **Problem**: Colors don't appear in the output.
 
-**Solution**: 
+**Solution**:
+
 1. Make sure you're running in a terminal that supports colors
 2. Check if `NO_COLOR` environment variable is set
 3. Try running with `FORCE_COLOR=1`
@@ -421,6 +449,6 @@ If you have questions or issues with these libraries, please:
 
 ---
 
-**Last Updated**: 2025-01-08  
-**Version**: 1.0.0  
+**Last Updated**: 2025-01-08\
+**Version**: 1.0.0\
 **Maintainer**: Repository Owner

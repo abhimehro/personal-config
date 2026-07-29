@@ -21,12 +21,20 @@ from repository_automation_tasks import run_daily_status_report
 
 class TestRunDailyStatusReport(TestCase):
     def setUp(self):
-        self.mock_load_results = patch("repository_automation_tasks.load_task_results").start()
+        self.mock_load_results = patch(
+            "repository_automation_tasks.load_task_results"
+        ).start()
         self.mock_iso_day = patch("repository_automation_tasks.iso_day").start()
-        self.mock_report_lines = patch("repository_automation_tasks.daily_report_lines").start()
-        self.mock_append = patch("repository_automation_tasks.append_publication_result").start()
+        self.mock_report_lines = patch(
+            "repository_automation_tasks.daily_report_lines"
+        ).start()
+        self.mock_append = patch(
+            "repository_automation_tasks.append_publication_result"
+        ).start()
         self.mock_write = patch("repository_automation_tasks.write_result").start()
-        self.mock_overall_status = patch("repository_automation_tasks.overall_status").start()
+        self.mock_overall_status = patch(
+            "repository_automation_tasks.overall_status"
+        ).start()
         self.addCleanup(patch.stopall)
 
     def test_run_daily_status_report_success(self):

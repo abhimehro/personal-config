@@ -39,13 +39,13 @@ server crash-loops looking for `Contents/MacOS/jellyfin-web`.
 
 ## Ports / coexistence
 
-| Service                 | Port            | Notes                                                      |
-| ----------------------- | --------------- | ---------------------------------------------------------- |
-| Jellyfin HTTP           | **8096**        | Built-in auth; LAN + Windscribe remote (default path)      |
-| Jellyfin HTTPS          | 8920            | Leave closed                                               |
-| WebDAV (Infuse)         | 8080            | Unchanged                                                  |
-| Plex (legacy)           | 32400           | Not listening on this host; data preserved                 |
-| email-security-pipeline | (Colima bridge) | No host port conflict with 8096                            |
+| Service                 | Port            | Notes                                                 |
+| ----------------------- | --------------- | ----------------------------------------------------- |
+| Jellyfin HTTP           | **8096**        | Built-in auth; LAN + Windscribe remote (default path) |
+| Jellyfin HTTPS          | 8920            | Leave closed                                          |
+| WebDAV (Infuse)         | 8080            | Unchanged                                             |
+| Plex (legacy)           | 32400           | Not listening on this host; data preserved            |
+| email-security-pipeline | (Colima bridge) | No host port conflict with 8096                       |
 
 **Remote (default path, enabled 2026-07-17):** Windscribe maps
 `82.23.253.53:8096` → host `8096/TCP`. Published Server URI:

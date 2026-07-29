@@ -193,9 +193,10 @@ function isolateBlockElements(mdx) {
   let fixed = 0;
   const out = mdx.split("\n").map((line) => {
     if (
-      /^\s*(?:before|after|code|summary|language|mode|annotations|filename|id)\s*=/.test(
-        line,
-      ) ||
+      /^\s*(?:before|after|code|summary|language|mode|annotations|filename|id)\s*=/
+        .test(
+          line,
+        ) ||
       /^\s{4,}/.test(line)
     ) {
       return line;
@@ -229,9 +230,11 @@ function balanceBlockTags(mdx) {
   let text = mdx;
   let fixed = 0;
   for (const tag of BLOCK_TAGS) {
-    const open = (text.match(new RegExp(`^\\s{0,2}<${tag}\\b[^>]*>`, "gm")) || [])
-      .length;
-    const close = (text.match(new RegExp(`^\\s{0,2}</${tag}>`, "gm")) || []).length;
+    const open =
+      (text.match(new RegExp(`^\\s{0,2}<${tag}\\b[^>]*>`, "gm")) || [])
+        .length;
+    const close =
+      (text.match(new RegExp(`^\\s{0,2}</${tag}>`, "gm")) || []).length;
     if (open > close) {
       const missing = open - close;
       text = `${text}\n${`</${tag}>`.repeat(missing)}\n`;
@@ -302,10 +305,9 @@ function trimJsxStringAttrBody(rawValue, kind) {
  * @returns {{ body: string, fixed: number }}
  */
 function rewriteOneJsxStringAttr(body, key, kind) {
-  const startRe =
-    kind === "quote"
-      ? new RegExp(`(\\s)(${key})="`, "g")
-      : new RegExp(`(\\s)(${key})=\\{"`, "g");
+  const startRe = kind === "quote"
+    ? new RegExp(`(\\s)(${key})="`, "g")
+    : new RegExp(`(\\s)(${key})=\\{"`, "g");
   let match;
   while ((match = startRe.exec(body))) {
     const valueStart = match.index + match[0].length;
@@ -315,8 +317,8 @@ function rewriteOneJsxStringAttr(body, key, kind) {
       trimJsxStringAttrBody(found.rawValue, kind).replace(/\r\n/g, "\n"),
     );
     const expr = `${match[1]}${key}={${JSON.stringify(content)}}`;
-    const next =
-      body.slice(0, match.index) + expr + body.slice(valueStart + found.consumed);
+    const next = body.slice(0, match.index) + expr +
+      body.slice(valueStart + found.consumed);
     return { body: next, fixed: 1 };
   }
   return { body, fixed: 0 };
@@ -448,12 +450,16 @@ function main(argv) {
     const { payload, fixed, details } = fixRecapSourcePayload(parsed);
     const text = `${JSON.stringify(payload, null, 2)}\n`;
     if (write && fixed > 0) fs.writeFileSync(target, text);
-    process.stdout.write(JSON.stringify({ ok: true, fixed, details, target }) + "\n");
+    process.stdout.write(
+      JSON.stringify({ ok: true, fixed, details, target }) + "\n",
+    );
     return;
   }
   const { text, fixed, details } = fixMdxContent(raw);
   if (write && fixed > 0) fs.writeFileSync(target, text);
-  process.stdout.write(JSON.stringify({ ok: true, fixed, details, target }) + "\n");
+  process.stdout.write(
+    JSON.stringify({ ok: true, fixed, details, target }) + "\n",
+  );
 }
 
 if (require.main === module) {

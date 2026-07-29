@@ -10,15 +10,20 @@ repoprompt_variant: mcp
 
 Task: $ARGUMENTS
 
-Build deep context via `context_builder` to get a plan, then implement directly. Use follow-up reasoning only when navigating the selected code proves difficult or the plan leaves a concrete gap.
+Build deep context via `context_builder` to get a plan, then implement directly.
+Use follow-up reasoning only when navigating the selected code proves difficult
+or the plan leaves a concrete gap.
 
 ## The Workflow
 
 0. **Verify workspace** – Confirm the target codebase is loaded
 1. **Quick scan** – Understand how the task relates to the codebase
-2. **Context builder** – Call `context_builder` with a clear prompt to get deep context + an architectural plan
-3. **Only if needed, ask `chat_send`** – Use it when navigating the selected code is difficult or the plan leaves a concrete unresolved gap
-4. **Implement directly** – Use editing tools to make changes once the plan is clear
+2. **Context builder** – Call `context_builder` with a clear prompt to get deep
+   context + an architectural plan
+3. **Only if needed, ask `chat_send`** – Use it when navigating the selected
+   code is difficult or the plan leaves a concrete unresolved gap
+4. **Implement directly** – Use editing tools to make changes once the plan is
+   clear
 
 ---
 
@@ -30,7 +35,9 @@ Build deep context via `context_builder` to get a plan, then implement directly.
 2. Completed Phase 1 (Quick Scan)
 3. **Called `context_builder`** and received its plan
 
-Skipping `context_builder` results in shallow implementations that miss architectural patterns, related code, and edge cases. The quick scan alone is NOT sufficient for implementation.
+Skipping `context_builder` results in shallow implementations that miss
+architectural patterns, related code, and edge cases. The quick scan alone is
+NOT sufficient for implementation.
 
 ---
 
@@ -44,7 +51,8 @@ Before any exploration, confirm the target codebase is loaded:
 
 **Check the output:**
 
-- If your target root appears in a window → bind to that window with `select_window`
+- If your target root appears in a window → bind to that window with
+  `select_window`
 - If not → the codebase isn't loaded
 
 **Bind to the correct window:**
@@ -64,7 +72,8 @@ Before any exploration, confirm the target codebase is loaded:
 
 ## Phase 1: Quick Scan (LIMITED - 2-3 tool calls max)
 
-⚠️ **This phase is intentionally brief.** Do NOT do extensive exploration here—that's what `context_builder` is for.
+⚠️ **This phase is intentionally brief.** Do NOT do extensive exploration
+here—that's what `context_builder` is for.
 
 Start by getting a lay of the land with the file tree:
 
@@ -79,15 +88,18 @@ Then use targeted searches to understand how the task maps to the codebase:
 {"tool":"get_code_structure","args":{"paths":["RootName/likely/relevant/area"]}}
 ```
 
-Use what you learn to **reformulate the user's prompt** with added clarity—reference specific modules, patterns, or terminology from the codebase.
+Use what you learn to **reformulate the user's prompt** with added
+clarity—reference specific modules, patterns, or terminology from the codebase.
 
-**STOP exploring after 2-3 searches.** Your goal is orientation, not deep understanding. `context_builder` will do the heavy lifting.
+**STOP exploring after 2-3 searches.** Your goal is orientation, not deep
+understanding. `context_builder` will do the heavy lifting.
 
 ---
 
 ## Phase 2: Context Builder
 
-Call `context_builder` with your informed prompt. Use `response_type: "plan"` to get an actionable architectural plan.
+Call `context_builder` with your informed prompt. Use `response_type: "plan"` to
+get an actionable architectural plan.
 
 ```json
 {
@@ -105,23 +117,34 @@ Call `context_builder` with your informed prompt. Use `response_type: "plan"` to
 - Architectural plan grounded in actual code
 - `chat_id` for follow-up conversation
 
-**Trust `context_builder`** – it explores deeply, aggregates the relevant context, and selects intelligently. Default to trusting the plan it returns. The `chat_send` follow-up only reasons over that selected context; it cannot fill coverage gaps on its own.
+**Trust `context_builder`** – it explores deeply, aggregates the relevant
+context, and selects intelligently. Default to trusting the plan it returns. The
+`chat_send` follow-up only reasons over that selected context; it cannot fill
+coverage gaps on its own.
 
 ---
 
 ## Phase 3: Ask `chat_send` only if needed
 
-`chat_send` deep-reasons over the files selected by `context_builder`. It sees those selected files **completely** (full content, not summaries), but it **only sees what's in the selection** — nothing else.
+`chat_send` deep-reasons over the files selected by `context_builder`. It sees
+those selected files **completely** (full content, not summaries), but it **only
+sees what's in the selection** — nothing else.
 
-**This phase is optional.** If the builder's plan is already clear and navigation through the selected code is straightforward, proceed straight to Phase 4.
+**This phase is optional.** If the builder's plan is already clear and
+navigation through the selected code is straightforward, proceed straight to
+Phase 4.
 
 Bring a follow-up to `chat_send` only when:
 
 - Navigating the selected code proves difficult even with the builder's plan
 - You need cross-file reasoning over the files already selected
-- The plan leaves a concrete unresolved gap you cannot close by reading the selected files directly
+- The plan leaves a concrete unresolved gap you cannot close by reading the
+  selected files directly
 
-If the answer depends on files outside the current selection, `chat_send` cannot answer it from thin air. Do **not** turn this workflow into manual selection management by default — if coverage is materially wrong, prefer rerunning `context_builder` with a better prompt.
+If the answer depends on files outside the current selection, `chat_send` cannot
+answer it from thin air. Do **not** turn this workflow into manual selection
+management by default — if coverage is materially wrong, prefer rerunning
+`context_builder` with a better prompt.
 
 ```json
 {
@@ -144,7 +167,8 @@ If the answer depends on files outside the current selection, `chat_send` cannot
 **Don't expect:**
 
 - Knowledge of files outside the selection
-- Repository exploration or missing-file discovery — that's `context_builder`'s job
+- Repository exploration or missing-file discovery — that's `context_builder`'s
+  job
 - Implementation — that's your job
 
 ---
@@ -156,9 +180,11 @@ If the answer depends on files outside the current selection, `chat_send` cannot
 - [ ] A builder result available (`chat_id` if follow-up is needed)
 - [ ] An architectural plan grounded in actual code
 
-If a specific point is still unclear, use `chat_send` to clarify before proceeding.
+If a specific point is still unclear, use `chat_send` to clarify before
+proceeding.
 
-Implement the plan directly. **Do not use `chat_send` with `mode:"edit"`** – you implement directly.
+Implement the plan directly. **Do not use `chat_send` with `mode:"edit"`** – you
+implement directly.
 
 **Primary tools:**
 
@@ -173,7 +199,8 @@ Implement the plan directly. **Do not use `chat_send` with `mode:"edit"`** – y
 {"tool":"read_file","args":{"path":"Root/File.swift","start_line":50,"limit":30}}
 ```
 
-**Ask `chat_send` only when navigation or cross-file reasoning is the bottleneck:**
+**Ask `chat_send` only when navigation or cross-file reasoning is the
+bottleneck:**
 
 ```json
 {
@@ -191,33 +218,52 @@ Implement the plan directly. **Do not use `chat_send` with `mode:"edit"`** – y
 
 ## Key Guidelines
 
-**Token limit:** Stay under ~160k tokens. Check with `manage_selection(op:"get")` if unsure. Context builder manages this, but be aware if you add files.
+**Token limit:** Stay under ~160k tokens. Check with
+`manage_selection(op:"get")` if unsure. Context builder manages this, but be
+aware if you add files.
 
 **Selection coverage:**
 
 - `context_builder` should already have selected the files needed for the plan
-- `chat_send` can reason only over that selected context; it cannot discover missing files on its own
-- If a material coverage gap blocks you, prefer rerunning `context_builder` with a better prompt over hand-curating selection
-- Use `manage_selection` only as a last resort for a very small, targeted addition
+- `chat_send` can reason only over that selected context; it cannot discover
+  missing files on its own
+- If a material coverage gap blocks you, prefer rerunning `context_builder` with
+  a better prompt over hand-curating selection
+- Use `manage_selection` only as a last resort for a very small, targeted
+  addition
 
-**`chat_send` sees only the selection:** If the answer depends on files outside the selection, `chat_send` cannot provide it until coverage changes — and in this workflow, coverage changes should usually come from `context_builder`, not from manual curation.
+**`chat_send` sees only the selection:** If the answer depends on files outside
+the selection, `chat_send` cannot provide it until coverage changes — and in
+this workflow, coverage changes should usually come from `context_builder`, not
+from manual curation.
 
 ---
 
 ## Anti-patterns to Avoid
 
-- 🚫 Using `chat_send` with `mode:"edit"` – implement directly with editing tools
+- 🚫 Using `chat_send` with `mode:"edit"` – implement directly with editing
+  tools
 - 🚫 Asking `chat_send` about files it cannot see in the current selection
 - 🚫 Treating Phase 3 as mandatory when the builder's plan is already clear
-- 🚫 Reopening or second-guessing the builder's plan by default instead of trusting it
-- 🚫 Leaning on manual `manage_selection` work to patch coverage gaps that should be handled by `context_builder`
-- 🚫 Skipping `context_builder` and going straight to implementation – you'll miss context
-- 🚫 Using `manage_selection` with `op:"clear"` – this undoes `context_builder`'s work; only use small targeted additions if absolutely necessary
+- 🚫 Reopening or second-guessing the builder's plan by default instead of
+  trusting it
+- 🚫 Leaning on manual `manage_selection` work to patch coverage gaps that
+  should be handled by `context_builder`
+- 🚫 Skipping `context_builder` and going straight to implementation – you'll
+  miss context
+- 🚫 Using `manage_selection` with `op:"clear"` – this undoes
+  `context_builder`'s work; only use small targeted additions if absolutely
+  necessary
 - 🚫 Exceeding ~160k tokens – use slices if needed
-- 🚫 **CRITICAL:** Doing extensive exploration (5+ tool calls) before calling `context_builder` – the quick scan should be 2-3 calls max
-- 🚫 Reading full file contents during Phase 1 – save that for after `context_builder` builds context
-- 🚫 Convincing yourself you understand enough to skip `context_builder` – you don't
+- 🚫 **CRITICAL:** Doing extensive exploration (5+ tool calls) before calling
+  `context_builder` – the quick scan should be 2-3 calls max
+- 🚫 Reading full file contents during Phase 1 – save that for after
+  `context_builder` builds context
+- 🚫 Convincing yourself you understand enough to skip `context_builder` – you
+  don't
 
 ---
 
-**Your job:** Get a solid plan from `context_builder`, trust it by default, use `chat_send` only when navigating the selected code proves difficult or the plan leaves a concrete unresolved gap, then implement directly and completely.
+**Your job:** Get a solid plan from `context_builder`, trust it by default, use
+`chat_send` only when navigating the selected code proves difficult or the plan
+leaves a concrete unresolved gap, then implement directly and completely.

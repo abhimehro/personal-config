@@ -1,6 +1,7 @@
 # Simple DNS/Privacy Solutions
 
-Your system is now clean and using default DNS. Here are some SIMPLE alternatives if you want basic privacy without complexity:
+Your system is now clean and using default DNS. Here are some SIMPLE
+alternatives if you want basic privacy without complexity:
 
 ## Option 1: Browser-Only Privacy (EASIEST)
 
@@ -45,9 +46,8 @@ sudo networksetup -setdnsservers "Wi-Fi" "Empty"
 
 ## Current Status
 
-✅ System is clean and working
-✅ Using your ISP's default DNS
-✅ No conflicting services
-✅ Normal internet browsing works
+✅ System is clean and working ✅ Using your ISP's default DNS ✅ No conflicting
+services ✅ Normal internet browsing works
 
-**Remember: Perfect privacy isn't worth constant frustration. Sometimes "good enough" is actually perfect.**
+**Remember: Perfect privacy isn't worth constant frustration. Sometimes "good
+enough" is actually perfect.**

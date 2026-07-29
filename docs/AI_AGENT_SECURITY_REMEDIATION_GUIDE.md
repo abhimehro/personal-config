@@ -102,11 +102,11 @@ trufflehog filesystem . --only-verified
 
 **personal-config dispatch inputs (spot check):**
 
-| Workflow                      | Input                 | Binding                                                                       |
-| ----------------------------- | --------------------- | ----------------------------------------------------------------------------- |
-| `copilot-setup-steps.yml`     | `request`             | `env.REQUEST` → `process.env.REQUEST`                                         |
-| `agentics-maintenance.yml`    | `operation`           | `env.GH_AW_OPERATION` (in `if:` only at job level)                            |
-| `repository-automation-*.yml` | `allow_write_actions` | job `env` / expression only                                                   |
+| Workflow                      | Input                 | Binding                                            |
+| ----------------------------- | --------------------- | -------------------------------------------------- |
+| `copilot-setup-steps.yml`     | `request`             | `env.REQUEST` → `process.env.REQUEST`              |
+| `agentics-maintenance.yml`    | `operation`           | `env.GH_AW_OPERATION` (in `if:` only at job level) |
+| `repository-automation-*.yml` | `allow_write_actions` | job `env` / expression only                        |
 
 > **Note (ABHI-1321):** Disabled `gemini-*.yml` workflows were removed in the
 > workflow consolidation. If restored from git history, re-verify

@@ -72,7 +72,10 @@ def generate_report_content(results, closed_data, escalated_data):
     )
 
 
-def main(input_path="tasks/pr-merge-results.json", output_path="tasks/pr-review-2026-03-10.md"):
+def main(
+    input_path="tasks/pr-merge-results.json",
+    output_path="tasks/pr-review-2026-03-10.md",
+):
     with open(input_path) as f:
         results = json.load(f)
 

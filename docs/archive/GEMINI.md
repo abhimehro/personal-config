@@ -1,12 +1,15 @@
 # Personal System Configuration
 
-This repository hosts the personal system configuration, dotfiles, and automation scripts for a macOS environment. It is designed to be a "source of truth" for the user's development, gaming, and media setups.
+This repository hosts the personal system configuration, dotfiles, and
+automation scripts for a macOS environment. It is designed to be a "source of
+truth" for the user's development, gaming, and media setups.
 
 ## 📂 Project Overview
 
 - **Type:** System Configuration / Dotfiles / Automation
 - **OS:** macOS (Darwin)
-- **Key Technologies:** Bash, Fish Shell, Homebrew, 1Password (`op`), Control D, Windscribe, Rclone.
+- **Key Technologies:** Bash, Fish Shell, Homebrew, 1Password (`op`), Control D,
+  Windscribe, Rclone.
 - **Management Strategy:** Symlink-based (Repo -> Home Directory).
 
 ## 🏗️ Core Structure
@@ -56,15 +59,22 @@ _Requires `exec fish` after sync._
 
 ## 🛠️ Development Conventions
 
-- **Source of Truth:** All edits should be made in this repository, not in the home directory directly (files are symlinked).
-- **Secrets:** Never commit secrets. Use **1Password** (`op` CLI) for sensitive data handling (SSH keys, API tokens).
+- **Source of Truth:** All edits should be made in this repository, not in the
+  home directory directly (files are symlinked).
+- **Secrets:** Never commit secrets. Use **1Password** (`op` CLI) for sensitive
+  data handling (SSH keys, API tokens).
 - **Scripting:**
   - Automation scripts are generally `bash`.
   - Interactive shell functions are `fish`.
-- **Documentation:** Extensive Markdown documentation exists in subdirectories (e.g., `maintenance/README.md`, `controld-system/README.md`). Always update docs when changing functionality.
+- **Documentation:** Extensive Markdown documentation exists in subdirectories
+  (e.g., `maintenance/README.md`, `controld-system/README.md`). Always update
+  docs when changing functionality.
 
 ## ⚠️ Critical Notes
 
-- **SSH:** Config managed via `configs/ssh/config`. Keys are loaded via 1Password Agent.
-- **Network:** The `network-mode-manager.sh` is the underlying engine for DNS/VPN switching.
-- **Backups:** ProtonDrive is used for one-way home backups (scripted in `maintenance`).
+- **SSH:** Config managed via `configs/ssh/config`. Keys are loaded via
+  1Password Agent.
+- **Network:** The `network-mode-manager.sh` is the underlying engine for
+  DNS/VPN switching.
+- **Backups:** ProtonDrive is used for one-way home backups (scripted in
+  `maintenance`).

@@ -1,8 +1,9 @@
-from concurrent.futures import ThreadPoolExecutor
 import datetime
 import json
-from gh_token_env import load_gh_token_env
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
+
+from gh_token_env import load_gh_token_env
 
 repos = [
     "abhimehro/personal-config",

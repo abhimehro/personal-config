@@ -1,18 +1,22 @@
 > **NOTE (2026):** This guide reflects the original 1Password-only SSH
 > configuration using `cursor-*` hostnames. The active, generic `dev-*`
-> hostnames and Proton Pass integration are documented in the main
-> `README.md`.
+> hostnames and Proton Pass integration are documented in the main `README.md`.
 
 # SSH Configuration for Cursor IDE & 1Password
 
 ## 🎯 Overview
 
-This SSH configuration provides seamless integration between Cursor IDE, 1Password SSH agent, and dynamic VPN/local network scenarios. It automatically handles connections whether you're on VPN or local network, with optimized settings for IDE usage.
+This SSH configuration provides seamless integration between Cursor IDE,
+1Password SSH agent, and dynamic VPN/local network scenarios. It automatically
+handles connections whether you're on VPN or local network, with optimized
+settings for IDE usage.
 
 ## ✨ Features
 
-- **🔐 1Password SSH Agent Integration** - Secure key management without storing keys locally
-- **🌐 Dynamic VPN/Local Network Support** - Automatically adapts to network changes
+- **🔐 1Password SSH Agent Integration** - Secure key management without storing
+  keys locally
+- **🌐 Dynamic VPN/Local Network Support** - Automatically adapts to network
+  changes
 - **🎨 Cursor IDE Optimized** - Perfect for remote development workflows
 - **📱 mDNS/Bonjour Support** - Reliable local machine connections
 - **🔧 Multiple Connection Methods** - Fallback options for reliability
@@ -90,7 +94,8 @@ ssh cursor-auto     # Auto-detection
 
 ### Network Requirements
 
-- **Target machine** must have SSH enabled (System Preferences → Sharing → Remote Login)
+- **Target machine** must have SSH enabled (System Preferences → Sharing →
+  Remote Login)
 - **Firewall** configured to allow SSH connections
 - **Network connectivity** between machines
 
@@ -98,7 +103,8 @@ ssh cursor-auto     # Auto-detection
 
 ### `/configs/ssh/config`
 
-Main SSH configuration with host definitions, 1Password integration, and optimization settings.
+Main SSH configuration with host definitions, 1Password integration, and
+optimization settings.
 
 ### `/configs/ssh/agent.toml`
 
@@ -233,8 +239,10 @@ See [iTerm2 Setup Guide](iTerm2_setup_guide.md) for detailed configuration.
 ## 📚 Additional Resources
 
 - **[iTerm2 Setup Guide](iTerm2_setup_guide.md)** - Complete iTerm2 integration
-- **[1Password SSH Guide](https://developer.1password.com/docs/ssh/)** - Official documentation
-- **[SSH Config Manual](https://man.openbsd.org/ssh_config)** - SSH configuration reference
+- **[1Password SSH Guide](https://developer.1password.com/docs/ssh/)** -
+  Official documentation
+- **[SSH Config Manual](https://man.openbsd.org/ssh_config)** - SSH
+  configuration reference
 
 ## 🤝 Contributing
 
@@ -252,6 +260,6 @@ This is a personal configuration, but improvements and suggestions are welcome:
 
 ---
 
-**Status:** ✅ Production Ready  
-**Last Updated:** August 4, 2025  
+**Status:** ✅ Production Ready\
+**Last Updated:** August 4, 2025\
 **Compatibility:** macOS with 1Password 8+

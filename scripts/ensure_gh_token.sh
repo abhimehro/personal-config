@@ -16,7 +16,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-if [[ -n ${GH_TOKEN:-} ]]; then
+if [[ -n ${GH_TOKEN-} ]]; then
 	printf '%s\n' "${GH_TOKEN}"
 	exit 0
 fi

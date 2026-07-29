@@ -1,3 +1,4 @@
+import base64
 import concurrent.futures
 import importlib.util
 import os
@@ -7,7 +8,6 @@ import threading
 import time
 import urllib.error
 import urllib.request
-import base64
 
 
 def wait_for_port(port, timeout=5.0):
@@ -53,7 +53,9 @@ class ServerRunner:
             "scripts",
             "infuse-media-server.py",
         )
-        spec = importlib.util.spec_from_file_location("infuse_media_server", script_path)
+        spec = importlib.util.spec_from_file_location(
+            "infuse_media_server", script_path
+        )
         self.infuse_media_server = importlib.util.module_from_spec(spec)
         sys.modules["infuse_media_server"] = self.infuse_media_server
         spec.loader.exec_module(self.infuse_media_server)
@@ -75,7 +77,9 @@ class ServerRunner:
 
         if not wait_for_port(self.port):
             sys.argv = self.old_argv
-            raise RuntimeError(f"Server failed to start on port {self.port} within timeout")
+            raise RuntimeError(
+                f"Server failed to start on port {self.port} within timeout"
+            )
 
     def stop(self):
         sys.argv = self.old_argv
@@ -85,7 +89,7 @@ def run_valid_auth_benchmark(num_requests=50, concurrency=50, port=8081):
     _run_benchmark(
         config={"num_requests": num_requests, "concurrency": concurrency, "port": port},
         auth_header=f"Basic {base64.b64encode(base64.b64decode(b'YWRtaW46YWRtaW4=')).decode('utf-8')}",
-        scenario_name="Valid Auth"
+        scenario_name="Valid Auth",
     )
 
 
@@ -93,7 +97,7 @@ def run_invalid_auth_benchmark(num_requests=50, concurrency=50, port=8081):
     _run_benchmark(
         config={"num_requests": num_requests, "concurrency": concurrency, "port": port},
         auth_header=f"Basic {base64.b64encode(base64.b64decode(b'YmFkOnBhc3N3b3Jk')).decode('utf-8')}",
-        scenario_name="Invalid Auth"
+        scenario_name="Invalid Auth",
     )
 
 
@@ -101,7 +105,9 @@ def _execute_requests(num_requests, concurrency, url, auth_header):
     results = []
     start_time_total = time.time()
     with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:
-        futures = [executor.submit(worker, url, i, auth_header) for i in range(num_requests)]
+        futures = [
+            executor.submit(worker, url, i, auth_header) for i in range(num_requests)
+        ]
         for future in concurrent.futures.as_completed(futures):
             results.append(future.result())
     end_time_total = time.time()
@@ -128,7 +134,7 @@ def _print_benchmark_results(scenario_name, results, total_time):
         "failures": failures,
         "avg_latency": avg_latency,
         "min_latency": min_latency,
-        "max_latency": max_latency
+        "max_latency": max_latency,
     }
     _print_metrics(scenario_name, metrics)
 
@@ -145,7 +151,7 @@ def _print_metrics(scenario_name, metrics):
     print(f"Average latency per request: {metrics['avg_latency']:.2f} seconds")
     print(f"Min latency: {metrics['min_latency']:.2f} seconds")
     print(f"Max latency: {metrics['max_latency']:.2f} seconds")
-    if metrics['total_time'] > 0:
+    if metrics["total_time"] > 0:
         print(
             f"Throughput: {(len(metrics['successes']) + len(metrics['rate_limited'])) / metrics['total_time']:.2f} requests/second"
         )

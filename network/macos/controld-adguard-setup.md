@@ -1,12 +1,14 @@
 # Control D + AdGuard Optimal Configuration
 
-**Last Updated**: October 10, 2025  
-**Status**: ✅ Working  
+**Last Updated**: October 10, 2025\
+**Status**: ✅ Working\
 **macOS Version**: 15.0.1 (Sequoia)
 
 ## Overview
 
-This configuration allows Control D DNS and AdGuard to work together optimally without conflicts, providing comprehensive DNS filtering, privacy protection, and web content blocking.
+This configuration allows Control D DNS and AdGuard to work together optimally
+without conflicts, providing comprehensive DNS filtering, privacy protection,
+and web content blocking.
 
 ## Working Configuration Summary
 
@@ -222,4 +224,5 @@ Configuration backed up to:
 
 ---
 
-_This configuration represents the optimal balance between DNS privacy, content filtering, and system stability on macOS._
+_This configuration represents the optimal balance between DNS privacy, content
+filtering, and system stability on macOS._

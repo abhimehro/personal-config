@@ -2,7 +2,9 @@
 
 ## Overview
 
-The `maintenance/` directory contains 30+ automated scripts for system cleanup, health checks, analytics, and optimization. These run via LaunchAgents on schedules (daily, weekly, monthly).
+The `maintenance/` directory contains 30+ automated scripts for system cleanup,
+health checks, analytics, and optimization. These run via LaunchAgents on
+schedules (daily, weekly, monthly).
 
 ## Performance Goals
 
@@ -159,8 +161,8 @@ sudo launchctl print system | grep maintenance
 
 Instead of running 10 small scripts hourly, combine into one script:
 
-**Before:** 10 scripts × 0.5s startup overhead = 5s wasted
-**After:** 1 script with 10 functions = 0.5s startup overhead
+**Before:** 10 scripts × 0.5s startup overhead = 5s wasted **After:** 1 script
+with 10 functions = 0.5s startup overhead
 
 ### Strategy 2: Parallelize Independent Tasks
 
@@ -279,4 +281,6 @@ hyperfine --warmup 1 --runs 5 \
 - Already fast (<1s)
 - One-time setup scripts
 
-**Key principle:** Optimize scripts that run often or when users are waiting. Background maintenance has looser requirements but should still be respectful of system resources.
+**Key principle:** Optimize scripts that run often or when users are waiting.
+Background maintenance has looser requirements but should still be respectful of
+system resources.

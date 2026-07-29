@@ -2,13 +2,19 @@
 
 ## Overview
 
-This document describes a creative workaround for hiding the intrusive macOS microphone mode indicator using Barbee's customizable menu bar icon positioning. This solution emerged from the limitation that macOS 26 (and 15+) doesn't allow users to hide the large orange mic mode indicator that appears when apps like Boom 3D, SpeakerAmp, or audio production tools use the microphone.
+This document describes a creative workaround for hiding the intrusive macOS
+microphone mode indicator using Barbee's customizable menu bar icon positioning.
+This solution emerged from the limitation that macOS 26 (and 15+) doesn't allow
+users to hide the large orange mic mode indicator that appears when apps like
+Boom 3D, SpeakerAmp, or audio production tools use the microphone.
 
 ## The Problem
 
 ### What Apple Changed
 
-Starting with macOS Sonoma (14), Apple introduced a large, prominent microphone mode indicator in the menu bar whenever apps access the microphone. Unlike the small orange dot that preceded it, this indicator:
+Starting with macOS Sonoma (14), Apple introduced a large, prominent microphone
+mode indicator in the menu bar whenever apps access the microphone. Unlike the
+small orange dot that preceded it, this indicator:
 
 - Cannot be disabled through System Settings
 - Cannot be hidden via `defaults write` commands
@@ -23,7 +29,8 @@ Apps like Bartender, Ice, and Hidden Bar **cannot hide**:
 - Screen capture indicators (when apps actively use screen recording)
 - Microphone mode indicators (when apps actively use mic input)
 
-These privacy indicators are rendered at the system level and bypass third-party menu bar management.
+These privacy indicators are rendered at the system level and bypass third-party
+menu bar management.
 
 ### Affected Apps
 
@@ -38,7 +45,8 @@ This issue particularly impacts users of:
 
 ### Concept
 
-Instead of trying to hide the indicator (impossible), we **obscure it visually** by:
+Instead of trying to hide the indicator (impossible), we **obscure it visually**
+by:
 
 1. Positioning Barbee's icon directly over where the mic indicator appears
 2. Widening Barbee to create a "notch" in the middle of the menu bar
@@ -87,8 +95,8 @@ Instead of trying to hide the indicator (impossible), we **obscure it visually**
 
 Apps are organized into three categories:
 
-**1. Shown Items (Visible)** - Left side of Barbee
-These apps remain always visible in the menu bar:
+**1. Shown Items (Visible)** - Left side of Barbee These apps remain always
+visible in the menu bar:
 
 - Finder
 - App Store
@@ -108,8 +116,8 @@ These apps remain always visible in the menu bar:
 - Cleanshot X
 - Various system indicators
 
-**2. Hidden Items** - Right side of Barbee
-These apps hide behind Barbee and expand when clicked:
+**2. Hidden Items** - Right side of Barbee These apps hide behind Barbee and
+expand when clicked:
 
 - 1Password
 - Stats (CPU/Memory)
@@ -124,8 +132,7 @@ These apps hide behind Barbee and expand when clicked:
 - Finder windows
 - Additional system tools
 
-**3. Always Hidden Items**
-New apps automatically appear here:
+**3. Always Hidden Items** New apps automatically appear here:
 
 - Finder (duplicate entry)
 - Configured to auto-hide new menu bar items
@@ -156,7 +163,8 @@ Spacers create the visual separation and ensure hidden apps expand correctly:
   Always shown              Orange peeking through              Expand on click
 ```
 
-The key insight: The 200-pixel spacers on either side of Barbee create a "zone" where:
+The key insight: The 200-pixel spacers on either side of Barbee create a "zone"
+where:
 
 - The mic indicator appears (behind Barbee)
 - Hidden apps expand into the spacer space
@@ -168,8 +176,10 @@ The key insight: The 200-pixel spacers on either side of Barbee create a "zone" 
 
 The complete Barbee configuration is backed up at:
 
-- **Repository**: `~/Documents/dev/personal-config/macos/barbee-config/Backup/Barbee_Profile_2025_10_17_17_11_05/Default.bbp`
-- **iCloud**: `~/Library/Mobile Documents/iCloud~hyperartflow~barbee/Documents/Backups/Default.bbp`
+- **Repository**:
+  `~/Documents/dev/personal-config/macos/barbee-config/Backup/Barbee_Profile_2025_10_17_17_11_05/Default.bbp`
+- **iCloud**:
+  `~/Library/Mobile Documents/iCloud~hyperartflow~barbee/Documents/Backups/Default.bbp`
 
 ### Backup Contents
 
@@ -190,7 +200,8 @@ Default.bbp/
 1. Open Barbee preferences
 2. Go to Profile tab
 3. Click "Import Profile"
-4. Navigate to: `~/Documents/dev/personal-config/macos/barbee-config/Backup/Barbee_Profile_2025_10_17_17_11_05/Default.bbp`
+4. Navigate to:
+   `~/Documents/dev/personal-config/macos/barbee-config/Backup/Barbee_Profile_2025_10_17_17_11_05/Default.bbp`
 5. Click Import
 6. Restart Barbee (quit and relaunch)
 
@@ -259,7 +270,8 @@ defaults write com.apple.controlcenter "NSStatusItem Visible AudioVideoModule" -
 killall ControlCenter
 ```
 
-**Limitation**: Temporarily removes ALL Control Center icons, breaks system functionality.
+**Limitation**: Temporarily removes ALL Control Center icons, breaks system
+functionality.
 
 #### 4. Revoking Microphone Permissions
 
@@ -271,17 +283,20 @@ killall ControlCenter
 - **Ice**: Cannot hide active privacy indicators
 - **Hidden Bar**: Cannot hide active privacy indicators
 
-These apps can hide _inactive_ menu bar items but system privacy indicators bypass them.
+These apps can hide _inactive_ menu bar items but system privacy indicators
+bypass them.
 
 ## Related Issue: Screen Capture Indicator
 
 ### The Good News
 
-Unlike the mic mode indicator, the screen capture nag alerts CAN be suppressed! See:
+Unlike the mic mode indicator, the screen capture nag alerts CAN be suppressed!
+See:
 
 - [`screencapture-nag-remover-setup.md`](./screencapture-nag-remover-setup.md)
 
-The screen capture alerts use a modifiable plist file that allows us to set nag dates 100 years in the future.
+The screen capture alerts use a modifiable plist file that allows us to set nag
+dates 100 years in the future.
 
 ### Why the Difference?
 
@@ -363,8 +378,7 @@ Watch these forums for developments:
 
 ### Submit Feedback to Apple
 
-Let Apple know this matters:
-🔗 https://www.apple.com/feedback/macos.html
+Let Apple know this matters: 🔗 https://www.apple.com/feedback/macos.html
 
 **Suggested feedback points**:
 
@@ -375,7 +389,10 @@ Let Apple know this matters:
 
 ## Conclusion
 
-While this solution doesn't remove the mic mode indicator, it transforms it from an intrusive annoyance into a subtle design element. The strategic use of Barbee demonstrates that creative thinking can work around even deeply embedded system limitations.
+While this solution doesn't remove the mic mode indicator, it transforms it from
+an intrusive annoyance into a subtle design element. The strategic use of Barbee
+demonstrates that creative thinking can work around even deeply embedded system
+limitations.
 
 The key insight: **When you can't remove a problem, redesign around it.**
 
@@ -398,7 +415,7 @@ The key insight: **When you can't remove a problem, redesign around it.**
 
 ---
 
-**Last Updated**: October 17, 2025  
-**macOS Version**: 26.0.1 (25A362)  
-**Barbee Version**: Latest supporting macOS 26  
+**Last Updated**: October 17, 2025\
+**macOS Version**: 26.0.1 (25A362)\
+**Barbee Version**: Latest supporting macOS 26\
 **Status**: ✅ Working perfectly

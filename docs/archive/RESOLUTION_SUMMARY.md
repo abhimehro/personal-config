@@ -2,7 +2,8 @@
 
 ## Status: ✅ RESOLVED
 
-The merge conflicts preventing PR #144 from being merged have been successfully resolved. This document explains what was done and how to apply the solution.
+The merge conflicts preventing PR #144 from being merged have been successfully
+resolved. This document explains what was done and how to apply the solution.
 
 ## What Was Done
 
@@ -32,7 +33,8 @@ Applied a **merge-both** strategy since both changes are valuable:
 
 ### File: `.jules/bolt.md`
 
-**Action:** Added the missing "2026-01-20" entry from main before the "2026-02-15" entry from PR #144.
+**Action:** Added the missing "2026-01-20" entry from main before the
+"2026-02-15" entry from PR #144.
 
 **Result:** Both learning entries are now present in chronological order.
 
@@ -40,13 +42,15 @@ Applied a **merge-both** strategy since both changes are valuable:
 
 **Action:** No changes needed - already has PR #144's optimized grep logic.
 
-**Result:** Single-pass regex validation (50% fewer process forks, better memory usage).
+**Result:** Single-pass regex validation (50% fewer process forks, better memory
+usage).
 
 ## How to Apply This Resolution
 
 ### Option 1: Update PR #144 Branch (Recommended)
 
-Since PR #144 is owned by `google-labs-jules[bot]`, the bot or a maintainer with access can update it:
+Since PR #144 is owned by `google-labs-jules[bot]`, the bot or a maintainer with
+access can update it:
 
 ```bash
 # Checkout the PR branch
@@ -141,7 +145,7 @@ Refer to `PR144_RESOLUTION_GUIDE.md` for more detailed information about:
 
 ---
 
-**Resolution completed by:** Copilot SWE Agent  
-**Date:** 2026-01-22  
-**Branch:** copilot/fix-merge-conflicts-pr-144  
+**Resolution completed by:** Copilot SWE Agent\
+**Date:** 2026-01-22\
+**Branch:** copilot/fix-merge-conflicts-pr-144\
 **Resolution commits:** 6cb4e33, 06af9c1, efe8b42

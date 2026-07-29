@@ -1,7 +1,8 @@
 # macOS Performance Optimizations
 
-**Date Created:** October 12, 2025  
-**Purpose:** Additional system optimizations to reduce resource usage and improve performance
+**Date Created:** October 12, 2025\
+**Purpose:** Additional system optimizations to reduce resource usage and
+improve performance
 
 ## Applied Optimizations
 
@@ -28,7 +29,8 @@ sudo defaults write /.Spotlight-V100/VolumeConfiguration.plist Exclusions -array
 
 #### Reduce Notification Center Widgets
 
-Since you removed widgets from display, ensure Widget Center doesn't pre-load them:
+Since you removed widgets from display, ensure Widget Center doesn't pre-load
+them:
 
 ```bash
 # Disable Today widgets completely (if not using Control Center widgets)
@@ -101,7 +103,8 @@ sudo spctl --status
 # sudo defaults write /Library/Preferences/com.apple.security GKAutoRearm -bool NO
 ```
 
-**Note:** This is a security trade-off. Only disable if you're comfortable managing security manually.
+**Note:** This is a security trade-off. Only disable if you're comfortable
+managing security manually.
 
 #### Reduce Motion Effects
 
@@ -241,7 +244,8 @@ chmod +x ~/Documents/dev/personal-config/maintenance/bin/kill_unwanted_widgets.s
 
 ### After Optimizations
 
-- Widget extensions running: ~55 (only system-critical + your Control Center widgets)
+- Widget extensions running: ~55 (only system-critical + your Control Center
+  widgets)
 - Background services: 10+ disabled permanently
 - Diagnostic reports: 0 (ReportCrash disabled)
 - Memory pressure: Reduced

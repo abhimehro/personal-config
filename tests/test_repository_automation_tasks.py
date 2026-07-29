@@ -23,8 +23,8 @@ from repository_automation_tasks import (  # noqa: E402
     configured_commands,
     execute_configured_commands,
     run_command_set,
-    run_quality_assurance,
     run_performance_optimizer,
+    run_quality_assurance,
     run_safe_adjustment_commands,
     run_weekly_retrospective,
 )
@@ -131,9 +131,13 @@ class TestRunSafeAdjustmentCommands(unittest.TestCase):
         self.assertEqual((result, url), ([], ""))
 
     @patch("repository_automation_tasks.git_output", return_value="")
-    @patch("repository_automation_tasks.run_shell_command", return_value={"exit_code": 0})
+    @patch(
+        "repository_automation_tasks.run_shell_command", return_value={"exit_code": 0}
+    )
     @patch("repository_automation_tasks.writes_allowed", return_value=True)
-    def test_no_changes(self, _mock_writes_allowed, _mock_run_shell_command, _mock_git_output):
+    def test_no_changes(
+        self, _mock_writes_allowed, _mock_run_shell_command, _mock_git_output
+    ):
         result, url = run_safe_adjustment_commands(self.section)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["name"], "cmd")
@@ -204,7 +208,9 @@ class TestRunPerformanceOptimizer(unittest.TestCase):
     @patch("repository_automation_tasks.discover_hotspots")
     @patch("repository_automation_tasks.run_command_set")
     @patch("repository_automation_tasks.write_result")
-    def test_run_performance_optimizer_cases(self, mock_write_result, mock_run_command_set, mock_discover_hotspots):
+    def test_run_performance_optimizer_cases(
+        self, mock_write_result, mock_run_command_set, mock_discover_hotspots
+    ):
         cases = [
             (
                 "with_config",
@@ -246,7 +252,14 @@ class TestRunPerformanceOptimizer(unittest.TestCase):
             ),
         ]
 
-        for name, config, expected_arg, command_results, hotspots, expected_lines in cases:
+        for (
+            name,
+            config,
+            expected_arg,
+            command_results,
+            hotspots,
+            expected_lines,
+        ) in cases:
             with self.subTest(name=name):
                 mock_run_command_set.reset_mock()
                 mock_write_result.reset_mock()
@@ -321,36 +334,46 @@ class TestExecuteConfiguredCommands(unittest.TestCase):
 
 class TestRunCommandSet(unittest.TestCase):
     def _run_with_mock(self, mock_return):
-        with unittest.mock.patch("repository_automation_tasks.execute_configured_commands") as mock_execute:
+        with unittest.mock.patch(
+            "repository_automation_tasks.execute_configured_commands"
+        ) as mock_execute:
             mock_execute.return_value = mock_return
             return run_command_set("my-task", {})
 
     def test_run_command_set_success(self):
-        status, summary, data = self._run_with_mock((
-            [{"name": "setup1", "exit_code": 0}],
-            [{"name": "cmd1", "exit_code": 0}],
-        ))
+        status, summary, data = self._run_with_mock(
+            (
+                [{"name": "setup1", "exit_code": 0}],
+                [{"name": "cmd1", "exit_code": 0}],
+            )
+        )
         self.assertEqual(status, "success")
-        self.assertEqual(summary, "my-task executed 1 setup commands and 1 validation commands.")
+        self.assertEqual(
+            summary, "my-task executed 1 setup commands and 1 validation commands."
+        )
         self.assertIn("## Setup commands", data["body"])
         self.assertNotIn("## Human review required", data["body"])
         self.assertNotIn("## Optional command warnings", data["body"])
 
     def test_run_command_set_warning(self):
-        status, summary, data = self._run_with_mock((
-            [],
-            [{"name": "cmd1", "exit_code": 1, "optional": True}],
-        ))
+        status, summary, data = self._run_with_mock(
+            (
+                [],
+                [{"name": "cmd1", "exit_code": 1, "optional": True}],
+            )
+        )
         self.assertEqual(status, "warning")
         self.assertNotIn("## Human review required", data["body"])
         self.assertIn("## Optional command warnings", data["body"])
         self.assertIn("`cmd1` failed but is configured as optional.", data["body"])
 
     def test_run_command_set_failure(self):
-        status, summary, data = self._run_with_mock((
-            [{"name": "setup1", "exit_code": 1}],
-            [{"name": "cmd1", "exit_code": 1, "optional": True}],
-        ))
+        status, summary, data = self._run_with_mock(
+            (
+                [{"name": "setup1", "exit_code": 1}],
+                [{"name": "cmd1", "exit_code": 1, "optional": True}],
+            )
+        )
         self.assertEqual(status, "failure")
         self.assertIn("## Human review required", data["body"])
         self.assertIn("`setup1` failed and is not marked optional.", data["body"])
@@ -359,9 +382,15 @@ class TestRunCommandSet(unittest.TestCase):
 
 class TestRunWeeklyRetrospective(unittest.TestCase):
     def setUp(self):
-        self.mock_recent_daily_runs = patch("repository_automation_tasks.recent_daily_runs").start()
-        self.mock_weekly_markers = patch("repository_automation_tasks.weekly_markers").start()
-        self.mock_ensure_gh_token = patch("repository_automation_tasks.ensure_gh_token").start()
+        self.mock_recent_daily_runs = patch(
+            "repository_automation_tasks.recent_daily_runs"
+        ).start()
+        self.mock_weekly_markers = patch(
+            "repository_automation_tasks.weekly_markers"
+        ).start()
+        self.mock_ensure_gh_token = patch(
+            "repository_automation_tasks.ensure_gh_token"
+        ).start()
         self.mock_run_safe_adjustment_commands = patch(
             "repository_automation_tasks.run_safe_adjustment_commands"
         ).start()
@@ -371,7 +400,9 @@ class TestRunWeeklyRetrospective(unittest.TestCase):
         self.mock_append_publication_result = patch(
             "repository_automation_tasks.append_publication_result"
         ).start()
-        self.mock_write_result = patch("repository_automation_tasks.write_result").start()
+        self.mock_write_result = patch(
+            "repository_automation_tasks.write_result"
+        ).start()
         self.addCleanup(patch.stopall)
 
     def test_run_weekly_retrospective_success(self):
@@ -392,7 +423,10 @@ class TestRunWeeklyRetrospective(unittest.TestCase):
 
         config = {
             "weekly_retrospective": {"labels": ["weekly"]},
-            "reporting": {"daily_issue_prefix": "[test] Daily", "weekly_issue_prefix": "[test] Weekly"}
+            "reporting": {
+                "daily_issue_prefix": "[test] Daily",
+                "weekly_issue_prefix": "[test] Weekly",
+            },
         }
 
         result = run_weekly_retrospective(config)
@@ -400,7 +434,9 @@ class TestRunWeeklyRetrospective(unittest.TestCase):
         self.mock_recent_daily_runs.assert_called_once()
         self.mock_weekly_markers.assert_called_once_with("[test] Daily")
         self.mock_ensure_gh_token.assert_called_once()
-        self.mock_run_safe_adjustment_commands.assert_called_once_with({"labels": ["weekly"]})
+        self.mock_run_safe_adjustment_commands.assert_called_once_with(
+            {"labels": ["weekly"]}
+        )
         self.mock_weekly_report_lines.assert_called_once_with(
             config,
             ["run1", "run2"],
@@ -455,10 +491,9 @@ class TestRunWeeklyRetrospective(unittest.TestCase):
             "weekly-retrospective",
             ("failure", "Reviewed 2 daily workflow runs from the last 7 days."),
             "appended_body",
-            {"runs": ["run1", "run2"], "issue_url": "http://issue", "safe_pr_url": ""}
+            {"runs": ["run1", "run2"], "issue_url": "http://issue", "safe_pr_url": ""},
         )
         self.assertEqual(result, {"status": "failure"})
-
 
 
 if __name__ == "__main__":

@@ -20,7 +20,8 @@ Updated SSH config with your system values:
 
 - **Username**: `abhimehrotra`
 - **mDNS Hostname**: `abhis-macbook-air.local`
-- **Local Hostname**: `abhis-macbook-air.local` (mDNS works better than direct hostname)
+- **Local Hostname**: `abhis-macbook-air.local` (mDNS works better than direct
+  hostname)
 
 ## Updated SSH Hosts
 

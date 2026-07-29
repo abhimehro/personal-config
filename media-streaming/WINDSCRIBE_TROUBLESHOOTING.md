@@ -3,7 +3,8 @@
 **Date**: June 20, 2026 (static IP updated 2026-07-16: Dallas `82.23.253.53`)
 **Status**: ✅ LaunchAgent Running | ✅ Stable Windscribe Port Plan Documented
 
-> **Static IP:** Dallas `82.23.253.53` (replaces expired Atlanta `82.21.151.194`).
+> **Static IP:** Dallas `82.23.253.53` (replaces expired Atlanta
+> `82.21.151.194`).
 
 ---
 
@@ -11,7 +12,8 @@
 
 ### 1. `rename-media.sh` Script Error
 
-**Problem**: Missing variable declarations causing LaunchAgent to crash repeatedly.
+**Problem**: Missing variable declarations causing LaunchAgent to crash
+repeatedly.
 
 **Fix Applied**: Added missing variables:
 
@@ -36,7 +38,8 @@ LOG_FILE="${HOME}/Library/Logs/media-rename.log"
 
 **Location**:
 
-- Source: `~/Documents/dev/personal-config/media-streaming/launchd/com.speedybee.media.server.plist`
+- Source:
+  `~/Documents/dev/personal-config/media-streaming/launchd/com.speedybee.media.server.plist`
 - Symlink: `~/Library/LaunchAgents/com.speedybee.media.server.plist`
 
 ### 3. Enhanced `final-media-server.sh`
@@ -46,7 +49,8 @@ LOG_FILE="${HOME}/Library/Logs/media-rename.log"
 - Detects VPN connection status automatically
 - Fails explicitly if 1Password credentials unavailable (no temporary passwords)
 - Supports three modes: `--local`, `--external`, `auto` (default)
-- Provides clear Infuse configuration instructions for both LAN and VPN scenarios
+- Provides clear Infuse configuration instructions for both LAN and VPN
+  scenarios
 
 ---
 
@@ -54,28 +58,35 @@ LOG_FILE="${HOME}/Library/Logs/media-rename.log"
 
 ### Current Status
 
-**VPN Static IP**: `82.23.253.53` (Dallas)
-**Local WebDAV Server**: ✅ Stable internal port `8080`
-**Primary Media Server**: ✅ Jellyfin on `8096/TCP` (LAN + **default remote** via Windscribe)
-**Backup Remote Media Server**: WebDAV on external `8088/TCP` -> internal `8080/TCP`
-**Plex**: Legacy only (`32400`); not required once Jellyfin is verified
+**VPN Static IP**: `82.23.253.53` (Dallas) **Local WebDAV Server**: ✅ Stable
+internal port `8080` **Primary Media Server**: ✅ Jellyfin on `8096/TCP` (LAN +
+**default remote** via Windscribe) **Backup Remote Media Server**: WebDAV on
+external `8088/TCP` -> internal `8080/TCP` **Plex**: Legacy only (`32400`); not
+required once Jellyfin is verified
 
 ### Diagnosis
 
-Earlier references to external port `22650` are stale. The current supported WebDAV backup mapping is `82.23.253.53:8088` externally to the Mac's internal WebDAV port `8080/TCP`. Jellyfin remote (default path) uses `8096/TCP` internally and externally — configured in **Windscribe**, plus Published Server URI `http://82.23.253.53:8096` in Jellyfin Networking.
+Earlier references to external port `22650` are stale. The current supported
+WebDAV backup mapping is `82.23.253.53:8088` externally to the Mac's internal
+WebDAV port `8080/TCP`. Jellyfin remote (default path) uses `8096/TCP`
+internally and externally — configured in **Windscribe**, plus Published Server
+URI `http://82.23.253.53:8096` in Jellyfin Networking.
 
 ### Root Causes (Most Likely)
 
 1. **Windscribe Port Forward Not Applied**
-   - Port forwards in Windscribe require the VPN to be disconnected and reconnected after configuration
+   - Port forwards in Windscribe require the VPN to be disconnected and
+     reconnected after configuration
    - The static IP must be active and renewed
 
 2. **Wrong Forward Configuration**
    - Windscribe forwards work differently than traditional router forwards
-   - They require the internal IP to be the VPN tunnel IP (e.g., `100.125.56.240`), NOT the LAN IP (`192.168.0.111`)
+   - They require the internal IP to be the VPN tunnel IP (e.g.,
+     `100.125.56.240`), NOT the LAN IP (`192.168.0.111`)
 
 3. **macOS Firewall Blocking**
-   - Even though rclone is in the firewall rules, macOS may block unsolicited inbound connections
+   - Even though rclone is in the firewall rules, macOS may block unsolicited
+     inbound connections
    - Needs explicit "Allow incoming connections" setting
 
 ---
@@ -107,9 +118,13 @@ Earlier references to external port `22650` are stale. The current supported Web
 
 ### Step 2: Keep WebDAV Internal Port Stable
 
-WebDAV must remain on internal port `8080/TCP`. Do not forward `8081-8083` for remote use. If port `8080` is occupied, the daemon should fail loudly so the port conflict can be fixed instead of silently moving to a different internal port that Windscribe is not forwarding.
+WebDAV must remain on internal port `8080/TCP`. Do not forward `8081-8083` for
+remote use. If port `8080` is occupied, the daemon should fail loudly so the
+port conflict can be fixed instead of silently moving to a different internal
+port that Windscribe is not forwarding.
 
-If Windscribe assigns a different external port, keep the internal port at `8080` and update only the client-side external port in Infuse.
+If Windscribe assigns a different external port, keep the internal port at
+`8080` and update only the client-side external port in Infuse.
 
 ### Step 3: Reconnect VPN
 
@@ -121,7 +136,9 @@ After updating the port forward:
 
 ### Step 4: Configure rclone to Bind to VPN Interface
 
-rclone binds to `0.0.0.0:8080` so the same daemon can serve LAN clients and traffic arriving through the Windscribe tunnel. This is intentional for the backup WebDAV path.
+rclone binds to `0.0.0.0:8080` so the same daemon can serve LAN clients and
+traffic arriving through the Windscribe tunnel. This is intentional for the
+backup WebDAV path.
 
 Run the LaunchAgent-managed daemon for normal use:
 
@@ -236,9 +253,11 @@ tail -f ~/Library/Logs/alldebrid-sync.log
 
 ## 📋 Next Steps Checklist
 
-- [x] Confirm Windscribe Jellyfin mapping: external `8096/TCP` -> internal `8096/TCP`
+- [x] Confirm Windscribe Jellyfin mapping: external `8096/TCP` -> internal
+      `8096/TCP`
 - [x] Jellyfin Published Server URI: `http://82.23.253.53:8096`
-- [ ] Confirm Windscribe WebDAV backup mapping: external `8088/TCP` -> internal `8080/TCP`
+- [ ] Confirm Windscribe WebDAV backup mapping: external `8088/TCP` -> internal
+      `8080/TCP`
 - [ ] Disconnect and reconnect Windscribe VPN after changing mappings
 - [ ] Test Jellyfin remote from cellular: `http://82.23.253.53:8096/`
 - [ ] Test WebDAV external connectivity from a cellular device
@@ -251,19 +270,19 @@ tail -f ~/Library/Logs/alldebrid-sync.log
 
 ## ⚡ Quick Reference
 
-| Component              | Status      | Notes                                |
-| ---------------------- | ----------- | ------------------------------------ |
-| rename-media.sh        | ✅ FIXED    | Now has all required variables       |
-| sync-alldebrid.sh      | ✅ OK       | Running hourly via LaunchAgent       |
-| final-media-server.sh  | ✅ ENHANCED | Auto-detects VPN, 1Password enforced |
-| LaunchAgent: renamer   | ✅ RUNNING  | Watch mode active                    |
-| LaunchAgent: alldebrid | ✅ LOADED   | Syncs hourly                         |
-| LaunchAgent: server    | ✅ RUNNING  | Serves backup WebDAV on stable 8080  |
-| LaunchAgent: jellyfin  | ✅ PHASE 1  | Native Jellyfin LAN `8096`           |
-| LAN Access             | ✅ WORKING  | WebDAV `LAN:8080` / Jellyfin `LAN:8096` |
+| Component              | Status      | Notes                                      |
+| ---------------------- | ----------- | ------------------------------------------ |
+| rename-media.sh        | ✅ FIXED    | Now has all required variables             |
+| sync-alldebrid.sh      | ✅ OK       | Running hourly via LaunchAgent             |
+| final-media-server.sh  | ✅ ENHANCED | Auto-detects VPN, 1Password enforced       |
+| LaunchAgent: renamer   | ✅ RUNNING  | Watch mode active                          |
+| LaunchAgent: alldebrid | ✅ LOADED   | Syncs hourly                               |
+| LaunchAgent: server    | ✅ RUNNING  | Serves backup WebDAV on stable 8080        |
+| LaunchAgent: jellyfin  | ✅ PHASE 1  | Native Jellyfin LAN `8096`                 |
+| LAN Access             | ✅ WORKING  | WebDAV `LAN:8080` / Jellyfin `LAN:8096`    |
 | Jellyfin Remote        | ✅ DEFAULT  | `82.23.253.53:8096` -> `8096` (Windscribe) |
-| WebDAV VPN Access      | ✅ CONFIG   | `82.23.253.53:8088` -> `8080`       |
-| Plex Remote            | ⚠️ LEGACY   | `32400` — retire after Jellyfin cutover |
+| WebDAV VPN Access      | ✅ CONFIG   | `82.23.253.53:8088` -> `8080`              |
+| Plex Remote            | ⚠️ LEGACY   | `32400` — retire after Jellyfin cutover    |
 
 ---
 

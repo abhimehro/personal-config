@@ -2,7 +2,8 @@
 
 ## ✅ Task Completed
 
-I have successfully consolidated your various ad-blocking lists into two comprehensive sets for AdGuard macOS:
+I have successfully consolidated your various ad-blocking lists into two
+comprehensive sets for AdGuard macOS:
 
 ### 📋 **Denylist** (`Consolidated-Denylist.txt`)
 
@@ -63,7 +64,8 @@ python3 create_consolidated_lists.py
 
 - **AdGuard Limitation**: macOS app only supports one denylist and one allowlist
 - **File Format**: All files use UTF-8 encoding for compatibility
-- **Sample Files**: The current files contain samples; run the Python script for complete lists
+- **Sample Files**: The current files contain samples; run the Python script for
+  complete lists
 - **Backup**: Keep backups before importing new lists
 
 ## 📊 **Expected Results**

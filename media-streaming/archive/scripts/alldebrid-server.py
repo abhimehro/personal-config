@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import argparse
 import base64
-from http.server import SimpleHTTPRequestHandler
 import os
 import secrets
 import socketserver
 import string
 import sys
 import time
+from http.server import SimpleHTTPRequestHandler
 
 MOUNT_DIR = os.environ.get("ALD_MOUNT_DIR", os.path.expanduser("~/mnt/alldebrid"))
 

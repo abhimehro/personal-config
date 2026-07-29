@@ -1,6 +1,7 @@
 # Docker Setup for personal-config
 
-This repository is now containerized with Docker for reproducible development, testing, and CI/CD workflows.
+This repository is now containerized with Docker for reproducible development,
+testing, and CI/CD workflows.
 
 ## Files Generated
 
@@ -107,14 +108,13 @@ docker push myregistry/personal-config:latest
 
 ## Best Practices Applied
 
-✓ **Multi-stage builds** - Separate builder and runtime stages for minimal final image
-✓ **Non-root user** - Runs as `scriptuser` for security
-✓ **Layer caching** - Dependencies installed before source copy
-✓ **Health checks** - Container health verification
-✓ **Volume management** - Persistent logs and reports
-✓ **Read-only mounts** - Scripts/tests mounted as read-only where appropriate
-✓ **.dockerignore** - Reduces build context by ~80%
-✓ **Environment isolation** - Separate services for dev/test/lint workflows
+✓ **Multi-stage builds** - Separate builder and runtime stages for minimal final
+image ✓ **Non-root user** - Runs as `scriptuser` for security ✓ **Layer
+caching** - Dependencies installed before source copy ✓ **Health checks** -
+Container health verification ✓ **Volume management** - Persistent logs and
+reports ✓ **Read-only mounts** - Scripts/tests mounted as read-only where
+appropriate ✓ **.dockerignore** - Reduces build context by ~80% ✓ **Environment
+isolation** - Separate services for dev/test/lint workflows
 
 ## Service Reference
 
@@ -131,7 +131,8 @@ docker push myregistry/personal-config:latest
 ## Tips
 
 - Use `docker compose watch` for auto-rebuild on file changes (Docker v2.20+)
-- Mount `.env.local` for environment overrides: `docker compose -f docker-compose.yml --env-file .env.local up dev`
+- Mount `.env.local` for environment overrides:
+  `docker compose -f docker-compose.yml --env-file .env.local up dev`
 - View logs: `docker compose logs -f dev`
 - Stop all containers: `docker compose down`
 - Clean up volumes: `docker compose down -v`

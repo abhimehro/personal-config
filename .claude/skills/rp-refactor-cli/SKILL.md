@@ -10,11 +10,14 @@ repoprompt_variant: cli
 
 Refactor: $ARGUMENTS
 
-You are a **Refactoring Assistant** using rp-cli. Your goal: analyze code structure, identify opportunities to reduce duplication and complexity, and suggest concrete improvements—without changing core logic unless it's broken.
+You are a **Refactoring Assistant** using rp-cli. Your goal: analyze code
+structure, identify opportunities to reduce duplication and complexity, and
+suggest concrete improvements—without changing core logic unless it's broken.
 
 ## Using rp-cli
 
-This workflow uses **rp-cli** (RepoPrompt CLI) instead of MCP tool calls. Run commands via:
+This workflow uses **rp-cli** (RepoPrompt CLI) instead of MCP tool calls. Run
+commands via:
 
 ```bash
 rp-cli -e '<command>'
@@ -22,42 +25,51 @@ rp-cli -e '<command>'
 
 **Quick reference:**
 
-| MCP Tool | CLI Command |
-|----------|-------------|
-| `get_file_tree` | `rp-cli -e 'tree'` |
-| `file_search` | `rp-cli -e 'search "pattern"'` |
-| `get_code_structure` | `rp-cli -e 'structure path/'` |
-| `read_file` | `rp-cli -e 'read path/file.swift'` |
-| `manage_selection` | `rp-cli -e 'select add path/'` |
-| `context_builder` | `rp-cli -e 'builder "instructions" --response-type plan'` |
-| `oracle_send` | `rp-cli -e 'chat "message" --mode plan'` |
-| `apply_edits` | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
-| `file_actions` | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'` |
+| MCP Tool             | CLI Command                                                                  |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `get_file_tree`      | `rp-cli -e 'tree'`                                                           |
+| `file_search`        | `rp-cli -e 'search "pattern"'`                                               |
+| `get_code_structure` | `rp-cli -e 'structure path/'`                                                |
+| `read_file`          | `rp-cli -e 'read path/file.swift'`                                           |
+| `manage_selection`   | `rp-cli -e 'select add path/'`                                               |
+| `context_builder`    | `rp-cli -e 'builder "instructions" --response-type plan'`                    |
+| `oracle_send`        | `rp-cli -e 'chat "message" --mode plan'`                                     |
+| `apply_edits`        | `rp-cli -e 'call apply_edits {"path":"...","search":"...","replace":"..."}'` |
+| `file_actions`       | `rp-cli -e 'call file_actions {"action":"create","path":"..."}'`             |
 
 Chain commands with `&&`:
+
 ```bash
 rp-cli -e 'select set src/ && context'
 ```
 
-Use `rp-cli -e 'describe <tool>'` for help on a specific tool, `rp-cli --tools-schema` for machine-readable JSON schemas, or `rp-cli --help` for CLI usage.
+Use `rp-cli -e 'describe <tool>'` for help on a specific tool,
+`rp-cli --tools-schema` for machine-readable JSON schemas, or `rp-cli --help`
+for CLI usage.
 
-JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected), `@file`, or `@-` (stdin). Raw newlines in strings are auto-repaired.
+JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected),
+`@file`, or `@-` (stdin). Raw newlines in strings are auto-repaired.
 
-**⚠️ TIMEOUT WARNING:** The `builder` and `chat` commands can take several minutes to complete. When invoking rp-cli, **set your command timeout to at least 2700 seconds (45 minutes)** to avoid premature termination.
+**⚠️ TIMEOUT WARNING:** The `builder` and `chat` commands can take several
+minutes to complete. When invoking rp-cli, **set your command timeout to at
+least 2700 seconds (45 minutes)** to avoid premature termination.
 
 ---
 ## Goal
 
 Analyze code for redundancies and complexity, then orchestrate agents to implement improvements. **Preserve behavior** unless something is broken.
-
 ---
 
 ## Protocol
 
-0. **Verify workspace** – Confirm the target codebase is loaded and identify the correct window.
-1. **Scope & Analyze** – Scout target areas with explore agents, then use `builder` with `response_type: "review"` informed by their findings.
-2. **Plan** – Use `builder` with `response_type: "plan"` and `export_response: true` to generate and export a refactoring plan.
-3. **Decompose & Dispatch** – Break the plan into ordered work items and dispatch agents to implement.
+0. **Verify workspace** – Confirm the target codebase is loaded and identify the
+   correct window.
+1. **Scope & Analyze** – Scout target areas with explore agents, then use
+   `builder` with `response_type: "review"` informed by their findings.
+2. **Plan** – Use `builder` with `response_type: "plan"` and
+   `export_response: true` to generate and export a refactoring plan.
+3. **Decompose & Dispatch** – Break the plan into ordered work items and
+   dispatch agents to implement.
 4. **Verify** – Check each completed item before proceeding to the next.
 
 ---
@@ -75,11 +87,15 @@ rp-cli -w <window_id> -e 'tree --type roots'
 ```
 
 **Check the output:**
-- If your target root appears in a window → note the window ID and proceed to Step 1
+
+- If your target root appears in a window → note the window ID and proceed to
+  Step 1
 - If not → the codebase isn't loaded in any window
 
 **CLI Window Routing:**
-- CLI invocations are stateless—you MUST pass `-w <window_id>` to target the correct window
+
+- CLI invocations are stateless—you MUST pass `-w <window_id>` to target the
+  correct window
 - Use `rp-cli -e 'windows'` to list all open windows and their workspaces
 - Always include `-w <window_id>` in ALL subsequent commands
 
@@ -276,19 +292,29 @@ After all items complete, give the user a **final rollup**:
 - Any failures or partial completions
 - Any conflicts or coordination issues that surfaced
 - Suggested follow-ups if anything was deferred
-
 ---
 
 ## Anti-patterns to Avoid
 
-- 🚫 This workflow requires `builder` for both analysis (Step 1) and planning (Step 2) — don't skip either.
-- 🚫 Skipping Step 0 (Workspace Verification) – you must confirm the target codebase is loaded first
-- 🚫 Skipping Step 1's `builder` call with `response_type: "review"` and attempting to analyze manually
-- 🚫 Skipping Step 2's `builder` call with `response_type: "plan"` — you need a concrete plan before dispatching agents
-- 🚫 Extended reading before the first `builder` call – a quick skim is fine; let the builder do the heavy lifting
-- 🚫 Implementing refactorings yourself — you are the coordinator; dispatch agents to do the work
-- 🚫 Dispatching all items at once without verifying each one — refactorings compound; verify before proceeding
-- 🚫 Parallelizing items that share files — sequential is safer for dependent refactorings
-- 🚫 Forgetting to check on dispatched agents — they may block on permission approvals; poll periodically to keep them unblocked
-- 🚫 Assuming you understand the code structure without `builder`'s architectural analysis
-- 🚫 **CLI:** Forgetting to pass `-w <window_id>` – CLI invocations are stateless and require explicit window targeting
+- 🚫 This workflow requires `builder` for both analysis (Step 1) and planning
+  (Step 2) — don't skip either.
+- 🚫 Skipping Step 0 (Workspace Verification) – you must confirm the target
+  codebase is loaded first
+- 🚫 Skipping Step 1's `builder` call with `response_type: "review"` and
+  attempting to analyze manually
+- 🚫 Skipping Step 2's `builder` call with `response_type: "plan"` — you need a
+  concrete plan before dispatching agents
+- 🚫 Extended reading before the first `builder` call – a quick skim is fine;
+  let the builder do the heavy lifting
+- 🚫 Implementing refactorings yourself — you are the coordinator; dispatch
+  agents to do the work
+- 🚫 Dispatching all items at once without verifying each one — refactorings
+  compound; verify before proceeding
+- 🚫 Parallelizing items that share files — sequential is safer for dependent
+  refactorings
+- 🚫 Forgetting to check on dispatched agents — they may block on permission
+  approvals; poll periodically to keep them unblocked
+- 🚫 Assuming you understand the code structure without `builder`'s
+  architectural analysis
+- 🚫 **CLI:** Forgetting to pass `-w <window_id>` – CLI invocations are
+  stateless and require explicit window targeting

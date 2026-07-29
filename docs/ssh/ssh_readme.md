@@ -7,7 +7,9 @@
 
 ## 🔐 1Password + Cursor IDE SSH Setup
 
-This directory contains a complete SSH configuration optimized for Cursor IDE development with 1Password SSH agent integration and dynamic VPN/local network support.
+This directory contains a complete SSH configuration optimized for Cursor IDE
+development with 1Password SSH agent integration and dynamic VPN/local network
+support.
 
 ## 📁 Structure
 
@@ -96,5 +98,4 @@ ssh/
 
 ---
 
-**Created:** 2025-08-04
-**Status:** ✅ Production Ready
+**Created:** 2025-08-04 **Status:** ✅ Production Ready

@@ -2,7 +2,8 @@
 
 ## The DNS Conflict Problem
 
-**CORE ISSUE**: Both Control D and Windscribe want to control DNS for security/privacy reasons, creating a conflict.
+**CORE ISSUE**: Both Control D and Windscribe want to control DNS for
+security/privacy reasons, creating a conflict.
 
 ### What Each Service Does
 
@@ -235,8 +236,7 @@ windscribe dns custom <Control D endpoint>
 - `sudo ctrld start` fails with "connection refused"
 - Service won't start when VPN is connected
 
-**Solution**:
-This is why we use `--skip_self_checks`:
+**Solution**: This is why we use `--skip_self_checks`:
 
 ```bash
 # Already configured in your setup
@@ -362,7 +362,8 @@ When things go wrong with VPN + Control D:
 - [ ] DNS resolves: `dig example.com +short`
 - [ ] No DNS leaks: `curl -s https://ipleak.net/json/ | jq -r '.dns_servers[]'`
 - [ ] VPN tunnel active: `ifconfig | grep utun`
-- [ ] Firewall not blocking: `sudo /usr/libexec/ApplicationFirewall/socketfilterfw --listapps | grep ctrld`
+- [ ] Firewall not blocking:
+      `sudo /usr/libexec/ApplicationFirewall/socketfilterfw --listapps | grep ctrld`
 
 ---
 

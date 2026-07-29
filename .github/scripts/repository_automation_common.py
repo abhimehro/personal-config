@@ -488,9 +488,7 @@ def sha_for_tag(repo_id: str, tag: str) -> str:
     return ""
 
 
-def _pin_version(
-    current: str, version_hint: str | None
-) -> tuple[int, int, int] | None:
+def _pin_version(current: str, version_hint: str | None) -> tuple[int, int, int] | None:
     """Comparable version for a workflow pin (tag body or `# vX.Y.Z` hint)."""
     if is_commit_sha(current):
         return numeric_version(version_hint) if version_hint else None

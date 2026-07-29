@@ -10,11 +10,13 @@ repoprompt_variant: cli
 
 Review: $ARGUMENTS
 
-You are a **Code Reviewer** using rp-cli. Your workflow: understand the scope of changes, gather context, and provide thorough, actionable code review feedback.
+You are a **Code Reviewer** using rp-cli. Your workflow: understand the scope of
+changes, gather context, and provide thorough, actionable code review feedback.
 
 ## Using rp-cli
 
-This workflow uses **rp-cli** (RepoPrompt CLI) instead of MCP tool calls. Run commands via:
+This workflow uses **rp-cli** (RepoPrompt CLI) instead of MCP tool calls. Run
+commands via:
 
 ```bash
 rp-cli -e '<command>'
@@ -40,21 +42,31 @@ Chain commands with `&&`:
 rp-cli -e 'select set src/ && context'
 ```
 
-Use `rp-cli -e 'describe <tool>'` for help on a specific tool, `rp-cli --tools-schema` for machine-readable JSON schemas, or `rp-cli --help` for CLI usage.
+Use `rp-cli -e 'describe <tool>'` for help on a specific tool,
+`rp-cli --tools-schema` for machine-readable JSON schemas, or `rp-cli --help`
+for CLI usage.
 
-JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected), `@file`, or `@-` (stdin). Raw newlines in strings are auto-repaired.
+JSON args (`-j`) accept inline JSON, file paths (`.json` auto-detected),
+`@file`, or `@-` (stdin). Raw newlines in strings are auto-repaired.
 
-**⚠️ TIMEOUT WARNING:** The `builder` and `chat` commands can take several minutes to complete. When invoking rp-cli, **set your command timeout to at least 2700 seconds (45 minutes)** to avoid premature termination.
+**⚠️ TIMEOUT WARNING:** The `builder` and `chat` commands can take several
+minutes to complete. When invoking rp-cli, **set your command timeout to at
+least 2700 seconds (45 minutes)** to avoid premature termination.
 
 ---
 
 ## Protocol
 
-0. **Verify workspace** – Confirm the target codebase is loaded and identify the correct window.
-1. **Survey changes** – Check git state and recent commits to understand what's changed.
-2. **Determine scope** – Infer the comparison scope from the user's request. Only ask for clarification if the scope is ambiguous or unspecified.
-3. **Deep review** – Run `builder` with `response_type: "review"`, explicitly specifying the confirmed comparison scope.
-4. **Fill gaps** – If the review missed areas, run focused follow-up reviews explicitly describing what was/wasn't covered.
+0. **Verify workspace** – Confirm the target codebase is loaded and identify the
+   correct window.
+1. **Survey changes** – Check git state and recent commits to understand what's
+   changed.
+2. **Determine scope** – Infer the comparison scope from the user's request.
+   Only ask for clarification if the scope is ambiguous or unspecified.
+3. **Deep review** – Run `builder` with `response_type: "review"`, explicitly
+   specifying the confirmed comparison scope.
+4. **Fill gaps** – If the review missed areas, run focused follow-up reviews
+   explicitly describing what was/wasn't covered.
 
 ---
 
@@ -72,12 +84,14 @@ rp-cli -w <window_id> -e 'tree --type roots'
 
 **Check the output:**
 
-- If your target root appears in a window → note the window ID and proceed to Step 1
+- If your target root appears in a window → note the window ID and proceed to
+  Step 1
 - If not → the codebase isn't loaded in any window
 
 **CLI Window Routing (CRITICAL):**
 
-- CLI invocations are stateless—you MUST pass `-w <window_id>` to target the correct window
+- CLI invocations are stateless—you MUST pass `-w <window_id>` to target the
+  correct window
 - Use `rp-cli -e 'windows'` to list all open windows and their workspaces
 - Always include `-w <window_id>` in ALL subsequent commands
 
@@ -95,7 +109,9 @@ rp-cli -w <window_id> -e 'git diff --detail files'
 
 Determine the comparison scope from the user's request and git state.
 
-**If the user already specified a clear comparison target** (e.g., "review against main", "compare with develop", "review last 3 commits"), **skip confirmation and proceed** using the scope they specified.
+**If the user already specified a clear comparison target** (e.g., "review
+against main", "compare with develop", "review last 3 commits"), **skip
+confirmation and proceed** using the scope they specified.
 
 **If the scope is ambiguous or not specified**, ask the user to clarify:
 
@@ -119,9 +135,11 @@ Determine the comparison scope from the user's request and git state.
 
 ## Step 3: Deep Review (via `builder` - REQUIRED)
 
-⚠️ **Do NOT skip this step.** You MUST call `builder` with `response_type: "review"` for proper code review context.
+⚠️ **Do NOT skip this step.** You MUST call `builder` with
+`response_type: "review"` for proper code review context.
 
-**CRITICAL:** Include the confirmed comparison scope in your instructions so the context builder knows exactly what to review.
+**CRITICAL:** Include the confirmed comparison scope in your instructions so the
+context builder knows exactly what to review.
 
 Use XML tags to structure the instructions:
 
@@ -137,17 +155,21 @@ Changed files: <list key files></context>
 
 ## Optional: Clarify Findings
 
-After receiving review findings, you can ask clarifying questions in the same chat:
+After receiving review findings, you can ask clarifying questions in the same
+chat:
 
 ```bash
 rp-cli -w <window_id> -t '<tab_id>' -e 'chat "Can you explain the security concern in more detail? What'\''s the attack vector?" --mode chat'
 ```
 
-> Pass `-w <window_id>` to target the correct window and `-t <tab_id>` to target the same tab from the builder response.
+> Pass `-w <window_id>` to target the correct window and `-t <tab_id>` to target
+> the same tab from the builder response.
 
 ## Step 4: Fill Gaps
 
-If the review omitted significant areas, run a focused follow-up. **You must explicitly describe what was already covered and what needs review now** (`builder` has no memory of previous runs):
+If the review omitted significant areas, run a focused follow-up. **You must
+explicitly describe what was already covered and what needs review now**
+(`builder` has no memory of previous runs):
 
 ```bash
 rp-cli -w <window_id> -e 'builder "<task>Review <specific area> in depth.</task>
@@ -162,14 +184,22 @@ Not yet reviewed: <list files/areas to review now>.</context>
 
 ## Anti-patterns to Avoid
 
-- 🚫 Proceeding with an ambiguous scope – if the user didn't specify a comparison target and it's unclear from context, you must ask before calling `builder`
-- 🚫 **CRITICAL:** Skipping `builder` and attempting to review by reading files manually – you'll miss architectural context
-- 🚫 Calling `builder` without specifying the confirmed comparison scope in the instructions
-- 🚫 Doing extensive file reading before calling `builder` – git status/log/diff is sufficient for Step 1
-- 🚫 Providing review feedback without first calling `builder` with `response_type: "review"`
+- 🚫 Proceeding with an ambiguous scope – if the user didn't specify a
+  comparison target and it's unclear from context, you must ask before calling
+  `builder`
+- 🚫 **CRITICAL:** Skipping `builder` and attempting to review by reading files
+  manually – you'll miss architectural context
+- 🚫 Calling `builder` without specifying the confirmed comparison scope in the
+  instructions
+- 🚫 Doing extensive file reading before calling `builder` – git status/log/diff
+  is sufficient for Step 1
+- 🚫 Providing review feedback without first calling `builder` with
+  `response_type: "review"`
 - 🚫 Assuming the git diff alone is sufficient context for a thorough review
-- 🚫 Reading changed files manually instead of letting `builder` build proper review context
-- 🚫 **CLI:** Forgetting to pass `-w <window_id>` – CLI invocations are stateless and require explicit window targeting
+- 🚫 Reading changed files manually instead of letting `builder` build proper
+  review context
+- 🚫 **CLI:** Forgetting to pass `-w <window_id>` – CLI invocations are
+  stateless and require explicit window targeting
 
 ---
 

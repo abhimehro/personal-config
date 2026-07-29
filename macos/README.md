@@ -1,6 +1,8 @@
 # macOS Configuration & Workarounds
 
-This directory contains configuration files and documentation for macOS 26.0.1 (25A362) system customizations, particularly focused on privacy indicator management and menu bar optimization.
+This directory contains configuration files and documentation for macOS 26.0.1
+(25A362) system customizations, particularly focused on privacy indicator
+management and menu bar optimization.
 
 ## Documentation
 
@@ -8,8 +10,9 @@ This directory contains configuration files and documentation for macOS 26.0.1 (
 
 📄 [`screencapture-nag-remover-setup.md`](./screencapture-nag-remover-setup.md)
 
-**Status**: ✅ **Working Solution**  
-**Method**: Modifies `ScreenCaptureApprovals.plist` to set nag dates 100 years in the future
+**Status**: ✅ **Working Solution**\
+**Method**: Modifies `ScreenCaptureApprovals.plist` to set nag dates 100 years
+in the future
 
 - Automated LaunchAgent runs daily to maintain suppression
 - Compatible with macOS 15+ and 26.0.1
@@ -20,13 +23,15 @@ This directory contains configuration files and documentation for macOS 26.0.1 (
 
 📄 [`barbee-menubar-configuration.md`](./barbee-menubar-configuration.md)
 
-**Status**: 🎨 **Visual Solution**  
-**Method**: Strategic positioning of Barbee (DynamicLake Pro) to obscure the indicator
+**Status**: 🎨 **Visual Solution**\
+**Method**: Strategic positioning of Barbee (DynamicLake Pro) to obscure the
+indicator
 
 - Cannot be truly disabled (system-level limitation)
 - Barbee icon positioned over mic indicator with 200px spacers
 - Orange color peeks through as intentional design accent
-- Backup configuration included: [`barbee-config/Backup/`](./barbee-config/Backup/)
+- Backup configuration included:
+  [`barbee-config/Backup/`](./barbee-config/Backup/)
 
 ## Key Differences
 
@@ -40,7 +45,8 @@ This directory contains configuration files and documentation for macOS 26.0.1 (
 
 ## ProtonDrive one-way home backup
 
-This repo includes a one-way rsync-based backup into ProtonDrive (preferred over symlinking macOS special folders).
+This repo includes a one-way rsync-based backup into ProtonDrive (preferred over
+symlinking macOS special folders).
 
 ```bash
 # Safe preview (no changes)
@@ -159,6 +165,6 @@ Watch for these potential improvements in future macOS updates:
 
 ---
 
-**Last Updated**: October 17, 2025  
-**macOS Version**: 26.0.1 (25A362)  
+**Last Updated**: October 17, 2025\
+**macOS Version**: 26.0.1 (25A362)\
 **Status**: Both solutions working as designed

@@ -260,9 +260,7 @@ def _tag_sha(repo_id: str, tag: str, caches: _PinCaches) -> str | None:
         sha = sha_for_tag(repo_id, tag)
         caches.sha[cache_key] = sha
     if not sha or not is_commit_sha(sha):
-        print(
-            f"Warning: Could not resolve commit SHA for {repo_id}@{tag}. Skipping."
-        )
+        print(f"Warning: Could not resolve commit SHA for {repo_id}@{tag}. Skipping.")
         return None
     return sha
 
@@ -899,12 +897,18 @@ def run_daily_status_report(config: dict[str, Any]) -> dict[str, Any]:
     )
     section = config.get("status_report", {})
     _reporting = config.get("reporting")
-    _daily_prefix = _reporting.get("daily_issue_prefix", "[repo-automation] Daily Status Report") if _reporting else "[repo-automation] Daily Status Report"
+    _daily_prefix = (
+        _reporting.get("daily_issue_prefix", "[repo-automation] Daily Status Report")
+        if _reporting
+        else "[repo-automation] Daily Status Report"
+    )
     title = f"{_daily_prefix} - {iso_day()}"
     body = "\n".join(daily_report_lines(config, results))
     body, issue_url, error = append_publication_result(
-        body, title=title, # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
-        labels=section.get("labels", ()), noun="daily issue"
+        body,
+        title=title,  # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+        labels=section.get("labels", ()),
+        noun="daily issue",
     )
     status = "failure" if error else overall_status(results)
     return write_result(
@@ -1086,7 +1090,13 @@ def run_weekly_retrospective(config: dict[str, Any]) -> dict[str, Any]:
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         f_runs = executor.submit(recent_daily_runs)
         _reporting = config.get("reporting")
-        _daily_prefix = _reporting.get("daily_issue_prefix", "[repo-automation] Daily Status Report") if _reporting else "[repo-automation] Daily Status Report"
+        _daily_prefix = (
+            _reporting.get(
+                "daily_issue_prefix", "[repo-automation] Daily Status Report"
+            )
+            if _reporting
+            else "[repo-automation] Daily Status Report"
+        )
         f_markers = executor.submit(
             weekly_markers,
             _daily_prefix,
@@ -1113,12 +1123,18 @@ def run_weekly_retrospective(config: dict[str, Any]) -> dict[str, Any]:
     )
     summary = f"Reviewed {len(runs)} daily workflow runs from the last 7 days."
     _reporting = config.get("reporting")
-    _weekly_prefix = _reporting.get("weekly_issue_prefix", "[repo-automation] Weekly Retrospective") if _reporting else "[repo-automation] Weekly Retrospective"
+    _weekly_prefix = (
+        _reporting.get("weekly_issue_prefix", "[repo-automation] Weekly Retrospective")
+        if _reporting
+        else "[repo-automation] Weekly Retrospective"
+    )
     title = f"{_weekly_prefix} - {iso_day()}"
     body = "\n".join(lines) + "\n"
     body, issue_url, error = append_publication_result(
-        body, title=title, # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
-        labels=section.get("labels", ()), noun="weekly issue"
+        body,
+        title=title,  # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+        labels=section.get("labels", ()),
+        noun="weekly issue",
     )
     if error:
         status = "failure"

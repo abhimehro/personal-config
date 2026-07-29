@@ -1,20 +1,24 @@
 # AdGuard List Consolidation
 
-This directory contains consolidated ad-blocking lists for AdGuard macOS, combining multiple tracker lists into two comprehensive files.
+This directory contains consolidated ad-blocking lists for AdGuard macOS,
+combining multiple tracker lists into two comprehensive files.
 
 ## Files Created
 
 ### 1. Consolidated-Denylist.txt
 
 - **Purpose**: Contains all domains that should be blocked
-- **Source Lists**: All tracker lists (Microsoft, No SafeSearch, OPPO/Realme, Roku, Samsung, TikTok, Vivo, Xiaomi, Amazon, Apple, Badware Hoster, LG webOS, Huawei)
+- **Source Lists**: All tracker lists (Microsoft, No SafeSearch, OPPO/Realme,
+  Roku, Samsung, TikTok, Vivo, Xiaomi, Amazon, Apple, Badware Hoster, LG webOS,
+  Huawei)
 - **Format**: One domain per line
 - **Usage**: Import as denylist in AdGuard macOS
 
 ### 2. Consolidated-Allowlist.txt
 
 - **Purpose**: Contains domains that should NOT be blocked
-- **Source Lists**: CD-Control-D-Bypass + legitimate entries from CD-Most-Abused-TLDs
+- **Source Lists**: CD-Control-D-Bypass + legitimate entries from
+  CD-Most-Abused-TLDs
 - **Format**: AdGuard allowlist syntax (`@@domain.com`)
 - **Usage**: Import as allowlist in AdGuard macOS
 
@@ -59,14 +63,17 @@ This will create:
 
 ## Important Notes
 
-⚠️ **AdGuard macOS Limitation**: The macOS app only supports importing one denylist and one allowlist. Importing additional lists will override existing ones.
+⚠️ **AdGuard macOS Limitation**: The macOS app only supports importing one
+denylist and one allowlist. Importing additional lists will override existing
+ones.
 
 📊 **Expected Domain Counts**:
 
 - Denylist: ~25,000+ domains
 - Allowlist: ~5,000+ domains
 
-🔧 **Customization**: You can modify the Python scripts to exclude specific tracker lists or add additional filtering criteria.
+🔧 **Customization**: You can modify the Python scripts to exclude specific
+tracker lists or add additional filtering criteria.
 
 ## Source Lists Included
 
@@ -106,9 +113,12 @@ $HOME/Downloads/
 
 ## Next Steps
 
-1. **Test the Configuration**: After importing both lists, test your AdGuard setup to ensure proper functionality
-2. **Monitor Performance**: Large lists may impact performance; monitor system resources
-3. **Regular Updates**: Consider setting up automated updates for the source lists
+1. **Test the Configuration**: After importing both lists, test your AdGuard
+   setup to ensure proper functionality
+2. **Monitor Performance**: Large lists may impact performance; monitor system
+   resources
+3. **Regular Updates**: Consider setting up automated updates for the source
+   lists
 4. **Backup**: Keep backups of your consolidated lists before making changes
 
 ## Troubleshooting

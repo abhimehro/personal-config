@@ -48,7 +48,9 @@ class TestRunWorkflowUpdater(TestCase):
         self.mocks["write_result"].assert_called_once()
         args, _kwargs = self.mocks["write_result"].call_args
         self.assertEqual(args[0], "workflow-updater")
-        self.assertEqual(args[1], ("success", "No GitHub Action updates were detected."))
+        self.assertEqual(
+            args[1], ("success", "No GitHub Action updates were detected.")
+        )
         self.assertEqual(args[3], {"updates": []})
 
     def test_run_workflow_updater_writes_disabled(self):
@@ -71,7 +73,9 @@ class TestRunWorkflowUpdater(TestCase):
         args, _kwargs = self.mocks["write_result"].call_args
         self.assertEqual(args[0], "workflow-updater")
         self.assertEqual(args[1][0], "warning")
-        self.assertIn("Draft PR creation is disabled or writes are not allowed", args[2])
+        self.assertIn(
+            "Draft PR creation is disabled or writes are not allowed", args[2]
+        )
 
     def test_run_workflow_updater_success(self):
         self.mocks["flattened_updates"].return_value = [

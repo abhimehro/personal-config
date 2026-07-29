@@ -262,7 +262,7 @@ class TestProcessAllowlistFiles(unittest.TestCase):
     def test_happy_path(self, mock_extract):
         mock_extract.side_effect = [
             {"bypass1.com", "bypass2.com"},
-            {"tld1.com", "tld2.com"}
+            {"tld1.com", "tld2.com"},
         ]
 
         base_dir = Path("/fake/dir")
@@ -273,14 +273,18 @@ class TestProcessAllowlistFiles(unittest.TestCase):
         self.assertEqual(result, {"bypass1.com", "bypass2.com", "tld1.com", "tld2.com"})
 
         self.assertEqual(mock_extract.call_count, 2)
-        mock_extract.assert_any_call(base_dir / "CD-Control-D-Bypass.json", "bypass domains")
-        mock_extract.assert_any_call(base_dir / "CD-Most-Abused-TLDs.json", "legitimate TLD domains")
+        mock_extract.assert_any_call(
+            base_dir / "CD-Control-D-Bypass.json", "bypass domains"
+        )
+        mock_extract.assert_any_call(
+            base_dir / "CD-Most-Abused-TLDs.json", "legitimate TLD domains"
+        )
 
     @patch("consolidate_adblock_lists.extract_allowlist_from_file")
     def test_overlapping_domains(self, mock_extract):
         mock_extract.side_effect = [
             {"shared.com", "bypass.com"},
-            {"shared.com", "tld.com"}
+            {"shared.com", "tld.com"},
         ]
 
         base_dir = Path("/fake/dir")
@@ -306,8 +310,12 @@ class TestRunConsolidation(unittest.TestCase):
         output_dir = Path("/fake/output")
 
         with (
-            patch("consolidate_adblock_lists.process_tracker_files") as mock_process_tracker,
-            patch("consolidate_adblock_lists.process_allowlist_files") as mock_process_allowlist,
+            patch(
+                "consolidate_adblock_lists.process_tracker_files"
+            ) as mock_process_tracker,
+            patch(
+                "consolidate_adblock_lists.process_allowlist_files"
+            ) as mock_process_allowlist,
             patch("consolidate_adblock_lists.write_json_files") as mock_write_json,
             patch("consolidate_adblock_lists.write_text_files") as mock_write_text,
             patch("consolidate_adblock_lists.print_summary") as mock_print_summary,
@@ -346,6 +354,7 @@ class TestRunConsolidation(unittest.TestCase):
             mock_print_summary.assert_called_once_with(
                 {"tracker.com"}, {"allow.com"}, output_dir
             )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document summarizes the organization and cleanup of the personal-config repository following the successful integration of Windscribe VPN + Control D DNS privacy filtering.
+This document summarizes the organization and cleanup of the personal-config
+repository following the successful integration of Windscribe VPN + Control D
+DNS privacy filtering.
 
 ## Recent Changes (October 2025)
 
@@ -14,9 +16,11 @@ This document summarizes the organization and cleanup of the personal-config rep
   - `ctrld.toml.backup` - Configuration backup
   - `README.md` - Integration documentation
 - **`scripts/network-mode-*.sh`** - Network mode orchestration layer (v4.x)
-  - `network-mode-manager.sh` - Switches between Control D DNS mode and Windscribe VPN mode
+  - `network-mode-manager.sh` - Switches between Control D DNS mode and
+    Windscribe VPN mode
   - `network-mode-verify.sh` - Tight verification for each mode
-  - `network-mode-regression.sh` - Full timed regression (Control D → Windscribe)
+  - `network-mode-regression.sh` - Full timed regression (Control D →
+    Windscribe)
 
 ### ✨ Enhanced
 
@@ -33,7 +37,8 @@ This document summarizes the organization and cleanup of the personal-config rep
    - Dual protection: VPN encryption + DNS privacy filtering
    - Real-time DNS logging with DOH encryption
    - Geographic routing through Miami proxy
-   - Profile switching (privacy/browsing/gaming) via `network-mode-manager` + `controld-manager`
+   - Profile switching (privacy/browsing/gaming) via `network-mode-manager` +
+     `controld-manager`
 
 2. **SSH Configuration** (v2.0)
    - 1Password SSH agent integration
@@ -135,8 +140,10 @@ sudo dns-gaming                             # Direct gaming switching
 ## Documentation Hierarchy
 
 1. **[Main README](README.md)** - Repository overview and quick start
-2. **[VPN + DNS Integration](windscribe-controld/README.md)** - Primary system docs
-3. **[Setup Guide](windscribe-controld/setup-guide.md)** - Complete technical details
+2. **[VPN + DNS Integration](windscribe-controld/README.md)** - Primary system
+   docs
+3. **[Setup Guide](windscribe-controld/setup-guide.md)** - Complete technical
+   details
 4. **[Control D System](controld-system/README.md)** - DNS system documentation
 5. **[SSH Configuration](docs/ssh/)** - SSH setup guides
 
@@ -178,7 +185,7 @@ sudo dns-gaming                             # Direct gaming switching
 
 ---
 
-**Repository Status**: ✅ Optimized and organized  
-**Primary System**: Windscribe VPN + Control D DNS (v4.0)  
-**Last Organized**: October 8, 2025  
+**Repository Status**: ✅ Optimized and organized\
+**Primary System**: Windscribe VPN + Control D DNS (v4.0)\
+**Last Organized**: October 8, 2025\
 **Verification**: `bash windscribe-controld/windscribe-controld-setup.sh`

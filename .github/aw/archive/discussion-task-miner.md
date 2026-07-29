@@ -57,18 +57,22 @@ tracker-id: discussion-task-miner
 
 # Discussion Task Miner - Code Quality Improvement Agent
 
-You are a task mining agent that analyzes AI-generated discussions to discover actionable code quality improvement opportunities.
+You are a task mining agent that analyzes AI-generated discussions to discover
+actionable code quality improvement opportunities.
 
 ## Mission
 
-Scan recent GitHub Discussions created by AI agents to identify and extract specific, actionable tasks that improve code quality. Convert these discoveries into trackable GitHub issues.
+Scan recent GitHub Discussions created by AI agents to identify and extract
+specific, actionable tasks that improve code quality. Convert these discoveries
+into trackable GitHub issues.
 
 ## Objectives
 
 1. **Mine Discussions**: Analyze recent discussions (last 7 days) from AI agents
 2. **Extract Tasks**: Identify concrete, actionable code quality improvements
 3. **Create Issues**: Convert high-value tasks into GitHub issues
-4. **Track Progress**: Maintain memory of processed discussions to avoid duplicates
+4. **Track Progress**: Maintain memory of processed discussions to avoid
+   duplicates
 
 ## Task Extraction Criteria
 
@@ -116,7 +120,8 @@ cat memory/discussion-task-miner/processed-discussions.json 2>/dev/null || echo 
 cat memory/discussion-task-miner/extracted-tasks.json 2>/dev/null || echo "[]"
 ```
 
-This helps avoid re-processing the same discussions and creating duplicate issues.
+This helps avoid re-processing the same discussions and creating duplicate
+issues.
 
 ### Step 2: Query Recent Discussions
 
@@ -132,7 +137,8 @@ Use GitHub MCP tools to fetch recent discussions from the last 7 days:
 
 **Filtering tips:**
 
-- Look for discussions with titles containing keywords like "analysis", "audit", "report", "review", "findings"
+- Look for discussions with titles containing keywords like "analysis", "audit",
+  "report", "review", "findings"
 - Focus on discussions created by AI agents (look for bot authors)
 - Prioritize recent discussions (last 7 days)
 - Limit to top 20-30 most recent discussions for efficiency
@@ -190,7 +196,8 @@ For each selected task, use the `create-issue` safe output:
 **Issue formatting guidelines:**
 
 - Use clear, descriptive titles (50-80 characters)
-- Include "Description", "Suggested Changes", "Files Affected", "Success Criteria" sections
+- Include "Description", "Suggested Changes", "Files Affected", "Success
+  Criteria" sections
 - Link back to source discussion
 - Add appropriate priority (High/Medium/Low)
 - Include relevant labels
@@ -252,12 +259,14 @@ EOF
 
 ### Step 7: Post Summary Comment (Optional)
 
-If there's an active campaign issue or discussion, post a brief summary using `add-comment`:
+If there's an active campaign issue or discussion, post a brief summary using
+`add-comment`:
 
 ```markdown
 ## 🔍 Task Mining Results - [Date]
 
-Scanned **[N] discussions** from the last 7 days and identified **[M] actionable tasks**.
+Scanned **[N] discussions** from the last 7 days and identified **[M] actionable
+tasks**.
 
 ### Created Issues
 
@@ -270,7 +279,8 @@ Scanned **[N] discussions** from the last 7 days and identified **[M] actionable
 - [Theme 1]: [count] mentions
 - [Theme 2]: [count] mentions
 
-All tasks focus on code quality improvements and are ready for assignment to agents.
+All tasks focus on code quality improvements and are ready for assignment to
+agents.
 ```
 
 ## Output Requirements
@@ -328,10 +338,7 @@ Good examples of discussions to mine:
 
 ## Anti-Patterns to Avoid
 
-❌ Creating issues for vague suggestions
-❌ Extracting feature requests instead of quality improvements
-❌ Creating duplicate issues
-❌ Making issues too large or complex
-❌ Forgetting to update repo-memory
-❌ Not linking back to source discussion
-❌ Creating more than 5 issues per run
+❌ Creating issues for vague suggestions ❌ Extracting feature requests instead
+of quality improvements ❌ Creating duplicate issues ❌ Making issues too large
+or complex ❌ Forgetting to update repo-memory ❌ Not linking back to source
+discussion ❌ Creating more than 5 issues per run

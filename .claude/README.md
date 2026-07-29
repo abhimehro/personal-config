@@ -1,6 +1,7 @@
 # Claude Code Skills
 
-This directory contains agent skills for **Claude Code**, an AI-powered development assistant.
+This directory contains agent skills for **Claude Code**, an AI-powered
+development assistant.
 
 ## Directory Structure
 
@@ -18,21 +19,26 @@ This directory contains agent skills for **Claude Code**, an AI-powered developm
 
 ## Intentional Duplication
 
-The content in this directory is **intentionally duplicated** in `.agents/skills/` for RepoPrompt's workflow system. Both directories contain the same skills but are loaded by different tools:
+The content in this directory is **intentionally duplicated** in
+`.agents/skills/` for RepoPrompt's workflow system. Both directories contain the
+same skills but are loaded by different tools:
 
 - `.claude/skills/` → Loaded by Claude Code
 
 - `.agents/skills/` → Loaded by RepoPrompt
 
-This separation allows each tool to access the same workflow definitions in their native format.
+This separation allows each tool to access the same workflow definitions in
+their native format.
 
 ## Usage
 
-These skills are automatically available when using Claude Code with this workspace. Each skill includes:
+These skills are automatically available when using Claude Code with this
+workspace. Each skill includes:
 
 - `SKILL.md` - The skill definition and instructions
 - `agents/` - Agent configuration files (e.g., OpenAI YAML configs)
 
 ## Management
 
-Skills are managed by Claude Code and should not be manually edited unless updating the workflow definitions.
+Skills are managed by Claude Code and should not be manually edited unless
+updating the workflow definitions.

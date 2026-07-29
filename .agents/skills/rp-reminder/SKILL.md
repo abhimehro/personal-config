@@ -8,7 +8,8 @@ repoprompt_variant: mcp
 
 # RepoPrompt Tools Reminder
 
-Continue your current workflow using RepoPrompt MCP tools instead of built-in alternatives.
+Continue your current workflow using RepoPrompt MCP tools instead of built-in
+alternatives.
 
 ## Primary Tools
 

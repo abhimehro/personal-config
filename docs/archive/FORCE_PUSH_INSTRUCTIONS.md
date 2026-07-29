@@ -2,7 +2,8 @@
 
 ## ✅ History Cleanup Complete
 
-The terminal files containing OAuth tokens have been successfully removed from **all commits** in git history using `git-filter-repo`.
+The terminal files containing OAuth tokens have been successfully removed from
+**all commits** in git history using `git-filter-repo`.
 
 ## What Changed
 

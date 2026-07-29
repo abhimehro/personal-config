@@ -1,7 +1,7 @@
 # MCP Server Secrets Management
 
-This document explains how to manage API keys and secrets for MCP (Model
-Context Protocol) servers securely.
+This document explains how to manage API keys and secrets for MCP (Model Context
+Protocol) servers securely.
 
 > **SECURITY:** Committed files must never contain live API keys. Use either
 > 1Password CLI refs (`op://…`) in MCP templates, or unmistakably fake
@@ -42,11 +42,11 @@ gitignored.
 
 Primary generated locations (examples):
 
-| Client   | Path                                              |
-| -------- | ------------------------------------------------- |
-| Cursor   | `~/.cursor/mcp.json`                              |
-| Windsurf | `~/.codeium/windsurf/mcp_config.json` (gitignored)|
-| Shared   | `~/.config/mcp-servers/mcp-config.json` (optional)|
+| Client   | Path                                               |
+| -------- | -------------------------------------------------- |
+| Cursor   | `~/.cursor/mcp.json`                               |
+| Windsurf | `~/.codeium/windsurf/mcp_config.json` (gitignored) |
+| Shared   | `~/.config/mcp-servers/mcp-config.json` (optional) |
 
 Regenerate with:
 
@@ -54,7 +54,7 @@ Regenerate with:
 ./scripts/generate-mcp-configs.sh
 ```
 
-### Example of a *local* filled config (do not commit)
+### Example of a _local_ filled config (do not commit)
 
 When documenting a filled local file, mark values so they cannot be mistaken for
 real credentials:
@@ -101,11 +101,11 @@ Then reference env vars in a local MCP config:
 
 ## Placeholder convention (repo-wide)
 
-| Pattern                         | Where used                         | Meaning                                      |
-| ------------------------------- | ---------------------------------- | -------------------------------------------- |
-| `op://Personal/<ITEM>/credential` | MCP `*.template` / `*.template.json` | 1Password ref — safe to commit             |
-| `REPLACE_WITH_YOUR_<NAME>`      | `.env.example`, docs examples      | Human must replace; never a real secret      |
-| Live key material               | Generated / `~/.config/…` only     | **Never** commit                             |
+| Pattern                           | Where used                           | Meaning                                 |
+| --------------------------------- | ------------------------------------ | --------------------------------------- |
+| `op://Personal/<ITEM>/credential` | MCP `*.template` / `*.template.json` | 1Password ref — safe to commit          |
+| `REPLACE_WITH_YOUR_<NAME>`        | `.env.example`, docs examples        | Human must replace; never a real secret |
+| Live key material                 | Generated / `~/.config/…` only       | **Never** commit                        |
 
 Do **not** use ambiguous phrases like `your_actual_…_here` in committed docs.
 

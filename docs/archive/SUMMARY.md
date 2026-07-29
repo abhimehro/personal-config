@@ -2,7 +2,9 @@
 
 ## 🚀 Current Status: Production Ready
 
-Your personal-config repository now contains a comprehensive, tested, and documented system configuration covering all aspects of your development and gaming setup.
+Your personal-config repository now contains a comprehensive, tested, and
+documented system configuration covering all aspects of your development and
+gaming setup.
 
 ## 📦 What's Included
 
@@ -40,11 +42,16 @@ Your personal-config repository now contains a comprehensive, tested, and docume
 
 ### 🎥 Media Streaming (Infuse + Alldebrid + Cloud union)
 
-- **Unified library**: rclone union of `gdrive:Media` + `onedrive:Media` (no local duplication; iCloud Desktop/Documents hosts structure).
-- **WebDAV service**: LaunchAgent `com.abhimehrotra.media.webdav` → port 8088, read-only.
-- **Alldebrid helper**: LaunchAgent `com.abhimehrotra.media.alldebrid` → mount `$HOME/mnt/alldebrid`, serve 8080.
-- **Secrets**: `~/.config/rclone/rclone.conf` (seed from template, fill via 1Password) and `~/.config/media-server/credentials` (untracked).
-- **Cache/logs**: `~/Library/Application Support/MediaCache`, `~/Library/Logs/media`.
+- **Unified library**: rclone union of `gdrive:Media` + `onedrive:Media` (no
+  local duplication; iCloud Desktop/Documents hosts structure).
+- **WebDAV service**: LaunchAgent `com.abhimehrotra.media.webdav` → port 8088,
+  read-only.
+- **Alldebrid helper**: LaunchAgent `com.abhimehrotra.media.alldebrid` → mount
+  `$HOME/mnt/alldebrid`, serve 8080.
+- **Secrets**: `~/.config/rclone/rclone.conf` (seed from template, fill via
+  1Password) and `~/.config/media-server/credentials` (untracked).
+- **Cache/logs**: `~/Library/Application Support/MediaCache`,
+  `~/Library/Logs/media`.
 
 ## ✨ Key Achievements
 
@@ -177,7 +184,8 @@ scutil --dns | head -20
 
 ## 🏆 Repository Status: COMPLETE ✅
 
-Your personal-config repository is now a **comprehensive, production-ready system** that:
+Your personal-config repository is now a **comprehensive, production-ready
+system** that:
 
 - ✅ **Automates your entire network configuration**
 - ✅ **Provides secure, reliable SSH access**
@@ -187,10 +195,10 @@ Your personal-config repository is now a **comprehensive, production-ready syste
 - ✅ **Tests and validates all configurations**
 - ✅ **Provides easy maintenance and updates**
 
-**🌟 This is now a reference-quality personal configuration repository that any developer would be proud to maintain!** 🌟
+**🌟 This is now a reference-quality personal configuration repository that any
+developer would be proud to maintain!** 🌟
 
 ---
 
-_Repository Status: Production Ready_
-_Last Updated: September 11, 2024_
-_Total Components: DNS Management + SSH Configuration + Development Environment_
+_Repository Status: Production Ready_ _Last Updated: September 11, 2024_ _Total
+Components: DNS Management + SSH Configuration + Development Environment_

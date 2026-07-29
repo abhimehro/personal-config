@@ -31,7 +31,6 @@
 - Commands/comments to run next:
 - Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
 
-
 ## Run — 2026-07-26
 
 ### Scope
@@ -54,9 +53,9 @@
 
 - Merged (squash): esp #1365; Seatek #530; pc #1780/#1782; cs #1062; hg #416
 - Closed: none
-- Deferred/escalated: cs #1060; esp #1366 (REQUEST_CHANGES artifact skew),
-  #1362 (CONFLICTING TOCTOU); Seatek #507/#518/#525 (0ej), #521 (0ek);
-  hg #413 (CONFLICTING after #416; numpy/Bolt regression)
+- Deferred/escalated: cs #1060; esp #1366 (REQUEST_CHANGES artifact skew), #1362
+  (CONFLICTING TOCTOU); Seatek #507/#518/#525 (0ej), #521 (0ek); hg #413
+  (CONFLICTING after #416; numpy/Bolt regression)
 
 ### Follow-ups
 
@@ -154,8 +153,8 @@
 
 - Merged security: Seatek #472, sc #241
 - Merged deps: pc #1673; esp #1292/#1291; Seatek #479; hg #379/#373; sc #243
-- Merged salvages/routine: hg #378; Seatek #478; esp #1289/#1288/#1287/#1286;
-  sc #239/#240/#244; pc #1672/#1671/#1664/#1662/#1661/#1658
+- Merged salvages/routine: hg #378; Seatek #478; esp #1289/#1288/#1287/#1286; sc
+  #239/#240/#244; pc #1672/#1671/#1664/#1662/#1661/#1658
 - Closed: Seatek #482/#483; esp #1293; sc #237; pc #1674/#1660
 - Escalated: sc #233 (auth); hg #374 (numpy 2.x); pc #1670 (gemini workflows);
   rpce #126/#127 (artifact majors)
@@ -251,13 +250,15 @@
 
 ### Actions
 
-- Merged: 21 deps + 8 security + 31 salvage/a11y/perf/tests (see `tasks/pr-review-2026-07-21.md`)
+- Merged: 21 deps + 8 security + 31 salvage/a11y/perf/tests (see
+  `tasks/pr-review-2026-07-21.md`)
 - Closed: zero-diff QA + duplicates/supersedes
 - Deferred/escalated: auth/secrets/numpy/artifact majors; CodeScene; conflicts
 
 ### Follow-ups
 
-- Phase 2 salvage: pc conflict cluster (#1716–#1726), esp DIRTY Bolts, sc auth human review
+- Phase 2 salvage: pc conflict cluster (#1716–#1726), esp DIRTY Bolts, sc auth
+  human review
 - Tip-release majors rpce #126/#127 remain escalated (Lesson 0dw)
 - Snapshot: `tasks/pr-review-2026-07-21.md`
 
@@ -268,8 +269,8 @@
 - Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
   Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
   repoprompt-ce
-- Trigger/context: Cron Phase 1 `0 13 * * *` review-and-merge; preflight PASS 7/7;
-  branch `cursor-agent/pr-workflow-automation-95f6`
+- Trigger/context: Cron Phase 1 `0 13 * * *` review-and-merge; preflight PASS
+  7/7; branch `cursor-agent/pr-workflow-automation-95f6`
 
 ### Metrics
 
@@ -283,26 +284,32 @@
 
 ### Actions
 
-- Merged: pc #1758/#1763; cs #1058/#1057/#1056/#1053; esp #1350–#1352/#1355/#1341/#1354/#1347/#1346;
-  Seatek #520/#522; hg #406/#407/#408; sc #288
+- Merged: pc #1758/#1763; cs #1058/#1057/#1056/#1053; esp
+  #1350–#1352/#1355/#1341/#1354/#1347/#1346; Seatek #520/#522; hg
+  #406/#407/#408; sc #288
 - Closed: cs #1055; Seatek #524 (zero-diff)
-- Escalated: pc #1744/#1721/#1748; esp #1353/#1328/#1324/#1319/#1342; Seatek #525/#518/#507/#521/#511;
-  sc #285/#276/#275/#268; rpce #126/#127
+- Escalated: pc #1744/#1721/#1748; esp #1353/#1328/#1324/#1319/#1342; Seatek
+  #525/#518/#507/#521/#511; sc #285/#276/#275/#268; rpce #126/#127
 - Deferred: pc #1756; esp #1348
 - CodeScene: `/cs-agent skill:fix-code-health-degradations` on sc #285
 
 ### Follow-ups
 
-- Phase 2: Sentinel env-filter cluster (Seatek), TOCTOU pair (esp), dummy_todos auth (sc),
-  tip artifact majors (rpce), visual-recap salvage (pc #1748)
+- Phase 2: Sentinel env-filter cluster (Seatek), TOCTOU pair (esp), dummy_todos
+  auth (sc), tip artifact majors (rpce), visual-recap salvage (pc #1748)
 - Snapshot: `tasks/pr-review-2026-07-24.md`
 - Lessons: 0ej/0ek recorded; 0el bolt.md after sibling Bolt merge
 
 ## 2026-07-28 Phase 1 (cron)
 
-- Preflight PASS 7/7; inventoried **47**; **16** squash-merges; **0** closes (token lacks closePullRequest — Lesson **0es**); **5** close-recommended via MCP; **3** REQUEST_CHANGES; **17** escalate; **5** defer.
-- Merged: pc #1801/#1798/#1795; cs #1071/#1070/#1068/#1067; esp #1376/#1373/#1372; Seatek #537/#533; hg #428/#422; sc #299/#294.
-- Auth: unset GH_TOKEN (0eo); MCP reviews; adversarial parallel review (opus + gpt-5.5).
+- Preflight PASS 7/7; inventoried **47**; **16** squash-merges; **0** closes
+  (token lacks closePullRequest — Lesson **0es**); **5** close-recommended via
+  MCP; **3** REQUEST_CHANGES; **17** escalate; **5** defer.
+- Merged: pc #1801/#1798/#1795; cs #1071/#1070/#1068/#1067; esp
+  #1376/#1373/#1372; Seatek #537/#533; hg #428/#422; sc #299/#294.
+- Auth: unset GH_TOKEN (0eo); MCP reviews; adversarial parallel review (opus +
+  gpt-5.5).
 - Cascade: bolt.md #1800/#1791 CONFLICTING after #1801; #1064 after #1067.
-- Docs: `tasks/pr-review-2026-07-28.md`; branch `cursor-agent/automated-pr-workflow-3d54`.
+- Docs: `tasks/pr-review-2026-07-28.md`; branch
+  `cursor-agent/automated-pr-workflow-3d54`.
 - Open EOD: **31** (close gap leaves 5 dups open for Phase 2).

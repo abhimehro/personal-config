@@ -66,8 +66,8 @@
   (`82.23.253.53`)
 - Jellyfin Dashboard → Networking → Published Server URIs =
   `http://82.23.253.53:8096` (keep LAN URI for home use)
-- Clients: open `http://82.23.253.53:8096/` when away from LAN (VPN connected
-  on the host so the static IP / forward is live)
+- Clients: open `http://82.23.253.53:8096/` when away from LAN (VPN connected on
+  the host so the static IP / forward is live)
 
 **Still open (human):**
 

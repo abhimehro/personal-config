@@ -45,11 +45,15 @@ source: github/gh-aw/.github/workflows/daily-workflow-updater.md@94662b1dee8ce96
 
 # Daily Workflow Updater
 
-You are an AI automation agent that keeps GitHub Actions up to date by running the `gh aw update` command daily and creating pull requests when action versions are updated.
+You are an AI automation agent that keeps GitHub Actions up to date by running
+the `gh aw update` command daily and creating pull requests when action versions
+are updated.
 
 ## Your Mission
 
-Run the `gh aw update` command to check for and apply updates to GitHub Actions versions in `.github/aw/actions-lock.json`. If updates are found, create a pull request with the changes.
+Run the `gh aw update` command to check for and apply updates to GitHub Actions
+versions in `.github/aw/actions-lock.json`. If updates are found, create a pull
+request with the changes.
 
 ## Task Steps
 
@@ -72,13 +76,15 @@ This command will:
 
 ### 2. Check for Changes
 
-After running the update command, check if any changes were made to the actions-lock.json file:
+After running the update command, check if any changes were made to the
+actions-lock.json file:
 
 ```bash
 git status
 ```
 
-Look specifically for changes to `.github/aw/actions-lock.json`. We only want to create a PR if this file has been modified.
+Look specifically for changes to `.github/aw/actions-lock.json`. We only want to
+create a PR if this file has been modified.
 
 ### 3. Review the Changes
 
@@ -92,7 +98,8 @@ This will show you which actions were updated and to which versions.
 
 ### 4. Handle Lock Files
 
-**CRITICAL**: Do NOT include `.lock.yml` files in the PR. These files are compiled workflow files and should not be committed as part of action updates.
+**CRITICAL**: Do NOT include `.lock.yml` files in the PR. These files are
+compiled workflow files and should not be committed as part of action updates.
 
 If `.lock.yml` files were modified:
 
@@ -124,7 +131,8 @@ If `.github/aw/actions-lock.json` has changes:
 ```markdown
 ## GitHub Actions Updates - [Date]
 
-This PR updates GitHub Actions versions in `.github/aw/actions-lock.json` to their latest compatible releases.
+This PR updates GitHub Actions versions in `.github/aw/actions-lock.json` to
+their latest compatible releases.
 
 ### Actions Updated
 
@@ -143,11 +151,13 @@ This PR updates GitHub Actions versions in `.github/aw/actions-lock.json` to the
 
 - All action updates respect semantic versioning and maintain compatibility
 - Actions are pinned to commit SHAs for security
-- Workflow `.lock.yml` files are excluded from this PR and will be regenerated during the next compilation
+- Workflow `.lock.yml` files are excluded from this PR and will be regenerated
+  during the next compilation
 
 ### Testing
 
-The updated actions will be automatically used in workflow compilations. No manual testing required.
+The updated actions will be automatically used in workflow compilations. No
+manual testing required.
 
 ---
 
@@ -156,20 +166,30 @@ _This PR was automatically created by the Daily Workflow Updater workflow._
 
 ### 6. Handle Edge Cases
 
-- **No updates available**: If `actions-lock.json` was not modified, do NOT create a PR. Exit gracefully with a message like "All actions are already up to date."
+- **No updates available**: If `actions-lock.json` was not modified, do NOT
+  create a PR. Exit gracefully with a message like "All actions are already up
+  to date."
 
-- **Only .lock.yml files changed**: If only `.lock.yml` files changed but `actions-lock.json` was not modified, reset the lock files and exit without creating a PR.
+- **Only .lock.yml files changed**: If only `.lock.yml` files changed but
+  `actions-lock.json` was not modified, reset the lock files and exit without
+  creating a PR.
 
-- **Update command fails**: If the `gh aw update` command fails, report the error but do not create a PR. The error might be temporary (network issues, API rate limits).
+- **Update command fails**: If the `gh aw update` command fails, report the
+  error but do not create a PR. The error might be temporary (network issues,
+  API rate limits).
 
 ## Important Guidelines
 
-1. **Only commit actions-lock.json**: Never commit `.lock.yml` files in this workflow
-2. **Be informative**: Clearly list which actions were updated in the PR description
-3. **Use safe-outputs**: Use the create-pull-request safe-output to create the PR automatically
+1. **Only commit actions-lock.json**: Never commit `.lock.yml` files in this
+   workflow
+2. **Be informative**: Clearly list which actions were updated in the PR
+   description
+3. **Use safe-outputs**: Use the create-pull-request safe-output to create the
+   PR automatically
 4. **Exit gracefully**: If no updates are needed, don't create a PR
 5. **Include details**: Show before/after versions for each updated action
-6. **Semantic versioning**: The update command respects semantic versioning by default
+6. **Semantic versioning**: The update command respects semantic versioning by
+   default
 
 ## Example Workflow
 

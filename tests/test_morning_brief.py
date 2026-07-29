@@ -7,7 +7,6 @@ Run with:
     # or: python3 -m pytest test_morning_brief.py -v  (optional dev dependency)
 """
 
-
 import datetime as dt
 import importlib.util
 import os
@@ -672,7 +671,7 @@ class TestFetchWeather(unittest.TestCase):
             "current_temp": "65.5",
             "high_temp": "72.1",
             "rain_probability": "15",
-            "narrative": "Cached narrative."
+            "narrative": "Cached narrative.",
         }
 
         result = mb.fetch_weather(self.session, self.config, self.cache)
@@ -693,8 +692,8 @@ class TestFetchWeather(unittest.TestCase):
             "current_weather": {"temperature": 65.5},
             "daily": {
                 "temperature_2m_max": [72.1],
-                "precipitation_probability_max": [15]
-            }
+                "precipitation_probability_max": [15],
+            },
         }
         self.session.get.return_value = response
 

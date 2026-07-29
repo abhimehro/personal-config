@@ -6,10 +6,10 @@ set -euo pipefail
 # Path: ~/.m2/repository
 # Note: This path is in the default whitelist. Remove from whitelist to enable cleanup.
 clean_maven_repository() {
-    local maven_repo="$HOME/.m2/repository"
+	local maven_repo="$HOME/.m2/repository"
 
-    # Only clean if the directory exists
-    [[ -d "$maven_repo" ]] || return 0
+	# Only clean if the directory exists
+	[[ -d $maven_repo ]] || return 0
 
-    safe_clean "$maven_repo"/* "Maven local repository"
+	safe_clean "$maven_repo"/* "Maven local repository"
 }

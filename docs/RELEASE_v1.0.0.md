@@ -2,17 +2,20 @@
 
 ## Release Preparation (February 2026)
 
-This document outlines the recommended steps for creating a release tag to mark the completion of the security hardening sprint in February 2026.
+This document outlines the recommended steps for creating a release tag to mark
+the completion of the security hardening sprint in February 2026.
 
 ---
 
 ## Release Summary
 
-**Version:** v1.0.0 (proposed)  
-**Release Date:** February 13, 2026  
+**Version:** v1.0.0 (proposed)\
+**Release Date:** February 13, 2026\
 **Theme:** Security Hardening and Automation
 
-This release marks a significant security milestone with comprehensive protection against symlink attacks, TOCTOU race conditions, and improved automation workflows.
+This release marks a significant security milestone with comprehensive
+protection against symlink attacks, TOCTOU race conditions, and improved
+automation workflows.
 
 ---
 
@@ -38,9 +41,12 @@ This release marks a significant security milestone with comprehensive protectio
 
 **Security Vulnerabilities Fixed:**
 
-- [CWE-59](https://cwe.mitre.org/data/definitions/59.html): Improper Link Resolution Before File Access (Symlink Following)
-- [CWE-362](https://cwe.mitre.org/data/definitions/362.html): Race Condition (TOCTOU)
-- [CWE-732](https://cwe.mitre.org/data/definitions/732.html): Incorrect Permission Assignment
+- [CWE-59](https://cwe.mitre.org/data/definitions/59.html): Improper Link
+  Resolution Before File Access (Symlink Following)
+- [CWE-362](https://cwe.mitre.org/data/definitions/362.html): Race Condition
+  (TOCTOU)
+- [CWE-732](https://cwe.mitre.org/data/definitions/732.html): Incorrect
+  Permission Assignment
 
 ### 🤖 Automation & Workflows
 
@@ -77,7 +83,8 @@ This release marks a significant security milestone with comprehensive protectio
 ### ✅ Completed Tests
 
 - [x] Symlink protection tests: `./tests/test_symlink_protection.sh`
-- [x] SSH configuration validation: `./tests/test_ssh_config.sh` (partial - requires 1Password)
+- [x] SSH configuration validation: `./tests/test_ssh_config.sh` (partial -
+      requires 1Password)
 - [x] Manual verification of atomic file operations
 - [x] Code review and security analysis
 
@@ -144,26 +151,31 @@ Use this template when creating the GitHub release:
 ````markdown
 # 🎉 v1.0.0 - Security Hardening Milestone
 
-This release marks a major security milestone with comprehensive protection against common attack vectors in configuration management scripts.
+This release marks a major security milestone with comprehensive protection
+against common attack vectors in configuration management scripts.
 
 ## 🛡️ Security Improvements
 
 ### Symlink Attack Prevention
 
-- **Fixed [CWE-59](https://cwe.mitre.org/data/definitions/59.html)**: Improper Link Resolution Before File Access
-- Replaced vulnerable `cp` + `chmod` patterns with atomic `install -m` operations
+- **Fixed [CWE-59](https://cwe.mitre.org/data/definitions/59.html)**: Improper
+  Link Resolution Before File Access
+- Replaced vulnerable `cp` + `chmod` patterns with atomic `install -m`
+  operations
 - Added comprehensive symlink detection for all critical paths
 - Implemented defense-in-depth with pre-flight and post-creation checks
 
 ### TOCTOU Race Condition Elimination
 
-- **Fixed [CWE-362](https://cwe.mitre.org/data/definitions/362.html)**: Time-of-Check-Time-of-Use races
+- **Fixed [CWE-362](https://cwe.mitre.org/data/definitions/362.html)**:
+  Time-of-Check-Time-of-Use races
 - Minimized race windows with atomic operations
 - Added verification layers for critical file operations
 
 ### File Permission Hardening
 
-- **Fixed [CWE-732](https://cwe.mitre.org/data/definitions/732.html)**: Incorrect Permission Assignment
+- **Fixed [CWE-732](https://cwe.mitre.org/data/definitions/732.html)**:
+  Incorrect Permission Assignment
 - Configuration files now created with mode 600 atomically
 - Directories created with mode 700 atomically
 - Eliminated world-readable sensitive files
@@ -259,10 +271,10 @@ To benefit from security improvements:
 
 ---
 
-**Full Changelog**: https://github.com/abhimehro/personal-config/blob/main/CHANGELOG.md
+**Full Changelog**:
+https://github.com/abhimehro/personal-config/blob/main/CHANGELOG.md
 
 ```
-
 ---
 
 ## Post-Release Steps

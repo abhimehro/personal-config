@@ -2,7 +2,8 @@
 
 ## 🎯 Goal
 
-Complete factory reset to eliminate ALL configurations, launch daemons, old files, and start completely fresh.
+Complete factory reset to eliminate ALL configurations, launch daemons, old
+files, and start completely fresh.
 
 ## 📦 Step 1: Essential Data Backup
 
@@ -186,4 +187,5 @@ echo "✅ Backup complete! Copy ~/Desktop/ESSENTIAL_BACKUP to external drive"
 
 ---
 
-**Remember: A clean slate often fixes more problems than hours of troubleshooting. You'll have a Mac that works exactly as Apple intended!**
+**Remember: A clean slate often fixes more problems than hours of
+troubleshooting. You'll have a Mac that works exactly as Apple intended!**

@@ -2,7 +2,7 @@ import os
 import sys
 import types
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 # Ensure the scripts directory is in the path
 sys.path.insert(
@@ -57,10 +57,6 @@ class TestTruncate(unittest.TestCase):
         self.assertLessEqual(len(result), 4000)
 
 
-
-
-
-
 class TestRunProcess(unittest.TestCase):
     def setUp(self):
         self.original_env = os.environ.copy()
@@ -79,11 +75,11 @@ class TestRunProcess(unittest.TestCase):
         mock_run.assert_called_once_with(
             cmd,
             cwd=rac.ROOT,
-            check=kwargs.get('check', False),
+            check=kwargs.get("check", False),
             capture_output=True,
             text=True,
-            input=kwargs.get('input_text', None),
-            timeout=kwargs.get('timeout', None),
+            input=kwargs.get("input_text", None),
+            timeout=kwargs.get("timeout", None),
             env=rac.command_env(),
         )
 
@@ -96,11 +92,7 @@ class TestRunProcess(unittest.TestCase):
 
         # Scenario with extra args
         self._assert_mock_run(
-            mock_run,
-            ["cat"],
-            input_text="hello world",
-            timeout=10,
-            check=True
+            mock_run, ["cat"], input_text="hello world", timeout=10, check=True
         )
 
     def test_run_process_real(self):

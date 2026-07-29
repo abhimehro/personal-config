@@ -63,22 +63,20 @@ When Alldebrid connection works, organize like this:
 
 ### **Your Network Details**
 
-- **VPN**: Proton VPN (port forwarding enabled but not needed for outbound connections)
+- **VPN**: Proton VPN (port forwarding enabled but not needed for outbound
+  connections)
 - **DNS**: Default Proton DNS
 - **Firewall**: Check macOS firewall if local rclone method needed
 
 ## 🚨 **Common Issues**
 
-**"Authentication Failed"**
-→ Double-check username/password (no extra spaces)
+**"Authentication Failed"** → Double-check username/password (no extra spaces)
 
-**"Server Unreachable"**
-→ Check VPN settings or try without VPN temporarily
+**"Server Unreachable"** → Check VPN settings or try without VPN temporarily
 
-**"Timeout"**
-→ Try different WiFi network or mobile hotspot
+**"Timeout"** → Try different WiFi network or mobile hotspot
 
-**Empty Folder in Infuse**
-→ Content might not be in `/links/` yet - check Alldebrid web interface
+**Empty Folder in Infuse** → Content might not be in `/links/` yet - check
+Alldebrid web interface
 
 Your Mac can definitely reach the Alldebrid server, so this should work!

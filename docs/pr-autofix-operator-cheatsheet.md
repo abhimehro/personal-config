@@ -49,7 +49,8 @@ Review-Inputs: Copilot,Gemini,Human
 Mode: T2+S+H
 ```
 
-`.gitmessage` at repo root contains this layout and can be used as your commit template.
+`.gitmessage` at repo root contains this layout and can be used as your commit
+template.
 
 ---
 
@@ -64,7 +65,8 @@ ln -sf "$(pwd)/.gitmessage" ~/.config/git/commit-template.personal-config.txt
 git config --global commit.template ~/.config/git/commit-template.personal-config.txt
 ```
 
-You can symlink the same `.gitmessage` into other repos if you want a single source of truth.
+You can symlink the same `.gitmessage` into other repos if you want a single
+source of truth.
 
 ---
 
