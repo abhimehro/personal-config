@@ -6,6 +6,83 @@
 
 ## Entry template
 
+
+## Run — 2026-07-28
+
+### Input tail
+
+- Source: `tasks/pr-review-2026-07-28.md` Phase 1 remainder + live re-fetch
+- Preflight PASS 7/7; `unset GH_TOKEN` (0eo); cursor-cloud-hooks synced
+- Live CONFLICTING: pc #1800/#1791, cs #1069/#1064, esp #1362, hg #427/#420/#413
+- Dropped since Phase 1: pc #1789/#1787/#1786 (merged)
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|-------:|-------------|-------:|-------|
+| personal-config | 1800 | SALVAGE | [#1804](https://github.com/abhimehro/personal-config/pull/1804) | tasks.py only; S2 |
+| personal-config | 1791 | SALVAGE | [#1803](https://github.com/abhimehro/personal-config/pull/1803) | common.py regex; S2 |
+| ctrld-sync | 1064 | SALVAGE | [#1072](https://github.com/abhimehro/ctrld-sync/pull/1072) | surgical; kept #1067; 364 tests |
+| ctrld-sync | 1069 | CLOSE-SUPERSEDED | — | duplicate of #1067 |
+| ctrld-sync | 1066 | CLOSE-SUPERSEDED | — | duplicate; CodeScene now green |
+| email-security-pipeline | 1362 | CLOSE-SUPERSEDED | — | prefer #1370 (0es) |
+| Hydrograph… | 413 | CLOSE-SUPERSEDED | — | prefer #418 (0es) |
+| Hydrograph… | 427 | CLOSE-SUPERSEDED | — | duplicate of #428 |
+| Hydrograph… | 420 | CLOSE-SUPERSEDED | — | duplicate of #428 |
+| series_correction… | 293 | CLOSE-SUPERSEDED | — | duplicate of #299 |
+| email-security-pipeline | 1366 | REQUEST_CHANGES | — | artifact v7/v8 (0er) |
+| personal-config | 1792 | REQUEST_CHANGES | — | a11y vs #1795 |
+
+- Salvage drafts opened: **3**
+- Infra-fix drafts: **0**
+- Autonomous merges: **0** (S1)
+- New lesson: **0et** (surgical salvage when changed-in-both)
+- CodeScene MCP: unavailable; posted `/cs-agent` trigger on #1072
+- API close: still blocked (0eq); dispositions via MCP reviews
+- `request_reviewers`: succeeded on salvage drafts #1803/#1804/#1072 → `abhimehro`
+
+### Verification
+
+- pc salvages: `python3 -m py_compile` on touched automation scripts
+- cs #1072: `uv run pytest tests/` → **364 passed**
+- Compared esp/hg dirty PRs vs `origin/main` for supersession evidence
+
+### Handoff
+
+1. Human merge draft #1804/#1803/#1072 → close originals
+2. Human close CLOSE-SUPERSEDED list
+3. T1 security: #1370, #418, #1784, #1060, Seatek cluster, #295
+4. Fix #1366 / #1792
+
+## Run — 2026-07-27
+
+### Input tail
+
+- Source report/snapshot: `tasks/pr-review-2026-07-26.md` (Phase 1 escalated remainder) + live GitHub re-fetch
+- PRs investigated: 8 Phase-1 remainder + 2 live CONFLICTING (esp#1362, hg#413)
+- Dropped: Seatek #521 (merged since Phase 1)
+
+### Outcomes
+
+- Salvage draft PRs opened: **0** (unique security value already on preferred CLEAN twins / main)
+- Infra-fix draft PRs opened: **0**
+- Originals marked CLOSE-SUPERSEDED (MCP review; API close blocked 0eq): esp [#1362](https://github.com/abhimehro/email-security-pipeline/pull/1362) → prefer [#1370](https://github.com/abhimehro/email-security-pipeline/pull/1370) + main #1353; hg [#413](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/413) → prefer [#418](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/418)
+- REQUEST_CHANGES: esp [#1366](https://github.com/abhimehro/email-security-pipeline/pull/1366) artifact skew (0er)
+- ESCALATE left open: cs #1060; Seatek #507/#518/#525; preferred twins #1370/#418 for human T1
+- CodeScene: `/cs-agent` posted via MCP on ctrld [#1066](https://github.com/abhimehro/ctrld-sync/pull/1066)
+
+### Verification status
+
+- Local verify: compared PR diffs vs `origin/main` for app_runner/setup_wizard (esp) and utils/security.py (hg); confirmed #1353 already landed app_runner fd-only path
+- Close API: `closePullRequest` 403 for Cursor app token (Lesson 0eq) — human must close
+- request_reviewers: cannot request author `abhimehro` on bot-authored PRs
+
+### Handoff
+
+- Maintainer: close #1362 and #413; T1 review #1370 + #418; fix/close #1366; pick one Seatek env-filter PR; ack cs#1060
+- Session docs: `tasks/pr-inventory.md`, `pr-triage.md`, `pr-review-2026-07-27.md`
+- Cross-links: Phase 1 `tasks/pr-review-2026-07-26.md`
+
 ## Run — 2026-06-21
 
 ### Input tail

@@ -343,14 +343,22 @@ start_controld() {
 		error "controld-manager script not found in repo or /usr/local/bin. Please run 'scripts/setup-controld.sh' to install it securely."
 	fi
 
+	# Build env vars for the privileged manager. Only pass non-empty values so
+	# that controld-manager can load them from the secure env file when the user
+	# has not explicitly overridden them.
+	local -a env_args=()
+	local _priv="${CTR_PROFILE_PRIVACY_ID:-${CTRLD_PRIVACY_PROFILE-}}"
+	local _game="${CTR_PROFILE_GAMING_ID:-${CTRLD_GAMING_PROFILE-}}"
+	local _brows="${CTR_PROFILE_BROWSING_ID:-${CTRLD_BROWSING_PROFILE-}}"
+	[[ -n $_priv ]] && env_args+=("CTR_PROFILE_PRIVACY_ID=$_priv")
+	[[ -n $_game ]] && env_args+=("CTR_PROFILE_GAMING_ID=$_game")
+	[[ -n $_brows ]] && env_args+=("CTR_PROFILE_BROWSING_ID=$_brows")
+	[[ -n ${CTRLD_PRIVACY_PROFILE-} ]] && env_args+=("CTRLD_PRIVACY_PROFILE=${CTRLD_PRIVACY_PROFILE}")
+	[[ -n ${CTRLD_GAMING_PROFILE-} ]] && env_args+=("CTRLD_GAMING_PROFILE=${CTRLD_GAMING_PROFILE}")
+	[[ -n ${CTRLD_BROWSING_PROFILE-} ]] && env_args+=("CTRLD_BROWSING_PROFILE=${CTRLD_BROWSING_PROFILE}")
+
 	# Call switch with profile and optional protocol override
-	if sudo env CTRLD_PRIVACY_PROFILE="${CTRLD_PRIVACY_PROFILE-}" \
-		CTRLD_GAMING_PROFILE="${CTRLD_GAMING_PROFILE-}" \
-		CTRLD_BROWSING_PROFILE="${CTRLD_BROWSING_PROFILE-}" \
-		CTR_PROFILE_PRIVACY_ID="${CTR_PROFILE_PRIVACY_ID:-${CTRLD_PRIVACY_PROFILE-}}" \
-		CTR_PROFILE_GAMING_ID="${CTR_PROFILE_GAMING_ID:-${CTRLD_GAMING_PROFILE-}}" \
-		CTR_PROFILE_BROWSING_ID="${CTR_PROFILE_BROWSING_ID:-${CTRLD_BROWSING_PROFILE-}}" \
-		"$controld_manager" switch "$profile_key" "$force_proto"; then
+	if sudo env "${env_args[@]}" "$controld_manager" switch "$profile_key" "$force_proto"; then
 		# Annotate active_profile with IPv6 policy / mode for reconcile + status.
 		local active_profile_file="${CONTROLD_DIR:-/etc/controld}/active_profile"
 		if sudo test -f "$active_profile_file"; then

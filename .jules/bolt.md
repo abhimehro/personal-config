@@ -627,3 +627,6 @@ invocation.
 ## 2026-12-07 - [Avoid eager empty dict and list allocations in chained .get() loops across multiple domains]
 **Learning:** Chaining `.get("key", {}).get("sub_key", [])` inside processing loops allocates new empty dictionary and list objects on every iteration when the key is missing or the value is falsy. This leads to measurable memory allocation overhead on the fast path, especially when dealing with complex nested JSON payloads.
 **Action:** Replace `val.get("key", {}).get("sub_key", [])` with multi-step `None` checks like `_key = val.get("key"); _sub_key = _key.get("sub_key") if _key else ()` to prevent redundant dictionary and list allocations entirely.
+## 2025-02-27 - Python Dictionary Allocation Overhead
+**Learning:** Chaining `.get("key", {}).get("sub_key", [])` inside loops causes measurable memory allocation overhead on the fast path because Python instantiates new empty dictionaries and lists on every iteration when keys are missing.
+**Action:** Replace this with multi-step `None` checks (e.g., `_key = val.get("key"); _sub = _key.get("sub_key") if _key else []`) to prevent redundant object allocations in critical paths.

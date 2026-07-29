@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Run AI inference
         id: inference
@@ -25,16 +27,15 @@ jobs:
             Title: ${{ github.event.issue.title }}
             Body: ${{ github.event.issue.body }}
 
-      # SECURITY: do not interpolate ${{ steps.inference.outputs.response }} or
-      # any other untrusted field directly into a `run:` block. The LLM output
-      # is attacker-influenceable via prompt injection in the issue body, so a
-      # crafted response can break out of shell quoting and execute commands
-      # in the runner with GITHUB_TOKEN available. Bind the value to an env
-      # var and pass it as a quoted shell argument instead. See issue #892.
+      # SECURITY: the LLM output is attacker-influenceable via prompt injection
+      # in the issue body. Write it to a temporary file and use --body-file so no
+      # shell interpolation of the response can occur. See issue #892.
       - name: Comment with AI summary
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           RESPONSE: ${{ steps.inference.outputs.response }}
         run: |
-          gh issue comment "$ISSUE_NUMBER" --body "$RESPONSE"
+          response_file="${RUNNER_TEMP}/ai-summary.md"
+          printf '%s\n' "$RESPONSE" > "$response_file"
+          gh issue comment "$ISSUE_NUMBER" --body-file "$response_file"
