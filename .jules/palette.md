@@ -342,7 +342,10 @@ the emoji icon in `<span aria-hidden="true">` to hide it from screen readers.
 ## 2026-07-22 - Accessible Data Tables
 **Learning:** When creating data tables for performance reports, screen readers struggle to associate data cells with their row identifiers if they are marked as simple `<td>` elements.
 **Action:** Always use `<th scope="row">` for the first column in data-heavy tables to ensure proper row-level header associations for screen reader users.
-
 ## 2026-07-27 - Semantic HTML for Key-Value Pairs
 **Learning:** For presenting key-value pairs (e.g., system metrics or system activities), a description list (`<dl>`, `<dt>`, `<dd>`) is semantically more correct and accessible than an unordered list (`<ul>`, `<li>`).
 **Action:** Use description lists for key-value pair data to ensure proper semantic structure and accessibility, instead of unordered lists.
+
+## 2026-07-29 - HTML Description Lists
+**Learning:** Using generic `<div>` tags directly inside a `<dl>` element creates invalid HTML markup, which can confuse screen readers and disrupt the reading flow of grouped key-value data. Standard HTML `<dl>` lists only allow `<dt>` and `<dd>` as direct children.
+**Action:** Always ensure `<dl>` elements strictly contain valid `<dt>` and `<dd>` elements, and use CSS grid or flexbox on the `<dl>` itself if complex alignment is needed.

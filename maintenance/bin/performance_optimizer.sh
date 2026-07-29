@@ -535,10 +535,9 @@ generate_performance_report() {
         .skip-link:focus { top: 0; }
         .header { background-color: #f0f0f0; padding: 10px; border-radius: 5px; }
         .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
-        dl.metric-list { margin: 0; padding: 0; }
-        .metric { margin: 5px 0; display: flex; }
-        .metric dt { margin-right: 8px; }
-        .metric dd { margin: 0; }
+        dl.metric-list { margin: 0; padding: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 8px; }
+        .metric-list dt { margin-right: 8px; }
+        .metric-list dd { margin: 0; }
         .good { color: #057A55; }
         .warning { color: #B45309; }
         .critical { color: #DC2626; }
@@ -558,10 +557,10 @@ generate_performance_report() {
     <section class="section" aria-labelledby="sys-info-heading" role="region">
         <h2 id="sys-info-heading"><span aria-hidden="true">💻</span> System Information</h2>
         <dl class="metric-list">
-            <div class="metric"><dt><strong>System:</strong></dt><dd>$system_info</dd></div>
-            <div class="metric"><dt><strong>CPU:</strong></dt><dd>$cpu_info</dd></div>
-            <div class="metric"><dt><strong>Memory:</strong></dt><dd>${memory_info} GB</dd></div>
-            <div class="metric"><dt><strong>Disk:</strong></dt><dd>$disk_info</dd></div>
+            <dt><strong>System:</strong></dt><dd>$system_info</dd>
+            <dt><strong>CPU:</strong></dt><dd>$cpu_info</dd>
+            <dt><strong>Memory:</strong></dt><dd>${memory_info} GB</dd>
+            <dt><strong>Disk:</strong></dt><dd>$disk_info</dd>
         </dl>
     </section>
     

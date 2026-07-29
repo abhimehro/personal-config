@@ -429,10 +429,9 @@ generate_dashboard() {
         .status-good { color: #1E7E34; } /* WCAG AA accessible */
         .status-warning { color: #B45309; } /* WCAG AA accessible */
         .status-critical { color: #DC2626; } /* WCAG AA accessible */
-        dl.activity-list { margin: 0; padding: 0; }
-        .activity-item { margin: 5px 0; display: flex; }
-        .activity-item dt { margin-right: 8px; font-weight: 500; }
-        .activity-item dd { margin: 0; color: #555; }
+        dl.activity-list { margin: 0; padding: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 8px; }
+        .activity-list dt { font-weight: 500; margin: 0; }
+        .activity-list dd { margin: 0; color: #555; }
         .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 0.9em; }
     </style>
 </head>
@@ -492,10 +491,10 @@ EOF
             <div class="insights-box">
                 <p id="activity-desc">Latest maintenance tasks and system activities:</p>
                 <dl class="activity-list" aria-labelledby="activity-desc">
-                    <div class="activity-item"><dt>Daily health check:</dt><dd>$(date "+%H:%M")</dd></div>
-                    <div class="activity-item"><dt>System cleanup:</dt><dd>Completed successfully</dd></div>
-                    <div class="activity-item"><dt>Homebrew maintenance:</dt><dd>Up to date</dd></div>
-                    <div class="activity-item"><dt>Metrics collection:</dt><dd>Active</dd></div>
+                    <dt>Daily health check:</dt><dd>$(date "+%H:%M")</dd>
+                    <dt>System cleanup:</dt><dd>Completed successfully</dd>
+                    <dt>Homebrew maintenance:</dt><dd>Up to date</dd>
+                    <dt>Metrics collection:</dt><dd>Active</dd>
                 </dl>
             </div>
         </section>
