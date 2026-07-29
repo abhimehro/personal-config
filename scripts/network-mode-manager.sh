@@ -358,7 +358,7 @@ start_controld() {
 	[[ -n ${CTRLD_BROWSING_PROFILE-} ]] && env_args+=("CTRLD_BROWSING_PROFILE=${CTRLD_BROWSING_PROFILE}")
 
 	# Call switch with profile and optional protocol override
-	if sudo env "${env_args[@]}" "$controld_manager" switch "$profile_key" "$force_proto"; then
+	if sudo env ${env_args[@]:+"${env_args[@]}"} "$controld_manager" switch "$profile_key" "$force_proto"; then
 		# Annotate active_profile with IPv6 policy / mode for reconcile + status.
 		local active_profile_file="${CONTROLD_DIR:-/etc/controld}/active_profile"
 		if sudo test -f "$active_profile_file"; then

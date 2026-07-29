@@ -168,10 +168,12 @@ load_controld_env() {
 		value="${value%"${value##*[![:space:]]}"}"
 
 		# Strip one matching pair of quotes.
-		if [[ $value == \"*\" ]]; then
-			value="${value:1:-1}"
-		elif [[ $value == \'*\' ]]; then
-			value="${value:1:-1}"
+		# bash 3.2-safe: detect quote-wrapped values with glob patterns,
+		# then strip via length math (negative substring unsupported in 3.2).
+		if [[ ${#value} -ge 2 && $value == \"*\" ]]; then
+			value="${value:1:${#value}-2}"
+		elif [[ ${#value} -ge 2 && $value == \'*\' ]]; then
+			value="${value:1:${#value}-2}"
 		fi
 
 		if [[ -z $key ]]; then

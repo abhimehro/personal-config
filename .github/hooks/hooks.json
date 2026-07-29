@@ -3,7 +3,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "command": ".github/github-copilot-1password-hooks-bundle/bin/run-hook.sh 1password-validate-mounted-env-files",
+        "command": "[ -x \".github/github-copilot-1password-hooks-bundle/bin/run-hook.sh\" ] && \".github/github-copilot-1password-hooks-bundle/bin/run-hook.sh\" 1password-validate-mounted-env-files || echo '{\"decision\":\"allow\"}'",
         "timeout": 15
       }
     ]

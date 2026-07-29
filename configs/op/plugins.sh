@@ -25,6 +25,8 @@ case "${OP_AGENT_SKIP-}" in
 esac
 
 if [ "$_op_skip_plugin_aliases" -eq 0 ]; then
-	alias brew="op plugin run -- brew"
+	:
 fi
 unset _op_skip_plugin_aliases
+alias agent="op plugin run -- agent"
+alias copilot="op plugin run -- copilot"

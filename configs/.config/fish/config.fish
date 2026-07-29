@@ -14,6 +14,8 @@ if not set -q __fish_path_initialized
 
     # Tool-specific bins (append to avoid shadowing system tools)
     fish_add_path --global --append $HOME/.cache/lm-studio/bin
+    fish_add_path --global --append $HOME/scripts
+    fish_add_path --global --append $HOME/.antigravity-ide/antigravity-ide/bin
 
     set -g __fish_path_initialized 1
 end
@@ -157,8 +159,6 @@ if type -q bat
     alias bathelp 'bat --style=full'
 end
 
-type -q fd; and alias find 'fd'
-type -q rg; and alias grep 'rg'
 
 # Safety
 abbr -a rm 'rm -i'
@@ -305,14 +305,7 @@ alias bulk-rename "$NM_ROOT/media-streaming/scripts/bulk-rename-cloud.sh"
 
 # History Setup
 set -g fish_history_limit 10000
-set -U fish_user_paths $fish_user_paths /Users/speedybee/.local/bin
-fish_add_path /Users/speedybee/scripts
 
-# Added by Antigravity IDE
-fish_add_path /Users/speedybee/.antigravity-ide/antigravity-ide/bin
 
-# >>>> BEGIN MANAGED DEVIN BLOCK >>>>
-if test -x "/Users/speedybee/.local/bin/devin"
-  "/Users/speedybee/.local/bin/devin" shell init fish --stage post | source
-end
-# <<<< END MANAGED DEVIN BLOCK <<<<
+# 1Password shell plugins (fish-native loader; bash plugins.sh is not sourceable)
+source /Users/speedybee/.config/op/op-plugin-loader.fish
