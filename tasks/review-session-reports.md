@@ -32,6 +32,40 @@
 - Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
 
 
+## Run — 2026-07-26
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron `0 13 * * *` Phase 1 review-and-merge; branch
+  `cursor-agent/automated-pr-workflow-6b24`
+
+### Metrics
+
+- PRs inventoried: 14
+- PRs merged: 6
+- PRs closed: 0
+- PRs escalated/deferred: 8
+- Autofix: 0
+
+### Actions
+
+- Merged (squash): esp #1365; Seatek #530; pc #1780/#1782; cs #1062; hg #416
+- Closed: none
+- Deferred/escalated: cs #1060; esp #1366 (REQUEST_CHANGES artifact skew),
+  #1362 (CONFLICTING TOCTOU); Seatek #507/#518/#525 (0ej), #521 (0ek);
+  hg #413 (CONFLICTING after #416; numpy/Bolt regression)
+
+### Follow-ups
+
+- Phase 2: salvage esp #1362, hg #413; consolidate Seatek env siblings; human
+  ack cs #1060; fix esp #1366 upload/download artifact majors
+- Dated snapshot: `tasks/pr-review-2026-07-26.md`
+- Lesson **0er**: workflow “consolidate” PRs may silently bump download-artifact
+  major without matching upload-artifact
+
 ## Run — 2026-07-25
 
 ### Scope
@@ -263,3 +297,12 @@
   tip artifact majors (rpce), visual-recap salvage (pc #1748)
 - Snapshot: `tasks/pr-review-2026-07-24.md`
 - Lessons: 0ej/0ek recorded; 0el bolt.md after sibling Bolt merge
+
+## 2026-07-28 Phase 1 (cron)
+
+- Preflight PASS 7/7; inventoried **47**; **16** squash-merges; **0** closes (token lacks closePullRequest — Lesson **0es**); **5** close-recommended via MCP; **3** REQUEST_CHANGES; **17** escalate; **5** defer.
+- Merged: pc #1801/#1798/#1795; cs #1071/#1070/#1068/#1067; esp #1376/#1373/#1372; Seatek #537/#533; hg #428/#422; sc #299/#294.
+- Auth: unset GH_TOKEN (0eo); MCP reviews; adversarial parallel review (opus + gpt-5.5).
+- Cascade: bolt.md #1800/#1791 CONFLICTING after #1801; #1064 after #1067.
+- Docs: `tasks/pr-review-2026-07-28.md`; branch `cursor-agent/automated-pr-workflow-3d54`.
+- Open EOD: **31** (close gap leaves 5 dups open for Phase 2).

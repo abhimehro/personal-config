@@ -31,6 +31,8 @@
   [upstream.0]
     name = 'Control D System'
     type = 'doh3'
-    endpoint = 'https://dns.controld.com/free'
+    # Replace <CONTROL_D_RESOLVER_ID> with your real resolver ID.
+    # Do not use the public /free endpoint for a profile-aware configuration.
+    endpoint = 'https://dns.controld.com/<CONTROL_D_RESOLVER_ID>'
     bootstrap_ip = '76.76.2.0'
     timeout = 3000

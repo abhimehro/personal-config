@@ -9,7 +9,7 @@ Raycast AI**, and **Vibe**.
 | File                        | Role                                             | Secrets                                       |
 | --------------------------- | ------------------------------------------------ | --------------------------------------------- |
 | `mcp-servers.template.json` | **Canonical** server list. Committed.            | `op://` references only — **never** live keys |
-| `mcp-servers.template`      | Legacy flat copy (kept for reference)            | refs only                                     |
+| `mcp-servers.template`      | Legacy flat mirror of the canonical list         | `op://` refs only (same as `.json`)           |
 | `servers.local.json`        | Optional hand-maintained local file (gitignored) | may contain live keys                         |
 
 Edit **`mcp-servers.template.json`** to add/remove a server or change args. Then
@@ -108,7 +108,9 @@ pass-cli agent list
 
 ## Security notes
 
-- Committed files contain **only** `op://` / `pass://` references.
+- Committed files contain **only** `op://` / `pass://` references (MCP
+  templates) or unmistakably fake `REPLACE_WITH_*` markers (`.env.example`
+  style). Never commit live key material.
 - Generated files (live keys) are `0600`, outside the repo, and covered by
   `.gitignore` patterns (`*mcp-config*.local.json`, `mcp-configs/*.local.json`).
 - Backups live in `~/.config/mcp-backups/` (0700) — not in the repo.
@@ -116,3 +118,7 @@ pass-cli agent list
   Those configs were regenerated with `op://`-resolved keys at `0600`. The
   exposed keys (Brave, Exa, Tavily, GitHub PAT, Perplexity) **should be
   rotated**.
+- **ABHI-1549:** Ambiguous doc placeholders (`your_actual_…`) were removed in
+  favor of `REPLACE_WITH_*` + documented `op://` refs so scanners/humans cannot
+  confuse templates with live credentials. See
+  `docs/MCP_SECRETS_MANAGEMENT.md`.

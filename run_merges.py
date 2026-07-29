@@ -1,76 +1,67 @@
-from concurrent.futures import ThreadPoolExecutor
 import json
-import os
 import subprocess
+import sys
 import time
-from functools import lru_cache
+from concurrent.futures import ThreadPoolExecutor
 
-
-def _parse_env_line(line, env_dict):
-    line = line.strip()
-    if not line:
-        return
-    if line.startswith("#"):
-        return
-    if line.startswith("export "):
-        line = line[7:].strip()
-    # ⚡ Bolt Optimization: Use partition() over split() to avoid intermediate list allocation overhead
-    key, sep, val = line.partition("=")
-    if not sep:
-        return
-    env_dict[key] = val.strip("'\"")
-
-
-@lru_cache(maxsize=None)
-def _get_parsed_env_vars():
-    # ⚡ Bolt Optimization: Cache only the parsed variables from the file to prevent redundant IO reads, while keeping it safe from mutable dictionary cache poisoning
-    parsed_vars = {}
-    try:
-        with open("../email-security-pipeline/GH_TOKEN.env", "r") as f:
-            for line in f:
-                _parse_env_line(line, parsed_vars)
-    except FileNotFoundError:
-        pass
-    return parsed_vars
-
-
-def _load_gh_token_env():
-    env = os.environ.copy()
-    env.update(_get_parsed_env_vars())
-    return env
+from gh_token_env import load_gh_token_env
+from pr_reference import PRReference
 
 
 def run_gh(cmd_list):
-    env = _load_gh_token_env()
-    result = subprocess.run(cmd_list, capture_output=True, text=True, env=env)
+    """Call ``gh`` and return parsed JSON, or a string, or None on failure/timeout."""
+    env = load_gh_token_env()
+    try:
+        result = subprocess.run(
+            cmd_list,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=120,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        print(
+            f"gh command timed out: {cmd_list[0] if cmd_list else cmd_list}",
+            file=sys.stderr,
+        )
+        return None
     if result.returncode != 0:
         return None
     try:
         return json.loads(result.stdout)
-    except:
+    except json.JSONDecodeError:
         return result.stdout
 
 
 def get_diff(repo, pr):
+    """Fetch the textual diff for a PR."""
     res = run_gh(["gh", "pr", "diff", str(pr), "-R", str(repo)])
     return res if isinstance(res, str) else ""
 
 
 def _fetch_pr_data(item):
     repo, pr, title = item
+    ref = PRReference.from_parts(repo, pr)
     info = run_gh(
-        ["gh", "pr", "view", str(pr), "-R", str(repo), "--json", "mergeStateStatus"]
+        [
+            "gh",
+            "pr",
+            "view",
+            str(ref.number),
+            "-R",
+            ref.repo,
+            "--json",
+            "mergeStateStatus",
+        ]
     )
     diff = ""
     if info and info.get("mergeStateStatus") not in ["DIRTY", "CONFLICTING"]:
-        diff = get_diff(repo, pr)
-    return repo, pr, title, info, diff
+        diff = get_diff(ref.repo, str(ref.number))
+    return ref.repo, str(ref.number), title, info, diff
 
 
 def _fetch_all_pr_data_parallel(queue_items):
-    # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls using map() to significantly speed up PR data fetching
-    # This mitigates network latency and execution time by querying github concurrently
-    # ⚡ Bolt Optimization: Dynamic thread concurrency to eliminate batching latency
     with ThreadPoolExecutor(max_workers=min(len(queue_items) or 1, 32)) as executor:
         return list(executor.map(_fetch_pr_data, queue_items))
 
@@ -180,7 +171,7 @@ queue = [
 
 results = {"merged": [], "escalated": [], "conflicting": []}
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     for repo, pr, title, info, diff in _fetch_all_pr_data_parallel(queue):
         print(f"\nProcessing {repo}#{pr}: {title}")
 
@@ -209,13 +200,11 @@ if __name__ == '__main__':
             escalate = True
             reasons.append("Dangerous GitHub Actions workflow detected.")
         if ".gitignore" in diff_lower and "+" in diff_lower and "!" in diff_lower:
-            # Simplistic check for gitignore weakening
             pass
         if ".env.example" in diff_lower and "- " in diff_lower:
             escalate = True
             reasons.append("Weakened .env.example.")
 
-        # ⚡ Bolt Optimization: Cache title.lower() to prevent redundant C-level string allocations during multiple sequential "in" checks
         title_lower = title.lower()
         for sensitive in ("auth", "payment", "migration", "sql"):
             if sensitive in title_lower:
@@ -228,21 +217,34 @@ if __name__ == '__main__':
             results["escalated"].append((repo, pr, title, reasons))
             continue
 
-        print(f"Gate 2 passed. Merging...")
-        env = _load_gh_token_env()
+        print("Gate 2 passed. Merging...")
+        ref = PRReference.from_parts(repo, pr)
+        env = load_gh_token_env()
         res = subprocess.run(
-            ["gh", "pr", "merge", str(pr), "-R", str(repo), "--squash", "--delete-branch"],
+            [
+                "gh",
+                "pr",
+                "merge",
+                str(ref.number),
+                "-R",
+                ref.repo,
+                "--squash",
+                "--delete-branch",
+            ],
             capture_output=True,
             text=True,
             env=env,
+            timeout=120,
+            check=False,
         )
         if res.returncode == 0:
             print(f"Successfully merged {repo}#{pr}")
             results["merged"].append((repo, pr, title))
         else:
-            print(f"Merge failed: {res.stderr}")
+            error_text = res.stderr.strip() or res.stdout.strip() or "unknown error"
+            print(f"Merge failed: {error_text}")
             results["escalated"].append(
-                (repo, pr, title, ["Merge command failed", res.stderr])
+                (repo, pr, title, ["Merge command failed", error_text])
             )
             continue
 

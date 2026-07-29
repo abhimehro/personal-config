@@ -26,12 +26,8 @@ on:
         default: true
         type: boolean
 
-# FIX 1: was `permissions: {}` which grants zero permissions
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
-  actions: read
+# Least-privilege default: jobs use the GH_TOKEN PAT for all writes.
+permissions: {}
 
 concurrency:
   group: repository-automation-daily-${{ github.repository }}
@@ -54,6 +50,7 @@ jobs:
         with:
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
+          persist-credentials: true  # Required for git push when creating draft PRs
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -90,6 +87,7 @@ jobs:
         with:
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -126,6 +124,7 @@ jobs:
         with:
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -168,6 +167,7 @@ jobs:
         with:
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -208,6 +208,7 @@ jobs:
         with:
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -218,7 +219,7 @@ jobs:
         run: python -m pip install --upgrade pip pyyaml
 
       - name: Download task artifacts
-        uses: actions/download-artifact@v8.0.1 # v8.0.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: .automation-output
 

@@ -1,5 +1,51 @@
 # Lessons Learned
 
+## Lesson 0et: Surgical salvage when merge-tree shows changed-in-both after sibling merge (2026-07-28)
+
+**Pattern:** ctrld #1064 CONFLICTING after #1067: `git merge-tree` reports
+**changed in both** on `main.py` and `.jules/palette.md`. Wholesale
+`git checkout pr -- main.py` onto current `main` would drop the just-merged
+partial-success UX from #1067 while picking up the prompt-extract residual.
+**Rule:** (1) Never wholesale-checkout a hotspot file when merge-tree says
+changed-in-both after a sibling merge. (2) Extract only the unique residual
+(helper + call-site rewrite; `_print_bold_header` swaps) with a scripted
+patch onto `origin/main`. (3) Assert the sibling feature string still exists
+post-patch (e.g. “partial success”). (4) Skip journals entirely (S2).
+**Detection cost:** Low — `git merge-tree` “changed in both” on the same path
+the sibling PR touched.
+
+## Lesson 0es: Prefer CLEAN twin over CONFLICTING Sentinel bundle (2026-07-27)
+
+**Pattern:** After a Phase 1 merge, an older Sentinel PR goes `CONFLICTING`
+while a newer sibling lands CLEAN with a **subset** of the security fix
+(esp #1362 vs #1370; hg #413 vs #418). The dirty PR often also carries
+harmful extras (numpy regression, Bolt/CHANGELOG/journal churn) or is
+already partially absorbed on `main` (e.g. app_runner via #1353).
+**Rule:** (1) Diff both siblings against current `main` before opening a
+salvage branch. (2) If the CLEAN twin covers the remaining security
+surface and the dirty PR's unique delta is journal/noise/regression →
+**CLOSE-SUPERSEDED** pointing at the twin (and any main PR that already
+landed). (3) Do not salvage a conflicted bundle that regresses deps.
+(4) Escalate the preferred twin for human T1 merge; Phase 2 still never
+auto-merges.
+**Detection cost:** Low — same title family + one CONFLICTING + one CLEAN;
+`gh pr diff --name-only` comparison.
+## Lesson 0es: Cursor App token can squash-merge but cannot close PRs (2026-07-28)
+
+**Pattern:** Phase 1 squash-merges succeed with hosts.yml Cursor token, but
+`gh pr close`, GraphQL `closePullRequest`, and REST `PATCH .../issues/{n}`
+all return **Resource not accessible by integration**. `gh pr comment` also
+denied; MCP `post_review_comment_on_pr` works. `request_reviewers` fails when
+the target is already the PR author (abhimehro).
+**Rule:** (1) Treat CLOSE dispositions as **recommend-close via MCP review**
+when close API is denied; hand the list to Phase 2 salvage (which must close
+duplicates). (2) Do not burn retries on GraphQL/REST close with the same App
+token. (3) Prefer Dependabot-authored PRs when requesting reviewers. (4)
+Document close-recommended PRs in `pr-review-YYYY-MM-DD.md` Post-session
+remainder with `CLOSE-DUPLICATE` reason.
+**Detection cost:** Low — one failed `gh pr close` is enough.
+
+
 ## Lesson 0ej: Diff before/after/code with unescaped `\"` breaks Plan MDX (2026-07-21)
 
 **Pattern:** Visual recap publish returns `422 Unprocessable Entity` with
@@ -65,6 +111,21 @@ spawn tsx ENOENT`. Installing `tsx` next to `@agent-native/core` (#1715) did
 `PATH` includes that prefix's `.bin` **and** you intentionally want the core
 source fallback. (3) Smoke-test `$RECAP_CLI recap --help` right after install.
 (4) `RECAP_CLI_VERSION` pins **recap-cli** versions (0.4.x), not core (0.11x).
+## Lesson 0er: “Consolidate workflow” PRs may bump download-artifact major alone (2026-07-26)
+
+**Pattern:** esp #1366 titled as checkout consolidation also changed
+`actions/download-artifact` to **v8.0.1** while producer jobs kept
+`actions/upload-artifact@v7`. PR CI stayed green (checkout jobs only); the
+skew would break daily automation summary jobs that download sibling
+artifacts. Adversarial review caught it; Phase 1 issued REQUEST_CHANGES.
+**Rule:** (1) Diff-grep every `upload-artifact` / `download-artifact` pin in
+workflow-consolidation PRs. (2) Require matching majors (or bump both). (3)
+Treat tip-major artifact bumps as ESCALATE / REQUEST_CHANGES even when
+checkout-only CI is green (extends Lesson 0dw). (4) Prefer closing or
+fixing before merge — do not squash-merge skewed pairs.
+**Detection cost:** Low — `rg 'upload-artifact|download-artifact'` on PR
+diff.
+
 ## Lesson 0eo: Invalid env GH_TOKEN shadows hosts.yml Cursor token (2026-07-25)
 
 **Pattern:** Cloud Agent injects `GH_TOKEN=github_pat_…` that returns **401 Bad

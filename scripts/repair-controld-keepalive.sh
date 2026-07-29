@@ -37,6 +37,12 @@ source "$ROOT/scripts/lib/controld-profile.sh"
 # shellcheck source=scripts/lib/controld-service.sh
 source "$ROOT/scripts/lib/controld-service.sh"
 
+# Load configuration from the protected env file using the strict loader.
+load_controld_env || {
+	echo "[ERROR] Failed to load Control D configuration." >&2
+	exit 1
+}
+
 RESTART_PROFILE=""
 FORCE_CD_MODE=0
 
@@ -114,7 +120,7 @@ fi
 
 # Quarantine user-level static free-DNS config that bypasses profile IDs.
 USER_HOME=""
-if [[ -n "${SUDO_USER:-}" ]]; then
+if [[ -n ${SUDO_USER-} ]]; then
 	if command -v dscl >/dev/null 2>&1; then
 		USER_HOME="$(dscl . -read /Users/"$SUDO_USER" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
 	elif command -v getent >/dev/null 2>&1; then
