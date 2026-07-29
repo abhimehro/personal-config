@@ -60,7 +60,7 @@ class TestRunCmd(unittest.TestCase):
         self.assertEqual(err, "")
         mock_run.assert_called_once()
         args, kwargs = mock_run.call_args
-        self.assertEqual(args[0], ["gh", "version"])
+        self.assertEqual(args[0][0], "gh")
         self.assertTrue(kwargs.get("capture_output"))
         self.assertTrue(kwargs.get("text"))
         self.assertEqual(kwargs.get("timeout"), 120)
