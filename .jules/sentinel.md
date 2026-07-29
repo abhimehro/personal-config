@@ -678,3 +678,8 @@ treated strictly as patterns and not parsed as command-line options.
 **Accepted exclusions:**
 - `tests/test_vulnerability_fix.py` intentionally uses `exec(code, mod.__dict__)` to load isolated AST nodes for regression testing; the input AST is built from the repository's own source, not attacker-controlled.
 - `scratch_inventory.py` / `scratch_triage.py` are out of scope for this fix; they do not load `GH_TOKEN.env` and operate on hardcoded repo lists, but should be hardened with timeouts and the shared env loader in a follow-up.
+
+## 2026-07-28 - Option Injection Risk via pkill and pgrep
+**Vulnerability:** Option Injection (CWE-88 variant). Found that some scripts using `pgrep` and `pkill` for process management did not include the `--` delimiter before the process name argument when other flags were present. For instance, `pgrep -x "ctrld"` was changed to `pgrep -x -- "ctrld"`. If an attacker controls the variable and starts it with a hyphen, `pgrep` or `pkill` may interpret the variable as a command-line flag rather than a positional argument, leading to option injection or unintended execution.
+**Learning:** When invoking `pgrep` or `pkill` with dynamic variables or even static strings that could be refactored to variables, you must explicitly separate options from arguments using the `--` delimiter to prevent them from being parsed as flags.
+**Prevention:** Always use the `--` argument delimiter before positional arguments when using `pgrep` or `pkill`.
