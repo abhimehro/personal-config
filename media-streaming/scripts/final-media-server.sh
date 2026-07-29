@@ -52,7 +52,7 @@ spinner_wait() {
 
 # Kill any existing servers
 echo "🧹 Cleaning up existing servers..."
-pkill -f "rclone serve" 2>/dev/null || true
+pkill -f -- "rclone serve" 2>/dev/null || true
 spinner_wait 2 "🧹 Waiting for cleanup..."
 
 # Network discovery
@@ -220,7 +220,7 @@ echo "📝 Server Information"
 echo "════════════════════════════════════════════════════════════════"
 echo "   PID:           $SERVER_PID"
 echo "   Log File:      ~/Library/Logs/media-server.log"
-echo "   Kill Command:  pkill -f 'rclone serve'"
+echo "   Kill Command:  pkill -f -- 'rclone serve'"
 echo
 echo "This server is now running in the background."
 echo "════════════════════════════════════════════════════════════════"

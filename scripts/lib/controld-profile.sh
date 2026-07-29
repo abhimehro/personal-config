@@ -11,6 +11,11 @@ if [[ ${_CONTROLD_PROFILE_SH_-} == "true" ]]; then
 fi
 _CONTROLD_PROFILE_SH_="true"
 
+# Load the strict env loader.  This makes load_controld_env available to callers.
+_CONTROLD_PROFILE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/controld-env.sh
+source "$_CONTROLD_PROFILE_DIR/controld-env.sh" || true
+
 # Validate DNS protocol.
 validate_protocol() {
 	local proto="$1"
@@ -37,28 +42,32 @@ redact_profile_id() {
 }
 
 # Resolve profile name to profile ID.
+# Returns 0 and prints the ID when configured; otherwise returns 1 and writes a
+# redacted error to stderr.  No hardcoded fallback IDs are used.
 get_profile_id() {
 	local profile_name="$1"
 	local profile_id=""
 
 	case "$profile_name" in
-	"privacy") profile_id="${CTR_PROFILE_PRIVACY_ID:-${CTRLD_PRIVACY_PROFILE:-6m971e9jaf}}" ;;
-	"gaming") profile_id="${CTR_PROFILE_GAMING_ID:-${CTRLD_GAMING_PROFILE:-1xfy57w34t7}}" ;;
-	"browsing") profile_id="${CTR_PROFILE_BROWSING_ID:-${CTRLD_BROWSING_PROFILE:-rcnz7qgvwg}}" ;;
+	"privacy") profile_id="${CTR_PROFILE_PRIVACY_ID:-${CTRLD_PRIVACY_PROFILE-}}" ;;
+	"gaming") profile_id="${CTR_PROFILE_GAMING_ID:-${CTRLD_GAMING_PROFILE-}}" ;;
+	"browsing") profile_id="${CTR_PROFILE_BROWSING_ID:-${CTRLD_BROWSING_PROFILE-}}" ;;
 	*)
-		echo ""
-		return 0
+		echo "get_profile_id: unknown profile '$profile_name'" >&2
+		return 1
 		;;
 	esac
 
-	# Validate the resolved profile ID
-	if [[ -n $profile_id ]]; then
-		# Use validate_profile_id from network-common.sh (assumes it's loaded)
-		if command -v validate_profile_id >/dev/null 2>&1; then
-			if ! validate_profile_id "$profile_id"; then
-				echo ""
-				return 0
-			fi
+	if [[ -z $profile_id ]]; then
+		echo "get_profile_id: profile '$profile_name' is not configured" >&2
+		return 1
+	fi
+
+	# Use validate_profile_id from network-common.sh when available.
+	if command -v validate_profile_id >/dev/null 2>&1; then
+		if ! validate_profile_id "$profile_id"; then
+			echo "get_profile_id: profile '$profile_name' has an invalid resolver ID" >&2
+			return 1
 		fi
 	fi
 

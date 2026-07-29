@@ -62,6 +62,31 @@ else
 	echo "⚠️  No MEDIA_WEBDAV_PASS references found (unexpected)"
 fi
 
+# ABHI-1549: ambiguous "actual key" doc placeholders must not appear in committed templates/docs
+if git grep -nE 'your_actual_[a-z0-9_]+' -- '*.md' '*.example' '*.template' '*.template.json' '.env.example' 2>/dev/null; then
+	echo "✗ Found ambiguous your_actual_* placeholders (use REPLACE_WITH_* or op://)"
+	failures=$((failures + 1))
+else
+	echo "✓ No ambiguous your_actual_* placeholders in templates/docs"
+fi
+
+# ABHI-1549: legacy MCP template must not use YOUR_* fake keys (prefer op://)
+if git grep -nE '"YOUR_[A-Z0-9_]+_API_KEY"' -- 'mcp-configs/*.template' 'mcp-configs/*.template.json' 2>/dev/null; then
+	echo "✗ Found YOUR_*_API_KEY in MCP templates (use op:// refs)"
+	failures=$((failures + 1))
+else
+	echo "✓ MCP templates do not use YOUR_*_API_KEY placeholders"
+fi
+
+# ABHI-1549: canonical MCP template uses 1Password refs
+if grep -q 'op://Personal/BRAVE_API_KEY/credential' mcp-configs/mcp-servers.template.json &&
+	grep -q 'op://Personal/BRAVE_API_KEY/credential' mcp-configs/mcp-servers.template; then
+	echo "✓ Canonical + legacy MCP templates use op:// secret refs"
+else
+	echo "✗ MCP templates missing expected op:// BRAVE_API_KEY ref"
+	failures=$((failures + 1))
+fi
+
 echo ""
 if [[ $failures -gt 0 ]]; then
 	echo "=== FAILED: $failures credential hygiene check(s) ==="
