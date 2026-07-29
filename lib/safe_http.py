@@ -31,6 +31,8 @@ DEFAULT_TIMEOUT = (5, 20)  # (connect, read) seconds
 DEFAULT_MAX_BYTES = 25 * 1024 * 1024
 ALLOWED_SCHEMES = frozenset({"http", "https"})
 
+_SPACE_RE = re.compile(r"\s")
+
 # Tailscale CGNAT range is not considered private by ``ipaddress`` but is not
 # globally routable, so we treat it separately.
 _CGNAT_NETWORK = ipaddress.IPv4Network("100.64.0.0/10")
@@ -113,7 +115,7 @@ def _normalize_host(host: str) -> str:
         raise UnsafeURLError("URL host is required")
     if not host.isascii():
         raise UnsafeURLError(f"Non-ASCII hostnames are not allowed: {host!r}")
-    if re.search(r"\s", host):
+    if _SPACE_RE.search(host):
         raise UnsafeURLError(f"Invalid hostname: {host!r}")
     return host.lower().rstrip(".")
 

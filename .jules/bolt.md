@@ -831,3 +831,6 @@ instantiates new empty dictionaries and lists on every iteration when keys are
 missing. **Action:** Replace this with multi-step `None` checks (e.g.,
 `_key = val.get("key"); _sub = _key.get("sub_key") if _key else []`) to prevent
 redundant object allocations in critical paths.
+## 2026-03-10 - [Pre-compile regular expressions in utility functions]
+**Learning:** Re-compiling the identical regular expression inside functions that are called frequently (like `_normalize_host` checking for whitespace) adds unnecessary overhead due to repeated evaluation.
+**Action:** Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module level when they are static and used repeatedly inside functions or loops.
