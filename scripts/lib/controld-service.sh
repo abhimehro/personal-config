@@ -118,10 +118,10 @@ _stop_ctrld_cleanly() {
 	if pgrep -x "ctrld" >/dev/null 2>&1; then
 		# Last resort: uninstall clears KeepAlive, then terminate stragglers.
 		_ctrld service uninstall 2>/dev/null || true
-		pkill -x ctrld 2>/dev/null || true
+		pkill -x -- ctrld 2>/dev/null || true
 		_wait_for_process_stop "ctrld" 30
 		if pgrep -x "ctrld" >/dev/null 2>&1; then
-			pkill -9 -x ctrld 2>/dev/null || true
+			pkill -9 -x -- ctrld 2>/dev/null || true
 			sleep 0.1
 		fi
 	fi
@@ -794,7 +794,7 @@ _force_reinstall_ctrld_native() {
 		echo "[WARN] ctrld still alive after stop; uninstalling once to clear KeepAlive." >>"$start_err_log"
 		_ctrld service uninstall 2>/dev/null || true
 		sleep 0.5
-		pkill -x ctrld 2>/dev/null || true
+		pkill -x -- ctrld 2>/dev/null || true
 		_wait_for_process_stop "ctrld" 30
 	fi
 

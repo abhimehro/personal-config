@@ -806,14 +806,14 @@ opt_bluetooth_reset() {
 			return 0
 		fi
 
-		if sudo pkill -TERM bluetoothd >/dev/null 2>&1; then
+		if sudo pkill -TERM -- bluetoothd >/dev/null 2>&1; then
 			if [[ $spinner_started == "true" ]]; then
 				stop_inline_spinner
 			fi
 			echo -e "  ${GRAY}${ICON_WARNING}${NC} ${GRAY}${disconnect_notice}${NC}"
 			sleep 1
 			if pgrep -x bluetoothd >/dev/null 2>&1; then
-				sudo pkill -KILL bluetoothd >/dev/null 2>&1 || true
+				sudo pkill -KILL -- bluetoothd >/dev/null 2>&1 || true
 			fi
 			opt_msg "Bluetooth module restarted"
 			opt_msg "Connectivity issues resolved"
