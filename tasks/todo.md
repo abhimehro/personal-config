@@ -8,5 +8,6 @@
 - [x] Escalate hg #434 (python ^3.12 floor) via MCP review
 - [x] REQUEST_CHANGES rpce #144 (unrelated flaky XCTest) via MCP
 - [x] Write pr-inventory / pr-triage / pr-review Phase2 / salvage-session-reports / lessons 0ew
-- [ ] Notion + automation memory update
-- [ ] Commit/push session docs on `cursor-agent/automated-pr-salvage-workflow-1a80`
+- [x] Notion + automation memory update
+- [x] Commit/push session docs on `cursor-agent/automated-pr-salvage-workflow-1a80`
+- [ ] Open session docs PR
