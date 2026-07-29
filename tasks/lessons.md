@@ -1,19 +1,5 @@
 # Lessons Learned
 
-## Lesson 0et: Surgical salvage when merge-tree shows changed-in-both after sibling merge (2026-07-28)
-
-**Pattern:** ctrld #1064 CONFLICTING after #1067: `git merge-tree` reports
-**changed in both** on `main.py` and `.jules/palette.md`. Wholesale
-`git checkout pr -- main.py` onto current `main` would drop the just-merged
-partial-success UX from #1067 while picking up the prompt-extract residual.
-**Rule:** (1) Never wholesale-checkout a hotspot file when merge-tree says
-changed-in-both after a sibling merge. (2) Extract only the unique residual
-(helper + call-site rewrite; `_print_bold_header` swaps) with a scripted
-patch onto `origin/main`. (3) Assert the sibling feature string still exists
-post-patch (e.g. “partial success”). (4) Skip journals entirely (S2).
-**Detection cost:** Low — `git merge-tree` “changed in both” on the same path
-the sibling PR touched.
-
 ## Lesson 0es: Prefer CLEAN twin over CONFLICTING Sentinel bundle (2026-07-27)
 
 **Pattern:** After a Phase 1 merge, an older Sentinel PR goes `CONFLICTING`
