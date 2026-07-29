@@ -31,6 +31,34 @@
 - Commands/comments to run next:
 - Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
 
+## Run — 2026-07-29
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron Phase 1 `0 13 * * *` review-and-merge
+
+### Metrics
+
+- PRs inventoried: 9
+- PRs merged: 6
+- PRs closed: 0 (1 close-recommended via MCP)
+- PRs escalated/deferred: 1 escalate + 1 REQUEST_CHANGES (+1 close-rec)
+
+### Actions
+
+- Merged: cs #1075/#1074; esp #1380/#1366; pc #1811/#1808
+- Closed: none (token Lesson 0es) — close-rec esp #1381
+- Deferred/escalated: hg #434 ESCALATE; rpce #144 REQUEST_CHANGES
+
+### Follow-ups
+
+- Phase 2: close esp #1381; human ACK hg #434 python floor; fix rpce #144 CI
+- Lessons: 0eu (artifact pair), 0ev (post-merge automation twins)
+- Snapshot: `tasks/pr-review-2026-07-29.md`
+
 ## Run — 2026-07-26
 
 ### Scope
