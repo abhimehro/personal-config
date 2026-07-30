@@ -1,0 +1,12 @@
+[0G[2K[0G[2K[0G
+[1m[30m[107m  ISSUES  [0m
+
+[1m[4m.github/workflows/greetings.yml[0m[4m[90m:12:1[0m
+ [1m[90m[49m12:1[22m[39m[49m  [31m[49mhigh[39m[49m  failed to handle a line: list tags: GET                                                  [1m[90m[49mpinact/parse-error[22m[39m[49m
+             https://api.github.com/repos/actions/first-interaction/tags?per_page=100: 401 Bad
+             credentials []
+
+Checked 1 file
+[1m[91m✖ 1 new security issue
+[0m[90mRun [0m[96mtrunk upgrade[0m[90m to upgrade [0m[90m2 linters
+[0m
