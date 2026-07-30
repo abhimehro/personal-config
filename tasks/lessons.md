@@ -1,5 +1,19 @@
 # Lessons Learned
 
+## Lesson 0ew: abhimehro PAT restores gh create/close (2026-07-29)
+
+**Pattern:** Prior sessions with Cursor App token (hosts.yml) could squash-merge
+but got **Resource not accessible by integration** on `gh pr close` / create
+(Lesson 0eq/0es). Tonight's injected `GH_TOKEN` is a classic PAT as
+`abhimehro`: `gh pr create --draft` and `gh pr close` both succeeded for esp
+#1383/#1381. **Rule:** (1) Prefer PAT/`abhimehro` for Phase 2 close + draft PR
+create when available. (2) Keep MCP `post_review_comment_on_pr` as fallback for
+reviews when App-only. (3) `request_reviewers` still 422 when the salvage PR
+author is already `abhimehro` — skip or use a bot account. (4) Do not `unset
+GH_TOKEN` blindly if `gh api user` shows a working PAT (revisit 0eo only when
+the token is expired/invalid). **Detection cost:** Low — one `gh pr close` or
+`gh pr create --draft` probe.
+
 ## Lesson 0eu: upload@v7 + download@v8 is the intended pair (2026-07-29)
 
 **Pattern:** Prior Phase-1 reviews blocked esp #1366 citing Lesson 0er
@@ -9,8 +23,9 @@ latest is **v8.0.1**. GitHub's changelog documents v8 download as the compatible
 consumer of v7 upload (incl. optional `archive: false`). **Rule:** (1) Before
 REQUEST_CHANGES on artifact majors, verify tags via
 `gh api repos/actions/upload-artifact/releases/latest` and
-`gh api repos/actions/download-artifact/releases/latest`. (2) Do not
-SHA pins annotated with `# vX.Y.Z`. **Detection cost:** Low — one API call per
+`gh api repos/actions/download-artifact/releases/latest`. (2) Do not require
+matching majors when upstream versions diverge by design. (3) Prefer SHA pins
+annotated with `# vX.Y.Z`. **Detection cost:** Low — one API call per
 action.
 
 ## Lesson 0ev: Two-dot check automation twins opened after merge (2026-07-29)

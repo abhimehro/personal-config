@@ -1,19 +1,13 @@
-# PR Triage — 2026-07-29
+# PR Triage — 2026-07-29 (Phase 2)
 
 | PR | Disposition | Rationale |
 |----|-------------|-----------|
-| ctrld #1075 | MERGE | Dependabot `actions/stale` 10→11 |
-| ctrld #1074 | MERGE | Jules formatting-only `main.py` |
-| esp #1380 | MERGE | Unused import removal |
-| esp #1366 | MERGE | Checkout/first-interaction/download pins; 0er overturned (Lesson 0eu) |
-| pc #1811 | MERGE | Equivalence-preserving `_SPACE_RE` + SC2148 shebang |
-| pc #1808 | MERGE-AFTER-FIX | Secret isolation tests; merged main for shebang |
-| esp #1381 | CLOSE-SUPERSEDED | Twin after #1366; two-dot regresses #1380 + CHANGELOG |
-| hg #434 | ESCALATE | Python floor ^3.10→^3.12 + mypy blocking; docs/stub gaps |
-| rpce #144 | REQUEST_CHANGES | a11y OK; Build shard 1 failing |
+| esp #1381 | CLOSE-SUPERSEDED + SALVAGE | Twin of #1366; two-dot residual = release-drafter v7.7.0 only → draft [#1383](https://github.com/abhimehro/email-security-pipeline/pull/1383); closed #1381 |
+| esp #1383 | DRAFT (human merge) | Surgical pin bump; S6 security-classified — no auto-merge |
+| hg #434 | ESCALATE | Python `^3.10`→`^3.12` + blocking mypy; product/compat ack required |
+| rpce #144 | REQUEST_CHANGES | a11y OK; shard-1 fail is unrelated `WorkspaceCodemapLocalGitClassificationTests` timing race |
+| pc #1812 | DEFER | Phase 1 session docs draft — leave for human/squash |
 
-## Multi-model review synthesis
+## CONFLICTING salvage targets
 
-- **esp #1366 (opus):** approve — upload@v7/download@v8 intended; prior 0er block incorrect.
-- **hg #434 (opus + gpt-5.5):** disagree on MERGE vs ESCALATE → **ESCALATE** (floor bump).
-- **pc #1811/#1808 (opus):** both safe; merge order #1811→#1808.
+None. Queue empty after prior-day drain.
