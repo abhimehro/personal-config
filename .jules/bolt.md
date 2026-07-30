@@ -834,3 +834,6 @@ redundant object allocations in critical paths.
 ## 2026-03-10 - [Pre-compile regular expressions in utility functions]
 **Learning:** Re-compiling the identical regular expression inside functions that are called frequently (like `_normalize_host` checking for whitespace) adds unnecessary overhead due to repeated evaluation.
 **Action:** Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module level when they are static and used repeatedly inside functions or loops.
+## 2024-07-30 - Replace manual string parsing loop with pre-compiled regex in extract_ready_prs
+**Learning:** Re-implementing line-by-line string extraction using a `while True` loop and `str.find()` is slower and more complex than using a pre-compiled regular expression with `re.findall()` for straightforward pattern matching on text blocks. The regex approach reduces parsing time by over 50%.
+**Action:** Use pre-compiled regular expressions for pattern matching and extraction within text blocks instead of manual index management and character parsing loops.

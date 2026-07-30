@@ -1,10 +1,14 @@
 import json
+import re
 import subprocess
 import sys
 from collections import defaultdict
 
 from gh_token_env import load_gh_token_env
 from pr_reference import PRReference
+
+# ⚡ Bolt Optimization: Pre-compile regex for faster PR reference extraction
+_READY_PR_PATTERN = re.compile(r"^- (abhimehro/.*)$", re.MULTILINE)
 
 
 def run_gh(cmd_list):
@@ -209,21 +213,8 @@ def rewrite_triage_file(lines, ready_prs, duplicates, ready_only):
 
 
 def _extract_ready_prs(content):
-    ready_prs = []
-    idx = 0
-    while True:
-        idx = content.find("- abhimehro/", idx)
-        if idx == -1:
-            break
-        if idx > 0 and content[idx - 1] != chr(10):
-            idx += 1
-            continue
-        end_idx = content.find(chr(10), idx)
-        if end_idx == -1:
-            end_idx = len(content)
-        ready_prs.append(content[idx + 2 : end_idx].strip())
-        idx = end_idx
-    return ready_prs
+    # ⚡ Bolt Optimization: Use pre-compiled regex for extraction, avoiding slow manual string parsing loops
+    return [m.strip() for m in _READY_PR_PATTERN.findall(content)]
 
 
 def _get_pre_ready_text(content):
