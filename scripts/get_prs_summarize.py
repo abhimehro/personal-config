@@ -142,6 +142,30 @@ def esc_cell(s: str, maxlen: int = 48) -> str:
     return s
 
 
+def _format_details(data: dict) -> str:
+    lines: list[str] = []
+    reviews = data.get("reviews") or ()
+    latest = data.get("latestReviews") or ()
+    comments = data.get("comments") or ()
+    rd = data.get("reviewDecision") or ""
+    if rd:
+        lines.append(f"- reviewDecision: `{rd}`")
+    lines.append(f"- review threads: {len(reviews)} raw / {len(latest)} latest")
+    lines.append(f"- issue comments: {len(comments)}")
+    for r in latest[:3]:
+        author = r.get("author")
+        who = (author.get("login") if author else None) or "?"
+        state = r.get("state") or "?"
+        snippet = (r.get("body") or "")[:200].replace("\n", " ")
+        lines.append(f"  - {who} [{state}]: {snippet}")
+    for c in comments[-2:]:
+        author = c.get("author")
+        who = (author.get("login") if author else None) or "?"
+        snippet = (c.get("body") or "")[:200].replace("\n", " ")
+        lines.append(f"  - comment {who}: {snippet}")
+    return "\n".join(lines)
+
+
 def fetch_details(repo: str, num: int) -> str:
     env = load_gh_token_env()
     try:
@@ -167,27 +191,7 @@ def fetch_details(repo: str, num: int) -> str:
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return "_Could not load details_"
     data = json.loads(raw)
-    lines: list[str] = []
-    reviews = data.get("reviews") or ()
-    latest = data.get("latestReviews") or ()
-    comments = data.get("comments") or ()
-    rd = data.get("reviewDecision") or ""
-    if rd:
-        lines.append(f"- reviewDecision: `{rd}`")
-    lines.append(f"- review threads: {len(reviews)} raw / {len(latest)} latest")
-    lines.append(f"- issue comments: {len(comments)}")
-    for r in latest[:3]:
-        author = r.get("author")
-        who = (author.get("login") if author else None) or "?"
-        state = r.get("state") or "?"
-        snippet = (r.get("body") or "")[:200].replace("\n", " ")
-        lines.append(f"  - {who} [{state}]: {snippet}")
-    for c in comments[-2:]:
-        author = c.get("author")
-        who = (author.get("login") if author else None) or "?"
-        snippet = (c.get("body") or "")[:200].replace("\n", " ")
-        lines.append(f"  - comment {who}: {snippet}")
-    return "\n".join(lines)
+    return _format_details(data)
 
 
 def _fetch_task_wrapper(args: tuple[str, dict]) -> tuple[int, str] | None:
