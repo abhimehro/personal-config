@@ -1,13 +1,31 @@
-# PR Triage — 2026-07-29 (Phase 2)
+# PR Triage — 2026-07-30
 
-| PR | Disposition | Rationale |
-|----|-------------|-----------|
-| esp #1381 | CLOSE-SUPERSEDED + SALVAGE | Twin of #1366; two-dot residual = release-drafter v7.7.0 only → draft [#1383](https://github.com/abhimehro/email-security-pipeline/pull/1383); closed #1381 |
-| esp #1383 | DRAFT (human merge) | Surgical pin bump; S6 security-classified — no auto-merge |
-| hg #434 | ESCALATE | Python `^3.10`→`^3.12` + blocking mypy; product/compat ack required |
-| rpce #144 | REQUEST_CHANGES | a11y OK; shard-1 fail is unrelated `WorkspaceCodemapLocalGitClassificationTests` timing race |
-| pc #1812 | DEFER | Phase 1 session docs draft — leave for human/squash |
+## Duplicate / overlap groups
 
-## CONFLICTING salvage targets
+| Group | PRs | Keep | Close |
+|-------|-----|------|-------|
+| greetings first-interaction pin | pc #1828, #1827, #1819, #1821, #1820 | #1828 (also ai-inference pin; WI green) | #1827 (mislabeled Sentinel + journal dup) |
+| rpce Set containment | #153, #151 | #153 (CI PASS) | #151 (identical, CI FAIL) |
+| dummy_todos auth | series #315, #320, #330, #331 | #315 (clean auth fix) for human | #320 junk `commit_wrapper.py`; #330 import-only OK to merge first; #331 depends on max_read |
+| GraphQL PR batching | pc #1820, #1821 | neither yet | #1820 has trunk binary artifacts |
 
-None. Queue empty after prior-day drain.
+## Stale (>30d)
+
+None (all age 0–1d).
+
+## Security / escalate
+
+1. **pc #1822** — CORS fail-closed on archived alldebrid-server (trust boundary)
+2. **pc #1827** — mislabeled; close as superseded by #1828
+3. **Seatek #552** — `run_shell_command` rejects str (injection harden)
+4. **series #315** — repair broken `authenticate` (auth)
+5. **series #320** — auth + junk file → REQUEST_CHANGES
+
+## Merge order (Phase 1)
+
+1. pc #1828 (unblocks WI on main for sibling PRs)
+2. series unused-import / tests: #324, #314, #317, #316, #312, #329, #330
+3. Seatek tests/cleanup: #556, #559, #550, #553, #554, #563
+4. rpce #153
+5. Re-check WI-failing pc PRs after #1828 lands
+6. pc #1819 if unique defaultdict delta remains
