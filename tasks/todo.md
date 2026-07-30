@@ -1,13 +1,26 @@
-# Phase 2 Salvage — 2026-07-29
+# Phase 2 Salvage — 2026-07-30 (cron 17:00 UTC)
 
-- [x] Preflight (`gh auth`, 7/7 repos, `make cursor-cloud-hooks`)
-- [x] Re-fetch Phase 1 remainder + live CONFLICTING inventory (empty)
-- [x] Confirm prior-day salvage drafts merged (#1804/#1803/#1072)
-- [x] Deep-dive esp #1381 → surgical release-drafter salvage #1383
-- [x] Close #1381 as superseded
-- [x] Escalate hg #434 (python ^3.12 floor) via MCP review
-- [x] REQUEST_CHANGES rpce #144 (unrelated flaky XCTest) via MCP
-- [x] Write pr-inventory / pr-triage / pr-review Phase2 / salvage-session-reports / lessons 0ew
-- [x] Notion + automation memory update
-- [x] Commit/push session docs on `cursor-agent/automated-pr-salvage-workflow-1a80`
-- [x] Open session docs PR
+## Preflight
+- [x] `gh auth` as abhimehro PAT (Lesson 0ew)
+- [x] Preflight PASS 7/7 + `make cursor-cloud-hooks`
+- [x] Re-fetch live PR state vs Phase 1 remainder
+
+## Phase 1 remainder actions
+- [x] CLOSE-SUPERSEDED pc #1827
+- [x] CLOSE-SUPERSEDED rpce #151
+- [x] ESCALATE pc #1822, seatek #552, series #315
+- [x] Salvage pc #1820 → #1836; close #1820/#1821
+- [x] CLOSE #1819 prefer #1831
+- [x] REQUEST_CHANGES rpce #144
+
+## Additional CONFLICTING
+- [x] Seatek tests salvage → #565; close #551/#553/#557/#558; defer #554/#563
+- [x] series #313 → #332; #329 → #333; close #320; defer #327
+- [x] rpce #146/#149/#150 → #157
+
+## Deliverables
+- [x] `pr-inventory.md`, `pr-triage.md`, `pr-review-2026-07-30.md`
+- [x] Append `salvage-session-reports.md` + Lesson **0ey**
+- [ ] Commit/push docs branch + open_git_pr
+- [ ] Notion + Memory update
+- [x] Autonomous merges: **0**
