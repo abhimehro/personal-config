@@ -9,5 +9,5 @@
 - [x] Post reviews (REQUEST_CHANGES / ESCALATE) via MCP
 - [x] Close-recommend supersedes (App token blocked close — Lesson 0es)
 - [x] Write pr-review-2026-07-30.md + append session reports + lessons
-- [ ] Commit/push docs on cursor-agent/automated-pr-workflow-62e2
-- [ ] Open/update docs PR
+- [x] Commit/push docs on cursor-agent/automated-pr-workflow-62e2
+- [x] Open/update docs PR
