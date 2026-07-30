@@ -22,9 +22,9 @@ the token is expired/invalid). **Detection cost:** Low — one `gh pr close` or
 latest is **v8.0.1**. GitHub's changelog documents v8 download as the compatible
 consumer of v7 upload (incl. optional `archive: false`). **Rule:** (1) Before
 REQUEST_CHANGES on artifact majors, verify tags via
-`gh api repos/actions/upload-artifact/releases/latest` and
-`gh api repos/actions/download-artifact/releases/latest`. (2) Do not require
-matching majors when upstream versions diverge by design. (3) Prefer SHA pins
+`gh api repos/actions/{upload,download}-artifact/releases/latest`. (2) Do not
+require matching majors when upstream versions diverge by design. (3) Prefer
+SHA pins
 annotated with `# vX.Y.Z`. **Detection cost:** Low — one API call per
 action.
 
