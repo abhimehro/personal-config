@@ -468,3 +468,6 @@ on the `<dl>` itself if complex alignment is needed.
 
 **Learning:** When using `aria-labelledby` on a composite UI element (such as a metric card) that contains both a textual label and a dynamically generated value, the attribute must reference the IDs of both the label and the value (e.g., `aria-labelledby="label-id value-id"`). Referencing only the label causes screen readers to skip announcing the actual value, breaking accessibility.
 **Action:** Always verify that `aria-labelledby` attributes point to all relevant text and value IDs within composite components so that screen readers announce the full context.
+## 2026-07-31 - Skip-to-content links for Python generated HTML
+**Learning:** Python scripts that generate static HTML for directory listings omit essential keyboard accessibility features like skip-to-content links, making navigation tedious for keyboard and screen reader users.
+**Action:** Always include a visually hidden, focusable skip link (`<a href="#main-content" class="skip-link">Skip to main content</a>`) at the top of the `<body>` and ensure the main content is wrapped in `<main id="main-content">`.
