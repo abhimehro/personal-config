@@ -23,6 +23,7 @@ INSTALLATION:
 import json
 import os
 import sys
+from collections import defaultdict
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -478,12 +479,12 @@ def _wait_for_fresh_scan(workspace: str, state: Dict[str, Any]) -> str:
 def _group_vulns_by_file(
     all_vulns: List[Dict[str, Any]],
 ) -> Dict[str, List[Dict[str, Any]]]:
-    results_by_file: Dict[str, List[Dict[str, Any]]] = {}
+    results_by_file: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     for vuln in all_vulns:
         file_path = vuln.get("file_path", "")
         if file_path:
-            results_by_file.setdefault(file_path, []).append(vuln)
-    return results_by_file
+            results_by_file[file_path].append(vuln)
+    return dict(results_by_file)
 
 
 def _sort_vulns_by_severity(vulns: List[Dict[str, Any]]) -> None:
