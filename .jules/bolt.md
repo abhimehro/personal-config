@@ -834,3 +834,6 @@ redundant object allocations in critical paths.
 ## 2026-03-10 - [Pre-compile regular expressions in utility functions]
 **Learning:** Re-compiling the identical regular expression inside functions that are called frequently (like `_normalize_host` checking for whitespace) adds unnecessary overhead due to repeated evaluation.
 **Action:** Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module level when they are static and used repeatedly inside functions or loops.
+## 2026-07-29 - Optimize I/O overhead on .env files
+**Learning:** Iterating over a file handler line-by-line using `for line in handle:` creates minor synchronous I/O overhead per iteration. For files known to be small, bulk reading and processing strings in memory (`handle.read().splitlines()`) yields a measurable performance boost.
+**Action:** Use `.read().splitlines()` instead of line iteration when parsing simple text files that easily fit in memory, such as configuration or `.env` files.
