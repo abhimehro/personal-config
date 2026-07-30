@@ -811,3 +811,7 @@ that could be refactored to variables, you must explicitly separate options from
 arguments using the `--` delimiter to prevent them from being parsed as flags.
 **Prevention:** Always use the `--` argument delimiter before positional
 arguments when using `pgrep` or `pkill`.
+## 2026-07-30 - Fix Hardcoded Password in Test
+**Vulnerability:** A benchmark script contained a hardcoded, base64-encoded password ('admin:admin').
+**Learning:** Hardcoding credentials, even obfuscated ones in test files, can trigger security scanners, build bad habits, and risk accidental deployment or credential reuse.
+**Prevention:** Always use environment variables for authentication logic in tests, providing safe fallback defaults (e.g., 'testuser') so benchmarks remain functional locally without exposing sensitive strings.

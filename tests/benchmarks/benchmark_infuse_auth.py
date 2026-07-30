@@ -66,9 +66,9 @@ class ServerRunner:
             "infuse-media-server.py",
             str(self.port),
             "--user",
-            base64.b64decode(b"YWRtaW4=").decode("utf-8"),
+            os.environ.get("BENCHMARK_USER", "testuser"),
             "--password",
-            base64.b64decode(b"YWRtaW4=").decode("utf-8"),
+            os.environ.get("BENCHMARK_PASSWORD", "testpass"),
         ]
 
         self.server_thread = threading.Thread(target=self.infuse_media_server.main)
@@ -86,9 +86,12 @@ class ServerRunner:
 
 
 def run_valid_auth_benchmark(num_requests=50, concurrency=50, port=8081):
+    user = os.environ.get("BENCHMARK_USER", "testuser")
+    password = os.environ.get("BENCHMARK_PASSWORD", "testpass")
+    credentials = f"{user}:{password}"
     _run_benchmark(
         config={"num_requests": num_requests, "concurrency": concurrency, "port": port},
-        auth_header=f"Basic {base64.b64encode(base64.b64decode(b'YWRtaW46YWRtaW4=')).decode('utf-8')}",
+        auth_header=f"Basic {base64.b64encode(credentials.encode('utf-8')).decode('utf-8')}",
         scenario_name="Valid Auth",
     )
 
@@ -96,7 +99,7 @@ def run_valid_auth_benchmark(num_requests=50, concurrency=50, port=8081):
 def run_invalid_auth_benchmark(num_requests=50, concurrency=50, port=8081):
     _run_benchmark(
         config={"num_requests": num_requests, "concurrency": concurrency, "port": port},
-        auth_header=f"Basic {base64.b64encode(base64.b64decode(b'YmFkOnBhc3N3b3Jk')).decode('utf-8')}",
+        auth_header=f"Basic {base64.b64encode(b'bad:password').decode('utf-8')}",
         scenario_name="Invalid Auth",
     )
 
