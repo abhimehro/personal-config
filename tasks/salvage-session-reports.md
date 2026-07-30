@@ -6,6 +6,43 @@
 
 ## Entry template
 
+## Run — 2026-07-29
+
+### Input tail
+
+- Source: `tasks/pr-review-2026-07-29.md` Phase 1 remainder + live re-fetch
+- Preflight PASS 7/7; `make cursor-cloud-hooks`; PAT as `abhimehro` (0ew)
+- Live CONFLICTING: **none**
+- Prior-day salvages verified MERGED: pc #1804/#1803, cs #1072
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|-------:|-------------|--------|-------|
+| email-security-pipeline | 1381 | SALVAGE + CLOSE | [#1383](https://github.com/abhimehro/email-security-pipeline/pull/1383) draft | release-drafter v7.7.0 only |
+| Hydrograph… | 434 | ESCALATE | — | python ^3.12 floor; MCP comment |
+| repoprompt-ce | 144 | REQUEST_CHANGES | — | unrelated XCTest flake on shard 1 |
+
+- Salvage drafts opened: **1**
+- Infra-fix drafts: **0**
+- Closed via API: **1** (#1381) — PAT close works (0ew)
+- Autonomous merges: **0** (S1)
+- New lesson: **0ew** (abhimehro PAT restores create/close)
+- `request_reviewers`: 422 when salvage author is `abhimehro` (expected)
+
+### Verification
+
+- Two-dot residual check on #1381 vs `main` → only release-drafter bump
+- Local patch of `.github/workflows/release-drafter.yml` from `origin/main`
+- rpce failure log: `WorkspaceCodemapLocalGitClassificationTests` busy/cancel
+
+### Handoff
+
+1. Merge draft [#1383](https://github.com/abhimehro/email-security-pipeline/pull/1383)
+2. Human decide hg [#434](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/434)
+3. Re-run/fix rpce [#144](https://github.com/abhimehro/repoprompt-ce/pull/144) shard-1
+4. Squash Phase 1 docs [#1812](https://github.com/abhimehro/personal-config/pull/1812)
+
 ## Run — 2026-07-28
 
 ### Input tail
