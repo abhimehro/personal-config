@@ -429,6 +429,8 @@ generate_dashboard() {
         .status-good { color: #1E7E34; } /* WCAG AA accessible */
         .status-warning { color: #B45309; } /* WCAG AA accessible */
         .status-critical { color: #DC2626; } /* WCAG AA accessible */
+        dl.activity-list { margin: 0; padding: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 15px; }
+        .activity-term { font-weight: bold; color: #333; }
         .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 0.9em; }
     </style>
 </head>
@@ -487,12 +489,12 @@ EOF
             <h2 id="activity-heading"><span aria-hidden="true">🔄</span> Recent Activity</h2>
             <div class="insights-box">
                 <p id="activity-desc">Latest maintenance tasks and system activities:</p>
-                <ul aria-labelledby="activity-desc">
-                    <li>Daily health check - $(date "+%H:%M")</li>
-                    <li>System cleanup - Completed successfully</li>
-                    <li>Homebrew maintenance - Up to date</li>
-                    <li>Metrics collection - Active</li>
-                </ul>
+                <dl class="activity-list" aria-labelledby="activity-desc">
+                    <dt class="activity-term">Daily health check</dt><dd>$(date "+%H:%M")</dd>
+                    <dt class="activity-term">System cleanup</dt><dd>Completed successfully</dd>
+                    <dt class="activity-term">Homebrew maintenance</dt><dd>Up to date</dd>
+                    <dt class="activity-term">Metrics collection</dt><dd>Active</dd>
+                </dl>
             </div>
         </section>
         </main>
