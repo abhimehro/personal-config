@@ -468,3 +468,6 @@ on the `<dl>` itself if complex alignment is needed.
 
 **Learning:** When using `aria-labelledby` on a composite UI element (such as a metric card) that contains both a textual label and a dynamically generated value, the attribute must reference the IDs of both the label and the value (e.g., `aria-labelledby="label-id value-id"`). Referencing only the label causes screen readers to skip announcing the actual value, breaking accessibility.
 **Action:** Always verify that `aria-labelledby` attributes point to all relevant text and value IDs within composite components so that screen readers announce the full context.
+## $(date +%Y-%m-%d) - Main Landmark and Skip Links in Media Server
+**Learning:** Python scripts generating static HTML for media streaming tools missed fundamental screen reader landmarks (like `<main>`) and keyboard bypass features (like skip-to-content).
+**Action:** When dynamically generating standalone HTML views, always include a hidden skip link targeting the primary content container.
