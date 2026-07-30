@@ -10,4 +10,4 @@
 - [x] Write pr-inventory / pr-triage / pr-review Phase2 / salvage-session-reports / lessons 0ew
 - [x] Notion + automation memory update
 - [x] Commit/push session docs on `cursor-agent/automated-pr-salvage-workflow-1a80`
-- [ ] Open session docs PR
+- [x] Open session docs PR
