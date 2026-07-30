@@ -1,8 +1,8 @@
 # GitHub Actions Workflows
 
-Canonical catalog for `.github/workflows/` (ABHI-1321 / #1469). **17 active YAML
-workflows** after consolidation (2026-07-16). Prefer this table over hunting
-through the directory.
+Canonical catalog for `.github/workflows/` (ABHI-1321 / #1469). **18 active YAML
+workflows** after consolidation (includes `greetings.yml`). Prefer this table
+over hunting through the directory.
 
 > **Consolidation history:** Scheduled agentic jobs live in
 > `repository-automation-daily.yml` and `repository-automation-weekly.yml`.
@@ -33,6 +33,7 @@ through the directory.
 | `pr-visual-recap.yml` | PR `opened` / `ready_for_review` / `reopened` / `closed` / label `visual-recap` (**not** every push) | Visual/recap sticky comment. Default agent: **OpenCode + Mistral**. Manual refresh: add label `visual-recap` or re-run from Actions. See `docs/pr-visual-recap-agent-backends.md`. |
 | `stale.yml`           | `workflow_dispatch` only                                                                             | Mark stale issues/PRs (manual; schedule removed)                                                                                                                                   |
 | `main.yml`            | `workflow_dispatch`                                                                                  | Clean stale remote branches (manual)                                                                                                                                               |
+| `greetings.yml`       | First-time contributor PR/issue                                                                      | Welcome message for first interaction                                                                                                                                              |
 
 ### Agent / automation
 
@@ -60,7 +61,7 @@ through the directory.
 
 ```bash
 # List workflows
-ls .github/workflows/*.yml | wc -l   # expect 17
+ls .github/workflows/*.yml | wc -l   # expect 18
 
 # Actionlint if installed
 actionlint .github/workflows/*.yml
