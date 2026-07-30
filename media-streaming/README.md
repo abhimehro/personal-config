@@ -1,6 +1,6 @@
 # 🎬 Ultimate Autonomous Media Streaming Pipeline
 
-> **Status**: ✅ **HYBRID PIPELINE** - Updated July 2026 **Architecture**:
+> **Status**: ✅ **HYBRID PIPELINE** - Updated 2026-07-30 **Architecture**:
 > Hybrid WebDAV + Native macOS FSKit Mount + **Jellyfin (native, Phase 1
 > LIVE)**\
 > **Performance**: 10GB Bounded VFS Cache (Zero-Memory Bloat)
@@ -57,9 +57,19 @@ playback once Jellyfin is verified.
    - **Script**: `mount-media.sh`
    - **Agent**: `com.speedybee.media.mount` (KeepAlive Daemon)
    - **Action**: Mounts the remote using `rclone mount` directly to
-     `~/CloudMedia/mounted/` via macOS's native kernel-free FSKit API. This
-     completely bypasses the legacy NFS loopback protocol, avoiding hangs and
-     local loopback server dependencies. Plex scans this local path directly.
+     `~/CloudMedia/mounted/` via macOS's native kernel-free FSKit API (fuse-t
+     backend). This completely bypasses the legacy NFS loopback protocol,
+     avoiding hangs and local loopback server dependencies. Jellyfin (and
+     legacy Plex) scan this local path directly.
+   - **Boot race safeguard**: Before mounting, `wait_for_fskit` polls for the
+     fuse-t process (`/Applications/fuse-t.app/Contents/MacOS/fuse-t`) for up
+     to 60s. launchd often starts this agent before FSKit is ready; without the
+     gate you get a transient "fuse-t cannot start" error that KeepAlive later
+     recovers from. The gate removes that noisy first failure.
+   - **Note on System Settings**: The per-app File System Extensions toggle for
+     fuse-t can appear OFF on macOS betas even when the group-level toggle is
+     ON and the FSKit extension is active. Trust `mount | grep mounted` and a
+     live fuse-t process over the cosmetic app toggle.
 
 ## 📁 **Library Structure**
 
@@ -83,13 +93,33 @@ playback once Jellyfin is verified.
 
 Use these shortcuts in your terminal (Fish shell required):
 
-| Shortcut          | Description                                                       |
-| :---------------- | :---------------------------------------------------------------- |
-| `media-status`    | Check if all 3 media agents are running (server, mount, renamer)  |
-| `media-logs`      | Stream logs for server and mount                                  |
-| `media-restart`   | Full restart of the media infrastructure (server, mount, renamer) |
-| `list-uploads`    | Show files pending approval                                       |
-| `approve-uploads` | Process and upload pending files                                  |
+| Shortcut          | Description                                                                 |
+| :---------------- | :-------------------------------------------------------------------------- |
+| `media-status`    | Check core media agents (server, mount, renamer) + optional Jellyfin        |
+| `media-logs`      | Stream logs for server and mount                                            |
+| `media-restart`   | Full restart of the media infrastructure (server, mount, renamer)           |
+| `gaming-mode`     | Toggle / suspend / restore the full media stack for GeForce NOW sessions    |
+| `gaming-mode on`  | Unload media LaunchAgents (`bootout`) so KeepAlive cannot respawn them      |
+| `gaming-mode off` | Reload agents via `bootstrap` + `kickstart` (reverse start order)           |
+| `gaming-mode status` | Per-agent loaded / running / suspended state                             |
+| `gaming-mode net …`  | Pass-through to `nm-gaming` (ControlD / network gaming profile)          |
+| `list-uploads`    | Show files pending approval                                                 |
+| `approve-uploads` | Process and upload pending files                                            |
+
+**Gaming mode details**
+
+- Script: `media-streaming/scripts/gaming-mode.sh`
+- Fish wrapper: `configs/.config/fish/functions/gaming-mode.fish`
+- Agents unloaded when ON: `com.speedybee.jellyfin`, `com.speedybee.media.renamer`,
+  `com.speedybee.media.server`, `com.speedybee.media.mount`,
+  `com.speedybee.media.mount-watchdog`
+- Why `bootout` / `bootstrap` (not stop/start): these plists use `KeepAlive`, so
+  a plain stop or kill immediately respawns the job. `bootout` removes the job
+  from the domain; restore re-registers the plist then force-starts it.
+- After `gaming-mode off`, give the mount ~10s for the FSKit gate, then run
+  `media-status`.
+- Network profile is **not** auto-flipped; run `nm-gaming` (or
+  `gaming-mode net …`) when you also want ControlD on the gaming profile.
 
 **Note**: Pre-approval gate active. Use `approve-download --list` to see pending
 candidates, `approve-download --status` for counts, or
@@ -174,6 +204,15 @@ deletion occurs.
 - **WebDAV Server**: `tail -f ~/Library/Logs/media-server.log`
 - **Mount Status**: `tail -f ~/Library/Logs/media-mount.log`
 - **Sync History**: `tail -f ~/Library/Logs/alldebrid-sync.log`
+- **fuse-t / FSKit at login**: If you still see a one-shot "fuse-t cannot start"
+  before the mount comes up, confirm fuse-t is installed at
+  `/Applications/fuse-t.app`, that File System Extensions are allowed at the
+  *group* level in System Settings, and that `mount-media.sh` still contains
+  `wait_for_fskit`. Increase the 60s bound only if cold boot is slower than that
+  on this machine. KeepAlive will still retry if the gate times out.
+- **Gaming mode stuck down**: `gaming-mode status` then `gaming-mode off`. If an
+  individual plist is missing under `~/Library/LaunchAgents/`, run
+  `sync-launchagents` first.
 
 ## 🔐 **Security Note**
 
