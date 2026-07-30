@@ -811,7 +811,11 @@ that could be refactored to variables, you must explicitly separate options from
 arguments using the `--` delimiter to prevent them from being parsed as flags.
 **Prevention:** Always use the `--` argument delimiter before positional
 arguments when using `pgrep` or `pkill`.
-## 2026-07-30 - Fix Hardcoded Password in Test
-**Vulnerability:** A benchmark script contained a hardcoded, base64-encoded password ('admin:admin').
-**Learning:** Hardcoding credentials, even obfuscated ones in test files, can trigger security scanners, build bad habits, and risk accidental deployment or credential reuse.
-**Prevention:** Always use environment variables for authentication logic in tests, providing safe fallback defaults (e.g., 'testuser') so benchmarks remain functional locally without exposing sensitive strings.
+## 2026-07-30 - Fix Action Pin Violation
+**Vulnerability:** The `actions/first-interaction` action was not pinned to a specific commit SHA in the `greetings.yml` workflow.
+**Learning:** Using mutable tags (like `@v3`) for GitHub Actions allows maintainers or attackers who compromise the action's repository to execute arbitrary code in our CI environment by pushing a malicious commit and moving the tag.
+**Prevention:** Always pin GitHub Actions to full 40-character commit SHAs and include a trailing version comment (e.g., `# v3`) for verifiability.
+## 2026-07-30 - Fix Action Pin Violation
+**Vulnerability:** The `actions/first-interaction` action was not pinned to a specific commit SHA in the `greetings.yml` workflow.
+**Learning:** Using mutable tags (like `@v3`) for GitHub Actions allows maintainers or attackers who compromise the action's repository to execute arbitrary code in our CI environment by pushing a malicious commit and moving the tag.
+**Prevention:** Always pin GitHub Actions to full 40-character commit SHAs and include a trailing version comment (e.g., `# v3`) for verifiability.
