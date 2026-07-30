@@ -81,35 +81,35 @@ class TestContainsAllKeywords(unittest.TestCase):
     def test_contains_all_present(self):
         title = "bolt optimization: fix dataframe iteration performance"
         kws = ("bolt", "iteration", "performance")
-        prs = [{"repo": "r1", "title_lower": title}]
+        prs = [{"repo": "r1", "title_lower": title, "title": title}]
         matches = scratch_triage._find_matching_prs(prs, "r1", kws)
         self.assertEqual(len(matches), 1)
 
     def test_missing_one_keyword(self):
         title = "bolt optimization: fix dataframe performance"
         kws = ("bolt", "iteration", "performance")
-        prs = [{"repo": "r1", "title_lower": title}]
+        prs = [{"repo": "r1", "title_lower": title, "title": title}]
         matches = scratch_triage._find_matching_prs(prs, "r1", kws)
         self.assertEqual(len(matches), 0)
 
     def test_empty_keywords_list(self):
         title = "bolt optimization: fix dataframe iteration performance"
         kws = ()
-        prs = [{"repo": "r1", "title_lower": title}]
+        prs = [{"repo": "r1", "title_lower": title, "title": title}]
         matches = scratch_triage._find_matching_prs(prs, "r1", kws)
         self.assertEqual(len(matches), 1)
 
     def test_empty_title(self):
         title = ""
         kws = ("bolt", "iteration")
-        prs = [{"repo": "r1", "title_lower": title}]
+        prs = [{"repo": "r1", "title_lower": title, "title": title}]
         matches = scratch_triage._find_matching_prs(prs, "r1", kws)
         self.assertEqual(len(matches), 0)
 
     def test_partial_match(self):
         title = "bolt optimization: iterate data"
         kws = ("iteration",)
-        prs = [{"repo": "r1", "title_lower": title}]
+        prs = [{"repo": "r1", "title_lower": title, "title": title}]
         matches = scratch_triage._find_matching_prs(prs, "r1", kws)
         self.assertEqual(len(matches), 0)
 

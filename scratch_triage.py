@@ -26,20 +26,20 @@ def run_cmd(cmd):
 
 def _find_matching_prs(all_prs, repo, title_keywords):
     lower_kws = tuple(kw.lower() for kw in title_keywords)
-    matches = []
-    for p in all_prs:
-        if p["repo"] != repo:
-            continue
 
-        title_lower = p.get("title_lower")
-        if title_lower is None:
-            p["title_lower"] = title_lower = p["title"].lower()
+    # ⚡ Bolt Optimization: Successive list comprehensions are evaluated in C
+    # and immediately reduce the working set size, bypassing Python function
+    # overhead without increasing cyclomatic complexity.
+    matches = [p for p in all_prs if p["repo"] == repo]
 
-        for kw in lower_kws:
-            if kw not in title_lower:
-                break
-        else:
-            matches.append(p)
+    for kw in lower_kws:
+        if not matches:
+            break
+        matches = [
+            p for p in matches
+            if kw in (p.get("title_lower") or p.setdefault("title_lower", p["title"].lower()))
+        ]
+
     return matches
 
 
