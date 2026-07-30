@@ -5,6 +5,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 from gh_token_env import load_gh_token_env
 
+_GH_ENV = load_gh_token_env()
+
 repos = [
     "abhimehro/personal-config",
     "abhimehro/ctrld-sync",
@@ -16,9 +18,8 @@ repos = [
 
 
 def run_cmd(cmd):
-    env = load_gh_token_env()
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=120)
+        res = subprocess.run(cmd, capture_output=True, text=True, env=_GH_ENV, timeout=120)
         return res.returncode == 0, res.stdout, res.stderr
     except subprocess.TimeoutExpired:
         return False, "", "Timeout expired"
