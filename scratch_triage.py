@@ -135,22 +135,21 @@ def _build_graphql_query(batch):
         """)
     return "query {" + "".join(query_parts) + "}"
 
+def _parse_single_pr(pr, repo):
+    if pr.get("author"):
+        pr["author"] = {"login": pr["author"]["login"]}
+    pr["repo"] = repo.rpartition("/")[2]
+    pr["full_repo"] = repo
+    pr["title_lower"] = pr["title"].lower()
+    return pr
+
 def _parse_graphql_response(stdout, batch):
     parsed_prs = []
-    data = json.loads(stdout)
-    gh_data = data.get("data", {})
+    gh_data = json.loads(stdout).get("data", {})
     for j, repo in enumerate(batch):
-        repo_data = gh_data.get(f"repo_{j}")
-        if not repo_data:
-            continue
+        repo_data = gh_data.get(f"repo_{j}") or {}
         nodes = repo_data.get("pullRequests", {}).get("nodes", [])
-        for pr in nodes:
-            if pr.get("author"):
-                pr["author"] = {"login": pr["author"]["login"]}
-            pr["repo"] = repo.rpartition("/")[2]
-            pr["full_repo"] = repo
-            pr["title_lower"] = pr["title"].lower()
-            parsed_prs.append(pr)
+        parsed_prs.extend(_parse_single_pr(pr, repo) for pr in nodes)
     return parsed_prs
 
 def _fetch_all_prs_graphql(repo_list):
