@@ -834,3 +834,6 @@ redundant object allocations in critical paths.
 ## 2026-03-10 - [Pre-compile regular expressions in utility functions]
 **Learning:** Re-compiling the identical regular expression inside functions that are called frequently (like `_normalize_host` checking for whitespace) adds unnecessary overhead due to repeated evaluation.
 **Action:** Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module level when they are static and used repeatedly inside functions or loops.
+## 2026-07-30 - Limit string splitting allocations
+**Learning:** Using `.split("|")` on strings without a limit allocates lists of all tokens. When you only need the first `n` elements (and you check `len(parts) <= n-1`), an unbounded split allocates unnecessary objects if the string contains many more delimiters. This becomes a bottleneck in parsing tight loops.
+**Action:** When you only need up to `n` splits, always use `.split("|", n)` to bound the list allocation and avoid unnecessary parsing of the rest of the string.
