@@ -49,31 +49,31 @@ def _fetch_pr_diff_only(item, info):
     return ref.repo, str(ref.number), title, info, diff
 
 
+def _build_graphql_query(queue_items):
+    parts = []
+    for i, item in enumerate(queue_items):
+        owner, name = item[0].split("/")
+        parts.append(
+            f'pr{i}: repository(owner: "{owner}", name: "{name}") {{ pullRequest(number: {item[1]}) {{ mergeStateStatus }} }}'
+        )
+    return "query { " + " ".join(parts) + " }"
+
+
+def _parse_graphql_response(res, queue_items):
+    data = res.get("data", {}) if isinstance(res, dict) else {}
+    info_map = {}
+    for i, item in enumerate(queue_items):
+        pr_node = data.get(f"pr{i}", {}) or {}
+        info_map[item] = pr_node.get("pullRequest")
+    return info_map
+
+
 def _fetch_all_pr_info_graphql(queue_items):
     if not queue_items:
         return {}
-    query_parts = []
-    for i, item in enumerate(queue_items):
-        repo, pr, _ = item
-        owner, name = repo.split("/")
-        query_parts.append(
-            f'pr{i}: repository(owner: "{owner}", name: "{name}") {{ pullRequest(number: {pr}) {{ mergeStateStatus }} }}'
-        )
-    query = "query { " + " ".join(query_parts) + " }"
+    query = _build_graphql_query(queue_items)
     res = run_gh(["gh", "api", "graphql", "-f", f"query={query}"])
-
-    info_map = {}
-    if res and isinstance(res, dict) and "data" in res:
-        for i, item in enumerate(queue_items):
-            pr_data = res["data"].get(f"pr{i}")
-            if pr_data and pr_data.get("pullRequest"):
-                info_map[item] = pr_data["pullRequest"]
-            else:
-                info_map[item] = None
-    else:
-        for item in queue_items:
-            info_map[item] = None
-    return info_map
+    return _parse_graphql_response(res, queue_items)
 
 
 def _fetch_all_pr_data_parallel(queue_items):
