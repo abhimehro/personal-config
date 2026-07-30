@@ -40,30 +40,49 @@ def get_diff(repo, pr):
     return res if isinstance(res, str) else ""
 
 
-def _fetch_pr_data(item):
+def _fetch_pr_diff_only(item, info):
     repo, pr, title = item
     ref = PRReference.from_parts(repo, pr)
-    info = run_gh(
-        [
-            "gh",
-            "pr",
-            "view",
-            str(ref.number),
-            "-R",
-            ref.repo,
-            "--json",
-            "mergeStateStatus",
-        ]
-    )
     diff = ""
     if info and info.get("mergeStateStatus") not in ["DIRTY", "CONFLICTING"]:
         diff = get_diff(ref.repo, str(ref.number))
     return ref.repo, str(ref.number), title, info, diff
 
 
+def _fetch_all_pr_info_graphql(queue_items):
+    if not queue_items:
+        return {}
+    query_parts = []
+    for i, item in enumerate(queue_items):
+        repo, pr, _ = item
+        owner, name = repo.split("/")
+        query_parts.append(
+            f'pr{i}: repository(owner: "{owner}", name: "{name}") {{ pullRequest(number: {pr}) {{ mergeStateStatus }} }}'
+        )
+    query = "query { " + " ".join(query_parts) + " }"
+    res = run_gh(["gh", "api", "graphql", "-f", f"query={query}"])
+
+    info_map = {}
+    if res and isinstance(res, dict) and "data" in res:
+        for i, item in enumerate(queue_items):
+            pr_data = res["data"].get(f"pr{i}")
+            if pr_data and pr_data.get("pullRequest"):
+                info_map[item] = pr_data["pullRequest"]
+            else:
+                info_map[item] = None
+    else:
+        for item in queue_items:
+            info_map[item] = None
+    return info_map
+
+
 def _fetch_all_pr_data_parallel(queue_items):
+    info_map = _fetch_all_pr_info_graphql(queue_items)
     with ThreadPoolExecutor(max_workers=min(len(queue_items) or 1, 32)) as executor:
-        return list(executor.map(_fetch_pr_data, queue_items))
+        futures = []
+        for item in queue_items:
+            futures.append(executor.submit(_fetch_pr_diff_only, item, info_map.get(item)))
+        return [f.result() for f in futures]
 
 
 queue = [
