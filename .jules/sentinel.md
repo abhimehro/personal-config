@@ -811,3 +811,8 @@ that could be refactored to variables, you must explicitly separate options from
 arguments using the `--` delimiter to prevent them from being parsed as flags.
 **Prevention:** Always use the `--` argument delimiter before positional
 arguments when using `pgrep` or `pkill`.
+
+## 2026-07-30 - Missing Timeouts and Auth Loader in Subprocess check_output
+**Vulnerability:** `get_prs_summarize.py` invoked `gh` via `subprocess.check_output` without a timeout or the standardized `gh_token_env` loader, risking indefinite hangs on network requests (DoS) and potential inconsistent execution environments.
+**Learning:** Even in read-only data formatting scripts, all network-bound subprocess calls should have strict timeouts and utilize consistent authentication loading mechanisms to avoid stalling or failing silently.
+**Prevention:** Always use `subprocess.run` with a `timeout` argument and explicitly pass `env=load_gh_token_env()` when calling external APIs, rather than relying on `subprocess.check_output` with inherited environments.

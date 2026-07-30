@@ -11,6 +11,9 @@ import os
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from gh_token_env import load_gh_token_env
+
 FAIL_CONCLUSIONS = frozenset(
     {
         "FAILURE",
@@ -140,8 +143,9 @@ def esc_cell(s: str, maxlen: int = 48) -> str:
 
 
 def fetch_details(repo: str, num: int) -> str:
+    env = load_gh_token_env()
     try:
-        raw = subprocess.check_output(
+        result = subprocess.run(
             [
                 "gh",
                 "pr",
@@ -153,9 +157,14 @@ def fetch_details(repo: str, num: int) -> str:
                 "reviews,comments,latestReviews,reviewDecision",
             ],
             text=True,
-            stderr=subprocess.DEVNULL,
+            capture_output=True,
+            timeout=120,
+            env=env,
         )
-    except subprocess.CalledProcessError:
+        if result.returncode != 0:
+            return "_Could not load details_"
+        raw = result.stdout
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return "_Could not load details_"
     data = json.loads(raw)
     lines: list[str] = []
