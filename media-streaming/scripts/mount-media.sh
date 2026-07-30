@@ -69,6 +69,32 @@ cleanup_stale_mount() {
 	fi
 }
 
+
+# SAFEGUARD 0: Wait for the fuse-t FSKit module to be ready.
+# At boot/login, launchd fires this script before the fuse-t process (and its
+# FSKit module) is up. Attempting the NFS-backed rclone mount before fuse-t is
+# live causes a transient "fuse-t cannot start" failure; launchd KeepAlive
+# then retries and it succeeds, which is why the mount worked despite the
+# startup error. This gate simply waits for the fuse-t process to appear (a
+# side-effect-free readiness signal) before mounting, with a bounded timeout.
+wait_for_fskit() {
+	local max_wait=60
+	local waited=0
+	log "🛡️  Safeguard: Waiting for fuse-t process to become ready..."
+	while [[ $waited -lt $max_wait ]]; do
+		if pgrep -qf "/Applications/fuse-t.app/Contents/MacOS/fuse-t"; then
+			log "✅ fuse-t is running (ready after ${waited}s)"
+			return 0
+		fi
+		sleep 3
+		waited=$((waited + 3))
+	done
+	log "⚠️  fuse-t not detected after ${max_wait}s; proceeding anyway (KeepAlive will retry if the mount fails)"
+	return 0
+}
+
+wait_for_fskit
+
 log "🔌 Starting Native FSKit Mount..."
 
 # SAFEGUARD 1: Clean up any stale mount directory before starting

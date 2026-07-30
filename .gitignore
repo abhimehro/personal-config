@@ -288,6 +288,7 @@ configs/.config/fish/functions/*
 !configs/.config/fish/functions/media-restart.fish
 !configs/.config/fish/functions/media-status.fish
 !configs/.config/fish/functions/media-logs.fish
+!configs/.config/fish/functions/gaming-mode.fish
 !configs/.config/fish/functions/*.backup
 
 # Local-only / machine-generated files
