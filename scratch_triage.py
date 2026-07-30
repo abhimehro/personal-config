@@ -24,24 +24,21 @@ def run_cmd(cmd):
         return False, "", "Timeout expired"
 
 
-def _contains_all_keywords(title_lower, lower_kws):
-    for kw in lower_kws:
-        if kw not in title_lower:
-            return False
-    return True
-
-
 def _find_matching_prs(all_prs, repo, title_keywords):
     lower_kws = tuple(kw.lower() for kw in title_keywords)
     matches = []
     for p in all_prs:
         if p["repo"] != repo:
             continue
+
         title_lower = p.get("title_lower")
         if title_lower is None:
             p["title_lower"] = title_lower = p["title"].lower()
 
-        if _contains_all_keywords(title_lower, lower_kws):
+        for kw in lower_kws:
+            if kw not in title_lower:
+                break
+        else:
             matches.append(p)
     return matches
 

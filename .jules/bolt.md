@@ -834,3 +834,6 @@ redundant object allocations in critical paths.
 ## 2026-03-10 - [Pre-compile regular expressions in utility functions]
 **Learning:** Re-compiling the identical regular expression inside functions that are called frequently (like `_normalize_host` checking for whitespace) adds unnecessary overhead due to repeated evaluation.
 **Action:** Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module level when they are static and used repeatedly inside functions or loops.
+## 2026-12-15 - [Function Call Overhead inside tight loops]
+**Learning:** Calling a helper function inside a tight loop over thousands of elements causes measurable overhead due to Python function call stack creation.
+**Action:** When a helper function is small (e.g., iterating strings for substring matches), inline the logic directly into the parent loop using a `for...else` construct to bypass the function call overhead. Additionally, when a dictionary key is guaranteed to exist due to prior optimizations, use direct index lookup `dict["key"]` instead of `.get("key")` paired with a `None` check to further reduce dictionary method call overhead.
