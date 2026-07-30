@@ -344,10 +344,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
         cors_headers = [
             h for h in sent_headers if h[0] == "Access-Control-Allow-Origin"
         ]
-        self.assertEqual(len(cors_headers), 1)
-        self.assertEqual(
-            cors_headers[0][1], "*", "Should allow all origins when no auth"
-        )
+        self.assertEqual(len(cors_headers), 0, "Should not send wildcard CORS even without auth")
 
 
 if __name__ == "__main__":

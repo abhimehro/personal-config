@@ -70,28 +70,23 @@ class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
 
     def end_headers(self):
         # Handle CORS
-        # If auth is enabled, strictly control CORS
-        if AUTH_USER and AUTH_PASS:
-            origin = self.headers.get("Origin")
-            allowed_origins_env = os.environ.get("ALD_ALLOWED_ORIGINS")
+        origin = self.headers.get("Origin")
+        allowed_origins_env = os.environ.get("ALD_ALLOWED_ORIGINS")
 
-            if allowed_origins_env and origin:
-                allowed_origins = {
-                    o.strip() for o in allowed_origins_env.split(",") if o.strip()
-                }
-                safe_origin = origin.replace("\r", "").replace("\n", "")
-                # Security: Use exact match, not substring check, to prevent bypass attacks
-                # (e.g., "http://example.com" should not match "http://example.com.evil.com")
-                if (
-                    safe_origin in allowed_origins
-                ):  # This 'in' checks set membership (exact match), not substring
-                    self.send_header("Access-Control-Allow-Origin", safe_origin)
-                    self.send_header("Vary", "Origin")
-            # If no allowed origins configured, do not send Access-Control-Allow-Origin
-            # This effectively blocks browser fetch/XHR from other origins
-        else:
-            # No auth, allow all (legacy behavior)
-            self.send_header("Access-Control-Allow-Origin", "*")
+        if allowed_origins_env and origin:
+            allowed_origins = {
+                o.strip() for o in allowed_origins_env.split(",") if o.strip()
+            }
+            safe_origin = origin.replace("\r", "").replace("\n", "")
+            # Security: Use exact match, not substring check, to prevent bypass attacks
+            # (e.g., "http://example.com" should not match "http://example.com.evil.com")
+            if (
+                safe_origin in allowed_origins
+            ):  # This 'in' checks set membership (exact match), not substring
+                self.send_header("Access-Control-Allow-Origin", safe_origin)
+                self.send_header("Vary", "Origin")
+        # If no allowed origins configured, do not send Access-Control-Allow-Origin
+        # This effectively blocks browser fetch/XHR from other origins
 
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
