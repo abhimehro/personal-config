@@ -21,6 +21,6 @@
 ## Deliverables
 - [x] `pr-inventory.md`, `pr-triage.md`, `pr-review-2026-07-30.md`
 - [x] Append `salvage-session-reports.md` + Lesson **0ey**
-- [ ] Commit/push docs branch + open_git_pr
-- [ ] Notion + Memory update
+- [x] Commit/push docs branch + open_git_pr
+- [x] Notion + Memory update
 - [x] Autonomous merges: **0**
