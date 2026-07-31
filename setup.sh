@@ -64,6 +64,15 @@ check_requirements() {
 	require_cmd op
 }
 
+install_cli_tooling() {
+	header "CLI Tooling"
+	log_info "Installing Homebrew CLI dependencies (macos/Brewfile)..."
+	brew bundle --file="$REPO_ROOT/macos/Brewfile"
+	log_info "Ensuring gh CLI extensions are installed (gh-stack, gh-aw, etc.)..."
+	bash "$REPO_ROOT/scripts/install_gh_extensions.sh"
+	log_ok "CLI tooling ready."
+}
+
 sync_configs() {
 	header "Configuration Sync"
 	log_info "Syncing configuration symlinks..."
@@ -186,9 +195,10 @@ main() {
 		echo
 		printf "%bPlan of Execution:%b\n" "${BOLD}" "${NC}"
 		printf "  1. Check macOS environment and requirements (brew, op)\n"
-		printf "  2. Sync and verify configuration symlinks\n"
-		printf "  3. Install system maintenance agents\n"
-		printf "  4. Setup network tools and media services\n"
+		printf "  2. Install CLI tooling (Brewfile + gh extensions)\n"
+		printf "  3. Sync and verify configuration symlinks\n"
+		printf "  4. Install system maintenance agents\n"
+		printf "  5. Setup network tools and media services\n"
 		echo
 		printf "%b⚠️  This will modify configuration files in your home directory.%b\n" "${YELLOW}" "${NC}"
 		echo
@@ -203,6 +213,7 @@ main() {
 	fi
 
 	check_requirements
+	install_cli_tooling
 	sync_configs
 	install_maintenance
 	remove_legacy_agents
@@ -215,6 +226,7 @@ main() {
 	printf "%b🎉 Bootstrap Complete!%b\n" "${GREEN}" "${NC}"
 	hr
 	printf "%bSummary of Actions:%b\n" "${BOLD}" "${NC}"
+	printf "  ✅ CLI tooling installed (Brewfile + gh extensions)\n"
 	printf "  ✅ Dotfiles linked and verified\n"
 	printf "  ✅ Maintenance launchd installed\n"
 	printf "  ✅ Network helpers prepared\n"
