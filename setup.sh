@@ -81,6 +81,7 @@ install_maintenance() {
 
 remove_legacy_agents() {
 	local legacy="$HOME/Library/LaunchAgents/com.user.maintenance.weekly.plist"
+	local legacy_label
 
 	# Boot out any stale maintenance agent labels before removing files
 	for legacy_label in com.user.maintenance.weekly com.abhimehrotra.maintenance.weekly com.abhimehrotra.maintenance.monthly; do

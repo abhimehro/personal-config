@@ -26,6 +26,7 @@ fi
 # Configuration
 RUN_START=$(date +%s)
 export RUN_START
+export AUTOMATED_RUN="${AUTOMATED_RUN-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -n ${MAINTENANCE_HOME-} && -d $MAINTENANCE_HOME ]]; then
 	LOG_DIR="$HOME/Library/Logs/maintenance"
@@ -297,7 +298,7 @@ run_script() {
 		# Execute script
 		if [[ $is_parallel == "true" ]]; then
 			# Run directly for parallel (background) tasks
-			if AUTOMATED_RUN="${AUTOMATED_RUN:-1}" "$script_path" >"$log_file" 2>&1; then
+			if "$script_path" >"$log_file" 2>&1; then
 				end_time=$(date +%s)
 				duration_sec=$((end_time - start_time))
 				duration_fmt="${duration_sec}s"
@@ -316,7 +317,7 @@ run_script() {
 			fi
 		else
 			# Run with spinner for serial tasks
-			AUTOMATED_RUN="${AUTOMATED_RUN:-1}" "$script_path" >"$log_file" 2>&1 &
+			"$script_path" >"$log_file" 2>&1 &
 			local pid=$!
 
 			spinner $pid "Running $clean_name..."
@@ -530,13 +531,15 @@ send_automated_notification() {
 
 	local failed=0
 	local missing=0
-	for entry in "${SUMMARY_RESULTS[@]}"; do
-		if [[ $entry == *"Failed"* ]]; then
-			failed=$((failed + 1))
-		elif [[ $entry == *"Missing"* ]]; then
-			missing=$((missing + 1))
-		fi
-	done
+	if [[ ${#SUMMARY_RESULTS[@]} -gt 0 ]]; then
+		for entry in "${SUMMARY_RESULTS[@]}"; do
+			if [[ $entry == *"Failed"* ]]; then
+				failed=$((failed + 1))
+			elif [[ $entry == *"Missing"* ]]; then
+				missing=$((missing + 1))
+			fi
+		done
+	fi
 
 	local title="Maintenance"
 	local msg
@@ -590,9 +593,11 @@ echo "=== Master Maintenance Run Completed: $(date) ===" | tee -a "$MASTER_LOG"
 find "$LOG_DIR" -name "maintenance_master_*.log" -type f | sort -r | tail -n +11 | xargs rm -f 2>/dev/null || true
 
 # Exit non-zero if any task failed or was missing
-for entry in "${SUMMARY_RESULTS[@]}"; do
-	if [[ $entry == *"Failed"* || $entry == *"Missing"* ]]; then
-		exit 1
-	fi
-done
+if [[ ${#SUMMARY_RESULTS[@]} -gt 0 ]]; then
+	for entry in "${SUMMARY_RESULTS[@]}"; do
+		if [[ $entry == *"Failed"* || $entry == *"Missing"* ]]; then
+			exit 1
+		fi
+	done
+fi
 exit 0

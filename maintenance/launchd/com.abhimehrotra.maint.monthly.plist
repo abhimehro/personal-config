@@ -17,7 +17,7 @@
     <array>
         <string>/bin/bash</string>
         <string>-c</string>
-        <string>mkdir -p "$HOME/Library/Logs/maintenance" &amp;&amp; exec "$HOME/Library/Maintenance/bin/run_all_maintenance.sh" monthly &gt;&gt;"$HOME/Library/Logs/maintenance/maintenance_monthly.out" 2&gt;&gt;"$HOME/Library/Logs/maintenance/maintenance_monthly.err"</string>
+        <string>export MAINTENANCE_HOME="$HOME/Library/Maintenance" &amp;&amp; mkdir -p "$HOME/Library/Logs/maintenance" &amp;&amp; exec "$HOME/Library/Maintenance/bin/run_all_maintenance.sh" monthly &gt;&gt;"$HOME/Library/Logs/maintenance/maintenance_monthly.out" 2&gt;&gt;"$HOME/Library/Logs/maintenance/maintenance_monthly.err"</string>
     </array>
 
     <key>StartCalendarInterval</key>

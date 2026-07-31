@@ -107,7 +107,8 @@ brew install terminal-notifier
 ~/Library/Maintenance/bin/run_all_maintenance.sh weekly
 
 # Run monthly maintenance (comprehensive)
-~/Library/Maintenance/bin/run_all_maintenance.sh monthly
+# Use FORCE_RUN=1 on non-1st days so editor/deep-cleaner sub-scripts also run.
+FORCE_RUN=1 ~/Library/Maintenance/bin/run_all_maintenance.sh monthly
 
 # View logs interactively
 ~/Library/Maintenance/bin/view_logs.sh health_check  # View health check logs
@@ -119,7 +120,7 @@ brew install terminal-notifier
 
 ```bash
 # View all maintenance launch agents
-launchctl list | grep maintenance
+launchctl list | grep com.abhimehrotra
 
 # Check logs
 ls ~/Library/Logs/maintenance/
@@ -273,7 +274,7 @@ Battery status: 87%; charging
 
 ```bash
 # View launch agent status
-launchctl list | grep -E "(maintenance|cleanup)"
+launchctl list | grep -E 'com\.abhimehrotra'
 
 # Check recent logs
 ls -la ~/Library/Logs/maintenance/ | tail -10
@@ -301,7 +302,7 @@ terminal-notifier -title "Test" -message "Click me" \
 
 ```bash
 # Check status
-launchctl list | grep maintenance
+launchctl list | grep com.abhimehrotra
 
 # Reload if needed
 launchctl kickstart -k gui/$(id -u)/com.abhimehrotra.maintenance.healthcheck

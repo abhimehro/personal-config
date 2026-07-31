@@ -57,9 +57,10 @@ cd ~/Documents/dev/personal-config/maintenance/bin
 ### Monthly Orchestrator (Test all monthly tasks together)
 
 ```bash
-# Test complete monthly automation
+# Test complete monthly automation (use FORCE_RUN=1 on non-1st days so
+# editor_cleanup and deep_cleaner run instead of self-gating)
 cd ~/Documents/dev/personal-config/maintenance/bin
-./run_all_maintenance.sh monthly
+FORCE_RUN=1 ./run_all_maintenance.sh monthly
 ```
 
 ## 🔄 Launch Agent Management

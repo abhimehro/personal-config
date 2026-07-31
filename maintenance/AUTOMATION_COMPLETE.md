@@ -140,8 +140,10 @@ into `~/Library/LaunchAgents`.
 1. **Monitor logs** after the first automated runs to ensure everything works as
    expected
 2. **Install launch agents** if not already active:
-   `launchctl load ~/Documents/dev/personal-config/maintenance/launchd/*.plist`
-3. **Customize timing** if desired by editing the `.plist` files
-4. **Add additional monthly tasks** by modifying `monthly_maintenance.sh`
+   `bash ~/Documents/dev/personal-config/maintenance/install.sh`
+3. **Customize timing** if desired by editing the generated plists in
+   `~/Library/LaunchAgents/com.abhimehrotra.maint.*`
+4. **Add additional monthly tasks** by modifying `run_all_maintenance.sh`
+   (`run_monthly_maintenance()`) or the relevant sub-script
 
 **The maintenance automation system is now FULLY OPERATIONAL! 🚀**
