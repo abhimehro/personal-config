@@ -6,6 +6,60 @@
 
 ## Entry template
 
+## Run — 2026-07-30
+
+### Input tail
+
+- Source: Phase 1 draft [#1832](https://github.com/abhimehro/personal-config/pull/1832) remainder (`pr-review-2026-07-30.md`) + live re-fetch
+- Preflight PASS 7/7; `make cursor-cloud-hooks`; PAT as `abhimehro` (0ew)
+- Live CONFLICTING: pc #1827/#1821/#1820/#1819; Seatek #563/#558/#557/#554/#553/#552/#551; series #329/#327/#320/#315/#313; rpce #151/#150/#149/#146
+- Prior-day: esp #1383 MERGED; hg #434 MERGED; pc #1812 MERGED
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|-------:|-------------|--------|-------|
+| personal-config | 1827 | CLOSE-SUPERSEDED | — | pin already in #1828 |
+| personal-config | 1821 | CLOSE / no-op | — | scratch_triage only |
+| personal-config | 1820 | SALVAGE + CLOSE | [#1836](https://github.com/abhimehro/personal-config/pull/1836) | GraphQL only; no trunk junk |
+| personal-config | 1819 | CLOSE-SUPERSEDED | — | prefer CLEAN #1831 |
+| personal-config | 1822 | ESCALATE | — | CORS MCP |
+| Seatek_Analysis | 551/553/557/558 | SALVAGE + CLOSE | [#565](https://github.com/abhimehro/Seatek_Analysis/pull/565) | tests + flattened_updates |
+| Seatek_Analysis | 552 | ESCALATE | — | list-only shell MCP |
+| Seatek_Analysis | 554/563 | DEFER | — | API rename redesigns |
+| series_correction… | 313 | SALVAGE | [#332](https://github.com/abhimehro/series_correction_project_updated/pull/332) | setup.py only |
+| series_correction… | 329 | SALVAGE + CLOSE | [#333](https://github.com/abhimehro/series_correction_project_updated/pull/333) | parse_year_pair tests |
+| series_correction… | 320 | CLOSE | — | junk; prefer #315 |
+| series_correction… | 315 | ESCALATE | — | authenticate MCP |
+| series_correction… | 327 | DEFER | — | large extract-helpers |
+| repoprompt-ce | 151 | CLOSE-SUPERSEDED | — | identical to #153 |
+| repoprompt-ce | 146/149/150 | SALVAGE + CLOSE | [#157](https://github.com/abhimehro/repoprompt-ce/pull/157) | combined Swift micro-opts |
+| repoprompt-ce | 144 | REQUEST_CHANGES | — | shard 4 fail |
+
+- Salvage drafts opened: **5**
+- Infra-fix drafts: **0**
+- Closed via API: **8+** (PAT close works — 0ew)
+- Autonomous merges: **0** (S1)
+- New lesson: **0ey** (combined salvage drafts)
+- CodeScene MCP: unavailable; no `/cs-agent` wait required on salvage drafts
+- `request_reviewers`: skipped (author already abhimehro)
+
+### Verification
+
+- pc #1836: `python3 -m unittest tests.test_run_merges` → 8 OK
+- seatek #565: `pytest` automation tests → 20 OK
+- series #333: `pytest -k parse_year_pair` → 4 OK
+- series #332: `py_compile setup.py`
+- rpce #157: source-only; needs macOS `dev-swift-build`
+
+### Handoff
+
+1. Human merge drafts #1836 / #565 / #332 / #333 / #157
+2. Human T1: #1822 CORS, #552 injection, #315 authenticate
+3. Human: decide #554/#563/#327 redesigns or re-roll
+4. Prefer merge CLEAN #1831 (covers closed #1819)
+5. Squash Phase 1 docs draft [#1832](https://github.com/abhimehro/personal-config/pull/1832) when ready
+
 ## Run — 2026-07-29
 
 ### Input tail

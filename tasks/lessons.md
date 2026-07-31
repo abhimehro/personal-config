@@ -1,5 +1,33 @@
 # Lessons Learned
 
+## Lesson 0ex: main-side unpinned action fails WI on unrelated PRs (2026-07-30)
+
+**Pattern:** Several personal-config Bolt PRs that did **not** touch workflows
+still failed **Workflow Integrity** because `main`'s `greetings.yml` used
+`actions/first-interaction@v3` (mutable tag). Only PRs that rewrote the pin
+(or landed after #1828) went green. **Rule:** (1) When ≥3 open PRs fail the
+same Workflow Integrity pin check and the violation path is on `main`, treat as
+**main-side infra** and prioritize a dedicated pin PR before blaming Bolt diffs.
+(2) Merge the pin PR first in the session; then re-check siblings (may need
+re-run, not just rebase, if checks cached). (3) Mislabeled Sentinel PRs that
+only add the same pin + journal → CLOSE-SUPERSEDED once the pin lands.
+**Detection cost:** Low — WI log cites `.github/workflows/….yml` even when
+`gh pr diff --name-only` excludes workflows.
+## Lesson 0ey: Combined salvage drafts beat N×1-line conflicted twins (2026-07-30)
+
+**Pattern:** After Phase 1 merges, many Jules/Bolt PRs stay CONFLICTING only
+because of `.jules/*.md` journals or shared greetings.yml pins, while the unique
+source residual is 1–3 lines (rpce #146/#149/#150) or a cluster of compatible
+unit tests (Seatek #551/#553/#557/#558). Opening one draft per original burns
+reviewer attention and multiplies CI. **Rule:** (1) When residuals share a
+theme and do not conflict with each other on `main`, combine into a single
+surgical salvage draft and close all originals as superseded. (2) Still skip
+journals (S2) and still adapt tests to live APIs (S4) — never wholesale-checkout
+a test whose assertions assume a renamed function. (3) Do not combine across
+trust-boundary domains (auth + perf). **Detection cost:** Low — list
+CONFLICTING file sets; if journals/greetings dominate and source deltas are
+disjoint, combine.
+
 ## Lesson 0ew: abhimehro PAT restores gh create/close (2026-07-29)
 
 **Pattern:** Prior sessions with Cursor App token (hosts.yml) could squash-merge
