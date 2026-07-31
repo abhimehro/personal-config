@@ -40,22 +40,18 @@ By keeping these configurations in version control, I can:
 
 ## 🎯 Quick Start
 
-### ProtonDrive one-way home backup (archived)
-
-The ProtonDrive backup script lives under maintenance archive (not
-`./scripts/`):
+### ProtonDrive one-way home backup
 
 ```bash
 # Safe preview (no changes)
-./maintenance/bin/archive/protondrive_backup.sh --dry-run --no-delete
+./scripts/protondrive_backup.sh --dry-run --no-delete
 
 # Live mirror into ProtonDrive (uses --delete-delay unless you pass --no-delete)
-./maintenance/bin/archive/protondrive_backup.sh --run
+./scripts/protondrive_backup.sh --run
 ```
 
-Edit `./maintenance/conf/protondrive_backup.exclude` to tune exclusions (git
-repos, build artifacts, caches, etc.). Confirm the archived script still matches
-your rclone setup before relying on it.
+Edit `./scripts/protondrive_backup.exclude` to tune exclusions (git repos, build
+artifacts, caches, etc.).
 
 ### Bootstrap this Mac (idempotent)
 
@@ -208,8 +204,14 @@ personal-config/
 │   ├── windscribe-controld-setup.sh  # Automated setup & verification
 │   ├── setup-guide.md         # Complete integration guide
 │   └── ctrld.toml.backup      # Configuration backup
-├── 🌐 scripts/network-mode-manager.sh  # Control D ⇄ Windscribe mode switching
-├── 🌐 controld-system/        # Low-level Control D profile management
+├── 🌐 dns-setup/              # Dynamic DNS Management System
+│   ├── scripts/               # DNS switching automation
+│   │   ├── dns-privacy        # Privacy profile switcher
+│   │   ├── dns-gaming         # Gaming profile switcher
+│   │   ├── deploy.sh          # Script deployment tool
+│   │   └── README.md          # Comprehensive DNS guide
+│   ├── DEPLOYMENT_SUMMARY.md  # Complete setup documentation
+│   └── backups/               # Network configuration backups
 ├── 🔐 configs/                # System Configuration Files
 │   ├── ssh/                   # SSH configuration
 │   │   ├── config             # Main SSH configuration
@@ -346,20 +348,16 @@ files are linked to your home directory. This ensures:
 ./scripts/verify_ssh_config.sh
 ```
 
-### DNS / network mode switching
+### DNS Management Only
 
 ```bash
-# Show current Control D / Windscribe state
-./scripts/network-mode-manager.sh status
+# Deploy DNS scripts to ~/bin
+./dns-setup/scripts/deploy.sh
 
-# Standalone Control D (profiles: browsing|privacy|gaming)
-./scripts/network-mode-manager.sh controld privacy
-
-# Verify expected state
-./scripts/network-mode-verify.sh controld privacy
+# Switch profiles
+sudo dns-privacy  # Enhanced privacy filtering
+sudo dns-gaming   # Gaming optimization
 ```
-
-See `AGENTS.md` for DoH/DoH3 × IPv6 mode matrix and repair notes.
 
 ### SSH Configuration Only
 
@@ -622,11 +620,12 @@ done
 
 ### Support Resources
 
-- **[AGENTS.md](AGENTS.md)** - Network mode manager, Control D repair, and agent
-  caveats
+- **[DNS Setup Guide](dns-setup/scripts/README.md)** - Complete DNS
+  documentation
 - **[SSH Configuration Guide](docs/ssh/ssh_configuration_guide.md)** - SSH setup
   instructions
-- **[Testing Guide](docs/TESTING.md)** - Shell/Python test patterns
+- **[Deployment Summary](dns-setup/DEPLOYMENT_SUMMARY.md)** - Technical
+  implementation details
 
 ## 📌 Pinned Formulae (Homebrew)
 

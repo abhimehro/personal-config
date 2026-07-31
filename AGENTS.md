@@ -227,19 +227,7 @@ High-level docs live in `media-streaming/README.md`. Setup is staged by
 ```bash
 # Verify media automation agents (names vary; grep is the easiest entrypoint)
 launchctl list | grep -E '(media|alldebrid|speedybee)'
-
-# Fish shortcuts (see media-streaming/README.md)
-media-status
-media-restart
-gaming-mode status   # suspend/restore full stack for GeForce NOW
 ```
-
-Mount notes (2026-07-30):
-
-- `media-streaming/scripts/mount-media.sh` waits up to 60s for the fuse-t
-  process before `rclone mount` (login race with FSKit).
-- `gaming-mode` uses `launchctl bootout` / `bootstrap`+`kickstart` because the
-  media plists are KeepAlive.
 
 ### Lint / formatting (Trunk)
 
@@ -403,14 +391,10 @@ The media pipeline is split into:
 - Setup + configuration templates (e.g., rclone template seeded by `setup.sh`).
 - Automation via LaunchAgents (installed if present).
 - Operational scripts in `media-streaming/scripts/` (sync, rename/finalize,
-  repair, mount, gaming-mode).
+  repair).
 
 The docs in `media-streaming/README.md` describe the intended “zero-click” flow
-and the responsibilities of each agent/script. Day-to-day ops:
-
-- `media-status` / `media-restart` / `media-logs` (Fish)
-- `gaming-mode on|off|status` to pause the stack for latency-critical gaming
-- `mount-media.sh` FSKit gate + stale-mount safeguards (see README)
+and the responsibilities of each agent/script.
 
 ### 5) Code quality + automation workflows
 
