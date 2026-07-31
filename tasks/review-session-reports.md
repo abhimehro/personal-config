@@ -31,6 +31,35 @@
 - Commands/comments to run next:
 - Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
 
+## Run — 2026-07-30
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron Phase 1 `0 13 * * *` review-and-merge
+
+### Metrics
+
+- PRs inventoried: 57 automation-signal
+- PRs merged: 17
+- PRs closed: 0 (App token 0es; 2 close-recommended via MCP)
+- PRs escalated/deferred: 3 escalate, 4 REQUEST_CHANGES, remainder defer
+
+### Actions
+
+- Merged: pc #1828; Seatek #562/#559/#556/#550; series
+  #330/#328/#325/#324/#319/#317/#316/#314/#312/#311/#307; rpce #153
+  (#318 also merged today, possibly concurrent)
+- Closed: none (403); MCP close-rec on pc #1827, rpce #151
+- Deferred/escalated: CORS #1822, auth #315, cmd-inject #552; RC on #1820/#320/#313/#144
+
+### Follow-ups
+
+- Phase 2: close #1827/#151; human merge #315; salvage conflicted test PRs
+- Snapshot: `tasks/pr-review-2026-07-30.md`
+
 ## Run — 2026-07-26
 
 ### Scope
