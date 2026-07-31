@@ -119,7 +119,7 @@ def _set_env_var(k, v, script_lines):
         value = escape(v)
     script_lines.append("set -g -x %s %s" % (k, value))
 
-def _process_env_vars(old_env, new_env, script_lines):
+def _process_new_env_vars(old_env, new_env, script_lines):
     for k, v in new_env.items():
         if ignored(k):
             continue
@@ -129,9 +129,14 @@ def _process_env_vars(old_env, new_env, script_lines):
         elif v1 != v:
             _update_env_var(k, v, v1, script_lines)
 
+def _process_removed_env_vars(old_env, new_env, script_lines):
     for var in set(old_env.keys()) - set(new_env.keys()):
         script_lines.append(comment("removing %s" % var))
         script_lines.append("set -e %s" % var)
+
+def _process_env_vars(old_env, new_env, script_lines):
+    _process_new_env_vars(old_env, new_env, script_lines)
+    _process_removed_env_vars(old_env, new_env, script_lines)
 
 def _process_aliases(alias_str):
     alias_lines = []
