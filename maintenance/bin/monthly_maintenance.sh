@@ -152,7 +152,7 @@ fi
 if command -v terminal-notifier >/dev/null 2>&1; then
 	if [[ $TASKS_FAILED -gt 0 ]]; then
 		terminal-notifier -title "Monthly Maintenance" \
-			-subtitle "Completed with $EXIT_CODE task error(s)" \
+			-subtitle "Completed with $TASKS_FAILED task error(s)" \
 			-message "Click for details" \
 			-group "maintenance" \
 			-execute "$HOME/Library/Maintenance/bin/view_logs.sh monthly" 2>/dev/null || true
