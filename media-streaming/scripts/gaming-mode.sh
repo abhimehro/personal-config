@@ -38,14 +38,17 @@ agent_in_domain() { launchctl print "$DOMAIN/$1" &>/dev/null; }
 agent_running() {
 	local pid
 	pid=$(launchctl list 2>/dev/null | awk -v a="$1" '$NF==a {print $1}')
-	[[ -n "$pid" && "$pid" != "0" && "$pid" != "-" ]]
+	[[ -n $pid && $pid != "0" && $pid != "-" ]]
 }
 
 # Stack is "up" if any agent is registered in the domain.
 current_state() {
 	local a
 	for a in "${AGENTS[@]}"; do
-		if agent_in_domain "$a"; then echo "up"; return; fi
+		if agent_in_domain "$a"; then
+			echo "up"
+			return
+		fi
 	done
 	echo "down"
 }
@@ -71,10 +74,10 @@ start_stack() {
 	log "Gaming Mode OFF, restoring media stack..."
 	local i a plist
 	local reversed=()
-	for ((i=${#AGENTS[@]}-1; i>=0; i--)); do reversed+=("${AGENTS[i]}"); done
+	for ((i = ${#AGENTS[@]} - 1; i >= 0; i--)); do reversed+=("${AGENTS[i]}"); done
 	for a in "${reversed[@]}"; do
 		plist=$(plist_for "$a")
-		if [[ ! -f "$plist" ]]; then
+		if [[ ! -f $plist ]]; then
 			log "   warn    $a plist not found at $plist"
 			continue
 		fi
@@ -110,14 +113,16 @@ show_status() {
 
 main() {
 	case "${1:-toggle}" in
-		on)     stop_stack ;;
-		off)    start_stack ;;
-		status) show_status ;;
-		toggle)
-			if [ "$(current_state)" = "up" ]; then stop_stack; else start_stack; fi
-			;;
-		*)
-			echo "Usage: gaming-mode [on|off|status]"; exit 1 ;;
+	on) stop_stack ;;
+	off) start_stack ;;
+	status) show_status ;;
+	toggle)
+		if [ "$(current_state)" = "up" ]; then stop_stack; else start_stack; fi
+		;;
+	*)
+		echo "Usage: gaming-mode [on|off|status]"
+		exit 1
+		;;
 	esac
 }
 main "$@"

@@ -50,10 +50,11 @@
 ### Actions
 
 - Merged: pc #1828; Seatek #562/#559/#556/#550; series
-  #330/#328/#325/#324/#319/#317/#316/#314/#312/#311/#307; rpce #153
-  (#318 also merged today, possibly concurrent)
+  #330/#328/#325/#324/#319/#317/#316/#314/#312/#311/#307; rpce #153 (#318 also
+  merged today, possibly concurrent)
 - Closed: none (403); MCP close-rec on pc #1827, rpce #151
-- Deferred/escalated: CORS #1822, auth #315, cmd-inject #552; RC on #1820/#320/#313/#144
+- Deferred/escalated: CORS #1822, auth #315, cmd-inject #552; RC on
+  #1820/#320/#313/#144
 
 ### Follow-ups
 

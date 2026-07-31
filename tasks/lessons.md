@@ -4,55 +4,58 @@
 
 **Pattern:** Several personal-config Bolt PRs that did **not** touch workflows
 still failed **Workflow Integrity** because `main`'s `greetings.yml` used
-`actions/first-interaction@v3` (mutable tag). Only PRs that rewrote the pin
-(or landed after #1828) went green. **Rule:** (1) When ≥3 open PRs fail the
-same Workflow Integrity pin check and the violation path is on `main`, treat as
+`actions/first-interaction@v3` (mutable tag). Only PRs that rewrote the pin (or
+landed after #1828) went green. **Rule:** (1) When ≥3 open PRs fail the same
+Workflow Integrity pin check and the violation path is on `main`, treat as
 **main-side infra** and prioritize a dedicated pin PR before blaming Bolt diffs.
 (2) Merge the pin PR first in the session; then re-check siblings (may need
 re-run, not just rebase, if checks cached). (3) Mislabeled Sentinel PRs that
 only add the same pin + journal → CLOSE-SUPERSEDED once the pin lands.
 **Detection cost:** Low — WI log cites `.github/workflows/….yml` even when
 `gh pr diff --name-only` excludes workflows.
+
 ## Lesson 0ey: Combined salvage drafts beat N×1-line conflicted twins (2026-07-30)
 
 **Pattern:** After Phase 1 merges, many Jules/Bolt PRs stay CONFLICTING only
 because of `.jules/*.md` journals or shared greetings.yml pins, while the unique
 source residual is 1–3 lines (rpce #146/#149/#150) or a cluster of compatible
 unit tests (Seatek #551/#553/#557/#558). Opening one draft per original burns
-reviewer attention and multiplies CI. **Rule:** (1) When residuals share a
-theme and do not conflict with each other on `main`, combine into a single
-surgical salvage draft and close all originals as superseded. (2) Still skip
-journals (S2) and still adapt tests to live APIs (S4) — never wholesale-checkout
-a test whose assertions assume a renamed function. (3) Do not combine across
-trust-boundary domains (auth + perf). **Detection cost:** Low — list
-CONFLICTING file sets; if journals/greetings dominate and source deltas are
-disjoint, combine.
+reviewer attention and multiplies CI. **Rule:** (1) When residuals share a theme
+and do not conflict with each other on `main`, combine into a single surgical
+salvage draft and close all originals as superseded. (2) Still skip journals
+(S2) and still adapt tests to live APIs (S4) — never wholesale-checkout a test
+whose assertions assume a renamed function. (3) Do not combine across
+trust-boundary domains (auth + perf). **Detection cost:** Low — list CONFLICTING
+file sets; if journals/greetings dominate and source deltas are disjoint,
+combine.
 
 ## Lesson 0ew: abhimehro PAT restores gh create/close (2026-07-29)
 
 **Pattern:** Prior sessions with Cursor App token (hosts.yml) could squash-merge
 but got **Resource not accessible by integration** on `gh pr close` / create
-(Lesson 0eq/0es). Tonight's injected `GH_TOKEN` is a classic PAT as
-`abhimehro`: `gh pr create --draft` and `gh pr close` both succeeded for esp
-#1383/#1381. **Rule:** (1) Prefer PAT/`abhimehro` for Phase 2 close + draft PR
-create when available. (2) Keep MCP `post_review_comment_on_pr` as fallback for
-reviews when App-only. (3) `request_reviewers` still 422 when the salvage PR
-author is already `abhimehro` — skip or use a bot account. (4) Do not `unset
-GH_TOKEN` blindly if `gh api user` shows a working PAT (revisit 0eo only when
-the token is expired/invalid). **Detection cost:** Low — one `gh pr close` or
+(Lesson 0eq/0es). Tonight's injected `GH_TOKEN` is a classic PAT as `abhimehro`:
+`gh pr create --draft` and `gh pr close` both succeeded for esp #1383/#1381.
+**Rule:** (1) Prefer PAT/`abhimehro` for Phase 2 close + draft PR create when
+available. (2) Keep MCP `post_review_comment_on_pr` as fallback for reviews when
+App-only. (3) `request_reviewers` still 422 when the salvage PR author is
+already `abhimehro` — skip or use a bot account. (4) Do not `unset
+GH_TOKEN`
+blindly if `gh api user` shows a working PAT (revisit 0eo only when the token is
+expired/invalid). **Detection cost:** Low — one `gh pr close` or
 `gh pr create --draft` probe.
 
 ## Lesson 0eu: upload@v7 + download@v8 is the intended pair (2026-07-29)
 
 **Pattern:** Prior Phase-1 reviews blocked esp #1366 citing Lesson 0er
 ("upload/download major skew"). Live GitHub tags (2026-07-29):
-`actions/upload-artifact` latest is **v7.0.1** (no v8); `actions/download-artifact`
-latest is **v8.0.1**. GitHub's changelog documents v8 download as the compatible
-consumer of v7 upload (incl. optional `archive: false`). **Rule:** (1) Before
-REQUEST_CHANGES on artifact majors, verify tags via
+`actions/upload-artifact` latest is **v7.0.1** (no v8);
+`actions/download-artifact` latest is **v8.0.1**. GitHub's changelog documents
+v8 download as the compatible consumer of v7 upload (incl. optional
+`archive: false`). **Rule:** (1) Before REQUEST_CHANGES on artifact majors,
+verify tags via
 `gh api repos/actions/{upload,download}-artifact/releases/latest`. (2) Do not
-require matching majors when upstream versions diverge by design. (3) Prefer
-SHA pins annotated with `# vX.Y.Z`. **Detection cost:** Low — one API call per
+require matching majors when upstream versions diverge by design. (3) Prefer SHA
+pins annotated with `# vX.Y.Z`. **Detection cost:** Low — one API call per
 action.
 
 ## Lesson 0ev: Two-dot check automation twins opened after merge (2026-07-29)
@@ -65,7 +68,6 @@ immediately two-dot-diff any same-title twin (`git diff origin/main..pr-ref`).
 (2) CLOSE-SUPERSEDED if unique delta is changelog churn / regressions; keep only
 true residual bumps as focused PRs. **Detection cost:** Low — createdAt within
 minutes of sibling merge + identical title.
-
 
 ## Lesson 0et: Surgical salvage when merge-tree shows changed-in-both after sibling merge (2026-07-28)
 
@@ -1846,9 +1848,9 @@ but replaced `test_oversized_subject_logs_warning` with `pass` because the
 warning now logs from `security_validators.logger`, not `parser.logger`.
 **Rule:** When salvaging helper extractions that relocate logging, keep a real
 assertion by `patch`ing the module that owns the logger. Never accept `pass` as
-a substitute for a DoS/truncation warning regression test.
-**Detection cost:** Low — PR diff shows `pass` under a `logs_warning` test name
-plus an import of `validate_*` helpers.
+a substitute for a DoS/truncation warning regression test. **Detection cost:**
+Low — PR diff shows `pass` under a `logs_warning` test name plus an import of
+`validate_*` helpers.
 
 ## Lesson 0et: Isolate CTR_PROFILE_* in unit tests (2026-07-28)
 

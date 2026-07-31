@@ -309,3 +309,6 @@ set -g fish_history_limit 10000
 
 # 1Password shell plugins (fish-native loader; bash plugins.sh is not sourceable)
 source /Users/speedybee/.config/op/op-plugin-loader.fish
+
+# Added by Devin - Next
+fish_add_path /Users/speedybee/.codeium/windsurf/bin

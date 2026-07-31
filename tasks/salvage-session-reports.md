@@ -10,31 +10,35 @@
 
 ### Input tail
 
-- Source: Phase 1 draft [#1832](https://github.com/abhimehro/personal-config/pull/1832) remainder (`pr-review-2026-07-30.md`) + live re-fetch
+- Source: Phase 1 draft
+  [#1832](https://github.com/abhimehro/personal-config/pull/1832) remainder
+  (`pr-review-2026-07-30.md`) + live re-fetch
 - Preflight PASS 7/7; `make cursor-cloud-hooks`; PAT as `abhimehro` (0ew)
-- Live CONFLICTING: pc #1827/#1821/#1820/#1819; Seatek #563/#558/#557/#554/#553/#552/#551; series #329/#327/#320/#315/#313; rpce #151/#150/#149/#146
+- Live CONFLICTING: pc #1827/#1821/#1820/#1819; Seatek
+  #563/#558/#557/#554/#553/#552/#551; series #329/#327/#320/#315/#313; rpce
+  #151/#150/#149/#146
 - Prior-day: esp #1383 MERGED; hg #434 MERGED; pc #1812 MERGED
 
 ### Outcomes
 
-| Repo | Old PR | Disposition | New PR | Notes |
-|------|-------:|-------------|--------|-------|
-| personal-config | 1827 | CLOSE-SUPERSEDED | — | pin already in #1828 |
-| personal-config | 1821 | CLOSE / no-op | — | scratch_triage only |
-| personal-config | 1820 | SALVAGE + CLOSE | [#1836](https://github.com/abhimehro/personal-config/pull/1836) | GraphQL only; no trunk junk |
-| personal-config | 1819 | CLOSE-SUPERSEDED | — | prefer CLEAN #1831 |
-| personal-config | 1822 | ESCALATE | — | CORS MCP |
-| Seatek_Analysis | 551/553/557/558 | SALVAGE + CLOSE | [#565](https://github.com/abhimehro/Seatek_Analysis/pull/565) | tests + flattened_updates |
-| Seatek_Analysis | 552 | ESCALATE | — | list-only shell MCP |
-| Seatek_Analysis | 554/563 | DEFER | — | API rename redesigns |
-| series_correction… | 313 | SALVAGE | [#332](https://github.com/abhimehro/series_correction_project_updated/pull/332) | setup.py only |
-| series_correction… | 329 | SALVAGE + CLOSE | [#333](https://github.com/abhimehro/series_correction_project_updated/pull/333) | parse_year_pair tests |
-| series_correction… | 320 | CLOSE | — | junk; prefer #315 |
-| series_correction… | 315 | ESCALATE | — | authenticate MCP |
-| series_correction… | 327 | DEFER | — | large extract-helpers |
-| repoprompt-ce | 151 | CLOSE-SUPERSEDED | — | identical to #153 |
-| repoprompt-ce | 146/149/150 | SALVAGE + CLOSE | [#157](https://github.com/abhimehro/repoprompt-ce/pull/157) | combined Swift micro-opts |
-| repoprompt-ce | 144 | REQUEST_CHANGES | — | shard 4 fail |
+| Repo               |          Old PR | Disposition      | New PR                                                                          | Notes                       |
+| ------------------ | --------------: | ---------------- | ------------------------------------------------------------------------------- | --------------------------- |
+| personal-config    |            1827 | CLOSE-SUPERSEDED | —                                                                               | pin already in #1828        |
+| personal-config    |            1821 | CLOSE / no-op    | —                                                                               | scratch_triage only         |
+| personal-config    |            1820 | SALVAGE + CLOSE  | [#1836](https://github.com/abhimehro/personal-config/pull/1836)                 | GraphQL only; no trunk junk |
+| personal-config    |            1819 | CLOSE-SUPERSEDED | —                                                                               | prefer CLEAN #1831          |
+| personal-config    |            1822 | ESCALATE         | —                                                                               | CORS MCP                    |
+| Seatek_Analysis    | 551/553/557/558 | SALVAGE + CLOSE  | [#565](https://github.com/abhimehro/Seatek_Analysis/pull/565)                   | tests + flattened_updates   |
+| Seatek_Analysis    |             552 | ESCALATE         | —                                                                               | list-only shell MCP         |
+| Seatek_Analysis    |         554/563 | DEFER            | —                                                                               | API rename redesigns        |
+| series_correction… |             313 | SALVAGE          | [#332](https://github.com/abhimehro/series_correction_project_updated/pull/332) | setup.py only               |
+| series_correction… |             329 | SALVAGE + CLOSE  | [#333](https://github.com/abhimehro/series_correction_project_updated/pull/333) | parse_year_pair tests       |
+| series_correction… |             320 | CLOSE            | —                                                                               | junk; prefer #315           |
+| series_correction… |             315 | ESCALATE         | —                                                                               | authenticate MCP            |
+| series_correction… |             327 | DEFER            | —                                                                               | large extract-helpers       |
+| repoprompt-ce      |             151 | CLOSE-SUPERSEDED | —                                                                               | identical to #153           |
+| repoprompt-ce      |     146/149/150 | SALVAGE + CLOSE  | [#157](https://github.com/abhimehro/repoprompt-ce/pull/157)                     | combined Swift micro-opts   |
+| repoprompt-ce      |             144 | REQUEST_CHANGES  | —                                                                               | shard 4 fail                |
 
 - Salvage drafts opened: **5**
 - Infra-fix drafts: **0**
@@ -58,7 +62,8 @@
 2. Human T1: #1822 CORS, #552 injection, #315 authenticate
 3. Human: decide #554/#563/#327 redesigns or re-roll
 4. Prefer merge CLEAN #1831 (covers closed #1819)
-5. Squash Phase 1 docs draft [#1832](https://github.com/abhimehro/personal-config/pull/1832) when ready
+5. Squash Phase 1 docs draft
+   [#1832](https://github.com/abhimehro/personal-config/pull/1832) when ready
 
 ## Run — 2026-07-29
 
@@ -71,11 +76,11 @@
 
 ### Outcomes
 
-| Repo | Old PR | Disposition | New PR | Notes |
-|------|-------:|-------------|--------|-------|
-| email-security-pipeline | 1381 | SALVAGE + CLOSE | [#1383](https://github.com/abhimehro/email-security-pipeline/pull/1383) draft | release-drafter v7.7.0 only |
-| Hydrograph… | 434 | ESCALATE | — | python ^3.12 floor; MCP comment |
-| repoprompt-ce | 144 | REQUEST_CHANGES | — | unrelated XCTest flake on shard 1 |
+| Repo                    | Old PR | Disposition     | New PR                                                                        | Notes                             |
+| ----------------------- | -----: | --------------- | ----------------------------------------------------------------------------- | --------------------------------- |
+| email-security-pipeline |   1381 | SALVAGE + CLOSE | [#1383](https://github.com/abhimehro/email-security-pipeline/pull/1383) draft | release-drafter v7.7.0 only       |
+| Hydrograph…             |    434 | ESCALATE        | —                                                                             | python ^3.12 floor; MCP comment   |
+| repoprompt-ce           |    144 | REQUEST_CHANGES | —                                                                             | unrelated XCTest flake on shard 1 |
 
 - Salvage drafts opened: **1**
 - Infra-fix drafts: **0**
@@ -92,10 +97,14 @@
 
 ### Handoff
 
-1. Merge draft [#1383](https://github.com/abhimehro/email-security-pipeline/pull/1383)
-2. Human decide hg [#434](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/434)
-3. Re-run/fix rpce [#144](https://github.com/abhimehro/repoprompt-ce/pull/144) shard-1
-4. Squash Phase 1 docs [#1812](https://github.com/abhimehro/personal-config/pull/1812)
+1. Merge draft
+   [#1383](https://github.com/abhimehro/email-security-pipeline/pull/1383)
+2. Human decide hg
+   [#434](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/434)
+3. Re-run/fix rpce [#144](https://github.com/abhimehro/repoprompt-ce/pull/144)
+   shard-1
+4. Squash Phase 1 docs
+   [#1812](https://github.com/abhimehro/personal-config/pull/1812)
 
 ## Run — 2026-07-28
 
