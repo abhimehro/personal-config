@@ -843,3 +843,6 @@ static and used repeatedly inside functions or loops.
 ## 2026-12-08 - [Avoid slow manual string slicing with while loops]
 **Learning:** Using a manual `while True` loop to parse out multi-line string content by constantly calling `str.find` and managing pointers is extremely inefficient, byte-code intensive, and hard to read.
 **Action:** Replace manual string-parsing loops with a single `re.findall` call using a pre-compiled regular expression at the module level for a significant performance and readability boost.
+## 2026-07-31 - Bound splits + bulk-read small dotenv files
+**Learning:** Unbounded `.split("|")` and per-line I/O on small `.env` files add avoidable allocations in tight parse loops.
+**Action:** Use `.split("|", n)` when only the first n fields are needed, and `handle.read().splitlines()` for small in-memory config files.
