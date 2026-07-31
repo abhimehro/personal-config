@@ -95,6 +95,13 @@ def gen_script():
 
     script_lines = []
 
+    _process_env_vars(old_env, new_env, script_lines)
+    script = "\n".join(script_lines)
+    alias = _process_aliases(alias_str)
+
+    return script + "\n" + alias
+
+def _process_env_vars(old_env, new_env, script_lines):
     for k, v in new_env.items():
         if ignored(k):
             continue
@@ -119,16 +126,13 @@ def gen_script():
         script_lines.append(comment("removing %s" % var))
         script_lines.append("set -e %s" % var)
 
-    script = "\n".join(script_lines)
-
+def _process_aliases(alias_str):
     alias_lines = []
     for line in alias_str.splitlines():
         _, rest = line.split(None, 1)
         k, v = rest.split("=", 1)
         alias_lines.append("alias " + escape_identifier(k) + "=" + v)
-    alias = "\n".join(alias_lines)
-
-    return script + "\n" + alias
+    return "\n".join(alias_lines)
 
 
 script_file = os.fdopen(3, "w")
