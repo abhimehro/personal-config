@@ -1,0 +1,26 @@
+[user]
+	name = Your Name
+	email = you@example.com
+
+[init]
+	defaultBranch = main
+
+[core]
+	editor = nvim
+	autocrlf = input
+
+[pull]
+	rebase = false
+
+[push]
+	default = simple
+
+[merge]
+	conflictstyle = diff3
+
+[alias]
+	st = status
+	co = checkout
+	br = branch
+	cm = commit
+	lg = log --oneline --graph --decorate --all
