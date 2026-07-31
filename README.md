@@ -64,6 +64,7 @@ cd ~/dev/personal-config
 ./setup.sh
 # Requires: macOS, Homebrew, 1Password CLI (`op`), rclone installed via brew
 # Does:
+#  - Installs CLI tooling (macos/Brewfile + gh extensions incl. gh-stack)
 #  - Links dotfiles (SSH, fish, Cursor/VSCode) with backup/verify
 #  - Installs maintenance launchd agents
 #  - Prepares Control D / Windscribe helpers
