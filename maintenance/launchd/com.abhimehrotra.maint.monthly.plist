@@ -3,30 +3,23 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maintenance.monthly</string>
-    
+    <string>com.abhimehrotra.maint.monthly</string>
+
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
-        <key>MAINTENANCE_HOME</key>
-        <string>/Users/speedybee/Library/Maintenance</string>
         <key>AUTOMATED_RUN</key>
         <string>1</string>
     </dict>
-    
+
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/speedybee/Library/Maintenance/bin/monthly_maintenance.sh</string>
+        <string>-c</string>
+        <string>mkdir -p "$HOME/Library/Logs/maintenance" &amp;&amp; exec "$HOME/Library/Maintenance/bin/run_all_maintenance.sh" monthly &gt;&gt;"$HOME/Library/Logs/maintenance/maintenance_monthly.out" 2&gt;&gt;"$HOME/Library/Logs/maintenance/maintenance_monthly.err"</string>
     </array>
-    
-    <key>StandardOutPath</key>
-    <string>/Users/speedybee/Library/Logs/maintenance/maintenance_monthly.out</string>
-    
-    <key>StandardErrorPath</key>
-    <string>/Users/speedybee/Library/Logs/maintenance/maintenance_monthly.err</string>
-    
+
     <key>StartCalendarInterval</key>
     <dict>
         <key>Day</key>
@@ -36,10 +29,10 @@
         <key>Minute</key>
         <integer>0</integer>
     </dict>
-    
+
     <key>RunAtLoad</key>
     <false/>
-    
+
     <key>KeepAlive</key>
     <false/>
 </dict>

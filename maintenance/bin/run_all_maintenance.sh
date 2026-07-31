@@ -27,7 +27,13 @@ fi
 RUN_START=$(date +%s)
 export RUN_START
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_DIR="$SCRIPT_DIR/../tmp"
+if [[ -n ${MAINTENANCE_HOME-} && -d $MAINTENANCE_HOME ]]; then
+	LOG_DIR="$HOME/Library/Logs/maintenance"
+elif [[ $SCRIPT_DIR == "$HOME/Library/Maintenance/bin" ]]; then
+	LOG_DIR="$HOME/Library/Logs/maintenance"
+else
+	LOG_DIR="$SCRIPT_DIR/../tmp"
+fi
 
 print_help() {
 	echo -e "${BOLD}${BLUE}🛠️  Master Maintenance Script${NC}"
@@ -36,9 +42,9 @@ print_help() {
 	echo -e "${BOLD}Usage:${NC} $(basename "$0") [command]"
 	echo -e ""
 	echo -e "${BOLD}Commands:${NC}"
-	echo -e "  ${GREEN}weekly${NC}   Run weekly maintenance tasks (Health, Brew, Node, Services)"
+	echo -e "  ${GREEN}weekly${NC}   Run weekly maintenance tasks (Cleanup, Node, Google Drive, Optimizers)"
 	echo -e "           ${YELLOW}(Default if no argument provided)${NC}"
-	echo -e "  ${GREEN}monthly${NC}  Run comprehensive monthly maintenance (Weekly + System/Editor cleanup)"
+	echo -e "  ${GREEN}monthly${NC}  Run monthly deep cleaning tasks (System/Editor/Deep cleaner)"
 	echo -e "  ${GREEN}health${NC}   Run system health check only"
 	echo -e "  ${GREEN}quick${NC}    Run quick system cleanup"
 	echo -e "  ${GREEN}help${NC}     Show this help message"
@@ -291,7 +297,7 @@ run_script() {
 		# Execute script
 		if [[ $is_parallel == "true" ]]; then
 			# Run directly for parallel (background) tasks
-			if "$script_path" >"$log_file" 2>&1; then
+			if AUTOMATED_RUN="${AUTOMATED_RUN:-1}" "$script_path" >"$log_file" 2>&1; then
 				end_time=$(date +%s)
 				duration_sec=$((end_time - start_time))
 				duration_fmt="${duration_sec}s"
@@ -310,7 +316,7 @@ run_script() {
 			fi
 		else
 			# Run with spinner for serial tasks
-			"$script_path" >"$log_file" 2>&1 &
+			AUTOMATED_RUN="${AUTOMATED_RUN:-1}" "$script_path" >"$log_file" 2>&1 &
 			local pid=$!
 
 			spinner $pid "Running $clean_name..."
@@ -348,63 +354,46 @@ run_script() {
 run_weekly_maintenance() {
 	echo "=== Weekly Maintenance Tasks ===" | tee -a "$MASTER_LOG"
 
-	# Serial tasks
-	run_script "health_check.sh" "critical"
-	run_script "quick_cleanup.sh" "cleanup"
+	# Serial weekly tasks
+	run_script "quick_cleanup.sh" "cleanup" || true
+	run_script "node_maintenance.sh" "maintenance" || true
+	run_script "google_drive_monitor.sh" "maintenance" || true
 
-	echo "Starting parallel maintenance tasks..." | tee -a "$MASTER_LOG"
+	echo "Starting parallel optimization tasks..." | tee -a "$MASTER_LOG"
 
-	local brew_status="$LOG_DIR/status_brew_$TIMESTAMP.log"
-	local node_status="$LOG_DIR/status_node_$TIMESTAMP.log"
-	local gdrive_status="$LOG_DIR/status_gdrive_$TIMESTAMP.log"
-	local service_status="$LOG_DIR/status_service_$TIMESTAMP.log"
-
-	pids=""
+	local service_status="$LOG_DIR/status_service_optimizer_$TIMESTAMP.log"
+	local perf_status="$LOG_DIR/status_performance_optimizer_$TIMESTAMP.log"
+	local pids=""
 
 	# Note: Passed "true" as 4th arg to indicate parallel execution
-	(run_script "brew_maintenance.sh" "maintenance" "$brew_status" "true") &
-	pids="$pids $!"
-
-	(run_script "node_maintenance.sh" "maintenance" "$node_status" "true") &
-	pids="$pids $!"
-
-	(run_script "google_drive_monitor.sh" "maintenance" "$gdrive_status" "true") &
-	pids="$pids $!"
-
 	(run_script "service_optimizer.sh" "optimization" "$service_status" "true") &
 	pids="$pids $!"
 
-	# Wait for all
-	wait_for_pids "$pids" "Running parallel tasks..."
+	(run_script "performance_optimizer.sh" "optimization" "$perf_status" "true") &
+	pids="$pids $!"
 
-	# Consolidate logs
-	cat "$brew_status" "$node_status" "$gdrive_status" "$service_status" >>"$MASTER_LOG"
+	wait_for_pids "$pids" "Running optimization tasks..."
 
-	# Consolidate Results from temp file
+	cat "$service_status" "$perf_status" >>"$MASTER_LOG" 2>/dev/null || true
+
 	if [[ -f $PARALLEL_RESULTS_LOG ]]; then
 		while IFS= read -r line; do
 			SUMMARY_RESULTS+=("$line")
 		done <"$PARALLEL_RESULTS_LOG"
 	fi
 
-	echo "Parallel tasks completed." | tee -a "$MASTER_LOG"
-
-	# Performance optimizer (Serial)
-	run_script "performance_optimizer.sh" "optimization"
+	echo "Parallel optimization tasks completed." | tee -a "$MASTER_LOG"
 }
 
 # Function to run comprehensive scripts (monthly)
 run_monthly_maintenance() {
 	echo "=== Monthly Maintenance Tasks ===" | tee -a "$MASTER_LOG"
 
-	run_weekly_maintenance
-
 	echo "Starting monthly parallel cleanup tasks..." | tee -a "$MASTER_LOG"
 
 	local system_cleanup_status="$LOG_DIR/status_system_cleanup_$TIMESTAMP.log"
 	local editor_cleanup_status="$LOG_DIR/status_editor_cleanup_$TIMESTAMP.log"
-
-	pids=""
+	local pids=""
 
 	(run_script "system_cleanup.sh" "cleanup" "$system_cleanup_status" "true") &
 	pids="$pids $!"
@@ -412,13 +401,10 @@ run_monthly_maintenance() {
 	(run_script "editor_cleanup.sh" "cleanup" "$editor_cleanup_status" "true") &
 	pids="$pids $!"
 
-	# Wait for all
 	wait_for_pids "$pids" "Running cleanup tasks..."
 
-	# Consolidate logs
-	cat "$system_cleanup_status" "$editor_cleanup_status" >>"$MASTER_LOG"
+	cat "$system_cleanup_status" "$editor_cleanup_status" >>"$MASTER_LOG" 2>/dev/null || true
 
-	# Consolidate Results from temp file
 	if [[ -f $PARALLEL_RESULTS_LOG ]]; then
 		while IFS= read -r line; do
 			SUMMARY_RESULTS+=("$line")
@@ -428,7 +414,7 @@ run_monthly_maintenance() {
 	echo "Monthly parallel tasks completed." | tee -a "$MASTER_LOG"
 
 	echo "Running deep cleaner with caution..." | tee -a "$MASTER_LOG"
-	run_script "deep_cleaner.sh" "cleanup"
+	run_script "deep_cleaner.sh" "cleanup" || true
 }
 
 # Function to print summary table
@@ -538,14 +524,45 @@ print_summary() {
 	fi
 }
 
+# Send macOS notification when running under automation
+send_automated_notification() {
+	[[ ${AUTOMATED_RUN:-0} == "1" ]] || return 0
+
+	local failed=0
+	local missing=0
+	for entry in "${SUMMARY_RESULTS[@]}"; do
+		if [[ $entry == *"Failed"* ]]; then
+			failed=$((failed + 1))
+		elif [[ $entry == *"Missing"* ]]; then
+			missing=$((missing + 1))
+		fi
+	done
+
+	local title="Maintenance"
+	local msg
+	if [[ $failed -gt 0 ]]; then
+		msg="Completed with ${failed} task error(s)"
+	elif [[ $missing -gt 0 ]]; then
+		msg="Completed with ${missing} missing task(s)"
+	else
+		msg="All tasks completed successfully"
+	fi
+
+	if command -v terminal-notifier >/dev/null 2>&1; then
+		terminal-notifier -title "$title" -subtitle "$msg" -message "Maintenance run finished" -group "maintenance" 2>/dev/null || true
+	elif command -v osascript >/dev/null 2>&1; then
+		osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "$msg" "$title" 2>/dev/null || true
+	fi
+}
+
 # --- Execution Entry Point ---
 
 if [[ $# -eq 1 ]]; then
 	case "$1" in
 	"weekly") run_weekly_maintenance ;;
 	"monthly") run_monthly_maintenance ;;
-	"health") run_script "health_check.sh" "critical" ;;
-	"quick") run_script "quick_cleanup.sh" "cleanup" ;;
+	"health") run_script "health_check.sh" "critical" || true ;;
+	"quick") run_script "quick_cleanup.sh" "cleanup" || true ;;
 	*)
 		print_help
 		exit 1
@@ -565,9 +582,17 @@ if [[ -x "$SCRIPT_DIR/generate_error_summary.sh" ]]; then
 fi
 
 print_summary
+send_automated_notification
 
-# Footer
 echo "=== Master Maintenance Run Completed: $(date) ===" | tee -a "$MASTER_LOG"
 
 # Clean up old logs (Keep 10)
 find "$LOG_DIR" -name "maintenance_master_*.log" -type f | sort -r | tail -n +11 | xargs rm -f 2>/dev/null || true
+
+# Exit non-zero if any task failed or was missing
+for entry in "${SUMMARY_RESULTS[@]}"; do
+	if [[ $entry == *"Failed"* || $entry == *"Missing"* ]]; then
+		exit 1
+	fi
+done
+exit 0

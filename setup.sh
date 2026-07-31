@@ -81,9 +81,14 @@ install_maintenance() {
 
 remove_legacy_agents() {
 	local legacy="$HOME/Library/LaunchAgents/com.user.maintenance.weekly.plist"
+
+	# Boot out any stale maintenance agent labels before removing files
+	for legacy_label in com.user.maintenance.weekly com.abhimehrotra.maintenance.weekly com.abhimehrotra.maintenance.monthly; do
+		launchctl bootout "gui/$(id -u)/$legacy_label" 2>/dev/null || true
+	done
+
 	if [[ -f $legacy ]]; then
 		log_info "Removing legacy maintenance LaunchAgent (com.user.maintenance.weekly)..."
-		launchctl bootout "gui/$(id -u)" "$legacy" 2>/dev/null || true
 		rm -f "$legacy"
 		log_ok "Legacy LaunchAgent removed."
 	fi

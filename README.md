@@ -108,8 +108,14 @@ For canonical triage/salvage policy, see `docs/automated-pr-review-agent.md` and
 # Quick system cleanup
 ~/dev/personal-config/maintenance/bin/run_all_maintenance.sh quick
 
+# Weekly maintenance (Monday)
+~/dev/personal-config/maintenance/bin/run_all_maintenance.sh weekly
+
+# Monthly deep clean (1st of month)
+~/dev/personal-config/maintenance/bin/run_all_maintenance.sh monthly
+
 # View automation status
-launchctl list | grep maintenance
+launchctl list | grep com.abhimehrotra
 
 # View latest health report
 ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat

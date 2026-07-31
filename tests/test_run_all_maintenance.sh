@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Unit tests for maintenance/bin/run_all_maintenance.sh
-# Mocks: health_check.sh, quick_cleanup.sh, and all weekly-mode sub-scripts
+# Mocks: sub-scripts for health, quick, weekly, and monthly modes.
 #
 # Pattern: script-copy + mock-sibling (see docs/TESTING.md for patterns)
 # The orchestrator resolves sub-scripts relative to its own SCRIPT_DIR, so
@@ -127,9 +127,11 @@ else
 	cat "$TEST_DIR/t5.log"
 	FAIL=$((FAIL + 1))
 fi
-check_grep "weekly calls health_check.sh" "health_check.sh called" "$CALL_LOG"
 check_grep "weekly calls quick_cleanup.sh" "quick_cleanup.sh called" "$CALL_LOG"
-check_grep "weekly calls performance_optimizer" "performance_optimizer.sh called" "$CALL_LOG"
+check_grep "weekly calls node_maintenance.sh" "node_maintenance.sh called" "$CALL_LOG"
+check_grep "weekly calls google_drive_monitor.sh" "google_drive_monitor.sh called" "$CALL_LOG"
+check_grep "weekly calls service_optimizer.sh" "service_optimizer.sh called" "$CALL_LOG"
+check_grep "weekly calls performance_optimizer.sh" "performance_optimizer.sh called" "$CALL_LOG"
 
 # ---- Test 6: default (no-args) mode runs weekly tasks ----
 : >"$CALL_LOG"
@@ -141,29 +143,46 @@ else
 	cat "$TEST_DIR/t6.log"
 	FAIL=$((FAIL + 1))
 fi
-check_grep "no-args calls health_check.sh" "health_check.sh called" "$CALL_LOG"
 check_grep "no-args calls quick_cleanup.sh" "quick_cleanup.sh called" "$CALL_LOG"
-check_grep "no-args calls performance_optimizer" "performance_optimizer.sh called" "$CALL_LOG"
+check_grep "no-args calls node_maintenance.sh" "node_maintenance.sh called" "$CALL_LOG"
+check_grep "no-args calls performance_optimizer.sh" "performance_optimizer.sh called" "$CALL_LOG"
 
-# ---- Test 7: error propagation — orchestrator exits non-zero when sub-script fails ----
-make_mock_fail "health_check.sh"
+# ---- Test 7: monthly mode dispatches to expected scripts ----
 : >"$CALL_LOG"
-t7_exit=0
-bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t7.log" 2>&1 || t7_exit=$?
-if [[ $t7_exit -ne 0 ]]; then
-	echo "PASS: sub-script failure propagated to orchestrator"
+if bash "$MOCK_DIR/run_all_maintenance.sh" monthly >"$TEST_DIR/t7.log" 2>&1; then
+	echo "PASS: monthly mode exits 0"
 	PASS=$((PASS + 1))
 else
-	echo "FAIL: orchestrator did not propagate sub-script failure"
+	echo "FAIL: monthly mode exited non-zero"
+	cat "$TEST_DIR/t7.log"
 	FAIL=$((FAIL + 1))
 fi
-make_mock_ok "health_check.sh"
+check_grep "monthly calls system_cleanup.sh" "system_cleanup.sh called" "$CALL_LOG"
+check_grep "monthly calls editor_cleanup.sh" "editor_cleanup.sh called" "$CALL_LOG"
+check_grep "monthly calls deep_cleaner.sh" "deep_cleaner.sh called" "$CALL_LOG"
 
-# ---- Test 8: master log file is created in LOG_DIR ----
+# ---- Test 8: weekly matrix continues after a sub-script failure and exits non-zero ----
+make_mock_fail "node_maintenance.sh"
+: >"$CALL_LOG"
+t8_exit=0
+bash "$MOCK_DIR/run_all_maintenance.sh" weekly >"$TEST_DIR/t8.log" 2>&1 || t8_exit=$?
+if [[ $t8_exit -ne 0 ]]; then
+	echo "PASS: weekly mode exits non-zero when a sub-script fails"
+	PASS=$((PASS + 1))
+else
+	echo "FAIL: weekly mode should exit non-zero on sub-script failure"
+	FAIL=$((FAIL + 1))
+fi
+check_grep "weekly continues after node failure" "node_maintenance.sh called (fail)" "$CALL_LOG"
+check_grep "weekly still runs quick_cleanup after failure" "quick_cleanup.sh called" "$CALL_LOG"
+check_grep "weekly still runs service_optimizer after failure" "service_optimizer.sh called" "$CALL_LOG"
+make_mock_ok "node_maintenance.sh"
+
+# ---- Test 9: master log file is created in LOG_DIR ----
 # Remove any master logs left by earlier tests so this assertion is unambiguous.
 rm -f "$LOG_TMP"/maintenance_master_*.log 2>/dev/null || true
 : >"$CALL_LOG"
-bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t8.log" 2>&1
+bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t9.log" 2>&1
 log_count=$(find "$LOG_TMP" -name "maintenance_master_*.log" -type f 2>/dev/null | wc -l | tr -d ' ')
 if [[ $log_count -gt 0 ]]; then
 	echo "PASS: master log file created in LOG_DIR"
@@ -173,17 +192,17 @@ else
 	FAIL=$((FAIL + 1))
 fi
 
-# ---- Test 8: concurrent locking prevents second instance ----
+# ---- Test 10: concurrent locking prevents second instance ----
 # Pre-create a fresh lock so the orchestrator sees a recent (non-stale) lock
 mkdir -p "$LOG_TMP/run_all_maintenance.lock"
 : >"$CALL_LOG"
-t8_out=$(bash "$MOCK_DIR/run_all_maintenance.sh" health 2>&1 || true)
+t10_out=$(bash "$MOCK_DIR/run_all_maintenance.sh" health 2>&1 || true)
 rmdir "$LOG_TMP/run_all_maintenance.lock" 2>/dev/null || true
-if echo "$t8_out" | grep -q "already running"; then
+if echo "$t10_out" | grep -q "already running"; then
 	echo "PASS: concurrent lock blocks second instance"
 	PASS=$((PASS + 1))
 else
-	echo "FAIL: expected 'already running' message; got: $t8_out"
+	echo "FAIL: expected 'already running' message; got: $t10_out"
 	FAIL=$((FAIL + 1))
 fi
 if ! grep -q "health_check.sh called" "$CALL_LOG" 2>/dev/null; then
@@ -194,10 +213,10 @@ else
 	FAIL=$((FAIL + 1))
 fi
 
-# ---- Test 9: idempotency — two sequential runs both dispatch successfully ----
+# ---- Test 11: idempotency — two sequential runs both dispatch successfully ----
 : >"$CALL_LOG"
-bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t9a.log" 2>&1
-bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t9b.log" 2>&1
+bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t11a.log" 2>&1
+bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t11b.log" 2>&1
 call_count=$(grep -c "health_check.sh called" "$CALL_LOG" 2>/dev/null || true)
 if [[ $call_count -eq 2 ]]; then
 	echo "PASS: idempotency — two sequential runs both dispatched"
