@@ -1,0 +1,9 @@
+# Homebrew Bundle: CLI tooling for personal-config
+#
+# Run with: brew bundle --file=macos/Brewfile
+#
+# gh CLI extensions (gh-stack, gh-aw, etc.) are not brew-managed and are
+# installed/verified separately by scripts/install_gh_extensions.sh, which
+# setup.sh runs right after this bundle.
+
+brew "gh"
