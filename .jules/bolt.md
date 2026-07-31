@@ -839,3 +839,6 @@ that are called frequently (like `_normalize_host` checking for whitespace) adds
 unnecessary overhead due to repeated evaluation. **Action:** Always pre-compile
 regular expressions (e.g. `re.compile(...)`) at the module level when they are
 static and used repeatedly inside functions or loops.
+## 2025-07-31 - [Rejected] Bounding string splits for small strings
+**Learning:** Using `string.split(delim, maxsplit)` on small strings (like markdown table rows) offers no measurable performance benefit in Python and introduces severe bugs if the delimiter count exceeds expectations (trailing data is dumped into the final element). CPython argument parsing overhead makes it slower than an unbounded split when there are fewer delimiters than the limit.
+**Action:** Never propose `maxsplit` optimizations on short, unpredictable strings; reserve it strictly for large, known-format data blobs where avoiding trailing list allocations has a proven impact.
