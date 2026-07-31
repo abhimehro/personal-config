@@ -1,13 +1,25 @@
-# Phase 2 Salvage — 2026-07-29
+# Weekly Repository Health — General (2026-07-30)
 
-- [x] Preflight (`gh auth`, 7/7 repos, `make cursor-cloud-hooks`)
-- [x] Re-fetch Phase 1 remainder + live CONFLICTING inventory (empty)
-- [x] Confirm prior-day salvage drafts merged (#1804/#1803/#1072)
-- [x] Deep-dive esp #1381 → surgical release-drafter salvage #1383
-- [x] Close #1381 as superseded
-- [x] Escalate hg #434 (python ^3.12 floor) via MCP review
-- [x] REQUEST_CHANGES rpce #144 (unrelated flaky XCTest) via MCP
-- [x] Write pr-inventory / pr-triage / pr-review Phase2 / salvage-session-reports / lessons 0ew
-- [x] Notion + automation memory update
-- [x] Commit/push session docs on `cursor-agent/automated-pr-salvage-workflow-1a80`
-- [x] Open session docs PR
+## personal-config
+- [x] Fix README broken ProtonDrive / dns-setup references
+- [x] Fix monthly_maintenance.sh undefined $EXIT_CODE
+- [x] Fix workflows README count (greetings.yml)
+- [x] File issue for maintenance orchestration split (#1834)
+
+## email-security-pipeline
+- [x] Remove tracked root junk / dump artifacts
+- [x] Fix README Quick Start Option gap + test_config path
+- [x] File issue for god modules / stale branches (#1391)
+
+## ctrld-sync
+- [x] Remove tracked junk files
+- [x] Fix AGENTS.md multi-module + Docker reality
+- [x] Extend CI coverage to api_client/cache + root test_main.py
+- [x] File issue for main.py further extraction (#1082)
+
+## repoprompt-ce
+- [x] Fix version.env merge conflict garbage
+- [x] File issue for AgentMode god-files / missing PR templates (#155)
+
+## Deliverables
+- Draft PRs: #1833, #1081, #1390, #154
