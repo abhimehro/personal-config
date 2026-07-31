@@ -101,26 +101,33 @@ def gen_script():
 
     return script + "\n" + alias
 
+def _add_new_env_var(k, v, script_lines):
+    script_lines.append(comment("adding %s=%s" % (k, v)))
+    _set_env_var(k, v, script_lines)
+
+def _update_env_var(k, v, v1, script_lines):
+    script_lines.append(comment("updating %s=%s -> %s" % (k, v1, v)))
+    if k == "PWD":
+        script_lines.append("cd %s" % escape(v))
+    else:
+        _set_env_var(k, v, script_lines)
+
+def _set_env_var(k, v, script_lines):
+    if k == "PATH":
+        value = " ".join([escape(directory) for directory in v.split(":")])
+    else:
+        value = escape(v)
+    script_lines.append("set -g -x %s %s" % (k, value))
+
 def _process_env_vars(old_env, new_env, script_lines):
     for k, v in new_env.items():
         if ignored(k):
             continue
         v1 = old_env.get(k)
         if not v1:
-            script_lines.append(comment("adding %s=%s" % (k, v)))
+            _add_new_env_var(k, v, script_lines)
         elif v1 != v:
-            script_lines.append(comment("updating %s=%s -> %s" % (k, v1, v)))
-            # process special variables
-            if k == "PWD":
-                script_lines.append("cd %s" % escape(v))
-                continue
-        else:
-            continue
-        if k == "PATH":
-            value = " ".join([escape(directory) for directory in v.split(":")])
-        else:
-            value = escape(v)
-        script_lines.append("set -g -x %s %s" % (k, value))
+            _update_env_var(k, v, v1, script_lines)
 
     for var in set(old_env.keys()) - set(new_env.keys()):
         script_lines.append(comment("removing %s" % var))
