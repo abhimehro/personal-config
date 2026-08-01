@@ -440,7 +440,7 @@ If a layer is merged out of order or a stack goes stale against `main`:
   stack from current `main` over resurrecting a collapsed one.
 - **Before any recovery,** confirm the automation-facing guidance is still intact
   on `main` (skill files, this AGENTS.md section, the review/salvage doc notes,
-  and Lessons 0ez/0fb) so agents are unaffected while you repair the test stack.
+  and Lessons 0ez/0fb in `tasks/lessons.md`) so agents are unaffected while you repair the test stack.
 
 ## Big-picture architecture (how the pieces fit)
 
