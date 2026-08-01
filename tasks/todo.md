@@ -1,10 +1,25 @@
-# Phase 2 Salvage — 2026-07-31
+# Phase 2 Salvage — 2026-08-01
 
-- [x] Preflight + cursor-cloud-hooks
-- [x] Inventory CONFLICTING from Phase 1 remainder
-- [x] Salvage pc palette + micro-opts; seatek #552
-- [x] Close superseded originals
-- [x] Escalate security / broken auth
-- [x] Write inventory/triage/review/lessons/salvage report
-- [ ] Human: merge draft #571/#1856/#1857
-- [ ] Human: T1 escalations
+## Preflight
+- [x] `gh auth` as abhimehro (PAT)
+- [x] Preflight PASS 7/7
+- [x] `make cursor-cloud-hooks`
+- [x] Live PR re-fetch
+
+## Hard gates
+- [x] S1: no autonomous merges
+- [x] Security/Sentinel → ESCALATE
+- [x] ESP draft-only; CodeScene cmd posted
+- [x] Journals append-only (0y)
+
+## Queue actions
+- [x] Inventory + triage files
+- [x] Post CodeScene cmd on ESP #1399
+- [x] Salvage PC #1857 → #1875
+- [x] Salvage PC #1859 empty-state → #1876
+- [x] CLOSE PC #1825 junk
+- [x] Salvage ctrld #1081 → #1105
+- [x] Salvage ESP #1399 spam-only → #1401
+- [x] Salvage Seatek #554 → #576
+- [x] ESCALATE comments: pc #1822, seatek #568/#555, rpce #158; RC #560
+- [x] Session docs commit + docs PR + Notion + memory

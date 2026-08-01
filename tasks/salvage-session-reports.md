@@ -6,6 +6,56 @@
 
 ## Entry template
 
+## Run — 2026-08-01
+
+### Input tail
+
+- Source: Phase 1 `tasks/pr-review-2026-08-01.md` remainder + live re-fetch
+- Preflight PASS 7/7; `make cursor-cloud-hooks`; PAT as `abhimehro` (0ew)
+- Live CONFLICTING focus: pc #1859/#1857/#1825/#1822; ctrld #1081; esp #1399;
+  Seatek #568/#555/#560/#554; rpce DIRTY drift cluster
+- Auto-resolved vs Phase 1 snapshot: hg #443 CLEAN; series queue empty
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+| ---- | -----: | ----------- | ------ | ----- |
+| personal-config | 1857 | SALVAGE + CLOSE | [#1875](https://github.com/abhimehro/personal-config/pull/1875) | re-roll DIRTY prior salvage |
+| personal-config | 1859 | SALVAGE + CLOSE | [#1876](https://github.com/abhimehro/personal-config/pull/1876) | empty-state only; keep a11y |
+| personal-config | 1825 | CLOSE / no-op | — | patch3/scratch only |
+| personal-config | 1822 | ESCALATE | — | CORS + huge churn |
+| ctrld-sync | 1081 | SALVAGE + CLOSE | [#1105](https://github.com/abhimehro/ctrld-sync/pull/1105) | scratch+CI; skip AGENTS churn |
+| email-security-pipeline | 1399 | SALVAGE + CLOSE | [#1401](https://github.com/abhimehro/email-security-pipeline/pull/1401) | spam_analyzer only; reject monolith collapse; `/cs-agent` posted |
+| Seatek_Analysis | 554 | SALVAGE + CLOSE | [#576](https://github.com/abhimehro/Seatek_Analysis/pull/576) | warn_on_default rename |
+| Seatek_Analysis | 568 | ESCALATE | — | path hijack CRITICAL |
+| Seatek_Analysis | 555 | ESCALATE | — | multi-root |
+| Seatek_Analysis | 560 | REQUEST_CHANGES | — | parallelize mixed churn |
+| repoprompt-ce | 158 | ESCALATE | — | TOCTOU + 37k drift |
+| Hydrograph… | — | AUTO-RESOLVED | — | #443 CLEAN; security CLEAN leave |
+| series_correction… | — | DRAINED | — | 0 open PRs |
+
+- Salvage drafts opened: **5**
+- Infra-fix drafts: **0**
+- Closed via API: **6**
+- Autonomous merges: **0** (S1)
+- New lesson: **0fc** (reject module-collapse perf PRs)
+- `request_reviewers`: skipped (author already abhimehro)
+
+### Verification
+
+- pc #1875: `python3 -m py_compile parse_inventory.py gh_token_env.py`
+- pc #1876: `python3 -m unittest tests.test_infuse_media_server` → OK
+- ctrld #1105: `uv run pytest tests/ --collect-only` → 364
+- esp #1401: `pytest -k spam` → 28 passed
+- seatek #576: `pytest tests/test_repository_automation_common.py` → 15 passed
+
+### Handoff
+
+1. Human merge drafts #1875 / #1876 / #1105 / #1401 / #576 (prefer Seatek #571 before #576)
+2. Human T1 security: pc #1822; seatek #568/#555/#573; hg #445/#448/#450; rpce #158
+3. Re-roll seatek #560 and rpce DIRTY pile as focused drafts
+4. Phase 1 follow-up: hg #443/#441 CLEAN; pc #1867 CI; rpce #163/#164 CI
+
 ## Run — 2026-07-30
 
 ### Input tail
