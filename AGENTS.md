@@ -429,7 +429,7 @@ If a layer is merged out of order or a stack goes stale against `main`:
 - **Accidental bottom-layer merge:** GitHub locks a PR once merged (it cannot be
   reopened), and auto-retargets the next layer to `main`. The stack survives as
   the remaining open PRs; do **not** force-push a collapsed local rebase over them.
-  Reset your local branches to the remote tips instead (`git branch -f <b> origin/<b>`),
+  Reset your local branches to the remote tips instead (`git branch -f <branch> origin/<branch>`),
   then decide whether a replacement bottom PR is even needed (it is usually empty
   if the content already reached `main`).
 - **Layer merged but immediately reverted:** the net diff on `main` is zero, so the
