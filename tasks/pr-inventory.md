@@ -1,50 +1,48 @@
-# PR Inventory — 2026-08-01
+# PR Inventory — Salvage Session 2026-08-01
 
-Phase 1 cron (`0 13 * * *`). Preflight **PASS 7/7**. Inventoried **39**
-automation / bot-signal PRs across 7 repos (plus a few stacked human docs PRs
-seen at recheck).
+Live re-fetch after Phase 1 remainder (`tasks/pr-review-2026-08-01.md`).
+Scope: bot/automation PRs that are CONFLICTING/DIRTY (or prior deferred/escalated still open).
 
-| Repo | PR | Author | Category | CI | Conflicts | Age | Status |
-| ---- | -- | ------ | -------- | -- | --------- | --- | ------ |
-| personal-config | 1822 | abhimehro | SECURITY | PASS | CONFLICTING | 2d | ESCALATE |
-| personal-config | 1841 | abhimehro | SECURITY | PASS | MERGEABLE | 1d | ESCALATE |
-| personal-config | 1857 | abhimehro | PERFORMANCE | FAIL | MERGEABLE | 0d | DEFER (salvage CI) |
-| personal-config | 1859 | abhimehro | UI | PASS | CONFLICTING | 0d | DEFER Phase 2 |
-| personal-config | 1867 | abhimehro | PERFORMANCE | FAIL | MERGEABLE | 0d | REQUEST_CHANGES |
-| personal-config | 1868 | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGED |
-| ctrld-sync | 1081 | app/cursor | CI/INFRA | FAIL | CONFLICTING | 1d | DEFER |
-| ctrld-sync | 1086 | abhimehro | REFACTOR | PASS | MERGEABLE | 1d | REQUEST_CHANGES |
-| ctrld-sync | 1090 | abhimehro | UI | PASS | MERGEABLE | 0d | CLOSED (twin of 1092) |
-| ctrld-sync | 1091 | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGED |
-| ctrld-sync | 1092 | abhimehro | UI | PASS | MERGEABLE | 0d | MERGED |
-| email-security-pipeline | 1395 | abhimehro | CI/INFRA | PASS | MERGEABLE | 0d | MERGED |
-| email-security-pipeline | 1397 | abhimehro | UI | PASS | MERGEABLE | 0d | MERGED |
-| email-security-pipeline | 1398 | dependabot | DEPENDENCY | PASS | MERGEABLE | 0d | CLOSED (twin of 1395) |
-| email-security-pipeline | 1399 | abhimehro | PERFORMANCE | FAIL (CodeScene) | MERGEABLE | 0d | DEFER (+cs-agent) |
-| Seatek_Analysis | 555 | abhimehro | SECURITY | PASS | CONFLICTING | 2d | ESCALATE |
-| Seatek_Analysis | 560 | abhimehro | PERFORMANCE | PASS | CONFLICTING | 2d | DEFER Phase 2 |
-| Seatek_Analysis | 568 | abhimehro | SECURITY | PASS | CONFLICTING | 1d | ESCALATE |
-| Seatek_Analysis | 571 | abhimehro | SECURITY | PASS | MERGEABLE | 0d | ESCALATE |
-| Seatek_Analysis | 572 | abhimehro | CI/INFRA | PASS | MERGEABLE | 0d | MERGED (zero-diff) |
-| Seatek_Analysis | 573 | abhimehro | SECURITY | PASS | MERGEABLE | 0d | ESCALATE |
-| Seatek_Analysis | 574 | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | MERGED |
-| Hydrograph | 441 | dependabot | DEPENDENCY | PASS | MERGEABLE | 1d | ESCALATE (numpy floor) |
-| Hydrograph | 442 | dependabot | DEPENDENCY | PASS | MERGEABLE | 1d | MERGED |
-| Hydrograph | 443 | dependabot | DEPENDENCY | PASS→CONFLICT | was MERGEABLE | 1d | DEFER Phase 2 (lock after 442) |
-| Hydrograph | 445 | abhimehro | SECURITY | PASS | MERGEABLE | 1d | ESCALATE |
-| Hydrograph | 448 | abhimehro | SECURITY | PASS | MERGEABLE | 0d | ESCALATE |
-| Hydrograph | 449 | dependabot | DEPENDENCY | PASS | MERGEABLE | 0d | MERGED |
-| Hydrograph | 450 | abhimehro | SECURITY | PASS | MERGEABLE | 0d | ESCALATE |
-| Hydrograph | 451 | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | MERGED |
-| series_correction | 336 | abhimehro | REFACTOR | FAIL (CodeScene) | CONFLICTING | 1d | DEFER |
-| series_correction | 337 | abhimehro | PERFORMANCE | PASS | MERGEABLE | 1d | MERGED |
-| series_correction | 338 | abhimehro | CI/INFRA | PASS | MERGEABLE | 0d | MERGED |
-| repoprompt-ce | 144 | abhimehro | UI | PASS | CONFLICTING | 3d | DEFER Phase 2 |
-| repoprompt-ce | 157 | abhimehro | PERFORMANCE | FAIL | CONFLICTING | 1d | DEFER Phase 2 |
-| repoprompt-ce | 158 | abhimehro | SECURITY | FAIL | CONFLICTING | 1d | ESCALATE |
-| repoprompt-ce | 161 | abhimehro | UI | PASS | CONFLICTING | 1d | DEFER Phase 2 |
-| repoprompt-ce | 163 | abhimehro | UI | FAIL (Secret Scan) | MERGEABLE | 0d | REQUEST_CHANGES |
-| repoprompt-ce | 164 | abhimehro | PERFORMANCE | FAIL | MERGEABLE | 0d | REQUEST_CHANGES |
+## Counts (live)
 
-Hydrograph = `Hydrograph_Versus_Seatek_Sensors_Project`;
-series_correction = `series_correction_project_updated`.
+| Repo | Open | CONFLICTING/DIRTY (start) | Notes |
+| ---- | ---- | ------------------------- | ----- |
+| personal-config | 9 | 4 (#1859/#1857/#1825/#1822) | Salvaged 1857/1859; closed 1825; escalate 1822 |
+| ctrld-sync | 3 | 1 (#1081) | Salvaged → #1105 |
+| email-security-pipeline | 1 | 1 (#1399) + CodeScene | Spam-only salvage → #1401 |
+| Seatek_Analysis | 6 | 4 (#568/#555/#560/#554) | #554 → #576; security escalate |
+| Hydrograph… | 5 | 0 | All CLEAN (Phase 1 remainder stale on #443) |
+| series_correction… | 0 | 0 | Queue drained |
+| repoprompt-ce | 9 | 7 DIRTY + UNSTABLE CI | Security escalate #158; defer drift pile |
+
+## Salvage drafts opened this run
+
+| New draft | Salvages | Repo |
+| --------- | -------- | ---- |
+| [#1875](https://github.com/abhimehro/personal-config/pull/1875) | #1857 | personal-config |
+| [#1876](https://github.com/abhimehro/personal-config/pull/1876) | #1859 (empty-state only) | personal-config |
+| [#1105](https://github.com/abhimehro/ctrld-sync/pull/1105) | #1081 | ctrld-sync |
+| [#1401](https://github.com/abhimehro/email-security-pipeline/pull/1401) | #1399 (spam_analyzer only) | email-security-pipeline |
+| [#576](https://github.com/abhimehro/Seatek_Analysis/pull/576) | #554 | Seatek_Analysis |
+
+## Closed this run
+
+| PR | Disposition |
+| -- | ----------- |
+| pc #1857 | superseded by #1875 |
+| pc #1859 | superseded by #1876 |
+| pc #1825 | no-op junk |
+| ctrld #1081 | superseded by #1105 |
+| esp #1399 | superseded by #1401 |
+| seatek #554 | superseded by #576 |
+
+## Still escalated / deferred (human)
+
+- pc #1822 CORS (DIRTY Sentinel)
+- seatek #568 path hijack, #555 multi-root, #560 parallelize (REQUEST_CHANGES)
+- seatek #571/#573 CLEAN security awaiting human
+- hg #445/#448/#450/#441 CLEAN security/deps
+- rpce #158 TOCTOU + DIRTY drift cluster (#161/#157/#152/#148/#147/#144)
+- rpce #163/#164 UNSTABLE CI (MERGEABLE — Phase 1 territory)
+- ctrld #1086 CLEAN but prior REQUEST_CHANGES (pin scope)
+- pc #1841 CLEAN Sentinel; #1867 UNSTABLE Bolt
