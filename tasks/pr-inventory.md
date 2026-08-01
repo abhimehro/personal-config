@@ -7,7 +7,7 @@ Scope: bot/automation PRs that are CONFLICTING/DIRTY (or prior deferred/escalate
 
 | Repo | Open | CONFLICTING/DIRTY (start) | Notes |
 | ---- | ---- | ------------------------- | ----- |
-| personal-config | 9→ | 4 (#1859/#1857/#1825/#1822) | Salvaged 1857/1859; closed 1825; escalate 1822 |
+| personal-config | 9 | 4 (#1859/#1857/#1825/#1822) | Salvaged 1857/1859; closed 1825; escalate 1822 |
 | ctrld-sync | 3 | 1 (#1081) | Salvaged → #1105 |
 | email-security-pipeline | 1 | 1 (#1399) + CodeScene | Spam-only salvage → #1401 |
 | Seatek_Analysis | 6 | 4 (#568/#555/#560/#554) | #554 → #576; security escalate |
