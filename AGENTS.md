@@ -391,6 +391,18 @@ Agent-specific rules:
   `gh stack init` with multiple branch names creates them off trunk in parallel, not
   chained, until the first rebase.
 
+For a one-page command cheat sheet, see
+`docs/gh-stack/quick-reference.md`. When in doubt during a session, run this
+quick verification before submitting or merging:
+
+- [ ] `gh stack view` shows every layer with a linear chain (no forks, no
+  `needsRebase=true`).
+- [ ] Each PR's `baseRefName` is the layer directly below it (the bottom targets
+  `main`).
+- [ ] You are about to merge only the **top** layer, via `gh stack merge --yes`
+  (or the merge-async REST API for API-only sessions).
+- [ ] A human has approved the merge (boundary S1); agents stop at opening drafts.
+
 **Merging a stack (Lesson 0ez — learned the hard way on 2026-07-31):** stacked PRs
 **cannot** be merged with `gh pr merge`, GraphQL `mergePullRequest`, or the ordinary
 `PUT /repos/{owner}/{repo}/pulls/{n}/merge` (even with `Prefer: respond-async`). They
