@@ -478,3 +478,7 @@ announce the full context.
 ## 2026-07-31 - Skip-to-content links for Python generated HTML
 **Learning:** Python scripts that generate static HTML for directory listings omit essential keyboard accessibility features like skip-to-content links, making navigation tedious for keyboard and screen reader users.
 **Action:** Always include a visually hidden, focusable skip link (`<a href="#main-content" class="skip-link">Skip to main content</a>`) at the top of the `<body>` and ensure the main content is wrapped in `<main id="main-content">`.
+
+## 2026-08-01 — empty-state class (salvage #1859)
+
+Added `empty-state` class on empty directory listing `<li>` without removing skip-link / landmark a11y from main.
