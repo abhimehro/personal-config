@@ -560,10 +560,11 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
   downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`.
   Subsequent runs are fast. The update script installs the Trunk launcher, but
   tool downloads happen lazily.
-- **No `requirements.txt`**: Python tests and scripts are mostly standard
-  library. The full test suite needs `pyyaml` (`pip install pyyaml`) — used by
-  `tests/test_repository_automation_common.py` which exercises
-  `.github/scripts/repository_automation_common.py`.
+- **`requirements.txt`**: The root `requirements.txt` contains `pyyaml`, which is
+  needed by the full test suite (e.g., `tests/test_repository_automation_common.py`
+  exercises `.github/scripts/repository_automation_common.py`). The Devin
+  environment blueprint installs this dependency automatically; otherwise run
+  `python3 -m pip install -r requirements.txt`.
 - **`package.json` is empty**: The root `package.json` is `{}` — it exists as a
   Trunk runtime anchor for Node-based linters (prettier, markdownlint). Do not
   run `npm install`.
