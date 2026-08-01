@@ -1077,7 +1077,7 @@
 | series… | #336 | ESCALATE | — | broken authenticate + CHANGELOG wipe |
 | series… | #322 | ESCALATE/DEFER | — | auth-adjacent |
 | series… | #337 | REQUEST_CHANGES | — | NaN masking |
-| ctrld-sync | #1086/#1088/#1081 | RC/DEFER | — | junk / CodeScene / CI |
+| ctrld-sync | #1086/#1088/#1081 | REQUEST_CHANGES/DEFER | — | junk / CodeScene / CI |
 | email-security-pipeline | #1394 | DEFER | — | S6 |
 | repoprompt-ce | #147/#158 + CI queue | ESCALATE/DEFER | — | no salvage |
 
