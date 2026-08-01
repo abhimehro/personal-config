@@ -19,7 +19,7 @@ gh stack init <branch-a> <branch-b> <branch-c>
 
 | Command | What it does |
 | ------- | ------------ |
-| \`gh stack view\` | Show the current stack, each layer, and its PR |
+| `gh stack view` | Show the current stack, each layer, and its PR |
 | \`gh stack rebase --no-trunk\` | Rebase every layer onto the one below (run before submit/merge) |
 | \`gh stack submit --auto\` | Push branches and open/update the stack of PRs |
 | \`gh stack push\` | Push branch updates without opening new PRs |
