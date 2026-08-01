@@ -145,6 +145,8 @@ else
 fi
 check_grep "no-args calls quick_cleanup.sh" "quick_cleanup.sh called" "$CALL_LOG"
 check_grep "no-args calls node_maintenance.sh" "node_maintenance.sh called" "$CALL_LOG"
+check_grep "no-args calls google_drive_monitor.sh" "google_drive_monitor.sh called" "$CALL_LOG"
+check_grep "no-args calls service_optimizer.sh" "service_optimizer.sh called" "$CALL_LOG"
 check_grep "no-args calls performance_optimizer.sh" "performance_optimizer.sh called" "$CALL_LOG"
 
 # ---- Test 7: monthly mode dispatches to expected scripts ----
@@ -174,8 +176,9 @@ else
 	FAIL=$((FAIL + 1))
 fi
 check_grep "weekly continues after node failure" "node_maintenance.sh called (fail)" "$CALL_LOG"
-check_grep "weekly still runs quick_cleanup after failure" "quick_cleanup.sh called" "$CALL_LOG"
+check_grep "weekly still runs google_drive_monitor after failure" "google_drive_monitor.sh called" "$CALL_LOG"
 check_grep "weekly still runs service_optimizer after failure" "service_optimizer.sh called" "$CALL_LOG"
+check_grep "weekly still runs performance_optimizer after failure" "performance_optimizer.sh called" "$CALL_LOG"
 make_mock_ok "node_maintenance.sh"
 
 # ---- Test 9: master log file is created in LOG_DIR ----
