@@ -12,7 +12,7 @@ Scope: bot/automation PRs that are CONFLICTING/DIRTY (or prior deferred/escalate
 | email-security-pipeline | 1 | 1 (#1399) + CodeScene | Spam-only salvage → #1401 |
 | Seatek_Analysis | 6 | 4 (#568/#555/#560/#554) | #554 → #576; security escalate |
 | Hydrograph… | 5 | 0 | All CLEAN (Phase 1 remainder stale on #443) |
-| series_correction… | 0 | 0 | Drain drained |
+| series_correction… | 0 | 0 | Queue drained |
 | repoprompt-ce | 9 | 7 DIRTY + UNSTABLE CI | Security escalate #158; defer drift pile |
 
 ## Salvage drafts opened this run
