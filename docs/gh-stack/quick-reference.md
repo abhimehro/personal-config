@@ -37,5 +37,5 @@ gh stack init <branch-a> <branch-b> <branch-c>
 4. **Merging requires a human.** Review/Salvage agents may \`link\`/\`init\` and
    open drafts, but never run \`gh stack merge\` unattended (boundary S1).
 
-See \`troubleshooting.md\` for what to do when a stack goes \`DIRTY\` or a layer is
+See [`docs/automated-pr-review-agent.md`](../automated-pr-review-agent.md) (and the linked `AGENTS.md` section) for what to do when a stack goes `DIRTY` or a layer is
 accidentally merged out of order.
