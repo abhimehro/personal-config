@@ -1,6 +1,6 @@
 # PR Triage — 2026-07-31
 
-Phase 1 cron (`0 13 * * *`). Preflight PASS 7/7. Auth: token with close/merge perms. Adversarial: opus-4.8 + gpt-5.5 parallel.
+Phase 1 cron (`0 13 * * *`). Preflight PASS 7/7. Auth: GitHub token with close/merge permissions. Adversarial: opus-4.8 + gpt-5.5 parallel.
 
 ## Disposition summary
 
