@@ -1,0 +1,30 @@
+# https://docs.devin.ai/onboard-devin/environment-yaml
+# One-time setup (e.g., install system tools, global CLIs).
+initialize: |
+  sudo apt-get update
+  sudo add-apt-repository -y ppa:deadsnakes/ppa
+  sudo apt-get update
+  sudo apt-get install -y python3.12 python3.12-venv graphviz rclone shellcheck openjdk-17-jre-headless
+  mkdir -p /home/ubuntu/bin
+  ln -sf /usr/bin/python3.12 /home/ubuntu/bin/python3
+  sudo python3.12 -m ensurepip --upgrade
+  curl -fsSL -o /home/ubuntu/bin/plantuml.jar https://github.com/plantuml/plantuml/releases/download/v1.2024.5/plantuml-1.2024.5.jar
+  printf '%s\n' '#!/usr/bin/env bash' 'exec java -jar /home/ubuntu/bin/plantuml.jar "$@"' > /home/ubuntu/bin/plantuml
+  chmod +x /home/ubuntu/bin/plantuml
+  curl https://get.trunk.io -fsSL | bash
+# Install project dependencies (runs during builds, surfaced to agent at session start).
+maintenance: |
+  python3.12 -m pip install -r requirements.txt
+knowledge:
+  - name: lint
+    contents: |
+      make lint-errors
+      trunk check path/to/file
+  - name: test
+    contents: |
+      make test-quick
+      make test-all
+  - name: diagram
+    contents: |
+      plantuml -checkonly path/to/diagram.puml
+      plantuml -tpng path/to/diagram.puml
