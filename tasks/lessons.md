@@ -27,6 +27,23 @@ the body to a file and pass `--body-file`. Never put `$` + digits in
 double-quoted close/comment strings.
 **Detection cost:** Low — read the posted comment URL after close.
 
+## Lesson 0fb: Stack sibling PRs to break post-merge conflict cascades (2026-07-31)
+
+**Pattern:** Phase 1 merged 21 PRs on 2026-07-31, but the two gh-stack stacks
+(starter configs #1842-#1844 and CLI tooling #1846-#1848) could not be merged
+via `gh pr merge` / GraphQL `mergePullRequest` / ordinary `PUT .../merge` (even with
+`Prefer: respond-async`). GitHub rejected them with "part of a stack… use the
+asynchronous merge REST API". This is the same class of failure as Lessons 0, 0y, and 0z:
+merging siblings independently leaves the rest DIRTY in a cascade.
+**Rule:** (1) For 2+ open PRs in the same repo that collide on the same file(s),
+link them with `gh stack link <bottom> ... <top>` and merge only the top; do not
+merge each independently. (2) Stack merges require `gh stack merge --yes` (when
+the gh extension is present) or the async REST API
+`PUT /repos/{owner}/{repo}/pulls/{top}/merge-async` + poll `.../merge-async/{uuid}` until
+`status=merged`. (3) Auto-merge is unsupported for stacks. (4) The full recipe lives
+in AGENTS.md → `Stacked PRs during review/salvage sessions`.
+**Detection cost:** Low — `baseRefName != main` on children, or a GraphQL/REST error
+mentioning stack.
 ## Lesson 0ex: main-side unpinned action fails WI on unrelated PRs (2026-07-30)
 
 **Pattern:** Several personal-config Bolt PRs that did **not** touch workflows
