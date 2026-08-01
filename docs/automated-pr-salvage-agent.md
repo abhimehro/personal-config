@@ -205,6 +205,19 @@ post `/cs-agent skill:fix-code-health-degradations` (if not already present in
 the thread) and wait for that run's result. Then continue with the salvage
 decision based on the updated check state and diff.
 
+**Stacked salvages (`gh-stack`, Lesson 0ez):** When the queue has 2+ deferred /
+escalated PRs that touch the same file(s) or the same consolidation category, do
+**not** create each salvage branch independently off `main`. Instead, build them as a
+chained stack with `gh stack init salvage/<repo>-<a> salvage/<repo>-<b> ...`, then
+`gh stack rebase --no-trunk` and `gh stack submit --auto` to open them all as **draft** PRs.
+Each layer inherits the layer below it, so a salvage that depends on an infra-fix
+or a lower-priority salvage is already rebased on it — eliminating the domino
+conflicts that normally follow when siblings are merged one-by-one. This does not
+violate S1 (never merge autonomously): stacking only changes how the draft PRs are
+*created*, not how they are merged. Merging still requires a human, and still uses
+the merge-async path documented in AGENTS.md (`gh stack merge --yes` or
+`POST .../merge-async`), never `gh pr merge` or auto-merge.
+
 ```
 read PR title, body, file list, and full diff
 â
