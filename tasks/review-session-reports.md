@@ -46,7 +46,9 @@
 - PRs inventoried: 61
 - PRs merged: 21
 - PRs closed: 7
-- PRs escalated/deferred: 8 escalate + 5 request-changes + remainder Phase 2
+- PRs escalated: 8
+- PRs request-changes: 5
+- PRs deferred: remainder Phase 2
 
 ### Actions
 
