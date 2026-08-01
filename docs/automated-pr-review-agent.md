@@ -187,7 +187,7 @@ Apply these during classification and review (see also `tasks/lessons.md`):
   merge the **top** of the stack once. This avoids merging each sibling and having the
   rest flip DIRTY. **Stack merges are not `gh pr merge`/GraphQL `mergePullRequest`-compatible**:
   use `gh stack merge --yes` if the gh extension is installed, otherwise the async REST API
-  `POST /repos/{owner}/{repo}/pulls/{top}/merge-async` + poll `.../merge-async/{uuid}` until
+  `PUT /repos/{owner}/{repo}/pulls/{top}/merge-async` + poll `.../merge-async/{uuid}` until
   `status=merged`. Auto-merge is unsupported for stacks. See AGENTS.md → `Stacked PRs during
   review/salvage sessions` for the full recipe.
 - **Lockfile scope creep:** Review lockfile in every PR; strip unrelated

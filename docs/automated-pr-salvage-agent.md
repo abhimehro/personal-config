@@ -216,7 +216,7 @@ conflicts that normally follow when siblings are merged one-by-one. This does no
 violate S1 (never merge autonomously): stacking only changes how the draft PRs are
 *created*, not how they are merged. Merging still requires a human, and still uses
 the merge-async path documented in AGENTS.md (`gh stack merge --yes` or
-`POST .../merge-async`), never `gh pr merge` or auto-merge.
+`PUT /repos/{owner}/{repo}/pulls/{n}/merge-async`), never `gh pr merge` or auto-merge.
 
 ```
 read PR title, body, file list, and full diff

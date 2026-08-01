@@ -33,13 +33,13 @@ double-quoted close/comment strings.
 (starter configs #1842-#1844 and CLI tooling #1846-#1848) could not be merged
 via `gh pr merge` / GraphQL `mergePullRequest` / ordinary `PUT .../merge` (even with
 `Prefer: respond-async`). GitHub rejected them with "part of a stack… use the
-asynchronous merge REST API". This is the same class of failure as Lesson 0/0y/0z:
+asynchronous merge REST API". This is the same class of failure as Lessons 0, 0y, and 0z:
 merging siblings independently leaves the rest DIRTY in a cascade.
 **Rule:** (1) For 2+ open PRs in the same repo that collide on the same file(s),
 link them with `gh stack link <bottom> ... <top>` and merge only the top; do not
 merge each independently. (2) Stack merges require `gh stack merge --yes` (when
 the gh extension is present) or the async REST API
-`POST /repos/{owner}/{repo}/pulls/{top}/merge-async` + poll `.../merge-async/{uuid}` until
+`PUT /repos/{owner}/{repo}/pulls/{top}/merge-async` + poll `.../merge-async/{uuid}` until
 `status=merged`. (3) Auto-merge is unsupported for stacks. (4) The full recipe lives
 in AGENTS.md → `Stacked PRs during review/salvage sessions`.
 **Detection cost:** Low — `baseRefName != main` on children, or a GraphQL/REST error
