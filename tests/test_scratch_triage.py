@@ -48,30 +48,32 @@ class TestProcessPrGroup(unittest.TestCase):
         self.assertEqual(len(groups), 0)
 
 
+import asyncio
+
 class TestRunCmd(unittest.TestCase):
-    @patch("scratch_triage.subprocess.run")
-    def test_run_cmd_success(self, mock_run):
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=["gh"], returncode=0, stdout='{"ok": true}', stderr=""
-        )
-        ok, out, err = scratch_triage.run_cmd(["gh", "version"])
+    @patch("scratch_triage.asyncio.create_subprocess_exec", new_callable=unittest.mock.AsyncMock)
+    @patch("scratch_triage.asyncio.wait_for", new_callable=unittest.mock.AsyncMock)
+    def test_run_cmd_success(self, mock_wait_for, mock_exec):
+        mock_proc = unittest.mock.MagicMock()
+        mock_proc.returncode = 0
+        mock_exec.return_value = mock_proc
+        mock_wait_for.return_value = (b'{"ok": true}', b"")
+
+        ok, out, err = asyncio.run(scratch_triage.run_cmd(["gh", "version"]))
         self.assertTrue(ok)
         self.assertEqual(out, '{"ok": true}')
         self.assertEqual(err, "")
-        mock_run.assert_called_once()
-        args, kwargs = mock_run.call_args
-        self.assertEqual(args[0], ["gh", "version"])
-        self.assertEqual(kwargs.get("capture_output"), True)
-        self.assertEqual(kwargs.get("text"), True)
-        self.assertIn("env", kwargs)
-        self.assertEqual(kwargs.get("timeout"), 120)
+        mock_exec.assert_called_once()
 
-    @patch("scratch_triage.subprocess.run")
-    def test_run_cmd_failure(self, mock_run):
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=["gh"], returncode=1, stdout="", stderr="not found"
-        )
-        ok, out, err = scratch_triage.run_cmd(["gh", "missing"])
+    @patch("scratch_triage.asyncio.create_subprocess_exec", new_callable=unittest.mock.AsyncMock)
+    @patch("scratch_triage.asyncio.wait_for", new_callable=unittest.mock.AsyncMock)
+    def test_run_cmd_failure(self, mock_wait_for, mock_exec):
+        mock_proc = unittest.mock.MagicMock()
+        mock_proc.returncode = 1
+        mock_exec.return_value = mock_proc
+        mock_wait_for.return_value = (b"", b"not found")
+
+        ok, out, err = asyncio.run(scratch_triage.run_cmd(["gh", "missing"]))
         self.assertFalse(ok)
         self.assertEqual(out, "")
         self.assertEqual(err, "not found")

@@ -1,11 +1,9 @@
 import datetime
 import json
 import subprocess
-from concurrent.futures import ThreadPoolExecutor
+import asyncio
 
 from gh_token_env import load_gh_token_env
-
-_GH_ENV = load_gh_token_env()
 
 repos = [
     "abhimehro/personal-config",
@@ -16,13 +14,36 @@ repos = [
     "abhimehro/series_correction_project_updated",
 ]
 
+_GH_ENV = None
+_SEMAPHORE = None
 
-def run_cmd(cmd):
-    try:
-        res = subprocess.run(cmd, capture_output=True, text=True, env=_GH_ENV, timeout=120)
-        return res.returncode == 0, res.stdout, res.stderr
-    except subprocess.TimeoutExpired:
-        return False, "", "Timeout expired"
+def _get_gh_env():
+    global _GH_ENV
+    if _GH_ENV is None:
+        _GH_ENV = load_gh_token_env()
+    return _GH_ENV
+
+def _get_semaphore():
+    global _SEMAPHORE
+    if _SEMAPHORE is None:
+        _SEMAPHORE = asyncio.Semaphore(32)
+    return _SEMAPHORE
+
+async def run_cmd(cmd):
+    async with _get_semaphore():
+        proc = await asyncio.create_subprocess_exec(
+            *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, env=_get_gh_env()
+        )
+        try:
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
+            return proc.returncode == 0, stdout.decode(), stderr.decode()
+        except asyncio.TimeoutError:
+            try:
+                proc.terminate()
+                await proc.wait()
+            except ProcessLookupError:
+                pass
+            return False, "", "Timeout expired"
 
 
 def _contains_all_keywords(title_lower, lower_kws):
@@ -115,9 +136,9 @@ def group_prs(all_prs, triage_md):
         )
 
 
-def _fetch_repo_prs(repo):
+async def _fetch_repo_prs(repo):
     repo_prs = []
-    success, stdout, _ = run_cmd(
+    success, stdout, _ = await run_cmd(
         [
             "gh",
             "pr",
@@ -144,12 +165,12 @@ def _fetch_repo_prs(repo):
     return repo_prs
 
 
-def _process_pr(pr):
+async def _process_pr(pr):
     repo = pr["full_repo"]
     num = pr["number"]
     if pr.get("status_action") == "CLOSE":
         print(f"Closing {repo}#{num} (duplicate)")
-        run_cmd(
+        await run_cmd(
             [
                 "gh",
                 "pr",
@@ -164,7 +185,7 @@ def _process_pr(pr):
         return pr, "closed"
     elif pr["mergeStateStatus"] == "CLEAN" or pr["mergeStateStatus"] == "HAS_HOOKS":
         print(f"Merging {repo}#{num}")
-        success, out, err = run_cmd(
+        success, out, err = await run_cmd(
             [
                 "gh",
                 "pr",
@@ -187,42 +208,42 @@ def _process_pr(pr):
 
 
 if __name__ == "__main__":
-    all_prs = []
-    # ⚡ Bolt Optimization: Parallelize N+1 read-only API calls using map() to significantly speed up PR fetching
-    # ⚡ Bolt Optimization: Dynamic thread concurrency to eliminate batching latency
-    with ThreadPoolExecutor(max_workers=min(len(repos) or 1, 32)) as executor:
-        for repo_prs in executor.map(_fetch_repo_prs, repos):
-            all_prs.extend(repo_prs)
-
-    merged = []
-    closed = []
-    escalated = []
-
-    # ⚡ Bolt Optimization: Hoisted datetime.date.today().isoformat() out of formatting blocks to avoid redundant parsing overhead
     today_iso = datetime.date.today().isoformat()
 
-    triage_md = [
-        f"# PR triage — backlog cleanup test ({today_iso})\n",
-        "**Policy:** squash merge, stale_days 30, auto-fix enabled, mode review-and-merge. **No force-push.**\n",
-        "## Duplicate / supersede groups\n",
-        "| Keep (canonical) | Close as duplicate / superseded | Rationale |",
-        "| --- | --- | --- |",
-    ]
+    async def main_async():
+        all_prs = []
+        fetch_tasks = [_fetch_repo_prs(r) for r in repos]
+        results = await asyncio.gather(*fetch_tasks)
+        for repo_prs in results:
+            all_prs.extend(repo_prs)
 
-    group_prs(all_prs, triage_md)
+        merged = []
+        closed = []
+        escalated = []
 
-    # Process Actions
-    # ⚡ Bolt Optimization: Dynamic thread concurrency to eliminate batching latency
-    with ThreadPoolExecutor(max_workers=min(len(all_prs) or 1, 32)) as executor:
-        for pr, action in executor.map(
-            _process_pr, sorted(all_prs, key=lambda x: (x["repo"], -x["number"]))
-        ):
+        triage_md = [
+            f"# PR triage — backlog cleanup test ({today_iso})\n",
+            "**Policy:** squash merge, stale_days 30, auto-fix enabled, mode review-and-merge. **No force-push.**\n",
+            "## Duplicate / supersede groups\n",
+            "| Keep (canonical) | Close as duplicate / superseded | Rationale |",
+            "| --- | --- | --- |",
+        ]
+
+        group_prs(all_prs, triage_md)
+
+        process_tasks = [_process_pr(pr) for pr in sorted(all_prs, key=lambda x: (x["repo"], -x["number"]))]
+        action_results = await asyncio.gather(*process_tasks)
+        for pr, action in action_results:
             if action == "closed":
                 closed.append(pr)
             elif action == "merged":
                 merged.append(pr)
             elif action == "escalated":
                 escalated.append(pr)
+
+        return merged, closed, escalated, triage_md, all_prs
+
+    merged, closed, escalated, triage_md, all_prs = asyncio.run(main_async())
 
     triage_md.extend(
         [

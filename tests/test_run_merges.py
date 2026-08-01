@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from run_merges import _fetch_all_pr_data_parallel, _fetch_pr_diff_only, get_diff, run_gh
+from run_merges import _fetch_all_pr_data_parallel, _fetch_pr_data, get_diff, run_gh
 
 
 class TestRunMerges(unittest.TestCase):
@@ -69,52 +69,65 @@ class TestRunMerges(unittest.TestCase):
 
     @patch("run_merges.get_diff")
     @patch("run_merges.run_gh")
-    def test_fetch_all_pr_data_parallel(self, mock_run_gh, mock_get_diff):
-        mock_run_gh.return_value = {
-            "data": {
-                "pr0": {"pullRequest": {"mergeStateStatus": "CLEAN"}},
-                "pr1": {"pullRequest": {"mergeStateStatus": "DIRTY"}},
-            }
-        }
-        mock_get_diff.side_effect = lambda repo, pr: "diff " + pr
+    def test_fetch_pr_data_clean(self, mock_run_gh, mock_get_diff):
+        mock_run_gh.return_value = {"mergeStateStatus": "CLEAN"}
+        mock_get_diff.return_value = "some diff"
 
-        items = [("owner/repo1", "1", "title1"), ("owner/repo2", "2", "title2")]
-        result = _fetch_all_pr_data_parallel(items)
+        repo, pr, title, info, diff = _fetch_pr_data(("owner/myrepo", "1", "title"))
 
-        self.assertEqual(len(result), 2)
+        self.assertEqual(repo, "owner/myrepo")
+        self.assertEqual(pr, "1")
+        self.assertEqual(title, "title")
+        self.assertEqual(info, {"mergeStateStatus": "CLEAN"})
+        self.assertEqual(diff, "some diff")
 
-        # PR 1 (CLEAN)
-        self.assertEqual(result[0][0], "owner/repo1")
-        self.assertEqual(result[0][1], "1")
-        self.assertEqual(result[0][3], {"mergeStateStatus": "CLEAN"})
-        self.assertEqual(result[0][4], "diff 1")
+        mock_run_gh.assert_called_once_with(
+            [
+                "gh",
+                "pr",
+                "view",
+                "1",
+                "-R",
+                "owner/myrepo",
+                "--json",
+                "mergeStateStatus",
+            ]
+        )
+        mock_get_diff.assert_called_once_with("owner/myrepo", "1")
 
-        # PR 2 (DIRTY)
-        self.assertEqual(result[1][3], {"mergeStateStatus": "DIRTY"})
-        self.assertEqual(result[1][4], "")
-
-        # Verify GraphQL call
-        self.assertEqual(mock_run_gh.call_count, 1)
-        args, _ = mock_run_gh.call_args
-        self.assertIn("graphql", args[0])
-
-        # Verify diff fetch call count
-        self.assertEqual(mock_get_diff.call_count, 1)
-
+    @patch("run_merges.get_diff")
     @patch("run_merges.run_gh")
-    def test_fetch_all_pr_data_parallel_graphql_failure(self, mock_run_gh):
+    def test_fetch_pr_data_dirty(self, mock_run_gh, mock_get_diff):
+        mock_run_gh.return_value = {"mergeStateStatus": "DIRTY"}
+
+        repo, pr, title, info, diff = _fetch_pr_data(("owner/myrepo", "1", "title"))
+
+        self.assertEqual(info, {"mergeStateStatus": "DIRTY"})
+        self.assertEqual(diff, "")
+        mock_get_diff.assert_not_called()
+
+    @patch("run_merges.get_diff")
+    @patch("run_merges.run_gh")
+    def test_fetch_pr_data_no_info(self, mock_run_gh, mock_get_diff):
         mock_run_gh.return_value = None
 
-        items = [("owner/repo1", "1", "title1")]
-        result = _fetch_all_pr_data_parallel(items)
+        repo, pr, title, info, diff = _fetch_pr_data(("owner/myrepo", "1", "title"))
 
-        self.assertEqual(len(result), 1)
-        self.assertIsNone(result[0][3])
-        self.assertEqual(result[0][4], "")
+        self.assertIsNone(info)
+        self.assertEqual(diff, "")
+        mock_get_diff.assert_not_called()
 
-    def test_fetch_all_pr_data_parallel_invalid_reference(self):
+    def test_fetch_pr_data_invalid_reference(self):
         with self.assertRaises(ValueError):
-            _fetch_all_pr_data_parallel([("myrepo", "1", "title")])
+            _fetch_pr_data(("myrepo", "1", "title"))
+
+    @patch("run_merges._fetch_pr_data")
+    def test_fetch_all_pr_data_parallel(self, mock_fetch):
+        mock_fetch.side_effect = lambda item: (item[0], item[1], item[2], None, "")
+        result = _fetch_all_pr_data_parallel(
+            [("owner/a", "1", "t1"), ("owner/b", "2", "t2")]
+        )
+        self.assertEqual(len(result), 2)
 
 
 if __name__ == "__main__":
