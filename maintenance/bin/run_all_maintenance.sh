@@ -28,9 +28,7 @@ RUN_START=$(date +%s)
 export RUN_START
 export AUTOMATED_RUN="${AUTOMATED_RUN-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -n ${MAINTENANCE_HOME-} && -d $MAINTENANCE_HOME ]]; then
-	LOG_DIR="$HOME/Library/Logs/maintenance"
-elif [[ $SCRIPT_DIR == "$HOME/Library/Maintenance/bin" ]]; then
+if [[ $SCRIPT_DIR == "$HOME/Library/Maintenance/bin" ]]; then
 	LOG_DIR="$HOME/Library/Logs/maintenance"
 else
 	LOG_DIR="$SCRIPT_DIR/../tmp"
@@ -396,7 +394,9 @@ run_monthly_maintenance() {
 	local editor_cleanup_status="$LOG_DIR/status_editor_cleanup_$TIMESTAMP.log"
 	local pids=""
 
-	(run_script "system_cleanup.sh" "cleanup" "$system_cleanup_status" "true") &
+	# Force system_cleanup to run even when the 1st of the month falls on a Monday,
+	# because the monthly LaunchAgent is the intended caller on the 1st.
+	(FORCE_RUN=1 run_script "system_cleanup.sh" "cleanup" "$system_cleanup_status" "true") &
 	pids="$pids $!"
 
 	(run_script "editor_cleanup.sh" "cleanup" "$editor_cleanup_status" "true") &
@@ -496,14 +496,16 @@ print_summary() {
 	local any_failed=false
 	local any_missing=false
 
-	for entry in "${SUMMARY_RESULTS[@]}"; do
-		if [[ $entry == *"Failed"* ]]; then
-			any_failed=true
-			break
-		elif [[ $entry == *"Missing"* ]]; then
-			any_missing=true
-		fi
-	done
+	if [[ ${#SUMMARY_RESULTS[@]} -gt 0 ]]; then
+		for entry in "${SUMMARY_RESULTS[@]}"; do
+			if [[ $entry == *"Failed"* ]]; then
+				any_failed=true
+				break
+			elif [[ $entry == *"Missing"* ]]; then
+				any_missing=true
+			fi
+		done
+	fi
 
 	echo "" | tee -a "$MASTER_LOG"
 	if [[ $any_failed == "true" ]]; then

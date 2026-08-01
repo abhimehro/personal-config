@@ -89,7 +89,7 @@ install_maintenance() {
 }
 
 remove_legacy_agents() {
-	local legacy="$HOME/Library/LaunchAgents/com.user.maintenance.weekly.plist"
+	local legacy
 	local legacy_label
 
 	# Boot out any stale maintenance agent labels before removing files
@@ -97,11 +97,17 @@ remove_legacy_agents() {
 		launchctl bootout "gui/$(id -u)/$legacy_label" 2>/dev/null || true
 	done
 
-	if [[ -f $legacy ]]; then
-		log_info "Removing legacy maintenance LaunchAgent (com.user.maintenance.weekly)..."
-		rm -f "$legacy"
-		log_ok "Legacy LaunchAgent removed."
-	fi
+	# Remove stale plist files so they are not re-registered on next login
+	for legacy in \
+		"$HOME/Library/LaunchAgents/com.user.maintenance.weekly.plist" \
+		"$HOME/Library/LaunchAgents/com.abhimehrotra.maintenance.weekly.plist" \
+		"$HOME/Library/LaunchAgents/com.abhimehrotra.maintenance.monthly.plist"; do
+		if [[ -f $legacy ]]; then
+			log_info "Removing stale maintenance LaunchAgent plist: $(basename "$legacy")..."
+			rm -f "$legacy"
+			log_ok "Stale LaunchAgent removed."
+		fi
+	done
 }
 
 prepare_network_tools() {

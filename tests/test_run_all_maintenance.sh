@@ -10,6 +10,10 @@
 
 set -euo pipefail
 
+# Ensure the orchestrator's installed-vs-repo log-dir heuristic is not biased
+# by a developer's shell environment.
+unset MAINTENANCE_HOME 2>/dev/null || true
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPT="$REPO_ROOT/maintenance/bin/run_all_maintenance.sh"
 
@@ -181,11 +185,27 @@ check_grep "weekly still runs service_optimizer after failure" "service_optimize
 check_grep "weekly still runs performance_optimizer after failure" "performance_optimizer.sh called" "$CALL_LOG"
 make_mock_ok "node_maintenance.sh"
 
-# ---- Test 9: master log file is created in LOG_DIR ----
+# ---- Test 9: missing sub-script is recorded and the matrix exits non-zero ----
+rm -f "$MOCK_DIR/performance_optimizer.sh"
+: >"$CALL_LOG"
+t9_exit=0
+bash "$MOCK_DIR/run_all_maintenance.sh" weekly >"$TEST_DIR/t9.log" 2>&1 || t9_exit=$?
+if [[ $t9_exit -ne 0 ]]; then
+	echo "PASS: weekly mode exits non-zero when a sub-script is missing"
+	PASS=$((PASS + 1))
+else
+	echo "FAIL: weekly mode should exit non-zero when a sub-script is missing"
+	FAIL=$((FAIL + 1))
+fi
+check_grep "missing performance_optimizer noted" "performance_optimizer.sh not found/executable" "$TEST_DIR/t9.log"
+check_grep "weekly still runs service_optimizer when performance is missing" "service_optimizer.sh called" "$CALL_LOG"
+make_mock_ok "performance_optimizer.sh"
+
+# ---- Test 10: master log file is created in LOG_DIR ----
 # Remove any master logs left by earlier tests so this assertion is unambiguous.
 rm -f "$LOG_TMP"/maintenance_master_*.log 2>/dev/null || true
 : >"$CALL_LOG"
-bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t9.log" 2>&1
+bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t10.log" 2>&1
 log_count=$(find "$LOG_TMP" -name "maintenance_master_*.log" -type f 2>/dev/null | wc -l | tr -d ' ')
 if [[ $log_count -gt 0 ]]; then
 	echo "PASS: master log file created in LOG_DIR"
@@ -195,17 +215,17 @@ else
 	FAIL=$((FAIL + 1))
 fi
 
-# ---- Test 10: concurrent locking prevents second instance ----
+# ---- Test 11: concurrent locking prevents second instance ----
 # Pre-create a fresh lock so the orchestrator sees a recent (non-stale) lock
 mkdir -p "$LOG_TMP/run_all_maintenance.lock"
 : >"$CALL_LOG"
-t10_out=$(bash "$MOCK_DIR/run_all_maintenance.sh" health 2>&1 || true)
+t11_out=$(bash "$MOCK_DIR/run_all_maintenance.sh" health 2>&1 || true)
 rmdir "$LOG_TMP/run_all_maintenance.lock" 2>/dev/null || true
-if echo "$t10_out" | grep -q "already running"; then
+if echo "$t11_out" | grep -q "already running"; then
 	echo "PASS: concurrent lock blocks second instance"
 	PASS=$((PASS + 1))
 else
-	echo "FAIL: expected 'already running' message; got: $t10_out"
+	echo "FAIL: expected 'already running' message; got: $t11_out"
 	FAIL=$((FAIL + 1))
 fi
 if ! grep -q "health_check.sh called" "$CALL_LOG" 2>/dev/null; then
@@ -216,10 +236,10 @@ else
 	FAIL=$((FAIL + 1))
 fi
 
-# ---- Test 11: idempotency — two sequential runs both dispatch successfully ----
+# ---- Test 12: idempotency — two sequential runs both dispatch successfully ----
 : >"$CALL_LOG"
-bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t11a.log" 2>&1
-bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t11b.log" 2>&1
+bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t12a.log" 2>&1
+bash "$MOCK_DIR/run_all_maintenance.sh" health >"$TEST_DIR/t12b.log" 2>&1
 call_count=$(grep -c "health_check.sh called" "$CALL_LOG" 2>/dev/null || true)
 if [[ $call_count -eq 2 ]]; then
 	echo "PASS: idempotency — two sequential runs both dispatched"
