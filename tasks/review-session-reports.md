@@ -31,6 +31,40 @@
 - Commands/comments to run next:
 - Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
 
+## Run — 2026-07-31
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron Phase 1 `0 13 * * *` review-and-merge; branch
+  `cursor-agent/automated-pr-workflow-bce2`
+
+### Metrics
+
+- PRs inventoried: 61
+- PRs merged: 21
+- PRs closed: 7
+- PRs escalated: 8
+- PRs request-changes: 5
+- PRs deferred: remainder Phase 2
+
+### Actions
+
+- Merged: pc #1839/#1850/#1831/#1854/#1842–#1844/#1846–#1848; ctrld #1089/#1083;
+  Seatek #567/#561; Hydrograph #440/#446; series #331/#326/#323/#321; rpce #162
+- Closed: pc #1853/#1826/#1818; ctrld #1087; Seatek #569/#563; rpce #156
+- Deferred/escalated: security Sentinels; seatek#555; rpce#147/#158; series#337;
+  ctrld#1088 CodeScene; Hydrograph #443/#442 lock conflicts; huge rpce CI-red
+
+### Follow-ups
+
+- Phase 2: salvage Hydrograph #443/#442 locks; personal-config CONFLICTING
+  Palette/Bolt; CodeScene wait on ctrld#1088
+- Snapshot: `tasks/pr-review-2026-07-31.md`
+- Lesson 0ez: stacked PRs require `PUT …/merge-async`
+
 ## Run — 2026-07-30
 
 ### Scope
