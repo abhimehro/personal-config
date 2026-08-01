@@ -104,10 +104,11 @@ brew install terminal-notifier
 ~/Library/Maintenance/bin/quick_cleanup.sh
 
 # Run weekly maintenance
-~/Library/Maintenance/bin/weekly_maintenance.sh
+~/Library/Maintenance/bin/run_all_maintenance.sh weekly
 
 # Run monthly maintenance (comprehensive)
-~/Library/Maintenance/bin/monthly_maintenance.sh
+# Use FORCE_RUN=1 on non-1st days so editor/deep-cleaner sub-scripts also run.
+FORCE_RUN=1 ~/Library/Maintenance/bin/run_all_maintenance.sh monthly
 
 # View logs interactively
 ~/Library/Maintenance/bin/view_logs.sh health_check  # View health check logs
@@ -119,7 +120,7 @@ brew install terminal-notifier
 
 ```bash
 # View all maintenance launch agents
-launchctl list | grep maintenance
+launchctl list | grep com.abhimehrotra
 
 # Check logs
 ls ~/Library/Logs/maintenance/
@@ -140,8 +141,8 @@ ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat
 maintenance/
 ├── bin/                          # Executable Scripts
 │   ├── run_all_maintenance.sh    # Master orchestration script
-│   ├── weekly_maintenance.sh     # Weekly orchestrator
-│   ├── monthly_maintenance.sh    # Monthly orchestrator
+│   ├── weekly_maintenance.sh     # Compatibility shim to run_all_maintenance.sh weekly
+│   ├── monthly_maintenance.sh    # Compatibility shim to run_all_maintenance.sh monthly
 │   ├── health_check.sh           # System health monitoring
 │   ├── quick_cleanup.sh          # Quick system cleanup
 │   ├── brew_maintenance.sh       # Homebrew maintenance
@@ -217,16 +218,17 @@ UPDATE_MAS_APPS=1          # Auto-update Mac App Store apps
    - Script: `system_cleanup.sh`
    - Purpose: System maintenance
 
-6. **Weekly Maintenance** (`com.user.maintenance.weekly`)
+6. **Weekly Maintenance** (`com.abhimehrotra.maint.weekly`)
    - Time: Monday 9:00 AM
-   - Script: `weekly_maintenance.sh`
-   - Purpose: Comprehensive weekly tasks
+   - Script: `run_all_maintenance.sh weekly`
+   - Purpose: quick cleanup, node maintenance, Google Drive monitoring, service
+     & performance optimizers
    - Notifications: ✅ Click to view error summary
 
-7. **Monthly Maintenance** (`com.abhimehrotra.maintenance.monthly`)
+7. **Monthly Maintenance** (`com.abhimehrotra.maint.monthly`)
    - Time: 1st of month 6:00 AM
-   - Script: `monthly_maintenance.sh`
-   - Purpose: Deep system maintenance
+   - Script: `run_all_maintenance.sh monthly`
+   - Purpose: system cleanup, editor cleanup, deep cleaner
    - Notifications: ✅ Click to view error summary
 
 8. **ProtonDrive Backup** (`com.abhimehrotra.maintenance.protondrivebackup`)
@@ -272,7 +274,7 @@ Battery status: 87%; charging
 
 ```bash
 # View launch agent status
-launchctl list | grep -E "(maintenance|cleanup)"
+launchctl list | grep -E 'com\.abhimehrotra'
 
 # Check recent logs
 ls -la ~/Library/Logs/maintenance/ | tail -10
@@ -300,7 +302,7 @@ terminal-notifier -title "Test" -message "Click me" \
 
 ```bash
 # Check status
-launchctl list | grep maintenance
+launchctl list | grep com.abhimehrotra
 
 # Reload if needed
 launchctl kickstart -k gui/$(id -u)/com.abhimehrotra.maintenance.healthcheck

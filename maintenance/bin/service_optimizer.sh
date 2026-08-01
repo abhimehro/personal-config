@@ -21,14 +21,23 @@ set -euo pipefail
 
 # --- Pre-flight Checks ---
 
-if [[ $EUID -ne 0 ]]; then
-	echo "Error: This script must be run with sudo."
-	exit 1
+RUN_AS_ROOT=false
+if [[ $EUID -eq 0 ]]; then
+	RUN_AS_ROOT=true
+else
+	echo "[INFO] Running without root privileges; system-level services will be skipped."
 fi
 
-# Determine the current logged-in user's ID for GUI services.
-# This is more robust than assuming UID 501.
-CURRENT_UID=$(stat -f%u /dev/console)
+# Determine the target user's ID for GUI services.
+# Prefer the console owner on macOS, otherwise fall back to the current user.
+if [[ $(uname -s) == "Darwin" ]] && CURRENT_UID=$(stat -f%u /dev/console 2>/dev/null) && [[ -n $CURRENT_UID ]]; then
+	: # macOS console owner found
+elif [[ -n ${SUDO_USER-} ]]; then
+	CURRENT_UID=$(id -u "$SUDO_USER")
+else
+	CURRENT_UID=$(id -u)
+fi
+
 if [[ -z $CURRENT_UID ]]; then
 	echo "Error: Could not determine the logged-in user's ID."
 	exit 1
@@ -40,8 +49,7 @@ echo
 
 # --- System-Level Services ---
 
-# These services run at the system level and are common culprits for
-# background activity and resource usage.
+# These services run at the system level and require root privileges.
 SYSTEM_SERVICES_TO_DISABLE=(
 	"system/com.apple.chronod"          # Widget timeline manager
 	"system/com.apple.duetexpertd"      # Predictive app launcher (Siri Suggestions)
@@ -49,17 +57,22 @@ SYSTEM_SERVICES_TO_DISABLE=(
 	"system/com.apple.ReportCrash.Root" # Root-level crash reporting
 )
 
-echo "[1/3] Disabling system-level services..."
-for service in "${SYSTEM_SERVICES_TO_DISABLE[@]}"; do
-	# Check if the service is already disabled to ensure idempotency.
-	if launchctl print-disabled "$service" | grep -q '"disabled" => true'; then
-		echo "  - Already disabled: $service"
-	else
-		echo "  - Disabling: $service"
-		launchctl disable "$service"
-	fi
-done
-echo
+if [[ $RUN_AS_ROOT == "true" ]]; then
+	echo "[1/3] Disabling system-level services..."
+	for service in "${SYSTEM_SERVICES_TO_DISABLE[@]}"; do
+		# Check if the service is already disabled to ensure idempotency.
+		if launchctl print-disabled "$service" | grep -q '"disabled" => true'; then
+			echo "  - Already disabled: $service"
+		else
+			echo "  - Disabling: $service"
+			launchctl disable "$service"
+		fi
+	done
+	echo
+else
+	echo "[1/3] Skipping system-level services (root required)."
+	echo
+fi
 
 # --- User-Level Services ---
 

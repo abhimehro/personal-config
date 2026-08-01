@@ -3,43 +3,36 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maintenance.weekly</string>
-    
+    <string>com.abhimehrotra.maint.monthly</string>
+
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
-        <key>MAINTENANCE_HOME</key>
-        <string>/Users/speedybee/Library/Maintenance</string>
         <key>AUTOMATED_RUN</key>
         <string>1</string>
     </dict>
-    
+
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/speedybee/Library/Maintenance/bin/weekly_maintenance.sh</string>
+        <string>-c</string>
+        <string>export MAINTENANCE_HOME="$HOME/Library/Maintenance" &amp;&amp; mkdir -p "$HOME/Library/Logs/maintenance" &amp;&amp; exec "$HOME/Library/Maintenance/bin/run_all_maintenance.sh" monthly &gt;&gt;"$HOME/Library/Logs/maintenance/maintenance_monthly.out" 2&gt;&gt;"$HOME/Library/Logs/maintenance/maintenance_monthly.err"</string>
     </array>
-    
-    <key>StandardOutPath</key>
-    <string>/Users/speedybee/Library/Logs/maintenance/maintenance_weekly.out</string>
-    
-    <key>StandardErrorPath</key>
-    <string>/Users/speedybee/Library/Logs/maintenance/maintenance_weekly.err</string>
-    
+
     <key>StartCalendarInterval</key>
     <dict>
-        <key>Weekday</key>
+        <key>Day</key>
         <integer>1</integer>
         <key>Hour</key>
-        <integer>9</integer>
+        <integer>6</integer>
         <key>Minute</key>
         <integer>0</integer>
     </dict>
-    
+
     <key>RunAtLoad</key>
     <false/>
-    
+
     <key>KeepAlive</key>
     <false/>
 </dict>

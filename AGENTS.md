@@ -216,7 +216,7 @@ The maintenance system is documented in `maintenance/README.md`.
 ./maintenance/bin/run_all_maintenance.sh quick
 
 # Check scheduled agents
-launchctl list | grep maintenance
+launchctl list | grep com.abhimehrotra
 ```
 
 ### Media streaming pipeline

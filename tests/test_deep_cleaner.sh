@@ -70,11 +70,15 @@ fi
 MOCK
 chmod +x "$MOCK_BIN/du"
 
-# date mock: behave normally except when MOCK_DAY_OF_MONTH=first, then %-d returns 1
+# date mock: override %-d so tests are not calendar-dependent
 cat >"$MOCK_BIN/date" <<'MOCK'
 #!/bin/bash
-if [[ "${MOCK_DAY_OF_MONTH:-}" == "first" && "${1:-}" == "+%-d" ]]; then
-	echo "1"
+if [[ "${1:-}" == "+%-d" ]]; then
+	case "${MOCK_DAY_OF_MONTH:-}" in
+		first) echo "1" ;;
+		notfirst) echo "15" ;;
+		*) exec /bin/date "$@" ;;
+	esac
 else
 	exec /bin/date "$@"
 fi
@@ -120,8 +124,8 @@ HOME1="$TEST_DIR/home1"
 make_mock_home "$HOME1"
 STATE_DIR1="$TEST_DIR/state1"
 
-# Use the real date so today (not the 1st) is used.
-if HOME="$HOME1" PERSONAL_CONFIG_STATE_DIR="$STATE_DIR1" PATH="$MOCK_BIN:$PATH" \
+# Force a non-1st day so the monthly gate skips without --force.
+if MOCK_DAY_OF_MONTH=notfirst HOME="$HOME1" PERSONAL_CONFIG_STATE_DIR="$STATE_DIR1" PATH="$MOCK_BIN:$PATH" \
 	bash "$SCRIPT" >"$TEST_DIR/t1.log" 2>&1; then
 	echo "PASS: script exits 0 when skipping monthly run"
 	PASS=$((PASS + 1))
