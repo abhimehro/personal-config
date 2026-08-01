@@ -422,6 +422,26 @@ path matches your environment:
   Retry once if it fails with "Base branch was modified" (sibling merges still
   settling). **Auto-merge is unsupported for stacks** — never queue one and walk away.
 
+#### Recovering from a broken stack
+
+If a layer is merged out of order or a stack goes stale against `main`:
+
+- **Accidental bottom-layer merge:** GitHub locks a PR once merged (it cannot be
+  reopened), and auto-retargets the next layer to `main`. The stack survives as
+  the remaining open PRs; do **not** force-push a collapsed local rebase over them.
+  Reset your local branches to the remote tips instead (`git branch -f <b> origin/<b>`),
+  then decide whether a replacement bottom PR is even needed (it is usually empty
+  if the content already reached `main`).
+- **Layer merged but immediately reverted:** the net diff on `main` is zero, so the
+  surviving stack layers still carry the real content. Verify with
+  `git diff --name-only origin/main <top-branch>` before assuming anything was lost.
+- **Stack went stale / all content already on `main`:** a plain `git rebase` will
+  drop the now-empty commits and collapse the chain. Prefer rebuilding a fresh
+  stack from current `main` over resurrecting a collapsed one.
+- **Before any recovery,** confirm the automation-facing guidance is still intact
+  on `main` (skill files, this AGENTS.md section, the review/salvage doc notes,
+  and Lessons 0ez/0fb) so agents are unaffected while you repair the test stack.
+
 ## Big-picture architecture (how the pieces fit)
 
 ### 1) Config-as-code via symlink orchestration
