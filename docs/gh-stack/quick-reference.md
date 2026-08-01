@@ -7,7 +7,7 @@ it, see the `Stacked PRs during review/salvage sessions` section in
 
 ## Creating a stack
 
-\`\`\`bash
+```bash
 # From existing open PRs (same repo, overlapping files), bottom to top
 gh stack link <pr-bottom> <pr-middle> <pr-top>
 
