@@ -64,6 +64,7 @@ cd ~/dev/personal-config
 ./setup.sh
 # Requires: macOS, Homebrew, 1Password CLI (`op`), rclone installed via brew
 # Does:
+#  - Installs CLI tooling (macos/Brewfile + gh extensions incl. gh-stack)
 #  - Links dotfiles (SSH, fish, Cursor/VSCode) with backup/verify
 #  - Installs maintenance launchd agents
 #  - Prepares Control D / Windscribe helpers
@@ -108,8 +109,14 @@ For canonical triage/salvage policy, see `docs/automated-pr-review-agent.md` and
 # Quick system cleanup
 ~/dev/personal-config/maintenance/bin/run_all_maintenance.sh quick
 
+# Weekly maintenance (Monday)
+~/dev/personal-config/maintenance/bin/run_all_maintenance.sh weekly
+
+# Monthly deep clean (1st of month)
+~/dev/personal-config/maintenance/bin/run_all_maintenance.sh monthly
+
 # View automation status
-launchctl list | grep maintenance
+launchctl list | grep com.abhimehrotra
 
 # View latest health report
 ls ~/Library/Logs/maintenance/health_report-*.txt | tail -1 | xargs cat

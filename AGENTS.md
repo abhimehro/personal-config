@@ -216,7 +216,7 @@ The maintenance system is documented in `maintenance/README.md`.
 ./maintenance/bin/run_all_maintenance.sh quick
 
 # Check scheduled agents
-launchctl list | grep maintenance
+launchctl list | grep com.abhimehrotra
 ```
 
 ### Media streaming pipeline
@@ -347,6 +347,69 @@ Canonical policy references:
   on PRs (OpenCode + Mistral). Agents should **read** an existing recap when
   present; do not re-trigger on every triage (quota). Refresh via label
   `visual-recap` only when needed.
+
+### Stacked PRs during review/salvage sessions (`gh-stack`)
+
+The `github/gh-stack` `gh` extension is installed via
+`scripts/install_gh_extensions.sh`; its usage skill is tracked at
+`.agents/skills/gh-stack/SKILL.md` (mirrored to `.claude/skills` and
+`.windsurf/skills`). Load it before doing any of the below.
+
+Use `gh stack` during Review (Phase 1) and Salvage (Phase 2) sessions to break the
+**post-merge conflict cascade** (see "Post-merge conflict cascade" heuristic in
+`docs/automated-pr-review-agent.md` and the domino-effect guidance in
+`docs/automated-pr-salvage-agent.md`): PRs that touch the same hot file frequently
+flip `DIRTY` one after another as siblings merge ahead of them. Rather than merging
+or salvaging each sibling independently and re-triaging the fallout, chain the
+related PRs/branches into a stack so each one is rebased on the branch below it:
+
+```bash
+# Link existing open PRs (same repo, overlapping files) into a stack, bottom to top
+gh stack link <pr-bottom> <pr-middle> <pr-top>
+
+# Or, when salvaging, create the replacement branches as a chain from the start
+gh stack init salvage/<repo>-<a> salvage/<repo>-<b> salvage/<repo>-<c>
+
+# Merge a linked stack bottom-to-top once reviewed (never run unattended by Review/Salvage agents)
+gh stack merge --yes
+```
+
+Agent-specific rules:
+
+- **Review Agent (Phase 1):** may use `gh stack link` to group already-open sibling
+  PRs that collide on the same file(s) before merging, then merge the stack with
+  `gh stack merge --yes` instead of merging them one at a time and re-checking
+  mergeable state after each. Still subject to all existing merge gates per-PR.
+- **Salvage Agent (Phase 2):** when the salvage queue contains multiple
+  deferred/escalated PRs that touch the same files or the same consolidation
+  category, build the replacement branches with `gh stack init` (chained) instead of
+  independent branches off `main`, then `gh stack submit --auto` to open them all as
+  **draft** PRs. This preserves the "never merge autonomously" boundary (S1) while
+  eliminating the need for each salvage branch to re-resolve conflicts introduced
+  by its siblings.
+- Always run `gh stack rebase --no-trunk` immediately before `gh stack submit`/`merge`;
+  `gh stack init` with multiple branch names creates them off trunk in parallel, not
+  chained, until the first rebase.
+
+**Merging a stack (Lesson 0ez — learned the hard way on 2026-07-31):** stacked PRs
+**cannot** be merged with `gh pr merge`, GraphQL `mergePullRequest`, or the ordinary
+`PUT /repos/{owner}/{repo}/pulls/{n}/merge` (even with `Prefer: respond-async`). They
+fail with "part of a stack… use the asynchronous merge REST API". Use whichever
+path matches your environment:
+
+- **Has the `gh` extension** (local / provisioned runner): `gh stack merge --yes`.
+- **API-only agent sessions** (Cursor cloud, MCP, bare `GH_TOKEN`):
+
+  ```bash
+  # Merging the TOP of the stack merges every lower layer into the ultimate base
+  gh api -X PUT repos/$REPO/pulls/$TOP_PR/merge-async -f merge_method=squash
+
+  # Poll until status=merged (uuid lives under .details.uuid)
+  gh api repos/$REPO/pulls/$TOP_PR/merge-async/$UUID
+  ```
+
+  Retry once if it fails with "Base branch was modified" (sibling merges still
+  settling). **Auto-merge is unsupported for stacks** — never queue one and walk away.
 
 ## Big-picture architecture (how the pieces fit)
 

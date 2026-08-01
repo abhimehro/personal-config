@@ -69,7 +69,6 @@ cleanup_stale_mount() {
 	fi
 }
 
-
 # SAFEGUARD 0: Wait for the fuse-t FSKit module to be ready.
 # At boot/login, launchd fires this script before the fuse-t process (and its
 # FSKit module) is up. Attempting the NFS-backed rclone mount before fuse-t is

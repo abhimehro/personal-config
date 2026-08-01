@@ -81,7 +81,9 @@ def _fetch_all_pr_data_parallel(queue_items):
     with ThreadPoolExecutor(max_workers=min(len(queue_items) or 1, 32)) as executor:
         futures = []
         for item in queue_items:
-            futures.append(executor.submit(_fetch_pr_diff_only, item, info_map.get(item)))
+            futures.append(
+                executor.submit(_fetch_pr_diff_only, item, info_map.get(item))
+            )
         return [f.result() for f in futures]
 
 

@@ -1,70 +1,41 @@
-# PR Triage — 2026-07-30
+# PR Triage — Phase 2 Salvage 2026-08-01
 
-## Duplicate / overlap groups
+## Phase 1 remainder → Phase 2 disposition
 
-| Group | PRs | Keep | Close |
-|-------|-----|------|-------|
-| greetings first-interaction pin | pc #1828, #1827, #1819, #1821, #1820 | #1828 (also ai-inference pin; WI green) | #1827 (mislabeled Sentinel + journal dup) |
-| rpce Set containment | #153, #151 | #153 (CI PASS) | #151 (identical, CI FAIL) |
-| dummy_todos auth | series #315, #320, #330, #331 | #315 (clean auth fix) for human | #320 junk `commit_wrapper.py`; #330 import-only OK to merge first; #331 depends on max_read |
-| GraphQL PR batching | pc #1820, #1821 | neither yet | #1820 has trunk binary artifacts |
+| Remainder item | Live state | Phase 2 action |
+| -------------- | ---------- | -------------- |
+| pc #1822 CORS | DIRTY | ESCALATE comment |
+| pc #1841 timeout/auth | CLEAN | leave for human / Phase 1 |
+| pc #1867 defaultdict | MERGEABLE/UNSTABLE | leave (CI red) |
+| pc #1857 microopts | DIRTY | SALVAGE → #1875; close #1857 |
+| pc #1859 empty-state | DIRTY | SALVAGE a11y-safe → #1876; close #1859 |
+| pc #1825 asyncio | DIRTY | CLOSE no-op (junk files only) |
+| ctrld #1086 format | CLEAN + prior RC | leave |
+| ctrld #1081 housekeeping | DIRTY | SALVAGE → #1105; close #1081 |
+| esp #1399 Bolt spam | DIRTY + CodeScene | `/cs-agent` + spam-only SALVAGE → #1401; close #1399 |
+| seatek #571 list-only | CLEAN | leave (T1 human) |
+| seatek #573 file-read DoS | CLEAN | leave (security human) |
+| seatek #568 path hijack | DIRTY | ESCALATE |
+| seatek #555 multi-root | DIRTY | ESCALATE |
+| seatek #560 parallelize | DIRTY | REQUEST_CHANGES |
+| seatek #554 warn tests | DIRTY | SALVAGE → #576; close #554 |
+| hg #441/#443/#445/#448/#450 | CLEAN | leave (security/deps human); #443 auto-resolved vs Phase 1 snapshot |
+| series #336 | gone | queue drained |
+| rpce #158 TOCTOU | DIRTY drift | ESCALATE |
+| rpce #163/#164 | UNSTABLE | leave Phase 1 |
+| rpce #144/#157/#161… | DIRTY drift | DEFER (focused re-roll needed) |
 
-## Stale (>30d)
+## Rejected payloads (do not salvage)
 
-None (all age 0–1d).
+1. **ESP #1399 module collapse** — deletes `alert_*` / `media_*` modules into monoliths.
+2. **PC #1859 a11y regression** — removes skip-link / landmarks while adding `empty-state`.
+3. **PC #1825** — `patch3.diff` + `scratch_triage.py` only.
+4. **RPCE DIRTY pile** — 10k–37k line branch drift; extract-on-demand only.
 
-## Security / escalate
+## Merge order for humans (drafts)
 
-1. **pc #1822** — CORS fail-closed on archived alldebrid-server (trust boundary)
-2. **pc #1827** — mislabeled; close as superseded by #1828
-3. **Seatek #552** — `run_shell_command` rejects str (injection harden)
-4. **series #315** — repair broken `authenticate` (auth)
-5. **series #320** — auth + junk file → REQUEST_CHANGES
-
-## Merge order (Phase 1)
-
-1. pc #1828 (unblocks WI on main for sibling PRs)
-2. series unused-import / tests: #324, #314, #317, #316, #312, #329, #330
-3. Seatek tests/cleanup: #556, #559, #550, #553, #554, #563
-4. rpce #153
-5. Re-check WI-failing pc PRs after #1828 lands
-6. pc #1819 if unique defaultdict delta remains
-# PR Triage — 2026-07-30 Phase 2
-
-## Decision rules applied
-
-- S1: never auto-merge salvage drafts
-- S2: skip journals (`.jules/*`)
-- S4: adapt tests to main APIs (truncate assertion; no blind checkout)
-- 0es: prefer CLEAN twin (#1831 over #1819; #153 over #151)
-- 0et: surgical residuals when changed-in-both
-- Auth/CORS/injection → ESCALATE only (no salvage of auth)
-
-## Counts
-
-| Disposition | Count |
-|-------------|------:|
-| CLOSE-SUPERSEDED / no-op | 8 |
-| SALVAGE drafts opened | 5 |
-| ESCALATE (MCP) | 3 |
-| REQUEST_CHANGES | 1 (#144) |
-| DEFER | 3 (#554/#563/#327) |
-| Autonomous merges | **0** |
-
-## Salvage drafts awaiting human
-
-1. [pc #1836](https://github.com/abhimehro/personal-config/pull/1836) — GraphQL batch `run_merges` (from #1820, no trunk junk)
-2. [seatek #565](https://github.com/abhimehro/Seatek_Analysis/pull/565) — automation unit tests + `flattened_updates` fix
-3. [series #332](https://github.com/abhimehro/series_correction_project_updated/pull/332) — setup.py `__future__` cleanup
-4. [series #333](https://github.com/abhimehro/series_correction_project_updated/pull/333) — `parse_year_pair` tests
-5. [rpce #157](https://github.com/abhimehro/repoprompt-ce/pull/157) — Swift micro-opts (#146/#149/#150)
-
-## Human T1 escalations
-
-1. [pc #1822](https://github.com/abhimehro/personal-config/pull/1822) — CORS fail-closed
-2. [seatek #552](https://github.com/abhimehro/Seatek_Analysis/pull/552) — `run_shell_command` list-only
-3. [series #315](https://github.com/abhimehro/series_correction_project_updated/pull/315) — `authenticate()` repair
-
-## Prefer Phase 1 CLEAN twins (not salvaged)
-
-- [pc #1831](https://github.com/abhimehro/personal-config/pull/1831) — defaultdict (covers #1819)
+1. Seatek #571 (list-only shell) before #576 (warn rename) — same file.
+2. pc #1875, #1876
+3. ctrld #1105
+4. esp #1401
+5. Security CLEAN cluster (hg #445/#448/#450; seatek #573; pc #1841) — human only

@@ -831,6 +831,18 @@ instantiates new empty dictionaries and lists on every iteration when keys are
 missing. **Action:** Replace this with multi-step `None` checks (e.g.,
 `_key = val.get("key"); _sub = _key.get("sub_key") if _key else []`) to prevent
 redundant object allocations in critical paths.
+
 ## 2026-03-10 - [Pre-compile regular expressions in utility functions]
-**Learning:** Re-compiling the identical regular expression inside functions that are called frequently (like `_normalize_host` checking for whitespace) adds unnecessary overhead due to repeated evaluation.
-**Action:** Always pre-compile regular expressions (e.g. `re.compile(...)`) at the module level when they are static and used repeatedly inside functions or loops.
+
+**Learning:** Re-compiling the identical regular expression inside functions
+that are called frequently (like `_normalize_host` checking for whitespace) adds
+unnecessary overhead due to repeated evaluation. **Action:** Always pre-compile
+regular expressions (e.g. `re.compile(...)`) at the module level when they are
+static and used repeatedly inside functions or loops.
+
+## 2026-12-08 - [Avoid slow manual string slicing with while loops]
+**Learning:** Using a manual `while True` loop to parse out multi-line string content by constantly calling `str.find` and managing pointers is extremely inefficient, byte-code intensive, and hard to read.
+**Action:** Replace manual string-parsing loops with a single `re.findall` call using a pre-compiled regular expression at the module level for a significant performance and readability boost.
+## 2024-05-18 - Replacing file iteration with splitlines() for memory efficiency
+**Learning:** The previous plan attempted to optimize file parsing by changing lazy iteration (`for line in handle:`) to loading the entire file into memory and splitting it into a list (`for line in handle.read().splitlines():`). While potentially faster for very small text files by avoiding the overhead of multiple I/O loops, it degraded memory efficiency because it required loading the entire file into memory at once. It also destroyed newline formatting. We learned that the standard `for line in handle:` is generally more memory-efficient and safer to use unless memory overhead is strictly not a concern and raw read speed is critical.
+**Action:** When considering file reading performance optimizations, always weigh raw read speed against memory consumption and memory overhead. Prioritize lazy iteration (`for line in handle:`) for unknown file sizes or whenever memory optimization is prioritized over micro-optimizations in speed.

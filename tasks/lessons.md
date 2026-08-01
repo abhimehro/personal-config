@@ -1,58 +1,105 @@
 # Lessons Learned
 
+## Lesson 0ez: stacked PRs need merge-async REST (2026-07-31)
+
+**Pattern:** Stacked GitHub PRs (child bases on parent head; parent still
+targets `main`) reject `gh pr merge` / GraphQL `mergePullRequest` and the
+ordinary `PUT …/pulls/{n}/merge` even with `Prefer: respond-async`. Error:
+"part of a stack… use the asynchronous merge REST API" /
+"Merging stacked PRs via this endpoint is not supported."
+**Rule:** (1) Use `PUT /repos/{owner}/{repo}/pulls/{n}/merge-async` with
+`merge_method=squash`. (2) Merging the **top** of the stack merges all lower
+layers into the ultimate base. (3) Poll
+`GET …/pulls/{n}/merge-async/{uuid}` until `status=merged` (UUID is under
+`details.uuid`). (4) If `failed` with "Base branch was modified", retry once
+after sibling merges settle. (5) Auto-merge is unsupported for stacks.
+**Detection cost:** Low — `baseRefName != main` on children, or GraphQL error
+text mentioning stack.
+
+## Lesson 0fa: shell-expand close comments carefully (2026-07-31)
+
+**Pattern:** `gh pr close … --comment "… #$1854 …"` with an unquoted /
+double-quoted string lets the shell treat `$1854` as a variable (empty),
+mangling the close comment body (and can splice unrelated script text if the
+heredoc/quoting is wrong).
+**Rule:** Use single-quoted `--comment '… #1854 …'` or escape `\$`, or write
+the body to a file and pass `--body-file`. Never put `$` + digits in
+double-quoted close/comment strings.
+**Detection cost:** Low — read the posted comment URL after close.
+
+## Lesson 0fb: Stack sibling PRs to break post-merge conflict cascades (2026-07-31)
+
+**Pattern:** Phase 1 merged 21 PRs on 2026-07-31, but the two gh-stack stacks
+(starter configs #1842-#1844 and CLI tooling #1846-#1848) could not be merged
+via `gh pr merge` / GraphQL `mergePullRequest` / ordinary `PUT .../merge` (even with
+`Prefer: respond-async`). GitHub rejected them with "part of a stack… use the
+asynchronous merge REST API". This is the same class of failure as Lessons 0, 0y, and 0z:
+merging siblings independently leaves the rest DIRTY in a cascade.
+**Rule:** (1) For 2+ open PRs in the same repo that collide on the same file(s),
+link them with `gh stack link <bottom> ... <top>` and merge only the top; do not
+merge each independently. (2) Stack merges require `gh stack merge --yes` (when
+the gh extension is present) or the async REST API
+`PUT /repos/{owner}/{repo}/pulls/{top}/merge-async` + poll `.../merge-async/{uuid}` until
+`status=merged`. (3) Auto-merge is unsupported for stacks. (4) The full recipe lives
+in AGENTS.md → `Stacked PRs during review/salvage sessions`.
+**Detection cost:** Low — `baseRefName != main` on children, or a GraphQL/REST error
+mentioning stack.
 ## Lesson 0ex: main-side unpinned action fails WI on unrelated PRs (2026-07-30)
 
 **Pattern:** Several personal-config Bolt PRs that did **not** touch workflows
 still failed **Workflow Integrity** because `main`'s `greetings.yml` used
-`actions/first-interaction@v3` (mutable tag). Only PRs that rewrote the pin
-(or landed after #1828) went green. **Rule:** (1) When ≥3 open PRs fail the
-same Workflow Integrity pin check and the violation path is on `main`, treat as
+`actions/first-interaction@v3` (mutable tag). Only PRs that rewrote the pin (or
+landed after #1828) went green. **Rule:** (1) When ≥3 open PRs fail the same
+Workflow Integrity pin check and the violation path is on `main`, treat as
 **main-side infra** and prioritize a dedicated pin PR before blaming Bolt diffs.
 (2) Merge the pin PR first in the session; then re-check siblings (may need
 re-run, not just rebase, if checks cached). (3) Mislabeled Sentinel PRs that
 only add the same pin + journal → CLOSE-SUPERSEDED once the pin lands.
 **Detection cost:** Low — WI log cites `.github/workflows/….yml` even when
 `gh pr diff --name-only` excludes workflows.
+
 ## Lesson 0ey: Combined salvage drafts beat N×1-line conflicted twins (2026-07-30)
 
 **Pattern:** After Phase 1 merges, many Jules/Bolt PRs stay CONFLICTING only
 because of `.jules/*.md` journals or shared greetings.yml pins, while the unique
 source residual is 1–3 lines (rpce #146/#149/#150) or a cluster of compatible
 unit tests (Seatek #551/#553/#557/#558). Opening one draft per original burns
-reviewer attention and multiplies CI. **Rule:** (1) When residuals share a
-theme and do not conflict with each other on `main`, combine into a single
-surgical salvage draft and close all originals as superseded. (2) Still skip
-journals (S2) and still adapt tests to live APIs (S4) — never wholesale-checkout
-a test whose assertions assume a renamed function. (3) Do not combine across
-trust-boundary domains (auth + perf). **Detection cost:** Low — list
-CONFLICTING file sets; if journals/greetings dominate and source deltas are
-disjoint, combine.
+reviewer attention and multiplies CI. **Rule:** (1) When residuals share a theme
+and do not conflict with each other on `main`, combine into a single surgical
+salvage draft and close all originals as superseded. (2) Still skip journals
+(S2) and still adapt tests to live APIs (S4) — never wholesale-checkout a test
+whose assertions assume a renamed function. (3) Do not combine across
+trust-boundary domains (auth + perf). **Detection cost:** Low — list CONFLICTING
+file sets; if journals/greetings dominate and source deltas are disjoint,
+combine.
 
 ## Lesson 0ew: abhimehro PAT restores gh create/close (2026-07-29)
 
 **Pattern:** Prior sessions with Cursor App token (hosts.yml) could squash-merge
 but got **Resource not accessible by integration** on `gh pr close` / create
-(Lesson 0eq/0es). Tonight's injected `GH_TOKEN` is a classic PAT as
-`abhimehro`: `gh pr create --draft` and `gh pr close` both succeeded for esp
-#1383/#1381. **Rule:** (1) Prefer PAT/`abhimehro` for Phase 2 close + draft PR
-create when available. (2) Keep MCP `post_review_comment_on_pr` as fallback for
-reviews when App-only. (3) `request_reviewers` still 422 when the salvage PR
-author is already `abhimehro` — skip or use a bot account. (4) Do not `unset
-GH_TOKEN` blindly if `gh api user` shows a working PAT (revisit 0eo only when
-the token is expired/invalid). **Detection cost:** Low — one `gh pr close` or
+(Lesson 0eq/0es). Tonight's injected `GH_TOKEN` is a classic PAT as `abhimehro`:
+`gh pr create --draft` and `gh pr close` both succeeded for esp #1383/#1381.
+**Rule:** (1) Prefer PAT/`abhimehro` for Phase 2 close + draft PR create when
+available. (2) Keep MCP `post_review_comment_on_pr` as fallback for reviews when
+App-only. (3) `request_reviewers` still 422 when the salvage PR author is
+already `abhimehro` — skip or use a bot account. (4) Do not `unset
+GH_TOKEN`
+blindly if `gh api user` shows a working PAT (revisit 0eo only when the token is
+expired/invalid). **Detection cost:** Low — one `gh pr close` or
 `gh pr create --draft` probe.
 
 ## Lesson 0eu: upload@v7 + download@v8 is the intended pair (2026-07-29)
 
 **Pattern:** Prior Phase-1 reviews blocked esp #1366 citing Lesson 0er
 ("upload/download major skew"). Live GitHub tags (2026-07-29):
-`actions/upload-artifact` latest is **v7.0.1** (no v8); `actions/download-artifact`
-latest is **v8.0.1**. GitHub's changelog documents v8 download as the compatible
-consumer of v7 upload (incl. optional `archive: false`). **Rule:** (1) Before
-REQUEST_CHANGES on artifact majors, verify tags via
+`actions/upload-artifact` latest is **v7.0.1** (no v8);
+`actions/download-artifact` latest is **v8.0.1**. GitHub's changelog documents
+v8 download as the compatible consumer of v7 upload (incl. optional
+`archive: false`). **Rule:** (1) Before REQUEST_CHANGES on artifact majors,
+verify tags via
 `gh api repos/actions/{upload,download}-artifact/releases/latest`. (2) Do not
-require matching majors when upstream versions diverge by design. (3) Prefer
-SHA pins annotated with `# vX.Y.Z`. **Detection cost:** Low — one API call per
+require matching majors when upstream versions diverge by design. (3) Prefer SHA
+pins annotated with `# vX.Y.Z`. **Detection cost:** Low — one API call per
 action.
 
 ## Lesson 0ev: Two-dot check automation twins opened after merge (2026-07-29)
@@ -65,7 +112,6 @@ immediately two-dot-diff any same-title twin (`git diff origin/main..pr-ref`).
 (2) CLOSE-SUPERSEDED if unique delta is changelog churn / regressions; keep only
 true residual bumps as focused PRs. **Detection cost:** Low — createdAt within
 minutes of sibling merge + identical title.
-
 
 ## Lesson 0et: Surgical salvage when merge-tree shows changed-in-both after sibling merge (2026-07-28)
 
@@ -1846,9 +1892,9 @@ but replaced `test_oversized_subject_logs_warning` with `pass` because the
 warning now logs from `security_validators.logger`, not `parser.logger`.
 **Rule:** When salvaging helper extractions that relocate logging, keep a real
 assertion by `patch`ing the module that owns the logger. Never accept `pass` as
-a substitute for a DoS/truncation warning regression test.
-**Detection cost:** Low — PR diff shows `pass` under a `logs_warning` test name
-plus an import of `validate_*` helpers.
+a substitute for a DoS/truncation warning regression test. **Detection cost:**
+Low — PR diff shows `pass` under a `logs_warning` test name plus an import of
+`validate_*` helpers.
 
 ## Lesson 0et: Isolate CTR_PROFILE_* in unit tests (2026-07-28)
 
@@ -1860,3 +1906,37 @@ unless the suite unsets those vars (and legacy `CTRLD_*_PROFILE`) at start.
 **Rule:** Any test asserting unset/fail-closed Control D profile behavior must
 `unset CTR_PROFILE_* CTRLD_*_PROFILE` (and related `CONTROLD_*` keys when
 asserting file load) before sourcing or calling the loader.
+
+## 0fa — Mid-function corruption in "exception cleanup" PRs (2026-07-31)
+
+**Pattern:** A Jules/QA PR titled “redundant-exception cleanup” can splice an unrelated helper into the middle of `authenticate` (and drop security imports) while also wiping `CHANGELOG.md` entries.
+
+**Rule:** Before salvaging any PR that touches `authenticate` / credential helpers / CHANGELOG, read the full hunk. If control flow is broken or journal entries are deleted, **ESCALATE** — never cherry-pick.
+
+**Detection cost:** Low — `gh pr diff` + search for `def authenticate` continuity.
+
+## 0fb — Dependabot Poetry lock cascade (2026-08-01)
+
+**Pattern:** Hydrograph #442 (matplotlib) and #443 (scipy) were both MERGEABLE
+with green CI; after squash-merging #442, #443 immediately became CONFLICTING
+on `poetry.lock` and `update-branch` returned 422.
+
+**Rule:** When multiple Dependabot PRs share `poetry.lock` / `uv.lock`, merge
+**one** lock-touching PR per repo per session (or `gh stack link` them), then
+re-check siblings before the next merge. Do not assume green Dependabot twins
+remain mergeable after a sibling lock merge.
+
+**Detection cost:** Low — same-repo Dependabot PRs listing `poetry.lock`.
+
+## 0fc — Reject module-collapse “perf” PRs (2026-08-01)
+
+**Pattern:** ESP #1399 titled as SpamAnalyzer Bolt opts also deleted modular
+`alert_*` / `media_*` files and re-inlined them into monoliths (+2k/−2k), while
+CodeScene was red. Salvaging the whole branch would undo modularization.
+**Rule:** When a “perf” PR touches many modules or deletes sibling packages,
+diff **per file** against `main`. Salvage only the named hot path (here
+`spam_analyzer.py`); reject structural collapses. Still post
+`/cs-agent skill:fix-code-health-degradations` when CodeScene is red.
+**Detection cost:** Low — `gh pr diff --stat` showing deletes of whole modules
+alongside a one-file perf claim.
+
