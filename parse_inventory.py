@@ -85,7 +85,7 @@ def _ensure_repo_bucket(repo_name, repos):
 
 
 def _parse_row_record(line, current_repo, line_number):
-    parts = line.split("|")
+    parts = line.split("|", 10)
     if len(parts) <= 9:
         return None
     repo_col, pr_id, author, checks, hints = _extract_pr_row_fields(parts)

@@ -60,8 +60,10 @@ def _validate_env_fd(fd: int, path: Path) -> None:
 
 def _parse_env_lines(handle, parsed: dict[str, str]) -> None:
     """Read a dotenv-style file handle into ``parsed``."""
-    for line in handle:
-        parse_env_line(line, parsed)
+    content = handle.read()
+    if content:
+        for line in content.splitlines():
+            parse_env_line(line, parsed)
 
 
 def _read_env_file(path: Path) -> dict[str, str]:
