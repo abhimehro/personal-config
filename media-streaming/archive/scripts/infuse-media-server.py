@@ -220,8 +220,6 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
             <title>Media Library - {safe_path}</title>
             <style>
                 body {{ font-family: Arial, sans-serif; margin: 5%; }}
-                .skip-link {{ position: absolute; top: 0; left: 0; transform: translateY(-150%); background: #000; color: #fff; padding: 8px; z-index: 100; text-decoration: none; transition: transform 0.2s; }}
-                .skip-link:focus, .skip-link:focus-visible {{ transform: translateY(0); }}
                 nav ul {{ list-style-type: none; padding: 0; margin: 0; }}
                 nav li {{ margin: 0; padding: 0; }}
                 .file {{ display: block; padding: 10px; text-decoration: none; color: #333; }}
@@ -231,13 +229,9 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
             </style>
         </head>
         <body>
-            <a href="#main-content" class="skip-link">Skip to main content</a>
-            <header>
-                <h1><span aria-hidden="true">📁</span> Media Library: /{safe_path}</h1>
-            </header>
-            <main id="main-content">
-                <nav aria-label="Directory listing">
-                    <ul>
+            <h1><span aria-hidden="true">📁</span> Media Library: /{safe_path}</h1>
+            <nav aria-label="Directory listing">
+                <ul>
         """]
 
         # Add parent directory link if not root
@@ -284,7 +278,6 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
         html_parts.append("""
                 </ul>
             </nav>
-            </main>
         </body>
         </html>
         """)

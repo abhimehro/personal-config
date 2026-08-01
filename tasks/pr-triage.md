@@ -1,122 +1,80 @@
-# PR Triage — 2026-07-31 Phase 2
+# PR Triage — 2026-07-30
 
-## Disposition key
+## Duplicate / overlap groups
 
-- **SALVAGE** — draft PR opened; original closed superseded
-- **CLOSE-SUPERSEDED** — change already on main / twin
-- **ESCALATE** — security / trust boundary / broken diff
-- **DEFER** — large / CI-red / redesign
-- **REQUEST_CHANGES** — junk or scope creep
-- **AUTO-RESOLVED** — was CONFLICTING, now CLEAN (Phase 1 re-run)
+| Group                           | PRs                                  | Keep                                    | Close                                                                                       |
+| ------------------------------- | ------------------------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------- |
+| greetings first-interaction pin | pc #1828, #1827, #1819, #1821, #1820 | #1828 (also ai-inference pin; WI green) | #1827 (mislabeled Sentinel + journal dup)                                                   |
+| rpce Set containment            | #153, #151                           | #153 (CI PASS)                          | #151 (identical, CI FAIL)                                                                   |
+| dummy_todos auth                | series #315, #320, #330, #331        | #315 (clean auth fix) for human         | #320 junk `commit_wrapper.py`; #330 import-only OK to merge first; #331 depends on max_read |
+| GraphQL PR batching             | pc #1820, #1821                      | neither yet                             | #1820 has trunk binary artifacts                                                            |
 
-## Decisions
+## Stale (>30d)
 
-| Repo | PR | Disposition | Why |
-|------|----|-------------|-----|
-| pc | 1840/1835 | SALVAGE → #1856 | a11y skip-link; journal append-only |
-| pc | 1824/1823 | SALVAGE → #1857 | micro-opts combined (0ey) |
-| pc | 1830 | CLOSE-SUPERSEDED | regex already #1854; harmful extras |
-| pc | 1822/1841 | ESCALATE | CORS / auth env |
-| pc | 1825 | REQUEST_CHANGES | scratch artifacts |
-| pc | 1852 | DEFER | large maintenance |
-| ctrld | 1086 | REQUEST_CHANGES | junk json |
-| ctrld | 1088/1081 | DEFER | CodeScene / CI |
-| esp | 1394 | DEFER | god-module (S6) |
-| seatek | 552 | SALVAGE → #571 | T1 injection harden |
-| seatek | 554 | DEFER | warn_on_* redesign |
-| seatek | 560 | REQUEST_CHANGES | workflow scope |
-| seatek | 568/555 | ESCALATE | path / workspace_roots |
-| hg | 443/442 | AUTO-RESOLVED | CLEAN after #440 |
-| hg | 445 | ESCALATE | path traversal |
-| hg | 441 | DEFER | numpy runtime bump |
-| series | 336 | ESCALATE | broken authenticate + CHANGELOG wipe |
-| series | 322 | ESCALATE/DEFER | auth-adjacent multi-file |
-| series | 337 | REQUEST_CHANGES | NaN masking |
-| rpce | 147/158 | ESCALATE | workflows / TOCTOU |
-| rpce | 144/159/161/157/152/148 | DEFER | CI/huge |
-# PR Triage — 2026-07-31
+None (all age 0–1d).
 
-Phase 1 cron (`0 13 * * *`). Preflight PASS 7/7. Auth: GitHub token with close/merge permissions. Adversarial: opus-4.8 + gpt-5.5 parallel.
+## Security / escalate
 
-## Disposition summary
+1. **pc #1822** — CORS fail-closed on archived alldebrid-server (trust boundary)
+2. **pc #1827** — mislabeled; close as superseded by #1828
+3. **Seatek #552** — `run_shell_command` rejects str (injection harden)
+4. **series #315** — repair broken `authenticate` (auth)
+5. **series #320** — auth + junk file → REQUEST_CHANGES
 
-| Disposition | Count (planned) |
-| --- | ---: |
-| MERGE | ~22 |
-| DEFER / twin | ~15 |
-| REQUEST_CHANGES | ~6 |
-| ESCALATE | ~8 |
-| CONFLICTING → Phase 2 | ~9 |
+## Merge order (Phase 1)
 
-## MERGE (consensus, CI green)
+1. pc #1828 (unblocks WI on main for sibling PRs)
+2. series unused-import / tests: #324, #314, #317, #316, #312, #329, #330
+3. Seatek tests/cleanup: #556, #559, #550, #553, #554, #563
+4. rpce #153
+5. Re-check WI-failing pc PRs after #1828 lands
+6. pc #1819 if unique defaultdict delta remains
 
-| Repo | PR | Why |
-| --- | ---: | --- |
-| personal-config | 1839 | Zero-diff Daily QA |
-| personal-config | 1850 | CodeQL pin v4.37.4 SHA verified |
-| personal-config | 1854 | Bolt regex twin (preferred over #1853/#1826/#1818) |
-| personal-config | 1831 | defaultdict(list) equivalent |
-| personal-config | 1846 | Brewfile + gh |
-| personal-config | 1842 | zsh starter |
-| personal-config | 1843 | git starter |
-| personal-config | 1844 | nvim starter |
-| personal-config | 1847 | gh extensions installer |
-| personal-config | 1848 | wire bootstrap into setup.sh |
-| ctrld-sync | 1089 | allowlist opt + test format (preferred over #1087) |
-| ctrld-sync | 1083 | Partial batch status logging |
-| Seatek_Analysis | 567 | Zero-diff Daily QA |
-| Seatek_Analysis | 561 | named-fn extract (preferred over #569) |
-| Hydrograph… | 446 | redundant dropna removal |
-| Hydrograph… | 440 | pandas-stubs 3.x (dev) |
-| Hydrograph… | 443 | scipy 1.18.0 |
-| Hydrograph… | 442 | matplotlib 3.11.1 |
-| series_correction… | 331 | fallback test only |
-| series_correction… | 326 | helper extraction |
-| series_correction… | 323 | JSON parse fix (`dummy_todos.py` only; no auth) |
-| series_correction… | 321 | flatten `_get_data_directory` |
-| repoprompt-ce | 162 | static DateFormatter |
+# PR Triage — 2026-07-30 Phase 2
 
-## ESCALATE (security / trust boundary)
+## Decision rules applied
 
-| Repo | PR | Reason |
-| --- | ---: | --- |
-| personal-config | 1822 | Sentinel CORS (archived alldebrid-server) |
-| personal-config | 1841 | Sentinel timeout/auth env on subprocess |
-| Seatek_Analysis | 568 | Sentinel path-hijacking (`shutil.which`) |
-| Seatek_Analysis | 555 | Untrusted workspace_roots in 1Password/Copilot hook |
-| Seatek_Analysis | 552 | Command injection (CONFLICTING) |
-| Hydrograph… | 445 | Sentinel path traversal on `--output` |
-| repoprompt-ce | 147 | Privileged workflows under "remove prints" title |
-| repoprompt-ce | 158 | TOCTOU Sentinel (CI failing) |
+- S1: never auto-merge salvage drafts
+- S2: skip journals (`.jules/*`)
+- S4: adapt tests to main APIs (truncate assertion; no blind checkout)
+- 0es: prefer CLEAN twin (#1831 over #1819; #153 over #151)
+- 0et: surgical residuals when changed-in-both
+- Auth/CORS/injection → ESCALATE only (no salvage of auth)
 
-## REQUEST_CHANGES
+## Counts
 
-| Repo | PR | Reason |
-| --- | ---: | --- |
-| ctrld-sync | 1086 | Stray `pr_payload.json` |
-| ctrld-sync | 1081 | test CI fail; repo-health |
-| Seatek_Analysis | 560 | Scope creep (workflow/model + mclapply) |
-| series_correction… | 337 | Alters NaN masking / outlier stats; journal wipe |
-| personal-config | 1825 | Scratch `patch3.diff` / `scratch_triage.py` |
-| repoprompt-ce | 144/148/152/156/157/159/161 | Failing Style/Build or huge merge-base noise |
+| Disposition              |              Count |
+| ------------------------ | -----------------: |
+| CLOSE-SUPERSEDED / no-op |                  8 |
+| SALVAGE drafts opened    |                  5 |
+| ESCALATE (MCP)           |                  3 |
+| REQUEST_CHANGES          |           1 (#144) |
+| DEFER                    | 3 (#554/#563/#327) |
+| Autonomous merges        |              **0** |
 
-## DEFER (twins / conflicts / large)
+## Salvage drafts awaiting human
 
-- pc #1853, #1830, #1826, #1818 — regex twins of #1854
-- pc #1840, #1835, #1824, #1823 — CONFLICTING → Phase 2
-- pc #1852 — large maintenance consolidate (human review)
-- ctrld #1087 — subsumed by #1089; #1088 CodeScene (post `/cs-agent`)
-- seatek #569 twin of #561; #563 zero-diff misleading title; #554 CONFLICTING
-- series #336, #322 CONFLICTING/FAIL
-- hg #441 — numpy 2.2→2.4 runtime bump (defer; not auto-merge majors)
-- esp #1394 — large god-module split (human/Phase 2)
-- rpce huge Palette/salvage diffs
+1. [pc #1836](https://github.com/abhimehro/personal-config/pull/1836) — GraphQL
+   batch `run_merges` (from #1820, no trunk junk)
+2. [seatek #565](https://github.com/abhimehro/Seatek_Analysis/pull/565) —
+   automation unit tests + `flattened_updates` fix
+3. [series #332](https://github.com/abhimehro/series_correction_project_updated/pull/332)
+   — setup.py `__future__` cleanup
+4. [series #333](https://github.com/abhimehro/series_correction_project_updated/pull/333)
+   — `parse_year_pair` tests
+5. [rpce #157](https://github.com/abhimehro/repoprompt-ce/pull/157) — Swift
+   micro-opts (#146/#149/#150)
 
-## Prefer-twin map
+## Human T1 escalations
 
-| Group | Keep | Drop/defer |
-| --- | --- | --- |
-| pc regex PR extraction | #1854 | #1853, #1830, #1826, #1818 |
-| ctrld allowlist | #1089 | #1087, #1086 (junk) |
-| seatek metrics | #561 | #569 |
-| rpce DateFormatter | #162 | #156 (CI fail, huge) |
+1. [pc #1822](https://github.com/abhimehro/personal-config/pull/1822) — CORS
+   fail-closed
+2. [seatek #552](https://github.com/abhimehro/Seatek_Analysis/pull/552) —
+   `run_shell_command` list-only
+3. [series #315](https://github.com/abhimehro/series_correction_project_updated/pull/315)
+   — `authenticate()` repair
+
+## Prefer Phase 1 CLEAN twins (not salvaged)
+
+- [pc #1831](https://github.com/abhimehro/personal-config/pull/1831) —
+  defaultdict (covers #1819)

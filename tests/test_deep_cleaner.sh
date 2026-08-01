@@ -75,6 +75,8 @@ cat >"$MOCK_BIN/date" <<'MOCK'
 #!/bin/bash
 if [[ "${MOCK_DAY_OF_MONTH:-}" == "first" && "${1:-}" == "+%-d" ]]; then
 	echo "1"
+elif [[ "${MOCK_DAY_OF_MONTH:-}" == "30" && "${1:-}" == "+%-d" ]]; then
+	echo "30"
 else
 	exec /bin/date "$@"
 fi
@@ -121,7 +123,7 @@ make_mock_home "$HOME1"
 STATE_DIR1="$TEST_DIR/state1"
 
 # Use the real date so today (not the 1st) is used.
-if HOME="$HOME1" PERSONAL_CONFIG_STATE_DIR="$STATE_DIR1" PATH="$MOCK_BIN:$PATH" \
+if MOCK_DAY_OF_MONTH=30 HOME="$HOME1" PERSONAL_CONFIG_STATE_DIR="$STATE_DIR1" PATH="$MOCK_BIN:$PATH" \
 	bash "$SCRIPT" >"$TEST_DIR/t1.log" 2>&1; then
 	echo "PASS: script exits 0 when skipping monthly run"
 	PASS=$((PASS + 1))
