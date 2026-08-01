@@ -22,4 +22,4 @@
 - [x] Salvage ESP #1399 spam-only → #1401
 - [x] Salvage Seatek #554 → #576
 - [x] ESCALATE comments: pc #1822, seatek #568/#555, rpce #158; RC #560
-- [ ] Session docs commit + docs PR + Notion + memory
+- [x] Session docs commit + docs PR + Notion + memory
