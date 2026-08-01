@@ -1865,7 +1865,7 @@ asserting file load) before sourcing or calling the loader.
 
 ## 0fa — Mid-function corruption in "exception cleanup" PRs (2026-07-31)
 
-**Pattern:** A Jules/QA PR titled as redundant-exception cleanup can splice an unrelated helper into the middle of `authenticate` (and drop security imports) while also wiping CHANGELOG entries.
+**Pattern:** A Jules/QA PR titled “redundant-exception cleanup” can splice an unrelated helper into the middle of `authenticate` (and drop security imports) while also wiping `CHANGELOG.md` entries.
 
 **Rule:** Before salvaging any PR that touches `authenticate` / credential helpers / CHANGELOG, read the full hunk. If control flow is broken or journal entries are deleted, **ESCALATE** — never cherry-pick.
 
