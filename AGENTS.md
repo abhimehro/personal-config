@@ -348,6 +348,49 @@ Canonical policy references:
   present; do not re-trigger on every triage (quota). Refresh via label
   `visual-recap` only when needed.
 
+### Stacked PRs during review/salvage sessions (`gh-stack`)
+
+The `github/gh-stack` `gh` extension is installed via
+`scripts/install_gh_extensions.sh`; its usage skill is tracked at
+`.agents/skills/gh-stack/SKILL.md` (mirrored to `.claude/skills` and
+`.windsurf/skills`). Load it before doing any of the below.
+
+Use `gh stack` during Review (Phase 1) and Salvage (Phase 2) sessions to break the
+**post-merge conflict cascade** (see "Post-merge conflict cascade" heuristic in
+`docs/automated-pr-review-agent.md` and the domino-effect guidance in
+`docs/automated-pr-salvage-agent.md`): PRs that touch the same hot file frequently
+flip `DIRTY` one after another as siblings merge ahead of them. Rather than merging
+or salvaging each sibling independently and re-triaging the fallout, chain the
+related PRs/branches into a stack so each one is rebased on the branch below it:
+
+```bash
+# Link existing open PRs (same repo, overlapping files) into a stack, bottom to top
+gh stack link <pr-bottom> <pr-middle> <pr-top>
+
+# Or, when salvaging, create the replacement branches as a chain from the start
+gh stack init salvage/<repo>-<a> salvage/<repo>-<b> salvage/<repo>-<c>
+
+# Merge a linked stack bottom-to-top once reviewed (never run unattended by Review/Salvage agents)
+gh stack merge --yes
+```
+
+Agent-specific rules:
+
+- **Review Agent (Phase 1):** may use `gh stack link` to group already-open sibling
+  PRs that collide on the same file(s) before merging, then merge the stack with
+  `gh stack merge --yes` instead of merging them one at a time and re-checking
+  mergeable state after each. Still subject to all existing merge gates per-PR.
+- **Salvage Agent (Phase 2):** when the salvage queue contains multiple
+  deferred/escalated PRs that touch the same files or the same consolidation
+  category, build the replacement branches with `gh stack init` (chained) instead of
+  independent branches off `main`, then `gh stack submit --auto` to open them all as
+  **draft** PRs. This preserves the "never merge autonomously" boundary (S1) while
+  eliminating the need for each salvage branch to re-resolve conflicts introduced
+  by its siblings.
+- Always run `gh stack rebase --no-trunk` immediately before `gh stack submit`/`merge`;
+  `gh stack init` with multiple branch names creates them off trunk in parallel, not
+  chained, until the first rebase.
+
 ## Big-picture architecture (how the pieces fit)
 
 ### 1) Config-as-code via symlink orchestration
@@ -548,3 +591,66 @@ symlink destinations are never followed. To target one hash directory:
   `seatek_series_correction.egg-info/` files under
   `series_correction_project_updated` after editable installs; restore or
   discard those changes and do not commit them.
+# Devin Handoff — Agent Guide
+
+## What this is
+
+A script to hand off tasks to [Devin](https://devin.ai), a cloud AI software
+engineer. Use it when a task needs a VM, browser, CI, or long-running execution.
+
+## When to hand off
+
+- **VM / server**: Running a dev server, testing endpoints, Docker builds
+- **Browser**: Screenshots, OAuth flows, E2E testing, scraping
+- **CI/CD**: Pipeline debugging, deployment, infrastructure changes
+- **Long-running work**: Migrations, batch processing, large refactors
+- **Parallel execution**: Offload work while you continue locally
+
+## Finding the script
+
+`scripts/devin-handoff.sh` below refers to wherever the script lives in your
+setup. Check, in order:
+
+1. `scripts/devin-handoff.sh` in the current repo
+2. An installed `devin-handoff` skill or plugin (the script sits next to its
+   `SKILL.md`, e.g. `.agents/skills/devin-handoff/scripts/devin-handoff.sh`)
+3. If neither exists, clone it:
+   `git clone https://github.com/club-cog/devin-handoff.git`
+
+## How to use
+
+1. Gather context from the current repo (the script does this automatically)
+2. Summarize what you've learned so far as `--context`
+3. Run:
+
+```bash
+scripts/devin-handoff.sh create \
+  --task "<concise task description>" \
+  --context "<what you've found so far>"
+```
+
+4. Share the session URL with the user
+5. To wait for completion, poll until Devin finishes:
+
+```bash
+scripts/devin-handoff.sh poll SESSION_ID --interval 15
+```
+
+The poll command prints status updates every N seconds and exits when Devin
+finishes (`exit`/`error`/`suspended`) or reaches `waiting_for_user` — meaning
+Devin has stopped working and is waiting on a message from you, which for a
+handoff counts as done. It prints the PR URL if one was created.
+
+6. To archive the session when done:
+
+```bash
+scripts/devin-handoff.sh archive SESSION_ID --org-id ORG_ID
+```
+
+Or auto-archive after polling: add `--archive --org-id ORG_ID` to the poll command.
+
+## Requirements
+
+- `DEVIN_API_KEY` environment variable must be set
+- `curl` and `jq` must be available
+- `git` is optional (for automatic repo/branch/diff detection)
