@@ -839,3 +839,7 @@ that are called frequently (like `_normalize_host` checking for whitespace) adds
 unnecessary overhead due to repeated evaluation. **Action:** Always pre-compile
 regular expressions (e.g. `re.compile(...)`) at the module level when they are
 static and used repeatedly inside functions or loops.
+
+## 2026-12-08 - [Avoid slow manual string slicing with while loops]
+**Learning:** Using a manual `while True` loop to parse out multi-line string content by constantly calling `str.find` and managing pointers is extremely inefficient, byte-code intensive, and hard to read.
+**Action:** Replace manual string-parsing loops with a single `re.findall` call using a pre-compiled regular expression at the module level for a significant performance and readability boost.
