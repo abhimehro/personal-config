@@ -1,0 +1,27 @@
+# Prompt and shell basics
+export EDITOR="nvim"
+export VISUAL="nvim"
+
+# Better history behavior
+HISTSIZE=10000
+SAVEHIST=10000
+setopt APPEND_HISTORY
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_ALL_DUPS
+
+# Safer, nicer shell defaults
+setopt AUTO_CD
+setopt CORRECT
+setopt INTERACTIVE_COMMENTS
+
+# Handy aliases
+alias ll='ls -lah'
+alias gs='git status'
+alias gp='git pull'
+alias gl='git log --oneline --graph --decorate --all'
+
+# Path additions
+export PATH="$HOME/bin:$HOME/.local/bin:$PATH"
+
+# Load local machine overrides if present
+[ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
