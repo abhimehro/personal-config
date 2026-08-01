@@ -1016,14 +1016,16 @@ def weekly_markers(prefix: str) -> dict[str, dict[str, int]]:
         ],
         default=[],
     )
-    markers: dict[str, dict[str, int]] = {}
+    from collections import defaultdict
+    # ⚡ Bolt Optimization: Replace chained dict.setdefault() inside loops with defaultdict(list)
+    # or defaultdict(int) to prevent redundant dictionary allocation and lookup overhead on hot paths.
+    markers: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     for issue in issues:
         if not issue.get("title", "").startswith(prefix):
             continue
         if parse_timestamp(issue["createdAt"]) < cutoff:
             continue
         for task, value in extract_status_markers(issue.get("body", "")).items():
-            markers.setdefault(task, {}).setdefault(value, 0)
             markers[task][value] += 1
     return markers
 
