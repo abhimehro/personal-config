@@ -391,8 +391,7 @@ Agent-specific rules:
   `gh stack init` with multiple branch names creates them off trunk in parallel, not
   chained, until the first rebase.
 
-For a one-page command cheat sheet, see
-`docs/gh-stack/quick-reference.md`. When in doubt during a session, run this
+For a one-page command cheat sheet, see [docs/gh-stack/quick-reference.md](docs/gh-stack/quick-reference.md). When in doubt during a session, run this
 quick verification before submitting or merging:
 
 - [ ] `gh stack view` shows every layer with a linear chain (no forks, no
