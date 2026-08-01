@@ -1,5 +1,32 @@
 # Lessons Learned
 
+## Lesson 0ez: stacked PRs need merge-async REST (2026-07-31)
+
+**Pattern:** Stacked GitHub PRs (child bases on parent head; parent still
+targets `main`) reject `gh pr merge` / GraphQL `mergePullRequest` and the
+ordinary `PUT …/pulls/{n}/merge` even with `Prefer: respond-async`. Error:
+"part of a stack… use the asynchronous merge REST API" /
+"Merging stacked PRs via this endpoint is not supported."
+**Rule:** (1) Use `PUT /repos/{owner}/{repo}/pulls/{n}/merge-async` with
+`merge_method=squash`. (2) Merging the **top** of the stack merges all lower
+layers into the ultimate base. (3) Poll
+`GET …/pulls/{n}/merge-async/{uuid}` until `status=merged` (UUID is under
+`details.uuid`). (4) If `failed` with "Base branch was modified", retry once
+after sibling merges settle. (5) Auto-merge is unsupported for stacks.
+**Detection cost:** Low — `baseRefName != main` on children, or GraphQL error
+text mentioning stack.
+
+## Lesson 0fa: shell-expand close comments carefully (2026-07-31)
+
+**Pattern:** `gh pr close … --comment "… #$1854 …"` with an unquoted /
+double-quoted string lets the shell treat `$1854` as a variable (empty),
+mangling the close comment body (and can splice unrelated script text if the
+heredoc/quoting is wrong).
+**Rule:** Use single-quoted `--comment '… #1854 …'` or escape `\$`, or write
+the body to a file and pass `--body-file`. Never put `$` + digits in
+double-quoted close/comment strings.
+**Detection cost:** Low — read the posted comment URL after close.
+
 ## Lesson 0ex: main-side unpinned action fails WI on unrelated PRs (2026-07-30)
 
 **Pattern:** Several personal-config Bolt PRs that did **not** touch workflows
@@ -1862,3 +1889,11 @@ unless the suite unsets those vars (and legacy `CTRLD_*_PROFILE`) at start.
 **Rule:** Any test asserting unset/fail-closed Control D profile behavior must
 `unset CTR_PROFILE_* CTRLD_*_PROFILE` (and related `CONTROLD_*` keys when
 asserting file load) before sourcing or calling the loader.
+
+## 0fa — Mid-function corruption in "exception cleanup" PRs (2026-07-31)
+
+**Pattern:** A Jules/QA PR titled “redundant-exception cleanup” can splice an unrelated helper into the middle of `authenticate` (and drop security imports) while also wiping `CHANGELOG.md` entries.
+
+**Rule:** Before salvaging any PR that touches `authenticate` / credential helpers / CHANGELOG, read the full hunk. If control flow is broken or journal entries are deleted, **ESCALATE** — never cherry-pick.
+
+**Detection cost:** Low — `gh pr diff` + search for `def authenticate` continuity.
