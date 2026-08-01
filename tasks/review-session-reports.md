@@ -377,3 +377,19 @@
 - Docs: `tasks/pr-review-2026-07-28.md`; branch
   `cursor-agent/automated-pr-workflow-3d54`.
 - Open EOD: **31** (close gap leaves 5 dups open for Phase 2).
+
+## 2026-08-01 Phase 1 (cron)
+
+- Preflight PASS 7/7; inventoried **39**; **12** squash-merges; **2** closes;
+  **12** ESCALATE; **4** REQUEST_CHANGES; CodeScene trigger on esp#1399.
+- Merged: esp#1395; hg#449/#442/#451; pc#1868; ctrld#1092/#1091; esp#1397;
+  Seatek#572/#574; series#338/#337.
+- Closed twins: ctrld#1090; esp#1398.
+- Cascade: hg#443 CONFLICTING after #442 poetry.lock (Lesson **0fb**).
+- Skipped merge: pc#1867 (required tests red — deep_cleaner unrelated but
+  policy never merge failing CI).
+- Auth: PAT — squash-merge + close + comment OK; MCP reviews OK.
+- Adversarial: opus-4.8 + gpt-5.5 parallel; consensus merge-safe except #1867.
+- Docs: `tasks/pr-review-2026-08-01.md`, `pr-inventory.md`, `pr-triage.md`;
+  branch `cursor-agent/automated-pr-workflow-e348`.
+- Phase 2 trigger: yes (≥1 ESCALATE; Hydrograph path cluster; rpce CONFLICTING).

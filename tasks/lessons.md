@@ -1914,3 +1914,29 @@ asserting file load) before sourcing or calling the loader.
 **Rule:** Before salvaging any PR that touches `authenticate` / credential helpers / CHANGELOG, read the full hunk. If control flow is broken or journal entries are deleted, **ESCALATE** — never cherry-pick.
 
 **Detection cost:** Low — `gh pr diff` + search for `def authenticate` continuity.
+
+## 0fb — Dependabot Poetry lock cascade (2026-08-01)
+
+**Pattern:** Hydrograph #442 (matplotlib) and #443 (scipy) were both MERGEABLE
+with green CI; after squash-merging #442, #443 immediately became CONFLICTING
+on `poetry.lock` and `update-branch` returned 422.
+
+**Rule:** When multiple Dependabot PRs share `poetry.lock` / `uv.lock`, merge
+**one** lock-touching PR per repo per session (or `gh stack link` them), then
+re-check siblings before the next merge. Do not assume green Dependabot twins
+remain mergeable after a sibling lock merge.
+
+**Detection cost:** Low — same-repo Dependabot PRs listing `poetry.lock`.
+
+## 0fc — Reject module-collapse “perf” PRs (2026-08-01)
+
+**Pattern:** ESP #1399 titled as SpamAnalyzer Bolt opts also deleted modular
+`alert_*` / `media_*` files and re-inlined them into monoliths (+2k/−2k), while
+CodeScene was red. Salvaging the whole branch would undo modularization.
+**Rule:** When a “perf” PR touches many modules or deletes sibling packages,
+diff **per file** against `main`. Salvage only the named hot path (here
+`spam_analyzer.py`); reject structural collapses. Still post
+`/cs-agent skill:fix-code-health-degradations` when CodeScene is red.
+**Detection cost:** Low — `gh pr diff --stat` showing deletes of whole modules
+alongside a one-file perf claim.
+

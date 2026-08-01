@@ -246,7 +246,8 @@ cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.weekly.plist" <<EOF
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>$INSTALL_DIR/bin/weekly_maintenance.sh</string>
+        <string>$INSTALL_DIR/bin/run_all_maintenance.sh</string>
+        <string>weekly</string>
     </array>
 
     <key>StandardOutPath</key>
@@ -296,7 +297,8 @@ cat >"$LAUNCHAGENTS_DIR/com.abhimehrotra.maint.monthly.plist" <<EOF
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>$INSTALL_DIR/bin/monthly_maintenance.sh</string>
+        <string>$INSTALL_DIR/bin/run_all_maintenance.sh</string>
+        <string>monthly</string>
     </array>
 
     <key>StandardOutPath</key>

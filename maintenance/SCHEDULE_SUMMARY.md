@@ -5,14 +5,14 @@
 
 ## 🕐 Complete Schedule Overview
 
-| Time         | Event                   | Frequency    | Script                   | Description                                       |
-| ------------ | ----------------------- | ------------ | ------------------------ | ------------------------------------------------- |
-| **8:30 AM**  | 🏥 System Health Check  | Daily        | `health_check.sh`        | System monitoring, disk space, memory, crash logs |
-| **9:00 AM**  | 🧹 System Cleanup       | Daily        | `system_cleanup.sh`      | Cache cleanup, temp files, logs                   |
-| **9:00 AM**  | 📅 Weekly Maintenance   | Monday       | `weekly_maintenance.sh`  | Node modules, Google Drive monitoring             |
-| **9:00 AM**  | 📆 Monthly Maintenance  | 1st of month | `monthly_maintenance.sh` | Editor cleanup, deep analysis                     |
-| **3:15 AM**  | ☁️ ProtonDrive Backup   | Daily        | `protondrive_backup.sh`  | One-way home backup to ProtonDrive                |
-| **10:00 AM** | 🍺 Homebrew Maintenance | Daily        | `brew_maintenance.sh`    | Package updates, cask maintenance                 |
+| Time         | Event                   | Frequency    | Script                           | Description                                       |
+| ------------ | ----------------------- | ------------ | -------------------------------- | ------------------------------------------------- |
+| **8:30 AM**  | 🏥 System Health Check  | Daily        | `health_check.sh`                | System monitoring, disk space, memory, crash logs |
+| **9:00 AM**  | 🧹 System Cleanup       | Daily        | `system_cleanup.sh`              | Cache cleanup, temp files, logs                   |
+| **9:00 AM**  | 📅 Weekly Maintenance   | Monday       | `run_all_maintenance.sh weekly`  | quick cleanup, node, Google Drive, optimizers     |
+| **6:00 AM**  | 📆 Monthly Maintenance  | 1st of month | `run_all_maintenance.sh monthly` | system/editor cleanup, deep cleaner               |
+| **3:15 AM**  | ☁️ ProtonDrive Backup   | Daily        | `protondrive_backup.sh`          | One-way home backup to ProtonDrive                |
+| **10:00 AM** | 🍺 Homebrew Maintenance | Daily        | `brew_maintenance.sh`            | Package updates, cask maintenance                 |
 
 ## 🔗 Launch Agent Mapping
 
@@ -25,11 +25,11 @@
 
 ### Weekly Agent
 
-- `com.abhimehrotra.maintenance.weekly.plist` → **9:00 AM Monday**
+- `com.abhimehrotra.maint.weekly.plist` → **9:00 AM Monday**
 
 ### Monthly Agent
 
-- `com.abhimehrotra.maintenance.monthly.plist` → **9:00 AM 1st of month**
+- `com.abhimehrotra.maint.monthly.plist` → **6:00 AM 1st of month**
 
 ## 📋 Task Details
 
@@ -66,13 +66,15 @@
 
 ### 📅 Weekly Maintenance (Monday 9:00 AM)
 
-- ✅ Quick system cleanup (lighter version)
+- ✅ Quick system cleanup
 - ✅ Node.js module maintenance and verification
 - ✅ Google Drive monitoring and optimization
-- ✅ Comprehensive system status checks
+- ✅ Service optimizer
+- ✅ Performance optimizer
 
-### 📆 Monthly Deep Maintenance (1st of month 9:00 AM)
+### 📆 Monthly Deep Maintenance (1st of month 6:00 AM)
 
+- ✅ System cleanup
 - ✅ Editor cache cleanup (Cursor, VS Code, Zed)
 - ✅ Deep system analysis and reporting
 - ✅ Large file discovery and reporting
@@ -118,4 +120,4 @@ All 5 recurring events from your calendar are now matched:
 - ✅ 🧹 System Cleanup: 9:00 AM - 9:20 AM Daily
 - ✅ 🍺 Homebrew Maintenance: 10:00 AM - 10:30 AM Daily
 - ✅ 📅 Weekly Maintenance: 9:00 AM - 9:45 AM Every Monday
-- ✅ 📆 Monthly Maintenance: 9:00 AM - 10:00 AM 1st of each month
+- ✅ 📆 Monthly Maintenance: 6:00 AM - 7:00 AM 1st of each month
