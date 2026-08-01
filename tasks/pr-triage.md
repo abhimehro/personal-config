@@ -4,8 +4,8 @@
 
 | Keep | Close | Rationale |
 | ---- | ----- | --------- |
-| ctrld-sync#1092 | #1090 | Same `_get_interactive_restart_confirmation` DIM hierarchy; #1092 dims cancel parenthetical only + journal |
-| email-security-pipeline#1395 | #1398 | Same codeql upload-sarif 2.26.2 bump; #1395 SHA-pins (preferred) |
+| ctrld-sync#1092 | ctrld-sync#1090 | Same `_get_interactive_restart_confirmation` DIM hierarchy; #1092 dims cancel parenthetical only + journal |
+| email-security-pipeline#1395 | email-security-pipeline#1398 | Same codeql upload-sarif 2.26.2 bump; #1395 SHA-pins (preferred) |
 
 ## Overlap clusters (escalate / Phase 2 — do not auto-close)
 
