@@ -391,6 +391,26 @@ Agent-specific rules:
   `gh stack init` with multiple branch names creates them off trunk in parallel, not
   chained, until the first rebase.
 
+**Merging a stack (Lesson 0ez — learned the hard way on 2026-07-31):** stacked PRs
+**cannot** be merged with `gh pr merge`, GraphQL `mergePullRequest`, or the ordinary
+`PUT /repos/{owner}/{repo}/pulls/{n}/merge` (even with `Prefer: respond-async`). They
+fail with "part of a stack… use the asynchronous merge REST API". Use whichever
+path matches your environment:
+
+- **Has the `gh` extension** (local / provisioned runner): `gh stack merge --yes`.
+- **API-only agent sessions** (Cursor cloud, MCP, bare `GH_TOKEN`):
+
+  ```bash
+  # Merging the TOP of the stack merges every lower layer into the ultimate base
+  gh api -X PUT repos/$REPO/pulls/$TOP_PR/merge-async -f merge_method=squash
+
+  # Poll until status=merged (uuid lives under .details.uuid)
+  gh api repos/$REPO/pulls/$TOP_PR/merge-async/$UUID
+  ```
+
+  Retry once if it fails with "Base branch was modified" (sibling merges still
+  settling). **Auto-merge is unsupported for stacks** — never queue one and walk away.
+
 ## Big-picture architecture (how the pieces fit)
 
 ### 1) Config-as-code via symlink orchestration
