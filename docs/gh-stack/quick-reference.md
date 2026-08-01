@@ -1,9 +1,9 @@
 # gh-stack Quick Reference
 
 A one-page command cheat sheet for working with stacked pull requests using the
-\`github/gh-stack\` \`gh\` extension. For the full workflow and the reasoning behind
-it, see the \`Stacked PRs during review/salvage sessions\` section in
-[\`AGENTS.md\`](../../AGENTS.md) and the skill at \`.agents/skills/gh-stack/SKILL.md\`.
+`github/gh-stack` `gh` extension. For the full workflow and the reasoning behind
+it, see the `Stacked PRs during review/salvage sessions` section in
+[`AGENTS.md`](../../AGENTS.md) and the skill at `.agents/skills/gh-stack/SKILL.md`.
 
 ## Creating a stack
 
