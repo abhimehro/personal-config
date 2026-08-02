@@ -1940,3 +1940,19 @@ diff **per file** against `main`. Salvage only the named hot path (here
 **Detection cost:** Low — `gh pr diff --stat` showing deletes of whole modules
 alongside a one-file perf claim.
 
+
+## 0fd — Close Sentinel clusters when main already has the guard (2026-08-02)
+
+**Pattern:** Multiple CONFLICTING Sentinel PRs (#445/#448/#450) claimed path
+traversal / arbitrary write fixes on the same CLI `--output` path, but `main`
+already called `is_safe_path`. One sibling (#448) had the check copy-pasted
+seven times; another (#450) only extracted a reporter class.
+
+**Rule:** Before salvaging a CONFLICTING Sentinel/security PR, grep `main` for
+the same guard (`is_safe_path`, TOCTOU helper, etc.). If the protection is
+already present, **CLOSE-SUPERSEDED** — do not open a refactor-only salvage.
+If a sibling shows duplicated identical security blocks, treat as corruption
+and close (same family as Lesson 0fa), not as defense-in-depth.
+
+**Detection cost:** Low — `rg is_safe_path validate_data.py` on `main` +
+`rg -c` on the PR tip.
