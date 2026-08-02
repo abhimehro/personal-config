@@ -9,6 +9,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+from collections import defaultdict
 from typing import Any
 
 from repository_automation_common import (
@@ -1016,9 +1017,7 @@ def weekly_markers(prefix: str) -> dict[str, dict[str, int]]:
         ],
         default=[],
     )
-    from collections import defaultdict
-    # ⚡ Bolt Optimization: Replace chained dict.setdefault() inside loops with defaultdict(list)
-    # or defaultdict(int) to prevent redundant dictionary allocation and lookup overhead on hot paths.
+    # Prefer defaultdict over chained setdefault on the weekly marker hot path.
     markers: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     for issue in issues:
         if not issue.get("title", "").startswith(prefix):
@@ -1027,7 +1026,7 @@ def weekly_markers(prefix: str) -> dict[str, dict[str, int]]:
             continue
         for task, value in extract_status_markers(issue.get("body", "")).items():
             markers[task][value] += 1
-    return markers
+    return {task: dict(counts) for task, counts in markers.items()}
 
 
 def weekly_report_lines(
