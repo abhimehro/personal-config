@@ -8,5 +8,5 @@
 - [x] Merge green safe PRs (squash); close superseded/stale
 - [x] Post review comments / escalate trust-boundary PRs
 - [x] Write `tasks/pr-review-2026-08-02.md`, update `lessons.md`, append session report
-- [ ] Commit + push docs on `cursor-agent/automated-pr-workflow-7358`
-- [ ] Update automation memory
+- [x] Commit + push docs on `cursor-agent/automated-pr-workflow-7358`
+- [x] Update automation memory
