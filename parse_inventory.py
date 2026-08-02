@@ -2,6 +2,7 @@ import json
 import re
 import subprocess
 import sys
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
@@ -79,11 +80,6 @@ def _extract_pr_row_fields(parts):
     )
 
 
-def _ensure_repo_bucket(repo_name, repos):
-    if repo_name not in repos:
-        repos[repo_name] = []
-
-
 def _parse_row_record(line, current_repo, line_number):
     parts = line.split("|")
     if len(parts) <= 9:
@@ -110,7 +106,7 @@ def _parse_row_record(line, current_repo, line_number):
 def _process_inventory_line(line, current_repo, repos, line_number):
     repo_name = _parse_repo_name(line)
     if repo_name:
-        _ensure_repo_bucket(repo_name, repos)
+        _ = repos[repo_name]
         return repo_name
 
     if _should_skip_table_row(line):
@@ -119,18 +115,19 @@ def _process_inventory_line(line, current_repo, repos, line_number):
     row_record = _parse_row_record(line, current_repo, line_number)
     if row_record:
         effective_repo, payload = row_record
-        _ensure_repo_bucket(effective_repo, repos)
         repos[effective_repo].append(payload)
 
     return current_repo
 
 
 def parse_inventory_lines(lines, *, source="tasks/pr-inventory.md"):
-    repos = {}
+    # ⚡ Bolt Optimization: Replace manual key checks with collections.defaultdict
+    # to avoid redundant evaluations and list allocation overhead on every iteration
+    repos = defaultdict(list)
     current_repo = None
     for line_number, line in enumerate(lines, start=1):
         current_repo = _process_inventory_line(line, current_repo, repos, line_number)
-    return repos
+    return dict(repos)
 
 
 def _is_pr_stale(updated_at, now=None):
