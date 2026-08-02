@@ -168,7 +168,7 @@ class TestMediaServerHandler(unittest.TestCase):
         """
         html_empty = self.handler.generate_directory_listing([], "/empty_folder")
         self.assertIn(
-            '<li><span class="file" style="color: #666;"><em>Directory is empty</em></span></li>',
+            '<li class="empty-state"><span class="file" style="color: #666;"><em>Directory is empty</em></span></li>',
             html_empty,
         )
 
