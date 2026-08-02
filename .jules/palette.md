@@ -482,3 +482,6 @@ announce the full context.
 ## 2026-08-01 — empty-state class (salvage #1859)
 
 Added `empty-state` class on empty directory listing `<li>` without removing skip-link / landmark a11y from main.
+## 2026-08-02 - Improved empty states and a11y focus rings
+**Learning:** Shell-generated HTML reports often neglect a11y focus states for `.skip-link` and lack robust visual distinction for empty states (e.g. no recommendations).
+**Action:** Always verify keyboard accessibility (`:focus` with clear outline) and add icons/soft backgrounds for empty states to make them visibly distinct.

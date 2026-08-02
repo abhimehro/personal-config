@@ -532,7 +532,7 @@ generate_performance_report() {
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .skip-link { position: absolute; top: -40px; left: 0; background: #000; color: white; padding: 8px; z-index: 100; text-decoration: none; transition: top 0.2s; }
-        .skip-link:focus { top: 0; }
+        .skip-link:focus { top: 0; outline: 3px solid #007bff; outline-offset: 2px; }
         .header { background-color: #f0f0f0; padding: 10px; border-radius: 5px; }
         .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
         dl.metric-list { margin: 0; padding: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 8px; }
@@ -613,7 +613,7 @@ EOF
 	fi
 
 	if [[ $has_recs == false ]]; then
-		echo '            <li class="empty-state" style="color: #666; font-style: italic;">System is running smoothly. No specific recommendations at this time.</li>' >>"$report_file"
+		echo '            <li class="empty-state" style="color: #155724; background-color: #d4edda; border-color: #c3e6cb; padding: 15px; border-radius: 4px; display: flex; align-items: center; gap: 10px;"><span aria-hidden="true" style="font-size: 1.2em;">✅</span> <span>System is running smoothly. No specific recommendations at this time.</span></li>' >>"$report_file"
 	fi
 
 	cat >>"$report_file" <<EOF
