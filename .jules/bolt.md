@@ -846,3 +846,8 @@ static and used repeatedly inside functions or loops.
 ## 2024-05-18 - Replacing file iteration with splitlines() for memory efficiency
 **Learning:** The previous plan attempted to optimize file parsing by changing lazy iteration (`for line in handle:`) to loading the entire file into memory and splitting it into a list (`for line in handle.read().splitlines():`). While potentially faster for very small text files by avoiding the overhead of multiple I/O loops, it degraded memory efficiency because it required loading the entire file into memory at once. It also destroyed newline formatting. We learned that the standard `for line in handle:` is generally more memory-efficient and safer to use unless memory overhead is strictly not a concern and raw read speed is critical.
 **Action:** When considering file reading performance optimizations, always weigh raw read speed against memory consumption and memory overhead. Prioritize lazy iteration (`for line in handle:`) for unknown file sizes or whenever memory optimization is prioritized over micro-optimizations in speed.
+
+## 2026-07-31 - Bound splits + bulk-read small dotenv files
+**Learning:** Unbounded `.split("|")` and per-line I/O on small `.env` files add avoidable allocations in tight parse loops.
+**Action:** Use `.split("|", n)` when only the first n fields are needed, and `handle.read().splitlines()` for small in-memory config files.
+
