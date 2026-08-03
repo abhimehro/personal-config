@@ -11,6 +11,9 @@ import os
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from gh_token_env import load_gh_token_env
+
 FAIL_CONCLUSIONS = frozenset(
     {
         "FAILURE",
@@ -139,25 +142,7 @@ def esc_cell(s: str, maxlen: int = 48) -> str:
     return s
 
 
-def fetch_details(repo: str, num: int) -> str:
-    try:
-        raw = subprocess.check_output(
-            [
-                "gh",
-                "pr",
-                "view",
-                str(num),
-                "--repo",
-                repo,
-                "--json",
-                "reviews,comments,latestReviews,reviewDecision",
-            ],
-            text=True,
-            stderr=subprocess.DEVNULL,
-        )
-    except subprocess.CalledProcessError:
-        return "_Could not load details_"
-    data = json.loads(raw)
+def _format_details(data: dict) -> str:
     lines: list[str] = []
     reviews = data.get("reviews") or ()
     latest = data.get("latestReviews") or ()
@@ -179,6 +164,37 @@ def fetch_details(repo: str, num: int) -> str:
         snippet = (c.get("body") or "")[:200].replace("\n", " ")
         lines.append(f"  - comment {who}: {snippet}")
     return "\n".join(lines)
+
+
+def fetch_details(repo: str, num: int) -> str:
+    env = load_gh_token_env()
+    try:
+        result = subprocess.run(
+            [
+                "gh",
+                "pr",
+                "view",
+                str(num),
+                "--repo",
+                repo,
+                "--json",
+                "reviews,comments,latestReviews,reviewDecision",
+            ],
+            text=True,
+            capture_output=True,
+            timeout=120,
+            env=env,
+        )
+        if result.returncode != 0:
+            return "_Could not load details_"
+        raw = result.stdout
+    except (subprocess.TimeoutExpired, OSError):
+        return "_Could not load details_"
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return "_Could not load details_"
+    return _format_details(data)
 
 
 def _fetch_task_wrapper(args: tuple[str, dict]) -> tuple[int, str] | None:
