@@ -1,18 +1,31 @@
-# Phase 2 Salvage — 2026-08-01
+# PR Review Session 2026-08-02 — Phase 1
 
+- [x] Preflight (`preflight-gh-pr-automation.sh`) — PASS 7/7
+- [x] Inventory open automation PRs → `tasks/pr-inventory.md`
+- [x] Triage / classify → `tasks/pr-triage.md`
+- [x] Adversarial multi-model review on merge candidates
+- [x] Gate review (CI / security / quality) per PR
+- [x] Merge green safe PRs (squash); close superseded/stale
+- [x] Post review comments / escalate trust-boundary PRs
+- [x] Write `tasks/pr-review-2026-08-02.md`, update `lessons.md`, append session report
+- [x] Commit + push docs on `cursor-agent/automated-pr-workflow-7358`
+- [x] Update automation memory
 ## Preflight
+
 - [x] `gh auth` as abhimehro (PAT)
 - [x] Preflight PASS 7/7
 - [x] `make cursor-cloud-hooks`
 - [x] Live PR re-fetch
 
 ## Hard gates
+
 - [x] S1: no autonomous merges
 - [x] Security/Sentinel → ESCALATE
 - [x] ESP draft-only; CodeScene cmd posted
 - [x] Journals append-only (0y)
 
 ## Queue actions
+
 - [x] Inventory + triage files
 - [x] Post CodeScene cmd on ESP #1399
 - [x] Salvage PC #1857 → #1875
