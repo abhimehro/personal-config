@@ -19,6 +19,20 @@ if [[ -f "$SCRIPT_DIR/../lib/state.sh" ]]; then
 	source "$SCRIPT_DIR/../lib/state.sh"
 fi
 
+# -----------------------------------------------------------------------------
+# Leave-alone exclusions
+# These exclusions prevent launchd-driven relaunch loops, system instability,
+# VM disruption, Spotlight interference, and audio dropouts when renice/kill/
+# unload paths run under memory or CPU pressure.
+# -----------------------------------------------------------------------------
+if [[ -f "$SCRIPT_DIR/../lib/process_exclusions.sh" ]]; then
+	# shellcheck disable=SC1091
+	source "$SCRIPT_DIR/../lib/process_exclusions.sh"
+else
+	process_is_protected() { return 1; }
+	service_label_is_protected() { return 1; }
+fi
+
 # Ensure directories exist
 mkdir -p "$LOG_DIR" "$METRICS_DIR" "$CONFIG_DIR"
 
@@ -183,15 +197,35 @@ optimize_cpu_usage() {
 	if (($(bc_cmp "$cpu_percent" ">" "70"))); then
 		log_info "High CPU load detected, optimizing background processes"
 
-		# Reduce priority of non-essential processes
-		local background_procs
-		background_procs=$(ps -eo pid,nice,comm | grep -E "(Spotlight|mds|mdworker)" | awk '$2 == 0 {print $1}' || true)
+		# Reduce priority of non-essential USER helper processes only.
+		# LEAVE ALONE: never renice mds/mds_stores/mdworker/core OS/audio/VM.
+		# (Previously this path reniced Spotlight workers and could interfere
+		# with active indexing under RAM pressure.)
+		local background_procs=""
+		local pid nice comm
+		while read -r pid nice comm; do
+			[[ -n ${pid:-} ]] || continue
+			[[ ${nice:-} == 0 ]] || continue
+			case ${comm:-} in
+				kernel_task | launchd | WindowServer | loginwindow | coreaudiod | mds | mds_stores | mdworker | mdworker_shared)
+					continue
+					;;
+			esac
+			# Only candidate user helpers / Electron-family; final gate is process_is_protected.
+			case ${comm:-} in
+				*Helper* | *Agent* | *chrome* | *Chrome* | *Electron* | *Slack* | *Discord* | *Teams* | *Spotify* | *node*)
+					background_procs+="${pid} "
+					;;
+			esac
+		done < <(ps -eo pid=,nice=,comm= 2>/dev/null || true)
 
 		if [[ -n $background_procs ]]; then
-			echo "$background_procs" | while read -r pid; do
-				if [[ -n $pid ]]; then
+			for pid in $background_procs; do
+				if [[ -n $pid ]] && ! process_is_protected "$pid"; then
 					renice 15 "$pid" >/dev/null 2>&1 || true
-					log_info "Reduced priority for process $pid"
+					log_info "Reduced priority for unprotected process $pid"
+				elif [[ -n $pid ]]; then
+					log_info "Skipped renice for protected process $pid"
 				fi
 			done
 		fi
@@ -238,19 +272,23 @@ optimize_memory_usage() {
 		sudo dscacheutil -flushcache >/dev/null 2>&1 || true
 		log_info "Cleared DNS cache"
 
-		# Kill memory-heavy inactive applications
+		# Identify memory-heavy processes for diagnostics only.
+		# LEAVE ALONE: never auto-terminate protected processes; even browser
+		# helpers are reported rather than killed (avoids data loss + relaunch).
 		local memory_hogs
-		memory_hogs=$(ps -axo pid,rss,comm | sort -k2 -nr | head -10 | awk '$2 > 100000 && $3 !~ /(kernel|launchd|WindowServer|loginwindow)/ {print $1}' || true)
+		memory_hogs=$(ps -axo pid,rss,comm | sort -k2 -nr | head -20 | awk '$2 > 100000 {print $1}' || true)
 
 		if [[ -n $memory_hogs ]]; then
-			echo "$memory_hogs" | head -3 | while read -r pid; do
+			echo "$memory_hogs" | head -5 | while read -r pid; do
 				if [[ -n $pid ]]; then
-					# Check if process is safe to terminate
-					local proc_name
+					local proc_name proc_args
 					proc_name=$(ps -p "$pid" -o comm= 2>/dev/null || echo "unknown")
-					if [[ $proc_name =~ (Chrome|Firefox|Safari|Slack|Electron) ]]; then
-						log_info "High memory process detected: $proc_name (PID: $pid) - skipping automatic termination"
+					proc_args=$(ps -p "$pid" -o args= 2>/dev/null || echo "")
+					if process_is_protected "$pid" "$proc_name" "$proc_args"; then
+						log_info "High memory PROTECTED process (leave alone): $proc_name (PID: $pid)"
+						continue
 					fi
+					log_info "High memory user process detected: $proc_name (PID: $pid) - skipping automatic termination"
 				fi
 			done
 		fi
@@ -372,26 +410,45 @@ optimize_network() {
 optimize_applications() {
 	log_info "Starting application optimization..."
 
-	# Kill zombie processes
+	# Kill zombie processes (still respect leave-alone PIDs if mis-reported)
 	local zombies
 	zombies=$(ps aux | awk '$8 ~ /^Z/ {print $2}')
 	if [[ -n $zombies ]]; then
 		echo "$zombies" | while read -r pid; do
-			if [[ -n $pid ]]; then
+			if [[ -n $pid ]] && ! process_is_protected "$pid"; then
 				kill -TERM "$pid" >/dev/null 2>&1 || true
 				log_info "Cleaned zombie process $pid"
+			elif [[ -n $pid ]]; then
+				log_info "Skipped protected zombie candidate $pid"
 			fi
 		done
 	fi
 
 	# Optimize launch agents and daemons
+	# LEAVE ALONE: never unload apple/system/ReportCrash/audio/VM/VPN agents.
 	local inactive_agents
 	inactive_agents=$(launchctl list | grep -E "^-.*\.(plist|agent)" | awk '{print $3}' || true)
 
 	if [[ -n $inactive_agents ]]; then
 		echo "$inactive_agents" | while read -r agent; do
-			if [[ -n $agent && $agent != *"apple"* && $agent != *"system"* ]]; then
-				# Only unload non-system agents that are inactive
+			if [[ -z $agent ]]; then
+				continue
+			fi
+			if service_label_is_protected "$agent" || [[ $agent == *"apple"* || $agent == *"system"* || $agent == com.apple.* ]]; then
+				log_info "Skipped unload for protected/inactive system agent: $agent"
+				continue
+			fi
+			# Extra guard: cloud sync / File Provider / VPN agents
+			case $agent in
+				*proton* | *Proton* | *OneDrive* | *GoogleDrive* | *fileprovider* | *FileProvider* | *windscribe* | *Windscribe* | *1password* | *1Password*)
+					log_info "Skipped unload for cloud/VPN agent: $agent"
+					continue
+					;;
+			esac
+			# Only unload non-system agents that are inactive
+			if [[ ${DRY_RUN:-0} == 1 ]]; then
+				log_info "[DRY RUN] Would unload inactive agent: $agent"
+			else
 				launchctl unload "$agent" >/dev/null 2>&1 || true
 				log_info "Unloaded inactive agent: $agent"
 			fi

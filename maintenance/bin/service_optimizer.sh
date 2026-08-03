@@ -19,6 +19,16 @@
 
 set -euo pipefail
 
+# -----------------------------------------------------------------------------
+# Leave-alone exclusions
+# These exclusions prevent launchd-driven relaunch loops, system instability,
+# VM disruption, Spotlight interference, and audio dropouts. ReportCrash*
+# containment is owned by scripts/report-daemons-watchdog.sh only.
+# -----------------------------------------------------------------------------
+_SO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$_SO_DIR/../lib/process_exclusions.sh"
+
 # --- Pre-flight Checks ---
 
 RUN_AS_ROOT=false
@@ -54,12 +64,20 @@ SYSTEM_SERVICES_TO_DISABLE=(
 	"system/com.apple.chronod"          # Widget timeline manager
 	"system/com.apple.duetexpertd"      # Predictive app launcher (Siri Suggestions)
 	"system/com.apple.suggestd"         # Suggestions daemon
-	"system/com.apple.ReportCrash.Root" # Root-level crash reporting
+	# LEAVE ALONE: ReportCrash.Root must NOT be disabled/killed here.
+	# Under RAM pressure, launchctl disable + App Tamer pause created a relaunch
+	# storm. Containment is exclusively scripts/report-daemons-watchdog.sh.
 )
 
 if [[ $RUN_AS_ROOT == "true" ]]; then
 	echo "[1/3] Disabling system-level services..."
 	for service in "${SYSTEM_SERVICES_TO_DISABLE[@]}"; do
+		# Skip empty entries and protected leave-alone labels (ReportCrash*, audio, VM, etc.).
+		[[ -z ${service// /} ]] && continue
+		if service_label_is_protected "$service"; then
+			echo "  - Skipping protected leave-alone service: $service"
+			continue
+		fi
 		# Check if the service is already disabled to ensure idempotency.
 		if launchctl print-disabled "$service" | grep -q '"disabled" => true'; then
 			echo "  - Already disabled: $service"
@@ -79,7 +97,8 @@ fi
 # These services run at the user level (per-GUI session) and are often
 # related to apps and features that are not actively in use.
 USER_SERVICES_TO_DISABLE=(
-	"gui/$CURRENT_UID/com.apple.ReportCrash"                                    # User-level crash reporting
+	# LEAVE ALONE: gui ReportCrash* must NOT be disabled/killed here.
+	# See maintenance/lib/process_exclusions.sh and report-daemons-watchdog.sh.
 	"gui/$CURRENT_UID/com.apple.calendar.CalendarAgentBookmarkMigrationService" # Calendar widget services
 	"gui/$CURRENT_UID/com.apple.podcasts.PodcastContentService"                 # Podcasts background content fetching
 	"gui/$CURRENT_UID/com.apple.proactived"                                     # Proactive suggestions and predictions
@@ -93,6 +112,11 @@ USER_SERVICES_TO_DISABLE=(
 
 echo "[2/3] Disabling user-level services for UID $CURRENT_UID..."
 for service in "${USER_SERVICES_TO_DISABLE[@]}"; do
+	[[ -z ${service// /} ]] && continue
+	if service_label_is_protected "$service"; then
+		echo "  - Skipping protected leave-alone service: $service"
+		continue
+	fi
 	if launchctl print-disabled "$service" | grep -q '"disabled" => true'; then
 		echo "  - Already disabled: $service"
 	else
