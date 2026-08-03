@@ -61,9 +61,9 @@ echo
 
 # These services run at the system level and require root privileges.
 SYSTEM_SERVICES_TO_DISABLE=(
-	"system/com.apple.chronod"          # Widget timeline manager
-	"system/com.apple.duetexpertd"      # Predictive app launcher (Siri Suggestions)
-	"system/com.apple.suggestd"         # Suggestions daemon
+	"system/com.apple.chronod"     # Widget timeline manager
+	"system/com.apple.duetexpertd" # Predictive app launcher (Siri Suggestions)
+	"system/com.apple.suggestd"    # Suggestions daemon
 	# LEAVE ALONE: ReportCrash.Root must NOT be disabled/killed here.
 	# Under RAM pressure, launchctl disable + App Tamer pause created a relaunch
 	# storm. Containment is exclusively scripts/report-daemons-watchdog.sh.

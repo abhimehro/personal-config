@@ -31,7 +31,7 @@
 # ==============================================================================
 
 # Prevent double-load from rewriting arrays under set -u.
-if [[ -n ${PROCESS_EXCLUSIONS_LOADED:-} ]]; then
+if [[ -n ${PROCESS_EXCLUSIONS_LOADED-} ]]; then
 	return 0 2>/dev/null || exit 0
 fi
 PROCESS_EXCLUSIONS_LOADED=1
@@ -154,7 +154,7 @@ _pe_lc() {
 }
 
 process_name_is_protected() {
-	local name="${1:-}"
+	local name="${1-}"
 	[[ -z $name ]] && return 1
 	local base n p
 	base="${name##*/}"
@@ -177,9 +177,9 @@ process_name_is_protected() {
 # process_is_protected [pid] [comm] [full_command]
 # Any one of the identifiers may be empty. Returns 0 if protected.
 process_is_protected() {
-	local pid="${1:-}"
-	local comm="${2:-}"
-	local full="${3:-}"
+	local pid="${1-}"
+	local comm="${2-}"
+	local full="${3-}"
 
 	if [[ -n $comm ]] && process_name_is_protected "$comm"; then
 		return 0
@@ -208,7 +208,7 @@ process_is_protected() {
 }
 
 service_label_is_protected() {
-	local label="${1:-}"
+	local label="${1-}"
 	[[ -z $label ]] && return 1
 	local lc p fixed lf
 	lc="$(_pe_lc "$label")"
@@ -242,7 +242,7 @@ filter_unprotected_pids() {
 
 # True if a problem-process kill pattern is too broad / protected.
 problem_process_pattern_is_protected() {
-	local pattern="${1:-}"
+	local pattern="${1-}"
 	[[ -z $pattern ]] && return 0
 	# Inert placeholder used by service_monitor under bash 3.2 + set -u
 	[[ $pattern == __service_monitor_no_problem_processes__ ]] && return 0

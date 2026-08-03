@@ -83,7 +83,6 @@ mkdir -p ~/Documents/dev/personal-config/maintenance/tmp
 
 _For detailed information, see the full [README.md](README.md)_
 
-
 ## Leave-alone / relaunch-loop prevention
 
 ```bash
@@ -97,4 +96,5 @@ tail -50 ~/Library/Logs/report-daemons-watchdog.log
 DRY_RUN=1 ~/dev/personal-config/maintenance/bin/performance_optimizer.sh optimize
 ```
 
-Do **not** add `ReportCrash*` back to `service_optimizer.sh` / `service_monitor.sh` disable lists.
+Do **not** add `ReportCrash*` back to `service_optimizer.sh` /
+`service_monitor.sh` disable lists.

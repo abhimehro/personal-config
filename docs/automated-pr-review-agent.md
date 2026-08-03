@@ -181,15 +181,18 @@ Apply these during classification and review (see also `tasks/lessons.md`):
   each merge before proceeding. PRs touching the same hot file (`main.py`,
   `payload.json`, etc.) frequently flip to DIRTY after a sibling merge — defer
   with an explicit comment rather than force-push.
-- **Stacked sibling PRs (`gh-stack`, Lesson 0ez):** When 2+ open PRs in the same repo
-  collide on the same file(s) and all pass their gates, link them into a stack with
-  `gh stack link <bottom> <middle> <top>` (bottom = the one that should land first), then
-  merge the **top** of the stack once. This avoids merging each sibling and having the
-  rest flip DIRTY. **Stack merges are not `gh pr merge`/GraphQL `mergePullRequest`-compatible**:
-  use `gh stack merge --yes` if the gh extension is installed, otherwise the async REST API
-  `PUT /repos/{owner}/{repo}/pulls/{top}/merge-async` + poll `.../merge-async/{uuid}` until
-  `status=merged`. Auto-merge is unsupported for stacks. See AGENTS.md → `Stacked PRs during
-  review/salvage sessions` for the full recipe.
+- **Stacked sibling PRs (`gh-stack`, Lesson 0ez):** When 2+ open PRs in the same
+  repo collide on the same file(s) and all pass their gates, link them into a
+  stack with `gh stack link <bottom> <middle> <top>` (bottom = the one that
+  should land first), then merge the **top** of the stack once. This avoids
+  merging each sibling and having the rest flip DIRTY. **Stack merges are not
+  `gh pr merge`/GraphQL `mergePullRequest`-compatible**: use
+  `gh stack merge --yes` if the gh extension is installed, otherwise the async
+  REST API `PUT /repos/{owner}/{repo}/pulls/{top}/merge-async` + poll
+  `.../merge-async/{uuid}` until `status=merged`. Auto-merge is unsupported for
+  stacks. See AGENTS.md → `Stacked PRs during
+  review/salvage sessions` for the
+  full recipe.
 - **Lockfile scope creep:** Review lockfile in every PR; strip unrelated
   lockfile changes (e.g. docstring PR adding `pytest-benchmark`).
 - **Validator return-value risk:** Before approving dead-code removal that

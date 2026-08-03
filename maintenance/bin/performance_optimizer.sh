@@ -204,18 +204,18 @@ optimize_cpu_usage() {
 		local background_procs=""
 		local pid nice comm
 		while read -r pid nice comm; do
-			[[ -n ${pid:-} ]] || continue
-			[[ ${nice:-} == 0 ]] || continue
-			case ${comm:-} in
-				kernel_task | launchd | WindowServer | loginwindow | coreaudiod | mds | mds_stores | mdworker | mdworker_shared)
-					continue
-					;;
+			[[ -n ${pid-} ]] || continue
+			[[ ${nice-} == 0 ]] || continue
+			case ${comm-} in
+			kernel_task | launchd | WindowServer | loginwindow | coreaudiod | mds | mds_stores | mdworker | mdworker_shared)
+				continue
+				;;
 			esac
 			# Only candidate user helpers / Electron-family; final gate is process_is_protected.
-			case ${comm:-} in
-				*Helper* | *Agent* | *chrome* | *Chrome* | *Electron* | *Slack* | *Discord* | *Teams* | *Spotify* | *node*)
-					background_procs+="${pid} "
-					;;
+			case ${comm-} in
+			*Helper* | *Agent* | *chrome* | *Chrome* | *Electron* | *Slack* | *Discord* | *Teams* | *Spotify* | *node*)
+				background_procs+="${pid} "
+				;;
 			esac
 		done < <(ps -eo pid=,nice=,comm= 2>/dev/null || true)
 
@@ -440,10 +440,10 @@ optimize_applications() {
 			fi
 			# Extra guard: cloud sync / File Provider / VPN agents
 			case $agent in
-				*proton* | *Proton* | *OneDrive* | *GoogleDrive* | *fileprovider* | *FileProvider* | *windscribe* | *Windscribe* | *1password* | *1Password*)
-					log_info "Skipped unload for cloud/VPN agent: $agent"
-					continue
-					;;
+			*proton* | *Proton* | *OneDrive* | *GoogleDrive* | *fileprovider* | *FileProvider* | *windscribe* | *Windscribe* | *1password* | *1Password*)
+				log_info "Skipped unload for cloud/VPN agent: $agent"
+				continue
+				;;
 			esac
 			# Only unload non-system agents that are inactive
 			if [[ ${DRY_RUN:-0} == 1 ]]; then
