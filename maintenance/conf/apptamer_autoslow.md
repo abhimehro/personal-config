@@ -11,6 +11,28 @@ Apply each entry once via the App Tamer menu bar UI:
 3. For the always-background system daemons below, you can instead use **Slow
    down this process** outright since you never interact with them.
 
+## LEAVE ALONE (do not pause, AutoSlow, or hard-Slow)
+
+These categories caused a launchd relaunch storm under RAM pressure when App
+Tamer paused them (`T` state) while maintenance scripts also tried to
+disable/kill them. Containment for crash reporters is **only**
+`scripts/report-daemons-watchdog.sh`.
+
+| Process / pattern                                                                 | Why leave alone                                                             |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `ReportCrash`, `ReportCrashService`, `ReportMemoryException`, `osanalyticshelper` | launchd respawns immediately; pausing creates hundreds of stopped processes |
+| `launchd`, `kernel_task`, `WindowServer`, `loginwindow`                           | session / kernel stability                                                  |
+| `coreaudiod`                                                                      | audio dropouts                                                              |
+| `mds`, `mds_stores`, `mdworker*` while Spotlight is active                        | indexing thrash; do not hard-Slow under pressure                            |
+| `com.apple.Virtualization.VirtualMachine`, UTM/Parallels/VMware guests            | VM freezes                                                                  |
+| Any `com.apple.*` diagnostic agent you do not fully understand                    | prefer watchdog + exclusions library over App Tamer pause                   |
+
+Safe AutoSlow targets remain idle **user** apps (Electron chat, unfocused
+browsers helpers, cosmetic menu bar toys). Prefer 5-10% CPU limits over
+pause-for-diagnostics.
+
+See also: `maintenance/lib/process_exclusions.sh`.
+
 ## Behavior key
 
 - **AutoSlow** = slow only when the app is in the background / not focused.

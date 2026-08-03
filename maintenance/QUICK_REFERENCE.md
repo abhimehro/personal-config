@@ -82,3 +82,19 @@ mkdir -p ~/Documents/dev/personal-config/maintenance/tmp
 ---
 
 _For detailed information, see the full [README.md](README.md)_
+
+## Leave-alone / relaunch-loop prevention
+
+```bash
+# Policy library
+source ~/dev/personal-config/maintenance/lib/process_exclusions.sh
+
+# Watchdog logs (ReportCrash containment)
+tail -50 ~/Library/Logs/report-daemons-watchdog.log
+
+# Dry-run performance optimizer (should skip protected PIDs/agents)
+DRY_RUN=1 ~/dev/personal-config/maintenance/bin/performance_optimizer.sh optimize
+```
+
+Do **not** add `ReportCrash*` back to `service_optimizer.sh` /
+`service_monitor.sh` disable lists.

@@ -7,9 +7,9 @@ import json
 import os
 import re
 import sys
+from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from collections import defaultdict
 from typing import Any
 
 from repository_automation_common import (
