@@ -18,21 +18,21 @@
 
 ### Outcomes
 
-| Repo | Old PR | Disposition | New PR | Notes |
-| ---- | -----: | ----------- | ------ | ----- |
-| personal-config | 1857 | SALVAGE + CLOSE | [#1875](https://github.com/abhimehro/personal-config/pull/1875) | re-roll DIRTY prior salvage |
-| personal-config | 1859 | SALVAGE + CLOSE | [#1876](https://github.com/abhimehro/personal-config/pull/1876) | empty-state only; keep a11y |
-| personal-config | 1825 | CLOSE / no-op | — | patch3/scratch only |
-| personal-config | 1822 | ESCALATE | — | CORS + huge churn |
-| ctrld-sync | 1081 | SALVAGE + CLOSE | [#1105](https://github.com/abhimehro/ctrld-sync/pull/1105) | scratch+CI; skip AGENTS churn |
-| email-security-pipeline | 1399 | SALVAGE + CLOSE | [#1401](https://github.com/abhimehro/email-security-pipeline/pull/1401) | spam_analyzer only; reject monolith collapse; `/cs-agent` posted |
-| Seatek_Analysis | 554 | SALVAGE + CLOSE | [#576](https://github.com/abhimehro/Seatek_Analysis/pull/576) | warn_on_default rename |
-| Seatek_Analysis | 568 | ESCALATE | — | path hijack CRITICAL |
-| Seatek_Analysis | 555 | ESCALATE | — | multi-root |
-| Seatek_Analysis | 560 | REQUEST_CHANGES | — | parallelize mixed churn |
-| repoprompt-ce | 158 | ESCALATE | — | TOCTOU + 37k drift |
-| Hydrograph… | — | AUTO-RESOLVED | — | #443 CLEAN; security CLEAN leave |
-| series_correction… | — | DRAINED | — | 0 open PRs |
+| Repo                    | Old PR | Disposition     | New PR                                                                  | Notes                                                            |
+| ----------------------- | -----: | --------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| personal-config         |   1857 | SALVAGE + CLOSE | [#1875](https://github.com/abhimehro/personal-config/pull/1875)         | re-roll DIRTY prior salvage                                      |
+| personal-config         |   1859 | SALVAGE + CLOSE | [#1876](https://github.com/abhimehro/personal-config/pull/1876)         | empty-state only; keep a11y                                      |
+| personal-config         |   1825 | CLOSE / no-op   | —                                                                       | patch3/scratch only                                              |
+| personal-config         |   1822 | ESCALATE        | —                                                                       | CORS + huge churn                                                |
+| ctrld-sync              |   1081 | SALVAGE + CLOSE | [#1105](https://github.com/abhimehro/ctrld-sync/pull/1105)              | scratch+CI; skip AGENTS churn                                    |
+| email-security-pipeline |   1399 | SALVAGE + CLOSE | [#1401](https://github.com/abhimehro/email-security-pipeline/pull/1401) | spam_analyzer only; reject monolith collapse; `/cs-agent` posted |
+| Seatek_Analysis         |    554 | SALVAGE + CLOSE | [#576](https://github.com/abhimehro/Seatek_Analysis/pull/576)           | warn_on_default rename                                           |
+| Seatek_Analysis         |    568 | ESCALATE        | —                                                                       | path hijack CRITICAL                                             |
+| Seatek_Analysis         |    555 | ESCALATE        | —                                                                       | multi-root                                                       |
+| Seatek_Analysis         |    560 | REQUEST_CHANGES | —                                                                       | parallelize mixed churn                                          |
+| repoprompt-ce           |    158 | ESCALATE        | —                                                                       | TOCTOU + 37k drift                                               |
+| Hydrograph…             |      — | AUTO-RESOLVED   | —                                                                       | #443 CLEAN; security CLEAN leave                                 |
+| series_correction…      |      — | DRAINED         | —                                                                       | 0 open PRs                                                       |
 
 - Salvage drafts opened: **5**
 - Infra-fix drafts: **0**
@@ -51,8 +51,10 @@
 
 ### Handoff
 
-1. Human merge drafts #1875 / #1876 / #1105 / #1401 / #576 (prefer Seatek #571 before #576)
-2. Human T1 security: pc #1822; seatek #568/#555/#573; hg #445/#448/#450; rpce #158
+1. Human merge drafts #1875 / #1876 / #1105 / #1401 / #576 (prefer Seatek #571
+   before #576)
+2. Human T1 security: pc #1822; seatek #568/#555/#573; hg #445/#448/#450; rpce
+   #158
 3. Re-roll seatek #560 and rpce DIRTY pile as focused drafts
 4. Phase 1 follow-up: hg #443/#441 CLEAN; pc #1867 CI; rpce #163/#164 CI
 
@@ -1107,29 +1109,31 @@
 - Trigger: cron Phase 2 `0 17 * * *`
 - Agent branch: `cursor-agent/automated-pr-salvage-workflow-e012`
 - Preflight: PASS 7/7 (+ cursor-cloud-hooks)
-- Source: Phase 1 [#1855](https://github.com/abhimehro/personal-config/pull/1855) remainder + live CONFLICTING re-fetch
+- Source: Phase 1
+  [#1855](https://github.com/abhimehro/personal-config/pull/1855) remainder +
+  live CONFLICTING re-fetch
 - Auth: `abhimehro` PAT (Lesson 0ew) — create/close OK
 
 ### Outcomes
 
-| Repo | Old PR | Disposition | New PR | Notes |
-|------|--------|-------------|--------|-------|
-| personal-config | #1840/#1835 | SALVAGE | [#1856](https://github.com/abhimehro/personal-config/pull/1856) | skip-link; journal 0y |
-| personal-config | #1824/#1823 | SALVAGE | [#1857](https://github.com/abhimehro/personal-config/pull/1857) | combined 0ey |
-| personal-config | #1830 | CLOSE-SUPERSEDED | — | regex in #1854; harmful extras |
-| personal-config | #1822/#1841 | ESCALATE | — | CORS / auth env |
-| personal-config | #1825 | REQUEST_CHANGES | — | scratch |
-| Seatek_Analysis | #552 | SALVAGE | [#571](https://github.com/abhimehro/Seatek_Analysis/pull/571) | T1 list-only shell |
-| Seatek_Analysis | #554 | DEFER | — | warn_on_* redesign |
-| Seatek_Analysis | #560 | REQUEST_CHANGES | — | workflow scope |
-| Hydrograph… | #443/#442 | AUTO-RESOLVED | — | CLEAN after #440 |
-| Hydrograph… | #445 | ESCALATE | — | path traversal |
-| series… | #336 | ESCALATE | — | broken authenticate + CHANGELOG wipe |
-| series… | #322 | ESCALATE/DEFER | — | auth-adjacent |
-| series… | #337 | REQUEST_CHANGES | — | NaN masking |
-| ctrld-sync | #1086/#1088/#1081 | REQUEST_CHANGES/DEFER | — | junk / CodeScene / CI |
-| email-security-pipeline | #1394 | DEFER | — | S6 |
-| repoprompt-ce | #147/#158 + CI queue | ESCALATE/DEFER | — | no salvage |
+| Repo                    | Old PR               | Disposition           | New PR                                                          | Notes                                |
+| ----------------------- | -------------------- | --------------------- | --------------------------------------------------------------- | ------------------------------------ |
+| personal-config         | #1840/#1835          | SALVAGE               | [#1856](https://github.com/abhimehro/personal-config/pull/1856) | skip-link; journal 0y                |
+| personal-config         | #1824/#1823          | SALVAGE               | [#1857](https://github.com/abhimehro/personal-config/pull/1857) | combined 0ey                         |
+| personal-config         | #1830                | CLOSE-SUPERSEDED      | —                                                               | regex in #1854; harmful extras       |
+| personal-config         | #1822/#1841          | ESCALATE              | —                                                               | CORS / auth env                      |
+| personal-config         | #1825                | REQUEST_CHANGES       | —                                                               | scratch                              |
+| Seatek_Analysis         | #552                 | SALVAGE               | [#571](https://github.com/abhimehro/Seatek_Analysis/pull/571)   | T1 list-only shell                   |
+| Seatek_Analysis         | #554                 | DEFER                 | —                                                               | warn_on_* redesign                   |
+| Seatek_Analysis         | #560                 | REQUEST_CHANGES       | —                                                               | workflow scope                       |
+| Hydrograph…             | #443/#442            | AUTO-RESOLVED         | —                                                               | CLEAN after #440                     |
+| Hydrograph…             | #445                 | ESCALATE              | —                                                               | path traversal                       |
+| series…                 | #336                 | ESCALATE              | —                                                               | broken authenticate + CHANGELOG wipe |
+| series…                 | #322                 | ESCALATE/DEFER        | —                                                               | auth-adjacent                        |
+| series…                 | #337                 | REQUEST_CHANGES       | —                                                               | NaN masking                          |
+| ctrld-sync              | #1086/#1088/#1081    | REQUEST_CHANGES/DEFER | —                                                               | junk / CodeScene / CI                |
+| email-security-pipeline | #1394                | DEFER                 | —                                                               | S6                                   |
+| repoprompt-ce           | #147/#158 + CI queue | ESCALATE/DEFER        | —                                                               | no salvage                           |
 
 - Salvage draft PRs opened: **3**
 - Closed superseded / no-op: **6**
@@ -1138,12 +1142,16 @@
 
 ### Handoff
 
-1. **Human merge drafts (priority):** seatek [#571](https://github.com/abhimehro/Seatek_Analysis/pull/571) (T1) → pc [#1856](https://github.com/abhimehro/personal-config/pull/1856)/[#1857](https://github.com/abhimehro/personal-config/pull/1857)
-2. **T1 human:** pc #1822/#1841; seatek #568/#555; hg #445; series #336; rpce #158/#147
+1. **Human merge drafts (priority):** seatek
+   [#571](https://github.com/abhimehro/Seatek_Analysis/pull/571) (T1) → pc
+   [#1856](https://github.com/abhimehro/personal-config/pull/1856)/[#1857](https://github.com/abhimehro/personal-config/pull/1857)
+2. **T1 human:** pc #1822/#1841; seatek #568/#555; hg #445; series #336; rpce
+   #158/#147
 3. Next Phase 1: hg #443/#442 now CLEAN
 4. Skip `request_reviewers` when author is abhimehro (0ew)
 
-- Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-07-31.md)
+- Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md),
+  [Review](tasks/pr-review-2026-07-31.md)
 - New lesson: **0fa** (detect mid-function corruption in auth salvages)
 
 ## Run — 2026-08-02

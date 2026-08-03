@@ -1,18 +1,21 @@
 # Phase 2 Salvage — 2026-08-01
 
 ## Preflight
+
 - [x] `gh auth` as abhimehro (PAT)
 - [x] Preflight PASS 7/7
 - [x] `make cursor-cloud-hooks`
 - [x] Live PR re-fetch
 
 ## Hard gates
+
 - [x] S1: no autonomous merges
 - [x] Security/Sentinel → ESCALATE
 - [x] ESP draft-only; CodeScene cmd posted
 - [x] Journals append-only (0y)
 
 ## Queue actions
+
 - [x] Inventory + triage files
 - [x] Post CodeScene cmd on ESP #1399
 - [x] Salvage PC #1857 → #1875

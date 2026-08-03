@@ -40,6 +40,22 @@ Notes:
 - Outputs are shown inline in Raycast; full logs remain under
   `~/Library/Logs/maintenance/` via the underlying tasks.
 
+## Leave-alone process policy (RAM-pressure safety)
+
+Under memory pressure, pausing or killing Apple diagnostic agents
+(`ReportCrash*`) while `launchd` respawns them creates a relaunch loop (stopped
+`T` processes, extreme load).
+
+- **Policy library**: `maintenance/lib/process_exclusions.sh` (sourced by
+  optimizers/monitors)
+- **Crash-reporter containment only**: `scripts/report-daemons-watchdog.sh` +
+  LaunchAgent `launch-agents/com.speedybee.report-daemons-watchdog.plist`
+- **Never automate against**: `launchd`, `kernel_task`, `WindowServer`,
+  `coreaudiod`, active Spotlight (`mds*`), VM guest services, VPN/auth agents
+  listed in the exclusions file
+- **Eligible targets**: idle user helpers / Electron-family apps (renice or App
+  Tamer AutoSlow only)
+
 ## ✨ Features
 
 ### 🔄 Automated Schedules
