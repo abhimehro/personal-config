@@ -1,5 +1,20 @@
 # Lessons Learned
 
+## Lesson 0fc: Bolt journal wipe is CLOSE not MERGE (2026-08-02)
+
+**Pattern:** A Bolt PR titled as a tiny `parse_inventory` / `defaultdict`
+optimization also rewrote `.jules/bolt.md` from ~848 lines down to ~11,
+deleting the accumulated journal while keeping a small code delta. CI stayed
+green, so a naive gate would have merged it.
+**Rule:** (1) Always inspect `.jules/*.md` patches on Bolt/Jules/Palette/Sentinel
+PRs — if the journal is truncated or replaced wholesale, **CLOSE** (or
+REQUEST_CHANGES) even when the code change is otherwise fine. (2) Prefer
+merging sibling salvages that touch the same source file without journal
+destruction (here #1875). (3) If the code refactor is still wanted, require a
+focused re-open that leaves `main`'s journal intact (append-only).
+**Detection cost:** Low — `gh api …/pulls/{n}/files` showing huge deletions on
+`.jules/bolt.md` with a tiny companion source file.
+
 ## Lesson 0ez: stacked PRs need merge-async REST (2026-07-31)
 
 **Pattern:** Stacked GitHub PRs (child bases on parent head; parent still
