@@ -188,9 +188,12 @@ def fetch_details(repo: str, num: int) -> str:
         if result.returncode != 0:
             return "_Could not load details_"
         raw = result.stdout
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+    except (subprocess.TimeoutExpired, OSError):
         return "_Could not load details_"
-    data = json.loads(raw)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return "_Could not load details_"
     return _format_details(data)
 
 
