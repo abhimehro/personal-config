@@ -490,3 +490,7 @@ top of the `<body>` and ensure the main content is wrapped in
 
 Added `empty-state` class on empty directory listing `<li>` without removing
 skip-link / landmark a11y from main.
+
+## 2026-08-04 - Native HTML Meter for Data Visualization
+**Learning:** Presenting system metrics (like CPU load or disk usage) as raw text in HTML reports misses an opportunity for accessible data visualization.
+**Action:** Use the native HTML5 `<meter>` element to provide a semantic, accessible, and visually appealing representation of scalar measurements within known ranges, ensuring appropriate `aria-label`, `min`, `max`, `low`, and `high` attributes are set.
