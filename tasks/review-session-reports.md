@@ -386,8 +386,8 @@
   Seatek#572/#574; series#338/#337.
 - Closed twins: ctrld#1090; esp#1398.
 - Cascade: hg#443 CONFLICTING after #442 poetry.lock (Lesson **0fb**).
-- Skipped merge: pc#1867 (required tests red — deep_cleaner unrelated but
-  policy never merge failing CI).
+- Skipped merge: pc#1867 (required tests red — deep_cleaner unrelated but policy
+  never merge failing CI).
 - Auth: PAT — squash-merge + close + comment OK; MCP reviews OK.
 - Adversarial: opus-4.8 + gpt-5.5 parallel; consensus merge-safe except #1867.
 - Docs: `tasks/pr-review-2026-08-01.md`, `pr-inventory.md`, `pr-triage.md`;

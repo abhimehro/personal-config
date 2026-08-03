@@ -355,13 +355,14 @@ The `github/gh-stack` `gh` extension is installed via
 `.agents/skills/gh-stack/SKILL.md` (mirrored to `.claude/skills` and
 `.windsurf/skills`). Load it before doing any of the below.
 
-Use `gh stack` during Review (Phase 1) and Salvage (Phase 2) sessions to break the
-**post-merge conflict cascade** (see "Post-merge conflict cascade" heuristic in
-`docs/automated-pr-review-agent.md` and the domino-effect guidance in
-`docs/automated-pr-salvage-agent.md`): PRs that touch the same hot file frequently
-flip `DIRTY` one after another as siblings merge ahead of them. Rather than merging
-or salvaging each sibling independently and re-triaging the fallout, chain the
-related PRs/branches into a stack so each one is rebased on the branch below it:
+Use `gh stack` during Review (Phase 1) and Salvage (Phase 2) sessions to break
+the **post-merge conflict cascade** (see "Post-merge conflict cascade" heuristic
+in `docs/automated-pr-review-agent.md` and the domino-effect guidance in
+`docs/automated-pr-salvage-agent.md`): PRs that touch the same hot file
+frequently flip `DIRTY` one after another as siblings merge ahead of them.
+Rather than merging or salvaging each sibling independently and re-triaging the
+fallout, chain the related PRs/branches into a stack so each one is rebased on
+the branch below it:
 
 ```bash
 # Link existing open PRs (same repo, overlapping files) into a stack, bottom to top
@@ -376,28 +377,44 @@ gh stack merge --yes
 
 Agent-specific rules:
 
-- **Review Agent (Phase 1):** may use `gh stack link` to group already-open sibling
-  PRs that collide on the same file(s) before merging, then merge the stack with
-  `gh stack merge --yes` instead of merging them one at a time and re-checking
-  mergeable state after each. Still subject to all existing merge gates per-PR.
+- **Review Agent (Phase 1):** may use `gh stack link` to group already-open
+  sibling PRs that collide on the same file(s) before merging, then merge the
+  stack with `gh stack merge --yes` instead of merging them one at a time and
+  re-checking mergeable state after each. Still subject to all existing merge
+  gates per-PR.
 - **Salvage Agent (Phase 2):** when the salvage queue contains multiple
   deferred/escalated PRs that touch the same files or the same consolidation
-  category, build the replacement branches with `gh stack init` (chained) instead of
-  independent branches off `main`, then `gh stack submit --auto` to open them all as
-  **draft** PRs. This preserves the "never merge autonomously" boundary (S1) while
-  eliminating the need for each salvage branch to re-resolve conflicts introduced
-  by its siblings.
-- Always run `gh stack rebase --no-trunk` immediately before `gh stack submit`/`merge`;
-  `gh stack init` with multiple branch names creates them off trunk in parallel, not
-  chained, until the first rebase.
+  category, build the replacement branches with `gh stack init` (chained)
+  instead of independent branches off `main`, then `gh stack submit --auto` to
+  open them all as **draft** PRs. This preserves the "never merge autonomously"
+  boundary (S1) while eliminating the need for each salvage branch to re-resolve
+  conflicts introduced by its siblings.
+- Always run `gh stack rebase --no-trunk` immediately before
+  `gh stack submit`/`merge`; `gh stack init` with multiple branch names creates
+  them off trunk in parallel, not chained, until the first rebase.
 
-**Merging a stack (Lesson 0ez — learned the hard way on 2026-07-31):** stacked PRs
-**cannot** be merged with `gh pr merge`, GraphQL `mergePullRequest`, or the ordinary
-`PUT /repos/{owner}/{repo}/pulls/{n}/merge` (even with `Prefer: respond-async`). They
-fail with "part of a stack… use the asynchronous merge REST API". Use whichever
-path matches your environment:
+For a one-page command cheat sheet, see
+[docs/gh-stack/quick-reference.md](docs/gh-stack/quick-reference.md). When in
+doubt during a session, run this quick verification before submitting or
+merging:
 
-- **Has the `gh` extension** (local / provisioned runner): `gh stack merge --yes`.
+- [ ] `gh stack view` shows every layer with a linear chain (no forks, no
+      `needsRebase=true`).
+- [ ] Each PR's `baseRefName` is the layer directly below it (the bottom targets
+      `main`).
+- [ ] You are about to merge only the **top** layer, via `gh stack merge --yes`
+      (or the merge-async REST API for API-only sessions).
+- [ ] A human has approved the merge (boundary S1); agents stop at opening
+      drafts.
+
+**Merging a stack (Lesson 0ez — learned the hard way on 2026-07-31):** stacked
+PRs **cannot** be merged with `gh pr merge`, GraphQL `mergePullRequest`, or the
+ordinary `PUT /repos/{owner}/{repo}/pulls/{n}/merge` (even with
+`Prefer: respond-async`). They fail with "part of a stack… use the asynchronous
+merge REST API". Use whichever path matches your environment:
+
+- **Has the `gh` extension** (local / provisioned runner):
+  `gh stack merge --yes`.
 - **API-only agent sessions** (Cursor cloud, MCP, bare `GH_TOKEN`):
 
   ```bash
@@ -409,7 +426,31 @@ path matches your environment:
   ```
 
   Retry once if it fails with "Base branch was modified" (sibling merges still
-  settling). **Auto-merge is unsupported for stacks** — never queue one and walk away.
+  settling). **Auto-merge is unsupported for stacks** — never queue one and walk
+  away.
+
+#### Recovering from a broken stack
+
+If a layer is merged out of order or a stack goes stale against `main`:
+
+- **Accidental bottom-layer merge:** GitHub locks a PR once merged (it cannot be
+  reopened), and auto-retargets the next layer to `main`. The stack survives as
+  the remaining open PRs; do **not** force-push a collapsed local rebase over
+  them. Reset your local branches to the remote tips instead
+  (`git branch -f <branch> origin/<branch>`), then decide whether a replacement
+  bottom PR is even needed (it is usually empty if the content already reached
+  `main`).
+- **Layer merged but immediately reverted:** the net diff on `main` is zero, so
+  the surviving stack layers still carry the real content. Verify with
+  `git diff --name-only origin/main <top-branch>` before assuming anything was
+  lost.
+- **Stack went stale / all content already on `main`:** a plain `git rebase`
+  will drop the now-empty commits and collapse the chain. Prefer rebuilding a
+  fresh stack from current `main` over resurrecting a collapsed one.
+- **Before any recovery,** confirm the automation-facing guidance is still
+  intact on `main` (skill files, this AGENTS.md section, the review/salvage doc
+  notes, and Lessons 0ez/0fb in `tasks/lessons.md`) so agents are unaffected
+  while you repair the test stack.
 
 ## Big-picture architecture (how the pieces fit)
 
@@ -560,10 +601,11 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
   downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`.
   Subsequent runs are fast. The update script installs the Trunk launcher, but
   tool downloads happen lazily.
-- **`requirements.txt`**: The root `requirements.txt` contains `pyyaml`, which is
-  needed by the full test suite (e.g., `tests/test_repository_automation_common.py`
-  exercises `.github/scripts/repository_automation_common.py`). The Devin
-  environment blueprint installs this dependency automatically; otherwise run
+- **`requirements.txt`**: The root `requirements.txt` contains `pyyaml`, which
+  is needed by the full test suite (e.g.,
+  `tests/test_repository_automation_common.py` exercises
+  `.github/scripts/repository_automation_common.py`). The Devin environment
+  blueprint installs this dependency automatically; otherwise run
   `python3 -m pip install -r requirements.txt`.
 - **`package.json` is empty**: The root `package.json` is `{}` — it exists as a
   Trunk runtime anchor for Node-based linters (prettier, markdownlint). Do not

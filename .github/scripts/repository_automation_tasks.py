@@ -7,6 +7,7 @@ import json
 import os
 import re
 import sys
+from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -1016,16 +1017,16 @@ def weekly_markers(prefix: str) -> dict[str, dict[str, int]]:
         ],
         default=[],
     )
-    markers: dict[str, dict[str, int]] = {}
+    # Prefer defaultdict over chained setdefault on the weekly marker hot path.
+    markers: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     for issue in issues:
         if not issue.get("title", "").startswith(prefix):
             continue
         if parse_timestamp(issue["createdAt"]) < cutoff:
             continue
         for task, value in extract_status_markers(issue.get("body", "")).items():
-            markers.setdefault(task, {}).setdefault(value, 0)
             markers[task][value] += 1
-    return markers
+    return {task: dict(counts) for task, counts in markers.items()}
 
 
 def weekly_report_lines(

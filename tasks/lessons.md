@@ -19,15 +19,14 @@ focused re-open that leaves `main`'s journal intact (append-only).
 
 **Pattern:** Stacked GitHub PRs (child bases on parent head; parent still
 targets `main`) reject `gh pr merge` / GraphQL `mergePullRequest` and the
-ordinary `PUT …/pulls/{n}/merge` even with `Prefer: respond-async`. Error:
-"part of a stack… use the asynchronous merge REST API" /
-"Merging stacked PRs via this endpoint is not supported."
-**Rule:** (1) Use `PUT /repos/{owner}/{repo}/pulls/{n}/merge-async` with
-`merge_method=squash`. (2) Merging the **top** of the stack merges all lower
-layers into the ultimate base. (3) Poll
-`GET …/pulls/{n}/merge-async/{uuid}` until `status=merged` (UUID is under
-`details.uuid`). (4) If `failed` with "Base branch was modified", retry once
-after sibling merges settle. (5) Auto-merge is unsupported for stacks.
+ordinary `PUT …/pulls/{n}/merge` even with `Prefer: respond-async`. Error: "part
+of a stack… use the asynchronous merge REST API" / "Merging stacked PRs via this
+endpoint is not supported." **Rule:** (1) Use
+`PUT /repos/{owner}/{repo}/pulls/{n}/merge-async` with `merge_method=squash`.
+(2) Merging the **top** of the stack merges all lower layers into the ultimate
+base. (3) Poll `GET …/pulls/{n}/merge-async/{uuid}` until `status=merged` (UUID
+is under `details.uuid`). (4) If `failed` with "Base branch was modified", retry
+once after sibling merges settle. (5) Auto-merge is unsupported for stacks.
 **Detection cost:** Low — `baseRefName != main` on children, or GraphQL error
 text mentioning stack.
 
@@ -36,29 +35,29 @@ text mentioning stack.
 **Pattern:** `gh pr close … --comment "… #$1854 …"` with an unquoted /
 double-quoted string lets the shell treat `$1854` as a variable (empty),
 mangling the close comment body (and can splice unrelated script text if the
-heredoc/quoting is wrong).
-**Rule:** Use single-quoted `--comment '… #1854 …'` or escape `\$`, or write
-the body to a file and pass `--body-file`. Never put `$` + digits in
-double-quoted close/comment strings.
-**Detection cost:** Low — read the posted comment URL after close.
+heredoc/quoting is wrong). **Rule:** Use single-quoted `--comment '… #1854 …'`
+or escape `\$`, or write the body to a file and pass `--body-file`. Never put
+`$` + digits in double-quoted close/comment strings. **Detection cost:** Low —
+read the posted comment URL after close.
 
 ## Lesson 0fb: Stack sibling PRs to break post-merge conflict cascades (2026-07-31)
 
 **Pattern:** Phase 1 merged 21 PRs on 2026-07-31, but the two gh-stack stacks
 (starter configs #1842-#1844 and CLI tooling #1846-#1848) could not be merged
-via `gh pr merge` / GraphQL `mergePullRequest` / ordinary `PUT .../merge` (even with
-`Prefer: respond-async`). GitHub rejected them with "part of a stack… use the
-asynchronous merge REST API". This is the same class of failure as Lessons 0, 0y, and 0z:
-merging siblings independently leaves the rest DIRTY in a cascade.
-**Rule:** (1) For 2+ open PRs in the same repo that collide on the same file(s),
-link them with `gh stack link <bottom> ... <top>` and merge only the top; do not
-merge each independently. (2) Stack merges require `gh stack merge --yes` (when
-the gh extension is present) or the async REST API
-`PUT /repos/{owner}/{repo}/pulls/{top}/merge-async` + poll `.../merge-async/{uuid}` until
-`status=merged`. (3) Auto-merge is unsupported for stacks. (4) The full recipe lives
-in AGENTS.md → `Stacked PRs during review/salvage sessions`.
-**Detection cost:** Low — `baseRefName != main` on children, or a GraphQL/REST error
-mentioning stack.
+via `gh pr merge` / GraphQL `mergePullRequest` / ordinary `PUT .../merge` (even
+with `Prefer: respond-async`). GitHub rejected them with "part of a stack… use
+the asynchronous merge REST API". This is the same class of failure as Lessons
+0, 0y, and 0z: merging siblings independently leaves the rest DIRTY in a
+cascade. **Rule:** (1) For 2+ open PRs in the same repo that collide on the same
+file(s), link them with `gh stack link <bottom> ... <top>` and merge only the
+top; do not merge each independently. (2) Stack merges require
+`gh stack merge --yes` (when the gh extension is present) or the async REST API
+`PUT /repos/{owner}/{repo}/pulls/{top}/merge-async` + poll
+`.../merge-async/{uuid}` until `status=merged`. (3) Auto-merge is unsupported
+for stacks. (4) The full recipe lives in AGENTS.md →
+`Stacked PRs during review/salvage sessions`. **Detection cost:** Low —
+`baseRefName != main` on children, or a GraphQL/REST error mentioning stack.
+
 ## Lesson 0ex: main-side unpinned action fails WI on unrelated PRs (2026-07-30)
 
 **Pattern:** Several personal-config Bolt PRs that did **not** touch workflows
@@ -1924,17 +1923,22 @@ asserting file load) before sourcing or calling the loader.
 
 ## 0fa — Mid-function corruption in "exception cleanup" PRs (2026-07-31)
 
-**Pattern:** A Jules/QA PR titled “redundant-exception cleanup” can splice an unrelated helper into the middle of `authenticate` (and drop security imports) while also wiping `CHANGELOG.md` entries.
+**Pattern:** A Jules/QA PR titled “redundant-exception cleanup” can splice an
+unrelated helper into the middle of `authenticate` (and drop security imports)
+while also wiping `CHANGELOG.md` entries.
 
-**Rule:** Before salvaging any PR that touches `authenticate` / credential helpers / CHANGELOG, read the full hunk. If control flow is broken or journal entries are deleted, **ESCALATE** — never cherry-pick.
+**Rule:** Before salvaging any PR that touches `authenticate` / credential
+helpers / CHANGELOG, read the full hunk. If control flow is broken or journal
+entries are deleted, **ESCALATE** — never cherry-pick.
 
-**Detection cost:** Low — `gh pr diff` + search for `def authenticate` continuity.
+**Detection cost:** Low — `gh pr diff` + search for `def authenticate`
+continuity.
 
 ## 0fb — Dependabot Poetry lock cascade (2026-08-01)
 
 **Pattern:** Hydrograph #442 (matplotlib) and #443 (scipy) were both MERGEABLE
-with green CI; after squash-merging #442, #443 immediately became CONFLICTING
-on `poetry.lock` and `update-branch` returned 422.
+with green CI; after squash-merging #442, #443 immediately became CONFLICTING on
+`poetry.lock` and `update-branch` returned 422.
 
 **Rule:** When multiple Dependabot PRs share `poetry.lock` / `uv.lock`, merge
 **one** lock-touching PR per repo per session (or `gh stack link` them), then
@@ -1955,3 +1959,19 @@ diff **per file** against `main`. Salvage only the named hot path (here
 **Detection cost:** Low — `gh pr diff --stat` showing deletes of whole modules
 alongside a one-file perf claim.
 
+
+## 0fd — Close Sentinel clusters when main already has the guard (2026-08-02)
+
+**Pattern:** Multiple CONFLICTING Sentinel PRs (#445/#448/#450) claimed path
+traversal / arbitrary write fixes on the same CLI `--output` path, but `main`
+already called `is_safe_path`. One sibling (#448) had the check copy-pasted
+seven times; another (#450) only extracted a reporter class.
+
+**Rule:** Before salvaging a CONFLICTING Sentinel/security PR, grep `main` for
+the same guard (`is_safe_path`, TOCTOU helper, etc.). If the protection is
+already present, **CLOSE-SUPERSEDED** — do not open a refactor-only salvage.
+If a sibling shows duplicated identical security blocks, treat as corruption
+and close (same family as Lesson 0fa), not as defense-in-depth.
+
+**Detection cost:** Low — `rg is_safe_path validate_data.py` on `main` +
+`rg -c` on the PR tip.
