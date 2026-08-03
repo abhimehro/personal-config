@@ -9,6 +9,16 @@ LOG_DIR="$HOME/Library/Logs/maintenance"
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/service_monitor.log"
 
+# -----------------------------------------------------------------------------
+# Leave-alone exclusions
+# These exclusions prevent launchd-driven relaunch loops, system instability,
+# VM disruption, Spotlight interference, and audio dropouts. Never re-disable
+# or kill ReportCrash* / core OS / audio / Spotlight / VM services from here.
+# -----------------------------------------------------------------------------
+_SM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$_SM_DIR/../lib/process_exclusions.sh"
+
 # User ID
 USER_ID=$(id -u)
 
@@ -60,11 +70,12 @@ SYSTEM_SERVICES=(
 	"com.apple.chronod"
 	"com.apple.duetexpertd"
 	"com.apple.suggestd"
-	"com.apple.ReportCrash.Root"
+	# LEAVE ALONE: com.apple.ReportCrash.Root — owned by report-daemons-watchdog.
+	# Do not re-add to this disable/enforce list (launchd thrash under RAM pressure).
 )
 
 USER_SERVICES=(
-	"com.apple.ReportCrash"
+	# LEAVE ALONE: com.apple.ReportCrash* — owned by report-daemons-watchdog.
 	"com.apple.calendar.CalendarAgentBookmarkMigrationService"
 	"com.apple.podcasts.PodcastContentService"
 	"com.apple.proactived"
@@ -167,6 +178,12 @@ append ""
 append "System Services Status:"
 append "-----------------------"
 for service in "${SYSTEM_SERVICES[@]}"; do
+	[[ -z ${service// /} ]] && continue
+	if service_label_is_protected "$service"; then
+		append "PROTECTED $service: leave-alone (not enforced)"
+		log_info "$service is protected; skipping disable enforcement"
+		continue
+	fi
 	if check_disabled_status "system" "$service"; then
 		append "✅ $service: DISABLED"
 		log_info "$service is correctly disabled"
@@ -191,6 +208,12 @@ append ""
 append "User Services Status:"
 append "---------------------"
 for service in "${USER_SERVICES[@]}"; do
+	[[ -z ${service// /} ]] && continue
+	if service_label_is_protected "$service"; then
+		append "PROTECTED $service: leave-alone (not enforced)"
+		log_info "$service is protected; skipping disable enforcement"
+		continue
+	fi
 	if check_disabled_status "user" "$service"; then
 		append "✅ $service: DISABLED"
 		log_info "$service is correctly disabled"
@@ -215,6 +238,11 @@ append "----------------------"
 for process in "${PROBLEM_PROCESSES[@]}"; do
 	# Skip inert placeholder used to keep the array non-empty under bash 3.2 + set -u
 	[[ $process == __service_monitor_no_problem_processes__ ]] && continue
+	if problem_process_pattern_is_protected "$process"; then
+		append "PROTECTED $process: leave-alone (will not kill)"
+		log_info "Refusing to kill protected pattern: $process"
+		continue
+	fi
 	if check_process_running "$process"; then
 		append "⚠️  $process: RUNNING (should not be)"
 		log_warn "$process is running - killing process"
