@@ -595,9 +595,9 @@ generate_performance_report() {
         dl.metric-list { margin: 0; padding: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 8px; }
         .metric { font-weight: bold; }
         dd { margin: 0; }
-        .good { color: #057A55; }
-        .warning { color: #B45309; }
-        .critical { color: #DC2626; }
+        .good { color: #1E7E34; } /* WCAG AA accessible */
+        .warning { color: #B45309; } /* WCAG AA accessible */
+        .critical { color: #DC2626; } /* WCAG AA accessible */
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         th { background-color: #f0f0f0; }
