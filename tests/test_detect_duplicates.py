@@ -12,6 +12,7 @@ from detect_duplicates import (
     _generate_duplicate_section,
     _generate_ready_section,
     _generate_superseded_section,
+    _get_superseded_text,
     _group_prs_by_files,
     get_duplicates,
     rewrite_triage_file,
@@ -290,6 +291,53 @@ class TestDetectDuplicates(unittest.TestCase):
             "- org/repo#4\n"
         )
         handle.write.assert_called_once_with(expected_content)
+
+    def test_get_superseded_text_both_markers(self):
+        """Test _get_superseded_text when both SUPERSEDED and STALE markers are present."""
+        lines = [
+            "## SUPERSEDED\n",
+            "- org/repo#1\n",
+            "- org/repo#2\n",
+            "## STALE\n",
+            "- org/repo#3\n",
+        ]
+        out = _get_superseded_text(lines)
+        self.assertEqual(out, "- org/repo#1\n- org/repo#2\n")
+
+    def test_get_superseded_text_missing_superseded(self):
+        """Test _get_superseded_text when SUPERSEDED is missing but STALE is present."""
+        lines = [
+            "- org/repo#1\n",
+            "- org/repo#2\n",
+            "## STALE\n",
+            "- org/repo#3\n",
+        ]
+        out = _get_superseded_text(lines)
+        self.assertEqual(out, "- org/repo#1\n- org/repo#2\n")
+
+    def test_get_superseded_text_missing_stale(self):
+        """Test _get_superseded_text when STALE is missing but SUPERSEDED is present."""
+        lines = [
+            "## SUPERSEDED\n",
+            "- org/repo#1\n",
+            "- org/repo#2\n",
+        ]
+        out = _get_superseded_text(lines)
+        self.assertEqual(out, "- org/repo#1\n- org/repo#2\n")
+
+    def test_get_superseded_text_missing_both(self):
+        """Test _get_superseded_text when both markers are missing."""
+        lines = [
+            "- org/repo#1\n",
+            "- org/repo#2\n",
+        ]
+        out = _get_superseded_text(lines)
+        self.assertEqual(out, "- org/repo#1\n- org/repo#2\n")
+
+    def test_get_superseded_text_empty(self):
+        """Test _get_superseded_text when input is empty."""
+        out = _get_superseded_text([])
+        self.assertEqual(out, "")
 
 
 if __name__ == "__main__":
