@@ -16,6 +16,7 @@ from consolidate_adblock_lists import (
     process_allowlist_files,
     process_tracker_files,
     run_consolidation,
+    write_text_files,
 )
 
 
@@ -302,6 +303,39 @@ class TestProcessAllowlistFiles(unittest.TestCase):
             result = process_allowlist_files(base_dir)
 
         self.assertEqual(result, set())
+
+
+class TestWriteTextFiles(unittest.TestCase):
+    def setUp(self):
+        self.output_dir = Path("/fake/output")
+
+    @patch("builtins.open", new_callable=mock_open)
+    @patch("sys.stdout")
+    def test_happy_path(self, mock_stdout, mock_file):
+        denylist_domains = {"tracker2.com", "tracker1.com"}
+        allowlist_domains = {"allow2.com", "allow1.com"}
+
+        write_text_files(self.output_dir, denylist_domains, allowlist_domains)
+
+        handle = mock_file()
+        expected_calls = [
+            unittest.mock.call("tracker1.com\ntracker2.com\n"),
+            unittest.mock.call("@@allow1.com\n@@allow2.com\n"),
+        ]
+        handle.write.assert_has_calls(expected_calls)
+        self.assertEqual(handle.write.call_count, 2)
+
+    @patch("builtins.open", new_callable=mock_open)
+    @patch("sys.stdout")
+    def test_empty_domains(self, mock_stdout, mock_file):
+        write_text_files(self.output_dir, set(), set())
+
+        # Files should still be opened
+        self.assertEqual(mock_file.call_count, 2)
+
+        # But write should not be called
+        handle = mock_file()
+        handle.write.assert_not_called()
 
 
 class TestRunConsolidation(unittest.TestCase):
