@@ -492,3 +492,7 @@ Added `empty-state` class on empty directory listing `<li>` without removing ski
 ## 2026-08-02 - Improved empty states and a11y focus rings
 **Learning:** Shell-generated HTML reports often neglect a11y focus states for `.skip-link` and lack robust visual distinction for empty states (e.g. no recommendations).
 **Action:** Always verify keyboard accessibility (`:focus` with clear outline) and add icons/soft backgrounds for empty states to make them visibly distinct.
+
+## 2026-08-04 - Native HTML Meter for Data Visualization
+**Learning:** Presenting system metrics (like CPU load or disk usage) as raw text in HTML reports misses an opportunity for accessible data visualization.
+**Action:** Use the native HTML5 `<meter>` element to provide a semantic, accessible, and visually appealing representation of scalar measurements within known ranges, ensuring appropriate `aria-label`, `min`, `max`, `low`, and `high` attributes are set.
