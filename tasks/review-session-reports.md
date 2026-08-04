@@ -1,3 +1,22 @@
+# Review session — 2026-08-04 (cron Phase 1 13:00 UTC)
+
+Preflight PASS 7/7. Inventoried **88**. Squash-merged **49**. Closed **5**.
+Escalated **10**. Request-changes **~15**. Deferred CONFLICTING to Phase 2.
+Adversarial: opus-4.8 + gpt-5.5. Docs branch: `cursor-agent/automated-pr-workflow-1f9f`.
+Report: `tasks/pr-review-2026-08-04.md`.
+
+| Metric | Count |
+| --- | ---: |
+| Inventoried | 88 |
+| Merged | 49 |
+| Closed | 5 |
+| Escalated | 10 |
+| Open EOD | ~34 |
+
+New lessons: **0fd** (LICENSE/README hijack), **0fe** (`.Jules` case collision), **0ff** (mislabeled test PRs renaming prod APIs).
+
+---
+
 # Review Session Reports
 
 > Append-only log for Automated PR Review Agent sessions. Single writer: review
