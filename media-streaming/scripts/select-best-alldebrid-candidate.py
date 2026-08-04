@@ -37,10 +37,11 @@ BAD_MARKERS = {
     "xbet": -40,
 }
 
-BAD_MARKERS_RE = {
-    token: (re.compile(rf"(?i)(^|[^a-z0-9]){re.escape(token)}([^a-z0-9]|$)"), points)
-    for token, points in BAD_MARKERS.items()
-}
+# ⚡ Bolt Optimization: Use a single combined regular expression to eliminate
+# repeated regex loop iteration overhead per candidate evaluation.
+# Tokens are sorted by length descending so that longer prefixes match first.
+_BAD_MARKERS_PATTERN = rf"(?i)(?<![a-z0-9])({'|'.join(re.escape(t) for t in sorted(BAD_MARKERS.keys(), key=len, reverse=True))})(?![a-z0-9])"
+BAD_MARKERS_SINGLE_RE = re.compile(_BAD_MARKERS_PATTERN)
 
 RESOLUTION = {
     "4320p": 80,
@@ -199,9 +200,12 @@ def score_candidate(filename: str) -> tuple[int, list[str]]:
     score += apply_token_scores(text, compact, RELEASE, reasons, stop_after_first=True)
     score += apply_token_scores(text, compact, CODEC, reasons, stop_after_first=True)
 
-    for token, (regex, points) in BAD_MARKERS_RE.items():
-        if regex.search(filename):
-            score += points
+    matched_bad_markers = set()
+    for match in BAD_MARKERS_SINGLE_RE.finditer(filename):
+        token = match.group(1).lower()
+        if token not in matched_bad_markers:
+            matched_bad_markers.add(token)
+            score += BAD_MARKERS[token]
             reasons.append(f"bad:{token}")
 
     return score, reasons
