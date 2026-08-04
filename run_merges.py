@@ -272,6 +272,6 @@ if __name__ == "__main__":
         print("Waiting 5 seconds for GitHub to update state...")
         time.sleep(5)
 
-        print("\n--- DONE ---")
-        with open("tasks/pr-merge-results.json", "w") as f:
-            json.dump(results, f, indent=2)
+    print("\n--- DONE ---")
+    with open("tasks/pr-merge-results.json", "w") as f:
+        json.dump(results, f, indent=2)
