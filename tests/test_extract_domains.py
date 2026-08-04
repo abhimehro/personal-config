@@ -6,7 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, mock_open
 
 # Add the project root to sys.path so we can import the script
 project_root = Path(__file__).resolve().parent.parent
@@ -18,6 +18,7 @@ from adguard.scripts.extract_domains import (
     extract_domains_from_file,
     process_allowlist_files,
     process_denylist_files,
+    write_lists,
 )
 
 
@@ -290,6 +291,35 @@ class TestProcessDenylistFiles(unittest.TestCase):
             result = process_denylist_files(temp_dir)
             self.assertEqual(result, set())
             mock_extract.assert_called_once()
+
+
+class TestWriteLists(unittest.TestCase):
+    @patch("builtins.print")
+    def test_happy_path(self, mock_print):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            denylist = {"bad.com", "worse.com"}
+            allowlist = {"good.com"}
+            write_lists(temp_dir, denylist, allowlist)
+
+            with open(os.path.join(temp_dir, "Consolidated-Denylist.txt"), "r") as f:
+                self.assertEqual(f.read(), "bad.com\nworse.com\n")
+            with open(os.path.join(temp_dir, "Consolidated-Allowlist.txt"), "r") as f:
+                self.assertEqual(f.read(), "@@good.com\n")
+
+    @patch("adguard.scripts.extract_domains.os.path.exists")
+    def test_base_dir_not_exists(self, mock_exists):
+        mock_exists.return_value = False
+        # Should not raise exception
+        write_lists("/fake/dir", {"bad.com"}, {"good.com"})
+        mock_exists.assert_called_once_with("/fake/dir")
+
+    @patch("adguard.scripts.extract_domains.os.path.exists")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_open_exception(self, mock_file, mock_exists):
+        mock_exists.return_value = True
+        mock_file.side_effect = PermissionError("Permission denied")
+        with self.assertRaises(PermissionError):
+            write_lists("/fake/dir", {"bad.com"}, {"good.com"})
 
 
 if __name__ == "__main__":
