@@ -85,40 +85,6 @@ def _format_pr_row(pr, today_iso):
     return f"| {pr['repo']} | {pr['number']} | {author} | {branch} | {cat} | {ci} | {conflicts} | {date_str} | {title} |"
 
 
-def _generate_markdown_header():
-    return [
-        f"# Automated PR inventory — backlog cleanup test ({datetime.date.today().isoformat()})\n",
-        "**Preflight:** `bash scripts/preflight-gh-pr-automation.sh --config tasks/pr-review-agent.config.yaml` — **passed** (read-only).\n",
-        "**Config:** `tasks/pr-review-agent.config.yaml` — `mode: review-and-merge`, `merge_strategy: squash`, `stale_threshold_days: 30`, `auto_fix_enabled: true`, `schedule: none`.\n",
-        "| Repo | PR | Author (API) | Branch (head) | Category | CI rollup | Conflicts | Age (created→) | Notes |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
-    ]
-
-
-def _format_pr_row(pr, today_iso):
-    cat = get_category(pr["title"], pr["headRefName"])
-
-    ci = "C"
-    if pr["mergeStateStatus"] not in ("CLEAN", "HAS_HOOKS"):
-        if pr["mergeStateStatus"] == "UNSTABLE":
-            ci = "U"
-        elif pr["mergeStateStatus"] == "DIRTY":
-            ci = "D"
-        else:
-            ci = "?"
-
-    conflicts = "yes" if pr["mergeStateStatus"] == "DIRTY" else "none"
-    # ⚡ Bolt Optimization: Hoisted datetime.date.today().isoformat() out of loop to avoid redundant string parsing overhead
-    date_str = pr.get("createdAt", today_iso)[:10]
-
-    # SECURITY: PR metadata is untrusted; escape formula injection if the
-    # inventory table is opened in Excel/Sheets (CWE-1236).
-    author = escape_spreadsheet_formula(pr["author"]["login"])
-    branch = escape_spreadsheet_formula(pr["headRefName"])
-    title = escape_spreadsheet_formula(pr["title"])
-    return f"| {pr['repo']} | {pr['number']} | {author} | {branch} | {cat} | {ci} | {conflicts} | {date_str} | {title} |"
-
-
 def generate_markdown(all_prs):
     out_md = _generate_markdown_header()
 
