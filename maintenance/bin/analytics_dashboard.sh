@@ -432,6 +432,9 @@ generate_dashboard() {
         dl.activity-list { margin: 0; padding: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 15px; }
         .activity-term { font-weight: bold; color: #333; }
         .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 0.9em; }
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; color: #6c757d; text-align: center; }
+        .empty-state .icon { font-size: 3em; margin-bottom: 15px; opacity: 0.5; }
+        .empty-state p { margin: 0; font-size: 1.1em; }
     </style>
 </head>
 <body>
@@ -481,7 +484,22 @@ EOF
         <section class="section" aria-labelledby="insights-heading" role="region">
             <h2 id="insights-heading"><span aria-hidden="true">📊</span> System Insights</h2>
             <div class="insights-box">
-                <pre>$(cat "$insights_file" 2>/dev/null || echo "Insights not available")</pre>
+EOF
+
+	if [[ -f "$insights_file" ]] && [[ -s "$insights_file" ]]; then
+		cat >>"$dashboard_file" <<EOF
+                <pre>$(cat "$insights_file" 2>/dev/null)</pre>
+EOF
+	else
+		cat >>"$dashboard_file" <<EOF
+                <div class="empty-state">
+                    <div class="icon" aria-hidden="true">📝</div>
+                    <p>No insights available for this period.</p>
+                </div>
+EOF
+	fi
+
+	cat >>"$dashboard_file" <<EOF
             </div>
         </section>
         
