@@ -292,52 +292,57 @@ class TestDetectDuplicates(unittest.TestCase):
         )
         handle.write.assert_called_once_with(expected_content)
 
-    def test_get_superseded_text_both_markers(self):
-        """Test _get_superseded_text when both SUPERSEDED and STALE markers are present."""
-        lines = [
-            "## SUPERSEDED\n",
-            "- org/repo#1\n",
-            "- org/repo#2\n",
-            "## STALE\n",
-            "- org/repo#3\n",
+    def test_get_superseded_text_variants(self):
+        """Test _get_superseded_text with various marker combinations."""
+        cases = [
+            (
+                "both markers",
+                [
+                    "## SUPERSEDED\n",
+                    "- org/repo#1\n",
+                    "- org/repo#2\n",
+                    "## STALE\n",
+                    "- org/repo#3\n",
+                ],
+                "- org/repo#1\n- org/repo#2\n",
+            ),
+            (
+                "missing superseded",
+                [
+                    "- org/repo#1\n",
+                    "- org/repo#2\n",
+                    "## STALE\n",
+                    "- org/repo#3\n",
+                ],
+                "- org/repo#1\n- org/repo#2\n",
+            ),
+            (
+                "missing stale",
+                [
+                    "## SUPERSEDED\n",
+                    "- org/repo#1\n",
+                    "- org/repo#2\n",
+                ],
+                "- org/repo#1\n- org/repo#2\n",
+            ),
+            (
+                "missing both",
+                [
+                    "- org/repo#1\n",
+                    "- org/repo#2\n",
+                ],
+                "- org/repo#1\n- org/repo#2\n",
+            ),
+            (
+                "empty input",
+                [],
+                "",
+            ),
         ]
-        out = _get_superseded_text(lines)
-        self.assertEqual(out, "- org/repo#1\n- org/repo#2\n")
 
-    def test_get_superseded_text_missing_superseded(self):
-        """Test _get_superseded_text when SUPERSEDED is missing but STALE is present."""
-        lines = [
-            "- org/repo#1\n",
-            "- org/repo#2\n",
-            "## STALE\n",
-            "- org/repo#3\n",
-        ]
-        out = _get_superseded_text(lines)
-        self.assertEqual(out, "- org/repo#1\n- org/repo#2\n")
-
-    def test_get_superseded_text_missing_stale(self):
-        """Test _get_superseded_text when STALE is missing but SUPERSEDED is present."""
-        lines = [
-            "## SUPERSEDED\n",
-            "- org/repo#1\n",
-            "- org/repo#2\n",
-        ]
-        out = _get_superseded_text(lines)
-        self.assertEqual(out, "- org/repo#1\n- org/repo#2\n")
-
-    def test_get_superseded_text_missing_both(self):
-        """Test _get_superseded_text when both markers are missing."""
-        lines = [
-            "- org/repo#1\n",
-            "- org/repo#2\n",
-        ]
-        out = _get_superseded_text(lines)
-        self.assertEqual(out, "- org/repo#1\n- org/repo#2\n")
-
-    def test_get_superseded_text_empty(self):
-        """Test _get_superseded_text when input is empty."""
-        out = _get_superseded_text([])
-        self.assertEqual(out, "")
+        for name, lines, expected in cases:
+            with self.subTest(name=name):
+                self.assertEqual(_get_superseded_text(lines), expected)
 
 
 if __name__ == "__main__":
