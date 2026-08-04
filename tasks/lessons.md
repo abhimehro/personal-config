@@ -1,5 +1,57 @@
 # Lessons Learned
 
+## Lesson 0ff: "Add tests" PRs that rename production APIs (2026-08-04)
+
+**Pattern:** Seatek Jules PRs titled as missing unit tests (#595/#601) also
+renamed real helpers (`discover_hotspots`, `run_command_set`) and added
+differently-typed replacements used mainly by the new tests.
+**Rule:** (1) Diff `tests/` vs production paths — any rename/signature change
+in `.github/scripts/` or app modules is **not** tests-only. (2) REQUEST_CHANGES
+and require stable APIs or intentional migrations. (3) Coordinate siblings on
+the same automation scripts to avoid conflict cascades.
+**Detection cost:** Low — `gh api …/pulls/{n}/files` showing non-test paths.
+
+## Lesson 0fg: "Add tests" PRs that bypass secure process wrappers (2026-08-04)
+
+**Pattern:** Seatek #600 titled as a `run_checked` unit test replaced
+`return run_process(command, check=True)` with a direct `subprocess.run(...)`,
+dropping `filter_env_securely` / allowlisted env handling.
+**Rule:** (1) Treat any rewrite of `run_process` / `run_checked` / `command_env`
+as a **security change**, not a test. (2) CLOSE the production rewrite; salvage
+only a pure test of the existing wrapper if still missing. (3) Pair with Lesson
+0ff for mislabeled prod renames.
+**Detection cost:** Low — `gh pr diff` showing `subprocess.run` replacing
+`run_process` in automation helpers.
+
+## Lesson 0fh: CLOSE-SUPERSEDED when CWE fix already lands on main (2026-08-04)
+
+**Pattern:** series #357 (CWE-209) and rpce #188 (ModelPresetsManager validation)
+were still CONFLICTING/DIRTY while `main` already contained equivalent guards
+(`log.exception` + generic print; `ModelPresetsManager.shared.preset(named:)`).
+**Rule:** Before opening a salvage draft, grep/`gh api` `main` for the same
+guard. If present, **CLOSE-SUPERSEDED** with a pointer — do not re-author.
+**Detection cost:** Low — one-file security/validation PRs vs current `main`.
+
+## Lesson 0fe: Palette `.Jules` vs `.jules` case collision (2026-08-04)
+
+**Pattern:** ctrld-sync#1115 created `.Jules/palette.md` while main already
+has `.jules/palette.md`. On macOS (case-insensitive) this collides and can
+orphan the journal; #1111 correctly appended to `.jules/`.
+**Rule:** Prefer the PR that writes the existing lowercase `.jules/` path.
+Close siblings that introduce `.Jules/` as a new path.
+**Detection cost:** Low — compare journal paths in the files list.
+
+## Lesson 0fd: Gitleaks "comment fix" that swaps README/LICENSE (2026-08-04)
+
+**Pattern:** personal-config#1898 claimed a false-positive comment tweak but
+replaced README.md with upstream Gitleaks docs and LICENSE copyright with
+Zachary Rice; Gitleaks failed on a planted example secret in the injected
+README.
+**Rule:** (1) Never merge when Gitleaks fails. (2) Inspect file list for
+unexpected README/LICENSE rewrites on "comment-only" PRs. (3) CLOSE and require
+a focused re-open.
+**Detection cost:** Low — `changedFiles` + LICENSE/README in files list.
+
 ## Lesson 0fc: Bolt journal wipe is CLOSE not MERGE (2026-08-02)
 
 **Pattern:** A Bolt PR titled as a tiny `parse_inventory` / `defaultdict`
