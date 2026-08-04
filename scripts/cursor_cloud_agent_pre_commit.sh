@@ -2,7 +2,7 @@
 # Canonical copy of Cursor Cloud Agent pre-commit secret scanner.
 # Installed copy (environment-specific): ~/.cursor/agent-hooks/<workspace-hash>/pre-commit.cursor
 #
-# Fix 2026-03-21: secret *labels* in CLOUD_AGENT_INJECTED_SECRET_NAMES may contain
+# Patch 2026-03-21: secret *labels* in CLOUD_AGENT_INJECTED_SECRET_NAMES may contain
 # spaces (e.g. "GitHub SSH Key"). Bash ${!name} indirect expansion requires an
 # identifier; use printenv "$name" instead.
 #
