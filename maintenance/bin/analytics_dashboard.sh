@@ -481,7 +481,7 @@ EOF
         <section class="section" aria-labelledby="insights-heading" role="region">
             <h2 id="insights-heading"><span aria-hidden="true">📊</span> System Insights</h2>
             <div class="insights-box">
-                <pre>$(cat "$insights_file" 2>/dev/null || echo "Insights not available")</pre>
+                $(if [[ -s "$insights_file" ]]; then echo "<pre>$(cat "$insights_file")</pre>"; else echo '<div class="empty-state" style="color: #495057; display: flex; align-items: center; gap: 10px;"><span aria-hidden="true" style="font-size: 1.2em;">🔍</span> <span>No new insights available for this period.</span></div>'; fi)
             </div>
         </section>
         
