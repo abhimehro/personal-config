@@ -20,9 +20,9 @@ def run_gh(cmd_list):
             timeout=120,
             check=False,
         )
-    except subprocess.TimeoutExpired:
+    except (subprocess.TimeoutExpired, OSError) as e:
         print(
-            f"gh command timed out: {cmd_list[0] if cmd_list else cmd_list}",
+            f"gh command failed or timed out ({type(e).__name__}): {cmd_list[0] if cmd_list else cmd_list}",
             file=sys.stderr,
         )
         return None
