@@ -1975,3 +1975,47 @@ and close (same family as Lesson 0fa), not as defense-in-depth.
 
 **Detection cost:** Low — `rg is_safe_path validate_data.py` on `main` +
 `rg -c` on the PR tip.
+
+## 0fe — Prefer existing lowercase `.jules/` over `.Jules` case twins (2026-08-04)
+
+**Pattern:** Bot PRs introduce `.Jules/` journals that collide with tracked
+`.jules/` on case-insensitive filesystems and break CI case-collision gates.
+
+**Rule:** Prefer the existing lowercase `.jules/` path; close/reject
+case-colliding journal renames.
+
+**Detection cost:** Low — `Reject case-colliding paths` check + `git ls-files`.
+
+## 0ff — Mislabeled “add tests” PRs that rename production helpers (2026-08-04)
+
+**Pattern:** Seatek/Jules “🧪 testing” PRs refactor or rename helpers in
+`.github/scripts/repository_automation_tasks.py` while claiming test-only scope.
+One sibling (#596) removed a `MAX_FILE_SIZE` DoS guard under a test title.
+
+**Rule:** Diff production paths on every “add tests” PR. REQUEST_CHANGES if prod
+APIs change; ESCALATE if a security guard is weakened.
+
+**Detection cost:** Low — `gh pr diff --name-only` showing non-test scripts.
+
+## 0fg — Strip stray commit_message / scratch scripts before merge (2026-08-05)
+
+**Pattern:** Palette/QA/Code-Health PRs land green but add root artifacts
+(`commit_message.txt`, `test_mock_behavior.py`, `submission.sh`, `patch1.py`,
+`fix_duplication.py`) or clobber `tasks/todo.md`.
+
+**Rule:** Autofix by deleting the stray file when the functional delta is sound;
+otherwise REQUEST_CHANGES. Never squash-merge junk into `main`.
+
+**Detection cost:** Low — `--name-only` for non-domain paths / scratch names.
+
+## 0fh — Async alert “create_task” without retain/await is a drop risk (2026-08-05)
+
+**Pattern:** esp#1421 replaced blocking webhook dispatch with
+`loop.create_task(_run_async_alerts())` and discarded the task reference.
+Security alerts can vanish on loop shutdown with no logged failure.
+
+**Rule:** For alerting/security notification paths, never fire-and-forget.
+Retain the task, await it, or keep a sync/blocking fallback; log task
+exceptions via `add_done_callback`.
+
+**Detection cost:** Medium — search PR diffs for `create_task` in alert modules.

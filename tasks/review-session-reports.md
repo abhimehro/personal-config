@@ -31,6 +31,42 @@
 - Commands/comments to run next:
 - Cross-links to dated snapshots (`tasks/pr-review-YYYY-MM-DD.md`) if created:
 
+## Run — 2026-08-05
+
+### Scope
+
+- Repos: personal-config, ctrld-sync, email-security-pipeline, Seatek_Analysis,
+  Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated,
+  repoprompt-ce
+- Trigger/context: cron Phase 1 `0 13 * * *` review-and-merge; branch
+  `cursor-agent/automated-pr-workflow-e9cd`
+
+### Metrics
+
+- PRs inventoried: 56
+- PRs merged: 13
+- PRs closed: 3
+- PRs escalated: ~18
+- PRs request-changes: ~20
+- Auto-fixed: 3
+
+### Actions
+
+- Merged: ctrld#1119; hg#472/#470/#461; Seatek#603/#608; pc#1922/#1921/#1918/#1913;
+  esp#1427; series#363; rpce#185
+- Closed: Seatek#606 (dup #608); pc#1915 (dup #1918); series#361 (superseded #363)
+- Autofix: pc#1913 palette journal; esp#1427 drop commit_message.txt; series#363
+  drop test_mock_behavior.py
+- Escalated: pc#1907 CORS; Seatek Sentinel cluster (#573/#580/#585/#590/#605/#607)
+  + #596 DoS-guard drop; hg sanitize_filename cluster (#459/#466/#468/#473) +
+  #471 pandas major; series#364 PBKDF2; rpce#192/#193/#196; esp#1421 fire-and-forget
+- CodeScene triggers: esp#1423/#1409; series#364/#360
+
+### Follow-ups
+
+- Phase 2: consolidate hg #466; Seatek #605 supersession; rpce critical auth
+- Snapshot: `tasks/pr-review-2026-08-05.md`
+
 ## Run — 2026-07-31
 
 ### Scope
