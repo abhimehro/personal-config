@@ -496,3 +496,6 @@ Added `empty-state` class on empty directory listing `<li>` without removing ski
 ## 2026-08-04 - Native HTML Meter for Data Visualization
 **Learning:** Presenting system metrics (like CPU load or disk usage) as raw text in HTML reports misses an opportunity for accessible data visualization.
 **Action:** Use the native HTML5 `<meter>` element to provide a semantic, accessible, and visually appealing representation of scalar measurements within known ranges, ensuring appropriate `aria-label`, `min`, `max`, `low`, and `high` attributes are set.
+## 2026-08-04 - HTML Reports Missing Data Fallback UX
+**Learning:** Raw fallback text ("Insights not available") inside `<pre>` tags for missing report sections feels like a technical error to the user rather than an expected empty state.
+**Action:** When generating HTML reports or dashboards with potentially missing data, always conditionally render a dedicated `.empty-state` component with flexbox layout, muted colors, and a relevant icon to communicate the absence of data clearly and beautifully.
