@@ -871,3 +871,8 @@ is prioritized over micro-optimizations in speed.
 avoidable allocations in tight parse loops. **Action:** Use `.split("|", n)`
 when only the first n fields are needed, and `handle.read().splitlines()` for
 small in-memory config files.
+
+## 2024-05-18 - Replacing unconditional module imports with graceful fallbacks
+
+**Learning:** Unconditionally importing external modules (like `yaml`) at the module level in scripts that might be executed in environments where the dependency is missing (e.g., benchmark test environments) causes immediate execution failures (ModuleNotFoundError).
+**Action:** When a script depends on an external module that isn't strictly required for all its execution paths (or for the script to load), use a graceful try-except import block (e.g., `try: import yaml \except ImportError: yaml = None`) and handle the `None` state where the module is actually used. This prevents environment-related test failures and allows other parts of the script to be tested or benchmarked successfully.

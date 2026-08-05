@@ -12,7 +12,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import yaml
+try:
+    import yaml
+except ImportError:
+    yaml = None  # type: ignore
 
 # MCP GitHub compatibility flag
 _mcp_env = os.environ.get("USE_MCP_GITHUB")
@@ -63,8 +66,10 @@ def iso_day(value: dt.datetime | None = None) -> str:
 
 
 def load_config() -> dict[str, Any]:
+    if yaml is None:
+        return {}
     data = yaml.safe_load(CONFIG_PATH.read_text())
-    return data.get("automation", {})
+    return data.get("automation", {}) if data else {}
 
 
 def task_dir(task: str) -> Path:
