@@ -643,9 +643,9 @@ EOF
 	[[ $disk_usage -gt 90 ]] && disk_status="critical"
 
 	cat >>"$report_file" <<EOF
-            <tr><th scope="row">CPU Load</th><td>$cpu_load</td><td class="$cpu_status">$(echo $cpu_status | tr '[:lower:]' '[:upper:]')</td></tr>
+            <tr><th scope="row">CPU Load</th><td><meter aria-label="CPU Load" min="0" max="8" low="2" high="4" optimum="1" value="$cpu_load">$cpu_load</meter></td><td class="$cpu_status">$(echo $cpu_status | tr '[:lower:]' '[:upper:]')</td></tr>
             <tr><th scope="row">Memory Free Pages</th><td>$memory_usage</td><td class="good">GOOD</td></tr>
-            <tr><th scope="row">Disk Usage</th><td>${disk_usage}%</td><td class="$disk_status">$(echo "$disk_status" | tr '[:lower:]' '[:upper:]')</td></tr>
+            <tr><th scope="row">Disk Usage</th><td><meter aria-label="Disk Usage" min="0" max="100" low="70" high="90" optimum="50" value="${disk_usage}">${disk_usage}%</meter></td><td class="$disk_status">$(echo "$disk_status" | tr '[:lower:]' '[:upper:]')</td></tr>
         </table>
     </section>
     
