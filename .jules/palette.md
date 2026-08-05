@@ -492,3 +492,6 @@ Added `empty-state` class on empty directory listing `<li>` without removing ski
 ## 2026-08-02 - Improved empty states and a11y focus rings
 **Learning:** Shell-generated HTML reports often neglect a11y focus states for `.skip-link` and lack robust visual distinction for empty states (e.g. no recommendations).
 **Action:** Always verify keyboard accessibility (`:focus` with clear outline) and add icons/soft backgrounds for empty states to make them visibly distinct.
+## 2026-08-04 - HTML Reports Missing Data Fallback UX
+**Learning:** Raw fallback text ("Insights not available") inside `<pre>` tags for missing report sections feels like a technical error to the user rather than an expected empty state.
+**Action:** When generating HTML reports or dashboards with potentially missing data, always conditionally render a dedicated `.empty-state` component with flexbox layout, muted colors, and a relevant icon to communicate the absence of data clearly and beautifully.
