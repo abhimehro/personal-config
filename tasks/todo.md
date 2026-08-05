@@ -10,5 +10,6 @@
 - [x] Escalate security / trust-boundary PRs (comments)
 - [x] REQUEST_CHANGES / CodeScene triggers for CI-red
 - [x] Write `pr-review-2026-08-05.md`, append session report, update lessons
-- [ ] Commit + push docs on `cursor-agent/automated-pr-workflow-e9cd`
-- [ ] Open docs PR via automation tool
+- [x] Commit + push docs on `cursor-agent/automated-pr-workflow-e9cd`
+- [x] Open docs PR via automation tool (#1925)
+- [x] Notion daily report created
