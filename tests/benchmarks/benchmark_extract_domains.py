@@ -50,20 +50,8 @@ def run_benchmark(name, setups, context):
     print(f"Time saved: {old_time - new_time:.4f} seconds")
 
 
-def main():
-    num_rules = 500000
-    iterations = 50
-    print(f"Generating synthetic JSON data for benchmark ({num_rules} rules)...")
-    test_data = generate_test_data(num_rules)
-
-    # Save test data to file to benchmark the full end-to-end execution
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-        json.dump(test_data, f)
-        temp_filepath = f.name
-
-    try:
-        # Full end-to-end setups (including JSON parsing)
-        setup_e2e_old = f"""
+def _get_setup_blocks():
+    setup_e2e_old = """
 import json
 def extract(filepath):
     domains = []
@@ -79,7 +67,7 @@ def extract(filepath):
     return domains
 """
 
-        setup_e2e_new = f"""
+    setup_e2e_new = """
 import json
 def extract(filepath):
     try:
@@ -92,7 +80,7 @@ def extract(filepath):
     return []
 """
 
-        setup_e2e_allow_old = f"""
+    setup_e2e_allow_old = """
 import json
 def extract(filepath):
     domains = []
@@ -101,15 +89,14 @@ def extract(filepath):
             data = json.load(f)
             if 'rules' in data:
                 for rule in data['rules']:
-                    if 'PK' in rule and rule.get('action', {{}}).get('do') == 1:
+                    if 'PK' in rule and rule.get('action', {}).get('do') == 1:
                         domains.append(rule['PK'])
     except Exception as e:
         pass
     return domains
 """
 
-        # Using the optimized dictionary access rather than get().get()
-        setup_e2e_allow_new = f"""
+    setup_e2e_allow_new = """
 import json
 def extract(filepath):
     try:
@@ -125,6 +112,24 @@ def extract(filepath):
         pass
     return []
 """
+    return setup_e2e_old, setup_e2e_new, setup_e2e_allow_old, setup_e2e_allow_new
+
+
+def main():
+    num_rules = 500000
+    iterations = 50
+    print(f"Generating synthetic JSON data for benchmark ({num_rules} rules)...")
+    test_data = generate_test_data(num_rules)
+
+    # Save test data to file to benchmark the full end-to-end execution
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        json.dump(test_data, f)
+        temp_filepath = f.name
+
+    try:
+        setup_e2e_old, setup_e2e_new, setup_e2e_allow_old, setup_e2e_allow_new = (
+            _get_setup_blocks()
+        )
 
         print(f"\nBenchmarking end-to-end (including file read and JSON parsing)")
         print(f"Dataset size: {num_rules} rules. Iterations: {iterations}")
