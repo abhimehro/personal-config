@@ -1,5 +1,19 @@
 # Lessons Learned
 
+## Lesson 0fi: Risk log colors must match lowercase production risk_level (2026-08-06)
+
+**Pattern:** Palette PR esp#1423 colorized `Analysis complete` using
+`risk=HIGH` / `risk=MEDIUM`, and tests only used uppercase synthetics. Production
+`calculate_risk_level` / `alert_report` emit lowercase `high` / `medium` / `low`,
+and `main.py` logs `risk={threat_report.risk_level}` — so real high-risk lines
+stayed green.
+**Rule:** (1) When matching risk tokens in logs/UX, use case-insensitive checks
+or the exact production enum. (2) Unit tests must use the same casing as
+production emitters. (3) Adversarial review should cross-check string literals
+against call sites, not only the PR diff.
+**Detection cost:** Low — `rg 'risk_level|risk=' src/` vs the PR's match strings.
+
+
 ## Lesson 0fc: Bolt journal wipe is CLOSE not MERGE (2026-08-02)
 
 **Pattern:** A Bolt PR titled as a tiny `parse_inventory` / `defaultdict`

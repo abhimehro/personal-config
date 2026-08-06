@@ -407,3 +407,20 @@
   branch `cursor-agent/automated-pr-workflow-7358`.
 - Phase 2 trigger: yes (≥1 ESCALATE; Hydrograph path cluster; rpce CONFLICTING).
 - Open EOD approx: **19** (pc1 / Seatek2 / hg3 / rpce13).
+
+## 2026-08-06 Phase 1 (cron)
+
+- Preflight PASS 7/7; inventoried **~45–56**; **13** squash-merges; **2** closes;
+  **1** autofix (esp#1423); **~22** ESCALATE; **~10** REQUEST_CHANGES.
+- Merged: series#368; hg#476; pc#1928/#1909; ctrld#1121/#1122; Seatek#613/#596;
+  esp#1433/#1423; rpce#198/#199/#204.
+- Closed: rpce#200 (superseded #204); rpce#192 (journal wipe + mass deletes — 0fc).
+- Autofix: esp#1423 case-insensitive risk colors (Lesson **0fi**).
+- CodeScene: `/cs-agent skill:fix-code-health-degradations` on series#364.
+- Auth: `abhimehro` PAT — squash-merge + close + comment + MCP reviews OK.
+- Adversarial: opus-4.8 + gpt-5.5 parallel; consensus MERGE batch; gpt caught
+  risk casing; opus caught salvage hold + #192 wipe.
+- Docs: `tasks/pr-review-2026-08-06.md`, `pr-inventory.md`, `pr-triage.md`;
+  branch `cursor-agent/automated-pr-workflow-9fc4`.
+- Phase 2 trigger: yes (Sentinel clusters; CORS; SSRF; 0fh alerts; rpce CI red).
+- Open EOD approx: **42** (pc8 / cs0 / esp4 / Seatek12 / hg6 / sc3 / rpce9).

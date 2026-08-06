@@ -1,105 +1,52 @@
-# PR Triage — 2026-08-02
-# PR Triage — Phase 2 Salvage 2026-08-02
+# PR Triage — 2026-08-06 Phase 1
 
-Decision tree applied per `docs/automated-pr-salvage-agent.md` (S1–S6).
-Input: Phase 1 remainder + live CONFLICTING re-fetch. Autonomous merges: **0**.
+Decision tree per `docs/automated-pr-review-agent.md`. Mode: review-and-merge.
+Adversarial parallel review: `claude-opus-4-8-thinking-high` + `gpt-5.5-high`.
 
 ## Disposition summary
 
-| Disposition | Count | PRs |
-| ----------- | ----: | --- |
-| SALVAGE (draft) | 1 | rpce #171 ← #165/#158 |
-| CLOSE-SUPERSEDED | 4 | hg #445/#448/#450; rpce #158 |
-| ESCALATE (human) | 3 | pc #1841; seatek #580/#573 |
-| DEFER | 6 | rpce #144/#147/#148/#152/#157/#161 |
-| Phase 1 hold (UNSTABLE) | 6 | rpce #163/#164/#168/#169/#170 + note on #165 |
-| Empty queues | 3 repos | ctrld / esp / series |
+| Disposition | Count | Notes |
+| ----------- | ----: | ----- |
+| MERGED (squash) | 13 | deps, pins, Bolt/Palette, tests-only, autofix |
+| CLOSED | 2 | rpce#200 superseded; rpce#192 journal wipe + mass deletes |
+| AUTOFIX | 1 | esp#1423 risk casing (Lesson **0fi**) |
+| REQUEST_CHANGES | ~10 | yaml silent fail; 0ff test/prod renames; 0fg artifacts; failing CI |
+| ESCALATE | ~22 | Sentinel clusters; CORS; SSRF allowlist; fire-and-forget alerts; PBKDF2 |
+| DEFER / HOLD | remainder | docs PRs; salvage; CONFLICTING; Code Health refactors |
 
-## Deep-dive notes
+## Merge batch (ordered)
 
-### Hydrograph #445/#448/#450
+1. series#368 Dependabot `pnpm/action-setup` SHA pin (verified upstream)
+2. hg#476 Dependabot `pandas-stubs` (CI stubs only)
+3. pc#1928 / esp#1433 `github/gh-aw` action pin v0.85.4 (verified)
+4. ctrld#1121 Palette grammar; #1122 Bolt try/except (journal append-only)
+5. Seatek#613 Bolt `.subset2` / `mean.default`
+6. rpce#198 a11y; #199 `keys.contains`; #204 DateFormatter static
+7. pc#1909 tests-only `write_lists`; Seatek#596 tests-only `_hotspot_line_count`
+8. esp#1423 after autofix cycle 1 (case-insensitive risk match) + green CI
 
-`main` already imports `is_safe_path` and guards `--output` in `validate_data.py`.
-#448 contained ×7 duplicated `is_safe_path` blocks (corruption). #450 only
-extracted a `ValidationReporter` refactor. No residual security gap → close.
+## Security / escalate clusters (Phase 2 input)
 
-### rpce #158 vs #165 → #171
+- **Hydrograph sanitize:** #459/#466/#468/#473/#475/#478
+- **Seatek subprocess Sentinels:** #573/#580/#585/#590/#605/#607/#610/#612
+- **esp security:** #1431 SSRF host allowlist; #1432 email/subprocess validators; #1421 create_task alerts (0fh)
+- **pc#1907** CORS allowlist + stray `handoff.md`
+- **series#365/#364** auth timing / PBKDF2 (CS red on #364 — `/cs-agent` posted)
+- **rpce TOCTOU Sentinels** #196/#201 (CI red; escalate even if greened)
 
-#165 MERGEABLE but UNSTABLE: real TOCTOU fix in `MCPConfigExportService` /
-`MCPTerminalRecord` mixed with `ToolOutputFormatter` `.text(text:)` churn.
-Salvaged **security files only** onto draft [#171](https://github.com/abhimehro/repoprompt-ce/pull/171).
-Closed CONFLICTING twin #158.
+## Duplicate / close
 
-### rpce DIRTY drift pile
+- rpce#200 closed after #204 (same DateFormatter change; harness churn conflict)
+- rpce#192 closed: Keychain claim + `.jules/bolt.md` wipe + mass test deletions (0fc)
 
-100–400 files vs `main` each; titled intent buried in skill/CI/vendor noise.
-DEFER with re-roll guidance; prefer MERGEABLE a11y/Bolt twins after CI green.
+## Autofix detail
 
-## Security gates
+**esp#1423:** Production `risk_level` is lowercase (`high`/`medium`/`low`). PR
+matched `risk=HIGH`. Autofix uses case-insensitive substring match; tests use
+production lowercase + one uppercase regression case. Local 19/19
+`test_logging_utils.py` pass; CI green; squash-merged.
 
-- No auth/payment/schema changes implemented.
-- Security salvage #171 remains **draft** for human merge (S1).
-- CLEAN Sentinels left open for human (never auto-merged).
-# PR Triage — Phase 2 Salvage 2026-08-01
+## Phase 2 trigger
 
-## Duplicate / overlap groups
-
-1. **esp spam_analyzer fast-path:** #1401 (salvage of #1399 — auth + headers) vs #1405 (headers-only frozenset). Prefer **#1401**; close #1405 as overlapping after #1401 lands.
-2. **pc parse_inventory:** #1875 (split bound + dotenv bulk-read) vs #1883 (defaultdict + **destroys** `.jules/bolt.md` 848→11 lines). Merge #1875; auto-fix #1883 by restoring journal or REQUEST_CHANGES if fix fails.
-3. **pc defaultdict markers:** #1867 (repository_automation_tasks) — distinct from #1883; fix inline import then merge.
-4. **Hydrograph path-hardening cluster:** #445/#448/#450 — all Sentinel, all CONFLICTING → Phase 2 consolidation (do not merge).
-5. **rpce a11y / TOCTOU / perf:** #144/#161/#163/#169 a11y; #158/#165 TOCTOU; #157/#164/#170 DateFormatter — mostly CONFLICTING or red CI → Phase 2 / REQUEST_CHANGES.
-6. **Demo stack:** #1871 → #1872 → #1873 (bases chained). Merge via `merge-async` on **#1873** (Lesson 0ez).
-| Remainder item              | Live state         | Phase 2 action                                                      |
-| --------------------------- | ------------------ | ------------------------------------------------------------------- |
-| pc #1822 CORS               | DIRTY              | ESCALATE comment                                                    |
-| pc #1841 timeout/auth       | CLEAN              | leave for human / Phase 1                                           |
-| pc #1867 defaultdict        | MERGEABLE/UNSTABLE | leave (CI red)                                                      |
-| pc #1857 microopts          | DIRTY              | SALVAGE → #1875; close #1857                                        |
-| pc #1859 empty-state        | DIRTY              | SALVAGE a11y-safe → #1876; close #1859                              |
-| pc #1825 asyncio            | DIRTY              | CLOSE no-op (junk files only)                                       |
-| ctrld #1086 format          | CLEAN + prior RC   | leave                                                               |
-| ctrld #1081 housekeeping    | DIRTY              | SALVAGE → #1105; close #1081                                        |
-| esp #1399 Bolt spam         | DIRTY + CodeScene  | `/cs-agent` + spam-only SALVAGE → #1401; close #1399                |
-| seatek #571 list-only       | CLEAN              | leave (T1 human)                                                    |
-| seatek #573 file-read DoS   | CLEAN              | leave (security human)                                              |
-| seatek #568 path hijack     | DIRTY              | ESCALATE                                                            |
-| seatek #555 multi-root      | DIRTY              | ESCALATE                                                            |
-| seatek #560 parallelize     | DIRTY              | REQUEST_CHANGES                                                     |
-| seatek #554 warn tests      | DIRTY              | SALVAGE → #576; close #554                                          |
-| hg #441/#443/#445/#448/#450 | CLEAN              | leave (security/deps human); #443 auto-resolved vs Phase 1 snapshot |
-| series #336                 | gone               | queue drained                                                       |
-| rpce #158 TOCTOU            | DIRTY drift        | ESCALATE                                                            |
-| rpce #163/#164              | UNSTABLE           | leave Phase 1                                                       |
-| rpce #144/#157/#161…        | DIRTY drift        | DEFER (focused re-roll needed)                                      |
-
-## Disposition plan
-
-| Disposition | PRs |
-| ----------- | --- |
-| MERGE (zero-diff) | pc#1882, esp#1404, Seatek#578, series#340 |
-| MERGE | pc#1875, #1876; ctrld#1107, #1109; Seatek#581, #576; esp#1401 |
-| MERGE (stack) | pc#1871–#1873 via merge-async top |
-| MERGE-AFTER-FIX | pc#1867 (hoist import); pc#1883 (restore bolt.md) |
-| CLOSE-DUPLICATE | esp#1405 after #1401 |
-| ESCALATE | pc#1841; Seatek#580, #573; hg#445/#448/#450; rpce#165, #158 |
-| REQUEST_CHANGES | rpce#170/#169/#168/#164/#163 (failing required Build/Secret Scan) |
-| DEFER Phase 2 | rpce CONFLICTING remainder; Hydrograph Sentinels |
-1. **ESP #1399 module collapse** — deletes `alert_*` / `media_*` modules into
-   monoliths.
-2. **PC #1859 a11y regression** — removes skip-link / landmarks while adding
-   `empty-state`.
-3. **PC #1825** — `patch3.diff` + `scratch_triage.py` only.
-4. **RPCE DIRTY pile** — 10k–37k line branch drift; extract-on-demand only.
-
-## Security gate notes
-
-- All Sentinel PRs stay ESCALATE even if CI green (trust-boundary / path / TOCTOU / DoS).
-- No secrets observed in merge-candidate diffs reviewed.
-- `github-advanced-security` FAILURE noise ignored when overall rollup SUCCESS and required checks pass.
-1. Seatek #571 (list-only shell) before #576 (warn rename) — same file.
-2. pc #1875, #1876
-3. ctrld #1105
-4. esp #1401
-5. Security CLEAN cluster (hg #445/#448/#450; seatek #573; pc #1841) — human
-   only
+**Yes** — ≥1 ESCALATE; Hydrograph sanitize cluster; Seatek Sentinel cluster;
+rpce CONFLICTING salvage/security tail; series CodeScene red.
