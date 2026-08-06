@@ -249,7 +249,8 @@ UPDATE_MAS_APPS=1          # Auto-update Mac App Store apps
 
 8. **ProtonDrive Backup** (`com.abhimehrotra.maintenance.protondrivebackup`)
    - Time: 3:15 AM daily
-   - Script: `protondrive_backup.sh`
+   - Script: `bin/archive/protondrive_backup.sh` (archived path; install must
+     place or symlink it where the plist expects)
    - Purpose: One-way home backup to ProtonDrive
 
 ## 📊 Monitoring & Logs

@@ -11,7 +11,7 @@
 | **9:00 AM**  | 🧹 System Cleanup       | Daily        | `system_cleanup.sh`              | Cache cleanup, temp files, logs                   |
 | **9:00 AM**  | 📅 Weekly Maintenance   | Monday       | `run_all_maintenance.sh weekly`  | quick cleanup, node, Google Drive, optimizers     |
 | **6:00 AM**  | 📆 Monthly Maintenance  | 1st of month | `run_all_maintenance.sh monthly` | system/editor cleanup, deep cleaner               |
-| **3:15 AM**  | ☁️ ProtonDrive Backup   | Daily        | `protondrive_backup.sh`          | One-way home backup to ProtonDrive                |
+| **3:15 AM**  | ☁️ ProtonDrive Backup   | Daily        | `bin/archive/protondrive_backup.sh` | One-way home backup to ProtonDrive             |
 | **10:00 AM** | 🍺 Homebrew Maintenance | Daily        | `brew_maintenance.sh`            | Package updates, cask maintenance                 |
 
 ## 🔗 Launch Agent Mapping
