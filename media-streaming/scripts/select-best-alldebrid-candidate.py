@@ -102,6 +102,14 @@ class Candidate:
     reasons: list[str]
 
 
+@dataclass
+class SelectionResult:
+    winner: Candidate | None
+    skipped_processed: int
+    skipped_ignored: int
+    duplicate_count: int
+
+
 # ⚡ Bolt Optimization: Pre-compile regular expressions to avoid repeated compilation overhead in string operations
 _CLEAN_QUOTES_RE = re.compile(r"&#0*39;")
 _CLEAN_BRACKETS_RE = re.compile(r"\[[^\]]*\]")
@@ -226,6 +234,47 @@ def read_processed_identities(selected_path: Path) -> set[str]:
     return identities
 
 
+def build_candidates(files: list[str], ignored: set[str], processed: set[str]) -> tuple[list[Candidate], int, int]:
+    candidates: list[Candidate] = []
+    skipped_processed = 0
+    skipped_ignored = 0
+
+    for filename in files:
+        identity = identity_for(filename)
+        if filename in ignored or identity in ignored:
+            skipped_ignored += 1
+            continue
+        if identity in processed:
+            skipped_processed += 1
+            continue
+        score, reasons = score_candidate(filename)
+        candidates.append(Candidate(filename, identity, score, reasons))
+
+    return candidates, skipped_processed, skipped_ignored
+
+def select_candidate(
+    files: list[str], ignored: set[str], processed: set[str]
+) -> SelectionResult:
+    candidates, skipped_processed, skipped_ignored = build_candidates(files, ignored, processed)
+
+    if not candidates:
+        return SelectionResult(None, skipped_processed, skipped_ignored, 0)
+
+    # ⚡ Bolt Optimization: Use defaultdict(list) instead of dict.setdefault(key, []).append(val)
+    # Measured ~50% execution time reduction for this operation by avoiding conditional key checks and empty list creation.
+    grouped: dict[str, list[Candidate]] = defaultdict(list)
+    for candidate in candidates:
+        grouped[candidate.identity].append(candidate)
+
+    winners = [
+        max(group, key=lambda c: (c.score, c.filename)) for group in grouped.values()
+    ]
+    winner = max(winners, key=lambda c: (c.score, c.identity, c.filename))
+    duplicate_count = max(0, len(grouped[winner.identity]) - 1)
+
+    return SelectionResult(winner, skipped_processed, skipped_ignored, duplicate_count)
+
+
 def main() -> int:
     approval_dir = Path(
         os.environ.get(
@@ -244,39 +293,20 @@ def main() -> int:
     ignored = read_lines(ignore_path)
     processed = read_processed_identities(selected_path)
 
-    candidates: list[Candidate] = []
-    skipped_processed = 0
-    skipped_ignored = 0
+    result = select_candidate(files, ignored, processed)
 
-    for filename in files:
-        identity = identity_for(filename)
-        if filename in ignored or identity in ignored:
-            skipped_ignored += 1
-            continue
-        if identity in processed:
-            skipped_processed += 1
-            continue
-        score, reasons = score_candidate(filename)
-        candidates.append(Candidate(filename, identity, score, reasons))
-
-    if not candidates:
+    if not result.winner:
         print("Candidate selection: no eligible candidates", file=sys.stderr)
-        print(f"skipped already selected: {skipped_processed}", file=sys.stderr)
-        print(f"skipped ignored: {skipped_ignored}", file=sys.stderr)
+        print(f"skipped already selected: {result.skipped_processed}", file=sys.stderr)
+        print(f"skipped ignored: {result.skipped_ignored}", file=sys.stderr)
         pending_path.unlink(missing_ok=True)
         return 0
 
-    # ⚡ Bolt Optimization: Use defaultdict(list) instead of dict.setdefault(key, []).append(val)
-    # Measured ~50% execution time reduction for this operation by avoiding conditional key checks and empty list creation.
-    grouped: dict[str, list[Candidate]] = defaultdict(list)
-    for candidate in candidates:
-        grouped[candidate.identity].append(candidate)
+    winner = result.winner
+    duplicate_count = result.duplicate_count
+    skipped_processed = result.skipped_processed
+    skipped_ignored = result.skipped_ignored
 
-    winners = [
-        max(group, key=lambda c: (c.score, c.filename)) for group in grouped.values()
-    ]
-    winner = max(winners, key=lambda c: (c.score, c.identity, c.filename))
-    duplicate_count = max(0, len(grouped[winner.identity]) - 1)
     reason = " + ".join(dict.fromkeys(winner.reasons)) or "baseline"
     selected_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 

@@ -314,11 +314,12 @@ class TestHTTPResponseSplitting(unittest.TestCase):
             "Query string bypass attempt should be blocked",
         )
 
-    def test_no_auth_allows_all_origins(self):
-        """Test that when auth is disabled, all origins are allowed (legacy behavior)."""
+    def test_no_auth_restricts_origins(self):
+        """Test that when auth is disabled, origins are strictly verified against ALD_ALLOWED_ORIGINS."""
         # Ensure auth is not set
         os.environ.pop("ALD_AUTH_USER", None)
         os.environ.pop("ALD_AUTH_PASS", None)
+        os.environ["ALD_ALLOWED_ORIGINS"] = "http://allowed-origin.com"
 
         # Set module-level auth variables to None
         alldebrid_server.AUTH_USER = None
@@ -344,10 +345,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
         cors_headers = [
             h for h in sent_headers if h[0] == "Access-Control-Allow-Origin"
         ]
-        self.assertEqual(len(cors_headers), 1)
-        self.assertEqual(
-            cors_headers[0][1], "*", "Should allow all origins when no auth"
-        )
+        self.assertEqual(len(cors_headers), 0, "Should reject unallowed origin even when no auth")
 
 
 if __name__ == "__main__":
