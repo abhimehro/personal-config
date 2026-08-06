@@ -655,6 +655,43 @@ class TestSectionToggles(unittest.TestCase):
 # ============================================================
 
 
+class TestProcessPodcastFeed(unittest.TestCase):
+    def test_process_podcast_feed_empty(self):
+        from unittest.mock import Mock
+
+        llm_mock = Mock()
+        session_mock = Mock()
+        entries = []
+
+        result = mb._process_podcast_feed(entries, llm_mock, session_mock, 3)
+        assert result.tags == []
+        assert "America Adapts" in result.html
+
+    def test_process_podcast_feed_success(self):
+        from unittest.mock import Mock
+
+        llm_mock = Mock()
+        llm_mock.summarize_podcast.return_value = (
+            "AI summary for testing coastal systems."
+        )
+        session_mock = Mock()
+
+        entries = [
+            {
+                "title": "Episode 1",
+                "link": "http://example.com/1",
+                "published": "Mon, 01 Jan 2026",
+                "summary": "Original summary",
+            }
+        ]
+
+        result = mb._process_podcast_feed(entries, llm_mock, session_mock, 3)
+
+        assert "AI summary for testing coastal systems" in result.html
+        assert "Episode 1" in result.html
+        assert "coastal-science" in result.tags
+
+
 class TestFetchWeather(unittest.TestCase):
     def setUp(self):
         from unittest.mock import Mock
