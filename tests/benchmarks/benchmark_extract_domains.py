@@ -1,4 +1,3 @@
-import contextlib
 import json
 import os
 import tempfile
@@ -51,8 +50,9 @@ def run_benchmark(name, setups, context):
     print(f"Time saved: {old_time - new_time:.4f} seconds")
 
 
-@contextlib.contextmanager
-def setup_benchmark_data(num_rules):
+def main():
+    num_rules = 500000
+    iterations = 50
     print(f"Generating synthetic JSON data for benchmark ({num_rules} rules)...")
     test_data = generate_test_data(num_rules)
 
@@ -62,16 +62,6 @@ def setup_benchmark_data(num_rules):
         temp_filepath = f.name
 
     try:
-        yield temp_filepath
-    finally:
-        os.unlink(temp_filepath)
-
-
-def main():
-    num_rules = 500000
-    iterations = 50
-
-    with setup_benchmark_data(num_rules) as temp_filepath:
         # Full end-to-end setups (including JSON parsing)
         setup_e2e_old = f"""
 import json
@@ -152,6 +142,9 @@ def extract(filepath):
             (setup_e2e_allow_old, setup_e2e_allow_new),
             context,
         )
+
+    finally:
+        os.unlink(temp_filepath)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,6 @@ import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from collections import defaultdict
 
 from gh_token_env import load_gh_token_env
 from pr_reference import parse_pr_reference, parse_repo_name
@@ -80,6 +79,11 @@ def _extract_pr_row_fields(parts):
     )
 
 
+def _ensure_repo_bucket(repo_name, repos):
+    if repo_name not in repos:
+        repos[repo_name] = []
+
+
 def _parse_row_record(line, current_repo, line_number):
     parts = line.split("|", 10)
     if len(parts) <= 9:
@@ -106,8 +110,7 @@ def _parse_row_record(line, current_repo, line_number):
 def _process_inventory_line(line, current_repo, repos, line_number):
     repo_name = _parse_repo_name(line)
     if repo_name:
-        # ⚡ Bolt Optimization: Using defaultdict allows us to initialize empty buckets simply by accessing the key
-        _ = repos[repo_name]
+        _ensure_repo_bucket(repo_name, repos)
         return repo_name
 
     if _should_skip_table_row(line):
@@ -116,14 +119,14 @@ def _process_inventory_line(line, current_repo, repos, line_number):
     row_record = _parse_row_record(line, current_repo, line_number)
     if row_record:
         effective_repo, payload = row_record
-        # ⚡ Bolt Optimization: defaultdict(list) eliminates repetitive key-check overhead
+        _ensure_repo_bucket(effective_repo, repos)
         repos[effective_repo].append(payload)
 
     return current_repo
 
 
 def parse_inventory_lines(lines, *, source="tasks/pr-inventory.md"):
-    repos = defaultdict(list)
+    repos = {}
     current_repo = None
     for line_number, line in enumerate(lines, start=1):
         current_repo = _process_inventory_line(line, current_repo, repos, line_number)

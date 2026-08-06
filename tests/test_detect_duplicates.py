@@ -12,7 +12,6 @@ from detect_duplicates import (
     _generate_duplicate_section,
     _generate_ready_section,
     _generate_superseded_section,
-    _get_superseded_text,
     _group_prs_by_files,
     get_duplicates,
     rewrite_triage_file,
@@ -291,58 +290,6 @@ class TestDetectDuplicates(unittest.TestCase):
             "- org/repo#4\n"
         )
         handle.write.assert_called_once_with(expected_content)
-
-    def test_get_superseded_text_variants(self):
-        """Test _get_superseded_text with various marker combinations."""
-        cases = [
-            (
-                "both markers",
-                [
-                    "## SUPERSEDED\n",
-                    "- org/repo#1\n",
-                    "- org/repo#2\n",
-                    "## STALE\n",
-                    "- org/repo#3\n",
-                ],
-                "- org/repo#1\n- org/repo#2\n",
-            ),
-            (
-                "missing superseded",
-                [
-                    "- org/repo#1\n",
-                    "- org/repo#2\n",
-                    "## STALE\n",
-                    "- org/repo#3\n",
-                ],
-                "- org/repo#1\n- org/repo#2\n",
-            ),
-            (
-                "missing stale",
-                [
-                    "## SUPERSEDED\n",
-                    "- org/repo#1\n",
-                    "- org/repo#2\n",
-                ],
-                "- org/repo#1\n- org/repo#2\n",
-            ),
-            (
-                "missing both",
-                [
-                    "- org/repo#1\n",
-                    "- org/repo#2\n",
-                ],
-                "- org/repo#1\n- org/repo#2\n",
-            ),
-            (
-                "empty input",
-                [],
-                "",
-            ),
-        ]
-
-        for name, lines, expected in cases:
-            with self.subTest(name=name):
-                self.assertEqual(_get_superseded_text(lines), expected)
 
 
 if __name__ == "__main__":

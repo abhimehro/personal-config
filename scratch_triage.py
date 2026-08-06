@@ -59,48 +59,53 @@ def _process_pr_group(matches, repo, rationale, groups):
         keep["status_action"] = "KEEP"
 
 
-GROUPING_RULES = [
-    # personal-config
-    (
-        "personal-config",
-        ["eval", "cwe-78"],
-        "Same CWE-78 eval injection theme; keep newest",
-    ),
-    ("personal-config", ["qa & agentic review"], "Duplicate QA reviews; keep newest"),
-    (
-        "personal-config",
-        ["markdown table"],
-        "Bolt perf optimizations for markdown tables; keep newest",
-    ),
-    ("personal-config", ["palette", "prompt"], "Palette UX prompts; keep newest"),
-    # email-security-pipeline
-    ("email-security-pipeline", ["empty state"], "Palette empty states; keep newest"),
-    (
-        "email-security-pipeline",
-        ["video frame"],
-        "Bolt video frame performance; keep newest",
-    ),
-    # series_correction
-    (
-        "series_correction_project_updated",
-        ["itertuples"],
-        "Bolt dataframe iteration perf; keep newest",
-    ),
-    (
-        "series_correction_project_updated",
-        ["iteration", "performance"],
-        "Iteration optimizations; handled by above/keep newest",
-    ),
-]
-
-
 def group_prs(all_prs, triage_md):
     # manual grouping logic based on patterns
     groups = []
 
-    for repo, title_keywords, rationale in GROUPING_RULES:
+    def find_and_group(repo, title_keywords, rationale):
         matches = _find_matching_prs(all_prs, repo, title_keywords)
         _process_pr_group(matches, repo, rationale, groups)
+
+    # personal-config
+    find_and_group(
+        "personal-config",
+        ["eval", "cwe-78"],
+        "Same CWE-78 eval injection theme; keep newest",
+    )
+    find_and_group(
+        "personal-config", ["qa & agentic review"], "Duplicate QA reviews; keep newest"
+    )
+    find_and_group(
+        "personal-config",
+        ["markdown table"],
+        "Bolt perf optimizations for markdown tables; keep newest",
+    )
+    find_and_group(
+        "personal-config", ["palette", "prompt"], "Palette UX prompts; keep newest"
+    )
+
+    # email-security-pipeline
+    find_and_group(
+        "email-security-pipeline", ["empty state"], "Palette empty states; keep newest"
+    )
+    find_and_group(
+        "email-security-pipeline",
+        ["video frame"],
+        "Bolt video frame performance; keep newest",
+    )
+
+    # series_correction
+    find_and_group(
+        "series_correction_project_updated",
+        ["itertuples"],
+        "Bolt dataframe iteration perf; keep newest",
+    )
+    find_and_group(
+        "series_correction_project_updated",
+        ["iteration", "performance"],
+        "Iteration optimizations; handled by above/keep newest",
+    )
 
     for g in groups:
         dups_str = ", ".join([f"**#{d['number']}**" for d in g["dups"]])
