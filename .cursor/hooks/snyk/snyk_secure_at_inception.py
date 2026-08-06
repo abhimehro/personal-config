@@ -20,8 +20,10 @@ INSTALLATION:
   3. Configure hooks.json (see hooks.json in this directory)
 """
 
+import bisect
 import json
 import os
+import re
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
@@ -190,6 +192,8 @@ def compute_modified_ranges(
     ranges: List[Dict[str, int]] = []
     search_offset = 0
 
+    newline_offsets = [m.start() for m in re.finditer(r"\n", file_content)]
+
     for edit in edits:
         new_str = edit.get("new_string", "")
         if not new_str:
@@ -200,7 +204,7 @@ def compute_modified_ranges(
             idx = file_content.find(new_str)
 
         if idx >= 0:
-            start_line = file_content[:idx].count("\n") + 1
+            start_line = bisect.bisect_left(newline_offsets, idx) + 1
             end_line = start_line + new_str.count("\n")
             ranges.append({"start": start_line, "end": end_line})
             search_offset = idx + len(new_str)

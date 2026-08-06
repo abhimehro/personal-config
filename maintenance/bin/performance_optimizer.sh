@@ -589,15 +589,15 @@ generate_performance_report() {
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .skip-link { position: absolute; top: -40px; left: 0; background: #000; color: white; padding: 8px; z-index: 100; text-decoration: none; transition: top 0.2s; }
-        .skip-link:focus { top: 0; }
+        .skip-link:focus { top: 0; outline: 3px solid #007bff; outline-offset: 2px; }
         .header { background-color: #f0f0f0; padding: 10px; border-radius: 5px; }
         .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
         dl.metric-list { margin: 0; padding: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 8px; }
         .metric { font-weight: bold; }
         dd { margin: 0; }
-        .good { color: #057A55; }
-        .warning { color: #B45309; }
-        .critical { color: #DC2626; }
+        .good { color: #1E7E34; } /* WCAG AA accessible */
+        .warning { color: #B45309; } /* WCAG AA accessible */
+        .critical { color: #DC2626; } /* WCAG AA accessible */
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         th { background-color: #f0f0f0; }
@@ -643,9 +643,9 @@ EOF
 	[[ $disk_usage -gt 90 ]] && disk_status="critical"
 
 	cat >>"$report_file" <<EOF
-            <tr><th scope="row">CPU Load</th><td>$cpu_load</td><td class="$cpu_status">$(echo $cpu_status | tr '[:lower:]' '[:upper:]')</td></tr>
+            <tr><th scope="row">CPU Load</th><td><meter aria-label="CPU Load" min="0" max="8" low="2" high="4" optimum="1" value="$cpu_load">$cpu_load</meter></td><td class="$cpu_status">$(echo $cpu_status | tr '[:lower:]' '[:upper:]')</td></tr>
             <tr><th scope="row">Memory Free Pages</th><td>$memory_usage</td><td class="good">GOOD</td></tr>
-            <tr><th scope="row">Disk Usage</th><td>${disk_usage}%</td><td class="$disk_status">$(echo "$disk_status" | tr '[:lower:]' '[:upper:]')</td></tr>
+            <tr><th scope="row">Disk Usage</th><td><meter aria-label="Disk Usage" min="0" max="100" low="70" high="90" optimum="50" value="${disk_usage}">${disk_usage}%</meter></td><td class="$disk_status">$(echo "$disk_status" | tr '[:lower:]' '[:upper:]')</td></tr>
         </table>
     </section>
     
@@ -670,7 +670,7 @@ EOF
 	fi
 
 	if [[ $has_recs == false ]]; then
-		echo '            <li class="empty-state" style="color: #666; font-style: italic;">System is running smoothly. No specific recommendations at this time.</li>' >>"$report_file"
+		echo '            <li class="empty-state" style="color: #155724; background-color: #d4edda; border-color: #c3e6cb; padding: 15px; border-radius: 4px; display: flex; align-items: center; gap: 10px;"><span aria-hidden="true" style="font-size: 1.2em;">✅</span> <span>System is running smoothly. No specific recommendations at this time.</span></li>' >>"$report_file"
 	fi
 
 	cat >>"$report_file" <<EOF

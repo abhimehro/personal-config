@@ -1268,6 +1268,58 @@ def fetch_news_sections(feeds: dict[str, str], cache: FileCache) -> str:
     return "".join(s for s in sections if s)
 
 
+def _process_podcast_feed(
+    entries: list[dict],
+    llm: PerplexityClient,
+    session: requests.Session,
+    limit: int,
+) -> SectionResult:
+    """Extracts data and formats it from parsed podcast feed entries."""
+    detected_tags: set[str] = set()
+    items: list[str] = []
+
+    def process_entry(entry: dict) -> dict[str, str]:
+        title_ = sanitize_text(entry.get("title", "No Title"))
+        link_ = entry.get("link", "#")
+        pub_date_ = sanitize_text(entry.get("published", ""))
+        summary_raw = entry.get("summary", entry.get("description", ""))
+        summary_ = llm.summarize_podcast(
+            strip_html_tags(html.unescape(summary_raw)), session=session
+        )
+        return {
+            "title": title_,
+            "link": link_,
+            "pub_date": pub_date_,
+            "llm_summary": summary_,
+        }
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(limit, 5)) as executor:
+        processed_entries = list(executor.map(process_entry, entries[:limit]))
+
+    for entry_data in processed_entries:
+        llm_summary = entry_data["llm_summary"]
+        for tag in derive_dynamic_tags(llm_summary):
+            detected_tags.add(tag)
+
+        summary_block = (
+            f'<br><span style="color: #444; font-size: 0.9em;"><em>{sanitize_text(llm_summary)}</em></span>'
+            if llm_summary
+            else ""
+        )
+
+        items.append(
+            f'<li style="margin-bottom: 12px;">'
+            f'<a href="{entry_data["link"]}" style="text-decoration: none; font-weight: bold; color: #2c3e50;">{entry_data["title"]}</a><br>'
+            f'<span style="color: #666; font-size: 0.8em;">Published: {entry_data["pub_date"]}</span>{summary_block}'
+            f"</li>"
+        )
+
+    return SectionResult(
+        html=html_section("🎧 Latest from America Adapts", html_ul(items)),
+        tags=sorted(detected_tags),
+    )
+
+
 def fetch_podcast_section(llm: PerplexityClient, *, limit: int = 3) -> SectionResult:
     session = build_retry_session(total=2, backoff_factor=0.5)
 
@@ -1285,51 +1337,8 @@ def fetch_podcast_section(llm: PerplexityClient, *, limit: int = 3) -> SectionRe
         if not feed.entries:
             return SectionResult("", [])
 
-        detected_tags: set[str] = set()
-        items: list[str] = []
+        return _process_podcast_feed(feed.entries, llm, session, limit)
 
-        def process_entry(entry: dict) -> dict[str, str]:
-            title_ = sanitize_text(entry.get("title", "No Title"))
-            link_ = entry.get("link", "#")
-            pub_date_ = sanitize_text(entry.get("published", ""))
-            summary_raw = entry.get("summary", entry.get("description", ""))
-            summary_ = llm.summarize_podcast(
-                strip_html_tags(html.unescape(summary_raw)), session=session
-            )
-            return {
-                "title": title_,
-                "link": link_,
-                "pub_date": pub_date_,
-                "llm_summary": summary_,
-            }
-
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=min(limit, 5)
-        ) as executor:
-            processed_entries = list(executor.map(process_entry, feed.entries[:limit]))
-
-        for entry_data in processed_entries:
-            llm_summary = entry_data["llm_summary"]
-            for tag in derive_dynamic_tags(llm_summary):
-                detected_tags.add(tag)
-
-            summary_block = (
-                f'<br><span style="color: #444; font-size: 0.9em;"><em>{sanitize_text(llm_summary)}</em></span>'
-                if llm_summary
-                else ""
-            )
-
-            items.append(
-                f'<li style="margin-bottom: 12px;">'
-                f'<a href="{entry_data["link"]}" style="text-decoration: none; font-weight: bold; color: #2c3e50;">{entry_data["title"]}</a><br>'
-                f'<span style="color: #666; font-size: 0.8em;">Published: {entry_data["pub_date"]}</span>{summary_block}'
-                f"</li>"
-            )
-
-        return SectionResult(
-            html=html_section("🎧 Latest from America Adapts", html_ul(items)),
-            tags=sorted(detected_tags),
-        )
     except Exception as exc:
         logger.error("Podcast error: %s", exc)
         return SectionResult(
