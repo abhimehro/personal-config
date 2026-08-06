@@ -21,43 +21,6 @@ EXPECTED_AUTH_TOKEN = None
 # Rate limiting for auth failures
 FAILED_AUTH_ATTEMPTS = {}
 
-DIRECTORY_LISTING_HEADER_TEMPLATE = """
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Media Library - {safe_path}</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 5%; }}
-                .skip-link {{ position: absolute; top: 0; left: 0; transform: translateY(-150%); background: #000; color: #fff; padding: 8px; z-index: 100; text-decoration: none; transition: transform 0.2s; }}
-                .skip-link:focus, .skip-link:focus-visible {{ transform: translateY(0); }}
-                nav ul {{ list-style-type: none; padding: 0; margin: 0; }}
-                nav li {{ margin: 0; padding: 0; }}
-                .file {{ display: block; padding: 10px; text-decoration: none; color: #333; }}
-                .file:hover, .file:focus-visible {{ background: #f0f0f0; outline: 2px solid #0066cc; outline-offset: -2px; }}
-                .directory {{ font-weight: bold; color: #0066cc; }}
-                .video {{ color: #c04c00; }}
-            </style>
-        </head>
-        <body>
-            <a href="#main-content" class="skip-link">Skip to main content</a>
-            <header>
-                <h1><span aria-hidden="true">📁</span> Media Library: /{safe_path}</h1>
-            </header>
-            <main id="main-content">
-                <nav aria-label="Directory listing">
-                    <ul>
-"""
-
-DIRECTORY_LISTING_FOOTER = """
-                </ul>
-            </nav>
-            </main>
-        </body>
-        </html>
-"""
-
 
 class MediaServerHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -248,7 +211,34 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
         """Generate HTML directory listing"""
         safe_path = html.escape(current_path)
 
-        html_parts = [DIRECTORY_LISTING_HEADER_TEMPLATE.format(safe_path=safe_path)]
+        html_parts = [f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Media Library - {safe_path}</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 5%; }}
+                .skip-link {{ position: absolute; top: 0; left: 0; transform: translateY(-150%); background: #000; color: #fff; padding: 8px; z-index: 100; text-decoration: none; transition: transform 0.2s; }}
+                .skip-link:focus, .skip-link:focus-visible {{ transform: translateY(0); }}
+                nav ul {{ list-style-type: none; padding: 0; margin: 0; }}
+                nav li {{ margin: 0; padding: 0; }}
+                .file {{ display: block; padding: 10px; text-decoration: none; color: #333; }}
+                .file:hover, .file:focus-visible {{ background: #f0f0f0; outline: 2px solid #0066cc; outline-offset: -2px; }}
+                .directory {{ font-weight: bold; color: #0066cc; }}
+                .video {{ color: #c04c00; }}
+            </style>
+        </head>
+        <body>
+            <a href="#main-content" class="skip-link">Skip to main content</a>
+            <header>
+                <h1><span aria-hidden="true">📁</span> Media Library: /{safe_path}</h1>
+            </header>
+            <main id="main-content">
+                <nav aria-label="Directory listing">
+                    <ul>
+        """]
 
         # Add parent directory link if not root
         if current_path and current_path != "/":
@@ -291,7 +281,13 @@ class MediaServerHandler(SimpleHTTPRequestHandler):
             )
         html_parts.extend(items_html)
 
-        html_parts.append(DIRECTORY_LISTING_FOOTER)
+        html_parts.append("""
+                </ul>
+            </nav>
+            </main>
+        </body>
+        </html>
+        """)
         return "".join(html_parts)
 
     def send_directory_response(self, content):

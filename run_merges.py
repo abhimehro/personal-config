@@ -20,9 +20,9 @@ def run_gh(cmd_list):
             timeout=120,
             check=False,
         )
-    except (subprocess.TimeoutExpired, OSError) as e:
+    except subprocess.TimeoutExpired:
         print(
-            f"gh command failed or timed out ({type(e).__name__}): {cmd_list[0] if cmd_list else cmd_list}",
+            f"gh command timed out: {cmd_list[0] if cmd_list else cmd_list}",
             file=sys.stderr,
         )
         return None
@@ -272,6 +272,6 @@ if __name__ == "__main__":
         print("Waiting 5 seconds for GitHub to update state...")
         time.sleep(5)
 
-    print("\n--- DONE ---")
-    with open("tasks/pr-merge-results.json", "w") as f:
-        json.dump(results, f, indent=2)
+        print("\n--- DONE ---")
+        with open("tasks/pr-merge-results.json", "w") as f:
+            json.dump(results, f, indent=2)

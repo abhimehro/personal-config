@@ -871,8 +871,3 @@ is prioritized over micro-optimizations in speed.
 avoidable allocations in tight parse loops. **Action:** Use `.split("|", n)`
 when only the first n fields are needed, and `handle.read().splitlines()` for
 small in-memory config files.
-
-## 2026-11-20 - [Avoid redundant key checks in parsing loops]
-
-**Learning:** Replacing manual dictionary existence checks (`if key not in dict: dict[key] = []`) inside tight loops with `collections.defaultdict(list)` avoids redundant evaluation and key lookups.
-**Action:** When working on large string parsing loops that populate nested dictionary lists, initialize the result structure with `collections.defaultdict(list)` instead of standard dictionaries.
