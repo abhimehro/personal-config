@@ -226,9 +226,24 @@ def read_processed_identities(selected_path: Path) -> set[str]:
     return identities
 
 
-def _evaluate_candidates(
-    files: list[str], ignored: set[str], processed: set[str]
-) -> tuple[list[Candidate], int, int]:
+def main() -> int:
+    approval_dir = Path(
+        os.environ.get(
+            "APPROVAL_DIR", str(Path.home() / "CloudMedia" / "approval_needed")
+        )
+    )
+    selected_path = approval_dir / ".alldebrid_selected.tsv"
+    ignore_path = approval_dir / ".alldebrid_ignore"
+    pending_path = approval_dir / ".alldebrid_candidate_pending.tsv"
+
+    files = [
+        line.strip()
+        for line in sys.stdin
+        if line.strip() and VIDEO_RE.search(line.strip())
+    ]
+    ignored = read_lines(ignore_path)
+    processed = read_processed_identities(selected_path)
+
     candidates: list[Candidate] = []
     skipped_processed = 0
     skipped_ignored = 0
@@ -243,15 +258,7 @@ def _evaluate_candidates(
             continue
         score, reasons = score_candidate(filename)
         candidates.append(Candidate(filename, identity, score, reasons))
-    return candidates, skipped_processed, skipped_ignored
 
-
-def _process_and_output_winner(
-    candidates: list[Candidate],
-    pending_path: Path,
-    skipped_processed: int,
-    skipped_ignored: int,
-) -> int:
     if not candidates:
         print("Candidate selection: no eligible candidates", file=sys.stderr)
         print(f"skipped already selected: {skipped_processed}", file=sys.stderr)
@@ -287,33 +294,6 @@ def _process_and_output_winner(
     print(f"skipped ignored: {skipped_ignored}", file=sys.stderr)
     print(winner.filename)
     return 0
-
-
-def main() -> int:
-    approval_dir = Path(
-        os.environ.get(
-            "APPROVAL_DIR", str(Path.home() / "CloudMedia" / "approval_needed")
-        )
-    )
-    selected_path = approval_dir / ".alldebrid_selected.tsv"
-    ignore_path = approval_dir / ".alldebrid_ignore"
-    pending_path = approval_dir / ".alldebrid_candidate_pending.tsv"
-
-    files = [
-        line.strip()
-        for line in sys.stdin
-        if line.strip() and VIDEO_RE.search(line.strip())
-    ]
-    ignored = read_lines(ignore_path)
-    processed = read_processed_identities(selected_path)
-
-    candidates, skipped_processed, skipped_ignored = _evaluate_candidates(
-        files, ignored, processed
-    )
-
-    return _process_and_output_winner(
-        candidates, pending_path, skipped_processed, skipped_ignored
-    )
 
 
 if __name__ == "__main__":
