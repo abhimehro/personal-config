@@ -1188,3 +1188,87 @@
 
 - Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-08-02.md)
 - New lesson: **0fd** (close Sentinel clusters when main already has the guard)
+
+## Run — 2026-08-04
+
+- Trigger: cron Phase 2 `0 17 * * *`
+- Agent branch: `cursor-agent/automated-pr-salvage-workflow-6658`
+- Preflight: PASS 7/7 (+ cursor-cloud-hooks)
+- Source: Phase 1 [#1912](https://github.com/abhimehro/personal-config/pull/1912) / `pr-review-2026-08-04.md` remainder + live CONFLICTING re-fetch
+- Auth: `abhimehro` PAT (Lesson 0ew) — create/close OK
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | #1893 | SALVAGE | [#1913](https://github.com/abhimehro/personal-config/pull/1913) | meter + journal append |
+| Seatek_Analysis | #593 | SALVAGE | [#603](https://github.com/abhimehro/Seatek_Analysis/pull/603) | load_config or {} + 3 tests |
+| Seatek_Analysis | #600 | CLOSE | — | bypasses run_process secure env (0fg) |
+| series_correction… | #358 | SALVAGE | [#360](https://github.com/abhimehro/series_correction_project_updated/pull/360) | OSError test; CodeScene `/cs-agent` |
+| series_correction… | #357 | CLOSE-SUPERSEDED | — | CWE-209 already on main (0fh) |
+| repoprompt-ce | #181 | SALVAGE | [#195](https://github.com/abhimehro/repoprompt-ce/pull/195) | indexBytes reuse; skip test churn |
+| repoprompt-ce | #188 | CLOSE-SUPERSEDED | — | ModelPresetsManager already on main |
+| Hydrograph… | #461 | AUTO-RESOLVED | — | now CLEAN; Phase 1 follow-up |
+| personal-config | #1907 | ESCALATE | — | CORS Sentinel |
+| Seatek_Analysis | #573/#580/#585/#590 | ESCALATE | — | Sentinel cluster |
+| Hydrograph… | #459/#466 | ESCALATE | — | sanitize_filename twins |
+| repoprompt-ce | #192/#193 | ESCALATE | — | Keychain / stderr |
+| email-security-pipeline | #1421 | REQUEST_CHANGES | — | aiohttp pin + async |
+| Seatek_Analysis | #595/#601 | REQUEST_CHANGES | — | mislabeled prod renames (0ff) |
+| ctrld / empty queues | — | EMPTY | — | no CONFLICTING |
+
+- Salvage draft PRs opened: **4**
+- Closed superseded / harmful / no-op: **7**
+- Autonomous merges: **0**
+- Infra-fix drafts: **0**
+
+### Handoff
+
+1. **Human merge drafts:** [pc #1913](https://github.com/abhimehro/personal-config/pull/1913), [Seatek #603](https://github.com/abhimehro/Seatek_Analysis/pull/603), [series #360](https://github.com/abhimehro/series_correction_project_updated/pull/360) (after CodeScene), [rpce #195](https://github.com/abhimehro/repoprompt-ce/pull/195)
+2. **T1 human security:** pc#1907; seatek#573/#580/#585/#590; hg#459/#466; rpce#192/#193
+3. **Phase 1 follow-up:** hg#461 dependabot; esp#1421 pin; Seatek automation-script RC pile
+4. Skip `request_reviewers` when author is abhimehro (0ew)
+
+- Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-08-04.md)
+- New lessons: **0fg**, **0fh**
+
+## Run — 2026-08-06
+
+- Trigger: cron Phase 2 `0 17 * * *`
+- Agent branch: `cursor-agent/automated-pr-salvage-workflow-31fa`
+- Preflight: PASS 7/7 (+ cursor-cloud-hooks)
+- Source: Phase 1 [#1930](https://github.com/abhimehro/personal-config/pull/1930) / `pr-review-2026-08-06.md` remainder + live CONFLICTING re-fetch
+- Auth: `abhimehro` PAT (Lesson 0ew) — create/close OK
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| series… | #360 | SALVAGE | [#369](https://github.com/abhimehro/series_correction_project_updated/pull/369) | OSError test only (0fj) |
+| email-security-pipeline | #1409 | SALVAGE | [#1437](https://github.com/abhimehro/email-security-pipeline/pull/1437) | sanitize fast-path; reject media_analyzer (0fc) |
+| repoprompt-ce | #195 | SALVAGE | [#206](https://github.com/abhimehro/repoprompt-ce/pull/206) | indexBytes reuse + journal 0y |
+| repoprompt-ce | #193 | SALVAGE | [#207](https://github.com/abhimehro/repoprompt-ce/pull/207) | stderr byte-count only; drop mega-diff |
+| personal-config | #1904 | CLOSE | — | 21-file Code Health hijack |
+| Seatek_Analysis | #595/#598/#599/#601 | CLOSE | — | 0ff test+prod renames |
+| personal-config | #1907 | ESCALATE | — | CORS |
+| Seatek_Analysis | Sentinel cluster | ESCALATE | — | #573–#612 |
+| Hydrograph… | sanitize cluster | ESCALATE | — | #459–#478 |
+| esp | #1421/#1431/#1432 | ESCALATE | — | S6 security |
+| series… | #364/#365 | ESCALATE | — | PBKDF2 + timing; CS on #364 |
+| rpce | #196/#201 | ESCALATE | — | TOCTOU UNSTABLE |
+| ctrld-sync | — | EMPTY | — | no CONFLICTING |
+
+- Salvage draft PRs opened: **4**
+- Closed superseded / no-op / hijack: **9**
+- Autonomous merges: **0**
+- Infra-fix drafts: **0**
+
+### Handoff
+
+1. **Human merge drafts (priority):** series [#369](https://github.com/abhimehro/series_correction_project_updated/pull/369) → esp [#1437](https://github.com/abhimehro/email-security-pipeline/pull/1437) → rpce [#206](https://github.com/abhimehro/repoprompt-ce/pull/206) → rpce [#207](https://github.com/abhimehro/repoprompt-ce/pull/207) (security-adjacent; review carefully)
+2. **T1 human security:** pc#1907; Seatek Sentinels; Hydrograph sanitize; esp S6; series#364/#365; rpce TOCTOU
+3. Skip `request_reviewers` when author is abhimehro (0ew)
+4. Open docs PRs #1914/#1930 still pending — avoid thrash; this report is independent
+
+- Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-08-06.md)
+- New lesson: **0fj** (re-salvage contaminated prior salvage drafts by unique assertion only)

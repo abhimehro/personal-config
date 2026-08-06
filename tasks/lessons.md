@@ -1,5 +1,25 @@
 # Lessons Learned
 
+## Lesson 0fj: Re-salvage contaminated prior salvage drafts by unique assertion only (2026-08-06)
+
+**Pattern:** DIRTY prior salvage drafts often accrue Code Health reshuffles that
+bury the unique assertion. **Rule:** Fresh branch from `main`; apply only the
+missing test/fix; close the contaminated draft. See also section **0fj** below.
+
+## Lesson 0fi: Risk log colors must match lowercase production risk_level (2026-08-06)
+
+**Pattern:** Palette PR esp#1423 colorized `Analysis complete` using
+`risk=HIGH` / `risk=MEDIUM`, and tests only used uppercase synthetics. Production
+`calculate_risk_level` / `alert_report` emit lowercase `high` / `medium` / `low`,
+and `main.py` logs `risk={threat_report.risk_level}` — so real high-risk lines
+stayed green.
+**Rule:** (1) When matching risk tokens in logs/UX, use case-insensitive checks
+or the exact production enum. (2) Unit tests must use the same casing as
+production emitters. (3) Adversarial review should cross-check string literals
+against call sites, not only the PR diff.
+**Detection cost:** Low — `rg 'risk_level|risk=' src/` vs the PR's match strings.
+
+
 ## Lesson 0fc: Bolt journal wipe is CLOSE not MERGE (2026-08-02)
 
 **Pattern:** A Bolt PR titled as a tiny `parse_inventory` / `defaultdict`
@@ -1975,3 +1995,21 @@ and close (same family as Lesson 0fa), not as defense-in-depth.
 
 **Detection cost:** Low — `rg is_safe_path validate_data.py` on `main` +
 `rg -c` on the PR tip.
+
+## 0fj — Re-salvage contaminated prior salvage drafts by unique assertion only (2026-08-06)
+
+**Pattern:** A prior Phase 2 salvage draft (series#360) started as a single
+OSError regression test, then later commits "improved cohesion" / Code Health
+reshuffled the entire `test_batch_correction.py`, making the branch CONFLICTING
+and burying the unique assertion in noise. Blindly re-checking out the salvage
+branch would re-import the reshuffle.
+
+**Rule:** When re-salvaging a DIRTY prior salvage PR: (1) identify the **one
+unique behavior** still missing from `main`; (2) open a fresh branch from
+`main`; (3) apply **only** that assertion/fix; (4) close the contaminated
+draft. Never `git checkout dirty_salvage -- tests/…` wholesale.
+
+**Detection cost:** Low — compare `gh pr diff --name-only` + search for the
+named test on `main`; if the tip reorders large helper blocks, treat as
+contaminated.
+
