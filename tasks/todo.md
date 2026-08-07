@@ -9,5 +9,5 @@
 - [x] Recover Aug 5/6 stranded docs/lessons
 - [x] Adversarial multi-model review (opus + gpt-5.5)
 - [x] Write pr-inventory / pr-triage / pr-review-2026-08-07 / lessons
-- [ ] Commit + push docs branch + open PR
-- [ ] Update automation memory
+- [x] Commit + push docs branch + open PR (#1937)
+- [x] Update automation memory
