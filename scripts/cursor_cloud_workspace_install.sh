@@ -161,6 +161,12 @@ install_seatek_analysis() {
         return 0
       fi
     fi
+    if ! "${series27_venv}/bin/python" -m pip --version >/dev/null 2>&1; then
+      "${series27_venv}/bin/python" -m ensurepip --upgrade || {
+        log "Seatek_Analysis: skip Series 27 venv (pip bootstrap failed)"
+        return 0
+      }
+    fi
     "${series27_venv}/bin/python" -m pip install -U pip
     "${series27_venv}/bin/python" -m pip install -r "${repo}/Series_27/Analysis/requirements.txt"
     if [[ -f "${repo}/requirements-dev.txt" ]]; then
