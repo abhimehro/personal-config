@@ -12,10 +12,8 @@
 - [x] Salvage pc #1902 → draft #1938; close #1902
 - [x] Salvage rpce #211 → draft #213; close #211
 - [x] Escalate esp #1421 + security remainder (comments)
-- [x] Write inventory / triage / review addendum / lessons / salvage report
-
-## Deliverables remaining
-- [ ] Commit + push docs branch
-- [ ] Open docs PR via automation tool
-- [ ] Notion page + automation memory
-- [ ] Review comments on new salvage drafts (optional)
+- [x] Write inventory / triage / review / lessons / salvage report
+- [x] Commit + push docs branch; open [#1939](https://github.com/abhimehro/personal-config/pull/1939)
+- [x] Notion page + automation memory
+- [x] Review comments on #1938 / #213
+- [x] Skipped request_reviewers (author abhimehro — 0ew)
