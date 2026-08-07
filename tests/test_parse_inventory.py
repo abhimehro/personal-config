@@ -102,7 +102,7 @@ class TestParseInventory(unittest.TestCase):
             _parse_repo_name("### [  owner/repo-name  ](url)"), "owner/repo-name"
         )
 
-    def test_parse_repo_name_invalid_link_format(self):
+    def test_parse_repo_name_with_invalid_link_format(self):
         self.assertIsNone(_parse_repo_name("### no-link"))
 
     def test_parse_repo_name_invalid_prefix(self):
@@ -118,7 +118,7 @@ class TestParseInventory(unittest.TestCase):
 
     # --- _load_inventory_lines ---
 
-    def test_load_inventory_lines_file_not_found(self):
+    def test_load_inventory_lines_when_file_not_found(self):
         lines = _load_inventory_lines("nonexistent_file_xyz_123.txt")
         self.assertEqual(list(lines), [])
 
@@ -153,7 +153,7 @@ class TestParseInventory(unittest.TestCase):
 
     # --- _get_pr_category ---
 
-    def test_get_pr_category_superseded_no_files(self):
+    def test_get_pr_category_superseded_with_no_files(self):
         info = self._build_info("CLEAN", self._recent_iso(), with_files=False)
         self.assertEqual(_get_pr_category(info, "C", now=None), "SUPERSEDED")
 
