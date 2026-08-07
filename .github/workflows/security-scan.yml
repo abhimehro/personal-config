@@ -61,18 +61,18 @@ jobs:
           fetch-depth: 0  # Full history for better scanning
           persist-credentials: false
 
+      # Do not hardcode base=main/head=HEAD: on pushes to main those resolve to
+      # the same commit after checkout and TruffleHog exits 1 ("BASE and HEAD
+      # commits are the same"). Let the action use the GitHub event range.
       - name: TruffleHog OSS
         uses: trufflesecurity/trufflehog@6f3c981e7b77f235fd2702dd74af25fc4b72bf11 # v3.96.0
         with:
           path: ./
-          base: main
-          head: HEAD
           filter: files
           only-verified: true
           fail: true
           json: false
           no-update: false
-          extra-args: --debug
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
