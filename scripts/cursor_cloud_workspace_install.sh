@@ -10,11 +10,9 @@ PC_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 if [[ -d "/agent/repos/personal-config" ]]; then
   REPOS_ROOT="/agent/repos"
-elif [[ -d "${PC_ROOT}/../ctrld-sync" ]]; then
-  REPOS_ROOT="$(cd "${PC_ROOT}/.." && pwd)"
 else
-  echo "cursor_cloud_workspace_install: could not locate sibling repositories" >&2
-  exit 1
+  # Fall back to the parent of personal-config; per-repo installers skip missing siblings.
+  REPOS_ROOT="$(cd "${PC_ROOT}/.." && pwd)"
 fi
 
 log() {
@@ -25,12 +23,32 @@ pip_user() {
   python3 -m pip install --user --break-system-packages "$@"
 }
 
+run_in_repo() {
+  local repo="$1"
+  shift
+  (cd "${repo}" && "$@")
+}
+
+restore_editable_egg_info() {
+  local repo="$1"
+  if [[ ! -d "${repo}/.git" ]]; then
+    return 0
+  fi
+  # Editable installs can rewrite egg-info metadata; restore if the tree is dirty (AGENTS.md).
+  if git -C "${repo}" status --porcelain -- '*.egg-info' 2>/dev/null | grep -q .; then
+    git -C "${repo}" restore '*.egg-info' 2>/dev/null \
+      || git -C "${repo}" checkout -- '*.egg-info' 2>/dev/null \
+      || true
+  fi
+}
+
 ensure_uv() {
   if command -v uv >/dev/null 2>&1; then
     return 0
   fi
-  log "installing uv"
-  curl -LsSf https://astral.sh/uv/install.sh | env INSTALLER_NO_MODIFY_PATH=1 sh
+  ensure_pip
+  log "installing uv via pip (avoids curl|sh installer)"
+  pip_user 'uv>=0.5,<0.9'
   export PATH="${HOME}/.local/bin:${PATH}"
 }
 
@@ -50,6 +68,7 @@ install_personal_config() {
     return 0
   fi
 
+  ensure_pip
   log "personal-config: python requirements"
   if [[ -f "${repo}/requirements.txt" ]]; then
     pip_user -r "${repo}/requirements.txt"
@@ -57,10 +76,11 @@ install_personal_config() {
 
   if [[ -x "${repo}/scripts/install_cursor_cloud_agent_hooks.sh" ]]; then
     log "personal-config: cursor cloud hooks"
-    (cd "${repo}" && ./scripts/install_cursor_cloud_agent_hooks.sh) || true
+    run_in_repo "${repo}" ./scripts/install_cursor_cloud_agent_hooks.sh || true
   fi
 
   if ! command -v trunk >/dev/null 2>&1; then
+    # Matches .devin/blueprint.yaml; HTTPS-only fetch from get.trunk.io (no checksum published).
     log "personal-config: installing trunk launcher"
     curl -fsSL https://get.trunk.io | bash -s -- -y || true
     export PATH="${HOME}/.local/bin:${PATH}"
@@ -78,7 +98,7 @@ install_ctrld_sync() {
   log "ctrld-sync: uv python 3.13 + sync"
   uv python install 3.13
   uv sync --project "${repo}" --all-extras
-  uv run --project "${repo}" pre-commit install || true
+  run_in_repo "${repo}" uv run pre-commit install || true
 }
 
 install_email_security_pipeline() {
@@ -91,7 +111,7 @@ install_email_security_pipeline() {
   ensure_pip
   log "email-security-pipeline: requirements-ci.txt"
   pip_user -r "${repo}/requirements-ci.txt"
-  python3 -m pre_commit install --config "${repo}/.pre-commit-config.yaml" || true
+  run_in_repo "${repo}" python3 -m pre_commit install || true
 }
 
 install_hydrograph() {
@@ -105,6 +125,7 @@ install_hydrograph() {
   log "Hydrograph: requirements-ci.txt + editable install"
   pip_user -r "${repo}/requirements-ci.txt"
   pip_user -e "${repo}"
+  restore_editable_egg_info "${repo}"
 }
 
 install_series_correction() {
@@ -118,6 +139,7 @@ install_series_correction() {
   log "series_correction: requirements-dev.txt + editable install"
   pip_user -r "${repo}/scripts/requirements-dev.txt"
   pip_user -e "${repo}"
+  restore_editable_egg_info "${repo}"
 }
 
 install_seatek_analysis() {
@@ -135,8 +157,9 @@ install_seatek_analysis() {
   local ppm_repo="https://packagemanager.posit.co/cran/__linux__/noble/latest"
   log "Seatek_Analysis: renv restore (${ppm_repo})"
   if ! (
+    set -e
     cd "${repo}"
-    Rscript --no-init-file -e 'lib <- file.path("renv/library", paste0("R-", format(getRversion()[1, 1:2])), R.version$platform); dir.create(lib, recursive = TRUE, showWarnings = FALSE); install.packages("renv", repos = "'"${ppm_repo}"'", lib = lib)'
+    Rscript --no-init-file -e 'lib <- file.path("renv/library", paste0("R-", format(getRversion()[1, 1:2])), R.version$platform); dir.create(lib, recursive = TRUE, showWarnings = FALSE); ok <- install.packages("renv", repos = "'"${ppm_repo}"'", lib = lib); if (length(ok) == 0 || !"renv" %in% ok) quit(status = 1)'
     Rscript -e "options(renv.config.repos.override = c(CRAN = '${ppm_repo}')); renv::restore()"
   ); then
     log "Seatek_Analysis: renv restore failed (non-fatal; other repos still usable)"
@@ -153,8 +176,17 @@ install_seatek_analysis() {
     fi
   done
 
+  series27_venv_python_ready() {
+    [[ -x "${series27_venv}/bin/python" ]] \
+      && "${series27_venv}/bin/python" -c 'import sys; sys.exit(0 if (3, 11) <= sys.version_info[:2] <= (3, 12) else 1)' 2>/dev/null
+  }
+
   if [[ -n "${python_bin}" && -f "${repo}/Series_27/Analysis/requirements.txt" ]]; then
     log "Seatek_Analysis: optional Series 27 venv"
+    if [[ -d "${series27_venv}" ]] && ! series27_venv_python_ready; then
+      log "Seatek_Analysis: removing stale Series 27 venv"
+      rm -rf "${series27_venv}"
+    fi
     if [[ ! -d "${series27_venv}" ]]; then
       if ! "${python_bin}" -m venv "${series27_venv}"; then
         log "Seatek_Analysis: skip Series 27 venv (python venv unavailable)"
