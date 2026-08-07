@@ -1,12 +1,21 @@
-# PR Review Session 2026-08-04 — TODO
+# Phase 2 Salvage — 2026-08-07
 
-- [x] Preflight gate (7/7 PASS)
-- [x] Inventory open PRs across 7 repos
-- [x] Write pr-inventory.md / pr-triage.md
-- [x] Adversarial review of high-risk merge cluster (opus + gpt)
-- [x] Merge green safe PRs (squash), re-check cascade
-- [x] Close duplicates / journal wipes / hijack
-- [x] REQUEST_CHANGES on red CI; post CodeScene skill on #1409
-- [x] ESCALATE Sentinels / trust-boundary
-- [x] Write pr-review-2026-08-04.md + update lessons + session reports
-- [x] Commit/push docs branch; update automation memory
+## Preflight
+- [x] `gh auth` as abhimehro (PAT)
+- [x] `make cursor-cloud-hooks`
+- [x] preflight 7/7 PASS
+- [x] Read automation memory (last run 2026-08-06)
+- [x] Load Phase 1 remainder from #1937
+
+## Actions
+- [x] Inventory live CONFLICTING + remainder
+- [x] Salvage pc #1902 → draft #1938; close #1902
+- [x] Salvage rpce #211 → draft #213; close #211
+- [x] Escalate esp #1421 + security remainder (comments)
+- [x] Write inventory / triage / review addendum / lessons / salvage report
+
+## Deliverables remaining
+- [ ] Commit + push docs branch
+- [ ] Open docs PR via automation tool
+- [ ] Notion page + automation memory
+- [ ] Review comments on new salvage drafts (optional)

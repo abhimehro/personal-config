@@ -1188,3 +1188,44 @@
 
 - Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-08-02.md)
 - New lesson: **0fd** (close Sentinel clusters when main already has the guard)
+
+## Run — 2026-08-07
+
+- Trigger: cron Phase 2 `0 17 * * *`
+- Agent branch: `cursor-agent/automated-pr-salvage-workflow-eeed`
+- Preflight: PASS 7/7 (+ cursor-cloud-hooks)
+- Source: Phase 1 [#1937](https://github.com/abhimehro/personal-config/pull/1937) / `pr-review-2026-08-07.md` remainder + live CONFLICTING re-fetch
+- Auth: `abhimehro` PAT (Lesson 0ew) — create/close OK
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | #1902 | SALVAGE | [#1938](https://github.com/abhimehro/personal-config/pull/1938) | write_text_files tests; strip junk (0fg) |
+| personal-config | #1902 | CLOSE-SUPERSEDED | #1938 | closed with cross-link |
+| repoprompt-ce | #211 | SALVAGE | [#213](https://github.com/abhimehro/repoprompt-ce/pull/213) | a11y labels; strip XCTSkip (0fl) |
+| repoprompt-ce | #211 | CLOSE-SUPERSEDED | #213 | closed with cross-link |
+| email-security-pipeline | #1421 | ESCALATE | — | S6 aiohttp CONFLICTING (0fh) |
+| personal-config | #1907 | ESCALATE | — | CORS |
+| Seatek_Analysis | #620 | ESCALATE | — | Sentinel path-hijack |
+| Hydrograph… | #484 | ESCALATE | — | sanitize_filename |
+| series… | #365/#364 | ESCALATE | — | auth timing / PBKDF2 |
+| series… | #371 | REQUEST_CHANGES | — | CodeScene already posted |
+| email-security-pipeline | #1444 | ESCALATE | — | opencv 5.x |
+| repoprompt-ce | #210 | ESCALATE | — | TOCTOU + CI |
+| ctrld-sync | #1136 | ESCALATE | — | mypy 2.x |
+
+- Salvage draft PRs opened: **2**
+- Closed superseded / no-op: **2**
+- Autonomous merges: **0**
+- Infra-fix drafts: **0**
+
+### Handoff
+
+1. **Human merge drafts (priority):** pc [#1938](https://github.com/abhimehro/personal-config/pull/1938) → rpce [#213](https://github.com/abhimehro/repoprompt-ce/pull/213) → prior [#369](https://github.com/abhimehro/series_correction_project_updated/pull/369)/[#1437](https://github.com/abhimehro/email-security-pipeline/pull/1437)/[#206](https://github.com/abhimehro/repoprompt-ce/pull/206)/[#207](https://github.com/abhimehro/repoprompt-ce/pull/207)
+2. **T1 human security:** pc #1907; Seatek #620; Hydrograph #484; series #365/#364; rpce #210; esp #1421
+3. **Majors:** ctrld #1136; esp #1444
+4. Skip `request_reviewers` when author is abhimehro (0ew)
+
+- Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-08-07.md)
+- New lesson: **0fl** (strip XCTSkip from Palette/a11y salvages)

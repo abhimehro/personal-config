@@ -1,5 +1,17 @@
 # Lessons Learned
 
+## Lesson 0fl: Strip XCTSkip contamination from Palette/a11y salvages (2026-08-07)
+
+**Pattern:** Palette PR #211 correctly added `.accessibilityLabel` on notification
+row buttons, but also injected `throw XCTSkip("Test flake in CI")` into three
+unrelated flaky tests. After a sibling Palette merge (#203), the PR went DIRTY;
+Phase 1 correctly REQUEST_CHANGES'd the skips.
+**Rule:** When salvaging a11y/Palette PRs, keep only the UI label + append-only
+journal. Never carry XCTSkip / disable-test hunks meant to greenwash CI.
+**Detection cost:** Low — `gh pr diff` for `XCTSkip` / `XCTExpectFailure` outside
+the named a11y files.
+
+
 ## Lesson 0ff: "Add tests" PRs that rename production APIs (2026-08-04)
 
 **Pattern:** Seatek Jules PRs titled as missing unit tests (#595/#601) also
