@@ -15,24 +15,25 @@ RUN apt-get update \
     libzip-dev zlib1g-dev libgit2-dev pandoc cmake \
   && rm -rf /var/lib/apt/lists/*
 
-# R 4.3.3 from Posit r-builds (matches Seatek_Analysis renv.lock).
+# R 4.3.3 from Posit r-builds noble packages (matches Seatek_Analysis renv.lock).
 RUN set -eux; \
   arch="$(dpkg --print-architecture)"; \
   r_version="4.3.3"; \
   r_deb="r-${r_version}_1_${arch}.deb"; \
   case "${arch}" in \
-    amd64) r_sha="dde20cc255a1c5627ec5ed84c8d3b24f094b4b0459b363e96c137fb98220bae5" ;; \
-    arm64) r_sha="5349604db30056bd8b40ab32518ea002bd748bcecff9e56b0ad4415981d3776e" ;; \
+    amd64) r_sha="f1a4c4d4c36f7e8ddd67fd2abf2019f15e4c05e20ecc22d4c1890d64692b9ab5" ;; \
+    arm64) r_sha="" ;; \
     *) echo "Unsupported architecture: ${arch}" >&2; exit 1 ;; \
   esac; \
-  curl -fsSL -o "/tmp/${r_deb}" "https://cdn.posit.co/r/ubuntu-2204/pkgs/${r_deb}"; \
+  if [ -z "${r_sha}" ]; then echo "R noble package SHA not pinned for ${arch}" >&2; exit 1; fi; \
+  curl -fsSL -o "/tmp/${r_deb}" "https://cdn.posit.co/r/ubuntu-2404/pkgs/${r_deb}"; \
   printf "%s  /tmp/%s\n" "${r_sha}" "${r_deb}" | sha256sum -c -; \
   apt-get update \
   && apt-get install -y --no-install-recommends "/tmp/${r_deb}" \
   && rm -f "/tmp/${r_deb}" \
-  && rm -rf /var/lib/apt/lists/*; \
-  ln -sf "/opt/R/${r_version}/bin/R" /usr/local/bin/R; \
-  ln -sf "/opt/R/${r_version}/bin/Rscript" /usr/local/bin/Rscript
+  && rm -rf /var/lib/apt/lists/* \
+  && ln -sf "/opt/R/${r_version}/bin/R" /usr/local/bin/R \
+  && ln -sf "/opt/R/${r_version}/bin/Rscript" /usr/local/bin/Rscript
 
 # PlantUML (personal-config blueprint initialize).
 RUN mkdir -p /opt/cloud-agent/bin \
@@ -42,7 +43,8 @@ RUN mkdir -p /opt/cloud-agent/bin \
     > /opt/cloud-agent/bin/plantuml \
   && chmod +x /opt/cloud-agent/bin/plantuml
 
-RUN useradd -m -s /bin/bash -u 1000 ubuntu \
+# ubuntu:24.04 ships the ubuntu user; only ensure sudo and home layout.
+RUN if ! id ubuntu >/dev/null 2>&1; then useradd -m -s /bin/bash -u 1000 ubuntu; fi \
   && echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/ubuntu \
   && chmod 0440 /etc/sudoers.d/ubuntu
 
