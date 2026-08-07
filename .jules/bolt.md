@@ -872,7 +872,12 @@ avoidable allocations in tight parse loops. **Action:** Use `.split("|", n)`
 when only the first n fields are needed, and `handle.read().splitlines()` for
 small in-memory config files.
 
-## 2026-11-20 - [Avoid redundant key checks in parsing loops]
+## 2026-08-05 - Replacing unconditional module imports with graceful fallbacks
+
+**Learning:** Unconditionally importing external modules (like `yaml`) at the module level in scripts that might be executed in environments where the dependency is missing (e.g., benchmark test environments) causes immediate execution failures (ModuleNotFoundError).
+**Action:** When a script depends on an external module that isn't strictly required for all its execution paths (or for the script to load), use a graceful try-except import block (e.g., `try: import yaml \except ImportError: yaml = None`) and handle the `None` state where the module is actually used. This prevents environment-related test failures and allows other parts of the script to be tested or benchmarked successfully.
+
+## 2026-08-05 - [Avoid redundant key checks in parsing loops]
 
 **Learning:** Replacing manual dictionary existence checks (`if key not in dict: dict[key] = []`) inside tight loops with `collections.defaultdict(list)` avoids redundant evaluation and key lookups.
 **Action:** When working on large string parsing loops that populate nested dictionary lists, initialize the result structure with `collections.defaultdict(list)` instead of standard dictionaries.
