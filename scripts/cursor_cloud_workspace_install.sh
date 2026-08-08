@@ -166,10 +166,10 @@ install_seatek_analysis() {
   if ! (
     set -e
     cd "${repo}"
-  # Bootstrap renv into the project library layout renv/activate.R expects; verify with
-  # requireNamespace (install.packages returns invisible NULL on success).
+    # Bootstrap renv into the project library layout renv/activate.R expects; verify with
+    # requireNamespace (install.packages returns invisible NULL on success).
     Rscript --no-init-file -e 'lib <- file.path("renv/library", paste0("R-", format(getRversion()[1, 1:2])), R.version$platform); dir.create(lib, recursive = TRUE, showWarnings = FALSE); install.packages("renv", repos = "'"${ppm_repo}"'", lib = lib); if (!requireNamespace("renv", lib.loc = lib, quietly = TRUE)) quit(status = 1)'
-    Rscript --no-init-file -e "options(renv.config.repos.override = c(CRAN = '${ppm_repo}')); renv::restore()"
+    Rscript --no-init-file -e 'lib <- file.path("renv/library", paste0("R-", format(getRversion()[1, 1:2])), R.version$platform); .libPaths(unique(c(lib, .libPaths()))); options(renv.config.repos.override = c(CRAN = "'"${ppm_repo}"'")); renv::restore()'
   ); then
     # SECURITY: renv failure must not skip Series 27 — that path is Python-only
     log "Seatek_Analysis: renv restore failed (non-fatal; continuing Series 27 if available)"
