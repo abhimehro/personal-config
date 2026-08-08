@@ -249,9 +249,7 @@ def read_processed_identities(selected_path: Path) -> set[str]:
     return identities
 
 
-def select_candidate(
-    files: list[str], ignored: set[str], processed: set[str]
-) -> SelectionResult:
+def build_candidates(files: list[str], ignored: set[str], processed: set[str]) -> tuple[list[Candidate], int, int]:
     candidates: list[Candidate] = []
     skipped_processed = 0
     skipped_ignored = 0
@@ -266,6 +264,13 @@ def select_candidate(
             continue
         score, reasons = score_candidate(filename)
         candidates.append(Candidate(filename, identity, score, reasons))
+
+    return candidates, skipped_processed, skipped_ignored
+
+def select_candidate(
+    files: list[str], ignored: set[str], processed: set[str]
+) -> SelectionResult:
+    candidates, skipped_processed, skipped_ignored = build_candidates(files, ignored, processed)
 
     if not candidates:
         return SelectionResult(None, skipped_processed, skipped_ignored, 0)
