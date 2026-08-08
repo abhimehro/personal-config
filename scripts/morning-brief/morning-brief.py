@@ -118,6 +118,26 @@ VALID_ZODIAC_SIGNS = frozenset(
 READWISE_SAVE_URL = "https://readwise.io/api/v3/save"
 PERPLEXITY_CHAT_URL = "https://api.perplexity.ai/chat/completions"
 LINEAR_GRAPHQL_URL = "https://api.linear.app/graphql"
+
+LINEAR_FOCUS_QUERY = """
+    query MorningBriefFocus {
+      viewer {
+        assignedIssues(first: 12, orderBy: updatedAt) {
+          nodes {
+            identifier
+            title
+            url
+            priority
+            dueDate
+            updatedAt
+            cycle { id }
+            labels(first: 5) { nodes { name } }
+            state { name type }
+          }
+        }
+      }
+    }
+"""
 AMERICA_ADAPTS_RSS_URL = "https://americaadapts.libsyn.com/rss"
 
 DEFAULT_TIMEOUT = 10
@@ -986,6 +1006,26 @@ def fetch_horoscope(session: requests.Session, zodiac_sign: str) -> str:
         executor.shutdown(wait=False, cancel_futures=True)
 
 
+def _fetch_linear_focus_nodes(session: requests.Session, api_key: str) -> tuple:
+    response = safe_request(
+        "POST",
+        LINEAR_GRAPHQL_URL,
+        session=session,
+        allowed_hosts={"api.linear.app"},
+        headers={
+            "Authorization": api_key,
+            "Content-Type": "application/json",
+        },
+        json={"query": LINEAR_FOCUS_QUERY},
+        timeout=DEFAULT_TIMEOUT,
+    )
+    response.raise_for_status()
+    _data = response.json().get("data")
+    _viewer = _data.get("viewer") if _data else None
+    _assigned = _viewer.get("assignedIssues") if _viewer else None
+    return _assigned.get("nodes") if _assigned else ()
+
+
 def fetch_linear_focus_items(
     session: requests.Session,
     config: AppConfig,
@@ -993,26 +1033,6 @@ def fetch_linear_focus_items(
 ) -> list[FocusItem]:
     if not config.linear_api_key:
         return []
-
-    query = """
-    query MorningBriefFocus {
-      viewer {
-        assignedIssues(first: 12, orderBy: updatedAt) {
-          nodes {
-            identifier
-            title
-            url
-            priority
-            dueDate
-            updatedAt
-            cycle { id }
-            labels(first: 5) { nodes { name } }
-            state { name type }
-          }
-        }
-      }
-    }
-    """
 
     priority_labels = {
         1: "urgent",
@@ -1022,23 +1042,7 @@ def fetch_linear_focus_items(
     }
 
     try:
-        response = safe_request(
-            "POST",
-            LINEAR_GRAPHQL_URL,
-            session=session,
-            allowed_hosts={"api.linear.app"},
-            headers={
-                "Authorization": config.linear_api_key,
-                "Content-Type": "application/json",
-            },
-            json={"query": query},
-            timeout=DEFAULT_TIMEOUT,
-        )
-        response.raise_for_status()
-        _data = response.json().get("data")
-        _viewer = _data.get("viewer") if _data else None
-        _assigned = _viewer.get("assignedIssues") if _viewer else None
-        nodes = _assigned.get("nodes") if _assigned else ()
+        nodes = _fetch_linear_focus_nodes(session, config.linear_api_key)
 
         items: list[FocusItem] = []
         for issue in nodes:
