@@ -17,5 +17,5 @@
 ## Docs / handoff
 - [x] Append salvage-session-reports.md (Aug-7 recover + Aug-8)
 - [x] Lessons 0fl / 0fm / 0fn
-- [ ] Draft docs PR via open_git_pr
-- [ ] Notion + automation memory update
+- [x] Draft docs PR [#1947](https://github.com/abhimehro/personal-config/pull/1947)
+- [x] Notion + automation memory update
