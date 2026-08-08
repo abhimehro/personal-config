@@ -1,5 +1,18 @@
 # Lessons Learned
 
+## Lesson 0fl: Sanitizer “perf” fast-paths must preserve bare-path redaction (2026-08-08)
+
+**Pattern:** ESP #1437 added `if "http" not in msg and "www" not in msg: return
+msg` before `sanitize_error_message` regex. CI green, but `URL_PATTERN` also
+matches scheme-less `/…` paths for Slack/Discord webhooks and query tokens.
+Adversarial repro showed secrets that used to redact now leak.
+**Rule:** Never merge alert/error sanitizer “fast-paths” that early-return on
+`http`/`www` alone. Treat as SECURITY/ESCALATE. Any optimization must still
+enter redaction when bare `/` paths or known webhook shapes are possible — or
+drop the fast-path.
+**Detection cost:** Low — `gh pr diff` on `sanitize_error_message` + check
+`URL_PATTERN` alternatives for bare paths.
+
 ## Lesson 0fk: Docs tasks/* cascade — merge one, recover the rest (2026-08-07)
 
 **Pattern:** Multiple draft docs PRs (`pr-review-YYYY-MM-DD.md`, `lessons.md`,
