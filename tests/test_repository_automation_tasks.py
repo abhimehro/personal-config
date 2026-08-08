@@ -96,7 +96,7 @@ class TestApplyWorkflowUpdates(unittest.TestCase):
         self.assertNotIn("v7.0.1.0.1", result)
         self.assertEqual(result.count("actions/upload-artifact@v7.0.1"), 3)
 
-    def test_distinct_replacements_still_applied(self):
+    def test_distinct_replacements_applied(self):
         text = "uses: actions/checkout@v3\n" "uses: actions/upload-artifact@v4\n"
         replacements = [
             {"old": "uses: actions/checkout@v3", "new": "uses: actions/checkout@v4"},
@@ -290,7 +290,7 @@ class TestRunPerformanceOptimizer(unittest.TestCase):
 
 class TestExecuteConfiguredCommands(unittest.TestCase):
     @patch("repository_automation_tasks.run_shell_command")
-    def test_execute_configured_commands_success(self, mock_run_shell_command):
+    def test_execute_configured_cmds_success(self, mock_run_shell_command):
         mock_run_shell_command.side_effect = lambda cmd, timeout: {
             "exit_code": 0,
             "stdout": f"ran {cmd}",
