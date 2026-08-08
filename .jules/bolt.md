@@ -881,3 +881,7 @@ small in-memory config files.
 
 **Learning:** Replacing manual dictionary existence checks (`if key not in dict: dict[key] = []`) inside tight loops with `collections.defaultdict(list)` avoids redundant evaluation and key lookups.
 **Action:** When working on large string parsing loops that populate nested dictionary lists, initialize the result structure with `collections.defaultdict(list)` instead of standard dictionaries.
+
+## 2026-12-09 - [Safe Caching with id()]
+**Learning:** Using `id(obj)` (like a dictionary) as a cache key is highly performant but inherently unsafe for dynamically created objects because Python reuses memory addresses for garbage-collected objects, which can lead to stale cache hits for entirely different objects. The cache key must also include any dynamic state (like boolean flags) that dictates the result.
+**Action:** Only use `id()` as a cache key when you can explicitly guarantee the objects are long-lived, stable constants (e.g., module-level constants) and always include all relevant state parameters (e.g., `(id(tokens), keep_plus)`) in the compound cache key.

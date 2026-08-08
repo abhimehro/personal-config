@@ -163,6 +163,9 @@ def compact_token(value: str, keep_plus: bool = False) -> str:
     return regex.sub("", value.lower())
 
 
+_PRECOMPUTED_TOKENS_COMPACT = {}
+
+
 def apply_token_scores(
     text: str,
     compact: str,
@@ -174,9 +177,21 @@ def apply_token_scores(
     label_transform=lambda token: token,
 ) -> int:
     score = 0
+
+    # ⚡ Bolt Optimization: Cache the compact_token evaluation per dictionary.
+    # The target dictionaries are static module-level constants.
+    cache_key = (id(tokens), keep_plus)
+    if cache_key not in _PRECOMPUTED_TOKENS_COMPACT:
+        _PRECOMPUTED_TOKENS_COMPACT[cache_key] = {
+            t: compact_token(t, keep_plus=keep_plus) for t in tokens
+        }
+
+    compact_map = _PRECOMPUTED_TOKENS_COMPACT[cache_key]
+
     for token, points in tokens.items():
-        token_compact = compact_token(token, keep_plus=keep_plus)
-        if token in text or token_compact in compact:
+        # ⚡ Bolt Optimization: Evaluate `token in text` first to short-circuit
+        # the secondary `in` check against the pre-compacted strings if possible.
+        if token in text or compact_map[token] in compact:
             score += points
             reasons.append(label_transform(token))
             if stop_after_first:
