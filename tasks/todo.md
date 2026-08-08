@@ -1,13 +1,21 @@
-# Phase 1 todo — 2026-08-07
+# Phase 2 Salvage — 2026-08-08
 
-- [x] Preflight PASS 7/7
-- [x] Inventory + triage
-- [x] Merge safe green PRs (24)
-- [x] Close superseded/cascade docs + Seatek #615
-- [x] Escalate Sentinels/auth/CORS/TOCTOU; RC failing CI
-- [x] CodeScene triggers on #371/#369/#617/#1421
-- [x] Recover Aug 5/6 stranded docs/lessons
-- [x] Adversarial multi-model review (opus + gpt-5.5)
-- [x] Write pr-inventory / pr-triage / pr-review-2026-08-07 / lessons
-- [x] Commit + push docs branch + open PR (#1937)
-- [x] Update automation memory
+## Preflight
+- [x] gh auth as abhimehro; cursor-cloud-hooks; 7 repos
+
+## Inventory / triage
+- [x] Live CONFLICTING + Phase 1 2026-08-08 remainder
+- [x] Write pr-inventory.md, pr-triage.md, pr-review-2026-08-08.md, lessons
+
+## Salvage actions
+- [x] series#369 → draft #375; closed #369
+- [x] rpce#194 → draft #218; closed #194
+- [x] CLOSE #187, #374, #1437, #1939
+- [x] ESCALATE comments on security/majors remainder
+- [x] Autonomous merges: **0**
+
+## Docs / handoff
+- [x] Append salvage-session-reports.md (Aug-7 recover + Aug-8)
+- [x] Lessons 0fl / 0fm / 0fn
+- [x] Draft docs PR [#1947](https://github.com/abhimehro/personal-config/pull/1947)
+- [x] Notion + automation memory update

@@ -1188,3 +1188,83 @@
 
 - Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-08-02.md)
 - New lesson: **0fd** (close Sentinel clusters when main already has the guard)
+
+## Run — 2026-08-07
+
+- Trigger: cron Phase 2 `0 17 * * *`
+- Agent branch: `cursor-agent/automated-pr-salvage-workflow-eeed`
+- Preflight: PASS 7/7 (+ cursor-cloud-hooks)
+- Source: Phase 1 [#1937](https://github.com/abhimehro/personal-config/pull/1937) / `pr-review-2026-08-07.md` remainder + live CONFLICTING re-fetch
+- Auth: `abhimehro` PAT (Lesson 0ew) — create/close OK
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| personal-config | #1902 | SALVAGE | [#1938](https://github.com/abhimehro/personal-config/pull/1938) | write_text_files tests; strip junk (0fg) |
+| personal-config | #1902 | CLOSE-SUPERSEDED | #1938 | closed with cross-link |
+| repoprompt-ce | #211 | SALVAGE | [#213](https://github.com/abhimehro/repoprompt-ce/pull/213) | a11y labels; strip XCTSkip (0fm) |
+| repoprompt-ce | #211 | CLOSE-SUPERSEDED | #213 | closed with cross-link |
+| email-security-pipeline | #1421 | ESCALATE | — | S6 aiohttp CONFLICTING (0fh) |
+| personal-config | #1907 | ESCALATE | — | CORS |
+| Seatek_Analysis | #620 | ESCALATE | — | Sentinel path-hijack |
+| Hydrograph… | #484 | ESCALATE | — | sanitize_filename |
+| series… | #365/#364 | ESCALATE | — | auth timing / PBKDF2 |
+| series… | #371 | REQUEST_CHANGES | — | CodeScene already posted |
+| email-security-pipeline | #1444 | ESCALATE | — | opencv 5.x |
+| repoprompt-ce | #210 | ESCALATE | — | TOCTOU + CI |
+| ctrld-sync | #1136 | ESCALATE | — | mypy 2.x |
+
+- Salvage draft PRs opened: **2**
+- Closed superseded / no-op: **2**
+- Autonomous merges: **0**
+- Infra-fix drafts: **0**
+
+### Handoff
+
+1. **Human merge drafts (priority):** pc [#1938](https://github.com/abhimehro/personal-config/pull/1938) → rpce [#213](https://github.com/abhimehro/repoprompt-ce/pull/213) → prior drafts
+2. **T1 human security:** pc #1907; Seatek #620; Hydrograph #484; series #365/#364; rpce #210; esp #1421
+3. **Majors:** ctrld #1136; esp #1444
+4. Skip `request_reviewers` when author is abhimehro (0ew)
+
+- New lesson (renumbered): **0fm** (strip XCTSkip from Palette/a11y salvages) — original Aug-7 id collided with Phase 1 sanitizer **0fl**
+
+## Run — 2026-08-08
+
+- Trigger: cron Phase 2 `0 17 * * *`
+- Agent branch: `cursor-agent/automated-pr-salvage-workflow-9fab`
+- Preflight: PASS 7/7 (+ cursor-cloud-hooks)
+- Source: Phase 1 [#1946](https://github.com/abhimehro/personal-config/pull/1946) / `pr-review-2026-08-08.md` remainder + live CONFLICTING re-fetch
+- Auth: `abhimehro` PAT (Lesson 0ew)
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|-------:|-------------|--------|-------|
+| series_correction… | 369 | SALVAGE + CLOSE | [#375](https://github.com/abhimehro/series_correction_project_updated/pull/375) | ensure_output OSError test only (0fj) |
+| repoprompt-ce | 194 | SALVAGE + CLOSE | [#218](https://github.com/abhimehro/repoprompt-ce/pull/218) | ToolGroupsTests only |
+| repoprompt-ce | 187 | CLOSE-SUPERSEDED | — | poll coverage on main |
+| series_correction… | 374 | CLOSE-SUPERSEDED | — | format via #371 |
+| email-security-pipeline | 1437 | CLOSE rejected | — | insecure sanitizer (0fl/0fn) |
+| personal-config | 1939 | CLOSE + recover | this docs PR | 0fk |
+| email-security-pipeline | 1421 | ESCALATE | — | S6 aiohttp |
+| series… | 364 | ESCALATE | — | PBKDF2 |
+| repoprompt-ce | 196 | ESCALATE | — | TOCTOU DIRTY |
+| personal-config / Seatek / Hydrograph / series / ctrld / rpce | 1907/620/484/365/1444/1136/210 | ESCALATE comments | — | human T1 |
+
+- Salvage drafts opened: **2**
+- Closed: **6**
+- Autonomous merges: **0**
+- Infra-fix drafts: **0**
+- New lessons: **0fm**, **0fn** (0fl from Phase 1 preserved)
+
+### Verification
+
+- #375: `pytest …::TestEnsureOutputDirectory` → 1 passed
+- #218: needs macOS `make dev-test FILTER=ToolGroupsTests`
+
+### Handoff
+
+1. Human merge drafts [#375](https://github.com/abhimehro/series_correction_project_updated/pull/375) → [#218](https://github.com/abhimehro/repoprompt-ce/pull/218)
+2. Human T1: #1907, #620, #484, #365, #364, #1421, #217/#210 TOCTOU, #1136, #1444
+3. Merge Phase 1 docs [#1946](https://github.com/abhimehro/personal-config/pull/1946) then this Phase 2 docs PR (0fk)

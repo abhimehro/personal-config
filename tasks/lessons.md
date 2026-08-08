@@ -1,5 +1,39 @@
 # Lessons Learned
 
+
+## Lesson 0fl: Sanitizer “perf” fast-paths must preserve bare-path redaction (2026-08-08)
+
+**Pattern:** ESP #1437 added `if "http" not in msg and "www" not in msg: return
+msg` before `sanitize_error_message` regex. CI green, but `URL_PATTERN` also
+matches scheme-less `/…` paths for Slack/Discord webhooks and query tokens.
+Adversarial repro showed secrets that used to redact now leak.
+**Rule:** Never merge alert/error sanitizer “fast-paths” that early-return on
+`http`/`www` alone. Treat as SECURITY/ESCALATE. Any optimization must still
+enter redaction when bare `/` paths or known webhook shapes are possible — or
+drop the fast-path.
+**Detection cost:** Low — `gh pr diff` on `sanitize_error_message` + check
+`URL_PATTERN` alternatives for bare paths.
+
+## Lesson 0fm: Strip XCTSkip contamination from Palette/a11y salvages (2026-08-07)
+
+**Pattern:** CONFLICTING a11y/Palette salvages sometimes carry `XCTSkip` /
+unavailable-API stubs that green CI on Linux/mac stubs but hide the real
+assertion on device builds (rpce #211 salvage).
+**Rule:** When salvaging UI/a11y tests, strip `XCTSkip` paths and keep only
+assertions that exercise the intended accessibility labels on current APIs.
+**Detection cost:** Low — `rg XCTSkip` on salvage test files.
+**Note:** Originally logged as 0fl on Aug-7; renumbered to 0fm after Phase 1
+claimed 0fl for the sanitizer lesson on Aug-8.
+
+## Lesson 0fn: Phase 2 must reject already-flagged insecure salvages (2026-08-08)
+
+**Pattern:** Prior salvage drafts (esp#1437) can sit CONFLICTING after Phase 1
+marks them ESCALATE for a security regression. Re-applying the same fast-path
+“to clear DIRTY” would reintroduce the bug.
+**Rule:** If Phase 1 remainder says ESCALATE for a security regression on a
+DIRTY salvage, **close as rejected** — do not re-salvage the insecure delta.
+**Detection cost:** Low — cross-check Phase 1 remainder reason before salvage.
+
 ## Lesson 0fk: Docs tasks/* cascade — merge one, recover the rest (2026-08-07)
 
 **Pattern:** Multiple draft docs PRs (`pr-review-YYYY-MM-DD.md`, `lessons.md`,
