@@ -14,9 +14,9 @@ Branch: `cursor-agent/daily-repository-health-checks-5bbc`
 - [x] OSV/dependency spot-check across Python repos
 - [x] Historical Daily QA issues: status comment or create today's issues
 - [x] High-confidence minor fixes → PR(s) only (pyyaml pin)
-- [ ] Notion Daily QA Report — 2026-08-08
-- [ ] Update automation memory
-- [ ] Commit/push/open PR for pyyaml pin
+- [x] Notion Daily QA Report — 2026-08-08
+- [x] Update automation memory
+- [x] Commit/push/open PR for pyyaml pin (#1949)
 
 ## Issues created
 | Repo | Issue | Result |
