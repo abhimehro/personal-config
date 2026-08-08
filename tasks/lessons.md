@@ -1,5 +1,58 @@
 # Lessons Learned
 
+## Lesson 0fk: Docs tasks/* cascade — merge one, recover the rest (2026-08-07)
+
+**Pattern:** Multiple draft docs PRs (`pr-review-YYYY-MM-DD.md`, `lessons.md`,
+`pr-inventory.md`, `pr-triage.md`) all rewrite the same `tasks/*` files. Merging
+the oldest green one (#1912) flips siblings CONFLICTING. Closing them without
+recovering unique dated reports/lessons strands audit history (adversarial
+finding on this session).
+**Rule:** (1) Merge at most one competing `tasks/*` docs PR per pass. (2) Before
+closing CONFLICTING docs siblings, `git fetch` their branches and copy unique
+dated reports + missing `Lesson 0f*` entries into the current session docs PR.
+(3) Prefer appending to `tasks/review-session-reports.md` over rewriting shared
+inventory files in every draft.
+**Detection cost:** Low — `gh pr view --json files` showing overlapping
+`tasks/lessons.md` / `tasks/pr-inventory.md`.
+
+## Lesson 0fg: Strip stray commit_message / scratch scripts before merge (2026-08-05)
+
+**Pattern:** Palette/QA/Code-Health PRs land green but add root artifacts
+(`commit_message.txt`, `test_mock_behavior.py`, `submission.sh`, `patch1.py`,
+`fix_duplication.py`) or clobber `tasks/todo.md`.
+**Rule:** Autofix by deleting the stray file when the functional delta is sound;
+otherwise REQUEST_CHANGES. Never squash-merge junk into `main`.
+**Detection cost:** Low — `--name-only` for non-domain paths / scratch names.
+
+## Lesson 0fh: Async alert create_task without retain/await is a drop risk (2026-08-05)
+
+**Pattern:** esp#1421 replaced blocking webhook dispatch with
+`loop.create_task(_run_async_alerts())` and discarded the task reference.
+Security alerts can vanish on loop shutdown with no logged failure.
+**Rule:** For alerting/security notification paths, never fire-and-forget.
+Retain the task, await it, or keep a sync/blocking fallback; log task
+exceptions via `add_done_callback`.
+**Detection cost:** Medium — search PR diffs for `create_task` in alert modules.
+
+## Lesson 0fj: Re-salvage contaminated prior salvage drafts by unique assertion only (2026-08-06)
+
+**Pattern:** DIRTY prior salvage drafts often accrue Code Health reshuffles that
+bury the unique assertion. **Rule:** Fresh branch from `main`; apply only the
+missing test/fix; close the contaminated draft. See also section **0fj** below.
+
+## Lesson 0fi: Risk log colors must match lowercase production risk_level (2026-08-06)
+
+**Pattern:** Palette PR esp#1423 colorized `Analysis complete` using
+`risk=HIGH` / `risk=MEDIUM`, and tests only used uppercase synthetics. Production
+`calculate_risk_level` / `alert_report` emit lowercase `high` / `medium` / `low`,
+and `main.py` logs `risk={threat_report.risk_level}` — so real high-risk lines
+stayed green.
+**Rule:** (1) When matching risk tokens in logs/UX, use case-insensitive checks
+or the exact production enum. (2) Unit tests must use the same casing as
+production emitters. (3) Adversarial review should cross-check string literals
+against call sites, not only the PR diff.
+**Detection cost:** Low — `rg 'risk_level|risk=' src/` vs the PR's match strings.
+
 ## Lesson 0ff: "Add tests" PRs that rename production APIs (2026-08-04)
 
 **Pattern:** Seatek Jules PRs titled as missing unit tests (#595/#601) also
