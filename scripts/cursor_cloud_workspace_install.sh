@@ -162,8 +162,8 @@ install_seatek_analysis() {
     Rscript --no-init-file -e 'lib <- file.path("renv/library", paste0("R-", format(getRversion()[1, 1:2])), R.version$platform); dir.create(lib, recursive = TRUE, showWarnings = FALSE); ok <- install.packages("renv", repos = "'"${ppm_repo}"'", lib = lib); if (length(ok) == 0 || !"renv" %in% ok) quit(status = 1)'
     Rscript -e "options(renv.config.repos.override = c(CRAN = '${ppm_repo}')); renv::restore()"
   ); then
-    log "Seatek_Analysis: renv restore failed (non-fatal; other repos still usable)"
-    return 0
+    # SECURITY: renv failure must not skip Series 27 — that path is Python-only
+    log "Seatek_Analysis: renv restore failed (non-fatal; continuing Series 27 if available)"
   fi
 
   local series27_venv="${HOME}/.venvs/seatek_series27"
