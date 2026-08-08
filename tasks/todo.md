@@ -14,5 +14,5 @@ Mode: review-and-merge | Branch: `cursor-agent/automated-pr-workflow-d318`
 - [x] ESCALATE security clusters (no merge) incl. esp#1437
 - [x] Adversarial multi-model review (opus + gpt)
 - [x] Session report `tasks/pr-review-2026-08-08.md` + lesson 0fl
-- [ ] Commit/push docs; open PR
-- [ ] Update automation memory
+- [x] Commit/push docs; open PR
+- [x] Update automation memory
