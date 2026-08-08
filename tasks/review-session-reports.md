@@ -445,3 +445,19 @@ New lessons: **0fd** (LICENSE/README hijack), **0fe** (`.Jules` case collision),
   branch `cursor-agent/automated-pr-workflow-7358`.
 - Phase 2 trigger: yes (≥1 ESCALATE; Hydrograph path cluster; rpce CONFLICTING).
 - Open EOD approx: **19** (pc1 / Seatek2 / hg3 / rpce13).
+
+## 2026-08-08 Phase 1 (cron)
+
+- Preflight PASS 7/7; inventoried **~55**; **16** squash-merges; **5** closes;
+  **~30** ESCALATE held; **6** REQUEST_CHANGES; CodeScene triggers **3**.
+- Merged: pc#1935/#1938/#1903/#1943/#1945; ctrld#1138/#1134/#1139/#1128;
+  esp#1449; Seatek#628; series#371; rpce#207/#213/#206/#212.
+- Closed: pc#1941; Seatek#623/#617/#626; rpce#216.
+- Blocked: esp#1437 sanitizer fast-path leak (Lesson **0fl**; adversarial
+  consensus critical).
+- Lock discipline: only ctrld#1134 this session; #1133 DIRTY, #1135 deferred.
+- Adversarial: opus-4.8 + gpt-5.5 parallel.
+- Docs: `tasks/pr-review-2026-08-08.md`, `pr-inventory.md`, `pr-triage.md`;
+  branch `cursor-agent/automated-pr-workflow-d318`.
+- Phase 2 trigger: yes (≥1 ESCALATE; Sentinel/TOCTOU/auth/CORS clusters).
+- Open EOD: **43** (pc2 / ctrld3 / esp4 / Seatek11 / hg10 / series5 / rpce8).

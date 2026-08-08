@@ -1,13 +1,18 @@
-# Phase 1 todo — 2026-08-07
+# PR Review Session Plan — 2026-08-08
+
+Mode: review-and-merge | Branch: `cursor-agent/automated-pr-workflow-d318`
+
+## Checklist
 
 - [x] Preflight PASS 7/7
-- [x] Inventory + triage
-- [x] Merge safe green PRs (24)
-- [x] Close superseded/cascade docs + Seatek #615
-- [x] Escalate Sentinels/auth/CORS/TOCTOU; RC failing CI
-- [x] CodeScene triggers on #371/#369/#617/#1421
-- [x] Recover Aug 5/6 stranded docs/lessons
-- [x] Adversarial multi-model review (opus + gpt-5.5)
-- [x] Write pr-inventory / pr-triage / pr-review-2026-08-07 / lessons
-- [x] Commit + push docs branch + open PR (#1937)
+- [x] Write `tasks/pr-inventory.md`
+- [x] Write `tasks/pr-triage.md`
+- [x] Gate CI + security on merge candidates
+- [x] Squash-merge green safe PRs (16) — one ctrld lock (#1134)
+- [x] Close zero-diff / superseded / duplicate (5)
+- [x] REQUEST_CHANGES / CodeScene triggers
+- [x] ESCALATE security clusters (no merge) incl. esp#1437
+- [x] Adversarial multi-model review (opus + gpt)
+- [x] Session report `tasks/pr-review-2026-08-08.md` + lesson 0fl
+- [x] Commit/push docs; open PR
 - [x] Update automation memory
