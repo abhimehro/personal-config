@@ -1,91 +1,88 @@
-# PR Inventory — 2026-08-07
+# PR Inventory — 2026-08-08
 
-Phase 1 cron (13:00 UTC). Preflight PASS 7/7. Auth: `abhimehro` PAT.
-Mode: review-and-merge. Stale threshold: 30 days. Merge: squash.
+Session: Phase 1 cron | Preflight PASS 7/7 | Branch `cursor-agent/automated-pr-workflow-d318`
 
-Scope: automation-driven open PRs (bot authors + human-authored
-Bolt/Jules/Sentinel/Palette/salvage/cursor-agent/Dependabot).
+| Repo | PR | Author | Category | CI | Conflicts | Age (upd) | Disposition |
+| ---- | -- | ------ | -------- | -- | --------- | --------- | ----------- |
+| personal-config | 1903 | abhimehro | REFACTOR | green | CLEAN | 08-06 | MERGE |
+| personal-config | 1907 | abhimehro | SECURITY | green | CLEAN | 08-07 | ESCALATE CORS |
+| personal-config | 1935 | abhimehro | CI/INFRA | green | CLEAN | 08-06 | MERGE (trufflehog FP) |
+| personal-config | 1938 | abhimehro | FEATURE | green | CLEAN | 08-08 | MERGE (salvage tests) |
+| personal-config | 1939 | cursor | CI/INFRA | — | CONFLICTING | 08-08 | DEFER draft salvage docs |
+| personal-config | 1941 | abhimehro | CI/INFRA | green | CLEAN | 08-07 | CLOSE twin of #1935 |
+| personal-config | 1943 | abhimehro | UI | green | CLEAN | 08-07 | MERGE Palette |
+| personal-config | 1945 | abhimehro | PERFORMANCE | green | CLEAN | 08-08 | MERGE Bolt |
+| ctrld-sync | 1128 | abhimehro | REFACTOR | green | CLEAN | 08-06 | DEFER (main.py+docs format; after #1138) |
+| ctrld-sync | 1133 | dependabot | DEPENDENCY | unstable label | CLEAN | 08-07 | DEFER lock sibling (pre-commit) |
+| ctrld-sync | 1134 | dependabot | DEPENDENCY | green | CLEAN | 08-07 | MERGE pytest lock (one/session) |
+| ctrld-sync | 1135 | dependabot | DEPENDENCY | unstable draft | CLEAN | 08-07 | DEFER lock sibling (ruff) |
+| ctrld-sync | 1136 | dependabot | DEPENDENCY | fail label | CLEAN | 08-07 | ESCALATE mypy 2.x major |
+| ctrld-sync | 1138 | abhimehro | UI | green | CLEAN | 08-07 | MERGE Palette |
+| ctrld-sync | 1139 | abhimehro | REFACTOR | green | CLEAN | 08-07 | DEFER main.py format vs #1128 |
+| email-security-pipeline | 1421 | abhimehro | PERFORMANCE | — | CONFLICTING | 08-07 | ESCALATE/DEFER CodeScene+conflict |
+| email-security-pipeline | 1437 | abhimehro | PERFORMANCE | green | CLEAN | 08-08 | ESCALATE sanitizer regression |
+| email-security-pipeline | 1444 | dependabot | DEPENDENCY | fail | CLEAN | 08-07 | ESCALATE opencv 5.x |
+| email-security-pipeline | 1447 | abhimehro | UI | CodeScene fail | CLEAN | 08-07 | REQUEST_CHANGES + CS trigger |
+| email-security-pipeline | 1449 | abhimehro | PERFORMANCE | green | CLEAN | 08-08 | MERGE Bolt |
+| Seatek_Analysis | 573–627 | abhimehro | SECURITY | green* | CLEAN | 08-07 | ESCALATE Sentinel cluster |
+| Seatek_Analysis | 617 | abhimehro | SECURITY | green | CLEAN | 08-07 | CLOSE zero-diff |
+| Seatek_Analysis | 620 | abhimehro | SECURITY | green | CLEAN | 08-07 | ESCALATE cluster head |
+| Seatek_Analysis | 623 | abhimehro | PERFORMANCE | green | CLEAN | 08-07 | CLOSE twin of #628 |
+| Seatek_Analysis | 626 | abhimehro | CI/INFRA | green | CLEAN | 08-07 | CLOSE zero-diff |
+| Seatek_Analysis | 628 | abhimehro | PERFORMANCE | green | CLEAN | 08-08 | MERGE Bolt sprintf |
+| Hydrograph… | 459–488 | abhimehro | SECURITY | green | CLEAN | 08-07 | ESCALATE sanitize_filename cluster |
+| series_correction… | 364 | abhimehro | SECURITY | green | CLEAN | 08-07 | ESCALATE PBKDF2 |
+| series_correction… | 365 | abhimehro | SECURITY | green | CLEAN | 08-07 | ESCALATE auth timing |
+| series_correction… | 369 | abhimehro | FEATURE | green | UNSTABLE | 08-07 | DEFER salvage tests |
+| series_correction… | 371 | abhimehro | REFACTOR | green | CLEAN | 08-07 | MERGE Jules format |
+| series_correction… | 372 | abhimehro | SECURITY | CodeScene | CLEAN | 08-07 | REQUEST_CHANGES + CS |
+| series_correction… | 374 | abhimehro | REFACTOR | CodeScene | CLEAN | 08-07 | REQUEST_CHANGES + CS |
+| repoprompt-ce | 184 | abhimehro | FEATURE | shard1 fail | UNSTABLE | 08-06 | REQUEST_CHANGES |
+| repoprompt-ce | 186/187/194 | abhimehro | FEATURE | — | CLEAN | 08-07 | DEFER large test suites |
+| repoprompt-ce | 196/201/210/214 | abhimehro | SECURITY | — | CLEAN | 08-07 | ESCALATE TOCTOU cluster |
+| repoprompt-ce | 206 | abhimehro | PERFORMANCE | green | CLEAN | 08-08 | MERGE salvage indexBytes |
+| repoprompt-ce | 207 | abhimehro | SECURITY | green | CLEAN | 08-08 | MERGE salvage stderr bytes |
+| repoprompt-ce | 212 | abhimehro | PERFORMANCE | green | CLEAN | 08-07 | MERGE DateFormatter |
+| repoprompt-ce | 213 | abhimehro | UI | green | CLEAN | 08-08 | MERGE a11y salvage |
+| repoprompt-ce | 216 | abhimehro | PERFORMANCE | shard4 fail | UNSTABLE | 08-08 | CLOSE twin/#212 prefer |
 
-## Start-of-session counts (auto targets)
+\*Sentinel cluster CI not individually re-verified this session; held per policy.
 
-| Repo | Auto open |
-| ---- | --------: |
-| personal-config | 8 |
-| ctrld-sync | 6 |
-| email-security-pipeline | 4 |
-| Seatek_Analysis | 14 |
-| Hydrograph… | 10 |
-| series_correction… | 4 |
-| repoprompt-ce | 12 |
-| **Total** | **58** |
+---
 
-## End-of-session open remainder (auto)
+## Phase 2 addendum (2026-08-08)
 
-| Repo | Open | Notes |
-| ---- | ---: | ----- |
-| personal-config | 1 | #1907 CORS ESCALATE |
-| ctrld-sync | ~4 | Dependabot lock siblings after #1132; mypy major #1136 |
-| email-security-pipeline | ~3 | #1421 CONFLICTING; #1444 opencv major; #1437 salvage draft |
-| Seatek_Analysis | 10 | Sentinel path/subprocess cluster |
-| Hydrograph… | 8 | Sentinel sanitize_filename cluster |
-| series_correction… | 4 | #364/#365 auth; #371 CodeScene; #369 salvage |
-| repoprompt-ce | 9 | TOCTOU + failing tests/a11y |
-| **Approx open auto** | **~44** | |
+# PR Inventory — Phase 2 Salvage 2026-08-08
 
-## Merged this session (24)
+Preflight: PASS 7/7 (+ `make cursor-cloud-hooks`). Auth: `abhimehro` PAT (0ew).
+Source: Phase 1 [`pr-review-2026-08-08.md`](pr-review-2026-08-08.md) / [#1946](https://github.com/abhimehro/personal-config/pull/1946) remainder + live CONFLICTING re-fetch.
 
-| Repo | PR | Category | Note |
-| ---- | -- | -------- | ---- |
-| ctrld-sync | 1130 | DEPENDENCY | pnpm/action-setup |
-| ctrld-sync | 1131 | DEPENDENCY | gh-aw actions/setup pin |
-| ctrld-sync | 1129 | DEPENDENCY | gh-aw setup-cli |
-| ctrld-sync | 1127 | UI | Palette error grammar |
-| ctrld-sync | 1126 | SECURITY | pygments 2.20.0 CVE (verified on main) |
-| ctrld-sync | 1123 | CI/INFRA | repo-health |
-| ctrld-sync | 1132 | DEPENDENCY | pytest-cov (one lock / 0fb) |
-| Seatek_Analysis | 619 | DEPENDENCY | pnpm/action-setup |
-| Seatek_Analysis | 618 | CI/INFRA | zero-diff daily QA |
-| Seatek_Analysis | 621 | PERFORMANCE | Bolt POSIXct guard (verified on main) |
-| Hydrograph… | 481 | DEPENDENCY | pnpm/action-setup |
-| Hydrograph… | 482 | DEPENDENCY | pandas requirements align to 3.0.5 (verified) |
-| email-security-pipeline | 1439 | UI | Palette email hint |
-| email-security-pipeline | 1435 | CI/INFRA | repo-health |
-| email-security-pipeline | 1446 | DEPENDENCY | certifi |
-| email-security-pipeline | 1445 | DEPENDENCY | pytest |
-| email-security-pipeline | 1443 | DEPENDENCY | pre-commit |
-| email-security-pipeline | 1442 | CI/INFRA | zero-diff daily QA |
-| personal-config | 1924 | PERFORMANCE | Bolt yaml import fallback |
-| personal-config | 1931 | CI/INFRA | repo-health TruffleHog |
-| personal-config | 1912 | CI/INFRA | docs Phase1 2026-08-04 |
-| repoprompt-ce | 209 | CI/INFRA | zero-diff Jules QA |
-| repoprompt-ce | 203 | UI | Palette a11y Chat buttons |
-| repoprompt-ce | 205 | CI/INFRA | repo-health community templates |
+## Open counts (live)
 
-## Closed this session (5)
+| Repo | Open | CONFLICTING | Notes |
+|------|-----:|------------:|-------|
+| personal-config | 2 | 0 | #1946 docs draft; #1907 CORS CLEAN |
+| ctrld-sync | 4 | 0 | #1136 mypy major; #1133/#1135 deps |
+| email-security-pipeline | 3 | 1 | #1421 aiohttp DIRTY; #1444 opencv; #1447 Palette |
+| Seatek_Analysis | 12 | 0 | Sentinel path-hijack cluster |
+| Hydrograph… | 11 | 0 | sanitize_filename cluster |
+| series_correction… | 4 | 1 | #364 PBKDF2 DIRTY; #365/#372 |
+| repoprompt-ce | 8 | 1 | #196 TOCTOU DIRTY; TOCTOU/test cluster |
 
-| Repo | PR | Reason |
-| ---- | -- | ------ |
-| personal-config | 1925 | CONFLICTING docs cascade after #1912; recovered Aug 5 report |
-| personal-config | 1930 | CONFLICTING docs cascade; recovered Aug 6 report |
-| personal-config | 1933 | CONFLICTING salvage docs cascade |
-| personal-config | 1914 | Trunk MQ fail + docs cascade |
-| Seatek_Analysis | 615 | Superseded by focused #621; workflow scope creep |
+## CONFLICTING queue (start → disposition)
 
-## Representative remaining (disposition)
+| Repo | PR | Author/branch signal | Disposition |
+|------|---:|----------------------|-------------|
+| personal-config | 1939 | cursor salvage docs | CLOSE → recovered into this docs PR (0fk) |
+| email-security-pipeline | 1437 | salvage sanitize fast-path | CLOSE rejected (0fl) |
+| email-security-pipeline | 1421 | Bolt aiohttp | ESCALATE S6/0fh |
+| series… | 369 | prior salvage OSError | SALVAGE → [#375](https://github.com/abhimehro/series_correction_project_updated/pull/375) |
+| series… | 374 | Jules black format | CLOSE superseded by #371 |
+| series… | 364 | Sentinel PBKDF2 | ESCALATE auth |
+| repoprompt-ce | 194 | Jules ToolGroups | SALVAGE → [#218](https://github.com/abhimehro/repoprompt-ce/pull/218) |
+| repoprompt-ce | 187 | Jules poll tests | CLOSE superseded (coverage on main) |
+| repoprompt-ce | 196 | Sentinel TOCTOU | ESCALATE |
 
-| Repo | PR | Disposition |
-| ---- | -- | ----------- |
-| personal-config | 1907 | ESCALATE CORS |
-| Seatek_Analysis | 620/617/612/610/607/605/590/585/580/573 | ESCALATE Sentinel cluster |
-| Hydrograph… | 484…459 | ESCALATE sanitize cluster |
-| series… | 365/364 | ESCALATE auth |
-| series… | 371 | REQUEST_CHANGES + CodeScene trigger |
-| series… | 369 | DEFER salvage draft (CodeScene) |
-| esp | 1421 | REQUEST_CHANGES / DEFER CONFLICTING |
-| esp | 1444 | ESCALATE opencv major |
-| esp | 1437 | DEFER salvage draft |
-| rpce | 211 | REQUEST_CHANGES XCTSkip (now CONFLICTING) |
-| rpce | 210/201/196 | ESCALATE TOCTOU |
-| rpce | 212/194/186 | REQUEST_CHANGES failing CI |
-| ctrld-sync | 1136 | ESCALATE mypy major |
-| ctrld-sync | 1133–1135 | DEFER lock cascade |
+## Auto-resolved since Phase 1 snapshots
+
+- pc #1938 MERGED; #1937 MERGED; rpce #213 MERGED; series #371 MERGED
