@@ -1,96 +1,91 @@
-# PR Inventory — 2026-08-04
+# PR Inventory — 2026-08-07
 
-Preflight: PASS 7/7. Mode: review-and-merge. Stale threshold: 30d.
+Phase 1 cron (13:00 UTC). Preflight PASS 7/7. Auth: `abhimehro` PAT.
+Mode: review-and-merge. Stale threshold: 30 days. Merge: squash.
 
-In scope: **88** open automation PRs across 7 repos.
+Scope: automation-driven open PRs (bot authors + human-authored
+Bolt/Jules/Sentinel/Palette/salvage/cursor-agent/Dependabot).
 
-| Repo | PR | Author | Category | CI | Mergeable | Age | Disposition |
-| ---- | -- | ------ | -------- | -- | --------- | --- | ----------- |
-| Hydrograph_Versus_Seatek_Sensors_Project | [#466](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/466) | abhimehro | SECURITY | PASS | MERGEABLE | 0d | ESCALATE |
-| Hydrograph_Versus_Seatek_Sensors_Project | [#464](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/464) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| Hydrograph_Versus_Seatek_Sensors_Project | [#461](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/461) | app/dependabot | DEPENDENCY | PASS | MERGEABLE | 0d | MERGE |
-| Hydrograph_Versus_Seatek_Sensors_Project | [#460](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/460) | app/dependabot | DEPENDENCY | PASS | MERGEABLE | 0d | MERGE |
-| Hydrograph_Versus_Seatek_Sensors_Project | [#459](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/459) | abhimehro | SECURITY | PASS | MERGEABLE | 0d | ESCALATE |
-| Hydrograph_Versus_Seatek_Sensors_Project | [#457](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/457) | abhimehro | REFACTOR | PASS | MERGEABLE | 1d | MERGE |
-| Seatek_Analysis | [#601](https://github.com/abhimehro/Seatek_Analysis/pull/601) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | REQUEST_CHANGES |
-| Seatek_Analysis | [#600](https://github.com/abhimehro/Seatek_Analysis/pull/600) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | REQUEST_CHANGES |
-| Seatek_Analysis | [#599](https://github.com/abhimehro/Seatek_Analysis/pull/599) | abhimehro | CI/INFRA | PASS | MERGEABLE | 0d | REQUEST_CHANGES |
-| Seatek_Analysis | [#598](https://github.com/abhimehro/Seatek_Analysis/pull/598) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | REQUEST_CHANGES |
-| Seatek_Analysis | [#597](https://github.com/abhimehro/Seatek_Analysis/pull/597) | abhimehro | SECURITY | PASS | MERGEABLE | 0d | MERGE |
-| Seatek_Analysis | [#596](https://github.com/abhimehro/Seatek_Analysis/pull/596) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | REQUEST_CHANGES |
-| Seatek_Analysis | [#595](https://github.com/abhimehro/Seatek_Analysis/pull/595) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | REQUEST_CHANGES |
-| Seatek_Analysis | [#594](https://github.com/abhimehro/Seatek_Analysis/pull/594) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| Seatek_Analysis | [#593](https://github.com/abhimehro/Seatek_Analysis/pull/593) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | REQUEST_CHANGES |
-| Seatek_Analysis | [#592](https://github.com/abhimehro/Seatek_Analysis/pull/592) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| Seatek_Analysis | [#590](https://github.com/abhimehro/Seatek_Analysis/pull/590) | abhimehro | SECURITY | PASS | MERGEABLE | 0d | ESCALATE |
-| Seatek_Analysis | [#588](https://github.com/abhimehro/Seatek_Analysis/pull/588) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| Seatek_Analysis | [#585](https://github.com/abhimehro/Seatek_Analysis/pull/585) | abhimehro | SECURITY | PASS | MERGEABLE | 1d | ESCALATE |
-| Seatek_Analysis | [#584](https://github.com/abhimehro/Seatek_Analysis/pull/584) | abhimehro | FEATURE | PASS | MERGEABLE | 1d | MERGE |
-| Seatek_Analysis | [#580](https://github.com/abhimehro/Seatek_Analysis/pull/580) | abhimehro | SECURITY | PASS | MERGEABLE | 2d | ESCALATE |
-| Seatek_Analysis | [#573](https://github.com/abhimehro/Seatek_Analysis/pull/573) | abhimehro | SECURITY | PASS | MERGEABLE | 3d | ESCALATE |
-| ctrld-sync | [#1115](https://github.com/abhimehro/ctrld-sync/pull/1115) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | CLOSE |
-| ctrld-sync | [#1113](https://github.com/abhimehro/ctrld-sync/pull/1113) | abhimehro | REFACTOR | PASS | MERGEABLE | 1d | MERGE |
-| ctrld-sync | [#1111](https://github.com/abhimehro/ctrld-sync/pull/1111) | abhimehro | FEATURE | PASS | MERGEABLE | 1d | MERGE |
-| email-security-pipeline | [#1421](https://github.com/abhimehro/email-security-pipeline/pull/1421) | abhimehro | DEPENDENCY | PASS | MERGEABLE | 0d | REQUEST_CHANGES |
-| email-security-pipeline | [#1420](https://github.com/abhimehro/email-security-pipeline/pull/1420) | abhimehro | DEPENDENCY | FAIL | MERGEABLE | 0d | CLOSE |
-| email-security-pipeline | [#1419](https://github.com/abhimehro/email-security-pipeline/pull/1419) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| email-security-pipeline | [#1418](https://github.com/abhimehro/email-security-pipeline/pull/1418) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | CLOSE |
-| email-security-pipeline | [#1417](https://github.com/abhimehro/email-security-pipeline/pull/1417) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| email-security-pipeline | [#1416](https://github.com/abhimehro/email-security-pipeline/pull/1416) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| email-security-pipeline | [#1415](https://github.com/abhimehro/email-security-pipeline/pull/1415) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| email-security-pipeline | [#1414](https://github.com/abhimehro/email-security-pipeline/pull/1414) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| email-security-pipeline | [#1412](https://github.com/abhimehro/email-security-pipeline/pull/1412) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| email-security-pipeline | [#1410](https://github.com/abhimehro/email-security-pipeline/pull/1410) | abhimehro | CI/INFRA | PASS | MERGEABLE | 0d | MERGE |
-| email-security-pipeline | [#1409](https://github.com/abhimehro/email-security-pipeline/pull/1409) | abhimehro | PERFORMANCE | FAIL | MERGEABLE | 1d | REQUEST_CHANGES |
-| personal-config | [#1910](https://github.com/abhimehro/personal-config/pull/1910) | abhimehro | CI/INFRA | PASS | MERGEABLE | 0d | MERGE |
-| personal-config | [#1909](https://github.com/abhimehro/personal-config/pull/1909) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | REQUEST_CHANGES |
-| personal-config | [#1908](https://github.com/abhimehro/personal-config/pull/1908) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| personal-config | [#1907](https://github.com/abhimehro/personal-config/pull/1907) | abhimehro | SECURITY | PASS | MERGEABLE | 0d | ESCALATE |
-| personal-config | [#1906](https://github.com/abhimehro/personal-config/pull/1906) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | MERGE |
-| personal-config | [#1905](https://github.com/abhimehro/personal-config/pull/1905) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| personal-config | [#1904](https://github.com/abhimehro/personal-config/pull/1904) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | REQUEST_CHANGES |
-| personal-config | [#1903](https://github.com/abhimehro/personal-config/pull/1903) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | REQUEST_CHANGES |
-| personal-config | [#1902](https://github.com/abhimehro/personal-config/pull/1902) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | REQUEST_CHANGES |
-| personal-config | [#1901](https://github.com/abhimehro/personal-config/pull/1901) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| personal-config | [#1900](https://github.com/abhimehro/personal-config/pull/1900) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | MERGE |
-| personal-config | [#1899](https://github.com/abhimehro/personal-config/pull/1899) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| personal-config | [#1898](https://github.com/abhimehro/personal-config/pull/1898) | abhimehro | FEATURE | FAIL | MERGEABLE | 0d | CLOSE |
-| personal-config | [#1897](https://github.com/abhimehro/personal-config/pull/1897) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | CLOSE |
-| personal-config | [#1896](https://github.com/abhimehro/personal-config/pull/1896) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| personal-config | [#1895](https://github.com/abhimehro/personal-config/pull/1895) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| personal-config | [#1894](https://github.com/abhimehro/personal-config/pull/1894) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| personal-config | [#1893](https://github.com/abhimehro/personal-config/pull/1893) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | MERGE |
-| personal-config | [#1890](https://github.com/abhimehro/personal-config/pull/1890) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | MERGE |
-| personal-config | [#1886](https://github.com/abhimehro/personal-config/pull/1886) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 1d | MERGE |
-| repoprompt-ce | [#194](https://github.com/abhimehro/repoprompt-ce/pull/194) | abhimehro | FEATURE | FAIL | MERGEABLE | 0d | REQUEST_CHANGES |
-| repoprompt-ce | [#193](https://github.com/abhimehro/repoprompt-ce/pull/193) | abhimehro | SECURITY | PASS | MERGEABLE | 0d | ESCALATE |
-| repoprompt-ce | [#192](https://github.com/abhimehro/repoprompt-ce/pull/192) | abhimehro | SECURITY | FAIL | MERGEABLE | 0d | ESCALATE |
-| repoprompt-ce | [#191](https://github.com/abhimehro/repoprompt-ce/pull/191) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| repoprompt-ce | [#190](https://github.com/abhimehro/repoprompt-ce/pull/190) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| repoprompt-ce | [#189](https://github.com/abhimehro/repoprompt-ce/pull/189) | abhimehro | SECURITY | PASS | MERGEABLE | 0d | MERGE |
-| repoprompt-ce | [#188](https://github.com/abhimehro/repoprompt-ce/pull/188) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| repoprompt-ce | [#187](https://github.com/abhimehro/repoprompt-ce/pull/187) | abhimehro | FEATURE | FAIL | MERGEABLE | 0d | REQUEST_CHANGES |
-| repoprompt-ce | [#186](https://github.com/abhimehro/repoprompt-ce/pull/186) | abhimehro | FEATURE | FAIL | MERGEABLE | 0d | REQUEST_CHANGES |
-| repoprompt-ce | [#185](https://github.com/abhimehro/repoprompt-ce/pull/185) | abhimehro | FEATURE | FAIL | MERGEABLE | 0d | REQUEST_CHANGES |
-| repoprompt-ce | [#184](https://github.com/abhimehro/repoprompt-ce/pull/184) | abhimehro | FEATURE | FAIL | MERGEABLE | 0d | REQUEST_CHANGES |
-| repoprompt-ce | [#183](https://github.com/abhimehro/repoprompt-ce/pull/183) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| repoprompt-ce | [#182](https://github.com/abhimehro/repoprompt-ce/pull/182) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| repoprompt-ce | [#181](https://github.com/abhimehro/repoprompt-ce/pull/181) | abhimehro | PERFORMANCE | FAIL | MERGEABLE | 0d | REQUEST_CHANGES |
-| repoprompt-ce | [#180](https://github.com/abhimehro/repoprompt-ce/pull/180) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| repoprompt-ce | [#179](https://github.com/abhimehro/repoprompt-ce/pull/179) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#359](https://github.com/abhimehro/series_correction_project_updated/pull/359) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#358](https://github.com/abhimehro/series_correction_project_updated/pull/358) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#357](https://github.com/abhimehro/series_correction_project_updated/pull/357) | abhimehro | SECURITY | PASS | MERGEABLE | 0d | ESCALATE |
-| series_correction_project_updated | [#356](https://github.com/abhimehro/series_correction_project_updated/pull/356) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#355](https://github.com/abhimehro/series_correction_project_updated/pull/355) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#354](https://github.com/abhimehro/series_correction_project_updated/pull/354) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#353](https://github.com/abhimehro/series_correction_project_updated/pull/353) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#352](https://github.com/abhimehro/series_correction_project_updated/pull/352) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#351](https://github.com/abhimehro/series_correction_project_updated/pull/351) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#350](https://github.com/abhimehro/series_correction_project_updated/pull/350) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#349](https://github.com/abhimehro/series_correction_project_updated/pull/349) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#348](https://github.com/abhimehro/series_correction_project_updated/pull/348) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#347](https://github.com/abhimehro/series_correction_project_updated/pull/347) | abhimehro | REFACTOR | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#346](https://github.com/abhimehro/series_correction_project_updated/pull/346) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#345](https://github.com/abhimehro/series_correction_project_updated/pull/345) | abhimehro | FEATURE | PASS | MERGEABLE | 0d | MERGE |
-| series_correction_project_updated | [#342](https://github.com/abhimehro/series_correction_project_updated/pull/342) | abhimehro | FEATURE | PASS | MERGEABLE | 1d | MERGE |
+## Start-of-session counts (auto targets)
+
+| Repo | Auto open |
+| ---- | --------: |
+| personal-config | 8 |
+| ctrld-sync | 6 |
+| email-security-pipeline | 4 |
+| Seatek_Analysis | 14 |
+| Hydrograph… | 10 |
+| series_correction… | 4 |
+| repoprompt-ce | 12 |
+| **Total** | **58** |
+
+## End-of-session open remainder (auto)
+
+| Repo | Open | Notes |
+| ---- | ---: | ----- |
+| personal-config | 1 | #1907 CORS ESCALATE |
+| ctrld-sync | ~4 | Dependabot lock siblings after #1132; mypy major #1136 |
+| email-security-pipeline | ~3 | #1421 CONFLICTING; #1444 opencv major; #1437 salvage draft |
+| Seatek_Analysis | 10 | Sentinel path/subprocess cluster |
+| Hydrograph… | 8 | Sentinel sanitize_filename cluster |
+| series_correction… | 4 | #364/#365 auth; #371 CodeScene; #369 salvage |
+| repoprompt-ce | 9 | TOCTOU + failing tests/a11y |
+| **Approx open auto** | **~44** | |
+
+## Merged this session (24)
+
+| Repo | PR | Category | Note |
+| ---- | -- | -------- | ---- |
+| ctrld-sync | 1130 | DEPENDENCY | pnpm/action-setup |
+| ctrld-sync | 1131 | DEPENDENCY | gh-aw actions/setup pin |
+| ctrld-sync | 1129 | DEPENDENCY | gh-aw setup-cli |
+| ctrld-sync | 1127 | UI | Palette error grammar |
+| ctrld-sync | 1126 | SECURITY | pygments 2.20.0 CVE (verified on main) |
+| ctrld-sync | 1123 | CI/INFRA | repo-health |
+| ctrld-sync | 1132 | DEPENDENCY | pytest-cov (one lock / 0fb) |
+| Seatek_Analysis | 619 | DEPENDENCY | pnpm/action-setup |
+| Seatek_Analysis | 618 | CI/INFRA | zero-diff daily QA |
+| Seatek_Analysis | 621 | PERFORMANCE | Bolt POSIXct guard (verified on main) |
+| Hydrograph… | 481 | DEPENDENCY | pnpm/action-setup |
+| Hydrograph… | 482 | DEPENDENCY | pandas requirements align to 3.0.5 (verified) |
+| email-security-pipeline | 1439 | UI | Palette email hint |
+| email-security-pipeline | 1435 | CI/INFRA | repo-health |
+| email-security-pipeline | 1446 | DEPENDENCY | certifi |
+| email-security-pipeline | 1445 | DEPENDENCY | pytest |
+| email-security-pipeline | 1443 | DEPENDENCY | pre-commit |
+| email-security-pipeline | 1442 | CI/INFRA | zero-diff daily QA |
+| personal-config | 1924 | PERFORMANCE | Bolt yaml import fallback |
+| personal-config | 1931 | CI/INFRA | repo-health TruffleHog |
+| personal-config | 1912 | CI/INFRA | docs Phase1 2026-08-04 |
+| repoprompt-ce | 209 | CI/INFRA | zero-diff Jules QA |
+| repoprompt-ce | 203 | UI | Palette a11y Chat buttons |
+| repoprompt-ce | 205 | CI/INFRA | repo-health community templates |
+
+## Closed this session (5)
+
+| Repo | PR | Reason |
+| ---- | -- | ------ |
+| personal-config | 1925 | CONFLICTING docs cascade after #1912; recovered Aug 5 report |
+| personal-config | 1930 | CONFLICTING docs cascade; recovered Aug 6 report |
+| personal-config | 1933 | CONFLICTING salvage docs cascade |
+| personal-config | 1914 | Trunk MQ fail + docs cascade |
+| Seatek_Analysis | 615 | Superseded by focused #621; workflow scope creep |
+
+## Representative remaining (disposition)
+
+| Repo | PR | Disposition |
+| ---- | -- | ----------- |
+| personal-config | 1907 | ESCALATE CORS |
+| Seatek_Analysis | 620/617/612/610/607/605/590/585/580/573 | ESCALATE Sentinel cluster |
+| Hydrograph… | 484…459 | ESCALATE sanitize cluster |
+| series… | 365/364 | ESCALATE auth |
+| series… | 371 | REQUEST_CHANGES + CodeScene trigger |
+| series… | 369 | DEFER salvage draft (CodeScene) |
+| esp | 1421 | REQUEST_CHANGES / DEFER CONFLICTING |
+| esp | 1444 | ESCALATE opencv major |
+| esp | 1437 | DEFER salvage draft |
+| rpce | 211 | REQUEST_CHANGES XCTSkip (now CONFLICTING) |
+| rpce | 210/201/196 | ESCALATE TOCTOU |
+| rpce | 212/194/186 | REQUEST_CHANGES failing CI |
+| ctrld-sync | 1136 | ESCALATE mypy major |
+| ctrld-sync | 1133–1135 | DEFER lock cascade |

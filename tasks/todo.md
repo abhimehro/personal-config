@@ -1,12 +1,13 @@
-# PR Review Session 2026-08-04 — TODO
+# Phase 1 todo — 2026-08-07
 
-- [x] Preflight gate (7/7 PASS)
-- [x] Inventory open PRs across 7 repos
-- [x] Write pr-inventory.md / pr-triage.md
-- [x] Adversarial review of high-risk merge cluster (opus + gpt)
-- [x] Merge green safe PRs (squash), re-check cascade
-- [x] Close duplicates / journal wipes / hijack
-- [x] REQUEST_CHANGES on red CI; post CodeScene skill on #1409
-- [x] ESCALATE Sentinels / trust-boundary
-- [x] Write pr-review-2026-08-04.md + update lessons + session reports
-- [x] Commit/push docs branch; update automation memory
+- [x] Preflight PASS 7/7
+- [x] Inventory + triage
+- [x] Merge safe green PRs (24)
+- [x] Close superseded/cascade docs + Seatek #615
+- [x] Escalate Sentinels/auth/CORS/TOCTOU; RC failing CI
+- [x] CodeScene triggers on #371/#369/#617/#1421
+- [x] Recover Aug 5/6 stranded docs/lessons
+- [x] Adversarial multi-model review (opus + gpt-5.5)
+- [x] Write pr-inventory / pr-triage / pr-review-2026-08-07 / lessons
+- [x] Commit + push docs branch + open PR (#1937)
+- [x] Update automation memory
