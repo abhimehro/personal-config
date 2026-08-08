@@ -1,3 +1,22 @@
+# Review session — 2026-08-07 (cron Phase 1 13:00 UTC)
+
+Preflight PASS 7/7. Inventoried **58**. Squash-merged **24**. Closed **5**.
+Escalated **~25**. Request-changes **~8**. CodeScene triggers **4**.
+Adversarial: opus-4.8 + gpt-5.5. Docs branch: `cursor-agent/automated-pr-workflow-a609`.
+Report: `tasks/pr-review-2026-08-07.md`. Recovered stranded Aug 5/6 reports (lesson **0fk**).
+
+| Metric | Count |
+| --- | ---: |
+| Inventoried | 58 |
+| Merged | 24 |
+| Closed | 5 |
+| Escalated | ~25 |
+| Open EOD | ~44 |
+
+New lesson: **0fk** (docs `tasks/*` cascade recovery). Restored **0fg**/**0fh** headings.
+
+---
+
 # Review session — 2026-08-04 (cron Phase 1 13:00 UTC)
 
 Preflight PASS 7/7. Inventoried **88**. Squash-merged **49**. Closed **5**.
