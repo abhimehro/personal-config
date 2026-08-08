@@ -16,7 +16,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # R 4.3.3 from Posit r-builds noble packages (matches Seatek_Analysis renv.lock).
-# Skip on non-amd64; install script tolerates missing Rscript.
+# Skip on non-amd64 (no published noble deb checksum for arm64); install script
+# tolerates missing Rscript. Re-verify r_sha when bumping R or the Posit CDN artifact.
 RUN set -eux; \
   arch="$(dpkg --print-architecture)"; \
   r_version="4.3.3"; \
@@ -35,7 +36,7 @@ RUN set -eux; \
     && ln -sf "/opt/R/${r_version}/bin/Rscript" /usr/local/bin/Rscript; \
   fi
 
-# PlantUML (personal-config blueprint initialize).
+# PlantUML (personal-config blueprint initialize). Re-verify plantuml_sha when bumping version.
 RUN set -eux; \
   plantuml_version="1.2024.5"; \
   plantuml_sha="3c551212da4aa421a2c2940b8cfae26951b3591f75d5b93e33775e930641c7db"; \
