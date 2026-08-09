@@ -163,7 +163,7 @@ class TestHtmlHelpers(unittest.TestCase):
         assert mb.html_ul(items) == "<ul><li>a</li><li>b</li></ul>"
 
     def test_html_ul_empty(self):
-        assert mb.html_ul([]) == '<ul><li class="empty-state">📭 No items</li></ul>'
+        assert mb.html_ul([]) == '<ul><li class="empty-state"><span aria-hidden="true">📭</span> No items</li></ul>'
 
     def test_html_section(self):
         result = mb.html_section("Title", "<p>body</p>")
