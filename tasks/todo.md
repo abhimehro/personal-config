@@ -8,8 +8,8 @@
 - [x] Triage: SALVAGE / CLOSE-SUPERSEDED / ESCALATE / DEFER (never merge autonomously — S1)
 - [x] Salvage recoverable DIRTY work onto fresh `main` draft PRs; close originals with cross-links
 - [x] Write deliverables: `pr-inventory.md`, `pr-triage.md`, `pr-review-2026-08-09.md` Phase 2 addendum, append `salvage-session-reports.md` + lesson **0fo**
-- [ ] Commit/push docs on personal-config; open/update draft docs PR via automation tools
-- [ ] Update automation memory; Notion session page
+- [x] Commit/push docs on personal-config; open/update draft docs PR via automation tools
+- [x] Update automation memory; Notion session page
 
 ## Security gates
 
