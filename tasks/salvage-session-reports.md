@@ -4,6 +4,47 @@
 > writer: salvage automation only. Do not edit review entries here; review
 > writes to `tasks/review-session-reports.md`.
 
+## Run — 2026-08-09
+
+### Input tail
+
+- Source: Phase 1 [#1953](https://github.com/abhimehro/personal-config/pull/1953) /
+  `pr-review-2026-08-09.md` remainder + live CONFLICTING re-fetch
+- Preflight PASS; `make cursor-cloud-hooks`; PAT as `abhimehro` (0ew)
+- Live CONFLICTING: esp #1421; rpce #220/#186; series #372/#364
+- Prior salvage drafts still open: series #375; rpce #218
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+| ---- | -----: | ----------- | ------ | ----- |
+| series_correction… | 372 | SALVAGE + CLOSE | [#379](https://github.com/abhimehro/series_correction_project_updated/pull/379) | lazy log.exception only |
+| series_correction… | 364 | ESCALATE | — | dummy_todos PBKDF2; auth boundary |
+| series_correction… | 375 | HUMAN QUEUE | — | Aug 8 draft retained |
+| repoprompt-ce | 186 | SALVAGE + CLOSE | [#224](https://github.com/abhimehro/repoprompt-ce/pull/224) | extend canonical REPL tests (0fo) |
+| repoprompt-ce | 220 | CLOSE no-op | — | incomplete isoFormatter reuse |
+| repoprompt-ce | 218 | HUMAN QUEUE | — | Aug 8 draft retained |
+| email-security-pipeline | 1421 | ESCALATE | — | aiohttp / 0fh |
+
+- Salvage drafts opened: **2**
+- Infra-fix drafts: **0**
+- Closed via API: **3**
+- Autonomous merges: **0** (S1)
+- New lesson: **0fo**
+- `request_reviewers`: skipped (author already abhimehro)
+
+### Verification
+
+- series #379: `python3 -m pytest scripts/tests/test_batch_correction.py -q` → 20 passed
+- rpce #224: Swift XCTest not runnable on Linux cloud — human macOS
+  `make dev-test FILTER=REPLInputParserTests`
+
+### Handoff
+
+1. Human merge drafts #379 → #375 → #224 → #218
+2. Human T1 security: pc#1907; Seatek/Hydrograph Sentinel clusters; series#365/#364; rpce TOCTOU; esp#1421/#1444; ctrld#1136/#1147
+3. Docs: this branch stacks on Phase 1 #1953 (0fk) — merge docs lineage once
+
 ## Entry template
 
 ## Run — 2026-08-01

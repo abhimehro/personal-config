@@ -1,12 +1,20 @@
-# PR Review Session 2026-08-09 — Phase 1
+# TODO — Automated PR Salvage Phase 2 — 2026-08-09
 
-- [x] Preflight (`preflight-gh-pr-automation.sh`) — PASS 7/7
-- [x] Inventory open automation PRs → `tasks/pr-inventory.md`
-- [x] Triage/classify → `tasks/pr-triage.md`
-- [x] Merge green safe PRs (squash); close stale/duplicates
-- [x] Autofix esp#1453 (strip scratch); CodeScene series#372
-- [x] Escalate security/Sentinel/auth clusters (held for human)
-- [x] Write `tasks/pr-review-2026-08-09.md` + finalize lessons
-- [x] Commit/push docs branch; open docs PR via automation tool
-- [x] Close superseded Aug 8 docs drafts #1946/#1947 after recovery
-- [x] Adversarial multi-model review (opus + gpt-5.5); address W1 by pushing recovery
+## Plan
+
+- [x] Preflight: `gh auth` as abhimehro, branch `cursor-agent/automated-pr-salvage-workflow-9373`, `make cursor-cloud-hooks`
+- [x] Re-fetch live CONFLICTING/DIRTY/UNSTABLE bot PRs across 7 repos
+- [x] Cross-check Phase 1 remainder (#1953 / Aug 9) + Aug 8 salvage memory against live state
+- [x] Triage: SALVAGE / CLOSE-SUPERSEDED / ESCALATE / DEFER (never merge autonomously — S1)
+- [x] Salvage recoverable DIRTY work onto fresh `main` draft PRs; close originals with cross-links
+- [x] Write deliverables: `pr-inventory.md`, `pr-triage.md`, `pr-review-2026-08-09.md` Phase 2 addendum, append `salvage-session-reports.md` + lesson **0fo**
+- [ ] Commit/push docs on personal-config; open/update draft docs PR via automation tools
+- [ ] Update automation memory; Notion session page
+
+## Security gates
+
+- No autonomous merges (S1) ✅
+- No force-push ✅
+- Security/auth/CORS/TOCTOU/Sentinel/PBKDF2 stay ESCALATE (0fn) ✅
+- Skip `request_reviewers` when author is already abhimehro (0ew) ✅
+- One competing `tasks/*` docs lineage — stacked on Phase 1 #1953 tip (0fk) ✅

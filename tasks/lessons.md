@@ -1,5 +1,18 @@
 # Lessons Learned
 
+## Lesson 0fo: Extend canonical XCTest suites — never add a colliding second class path (2026-08-09)
+
+**Pattern:** CONFLICTING Jules test PRs (rpce#186) add a *new* file under a
+different folder (`Tests/.../MCP/Interactive/REPLInputParserTests.swift`) while
+`main` already has `Tests/.../Interactive/REPLInputParserTests.swift` with the
+same `final class REPLInputParserTests`. Checking out the PR path wholesale
+creates a duplicate XCTest type and fails Build and Test.
+**Rule:** Diff method names against the canonical suite; append only unique
+edge-case tests to the existing file. Drop contaminant Palette/docs/journal
+churn (0y/0fj). Prefer one class, one path.
+**Detection cost:** Low — `git ls-tree` / `rg 'final class <Name>'` on both
+paths before salvage checkout.
+
 ## Lesson 0fl: Sanitizer “perf” fast-paths must preserve bare-path redaction (2026-08-08)
 
 **Pattern:** ESP #1437 added `if "http" not in msg and "www" not in msg: return
