@@ -7,5 +7,6 @@
 - [x] Autofix esp#1453 (strip scratch); CodeScene series#372
 - [x] Escalate security/Sentinel/auth clusters (held for human)
 - [x] Write `tasks/pr-review-2026-08-09.md` + finalize lessons
-- [ ] Commit/push docs branch; open docs PR via automation tool
+- [x] Commit/push docs branch; open docs PR via automation tool
 - [x] Close superseded Aug 8 docs drafts #1946/#1947 after recovery
+- [x] Adversarial multi-model review (opus + gpt-5.5); address W1 by pushing recovery
