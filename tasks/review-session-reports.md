@@ -1,3 +1,20 @@
+# Review session — 2026-08-09 (cron Phase 1 13:00 UTC)
+
+Preflight PASS 7/7. Inventoried **~58**. Squash-merged **11**. Closed **5**.
+Autofix **1**. CodeScene **1**. Escalated **~35**. Request-changes **2**.
+Adversarial: opus-4.8 + gpt-5.5. Docs branch: `cursor-agent/automated-pr-workflow-db86`.
+Report: `tasks/pr-review-2026-08-09.md`. Recovered Aug 8 report + lessons 0fl/0fm/0fn (0fk).
+
+| Metric | Count |
+| --- | ---: |
+| Inventoried | ~58 |
+| Merged | 11 |
+| Closed | 5 |
+| Escalated | ~35 |
+| Open EOD | ~42 |
+
+---
+
 # Review session — 2026-08-07 (cron Phase 1 13:00 UTC)
 
 Preflight PASS 7/7. Inventoried **58**. Squash-merged **24**. Closed **5**.
