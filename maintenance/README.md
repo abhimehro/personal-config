@@ -48,8 +48,9 @@ Under memory pressure, pausing or killing Apple diagnostic agents
 
 - **Policy library**: `maintenance/lib/process_exclusions.sh` (sourced by
   optimizers/monitors)
-- **Crash-reporter containment only**: `scripts/report-daemons-watchdog.sh` +
-  LaunchAgent `launch-agents/com.speedybee.report-daemons-watchdog.plist`
+- **Crash-reporter observation only**: `scripts/report-daemons-watchdog.sh` +
+  LaunchAgent `launch-agents/com.speedybee.report-daemons-watchdog.plist`; it
+  never disables or kills Apple's launchd-managed reporters
 - **Never automate against**: `launchd`, `kernel_task`, `WindowServer`,
   `coreaudiod`, active Spotlight (`mds*`), VM guest services, VPN/auth agents
   listed in the exclusions file

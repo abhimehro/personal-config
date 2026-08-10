@@ -1,0 +1,38 @@
+#!/bin/bash
+# Clean agent bash launcher. Does not change the login shell (Fish).
+# Non-interactive fix: bash ignores --rcfile for -c unless interactive,
+# so we export BASH_ENV to load the agent bashrc for -c runs.
+# Usage:
+#   agent-bash
+#   agent-bash -c 'git status -sb'
+#   agent-bash --self-test
+
+AGENT_RC="${AGENT_BASH_RC:-$HOME/.config/agent-shell/bashrc}"
+export BASH_ENV="$AGENT_RC"
+
+BASH_BIN=/bin/bash
+if [[ "${1:-}" == "--self-test" ]]; then
+  exec "$BASH_BIN" --noprofile --rcfile "$AGENT_RC" -c '
+    echo "agent-bash self-test"
+    echo "shell=bash"
+    echo "BASH_ENV=$BASH_ENV"
+    echo "PWD=$PWD"
+    echo "AGENT_WORKSPACE=$AGENT_WORKSPACE"
+    echo "PYTHONUNBUFFERED=$PYTHONUNBUFFERED"
+    echo "PAGER=$PAGER"
+    command -v git >/dev/null && echo "git=ok" || echo "git=missing"
+    command -v python3 >/dev/null && echo "python3=ok" || echo "python3=missing"
+    echo "stdout-mark"
+    echo "stderr-mark" >&2
+    echo "PATH_HEAD=${PATH%%:*}"
+    if [ -n "${AGENT_BASH_ENV_LOADED:-}" ]; then echo "bashrc=loaded"; else echo "bashrc=missing"; fi
+  '
+fi
+
+# Interactive: use --rcfile. Non-interactive -c: BASH_ENV handles env load.
+# --noprofile avoids host /etc/profile noise for agents.
+if [[ $# -eq 0 ]]; then
+  exec "$BASH_BIN" --noprofile --rcfile "$AGENT_RC" -i
+fi
+
+exec "$BASH_BIN" --noprofile --rcfile "$AGENT_RC" "$@"

@@ -10,9 +10,9 @@
         <string>/Users/speedybee/dev/personal-config/scripts/report-daemons-watchdog.sh</string>
     </array>
     <key>RunAtLoad</key>
-    <true/>
+    <false/>
     <key>StartInterval</key>
-    <integer>60</integer>
+    <integer>900</integer>
     <key>Nice</key>
     <integer>5</integer>
     <key>ProcessType</key>

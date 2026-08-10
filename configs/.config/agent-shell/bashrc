@@ -1,0 +1,52 @@
+# Agent bash environment
+# Used both as:
+#   - interactive rc via: bash --rcfile ...
+#   - non-interactive via: BASH_ENV=... (see ~/bin/agent-bash)
+#
+# Keep this free of prompts that break machine parsing when possible.
+
+# Prevent recursive BASH_ENV sourcing
+if [ -n "${AGENT_BASH_ENV_LOADED:-}" ]; then
+  return 0 2>/dev/null || exit 0
+fi
+export AGENT_BASH_ENV_LOADED=1
+
+export LANG="${LANG:-en_US.UTF-8}"
+export LC_ALL="${LC_ALL:-en_US.UTF-8}"
+export EDITOR="${EDITOR:-nvim}"
+export VISUAL="${VISUAL:-nvim}"
+export GIT_EDITOR="${GIT_EDITOR:-nvim}"
+
+export HOMEBREW_NO_AUTO_UPDATE=1
+export HOMEBREW_NO_ANALYTICS=1
+export HOMEBREW_NO_ENV_HINTS=1
+export PIP_DISABLE_PIP_VERSION_CHECK=1
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONUNBUFFERED=1
+export PAGER="${PAGER:-cat}"
+export GIT_PAGER="${GIT_PAGER:-cat}"
+export LESS="${LESS:--FRX}"
+
+export AGENT_WORKSPACE="${AGENT_WORKSPACE:-$HOME/dev/abhimehro}"
+export PERSONAL_CONFIG="${PERSONAL_CONFIG:-$HOME/dev/personal-config}"
+
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:$HOME/bin:$HOME/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+# Auto-cd for common agent launch dirs
+case "$PWD" in
+  /|"$HOME"|"$HOME/")
+    if [ -d "$AGENT_WORKSPACE" ]; then
+      cd "$AGENT_WORKSPACE" 2>/dev/null || true
+    fi
+    ;;
+esac
+
+# Interactive-only niceties
+case "$-" in
+  *i*)
+    PS1='\u@agent:\w\$ '
+    alias ll='ls -la'
+    alias gs='git status -sb'
+    alias ..='cd ..'
+    ;;
+esac
