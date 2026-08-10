@@ -489,7 +489,7 @@ EOF
 	if [[ -f "$insights_file" ]] && [[ -s "$insights_file" ]]; then
 		local insights_content
 		insights_content=$(cat "$insights_file" 2>/dev/null)
-		if [[ "$insights_content" == *"Insights not available"* ]]; then
+		if [[ "$insights_content" == *"Insights not available"* ]] || [[ "$insights_content" != *"PERFORMANCE ASSESSMENT"* ]]; then
 			cat >>"$dashboard_file" <<EOF
                 <div class="empty-state">
                     <div class="icon" aria-hidden="true">📝</div>
