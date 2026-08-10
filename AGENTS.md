@@ -657,109 +657,62 @@ symlink destinations are never followed. To target one hash directory:
 
 ## Agent shell (POSIX for coding agents)
 
-Login shell stays **Fish**. Coding agents should not be given raw Fish as their command shell.
+Login shell stays **Fish**. Coding agents should not be given raw Fish as their
+command shell.
 
 ### Local command pattern
+
 ## main...origin/main
-?? .agents/
-?? .claude/
-?? .cursor/
-?? .github/github-app.yml
-?? .trunk/
-?? .vscode/
-?? .windsurf/
+
+?? .agents/ ?? .claude/ ?? .cursor/ ?? .github/github-app.yml ?? .trunk/ ??
+.vscode/ ?? .windsurf/
+
 ## main...origin/main
-?? .agents/
-?? .claude/
-?? .cursor/
-?? .github/github-app.yml
-?? .trunk/
-?? .vscode/
-?? .windsurf/
-=== agent-term-doctor ===
-log: /Users/speedybee/.local/state/agent-term-doctor/session-20260804T184640Z-29691.log
-PASS  found agent-zsh -> /Users/speedybee/bin/agent-zsh
-PASS  found agent-bash -> /Users/speedybee/bin/agent-bash
-login_shell=unknown
-WARN  could not read login shell
-parent_comm=/bin/sh
-PASS  agent-zsh workspace cd ok
-PASS  agent-zsh unbuffered + pager hardened
-PASS  agent-zsh stdout captured
-PASS  agent-zsh stderr emitted
-PASS  agent-bash workspace cd ok
-PASS  agent-bash unbuffered + pager hardened
-PASS  agent-bash stdout captured
-PASS  agent-bash stderr emitted
-PASS  agent-bash rc loaded on -c
-burst agent-zsh 12/12
-PASS  agent-zsh burst reliable
-burst agent-bash 12/12
-PASS  agent-bash burst reliable
-PASS  git --no-pager returns output (0927973 fix: neutralize middle-dot in langs card alt text)
-stdin_tty=no
-stdout_tty=no
-stderr_tty=no
-----
+
+## ?? .agents/ ?? .claude/ ?? .cursor/ ?? .github/github-app.yml ?? .trunk/ ?? .vscode/ ?? .windsurf/ === agent-term-doctor === log: /Users/speedybee/.local/state/agent-term-doctor/session-20260804T184640Z-29691.log PASS found agent-zsh -> /Users/speedybee/bin/agent-zsh PASS found agent-bash -> /Users/speedybee/bin/agent-bash login_shell=unknown WARN could not read login shell parent_comm=/bin/sh PASS agent-zsh workspace cd ok PASS agent-zsh unbuffered + pager hardened PASS agent-zsh stdout captured PASS agent-zsh stderr emitted PASS agent-bash workspace cd ok PASS agent-bash unbuffered + pager hardened PASS agent-bash stdout captured PASS agent-bash stderr emitted PASS agent-bash rc loaded on -c burst agent-zsh 12/12 PASS agent-zsh burst reliable burst agent-bash 12/12 PASS agent-bash burst reliable PASS git --no-pager returns output (0927973 fix: neutralize middle-dot in langs card alt text) stdin_tty=no stdout_tty=no stderr_tty=no
+
 INTERPRETATION
-- PASS launchers + swallowed output later => suspect agent terminal tool/PTY, not shell rc
+
+- PASS launchers + swallowed output later => suspect agent terminal tool/PTY,
+  not shell rc
 - Agents do NOT auto-switch from Fish; point them at agent-zsh or agent-bash
-- Prefer: agent-zsh -c ...   fallback: agent-bash -c ...
-----
-summary warnings=1 failures=0
-status=warn exit=1
-latest=/Users/speedybee/.local/state/agent-term-doctor/latest.log
-=== agent-term-doctor ===
-log: /Users/speedybee/.local/state/agent-term-doctor/session-20260804T184641Z-29878.log
-PASS  found agent-zsh -> /Users/speedybee/bin/agent-zsh
-PASS  found agent-bash -> /Users/speedybee/bin/agent-bash
-login_shell=unknown
-WARN  could not read login shell
-parent_comm=/bin/bash
-NOTE  parent looks POSIX (/bin/bash)
-PASS  agent-zsh workspace cd ok
-PASS  agent-zsh unbuffered + pager hardened
-PASS  agent-zsh stdout captured
-PASS  agent-zsh stderr emitted
-PASS  agent-bash workspace cd ok
-PASS  agent-bash unbuffered + pager hardened
-PASS  agent-bash stdout captured
-PASS  agent-bash stderr emitted
-PASS  agent-bash rc loaded on -c
-burst agent-zsh 12/12
-PASS  agent-zsh burst reliable
-burst agent-bash 12/12
-PASS  agent-bash burst reliable
-PASS  git --no-pager returns output (0927973 fix: neutralize middle-dot in langs card alt text)
-stdin_tty=no
-stdout_tty=no
-stderr_tty=no
-----
+- Prefer: agent-zsh -c ... fallback: agent-bash -c ...
+
+---
+
+## summary warnings=1 failures=0 status=warn exit=1 latest=/Users/speedybee/.local/state/agent-term-doctor/latest.log === agent-term-doctor === log: /Users/speedybee/.local/state/agent-term-doctor/session-20260804T184641Z-29878.log PASS found agent-zsh -> /Users/speedybee/bin/agent-zsh PASS found agent-bash -> /Users/speedybee/bin/agent-bash login_shell=unknown WARN could not read login shell parent_comm=/bin/bash NOTE parent looks POSIX (/bin/bash) PASS agent-zsh workspace cd ok PASS agent-zsh unbuffered + pager hardened PASS agent-zsh stdout captured PASS agent-zsh stderr emitted PASS agent-bash workspace cd ok PASS agent-bash unbuffered + pager hardened PASS agent-bash stdout captured PASS agent-bash stderr emitted PASS agent-bash rc loaded on -c burst agent-zsh 12/12 PASS agent-zsh burst reliable burst agent-bash 12/12 PASS agent-bash burst reliable PASS git --no-pager returns output (0927973 fix: neutralize middle-dot in langs card alt text) stdin_tty=no stdout_tty=no stderr_tty=no
+
 INTERPRETATION
-- PASS launchers + swallowed output later => suspect agent terminal tool/PTY, not shell rc
+
+- PASS launchers + swallowed output later => suspect agent terminal tool/PTY,
+  not shell rc
 - Agents do NOT auto-switch from Fish; point them at agent-zsh or agent-bash
-- Prefer: agent-zsh -c ...   fallback: agent-bash -c ...
-----
-summary warnings=1 failures=0
-status=warn exit=1
+- Prefer: agent-zsh -c ... fallback: agent-bash -c ...
+
+---
+
+summary warnings=1 failures=0 status=warn exit=1
 latest=/Users/speedybee/.local/state/agent-term-doctor/latest.log
 
 ### Host-specific notes
-| Host | Configure where | Auto-uses agent-zsh? |
-|:---|:---|:---|
-| Cursor IDE | User +  terminal profiles | Yes, when default/automation profile set |
-| Cursor CLI |  + this file | No — prefix commands |
-| Mistral Vibe |  + this file | No — prefix commands |
-| Claude Code |  + repo docs | No — prefix commands |
-| Codex |  | No — prefix commands |
-| Devin cloud |  (Ubuntu bash) | N/A (no Fish on VM) |
-| Antigravity/Gemini |  + repo  | No — prefix commands |
-| Raycast Script Commands | shebang on each script | N/A if shebang is bash/zsh |
-| Raycast AI Terminal | instruction / wrapper | No — prefix or wrapper |
+
+| Host                    | Configure where          | Auto-uses agent-zsh?                     |
+| :---------------------- | :----------------------- | :--------------------------------------- |
+| Cursor IDE              | User + terminal profiles | Yes, when default/automation profile set |
+| Cursor CLI              | + this file              | No — prefix commands                     |
+| Mistral Vibe            | + this file              | No — prefix commands                     |
+| Claude Code             | + repo docs              | No — prefix commands                     |
+| Codex                   |                          | No — prefix commands                     |
+| Devin cloud             | (Ubuntu bash)            | N/A (no Fish on VM)                      |
+| Antigravity/Gemini      | + repo                   | No — prefix commands                     |
+| Raycast Script Commands | shebang on each script   | N/A if shebang is bash/zsh               |
+| Raycast AI Terminal     | instruction / wrapper    | No — prefix or wrapper                   |
 
 ### Rules
-- Agents do **not** auto-select these launchers unless the host tool is configured
+
+- Agents do **not** auto-select these launchers unless the host tool is
+  configured
 - Do **not** change the macOS login shell away from Fish
-- Prefer absolute or PATH-resolved  over assuming Fish abbreviations
+- Prefer absolute or PATH-resolved over assuming Fish abbreviations
 - Full matrix:
 - Launcher details:

@@ -21,13 +21,13 @@ lint:
     - bandit@1.9.4
     - black@26.5.1
     - checkov@3.3.9
-    - deno@2.9.4
+    - deno@2.9.5
     - dotenv-linter@4.0.0
     - git-diff-check
     - hadolint@2.15.1
     - isort@8.0.1
-    - osv-scanner@2.4.0
-    - ruff@0.16.1
+    - osv-scanner@2.5.0
+    - ruff@0.16.2
     - shellcheck@0.11.0
     - shfmt@3.13.1
     - taplo@0.10.0

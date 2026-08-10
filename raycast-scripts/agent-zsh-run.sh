@@ -10,8 +10,8 @@
 
 set -euo pipefail
 CMD="${1:-}"
-if [[ -z "$CMD" ]]; then
-  echo "usage: provide a command" >&2
-  exit 2
+if [[ -z $CMD ]]; then
+	echo "usage: provide a command" >&2
+	exit 2
 fi
 exec "$HOME/bin/agent-zsh" -c "$CMD"

@@ -8,12 +8,12 @@ agent-bash --self-test
 echo
 echo "== burst reliability (10 each) =="
 for s in agent-zsh agent-bash; do
-  ok=0
-  for i in $(seq 1 10); do
-    o=$($s -c "printf 'M-%s' $i")
-    [ "$o" = "M-$i" ] && ok=$((ok+1))
-  done
-  echo "$s burst ok=$ok/10"
+	ok=0
+	for i in $(seq 1 10); do
+		o=$($s -c "printf 'M-%s' $i")
+		[ "$o" = "M-$i" ] && ok=$((ok + 1))
+	done
+	echo "$s burst ok=$ok/10"
 done
 echo
 echo "== login shell (should remain fish) =="

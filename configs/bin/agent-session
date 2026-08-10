@@ -6,21 +6,33 @@ SHELL_KIND=zsh
 SKIP=0
 PASSTHROUGH=()
 while [ $# -gt 0 ]; do
-  case "$1" in
-    --bash) SHELL_KIND=bash; shift ;;
-    --zsh) SHELL_KIND=zsh; shift ;;
-    --skip-doctor) SKIP=1; shift ;;
-    *) PASSTHROUGH+=("$1"); shift ;;
-  esac
+	case "$1" in
+	--bash)
+		SHELL_KIND=bash
+		shift
+		;;
+	--zsh)
+		SHELL_KIND=zsh
+		shift
+		;;
+	--skip-doctor)
+		SKIP=1
+		shift
+		;;
+	*)
+		PASSTHROUGH+=("$1")
+		shift
+		;;
+	esac
 done
 if [ "$SKIP" -ne 1 ]; then
-  if command -v agent-term-doctor >/dev/null 2>&1; then
-    agent-term-doctor || true
-    echo
-  fi
+	if command -v agent-term-doctor >/dev/null 2>&1; then
+		agent-term-doctor || true
+		echo
+	fi
 fi
 if [ "$SHELL_KIND" = bash ]; then
-  exec agent-bash "${PASSTHROUGH[@]}"
+	exec agent-bash "${PASSTHROUGH[@]}"
 else
-  exec agent-zsh "${PASSTHROUGH[@]}"
+	exec agent-zsh "${PASSTHROUGH[@]}"
 fi
