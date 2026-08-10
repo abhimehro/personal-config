@@ -1,5 +1,18 @@
 # Lessons Learned
 
+## Lesson 0fp: Keep platform skip guards when salvaging cross-platform test scripts (2026-08-10)
+
+**Pattern:** rpce#184 tip changed a portable `stat` mode assert **and** removed
+`@unittest.skipIf(... ditto/plutil ...)` from `Scripts/test_release_promotion.py`.
+A blind `git checkout pr -- Scripts/...` would drop the macOS-only guard and
+break Linux CI runners that lack those tools.
+**Rule:** When salvaging shell/Python test helpers, diff against `main` and keep
+existing platform skip/xfail guards unless the salvage’s *purpose* is to make
+the suite portable. Prefer minimal portable assertion patches over wholesale
+file checkout.
+**Detection cost:** Low — `git diff origin/main...pr -- Scripts/` for removed
+`skipIf` / `pytest.mark.skip` / `XCTSkip`.
+
 ## Lesson 0fo: Extend canonical XCTest suites — never add a colliding second class path (2026-08-09)
 
 **Pattern:** CONFLICTING Jules test PRs (rpce#186) add a *new* file under a

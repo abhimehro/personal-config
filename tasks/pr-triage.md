@@ -1,44 +1,49 @@
-# PR Triage — 2026-08-09
+# PR Triage — 2026-08-10
 
-Phase 1 classification retained below. Phase 2 deep-dive dispositions follow.
+## Conflicted / DIRTY queue
 
-## Phase 2 decision tree (CONFLICTING only)
+### email-security-pipeline #1421 — Bolt aiohttp (contaminated)
+- **Disposition:** ESCALATE
+- Why: workflow pin downgrades, journal/CHANGELOG wipe, `fix_complexity.py` junk; Lesson **0fh** `create_task` drop risk on S6 repo.
+- Action: comment posted; no salvage draft.
 
-| PR | Value on main? | Worth keeping? | Disposition | Why |
-| -- | -------------- | -------------- | ----------- | --- |
-| series#372 | Partial | Yes (2 log sites) | SALVAGE #379 | Drop format-noise tests |
-| series#364 | No real prod auth | Auth demo only | ESCALATE | Hard boundary; `dummy_todos.py` |
-| rpce#186 | Partial suite exists | Yes (edge tests) | SALVAGE #224 | Extend canonical file (0fo) |
-| rpce#220 | Related #222 merged | No (incomplete) | CLOSE no-op | Missing `isoFormatter` defs |
-| esp#1421 | Unique aiohttp | Yes but unsafe | ESCALATE | 0fh / security repo |
+### series_correction #364 — PBKDF2 iterations
+- **Disposition:** ESCALATE
+- Why: auth/crypto hard boundary; `dummy_todos.py` (0ef); no hash migration.
+- Action: comment posted; no salvage draft.
 
-## Phase 1 classification summary
+### repoprompt-ce #196 — TOCTOU (contaminated)
+- **Disposition:** ESCALATE
+- Why: TOCTOU mixed with Changelog ISO8601 + journals; sibling cluster still open; `main` still `write`+`setAttributes`.
+- Action: comment posted; human consolidate one atomic createFile→replaceItem salvage.
 
-| Category | Count (approx) | Action bias |
-| -------- | -------------: | ----------- |
-| SECURITY / Sentinel | ~30 | ESCALATE (clusters) |
-| DEPENDENCY | 4 | Merge minors; escalate majors; one lock/pass |
-| PERFORMANCE / Bolt | 4 | Merge green non-security; strip scratch |
-| UI / Palette | 3 | Prefer fixed-width twin; close overlap |
-| CI/INFRA / Daily QA | 4 | Merge zero-diff; RC failing builds |
-| REFACTOR (Devin) | 1 | DEFER human skim |
-| Docs (session) | 2 | Recover → close (0fk) |
+## Salvaged / closed
 
-## Duplicate / overlap groups
+### repoprompt-ce #184 → #227
+- Valuable: MCPCommandParserTests + portable `stat` mode assert.
+- Contaminant rejected: dropping macOS `skipIf` on release-promotion suite (Lesson **0fp**).
+- Original closed as superseded.
 
-1. **Seatek Bolt set()** — #630 vs #635 → merge #635, close #630.
-2. **esp Palette timers** — #1447 vs #1451 → merge #1451, close #1447.
-3. **Seatek Sentinel path/subprocess** — many siblings → ESCALATE consolidate.
-4. **Hydrograph sanitize_filename** — many siblings → ESCALATE consolidate.
-5. **rpce TOCTOU** — #196/#201/#210/#214/#217/#223 → ESCALATE consolidate.
-6. **Docs tasks/** — Phase 2 stacked on Phase 1 #1953 tip (0fk).
-7. **rpce REPL tests** — #186 duplicate class path → salvage into Interactive/ (0fo).
+### email-security-pipeline #1459
+- Jules Daily QA zero-diff → CLOSE no-op.
 
-## Gates applied (Phase 2)
+## Clusters still held (human T1)
 
-- Never autonomous merge (S1)
-- Never force-push
-- Never implement auth/PBKDF2 without human approval
-- Never salvage esp#1421 create_task fire-and-forget (0fh)
-- Skip `request_reviewers` when author is already `abhimehro` (0ew)
-- One competing `tasks/*` docs lineage (stack on #1953) (0fk)
+| Cluster | Head PRs | Note |
+| ------- | -------- | ---- |
+| Seatek path-hijack / timeout | #640/#638/#634/#627/#620… | Consolidate absolute `gh` path + timeouts |
+| Hydrograph sanitize_filename | #500/#496/#494/#492… | Newline / log-injection; one strongest regex |
+| rpce TOCTOU | #217/#223/#214/#210/#201/#196 | One atomic write salvage |
+| series auth | #365/#364/#378 | Timing + PBKDF2 |
+
+## Human merge priority (drafts)
+
+1. series [#379](https://github.com/abhimehro/series_correction_project_updated/pull/379) (CLEAN)
+2. series [#375](https://github.com/abhimehro/series_correction_project_updated/pull/375) (CodeScene-only)
+3. rpce [#227](https://github.com/abhimehro/repoprompt-ce/pull/227) (NEW)
+4. rpce [#224](https://github.com/abhimehro/repoprompt-ce/pull/224)
+5. rpce [#218](https://github.com/abhimehro/repoprompt-ce/pull/218)
+
+## Docs lineage (0fk)
+
+Stack today's report on [#1954](https://github.com/abhimehro/personal-config/pull/1954) tip (which already contains [#1953](https://github.com/abhimehro/personal-config/pull/1953)). One competing `tasks/*` docs PR lineage.
