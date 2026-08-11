@@ -1,91 +1,92 @@
-# PR Inventory — 2026-08-07
+# PR Inventory — 2026-08-11
 
-Phase 1 cron (13:00 UTC). Preflight PASS 7/7. Auth: `abhimehro` PAT.
-Mode: review-and-merge. Stale threshold: 30 days. Merge: squash.
+Phase 1 cron. Preflight PASS 7/7. Candidates filtered for bot/automation signals.
 
-Scope: automation-driven open PRs (bot authors + human-authored
-Bolt/Jules/Sentinel/Palette/salvage/cursor-agent/Dependabot).
+Total open (all authors): see raw dump. Automation candidates: **84**.
 
-## Start-of-session counts (auto targets)
-
-| Repo | Auto open |
-| ---- | --------: |
-| personal-config | 8 |
-| ctrld-sync | 6 |
-| email-security-pipeline | 4 |
-| Seatek_Analysis | 14 |
-| Hydrograph… | 10 |
-| series_correction… | 4 |
-| repoprompt-ce | 12 |
-| **Total** | **58** |
-
-## End-of-session open remainder (auto)
-
-| Repo | Open | Notes |
-| ---- | ---: | ----- |
-| personal-config | 1 | #1907 CORS ESCALATE |
-| ctrld-sync | ~4 | Dependabot lock siblings after #1132; mypy major #1136 |
-| email-security-pipeline | ~3 | #1421 CONFLICTING; #1444 opencv major; #1437 salvage draft |
-| Seatek_Analysis | 10 | Sentinel path/subprocess cluster |
-| Hydrograph… | 8 | Sentinel sanitize_filename cluster |
-| series_correction… | 4 | #364/#365 auth; #371 CodeScene; #369 salvage |
-| repoprompt-ce | 9 | TOCTOU + failing tests/a11y |
-| **Approx open auto** | **~44** | |
-
-## Merged this session (24)
-
-| Repo | PR | Category | Note |
-| ---- | -- | -------- | ---- |
-| ctrld-sync | 1130 | DEPENDENCY | pnpm/action-setup |
-| ctrld-sync | 1131 | DEPENDENCY | gh-aw actions/setup pin |
-| ctrld-sync | 1129 | DEPENDENCY | gh-aw setup-cli |
-| ctrld-sync | 1127 | UI | Palette error grammar |
-| ctrld-sync | 1126 | SECURITY | pygments 2.20.0 CVE (verified on main) |
-| ctrld-sync | 1123 | CI/INFRA | repo-health |
-| ctrld-sync | 1132 | DEPENDENCY | pytest-cov (one lock / 0fb) |
-| Seatek_Analysis | 619 | DEPENDENCY | pnpm/action-setup |
-| Seatek_Analysis | 618 | CI/INFRA | zero-diff daily QA |
-| Seatek_Analysis | 621 | PERFORMANCE | Bolt POSIXct guard (verified on main) |
-| Hydrograph… | 481 | DEPENDENCY | pnpm/action-setup |
-| Hydrograph… | 482 | DEPENDENCY | pandas requirements align to 3.0.5 (verified) |
-| email-security-pipeline | 1439 | UI | Palette email hint |
-| email-security-pipeline | 1435 | CI/INFRA | repo-health |
-| email-security-pipeline | 1446 | DEPENDENCY | certifi |
-| email-security-pipeline | 1445 | DEPENDENCY | pytest |
-| email-security-pipeline | 1443 | DEPENDENCY | pre-commit |
-| email-security-pipeline | 1442 | CI/INFRA | zero-diff daily QA |
-| personal-config | 1924 | PERFORMANCE | Bolt yaml import fallback |
-| personal-config | 1931 | CI/INFRA | repo-health TruffleHog |
-| personal-config | 1912 | CI/INFRA | docs Phase1 2026-08-04 |
-| repoprompt-ce | 209 | CI/INFRA | zero-diff Jules QA |
-| repoprompt-ce | 203 | UI | Palette a11y Chat buttons |
-| repoprompt-ce | 205 | CI/INFRA | repo-health community templates |
-
-## Closed this session (5)
-
-| Repo | PR | Reason |
-| ---- | -- | ------ |
-| personal-config | 1925 | CONFLICTING docs cascade after #1912; recovered Aug 5 report |
-| personal-config | 1930 | CONFLICTING docs cascade; recovered Aug 6 report |
-| personal-config | 1933 | CONFLICTING salvage docs cascade |
-| personal-config | 1914 | Trunk MQ fail + docs cascade |
-| Seatek_Analysis | 615 | Superseded by focused #621; workflow scope creep |
-
-## Representative remaining (disposition)
-
-| Repo | PR | Disposition |
-| ---- | -- | ----------- |
-| personal-config | 1907 | ESCALATE CORS |
-| Seatek_Analysis | 620/617/612/610/607/605/590/585/580/573 | ESCALATE Sentinel cluster |
-| Hydrograph… | 484…459 | ESCALATE sanitize cluster |
-| series… | 365/364 | ESCALATE auth |
-| series… | 371 | REQUEST_CHANGES + CodeScene trigger |
-| series… | 369 | DEFER salvage draft (CodeScene) |
-| esp | 1421 | REQUEST_CHANGES / DEFER CONFLICTING |
-| esp | 1444 | ESCALATE opencv major |
-| esp | 1437 | DEFER salvage draft |
-| rpce | 211 | REQUEST_CHANGES XCTSkip (now CONFLICTING) |
-| rpce | 210/201/196 | ESCALATE TOCTOU |
-| rpce | 212/194/186 | REQUEST_CHANGES failing CI |
-| ctrld-sync | 1136 | ESCALATE mypy major |
-| ctrld-sync | 1133–1135 | DEFER lock cascade |
+| Repo | PR | Author | Category | CI | Conflicts | Age | Draft | Title |
+| ---- | -- | ------ | -------- | -- | --------- | --- | ----- | ----- |
+| Hydrograph_Versus_Seatek_Sensors_Project | [502](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/502) | abhimehro | SECURITY | PASS | MERGEABLE | 0d | False | 🛡️ Sentinel: [MEDIUM] Fix log injection vulnerability in filename sani |
+| Hydrograph_Versus_Seatek_Sensors_Project | [500](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/500) | abhimehro | SECURITY | PASS | MERGEABLE | 0d | False | 🛡️ Sentinel: [HIGH] Fix newline injection in filename sanitization |
+| Hydrograph_Versus_Seatek_Sensors_Project | [498](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/498) | app/cursor | CI/INFRA | FAIL | MERGEABLE | 0d | True | chore(repo-health): drop session junk, skip unused hydro load, sync to |
+| Hydrograph_Versus_Seatek_Sensors_Project | [496](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/496) | abhimehro | SECURITY | PASS | MERGEABLE | 1d | False | 🛡️ Sentinel: [HIGH] Fix sanitize_filename newline injection |
+| Hydrograph_Versus_Seatek_Sensors_Project | [494](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/494) | abhimehro | SECURITY | PASS | MERGEABLE | 1d | False | 🛡️ Sentinel: [HIGH] Fix log injection vulnerability via \s in sanitize |
+| Hydrograph_Versus_Seatek_Sensors_Project | [492](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/492) | abhimehro | SECURITY | PASS | MERGEABLE | 2d | False | 🛡️ Sentinel: [MEDIUM] Fix filename sanitization to prevent log injecti |
+| Hydrograph_Versus_Seatek_Sensors_Project | [490](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/490) | abhimehro | SECURITY | PASS | MERGEABLE | 2d | False | 🛡️ Sentinel: [MEDIUM] Fix log injection risk in filename sanitization |
+| Hydrograph_Versus_Seatek_Sensors_Project | [488](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/488) | abhimehro | SECURITY | PASS | MERGEABLE | 3d | False | 🛡️ Sentinel: [MEDIUM] Fix log injection / shell parsing risk in filena |
+| Hydrograph_Versus_Seatek_Sensors_Project | [486](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/486) | abhimehro | SECURITY | PASS | MERGEABLE | 3d | False | 🛡️ Sentinel: [MEDIUM] Fix log injection vulnerability in sanitize_file |
+| Hydrograph_Versus_Seatek_Sensors_Project | [484](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/484) | abhimehro | SECURITY | PASS | MERGEABLE | 4d | False | 🛡️ Sentinel: [HIGH] Fix log injection vulnerability in filename saniti |
+| Hydrograph_Versus_Seatek_Sensors_Project | [483](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/483) | abhimehro | SECURITY | PASS | MERGEABLE | 4d | False | 🛡️ Sentinel: [MEDIUM] Fix log injection vulnerability in filename sani |
+| Hydrograph_Versus_Seatek_Sensors_Project | [478](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/478) | abhimehro | SECURITY | PASS | MERGEABLE | 5d | False | 🛡️ Sentinel: [MEDIUM] Fix log injection vulnerability in filename sani |
+| Hydrograph_Versus_Seatek_Sensors_Project | [475](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/475) | abhimehro | SECURITY | PASS | MERGEABLE | 5d | False | 🛡️ Sentinel: [HIGH] Fix newline vulnerability in sanitize_filename reg |
+| Hydrograph_Versus_Seatek_Sensors_Project | [473](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/473) | abhimehro | SECURITY | PASS | MERGEABLE | 6d | False | 🛡️ Sentinel: [HIGH] Fix log injection vulnerability in filename saniti |
+| Hydrograph_Versus_Seatek_Sensors_Project | [468](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/468) | abhimehro | SECURITY | PASS | MERGEABLE | 6d | False | 🛡️ Sentinel: [MEDIUM] Fix newline bypass in sanitize_filename |
+| Hydrograph_Versus_Seatek_Sensors_Project | [466](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/466) | abhimehro | SECURITY | PASS | MERGEABLE | 7d | False | 🛠️ QA: 🛡️ Sentinel: [MEDIUM] Fix filename sanitization newline injecti |
+| Hydrograph_Versus_Seatek_Sensors_Project | [459](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/459) | abhimehro | SECURITY | PASS | MERGEABLE | 7d | False | 🛡️ Sentinel: [MEDIUM] Fix log injection vulnerability via `sanitize_fi |
+| Seatek_Analysis | [650](https://github.com/abhimehro/Seatek_Analysis/pull/650) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | False | ⚡ Bolt: Avoid redundant median calculation in mad() |
+| Seatek_Analysis | [649](https://github.com/abhimehro/Seatek_Analysis/pull/649) | abhimehro | SECURITY | PASS | MERGEABLE | 0d | False | 🛡️ Sentinel: [CRITICAL] Fix Path Hijacking Vulnerability |
+| Seatek_Analysis | [648](https://github.com/abhimehro/Seatek_Analysis/pull/648) | abhimehro | CI/INFRA | PASS | MERGEABLE | 0d | False | Jules Daily QA & Agentic Review |
+| Seatek_Analysis | [645](https://github.com/abhimehro/Seatek_Analysis/pull/645) | abhimehro | SECURITY | PASS | MERGEABLE | 0d | False | 🛡️ Sentinel: [CRITICAL] Fix B607 path hijacking vulnerability in gh ex |
+| Seatek_Analysis | [643](https://github.com/abhimehro/Seatek_Analysis/pull/643) | app/cursor | CI/INFRA | FAIL | MERGEABLE | 0d | True | chore(repo-health): untrack venv/backups bloat and fix agent docs |
+| Seatek_Analysis | [641](https://github.com/abhimehro/Seatek_Analysis/pull/641) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 1d | False | ⚡ Bolt: Optimize mad() calculation |
+| Seatek_Analysis | [640](https://github.com/abhimehro/Seatek_Analysis/pull/640) | abhimehro | SECURITY | PASS | MERGEABLE | 1d | False | 🛡️ Sentinel: [CRITICAL/HIGH] Fix path hijacking vulnerability in GitHu |
+| Seatek_Analysis | [638](https://github.com/abhimehro/Seatek_Analysis/pull/638) | abhimehro | SECURITY | PASS | MERGEABLE | 1d | False | 🛡️ Sentinel: [HIGH] Fix path hijacking vulnerability for gh CLI tool |
+| Seatek_Analysis | [637](https://github.com/abhimehro/Seatek_Analysis/pull/637) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 1d | False | ⚡ Bolt: [Performance] Pre-calculate median for mad calculations |
+| Seatek_Analysis | [634](https://github.com/abhimehro/Seatek_Analysis/pull/634) | abhimehro | SECURITY | PASS | MERGEABLE | 2d | False | 🛡️ Sentinel: [CRITICAL] Fix path hijacking vulnerability |
+| Seatek_Analysis | [632](https://github.com/abhimehro/Seatek_Analysis/pull/632) | abhimehro | SECURITY | PASS | MERGEABLE | 2d | False | 🛡️ Sentinel: [CRITICAL/HIGH] Fix path hijacking vulnerability in GH_BI |
+| Seatek_Analysis | [627](https://github.com/abhimehro/Seatek_Analysis/pull/627) | abhimehro | SECURITY | PASS | MERGEABLE | 3d | False | 🛡️ Sentinel: [HIGH] Fix subprocess path hijacking vulnerability |
+| Seatek_Analysis | [624](https://github.com/abhimehro/Seatek_Analysis/pull/624) | abhimehro | SECURITY | PASS | MERGEABLE | 3d | False | 🛡️ Sentinel: [MEDIUM] Fix Bandit B607 Path Hijacking vulnerability |
+| Seatek_Analysis | [620](https://github.com/abhimehro/Seatek_Analysis/pull/620) | abhimehro | SECURITY | PASS | MERGEABLE | 4d | False | 🛡️ Sentinel: [CRITICAL] Fix Path Hijacking Vulnerability in GitHub CLI |
+| Seatek_Analysis | [612](https://github.com/abhimehro/Seatek_Analysis/pull/612) | abhimehro | SECURITY | PASS | MERGEABLE | 5d | False | 🛡️ Sentinel: [MEDIUM] Fix DoS vulnerability in subprocess execution |
+| Seatek_Analysis | [610](https://github.com/abhimehro/Seatek_Analysis/pull/610) | abhimehro | SECURITY | PASS | MERGEABLE | 5d | False | 🛡️ Sentinel: [MEDIUM] Fix DoS risk in subprocess calls |
+| Seatek_Analysis | [607](https://github.com/abhimehro/Seatek_Analysis/pull/607) | abhimehro | SECURITY | PASS | MERGEABLE | 6d | False | 🛡️ Sentinel: [MEDIUM] Fix DoS risk in subprocess execution |
+| Seatek_Analysis | [605](https://github.com/abhimehro/Seatek_Analysis/pull/605) | abhimehro | SECURITY | PASS | MERGEABLE | 6d | False | 🛡️ Sentinel: [HIGH] Fix subprocess path hijacking and DoS risks |
+| Seatek_Analysis | [590](https://github.com/abhimehro/Seatek_Analysis/pull/590) | abhimehro | SECURITY | PASS | MERGEABLE | 7d | False | 🛡️ Sentinel: [security improvement] Add timeout to subprocess calls |
+| Seatek_Analysis | [585](https://github.com/abhimehro/Seatek_Analysis/pull/585) | abhimehro | SECURITY | PASS | MERGEABLE | 8d | False | 🛡️ Sentinel: [CRITICAL] Fix Path Hijacking Vulnerability in subprocess |
+| Seatek_Analysis | [580](https://github.com/abhimehro/Seatek_Analysis/pull/580) | abhimehro | SECURITY | PASS | MERGEABLE | 9d | False | 🛡️ Sentinel: [CRITICAL/HIGH] Fix Path Hijacking Vulnerability |
+| Seatek_Analysis | [573](https://github.com/abhimehro/Seatek_Analysis/pull/573) | abhimehro | SECURITY | PASS | MERGEABLE | 10d | False | 🛡️ Sentinel: [MEDIUM] Fix File Read DoS via Special Files |
+| ctrld-sync | [1157](https://github.com/abhimehro/ctrld-sync/pull/1157) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | False | ⚡ Bolt: Optimize hostname validation with fast-path heuristic |
+| ctrld-sync | [1156](https://github.com/abhimehro/ctrld-sync/pull/1156) | abhimehro | SECURITY | PASS | MERGEABLE | 0d | False | 🛡️ Sentinel: [MEDIUM] Fix TOCTOU vulnerability in plan JSON creation |
+| ctrld-sync | [1155](https://github.com/abhimehro/ctrld-sync/pull/1155) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | False | ⚡ Bolt: Optimize hostname validation with fast-path IP check |
+| ctrld-sync | [1154](https://github.com/abhimehro/ctrld-sync/pull/1154) | app/dependabot | DEPENDENCY | PASS | MERGEABLE | 0d | False | chore(deps): bump github/gh-aw from 0.84.3 to 0.85.4 |
+| ctrld-sync | [1153](https://github.com/abhimehro/ctrld-sync/pull/1153) | app/dependabot | DEPENDENCY | PASS | MERGEABLE | 0d | False | chore(deps): bump github/gh-aw/actions/setup from 0.84.3 to 0.85.4 |
+| ctrld-sync | [1151](https://github.com/abhimehro/ctrld-sync/pull/1151) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 1d | False | ⚡ Bolt: Optimize rate limit header parsing |
+| ctrld-sync | [1150](https://github.com/abhimehro/ctrld-sync/pull/1150) | abhimehro | UI | PASS | MERGEABLE | 1d | False | 🎨 Palette: Grammatical Polish for Dry Run Errors |
+| ctrld-sync | [1147](https://github.com/abhimehro/ctrld-sync/pull/1147) | abhimehro | SECURITY | PASS | MERGEABLE | 2d | False | 🛡️ Sentinel: [MEDIUM] Replace insecure random module with secrets |
+| ctrld-sync | [1145](https://github.com/abhimehro/ctrld-sync/pull/1145) | abhimehro | REFACTOR | PASS | MERGEABLE | 2d | False | refactor(sync): collapse batch context into _BatchTarget and SyncProfi |
+| ctrld-sync | [1136](https://github.com/abhimehro/ctrld-sync/pull/1136) | app/dependabot | DEPENDENCY | PASS | MERGEABLE | 3d | False | chore(deps-dev): bump mypy from 1.19.1 to 2.3.0 |
+| ctrld-sync | [1135](https://github.com/abhimehro/ctrld-sync/pull/1135) | app/dependabot | DEPENDENCY | PASS | MERGEABLE | 3d | False | chore(deps-dev): bump ruff from 0.15.4 to 0.16.1 |
+| email-security-pipeline | [1464](https://github.com/abhimehro/email-security-pipeline/pull/1464) | abhimehro | CI/INFRA | PASS | MERGEABLE | 0d | False | Jules Daily QA & Agentic Review - Minor Fixes |
+| email-security-pipeline | [1463](https://github.com/abhimehro/email-security-pipeline/pull/1463) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | False | ⚡ Bolt: Optimize _is_attachment by removing unnecessary string allocat |
+| email-security-pipeline | [1461](https://github.com/abhimehro/email-security-pipeline/pull/1461) | abhimehro | UI | PASS | MERGEABLE | 0d | False | 🎨 Palette: Fix visual shift in spinner elapsed time |
+| email-security-pipeline | [1458](https://github.com/abhimehro/email-security-pipeline/pull/1458) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 1d | False | ⚡ Bolt: Optimize email header parsing fast-path |
+| email-security-pipeline | [1444](https://github.com/abhimehro/email-security-pipeline/pull/1444) | app/dependabot | DEPENDENCY | FAIL | MERGEABLE | 3d | False | chore(deps): bump opencv-python-headless from 4.13.0.92 to 5.0.0.93 |
+| email-security-pipeline | [1421](https://github.com/abhimehro/email-security-pipeline/pull/1421) | abhimehro | PERFORMANCE | PASS | CONFLICTING | 7d | False | ⚡ Bolt: Refactor alert webhook to use aiohttp for non-blocking async I |
+| personal-config | [1964](https://github.com/abhimehro/personal-config/pull/1964) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | False | ⚡ Bolt: [performance improvement] Optimize dictionary .get calls in Gr |
+| personal-config | [1962](https://github.com/abhimehro/personal-config/pull/1962) | abhimehro | UI | PASS | MERGEABLE | 0d | False | 🎨 Palette: Improve insights empty state fallback |
+| personal-config | [1960](https://github.com/abhimehro/personal-config/pull/1960) | app/cursor | CI/INFRA | PASS | MERGEABLE | 0d | True | docs(pr-salvage): Phase 2 session report 2026-08-10 |
+| personal-config | [1959](https://github.com/abhimehro/personal-config/pull/1959) | abhimehro | UI | PASS | MERGEABLE | 0d | False | 🎨 Palette: Add semantic meter visualization to dashboard metrics |
+| personal-config | [1958](https://github.com/abhimehro/personal-config/pull/1958) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 1d | False | ⚡ Bolt: [performance improvement] optimize section generation with lis |
+| personal-config | [1955](https://github.com/abhimehro/personal-config/pull/1955) | abhimehro | UI | PASS | MERGEABLE | 1d | False | 🎨 Palette: Polish empty states in HTML reports |
+| personal-config | [1954](https://github.com/abhimehro/personal-config/pull/1954) | app/cursor | CI/INFRA | PASS | MERGEABLE | 1d | True | docs(pr-salvage): Phase 2 session report 2026-08-09 |
+| personal-config | [1953](https://github.com/abhimehro/personal-config/pull/1953) | app/cursor | FEATURE | PASS | MERGEABLE | 1d | True | docs(pr-review): Phase 1 session report 2026-08-09 |
+| personal-config | [1907](https://github.com/abhimehro/personal-config/pull/1907) | abhimehro | SECURITY | PASS | MERGEABLE | 7d | False | 🔒 Sentinel: [HIGH] Fix overly permissive CORS policy |
+| repoprompt-ce | [231](https://github.com/abhimehro/repoprompt-ce/pull/231) | abhimehro | PERFORMANCE | PASS | MERGEABLE | 0d | False | ⚡ Bolt: [performance improvement] Cache expensive DateFormatter alloca |
+| repoprompt-ce | [230](https://github.com/abhimehro/repoprompt-ce/pull/230) | abhimehro | UI | PASS | MERGEABLE | 0d | False | 🎨 Palette: Add accessibility labels to icon-only buttons |
+| repoprompt-ce | [228](https://github.com/abhimehro/repoprompt-ce/pull/228) | abhimehro | SECURITY | FAIL | MERGEABLE | 0d | False | 🛡️ Sentinel: [CRITICAL] Fix TOCTOU vulnerability in file writes |
+| repoprompt-ce | [227](https://github.com/abhimehro/repoprompt-ce/pull/227) | abhimehro | CI/INFRA | FAIL | MERGEABLE | 0d | True | test(mcp): MCPCommandParser coverage (salvages #184) |
+| repoprompt-ce | [226](https://github.com/abhimehro/repoprompt-ce/pull/226) | abhimehro | UI | FAIL | MERGEABLE | 1d | False | 🎨 Palette: [UX improvement] Add accessibility labels to UI components |
+| repoprompt-ce | [224](https://github.com/abhimehro/repoprompt-ce/pull/224) | abhimehro | CI/INFRA | PASS | MERGEABLE | 1d | True | test(mcp): REPLInputParser edge-case coverage (salvages #186) |
+| repoprompt-ce | [223](https://github.com/abhimehro/repoprompt-ce/pull/223) | abhimehro | SECURITY | FAIL | MERGEABLE | 1d | False | 🛡️ Sentinel: [HIGH] Fix TOCTOU vulnerability in MCPTerminalRecord.swif |
+| repoprompt-ce | [218](https://github.com/abhimehro/repoprompt-ce/pull/218) | abhimehro | CI/INFRA | FAIL | MERGEABLE | 2d | True | test(mcp): add ToolGroupsCatalog coverage (salvages #194) |
+| repoprompt-ce | [217](https://github.com/abhimehro/repoprompt-ce/pull/217) | abhimehro | SECURITY | PASS | MERGEABLE | 2d | False | 🛡️ Sentinel: [CRITICAL] Fix TOCTOU vulnerability in file writes |
+| repoprompt-ce | [214](https://github.com/abhimehro/repoprompt-ce/pull/214) | abhimehro | SECURITY | FAIL | MERGEABLE | 3d | False | 🛡️ Sentinel: [HIGH] Fix TOCTOU vulnerability in file permissions |
+| repoprompt-ce | [210](https://github.com/abhimehro/repoprompt-ce/pull/210) | abhimehro | SECURITY | FAIL | MERGEABLE | 4d | False | 🛡️ Sentinel: [CRITICAL/HIGH] Fix TOCTOU vulnerability in file writing |
+| repoprompt-ce | [201](https://github.com/abhimehro/repoprompt-ce/pull/201) | abhimehro | SECURITY | FAIL | MERGEABLE | 5d | False | 🛡️ Sentinel: [HIGH] Fix TOCTOU vulnerability in file writing |
+| repoprompt-ce | [196](https://github.com/abhimehro/repoprompt-ce/pull/196) | abhimehro | SECURITY | PASS | CONFLICTING | 6d | False | 🛡️ Sentinel: [CRITICAL] Fix TOCTOU vulnerability in file writes |
+| series_correction_project_updated | [381](https://github.com/abhimehro/series_correction_project_updated/pull/381) | app/cursor | CI/INFRA | PASS | MERGEABLE | 0d | True | chore(repo-health): remove root one-shot scripts and add PR templates |
+| series_correction_project_updated | [379](https://github.com/abhimehro/series_correction_project_updated/pull/379) | abhimehro | CI/INFRA | PASS | MERGEABLE | 1d | False | fix(logging): lazy log.exception in batch_correction (salvages #372) |
+| series_correction_project_updated | [378](https://github.com/abhimehro/series_correction_project_updated/pull/378) | abhimehro | SECURITY | PASS | MERGEABLE | 1d | False | 🛡️ Sentinel: [CRITICAL] Fix user enumeration timing attack |
+| series_correction_project_updated | [375](https://github.com/abhimehro/series_correction_project_updated/pull/375) | abhimehro | CI/INFRA | FAIL | MERGEABLE | 2d | True | test: cover _ensure_output_directory OSError (salvages #369) |
+| series_correction_project_updated | [365](https://github.com/abhimehro/series_correction_project_updated/pull/365) | abhimehro | SECURITY | PASS | MERGEABLE | 5d | False | 🛡️ Sentinel: [HIGH] Fix username enumeration timing attack |
+| series_correction_project_updated | [364](https://github.com/abhimehro/series_correction_project_updated/pull/364) | abhimehro | SECURITY | PASS | MERGEABLE | 6d | False | 🛡️ Sentinel: [MEDIUM] Enhance PBKDF2 iteration count |

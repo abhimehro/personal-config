@@ -1,37 +1,60 @@
-# PR Triage — 2026-08-07
+# PR Triage — 2026-08-11
 
-## Duplicate / overlap groups
+## Merge queue (this pass)
 
-### Hydrograph sanitize_filename Sentinel cluster
-PRs: #484, #483, #478, #475, #473, #468, #466, #459  
-Action: ESCALATE all; Phase 2 consolidate strongest sanitizer into one salvage.
+| Repo | PR | Disposition | Rationale |
+| ---- | -- | ----------- | --------- |
+| ctrld-sync | 1153 | MERGE | Dependabot gh-aw/actions/setup pin; CI green |
+| ctrld-sync | 1154 | MERGE | Dependabot gh-aw pin; CI green |
+| ctrld-sync | 1135 | MERGE | ruff 0.16.1 (sole uv.lock this pass; 0fb) |
+| ctrld-sync | 1150 | MERGE | Palette pluralize dry-run errors + complexity extract |
+| ctrld-sync | 1157 | MERGE | Bolt hostname fast-path (keeps `%` / empty guards) |
+| ctrld-sync | 1151 | MERGE | Bolt rate-limit parse + tests |
+| email-security-pipeline | 1461 | MERGE | Palette fixed-width spinner timer |
+| email-security-pipeline | 1463 | MERGE | Bolt attachment Content-Disposition early return |
+| email-security-pipeline | 1464 | MERGE | Jules flake8 blanks + dedupe duplicate timeout tests |
+| Seatek_Analysis | 641 | MERGE | Bolt mad() median precompute (clearest twin) |
+| Seatek_Analysis | 648 | CLOSE | Zero-diff Jules Daily QA |
+| personal-config | 1955 | MERGE | Palette empty-state polish |
+| personal-config | 1959 | MERGE | Palette meter visualization |
+| personal-config | 1962 | MERGE | Palette insights empty-state fallback |
+| personal-config | 1964 | MERGE | Bolt GraphQL parse micro-opt |
+| personal-config | 1958 | MERGE | Bolt list-comprehension sections |
+| repoprompt-ce | 230 | MERGE | Palette a11y labels |
+| repoprompt-ce | 231 | MERGE | Bolt DateFormatter cache |
+| series_correction | 381 | MERGE | Repo-health: remove root junk + PR templates (undraft) |
+| series_correction | 379 | MERGE | Lazy log.exception (ready salvage, trivial) |
 
-### Seatek path-hijack / subprocess timeout Sentinel cluster
-PRs: #620, #617, #612, #610, #607, #605, #590, #585, #580, #573  
-Action: ESCALATE all; Phase 2 one absolute-path + timeout salvage.
+## Close as duplicate / superseded
 
-### repoprompt-ce TOCTOU cluster
-PRs: #210, #201, #196 (+ salvage drafts #207/#206)  
-Action: ESCALATE; prefer salvage without journal wipe (0fc). #201 has huge deletions.
+| Repo | PR | Keep | Reason |
+| ---- | -- | ---- | ------ |
+| ctrld-sync | 1155 | 1157 | Narrower hostname fast-path twin |
+| Seatek_Analysis | 650 | 641 | mad() twin (assignment-in-expr) |
+| Seatek_Analysis | 637 | 641 | mad() twin (older) |
+| personal-config | 1953 | recovered | Docs cascade → this branch (0fk) |
+| personal-config | 1954 | recovered | Docs cascade → this branch (0fk) |
+| personal-config | 1960 | recovered | Docs cascade → this branch (0fk) |
 
-### personal-config docs tasks/* cascade
-PRs: #1912 (merged), #1925/#1930/#1933/#1914 (closed)  
-Action: recovered Aug 5/6 reports + lessons 0fg–0fk into this session’s docs PR (0fk).
+## Escalate (security / major / failing)
 
-### Seatek Bolt POSIXct twins
-#621 (merged, focused) vs #615 (closed — workflow scope creep + failing Gate).
+| Repo | PR | Reason |
+| ---- | -- | ------ |
+| personal-config | 1907 | CORS trust boundary |
+| Seatek_Analysis | 649 (head) + cluster | Path-hijack Sentinels |
+| Hydrograph | 502 (head) + cluster | sanitize_filename Sentinels |
+| series_correction | 378/365/364 | Auth timing / PBKDF2 |
+| series_correction | 375 | Salvage draft (human) |
+| ctrld-sync | 1136 | mypy 2.x major |
+| ctrld-sync | 1156 / 1147 | TOCTOU / secrets.random |
+| email-security-pipeline | 1444 | opencv 5.x + failing pytest |
+| email-security-pipeline | 1421 | CONFLICTING aiohttp Bolt |
+| email-security-pipeline | 1458 | Private `msg._headers` API |
+| repoprompt-ce | 228/223/217/214/210/201/196 | TOCTOU cluster |
+| repoprompt-ce | 227/224/218 | Salvage drafts |
+| Seatek_Analysis | 643 | Repo-health draft + failing CodeQL |
+| Hydrograph | 498 | Repo-health draft + CodeScene fail → trigger |
 
-### Palette a11y twins (rpce)
-#203 (merged, Chat buttons only) vs #211 (REQUEST_CHANGES — XCTSkip flake masking; now CONFLICTING after #203).
+## Sentinel duplicate close policy
 
-### ctrld Dependabot uv.lock cascade (0fb)
-Merged #1132 (pytest-cov) first. Defer #1133–#1135; escalate #1136 mypy 2.x major.
-
-## Stale (>30 days)
-None in this auto inventory (all age ≤6 days).
-
-## Security gate failures → never merge in Phase 1
-- Auth: series #364, #365
-- CORS: pc #1907
-- All Sentinel-labeled PRs
-- Major runtime bumps: esp #1444 opencv 5.x; ctrld #1136 mypy 2.x
+Keep newest MERGEABLE green head escalated; close older siblings as CLOSE-DUPLICATE with link to head.

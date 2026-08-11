@@ -1,30 +1,16 @@
-# Daily QA & Agentic Review — 2026-08-08
+# PR Review Session Plan — 2026-08-11
 
-Branch: `cursor-agent/daily-repository-health-checks-5bbc`
+Mode: review-and-merge | Preflight: PASS 7/7 | Branch: `cursor-agent/automated-pr-workflow-f6d5`
 
-## Plan
+## Checklist
 
-- [x] Verify personal-config (`make lint-errors`, `make test-quick`, `make test`, `make test-python`)
-- [x] Verify ctrld-sync (`uv sync`, ruff, pytest, py_compile)
-- [x] Verify email-security-pipeline (`python3 -m pytest`)
-- [x] Verify Seatek_Analysis (testthat via `~/R/library`, bypass `.Rprofile`)
-- [x] Verify Hydrograph (`pytest` + flake8 + mypy)
-- [x] Verify series_correction (`pytest` + flake8)
-- [x] Verify repoprompt-ce (main CI + sparkle + SHA256SUMS)
-- [x] OSV/dependency spot-check across Python repos
-- [x] Historical Daily QA issues: status comment or create today's issues
-- [x] High-confidence minor fixes → PR(s) only (pyyaml pin)
-- [x] Notion Daily QA Report — 2026-08-08
-- [x] Update automation memory
-- [x] Commit/push/open PR for pyyaml pin (#1949)
-
-## Issues created
-| Repo | Issue | Result |
-|------|-------|--------|
-| personal-config | #1948 | HEALTHY + pin PR |
-| ctrld-sync | #1146 | HEALTHY |
-| email-security-pipeline | #1452 | HEALTHY |
-| Seatek_Analysis | #631 | HEALTHY |
-| Hydrograph | #491 | HEALTHY |
-| series_correction | #376 | HEALTHY |
-| repoprompt-ce | #219 | WATCH (WorktreeAPISmokeHarness timeout) |
+- [x] Preflight gate
+- [x] Inventory open automation PRs (~84 candidates / 85 open)
+- [ ] Write `pr-inventory.md` + `pr-triage.md`
+- [ ] Recover docs from #1953/#1954/#1960 onto this branch (0fk)
+- [ ] Merge Dependabot action pins + ruff lock (one lock)
+- [ ] Merge Palette / Bolt / Jules safe set; close twins
+- [ ] Escalate security clusters; close older Sentinel duplicates
+- [ ] CodeScene trigger on Hydro #498
+- [ ] Adversarial multi-model review (opus + gpt)
+- [ ] Write `pr-review-2026-08-11.md`, update lessons, commit/push/open PR
