@@ -169,27 +169,23 @@ def _get_superseded_text(lines):
 
 
 def _generate_superseded_section(ready_prs, superseded_text):
-    out = ["## SUPERSEDED"]
-    for pr in ready_prs:
-        if pr in superseded_text:
-            out.append(pr if pr.startswith("-") else f"- {pr}")
-    return out
+    # ⚡ Bolt Optimization: Replacing standard for loops that use .append() with list comprehensions yields C-speed execution and avoids repeated .append method lookups
+    return ["## SUPERSEDED"] + [
+        pr if pr.startswith("-") else f"- {pr}"
+        for pr in ready_prs
+        if pr in superseded_text
+    ]
 
 
 def _generate_duplicate_section(duplicates):
-    out = ["## DUPLICATE"]
-    for d in duplicates:
-        out.append(f"- {d}")
-    return out
+    # ⚡ Bolt Optimization: Replacing standard for loops that use .append() with list comprehensions yields C-speed execution and avoids repeated .append method lookups
+    return ["## DUPLICATE"] + [f"- {d}" for d in duplicates]
 
 
 def _generate_ready_section(ready_only, duplicates):
-    out = ["## READY"]
     duplicates_set = set(duplicates)
-    for pr in ready_only:
-        if pr not in duplicates_set:
-            out.append(f"- {pr}")
-    return out
+    # ⚡ Bolt Optimization: Replacing standard for loops that use .append() with list comprehensions yields C-speed execution and avoids repeated .append method lookups
+    return ["## READY"] + [f"- {pr}" for pr in ready_only if pr not in duplicates_set]
 
 
 def rewrite_triage_file(lines, ready_prs, duplicates, ready_only):
