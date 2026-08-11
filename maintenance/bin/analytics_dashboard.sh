@@ -435,6 +435,7 @@ generate_dashboard() {
         .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; color: #6c757d; text-align: center; }
         .empty-state .icon { font-size: 3em; margin-bottom: 15px; opacity: 0.5; }
         .empty-state p { margin: 0; font-size: 1.1em; }
+        meter { width: 100%; height: 1.5em; display: block; margin-top: 10px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -448,7 +449,10 @@ generate_dashboard() {
         <main id="main-content">
         <ul class="metrics-grid">
             <li class="metric-card success" aria-labelledby="health-score-label health-score-value">
-                <div class="metric-value" id="health-score-value">${current_health}</div>
+                <div class="metric-value" id="health-score-value">
+                    ${current_health}
+                    <meter value="${current_health}" min="0" max="100" low="50" high="85" optimum="100" aria-label="Health Score: ${current_health}"></meter>
+                </div>
                 <div class="metric-label" id="health-score-label">Health Score</div>
             </li>
 EOF
@@ -464,11 +468,17 @@ EOF
 
 		cat >>"$dashboard_file" <<EOF
             <li class="metric-card" aria-labelledby="performance-score-label performance-score-value">
-                <div class="metric-value" id="performance-score-value">${avg_performance}</div>
+                <div class="metric-value" id="performance-score-value">
+                    ${avg_performance}
+                    <meter value="${avg_performance}" min="0" max="100" low="50" high="85" optimum="100" aria-label="Performance Score: ${avg_performance}"></meter>
+                </div>
                 <div class="metric-label" id="performance-score-label">Performance Score</div>
             </li>
             <li class="metric-card $([ "${avg_disk:-0}" -gt 85 ] && echo "warning" || echo "success")" aria-labelledby="disk-usage-label disk-usage-value">
-                <div class="metric-value" id="disk-usage-value">${avg_disk}%</div>
+                <div class="metric-value" id="disk-usage-value">
+                    ${avg_disk}%
+                    <meter value="${avg_disk}" min="0" max="100" low="70" high="85" optimum="0" aria-label="Disk Usage: ${avg_disk}%"></meter>
+                </div>
                 <div class="metric-label" id="disk-usage-label">Disk Usage</div>
             </li>
             <li class="metric-card $([ "${total_warnings:-0}" -gt 3 ] && echo "warning" || echo "success")" aria-labelledby="total-warnings-label total-warnings-value">
