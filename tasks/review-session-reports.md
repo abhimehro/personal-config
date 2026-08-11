@@ -1,3 +1,20 @@
+# Review session — 2026-08-11 (cron Phase 1 13:00 UTC)
+
+Preflight PASS 7/7. Inventoried **84**. Squash-merged **17**. Closed **~46**.
+Autofix **1** (ctrld#1151). REQUEST_CHANGES **3**. CodeScene **1** (Hydro#498).
+Adversarial: opus-4.8 + gpt-5.5. Docs branch: `cursor-agent/automated-pr-workflow-f6d5`.
+Report: `tasks/pr-review-2026-08-11.md`. Recovered Aug 8–10 reports (0fk).
+New lessons: **0fl** (hostname `%` zone guard), **0fm** (dry-run interrupt counts).
+
+| Metric | Count |
+| --- | ---: |
+| Inventoried | 84 |
+| Merged | 17 |
+| Closed | ~46 |
+| Open auto EOD | ~24 |
+
+---
+
 # Review session — 2026-08-07 (cron Phase 1 13:00 UTC)
 
 Preflight PASS 7/7. Inventoried **58**. Squash-merged **24**. Closed **5**.

@@ -1,5 +1,25 @@
 # Lessons Learned
 
+## Lesson 0fl: Hostname fast-path must exclude IPv6 zone indexes (2026-08-11)
+
+**Pattern:** Bolt twins add `_is_likely_domain` / `_is_definitely_domain` that
+skip `ipaddress.ip_address()` when the last character is a non-hex letter.
+Without a `"%" not in hostname` guard, scoped IPv6 like `fe80::1%eth0` (ends
+in `o`) takes the DNS path instead of `_is_safe_ip` rejection.
+**Rule:** Prefer the twin that rejects empty hosts **and** `%` before the
+domain fast-path (e.g. #1157 over #1155). Close the narrower twin as duplicate.
+**Detection cost:** Low — diff the helper predicates side-by-side.
+
+## Lesson 0fm: Dry-run error counts must not use `total - success` after interrupt (2026-08-11)
+
+**Pattern:** Palette pluralize PRs pass `total - success_count` into error
+messages. After `KeyboardInterrupt`, unstarted profiles inflate the error
+count even though they never ran.
+**Rule:** Count failures from `sync_results` (or equivalent completed rows),
+not `len(ids) - successes`. Hold merge until fixed.
+**Detection cost:** Medium — search for `total - success` near interrupt
+handlers in CLI sync loops.
+
 ## Lesson 0fk: Docs tasks/* cascade — merge one, recover the rest (2026-08-07)
 
 **Pattern:** Multiple draft docs PRs (`pr-review-YYYY-MM-DD.md`, `lessons.md`,
