@@ -1,5 +1,26 @@
 # Lessons Learned
 
+## Lesson 0fl: Cursor App install R/W ≠ Cloud `ghs_` mutate rights (2026-08-12)
+
+**Pattern:** GitHub → Installed GitHub Apps → Cursor already shows **Read and
+write** for Issues + Pull requests on **All repositories**, yet Cloud Agent
+`env -u GH_TOKEN gh …` (hosts.yml `ghs_` / `cursor[bot]`) still returns
+**Resource not accessible by integration** on issue comment, issue close, and
+PR review. The same App token **can create** issues (`cursor[bot]`). 403
+responses include `X-Accepted-Github-Permissions: issues=write` /
+`pull_requests=write`. Injected `GH_TOKEN` (fine-grained PAT as `abhimehro`)
+succeeds on the same endpoints. This is **not** a missing App-install checkbox
+— Cursor mints a **reduced-capability installation token** for Cloud Agents
+that does not expose the full install grants for mutate APIs.
+**Rule:** (1) Do **not** diagnose solely from the App settings PDF/UI when
+create works but comment/close 403. (2) For Daily QA / issue lifecycle, **keep
+`GH_TOKEN` set** (PAT) — do not `env -u GH_TOKEN` for comment/close. (3) Prefer
+PAT for create+close so one identity owns the full lifecycle; accept
+`abhimehro` authorship instead of `cursor[bot]`. (4) Use MCP review tools when
+App-only. (5) Extends Lessons 0es / 0eq / 0ew.
+**Detection cost:** Low — one App create + one App comment probe; compare
+authors and `X-Accepted-Github-Permissions`.
+
 ## Lesson 0fk: Docs tasks/* cascade — merge one, recover the rest (2026-08-07)
 
 **Pattern:** Multiple draft docs PRs (`pr-review-YYYY-MM-DD.md`, `lessons.md`,
