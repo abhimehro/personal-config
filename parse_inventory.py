@@ -195,12 +195,15 @@ def _load_inventory_lines(filepath):
 
 
 def _write_triage_report(filepath, triage):
+    # ⚡ Bolt Optimization: Consolidate disk I/O outside tight loops by building the string in memory first.
+    # Impact: Reduces script I/O wait overhead significantly for large triage sets.
+    out = ["# PR Triage\n"]
+    for category, pr_list in triage.items():
+        out.append(f"## {category}")
+        out.extend(f"- {pr}" for pr in pr_list)
+
     with open(filepath, "w") as f:
-        f.write("# PR Triage\n\n")
-        for category, pr_list in triage.items():
-            f.write(f"## {category}\n")
-            for pr in pr_list:
-                f.write(f"- {pr}\n")
+        f.write("\n".join(out) + "\n")
 
 
 def main():

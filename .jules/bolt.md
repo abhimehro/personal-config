@@ -885,3 +885,7 @@ small in-memory config files.
 ## 2026-12-09 - [Safe Caching with id()]
 **Learning:** Using `id(obj)` (like a dictionary) as a cache key is highly performant but inherently unsafe for dynamically created objects because Python reuses memory addresses for garbage-collected objects, which can lead to stale cache hits for entirely different objects. The cache key must also include any dynamic state (like boolean flags) that dictates the result.
 **Action:** Only use `id()` as a cache key when you can explicitly guarantee the objects are long-lived, stable constants (e.g., module-level constants) and always include all relevant state parameters (e.g., `(id(tokens), keep_plus)`) in the compound cache key.
+
+## 2026-12-10 - [Avoid multiple write calls in tight loops]
+**Learning:** Calling `f.write()` repeatedly inside a tight nested loop creates unnecessary disk I/O overhead and reduces script speed, especially as the number of elements grows.
+**Action:** Always buffer string components into a list in memory (e.g. using `append` or `extend`) and write to disk in a single operation using `"\n".join(out) + "\n"` to minimize I/O overhead.
