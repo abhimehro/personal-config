@@ -4,7 +4,10 @@ import subprocess  # nosec B404
 import unittest
 from pathlib import Path
 
-import yaml
+try:
+    import yaml
+except ImportError:
+    yaml = None
 
 WORKFLOW_PATH = (
     Path(__file__).resolve().parents[1]
@@ -18,6 +21,7 @@ def load_workflow():
     return yaml.safe_load(WORKFLOW_PATH.read_text(encoding="utf-8"))
 
 
+@unittest.skipIf(yaml is None, "yaml module is required for these tests")
 class TestRefactoringAgentWorkflow(unittest.TestCase):
     def test_refactoring_agent_enforces_concurrency_per_pr(self):
         workflow = load_workflow()
