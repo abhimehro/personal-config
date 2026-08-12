@@ -679,8 +679,26 @@ EOF
     
     <section class="section" aria-labelledby="recent-opts-heading" role="region">
         <h2 id="recent-opts-heading"><span aria-hidden="true">🔄</span> Recent Optimizations</h2>
-        <p>Last optimization run: $(tail -1 "$PERFORMANCE_LOG" 2>/dev/null || echo "Never")</p>
+EOF
+
+	local last_run
+	last_run=$(tail -1 "$PERFORMANCE_LOG" 2>/dev/null || echo "")
+	if [[ -z "$last_run" ]]; then
+		cat >>"$report_file" <<EOF
+        <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; color: #6c757d; text-align: center;">
+            <div class="icon" aria-hidden="true" style="font-size: 3em; margin-bottom: 15px; opacity: 0.5;">🕒</div>
+            <p style="margin: 0; font-size: 1.1em;">No recent optimizations recorded.</p>
+        </div>
     </section>
+EOF
+	else
+		cat >>"$report_file" <<EOF
+        <p>Last optimization run: ${last_run}</p>
+    </section>
+EOF
+	fi
+
+	cat >>"$report_file" <<EOF
     </main>
 </body>
 </html>
