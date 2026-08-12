@@ -54,7 +54,7 @@ Optional (only if you need agent-driven auto-merge management):
       updates to a PR branch** fails with **403** (e.g. `cursor[bot]`). Run
       `gh auth setup-git` after selecting the active account, or use HTTPS
       remotes with an explicit credential helper.
-- [ ] **Cursor Cloud dual credentials (Lesson 0fl):** Cloud Agents often have
+- [ ] **Cursor Cloud dual credentials (Lesson 0fn):** Cloud Agents often have
       both (a) injected `GH_TOKEN` fine-grained PAT as the human account and
       (b) `~/.config/gh/hosts.yml` `ghs_` App install token as `cursor[bot]`.
       The GitHub App install UI may already show **Issues / Pull requests: Read

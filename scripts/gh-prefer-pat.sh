@@ -2,7 +2,7 @@
 # Prefer the injected human PAT (GH_TOKEN) for gh issue/PR lifecycle writes.
 # SECURITY: Cursor Cloud may also expose a hosts.yml ghs_ App token as
 # cursor[bot]. That token can create issues but still 403 on comment/close
-# even when the App install UI shows Issues R/W (Lesson 0fl). Unsetting
+# even when the App install UI shows Issues R/W (Lesson 0fn). Unsetting
 # GH_TOKEN forces the reduced App token — avoid that for Daily QA closes.
 set -euo pipefail
 

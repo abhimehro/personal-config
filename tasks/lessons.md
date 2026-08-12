@@ -1,6 +1,6 @@
 # Lessons Learned
 
-## Lesson 0fl: Cursor App install R/W ≠ Cloud `ghs_` mutate rights (2026-08-12)
+## Lesson 0fn: Cursor App install R/W ≠ Cloud `ghs_` mutate rights (2026-08-12)
 
 **Pattern:** GitHub → Installed GitHub Apps → Cursor already shows **Read and
 write** for Issues + Pull requests on **All repositories**, yet Cloud Agent
