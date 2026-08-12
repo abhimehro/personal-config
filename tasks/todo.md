@@ -8,7 +8,7 @@
 - [x] Load Phase 1 remainder from #1977
 
 ## CONFLICTING queue
-- [x] pc #1977 — recover into Phase 2 docs PR (0fk)
+- [x] pc #1977 — recover into Phase 2 docs PR (0fk); closed via #1979
 - [x] ctrld #1150 → draft #1159; closed
 - [x] Hydro #504 → draft #507; closed
 - [x] series #378 → CLOSE no-op
@@ -18,4 +18,4 @@
 ## Deliverables
 - [x] `tasks/pr-inventory.md`, `pr-triage.md`, `pr-review-2026-08-12.md`
 - [x] Append `tasks/salvage-session-reports.md` + Lesson 0fq
-- [ ] Open draft docs PR; close #1977; Notion + memory
+- [x] Open draft docs PR #1979; close #1977; Notion + memory
