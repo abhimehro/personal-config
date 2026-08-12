@@ -10,5 +10,5 @@ Mode: review-and-merge | Preflight: PASS 7/7 | Stale: 30d | Merge: squash
 - [x] Escalate security / majors / failing CI / auth
 - [x] Post review comments on acted PRs
 - [x] Write `tasks/pr-review-2026-08-12.md`, append session report, update lessons
-- [ ] Commit + push docs on `cursor-agent/automated-pr-workflow-90fd`
+- [x] Commit + push docs on `cursor-agent/automated-pr-workflow-90fd`
 - [ ] Open/update docs PR via automation tools
