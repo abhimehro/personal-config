@@ -1,91 +1,53 @@
-# PR Inventory — 2026-08-07
+# PR Inventory — Phase 2 Salvage 2026-08-12
 
-Phase 1 cron (13:00 UTC). Preflight PASS 7/7. Auth: `abhimehro` PAT.
-Mode: review-and-merge. Stale threshold: 30 days. Merge: squash.
+Phase 2 cron (17:00 UTC). Preflight PASS (+ `make cursor-cloud-hooks`).
+Auth: `abhimehro` PAT (Lesson 0ew). Mode: **salvage only — 0 autonomous merges (S1)**.
 
-Scope: automation-driven open PRs (bot authors + human-authored
-Bolt/Jules/Sentinel/Palette/salvage/cursor-agent/Dependabot).
+Input: Phase 1 draft [#1977](https://github.com/abhimehro/personal-config/pull/1977)
+(`pr-review-2026-08-12.md` remainder) + live CONFLICTING re-fetch.
 
-## Start-of-session counts (auto targets)
+## Live CONFLICTING automation queue (start)
 
-| Repo | Auto open |
-| ---- | --------: |
-| personal-config | 8 |
-| ctrld-sync | 6 |
-| email-security-pipeline | 4 |
-| Seatek_Analysis | 14 |
-| Hydrograph… | 10 |
+| Repo | PR | Author / pattern | Title |
+| ---- | -- | ---------------- | ----- |
+| personal-config | 1977 | app/cursor docs | Phase 1 session report 2026-08-12 |
+| ctrld-sync | 1150 | Palette / abhimehro | Grammatical Polish for Dry Run Errors |
+| Hydrograph… | 504 | Sentinel / abhimehro | Log injection via filename sanitization |
+| series… | 378 | Sentinel / abhimehro | User enumeration timing attack |
+| repoprompt-ce | 231 | Bolt / abhimehro | Cache DateFormatter allocations |
+| repoprompt-ce | 224 | salvage / abhimehro | REPLInputParser edge-case coverage |
+
+## Open PR counts (end of Phase 2, approx)
+
+| Repo | Open |
+| ---- | ---: |
+| personal-config | 4 |
+| ctrld-sync | 3 |
+| email-security-pipeline | 1 |
+| Seatek_Analysis | 2 |
+| Hydrograph… | 2 |
 | series_correction… | 4 |
-| repoprompt-ce | 12 |
-| **Total** | **58** |
+| repoprompt-ce | 9 |
+| **Total** | **25** |
 
-## End-of-session open remainder (auto)
+## Salvage drafts opened this run
 
-| Repo | Open | Notes |
-| ---- | ---: | ----- |
-| personal-config | 1 | #1907 CORS ESCALATE |
-| ctrld-sync | ~4 | Dependabot lock siblings after #1132; mypy major #1136 |
-| email-security-pipeline | ~3 | #1421 CONFLICTING; #1444 opencv major; #1437 salvage draft |
-| Seatek_Analysis | 10 | Sentinel path/subprocess cluster |
-| Hydrograph… | 8 | Sentinel sanitize_filename cluster |
-| series_correction… | 4 | #364/#365 auth; #371 CodeScene; #369 salvage |
-| repoprompt-ce | 9 | TOCTOU + failing tests/a11y |
-| **Approx open auto** | **~44** | |
+| Repo | New PR | Salvages |
+| ---- | ------ | -------- |
+| Hydrograph… | [#507](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/507) | #504 |
+| ctrld-sync | [#1159](https://github.com/abhimehro/ctrld-sync/pull/1159) | #1150 |
+| repoprompt-ce | [#237](https://github.com/abhimehro/repoprompt-ce/pull/237) | #224/#186 |
 
-## Merged this session (24)
-
-| Repo | PR | Category | Note |
-| ---- | -- | -------- | ---- |
-| ctrld-sync | 1130 | DEPENDENCY | pnpm/action-setup |
-| ctrld-sync | 1131 | DEPENDENCY | gh-aw actions/setup pin |
-| ctrld-sync | 1129 | DEPENDENCY | gh-aw setup-cli |
-| ctrld-sync | 1127 | UI | Palette error grammar |
-| ctrld-sync | 1126 | SECURITY | pygments 2.20.0 CVE (verified on main) |
-| ctrld-sync | 1123 | CI/INFRA | repo-health |
-| ctrld-sync | 1132 | DEPENDENCY | pytest-cov (one lock / 0fb) |
-| Seatek_Analysis | 619 | DEPENDENCY | pnpm/action-setup |
-| Seatek_Analysis | 618 | CI/INFRA | zero-diff daily QA |
-| Seatek_Analysis | 621 | PERFORMANCE | Bolt POSIXct guard (verified on main) |
-| Hydrograph… | 481 | DEPENDENCY | pnpm/action-setup |
-| Hydrograph… | 482 | DEPENDENCY | pandas requirements align to 3.0.5 (verified) |
-| email-security-pipeline | 1439 | UI | Palette email hint |
-| email-security-pipeline | 1435 | CI/INFRA | repo-health |
-| email-security-pipeline | 1446 | DEPENDENCY | certifi |
-| email-security-pipeline | 1445 | DEPENDENCY | pytest |
-| email-security-pipeline | 1443 | DEPENDENCY | pre-commit |
-| email-security-pipeline | 1442 | CI/INFRA | zero-diff daily QA |
-| personal-config | 1924 | PERFORMANCE | Bolt yaml import fallback |
-| personal-config | 1931 | CI/INFRA | repo-health TruffleHog |
-| personal-config | 1912 | CI/INFRA | docs Phase1 2026-08-04 |
-| repoprompt-ce | 209 | CI/INFRA | zero-diff Jules QA |
-| repoprompt-ce | 203 | UI | Palette a11y Chat buttons |
-| repoprompt-ce | 205 | CI/INFRA | repo-health community templates |
-
-## Closed this session (5)
+## Closed this run
 
 | Repo | PR | Reason |
 | ---- | -- | ------ |
-| personal-config | 1925 | CONFLICTING docs cascade after #1912; recovered Aug 5 report |
-| personal-config | 1930 | CONFLICTING docs cascade; recovered Aug 6 report |
-| personal-config | 1933 | CONFLICTING salvage docs cascade |
-| personal-config | 1914 | Trunk MQ fail + docs cascade |
-| Seatek_Analysis | 615 | Superseded by focused #621; workflow scope creep |
+| Hydrograph… | 504 | Superseded by #507 |
+| ctrld-sync | 1150 | Superseded by #1159 (contamination stripped) |
+| series… | 378 | No-op — `dummy_todos.py` absent on main |
+| repoprompt-ce | 224 | Superseded by clean #237 |
+| personal-config | 1977 | Superseded by this Phase 2 docs PR (0fk recovery) |
 
-## Representative remaining (disposition)
+## Still escalated / deferred (human)
 
-| Repo | PR | Disposition |
-| ---- | -- | ----------- |
-| personal-config | 1907 | ESCALATE CORS |
-| Seatek_Analysis | 620/617/612/610/607/605/590/585/580/573 | ESCALATE Sentinel cluster |
-| Hydrograph… | 484…459 | ESCALATE sanitize cluster |
-| series… | 365/364 | ESCALATE auth |
-| series… | 371 | REQUEST_CHANGES + CodeScene trigger |
-| series… | 369 | DEFER salvage draft (CodeScene) |
-| esp | 1421 | REQUEST_CHANGES / DEFER CONFLICTING |
-| esp | 1444 | ESCALATE opencv major |
-| esp | 1437 | DEFER salvage draft |
-| rpce | 211 | REQUEST_CHANGES XCTSkip (now CONFLICTING) |
-| rpce | 210/201/196 | ESCALATE TOCTOU |
-| rpce | 212/194/186 | REQUEST_CHANGES failing CI |
-| ctrld-sync | 1136 | ESCALATE mypy major |
-| ctrld-sync | 1133–1135 | DEFER lock cascade |
+See `tasks/pr-triage.md` — CORS/TOCTOU/majors/CodeScene holds unchanged.

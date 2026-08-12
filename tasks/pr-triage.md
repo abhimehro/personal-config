@@ -1,37 +1,41 @@
-# PR Triage — 2026-08-07
+# PR Triage — Phase 2 Salvage 2026-08-12
 
-## Duplicate / overlap groups
+## Decision summary
 
-### Hydrograph sanitize_filename Sentinel cluster
-PRs: #484, #483, #478, #475, #473, #468, #466, #459  
-Action: ESCALATE all; Phase 2 consolidate strongest sanitizer into one salvage.
+| Repo | PR | Disposition | Action |
+| ---- | -- | ----------- | ------ |
+| Hydrograph… | 504 | SALVAGE | Draft [#507](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/507); close #504 |
+| ctrld-sync | 1150 | SALVAGE | Draft [#1159](https://github.com/abhimehro/ctrld-sync/pull/1159); strip lock/deps; close #1150 |
+| repoprompt-ce | 224 | SALVAGE | Draft [#237](https://github.com/abhimehro/repoprompt-ce/pull/237) tests-only (0fj); close #224 |
+| series… | 378 | CLOSE no-op | Target `dummy_todos.py` gone from main; no auth re-intro |
+| repoprompt-ce | 231 | HOLD/ESCALATE | DateFormatter + contamination (0fm); comment only |
+| personal-config | 1977 | DOCS recover | Fold Phase 1 reports into Phase 2 docs PR; close #1977 |
+| personal-config | 1907 | ESCALATE | CORS trust boundary — human |
+| ctrld-sync | 1156 | ESCALATE | TOCTOU plan JSON — human |
+| ctrld-sync | 1136 | ESCALATE | mypy 2.x major — human |
+| email-security-pipeline | 1444 | ESCALATE | opencv 5.x + failing CI (S6) |
+| Seatek_Analysis | 657 | REQUEST_CHANGES | fail-open OSError→{} |
+| Seatek_Analysis | 643 | DEFER | CodeScene/CodeQL |
+| Hydrograph… | 498 | DEFER | failing tests + junk |
+| series… | 386/385 | ESCALATE | pandas/numpy majors + failing CI |
+| series… | 375 | DEFER | CodeScene salvage test |
+| repoprompt-ce | 232/228 | ESCALATE | TOCTOU contaminated |
+| repoprompt-ce | 226 | REQUEST_CHANGES | a11y scope creep |
+| repoprompt-ce | 235/234/227 | DEFER | failing CI / contaminated salvage |
 
-### Seatek path-hijack / subprocess timeout Sentinel cluster
-PRs: #620, #617, #612, #610, #607, #605, #590, #585, #580, #573  
-Action: ESCALATE all; Phase 2 one absolute-path + timeout salvage.
+## Human merge priority (drafts)
 
-### repoprompt-ce TOCTOU cluster
-PRs: #210, #201, #196 (+ salvage drafts #207/#206)  
-Action: ESCALATE; prefer salvage without journal wipe (0fc). #201 has huge deletions.
+1. Hydro [#507](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/507) — sanitize newline tests
+2. ctrld [#1159](https://github.com/abhimehro/ctrld-sync/pull/1159) — dry-run pluralize (0fm-compliant `sync_results` count)
+3. rpce [#237](https://github.com/abhimehro/repoprompt-ce/pull/237) — REPLInputParserTests (`make dev-test FILTER=REPLInputParserTests`)
+4. Prior queue: series [#375](https://github.com/abhimehro/series_correction_project_updated/pull/375), rpce [#227](https://github.com/abhimehro/repoprompt-ce/pull/227) (contaminated — prefer fresh re-roll)
 
-### personal-config docs tasks/* cascade
-PRs: #1912 (merged), #1925/#1930/#1933/#1914 (closed)  
-Action: recovered Aug 5/6 reports + lessons 0fg–0fk into this session’s docs PR (0fk).
+## Rules applied
 
-### Seatek Bolt POSIXct twins
-#621 (merged, focused) vs #615 (closed — workflow scope creep + failing Gate).
-
-### Palette a11y twins (rpce)
-#203 (merged, Chat buttons only) vs #211 (REQUEST_CHANGES — XCTSkip flake masking; now CONFLICTING after #203).
-
-### ctrld Dependabot uv.lock cascade (0fb)
-Merged #1132 (pytest-cov) first. Defer #1133–#1135; escalate #1136 mypy 2.x major.
-
-## Stale (>30 days)
-None in this auto inventory (all age ≤6 days).
-
-## Security gate failures → never merge in Phase 1
-- Auth: series #364, #365
-- CORS: pc #1907
-- All Sentinel-labeled PRs
-- Major runtime bumps: esp #1444 opencv 5.x; ctrld #1136 mypy 2.x
+- S1 no autonomous merges
+- 0y journal append-only
+- 0fj contaminated salvage → fresh main + unique files
+- 0fm dry-run error_count from `sync_results`
+- 0fn do not re-apply rejected insecure / do not resurrect deleted auth demos
+- 0fk one competing `tasks/*` docs lineage
+- 0ew skip `request_reviewers` when author is abhimehro

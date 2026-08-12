@@ -1188,3 +1188,36 @@
 
 - Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-08-02.md)
 - New lesson: **0fd** (close Sentinel clusters when main already has the guard)
+
+## Run — 2026-08-12
+
+- Trigger: cron Phase 2 `0 17 * * *`
+- Agent branch: `cursor-agent/automated-pr-salvage-workflow-2869`
+- Preflight: PASS (+ cursor-cloud-hooks)
+- Source: Phase 1 [#1977](https://github.com/abhimehro/personal-config/pull/1977) / `pr-review-2026-08-12.md` remainder + live CONFLICTING re-fetch
+- Auth: `abhimehro` PAT (Lesson 0ew) — create/close OK
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| Hydrograph… | #504 | SALVAGE | [#507](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/507) | newline/CR tests + journal; regex already on main |
+| ctrld-sync | #1150 | SALVAGE | [#1159](https://github.com/abhimehro/ctrld-sync/pull/1159) | pluralize dry-run; strip lock/deps (0fm) |
+| repoprompt-ce | #224 | SALVAGE | [#237](https://github.com/abhimehro/repoprompt-ce/pull/237) | REPLInputParserTests only (0fj) |
+| series… | #378 | CLOSE no-op | — | `dummy_todos.py` absent on main |
+| repoprompt-ce | #231 | HOLD/ESCALATE | — | DateFormatter + contamination |
+| personal-config | #1977 | DOCS recover | this docs PR | Phase 1 08-08…12 + Lessons 0fl/0fm |
+
+- Salvage draft PRs opened: **3**
+- Closed superseded / no-op: **4**
+- Autonomous merges: **0**
+- Infra-fix drafts: **0**
+
+### Handoff
+
+1. **Human merge drafts:** Hydro [#507](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/507) → ctrld [#1159](https://github.com/abhimehro/ctrld-sync/pull/1159) → rpce [#237](https://github.com/abhimehro/repoprompt-ce/pull/237)
+2. **T1 human:** pc#1907 CORS; ctrld#1156 TOCTOU / #1136 mypy; esp#1444 opencv; Seatek#657; series#386/#385; rpce#232/#228/#231
+3. Skip `request_reviewers` when author is abhimehro (0ew)
+4. New lesson: **0fq** (close auth salvages when demo module deleted from main)
+
+- Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-08-12.md)
