@@ -150,7 +150,7 @@ def write_text_files(output_dir, denylist_domains, allowlist_domains):
         if allowlist_domains:
             # ⚡ Bolt Optimization: Use join() for faster batched string writing instead of looping f.write()
             f.write(
-                "\n".join(f"@@{domain}" for domain in sorted(allowlist_domains)) + "\n"
+                "\n".join([f"@@{domain}" for domain in sorted(allowlist_domains)]) + "\n"
             )
 
     print(f"✅ Created: {denylist_txt_path}")

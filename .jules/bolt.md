@@ -1,3 +1,6 @@
+## 2026-12-10 - [Use C-speed str.join for batched disk I/O]
+**Learning:** Passing generator expressions (e.g., `"\n".join(f"@@{x}" for x in iter)`) into `str.join()` is measurably slower than passing list comprehensions (e.g., `"\n".join([f"@@{x}" for x in iter])`). List comprehensions allow `join()` to pre-allocate memory and execute at C-speed, whereas generators force `join()` to continually re-allocate memory as the generator is consumed.
+**Action:** When using `str.join()` to batch write strings to disk, always pass a list comprehension rather than a generator expression for optimal performance.
 ## 2024-10-27 - [Idempotent Service Switching]
 
 **Learning:** Shell scripts managing services should be idempotent. Restarting a

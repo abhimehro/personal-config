@@ -40,20 +40,20 @@ def process_draft_fixes(results, draft_fixes):
 
 
 def format_lists(merged_data, closed_data, escalated_data):
-    # ⚡ Bolt Optimization: Use generator expressions instead of list comprehensions inside str.join() to avoid intermediate list memory allocation overhead
-    merged_str = "\n".join(
+    # ⚡ Bolt Optimization: Use list comprehensions instead of generator expressions inside str.join() to avoid memory re-allocations overhead and execute at C-speed
+    merged_str = "\n".join([
         f"- [#{pr}](https://github.com/{repo}/pull/{pr}) in `{repo}`: {title}"
         for repo, pr, title in merged_data
-    )
-    closed_str = "\n".join(
+    ])
+    closed_str = "\n".join([
         f"- [{pr}](https://github.com/{pr.replace('#', '/pull/')})"
         for pr in closed_data
-    )
+    ])
     # ⚡ Bolt Optimization: Use str.partition() over multiple split() calls to avoid redundant list allocations
-    escalated_str = "\n".join(
+    escalated_str = "\n".join([
         f"- [{p}](https://github.com/{p.replace('#', '/pull/')}) - {desc}"
         for p, _, desc in (pr.partition(" ") for pr in escalated_data)
-    )
+    ])
     return merged_str, closed_str, escalated_str
 
 

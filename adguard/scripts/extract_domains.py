@@ -121,7 +121,7 @@ def write_lists(base_dir, denylist_domains, allowlist_domains):
             if allowlist_domains:
                 # ⚡ Bolt Optimization: Use join() for faster batched string writing instead of looping f.write()
                 f.write(
-                    "\n".join(f"@@{domain}" for domain in sorted(allowlist_domains))
+                    "\n".join([f"@@{domain}" for domain in sorted(allowlist_domains)])
                     + "\n"
                 )
 
