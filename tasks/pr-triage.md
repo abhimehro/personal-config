@@ -1,37 +1,41 @@
-# PR Triage — 2026-08-07
+# PR Triage — 2026-08-12
+
+Phase 1 cron. Preflight PASS 7/7. Mode: review-and-merge.
+
+## Disposition summary
+
+| Disposition | Count | Notes |
+| ----------- | ----: | ----- |
+| MERGE | 7 | #388 #1967 #1467 #658 #655 #1974 #1976 |
+| CLOSE | 3 | #652 twin, #653 incomplete, #1966 docs recovered |
+| ESCALATE | 10+ | security / majors / CORS mismatch / TOCTOU |
+| REQUEST_CHANGES | 2 | Seatek#657 fail-open; rpce#226 scope |
+| DEFER / HOLD | 10+ | CodeScene, failing CI, conflicts, 0fm holds |
 
 ## Duplicate / overlap groups
 
-### Hydrograph sanitize_filename Sentinel cluster
-PRs: #484, #483, #478, #475, #473, #468, #466, #459  
-Action: ESCALATE all; Phase 2 consolidate strongest sanitizer into one salvage.
+| Group | Keep | Close / defer | Reason |
+| ----- | ---- | ------------- | ------ |
+| Seatek anyNA Bolt | #658 (merged) | #652 closed | Identical hot-path |
+| Seatek path hijack | already on main via #649 | #653 closed | Journal-only / changelog churn |
+| Docs tasks/* | session branch 90fd | #1966 closed | 0fk recover then close |
+| rpce TOCTOU | human pick one | #232/#228 escalate | Contaminated twins |
+| rpce a11y | prefer #235 when green | #226 REQUEST_CHANGES | Scope creep |
+| series requirements | human after CI | #385/#386 escalate | Same file + majors/fail |
 
-### Seatek path-hijack / subprocess timeout Sentinel cluster
-PRs: #620, #617, #612, #610, #607, #605, #590, #585, #580, #573  
-Action: ESCALATE all; Phase 2 one absolute-path + timeout salvage.
+## Security escalations (do not auto-merge)
 
-### repoprompt-ce TOCTOU cluster
-PRs: #210, #201, #196 (+ salvage drafts #207/#206)  
-Action: ESCALATE; prefer salvage without journal wipe (0fc). #201 has huge deletions.
+- personal-config#1907 — CORS title / unrelated files
+- ctrld-sync#1156 — TOCTOU plan JSON (+ adversarial: silent write fail; scratch test_json.py)
+- Hydro#504 — sanitize filename CONFLICTING
+- series#378 — auth timing (dummy_todos) CONFLICTING
+- Seatek#657 — REQUEST_CHANGES fail-open OSError→{}
+- rpce#232/#228 — TOCTOU + huge unrelated diffs
+- Majors: ctrld#1136 mypy2; esp#1444 opencv5; series#386 pandas3; series#385 numpy
 
-### personal-config docs tasks/* cascade
-PRs: #1912 (merged), #1925/#1930/#1933/#1914 (closed)  
-Action: recovered Aug 5/6 reports + lessons 0fg–0fk into this session’s docs PR (0fk).
+## Adversarial multi-model (opus-4.8 + gpt-5.5)
 
-### Seatek Bolt POSIXct twins
-#621 (merged, focused) vs #615 (closed — workflow scope creep + failing Gate).
-
-### Palette a11y twins (rpce)
-#203 (merged, Chat buttons only) vs #211 (REQUEST_CHANGES — XCTSkip flake masking; now CONFLICTING after #203).
-
-### ctrld Dependabot uv.lock cascade (0fb)
-Merged #1132 (pytest-cov) first. Defer #1133–#1135; escalate #1136 mypy 2.x major.
-
-## Stale (>30 days)
-None in this auto inventory (all age ≤6 days).
-
-## Security gate failures → never merge in Phase 1
-- Auth: series #364, #365
-- CORS: pc #1907
-- All Sentinel-labeled PRs
-- Major runtime bumps: esp #1444 opencv 5.x; ctrld #1136 mypy 2.x
+Consensus: all 7 merges sound; escalations correct. Notes:
+- #1467 `type is list` nit only
+- #657 REQUEST_CHANGES upheld by gpt-5.5; opus found borderline — keep REQUEST_CHANGES (fail-secure)
+- #1156 escalate reinforced (silent write failure / scratch `/etc/shadow` test)

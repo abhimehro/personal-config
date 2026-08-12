@@ -445,3 +445,15 @@ New lessons: **0fd** (LICENSE/README hijack), **0fe** (`.Jules` case collision),
   branch `cursor-agent/automated-pr-workflow-7358`.
 - Phase 2 trigger: yes (≥1 ESCALATE; Hydrograph path cluster; rpce CONFLICTING).
 - Open EOD approx: **19** (pc1 / Seatek2 / hg3 / rpce13).
+
+## 2026-08-12 Phase 1 cron
+
+- Preflight PASS 7/7; inventoried 30 → ~21 open auto EOD.
+- Merged 7: series#388; pc#1967/#1974/#1976; esp#1467; Seatek#658/#655.
+- Closed 3: Seatek#652 twin, #653 incomplete, pc#1966 docs recovered (0fk).
+- Autofix: pc#1974 lesson 0fl→0fn.
+- Escalations: CORS#1907, TOCTOU ctrld#1156 + rpce#232/#228, auth#378, sanitize#504, majors mypy/opencv/pandas/numpy.
+- REQUEST_CHANGES: Seatek#657 fail-open; rpce#226 scope.
+- CodeScene posted: series#375, Seatek#643, Hydro#498.
+- Adversarial: opus-4.8 + gpt-5.5 — merges sound; keep #657 RC.
+- Details: tasks/pr-review-2026-08-12.md
