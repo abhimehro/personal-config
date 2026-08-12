@@ -4,12 +4,19 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
 from gh_token_env import load_gh_token_env
+from pr_reference import parse_repo_name
 from spreadsheet_safety import escape_spreadsheet_formula
 
 
 def _fetch_repo_prs(repo):
     repo_prs = []
     env = load_gh_token_env()
+
+    # SECURITY: Validate the repo name to prevent command injection / SSRF.
+    if not parse_repo_name(repo):
+        print(f"Skipping invalid repo reference: {repo}")
+        return []
+
     try:
         res = subprocess.run(
             [

@@ -4,6 +4,7 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
 from gh_token_env import load_gh_token_env
+from pr_reference import parse_repo_name
 
 repos = [
     "abhimehro/personal-config",
@@ -16,6 +17,12 @@ repos = [
 
 
 def run_cmd(cmd):
+    # SECURITY: Prevent command injection in PR triage scripts (CWE-78)
+    if not isinstance(cmd, list):
+        raise ValueError("run_cmd requires a list of arguments, not a string")
+    if cmd[0] != "gh":
+        raise ValueError("run_cmd may only execute the 'gh' CLI")
+
     env = load_gh_token_env()
     try:
         res = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=120)
@@ -111,6 +118,12 @@ def group_prs(all_prs, triage_md):
 
 def _fetch_repo_prs(repo):
     repo_prs = []
+
+    # SECURITY: Validate the repo name to prevent command injection / SSRF.
+    if not parse_repo_name(repo):
+        print(f"Skipping invalid repo reference: {repo}")
+        return []
+
     success, stdout, _ = run_cmd(
         [
             "gh",
