@@ -16,7 +16,7 @@ log "start mode=observe-only uid=$(id -u)"
 
 found=0
 for name in ReportCrash ReportCrashService ReportMemoryException; do
-    pids="$(pgrep -x "$name" 2>/dev/null | tr '\n' ',' | sed 's/,$//' || true)"
+    pids="$(pgrep -x -- "$name" 2>/dev/null | tr '\n' ',' | sed 's/,$//' || true)"
     if [[ -n "$pids" ]]; then
         log "process=$name pids=$pids action=leave-alone"
         found=1
@@ -69,7 +69,7 @@ etime_to_seconds() {
 check_stuck() {
     local name="$1"
     local pid etime_raw cpu etime_sec role uid
-    for pid in $(pgrep -x "$name" 2>/dev/null); do
+    for pid in $(pgrep -x -- "$name" 2>/dev/null); do
         # etime = [[dd-]hh:]mm:ss on macOS; %cpu = instantaneous usage
         read -r etime_raw cpu uid <<<"$(ps -p "$pid" -o etime=,%cpu=,uid= 2>/dev/null)"
         [[ -n "${etime_raw:-}" && -n "${cpu:-}" ]] || continue
