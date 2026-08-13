@@ -33,6 +33,7 @@ zero-diff CLOSE, contaminated-mega CLOSE (0fr), one unique-test salvage.
 | repoprompt-ce | [#237](https://github.com/abhimehro/repoprompt-ce/pull/237) | REPLInputParserTests (Aug 12) |
 | personal-config | [#1979](https://github.com/abhimehro/personal-config/pull/1979) | Aug 12 docs |
 | personal-config | [#1986](https://github.com/abhimehro/personal-config/pull/1986) | Phase 1 13:00 docs |
+| personal-config | [#1988](https://github.com/abhimehro/personal-config/pull/1988) | this Phase 2 17:00 docs (prefer for 0fk squash) |
 
 ## Merge-ready leftovers (human squash; not Phase 2)
 

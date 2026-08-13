@@ -1253,7 +1253,7 @@
 | series… | #390 | REQUEST_CHANGES | — | `copy(deep=False)` (0fp) |
 | ctrld-sync | #1136 | ESCALATE | — | mypy 2.x major |
 
-- Salvage draft PRs opened: **1** (plus this docs PR)
+- Salvage draft PRs opened: **1** (plus docs [#1988](https://github.com/abhimehro/personal-config/pull/1988))
 - Closed superseded / no-op: **10**
 - Autonomous merges: **0** (S1)
 - Infra-fix drafts: **0**
