@@ -30,8 +30,10 @@ The automated PR review agent successfully processed the backlog across 5 reposi
 
 def process_draft_fixes(results, draft_fixes):
     new_escalated = []
+    # ⚡ Bolt Optimization: Convert draft_fixes to a set for O(1) hash map lookup instead of O(n) list iteration inside the loop
+    draft_fixes_set = set(draft_fixes)
     for e in results.get("escalated", ()):
-        if f"{e[0]}#{e[1]}" in draft_fixes:
+        if f"{e[0]}#{e[1]}" in draft_fixes_set:
             results["merged"].append((e[0], e[1], e[2]))
         else:
             new_escalated.append(e)
