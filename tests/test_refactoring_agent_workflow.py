@@ -4,7 +4,10 @@ import subprocess  # nosec B404
 import unittest
 from pathlib import Path
 
-import yaml
+try:
+    import yaml
+except ImportError:
+    yaml = None
 
 WORKFLOW_PATH = (
     Path(__file__).resolve().parents[1]
@@ -19,6 +22,7 @@ def load_workflow():
 
 
 class TestRefactoringAgentWorkflow(unittest.TestCase):
+    @unittest.skipIf(yaml is None, "yaml module is not installed")
     def test_refactoring_agent_enforces_concurrency_per_pr(self):
         workflow = load_workflow()
 
@@ -30,6 +34,7 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
             },
         )
 
+    @unittest.skipIf(yaml is None, "yaml module is not installed")
     def test_refactoring_agent_retries_failed_push_once(self):
         steps = load_workflow()["jobs"]["refactor"]["steps"]
         steps_by_id = {step["id"]: step for step in steps if "id" in step}
@@ -58,6 +63,7 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
             == "always() && steps.refactor-attempt-1.outcome == 'failure' && steps.refactor-attempt-2.outcome == 'failure'"
         )
 
+    @unittest.skipIf(yaml is None, "yaml module is not installed")
     def test_prepare_command_extracts_first_cs_agent_line_from_multiline_comment(self):
         import tempfile
 
@@ -110,6 +116,7 @@ class TestRefactoringAgentWorkflow(unittest.TestCase):
                 ),
             )
 
+    @unittest.skipIf(yaml is None, "yaml module is not installed")
     def test_prepare_command_fails_when_no_cs_agent_line_present(self):
         import tempfile
 

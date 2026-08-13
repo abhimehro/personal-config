@@ -889,3 +889,6 @@ small in-memory config files.
 ## 2026-12-10 - [Avoid multiple write calls in tight loops]
 **Learning:** Calling `f.write()` repeatedly inside a tight nested loop creates unnecessary disk I/O overhead and reduces script speed, especially as the number of elements grows.
 **Action:** Always buffer string components into a list in memory (e.g. using `append` or `extend`) and write to disk in a single operation using `"\n".join(out) + "\n"` to minimize I/O overhead.
+## 2026-03-10 - [Optimize str.join() with list comprehensions]
+**Learning:** When using `str.join()`, passing a list comprehension (e.g., `"\n".join([x for x in iter])`) is measurably faster than passing a generator expression (e.g., `"\n".join(x for x in iter)`) because it allows `join()` to pre-allocate memory and execute at C-speed.
+**Action:** Replace generator expressions with list comprehensions inside `str.join()` for optimal performance.

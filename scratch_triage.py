@@ -103,6 +103,8 @@ def group_prs(all_prs, triage_md):
         _process_pr_group(matches, repo, rationale, groups)
 
     for g in groups:
+        # ⚡ Bolt Optimization: Use list comprehension inside str.join() instead of a generator
+        # expression to allow str.join() to pre-allocate memory and execute at C-speed.
         dups_str = ", ".join([f"**#{d['number']}**" for d in g["dups"]])
         triage_md.append(
             f"| {g['repo']} **#{g['keep']['number']}** | {dups_str} | {g['rationale']} |"
