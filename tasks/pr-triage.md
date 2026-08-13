@@ -1,37 +1,33 @@
-# PR Triage — 2026-08-07
+# PR triage — 2026-08-13
 
 ## Duplicate / overlap groups
 
-### Hydrograph sanitize_filename Sentinel cluster
-PRs: #484, #483, #478, #475, #473, #468, #466, #459  
-Action: ESCALATE all; Phase 2 consolidate strongest sanitizer into one salvage.
+| Keep | Close/hold siblings | Rationale |
+| ---- | ------------------- | --------- |
+| pc **#1984** | #1985, #1978 | Three-way `generate_report.py` overlap. #1984 is the only single-file, journal-free, behavior-preserving change. #1985 also duplicates #1982 yaml skipIf. #1978 prepends `.jules/bolt.md` (not append-only). |
+| pc **#1982** (rework) | yaml portion of #1985 | Competing skipIf implementations. Prefer fail-loud (pyyaml is required) over skip. |
+| rpce **#235** | #226 | Focused a11y labels vs 60-file Palette scope+failing CI. Prefer #235. |
+| rpce TOCTOU head **#239** (after CI) | #232, #228 | Huge 290-file TOCTOU PRs vs focused 3-file #239. Hold all (security + failing CI / journal). Do not merge any this pass. |
+| rpce DateFormatter | #241, #236, #231 | Same GitService formatter cluster. #231 already CHANGES_REQUESTED; #241/#236 failing CI. |
+| Seatek QA **#664** | — | Zero-diff; close. |
+| series QA **#384** | — | Zero-diff; close. |
+| rpce QA **#240** (then #234) | #234 | Zero-diff QA. #234 also has unrelated shard failures. |
 
-### Seatek path-hijack / subprocess timeout Sentinel cluster
-PRs: #620, #617, #612, #610, #607, #605, #590, #585, #580, #573  
-Action: ESCALATE all; Phase 2 one absolute-path + timeout salvage.
+## Stale (>30d)
 
-### repoprompt-ce TOCTOU cluster
-PRs: #210, #201, #196 (+ salvage drafts #207/#206)  
-Action: ESCALATE; prefer salvage without journal wipe (0fc). #201 has huge deletions.
+None of the open automation PRs are older than 30 days.
 
-### personal-config docs tasks/* cascade
-PRs: #1912 (merged), #1925/#1930/#1933/#1914 (closed)  
-Action: recovered Aug 5/6 reports + lessons 0fg–0fk into this session’s docs PR (0fk).
+## Superseded / zero-diff
 
-### Seatek Bolt POSIXct twins
-#621 (merged, focused) vs #615 (closed — workflow scope creep + failing Gate).
+- Seatek #664, series #384, rpce #240, rpce #234: `changedFiles=0`.
 
-### Palette a11y twins (rpce)
-#203 (merged, Chat buttons only) vs #211 (REQUEST_CHANGES — XCTSkip flake masking; now CONFLICTING after #203).
+## Security / trust-boundary (always escalate)
 
-### ctrld Dependabot uv.lock cascade (0fb)
-Merged #1132 (pytest-cov) first. Defer #1133–#1135; escalate #1136 mypy 2.x major.
+- Sentinel: pc #1980, #1907; ctrld #1156; Seatek #665, #662, #657; rpce #239, #232, #228; Hydro salvage #507
+- Majors: ctrld #1136 mypy 2.x; esp #1444 opencv 5; Seatek #661 numpy 1→2; series #386 pandas 3; series #385 numpy 2.2→2.5
+- Workflow/Gitleaks: pc #1969
+- Scratch `/etc/shadow` probe in ctrld #1156 `test_json.py` (Lesson 0fg)
 
-## Stale (>30 days)
-None in this auto inventory (all age ≤6 days).
+## Salvage drafts (never merge this phase)
 
-## Security gate failures → never merge in Phase 1
-- Auth: series #364, #365
-- CORS: pc #1907
-- All Sentinel-labeled PRs
-- Major runtime bumps: esp #1444 opencv 5.x; ctrld #1136 mypy 2.x
+pc #1979, ctrld #1159, Hydro #507, rpce #237, series #375, rpce #227
