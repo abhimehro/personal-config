@@ -13,5 +13,5 @@ Branch: `cursor-agent/automated-pr-salvage-workflow-284b`
 - [x] Close contaminated MERGEABLE megas (#228, #232, #226, #231, #227, #375)
 - [x] Leave CORS / Sentinel / majors / TOCTOU focused heads as ESCALATE (no merge)
 - [x] Write inventory, triage, salvage-session-reports, lesson 0fr
-- [ ] Open docs PR (this branch) as draft; human merge
-- [ ] Notion + automation memory
+- [x] Open docs PR (this branch) as draft; human merge
+- [x] Notion + automation memory
