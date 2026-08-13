@@ -10,11 +10,11 @@ Branch: `cursor-agent/automated-pr-workflow-54ad`
 - [x] Gate 1–4 review (CI, security, quality, category)
 - [x] Adversarial multi-model (opus-4.8 + gpt-5.5, parallel)
 - [x] Recover stranded 08-08…12 reports + lessons 0fl/0fm/0fq (0fk)
-- [ ] Post MCP reviews (APPROVE / REQUEST_CHANGES / COMMENT)
-- [ ] Request reviewers on Dependabot majors
-- [ ] Write session artifacts + open docs PR
-- [ ] Notion + Linear session notes (no secrets)
-- [ ] Update automation memory
+- [x] Post MCP reviews (APPROVE / REQUEST_CHANGES / COMMENT)
+- [x] Request reviewers on Dependabot majors
+- [x] Write session artifacts + open docs PR
+- [x] Notion + Linear session notes (no secrets)
+- [x] Update automation memory
 
 ## Constraints this run
 
