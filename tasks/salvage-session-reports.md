@@ -1188,3 +1188,85 @@
 
 - Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-08-02.md)
 - New lesson: **0fd** (close Sentinel clusters when main already has the guard)
+
+## Run — 2026-08-12
+
+- Trigger: cron Phase 2 `0 17 * * *`
+- Agent branch: `cursor-agent/automated-pr-salvage-workflow-2869`
+- Preflight: PASS (+ cursor-cloud-hooks)
+- Source: Phase 1 [#1977](https://github.com/abhimehro/personal-config/pull/1977) / `pr-review-2026-08-12.md` remainder + live CONFLICTING re-fetch
+- Auth: `abhimehro` PAT (Lesson 0ew) — create/close OK
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| Hydrograph… | #504 | SALVAGE | [#507](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/507) | newline/CR tests + journal; regex already on main |
+| ctrld-sync | #1150 | SALVAGE | [#1159](https://github.com/abhimehro/ctrld-sync/pull/1159) | pluralize dry-run; strip lock/deps (0fm) |
+| repoprompt-ce | #224 | SALVAGE | [#237](https://github.com/abhimehro/repoprompt-ce/pull/237) | REPLInputParserTests only (0fj) |
+| series… | #378 | CLOSE no-op | — | `dummy_todos.py` absent on main |
+| repoprompt-ce | #231 | HOLD/ESCALATE | — | DateFormatter + contamination |
+| personal-config | #1977 | DOCS recover | this docs PR | Phase 1 08-08…12 + Lessons 0fl/0fm |
+
+- Salvage draft PRs opened: **3**
+- Closed superseded / no-op: **4**
+- Autonomous merges: **0**
+- Infra-fix drafts: **0**
+
+### Handoff
+
+1. **Human merge drafts:** Hydro [#507](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/507) → ctrld [#1159](https://github.com/abhimehro/ctrld-sync/pull/1159) → rpce [#237](https://github.com/abhimehro/repoprompt-ce/pull/237)
+2. **T1 human:** pc#1907 CORS; ctrld#1156 TOCTOU / #1136 mypy; esp#1444 opencv; Seatek#657; series#386/#385; rpce#232/#228/#231
+3. Skip `request_reviewers` when author is abhimehro (0ew)
+4. New lesson: **0fq** (close auth salvages when demo module deleted from main)
+
+- Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-08-12.md)
+
+## Run — 2026-08-13
+
+- Trigger: cron Phase 2 `0 17 * * *`
+- Agent branch: `cursor-agent/automated-pr-salvage-workflow-284b`
+- Preflight: PASS 7/7 (+ cursor-cloud-hooks)
+- Source: Phase 1 [#1986](https://github.com/abhimehro/personal-config/pull/1986)
+  / `pr-review-2026-08-13.md` remainder + live re-fetch
+- Auth: `abhimehro` PAT (Lesson 0ew) — create/close OK
+- Live CONFLICTING: **0** (43 auto-open, all MERGEABLE)
+
+### Outcomes
+
+| Repo | Old PR | Disposition | New PR | Notes |
+|------|--------|-------------|--------|-------|
+| repoprompt-ce | #227 | SALVAGE + CLOSE | [#244](https://github.com/abhimehro/repoprompt-ce/pull/244) | Newline tests identical on main; REPL covered by #237 |
+| repoprompt-ce | #228 | CLOSE-SUPERSEDED | — | prefer focused #239 TOCTOU |
+| repoprompt-ce | #232 | CLOSE-SUPERSEDED | — | −27k contaminated; prefer #239 |
+| repoprompt-ce | #226 | CLOSE-SUPERSEDED | — | prefer focused #235 a11y |
+| repoprompt-ce | #231 | CLOSE / contaminated | — | DateFormatter mega; HOLD #236/#241 |
+| repoprompt-ce | #240 | CLOSE / no-op | — | zero-diff Daily QA |
+| repoprompt-ce | #234 | CLOSE / no-op | — | zero-diff Daily QA |
+| Seatek_Analysis | #664 | CLOSE / no-op | — | zero-diff Daily QA |
+| series… | #384 | CLOSE / no-op | — | zero-diff Automated QA |
+| series… | #375 | CLOSE / contaminated | — | whole-module test rewrite; OSError already on main |
+| personal-config | #1907 | ESCALATE | — | CORS trust boundary |
+| ctrld-sync | #1156 | ESCALATE | — | TOCTOU + `/etc/shadow` scratch (0fg) |
+| email-security-pipeline | #1444 | ESCALATE | — | opencv 5.x + pytest (0bb) |
+| Seatek_Analysis | #665 | ESCALATE | — | Sentinel file-read DoS |
+| series… | #390 | REQUEST_CHANGES | — | `copy(deep=False)` (0fp) |
+| ctrld-sync | #1136 | ESCALATE | — | mypy 2.x major |
+
+- Salvage draft PRs opened: **1** (plus this docs PR)
+- Closed superseded / no-op: **10**
+- Autonomous merges: **0** (S1)
+- Infra-fix drafts: **0**
+- `request_reviewers`: skipped when author is abhimehro (0ew)
+
+### Handoff
+
+1. **Human merge drafts:** rpce MCP parser-test salvage → then prior #507 / #1159 / #237
+2. **Human squash merge-ready:** pc #1984, esp #1469/#1471, hg #509, rpce #235
+3. **T1 human:** pc #1907 CORS; ctrld #1156 TOCTOU / #1136 mypy; esp #1444 opencv;
+   Seatek #665/#657; series #386/#385; rpce #239 TOCTOU (Style red)
+4. **Docs:** recover-and-squash this lineage vs #1986/#1979 (0fk) — merge **one**
+5. Skip `request_reviewers` when author is abhimehro (0ew)
+6. New lesson: **0fr** (MERGEABLE is not salvageable)
+
+- Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-08-13.md)
