@@ -615,10 +615,19 @@ def html_li(content: str) -> str:
     return f"<li>{content}</li>"
 
 
+def html_empty_state(icon: str, message: str) -> str:
+    return (
+        f'<div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; color: #6c757d; text-align: center;">'
+        f'<div class="icon" aria-hidden="true" style="font-size: 3em; margin-bottom: 15px; opacity: 0.5;">{icon}</div>'
+        f'<p style="margin: 0; font-size: 1.1em;">{message}</p>'
+        f'</div>'
+    )
+
+
 def html_ul(items: Iterable[str]) -> str:
     item_list = list(items)
     if not item_list:
-        return '<ul><li class="empty-state"><span aria-hidden="true">📭</span> No items</li></ul>'
+        return f'<ul><li>{html_empty_state("📭", "No items")}</li></ul>'
     return f"<ul>{''.join(item_list)}</ul>"
 
 
@@ -1348,7 +1357,7 @@ def fetch_podcast_section(llm: PerplexityClient, *, limit: int = 3) -> SectionRe
         return SectionResult(
             html_section(
                 "🎧 Latest from America Adapts",
-                "<p><em>Could not fetch episodes today.</em></p>",
+                html_empty_state("🎧", "Could not fetch episodes today."),
             ),
             [],
         )
@@ -1399,12 +1408,12 @@ def render_linear_queue_focus_section(
     review_body = (
         html_ul([render_linear_queue_item(item) for item in queue.review_items])
         if queue.review_items
-        else "<p><em>No review items were surfaced from Linear.</em></p>"
+        else html_empty_state("📝", "No review items were surfaced from Linear.")
     )
     notification_body = (
         html_ul([render_linear_queue_item(item) for item in queue.notification_items])
         if queue.notification_items
-        else "<p><em>No unread notifications were surfaced from Linear.</em></p>"
+        else html_empty_state("📭", "No unread notifications were surfaced from Linear.")
     )
 
     subsections = [

@@ -163,7 +163,8 @@ class TestHtmlHelpers(unittest.TestCase):
         assert mb.html_ul(items) == "<ul><li>a</li><li>b</li></ul>"
 
     def test_html_ul_empty(self):
-        assert mb.html_ul([]) == '<ul><li class="empty-state"><span aria-hidden="true">📭</span> No items</li></ul>'
+        expected = '<ul><li><div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; color: #6c757d; text-align: center;"><div class="icon" aria-hidden="true" style="font-size: 3em; margin-bottom: 15px; opacity: 0.5;">📭</div><p style="margin: 0; font-size: 1.1em;">No items</p></div></li></ul>'
+        assert mb.html_ul([]) == expected
 
     def test_html_section(self):
         result = mb.html_section("Title", "<p>body</p>")
