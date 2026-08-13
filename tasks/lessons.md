@@ -21,6 +21,61 @@ App-only. (5) Extends Lessons 0es / 0eq / 0ew.
 **Detection cost:** Low — one App create + one App comment probe; compare
 authors and `X-Accepted-Github-Permissions`.
 
+## Lesson 0fo: `str.join([list])` ≠ `sum([list])` (2026-08-13)
+
+**Pattern:** Bolt PRs convert generator expressions to list comprehensions
+inside `str.join()` (often a real win — `join` materializes internally) and
+then apply the same rewrite to `sum()`, which is a pessimization (extra list)
+and sometimes rewrite a benchmark docstring that previously preferred the
+generator (`ctrld-sync#1161`).
+**Rule:** Treat `join(list-comp)` and `sum(generator)` as distinct. Do not
+flip a benchmark's stated rationale to match worse code. On adversarial
+disagreement about a micro-opt that contradicts an existing benchmark,
+**HOLD** (fail-secure).
+**Detection cost:** Low — diff `sum(` vs `"\n".join(` and the test docstring.
+
+## Lesson 0fp: Sanitizer `copy(deep=False)` breaks isolation (2026-08-13)
+
+**Pattern:** Bolt `sanitize_dataframe_for_spreadsheet` switched
+`dataframe.copy()` to `dataframe.copy(deep=False)`. Numeric blocks stay
+aliased to the caller; mutating the returned frame can corrupt the source
+(verified on pandas 2.3.3).
+**Rule:** Keep a deep copy in security-sensitive sanitizers. Do not trade
+isolation for a shallow-copy micro-opt unless the contract, docstring, and
+tests explicitly cover aliasing.
+**Detection cost:** Low — search sanitizer helpers for `copy(deep=False)`.
+
+## Lesson 0fl: Hostname fast-path must exclude IPv6 zone indexes (2026-08-11)
+
+**Pattern:** Bolt twins add `_is_likely_domain` / `_is_definitely_domain` that
+skip `ipaddress.ip_address()` when the last character is a non-hex letter.
+Without a `"%" not in hostname` guard, scoped IPv6 like `fe80::1%eth0` (ends
+in `o`) takes the DNS path instead of `_is_safe_ip` rejection.
+**Rule:** Prefer the twin that rejects empty hosts **and** `%` before the
+domain fast-path (e.g. #1157 over #1155). Close the narrower twin as duplicate.
+**Detection cost:** Low — diff the helper predicates side-by-side.
+
+## Lesson 0fm: Dry-run error counts must not use `total - success` after interrupt (2026-08-11)
+
+**Pattern:** Palette pluralize PRs pass `total - success_count` into error
+messages. After `KeyboardInterrupt`, unstarted profiles inflate the error
+count even though they never ran.
+**Rule:** Count failures from `sync_results` (or equivalent completed rows),
+not `len(ids) - successes`. Hold merge until fixed.
+**Detection cost:** Medium — search for `total - success` near interrupt
+handlers in CLI sync loops.
+
+## Lesson 0fq: Close auth salvages when the demo module is gone (2026-08-12)
+
+**Pattern:** CONFLICTING Sentinel “timing attack” / PBKDF2 PRs still diff
+`dummy_todos.py`, but `main` no longer contains that file (deleted after
+earlier merge/revert churn). Salvaging would re-introduce auth demo code.
+**Rule:** If the only functional file in an auth/Sentinel PR is missing on
+`main`, **CLOSE as no-op** — do not recreate auth modules without explicit
+maintainer approval (hard boundary). Journal-only appends are not enough to
+justify a salvage PR.
+**Detection cost:** Low — `gh api .../contents/<file>?ref=main` → 404.
+
 ## Lesson 0fk: Docs tasks/* cascade — merge one, recover the rest (2026-08-07)
 
 **Pattern:** Multiple draft docs PRs (`pr-review-YYYY-MM-DD.md`, `lessons.md`,
