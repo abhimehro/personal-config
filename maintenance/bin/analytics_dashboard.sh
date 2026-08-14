@@ -435,6 +435,7 @@ generate_dashboard() {
         .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; color: #6c757d; text-align: center; }
         .empty-state .icon { font-size: 3em; margin-bottom: 15px; opacity: 0.5; }
         .empty-state p { margin: 0; font-size: 1.1em; }
+        kbd { background: #eee; padding: 2px 6px; border-radius: 4px; font-family: monospace; border: 1px solid #ccc; color: #333; font-size: 0.9em; }
         meter { width: 100%; height: 1.5em; display: block; margin-top: 10px; border-radius: 4px; }
     </style>
 </head>
@@ -502,8 +503,9 @@ EOF
 		if [[ "$insights_content" == *"Insights not available"* ]] || [[ "$insights_content" != *"PERFORMANCE ASSESSMENT"* ]]; then
 			cat >>"$dashboard_file" <<EOF
                 <div class="empty-state">
-                    <div class="icon" aria-hidden="true">📝</div>
+                    <div class="icon" aria-hidden="true">&#x1F4DD;</div>
                     <p>No insights available for this period.</p>
+                    <p style="margin-top: 10px; font-size: 0.9em;">Run <kbd>maintenance/bin/performance_optimizer.sh benchmark</kbd> to generate data.</p>
                 </div>
 EOF
 		else
@@ -514,8 +516,9 @@ EOF
 	else
 		cat >>"$dashboard_file" <<EOF
                 <div class="empty-state">
-                    <div class="icon" aria-hidden="true">📝</div>
+                    <div class="icon" aria-hidden="true">&#x1F4DD;</div>
                     <p>No insights available for this period.</p>
+                    <p style="margin-top: 10px; font-size: 0.9em;">Run <kbd>maintenance/bin/performance_optimizer.sh benchmark</kbd> to generate data.</p>
                 </div>
 EOF
 	fi
