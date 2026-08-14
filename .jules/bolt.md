@@ -889,3 +889,10 @@ small in-memory config files.
 ## 2026-12-10 - [Avoid multiple write calls in tight loops]
 **Learning:** Calling `f.write()` repeatedly inside a tight nested loop creates unnecessary disk I/O overhead and reduces script speed, especially as the number of elements grows.
 **Action:** Always buffer string components into a list in memory (e.g. using `append` or `extend`) and write to disk in a single operation using `"\n".join(out) + "\n"` to minimize I/O overhead.
+## 2026-12-10 - [Avoid optimizing short-circuiting Python conditionals]
+**Learning:** Python's inline conditional expression (`val.lower() if val else ""`) natively uses short-circuit evaluation, meaning the method is never called if `val` is falsy. Refactoring this into a multi-line explicit `if/else` block provides zero performance benefit and actually degrades code readability and bytecode efficiency.
+**Action:** Do not refactor inline conditional expressions into explicit `if/else` blocks under the false premise of avoiding eager evaluation.
+
+## 2026-12-10 - [str.join() with List Comprehensions]
+**Learning:** Passing a list comprehension (e.g., `"\n".join([x for x in iter])`) to `str.join()` is measurably faster than passing a generator expression (e.g., `"\n".join(x for x in iter)`). This happens because `str.join()` under the hood computes the exact memory size needed to allocate the final string, and doing so requires an intermediate C list anyway. Providing the list directly avoids the generator frame suspension overhead.
+**Action:** When using `str.join()`, prefer list comprehensions over generator expressions to minimize overhead in hot paths.

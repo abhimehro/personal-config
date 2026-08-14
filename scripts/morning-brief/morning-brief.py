@@ -1269,7 +1269,8 @@ def fetch_news_sections(feeds: dict[str, str], cache: FileCache) -> str:
             for name, url in feeds.items()
         ]
         sections = [f.result() for f in futures]
-    return "".join(s for s in sections if s)
+    # ⚡ Bolt Optimization: Passing a list comprehension to str.join() allows it to pre-allocate memory and execute at C-speed
+    return "".join([s for s in sections if s])
 
 
 def _process_podcast_feed(
