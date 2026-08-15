@@ -13,4 +13,4 @@ Mode: review-and-merge. Preflight: PASS 7/7.
 - [x] Close duplicates / zero-diff / superseded (12; 0fk recovery for docs)
 - [x] CodeScene trigger on failing code-health PRs (#643, #498, #1980)
 - [x] Append `tasks/review-session-reports.md` + dated snapshot + lesson 0fr
-- [ ] Commit/push docs; open artifacts PR
+- [x] Commit/push docs; open artifacts PR
