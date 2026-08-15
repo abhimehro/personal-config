@@ -1,7 +1,8 @@
 # 📅 Maintenance Automation Schedule - FINAL
 
-**Updated:** October 10, 2025\
-**Status:** ✅ All timings now match your pre-configured calendar events
+**Updated:** 2026-08-13 (aligned with `maintenance/install.sh`)
+
+**Status:** ✅ Schedule matches install-time LaunchAgents (`com.abhimehrotra.maint.*`)
 
 ## 🕐 Complete Schedule Overview
 
@@ -11,21 +12,27 @@
 | **9:00 AM**  | 🧹 System Cleanup       | Daily        | `system_cleanup.sh`              | Cache cleanup, temp files, logs                   |
 | **9:00 AM**  | 📅 Weekly Maintenance   | Monday       | `run_all_maintenance.sh weekly`  | quick cleanup, node, Google Drive, optimizers     |
 | **6:00 AM**  | 📆 Monthly Maintenance  | 1st of month | `run_all_maintenance.sh monthly` | system/editor cleanup, deep cleaner               |
-| **3:15 AM**  | ☁️ ProtonDrive Backup   | Daily        | `bin/archive/protondrive_backup.sh` | One-way home backup to ProtonDrive             |
+| **3:15 AM**  | ☁️ Google Drive (Light) | Tue–Sun      | (install.sh googledrive light)   | Light Google Drive home backup                    |
+| **4:00 AM**  | ☁️ Google Drive (Full)  | Monday       | (install.sh googledrive full)    | Fuller Google Drive backup                        |
 | **10:00 AM** | 🍺 Homebrew Maintenance | Daily        | `brew_maintenance.sh`            | Package updates, cask maintenance                 |
+
+> ProtonDrive one-way backup is **archived**
+> (`maintenance/bin/archive/protondrive_backup.sh`) and is not installed by
+> `maintenance/install.sh`.
 
 ## 🔗 Launch Agent Mapping
 
 ### Daily Agents
 
-- `com.abhimehrotra.maintenance.protondrivebackup.plist` → **3:15 AM daily**
-- `com.abhimehrotra.maintenance.healthcheck.plist` → **8:30 AM daily**
-- `com.abhimehrotra.maintenance.systemcleanup.plist` → **9:00 AM daily**
-- `com.abhimehrotra.maintenance.brew.plist` → **10:00 AM daily**
+- `com.abhimehrotra.maint.googledrivebackup.light.plist` → **3:15 AM Tue–Sun**
+- `com.abhimehrotra.maint.healthcheck.plist` → **8:30 AM daily**
+- `com.abhimehrotra.maint.systemcleanup.plist` → **9:00 AM daily**
+- `com.abhimehrotra.maint.brew.plist` → **10:00 AM daily**
 
 ### Weekly Agent
 
 - `com.abhimehrotra.maint.weekly.plist` → **9:00 AM Monday**
+- `com.abhimehrotra.maint.googledrivebackup.full.plist` → **4:00 AM Monday**
 
 ### Monthly Agent
 
