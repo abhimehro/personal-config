@@ -499,3 +499,7 @@ Added `empty-state` class on empty directory listing `<li>` without removing ski
 ## 2026-08-04 - HTML Reports Missing Data Fallback UX
 **Learning:** Raw fallback text ("Insights not available") inside `<pre>` tags for missing report sections feels like a technical error to the user rather than an expected empty state.
 **Action:** When generating HTML reports or dashboards with potentially missing data, always conditionally render a dedicated `.empty-state` component with flexbox layout, muted colors, and a relevant icon to communicate the absence of data clearly and beautifully.
+
+## 2026-08-14 - Add actionable hints to empty states
+**Learning:** Empty states in generated reports lacked actionable next steps, leaving users unsure of how to populate missing data (like insights or optimizations).
+**Action:** Always include a helpful call-to-action or instructional hint (such as the specific command to run, formatted with <kbd>) in empty states to guide the user.

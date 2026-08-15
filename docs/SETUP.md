@@ -30,9 +30,10 @@ npm install -g pyright bash-language-server \
 1. Clone the `personal-config` repo:
 
 ```bash
-mkdir -p ~/Documents/dev
-cd ~/Documents/dev
+mkdir -p ~/dev
+cd ~/dev
 git clone git@github.com:<user>/personal-config.git
+cd ~/dev/personal-config
 ```
 
 2. Symlink or copy fish config:
@@ -230,10 +231,6 @@ windows:
         color: Green
         layout:
           cwd: /Users/speedybee/dev/personal-config
-      - title: dev-root
-        color: Blue
-        layout:
-          cwd: /Users/speedybee/Documents/dev
       - title: downloads
         color: Cyan
         layout:
