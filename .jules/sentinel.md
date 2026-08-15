@@ -816,3 +816,8 @@ arguments when using `pgrep` or `pkill`.
 **Vulnerability:** `get_prs_summarize.py` invoked `gh` via `subprocess.check_output` without a timeout or the standardized `gh_token_env` loader, risking indefinite hangs on network requests (DoS) and potential inconsistent execution environments.
 **Learning:** Even in read-only data formatting scripts, all network-bound subprocess calls should have strict timeouts and utilize consistent authentication loading mechanisms to avoid stalling or failing silently.
 **Prevention:** Always use `subprocess.run` with a `timeout` argument and explicitly pass `env=load_gh_token_env()` when calling external APIs, rather than relying on `subprocess.check_output` with inherited environments.
+## 2026-08-15 - Command Injection Risk via eval in shopt restorations
+
+**Vulnerability:** Command Injection (CWE-78 variant). The scripts used `eval "$_nullglob_state"` to restore saved shell options. If a variable is compromised, `eval` would execute the payload as an arbitrary command.
+**Learning:** You do not need to use `eval` to execute saved safe shell commands like `shopt -s nullglob`. Direct unquoted execution `$_nullglob_state` correctly splits the string by spaces, safely calling `shopt` without evaluating shell metacharacters.
+**Prevention:** Avoid `eval` to execute stored commands or state restorations. Use direct unquoted execution when the command is simple and its arguments only rely on word-splitting.
