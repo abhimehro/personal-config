@@ -169,23 +169,27 @@ def _get_superseded_text(lines):
 
 
 def _generate_superseded_section(ready_prs, superseded_text):
-    # ⚡ Bolt Optimization: Use list comprehension instead of for loop with .append
-    return ["## SUPERSEDED"] + [
-        (pr if pr.startswith("-") else f"- {pr}")
-        for pr in ready_prs
-        if pr in superseded_text
-    ]
+    out = ["## SUPERSEDED"]
+    for pr in ready_prs:
+        if pr in superseded_text:
+            out.append(pr if pr.startswith("-") else f"- {pr}")
+    return out
 
 
 def _generate_duplicate_section(duplicates):
-    # ⚡ Bolt Optimization: Use list comprehension instead of for loop with .append
-    return ["## DUPLICATE"] + [f"- {d}" for d in duplicates]
+    out = ["## DUPLICATE"]
+    for d in duplicates:
+        out.append(f"- {d}")
+    return out
 
 
 def _generate_ready_section(ready_only, duplicates):
+    out = ["## READY"]
     duplicates_set = set(duplicates)
-    # ⚡ Bolt Optimization: Use list comprehension instead of for loop with .append
-    return ["## READY"] + [f"- {pr}" for pr in ready_only if pr not in duplicates_set]
+    for pr in ready_only:
+        if pr not in duplicates_set:
+            out.append(f"- {pr}")
+    return out
 
 
 def rewrite_triage_file(lines, ready_prs, duplicates, ready_only):

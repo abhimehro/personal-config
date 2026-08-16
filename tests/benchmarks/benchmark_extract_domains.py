@@ -67,7 +67,13 @@ def setup_benchmark_data(num_rules):
         os.unlink(temp_filepath)
 
 
-SETUP_E2E_OLD = """
+def main():
+    num_rules = 500000
+    iterations = 50
+
+    with setup_benchmark_data(num_rules) as temp_filepath:
+        # Full end-to-end setups (including JSON parsing)
+        setup_e2e_old = f"""
 import json
 def extract(filepath):
     domains = []
@@ -83,7 +89,7 @@ def extract(filepath):
     return domains
 """
 
-SETUP_E2E_NEW = """
+        setup_e2e_new = f"""
 import json
 def extract(filepath):
     try:
@@ -96,7 +102,7 @@ def extract(filepath):
     return []
 """
 
-SETUP_E2E_ALLOW_OLD = """
+        setup_e2e_allow_old = f"""
 import json
 def extract(filepath):
     domains = []
@@ -105,14 +111,15 @@ def extract(filepath):
             data = json.load(f)
             if 'rules' in data:
                 for rule in data['rules']:
-                    if 'PK' in rule and rule.get('action', {}).get('do') == 1:
+                    if 'PK' in rule and rule.get('action', {{}}).get('do') == 1:
                         domains.append(rule['PK'])
     except Exception as e:
         pass
     return domains
 """
 
-SETUP_E2E_ALLOW_NEW = """
+        # Using the optimized dictionary access rather than get().get()
+        setup_e2e_allow_new = f"""
 import json
 def extract(filepath):
     try:
@@ -129,15 +136,6 @@ def extract(filepath):
     return []
 """
 
-def main():
-    num_rules = 500000
-    iterations = 50
-
-    with setup_benchmark_data(num_rules) as temp_filepath:
-        # Full end-to-end setups (including JSON parsing)
-        # Definitions extracted to top-level constants
-        pass
-
         print(f"\nBenchmarking end-to-end (including file read and JSON parsing)")
         print(f"Dataset size: {num_rules} rules. Iterations: {iterations}")
 
@@ -145,13 +143,13 @@ def main():
 
         run_benchmark(
             "extract_domains",
-            (SETUP_E2E_OLD, SETUP_E2E_NEW),
+            (setup_e2e_old, setup_e2e_new),
             context,
         )
 
         run_benchmark(
             "extract_allowlist_domains",
-            (SETUP_E2E_ALLOW_OLD, SETUP_E2E_ALLOW_NEW),
+            (setup_e2e_allow_old, setup_e2e_allow_new),
             context,
         )
 

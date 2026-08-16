@@ -18,37 +18,5 @@
     "cursor-team-kit": {
       "enabled": true
     }
-  },
-  "terminal.integrated.profiles.osx": {
-    "agent-zsh": {
-      "path": "/Users/speedybee/bin/agent-zsh",
-      "args": [],
-      "overrideName": true,
-      "icon": "terminal-bash"
-    },
-    "agent-bash": {
-      "path": "/Users/speedybee/bin/agent-bash",
-      "args": [],
-      "overrideName": true,
-      "icon": "terminal"
-    },
-    "Fish (login)": {
-      "path": "/opt/homebrew/bin/fish",
-      "args": [
-        "-l"
-      ],
-      "overrideName": true
-    }
-  },
-  "terminal.integrated.defaultProfile.osx": "agent-zsh",
-  "terminal.integrated.automationProfile.osx": {
-    "path": "/Users/speedybee/bin/agent-zsh",
-    "args": []
-  },
-  "terminal.integrated.env.osx": {
-    "PYTHONUNBUFFERED": "1",
-    "PAGER": "cat",
-    "GIT_PAGER": "cat",
-    "OP_AGENT_SKIP": "1"
   }
 }

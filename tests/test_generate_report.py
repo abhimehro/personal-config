@@ -78,7 +78,7 @@ class TestGenerateReport(unittest.TestCase):
         with self.assertRaises(AttributeError):
             generate_report.format_lists([], [123], [])
 
-    def test_format_lists_bad_escalated_data(self):
+    def test_format_lists_invalid_escalated_data(self):
         # Invalid elements in escalated_data trigger AttributeError
         with self.assertRaises(AttributeError):
             generate_report.format_lists([], [], [123])

@@ -54,18 +54,6 @@ Optional (only if you need agent-driven auto-merge management):
       updates to a PR branch** fails with **403** (e.g. `cursor[bot]`). Run
       `gh auth setup-git` after selecting the active account, or use HTTPS
       remotes with an explicit credential helper.
-- [ ] **Cursor Cloud dual credentials (Lesson 0fn):** Cloud Agents often have
-      both (a) injected `GH_TOKEN` fine-grained PAT as the human account and (b)
-      `~/.config/gh/hosts.yml` `ghs_` App install token as `cursor[bot]`. The
-      GitHub App install UI may already show **Issues / Pull requests: Read &
-      write** on all repos, yet the Cloud `ghs_` token can still **create**
-      issues while **comment/close/PR-review** return 403 with
-      `X-Accepted-Github-Permissions: issues=write`. Treat this as Cursor-side
-      reduced token minting, not a missing install checkbox.
-- [ ] **Daily QA / issue lifecycle workaround:** Keep `GH_TOKEN` set. Do **not**
-      run `env -u GH_TOKEN` for issue create/comment/close. Use the PAT so
-      create and close share one working identity (`abhimehro`). Prefer this
-      over hybrid App-create + PAT-close unless bot authorship is required.
 
 ## 5) Preflight Validation (Fail Fast)
 

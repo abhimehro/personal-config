@@ -58,17 +58,16 @@ IGNORED_DIRS = {".git", ".venv", "node_modules", "__pycache__"}
 
 
 def configured_commands(section: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
-    # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
-    # ⚡ Bolt Optimization: Use list comprehension instead of for loop with .append
-    return [
-        (bucket_name, item)
-        for bucket_name, key in (
-            ("setup", "setup_commands"),
-            ("command", "commands"),
-            ("security", "security_commands"),
-        )
-        for item in section.get(key, ())
-    ]
+    buckets = []
+    for bucket_name, key in (
+        ("setup", "setup_commands"),
+        ("command", "commands"),
+        ("security", "security_commands"),
+    ):
+        # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
+        for item in section.get(key, ()):
+            buckets.append((bucket_name, item))
+    return buckets
 
 
 def execute_configured_commands(
@@ -349,18 +348,19 @@ def workflow_file_plans() -> list[dict[str, Any]]:
 
 
 def flattened_updates(plans: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    # ⚡ Bolt Optimization: Use list comprehension instead of for loop with .append
-    return [
-        {
-            "file": item["file"],
-            "action": item["action"],
-            "current": item["current"],
-            "target": item["target"],
-            "major_bump": item.get("major_bump", False),
-        }
-        for plan in plans
-        for item in plan["replacements"]
-    ]
+    updates = []
+    for plan in plans:
+        for item in plan["replacements"]:
+            updates.append(
+                {
+                    "file": item["file"],
+                    "action": item["action"],
+                    "current": item["current"],
+                    "target": item["target"],
+                    "major_bump": item.get("major_bump", False),
+                }
+            )
+    return updates
 
 
 def apply_workflow_updates(plans: list[dict[str, Any]]) -> None:
@@ -943,15 +943,17 @@ def run_safe_adjustment_commands(
 ) -> tuple[list[dict[str, Any]], str]:
     if not writes_allowed() or not section.get("auto_apply_safe_changes"):
         return [], ""
+    command_results = []
     # ⚡ Bolt Optimization: Use empty tuple () instead of [] as fallback in .get() to prevent redundant mutable list allocations
-    # ⚡ Bolt Optimization: Use list comprehension instead of for loop with .append
-    command_results = [
-        {
-            "name": item["name"],
-            **run_shell_command(item["run"], int(item.get("timeout_seconds", 1200))),
-        }
-        for item in section.get("safe_adjustment_commands", ())
-    ]
+    for item in section.get("safe_adjustment_commands", ()):
+        command_results.append(
+            {
+                "name": item["name"],
+                **run_shell_command(
+                    item["run"], int(item.get("timeout_seconds", 1200))
+                ),
+            }
+        )
     changed = [
         line[3:] for line in git_output("status", "--porcelain").splitlines() if line
     ]

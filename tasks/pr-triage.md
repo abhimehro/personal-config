@@ -1,89 +1,105 @@
-# PR Triage — 2026-08-15
+# PR Triage — 2026-08-02
+# PR Triage — Phase 2 Salvage 2026-08-02
+
+Decision tree applied per `docs/automated-pr-salvage-agent.md` (S1–S6).
+Input: Phase 1 remainder + live CONFLICTING re-fetch. Autonomous merges: **0**.
+
+## Disposition summary
+
+| Disposition | Count | PRs |
+| ----------- | ----: | --- |
+| SALVAGE (draft) | 1 | rpce #171 ← #165/#158 |
+| CLOSE-SUPERSEDED | 4 | hg #445/#448/#450; rpce #158 |
+| ESCALATE (human) | 3 | pc #1841; seatek #580/#573 |
+| DEFER | 6 | rpce #144/#147/#148/#152/#157/#161 |
+| Phase 1 hold (UNSTABLE) | 6 | rpce #163/#164/#168/#169/#170 + note on #165 |
+| Empty queues | 3 repos | ctrld / esp / series |
+
+## Deep-dive notes
+
+### Hydrograph #445/#448/#450
+
+`main` already imports `is_safe_path` and guards `--output` in `validate_data.py`.
+#448 contained ×7 duplicated `is_safe_path` blocks (corruption). #450 only
+extracted a `ValidationReporter` refactor. No residual security gap → close.
+
+### rpce #158 vs #165 → #171
+
+#165 MERGEABLE but UNSTABLE: real TOCTOU fix in `MCPConfigExportService` /
+`MCPTerminalRecord` mixed with `ToolOutputFormatter` `.text(text:)` churn.
+Salvaged **security files only** onto draft [#171](https://github.com/abhimehro/repoprompt-ce/pull/171).
+Closed CONFLICTING twin #158.
+
+### rpce DIRTY drift pile
+
+100–400 files vs `main` each; titled intent buried in skill/CI/vendor noise.
+DEFER with re-roll guidance; prefer MERGEABLE a11y/Bolt twins after CI green.
+
+## Security gates
+
+- No auth/payment/schema changes implemented.
+- Security salvage #171 remains **draft** for human merge (S1).
+- CLEAN Sentinels left open for human (never auto-merged).
+# PR Triage — Phase 2 Salvage 2026-08-01
 
 ## Duplicate / overlap groups
 
-### Hydrograph Bolt `np.where` / `to_numpy`
-Merged [#518](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/518). Closed #517 (scratch patch files), #513, #511.
+1. **esp spam_analyzer fast-path:** #1401 (salvage of #1399 — auth + headers) vs #1405 (headers-only frozenset). Prefer **#1401**; close #1405 as overlapping after #1401 lands.
+2. **pc parse_inventory:** #1875 (split bound + dotenv bulk-read) vs #1883 (defaultdict + **destroys** `.jules/bolt.md` 848→11 lines). Merge #1875; auto-fix #1883 by restoring journal or REQUEST_CHANGES if fix fails.
+3. **pc defaultdict markers:** #1867 (repository_automation_tasks) — distinct from #1883; fix inline import then merge.
+4. **Hydrograph path-hardening cluster:** #445/#448/#450 — all Sentinel, all CONFLICTING → Phase 2 consolidation (do not merge).
+5. **rpce a11y / TOCTOU / perf:** #144/#161/#163/#169 a11y; #158/#165 TOCTOU; #157/#164/#170 DateFormatter — mostly CONFLICTING or red CI → Phase 2 / REQUEST_CHANGES.
+6. **Demo stack:** #1871 → #1872 → #1873 (bases chained). Merge via `merge-async` on **#1873** (Lesson 0ez).
+| Remainder item              | Live state         | Phase 2 action                                                      |
+| --------------------------- | ------------------ | ------------------------------------------------------------------- |
+| pc #1822 CORS               | DIRTY              | ESCALATE comment                                                    |
+| pc #1841 timeout/auth       | CLEAN              | leave for human / Phase 1                                           |
+| pc #1867 defaultdict        | MERGEABLE/UNSTABLE | leave (CI red)                                                      |
+| pc #1857 microopts          | DIRTY              | SALVAGE → #1875; close #1857                                        |
+| pc #1859 empty-state        | DIRTY              | SALVAGE a11y-safe → #1876; close #1859                              |
+| pc #1825 asyncio            | DIRTY              | CLOSE no-op (junk files only)                                       |
+| ctrld #1086 format          | CLEAN + prior RC   | leave                                                               |
+| ctrld #1081 housekeeping    | DIRTY              | SALVAGE → #1105; close #1081                                        |
+| esp #1399 Bolt spam         | DIRTY + CodeScene  | `/cs-agent` + spam-only SALVAGE → #1401; close #1399                |
+| seatek #571 list-only       | CLEAN              | leave (T1 human)                                                    |
+| seatek #573 file-read DoS   | CLEAN              | leave (security human)                                              |
+| seatek #568 path hijack     | DIRTY              | ESCALATE                                                            |
+| seatek #555 multi-root      | DIRTY              | ESCALATE                                                            |
+| seatek #560 parallelize     | DIRTY              | REQUEST_CHANGES                                                     |
+| seatek #554 warn tests      | DIRTY              | SALVAGE → #576; close #554                                          |
+| hg #441/#443/#445/#448/#450 | CLEAN              | leave (security/deps human); #443 auto-resolved vs Phase 1 snapshot |
+| series #336                 | gone               | queue drained                                                       |
+| rpce #158 TOCTOU            | DIRTY drift        | ESCALATE                                                            |
+| rpce #163/#164              | UNSTABLE           | leave Phase 1                                                       |
+| rpce #144/#157/#161…        | DIRTY drift        | DEFER (focused re-roll needed)                                      |
 
-### email-security-pipeline Palette timer
-Merged [#1469](https://github.com/abhimehro/email-security-pipeline/pull/1469) (`.jules`). Closed #1480/#1476 (`.Jules/` — lesson 0fe).
+## Disposition plan
 
-### email-security-pipeline header subset
-Merged [#1478](https://github.com/abhimehro/email-security-pipeline/pull/1478). HOLD #1487 (`patch_bumpy2.py` hitchhiker, 0fg).
+| Disposition | PRs |
+| ----------- | --- |
+| MERGE (zero-diff) | pc#1882, esp#1404, Seatek#578, series#340 |
+| MERGE | pc#1875, #1876; ctrld#1107, #1109; Seatek#581, #576; esp#1401 |
+| MERGE (stack) | pc#1871–#1873 via merge-async top |
+| MERGE-AFTER-FIX | pc#1867 (hoist import); pc#1883 (restore bolt.md) |
+| CLOSE-DUPLICATE | esp#1405 after #1401 |
+| ESCALATE | pc#1841; Seatek#580, #573; hg#445/#448/#450; rpce#165, #158 |
+| REQUEST_CHANGES | rpce#170/#169/#168/#164/#163 (failing required Build/Secret Scan) |
+| DEFER Phase 2 | rpce CONFLICTING remainder; Hydrograph Sentinels |
+1. **ESP #1399 module collapse** — deletes `alert_*` / `media_*` modules into
+   monoliths.
+2. **PC #1859 a11y regression** — removes skip-link / landmarks while adding
+   `empty-state`.
+3. **PC #1825** — `patch3.diff` + `scratch_triage.py` only.
+4. **RPCE DIRTY pile** — 10k–37k line branch drift; extract-on-demand only.
 
-### ctrld pluralize
-Merged [#1168](https://github.com/abhimehro/ctrld-sync/pull/1168). Closed CONFLICTING salvage #1159.
+## Security gate notes
 
-### personal-config docs `tasks/*` cascade (0fk)
-Recovered `pr-review-2026-08-08.md` … `2026-08-13.md` plus lessons 0fo/0fp/0fl/0fm/0fq onto `cursor-agent/automated-pr-workflow-864b`. Closed Phase 1 cascade [#1986](https://github.com/abhimehro/personal-config/pull/1986). Left Phase 2 salvage docs #1988/#1979 open.
-
-### personal-config `str.join` Bolt cluster
-#1997 / #1996 / #1985 / #1978 (+ #1984 set-lookup). HOLD overlapping twins (0fo). Do not merge all.
-
-### Seatek Sentinel read/encoding cluster
-#667 / #665 / #662 / #657 — ESCALATE; Phase 2 pick one head.
-
-### repoprompt-ce TOCTOU cluster
-#250 / #243 / #239 — ESCALATE; pick one head after human review.
-
-### repoprompt-ce a11y
-Merged #235. HOLD #253 (failing Build and Test shards) and #247 (`patch_formatter.py`).
-
-### gh-aw 0.85.4 → 0.86.2
-Merged SHA-pinned setup/setup-cli twins (pc #1992/#1993, ctrld #1171, esp #1484/#1485). HOLD ctrld #1170 floating tag on generated `agentics-maintenance.yml`.
-
-## Stale (>30 days)
-None in this auto inventory (all younger than 30 days). Oldest security hold: pc #1907 CORS (still escalate, not stale-close).
-
-## Security gate → never merge in Phase 1
-### Hydrograph sanitize_filename Sentinel cluster
-
-PRs: #484, #483, #478, #475, #473, #468, #466, #459\
-Action: ESCALATE all; Phase 2 consolidate strongest sanitizer into one salvage.
-
-### Seatek path-hijack / subprocess timeout Sentinel cluster
-
-PRs: #620, #617, #612, #610, #607, #605, #590, #585, #580, #573\
-Action: ESCALATE all; Phase 2 one absolute-path + timeout salvage.
-
-### repoprompt-ce TOCTOU cluster
-
-PRs: #210, #201, #196 (+ salvage drafts #207/#206)\
-Action: ESCALATE; prefer salvage without journal wipe (0fc). #201 has huge
-deletions.
-
-### personal-config docs tasks/* cascade
-
-PRs: #1912 (merged), #1925/#1930/#1933/#1914 (closed)\
-Action: recovered Aug 5/6 reports + lessons 0fg–0fk into this session’s docs PR
-(0fk).
-
-### Seatek Bolt POSIXct twins
-
-#621 (merged, focused) vs #615 (closed — workflow scope creep + failing Gate).
-
-### Palette a11y twins (rpce)
-
-#203 (merged, Chat buttons only) vs #211 (REQUEST_CHANGES — XCTSkip flake
-masking; now CONFLICTING after #203).
-
-### ctrld Dependabot uv.lock cascade (0fb)
-
-Merged #1132 (pytest-cov) first. Defer #1133–#1135; escalate #1136 mypy 2.x
-major.
-
-## Stale (>30 days)
-
-None in this auto inventory (all age ≤6 days).
-
-## Security gate failures → never merge in Phase 1
-
-- Auth: series #364, #365
-- CORS: pc #1907
-- All Sentinel-labeled PRs (injection, TOCTOU, spreadsheet, YAML fail-open)
-- Workflow consolidations: pc #2002, esp #1471
-- Major runtime bumps: seatek #661 numpy 1.26→2.5.2; series #393 numpy span; series #386 pandas 3; esp #1444 opencv 5; ctrld #1136 mypy 2
-- Human OOS: pc #1969, ctrld #1165
-
-## Auto-fix attempted
-Hydrograph #509 local lockfile merge was discarded after Dependabot force-updated the branch (lesson 0fr). Remote tip squash-merged instead. No force-push.
+- All Sentinel PRs stay ESCALATE even if CI green (trust-boundary / path / TOCTOU / DoS).
+- No secrets observed in merge-candidate diffs reviewed.
+- `github-advanced-security` FAILURE noise ignored when overall rollup SUCCESS and required checks pass.
+1. Seatek #571 (list-only shell) before #576 (warn rename) — same file.
+2. pc #1875, #1876
+3. ctrld #1105
+4. esp #1401
+5. Security CLEAN cluster (hg #445/#448/#450; seatek #573; pc #1841) — human
+   only

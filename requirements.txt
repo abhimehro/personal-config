@@ -1,2 +1,1 @@
-# DEPENDENCY: pyyaml==6.0.3 — YAML parsing for automation scripts — pinned 2026-08-08 (OSV-clean; matches Hydrograph/ctrld-sync)
-pyyaml==6.0.3
+pyyaml

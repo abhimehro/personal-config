@@ -2,9 +2,9 @@ import json
 import re
 import subprocess
 import sys
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from collections import defaultdict
 
 from gh_token_env import load_gh_token_env
 from pr_reference import parse_pr_reference, parse_repo_name
@@ -195,15 +195,12 @@ def _load_inventory_lines(filepath):
 
 
 def _write_triage_report(filepath, triage):
-    # ⚡ Bolt Optimization: Consolidate disk I/O outside tight loops by building the string in memory first.
-    # Impact: Reduces script I/O wait overhead significantly for large triage sets.
-    out = ["# PR Triage\n"]
-    for category, pr_list in triage.items():
-        out.append(f"## {category}")
-        out.extend(f"- {pr}" for pr in pr_list)
-
     with open(filepath, "w") as f:
-        f.write("\n".join(out) + "\n")
+        f.write("# PR Triage\n\n")
+        for category, pr_list in triage.items():
+            f.write(f"## {category}\n")
+            for pr in pr_list:
+                f.write(f"- {pr}\n")
 
 
 def main():

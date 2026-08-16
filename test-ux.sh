@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 echo "Testing HTML reports generation..."
 mkdir -p /tmp/reports
 maintenance/bin/analytics_dashboard.sh --test || true

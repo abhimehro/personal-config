@@ -299,7 +299,6 @@ analyze_schedule_performance() {
 	log_info "Optimal maintenance hours identified: ${optimal_hours[*]}"
 
 	# Save recommendations
-	mkdir -p "$SCRIPT_DIR/../reports"
 	cat >"$SCRIPT_DIR/../reports/schedule_recommendations.txt" <<EOF
 Schedule Performance Analysis - $(date)
 

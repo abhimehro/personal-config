@@ -163,9 +163,6 @@ def compact_token(value: str, keep_plus: bool = False) -> str:
     return regex.sub("", value.lower())
 
 
-_PRECOMPUTED_TOKENS_COMPACT = {}
-
-
 def apply_token_scores(
     text: str,
     compact: str,
@@ -177,21 +174,9 @@ def apply_token_scores(
     label_transform=lambda token: token,
 ) -> int:
     score = 0
-
-    # ⚡ Bolt Optimization: Cache the compact_token evaluation per dictionary.
-    # The target dictionaries are static module-level constants.
-    cache_key = (id(tokens), keep_plus)
-    if cache_key not in _PRECOMPUTED_TOKENS_COMPACT:
-        _PRECOMPUTED_TOKENS_COMPACT[cache_key] = {
-            t: compact_token(t, keep_plus=keep_plus) for t in tokens
-        }
-
-    compact_map = _PRECOMPUTED_TOKENS_COMPACT[cache_key]
-
     for token, points in tokens.items():
-        # ⚡ Bolt Optimization: Evaluate `token in text` first to short-circuit
-        # the secondary `in` check against the pre-compacted strings if possible.
-        if token in text or compact_map[token] in compact:
+        token_compact = compact_token(token, keep_plus=keep_plus)
+        if token in text or token_compact in compact:
             score += points
             reasons.append(label_transform(token))
             if stop_after_first:
@@ -249,7 +234,9 @@ def read_processed_identities(selected_path: Path) -> set[str]:
     return identities
 
 
-def build_candidates(files: list[str], ignored: set[str], processed: set[str]) -> tuple[list[Candidate], int, int]:
+def select_candidate(
+    files: list[str], ignored: set[str], processed: set[str]
+) -> SelectionResult:
     candidates: list[Candidate] = []
     skipped_processed = 0
     skipped_ignored = 0
@@ -264,13 +251,6 @@ def build_candidates(files: list[str], ignored: set[str], processed: set[str]) -
             continue
         score, reasons = score_candidate(filename)
         candidates.append(Candidate(filename, identity, score, reasons))
-
-    return candidates, skipped_processed, skipped_ignored
-
-def select_candidate(
-    files: list[str], ignored: set[str], processed: set[str]
-) -> SelectionResult:
-    candidates, skipped_processed, skipped_ignored = build_candidates(files, ignored, processed)
 
     if not candidates:
         return SelectionResult(None, skipped_processed, skipped_ignored, 0)

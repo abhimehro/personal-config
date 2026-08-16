@@ -328,6 +328,3 @@ venv/
 
 # Continual-learning local incremental index (do not commit)
 .cursor/hooks/state/
-
-# Local diagnostic incident reports
-/docs/RAYCAST_AUDIO_CPU_INCIDENT_2026-08-10.md

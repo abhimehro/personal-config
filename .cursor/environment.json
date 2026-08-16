@@ -1,17 +1,1 @@
-{
-  "name": "Abhi's Dev Cloud Workspace",
-  "user": "ubuntu",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": ".."
-  },
-  "install": "bash scripts/cursor_cloud_workspace_install.sh",
-  "repositoryDependencies": [
-    "github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project",
-    "github.com/abhimehro/Seatek_Analysis",
-    "github.com/abhimehro/ctrld-sync",
-    "github.com/abhimehro/email-security-pipeline",
-    "github.com/abhimehro/repoprompt-ce",
-    "github.com/abhimehro/series_correction_project_updated"
-  ]
-}
+{}

@@ -160,7 +160,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies for tests
-        run: if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install "pyyaml==6.0.3"; fi
+        run: if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install pyyaml; fi
 
       - name: Run all tests (shell + Python)
         run: make test-all

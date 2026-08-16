@@ -307,7 +307,7 @@ class TestHTTPResponseSplitting(unittest.TestCase):
             "Path-based bypass attempt should be blocked",
         )
 
-    def test_query_string_bypass_blocked(self):
+    def test_query_string_bypass_attempt_blocked(self):
         """Test that query string attacks are blocked (e.g., http://evil.com?ref=http://example.com)."""
         self._test_origin_rejection(
             "http://evil.com?ref=http://example.com",
