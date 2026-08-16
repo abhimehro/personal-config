@@ -3,48 +3,51 @@
 Preflight PASS 7/7. Inventoried **41**. Squash-merged **0** (`gh` read-only).
 APPROVE **5**. REQUEST_CHANGES **6**. CLOSE-recommend **4**. Escalated/deferred
 **~26**. Adversarial: opus-4.8 + gpt-5.5. Docs branch:
-`cursor-agent/automated-pr-workflow-54ad`. Report: `tasks/pr-review-2026-08-13.md`.
-Recovered stranded Aug 8–12 reports + lessons **0fl**/**0fm**/**0fq**. New
-**0fo** (join vs sum), **0fp** (sanitizer shallow copy).
+`cursor-agent/automated-pr-workflow-54ad`. Report:
+`tasks/pr-review-2026-08-13.md`. Recovered stranded Aug 8–12 reports + lessons
+**0fl**/**0fm**/**0fq**. New **0fo** (join vs sum), **0fp** (sanitizer shallow
+copy).
 
-| Metric | Count |
-| --- | ---: |
-| Inventoried | 41 |
-| Merged | 0 |
-| APPROVE | 5 |
-| Closed | 0 |
-| Escalated | ~26 |
-| Open EOD | 41 |
+| Metric      | Count |
+| ----------- | ----: |
+| Inventoried |    41 |
+| Merged      |     0 |
+| APPROVE     |     5 |
+| Closed      |     0 |
+| Escalated   |   ~26 |
+| Open EOD    |    41 |
 
 ---
 
 # Review session — 2026-08-07 (cron Phase 1 13:00 UTC)
 
-
 Preflight PASS 7/7. Inventoried **58**. Squash-merged **24**. Closed **5**.
 Escalated **~25**. Request-changes **~8**. CodeScene triggers **4**.
-Adversarial: opus-4.8 + gpt-5.5. Docs branch: `cursor-agent/automated-pr-workflow-a609`.
-Report: `tasks/pr-review-2026-08-07.md`. Recovered stranded Aug 5/6 reports (lesson **0fk**).
+Adversarial: opus-4.8 + gpt-5.5. Docs branch:
+`cursor-agent/automated-pr-workflow-a609`. Report:
+`tasks/pr-review-2026-08-07.md`. Recovered stranded Aug 5/6 reports (lesson
+**0fk**).
+
 # Review session — 2026-08-16 (cron Phase 1 13:00 UTC)
 
-Preflight PASS 7/7. Inventoried **68**. Squash-merged **9**. Closed **2**.
-HOLD **~12**. ESCALATE **~31**. Open EOD **~57**. REQUEST_CHANGES / COMMENT
-on 0fo/0fp/0fg, majors, Sentinel clusters. CodeScene MCP down; posted
+Preflight PASS 7/7. Inventoried **68**. Squash-merged **9**. Closed **2**. HOLD
+**~12**. ESCALATE **~31**. Open EOD **~57**. REQUEST_CHANGES / COMMENT on
+0fo/0fp/0fg, majors, Sentinel clusters. CodeScene MCP down; posted
 `/cs-agent skill:fix-code-health-degradations` on ctrld#1183 and pc#1980.
 Adversarial: opus-5 + gpt-5.6-sol (model picker N/A). Reviewers requested on
-cursor PRs #1162, #1473, #498, #643.
-Docs branch: `cursor-agent/automated-pr-workflow-9b3f`.
-Report: `tasks/pr-review-2026-08-16.md`.
-New lesson: **0fs** (sibling Dependabot lock merge falsifies repo-health pins).
+cursor PRs #1162, #1473, #498, #643. Docs branch:
+`cursor-agent/automated-pr-workflow-9b3f`. Report:
+`tasks/pr-review-2026-08-16.md`. New lesson: **0fs** (sibling Dependabot lock
+merge falsifies repo-health pins).
 
-| Metric | Count |
-| --- | ---: |
-| Inventoried | 68 |
-| Merged | 9 |
-| Closed | 2 |
-| HOLD / REQUEST_CHANGES | ~12 |
-| Escalated | ~31 |
-| Open EOD | ~57 |
+| Metric                 | Count |
+| ---------------------- | ----: |
+| Inventoried            |    68 |
+| Merged                 |     9 |
+| Closed                 |     2 |
+| HOLD / REQUEST_CHANGES |   ~12 |
+| Escalated              |   ~31 |
+| Open EOD               |   ~57 |
 
 ---
 
@@ -52,18 +55,18 @@ New lesson: **0fs** (sibling Dependabot lock merge falsifies repo-health pins).
 
 Preflight PASS 7/7. Inventoried **~80**. Squash-merged **19**. Closed **12**.
 Escalated Sentinel/CORS/majors/workflow. REQUEST_CHANGES **~22**. CodeScene
-triggers **3**. Adversarial: opus-5 + gpt-5.6-sol + gemini-3.7-flash.
-Docs branch: `cursor-agent/automated-pr-workflow-864b`.
-Report: `tasks/pr-review-2026-08-15.md`. Recovered 08-08…13 reports (0fk).
-New lesson: **0fr** (Dependabot force-update vs local autofix; no force-push).
+triggers **3**. Adversarial: opus-5 + gpt-5.6-sol + gemini-3.7-flash. Docs
+branch: `cursor-agent/automated-pr-workflow-864b`. Report:
+`tasks/pr-review-2026-08-15.md`. Recovered 08-08…13 reports (0fk). New lesson:
+**0fr** (Dependabot force-update vs local autofix; no force-push).
 
-| Metric | Count |
-| --- | ---: |
-| Inventoried | ~80 |
-| Merged | 19 |
-| Closed | 12 |
-| Escalated / HOLD | ~30 |
-| Open EOD | 49 |
+| Metric           | Count |
+| ---------------- | ----: |
+| Inventoried      |   ~80 |
+| Merged           |    19 |
+| Closed           |    12 |
+| Escalated / HOLD |   ~30 |
+| Open EOD         |    49 |
 
 ---
 

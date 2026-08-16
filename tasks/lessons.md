@@ -3,31 +3,32 @@
 ## Lesson 0fr: MERGEABLE is not salvageable (2026-08-13)
 
 **Pattern:** After Phase 1, GitHub reported **zero CONFLICTING** auto PRs.
-Several were still `MERGEABLE/CLEAN` with −20k line contaminated rewrites
-(rpce #232/#228/#231) or `+0/−0` Daily QA shells (#664/#240/#234/#384).
-Treating “no conflicts” as “Phase 2 has nothing to do” would leave mega-diffs
-and empty PRs in the queue until the next cascade.
-**Rule:** Phase 2 always re-fetches. Close zero-diff QA PRs even when CLEAN.
-Close contaminated MERGEABLE PRs (huge `changedFiles` / net deletions) in
-favor of the focused sibling. Salvage only unique files that are **not**
-already on `main`. Never treat GitHub mergeability as a merge or keep-open
-signal.
-**Detection cost:** Low — `gh pr list --json mergeable,additions,deletions,changedFiles`.
+Several were still `MERGEABLE/CLEAN` with −20k line contaminated rewrites (rpce
+#232/#228/#231) or `+0/−0` Daily QA shells (#664/#240/#234/#384). Treating “no
+conflicts” as “Phase 2 has nothing to do” would leave mega-diffs and empty PRs
+in the queue until the next cascade. **Rule:** Phase 2 always re-fetches. Close
+zero-diff QA PRs even when CLEAN. Close contaminated MERGEABLE PRs (huge
+`changedFiles` / net deletions) in favor of the focused sibling. Salvage only
+unique files that are **not** already on `main`. Never treat GitHub mergeability
+as a merge or keep-open signal. **Detection cost:** Low —
+`gh pr list --json mergeable,additions,deletions,changedFiles`.
+
 ## Lesson 0fs: Sibling Dependabot lock merge falsifies repo-health pin PRs (2026-08-16)
 
 **Pattern:** After squash-merging Dependabot lock PRs (ctrld #1176 ruff
-0.16.1→0.16.2, #1175 pre-commit 4.6.1→4.6.2), a same-session Cursor
-repo-health PR (#1162) still pinned **ruff-pre-commit `v0.16.1`** and claimed
-the comment “aligns with `uv.lock`.” That comment became self-falsifying the
-moment #1176 landed. Merging #1162 would have *downgraded* the just-merged
-pin. **Rule:** (1) After any sibling Dependabot lock merge, re-read remaining
-“align ruff / pre-commit / lock” PRs against **current `main`**, not the
-inventory snapshot. (2) If the PR pins an *older* rev than `main`, HOLD or
-re-pin — never merge a self-falsifying alignment comment. (3) Prefer merging
-the Dependabot lock PR and closing/HOLD-ing the stale health PR over merging
-both. (4) Same trap applies to pre-commit, mypy, and action SHA “alignment”
-twins. **Detection cost:** Low — `gh pr diff` the pin line vs `git show
-origin/main:<lockfile>` after each lock merge.
+0.16.1→0.16.2, #1175 pre-commit 4.6.1→4.6.2), a same-session Cursor repo-health
+PR (#1162) still pinned **ruff-pre-commit `v0.16.1`** and claimed the comment
+“aligns with `uv.lock`.” That comment became self-falsifying the moment #1176
+landed. Merging #1162 would have _downgraded_ the just-merged pin. **Rule:** (1)
+After any sibling Dependabot lock merge, re-read remaining “align ruff /
+pre-commit / lock” PRs against **current `main`**, not the inventory snapshot.
+(2) If the PR pins an _older_ rev than `main`, HOLD or re-pin — never merge a
+self-falsifying alignment comment. (3) Prefer merging the Dependabot lock PR and
+closing/HOLD-ing the stale health PR over merging both. (4) Same trap applies to
+pre-commit, mypy, and action SHA “alignment” twins. **Detection cost:** Low —
+`gh pr diff` the pin line vs `git show
+origin/main:<lockfile>` after each lock
+merge.
 
 ## Lesson 0fn: Cursor App install R/W ≠ Cloud `ghs_` mutate rights (2026-08-12)
 
@@ -52,129 +53,120 @@ compare authors and `X-Accepted-Github-Permissions`.
 ## Lesson 0fr: Dependabot force-update beats local autofix; never force-push (2026-08-15)
 
 **Pattern:** Hydrograph #509 went DIRTY after #515 (shared `poetry.lock`). A
-local merge regenerated `content-hash`, but Dependabot **force-updated** the
-PR branch before push. `git push` rejected (non-fast-forward). The remote
-rebase was already CLEAN (numpy 2.5.2 + pre-commit 4.6.2) with green CI.
-**Rule:** (1) Never force-push bot branches. (2) If Dependabot rebased and
-checks are green, squash-merge the remote tip; discard the unpushed local
-autofix. (3) Floating `setup-cli@v0.86.2` tags in generated
-`agentics-maintenance.yml` are HOLD — merge SHA-pinned lockfile twins instead.
-(4) Injected Cursor `pre-commit.cursor` still breaks on secret labels with
-spaces (`GitHub SSH Key`); run `make cursor-cloud-hooks` before the first
-commit. (5) This PAT **can** squash-merge as `abhimehro`; 2026-08-13 “gh
-read-only” memory is stale. (6) MCP cannot `REQUEST_CHANGES` on `app/cursor`
-PRs — COMMENT + `request_reviewers`.
+local merge regenerated `content-hash`, but Dependabot **force-updated** the PR
+branch before push. `git push` rejected (non-fast-forward). The remote rebase
+was already CLEAN (numpy 2.5.2 + pre-commit 4.6.2) with green CI. **Rule:** (1)
+Never force-push bot branches. (2) If Dependabot rebased and checks are green,
+squash-merge the remote tip; discard the unpushed local autofix. (3) Floating
+`setup-cli@v0.86.2` tags in generated `agentics-maintenance.yml` are HOLD —
+merge SHA-pinned lockfile twins instead. (4) Injected Cursor `pre-commit.cursor`
+still breaks on secret labels with spaces (`GitHub SSH Key`); run
+`make cursor-cloud-hooks` before the first commit. (5) This PAT **can**
+squash-merge as `abhimehro`; 2026-08-13 “gh read-only” memory is stale. (6) MCP
+cannot `REQUEST_CHANGES` on `app/cursor` PRs — COMMENT + `request_reviewers`.
 **Detection cost:** Low — `git fetch` then compare `HEAD..origin/<bot-branch>`;
 if remote is CLEAN, merge it.
 
 ## Lesson 0fo: `str.join([list])` ≠ `sum([list])` (2026-08-13)
 
 **Pattern:** Bolt PRs convert generator expressions to list comprehensions
-inside `str.join()` (often a real win — `join` materializes internally) and
-then apply the same rewrite to `sum()`, which is a pessimization (extra list)
-and sometimes rewrite a benchmark docstring that previously preferred the
-generator (`ctrld-sync#1161`).
-**Rule:** Treat `join(list-comp)` and `sum(generator)` as distinct. Do not
-flip a benchmark's stated rationale to match worse code. On adversarial
-disagreement about a micro-opt that contradicts an existing benchmark,
-**HOLD** (fail-secure).
-**Detection cost:** Low — diff `sum(` vs `"\n".join(` and the test docstring.
+inside `str.join()` (often a real win — `join` materializes internally) and then
+apply the same rewrite to `sum()`, which is a pessimization (extra list) and
+sometimes rewrite a benchmark docstring that previously preferred the generator
+(`ctrld-sync#1161`). **Rule:** Treat `join(list-comp)` and `sum(generator)` as
+distinct. Do not flip a benchmark's stated rationale to match worse code. On
+adversarial disagreement about a micro-opt that contradicts an existing
+benchmark, **HOLD** (fail-secure). **Detection cost:** Low — diff `sum(` vs
+`"\n".join(` and the test docstring.
 
 ## Lesson 0fp: Sanitizer `copy(deep=False)` breaks isolation (2026-08-13)
 
 **Pattern:** Bolt `sanitize_dataframe_for_spreadsheet` switched
-`dataframe.copy()` to `dataframe.copy(deep=False)`. Numeric blocks stay
-aliased to the caller; mutating the returned frame can corrupt the source
-(verified on pandas 2.3.3).
-**Rule:** Keep a deep copy in security-sensitive sanitizers. Do not trade
-isolation for a shallow-copy micro-opt unless the contract, docstring, and
-tests explicitly cover aliasing.
-**Detection cost:** Low — search sanitizer helpers for `copy(deep=False)`.
+`dataframe.copy()` to `dataframe.copy(deep=False)`. Numeric blocks stay aliased
+to the caller; mutating the returned frame can corrupt the source (verified on
+pandas 2.3.3). **Rule:** Keep a deep copy in security-sensitive sanitizers. Do
+not trade isolation for a shallow-copy micro-opt unless the contract, docstring,
+and tests explicitly cover aliasing. **Detection cost:** Low — search sanitizer
+helpers for `copy(deep=False)`.
 
 ## Lesson 0fl: Hostname fast-path must exclude IPv6 zone indexes (2026-08-11)
 
 **Pattern:** Bolt twins add `_is_likely_domain` / `_is_definitely_domain` that
 skip `ipaddress.ip_address()` when the last character is a non-hex letter.
-Without a `"%" not in hostname` guard, scoped IPv6 like `fe80::1%eth0` (ends
-in `o`) takes the DNS path instead of `_is_safe_ip` rejection.
-**Rule:** Prefer the twin that rejects empty hosts **and** `%` before the
-domain fast-path (e.g. #1157 over #1155). Close the narrower twin as duplicate.
-**Detection cost:** Low — diff the helper predicates side-by-side.
+Without a `"%" not in hostname` guard, scoped IPv6 like `fe80::1%eth0` (ends in
+`o`) takes the DNS path instead of `_is_safe_ip` rejection. **Rule:** Prefer the
+twin that rejects empty hosts **and** `%` before the domain fast-path (e.g.
+#1157 over #1155). Close the narrower twin as duplicate. **Detection cost:** Low
+— diff the helper predicates side-by-side.
 
 ## Lesson 0fm: Dry-run error counts must not use `total - success` after interrupt (2026-08-11)
 
 **Pattern:** Palette pluralize PRs pass `total - success_count` into error
-messages. After `KeyboardInterrupt`, unstarted profiles inflate the error
-count even though they never ran.
-**Rule:** Count failures from `sync_results` (or equivalent completed rows),
-not `len(ids) - successes`. Hold merge until fixed.
+messages. After `KeyboardInterrupt`, unstarted profiles inflate the error count
+even though they never ran. **Rule:** Count failures from `sync_results` (or
+equivalent completed rows), not `len(ids) - successes`. Hold merge until fixed.
 **Detection cost:** Medium — search for `total - success` near interrupt
 handlers in CLI sync loops.
 
 ## Lesson 0fq: Close auth salvages when the demo module is gone (2026-08-12)
 
 **Pattern:** CONFLICTING Sentinel “timing attack” / PBKDF2 PRs still diff
-`dummy_todos.py`, but `main` no longer contains that file (deleted after
-earlier merge/revert churn). Salvaging would re-introduce auth demo code.
-**Rule:** If the only functional file in an auth/Sentinel PR is missing on
-`main`, **CLOSE as no-op** — do not recreate auth modules without explicit
-maintainer approval (hard boundary). Journal-only appends are not enough to
-justify a salvage PR.
+`dummy_todos.py`, but `main` no longer contains that file (deleted after earlier
+merge/revert churn). Salvaging would re-introduce auth demo code. **Rule:** If
+the only functional file in an auth/Sentinel PR is missing on `main`, **CLOSE as
+no-op** — do not recreate auth modules without explicit maintainer approval
+(hard boundary). Journal-only appends are not enough to justify a salvage PR.
 **Detection cost:** Low — `gh api .../contents/<file>?ref=main` → 404.
 
 ## Lesson 0fo: `str.join([list])` ≠ `sum([list])` (2026-08-13)
 
 **Pattern:** Bolt PRs convert generator expressions to list comprehensions
-inside `str.join()` (often a real win — `join` materializes internally) and
-then apply the same rewrite to `sum()`, which is a pessimization (extra list)
-and sometimes rewrite a benchmark docstring that previously preferred the
-generator (`ctrld-sync#1161`).
-**Rule:** Treat `join(list-comp)` and `sum(generator)` as distinct. Do not
-flip a benchmark's stated rationale to match worse code. On adversarial
-disagreement about a micro-opt that contradicts an existing benchmark,
-**HOLD** (fail-secure).
-**Detection cost:** Low — diff `sum(` vs `"\n".join(` and the test docstring.
+inside `str.join()` (often a real win — `join` materializes internally) and then
+apply the same rewrite to `sum()`, which is a pessimization (extra list) and
+sometimes rewrite a benchmark docstring that previously preferred the generator
+(`ctrld-sync#1161`). **Rule:** Treat `join(list-comp)` and `sum(generator)` as
+distinct. Do not flip a benchmark's stated rationale to match worse code. On
+adversarial disagreement about a micro-opt that contradicts an existing
+benchmark, **HOLD** (fail-secure). **Detection cost:** Low — diff `sum(` vs
+`"\n".join(` and the test docstring.
 
 ## Lesson 0fp: Sanitizer `copy(deep=False)` breaks isolation (2026-08-13)
 
 **Pattern:** Bolt `sanitize_dataframe_for_spreadsheet` switched
-`dataframe.copy()` to `dataframe.copy(deep=False)`. Numeric blocks stay
-aliased to the caller; mutating the returned frame can corrupt the source
-(verified on pandas 2.3.3).
-**Rule:** Keep a deep copy in security-sensitive sanitizers. Do not trade
-isolation for a shallow-copy micro-opt unless the contract, docstring, and
-tests explicitly cover aliasing.
-**Detection cost:** Low — search sanitizer helpers for `copy(deep=False)`.
+`dataframe.copy()` to `dataframe.copy(deep=False)`. Numeric blocks stay aliased
+to the caller; mutating the returned frame can corrupt the source (verified on
+pandas 2.3.3). **Rule:** Keep a deep copy in security-sensitive sanitizers. Do
+not trade isolation for a shallow-copy micro-opt unless the contract, docstring,
+and tests explicitly cover aliasing. **Detection cost:** Low — search sanitizer
+helpers for `copy(deep=False)`.
 
 ## Lesson 0fl: Hostname fast-path must exclude IPv6 zone indexes (2026-08-11)
 
 **Pattern:** Bolt twins add `_is_likely_domain` / `_is_definitely_domain` that
 skip `ipaddress.ip_address()` when the last character is a non-hex letter.
-Without a `"%" not in hostname` guard, scoped IPv6 like `fe80::1%eth0` (ends
-in `o`) takes the DNS path instead of `_is_safe_ip` rejection.
-**Rule:** Prefer the twin that rejects empty hosts **and** `%` before the
-domain fast-path (e.g. #1157 over #1155). Close the narrower twin as duplicate.
-**Detection cost:** Low — diff the helper predicates side-by-side.
+Without a `"%" not in hostname` guard, scoped IPv6 like `fe80::1%eth0` (ends in
+`o`) takes the DNS path instead of `_is_safe_ip` rejection. **Rule:** Prefer the
+twin that rejects empty hosts **and** `%` before the domain fast-path (e.g.
+#1157 over #1155). Close the narrower twin as duplicate. **Detection cost:** Low
+— diff the helper predicates side-by-side.
 
 ## Lesson 0fm: Dry-run error counts must not use `total - success` after interrupt (2026-08-11)
 
 **Pattern:** Palette pluralize PRs pass `total - success_count` into error
-messages. After `KeyboardInterrupt`, unstarted profiles inflate the error
-count even though they never ran.
-**Rule:** Count failures from `sync_results` (or equivalent completed rows),
-not `len(ids) - successes`. Hold merge until fixed.
+messages. After `KeyboardInterrupt`, unstarted profiles inflate the error count
+even though they never ran. **Rule:** Count failures from `sync_results` (or
+equivalent completed rows), not `len(ids) - successes`. Hold merge until fixed.
 **Detection cost:** Medium — search for `total - success` near interrupt
 handlers in CLI sync loops.
 
 ## Lesson 0fq: Close auth salvages when the demo module is gone (2026-08-12)
 
 **Pattern:** CONFLICTING Sentinel “timing attack” / PBKDF2 PRs still diff
-`dummy_todos.py`, but `main` no longer contains that file (deleted after
-earlier merge/revert churn). Salvaging would re-introduce auth demo code.
-**Rule:** If the only functional file in an auth/Sentinel PR is missing on
-`main`, **CLOSE as no-op** — do not recreate auth modules without explicit
-maintainer approval (hard boundary). Journal-only appends are not enough to
-justify a salvage PR.
+`dummy_todos.py`, but `main` no longer contains that file (deleted after earlier
+merge/revert churn). Salvaging would re-introduce auth demo code. **Rule:** If
+the only functional file in an auth/Sentinel PR is missing on `main`, **CLOSE as
+no-op** — do not recreate auth modules without explicit maintainer approval
+(hard boundary). Journal-only appends are not enough to justify a salvage PR.
 **Detection cost:** Low — `gh api .../contents/<file>?ref=main` → 404.
 
 ## Lesson 0fk: Docs tasks/* cascade — merge one, recover the rest (2026-08-07)
@@ -2230,36 +2222,33 @@ already present, **CLOSE-SUPERSEDED** — do not open a refactor-only salvage. I
 a sibling shows duplicated identical security blocks, treat as corruption and
 close (same family as Lesson 0fa), not as defense-in-depth.
 
-**Detection cost:** Low — `rg is_safe_path validate_data.py` on `main` +
-`rg -c` on the PR tip.
+**Detection cost:** Low — `rg is_safe_path validate_data.py` on `main` + `rg -c`
+on the PR tip.
 
 ## Lesson 0fl: Hostname fast-path must exclude IPv6 zone indexes (2026-08-11)
 
 **Pattern:** Bolt twins add `_is_likely_domain` / `_is_definitely_domain` that
 skip `ipaddress.ip_address()` when the last character is a non-hex letter.
-Without a `"%" not in hostname` guard, scoped IPv6 like `fe80::1%eth0` (ends
-in `o`) takes the DNS path instead of `_is_safe_ip` rejection.
-**Rule:** Prefer the twin that rejects empty hosts **and** `%` before the
-domain fast-path (e.g. #1157 over #1155). Close the narrower twin as duplicate.
-**Detection cost:** Low — diff the helper predicates side-by-side.
-
+Without a `"%" not in hostname` guard, scoped IPv6 like `fe80::1%eth0` (ends in
+`o`) takes the DNS path instead of `_is_safe_ip` rejection. **Rule:** Prefer the
+twin that rejects empty hosts **and** `%` before the domain fast-path (e.g.
+#1157 over #1155). Close the narrower twin as duplicate. **Detection cost:** Low
+— diff the helper predicates side-by-side.
 
 ## Lesson 0fm: Dry-run error counts must not use `total - success` after interrupt (2026-08-11)
 
 **Pattern:** Palette pluralize PRs pass `total - success_count` into error
-messages. After `KeyboardInterrupt`, unstarted profiles inflate the error
-count even though they never ran.
-**Rule:** Count failures from `sync_results` (or equivalent completed rows),
-not `len(ids) - successes`. Hold merge until fixed.
+messages. After `KeyboardInterrupt`, unstarted profiles inflate the error count
+even though they never ran. **Rule:** Count failures from `sync_results` (or
+equivalent completed rows), not `len(ids) - successes`. Hold merge until fixed.
 **Detection cost:** Medium — search for `total - success` near interrupt
 handlers in CLI sync loops.
-
 
 ## Lesson 0fq: Close auth salvages when the demo module is gone (2026-08-12)
 
 **Pattern:** CONFLICTING Sentinel “timing attack” / PBKDF2 PRs still diff
-`dummy_todos.py`, but `main` no longer contains that file (deleted after
-earlier merge/revert churn). Salvaging would re-introduce auth demo code.
+`dummy_todos.py`, but `main` no longer contains that file (deleted after earlier
+merge/revert churn). Salvaging would re-introduce auth demo code.
 
 **Rule:** If the only functional file in an auth/Sentinel PR is missing on
 `main`, **CLOSE as no-op** — do not recreate auth modules without explicit
