@@ -71,7 +71,9 @@ def _parse_graphql_response(res, queue_items):
     info_map = {}
     for i, item in enumerate(queue_items):
         pr_node = data.get(f"pr{i}")
-        info_map[item] = pr_node.get("pullRequest") if isinstance(pr_node, dict) else None
+        info_map[item] = (
+            pr_node.get("pullRequest") if isinstance(pr_node, dict) else None
+        )
     return info_map
 
 

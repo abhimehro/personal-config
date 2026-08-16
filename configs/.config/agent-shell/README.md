@@ -107,5 +107,6 @@ For AI chats that execute shell tools, prefer asking: â€œrun via `agent-zsh -c`â
 
 ## Full host matrix
 
-See [`docs/AGENT_SHELL_CONFIG_MATRIX.md`](../../../docs/AGENT_SHELL_CONFIG_MATRIX.md)
+See
+[`docs/AGENT_SHELL_CONFIG_MATRIX.md`](../../../docs/AGENT_SHELL_CONFIG_MATRIX.md)
 for Cursor, Vibe, Claude, Codex, Devin, Antigravity, and Raycast.

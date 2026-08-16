@@ -96,22 +96,22 @@ Doctor logs (local only; do not commit):
 
 ### 8. Raycast
 
-- **Script Commands:** interpreter comes from the script shebang (`bash`,
-  `zsh`, `osascript`). They do **not** use Fish unless the shebang says so.
+- **Script Commands:** interpreter comes from the script shebang (`bash`, `zsh`,
+  `osascript`). They do **not** use Fish unless the shebang says so.
 - **AI Terminal:** runs commands in a shell on this Mac. Prefer
   `agent-zsh -c '…'` from AI instructions, or a Script Command wrapper.
 - Details: [`docs/RAYCAST_AGENT_SHELL.md`](RAYCAST_AGENT_SHELL.md)
 
 ## Sync vs separate
 
-| Artifact                 | Cursor IDE               | Local CLIs    | Devin cloud              | Raycast                |
-| :----------------------- | :----------------------- | :------------ | :----------------------- | :--------------------- |
-| `agent-zsh` launchers    | optional default profile | prefix / PATH | install in VM if desired | shebang or wrapper     |
-| shell policy in repo     | yes                      | yes           | yes (guidance)           | yes (if AI reads repo) |
-| IDE terminal profile     | yes                      | no            | no                       | no                     |
-| `.devin` blueprint       | no                       | no            | yes                      | no                     |
-| Vibe config              | no                       | Vibe only     | no                       | no                     |
-| Script Command shebang   | no                       | no            | no                       | yes                    |
+| Artifact               | Cursor IDE               | Local CLIs    | Devin cloud              | Raycast                |
+| :--------------------- | :----------------------- | :------------ | :----------------------- | :--------------------- |
+| `agent-zsh` launchers  | optional default profile | prefix / PATH | install in VM if desired | shebang or wrapper     |
+| shell policy in repo   | yes                      | yes           | yes (guidance)           | yes (if AI reads repo) |
+| IDE terminal profile   | yes                      | no            | no                       | no                     |
+| `.devin` blueprint     | no                       | no            | yes                      | no                     |
+| Vibe config            | no                       | Vibe only     | no                       | no                     |
+| Script Command shebang | no                       | no            | no                       | yes                    |
 
 ## Recommended operator checklist
 

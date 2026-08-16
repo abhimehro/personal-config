@@ -683,7 +683,7 @@ EOF
 
 	local last_run
 	last_run=$(tail -1 "$PERFORMANCE_LOG" 2>/dev/null || echo "")
-	if [[ -z "$last_run" ]]; then
+	if [[ -z $last_run ]]; then
 		cat >>"$report_file" <<EOF
         <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; color: #6c757d; text-align: center;">
             <div class="icon" aria-hidden="true" style="font-size: 3em; margin-bottom: 15px; opacity: 0.5;">&#x1F552;</div>

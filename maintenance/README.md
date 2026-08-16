@@ -73,8 +73,9 @@ Under memory pressure, pausing or killing Apple diagnostic agents
 - Google Drive Backup (Light): 3:15 AM Tue–Sun — home backup light mode
 - Google Drive Backup (Full): Monday 4:00 AM — fuller Google Drive backup
 - ProtonDrive Backup: **archived** (`bin/archive/protondrive_backup.sh`); not
-  installed by `install.sh` (use `macos/com.abhimehrotra.protondrive-backup.plist`
-  only if you intentionally re-enable it)
+  installed by `install.sh` (use
+  `macos/com.abhimehrotra.protondrive-backup.plist` only if you intentionally
+  re-enable it)
 
 ### 🏥 Health Monitoring
 
@@ -256,18 +257,21 @@ still use older `…maintenance.*` names — treat `install.sh` as authoritative
    - Purpose: system cleanup, editor cleanup, deep cleaner
    - Notifications: ✅ Click to view error summary
 
-8. **Google Drive Backup (Light)** (`com.abhimehrotra.maint.googledrivebackup.light`)
+8. **Google Drive Backup (Light)**
+   (`com.abhimehrotra.maint.googledrivebackup.light`)
    - Time: 3:15 AM Tue–Sun
    - Purpose: Light-mode Google Drive home backup
 
-9. **Google Drive Backup (Full)** (`com.abhimehrotra.maint.googledrivebackup.full`)
+9. **Google Drive Backup (Full)**
+   (`com.abhimehrotra.maint.googledrivebackup.full`)
    - Time: Monday 4:00 AM
    - Purpose: Fuller Google Drive backup
 
 10. **ProtonDrive Backup** (archived — not installed by `install.sh`)
     - Optional: `macos/com.abhimehrotra.protondrive-backup.plist`
     - Script: `bin/archive/protondrive_backup.sh`
-    - Historical: `maintenance/launchd/com.abhimehrotra.maintenance.protondrivebackup.plist`
+    - Historical:
+      `maintenance/launchd/com.abhimehrotra.maintenance.protondrivebackup.plist`
 
 ## 📊 Monitoring & Logs
 
@@ -383,4 +387,5 @@ Schedules & Settings**
 
 ---
 
-_Last Updated: August 2026 - Align docs with `install.sh` labels; ProtonDrive archived_
+_Last Updated: August 2026 - Align docs with `install.sh` labels; ProtonDrive
+archived_

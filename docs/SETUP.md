@@ -244,8 +244,8 @@ windows:
             - exec: nvim
 ```
 
-3. Bind a Raycast hotkey to "Run Launch Configuration" for the Ghostty
-   extension so it opens both windows on demand.
+3. Bind a Raycast hotkey to "Run Launch Configuration" for the Ghostty extension
+   so it opens both windows on demand.
 
 ---
 

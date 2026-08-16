@@ -5,21 +5,20 @@
 **Pattern:** GitHub → Installed GitHub Apps → Cursor already shows **Read and
 write** for Issues + Pull requests on **All repositories**, yet Cloud Agent
 `env -u GH_TOKEN gh …` (hosts.yml `ghs_` / `cursor[bot]`) still returns
-**Resource not accessible by integration** on issue comment, issue close, and
-PR review. The same App token **can create** issues (`cursor[bot]`). 403
-responses include `X-Accepted-Github-Permissions: issues=write` /
-`pull_requests=write`. Injected `GH_TOKEN` (fine-grained PAT as `abhimehro`)
-succeeds on the same endpoints. This is **not** a missing App-install checkbox
-— Cursor mints a **reduced-capability installation token** for Cloud Agents
-that does not expose the full install grants for mutate APIs.
-**Rule:** (1) Do **not** diagnose solely from the App settings PDF/UI when
-create works but comment/close 403. (2) For Daily QA / issue lifecycle, **keep
-`GH_TOKEN` set** (PAT) — do not `env -u GH_TOKEN` for comment/close. (3) Prefer
-PAT for create+close so one identity owns the full lifecycle; accept
-`abhimehro` authorship instead of `cursor[bot]`. (4) Use MCP review tools when
-App-only. (5) Extends Lessons 0es / 0eq / 0ew.
-**Detection cost:** Low — one App create + one App comment probe; compare
-authors and `X-Accepted-Github-Permissions`.
+**Resource not accessible by integration** on issue comment, issue close, and PR
+review. The same App token **can create** issues (`cursor[bot]`). 403 responses
+include `X-Accepted-Github-Permissions: issues=write` / `pull_requests=write`.
+Injected `GH_TOKEN` (fine-grained PAT as `abhimehro`) succeeds on the same
+endpoints. This is **not** a missing App-install checkbox — Cursor mints a
+**reduced-capability installation token** for Cloud Agents that does not expose
+the full install grants for mutate APIs. **Rule:** (1) Do **not** diagnose
+solely from the App settings PDF/UI when create works but comment/close 403. (2)
+For Daily QA / issue lifecycle, **keep `GH_TOKEN` set** (PAT) — do not
+`env -u GH_TOKEN` for comment/close. (3) Prefer PAT for create+close so one
+identity owns the full lifecycle; accept `abhimehro` authorship instead of
+`cursor[bot]`. (4) Use MCP review tools when App-only. (5) Extends Lessons 0es /
+0eq / 0ew. **Detection cost:** Low — one App create + one App comment probe;
+compare authors and `X-Accepted-Github-Permissions`.
 
 ## Lesson 0fk: Docs tasks/* cascade — merge one, recover the rest (2026-08-07)
 
@@ -27,33 +26,32 @@ authors and `X-Accepted-Github-Permissions`.
 `pr-inventory.md`, `pr-triage.md`) all rewrite the same `tasks/*` files. Merging
 the oldest green one (#1912) flips siblings CONFLICTING. Closing them without
 recovering unique dated reports/lessons strands audit history (adversarial
-finding on this session).
-**Rule:** (1) Merge at most one competing `tasks/*` docs PR per pass. (2) Before
-closing CONFLICTING docs siblings, `git fetch` their branches and copy unique
-dated reports + missing `Lesson 0f*` entries into the current session docs PR.
-(3) Prefer appending to `tasks/review-session-reports.md` over rewriting shared
-inventory files in every draft.
-**Detection cost:** Low — `gh pr view --json files` showing overlapping
+finding on this session). **Rule:** (1) Merge at most one competing `tasks/*`
+docs PR per pass. (2) Before closing CONFLICTING docs siblings, `git fetch`
+their branches and copy unique dated reports + missing `Lesson 0f*` entries into
+the current session docs PR. (3) Prefer appending to
+`tasks/review-session-reports.md` over rewriting shared inventory files in every
+draft. **Detection cost:** Low — `gh pr view --json files` showing overlapping
 `tasks/lessons.md` / `tasks/pr-inventory.md`.
 
 ## Lesson 0fg: Strip stray commit_message / scratch scripts before merge (2026-08-05)
 
 **Pattern:** Palette/QA/Code-Health PRs land green but add root artifacts
 (`commit_message.txt`, `test_mock_behavior.py`, `submission.sh`, `patch1.py`,
-`fix_duplication.py`) or clobber `tasks/todo.md`.
-**Rule:** Autofix by deleting the stray file when the functional delta is sound;
-otherwise REQUEST_CHANGES. Never squash-merge junk into `main`.
-**Detection cost:** Low — `--name-only` for non-domain paths / scratch names.
+`fix_duplication.py`) or clobber `tasks/todo.md`. **Rule:** Autofix by deleting
+the stray file when the functional delta is sound; otherwise REQUEST_CHANGES.
+Never squash-merge junk into `main`. **Detection cost:** Low — `--name-only` for
+non-domain paths / scratch names.
 
 ## Lesson 0fh: Async alert create_task without retain/await is a drop risk (2026-08-05)
 
 **Pattern:** esp#1421 replaced blocking webhook dispatch with
 `loop.create_task(_run_async_alerts())` and discarded the task reference.
-Security alerts can vanish on loop shutdown with no logged failure.
-**Rule:** For alerting/security notification paths, never fire-and-forget.
-Retain the task, await it, or keep a sync/blocking fallback; log task
-exceptions via `add_done_callback`.
-**Detection cost:** Medium — search PR diffs for `create_task` in alert modules.
+Security alerts can vanish on loop shutdown with no logged failure. **Rule:**
+For alerting/security notification paths, never fire-and-forget. Retain the
+task, await it, or keep a sync/blocking fallback; log task exceptions via
+`add_done_callback`. **Detection cost:** Medium — search PR diffs for
+`create_task` in alert modules.
 
 ## Lesson 0fj: Re-salvage contaminated prior salvage drafts by unique assertion only (2026-08-06)
 
@@ -63,62 +61,60 @@ missing test/fix; close the contaminated draft. See also section **0fj** below.
 
 ## Lesson 0fi: Risk log colors must match lowercase production risk_level (2026-08-06)
 
-**Pattern:** Palette PR esp#1423 colorized `Analysis complete` using
-`risk=HIGH` / `risk=MEDIUM`, and tests only used uppercase synthetics. Production
-`calculate_risk_level` / `alert_report` emit lowercase `high` / `medium` / `low`,
-and `main.py` logs `risk={threat_report.risk_level}` — so real high-risk lines
-stayed green.
-**Rule:** (1) When matching risk tokens in logs/UX, use case-insensitive checks
-or the exact production enum. (2) Unit tests must use the same casing as
-production emitters. (3) Adversarial review should cross-check string literals
-against call sites, not only the PR diff.
-**Detection cost:** Low — `rg 'risk_level|risk=' src/` vs the PR's match strings.
+**Pattern:** Palette PR esp#1423 colorized `Analysis complete` using `risk=HIGH`
+/ `risk=MEDIUM`, and tests only used uppercase synthetics. Production
+`calculate_risk_level` / `alert_report` emit lowercase `high` / `medium` /
+`low`, and `main.py` logs `risk={threat_report.risk_level}` — so real high-risk
+lines stayed green. **Rule:** (1) When matching risk tokens in logs/UX, use
+case-insensitive checks or the exact production enum. (2) Unit tests must use
+the same casing as production emitters. (3) Adversarial review should
+cross-check string literals against call sites, not only the PR diff.
+**Detection cost:** Low — `rg 'risk_level|risk=' src/` vs the PR's match
+strings.
 
 ## Lesson 0ff: "Add tests" PRs that rename production APIs (2026-08-04)
 
 **Pattern:** Seatek Jules PRs titled as missing unit tests (#595/#601) also
 renamed real helpers (`discover_hotspots`, `run_command_set`) and added
-differently-typed replacements used mainly by the new tests.
-**Rule:** (1) Diff `tests/` vs production paths — any rename/signature change
-in `.github/scripts/` or app modules is **not** tests-only. (2) REQUEST_CHANGES
-and require stable APIs or intentional migrations. (3) Coordinate siblings on
-the same automation scripts to avoid conflict cascades.
-**Detection cost:** Low — `gh api …/pulls/{n}/files` showing non-test paths.
+differently-typed replacements used mainly by the new tests. **Rule:** (1) Diff
+`tests/` vs production paths — any rename/signature change in `.github/scripts/`
+or app modules is **not** tests-only. (2) REQUEST_CHANGES and require stable
+APIs or intentional migrations. (3) Coordinate siblings on the same automation
+scripts to avoid conflict cascades. **Detection cost:** Low —
+`gh api …/pulls/{n}/files` showing non-test paths.
 
 ## Lesson 0fe: Palette `.Jules` vs `.jules` case collision (2026-08-04)
 
-**Pattern:** ctrld-sync#1115 created `.Jules/palette.md` while main already
-has `.jules/palette.md`. On macOS (case-insensitive) this collides and can
-orphan the journal; #1111 correctly appended to `.jules/`.
-**Rule:** Prefer the PR that writes the existing lowercase `.jules/` path.
-Close siblings that introduce `.Jules/` as a new path.
-**Detection cost:** Low — compare journal paths in the files list.
+**Pattern:** ctrld-sync#1115 created `.Jules/palette.md` while main already has
+`.jules/palette.md`. On macOS (case-insensitive) this collides and can orphan
+the journal; #1111 correctly appended to `.jules/`. **Rule:** Prefer the PR that
+writes the existing lowercase `.jules/` path. Close siblings that introduce
+`.Jules/` as a new path. **Detection cost:** Low — compare journal paths in the
+files list.
 
 ## Lesson 0fd: Gitleaks "comment fix" that swaps README/LICENSE (2026-08-04)
 
 **Pattern:** personal-config#1898 claimed a false-positive comment tweak but
 replaced README.md with upstream Gitleaks docs and LICENSE copyright with
 Zachary Rice; Gitleaks failed on a planted example secret in the injected
-README.
-**Rule:** (1) Never merge when Gitleaks fails. (2) Inspect file list for
+README. **Rule:** (1) Never merge when Gitleaks fails. (2) Inspect file list for
 unexpected README/LICENSE rewrites on "comment-only" PRs. (3) CLOSE and require
-a focused re-open.
-**Detection cost:** Low — `changedFiles` + LICENSE/README in files list.
+a focused re-open. **Detection cost:** Low — `changedFiles` + LICENSE/README in
+files list.
 
 ## Lesson 0fc: Bolt journal wipe is CLOSE not MERGE (2026-08-02)
 
 **Pattern:** A Bolt PR titled as a tiny `parse_inventory` / `defaultdict`
-optimization also rewrote `.jules/bolt.md` from ~848 lines down to ~11,
-deleting the accumulated journal while keeping a small code delta. CI stayed
-green, so a naive gate would have merged it.
-**Rule:** (1) Always inspect `.jules/*.md` patches on Bolt/Jules/Palette/Sentinel
-PRs — if the journal is truncated or replaced wholesale, **CLOSE** (or
-REQUEST_CHANGES) even when the code change is otherwise fine. (2) Prefer
-merging sibling salvages that touch the same source file without journal
-destruction (here #1875). (3) If the code refactor is still wanted, require a
-focused re-open that leaves `main`'s journal intact (append-only).
-**Detection cost:** Low — `gh api …/pulls/{n}/files` showing huge deletions on
-`.jules/bolt.md` with a tiny companion source file.
+optimization also rewrote `.jules/bolt.md` from ~848 lines down to ~11, deleting
+the accumulated journal while keeping a small code delta. CI stayed green, so a
+naive gate would have merged it. **Rule:** (1) Always inspect `.jules/*.md`
+patches on Bolt/Jules/Palette/Sentinel PRs — if the journal is truncated or
+replaced wholesale, **CLOSE** (or REQUEST_CHANGES) even when the code change is
+otherwise fine. (2) Prefer merging sibling salvages that touch the same source
+file without journal destruction (here #1875). (3) If the code refactor is still
+wanted, require a focused re-open that leaves `main`'s journal intact
+(append-only). **Detection cost:** Low — `gh api …/pulls/{n}/files` showing huge
+deletions on `.jules/bolt.md` with a tiny companion source file.
 
 ## Lesson 0ez: stacked PRs need merge-async REST (2026-07-31)
 
@@ -2064,7 +2060,6 @@ diff **per file** against `main`. Salvage only the named hot path (here
 **Detection cost:** Low — `gh pr diff --stat` showing deletes of whole modules
 alongside a one-file perf claim.
 
-
 ## 0fd — Close Sentinel clusters when main already has the guard (2026-08-02)
 
 **Pattern:** Multiple CONFLICTING Sentinel PRs (#445/#448/#450) claimed path
@@ -2074,9 +2069,9 @@ seven times; another (#450) only extracted a reporter class.
 
 **Rule:** Before salvaging a CONFLICTING Sentinel/security PR, grep `main` for
 the same guard (`is_safe_path`, TOCTOU helper, etc.). If the protection is
-already present, **CLOSE-SUPERSEDED** — do not open a refactor-only salvage.
-If a sibling shows duplicated identical security blocks, treat as corruption
-and close (same family as Lesson 0fa), not as defense-in-depth.
+already present, **CLOSE-SUPERSEDED** — do not open a refactor-only salvage. If
+a sibling shows duplicated identical security blocks, treat as corruption and
+close (same family as Lesson 0fa), not as defense-in-depth.
 
-**Detection cost:** Low — `rg is_safe_path validate_data.py` on `main` +
-`rg -c` on the PR tip.
+**Detection cost:** Low — `rg is_safe_path validate_data.py` on `main` + `rg -c`
+on the PR tip.
