@@ -6,15 +6,15 @@
 # GH_TOKEN forces the reduced App token — avoid that for Daily QA closes.
 set -euo pipefail
 
-if [[ -z "${GH_TOKEN:-}" ]]; then
-  echo "error: GH_TOKEN is unset; cannot use PAT lifecycle path" >&2
-  exit 1
+if [[ -z ${GH_TOKEN:-} ]]; then
+	echo "error: GH_TOKEN is unset; cannot use PAT lifecycle path" >&2
+	exit 1
 fi
 
 login="$(gh api user --jq .login 2>/dev/null || true)"
-if [[ -z "${login}" ]]; then
-  echo "error: GH_TOKEN present but gh api user failed" >&2
-  exit 1
+if [[ -z ${login} ]]; then
+	echo "error: GH_TOKEN present but gh api user failed" >&2
+	exit 1
 fi
 
 echo "gh identity: ${login} (PAT path; GH_TOKEN kept set)"
