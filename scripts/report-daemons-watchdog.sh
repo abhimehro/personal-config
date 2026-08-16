@@ -1,95 +1,100 @@
 #!/bin/bash
-# report-daemons-watchdog.sh - break Report* thrash loops
+# report-daemons-watchdog.sh - observe Apple crash reporters without interfering
+#
+# ReportCrash*, including the root-owned ReportCrash.Root daemon, are managed by
+# launchd. Killing or disabling them from a user LaunchAgent causes futile work,
+# misleading logs, and can amplify crash/relaunch pressure. This compatibility
+# script is intentionally read-only. Its historical path is retained so existing
+# LaunchAgent installations continue to work safely.
+
 set -u
-export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin"
+export PATH="/usr/bin:/bin:/usr/sbin:/sbin"
 
-log() { echo "[$(date "+%Y-%m-%d %H:%M:%S")] $*"; }
-UID_NUM=$(id -u)
-log "start uid=${UID_NUM}"
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
-# Repair App Tamer rules if needed (fast python)
-PREFS="$HOME/Library/Preferences/com.stclairsoft.AppTamer.plist"
-if [[ -f "$PREFS" ]]; then
-  /usr/bin/python3 - "$PREFS" <<'PY'
-import plistlib, sys
-from pathlib import Path
-p = Path(sys.argv[1])
-try:
-    data = plistlib.loads(p.read_bytes())
-except Exception as e:
-    print("apptamer_prefs_read_error", e)
-    raise SystemExit(0)
-targets = {
-    "ReportCrash", "ReportCrashService", "ReportMemoryException",
-    "CrashReporterSupportHelper", "osanalyticshelper", "ReportSystemMemory",
-}
-needles = ("reportcrash", "reportmemory", "osanalytics", "crashreporter")
-changed = False
-for key, val in list(data.items()):
-    if not isinstance(val, dict):
-        continue
-    name = str(key)
-    bid = str(val.get("bundleID", key))
-    if name in targets or bid in targets or any(n in name.lower() or n in bid.lower() for n in needles):
-        for k, v in {
-            "pauseInBackground": False,
-            "limitInBackground": False,
-            "limitInForeground": False,
-            "lowQOSInBackground": False,
-            "quitWhenIdle": False,
-        }.items():
-            if val.get(k) != v:
-                val[k] = v
-                changed = True
-        if isinstance(val.get("cpuLimit"), (int, float)) and float(val["cpuLimit"]) < 1.0:
-            val["cpuLimit"] = 1.0
-            changed = True
-        data[key] = val
-if changed:
-    p.write_bytes(plistlib.dumps(data, fmt=plistlib.FMT_BINARY))
-    print("apptamer_prefs_repaired=1")
-else:
-    print("apptamer_prefs_ok=1")
-PY
-fi
+log "start mode=observe-only uid=$(id -u)"
 
-# Disable user-domain reporters (ignore failures)
-for svc in   "gui/${UID_NUM}/com.apple.ReportCrash"   "gui/${UID_NUM}/com.apple.ReportCrashService"   "gui/${UID_NUM}/com.apple.ReportMemoryException"
-do
-  launchctl disable "$svc" >/dev/null 2>&1 || true
+found=0
+for name in ReportCrash ReportCrashService ReportMemoryException; do
+	pids="$(pgrep -x "$name" 2>/dev/null | tr '\n' ',' | sed 's/,$//' || true)"
+	if [[ -n $pids ]]; then
+		log "process=$name pids=$pids action=leave-alone"
+		found=1
+	fi
 done
 
-# Best-effort system disable if sudo -n works
-if sudo -n true >/dev/null 2>&1; then
-  for svc in     system/com.apple.ReportCrash.Root     system/com.apple.ReportCrash     system/com.apple.ReportCrashService     system/com.apple.ReportMemoryException     system/com.apple.ReportMemoryService     system/com.apple.ReportMemory
-  do
-    sudo launchctl disable "$svc" >/dev/null 2>&1 || true
-  done
-  log "system_disable_attempted=1"
-else
-  log "sudo_unavailable=1"
+if [[ $found -eq 0 ]]; then
+	log "no_report_processes"
 fi
 
-# CONT then KILL any leftover Report* processes
-pids=$(pgrep -f "ReportCrash|ReportMemoryException|ReportCrashService" 2>/dev/null || true)
-if [[ -n "${pids}" ]]; then
-  log "found_pids=${pids//$'
-'/,}"
-  for pid in $pids; do
-    st=$(ps -p "$pid" -o state= 2>/dev/null | tr -d " " || true)
-    if [[ "${st}" == T* ]]; then
-      kill -CONT "$pid" 2>/dev/null || true
-      log "cont pid=$pid"
-    fi
-  done
-  for pid in $pids; do
-    kill -KILL "$pid" 2>/dev/null || true
-    log "kill pid=$pid"
-  done
-else
-  log "no_report_pids"
-fi
+# Stuck-reporter detection (alert-only).
+#
+# A healthy ReportCrash* worker exits within seconds of writing its report. A
+# worker that stays alive for a long time while using no CPU is hung mid-report.
+# We only FLAG such processes; we never kill, disable, throttle, or restart
+# anything. Threshold: alive more than STUCK_THRESHOLD_SECS and effectively idle
+# (instantaneous CPU below STUCK_IDLE_CPU percent).
+#
+# macOS BSD ps supports etime ([[dd-]hh:]mm:ss), not POSIX etimes. Parse etime
+# into seconds. ReportCrash.Root appears as "ReportCrash daemon" (uid 0); the
+# per-user worker is "ReportCrash agent". Both share the ReportCrash basename.
+STUCK_THRESHOLD_SECS=600 # 10 minutes
+STUCK_IDLE_CPU=0.5       # percent; below this counts as effectively idle
 
-left=$(pgrep -f "ReportCrash|ReportMemoryException|ReportCrashService" 2>/dev/null | wc -l | tr -d " ")
-log "live_report_procs=${left}"
+# Convert BSD ps etime ([[dd-]hh:]mm:ss) to integer seconds.
+etime_to_seconds() {
+	local etime="$1"
+	local days=0 rest hours=0 mins=0 secs=0
+	etime="${etime// /}"
+	if [[ $etime == *-* ]]; then
+		days="${etime%%-*}"
+		rest="${etime#*-}"
+	else
+		rest="$etime"
+	fi
+	IFS=':' read -r a b c <<<"$rest"
+	if [[ -n ${c:-} ]]; then
+		hours=$a
+		mins=$b
+		secs=$c
+	else
+		hours=0
+		mins=$a
+		secs=$b
+	fi
+	# Force base-10: ps may zero-pad fields (08, 09).
+	echo $((10#$days * 86400 + 10#$hours * 3600 + 10#$mins * 60 + 10#$secs))
+}
+
+check_stuck() {
+	local name="$1"
+	local pid etime_raw cpu etime_sec role uid
+	for pid in $(pgrep -x "$name" 2>/dev/null); do
+		# etime = [[dd-]hh:]mm:ss on macOS; %cpu = instantaneous usage
+		read -r etime_raw cpu uid <<<"$(ps -p "$pid" -o etime=,%cpu=,uid= 2>/dev/null)"
+		[[ -n ${etime_raw:-} && -n ${cpu:-} ]] || continue
+		etime_sec="$(etime_to_seconds "$etime_raw")"
+		[[ -n $etime_sec && $etime_sec -gt 0 ]] || continue
+
+		role="worker"
+		if [[ $uid == "0" ]]; then
+			role="root-daemon"
+		fi
+		# Prefer args label when present (agent vs daemon).
+		case "$(ps -p "$pid" -o args= 2>/dev/null)" in
+		*" daemon"*) role="root-daemon" ;;
+		*" agent"*) role="user-agent" ;;
+		esac
+
+		if ((etime_sec > STUCK_THRESHOLD_SECS)) &&
+			awk -v c="$cpu" -v t="$STUCK_IDLE_CPU" 'BEGIN{exit !(c+0 < t+0)}'; then
+			log "STUCK_REPORTER name=$name role=$role pid=$pid elapsed_sec=$etime_sec cpu_pct=$cpu ts=$(date '+%Y-%m-%dT%H:%M:%S%z') action=alert-only"
+		fi
+	done
+}
+
+for name in ReportCrash ReportCrashService ReportMemoryException; do
+	check_stuck "$name"
+done
+
 log "done"

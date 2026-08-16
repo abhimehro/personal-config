@@ -1,0 +1,36 @@
+#!/bin/zsh
+# Clean agent zsh launcher. Does not change the login shell (Fish).
+# Usage:
+#   agent-zsh
+#   agent-zsh -c 'git status -sb'
+#   agent-zsh --self-test
+
+export ZDOTDIR="${ZDOTDIR_AGENT:-$HOME/.config/agent-shell}"
+
+ZSH_BIN=/opt/homebrew/bin/zsh
+[[ -x $ZSH_BIN ]] || ZSH_BIN=/bin/zsh
+[[ -x $ZSH_BIN ]] || {
+	print -u2 "agent-zsh: no zsh binary found"
+	exit 127
+}
+
+if [[ "${1:-}" == "--self-test" ]]; then
+	exec "$ZSH_BIN" -c '
+    print "agent-zsh self-test"
+    print "shell=zsh"
+    print "ZDOTDIR=$ZDOTDIR"
+    print "PWD=$PWD"
+    print "AGENT_WORKSPACE=$AGENT_WORKSPACE"
+    print "PYTHONUNBUFFERED=$PYTHONUNBUFFERED"
+    print "PAGER=$PAGER"
+    command -v git >/dev/null && print "git=ok" || print "git=missing"
+    command -v python3 >/dev/null && print "python3=ok" || print "python3=missing"
+    # stdout + stderr both emit
+    print "stdout-mark"
+    print "stderr-mark" >&2
+    # ensure non-empty PATH head
+    print "PATH_HEAD=${PATH%%:*}"
+  '
+fi
+
+exec "$ZSH_BIN" "$@"

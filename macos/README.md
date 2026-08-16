@@ -48,27 +48,23 @@ indicator
 This repo includes a one-way rsync-based backup into ProtonDrive (preferred over
 symlinking macOS special folders).
 
+The script lives under the maintenance archive (not `scripts/`):
+
 ```bash
 # Safe preview (no changes)
-~/Documents/dev/personal-config/scripts/protondrive_backup.sh --dry-run --no-delete
+./maintenance/bin/archive/protondrive_backup.sh --dry-run --no-delete
 
 # Live run
-~/Documents/dev/personal-config/scripts/protondrive_backup.sh --run
+./maintenance/bin/archive/protondrive_backup.sh --run
 ```
 
 ### Optional: schedule via launchd
 
-```bash
-mkdir -p ~/Library/LaunchAgents
-cp ~/Documents/dev/personal-config/macos/com.abhimehrotra.protondrive-backup.plist \
-  ~/Library/LaunchAgents/
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.abhimehrotra.protondrive-backup.plist
-launchctl enable gui/$(id -u)/com.abhimehrotra.protondrive-backup
-launchctl kickstart -k gui/$(id -u)/com.abhimehrotra.protondrive-backup
-
-# Logs
-tail -n 200 ~/Library/Logs/protondrive-backup.log
-```
+Prefer the maintenance LaunchAgent
+(`maintenance/launchd/com.abhimehrotra.maintenance.protondrivebackup.plist`)
+after `maintenance/install.sh`, or update
+`macos/com.abhimehrotra.protondrive-backup.plist` so `ProgramArguments` points
+at `maintenance/bin/archive/protondrive_backup.sh` before loading it.
 
 ## Quick Links
 

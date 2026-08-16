@@ -1,0 +1,46 @@
+#!/bin/bash
+# agent-session: run doctor then start agent-zsh (or bash)
+# Usage: agent-session | agent-session --bash | agent-session -c 'cmd'
+set -u
+SHELL_KIND=zsh
+SKIP=0
+PASSTHROUGH=()
+while [ $# -gt 0 ]; do
+	case "$1" in
+	--bash)
+		SHELL_KIND=bash
+		shift
+		;;
+	--zsh)
+		SHELL_KIND=zsh
+		shift
+		;;
+	--skip-doctor)
+		SKIP=1
+		shift
+		;;
+	*)
+		PASSTHROUGH+=("$1")
+		shift
+		;;
+	esac
+done
+if [ "$SKIP" -ne 1 ]; then
+	if command -v agent-term-doctor >/dev/null 2>&1; then
+		agent-term-doctor || true
+		echo
+	fi
+fi
+if [ "$SHELL_KIND" = bash ]; then
+	if [ "${#PASSTHROUGH[@]}" -gt 0 ]; then
+		exec agent-bash "${PASSTHROUGH[@]}"
+	else
+		exec agent-bash
+	fi
+else
+	if [ "${#PASSTHROUGH[@]}" -gt 0 ]; then
+		exec agent-zsh "${PASSTHROUGH[@]}"
+	else
+		exec agent-zsh
+	fi
+fi

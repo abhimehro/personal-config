@@ -102,7 +102,7 @@ class TestParseInventory(unittest.TestCase):
             _parse_repo_name("### [  owner/repo-name  ](url)"), "owner/repo-name"
         )
 
-    def test_parse_repo_name_invalid_link_format(self):
+    def test_parse_repo_name_bad_link_format(self):
         self.assertIsNone(_parse_repo_name("### no-link"))
 
     def test_parse_repo_name_invalid_prefix(self):
@@ -118,7 +118,7 @@ class TestParseInventory(unittest.TestCase):
 
     # --- _load_inventory_lines ---
 
-    def test_load_inventory_lines_file_not_found(self):
+    def test_load_inventory_missing_file(self):
         lines = _load_inventory_lines("nonexistent_file_xyz_123.txt")
         self.assertEqual(list(lines), [])
 
@@ -153,7 +153,7 @@ class TestParseInventory(unittest.TestCase):
 
     # --- _get_pr_category ---
 
-    def test_get_pr_category_superseded_no_files(self):
+    def test_get_pr_category_superseded_empty(self):
         info = self._build_info("CLEAN", self._recent_iso(), with_files=False)
         self.assertEqual(_get_pr_category(info, "C", now=None), "SUPERSEDED")
 
@@ -238,12 +238,9 @@ class TestParseInventory(unittest.TestCase):
         handle = m_open()
 
         expected_calls = [
-            call("# PR Triage\n\n"),
-            call("## STALE\n"),
-            call("- repoA#123\n"),
-            call("- repoB#456\n"),
-            call("## READY\n"),
-            call("- repoC#789\n"),
+            call(
+                "# PR Triage\n\n## STALE\n- repoA#123\n- repoB#456\n## READY\n- repoC#789\n"
+            ),
         ]
         handle.write.assert_has_calls(expected_calls, any_order=False)
 

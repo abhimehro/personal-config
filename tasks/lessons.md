@@ -1,19 +1,193 @@
 # Lessons Learned
 
+## Lesson 0fn: Cursor App install R/W ≠ Cloud `ghs_` mutate rights (2026-08-12)
+
+**Pattern:** GitHub → Installed GitHub Apps → Cursor already shows **Read and
+write** for Issues + Pull requests on **All repositories**, yet Cloud Agent
+`env -u GH_TOKEN gh …` (hosts.yml `ghs_` / `cursor[bot]`) still returns
+**Resource not accessible by integration** on issue comment, issue close, and PR
+review. The same App token **can create** issues (`cursor[bot]`). 403 responses
+include `X-Accepted-Github-Permissions: issues=write` / `pull_requests=write`.
+Injected `GH_TOKEN` (fine-grained PAT as `abhimehro`) succeeds on the same
+endpoints. This is **not** a missing App-install checkbox — Cursor mints a
+**reduced-capability installation token** for Cloud Agents that does not expose
+the full install grants for mutate APIs. **Rule:** (1) Do **not** diagnose
+solely from the App settings PDF/UI when create works but comment/close 403. (2)
+For Daily QA / issue lifecycle, **keep `GH_TOKEN` set** (PAT) — do not
+`env -u GH_TOKEN` for comment/close. (3) Prefer PAT for create+close so one
+identity owns the full lifecycle; accept `abhimehro` authorship instead of
+`cursor[bot]`. (4) Use MCP review tools when App-only. (5) Extends Lessons 0es /
+0eq / 0ew. **Detection cost:** Low — one App create + one App comment probe;
+compare authors and `X-Accepted-Github-Permissions`.
+
+## Lesson 0fr: Dependabot force-update beats local autofix; never force-push (2026-08-15)
+
+**Pattern:** Hydrograph #509 went DIRTY after #515 (shared `poetry.lock`). A
+local merge regenerated `content-hash`, but Dependabot **force-updated** the
+PR branch before push. `git push` rejected (non-fast-forward). The remote
+rebase was already CLEAN (numpy 2.5.2 + pre-commit 4.6.2) with green CI.
+**Rule:** (1) Never force-push bot branches. (2) If Dependabot rebased and
+checks are green, squash-merge the remote tip; discard the unpushed local
+autofix. (3) Floating `setup-cli@v0.86.2` tags in generated
+`agentics-maintenance.yml` are HOLD — merge SHA-pinned lockfile twins instead.
+(4) Injected Cursor `pre-commit.cursor` still breaks on secret labels with
+spaces (`GitHub SSH Key`); run `make cursor-cloud-hooks` before the first
+commit. (5) This PAT **can** squash-merge as `abhimehro`; 2026-08-13 “gh
+read-only” memory is stale. (6) MCP cannot `REQUEST_CHANGES` on `app/cursor`
+PRs — COMMENT + `request_reviewers`.
+**Detection cost:** Low — `git fetch` then compare `HEAD..origin/<bot-branch>`;
+if remote is CLEAN, merge it.
+
+## Lesson 0fo: `str.join([list])` ≠ `sum([list])` (2026-08-13)
+
+**Pattern:** Bolt PRs convert generator expressions to list comprehensions
+inside `str.join()` (often a real win — `join` materializes internally) and
+then apply the same rewrite to `sum()`, which is a pessimization (extra list)
+and sometimes rewrite a benchmark docstring that previously preferred the
+generator (`ctrld-sync#1161`).
+**Rule:** Treat `join(list-comp)` and `sum(generator)` as distinct. Do not
+flip a benchmark's stated rationale to match worse code. On adversarial
+disagreement about a micro-opt that contradicts an existing benchmark,
+**HOLD** (fail-secure).
+**Detection cost:** Low — diff `sum(` vs `"\n".join(` and the test docstring.
+
+## Lesson 0fp: Sanitizer `copy(deep=False)` breaks isolation (2026-08-13)
+
+**Pattern:** Bolt `sanitize_dataframe_for_spreadsheet` switched
+`dataframe.copy()` to `dataframe.copy(deep=False)`. Numeric blocks stay
+aliased to the caller; mutating the returned frame can corrupt the source
+(verified on pandas 2.3.3).
+**Rule:** Keep a deep copy in security-sensitive sanitizers. Do not trade
+isolation for a shallow-copy micro-opt unless the contract, docstring, and
+tests explicitly cover aliasing.
+**Detection cost:** Low — search sanitizer helpers for `copy(deep=False)`.
+
+## Lesson 0fl: Hostname fast-path must exclude IPv6 zone indexes (2026-08-11)
+
+**Pattern:** Bolt twins add `_is_likely_domain` / `_is_definitely_domain` that
+skip `ipaddress.ip_address()` when the last character is a non-hex letter.
+Without a `"%" not in hostname` guard, scoped IPv6 like `fe80::1%eth0` (ends
+in `o`) takes the DNS path instead of `_is_safe_ip` rejection.
+**Rule:** Prefer the twin that rejects empty hosts **and** `%` before the
+domain fast-path (e.g. #1157 over #1155). Close the narrower twin as duplicate.
+**Detection cost:** Low — diff the helper predicates side-by-side.
+
+## Lesson 0fm: Dry-run error counts must not use `total - success` after interrupt (2026-08-11)
+
+**Pattern:** Palette pluralize PRs pass `total - success_count` into error
+messages. After `KeyboardInterrupt`, unstarted profiles inflate the error
+count even though they never ran.
+**Rule:** Count failures from `sync_results` (or equivalent completed rows),
+not `len(ids) - successes`. Hold merge until fixed.
+**Detection cost:** Medium — search for `total - success` near interrupt
+handlers in CLI sync loops.
+
+## Lesson 0fq: Close auth salvages when the demo module is gone (2026-08-12)
+
+**Pattern:** CONFLICTING Sentinel “timing attack” / PBKDF2 PRs still diff
+`dummy_todos.py`, but `main` no longer contains that file (deleted after
+earlier merge/revert churn). Salvaging would re-introduce auth demo code.
+**Rule:** If the only functional file in an auth/Sentinel PR is missing on
+`main`, **CLOSE as no-op** — do not recreate auth modules without explicit
+maintainer approval (hard boundary). Journal-only appends are not enough to
+justify a salvage PR.
+**Detection cost:** Low — `gh api .../contents/<file>?ref=main` → 404.
+
+## Lesson 0fk: Docs tasks/* cascade — merge one, recover the rest (2026-08-07)
+
+**Pattern:** Multiple draft docs PRs (`pr-review-YYYY-MM-DD.md`, `lessons.md`,
+`pr-inventory.md`, `pr-triage.md`) all rewrite the same `tasks/*` files. Merging
+the oldest green one (#1912) flips siblings CONFLICTING. Closing them without
+recovering unique dated reports/lessons strands audit history (adversarial
+finding on this session). **Rule:** (1) Merge at most one competing `tasks/*`
+docs PR per pass. (2) Before closing CONFLICTING docs siblings, `git fetch`
+their branches and copy unique dated reports + missing `Lesson 0f*` entries into
+the current session docs PR. (3) Prefer appending to
+`tasks/review-session-reports.md` over rewriting shared inventory files in every
+draft. **Detection cost:** Low — `gh pr view --json files` showing overlapping
+`tasks/lessons.md` / `tasks/pr-inventory.md`.
+
+## Lesson 0fg: Strip stray commit_message / scratch scripts before merge (2026-08-05)
+
+**Pattern:** Palette/QA/Code-Health PRs land green but add root artifacts
+(`commit_message.txt`, `test_mock_behavior.py`, `submission.sh`, `patch1.py`,
+`fix_duplication.py`) or clobber `tasks/todo.md`. **Rule:** Autofix by deleting
+the stray file when the functional delta is sound; otherwise REQUEST_CHANGES.
+Never squash-merge junk into `main`. **Detection cost:** Low — `--name-only` for
+non-domain paths / scratch names.
+
+## Lesson 0fh: Async alert create_task without retain/await is a drop risk (2026-08-05)
+
+**Pattern:** esp#1421 replaced blocking webhook dispatch with
+`loop.create_task(_run_async_alerts())` and discarded the task reference.
+Security alerts can vanish on loop shutdown with no logged failure. **Rule:**
+For alerting/security notification paths, never fire-and-forget. Retain the
+task, await it, or keep a sync/blocking fallback; log task exceptions via
+`add_done_callback`. **Detection cost:** Medium — search PR diffs for
+`create_task` in alert modules.
+
+## Lesson 0fj: Re-salvage contaminated prior salvage drafts by unique assertion only (2026-08-06)
+
+**Pattern:** DIRTY prior salvage drafts often accrue Code Health reshuffles that
+bury the unique assertion. **Rule:** Fresh branch from `main`; apply only the
+missing test/fix; close the contaminated draft. See also section **0fj** below.
+
+## Lesson 0fi: Risk log colors must match lowercase production risk_level (2026-08-06)
+
+**Pattern:** Palette PR esp#1423 colorized `Analysis complete` using `risk=HIGH`
+/ `risk=MEDIUM`, and tests only used uppercase synthetics. Production
+`calculate_risk_level` / `alert_report` emit lowercase `high` / `medium` /
+`low`, and `main.py` logs `risk={threat_report.risk_level}` — so real high-risk
+lines stayed green. **Rule:** (1) When matching risk tokens in logs/UX, use
+case-insensitive checks or the exact production enum. (2) Unit tests must use
+the same casing as production emitters. (3) Adversarial review should
+cross-check string literals against call sites, not only the PR diff.
+**Detection cost:** Low — `rg 'risk_level|risk=' src/` vs the PR's match
+strings.
+
+## Lesson 0ff: "Add tests" PRs that rename production APIs (2026-08-04)
+
+**Pattern:** Seatek Jules PRs titled as missing unit tests (#595/#601) also
+renamed real helpers (`discover_hotspots`, `run_command_set`) and added
+differently-typed replacements used mainly by the new tests. **Rule:** (1) Diff
+`tests/` vs production paths — any rename/signature change in `.github/scripts/`
+or app modules is **not** tests-only. (2) REQUEST_CHANGES and require stable
+APIs or intentional migrations. (3) Coordinate siblings on the same automation
+scripts to avoid conflict cascades. **Detection cost:** Low —
+`gh api …/pulls/{n}/files` showing non-test paths.
+
+## Lesson 0fe: Palette `.Jules` vs `.jules` case collision (2026-08-04)
+
+**Pattern:** ctrld-sync#1115 created `.Jules/palette.md` while main already has
+`.jules/palette.md`. On macOS (case-insensitive) this collides and can orphan
+the journal; #1111 correctly appended to `.jules/`. **Rule:** Prefer the PR that
+writes the existing lowercase `.jules/` path. Close siblings that introduce
+`.Jules/` as a new path. **Detection cost:** Low — compare journal paths in the
+files list.
+
+## Lesson 0fd: Gitleaks "comment fix" that swaps README/LICENSE (2026-08-04)
+
+**Pattern:** personal-config#1898 claimed a false-positive comment tweak but
+replaced README.md with upstream Gitleaks docs and LICENSE copyright with
+Zachary Rice; Gitleaks failed on a planted example secret in the injected
+README. **Rule:** (1) Never merge when Gitleaks fails. (2) Inspect file list for
+unexpected README/LICENSE rewrites on "comment-only" PRs. (3) CLOSE and require
+a focused re-open. **Detection cost:** Low — `changedFiles` + LICENSE/README in
+files list.
+
 ## Lesson 0fc: Bolt journal wipe is CLOSE not MERGE (2026-08-02)
 
 **Pattern:** A Bolt PR titled as a tiny `parse_inventory` / `defaultdict`
-optimization also rewrote `.jules/bolt.md` from ~848 lines down to ~11,
-deleting the accumulated journal while keeping a small code delta. CI stayed
-green, so a naive gate would have merged it.
-**Rule:** (1) Always inspect `.jules/*.md` patches on Bolt/Jules/Palette/Sentinel
-PRs — if the journal is truncated or replaced wholesale, **CLOSE** (or
-REQUEST_CHANGES) even when the code change is otherwise fine. (2) Prefer
-merging sibling salvages that touch the same source file without journal
-destruction (here #1875). (3) If the code refactor is still wanted, require a
-focused re-open that leaves `main`'s journal intact (append-only).
-**Detection cost:** Low — `gh api …/pulls/{n}/files` showing huge deletions on
-`.jules/bolt.md` with a tiny companion source file.
+optimization also rewrote `.jules/bolt.md` from ~848 lines down to ~11, deleting
+the accumulated journal while keeping a small code delta. CI stayed green, so a
+naive gate would have merged it. **Rule:** (1) Always inspect `.jules/*.md`
+patches on Bolt/Jules/Palette/Sentinel PRs — if the journal is truncated or
+replaced wholesale, **CLOSE** (or REQUEST_CHANGES) even when the code change is
+otherwise fine. (2) Prefer merging sibling salvages that touch the same source
+file without journal destruction (here #1875). (3) If the code refactor is still
+wanted, require a focused re-open that leaves `main`'s journal intact
+(append-only). **Detection cost:** Low — `gh api …/pulls/{n}/files` showing huge
+deletions on `.jules/bolt.md` with a tiny companion source file.
 
 ## Lesson 0ez: stacked PRs need merge-async REST (2026-07-31)
 
@@ -1959,7 +2133,6 @@ diff **per file** against `main`. Salvage only the named hot path (here
 **Detection cost:** Low — `gh pr diff --stat` showing deletes of whole modules
 alongside a one-file perf claim.
 
-
 ## 0fd — Close Sentinel clusters when main already has the guard (2026-08-02)
 
 **Pattern:** Multiple CONFLICTING Sentinel PRs (#445/#448/#450) claimed path
@@ -1969,9 +2142,9 @@ seven times; another (#450) only extracted a reporter class.
 
 **Rule:** Before salvaging a CONFLICTING Sentinel/security PR, grep `main` for
 the same guard (`is_safe_path`, TOCTOU helper, etc.). If the protection is
-already present, **CLOSE-SUPERSEDED** — do not open a refactor-only salvage.
-If a sibling shows duplicated identical security blocks, treat as corruption
-and close (same family as Lesson 0fa), not as defense-in-depth.
+already present, **CLOSE-SUPERSEDED** — do not open a refactor-only salvage. If
+a sibling shows duplicated identical security blocks, treat as corruption and
+close (same family as Lesson 0fa), not as defense-in-depth.
 
-**Detection cost:** Low — `rg is_safe_path validate_data.py` on `main` +
-`rg -c` on the PR tip.
+**Detection cost:** Low — `rg is_safe_path validate_data.py` on `main` + `rg -c`
+on the PR tip.

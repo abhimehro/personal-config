@@ -1,116 +1,170 @@
-# PR Inventory — 2026-08-02
+# PR Inventory — 2026-08-15
 
-Phase 1 cron. Preflight PASS 7/7. Auth: `abhimehro` PAT.
-Scope: automation-driven open PRs (bot authors + human-authored Bolt/Jules/Sentinel/Palette/salvage/demo-stack).
+Phase 1 cron (13:00 UTC). Preflight PASS 7/7. Auth: `abhimehro` PAT (squash-merge works).
+Mode: review-and-merge. Stale threshold: 30 days. Merge: squash.
 
-| Repo | PR | Author signal | Category | CI rollup | Conflicts | Age | Files | Status |
-| ---- | -- | ------------- | -------- | --------- | --------- | --- | ----- | ------ |
-| personal-config | 1883 | Bolt | PERFORMANCE | SUCCESS | MERGEABLE | 0 | 2 | REVIEW — journal wipe risk |
-| personal-config | 1882 | Bolt | PERFORMANCE | SUCCESS | MERGEABLE | 0 | 0 | MERGE (zero-diff) |
-| personal-config | 1876 | salvage | UI | SUCCESS | MERGEABLE | 0 | 3 | MERGE |
-| personal-config | 1875 | salvage | PERFORMANCE | SUCCESS | MERGEABLE | 0 | 3 | MERGE |
-| personal-config | 1873 | demo-stack | CI/INFRA | SUCCESS | MERGEABLE | 0 | 1 | MERGE (stack top) |
-| personal-config | 1872 | demo-stack | CI/INFRA | SUCCESS | MERGEABLE | 0 | 1 | MERGE (stack mid) |
-| personal-config | 1871 | demo-stack | CI/INFRA | SUCCESS | MERGEABLE | 0 | 1 | MERGE (stack base) |
-| personal-config | 1867 | Bolt | PERFORMANCE | SUCCESS | MERGEABLE | 1 | 1 | MERGE-AFTER-FIX (inline import) |
-| personal-config | 1841 | Sentinel | SECURITY | SUCCESS | MERGEABLE | 3 | — | ESCALATE |
-| ctrld-sync | 1109 | Jules style | REFACTOR | SUCCESS | MERGEABLE | 0 | 9 | MERGE |
-| ctrld-sync | 1107 | Palette | UI | SUCCESS | MERGEABLE | 0 | 2 | MERGE |
-| email-security-pipeline | 1405 | Bolt | PERFORMANCE | SUCCESS | MERGEABLE | 0 | 2 | CLOSE after #1401 (overlap) |
-| email-security-pipeline | 1404 | Jules QA | CI/INFRA | SUCCESS | MERGEABLE | 0 | 0 | MERGE (zero-diff) |
-| email-security-pipeline | 1401 | salvage | PERFORMANCE | SUCCESS | MERGEABLE | 0 | 2 | MERGE (prefer) |
-| Seatek_Analysis | 581 | Bolt | PERFORMANCE | SUCCESS | MERGEABLE | 0 | 2 | MERGE |
-| Seatek_Analysis | 580 | Sentinel | SECURITY | SUCCESS | MERGEABLE | 0 | 2 | ESCALATE |
-| Seatek_Analysis | 578 | Jules QA | CI/INFRA | SUCCESS | MERGEABLE | 0 | 0 | MERGE (zero-diff) |
-| Seatek_Analysis | 576 | salvage | REFACTOR | SUCCESS | MERGEABLE | 0 | 2 | MERGE |
-| Seatek_Analysis | 573 | Sentinel | SECURITY | SUCCESS | MERGEABLE | 1 | 3 | ESCALATE |
-| Hydrograph… | 450 | Sentinel | SECURITY | SUCCESS* | CONFLICTING | 1 | 3 | ESCALATE/DEFER |
-| Hydrograph… | 448 | Sentinel | SECURITY | SUCCESS* | CONFLICTING | 1 | 3 | ESCALATE/DEFER |
-| Hydrograph… | 445 | Sentinel | SECURITY | SUCCESS* | CONFLICTING | 2 | 2 | ESCALATE/DEFER |
-| series_correction… | 340 | Jules QA | CI/INFRA | SUCCESS | MERGEABLE | 0 | 0 | MERGE (zero-diff) |
-| repoprompt-ce | 170 | Bolt | PERFORMANCE | FAILURE | MERGEABLE | 0 | 5 | REQUEST_CHANGES |
-| repoprompt-ce | 169 | Palette | UI | FAILURE | MERGEABLE | 0 | 1 | REQUEST_CHANGES |
-| repoprompt-ce | 168 | Agentic QA | CI/INFRA | FAILURE | MERGEABLE | 0 | 6 | REQUEST_CHANGES |
-| repoprompt-ce | 165 | Sentinel | SECURITY | FAILURE | MERGEABLE | 0 | 7 | ESCALATE |
-| repoprompt-ce | 164 | Bolt | PERFORMANCE | FAILURE | MERGEABLE | 1 | 8 | REQUEST_CHANGES |
-| repoprompt-ce | 163 | Palette | UI | FAILURE | MERGEABLE | 1 | 6 | REQUEST_CHANGES |
-| repoprompt-ce | 161 | Palette | UI | — | CONFLICTING | 2 | — | DEFER Phase 2 |
-| repoprompt-ce | 158 | Sentinel | SECURITY | — | CONFLICTING | 2 | — | ESCALATE/DEFER |
-| repoprompt-ce | 157 | salvage | PERFORMANCE | — | CONFLICTING | 2 | — | DEFER Phase 2 |
-| repoprompt-ce | 152 | FSEvents | REFACTOR | — | CONFLICTING | 3 | — | DEFER Phase 2 |
-| repoprompt-ce | 148 | ChatPreset | FEATURE | — | CONFLICTING | 3 | — | DEFER Phase 2 |
-| repoprompt-ce | 147 | Code Health | REFACTOR | — | CONFLICTING | 3 | 56 | DEFER Phase 2 |
-| repoprompt-ce | 144 | Palette | UI | — | CONFLICTING | 4 | — | DEFER Phase 2 |
+Scope: automation-driven open PRs (Dependabot/Renovate/Jules/Devin/Copilot/Bolt/Palette/Sentinel/cursor-agent). Human OOS: personal-config #1969, ctrld-sync #1165 — not merged or closed.
 
-\* Hydrograph rollup SUCCESS but `github-advanced-security` noise; CONFLICTING blocks merge.
+Adversarial (parallel): opus-5, gpt-5.6-sol, gemini-3.7-flash.
 
-**Totals:** 36 inventoried automation PRs.
-# PR Inventory — Salvage Session 2026-08-02
+## Start-of-session counts (auto targets)
 
-Live re-fetch after Phase 1 remainder (`tasks/pr-review-2026-08-02.md` / [#1884](https://github.com/abhimehro/personal-config/pull/1884)).
-Scope: bot/automation PRs that are CONFLICTING/DIRTY (or prior deferred/escalated still open).
+| Repo | Auto open (approx) |
+| ---- | -----------------: |
+| personal-config | 18 |
+| ctrld-sync | 7 |
+| email-security-pipeline | 6 |
+| Seatek_Analysis | 8 |
+| Hydrograph… | 6 |
+| series_correction… | 5 |
+| repoprompt-ce | 13 |
+| **Total auto + 2 human OOS** | **~80** |
+| Repo                    | Auto open |
+| ----------------------- | --------: |
+| personal-config         |         8 |
+| ctrld-sync              |         6 |
+| email-security-pipeline |         4 |
+| Seatek_Analysis         |        14 |
+| Hydrograph…             |        10 |
+| series_correction…      |         4 |
+| repoprompt-ce           |        12 |
+| **Total**               |    **58** |
 
-## Counts (live at Phase 2 start)
+## End-of-session open remainder
 
-| Repo | Open | CONFLICTING/DIRTY | Notes |
-| ---- | ---- | ----------------- | ----- |
-| personal-config | 2 | 0 | #1841 CLEAN Sentinel escalate; #1884 Phase 1 docs |
-| ctrld-sync | 0 | 0 | Queue drained (yesterday #1105 merged) |
-| email-security-pipeline | 0 | 0 | Queue drained (#1401 merged) |
-| Seatek_Analysis | 2 | 0 | #580/#573 CLEAN Sentinel escalate |
-| Hydrograph… | 3 | 3 (#445/#448/#450) | All Sentinel path cluster → CLOSE-SUPERSEDED |
-| series_correction… | 0 | 0 | Queue drained |
-| repoprompt-ce | 13 | 7 DIRTY + 6 UNSTABLE | Salvage #171 from #165/#158; defer drift pile |
+| Repo | Open | Notes |
+| ---- | ---: | ----- |
+| personal-config | 16 | #1969 human OOS; Sentinel/CORS/docs salvage/#2002 |
+| ctrld-sync | 6 | #1165 human OOS; #1170 tag HOLD; #1156 TOCTOU |
+| email-security-pipeline | 4 | #1487 scratch; #1471/#1444 escalate |
+| Seatek_Analysis | 7 | Sentinel cluster; #661 numpy major; #643 |
+| Hydrograph… | 2 | #507 sanitizer salvage; #498 repo-health |
+| series_correction… | 3 | #390 shallow copy; majors #393/#386 |
+| repoprompt-ce | 11 | TOCTOU/a11y/CI-fail/salvage tests |
+| **Open total** | **49** | ~47 auto + 2 human OOS |
+| Repo                    |    Open | Notes                                                      |
+| ----------------------- | ------: | ---------------------------------------------------------- |
+| personal-config         |       1 | #1907 CORS ESCALATE                                        |
+| ctrld-sync              |      ~4 | Dependabot lock siblings after #1132; mypy major #1136     |
+| email-security-pipeline |      ~3 | #1421 CONFLICTING; #1444 opencv major; #1437 salvage draft |
+| Seatek_Analysis         |      10 | Sentinel path/subprocess cluster                           |
+| Hydrograph…             |       8 | Sentinel sanitize_filename cluster                         |
+| series_correction…      |       4 | #364/#365 auth; #371 CodeScene; #369 salvage               |
+| repoprompt-ce           |       9 | TOCTOU + failing tests/a11y                                |
+| **Approx open auto**    | **~44** |                                                            |
 
-## Salvage drafts opened this run
+## Merged this session (19)
 
-| New draft | Salvages | Repo |
-| --------- | -------- | ---- |
-| [#171](https://github.com/abhimehro/repoprompt-ce/pull/171) | #165/#158 TOCTOU-only | repoprompt-ce |
+| Repo | PR | Category | Note |
+| ---- | -- | -------- | ---- |
+| series_correction… | [394](https://github.com/abhimehro/series_correction_project_updated/pull/394) | DEPENDENCY | pylint 4.0.6→4.0.7 |
+| personal-config | [2004](https://github.com/abhimehro/personal-config/pull/2004) | PERFORMANCE | Bolt list-comps; CI all pass |
+| personal-config | [2001](https://github.com/abhimehro/personal-config/pull/2001) | UI | Palette CTA |
+| personal-config | [1993](https://github.com/abhimehro/personal-config/pull/1993) | CI/INFRA | setup-cli SHA pin |
+| personal-config | [1992](https://github.com/abhimehro/personal-config/pull/1992) | CI/INFRA | setup SHA pin |
+| personal-config | [1987](https://github.com/abhimehro/personal-config/pull/1987) | DOCS | agent-shell |
+| ctrld-sync | [1171](https://github.com/abhimehro/ctrld-sync/pull/1171) | CI/INFRA | setup SHA pin |
+| ctrld-sync | [1168](https://github.com/abhimehro/ctrld-sync/pull/1168) | UI | pluralize |
+| email-security-pipeline | [1485](https://github.com/abhimehro/email-security-pipeline/pull/1485) | CI/INFRA | setup-cli SHA |
+| email-security-pipeline | [1484](https://github.com/abhimehro/email-security-pipeline/pull/1484) | CI/INFRA | setup SHA |
+| email-security-pipeline | [1483](https://github.com/abhimehro/email-security-pipeline/pull/1483) | DEPENDENCY | pre-commit |
+| email-security-pipeline | [1482](https://github.com/abhimehro/email-security-pipeline/pull/1482) | DEPENDENCY | numpy 2.5.2 patch |
+| email-security-pipeline | [1478](https://github.com/abhimehro/email-security-pipeline/pull/1478) | PERFORMANCE | header `in` checks |
+| email-security-pipeline | [1469](https://github.com/abhimehro/email-security-pipeline/pull/1469) | UI | Palette timer; `.jules` |
+| Seatek_Analysis | [674](https://github.com/abhimehro/Seatek_Analysis/pull/674) | UI | CLI empty-state |
+| Hydrograph… | [518](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/518) | PERFORMANCE | `to_numpy()` |
+| Hydrograph… | [515](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/515) | DEPENDENCY | pre-commit 4.6.2 |
+| Hydrograph… | [509](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/509) | DEPENDENCY | numpy 2.5.1→2.5.2 (Dependabot rebase, 0fr) |
+| repoprompt-ce | [235](https://github.com/abhimehro/repoprompt-ce/pull/235) | UI | a11y labels |
+| Repo                    | PR   | Category    | Note                                          |
+| ----------------------- | ---- | ----------- | --------------------------------------------- |
+| ctrld-sync              | 1130 | DEPENDENCY  | pnpm/action-setup                             |
+| ctrld-sync              | 1131 | DEPENDENCY  | gh-aw actions/setup pin                       |
+| ctrld-sync              | 1129 | DEPENDENCY  | gh-aw setup-cli                               |
+| ctrld-sync              | 1127 | UI          | Palette error grammar                         |
+| ctrld-sync              | 1126 | SECURITY    | pygments 2.20.0 CVE (verified on main)        |
+| ctrld-sync              | 1123 | CI/INFRA    | repo-health                                   |
+| ctrld-sync              | 1132 | DEPENDENCY  | pytest-cov (one lock / 0fb)                   |
+| Seatek_Analysis         | 619  | DEPENDENCY  | pnpm/action-setup                             |
+| Seatek_Analysis         | 618  | CI/INFRA    | zero-diff daily QA                            |
+| Seatek_Analysis         | 621  | PERFORMANCE | Bolt POSIXct guard (verified on main)         |
+| Hydrograph…             | 481  | DEPENDENCY  | pnpm/action-setup                             |
+| Hydrograph…             | 482  | DEPENDENCY  | pandas requirements align to 3.0.5 (verified) |
+| email-security-pipeline | 1439 | UI          | Palette email hint                            |
+| email-security-pipeline | 1435 | CI/INFRA    | repo-health                                   |
+| email-security-pipeline | 1446 | DEPENDENCY  | certifi                                       |
+| email-security-pipeline | 1445 | DEPENDENCY  | pytest                                        |
+| email-security-pipeline | 1443 | DEPENDENCY  | pre-commit                                    |
+| email-security-pipeline | 1442 | CI/INFRA    | zero-diff daily QA                            |
+| personal-config         | 1924 | PERFORMANCE | Bolt yaml import fallback                     |
+| personal-config         | 1931 | CI/INFRA    | repo-health TruffleHog                        |
+| personal-config         | 1912 | CI/INFRA    | docs Phase1 2026-08-04                        |
+| repoprompt-ce           | 209  | CI/INFRA    | zero-diff Jules QA                            |
+| repoprompt-ce           | 203  | UI          | Palette a11y Chat buttons                     |
+| repoprompt-ce           | 205  | CI/INFRA    | repo-health community templates               |
 
-## Closed this run
+## Closed this session (12)
 
-| PR | Disposition |
-| -- | ----------- |
-| hg #445 | CLOSE-SUPERSEDED — `is_safe_path` already on `main` |
-| hg #448 | CLOSE-SUPERSEDED — duplicate-check corruption; fix on `main` |
-| hg #450 | CLOSE-SUPERSEDED — refactor only; security on `main` |
-| rpce #158 | CLOSE-SUPERSEDED by #171 |
-| Repo                    | Open | CONFLICTING/DIRTY (start)   | Notes                                          |
-| ----------------------- | ---- | --------------------------- | ---------------------------------------------- |
-| personal-config         | 9    | 4 (#1859/#1857/#1825/#1822) | Salvaged 1857/1859; closed 1825; escalate 1822 |
-| ctrld-sync              | 3    | 1 (#1081)                   | Salvaged → #1105                               |
-| email-security-pipeline | 1    | 1 (#1399) + CodeScene       | Spam-only salvage → #1401                      |
-| Seatek_Analysis         | 6    | 4 (#568/#555/#560/#554)     | #554 → #576; security escalate                 |
-| Hydrograph…             | 5    | 0                           | All CLEAN (Phase 1 remainder stale on #443)    |
-| series_correction…      | 0    | 0                           | Queue drained                                  |
-| repoprompt-ce           | 9    | 7 DIRTY + UNSTABLE CI       | Security escalate #158; defer drift pile       |
+| Repo | PR | Reason |
+| ---- | -- | ------ |
+| series_correction… | 396, 392 | zero-diff daily QA |
+| repoprompt-ce | 252, 246 | zero-diff Jules QA |
+| email-security-pipeline | 1480, 1476 | `.Jules/` case collision (0fe); superseded by #1469 |
+| Hydrograph… | 517 | stray `patch.diff` / `.orig` (0fg); superseded by #518 |
+| Hydrograph… | 513, 511 | duplicate Bolt `np.where` twins of #518 |
+| ctrld-sync | 1159 | CONFLICTING salvage; superseded by #1168 |
+| Seatek_Analysis | 670 | only `test_results.txt` (0fg) |
+| personal-config | 1986 | docs cascade; 08-08…13 recovered onto 864b (0fk) |
 
-## Salvage drafts opened this run
+## Representative remaining (disposition)
 
-| New draft                                                               | Salvages                   | Repo                    |
-| ----------------------------------------------------------------------- | -------------------------- | ----------------------- |
-| [#1875](https://github.com/abhimehro/personal-config/pull/1875)         | #1857                      | personal-config         |
-| [#1876](https://github.com/abhimehro/personal-config/pull/1876)         | #1859 (empty-state only)   | personal-config         |
-| [#1105](https://github.com/abhimehro/ctrld-sync/pull/1105)              | #1081                      | ctrld-sync              |
-| [#1401](https://github.com/abhimehro/email-security-pipeline/pull/1401) | #1399 (spam_analyzer only) | email-security-pipeline |
-| [#576](https://github.com/abhimehro/Seatek_Analysis/pull/576)           | #554                       | Seatek_Analysis         |
+| Repo | PR | Disposition |
+| ---- | -- | ----------- |
+| personal-config | 1907, 2000, 1998, 1989, 1980 | ESCALATE Sentinel/CORS |
+| personal-config | 2002 | ESCALATE workflow rewrite |
+| personal-config | 1991 | HOLD unescaped `html_empty_state` |
+| personal-config | 1997/1996/1985/1984/1978 | HOLD join cluster |
+| personal-config | 1982 | HOLD yaml skipIf |
+| personal-config | 1988, 1979 | DEFER Phase 2 salvage docs |
+| personal-config | 1969 | HUMAN OOS (skill-index) |
+| ctrld-sync | 1170 | HOLD floating gh-aw tag |
+| ctrld-sync | 1161 | HOLD sum/join (0fo) |
+| ctrld-sync | 1156 | ESCALATE TOCTOU |
+| ctrld-sync | 1136 | ESCALATE mypy 2.x |
+| ctrld-sync | 1165 | HUMAN OOS |
+| email-security-pipeline | 1487 | HOLD `patch_bumpy2.py` (0fg) |
+| email-security-pipeline | 1471, 1444 | ESCALATE workflow / opencv 5 |
+| Seatek_Analysis | 667/665/662/657 | ESCALATE Sentinel |
+| Seatek_Analysis | 661 | ESCALATE numpy 1.26→2.5.2 |
+| Seatek_Analysis | 643, 673 | HOLD repo-health / lint scratch |
+| Hydrograph… | 507 | ESCALATE sanitizer salvage |
+| Hydrograph… | 498 | HOLD failing CI |
+| series_correction… | 390, 393, 386 | HOLD/ESCALATE 0fp + majors |
+| repoprompt-ce | 250/243/239 | ESCALATE TOCTOU |
+| repoprompt-ce | 253 | HOLD failing CI + duplicate #235 |
+| Repo            | PR   | Reason                                                       |
+| --------------- | ---- | ------------------------------------------------------------ |
+| personal-config | 1925 | CONFLICTING docs cascade after #1912; recovered Aug 5 report |
+| personal-config | 1930 | CONFLICTING docs cascade; recovered Aug 6 report             |
+| personal-config | 1933 | CONFLICTING salvage docs cascade                             |
+| personal-config | 1914 | Trunk MQ fail + docs cascade                                 |
+| Seatek_Analysis | 615  | Superseded by focused #621; workflow scope creep             |
 
-## Closed this run
+## Representative remaining (disposition)
 
-| PR          | Disposition         |
-| ----------- | ------------------- |
-| pc #1857    | superseded by #1875 |
-| pc #1859    | superseded by #1876 |
-| pc #1825    | no-op junk          |
-| ctrld #1081 | superseded by #1105 |
-| esp #1399   | superseded by #1401 |
-| seatek #554 | superseded by #576  |
-
-## Still escalated / deferred (human)
-
-- pc #1841 Sentinel timeout/auth env (CLEAN)
-- seatek #580 path hijack, #573 file-read DoS (CLEAN)
-- rpce #165 prefer #171; Build/Test red on original
-- rpce DIRTY drift: #161/#157/#152/#148/#147/#144 (DEFER)
-- rpce UNSTABLE MERGEABLE: #170/#169/#168/#164/#163 (Phase 1 REQUEST_CHANGES)
+| Repo            | PR                                      | Disposition                               |
+| --------------- | --------------------------------------- | ----------------------------------------- |
+| personal-config | 1907                                    | ESCALATE CORS                             |
+| Seatek_Analysis | 620/617/612/610/607/605/590/585/580/573 | ESCALATE Sentinel cluster                 |
+| Hydrograph…     | 484…459                                 | ESCALATE sanitize cluster                 |
+| series…         | 365/364                                 | ESCALATE auth                             |
+| series…         | 371                                     | REQUEST_CHANGES + CodeScene trigger       |
+| series…         | 369                                     | DEFER salvage draft (CodeScene)           |
+| esp             | 1421                                    | REQUEST_CHANGES / DEFER CONFLICTING       |
+| esp             | 1444                                    | ESCALATE opencv major                     |
+| esp             | 1437                                    | DEFER salvage draft                       |
+| rpce            | 211                                     | REQUEST_CHANGES XCTSkip (now CONFLICTING) |
+| rpce            | 210/201/196                             | ESCALATE TOCTOU                           |
+| rpce            | 212/194/186                             | REQUEST_CHANGES failing CI                |
+| ctrld-sync      | 1136                                    | ESCALATE mypy major                       |
+| ctrld-sync      | 1133–1135                               | DEFER lock cascade                        |

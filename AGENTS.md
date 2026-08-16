@@ -583,14 +583,15 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
 | What                       | Command                                          | Notes                                                                                                                                                                                                            |
 | -------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Cursor Cloud hook sync     | `make cursor-cloud-hooks`                        | Copies `scripts/cursor_cloud_agent_*.sh` into `~/.cursor/agent-hooks/*` when **both** `pre-commit.cursor` and `commit-msg.cursor` exist as regular files; refuses symlink hook paths (`install(1)`, TOCTOU-safe) |
-| Shell tests only           | `make test`                                      | Fastest full suite; 31 tests, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                                                                                                                      |
+| Shell tests only           | `make test`                                      | Fastest full suite; 47 `tests/test_*.sh`, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                                                                                                          |
 | Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                                                                                                                        |
 | All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI.                                                                                             |
-| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install pyyaml`                                                                                                                |
-| Python tests only          | `make test-python`                               | Mostly stdlib; install `pyyaml` (`pip install pyyaml`) for the full suite                                                                                                                                        |
+| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install -r requirements.txt` (`pyyaml==6.0.3`)                                                                                 |
+| Python tests only          | `make test-python`                               | Mostly stdlib; install via `python3 -m pip install -r requirements.txt` (`pyyaml==6.0.3`) for the full suite                                                                                                     |
 | Lint (all)                 | `make lint`                                      | Trunk downloads its own tool versions on first run                                                                                                                                                               |
 | Lint (correctness gate)    | `make lint-errors`                               | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate.                                                                                                                                          |
 | Format                     | `make lint-fix`                                  | Auto-fixes where supported                                                                                                                                                                                       |
+| Auth hygiene (optional)    | `make verify-credentials`                        | Runs `scripts/verify-repo-auth-hygiene.sh` (trufflehog `--only-verified` + password grep)                                                                                                                        |
 
 ### Non-obvious caveats
 
@@ -601,8 +602,8 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
   downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`.
   Subsequent runs are fast. The update script installs the Trunk launcher, but
   tool downloads happen lazily.
-- **`requirements.txt`**: The root `requirements.txt` contains `pyyaml`, which
-  is needed by the full test suite (e.g.,
+- **`requirements.txt`**: The root `requirements.txt` pins `pyyaml==6.0.3`,
+  which is needed by the full test suite (e.g.,
   `tests/test_repository_automation_common.py` exercises
   `.github/scripts/repository_automation_common.py`). The Devin environment
   blueprint installs this dependency automatically; otherwise run
@@ -654,3 +655,47 @@ symlink destinations are never followed. To target one hash directory:
   `seatek_series_correction.egg-info/` files under
   `series_correction_project_updated` after editable installs; restore or
   discard those changes and do not commit them.
+
+## Agent shell (POSIX for coding agents)
+
+Login shell stays **Fish**. Coding agents should not be given raw Fish as their
+command shell.
+
+### Local command pattern
+
+```bash
+agent-zsh -c '<command>'    # primary
+agent-bash -c '<command>'   # fallback
+agent-term-doctor           # diagnostics
+agent-session               # doctor then interactive agent-zsh
+```
+
+Launchers live in-repo under `configs/bin/agent-*` (synced to `~/bin` on the
+Mac). Profiles: `configs/.config/agent-shell/`. Prefer non-interactive-safe env:
+`PYTHONUNBUFFERED=1`, `PAGER=cat`, `GIT_PAGER=cat`.
+
+### Host-specific notes
+
+| Host                    | Configure where          | Auto-uses agent-zsh?                     |
+| :---------------------- | :----------------------- | :--------------------------------------- |
+| Cursor IDE              | User + terminal profiles | Yes, when default/automation profile set |
+| Cursor CLI              | + this file              | No — prefix commands                     |
+| Mistral Vibe            | + this file              | No — prefix commands                     |
+| Claude Code             | + repo docs              | No — prefix commands                     |
+| Codex                   | + repo docs              | No — prefix commands                     |
+| Devin cloud             | (Ubuntu bash)            | N/A (no Fish on VM)                      |
+| Antigravity/Gemini      | + repo                   | No — prefix commands                     |
+| Raycast Script Commands | shebang on each script   | N/A if shebang is bash/zsh               |
+| Raycast AI Terminal     | instruction / wrapper    | No — prefix or wrapper                   |
+
+### Rules
+
+- Agents do **not** auto-select these launchers unless the host tool is
+  configured
+- Do **not** change the macOS login shell away from Fish
+- Prefer absolute or PATH-resolved over assuming Fish abbreviations
+- Full matrix:
+  [`docs/AGENT_SHELL_CONFIG_MATRIX.md`](docs/AGENT_SHELL_CONFIG_MATRIX.md)
+- Launcher details:
+  [`configs/.config/agent-shell/README.md`](configs/.config/agent-shell/README.md)
+- Raycast: [`docs/RAYCAST_AGENT_SHELL.md`](docs/RAYCAST_AGENT_SHELL.md)

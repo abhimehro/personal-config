@@ -28,3 +28,11 @@ knowledge:
     contents: |
       plantuml -checkonly path/to/diagram.puml
       plantuml -tpng path/to/diagram.puml
+  - name: agent-shell-local-vs-cloud
+    contents: |
+      Local macOS login shell is Fish. Local agents should use agent-zsh/agent-bash
+      wrappers from ~/bin when running on the workstation.
+      Devin cloud sessions run Ubuntu and already use bash/sh — do not install Fish,
+      and do not assume ~/bin/agent-zsh exists unless initialize installs it.
+      Keep all blueprint commands POSIX bash-safe.
+      See docs/AGENT_SHELL_CONFIG_MATRIX.md in personal-config.

@@ -8,7 +8,7 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>/Users/speedybee/dev/personal-config/scripts/protondrive_backup.sh</string>
+    <string>/Users/speedybee/dev/personal-config/maintenance/bin/archive/protondrive_backup.sh</string>
     <string>--run</string>
     <string>--no-delete</string>
   </array>
