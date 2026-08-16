@@ -2,18 +2,21 @@
 
 Preflight PASS 7/7. Inventoried **58**. Squash-merged **24**. Closed **5**.
 Escalated **~25**. Request-changes **~8**. CodeScene triggers **4**.
-Adversarial: opus-4.8 + gpt-5.5. Docs branch: `cursor-agent/automated-pr-workflow-a609`.
-Report: `tasks/pr-review-2026-08-07.md`. Recovered stranded Aug 5/6 reports (lesson **0fk**).
+Adversarial: opus-4.8 + gpt-5.5. Docs branch:
+`cursor-agent/automated-pr-workflow-a609`. Report:
+`tasks/pr-review-2026-08-07.md`. Recovered stranded Aug 5/6 reports (lesson
+**0fk**).
 
-| Metric | Count |
-| --- | ---: |
-| Inventoried | 58 |
-| Merged | 24 |
-| Closed | 5 |
-| Escalated | ~25 |
-| Open EOD | ~44 |
+| Metric      | Count |
+| ----------- | ----: |
+| Inventoried |    58 |
+| Merged      |    24 |
+| Closed      |     5 |
+| Escalated   |   ~25 |
+| Open EOD    |   ~44 |
 
-New lesson: **0fk** (docs `tasks/*` cascade recovery). Restored **0fg**/**0fh** headings.
+New lesson: **0fk** (docs `tasks/*` cascade recovery). Restored **0fg**/**0fh**
+headings.
 
 ---
 
@@ -21,18 +24,20 @@ New lesson: **0fk** (docs `tasks/*` cascade recovery). Restored **0fg**/**0fh** 
 
 Preflight PASS 7/7. Inventoried **88**. Squash-merged **49**. Closed **5**.
 Escalated **10**. Request-changes **~15**. Deferred CONFLICTING to Phase 2.
-Adversarial: opus-4.8 + gpt-5.5. Docs branch: `cursor-agent/automated-pr-workflow-1f9f`.
-Report: `tasks/pr-review-2026-08-04.md`.
+Adversarial: opus-4.8 + gpt-5.5. Docs branch:
+`cursor-agent/automated-pr-workflow-1f9f`. Report:
+`tasks/pr-review-2026-08-04.md`.
 
-| Metric | Count |
-| --- | ---: |
-| Inventoried | 88 |
-| Merged | 49 |
-| Closed | 5 |
-| Escalated | 10 |
-| Open EOD | ~34 |
+| Metric      | Count |
+| ----------- | ----: |
+| Inventoried |    88 |
+| Merged      |    49 |
+| Closed      |     5 |
+| Escalated   |    10 |
+| Open EOD    |   ~34 |
 
-New lessons: **0fd** (LICENSE/README hijack), **0fe** (`.Jules` case collision), **0ff** (mislabeled test PRs renaming prod APIs).
+New lessons: **0fd** (LICENSE/README hijack), **0fe** (`.Jules` case collision),
+**0ff** (mislabeled test PRs renaming prod APIs).
 
 ---
 
@@ -440,7 +445,8 @@ New lessons: **0fd** (LICENSE/README hijack), **0fe** (`.Jules` case collision),
   esp#1404/#1401; Seatek#578/#581/#576; series#340.
 - Closed: esp#1405 (overlap #1401); pc#1883 (journal wipe — Lesson **0fc**).
 - Auth: `abhimehro` PAT — squash-merge + close + merge-async + MCP reviews OK.
-- Adversarial: opus-4.8 + gpt-5.5 parallel; consensus block #1883 / prefer #1401.
+- Adversarial: opus-4.8 + gpt-5.5 parallel; consensus block #1883 / prefer
+  #1401.
 - Docs: `tasks/pr-review-2026-08-02.md`, `pr-inventory.md`, `pr-triage.md`;
   branch `cursor-agent/automated-pr-workflow-7358`.
 - Phase 2 trigger: yes (≥1 ESCALATE; Hydrograph path cluster; rpce CONFLICTING).
