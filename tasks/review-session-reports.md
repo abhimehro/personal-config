@@ -1,3 +1,26 @@
+# Review session — 2026-08-16 (cron Phase 1 13:00 UTC)
+
+Preflight PASS 7/7. Inventoried **68**. Squash-merged **9**. Closed **2**.
+HOLD **~12**. ESCALATE **~31**. Open EOD **~57**. REQUEST_CHANGES / COMMENT
+on 0fo/0fp/0fg, majors, Sentinel clusters. CodeScene MCP down; posted
+`/cs-agent skill:fix-code-health-degradations` on ctrld#1183 and pc#1980.
+Adversarial: opus-5 + gpt-5.6-sol (model picker N/A). Reviewers requested on
+cursor PRs #1162, #1473, #498, #643.
+Docs branch: `cursor-agent/automated-pr-workflow-9b3f`.
+Report: `tasks/pr-review-2026-08-16.md`.
+New lesson: **0fs** (sibling Dependabot lock merge falsifies repo-health pins).
+
+| Metric | Count |
+| --- | ---: |
+| Inventoried | 68 |
+| Merged | 9 |
+| Closed | 2 |
+| HOLD / REQUEST_CHANGES | ~12 |
+| Escalated | ~31 |
+| Open EOD | ~57 |
+
+---
+
 # Review session — 2026-08-15 (cron Phase 1 13:00 UTC)
 
 Preflight PASS 7/7. Inventoried **~80**. Squash-merged **19**. Closed **12**.
