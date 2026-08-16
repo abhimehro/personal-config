@@ -8,8 +8,9 @@ clean, updated, and healthy with minimal manual intervention.
 **Current Status**: ✅ **Fully Operational**
 
 - **Scripts**: All working and tested with actionable notifications
-- **Automation**: 9 launch agents active (exit code 0)
-- **Last Update**: January 2026
+- **Automation**: 9 launch agents installed by `maintenance/install.sh`
+  (`com.abhimehrotra.maint.*` labels)
+- **Last Update**: August 2026
 - **Dependencies**: terminal-notifier (for interactive notifications)
 
 ## ⚡ Raycast Quick Actions
@@ -69,7 +70,12 @@ Under memory pressure, pausing or killing Apple diagnostic agents
 - Daily Nag Remover: 10:00 AM - Suppresses persistent screen capture alerts
 - Weekly Maintenance: Monday 9:00 AM - Comprehensive weekly tasks
 - Monthly Maintenance: 1st of month 6:00 AM - Deep system maintenance
-- ProtonDrive Backup: 3:15 AM - One-way home backup to ProtonDrive
+- Google Drive Backup (Light): 3:15 AM Tue–Sun — home backup light mode
+- Google Drive Backup (Full): Monday 4:00 AM — fuller Google Drive backup
+- ProtonDrive Backup: **archived** (`bin/archive/protondrive_backup.sh`); not
+  installed by `install.sh` (use
+  `macos/com.abhimehrotra.protondrive-backup.plist` only if you intentionally
+  re-enable it)
 
 ### 🏥 Health Monitoring
 
@@ -206,31 +212,34 @@ UPDATE_MAS_APPS=1          # Auto-update Mac App Store apps
 
 ### Active Schedules
 
-1. **Daily Health Check** (`com.abhimehrotra.maintenance.healthcheck`)
+Labels below match what `maintenance/install.sh` writes
+(`com.abhimehrotra.maint.*`). Checked-in files under `maintenance/launchd/` may
+still use older `…maintenance.*` names — treat `install.sh` as authoritative.
+
+1. **Daily Health Check** (`com.abhimehrotra.maint.healthcheck`)
    - Time: 8:30 AM daily
    - Script: `health_check.sh`
    - Purpose: System health monitoring
    - Notifications: ✅ Click to view logs
 
-2. **Daily Brew Maintenance** (`com.abhimehrotra.maintenance.brew`)
+2. **Daily Brew Maintenance** (`com.abhimehrotra.maint.brew`)
    - Time: 10:00 AM daily
    - Script: `brew_maintenance.sh`
    - Purpose: Homebrew packages + comprehensive cask updates
    - Notifications: ✅ Click to view logs
 
-3. **Daily Nag Remover**
-   (`com.abhimehrotra.maintenance.screencapture-nag-remover`)
+3. **Daily Nag Remover** (`com.abhimehrotra.maint.screencapture-nag-remover`)
    - Time: 10:00 AM daily
    - Script: `screencapture_nag_remover.sh`
    - Purpose: Suppresses persistent macOS screen capture alerts
    - Note: Requires Full Disk Access for `/bin/bash`
 
-4. **Daily Service Monitor** (`com.abhimehrotra.maintenance.servicemonitor`)
+4. **Daily Service Monitor** (`com.abhimehrotra.maint.servicemonitor`)
    - Time: 8:35 AM daily
    - Script: `service_monitor.sh`
    - Purpose: Disables unused background services (without killing widgets)
 
-5. **Daily System Cleanup** (`com.abhimehrotra.maintenance.systemcleanup`)
+5. **Daily System Cleanup** (`com.abhimehrotra.maint.systemcleanup`)
    - Time: 9:00 AM daily (9:30 AM on Mondays to avoid collision)
    - Script: `system_cleanup.sh`
    - Purpose: System maintenance
@@ -248,11 +257,21 @@ UPDATE_MAS_APPS=1          # Auto-update Mac App Store apps
    - Purpose: system cleanup, editor cleanup, deep cleaner
    - Notifications: ✅ Click to view error summary
 
-8. **ProtonDrive Backup** (`com.abhimehrotra.maintenance.protondrivebackup`)
-   - Time: 3:15 AM daily
-   - Script: `bin/archive/protondrive_backup.sh` (archived path; install must
-     place or symlink it where the plist expects)
-   - Purpose: One-way home backup to ProtonDrive
+8. **Google Drive Backup (Light)**
+   (`com.abhimehrotra.maint.googledrivebackup.light`)
+   - Time: 3:15 AM Tue–Sun
+   - Purpose: Light-mode Google Drive home backup
+
+9. **Google Drive Backup (Full)**
+   (`com.abhimehrotra.maint.googledrivebackup.full`)
+   - Time: Monday 4:00 AM
+   - Purpose: Fuller Google Drive backup
+
+10. **ProtonDrive Backup** (archived — not installed by `install.sh`)
+    - Optional: `macos/com.abhimehrotra.protondrive-backup.plist`
+    - Script: `bin/archive/protondrive_backup.sh`
+    - Historical:
+      `maintenance/launchd/com.abhimehrotra.maintenance.protondrivebackup.plist`
 
 ## 📊 Monitoring & Logs
 
@@ -323,14 +342,14 @@ terminal-notifier -title "Test" -message "Click me" \
 launchctl list | grep com.abhimehrotra
 
 # Reload if needed
-launchctl kickstart -k gui/$(id -u)/com.abhimehrotra.maintenance.healthcheck
+launchctl kickstart -k gui/$(id -u)/com.abhimehrotra.maint.healthcheck
 ```
 
 **Script Permissions**
 
 ```bash
 # Fix permissions
-chmod +x ~/Documents/dev/personal-config/maintenance/bin/*.sh
+chmod +x ~/dev/personal-config/maintenance/bin/*.sh
 ```
 
 **Log Directory Missing**
@@ -338,7 +357,7 @@ chmod +x ~/Documents/dev/personal-config/maintenance/bin/*.sh
 ```bash
 # Create log directories
 mkdir -p ~/Library/Logs/maintenance
-mkdir -p ~/Documents/dev/personal-config/maintenance/tmp
+mkdir -p ~/dev/personal-config/maintenance/tmp
 ```
 
 ## 🔄 Updates & Maintenance
@@ -368,4 +387,5 @@ Schedules & Settings**
 
 ---
 
-_Last Updated: January 2026 - System Status: Fully Operational_
+_Last Updated: August 2026 - Align docs with `install.sh` labels; ProtonDrive
+archived_
