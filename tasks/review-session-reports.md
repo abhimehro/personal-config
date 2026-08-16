@@ -1,3 +1,22 @@
+# Review session — 2026-08-15 (cron Phase 1 13:00 UTC)
+
+Preflight PASS 7/7. Inventoried **~80**. Squash-merged **19**. Closed **12**.
+Escalated Sentinel/CORS/majors/workflow. REQUEST_CHANGES **~22**. CodeScene
+triggers **3**. Adversarial: opus-5 + gpt-5.6-sol + gemini-3.7-flash.
+Docs branch: `cursor-agent/automated-pr-workflow-864b`.
+Report: `tasks/pr-review-2026-08-15.md`. Recovered 08-08…13 reports (0fk).
+New lesson: **0fr** (Dependabot force-update vs local autofix; no force-push).
+
+| Metric | Count |
+| --- | ---: |
+| Inventoried | ~80 |
+| Merged | 19 |
+| Closed | 12 |
+| Escalated / HOLD | ~30 |
+| Open EOD | 49 |
+
+---
+
 # Review session — 2026-08-07 (cron Phase 1 13:00 UTC)
 
 Preflight PASS 7/7. Inventoried **58**. Squash-merged **24**. Closed **5**.
