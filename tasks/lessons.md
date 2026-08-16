@@ -1,5 +1,21 @@
 # Lessons Learned
 
+## Lesson 0fs: Sibling Dependabot lock merge falsifies repo-health pin PRs (2026-08-16)
+
+**Pattern:** After squash-merging Dependabot lock PRs (ctrld #1176 ruff
+0.16.1→0.16.2, #1175 pre-commit 4.6.1→4.6.2), a same-session Cursor
+repo-health PR (#1162) still pinned **ruff-pre-commit `v0.16.1`** and claimed
+the comment “aligns with `uv.lock`.” That comment became self-falsifying the
+moment #1176 landed. Merging #1162 would have *downgraded* the just-merged
+pin. **Rule:** (1) After any sibling Dependabot lock merge, re-read remaining
+“align ruff / pre-commit / lock” PRs against **current `main`**, not the
+inventory snapshot. (2) If the PR pins an *older* rev than `main`, HOLD or
+re-pin — never merge a self-falsifying alignment comment. (3) Prefer merging
+the Dependabot lock PR and closing/HOLD-ing the stale health PR over merging
+both. (4) Same trap applies to pre-commit, mypy, and action SHA “alignment”
+twins. **Detection cost:** Low — `gh pr diff` the pin line vs `git show
+origin/main:<lockfile>` after each lock merge.
+
 ## Lesson 0fn: Cursor App install R/W ≠ Cloud `ghs_` mutate rights (2026-08-12)
 
 **Pattern:** GitHub → Installed GitHub Apps → Cursor already shows **Read and
