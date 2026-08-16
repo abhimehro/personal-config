@@ -1,3 +1,30 @@
+# Review session — 2026-08-13 (cron Phase 1 13:00 UTC)
+
+Preflight PASS 7/7. Inventoried **41**. Squash-merged **0** (`gh` read-only).
+APPROVE **5**. REQUEST_CHANGES **6**. CLOSE-recommend **4**. Escalated/deferred
+**~26**. Adversarial: opus-4.8 + gpt-5.5. Docs branch:
+`cursor-agent/automated-pr-workflow-54ad`. Report: `tasks/pr-review-2026-08-13.md`.
+Recovered stranded Aug 8–12 reports + lessons **0fl**/**0fm**/**0fq**. New
+**0fo** (join vs sum), **0fp** (sanitizer shallow copy).
+
+| Metric | Count |
+| --- | ---: |
+| Inventoried | 41 |
+| Merged | 0 |
+| APPROVE | 5 |
+| Closed | 0 |
+| Escalated | ~26 |
+| Open EOD | 41 |
+
+---
+
+# Review session — 2026-08-07 (cron Phase 1 13:00 UTC)
+
+
+Preflight PASS 7/7. Inventoried **58**. Squash-merged **24**. Closed **5**.
+Escalated **~25**. Request-changes **~8**. CodeScene triggers **4**.
+Adversarial: opus-4.8 + gpt-5.5. Docs branch: `cursor-agent/automated-pr-workflow-a609`.
+Report: `tasks/pr-review-2026-08-07.md`. Recovered stranded Aug 5/6 reports (lesson **0fk**).
 # Review session — 2026-08-16 (cron Phase 1 13:00 UTC)
 
 Preflight PASS 7/7. Inventoried **68**. Squash-merged **9**. Closed **2**.
