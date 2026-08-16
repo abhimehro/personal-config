@@ -1159,20 +1159,22 @@
 - Trigger: cron Phase 2 `0 17 * * *`
 - Agent branch: `cursor-agent/automated-pr-salvage-workflow-d8a4`
 - Preflight: PASS 7/7 (+ cursor-cloud-hooks)
-- Source: Phase 1 [#1884](https://github.com/abhimehro/personal-config/pull/1884) / `pr-review-2026-08-02.md` remainder + live CONFLICTING re-fetch
+- Source: Phase 1
+  [#1884](https://github.com/abhimehro/personal-config/pull/1884) /
+  `pr-review-2026-08-02.md` remainder + live CONFLICTING re-fetch
 - Auth: `abhimehro` PAT (Lesson 0ew) — create/close OK
 
 ### Outcomes
 
-| Repo | Old PR | Disposition | New PR | Notes |
-|------|--------|-------------|--------|-------|
-| Hydrograph… | #445/#448/#450 | CLOSE-SUPERSEDED | — | `is_safe_path` already on main; #448 duplicate bloat |
-| repoprompt-ce | #165/#158 | SALVAGE | [#171](https://github.com/abhimehro/repoprompt-ce/pull/171) | TOCTOU-only; strip ToolOutputFormatter churn |
-| repoprompt-ce | #158 | CLOSE-SUPERSEDED | #171 | DIRTY twin |
-| personal-config | #1841 | ESCALATE | — | CLEAN Sentinel |
-| Seatek_Analysis | #580/#573 | ESCALATE | — | CLEAN Sentinel |
-| repoprompt-ce | #144/#147/#148/#152/#157/#161 | DEFER | — | large drift pile |
-| ctrld / esp / series | — | EMPTY | — | prior salvages merged on Phase 1 |
+| Repo                 | Old PR                        | Disposition      | New PR                                                      | Notes                                                |
+| -------------------- | ----------------------------- | ---------------- | ----------------------------------------------------------- | ---------------------------------------------------- |
+| Hydrograph…          | #445/#448/#450                | CLOSE-SUPERSEDED | —                                                           | `is_safe_path` already on main; #448 duplicate bloat |
+| repoprompt-ce        | #165/#158                     | SALVAGE          | [#171](https://github.com/abhimehro/repoprompt-ce/pull/171) | TOCTOU-only; strip ToolOutputFormatter churn         |
+| repoprompt-ce        | #158                          | CLOSE-SUPERSEDED | #171                                                        | DIRTY twin                                           |
+| personal-config      | #1841                         | ESCALATE         | —                                                           | CLEAN Sentinel                                       |
+| Seatek_Analysis      | #580/#573                     | ESCALATE         | —                                                           | CLEAN Sentinel                                       |
+| repoprompt-ce        | #144/#147/#148/#152/#157/#161 | DEFER            | —                                                           | large drift pile                                     |
+| ctrld / esp / series | —                             | EMPTY            | —                                                           | prior salvages merged on Phase 1                     |
 
 - Salvage draft PRs opened: **1**
 - Closed superseded / no-op: **4**
@@ -1181,12 +1183,16 @@
 
 ### Handoff
 
-1. **Human merge draft:** [rpce #171](https://github.com/abhimehro/repoprompt-ce/pull/171) (TOCTOU) — then close #165
+1. **Human merge draft:**
+   [rpce #171](https://github.com/abhimehro/repoprompt-ce/pull/171) (TOCTOU) —
+   then close #165
 2. **T1 human security:** pc #1841; seatek #580/#573
-3. **Phase 1 follow-up:** rpce UNSTABLE a11y/Bolt queue (#163/#164/#168/#169/#170)
+3. **Phase 1 follow-up:** rpce UNSTABLE a11y/Bolt queue
+   (#163/#164/#168/#169/#170)
 4. Skip `request_reviewers` when author is abhimehro (0ew)
 
-- Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md), [Review](tasks/pr-review-2026-08-02.md)
+- Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md),
+  [Review](tasks/pr-review-2026-08-02.md)
 - New lesson: **0fd** (close Sentinel clusters when main already has the guard)
 
 ## Run — 2026-08-12

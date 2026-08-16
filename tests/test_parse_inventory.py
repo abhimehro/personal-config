@@ -238,7 +238,9 @@ class TestParseInventory(unittest.TestCase):
         handle = m_open()
 
         expected_calls = [
-            call("# PR Triage\n\n## STALE\n- repoA#123\n- repoB#456\n## READY\n- repoC#789\n"),
+            call(
+                "# PR Triage\n\n## STALE\n- repoA#123\n- repoB#456\n## READY\n- repoC#789\n"
+            ),
         ]
         handle.write.assert_has_calls(expected_calls, any_order=False)
 

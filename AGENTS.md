@@ -583,14 +583,15 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
 | What                       | Command                                          | Notes                                                                                                                                                                                                            |
 | -------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Cursor Cloud hook sync     | `make cursor-cloud-hooks`                        | Copies `scripts/cursor_cloud_agent_*.sh` into `~/.cursor/agent-hooks/*` when **both** `pre-commit.cursor` and `commit-msg.cursor` exist as regular files; refuses symlink hook paths (`install(1)`, TOCTOU-safe) |
-| Shell tests only           | `make test`                                      | Fastest full suite; 47 `tests/test_*.sh`, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                                                                                                           |
+| Shell tests only           | `make test`                                      | Fastest full suite; 47 `tests/test_*.sh`, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                                                                                                          |
 | Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                                                                                                                        |
 | All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI.                                                                                             |
-| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install pyyaml`                                                                                                                |
-| Python tests only          | `make test-python`                               | Mostly stdlib; install `pyyaml` (`pip install pyyaml`) for the full suite                                                                                                                                        |
+| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install -r requirements.txt` (`pyyaml==6.0.3`)                                                                                 |
+| Python tests only          | `make test-python`                               | Mostly stdlib; install via `python3 -m pip install -r requirements.txt` (`pyyaml==6.0.3`) for the full suite                                                                                                     |
 | Lint (all)                 | `make lint`                                      | Trunk downloads its own tool versions on first run                                                                                                                                                               |
 | Lint (correctness gate)    | `make lint-errors`                               | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate.                                                                                                                                          |
 | Format                     | `make lint-fix`                                  | Auto-fixes where supported                                                                                                                                                                                       |
+| Auth hygiene (optional)    | `make verify-credentials`                        | Runs `scripts/verify-repo-auth-hygiene.sh` (trufflehog `--only-verified` + password grep)                                                                                                                        |
 
 ### Non-obvious caveats
 
@@ -601,8 +602,8 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
   downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`.
   Subsequent runs are fast. The update script installs the Trunk launcher, but
   tool downloads happen lazily.
-- **`requirements.txt`**: The root `requirements.txt` contains `pyyaml`, which
-  is needed by the full test suite (e.g.,
+- **`requirements.txt`**: The root `requirements.txt` pins `pyyaml==6.0.3`,
+  which is needed by the full test suite (e.g.,
   `tests/test_repository_automation_common.py` exercises
   `.github/scripts/repository_automation_common.py`). The Devin environment
   blueprint installs this dependency automatically; otherwise run
@@ -662,37 +663,16 @@ command shell.
 
 ### Local command pattern
 
-## main...origin/main
+```bash
+agent-zsh -c '<command>'    # primary
+agent-bash -c '<command>'   # fallback
+agent-term-doctor           # diagnostics
+agent-session               # doctor then interactive agent-zsh
+```
 
-?? .agents/ ?? .claude/ ?? .cursor/ ?? .github/github-app.yml ?? .trunk/ ??
-.vscode/ ?? .windsurf/
-
-## main...origin/main
-
-## ?? .agents/ ?? .claude/ ?? .cursor/ ?? .github/github-app.yml ?? .trunk/ ?? .vscode/ ?? .windsurf/ === agent-term-doctor === log: /Users/speedybee/.local/state/agent-term-doctor/session-20260804T184640Z-29691.log PASS found agent-zsh -> /Users/speedybee/bin/agent-zsh PASS found agent-bash -> /Users/speedybee/bin/agent-bash login_shell=unknown WARN could not read login shell parent_comm=/bin/sh PASS agent-zsh workspace cd ok PASS agent-zsh unbuffered + pager hardened PASS agent-zsh stdout captured PASS agent-zsh stderr emitted PASS agent-bash workspace cd ok PASS agent-bash unbuffered + pager hardened PASS agent-bash stdout captured PASS agent-bash stderr emitted PASS agent-bash rc loaded on -c burst agent-zsh 12/12 PASS agent-zsh burst reliable burst agent-bash 12/12 PASS agent-bash burst reliable PASS git --no-pager returns output (0927973 fix: neutralize middle-dot in langs card alt text) stdin_tty=no stdout_tty=no stderr_tty=no
-
-INTERPRETATION
-
-- PASS launchers + swallowed output later => suspect agent terminal tool/PTY,
-  not shell rc
-- Agents do NOT auto-switch from Fish; point them at agent-zsh or agent-bash
-- Prefer: agent-zsh -c ... fallback: agent-bash -c ...
-
----
-
-## summary warnings=1 failures=0 status=warn exit=1 latest=/Users/speedybee/.local/state/agent-term-doctor/latest.log === agent-term-doctor === log: /Users/speedybee/.local/state/agent-term-doctor/session-20260804T184641Z-29878.log PASS found agent-zsh -> /Users/speedybee/bin/agent-zsh PASS found agent-bash -> /Users/speedybee/bin/agent-bash login_shell=unknown WARN could not read login shell parent_comm=/bin/bash NOTE parent looks POSIX (/bin/bash) PASS agent-zsh workspace cd ok PASS agent-zsh unbuffered + pager hardened PASS agent-zsh stdout captured PASS agent-zsh stderr emitted PASS agent-bash workspace cd ok PASS agent-bash unbuffered + pager hardened PASS agent-bash stdout captured PASS agent-bash stderr emitted PASS agent-bash rc loaded on -c burst agent-zsh 12/12 PASS agent-zsh burst reliable burst agent-bash 12/12 PASS agent-bash burst reliable PASS git --no-pager returns output (0927973 fix: neutralize middle-dot in langs card alt text) stdin_tty=no stdout_tty=no stderr_tty=no
-
-INTERPRETATION
-
-- PASS launchers + swallowed output later => suspect agent terminal tool/PTY,
-  not shell rc
-- Agents do NOT auto-switch from Fish; point them at agent-zsh or agent-bash
-- Prefer: agent-zsh -c ... fallback: agent-bash -c ...
-
----
-
-summary warnings=1 failures=0 status=warn exit=1
-latest=/Users/speedybee/.local/state/agent-term-doctor/latest.log
+Launchers live in-repo under `configs/bin/agent-*` (synced to `~/bin` on the
+Mac). Profiles: `configs/.config/agent-shell/`. Prefer non-interactive-safe env:
+`PYTHONUNBUFFERED=1`, `PAGER=cat`, `GIT_PAGER=cat`.
 
 ### Host-specific notes
 
@@ -702,7 +682,7 @@ latest=/Users/speedybee/.local/state/agent-term-doctor/latest.log
 | Cursor CLI              | + this file              | No — prefix commands                     |
 | Mistral Vibe            | + this file              | No — prefix commands                     |
 | Claude Code             | + repo docs              | No — prefix commands                     |
-| Codex                   |                          | No — prefix commands                     |
+| Codex                   | + repo docs              | No — prefix commands                     |
 | Devin cloud             | (Ubuntu bash)            | N/A (no Fish on VM)                      |
 | Antigravity/Gemini      | + repo                   | No — prefix commands                     |
 | Raycast Script Commands | shebang on each script   | N/A if shebang is bash/zsh               |
@@ -715,4 +695,7 @@ latest=/Users/speedybee/.local/state/agent-term-doctor/latest.log
 - Do **not** change the macOS login shell away from Fish
 - Prefer absolute or PATH-resolved over assuming Fish abbreviations
 - Full matrix:
+  [`docs/AGENT_SHELL_CONFIG_MATRIX.md`](docs/AGENT_SHELL_CONFIG_MATRIX.md)
 - Launcher details:
+  [`configs/.config/agent-shell/README.md`](configs/.config/agent-shell/README.md)
+- Raycast: [`docs/RAYCAST_AGENT_SHELL.md`](docs/RAYCAST_AGENT_SHELL.md)
