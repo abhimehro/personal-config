@@ -913,3 +913,6 @@ unnecessary disk I/O overhead and reduces script speed, especially as the number
 of elements grows. **Action:** Always buffer string components into a list in
 memory (e.g. using `append` or `extend`) and write to disk in a single operation
 using `"\n".join(out) + "\n"` to minimize I/O overhead.
+## 2026-12-10 - [O(n²) membership checks in loop]
+**Learning:** Using `if item in list:` inside a loop where the list is checked on every iteration transforms processing into an O(n*m) complexity operation, creating performance bottlenecks as the loops grow.
+**Action:** When filtering or determining set inclusion during parsing or generator loops, always pre-convert the filter list to a set (`filter_set = set(filter_list)`) before the loop to reduce lookup times from O(n) to O(1).
