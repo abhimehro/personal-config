@@ -355,6 +355,12 @@ The `github/gh-stack` `gh` extension is installed via
 `.agents/skills/gh-stack/SKILL.md` (mirrored to `.claude/skills` and
 `.windsurf/skills`). Load it before doing any of the below.
 
+`/purge-anthropies` is vendored at `.agents/skills/purge-anthropies/`
+(mirrored into `.claude/skills`, `.cursor/skills`, `.windsurf/skills`, and
+`.devin/skills`). Local CLI: `pipx install -e ~/dev/anthropies` then
+`anthropies clean|humanize|inspect`. Claude/Gemini hosts must clean and
+print-prompt only; do not rewrite with those models.
+
 Use `gh stack` during Review (Phase 1) and Salvage (Phase 2) sessions to break
 the **post-merge conflict cascade** (see "Post-merge conflict cascade" heuristic
 in `docs/automated-pr-review-agent.md` and the domino-effect guidance in

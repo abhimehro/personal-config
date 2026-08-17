@@ -97,6 +97,12 @@
       "skillPath": "skills/pplx-cli/SKILL.md",
       "computedHash": "b71fd641d204f41ca4f2535c093d60b1de55b95b611527f297179f155c72d701"
     },
+    "purge-anthropies": {
+      "source": "CharlesHoskinson/anthropies",
+      "sourceType": "github",
+      "skillPath": "skills/purge-anthropies/SKILL.md",
+      "computedHash": "e0ed1d566245acb9abb3a6ffe5f197d831ec7708d2680a1b0d7e9dda9632a4a2"
+    },
     "windscribe-vpn": {
       "source": "Windscribe/Desktop-App",
       "sourceType": "github",
