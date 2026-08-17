@@ -13,6 +13,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from gh_token_env import load_gh_token_env
+from pr_reference import parse_repo_name
 
 FAIL_CONCLUSIONS = frozenset(
     {
@@ -167,6 +168,9 @@ def _format_details(data: dict) -> str:
 
 
 def fetch_details(repo: str, num: int) -> str:
+    repo = parse_repo_name(repo)
+    if not repo:
+        return "_Could not load details_"
     env = load_gh_token_env()
     try:
         result = subprocess.run(

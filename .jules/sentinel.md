@@ -824,3 +824,9 @@ stalling or failing silently. **Prevention:** Always use `subprocess.run` with a
 `timeout` argument and explicitly pass `env=load_gh_token_env()` when calling
 external APIs, rather than relying on `subprocess.check_output` with inherited
 environments.
+
+## 2026-08-17 - Command Injection Risk via subprocess.run without Validation
+
+**Vulnerability:** Command Injection / Server-Side Request Forgery (SSRF) Risk via `get_prs_summarize.py` without parsing the repository name string `repo` via `parse_repo_name(repo)`. `repo` was passed directly in from command line.
+**Learning:** `repo` passed to external command line utilities like the `gh` CLI in list-based `subprocess.run` blocks must be validated properly using `parse_repo_name(repo)` from `pr_reference.py`.
+**Prevention:** Always validate repository names with `parse_repo_name` before using `subprocess.run`.
