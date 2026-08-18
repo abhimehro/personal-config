@@ -1,5 +1,25 @@
 # Lessons Learned
 
+## Lesson 0fu: `eval` shopt restore must not become unquoted expansion (2026-08-18)
+
+**Pattern:** Sentinel DIRTY #2007 replaced `eval "$_nullglob_state"` with
+unquoted `$_nullglob_state`. That still word-splits and glob-expands. If the
+saved string is ever attacker-controlled, both forms execute the payload.
+**Rule:** Do not salvage “drop eval” patches that leave unquoted expansion.
+Restore `shopt` from a saved option name (`shopt -s nullglob` /
+`shopt -u nullglob`) or an array. Leave CWE-78 eval PRs as ESCALATE until the
+rewrite is fail-secure. **Detection cost:** Low — `rg 'eval "\$_'` vs
+unquoted `$_.*glob_state`.
+
+## Lesson 0fv: Adapt salvages when the original file was split (2026-08-18)
+
+**Pattern:** ctrld #1174 patched top-level `sync.py`, which no longer exists on
+`main` (`sync/rules.py` + package). Closing as “file gone” would drop a real
+validator-drift fix. **Rule:** If the PR’s path is missing on `main`, search for
+the function (`_filter_rules_for_folder`) and adapt onto the current module.
+Update tests to patch the new import path. **Detection cost:** Low —
+`git grep origin/main -- <symbol>`.
+
 ## Lesson 0fr: MERGEABLE is not salvageable (2026-08-13)
 
 **Pattern:** After Phase 1, GitHub reported **zero CONFLICTING** auto PRs.

@@ -6,6 +6,58 @@
 
 ## Entry template
 
+## Run — 2026-08-18
+
+### Input tail
+
+- Source: Phase 1 `tasks/pr-review-2026-08-16.md` remainder + PR
+  [#2016](https://github.com/abhimehro/personal-config/pull/2016)
+  (`pr-review-2026-08-17.md`) + live re-fetch
+- Preflight PASS 7/7; `make cursor-cloud-hooks`; PAT as `abhimehro` (0ew)
+- Live open: **77**; CONFLICTING: **13**
+- Zero-diff: esp #1495
+
+### Outcomes
+
+| Repo                    | Old PR | Disposition     | New PR                                                                | Notes                                              |
+| ----------------------- | -----: | --------------- | --------------------------------------------------------------------- | -------------------------------------------------- |
+| personal-config         |   2000 | SALVAGE + CLOSE | [#2022](https://github.com/abhimehro/personal-config/pull/2022)       | `pgrep -x --`; twin of #1989                       |
+| personal-config         |   1989 | SALVAGE + CLOSE | [#2022](https://github.com/abhimehro/personal-config/pull/2022)       | identical to #2000                                 |
+| personal-config         |   1997 | CLOSE           | —                                                                     | superseded by CLEAN #1996                          |
+| personal-config         |   1985 | CLOSE           | —                                                                     | scratch + yaml skipIf (0fo)                        |
+| personal-config         |   1991 | CLOSE           | —                                                                     | inline-style empty state vs main                   |
+| personal-config         |   2007 | ESCALATE        | —                                                                     | eval→unquoted (0fu)                                |
+| personal-config         |   1907 | ESCALATE        | —                                                                     | CORS mega 95 files                                 |
+| ctrld-sync              |   1188 | SALVAGE + CLOSE | [#1194](https://github.com/abhimehro/ctrld-sync/pull/1194)            | uv Docker/Bandit; keep requirements.txt            |
+| ctrld-sync              |   1174 | SALVAGE + CLOSE | [#1195](https://github.com/abhimehro/ctrld-sync/pull/1195)            | adapted to `sync/rules.py` (0fv)                   |
+| ctrld-sync              |   1161 | HOLD            | —                                                                     | sum() 0fo                                          |
+| ctrld-sync              |   1136 | ESCALATE        | —                                                                     | mypy 2.x major                                     |
+| email-security-pipeline |   1495 | CLOSE           | —                                                                     | zero-diff Daily QA (0fr)                           |
+| email-security-pipeline |   1487 | CLOSE           | —                                                                     | `_has_all_required_headers` already on main        |
+| email-security-pipeline |   1473 | ESCALATE        | —                                                                     | requirements-ci as default (S6)                    |
+| Seatek_Analysis         |    690 | SALVAGE + CLOSE | [#693](https://github.com/abhimehro/Seatek_Analysis/pull/693)         | `.POSIXct` only; reject profile dumps              |
+
+- Salvage drafts opened: **4** (#2022, #1194, #1195, #693)
+- Infra-fix drafts: **0** (dependency-review repair shipped inside #1194)
+- Closed via API: **10**
+- Autonomous merges: **0** (S1)
+- New lessons: **0fu**, **0fv**
+- `request_reviewers`: skipped (author already abhimehro)
+
+### Verification
+
+- pc #2022: `bash -n scripts/report-daemons-watchdog.sh`
+- ctrld #1195: `uv run pytest tests/test_push_rules_perf.py tests/test_security.py tests/test_security_limits.py` → 45 passed
+- ctrld #1194: YAML/Dockerfile review; requirements.txt retained
+- seatek #693: one-line R parse; no profile\*.R / test_data
+
+### Handoff
+
+1. Human merge drafts **#1194** (T0-adjacent dependency-review repair) then **#1195** then **#2022** then **#693**
+2. Human T1: pc #2007 (0fu), pc #1907 CORS, pc #1980 SSRF, ctrld #1136 mypy 2.x, esp #1444 opencv, esp #1473
+3. HOLD: ctrld #1161 (0fo), series #390 (0fp), pc #1996 join flip-flop
+4. Squash **one** docs lineage: this salvage docs PR vs Phase 1 [#2016](https://github.com/abhimehro/personal-config/pull/2016) (0fk)
+
 ## Run — 2026-08-01
 
 ### Input tail
