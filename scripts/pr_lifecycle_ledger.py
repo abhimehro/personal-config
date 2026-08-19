@@ -221,15 +221,34 @@ def validate_transition_event(event: dict[str, Any], projected: dict[str, Any]) 
 
 
 def validate_transition_shape(event: dict[str, Any], projected: dict[str, Any]) -> None:
+    validate_projected_transition_status(event)
+    validate_transition_origin(event, projected)
+    validate_transition_owners(event)
+    validate_legal_transition(event)
+
+
+def validate_projected_transition_status(event: dict[str, Any]) -> None:
     event_id = event["event_id"]
     if event["status"] != "PROJECTED" or event["acknowledged_at_utc"] is not None:
         raise ValueError(f"event {event_id}: transitions remain projected")
+
+
+def validate_transition_origin(event: dict[str, Any], projected: dict[str, Any]) -> None:
+    event_id = event["event_id"]
     if event["from_state"] != projected["lifecycle_state"]:
         raise ValueError(f"event {event_id}: from-state disagrees with projection")
+
+
+def validate_transition_owners(event: dict[str, Any]) -> None:
+    event_id = event["event_id"]
     if STATE_OWNERS[event["from_state"]] != event["from_owner"]:
         raise ValueError(f"event {event_id}: from-state and owner disagree")
     if STATE_OWNERS[event["to_state"]] != event["to_owner"]:
         raise ValueError(f"event {event_id}: to-state and owner disagree")
+
+
+def validate_legal_transition(event: dict[str, Any]) -> None:
+    event_id = event["event_id"]
     if event["to_state"] not in LEGAL_TRANSITIONS.get(event["from_state"], set()):
         raise ValueError(f"event {event_id}: illegal lifecycle transition")
     if event["kind"] == "TERMINAL" and event["to_state"] != "TERMINAL":
@@ -277,13 +296,22 @@ def validate_receipt_order(event: dict[str, Any], event_by_id: dict[str, dict[st
 def validate_projection(items: dict[str, dict[str, Any]], projected: dict[str, dict[str, Any]]) -> None:
     for item_key, item in items.items():
         expected = projected[item_key]
-        if item["lifecycle_state"] == "TERMINAL" and (
-            item["revision"] < 1 or expected["latest_transition_kind"] != "TERMINAL"
-        ):
-            raise ValueError(f"ledger item {item_key}: terminal record requires terminal event")
-        for field in ("revision", "lifecycle_state", "current_owner", "next_owner", "terminal_disposition", "handoffs"):
-            if item[field] != expected[field]:
-                raise ValueError(f"ledger item {item_key}: projection {field} disagrees with events")
+        validate_terminal_projection(item, expected, item_key)
+        validate_projected_item_fields(item, expected, item_key)
+
+
+def validate_terminal_projection(item: dict[str, Any], expected: dict[str, Any], item_key: str) -> None:
+    invalid = item["lifecycle_state"] == "TERMINAL" and (
+        item["revision"] < 1 or expected["latest_transition_kind"] != "TERMINAL"
+    )
+    if invalid:
+        raise ValueError(f"ledger item {item_key}: terminal record requires terminal event")
+
+
+def validate_projected_item_fields(item: dict[str, Any], expected: dict[str, Any], item_key: str) -> None:
+    for field in ("revision", "lifecycle_state", "current_owner", "next_owner", "terminal_disposition", "handoffs"):
+        if item[field] != expected[field]:
+            raise ValueError(f"ledger item {item_key}: projection {field} disagrees with events")
 
 
 def validate_calibration(
