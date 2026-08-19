@@ -1,5 +1,25 @@
 # Lessons Learned
 
+## Lesson 0ft: Unbootstrapped ledger is HOLD_PLATFORM, not inventory (2026-08-19)
+
+**Pattern:** Stage 3 calibration fired with
+`tasks/pr-lifecycle-ledger.yaml` at `activation_state: NOT_BOOTSTRAPPED` and
+`selected_write_primitive: null`. `git fetch origin automation/pr-lifecycle-ledger`
+and Contents API `?ref=automation/pr-lifecycle-ledger` both miss. The live cron
+was `0 17 * * *` (Stage 2's contract slot) while the loaded prompt and the
+checked-in export are Stage 3 calibration (`15 21 * * *`). Treating that as a
+green light to inventory bot PRs, salvage, or increment calibration would
+bypass the continuity plane. **Rule:** (1) If the runtime ledger cannot be
+read, validated, **and** written through the recorded CAS primitive, record
+`HOLD_PLATFORM` (or `ANALYSIS_ERROR` on a corrupt present file) and take **no**
+lifecycle action or calibration increment. (2) Never use the main-branch
+pointer as runtime calibration state. (3) Stage identity follows the loaded
+prompt, not the clock; a 17:00 trigger does not authorize Stage 2 salvage when
+the prompt is Stage 3. (4) Missing data-branch evidence is complete absence,
+not an invitation to create the orphan branch from Stage 3. **Detection cost:**
+Low — read the pointer's `selected_write_primitive` / `activation_state`, then
+`git ls-remote origin refs/heads/automation/pr-lifecycle-ledger`.
+
 ## Lesson 0fr: MERGEABLE is not salvageable (2026-08-13)
 
 **Pattern:** After Phase 1, GitHub reported **zero CONFLICTING** auto PRs.
