@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Synchronize Cursor export prompt fields with their reviewed Markdown sources.
 
 Run with --write to update the checked-in exports, or --check to fail if the
@@ -12,7 +11,6 @@ import argparse
 import json
 import sys
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[1]
 MAPPINGS = {
@@ -28,26 +26,48 @@ def sync(write: bool) -> list[str]:
     exports = ROOT / "docs/cursor-automations/exports"
     prompts = ROOT / "docs/cursor-automations/prompts"
     for export_name, prompt_name in MAPPINGS.items():
-        export_path = exports / export_name
-        prompt_path = prompts / prompt_name
-        try:
-            export = json.loads(export_path.read_text(encoding="utf-8"))
-            prompt = prompt_path.read_text(encoding="utf-8").strip() + "\n"
-        except (OSError, json.JSONDecodeError) as exc:
-            errors.append(f"{export_name}: {exc}")
-            continue
-        entries = export.get("prompts")
-        if not isinstance(entries, list) or len(entries) != 1 or not isinstance(entries[0], dict):
-            errors.append(f"{export_name}: expected one prompt entry")
-            continue
-        if entries[0].get("prompt") == prompt:
-            continue
-        if not write:
-            errors.append(f"{export_name}: prompt differs from {prompt_name}")
-            continue
-        entries[0]["prompt"] = prompt
-        export_path.write_text(json.dumps(export, indent=2) + "\n", encoding="utf-8")
+        error = sync_one(exports / export_name, prompts / prompt_name, write)
+        if error:
+            errors.append(error)
     return errors
+
+
+def sync_one(export_path: Path, prompt_path: Path, write: bool) -> str | None:
+    try:
+        export = json.loads(export_path.read_text(encoding="utf-8"))
+        prompt = prompt_path.read_text(encoding="utf-8").strip() + "\n"
+    except (OSError, json.JSONDecodeError) as exc:
+        return f"{export_path.name}: {exc}"
+    entry = get_single_prompt_entry(export, export_path.name)
+    if isinstance(entry, str):
+        return entry
+    if entry.get("prompt") == prompt:
+        return None
+    return reconcile_prompt(entry, export, export_path, prompt_path.name, prompt, write)
+
+
+def get_single_prompt_entry(export: dict[str, object], export_name: str) -> dict[str, object] | str:
+    entries = export.get("prompts")
+    valid = isinstance(entries, list) and len(entries) == 1
+    valid = valid and isinstance(entries[0], dict)
+    if not valid:
+        return f"{export_name}: expected one prompt entry"
+    return entries[0]
+
+
+def reconcile_prompt(
+    entry: dict[str, object],
+    export: dict[str, object],
+    export_path: Path,
+    prompt_name: str,
+    prompt: str,
+    write: bool,
+) -> str | None:
+    if not write:
+        return f"{export_path.name}: prompt differs from {prompt_name}"
+    entry["prompt"] = prompt
+    export_path.write_text(json.dumps(export, indent=2) + "\n", encoding="utf-8")
+    return None
 
 
 def main() -> int:

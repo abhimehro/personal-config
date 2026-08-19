@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pr_lifecycle_common import (
+from pr_lifecycle_support import (
     KEY_RE,
     SHA_RE,
     require_https_url,
@@ -63,14 +63,26 @@ def validate_item(item: Any, seen_keys: set[str]) -> dict[str, Any]:
 
 
 def validate_item_identity(value: dict[str, Any], key: str) -> None:
+    validate_item_key(value, key)
+    validate_item_anchors(value, key)
+    validate_item_author(value, key)
+
+
+def validate_item_key(value: dict[str, Any], key: str) -> None:
     if not KEY_RE.fullmatch(key):
         raise ValueError("ledger item: invalid key")
     if not key.startswith(f"{value['repository']}#{value['pr']}@"):
         raise ValueError(f"ledger item {key}: key does not match repository and PR")
+
+
+def validate_item_anchors(value: dict[str, Any], key: str) -> None:
     if not SHA_RE.fullmatch(value["head_sha"]) or not key.endswith(value["head_sha"]):
         raise ValueError(f"ledger item {key}: key/head SHA mismatch")
     if not SHA_RE.fullmatch(value["base_sha"]):
         raise ValueError(f"ledger item {key}: invalid base SHA")
+
+
+def validate_item_author(value: dict[str, Any], key: str) -> None:
     author = require_mapping(value["author"], f"ledger item {key}.author")
     if author["identity_source"] != "github_api":
         raise ValueError(f"ledger item {key}: identity source must be github_api")

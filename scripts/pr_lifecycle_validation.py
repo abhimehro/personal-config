@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pr_lifecycle_common import ROOT, load_yaml, validate_schema
 from pr_lifecycle_config import (
     validate_bootstrap_pointer,
     validate_config,
     validate_exports_and_prompts,
 )
 from pr_lifecycle_ledger import validate_runtime_records
+from pr_lifecycle_schema import validate_schema
+from pr_lifecycle_support import ROOT
+from pr_lifecycle_yaml import load_yaml
 
 
 def validate(runtime_ledger: Path) -> None:

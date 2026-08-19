@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from pr_lifecycle_common import ROOT, require_fields, require_list, require_mapping
+from pr_lifecycle_support import ROOT, require_fields, require_list, require_mapping
 
 
 def validate_config(config: dict[str, Any]) -> None:
@@ -72,21 +72,45 @@ def require_exact_stage_contract(value: Any) -> None:
 def validate_bootstrap_pointer(pointer: dict[str, Any], config: dict[str, Any]) -> None:
     required = {"pointer_version", "pointer_kind", "runtime_ledger"}
     require_fields(pointer, required, required, "ledger pointer")
-    if pointer["pointer_version"] != "1.0" or pointer["pointer_kind"] != "runtime_lifecycle_ledger":
-        raise ValueError("ledger pointer: unsupported version or kind")
+    validate_pointer_identity(pointer)
     runtime = require_mapping(pointer["runtime_ledger"], "ledger pointer.runtime_ledger")
+    validate_pointer_runtime_shape(runtime)
+    expected = config["lifecycle"]["runtime_ledger"]
+    validate_pointer_location(runtime, expected)
+    validate_pointer_activation(runtime)
+    validate_pointer_primitives(runtime, expected)
+
+
+def validate_pointer_identity(pointer: dict[str, Any]) -> None:
+    valid = pointer["pointer_version"] == "1.0"
+    valid = valid and pointer["pointer_kind"] == "runtime_lifecycle_ledger"
+    if not valid:
+        raise ValueError("ledger pointer: unsupported version or kind")
+
+
+def validate_pointer_runtime_shape(runtime: dict[str, Any]) -> None:
     fields = {
         "data_branch", "data_path", "schema_path", "activation_state",
         "selected_write_primitive", "allowed_write_primitives", "bootstrap_document",
     }
     require_fields(runtime, fields, fields, "ledger pointer.runtime_ledger")
-    expected = config["lifecycle"]["runtime_ledger"]
-    if runtime["data_branch"] != expected["data_branch"] or runtime["data_path"] != expected["data_path"]:
+
+
+def validate_pointer_location(runtime: dict[str, Any], expected: dict[str, Any]) -> None:
+    matches = runtime["data_branch"] == expected["data_branch"]
+    matches = matches and runtime["data_path"] == expected["data_path"]
+    if not matches:
         raise ValueError("ledger pointer: runtime location differs from config")
+
+
+def validate_pointer_activation(runtime: dict[str, Any]) -> None:
     if runtime["activation_state"] not in {"NOT_BOOTSTRAPPED", "ACTIVE"}:
         raise ValueError("ledger pointer: invalid activation state")
     if runtime["selected_write_primitive"] is not None:
         raise ValueError("ledger pointer: selected primitive belongs in runtime data")
+
+
+def validate_pointer_primitives(runtime: dict[str, Any], expected: dict[str, Any]) -> None:
     if set(runtime["allowed_write_primitives"]) != set(expected["allowed_write_primitives"]):
         raise ValueError("ledger pointer: allowed primitives differ from config")
 
