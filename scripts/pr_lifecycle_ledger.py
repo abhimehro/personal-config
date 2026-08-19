@@ -91,17 +91,35 @@ def validate_item_author(value: dict[str, Any], key: str) -> None:
 
 
 def validate_item_state(value: dict[str, Any], key: str) -> None:
+    validate_item_guardrail_outcome(value, key)
+    validate_item_owner(value, key)
+    validator = {"TERMINAL": validate_terminal_item_state}.get(
+        value["lifecycle_state"], validate_nonterminal_item_state
+    )
+    validator(value, key)
+
+
+def validate_item_guardrail_outcome(value: dict[str, Any], key: str) -> None:
     if value["guardrail_outcome"] not in ALLOWED_OUTCOMES:
         raise ValueError(f"ledger item {key}: invalid guardrail outcome")
+
+
+def validate_item_owner(value: dict[str, Any], key: str) -> None:
     if STATE_OWNERS[value["lifecycle_state"]] != value["current_owner"]:
         raise ValueError(f"ledger item {key}: lifecycle state and owner disagree")
+
+
+def validate_terminal_item_state(value: dict[str, Any], key: str) -> None:
     terminal = value.get("terminal_disposition")
-    if value["lifecycle_state"] == "TERMINAL":
-        valid = terminal in TERMINAL_DISPOSITIONS
-        valid = valid and value["next_owner"] == "none"
-        if not valid:
-            raise ValueError(f"ledger item {key}: terminal record requires disposition/no owner")
-    elif terminal is not None or value["next_owner"] == "none":
+    if not all((terminal in TERMINAL_DISPOSITIONS, value["next_owner"] == "none")):
+        raise ValueError(f"ledger item {key}: terminal record requires disposition/no owner")
+
+
+def validate_nonterminal_item_state(value: dict[str, Any], key: str) -> None:
+    terminal = value.get("terminal_disposition")
+    if terminal is not None:
+        raise ValueError(f"ledger item {key}: nonterminal record requires next owner")
+    if value["next_owner"] == "none":
         raise ValueError(f"ledger item {key}: nonterminal record requires next owner")
 
 
@@ -210,10 +228,18 @@ def validate_calibration_count(
     count: int,
     required: int,
 ) -> None:
-    if required != 7 or not isinstance(count, int) or count < 0 or count > required:
+    if not is_valid_successful_count(count, required):
         raise ValueError("calibration: successful count must be between zero and seven")
     if calibration["completion_authority"] != "approve-merge-close-nonsecurity":
         raise ValueError("calibration: unexpected completion authority")
+
+
+def is_valid_successful_count(count: int, required: int) -> bool:
+    if required != 7:
+        return False
+    if not isinstance(count, int):
+        return False
+    return 0 <= count <= required
 
 
 def validate_calibration_policy(
@@ -222,11 +248,21 @@ def validate_calibration_policy(
     count: int,
 ) -> bool:
     policy_matches = calibration["policy_revision"] == current_policy
-    if not policy_matches:
-        reset = calibration["status"] == "REPORT_ONLY" and count == 0
-        if calibration["invalidated_by_revision"] != current_policy or not reset:
-            raise ValueError("calibration: stale policy must be invalidated and reset")
-    return policy_matches
+    if policy_matches:
+        return True
+    validate_stale_calibration_reset(calibration, current_policy, count)
+    return False
+
+
+def validate_stale_calibration_reset(
+    calibration: dict[str, Any], current_policy: str, count: int
+) -> None:
+    if calibration["invalidated_by_revision"] != current_policy:
+        raise ValueError("calibration: stale policy must be invalidated and reset")
+    if calibration["status"] != "REPORT_ONLY":
+        raise ValueError("calibration: stale policy must be invalidated and reset")
+    if count != 0:
+        raise ValueError("calibration: stale policy must be invalidated and reset")
 
 
 def validate_calibration_event_count(
@@ -277,17 +313,41 @@ def validate_work_items(value: Any, items: dict[str, dict[str, Any]]) -> None:
     seen: set[str] = set()
     for raw in require_list(value, "stage2_work_items"):
         work = require_mapping(raw, "stage2 work item")
-        source = items.get(work["source_item_key"])
-        valid = work["work_item_id"] not in seen and source is not None
-        valid = valid and work["current_owner"] == "stage2"
-        valid = valid and source["current_owner"] == "stage2"
-        if not valid:
-            raise ValueError("stage2 work item: duplicate ID, source, or owner failure")
-        if not work["allowed_paths"] or not work["acceptance_criteria"]:
-            raise ValueError("stage2 work item: scope and acceptance are mandatory")
-        require_https_urls(work["provenance_urls"], "stage2 work item.provenance_urls")
-        require_utc(work["expiry_utc"], "stage2 work item.expiry_utc")
+        validate_work_item_identity(work, items, seen)
+        validate_work_item_scope(work)
+        validate_work_item_evidence(work)
         seen.add(work["work_item_id"])
+
+
+def validate_work_item_identity(
+    work: dict[str, Any], items: dict[str, dict[str, Any]], seen: set[str]
+) -> None:
+    work_item_id = work["work_item_id"]
+    if work_item_id in seen:
+        raise ValueError("stage2 work item: duplicate ID, source, or owner failure")
+    source = items.get(work["source_item_key"])
+    if source is None:
+        raise ValueError("stage2 work item: duplicate ID, source, or owner failure")
+    validate_work_item_owners(work, source)
+
+
+def validate_work_item_owners(work: dict[str, Any], source: dict[str, Any]) -> None:
+    if work["current_owner"] != "stage2":
+        raise ValueError("stage2 work item: duplicate ID, source, or owner failure")
+    if source["current_owner"] != "stage2":
+        raise ValueError("stage2 work item: duplicate ID, source, or owner failure")
+
+
+def validate_work_item_scope(work: dict[str, Any]) -> None:
+    if not work["allowed_paths"]:
+        raise ValueError("stage2 work item: scope and acceptance are mandatory")
+    if not work["acceptance_criteria"]:
+        raise ValueError("stage2 work item: scope and acceptance are mandatory")
+
+
+def validate_work_item_evidence(work: dict[str, Any]) -> None:
+    require_https_urls(work["provenance_urls"], "stage2 work item.provenance_urls")
+    require_utc(work["expiry_utc"], "stage2 work item.expiry_utc")
 
 
 def validate_imports(value: Any) -> None:
@@ -305,24 +365,47 @@ def validate_merge_methods(value: Any, configured_repos: set[str]) -> None:
     seen: set[str] = set()
     for raw in require_list(value, "repository_merge_methods"):
         entry = require_mapping(raw, "repository merge method")
-        repository = entry["repository"]
-        if repository in seen:
-            raise ValueError("repository merge method: duplicate repository")
-        seen.add(repository)
-        require_utc(entry["updated_at_utc"], "repository merge method.updated_at_utc")
-        if entry["discovery_status"] == "VERIFIED":
-            validate_verified_merge_method(entry)
-        elif not entry["hold_reason"] or entry["required_checks_verified_zero"]:
-            raise ValueError("repository merge method: pending record requires explicit hold")
+        validate_merge_method_entry(entry, seen)
     if seen != configured_repos:
         raise ValueError("repository merge method: records must match configured repos")
 
 
+def validate_merge_method_entry(entry: dict[str, Any], seen: set[str]) -> None:
+    repository = entry["repository"]
+    if repository in seen:
+        raise ValueError("repository merge method: duplicate repository")
+    seen.add(repository)
+    require_utc(entry["updated_at_utc"], "repository merge method.updated_at_utc")
+    validator = {"VERIFIED": validate_verified_merge_method}.get(
+        entry["discovery_status"], validate_pending_merge_method
+    )
+    validator(entry)
+
+
+def validate_pending_merge_method(entry: dict[str, Any]) -> None:
+    if not entry["hold_reason"]:
+        raise ValueError("repository merge method: pending record requires explicit hold")
+    if entry["required_checks_verified_zero"]:
+        raise ValueError("repository merge method: pending record requires explicit hold")
+
+
 def validate_verified_merge_method(entry: dict[str, Any]) -> None:
-    if entry["method"] == "UNKNOWN" or entry["required_checks_source"] == "UNKNOWN":
+    validate_known_merge_method(entry)
+    validate_verified_merge_evidence(entry)
+    validate_verified_merge_hold(entry)
+
+
+def validate_known_merge_method(entry: dict[str, Any]) -> None:
+    if "UNKNOWN" in {entry["method"], entry["required_checks_source"]}:
         raise ValueError("repository merge method: verified record cannot be unknown")
+
+
+def validate_verified_merge_evidence(entry: dict[str, Any]) -> None:
     require_https_url(entry["evidence_url"], "repository merge method.evidence_url")
     require_utc(entry["observed_at_utc"], "repository merge method.observed_at_utc")
+
+
+def validate_verified_merge_hold(entry: dict[str, Any]) -> None:
     if entry["hold_reason"] is not None:
         raise ValueError("repository merge method: verified record cannot have hold")
     empty = not entry["required_checks"]
