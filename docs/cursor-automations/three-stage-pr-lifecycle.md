@@ -16,11 +16,11 @@ visibly available.
 
 ## Automation order
 
-| Cursor automation   | Repository specification                |      Schedule | Concurrency |                                                   Run cap | Write authority                                                                                   |
-| ------------------- | --------------------------------------- | ------------: | ----------: | --------------------------------------------------------: | ------------------------------------------------------------------------------------------------- |
-| Daily PR Review     | `docs/automated-pr-review-agent.md`     |  `0 15 * * *` |           1 |                                        20 inventory items | Routine approve, squash merge, close, and mechanical repair only when all routine predicates pass |
-| Daily PR Salvage    | `docs/automated-pr-salvage-agent.md`    |  `0 17 * * *` |           1 |                                     5 recovery candidates | Focused draft recovery only; no approval, merge, or original-security closure                     |
-| Daily PR Completion | `docs/automated-pr-completion-agent.md` | `0 19 * * *`  |           1 | 20 reconciliations, 5 packets, 5 post-calibration actions | Report-only until calibration approval; then bounded non-security completion or closure           |
+| Cursor automation   | Repository specification                |     Schedule | Concurrency |                                                   Run cap | Write authority                                                                                   |
+| ------------------- | --------------------------------------- | -----------: | ----------: | --------------------------------------------------------: | ------------------------------------------------------------------------------------------------- |
+| Daily PR Review     | `docs/automated-pr-review-agent.md`     | `0 15 * * *` |           1 |                                        20 inventory items | Routine approve, squash merge, close, and mechanical repair only when all routine predicates pass |
+| Daily PR Salvage    | `docs/automated-pr-salvage-agent.md`    | `0 17 * * *` |           1 |                                     5 recovery candidates | Focused draft recovery only; no approval, merge, or original-security closure                     |
+| Daily PR Completion | `docs/automated-pr-completion-agent.md` | `0 19 * * *` |           1 | 20 reconciliations, 5 packets, 5 post-calibration actions | Report-only until calibration approval; then bounded non-security completion or closure           |
 
 The schedules are UTC. Each stage must finish or record `ANALYSIS_ERROR` before
 the next one starts. If the Cursor dashboard offers no explicit concurrency
@@ -30,8 +30,8 @@ shifts with daylight-saving time; the cron source remains UTC.
 
 ## Paste-ready source artifacts
 
-| Stage               | Prompt                                                                                     | Export                                                                                         | Approval action                     | Memory   |
-| ------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ----------------------------------- | -------- |
+| Stage               | Prompt                                                                                     | Export                                                                                         | Approval action                     | Memory                   |
+| ------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------ |
 | Stage 1             | [`prompts/daily-pr-review.md`](prompts/daily-pr-review.md)                                 | [`exports/daily-pr-review.json`](exports/daily-pr-review.json)                                 | Present, routine only               | Enabled namespaced cache |
 | Stage 2             | [`prompts/daily-pr-salvage.md`](prompts/daily-pr-salvage.md)                               | [`exports/daily-pr-salvage.json`](exports/daily-pr-salvage.json)                               | Absent                              | Enabled namespaced cache |
 | Stage 3 calibration | [`prompts/daily-pr-completion.calibration.md`](prompts/daily-pr-completion.calibration.md) | [`exports/daily-pr-completion.calibration.json`](exports/daily-pr-completion.calibration.json) | Absent                              | Enabled namespaced cache |
@@ -76,12 +76,12 @@ specification's predicates.
 The live Dashboard references Notion, Memory, Sequential thinking, GitKraken,
 cloudrun, Linear, codescene, julesServer, Snyk, and Sonatype-mcp, and exposes a
 wider connected workspace inventory. This inventory is not a blanket execution
-allowlist. Each stage remains bound by its prompt, immutable anchors, action cap,
-and absolute prohibitions. A connected tool may not alter branch protection,
-rulesets, workflow permissions, bypass actors, unrelated branches, or the
-security and human-review boundaries. The checked-in JSON shape records the
-observed repository connector and stage-specific approval flag; the Dashboard
-remains the evidence source for the connected MCP inventory.
+allowlist. Each stage remains bound by its prompt, immutable anchors, action
+cap, and absolute prohibitions. A connected tool may not alter branch
+protection, rulesets, workflow permissions, bypass actors, unrelated branches,
+or the security and human-review boundaries. The checked-in JSON shape records
+the observed repository connector and stage-specific approval flag; the
+Dashboard remains the evidence source for the connected MCP inventory.
 
 ## Stage handoffs
 

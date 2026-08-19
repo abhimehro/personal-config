@@ -235,7 +235,9 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
     def test_export_prompts_preserve_dashboard_mcp_reference(self):
         prompts = ROOT / "docs/cursor-automations/prompts"
         for path in sorted(prompts.glob("daily-pr-*.md")):
-            self.assertIn("Dashboard-referenced MCP set", path.read_text(encoding="utf-8"))
+            self.assertIn(
+                "Dashboard-referenced MCP set", path.read_text(encoding="utf-8")
+            )
 
     def test_authoritative_ruleset_reads_clear_pending_merge_method_holds(self):
         ledger = self.example()

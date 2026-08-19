@@ -8,46 +8,46 @@ Live re-fetch: **77** open, **13 CONFLICTING**. Input: Phase 1 remainder from
 
 ## Start-of-session CONFLICTING
 
-| Repo                    | PR     | Head                                    | Salvage result          |
-| ----------------------- | ------ | --------------------------------------- | ----------------------- |
-| ctrld-sync              | #1188  | `jules/uv-docker-bandit-hardening-y4f4` | CLOSE → draft #1194     |
-| ctrld-sync              | #1174  | `copilot/add-is-valid-rule-fn`          | CLOSE → draft #1195     |
-| ctrld-sync              | #1161  | `jules/fix-network-timeout-retry-3k3t`  | HOLD 0fo                |
-| ctrld-sync              | #1136  | `copilot/update-mypy-2-x`               | ESCALATE                |
-| personal-config         | #2007  | `copilot/replace-eval-with-shopt-u`     | ESCALATE 0fu (no salvage) |
-| personal-config         | #2000  | `jules/pgrep-cwe88-hardening-3j5k`      | CLOSE → draft #2022     |
-| personal-config         | #1997  | `jules/bolt-join-hardening-x9k2`        | CLOSE (superseded #1996) |
-| personal-config         | #1991  | `copilot/palette-morning-brief-ux`      | CLOSE (superseded #1980) |
-| personal-config         | #1989  | `copilot/fix-pgrep-cwe-88-injection`    | CLOSE (superseded #2022) |
-| personal-config         | #1985  | `copilot/harden-bolt-join-lookup`       | CLOSE (superseded #1996) |
-| personal-config         | #1907  | `copilot/add-cors-whitelist-to-scripts` | ESCALATE                |
-| email-security-pipeline | #1495  | `copilot/add-daily-qa-workflow`         | CLOSE 0fr               |
-| email-security-pipeline | #1487  | `jules/security-headers-hardening-k9m2` | CLOSE (already on main) |
-| email-security-pipeline | #1473  | `jules/requirements-ci-default-5n8p`    | ESCALATE                |
-| Seatek_Analysis         | #690   | `copilot/fix-posixct-comparison-type`   | CLOSE → draft #693      |
+| Repo                    | PR    | Head                                    | Salvage result            |
+| ----------------------- | ----- | --------------------------------------- | ------------------------- |
+| ctrld-sync              | #1188 | `jules/uv-docker-bandit-hardening-y4f4` | CLOSE → draft #1194       |
+| ctrld-sync              | #1174 | `copilot/add-is-valid-rule-fn`          | CLOSE → draft #1195       |
+| ctrld-sync              | #1161 | `jules/fix-network-timeout-retry-3k3t`  | HOLD 0fo                  |
+| ctrld-sync              | #1136 | `copilot/update-mypy-2-x`               | ESCALATE                  |
+| personal-config         | #2007 | `copilot/replace-eval-with-shopt-u`     | ESCALATE 0fu (no salvage) |
+| personal-config         | #2000 | `jules/pgrep-cwe88-hardening-3j5k`      | CLOSE → draft #2022       |
+| personal-config         | #1997 | `jules/bolt-join-hardening-x9k2`        | CLOSE (superseded #1996)  |
+| personal-config         | #1991 | `copilot/palette-morning-brief-ux`      | CLOSE (superseded #1980)  |
+| personal-config         | #1989 | `copilot/fix-pgrep-cwe-88-injection`    | CLOSE (superseded #2022)  |
+| personal-config         | #1985 | `copilot/harden-bolt-join-lookup`       | CLOSE (superseded #1996)  |
+| personal-config         | #1907 | `copilot/add-cors-whitelist-to-scripts` | ESCALATE                  |
+| email-security-pipeline | #1495 | `copilot/add-daily-qa-workflow`         | CLOSE 0fr                 |
+| email-security-pipeline | #1487 | `jules/security-headers-hardening-k9m2` | CLOSE (already on main)   |
+| email-security-pipeline | #1473 | `jules/requirements-ci-default-5n8p`    | ESCALATE                  |
+| Seatek_Analysis         | #690  | `copilot/fix-posixct-comparison-type`   | CLOSE → draft #693        |
 
 ## Drafts opened this run
 
-| Repo            | PR     | Branch                                              |
-| --------------- | ------ | --------------------------------------------------- |
-| personal-config | #2022  | `cursor-agent/salvage-pc-2000-pgrep-cwe88-517a`     |
-| ctrld-sync      | #1194  | `cursor-agent/salvage-ctrld-1188-uv-docker-517a`    |
-| ctrld-sync      | #1195  | `cursor-agent/salvage-ctrld-1174-is-valid-rule-517a` |
-| Seatek_Analysis | #693   | `cursor-agent/salvage-seatek-690-posixct-517a`      |
+| Repo            | PR    | Branch                                               |
+| --------------- | ----- | ---------------------------------------------------- |
+| personal-config | #2022 | `cursor-agent/salvage-pc-2000-pgrep-cwe88-517a`      |
+| ctrld-sync      | #1194 | `cursor-agent/salvage-ctrld-1188-uv-docker-517a`     |
+| ctrld-sync      | #1195 | `cursor-agent/salvage-ctrld-1174-is-valid-rule-517a` |
+| Seatek_Analysis | #693  | `cursor-agent/salvage-seatek-690-posixct-517a`       |
 
 ## Merge-ready leftovers (human squash; not Phase 2)
 
-| Repo                    | PR     | Note                              |
-| ----------------------- | ------ | --------------------------------- |
-| ctrld-sync              | #1194  | first (Docker/bandit + CI repair) |
-| ctrld-sync              | #1195  | second (is_valid_rule)            |
-| personal-config         | #2022  | pgrep CWE-88                      |
-| Seatek_Analysis         | #693   | .POSIXct one-liner                |
-| personal-config         | #1980  | Palette UX (keep; #1991 closed)   |
-| personal-config         | #1996  | Bolt join CLEAN                   |
-| personal-config         | #2016  | Phase 1 13:00 08-17 docs          |
-| Hydrograph…             | #511   | hydro salvage leftover            |
-| series_correction…      | #393   | pytest skip                       |
+| Repo               | PR    | Note                              |
+| ------------------ | ----- | --------------------------------- |
+| ctrld-sync         | #1194 | first (Docker/bandit + CI repair) |
+| ctrld-sync         | #1195 | second (is_valid_rule)            |
+| personal-config    | #2022 | pgrep CWE-88                      |
+| Seatek_Analysis    | #693  | .POSIXct one-liner                |
+| personal-config    | #1980 | Palette UX (keep; #1991 closed)   |
+| personal-config    | #1996 | Bolt join CLEAN                   |
+| personal-config    | #2016 | Phase 1 13:00 08-17 docs          |
+| Hydrograph…        | #511  | hydro salvage leftover            |
+| series_correction… | #393  | pytest skip                       |
 
 ---
 
