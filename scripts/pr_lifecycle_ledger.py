@@ -246,15 +246,30 @@ def validate_approval(
     policy_matches: bool,
 ) -> None:
     if calibration["status"] == "APPROVED":
-        valid = count >= required and policy_matches
-        valid = valid and not calibration["invalidated_by_revision"]
-        valid = valid and calibration["approved_by"] and calibration["approved_at_utc"]
-        valid = valid and calibration["approval_evidence_urls"]
-        if not valid:
-            raise ValueError("calibration: approval requires seven current successful runs")
-        require_utc(calibration["approved_at_utc"], "calibration.approved_at_utc")
-        require_https_urls(calibration["approval_evidence_urls"], "calibration.approval_evidence_urls")
-    if calibration["status"] == "REVOKED" and not calibration["revoked_at_utc"]:
+        validate_approved_calibration(calibration, count, required, policy_matches)
+    elif calibration["status"] == "REVOKED":
+        validate_revoked_calibration(calibration)
+
+
+def validate_approved_calibration(
+    calibration: dict[str, Any], count: int, required: int, policy_matches: bool
+) -> None:
+    prerequisites = (
+        count >= required,
+        policy_matches,
+        not calibration["invalidated_by_revision"],
+        calibration["approved_by"],
+        calibration["approved_at_utc"],
+        calibration["approval_evidence_urls"],
+    )
+    if not all(prerequisites):
+        raise ValueError("calibration: approval requires seven current successful runs")
+    require_utc(calibration["approved_at_utc"], "calibration.approved_at_utc")
+    require_https_urls(calibration["approval_evidence_urls"], "calibration.approval_evidence_urls")
+
+
+def validate_revoked_calibration(calibration: dict[str, Any]) -> None:
+    if not calibration["revoked_at_utc"]:
         raise ValueError("calibration: revoked status requires timestamp")
 
 

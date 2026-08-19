@@ -169,11 +169,21 @@ def validate_export_actions(data: dict[str, Any], path: Path) -> None:
 def validate_export_action(action: dict[str, Any], path: Path) -> None:
     if "requestReviewers" in action:
         raise ValueError(f"{path}: reviewer requests are prohibited")
-    if "mcp" in action:
-        server = action["mcp"].get("server", {})
-        if server.get("name") != "GitKraken" or server.get("id") != "5021":
-            raise ValueError(f"{path}: MCP allowlist is GitKraken only")
-    elif "prComment" not in action:
+    kind = next((candidate for candidate in ("mcp", "prComment") if candidate in action), None)
+    validator = {"mcp": validate_mcp_action, "prComment": validate_pr_comment_action}.get(kind)
+    if validator is None:
+        raise ValueError(f"{path}: unsupported action")
+    validator(action, path)
+
+
+def validate_mcp_action(action: dict[str, Any], path: Path) -> None:
+    server = action["mcp"].get("server", {})
+    if server.get("name") != "GitKraken" or server.get("id") != "5021":
+        raise ValueError(f"{path}: MCP allowlist is GitKraken only")
+
+
+def validate_pr_comment_action(action: dict[str, Any], path: Path) -> None:
+    if "prComment" not in action:
         raise ValueError(f"{path}: unsupported action")
 
 
