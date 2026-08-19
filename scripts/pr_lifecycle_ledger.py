@@ -296,14 +296,25 @@ def validate_receipt_state(event: dict[str, Any], parent: dict[str, Any]) -> Non
 
 
 def validate_receipt_order(event: dict[str, Any], event_by_id: dict[str, dict[str, Any]]) -> None:
-    parent_id = event["parent_event_id"]
-    receipts = [value for value in event_by_id.values() if value.get("parent_event_id") == parent_id]
+    validate_unique_receipt(event, event_by_id)
+    validate_receipt_status(event)
+    validate_receipt_timestamp(event)
+
+
+def validate_unique_receipt(event: dict[str, Any], event_by_id: dict[str, dict[str, Any]]) -> None:
+    receipts = [value for value in event_by_id.values() if value.get("parent_event_id") == event["parent_event_id"]]
     if receipts:
         raise ValueError(f"event {event['event_id']}: duplicate receipt for parent")
+
+
+def validate_receipt_status(event: dict[str, Any]) -> None:
     if event["kind"] == "ACKNOWLEDGEMENT" and event["status"] != "ACKNOWLEDGED":
         raise ValueError(f"event {event['event_id']}: acknowledgement status required")
     if event["kind"] == "CANCELLATION" and event["status"] != "CANCELLED":
         raise ValueError(f"event {event['event_id']}: cancellation status required")
+
+
+def validate_receipt_timestamp(event: dict[str, Any]) -> None:
     if not event["acknowledged_at_utc"]:
         raise ValueError(f"event {event['event_id']}: receipt timestamp required")
 
