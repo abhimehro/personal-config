@@ -1,6 +1,6 @@
 # Automated PR Salvage & Recovery Agent
 
-**Version:** 1.0 **Compatibility:** Security-First Development Agent v3.0; pairs
+**Version:** 1.1 **Compatibility:** Security-First Development Agent v3.0; pairs
 with
 [Automated PR Review & Consolidation Agent v1.0](automated-pr-review-agent.md).
 **Scope:** Investigate, recover, and rationalize the deferred / escalated tail
@@ -28,6 +28,27 @@ salvage operations touch source code in non-trivial ways (cherry-picks, conflict
 resolution, test adaptation, file reverts) and must not bypass human judgment.
 
 ---
+
+## Lifecycle override and Stage 3 handoff
+
+This specification's detailed salvage safeguards remain in force. Where a legacy
+example below says to close an original immediately after opening a draft or to
+send every draft directly to a human maintainer, this override controls.
+
+Stage 2 accepts only a bounded mechanical recovery owned by `stage2` in the
+[Automated PR Lifecycle Contract](automated-pr-lifecycle.md). It opens a focused
+draft with tests and provenance, then transfers the item to Stage 3. It does not
+approve or merge. It does not close a security-sensitive original merely because
+a replacement draft exists. A non-security original may become a closure
+candidate only after the ledger has canonical evidence, immutable anchors, and
+the applicable cooldown; Stage 3 completes that action after calibration.
+
+Before acting, Stage 2 reads its last three run records and its owned ledger
+entries. It live-reconciles every candidate. A changed base or head SHA returns
+the item to Stage 1 rather than reusing stale work. After acting, it appends a
+Stage 2 run record, adds provenance/test/failure information to the ledger, and
+hands every draft, unresolved policy, platform gap, canonical conflict, or failed
+recovery to `stage3`.
 
 ## Why a separate skill rather than an addendum
 
@@ -77,7 +98,7 @@ report was written.
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Configured repos                            | `tasks/pr-review-agent.config.yaml`                                                                                                       | yes       | Same field as Phase 1.                                                                                                                                                      |
 | Bot authors / automation patterns           | `tasks/pr-review-agent.config.yaml`                                                                                                       | yes       | Same as Phase 1.                                                                                                                                                            |
-| List of PRs to investigate                  | Phase 1 report (`tasks/pr-review-YYYY-MM-DD.md` "Post-session remainder" section) **or** explicit override list passed at invocation time | yes       | If invoked without an explicit list, use the most recent dated session report's deferred/escalated tail.                                                                    |
+| List of PRs to investigate                  | Stage-2-owned entries in `tasks/pr-lifecycle-ledger.yaml` or explicit override list | yes       | Historical Phase 1 reports are evidence only; live-reconcile every item. |
 | Live PR state                               | GitHub API at run time                                                                                                                    | yes       | Re-fetch â never trust the snapshot in the Phase 1 report alone.                                                                                                          |
 | Repo working clones                         | Cloned at run time into a scratch directory (e.g. `/tmp/salvage/<repo>`)                                                                  | yes       | Need read **and** write access â Salvage opens new branches and pushes them.                                                                                              |
 | `GH_TOKEN` with push + PR-create permission | Env var                                                                                                                                   | yes       | If `git push` would otherwise pick a read-only bot credential, override the remote URL with `https://x-access-token:${GH_TOKEN}@github.com/<owner>/<repo>.git` (Lesson 0j). |
@@ -88,31 +109,25 @@ report was written.
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | Salvage PRs (one per recoverable original)                 | New branches `cursor-agent/salvage-<repo>-<old_pr>-<short_label>-<suffix>` on each affected repo, opened as **draft** | `gh pr create --draft`                                                                                                    |
 | Infra-fix PRs (one per repo whose `main` needs unblocking) | Same naming pattern: `cursor-agent/fix-<short_label>-<suffix>`                                                        | `gh pr create --draft`                                                                                                    |
-| Closure comments on superseded / blocked-by originals      | Inline PR comments with cross-link to either the salvage PR or the existing-on-main commit                            | `gh pr close --comment "..."` or `gh pr comment`                                                                          |
+| Closure candidates on non-security originals | Ledger event with canonical or no-op evidence                                                                         | Stage 3 completes only after anchors and cooldown are valid                                                                  |
 | Salvage session report                                     | Append to `tasks/salvage-session-reports.md` under a `## Run â YYYY-MM-DD` heading                                  | Markdown table with `Repo`, `Old PR`, `Disposition`, `New PR`, `Notes` columns + a counts summary + new patterns observed |
 | New lessons                                                | Append to `tasks/lessons.md`                                                                                          | One numbered lesson per new pattern (Pattern â Rule â Detection cost)                                                 |
 
 ### Conflict-proofing write boundaries
 
-- Salvage automation writes only to `tasks/salvage-session-reports.md`.
+- Salvage automation writes only to `tasks/salvage-session-reports.md` and
+  Stage-2-owned entries in `tasks/pr-lifecycle-ledger.yaml`.
 - Salvage automation must not write to `tasks/review-session-reports.md`.
 - Canonical policy docs are read-mostly; only update for policy/version changes.
 
 ## Handoff points
 
-After a Phase 2 run finishes, the human maintainer is expected to:
-
-1. Review the new draft PRs in priority order: **infra-fix PRs first** (they
-   unblock other PRs), then security-classified salvages (Sentinel /
-   CWE-tagged), then perf / UX / chore salvages.
-2. For each, verify the ELIR block in the PR description, run the verification
-   commands listed there, and either merge (squash) or request changes.
-3. After merging an infra-fix PR, run
-   **`gh api -X PUT repos/<owner>/<repo>/pulls/<pr>/update-branch`** on each
-   blocked-by PR and let CI re-run; then re-trigger Phase 1 on that repo to
-   merge what's now clean.
-4. If a salvage PR's verification step fails, leave a review comment on the
-   salvage PR (not the original â the original is already closed).
+After a Phase 2 run finishes, it must transfer every nonterminal item to Stage
+3 with the draft URL, provenance, tests, failed approaches, SHA anchors, and the
+smallest next action. Stage 3 reconciles completion eligibility, follows an
+infra-fix merge with fresh inventory, or creates one human decision packet when
+policy/security judgment is irreducible. Stage 2 never leaves an unowned draft
+or prose-only escalation.
 
 The agent is expected to never:
 

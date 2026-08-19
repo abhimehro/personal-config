@@ -1,0 +1,36 @@
+# Copy to tasks/pr-lifecycle-ledger.yaml before the first coordinated three-stage run.
+# This file is state, not a session report. Keep entries sorted by current_owner then key.
+version: "1.0"
+updated_at_utc: "YYYY-MM-DDTHH:MM:SSZ"
+items:
+  - key: "owner/repository#123@HEAD_SHA"
+    repository: "owner/repository"
+    pr: 123
+    url: "https://github.com/owner/repository/pull/123"
+    base_sha: "BASE_SHA"
+    head_sha: "HEAD_SHA"
+    author_type: "bot" # bot | automation_human | human | unknown
+    classification: "CI_INFRA"
+    risk_class: "routine" # routine | sensitive | security | unknown
+    guardrail_outcome: "HOLD_EVIDENCE"
+    lifecycle_state: "AWAITING_RECONCILIATION"
+    current_owner: "stage3"
+    next_owner: "stage3"
+    safe_default: "hold"
+    next_action: "Re-fetch required checks and compare current paths before expiry."
+    next_action_expires_at_utc: "YYYY-MM-DDTHH:MM:SSZ"
+    changed_paths: []
+    evidence_urls: []
+    canonical_candidate: null
+    attempts:
+      - stage: "stage1"
+        at_utc: "YYYY-MM-DDTHH:MM:SSZ"
+        result: "HOLD_EVIDENCE"
+        detail: "Required check evidence was unavailable."
+    handoffs:
+      - from: "stage1"
+        to: "stage3"
+        at_utc: "YYYY-MM-DDTHH:MM:SSZ"
+        reason: "Evidence gap needs reconciliation, not salvage."
+    lessons_applied: []
+    updated_at_utc: "YYYY-MM-DDTHH:MM:SSZ"

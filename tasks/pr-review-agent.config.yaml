@@ -28,3 +28,28 @@ merge_strategy: squash
 auto_fix_enabled: true
 human_escalation_channel: github-review-request
 
+lifecycle:
+  version: "1.0"
+  ledger: tasks/pr-lifecycle-ledger.yaml
+  routine_evidence_expiry_days: 7
+  no_op_or_supersession_cooldown_hours: 24
+  stale_close_cooldown_hours: 72
+  stage_caps:
+    stage1_inventory: 20
+    stage2_salvage_candidates: 5
+    stage3_reconciliation: 20
+    stage3_decision_packets: 5
+    stage3_completion_actions: 5
+  stages:
+    stage1_review:
+      schedule: "0 13 * * *"
+      concurrency: 1
+      authority: routine-approve-squash-merge-close
+    stage2_salvage:
+      schedule: "0 17 * * *"
+      concurrency: 1
+      authority: draft-only-recovery
+    stage3_completion:
+      schedule: "15 21 * * *"
+      concurrency: 1
+      authority: report-only-until-calibration-approved
