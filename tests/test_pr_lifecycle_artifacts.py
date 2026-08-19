@@ -1,4 +1,5 @@
 import copy
+import json
 import subprocess
 import sys
 import tempfile
@@ -202,6 +203,12 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         config["lifecycle"]["validation_command"] = "python3 scripts/validate_pr_lifecycle_artifacts.py"
         with self.assertRaisesRegex(ValueError, "must require fetched runtime ledger path"):
             validator.validate_config(config)
+
+    def test_enabled_memory_is_required_for_all_cursor_exports(self):
+        exports = ROOT / "docs/cursor-automations/exports"
+        for path in sorted(exports.glob("*.json")):
+            data = json.loads(path.read_text(encoding="utf-8"))
+            self.assertTrue(data["memoryEnabled"], path.name)
 
     def test_authoritative_ruleset_reads_clear_pending_merge_method_holds(self):
         ledger = self.example()

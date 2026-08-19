@@ -161,8 +161,8 @@ def validate_export_schedule(data: dict[str, Any], path: Path, schedule: str) ->
 
 
 def validate_export_memory(data: dict[str, Any], path: Path) -> None:
-    if data["memoryEnabled"] is not False:
-        raise ValueError(f"{path}: memory must be disabled")
+    if data["memoryEnabled"] is not True:
+        raise ValueError(f"{path}: memory must be enabled")
 
 
 def validate_export_approval(data: dict[str, Any], path: Path, allow_approve: bool) -> None:
@@ -200,7 +200,7 @@ def validate_pr_comment_action(action: dict[str, Any], path: Path) -> None:
 def validate_prompt(content: str, name: str) -> None:
     required = {
         "docs/automated-pr-lifecycle.md", "docs/pr-lifecycle-runtime-ledger.md",
-        "Memory is disabled", "ledger, run records, and lessons",
+        "Memory is enabled", "ledger, run records, and lessons",
     }
     if any(marker not in content for marker in required):
         raise ValueError(f"{name}: missing runtime continuity marker")
