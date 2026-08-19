@@ -52,13 +52,14 @@ The current re-review head is `1efd36d`. Schema v1.2 is implemented before any r
 
 The active lifecycle configuration now requires the fetched-ledger invocation `python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"`; the configuration validator rejects the former argument-less form, and a focused regression test covers that rejection. The Stage 2 fixture uses the same command.
 
-The verified-zero registry was corrected separately from the schema change. `abhimehro/personal-config` remains `VERIFIED` only because the authoritative branch-protection endpoint was read at `2026-08-19T12:52:18Z` and recorded a disabled-protection response, while the ruleset endpoint returned no rulesets. The other six repositories are `PENDING`, use `UNKNOWN` discovery values, have `required_checks_verified_zero: false`, and carry an explicit hold until an authoritative source is readable. This allows no inferred merge path.
+The verified-zero registry was corrected separately from the schema change. `abhimehro/personal-config` remains `VERIFIED` only because the authoritative branch-protection endpoint was read at `2026-08-19T12:52:18Z` and recorded a disabled-protection response, while the ruleset endpoint returned no rulesets. The remaining six repositories were then read from their authoritative branch-protection and ruleset endpoints at `2026-08-19T13:04:17Z`. `ctrld-sync`, `email-security-pipeline`, `Seatek_Analysis`, `Hydrograph_Versus_Seatek_Sensors_Project`, and `series_correction_project_updated` have no required-status-check rule in their active rulesets and are now `VERIFIED` with evidence-backed zero required checks. `repoprompt-ce` is `VERIFIED` with nonzero requirements for CodeQL code scanning and code quality, so its `required_checks_verified_zero` remains false. No merge path is inferred beyond these recorded settings.
 
 | Evidence item | Result |
 |---|---|
 | Focused lifecycle regression suite | 20 tests passed, including stale-command rejection and pending-hold coverage. |
 | Full local validation | Ruff, Bandit, fixture validation, prompt/export synchronization, `make test-quick`, and `make test-all` passed, with 480 repository tests passing. |
 | Hosted quality gate | `CodeScene Code Health Review (main)` passed on the preceding schema-v1.2 quality head and on current evidence remediation head `1efd36d`. |
+| Authoritative registry refresh | Branch-protection and full ruleset definitions were read for the six remaining repositories. The explicit stale-command regression `test_active_config_requires_fetched_runtime_ledger_argument` passed. |
 | Runtime and governance | No runtime-ledger branch bootstrap, dashboard change, approval, merge, close, or PR-comment action was performed. |
 
 These records are implementation and re-review evidence only. They do not authorize merge, dashboard activation, or runtime-ledger bootstrap; each remains a separate human decision.

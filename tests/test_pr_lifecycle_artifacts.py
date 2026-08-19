@@ -203,12 +203,14 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must require fetched runtime ledger path"):
             validator.validate_config(config)
 
-    def test_unreadable_merge_method_source_requires_pending_hold(self):
+    def test_authoritative_ruleset_reads_clear_pending_merge_method_holds(self):
         ledger = self.example()
-        pending = ledger["repository_merge_methods"][1]
-        self.assertEqual(pending["discovery_status"], "PENDING")
-        self.assertFalse(pending["required_checks_verified_zero"])
-        self.assertIsNotNone(pending["hold_reason"])
+        verified = ledger["repository_merge_methods"]
+        self.assertTrue(all(entry["discovery_status"] == "VERIFIED" for entry in verified))
+        self.assertTrue(all(entry["hold_reason"] is None for entry in verified))
+        self.assertTrue(all(entry["required_checks_verified_zero"] for entry in verified[1:6]))
+        self.assertFalse(verified[6]["required_checks_verified_zero"])
+        self.assertTrue(verified[6]["required_checks"])
 
 
 if __name__ == "__main__":
