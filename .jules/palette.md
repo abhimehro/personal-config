@@ -530,3 +530,8 @@ with potentially missing data, always conditionally render a dedicated
 to communicate the absence of data clearly and beautifully.
 
 >>>>>>> Stashed changes
+
+## 2026-08-19 - Native HTML Meter for Data Visualization
+
+**Learning:** Generating HTML dashboards with native HTML5 `<meter>` elements provides semantic, accessible data visualization for scalar values. Missing these on certain metric cards creates inconsistency and poor UX.
+**Action:** Ensure all similar metric cards use the native HTML5 `<meter>` element with appropriate attributes (`min`, `max`, `low`, `high`, `optimum`, and `aria-label`) for accessible and consistent visual representation of scalar metrics.
