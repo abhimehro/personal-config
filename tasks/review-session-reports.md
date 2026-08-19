@@ -1,3 +1,31 @@
+# Stage 1 — 2026-08-19 (cron 15:00 UTC / fired 22:30Z)
+
+Preflight PASS 7/7. Runtime ledger **ACTIVE** (`github_contents_api`).
+Inventoried **15** REST-allowlisted bot PRs (cap 20). Open **92**; **77** REST
+login `abhimehro` excluded as HUMAN. Squash-merged **0**. Closed **0**. GitHub
+PR mutations **0**. Ledger `0` → `1` (blob
+`b58f98b8ad565a7e822b03a214b63da1d33e12a9`, commit
+`e77e75856ed55ba767eef7ac0f3ab5f7d6baf8a4`). Stage 2 queued **1** (hydro#535
+mypy CI pin). Stage 3 **14**. Calibration REPORT_ONLY count **0**. Adversarial:
+opus-5 + gpt-5.6-sol on #535 → HOLD. Lessons **0fx** / **0fy**. Full record:
+`tasks/pr-review-2026-08-19.md`. Docs branch:
+`cursor-agent/automated-pr-review-workflow-1694`.
+
+| Metric                         | Count |
+| ------------------------------ | ----: |
+| Inventoried (REST allowlisted) |    15 |
+| Human-login excluded           |    77 |
+| Merged                         |     0 |
+| Closed                         |     0 |
+| Stage 2 queued                 |     1 |
+| Stage 3 handoffs               |    14 |
+| GitHub PR actions              |     0 |
+| Ledger CAS writes              |     1 |
+
+Per-item table: see `tasks/pr-review-2026-08-19.md` (mandatory Stage 1 columns).
+
+---
+
 # Review session — 2026-08-13 (cron Phase 1 13:00 UTC)
 
 Preflight PASS 7/7. Inventoried **41**. Squash-merged **0** (`gh` read-only).

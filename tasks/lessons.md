@@ -1,5 +1,40 @@
 # Lessons Learned
 
+## Lesson 0fx: Match bot allowlist to REST `user.login`, not GraphQL `app/` (2026-08-19)
+
+**Pattern:** `gh pr list --json author` returns GraphQL logins `app/dependabot`
+and `app/cursor`. The versioned allowlist in
+`tasks/pr-review-agent.config.yaml` stores REST identities
+(`dependabot[bot]`, `cursor[bot]`, …). Matching GraphQL `app/dependabot` as a
+string equality against `dependabot[bot]` falsely marks every Dependabot PR
+non-allowlisted. Jules/Bolt/Sentinel/Palette/Daily QA PRs use REST
+`user.login=abhimehro` type User even when the title or branch looks bot-made.
+Treating those as bots from title/branch/history would autonomously act on
+human-authored work.
+**Rule:** An author is a bot only when REST `.user.login` or the configured
+`app_slug` matches the allowlist. GraphQL `app/<slug>` is not an allowlist
+match. Ambiguous identity is human-authored: never autonomously approve, merge,
+or close. Do not infer bot authorship from title, body, branch, comment, or
+review history.
+**Detection cost:** Low — compare `gh api repos/.../pulls/N --jq .user.login`
+to the allowlist; ignore GraphQL `author.login` for the gate.
+
+## Lesson 0fy: Poetry mypy bump can be green while CI still pins the old mypy (2026-08-19)
+
+**Pattern:** Hydrograph Dependabot #535 raised `mypy` 2.3.0 → 2.3.1 in
+`pyproject.toml` and `poetry.lock`. Required checks were green (MERGEABLE /
+CLEAN). Adversarial review found CI typecheck still does
+`pip install -r requirements-ci.txt && mypy src/`, and `requirements-ci.txt` on
+`main` remains `mypy==2.3.0`. Merging would have claimed a 2.3.1 bump the
+typecheck job never ran.
+**Rule:** For Python tool bumps, re-read the **CI install path**, not only the
+lockfile the bot touched. If pytest/mypy/ruff CI uses `requirements-ci.txt` (or
+an unpinned extra), HOLD_EVIDENCE until that pin matches. Green GitHub checks
+are not proof the new version executed. Route a bounded Stage 2 repair to align
+the CI pin; do not squash-merge the lock-only PR.
+**Detection cost:** Low — `gh api .../contents/requirements-ci.txt?ref=main`
+plus the workflow `run:` that invokes mypy.
+
 ## Lesson 0fu: `eval` shopt restore must not become unquoted expansion (2026-08-18)
 
 **Pattern:** Sentinel DIRTY #2007 replaced `eval "$_nullglob_state"` with
