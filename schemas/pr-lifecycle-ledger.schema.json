@@ -28,8 +28,8 @@
   },
   "$defs": {
     "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-    "timestamp": { "type": "string", "pattern": "Z$" },
-    "url": { "type": "string", "pattern": "^https://" },
+    "timestamp": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$" },
+    "url": { "type": "string", "pattern": "^https://[^\\s]+$" },
     "item": {
       "type": "object",
       "additionalProperties": false,
@@ -68,17 +68,40 @@
       "properties": {
         "event_id": { "type": "string", "pattern": "^evt-[A-Za-z0-9._-]+$" },
         "kind": { "enum": ["HANDOFF", "ACKNOWLEDGEMENT", "IMPORT", "CALIBRATION", "TERMINAL"] },
-        "item_key": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*@[0-9a-f]{40}$" },
+        "item_key": { "type": ["string", "null"], "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*@[0-9a-f]{40}$" },
         "from_owner": { "enum": ["stage1", "stage2", "stage3", "human", "none"] },
         "to_owner": { "enum": ["stage1", "stage2", "stage3", "human", "none"] },
         "expected_item_revision": { "type": "integer", "minimum": 0 },
-        "resulting_item_revision": { "type": "integer", "minimum": 1 },
+        "resulting_item_revision": { "type": "integer", "minimum": 0 },
         "idempotency_key": { "type": "string", "minLength": 1 },
         "status": { "enum": ["PROJECTED", "ACKNOWLEDGED", "CANCELLED"] },
         "created_at_utc": { "$ref": "#/$defs/timestamp" },
-        "acknowledged_at_utc": { "type": ["string", "null"], "pattern": "Z$" },
+        "acknowledged_at_utc": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$" },
+        "policy_revision": { "type": ["string", "null"] },
+        "successful": { "type": ["boolean", "null"] },
         "reason": { "type": "string" }
-      }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "CALIBRATION" } } },
+          "then": {
+            "properties": {
+              "item_key": { "const": null },
+              "expected_item_revision": { "const": 0 },
+              "resulting_item_revision": { "const": 0 },
+              "policy_revision": { "type": "string", "minLength": 1 },
+              "successful": { "const": true }
+            },
+            "required": ["policy_revision", "successful"]
+          },
+          "else": {
+            "properties": {
+              "item_key": { "type": "string" },
+              "resulting_item_revision": { "minimum": 1 }
+            }
+          }
+        }
+      ]
     },
     "calibration": {
       "type": "object",
@@ -92,13 +115,26 @@
         "policy_revision": { "type": "string", "minLength": 1 },
         "coverage": { "type": "object", "additionalProperties": false, "required": ["identity_classes", "risk_classes", "merge_methods", "required_check_sources"], "properties": { "identity_classes": { "type": "array", "items": { "type": "string" } }, "risk_classes": { "type": "array", "items": { "type": "string" } }, "merge_methods": { "type": "array", "items": { "type": "string" } }, "required_check_sources": { "type": "array", "items": { "type": "string" } } } },
         "approved_by": { "type": ["string", "null"] },
-        "approved_at_utc": { "type": ["string", "null"], "pattern": "Z$" },
+        "approved_at_utc": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$" },
         "approval_evidence_urls": { "type": "array", "items": { "$ref": "#/$defs/url" } },
         "invalidated_by_revision": { "type": ["string", "null"] },
-        "revoked_at_utc": { "type": ["string", "null"], "pattern": "Z$" },
+        "revoked_at_utc": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$" },
         "rollback_conditions": { "type": "array", "minItems": 1, "items": { "type": "string" } },
         "completion_authority": { "const": "approve-merge-close-nonsecurity" }
-      }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "APPROVED" } } },
+          "then": {
+            "properties": {
+              "successful_run_count": { "minimum": 7 },
+              "approved_by": { "type": "string", "minLength": 1 },
+              "approved_at_utc": { "$ref": "#/$defs/timestamp" },
+              "approval_evidence_urls": { "minItems": 1 }
+            }
+          }
+        }
+      ]
     },
     "stage2WorkItem": {
       "type": "object",
@@ -126,6 +162,6 @@
       }
     },
     "import": { "type": "object", "additionalProperties": false, "required": ["import_id", "source_path", "source_fingerprint", "status", "created_at_utc"], "properties": { "import_id": { "type": "string", "pattern": "^imp-[A-Za-z0-9._-]+$" }, "source_path": { "type": "string" }, "source_fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "status": { "enum": ["EVIDENCE_ONLY", "RECONCILED", "SKIPPED"] }, "created_at_utc": { "$ref": "#/$defs/timestamp" } } },
-    "mergeMethod": { "type": "object", "additionalProperties": false, "required": ["repository", "method", "required_checks_source", "required_checks", "updated_at_utc"], "properties": { "repository": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" }, "method": { "enum": ["TRUNK_QUEUE", "GITHUB_SQUASH", "GITHUB_MERGE_QUEUE", "UNKNOWN"] }, "required_checks_source": { "enum": ["TRUNK", "GITHUB_RULESETS", "GITHUB_BRANCH_PROTECTION", "UNKNOWN"] }, "required_checks": { "type": "array", "items": { "type": "string" } }, "updated_at_utc": { "$ref": "#/$defs/timestamp" } } }
+    "mergeMethod": { "type": "object", "additionalProperties": false, "required": ["repository", "method", "required_checks_source", "required_checks", "required_checks_verified_zero", "discovery_status", "evidence_url", "observed_at_utc", "updated_at_utc", "hold_reason"], "properties": { "repository": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" }, "method": { "enum": ["TRUNK_QUEUE", "GITHUB_SQUASH", "GITHUB_MERGE_QUEUE", "UNKNOWN"] }, "required_checks_source": { "enum": ["TRUNK", "GITHUB_RULESETS", "GITHUB_BRANCH_PROTECTION", "UNKNOWN"] }, "required_checks": { "type": "array", "items": { "type": "string" } }, "required_checks_verified_zero": { "type": "boolean" }, "discovery_status": { "enum": ["VERIFIED", "PENDING"] }, "evidence_url": { "type": ["string", "null"], "pattern": "^https://[^\\s]+$" }, "observed_at_utc": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$" }, "updated_at_utc": { "$ref": "#/$defs/timestamp" }, "hold_reason": { "type": ["string", "null"] } } }
   }
 }

@@ -47,17 +47,29 @@ sensitive_path_taxonomy:
     - destructive_data_actions
 
 stale_threshold_days: 30
-merge_strategy: squash
-auto_fix_enabled: true
-human_escalation_channel: github-review-request
 
 lifecycle:
-  version: "1.1"
-  source_of_truth: "docs/automated-pr-lifecycle.md and tasks/pr-lifecycle-ledger.yaml"
+  version: "1.2"
+  source_of_truth: "docs/automated-pr-lifecycle.md and the runtime ledger data branch"
   schema: schemas/pr-lifecycle-ledger.schema.json
   validation_command: python3 scripts/validate_pr_lifecycle_artifacts.py
   cursor_dashboard_runtime: separately_applied_from_checked_in_exports
-  ledger: tasks/pr-lifecycle-ledger.yaml
+  policy_revision: "pr-lifecycle-v1.2"
+  policy_inputs:
+    identity_classification_revision: "2026-08-19"
+    sensitive_path_taxonomy_revision: "2026-08-19"
+    permission_scope_revision: "cursor-export-v1.1"
+    required_check_source_revision: "registry-v1.2"
+    merge_method_revision: "registry-v1.2"
+    prompt_revision: "pr-lifecycle-v1.2"
+  runtime_ledger:
+    data_branch: automation/pr-lifecycle-ledger
+    data_path: pr-lifecycle-ledger.yaml
+    main_branch_pointer: tasks/pr-lifecycle-ledger.yaml
+    bootstrap_state: NOT_BOOTSTRAPPED
+    allowed_write_primitives:
+      - git_fast_forward
+      - github_contents_api
   routine_evidence_expiry_days: 7
   no_op_or_supersession_cooldown_hours: 24
   stale_close_cooldown_hours: 72

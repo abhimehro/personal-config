@@ -22,19 +22,20 @@ Automated routine approval is a policy-authorized throughput control, not an ind
 
 | Record | Location | Writer | Purpose |
 |---|---|---|---|
-| Lifecycle ledger | `tasks/pr-lifecycle-ledger.yaml` | The stage that currently owns the item through a revision-checked event | Current state, SHA anchors, evidence, next action, handoff history, calibration, and merge-method registry |
+| Runtime lifecycle ledger | `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` after separately authorized bootstrap | The stage that currently owns the item through a revision-checked event | Current state, SHA anchors, evidence, next action, handoff history, calibration, and merge-method registry |
+| Main-branch ledger pointer | `tasks/pr-lifecycle-ledger.yaml` | Maintainer only during bootstrap | Non-authoritative retrieval/bootstrap metadata, never live calibration state |
 | Review run record | `tasks/review-session-reports.md` | Stage 1 only | Append-only inventory and routine-disposition audit |
 | Salvage run record | `tasks/salvage-session-reports.md` | Stage 2 only | Append-only recovery and draft-provenance audit |
 | Completion run record | `tasks/completion-session-reports.md` | Stage 3 only | Append-only reconciliation, packet, and bounded-completion audit |
 | Lessons | `tasks/lessons.md` | Any stage, through an append-only entry | Reusable routing or verification rules, not raw logs or speculation |
 
-The ledger is the only source of an item's current owner. A run report is evidence of what a stage did; it cannot silently transfer ownership. A stage must never edit another stage's run report.
+The runtime ledger is the only source of an item's current owner. A run report is evidence of what a stage did; it cannot silently transfer ownership. A stage must never edit another stage's run report. The Git-native write, compare-and-swap, runtime capability, inventory-exclusion, and bootstrap protocol is normative in [PR Lifecycle Runtime Ledger](pr-lifecycle-runtime-ledger.md).
 
 The three `docs/automated-pr-*.md` specifications and this lifecycle contract are the authoritative Cursor-facing PR-automation documents in this repository. The `.agents` directory supplies generic skills and has no PR-specific review, salvage, or completion asset in the current default branch. It must not override this lifecycle without an explicit policy revision.
 
 ## Normative ledger and legal transitions
 
-`schemas/pr-lifecycle-ledger.schema.json` is the normative machine-readable schema. `scripts/validate_pr_lifecycle_artifacts.py` must pass before an automation reads or writes the ledger. The validator rejects duplicate YAML mapping keys, unknown fields, duplicate item/event/idempotency keys, invalid anchors, invalid URLs/timestamps, invalid terminal ownership, missing calibration fields, invalid Stage 2 work items, and an export whose authority does not match its stage. Any failure is `ANALYSIS_ERROR`; no action may follow.
+`schemas/pr-lifecycle-ledger.schema.json` is the normative machine-readable schema. `scripts/validate_pr_lifecycle_artifacts.py` must pass before an automation reads or writes the runtime ledger. The validator rejects duplicate YAML mapping keys, unknown fields, duplicate item/event/idempotency keys, invalid anchors, invalid URLs/timestamps, invalid terminal ownership, missing calibration fields, invalid Stage 2 work items, and an export whose authority does not match its stage. Any failure is `ANALYSIS_ERROR`; no action may follow. A main-branch bootstrap pointer is not a valid runtime-ledger input.
 
 The unique item key is `owner/repository#PR@head_sha`. Each entry has an integer `revision`; a state transition increments it by exactly one. Nonterminal legal states are `STAGE1_INTAKE`, `STAGE2_QUEUED`, `STAGE2_ACTIVE`, `STAGE3_RECONCILIATION`, and `WAITING_HUMAN`. The only terminal state is `TERMINAL`, which must have one terminal disposition and `current_owner: none`, `next_owner: none`.
 
@@ -96,7 +97,7 @@ Completion approval automatically resets to `REPORT_ONLY` when the policy revisi
 
 ## Repository merge methods and required checks
 
-Every configured repository has a `repository_merge_methods` record. `method` is `TRUNK_QUEUE`, `GITHUB_SQUASH`, `GITHUB_MERGE_QUEUE`, or `UNKNOWN`; the required-check source is `TRUNK`, GitHub rulesets, GitHub branch protection, or unknown. `UNKNOWN` or an unreadable required-check source is `HOLD_EVIDENCE`, never an inferred green check.
+Every configured repository has a `repository_merge_methods` record with an evidence URL, observation timestamp, discovery status, and explicit hold reason where discovery is incomplete. `method` is `TRUNK_QUEUE`, `GITHUB_SQUASH`, `GITHUB_MERGE_QUEUE`, or `UNKNOWN`; the required-check source is `TRUNK`, GitHub rulesets, GitHub branch protection, or unknown. `UNKNOWN`, an unreadable source, or an ambiguous empty response is `HOLD_EVIDENCE`, never an inferred green check. An empty `required_checks` list is eligible only when `required_checks_verified_zero: true` records that a successfully read authoritative source explicitly requires zero checks.
 
 For `abhimehro/personal-config`, the current method is `TRUNK_QUEUE`. Approval and queue submission are separate audited actions and both count toward Stage 3’s five-action cap. The second action may occur only after re-reading every completion predicate. Approval-success/queue-failure stops the item with an error record. Merge-success/branch-delete-failure is a non-blocking follow-up. Failed attempts and retries count against the cap.
 

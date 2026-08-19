@@ -30,3 +30,18 @@ The revision must retain the parts of the reviewed design that already match mai
 ## Re-review gate
 
 Every row must be marked **Implemented** only after its named artifact is present and the stated validation evidence is recorded. A passing documentation check is not evidence that the Cursor Dashboard runtime matches the checked-in source. The maintainer must apply or update the dashboard from the exported artifacts, then record the dashboard fingerprint and the first calibration run in the lifecycle ledger.
+
+## Enforcement-layer follow-up
+
+The approved enforcement follow-up is implemented in source on this draft branch. It adds enforcement, test, and CI coverage without creating a data branch, changing a Cursor Dashboard automation, approving, merging, closing, or otherwise mutating any PR.
+
+| Follow-up | Source implementation | Validation evidence | Runtime status |
+|---|---|---|---|
+| A1, Git-native ledger write path | `docs/pr-lifecycle-runtime-ledger.md`; main-branch bootstrap pointer; explicit fast-forward and Contents API CAS rules; inventory exclusion; capability hold behavior. | Pointer validation, non-empty runtime fixture, prompt/export validation. | **Deferred:** requires separate post-re-review bootstrap authorization. |
+| A2, CodeScene refactor | Validator split into parsing/schema, configuration/export, ledger cross-record, and thin orchestration modules. | Clean Ruff, Bandit, and Radon checks; no complexity grade C or worse. | Source complete. |
+| B1-B2, URL/schema/calibration enforcement | JSON Schema plus cross-record validation for complete HTTPS URLs, timestamps, terminal ownership, projection continuity, current-policy calibration events, and seven-run approval. | Twelve focused regression tests and `PR_LIFECYCLE_VALID`. | Source complete. |
+| B3-B4, pointer/registry/config correctness | Runtime pointer validation, legacy-key rejection, exact stage caps/schedules/authorities, verified-zero required-check proof, and dated read-only discovery evidence for all seven repositories. | Fixture validation and targeted regression tests. | Runtime reads remain held until bootstrap. |
+| C, Cursor transition and drift safety | Runtime-ledger prompt preamble, prompt/export synchronization, dashboard bootstrap prerequisite, and mutually exclusive Stage 3 transition/rollback steps. | `CURSOR_EXPORT_PROMPTS_MATCH` plus export-action validation. | **Deferred:** no dashboard automation was changed. |
+| D, trusted-base enforcement | `Code Quality` CI job installs the pinned schema dependency and runs artifact validation, prompt/export sync, and focused lifecycle tests before the broader suite. | Workflow review and local command parity. | Active when this source reaches the trusted base. |
+
+The broad `make test-all` suite was also run. It retains one unrelated existing failure in `tests/test_controld_manager.sh`, where the invalid-profile test output contains the expected `Unknown profile` text but its shell assertion reports failure. Neither that test nor `controld-system/scripts/controld-manager` is in this PR's diff. The lifecycle smoke suite and focused enforcement suite pass.
