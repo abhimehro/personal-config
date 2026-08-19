@@ -139,13 +139,29 @@ def validate_export_shape(data: dict[str, Any], path: Path, schedule: str, allow
     fields = {"name", "triggers", "actions", "prompts", "model", "agentOptions", "memoryEnabled", "scope"}
     if set(data) != fields:
         raise ValueError(f"{path}: export fields differ from observed Cursor shape")
+    validate_export_schedule(data, path, schedule)
+    validate_export_memory(data, path)
+    validate_export_approval(data, path, allow_approve)
+    validate_export_actions(data, path)
+
+
+def validate_export_schedule(data: dict[str, Any], path: Path, schedule: str) -> None:
     if data["triggers"][0]["cron"]["cron"] != schedule:
         raise ValueError(f"{path}: cron differs from lifecycle stage")
+
+
+def validate_export_memory(data: dict[str, Any], path: Path) -> None:
     if data["memoryEnabled"] is not False:
         raise ValueError(f"{path}: memory must be disabled")
+
+
+def validate_export_approval(data: dict[str, Any], path: Path, allow_approve: bool) -> None:
     approvals = [action for action in data["actions"] if action.get("prComment", {}).get("allowApprove") is True]
     if bool(approvals) != allow_approve:
         raise ValueError(f"{path}: approval authority differs from stage")
+
+
+def validate_export_actions(data: dict[str, Any], path: Path) -> None:
     for action in require_list(data["actions"], f"{path}.actions"):
         validate_export_action(action, path)
 

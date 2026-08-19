@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,6 +20,15 @@ MAPPINGS = {
     "daily-pr-completion.calibration.json": "daily-pr-completion.calibration.md",
     "daily-pr-completion.json": "daily-pr-completion.md",
 }
+
+
+@dataclass
+class PromptReconciliation:
+    export: dict[str, object]
+    entry: dict[str, object]
+    export_path: Path
+    prompt_name: str
+    prompt: str
 
 
 def sync(write: bool) -> list[str]:
@@ -33,6 +43,17 @@ def sync(write: bool) -> list[str]:
 
 
 def sync_one(export_path: Path, prompt_path: Path, write: bool) -> str | None:
+    reconciliation = load_prompt_reconciliation(export_path, prompt_path)
+    if isinstance(reconciliation, str):
+        return reconciliation
+    if reconciliation.entry.get("prompt") == reconciliation.prompt:
+        return None
+    return reconcile_prompt(reconciliation, write)
+
+
+def load_prompt_reconciliation(
+    export_path: Path, prompt_path: Path
+) -> PromptReconciliation | str:
     try:
         export = json.loads(export_path.read_text(encoding="utf-8"))
         prompt = prompt_path.read_text(encoding="utf-8").strip() + "\n"
@@ -41,9 +62,7 @@ def sync_one(export_path: Path, prompt_path: Path, write: bool) -> str | None:
     entry = get_single_prompt_entry(export, export_path.name)
     if isinstance(entry, str):
         return entry
-    if entry.get("prompt") == prompt:
-        return None
-    return reconcile_prompt(entry, export, export_path, prompt_path.name, prompt, write)
+    return PromptReconciliation(export, entry, export_path, prompt_path.name, prompt)
 
 
 def get_single_prompt_entry(export: dict[str, object], export_name: str) -> dict[str, object] | str:
@@ -55,18 +74,16 @@ def get_single_prompt_entry(export: dict[str, object], export_name: str) -> dict
     return entries[0]
 
 
-def reconcile_prompt(
-    entry: dict[str, object],
-    export: dict[str, object],
-    export_path: Path,
-    prompt_name: str,
-    prompt: str,
-    write: bool,
-) -> str | None:
+def reconcile_prompt(reconciliation: PromptReconciliation, write: bool) -> str | None:
     if not write:
-        return f"{export_path.name}: prompt differs from {prompt_name}"
-    entry["prompt"] = prompt
-    export_path.write_text(json.dumps(export, indent=2) + "\n", encoding="utf-8")
+        return (
+            f"{reconciliation.export_path.name}: prompt differs from "
+            f"{reconciliation.prompt_name}"
+        )
+    reconciliation.entry["prompt"] = reconciliation.prompt
+    reconciliation.export_path.write_text(
+        json.dumps(reconciliation.export, indent=2) + "\n", encoding="utf-8"
+    )
     return None
 
 

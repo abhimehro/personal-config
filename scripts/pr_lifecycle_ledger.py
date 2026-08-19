@@ -146,21 +146,42 @@ def validate_item_event(
     seen_keys: set[tuple[str, str]],
     projected: dict[str, int],
 ) -> None:
+    item_key, pair = validate_item_event_reference(event, items, seen_keys)
+    validate_item_event_revision(event, item_key, projected)
+    validate_item_event_acknowledgement(event, item_key)
+    seen_keys.add(pair)
+    projected[item_key] = event["resulting_item_revision"]
+
+
+def validate_item_event_reference(
+    event: dict[str, Any],
+    items: dict[str, dict[str, Any]],
+    seen_keys: set[tuple[str, str]],
+) -> tuple[str, tuple[str, str]]:
     event_id = event["event_id"]
     item_key = event["item_key"]
     pair = (item_key, event["idempotency_key"])
     if item_key not in items or pair in seen_keys:
         raise ValueError(f"event {event_id}: unknown item or duplicate idempotency key")
-    if event["resulting_item_revision"] != event["expected_item_revision"] + 1:
-        raise ValueError(f"event {event_id}: revision must increment by one")
     if event["idempotency_key"] != f"{item_key}:{event_id}":
         raise ValueError(f"event {event_id}: invalid idempotency key")
-    if event["status"] == "ACKNOWLEDGED" and not event["acknowledged_at_utc"]:
-        raise ValueError(f"event {event_id}: acknowledgement timestamp required")
+    return item_key, pair
+
+
+def validate_item_event_revision(
+    event: dict[str, Any], item_key: str, projected: dict[str, int]
+) -> None:
+    event_id = event["event_id"]
+    if event["resulting_item_revision"] != event["expected_item_revision"] + 1:
+        raise ValueError(f"event {event_id}: revision must increment by one")
     if event["expected_item_revision"] != projected.get(item_key, 0):
         raise ValueError(f"event {event_id}: stale or discontinuous item projection")
-    seen_keys.add(pair)
-    projected[item_key] = event["resulting_item_revision"]
+
+
+def validate_item_event_acknowledgement(event: dict[str, Any], item_key: str) -> None:
+    event_id = event["event_id"]
+    if event["status"] == "ACKNOWLEDGED" and not event["acknowledged_at_utc"]:
+        raise ValueError(f"event {event_id}: acknowledgement timestamp required")
 
 
 def validate_projection(items: dict[str, dict[str, Any]], projected: dict[str, int]) -> None:
