@@ -6,6 +6,58 @@
 
 ## Entry template
 
+## Run — 2026-08-18
+
+### Input tail
+
+- Source: Phase 1 `tasks/pr-review-2026-08-16.md` remainder + PR
+  [#2016](https://github.com/abhimehro/personal-config/pull/2016)
+  (`pr-review-2026-08-17.md`) + live re-fetch
+- Preflight PASS 7/7; `make cursor-cloud-hooks`; PAT as `abhimehro` (0ew)
+- Live open: **77**; CONFLICTING: **13**
+- Zero-diff: esp #1495
+
+### Outcomes
+
+| Repo                    | Old PR | Disposition     | New PR                                                                | Notes                                              |
+| ----------------------- | -----: | --------------- | --------------------------------------------------------------------- | -------------------------------------------------- |
+| personal-config         |   2000 | SALVAGE + CLOSE | [#2022](https://github.com/abhimehro/personal-config/pull/2022)       | `pgrep -x --`; twin of #1989                       |
+| personal-config         |   1989 | SALVAGE + CLOSE | [#2022](https://github.com/abhimehro/personal-config/pull/2022)       | identical to #2000                                 |
+| personal-config         |   1997 | CLOSE           | —                                                                     | superseded by CLEAN #1996                          |
+| personal-config         |   1985 | CLOSE           | —                                                                     | scratch + yaml skipIf (0fo)                        |
+| personal-config         |   1991 | CLOSE           | —                                                                     | inline-style empty state vs main                   |
+| personal-config         |   2007 | ESCALATE        | —                                                                     | eval→unquoted (0fu)                                |
+| personal-config         |   1907 | ESCALATE        | —                                                                     | CORS mega 95 files                                 |
+| ctrld-sync              |   1188 | SALVAGE + CLOSE | [#1194](https://github.com/abhimehro/ctrld-sync/pull/1194)            | uv Docker/Bandit; keep requirements.txt            |
+| ctrld-sync              |   1174 | SALVAGE + CLOSE | [#1195](https://github.com/abhimehro/ctrld-sync/pull/1195)            | adapted to `sync/rules.py` (0fv)                   |
+| ctrld-sync              |   1161 | HOLD            | —                                                                     | sum() 0fo                                          |
+| ctrld-sync              |   1136 | ESCALATE        | —                                                                     | mypy 2.x major                                     |
+| email-security-pipeline |   1495 | CLOSE           | —                                                                     | zero-diff Daily QA (0fr)                           |
+| email-security-pipeline |   1487 | CLOSE           | —                                                                     | `_has_all_required_headers` already on main        |
+| email-security-pipeline |   1473 | ESCALATE        | —                                                                     | requirements-ci as default (S6)                    |
+| Seatek_Analysis         |    690 | SALVAGE + CLOSE | [#693](https://github.com/abhimehro/Seatek_Analysis/pull/693)         | `.POSIXct` only; reject profile dumps              |
+
+- Salvage drafts opened: **4** (#2022, #1194, #1195, #693)
+- Infra-fix drafts: **0** (dependency-review repair shipped inside #1194)
+- Closed via API: **10**
+- Autonomous merges: **0** (S1)
+- New lessons: **0fu**, **0fv**
+- `request_reviewers`: skipped (author already abhimehro)
+
+### Verification
+
+- pc #2022: `bash -n scripts/report-daemons-watchdog.sh`
+- ctrld #1195: `uv run pytest tests/test_push_rules_perf.py tests/test_security.py tests/test_security_limits.py` → 45 passed
+- ctrld #1194: YAML/Dockerfile review; requirements.txt retained
+- seatek #693: one-line R parse; no profile\*.R / test_data
+
+### Handoff
+
+1. Human merge drafts **#1194** (T0-adjacent dependency-review repair) then **#1195** then **#2022** then **#693**
+2. Human T1: pc #2007 (0fu), pc #1907 CORS, pc #1980 SSRF, ctrld #1136 mypy 2.x, esp #1444 opencv, esp #1473
+3. HOLD: ctrld #1161 (0fo), series #390 (0fp), pc #1996 join flip-flop
+4. Squash **one** docs lineage: this salvage docs PR vs Phase 1 [#2016](https://github.com/abhimehro/personal-config/pull/2016) (0fk)
+
 ## Run — 2026-08-01
 
 ### Input tail
@@ -1288,3 +1340,116 @@
 
 - Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md),
   [Review](tasks/pr-review-2026-08-13.md)
+
+## Run — 2026-08-19
+
+## Identity
+
+- Stage: `stage2`
+- Trigger: `cron` (`0 17 * * *` UTC)
+- Configuration version and policy revision: lifecycle `1.2` /
+  `pr-lifecycle-v1.2`; identity and taxonomy `2026-08-19`; prompt
+  `pr-lifecycle-v1.2`
+- Start and end UTC: `2026-08-19T17:01:22Z` → `2026-08-19T17:07:13Z`
+- Ledger revision read and resulting revision: **unread** (no runtime ledger
+  object); no Stage-2-owned projection mutated
+- Dashboard export fingerprint and memory mode: dashboard bootstrap not
+  applied (follow-up C deferred); memory used as namespaced cache only
+- Calibration mode: `report_only` (runtime ledger not bootstrapped)
+- Agent branch: `cursor-agent/automated-pr-salvage-workflow-a615`
+- Trusted base SHA at intake: `73f2f16750fbcec73e795e8b09c9164a69954a88`
+  (`origin/main` after fetch)
+- Preflight: PASS (read-only, 7/7 repos) + `make cursor-cloud-hooks`
+- Selected write primitive: **absent** (`null` / untested). Git fetch of
+  `automation/pr-lifecycle-ledger` failed (`couldn't find remote ref`). GitHub
+  Contents API `GET .../contents/pr-lifecycle-ledger.yaml?ref=automation/pr-lifecycle-ledger`
+  returned **404** `No commit found for the ref`.
+- Continuity reads: last three **committed** Stage 2 records on `main` are
+  2026-08-13, 2026-08-12, 2026-08-02. Automation memory described a 2026-08-18
+  salvage; that report exists only on unmerged
+  [#2023](https://github.com/abhimehro/personal-config/pull/2023) and was not
+  used as work-item scope.
+- Auth: `gh` authenticated; no close/merge/approve/review-request attempted
+
+## Inputs and reconciliation
+
+- Items considered: **0** complete `stage2_work_items` (runtime ledger
+  unreachable)
+- Items skipped as unchanged: **0**
+- Items invalidated by SHA drift: **0**
+- Items resolved outside the workflow: **not inventoried** (Stage 2 does not
+  discover backlog without ledger ownership)
+- Rejected incomplete work items: **all inferred candidates** (memory /
+  Phase 1 remainder / open bot PRs). Missing immutable source key, allowed
+  paths, test command, acceptance criteria, provenance, expiry, attempt
+  count, owner, creation event, and history.
+
+## Mandatory per-item evidence, action, and outcome record
+
+One row is required for every processed, proposed, skipped, retried, or
+completed item. A missing field is `ANALYSIS_ERROR`, not an invitation to fill
+it from memory.
+
+| Ledger key | Repository / PR | Observed vs ledger base/head SHA | Owner before → after | GitHub identity / author type | Classification / risk / sticky paths | Guardrail outcome | Changed paths | Evidence URLs | Proposed route / actual action | Mode / audit ID / action count | Retry or error | Final observed outcome / calibration correctness | Provenance or canonical relation |
+| ---------- | --------------- | -------------------------------- | -------------------- | ----------------------------- | ------------------------------------ | ----------------- | ------------- | ------------- | ------------------------------ | ------------------------------ | -------------- | ------------------------------------------------ | -------------------------------- |
+| `runtime-ledger-unread` | `abhimehro/personal-config` / none (platform gap, not a product PR) | Observed trusted base `73f2f16750fbcec73e795e8b09c9164a69954a88`; ledger anchors **absent** | intended `stage2` intake → `stage3` | n/a (no source PR) | n/a; no product-path classification | `HOLD_PLATFORM` | none on product trees; this run appends Stage 2 audit files only | [PR #2026 merged](https://github.com/abhimehro/personal-config/pull/2026); [PR #2031 merged](https://github.com/abhimehro/personal-config/pull/2031); GitHub API 404 `branches/automation/pr-lifecycle-ledger`; Contents API 404 on `pr-lifecycle-ledger.yaml@automation/pr-lifecycle-ledger`; validator `PR_LIFECYCLE_INVALID` on missing file; [docs/pr-lifecycle-runtime-ledger.md](docs/pr-lifecycle-runtime-ledger.md) A1 deferred | Fetch/validate/write runtime ledger → **stop**; no recovery branch | `report_only` / stage2-2026-08-19-hold-platform / recoveries **0**, mutation attempts **0**, CAS retries **0** | Data branch missing; write primitive unset; no second primitive switch | Correct fail-closed hold; zero salvage drafts; zero closes; zero merges; zero review requests | Bootstrap prerequisite is maintainer-authorized orphan branch `automation/pr-lifecycle-ledger` plus recorded CAS primitive. Competing docs lineages [#2023](https://github.com/abhimehro/personal-config/pull/2023) and [#2016](https://github.com/abhimehro/personal-config/pull/2016) are Stage 3/0fk, not Stage 2 recoveries |
+
+## Revision-checked handoffs and human decisions
+
+| Ledger key | Event ID / idempotency key | Expected → resulting revision | Next owner | One next action | Safe default | Expiry | Receiver acknowledgement |
+| ---------- | -------------------------- | ----------------------------- | ---------- | --------------- | ------------ | ------ | ------------------------ |
+| `runtime-ledger-unread` | `handoff-stage2-2026-08-19-hold-platform` / `(runtime-ledger-unread, handoff-stage2-2026-08-19-hold-platform)` | **unwritable** (no CAS path) → no ledger revision increment | `stage3` | Authorize and seed orphan branch `automation/pr-lifecycle-ledger` with one selected write primitive, validate a read/write round trip, then import historical reports. Do not salvage from memory meanwhile. | Leave all open product PRs untouched; no merge, close, approve, or review-request | `2026-08-26T17:07:13Z` | Pending Stage 3 ACK on a bootstrapped ledger; this run record is the sender evidence |
+
+## Continuity
+
+- Successful pattern reused: fail-closed missing-branch rule from
+  `docs/pr-lifecycle-runtime-ledger.md` (“Data branch or file is missing
+  before bootstrap → `HOLD_PLATFORM`; report one bootstrap prerequisite”).
+- Failed approach not to repeat: reconstructing Stage 2 work from
+  automation memory (2026-08-18 CONFLICTING/CLOSED lists) or from unmerged
+  [#2023](https://github.com/abhimehro/personal-config/pull/2023) /
+  Phase 1 remainder files when the runtime ledger is unread.
+- New lesson candidate and the future rule it changes: **0fw** (missing
+  runtime ledger is `HOLD_PLATFORM`, not backlog discovery).
+- Configuration or policy gap: enforcement follow-up **A1** remains
+  deferred — source contract is on `main` (#2026/#2031) but the orphan
+  data branch and recorded write primitive do not exist. Cursor dashboard
+  Stage 2 still lists extra MCPs/actions (review-request, Notion, etc.)
+  that the Stage 2 spec forbids; this run did not use them for mutation.
+- Historical-import sources or fingerprints processed: **none** (Stage 3
+  owns import).
+
+## Metrics
+
+- Inventory / recovery / reconciliation count: 0 / 0 / 0
+- Merged: **0**
+- Closed: **0**
+- Drafts created: **0** product recoveries (docs audit PR for this record
+  only)
+- Decision packets created: **0**
+- Analysis errors: **0** (`HOLD_PLATFORM`, not `ANALYSIS_ERROR`)
+- State-changing actions, including failed attempts and retries: **0**
+  product-PR mutations; ledger CAS not attempted after 404
+- `request_reviewers`: skipped (Stage 2 must not request review)
+- Autonomous merges: **0** (S1)
+
+### Handoff (Stage 3)
+
+1. **Bootstrap prerequisite (one):** maintainer creates and seeds
+   `automation/pr-lifecycle-ledger` with `pr-lifecycle-ledger.yaml`, records
+   the selected write primitive, and proves the main-branch pointer cannot
+   be used as runtime state. Until then, Stage 1/2/3 take no lifecycle
+   action against product PRs.
+2. **Docs 0fk:** squash **one** of [#2016](https://github.com/abhimehro/personal-config/pull/2016)
+   (Phase 1 2026-08-17) vs
+   [#2023](https://github.com/abhimehro/personal-config/pull/2023)
+   (Phase 2 2026-08-18) vs this run-record PR. Do not fight the journal.
+3. Do not recreate 2026-08-18 salvage approaches from memory. After
+   bootstrap, Stage 3 imports committed run records, then hands complete
+   work items to Stage 2 if still eligible.
+4. Skip `request_reviewers` on Stage 2 drafts when policy forbids it.
+
+- Cross-links: [Lifecycle contract](docs/automated-pr-lifecycle.md),
+  [Runtime ledger](docs/pr-lifecycle-runtime-ledger.md),
+  [Salvage spec](docs/automated-pr-salvage-agent.md),
+  [Lessons](tasks/lessons.md) (0fw)
