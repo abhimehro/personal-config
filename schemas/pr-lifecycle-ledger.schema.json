@@ -16,7 +16,7 @@
     "repository_merge_methods"
   ],
   "properties": {
-    "schema_version": { "const": "1.1" },
+    "schema_version": { "const": "1.2" },
     "schema_path": { "const": "schemas/pr-lifecycle-ledger.schema.json" },
     "ledger_revision": { "type": "integer", "minimum": 0 },
     "calibration": { "$ref": "#/$defs/calibration" },
@@ -64,13 +64,18 @@
     "event": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["event_id", "kind", "item_key", "from_owner", "to_owner", "expected_item_revision", "resulting_item_revision", "idempotency_key", "status", "created_at_utc", "acknowledged_at_utc"],
+      "required": ["event_id", "kind", "item_key", "from_owner", "to_owner", "from_state", "to_state", "next_owner", "terminal_disposition", "parent_event_id", "expected_item_revision", "resulting_item_revision", "idempotency_key", "status", "created_at_utc", "acknowledged_at_utc"],
       "properties": {
         "event_id": { "type": "string", "pattern": "^evt-[A-Za-z0-9._-]+$" },
-        "kind": { "enum": ["HANDOFF", "ACKNOWLEDGEMENT", "IMPORT", "CALIBRATION", "TERMINAL"] },
+        "kind": { "enum": ["HANDOFF", "ACKNOWLEDGEMENT", "CANCELLATION", "IMPORT", "CALIBRATION", "TERMINAL"] },
         "item_key": { "type": ["string", "null"], "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*@[0-9a-f]{40}$" },
         "from_owner": { "enum": ["stage1", "stage2", "stage3", "human", "none"] },
         "to_owner": { "enum": ["stage1", "stage2", "stage3", "human", "none"] },
+        "from_state": { "type": ["string", "null"], "enum": ["STAGE1_INTAKE", "STAGE2_QUEUED", "STAGE2_ACTIVE", "STAGE3_RECONCILIATION", "WAITING_HUMAN", "TERMINAL", null] },
+        "to_state": { "type": ["string", "null"], "enum": ["STAGE1_INTAKE", "STAGE2_QUEUED", "STAGE2_ACTIVE", "STAGE3_RECONCILIATION", "WAITING_HUMAN", "TERMINAL", null] },
+        "next_owner": { "enum": ["stage1", "stage2", "stage3", "human", "none"] },
+        "terminal_disposition": { "enum": ["MERGED_ROUTINE", "MERGED_BOUNDED_COMPLETION", "CLOSED_NOOP", "CLOSED_DUPLICATE", "CLOSED_STALE", "CLOSED_SUPERSEDED", "HUMAN_REJECTED", "HUMAN_DEFERRED", null] },
+        "parent_event_id": { "type": ["string", "null"], "pattern": "^evt-[A-Za-z0-9._-]+$" },
         "expected_item_revision": { "type": "integer", "minimum": 0 },
         "resulting_item_revision": { "type": "integer", "minimum": 0 },
         "idempotency_key": { "type": "string", "minLength": 1 },
@@ -83,21 +88,42 @@
       },
       "allOf": [
         {
-          "if": { "properties": { "kind": { "const": "CALIBRATION" } } },
+          "if": { "properties": { "kind": { "enum": ["HANDOFF", "IMPORT", "TERMINAL"] } } },
           "then": {
             "properties": {
-              "item_key": { "const": null },
-              "expected_item_revision": { "const": 0 },
-              "resulting_item_revision": { "const": 0 },
-              "policy_revision": { "type": "string", "minLength": 1 },
-              "successful": { "const": true }
+              "item_key": { "type": "string" },
+              "from_state": { "type": "string" },
+              "to_state": { "type": "string" },
+              "parent_event_id": { "const": null },
+              "status": { "const": "PROJECTED" },
+              "acknowledged_at_utc": { "const": null }
             },
-            "required": ["policy_revision", "successful"]
+            "required": ["from_state", "to_state"]
           },
           "else": {
+            "if": { "properties": { "kind": { "enum": ["ACKNOWLEDGEMENT", "CANCELLATION"] } } },
+            "then": {
+              "properties": {
+                "item_key": { "type": "string" },
+                "from_state": { "type": "string" },
+                "to_state": { "type": "string" },
+                "parent_event_id": { "type": "string" },
+                "acknowledged_at_utc": { "$ref": "#/$defs/timestamp" }
+              },
+              "required": ["parent_event_id"]
+            },
+            "else": {
             "properties": {
-              "item_key": { "type": "string" },
-              "resulting_item_revision": { "minimum": 1 }
+                "item_key": { "const": null },
+                "from_state": { "const": null },
+                "to_state": { "const": null },
+                "parent_event_id": { "const": null },
+                "expected_item_revision": { "const": 0 },
+                "resulting_item_revision": { "const": 0 },
+                "policy_revision": { "type": "string", "minLength": 1 },
+                "successful": { "const": true }
+              },
+              "required": ["policy_revision", "successful"]
             }
           }
         }

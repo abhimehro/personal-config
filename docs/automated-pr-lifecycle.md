@@ -1,6 +1,6 @@
 # Automated PR Lifecycle Contract
 
-**Version:** 1.1
+**Version:** 1.2
 
 This contract is the shared operating model for the Automated PR Review Agent, Automated PR Salvage & Recovery Agent, and Automated PR Completion Agent. The three agents are complementary. They must not repeat an unchanged analysis or leave an item without an owner.
 
@@ -35,7 +35,7 @@ The three `docs/automated-pr-*.md` specifications and this lifecycle contract ar
 
 ## Normative ledger and legal transitions
 
-`schemas/pr-lifecycle-ledger.schema.json` is the normative machine-readable schema. `scripts/validate_pr_lifecycle_artifacts.py` must pass before an automation reads or writes the runtime ledger. The validator rejects duplicate YAML mapping keys, unknown fields, duplicate item/event/idempotency keys, invalid anchors, invalid URLs/timestamps, invalid terminal ownership, missing calibration fields, invalid Stage 2 work items, and an export whose authority does not match its stage. Any failure is `ANALYSIS_ERROR`; no action may follow. A main-branch bootstrap pointer is not a valid runtime-ledger input.
+`schemas/pr-lifecycle-ledger.schema.json` is the normative machine-readable schema. `scripts/validate_pr_lifecycle_artifacts.py` must pass before an automation reads or writes the runtime ledger. The validator rejects duplicate YAML mapping keys, unknown fields, duplicate item/event/idempotency keys, invalid anchors, invalid URLs/timestamps, invalid transition state/owner pairs, illegal transitions, projection disagreement, invalid terminal ownership, missing calibration fields, invalid Stage 2 work items, and an export whose authority does not match its stage. Any failure is `ANALYSIS_ERROR`; no action may follow. A main-branch bootstrap pointer is not a valid runtime-ledger input.
 
 The unique item key is `owner/repository#PR@head_sha`. Each entry has an integer `revision`; a state transition increments it by exactly one. Nonterminal legal states are `STAGE1_INTAKE`, `STAGE2_QUEUED`, `STAGE2_ACTIVE`, `STAGE3_RECONCILIATION`, and `WAITING_HUMAN`. The only terminal state is `TERMINAL`, which must have one terminal disposition and `current_owner: none`, `next_owner: none`.
 
@@ -49,11 +49,11 @@ The unique item key is `owner/repository#PR@head_sha`. Each entry has an integer
 
 ### Atomic, idempotent handoff protocol
 
-1. The sending stage reads the item revision and creates one `HANDOFF` event with a unique `event_id`, `item_key`, from/to owner, `expected_item_revision`, resulting revision, and idempotency key `(item_key, event_id)`.
+1. The sending stage reads the item revision and creates one projected `HANDOFF` event with a unique `event_id`, `item_key`, from/to lifecycle state and matching from/to owner, `expected_item_revision`, resulting revision, and idempotency key `(item_key, event_id)`.
 2. It applies the event only if the stored item revision equals `expected_item_revision`; the projection, owner, next action, and revision update occur in the same committed ledger edit.
-3. A receiver is ineligible until the event projection exists. On receipt it records an `ACKNOWLEDGED` event against the same handoff ID before processing.
+3. A receiver is ineligible until the event projection exists. On receipt it appends an `ACKNOWLEDGEMENT` receipt with `parent_event_id` set to the handoff ID before processing. Receipts do not increment revision or mutate the projected state; the original transition remains `PROJECTED` forever.
 4. Replaying the same event is a no-op. A competing writer with a stale expected revision loses, records `ANALYSIS_ERROR`, and re-reads the ledger instead of clobbering.
-5. If a write is interrupted, a later run validates the ledger. A present event without the matching projected item state is cancelled and reissued from fresh evidence; a projected event without acknowledgement remains owned by the sender until acknowledged.
+5. If a write is interrupted, a later run validates the ledger. A present event without the matching projected item state is recorded with a `CANCELLATION` receipt and reissued from fresh evidence; a projected event without acknowledgement remains owned by the sender until acknowledged. A cancellation is a receipt, not a backdoor state change.
 
 The full required item, event, calibration, import, and Stage 2 work-item fields are defined in the schema and illustrated in `tasks/pr-lifecycle-ledger.example.yaml`. Unknown fields are invalid rather than silently accepted.
 

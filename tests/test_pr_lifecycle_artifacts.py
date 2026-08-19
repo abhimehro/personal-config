@@ -44,6 +44,11 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
                     "item_key": None,
                     "from_owner": "stage3",
                     "to_owner": "stage3",
+                    "from_state": None,
+                    "to_state": None,
+                    "next_owner": "stage3",
+                    "terminal_disposition": None,
+                    "parent_event_id": None,
                     "expected_item_revision": 0,
                     "resulting_item_revision": 0,
                     "idempotency_key": f"__calibration__:evt-calibration-v12-00{ordinal}",
@@ -126,7 +131,42 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
     def test_event_projection_must_match_item_revision(self):
         ledger = self.example()
         ledger["items"][0]["revision"] = 2
-        self.assert_invalid(ledger, "projection revision lacks latest event")
+        self.assert_invalid(ledger, "projection revision disagrees")
+
+    def test_acknowledgement_and_cancellation_do_not_increment_revision(self):
+        validator.validate(self.write_ledger(self.example()))
+        ledger = self.example()
+        receipt = ledger["events"][1]
+        receipt["kind"] = "CANCELLATION"
+        receipt["status"] = "CANCELLED"
+        validator.validate(self.write_ledger(ledger))
+
+    def test_receipts_require_a_parent_transition(self):
+        for kind, status in (("ACKNOWLEDGEMENT", "ACKNOWLEDGED"), ("CANCELLATION", "CANCELLED")):
+            ledger = self.example()
+            ledger["events"][1]["kind"] = kind
+            ledger["events"][1]["status"] = status
+            ledger["events"][1]["parent_event_id"] = None
+            self.assert_invalid(ledger, "parent_event_id")
+
+    def test_in_place_handoff_status_mutation_is_not_a_receipt(self):
+        ledger = self.example()
+        ledger["events"][0]["status"] = "ACKNOWLEDGED"
+        self.assert_invalid(ledger, "schema events.0.status")
+
+    def test_terminal_item_requires_terminal_event(self):
+        ledger = self.example()
+        ledger["events"].pop(2)
+        ledger["items"][1]["handoffs"] = []
+        ledger["items"][1]["revision"] = 0
+        self.assert_invalid(ledger, "terminal record requires terminal event")
+
+    def test_stage2_command_requires_explicit_runtime_ledger_path(self):
+        command = self.example()["stage2_work_items"][0]["required_test_command"]
+        self.assertEqual(
+            command,
+            'python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"',
+        )
 
     def test_verified_zero_requires_authoritative_evidence(self):
         ledger = self.example()

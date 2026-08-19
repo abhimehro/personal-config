@@ -29,6 +29,15 @@ STATE_OWNERS = {
     "STAGE2_ACTIVE": "stage2", "STAGE3_RECONCILIATION": "stage3",
     "WAITING_HUMAN": "human", "TERMINAL": "none",
 }
+LEGAL_TRANSITIONS = {
+    "STAGE1_INTAKE": {"TERMINAL", "STAGE2_QUEUED", "STAGE3_RECONCILIATION"},
+    "STAGE2_QUEUED": {"STAGE2_ACTIVE", "STAGE3_RECONCILIATION"},
+    "STAGE2_ACTIVE": {"STAGE3_RECONCILIATION"},
+    "STAGE3_RECONCILIATION": {"STAGE1_INTAKE", "STAGE2_QUEUED", "WAITING_HUMAN", "TERMINAL"},
+    "WAITING_HUMAN": {"STAGE1_INTAKE", "STAGE2_QUEUED", "STAGE3_RECONCILIATION", "TERMINAL"},
+}
+TRANSITION_KINDS = {"HANDOFF", "IMPORT", "TERMINAL"}
+RECEIPT_KINDS = {"ACKNOWLEDGEMENT", "CANCELLATION"}
 
 
 def validate_runtime_records(ledger: dict[str, Any], config: dict[str, Any]) -> None:
@@ -126,13 +135,15 @@ def validate_nonterminal_item_state(value: dict[str, Any], key: str) -> None:
 def validate_events(events: Any, items: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     seen_ids: set[str] = set()
     seen_keys: set[tuple[str, str]] = set()
-    projected: dict[str, int] = {}
+    event_by_id: dict[str, dict[str, Any]] = {}
+    projection = {key: initial_projection() for key in items}
     calibration_events: list[dict[str, Any]] = []
     for raw in require_list(events, "events"):
         event = require_mapping(raw, "event")
         event_id = event["event_id"]
         if event_id in seen_ids:
-            raise ValueError(f"event: duplicate event ID {event_id}")
+            validate_identical_replay(event, event_by_id[event_id])
+            continue
         seen_ids.add(event_id)
         require_utc(event["created_at_utc"], f"event {event_id}.created_at_utc")
         if event["acknowledged_at_utc"] is not None:
@@ -141,8 +152,9 @@ def validate_events(events: Any, items: dict[str, dict[str, Any]]) -> list[dict[
             validate_calibration_event(event, seen_keys)
             calibration_events.append(event)
         else:
-            validate_item_event(event, items, seen_keys, projected)
-    validate_projection(items, projected)
+            validate_item_event(event, items, seen_keys, event_by_id, projection)
+        event_by_id[event_id] = event
+    validate_projection(items, projection)
     return calibration_events
 
 
@@ -158,17 +170,30 @@ def validate_calibration_event(event: dict[str, Any], seen_keys: set[tuple[str, 
     seen_keys.add(pair)
 
 
+def validate_identical_replay(event: dict[str, Any], parent: dict[str, Any]) -> None:
+    if event != parent:
+        raise ValueError(f"event {event['event_id']}: duplicate event ID differs from original")
+
+
+def initial_projection() -> dict[str, Any]:
+    return {"revision": 0, "lifecycle_state": "STAGE1_INTAKE", "current_owner": "stage1", "next_owner": "stage1", "terminal_disposition": None, "handoffs": [], "latest_transition": None, "latest_transition_kind": None}
+
+
 def validate_item_event(
-    event: dict[str, Any],
-    items: dict[str, dict[str, Any]],
-    seen_keys: set[tuple[str, str]],
-    projected: dict[str, int],
+    event: dict[str, Any], items: dict[str, dict[str, Any]],
+    seen_keys: set[tuple[str, str]], event_by_id: dict[str, dict[str, Any]],
+    projection: dict[str, dict[str, Any]],
 ) -> None:
     item_key, pair = validate_item_event_reference(event, items, seen_keys)
-    validate_item_event_revision(event, item_key, projected)
-    validate_item_event_acknowledgement(event, item_key)
+    projected = projection[item_key]
+    if event["kind"] in TRANSITION_KINDS:
+        validate_transition_event(event, projected)
+        apply_transition(event, projected)
+    elif event["kind"] in RECEIPT_KINDS:
+        validate_receipt_event(event, projected, event_by_id)
+    else:
+        raise ValueError(f"event {event['event_id']}: unsupported item event kind")
     seen_keys.add(pair)
-    projected[item_key] = event["resulting_item_revision"]
 
 
 def validate_item_event_reference(
@@ -186,27 +211,79 @@ def validate_item_event_reference(
     return item_key, pair
 
 
-def validate_item_event_revision(
-    event: dict[str, Any], item_key: str, projected: dict[str, int]
-) -> None:
+def validate_transition_event(event: dict[str, Any], projected: dict[str, Any]) -> None:
     event_id = event["event_id"]
     if event["resulting_item_revision"] != event["expected_item_revision"] + 1:
         raise ValueError(f"event {event_id}: revision must increment by one")
-    if event["expected_item_revision"] != projected.get(item_key, 0):
+    if event["expected_item_revision"] != projected["revision"]:
         raise ValueError(f"event {event_id}: stale or discontinuous item projection")
+    validate_transition_shape(event, projected)
 
 
-def validate_item_event_acknowledgement(event: dict[str, Any], item_key: str) -> None:
+def validate_transition_shape(event: dict[str, Any], projected: dict[str, Any]) -> None:
     event_id = event["event_id"]
-    if event["status"] == "ACKNOWLEDGED" and not event["acknowledged_at_utc"]:
-        raise ValueError(f"event {event_id}: acknowledgement timestamp required")
+    if event["status"] != "PROJECTED" or event["acknowledged_at_utc"] is not None:
+        raise ValueError(f"event {event_id}: transitions remain projected")
+    if event["from_state"] != projected["lifecycle_state"]:
+        raise ValueError(f"event {event_id}: from-state disagrees with projection")
+    if STATE_OWNERS[event["from_state"]] != event["from_owner"]:
+        raise ValueError(f"event {event_id}: from-state and owner disagree")
+    if STATE_OWNERS[event["to_state"]] != event["to_owner"]:
+        raise ValueError(f"event {event_id}: to-state and owner disagree")
+    if event["to_state"] not in LEGAL_TRANSITIONS.get(event["from_state"], set()):
+        raise ValueError(f"event {event_id}: illegal lifecycle transition")
+    if event["kind"] == "TERMINAL" and event["to_state"] != "TERMINAL":
+        raise ValueError(f"event {event_id}: terminal event must end in TERMINAL")
+    if event["kind"] != "TERMINAL" and event["to_state"] == "TERMINAL":
+        raise ValueError(f"event {event_id}: TERMINAL state requires terminal event")
 
 
-def validate_projection(items: dict[str, dict[str, Any]], projected: dict[str, int]) -> None:
+def apply_transition(event: dict[str, Any], projected: dict[str, Any]) -> None:
+    projected.update({"revision": event["resulting_item_revision"], "lifecycle_state": event["to_state"], "current_owner": event["to_owner"], "next_owner": event["next_owner"], "terminal_disposition": event["terminal_disposition"], "latest_transition": event["event_id"], "latest_transition_kind": event["kind"]})
+    projected["handoffs"].append(event["event_id"])
+
+
+def validate_receipt_event(event: dict[str, Any], projected: dict[str, Any], event_by_id: dict[str, dict[str, Any]]) -> None:
+    event_id = event["event_id"]
+    parent = event_by_id.get(event["parent_event_id"])
+    if parent is None or parent["kind"] not in {"HANDOFF", "IMPORT"}:
+        raise ValueError(f"event {event_id}: receipt requires an earlier handoff or import")
+    if parent["item_key"] != event["item_key"] or projected["latest_transition"] != parent["event_id"]:
+        raise ValueError(f"event {event_id}: receipt targets a superseded transition")
+    if event["expected_item_revision"] != projected["revision"] or event["resulting_item_revision"] != projected["revision"]:
+        raise ValueError(f"event {event_id}: receipt must not increment revision")
+    fields = ("from_state", "to_state", "from_owner", "to_owner", "next_owner", "terminal_disposition")
+    expected = {"from_state": parent["to_state"], "to_state": parent["to_state"], "from_owner": parent["to_owner"], "to_owner": parent["to_owner"], "next_owner": parent["next_owner"], "terminal_disposition": parent["terminal_disposition"]}
+    if any(event[field] != expected[field] for field in fields):
+        raise ValueError(f"event {event_id}: receipt changes projected state")
+    if STATE_OWNERS[event["to_state"]] != event["to_owner"]:
+        raise ValueError(f"event {event_id}: receipt state and owner disagree")
+    validate_receipt_order(event, event_by_id)
+
+
+def validate_receipt_order(event: dict[str, Any], event_by_id: dict[str, dict[str, Any]]) -> None:
+    parent_id = event["parent_event_id"]
+    receipts = [value for value in event_by_id.values() if value.get("parent_event_id") == parent_id]
+    if receipts:
+        raise ValueError(f"event {event['event_id']}: duplicate receipt for parent")
+    if event["kind"] == "ACKNOWLEDGEMENT" and event["status"] != "ACKNOWLEDGED":
+        raise ValueError(f"event {event['event_id']}: acknowledgement status required")
+    if event["kind"] == "CANCELLATION" and event["status"] != "CANCELLED":
+        raise ValueError(f"event {event['event_id']}: cancellation status required")
+    if not event["acknowledged_at_utc"]:
+        raise ValueError(f"event {event['event_id']}: receipt timestamp required")
+
+
+def validate_projection(items: dict[str, dict[str, Any]], projected: dict[str, dict[str, Any]]) -> None:
     for item_key, item in items.items():
-        revision = projected.get(item_key, 0)
-        if revision != item["revision"]:
-            raise ValueError(f"ledger item {item_key}: projection revision lacks latest event")
+        expected = projected[item_key]
+        if item["lifecycle_state"] == "TERMINAL" and (
+            item["revision"] < 1 or expected["latest_transition_kind"] != "TERMINAL"
+        ):
+            raise ValueError(f"ledger item {item_key}: terminal record requires terminal event")
+        for field in ("revision", "lifecycle_state", "current_owner", "next_owner", "terminal_disposition", "handoffs"):
+            if item[field] != expected[field]:
+                raise ValueError(f"ledger item {item_key}: projection {field} disagrees with events")
 
 
 def validate_calibration(

@@ -1,5 +1,5 @@
 # Complete illustrative records. Do not copy literal anchors into production.
-schema_version: "1.1"
+schema_version: "1.2"
 schema_path: schemas/pr-lifecycle-ledger.schema.json
 ledger_revision: 42
 calibration:
@@ -83,8 +83,8 @@ items:
       evidence: 1
       recovery: 0
       mutations: 2
-    handoffs: []
-    revision: 0
+    handoffs: [evt-2026-stage1-terminal-001]
+    revision: 1
     updated_at_utc: "2026-08-19T08:00:00Z"
 events:
   - event_id: evt-2026-stage1-stage2-001
@@ -92,18 +92,62 @@ events:
     item_key: abhimehro/personal-config#2026@0123456789abcdef0123456789abcdef01234567
     from_owner: stage1
     to_owner: stage2
+    from_state: STAGE1_INTAKE
+    to_state: STAGE2_QUEUED
+    next_owner: stage2
+    terminal_disposition: null
+    parent_event_id: null
     expected_item_revision: 0
     resulting_item_revision: 1
     idempotency_key: "abhimehro/personal-config#2026@0123456789abcdef0123456789abcdef01234567:evt-2026-stage1-stage2-001"
-    status: ACKNOWLEDGED
+    status: PROJECTED
     created_at_utc: "2026-08-19T07:55:00Z"
-    acknowledged_at_utc: "2026-08-19T08:00:00Z"
+    acknowledged_at_utc: null
     reason: "Stage 1 created a complete bounded recovery work item."
+  - event_id: evt-2026-stage2-ack-001
+    kind: ACKNOWLEDGEMENT
+    item_key: abhimehro/personal-config#2026@0123456789abcdef0123456789abcdef01234567
+    from_owner: stage2
+    to_owner: stage2
+    from_state: STAGE2_QUEUED
+    to_state: STAGE2_QUEUED
+    next_owner: stage2
+    terminal_disposition: null
+    parent_event_id: evt-2026-stage1-stage2-001
+    expected_item_revision: 1
+    resulting_item_revision: 1
+    idempotency_key: "abhimehro/personal-config#2026@0123456789abcdef0123456789abcdef01234567:evt-2026-stage2-ack-001"
+    status: ACKNOWLEDGED
+    created_at_utc: "2026-08-19T08:00:00Z"
+    acknowledged_at_utc: "2026-08-19T08:00:00Z"
+    reason: "Stage 2 accepted the handoff without changing lifecycle state."
+  - event_id: evt-2026-stage1-terminal-001
+    kind: TERMINAL
+    item_key: abhimehro/ctrld-sync#1193@fedcba9876543210fedcba9876543210fedcba98
+    from_owner: stage1
+    to_owner: none
+    from_state: STAGE1_INTAKE
+    to_state: TERMINAL
+    next_owner: none
+    terminal_disposition: MERGED_ROUTINE
+    parent_event_id: null
+    expected_item_revision: 0
+    resulting_item_revision: 1
+    idempotency_key: "abhimehro/ctrld-sync#1193@fedcba9876543210fedcba9876543210fedcba98:evt-2026-stage1-terminal-001"
+    status: PROJECTED
+    created_at_utc: "2026-08-19T07:55:00Z"
+    acknowledged_at_utc: null
+    reason: "Verified routine merge recorded as the terminal transition."
   - event_id: evt-calibration-v12-001
     kind: CALIBRATION
     item_key: null
     from_owner: stage3
     to_owner: stage3
+    from_state: null
+    to_state: null
+    next_owner: stage3
+    terminal_disposition: null
+    parent_event_id: null
     expected_item_revision: 0
     resulting_item_revision: 0
     idempotency_key: "__calibration__:evt-calibration-v12-001"
@@ -118,6 +162,11 @@ events:
     item_key: null
     from_owner: stage3
     to_owner: stage3
+    from_state: null
+    to_state: null
+    next_owner: stage3
+    terminal_disposition: null
+    parent_event_id: null
     expected_item_revision: 0
     resulting_item_revision: 0
     idempotency_key: "__calibration__:evt-calibration-v12-002"
@@ -132,6 +181,11 @@ events:
     item_key: null
     from_owner: stage3
     to_owner: stage3
+    from_state: null
+    to_state: null
+    next_owner: stage3
+    terminal_disposition: null
+    parent_event_id: null
     expected_item_revision: 0
     resulting_item_revision: 0
     idempotency_key: "__calibration__:evt-calibration-v12-003"
@@ -151,7 +205,7 @@ stage2_work_items:
     allowed_paths: [docs/automated-pr-lifecycle.md]
     prohibited_paths: [.github/workflows, scripts, tasks/lessons.md]
     repair_description: "Correct one broken lifecycle documentation link without changing policy."
-    required_test_command: "python3 scripts/validate_pr_lifecycle_artifacts.py"
+    required_test_command: "python3 scripts/validate_pr_lifecycle_artifacts.py \"$RUNTIME_LEDGER_PATH\""
     expected_test_result: "PR_LIFECYCLE_VALID"
     acceptance_criteria:
       - "Only the allowed documentation path changes."
