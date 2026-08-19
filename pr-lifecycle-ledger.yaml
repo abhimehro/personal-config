@@ -1,0 +1,103 @@
+schema_version: "1.2"
+schema_path: schemas/pr-lifecycle-ledger.schema.json
+ledger_revision: 0
+calibration:
+  status: REPORT_ONLY
+  successful_run_count: 0
+  required_successful_runs: 7
+  scope: configured-repo-set
+  policy_revision: "pr-lifecycle-v1.2"
+  coverage:
+    identity_classes: []
+    risk_classes: []
+    merge_methods: []
+    required_check_sources: []
+  approved_by: null
+  approved_at_utc: null
+  approval_evidence_urls: []
+  invalidated_by_revision: null
+  revoked_at_utc: null
+  rollback_conditions:
+    - "Runtime ledger read, validation, or compare-and-swap verification fails."
+    - "A security-sensitive or ordinary human-authored item enters a routine action path."
+  completion_authority: approve-merge-close-nonsecurity
+items: []
+events: []
+stage2_work_items: []
+imports:
+  - import_id: imp-bootstrap-contents-api-20260819
+    source_path: bootstrap-manifest.yaml
+    source_fingerprint: a6ce8c82d0746c51f92b516d88da380e5d6cf092ecaf7b68d6a5b35292c42ae3
+    status: EVIDENCE_ONLY
+    created_at_utc: "2026-08-19T18:07:30Z"
+repository_merge_methods:
+  - repository: abhimehro/personal-config
+    method: TRUNK_QUEUE
+    required_checks_source: TRUNK
+    required_checks: []
+    required_checks_verified_zero: true
+    discovery_status: VERIFIED
+    evidence_url: https://api.github.com/repos/abhimehro/personal-config/branches/main/protection
+    observed_at_utc: "2026-08-19T12:52:18Z"
+    updated_at_utc: "2026-08-19T12:52:18Z"
+    hold_reason: null
+  - repository: abhimehro/ctrld-sync
+    method: GITHUB_SQUASH
+    required_checks_source: GITHUB_RULESETS
+    required_checks: []
+    required_checks_verified_zero: true
+    discovery_status: VERIFIED
+    evidence_url: https://api.github.com/repos/abhimehro/ctrld-sync/rulesets/11617361
+    observed_at_utc: "2026-08-19T13:04:17Z"
+    updated_at_utc: "2026-08-19T13:04:17Z"
+    hold_reason: null
+  - repository: abhimehro/email-security-pipeline
+    method: GITHUB_SQUASH
+    required_checks_source: GITHUB_RULESETS
+    required_checks: []
+    required_checks_verified_zero: true
+    discovery_status: VERIFIED
+    evidence_url: https://api.github.com/repos/abhimehro/email-security-pipeline/rulesets/9621487
+    observed_at_utc: "2026-08-19T13:04:17Z"
+    updated_at_utc: "2026-08-19T13:04:17Z"
+    hold_reason: null
+  - repository: abhimehro/Seatek_Analysis
+    method: GITHUB_SQUASH
+    required_checks_source: GITHUB_RULESETS
+    required_checks: []
+    required_checks_verified_zero: true
+    discovery_status: VERIFIED
+    evidence_url: https://api.github.com/repos/abhimehro/Seatek_Analysis/rulesets/13305024
+    observed_at_utc: "2026-08-19T13:04:17Z"
+    updated_at_utc: "2026-08-19T13:04:17Z"
+    hold_reason: null
+  - repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+    method: GITHUB_SQUASH
+    required_checks_source: GITHUB_RULESETS
+    required_checks: []
+    required_checks_verified_zero: true
+    discovery_status: VERIFIED
+    evidence_url: https://api.github.com/repos/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/rulesets/4178077
+    observed_at_utc: "2026-08-19T13:04:17Z"
+    updated_at_utc: "2026-08-19T13:04:17Z"
+    hold_reason: null
+  - repository: abhimehro/series_correction_project_updated
+    method: GITHUB_SQUASH
+    required_checks_source: GITHUB_RULESETS
+    required_checks: []
+    required_checks_verified_zero: true
+    discovery_status: VERIFIED
+    evidence_url: https://api.github.com/repos/abhimehro/series_correction_project_updated/rulesets/15878378
+    observed_at_utc: "2026-08-19T13:04:17Z"
+    updated_at_utc: "2026-08-19T13:04:17Z"
+    hold_reason: null
+  - repository: abhimehro/repoprompt-ce
+    method: GITHUB_SQUASH
+    required_checks_source: GITHUB_RULESETS
+    required_checks: ["CodeQL code scanning: errors/high_or_higher", "code quality: errors"]
+    required_checks_verified_zero: false
+    discovery_status: VERIFIED
+    evidence_url: https://api.github.com/repos/abhimehro/repoprompt-ce/rulesets/20172206
+    observed_at_utc: "2026-08-19T13:04:17Z"
+    updated_at_utc: "2026-08-19T13:04:17Z"
+    hold_reason: null

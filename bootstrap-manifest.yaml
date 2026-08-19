@@ -1,0 +1,13 @@
+bootstrap_version: "1.0"
+runtime_ledger:
+  branch: automation/pr-lifecycle-ledger
+  path: pr-lifecycle-ledger.yaml
+  schema_version: "1.2"
+  schema_path: schemas/pr-lifecycle-ledger.schema.json
+  selected_write_primitive: github_contents_api
+  compare_and_swap_anchor: ledger-file-blob-sha-plus-ledger-revision
+  credential_evidence: GitHub Contents API read and conditional-write authorization verified during bootstrap
+  permission_scope: contents-write on abhimehro/personal-config, restricted to the runtime ledger data branch
+  activation_timestamp_utc: "2026-08-19T18:07:30Z"
+  rollback_contact: Abhi Mehrotra
+  activation_state: ACTIVE
