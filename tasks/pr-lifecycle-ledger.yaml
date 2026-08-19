@@ -1,0 +1,12 @@
+pointer_version: "1.0"
+pointer_kind: runtime_lifecycle_ledger
+runtime_ledger:
+  data_branch: automation/pr-lifecycle-ledger
+  data_path: pr-lifecycle-ledger.yaml
+  schema_path: schemas/pr-lifecycle-ledger.schema.json
+  activation_state: NOT_BOOTSTRAPPED
+  selected_write_primitive: null
+  allowed_write_primitives:
+    - git_fast_forward
+    - github_contents_api
+  bootstrap_document: docs/pr-lifecycle-runtime-ledger.md
