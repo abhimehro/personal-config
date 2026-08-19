@@ -120,10 +120,12 @@ Use `tasks/pr-review-agent.config.yaml` (or override via CLI). Key fields:
 - **bot_authors:** e.g. `jules[bot]`, `dependabot[bot]`, `renovate[bot]`,
   `app/copilot-swe-agent`.
 - **stale_threshold_days:** e.g. 30.
-- **merge_strategy:** squash | merge-commit | rebase.
-- **auto_fix_enabled:** true | false.
-- **human_escalation_channel:** e.g. `github-review-request` (documentation
-  only).
+- **identity_classification** and **sensitive_path_taxonomy:** versioned sources
+  for bot identity and sticky sensitive-path decisions.
+- **lifecycle.policy_inputs**, **lifecycle.stage_caps**, and
+  **lifecycle.stages:** reviewed policy revisions, capacity limits, schedules,
+  concurrency, and authority. Legacy merge, auto-fix, and escalation keys are
+  prohibited by lifecycle validation.
 
 ## Review heuristics
 
