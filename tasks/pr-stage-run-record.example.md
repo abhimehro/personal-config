@@ -19,15 +19,17 @@
 
 ## Mandatory per-item evidence, action, and outcome record
 
-One row is required for every processed, proposed, skipped, retried, or completed item. A missing field is `ANALYSIS_ERROR`, not an invitation to fill it from memory.
+One row is required for every processed, proposed, skipped, retried, or
+completed item. A missing field is `ANALYSIS_ERROR`, not an invitation to fill
+it from memory.
 
 | Ledger key | Repository / PR | Observed vs ledger base/head SHA | Owner before → after | GitHub identity / author type | Classification / risk / sticky paths | Guardrail outcome | Changed paths | Evidence URLs | Proposed route / actual action | Mode / audit ID / action count | Retry or error | Final observed outcome / calibration correctness | Provenance or canonical relation |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| ---------- | --------------- | -------------------------------- | -------------------- | ----------------------------- | ------------------------------------ | ----------------- | ------------- | ------------- | ------------------------------ | ------------------------------ | -------------- | ------------------------------------------------ | -------------------------------- |
 
 ## Revision-checked handoffs and human decisions
 
 | Ledger key | Event ID / idempotency key | Expected → resulting revision | Next owner | One next action | Safe default | Expiry | Receiver acknowledgement |
-|---|---|---|---|---|---|---|---|
+| ---------- | -------------------------- | ----------------------------- | ---------- | --------------- | ------------ | ------ | ------------------------ |
 
 ## Continuity
 

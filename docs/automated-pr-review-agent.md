@@ -11,12 +11,24 @@ consolidating, and resolving bot-authored PRs—merging the good, fixing the
 fixable, and closing the rest. Act autonomously on routine decisions; escalate
 when a PR crosses a defined trust boundary.
 
-**In scope:** PRs whose GitHub API `login` or `app_slug` exactly matches a configured, versioned bot identity (see [Configuration](#configuration)). Never infer bot authorship from a title, branch, body, comment, or review history. An ambiguous identity is human-authored for autonomous-action purposes. Stage 1 may analyze a human-authored PR and record evidence, but it never autonomously approves, merges, or closes it. _(Note: The agent is now exclusively responsible for first-interaction contributor greetings, as legacy greeting workflows have been disabled)._
+**In scope:** PRs whose GitHub API `login` or `app_slug` exactly matches a
+configured, versioned bot identity (see [Configuration](#configuration)). Never
+infer bot authorship from a title, branch, body, comment, or review history. An
+ambiguous identity is human-authored for autonomous-action purposes. Stage 1 may
+analyze a human-authored PR and record evidence, but it never autonomously
+approves, merges, or closes it. _(Note: The agent is now exclusively responsible
+for first-interaction contributor greetings, as legacy greeting workflows have
+been disabled)._
 
 ## Preflight gate (mandatory)
 
-**A fetched runtime ledger validated with `python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"` and preflight must pass before any triage or write actions.** Fetch `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` first; the main-branch `tasks/pr-lifecycle-ledger.yaml` file is a bootstrap pointer and never runtime state. If either check fails or the runtime branch is absent,
-the session must not proceed to inventory, merge, or close.
+**A fetched runtime ledger validated with
+`python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"` and
+preflight must pass before any triage or write actions.** Fetch
+`automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` first; the main-branch
+`tasks/pr-lifecycle-ledger.yaml` file is a bootstrap pointer and never runtime
+state. If either check fails or the runtime branch is absent, the session must
+not proceed to inventory, merge, or close.
 
 - Run the preflight script per
   [GitHub App Permission Checklist](github-app-pr-automation-checklist.md).
@@ -31,8 +43,9 @@ the session must not proceed to inventory, merge, or close.
    Extract title, description, labels, branch, file diff, CI status, age, last
    activity, review comments, merge conflict status.
 2. **Continuity read:** Read the last three Stage 1 run records and all
-   Stage-1-owned entries in the [Automated PR Lifecycle Contract](automated-pr-lifecycle.md).
-   Do not repeat an unchanged, unexpired action owned by another stage.
+   Stage-1-owned entries in the
+   [Automated PR Lifecycle Contract](automated-pr-lifecycle.md). Do not repeat
+   an unchanged, unexpired action owned by another stage.
 3. **Output:** Write full inventory to `tasks/pr-inventory.md` (table: Repo, PR
    #, Author, Category, CI, Conflicts, Age, Status).
 4. **Classification:** Assign each PR exactly one category: `SECURITY`,
@@ -75,23 +88,26 @@ security failures, or architectural changes.
 
 Assign each PR one disposition:
 
-| Disposition     | Criteria                                       | Action                           |
-| --------------- | ---------------------------------------------- | -------------------------------- |
-| MERGE           | All gates pass, CI green, no conflicts         | Squash-merge, delete branch      |
-| MERGE-AFTER-FIX | Minor issues auto-fixed                        | Push fix, re-run CI, then merge  |
-| REQUEST-CHANGES | Issues beyond auto-fix                         | Post review, assign to human     |
-| ESCALATE        | Security gate failure or architectural concern | Tag human, block merge           |
-| CLOSE-DUPLICATE | Duplicate or superseded                        | Close with linked explanation    |
-| CLOSE-STALE     | Stale per config threshold                     | Close with reopen instructions   |
-| CONSOLIDATE     | Multiple small PRs should be one               | See consolidation protocol below |
-| HANDOFF-SALVAGE | One bounded mechanical recovery is required    | Create a Stage 2 ledger handoff |
-| HANDOFF-COMPLETION | Policy, platform, canonical, or evidence hold | Create a Stage 3 ledger handoff |
+| Disposition        | Criteria                                       | Action                           |
+| ------------------ | ---------------------------------------------- | -------------------------------- |
+| MERGE              | All gates pass, CI green, no conflicts         | Squash-merge, delete branch      |
+| MERGE-AFTER-FIX    | Minor issues auto-fixed                        | Push fix, re-run CI, then merge  |
+| REQUEST-CHANGES    | Issues beyond auto-fix                         | Post review, assign to human     |
+| ESCALATE           | Security gate failure or architectural concern | Tag human, block merge           |
+| CLOSE-DUPLICATE    | Duplicate or superseded                        | Close with linked explanation    |
+| CLOSE-STALE        | Stale per config threshold                     | Close with reopen instructions   |
+| CONSOLIDATE        | Multiple small PRs should be one               | See consolidation protocol below |
+| HANDOFF-SALVAGE    | One bounded mechanical recovery is required    | Create a Stage 2 ledger handoff  |
+| HANDOFF-COMPLETION | Policy, platform, canonical, or evidence hold  | Create a Stage 3 ledger handoff  |
 
 **Consolidation:** Create branch `chore/consolidated-[category]-updates` from
 main, cherry-pick or reapply changes, resolve conflicts, run tests, open one PR
 listing original PRs, close constituents with link.
 
-**Merge ordering:** Eligible routine dependency, CI/infra, refactor, UI, and test/format work follows the current repository merge method. Security-sensitive work is never automatically merged and is routed to Stage 3/human decision. After each completion, re-check remaining PRs for new conflicts.
+**Merge ordering:** Eligible routine dependency, CI/infra, refactor, UI, and
+test/format work follows the current repository merge method. Security-sensitive
+work is never automatically merged and is routed to Stage 3/human decision.
+After each completion, re-check remaining PRs for new conflicts.
 
 ## Phase 4 — Reporting & Learning
 
@@ -111,8 +127,8 @@ listing original PRs, close constituents with link.
 
 - Review automation writes only to `tasks/review-session-reports.md` and the
   Stage-1-owned entries in the fetched
-  `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` runtime ledger.
-  The main-branch `tasks/pr-lifecycle-ledger.yaml` bootstrap pointer is never
+  `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` runtime ledger. The
+  main-branch `tasks/pr-lifecycle-ledger.yaml` bootstrap pointer is never
   written as state.
 - Review automation must not write to `tasks/salvage-session-reports.md`.
 - Canonical policy docs are read-mostly; only update for policy/version changes.
@@ -121,9 +137,10 @@ listing original PRs, close constituents with link.
 
 Phase 1 is throughput-optimized: it merges what is clean, closes what is
 redundant, and gives every remaining item one next owner. It must not leave a
-prose-only deferred tail. Use the [Automated PR Lifecycle Contract](automated-pr-lifecycle.md)
-to route a bounded mechanical recovery to Stage 2 and an evidence, policy,
-platform, canonical, or security hold to Stage 3.
+prose-only deferred tail. Use the
+[Automated PR Lifecycle Contract](automated-pr-lifecycle.md) to route a bounded
+mechanical recovery to Stage 2 and an evidence, policy, platform, canonical, or
+security hold to Stage 3.
 
 When this skill finishes, append a Stage 1 run record and a ledger handoff. Each
 handoff must include repository, PR, base/head SHA, author type, classification,
@@ -136,15 +153,26 @@ Stage 2 produces one or more **draft** salvage / infra-fix PRs; it does not
 close a security original merely because a replacement draft exists. Stage 3
 owns later reconciliation and completion. Review automation must not write to
 `tasks/salvage-session-reports.md`. If a deferred PR is blocked by CodeScene
-code health, Stage 2 must confirm
-`/cs-agent skill:fix-code-health-degradations` was posted (or post it) before
-making final salvage/closure disposition.
+code health, Stage 2 must confirm `/cs-agent skill:fix-code-health-degradations`
+was posted (or post it) before making final salvage/closure disposition.
 
 ### Legacy disposition map and compatibility
 
-Historical reports remain evidence inputs under the lifecycle import procedure. Their legacy values map as follows: `ESCALATE` becomes Stage 3 with `REVIEW_SECURITY`, `HOLD_CONTRACT`, or the evidence-derived guardrail outcome; `DEFER` becomes Stage 2 only with one complete Stage 2 work item, otherwise Stage 3; `DIRTY` becomes a Stage 2 candidate only with bounded repair scope, otherwise Stage 3; `UNSTABLE` becomes `HOLD_EVIDENCE` and Stage 3 reconciliation; and `CLOSE-DUPLICATE` becomes `CLOSED_DUPLICATE` or `CLOSED_SUPERSEDED` only after canonical evidence and the appropriate cooldown.
+Historical reports remain evidence inputs under the lifecycle import procedure.
+Their legacy values map as follows: `ESCALATE` becomes Stage 3 with
+`REVIEW_SECURITY`, `HOLD_CONTRACT`, or the evidence-derived guardrail outcome;
+`DEFER` becomes Stage 2 only with one complete Stage 2 work item, otherwise
+Stage 3; `DIRTY` becomes a Stage 2 candidate only with bounded repair scope,
+otherwise Stage 3; `UNSTABLE` becomes `HOLD_EVIDENCE` and Stage 3
+reconciliation; and `CLOSE-DUPLICATE` becomes `CLOSED_DUPLICATE` or
+`CLOSED_SUPERSEDED` only after canonical evidence and the appropriate cooldown.
 
-The Stage 1 handoff must preserve the legacy deferred-tail inputs required for recovery: trigger/check evidence, immutable source/base anchors, changed and prohibited paths, root-cause/infra observation, proposed repair, required test command/result, attempts and failed approach, provenance/canonical relation, expiry, and one safe default. A prose report that lacks those inputs remains evidence-only; it cannot directly trigger a Stage 2 branch.
+The Stage 1 handoff must preserve the legacy deferred-tail inputs required for
+recovery: trigger/check evidence, immutable source/base anchors, changed and
+prohibited paths, root-cause/infra observation, proposed repair, required test
+command/result, attempts and failed approach, provenance/canonical relation,
+expiry, and one safe default. A prose report that lacks those inputs remains
+evidence-only; it cannot directly trigger a Stage 2 branch.
 
 ## Local Git, `gh`, and Jujitsu (jj)
 
@@ -165,8 +193,8 @@ Use `tasks/pr-review-agent.config.yaml` (or override via CLI). Key fields:
 - **stale_threshold_days:** e.g. 30.
 - **identity_classification** and **sensitive_path_taxonomy:** versioned sources
   that keep ambiguous identities human and sensitive-path classification sticky.
-- **lifecycle.policy_inputs:** identity, sensitive-path, permission, required-check,
-  merge-method, and prompt revision identifiers.
+- **lifecycle.policy_inputs:** identity, sensitive-path, permission,
+  required-check, merge-method, and prompt revision identifiers.
 - **lifecycle.stage_caps** and **lifecycle.stages:** the reviewed capacity,
   schedule, concurrency, and authority contract. Legacy merge, auto-fix, and
   escalation keys are prohibited by validation.
@@ -187,8 +215,8 @@ Apply these during classification and review (see also `tasks/lessons.md`):
   `docs/pr-visual-recap-agent-backends.md`.
 - **Zero-diff / superseded:** Detect early (`changed_files_count == 0` or no
   effective diff); create a non-security closure candidate only when identity,
-  anchors, canonical evidence, and the applicable cooldown are complete. Stage
-  3 completes eligible closures after calibration. Never mark a draft ready as a
+  anchors, canonical evidence, and the applicable cooldown are complete. Stage 3
+  completes eligible closures after calibration. Never mark a draft ready as a
   shortcut around the stage contract.
 - **Post-merge conflict cascade (Lesson 0):** Re-check mergeable state after
   each merge before proceeding. PRs touching the same hot file (`main.py`,
@@ -288,7 +316,10 @@ scheduled tasks run automatically each day on all seven priority repositories:
 
 7. **21:15 UTC** - Stage 3 Daily PR Completion
 
-**Note:** Stage 1, Stage 2, and Stage 3 are the scheduled Cursor Dashboard PR lifecycle automations. The 06:00 PR summary, 08:00 issue creation, 08:15 repository health, and 09:00 test jobs are upstream inputs only; they are not a second review-and-merge chain.
+**Note:** Stage 1, Stage 2, and Stage 3 are the scheduled Cursor Dashboard PR
+lifecycle automations. The 06:00 PR summary, 08:00 issue creation, 08:15
+repository health, and 09:00 test jobs are upstream inputs only; they are not a
+second review-and-merge chain.
 
 ### Weekly health & housekeeping (non-overlapping)
 
