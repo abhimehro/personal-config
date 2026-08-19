@@ -280,9 +280,9 @@ Apply these during classification and review (see also `tasks/lessons.md`):
 
 ## Scheduling
 
-The Review Agent is Stage 1 of the scheduled lifecycle. It runs at `0 13 * * *`
+The Review Agent is Stage 1 of the scheduled lifecycle. It runs at `0 15 * * *`
 UTC with one concurrent run and a 20-item inventory cap. It is followed by Stage
-2 at `0 17 * * *` and Stage 3 at `15 21 * * *`. See
+2 at `0 17 * * *` and Stage 3 at `0 19 * * *`. See
 [Three-Stage PR Lifecycle in Cursor Automations](cursor-automations/three-stage-pr-lifecycle.md).
 
 ### Daily Automation Chain
@@ -310,11 +310,11 @@ scheduled tasks run automatically each day on all seven priority repositories:
 
 4. **9:00 AM** - PR automation test
 
-5. **13:00 UTC** - Stage 1 Daily PR Review
+5. **15:00 UTC** - Stage 1 Daily PR Review
 
 6. **17:00 UTC** - Stage 2 Daily PR Salvage
 
-7. **21:15 UTC** - Stage 3 Daily PR Completion
+7. **19:00 UTC** - Stage 3 Daily PR Completion
 
 **Note:** Stage 1, Stage 2, and Stage 3 are the scheduled Cursor Dashboard PR
 lifecycle automations. The 06:00 PR summary, 08:00 issue creation, 08:15

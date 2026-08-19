@@ -235,10 +235,13 @@ semantics.
 ## Cursor configuration
 
 The Stage 2 Cursor automation runs at `0 17 * * *` UTC with one concurrent run
-and a maximum of five recovery candidates. It may use only the least-privilege
-repository connector needed to create an agent-owned draft branch and PR. It
-must not attach approval, review-request, generic comment, browser-control, or
-general shell-execution actions.
+and a maximum of five recovery candidates. The live Dashboard exposes the
+shared, broader MCP workspace inventory and explicitly references Notion, Memory,
+Sequential thinking, GitKraken, cloudrun, Linear, codescene, julesServer, Snyk,
+and Sonatype-mcp in the prompt. Tool visibility is not authority: Stage 2 remains
+draft-only and must not approve, request review, mark ready, merge, close,
+force-push, alter rulesets or workflow permissions, or use a connected tool to
+bypass its bounded-recovery contract.
 
 See
 [Three-Stage PR Lifecycle in Cursor Automations](cursor-automations/three-stage-pr-lifecycle.md)

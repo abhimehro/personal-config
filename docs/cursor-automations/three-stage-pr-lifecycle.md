@@ -1,11 +1,11 @@
 # Three-Stage PR Lifecycle in Cursor Automations
 
 This document maps the repository-native PR specifications to the three Cursor
-Automations. It does not replace the specifications. The paste-ready prompt and
-export artifacts in this directory are the reviewed source of truth; Cursor
-Dashboard is a separately applied runtime copy that can drift. Each automation
-must read the shared lifecycle contract and its own stage document before
-acting.
+Automations. It does not replace the specifications. The live Cursor Dashboard
+is canonical for trigger, enablement, model, connected-tool, and memory state;
+the paste-ready prompts and exports in this directory are reconciled records of
+that configuration. Each automation must read the shared lifecycle contract and
+its own stage document before acting.
 
 The configuration fields below are limited to the fields present in the existing
 Cursor automation exports: name, scheduled cron trigger, actions, prompt, model,
@@ -18,9 +18,9 @@ visibly available.
 
 | Cursor automation   | Repository specification                |      Schedule | Concurrency |                                                   Run cap | Write authority                                                                                   |
 | ------------------- | --------------------------------------- | ------------: | ----------: | --------------------------------------------------------: | ------------------------------------------------------------------------------------------------- |
-| Daily PR Review     | `docs/automated-pr-review-agent.md`     |  `0 13 * * *` |           1 |                                        20 inventory items | Routine approve, squash merge, close, and mechanical repair only when all routine predicates pass |
+| Daily PR Review     | `docs/automated-pr-review-agent.md`     |  `0 15 * * *` |           1 |                                        20 inventory items | Routine approve, squash merge, close, and mechanical repair only when all routine predicates pass |
 | Daily PR Salvage    | `docs/automated-pr-salvage-agent.md`    |  `0 17 * * *` |           1 |                                     5 recovery candidates | Focused draft recovery only; no approval, merge, or original-security closure                     |
-| Daily PR Completion | `docs/automated-pr-completion-agent.md` | `15 21 * * *` |           1 | 20 reconciliations, 5 packets, 5 post-calibration actions | Report-only until calibration approval; then bounded non-security completion or closure           |
+| Daily PR Completion | `docs/automated-pr-completion-agent.md` | `0 19 * * *`  |           1 | 20 reconciliations, 5 packets, 5 post-calibration actions | Report-only until calibration approval; then bounded non-security completion or closure           |
 
 The schedules are UTC. Each stage must finish or record `ANALYSIS_ERROR` before
 the next one starts. If the Cursor dashboard offers no explicit concurrency
@@ -32,10 +32,10 @@ shifts with daylight-saving time; the cron source remains UTC.
 
 | Stage               | Prompt                                                                                     | Export                                                                                         | Approval action                     | Memory   |
 | ------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ----------------------------------- | -------- |
-| Stage 1             | [`prompts/daily-pr-review.md`](prompts/daily-pr-review.md)                                 | [`exports/daily-pr-review.json`](exports/daily-pr-review.json)                                 | Present, routine only               | Disabled |
-| Stage 2             | [`prompts/daily-pr-salvage.md`](prompts/daily-pr-salvage.md)                               | [`exports/daily-pr-salvage.json`](exports/daily-pr-salvage.json)                               | Absent                              | Disabled |
-| Stage 3 calibration | [`prompts/daily-pr-completion.calibration.md`](prompts/daily-pr-completion.calibration.md) | [`exports/daily-pr-completion.calibration.json`](exports/daily-pr-completion.calibration.json) | Absent                              | Disabled |
-| Stage 3 completion  | [`prompts/daily-pr-completion.md`](prompts/daily-pr-completion.md)                         | [`exports/daily-pr-completion.json`](exports/daily-pr-completion.json)                         | Present, only after ledger approval | Disabled |
+| Stage 1             | [`prompts/daily-pr-review.md`](prompts/daily-pr-review.md)                                 | [`exports/daily-pr-review.json`](exports/daily-pr-review.json)                                 | Present, routine only               | Enabled namespaced cache |
+| Stage 2             | [`prompts/daily-pr-salvage.md`](prompts/daily-pr-salvage.md)                               | [`exports/daily-pr-salvage.json`](exports/daily-pr-salvage.json)                               | Absent                              | Enabled namespaced cache |
+| Stage 3 calibration | [`prompts/daily-pr-completion.calibration.md`](prompts/daily-pr-completion.calibration.md) | [`exports/daily-pr-completion.calibration.json`](exports/daily-pr-completion.calibration.json) | Absent                              | Enabled namespaced cache |
+| Stage 3 completion  | [`prompts/daily-pr-completion.md`](prompts/daily-pr-completion.md)                         | [`exports/daily-pr-completion.json`](exports/daily-pr-completion.json)                         | Present, only after ledger approval | Enabled namespaced cache |
 
 Use [`dashboard-application-checklist.md`](dashboard-application-checklist.md)
 to create, replace, fingerprint, disable, and roll back each dashboard
@@ -73,15 +73,15 @@ distinct post-calibration Stage 3 variant may use routine approval only after
 the approval is recorded in the validated ledger and only under the completion
 specification's predicates.
 
-Use a repository connector that is read-only unless a stage has a documented
-state change to perform. Any write-capable connector must be restricted to the
-seven configured repositories and must never be used to alter branch protection,
-rulesets, workflow permissions, bypass actors, or unrelated branches. The
-checked-in exports allow only the repository connector and the specific Stage
-1/approved-Stage-3 approval action. Do not attach browser-control,
-shell-execution, reviewer-request, generic comments, Browser, Browser-use,
-Playwright, desktop commander, AppleScript, email, drive, calendar, Rube,
-Firebase, Cloudflare, Clerk, or unrelated MCP actions to any lifecycle stage.
+The live Dashboard references Notion, Memory, Sequential thinking, GitKraken,
+cloudrun, Linear, codescene, julesServer, Snyk, and Sonatype-mcp, and exposes a
+wider connected workspace inventory. This inventory is not a blanket execution
+allowlist. Each stage remains bound by its prompt, immutable anchors, action cap,
+and absolute prohibitions. A connected tool may not alter branch protection,
+rulesets, workflow permissions, bypass actors, unrelated branches, or the
+security and human-review boundaries. The checked-in JSON shape records the
+observed repository connector and stage-specific approval flag; the Dashboard
+remains the evidence source for the connected MCP inventory.
 
 ## Stage handoffs
 

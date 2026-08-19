@@ -2,7 +2,7 @@
 # Session: cron Phase 1 2026-07-21 (review-and-merge)
 
 mode: review-and-merge
-schedule: "0 13 * * *"
+schedule: "0 15 * * *"
 
 repos:
   - abhimehro/personal-config
@@ -53,7 +53,7 @@ lifecycle:
   source_of_truth: "docs/automated-pr-lifecycle.md and the runtime ledger data branch"
   schema: schemas/pr-lifecycle-ledger.schema.json
   validation_command: 'python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"'
-  cursor_dashboard_runtime: separately_applied_from_checked_in_exports
+  cursor_dashboard_runtime: canonical-live-dashboard-reconciled-2026-08-19
   policy_revision: "pr-lifecycle-v1.2"
   policy_inputs:
     identity_classification_revision: "2026-08-19"
@@ -66,7 +66,8 @@ lifecycle:
     data_branch: automation/pr-lifecycle-ledger
     data_path: pr-lifecycle-ledger.yaml
     main_branch_pointer: tasks/pr-lifecycle-ledger.yaml
-    bootstrap_state: NOT_BOOTSTRAPPED
+    bootstrap_state: ACTIVE
+    selected_write_primitive: github_contents_api
     allowed_write_primitives:
       - git_fast_forward
       - github_contents_api
@@ -81,7 +82,7 @@ lifecycle:
     stage3_completion_actions: 5
   stages:
     stage1_review:
-      schedule: "0 13 * * *"
+      schedule: "0 15 * * *"
       concurrency: 1
       authority: routine-approve-squash-merge-close
     stage2_salvage:
@@ -89,6 +90,6 @@ lifecycle:
       concurrency: 1
       authority: draft-only-recovery
     stage3_completion:
-      schedule: "15 21 * * *"
+      schedule: "0 19 * * *"
       concurrency: 1
       authority: report-only-until-calibration-approved-then-bounded-nonsecurity-completion
