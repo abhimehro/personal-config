@@ -10,22 +10,20 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from pr_lifecycle_validation import ROOT, validate
+from pr_lifecycle_validation import validate
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "runtime_ledger",
-        nargs="?",
         type=Path,
-        default=ROOT / "tasks/pr-lifecycle-ledger.example.yaml",
-        help="fetched runtime ledger; defaults to the non-empty source fixture",
+        help="required fetched runtime ledger from automation/pr-lifecycle-ledger",
     )
     args = parser.parse_args()
     try:
         validate(args.runtime_ledger)
-    except ValueError as exc:
+    except (OSError, ValueError, KeyError, IndexError) as exc:
         print(f"PR_LIFECYCLE_INVALID: {exc}", file=sys.stderr)
         return 1
     print("PR_LIFECYCLE_VALID")

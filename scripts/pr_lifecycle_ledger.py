@@ -118,7 +118,7 @@ def validate_terminal_item_state(value: dict[str, Any], key: str) -> None:
 def validate_nonterminal_item_state(value: dict[str, Any], key: str) -> None:
     terminal = value.get("terminal_disposition")
     if terminal is not None:
-        raise ValueError(f"ledger item {key}: nonterminal record requires next owner")
+        raise ValueError(f"ledger item {key}: nonterminal record cannot carry a disposition")
     if value["next_owner"] == "none":
         raise ValueError(f"ledger item {key}: nonterminal record requires next owner")
 

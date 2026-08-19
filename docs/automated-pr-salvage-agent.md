@@ -25,7 +25,7 @@ Stage 1 processes routine PRs at throughput. Stage 2 recovers only an item with 
 
 ## Mandatory preflight and continuity read
 
-Run `python3 scripts/validate_pr_lifecycle_artifacts.py` and the shared GitHub preflight before any clone, branch creation, or write action. Then read the last three Stage 2 run records, the current Stage-2-owned entries in `tasks/pr-lifecycle-ledger.yaml`, and the applicable lessons in `tasks/lessons.md`. A malformed ledger, incomplete work item, expired work item, preflight failure, unknown source branch, or changed anchor is a fail-closed stop, not a cue to infer missing scope.
+Fetch `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` to a local `RUNTIME_LEDGER_PATH`, run `python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"`, and run the shared GitHub preflight before any clone, branch creation, or write action. Then read the last three Stage 2 run records, the current Stage-2-owned entries in the fetched runtime ledger, and the applicable lessons in `tasks/lessons.md`. The main-branch `tasks/pr-lifecycle-ledger.yaml` file is a bootstrap pointer and is never a runtime input. A missing runtime branch, malformed ledger, incomplete work item, expired work item, preflight failure, unknown source branch, or changed anchor is a fail-closed stop, not a cue to infer missing scope.
 
 Live-reconcile every candidate before recovery. Record the current base SHA, head SHA, changed paths, checks, mergeability, comments, and any canonical candidate. If the PR was merged or closed outside this workflow, record that verified terminal state. If the base or head SHA changed, record `STALE_ANCHOR`, return the item to Stage 1, and do not reuse the prior analysis.
 
@@ -33,7 +33,7 @@ Live-reconcile every candidate before recovery. Record the current base SHA, hea
 
 | Input | Required use |
 |---|---|
-| `tasks/pr-lifecycle-ledger.yaml` | Read only items whose `current_owner` is `stage2`; use the anchor pair and prior attempts as the starting point. |
+| Fetched `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` | Read only items whose `current_owner` is `stage2`; use the anchor pair and prior attempts as the starting point. The main-branch pointer is never read as state. |
 | Live GitHub PR/check data | Treat as authoritative over dated reports; all recovery decisions require fresh evidence. |
 | `tasks/pr-review-agent.config.yaml` | Read repository scope, allowlisted automation identities, journal-file rules, and stage caps. |
 | Trusted `main` checkout | Create a new branch only from current trusted base. Never execute untrusted PR-head code in a privileged context. |

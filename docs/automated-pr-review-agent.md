@@ -15,7 +15,7 @@ when a PR crosses a defined trust boundary.
 
 ## Preflight gate (mandatory)
 
-**`python3 scripts/validate_pr_lifecycle_artifacts.py` and preflight must pass before any triage or write actions.** If either fails,
+**A fetched runtime ledger validated with `python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"` and preflight must pass before any triage or write actions.** Fetch `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` first; the main-branch `tasks/pr-lifecycle-ledger.yaml` file is a bootstrap pointer and never runtime state. If either check fails or the runtime branch is absent,
 the session must not proceed to inventory, merge, or close.
 
 - Run the preflight script per
@@ -110,7 +110,10 @@ listing original PRs, close constituents with link.
 ### Conflict-proofing write boundaries
 
 - Review automation writes only to `tasks/review-session-reports.md` and the
-  Stage-1-owned entries in `tasks/pr-lifecycle-ledger.yaml`.
+  Stage-1-owned entries in the fetched
+  `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` runtime ledger.
+  The main-branch `tasks/pr-lifecycle-ledger.yaml` bootstrap pointer is never
+  written as state.
 - Review automation must not write to `tasks/salvage-session-reports.md`.
 - Canonical policy docs are read-mostly; only update for policy/version changes.
 
@@ -160,10 +163,13 @@ Use `tasks/pr-review-agent.config.yaml` (or override via CLI). Key fields:
 - **bot_authors:** e.g. `jules[bot]`, `dependabot[bot]`, `renovate[bot]`,
   `app/copilot-swe-agent`.
 - **stale_threshold_days:** e.g. 30.
-- **merge_strategy:** squash | merge-commit | rebase.
-- **auto_fix_enabled:** true | false.
-- **human_escalation_channel:** e.g. `github-review-request` (documentation
-  only).
+- **identity_classification** and **sensitive_path_taxonomy:** versioned sources
+  that keep ambiguous identities human and sensitive-path classification sticky.
+- **lifecycle.policy_inputs:** identity, sensitive-path, permission, required-check,
+  merge-method, and prompt revision identifiers.
+- **lifecycle.stage_caps** and **lifecycle.stages:** the reviewed capacity,
+  schedule, concurrency, and authority contract. Legacy merge, auto-fix, and
+  escalation keys are prohibited by validation.
 
 ## Review heuristics
 

@@ -1,4 +1,5 @@
 import copy
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -67,6 +68,17 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "schema root"):
             validator.validate(ROOT / "tasks/pr-lifecycle-ledger.yaml")
 
+    def test_validator_cli_requires_a_fetched_runtime_ledger_path(self):
+        result = subprocess.run(
+            [sys.executable, "scripts/validate_pr_lifecycle_artifacts.py"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("runtime_ledger", result.stderr)
+
     def test_duplicate_yaml_keys_fail_closed(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "duplicate.yaml"
@@ -130,6 +142,11 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         config["lifecycle"]["stages"]["stage1_review"]["schedule"] = "0 14 * * *"
         with self.assertRaisesRegex(ValueError, "approved contract"):
+            validator.validate_config(config)
+
+        config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
+        del config["repos"]
+        with self.assertRaisesRegex(ValueError, "config.repos"):
             validator.validate_config(config)
 
 

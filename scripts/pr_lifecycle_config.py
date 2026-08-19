@@ -14,6 +14,9 @@ def validate_config(config: dict[str, Any]) -> None:
     present = legacy & set(config)
     if present:
         raise ValueError(f"config: legacy lifecycle keys are prohibited: {sorted(present)}")
+    repos = require_list(config.get("repos"), "config.repos")
+    if not repos:
+        raise ValueError("config.repos: at least one repository is required")
     lifecycle = require_mapping(config.get("lifecycle"), "config.lifecycle")
     required = {
         "version", "source_of_truth", "schema", "validation_command",
