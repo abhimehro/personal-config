@@ -1,7 +1,7 @@
 # Phase 2 PR Salvage — 2026-08-18
 
-Branch: `cursor-agent/automated-pr-salvage-workflow-517a`
-Mode: salvage only — **S1 never merge**. Auth: `abhimehro` PAT.
+Branch: `cursor-agent/automated-pr-salvage-workflow-517a` Mode: salvage only —
+**S1 never merge**. Auth: `abhimehro` PAT.
 
 ## Preflight
 
@@ -9,7 +9,8 @@ Mode: salvage only — **S1 never merge**. Auth: `abhimehro` PAT.
 - [x] `make cursor-cloud-hooks`
 - [x] Read salvage policy + automation memory
 - [x] Live-fetch open auto PRs (77 open, 13 CONFLICTING)
-- [x] Load Phase 1 remainder from `pr-review-2026-08-16.md` + PR #2016 (`pr-review-2026-08-17.md`)
+- [x] Load Phase 1 remainder from `pr-review-2026-08-16.md` + PR #2016
+      (`pr-review-2026-08-17.md`)
 
 ## CONFLICTING queue
 
@@ -18,8 +19,10 @@ Mode: salvage only — **S1 never merge**. Auth: `abhimehro` PAT.
 - [x] pc #1997/#1985 — CLOSE (superseded by CLEAN #1996)
 - [x] esp #1487 — CLOSE (already on main)
 - [x] esp #1495 — CLOSE 0fr
-- [x] pc #2007/#2000/#1989/#1907 — #2000/#1989 salvaged as #2022; #2007/#1907 ESCALATE
-- [x] ctrld #1174/#1136/#1161 — #1174 salvaged as #1195; #1136 ESCALATE; #1161 HOLD 0fo
+- [x] pc #2007/#2000/#1989/#1907 — #2000/#1989 salvaged as #2022; #2007/#1907
+      ESCALATE
+- [x] ctrld #1174/#1136/#1161 — #1174 salvaged as #1195; #1136 ESCALATE; #1161
+      HOLD 0fo
 - [x] esp #1473 — ESCALATE
 - [x] seatek #690 — salvaged as #693 (.POSIXct only)
 

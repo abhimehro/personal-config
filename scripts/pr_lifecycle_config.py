@@ -152,9 +152,13 @@ def validate_pointer_activation(runtime: dict[str, Any]) -> None:
         raise ValueError("ledger pointer: invalid activation state")
     if state == "NOT_BOOTSTRAPPED":
         if selected is not None:
-            raise ValueError("ledger pointer: inactive pointer must not select a primitive")
+            raise ValueError(
+                "ledger pointer: inactive pointer must not select a primitive"
+            )
     elif selected not in allowed:
-        raise ValueError("ledger pointer: active pointer selects an unsupported primitive")
+        raise ValueError(
+            "ledger pointer: active pointer selects an unsupported primitive"
+        )
 
 
 def validate_pointer_primitives(

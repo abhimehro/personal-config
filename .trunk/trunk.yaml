@@ -26,7 +26,7 @@ lint:
     - git-diff-check
     - hadolint@2.15.1
     - isort@8.0.1
-    - osv-scanner@2.5.0
+    - osv-scanner@2.5.1
     - ruff@0.16.3
     - shellcheck@0.11.0
     - shfmt@3.13.1

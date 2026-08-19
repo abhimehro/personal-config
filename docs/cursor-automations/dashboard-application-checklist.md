@@ -8,12 +8,12 @@ compare-and-swap primitive. Apply a changed export only after confirming the
 Dashboard value it represents, then record the dashboard fingerprint in the next
 runtime-ledger event.
 
-| Stage               | Export                                         | Prompt to paste                              | Schedule      | Dashboard authority                                     | MCP/action allowlist                                               | Memory   |
-| ------------------- | ---------------------------------------------- | -------------------------------------------- | ------------- | ------------------------------------------------------- | ------------------------------------------------------------------ | -------- |
-| Stage 1             | `exports/daily-pr-review.json`                 | `prompts/daily-pr-review.md`                 | `0 15 * * *`  | `prComment.allowApprove: true`; routine only            | Dashboard-referenced MCP set; prompt and routine predicates govern | Enabled namespaced cache |
-| Stage 2             | `exports/daily-pr-salvage.json`                | `prompts/daily-pr-salvage.md`                | `0 17 * * *`  | No approval, reviewer request, merge, or close          | Dashboard-referenced MCP set; draft-only contract governs          | Enabled namespaced cache |
-| Stage 3 calibration | `exports/daily-pr-completion.calibration.json` | `prompts/daily-pr-completion.calibration.md` | `0 19 * * *`  | Report-only, no GitHub mutation                         | Dashboard-referenced MCP set; report-only prohibitions govern      | Enabled namespaced cache |
-| Stage 3 completion  | `exports/daily-pr-completion.json`             | `prompts/daily-pr-completion.md`             | `0 19 * * *`  | `prComment.allowApprove: true`; bounded completion only | Dashboard-referenced MCP set; approval gate and cap govern         | Enabled namespaced cache |
+| Stage               | Export                                         | Prompt to paste                              | Schedule     | Dashboard authority                                     | MCP/action allowlist                                               | Memory                   |
+| ------------------- | ---------------------------------------------- | -------------------------------------------- | ------------ | ------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------ |
+| Stage 1             | `exports/daily-pr-review.json`                 | `prompts/daily-pr-review.md`                 | `0 15 * * *` | `prComment.allowApprove: true`; routine only            | Dashboard-referenced MCP set; prompt and routine predicates govern | Enabled namespaced cache |
+| Stage 2             | `exports/daily-pr-salvage.json`                | `prompts/daily-pr-salvage.md`                | `0 17 * * *` | No approval, reviewer request, merge, or close          | Dashboard-referenced MCP set; draft-only contract governs          | Enabled namespaced cache |
+| Stage 3 calibration | `exports/daily-pr-completion.calibration.json` | `prompts/daily-pr-completion.calibration.md` | `0 19 * * *` | Report-only, no GitHub mutation                         | Dashboard-referenced MCP set; report-only prohibitions govern      | Enabled namespaced cache |
+| Stage 3 completion  | `exports/daily-pr-completion.json`             | `prompts/daily-pr-completion.md`             | `0 19 * * *` | `prComment.allowApprove: true`; bounded completion only | Dashboard-referenced MCP set; approval gate and cap govern         | Enabled namespaced cache |
 
 All schedules are **UTC**. In America/Chicago, the displayed local hour changes
 with daylight-saving time. The shared environment ID is

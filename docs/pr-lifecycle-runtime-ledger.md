@@ -93,11 +93,11 @@ completion action may follow a failed runtime-ledger read or write.
 
 ## Rollout Sequence
 
-The authorized bootstrap created and seeded the orphan data branch, validated the
-Contents API read/write primitive, recorded its manifest, and proved the
+The authorized bootstrap created and seeded the orphan data branch, validated
+the Contents API read/write primitive, recorded its manifest, and proved the
 main-branch pointer cannot be used as runtime state. Stage 1 and Stage 2 may
-read the active ledger only through the recorded primitive. Both Stage 3 variants
-are currently disabled for controlled manual testing; after the test, enable only
-the report-only calibration variant. The post-calibration completion variant
-remains disabled until the ledger contains the approved seven-run record and a
-dated written approval.
+read the active ledger only through the recorded primitive. Both Stage 3
+variants are currently disabled for controlled manual testing; after the test,
+enable only the report-only calibration variant. The post-calibration completion
+variant remains disabled until the ledger contains the approved seven-run record
+and a dated written approval.
