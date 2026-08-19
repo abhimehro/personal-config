@@ -45,3 +45,20 @@ The approved enforcement follow-up is implemented in source on this draft branch
 | D, trusted-base enforcement | `Code Quality` CI job installs the pinned schema dependency and runs artifact validation, prompt/export sync, and focused lifecycle tests before the broader suite. | Workflow review and local command parity. | Active when this source reaches the trusted base. |
 
 The broad `make test-all` suite passes. The unrelated `tests/test_controld_manager.sh` false positive was repaired in the test harness by replacing pipefail-sensitive `echo | grep -q` assertions with equivalent Bash here-string checks. The Control D runtime behavior was not changed. The lifecycle smoke suite and focused enforcement suite also pass.
+
+## Schema v1.2 and final evidence corrections
+
+The current re-review head is `1efd36d`. Schema v1.2 is implemented before any runtime-ledger bootstrap: transition events are append-only `HANDOFF`, `IMPORT`, and `TERMINAL` records with explicit lifecycle states and one-revision increments; `ACKNOWLEDGEMENT` and `CANCELLATION` are append-only receipts with `parent_event_id`, unchanged revision, and unchanged projected state. Terminal items require a final `TERMINAL` transition, revision at least one, `none/none` ownership, and a matching disposition. The illustrative ledger validates under v1.2.
+
+The active lifecycle configuration now requires the fetched-ledger invocation `python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"`; the configuration validator rejects the former argument-less form, and a focused regression test covers that rejection. The Stage 2 fixture uses the same command.
+
+The verified-zero registry was corrected separately from the schema change. `abhimehro/personal-config` remains `VERIFIED` only because the authoritative branch-protection endpoint was read at `2026-08-19T12:52:18Z` and recorded a disabled-protection response, while the ruleset endpoint returned no rulesets. The other six repositories are `PENDING`, use `UNKNOWN` discovery values, have `required_checks_verified_zero: false`, and carry an explicit hold until an authoritative source is readable. This allows no inferred merge path.
+
+| Evidence item | Result |
+|---|---|
+| Focused lifecycle regression suite | 20 tests passed, including stale-command rejection and pending-hold coverage. |
+| Full local validation | Ruff, Bandit, fixture validation, prompt/export synchronization, `make test-quick`, and `make test-all` passed, with 480 repository tests passing. |
+| Hosted quality gate | `CodeScene Code Health Review (main)` passed on the preceding schema-v1.2 quality head and on current evidence remediation head `1efd36d`. |
+| Runtime and governance | No runtime-ledger branch bootstrap, dashboard change, approval, merge, close, or PR-comment action was performed. |
+
+These records are implementation and re-review evidence only. They do not authorize merge, dashboard activation, or runtime-ledger bootstrap; each remains a separate human decision.
