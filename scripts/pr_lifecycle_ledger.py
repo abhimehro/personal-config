@@ -248,9 +248,18 @@ def validate_transition_owners(event: dict[str, Any]) -> None:
 
 
 def validate_legal_transition(event: dict[str, Any]) -> None:
+    validate_transition_table(event)
+    validate_terminal_transition_kind(event)
+
+
+def validate_transition_table(event: dict[str, Any]) -> None:
     event_id = event["event_id"]
     if event["to_state"] not in LEGAL_TRANSITIONS.get(event["from_state"], set()):
         raise ValueError(f"event {event_id}: illegal lifecycle transition")
+
+
+def validate_terminal_transition_kind(event: dict[str, Any]) -> None:
+    event_id = event["event_id"]
     if event["kind"] == "TERMINAL" and event["to_state"] != "TERMINAL":
         raise ValueError(f"event {event_id}: terminal event must end in TERMINAL")
     if event["kind"] != "TERMINAL" and event["to_state"] == "TERMINAL":
