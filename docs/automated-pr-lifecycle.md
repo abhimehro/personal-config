@@ -18,7 +18,7 @@ Every nonterminal item must carry immutable base and head SHA anchors, a risk cl
 
 Automated routine approval is a policy-authorized throughput control, not an independent human security review. Security-sensitive and ordinary human-authored PRs never become routine merge or close candidates.
 
-## Canonical records
+## Canonical records and repository authority
 
 | Record | Location | Writer | Purpose |
 |---|---|---|---|
@@ -29,6 +29,8 @@ Automated routine approval is a policy-authorized throughput control, not an ind
 | Lessons | `tasks/lessons.md` | Any stage, through an append-only entry | Reusable routing or verification rules, not raw logs or speculation |
 
 The ledger is the only source of an item's current owner. A run report is evidence of what a stage did; it cannot silently transfer ownership. Each stage may modify only ledger entries it owns, then append a handoff event. A stage must never edit another stage's run report.
+
+The three `docs/automated-pr-*.md` specifications and this lifecycle contract are the authoritative Cursor-facing PR-automation documents in this repository. The `.agents` directory supplies generic skills and has no PR-specific review, salvage, or completion asset in the current default branch. It must not override this lifecycle without an explicit policy revision.
 
 ## Required handoff record
 

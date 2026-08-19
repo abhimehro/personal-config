@@ -2,6 +2,8 @@
 
 This document maps the repository-native PR specifications to the three Cursor Automations. It does not replace the specifications. Each automation must read the shared lifecycle contract and its own stage document before acting.
 
+The configuration fields below are limited to the fields present in the existing Cursor automation exports: name, scheduled cron trigger, actions, prompt, model, environment, memory, and scope. Do not invent unsupported JSON fields for concurrency, timeout, retry, or merge permission. Enforce the documented caps in the prompt and configure them in the Cursor dashboard only when that control is visibly available.
+
 ## Automation order
 
 | Cursor automation | Repository specification | Schedule | Concurrency | Run cap | Write authority |
