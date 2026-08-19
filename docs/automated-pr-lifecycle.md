@@ -34,8 +34,8 @@ human-authored PRs never become routine merge or close candidates.
 
 | Record                     | Location                                                                                        | Writer                                                                  | Purpose                                                                                                    |
 | -------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Runtime lifecycle ledger   | `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` after separately authorized bootstrap | The stage that currently owns the item through a revision-checked event | Current state, SHA anchors, evidence, next action, handoff history, calibration, and merge-method registry |
-| Main-branch ledger pointer | `tasks/pr-lifecycle-ledger.yaml`                                                                | Maintainer only during bootstrap                                        | Non-authoritative retrieval/bootstrap metadata, never live calibration state                               |
+| Runtime lifecycle ledger   | `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml`                                      | The stage that currently owns the item through a revision-checked event | Current state, SHA anchors, evidence, next action, handoff history, calibration, and merge-method registry |
+| Main-branch ledger pointer | `tasks/pr-lifecycle-ledger.yaml`                                                                | Maintainer only for bootstrap metadata                                   | Non-authoritative retrieval/bootstrap metadata, never live calibration state                               |
 | Review run record          | `tasks/review-session-reports.md`                                                               | Stage 1 only                                                            | Append-only inventory and routine-disposition audit                                                        |
 | Salvage run record         | `tasks/salvage-session-reports.md`                                                              | Stage 2 only                                                            | Append-only recovery and draft-provenance audit                                                            |
 | Completion run record      | `tasks/completion-session-reports.md`                                                           | Stage 3 only                                                            | Append-only reconciliation, packet, and bounded-completion audit                                           |
@@ -215,8 +215,8 @@ approval, merge authorization, or substitute for a defined policy.
 
 ## Scheduling and bounded concurrency
 
-The standard daily order is Stage 1 at `0 13 * * *`, Stage 2 at `0 17 * * *`,
-and Stage 3 at `15 21 * * *`. Only one run per stage may execute at once. The
+The standard daily order is Stage 1 at `0 15 * * *`, Stage 2 at `0 17 * * *`,
+and Stage 3 at `0 19 * * *`. Only one run per stage may execute at once. The
 default per-run caps are 20 Stage 1 items, five Stage 2 recovery candidates, 20
 Stage 3 reconciliations, five human decision cards, and, after explicit
 calibration approval, five Stage 3 completion or closure actions.

@@ -82,7 +82,7 @@ def require_exact_stage_contract(value: Any) -> None:
     stages = require_mapping(value, "config.lifecycle.stages")
     expected = {
         "stage1_review": {
-            "schedule": "0 13 * * *",
+            "schedule": "0 15 * * *",
             "concurrency": 1,
             "authority": "routine-approve-squash-merge-close",
         },
@@ -92,7 +92,7 @@ def require_exact_stage_contract(value: Any) -> None:
             "authority": "draft-only-recovery",
         },
         "stage3_completion": {
-            "schedule": "15 21 * * *",
+            "schedule": "0 19 * * *",
             "concurrency": 1,
             "authority": "report-only-until-calibration-approved-then-bounded-nonsecurity-completion",
         },
@@ -145,10 +145,14 @@ def validate_pointer_location(
 
 
 def validate_pointer_activation(runtime: dict[str, Any]) -> None:
-    if runtime["activation_state"] not in {"NOT_BOOTSTRAPPED", "ACTIVE"}:
+    state = runtime["activation_state"]
+    selected = runtime["selected_write_primitive"]
+    if state not in {"NOT_BOOTSTRAPPED", "ACTIVE"}:
         raise ValueError("ledger pointer: invalid activation state")
-    if runtime["selected_write_primitive"] is not None:
-        raise ValueError("ledger pointer: selected primitive belongs in runtime data")
+    if state == "NOT_BOOTSTRAPPED" and selected is not None:
+        raise ValueError("ledger pointer: inactive pointer must not select a primitive")
+    if state == "ACTIVE" and selected not in set(runtime["allowed_write_primitives"]):
+        raise ValueError("ledger pointer: active pointer selects an unsupported primitive")
 
 
 def validate_pointer_primitives(
@@ -254,7 +258,7 @@ def validate_export_action(action: dict[str, Any], path: Path) -> None:
 def validate_mcp_action(action: dict[str, Any], path: Path) -> None:
     server = action["mcp"].get("server", {})
     if server.get("name") != "GitKraken" or server.get("id") != "5021":
-        raise ValueError(f"{path}: MCP allowlist is GitKraken only")
+        raise ValueError(f"{path}: export must preserve observed GitKraken connector")
 
 
 def validate_pr_comment_action(action: dict[str, Any], path: Path) -> None:
@@ -267,6 +271,7 @@ def validate_prompt(content: str, name: str) -> None:
         "docs/automated-pr-lifecycle.md",
         "docs/pr-lifecycle-runtime-ledger.md",
         "Memory is enabled",
+        "Dashboard-referenced MCP set",
         "ledger, run records, and lessons",
     }
     if any(marker not in content for marker in required):

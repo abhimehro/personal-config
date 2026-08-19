@@ -1,11 +1,9 @@
 # PR Lifecycle Revision Checklist
 
-**Applies to:** `personal-config` PR #2026 **Review baseline:** Head
-`7f1475d627a4d01f1b72732866b4cea1a7820b54` reviewed against `main` `e11e0b9e`
-**Purpose:** This is the implementation and re-review matrix for the
-maintainer-designated blocking review. It is not a merge authorization. PR #2026
-remains a draft until all entries are evidenced and a human re-reviews the
-complete contract.
+**Applies to:** `personal-config` PR #2026, merged. **Purpose:** This records
+the implementation and re-review evidence for the maintainer-designated blocking
+review and the subsequent authorized runtime reconciliation. It is not a blanket
+authorization for Stage 3 bounded completion.
 
 ## Preserved authority model
 
@@ -31,19 +29,19 @@ merge or close path.
 | 10 | Restore or map deleted salvage procedures.                                  | Trigger, source intake, stale-state handling, trusted-base setup, journal safety, bounded recovery, infra diagnosis, branch/provenance, retries, and rejection procedure.                      | Procedure crosswalk in Stage 2 specification.        | Implemented, validated |
 | 11 | Make historical import reproducible and rerunnable.                         | File globs, precedence, deterministic mapping, anchor handling, import ID/event, idempotency, no-longer-open PR handling, and evidence-only rule.                                              | Historical-import procedure and fixture.             | Implemented, validated |
 | 12 | Require completion and continuity reporting fields.                         | Mandatory per-item report template with anchors, ownership, identity, classification, audit/action count, live evidence, correctness assessment, outcome, and next state.                      | Template validation.                                 | Implemented, validated |
-| 13 | Disable or namespace shared memory behind the continuity plane.             | `memoryEnabled: false` in all reference exports by default, with documented opt-in namespace that cannot override ledger/run records/lessons.                                                  | Export and prompt assertions.                        | Implemented, validated |
+| 13 | Namespace shared memory behind the continuity plane.                        | `memoryEnabled: true` in all reference exports, documented as a namespaced cache that cannot override ledger/run records/lessons.                                                                | Export and prompt assertions.                        | Implemented, validated |
 | 14 | Make the merge path match each repository.                                  | Merge-method registry declares Trunk, merge queue, direct squash, or unknown; required-check source and unreadable-config hold; audited approval/merge outcomes.                               | Registry validation and completion predicate.        | Implemented, validated |
-| 15 | Cut MCP and action access to stage-specific least privilege.                | Checked-in allowlists and exports omit browser, desktop, AppleScript, email, drive, reviewer-request, and unrelated tools; write stages restrict their declared GitHub authority.              | Export action/MCP allowlist validation.              | Implemented, validated |
-| 16 | Fix review-spec numbering and scheduled-automation contradiction.           | Review specification uses sequential numbering, maps legacy statuses, and identifies the 13:00/17:00/21:15 UTC Cursor runs as the lifecycle; upstream 06:00/08:00/08:15 tasks are inputs only. | Documentation lint and human re-review.              | Implemented, validated |
+| 15 | Preserve Dashboard MCP inventory while enforcing stage authority.           | Documentation records the live prompt-referenced MCP group and broader Dashboard inventory without treating visible tools as authority; stage prompts retain all security and mutation limits.    | Dashboard reconciliation and prompt/export validation. | Implemented, validated |
+| 16 | Fix review-spec numbering and scheduled-automation contradiction.           | Review specification uses sequential numbering, maps legacy statuses, and identifies the 15:00/17:00/19:00 UTC Cursor runs as the lifecycle; upstream 06:00/08:00/08:15 tasks are inputs only. | Documentation lint and Dashboard reconciliation.      | Implemented, validated |
 
 ## Re-review gate
 
 Every row must be marked **Implemented** only after its named artifact is
 present and the stated validation evidence is recorded. A passing documentation
 check is not evidence that the Cursor Dashboard runtime matches the checked-in
-source. The maintainer must apply or update the dashboard from the exported
-artifacts, then record the dashboard fingerprint and the first calibration run
-in the lifecycle ledger.
+source. The Dashboard is canonical and must be read before an export is changed;
+the reconciled checked-in artifact then records the verified Dashboard state and
+its fingerprint in the next runtime-ledger event.
 
 ## Enforcement-layer follow-up
 
@@ -54,11 +52,11 @@ otherwise mutating any PR.
 
 | Follow-up                                  | Source implementation                                                                                                                                                                            | Validation evidence                                                                                                                                                                                                         | Runtime status                                                          |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| A1, Git-native ledger write path           | `docs/pr-lifecycle-runtime-ledger.md`; main-branch bootstrap pointer; explicit fast-forward and Contents API CAS rules; inventory exclusion; capability hold behavior.                           | Pointer validation, non-empty runtime fixture, prompt/export validation.                                                                                                                                                    | **Deferred:** requires separate post-re-review bootstrap authorization. |
+| A1, Git-native ledger write path           | `docs/pr-lifecycle-runtime-ledger.md`; active main-branch bootstrap pointer; explicit Contents API CAS rules; inventory exclusion; capability hold behavior.                                      | Pointer validation, fetched runtime-ledger validation, and stale-CAS rejection.                                                                                                                                              | **Active:** Contents API bootstrap authorized and verified.             |
 | A2, CodeScene refactor                     | Validator split into parsing/schema, configuration/export, ledger cross-record, and thin orchestration modules.                                                                                  | Ruff, Bandit, Radon, focused regression suite, fixture validation, prompt/export drift check, and `make test-quick` pass locally; the hosted `CodeScene Code Health Review (main)` passed for enforcement commit `e84816a`. | Source complete, hosted quality gate verified.                          |
 | B1-B2, URL/schema/calibration enforcement  | JSON Schema plus cross-record validation for complete HTTPS URLs, timestamps, terminal ownership, projection continuity, current-policy calibration events, and seven-run approval.              | Twelve focused regression tests and `PR_LIFECYCLE_VALID`.                                                                                                                                                                   | Source complete.                                                        |
-| B3-B4, pointer/registry/config correctness | Runtime pointer validation, legacy-key rejection, exact stage caps/schedules/authorities, verified-zero required-check proof, and dated read-only discovery evidence for all seven repositories. | Fixture validation and targeted regression tests.                                                                                                                                                                           | Runtime reads remain held until bootstrap.                              |
-| C, Cursor transition and drift safety      | Runtime-ledger prompt preamble, prompt/export synchronization, dashboard bootstrap prerequisite, and mutually exclusive Stage 3 transition/rollback steps.                                       | `CURSOR_EXPORT_PROMPTS_MATCH` plus export-action validation.                                                                                                                                                                | **Deferred:** no dashboard automation was changed.                      |
+| B3-B4, pointer/registry/config correctness | Runtime pointer validation, legacy-key rejection, exact stage caps/schedules/authorities, verified-zero required-check proof, and dated read-only discovery evidence for all seven repositories. | Fixture validation and targeted regression tests.                                                                                                                                                                           | Active ledger read is available through the selected Contents API path. |
+| C, Cursor transition and drift safety      | Runtime-ledger prompt preamble, prompt/export synchronization, Dashboard reconciliation, and mutually exclusive Stage 3 transition/rollback steps.                                                | `CURSOR_EXPORT_PROMPTS_MATCH`, export validation, and Dashboard readback.                                                                                                                                                   | Stage 3 variants disabled for controlled manual testing.                |
 | D, trusted-base enforcement                | `Code Quality` CI job installs the pinned schema dependency and runs artifact validation, prompt/export sync, and focused lifecycle tests before the broader suite.                              | Workflow review and local command parity.                                                                                                                                                                                   | Active when this source reaches the trusted base.                       |
 
 The broad `make test-all` suite passes. The unrelated
@@ -104,7 +102,7 @@ No merge path is inferred beyond these recorded settings.
 | Full local validation              | Ruff, Bandit, fixture validation, prompt/export synchronization, `make test-quick`, and `make test-all` passed, with 480 repository tests passing.                                                       |
 | Hosted quality gate                | `CodeScene Code Health Review (main)` passed on the preceding schema-v1.2 quality head and on current evidence remediation head `1efd36d`.                                                               |
 | Authoritative registry refresh     | Branch-protection and full ruleset definitions were read for the six remaining repositories. The explicit stale-command regression `test_active_config_requires_fetched_runtime_ledger_argument` passed. |
-| Runtime and governance             | No runtime-ledger branch bootstrap, dashboard change, approval, merge, close, or PR-comment action was performed.                                                                                        |
+| Runtime and governance             | The authorized ledger bootstrap and read/CAS verification completed; Dashboard settings are maintainer-controlled, with no product-PR mutation performed by this reconciliation.                  |
 
 These records are implementation and re-review evidence only. They do not
 authorize merge, dashboard activation, or runtime-ledger bootstrap; each remains

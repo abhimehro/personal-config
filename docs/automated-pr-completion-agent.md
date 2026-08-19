@@ -175,16 +175,18 @@ smallest next action rather than retrying indefinitely.
 
 ## Scheduling and resources
 
-Run after the existing review and salvage stages at `15 21 * * *`, with one
+Run after the existing review and salvage stages at `0 19 * * *`, with one
 concurrent run, a maximum of 20 reconciliations, five decision packets, and five
 post-calibration actions. Use the paste-ready calibration or completion export
-in `docs/cursor-automations/exports/`; Cursor Dashboard is a runtime copy, not
-an interpreter of repository YAML. The least-privilege action/MCP allowlist is
-GitKraken repository access only, plus `prComment.allowApprove` only in the
-post-calibration export. During calibration it must not attach approval,
-comment, reviewer-request, browser, desktop, shell, email, drive, calendar,
-AppleScript, or unrelated MCP actions. Shared memory is enabled as a namespaced
-cache and is never continuity authority.
+in `docs/cursor-automations/exports/`; the live Cursor Dashboard is canonical
+for current trigger, connection, and enablement state. Its prompt-referenced MCP
+set is Notion, Memory, Sequential thinking, GitKraken, cloudrun, Linear,
+codescene, julesServer, Snyk, and Sonatype-mcp, while its wider connected
+workspace inventory is not an additional action authority. During calibration,
+the report-only prohibitions control even when a visible integration is
+connected. The bounded-completion variant may use `prComment.allowApprove` only
+after validated ledger approval. Shared memory is enabled as a namespaced cache
+and is never continuity authority.
 
 ## Related specifications
 

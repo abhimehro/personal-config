@@ -74,6 +74,15 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "schema root"):
             validator.validate(ROOT / "tasks/pr-lifecycle-ledger.yaml")
 
+    def test_active_pointer_selects_an_allowed_write_primitive(self):
+        config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
+        pointer = validator.load_yaml(ROOT / "tasks/pr-lifecycle-ledger.yaml")
+        validator.validate_bootstrap_pointer(pointer, config)
+
+        pointer["runtime_ledger"]["selected_write_primitive"] = "unsupported"
+        with self.assertRaisesRegex(ValueError, "unsupported primitive"):
+            validator.validate_bootstrap_pointer(pointer, config)
+
     def test_validator_cli_requires_a_fetched_runtime_ledger_path(self):
         result = subprocess.run(
             [sys.executable, "scripts/validate_pr_lifecycle_artifacts.py"],
@@ -222,6 +231,11 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         for path in sorted(exports.glob("*.json")):
             data = json.loads(path.read_text(encoding="utf-8"))
             self.assertTrue(data["memoryEnabled"], path.name)
+
+    def test_export_prompts_preserve_dashboard_mcp_reference(self):
+        prompts = ROOT / "docs/cursor-automations/prompts"
+        for path in sorted(prompts.glob("daily-pr-*.md")):
+            self.assertIn("Dashboard-referenced MCP set", path.read_text(encoding="utf-8"))
 
     def test_authoritative_ruleset_reads_clear_pending_merge_method_holds(self):
         ledger = self.example()
