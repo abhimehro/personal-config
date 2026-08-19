@@ -26,9 +26,16 @@ def validate_config(config: dict[str, Any]) -> None:
         "stage_caps", "stages",
     }
     require_fields(lifecycle, required, required, "config.lifecycle")
+    require_fetched_ledger_command(lifecycle["validation_command"])
     validate_policy_inputs(lifecycle["policy_inputs"])
     require_exact_stage_caps(lifecycle["stage_caps"])
     require_exact_stage_contract(lifecycle["stages"])
+
+
+def require_fetched_ledger_command(command: Any) -> None:
+    expected = 'python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"'
+    if command != expected:
+        raise ValueError("config.lifecycle.validation_command: must require fetched runtime ledger path")
 
 
 def validate_policy_inputs(value: Any) -> None:

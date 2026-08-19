@@ -52,7 +52,7 @@ lifecycle:
   version: "1.2"
   source_of_truth: "docs/automated-pr-lifecycle.md and the runtime ledger data branch"
   schema: schemas/pr-lifecycle-ledger.schema.json
-  validation_command: python3 scripts/validate_pr_lifecycle_artifacts.py
+  validation_command: 'python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"'
   cursor_dashboard_runtime: separately_applied_from_checked_in_exports
   policy_revision: "pr-lifecycle-v1.2"
   policy_inputs:

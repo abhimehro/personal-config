@@ -230,67 +230,67 @@ repository_merge_methods:
     required_checks: []
     required_checks_verified_zero: true
     discovery_status: VERIFIED
-    evidence_url: https://github.com/abhimehro/personal-config/pull/2026
-    observed_at_utc: "2026-08-19T10:33:53Z"
-    updated_at_utc: "2026-08-19T10:33:53Z"
+    evidence_url: https://api.github.com/repos/abhimehro/personal-config/branches/main/protection
+    observed_at_utc: "2026-08-19T12:52:18Z"
+    updated_at_utc: "2026-08-19T12:52:18Z"
     hold_reason: null
   - repository: abhimehro/ctrld-sync
-    method: GITHUB_SQUASH
-    required_checks_source: GITHUB_BRANCH_PROTECTION
+    method: UNKNOWN
+    required_checks_source: UNKNOWN
     required_checks: []
-    required_checks_verified_zero: true
-    discovery_status: VERIFIED
-    evidence_url: https://api.github.com/repos/abhimehro/ctrld-sync/branches/main/protection
-    observed_at_utc: "2026-08-19T10:33:53Z"
-    updated_at_utc: "2026-08-19T10:33:53Z"
-    hold_reason: null
+    required_checks_verified_zero: false
+    discovery_status: PENDING
+    evidence_url: null
+    observed_at_utc: null
+    updated_at_utc: "2026-08-19T12:52:18Z"
+    hold_reason: "Authoritative merge-method and required-check source has not been read."
   - repository: abhimehro/email-security-pipeline
-    method: GITHUB_SQUASH
-    required_checks_source: GITHUB_BRANCH_PROTECTION
+    method: UNKNOWN
+    required_checks_source: UNKNOWN
     required_checks: []
-    required_checks_verified_zero: true
-    discovery_status: VERIFIED
-    evidence_url: https://api.github.com/repos/abhimehro/email-security-pipeline/branches/main/protection
-    observed_at_utc: "2026-08-19T10:33:53Z"
-    updated_at_utc: "2026-08-19T10:33:53Z"
-    hold_reason: null
+    required_checks_verified_zero: false
+    discovery_status: PENDING
+    evidence_url: null
+    observed_at_utc: null
+    updated_at_utc: "2026-08-19T12:52:18Z"
+    hold_reason: "Authoritative merge-method and required-check source has not been read."
   - repository: abhimehro/Seatek_Analysis
-    method: GITHUB_SQUASH
-    required_checks_source: GITHUB_BRANCH_PROTECTION
+    method: UNKNOWN
+    required_checks_source: UNKNOWN
     required_checks: []
-    required_checks_verified_zero: true
-    discovery_status: VERIFIED
-    evidence_url: https://api.github.com/repos/abhimehro/Seatek_Analysis/branches/main/protection
-    observed_at_utc: "2026-08-19T10:33:53Z"
-    updated_at_utc: "2026-08-19T10:33:53Z"
-    hold_reason: null
+    required_checks_verified_zero: false
+    discovery_status: PENDING
+    evidence_url: null
+    observed_at_utc: null
+    updated_at_utc: "2026-08-19T12:52:18Z"
+    hold_reason: "Authoritative merge-method and required-check source has not been read."
   - repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
-    method: GITHUB_SQUASH
-    required_checks_source: GITHUB_BRANCH_PROTECTION
+    method: UNKNOWN
+    required_checks_source: UNKNOWN
     required_checks: []
-    required_checks_verified_zero: true
-    discovery_status: VERIFIED
-    evidence_url: https://api.github.com/repos/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/branches/main/protection
-    observed_at_utc: "2026-08-19T10:33:53Z"
-    updated_at_utc: "2026-08-19T10:33:53Z"
-    hold_reason: null
+    required_checks_verified_zero: false
+    discovery_status: PENDING
+    evidence_url: null
+    observed_at_utc: null
+    updated_at_utc: "2026-08-19T12:52:18Z"
+    hold_reason: "Authoritative merge-method and required-check source has not been read."
   - repository: abhimehro/series_correction_project_updated
-    method: GITHUB_SQUASH
-    required_checks_source: GITHUB_BRANCH_PROTECTION
+    method: UNKNOWN
+    required_checks_source: UNKNOWN
     required_checks: []
-    required_checks_verified_zero: true
-    discovery_status: VERIFIED
-    evidence_url: https://api.github.com/repos/abhimehro/series_correction_project_updated/branches/main/protection
-    observed_at_utc: "2026-08-19T10:33:53Z"
-    updated_at_utc: "2026-08-19T10:33:53Z"
-    hold_reason: null
+    required_checks_verified_zero: false
+    discovery_status: PENDING
+    evidence_url: null
+    observed_at_utc: null
+    updated_at_utc: "2026-08-19T12:52:18Z"
+    hold_reason: "Authoritative merge-method and required-check source has not been read."
   - repository: abhimehro/repoprompt-ce
-    method: GITHUB_SQUASH
-    required_checks_source: GITHUB_BRANCH_PROTECTION
+    method: UNKNOWN
+    required_checks_source: UNKNOWN
     required_checks: []
-    required_checks_verified_zero: true
-    discovery_status: VERIFIED
-    evidence_url: https://api.github.com/repos/abhimehro/repoprompt-ce/branches/main/protection
-    observed_at_utc: "2026-08-19T10:33:53Z"
-    updated_at_utc: "2026-08-19T10:33:53Z"
-    hold_reason: null
+    required_checks_verified_zero: false
+    discovery_status: PENDING
+    evidence_url: null
+    observed_at_utc: null
+    updated_at_utc: "2026-08-19T12:52:18Z"
+    hold_reason: "Authoritative merge-method and required-check source has not been read."

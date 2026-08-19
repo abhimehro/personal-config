@@ -189,6 +189,27 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "config.repos"):
             validator.validate_config(config)
 
+    def test_active_config_requires_fetched_runtime_ledger_argument(self):
+        config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
+        self.assertEqual(
+            config["lifecycle"]["validation_command"],
+            'python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"',
+        )
+        self.assertNotEqual(
+            config["lifecycle"]["validation_command"],
+            "python3 scripts/validate_pr_lifecycle_artifacts.py",
+        )
+        config["lifecycle"]["validation_command"] = "python3 scripts/validate_pr_lifecycle_artifacts.py"
+        with self.assertRaisesRegex(ValueError, "must require fetched runtime ledger path"):
+            validator.validate_config(config)
+
+    def test_unreadable_merge_method_source_requires_pending_hold(self):
+        ledger = self.example()
+        pending = ledger["repository_merge_methods"][1]
+        self.assertEqual(pending["discovery_status"], "PENDING")
+        self.assertFalse(pending["required_checks_verified_zero"])
+        self.assertIsNotNone(pending["hold_reason"])
+
 
 if __name__ == "__main__":
     unittest.main()
