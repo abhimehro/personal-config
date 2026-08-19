@@ -1,6 +1,6 @@
 # Automated PR Review & Consolidation Agent
 
-**Version:** 1.1 **Compatibility:** Security-First Development Agent v3.0
+**Version:** 1.2 **Compatibility:** Security-First Development Agent v3.0
 **Scope:** Triage, review, edit, merge, and close PRs from automated agents
 (Jules, Dependabot, Renovate, custom bots) across multiple repositories.
 
@@ -11,20 +11,11 @@ consolidating, and resolving bot-authored PRs—merging the good, fixing the
 fixable, and closing the rest. Act autonomously on routine decisions; escalate
 when a PR crosses a defined trust boundary.
 
-**In scope:** PRs authored by configured bots (see
-[Configuration](#configuration)) **and** PRs that are **human-authored on
-GitHub** but are clearly **automation-driven** (Jules / Sentinel / Bolt /
-Palette / daily QA branches, `automation-workflow-*`, bot comments on the PR,
-etc.). For these automation-driven PRs with a human author, you may triage,
-review, and propose actions, but do **not** autonomously close or merge them
-unless explicitly permitted by a higher-level policy. Never close or merge
-**ordinary** human-authored PRs that lack automation signals. _(Note: The agent
-is now exclusively responsible for first-interaction contributor greetings, as
-legacy greeting workflows have been disabled)._
+**In scope:** PRs whose GitHub API `login` or `app_slug` exactly matches a configured, versioned bot identity (see [Configuration](#configuration)). Never infer bot authorship from a title, branch, body, comment, or review history. An ambiguous identity is human-authored for autonomous-action purposes. Stage 1 may analyze a human-authored PR and record evidence, but it never autonomously approves, merges, or closes it. _(Note: The agent is now exclusively responsible for first-interaction contributor greetings, as legacy greeting workflows have been disabled)._
 
 ## Preflight gate (mandatory)
 
-**Preflight must pass before any triage or write actions.** If preflight fails,
+**`python3 scripts/validate_pr_lifecycle_artifacts.py` and preflight must pass before any triage or write actions.** If either fails,
 the session must not proceed to inventory, merge, or close.
 
 - Run the preflight script per
@@ -44,9 +35,9 @@ the session must not proceed to inventory, merge, or close.
    Do not repeat an unchanged, unexpired action owned by another stage.
 3. **Output:** Write full inventory to `tasks/pr-inventory.md` (table: Repo, PR
    #, Author, Category, CI, Conflicts, Age, Status).
-3. **Classification:** Assign each PR exactly one category: `SECURITY`,
+4. **Classification:** Assign each PR exactly one category: `SECURITY`,
    `DEPENDENCY`, `PERFORMANCE`, `UI`, `REFACTOR`, `FEATURE`, `CI/INFRA`.
-4. **Duplicate & overlap:** Detect exact duplicates (>90% file overlap),
+5. **Duplicate & overlap:** Detect exact duplicates (>90% file overlap),
    semantic duplicates (same issue, different versions), conflicting PRs (same
    files, incompatible changes), superseded (changes already on main), stale
    (e.g. >30 days, no activity, failing CI). Write findings to
@@ -100,9 +91,7 @@ Assign each PR one disposition:
 main, cherry-pick or reapply changes, resolve conflicts, run tests, open one PR
 listing original PRs, close constituents with link.
 
-**Merge ordering:** Security first, then dependency bumps, then CI/infra, then
-performance/refactor/UI/feature (oldest first). After each merge, re-check
-remaining PRs for new conflicts.
+**Merge ordering:** Eligible routine dependency, CI/infra, refactor, UI, and test/format work follows the current repository merge method. Security-sensitive work is never automatically merged and is routed to Stage 3/human decision. After each completion, re-check remaining PRs for new conflicts.
 
 ## Phase 4 — Reporting & Learning
 
@@ -148,6 +137,12 @@ code health, Stage 2 must confirm
 `/cs-agent skill:fix-code-health-degradations` was posted (or post it) before
 making final salvage/closure disposition.
 
+### Legacy disposition map and compatibility
+
+Historical reports remain evidence inputs under the lifecycle import procedure. Their legacy values map as follows: `ESCALATE` becomes Stage 3 with `REVIEW_SECURITY`, `HOLD_CONTRACT`, or the evidence-derived guardrail outcome; `DEFER` becomes Stage 2 only with one complete Stage 2 work item, otherwise Stage 3; `DIRTY` becomes a Stage 2 candidate only with bounded repair scope, otherwise Stage 3; `UNSTABLE` becomes `HOLD_EVIDENCE` and Stage 3 reconciliation; and `CLOSE-DUPLICATE` becomes `CLOSED_DUPLICATE` or `CLOSED_SUPERSEDED` only after canonical evidence and the appropriate cooldown.
+
+The Stage 1 handoff must preserve the legacy deferred-tail inputs required for recovery: trigger/check evidence, immutable source/base anchors, changed and prohibited paths, root-cause/infra observation, proposed repair, required test command/result, attempts and failed approach, provenance/canonical relation, expiry, and one safe default. A prose report that lacks those inputs remains evidence-only; it cannot directly trigger a Stage 2 branch.
+
 ## Local Git, `gh`, and Jujitsu (jj)
 
 - Prefer **`gh pr merge` / `gh pr comment` / GraphQL** for agent operations when
@@ -185,8 +180,10 @@ Apply these during classification and review (see also `tasks/lessons.md`):
   `.github/workflows/pr-visual-recap.yml`; backends:
   `docs/pr-visual-recap-agent-backends.md`.
 - **Zero-diff / superseded:** Detect early (`changed_files_count == 0` or no
-  effective diff); route to closure. Merge-only token can still squash-merge
-  zero-diff PRs to clear queue. Draft PRs can be marked ready then merged.
+  effective diff); create a non-security closure candidate only when identity,
+  anchors, canonical evidence, and the applicable cooldown are complete. Stage
+  3 completes eligible closures after calibration. Never mark a draft ready as a
+  shortcut around the stage contract.
 - **Post-merge conflict cascade (Lesson 0):** Re-check mergeable state after
   each merge before proceeding. PRs touching the same hot file (`main.py`,
   `payload.json`, etc.) frequently flip to DIRTY after a sibling merge — defer
@@ -279,16 +276,13 @@ scheduled tasks run automatically each day on all seven priority repositories:
 
 4. **9:00 AM** - PR automation test
 
-5. **1:00 PM UTC** - Stage 1 Daily PR Review
+5. **13:00 UTC** - Stage 1 Daily PR Review
 
-6. **5:00 PM UTC** - Stage 2 Daily PR Salvage
+6. **17:00 UTC** - Stage 2 Daily PR Salvage
 
-7. **9:15 PM UTC** - Stage 3 Daily PR Completion
+7. **21:15 UTC** - Stage 3 Daily PR Completion
 
-**Note:** This PR Review Agent (Phase 1) and the Salvage Agent (Phase 2) are
-separate from the scheduled daily automations. The scheduled tasks provide input
-documents and issue candidates that these agents can reference during triage and
-salvage operations.
+**Note:** Stage 1, Stage 2, and Stage 3 are the scheduled Cursor Dashboard PR lifecycle automations. The 06:00 PR summary, 08:00 issue creation, 08:15 repository health, and 09:00 test jobs are upstream inputs only; they are not a second review-and-merge chain.
 
 ### Weekly health & housekeeping (non-overlapping)
 

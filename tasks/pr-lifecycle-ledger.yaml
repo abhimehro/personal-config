@@ -1,3 +1,64 @@
-version: "1.0"
-updated_at_utc: null
+schema_version: "1.1"
+schema_path: schemas/pr-lifecycle-ledger.schema.json
+ledger_revision: 0
+calibration:
+  status: REPORT_ONLY
+  successful_run_count: 0
+  required_successful_runs: 7
+  scope: configured-repo-set
+  policy_revision: "pr-lifecycle-v1.1"
+  coverage:
+    identity_classes: []
+    risk_classes: []
+    merge_methods: []
+    required_check_sources: []
+  approved_by: null
+  approved_at_utc: null
+  approval_evidence_urls: []
+  invalidated_by_revision: null
+  revoked_at_utc: null
+  rollback_conditions:
+    - "A security-sensitive or ordinary human-authored item reaches a routine action path."
+    - "A state change occurs with stale anchors, an unreadable required-check source, or no audit record."
+    - "A prompt, identity list, sensitive-path taxonomy, permission scope, required-check source, or merge method changes."
+  completion_authority: approve-merge-close-nonsecurity
 items: []
+events: []
+stage2_work_items: []
+imports: []
+repository_merge_methods:
+  - repository: abhimehro/personal-config
+    method: TRUNK_QUEUE
+    required_checks_source: TRUNK
+    required_checks: []
+    updated_at_utc: "2026-08-19T08:00:00Z"
+  - repository: abhimehro/ctrld-sync
+    method: UNKNOWN
+    required_checks_source: UNKNOWN
+    required_checks: []
+    updated_at_utc: "2026-08-19T08:00:00Z"
+  - repository: abhimehro/email-security-pipeline
+    method: UNKNOWN
+    required_checks_source: UNKNOWN
+    required_checks: []
+    updated_at_utc: "2026-08-19T08:00:00Z"
+  - repository: abhimehro/Seatek_Analysis
+    method: UNKNOWN
+    required_checks_source: UNKNOWN
+    required_checks: []
+    updated_at_utc: "2026-08-19T08:00:00Z"
+  - repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
+    method: UNKNOWN
+    required_checks_source: UNKNOWN
+    required_checks: []
+    updated_at_utc: "2026-08-19T08:00:00Z"
+  - repository: abhimehro/series_correction_project_updated
+    method: UNKNOWN
+    required_checks_source: UNKNOWN
+    required_checks: []
+    updated_at_utc: "2026-08-19T08:00:00Z"
+  - repository: abhimehro/repoprompt-ce
+    method: UNKNOWN
+    required_checks_source: UNKNOWN
+    required_checks: []
+    updated_at_utc: "2026-08-19T08:00:00Z"

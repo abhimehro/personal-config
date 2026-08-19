@@ -25,7 +25,7 @@ Stage 1 processes routine PRs at throughput. Stage 2 recovers only an item with 
 
 ## Mandatory preflight and continuity read
 
-Run the shared GitHub preflight before any clone, branch creation, or write action. Then read the last three Stage 2 run records, the current Stage-2-owned entries in `tasks/pr-lifecycle-ledger.yaml`, and the applicable lessons in `tasks/lessons.md`.
+Run `python3 scripts/validate_pr_lifecycle_artifacts.py` and the shared GitHub preflight before any clone, branch creation, or write action. Then read the last three Stage 2 run records, the current Stage-2-owned entries in `tasks/pr-lifecycle-ledger.yaml`, and the applicable lessons in `tasks/lessons.md`. A malformed ledger, incomplete work item, expired work item, preflight failure, unknown source branch, or changed anchor is a fail-closed stop, not a cue to infer missing scope.
 
 Live-reconcile every candidate before recovery. Record the current base SHA, head SHA, changed paths, checks, mergeability, comments, and any canonical candidate. If the PR was merged or closed outside this workflow, record that verified terminal state. If the base or head SHA changed, record `STALE_ANCHOR`, return the item to Stage 1, and do not reuse the prior analysis.
 
@@ -67,6 +67,36 @@ For journal and append-only files, extract and append only the new entry. Do not
 
 The draft body must state the original PR, anchor SHA, recovery scope, changed paths, verification command and result, and the reason the original was not completed directly. The draft remains a draft. Stage 2 does not approve or mark it ready.
 
+## Operational Stage 2 workflow
+
+### Step 0: Refresh the recovery tail
+
+Stage 2 does not discover its own broad backlog. It reads only `STAGE2_QUEUED` entries and complete `stage2_work_items` whose current owner is `stage2`. It re-fetches live GitHub state for each source PR and its base before use. A PR already merged, closed, deleted, or changed since its immutable anchors becomes a structured Stage 3 reconciliation handoff, not a recovery branch. Historical reports are evidence only; no prose `DEFER`, `DIRTY`, or `ESCALATE` record can create a Stage 2 task without a current, complete work item.
+
+### Step 1: Group by repository and detect shared infrastructure failure
+
+Group eligible work by repository, changed paths, required check, and source base SHA. If the same required check fails on four or more open PRs and is also failing on the default branch after a merge, classify the condition as base infrastructure failure. Do not churn four branch repairs. Create one `HOLD_EVIDENCE` or `HOLD_PLATFORM` Stage 3 handoff containing the default-branch check URL, affected PRs, current merge method, and the smallest trusted-base diagnostic. A security or required test failure is never bypassed as unrelated.
+
+### Step 2: Prepare a trusted recovery base
+
+Fetch current trusted `main` and create a new Stage-2-owned branch from it. The branch name is `cursor-agent/salvage-<repo>-<source-pr>-<short-label>-<suffix>`. Never update a contributor branch, reuse a rejected branch, or force-push. Recheck `main` SHA immediately before applying a change. If a human-authored commit on base or relevant source-file overlap appears after the work item was created, abort and return the item to Stage 1 with `STALE_ANCHOR`.
+
+### Step 3: Apply the smallest justified recovery
+
+Use a path-scoped replay, cherry-pick, or manual minimal reimplementation only for `allowed_paths`. Do not pull a full PR branch, wholesale-checkout a journal, lesson, report, workflow, generated artifact, `.agents` subtree, or large skill blob. When a performance recovery touches one file above 5 KB, inspect the effective diff and reject opaque serialized/JSON-blob growth unless the work item explicitly allows it. Remove unrelated lockfile churn and generated changes. If conflict resolution requires a policy choice, changes prohibited paths, or becomes more than one mechanical repair, stop and hand off to Stage 3.
+
+### Step 4: Adapt verification and retry once
+
+Compare the named test with current `main` call signatures and behavior. Adapt a test only where the work item’s repair description and acceptance criteria justify it; never wholesale-copy an old test or make a test pass by weakening a security assertion. Run the exact required test command and record its result. A failed recovery receives one deterministic repair/retest attempt only. A second unexplained failure, a `git update-branch` ambiguity, or unavailable target-platform evidence becomes `ANALYSIS_ERROR` or `HOLD_PLATFORM` and is handed to Stage 3 with the failed command and safe default.
+
+### Step 5: Create the draft and hand off atomically
+
+Open the new branch as a **draft** PR only after the named verification succeeds. Include the automated-salvage provenance block, source PR relationship, immutable anchors, allowed paths, prohibited paths, changed paths, test command/result, work-item ID, and remaining human question if any. Then create a revision-checked `HANDOFF` event to Stage 3. The original remains open unless Stage 3 later completes an eligible non-security closure after its evidence and cooldown; a security original stays open until an accepted canonical decision.
+
+### Step 6: Handle rejected recovery or expiration
+
+If a draft is rejected, closes without merge, or expires, Stage 3 records the observed outcome and rejection reason in the source item’s history. Stage 2 may not recreate that approach until a source anchor, policy revision, or relevant evidence changes. Any later work uses a new work-item ID and an explicit supersession/history link.
+
 ## Original PR and replacement handling
 
 Opening a draft does not itself justify closing an original. For non-security automation work, Stage 2 may record a closure candidate only when a canonical relationship or deterministic no-op evidence exists. Stage 3 applies the cooldown and completes the action after calibration. For security-sensitive work, keep the original open until the governing canonical decision is accepted.
@@ -83,12 +113,19 @@ If a draft is rejected or closed without merge, Stage 3 reconciles the original'
 | Sensitive repositories | Never bypass a broken security/test gate. Keep all sensitive recovery work draft-only and hand it to Stage 3. |
 | Drift guard | Abort recovery on a changed base/head SHA, human-authored base drift, or relevant source-file overlap. Record the reason and return to Stage 1 or Stage 3. |
 | Retry limit | Attempt a deterministic recovery or evidence retry once. A second unexplained failure becomes `ANALYSIS_ERROR`. |
+| GitHub update-branch ambiguity | A `422` or unavailable update-branch result is evidence to re-read live head/base/mergeability. It never authorizes rebasing, force-pushing, or guessing whether the source was superseded. |
+| Security-classified recovery | A sensitive path, sticky security class, unknown author, or policy boundary remains draft-only and ordinarily routes to Stage 3/human decision. Do not reduce it to a routine recovery. |
+| Provenance | Keep source PR URLs, immutable anchors, work-item ID, applied path list, verification output, rejection history, and original/replacement relation. |
 
 ## Run records, lessons, and handoffs
 
 Append the Stage 2 run to `tasks/salvage-session-reports.md` using `tasks/pr-stage-run-record.example.md`. Update only Stage-2-owned ledger entries. Add a lesson only when it changes a future routing, verification, or safety rule. Do not turn raw logs, speculative model output, or repetitive failures into durable policy.
 
 Every Stage 3 handoff must include the draft URL or failed-recovery reason, immutable anchors, current changed paths, verification output, prior attempts, canonical information, guardrail outcome, safe default, one next action, and expiry. The handoff is invalid if a required field is missing.
+
+## Migrated legacy procedures
+
+The prior salvage document’s detailed procedure remains supported through this explicit mapping. Its **trigger detection** is now ledger ownership plus valid Stage 2 work item; its **deferred-tail intake** is Step 0; **per-repository grouping and root-cause infrastructure investigation** are Step 1; **fresh-main preparation, scoped cherry-pick/conflict handling, journal protection, and test adaptation** are Steps 2-4; **draft provenance and original/replacement handling** are Step 5; and **failure/retry, human refinement, and rejected-salvage handling** are Step 6. Historical dated reports remain readable evidence, but the validator and ledger schema supersede their free-form state semantics.
 
 ## Cursor configuration
 

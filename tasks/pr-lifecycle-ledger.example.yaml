@@ -1,36 +1,158 @@
-# Copy to tasks/pr-lifecycle-ledger.yaml before the first coordinated three-stage run.
-# This file is state, not a session report. Keep entries sorted by current_owner then key.
-version: "1.0"
-updated_at_utc: "YYYY-MM-DDTHH:MM:SSZ"
+# Complete illustrative records. Do not copy literal anchors into production.
+schema_version: "1.1"
+schema_path: schemas/pr-lifecycle-ledger.schema.json
+ledger_revision: 42
+calibration:
+  status: REPORT_ONLY
+  successful_run_count: 3
+  required_successful_runs: 7
+  scope: configured-repo-set
+  policy_revision: "pr-lifecycle-v1.1"
+  coverage:
+    identity_classes: [BOT]
+    risk_classes: [ROUTINE, SENSITIVE]
+    merge_methods: [TRUNK_QUEUE]
+    required_check_sources: [TRUNK]
+  approved_by: null
+  approved_at_utc: null
+  approval_evidence_urls: []
+  invalidated_by_revision: null
+  revoked_at_utc: null
+  rollback_conditions:
+    - "Security-sensitive or ordinary human-authored item enters a routine action path."
+  completion_authority: approve-merge-close-nonsecurity
 items:
-  - key: "owner/repository#123@HEAD_SHA"
-    repository: "owner/repository"
-    pr: 123
-    url: "https://github.com/owner/repository/pull/123"
-    base_sha: "BASE_SHA"
-    head_sha: "HEAD_SHA"
-    author_type: "bot" # bot | automation_human | human | unknown
-    classification: "CI_INFRA"
-    risk_class: "routine" # routine | sensitive | security | unknown
-    guardrail_outcome: "HOLD_EVIDENCE"
-    lifecycle_state: "AWAITING_RECONCILIATION"
-    current_owner: "stage3"
-    next_owner: "stage3"
-    safe_default: "hold"
-    next_action: "Re-fetch required checks and compare current paths before expiry."
-    next_action_expires_at_utc: "YYYY-MM-DDTHH:MM:SSZ"
-    changed_paths: []
-    evidence_urls: []
-    canonical_candidate: null
+  - key: abhimehro/personal-config#2026@0123456789abcdef0123456789abcdef01234567
+    repository: abhimehro/personal-config
+    pr: 2026
+    url: https://github.com/abhimehro/personal-config/pull/2026
+    base_sha: 89abcdef0123456789abcdef0123456789abcdef
+    head_sha: 0123456789abcdef0123456789abcdef01234567
+    author:
+      login: dependabot[bot]
+      identity_source: github_api
+      app_slug: dependabot
+    author_type: BOT
+    classification: DEPENDENCY
+    risk_class: ROUTINE
+    sensitive_paths: []
+    guardrail_outcome: HOLD_EVIDENCE
+    lifecycle_state: STAGE2_QUEUED
+    terminal_disposition: null
+    current_owner: stage2
+    next_owner: stage2
+    safe_default: "Do not approve, merge, or close until required checks are read from the Trunk source."
+    next_action: "Read the Trunk required-check set and refresh immutable anchors once."
+    evidence_urls:
+      - https://github.com/abhimehro/personal-config/pull/2026
+    changed_paths:
+      - docs/automated-pr-lifecycle.md
     attempts:
-      - stage: "stage1"
-        at_utc: "YYYY-MM-DDTHH:MM:SSZ"
-        result: "HOLD_EVIDENCE"
-        detail: "Required check evidence was unavailable."
-    handoffs:
-      - from: "stage1"
-        to: "stage3"
-        at_utc: "YYYY-MM-DDTHH:MM:SSZ"
-        reason: "Evidence gap needs reconciliation, not salvage."
-    lessons_applied: []
-    updated_at_utc: "YYYY-MM-DDTHH:MM:SSZ"
+      evidence: 1
+      recovery: 0
+      mutations: 0
+    handoffs: [evt-2026-stage1-stage3-001, evt-2026-stage3-stage2-001]
+    revision: 5
+    updated_at_utc: "2026-08-19T08:00:00Z"
+  - key: abhimehro/ctrld-sync#1193@fedcba9876543210fedcba9876543210fedcba98
+    repository: abhimehro/ctrld-sync
+    pr: 1193
+    url: https://github.com/abhimehro/ctrld-sync/pull/1193
+    base_sha: abcdef0123456789abcdef0123456789abcdef01
+    head_sha: fedcba9876543210fedcba9876543210fedcba98
+    author:
+      login: dependabot[bot]
+      identity_source: github_api
+      app_slug: dependabot
+    author_type: BOT
+    classification: DEPENDENCY
+    risk_class: ROUTINE
+    sensitive_paths: []
+    guardrail_outcome: PASS_ROUTINE
+    lifecycle_state: TERMINAL
+    terminal_disposition: MERGED_ROUTINE
+    current_owner: none
+    next_owner: none
+    safe_default: "No further automated action."
+    next_action: "Retain as an audit record."
+    evidence_urls:
+      - https://github.com/abhimehro/ctrld-sync/pull/1193
+    changed_paths:
+      - package.json
+    attempts:
+      evidence: 1
+      recovery: 0
+      mutations: 2
+    handoffs: [evt-1193-terminal-001]
+    revision: 2
+    updated_at_utc: "2026-08-19T08:00:00Z"
+events:
+  - event_id: evt-2026-stage1-stage3-001
+    kind: HANDOFF
+    item_key: abhimehro/personal-config#2026@0123456789abcdef0123456789abcdef01234567
+    from_owner: stage1
+    to_owner: stage3
+    expected_item_revision: 3
+    resulting_item_revision: 4
+    idempotency_key: "abhimehro/personal-config#2026@0123456789abcdef0123456789abcdef01234567:evt-2026-stage1-stage3-001"
+    status: ACKNOWLEDGED
+    created_at_utc: "2026-08-19T07:55:00Z"
+    acknowledged_at_utc: "2026-08-19T08:00:00Z"
+    reason: "Stage 1 could not read the Trunk required-check source."
+  - event_id: evt-1193-terminal-001
+    kind: TERMINAL
+    item_key: abhimehro/ctrld-sync#1193@fedcba9876543210fedcba9876543210fedcba98
+    from_owner: stage1
+    to_owner: none
+    expected_item_revision: 1
+    resulting_item_revision: 2
+    idempotency_key: "abhimehro/ctrld-sync#1193@fedcba9876543210fedcba9876543210fedcba98:evt-1193-terminal-001"
+    status: ACKNOWLEDGED
+    created_at_utc: "2026-08-19T07:55:00Z"
+    acknowledged_at_utc: "2026-08-19T08:00:00Z"
+  - event_id: evt-2026-stage3-stage2-001
+    kind: HANDOFF
+    item_key: abhimehro/personal-config#2026@0123456789abcdef0123456789abcdef01234567
+    from_owner: stage3
+    to_owner: stage2
+    expected_item_revision: 4
+    resulting_item_revision: 5
+    idempotency_key: "abhimehro/personal-config#2026@0123456789abcdef0123456789abcdef01234567:evt-2026-stage3-stage2-001"
+    status: ACKNOWLEDGED
+    created_at_utc: "2026-08-19T08:00:00Z"
+    acknowledged_at_utc: "2026-08-19T08:00:01Z"
+    reason: "Stage 3 created a complete bounded recovery work item."
+stage2_work_items:
+  - work_item_id: s2-2026-doc-link-repair-001
+    source_item_key: abhimehro/personal-config#2026@0123456789abcdef0123456789abcdef01234567
+    repository: abhimehro/personal-config
+    pr: 2026
+    base_sha: 89abcdef0123456789abcdef0123456789abcdef
+    head_sha: 0123456789abcdef0123456789abcdef01234567
+    allowed_paths: [docs/automated-pr-lifecycle.md]
+    prohibited_paths: [.github/workflows, scripts, tasks/lessons.md]
+    repair_description: "Correct one broken lifecycle documentation link without changing policy."
+    required_test_command: "python3 scripts/validate_pr_lifecycle_artifacts.py"
+    expected_test_result: "PR_LIFECYCLE_VALID"
+    acceptance_criteria:
+      - "Only the allowed documentation path changes."
+      - "The validator passes from trusted main plus the recovery branch."
+    provenance_urls:
+      - https://github.com/abhimehro/personal-config/pull/2026
+    expiry_utc: "2026-08-20T08:00:00Z"
+    attempt_count: 0
+    current_owner: stage2
+    creation_event_id: evt-2026-stage3-stage2-001
+    history: []
+imports:
+  - import_id: imp-legacy-review-20260819-001
+    source_path: tasks/pr-review-2026-08-18.md
+    source_fingerprint: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    status: EVIDENCE_ONLY
+    created_at_utc: "2026-08-19T08:00:00Z"
+repository_merge_methods:
+  - repository: abhimehro/personal-config
+    method: TRUNK_QUEUE
+    required_checks_source: TRUNK
+    required_checks: []
+    updated_at_utc: "2026-08-19T08:00:00Z"

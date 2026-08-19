@@ -4,9 +4,11 @@
 
 - Stage: `stage1 | stage2 | stage3`
 - Trigger: `cron | on-demand | recovery`
-- Configuration version:
+- Configuration version and policy revision:
 - Start and end UTC:
-- Ledger version read:
+- Ledger revision read and resulting revision:
+- Dashboard export fingerprint and memory mode:
+- Calibration mode: `report_only | approved_completion | revoked`
 
 ## Inputs and reconciliation
 
@@ -15,15 +17,17 @@
 - Items invalidated by SHA drift:
 - Items resolved outside the workflow:
 
-## Actions and outcomes
+## Mandatory per-item evidence, action, and outcome record
 
-| Key | Previous owner/state | Action | Guardrail outcome | Result | Evidence |
-|---|---|---|---|---|---|
+One row is required for every processed, proposed, skipped, retried, or completed item. A missing field is `ANALYSIS_ERROR`, not an invitation to fill it from memory.
 
-## Handoffs and human decisions
+| Ledger key | Repository / PR | Observed vs ledger base/head SHA | Owner before → after | GitHub identity / author type | Classification / risk / sticky paths | Guardrail outcome | Changed paths | Evidence URLs | Proposed route / actual action | Mode / audit ID / action count | Retry or error | Final observed outcome / calibration correctness | Provenance or canonical relation |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 
-| Key | Next owner | One next action | Safe default | Expiry |
-|---|---|---|---|---|
+## Revision-checked handoffs and human decisions
+
+| Ledger key | Event ID / idempotency key | Expected → resulting revision | Next owner | One next action | Safe default | Expiry | Receiver acknowledgement |
+|---|---|---|---|---|---|---|---|
 
 ## Continuity
 
@@ -31,6 +35,7 @@
 - Failed approach not to repeat:
 - New lesson candidate and the future rule it changes:
 - Configuration or policy gap:
+- Historical-import sources or fingerprints processed:
 
 ## Metrics
 
@@ -40,3 +45,4 @@
 - Drafts created:
 - Decision packets created:
 - Analysis errors:
+- State-changing actions, including failed attempts and retries:

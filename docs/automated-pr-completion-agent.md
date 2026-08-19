@@ -1,6 +1,6 @@
 # Automated PR Completion Agent
 
-**Version:** 1.0
+**Version:** 1.1
 **Scope:** Own the nonterminal backlog left by the Review and Salvage agents across the configured repositories. The Completion Agent is the third stage in the daily PR workflow, not a second review pass or a second salvage implementation.
 
 ## Mission
@@ -21,7 +21,7 @@ Use the [Automated PR Lifecycle Contract](automated-pr-lifecycle.md) as the sour
 
 ## Preflight and continuity gate
 
-Before any action, run the shared preflight and read the last three review, salvage, and completion run records. Read all `stage3` ledger entries, then live-reconcile repository, PR state, base SHA, head SHA, changed paths, checks, comments, mergeability, and canonical candidates.
+Before any action, run `python3 scripts/validate_pr_lifecycle_artifacts.py`, then the shared GitHub preflight, and read the last three review, salvage, and completion run records. Read all `stage3` ledger entries, then live-reconcile repository, PR state, base SHA, head SHA, GitHub API author identity, sticky sensitive paths, registered merge method, required-check source, changed paths, checks, comments, mergeability, and canonical candidates. A validation failure, unknown merge method, or unreadable required-check source is `HOLD_EVIDENCE`; it permits no state change.
 
 If either anchor changed, record `STALE_ANCHOR`, return the item to Stage 1, and take no action against the old evidence. If a human or prior agent already merged or closed the PR, record the verified terminal outcome with an evidence URL. Do not reopen it or repeat the abandoned work.
 
@@ -43,17 +43,21 @@ Stage 3 is a coordinator for code recovery. It does not reimplement a salvage br
 
 ## Calibration mode
 
-For the first seven successful daily runs, Stage 3 is **report-only**. It may reconcile, write ledger events, create Stage 2 work items, create decision packets, and record close/merge candidates. It must not approve, merge, close, force-push, mark ready, resolve comments, modify rulesets, or alter workflow permissions.
+Stage 3 begins **report-only** and remains so until `calibration.status` in the validated ledger is `APPROVED` for the same configured-repository scope and policy revision. It may reconcile, create a complete Stage 2 work item, create a one-question decision packet, and record a candidate. It must not approve, merge, queue-submit, close, comment, force-push, mark ready, resolve comments, modify rulesets, alter workflow permissions, create a recovery branch, or delete a branch.
 
-Each calibration record must include the proposed action, the final later outcome if known, and whether the classification was correct. Calibration passes only when representative review confirms no security-sensitive or ordinary human-authored item entered a routine completion path, every state-changing candidate had complete SHA/check evidence, and the daily human inbox remained at five or fewer cards.
+A successful calibration run has all of the following: a validated ledger; every processed item live-reconciled with mandatory record fields; fresh anchors and readable required-check sources for each candidate; no prohibited action attempt; no `ANALYSIS_ERROR`; and no security-sensitive or ordinary human-authored item in a routine path. A zero-eligible-item run counts only when every Stage-3-owned item was live-reconciled. The run records proposed action, later observed outcome when known, and calibration correctness assessment. A run does not count merely because it found no work.
+
+The ledger’s calibration object records successful count, required count, scope, policy revision, representative coverage, approval identity/date/evidence, rollback conditions, invalidation revision, revocation time, and completion authority. A prompt, identity list, sensitive-path taxonomy, permissions/action surface, required-check source, or merge-method change resets the status to `REPORT_ONLY`. Any human can revoke completion by recording `REVOKED`; no recalibration result is merge permission without a dated approval.
 
 ## Bounded completion mode
 
-Bounded completion becomes available only after a dated, written calibration approval is recorded in the lifecycle ledger. It may perform at most five state-changing actions per run.
+Bounded completion becomes available only after a dated, written calibration approval is recorded in the validated lifecycle ledger. It may perform at most five state-changing actions per run. Approval, merge or queue submission, closure, comment, branch creation/deletion, failed mutation, and retry are each one action. The agent stops before exceeding the cap.
 
 ### Eligible merge
 
-The Completion Agent may approve and squash-merge a focused salvage draft only when all conditions are true: the author is an allowlisted bot or automation identity; the draft is non-security and non-human-authored; base/head anchors equal the ledger; changed paths are outside sensitive classes; tests and required checks are green; merge state is clean; no unresolved discussion, alert, overlap, canonical conflict, or stale evidence exists; the draft carries Stage 2 provenance; and an audit record is written before action.
+The Completion Agent may approve and complete the registered merge method for a focused salvage draft only when all conditions are true: the GitHub API author identity is an allowlisted bot; the draft is non-security and non-human-authored; base/head anchors equal the ledger; changed paths are outside sticky sensitive classes; tests and **required checks from the registered readable source** are green; merge state is clean; no unresolved discussion, alert, overlap, canonical conflict, or stale evidence exists; the draft carries Stage 2 provenance; and an audit record is written before action. It must re-read every predicate after approval and before the merge/queue submission.
+
+For `abhimehro/personal-config`, use the registered `TRUNK_QUEUE` submission path, not a raw GitHub squash assumption. Approval and queue submission are separate audited actions. An approval-success/queue-failure records the failure and stops. A merge-success/branch-delete-failure is a non-blocking follow-up; do not retry the merge.
 
 ### Eligible closure
 
@@ -71,13 +75,13 @@ The Completion Agent creates no more than five packets per run. It does not crea
 
 ## Reporting, lessons, and self-healing
 
-Append every run to `tasks/completion-session-reports.md` using the shared run-record template. Update the lifecycle ledger as the current state changes. Record a lesson in `tasks/lessons.md` only when it changes a future routing, verification, or safety rule. Record failed approaches explicitly, so a later agent does not repeat a rejected salvage or exhausted evidence request.
+Append every run to `tasks/completion-session-reports.md` using the shared run-record template. Each item record is mandatory: repository, PR, ledger key, observed/ledger base and head SHA, owner before/after, GitHub identity, classification/risk, guardrail outcome, changed paths, evidence URLs, proposed/actual route, calibration or bounded mode, audit-record ID, retries/errors, final observed outcome, calibration correctness assessment, next owner/action, expiry, and provenance/canonical relationship. Update the lifecycle ledger only through revision-checked events. Record a lesson in `tasks/lessons.md` only when it changes a future routing, verification, or safety rule. Record failed approaches explicitly, so a later agent does not repeat a rejected salvage or exhausted evidence request.
 
 The agent must stop automated state changes for an item after one unexplained retry, missing audit evidence, or a mismatch between the ledger and live state. It records `ANALYSIS_ERROR`, preserves the safe default, and prepares the smallest next action rather than retrying indefinitely.
 
 ## Scheduling and resources
 
-Run after the existing review and salvage stages at `15 21 * * *`, with one concurrent run, a maximum of 20 reconciliations, five decision packets, and five post-calibration completion actions. The Cursor configuration must use the least-privilege repository connector available. During calibration it must not attach an approval/comment action. The post-calibration variant may use routine approval only under this document's bounded completion predicates.
+Run after the existing review and salvage stages at `15 21 * * *`, with one concurrent run, a maximum of 20 reconciliations, five decision packets, and five post-calibration actions. Use the paste-ready calibration or completion export in `docs/cursor-automations/exports/`; Cursor Dashboard is a runtime copy, not an interpreter of repository YAML. The least-privilege action/MCP allowlist is GitKraken repository access only, plus `prComment.allowApprove` only in the post-calibration export. During calibration it must not attach approval, comment, reviewer-request, browser, desktop, shell, email, drive, calendar, AppleScript, or unrelated MCP actions. Shared memory is disabled by default and is never continuity authority.
 
 ## Related specifications
 
