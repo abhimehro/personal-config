@@ -88,7 +88,9 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
     def test_duplicate_yaml_keys_fail_closed(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "duplicate.yaml"
-            path.write_text("schema_version: '1.1'\nschema_version: '1.1'\n", encoding="utf-8")
+            path.write_text(
+                "schema_version: '1.1'\nschema_version: '1.1'\n", encoding="utf-8"
+            )
             with self.assertRaisesRegex(ValueError, "duplicate YAML key"):
                 validator.load_yaml(path)
 
@@ -108,11 +110,15 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         self.assert_invalid(evidence, "schema items.0.evidence_urls.0")
 
         provenance = self.example()
-        provenance["stage2_work_items"][0]["provenance_urls"] = ["http://example.test/source"]
+        provenance["stage2_work_items"][0]["provenance_urls"] = [
+            "http://example.test/source"
+        ]
         self.assert_invalid(provenance, "schema stage2_work_items.0.provenance_urls.0")
 
         approval = self.approved_example()
-        approval["calibration"]["approval_evidence_urls"] = ["http://example.test/approval"]
+        approval["calibration"]["approval_evidence_urls"] = [
+            "http://example.test/approval"
+        ]
         self.assert_invalid(approval, "schema calibration.approval_evidence_urls.0")
 
     def test_calibration_approval_requires_seven_events(self):
@@ -143,7 +149,10 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         validator.validate(self.write_ledger(ledger))
 
     def test_receipts_require_a_parent_transition(self):
-        for kind, status in (("ACKNOWLEDGEMENT", "ACKNOWLEDGED"), ("CANCELLATION", "CANCELLED")):
+        for kind, status in (
+            ("ACKNOWLEDGEMENT", "ACKNOWLEDGED"),
+            ("CANCELLATION", "CANCELLED"),
+        ):
             ledger = self.example()
             ledger["events"][1]["kind"] = kind
             ledger["events"][1]["status"] = status
@@ -200,8 +209,12 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
             config["lifecycle"]["validation_command"],
             "python3 scripts/validate_pr_lifecycle_artifacts.py",
         )
-        config["lifecycle"]["validation_command"] = "python3 scripts/validate_pr_lifecycle_artifacts.py"
-        with self.assertRaisesRegex(ValueError, "must require fetched runtime ledger path"):
+        config["lifecycle"][
+            "validation_command"
+        ] = "python3 scripts/validate_pr_lifecycle_artifacts.py"
+        with self.assertRaisesRegex(
+            ValueError, "must require fetched runtime ledger path"
+        ):
             validator.validate_config(config)
 
     def test_enabled_memory_is_required_for_all_cursor_exports(self):
@@ -213,9 +226,13 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
     def test_authoritative_ruleset_reads_clear_pending_merge_method_holds(self):
         ledger = self.example()
         verified = ledger["repository_merge_methods"]
-        self.assertTrue(all(entry["discovery_status"] == "VERIFIED" for entry in verified))
+        self.assertTrue(
+            all(entry["discovery_status"] == "VERIFIED" for entry in verified)
+        )
         self.assertTrue(all(entry["hold_reason"] is None for entry in verified))
-        self.assertTrue(all(entry["required_checks_verified_zero"] for entry in verified[1:6]))
+        self.assertTrue(
+            all(entry["required_checks_verified_zero"] for entry in verified[1:6])
+        )
         self.assertFalse(verified[6]["required_checks_verified_zero"])
         self.assertTrue(verified[6]["required_checks"])
 

@@ -65,7 +65,9 @@ def load_prompt_reconciliation(
     return PromptReconciliation(export, entry, export_path, prompt_path.name, prompt)
 
 
-def get_single_prompt_entry(export: dict[str, object], export_name: str) -> dict[str, object] | str:
+def get_single_prompt_entry(
+    export: dict[str, object], export_name: str
+) -> dict[str, object] | str:
     entries = export.get("prompts")
     valid = isinstance(entries, list) and len(entries) == 1
     valid = valid and isinstance(entries[0], dict)
@@ -97,7 +99,11 @@ def main() -> int:
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1
-    print("CURSOR_EXPORT_PROMPTS_SYNCHRONIZED" if args.write else "CURSOR_EXPORT_PROMPTS_MATCH")
+    print(
+        "CURSOR_EXPORT_PROMPTS_SYNCHRONIZED"
+        if args.write
+        else "CURSOR_EXPORT_PROMPTS_MATCH"
+    )
     return 0
 
 

@@ -15,26 +15,50 @@ from pr_lifecycle_support import (
 )
 
 ALLOWED_OUTCOMES = {
-    "PASS_ROUTINE", "REVIEW_SECURITY", "HOLD_CONTRACT", "HOLD_EVIDENCE",
-    "HOLD_PLATFORM", "HOLD_CANONICAL", "CLOSE_NONSECURITY_NOOP",
-    "ANALYSIS_ERROR", "NOT_RUN",
+    "PASS_ROUTINE",
+    "REVIEW_SECURITY",
+    "HOLD_CONTRACT",
+    "HOLD_EVIDENCE",
+    "HOLD_PLATFORM",
+    "HOLD_CANONICAL",
+    "CLOSE_NONSECURITY_NOOP",
+    "ANALYSIS_ERROR",
+    "NOT_RUN",
 }
 TERMINAL_DISPOSITIONS = {
-    "MERGED_ROUTINE", "MERGED_BOUNDED_COMPLETION", "CLOSED_NOOP",
-    "CLOSED_DUPLICATE", "CLOSED_STALE", "CLOSED_SUPERSEDED",
-    "HUMAN_REJECTED", "HUMAN_DEFERRED",
+    "MERGED_ROUTINE",
+    "MERGED_BOUNDED_COMPLETION",
+    "CLOSED_NOOP",
+    "CLOSED_DUPLICATE",
+    "CLOSED_STALE",
+    "CLOSED_SUPERSEDED",
+    "HUMAN_REJECTED",
+    "HUMAN_DEFERRED",
 }
 STATE_OWNERS = {
-    "STAGE1_INTAKE": "stage1", "STAGE2_QUEUED": "stage2",
-    "STAGE2_ACTIVE": "stage2", "STAGE3_RECONCILIATION": "stage3",
-    "WAITING_HUMAN": "human", "TERMINAL": "none",
+    "STAGE1_INTAKE": "stage1",
+    "STAGE2_QUEUED": "stage2",
+    "STAGE2_ACTIVE": "stage2",
+    "STAGE3_RECONCILIATION": "stage3",
+    "WAITING_HUMAN": "human",
+    "TERMINAL": "none",
 }
 LEGAL_TRANSITIONS = {
     "STAGE1_INTAKE": {"TERMINAL", "STAGE2_QUEUED", "STAGE3_RECONCILIATION"},
     "STAGE2_QUEUED": {"STAGE2_ACTIVE", "STAGE3_RECONCILIATION"},
     "STAGE2_ACTIVE": {"STAGE3_RECONCILIATION"},
-    "STAGE3_RECONCILIATION": {"STAGE1_INTAKE", "STAGE2_QUEUED", "WAITING_HUMAN", "TERMINAL"},
-    "WAITING_HUMAN": {"STAGE1_INTAKE", "STAGE2_QUEUED", "STAGE3_RECONCILIATION", "TERMINAL"},
+    "STAGE3_RECONCILIATION": {
+        "STAGE1_INTAKE",
+        "STAGE2_QUEUED",
+        "WAITING_HUMAN",
+        "TERMINAL",
+    },
+    "WAITING_HUMAN": {
+        "STAGE1_INTAKE",
+        "STAGE2_QUEUED",
+        "STAGE3_RECONCILIATION",
+        "TERMINAL",
+    },
 }
 TRANSITION_KINDS = {"HANDOFF", "IMPORT", "TERMINAL"}
 RECEIPT_KINDS = {"ACKNOWLEDGEMENT", "CANCELLATION"}
@@ -121,18 +145,24 @@ def validate_item_owner(value: dict[str, Any], key: str) -> None:
 def validate_terminal_item_state(value: dict[str, Any], key: str) -> None:
     terminal = value.get("terminal_disposition")
     if not all((terminal in TERMINAL_DISPOSITIONS, value["next_owner"] == "none")):
-        raise ValueError(f"ledger item {key}: terminal record requires disposition/no owner")
+        raise ValueError(
+            f"ledger item {key}: terminal record requires disposition/no owner"
+        )
 
 
 def validate_nonterminal_item_state(value: dict[str, Any], key: str) -> None:
     terminal = value.get("terminal_disposition")
     if terminal is not None:
-        raise ValueError(f"ledger item {key}: nonterminal record cannot carry a disposition")
+        raise ValueError(
+            f"ledger item {key}: nonterminal record cannot carry a disposition"
+        )
     if value["next_owner"] == "none":
         raise ValueError(f"ledger item {key}: nonterminal record requires next owner")
 
 
-def validate_events(events: Any, items: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+def validate_events(
+    events: Any, items: dict[str, dict[str, Any]]
+) -> list[dict[str, Any]]:
     seen_ids: set[str] = set()
     seen_keys: set[tuple[str, str]] = set()
     event_by_id: dict[str, dict[str, Any]] = {}
@@ -147,18 +177,27 @@ def validate_events(events: Any, items: dict[str, dict[str, Any]]) -> list[dict[
         seen_ids.add(event_id)
         require_utc(event["created_at_utc"], f"event {event_id}.created_at_utc")
         if event["acknowledged_at_utc"] is not None:
-            require_utc(event["acknowledged_at_utc"], f"event {event_id}.acknowledged_at_utc")
+            require_utc(
+                event["acknowledged_at_utc"], f"event {event_id}.acknowledged_at_utc"
+            )
         if event["kind"] == "CALIBRATION":
             validate_calibration_event(event, seen_keys)
             calibration_events.append(event)
         else:
-            validate_item_event(event, items, seen_keys, {"events": event_by_id, "projection": projection})
+            validate_item_event(
+                event,
+                items,
+                seen_keys,
+                {"events": event_by_id, "projection": projection},
+            )
         event_by_id[event_id] = event
     validate_projection(items, projection)
     return calibration_events
 
 
-def validate_calibration_event(event: dict[str, Any], seen_keys: set[tuple[str, str]]) -> None:
+def validate_calibration_event(
+    event: dict[str, Any], seen_keys: set[tuple[str, str]]
+) -> None:
     event_id = event["event_id"]
     pair = ("__calibration__", event["idempotency_key"])
     valid = event["item_key"] is None and pair not in seen_keys
@@ -172,16 +211,29 @@ def validate_calibration_event(event: dict[str, Any], seen_keys: set[tuple[str, 
 
 def validate_identical_replay(event: dict[str, Any], parent: dict[str, Any]) -> None:
     if event != parent:
-        raise ValueError(f"event {event['event_id']}: duplicate event ID differs from original")
+        raise ValueError(
+            f"event {event['event_id']}: duplicate event ID differs from original"
+        )
 
 
 def initial_projection() -> dict[str, Any]:
-    return {"revision": 0, "lifecycle_state": "STAGE1_INTAKE", "current_owner": "stage1", "next_owner": "stage1", "terminal_disposition": None, "handoffs": [], "latest_transition": None, "latest_transition_kind": None}
+    return {
+        "revision": 0,
+        "lifecycle_state": "STAGE1_INTAKE",
+        "current_owner": "stage1",
+        "next_owner": "stage1",
+        "terminal_disposition": None,
+        "handoffs": [],
+        "latest_transition": None,
+        "latest_transition_kind": None,
+    }
 
 
 def validate_item_event(
-    event: dict[str, Any], items: dict[str, dict[str, Any]],
-    seen_keys: set[tuple[str, str]], context: dict[str, Any],
+    event: dict[str, Any],
+    items: dict[str, dict[str, Any]],
+    seen_keys: set[tuple[str, str]],
+    context: dict[str, Any],
 ) -> None:
     item_key, pair = validate_item_event_reference(event, items, seen_keys)
     projected = context["projection"][item_key]
@@ -232,7 +284,9 @@ def validate_projected_transition_status(event: dict[str, Any]) -> None:
         raise ValueError(f"event {event_id}: transitions remain projected")
 
 
-def validate_transition_origin(event: dict[str, Any], projected: dict[str, Any]) -> None:
+def validate_transition_origin(
+    event: dict[str, Any], projected: dict[str, Any]
+) -> None:
     event_id = event["event_id"]
     if event["from_state"] != projected["lifecycle_state"]:
         raise ValueError(f"event {event_id}: from-state disagrees with projection")
@@ -266,51 +320,99 @@ def validate_terminal_transition_kind(event: dict[str, Any]) -> None:
 
 
 def apply_transition(event: dict[str, Any], projected: dict[str, Any]) -> None:
-    projected.update({"revision": event["resulting_item_revision"], "lifecycle_state": event["to_state"], "current_owner": event["to_owner"], "next_owner": event["next_owner"], "terminal_disposition": event["terminal_disposition"], "latest_transition": event["event_id"], "latest_transition_kind": event["kind"]})
+    projected.update(
+        {
+            "revision": event["resulting_item_revision"],
+            "lifecycle_state": event["to_state"],
+            "current_owner": event["to_owner"],
+            "next_owner": event["next_owner"],
+            "terminal_disposition": event["terminal_disposition"],
+            "latest_transition": event["event_id"],
+            "latest_transition_kind": event["kind"],
+        }
+    )
     projected["handoffs"].append(event["event_id"])
 
 
-def validate_receipt_event(event: dict[str, Any], projected: dict[str, Any], event_by_id: dict[str, dict[str, Any]]) -> None:
+def validate_receipt_event(
+    event: dict[str, Any],
+    projected: dict[str, Any],
+    event_by_id: dict[str, dict[str, Any]],
+) -> None:
     parent = validate_receipt_parent(event, projected, event_by_id)
     validate_receipt_revision(event, projected)
     validate_receipt_state(event, parent)
     validate_receipt_order(event, event_by_id)
 
 
-def validate_receipt_parent(event: dict[str, Any], projected: dict[str, Any], event_by_id: dict[str, dict[str, Any]]) -> dict[str, Any]:
+def validate_receipt_parent(
+    event: dict[str, Any],
+    projected: dict[str, Any],
+    event_by_id: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
     event_id = event["event_id"]
     parent = event_by_id.get(event["parent_event_id"])
     if parent is None or parent["kind"] not in {"HANDOFF", "IMPORT"}:
-        raise ValueError(f"event {event_id}: receipt requires an earlier handoff or import")
-    if parent["item_key"] != event["item_key"] or projected["latest_transition"] != parent["event_id"]:
+        raise ValueError(
+            f"event {event_id}: receipt requires an earlier handoff or import"
+        )
+    if (
+        parent["item_key"] != event["item_key"]
+        or projected["latest_transition"] != parent["event_id"]
+    ):
         raise ValueError(f"event {event_id}: receipt targets a superseded transition")
     return parent
 
 
 def validate_receipt_revision(event: dict[str, Any], projected: dict[str, Any]) -> None:
     event_id = event["event_id"]
-    if event["expected_item_revision"] != projected["revision"] or event["resulting_item_revision"] != projected["revision"]:
+    if (
+        event["expected_item_revision"] != projected["revision"]
+        or event["resulting_item_revision"] != projected["revision"]
+    ):
         raise ValueError(f"event {event_id}: receipt must not increment revision")
 
 
 def validate_receipt_state(event: dict[str, Any], parent: dict[str, Any]) -> None:
     event_id = event["event_id"]
-    fields = ("from_state", "to_state", "from_owner", "to_owner", "next_owner", "terminal_disposition")
-    expected = {"from_state": parent["to_state"], "to_state": parent["to_state"], "from_owner": parent["to_owner"], "to_owner": parent["to_owner"], "next_owner": parent["next_owner"], "terminal_disposition": parent["terminal_disposition"]}
+    fields = (
+        "from_state",
+        "to_state",
+        "from_owner",
+        "to_owner",
+        "next_owner",
+        "terminal_disposition",
+    )
+    expected = {
+        "from_state": parent["to_state"],
+        "to_state": parent["to_state"],
+        "from_owner": parent["to_owner"],
+        "to_owner": parent["to_owner"],
+        "next_owner": parent["next_owner"],
+        "terminal_disposition": parent["terminal_disposition"],
+    }
     if any(event[field] != expected[field] for field in fields):
         raise ValueError(f"event {event_id}: receipt changes projected state")
     if STATE_OWNERS[event["to_state"]] != event["to_owner"]:
         raise ValueError(f"event {event_id}: receipt state and owner disagree")
 
 
-def validate_receipt_order(event: dict[str, Any], event_by_id: dict[str, dict[str, Any]]) -> None:
+def validate_receipt_order(
+    event: dict[str, Any], event_by_id: dict[str, dict[str, Any]]
+) -> None:
     validate_unique_receipt(event, event_by_id)
     validate_receipt_status(event)
     validate_receipt_timestamp(event)
 
 
-def validate_unique_receipt(event: dict[str, Any], event_by_id: dict[str, dict[str, Any]]) -> None:
-    receipts = [value for value in event_by_id.values() if value.get("parent_event_id") == event["parent_event_id"]]
+def validate_unique_receipt(
+    event: dict[str, Any], event_by_id: dict[str, dict[str, Any]]
+) -> None:
+    receipts = [
+        value
+        for value in event_by_id.values()
+        if value.get("parent_event_id") == event["parent_event_id"]
+    ]
     if receipts:
         raise ValueError(f"event {event['event_id']}: duplicate receipt for parent")
 
@@ -327,25 +429,42 @@ def validate_receipt_timestamp(event: dict[str, Any]) -> None:
         raise ValueError(f"event {event['event_id']}: receipt timestamp required")
 
 
-def validate_projection(items: dict[str, dict[str, Any]], projected: dict[str, dict[str, Any]]) -> None:
+def validate_projection(
+    items: dict[str, dict[str, Any]], projected: dict[str, dict[str, Any]]
+) -> None:
     for item_key, item in items.items():
         expected = projected[item_key]
         validate_terminal_projection(item, expected, item_key)
         validate_projected_item_fields(item, expected, item_key)
 
 
-def validate_terminal_projection(item: dict[str, Any], expected: dict[str, Any], item_key: str) -> None:
+def validate_terminal_projection(
+    item: dict[str, Any], expected: dict[str, Any], item_key: str
+) -> None:
     invalid = item["lifecycle_state"] == "TERMINAL" and (
         item["revision"] < 1 or expected["latest_transition_kind"] != "TERMINAL"
     )
     if invalid:
-        raise ValueError(f"ledger item {item_key}: terminal record requires terminal event")
+        raise ValueError(
+            f"ledger item {item_key}: terminal record requires terminal event"
+        )
 
 
-def validate_projected_item_fields(item: dict[str, Any], expected: dict[str, Any], item_key: str) -> None:
-    for field in ("revision", "lifecycle_state", "current_owner", "next_owner", "terminal_disposition", "handoffs"):
+def validate_projected_item_fields(
+    item: dict[str, Any], expected: dict[str, Any], item_key: str
+) -> None:
+    for field in (
+        "revision",
+        "lifecycle_state",
+        "current_owner",
+        "next_owner",
+        "terminal_disposition",
+        "handoffs",
+    ):
         if item[field] != expected[field]:
-            raise ValueError(f"ledger item {item_key}: projection {field} disagrees with events")
+            raise ValueError(
+                f"ledger item {item_key}: projection {field} disagrees with events"
+            )
 
 
 def validate_calibration(
@@ -357,7 +476,9 @@ def validate_calibration(
     count = calibration["successful_run_count"]
     required = calibration["required_successful_runs"]
     validate_calibration_count(calibration, count, required)
-    policy_matches = validate_calibration_policy(calibration, lifecycle["policy_revision"], count)
+    policy_matches = validate_calibration_policy(
+        calibration, lifecycle["policy_revision"], count
+    )
     validate_calibration_event_count(calibration, events, count)
     validate_approval(calibration, count, required, policy_matches)
 
@@ -409,9 +530,15 @@ def validate_calibration_event_count(
     events: list[dict[str, Any]],
     count: int,
 ) -> None:
-    matching = [event for event in events if event["policy_revision"] == calibration["policy_revision"]]
+    matching = [
+        event
+        for event in events
+        if event["policy_revision"] == calibration["policy_revision"]
+    ]
     if len(matching) != count:
-        raise ValueError("calibration: successful count must match current-policy events")
+        raise ValueError(
+            "calibration: successful count must match current-policy events"
+        )
 
 
 def validate_approval(
@@ -440,7 +567,9 @@ def validate_approved_calibration(
     if not all(prerequisites):
         raise ValueError("calibration: approval requires seven current successful runs")
     require_utc(calibration["approved_at_utc"], "calibration.approved_at_utc")
-    require_https_urls(calibration["approval_evidence_urls"], "calibration.approval_evidence_urls")
+    require_https_urls(
+        calibration["approval_evidence_urls"], "calibration.approval_evidence_urls"
+    )
 
 
 def validate_revoked_calibration(calibration: dict[str, Any]) -> None:
@@ -523,9 +652,13 @@ def validate_merge_method_entry(entry: dict[str, Any], seen: set[str]) -> None:
 
 def validate_pending_merge_method(entry: dict[str, Any]) -> None:
     if not entry["hold_reason"]:
-        raise ValueError("repository merge method: pending record requires explicit hold")
+        raise ValueError(
+            "repository merge method: pending record requires explicit hold"
+        )
     if entry["required_checks_verified_zero"]:
-        raise ValueError("repository merge method: pending record requires explicit hold")
+        raise ValueError(
+            "repository merge method: pending record requires explicit hold"
+        )
 
 
 def validate_verified_merge_method(entry: dict[str, Any]) -> None:
@@ -549,4 +682,6 @@ def validate_verified_merge_hold(entry: dict[str, Any]) -> None:
         raise ValueError("repository merge method: verified record cannot have hold")
     empty = not entry["required_checks"]
     if empty != entry["required_checks_verified_zero"]:
-        raise ValueError("repository merge method: empty checks require verified-zero proof")
+        raise ValueError(
+            "repository merge method: empty checks require verified-zero proof"
+        )

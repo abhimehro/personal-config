@@ -13,17 +13,27 @@ def validate_config(config: dict[str, Any]) -> None:
     legacy = {"merge_strategy", "auto_fix_enabled", "human_escalation_channel"}
     present = legacy & set(config)
     if present:
-        raise ValueError(f"config: legacy lifecycle keys are prohibited: {sorted(present)}")
+        raise ValueError(
+            f"config: legacy lifecycle keys are prohibited: {sorted(present)}"
+        )
     repos = require_list(config.get("repos"), "config.repos")
     if not repos:
         raise ValueError("config.repos: at least one repository is required")
     lifecycle = require_mapping(config.get("lifecycle"), "config.lifecycle")
     required = {
-        "version", "source_of_truth", "schema", "validation_command",
-        "cursor_dashboard_runtime", "policy_revision", "policy_inputs",
-        "runtime_ledger", "routine_evidence_expiry_days",
-        "no_op_or_supersession_cooldown_hours", "stale_close_cooldown_hours",
-        "stage_caps", "stages",
+        "version",
+        "source_of_truth",
+        "schema",
+        "validation_command",
+        "cursor_dashboard_runtime",
+        "policy_revision",
+        "policy_inputs",
+        "runtime_ledger",
+        "routine_evidence_expiry_days",
+        "no_op_or_supersession_cooldown_hours",
+        "stale_close_cooldown_hours",
+        "stage_caps",
+        "stages",
     }
     require_fields(lifecycle, required, required, "config.lifecycle")
     require_fetched_ledger_command(lifecycle["validation_command"])
@@ -33,17 +43,24 @@ def validate_config(config: dict[str, Any]) -> None:
 
 
 def require_fetched_ledger_command(command: Any) -> None:
-    expected = 'python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"'
+    expected = (
+        'python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"'
+    )
     if command != expected:
-        raise ValueError("config.lifecycle.validation_command: must require fetched runtime ledger path")
+        raise ValueError(
+            "config.lifecycle.validation_command: must require fetched runtime ledger path"
+        )
 
 
 def validate_policy_inputs(value: Any) -> None:
     inputs = require_mapping(value, "config.lifecycle.policy_inputs")
     required = {
-        "identity_classification_revision", "sensitive_path_taxonomy_revision",
-        "permission_scope_revision", "required_check_source_revision",
-        "merge_method_revision", "prompt_revision",
+        "identity_classification_revision",
+        "sensitive_path_taxonomy_revision",
+        "permission_scope_revision",
+        "required_check_source_revision",
+        "merge_method_revision",
+        "prompt_revision",
     }
     require_fields(inputs, required, required, "config.lifecycle.policy_inputs")
 
@@ -51,8 +68,10 @@ def validate_policy_inputs(value: Any) -> None:
 def require_exact_stage_caps(value: Any) -> None:
     caps = require_mapping(value, "config.lifecycle.stage_caps")
     expected = {
-        "stage1_inventory": 20, "stage2_salvage_candidates": 5,
-        "stage3_reconciliation": 20, "stage3_decision_packets": 5,
+        "stage1_inventory": 20,
+        "stage2_salvage_candidates": 5,
+        "stage3_reconciliation": 20,
+        "stage3_decision_packets": 5,
         "stage3_completion_actions": 5,
     }
     if caps != expected:
@@ -63,15 +82,18 @@ def require_exact_stage_contract(value: Any) -> None:
     stages = require_mapping(value, "config.lifecycle.stages")
     expected = {
         "stage1_review": {
-            "schedule": "0 13 * * *", "concurrency": 1,
+            "schedule": "0 13 * * *",
+            "concurrency": 1,
             "authority": "routine-approve-squash-merge-close",
         },
         "stage2_salvage": {
-            "schedule": "0 17 * * *", "concurrency": 1,
+            "schedule": "0 17 * * *",
+            "concurrency": 1,
             "authority": "draft-only-recovery",
         },
         "stage3_completion": {
-            "schedule": "15 21 * * *", "concurrency": 1,
+            "schedule": "15 21 * * *",
+            "concurrency": 1,
             "authority": "report-only-until-calibration-approved-then-bounded-nonsecurity-completion",
         },
     }
@@ -83,7 +105,9 @@ def validate_bootstrap_pointer(pointer: dict[str, Any], config: dict[str, Any]) 
     required = {"pointer_version", "pointer_kind", "runtime_ledger"}
     require_fields(pointer, required, required, "ledger pointer")
     validate_pointer_identity(pointer)
-    runtime = require_mapping(pointer["runtime_ledger"], "ledger pointer.runtime_ledger")
+    runtime = require_mapping(
+        pointer["runtime_ledger"], "ledger pointer.runtime_ledger"
+    )
     validate_pointer_runtime_shape(runtime)
     expected = config["lifecycle"]["runtime_ledger"]
     validate_pointer_location(runtime, expected)
@@ -100,13 +124,20 @@ def validate_pointer_identity(pointer: dict[str, Any]) -> None:
 
 def validate_pointer_runtime_shape(runtime: dict[str, Any]) -> None:
     fields = {
-        "data_branch", "data_path", "schema_path", "activation_state",
-        "selected_write_primitive", "allowed_write_primitives", "bootstrap_document",
+        "data_branch",
+        "data_path",
+        "schema_path",
+        "activation_state",
+        "selected_write_primitive",
+        "allowed_write_primitives",
+        "bootstrap_document",
     }
     require_fields(runtime, fields, fields, "ledger pointer.runtime_ledger")
 
 
-def validate_pointer_location(runtime: dict[str, Any], expected: dict[str, Any]) -> None:
+def validate_pointer_location(
+    runtime: dict[str, Any], expected: dict[str, Any]
+) -> None:
     matches = runtime["data_branch"] == expected["data_branch"]
     matches = matches and runtime["data_path"] == expected["data_path"]
     if not matches:
@@ -120,8 +151,12 @@ def validate_pointer_activation(runtime: dict[str, Any]) -> None:
         raise ValueError("ledger pointer: selected primitive belongs in runtime data")
 
 
-def validate_pointer_primitives(runtime: dict[str, Any], expected: dict[str, Any]) -> None:
-    if set(runtime["allowed_write_primitives"]) != set(expected["allowed_write_primitives"]):
+def validate_pointer_primitives(
+    runtime: dict[str, Any], expected: dict[str, Any]
+) -> None:
+    if set(runtime["allowed_write_primitives"]) != set(
+        expected["allowed_write_primitives"]
+    ):
         raise ValueError("ledger pointer: allowed primitives differ from config")
 
 
@@ -129,8 +164,16 @@ def validate_exports_and_prompts(config: dict[str, Any]) -> None:
     expected = {
         "daily-pr-review.json": ("stage1_review", True, "daily-pr-review.md"),
         "daily-pr-salvage.json": ("stage2_salvage", False, "daily-pr-salvage.md"),
-        "daily-pr-completion.calibration.json": ("stage3_completion", False, "daily-pr-completion.calibration.md"),
-        "daily-pr-completion.json": ("stage3_completion", True, "daily-pr-completion.md"),
+        "daily-pr-completion.calibration.json": (
+            "stage3_completion",
+            False,
+            "daily-pr-completion.calibration.md",
+        ),
+        "daily-pr-completion.json": (
+            "stage3_completion",
+            True,
+            "daily-pr-completion.md",
+        ),
     }
     stages = config["lifecycle"]["stages"]
     directory = ROOT / "docs/cursor-automations/exports"
@@ -145,8 +188,19 @@ def validate_exports_and_prompts(config: dict[str, Any]) -> None:
         validate_prompt(source, prompt_name)
 
 
-def validate_export_shape(data: dict[str, Any], path: Path, schedule: str, allow_approve: bool) -> None:
-    fields = {"name", "triggers", "actions", "prompts", "model", "agentOptions", "memoryEnabled", "scope"}
+def validate_export_shape(
+    data: dict[str, Any], path: Path, schedule: str, allow_approve: bool
+) -> None:
+    fields = {
+        "name",
+        "triggers",
+        "actions",
+        "prompts",
+        "model",
+        "agentOptions",
+        "memoryEnabled",
+        "scope",
+    }
     if set(data) != fields:
         raise ValueError(f"{path}: export fields differ from observed Cursor shape")
     validate_export_schedule(data, path, schedule)
@@ -165,8 +219,14 @@ def validate_export_memory(data: dict[str, Any], path: Path) -> None:
         raise ValueError(f"{path}: memory must be enabled")
 
 
-def validate_export_approval(data: dict[str, Any], path: Path, allow_approve: bool) -> None:
-    approvals = [action for action in data["actions"] if action.get("prComment", {}).get("allowApprove") is True]
+def validate_export_approval(
+    data: dict[str, Any], path: Path, allow_approve: bool
+) -> None:
+    approvals = [
+        action
+        for action in data["actions"]
+        if action.get("prComment", {}).get("allowApprove") is True
+    ]
     if bool(approvals) != allow_approve:
         raise ValueError(f"{path}: approval authority differs from stage")
 
@@ -179,8 +239,13 @@ def validate_export_actions(data: dict[str, Any], path: Path) -> None:
 def validate_export_action(action: dict[str, Any], path: Path) -> None:
     if "requestReviewers" in action:
         raise ValueError(f"{path}: reviewer requests are prohibited")
-    kind = next((candidate for candidate in ("mcp", "prComment") if candidate in action), None)
-    validator = {"mcp": validate_mcp_action, "prComment": validate_pr_comment_action}.get(kind)
+    kind = next(
+        (candidate for candidate in ("mcp", "prComment") if candidate in action), None
+    )
+    validator = {
+        "mcp": validate_mcp_action,
+        "prComment": validate_pr_comment_action,
+    }.get(kind)
     if validator is None:
         raise ValueError(f"{path}: unsupported action")
     validator(action, path)
@@ -199,8 +264,10 @@ def validate_pr_comment_action(action: dict[str, Any], path: Path) -> None:
 
 def validate_prompt(content: str, name: str) -> None:
     required = {
-        "docs/automated-pr-lifecycle.md", "docs/pr-lifecycle-runtime-ledger.md",
-        "Memory is enabled", "ledger, run records, and lessons",
+        "docs/automated-pr-lifecycle.md",
+        "docs/pr-lifecycle-runtime-ledger.md",
+        "Memory is enabled",
+        "ledger, run records, and lessons",
     }
     if any(marker not in content for marker in required):
         raise ValueError(f"{name}: missing runtime continuity marker")
