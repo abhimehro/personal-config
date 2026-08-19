@@ -152,7 +152,7 @@ def validate_events(events: Any, items: dict[str, dict[str, Any]]) -> list[dict[
             validate_calibration_event(event, seen_keys)
             calibration_events.append(event)
         else:
-            validate_item_event(event, items, seen_keys, event_by_id, projection)
+            validate_item_event(event, items, seen_keys, {"events": event_by_id, "projection": projection})
         event_by_id[event_id] = event
     validate_projection(items, projection)
     return calibration_events
@@ -181,16 +181,15 @@ def initial_projection() -> dict[str, Any]:
 
 def validate_item_event(
     event: dict[str, Any], items: dict[str, dict[str, Any]],
-    seen_keys: set[tuple[str, str]], event_by_id: dict[str, dict[str, Any]],
-    projection: dict[str, dict[str, Any]],
+    seen_keys: set[tuple[str, str]], context: dict[str, Any],
 ) -> None:
     item_key, pair = validate_item_event_reference(event, items, seen_keys)
-    projected = projection[item_key]
+    projected = context["projection"][item_key]
     if event["kind"] in TRANSITION_KINDS:
         validate_transition_event(event, projected)
         apply_transition(event, projected)
     elif event["kind"] in RECEIPT_KINDS:
-        validate_receipt_event(event, projected, event_by_id)
+        validate_receipt_event(event, projected, context["events"])
     else:
         raise ValueError(f"event {event['event_id']}: unsupported item event kind")
     seen_keys.add(pair)
