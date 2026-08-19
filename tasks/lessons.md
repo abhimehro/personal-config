@@ -1,5 +1,21 @@
 # Lessons Learned
 
+## Lesson 0fw: Missing runtime ledger is HOLD_PLATFORM, not backlog discovery (2026-08-19)
+
+**Pattern:** After `docs(pr-automation): add durable three-stage lifecycle`
+(#2026) and `Align PR lifecycle artifacts and tooling` (#2031) landed, Stage 2
+still had automation-memory and Phase 1 remainder lists of CONFLICTING or
+MERGEABLE bot PRs. The runtime data branch
+`automation/pr-lifecycle-ledger` was absent (GitHub API 404), the selected
+write primitive was unset, and bootstrap remains `NOT_BOOTSTRAPPED`. Treating
+memory or `tasks/pr-review-*.md` as `STAGE2_QUEUED` work items would recreate
+the pre-v1.2 salvage backlog and skip revision-checked handoff. **Rule:** If
+`automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` cannot be fetched,
+validated, and written through the recorded CAS primitive, record
+`HOLD_PLATFORM`, process zero recoveries, and hand the bootstrap prerequisite
+to Stage 3. Do not infer work items from memory, titles, branch names, or
+unmerged session-report PRs. **Detection cost:** Low —
+`gh api repos/abhimehro/personal-config/branches/automation/pr-lifecycle-ledger`.
 ## Lesson 0ft: Unbootstrapped ledger is HOLD_PLATFORM, not inventory (2026-08-19)
 
 **Pattern:** Stage 3 calibration fired with
