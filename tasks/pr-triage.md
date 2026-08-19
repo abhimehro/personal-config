@@ -1,3 +1,72 @@
+# PR Triage — 2026-08-18 (Phase 2 salvage)
+
+Live CONFLICTING: **13**. Auth: `abhimehro` PAT. **S1 never merge.**
+
+## Decision summary
+
+### ctrld uv Docker/Bandit (#1188)
+
+Jules `requirements.txt` + Docker/bandit. `requirements.txt` already on main.
+Action: **SALVAGE** Docker/bandit + repair corrupted `uses:` → draft
+[#1194](https://github.com/abhimehro/ctrld-sync/pull/1194). **CLOSE** #1188.
+
+### ctrld is_valid_rule (#1174)
+
+Copilot patched deleted `sync.py`. Canonical home: `sync/rules.py`. Action:
+**SALVAGE** adapted helper → draft
+[#1195](https://github.com/abhimehro/ctrld-sync/pull/1195). **CLOSE** #1174.
+Lesson **0fv**.
+
+### pc pgrep CWE-88 (#2000/#1989)
+
+Jules/Copilot `pgrep -x --`. Action: **SALVAGE** → draft
+[#2022](https://github.com/abhimehro/personal-config/pull/2022). **CLOSE** both.
+
+### pc Bolt join (#1997/#1985)
+
+Both superseded by CLEAN
+[#1996](https://github.com/abhimehro/personal-config/pull/1996). **CLOSE**.
+
+### pc Palette (#1991 vs #1980)
+
+#1980 already has unique `get_palette_state.sh` + tests. **CLOSE** #1991.
+
+### pc eval→shopt (#2007)
+
+Jules eval-removal is CLEAN. Copilot unquoted restore is **0fu**. **ESCALATE**
+(do not salvage).
+
+### pc CORS (#1907)
+
+Mega + allowlist. **ESCALATE**.
+
+### ctrld HOLD (#1161)
+
+Retry wrapper. **HOLD** 0fo.
+
+### ctrld mypy 2.x (#1136)
+
+**ESCALATE**.
+
+### esp Daily QA (#1495)
+
+Zero unique vs main. **CLOSE** 0fr.
+
+### esp headers (#1487)
+
+Already on main. **CLOSE**.
+
+### esp requirements-ci (#1473)
+
+**ESCALATE**.
+
+### seatek POSIXct (#690)
+
+One unique `.POSIXct` line; rest contamination. **SALVAGE** → draft
+[#693](https://github.com/abhimehro/Seatek_Analysis/pull/693). **CLOSE** #690.
+
+---
+
 # PR Triage — 2026-08-13 (Phase 2 salvage)
 
 Live CONFLICTING: **none**. Triage is duplicate / contamination / security-gate.
