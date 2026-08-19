@@ -263,21 +263,36 @@ def apply_transition(event: dict[str, Any], projected: dict[str, Any]) -> None:
 
 
 def validate_receipt_event(event: dict[str, Any], projected: dict[str, Any], event_by_id: dict[str, dict[str, Any]]) -> None:
+    parent = validate_receipt_parent(event, projected, event_by_id)
+    validate_receipt_revision(event, projected)
+    validate_receipt_state(event, parent)
+    validate_receipt_order(event, event_by_id)
+
+
+def validate_receipt_parent(event: dict[str, Any], projected: dict[str, Any], event_by_id: dict[str, dict[str, Any]]) -> dict[str, Any]:
     event_id = event["event_id"]
     parent = event_by_id.get(event["parent_event_id"])
     if parent is None or parent["kind"] not in {"HANDOFF", "IMPORT"}:
         raise ValueError(f"event {event_id}: receipt requires an earlier handoff or import")
     if parent["item_key"] != event["item_key"] or projected["latest_transition"] != parent["event_id"]:
         raise ValueError(f"event {event_id}: receipt targets a superseded transition")
+    return parent
+
+
+def validate_receipt_revision(event: dict[str, Any], projected: dict[str, Any]) -> None:
+    event_id = event["event_id"]
     if event["expected_item_revision"] != projected["revision"] or event["resulting_item_revision"] != projected["revision"]:
         raise ValueError(f"event {event_id}: receipt must not increment revision")
+
+
+def validate_receipt_state(event: dict[str, Any], parent: dict[str, Any]) -> None:
+    event_id = event["event_id"]
     fields = ("from_state", "to_state", "from_owner", "to_owner", "next_owner", "terminal_disposition")
     expected = {"from_state": parent["to_state"], "to_state": parent["to_state"], "from_owner": parent["to_owner"], "to_owner": parent["to_owner"], "next_owner": parent["next_owner"], "terminal_disposition": parent["terminal_disposition"]}
     if any(event[field] != expected[field] for field in fields):
         raise ValueError(f"event {event_id}: receipt changes projected state")
     if STATE_OWNERS[event["to_state"]] != event["to_owner"]:
         raise ValueError(f"event {event_id}: receipt state and owner disagree")
-    validate_receipt_order(event, event_by_id)
 
 
 def validate_receipt_order(event: dict[str, Any], event_by_id: dict[str, dict[str, Any]]) -> None:
