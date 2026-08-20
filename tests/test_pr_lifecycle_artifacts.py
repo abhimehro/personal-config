@@ -32,15 +32,17 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         calibration = ledger["calibration"]
         calibration["status"] = "APPROVED"
         calibration["successful_run_count"] = 7
+        calibration["policy_revision"] = "pr-lifecycle-v1.3"
+        calibration["invalidated_by_revision"] = None
         calibration["approved_by"] = "abhimehro"
         calibration["approved_at_utc"] = "2026-08-19T09:00:00Z"
         calibration["approval_evidence_urls"] = [
             "https://github.com/abhimehro/personal-config/pull/2026"
         ]
-        for ordinal in range(4, 8):
+        for ordinal in range(1, 8):
             ledger["events"].append(
                 {
-                    "event_id": f"evt-calibration-v12-00{ordinal}",
+                    "event_id": f"evt-calibration-v13-00{ordinal}",
                     "kind": "CALIBRATION",
                     "item_key": None,
                     "from_owner": "stage3",
@@ -52,11 +54,11 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
                     "parent_event_id": None,
                     "expected_item_revision": 0,
                     "resulting_item_revision": 0,
-                    "idempotency_key": f"__calibration__:evt-calibration-v12-00{ordinal}",
+                    "idempotency_key": f"__calibration__:evt-calibration-v13-00{ordinal}",
                     "status": "ACKNOWLEDGED",
                     "created_at_utc": f"2026-08-{12 + ordinal}T08:00:00Z",
                     "acknowledged_at_utc": f"2026-08-{12 + ordinal}T08:00:01Z",
-                    "policy_revision": "pr-lifecycle-v1.2",
+                    "policy_revision": "pr-lifecycle-v1.3",
                     "successful": True,
                     "reason": "Complete report-only reconciliation.",
                 }

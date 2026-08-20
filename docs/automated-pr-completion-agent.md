@@ -1,6 +1,6 @@
 # Automated PR Completion Agent
 
-**Version:** 1.1 **Scope:** Own the nonterminal backlog left by the Review and
+**Version:** 1.3 **Scope:** Own the nonterminal backlog left by the Review and
 Salvage agents across the configured repositories. The Completion Agent is the
 third stage in the daily PR workflow, not a second review pass or a second
 salvage implementation.
@@ -60,7 +60,7 @@ For each owned entry, take one and only one route.
 | Base/head SHA changed                                                                         | Return to Stage 1                          | `STALE_ANCHOR`, prior anchors, current anchors, and reason                            |
 | One mechanical code repair remains                                                            | Create a bounded Stage 2 work item         | Explicit repair scope, required regression test, and failure to avoid repeating       |
 | A focused salvage draft is clean and non-security                                             | Hold for calibration or bounded completion | Provenance, checks, anchor match, changed paths, and completion predicate results     |
-| The original is demonstrably duplicate, superseded, zero-diff, or stale                       | Hold for calibration or bounded closure    | Canonical evidence or no-op evidence, cooldown, and original/replacement relationship |
+| The original is demonstrably duplicate, superseded, zero-diff, or stale                       | Record the close-candidate; Stage 1 may close during calibration | Canonical evidence or no-op evidence, cooldown, and original/replacement relationship |
 | Security, policy, auth, network, browser-origin, workflow, data, or platform decision remains | Create one human decision packet           | One question, up to three options, recommended option, safe default, and expiry       |
 | Checks or evidence are unavailable                                                            | Retry once, then `ANALYSIS_ERROR`          | Failed evidence source, retry time, and safe default                                  |
 | Competing candidate exists                                                                    | `HOLD_CANONICAL`                           | Candidate comparison and the smallest decision needed                                 |
@@ -83,11 +83,14 @@ a branch.
 A successful calibration run has all of the following: a validated ledger; every
 processed item live-reconciled with mandatory record fields; fresh anchors and
 readable required-check sources for each candidate; no prohibited action
-attempt; no `ANALYSIS_ERROR`; and no security-sensitive or ordinary
-human-authored item in a routine path. A zero-eligible-item run counts only when
-every Stage-3-owned item was live-reconciled. The run records proposed action,
-later observed outcome when known, and calibration correctness assessment. A run
-does not count merely because it found no work.
+attempt; no `ANALYSIS_ERROR`; no security-sensitive or ordinary human-authored
+item in a routine path; and ledger progress (a complete Stage 2 work item, a
+close-candidate record, a packet, or an owner/next_action change from live
+reconcile). A docs-only wrap-up does not count. A zero-eligible-item run counts
+only when every Stage-3-owned item was live-reconciled and no complete work item
+or close-candidate could be created from live evidence. The run records proposed
+action, later observed outcome when known, and calibration correctness
+assessment. A run does not count merely because it found no work.
 
 The ledger’s calibration object records successful count, required count, scope,
 policy revision, representative coverage, approval identity/date/evidence,
@@ -109,7 +112,7 @@ one action. The agent stops before exceeding the cap.
 
 The Completion Agent may approve and complete the registered merge method for a
 focused salvage draft only when all conditions are true: the GitHub API author
-identity is an allowlisted bot; the draft is non-security and
+identity is an allowlisted or token-authored bot; the draft is non-security and
 non-human-authored; base/head anchors equal the ledger; changed paths are
 outside sticky sensitive classes; tests and **required checks from the
 registered readable source** are green; merge state is clean; no unresolved

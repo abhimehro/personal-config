@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from pr_identity import identity_policy_from_config
 from pr_lifecycle_support import ROOT, require_fields, require_list, require_mapping
 
 
@@ -37,6 +38,7 @@ def validate_config(config: dict[str, Any]) -> None:
     }
     require_fields(lifecycle, required, required, "config.lifecycle")
     require_fetched_ledger_command(lifecycle["validation_command"])
+    validate_identity_classification(config)
     validate_policy_inputs(lifecycle["policy_inputs"])
     require_exact_stage_caps(lifecycle["stage_caps"])
     require_exact_stage_contract(lifecycle["stages"])
@@ -49,6 +51,49 @@ def require_fetched_ledger_command(command: Any) -> None:
     if command != expected:
         raise ValueError(
             "config.lifecycle.validation_command: must require fetched runtime ledger path"
+        )
+
+
+def validate_identity_classification(config: dict[str, Any]) -> None:
+    identity = require_mapping(
+        config.get("identity_classification"), "config.identity_classification"
+    )
+    required = {
+        "source",
+        "ambiguous_identity",
+        "title_branch_body_comment_inference",
+        "revision",
+        "required_independent_signals",
+        "maintainer_token_logins",
+        "branch_prefixes",
+        "title_keywords",
+        "body_markers",
+        "bot_commit_email_suffixes",
+    }
+    require_fields(identity, required, required, "config.identity_classification")
+    if identity["source"] != "github_api_with_token_authored_provenance":
+        raise ValueError("config.identity_classification.source: unsupported policy")
+    if identity["ambiguous_identity"] != "HUMAN":
+        raise ValueError(
+            "config.identity_classification.ambiguous_identity: must be HUMAN"
+        )
+    inference = identity["title_branch_body_comment_inference"]
+    if inference != "token_authored_provenance_only":
+        raise ValueError(
+            "config.identity_classification.title_branch_body_comment_inference: "
+            "must be token_authored_provenance_only"
+        )
+    policy = identity_policy_from_config(config)
+    inputs = require_mapping(
+        config["lifecycle"]["policy_inputs"], "config.lifecycle.policy_inputs"
+    )
+    if policy.revision != inputs["identity_classification_revision"]:
+        raise ValueError(
+            "config.identity_classification.revision: must match policy_inputs"
+        )
+    if policy.required_independent_signals < 2:
+        raise ValueError(
+            "config.identity_classification.required_independent_signals: must be >= 2"
         )
 
 
@@ -68,7 +113,8 @@ def validate_policy_inputs(value: Any) -> None:
 def require_exact_stage_caps(value: Any) -> None:
     caps = require_mapping(value, "config.lifecycle.stage_caps")
     expected = {
-        "stage1_inventory": 20,
+        "stage1_inventory": 50,
+        "stage1_actions": 20,
         "stage2_salvage_candidates": 5,
         "stage3_reconciliation": 20,
         "stage3_decision_packets": 5,
