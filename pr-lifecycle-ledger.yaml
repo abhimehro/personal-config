@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 5
+ledger_revision: 6
 calibration:
   status: REPORT_ONLY
   successful_run_count: 0
@@ -471,29 +471,31 @@ items:
   classification: DEPENDENCY
   risk_class: ROUTINE
   sensitive_paths: []
-  guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  guardrail_outcome: HOLD_CANONICAL
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Do not squash-merge until requirements-ci.txt mypy==2.3.1 matches pyproject.toml and typecheck
-    runs 2.3.1.
-  next_action: 'Stage 2: add requirements-ci.txt mypy==2.3.1 on a draft from current main plus this lock;
-    run pytest and mypy.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge original #535. Complete via tested draft #543 only; leave original
+    open until Stage 3 accepts the canonical outcome.'
+  next_action: 'Stage 3: complete salvage draft #543 (mypy 2.3.1 poetry+requirements-ci.txt) without merging
+    original #535; expiry 2026-08-27T17:00:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/535
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/543
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/actions/runs/32174645125
   changed_paths:
   - poetry.lock
   - pyproject.toml
   attempts:
-    evidence: 1
-    recovery: 0
-    mutations: 0
+    evidence: 2
+    recovery: 1
+    mutations: 1
   handoffs:
   - evt-s1-20260819-hydrographve-535-h
-  revision: 1
-  updated_at_utc: '2026-08-19T22:45:00Z'
+  - evt-s2-20260820-hydrographve-535-h
+  revision: 2
+  updated_at_utc: '2026-08-20T17:25:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#498@0edc77bc9b55e57dd347e44b062280e6cf26de3b
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 498
@@ -997,27 +999,30 @@ items:
   classification: CI_INFRA
   risk_class: ROUTINE
   sensitive_paths: []
-  guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  guardrail_outcome: CLOSE_NONSECURITY_NOOP
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Do not squash-merge until nolint-next wrap is proven and lint_output.txt stays deleted.
-  next_action: 'Consume work item s2-20260820-seatek-673-qa-lint: rebase onto post-#701 main; keep lint_output.txt
-    deleted; do not split a # nolint next line.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not salvage a style-only wrap that splits # nolint next. Do not delete lint_output.txt
+    in salvage (prohibited). Do not merge #673.'
+  next_action: 'Stage 3: close-candidate CLOSE_NONSECURITY_NOOP after cooldown vs merged #701; txtProgressBar
+    tryCatch already on main; remaining R diff is cosmetic plus forbidden nolint-next split; expiry 2026-08-27T17:00:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/673
+  - https://github.com/abhimehro/Seatek_Analysis/pull/701
   changed_paths:
   - Updated_Seatek_Analysis.R
   - lint_output.txt
   attempts:
-    evidence: 1
-    recovery: 0
+    evidence: 2
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20260820-seatekanalys-673-h
-  revision: 1
-  updated_at_utc: '2026-08-20T03:30:00Z'
+  - evt-s2-20260820-seatekanalys-673-h
+  revision: 2
+  updated_at_utc: '2026-08-20T17:25:00Z'
 - key: abhimehro/Seatek_Analysis#667@e74a37b54e6be86e4cf31ab6c9881cf1c0e0c1cd
   repository: abhimehro/Seatek_Analysis
   pr: 667
@@ -1511,14 +1516,16 @@ items:
   classification: UI
   risk_class: ROUTINE
   sensitive_paths: []
-  guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  guardrail_outcome: HOLD_PLATFORM
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Do not squash-merge the 53-file Palette PR; salvage accessibilityLabel-only Swift views.
-  next_action: 'Consume work item s2-20260820-rpce-247-a11y: copy a11y labels onto current main; prohibit
-    .github/.jules/.devin/docs templates.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: Do not squash-merge the 53-file Palette PR. Do not push an un-preflighted Swift commit.
+    Do not --no-verify. Wait for a macOS runner that can run make guardrails.
+  next_action: 'Stage 3 HOLD_PLATFORM: accessibilityLabel copies were applied locally on allowed Swift
+    views from main d7abf5a1bc45f948cade52e231e74f6983bfb6a2 then restored; commit preflight requires
+    gitleaks plus make guardrails (swift/xcrun missing on Linux). Retry on macOS; expiry 2026-08-27T17:00:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/247
   changed_paths:
@@ -1576,13 +1583,14 @@ items:
   - docs/spec/headless-mcp-domain-runtime-m6-host-extraction.md
   - patch_formatter.py
   attempts:
-    evidence: 1
-    recovery: 0
-    mutations: 0
+    evidence: 2
+    recovery: 1
+    mutations: 1
   handoffs:
   - evt-s1-20260820-repopromptce-247-h
-  revision: 1
-  updated_at_utc: '2026-08-20T03:30:00Z'
+  - evt-s2-20260820-repopromptce-247-h
+  revision: 2
+  updated_at_utc: '2026-08-20T17:25:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#536@3a63ebb016aef7a8558337d8c5f1f072d6a30c83
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 536
@@ -1641,27 +1649,30 @@ items:
   risk_class: ROUTINE
   sensitive_paths:
   - generated_output
-  guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  guardrail_outcome: HOLD_CANONICAL
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Do not squash-merge while .jules/bolt.md remains on the branch.
-  next_action: 'Consume work item s2-20260820b-seatek-705-isfile: copy isfile dedup onto current main;
-    prohibit .jules.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge original #705 while it still carries .jules/bolt.md. Complete via
+    tested draft #708 only.'
+  next_action: 'Stage 3: complete salvage draft #708 (duplicate isfile removed; journal absent) without
+    merging original #705; expiry 2026-08-27T17:00:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/705
+  - https://github.com/abhimehro/Seatek_Analysis/pull/708
   changed_paths:
   - .jules/bolt.md
   - code_health_scanner.py
   attempts:
-    evidence: 1
-    recovery: 0
-    mutations: 0
+    evidence: 2
+    recovery: 1
+    mutations: 1
   handoffs:
   - evt-s1-20260820b-seatekanalys-705-h
-  revision: 1
-  updated_at_utc: '2026-08-20T15:30:00Z'
+  - evt-s2-20260820b-seatekanalys-705-h
+  revision: 2
+  updated_at_utc: '2026-08-20T17:25:00Z'
 - key: abhimehro/Seatek_Analysis#704@2c5871e643d9aa945044419aa53d25bfa9ec96a4
   repository: abhimehro/Seatek_Analysis
   pr: 704
@@ -1761,14 +1772,16 @@ items:
   risk_class: ROUTINE
   sensitive_paths:
   - generated_output
-  guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  guardrail_outcome: HOLD_PLATFORM
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Do not squash-merge UNSTABLE a11y while required app shards fail.
-  next_action: 'Consume work item s2-20260820b-rpce-271-a11y: copy NotificationsButtonView/SettingsButton
-    labels onto current main; prohibit .jules; distinct from s2-20260820-rpce-247-a11y.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge UNSTABLE a11y #271. Do not start a salvage branch until make guardrails
+    can run on a macOS runner. Distinct from #247.'
+  next_action: 'Stage 3 HOLD_PLATFORM: required named test make guardrails needs swift/xcrun; no branch
+    created. Intended paths NotificationsButtonView.swift and SettingsButton.swift remain distinct from
+    #247; expiry 2026-08-27T17:00:00Z.'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/271
   changed_paths:
@@ -1776,13 +1789,14 @@ items:
   - Sources/RepoPrompt/Infrastructure/UI/Components/NotificationsButtonView.swift
   - Sources/RepoPrompt/Infrastructure/UI/Components/SettingsButton.swift
   attempts:
-    evidence: 1
-    recovery: 0
+    evidence: 2
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20260820b-repopromptce-271-h
-  revision: 1
-  updated_at_utc: '2026-08-20T15:30:00Z'
+  - evt-s2-20260820b-repopromptce-271-h
+  revision: 2
+  updated_at_utc: '2026-08-20T17:25:00Z'
 - key: abhimehro/series_correction_project_updated#403@bd04945b78cdf90fd46dca38d7c5cc26b85188aa
   repository: abhimehro/series_correction_project_updated
   pr: 403
@@ -5340,40 +5354,187 @@ events:
   created_at_utc: '2026-08-20T15:30:00Z'
   acknowledged_at_utc: null
   reason: Recover unique source only on a new focused draft that excludes .jules/journals/templates.
+- event_id: evt-s2-20260820-hydrographve-535-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#535@118f9ca67550bc2e2036e1f83f647e54cabc0a07
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260819-hydrographve-535-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#535@118f9ca67550bc2e2036e1f83f647e54cabc0a07:evt-s2-20260820-hydrographve-535-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-20T17:25:00Z'
+  acknowledged_at_utc: '2026-08-20T17:25:00Z'
+  reason: Stage 2 accepted the complete work item s2-20260819-hydro-535-mypy-ci-pin.
+- event_id: evt-s2-20260820-hydrographve-535-h
+  kind: HANDOFF
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#535@118f9ca67550bc2e2036e1f83f647e54cabc0a07
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#535@118f9ca67550bc2e2036e1f83f647e54cabc0a07:evt-s2-20260820-hydrographve-535-h
+  status: PROJECTED
+  created_at_utc: '2026-08-20T17:25:00Z'
+  acknowledged_at_utc: null
+  reason: 'Opened tested draft #543 from current main cddb8a3ac786e184802629bda0adb3ec728338cb pinning
+    mypy==2.3.1 in pyproject.toml, poetry.lock, and requirements-ci.txt. pytest 70 passed; mypy Success
+    on 13 files. Do not merge original #535.'
+- event_id: evt-s2-20260820-seatekanalys-673-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Seatek_Analysis#673@e2da9d736fd3f4e54bf035d00ecf8d95fc0e1f11
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260820-seatekanalys-673-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#673@e2da9d736fd3f4e54bf035d00ecf8d95fc0e1f11:evt-s2-20260820-seatekanalys-673-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-20T17:25:00Z'
+  acknowledged_at_utc: '2026-08-20T17:25:00Z'
+  reason: Stage 2 accepted the complete work item s2-20260820-seatek-673-qa-lint.
+- event_id: evt-s2-20260820-seatekanalys-673-h
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#673@e2da9d736fd3f4e54bf035d00ecf8d95fc0e1f11
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#673@e2da9d736fd3f4e54bf035d00ecf8d95fc0e1f11:evt-s2-20260820-seatekanalys-673-h
+  status: PROJECTED
+  created_at_utc: '2026-08-20T17:25:00Z'
+  acknowledged_at_utc: null
+  reason: 'Failed recovery, no draft: tryCatch txtProgressBar wrap already on current main 53416c3cfdb3f6929507a8747b043ffaf291e683
+    via #701. Remaining #673 R diff is a cosmetic constructor wrap plus a # nolint next / set(...) split
+    which is forbidden. lint_output.txt remains prohibited. Do not recreate this approach.'
+- event_id: evt-s2-20260820-repopromptce-247-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/repoprompt-ce#247@b3a5b0c760eca9bec5236ab11d0b2dcac38dda80
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260820-repopromptce-247-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#247@b3a5b0c760eca9bec5236ab11d0b2dcac38dda80:evt-s2-20260820-repopromptce-247-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-20T17:25:00Z'
+  acknowledged_at_utc: '2026-08-20T17:25:00Z'
+  reason: Stage 2 accepted the complete work item s2-20260820-rpce-247-a11y.
+- event_id: evt-s2-20260820-repopromptce-247-h
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#247@b3a5b0c760eca9bec5236ab11d0b2dcac38dda80
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/repoprompt-ce#247@b3a5b0c760eca9bec5236ab11d0b2dcac38dda80:evt-s2-20260820-repopromptce-247-h
+  status: PROJECTED
+  created_at_utc: '2026-08-20T17:25:00Z'
+  acknowledged_at_utc: null
+  reason: 'Failed recovery HOLD_PLATFORM: labels copied onto eight allowed Swift view files on current
+    main; not committed or pushed because rpce-contribution-check commit preflight requires make guardrails,
+    which failed FileNotFoundError: swift / xcrun not found. Local edits restored. Do not recreate until
+    a macOS runner exists.'
+- event_id: evt-s2-20260820b-seatekanalys-705-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Seatek_Analysis#705@c4d07fa12213f2c004c09f029b392a51fc81fe9f
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260820b-seatekanalys-705-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#705@c4d07fa12213f2c004c09f029b392a51fc81fe9f:evt-s2-20260820b-seatekanalys-705-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-20T17:25:00Z'
+  acknowledged_at_utc: '2026-08-20T17:25:00Z'
+  reason: Stage 2 accepted the complete work item s2-20260820b-seatek-705-isfile.
+- event_id: evt-s2-20260820b-seatekanalys-705-h
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#705@c4d07fa12213f2c004c09f029b392a51fc81fe9f
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#705@c4d07fa12213f2c004c09f029b392a51fc81fe9f:evt-s2-20260820b-seatekanalys-705-h
+  status: PROJECTED
+  created_at_utc: '2026-08-20T17:25:00Z'
+  acknowledged_at_utc: null
+  reason: 'Opened tested draft #708 from current main 53416c3cfdb3f6929507a8747b043ffaf291e683 removing
+    the duplicate consecutive os.path.isfile check in code_health_scanner.py only. Did not carry .jules/bolt.md.
+    py_compile OK; testthat green after sourcing Updated_Seatek_Analysis.R. Do not merge original #705.'
+- event_id: evt-s2-20260820b-repopromptce-271-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/repoprompt-ce#271@fc9f84652bebd183979716c9b6ddc6a4c5e4d03a
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260820b-repopromptce-271-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#271@fc9f84652bebd183979716c9b6ddc6a4c5e4d03a:evt-s2-20260820b-repopromptce-271-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-20T17:25:00Z'
+  acknowledged_at_utc: '2026-08-20T17:25:00Z'
+  reason: Stage 2 accepted the complete work item s2-20260820b-rpce-271-a11y.
+- event_id: evt-s2-20260820b-repopromptce-271-h
+  kind: HANDOFF
+  item_key: abhimehro/repoprompt-ce#271@fc9f84652bebd183979716c9b6ddc6a4c5e4d03a
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/repoprompt-ce#271@fc9f84652bebd183979716c9b6ddc6a4c5e4d03a:evt-s2-20260820b-repopromptce-271-h
+  status: PROJECTED
+  created_at_utc: '2026-08-20T17:25:00Z'
+  acknowledged_at_utc: null
+  reason: 'Failed recovery HOLD_PLATFORM: named test make guardrails cannot run on this Linux VM (swift/xcrun
+    missing). No salvage branch created. Distinct from #247. Do not recreate until a macOS runner exists.'
 stage2_work_items:
-- work_item_id: s2-20260819-hydro-535-mypy-ci-pin
-  source_item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#535@118f9ca67550bc2e2036e1f83f647e54cabc0a07
-  repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
-  pr: 535
-  base_sha: a94d902c26131d2783acdc178a048008f42076be
-  head_sha: 118f9ca67550bc2e2036e1f83f647e54cabc0a07
-  allowed_paths:
-  - pyproject.toml
-  - poetry.lock
-  - requirements-ci.txt
-  prohibited_paths:
-  - .github/workflows
-  - src
-  - tests
-  repair_description: Keep Dependabot mypy 2.3.1 in pyproject.toml and poetry.lock. Add the matching requirements-ci.txt
-    pin mypy==2.3.1 so CI typecheck (pip install -r requirements-ci.txt && mypy src/) actually runs 2.3.1.
-    Do not change application source.
-  required_test_command: python3 -m pip install -r requirements-ci.txt && MPLBACKEND=Agg python3 -m pytest
-    tests/ && python3 -m mypy src/
-  expected_test_result: pytest and mypy exit 0 using mypy 2.3.1
-  acceptance_criteria:
-  - requirements-ci.txt mypy==2.3.1 matches pyproject.toml ==2.3.1
-  - poetry.lock mypy version remains 2.3.1
-  - pytest tests/ and mypy src/ pass
-  - No files outside allowed_paths change
-  provenance_urls:
-  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/535
-  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/blob/main/requirements-ci.txt
-  expiry_utc: '2026-08-26T22:45:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260819-hydrographve-535-h
-  history: []
 - work_item_id: s2-20260820-ctrld-1161-bolt-summary
   source_item_key: abhimehro/ctrld-sync#1161@1b7811646f19f71a4304f8d51091cf6c28a46cf6
   repository: abhimehro/ctrld-sync
@@ -5402,135 +5563,6 @@ stage2_work_items:
   attempt_count: 0
   current_owner: stage2
   creation_event_id: evt-s1-20260820-ctrldsync-1161-h
-  history: []
-- work_item_id: s2-20260820-seatek-673-qa-lint
-  source_item_key: abhimehro/Seatek_Analysis#673@e2da9d736fd3f4e54bf035d00ecf8d95fc0e1f11
-  repository: abhimehro/Seatek_Analysis
-  pr: 673
-  base_sha: b0a33a62a8b98dd9f959a833e6cf388a8e974c6b
-  head_sha: e2da9d736fd3f4e54bf035d00ecf8d95fc0e1f11
-  allowed_paths:
-  - Updated_Seatek_Analysis.R
-  prohibited_paths:
-  - lint_output.txt
-  - .jules
-  - .github
-  repair_description: 'From current main (includes merged #701 fontColour), apply only still-valid Daily
-    QA line wraps from #673. Do not add lint_output.txt. Do not split a statement covered by `# nolint
-    next`. Delete lint_output.txt only if it is still tracked on main.'
-  required_test_command: Rscript -e "library(lintr); lint('Updated_Seatek_Analysis.R')"
-  expected_test_result: lintr runs; no new object_usage false-positive from wrapping a nolint-next line
-  acceptance_criteria:
-  - lint_output.txt is absent from the salvage diff
-  - 'Updated_Seatek_Analysis.R keeps #701 fontColour'
-  - No `# nolint next` guard is split across physical lines
-  provenance_urls:
-  - https://github.com/abhimehro/Seatek_Analysis/pull/673
-  - https://github.com/abhimehro/Seatek_Analysis/pull/701
-  expiry_utc: '2026-08-27T03:30:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260820-seatekanalys-673-h
-  history: []
-- work_item_id: s2-20260820-rpce-247-a11y
-  source_item_key: abhimehro/repoprompt-ce#247@b3a5b0c760eca9bec5236ab11d0b2dcac38dda80
-  repository: abhimehro/repoprompt-ce
-  pr: 247
-  base_sha: ae557a59e6ea04e0213f77b99c7179c41ca849ff
-  head_sha: b3a5b0c760eca9bec5236ab11d0b2dcac38dda80
-  allowed_paths:
-  - Sources/RepoPrompt/Features/AgentMode/Views/AgentMessageBubble.swift
-  - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentSessionRows.swift
-  - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentStatusInlinePills.swift
-  - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentTogglePills.swift
-  - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentWorkflowPill.swift
-  - Sources/RepoPrompt/Features/AgentMode/Views/Components/AgentWorkflowsConfigureSheet.swift
-  - Sources/RepoPrompt/Features/AgentMode/Views/ContextDrawer/AgentContextDrawerFilesTab.swift
-  - Sources/RepoPrompt/Features/Chat/Views/Buttons.swift
-  prohibited_paths:
-  - .github
-  - .jules
-  - .devin
-  - docs
-  - Package.swift
-  - CODE_OF_CONDUCT.md
-  - CONTRIBUTING.md
-  - README.md
-  repair_description: 'Copy only `.accessibilityLabel(...)` additions from Palette #247 onto current main
-    Swift view files listed in allowed_paths. Leave templates, journals, Package.swift, and unrelated
-    sources untouched. Open as a draft salvage PR.'
-  required_test_command: git diff --name-only origin/main...HEAD
-  expected_test_result: diff name-only is a subset of allowed_paths and each allowed file that changed
-    contains accessibilityLabel
-  acceptance_criteria:
-  - No files outside allowed_paths change
-  - Each changed Swift file adds accessibilityLabel next to existing hoverTooltip
-  - Templates and .jules journals are unchanged
-  provenance_urls:
-  - https://github.com/abhimehro/repoprompt-ce/pull/247
-  expiry_utc: '2026-08-27T03:30:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260820-repopromptce-247-h
-  history: []
-- work_item_id: s2-20260820b-seatek-705-isfile
-  source_item_key: abhimehro/Seatek_Analysis#705@c4d07fa12213f2c004c09f029b392a51fc81fe9f
-  repository: abhimehro/Seatek_Analysis
-  pr: 705
-  base_sha: 53416c3cfdb3f6929507a8747b043ffaf291e683
-  head_sha: c4d07fa12213f2c004c09f029b392a51fc81fe9f
-  allowed_paths:
-  - code_health_scanner.py
-  prohibited_paths:
-  - .jules
-  - .github
-  repair_description: 'Copy the redundant os.path.isfile dedup from #705 onto current main. Do not carry
-    .jules/bolt.md. Open as a draft salvage PR.'
-  required_test_command: Rscript -e "library(testthat); testthat::test_dir('tests/testthat', reporter='summary')"
-    && python3 -m py_compile code_health_scanner.py
-  expected_test_result: code_health_scanner.py compiles; existing testthat suite is unchanged or green
-  acceptance_criteria:
-  - Only code_health_scanner.py differs from main
-  - Redundant isfile check is removed once
-  - .jules/bolt.md is absent from the salvage diff
-  provenance_urls:
-  - https://github.com/abhimehro/Seatek_Analysis/pull/705
-  expiry_utc: '2026-08-27T15:30:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260820b-seatekanalys-705-h
-  history: []
-- work_item_id: s2-20260820b-rpce-271-a11y
-  source_item_key: abhimehro/repoprompt-ce#271@fc9f84652bebd183979716c9b6ddc6a4c5e4d03a
-  repository: abhimehro/repoprompt-ce
-  pr: 271
-  base_sha: ea7fc8ba8dfa48ee787bbc6daa7d250d0e056b85
-  head_sha: fc9f84652bebd183979716c9b6ddc6a4c5e4d03a
-  allowed_paths:
-  - Sources/RepoPrompt/Infrastructure/UI/Components/NotificationsButtonView.swift
-  - Sources/RepoPrompt/Infrastructure/UI/Components/SettingsButton.swift
-  prohibited_paths:
-  - .jules
-  - .github
-  - .devin
-  - docs
-  repair_description: 'Copy accessibility labels from #271 NotificationsButtonView.swift and SettingsButton.swift
-    onto current main. Distinct from s2-20260820-rpce-247-a11y (different files). Do not carry .jules/palette.md.
-    Open as a draft salvage PR.'
-  required_test_command: make guardrails
-  expected_test_result: guardrails exit 0 on the two Swift files; no journal/template files in the salvage
-    diff
-  acceptance_criteria:
-  - Only the two allowed Swift files differ from main
-  - 'Icon-only buttons keep accessibility labels from #271'
-  - .jules/palette.md is absent from the salvage diff
-  - Does not duplicate AgentMode label files from s2-20260820-rpce-247-a11y
-  provenance_urls:
-  - https://github.com/abhimehro/repoprompt-ce/pull/271
-  expiry_utc: '2026-08-27T15:30:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260820b-repopromptce-271-h
   history: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
