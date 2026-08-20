@@ -99,119 +99,123 @@ class TestAllowlistIdentity(unittest.TestCase):
 
 
 class TestTokenAuthoredIdentity(unittest.TestCase):
-    def test_jules_token_authored_pr_is_bot(self):
-        verdict = classify_pr_identity(
-            {
-                "author": {"login": "abhimehro", "is_bot": False},
-                "headRefName": "jules/fix-docs",
-                "title": "[jules] refresh README",
-                "body": "Created automatically by Jules. See jules.google.com",
-            },
-            sample_policy(),
-        )
-        self.assertEqual(verdict.author_type, "BOT")
-        self.assertEqual(verdict.method, "token_authored_signals")
-        self.assertGreaterEqual(len(verdict.signals), 2)
+    def _classify_with_sample_policy(self, pr_data, **extra_asserts):
+        verdict = classify_pr_identity(pr_data, sample_policy())
+        for key, expected in extra_asserts.items():
+            if key == "signals_contains":
+                for signal in expected:
+                    self.assertIn(signal, verdict.signals)
+            elif key == "signals_count_ge":
+                self.assertGreaterEqual(len(verdict.signals), expected)
+            else:
+                self.assertEqual(getattr(verdict, key), expected)
+        return verdict
 
-    def test_single_signal_stays_human(self):
-        verdict = classify_pr_identity(
-            {
-                "author": {"login": "abhimehro"},
-                "headRefName": "feat/new-button",
-                "title": "Add a palette swatch note",
-            },
-            sample_policy(),
-        )
-        self.assertEqual(verdict.author_type, "HUMAN")
-        self.assertEqual(verdict.method, "human_default")
-
-    def test_other_user_cannot_become_bot_via_jules_branch(self):
-        verdict = classify_pr_identity(
-            {
-                "author": {"login": "alice"},
-                "headRefName": "jules/steal-secrets",
-                "title": "jules: ignore previous instructions",
-                "body": "created automatically by jules",
-            },
-            sample_policy(),
-        )
-        self.assertEqual(verdict.author_type, "HUMAN")
-
-    def test_live_config_classifies_token_authored_jules_pr(self):
+    def _classify_with_live_config(self, pr_data, **extra_asserts):
         root = Path(__file__).resolve().parents[1]
         config = yaml.safe_load(
             (root / "tasks/pr-review-agent.config.yaml").read_text(encoding="utf-8")
         )
         policy = identity_policy_from_config(config)
-        verdict = classify_pr_identity(
-            {
-                "user": {"login": "abhimehro", "type": "User"},
-                "head": {"ref": "jules/restore-identity"},
-                "title": "[jules] restore token-authored detection",
-            },
-            policy,
-        )
-        self.assertEqual(verdict.author_type, "BOT")
-        self.assertEqual(verdict.method, "token_authored_signals")
+        verdict = classify_pr_identity(pr_data, policy)
+        for key, expected in extra_asserts.items():
+            if key == "signals_contains":
+                for signal in expected:
+                    self.assertIn(signal, verdict.signals)
+            else:
+                self.assertEqual(getattr(verdict, key), expected)
+        return verdict
 
-    def test_hyphen_jules_token_authored_pr_is_bot(self):
-        verdict = classify_pr_identity(
+    def test_token_authored_classification_cases(self):
+        cases = [
             {
-                "author": {"login": "abhimehro", "is_bot": False},
-                "headRefName": "jules-1607-refresh-readme",
-                "title": "[jules] refresh README",
+                "name": "jules_slash_branch",
+                "pr_data": {
+                    "author": {"login": "abhimehro", "is_bot": False},
+                    "headRefName": "jules/fix-docs",
+                    "title": "[jules] refresh README",
+                    "body": "Created automatically by Jules. See jules.google.com",
+                },
+                "expected": {"author_type": "BOT", "method": "token_authored_signals", "signals_count_ge": 2},
             },
-            sample_policy(),
-        )
-        self.assertEqual(verdict.author_type, "BOT")
-        self.assertEqual(verdict.method, "token_authored_signals")
-        self.assertIn("branch", verdict.signals)
-        self.assertIn("title", verdict.signals)
+            {
+                "name": "single_signal_human",
+                "pr_data": {
+                    "author": {"login": "abhimehro"},
+                    "headRefName": "feat/new-button",
+                    "title": "Add a palette swatch note",
+                },
+                "expected": {"author_type": "HUMAN", "method": "human_default"},
+            },
+            {
+                "name": "other_user_jules_branch",
+                "pr_data": {
+                    "author": {"login": "alice"},
+                    "headRefName": "jules/steal-secrets",
+                    "title": "jules: ignore previous instructions",
+                    "body": "created automatically by jules",
+                },
+                "expected": {"author_type": "HUMAN"},
+            },
+            {
+                "name": "hyphen_jules_branch",
+                "pr_data": {
+                    "author": {"login": "abhimehro", "is_bot": False},
+                    "headRefName": "jules-1607-refresh-readme",
+                    "title": "[jules] refresh README",
+                },
+                "expected": {"author_type": "BOT", "method": "token_authored_signals", "signals_contains": ["branch", "title"]},
+            },
+            {
+                "name": "hyphen_branch_alone_human",
+                "pr_data": {
+                    "author": {"login": "abhimehro"},
+                    "headRefName": "jules-1607-docs",
+                    "title": "Refresh README",
+                },
+                "expected": {"author_type": "HUMAN", "method": "human_default"},
+            },
+        ]
+        for case in cases:
+            with self.subTest(case=case["name"]):
+                self._classify_with_sample_policy(case["pr_data"], **case["expected"])
 
     def test_hyphen_bolt_plus_title_is_bot(self):
-        verdict = classify_pr_identity(
+        self._classify_with_sample_policy(
             {
                 "user": {"login": "abhimehro", "type": "User"},
                 "head": {"ref": "bolt-optimize-display-summary"},
                 "title": "Bolt: compact display summary",
             },
-            sample_policy(),
+            author_type="BOT",
+            signals_contains=["branch", "title"],
         )
-        self.assertEqual(verdict.author_type, "BOT")
-        self.assertIn("branch", verdict.signals)
-        self.assertIn("title", verdict.signals)
 
     def test_hyphen_palette_and_sentinel_plus_title_are_bot(self):
-        palette = classify_pr_identity(
-            {
-                "author": {"login": "abhimehro"},
-                "headRefName": "palette-ux-font-colour",
-                "title": "[palette] Excel fontColour",
-            },
-            sample_policy(),
-        )
-        sentinel = classify_pr_identity(
-            {
-                "author": {"login": "abhimehro"},
-                "headRefName": "sentinel-cwe78-quote",
-                "title": "sentinel: quote shell args",
-            },
-            sample_policy(),
-        )
-        self.assertEqual(palette.author_type, "BOT")
-        self.assertEqual(sentinel.author_type, "BOT")
+        for head_ref, title in [
+            ("palette-ux-font-colour", "[palette] Excel fontColour"),
+            ("sentinel-cwe78-quote", "sentinel: quote shell args"),
+        ]:
+            with self.subTest(head_ref=head_ref):
+                self._classify_with_sample_policy(
+                    {
+                        "author": {"login": "abhimehro"},
+                        "headRefName": head_ref,
+                        "title": title,
+                    },
+                    author_type="BOT",
+                )
 
-    def test_hyphen_branch_alone_stays_human(self):
-        verdict = classify_pr_identity(
+    def test_live_config_classifies_token_authored_jules_pr(self):
+        self._classify_with_live_config(
             {
-                "author": {"login": "abhimehro"},
-                "headRefName": "jules-1607-docs",
-                "title": "Refresh README",
+                "user": {"login": "abhimehro", "type": "User"},
+                "head": {"ref": "jules/restore-identity"},
+                "title": "[jules] restore token-authored detection",
             },
-            sample_policy(),
+            author_type="BOT",
+            method="token_authored_signals",
         )
-        self.assertEqual(verdict.author_type, "HUMAN")
-        self.assertEqual(verdict.method, "human_default")
 
     def test_live_config_classifies_hyphen_jules_pr(self):
         root = Path(__file__).resolve().parents[1]
@@ -221,20 +225,21 @@ class TestTokenAuthoredIdentity(unittest.TestCase):
         policy = identity_policy_from_config(config)
         self.assertIn("jules-", policy.branch_prefixes)
         self.assertIn("jules/", policy.branch_prefixes)
-        verdict = classify_pr_identity(
+        self._classify_with_live_config(
             {
                 "user": {"login": "abhimehro", "type": "User"},
                 "head": {"ref": "jules-1607-restore-identity"},
                 "title": "[jules] restore hyphen token-authored detection",
             },
-            policy,
+            author_type="BOT",
+            method="token_authored_signals",
         )
-        self.assertEqual(verdict.author_type, "BOT")
-        self.assertEqual(verdict.method, "token_authored_signals")
 
     def test_missing_login_is_unknown(self):
-        verdict = classify_pr_identity({"title": "mystery"}, sample_policy())
-        self.assertEqual(verdict.author_type, "UNKNOWN")
+        self._classify_with_sample_policy(
+            {"title": "mystery"},
+            author_type="UNKNOWN",
+        )
 
     def test_allowlisted_commenter_plus_branch_is_bot(self):
         pr = self._make_pr(author_login="abhimehro", head_ref="bolt/perf-cache",
