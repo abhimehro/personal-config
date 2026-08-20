@@ -66,8 +66,8 @@ jobs:
 
           # Default: Google on, Mistral off, unless overridden via repo/org Variables.
           # (Currently flipped for isolated Mistral testing.)
-          ENABLE_GOOGLE="${ENABLE_GOOGLE_VAR:-true}"
-          ENABLE_MISTRAL="${ENABLE_MISTRAL_VAR:-false}"
+          ENABLE_GOOGLE="${ENABLE_GOOGLE_VAR:-false}"
+          ENABLE_MISTRAL="${ENABLE_MISTRAL_VAR:-true}"
 
           if [[ "$ENABLE_GOOGLE" != "true" && "$ENABLE_MISTRAL" != "true" ]]; then
             echo "::error::Both ENABLE_GOOGLE and ENABLE_MISTRAL are disabled. Enable at least one via repo Variables."
