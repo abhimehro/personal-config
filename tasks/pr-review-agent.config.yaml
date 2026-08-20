@@ -26,15 +26,22 @@ identity_classification:
   source: github_api_with_token_authored_provenance
   ambiguous_identity: HUMAN
   title_branch_body_comment_inference: token_authored_provenance_only
-  revision: "2026-08-20"
+  revision: "2026-08-20-hyphen"
   required_independent_signals: 2
   maintainer_token_logins:
     - abhimehro
+  # Slash and hyphen forms: Jules/Bolt/Palette/Sentinel often omit the slash
+  # (lesson 0gb). Matching is startswith. daily-qa already matches daily-qa-*.
+  # Ordinary feat/ and fix/ are not bot prefixes.
   branch_prefixes:
     - jules/
+    - jules-
     - sentinel/
+    - sentinel-
     - bolt/
+    - bolt-
     - palette/
+    - palette-
     - automation-
     - daily-qa
     - chore/jules
@@ -81,19 +88,19 @@ sensitive_path_taxonomy:
 stale_threshold_days: 30
 
 lifecycle:
-  version: "1.3"
+  version: "1.4"
   source_of_truth: "docs/automated-pr-lifecycle.md and the runtime ledger data branch"
   schema: schemas/pr-lifecycle-ledger.schema.json
   validation_command: 'python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"'
   cursor_dashboard_runtime: canonical-live-dashboard-reconciled-2026-08-19
-  policy_revision: "pr-lifecycle-v1.3"
+  policy_revision: "pr-lifecycle-v1.4"
   policy_inputs:
-    identity_classification_revision: "2026-08-20"
+    identity_classification_revision: "2026-08-20-hyphen"
     sensitive_path_taxonomy_revision: "2026-08-19"
     permission_scope_revision: "cursor-export-v1.1"
     required_check_source_revision: "registry-v1.2"
     merge_method_revision: "registry-v1.2"
-    prompt_revision: "pr-lifecycle-v1.3"
+    prompt_revision: "pr-lifecycle-v1.4"
   runtime_ledger:
     data_branch: automation/pr-lifecycle-ledger
     data_path: pr-lifecycle-ledger.yaml

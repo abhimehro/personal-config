@@ -1,6 +1,6 @@
 # Automated PR Review & Consolidation Agent
 
-**Version:** 1.3 **Compatibility:** Security-First Development Agent v3.0
+**Version:** 1.4 **Compatibility:** Security-First Development Agent v3.0
 **Scope:** Triage, review, edit, merge, and close PRs from automated agents
 (Jules, Dependabot, Renovate, custom bots) across multiple repositories.
 
@@ -194,8 +194,10 @@ Use `tasks/pr-review-agent.config.yaml` (or override via CLI). Key fields:
   `app/copilot-swe-agent`.
 - **stale_threshold_days:** e.g. 30.
 - **identity_classification** and **sensitive_path_taxonomy:** versioned sources
-  that keep ambiguous identities human, restore token-authored bot provenance,
-  and keep sensitive-path classification sticky.
+  that keep ambiguous identities human, restore token-authored bot provenance
+  (slash **and** hyphen branch prefixes; lesson 0gb/0gc), and keep
+  sensitive-path classification sticky. Ordinary `feat/` / `fix/` without two
+  signals stay human.
 - **lifecycle.policy_inputs:** identity, sensitive-path, permission,
   required-check, merge-method, and prompt revision identifiers.
 - **lifecycle.stage_caps** and **lifecycle.stages:** the reviewed capacity,
@@ -286,7 +288,9 @@ Apply these during classification and review (see also `tasks/lessons.md`):
 The Review Agent is Stage 1 of the scheduled lifecycle. It runs at `0 15 * * *`
 UTC with one concurrent run and a 20-item inventory cap. It is followed by Stage
 2 at `0 17 * * *` and Stage 3 at `0 19 * * *`. See
-[Three-Stage PR Lifecycle in Cursor Automations](cursor-automations/three-stage-pr-lifecycle.md).
+[Three-Stage PR Lifecycle in Cursor Automations](cursor-automations/three-stage-pr-lifecycle.md)
+for the common prompt preamble, role-based MCP/skill lists, and calibration
+relationship.
 
 ### Daily Automation Chain
 

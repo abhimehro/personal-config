@@ -73,9 +73,13 @@ distinct post-calibration Stage 3 variant may use routine approval only after
 the approval is recorded in the validated ledger and only under the completion
 specification's predicates.
 
-The live Dashboard references Notion, Memory, Sequential thinking, GitKraken,
-cloudrun, Linear, codescene, julesServer, Snyk, and Sonatype-mcp, and exposes a
-wider connected workspace inventory. This inventory is not a blanket execution
+The live Dashboard is canonical for trigger, connection, and enablement state.
+The Dashboard-referenced MCP set is role-based per stage prompt: Stage 1 names
+`gh` plus codescene/Sonatype/Snyk as needed; Stage 2 names `gh` drafts,
+codescene, Context7, and Sonatype pins; Stage 3 names read-only `gh`, Notion
+packets, and hold-evidence scanners. Visibility of Notion, Memory, Sequential
+thinking, GitKraken, cloudrun, Linear, codescene, julesServer, Snyk,
+Sonatype-mcp, or any wider connected catalog is not a blanket execution
 allowlist. Each stage remains bound by its prompt, immutable anchors, action
 cap, and absolute prohibitions. A connected tool may not alter branch
 protection, rulesets, workflow permissions, bypass actors, unrelated branches,

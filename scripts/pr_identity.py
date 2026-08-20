@@ -267,6 +267,9 @@ def _branch_name(pr: Mapping[str, Any]) -> str:
 
 
 def _prefix_match(value: str, prefixes: Sequence[str]) -> bool:
+    # NOTE: Jules/Bolt/Palette/Sentinel often use hyphen prefixes (`jules-`)
+    # rather than slash (`jules/`). Matching is startswith; both forms must be
+    # versioned in config. Ordinary `feat/` / `fix/` are not bot prefixes.
     return any(value.startswith(prefix.lower()) for prefix in prefixes if prefix)
 
 
