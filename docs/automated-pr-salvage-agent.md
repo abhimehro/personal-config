@@ -1,6 +1,6 @@
 # Automated PR Salvage & Recovery Agent
 
-**Version:** 1.2 **Role:** Stage 2 in the durable three-stage PR lifecycle.
+**Version:** 1.3 **Role:** Stage 2 in the durable three-stage PR lifecycle.
 **Scope:** Convert one bounded, valuable, nonterminal PR item into a focused,
 tested draft recovery, or record why recovery is not currently safe.
 
@@ -111,13 +111,17 @@ it ready.
 
 ### Step 0: Refresh the recovery tail
 
-Stage 2 does not discover its own broad backlog. It reads only `STAGE2_QUEUED`
-entries and complete `stage2_work_items` whose current owner is `stage2`. It
-re-fetches live GitHub state for each source PR and its base before use. A PR
-already merged, closed, deleted, or changed since its immutable anchors becomes
-a structured Stage 3 reconciliation handoff, not a recovery branch. Historical
-reports are evidence only; no prose `DEFER`, `DIRTY`, or `ESCALATE` record can
-create a Stage 2 task without a current, complete work item.
+Stage 2 does not discover a fourth queue. It reads `STAGE2_QUEUED` entries and
+complete `stage2_work_items` whose current owner is `stage2`. Unused salvage
+capacity while complete unexpired work items exist is a failed run. If a
+Stage-2-owned ledger item lacks a complete work item, materialize one from that
+item’s `changed_paths`, `next_action`, and live GitHub evidence, then recover.
+Historical reports are hints requiring live verify; no prose `DEFER`, `DIRTY`,
+or `ESCALATE` record is a work item by itself. A docs-only session with zero
+drafts and zero structured failed-recovery records is a failed run when
+salvageable bot work existed. A PR already merged, closed, deleted, or changed
+since its immutable anchors becomes a structured Stage 3 reconciliation handoff,
+not a recovery branch.
 
 ### Step 1: Group by repository and detect shared infrastructure failure
 

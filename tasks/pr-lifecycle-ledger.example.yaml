@@ -4,10 +4,10 @@ schema_path: schemas/pr-lifecycle-ledger.schema.json
 ledger_revision: 42
 calibration:
   status: REPORT_ONLY
-  successful_run_count: 3
+  successful_run_count: 0
   required_successful_runs: 7
   scope: configured-repo-set
-  policy_revision: "pr-lifecycle-v1.2"
+  policy_revision: "pr-lifecycle-v1.3"
   coverage:
     identity_classes: [BOT]
     risk_classes: [ROUTINE, SENSITIVE]
@@ -16,7 +16,7 @@ calibration:
   approved_by: null
   approved_at_utc: null
   approval_evidence_urls: []
-  invalidated_by_revision: null
+  invalidated_by_revision: "pr-lifecycle-v1.3"
   revoked_at_utc: null
   rollback_conditions:
     - "Security-sensitive or ordinary human-authored item enters a routine action path."
