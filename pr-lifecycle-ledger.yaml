@@ -1,12 +1,12 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 1
+ledger_revision: 2
 calibration:
   status: REPORT_ONLY
   successful_run_count: 0
   required_successful_runs: 7
   scope: configured-repo-set
-  policy_revision: pr-lifecycle-v1.2
+  policy_revision: pr-lifecycle-v1.3
   coverage:
     identity_classes: []
     risk_classes: []
@@ -15,7 +15,7 @@ calibration:
   approved_by: null
   approved_at_utc: null
   approval_evidence_urls: []
-  invalidated_by_revision: null
+  invalidated_by_revision: pr-lifecycle-v1.3
   revoked_at_utc: null
   rollback_conditions:
   - Runtime ledger read, validation, or compare-and-swap verification fails.
