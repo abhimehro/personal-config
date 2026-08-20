@@ -1,6 +1,6 @@
 # Automated PR Completion Agent
 
-**Version:** 1.3 **Scope:** Own the nonterminal backlog left by the Review and
+**Version:** 1.4 **Scope:** Own the nonterminal backlog left by the Review and
 Salvage agents across the configured repositories. The Completion Agent is the
 third stage in the daily PR workflow, not a second review pass or a second
 salvage implementation.
@@ -182,10 +182,11 @@ Run after the existing review and salvage stages at `0 19 * * *`, with one
 concurrent run, a maximum of 20 reconciliations, five decision packets, and five
 post-calibration actions. Use the paste-ready calibration or completion export
 in `docs/cursor-automations/exports/`; the live Cursor Dashboard is canonical
-for current trigger, connection, and enablement state. Its prompt-referenced MCP
-set is Notion, Memory, Sequential thinking, GitKraken, cloudrun, Linear,
-codescene, julesServer, Snyk, and Sonatype-mcp, while its wider connected
-workspace inventory is not an additional action authority. During calibration,
+for current trigger, connection, and enablement state. The Dashboard-referenced
+MCP set for this stage is named in the calibration and completion prompts
+(`gh` reads, Notion packets, scanners as hold evidence; `gh` mutations only
+after ledger `APPROVED`). A wider connected workspace inventory is not an
+additional action authority. During calibration,
 the report-only prohibitions control even when a visible integration is
 connected. The bounded-completion variant may use `prComment.allowApprove` only
 after validated ledger approval. Shared memory is enabled as a namespaced cache

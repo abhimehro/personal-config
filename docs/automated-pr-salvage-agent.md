@@ -1,6 +1,6 @@
 # Automated PR Salvage & Recovery Agent
 
-**Version:** 1.3 **Role:** Stage 2 in the durable three-stage PR lifecycle.
+**Version:** 1.4 **Role:** Stage 2 in the durable three-stage PR lifecycle.
 **Scope:** Convert one bounded, valuable, nonterminal PR item into a focused,
 tested draft recovery, or record why recovery is not currently safe.
 
@@ -239,13 +239,13 @@ semantics.
 ## Cursor configuration
 
 The Stage 2 Cursor automation runs at `0 17 * * *` UTC with one concurrent run
-and a maximum of five recovery candidates. The live Dashboard exposes the
-shared, broader MCP workspace inventory and explicitly references Notion,
-Memory, Sequential thinking, GitKraken, cloudrun, Linear, codescene,
-julesServer, Snyk, and Sonatype-mcp in the prompt. Tool visibility is not
-authority: Stage 2 remains draft-only and must not approve, request review, mark
-ready, merge, close, force-push, alter rulesets or workflow permissions, or use
-a connected tool to bypass its bounded-recovery contract.
+and a maximum of five recovery candidates. The live Dashboard exposes a shared
+MCP workspace inventory; the Dashboard-referenced MCP set for this stage is
+named in `prompts/daily-pr-salvage.md` (`gh` drafts, codescene, Context7,
+Sonatype pins). Tool visibility is not authority: Stage 2 remains draft-only
+and must not approve, request review, mark ready, merge, close, force-push,
+alter rulesets or workflow permissions, or use a connected tool to bypass its
+bounded-recovery contract.
 
 See
 [Three-Stage PR Lifecycle in Cursor Automations](cursor-automations/three-stage-pr-lifecycle.md)

@@ -26,14 +26,18 @@ def sample_policy():
             ],
             "identity_classification": {
                 "source": "github_api_with_token_authored_provenance",
-                "revision": "2026-08-20",
+                "revision": "2026-08-20-hyphen",
                 "required_independent_signals": 2,
                 "maintainer_token_logins": ["abhimehro"],
                 "branch_prefixes": [
                     "jules/",
+                    "jules-",
                     "sentinel/",
+                    "sentinel-",
                     "bolt/",
+                    "bolt-",
                     "palette/",
+                    "palette-",
                     "automation-",
                     "daily-qa",
                     "chore/jules",
@@ -144,6 +148,84 @@ class TestTokenAuthoredIdentity(unittest.TestCase):
                 "user": {"login": "abhimehro", "type": "User"},
                 "head": {"ref": "jules/restore-identity"},
                 "title": "[jules] restore token-authored detection",
+            },
+            policy,
+        )
+        self.assertEqual(verdict.author_type, "BOT")
+        self.assertEqual(verdict.method, "token_authored_signals")
+
+    def test_hyphen_jules_token_authored_pr_is_bot(self):
+        verdict = classify_pr_identity(
+            {
+                "author": {"login": "abhimehro", "is_bot": False},
+                "headRefName": "jules-1607-refresh-readme",
+                "title": "[jules] refresh README",
+            },
+            sample_policy(),
+        )
+        self.assertEqual(verdict.author_type, "BOT")
+        self.assertEqual(verdict.method, "token_authored_signals")
+        self.assertIn("branch", verdict.signals)
+        self.assertIn("title", verdict.signals)
+
+    def test_hyphen_bolt_plus_title_is_bot(self):
+        verdict = classify_pr_identity(
+            {
+                "user": {"login": "abhimehro", "type": "User"},
+                "head": {"ref": "bolt-optimize-display-summary"},
+                "title": "Bolt: compact display summary",
+            },
+            sample_policy(),
+        )
+        self.assertEqual(verdict.author_type, "BOT")
+        self.assertIn("branch", verdict.signals)
+        self.assertIn("title", verdict.signals)
+
+    def test_hyphen_palette_and_sentinel_plus_title_are_bot(self):
+        palette = classify_pr_identity(
+            {
+                "author": {"login": "abhimehro"},
+                "headRefName": "palette-ux-font-colour",
+                "title": "[palette] Excel fontColour",
+            },
+            sample_policy(),
+        )
+        sentinel = classify_pr_identity(
+            {
+                "author": {"login": "abhimehro"},
+                "headRefName": "sentinel-cwe78-quote",
+                "title": "sentinel: quote shell args",
+            },
+            sample_policy(),
+        )
+        self.assertEqual(palette.author_type, "BOT")
+        self.assertEqual(sentinel.author_type, "BOT")
+
+    def test_hyphen_branch_alone_stays_human(self):
+        verdict = classify_pr_identity(
+            {
+                "author": {"login": "abhimehro"},
+                "headRefName": "jules-1607-docs",
+                "title": "Refresh README",
+            },
+            sample_policy(),
+        )
+        self.assertEqual(verdict.author_type, "HUMAN")
+        self.assertEqual(verdict.method, "human_default")
+
+    def test_live_config_classifies_hyphen_jules_pr(self):
+        root = Path(__file__).resolve().parents[1]
+        config = yaml.safe_load(
+            (root / "tasks/pr-review-agent.config.yaml").read_text(encoding="utf-8")
+        )
+        policy = identity_policy_from_config(config)
+        self.assertIn("jules-", policy.branch_prefixes)
+        self.assertIn("jules/", policy.branch_prefixes)
+        verdict = classify_pr_identity(
+            {
+                "user": {"login": "abhimehro", "type": "User"},
+                "head": {"ref": "jules-1607-restore-identity"},
+                "title": "[jules] restore hyphen token-authored detection",
             },
             policy,
         )
