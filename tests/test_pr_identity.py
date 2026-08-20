@@ -155,31 +155,29 @@ class TestTokenAuthoredIdentity(unittest.TestCase):
         self.assertEqual(verdict.author_type, "UNKNOWN")
 
     def test_allowlisted_commenter_plus_branch_is_bot(self):
-        verdict = classify_pr_identity(
-            {
-                "author": {"login": "abhimehro"},
-                "headRefName": "bolt/perf-cache",
-                "title": "Speed up lookups",
-                "comments": [{"author": {"login": "google-labs-jules[bot]"}}],
-            },
-            sample_policy(),
-        )
+        pr = self._make_pr(author_login="abhimehro", head_ref="bolt/perf-cache",
+                           title="Speed up lookups",
+                           comments=[{"author": {"login": "google-labs-jules[bot]"}}])
+        verdict = classify_pr_identity(pr, sample_policy())
         self.assertEqual(verdict.author_type, "BOT")
         self.assertIn("branch", verdict.signals)
         self.assertIn("timeline_comment", verdict.signals)
 
     def test_maintainer_comment_is_not_a_bot_signal(self):
-        verdict = classify_pr_identity(
-            {
-                "author": {"login": "abhimehro"},
-                "headRefName": "feat/human-work",
-                "title": "Human change",
-                "comments": [{"user": {"login": "abhimehro"}}],
-            },
-            sample_policy(),
-        )
+        pr = self._make_pr(author_login="abhimehro", head_ref="feat/human-work",
+                           title="Human change",
+                           comments=[{"user": {"login": "abhimehro"}}])
+        verdict = classify_pr_identity(pr, sample_policy())
         self.assertEqual(verdict.author_type, "HUMAN")
         self.assertNotIn("timeline_comment", verdict.signals)
+
+    def _make_pr(self, author_login, head_ref, title, comments):
+        return {
+            "author": {"login": author_login},
+            "headRefName": head_ref,
+            "title": title,
+            "comments": comments,
+        }
 
 
 if __name__ == "__main__":

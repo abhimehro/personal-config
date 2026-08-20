@@ -71,26 +71,48 @@ def validate_identity_classification(config: dict[str, Any]) -> None:
         "bot_commit_email_suffixes",
     }
     require_fields(identity, required, required, "config.identity_classification")
+    _validate_identity_source(identity)
+    _validate_identity_ambiguous(identity)
+    _validate_identity_inference(identity)
+    policy = identity_policy_from_config(config)
+    inputs = require_mapping(
+        config["lifecycle"]["policy_inputs"], "config.lifecycle.policy_inputs"
+    )
+    _validate_identity_revision_match(policy, inputs)
+    _validate_identity_signals(policy)
+
+
+def _validate_identity_source(identity: dict[str, Any]) -> None:
     if identity["source"] != "github_api_with_token_authored_provenance":
         raise ValueError("config.identity_classification.source: unsupported policy")
+
+
+def _validate_identity_ambiguous(identity: dict[str, Any]) -> None:
     if identity["ambiguous_identity"] != "HUMAN":
         raise ValueError(
             "config.identity_classification.ambiguous_identity: must be HUMAN"
         )
+
+
+def _validate_identity_inference(identity: dict[str, Any]) -> None:
     inference = identity["title_branch_body_comment_inference"]
     if inference != "token_authored_provenance_only":
         raise ValueError(
             "config.identity_classification.title_branch_body_comment_inference: "
             "must be token_authored_provenance_only"
         )
-    policy = identity_policy_from_config(config)
-    inputs = require_mapping(
-        config["lifecycle"]["policy_inputs"], "config.lifecycle.policy_inputs"
-    )
+
+
+def _validate_identity_revision_match(
+    policy: Any, inputs: dict[str, Any]
+) -> None:
     if policy.revision != inputs["identity_classification_revision"]:
         raise ValueError(
             "config.identity_classification.revision: must match policy_inputs"
         )
+
+
+def _validate_identity_signals(policy: Any) -> None:
     if policy.required_independent_signals < 2:
         raise ValueError(
             "config.identity_classification.required_independent_signals: must be >= 2"

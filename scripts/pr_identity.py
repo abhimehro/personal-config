@@ -58,17 +58,9 @@ class IdentityVerdict:
 
 
 def identity_policy_from_config(config: Mapping[str, Any]) -> IdentityPolicy:
-    identity = config.get("identity_classification")
-    if not isinstance(identity, Mapping):
-        raise ValueError("config.identity_classification: mapping required")
-    bots = config.get("bot_authors")
-    if not isinstance(bots, list) or not bots:
-        raise ValueError("config.bot_authors: non-empty list required")
-    required = identity.get("required_independent_signals")
-    if not isinstance(required, int) or required < 2:
-        raise ValueError(
-            "config.identity_classification.required_independent_signals: must be >= 2"
-        )
+    identity = _require_identity_mapping(config)
+    bots = _require_bot_authors(config)
+    required = _require_independent_signals(identity)
     return IdentityPolicy(
         bot_authors=tuple(str(item) for item in bots),
         maintainer_token_logins=_require_str_tuple(
@@ -84,6 +76,29 @@ def identity_policy_from_config(config: Mapping[str, Any]) -> IdentityPolicy:
         source=str(identity.get("source") or ""),
         revision=str(identity.get("revision") or ""),
     )
+
+
+def _require_identity_mapping(config: Mapping[str, Any]) -> Mapping[str, Any]:
+    identity = config.get("identity_classification")
+    if not isinstance(identity, Mapping):
+        raise ValueError("config.identity_classification: mapping required")
+    return identity
+
+
+def _require_bot_authors(config: Mapping[str, Any]) -> list[str]:
+    bots = config.get("bot_authors")
+    if not isinstance(bots, list) or not bots:
+        raise ValueError("config.bot_authors: non-empty list required")
+    return bots
+
+
+def _require_independent_signals(identity: Mapping[str, Any]) -> int:
+    required = identity.get("required_independent_signals")
+    if not isinstance(required, int) or required < 2:
+        raise ValueError(
+            "config.identity_classification.required_independent_signals: must be >= 2"
+        )
+    return required
 
 
 def classify_pr_identity(
@@ -145,18 +160,25 @@ def extract_github_identity(
 ) -> tuple[str, str | None, bool | None]:
     author = _mapping(pr.get("author")) or _mapping(pr.get("user"))
     login = str(author.get("login") or "").strip()
+    app_slug_text = _extract_app_slug(author, login)
+    is_bot = _extract_is_bot(author)
+    return login, app_slug_text or None, is_bot
+
+
+def _extract_app_slug(author: dict[str, Any], login: str) -> str | None:
     app_slug = author.get("app_slug") or author.get("slug")
     app_slug_text = str(app_slug).strip() if app_slug else None
     if login.lower().startswith("app/") and not app_slug_text:
         app_slug_text = login[4:]
-    is_bot: bool | None
+    return app_slug_text
+
+
+def _extract_is_bot(author: dict[str, Any]) -> bool | None:
     if "is_bot" in author:
-        is_bot = bool(author.get("is_bot"))
-    elif author.get("type") == "Bot":
-        is_bot = True
-    else:
-        is_bot = None
-    return login, app_slug_text or None, is_bot
+        return bool(author.get("is_bot"))
+    if author.get("type") == "Bot":
+        return True
+    return None
 
 
 def identities_match(candidate: str, allowlist: Sequence[str]) -> bool:
@@ -189,20 +211,50 @@ def collect_provenance_signals(
     pr: Mapping[str, Any], policy: IdentityPolicy
 ) -> tuple[str, ...]:
     signals: list[str] = []
+    _check_branch_signal(pr, policy, signals)
+    _check_title_signal(pr, policy, signals)
+    _check_body_signal(pr, policy, signals)
+    _check_comment_signal(pr, policy, signals)
+    _check_commit_email_signal(pr, policy, signals)
+    return tuple(signals)
+
+
+def _check_branch_signal(
+    pr: Mapping[str, Any], policy: IdentityPolicy, signals: list[str]
+) -> None:
     branch = _branch_name(pr)
     if branch and _prefix_match(branch.lower(), policy.branch_prefixes):
         signals.append(SIGNAL_BRANCH)
+
+
+def _check_title_signal(
+    pr: Mapping[str, Any], policy: IdentityPolicy, signals: list[str]
+) -> None:
     title = str(pr.get("title") or "")
     if title and _keyword_match(title.lower(), policy.title_keywords):
         signals.append(SIGNAL_TITLE)
+
+
+def _check_body_signal(
+    pr: Mapping[str, Any], policy: IdentityPolicy, signals: list[str]
+) -> None:
     body = str(pr.get("body") or "")
     if body and _keyword_match(body.lower(), policy.body_markers):
         signals.append(SIGNAL_BODY)
+
+
+def _check_comment_signal(
+    pr: Mapping[str, Any], policy: IdentityPolicy, signals: list[str]
+) -> None:
     if _allowlisted_commenter(pr, policy):
         signals.append(SIGNAL_COMMENT)
+
+
+def _check_commit_email_signal(
+    pr: Mapping[str, Any], policy: IdentityPolicy, signals: list[str]
+) -> None:
     if _bot_commit_email(pr, policy):
         signals.append(SIGNAL_COMMIT_EMAIL)
-    return tuple(signals)
 
 
 def _branch_name(pr: Mapping[str, Any]) -> str:
