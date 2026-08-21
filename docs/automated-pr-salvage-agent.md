@@ -226,10 +226,14 @@ new evidence.
 ## Run records, lessons, and handoffs
 
 Append the Stage 2 run to `tasks/salvage-session-reports.md` using
-`tasks/pr-stage-run-record.example.md`. Update only Stage-2-owned ledger
-entries. Add a lesson only when it changes a future routing, verification, or
-safety rule. Do not turn raw logs, speculative model output, or repetitive
-failures into durable policy.
+`tasks/pr-stage-run-record.example.md`, on the **same** personal-config
+`pr-lifecycle-docs-YYYYMMDD` PR Stage 1 opened (create that lineage once
+only if Stage 1 missed it). Push to that branch; do not open a sibling docs
+PR. Optional bulky snapshot: `tasks/pr-salvage-YYYY-MM-DD*.md`. Update only
+Stage-2-owned ledger entries. Add a lesson only as an EOF append when it
+changes a future routing, verification, or safety rule. Do not edit
+`AGENTS.md`, `tasks/todo.md`, or another stage's report. Do not turn raw
+logs, speculative model output, or repetitive failures into durable policy.
 
 Every Stage 3 handoff must include the draft URL or failed-recovery reason,
 immutable anchors, current changed paths, verification output, prior attempts,

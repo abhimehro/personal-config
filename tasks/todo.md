@@ -30,3 +30,16 @@ No Endor fleet scans. Do not rewrite AGENTS.md Learned* sections.
 - No secrets in commits; no force-push; no PR merges
 - Stage 2 never merges; salvage never autonomously merges
 - Record Endor skill as out_of_scope unless verified pipeline usage exists
+
+# Daily agent-docs lineage (2026-08-21)
+
+Stop Stage 1/2/3 from each opening a personal-config docs PR that rewrites the
+same `tasks/*` files. Git run records are for agents; Notion stays the human
+plane (packets + personal notes).
+
+- [x] Encode one UTC-day `pr-lifecycle-docs-YYYYMMDD` PR in the lifecycle contract
+- [x] Stage 1 creates/lands that lineage; Stage 2/3 only push to it
+- [x] Exclusive files: no cron edits to `AGENTS.md` or `tasks/todo.md`
+- [x] Update stage specs, prompts, exports, lesson 0gj, retro P1
+- [x] Add prompt contract test; `sync_cursor_export_prompts.py --write` + `--check`
+- [ ] Commit and push on #2052; do not bump `policy_revision`

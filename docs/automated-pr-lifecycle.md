@@ -43,12 +43,71 @@ human-authored PRs never become routine merge or close candidates.
 
 The runtime ledger is the only source of an item's current owner. A run report
 is evidence of what a stage did; it cannot silently transfer ownership. A stage
-must never edit another stage's run report. Same-day run records often live on
-**unmerged documentation PRs**; later stages must fetch those open heads (or
-the producing branch) in addition to `main` `tasks/*-session-reports.md`. The
-Git-native write, compare-and-swap, runtime capability, inventory-exclusion,
-and bootstrap protocol is normative in
+must never edit another stage's run report. Continuity for **agents** is the
+runtime ledger plus the **one** daily documentation lineage below, not three
+overlapping `tasks/*` PRs. The maintainer's human-facing notes live in Notion
+(Stage 3 packets and personal summaries). Do not open extra GitHub PRs to
+mirror Notion, and do not paste run records into Notion as a substitute for
+git continuity. The Git-native write, compare-and-swap, runtime capability,
+inventory-exclusion, and bootstrap protocol is normative in
 [PR Lifecycle Runtime Ledger](pr-lifecycle-runtime-ledger.md).
+
+## Agent documentation plane (daily lineage)
+
+Session docs exist so later agents can read what happened. They are not a
+second human inbox. Lesson **0fk** / **0gf** and the 2026-08-20 run (#2044,
+#2047, #2048, then #2051/#2052) show the failure mode: each stage opens its
+own PR against `tasks/*-session-reports.md` / `tasks/lessons.md`, then
+merging one dirties the rest.
+
+### One PR per UTC day
+
+Stages 1/2/3 share a single personal-config documentation PR for that UTC date:
+
+| Field | Value |
+| ----- | ----- |
+| Branch | `pr-lifecycle-docs-YYYYMMDD` (UTC date of the Stage 1 fire) |
+| Title | `docs(pr-lifecycle): YYYY-MM-DD run records` |
+| Labels | Existing `documentation` only. Locate the PR by **branch name**, not a new label. |
+
+**Stage 1 (15:00)** creates the branch from current `main` if it does not
+exist, opens that one PR, and appends the Stage 1 run record. **Stage 2
+(17:00)** and **Stage 3 (19:00)** fetch that open PR and **push commits onto
+its branch**. They must not open a second or third overlapping docs PR. If
+Stage 1 failed to open the lineage, Stage 2 may create it once; Stage 3 may
+create it only if both prior stages missed. Never open a sibling that also
+touches `tasks/*-session-reports.md` or `tasks/lessons.md`.
+
+Policy or retrospective PRs (prompt/spec edits, `AGENTS.md` learned sections)
+stay off this lineage. Cron stages must not edit `AGENTS.md` or
+`tasks/todo.md`.
+
+### Exclusive files
+
+| Writer | May write | Must not write |
+| ------ | --------- | -------------- |
+| Stage 1 | `tasks/review-session-reports.md`, `tasks/pr-review-YYYY-MM-DD*.md`, append-only `tasks/lessons.md` | salvage/completion reports, `AGENTS.md`, `tasks/todo.md` |
+| Stage 2 | `tasks/salvage-session-reports.md`, `tasks/pr-salvage-YYYY-MM-DD*.md`, append-only `tasks/lessons.md` | review/completion reports, `AGENTS.md`, `tasks/todo.md` |
+| Stage 3 | `tasks/completion-session-reports.md`, `tasks/pr-completion-YYYY-MM-DD*.md`, append-only `tasks/lessons.md` | review/salvage reports, `AGENTS.md`, `tasks/todo.md` |
+
+Prefer a **new dated file** for bulky inventory so the rolling log stays a
+short append. Lessons are EOF appends only; never rewrite earlier entries.
+
+### Stage 1 lands the lineage
+
+The next Stage 1 run treats an older `pr-lifecycle-docs` PR as routine
+docs-only BOT work when every existing routine predicate passes (readable
+required checks, MERGEABLE, no sticky sensitive paths, no unresolved hold).
+It submits `/trunk merge` (counts toward the 20-action cap). Stage 2 and
+Stage 3 never merge this PR. During `REPORT_ONLY`, Stage 3 still only
+appends. If Trunk cannot prepare a test branch (GitHub App or ruleset),
+record `HOLD_PLATFORM` and do not fall back to raw GitHub squash.
+
+### Continuity read
+
+Every stage reads, in order: today's open `pr-lifecycle-docs-YYYYMMDD` head,
+then yesterday's lineage if still open, then `main`
+`tasks/*-session-reports.md`. Do not assume three sibling docs PRs.
 
 ## Merge authority for Stage 2 outputs
 

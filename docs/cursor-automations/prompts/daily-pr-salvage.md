@@ -66,4 +66,9 @@ revision, or evidence changed. Count recovery and mutation attempts in the
 ledger. Send routine replacements toward Stage 1 re-ingest; send rejected
 recovery, platform gap, policy question, canonical conflict, or non-security
 closure candidates to Stage 3 with a revision-checked handoff. Merge authority
-for salvage outputs is never this stage.
+for salvage outputs is never this stage. Append the Stage 2 run record on the
+same `pr-lifecycle-docs-YYYYMMDD` PR (create that lineage once only if Stage 1
+missed it). Push to that branch; do not open a sibling docs PR. Write only
+`tasks/salvage-session-reports.md`, optional `tasks/pr-salvage-YYYY-MM-DD*.md`,
+and EOF lessons. Do not edit `AGENTS.md` or `tasks/todo.md`. Notion stays the
+human packet plane.

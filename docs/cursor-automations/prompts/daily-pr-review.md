@@ -87,5 +87,13 @@ superseded BOT items when the head SHA still matches. Record in-scope BOT PRs
 skipped only because the inventory cap filled as overflow, not as unowned.
 Stage 1 never auto-acts on security-sensitive or ordinary human-authored work.
 A docs-only session with zero merges, closes, or complete Stage 2 work items is
-a failed run, not a successful intake. Fetch same-day unmerged Stage 1 run-record
-PRs in addition to `main` session reports.
+a failed run, not a successful intake. Agent run records use one personal-config
+lineage per UTC day: branch `pr-lifecycle-docs-YYYYMMDD`, title
+`docs(pr-lifecycle): YYYY-MM-DD run records`. Locate it by branch name. Create
+that PR from `main` if missing; append only Stage 1 files
+(`tasks/review-session-reports.md`, optional `tasks/pr-review-YYYY-MM-DD*.md`,
+EOF `tasks/lessons.md`). Do not edit `AGENTS.md`, `tasks/todo.md`, or another
+stage's report. Push later stages onto this branch instead of opening siblings.
+`/trunk merge` an older green `pr-lifecycle-docs` PR when routine predicates
+pass. Continuity read is today's lineage head, then yesterday's if open, then
+`main`. Notion is the human plane (packets); do not duplicate run records there.

@@ -399,7 +399,9 @@ Agent-specific rules:
   item for each replacement PR, and leave merge to Stage 1 routine re-ingest,
   Stage 3 after approved calibration, or a human. See
   `docs/automated-pr-lifecycle.md` (Merge authority for Stage 2 outputs) and
-  `docs/pr-lifecycle-pipeline-run-retro-2026-08-20.md`.
+  `docs/pr-lifecycle-pipeline-run-retro-2026-08-20.md`. Cron session reports
+  belong on the shared `pr-lifecycle-docs-YYYYMMDD` lineage (Stage 1 lands it);
+  do not open a third overlapping `tasks/*` docs PR. Notion stays human packets.
 - Always run `gh stack rebase --no-trunk` immediately before
   `gh stack submit`/`merge`; `gh stack init` with multiple branch names creates
   them off trunk in parallel, not chained, until the first rebase.

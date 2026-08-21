@@ -62,7 +62,9 @@ evidence and immutable base/head SHA anchors. Do not repeat an unchanged action
 owned by another stage. Append a run record, update only the ledger entries you
 own, and leave every nonterminal item with one next owner, safe default, bounded
 next action, evidence links, and expiry. A changed SHA invalidates prior evidence
-and returns the item to Stage 1.
+and returns the item to Stage 1. Agent-facing run records share one
+`pr-lifecycle-docs-YYYYMMDD` PR per UTC day (Stage 1 creates and later
+`/trunk merge`s it; Stage 2/3 only push). Notion is the human plane.
 ```
 
 ## Approval and connector settings
@@ -105,6 +107,12 @@ After `APPROVED` it may merge salvage drafts only after an independent
 predicate re-read. Human review is reserved for a one-question Stage 3 packet
 only when policy or security judgment is irreducible; humans also merge salvage
 drafts that are not Stage-1-routine while calibration is open.
+
+Agent-facing session docs share one `pr-lifecycle-docs-YYYYMMDD` PR per UTC
+day (see `docs/automated-pr-lifecycle.md`). Stage 1 creates that PR and
+later Trunk-merges older green lineage PRs as routine docs. Stage 2/3 push
+run records onto the same branch and never open overlapping `tasks/*`
+siblings. Notion stays packets and maintainer notes, not a second git log.
 
 ## Calibration and rollback
 

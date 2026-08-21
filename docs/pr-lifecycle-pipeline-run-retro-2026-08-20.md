@@ -414,8 +414,9 @@ key. Do not CAS-write the runtime ledger from a docs PR (lesson 0gc).
 
 ### P0 — Continuity reads include unmerged same-day run-record PRs
 
-**Change:** Every stage reads the latest open docs PR / branch for its own and
-upstream stage records, not only `main` `tasks/*-session-reports.md`.
+**Change:** Every stage reads today's `pr-lifecycle-docs-YYYYMMDD` head (and
+yesterday's if still open) for run records, not only `main`
+`tasks/*-session-reports.md`. Do not assume three sibling docs PRs.
 
 **Acceptance:** Stage 3 identity block cites `#2044` / `#2047` (or the day’s
 heads) when those PRs are open.
@@ -443,14 +444,18 @@ invisible.
 **Acceptance:** The 15 rpce siblings appear as owned `NOT_RUN` / Stage 1
 backlog, not “forgotten.”
 
-### P1 — Docs-record lineage on personal-config
+### P0 — Docs-record lineage on personal-config (daily `pr-lifecycle-docs`)
 
-**Change:** Keep one squashable docs lineage (lesson 0fk class: #2016 CONFLICTING
-plus #2044/#2047/#2048). Human or Stage 1 Trunk-queue a docs-only audit PR after
-review. Do not stack a fourth overlapping `tasks/*-session-reports.md` PR
-without rebasing.
+**Change:** One branch `pr-lifecycle-docs-YYYYMMDD` per UTC day. Stage 1 creates
+it and later `/trunk merge`s older green lineage PRs as routine docs. Stage 2/3
+push onto that branch; they never open overlapping `tasks/*` siblings. Exclusive
+files; cron does not edit `AGENTS.md` or `tasks/todo.md`. Notion stays the human
+plane (packets + personal notes). See lifecycle contract § Agent documentation
+plane and lesson **0gj**.
 
-**Acceptance:** Operators can read yesterday’s Stage 1/2/3 records from `main`.
+**Acceptance:** Next live day has at most one personal-config session-docs PR.
+Yesterday’s Stage 1/2/3 records are either on that open head or on `main` after
+Stage 1 lands it.
 
 ### P1 — rpce / Swift platform skip
 
@@ -488,14 +493,14 @@ bump; calibration 1/7 must not reset):
 | Path | Change |
 | ---- | ------ |
 | `docs/pr-lifecycle-pipeline-run-retro-2026-08-20.md` | This audit |
-| `docs/automated-pr-lifecycle.md` | Salvage-output merge authority; continuity of unmerged run records; cap text 50/20 |
+| `docs/automated-pr-lifecycle.md` | Salvage-output merge authority; daily `pr-lifecycle-docs` lineage; cap text 50/20 |
 | `docs/automated-pr-review-agent.md` | Re-ingest salvage replacements; fix Scheduling cap; expired close-candidates |
 | `docs/automated-pr-salvage-agent.md` | Ledger item for replacement PRs; re-read `isDraft` (0gd); stale allowed_paths |
 | `docs/automated-pr-completion-agent.md` | Ingest observed salvage drafts as items; do not leave extras |
 | `docs/cursor-automations/three-stage-pr-lifecycle.md` | Handoff of salvage drafts; merger is Stage 1 or post-calib Stage 3 or human |
 | `docs/cursor-automations/prompts/daily-pr-*.md` | Matching prompt sentences |
 | `AGENTS.md` | Operational salvage-merge note in stacked-PR / salvage bullets. **Not** Learned* |
-| `tasks/lessons.md` | 0gd, 0ge, 0gf, 0gi |
+| `tasks/lessons.md` | 0gd, 0ge, 0gf, 0gi, 0gj |
 | `tasks/todo.md` | This plan’s checkboxes |
 
 Not changed: runtime ledger, identity allowlist, sensitive taxonomy, JSON
@@ -507,21 +512,26 @@ schema, GitHub Actions, Endor.
 
 ```text
 Stage 1 (15:00)  inventory (50) including salvage-labeled + overflow
+                 ├── open or reuse pr-lifecycle-docs-YYYYMMDD (agent run records)
+                 ├── /trunk merge older green pr-lifecycle-docs PRs
                  ├── routine BOT non-sensitive → squash / Trunk / close
                  ├── bounded mechanical → complete Stage 2 work item
                  └── else → Stage 3
 Stage 2 (17:00)  recover (5) from trusted main
                  ├── tested draft + ledger ITEM for the replacement
                  │     next_owner = stage1 (routine) or stage3 (canonical/security)
+                 ├── push Stage 2 run record onto today's docs lineage (no sibling PR)
                  └── failed / HOLD_PLATFORM → Stage 3 (no branch)
 Stage 3 (19:00)  REPORT_ONLY until 7 successful + human APPROVED
                  ├── ingest any salvage draft missing from ledger
+                 ├── push Stage 3 run record onto today's docs lineage (no sibling PR)
                  ├── close-candidate → Stage 1 (cooldown)
                  ├── mechanical remainder → Stage 2 work item
-                 ├── irreducible → one-question packet
+                 ├── irreducible → one-question Notion packet (human plane)
                  └── after APPROVED: merge salvage drafts only after independent predicates
-Human            merge salvage drafts during REPORT_ONLY; answer packets;
-                 never expect Stage 2 to merge
+Human            merge salvage drafts during REPORT_ONLY; answer Notion packets;
+                 never expect Stage 2 to merge; do not use git session PRs as a
+                 second personal notebook
 ```
 
 Separation of duties: **builder ≠ merger**. Stage 2 never gains approve/merge.

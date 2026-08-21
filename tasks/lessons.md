@@ -1,5 +1,19 @@
 # Lessons Learned
 
+## Lesson 0gj: One daily docs lineage, not three colliding session PRs (2026-08-21)
+
+**Pattern:** Stage 1/2/3 each opened a personal-config docs PR against the same
+`tasks/*-session-reports.md` / `lessons.md` files (#2044/#2047/#2048, then
+#2051/#2052). Merging one dirties the rest (0fk). Later stages read `main` and
+miss unmerged records (0gf). The maintainer already keeps takeaways in Notion.
+**Rule:** One branch `pr-lifecycle-docs-YYYYMMDD` per UTC day. Stage 1 creates
+it and `/trunk merge`s older green lineage PRs as routine docs. Stage 2/3 push
+onto that branch only. Exclusive files; no cron edits to `AGENTS.md` or
+`tasks/todo.md`. Notion stays the human plane (packets + personal notes); git
+run records stay for agents. Do not open a sibling overlapping docs PR.
+**Detection cost:** Low — two open personal-config PRs both listing
+`tasks/*-session-reports.md`.
+
 ## Lesson 0gi: Linux cloud runners cannot salvage Swift/macOS repos (2026-08-21)
 
 **Pattern:** Stage 2 on the 2026-08-20 live run copied rpce a11y labels for
@@ -18,10 +32,11 @@ the salvage on Linux. Platform skip belongs in config, not rediscovery.
 #2048. Stage 3 read `main` `tasks/review-session-reports.md` (morning v1.3) and
 older salvage records, not the 15:00 file. Ledger CAS still carried Stage 2.
 Cursor `pr_created` events titled those docs PRs “Draft”; live they are ready.
-**Rule:** Later stages fetch the open same-UTC-day documentation PR / branch for
-upstream records, not only `main`. Do not assume a run record is continuous
-because a file exists on `main` under a similar date. Re-read `isDraft` on
-docs PRs too (0gd).
+**Rule:** Later stages fetch today's `pr-lifecycle-docs-YYYYMMDD` head (lesson
+**0gj**), then yesterday's lineage if still open, then `main`. Do not assume a
+run record is continuous because a file exists on `main` under a similar date.
+Re-read `isDraft` on docs PRs too (0gd). Do not open a second overlapping
+session-docs PR.
 **Detection cost:** Low — `gh pr list --search` for that day’s stage docs PRs.
 
 ## Lesson 0ge: Salvage drafts need a merger that is not Stage 2 (2026-08-21)

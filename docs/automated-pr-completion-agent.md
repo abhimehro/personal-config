@@ -51,11 +51,12 @@ take no action against the old evidence. If a human or prior agent already
 merged or closed the PR, record the verified terminal outcome with an evidence
 URL. Do not reopen it or repeat the abandoned work.
 
-Read the latest **unmerged** Stage 1/2/3 documentation PRs for the same UTC day
-when those heads exist; `main` `tasks/*-session-reports.md` can lag. If a
-salvage draft is open in GitHub but absent from the ledger, ingest it as an
-item before packing or skipping it. Do not leave “extra drafts observed, not in
-ledger.”
+Read today's open `pr-lifecycle-docs-YYYYMMDD` head first, then yesterday's
+lineage if still open, then `main` `tasks/*-session-reports.md`. Do not open
+a third overlapping docs PR; push the Stage 3 run record onto that lineage
+(create it only if both prior stages missed). If a salvage draft is open in
+GitHub but absent from the ledger, ingest it as an item before packing or
+skipping it. Do not leave “extra drafts observed, not in ledger.”
 
 ## Completion decision tree
 
@@ -165,8 +166,10 @@ be sent to Stage 2.
 
 ## Reporting, lessons, and self-healing
 
-Append every run to `tasks/completion-session-reports.md` using the shared
-run-record template. Each item record is mandatory: repository, PR, ledger key,
+Append every run to `tasks/completion-session-reports.md` (optional bulky
+snapshot `tasks/pr-completion-YYYY-MM-DD*.md`) using the shared
+run-record template, on the daily `pr-lifecycle-docs-YYYYMMDD` lineage.
+Do not edit `AGENTS.md`, `tasks/todo.md`, or another stage's report. Each item record is mandatory: repository, PR, ledger key,
 observed/ledger base and head SHA, owner before/after, GitHub identity,
 classification/risk, guardrail outcome, changed paths, evidence URLs,
 proposed/actual route, calibration or bounded mode, audit-record ID,

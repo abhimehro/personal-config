@@ -66,7 +66,12 @@ through a complete Stage 2 work item. Create a human packet only for irreducible
 security, policy, platform, or canonical judgment. Keep any stale or unavailable
 evidence at `HOLD_EVIDENCE` or `ANALYSIS_ERROR` with the safe default. If a
 salvage draft is open in GitHub but missing from the ledger, ingest it as an
-item; do not leave extras. Read same-day unmerged Stage 1/2 documentation PRs,
-not only `main` session reports. Do not enable bounded completion until the
+item; do not leave extras. Read today's `pr-lifecycle-docs-YYYYMMDD` head, then
+yesterday's lineage if open, then `main` session reports. Push the Stage 3 run
+record onto that lineage (create it only if both prior stages missed); do not
+open a third overlapping docs PR. Write only `tasks/completion-session-reports.md`,
+optional `tasks/pr-completion-YYYY-MM-DD*.md`, and EOF lessons. Do not edit
+`AGENTS.md` or `tasks/todo.md`. Notion stays packets for the human; git run
+records stay for agents. Do not enable bounded completion until the
 ledger’s calibration record is `APPROVED` with a dated human approver, policy
 revision, scope, evidence, and rollback conditions.

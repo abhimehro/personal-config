@@ -66,4 +66,10 @@ Write the mandatory per-item completion record before each action and update it
 with the observed outcome afterwards. Never force-push, change rulesets or
 workflow permissions, request reviewers, mark ready, resolve conversations, or
 execute PR-head code in a privileged context. Automated approval remains a
-policy gate, not human security sign-off.
+policy gate, not human security sign-off. Append the Stage 3 run record on
+`pr-lifecycle-docs-YYYYMMDD` (create that lineage only if both prior stages
+missed it). Do not open a sibling docs PR. Write only
+`tasks/completion-session-reports.md`, optional
+`tasks/pr-completion-YYYY-MM-DD*.md`, and EOF lessons. Do not edit `AGENTS.md`
+or `tasks/todo.md`. Continuity read is today's lineage, then yesterday's if
+open, then `main`. Notion stays the human packet plane.

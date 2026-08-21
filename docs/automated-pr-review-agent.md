@@ -113,10 +113,15 @@ After each completion, re-check remaining PRs for new conflicts.
 
 ## Phase 4 — Reporting & Learning
 
-- Write session report by appending to `tasks/review-session-reports.md` (repos
-  processed, actions taken, escalations, consolidations, patterns, metrics).
-  Optionally also add a point-in-time snapshot as
-  `tasks/pr-review-YYYY-MM-DD.md` when a standalone dated file is needed.
+- Write the session report on the **daily documentation lineage**
+  (`pr-lifecycle-docs-YYYYMMDD` on personal-config). Create that branch/PR
+  from current `main` if it is missing; do not open a second overlapping
+  docs PR. Append to `tasks/review-session-reports.md` (repos processed,
+  actions taken, escalations, consolidations, patterns, metrics). Prefer a
+  point-in-time snapshot as `tasks/pr-review-YYYY-MM-DD.md` (or
+  `…-HHMM.md`) for bulky inventory. Also `/trunk merge` an older green
+  `pr-lifecycle-docs` PR when routine predicates pass (counts toward the
+  20-action cap).
 - Update the lifecycle ledger for every item currently owned by Stage 1, using
   the shared anchors, outcome, next owner, safe default, evidence, and bounded
   next action. A base or head SHA change must invalidate evidence and return the
@@ -127,13 +132,16 @@ After each completion, re-check remaining PRs for new conflicts.
 
 ### Conflict-proofing write boundaries
 
-- Review automation writes only to `tasks/review-session-reports.md` and the
+- Review automation writes only to `tasks/review-session-reports.md`, optional
+  `tasks/pr-review-YYYY-MM-DD*.md`, append-only `tasks/lessons.md`, and the
   Stage-1-owned entries in the fetched
   `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml` runtime ledger. The
   main-branch `tasks/pr-lifecycle-ledger.yaml` bootstrap pointer is never
   written as state.
-- Review automation must not write to `tasks/salvage-session-reports.md`.
-- Canonical policy docs are read-mostly; only update for policy/version changes.
+- Review automation must not write to `tasks/salvage-session-reports.md`,
+  `tasks/completion-session-reports.md`, `AGENTS.md`, or `tasks/todo.md`.
+- Canonical policy docs are read-mostly; only update for policy/version
+  changes, and never from the daily cron lineage.
 
 ## Phase 5 — Hand off the nonterminal tail
 
