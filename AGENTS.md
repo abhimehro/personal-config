@@ -654,10 +654,22 @@ symlink destinations are never followed. To target one hash directory:
 
 ## Learned User Preferences
 
-- Phase 2 PR salvage must never autonomously merge; open draft salvage or
-  infra-fix PRs and leave merge decisions to a human.
+- Stage 1/2/3 names the daily PR-lifecycle cron. In the gh-stack section,
+  Phase 1/Phase 2 are Review/Salvage *sessions*, and boundary S1 means those
+  session agents do not merge a stack unattended. S1 does not revoke Stage 1's
+  routine merge/close of bot-authored non-sensitive PRs.
+- Stage 2 PR salvage must never autonomously merge, approve, close, or request
+  review; open draft salvage or infra-fix PRs and leave merge decisions to a
+  human. Stage 1 holds routine merge and close authority for bot-authored
+  non-sensitive work.
 - Security, auth, secrets, and trust-boundary PRs stay escalated for human
   review even when CI is green.
+- Ordinary human-authored PRs stay untouched by the three-stage pipeline. Stage
+  3 files a one-question packet only when policy or security judgment is
+  irreducible.
+- Stage 3 stays `REPORT_ONLY` until seven successful calibrated runs and a dated
+  human `APPROVED` record; bounded completion stays off until then. Resetting
+  stale calibration to `REPORT_ONLY` / count 0 is not a successful run.
 
 ## Learned Workspace Facts
 
@@ -668,6 +680,23 @@ symlink destinations are never followed. To target one hash directory:
   `seatek_series_correction.egg-info/` files under
   `series_correction_project_updated` after editable installs; restore or
   discard those changes and do not commit them.
+- Runtime PR-lifecycle state is
+  `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml`, written with
+  `github_contents_api` CAS (blob-SHA precondition).
+  `tasks/pr-lifecycle-ledger.yaml` is a bootstrap pointer only; docs PRs on
+  `main` must not rewrite the ledger.
+- The three-stage pipeline covers seven repos (`personal-config`, `ctrld-sync`,
+  `email-security-pipeline`, `Seatek_Analysis`,
+  `Hydrograph_Versus_Seatek_Sensors_Project`,
+  `series_correction_project_updated`, `repoprompt-ce`). Stage 1 inventories at
+  most 50 items and skips SHA-unchanged work; a changed base/head SHA
+  invalidates prior evidence and returns the item to Stage 1. Stage 2 completes
+  at most five work items per run.
+- Stage 2 work-item IDs use `s2-YYYYMMDD-...`; Stage 3 ledger events use
+  `evt-s3-YYYYMMDD-...` (`ACKNOWLEDGEMENT`, `HANDOFF`, `CALIBRATION`).
+- RepoPrompt CE salvage that needs Swift or `make guardrails` cannot complete on
+  Linux cloud agents; leave `HOLD_PLATFORM` rather than retrying on Linux.
+- `personal-config` routine merges use the Trunk queue, not a raw GitHub squash.
 
 ## Agent shell (POSIX for coding agents)
 
