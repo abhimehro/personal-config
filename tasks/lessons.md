@@ -42,14 +42,18 @@ must exist; `gh pr view` `isDraft` plus `item_key` match.
 
 ## Lesson 0gd: `draft: true` on create is not proof the PR is a draft (2026-08-20)
 
-**Pattern:** Stage 2 GitHub MCP/create returned ready PRs for salvage #543 and
-#708 despite `draft: true`. Converted back before handoff. Docs PRs #2044 /
-#2047 / #2048 still show Cursor event title “Draft pull request created” with
-live `isDraft=false`.
-**Rule:** After create, re-read `draft` / `isDraft`. Convert a ready salvage
-landing back to draft before any handoff. Never treat the create request flag
-as the GitHub state.
-**Detection cost:** Low — `gh pr view --json isDraft` immediately after create.
+**Pattern:** GitHub MCP `create_pull_request` with `draft: true` can still
+create a **ready** PR (`draft: false`). Stage 2 hydro #543 and Seatek #708
+landed ready and were converted back via `update_pull_request` before handoff.
+Docs PRs #2044 / #2047 / #2048 still show Cursor event title “Draft pull
+request created” with live `isDraft=false`. Do not use `open_git_pr` for
+product salvages (it may mark ready).
+**Rule:** Immediately re-read `draft` / `isDraft` after create. Convert a ready
+salvage landing back to draft before any ledger handoff. Never request
+reviewers. Never mark ready. Never treat the create request flag as the GitHub
+state. A ready salvage is a Stage 2 policy miss, not a Stage 3 cue to merge.
+**Detection cost:** Low — `gh pr view --json isDraft` or `pull_request_read`
+`draft` immediately after create.
 
 ## Lesson 0gc: Hyphen prefixes are versioned in pr-lifecycle-v1.4 (2026-08-20)
 
