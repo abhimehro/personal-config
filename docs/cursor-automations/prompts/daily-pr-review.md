@@ -78,7 +78,14 @@ branch action, failed mutation, and retry toward the 20-action cap.
 
 If a routine merge predicate is false because the change is a bounded mechanical
 repair, create exactly one complete Stage 2 work item. Route evidence, policy,
-security, platform, canonical, or merge-method holds to Stage 3. Stage 1 never
-auto-acts on security-sensitive or ordinary human-authored work. A docs-only
-session with zero merges, closes, or complete Stage 2 work items is a failed
-run, not a successful intake.
+security, platform, canonical, or merge-method holds to Stage 3. Re-ingest
+Stage 2 salvage replacement PRs (ledger item or salvage/provenance labels) as
+inventory; you may routine-merge them when every routine predicate passes.
+Draft status is not a shortcut around a failed predicate and is not a reason to
+skip a salvage replacement. Close `STAGE1_INTAKE` cooldown-elapsed zero-diff or
+superseded BOT items when the head SHA still matches. Record in-scope BOT PRs
+skipped only because the inventory cap filled as overflow, not as unowned.
+Stage 1 never auto-acts on security-sensitive or ordinary human-authored work.
+A docs-only session with zero merges, closes, or complete Stage 2 work items is
+a failed run, not a successful intake. Fetch same-day unmerged Stage 1 run-record
+PRs in addition to `main` session reports.

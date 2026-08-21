@@ -90,11 +90,21 @@ Dashboard remains the evidence source for the connected MCP inventory.
 ## Stage handoffs
 
 Stage 1 sends one bounded mechanical repair to Stage 2. It sends every other
-nonterminal item to Stage 3. Stage 2 sends every draft, failed recovery, policy
-gap, platform gap, canonical conflict, or unreconciled original to Stage 3.
+nonterminal item to Stage 3. Stage 1 also **re-ingests** Stage 2 replacement
+PRs that have a ledger `item_key` (or salvage/provenance labels) and remains
+the only pre-calibration autonomous merger for routine BOT work.
+
+Stage 2 sends every draft (with a replacement ledger item), failed recovery,
+policy gap, platform gap, canonical conflict, or unreconciled original to
+Stage 1 (routine replacements) or Stage 3 (everything else). Stage 2 never
+merges.
+
 Stage 3 sends stale anchors to Stage 1 and mechanical code work to Stage 2.
-Human review is reserved for a one-question Stage 3 packet only when policy or
-security judgment is irreducible.
+During `REPORT_ONLY` it ingests missing salvage drafts and does not merge.
+After `APPROVED` it may merge salvage drafts only after an independent
+predicate re-read. Human review is reserved for a one-question Stage 3 packet
+only when policy or security judgment is irreducible; humans also merge salvage
+drafts that are not Stage-1-routine while calibration is open.
 
 ## Calibration and rollback
 

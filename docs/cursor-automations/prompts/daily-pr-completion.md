@@ -46,9 +46,13 @@ security-sensitive, `REVIEW_SECURITY`, `HOLD_CONTRACT`, `HOLD_PLATFORM`,
 implementation: create a complete Stage 2 work item instead.
 
 You may complete only qualified non-security bot work. A salvage draft must have
-matching anchors, one bounded scope, a complete Stage 2 provenance record, named
-passing tests, readable passing required checks, a clean merge state, no
-unresolved discussion/alert/overlap/canonical conflict, and an audit record. A
+matching anchors, one bounded scope, a complete Stage 2 provenance record
+including a ledger `item_key` for the replacement PR, named passing tests,
+readable passing required checks, a clean merge state, no unresolved
+discussion/alert/overlap/canonical conflict, and an audit record. Ingest a
+salvage draft that is open in GitHub but missing from the ledger before
+acting. Re-read every predicate independently of Stage 2's recovery notes.
+A
 closure requires deterministic no-op, duplicate, supersession, or stale evidence
 plus the required cooldown and canonical relationship where applicable. For
 `abhimehro/personal-config`, the merge method is `TRUNK_QUEUE`: approve and then

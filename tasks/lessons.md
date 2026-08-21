@@ -1,5 +1,56 @@
 # Lessons Learned
 
+## Lesson 0gi: Linux cloud runners cannot salvage Swift/macOS repos (2026-08-21)
+
+**Pattern:** Stage 2 on the 2026-08-20 live run copied rpce a11y labels for
+#247 locally, then `make guardrails` / `rpce-contribution-check` required
+`swift`/`xcrun`. The Linux cloud VM has none. The tree was restored; no
+`--no-verify` push. #271 was skipped. Stage 3 packeted both as `HOLD_PLATFORM`.
+**Rule:** If the named salvage test needs Xcode/Swift, fail-closed
+`HOLD_PLATFORM` **before** copying files. Do not `--no-verify`. Do not recreate
+the salvage on Linux. Platform skip belongs in config, not rediscovery.
+**Detection cost:** Low — `command -v swift` / `xcrun` at Stage 2 preflight for
+`repoprompt-ce`.
+
+## Lesson 0gf: Unmerged stage run records are not continuity (2026-08-21)
+
+**Pattern:** Stage 1/2/3 cron writes landed on unmerged docs PRs #2044 / #2047 /
+#2048. Stage 3 read `main` `tasks/review-session-reports.md` (morning v1.3) and
+older salvage records, not the 15:00 file. Ledger CAS still carried Stage 2.
+Cursor `pr_created` events titled those docs PRs “Draft”; live they are ready.
+**Rule:** Later stages fetch the open same-UTC-day documentation PR / branch for
+upstream records, not only `main`. Do not assume a run record is continuous
+because a file exists on `main` under a similar date. Re-read `isDraft` on
+docs PRs too (0gd).
+**Detection cost:** Low — `gh pr list --search` for that day’s stage docs PRs.
+
+## Lesson 0ge: Salvage drafts need a merger that is not Stage 2 (2026-08-21)
+
+**Pattern:** Stage 2 opened tested drafts Hydrograph #543 and Seatek #708, then
+handed “complete the draft” to Stage 3. Stage 3 was `REPORT_ONLY` and recorded
+those PRs as extras **not in the ledger**. Stage 1 had no `item_key` to
+re-ingest. No stage could merge. Docs PRs on personal-config `TRUNK_QUEUE` share
+the hole.
+**Rule:** Stage 2 never merges. Every replacement PR gets a ledger item
+`owner/repo#PR@head_sha` with provenance. Stage 1 re-ingests and may
+routine-merge when existing routine predicates pass. Stage 3 merges salvage
+drafts only after `APPROVED` plus an independent predicate check. Humans merge
+during `REPORT_ONLY` when the item is not Stage-1-routine. Do not “fix” this by
+giving Stage 2 merge authority.
+**Detection cost:** Low — ledger items whose GitHub number is a salvage() title
+must exist; `gh pr view` `isDraft` plus `item_key` match.
+
+## Lesson 0gd: `draft: true` on create is not proof the PR is a draft (2026-08-20)
+
+**Pattern:** Stage 2 GitHub MCP/create returned ready PRs for salvage #543 and
+#708 despite `draft: true`. Converted back before handoff. Docs PRs #2044 /
+#2047 / #2048 still show Cursor event title “Draft pull request created” with
+live `isDraft=false`.
+**Rule:** After create, re-read `draft` / `isDraft`. Convert a ready salvage
+landing back to draft before any handoff. Never treat the create request flag
+as the GitHub state.
+**Detection cost:** Low — `gh pr view --json isDraft` immediately after create.
+
 ## Lesson 0gc: Hyphen prefixes are versioned in pr-lifecycle-v1.4 (2026-08-20)
 
 **Pattern:** v1.3 slash prefixes left ~48 token-authored Jules/Bolt/Palette/

@@ -64,7 +64,9 @@ calibration event.
 Do not create a packet for routine remainder work. Route a bounded repair
 through a complete Stage 2 work item. Create a human packet only for irreducible
 security, policy, platform, or canonical judgment. Keep any stale or unavailable
-evidence at `HOLD_EVIDENCE` or `ANALYSIS_ERROR` with the safe default. Do not
-enable bounded completion until the ledger’s calibration record is `APPROVED`
-with a dated human approver, policy revision, scope, evidence, and rollback
-conditions.
+evidence at `HOLD_EVIDENCE` or `ANALYSIS_ERROR` with the safe default. If a
+salvage draft is open in GitHub but missing from the ledger, ingest it as an
+item; do not leave extras. Read same-day unmerged Stage 1/2 documentation PRs,
+not only `main` session reports. Do not enable bounded completion until the
+ledger’s calibration record is `APPROVED` with a dated human approver, policy
+revision, scope, evidence, and rollback conditions.

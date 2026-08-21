@@ -15,8 +15,10 @@ PR-automation policy.
 The Salvage Agent is a **draft builder**. It does not re-triage the whole
 backlog, approve, merge, force-push, alter a pre-existing branch, alter
 repository settings, or close a security-sensitive original simply because it
-opened a replacement draft. Stage 3 owns reconciliation, completion eligibility,
-close cooldowns, and the compact human decision inbox.
+opened a replacement draft. Merge authority for salvage outputs is Stage 1
+(routine re-ingest), Stage 3 after approved calibration with an independent
+predicate check, or a human — never this stage. Stage 3 owns reconciliation,
+completion eligibility, close cooldowns, and the compact human decision inbox.
 
 ## Mission
 
@@ -106,6 +108,17 @@ The draft body must state the original PR, anchor SHA, recovery scope, changed
 paths, verification command and result, and the reason the original was not
 completed directly. The draft remains a draft. Stage 2 does not approve or mark
 it ready.
+
+After GitHub returns a PR number, **re-read `isDraft`**. Create APIs that
+accept `draft: true` can still land **ready** (lesson **0gd**). Convert back to
+draft before handoff. Then CAS-write a **new ledger item** for the replacement
+keyed `owner/repo#PR@head_sha`, with provenance URLs to the original, the
+work-item id, test evidence, and `next_owner` Stage 1 if the replacement is
+routine/non-sensitive, otherwise Stage 3. A salvage PR without that item is an
+incomplete handoff: no later stage can merge it without rediscovery.
+
+Before applying `allowed_paths`, live-stat them on current `main`. If a path was
+removed or split (lesson **0fv**), do not expand scope; hand off `HOLD_EVIDENCE`.
 
 ## Operational Stage 2 workflow
 

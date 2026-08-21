@@ -22,9 +22,9 @@ item to Stage 1 intake.
 
 | Stage | Name       | Owns                                | May do                                                                                                                                                          | Must hand off                                                                                                 |
 | ----- | ---------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| 1     | Review     | New and invalidated inventory items | Routine approve, squash-merge, close, and narrowly mechanical repair when every routine predicate passes                                                        | Mechanical recovery to Stage 2; security, policy, platform, canonical, or evidence holds to Stage 3           |
-| 2     | Salvage    | Bounded mechanical recovery         | Open or update a focused **draft** replacement with required tests and provenance                                                                               | Draft completion, rejected recovery, unavailable platform, or unresolved decision to Stage 3                  |
-| 3     | Completion | All remaining nonterminal entries   | Reconcile live state, prevent duplication, create decision packets, and, only after approved calibration, complete qualified non-security work under a hard cap | SHA drift to Stage 1; mechanical recovery to Stage 2; irreducible policy/security decision to the human inbox |
+| 1     | Review     | New, invalidated, and salvage-replacement inventory items | Routine approve, squash-merge, close, and narrowly mechanical repair when every routine predicate passes. Re-ingest Stage 2 replacement PRs as inventory. | Mechanical recovery to Stage 2; security, policy, platform, canonical, or evidence holds to Stage 3           |
+| 2     | Salvage    | Bounded mechanical recovery         | Open or update a focused **draft** replacement with required tests and provenance. CAS-write a **new ledger item** for that replacement PR. Never approve, merge, or close. | Draft completion (with replacement `item_key`) to Stage 1 if routine, else Stage 3; rejected recovery, unavailable platform, or unresolved decision to Stage 3 |
+| 3     | Completion | All remaining nonterminal entries   | Reconcile live state, ingest salvage drafts missing from the ledger, prevent duplication, create decision packets, and, only after approved calibration, complete qualified non-security work under a hard cap | SHA drift to Stage 1; mechanical recovery to Stage 2; irreducible policy/security decision to the human inbox |
 
 Automated routine approval is a policy-authorized throughput control, not an
 independent human security review. Security-sensitive and ordinary
@@ -43,10 +43,35 @@ human-authored PRs never become routine merge or close candidates.
 
 The runtime ledger is the only source of an item's current owner. A run report
 is evidence of what a stage did; it cannot silently transfer ownership. A stage
-must never edit another stage's run report. The Git-native write,
-compare-and-swap, runtime capability, inventory-exclusion, and bootstrap
-protocol is normative in
+must never edit another stage's run report. Same-day run records often live on
+**unmerged documentation PRs**; later stages must fetch those open heads (or
+the producing branch) in addition to `main` `tasks/*-session-reports.md`. The
+Git-native write, compare-and-swap, runtime capability, inventory-exclusion,
+and bootstrap protocol is normative in
 [PR Lifecycle Runtime Ledger](pr-lifecycle-runtime-ledger.md).
+
+## Merge authority for Stage 2 outputs
+
+Stage 2 is a **draft builder**. It never approves, marks ready as a shortcut
+around failed predicates, merges, or closes an original because a replacement
+exists. A tested salvage draft is not a terminal disposition until a **different**
+actor merges it.
+
+| Actor | When it may merge a salvage replacement | When it must not |
+| ----- | --------------------------------------- | ---------------- |
+| Stage 2 | Never | Always |
+| Stage 1 | After re-ingesting the replacement ledger item (or an open salvage-labeled PR) **and** every routine predicate passes: BOT identity, non-sensitive, fresh anchors, readable required checks, clean merge, documented provenance to the original | Security, human, `HOLD_*`, or missing replacement `item_key` |
+| Stage 3 | Only after ledger `calibration.status` is `APPROVED` for the current policy revision, and only after an independent predicate re-read (completion spec) | During `REPORT_ONLY`; any sticky security or human item |
+| Human | Any time | n/a |
+
+Opening a replacement PR without a ledger `item_key` of the form
+`owner/repo#PR@head_sha` is an incomplete Stage 2 handoff. Stage 3 that
+observes a salvage draft “extra, not in ledger” must ingest it as an item
+before packing or skipping it. During `REPORT_ONLY`, humans merge salvage
+drafts that are not Stage-1-routine. This split keeps builder ≠ merger
+(2026-08-20 live run: Hydrograph #543 and Seatek_Analysis #708 had no merger).
+
+See [first live-run retrospective](pr-lifecycle-pipeline-run-retro-2026-08-20.md).
 
 The three `docs/automated-pr-*.md` specifications and this lifecycle contract
 are the authoritative Cursor-facing PR-automation documents in this repository.
@@ -240,9 +265,12 @@ approval, merge authorization, or substitute for a defined policy.
 
 The standard daily order is Stage 1 at `0 15 * * *`, Stage 2 at `0 17 * * *`,
 and Stage 3 at `0 19 * * *`. Only one run per stage may execute at once. The
-default per-run caps are 20 Stage 1 items, five Stage 2 recovery candidates, 20
-Stage 3 reconciliations, five human decision cards, and, after explicit
-calibration approval, five Stage 3 completion or closure actions.
+default per-run caps match `tasks/pr-review-agent.config.yaml`: 50 Stage 1
+inventory items and 20 Stage 1 state-changing actions, five Stage 2 recovery
+candidates, 20 Stage 3 reconciliations, five human decision cards, and, after
+explicit calibration approval, five Stage 3 completion or closure actions.
+In-scope BOT PRs skipped only because the inventory cap filled must be recorded
+as overflow (`NOT_RUN` or an equivalent owned backlog), not left unowned.
 
 ## Historical import procedure
 
@@ -269,3 +297,4 @@ terminal state, never resurrected.
 - [Automated PR Review & Consolidation Agent](automated-pr-review-agent.md)
 - [Automated PR Salvage & Recovery Agent](automated-pr-salvage-agent.md)
 - [Automated PR Completion Agent](automated-pr-completion-agent.md)
+- [First live-run retrospective (2026-08-20)](pr-lifecycle-pipeline-run-retro-2026-08-20.md)

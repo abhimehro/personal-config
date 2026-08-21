@@ -152,8 +152,13 @@ nonterminal work, including policy/security questions, unavailable platform
 evidence, canonical conflicts, and unverified close candidates.
 
 Stage 2 produces one or more **draft** salvage / infra-fix PRs; it does not
-close a security original merely because a replacement draft exists. Stage 3
-owns later reconciliation and completion. Review automation must not write to
+close a security original merely because a replacement draft exists. Stage 1
+**re-ingests** those replacement PRs (ledger `item_key` plus any open PR with
+salvage/provenance linkage) as inventory. Stage 1 may routine-merge a
+salvage replacement when every routine predicate already in this spec passes;
+it never grants Stage 2 merge authority and never marks a draft ready to skip a
+failed predicate. Stage 3 owns later reconciliation and, only after approved
+calibration, bounded completion. Review automation must not write to
 `tasks/salvage-session-reports.md`. If a deferred PR is blocked by CodeScene
 code health, Stage 2 must confirm `/cs-agent skill:fix-code-health-degradations`
 was posted (or post it) before making final salvage/closure disposition.
@@ -220,9 +225,10 @@ Apply these during classification and review (see also `tasks/lessons.md`):
   `docs/pr-visual-recap-agent-backends.md`.
 - **Zero-diff / superseded:** Detect early (`changed_files_count == 0` or no
   effective diff); close a bot-authored non-security PR when identity, anchors,
-  canonical evidence, and the applicable cooldown are complete. Do not wait for
-  Stage 3 calibration. Never mark a draft ready as a shortcut around the stage
-  contract.
+  canonical evidence, and the applicable cooldown are complete. Consume
+  `STAGE1_INTAKE` close-candidates whose cooldown has elapsed and whose head SHA
+  still matches. Do not wait for Stage 3 calibration. Never mark a draft ready
+  as a shortcut around the stage contract.
 - **Post-merge conflict cascade (Lesson 0):** Re-check mergeable state after
   each merge before proceeding. PRs touching the same hot file (`main.py`,
   `payload.json`, etc.) frequently flip to DIRTY after a sibling merge — defer
@@ -286,8 +292,9 @@ Apply these during classification and review (see also `tasks/lessons.md`):
 ## Scheduling
 
 The Review Agent is Stage 1 of the scheduled lifecycle. It runs at `0 15 * * *`
-UTC with one concurrent run and a 20-item inventory cap. It is followed by Stage
-2 at `0 17 * * *` and Stage 3 at `0 19 * * *`. See
+UTC with one concurrent run, a 50-item inventory cap, and a 20-action cap (see
+`lifecycle.stage_caps`). It is followed by Stage 2 at `0 17 * * *` and Stage 3
+at `0 19 * * *`. See
 [Three-Stage PR Lifecycle in Cursor Automations](cursor-automations/three-stage-pr-lifecycle.md)
 for the common prompt preamble, role-based MCP/skill lists, and calibration
 relationship.

@@ -51,6 +51,12 @@ take no action against the old evidence. If a human or prior agent already
 merged or closed the PR, record the verified terminal outcome with an evidence
 URL. Do not reopen it or repeat the abandoned work.
 
+Read the latest **unmerged** Stage 1/2/3 documentation PRs for the same UTC day
+when those heads exist; `main` `tasks/*-session-reports.md` can lag. If a
+salvage draft is open in GitHub but absent from the ledger, ingest it as an
+item before packing or skipping it. Do not leave “extra drafts observed, not in
+ledger.”
+
 ## Completion decision tree
 
 For each owned entry, take one and only one route.
@@ -59,7 +65,7 @@ For each owned entry, take one and only one route.
 | --------------------------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------- |
 | Base/head SHA changed                                                                         | Return to Stage 1                          | `STALE_ANCHOR`, prior anchors, current anchors, and reason                            |
 | One mechanical code repair remains                                                            | Create a bounded Stage 2 work item         | Explicit repair scope, required regression test, and failure to avoid repeating       |
-| A focused salvage draft is clean and non-security                                             | Hold for calibration or bounded completion | Provenance, checks, anchor match, changed paths, and completion predicate results     |
+| A focused salvage draft is clean and non-security                                             | Ingest it as a ledger item if missing; hold for Stage 1 re-ingest, human merge during REPORT_ONLY, or bounded completion after APPROVED | Provenance, checks, anchor match, changed paths, replacement `item_key`, and completion predicate results |
 | The original is demonstrably duplicate, superseded, zero-diff, or stale                       | Record the close-candidate; Stage 1 may close during calibration | Canonical evidence or no-op evidence, cooldown, and original/replacement relationship |
 | Security, policy, auth, network, browser-origin, workflow, data, or platform decision remains | Create one human decision packet           | One question, up to three options, recommended option, safe default, and expiry       |
 | Checks or evidence are unavailable                                                            | Retry once, then `ANALYSIS_ERROR`          | Failed evidence source, retry time, and safe default                                  |
