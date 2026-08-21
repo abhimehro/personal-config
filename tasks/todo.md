@@ -11,8 +11,8 @@ No Endor fleet scans. Do not rewrite AGENTS.md Learned* sections.
 - [x] Compare observed behavior vs documented policy
 - [x] Write `docs/pr-lifecycle-pipeline-run-retro-2026-08-20.md`
 - [x] Update pipeline docs/skills/lessons for P0/P1 gaps (no Learned* AGENTS.md)
-- [ ] Commit, push `cursor-agent/pr-pipeline-retrospective-b81b`, open draft PR
-- [ ] Run targeted tests / `make test-quick` after first push if YAML/scripts change
+- [x] Commit, push `cursor-agent/pr-pipeline-retrospective-b81b`, open draft PR #2052
+- [x] Run targeted tests / `make test-quick` after first push (docs-only; 30/30 smoke + path-validation OK)
 
 ## Security
 

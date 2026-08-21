@@ -67,7 +67,7 @@ GitHub owner is **`abhimehro`**, not SpeedyBee. **Verified** via remotes and
 | CodeScene / Sonatype / Snyk dashboards | Stage 1 recorded CodeScene MCP error and no `/cs-agent` post. Product mutations did not depend on it. **Verified** as a session claim; scanner *correctness* **Unverified**. |
 | Cursor Dashboard live MCP/enablement UI | Compared against checked-in exports and session identity blocks. Live dashboard drift **Unverified**. |
 | Runtime ledger CAS *HTTP* traces | Commits + blob SHAs on `automation/pr-lifecycle-ledger` **Verified**; Contents API request bodies **Unverified**. |
-| `ManagePullRequest` MCP | Not present in this environment. This docs PR used GitHub MCP `create_pull_request` if that tool succeeded. |
+| `ManagePullRequest` MCP | Not present in this environment. This docs PR was opened as draft [personal-config #2052](https://github.com/abhimehro/personal-config/pull/2052) via GitHub MCP `create_pull_request`. |
 | Endor Labs / configuration-automation skill | **Out of scope.** No Endor references in `docs/` for this pipeline. Recorded as `out_of_scope: configuration-automation / Endor onboarding`. |
 
 ### Two Stage 1 runs on 2026-08-20 (do not conflate)
