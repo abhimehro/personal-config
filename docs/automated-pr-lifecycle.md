@@ -22,9 +22,9 @@ item to Stage 1 intake.
 
 | Stage | Name       | Owns                                | May do                                                                                                                                                          | Must hand off                                                                                                 |
 | ----- | ---------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| 1     | Review     | New and invalidated inventory items | Routine approve, squash-merge, close, and narrowly mechanical repair when every routine predicate passes                                                        | Mechanical recovery to Stage 2; security, policy, platform, canonical, or evidence holds to Stage 3           |
-| 2     | Salvage    | Bounded mechanical recovery         | Open or update a focused **draft** replacement with required tests and provenance                                                                               | Draft completion, rejected recovery, unavailable platform, or unresolved decision to Stage 3                  |
-| 3     | Completion | All remaining nonterminal entries   | Reconcile live state, prevent duplication, create decision packets, and, only after approved calibration, complete qualified non-security work under a hard cap | SHA drift to Stage 1; mechanical recovery to Stage 2; irreducible policy/security decision to the human inbox |
+| 1     | Review     | New, invalidated, and salvage-replacement inventory items | Routine approve, squash-merge, close, and narrowly mechanical repair when every routine predicate passes. Re-ingest Stage 2 replacement PRs as inventory. | Mechanical recovery to Stage 2; security, policy, platform, canonical, or evidence holds to Stage 3           |
+| 2     | Salvage    | Bounded mechanical recovery         | Open or update a focused **draft** replacement with required tests and provenance. CAS-write a **new ledger item** for that replacement PR. Never approve, merge, or close. | Draft completion (with replacement `item_key`) to Stage 1 if routine, else Stage 3; rejected recovery, unavailable platform, or unresolved decision to Stage 3 |
+| 3     | Completion | All remaining nonterminal entries   | Reconcile live state, ingest salvage drafts missing from the ledger, prevent duplication, create decision packets, and, only after approved calibration, complete qualified non-security work under a hard cap | SHA drift to Stage 1; mechanical recovery to Stage 2; irreducible policy/security decision to the human inbox |
 
 Automated routine approval is a policy-authorized throughput control, not an
 independent human security review. Security-sensitive and ordinary
@@ -43,10 +43,94 @@ human-authored PRs never become routine merge or close candidates.
 
 The runtime ledger is the only source of an item's current owner. A run report
 is evidence of what a stage did; it cannot silently transfer ownership. A stage
-must never edit another stage's run report. The Git-native write,
-compare-and-swap, runtime capability, inventory-exclusion, and bootstrap
-protocol is normative in
+must never edit another stage's run report. Continuity for **agents** is the
+runtime ledger plus the **one** daily documentation lineage below, not three
+overlapping `tasks/*` PRs. The maintainer's human-facing notes live in Notion
+(Stage 3 packets and personal summaries). Do not open extra GitHub PRs to
+mirror Notion, and do not paste run records into Notion as a substitute for
+git continuity. The Git-native write, compare-and-swap, runtime capability,
+inventory-exclusion, and bootstrap protocol is normative in
 [PR Lifecycle Runtime Ledger](pr-lifecycle-runtime-ledger.md).
+
+## Agent documentation plane (daily lineage)
+
+Session docs exist so later agents can read what happened. They are not a
+second human inbox. Lesson **0fk** / **0gf** and the 2026-08-20 run (#2044,
+#2047, #2048, then the #2051/#2052 pair until #2051 landed) show the failure
+mode: each stage opens its own PR against `tasks/*-session-reports.md` /
+`tasks/lessons.md`, then merging one dirties the rest.
+
+### One PR per UTC day
+
+Stages 1/2/3 share a single personal-config documentation PR for that UTC date:
+
+| Field | Value |
+| ----- | ----- |
+| Branch | `pr-lifecycle-docs-YYYYMMDD` (UTC date of the Stage 1 fire) |
+| Title | `docs(pr-lifecycle): YYYY-MM-DD run records` |
+| Labels | Existing `documentation` only. Locate the PR by **branch name**, not a new label. |
+
+**Stage 1 (15:00)** creates the branch from current `main` if it does not
+exist, opens that one PR, and appends the Stage 1 run record. **Stage 2
+(17:00)** and **Stage 3 (19:00)** fetch that open PR and **push commits onto
+its branch**. They must not open a second or third overlapping docs PR. If
+Stage 1 failed to open the lineage, Stage 2 may create it once; Stage 3 may
+create it only if both prior stages missed. Never open a sibling that also
+touches `tasks/*-session-reports.md` or `tasks/lessons.md`.
+
+Policy or retrospective PRs (prompt/spec edits, `AGENTS.md` learned sections)
+stay off this lineage. Cron stages must not edit `AGENTS.md` or
+`tasks/todo.md`.
+
+### Exclusive files
+
+| Writer | May write | Must not write |
+| ------ | --------- | -------------- |
+| Stage 1 | `tasks/review-session-reports.md`, `tasks/pr-review-YYYY-MM-DD*.md`, append-only `tasks/lessons.md` | salvage/completion reports, `AGENTS.md`, `tasks/todo.md` |
+| Stage 2 | `tasks/salvage-session-reports.md`, `tasks/pr-salvage-YYYY-MM-DD*.md`, append-only `tasks/lessons.md` | review/completion reports, `AGENTS.md`, `tasks/todo.md` |
+| Stage 3 | `tasks/completion-session-reports.md`, `tasks/pr-completion-YYYY-MM-DD*.md`, append-only `tasks/lessons.md` | review/salvage reports, `AGENTS.md`, `tasks/todo.md` |
+
+Prefer a **new dated file** for bulky inventory so the rolling log stays a
+short append. Lessons are EOF appends only; never rewrite earlier entries.
+
+### Stage 1 lands the lineage
+
+The next Stage 1 run treats an older `pr-lifecycle-docs` PR as routine
+docs-only BOT work when every existing routine predicate passes (readable
+required checks, MERGEABLE, no sticky sensitive paths, no unresolved hold).
+It submits `/trunk merge` (counts toward the 20-action cap). Stage 2 and
+Stage 3 never merge this PR. During `REPORT_ONLY`, Stage 3 still only
+appends. If Trunk cannot prepare a test branch (GitHub App or ruleset),
+record `HOLD_PLATFORM` and do not fall back to raw GitHub squash.
+
+### Continuity read
+
+Every stage reads, in order: today's open `pr-lifecycle-docs-YYYYMMDD` head,
+then yesterday's lineage if still open, then `main`
+`tasks/*-session-reports.md`. Do not assume three sibling docs PRs.
+
+## Merge authority for Stage 2 outputs
+
+Stage 2 is a **draft builder**. It never approves, marks ready as a shortcut
+around failed predicates, merges, or closes an original because a replacement
+exists. A tested salvage draft is not a terminal disposition until a **different**
+actor merges it.
+
+| Actor | When it may merge a salvage replacement | When it must not |
+| ----- | --------------------------------------- | ---------------- |
+| Stage 2 | Never | Always |
+| Stage 1 | After re-ingesting the replacement ledger item (or an open salvage-labeled PR) **and** every routine predicate passes: BOT identity, non-sensitive, fresh anchors, readable required checks, clean merge, documented provenance to the original | Security, human, `HOLD_*`, or missing replacement `item_key` |
+| Stage 3 | Only after ledger `calibration.status` is `APPROVED` for the current policy revision, and only after an independent predicate re-read (completion spec) | During `REPORT_ONLY`; any sticky security or human item |
+| Human | Any time | n/a |
+
+Opening a replacement PR without a ledger `item_key` of the form
+`owner/repo#PR@head_sha` is an incomplete Stage 2 handoff. Stage 3 that
+observes a salvage draft “extra, not in ledger” must ingest it as an item
+before packing or skipping it. During `REPORT_ONLY`, humans merge salvage
+drafts that are not Stage-1-routine. This split keeps builder ≠ merger
+(2026-08-20 live run: Hydrograph #543 and Seatek_Analysis #708 had no merger).
+
+See [first live-run retrospective](pr-lifecycle-pipeline-run-retro-2026-08-20.md).
 
 The three `docs/automated-pr-*.md` specifications and this lifecycle contract
 are the authoritative Cursor-facing PR-automation documents in this repository.
@@ -240,9 +324,12 @@ approval, merge authorization, or substitute for a defined policy.
 
 The standard daily order is Stage 1 at `0 15 * * *`, Stage 2 at `0 17 * * *`,
 and Stage 3 at `0 19 * * *`. Only one run per stage may execute at once. The
-default per-run caps are 20 Stage 1 items, five Stage 2 recovery candidates, 20
-Stage 3 reconciliations, five human decision cards, and, after explicit
-calibration approval, five Stage 3 completion or closure actions.
+default per-run caps match `tasks/pr-review-agent.config.yaml`: 50 Stage 1
+inventory items and 20 Stage 1 state-changing actions, five Stage 2 recovery
+candidates, 20 Stage 3 reconciliations, five human decision cards, and, after
+explicit calibration approval, five Stage 3 completion or closure actions.
+In-scope BOT PRs skipped only because the inventory cap filled must be recorded
+as overflow (`NOT_RUN` or an equivalent owned backlog), not left unowned.
 
 ## Historical import procedure
 
@@ -269,3 +356,4 @@ terminal state, never resurrected.
 - [Automated PR Review & Consolidation Agent](automated-pr-review-agent.md)
 - [Automated PR Salvage & Recovery Agent](automated-pr-salvage-agent.md)
 - [Automated PR Completion Agent](automated-pr-completion-agent.md)
+- [First live-run retrospective (2026-08-20)](pr-lifecycle-pipeline-run-retro-2026-08-20.md)

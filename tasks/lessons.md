@@ -1,17 +1,76 @@
 # Lessons Learned
 
-## Lesson 0gd: Salvage PRs that land ready must be converted back to draft (2026-08-20)
+## Lesson 0gj: One daily docs lineage, not three colliding session PRs (2026-08-21)
+
+**Pattern:** Stage 1/2/3 each opened a personal-config docs PR against the same
+`tasks/*-session-reports.md` / `lessons.md` files (#2044/#2047/#2048, then
+#2051/#2052). Merging one dirties the rest (0fk). Later stages read `main` and
+miss unmerged records (0gf). The maintainer already keeps takeaways in Notion.
+#2051 merged 2026-08-21T09:58Z (Learned* glossary); remaining sibling was this
+retrospective (#2052) until it absorbed `main` for Trunk.
+**Rule:** One branch `pr-lifecycle-docs-YYYYMMDD` per UTC day. Stage 1 creates
+it and `/trunk merge`s older green lineage PRs as routine docs. Stage 2/3 push
+onto that branch only. Exclusive files; no cron edits to `AGENTS.md` or
+`tasks/todo.md`. Notion stays the human plane (packets + personal notes); git
+run records stay for agents. Do not open a sibling overlapping docs PR.
+**Detection cost:** Low — two open personal-config PRs both listing
+`tasks/*-session-reports.md`.
+
+## Lesson 0gi: Linux cloud runners cannot salvage Swift/macOS repos (2026-08-21)
+
+**Pattern:** Stage 2 on the 2026-08-20 live run copied rpce a11y labels for
+#247 locally, then `make guardrails` / `rpce-contribution-check` required
+`swift`/`xcrun`. The Linux cloud VM has none. The tree was restored; no
+`--no-verify` push. #271 was skipped. Stage 3 packeted both as `HOLD_PLATFORM`.
+**Rule:** If the named salvage test needs Xcode/Swift, fail-closed
+`HOLD_PLATFORM` **before** copying files. Do not `--no-verify`. Do not recreate
+the salvage on Linux. Platform skip belongs in config, not rediscovery.
+**Detection cost:** Low — `command -v swift` / `xcrun` at Stage 2 preflight for
+`repoprompt-ce`.
+
+## Lesson 0gf: Unmerged stage run records are not continuity (2026-08-21)
+
+**Pattern:** Stage 1/2/3 cron writes landed on unmerged docs PRs #2044 / #2047 /
+#2048. Stage 3 read `main` `tasks/review-session-reports.md` (morning v1.3) and
+older salvage records, not the 15:00 file. Ledger CAS still carried Stage 2.
+Cursor `pr_created` events titled those docs PRs “Draft”; live they are ready.
+**Rule:** Later stages fetch today's `pr-lifecycle-docs-YYYYMMDD` head (lesson
+**0gj**), then yesterday's lineage if still open, then `main`. Do not assume a
+run record is continuous because a file exists on `main` under a similar date.
+Re-read `isDraft` on docs PRs too (0gd). Do not open a second overlapping
+session-docs PR.
+**Detection cost:** Low — `gh pr list --search` for that day’s stage docs PRs.
+
+## Lesson 0ge: Salvage drafts need a merger that is not Stage 2 (2026-08-21)
+
+**Pattern:** Stage 2 opened tested drafts Hydrograph #543 and Seatek #708, then
+handed “complete the draft” to Stage 3. Stage 3 was `REPORT_ONLY` and recorded
+those PRs as extras **not in the ledger**. Stage 1 had no `item_key` to
+re-ingest. No stage could merge. Docs PRs on personal-config `TRUNK_QUEUE` share
+the hole.
+**Rule:** Stage 2 never merges. Every replacement PR gets a ledger item
+`owner/repo#PR@head_sha` with provenance. Stage 1 re-ingests and may
+routine-merge when existing routine predicates pass. Stage 3 merges salvage
+drafts only after `APPROVED` plus an independent predicate check. Humans merge
+during `REPORT_ONLY` when the item is not Stage-1-routine. Do not “fix” this by
+giving Stage 2 merge authority.
+**Detection cost:** Low — ledger items whose GitHub number is a salvage() title
+must exist; `gh pr view` `isDraft` plus `item_key` match.
+
+## Lesson 0gd: `draft: true` on create is not proof the PR is a draft (2026-08-20)
 
 **Pattern:** GitHub MCP `create_pull_request` with `draft: true` can still
-create a **ready** PR (`draft: false`). Stage 2 must never leave a salvage PR
-ready for review. This run: hydro #543 and Seatek #708 landed ready; both were
-converted back to draft via `update_pull_request` `draft: true` before the Stage
-3 handoff. Do not use `open_git_pr` for product salvages (it may mark ready).
-**Rule:** Immediately re-read `draft` after creating a salvage PR. If it is not
-draft, convert to draft before any ledger handoff. Never request reviewers.
-Never mark ready. A ready salvage is a Stage 2 policy miss, not a Stage 3 cue
-to merge.
-**Detection cost:** Low — `pull_request_read` `draft` field after create.
+create a **ready** PR (`draft: false`). Stage 2 hydro #543 and Seatek #708
+landed ready and were converted back via `update_pull_request` before handoff.
+Docs PRs #2044 / #2047 / #2048 still show Cursor event title “Draft pull
+request created” with live `isDraft=false`. Do not use `open_git_pr` for
+product salvages (it may mark ready).
+**Rule:** Immediately re-read `draft` / `isDraft` after create. Convert a ready
+salvage landing back to draft before any ledger handoff. Never request
+reviewers. Never mark ready. Never treat the create request flag as the GitHub
+state. A ready salvage is a Stage 2 policy miss, not a Stage 3 cue to merge.
+**Detection cost:** Low — `gh pr view --json isDraft` or `pull_request_read`
+`draft` immediately after create.
 
 ## Lesson 0gc: Hyphen prefixes are versioned in pr-lifecycle-v1.4 (2026-08-20)
 

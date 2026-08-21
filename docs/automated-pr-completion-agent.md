@@ -51,6 +51,13 @@ take no action against the old evidence. If a human or prior agent already
 merged or closed the PR, record the verified terminal outcome with an evidence
 URL. Do not reopen it or repeat the abandoned work.
 
+Read today's open `pr-lifecycle-docs-YYYYMMDD` head first, then yesterday's
+lineage if still open, then `main` `tasks/*-session-reports.md`. Do not open
+a third overlapping docs PR; push the Stage 3 run record onto that lineage
+(create it only if both prior stages missed). If a salvage draft is open in
+GitHub but absent from the ledger, ingest it as an item before packing or
+skipping it. Do not leave “extra drafts observed, not in ledger.”
+
 ## Completion decision tree
 
 For each owned entry, take one and only one route.
@@ -59,7 +66,7 @@ For each owned entry, take one and only one route.
 | --------------------------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------- |
 | Base/head SHA changed                                                                         | Return to Stage 1                          | `STALE_ANCHOR`, prior anchors, current anchors, and reason                            |
 | One mechanical code repair remains                                                            | Create a bounded Stage 2 work item         | Explicit repair scope, required regression test, and failure to avoid repeating       |
-| A focused salvage draft is clean and non-security                                             | Hold for calibration or bounded completion | Provenance, checks, anchor match, changed paths, and completion predicate results     |
+| A focused salvage draft is clean and non-security                                             | Ingest it as a ledger item if missing; hold for Stage 1 re-ingest, human merge during REPORT_ONLY, or bounded completion after APPROVED | Provenance, checks, anchor match, changed paths, replacement `item_key`, and completion predicate results |
 | The original is demonstrably duplicate, superseded, zero-diff, or stale                       | Record the close-candidate; Stage 1 may close during calibration | Canonical evidence or no-op evidence, cooldown, and original/replacement relationship |
 | Security, policy, auth, network, browser-origin, workflow, data, or platform decision remains | Create one human decision packet           | One question, up to three options, recommended option, safe default, and expiry       |
 | Checks or evidence are unavailable                                                            | Retry once, then `ANALYSIS_ERROR`          | Failed evidence source, retry time, and safe default                                  |
@@ -159,8 +166,10 @@ be sent to Stage 2.
 
 ## Reporting, lessons, and self-healing
 
-Append every run to `tasks/completion-session-reports.md` using the shared
-run-record template. Each item record is mandatory: repository, PR, ledger key,
+Append every run to `tasks/completion-session-reports.md` (optional bulky
+snapshot `tasks/pr-completion-YYYY-MM-DD*.md`) using the shared
+run-record template, on the daily `pr-lifecycle-docs-YYYYMMDD` lineage.
+Do not edit `AGENTS.md`, `tasks/todo.md`, or another stage's report. Each item record is mandatory: repository, PR, ledger key,
 observed/ledger base and head SHA, owner before/after, GitHub identity,
 classification/risk, guardrail outcome, changed paths, evidence URLs,
 proposed/actual route, calibration or bounded mode, audit-record ID,

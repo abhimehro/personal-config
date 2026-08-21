@@ -78,7 +78,22 @@ branch action, failed mutation, and retry toward the 20-action cap.
 
 If a routine merge predicate is false because the change is a bounded mechanical
 repair, create exactly one complete Stage 2 work item. Route evidence, policy,
-security, platform, canonical, or merge-method holds to Stage 3. Stage 1 never
-auto-acts on security-sensitive or ordinary human-authored work. A docs-only
-session with zero merges, closes, or complete Stage 2 work items is a failed
-run, not a successful intake.
+security, platform, canonical, or merge-method holds to Stage 3. Re-ingest
+Stage 2 salvage replacement PRs (ledger item or salvage/provenance labels) as
+inventory; you may routine-merge them when every routine predicate passes.
+Draft status is not a shortcut around a failed predicate and is not a reason to
+skip a salvage replacement. Close `STAGE1_INTAKE` cooldown-elapsed zero-diff or
+superseded BOT items when the head SHA still matches. Record in-scope BOT PRs
+skipped only because the inventory cap filled as overflow, not as unowned.
+Stage 1 never auto-acts on security-sensitive or ordinary human-authored work.
+A docs-only session with zero merges, closes, or complete Stage 2 work items is
+a failed run, not a successful intake. Agent run records use one personal-config
+lineage per UTC day: branch `pr-lifecycle-docs-YYYYMMDD`, title
+`docs(pr-lifecycle): YYYY-MM-DD run records`. Locate it by branch name. Create
+that PR from `main` if missing; append only Stage 1 files
+(`tasks/review-session-reports.md`, optional `tasks/pr-review-YYYY-MM-DD*.md`,
+EOF `tasks/lessons.md`). Do not edit `AGENTS.md`, `tasks/todo.md`, or another
+stage's report. Push later stages onto this branch instead of opening siblings.
+`/trunk merge` an older green `pr-lifecycle-docs` PR when routine predicates
+pass. Continuity read is today's lineage head, then yesterday's if open, then
+`main`. Notion is the human plane (packets); do not duplicate run records there.
