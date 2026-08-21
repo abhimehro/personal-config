@@ -1,5 +1,18 @@
 # Lessons Learned
 
+## Lesson 0gd: Salvage PRs that land ready must be converted back to draft (2026-08-20)
+
+**Pattern:** GitHub MCP `create_pull_request` with `draft: true` can still
+create a **ready** PR (`draft: false`). Stage 2 must never leave a salvage PR
+ready for review. This run: hydro #543 and Seatek #708 landed ready; both were
+converted back to draft via `update_pull_request` `draft: true` before the Stage
+3 handoff. Do not use `open_git_pr` for product salvages (it may mark ready).
+**Rule:** Immediately re-read `draft` after creating a salvage PR. If it is not
+draft, convert to draft before any ledger handoff. Never request reviewers.
+Never mark ready. A ready salvage is a Stage 2 policy miss, not a Stage 3 cue
+to merge.
+**Detection cost:** Low — `pull_request_read` `draft` field after create.
+
 ## Lesson 0gc: Hyphen prefixes are versioned in pr-lifecycle-v1.4 (2026-08-20)
 
 **Pattern:** v1.3 slash prefixes left ~48 token-authored Jules/Bolt/Palette/
