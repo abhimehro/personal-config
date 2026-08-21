@@ -56,9 +56,9 @@ inventory-exclusion, and bootstrap protocol is normative in
 
 Session docs exist so later agents can read what happened. They are not a
 second human inbox. Lesson **0fk** / **0gf** and the 2026-08-20 run (#2044,
-#2047, #2048, then #2051/#2052) show the failure mode: each stage opens its
-own PR against `tasks/*-session-reports.md` / `tasks/lessons.md`, then
-merging one dirties the rest.
+#2047, #2048, then the #2051/#2052 pair until #2051 landed) show the failure
+mode: each stage opens its own PR against `tasks/*-session-reports.md` /
+`tasks/lessons.md`, then merging one dirties the rest.
 
 ### One PR per UTC day
 

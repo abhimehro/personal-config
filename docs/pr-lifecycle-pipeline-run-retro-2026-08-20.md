@@ -3,6 +3,13 @@
 **Route:** T5+S+H (orchestrate + security + ELIR) with T4 analysis.
 **Auditor:** Cursor cloud agent on `cursor-agent/pr-pipeline-retrospective-b81b`.
 **Evidence cutoff:** 2026-08-21T08:30Z.
+**Post-cutoff (2026-08-21T10:02Z):** personal-config docs PRs #2044, #2047,
+#2048, and [#2051](https://github.com/abhimehro/personal-config/pull/2051)
+(`AGENTS.md` Learned* glossary) merged via Trunk. This remaining PR (#2052)
+merged `origin/main` (`9f2f0cd2`, includes #2051) so Trunk can prepare a test
+branch. Remaining `AGENTS.md` delta vs `main` is the salvage stacked-PR
+operational bullet only; Learned* is already on `main`. #2052 is ready, not
+draft. Appendix A still records the 08:30Z snapshot.
 **Policy compared:** lifecycle contract v1.4 (`docs/automated-pr-lifecycle.md`),
 stage specs, `tasks/pr-review-agent.config.yaml` (`stage_caps`), Cursor
 automation prompts under `docs/cursor-automations/`.
@@ -67,7 +74,7 @@ GitHub owner is **`abhimehro`**, not SpeedyBee. **Verified** via remotes and
 | CodeScene / Sonatype / Snyk dashboards | Stage 1 recorded CodeScene MCP error and no `/cs-agent` post. Product mutations did not depend on it. **Verified** as a session claim; scanner *correctness* **Unverified**. |
 | Cursor Dashboard live MCP/enablement UI | Compared against checked-in exports and session identity blocks. Live dashboard drift **Unverified**. |
 | Runtime ledger CAS *HTTP* traces | Commits + blob SHAs on `automation/pr-lifecycle-ledger` **Verified**; Contents API request bodies **Unverified**. |
-| `ManagePullRequest` MCP | Not present in this environment. This docs PR was opened as [personal-config #2052](https://github.com/abhimehro/personal-config/pull/2052) via GitHub MCP `create_pull_request` with `draft=true`. Immediate re-read showed `isDraft=false` (lesson **0gd**); a follow-up `update_pull_request` `draft=true` converted it. Live `isDraft=true` after conversion. **Verified**. |
+| `ManagePullRequest` MCP | Not present in this environment. This docs PR was opened as [personal-config #2052](https://github.com/abhimehro/personal-config/pull/2052) via GitHub MCP `create_pull_request` with `draft=true`. Immediate re-read showed `isDraft=false` (lesson **0gd**); a follow-up `update_pull_request` `draft=true` converted it. At cutoff `isDraft=true`. **Verified**. Post-cutoff: marked ready for Trunk after merging `main` (#2051). |
 | Endor Labs / configuration-automation skill | **Out of scope.** No Endor references in `docs/` for this pipeline. Recorded as `out_of_scope: configuration-automation / Endor onboarding`. |
 
 ### Two Stage 1 runs on 2026-08-20 (do not conflate)
@@ -499,7 +506,7 @@ bump; calibration 1/7 must not reset):
 | `docs/automated-pr-completion-agent.md` | Ingest observed salvage drafts as items; do not leave extras |
 | `docs/cursor-automations/three-stage-pr-lifecycle.md` | Handoff of salvage drafts; merger is Stage 1 or post-calib Stage 3 or human |
 | `docs/cursor-automations/prompts/daily-pr-*.md` | Matching prompt sentences |
-| `AGENTS.md` | Operational salvage-merge note in stacked-PR / salvage bullets. **Not** Learned* |
+| `AGENTS.md` | This PR’s remaining delta vs `main`: operational salvage-merge + daily-docs-lineage note in the stacked-PR salvage bullet. Learned* glossary landed separately via [#2051](https://github.com/abhimehro/personal-config/pull/2051) (merged 2026-08-21T09:58Z) and is already on this branch via merge of `main`. |
 | `tasks/lessons.md` | 0gd, 0ge, 0gf, 0gi, 0gj |
 | `tasks/todo.md` | This plan’s checkboxes |
 
@@ -557,7 +564,9 @@ routine BOT work.
    `…/3c27419416de81c99db3da826729474c`. **Needs HITL** (do not auto-close
    sticky).
 7. **Docs PR stack** #2016/#2044/#2047/#2048: squash-one lineage vs leave until
-   Trunk? **Needs HITL** (personal-config merge method).
+   Trunk? **Post-cutoff:** #2044/#2047/#2048/#2051 landed via Trunk. Remaining
+   HITL is `/trunk merge` on this PR (#2052) plus Dashboard paste of the
+   lineage exports. Do not raw-squash around Trunk.
 8. **Give Stage 3 merge during calibration?** **No.** Do not weaken
    `REPORT_ONLY`.
 9. **Give Stage 2 merge?** **No.** Hard boundary.
@@ -603,7 +612,8 @@ Stage 2 remains draft-only; sticky security and human PRs stay non-autonomous.
 FAILS IF: Operators treat calibration 1/7 as merge permission, or Stage 2 is
 given merge to “fix” the authority gap.
 VERIFY: Ledger rev 7 blob `d441c22e…`; hydro #536 squash `226f97b6…`; #543/#708
-still draft; #2044/#2047/#2048 still open.
+still draft at cutoff. Post-cutoff: #2044/#2047/#2048/#2051 merged; #2052
+contains `main`.
 MAINTAIN: Next Stage 2 must ledger replacement PRs; next Stage 1 must close
 elapsed zero-diffs and re-ingest salvage drafts.
 

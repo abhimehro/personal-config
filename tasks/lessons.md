@@ -6,6 +6,8 @@
 `tasks/*-session-reports.md` / `lessons.md` files (#2044/#2047/#2048, then
 #2051/#2052). Merging one dirties the rest (0fk). Later stages read `main` and
 miss unmerged records (0gf). The maintainer already keeps takeaways in Notion.
+#2051 merged 2026-08-21T09:58Z (Learned* glossary); remaining sibling was this
+retrospective (#2052) until it absorbed `main` for Trunk.
 **Rule:** One branch `pr-lifecycle-docs-YYYYMMDD` per UTC day. Stage 1 creates
 it and `/trunk merge`s older green lineage PRs as routine docs. Stage 2/3 push
 onto that branch only. Exclusive files; no cron edits to `AGENTS.md` or

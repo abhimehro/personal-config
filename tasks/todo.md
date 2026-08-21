@@ -42,4 +42,7 @@ plane (packets + personal notes).
 - [x] Exclusive files: no cron edits to `AGENTS.md` or `tasks/todo.md`
 - [x] Update stage specs, prompts, exports, lesson 0gj, retro P1
 - [x] Add prompt contract test; `sync_cursor_export_prompts.py --write` + `--check`
-- [ ] Commit and push on #2052; do not bump `policy_revision`
+- [x] Commit and push on #2052; do not bump `policy_revision`
+- [x] Merge `origin/main` (#2051 Learned*) into #2052 so Trunk can prepare a
+      test branch; remaining `AGENTS.md` delta is the salvage stacked-PR bullet
+      only — no Learned* rewrite
