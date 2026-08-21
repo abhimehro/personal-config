@@ -530,3 +530,8 @@ with potentially missing data, always conditionally render a dedicated
 to communicate the absence of data clearly and beautifully.
 
 >>>>>>> Stashed changes
+
+## $(date +%Y-%m-%d) - HTML Reports Missing Data Fallback UX
+
+**Learning:** Raw fallback text ("Insights not available") inside `<pre>` tags for missing report sections feels like a technical error to the user rather than an expected empty state.
+**Action:** When generating HTML reports or dashboards with potentially missing data, always conditionally render a dedicated `.empty-state` component with flexbox layout, muted colors, and a relevant icon to communicate the absence of data clearly and beautifully.
