@@ -148,3 +148,147 @@ not a mechanical product-PR repair).
 - Analysis errors: 0
 - State-changing actions, including failed attempts and retries: **0**
 - Calibration successful-run increment: **0** (does not count)
+
+## Stage Run Record — 2026-08-20
+
+## Identity
+
+- Stage: `stage3`
+- Trigger: `cron` (`0 19 * * *` at `2026-08-20T19:00:26Z`; loaded prompt is
+  Stage 3 calibration variant)
+- Configuration version and policy revision: lifecycle `1.4` /
+  `pr-lifecycle-v1.4`; identity `2026-08-20-hyphen`; merge-method registry
+  `VERIFIED`
+- Start UTC: `2026-08-20T19:00:26Z`
+- End UTC: `2026-08-20T19:28:00Z`
+- Ledger revision read and resulting revision: **6 → 7**
+- Selected write primitive: `github_contents_api` (pointer metadata only;
+  runtime file from `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml`)
+- CAS: blob SHA `5c433bf61e30825818d4cd39a91d9e5b8e316921` →
+  `d441c22e1cd49758f05e7d2af5b9049a4e729849`; commit
+  `ee885a6b1101beefa8b2ef0c29e71b308283d319`; one write, no retry
+- Validator: `PR_LIFECYCLE_VALID` before PUT and after re-fetch (byte match)
+- Dashboard export fingerprint:
+  `sha256:2a2b414967523a333926b61d68a1e61b084e2ff880e8590d5643ec035857d0bb`
+  (`docs/cursor-automations/exports/daily-pr-completion.calibration.json`)
+- Memory mode: namespaced cache only (empty at start; does not override ledger)
+- Calibration mode: `report_only` (`REPORT_ONLY`, `approved_by: null`)
+- Calibration increment this run: **+1** via
+  `evt-s3-20260820-calibration` (`successful_run_count` 0 → 1). Not a docs-only
+  wrap-up.
+
+## Inputs and reconciliation
+
+Continuity sources read before acting:
+
+- Stage 1 last records: `tasks/review-session-reports.md` /
+  `tasks/pr-review-2026-08-20.md` (on-demand v1.3) and 2026-08-19 cron
+- Stage 2 last records: salvage 2026-08-19 HOLD_PLATFORM, 2026-08-18, 2026-08-13;
+  ledger also carried a 2026-08-20 ~17:25Z Stage 2 CAS
+- Stage 3 last records: 2026-08-19 HOLD_PLATFORM only (this is the first live
+  Stage 3 after bootstrap)
+- Lessons: `tasks/lessons.md` through **0gc**
+- Runtime ledger: Contents API GET succeeded; schema `1.2`; calibration already
+  `REPORT_ONLY` at policy `pr-lifecycle-v1.4` (no stale-policy reset)
+- GitKraken: not used. Notion: five packets. Linear: unused. Scanners: unused
+  as merge gates.
+
+Reconciliation counts:
+
+- Items considered: 85 ledger items; 82 Stage-3-owned at start; **11 processed**
+  (cap 20)
+- Items skipped as unchanged / unexpired: zero-diff close-candidates still in
+  cooldown — email-security-pipeline #1504 until `2026-08-21T13:11:16Z`,
+  Seatek_Analysis #704 until `2026-08-21T00:32:43Z`,
+  series_correction_project_updated #403 until `2026-08-21T01:49:38Z`,
+  repoprompt-ce #270 until `2026-08-20T22:26:17Z`
+- Items invalidated by SHA drift: **0** (all 11 live base/head matched ledger)
+- Items resolved outside the workflow: Seatek_Analysis #701 and Hydro #536
+  already `MERGED_ROUTINE` in the ledger; not re-opened
+- Product-PR approve/merge/close/comment/branch mutation: **not performed**
+- Extra drafts observed, not in ledger (no Stage 1 intake this run): Hydro
+  #543, Seatek_Analysis #708
+
+## Mandatory per-item evidence, action, and outcome record
+
+| Ledger key | Repository / PR | Observed vs ledger base/head SHA | Owner before → after | GitHub identity / author type | Classification / risk / sticky paths | Guardrail outcome | Changed paths | Evidence URLs | Proposed route / actual action | Mode / audit ID / action count | Retry or error | Final observed outcome / calibration correctness | Provenance or canonical relation |
+| ---------- | --------------- | -------------------------------- | -------------------- | ----------------------------- | ------------------------------------ | ----------------- | ------------- | ------------- | ------------------------------ | ------------------------------ | -------------- | ------------------------------------------------ | -------------------------------- |
+| `abhimehro/Seatek_Analysis#673@e2da9d736fd3f4e54bf035d00ecf8d95fc0e1f11` | Seatek_Analysis #673 | match `b0a33a62…` / `e2da9d73…`; OPEN MERGEABLE | stage3 → stage1 | `abhimehro` github_api token_authored (branch,title) / BOT | CI_INFRA / ROUTINE / none | CLOSE_NONSECURITY_NOOP | Updated_Seatek_Analysis.R, lint_output.txt | https://github.com/abhimehro/Seatek_Analysis/pull/673 https://github.com/abhimehro/Seatek_Analysis/pull/701 https://api.github.com/repos/abhimehro/Seatek_Analysis/rulesets/13305024 | close-candidate → STAGE1_INTAKE; cooldown `2026-08-21T19:20:00Z` | report_only / evt-s3-20260820-seatekanalys-673-h / **0** | none | Correct. Fresh anchors; required-check source GITHUB_RULESETS verified-zero readable. Did not close. | Superseded by merged #701; remaining is cosmetic R wrap plus forbidden `# nolint next` split |
+| `abhimehro/Seatek_Analysis#705@c4d07fa12213f2c004c09f029b392a51fc81fe9f` | Seatek_Analysis #705 | match `53416c3c…` / `c4d07fa1…`; OPEN MERGEABLE | stage3 → stage1 | `abhimehro` github_api token_authored (branch,title) / BOT | REFACTOR / ROUTINE / generated_output | CLOSE_NONSECURITY_NOOP | .jules/bolt.md, code_health_scanner.py | https://github.com/abhimehro/Seatek_Analysis/pull/705 https://github.com/abhimehro/Seatek_Analysis/pull/708 https://api.github.com/repos/abhimehro/Seatek_Analysis/rulesets/13305024 | close-candidate original → STAGE1_INTAKE; leave draft #708 | report_only / evt-s3-20260820-seatekanalys-705-h / **0** | none | Correct. Did not merge #705 or #708. | Salvage #708 is +0/−4 `code_health_scanner.py` only (no journal) |
+| `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#535@118f9ca67550bc2e2036e1f83f647e54cabc0a07` | Hydro #535 | match `a94d902c…` / `118f9ca6…`; OPEN MERGEABLE | stage3 → human | `dependabot[bot]` github_api app_slug dependabot / BOT | DEPENDENCY / ROUTINE / none | HOLD_CANONICAL | poetry.lock, pyproject.toml | https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/535 https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/543 https://app.notion.com/p/3c27419416de81239945fe67878eda2e | packet WAITING_HUMAN | report_only / evt-s3-20260820-hydrographve-535-h / **0** | none | Correct. Canonical/policy; not a completion action. | Tested salvage #543 pins mypy 2.3.1 in poetry + requirements-ci.txt |
+| `abhimehro/ctrld-sync#1165@de77774551baeceff87ff2b6a8921b082bf3edea` | ctrld-sync #1165 | match `ead0e8f2…` / `de777745…`; OPEN MERGEABLE | stage3 → human | `abhimehro` github_api token_authored (body,timeline_comment,commit_email) / BOT | CI_INFRA / ROUTINE / none | HOLD_CANONICAL | tests/test_gh_client.py, tests/test_plan_details.py | https://github.com/abhimehro/ctrld-sync/pull/1165 https://github.com/abhimehro/ctrld-sync/pull/1202 https://app.notion.com/p/3c27419416de81caad68ea4c89a29d63 | packet WAITING_HUMAN | report_only / evt-s3-20260820-ctrldsync-1165-h / **0** | none | Correct. Overlap is canonical, not a Stage 2 work item yet. | Sibling of #1202 on tests/test_gh_client.py; recommended narrower winner |
+| `abhimehro/ctrld-sync#1202@4b10bd631026ebbb17b0d128e0ba73853d7a9693` | ctrld-sync #1202 | match `0250e033…` / `4b10bd63…`; OPEN MERGEABLE | stage3 → human | `abhimehro` github_api token_authored (branch,body,timeline_comment,commit_email) / BOT | CI_INFRA / ROUTINE / none | HOLD_CANONICAL | six test modules including tests/test_gh_client.py | https://github.com/abhimehro/ctrld-sync/pull/1202 https://github.com/abhimehro/ctrld-sync/pull/1165 https://app.notion.com/p/3c27419416de81caad68ea4c89a29d63 | packet WAITING_HUMAN | report_only / evt-s3-20260820-ctrldsync-1202-h / **0** | none | Correct. Same packet as #1165. | Broader mypy sibling; keep open until winner chosen |
+| `abhimehro/Seatek_Analysis#693@dd62586806b59c67ff51195db857b6587a27dd8f` | Seatek_Analysis #693 | match `4d0e4745…` / `dd625868…`; OPEN MERGEABLE | stage3 → human | `cursor[bot]` github_api app_slug cursor / BOT | PERFORMANCE / ROUTINE / none | HOLD_CANONICAL | Updated_Seatek_Analysis.R | https://github.com/abhimehro/Seatek_Analysis/pull/693 https://github.com/abhimehro/Seatek_Analysis/pull/692 https://app.notion.com/p/3c27419416de8120a9cec293ee73236c | packet WAITING_HUMAN | report_only / evt-s3-20260820-seatekanalys-693-h / **0** | none | Correct. Recommended canonical POSIXct parse; human must confirm. | Overlaps #692 timestamp parse; R-only vs journal-carrying sibling |
+| `abhimehro/Seatek_Analysis#692@6bac9d59986c575f32575492f605efc8b8ac4cdb` | Seatek_Analysis #692 | match `4d0e4745…` / `6bac9d59…`; OPEN CONFLICTING | stage3 → human | `abhimehro` github_api token_authored (branch,title) / BOT | PERFORMANCE / SENSITIVE / generated_output | HOLD_CONTRACT | .jules/bolt.md, Updated_Seatek_Analysis.R | https://github.com/abhimehro/Seatek_Analysis/pull/692 https://github.com/abhimehro/Seatek_Analysis/pull/693 https://app.notion.com/p/3c27419416de8120a9cec293ee73236c | packet WAITING_HUMAN | report_only / evt-s3-20260820-seatekanalys-692-h / **0** | none | Correct. Did not autonomously close SENSITIVE sticky item. | Lesson 0cs journal; CONFLICTING |
+| `abhimehro/repoprompt-ce#247@b3a5b0c760eca9bec5236ab11d0b2dcac38dda80` | repoprompt-ce #247 | match `ae557a59…` / `b3a5b0c7…`; OPEN CONFLICTING | stage3 → human | `abhimehro` github_api token_authored (branch,title) / BOT | UI / ROUTINE / none | HOLD_PLATFORM | 53 files (Palette + journals + Swift) | https://github.com/abhimehro/repoprompt-ce/pull/247 https://api.github.com/repos/abhimehro/repoprompt-ce/rulesets/20172206 https://app.notion.com/p/3c27419416de811faef5f096aac6512d | packet WAITING_HUMAN | report_only / evt-s3-20260820-repopromptce-247-h / **0** | none | Correct. Recorded failed approach: Linux `make guardrails` missing swift/xcrun. | Required checks readable: CodeQL errors/high_or_higher; code quality: errors. Merge GITHUB_SQUASH unused |
+| `abhimehro/repoprompt-ce#271@fc9f84652bebd183979716c9b6ddc6a4c5e4d03a` | repoprompt-ce #271 | match `ea7fc8ba…` / `fc9f8465…`; OPEN UNSTABLE | stage3 → human | `abhimehro` github_api token_authored (branch,title) / BOT | UI / ROUTINE / generated_output | HOLD_PLATFORM | .jules/palette.md, NotificationsButtonView.swift, SettingsButton.swift | https://github.com/abhimehro/repoprompt-ce/pull/271 https://api.github.com/repos/abhimehro/repoprompt-ce/rulesets/20172206 https://app.notion.com/p/3c27419416de811faef5f096aac6512d | packet WAITING_HUMAN (same as #247) | report_only / evt-s3-20260820-repopromptce-271-h / **0** | none | Correct. Distinct a11y files from #247; same platform gap. | Do not `--no-verify`; do not recreate salvage on Linux |
+| `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#523@a845bfdbb51bff2ed59635c5fce4a8f22237091f` | Hydro #523 | match `6a82671a…` / `a845bfdb…`; OPEN MERGEABLE | stage3 → human | `abhimehro` github_api token_authored (body,timeline_comment,commit_email) / BOT | REFACTOR / SENSITIVE / generated_output | HOLD_CANONICAL | pr_body.txt, src/hydrograph_seatek_analysis/data/processor.py | https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/523 https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/536 https://app.notion.com/p/3c27419416de81c99db3da826729474c | packet WAITING_HUMAN | report_only / evt-s3-20260820-hydrographve-523-h / **0** | none | Correct. Not an autonomous close-candidate (SENSITIVE sticky). | Formatter wrap already merged via #536; remainder includes pr_body.txt |
+| `abhimehro/personal-config#2041@2facd5bddc672c3bab21699acfd61152a13be098` | personal-config #2041 | match `a3da8cf5…` / `2facd5bd…`; OPEN draft MERGEABLE | stage3 → stage2 | `cursor[bot]` github_api allowlist_login / BOT | CI_INFRA / ROUTINE / none | HOLD_CONTRACT | docs/TESTING.md, maintenance/SCHEDULE_SUMMARY.md | https://github.com/abhimehro/personal-config/pull/2041 https://api.github.com/repos/abhimehro/personal-config/branches/main/protection | complete Stage 2 work item s2-20260820-pc-2041-docs-markers | report_only / evt-s3-20260820-personalconf-2041-h / **0** | none | Correct. Mechanical docs-only repair; TRUNK_QUEUE so not GitHub-squash. | Leave draft; never mark ready; required-check source TRUNK verified-zero |
+
+## Revision-checked handoffs and human decisions
+
+Each processed item: ACK of latest projected HANDOFF (revision unchanged), then
+HANDOFF (revision +1). Calibration event `evt-s3-20260820-calibration`.
+
+| Ledger key | Event ID / idempotency key | Expected → resulting revision | Next owner | One next action | Safe default | Expiry | Receiver acknowledgement |
+| ---------- | -------------------------- | ----------------------------- | ---------- | --------------- | ------------ | ------ | ------------------------ |
+| Seatek #673 | evt-s3-20260820-seatekanalys-673-h / `{key}:evt-s3-20260820-seatekanalys-673-h` | 2 → 3 | stage1 | Close as CLOSED_SUPERSEDED vs #701 after `2026-08-21T19:20:00Z` if same head SHA; do not merge | Do not merge #673; do not salvage `# nolint next` split | `2026-08-21T19:20:00Z` cooldown; item expiry via Stage 1 | ACK evt-s3-20260820-seatekanalys-673-a of evt-s2-20260820-seatekanalys-673-h |
+| Seatek #705 | evt-s3-20260820-seatekanalys-705-h | 2 → 3 | stage1 | Close original as CLOSED_SUPERSEDED vs #708 after `2026-08-21T19:20:00Z`; leave #708 draft | Do not merge #705 or #708 during REPORT_ONLY | `2026-08-21T19:20:00Z` | ACK evt-s3-20260820-seatekanalys-705-a |
+| Hydro #535 | evt-s3-20260820-hydrographve-535-h | 2 → 3 | human | Answer https://app.notion.com/p/3c27419416de81239945fe67878eda2e | Do not merge #535 or #543 | `2026-08-27T19:20:00Z` | ACK evt-s3-20260820-hydrographve-535-a |
+| ctrld #1165 | evt-s3-20260820-ctrldsync-1165-h | 1 → 2 | human | Answer https://app.notion.com/p/3c27419416de81caad68ea4c89a29d63 (recommended #1165) | Do not squash overlapping test-mypy siblings | `2026-08-27T19:20:00Z` | ACK evt-s3-20260820-ctrldsync-1165-a |
+| ctrld #1202 | evt-s3-20260820-ctrldsync-1202-h | 1 → 2 | human | Same packet as #1165; keep open until winner chosen | Do not squash overlapping test-mypy siblings | `2026-08-27T19:20:00Z` | ACK evt-s3-20260820-ctrldsync-1202-a |
+| Seatek #693 | evt-s3-20260820-seatekanalys-693-h | 1 → 2 | human | Answer https://app.notion.com/p/3c27419416de8120a9cec293ee73236c (recommended #693) | Do not merge #693 while #692 overlaps | `2026-08-27T19:20:00Z` | ACK evt-s3-20260820-seatekanalys-693-a |
+| Seatek #692 | evt-s3-20260820-seatekanalys-692-h | 1 → 2 | human | Same packet; do not merge journal PR | Do not merge generated journals (0cs); do not autonomously close SENSITIVE | `2026-08-27T19:20:00Z` | ACK evt-s3-20260820-seatekanalys-692-a |
+| rpce #247 | evt-s3-20260820-repopromptce-247-h | 2 → 3 | human | Answer https://app.notion.com/p/3c27419416de811faef5f096aac6512d | Do not squash 53-file Palette PR; do not `--no-verify` | `2026-08-27T19:20:00Z` | ACK evt-s3-20260820-repopromptce-247-a |
+| rpce #271 | evt-s3-20260820-repopromptce-271-h | 2 → 3 | human | Same macOS-runner packet as #247 | Do not recreate salvage until macOS runner exists | `2026-08-27T19:20:00Z` | ACK evt-s3-20260820-repopromptce-271-a |
+| Hydro #523 | evt-s3-20260820-hydrographve-523-h | 1 → 2 | human | Answer https://app.notion.com/p/3c27419416de81c99db3da826729474c | Do not squash #523; do not autonomously close SENSITIVE sticky | `2026-08-27T19:20:00Z` | ACK evt-s3-20260820-hydrographve-523-a |
+| personal-config #2041 | evt-s3-20260820-personalconf-2041-h | 1 → 2 | stage2 | Consume `s2-20260820-pc-2041-docs-markers`; leave draft; TRUNK_QUEUE | Do not merge or mark ready a draft repo-health PR | `2026-08-27T19:20:00Z` | ACK evt-s3-20260820-personalconf-2041-a |
+| (calibration) | evt-s3-20260820-calibration / `__calibration__:evt-s3-20260820-calibration` | 0 → 0 | stage3 | Continue REPORT_ONLY until seven successful runs and human APPROVED | Do not enable bounded completion | n/a | status ACKNOWLEDGED |
+
+### Decision packets (5 of 5; irreducible only)
+
+1. Hydro #535 vs salvage #543 — canonical/policy merge-or-close
+2. ctrld-sync #1165 vs #1202 — canonical test-mypy sibling
+3. Seatek #693 vs #692 — canonical POSIXct vs journal/CONFLICTING
+4. repoprompt-ce macOS runner for #247 and #271 — platform
+5. Hydro #523 vs merged #536 — whether to close a SENSITIVE sticky item
+
+### Stage 2 work item created
+
+- `s2-20260820-pc-2041-docs-markers` source
+  `abhimehro/personal-config#2041@2facd5bddc672c3bab21699acfd61152a13be098`
+- Allowed: `docs/TESTING.md`, `maintenance/SCHEDULE_SUMMARY.md`
+- Test: `make lint-errors`
+- creation_event_id: `evt-s3-20260820-personalconf-2041-h`
+
+Existing Stage 2 work item `s2-20260820-ctrld-1161-bolt-summary` left untouched
+(source still stage2; Stage 3 does not own it).
+
+## Continuity
+
+- Successful pattern reused: ACK latest projected HANDOFF, then revision-checked
+  HANDOFF; validate locally; Contents API CAS with blob SHA; re-fetch and
+  re-validate; increment calibration only via `kind: CALIBRATION`.
+- Failed approach not to repeat: do not recreate rpce Swift salvage on Linux
+  (`make guardrails` / swift/xcrun missing); do not `--no-verify`; do not close
+  SENSITIVE sticky items without a human packet; do not count a docs-only
+  wrap-up as calibration success (0gc).
+- New lesson candidate: none (no new routing/verification/safety rule).
+- Configuration or policy gap: Dashboard export still lists GitKraken as the
+  named MCP action; this run used `gh` reads, Notion packets, and Contents API
+  CAS as specified by the loaded prompt. Bounded completion remains disabled.
+- Historical-import sources or fingerprints processed: none
+
+## Metrics
+
+- Inventory / recovery / reconciliation count: 11 processed / 0 SHA drift / 4
+  skipped unexpired zero-diff close-candidates
+- Merged: 0
+- Closed: 0
+- Drafts created: 0 (observed existing #543 and #708 only)
+- Decision packets created: 5
+- Stage 2 work items created: 1
+- Close-candidates recorded: 2 (#673, #705)
+- Analysis errors: 0
+- State-changing product-PR actions, including failed attempts and retries: **0**
+- Calibration successful-run increment: **1** (`successful_run_count` = 1 of 7)
