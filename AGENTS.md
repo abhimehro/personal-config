@@ -647,6 +647,10 @@ symlink destinations are never followed. To target one hash directory:
 
 ## Learned User Preferences
 
+- Stage 1/2/3 names the daily PR-lifecycle cron. In the gh-stack section,
+  Phase 1/Phase 2 are Review/Salvage *sessions*, and boundary S1 means those
+  session agents do not merge a stack unattended. S1 does not revoke Stage 1's
+  routine merge/close of bot-authored non-sensitive PRs.
 - Stage 2 PR salvage must never autonomously merge, approve, close, or request
   review; open draft salvage or infra-fix PRs and leave merge decisions to a
   human. Stage 1 holds routine merge and close authority for bot-authored
