@@ -292,3 +292,134 @@ Existing Stage 2 work item `s2-20260820-ctrld-1161-bolt-summary` left untouched
 - Analysis errors: 0
 - State-changing product-PR actions, including failed attempts and retries: **0**
 - Calibration successful-run increment: **1** (`successful_run_count` = 1 of 7)
+
+## Stage Run Record — 2026-08-21
+
+## Identity
+
+- Stage: `stage3`
+- Trigger: `cron` (`0 19 * * *` fired 2026-08-21T19:01:51Z; loaded prompt is
+  Stage 3 Daily PR Completion, calibration variant)
+- Configuration version and policy revision: lifecycle `1.4` /
+  `pr-lifecycle-v1.4`; identity `2026-08-20-hyphen`; sensitive taxonomy
+  `2026-08-19`; permission scope `cursor-export-v1.1`; merge-method/required-check
+  registry `registry-v1.2`
+- Start UTC: `2026-08-21T19:01:51Z`
+- End UTC: `2026-08-21T19:50:00Z`
+- Ledger revision read and resulting revision: **7 → 8**
+  (blob `d441c22e1cd49758f05e7d2af5b9049a4e729849` →
+  `fcd5e862f03c989c1361c5013a4783a781878b93`; CAS commit
+  `d951bd844358c0ad9064eb189fbafc4de4acfa74`)
+- Selected write primitive: `github_contents_api` on
+  `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml`
+- Dashboard export fingerprint:
+  `sha256:7f03daa016b7326ce37b51588d1c8ac8f56f5343f9847039aea96d38eb8b2a97`
+  (`docs/cursor-automations/exports/daily-pr-completion.calibration.json`)
+- Memory mode: namespaced cache only (does not override ledger/anchors/stage
+  authority)
+- Calibration mode: `report_only`
+- Calibration increment this run: **+1** (`successful_run_count` 1 → 2 of 7).
+  Not a docs-only wrap-up. Not a stale-policy reset.
+
+## Inputs and reconciliation
+
+Continuity sources read before acting:
+
+- `docs/automated-pr-lifecycle.md` v1.4
+- `docs/pr-lifecycle-runtime-ledger.md`
+- `docs/automated-pr-completion-agent.md`
+- `tasks/lessons.md` through 0gj (this run adds 0gk)
+- Last Stage 3 records: 2026-08-19 `HOLD_PLATFORM`; 2026-08-20 successful
+  calibration (count 1 of 7)
+- Last Stage 2 records: 2026-08-19 `HOLD_PLATFORM`; 2026-08-20 live salvage
+  (Hydro #543, Seatek #708)
+- Last Stage 1 records on `main`: 2026-08-20 15:00 and on-demand v1.3
+- Runtime ledger GET (Contents API) revision 7, 85 items / 118 events; post-CAS
+  87 items / 133 events; validator `PR_LIFECYCLE_VALID`
+- Today's `pr-lifecycle-docs-20260821` head: **absent on origin** (Stage 1 and
+  Stage 2 did not open the 2026-08-21 lineage). Yesterday's lineage #2052 merged
+  to `main` (`299a0ee1`). This run creates the 2026-08-21 lineage from
+  `origin/main` (lesson 0gj).
+
+Items considered (cap 20 reconciliations / 5 packets): 6 processed.
+
+Items skipped as unchanged:
+
+- Stage 2 work items `s2-20260820-ctrld-1161-bolt-summary` and
+  `s2-20260820-pc-2041-docs-markers` (Stage 3 does not own them)
+- Stage 1–owned close-candidates Seatek #673 and #705 (cooldown
+  `2026-08-21T19:20:00Z`)
+- Unexpired `WAITING_HUMAN` packets (expire `2026-08-27T19:20:00Z`): Hydro #535
+  vs #543, ctrld #1165 vs #1202, Seatek #693 vs #692, rpce #247/#271 macOS
+  runner, Hydro #523 vs merged #536 — no repeat packets
+
+Items invalidated by SHA drift: **0**
+
+Items resolved outside the workflow: none observed among the six processed
+keys.
+
+## Mandatory per-item evidence, action, and outcome record
+
+| Ledger key | Repository / PR | Observed vs ledger base/head SHA | Owner before → after | GitHub identity / author type | Classification / risk / sticky paths | Guardrail outcome | Changed paths | Evidence URLs | Proposed route / actual action | Mode / audit ID / action count | Retry or error | Final observed outcome / calibration correctness | Provenance or canonical relation |
+| ---------- | --------------- | -------------------------------- | -------------------- | ----------------------------- | ------------------------------------ | ----------------- | ------------- | ------------- | ------------------------------ | ------------------------------ | -------------- | ------------------------------------------------ | -------------------------------- |
+| `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#543@2af2758598d89672d07af40fbc4927dee6bdc21e` | Hydrograph #543 | Observed base `cddb8a3ac786e184802629bda0adb3ec728338cb` / head `2af2758598d89672d07af40fbc4927dee6bdc21e`; **new ingest** (absent from pre-run ledger; lesson 0ge) | none → stage3 (IMPORT) → stage1 | login `abhimehro`; identity `2026-08-20-hyphen` HUMAN / `human_default` (1 independent signal: `branch` `cursor-agent/`; title `salvage()` not a versioned keyword; `cursoragent@cursor.com` not a versioned bot-email suffix). HUMAN items omit `identity_provenance` | HUMAN ⇒ SENSITIVE; sticky: none on `poetry.lock` / `pyproject.toml` / `requirements-ci.txt` | `HOLD_EVIDENCE` | `poetry.lock`, `pyproject.toml`, `requirements-ci.txt` | https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/543 ; checks SUCCESS (CodeQL, Python tests, CodeScene, GitGuardian). Required-check source: GITHUB_RULESETS verified-zero (`rulesets/4178077`). Merge-method registry GITHUB_SQUASH (unused; no merge). isDraft=false, OPEN, MERGEABLE/CLEAN | REPORT_ONLY ingest + ACK + HANDOFF to STAGE1_INTAKE. Do not routine-merge. Do not convert ready salvage to draft (0gd). | report_only / `evt-s3-20260821-543-i`+`a`+`h` / 0 product mutations | none | Correct: HUMAN/SENSITIVE/HOLD_EVIDENCE; next_owner stage1; revision 2 | Provenance of Dependabot #535 (existing unexpired Notion packet; no new packet) |
+| `abhimehro/Seatek_Analysis#708@a458455faf3137b7345d433a9b2eaa42e9019ec6` | Seatek_Analysis #708 | Observed base `53416c3cfdb3f6929507a8747b043ffaf291e683` / head `a458455faf3137b7345d433a9b2eaa42e9019ec6`; **new ingest** | none → stage3 (IMPORT) → stage1 | login `abhimehro`; identity `2026-08-20-hyphen` HUMAN / `human_default` (1 signal: `branch`). HUMAN items omit `identity_provenance` | HUMAN ⇒ SENSITIVE; sticky: none (`code_health_scanner.py` only; no `.jules/bolt.md`) | `HOLD_EVIDENCE` | `code_health_scanner.py` | https://github.com/abhimehro/Seatek_Analysis/pull/708 ; checks SUCCESS. Required-check source: GITHUB_RULESETS verified-zero. Merge-method registry unused. isDraft=false, OPEN, MERGEABLE/CLEAN | REPORT_ONLY ingest + ACK + HANDOFF to STAGE1_INTAKE. Do not routine-merge. Do not convert ready salvage to draft (0gd). | report_only / `evt-s3-20260821-708-i`+`a`+`h` / 0 product mutations | none | Correct: HUMAN/SENSITIVE/HOLD_EVIDENCE; next_owner stage1; revision 2 | Provenance of Jules #705 (Stage 1 already owns #705 as close-candidate) |
+| `abhimehro/Seatek_Analysis#704@2c5871e643d9aa945044419aa53d25bfa9ec96a4` | Seatek_Analysis #704 | Observed = ledger base/head (no STALE_ANCHOR); files=0 | stage1 → stage3 (ACK of projected HANDOFF) → stage1 | BOT (dependabot/jules lineage already on ledger) | ROUTINE / CLOSE_NONSECURITY_NOOP / sticky none | prior close-candidate; cooldown elapsed | none (files=0) | https://github.com/abhimehro/Seatek_Analysis/pull/704 ; OPEN MERGEABLE; checks SUCCESS. Required-check source: GITHUB_RULESETS verified-zero | ACK then HANDOFF to STAGE1_INTAKE. Did **not** close. | report_only / `evt-s3-20260821-seatekanalys-704-a`+`h` / 0 | none | Correct: still OPEN zero-diff; next_owner stage1; revision 2 | Close-candidate evidence unchanged; Stage 1 re-owns after cooldown |
+| `abhimehro/email-security-pipeline#1504@0e523f6d9914bf4ee64b9762ce31ea683a1d61a7` | email-security-pipeline #1504 | Observed = ledger base/head; files=0 | stage1 → stage3 (ACK) → stage1 | BOT | ROUTINE / CLOSE_NONSECURITY_NOOP / sticky none | prior close-candidate; cooldown elapsed | none | https://github.com/abhimehro/email-security-pipeline/pull/1504 ; OPEN MERGEABLE; checks SUCCESS. Required-check source: GITHUB_RULESETS verified-zero | ACK then HANDOFF to STAGE1_INTAKE. Did **not** close. | report_only / `evt-s3-20260821-emailsecuri-1504-a`+`h` / 0 | none | Correct: still OPEN zero-diff; next_owner stage1; revision 2 | Close-candidate evidence unchanged |
+| `abhimehro/series_correction_project_updated#403@bd04945b78cdf90fd46dca38d7c5cc26b85188aa` | series_correction_project_updated #403 | Observed = ledger base/head; files=0 | stage1 → stage3 (ACK) → stage1 | BOT | ROUTINE / CLOSE_NONSECURITY_NOOP / sticky none | prior close-candidate; cooldown elapsed | none | https://github.com/abhimehro/series_correction_project_updated/pull/403 ; OPEN MERGEABLE; checks SUCCESS. Required-check source: GITHUB_RULESETS verified-zero | ACK then HANDOFF to STAGE1_INTAKE. Did **not** close. | report_only / `evt-s3-20260821-seriescorrec-403-a`+`h` / 0 | none | Correct: still OPEN zero-diff; next_owner stage1; revision 2 | Close-candidate evidence unchanged |
+| `abhimehro/repoprompt-ce#270@8f325597ada9ea7aaa54a0db23a00d06896aed79` | repoprompt-ce #270 | Observed = ledger base/head; files=0; mergeable UNKNOWN | stage1 → stage3 (ACK) → stage1 | BOT | ROUTINE / CLOSE_NONSECURITY_NOOP / sticky none | prior close-candidate; cooldown elapsed | none | https://github.com/abhimehro/repoprompt-ce/pull/270 ; OPEN files=0; mergeable UNKNOWN; non-required CI `Build and Test (app shard 1)` FAILURE; required checks still readable (CodeQL errors/high_or_higher; code quality: errors). Required-check source: GITHUB_RULESETS (two named required checks) | ACK then HANDOFF to STAGE1_INTAKE. Still CLOSE_NONSECURITY_NOOP (do not merge). Did **not** close. | report_only / `evt-s3-20260821-repopromptce-270-a`+`h` / 0 | none | Correct: zero-diff close-candidate with readable required checks; next_owner stage1; revision 2 | Close-candidate evidence unchanged; non-required shard failure is not a merge gate |
+
+## Revision-checked handoffs and human decisions
+
+| Ledger key | Event ID / idempotency key | Expected → resulting revision | Next owner | One next action | Safe default | Expiry | Receiver acknowledgement |
+| ---------- | -------------------------- | ----------------------------- | ---------- | --------------- | ------------ | ------ | ------------------------ |
+| Hydro #543 | `evt-s3-20260821-543-i` / `{item_key}:evt-s3-20260821-543-i` | 0 → 1 (IMPORT) | stage3 | ingest live salvage | HOLD_EVIDENCE | `2026-08-28T19:20:00Z` | ACK `evt-s3-20260821-543-a` (receipt; no rev bump) |
+| Hydro #543 | `evt-s3-20260821-543-h` / `{item_key}:evt-s3-20260821-543-h` | 1 → 2 (HANDOFF) | stage1 | STAGE1_INTAKE re-ingest HUMAN salvage; do not ROUTINE-merge | HOLD_EVIDENCE | `2026-08-28T19:20:00Z` | pending Stage 1 |
+| Seatek #708 | `evt-s3-20260821-708-i` / `{item_key}:evt-s3-20260821-708-i` | 0 → 1 (IMPORT) | stage3 | ingest live salvage | HOLD_EVIDENCE | `2026-08-28T19:20:00Z` | ACK `evt-s3-20260821-708-a` |
+| Seatek #708 | `evt-s3-20260821-708-h` / `{item_key}:evt-s3-20260821-708-h` | 1 → 2 (HANDOFF) | stage1 | STAGE1_INTAKE re-ingest HUMAN salvage; do not ROUTINE-merge | HOLD_EVIDENCE | `2026-08-28T19:20:00Z` | pending Stage 1 |
+| Seatek #704 | `evt-s3-20260821-seatekanalys-704-a` then `-h` | ACK then 1 → 2 | stage1 | STAGE1_INTAKE; consider close after evidence refresh | CLOSE_NONSECURITY_NOOP | `2026-08-28T19:20:00Z` | ACK of Stage 1 projected HANDOFF copied `next_owner: stage1` |
+| email #1504 | `evt-s3-20260821-emailsecuri-1504-a` then `-h` | ACK then 1 → 2 | stage1 | STAGE1_INTAKE; consider close after evidence refresh | CLOSE_NONSECURITY_NOOP | `2026-08-28T19:20:00Z` | same ACK pattern |
+| series #403 | `evt-s3-20260821-seriescorrec-403-a` then `-h` | ACK then 1 → 2 | stage1 | STAGE1_INTAKE; consider close after evidence refresh | CLOSE_NONSECURITY_NOOP | `2026-08-28T19:20:00Z` | same ACK pattern |
+| rpce #270 | `evt-s3-20260821-repopromptce-270-a` then `-h` | ACK then 1 → 2 | stage1 | STAGE1_INTAKE; still CLOSE_NONSECURITY_NOOP (do not merge) | CLOSE_NONSECURITY_NOOP | `2026-08-28T19:20:00Z` | same ACK pattern |
+| `__calibration__` | `evt-s3-20260821-calibration` / `__calibration__:evt-s3-20260821-calibration` | calibration record only | n/a | n/a | REPORT_ONLY | n/a | successful: true; policy `pr-lifecycle-v1.4`; count 2 of 7 |
+
+Human packets this run: **0**. Unexpired packets from 2026-08-20 remain the
+canonical human plane (expire `2026-08-27T19:20:00Z`). Salvage identity is
+reducible under the versioned policy (HUMAN); the config gap is lesson 0gk, not
+a fifth overlapping packet.
+
+## Continuity
+
+- Successful pattern reused: ACK latest projected HANDOFF (copy parent
+  `next_owner`), then revision-checked HANDOFF; validate locally;
+  Contents API CAS with blob SHA via `gh api --input` JSON (CLI argv too long
+  for `-f content=`); re-GET byte-match; increment calibration only via
+  `kind: CALIBRATION`.
+- Failed approach not to repeat: do not classify one-signal `cursor-agent/`
+  salvage as BOT; do not convert ready salvage to draft (0gd); do not treat
+  bootstrap `tasks/pr-lifecycle-ledger.yaml` as runtime state; do not PUT the
+  full ledger via `gh api -f content=` (argument list too long); do not open a
+  third overlapping docs PR (0gj); do not comment/approve/merge/close product
+  PRs in REPORT_ONLY.
+- New lesson candidate: **0gk** — Stage 2 `salvage():` titles and
+  `cursoragent@cursor.com` are not versioned bot signals.
+- Configuration or policy gap: identity `2026-08-20-hyphen` does not version
+  `salvage` as a title keyword or `cursoragent@cursor.com` as a bot-email
+  suffix. Bounded completion remains disabled until dated human `APPROVED`
+  (count 2 of 7; need 7 successful calibrated runs).
+- Historical-import sources or fingerprints processed: none
+
+## Metrics
+
+- Inventory / recovery / reconciliation count: 6 processed / 0 SHA drift / 0
+  packets / 2 salvage ingestions / 4 close-candidate handoffs
+- Merged: 0
+- Closed: 0
+- Drafts created: 0 (observed ready #543 and #708; did not convert)
+- Decision packets created: 0
+- Stage 2 work items created: 0
+- Close-candidates recorded: 4 re-handed to Stage 1 (no new close-candidate
+  keys; cooldown elapsed on existing records)
+- Analysis errors: 0
+- State-changing product-PR actions, including failed attempts and retries: **0**
+- Calibration successful-run increment: **1** (`successful_run_count` = 2 of 7)
