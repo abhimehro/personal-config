@@ -1,3 +1,31 @@
+# Stage 1 — 2026-08-20 (cron 15:00 UTC / v1.4 hyphen identity)
+
+Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Stale
+calibration (`pr-lifecycle-v1.3`) reset to `REPORT_ONLY` count **0** /
+`pr-lifecycle-v1.4` (rev **3 → 4**; not a successful calibration run). Inventoried
+**50** new BOT PRs (cap 50) plus **34** unchanged-SHA skips. Open **104**;
+**5** HUMAN (`feat/`/`fix/` or <2 signals). Squash-merged **1** (Hydrograph #536,
+`226f97b630303cef047e4be75297c02615ec2485`). Closed **0**. GitHub PR mutations
+**1**. Ledger `4` → `5` (blob `b1cd06de01b8696a5025bbec011e12c19fdf6835`, commit
+`38e16c111c7269e0302cbfa4124e7be92d5addc8`). Stage 2 queued **2** (seatek#705
+isfile; rpce#271 a11y). Stage 3 **47** new handoffs (includes 4 zero-diff close
+candidates awaiting 24h). Calibration REPORT_ONLY count **0**. Lessons **0gc**.
+Full record: `tasks/pr-review-2026-08-20-1500.md`.
+
+| Metric                         | Count |
+| ------------------------------ | ----: |
+| Inventoried (new v1.4 BOT)     |    50 |
+| Unchanged SHA retained         |    34 |
+| Human-login excluded           |     5 |
+| Merged                         |     1 |
+| Closed                         |     0 |
+| Stage 2 queued (this run)      |     2 |
+| Stage 3 handoffs (this run)    |    47 |
+| GitHub PR actions              |     1 |
+| Ledger CAS writes              |     2 |
+
+Per-item table: see `tasks/pr-review-2026-08-20-1500.md` (mandatory Stage 1 columns).
+
 # Stage 1 — 2026-08-20 (on-demand v1.3 first live run)
 
 Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Stale
