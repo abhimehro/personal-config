@@ -13,7 +13,7 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-import pr_lifecycle_validation as validator
+import pr_lifecycle_validation as validator  # noqa: E402
 
 
 class TestPrLifecycleArtifacts(unittest.TestCase):

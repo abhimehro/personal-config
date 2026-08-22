@@ -7,7 +7,7 @@ import yaml
 scripts_dir = Path(__file__).parent.parent / "scripts"
 sys.path.append(str(scripts_dir))
 
-from pr_identity import (
+from pr_identity import (  # noqa: E402
     classify_pr_identity,
     identities_match,
     identity_policy_from_config,
