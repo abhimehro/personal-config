@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maint.monthly</string>
+    <string>com.abhimehrotra.maint.systemcleanup</string>
 
     <key>EnvironmentVariables</key>
     <dict>
@@ -18,22 +18,19 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/speedybee/Library/Maintenance/bin/run_all_maintenance.sh</string>
-        <string>monthly</string>
+        <string>/Users/speedybee/Library/Maintenance/bin/system_cleanup.sh</string>
     </array>
 
     <key>StandardOutPath</key>
-    <string>/Users/speedybee/Library/Logs/maintenance/maintenance_monthly.out</string>
+    <string>/Users/speedybee/Library/Logs/maintenance/system_cleanup.out</string>
 
     <key>StandardErrorPath</key>
-    <string>/Users/speedybee/Library/Logs/maintenance/maintenance_monthly.err</string>
+    <string>/Users/speedybee/Library/Logs/maintenance/system_cleanup.err</string>
 
     <key>StartCalendarInterval</key>
     <dict>
-        <key>Day</key>
-        <integer>1</integer>
         <key>Hour</key>
-        <integer>6</integer>
+        <integer>9</integer>
         <key>Minute</key>
         <integer>0</integer>
     </dict>

@@ -103,9 +103,7 @@ def _validate_identity_inference(identity: dict[str, Any]) -> None:
         )
 
 
-def _validate_identity_revision_match(
-    policy: Any, inputs: dict[str, Any]
-) -> None:
+def _validate_identity_revision_match(policy: Any, inputs: dict[str, Any]) -> None:
     if policy.revision != inputs["identity_classification_revision"]:
         raise ValueError(
             "config.identity_classification.revision: must match policy_inputs"

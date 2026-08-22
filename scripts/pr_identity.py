@@ -63,9 +63,7 @@ def identity_policy_from_config(config: Mapping[str, Any]) -> IdentityPolicy:
     required = _require_independent_signals(identity)
     return IdentityPolicy(
         bot_authors=tuple(str(item) for item in bots),
-        maintainer_token_logins=_require_str_tuple(
-            identity, "maintainer_token_logins"
-        ),
+        maintainer_token_logins=_require_str_tuple(identity, "maintainer_token_logins"),
         required_independent_signals=required,
         branch_prefixes=_require_str_tuple(identity, "branch_prefixes"),
         title_keywords=_require_str_tuple(identity, "title_keywords"),
