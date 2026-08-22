@@ -194,6 +194,49 @@ if ((LATEST_CASKS > 0)); then
 	fi
 fi
 
+# Repair leftover Caskroom dirs that brew doctor flags as missing valid
+# metadata. Homebrew only treats a token as installed when
+# .metadata/*/*/Casks/*.{rb,json} exists. Interrupted upgrades leave
+# *.upgrading staging dirs, and renamed casks (windsurf@next ->
+# devin-desktop@next) leave an old token directory. Do NOT brew uninstall
+# those leftovers: renamed tokens alias to the replacement and would
+# clobber the live app.
+CASKROOM="$(brew --caskroom 2>/dev/null || true)"
+if [[ -n ${CASKROOM} && -d $CASKROOM ]]; then
+	log_info "Checking Caskroom directories for leftover/invalid metadata..."
+	shopt -s nullglob
+	for dir in "$CASKROOM"/*; do
+		[[ -d $dir ]] || continue
+		token="${dir##*/}"
+		has_caskfile=0
+		if [[ -d $dir/.metadata ]] && find "$dir/.metadata" \( -path "*/Casks/*.rb" -o -path "*/Casks/*.json" \) -print -quit | grep -q .; then
+			has_caskfile=1
+		fi
+		has_real_version=0
+		for child in "$dir"/*; do
+			[[ -e $child ]] || continue
+			base="${child##*/}"
+			[[ $base == *.upgrading ]] && continue
+			has_real_version=1
+		done
+		if ((has_caskfile)); then
+			for leftover in "$dir"/*.upgrading; do
+				[[ -e $leftover ]] || continue
+				log_warn "Removing leftover upgrade staging dir for ${token}: ${leftover}"
+				rm -rf "$leftover"
+			done
+			continue
+		fi
+		if ((has_real_version)); then
+			log_warn "Caskroom/${token} has no valid metadata but still has a staged version; skip auto-remove"
+			continue
+		fi
+		log_warn "Removing Caskroom leftover without valid metadata: ${token}"
+		rm -rf "$dir"
+	done
+	shopt -u nullglob
+fi
+
 # Cleanup
 log_info "Cleaning up Homebrew cache and old versions..."
 if brew autoremove 2>&1 | tee -a "$LOG_DIR/brew_maintenance.log"; then

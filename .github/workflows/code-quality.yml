@@ -162,5 +162,11 @@ jobs:
       - name: Install dependencies for tests
         run: if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install "pyyaml==6.0.3"; fi
 
+      - name: Validate PR lifecycle source artifacts
+        run: |
+          python3 scripts/validate_pr_lifecycle_artifacts.py tasks/pr-lifecycle-ledger.example.yaml
+          python3 scripts/sync_cursor_export_prompts.py --check
+          python3 -m unittest tests/test_pr_lifecycle_artifacts.py -v
+
       - name: Run all tests (shell + Python)
         run: make test-all

@@ -1,2 +1,4 @@
 # DEPENDENCY: pyyaml==6.0.3 — YAML parsing for automation scripts — pinned 2026-08-08 (OSV-clean; matches Hydrograph/ctrld-sync)
 pyyaml==6.0.3
+# DEPENDENCY: jsonschema==4.26.0 — execute the normative PR lifecycle JSON Schema — pinned 2026-08-19 (OSV-clean)
+jsonschema==4.26.0

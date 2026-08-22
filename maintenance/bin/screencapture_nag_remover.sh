@@ -16,7 +16,8 @@ if ((MAJ < 15)); then
 fi
 
 _os_is_151_or_higher() {
-	((MAJ >= 15)) && ((MIN > 0))
+	# Sequoia 15.1+ and every later major (Tahoe 16, 27, ...) use bundle-ID dicts.
+	((MAJ > 15)) || { ((MAJ == 15)) && ((MIN > 0)); }
 }
 
 _fda_settings() {
