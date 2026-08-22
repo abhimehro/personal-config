@@ -116,6 +116,10 @@ These are the main Fish files intended for manual edits:
 - `configs/.config/fish/config.fish`
 - `configs/.config/fish/fish_plugins`
 - `configs/.config/fish/RESTORE_CUSTOMIZATIONS.md`
+- `configs/.config/fish/completions/op.fish`
+- `configs/.config/fish/functions/op-ready.fish`
+- `configs/.config/fish/functions/cursor-op.fish`
+- `configs/.config/fish/functions/_op_inject.fish`
 - `configs/.config/fish/functions/__ensure_dracula_theme.fish`
 - `configs/.config/fish/functions/fish_greeting.fish`
 - `configs/.config/fish/functions/git-mirror-clean.fish`
@@ -125,6 +129,7 @@ These are the main Fish files intended for manual edits:
 These are generally plugin-managed or machine-generated:
 
 - `configs/.config/fish/conf.d/*.fish`
+- `configs/.config/fish/completions/*` (except `op.fish`)
 - `configs/.config/fish/functions/_fzf_*`
 - `configs/.config/fish/functions/_tide_*`
 - `configs/.config/fish/fish_variables`

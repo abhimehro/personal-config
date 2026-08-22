@@ -61,6 +61,39 @@ ensure_pip() {
 	python3 -m pip install --user --upgrade --break-system-packages pip
 }
 
+ensure_pipx() {
+	export PATH="${HOME}/.local/bin:${PATH}"
+	if command -v pipx >/dev/null 2>&1; then
+		return 0
+	fi
+	ensure_pip
+	log "installing pipx via pip"
+	pip_user pipx
+	export PATH="${HOME}/.local/bin:${PATH}"
+	if ! command -v pipx >/dev/null 2>&1; then
+		log "pipx is still missing after pip install"
+		return 1
+	fi
+}
+
+install_anthropies() {
+	if ! ensure_pipx; then
+		log "skip anthropies (pipx unavailable)"
+		return 0
+	fi
+	log "installing anthropies CLI via pipx"
+	if ! pipx install --force 'git+https://github.com/CharlesHoskinson/anthropies.git'; then
+		log "anthropies pipx install failed (non-fatal)"
+		return 0
+	fi
+	export PATH="${HOME}/.local/bin:${PATH}"
+	if command -v anthropies >/dev/null 2>&1; then
+		anthropies --version || true
+	else
+		log "anthropies installed but not on PATH"
+	fi
+}
+
 series27_venv_python_ready() {
 	local venv_dir="$1"
 	[[ -x "${venv_dir}/bin/python" ]] &&
@@ -233,6 +266,7 @@ install_repoprompt_ce() {
 
 log "repos root: ${REPOS_ROOT}"
 install_personal_config
+install_anthropies
 install_ctrld_sync
 install_email_security_pipeline
 install_hydrograph

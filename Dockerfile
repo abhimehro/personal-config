@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     python3-venv \
+    pipx \
     # Network utilities
     curl \
     wget \
@@ -72,6 +73,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Python runtime
     python3 \
     python3-pip \
+    pipx \
     # System utilities
     jq \
     yq \
@@ -106,7 +108,7 @@ RUN mkdir -p /app/logs /app/data /app/reports && \
 USER scriptuser
 
 # Set environment variables
-ENV PATH="/app/scripts:/app/bin:${PATH}" \
+ENV PATH="/home/scriptuser/.local/bin:/app/scripts:/app/bin:${PATH}" \
     PYTHONUNBUFFERED=1 \
     SHELL=/bin/bash
 
