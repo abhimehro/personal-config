@@ -305,7 +305,6 @@ class TestProcessAllowlistFiles(unittest.TestCase):
         self.assertEqual(result, set())
 
 
-
 class TestWriteTextFiles(unittest.TestCase):
     def setUp(self):
         self.output_dir = Path("/fake/output")

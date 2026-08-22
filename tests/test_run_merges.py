@@ -59,9 +59,13 @@ class TestRunMerges(unittest.TestCase):
 
     def test_run_gh_timeout(self):
         import subprocess
+
         with (
             patch("run_merges.load_gh_token_env", return_value={}),
-            patch("subprocess.run", side_effect=subprocess.TimeoutExpired(cmd=["gh", "test"], timeout=120))
+            patch(
+                "subprocess.run",
+                side_effect=subprocess.TimeoutExpired(cmd=["gh", "test"], timeout=120),
+            ),
         ):
             result = run_gh(["gh", "test"])
             self.assertIsNone(result)
@@ -69,7 +73,7 @@ class TestRunMerges(unittest.TestCase):
     def test_run_gh_oserror(self):
         with (
             patch("run_merges.load_gh_token_env", return_value={}),
-            patch("subprocess.run", side_effect=OSError("Command not found"))
+            patch("subprocess.run", side_effect=OSError("Command not found")),
         ):
             result = run_gh(["gh", "test"])
             self.assertIsNone(result)
