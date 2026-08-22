@@ -913,3 +913,6 @@ unnecessary disk I/O overhead and reduces script speed, especially as the number
 of elements grows. **Action:** Always buffer string components into a list in
 memory (e.g. using `append` or `extend`) and write to disk in a single operation
 using `"\n".join(out) + "\n"` to minimize I/O overhead.
+## 2026-12-10 - [Avoid multiple append calls in list construction]
+**Learning:** Calling `.append()` repeatedly to build up a static or mostly static list inside a function creates unnecessary method lookup overhead and makes the code less readable compared to standard list initialization.
+**Action:** Replace multiple consecutive `.append()` calls with a single list initialization (e.g., `my_list = [item1, item2, ...]`) or `.extend([...])` to improve both performance and code clarity.
