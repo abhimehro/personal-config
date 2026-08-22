@@ -26,5 +26,9 @@ end
 if test "$_op_skip_plugin_aliases" -eq 0
   alias agent="op plugin run -- agent"
   alias copilot="op plugin run -- copilot"
+  alias gh="op plugin run -- gh"
+  alias gemini="op plugin run -- gemini"
+  alias huggingface-cli="op plugin run -- huggingface-cli"
+  alias vercel="op plugin run -- vercel"
 end
 set -e _op_skip_plugin_aliases

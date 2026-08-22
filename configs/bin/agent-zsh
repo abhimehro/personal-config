@@ -9,10 +9,13 @@ export ZDOTDIR="${ZDOTDIR_AGENT:-$HOME/.config/agent-shell}"
 
 ZSH_BIN=/opt/homebrew/bin/zsh
 [[ -x $ZSH_BIN ]] || ZSH_BIN=/bin/zsh
-[[ -x $ZSH_BIN ]] || { print -u2 "agent-zsh: no zsh binary found"; exit 127; }
+[[ -x $ZSH_BIN ]] || {
+	print -u2 "agent-zsh: no zsh binary found"
+	exit 127
+}
 
 if [[ "${1:-}" == "--self-test" ]]; then
-  exec "$ZSH_BIN" -c '
+	exec "$ZSH_BIN" -c '
     print "agent-zsh self-test"
     print "shell=zsh"
     print "ZDOTDIR=$ZDOTDIR"
