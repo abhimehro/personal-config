@@ -1,5 +1,4 @@
 import os
-import re
 
 fpath = "scripts/morning-brief/morning-brief.py"
 if os.path.exists(fpath):

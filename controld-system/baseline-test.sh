@@ -73,7 +73,7 @@ else
 fi
 
 echo ""
-if [ $failed -eq 0 ]; then
+if [ "$failed" -eq 0 ]; then
 	echo "Result: ALL TESTS PASSED ✓"
 	exit 0
 else
