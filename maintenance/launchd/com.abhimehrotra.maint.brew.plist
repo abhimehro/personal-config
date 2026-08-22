@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.abhimehrotra.maint.monthly</string>
+    <string>com.abhimehrotra.maint.brew</string>
 
     <key>EnvironmentVariables</key>
     <dict>
@@ -11,6 +11,8 @@
         <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
         <key>MAINTENANCE_HOME</key>
         <string>/Users/speedybee/Library/Maintenance</string>
+        <key>HOMEBREW_NO_ENV_HINTS</key>
+        <string>1</string>
         <key>AUTOMATED_RUN</key>
         <string>1</string>
     </dict>
@@ -18,22 +20,19 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/speedybee/Library/Maintenance/bin/run_all_maintenance.sh</string>
-        <string>monthly</string>
+        <string>/Users/speedybee/Library/Maintenance/bin/brew_maintenance.sh</string>
     </array>
 
     <key>StandardOutPath</key>
-    <string>/Users/speedybee/Library/Logs/maintenance/maintenance_monthly.out</string>
+    <string>/Users/speedybee/Library/Logs/maintenance/brew_maintenance.out</string>
 
     <key>StandardErrorPath</key>
-    <string>/Users/speedybee/Library/Logs/maintenance/maintenance_monthly.err</string>
+    <string>/Users/speedybee/Library/Logs/maintenance/brew_maintenance.err</string>
 
     <key>StartCalendarInterval</key>
     <dict>
-        <key>Day</key>
-        <integer>1</integer>
         <key>Hour</key>
-        <integer>6</integer>
+        <integer>10</integer>
         <key>Minute</key>
         <integer>0</integer>
     </dict>

@@ -18,7 +18,7 @@ visibly available.
 
 | Cursor automation   | Repository specification                |     Schedule | Concurrency |                                                   Run cap | Write authority                                                                                   |
 | ------------------- | --------------------------------------- | -----------: | ----------: | --------------------------------------------------------: | ------------------------------------------------------------------------------------------------- |
-| Daily PR Review     | `docs/automated-pr-review-agent.md`     | `0 15 * * *` |           1 |                                        50 inventory items / 20 actions | Routine approve, squash merge, close, and mechanical repair only when all routine predicates pass |
+| Daily PR Review     | `docs/automated-pr-review-agent.md`     | `0 15 * * *` |           1 |                           50 inventory items / 20 actions | Routine approve, squash merge, close, and mechanical repair only when all routine predicates pass |
 | Daily PR Salvage    | `docs/automated-pr-salvage-agent.md`    | `0 17 * * *` |           1 |                                     5 recovery candidates | Focused draft recovery only; no approval, merge, or original-security closure                     |
 | Daily PR Completion | `docs/automated-pr-completion-agent.md` | `0 19 * * *` |           1 | 20 reconciliations, 5 packets, 5 post-calibration actions | Report-only until calibration approval; then bounded non-security completion or closure           |
 
@@ -92,27 +92,26 @@ Dashboard remains the evidence source for the connected MCP inventory.
 ## Stage handoffs
 
 Stage 1 sends one bounded mechanical repair to Stage 2. It sends every other
-nonterminal item to Stage 3. Stage 1 also **re-ingests** Stage 2 replacement
-PRs that have a ledger `item_key` (or salvage/provenance labels) and remains
-the only pre-calibration autonomous merger for routine BOT work.
+nonterminal item to Stage 3. Stage 1 also **re-ingests** Stage 2 replacement PRs
+that have a ledger `item_key` (or salvage/provenance labels) and remains the
+only pre-calibration autonomous merger for routine BOT work.
 
 Stage 2 sends every draft (with a replacement ledger item), failed recovery,
-policy gap, platform gap, canonical conflict, or unreconciled original to
-Stage 1 (routine replacements) or Stage 3 (everything else). Stage 2 never
-merges.
+policy gap, platform gap, canonical conflict, or unreconciled original to Stage
+1 (routine replacements) or Stage 3 (everything else). Stage 2 never merges.
 
 Stage 3 sends stale anchors to Stage 1 and mechanical code work to Stage 2.
-During `REPORT_ONLY` it ingests missing salvage drafts and does not merge.
-After `APPROVED` it may merge salvage drafts only after an independent
-predicate re-read. Human review is reserved for a one-question Stage 3 packet
-only when policy or security judgment is irreducible; humans also merge salvage
-drafts that are not Stage-1-routine while calibration is open.
+During `REPORT_ONLY` it ingests missing salvage drafts and does not merge. After
+`APPROVED` it may merge salvage drafts only after an independent predicate
+re-read. Human review is reserved for a one-question Stage 3 packet only when
+policy or security judgment is irreducible; humans also merge salvage drafts
+that are not Stage-1-routine while calibration is open.
 
-Agent-facing session docs share one `pr-lifecycle-docs-YYYYMMDD` PR per UTC
-day (see `docs/automated-pr-lifecycle.md`). Stage 1 creates that PR and
-later Trunk-merges older green lineage PRs as routine docs. Stage 2/3 push
-run records onto the same branch and never open overlapping `tasks/*`
-siblings. Notion stays packets and maintainer notes, not a second git log.
+Agent-facing session docs share one `pr-lifecycle-docs-YYYYMMDD` PR per UTC day
+(see `docs/automated-pr-lifecycle.md`). Stage 1 creates that PR and later
+Trunk-merges older green lineage PRs as routine docs. Stage 2/3 push run records
+onto the same branch and never open overlapping `tasks/*` siblings. Notion stays
+packets and maintainer notes, not a second git log.
 
 ## Calibration and rollback
 
