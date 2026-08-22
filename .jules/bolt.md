@@ -877,18 +877,42 @@ small in-memory config files.
 
 ## 2026-08-05 - Replacing unconditional module imports with graceful fallbacks
 
-**Learning:** Unconditionally importing external modules (like `yaml`) at the module level in scripts that might be executed in environments where the dependency is missing (e.g., benchmark test environments) causes immediate execution failures (ModuleNotFoundError).
-**Action:** When a script depends on an external module that isn't strictly required for all its execution paths (or for the script to load), use a graceful try-except import block (e.g., `try: import yaml \except ImportError: yaml = None`) and handle the `None` state where the module is actually used. This prevents environment-related test failures and allows other parts of the script to be tested or benchmarked successfully.
+**Learning:** Unconditionally importing external modules (like `yaml`) at the
+module level in scripts that might be executed in environments where the
+dependency is missing (e.g., benchmark test environments) causes immediate
+execution failures (ModuleNotFoundError). **Action:** When a script depends on
+an external module that isn't strictly required for all its execution paths (or
+for the script to load), use a graceful try-except import block (e.g.,
+`try: import yaml \except ImportError: yaml = None`) and handle the `None` state
+where the module is actually used. This prevents environment-related test
+failures and allows other parts of the script to be tested or benchmarked
+successfully.
 
 ## 2026-08-05 - [Avoid redundant key checks in parsing loops]
 
-**Learning:** Replacing manual dictionary existence checks (`if key not in dict: dict[key] = []`) inside tight loops with `collections.defaultdict(list)` avoids redundant evaluation and key lookups.
-**Action:** When working on large string parsing loops that populate nested dictionary lists, initialize the result structure with `collections.defaultdict(list)` instead of standard dictionaries.
+**Learning:** Replacing manual dictionary existence checks
+(`if key not in dict: dict[key] = []`) inside tight loops with
+`collections.defaultdict(list)` avoids redundant evaluation and key lookups.
+**Action:** When working on large string parsing loops that populate nested
+dictionary lists, initialize the result structure with
+`collections.defaultdict(list)` instead of standard dictionaries.
 
 ## 2026-12-09 - [Safe Caching with id()]
-**Learning:** Using `id(obj)` (like a dictionary) as a cache key is highly performant but inherently unsafe for dynamically created objects because Python reuses memory addresses for garbage-collected objects, which can lead to stale cache hits for entirely different objects. The cache key must also include any dynamic state (like boolean flags) that dictates the result.
-**Action:** Only use `id()` as a cache key when you can explicitly guarantee the objects are long-lived, stable constants (e.g., module-level constants) and always include all relevant state parameters (e.g., `(id(tokens), keep_plus)`) in the compound cache key.
+
+**Learning:** Using `id(obj)` (like a dictionary) as a cache key is highly
+performant but inherently unsafe for dynamically created objects because Python
+reuses memory addresses for garbage-collected objects, which can lead to stale
+cache hits for entirely different objects. The cache key must also include any
+dynamic state (like boolean flags) that dictates the result. **Action:** Only
+use `id()` as a cache key when you can explicitly guarantee the objects are
+long-lived, stable constants (e.g., module-level constants) and always include
+all relevant state parameters (e.g., `(id(tokens), keep_plus)`) in the compound
+cache key.
 
 ## 2026-12-10 - [Avoid multiple write calls in tight loops]
-**Learning:** Calling `f.write()` repeatedly inside a tight nested loop creates unnecessary disk I/O overhead and reduces script speed, especially as the number of elements grows.
-**Action:** Always buffer string components into a list in memory (e.g. using `append` or `extend`) and write to disk in a single operation using `"\n".join(out) + "\n"` to minimize I/O overhead.
+
+**Learning:** Calling `f.write()` repeatedly inside a tight nested loop creates
+unnecessary disk I/O overhead and reduces script speed, especially as the number
+of elements grows. **Action:** Always buffer string components into a list in
+memory (e.g. using `append` or `extend`) and write to disk in a single operation
+using `"\n".join(out) + "\n"` to minimize I/O overhead.

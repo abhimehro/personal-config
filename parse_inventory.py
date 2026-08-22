@@ -2,9 +2,9 @@ import json
 import re
 import subprocess
 import sys
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from collections import defaultdict
 
 from gh_token_env import load_gh_token_env
 from pr_reference import parse_pr_reference, parse_repo_name
