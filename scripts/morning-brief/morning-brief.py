@@ -1376,7 +1376,7 @@ def render_greeting_section(weather: WeatherSnapshot, greeting_paragraph: str) -
         f"<div><strong>Baton Rouge Weather:</strong> "
         f"{sanitize_text(weather.high_temp)}°F High / "
         f"{sanitize_text(weather.current_temp)}°F Current "
-        f"(Rain: {sanitize_text(weather.rain_probability)}%)</div>"
+        f'(Rain: <meter aria-label="Rain Probability" min="0" max="100" low="30" high="70" optimum="0" value="{sanitize_text(weather.rain_probability)}">{sanitize_text(weather.rain_probability)}%</meter>)</div>'
     )
     return html_section("🌅 Good Morning, Abhi", body)
 
