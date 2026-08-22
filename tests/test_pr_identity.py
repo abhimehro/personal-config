@@ -9,8 +9,8 @@ sys.path.append(str(scripts_dir))
 
 from pr_identity import (
     classify_pr_identity,
-    identity_policy_from_config,
     identities_match,
+    identity_policy_from_config,
     normalize_identity_tokens,
 )
 
@@ -136,7 +136,11 @@ class TestTokenAuthoredIdentity(unittest.TestCase):
                     "title": "[jules] refresh README",
                     "body": "Created automatically by Jules. See jules.google.com",
                 },
-                "expected": {"author_type": "BOT", "method": "token_authored_signals", "signals_count_ge": 2},
+                "expected": {
+                    "author_type": "BOT",
+                    "method": "token_authored_signals",
+                    "signals_count_ge": 2,
+                },
             },
             {
                 "name": "single_signal_human",
@@ -164,7 +168,11 @@ class TestTokenAuthoredIdentity(unittest.TestCase):
                     "headRefName": "jules-1607-refresh-readme",
                     "title": "[jules] refresh README",
                 },
-                "expected": {"author_type": "BOT", "method": "token_authored_signals", "signals_contains": ["branch", "title"]},
+                "expected": {
+                    "author_type": "BOT",
+                    "method": "token_authored_signals",
+                    "signals_contains": ["branch", "title"],
+                },
             },
             {
                 "name": "hyphen_branch_alone_human",
@@ -242,18 +250,24 @@ class TestTokenAuthoredIdentity(unittest.TestCase):
         )
 
     def test_allowlisted_commenter_plus_branch_is_bot(self):
-        pr = self._make_pr(author_login="abhimehro", head_ref="bolt/perf-cache",
-                           title="Speed up lookups",
-                           comments=[{"author": {"login": "google-labs-jules[bot]"}}])
+        pr = self._make_pr(
+            author_login="abhimehro",
+            head_ref="bolt/perf-cache",
+            title="Speed up lookups",
+            comments=[{"author": {"login": "google-labs-jules[bot]"}}],
+        )
         verdict = classify_pr_identity(pr, sample_policy())
         self.assertEqual(verdict.author_type, "BOT")
         self.assertIn("branch", verdict.signals)
         self.assertIn("timeline_comment", verdict.signals)
 
     def test_maintainer_comment_is_not_a_bot_signal(self):
-        pr = self._make_pr(author_login="abhimehro", head_ref="feat/human-work",
-                           title="Human change",
-                           comments=[{"user": {"login": "abhimehro"}}])
+        pr = self._make_pr(
+            author_login="abhimehro",
+            head_ref="feat/human-work",
+            title="Human change",
+            comments=[{"user": {"login": "abhimehro"}}],
+        )
         verdict = classify_pr_identity(pr, sample_policy())
         self.assertEqual(verdict.author_type, "HUMAN")
         self.assertNotIn("timeline_comment", verdict.signals)

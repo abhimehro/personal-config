@@ -263,14 +263,21 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn("jules-", review)
         self.assertIn("feat/", review)
+        self.assertIn("pr-lifecycle-docs-", review)
         salvage = (
             ROOT / "docs/cursor-automations/prompts/daily-pr-salvage.md"
         ).read_text(encoding="utf-8")
         self.assertIn("fix-merge-conflicts", salvage)
+        self.assertIn("pr-lifecycle-docs-", salvage)
         calibration = (
             ROOT / "docs/cursor-automations/prompts/daily-pr-completion.calibration.md"
         ).read_text(encoding="utf-8")
         self.assertIn("read-only", calibration)
+        self.assertIn("pr-lifecycle-docs-", calibration)
+        completion = (
+            ROOT / "docs/cursor-automations/prompts/daily-pr-completion.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("pr-lifecycle-docs-", completion)
 
     def test_authoritative_ruleset_reads_clear_pending_merge_method_holds(self):
         ledger = self.example()

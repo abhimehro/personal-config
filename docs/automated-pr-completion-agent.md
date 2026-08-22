@@ -51,19 +51,26 @@ take no action against the old evidence. If a human or prior agent already
 merged or closed the PR, record the verified terminal outcome with an evidence
 URL. Do not reopen it or repeat the abandoned work.
 
+Read today's open `pr-lifecycle-docs-YYYYMMDD` head first, then yesterday's
+lineage if still open, then `main` `tasks/*-session-reports.md`. Do not open a
+third overlapping docs PR; push the Stage 3 run record onto that lineage (create
+it only if both prior stages missed). If a salvage draft is open in GitHub but
+absent from the ledger, ingest it as an item before packing or skipping it. Do
+not leave “extra drafts observed, not in ledger.”
+
 ## Completion decision tree
 
 For each owned entry, take one and only one route.
 
-| Observed condition                                                                            | Route                                      | Required record                                                                       |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------- |
-| Base/head SHA changed                                                                         | Return to Stage 1                          | `STALE_ANCHOR`, prior anchors, current anchors, and reason                            |
-| One mechanical code repair remains                                                            | Create a bounded Stage 2 work item         | Explicit repair scope, required regression test, and failure to avoid repeating       |
-| A focused salvage draft is clean and non-security                                             | Hold for calibration or bounded completion | Provenance, checks, anchor match, changed paths, and completion predicate results     |
-| The original is demonstrably duplicate, superseded, zero-diff, or stale                       | Record the close-candidate; Stage 1 may close during calibration | Canonical evidence or no-op evidence, cooldown, and original/replacement relationship |
-| Security, policy, auth, network, browser-origin, workflow, data, or platform decision remains | Create one human decision packet           | One question, up to three options, recommended option, safe default, and expiry       |
-| Checks or evidence are unavailable                                                            | Retry once, then `ANALYSIS_ERROR`          | Failed evidence source, retry time, and safe default                                  |
-| Competing candidate exists                                                                    | `HOLD_CANONICAL`                           | Candidate comparison and the smallest decision needed                                 |
+| Observed condition                                                                            | Route                                                                                                                                   | Required record                                                                                           |
+| --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Base/head SHA changed                                                                         | Return to Stage 1                                                                                                                       | `STALE_ANCHOR`, prior anchors, current anchors, and reason                                                |
+| One mechanical code repair remains                                                            | Create a bounded Stage 2 work item                                                                                                      | Explicit repair scope, required regression test, and failure to avoid repeating                           |
+| A focused salvage draft is clean and non-security                                             | Ingest it as a ledger item if missing; hold for Stage 1 re-ingest, human merge during REPORT_ONLY, or bounded completion after APPROVED | Provenance, checks, anchor match, changed paths, replacement `item_key`, and completion predicate results |
+| The original is demonstrably duplicate, superseded, zero-diff, or stale                       | Record the close-candidate; Stage 1 may close during calibration                                                                        | Canonical evidence or no-op evidence, cooldown, and original/replacement relationship                     |
+| Security, policy, auth, network, browser-origin, workflow, data, or platform decision remains | Create one human decision packet                                                                                                        | One question, up to three options, recommended option, safe default, and expiry                           |
+| Checks or evidence are unavailable                                                            | Retry once, then `ANALYSIS_ERROR`                                                                                                       | Failed evidence source, retry time, and safe default                                                      |
+| Competing candidate exists                                                                    | `HOLD_CANONICAL`                                                                                                                        | Candidate comparison and the smallest decision needed                                                     |
 
 Stage 3 is a coordinator for code recovery. It does not reimplement a salvage
 branch when Stage 2 can make a focused draft. It creates a Stage 2 work item
@@ -159,17 +166,19 @@ be sent to Stage 2.
 
 ## Reporting, lessons, and self-healing
 
-Append every run to `tasks/completion-session-reports.md` using the shared
-run-record template. Each item record is mandatory: repository, PR, ledger key,
-observed/ledger base and head SHA, owner before/after, GitHub identity,
-classification/risk, guardrail outcome, changed paths, evidence URLs,
-proposed/actual route, calibration or bounded mode, audit-record ID,
-retries/errors, final observed outcome, calibration correctness assessment, next
-owner/action, expiry, and provenance/canonical relationship. Update the
-lifecycle ledger only through revision-checked events. Record a lesson in
-`tasks/lessons.md` only when it changes a future routing, verification, or
-safety rule. Record failed approaches explicitly, so a later agent does not
-repeat a rejected salvage or exhausted evidence request.
+Append every run to `tasks/completion-session-reports.md` (optional bulky
+snapshot `tasks/pr-completion-YYYY-MM-DD*.md`) using the shared run-record
+template, on the daily `pr-lifecycle-docs-YYYYMMDD` lineage. Do not edit
+`AGENTS.md`, `tasks/todo.md`, or another stage's report. Each item record is
+mandatory: repository, PR, ledger key, observed/ledger base and head SHA, owner
+before/after, GitHub identity, classification/risk, guardrail outcome, changed
+paths, evidence URLs, proposed/actual route, calibration or bounded mode,
+audit-record ID, retries/errors, final observed outcome, calibration correctness
+assessment, next owner/action, expiry, and provenance/canonical relationship.
+Update the lifecycle ledger only through revision-checked events. Record a
+lesson in `tasks/lessons.md` only when it changes a future routing,
+verification, or safety rule. Record failed approaches explicitly, so a later
+agent does not repeat a rejected salvage or exhausted evidence request.
 
 The agent must stop automated state changes for an item after one unexplained
 retry, missing audit evidence, or a mismatch between the ledger and live state.
@@ -183,14 +192,13 @@ concurrent run, a maximum of 20 reconciliations, five decision packets, and five
 post-calibration actions. Use the paste-ready calibration or completion export
 in `docs/cursor-automations/exports/`; the live Cursor Dashboard is canonical
 for current trigger, connection, and enablement state. The Dashboard-referenced
-MCP set for this stage is named in the calibration and completion prompts
-(`gh` reads, Notion packets, scanners as hold evidence; `gh` mutations only
-after ledger `APPROVED`). A wider connected workspace inventory is not an
-additional action authority. During calibration,
-the report-only prohibitions control even when a visible integration is
-connected. The bounded-completion variant may use `prComment.allowApprove` only
-after validated ledger approval. Shared memory is enabled as a namespaced cache
-and is never continuity authority.
+MCP set for this stage is named in the calibration and completion prompts (`gh`
+reads, Notion packets, scanners as hold evidence; `gh` mutations only after
+ledger `APPROVED`). A wider connected workspace inventory is not an additional
+action authority. During calibration, the report-only prohibitions control even
+when a visible integration is connected. The bounded-completion variant may use
+`prComment.allowApprove` only after validated ledger approval. Shared memory is
+enabled as a namespaced cache and is never continuity authority.
 
 ## Related specifications
 

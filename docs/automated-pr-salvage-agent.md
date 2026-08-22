@@ -15,8 +15,10 @@ PR-automation policy.
 The Salvage Agent is a **draft builder**. It does not re-triage the whole
 backlog, approve, merge, force-push, alter a pre-existing branch, alter
 repository settings, or close a security-sensitive original simply because it
-opened a replacement draft. Stage 3 owns reconciliation, completion eligibility,
-close cooldowns, and the compact human decision inbox.
+opened a replacement draft. Merge authority for salvage outputs is Stage 1
+(routine re-ingest), Stage 3 after approved calibration with an independent
+predicate check, or a human — never this stage. Stage 3 owns reconciliation,
+completion eligibility, close cooldowns, and the compact human decision inbox.
 
 ## Mission
 
@@ -106,6 +108,18 @@ The draft body must state the original PR, anchor SHA, recovery scope, changed
 paths, verification command and result, and the reason the original was not
 completed directly. The draft remains a draft. Stage 2 does not approve or mark
 it ready.
+
+After GitHub returns a PR number, **re-read `isDraft`**. Create APIs that accept
+`draft: true` can still land **ready** (lesson **0gd**). Convert back to draft
+before handoff. Then CAS-write a **new ledger item** for the replacement keyed
+`owner/repo#PR@head_sha`, with provenance URLs to the original, the work-item
+id, test evidence, and `next_owner` Stage 1 if the replacement is
+routine/non-sensitive, otherwise Stage 3. A salvage PR without that item is an
+incomplete handoff: no later stage can merge it without rediscovery.
+
+Before applying `allowed_paths`, live-stat them on current `main`. If a path was
+removed or split (lesson **0fv**), do not expand scope; hand off
+`HOLD_EVIDENCE`.
 
 ## Operational Stage 2 workflow
 
@@ -213,10 +227,14 @@ new evidence.
 ## Run records, lessons, and handoffs
 
 Append the Stage 2 run to `tasks/salvage-session-reports.md` using
-`tasks/pr-stage-run-record.example.md`. Update only Stage-2-owned ledger
-entries. Add a lesson only when it changes a future routing, verification, or
-safety rule. Do not turn raw logs, speculative model output, or repetitive
-failures into durable policy.
+`tasks/pr-stage-run-record.example.md`, on the **same** personal-config
+`pr-lifecycle-docs-YYYYMMDD` PR Stage 1 opened (create that lineage once only if
+Stage 1 missed it). Push to that branch; do not open a sibling docs PR. Optional
+bulky snapshot: `tasks/pr-salvage-YYYY-MM-DD*.md`. Update only Stage-2-owned
+ledger entries. Add a lesson only as an EOF append when it changes a future
+routing, verification, or safety rule. Do not edit `AGENTS.md`, `tasks/todo.md`,
+or another stage's report. Do not turn raw logs, speculative model output, or
+repetitive failures into durable policy.
 
 Every Stage 3 handoff must include the draft URL or failed-recovery reason,
 immutable anchors, current changed paths, verification output, prior attempts,
@@ -242,9 +260,9 @@ The Stage 2 Cursor automation runs at `0 17 * * *` UTC with one concurrent run
 and a maximum of five recovery candidates. The live Dashboard exposes a shared
 MCP workspace inventory; the Dashboard-referenced MCP set for this stage is
 named in `prompts/daily-pr-salvage.md` (`gh` drafts, codescene, Context7,
-Sonatype pins). Tool visibility is not authority: Stage 2 remains draft-only
-and must not approve, request review, mark ready, merge, close, force-push,
-alter rulesets or workflow permissions, or use a connected tool to bypass its
+Sonatype pins). Tool visibility is not authority: Stage 2 remains draft-only and
+must not approve, request review, mark ready, merge, close, force-push, alter
+rulesets or workflow permissions, or use a connected tool to bypass its
 bounded-recovery contract.
 
 See
