@@ -96,7 +96,7 @@ def main() -> int:
     test_yaml_structure()
     print("✓ workflow_dispatch and job structure present")
 
-    step = extract_development_partner_step(content)
+    extract_development_partner_step(content)
     test_env_binding()
     print("✓ REQUEST bound via env from github.event.inputs.request")
 
