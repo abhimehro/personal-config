@@ -2504,3 +2504,34 @@ justify a salvage PR.
 **Detection cost:** Low — `gh api .../contents/<file>?ref=main` → 404.
 **Detection cost:** Low — `rg is_safe_path validate_data.py` on `main` + `rg -c`
 on the PR tip.
+
+
+## Lesson 0gl: Slim GraphQL inventory — omit `commits` on `gh pr list` (2026-08-22)
+
+**Pattern:** Stage 1 inventory with `gh pr list --json ...commits` hit GitHub
+GraphQL node-limit and HTTP 504 across the seven-repo sweep. The scheduled
+15:00 UTC run failed to complete. A slim payload (number, title, author, head
+SHA, base SHA, isDraft, mergeable, files, labels, body excerpt) was enough to
+classify BOT vs HUMAN under identity `2026-08-20-hyphen` and to skip unchanged
+SHA items.
+**Rule:** Default Stage 1 inventory must **not** request the `commits` field on
+`gh pr list`. Enrich commit emails only for the small HUMAN-candidate set that
+needs a second identity signal. Treat GraphQL 504 / node-limit as
+`HOLD_PLATFORM` for that enrichment path, not as a reason to skip the whole
+intake.
+**Detection cost:** Low — `gh pr list --json commits` on a repo with large PRs
+fails; slim list succeeds.
+
+## Lesson 0gm: Split-module salvage stays HOLD_EVIDENCE under frozen allowed_paths (2026-08-22)
+
+**Pattern:** ctrld-sync #1161 unique remainder is wrapping `sum()` as a list
+comprehension in `display.py` plus an inverted benchmark docstring. After #1183,
+`display.py` does not exist on current main; the live call is generator-form
+`sum(...)` in `display/tables.py`. The work item `allowed_paths` were
+`display.py` and `tests/test_benchmarks.py`. Salvage spec / lesson **0fv**: if a
+path was removed or split, do not expand scope.
+**Rule:** Do not recreate a deleted module to land a micro-optimization. Do not
+rewrite `display/tables.py` unless Stage 3 issues a **new** work item that
+names that path. Hand off `HOLD_EVIDENCE`. Leave the original DIRTY PR open.
+**Detection cost:** Low — `gh api repos/.../contents/display.py?ref=main` → 404
+while `display/tables.py` exists.
