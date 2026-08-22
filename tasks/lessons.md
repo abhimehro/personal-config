@@ -1,5 +1,28 @@
 # Lessons Learned
 
+## Lesson 0gk: Stage 2 salvage() titles are not versioned bot signals (2026-08-21)
+
+**Pattern:** Stage 2 opened ready salvage PRs Hydro #543 and Seatek #708 as
+login `abhimehro`, author email `cursoragent@cursor.com`, branch
+`cursor-agent/salvage-*`, title `salvage(): …`. Identity policy
+`2026-08-20-hyphen` requires two independent signals for BOT. The only matching
+signal is `branch` (`cursor-agent/`). Title keyword `salvage` is not in the
+versioned title list; `cursoragent@cursor.com` is not a versioned bot-email
+suffix; commenters (`trunk-io[bot]`, `github-actions[bot]`,
+`codescene-access[bot]`) are not in `bot_authors`. Result: HUMAN /
+`human_default`. Schema `identity_provenance.method` has no `human_default`, so
+HUMAN items omit provenance. `author_type: HUMAN` ⇒ `risk_class: SENSITIVE`
+(cannot be ROUTINE). Lesson 0gd forbids converting a ready salvage PR back to
+draft.
+**Rule:** Do not classify `salvage():` / `cursoragent@cursor.com` as BOT under
+the current identity revision. Do not routine-merge those PRs. Humans merge
+during `REPORT_ONLY`. Stage 1 may re-ingest them but cannot treat them as
+ROUTINE. A future identity revision may add `salvage` as a title keyword and/or
+`cursoragent@cursor.com` as a bot-email suffix — do not silently expand the
+allowlist in a Stage 3 run.
+**Detection cost:** Low — `scripts/pr_identity.py` on the live GraphQL node
+shows `independent_signal_count: 1` and `author_type: HUMAN`.
+
 ## Lesson 0gj: One daily docs lineage, not three colliding session PRs (2026-08-21)
 
 **Pattern:** Stage 1/2/3 each opened a personal-config docs PR against the same
