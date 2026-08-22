@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 9
+ledger_revision: 10
 calibration:
   status: REPORT_ONLY
   successful_run_count: 2
@@ -811,26 +811,29 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Do not squash-merge DIRTY; rebase display.py + benchmark tests only.
-  next_action: 'Consume work item s2-20260820-ctrld-1161-bolt-summary: rebase onto current main, keep
-    list-comprehension change, run pytest benchmarks.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not expand allowed_paths onto display/. Do not reintroduce display.py. Do not squash-merge
+    DIRTY #1161.'
+  next_action: 'Stage 3: issue a new work item with allowed_paths display/tables.py and tests/test_benchmarks.py,
+    or close #1161 as superseded if generator-form on main stays canonical. Do not recreate display.py.
+    Do not squash DIRTY #1161.'
   evidence_urls:
   - https://github.com/abhimehro/ctrld-sync/pull/1161
   changed_paths:
   - display.py
   - tests/test_benchmarks.py
   attempts:
-    evidence: 1
-    recovery: 0
+    evidence: 2
+    recovery: 1
     mutations: 0
   handoffs:
   - evt-s1-20260820-ctrldsync-1161-h
-  revision: 1
-  updated_at_utc: '2026-08-20T03:30:00Z'
+  - evt-s2-20260822-ctrldsync-1161-h
+  revision: 2
+  updated_at_utc: '2026-08-22T09:20:00Z'
 - key: abhimehro/Seatek_Analysis#701@bd0d3867c85cfeacbc39a103ee06133296308623
   repository: abhimehro/Seatek_Analysis
   pr: 701
@@ -1959,14 +1962,14 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE2_QUEUED
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Do not merge or mark ready a draft repo-health PR. Merge method is TRUNK_QUEUE, not GitHub
-    squash.
-  next_action: 'Stage 2: consume s2-20260820-pc-2041-docs-markers; rebase unique docs/TESTING.md and maintenance/SCHEDULE_SUMMARY.md
-    onto origin/main; make lint-errors; leave draft; never mark ready; expiry 2026-08-27T19:20:00Z.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not merge original ready #2041. Do not mark salvage draft #2063 ready. Merge method
+    is TRUNK_QUEUE.'
+  next_action: 'Stage 3: complete draft #2063; do not merge or mark ready original #2041; TRUNK_QUEUE
+    so do not GitHub-squash.'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2041
   - https://api.github.com/repos/abhimehro/personal-config/branches/main/protection
@@ -1974,14 +1977,15 @@ items:
   - docs/TESTING.md
   - maintenance/SCHEDULE_SUMMARY.md
   attempts:
-    evidence: 2
-    recovery: 0
-    mutations: 0
+    evidence: 3
+    recovery: 1
+    mutations: 1
   handoffs:
   - evt-s1-20260820b-personalconf-2041-h
   - evt-s3-20260820-personalconf-2041-h
-  revision: 2
-  updated_at_utc: '2026-08-20T19:20:00Z'
+  - evt-s2-20260822-personalconf-2041-h
+  revision: 3
+  updated_at_utc: '2026-08-22T09:20:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#523@a845bfdbb51bff2ed59635c5fce4a8f22237091f
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 523
@@ -6726,6 +6730,49 @@ items:
   - evt-s1-20260822-repopromptce-236-h
   revision: 1
   updated_at_utc: '2026-08-22T08:10:00Z'
+- key: abhimehro/personal-config#2063@5999c6f8bb381cdfe1f35c83fd2b342029fb7606
+  repository: abhimehro/personal-config
+  pr: 2063
+  url: https://github.com/abhimehro/personal-config/pull/2063
+  base_sha: 22041deae84ce9fc914eedb1de54bf5f7af9e3f4
+  head_sha: 5999c6f8bb381cdfe1f35c83fd2b342029fb7606
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+  author_type: BOT
+  classification: CI_INFRA
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: HOLD_CONTRACT
+  lifecycle_state: STAGE3_RECONCILIATION
+  terminal_disposition: null
+  current_owner: stage3
+  next_owner: stage1
+  safe_default: 'Leave draft #2063. Never mark ready. Do not GitHub-squash; personal-config merge method
+    is TRUNK_QUEUE.'
+  next_action: 'Stage 1: re-ingest routine docs salvage draft #2063; submit /trunk merge only if every
+    routine predicate passes. Do not convert ready original #2041.'
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2063
+  - https://github.com/abhimehro/personal-config/pull/2041
+  - https://api.github.com/repos/abhimehro/personal-config/branches/main/protection
+  changed_paths:
+  - docs/TESTING.md
+  - maintenance/SCHEDULE_SUMMARY.md
+  attempts:
+    evidence: 1
+    recovery: 1
+    mutations: 1
+  handoffs:
+  - evt-s2-20260822-personalconf-2063-h
+  revision: 1
+  updated_at_utc: '2026-08-22T09:20:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -10079,66 +10126,98 @@ events:
   created_at_utc: '2026-08-22T08:10:00Z'
   acknowledged_at_utc: null
   reason: 'Stage 3: confirm unique remaining Bolt change vs main; do not merge DIRTY or toolchain paths.'
-stage2_work_items:
-- work_item_id: s2-20260820-ctrld-1161-bolt-summary
-  source_item_key: abhimehro/ctrld-sync#1161@1b7811646f19f71a4304f8d51091cf6c28a46cf6
-  repository: abhimehro/ctrld-sync
-  pr: 1161
-  base_sha: ead0e8f2ad9713eddc5ac84f30d1cc478da86c48
-  head_sha: 1b7811646f19f71a4304f8d51091cf6c28a46cf6
-  allowed_paths:
-  - display.py
-  - tests/test_benchmarks.py
-  prohibited_paths:
-  - .github
-  - sync
-  - main.py
-  repair_description: 'Rebase Bolt list-comprehension summary aggregation from #1161 onto current main.
-    Keep the display.py and tests/test_benchmarks.py edits only. Do not carry unrelated files. Open as
-    a draft salvage PR.'
-  required_test_command: uv run pytest tests/test_benchmarks.py -v
-  expected_test_result: pytest tests/test_benchmarks.py exits 0
-  acceptance_criteria:
-  - Only display.py and tests/test_benchmarks.py differ from main
-  - 'List-comprehension aggregation from #1161 is present'
-  - pytest tests/test_benchmarks.py passes
-  provenance_urls:
-  - https://github.com/abhimehro/ctrld-sync/pull/1161
-  expiry_utc: '2026-08-27T03:30:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260820-ctrldsync-1161-h
-  history: []
-- work_item_id: s2-20260820-pc-2041-docs-markers
-  source_item_key: abhimehro/personal-config#2041@2facd5bddc672c3bab21699acfd61152a13be098
-  repository: abhimehro/personal-config
-  pr: 2041
-  base_sha: a3da8cf56f42ae585bf65f963259a88d3dd67897
-  head_sha: 2facd5bddc672c3bab21699acfd61152a13be098
-  allowed_paths:
-  - docs/TESTING.md
-  - maintenance/SCHEDULE_SUMMARY.md
-  prohibited_paths:
-  - .github
-  - scripts
-  - controld-system
-  repair_description: 'Rebase draft #2041 conflict-marker cleanup onto current origin/main. Keep only
-    docs/TESTING.md and maintenance/SCHEDULE_SUMMARY.md. Leave the PR draft. Do not mark ready. Do not
-    GitHub-squash; personal-config merge method is TRUNK_QUEUE.'
-  required_test_command: make lint-errors
-  expected_test_result: make lint-errors exits 0
-  acceptance_criteria:
-  - Only docs/TESTING.md and maintenance/SCHEDULE_SUMMARY.md differ from origin/main
-  - Conflict markers are absent in those two files
-  - make lint-errors passes
-  - PR remains draft and is not marked ready
-  provenance_urls:
-  - https://github.com/abhimehro/personal-config/pull/2041
-  expiry_utc: '2026-08-27T19:20:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s3-20260820-personalconf-2041-h
-  history: []
+- event_id: evt-s2-20260822-ctrldsync-1161-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/ctrld-sync#1161@1b7811646f19f71a4304f8d51091cf6c28a46cf6
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260820-ctrldsync-1161-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/ctrld-sync#1161@1b7811646f19f71a4304f8d51091cf6c28a46cf6:evt-s2-20260822-ctrldsync-1161-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-22T09:20:00Z'
+  acknowledged_at_utc: '2026-08-22T09:20:00Z'
+  reason: Stage 2 accepted complete work item s2-20260820-ctrld-1161-bolt-summary.
+- event_id: evt-s2-20260822-ctrldsync-1161-h
+  kind: HANDOFF
+  item_key: abhimehro/ctrld-sync#1161@1b7811646f19f71a4304f8d51091cf6c28a46cf6
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/ctrld-sync#1161@1b7811646f19f71a4304f8d51091cf6c28a46cf6:evt-s2-20260822-ctrldsync-1161-h
+  status: PROJECTED
+  created_at_utc: '2026-08-22T09:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Structured failed recovery, no draft. display.py is absent on current main (split to display/tables.py
+    after #1183). Frozen allowed_paths cannot expand (salvage spec / lesson 0fv as HOLD_EVIDENCE). Do
+    not recreate display.py. Original #1161 left OPEN DIRTY. Mapped remaining change is sum([list comp])
+    in display/tables.py plus tests/test_benchmarks.py.'
+- event_id: evt-s2-20260822-personalconf-2041-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#2041@2facd5bddc672c3bab21699acfd61152a13be098
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260820-personalconf-2041-h
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2041@2facd5bddc672c3bab21699acfd61152a13be098:evt-s2-20260822-personalconf-2041-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-22T09:20:00Z'
+  acknowledged_at_utc: '2026-08-22T09:20:00Z'
+  reason: Stage 2 accepted complete work item s2-20260820-pc-2041-docs-markers.
+- event_id: evt-s2-20260822-personalconf-2041-h
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2041@2facd5bddc672c3bab21699acfd61152a13be098
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/personal-config#2041@2facd5bddc672c3bab21699acfd61152a13be098:evt-s2-20260822-personalconf-2041-h
+  status: PROJECTED
+  created_at_utc: '2026-08-22T09:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Opened tested draft #2063 from current main 22041deae84ce9fc914eedb1de54bf5f7af9e3f4. Original
+    #2041 is ready (isDraft=false); left open and was not converted (0gd). make lint-errors passed. Re-read
+    isDraft=true.'
+- event_id: evt-s2-20260822-personalconf-2063-h
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2063@5999c6f8bb381cdfe1f35c83fd2b342029fb7606
+  from_owner: stage1
+  to_owner: stage3
+  from_state: STAGE1_INTAKE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2063@5999c6f8bb381cdfe1f35c83fd2b342029fb7606:evt-s2-20260822-personalconf-2063-h
+  status: PROJECTED
+  created_at_utc: '2026-08-22T09:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 2 salvage replacement for #2041. Draft #2063; isDraft=true after create; docs-only ROUTINE;
+    TRUNK_QUEUE. Next owner Stage 1 for routine re-ingest. Do not GitHub-squash. Do not mark ready.'
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
