@@ -213,8 +213,11 @@ UPDATE_MAS_APPS=1          # Auto-update Mac App Store apps
 ### Active Schedules
 
 Labels below match what `maintenance/install.sh` writes
-(`com.abhimehrotra.maint.*`). Checked-in files under `maintenance/launchd/` may
-still use older `…maintenance.*` names — treat `install.sh` as authoritative.
+(`com.abhimehrotra.maint.*`). That installer is authoritative: it generates
+`~/Library/LaunchAgents/com.abhimehrotra.maint.*.plist` and snapshots the same
+files into `maintenance/launchd/`. Older `…maintenance.*` names live under
+`maintenance/launchd/archive/`. `sync-launchagents` does **not** cover this
+path; it only syncs `media-streaming/launchd` and `launch-agents`.
 
 1. **Daily Health Check** (`com.abhimehrotra.maint.healthcheck`)
    - Time: 8:30 AM daily

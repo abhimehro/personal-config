@@ -20,13 +20,21 @@ with daylight-saving time. The shared environment ID is
 `8fa8ebdc-09a7-484a-a3a8-766347b3ac19`, model is `cursor-grok-4.6-high`, and
 scope is private.
 
-The Dashboard-referenced MCP set is Notion, Memory, Sequential thinking,
-GitKraken, cloudrun, Linear, codescene, julesServer, Snyk, and Sonatype-mcp. The
-Dashboard may expose a broader connected workspace catalog. Neither the visible
+The Dashboard-referenced MCP set is role-based in each stage prompt (`gh` is
+required; GitHub MCP is a same-token fallback). Stage 1 names codescene,
+Sonatype-mcp, and Snyk as needed for merge gates. Stage 2 names draft `gh`,
+codescene, Context7, and Sonatype pins. Stage 3 names read-only `gh`, Notion
+packets, and scanners as hold evidence. The Dashboard may still expose Notion,
+Memory, Sequential thinking, GitKraken, cloudrun, Linear, codescene,
+julesServer, Snyk, Sonatype-mcp, and a broader catalog. Neither the visible
 catalog nor a connected integration changes a stage's explicit authority,
 report-only rule, mutation cap, or security boundary. `concurrency: 1` is an
 operating requirement documented in source artifacts, not a Cursor Dashboard
 enforcement primitive.
+
+Agent-facing session docs share one `pr-lifecycle-docs-YYYYMMDD` PR per UTC day
+(lifecycle contract). Stage 3 still uses Notion only for one-question packets;
+do not paste run records into Notion as git continuity.
 
 The two Stage 3 exports share `0 19 * * *` and are **mutually exclusive**.
 Before enabling completion, disable or delete the calibration automation, verify

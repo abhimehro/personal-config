@@ -32,15 +32,17 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         calibration = ledger["calibration"]
         calibration["status"] = "APPROVED"
         calibration["successful_run_count"] = 7
+        calibration["policy_revision"] = "pr-lifecycle-v1.4"
+        calibration["invalidated_by_revision"] = None
         calibration["approved_by"] = "abhimehro"
         calibration["approved_at_utc"] = "2026-08-19T09:00:00Z"
         calibration["approval_evidence_urls"] = [
             "https://github.com/abhimehro/personal-config/pull/2026"
         ]
-        for ordinal in range(4, 8):
+        for ordinal in range(1, 8):
             ledger["events"].append(
                 {
-                    "event_id": f"evt-calibration-v12-00{ordinal}",
+                    "event_id": f"evt-calibration-v13-00{ordinal}",
                     "kind": "CALIBRATION",
                     "item_key": None,
                     "from_owner": "stage3",
@@ -52,11 +54,11 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
                     "parent_event_id": None,
                     "expected_item_revision": 0,
                     "resulting_item_revision": 0,
-                    "idempotency_key": f"__calibration__:evt-calibration-v12-00{ordinal}",
+                    "idempotency_key": f"__calibration__:evt-calibration-v13-00{ordinal}",
                     "status": "ACKNOWLEDGED",
                     "created_at_utc": f"2026-08-{12 + ordinal}T08:00:00Z",
                     "acknowledged_at_utc": f"2026-08-{12 + ordinal}T08:00:01Z",
-                    "policy_revision": "pr-lifecycle-v1.2",
+                    "policy_revision": "pr-lifecycle-v1.4",
                     "successful": True,
                     "reason": "Complete report-only reconciliation.",
                 }
@@ -235,9 +237,47 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
     def test_export_prompts_preserve_dashboard_mcp_reference(self):
         prompts = ROOT / "docs/cursor-automations/prompts"
         for path in sorted(prompts.glob("daily-pr-*.md")):
-            self.assertIn(
-                "Dashboard-referenced MCP set", path.read_text(encoding="utf-8")
-            )
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("Dashboard-referenced MCP set", text)
+            self.assertIn("`gh`", text)
+
+    def test_identity_policy_versions_hyphen_and_slash_prefixes(self):
+        config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
+        prefixes = config["identity_classification"]["branch_prefixes"]
+        for agent in ("jules", "bolt", "palette", "sentinel"):
+            self.assertIn(f"{agent}/", prefixes)
+            self.assertIn(f"{agent}-", prefixes)
+        self.assertEqual(
+            config["identity_classification"]["revision"],
+            config["lifecycle"]["policy_inputs"]["identity_classification_revision"],
+        )
+        self.assertEqual(config["lifecycle"]["policy_revision"], "pr-lifecycle-v1.4")
+        self.assertEqual(
+            config["lifecycle"]["policy_inputs"]["prompt_revision"],
+            "pr-lifecycle-v1.4",
+        )
+
+    def test_stage_prompts_name_role_based_tools(self):
+        review = (
+            ROOT / "docs/cursor-automations/prompts/daily-pr-review.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("jules-", review)
+        self.assertIn("feat/", review)
+        self.assertIn("pr-lifecycle-docs-", review)
+        salvage = (
+            ROOT / "docs/cursor-automations/prompts/daily-pr-salvage.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("fix-merge-conflicts", salvage)
+        self.assertIn("pr-lifecycle-docs-", salvage)
+        calibration = (
+            ROOT / "docs/cursor-automations/prompts/daily-pr-completion.calibration.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("read-only", calibration)
+        self.assertIn("pr-lifecycle-docs-", calibration)
+        completion = (
+            ROOT / "docs/cursor-automations/prompts/daily-pr-completion.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("pr-lifecycle-docs-", completion)
 
     def test_authoritative_ruleset_reads_clear_pending_merge_method_holds(self):
         ledger = self.example()
