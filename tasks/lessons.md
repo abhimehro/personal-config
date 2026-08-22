@@ -5,12 +5,13 @@
 **Pattern:** Palette a11y PRs add `role="status"` to empty-state containers so
 screen readers announce “no data.” When the empty state is an `<li>` inside a
 real `<ul>` (pc #2014 `performance_optimizer.sh` recommendations list), the
-explicit role **replaces** the implicit `listitem` role and leaves the list
-with zero listitem children. **Rule:** (1) Put `role="status"` on a nested
+explicit role **replaces** the implicit `listitem` role and leaves the list with
+zero listitem children. **Rule:** (1) Put `role="status"` on a nested
 `<span>`/`<div>`, never on the `<li>` itself. (2) `<div class="empty-state">`
 sites are fine. (3) Adversarial agreement on an a11y regression →
 REQUEST_CHANGES even when CI is green and the rest of the PR is a one-attribute
 diff. **Detection cost:** Low — search the diff for `role="status"` on `li`.
+
 ## Lesson 0gk: Stage 2 salvage() titles are not versioned bot signals (2026-08-21)
 
 **Pattern:** Stage 2 opened ready salvage PRs Hydro #543 and Seatek #708 as
@@ -24,15 +25,14 @@ suffix; commenters (`trunk-io[bot]`, `github-actions[bot]`,
 `human_default`. Schema `identity_provenance.method` has no `human_default`, so
 HUMAN items omit provenance. `author_type: HUMAN` ⇒ `risk_class: SENSITIVE`
 (cannot be ROUTINE). Lesson 0gd forbids converting a ready salvage PR back to
-draft.
-**Rule:** Do not classify `salvage():` / `cursoragent@cursor.com` as BOT under
-the current identity revision. Do not routine-merge those PRs. Humans merge
-during `REPORT_ONLY`. Stage 1 may re-ingest them but cannot treat them as
+draft. **Rule:** Do not classify `salvage():` / `cursoragent@cursor.com` as BOT
+under the current identity revision. Do not routine-merge those PRs. Humans
+merge during `REPORT_ONLY`. Stage 1 may re-ingest them but cannot treat them as
 ROUTINE. A future identity revision may add `salvage` as a title keyword and/or
 `cursoragent@cursor.com` as a bot-email suffix — do not silently expand the
-allowlist in a Stage 3 run.
-**Detection cost:** Low — `scripts/pr_identity.py` on the live GraphQL node
-shows `independent_signal_count: 1` and `author_type: HUMAN`.
+allowlist in a Stage 3 run. **Detection cost:** Low — `scripts/pr_identity.py`
+on the live GraphQL node shows `independent_signal_count: 1` and
+`author_type: HUMAN`.
 
 ## Lesson 0gj: One daily docs lineage, not three colliding session PRs (2026-08-21)
 
@@ -2516,22 +2516,19 @@ justify a salvage PR.
 **Detection cost:** Low — `rg is_safe_path validate_data.py` on `main` + `rg -c`
 on the PR tip.
 
-
 ## Lesson 0gl: Slim GraphQL inventory — omit `commits` on `gh pr list` (2026-08-22)
 
 **Pattern:** Stage 1 inventory with `gh pr list --json ...commits` hit GitHub
-GraphQL node-limit and HTTP 504 across the seven-repo sweep. The scheduled
-15:00 UTC run failed to complete. A slim payload (number, title, author, head
-SHA, base SHA, isDraft, mergeable, files, labels, body excerpt) was enough to
+GraphQL node-limit and HTTP 504 across the seven-repo sweep. The scheduled 15:00
+UTC run failed to complete. A slim payload (number, title, author, head SHA,
+base SHA, isDraft, mergeable, files, labels, body excerpt) was enough to
 classify BOT vs HUMAN under identity `2026-08-20-hyphen` and to skip unchanged
-SHA items.
-**Rule:** Default Stage 1 inventory must **not** request the `commits` field on
-`gh pr list`. Enrich commit emails only for the small HUMAN-candidate set that
-needs a second identity signal. Treat GraphQL 504 / node-limit as
-`HOLD_PLATFORM` for that enrichment path, not as a reason to skip the whole
-intake.
-**Detection cost:** Low — `gh pr list --json commits` on a repo with large PRs
-fails; slim list succeeds.
+SHA items. **Rule:** Default Stage 1 inventory must **not** request the
+`commits` field on `gh pr list`. Enrich commit emails only for the small
+HUMAN-candidate set that needs a second identity signal. Treat GraphQL 504 /
+node-limit as `HOLD_PLATFORM` for that enrichment path, not as a reason to skip
+the whole intake. **Detection cost:** Low — `gh pr list --json commits` on a
+repo with large PRs fails; slim list succeeds.
 
 ## Lesson 0gm: Split-module salvage stays HOLD_EVIDENCE under frozen allowed_paths (2026-08-22)
 
@@ -2540,9 +2537,9 @@ comprehension in `display.py` plus an inverted benchmark docstring. After #1183,
 `display.py` does not exist on current main; the live call is generator-form
 `sum(...)` in `display/tables.py`. The work item `allowed_paths` were
 `display.py` and `tests/test_benchmarks.py`. Salvage spec / lesson **0fv**: if a
-path was removed or split, do not expand scope.
-**Rule:** Do not recreate a deleted module to land a micro-optimization. Do not
-rewrite `display/tables.py` unless Stage 3 issues a **new** work item that
-names that path. Hand off `HOLD_EVIDENCE`. Leave the original DIRTY PR open.
-**Detection cost:** Low — `gh api repos/.../contents/display.py?ref=main` → 404
-while `display/tables.py` exists.
+path was removed or split, do not expand scope. **Rule:** Do not recreate a
+deleted module to land a micro-optimization. Do not rewrite `display/tables.py`
+unless Stage 3 issues a **new** work item that names that path. Hand off
+`HOLD_EVIDENCE`. Leave the original DIRTY PR open. **Detection cost:** Low —
+`gh api repos/.../contents/display.py?ref=main` → 404 while `display/tables.py`
+exists.

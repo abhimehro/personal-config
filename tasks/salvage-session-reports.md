@@ -17,10 +17,10 @@
 
 ### Outcomes
 
-| Repo            | Old PR | Disposition                 | New PR                                                          | Notes                                                                                          |
-| --------------- | -----: | --------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Repo            | Old PR | Disposition                                             | New PR                                                          | Notes                                                                                          |
+| --------------- | -----: | ------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | personal-config |   2041 | SALVAGE (opened draft; later ready by linear-code[bot]) | [#2063](https://github.com/abhimehro/personal-config/pull/2063) | Markers + stale skip-row; `automation` title + `cursor-agent/` branch; `make lint-errors` PASS |
-| ctrld-sync      |   1161 | HOLD_EVIDENCE (no draft)    | —                                                               | `display.py` split after #1183; frozen allowed_paths (0fv / 0gm)                               |
+| ctrld-sync      |   1161 | HOLD_EVIDENCE (no draft)                                | —                                                               | `display.py` split after #1183; frozen allowed_paths (0fv / 0gm)                               |
 
 - Salvage drafts opened: **1** (#2063)
 - Infra-fix drafts: **0**
@@ -35,13 +35,17 @@
 
 - pc #2063: `make lint-errors`; create-time `isDraft=true`; live later
   `isDraft=false` via `linear-code[bot]` `ready_for_review` (left ready, 0gd)
-- ctrld #1161: `display.py` 404 on main; generator-form lives in `display/tables.py`
+- ctrld #1161: `display.py` 404 on main; generator-form lives in
+  `display/tables.py`
 
 ### Handoff
 
-1. Stage 1: re-ingest **#2063** for `/trunk merge` if routine predicates pass; do not convert it back to draft (0gd)
-2. Stage 3 / human: Hydro #543 lockfile, Seatek #708 unique remainder, ctrld #1161 split-module
-3. Do not squash DIRTY #1161; do not mark #2063 ready; do not convert #2041 to draft
+1. Stage 1: re-ingest **#2063** for `/trunk merge` if routine predicates pass;
+   do not convert it back to draft (0gd)
+2. Stage 3 / human: Hydro #543 lockfile, Seatek #708 unique remainder, ctrld
+   #1161 split-module
+3. Do not squash DIRTY #1161; do not mark #2063 ready; do not convert #2041 to
+   draft
 
 Full record: `tasks/pr-salvage-2026-08-22.md`.
 

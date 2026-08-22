@@ -1,7 +1,7 @@
 # Phase 1 PR Review — 2026-08-17
 
-Branch: `cursor-agent/automated-pr-workflow-2dfb` Mode: review-and-merge.
-Stale: 30 days. Auto-fix: safe routine only. Merge: squash.
+Branch: `cursor-agent/automated-pr-workflow-2dfb` Mode: review-and-merge. Stale:
+30 days. Auto-fix: safe routine only. Merge: squash.
 
 - [x] Preflight gate (`preflight-gh-pr-automation.sh`, 7/7)
 - [x] `make cursor-cloud-hooks`
@@ -25,6 +25,7 @@ Stale: 30 days. Auto-fix: safe routine only. Merge: squash.
 - 0fo/0fp/0fg/0fs/0ft HOLD until re-verified vs current main
 - DIRTY ctrld#1188 uv-only → draft salvage
 - Do not merge salvage drafts or auth/payment/schema PRs
+
 # Stage 2 salvage 2026-08-20
 
 - [x] Fetch/validate runtime ledger (`github_contents_api`, rev 5,

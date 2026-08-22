@@ -231,7 +231,7 @@ append ""
 # 11) Mail attachments and downloads
 append "=== MAIL ATTACHMENTS ==="
 MAIL_DOWNLOADS="${HOME}/Library/Mail/V*/MailData/Attachments"
-if ls ${MAIL_DOWNLOADS} >/dev/null 2>&1; then # shellcheck disable=SC2086
+if ls ${MAIL_DOWNLOADS} >/dev/null 2>&1; then                # shellcheck disable=SC2086
 	mail_size=$(du -sh ${MAIL_DOWNLOADS} 2>/dev/null | cut -f1) # shellcheck disable=SC2086
 	append "Mail attachments: $mail_size"
 else
