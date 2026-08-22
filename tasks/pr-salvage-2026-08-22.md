@@ -22,7 +22,7 @@
 
 | Repo | Old PR | Disposition | New PR | Notes |
 | --- | ---: | --- | --- | --- |
-| personal-config | 2041 | SALVAGE (draft) | [#2063](https://github.com/abhimehro/personal-config/pull/2063) | Original ready (`isDraft=false`); left open (0gd). New draft from current main `22041dea…`. Title keyword `automation` + `cursor-agent/` branch = BOT. Files: `docs/TESTING.md`, `maintenance/SCHEDULE_SUMMARY.md`. Re-read `isDraft=true`. `make lint-errors` PASS. |
+| personal-config | 2041 | SALVAGE (opened draft; later ready by `linear-code[bot]`) | [#2063](https://github.com/abhimehro/personal-config/pull/2063) | Original ready; left open (0gd). Opened draft from current main `22041dea…` (`automation` + `cursor-agent/` = BOT). Create-time `isDraft=true`; `linear-code[bot]` marked ready at 08:13:36Z — left ready (0gd). `make lint-errors` PASS. |
 | ctrld-sync | 1161 | HOLD_EVIDENCE (no draft) | — | Structured failed recovery. `display.py` absent on current main (split to `display/tables.py` after #1183). Frozen `allowed_paths` cannot expand (0fv / **0gm**). Original left OPEN DIRTY. |
 
 - Salvage drafts opened: **1** (#2063)
@@ -41,15 +41,19 @@
 ## Verification
 
 - pc #2063: `make lint-errors` (no SC2155/SC2145)
-- Re-read `gh pr view 2063 --json isDraft,mergeable,mergeStateStatus,files`
-  → `isDraft=true`, `MERGEABLE`, `BLOCKED` (CI/Trunk pending)
+- Re-read after create: `isDraft=true`. Later live re-read (2026-08-22T08:22Z):
+  `isDraft=false` because `linear-code[bot]` emitted `ready_for_review` at
+  2026-08-22T08:13:36Z. Stage 2 did **not** mark it ready and did **not**
+  convert it back (0gd). Leave ready; Stage 1 may `/trunk merge` if routine
+  predicates pass.
 - ctrld #1161: `display.py` 404 on current main; live code is generator-form
   `sum(r["folders"] for r in sync_results)` in `display/tables.py`
 
 ## Handoff
 
-1. Stage 1 later: re-ingest draft **#2063** as routine docs; `/trunk merge` only
+1. Stage 1 later: re-ingest **#2063** as routine docs; `/trunk merge` only
    if every routine predicate passes. Do not convert ready original **#2041**.
+   Do not convert #2063 back to draft (0gd).
 2. Stage 3: Hydro **#543** (HUMAN lockfile) and Seatek **#708** (HUMAN; unique
    remainder vs main after #713) stay human. Optionally issue a new work item
    for ctrld #1161 with `allowed_paths: [display/tables.py, tests/test_benchmarks.py]`
