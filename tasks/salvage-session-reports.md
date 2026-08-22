@@ -6,6 +6,55 @@
 
 ## Entry template
 
+## Run — 2026-08-22 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **11** complete unexpired work item
+  `s2-20260822-esp-1514-path-import`
+- Preflight: `make cursor-cloud-hooks`; PAT as `abhimehro`; CodeScene MCP
+  `serverStatus=error` (unavailable)
+- Live: original ESP #1514 open, ready, CLEAN; head
+  `cb9f2dd6c791cf53574d5c82b61c3c7a17ceab9d`; base equals live main
+  `e009e5923860f5b504f6e179ad2380efe514bf4d`
+
+### Outcomes
+
+| Repo                    | Old PR | Disposition                                            | New PR                                                                      | Notes                                                                                          |
+| ----------------------- | -----: | ------------------------------------------------------ | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| email-security-pipeline |   1514 | SALVAGE (opened draft; converted back after 0gd ready) | [#1515](https://github.com/abhimehro/email-security-pipeline/pull/1515)     | Top-level `from pathlib import Path`; `python3 -m pytest` 754 passed; original left OPEN       |
+
+- Salvage drafts opened: **1** (#1515)
+- Infra-fix drafts: **0**
+- Closed via API: **0**
+- Autonomous merges: **0** (S1)
+- New lessons: **0**
+- `request_reviewers`: skipped
+- Ledger `11` → `12` (blob `61f895c52bfae47b86087a457c49e79bc66e1adf`, commit
+  `411984a73e0d786e27064a4f36413cdfd7dc4222`)
+- Cap 5; completed **1** (only eligible complete unexpired item). Remaining
+  `stage2_work_items`: **[]**.
+
+### Verification
+
+- ESP #1515: `python3 -m pytest` → 754 passed, 40 subtests, exit 0 on current
+  main + one-line runtime import
+- Create-time `isDraft=true`. `linear-code[bot]` `ready_for_review` at
+  2026-08-22T17:14:07Z. Converted back to draft at 2026-08-22T17:16:06Z before
+  ledger write (0gd). Re-read `draft=true`.
+- Original #1514 left OPEN. CodeScene MCP unavailable; original #1514 CodeScene
+  check already success.
+
+### Handoff
+
+1. Stage 1: re-ingest **#1515** for GITHUB_SQUASH if every routine predicate
+   passes; do not mark ready; HOLD_EVIDENCE until required checks
+2. Stage 3: keep original **#1514** OPEN (HOLD_CANONICAL); do not close because
+   #1515 exists
+3. Do not squash TYPE_CHECKING-only #1514; do not recreate that import
+
+Full record: `tasks/pr-salvage-2026-08-22-1700.md`.
+
 ## Run — 2026-08-22
 
 ### Input tail
