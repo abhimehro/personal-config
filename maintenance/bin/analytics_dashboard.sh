@@ -487,6 +487,14 @@ EOF
                 <div class="metric-label" id="total-warnings-label">Total Warnings</div>
             </li>
 EOF
+	else
+		cat >>"$dashboard_file" <<EOF
+            <li class="empty-state" style="grid-column: 1 / -1; min-height: 120px;">
+                <div class="icon" aria-hidden="true">&#x1F4CA;</div>
+                <p>No detailed metrics collected for this period.</p>
+                <p style="margin-top: 5px; font-size: 0.9em;">Wait for the next collection cycle or check jq installation.</p>
+            </li>
+EOF
 	fi
 
 	cat >>"$dashboard_file" <<EOF
