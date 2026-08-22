@@ -65,4 +65,4 @@ jobs:
           git add docs/skill-index/directory-data.json
           git commit -m "chore(skill-index): refresh source bundle"
           git push origin "$branch"
-          gh pr create --draft --base main --head "$branch" --title "chore(skill-index): refresh source bundle" --body "Generated from \\`${GITHUB_SHA}\\` after a skill-path change. This draft contains only the non-executable Skill Index data bundle. Review and merge to publish the new source revision to the directory."
+          gh pr create --draft --base main --head "$branch" --title "chore(skill-index): refresh source bundle" --body "Generated from \`${GITHUB_SHA}\` after a skill-path change. This draft contains only the non-executable Skill Index data bundle. Review and merge to publish the new source revision to the directory."
