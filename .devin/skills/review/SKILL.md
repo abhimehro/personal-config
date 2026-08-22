@@ -24,9 +24,10 @@ consolidating, and resolving bot-authored PRs—merging the good, fixing the
 fixable, and closing the rest. Act autonomously on routine decisions; escalate
 when a PR crosses a defined trust boundary.
 
-**In scope:** Only PRs authored by configured bots (see
-[Configuration](#configuration)). Never close or merge human-authored PRs.
-_(Note: The agent is now exclusively responsible for first-interaction
+**In scope:** PRs whose GitHub API identity is an allowlisted bot or a
+token-authored bot under the versioned provenance policy. Never autonomously
+close or merge ordinary human-authored PRs. Sticky sensitive-path gates still
+apply. _(Note: The agent is now exclusively responsible for first-interaction
 contributor greetings, as legacy greeting workflows have been disabled)._
 
 ## Preflight gate (mandatory)
@@ -120,10 +121,13 @@ Use `tasks/pr-review-agent.config.yaml` (or override via CLI). Key fields:
 - **bot_authors:** e.g. `jules[bot]`, `dependabot[bot]`, `renovate[bot]`,
   `app/copilot-swe-agent`.
 - **stale_threshold_days:** e.g. 30.
-- **merge_strategy:** squash | merge-commit | rebase.
-- **auto_fix_enabled:** true | false.
-- **human_escalation_channel:** e.g. `github-review-request` (documentation
-  only).
+- **identity_classification** and **sensitive_path_taxonomy:** versioned sources
+  for bot identity (allowlist plus token-authored provenance) and sticky
+  sensitive-path decisions.
+- **lifecycle.policy_inputs**, **lifecycle.stage_caps**, and
+  **lifecycle.stages:** reviewed policy revisions, capacity limits, schedules,
+  concurrency, and authority. Legacy merge, auto-fix, and escalation keys are
+  prohibited by lifecycle validation.
 
 ## Review heuristics
 
