@@ -2571,3 +2571,18 @@ Contents/Git history. Do not force-push. Do not create a new orphan from
 `main`. Do not treat `tasks/pr-lifecycle-ledger.yaml` as runtime state. After
 restore, re-GET the blob SHA and continue CAS as usual. **Detection cost:**
 Low — ref 404 plus a successful contents read by recorded commit SHA.
+
+## Lesson 0gp: Merged PRs with post-merge head drift keep the existing key (2026-08-22)
+
+**Pattern:** After a Trunk (or GitHub) merge, the merged PR's live `headOid`
+can drift from the ingested ledger `head_sha` because GitHub retargets or
+rebases the head ref. personal-config #2041 stayed
+`…#2041@2facd5bddc672c3bab21699acfd61152a13be098` while live head moved to
+`0d9a1146…` after merge `30db0e1b962b123f0ac15b9ddf150a50bc3e87b2`. Treating
+that as `STALE_ANCHOR` would mint a replacement key and bounce a **merged**
+PR back to Stage 1. **Rule:** When GitHub `merged` is true, keep the
+**existing** item key, record `MERGED_ROUTINE` (or the verified terminal
+disposition) with the merge-commit SHA in `evidence_urls`, and do **not**
+mint a new key. Do not `STALE_ANCHOR` a merged PR. Live-head drift on an
+**open** PR remains Stage 1 invalidation as before. **Detection cost:** Low
+— GraphQL/REST `merged: true` plus `headOid != ledger.head_sha`.
