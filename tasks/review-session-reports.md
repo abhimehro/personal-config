@@ -1,19 +1,211 @@
+# Stage 1 — 2026-08-22 (retry after missed 15:00 UTC cron)
+
+Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
+`REPORT_ONLY` count **2** (not incremented). Slim inventory (no GraphQL
+`commits`; lesson **0gl**). Inventoried **44** new BOT PRs plus **2** HUMAN
+salvage leftovers (Hydro #543, Seatek #708). Squash-merged **2** (Seatek #713
+`3e8bb2298ad8876697c76550a355f67183cc123b`, Seatek #673
+`166f0d8a43e483f034d818903d5709e9de005573`). Closed **5** (#704/#1504/#403/#270
+`CLOSED_NOOP`; #705 `CLOSED_SUPERSEDED` vs #713). GitHub PR mutations **7**.
+Ledger `8` → `9` (blob `4bed926ce157e97ae2f5809ac2c34c0a09b1515f`, commit
+`b39b62dbf1855bf00d6328fbf641f7acc918c0a4`). Stage 2 queued **2** (ctrld#1161,
+pc#2041) until the Stage 2 half of this retry. Stage 3 **46** handoffs.
+Lessons **0gl**. Full record: `tasks/pr-review-2026-08-22.md`. Docs branch:
+`pr-lifecycle-docs-20260822`.
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (new v1.4 BOT)  |    44 |
+| HUMAN salvage leftovers     |     2 |
+| Merged                      |     2 |
+| Closed                      |     5 |
+| Stage 2 queued (this run)   |     2 |
+| Stage 3 handoffs (this run) |    46 |
+| GitHub PR actions           |     7 |
+| Ledger CAS writes           |     1 |
+
+Per-item table: see `tasks/pr-review-2026-08-22.md` (mandatory Stage 1
+columns).
+
+# Stage 1 — 2026-08-20 (cron 15:00 UTC / v1.4 hyphen identity)
+
+Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Stale
+calibration (`pr-lifecycle-v1.3`) reset to `REPORT_ONLY` count **0** /
+`pr-lifecycle-v1.4` (rev **3 → 4**; not a successful calibration run).
+Inventoried **50** new BOT PRs (cap 50) plus **34** unchanged-SHA skips. Open
+**104**; **5** HUMAN (`feat/`/`fix/` or <2 signals). Squash-merged **1**
+(Hydrograph #536, `226f97b630303cef047e4be75297c02615ec2485`). Closed **0**.
+GitHub PR mutations **1**. Ledger `4` → `5` (blob
+`b1cd06de01b8696a5025bbec011e12c19fdf6835`, commit
+`38e16c111c7269e0302cbfa4124e7be92d5addc8`). Stage 2 queued **2** (seatek#705
+isfile; rpce#271 a11y). Stage 3 **47** new handoffs (includes 4 zero-diff close
+candidates awaiting 24h). Calibration REPORT_ONLY count **0**. Lessons **0gc**.
+Full record: `tasks/pr-review-2026-08-20-1500.md`.
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (new v1.4 BOT)  |    50 |
+| Unchanged SHA retained      |    34 |
+| Human-login excluded        |     5 |
+| Merged                      |     1 |
+| Closed                      |     0 |
+| Stage 2 queued (this run)   |     2 |
+| Stage 3 handoffs (this run) |    47 |
+| GitHub PR actions           |     1 |
+| Ledger CAS writes           |     2 |
+
+Per-item table: see `tasks/pr-review-2026-08-20-1500.md` (mandatory Stage 1
+columns).
+
+# Stage 1 — 2026-08-20 (on-demand v1.3 first live run)
+
+Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Stale
+calibration (`pr-lifecycle-v1.2`) reset to `REPORT_ONLY` count **0** /
+`pr-lifecycle-v1.3` (rev **1 → 2**; not a successful calibration run).
+Inventoried **35** BOT PRs (cap 50): **15** allowlist + **20** token-authored.
+Open **98**; **63** REST login `abhimehro` stayed HUMAN (mostly hyphen-branch
+title-only; lesson **0gb**). Squash-merged **1** (Seatek #701,
+`85ea23de1e1ce65bf34ba989a84611f5b8d7aa83`). Closed **0**. GitHub PR mutations
+**1**. Ledger `2` → `3` (blob `4be91819dcc6a9c5328fbe017ebec6c9575b6953`, commit
+`7ac50c870620780602bcb1a0887809109b267f66`). Stage 2 queued **4** (hydro#535
+mypy CI pin kept; ctrld#1161 Bolt summary; seatek#673 Daily QA lint; rpce#247
+a11y labels). Stage 3 **30**. Calibration REPORT_ONLY count **0**. Lessons
+**0gb**. Full record: `tasks/pr-review-2026-08-20.md`. Docs branch:
+`cursor-agent/pr-review-stage1-20260820`.
+
+| Metric                 | Count |
+| ---------------------- | ----: |
+| Inventoried (v1.3 BOT) |    35 |
+| Human-login excluded   |    63 |
+| Unchanged SHA retained |    15 |
+| Merged                 |     1 |
+| Closed                 |     0 |
+| Stage 2 queued         |     4 |
+| Stage 3 handoffs       |    30 |
+| GitHub PR actions      |     1 |
+| Ledger CAS writes      |     2 |
+
+Per-item table: see `tasks/pr-review-2026-08-20.md` (mandatory Stage 1 columns).
+
+# Stage 1 — 2026-08-19 (cron 15:00 UTC / fired 22:30Z)
+
+Preflight PASS 7/7. Runtime ledger **ACTIVE** (`github_contents_api`).
+Inventoried **15** REST-allowlisted bot PRs (cap 20). Open **92**; **77** REST
+login `abhimehro` excluded as HUMAN. Squash-merged **0**. Closed **0**. GitHub
+PR mutations **0**. Ledger `0` → `1` (blob
+`b58f98b8ad565a7e822b03a214b63da1d33e12a9`, commit
+`e77e75856ed55ba767eef7ac0f3ab5f7d6baf8a4`). Stage 2 queued **1** (hydro#535
+mypy CI pin). Stage 3 **14**. Calibration REPORT_ONLY count **0**. Adversarial:
+opus-5 + gpt-5.6-sol on #535 → HOLD. Lessons **0fx** / **0fy**. Full record:
+`tasks/pr-review-2026-08-19.md`. Docs branch:
+`cursor-agent/automated-pr-review-workflow-1694`.
+
+| Metric                         | Count |
+| ------------------------------ | ----: |
+| Inventoried (REST allowlisted) |    15 |
+| Human-login excluded           |    77 |
+| Merged                         |     0 |
+| Closed                         |     0 |
+| Stage 2 queued                 |     1 |
+| Stage 3 handoffs               |    14 |
+| GitHub PR actions              |     0 |
+| Ledger CAS writes              |     1 |
+
+Per-item table: see `tasks/pr-review-2026-08-19.md` (mandatory Stage 1 columns).
+
+---
+
+# Review session — 2026-08-13 (cron Phase 1 13:00 UTC)
+
+Preflight PASS 7/7. Inventoried **41**. Squash-merged **0** (`gh` read-only).
+APPROVE **5**. REQUEST_CHANGES **6**. CLOSE-recommend **4**. Escalated/deferred
+**~26**. Adversarial: opus-4.8 + gpt-5.5. Docs branch:
+`cursor-agent/automated-pr-workflow-54ad`. Report:
+`tasks/pr-review-2026-08-13.md`. Recovered stranded Aug 8–12 reports + lessons
+**0fl**/**0fm**/**0fq**. New **0fo** (join vs sum), **0fp** (sanitizer shallow
+copy).
+
+| Metric      | Count |
+| ----------- | ----: |
+| Inventoried |    41 |
+| Merged      |     0 |
+| APPROVE     |     5 |
+| Closed      |     0 |
+| Escalated   |   ~26 |
+| Open EOD    |    41 |
+
+---
+
 # Review session — 2026-08-07 (cron Phase 1 13:00 UTC)
 
 Preflight PASS 7/7. Inventoried **58**. Squash-merged **24**. Closed **5**.
 Escalated **~25**. Request-changes **~8**. CodeScene triggers **4**.
-Adversarial: opus-4.8 + gpt-5.5. Docs branch: `cursor-agent/automated-pr-workflow-a609`.
-Report: `tasks/pr-review-2026-08-07.md`. Recovered stranded Aug 5/6 reports (lesson **0fk**).
+Adversarial: opus-4.8 + gpt-5.5. Docs branch:
+`cursor-agent/automated-pr-workflow-a609`. Report:
+`tasks/pr-review-2026-08-07.md`. Recovered stranded Aug 5/6 reports (lesson
+**0fk**).
 
-| Metric | Count |
-| --- | ---: |
-| Inventoried | 58 |
-| Merged | 24 |
-| Closed | 5 |
-| Escalated | ~25 |
-| Open EOD | ~44 |
+# Review session — 2026-08-16 (cron Phase 1 13:00 UTC)
 
-New lesson: **0fk** (docs `tasks/*` cascade recovery). Restored **0fg**/**0fh** headings.
+Preflight PASS 7/7. Inventoried **68**. Squash-merged **9**. Closed **2**. HOLD
+**~12**. ESCALATE **~31**. Open EOD **~57**. REQUEST_CHANGES / COMMENT on
+0fo/0fp/0fg, majors, Sentinel clusters. CodeScene MCP down; posted
+`/cs-agent skill:fix-code-health-degradations` on ctrld#1183 and pc#1980.
+Adversarial: opus-5 + gpt-5.6-sol (model picker N/A). Reviewers requested on
+cursor PRs #1162, #1473, #498, #643. Docs branch:
+`cursor-agent/automated-pr-workflow-9b3f`. Report:
+`tasks/pr-review-2026-08-16.md`. New lesson: **0fs** (sibling Dependabot lock
+merge falsifies repo-health pins).
+
+| Metric                 | Count |
+| ---------------------- | ----: |
+| Inventoried            |    68 |
+| Merged                 |     9 |
+| Closed                 |     2 |
+| HOLD / REQUEST_CHANGES |   ~12 |
+| Escalated              |   ~31 |
+| Open EOD               |   ~57 |
+
+---
+
+# Review session — 2026-08-15 (cron Phase 1 13:00 UTC)
+
+Preflight PASS 7/7. Inventoried **~80**. Squash-merged **19**. Closed **12**.
+Escalated Sentinel/CORS/majors/workflow. REQUEST_CHANGES **~22**. CodeScene
+triggers **3**. Adversarial: opus-5 + gpt-5.6-sol + gemini-3.7-flash. Docs
+branch: `cursor-agent/automated-pr-workflow-864b`. Report:
+`tasks/pr-review-2026-08-15.md`. Recovered 08-08…13 reports (0fk). New lesson:
+**0fr** (Dependabot force-update vs local autofix; no force-push).
+
+| Metric           | Count |
+| ---------------- | ----: |
+| Inventoried      |   ~80 |
+| Merged           |    19 |
+| Closed           |    12 |
+| Escalated / HOLD |   ~30 |
+| Open EOD         |    49 |
+
+---
+
+# Review session — 2026-08-07 (cron Phase 1 13:00 UTC)
+
+Preflight PASS 7/7. Inventoried **58**. Squash-merged **24**. Closed **5**.
+Escalated **~25**. Request-changes **~8**. CodeScene triggers **4**.
+Adversarial: opus-4.8 + gpt-5.5. Docs branch:
+`cursor-agent/automated-pr-workflow-a609`. Report:
+`tasks/pr-review-2026-08-07.md`. Recovered stranded Aug 5/6 reports (lesson
+**0fk**).
+
+| Metric      | Count |
+| ----------- | ----: |
+| Inventoried |    58 |
+| Merged      |    24 |
+| Closed      |     5 |
+| Escalated   |   ~25 |
+| Open EOD    |   ~44 |
+
+New lesson: **0fk** (docs `tasks/*` cascade recovery). Restored **0fg**/**0fh**
+headings.
 
 ---
 
@@ -21,18 +213,20 @@ New lesson: **0fk** (docs `tasks/*` cascade recovery). Restored **0fg**/**0fh** 
 
 Preflight PASS 7/7. Inventoried **88**. Squash-merged **49**. Closed **5**.
 Escalated **10**. Request-changes **~15**. Deferred CONFLICTING to Phase 2.
-Adversarial: opus-4.8 + gpt-5.5. Docs branch: `cursor-agent/automated-pr-workflow-1f9f`.
-Report: `tasks/pr-review-2026-08-04.md`.
+Adversarial: opus-4.8 + gpt-5.5. Docs branch:
+`cursor-agent/automated-pr-workflow-1f9f`. Report:
+`tasks/pr-review-2026-08-04.md`.
 
-| Metric | Count |
-| --- | ---: |
-| Inventoried | 88 |
-| Merged | 49 |
-| Closed | 5 |
-| Escalated | 10 |
-| Open EOD | ~34 |
+| Metric      | Count |
+| ----------- | ----: |
+| Inventoried |    88 |
+| Merged      |    49 |
+| Closed      |     5 |
+| Escalated   |    10 |
+| Open EOD    |   ~34 |
 
-New lessons: **0fd** (LICENSE/README hijack), **0fe** (`.Jules` case collision), **0ff** (mislabeled test PRs renaming prod APIs).
+New lessons: **0fd** (LICENSE/README hijack), **0fe** (`.Jules` case collision),
+**0ff** (mislabeled test PRs renaming prod APIs).
 
 ---
 
@@ -440,7 +634,8 @@ New lessons: **0fd** (LICENSE/README hijack), **0fe** (`.Jules` case collision),
   esp#1404/#1401; Seatek#578/#581/#576; series#340.
 - Closed: esp#1405 (overlap #1401); pc#1883 (journal wipe — Lesson **0fc**).
 - Auth: `abhimehro` PAT — squash-merge + close + merge-async + MCP reviews OK.
-- Adversarial: opus-4.8 + gpt-5.5 parallel; consensus block #1883 / prefer #1401.
+- Adversarial: opus-4.8 + gpt-5.5 parallel; consensus block #1883 / prefer
+  #1401.
 - Docs: `tasks/pr-review-2026-08-02.md`, `pr-inventory.md`, `pr-triage.md`;
   branch `cursor-agent/automated-pr-workflow-7358`.
 - Phase 2 trigger: yes (≥1 ESCALATE; Hydrograph path cluster; rpce CONFLICTING).

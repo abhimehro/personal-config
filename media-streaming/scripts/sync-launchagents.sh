@@ -117,6 +117,34 @@ mkdir -p "$DEST_DIR" "$LOG_DIR" "$STATE_DIR"
 UID_NUM="$(id -u)"
 DOMAIN="gui/$UID_NUM"
 
+# Gaming Mode intentionally boots these out. Do not re-bootstrap them
+# from the unchanged-but-unloaded path unless --force is set.
+readonly GAMING_MODE_LABELS=(
+	com.speedybee.jellyfin
+	com.speedybee.media.renamer
+	com.speedybee.media.server
+	com.speedybee.media.mount
+	com.speedybee.media.mount-watchdog
+)
+
+is_gaming_mode_label() {
+	local candidate="$1" label
+	for label in "${GAMING_MODE_LABELS[@]}"; do
+		[[ $candidate == "$label" ]] && return 0
+	done
+	return 1
+}
+
+gaming_mode_active() {
+	local label
+	for label in "${GAMING_MODE_LABELS[@]}"; do
+		if is_loaded "$label"; then
+			return 1
+		fi
+	done
+	return 0
+}
+
 # ── Discover source plists ─────────────────────────────────────────────────
 declare -a SRC_PLISTS=()
 for d in "${SRC_DIRS[@]}"; do
@@ -309,8 +337,39 @@ for src in "${SRC_PLISTS[@]}"; do
 		"$C_GRAY" "${dst/#$HOME/~}" "$C_RESET"
 
 	if ! "$needs_install"; then
-		unchanged+=1
-		printf '%s\t%s\t%s\tunchanged\n' "$label" "$src_sum" "$dst" >>"$tmp_manifest"
+		if [[ $DRY_RUN == "true" ]]; then
+			if is_loaded "$label"; then
+				unchanged+=1
+			elif is_gaming_mode_label "$label" && gaming_mode_active && [[ $FORCE != "true" ]]; then
+				info "would skip bootstrap-missing $label (gaming mode active)"
+				unchanged+=1
+			else
+				warn "would bootstrap unchanged-but-unloaded $label"
+				updated+=1
+			fi
+			continue
+		fi
+		if is_loaded "$label"; then
+			unchanged+=1
+			printf '%s\t%s\t%s\tunchanged\n' "$label" "$src_sum" "$dst" >>"$tmp_manifest"
+			continue
+		fi
+		if is_gaming_mode_label "$label" && gaming_mode_active && [[ $FORCE != "true" ]]; then
+			info "skip bootstrap-missing $label (gaming mode active; use --force to load)"
+			unchanged+=1
+			printf '%s\t%s\t%s\tskip-gaming-mode\n' "$label" "$src_sum" "$dst" >>"$tmp_manifest"
+			continue
+		fi
+		info "file unchanged but not loaded; bootstrapping $label"
+		xattr -d com.apple.quarantine "$dst" 2>/dev/null || true
+		if bootstrap_label "$label" "$dst"; then
+			ok "bootstrapped missing $label"
+			updated+=1
+			printf '%s\t%s\t%s\tbootstrap-missing\n' "$label" "$src_sum" "$dst" >>"$tmp_manifest"
+		else
+			err "bootstrap-missing failed: $label"
+			failed+=1
+		fi
 		continue
 	fi
 
@@ -332,6 +391,7 @@ for src in "${SRC_PLISTS[@]}"; do
 		continue
 	fi
 	chmod 644 "$dst"
+	xattr -d com.apple.quarantine "$dst" 2>/dev/null || true
 
 	# 3. Bootstrap fresh
 	if bootstrap_label "$label" "$dst"; then
