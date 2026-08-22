@@ -1,3 +1,32 @@
+# Stage 1 — 2026-08-22 (retry after missed 15:00 UTC cron)
+
+Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
+`REPORT_ONLY` count **2** (not incremented). Slim inventory (no GraphQL
+`commits`; lesson **0gl**). Inventoried **44** new BOT PRs plus **2** HUMAN
+salvage leftovers (Hydro #543, Seatek #708). Squash-merged **2** (Seatek #713
+`3e8bb2298ad8876697c76550a355f67183cc123b`, Seatek #673
+`166f0d8a43e483f034d818903d5709e9de005573`). Closed **5** (#704/#1504/#403/#270
+`CLOSED_NOOP`; #705 `CLOSED_SUPERSEDED` vs #713). GitHub PR mutations **7**.
+Ledger `8` → `9` (blob `4bed926ce157e97ae2f5809ac2c34c0a09b1515f`, commit
+`b39b62dbf1855bf00d6328fbf641f7acc918c0a4`). Stage 2 queued **2** (ctrld#1161,
+pc#2041) until the Stage 2 half of this retry. Stage 3 **46** handoffs.
+Lessons **0gl**. Full record: `tasks/pr-review-2026-08-22.md`. Docs branch:
+`pr-lifecycle-docs-20260822`.
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (new v1.4 BOT)  |    44 |
+| HUMAN salvage leftovers     |     2 |
+| Merged                      |     2 |
+| Closed                      |     5 |
+| Stage 2 queued (this run)   |     2 |
+| Stage 3 handoffs (this run) |    46 |
+| GitHub PR actions           |     7 |
+| Ledger CAS writes           |     1 |
+
+Per-item table: see `tasks/pr-review-2026-08-22.md` (mandatory Stage 1
+columns).
+
 # Stage 1 — 2026-08-20 (cron 15:00 UTC / v1.4 hyphen identity)
 
 Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Stale
