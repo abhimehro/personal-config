@@ -1,5 +1,16 @@
 # Lessons Learned
 
+## Lesson 0ft: `role="status"` on `<li>` overrides listitem (2026-08-17)
+
+**Pattern:** Palette a11y PRs add `role="status"` to empty-state containers so
+screen readers announce “no data.” When the empty state is an `<li>` inside a
+real `<ul>` (pc #2014 `performance_optimizer.sh` recommendations list), the
+explicit role **replaces** the implicit `listitem` role and leaves the list
+with zero listitem children. **Rule:** (1) Put `role="status"` on a nested
+`<span>`/`<div>`, never on the `<li>` itself. (2) `<div class="empty-state">`
+sites are fine. (3) Adversarial agreement on an a11y regression →
+REQUEST_CHANGES even when CI is green and the rest of the PR is a one-attribute
+diff. **Detection cost:** Low — search the diff for `role="status"` on `li`.
 ## Lesson 0gk: Stage 2 salvage() titles are not versioned bot signals (2026-08-21)
 
 **Pattern:** Stage 2 opened ready salvage PRs Hydro #543 and Seatek #708 as
