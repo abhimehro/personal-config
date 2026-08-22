@@ -530,3 +530,7 @@ with potentially missing data, always conditionally render a dedicated
 to communicate the absence of data clearly and beautifully.
 
 >>>>>>> Stashed changes
+## $(date +%Y-%m-%d) - Native HTML Meter for Scalar Data Visualizations
+
+**Learning:** Shell scripts that generate static HTML reports often neglect data visualization, opting to display scalar measurements (like performance scores, disk usage, or warning counts) as plain text within metric cards. This approach is visually dull and misses an opportunity for accessible, semantic data representation.
+**Action:** Always use the native HTML5 `<meter>` element to provide semantic, accessible visual gauges for scalar data in generated HTML reports. Ensure you include appropriate `aria-label`, `min`, `max`, `low`, `high`, and `optimum` attributes to provide full context to screen readers and clear visual feedback to users.
