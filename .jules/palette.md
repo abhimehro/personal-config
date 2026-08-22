@@ -488,14 +488,45 @@ top of the `<body>` and ensure the main content is wrapped in
 
 ## 2026-08-01 — empty-state class (salvage #1859)
 
-Added `empty-state` class on empty directory listing `<li>` without removing skip-link / landmark a11y from main.
+Added `empty-state` class on empty directory listing `<li>` without removing
+skip-link / landmark a11y from main.
+
 ## 2026-08-02 - Improved empty states and a11y focus rings
-**Learning:** Shell-generated HTML reports often neglect a11y focus states for `.skip-link` and lack robust visual distinction for empty states (e.g. no recommendations).
-**Action:** Always verify keyboard accessibility (`:focus` with clear outline) and add icons/soft backgrounds for empty states to make them visibly distinct.
+
+**Learning:** Shell-generated HTML reports often neglect a11y focus states for
+`.skip-link` and lack robust visual distinction for empty states (e.g. no
+recommendations). **Action:** Always verify keyboard accessibility (`:focus`
+with clear outline) and add icons/soft backgrounds for empty states to make them
+visibly distinct.
 
 ## 2026-08-04 - Native HTML Meter for Data Visualization
-**Learning:** Presenting system metrics (like CPU load or disk usage) as raw text in HTML reports misses an opportunity for accessible data visualization.
-**Action:** Use the native HTML5 `<meter>` element to provide a semantic, accessible, and visually appealing representation of scalar measurements within known ranges, ensuring appropriate `aria-label`, `min`, `max`, `low`, and `high` attributes are set.
+
+**Learning:** Presenting system metrics (like CPU load or disk usage) as raw
+text in HTML reports misses an opportunity for accessible data visualization.
+**Action:** Use the native HTML5 `<meter>` element to provide a semantic,
+accessible, and visually appealing representation of scalar measurements within
+known ranges, ensuring appropriate `aria-label`, `min`, `max`, `low`, and `high`
+attributes are set.
+
 ## 2026-08-04 - HTML Reports Missing Data Fallback UX
-**Learning:** Raw fallback text ("Insights not available") inside `<pre>` tags for missing report sections feels like a technical error to the user rather than an expected empty state.
-**Action:** When generating HTML reports or dashboards with potentially missing data, always conditionally render a dedicated `.empty-state` component with flexbox layout, muted colors, and a relevant icon to communicate the absence of data clearly and beautifully.
+
+<<<<<<< Updated upstream **Learning:** Raw fallback text ("Insights not
+available") inside `<pre>` tags for missing report sections feels like a
+technical error to the user rather than an expected empty state. **Action:**
+When generating HTML reports or dashboards with potentially missing data, always
+conditionally render a dedicated `.empty-state` component with flexbox layout,
+muted colors, and a relevant icon to communicate the absence of data clearly and
+beautifully.
+
+## 2026-08-14 - Add actionable hints to empty states
+
+# **Learning:** Empty states in generated reports lacked actionable next steps, leaving users unsure of how to populate missing data (like insights or optimizations). **Action:** Always include a helpful call-to-action or instructional hint (such as the specific command to run, formatted with <kbd>) in empty states to guide the user.
+
+**Learning:** Raw fallback text ("Insights not available") inside `<pre>` tags
+for missing report sections feels like a technical error to the user rather than
+an expected empty state. **Action:** When generating HTML reports or dashboards
+with potentially missing data, always conditionally render a dedicated
+`.empty-state` component with flexbox layout, muted colors, and a relevant icon
+to communicate the absence of data clearly and beautifully.
+
+>>>>>>> Stashed changes

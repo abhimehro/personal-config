@@ -4,7 +4,7 @@ initialize: |
   sudo apt-get update
   sudo add-apt-repository -y ppa:deadsnakes/ppa
   sudo apt-get update
-  sudo apt-get install -y python3.12 python3.12-venv graphviz rclone shellcheck openjdk-17-jre-headless
+  sudo apt-get install -y python3.12 python3.12-venv python3-pip pipx graphviz rclone shellcheck openjdk-17-jre-headless
   mkdir -p /home/ubuntu/bin
   ln -sf /usr/bin/python3.12 /home/ubuntu/bin/python3
   sudo python3.12 -m ensurepip --upgrade
@@ -15,6 +15,9 @@ initialize: |
 # Install project dependencies (runs during builds, surfaced to agent at session start).
 maintenance: |
   python3.12 -m pip install -r requirements.txt
+  export PATH="$HOME/.local/bin:$PATH"
+  pipx ensurepath || true
+  pipx install --force git+https://github.com/CharlesHoskinson/anthropies.git || true
 knowledge:
   - name: lint
     contents: |

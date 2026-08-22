@@ -32,7 +32,15 @@ if [ "$SKIP" -ne 1 ]; then
 	fi
 fi
 if [ "$SHELL_KIND" = bash ]; then
-	exec agent-bash "${PASSTHROUGH[@]}"
+	if [ "${#PASSTHROUGH[@]}" -gt 0 ]; then
+		exec agent-bash "${PASSTHROUGH[@]}"
+	else
+		exec agent-bash
+	fi
 else
-	exec agent-zsh "${PASSTHROUGH[@]}"
+	if [ "${#PASSTHROUGH[@]}" -gt 0 ]; then
+		exec agent-zsh "${PASSTHROUGH[@]}"
+	else
+		exec agent-zsh
+	fi
 fi
