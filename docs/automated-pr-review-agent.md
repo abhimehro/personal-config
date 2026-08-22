@@ -114,14 +114,13 @@ After each completion, re-check remaining PRs for new conflicts.
 ## Phase 4 — Reporting & Learning
 
 - Write the session report on the **daily documentation lineage**
-  (`pr-lifecycle-docs-YYYYMMDD` on personal-config). Create that branch/PR
-  from current `main` if it is missing; do not open a second overlapping
-  docs PR. Append to `tasks/review-session-reports.md` (repos processed,
-  actions taken, escalations, consolidations, patterns, metrics). Prefer a
-  point-in-time snapshot as `tasks/pr-review-YYYY-MM-DD.md` (or
-  `…-HHMM.md`) for bulky inventory. Also `/trunk merge` an older green
-  `pr-lifecycle-docs` PR when routine predicates pass (counts toward the
-  20-action cap).
+  (`pr-lifecycle-docs-YYYYMMDD` on personal-config). Create that branch/PR from
+  current `main` if it is missing; do not open a second overlapping docs PR.
+  Append to `tasks/review-session-reports.md` (repos processed, actions taken,
+  escalations, consolidations, patterns, metrics). Prefer a point-in-time
+  snapshot as `tasks/pr-review-YYYY-MM-DD.md` (or `…-HHMM.md`) for bulky
+  inventory. Also `/trunk merge` an older green `pr-lifecycle-docs` PR when
+  routine predicates pass (counts toward the 20-action cap).
 - Update the lifecycle ledger for every item currently owned by Stage 1, using
   the shared anchors, outcome, next owner, safe default, evidence, and bounded
   next action. A base or head SHA change must invalidate evidence and return the
@@ -140,8 +139,8 @@ After each completion, re-check remaining PRs for new conflicts.
   written as state.
 - Review automation must not write to `tasks/salvage-session-reports.md`,
   `tasks/completion-session-reports.md`, `AGENTS.md`, or `tasks/todo.md`.
-- Canonical policy docs are read-mostly; only update for policy/version
-  changes, and never from the daily cron lineage.
+- Canonical policy docs are read-mostly; only update for policy/version changes,
+  and never from the daily cron lineage.
 
 ## Phase 5 — Hand off the nonterminal tail
 
@@ -162,10 +161,10 @@ evidence, canonical conflicts, and unverified close candidates.
 Stage 2 produces one or more **draft** salvage / infra-fix PRs; it does not
 close a security original merely because a replacement draft exists. Stage 1
 **re-ingests** those replacement PRs (ledger `item_key` plus any open PR with
-salvage/provenance linkage) as inventory. Stage 1 may routine-merge a
-salvage replacement when every routine predicate already in this spec passes;
-it never grants Stage 2 merge authority and never marks a draft ready to skip a
-failed predicate. Stage 3 owns later reconciliation and, only after approved
+salvage/provenance linkage) as inventory. Stage 1 may routine-merge a salvage
+replacement when every routine predicate already in this spec passes; it never
+grants Stage 2 merge authority and never marks a draft ready to skip a failed
+predicate. Stage 3 owns later reconciliation and, only after approved
 calibration, bounded completion. Review automation must not write to
 `tasks/salvage-session-reports.md`. If a deferred PR is blocked by CodeScene
 code health, Stage 2 must confirm `/cs-agent skill:fix-code-health-degradations`

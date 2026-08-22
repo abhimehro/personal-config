@@ -32,9 +32,9 @@ report-only rule, mutation cap, or security boundary. `concurrency: 1` is an
 operating requirement documented in source artifacts, not a Cursor Dashboard
 enforcement primitive.
 
-Agent-facing session docs share one `pr-lifecycle-docs-YYYYMMDD` PR per UTC
-day (lifecycle contract). Stage 3 still uses Notion only for one-question
-packets; do not paste run records into Notion as git continuity.
+Agent-facing session docs share one `pr-lifecycle-docs-YYYYMMDD` PR per UTC day
+(lifecycle contract). Stage 3 still uses Notion only for one-question packets;
+do not paste run records into Notion as git continuity.
 
 The two Stage 3 exports share `0 19 * * *` and are **mutually exclusive**.
 Before enabling completion, disable or delete the calibration automation, verify
