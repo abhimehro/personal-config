@@ -2543,3 +2543,31 @@ unless Stage 3 issues a **new** work item that names that path. Hand off
 `HOLD_EVIDENCE`. Leave the original DIRTY PR open. **Detection cost:** Low —
 `gh api repos/.../contents/display.py?ref=main` → 404 while `display/tables.py`
 exists.
+
+## Lesson 0gn: Slim GraphQL inventory — omit `statusCheckRollup` too (2026-08-22)
+
+**Pattern:** Lesson **0gl** dropped the `commits` field after GraphQL 504s. The
+15:00 UTC cron still 504'd on Seatek_Analysis and repoprompt-ce when
+`statusCheckRollup` stayed in `gh pr list --json`. Required-check evidence for
+the small merge-candidate set can be read later via REST check-runs /
+branch-protection, not on the seven-repo inventory sweep. **Rule:** Default
+Stage 1 inventory must omit **both** `commits` and `statusCheckRollup`. Enrich
+checks only for items that already pass identity, sensitivity, and merge-state
+gates. Treat GraphQL 504 / node-limit as `HOLD_PLATFORM` for that enrichment
+path, not as a reason to skip intake. **Detection cost:** Low —
+`gh pr list --json statusCheckRollup` on a repo with large PRs fails; slim list
+succeeds.
+
+## Lesson 0go: Restore a missing ledger ref; never invent ledger state (2026-08-22)
+
+**Pattern:** `GET .../git/ref/heads/automation/pr-lifecycle-ledger` returned
+404 while `GET .../contents/pr-lifecycle-ledger.yaml` by the last known commit
+SHA still returned rev 10 (`ccc48c10227711eacddfc97c685e2a5236bd6e17` /
+blob `a522d71e5a6895718c9410b1270a7f7d82cffbed`). The orphan data-branch
+pointer had been dropped; the objects had not. **Rule:** A 404 on the data
+branch is `HOLD_PLATFORM` until the ref is restored. Restore with
+`POST .../git/refs` pointing at the last known **existing** commit SHA from
+Contents/Git history. Do not force-push. Do not create a new orphan from
+`main`. Do not treat `tasks/pr-lifecycle-ledger.yaml` as runtime state. After
+restore, re-GET the blob SHA and continue CAS as usual. **Detection cost:**
+Low — ref 404 plus a successful contents read by recorded commit SHA.
