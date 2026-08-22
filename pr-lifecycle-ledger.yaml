@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 11
+ledger_revision: 12
 calibration:
   status: REPORT_ONLY
   successful_run_count: 2
@@ -6948,27 +6948,72 @@ items:
   classification: FEATURE
   risk_class: ROUTINE
   sensitive_paths: []
-  guardrail_outcome: HOLD_EVIDENCE
-  lifecycle_state: STAGE2_QUEUED
+  guardrail_outcome: HOLD_CANONICAL
+  lifecycle_state: STAGE3_RECONCILIATION
   terminal_disposition: null
-  current_owner: stage2
-  next_owner: stage2
-  safe_default: Do not squash-merge the TYPE_CHECKING-only Path import; it does not bind Path at runtime.
-  next_action: 'Consume work item s2-20260822-esp-1514-path-import: add a real top-level from pathlib
-    import Path.'
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge original #1514; competing salvage draft #1515 exists. Leave #1514
+    OPEN.'
+  next_action: 'Stage 3: keep original #1514 OPEN. Do not close because replacement #1515 exists. Reconcile
+    TYPE_CHECKING-only Path import vs runtime import on #1515.'
   evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1514
+  - https://github.com/abhimehro/email-security-pipeline/pull/1515
+  - https://api.github.com/repos/abhimehro/email-security-pipeline/rulesets/9621487
+  changed_paths:
+  - .github/scripts/repository_automation_tasks.py
+  attempts:
+    evidence: 1
+    recovery: 1
+    mutations: 1
+  handoffs:
+  - evt-s1-20260822b-emailsecuri-1514-h
+  - evt-s2-20260822-emailsecuri-1514-h
+  revision: 2
+  updated_at_utc: '2026-08-22T17:20:00Z'
+- key: abhimehro/email-security-pipeline#1515@01e5600238a7acfb6b4317ad39e8c6bf02a4bfa7
+  repository: abhimehro/email-security-pipeline
+  pr: 1515
+  url: https://github.com/abhimehro/email-security-pipeline/pull/1515
+  base_sha: e009e5923860f5b504f6e179ad2380efe514bf4d
+  head_sha: 01e5600238a7acfb6b4317ad39e8c6bf02a4bfa7
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+  author_type: BOT
+  classification: FEATURE
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: HOLD_EVIDENCE
+  lifecycle_state: STAGE3_RECONCILIATION
+  terminal_disposition: null
+  current_owner: stage3
+  next_owner: stage1
+  safe_default: 'Leave draft #1515. Never mark ready. Do not GitHub-squash until Stage 1 re-ingest with
+    required-check evidence. Do not close original #1514.'
+  next_action: 'Stage 1: re-ingest routine salvage draft #1515 after required checks; GITHUB_SQUASH only
+    if every routine predicate passes. Do not close original #1514.'
+  evidence_urls:
+  - https://github.com/abhimehro/email-security-pipeline/pull/1515
   - https://github.com/abhimehro/email-security-pipeline/pull/1514
   - https://api.github.com/repos/abhimehro/email-security-pipeline/rulesets/9621487
   changed_paths:
   - .github/scripts/repository_automation_tasks.py
   attempts:
     evidence: 1
-    recovery: 0
-    mutations: 0
+    recovery: 1
+    mutations: 1
   handoffs:
-  - evt-s1-20260822b-emailsecuri-1514-h
+  - evt-s2-20260822-emailsecuri-1515-h
   revision: 1
-  updated_at_utc: '2026-08-22T15:15:00Z'
+  updated_at_utc: '2026-08-22T17:20:00Z'
 - key: abhimehro/personal-config#2045@68e188655fc4b2dbcfdde4c7ef00d1de74e25578
   repository: abhimehro/personal-config
   pr: 2045
@@ -11494,34 +11539,63 @@ events:
   created_at_utc: '2026-08-22T15:15:00Z'
   acknowledged_at_utc: null
   reason: 'Stage 3: HUMAN identity; validated output path. No GitHub mutation.'
-stage2_work_items:
-- work_item_id: s2-20260822-esp-1514-path-import
-  source_item_key: abhimehro/email-security-pipeline#1514@cb9f2dd6c791cf53574d5c82b61c3c7a17ceab9d
-  repository: abhimehro/email-security-pipeline
-  pr: 1514
-  base_sha: e009e5923860f5b504f6e179ad2380efe514bf4d
-  head_sha: cb9f2dd6c791cf53574d5c82b61c3c7a17ceab9d
-  allowed_paths:
-  - .github/scripts/repository_automation_tasks.py
-  prohibited_paths:
-  - .github/workflows
-  - .env
-  - src/modules
-  repair_description: Add a real top-level `from pathlib import Path` in repository_automation_tasks.py.
-    The Jules PR only imported Path under `if typing.TYPE_CHECKING`, which does not bind Path at runtime.
-  required_test_command: python3 -m pytest
-  expected_test_result: exit 0
-  acceptance_criteria:
-  - Path is imported at module runtime, not only under TYPE_CHECKING
-  - No workflow, secret, or auth changes
-  - python3 -m pytest exits 0
-  provenance_urls:
-  - https://github.com/abhimehro/email-security-pipeline/pull/1514
-  expiry_utc: '2026-08-29T15:15:00Z'
-  attempt_count: 0
-  current_owner: stage2
-  creation_event_id: evt-s1-20260822b-emailsecuri-1514-h
-  history: []
+- event_id: evt-s2-20260822-emailsecuri-1514-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/email-security-pipeline#1514@cb9f2dd6c791cf53574d5c82b61c3c7a17ceab9d
+  from_owner: stage2
+  to_owner: stage2
+  from_state: STAGE2_QUEUED
+  to_state: STAGE2_QUEUED
+  next_owner: stage2
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260822b-emailsecuri-1514-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1514@cb9f2dd6c791cf53574d5c82b61c3c7a17ceab9d:evt-s2-20260822-emailsecuri-1514-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-22T17:20:00Z'
+  acknowledged_at_utc: '2026-08-22T17:20:00Z'
+  reason: Stage 2 accepted complete work item s2-20260822-esp-1514-path-import.
+- event_id: evt-s2-20260822-emailsecuri-1514-h
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1514@cb9f2dd6c791cf53574d5c82b61c3c7a17ceab9d
+  from_owner: stage2
+  to_owner: stage3
+  from_state: STAGE2_QUEUED
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1514@cb9f2dd6c791cf53574d5c82b61c3c7a17ceab9d:evt-s2-20260822-emailsecuri-1514-h
+  status: PROJECTED
+  created_at_utc: '2026-08-22T17:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Opened tested draft #1515 from current main e009e5923860f5b504f6e179ad2380efe514bf4d.
+    Original #1514 left OPEN (HOLD_CANONICAL). python3 -m pytest 754 passed. Create-time isDraft=true;
+    linear-code[bot] ready_for_review at 2026-08-22T17:14:07Z; converted back to draft at 2026-08-22T17:16:06Z
+    before ledger write (0gd).'
+- event_id: evt-s2-20260822-emailsecuri-1515-h
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1515@01e5600238a7acfb6b4317ad39e8c6bf02a4bfa7
+  from_owner: stage1
+  to_owner: stage3
+  from_state: STAGE1_INTAKE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage1
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1515@01e5600238a7acfb6b4317ad39e8c6bf02a4bfa7:evt-s2-20260822-emailsecuri-1515-h
+  status: PROJECTED
+  created_at_utc: '2026-08-22T17:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 2 salvage replacement for #1514. Draft #1515; isDraft=true after convert_to_draft (0gd);
+    FEATURE/ROUTINE; GITHUB_SQUASH. Next owner Stage 1 for routine re-ingest. HOLD_EVIDENCE until required
+    checks. Do not mark ready. Do not close original #1514.'
+stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
   source_path: bootstrap-manifest.yaml
