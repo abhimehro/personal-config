@@ -2586,3 +2586,30 @@ disposition) with the merge-commit SHA in `evidence_urls`, and do **not**
 mint a new key. Do not `STALE_ANCHOR` a merged PR. Live-head drift on an
 **open** PR remains Stage 1 invalidation as before. **Detection cost:** Low
 — GraphQL/REST `merged: true` plus `headOid != ledger.head_sha`.
+
+## Lesson 0gq: Hyphen-Jules Daily QA with one signal stays HUMAN (2026-08-23)
+
+**Pattern:** Jules Daily QA branches named `jules-daily-qa-<repo>-YYYY-MM-DD`
+(hyphen after `jules`, not `jules/`) plus a Daily-QA title give **one**
+versioned signal under identity `2026-08-20-hyphen`. Token login `abhimehro`
+still needs **≥2** independent signals for BOT. Result: HUMAN /
+`human_default`, `risk_class: SENSITIVE`, even when the diff is zero files.
+Stage 1 close authority is bot-authored non-security no-ops only. **Rule:** Do
+not close or merge hyphen-Jules Daily QA (or title-only Sentinel) when
+`independent_signal_count < 2`. Ambiguous identity is always HUMAN. Do not
+expand the allowlist in a Stage 1 run. **Detection cost:** Low —
+`scripts/pr_identity.py` shows one of `branch` / `title` and
+`author_type: HUMAN`.
+
+## Lesson 0gr: Unresolved GHAS/Bandit threads block routine merge (2026-08-23)
+
+**Pattern:** ctrld-sync #1212 had green required checks and a mechanical test
+cleanup, but GitHub Advanced Security / Bandit review threads on `assert`
+findings stayed unresolved. CLEAN merge state is false until those threads
+resolve. The findings live in tests; resolving **other authors'** security
+threads is out of Stage 1 scope. Combined with HUMAN identity (0gq), the PR
+is a Stage 3 hold. **Rule:** Unresolved GHAS/CodeQL/Bandit conversations are
+a merge-state failure even when CI is green. Do not resolve another reviewer's
+security thread. Do not squash. Hand off `HOLD_EVIDENCE` / `REVIEW_SECURITY`.
+**Detection cost:** Low — GraphQL `reviewThreads` / REST review comments with
+unresolved GHAS or Bandit.
