@@ -209,6 +209,18 @@ regexes = [
   # Optional trailing "." — the secret charset includes "." so "references."
   # is a common capture when prose ends a sentence.
   '''(?i)^(presence|scanning|false-positive|allowlist|detection|validation|management|injection|exfiltration|contained|embedded|reference|references|placeholders|committed|backends)\.?$''',
+  # WS-A (2026-08-23): self-describing test dummy values. Value-based on
+  # purpose — no path exclusions — so a real secret committed inside a test
+  # file is still caught. Root-cause: scanner FP on a MagicMock attribute
+  # `deepfake_api_key = "sk-very-secret-key-12345"` (email-security-pipeline
+  # tests/test_config_edge_cases.py, GH issue #1511). NOTE: these regexes are
+  # matched against the rule's *captured secret group*, which strips the
+  # leading keyword — personal-config-generic-secret captures "key-12345"
+  # from that line — so both the full token and the captured tail are listed.
+  '''sk-very-secret-key-12345''',
+  '''(?i)very[-_]?secret[-_]?key[-_]?[0-9]*''',
+  '''(?i)(dummy|placeholder|fake|sample)[-_]?secret[-_]?[0-9a-z]*''',
+  '''^key-12345$''',
 ]
 paths = [
   '''(?i)test''',
