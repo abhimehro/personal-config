@@ -29,14 +29,23 @@ echo ""
 # 1. DEEP VERIFICATION
 # Delegate to the unified verification checklist for CONTROL D ACTIVE state.
 
-# Detect active profile from system symlink (Separation Strategy)
-DETECTED_PROFILE="browsing" # Default fallback
-if sudo test -L "/etc/controld/ctrld.toml"; then
-	TARGET=$(sudo readlink "/etc/controld/ctrld.toml")
-	# Extract profile name from filename (e.g., ctrld.privacy.toml -> privacy)
-	FILENAME=$(basename "$TARGET")
-	DETECTED_PROFILE=$(echo "$FILENAME" | sed -E 's/^ctrld\.(.*)\.toml$/\1/')
+# Detect applied profile from public status, then privileged metadata, then TOML symlink.
+# Never default to browsing: a missing state must stay visible as unknown.
+DETECTED_PROFILE=""
+if [[ -r /etc/controld/status ]]; then
+	DETECTED_PROFILE=$(awk -F= '$1=="PROFILE"{print $2; exit}' /etc/controld/status)
 fi
+if [[ -z $DETECTED_PROFILE ]] && sudo test -f /etc/controld/active_profile; then
+	DETECTED_PROFILE=$(sudo awk -F= '$1=="PROFILE_NAME"{print $2; exit}' /etc/controld/active_profile)
+fi
+if [[ -z $DETECTED_PROFILE ]] && sudo test -L /etc/controld/ctrld.toml; then
+	TARGET=$(sudo readlink /etc/controld/ctrld.toml)
+	FILENAME=${TARGET##*/}
+	DETECTED_PROFILE=${FILENAME#ctrld.}
+	DETECTED_PROFILE=${DETECTED_PROFILE%.toml}
+	DETECTED_PROFILE=${DETECTED_PROFILE%.fallback}
+fi
+DETECTED_PROFILE="${DETECTED_PROFILE:-unknown}"
 
 echo -e "${BLUE}Running deep verification for profile: ${DETECTED_PROFILE}...${NC}"
 echo ""
