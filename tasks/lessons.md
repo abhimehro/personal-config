@@ -2613,3 +2613,12 @@ a merge-state failure even when CI is green. Do not resolve another reviewer's
 security thread. Do not squash. Hand off `HOLD_EVIDENCE` / `REVIEW_SECURITY`.
 **Detection cost:** Low — GraphQL `reviewThreads` / REST review comments with
 unresolved GHAS or Bandit.
+
+
+## Lesson 0gs: Contents GET uses `?ref=`; GraphQL check contexts need pagination (2026-08-23)
+
+**Pattern:** Stage 3 CAS retry 404'd when `gh api repos/.../contents/pr-lifecycle-ledger.yaml -f ref=automation/pr-lifecycle-ledger` sent `ref` as a form field. The working GET is query-string `...?ref=automation/pr-lifecycle-ledger`. PUT still uses JSON `branch` plus the current blob SHA as the CAS precondition, and the full ledger must go through `gh api --input` (CLI argv is too long for `-f content=`). Separately, `gh pr view --json statusCheckRollup` is unsupported, and GraphQL `statusCheckRollup { contexts }` fails unless `contexts` has `first` or `last`. Slim `statusCheckRollup { state }` plus a bounded `contexts(last: 20)` is enough for merge-state evidence.
+
+**Rule:** Contents GET for a non-default ref must use `?ref=`. Never `-f ref=` on GET. PUT CAS with `sha` + `branch` via `--input` JSON. Do not use `gh pr view --json statusCheckRollup`. Paginate GraphQL `contexts`. Treat a Contents 404 that used the form-field `ref` as an API-shape bug, not a missing ledger.
+
+**Detection cost:** Low — GET with `-f ref=` → HTTP 404; GET with `?ref=` returns the blob. GraphQL without `first`/`last` on `contexts` → schema error; with `last: 20` succeeds.
