@@ -4,11 +4,12 @@
 # Combined mode: start Control D on DoH/TCP, then connect Windscribe,
 # then re-enforce localhost DNS to avoid DNS drift.
 #
-# Location defaults (2026-07):
+# Location defaults (2026-08):
 #   - IPv4 / static IP path (default, WINDSCRIBE_IPV6 unset|0): Dallas static
 #     (current static IP slot; IPv4-only).
-#   - IPv6 path (WINDSCRIBE_IPV6=1): Atlanta / Peachtree non-static
-#     (Dallas static has no IPv6; Atlanta reserved as IPv6-capable default).
+#   - IPv6 path (WINDSCRIBE_IPV6=1): BBQ (Dallas nickname) non-static.
+#     windscribe-cli cannot favorite locations; BBQ is the IPv6 default and
+#     Peachtree (Atlanta) remains a valid explicit nickname override.
 # Override with positional location, or WINDSCRIBE_CONNECT_STATIC=0|1.
 
 set -euo pipefail
@@ -31,9 +32,11 @@ PROTOCOL="${3:-wireguard:443}"
 IPV6_MODE="${4:-${WINDSCRIBE_IPV6:-auto}}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# NOTE: Dallas = static IPv4 slot; Atlanta (Peachtree) = IPv6-capable non-static.
+# NOTE: Dallas = static IPv4 slot; BBQ / Peachtree = IPv6-capable non-static.
+# windscribe-cli has no location-favorite setter (only `ip fav` for the current IP).
+# Peachtree remains a valid explicit override: WINDSCRIBE_IPV6=1 ... Peachtree
 DEFAULT_STATIC_LOCATION="Dallas"
-DEFAULT_IPV6_LOCATION="Atlanta"
+DEFAULT_IPV6_LOCATION="BBQ"
 
 log() { echo -e "${BLUE}[INFO]${NC} $*"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
@@ -123,7 +126,7 @@ fi
 case "${WINDSCRIBE_IPV6-}" in
 1 | true | TRUE | yes | YES | on | ON)
 	LOCATION="${LOCATION_ARG:-$DEFAULT_IPV6_LOCATION}"
-	# ASSUMES: IPv6-capable cities (Atlanta/Peachtree, Dallas/BBQ) are non-static.
+	# ASSUMES: IPv6-capable nicknames (BBQ, Peachtree) are non-static.
 	export WINDSCRIBE_CONNECT_STATIC="${WINDSCRIBE_CONNECT_STATIC:-0}"
 	;;
 *)
@@ -152,7 +155,7 @@ spinner_wait 2 "Starting service"
 log "Step 2: Connecting Windscribe..."
 # Prefer static IP when LOCATION is prefixed with "static:", or when
 # WINDSCRIBE_CONNECT_STATIC=1 (default for IPv4/Dallas static path).
-# IPv6 path defaults WINDSCRIBE_CONNECT_STATIC=0 (Atlanta non-static).
+# IPv6 path defaults WINDSCRIBE_CONNECT_STATIC=0 (BBQ non-static).
 if [[ $LOCATION == static:* ]]; then
 	LOCATION="${LOCATION#static:}"
 	"$WINDSCRIBE_BIN" connect static "$LOCATION" "$PROTOCOL"
