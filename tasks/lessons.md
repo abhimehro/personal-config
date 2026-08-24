@@ -2586,3 +2586,39 @@ disposition) with the merge-commit SHA in `evidence_urls`, and do **not**
 mint a new key. Do not `STALE_ANCHOR` a merged PR. Live-head drift on an
 **open** PR remains Stage 1 invalidation as before. **Detection cost:** Low
 — GraphQL/REST `merged: true` plus `headOid != ledger.head_sha`.
+
+## Lesson 0gq: Hyphen-Jules Daily QA with one signal stays HUMAN (2026-08-23)
+
+**Pattern:** Jules Daily QA branches named `jules-daily-qa-<repo>-YYYY-MM-DD`
+(hyphen after `jules`, not `jules/`) plus a Daily-QA title give **one**
+versioned signal under identity `2026-08-20-hyphen`. Token login `abhimehro`
+still needs **≥2** independent signals for BOT. Result: HUMAN /
+`human_default`, `risk_class: SENSITIVE`, even when the diff is zero files.
+Stage 1 close authority is bot-authored non-security no-ops only. **Rule:** Do
+not close or merge hyphen-Jules Daily QA (or title-only Sentinel) when
+`independent_signal_count < 2`. Ambiguous identity is always HUMAN. Do not
+expand the allowlist in a Stage 1 run. **Detection cost:** Low —
+`scripts/pr_identity.py` shows one of `branch` / `title` and
+`author_type: HUMAN`.
+
+## Lesson 0gr: Unresolved GHAS/Bandit threads block routine merge (2026-08-23)
+
+**Pattern:** ctrld-sync #1212 had green required checks and a mechanical test
+cleanup, but GitHub Advanced Security / Bandit review threads on `assert`
+findings stayed unresolved. CLEAN merge state is false until those threads
+resolve. The findings live in tests; resolving **other authors'** security
+threads is out of Stage 1 scope. Combined with HUMAN identity (0gq), the PR
+is a Stage 3 hold. **Rule:** Unresolved GHAS/CodeQL/Bandit conversations are
+a merge-state failure even when CI is green. Do not resolve another reviewer's
+security thread. Do not squash. Hand off `HOLD_EVIDENCE` / `REVIEW_SECURITY`.
+**Detection cost:** Low — GraphQL `reviewThreads` / REST review comments with
+unresolved GHAS or Bandit.
+
+
+## Lesson 0gs: Contents GET uses `?ref=`; GraphQL check contexts need pagination (2026-08-23)
+
+**Pattern:** Stage 3 CAS retry 404'd when `gh api repos/.../contents/pr-lifecycle-ledger.yaml -f ref=automation/pr-lifecycle-ledger` sent `ref` as a form field. The working GET is query-string `...?ref=automation/pr-lifecycle-ledger`. PUT still uses JSON `branch` plus the current blob SHA as the CAS precondition, and the full ledger must go through `gh api --input` (CLI argv is too long for `-f content=`). Separately, `gh pr view --json statusCheckRollup` is unsupported, and GraphQL `statusCheckRollup { contexts }` fails unless `contexts` has `first` or `last`. Slim `statusCheckRollup { state }` plus a bounded `contexts(last: 20)` is enough for merge-state evidence.
+
+**Rule:** Contents GET for a non-default ref must use `?ref=`. Never `-f ref=` on GET. PUT CAS with `sha` + `branch` via `--input` JSON. Do not use `gh pr view --json statusCheckRollup`. Paginate GraphQL `contexts`. Treat a Contents 404 that used the form-field `ref` as an API-shape bug, not a missing ledger.
+
+**Detection cost:** Low — GET with `-f ref=` → HTTP 404; GET with `?ref=` returns the blob. GraphQL without `first`/`last` on `contexts` → schema error; with `last: 20` succeeds.
