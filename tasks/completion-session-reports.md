@@ -807,3 +807,187 @@ Stage 2 work items created: **0**. #717 is 15 files (above frozen
 - State-changing product-PR actions, including failed attempts and retries:
   **0**
 - Calibration successful-run increment: **1** (`successful_run_count` = 4 of 7)
+
+## Stage Run Record — 2026-08-24
+
+## Identity
+
+- Stage: `stage3`
+- Trigger: `cron` (`0 19 * * *` fired 2026-08-24T19:04:27Z; loaded prompt is
+  Stage 3 Daily PR Completion, calibration variant)
+- Configuration version and policy revision: lifecycle `1.4` /
+  `pr-lifecycle-v1.4`; identity `2026-08-20-hyphen`; sensitive taxonomy
+  `2026-08-19`; permission scope `cursor-export-v1.1`;
+  merge-method/required-check registry `registry-v1.2`
+- Start UTC: `2026-08-24T19:04:27Z`
+- End UTC: `2026-08-24T19:20:00Z`
+- Ledger revision read and resulting revision: **16 → 17** (blob
+  `2fea1b9edeafe916a52b95f0bedc941c778d36d9` →
+  `3fea56de0ddbaed9c77842d4d56caeff2fd89685`; CAS commit
+  `0436641e375072278edea2249456a04e8c8b1d5c`; size 625984; re-GET
+  byte-match; ledger-only `validate_schema` + `validate_runtime_records`
+  both OK)
+- Selected write primitive: `github_contents_api` on
+  `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml`
+- Dashboard export fingerprint: not re-hashed this run (full wrap still
+  fails on export/prompt; used ledger-only validators)
+- Memory mode: namespaced cache only (does not override ledger/anchors/stage
+  authority)
+- Calibration mode: `report_only`
+- Calibration increment this run: **+1** (`successful_run_count` 4 → 5 of 7).
+  Not a docs-only wrap-up. Not a stale-policy reset (`policy_revision`
+  already `pr-lifecycle-v1.4`). `approved_by` remains `null`; bounded
+  completion stays off.
+
+## Inputs and reconciliation
+
+Continuity sources read before acting:
+
+- `docs/automated-pr-lifecycle.md` v1.4
+- `docs/pr-lifecycle-runtime-ledger.md`
+- `docs/automated-pr-completion-agent.md`
+- `tasks/lessons.md` through **0gt**
+- Last Stage 3 records: 2026-08-22 count 3 of 7; 2026-08-23 count 4 of 7
+- Last Stage 2: 2026-08-24 17:00 `EMPTY_INTAKE` (rev 16; 0 work items)
+- Last Stage 1: 2026-08-24 15:00 on this docs lineage (lesson 0gt)
+- Runtime ledger GET revision 16, then CAS to 17; 20 ACK + 7 WAITING_HUMAN
+  HANDOFF + 1 CALIBRATION; processed items
+  `updated_at_utc: 2026-08-24T19:20:00Z`
+- Today's docs lineage: open PR
+  [#2084](https://github.com/abhimehro/personal-config/pull/2084) branch
+  `pr-lifecycle-docs-20260824`. Run record appended here. Did **not** open a
+  third overlapping docs PR (0gj).
+
+Items considered (cap 20 reconciliations / 5 packets): **20 processed**.
+
+Skipped to stay at 20:
+
+- Close-candidate `ctrld-sync #1161` remains Stage 1 owned (`CLOSED_SUPERSEDED`
+  at 15:15Z) — not stolen
+- Dual-key leftover
+  `personal-config#2077@7988aa8b89f9af7ae9c7ccf47bc99df98202d7e6`
+  (stale head; current key `@f6cd91a57ba7…` processed; leftover left
+  WAITING_HUMAN rev 2 / `updated_at_utc: 2026-08-23T19:20:00Z`)
+
+Items skipped as unchanged / unexpired packets (no repeat):
+
+- 2026-08-22 packets (CSPRNG, Palette, Sentinel, Seatek #708) still unexpired
+  through `2026-08-29T19:20:00Z`. No new Notion packets this run.
+
+Items invalidated by SHA drift: **0** among the 20 processed keys (live heads
+matched ledger keys). #2077 processed the new head; the stale dual-key was
+left untouched.
+
+Items resolved outside the workflow: none among the processed 20.
+
+Merge-method registry: personal-config `TRUNK_QUEUE` / `TRUNK` verified-zero;
+ctrld-sync, email-security-pipeline, Seatek_Analysis,
+Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated
+`GITHUB_SQUASH` / `GITHUB_RULESETS` verified-zero; repoprompt-ce
+`GITHUB_SQUASH` / `GITHUB_RULESETS` with named required checks
+(`required_checks_verified_zero: false`). All `VERIFIED`.
+
+## Mandatory per-item evidence, action, and outcome record
+
+| Ledger key | Repository / PR | Observed vs ledger base/head SHA | Owner before → after | GitHub identity / author type | Classification / risk / sticky paths | Guardrail outcome | Changed paths | Evidence URLs | Proposed route / actual action | Mode / audit ID / action count | Retry or error | Final observed outcome / calibration correctness | Provenance or canonical relation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `abhimehro/personal-config#2082@2e273a0d3dbf46445436078b84a8cf8bbebe6d2b` | personal-config #2082 | Observed = ledger base `10c7a267ab98abf39ad2f92eb71b49c846f57ac0` / head `2e273a0d3dbf46445436078b84a8cf8bbebe6d2b`. OPEN SUCCESS; mergeState UNKNOWN; 1 unresolved thread. | stage3 → stage3 | BOT / `allowlist_login` `dependabot[bot]` | SECURITY / SENSITIVE / sticky `workflows_and_permissions` | `REVIEW_SECURITY` | `.github/workflows/agentics-maintenance.yml` | https://github.com/abhimehro/personal-config/pull/2082 ; TRUNK verified-zero | ACK stay Stage 3. Do not Trunk-queue workflow pin with open review thread. Did **not** merge. | report_only / `evt-s3-20260824-personalconf-2082-a` / **0** | none | Correct: REVIEW_SECURITY on workflow Dependabot. rev 1 | Pair with #2081 same workflow file |
+| `abhimehro/personal-config#2081@71b8fdf6ba9851ecfc1c0166ed6f201505e67a90` | personal-config #2081 | Observed = ledger base `10c7a267ab98abf39ad2f92eb71b49c846f57ac0` / head `71b8fdf6ba9851ecfc1c0166ed6f201505e67a90`. OPEN SUCCESS; 1 unresolved thread. | stage3 → stage3 | BOT / `allowlist_login` `dependabot[bot]` | SECURITY / SENSITIVE / sticky `workflows_and_permissions` | `REVIEW_SECURITY` | `.github/workflows/agentics-maintenance.yml` | https://github.com/abhimehro/personal-config/pull/2081 ; TRUNK verified-zero | ACK stay Stage 3. Do not Trunk-queue setup-cli pin. Did **not** merge. | report_only / `evt-s3-20260824-personalconf-2081-a` / **0** | none | Correct: REVIEW_SECURITY. rev 1 | Pair with #2082 |
+| `abhimehro/personal-config#2079@15e7c3b77dad02036d84cb0565e092a62051e59d` | personal-config #2079 | Observed = ledger base `10c7a267ab98abf39ad2f92eb71b49c846f57ac0` / head `15e7c3b77dad02036d84cb0565e092a62051e59d`. OPEN DRAFT SUCCESS. | stage3 → stage3 | BOT / `allowlist_login` `cursor[bot]` | FEATURE / SENSITIVE / sticky `generated_output` | `HOLD_CONTRACT` | 8 prompt/export files | https://github.com/abhimehro/personal-config/pull/2079 ; TRUNK verified-zero | ACK stay Stage 3. Never merge drafts (0gd). Did **not** mark ready. | report_only / `evt-s3-20260824-personalconf-2079-a` / **0** | none | Correct: HOLD_CONTRACT DRAFT. rev 1 | Prompt wrap cluster |
+| `abhimehro/personal-config#2077@f6cd91a57ba739461889772c13712cf8c0912cfd` | personal-config #2077 | Observed = ledger base `8c9aa724ea074e97f802161f2779132b511a1e7c` / head `f6cd91a57ba739461889772c13712cf8c0912cfd`. OPEN BLOCKED/FAILURE (`Run All Tests`). HEAD_DRIFT vs stale dual-key. | stage3 → human | HUMAN / `human_default`; login `abhimehro` | SECURITY / SENSITIVE / sticky `security_configuration`, `shell_execution` | `REVIEW_SECURITY` | `.github/gitleaks.toml` + 7 windscribe/controld shells | https://github.com/abhimehro/personal-config/pull/2077 ; TRUNK verified-zero | ACK + HANDOFF WAITING_HUMAN. Do not Trunk-queue HUMAN gitleaks+shell. Stale `@7988aa8b…` left untouched. | report_only / `evt-s3-20260824-personalconf-2077-a`+`h` / **0** | none | Correct: HUMAN security + drift. rev 2 | Dual-key leftover `@7988aa8b…` still WAITING_HUMAN rev 2 / 2026-08-23 |
+| `abhimehro/email-security-pipeline#1521@29a2ce214a886c97d5df80bbcd955809014f4388` | email-security-pipeline #1521 | Observed = ledger base `3e0710d216341d2b05d338e0e7a26bb5d1397684` / head `29a2ce214a886c97d5df80bbcd955809014f4388`. OPEN CLEAN/SUCCESS; 1 unresolved thread. | stage3 → stage3 | BOT / `token_authored_signals` (`branch`, `title`); login `abhimehro` | UI / SENSITIVE / sticky `generated_output` | `HOLD_CANONICAL` | `.Jules/palette.md`, `src/utils/ui.py` | https://github.com/abhimehro/email-security-pipeline/pull/1521 ; rulesets/9621487 | ACK stay Stage 3. Reuse 2026-08-22 Palette packet. Do not merge cluster. | report_only / `evt-s3-20260824-emailsecuri-1521-a` / **0** | none | Correct: HOLD_CANONICAL vs #1516. rev 1 | Palette cluster |
+| `abhimehro/Seatek_Analysis#732@8ab0a319e00c0aa9d32a82cb838a2d40237f7403` | Seatek_Analysis #732 | Observed = ledger base `18feff8a7220c84a1d62dfb68467b1e8039bb840` / head `8ab0a319e00c0aa9d32a82cb838a2d40237f7403`. OPEN SUCCESS; 2 unresolved threads. | stage3 → human | BOT / `token_authored_signals` (`branch`, `title`); login `abhimehro` | SECURITY / SENSITIVE / sticky none | `REVIEW_SECURITY` | `code_health_scanner.py` | https://github.com/abhimehro/Seatek_Analysis/pull/732 ; rulesets/13305024 | ACK + HANDOFF WAITING_HUMAN. Sentinel DoS twin of #728. Did **not** squash. | report_only / `evt-s3-20260824-seatekanalys-732-a`+`h` / **0** | none | Correct: overlapping Sentinel. rev 2 | Twin of #728 |
+| `abhimehro/Seatek_Analysis#730@981c28e944b9b72be25355c5d99ff51442958287` | Seatek_Analysis #730 | Observed = ledger base `18feff8a7220c84a1d62dfb68467b1e8039bb840` / head `981c28e944b9b72be25355c5d99ff51442958287`. OPEN SUCCESS. | stage3 → stage3 | BOT / `token_authored_signals`; login `abhimehro` | CI_INFRA / ROUTINE / sticky none | `HOLD_CANONICAL` | `.github/scripts/repository_automation.py` | https://github.com/abhimehro/Seatek_Analysis/pull/730 ; rulesets/13305024 | ACK stay Stage 3. Palette CLI twin vs #726. Do not merge cluster. | report_only / `evt-s3-20260824-seatekanalys-730-a` / **0** | none | Correct: HOLD_CANONICAL. rev 1 | Palette vs #726 |
+| `abhimehro/Seatek_Analysis#728@f6cee73f5dafc99a187b4550d5d2a08c77f3dfe4` | Seatek_Analysis #728 | Observed = ledger base `18feff8a7220c84a1d62dfb68467b1e8039bb840` / head `f6cee73f5dafc99a187b4550d5d2a08c77f3dfe4`. OPEN SUCCESS. | stage3 → human | BOT / `token_authored_signals`; login `abhimehro` | SECURITY / SENSITIVE / sticky none | `REVIEW_SECURITY` | `code_health_scanner.py` | https://github.com/abhimehro/Seatek_Analysis/pull/728 ; rulesets/13305024 | ACK + HANDOFF WAITING_HUMAN. Sentinel twin of #732. Did **not** squash. | report_only / `evt-s3-20260824-seatekanalys-728-a`+`h` / **0** | none | Correct: overlapping Sentinel. rev 2 | Twin of #732 |
+| `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#558@3d25583c91bc5ffd2423e7ade360621f5efdd10b` | Hydrograph #558 | Observed = ledger base `cddb8a3ac786e184802629bda0adb3ec728338cb` / head `3d25583c91bc5ffd2423e7ade360621f5efdd10b`. OPEN CLEAN/SUCCESS. | stage3 → stage3 | BOT / `token_authored_signals`; login `abhimehro` | PERFORMANCE / ROUTINE / sticky none | `HOLD_CANONICAL` | `src/hydrograph_seatek_analysis/data/validator.py` | https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/558 ; rulesets/4178077 | ACK stay Stage 3; close-candidate recorded `CLOSED_DUPLICATE` after `2026-08-25T11:32:33Z`. Did **not** close. | report_only / `evt-s3-20260824-hydrographve-558-a` / **0** | none | Correct: cooldown not elapsed; REPORT_ONLY. rev 1; next_owner stage1 | Bolt pandas twin of #557 |
+| `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#557@1c9b96de8e25c1209a865f4a19db86f39a48c52f` | Hydrograph #557 | Observed = ledger base `cddb8a3ac786e184802629bda0adb3ec728338cb` / head `1c9b96de8e25c1209a865f4a19db86f39a48c52f`. OPEN CLEAN/SUCCESS. | stage3 → stage3 | BOT / `token_authored_signals`; login `abhimehro` | PERFORMANCE / ROUTINE / sticky none | `HOLD_CANONICAL` | `src/hydrograph_seatek_analysis/data/validator.py` | https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/557 ; rulesets/4178077 | ACK stay Stage 3; close-candidate after `2026-08-25T11:05:27Z`. Did **not** close. | report_only / `evt-s3-20260824-hydrographve-557-a` / **0** | none | Correct: cooldown not elapsed. rev 1; next_owner stage1 | Bolt pandas twin of #558 |
+| `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#555@993d086b11fa5d505d37f7ed4474c0134302d040` | Hydrograph #555 | Observed = ledger base `cddb8a3ac786e184802629bda0adb3ec728338cb` / head `993d086b11fa5d505d37f7ed4474c0134302d040`. OPEN CLEAN/SUCCESS. | stage3 → human | BOT / `token_authored_signals`; login `abhimehro` | SECURITY / SENSITIVE / sticky `generated_output`, `file_read_write_boundaries` | `REVIEW_SECURITY` | `.jules/sentinel.md`, `validate_data.py` | https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/555 ; rulesets/4178077 | ACK + HANDOFF WAITING_HUMAN. Sentinel path-traversal. Did **not** squash. | report_only / `evt-s3-20260824-hydrographve-555-a`+`h` / **0** | none | Correct: REVIEW_SECURITY. rev 2 | Sentinel cluster |
+| `abhimehro/series_correction_project_updated#409@15621ef64d18af14d82cec0ea9d3e004313ce736` | series_correction #409 | Observed = ledger base `d5f92cf071029273c81c257301308821006bf31a` / head `15621ef64d18af14d82cec0ea9d3e004313ce736`. OPEN CLEAN/SUCCESS; 3 unresolved threads. | stage3 → stage3 | BOT / `token_authored_signals`; login `abhimehro` | PERFORMANCE / SENSITIVE / sticky `generated_output` | `HOLD_CANONICAL` | `.jules/bolt.md`, `scripts/processor.py`, tests | https://github.com/abhimehro/series_correction_project_updated/pull/409 ; rulesets/15878378 | ACK stay Stage 3. HOLD_CANONICAL vs open #405. Do not merge generated_output cluster. | report_only / `evt-s3-20260824-seriescorrec-409-a` / **0** | none | Correct: HOLD_CANONICAL. rev 1 | Bolt vs #405 |
+| `abhimehro/repoprompt-ce#291@5debf8026e178947b76d69cc361deb5dd22c7824` | repoprompt-ce #291 | Observed = ledger base `fb756f99bac5a58e55b36503922c77a5bf599d31` / head `5debf8026e178947b76d69cc361deb5dd22c7824`. OPEN UNSTABLE/FAILURE (required checks named; verified-zero false). | stage3 → stage3 | BOT / `token_authored_signals`; login `abhimehro` | PERFORMANCE / SENSITIVE / sticky `generated_output` | `HOLD_CANONICAL` | `.jules/bolt.md`, `Sources/RepoPrompt/App/Changelog.swift` | https://github.com/abhimehro/repoprompt-ce/pull/291 ; rulesets/20172206 | ACK stay Stage 3. HOLD_CANONICAL vs #285. Do not salvage Swift on Linux (0gi). Did **not** merge UNSTABLE. | report_only / `evt-s3-20260824-repopromptce-291-a` / **0** | none | Correct: UNSTABLE + canonical. rev 1 | Bolt twin of #285 |
+| `abhimehro/repoprompt-ce#290@448cb77bcc784bb9d17a21a2ce09628f6bd8f542` | repoprompt-ce #290 | Observed = ledger base `fb756f99bac5a58e55b36503922c77a5bf599d31` / head `448cb77bcc784bb9d17a21a2ce09628f6bd8f542`. OPEN UNSTABLE (`Build and Test` shard 2 FAILURE). | stage3 → stage3 | BOT / `token_authored_signals`; login `abhimehro` | UI / SENSITIVE / sticky `generated_output` | `HOLD_CANONICAL` | `.jules/palette.md`, `MCPServerToggleView.swift` | https://github.com/abhimehro/repoprompt-ce/pull/290 ; rulesets/20172206 | ACK stay Stage 3. HOLD_CANONICAL vs #284. Do not salvage Swift on Linux. | report_only / `evt-s3-20260824-repopromptce-290-a` / **0** | none | Correct: UNSTABLE Palette twin. rev 1 | Palette twin of #284 |
+| `abhimehro/repoprompt-ce#288@c83f245e0545d278953127eb81fec5b8d5d7e2bb` | repoprompt-ce #288 | Observed = ledger base `fb756f99bac5a58e55b36503922c77a5bf599d31` / head `c83f245e0545d278953127eb81fec5b8d5d7e2bb`. OPEN UNSTABLE; files=0. | stage3 → stage3 | BOT / `token_authored_signals`; login `abhimehro` | CI_INFRA / ROUTINE / sticky none | `CLOSE_NONSECURITY_NOOP` | none (files=0) | https://github.com/abhimehro/repoprompt-ce/pull/288 ; rulesets/20172206 | ACK stay Stage 3; close-candidate `CLOSED_NOOP` after `2026-08-24T20:34:47Z`. Cooldown **not elapsed** at 19:20Z. Did **not** close. | report_only / `evt-s3-20260824-repopromptce-288-a` / **0** | none | Correct: zero-diff BOT close-candidate left open. rev 1; next_owner stage1 | Stage 1 already noted cooldown |
+| `abhimehro/repoprompt-ce#287@8cd188ae02e2b9bc14b9a3e8b8b8f9eb5b1e76e8` | repoprompt-ce #287 | Observed = ledger base `fb756f99bac5a58e55b36503922c77a5bf599d31` / head `8cd188ae02e2b9bc14b9a3e8b8b8f9eb5b1e76e8`. OPEN UNSTABLE (all app shards FAILURE). | stage3 → human | BOT / `token_authored_signals`; login `abhimehro` | SECURITY / SENSITIVE / sticky `generated_output`, `file_read_write_boundaries` | `REVIEW_SECURITY` | `.jules/sentinel.md`, MCP export/terminal Swift | https://github.com/abhimehro/repoprompt-ce/pull/287 ; rulesets/20172206 | ACK + HANDOFF WAITING_HUMAN. Sentinel TOCTOU. Do not salvage Swift on Linux. | report_only / `evt-s3-20260824-repopromptce-287-a`+`h` / **0** | none | Correct: REVIEW_SECURITY UNSTABLE. rev 2 | Twin of #282 |
+| `abhimehro/repoprompt-ce#285@a58603d756bf15305cb2133865e0a2d9333fe343` | repoprompt-ce #285 | Observed = ledger base `fb756f99bac5a58e55b36503922c77a5bf599d31` / head `a58603d756bf15305cb2133865e0a2d9333fe343`. OPEN CLEAN/SUCCESS. | stage3 → stage3 | BOT / `token_authored_signals`; login `abhimehro` | PERFORMANCE / SENSITIVE / sticky `generated_output` | `HOLD_EVIDENCE` | `.jules/bolt.md`, `Changelog.swift` | https://github.com/abhimehro/repoprompt-ce/pull/285 ; rulesets/20172206 | ACK stay Stage 3. HOLD_CANONICAL remaining unique vs #291. Do not salvage Swift. | report_only / `evt-s3-20260824-repopromptce-285-a` / **0** | none | Correct: generated_output Bolt. rev 1 | Bolt vs #291 |
+| `abhimehro/repoprompt-ce#284@4806a3538cb7910669feba49aa49310f208491ff` | repoprompt-ce #284 | Observed = ledger base `fb756f99bac5a58e55b36503922c77a5bf599d31` / head `4806a3538cb7910669feba49aa49310f208491ff`. OPEN UNSTABLE (shard 2 FAILURE). | stage3 → stage3 | BOT / `token_authored_signals`; login `abhimehro` | UI / SENSITIVE / sticky `generated_output` | `HOLD_CANONICAL` | `.jules/palette.md` + 4 Swift UI files | https://github.com/abhimehro/repoprompt-ce/pull/284 ; rulesets/20172206 | ACK stay Stage 3. HOLD_CANONICAL vs #290. Do not salvage Swift. | report_only / `evt-s3-20260824-repopromptce-284-a` / **0** | none | Correct: Palette twin UNSTABLE. rev 1 | Palette vs #290 |
+| `abhimehro/repoprompt-ce#283@c1662143af9ebd35c79c7d3efbc4ee3062ba2383` | repoprompt-ce #283 | Observed = ledger base `fb756f99bac5a58e55b36503922c77a5bf599d31` / head `c1662143af9ebd35c79c7d3efbc4ee3062ba2383`. OPEN UNSTABLE; files=0. | stage3 → human | HUMAN / `human_default` (one hyphen-Jules Daily QA signal — 0gq); login `abhimehro` | CI_INFRA / SENSITIVE / sticky none | `HOLD_EVIDENCE` | none (files=0) | https://github.com/abhimehro/repoprompt-ce/pull/283 ; rulesets/20172206 | ACK + HANDOFF WAITING_HUMAN. Close-candidate recorded; cannot routine-close HUMAN. Did **not** close. | report_only / `evt-s3-20260824-repopromptce-283-a`+`h` / **0** | none | Correct: 0gq HUMAN zero-diff left open. rev 2 | Daily QA close-candidate |
+| `abhimehro/repoprompt-ce#282@78d302f815078d9af156c29635a6e0b4796dae9d` | repoprompt-ce #282 | Observed = ledger base `fb756f99bac5a58e55b36503922c77a5bf599d31` / head `78d302f815078d9af156c29635a6e0b4796dae9d`. OPEN UNSTABLE (all app shards + Sentry FAILURE). | stage3 → human | BOT / `token_authored_signals`; login `abhimehro` | SECURITY / SENSITIVE / sticky `file_read_write_boundaries`, `generated_output` | `REVIEW_SECURITY` | `.jules/sentinel.md`, MCP export/terminal Swift | https://github.com/abhimehro/repoprompt-ce/pull/282 ; rulesets/20172206 | ACK + HANDOFF WAITING_HUMAN. Sentinel TOCTOU twin of #287. Do not salvage Swift. | report_only / `evt-s3-20260824-repopromptce-282-a`+`h` / **0** | none | Correct: REVIEW_SECURITY UNSTABLE. rev 2 | Twin of #287 |
+
+## Revision-checked handoffs and human decisions
+
+| Ledger key | Event ID / idempotency key | Expected → resulting revision | Next owner | One next action | Safe default | Expiry | Receiver acknowledgement |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| pc #2082 | `evt-s3-20260824-personalconf-2082-a` | ACK 1→1 | stage3 | keep REVIEW_SECURITY; open review thread | Do not Trunk-queue workflow pin | `2026-08-31T19:20:00Z` | ACK of projected HANDOFF; stay Stage 3 |
+| pc #2081 | `-a` | ACK 1→1 | stage3 | keep REVIEW_SECURITY | Do not Trunk-queue | `2026-08-31T19:20:00Z` | stay Stage 3 |
+| pc #2079 | `-a` | ACK 1→1 | stage3 | HOLD_CONTRACT DRAFT | Never merge or mark-ready drafts (0gd) | `2026-08-31T19:20:00Z` | stay Stage 3 |
+| pc #2077 `@f6cd91a5` | `-a` then `-h` | ACK 1→1 then HANDOFF 1→2 | human | review gitleaks.toml + windscribe/controld shells on drifted head | Do not Trunk-queue HUMAN | `2026-08-31T19:20:00Z` | human inbox |
+| esp #1521 | `-a` | ACK 1→1 | stage3 | HOLD_CANONICAL Palette vs #1516; reuse 2026-08-22 packet | Do not merge cluster | `2026-08-31T19:20:00Z` | stay Stage 3 |
+| Seatek #732 | `-a` then `-h` | ACK 1→1 then HANDOFF 1→2 | human | review Sentinel scanner DoS vs #728 | Do not squash overlapping security patches | `2026-08-31T19:20:00Z` | human inbox |
+| Seatek #730 | `-a` | ACK 1→1 | stage3 | HOLD_CANONICAL Palette vs #726 | Do not merge cluster | `2026-08-31T19:20:00Z` | stay Stage 3 |
+| Seatek #728 | `-a` then `-h` | ACK 1→1 then HANDOFF 1→2 | human | review Sentinel twin of #732 | Do not squash overlapping security patches | `2026-08-31T19:20:00Z` | human inbox |
+| Hydro #558 | `-a` | ACK 1→1 | stage1 | close-candidate after `2026-08-25T11:32:33Z` | Do not close in REPORT_ONLY | `2026-08-31T19:20:00Z` | ACK; next_owner stage1 |
+| Hydro #557 | `-a` | ACK 1→1 | stage1 | close-candidate after `2026-08-25T11:05:27Z` | Do not close in REPORT_ONLY | `2026-08-31T19:20:00Z` | ACK; next_owner stage1 |
+| Hydro #555 | `-a` then `-h` | ACK 1→1 then HANDOFF 1→2 | human | review Sentinel path-traversal | Do not squash | `2026-08-31T19:20:00Z` | human inbox |
+| series #409 | `-a` | ACK 1→1 | stage3 | HOLD_CANONICAL vs #405 | Do not merge generated_output cluster | `2026-08-31T19:20:00Z` | stay Stage 3 |
+| rpce #291 | `-a` | ACK 1→1 | stage3 | HOLD_CANONICAL vs #285; UNSTABLE | Do not salvage Swift on Linux (0gi) | `2026-08-31T19:20:00Z` | stay Stage 3 |
+| rpce #290 | `-a` | ACK 1→1 | stage3 | HOLD_CANONICAL vs #284; UNSTABLE | Do not salvage Swift | `2026-08-31T19:20:00Z` | stay Stage 3 |
+| rpce #288 | `-a` | ACK 1→1 | stage1 | close-candidate after `2026-08-24T20:34:47Z` | Cooldown not elapsed; do not close | `2026-08-31T19:20:00Z` | ACK; next_owner stage1 |
+| rpce #287 | `-a` then `-h` | ACK 1→1 then HANDOFF 1→2 | human | review Sentinel TOCTOU | Do not salvage Swift | `2026-08-31T19:20:00Z` | human inbox |
+| rpce #285 | `-a` | ACK 1→1 | stage3 | HOLD vs #291 | Do not salvage Swift | `2026-08-31T19:20:00Z` | stay Stage 3 |
+| rpce #284 | `-a` | ACK 1→1 | stage3 | HOLD vs #290 | Do not salvage Swift | `2026-08-31T19:20:00Z` | stay Stage 3 |
+| rpce #283 | `-a` then `-h` | ACK 1→1 then HANDOFF 1→2 | human | zero-diff Daily QA; one identity signal is not enough (0gq) | Do not close HUMAN zero-diff | `2026-08-31T19:20:00Z` | human inbox |
+| rpce #282 | `-a` then `-h` | ACK 1→1 then HANDOFF 1→2 | human | review Sentinel TOCTOU twin of #287 | Do not salvage Swift | `2026-08-31T19:20:00Z` | human inbox |
+| `__calibration__` | `evt-s3-20260824-calibration` / `__calibration__:evt-s3-20260824-calibration` | calibration record only | n/a | n/a | REPORT_ONLY | n/a | successful: true; policy `pr-lifecycle-v1.4`; count 5 of 7 |
+
+### Decision packets this run (0 of 5)
+
+No new packets. Unexpired 2026-08-22 packets remain the human plane through
+`2026-08-29T19:20:00Z`. Close-candidates #558 / #557 / #288 are reducible
+under cooldown + REPORT_ONLY without a new question. #283 is reducible under
+0gq (HUMAN, leave open). Sentinel/Palette/Bolt clusters reuse existing
+packets.
+
+Stage 2 work items created: **0**. Swift PRs cannot be salvaged on Linux
+(0gi). Lockfile PRs were not in this cap-20 set. Draft #2079 is HOLD_CONTRACT,
+not a mechanical repair.
+
+## Continuity
+
+- Successful pattern reused: ACK latest projected HANDOFF (copy parent
+  `next_owner` / `to_state`), then optional revision-checked HANDOFF to
+  WAITING_HUMAN (no self-handoff back to Stage 3); validate ledger-only;
+  Contents API CAS via `gh api --input` JSON with query-string `?ref=` on
+  GET; re-GET byte-match; increment calibration only via `kind: CALIBRATION`.
+- Failed approach not to repeat: do not GET Contents with `-f ref=` (form
+  field → 404; use `?ref=`); do not request `gh pr view --json
+  statusCheckRollup` (unsupported) or GraphQL `contexts` without `first`/`last`
+  (0gs); do not close hyphen-Jules Daily QA with one identity signal (0gq);
+  do not open a third overlapping docs PR (0gj); do not convert ready salvage
+  to draft (0gd); do not salvage Swift on Linux (0gi); do not comment,
+  approve, merge, or close product PRs in REPORT_ONLY.
+- New lesson candidate: none. **0gs** already covers GET `?ref=` / PUT
+  `--input`. Dual-key leftover for #2077 follows the existing dual-key rule
+  (process current head; leave stale key).
+- Configuration or policy gap: identity `2026-08-20-hyphen` still does not
+  version `salvage` as a title keyword or `cursoragent@cursor.com` as a
+  bot-email suffix (0gk). Bounded completion remains disabled until dated
+  human `APPROVED` (count 5 of 7; need 7 successful calibrated runs plus
+  dated approver, policy revision, scope, evidence, and rollback
+  conditions). Dual-key #2077 leftover remains a Stage 1 cleanup.
+- Historical-import sources or fingerprints processed: none
+
+## Metrics
+
+- Inventory / recovery / reconciliation count: 20 processed / 0 SHA-drift
+  invalidations among processed keys / 0 new packets / 3 close-candidates
+  recorded / 0 Stage 2 work items
+- Merged: 0
+- Closed: 0
+- Drafts created: 0
+- Decision packets created: 0
+- Stage 2 work items created: 0
+- Close-candidates recorded: 3 (#558, #557 cooldown; #288 files=0 cooldown
+  not elapsed — all left open)
+- Analysis errors: 0
+- State-changing product-PR actions, including failed attempts and retries:
+  **0**
+- Calibration successful-run increment: **1** (`successful_run_count` = 5 of 7)
