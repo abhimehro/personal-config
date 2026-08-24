@@ -6,6 +6,61 @@
 
 ## Entry template
 
+## Run — 2026-08-24 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **16** (`github_contents_api`); blob
+  `2fea1b9edeafe916a52b95f0bedc941c778d36d9`; data-branch commit
+  `8b8a84493d64e1a412905d21d73d3e8db3d3bb91`
+- Preflight: `make cursor-cloud-hooks`; PAT as `abhimehro`; CodeScene MCP
+  `namespaceStatus=error` (unavailable)
+- Live: `stage2_work_items: []`; items with `current_owner: stage2` **0**;
+  `STAGE2_QUEUED` / `STAGE2_ACTIVE` **0**; Stage 1 today queued **0**
+- Prior salvage remainder: ctrld-sync #1161 live-closed
+  `CLOSED_SUPERSEDED` at 2026-08-24T15:15:35Z (head still
+  `1b7811646f19f71a4304f8d51091cf6c28a46cf6`); do not recreate `display.py`
+  (0gm)
+
+### Outcomes
+
+| Repo       | Old PR | Disposition                         | New PR | Notes                                                                 |
+| ---------- | -----: | ----------------------------------- | ------ | --------------------------------------------------------------------- |
+| (none)     |      — | EMPTY_INTAKE (structured no-recovery) | —    | No complete unexpired Stage-2-owned work item; no fourth-queue invent |
+
+- Salvage drafts opened: **0**
+- Infra-fix drafts: **0**
+- Closed via API: **0**
+- Autonomous merges: **0** (S1)
+- New lessons: **0**
+- `request_reviewers`: skipped
+- Ledger CAS: **none** (no Stage-2-owned item to project; rev stays **16**)
+- Cap 5; completed **0** eligible items. Remaining `stage2_work_items`: **[]**.
+
+### Verification
+
+- Ledger-only `validate_schema` + `validate_runtime_records` **PASS** on rev
+  16. Full wrap validator still fails on `main` export/prompt mismatch
+  (pre-existing; Stage 2 did not edit policy exports).
+- Calibration: `REPORT_ONLY` count **4** / `pr-lifecycle-v1.4` (no stale
+  reset).
+- Live GitHub: ctrld #1161 `state=closed` `merged=false`
+  `closed_at=2026-08-24T15:15:35Z`. Docs lineage
+  [#2084](https://github.com/abhimehro/personal-config/pull/2084) open on
+  `pr-lifecycle-docs-20260824` head `092b4735`.
+- Did not invent salvage from Stage 3 remainder, Palette/Bolt/Sentinel
+  clusters, rpce Swift (0gi), or workflow Dependabot bumps.
+
+### Handoff
+
+1. Stage 3: ACK today's 16 Stage 1 handoffs; close-candidates hydro #557/#558
+   and rpce #288 wait for cooldown; do not merge drafts (#2079)
+2. Stage 1 later: re-ingest this docs lineage when routine predicates pass
+   (`/trunk merge`); do not GitHub-squash personal-config
+3. Do not recreate ctrld `display.py`; do not salvage rpce Swift on Linux
+
+Full record: `tasks/pr-salvage-2026-08-24-1700.md`.
+
 ## Run — 2026-08-22 17:00
 
 ### Input tail
