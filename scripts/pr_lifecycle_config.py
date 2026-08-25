@@ -344,7 +344,7 @@ def validate_prompt(content: str, name: str) -> None:
         "docs/pr-lifecycle-runtime-ledger.md",
         "Memory is enabled",
         "Dashboard-referenced MCP set",
-        "ledger, run records, and lessons",
+        "The ledger, run\nrecords, and lessons",
     }
     if any(marker not in content for marker in required):
         raise ValueError(f"{name}: missing runtime continuity marker")
