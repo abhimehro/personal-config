@@ -530,3 +530,7 @@ with potentially missing data, always conditionally render a dedicated
 to communicate the absence of data clearly and beautifully.
 
 >>>>>>> Stashed changes
+## 2026-08-25 - Native HTML Meter for Data Visualization
+
+**Learning:** Presenting system metrics (like total warnings) as raw text in HTML reports misses an opportunity for accessible data visualization and visual context.
+**Action:** Use the native HTML5 `<meter>` element to provide a semantic, accessible, and visually appealing representation of scalar measurements within known ranges, ensuring appropriate `aria-label`, `min`, `max`, `low`, `high`, and `optimum` attributes are set.
