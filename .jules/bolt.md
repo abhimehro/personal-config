@@ -913,3 +913,7 @@ unnecessary disk I/O overhead and reduces script speed, especially as the number
 of elements grows. **Action:** Always buffer string components into a list in
 memory (e.g. using `append` or `extend`) and write to disk in a single operation
 using `"\n".join(out) + "\n"` to minimize I/O overhead.
+## 2026-12-11 - [Avoid O(N^2) list membership checks in filtering loops]
+
+**Learning:** When filtering a single collection into multiple mutually exclusive categories, using multiple list comprehensions where subsequent comprehensions check for membership in previously built lists (e.g. failures = [r for r in results if r not in successes]) creates an O(N^2) time complexity bottleneck due to repeated O(K) linear list searches.
+**Action:** Replace these chained comprehensions with a single-pass for loop that categorizes elements in O(N) time without requiring intermediate lists to be searched.
