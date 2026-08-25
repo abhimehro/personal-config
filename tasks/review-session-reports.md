@@ -1,3 +1,37 @@
+# Stage 1 — 2026-08-24 (cron 15:00 UTC)
+
+Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
+`REPORT_ONLY` count **4** (not incremented). Slim inventory (no `commits` /
+`statusCheckRollup`; lessons **0gl** / **0gn**). Open **163**; SHA_MATCH skip
+**145**; NEW **17**; HEAD_DRIFT **1**. Ledger writes this run **20** (18 new
+keys + 2 SHA_MATCH mutations). `/trunk merge` **1** (personal-config #2078
+`4834c8a10ea750e1c662ec5f0dcb3c02544a6c6e` →
+`d006e33e2697ba9b716f6dfa558d6aec143daa28`). Squash-merged **1**
+(Seatek_Analysis #729 `64b86708adc2d12e873ca9ac1b7d39d7dece9d86` →
+`0c9020e3465fffb5774272b415d3d772002589bd`). Closed **2** (ctrld-sync #1161
+and Seatek_Analysis #717 `CLOSED_SUPERSEDED`). GitHub PR mutations **4**.
+Ledger `15` → `16` (blob `2fea1b9edeafe916a52b95f0bedc941c778d36d9`, commit
+`8b8a84493d64e1a412905d21d73d3e8db3d3bb91`). Stage 2 queued **0**. Stage 3
+**16** handoffs. Throughput **PASS**. Lesson **0gt**. Full record:
+`tasks/pr-review-2026-08-24-1500.md`. Docs branch:
+`pr-lifecycle-docs-20260824`.
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (open PRs)      |   163 |
+| SHA_MATCH skipped           |   145 |
+| Ledger items this run       |    20 |
+| HUMAN leftovers (no write)  |     1 |
+| Merged                      |     2 |
+| Closed superseded           |     2 |
+| Stage 2 queued (this run)   |     0 |
+| Stage 3 handoffs (this run) |    16 |
+| GitHub PR actions           |     4 |
+| Ledger CAS writes           |     1 |
+
+Per-item table: see `tasks/pr-review-2026-08-24-1500.md` (mandatory Stage 1
+columns).
+
 # Stage 1 — 2026-08-23 (cron 15:00 UTC)
 
 Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
