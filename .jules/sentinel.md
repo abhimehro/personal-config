@@ -824,3 +824,9 @@ stalling or failing silently. **Prevention:** Always use `subprocess.run` with a
 `timeout` argument and explicitly pass `env=load_gh_token_env()` when calling
 external APIs, rather than relying on `subprocess.check_output` with inherited
 environments.
+
+## 2026-08-26 - Command Injection Risk via eval in Trap Restoration
+
+**Vulnerability:** Command Injection (CWE-78 variant) in trap restoration logic. Scripts stored the previous state of `nullglob` or `dotglob` (e.g., `_nullglob_state=$(shopt -p nullglob)`) and restored it using `eval "$_nullglob_state"`. If an attacker can influence the state string before the `eval` is called, it could lead to arbitrary command execution.
+**Learning:** Never use `eval` to restore shell options or traps, even if the state was initially captured securely, as the string is inherently vulnerable to modification and the pattern encourages insecure practices.
+**Prevention:** Always use explicit string matching and safe commands to restore state (e.g., `if [[ $_nullglob_state == *" -s "* ]]; then shopt -s nullglob; elif [[ $_nullglob_state == *" -u "* ]]; then shopt -u nullglob; fi`) rather than `eval`.
