@@ -1,8 +1,8 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 22
+ledger_revision: 23
 calibration:
-  status: REPORT_ONLY
+  status: APPROVED
   successful_run_count: 7
   required_successful_runs: 7
   scope: configured-repo-set
@@ -20,10 +20,12 @@ calibration:
     required_check_sources:
     - GITHUB_RULESETS
     - TRUNK
-  approved_by: null
-  approved_at_utc: null
-  approval_evidence_urls: []
-  invalidated_by_revision: pr-lifecycle-v1.4
+  approved_by: abhimehro
+  approved_at_utc: '2026-08-26T22:00:00Z'
+  approval_evidence_urls:
+  - https://cursor.com/agents/bc-4f8d2d77-cc5d-4e23-8f2a-477dae91b81b
+  - https://github.com/abhimehro/personal-config/pull/2098
+  invalidated_by_revision: null
   revoked_at_utc: null
   rollback_conditions:
   - Runtime ledger read, validation, or compare-and-swap verification fails.
