@@ -2683,3 +2683,18 @@ is gone.
 
 **Detection cost:** Low — ref 404; Stage 1 report lists a newer commit SHA
 that `GET .../git/commits/<sha>` still returns.
+
+## Lesson 0gw: Omit `isLocked` from PullRequest GraphQL (2026-08-26)
+
+**Pattern:** Stage 3 live-reconcile GraphQL requested `isLocked` on
+`PullRequest`. GitHub's schema returns `undefinedField` for that name, so
+the whole selection fails and rollup/`contexts` never arrive. REST
+`GET /repos/{owner}/{repo}/pulls/{n}` already exposes `locked` and `draft`.
+
+**Rule:** Do not query `PullRequest.isLocked` in GraphQL. Omit it. Use REST
+`locked` / `draft` when those flags are required. Keep
+`statusCheckRollup { state }` plus `contexts(first|last: N)` (0gs). Do not
+rewrite 0gs.
+
+**Detection cost:** Low — GraphQL `errors[].extensions.code == undefinedField`
+naming `isLocked`.
