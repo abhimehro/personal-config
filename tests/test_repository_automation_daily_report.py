@@ -16,7 +16,7 @@ sys.path.append(
     )
 )
 
-from repository_automation_tasks import run_daily_status_report
+from repository_automation_tasks import run_daily_status_report  # noqa: E402
 
 
 class TestRunDailyStatusReport(TestCase):

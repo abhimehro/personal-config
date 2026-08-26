@@ -280,6 +280,10 @@ configs/.config/fish/functions/*
 !configs/.config/fish/config.fish
 !configs/.config/fish/fish_plugins
 !configs/.config/fish/RESTORE_CUSTOMIZATIONS.md
+!configs/.config/fish/completions/op.fish
+!configs/.config/fish/functions/op-ready.fish
+!configs/.config/fish/functions/cursor-op.fish
+!configs/.config/fish/functions/_op_inject.fish
 !configs/.config/fish/functions/nm-*.fish
 !configs/.config/fish/functions/__ensure_dracula_theme.fish
 !configs/.config/fish/functions/fix-dns.fish

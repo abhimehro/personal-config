@@ -26,8 +26,11 @@ case "${OP_AGENT_SKIP-}" in
 esac
 
 if [ "$_op_skip_plugin_aliases" -eq 0 ]; then
-	:
+	alias agent="op plugin run -- agent"
+	alias copilot="op plugin run -- copilot"
+	alias gh="op plugin run -- gh"
+	alias gemini="op plugin run -- gemini"
+	alias huggingface-cli="op plugin run -- huggingface-cli"
+	alias vercel="op plugin run -- vercel"
 fi
 unset _op_skip_plugin_aliases
-alias agent="op plugin run -- agent"
-alias copilot="op plugin run -- copilot"

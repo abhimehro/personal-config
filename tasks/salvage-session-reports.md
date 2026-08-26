@@ -6,6 +6,266 @@
 
 ## Entry template
 
+## Run — 2026-08-25 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **18** (`github_contents_api`); blob
+  `f7ac87639f53005eede78fe5f2c897026f3c38be`; data-branch commit
+  `f05d593880b6b56084cf3ece0f4438530dda22d0`
+- Preflight: `make cursor-cloud-hooks`; PAT as `abhimehro`; CodeScene MCP
+  `namespaceStatus=error` (unavailable)
+- Live: `stage2_work_items: []`; items with `current_owner: stage2` **0**;
+  `STAGE2_QUEUED` / `STAGE2_ACTIVE` **0**; Stage 1 today queued **0**
+- Prior remainder live-verify: hydro #557/#558 closed `CLOSED_DUPLICATE` at
+  2026-08-25T15:10:42Z / 15:10:44Z; rpce #288 closed `CLOSED_NOOP` at
+  2026-08-25T15:10:46Z. Do not recreate `display.py` (0gm)
+
+### Outcomes
+
+| Repo       | Old PR | Disposition                           | New PR | Notes                                                                 |
+| ---------- | -----: | ------------------------------------- | ------ | --------------------------------------------------------------------- |
+| (none)     |      — | EMPTY_INTAKE (structured no-recovery) | —      | No complete unexpired Stage-2-owned work item; no fourth-queue invent |
+
+- Salvage drafts opened: **0**
+- Infra-fix drafts: **0**
+- Closed via API: **0**
+- Autonomous merges: **0** (S1)
+- New lessons: **0**
+- `request_reviewers`: skipped
+- Ledger CAS: **none** (no Stage-2-owned item to project; rev stays **18**)
+- Cap 5; completed **0** eligible items. Remaining `stage2_work_items`: **[]**.
+
+### Verification
+
+- Ledger-only `validate_schema` + `validate_runtime_records` **PASS** on rev
+  18. Full wrap validator still fails on `main` export/prompt mismatch
+  (pre-existing; Stage 2 did not edit policy exports).
+- Calibration: `REPORT_ONLY` count **5** / `pr-lifecycle-v1.4` (no stale
+  reset).
+- Live GitHub: hydro #557 `state=CLOSED` `merged=false`
+  `closed_at=2026-08-25T15:10:42Z` head `1c9b96de8e25…`; hydro #558
+  `CLOSED` `2026-08-25T15:10:44Z` head `3d25583c91bc…`; rpce #288 `CLOSED`
+  `2026-08-25T15:10:46Z` head `c83f245e0545…`. Docs lineage
+  [#2091](https://github.com/abhimehro/personal-config/pull/2091) open on
+  `pr-lifecycle-docs-20260825` head `589e01b5`.
+- Did not invent salvage from Stage 3 remainder, Palette/Bolt/Sentinel
+  clusters, rpce Swift (0gi), or workflow Dependabot bumps.
+
+### Handoff
+
+1. Stage 3: ACK today's 23 Stage 1 handoffs; close-candidates seatek #736,
+   series #410, and rpce #293 wait for cooldown; do not merge drafts (#2087)
+2. Stage 1 later: re-ingest this docs lineage when routine predicates pass
+   (`/trunk merge`); do not GitHub-squash personal-config
+3. Do not recreate ctrld `display.py`; do not salvage rpce Swift on Linux
+
+Full record: `tasks/pr-salvage-2026-08-25-1700.md`.
+
+## Run — 2026-08-24 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **16** (`github_contents_api`); blob
+  `2fea1b9edeafe916a52b95f0bedc941c778d36d9`; data-branch commit
+  `8b8a84493d64e1a412905d21d73d3e8db3d3bb91`
+- Preflight: `make cursor-cloud-hooks`; PAT as `abhimehro`; CodeScene MCP
+  `namespaceStatus=error` (unavailable)
+- Live: `stage2_work_items: []`; items with `current_owner: stage2` **0**;
+  `STAGE2_QUEUED` / `STAGE2_ACTIVE` **0**; Stage 1 today queued **0**
+- Prior salvage remainder: ctrld-sync #1161 live-closed
+  `CLOSED_SUPERSEDED` at 2026-08-24T15:15:35Z (head still
+  `1b7811646f19f71a4304f8d51091cf6c28a46cf6`); do not recreate `display.py`
+  (0gm)
+
+### Outcomes
+
+| Repo       | Old PR | Disposition                         | New PR | Notes                                                                 |
+| ---------- | -----: | ----------------------------------- | ------ | --------------------------------------------------------------------- |
+| (none)     |      — | EMPTY_INTAKE (structured no-recovery) | —    | No complete unexpired Stage-2-owned work item; no fourth-queue invent |
+
+- Salvage drafts opened: **0**
+- Infra-fix drafts: **0**
+- Closed via API: **0**
+- Autonomous merges: **0** (S1)
+- New lessons: **0**
+- `request_reviewers`: skipped
+- Ledger CAS: **none** (no Stage-2-owned item to project; rev stays **16**)
+- Cap 5; completed **0** eligible items. Remaining `stage2_work_items`: **[]**.
+
+### Verification
+
+- Ledger-only `validate_schema` + `validate_runtime_records` **PASS** on rev
+  16. Full wrap validator still fails on `main` export/prompt mismatch
+  (pre-existing; Stage 2 did not edit policy exports).
+- Calibration: `REPORT_ONLY` count **4** / `pr-lifecycle-v1.4` (no stale
+  reset).
+- Live GitHub: ctrld #1161 `state=closed` `merged=false`
+  `closed_at=2026-08-24T15:15:35Z`. Docs lineage
+  [#2084](https://github.com/abhimehro/personal-config/pull/2084) open on
+  `pr-lifecycle-docs-20260824` head `092b4735`.
+- Did not invent salvage from Stage 3 remainder, Palette/Bolt/Sentinel
+  clusters, rpce Swift (0gi), or workflow Dependabot bumps.
+
+### Handoff
+
+1. Stage 3: ACK today's 16 Stage 1 handoffs; close-candidates hydro #557/#558
+   and rpce #288 wait for cooldown; do not merge drafts (#2079)
+2. Stage 1 later: re-ingest this docs lineage when routine predicates pass
+   (`/trunk merge`); do not GitHub-squash personal-config
+3. Do not recreate ctrld `display.py`; do not salvage rpce Swift on Linux
+
+Full record: `tasks/pr-salvage-2026-08-24-1700.md`.
+
+## Run — 2026-08-22 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **11** complete unexpired work item
+  `s2-20260822-esp-1514-path-import`
+- Preflight: `make cursor-cloud-hooks`; PAT as `abhimehro`; CodeScene MCP
+  `serverStatus=error` (unavailable)
+- Live: original ESP #1514 open, ready, CLEAN; head
+  `cb9f2dd6c791cf53574d5c82b61c3c7a17ceab9d`; base equals live main
+  `e009e5923860f5b504f6e179ad2380efe514bf4d`
+
+### Outcomes
+
+| Repo                    | Old PR | Disposition                                            | New PR                                                                      | Notes                                                                                          |
+| ----------------------- | -----: | ------------------------------------------------------ | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| email-security-pipeline |   1514 | SALVAGE (opened draft; converted back after 0gd ready) | [#1515](https://github.com/abhimehro/email-security-pipeline/pull/1515)     | Top-level `from pathlib import Path`; `python3 -m pytest` 754 passed; original left OPEN       |
+
+- Salvage drafts opened: **1** (#1515)
+- Infra-fix drafts: **0**
+- Closed via API: **0**
+- Autonomous merges: **0** (S1)
+- New lessons: **0**
+- `request_reviewers`: skipped
+- Ledger `11` → `12` (blob `61f895c52bfae47b86087a457c49e79bc66e1adf`, commit
+  `411984a73e0d786e27064a4f36413cdfd7dc4222`)
+- Cap 5; completed **1** (only eligible complete unexpired item). Remaining
+  `stage2_work_items`: **[]**.
+
+### Verification
+
+- ESP #1515: `python3 -m pytest` → 754 passed, 40 subtests, exit 0 on current
+  main + one-line runtime import
+- Create-time `isDraft=true`. `linear-code[bot]` `ready_for_review` at
+  2026-08-22T17:14:07Z. Converted back to draft at 2026-08-22T17:16:06Z before
+  ledger write (0gd). Re-read `draft=true`.
+- Original #1514 left OPEN. CodeScene MCP unavailable; original #1514 CodeScene
+  check already success.
+
+### Handoff
+
+1. Stage 1: re-ingest **#1515** for GITHUB_SQUASH if every routine predicate
+   passes; do not mark ready; HOLD_EVIDENCE until required checks
+2. Stage 3: keep original **#1514** OPEN (HOLD_CANONICAL); do not close because
+   #1515 exists
+3. Do not squash TYPE_CHECKING-only #1514; do not recreate that import
+
+Full record: `tasks/pr-salvage-2026-08-22-1700.md`.
+
+## Run — 2026-08-22
+
+### Input tail
+
+- Source: Stage 1 retry ledger rev **9** work items
+  `s2-20260820-pc-2041-docs-markers` and `s2-20260820-ctrld-1161-bolt-summary`
+- Preflight: `make cursor-cloud-hooks`; PAT as `abhimehro`; slim GraphQL (0gl)
+- Live: original #2041 ready CLEAN; original #1161 DIRTY/CONFLICTING
+
+### Outcomes
+
+| Repo            | Old PR | Disposition                                             | New PR                                                          | Notes                                                                                          |
+| --------------- | -----: | ------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| personal-config |   2041 | SALVAGE (opened draft; later ready by linear-code[bot]) | [#2063](https://github.com/abhimehro/personal-config/pull/2063) | Markers + stale skip-row; `automation` title + `cursor-agent/` branch; `make lint-errors` PASS |
+| ctrld-sync      |   1161 | HOLD_EVIDENCE (no draft)                                | —                                                               | `display.py` split after #1183; frozen allowed_paths (0fv / 0gm)                               |
+
+- Salvage drafts opened: **1** (#2063)
+- Infra-fix drafts: **0**
+- Closed via API: **0**
+- Autonomous merges: **0** (S1)
+- New lessons: **0gl**, **0gm**
+- `request_reviewers`: skipped
+- Ledger `9` → `10` (blob `a522d71e5a6895718c9410b1270a7f7d82cffbed`, commit
+  `ccc48c10227711eacddfc97c685e2a5236bd6e17`)
+
+### Verification
+
+- pc #2063: `make lint-errors`; create-time `isDraft=true`; live later
+  `isDraft=false` via `linear-code[bot]` `ready_for_review` (left ready, 0gd)
+- ctrld #1161: `display.py` 404 on main; generator-form lives in
+  `display/tables.py`
+
+### Handoff
+
+1. Stage 1: re-ingest **#2063** for `/trunk merge` if routine predicates pass;
+   do not convert it back to draft (0gd)
+2. Stage 3 / human: Hydro #543 lockfile, Seatek #708 unique remainder, ctrld
+   #1161 split-module
+3. Do not squash DIRTY #1161; do not mark #2063 ready; do not convert #2041 to
+   draft
+
+Full record: `tasks/pr-salvage-2026-08-22.md`.
+
+## Run — 2026-08-18
+
+### Input tail
+
+- Source: Phase 1 `tasks/pr-review-2026-08-16.md` remainder + PR
+  [#2016](https://github.com/abhimehro/personal-config/pull/2016)
+  (`pr-review-2026-08-17.md`) + live re-fetch
+- Preflight PASS 7/7; `make cursor-cloud-hooks`; PAT as `abhimehro` (0ew)
+- Live open: **77**; CONFLICTING: **13**
+- Zero-diff: esp #1495
+
+### Outcomes
+
+| Repo                    | Old PR | Disposition     | New PR                                                          | Notes                                       |
+| ----------------------- | -----: | --------------- | --------------------------------------------------------------- | ------------------------------------------- |
+| personal-config         |   2000 | SALVAGE + CLOSE | [#2022](https://github.com/abhimehro/personal-config/pull/2022) | `pgrep -x --`; twin of #1989                |
+| personal-config         |   1989 | SALVAGE + CLOSE | [#2022](https://github.com/abhimehro/personal-config/pull/2022) | identical to #2000                          |
+| personal-config         |   1997 | CLOSE           | —                                                               | superseded by CLEAN #1996                   |
+| personal-config         |   1985 | CLOSE           | —                                                               | scratch + yaml skipIf (0fo)                 |
+| personal-config         |   1991 | CLOSE           | —                                                               | inline-style empty state vs main            |
+| personal-config         |   2007 | ESCALATE        | —                                                               | eval→unquoted (0fu)                         |
+| personal-config         |   1907 | ESCALATE        | —                                                               | CORS mega 95 files                          |
+| ctrld-sync              |   1188 | SALVAGE + CLOSE | [#1194](https://github.com/abhimehro/ctrld-sync/pull/1194)      | uv Docker/Bandit; keep requirements.txt     |
+| ctrld-sync              |   1174 | SALVAGE + CLOSE | [#1195](https://github.com/abhimehro/ctrld-sync/pull/1195)      | adapted to `sync/rules.py` (0fv)            |
+| ctrld-sync              |   1161 | HOLD            | —                                                               | sum() 0fo                                   |
+| ctrld-sync              |   1136 | ESCALATE        | —                                                               | mypy 2.x major                              |
+| email-security-pipeline |   1495 | CLOSE           | —                                                               | zero-diff Daily QA (0fr)                    |
+| email-security-pipeline |   1487 | CLOSE           | —                                                               | `_has_all_required_headers` already on main |
+| email-security-pipeline |   1473 | ESCALATE        | —                                                               | requirements-ci as default (S6)             |
+| Seatek_Analysis         |    690 | SALVAGE + CLOSE | [#693](https://github.com/abhimehro/Seatek_Analysis/pull/693)   | `.POSIXct` only; reject profile dumps       |
+
+- Salvage drafts opened: **4** (#2022, #1194, #1195, #693)
+- Infra-fix drafts: **0** (dependency-review repair shipped inside #1194)
+- Closed via API: **10**
+- Autonomous merges: **0** (S1)
+- New lessons: **0fu**, **0fv**
+- `request_reviewers`: skipped (author already abhimehro)
+
+### Verification
+
+- pc #2022: `bash -n scripts/report-daemons-watchdog.sh`
+- ctrld #1195:
+  `uv run pytest tests/test_push_rules_perf.py tests/test_security.py tests/test_security_limits.py`
+  → 45 passed
+- ctrld #1194: YAML/Dockerfile review; requirements.txt retained
+- seatek #693: one-line R parse; no profile\*.R / test_data
+
+### Handoff
+
+1. Human merge drafts **#1194** (T0-adjacent dependency-review repair) then
+   **#1195** then **#2022** then **#693**
+2. Human T1: pc #2007 (0fu), pc #1907 CORS, pc #1980 SSRF, ctrld #1136 mypy 2.x,
+   esp #1444 opencv, esp #1473
+3. HOLD: ctrld #1161 (0fo), series #390 (0fp), pc #1996 join flip-flop
+4. Squash **one** docs lineage: this salvage docs PR vs Phase 1
+   [#2016](https://github.com/abhimehro/personal-config/pull/2016) (0fk)
+
 ## Run — 2026-08-01
 
 ### Input tail
@@ -1288,3 +1548,242 @@
 
 - Cross-links: [Inventory](tasks/pr-inventory.md), [Triage](tasks/pr-triage.md),
   [Review](tasks/pr-review-2026-08-13.md)
+
+## Run — 2026-08-19
+
+## Identity
+
+- Stage: `stage2`
+- Trigger: `cron` (`0 17 * * *` UTC)
+- Configuration version and policy revision: lifecycle `1.2` /
+  `pr-lifecycle-v1.2`; identity and taxonomy `2026-08-19`; prompt
+  `pr-lifecycle-v1.2`
+- Start and end UTC: `2026-08-19T17:01:22Z` → `2026-08-19T17:07:13Z`
+- Ledger revision read and resulting revision: **unread** (no runtime ledger
+  object); no Stage-2-owned projection mutated
+- Dashboard export fingerprint and memory mode: dashboard bootstrap not applied
+  (follow-up C deferred); memory used as namespaced cache only
+- Calibration mode: `report_only` (runtime ledger not bootstrapped)
+- Agent branch: `cursor-agent/automated-pr-salvage-workflow-a615`
+- Trusted base SHA at intake: `73f2f16750fbcec73e795e8b09c9164a69954a88`
+  (`origin/main` after fetch)
+- Preflight: PASS (read-only, 7/7 repos) + `make cursor-cloud-hooks`
+- Selected write primitive: **absent** (`null` / untested). Git fetch of
+  `automation/pr-lifecycle-ledger` failed (`couldn't find remote ref`). GitHub
+  Contents API
+  `GET .../contents/pr-lifecycle-ledger.yaml?ref=automation/pr-lifecycle-ledger`
+  returned **404** `No commit found for the ref`.
+- Continuity reads: last three **committed** Stage 2 records on `main` are
+  2026-08-13, 2026-08-12, 2026-08-02. Automation memory described a 2026-08-18
+  salvage; that report exists only on unmerged
+  [#2023](https://github.com/abhimehro/personal-config/pull/2023) and was not
+  used as work-item scope.
+- Auth: `gh` authenticated; no close/merge/approve/review-request attempted
+
+## Inputs and reconciliation
+
+- Items considered: **0** complete `stage2_work_items` (runtime ledger
+  unreachable)
+- Items skipped as unchanged: **0**
+- Items invalidated by SHA drift: **0**
+- Items resolved outside the workflow: **not inventoried** (Stage 2 does not
+  discover backlog without ledger ownership)
+- Rejected incomplete work items: **all inferred candidates** (memory / Phase 1
+  remainder / open bot PRs). Missing immutable source key, allowed paths, test
+  command, acceptance criteria, provenance, expiry, attempt count, owner,
+  creation event, and history.
+
+## Mandatory per-item evidence, action, and outcome record
+
+One row is required for every processed, proposed, skipped, retried, or
+completed item. A missing field is `ANALYSIS_ERROR`, not an invitation to fill
+it from memory.
+
+| Ledger key              | Repository / PR                                                     | Observed vs ledger base/head SHA                                                            | Owner before → after                | GitHub identity / author type | Classification / risk / sticky paths | Guardrail outcome | Changed paths                                                    | Evidence URLs                                                                                                                                                                                                                                                                                                                                                                                                                           | Proposed route / actual action                                     | Mode / audit ID / action count                                                                                 | Retry or error                                                         | Final observed outcome / calibration correctness                                              | Provenance or canonical relation                                                                                                                                                                                                                                                                                                |
+| ----------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------- | ----------------------------- | ------------------------------------ | ----------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runtime-ledger-unread` | `abhimehro/personal-config` / none (platform gap, not a product PR) | Observed trusted base `73f2f16750fbcec73e795e8b09c9164a69954a88`; ledger anchors **absent** | intended `stage2` intake → `stage3` | n/a (no source PR)            | n/a; no product-path classification  | `HOLD_PLATFORM`   | none on product trees; this run appends Stage 2 audit files only | [PR #2026 merged](https://github.com/abhimehro/personal-config/pull/2026); [PR #2031 merged](https://github.com/abhimehro/personal-config/pull/2031); GitHub API 404 `branches/automation/pr-lifecycle-ledger`; Contents API 404 on `pr-lifecycle-ledger.yaml@automation/pr-lifecycle-ledger`; validator `PR_LIFECYCLE_INVALID` on missing file; [docs/pr-lifecycle-runtime-ledger.md](docs/pr-lifecycle-runtime-ledger.md) A1 deferred | Fetch/validate/write runtime ledger → **stop**; no recovery branch | `report_only` / stage2-2026-08-19-hold-platform / recoveries **0**, mutation attempts **0**, CAS retries **0** | Data branch missing; write primitive unset; no second primitive switch | Correct fail-closed hold; zero salvage drafts; zero closes; zero merges; zero review requests | Bootstrap prerequisite is maintainer-authorized orphan branch `automation/pr-lifecycle-ledger` plus recorded CAS primitive. Competing docs lineages [#2023](https://github.com/abhimehro/personal-config/pull/2023) and [#2016](https://github.com/abhimehro/personal-config/pull/2016) are Stage 3/0fk, not Stage 2 recoveries |
+
+## Revision-checked handoffs and human decisions
+
+| Ledger key              | Event ID / idempotency key                                                                                     | Expected → resulting revision                               | Next owner | One next action                                                                                                                                                                                              | Safe default                                                                      | Expiry                 | Receiver acknowledgement                                                             |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------ |
+| `runtime-ledger-unread` | `handoff-stage2-2026-08-19-hold-platform` / `(runtime-ledger-unread, handoff-stage2-2026-08-19-hold-platform)` | **unwritable** (no CAS path) → no ledger revision increment | `stage3`   | Authorize and seed orphan branch `automation/pr-lifecycle-ledger` with one selected write primitive, validate a read/write round trip, then import historical reports. Do not salvage from memory meanwhile. | Leave all open product PRs untouched; no merge, close, approve, or review-request | `2026-08-26T17:07:13Z` | Pending Stage 3 ACK on a bootstrapped ledger; this run record is the sender evidence |
+
+## Continuity
+
+- Successful pattern reused: fail-closed missing-branch rule from
+  `docs/pr-lifecycle-runtime-ledger.md` (“Data branch or file is missing before
+  bootstrap → `HOLD_PLATFORM`; report one bootstrap prerequisite”).
+- Failed approach not to repeat: reconstructing Stage 2 work from automation
+  memory (2026-08-18 CONFLICTING/CLOSED lists) or from unmerged
+  [#2023](https://github.com/abhimehro/personal-config/pull/2023) / Phase 1
+  remainder files when the runtime ledger is unread.
+- New lesson candidate and the future rule it changes: **0fw** (missing runtime
+  ledger is `HOLD_PLATFORM`, not backlog discovery).
+- Configuration or policy gap: enforcement follow-up **A1** remains deferred —
+  source contract is on `main` (#2026/#2031) but the orphan data branch and
+  recorded write primitive do not exist. Cursor dashboard Stage 2 still lists
+  extra MCPs/actions (review-request, Notion, etc.) that the Stage 2 spec
+  forbids; this run did not use them for mutation.
+- Historical-import sources or fingerprints processed: **none** (Stage 3 owns
+  import).
+
+## Metrics
+
+- Inventory / recovery / reconciliation count: 0 / 0 / 0
+- Merged: **0**
+- Closed: **0**
+- Drafts created: **0** product recoveries (docs audit PR for this record only)
+- Decision packets created: **0**
+- Analysis errors: **0** (`HOLD_PLATFORM`, not `ANALYSIS_ERROR`)
+- State-changing actions, including failed attempts and retries: **0**
+  product-PR mutations; ledger CAS not attempted after 404
+- `request_reviewers`: skipped (Stage 2 must not request review)
+- Autonomous merges: **0** (S1)
+
+### Handoff (Stage 3)
+
+1. **Bootstrap prerequisite (one):** maintainer creates and seeds
+   `automation/pr-lifecycle-ledger` with `pr-lifecycle-ledger.yaml`, records the
+   selected write primitive, and proves the main-branch pointer cannot be used
+   as runtime state. Until then, Stage 1/2/3 take no lifecycle action against
+   product PRs.
+2. **Docs 0fk:** squash **one** of
+   [#2016](https://github.com/abhimehro/personal-config/pull/2016) (Phase 1
+   2026-08-17) vs
+   [#2023](https://github.com/abhimehro/personal-config/pull/2023) (Phase 2
+   2026-08-18) vs this run-record PR. Do not fight the journal.
+3. Do not recreate 2026-08-18 salvage approaches from memory. After bootstrap,
+   Stage 3 imports committed run records, then hands complete work items to
+   Stage 2 if still eligible.
+4. Skip `request_reviewers` on Stage 2 drafts when policy forbids it.
+
+- Cross-links: [Lifecycle contract](docs/automated-pr-lifecycle.md),
+  [Runtime ledger](docs/pr-lifecycle-runtime-ledger.md),
+  [Salvage spec](docs/automated-pr-salvage-agent.md),
+  [Lessons](tasks/lessons.md) (0fw)
+
+## Run — 2026-08-20
+
+## Identity
+
+- Stage: `stage2`
+- Trigger: `cron` (`0 17 * * *` UTC)
+- Configuration version and policy revision: lifecycle `1.4` /
+  `pr-lifecycle-v1.4`; identity `2026-08-20-hyphen`; prompt `pr-lifecycle-v1.4`
+- Start and end UTC: `2026-08-20T17:01:15Z` → `2026-08-20T17:26:00Z`
+- Ledger revision read and resulting revision: **5 → 6** (Contents API CAS
+  commit `de19c913e723bc35125e03bc39eeaf34ce46df49`, blob
+  `b1cd06de01b8696a5025bbec011e12c19fdf6835` →
+  `5c433bf61e30825818d4cd39a91d9e5b8e316921`)
+- Dashboard export fingerprint and memory mode: namespaced cache only; memory
+  did not override ledger, anchors, or stage authority
+- Calibration mode: `report_only` (`REPORT_ONLY`, `successful_run_count` 0,
+  `policy_revision` / `invalidated_by_revision` = `pr-lifecycle-v1.4`; no
+  calibration reset this run)
+- Agent branch: `cursor-agent/stage-2-pr-salvage-c726`
+- Trusted base SHA at intake: `a3da8cf56f42ae585bf65f963259a88d3dd67897`
+  (`origin/main`)
+- Preflight: PASS (read-only, 7/7 repos) + `make cursor-cloud-hooks`
+- Selected write primitive: **`github_contents_api`** (proven this run)
+- Continuity reads: last committed Stage 2 records 2026-08-19 HOLD_PLATFORM,
+  2026-08-18 (unmerged cache), 2026-08-13; lessons 0ga/0fw/0fy/0fv/0fr/0fu;
+  Stage-2-owned complete work items only
+- Auth: `gh` authenticated as `abhimehro`; no close/merge/approve/review-request
+  attempted
+
+## Inputs and reconciliation
+
+- Items considered: **6** complete unexpired `stage2_work_items`; processed
+  **5** (cap); left `s2-20260820-ctrld-1161-bolt-summary` `STAGE2_QUEUED`
+- Items skipped as unchanged: **0**
+- Items invalidated by SHA drift: **0** (hydro #535 base drifted on `main` to
+  `cddb8a3ac786e184802629bda0adb3ec728338cb` with **no allowed-path overlap**;
+  head SHA still matched; recovery from current main, not a STALE_ANCHOR)
+- Items resolved outside the workflow: **0**
+- Rejected incomplete work items: **0**
+
+## Mandatory per-item evidence, action, and outcome record
+
+| Ledger key                                                                                        | Repository / PR        | Observed vs ledger base/head SHA                                                                                                                                                               | Owner before → after                                        | GitHub identity / author type    | Classification / risk / sticky paths            | Guardrail outcome        | Changed paths                                                                                    | Evidence URLs                                                                                                                                                   | Proposed route / actual action                                       | Mode / audit ID / action count                                                            | Retry or error                                                                                                                     | Final observed outcome / calibration correctness                                                        | Provenance or canonical relation                                              |
+| ------------------------------------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | -------------------------------- | ----------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#535@118f9ca67550bc2e2036e1f83f647e54cabc0a07` | Hydrograph… / #535     | ledger base `a94d902c26131d2783acdc178a048008f42076be` → live main `cddb8a3ac786e184802629bda0adb3ec728338cb` (no allowed-path overlap); head still `118f9ca67550bc2e2036e1f83f647e54cabc0a07` | `stage2` `STAGE2_QUEUED` → `stage3` `STAGE3_RECONCILIATION` | `dependabot[bot]` / BOT          | DEPENDENCY / ROUTINE / none                     | `HOLD_CANONICAL`         | `pyproject.toml`, `poetry.lock`, `requirements-ci.txt` (draft)                                   | https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/535 ; https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/543 | Draft recovery #543 from current main; pin mypy 2.3.1 in poetry + CI | `report_only` / evt-s2-20260820-hydrographve-535-h / recovery 1, mutations 1              | PEP 668 blocked system pip; isolated venv. Sonatype-mcp pin lookup needed auth. Draft landed ready; converted back to draft (0gd). | Tested draft OPEN `draft=true`; pytest 70 passed; mypy 2.3.1 Success 13 files. Original #535 left open. | Canonical candidate is draft #543 vs original #535 (Lesson 0fy CI pin)        |
+| `abhimehro/Seatek_Analysis#673@e2da9d736fd3f4e54bf035d00ecf8d95fc0e1f11`                          | Seatek_Analysis / #673 | ledger base `b0a33a62…`; live main `53416c3cfdb3f6929507a8747b043ffaf291e683` includes #701; head still `e2da9d736fd3f4e54bf035d00ecf8d95fc0e1f11`                                             | `stage2` → `stage3`                                         | `abhimehro` token-authored / BOT | CI_INFRA / ROUTINE / none                       | `CLOSE_NONSECURITY_NOOP` | original `Updated_Seatek_Analysis.R`, `lint_output.txt`; salvage diff empty                      | https://github.com/abhimehro/Seatek_Analysis/pull/673 ; https://github.com/abhimehro/Seatek_Analysis/pull/701                                                   | Structured failed recovery; no draft                                 | `report_only` / evt-s2-20260820-seatekanalys-673-h / recovery 1, mutations 0              | Remaining wrap would split `# nolint next`; `lint_output.txt` prohibited                                                           | No draft. tryCatch already on main. Stage 3 close-cooldown vs #701.                                     | Canonical is merged #701, not #673                                            |
+| `abhimehro/repoprompt-ce#247@b3a5b0c760eca9bec5236ab11d0b2dcac38dda80`                            | repoprompt-ce / #247   | ledger base `ae557a59…`; live main `d7abf5a1bc45f948cade52e231e74f6983bfb6a2`; head still `b3a5b0c760eca9bec5236ab11d0b2dcac38dda80`; DIRTY/CONFLICTING                                        | `stage2` → `stage3`                                         | `abhimehro` token-authored / BOT | UI / ROUTINE / none                             | `HOLD_PLATFORM`          | intended 8 Swift view files only; `.github/.jules/.devin/docs/Package.swift` prohibited          | https://github.com/abhimehro/repoprompt-ce/pull/247                                                                                                             | Labels copied locally then restored; no push                         | `report_only` / evt-s2-20260820-repopromptce-247-h / recovery 1, mutations 1 (local only) | `make guardrails` / `rpce-contribution-check` need `swift`/`xcrun`; Linux VM has none. Did not `--no-verify`.                      | No draft. Working tree restored to `main`.                                                              | Distinct from #271. Retry on macOS runner                                     |
+| `abhimehro/Seatek_Analysis#705@c4d07fa12213f2c004c09f029b392a51fc81fe9f`                          | Seatek_Analysis / #705 | ledger base **equals** live main `53416c3cfdb3f6929507a8747b043ffaf291e683`; head still `c4d07fa12213f2c004c09f029b392a51fc81fe9f`                                                             | `stage2` → `stage3`                                         | `abhimehro` token-authored / BOT | REFACTOR / ROUTINE / generated_output (journal) | `HOLD_CANONICAL`         | draft `code_health_scanner.py` only; `.jules/bolt.md` not carried                                | https://github.com/abhimehro/Seatek_Analysis/pull/705 ; https://github.com/abhimehro/Seatek_Analysis/pull/708                                                   | Draft recovery #708 from current main                                | `report_only` / evt-s2-20260820b-seatekanalys-705-h / recovery 1, mutations 1             | Work-item R command needed `source()`; adapted to AGENTS.md. Draft landed ready; converted back to draft (0gd).                    | Tested draft OPEN `draft=true`; `py_compile` OK; testthat green after source. Original #705 left open.  | Canonical candidate is draft #708 vs original #705 (journal stay on original) |
+| `abhimehro/repoprompt-ce#271@fc9f84652bebd183979716c9b6ddc6a4c5e4d03a`                            | repoprompt-ce / #271   | ledger base `ea7fc8ba…`; live main `d7abf5a1bc45f948cade52e231e74f6983bfb6a2`; head still `fc9f84652bebd183979716c9b6ddc6a4c5e4d03a`; UNSTABLE                                                 | `stage2` → `stage3`                                         | `abhimehro` token-authored / BOT | UI / ROUTINE / generated_output                 | `HOLD_PLATFORM`          | intended `NotificationsButtonView.swift`, `SettingsButton.swift`; `.jules/palette.md` prohibited | https://github.com/abhimehro/repoprompt-ce/pull/271                                                                                                             | No branch; named test cannot run                                     | `report_only` / evt-s2-20260820b-repopromptce-271-h / recovery 1, mutations 0             | `make guardrails` requires Swift toolchain                                                                                         | No draft. Distinct from #247.                                                                           | HOLD_PLATFORM until macOS runner                                              |
+| `abhimehro/ctrld-sync#1161@1b7811646f19f71a4304f8d51091cf6c28a46cf6`                              | ctrld-sync / #1161     | not processed (cap 5); head still `1b7811646f19f71a4304f8d51091cf6c28a46cf6`; `display.py` removed on main                                                                                     | `stage2` `STAGE2_QUEUED` → **unchanged**                    | `abhimehro` token-authored / BOT | PERFORMANCE / ROUTINE / none                    | `HOLD_EVIDENCE`          | `display.py`, `tests/test_benchmarks.py`                                                         | https://github.com/abhimehro/ctrld-sync/pull/1161                                                                                                               | Skip this run (cap); do not expand allowed_paths                     | `report_only` / none / recovery 0                                                         | Path overlap: `display.py` split to `display/` on main (#1183)                                                                     | Remains complete unexpired Stage 2 work item                                                            | Next Stage 2 run; Lesson 0fv split-module                                     |
+
+## Revision-checked handoffs and human decisions
+
+| Ledger key  | Event ID / idempotency key                                                       | Expected → resulting revision | Next owner | One next action                                 | Safe default                                           | Expiry                     | Receiver acknowledgement                                    |
+| ----------- | -------------------------------------------------------------------------------- | ----------------------------- | ---------- | ----------------------------------------------- | ------------------------------------------------------ | -------------------------- | ----------------------------------------------------------- |
+| hydro #535  | `evt-s2-20260820-hydrographve-535-a` then `evt-s2-20260820-hydrographve-535-h`   | ACK 1→1; HANDOFF 1→2          | `stage3`   | Complete draft #543; do not merge original #535 | Do not squash original #535                            | `2026-08-27T17:00:00Z`     | Pending Stage 3 ACK of `evt-s2-20260820-hydrographve-535-h` |
+| Seatek #673 | `evt-s2-20260820-seatekanalys-673-a` then `evt-s2-20260820-seatekanalys-673-h`   | ACK 1→1; HANDOFF 1→2          | `stage3`   | Close-candidate vs merged #701 after cooldown   | Do not salvage nolint-next wrap; do not merge #673     | `2026-08-27T17:00:00Z`     | Pending Stage 3 ACK                                         |
+| rpce #247   | `evt-s2-20260820-repopromptce-247-a` then `evt-s2-20260820-repopromptce-247-h`   | ACK 1→1; HANDOFF 1→2          | `stage3`   | HOLD_PLATFORM until macOS `make guardrails`     | Do not push un-preflighted Swift; do not `--no-verify` | `2026-08-27T17:00:00Z`     | Pending Stage 3 ACK                                         |
+| Seatek #705 | `evt-s2-20260820b-seatekanalys-705-a` then `evt-s2-20260820b-seatekanalys-705-h` | ACK 1→1; HANDOFF 1→2          | `stage3`   | Complete draft #708; do not merge original #705 | Do not squash original while `.jules/bolt.md` remains  | `2026-08-27T17:00:00Z`     | Pending Stage 3 ACK                                         |
+| rpce #271   | `evt-s2-20260820b-repopromptce-271-a` then `evt-s2-20260820b-repopromptce-271-h` | ACK 1→1; HANDOFF 1→2          | `stage3`   | HOLD_PLATFORM; distinct from #247; no branch    | Do not start salvage until Swift toolchain exists      | `2026-08-27T17:00:00Z`     | Pending Stage 3 ACK                                         |
+| ctrld #1161 | none this run                                                                    | remains 1                     | `stage2`   | Next Stage 2 run consumes remaining work item   | Do not squash DIRTY; do not expand allowed_paths       | work-item expiry unchanged | Not handed off                                              |
+
+## Continuity
+
+- Successful pattern reused: Lesson **0fy** (CI pin `requirements-ci.txt` with
+  poetry); Lesson **0y** / journal append-only (did not carry `.jules/bolt.md`
+  from #705); cap-5 with remainder left queued; Contents API CAS with blob SHA
+  precondition.
+- Failed approach not to repeat: salvage that splits `# nolint next` /
+  `set(...)` (#673); pushing rpce Swift without `make guardrails`; treating
+  GitHub MCP `draft: true` as proof the PR is draft (0gd); reconstructing work
+  from memory (0fw).
+- New lesson candidate and the future rule it changes: **0gd** — re-read `draft`
+  after create; convert ready salvage PRs back to draft before handoff.
+- Configuration or policy gap: CodeScene MCP `serverStatus=error` this run;
+  Sonatype-mcp pin lookup required authentication; Linux Stage 2 runner cannot
+  execute rpce `make guardrails`. Cursor Dashboard still lists extra MCPs that
+  Stage 2 must not use.
+- Historical-import sources or fingerprints processed: **none** (Stage 3 owns
+  import).
+
+## Metrics
+
+- Inventory / recovery / reconciliation count: 6 considered / 5 processed / 5
+  handed to Stage 3
+- Merged: **0**
+- Closed: **0**
+- Drafts created: **2** product recoveries (hydro #543, Seatek #708), both
+  converted to `draft=true` after a ready landing; plus this docs PR
+- Decision packets created: **0**
+- Analysis errors: **0**
+- State-changing actions, including failed attempts and retries: 2 salvage
+  branches pushed; 2 ready→draft conversions; 1 local rpce mutation restored; 1
+  Contents API CAS (no retry); 0 review-requests; 0 merges; 0 closes
+- `request_reviewers`: skipped (Stage 2 must not request review)
+- Autonomous merges: **0** (S1)
+
+### Handoff (Stage 3)
+
+1. Complete hydro draft
+   [#543](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/543);
+   do not squash original
+   [#535](https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/535).
+2. Complete Seatek draft
+   [#708](https://github.com/abhimehro/Seatek_Analysis/pull/708); do not squash
+   original [#705](https://github.com/abhimehro/Seatek_Analysis/pull/705).
+3. Close-candidate Seatek
+   [#673](https://github.com/abhimehro/Seatek_Analysis/pull/673) vs merged
+   [#701](https://github.com/abhimehro/Seatek_Analysis/pull/701) after cooldown.
+4. HOLD_PLATFORM rpce
+   [#247](https://github.com/abhimehro/repoprompt-ce/pull/247) and
+   [#271](https://github.com/abhimehro/repoprompt-ce/pull/271) until a macOS
+   runner can run `make guardrails`.
+5. Leave ctrld [#1161](https://github.com/abhimehro/ctrld-sync/pull/1161) with
+   Stage 2 (`s2-20260820-ctrld-1161-bolt-summary`).
+6. Docs 0fk: squash **one** of this run-record PR vs open
+   [#2016](https://github.com/abhimehro/personal-config/pull/2016) /
+   [#2044](https://github.com/abhimehro/personal-config/pull/2044). Do not fight
+   the journal. Do not CAS-write the runtime ledger from a docs-only PR.
+
+- Cross-links: [Lifecycle contract](docs/automated-pr-lifecycle.md),
+  [Runtime ledger](docs/pr-lifecycle-runtime-ledger.md),
+  [Salvage spec](docs/automated-pr-salvage-agent.md),
+  [Lessons](tasks/lessons.md) (0gd, 0ga, 0fw, 0fy)
