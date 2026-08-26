@@ -2622,3 +2622,23 @@ unresolved GHAS or Bandit.
 **Rule:** Contents GET for a non-default ref must use `?ref=`. Never `-f ref=` on GET. PUT CAS with `sha` + `branch` via `--input` JSON. Do not use `gh pr view --json statusCheckRollup`. Paginate GraphQL `contexts`. Treat a Contents 404 that used the form-field `ref` as an API-shape bug, not a missing ledger.
 
 **Detection cost:** Low — GET with `-f ref=` → HTTP 404; GET with `?ref=` returns the blob. GraphQL without `first`/`last` on `contexts` → schema error; with `last: 20` succeeds.
+
+## Lesson 0gt: Slim identity under-counts until body/comment/email enrich (2026-08-24)
+
+**Pattern:** Token-login PRs can look HUMAN on the slim `gh pr list` pass and
+become BOT only after REST body, timeline commenter, and commit-email enrich.
+Two traps: (1) title `chore: automated QA review` does **not** match the
+versioned keyword `automation` (substring is `automated`, not `automation`);
+(2) branch prefixes are exact `startswith` of `jules/` and `jules-` only —
+`fix/jules-*` is not a prefix hit. Examples: repoprompt-ce #288 slim HUMAN
+(branch `jules-` only) → BOT after body + commit email + allowlisted
+commenter (zero-diff close candidate); Seatek_Analysis #717 slim HUMAN
+(title only) → BOT after title + timeline_comment + commit_email, then
+`CLOSED_SUPERSEDED` vs #729.
+
+**Rule:** Never close or merge a maintainer-login PR from slim identity
+alone. Enrich body/commenter/email first. `automated` ≠ `automation`.
+`fix/jules-*` is not `jules-`. Ambiguous identity stays HUMAN.
+
+**Detection cost:** Low — `scripts/pr_identity.py` after enrich shows
+`independent_signal_count` and `author_type`.
