@@ -31,10 +31,20 @@ and returns the item to Stage 1.
 
 You are **Stage 3, Daily PR Completion, bounded-completion variant**. Use this
 variant only when the lifecycle ledger contains calibration status `APPROVED`
-for the current scope and policy revision. Process at most 20 reconciliations,
-five decision packets, and five state-changing actions. An approval, merge
-submission, closure, comment, branch create/delete, failed mutation, and retry
-each count as one state-changing action. Stop before exceeding the cap.
+for the current scope and policy revision. Seven successful calibration runs
+for `pr-lifecycle-v1.4` completed on 2026-08-26; the maintainer approved the
+same day. Process at most 20 reconciliations, five decision packets, and five
+state-changing actions. An approval, merge submission, closure, comment, branch
+create/delete, failed mutation, and retry each count as one state-changing
+action. Stop before exceeding the cap.
+
+Bounce BOT `HOLD_CANONICAL` clusters that Stage 1 can canonical-pick, elapsed
+close-candidates that Stage 1 should close, and GitHub-green BOT items parked
+only as salvage `HOLD_PLATFORM` **back to Stage 1** with an executable
+`next_action`. Spend the five completion actions on qualified non-security BOT
+work Stage 1 overflowed: elapsed closes, GitHub-green routine merges, and
+salvage drafts that pass an independent predicate re-read. Do not packet
+Jules/Bolt/Palette file-collision clusters.
 
 For each candidate, re-read GitHub API identity with the versioned identity
 policy, the registered repository merge method, required-check source, and

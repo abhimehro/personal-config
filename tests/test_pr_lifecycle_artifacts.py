@@ -293,5 +293,66 @@ class TestPrLifecycleArtifacts(unittest.TestCase):
         self.assertTrue(verified[6]["required_checks"])
 
 
+class TestStage1ThroughputGate(unittest.TestCase):
+    def _prompt(self, name: str) -> str:
+        return (ROOT / "docs/cursor-automations/prompts" / name).read_text(
+            encoding="utf-8"
+        )
+
+    def test_review_prompt_sha_match_reselect(self):
+        review = self._prompt("daily-pr-review.md")
+        self.assertIn("SHA_MATCH skip only", review)
+        self.assertIn("Stage-1-executable", review)
+        self.assertIn("canonical-pick", review)
+
+    def test_review_prompt_hold_platform_is_salvage_only(self):
+        review = self._prompt("daily-pr-review.md")
+        self.assertIn("HOLD_PLATFORM is salvage-only", review)
+        self.assertIn("generated_output", review)
+
+    def test_review_prompt_throughput_fail_when_unused_slots(self):
+        review = self._prompt("daily-pr-review.md")
+        self.assertIn("FAIL", review)
+        self.assertIn("product mutations", review)
+        self.assertIn("bookkeeping", review)
+
+    def test_salvage_prompt_empty_intake_stop(self):
+        salvage = self._prompt("daily-pr-salvage.md")
+        self.assertIn("empty intake", salvage)
+        self.assertIn("Do not invent recoveries", salvage)
+
+    def test_completion_calibration_bounce_back(self):
+        calibration = self._prompt("daily-pr-completion.calibration.md")
+        self.assertIn("router", calibration)
+        self.assertIn("back to Stage 1", calibration)
+        self.assertIn("file-collision", calibration)
+
+    def test_completion_prompt_bounce_back(self):
+        completion = self._prompt("daily-pr-completion.md")
+        self.assertIn("back to Stage 1", completion)
+        self.assertIn("canonical-pick", completion)
+
+    def test_lifecycle_contract_sha_match_exception(self):
+        contract = (ROOT / "docs/automated-pr-lifecycle.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("SHA_MATCH skip applies only", contract)
+        self.assertIn("canonical-pick", contract)
+        self.assertIn("product-mutation", contract)
+        self.assertIn("salvage only", contract)
+
+    def test_policy_revision_stays_v14(self):
+        config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
+        self.assertEqual(config["lifecycle"]["policy_revision"], "pr-lifecycle-v1.4")
+        self.assertEqual(
+            config["lifecycle"]["policy_inputs"]["prompt_revision"],
+            "pr-lifecycle-v1.4",
+        )
+        self.assertEqual(
+            config["lifecycle"]["policy_inputs"]["sensitive_path_taxonomy_revision"],
+            "2026-08-19",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
