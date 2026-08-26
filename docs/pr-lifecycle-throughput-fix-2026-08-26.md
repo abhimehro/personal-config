@@ -41,19 +41,21 @@ actions on 2026-08-26 and marked throughput **PASS**.
 7. **Success metric is wrong.** PASS at 1 docs Trunk merge while open PRs grew
    13. Bookkeeping (CAS + docs PR) was counted toward the 20-action cap.
 
-Live ledger (rev 22, 2026-08-26 evening): 241 items; **0** Stage 2 work items;
+Live ledger after approval (rev 23): 241 items; **0** Stage 2 work items;
 nonterminal mass is Stage 3 `REVIEW_SECURITY` (58), `HOLD_CANONICAL` (36),
-`HOLD_CONTRACT` (34), plus WAITING_HUMAN. That is parking, not drain.
+`HOLD_CONTRACT` (34), plus WAITING_HUMAN. That is parking, not drain. Canonical-pick
+and SHA_MATCH reselect are what move the MERGEABLE BOT subset.
 
 ## Stage 3 calibration — approved
 
 | Check | Result |
 | ----- | ------ |
-| Successful `CALIBRATION` events | 7 (`evt-s3-20260820-calibration` … `evt-s3-20260826-calibration`) |
+| Successful `CALIBRATION` events | 7 (`evt-s3-20260820-calibration` … `evt-s3-20260826-calibration`); each `successful: true`, `ACKNOWLEDGED` |
 | `successful_run_count` | 7 of 7 |
 | `policy_revision` | `pr-lifecycle-v1.4` |
 | Prior status | `REPORT_ONLY`, `approved_by: null` |
 | Human approval | Maintainer Abhi Mehrotra (`abhimehro`), 2026-08-26, this session |
+| Live Dashboard | Calibration automation `d9d2c058-9c42-11f1-ba66-0e7d0216e441` is still **enabled**; cron will keep report-only until that is disabled and the completion prompt is pasted |
 
 Approving calibration **without** the Stage 1 drain still cannot clear
 `HOLD_CANONICAL` / sticky / HUMAN items (Stage 3 must not auto-act on those).
@@ -69,9 +71,11 @@ canonical-pick and SHA_MATCH reselect are what drain the MERGEABLE BOT backlog.
 - Throughput FAIL if net open BOT PRs grew and unused product slots remained.
 - Stage 2 empty intake: short record and stop.
 - Stage 3 bounces executable clusters to Stage 1; packets stay irreducible.
-- Runtime ledger `calibration.status` → `APPROVED` (Contents API CAS, not this
-  git PR). Dashboard: disable calibration automation, enable completion,
-  **paste** the updated prompts or cron keeps the old behavior.
+- Runtime ledger `calibration.status` → `APPROVED` via Contents API CAS
+  (`automation/pr-lifecycle-ledger` commit
+  `2f024d1f659fa8d8cd5b8bf76d40d90da3505b23`, ledger rev 23). Dashboard: disable
+  calibration automation, enable completion, **paste** the updated prompts or
+  cron keeps the old behavior.
 
 ## What this does not do
 

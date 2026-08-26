@@ -10,11 +10,12 @@ Stage 2 still never merges.
 - [x] Stage 2: empty-intake stop
 - [x] Stage 3: bounce executable clusters to Stage 1; packets only for
       irreducible sticky/HUMAN/real platform
-- [ ] Human APPROVE Stage 3 (7/7 successful CALIBRATION events; user 2026-08-26)
-      in runtime ledger via Contents API CAS; Dashboard: disable calibration,
-      enable completion, paste prompts
+- [x] Human APPROVE Stage 3 (7/7 successful CALIBRATION events; user 2026-08-26)
+      in runtime ledger via Contents API CAS (rev 22→23, commit
+      `2f024d1f659fa8d8cd5b8bf76d40d90da3505b23`); Dashboard: disable
+      calibration, enable completion, paste prompts
 - [x] Tests + `sync_cursor_export_prompts.py --write/--check`
-- [ ] Commit, push, open PR (not Trunk-merged unless asked)
+- [x] Commit, push, open PR (not Trunk-merged unless asked)
 
 # Phase 1 PR Review — 2026-08-17
 
