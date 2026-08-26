@@ -1,9 +1,9 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 21
+ledger_revision: 22
 calibration:
   status: REPORT_ONLY
-  successful_run_count: 6
+  successful_run_count: 7
   required_successful_runs: 7
   scope: configured-repo-set
   policy_revision: pr-lifecycle-v1.4
@@ -9732,24 +9732,25 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
+  lifecycle_state: WAITING_HUMAN
   terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  current_owner: human
+  next_owner: human
   safe_default: Do not squash-merge workflow dependency PRs.
-  next_action: 'Stage 3: workflow Action bump. Do not merge. Expires 2026-09-01T15:20:00Z'
+  next_action: 'Human: review workflow twin of #1526. Do not squash-merge workflow deps. Expires 2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/email-security-pipeline/pull/1525
   changed_paths:
   - .github/workflows/agentics-maintenance.yml
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260825-emailsecuri-1525-h
-  revision: 1
-  updated_at_utc: '2026-08-25T15:20:00Z'
+  - evt-s3-20260826-emailsecuri-1525-h
+  revision: 2
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/email-security-pipeline#1524@fda9c13c7cf9de9e5bddd6387aacba7632b26e45
   repository: abhimehro/email-security-pipeline
   pr: 1524
@@ -9975,24 +9976,26 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
+  lifecycle_state: WAITING_HUMAN
   terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  current_owner: human
+  next_owner: human
   safe_default: Do not squash-merge Sentinel clusters without human review.
-  next_action: 'Stage 3: human-review Sentinel cluster vs #738. Do not squash. Expires 2026-09-01T15:20:00Z'
+  next_action: 'Human: review Sentinel twin of #738. Do not squash overlapping security patches. Expires
+    2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/734
   changed_paths:
   - code_health_scanner.py
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260825-seatekanalys-734-h
-  revision: 1
-  updated_at_utc: '2026-08-25T15:20:00Z'
+  - evt-s3-20260826-seatekanalys-734-h
+  revision: 2
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#564@985483bc3d4811730195ccb892a816a952d54628
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 564
@@ -10139,25 +10142,26 @@ items:
   - generated_output
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
+  lifecycle_state: WAITING_HUMAN
   terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  current_owner: human
+  next_owner: human
   safe_default: Do not squash-merge Sentinel path-traversal claims without human review.
-  next_action: 'Stage 3: human-review Sentinel cluster vs #561. Do not squash. Expires 2026-09-01T15:20:00Z'
+  next_action: 'Human: review Sentinel twin of #561. Do not squash. Expires 2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/560
   changed_paths:
   - .jules/sentinel.md
   - validate_data.py
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260825-hydrographve-560-h
-  revision: 1
-  updated_at_utc: '2026-08-25T15:20:00Z'
+  - evt-s3-20260826-hydrographve-560-h
+  revision: 2
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/series_correction_project_updated#411@fd8682e6f98155ac11664dd44a7f452079fd9045
   repository: abhimehro/series_correction_project_updated
   pr: 411
@@ -10427,19 +10431,20 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: 'Do not squash-merge Bolt tolist() twins while #549/#553/#562/#564 remain open.'
-  next_action: 'Stage 3: HOLD_CANONICAL vs open #549/#553/#562/#564/#569. Do not merge. Expires 2026-09-02T15:20:00Z'
+  next_action: 'Stage 3: HOLD_CANONICAL Bolt validator.py twin vs open #549/#553/#562/#564/#569. Do not
+    squash. Close-candidate cooldown not elapsed. Expires 2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/570
   changed_paths:
   - src/hydrograph_seatek_analysis/data/validator.py
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-hydrographve-570-h
   revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#569@ca741391afa6249ca529c1a5a8ecde135460e932
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 569
@@ -10466,19 +10471,20 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not squash-merge Bolt list-conversion twins while earlier validator PRs remain open.
-  next_action: 'Stage 3: HOLD_CANONICAL vs open #549/#553/#562/#564/#570. Do not merge. Expires 2026-09-02T15:20:00Z'
+  next_action: 'Stage 3: HOLD_CANONICAL Bolt twin of #570 vs open cluster. Do not squash. Close-candidate
+    cooldown not elapsed. Expires 2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/569
   changed_paths:
   - src/hydrograph_seatek_analysis/data/validator.py
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-hydrographve-569-h
   revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#568@631fb22c061f7429f7f6a48a9a5b6802d6b62569
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 568
@@ -10502,26 +10508,26 @@ items:
   - generated_output
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
+  lifecycle_state: WAITING_HUMAN
   terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  current_owner: human
+  next_owner: human
   safe_default: Do not squash-merge Sentinel path-traversal patches without human review.
-  next_action: 'Stage 3: REVIEW_SECURITY Sentinel CLI output path. Sticky file_read_write_boundaries.
-    Expires 2026-09-02T15:20:00Z'
+  next_action: 'Human: review Sentinel validate_data.py. Do not squash. Expires 2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/568
   changed_paths:
   - .jules/sentinel.md
   - validate_data.py
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-hydrographve-568-h
-  revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  - evt-s3-20260826-hydrographve-568-h
+  revision: 2
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#566@e40fd4097d25c113f301a7376535860924192560
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 566
@@ -10543,24 +10549,25 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
+  lifecycle_state: WAITING_HUMAN
   terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  current_owner: human
+  next_owner: human
   safe_default: Do not squash-merge Sentinel path-traversal patches without human review.
-  next_action: 'Stage 3: REVIEW_SECURITY Sentinel HIGH path-traversal in validate_data.py. Expires 2026-09-02T15:20:00Z'
+  next_action: 'Human: review Sentinel validate_data.py. Do not squash. Expires 2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/566
   changed_paths:
   - validate_data.py
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-hydrographve-566-h
-  revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  - evt-s3-20260826-hydrographve-566-h
+  revision: 2
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#565@69e6dd5d24d266d68bf88b53876c0c62d2139ebb
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 565
@@ -10586,21 +10593,21 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not squash-merge lockfile or major-dependency bumps without review.
-  next_action: 'Stage 3: sticky lockfile/major-deps scipy 1.18.0→1.18.1 plus poetry.lock. Do not merge.
-    Expires 2026-09-02T15:20:00Z'
+  next_action: 'Stage 3: HOLD_CONTRACT scipy lockfile. Do not squash-merge lockfiles_and_major_dependencies.
+    Expires 2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/565
   changed_paths:
   - poetry.lock
   - pyproject.toml
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-hydrographve-565-h
   revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/Seatek_Analysis#747@53b0a61a98e6bf74cf6647a2cfe150afe6f49d32
   repository: abhimehro/Seatek_Analysis
   pr: 747
@@ -10628,21 +10635,21 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not squash-merge Bolt journal twins; keep a single canonical candidate.
-  next_action: 'Stage 3: HOLD_CANONICAL Bolt+`.jules/bolt.md` vs open #741/#739. Do not merge. Expires
-    2026-09-02T15:20:00Z'
+  next_action: 'Stage 3: HOLD_CANONICAL Bolt journal vs open #741/#739. Do not merge cluster. Expires
+    2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/747
   changed_paths:
   - .jules/bolt.md
   - Updated_Seatek_Analysis.R
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-seatekanalys-747-h
   revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/Seatek_Analysis#746@048a57a8b72f0280fba3b2a6413c6b7b0654f5a0
   repository: abhimehro/Seatek_Analysis
   pr: 746
@@ -10666,25 +10673,27 @@ items:
   - generated_output
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
+  lifecycle_state: WAITING_HUMAN
   terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  current_owner: human
+  next_owner: human
   safe_default: Do not squash-merge Sentinel path-validation patches without human review.
-  next_action: 'Stage 3: REVIEW_SECURITY Sentinel null-byte path vs #742/#734. Expires 2026-09-02T15:20:00Z'
+  next_action: 'Human: review Sentinel vs #742/#734. Do not squash overlapping security patches. Expires
+    2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/746
   changed_paths:
   - .jules/sentinel.md
   - code_health_scanner.py
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-seatekanalys-746-h
-  revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  - evt-s3-20260826-seatekanalys-746-h
+  revision: 2
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/Seatek_Analysis#744@ed3f42422472401571fd782f20348f4f08be6b02
   repository: abhimehro/Seatek_Analysis
   pr: 744
@@ -10706,13 +10715,12 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
+  lifecycle_state: WAITING_HUMAN
   terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  current_owner: human
+  next_owner: human
   safe_default: Do not squash-merge workflow-touching QA PRs without human review.
-  next_action: 'Stage 3: REVIEW_SECURITY greetings.yml plus lintr/test edits. Sticky workflows. Expires
-    2026-09-02T15:20:00Z'
+  next_action: 'Human: review greetings.yml workflow change. Do not squash. Expires 2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/744
   changed_paths:
@@ -10724,13 +10732,14 @@ items:
   - tests/testthat/test-write_summary_sheets.R
   - tests/testthat/test-write_year_sheet.R
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-seatekanalys-744-h
-  revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  - evt-s3-20260826-seatekanalys-744-h
+  revision: 2
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/Seatek_Analysis#743@5dcc49d8fee3035213a6291bc11ef1586eaf1fa2
   repository: abhimehro/Seatek_Analysis
   pr: 743
@@ -10757,19 +10766,19 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not squash-merge Palette CLI UX twins; keep a single canonical candidate.
-  next_action: 'Stage 3: HOLD_CANONICAL Palette repository_automation.py vs open #737/#726. Expires 2026-09-02T15:20:00Z'
+  next_action: 'Stage 3: HOLD_CANONICAL Palette vs open #737/#726. Do not merge cluster. Expires 2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/743
   changed_paths:
   - .github/scripts/repository_automation.py
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-seatekanalys-743-h
   revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/Seatek_Analysis#742@b6a6a12af7fd8357be7ce83b38f43d16bec6049b
   repository: abhimehro/Seatek_Analysis
   pr: 742
@@ -10793,12 +10802,13 @@ items:
   - generated_output
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
+  lifecycle_state: WAITING_HUMAN
   terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  current_owner: human
+  next_owner: human
   safe_default: Do not squash-merge Sentinel exception-handling patches without human review.
-  next_action: 'Stage 3: REVIEW_SECURITY Sentinel DoS in read_file_safe vs #746/#734. Expires 2026-09-02T15:20:00Z'
+  next_action: 'Human: review Sentinel vs #746/#734. Do not squash overlapping security patches. Expires
+    2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/742
   changed_paths:
@@ -10806,13 +10816,14 @@ items:
   - code_health_scanner.py
   - tests/test_code_health_scanner.py
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-seatekanalys-742-h
-  revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  - evt-s3-20260826-seatekanalys-742-h
+  revision: 2
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/Seatek_Analysis#741@b319aaaba97128f2425b712addcdd87d415bdf6d
   repository: abhimehro/Seatek_Analysis
   pr: 741
@@ -10840,21 +10851,21 @@ items:
   current_owner: stage3
   next_owner: stage3
   safe_default: Do not squash-merge Bolt journal twins; keep a single canonical candidate.
-  next_action: 'Stage 3: HOLD_CANONICAL Bolt+`.jules/bolt.md` vs open #747/#739. Do not merge. Expires
-    2026-09-02T15:20:00Z'
+  next_action: 'Stage 3: HOLD_CANONICAL Bolt journal vs open #747/#739. Do not merge cluster. Expires
+    2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/741
   changed_paths:
   - .jules/bolt.md
   - Updated_Seatek_Analysis.R
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-seatekanalys-741-h
   revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/personal-config#2094@72f918727420222902643897bf773bcd396dd72f
   repository: abhimehro/personal-config
   pr: 2094
@@ -10876,26 +10887,27 @@ items:
   sensitive_paths:
   - workflows_and_permissions
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
+  lifecycle_state: WAITING_HUMAN
   terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
+  current_owner: human
+  next_owner: human
   safe_default: Do not Trunk-queue or squash-merge workflow consolidation without human review.
-  next_action: 'Stage 3: REVIEW_SECURITY refactoring-agent.yml and security-scan.yml. Sticky workflows.
-    Expires 2026-09-02T15:20:00Z'
+  next_action: 'Human: review refactoring-agent.yml and security-scan.yml consolidation. Do not Trunk-queue.
+    Expires 2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2094
   changed_paths:
   - .github/workflows/refactoring-agent.yml
   - .github/workflows/security-scan.yml
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-personalconf-2094-h
-  revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  - evt-s3-20260826-personalconf-2094-h
+  revision: 2
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/personal-config#2093@dfd3d27f7726a658c2646030b031920ad73d6873
   repository: abhimehro/personal-config
   pr: 2093
@@ -10916,15 +10928,15 @@ items:
   sensitive_paths:
   - generated_output
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Never merge drafts (0gd). Do not Trunk-queue wrap-source PRs.
-  next_action: 'Stage 3: HOLD_CONTRACT isDraft true (0gd). Prompt/export wrap. Never merge drafts. Expires
-    2026-09-02T15:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: Do not squash-merge personal-config; Trunk queue only. Do not reopen merged wraps.
+  next_action: No further action; merged at 4cc762a654f98b8d51ab8db444979e6e3f865a79 (2026-08-26T16:20:15Z).
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2093
+  - https://github.com/abhimehro/personal-config/commit/4cc762a654f98b8d51ab8db444979e6e3f865a79
   changed_paths:
   - docs/cursor-automations/exports/daily-pr-completion.calibration.json
   - docs/cursor-automations/exports/daily-pr-completion.json
@@ -10935,13 +10947,14 @@ items:
   - docs/cursor-automations/prompts/daily-pr-review.md
   - docs/cursor-automations/prompts/daily-pr-salvage.md
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-personalconf-2093-h
-  revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  - evt-s3-20260826-personalconf-2093-t
+  revision: 2
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/personal-config#2092@d647ac87e8976781265516a039877857243d8170
   repository: abhimehro/personal-config
   pr: 2092
@@ -10971,7 +10984,7 @@ items:
   next_owner: stage3
   safe_default: Do not Trunk-queue Palette wrap-source or shell-execution PRs.
   next_action: 'Stage 3: HOLD_CONTRACT Palette plus wrap exports, analytics_dashboard.sh, pr_lifecycle_config.py.
-    Expires 2026-09-02T15:20:00Z'
+    SBOM FAILURE and CONFLICTING; not a unique mechanical repair. Expires 2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2092
   changed_paths:
@@ -10983,13 +10996,13 @@ items:
   - maintenance/bin/analytics_dashboard.sh
   - scripts/pr_lifecycle_config.py
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-personalconf-2092-h
   revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/personal-config#2091@26a3b301885a7dd19c9b150e2a4c31c219f0bf4e
   repository: abhimehro/personal-config
   pr: 2091
@@ -11060,8 +11073,8 @@ items:
   next_owner: stage3
   safe_default: Do not squash-merge rpce Bolt/Swift while required CodeQL is unsatisfied. Linux cannot
     salvage Swift (0gi).
-  next_action: 'Stage 3: HOLD_PLATFORM Swift (0gi) and HOLD_CANONICAL vs #295/#291. Do not salvage on
-    Linux. Expires 2026-09-02T15:20:00Z'
+  next_action: 'Stage 3: HOLD_PLATFORM Swift (0gi) and HOLD_CANONICAL vs #295/#291. Build/Test shards
+    failed; Linux cannot salvage Swift. Expires 2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/298
   changed_paths:
@@ -11070,13 +11083,13 @@ items:
   - Sources/RepoPromptMCP/DirectHeadlessDomainContext.swift
   - Sources/RepoPromptMCP/DirectHeadlessWorkspaceBackends.swift
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-repopromptce-298-h
   revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/repoprompt-ce#297@23d06aebe503d16da35532b325ef1e49dbcf78c5
   repository: abhimehro/repoprompt-ce
   pr: 297
@@ -11104,20 +11117,20 @@ items:
   next_owner: stage3
   safe_default: Do not squash-merge rpce Palette/Swift while required CodeQL is unsatisfied.
   next_action: 'Stage 3: HOLD_PLATFORM Swift (0gi) and HOLD_CANONICAL vs #284/#290/#294. Do not salvage
-    on Linux. Expires 2026-09-02T15:20:00Z'
+    on Linux. Expires 2026-09-02T19:20:00Z'
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/297
   changed_paths:
   - Sources/RepoPrompt/Infrastructure/UI/Components/NotificationsButtonView.swift
   - Sources/RepoPrompt/Infrastructure/UI/Components/SettingsButton.swift
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
     mutations: 0
   handoffs:
   - evt-s1-20260826-repopromptce-297-h
   revision: 1
-  updated_at_utc: '2026-08-26T15:20:00Z'
+  updated_at_utc: '2026-08-26T19:20:00Z'
 - key: abhimehro/series_correction_project_updated#412@5b78f9e0c0960b895f982f19149029fef790f5eb
   repository: abhimehro/series_correction_project_updated
   pr: 412
@@ -19104,6 +19117,537 @@ events:
   acknowledged_at_utc: null
   reason: Closed CLOSED_NOOP. Zero-diff (0 files) at head 3ef4c8ce76599ae5e029e42699152c4e6ed528e0. Cooldown
     after 2026-08-25T20:54:20Z elapsed. Closed 2026-08-26T15:22:32Z.
+- event_id: evt-s3-20260826-personalconf-2094-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#2094@72f918727420222902643897bf773bcd396dd72f
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-personalconf-2094-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2094@72f918727420222902643897bf773bcd396dd72f:evt-s3-20260826-personalconf-2094-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: ACK Stage 1 handoff. REVIEW_SECURITY refactoring-agent.yml plus security-scan.yml. SUCCESS CLEAN.
+    Do not Trunk-queue workflow/permissions.
+- event_id: evt-s3-20260826-personalconf-2094-h
+  kind: HANDOFF
+  item_key: abhimehro/personal-config#2094@72f918727420222902643897bf773bcd396dd72f
+  from_owner: stage3
+  to_owner: human
+  from_state: STAGE3_RECONCILIATION
+  to_state: WAITING_HUMAN
+  next_owner: human
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2094@72f918727420222902643897bf773bcd396dd72f:evt-s3-20260826-personalconf-2094-h
+  status: PROJECTED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 3 live reconcile: irreducible workflow/permissions security. REPORT_ONLY; no GitHub mutation.'
+- event_id: evt-s3-20260826-personalconf-2093-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#2093@dfd3d27f7726a658c2646030b031920ad73d6873
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-personalconf-2093-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2093@dfd3d27f7726a658c2646030b031920ad73d6873:evt-s3-20260826-personalconf-2093-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: ACK Stage 1 handoff. HOLD_CONTRACT wrap was isDraft; live is MERGED. Record verified terminal.
+    Do not reopen.
+- event_id: evt-s3-20260826-personalconf-2093-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2093@dfd3d27f7726a658c2646030b031920ad73d6873
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/personal-config#2093@dfd3d27f7726a658c2646030b031920ad73d6873:evt-s3-20260826-personalconf-2093-t
+  status: PROJECTED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: null
+  reason: Live MERGED_ROUTINE after SHA drift. Merge commit 4cc762a654f98b8d51ab8db444979e6e3f865a79 at
+    2026-08-26T16:20:15Z. REPORT_ONLY recorded outcome; Stage 3 did not merge.
+- event_id: evt-s3-20260826-personalconf-2092-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/personal-config#2092@d647ac87e8976781265516a039877857243d8170
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-personalconf-2092-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2092@d647ac87e8976781265516a039877857243d8170:evt-s3-20260826-personalconf-2092-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: ACK Stage 1 handoff. HOLD_CONTRACT Palette wrap plus shell. SUCCESS anchors; rollup FAILURE
+    (SBOM) DIRTY. Stay Stage 3. Do not Trunk-queue.
+- event_id: evt-s3-20260826-seatekanalys-747-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Seatek_Analysis#747@53b0a61a98e6bf74cf6647a2cfe150afe6f49d32
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-seatekanalys-747-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#747@53b0a61a98e6bf74cf6647a2cfe150afe6f49d32:evt-s3-20260826-seatekanalys-747-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: 'ACK Stage 1 handoff. HOLD_CANONICAL Bolt vs #741/#739. SUCCESS MERGEABLE. Stay Stage 3. Do
+    not squash.'
+- event_id: evt-s3-20260826-seatekanalys-746-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Seatek_Analysis#746@048a57a8b72f0280fba3b2a6413c6b7b0654f5a0
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-seatekanalys-746-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#746@048a57a8b72f0280fba3b2a6413c6b7b0654f5a0:evt-s3-20260826-seatekanalys-746-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: 'ACK Stage 1 handoff. REVIEW_SECURITY Sentinel vs #742/#734. SUCCESS MERGEABLE. Do not squash
+    overlapping security patches.'
+- event_id: evt-s3-20260826-seatekanalys-746-h
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#746@048a57a8b72f0280fba3b2a6413c6b7b0654f5a0
+  from_owner: stage3
+  to_owner: human
+  from_state: STAGE3_RECONCILIATION
+  to_state: WAITING_HUMAN
+  next_owner: human
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#746@048a57a8b72f0280fba3b2a6413c6b7b0654f5a0:evt-s3-20260826-seatekanalys-746-h
+  status: PROJECTED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 3 live reconcile: irreducible Sentinel security overlap. REPORT_ONLY; no GitHub mutation.'
+- event_id: evt-s3-20260826-seatekanalys-744-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Seatek_Analysis#744@ed3f42422472401571fd782f20348f4f08be6b02
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-seatekanalys-744-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#744@ed3f42422472401571fd782f20348f4f08be6b02:evt-s3-20260826-seatekanalys-744-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: ACK Stage 1 handoff. REVIEW_SECURITY greetings.yml. SUCCESS MERGEABLE. Do not squash-merge workflow/permissions.
+- event_id: evt-s3-20260826-seatekanalys-744-h
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#744@ed3f42422472401571fd782f20348f4f08be6b02
+  from_owner: stage3
+  to_owner: human
+  from_state: STAGE3_RECONCILIATION
+  to_state: WAITING_HUMAN
+  next_owner: human
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#744@ed3f42422472401571fd782f20348f4f08be6b02:evt-s3-20260826-seatekanalys-744-h
+  status: PROJECTED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 3 live reconcile: irreducible workflow/permissions security. REPORT_ONLY; no GitHub mutation.'
+- event_id: evt-s3-20260826-seatekanalys-743-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Seatek_Analysis#743@5dcc49d8fee3035213a6291bc11ef1586eaf1fa2
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-seatekanalys-743-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#743@5dcc49d8fee3035213a6291bc11ef1586eaf1fa2:evt-s3-20260826-seatekanalys-743-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: 'ACK Stage 1 handoff. HOLD_CANONICAL Palette vs #737/#726. SUCCESS MERGEABLE. Stay Stage 3.
+    Do not squash.'
+- event_id: evt-s3-20260826-seatekanalys-742-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Seatek_Analysis#742@b6a6a12af7fd8357be7ce83b38f43d16bec6049b
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-seatekanalys-742-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#742@b6a6a12af7fd8357be7ce83b38f43d16bec6049b:evt-s3-20260826-seatekanalys-742-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: 'ACK Stage 1 handoff. REVIEW_SECURITY Sentinel vs #746/#734. SUCCESS MERGEABLE. Do not squash
+    overlapping security patches.'
+- event_id: evt-s3-20260826-seatekanalys-742-h
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#742@b6a6a12af7fd8357be7ce83b38f43d16bec6049b
+  from_owner: stage3
+  to_owner: human
+  from_state: STAGE3_RECONCILIATION
+  to_state: WAITING_HUMAN
+  next_owner: human
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#742@b6a6a12af7fd8357be7ce83b38f43d16bec6049b:evt-s3-20260826-seatekanalys-742-h
+  status: PROJECTED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 3 live reconcile: irreducible Sentinel security overlap. REPORT_ONLY; no GitHub mutation.'
+- event_id: evt-s3-20260826-seatekanalys-741-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Seatek_Analysis#741@b319aaaba97128f2425b712addcdd87d415bdf6d
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-seatekanalys-741-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#741@b319aaaba97128f2425b712addcdd87d415bdf6d:evt-s3-20260826-seatekanalys-741-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: 'ACK Stage 1 handoff. HOLD_CANONICAL Bolt vs #747/#739. SUCCESS MERGEABLE. Stay Stage 3. Do
+    not squash.'
+- event_id: evt-s3-20260826-hydrographve-570-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#570@9a296ecb32c5b162edf37f8d766d0b84b1184920
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-hydrographve-570-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#570@9a296ecb32c5b162edf37f8d766d0b84b1184920:evt-s3-20260826-hydrographve-570-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: 'ACK Stage 1 handoff. HOLD_CANONICAL Bolt vs #549/#553/#562/#564/#569. SUCCESS MERGEABLE. Stay
+    Stage 3. 24h close cooldown not elapsed.'
+- event_id: evt-s3-20260826-hydrographve-569-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#569@ca741391afa6249ca529c1a5a8ecde135460e932
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-hydrographve-569-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#569@ca741391afa6249ca529c1a5a8ecde135460e932:evt-s3-20260826-hydrographve-569-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: 'ACK Stage 1 handoff. HOLD_CANONICAL Bolt twin of #570. SUCCESS MERGEABLE. Stay Stage 3. 24h
+    close cooldown not elapsed.'
+- event_id: evt-s3-20260826-hydrographve-568-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#568@631fb22c061f7429f7f6a48a9a5b6802d6b62569
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-hydrographve-568-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#568@631fb22c061f7429f7f6a48a9a5b6802d6b62569:evt-s3-20260826-hydrographve-568-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: ACK Stage 1 handoff. REVIEW_SECURITY Sentinel. SUCCESS MERGEABLE. Do not squash.
+- event_id: evt-s3-20260826-hydrographve-568-h
+  kind: HANDOFF
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#568@631fb22c061f7429f7f6a48a9a5b6802d6b62569
+  from_owner: stage3
+  to_owner: human
+  from_state: STAGE3_RECONCILIATION
+  to_state: WAITING_HUMAN
+  next_owner: human
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#568@631fb22c061f7429f7f6a48a9a5b6802d6b62569:evt-s3-20260826-hydrographve-568-h
+  status: PROJECTED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 3 live reconcile: irreducible Sentinel security. REPORT_ONLY; no GitHub mutation.'
+- event_id: evt-s3-20260826-hydrographve-566-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#566@e40fd4097d25c113f301a7376535860924192560
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-hydrographve-566-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#566@e40fd4097d25c113f301a7376535860924192560:evt-s3-20260826-hydrographve-566-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: ACK Stage 1 handoff. REVIEW_SECURITY Sentinel. SUCCESS MERGEABLE. Do not squash.
+- event_id: evt-s3-20260826-hydrographve-566-h
+  kind: HANDOFF
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#566@e40fd4097d25c113f301a7376535860924192560
+  from_owner: stage3
+  to_owner: human
+  from_state: STAGE3_RECONCILIATION
+  to_state: WAITING_HUMAN
+  next_owner: human
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#566@e40fd4097d25c113f301a7376535860924192560:evt-s3-20260826-hydrographve-566-h
+  status: PROJECTED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 3 live reconcile: irreducible Sentinel security. REPORT_ONLY; no GitHub mutation.'
+- event_id: evt-s3-20260826-hydrographve-565-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#565@69e6dd5d24d266d68bf88b53876c0c62d2139ebb
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-hydrographve-565-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#565@69e6dd5d24d266d68bf88b53876c0c62d2139ebb:evt-s3-20260826-hydrographve-565-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: ACK Stage 1 handoff. HOLD_CONTRACT lockfile scipy. SUCCESS MERGEABLE. Stay Stage 3. Not a unique
+    mechanical repair under HOLD_CONTRACT.
+- event_id: evt-s3-20260826-repopromptce-298-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/repoprompt-ce#298@e2bf8f76cc920fe475e9328dd9407761480fc250
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-repopromptce-298-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#298@e2bf8f76cc920fe475e9328dd9407761480fc250:evt-s3-20260826-repopromptce-298-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: 'ACK Stage 1 handoff. HOLD_PLATFORM Swift (0gi) plus HOLD_CANONICAL vs #295/#291. FAILURE UNSTABLE.
+    Stay Stage 3. Do not salvage on Linux.'
+- event_id: evt-s3-20260826-repopromptce-297-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/repoprompt-ce#297@23d06aebe503d16da35532b325ef1e49dbcf78c5
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260826-repopromptce-297-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#297@23d06aebe503d16da35532b325ef1e49dbcf78c5:evt-s3-20260826-repopromptce-297-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: 'ACK Stage 1 handoff. HOLD_PLATFORM Swift (0gi) vs #284/#290/#294. SUCCESS MERGEABLE. Stay Stage
+    3. Do not salvage on Linux.'
+- event_id: evt-s3-20260826-emailsecuri-1525-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/email-security-pipeline#1525@7b8d82fc237670729f03aa9496988c20c0a58332
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260825-emailsecuri-1525-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/email-security-pipeline#1525@7b8d82fc237670729f03aa9496988c20c0a58332:evt-s3-20260826-emailsecuri-1525-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: 'ACK Stage 1 overflow handoff. REVIEW_SECURITY workflow twin of #1526. SUCCESS MERGEABLE. Do
+    not squash-merge workflow deps.'
+- event_id: evt-s3-20260826-emailsecuri-1525-h
+  kind: HANDOFF
+  item_key: abhimehro/email-security-pipeline#1525@7b8d82fc237670729f03aa9496988c20c0a58332
+  from_owner: stage3
+  to_owner: human
+  from_state: STAGE3_RECONCILIATION
+  to_state: WAITING_HUMAN
+  next_owner: human
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/email-security-pipeline#1525@7b8d82fc237670729f03aa9496988c20c0a58332:evt-s3-20260826-emailsecuri-1525-h
+  status: PROJECTED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 3 live reconcile: irreducible workflow/permissions security. REPORT_ONLY; no GitHub mutation.'
+- event_id: evt-s3-20260826-seatekanalys-734-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Seatek_Analysis#734@28d5def7c2452a1db383bcef1abcc78c748440d5
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260825-seatekanalys-734-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#734@28d5def7c2452a1db383bcef1abcc78c748440d5:evt-s3-20260826-seatekanalys-734-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: 'ACK Stage 1 overflow handoff. REVIEW_SECURITY Sentinel twin of #738. SUCCESS MERGEABLE. Do
+    not squash overlapping security patches.'
+- event_id: evt-s3-20260826-seatekanalys-734-h
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#734@28d5def7c2452a1db383bcef1abcc78c748440d5
+  from_owner: stage3
+  to_owner: human
+  from_state: STAGE3_RECONCILIATION
+  to_state: WAITING_HUMAN
+  next_owner: human
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#734@28d5def7c2452a1db383bcef1abcc78c748440d5:evt-s3-20260826-seatekanalys-734-h
+  status: PROJECTED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 3 live reconcile: irreducible Sentinel security overlap. REPORT_ONLY; no GitHub mutation.'
+- event_id: evt-s3-20260826-hydrographve-560-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#560@89734077c445142c565d5fe45354afca486ebf1c
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s1-20260825-hydrographve-560-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#560@89734077c445142c565d5fe45354afca486ebf1c:evt-s3-20260826-hydrographve-560-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: 'ACK Stage 1 overflow handoff. REVIEW_SECURITY Sentinel twin of #561. SUCCESS MERGEABLE. Do
+    not squash.'
+- event_id: evt-s3-20260826-hydrographve-560-h
+  kind: HANDOFF
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#560@89734077c445142c565d5fe45354afca486ebf1c
+  from_owner: stage3
+  to_owner: human
+  from_state: STAGE3_RECONCILIATION
+  to_state: WAITING_HUMAN
+  next_owner: human
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#560@89734077c445142c565d5fe45354afca486ebf1c:evt-s3-20260826-hydrographve-560-h
+  status: PROJECTED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Stage 3 live reconcile: irreducible Sentinel security. REPORT_ONLY; no GitHub mutation.'
+- event_id: evt-s3-20260826-calibration
+  kind: CALIBRATION
+  item_key: null
+  from_owner: stage3
+  to_owner: stage3
+  from_state: null
+  to_state: null
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 0
+  idempotency_key: __calibration__:evt-s3-20260826-calibration
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-08-26T19:20:00Z'
+  acknowledged_at_utc: '2026-08-26T19:20:00Z'
+  reason: 'Report-only Stage 3 calibration: 19 live reconciliations, 9 WAITING_HUMAN handoffs, 1 verified
+    MERGED_ROUTINE terminal, 0 close-candidates recorded, 0 Stage 2 work items, 0 new packets, 0 completion
+    actions.'
+  policy_revision: pr-lifecycle-v1.4
+  successful: true
 stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
