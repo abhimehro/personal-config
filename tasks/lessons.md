@@ -5,12 +5,13 @@
 **Pattern:** Palette a11y PRs add `role="status"` to empty-state containers so
 screen readers announce “no data.” When the empty state is an `<li>` inside a
 real `<ul>` (pc #2014 `performance_optimizer.sh` recommendations list), the
-explicit role **replaces** the implicit `listitem` role and leaves the list
-with zero listitem children. **Rule:** (1) Put `role="status"` on a nested
+explicit role **replaces** the implicit `listitem` role and leaves the list with
+zero listitem children. **Rule:** (1) Put `role="status"` on a nested
 `<span>`/`<div>`, never on the `<li>` itself. (2) `<div class="empty-state">`
 sites are fine. (3) Adversarial agreement on an a11y regression →
 REQUEST_CHANGES even when CI is green and the rest of the PR is a one-attribute
 diff. **Detection cost:** Low — search the diff for `role="status"` on `li`.
+
 ## Lesson 0gk: Stage 2 salvage() titles are not versioned bot signals (2026-08-21)
 
 **Pattern:** Stage 2 opened ready salvage PRs Hydro #543 and Seatek #708 as
@@ -24,15 +25,14 @@ suffix; commenters (`trunk-io[bot]`, `github-actions[bot]`,
 `human_default`. Schema `identity_provenance.method` has no `human_default`, so
 HUMAN items omit provenance. `author_type: HUMAN` ⇒ `risk_class: SENSITIVE`
 (cannot be ROUTINE). Lesson 0gd forbids converting a ready salvage PR back to
-draft.
-**Rule:** Do not classify `salvage():` / `cursoragent@cursor.com` as BOT under
-the current identity revision. Do not routine-merge those PRs. Humans merge
-during `REPORT_ONLY`. Stage 1 may re-ingest them but cannot treat them as
+draft. **Rule:** Do not classify `salvage():` / `cursoragent@cursor.com` as BOT
+under the current identity revision. Do not routine-merge those PRs. Humans
+merge during `REPORT_ONLY`. Stage 1 may re-ingest them but cannot treat them as
 ROUTINE. A future identity revision may add `salvage` as a title keyword and/or
 `cursoragent@cursor.com` as a bot-email suffix — do not silently expand the
-allowlist in a Stage 3 run.
-**Detection cost:** Low — `scripts/pr_identity.py` on the live GraphQL node
-shows `independent_signal_count: 1` and `author_type: HUMAN`.
+allowlist in a Stage 3 run. **Detection cost:** Low — `scripts/pr_identity.py`
+on the live GraphQL node shows `independent_signal_count: 1` and
+`author_type: HUMAN`.
 
 ## Lesson 0gj: One daily docs lineage, not three colliding session PRs (2026-08-21)
 
@@ -2516,22 +2516,19 @@ justify a salvage PR.
 **Detection cost:** Low — `rg is_safe_path validate_data.py` on `main` + `rg -c`
 on the PR tip.
 
-
 ## Lesson 0gl: Slim GraphQL inventory — omit `commits` on `gh pr list` (2026-08-22)
 
 **Pattern:** Stage 1 inventory with `gh pr list --json ...commits` hit GitHub
-GraphQL node-limit and HTTP 504 across the seven-repo sweep. The scheduled
-15:00 UTC run failed to complete. A slim payload (number, title, author, head
-SHA, base SHA, isDraft, mergeable, files, labels, body excerpt) was enough to
+GraphQL node-limit and HTTP 504 across the seven-repo sweep. The scheduled 15:00
+UTC run failed to complete. A slim payload (number, title, author, head SHA,
+base SHA, isDraft, mergeable, files, labels, body excerpt) was enough to
 classify BOT vs HUMAN under identity `2026-08-20-hyphen` and to skip unchanged
-SHA items.
-**Rule:** Default Stage 1 inventory must **not** request the `commits` field on
-`gh pr list`. Enrich commit emails only for the small HUMAN-candidate set that
-needs a second identity signal. Treat GraphQL 504 / node-limit as
-`HOLD_PLATFORM` for that enrichment path, not as a reason to skip the whole
-intake.
-**Detection cost:** Low — `gh pr list --json commits` on a repo with large PRs
-fails; slim list succeeds.
+SHA items. **Rule:** Default Stage 1 inventory must **not** request the
+`commits` field on `gh pr list`. Enrich commit emails only for the small
+HUMAN-candidate set that needs a second identity signal. Treat GraphQL 504 /
+node-limit as `HOLD_PLATFORM` for that enrichment path, not as a reason to skip
+the whole intake. **Detection cost:** Low — `gh pr list --json commits` on a
+repo with large PRs fails; slim list succeeds.
 
 ## Lesson 0gm: Split-module salvage stays HOLD_EVIDENCE under frozen allowed_paths (2026-08-22)
 
@@ -2540,9 +2537,108 @@ comprehension in `display.py` plus an inverted benchmark docstring. After #1183,
 `display.py` does not exist on current main; the live call is generator-form
 `sum(...)` in `display/tables.py`. The work item `allowed_paths` were
 `display.py` and `tests/test_benchmarks.py`. Salvage spec / lesson **0fv**: if a
-path was removed or split, do not expand scope.
-**Rule:** Do not recreate a deleted module to land a micro-optimization. Do not
-rewrite `display/tables.py` unless Stage 3 issues a **new** work item that
-names that path. Hand off `HOLD_EVIDENCE`. Leave the original DIRTY PR open.
-**Detection cost:** Low — `gh api repos/.../contents/display.py?ref=main` → 404
-while `display/tables.py` exists.
+path was removed or split, do not expand scope. **Rule:** Do not recreate a
+deleted module to land a micro-optimization. Do not rewrite `display/tables.py`
+unless Stage 3 issues a **new** work item that names that path. Hand off
+`HOLD_EVIDENCE`. Leave the original DIRTY PR open. **Detection cost:** Low —
+`gh api repos/.../contents/display.py?ref=main` → 404 while `display/tables.py`
+exists.
+
+## Lesson 0gn: Slim GraphQL inventory — omit `statusCheckRollup` too (2026-08-22)
+
+**Pattern:** Lesson **0gl** dropped the `commits` field after GraphQL 504s. The
+15:00 UTC cron still 504'd on Seatek_Analysis and repoprompt-ce when
+`statusCheckRollup` stayed in `gh pr list --json`. Required-check evidence for
+the small merge-candidate set can be read later via REST check-runs /
+branch-protection, not on the seven-repo inventory sweep. **Rule:** Default
+Stage 1 inventory must omit **both** `commits` and `statusCheckRollup`. Enrich
+checks only for items that already pass identity, sensitivity, and merge-state
+gates. Treat GraphQL 504 / node-limit as `HOLD_PLATFORM` for that enrichment
+path, not as a reason to skip intake. **Detection cost:** Low —
+`gh pr list --json statusCheckRollup` on a repo with large PRs fails; slim list
+succeeds.
+
+## Lesson 0go: Restore a missing ledger ref; never invent ledger state (2026-08-22)
+
+**Pattern:** `GET .../git/ref/heads/automation/pr-lifecycle-ledger` returned
+404 while `GET .../contents/pr-lifecycle-ledger.yaml` by the last known commit
+SHA still returned rev 10 (`ccc48c10227711eacddfc97c685e2a5236bd6e17` /
+blob `a522d71e5a6895718c9410b1270a7f7d82cffbed`). The orphan data-branch
+pointer had been dropped; the objects had not. **Rule:** A 404 on the data
+branch is `HOLD_PLATFORM` until the ref is restored. Restore with
+`POST .../git/refs` pointing at the last known **existing** commit SHA from
+Contents/Git history. Do not force-push. Do not create a new orphan from
+`main`. Do not treat `tasks/pr-lifecycle-ledger.yaml` as runtime state. After
+restore, re-GET the blob SHA and continue CAS as usual. **Detection cost:**
+Low — ref 404 plus a successful contents read by recorded commit SHA.
+
+## Lesson 0gp: Merged PRs with post-merge head drift keep the existing key (2026-08-22)
+
+**Pattern:** After a Trunk (or GitHub) merge, the merged PR's live `headOid`
+can drift from the ingested ledger `head_sha` because GitHub retargets or
+rebases the head ref. personal-config #2041 stayed
+`…#2041@2facd5bddc672c3bab21699acfd61152a13be098` while live head moved to
+`0d9a1146…` after merge `30db0e1b962b123f0ac15b9ddf150a50bc3e87b2`. Treating
+that as `STALE_ANCHOR` would mint a replacement key and bounce a **merged**
+PR back to Stage 1. **Rule:** When GitHub `merged` is true, keep the
+**existing** item key, record `MERGED_ROUTINE` (or the verified terminal
+disposition) with the merge-commit SHA in `evidence_urls`, and do **not**
+mint a new key. Do not `STALE_ANCHOR` a merged PR. Live-head drift on an
+**open** PR remains Stage 1 invalidation as before. **Detection cost:** Low
+— GraphQL/REST `merged: true` plus `headOid != ledger.head_sha`.
+
+## Lesson 0gq: Hyphen-Jules Daily QA with one signal stays HUMAN (2026-08-23)
+
+**Pattern:** Jules Daily QA branches named `jules-daily-qa-<repo>-YYYY-MM-DD`
+(hyphen after `jules`, not `jules/`) plus a Daily-QA title give **one**
+versioned signal under identity `2026-08-20-hyphen`. Token login `abhimehro`
+still needs **≥2** independent signals for BOT. Result: HUMAN /
+`human_default`, `risk_class: SENSITIVE`, even when the diff is zero files.
+Stage 1 close authority is bot-authored non-security no-ops only. **Rule:** Do
+not close or merge hyphen-Jules Daily QA (or title-only Sentinel) when
+`independent_signal_count < 2`. Ambiguous identity is always HUMAN. Do not
+expand the allowlist in a Stage 1 run. **Detection cost:** Low —
+`scripts/pr_identity.py` shows one of `branch` / `title` and
+`author_type: HUMAN`.
+
+## Lesson 0gr: Unresolved GHAS/Bandit threads block routine merge (2026-08-23)
+
+**Pattern:** ctrld-sync #1212 had green required checks and a mechanical test
+cleanup, but GitHub Advanced Security / Bandit review threads on `assert`
+findings stayed unresolved. CLEAN merge state is false until those threads
+resolve. The findings live in tests; resolving **other authors'** security
+threads is out of Stage 1 scope. Combined with HUMAN identity (0gq), the PR
+is a Stage 3 hold. **Rule:** Unresolved GHAS/CodeQL/Bandit conversations are
+a merge-state failure even when CI is green. Do not resolve another reviewer's
+security thread. Do not squash. Hand off `HOLD_EVIDENCE` / `REVIEW_SECURITY`.
+**Detection cost:** Low — GraphQL `reviewThreads` / REST review comments with
+unresolved GHAS or Bandit.
+
+
+## Lesson 0gs: Contents GET uses `?ref=`; GraphQL check contexts need pagination (2026-08-23)
+
+**Pattern:** Stage 3 CAS retry 404'd when `gh api repos/.../contents/pr-lifecycle-ledger.yaml -f ref=automation/pr-lifecycle-ledger` sent `ref` as a form field. The working GET is query-string `...?ref=automation/pr-lifecycle-ledger`. PUT still uses JSON `branch` plus the current blob SHA as the CAS precondition, and the full ledger must go through `gh api --input` (CLI argv is too long for `-f content=`). Separately, `gh pr view --json statusCheckRollup` is unsupported, and GraphQL `statusCheckRollup { contexts }` fails unless `contexts` has `first` or `last`. Slim `statusCheckRollup { state }` plus a bounded `contexts(last: 20)` is enough for merge-state evidence.
+
+**Rule:** Contents GET for a non-default ref must use `?ref=`. Never `-f ref=` on GET. PUT CAS with `sha` + `branch` via `--input` JSON. Do not use `gh pr view --json statusCheckRollup`. Paginate GraphQL `contexts`. Treat a Contents 404 that used the form-field `ref` as an API-shape bug, not a missing ledger.
+
+**Detection cost:** Low — GET with `-f ref=` → HTTP 404; GET with `?ref=` returns the blob. GraphQL without `first`/`last` on `contexts` → schema error; with `last: 20` succeeds.
+
+## Lesson 0gt: Slim identity under-counts until body/comment/email enrich (2026-08-24)
+
+**Pattern:** Token-login PRs can look HUMAN on the slim `gh pr list` pass and
+become BOT only after REST body, timeline commenter, and commit-email enrich.
+Two traps: (1) title `chore: automated QA review` does **not** match the
+versioned keyword `automation` (substring is `automated`, not `automation`);
+(2) branch prefixes are exact `startswith` of `jules/` and `jules-` only —
+`fix/jules-*` is not a prefix hit. Examples: repoprompt-ce #288 slim HUMAN
+(branch `jules-` only) → BOT after body + commit email + allowlisted
+commenter (zero-diff close candidate); Seatek_Analysis #717 slim HUMAN
+(title only) → BOT after title + timeline_comment + commit_email, then
+`CLOSED_SUPERSEDED` vs #729.
+
+**Rule:** Never close or merge a maintainer-login PR from slim identity
+alone. Enrich body/commenter/email first. `automated` ≠ `automation`.
+`fix/jules-*` is not `jules-`. Ambiguous identity stays HUMAN.
+
+**Detection cost:** Low — `scripts/pr_identity.py` after enrich shows
+`independent_signal_count` and `author_type`.

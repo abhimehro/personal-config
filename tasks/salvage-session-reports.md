@@ -6,6 +6,166 @@
 
 ## Entry template
 
+## Run — 2026-08-25 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **18** (`github_contents_api`); blob
+  `f7ac87639f53005eede78fe5f2c897026f3c38be`; data-branch commit
+  `f05d593880b6b56084cf3ece0f4438530dda22d0`
+- Preflight: `make cursor-cloud-hooks`; PAT as `abhimehro`; CodeScene MCP
+  `namespaceStatus=error` (unavailable)
+- Live: `stage2_work_items: []`; items with `current_owner: stage2` **0**;
+  `STAGE2_QUEUED` / `STAGE2_ACTIVE` **0**; Stage 1 today queued **0**
+- Prior remainder live-verify: hydro #557/#558 closed `CLOSED_DUPLICATE` at
+  2026-08-25T15:10:42Z / 15:10:44Z; rpce #288 closed `CLOSED_NOOP` at
+  2026-08-25T15:10:46Z. Do not recreate `display.py` (0gm)
+
+### Outcomes
+
+| Repo       | Old PR | Disposition                           | New PR | Notes                                                                 |
+| ---------- | -----: | ------------------------------------- | ------ | --------------------------------------------------------------------- |
+| (none)     |      — | EMPTY_INTAKE (structured no-recovery) | —      | No complete unexpired Stage-2-owned work item; no fourth-queue invent |
+
+- Salvage drafts opened: **0**
+- Infra-fix drafts: **0**
+- Closed via API: **0**
+- Autonomous merges: **0** (S1)
+- New lessons: **0**
+- `request_reviewers`: skipped
+- Ledger CAS: **none** (no Stage-2-owned item to project; rev stays **18**)
+- Cap 5; completed **0** eligible items. Remaining `stage2_work_items`: **[]**.
+
+### Verification
+
+- Ledger-only `validate_schema` + `validate_runtime_records` **PASS** on rev
+  18. Full wrap validator still fails on `main` export/prompt mismatch
+  (pre-existing; Stage 2 did not edit policy exports).
+- Calibration: `REPORT_ONLY` count **5** / `pr-lifecycle-v1.4` (no stale
+  reset).
+- Live GitHub: hydro #557 `state=CLOSED` `merged=false`
+  `closed_at=2026-08-25T15:10:42Z` head `1c9b96de8e25…`; hydro #558
+  `CLOSED` `2026-08-25T15:10:44Z` head `3d25583c91bc…`; rpce #288 `CLOSED`
+  `2026-08-25T15:10:46Z` head `c83f245e0545…`. Docs lineage
+  [#2091](https://github.com/abhimehro/personal-config/pull/2091) open on
+  `pr-lifecycle-docs-20260825` head `589e01b5`.
+- Did not invent salvage from Stage 3 remainder, Palette/Bolt/Sentinel
+  clusters, rpce Swift (0gi), or workflow Dependabot bumps.
+
+### Handoff
+
+1. Stage 3: ACK today's 23 Stage 1 handoffs; close-candidates seatek #736,
+   series #410, and rpce #293 wait for cooldown; do not merge drafts (#2087)
+2. Stage 1 later: re-ingest this docs lineage when routine predicates pass
+   (`/trunk merge`); do not GitHub-squash personal-config
+3. Do not recreate ctrld `display.py`; do not salvage rpce Swift on Linux
+
+Full record: `tasks/pr-salvage-2026-08-25-1700.md`.
+
+## Run — 2026-08-24 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **16** (`github_contents_api`); blob
+  `2fea1b9edeafe916a52b95f0bedc941c778d36d9`; data-branch commit
+  `8b8a84493d64e1a412905d21d73d3e8db3d3bb91`
+- Preflight: `make cursor-cloud-hooks`; PAT as `abhimehro`; CodeScene MCP
+  `namespaceStatus=error` (unavailable)
+- Live: `stage2_work_items: []`; items with `current_owner: stage2` **0**;
+  `STAGE2_QUEUED` / `STAGE2_ACTIVE` **0**; Stage 1 today queued **0**
+- Prior salvage remainder: ctrld-sync #1161 live-closed
+  `CLOSED_SUPERSEDED` at 2026-08-24T15:15:35Z (head still
+  `1b7811646f19f71a4304f8d51091cf6c28a46cf6`); do not recreate `display.py`
+  (0gm)
+
+### Outcomes
+
+| Repo       | Old PR | Disposition                         | New PR | Notes                                                                 |
+| ---------- | -----: | ----------------------------------- | ------ | --------------------------------------------------------------------- |
+| (none)     |      — | EMPTY_INTAKE (structured no-recovery) | —    | No complete unexpired Stage-2-owned work item; no fourth-queue invent |
+
+- Salvage drafts opened: **0**
+- Infra-fix drafts: **0**
+- Closed via API: **0**
+- Autonomous merges: **0** (S1)
+- New lessons: **0**
+- `request_reviewers`: skipped
+- Ledger CAS: **none** (no Stage-2-owned item to project; rev stays **16**)
+- Cap 5; completed **0** eligible items. Remaining `stage2_work_items`: **[]**.
+
+### Verification
+
+- Ledger-only `validate_schema` + `validate_runtime_records` **PASS** on rev
+  16. Full wrap validator still fails on `main` export/prompt mismatch
+  (pre-existing; Stage 2 did not edit policy exports).
+- Calibration: `REPORT_ONLY` count **4** / `pr-lifecycle-v1.4` (no stale
+  reset).
+- Live GitHub: ctrld #1161 `state=closed` `merged=false`
+  `closed_at=2026-08-24T15:15:35Z`. Docs lineage
+  [#2084](https://github.com/abhimehro/personal-config/pull/2084) open on
+  `pr-lifecycle-docs-20260824` head `092b4735`.
+- Did not invent salvage from Stage 3 remainder, Palette/Bolt/Sentinel
+  clusters, rpce Swift (0gi), or workflow Dependabot bumps.
+
+### Handoff
+
+1. Stage 3: ACK today's 16 Stage 1 handoffs; close-candidates hydro #557/#558
+   and rpce #288 wait for cooldown; do not merge drafts (#2079)
+2. Stage 1 later: re-ingest this docs lineage when routine predicates pass
+   (`/trunk merge`); do not GitHub-squash personal-config
+3. Do not recreate ctrld `display.py`; do not salvage rpce Swift on Linux
+
+Full record: `tasks/pr-salvage-2026-08-24-1700.md`.
+
+## Run — 2026-08-22 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **11** complete unexpired work item
+  `s2-20260822-esp-1514-path-import`
+- Preflight: `make cursor-cloud-hooks`; PAT as `abhimehro`; CodeScene MCP
+  `serverStatus=error` (unavailable)
+- Live: original ESP #1514 open, ready, CLEAN; head
+  `cb9f2dd6c791cf53574d5c82b61c3c7a17ceab9d`; base equals live main
+  `e009e5923860f5b504f6e179ad2380efe514bf4d`
+
+### Outcomes
+
+| Repo                    | Old PR | Disposition                                            | New PR                                                                      | Notes                                                                                          |
+| ----------------------- | -----: | ------------------------------------------------------ | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| email-security-pipeline |   1514 | SALVAGE (opened draft; converted back after 0gd ready) | [#1515](https://github.com/abhimehro/email-security-pipeline/pull/1515)     | Top-level `from pathlib import Path`; `python3 -m pytest` 754 passed; original left OPEN       |
+
+- Salvage drafts opened: **1** (#1515)
+- Infra-fix drafts: **0**
+- Closed via API: **0**
+- Autonomous merges: **0** (S1)
+- New lessons: **0**
+- `request_reviewers`: skipped
+- Ledger `11` → `12` (blob `61f895c52bfae47b86087a457c49e79bc66e1adf`, commit
+  `411984a73e0d786e27064a4f36413cdfd7dc4222`)
+- Cap 5; completed **1** (only eligible complete unexpired item). Remaining
+  `stage2_work_items`: **[]**.
+
+### Verification
+
+- ESP #1515: `python3 -m pytest` → 754 passed, 40 subtests, exit 0 on current
+  main + one-line runtime import
+- Create-time `isDraft=true`. `linear-code[bot]` `ready_for_review` at
+  2026-08-22T17:14:07Z. Converted back to draft at 2026-08-22T17:16:06Z before
+  ledger write (0gd). Re-read `draft=true`.
+- Original #1514 left OPEN. CodeScene MCP unavailable; original #1514 CodeScene
+  check already success.
+
+### Handoff
+
+1. Stage 1: re-ingest **#1515** for GITHUB_SQUASH if every routine predicate
+   passes; do not mark ready; HOLD_EVIDENCE until required checks
+2. Stage 3: keep original **#1514** OPEN (HOLD_CANONICAL); do not close because
+   #1515 exists
+3. Do not squash TYPE_CHECKING-only #1514; do not recreate that import
+
+Full record: `tasks/pr-salvage-2026-08-22-1700.md`.
+
 ## Run — 2026-08-22
 
 ### Input tail
@@ -17,10 +177,10 @@
 
 ### Outcomes
 
-| Repo            | Old PR | Disposition                 | New PR                                                          | Notes                                                                                          |
-| --------------- | -----: | --------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Repo            | Old PR | Disposition                                             | New PR                                                          | Notes                                                                                          |
+| --------------- | -----: | ------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | personal-config |   2041 | SALVAGE (opened draft; later ready by linear-code[bot]) | [#2063](https://github.com/abhimehro/personal-config/pull/2063) | Markers + stale skip-row; `automation` title + `cursor-agent/` branch; `make lint-errors` PASS |
-| ctrld-sync      |   1161 | HOLD_EVIDENCE (no draft)    | —                                                               | `display.py` split after #1183; frozen allowed_paths (0fv / 0gm)                               |
+| ctrld-sync      |   1161 | HOLD_EVIDENCE (no draft)                                | —                                                               | `display.py` split after #1183; frozen allowed_paths (0fv / 0gm)                               |
 
 - Salvage drafts opened: **1** (#2063)
 - Infra-fix drafts: **0**
@@ -35,13 +195,17 @@
 
 - pc #2063: `make lint-errors`; create-time `isDraft=true`; live later
   `isDraft=false` via `linear-code[bot]` `ready_for_review` (left ready, 0gd)
-- ctrld #1161: `display.py` 404 on main; generator-form lives in `display/tables.py`
+- ctrld #1161: `display.py` 404 on main; generator-form lives in
+  `display/tables.py`
 
 ### Handoff
 
-1. Stage 1: re-ingest **#2063** for `/trunk merge` if routine predicates pass; do not convert it back to draft (0gd)
-2. Stage 3 / human: Hydro #543 lockfile, Seatek #708 unique remainder, ctrld #1161 split-module
-3. Do not squash DIRTY #1161; do not mark #2063 ready; do not convert #2041 to draft
+1. Stage 1: re-ingest **#2063** for `/trunk merge` if routine predicates pass;
+   do not convert it back to draft (0gd)
+2. Stage 3 / human: Hydro #543 lockfile, Seatek #708 unique remainder, ctrld
+   #1161 split-module
+3. Do not squash DIRTY #1161; do not mark #2063 ready; do not convert #2041 to
+   draft
 
 Full record: `tasks/pr-salvage-2026-08-22.md`.
 
