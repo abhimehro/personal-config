@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 20
+ledger_revision: 21
 calibration:
   status: REPORT_ONLY
   successful_run_count: 6
@@ -9936,23 +9936,23 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: CLOSE_NONSECURITY_NOOP
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Do not merge a zero-diff QA PR. Close after cooldown if same head SHA.
-  next_action: Stage 1 close-candidate CLOSED_NOOP after 2026-08-25T21:14:52Z if same head (0 files).
-    Head 564a162abfd58199f65b1854787d7ec2af2bb76d.
+  next_action: No further action; closed CLOSED_NOOP at 2026-08-26T15:22:28Z.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/736
   changed_paths: []
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-08-25T15:20:00Z'
+    mutations: 1
+  handoffs:
+  - evt-s1-20260826-seatekanalys-736-t
+  revision: 1
+  updated_at_utc: '2026-08-26T15:22:32Z'
 - key: abhimehro/Seatek_Analysis#734@28d5def7c2452a1db383bcef1abcc78c748440d5
   repository: abhimehro/Seatek_Analysis
   pr: 734
@@ -10219,23 +10219,23 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: CLOSE_NONSECURITY_NOOP
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Do not merge a zero-diff QA PR. Close after cooldown if same head SHA.
-  next_action: Stage 1 close-candidate CLOSED_NOOP after 2026-08-25T19:53:57Z if same head (0 files).
-    Head 31614bd111caf306ce70bf8e8ae21040a80ed066.
+  next_action: No further action; closed CLOSED_NOOP at 2026-08-26T15:22:30Z.
   evidence_urls:
   - https://github.com/abhimehro/series_correction_project_updated/pull/410
   changed_paths: []
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-08-25T15:20:00Z'
+    mutations: 1
+  handoffs:
+  - evt-s1-20260826-seriescorrec-410-t
+  revision: 1
+  updated_at_utc: '2026-08-26T15:22:32Z'
 - key: abhimehro/repoprompt-ce#295@83b39d2dbe02b0519f4ca9ae7ebac7a7bca47ce3
   repository: abhimehro/repoprompt-ce
   pr: 295
@@ -10339,23 +10339,23 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: CLOSE_NONSECURITY_NOOP
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_NOOP
+  current_owner: none
+  next_owner: none
   safe_default: Do not merge a zero-diff QA PR. Close after cooldown if same head SHA.
-  next_action: Stage 1 close-candidate CLOSED_NOOP after 2026-08-25T20:54:20Z if same head (0 files).
-    Head 3ef4c8ce76599ae5e029e42699152c4e6ed528e0.
+  next_action: No further action; closed CLOSED_NOOP at 2026-08-26T15:22:32Z.
   evidence_urls:
   - https://github.com/abhimehro/repoprompt-ce/pull/293
   changed_paths: []
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-08-25T15:20:00Z'
+    mutations: 1
+  handoffs:
+  - evt-s1-20260826-repopromptce-293-t
+  revision: 1
+  updated_at_utc: '2026-08-26T15:22:32Z'
 - key: abhimehro/repoprompt-ce#292@f2ca33ddee4261b6e40ce86889744b24dff9b061
   repository: abhimehro/repoprompt-ce
   pr: 292
@@ -19050,6 +19050,60 @@ events:
   acknowledged_at_utc: null
   reason: 'HOLD_PLATFORM: Swift Palette a11y labels vs open #284/#290/#294. Linux cannot salvage Swift
     (0gi).'
+- event_id: evt-s1-20260826-seatekanalys-736-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#736@564a162abfd58199f65b1854787d7ec2af2bb76d
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#736@564a162abfd58199f65b1854787d7ec2af2bb76d:evt-s1-20260826-seatekanalys-736-t
+  status: PROJECTED
+  created_at_utc: '2026-08-26T15:22:32Z'
+  acknowledged_at_utc: null
+  reason: Closed CLOSED_NOOP. Zero-diff (0 files) at head 564a162abfd58199f65b1854787d7ec2af2bb76d. Cooldown
+    after 2026-08-25T21:14:52Z elapsed. Closed 2026-08-26T15:22:28Z.
+- event_id: evt-s1-20260826-seriescorrec-410-t
+  kind: TERMINAL
+  item_key: abhimehro/series_correction_project_updated#410@31614bd111caf306ce70bf8e8ae21040a80ed066
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/series_correction_project_updated#410@31614bd111caf306ce70bf8e8ae21040a80ed066:evt-s1-20260826-seriescorrec-410-t
+  status: PROJECTED
+  created_at_utc: '2026-08-26T15:22:32Z'
+  acknowledged_at_utc: null
+  reason: Closed CLOSED_NOOP. Zero-diff (0 files) at head 31614bd111caf306ce70bf8e8ae21040a80ed066. Cooldown
+    after 2026-08-25T19:53:57Z elapsed. Closed 2026-08-26T15:22:30Z.
+- event_id: evt-s1-20260826-repopromptce-293-t
+  kind: TERMINAL
+  item_key: abhimehro/repoprompt-ce#293@3ef4c8ce76599ae5e029e42699152c4e6ed528e0
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_NOOP
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/repoprompt-ce#293@3ef4c8ce76599ae5e029e42699152c4e6ed528e0:evt-s1-20260826-repopromptce-293-t
+  status: PROJECTED
+  created_at_utc: '2026-08-26T15:22:32Z'
+  acknowledged_at_utc: null
+  reason: Closed CLOSED_NOOP. Zero-diff (0 files) at head 3ef4c8ce76599ae5e029e42699152c4e6ed528e0. Cooldown
+    after 2026-08-25T20:54:20Z elapsed. Closed 2026-08-26T15:22:32Z.
 stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
