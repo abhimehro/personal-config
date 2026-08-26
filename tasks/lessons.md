@@ -2642,3 +2642,59 @@ alone. Enrich body/commenter/email first. `automated` ≠ `automation`.
 
 **Detection cost:** Low — `scripts/pr_identity.py` after enrich shows
 `independent_signal_count` and `author_type`.
+
+## Lesson 0gu: Recreate the UTC-day docs lineage from current main when Stage 1's PR already merged (2026-08-26)
+
+**Pattern:** Stage 1 opened `pr-lifecycle-docs-20260826` as
+[personal-config#2096](https://github.com/abhimehro/personal-config/pull/2096)
+and Trunk-merged it (`2026-08-26T16:36:29Z`) before the 17:00 Stage 2 cron.
+GitHub deleted the head branch. Stage 2 therefore had no open lineage to push
+onto.
+
+**Rule:** If the UTC-day docs PR is already merged and
+`pr-lifecycle-docs-YYYYMMDD` is gone, Stage 2 creates that branch **once**
+from current `main` (which already contains Stage 1's records) and opens a
+new PR with the same branch name and `docs(pr-lifecycle): YYYY-MM-DD run
+records` title. Do not open a sibling with a different branch. Do not amend
+the merged PR. Stage 3 then pushes onto this replacement lineage if it is
+still open at 19:00.
+
+**Detection cost:** Low — `gh pr view` on today's docs PR is `MERGED` and
+`git/ref/heads/pr-lifecycle-docs-YYYYMMDD` is 404.
+
+## Lesson 0gv: Restore a dropped ledger ref to Stage 1's recorded CAS commit (2026-08-26)
+
+**Pattern:** `GET .../git/ref/heads/automation/pr-lifecycle-ledger` 404'd
+again. Walking commits from the **previous Stage 2 memory tip** (`f05d593`,
+rev 18) only listed ancestors. Stage 1's 15:00 run record on `main` already
+named the later CAS tip: rev **21**, commit
+`47435b29bad53a5e8001a24c419e0aca6408843c`, blob
+`cd158499096d2bb4b94594a733888563d50fd733`. That object still existed;
+Contents GET by commit SHA succeeded.
+
+**Rule:** A 404 data-branch ref is still `HOLD_PLATFORM` until restored
+(0go). Restore with `POST .../git/refs` pointing at the latest **existing**
+CAS commit recorded in today's Stage 1 run record (or Stage 3's, if later),
+not the last Stage 2 memory tip. Do not force-push. Do not create a new
+orphan from `main`. Do not treat `tasks/pr-lifecycle-ledger.yaml` as runtime
+state. After restore, re-GET `?ref=automation/pr-lifecycle-ledger` and
+continue. Walking an old tip cannot see descendant CAS commits once the ref
+is gone.
+
+**Detection cost:** Low — ref 404; Stage 1 report lists a newer commit SHA
+that `GET .../git/commits/<sha>` still returns.
+
+## Lesson 0gw: Omit `isLocked` from PullRequest GraphQL (2026-08-26)
+
+**Pattern:** Stage 3 live-reconcile GraphQL requested `isLocked` on
+`PullRequest`. GitHub's schema returns `undefinedField` for that name, so
+the whole selection fails and rollup/`contexts` never arrive. REST
+`GET /repos/{owner}/{repo}/pulls/{n}` already exposes `locked` and `draft`.
+
+**Rule:** Do not query `PullRequest.isLocked` in GraphQL. Omit it. Use REST
+`locked` / `draft` when those flags are required. Keep
+`statusCheckRollup { state }` plus `contexts(first|last: N)` (0gs). Do not
+rewrite 0gs.
+
+**Detection cost:** Low — GraphQL `errors[].extensions.code == undefinedField`
+naming `isLocked`.
