@@ -37,10 +37,14 @@ source key, repository, PR, base/head SHA, allowed and prohibited paths, repair
 description, test command/result, acceptance criteria, provenance, expiry,
 attempt count, owner, creation event, and history all validate. Prefer complete
 unexpired work items. Unused salvage capacity while complete unexpired work
-items exist is a failed run. If a Stage-2-owned ledger item lacks a complete
-work item, materialize one from that item’s `changed_paths`, `next_action`, and
-live GitHub evidence, then recover. Remainder markdown is a hint requiring live
-verify, never a work item by itself.
+items exist is a failed run. If the ledger has **zero** `current_owner: stage2`
+items and Stage 1 queued none, this is **empty intake**: write a short
+empty-intake record, push onto today's `pr-lifecycle-docs-YYYYMMDD` lineage if
+it exists, and **stop**. Do not invent recoveries. Do not open a sibling docs
+PR. Empty intake is not a failed run. If a Stage-2-owned ledger item lacks a
+complete work item, materialize one from that item’s `changed_paths`,
+`next_action`, and live GitHub evidence, then recover. Remainder markdown is a
+hint requiring live verify, never a work item by itself.
 
 Create at most one focused **draft** recovery branch per work item from the
 trusted current base. Recheck base SHA immediately before creation. Abort on
@@ -50,7 +54,8 @@ workflow, or generated file. Reapply only the justified minimal paths. Adapt
 tests to current `main`; do not wholesale-copy an obsolete test. Run the named
 test. A tested draft or structured failed-recovery record is success. A
 docs-only session with zero drafts and zero structured failed-recovery records
-is a failed run when salvageable bot work existed.
+is a failed run **only when salvageable bot work existed**. Empty intake is
+success.
 
 Never approve, request review, mark ready, merge, close, force-push, rewrite an
 existing branch, delete a branch, alter rulesets or workflow permissions, or
@@ -61,9 +66,10 @@ returns a PR number, re-read `isDraft` and convert a ready landing back to draft
 Live-stat `allowed_paths` on current main; do not expand scope when a path was
 split or removed. Do not recreate a failed approach unless an anchor, policy
 revision, or evidence changed. Count recovery and mutation attempts in the
-ledger. Send routine replacements toward Stage 1 re-ingest; send rejected
-recovery, platform gap, policy question, canonical conflict, or non-security
-closure candidates to Stage 3 with a revision-checked handoff. Merge authority
+ledger. Send routine replacements toward Stage 1 re-ingest; send BOT non-sensitive
+canonical overlap back to Stage 1 for canonical-pick; send rejected recovery,
+salvage-only platform gap, policy question, or sticky/HUMAN canonical conflict
+to Stage 3 with a revision-checked handoff. Merge authority
 for salvage outputs is never this stage. Append the Stage 2 run record on the
 same `pr-lifecycle-docs-YYYYMMDD` PR (create that lineage once only if Stage 1
 missed it). Push to that branch; do not open a sibling docs PR. Write only

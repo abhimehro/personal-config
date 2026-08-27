@@ -1,3 +1,22 @@
+# PR pipeline throughput + Stage 3 approval (2026-08-26)
+
+T5 — Orchestrate. Drain the ~200-PR backlog. Do not bump `policy_revision`.
+Stage 2 still never merges.
+
+- [x] Diagnose: SHA_MATCH skip, HOLD_CANONICAL parking, HOLD_PLATFORM on
+      GitHub-green BOT, Stage 3 REPORT_ONLY parking lot, empty Stage 2
+- [x] Stage 1: SHA_MATCH reselect, canonical-pick, salvage-only HOLD_PLATFORM,
+      `.jules/` journal not sticky, product-mutation budget, throughput FAIL
+- [x] Stage 2: empty-intake stop
+- [x] Stage 3: bounce executable clusters to Stage 1; packets only for
+      irreducible sticky/HUMAN/real platform
+- [x] Human APPROVE Stage 3 (7/7 successful CALIBRATION events; user 2026-08-26)
+      in runtime ledger via Contents API CAS (rev 22→23, commit
+      `2f024d1f659fa8d8cd5b8bf76d40d90da3505b23`); Dashboard: disable
+      calibration, enable completion, paste prompts
+- [x] Tests + `sync_cursor_export_prompts.py --write/--check`
+- [x] Commit, push, open PR (not Trunk-merged unless asked)
+
 # Phase 1 PR Review — 2026-08-17
 
 Branch: `cursor-agent/automated-pr-workflow-2dfb` Mode: review-and-merge. Stale:
