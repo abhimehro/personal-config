@@ -2682,3 +2682,20 @@ record and stop.
 
 **Detection cost:** Low — Stage 1 run record `SHA_MATCH skip` vs `MERGEABLE`
 open BOT count; throughput PASS while open PRs increased.
+
+## Lesson 0gv: Maintainer-login BOT cannot self-approve (2026-08-27)
+
+**Pattern:** Hydrograph #575 was BOT by identity policy (REST `login=abhimehro`
+plus ≥2 versioned signals) and merge-eligible. `gh pr review --approve` failed
+with GraphQL *Review Can not approve your own pull request* because the
+automation token's GitHub login matches the PR author. The failed approve still
+consumed a product-mutation slot. Squash-merge without self-approve succeeded
+(`aa3e00694eb06755c559e31ca1c2ca92c7e2b626`).
+
+**Rule:** When the token login equals the PR author, skip `gh pr review
+--approve` and complete the registered merge path if every other routine
+predicate is true. Count a failed self-approve as a product mutation. Do not
+retry approve. Do not treat the GraphQL error as a merge-state failure.
+
+**Detection cost:** Low — GraphQL error text plus `gh api user` login matching
+`author.login`.
