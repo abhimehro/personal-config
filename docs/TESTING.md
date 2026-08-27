@@ -375,7 +375,7 @@ the top (Pattern 5 above) and add an entry to this table.
 
 A curated subset of fast, cross-platform tests is wired into `make test-quick`.
 Use this target for quick pre-commit feedback without running the full suite
-(~23 tests).
+(3 tests).
 
 **Included tests:**
 
