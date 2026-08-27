@@ -1,3 +1,14 @@
+# Grok Bot PR Desk (filter, not a fourth stage) — 2026-08-27
+
+Paste-ready files: `docs/grok-bot/`. Do not give this Bot merge/issue/CAS
+authority. Dashboard Automations stay the only PR actors.
+
+- [ ] Create Bot **PR Desk**; paste `docs/grok-bot/pr-desk.profile.md`
+- [ ] Connect GitHub (read) + Notion plugins only
+- [ ] Run `docs/grok-bot/pr-desk.first-task.md`; correct once
+- [ ] Save skill + weekday 8:00 PM CDT routine from
+      `docs/grok-bot/pr-desk.skill-digest.md` after the format is good
+- [ ] Do not add a GitHub-notification listener in v1
 # PR pipeline throughput + Stage 3 approval (2026-08-26)
 
 T5 — Orchestrate. Drain the ~200-PR backlog. Do not bump `policy_revision`.

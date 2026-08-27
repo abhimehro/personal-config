@@ -673,6 +673,10 @@ symlink destinations are never followed. To target one hash directory:
   Bounded completion is on. Disable the calibration Dashboard automation and
   enable the completion variant after pasting the updated prompts. Resetting
   stale calibration to `REPORT_ONLY` / count 0 is not a successful run.
+- Grok Bot **PR Desk** (`docs/grok-bot/`) is a human-facing filter, not a
+  fourth lifecycle stage. It must not merge, approve, close, comment, create
+  GitHub issues, CAS-write the ledger, launch Cloud Agents, or write
+  `tasks/*-session-reports.md`. Digests cap at five human items.
 
 ## Learned Workspace Facts
 
