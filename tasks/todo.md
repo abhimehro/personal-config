@@ -9,6 +9,7 @@ authority. Dashboard Automations stay the only PR actors.
 - [ ] Save skill + weekday 8:00 PM CDT routine from
       `docs/grok-bot/pr-desk.skill-digest.md` after the format is good
 - [ ] Do not add a GitHub-notification listener in v1
+
 # PR pipeline throughput + Stage 3 approval (2026-08-26)
 
 T5 — Orchestrate. Drain the ~200-PR backlog. Do not bump `policy_revision`.

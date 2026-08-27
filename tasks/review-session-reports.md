@@ -6,14 +6,12 @@ Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
 **180**; NEW **18**; HEAD_DRIFT **0**. Ledger writes this run **21** (18 new
 keys + 3 SHA_MATCH terminal mutations). `/trunk merge` **1** (personal-config
 #2091 `26a3b301885a7dd19c9b150e2a4c31c219f0bf4e` →
-`cf33919de1710bbc57de21681cb3d63bb715b05d`). Closed **3** (seatek #736,
-series #410, rpce #293 `CLOSED_NOOP`). GitHub PR mutations **4**. Ledger `19`
-→ `20` then close CAS `20` → `21` (blob
-`cd158499096d2bb4b94594a733888563d50fd733`, commit
-`47435b29bad53a5e8001a24c419e0aca6408843c`). Stage 2 queued **0**. Stage 3
-**16** handoffs. Throughput **PASS**. Full record:
-`tasks/pr-review-2026-08-26-1500.md`. Docs branch:
-`pr-lifecycle-docs-20260826`.
+`cf33919de1710bbc57de21681cb3d63bb715b05d`). Closed **3** (seatek #736, series
+#410, rpce #293 `CLOSED_NOOP`). GitHub PR mutations **4**. Ledger `19` → `20`
+then close CAS `20` → `21` (blob `cd158499096d2bb4b94594a733888563d50fd733`,
+commit `47435b29bad53a5e8001a24c419e0aca6408843c`). Stage 2 queued **0**. Stage
+3 **16** handoffs. Throughput **PASS**. Full record:
+`tasks/pr-review-2026-08-26-1500.md`. Docs branch: `pr-lifecycle-docs-20260826`.
 
 | Metric                      | Count |
 | --------------------------- | ----: |
@@ -40,12 +38,11 @@ Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
 keys + 3 SHA_MATCH mutations). `/trunk merge` **1** (personal-config #2084
 `53162ac8c52eef4120e29d2722b2248d78a9c473` →
 `76865381805faaccd711d4ec999044f8ba39a158`). Closed **3** (hydro #557/#558
-`CLOSED_DUPLICATE`; rpce #288 `CLOSED_NOOP`). GitHub PR mutations **4**.
-Ledger `17` → `18` (blob `f7ac87639f53005eede78fe5f2c897026f3c38be`, commit
+`CLOSED_DUPLICATE`; rpce #288 `CLOSED_NOOP`). GitHub PR mutations **4**. Ledger
+`17` → `18` (blob `f7ac87639f53005eede78fe5f2c897026f3c38be`, commit
 `f05d593880b6b56084cf3ece0f4438530dda22d0`). Stage 2 queued **0**. Stage 3
 **23** handoffs. Throughput **PASS**. Full record:
-`tasks/pr-review-2026-08-25-1500.md`. Docs branch:
-`pr-lifecycle-docs-20260825`.
+`tasks/pr-review-2026-08-25-1500.md`. Docs branch: `pr-lifecycle-docs-20260825`.
 
 | Metric                      | Count |
 | --------------------------- | ----: |
@@ -74,13 +71,12 @@ keys + 2 SHA_MATCH mutations). `/trunk merge` **1** (personal-config #2078
 `4834c8a10ea750e1c662ec5f0dcb3c02544a6c6e` →
 `d006e33e2697ba9b716f6dfa558d6aec143daa28`). Squash-merged **1**
 (Seatek_Analysis #729 `64b86708adc2d12e873ca9ac1b7d39d7dece9d86` →
-`0c9020e3465fffb5774272b415d3d772002589bd`). Closed **2** (ctrld-sync #1161
-and Seatek_Analysis #717 `CLOSED_SUPERSEDED`). GitHub PR mutations **4**.
-Ledger `15` → `16` (blob `2fea1b9edeafe916a52b95f0bedc941c778d36d9`, commit
+`0c9020e3465fffb5774272b415d3d772002589bd`). Closed **2** (ctrld-sync #1161 and
+Seatek_Analysis #717 `CLOSED_SUPERSEDED`). GitHub PR mutations **4**. Ledger
+`15` → `16` (blob `2fea1b9edeafe916a52b95f0bedc941c778d36d9`, commit
 `8b8a84493d64e1a412905d21d73d3e8db3d3bb91`). Stage 2 queued **0**. Stage 3
 **16** handoffs. Throughput **PASS**. Lesson **0gt**. Full record:
-`tasks/pr-review-2026-08-24-1500.md`. Docs branch:
-`pr-lifecycle-docs-20260824`.
+`tasks/pr-review-2026-08-24-1500.md`. Docs branch: `pr-lifecycle-docs-20260824`.
 
 | Metric                      | Count |
 | --------------------------- | ----: |
@@ -104,19 +100,17 @@ Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
 `REPORT_ONLY` count **3** (not incremented). Slim inventory (no `commits` /
 `statusCheckRollup`; lessons **0gl** / **0gn**). Open **150**; SHA_MATCH skip
 **128**; ledger items this run **29**. Squash-merged **1**
-(email-security-pipeline #1515
-`01e5600238a7acfb6b4317ad39e8c6bf02a4bfa7` →
+(email-security-pipeline #1515 `01e5600238a7acfb6b4317ad39e8c6bf02a4bfa7` →
 `aa0420714eaf96f2ae5aef75fe22f3ba2460d86b`). `/trunk merge` **1**
 (personal-config #2067 `5093a4fa6fd9817accf82331bac37d9b772c5998` →
 `10c7a267ab98abf39ad2f92eb71b49c846f57ac0`). Closed **1** (series #406
-`CLOSED_NOOP`); recorded side-effect close esp #1514 `CLOSED_SUPERSEDED`.
-GitHub PR mutations **4**. Ledger `13` → `14` (blob
+`CLOSED_NOOP`); recorded side-effect close esp #1514 `CLOSED_SUPERSEDED`. GitHub
+PR mutations **4**. Ledger `13` → `14` (blob
 `f49b96c52f9e26fedd8642694c664e5a93865703`, commit
 `f92633902db595c3a9a3f0724c6e93360147aadf`). Stage 2 queued **0**. Stage 3
 **24** handoffs. HUMAN leftovers (gitleaks, hyphen-Jules Daily QA, title-only
 Sentinel) untouched. Lessons **0gq**, **0gr**. Full record:
-`tasks/pr-review-2026-08-23-1500.md`. Docs branch:
-`pr-lifecycle-docs-20260823`.
+`tasks/pr-review-2026-08-23-1500.md`. Docs branch: `pr-lifecycle-docs-20260823`.
 
 | Metric                      | Count |
 | --------------------------- | ----: |

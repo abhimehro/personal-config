@@ -333,9 +333,7 @@ class TestStage1ThroughputGate(unittest.TestCase):
         self.assertIn("canonical-pick", completion)
 
     def test_lifecycle_contract_sha_match_exception(self):
-        contract = (ROOT / "docs/automated-pr-lifecycle.md").read_text(
-            encoding="utf-8"
-        )
+        contract = (ROOT / "docs/automated-pr-lifecycle.md").read_text(encoding="utf-8")
         self.assertIn("SHA_MATCH skip applies only", contract)
         self.assertIn("canonical-pick", contract)
         self.assertIn("product-mutation", contract)

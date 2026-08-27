@@ -2560,42 +2560,42 @@ succeeds.
 
 ## Lesson 0go: Restore a missing ledger ref; never invent ledger state (2026-08-22)
 
-**Pattern:** `GET .../git/ref/heads/automation/pr-lifecycle-ledger` returned
-404 while `GET .../contents/pr-lifecycle-ledger.yaml` by the last known commit
-SHA still returned rev 10 (`ccc48c10227711eacddfc97c685e2a5236bd6e17` /
-blob `a522d71e5a6895718c9410b1270a7f7d82cffbed`). The orphan data-branch
-pointer had been dropped; the objects had not. **Rule:** A 404 on the data
-branch is `HOLD_PLATFORM` until the ref is restored. Restore with
-`POST .../git/refs` pointing at the last known **existing** commit SHA from
-Contents/Git history. Do not force-push. Do not create a new orphan from
-`main`. Do not treat `tasks/pr-lifecycle-ledger.yaml` as runtime state. After
-restore, re-GET the blob SHA and continue CAS as usual. **Detection cost:**
-Low — ref 404 plus a successful contents read by recorded commit SHA.
+**Pattern:** `GET .../git/ref/heads/automation/pr-lifecycle-ledger` returned 404
+while `GET .../contents/pr-lifecycle-ledger.yaml` by the last known commit SHA
+still returned rev 10 (`ccc48c10227711eacddfc97c685e2a5236bd6e17` / blob
+`a522d71e5a6895718c9410b1270a7f7d82cffbed`). The orphan data-branch pointer had
+been dropped; the objects had not. **Rule:** A 404 on the data branch is
+`HOLD_PLATFORM` until the ref is restored. Restore with `POST .../git/refs`
+pointing at the last known **existing** commit SHA from Contents/Git history. Do
+not force-push. Do not create a new orphan from `main`. Do not treat
+`tasks/pr-lifecycle-ledger.yaml` as runtime state. After restore, re-GET the
+blob SHA and continue CAS as usual. **Detection cost:** Low — ref 404 plus a
+successful contents read by recorded commit SHA.
 
 ## Lesson 0gp: Merged PRs with post-merge head drift keep the existing key (2026-08-22)
 
-**Pattern:** After a Trunk (or GitHub) merge, the merged PR's live `headOid`
-can drift from the ingested ledger `head_sha` because GitHub retargets or
-rebases the head ref. personal-config #2041 stayed
+**Pattern:** After a Trunk (or GitHub) merge, the merged PR's live `headOid` can
+drift from the ingested ledger `head_sha` because GitHub retargets or rebases
+the head ref. personal-config #2041 stayed
 `…#2041@2facd5bddc672c3bab21699acfd61152a13be098` while live head moved to
 `0d9a1146…` after merge `30db0e1b962b123f0ac15b9ddf150a50bc3e87b2`. Treating
-that as `STALE_ANCHOR` would mint a replacement key and bounce a **merged**
-PR back to Stage 1. **Rule:** When GitHub `merged` is true, keep the
-**existing** item key, record `MERGED_ROUTINE` (or the verified terminal
-disposition) with the merge-commit SHA in `evidence_urls`, and do **not**
-mint a new key. Do not `STALE_ANCHOR` a merged PR. Live-head drift on an
-**open** PR remains Stage 1 invalidation as before. **Detection cost:** Low
-— GraphQL/REST `merged: true` plus `headOid != ledger.head_sha`.
+that as `STALE_ANCHOR` would mint a replacement key and bounce a **merged** PR
+back to Stage 1. **Rule:** When GitHub `merged` is true, keep the **existing**
+item key, record `MERGED_ROUTINE` (or the verified terminal disposition) with
+the merge-commit SHA in `evidence_urls`, and do **not** mint a new key. Do not
+`STALE_ANCHOR` a merged PR. Live-head drift on an **open** PR remains Stage 1
+invalidation as before. **Detection cost:** Low — GraphQL/REST `merged: true`
+plus `headOid != ledger.head_sha`.
 
 ## Lesson 0gq: Hyphen-Jules Daily QA with one signal stays HUMAN (2026-08-23)
 
 **Pattern:** Jules Daily QA branches named `jules-daily-qa-<repo>-YYYY-MM-DD`
 (hyphen after `jules`, not `jules/`) plus a Daily-QA title give **one**
 versioned signal under identity `2026-08-20-hyphen`. Token login `abhimehro`
-still needs **≥2** independent signals for BOT. Result: HUMAN /
-`human_default`, `risk_class: SENSITIVE`, even when the diff is zero files.
-Stage 1 close authority is bot-authored non-security no-ops only. **Rule:** Do
-not close or merge hyphen-Jules Daily QA (or title-only Sentinel) when
+still needs **≥2** independent signals for BOT. Result: HUMAN / `human_default`,
+`risk_class: SENSITIVE`, even when the diff is zero files. Stage 1 close
+authority is bot-authored non-security no-ops only. **Rule:** Do not close or
+merge hyphen-Jules Daily QA (or title-only Sentinel) when
 `independent_signal_count < 2`. Ambiguous identity is always HUMAN. Do not
 expand the allowlist in a Stage 1 run. **Detection cost:** Low —
 `scripts/pr_identity.py` shows one of `branch` / `title` and
@@ -2607,65 +2607,78 @@ expand the allowlist in a Stage 1 run. **Detection cost:** Low —
 cleanup, but GitHub Advanced Security / Bandit review threads on `assert`
 findings stayed unresolved. CLEAN merge state is false until those threads
 resolve. The findings live in tests; resolving **other authors'** security
-threads is out of Stage 1 scope. Combined with HUMAN identity (0gq), the PR
-is a Stage 3 hold. **Rule:** Unresolved GHAS/CodeQL/Bandit conversations are
-a merge-state failure even when CI is green. Do not resolve another reviewer's
+threads is out of Stage 1 scope. Combined with HUMAN identity (0gq), the PR is a
+Stage 3 hold. **Rule:** Unresolved GHAS/CodeQL/Bandit conversations are a
+merge-state failure even when CI is green. Do not resolve another reviewer's
 security thread. Do not squash. Hand off `HOLD_EVIDENCE` / `REVIEW_SECURITY`.
 **Detection cost:** Low — GraphQL `reviewThreads` / REST review comments with
 unresolved GHAS or Bandit.
 
-
 ## Lesson 0gs: Contents GET uses `?ref=`; GraphQL check contexts need pagination (2026-08-23)
 
-**Pattern:** Stage 3 CAS retry 404'd when `gh api repos/.../contents/pr-lifecycle-ledger.yaml -f ref=automation/pr-lifecycle-ledger` sent `ref` as a form field. The working GET is query-string `...?ref=automation/pr-lifecycle-ledger`. PUT still uses JSON `branch` plus the current blob SHA as the CAS precondition, and the full ledger must go through `gh api --input` (CLI argv is too long for `-f content=`). Separately, `gh pr view --json statusCheckRollup` is unsupported, and GraphQL `statusCheckRollup { contexts }` fails unless `contexts` has `first` or `last`. Slim `statusCheckRollup { state }` plus a bounded `contexts(last: 20)` is enough for merge-state evidence.
+**Pattern:** Stage 3 CAS retry 404'd when
+`gh api repos/.../contents/pr-lifecycle-ledger.yaml -f ref=automation/pr-lifecycle-ledger`
+sent `ref` as a form field. The working GET is query-string
+`...?ref=automation/pr-lifecycle-ledger`. PUT still uses JSON `branch` plus the
+current blob SHA as the CAS precondition, and the full ledger must go through
+`gh api --input` (CLI argv is too long for `-f content=`). Separately,
+`gh pr view --json statusCheckRollup` is unsupported, and GraphQL
+`statusCheckRollup { contexts }` fails unless `contexts` has `first` or `last`.
+Slim `statusCheckRollup { state }` plus a bounded `contexts(last: 20)` is enough
+for merge-state evidence.
 
-**Rule:** Contents GET for a non-default ref must use `?ref=`. Never `-f ref=` on GET. PUT CAS with `sha` + `branch` via `--input` JSON. Do not use `gh pr view --json statusCheckRollup`. Paginate GraphQL `contexts`. Treat a Contents 404 that used the form-field `ref` as an API-shape bug, not a missing ledger.
+**Rule:** Contents GET for a non-default ref must use `?ref=`. Never `-f ref=`
+on GET. PUT CAS with `sha` + `branch` via `--input` JSON. Do not use
+`gh pr view --json statusCheckRollup`. Paginate GraphQL `contexts`. Treat a
+Contents 404 that used the form-field `ref` as an API-shape bug, not a missing
+ledger.
 
-**Detection cost:** Low — GET with `-f ref=` → HTTP 404; GET with `?ref=` returns the blob. GraphQL without `first`/`last` on `contexts` → schema error; with `last: 20` succeeds.
+**Detection cost:** Low — GET with `-f ref=` → HTTP 404; GET with `?ref=`
+returns the blob. GraphQL without `first`/`last` on `contexts` → schema error;
+with `last: 20` succeeds.
 
 ## Lesson 0gt: Slim identity under-counts until body/comment/email enrich (2026-08-24)
 
 **Pattern:** Token-login PRs can look HUMAN on the slim `gh pr list` pass and
 become BOT only after REST body, timeline commenter, and commit-email enrich.
 Two traps: (1) title `chore: automated QA review` does **not** match the
-versioned keyword `automation` (substring is `automated`, not `automation`);
-(2) branch prefixes are exact `startswith` of `jules/` and `jules-` only —
+versioned keyword `automation` (substring is `automated`, not `automation`); (2)
+branch prefixes are exact `startswith` of `jules/` and `jules-` only —
 `fix/jules-*` is not a prefix hit. Examples: repoprompt-ce #288 slim HUMAN
-(branch `jules-` only) → BOT after body + commit email + allowlisted
-commenter (zero-diff close candidate); Seatek_Analysis #717 slim HUMAN
-(title only) → BOT after title + timeline_comment + commit_email, then
-`CLOSED_SUPERSEDED` vs #729.
+(branch `jules-` only) → BOT after body + commit email + allowlisted commenter
+(zero-diff close candidate); Seatek_Analysis #717 slim HUMAN (title only) → BOT
+after title + timeline_comment + commit_email, then `CLOSED_SUPERSEDED` vs #729.
 
-**Rule:** Never close or merge a maintainer-login PR from slim identity
-alone. Enrich body/commenter/email first. `automated` ≠ `automation`.
-`fix/jules-*` is not `jules-`. Ambiguous identity stays HUMAN.
+**Rule:** Never close or merge a maintainer-login PR from slim identity alone.
+Enrich body/commenter/email first. `automated` ≠ `automation`. `fix/jules-*` is
+not `jules-`. Ambiguous identity stays HUMAN.
 
 **Detection cost:** Low — `scripts/pr_identity.py` after enrich shows
 `independent_signal_count` and `author_type`.
 
 ## Lesson 0gu: SHA_MATCH skip must not park executable BOT work (2026-08-26)
 
-**Pattern:** After Stage 3 landed, Stage 1 treated unchanged SHA as
-idempotent skip. On 2026-08-26 it skipped **180/198** open PRs, inventoried
-only 18 NEW twins (mostly Jules/Bolt/Palette/Sentinel overlap), handed those
-to Stage 3 as `HOLD_CANONICAL` / `REVIEW_SECURITY`, and spent unused mutation
-slots on docs-lineage Trunk plus zero-diff closes. Open PRs grew 126 → 200
-while ~128 MERGEABLE BOT PRs sat idle. Stage 3 `REPORT_ONLY` could not merge
-them. `HOLD_PLATFORM` was applied to GitHub-green `repoprompt-ce` BOT PRs
-because Linux cannot salvage Swift (lesson **0gi**), so Stage 1 never
-squash-merged checks-green work. `.jules/` journal overlap was treated as
-sticky `generated_output`. Stage 2 burned a session on empty intake.
+**Pattern:** After Stage 3 landed, Stage 1 treated unchanged SHA as idempotent
+skip. On 2026-08-26 it skipped **180/198** open PRs, inventoried only 18 NEW
+twins (mostly Jules/Bolt/Palette/Sentinel overlap), handed those to Stage 3 as
+`HOLD_CANONICAL` / `REVIEW_SECURITY`, and spent unused mutation slots on
+docs-lineage Trunk plus zero-diff closes. Open PRs grew 126 → 200 while ~128
+MERGEABLE BOT PRs sat idle. Stage 3 `REPORT_ONLY` could not merge them.
+`HOLD_PLATFORM` was applied to GitHub-green `repoprompt-ce` BOT PRs because
+Linux cannot salvage Swift (lesson **0gi**), so Stage 1 never squash-merged
+checks-green work. `.jules/` journal overlap was treated as sticky
+`generated_output`. Stage 2 burned a session on empty intake.
 
 **Rule:** SHA_MATCH skip only if the next action is unexpired **and not**
 Stage-1-executable. Reselect MERGEABLE green BOT, canonical-pick clusters,
 elapsed close-candidates, and Stage 3 bounce-backs into the 50 inventory.
-Canonical-pick BOT non-sensitive overlap in Stage 1 (keep one, close the
-rest). `HOLD_PLATFORM` is salvage-only. `.jules/` journal alone is lesson
-**0cs**, not sticky. Ledger CAS and docs lineage do not consume the product
-mutation cap. Throughput is **FAIL** if net open BOT PRs grew and unused
-product-mutation slots remained. Stage 3 bounces executable clusters back to
-Stage 1 and packets only irreducible sticky/HUMAN/real platform. Empty Stage 2
-intake is a short record and stop.
+Canonical-pick BOT non-sensitive overlap in Stage 1 (keep one, close the rest).
+`HOLD_PLATFORM` is salvage-only. `.jules/` journal alone is lesson **0cs**, not
+sticky. Ledger CAS and docs lineage do not consume the product mutation cap.
+Throughput is **FAIL** if net open BOT PRs grew and unused product-mutation
+slots remained. Stage 3 bounces executable clusters back to Stage 1 and packets
+only irreducible sticky/HUMAN/real platform. Empty Stage 2 intake is a short
+record and stop.
 
-**Detection cost:** Low — Stage 1 run record `SHA_MATCH skip` vs
-`MERGEABLE` open BOT count; throughput PASS while open PRs increased.
+**Detection cost:** Low — Stage 1 run record `SHA_MATCH skip` vs `MERGEABLE`
+open BOT count; throughput PASS while open PRs increased.

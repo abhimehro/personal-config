@@ -23,9 +23,9 @@
 
 ### Outcomes
 
-| Repo       | Old PR | Disposition                           | New PR | Notes                                                                 |
-| ---------- | -----: | ------------------------------------- | ------ | --------------------------------------------------------------------- |
-| (none)     |      — | EMPTY_INTAKE (structured no-recovery) | —      | No complete unexpired Stage-2-owned work item; no fourth-queue invent |
+| Repo   | Old PR | Disposition                           | New PR | Notes                                                                 |
+| ------ | -----: | ------------------------------------- | ------ | --------------------------------------------------------------------- |
+| (none) |      — | EMPTY_INTAKE (structured no-recovery) | —      | No complete unexpired Stage-2-owned work item; no fourth-queue invent |
 
 - Salvage drafts opened: **0**
 - Infra-fix drafts: **0**
@@ -38,19 +38,18 @@
 
 ### Verification
 
-- Ledger-only `validate_schema` + `validate_runtime_records` **PASS** on rev
-  18. Full wrap validator still fails on `main` export/prompt mismatch
+- Ledger-only `validate_schema` + `validate_runtime_records` **PASS** on rev 18.
+  Full wrap validator still fails on `main` export/prompt mismatch
   (pre-existing; Stage 2 did not edit policy exports).
-- Calibration: `REPORT_ONLY` count **5** / `pr-lifecycle-v1.4` (no stale
-  reset).
+- Calibration: `REPORT_ONLY` count **5** / `pr-lifecycle-v1.4` (no stale reset).
 - Live GitHub: hydro #557 `state=CLOSED` `merged=false`
-  `closed_at=2026-08-25T15:10:42Z` head `1c9b96de8e25…`; hydro #558
-  `CLOSED` `2026-08-25T15:10:44Z` head `3d25583c91bc…`; rpce #288 `CLOSED`
+  `closed_at=2026-08-25T15:10:42Z` head `1c9b96de8e25…`; hydro #558 `CLOSED`
+  `2026-08-25T15:10:44Z` head `3d25583c91bc…`; rpce #288 `CLOSED`
   `2026-08-25T15:10:46Z` head `c83f245e0545…`. Docs lineage
   [#2091](https://github.com/abhimehro/personal-config/pull/2091) open on
   `pr-lifecycle-docs-20260825` head `589e01b5`.
-- Did not invent salvage from Stage 3 remainder, Palette/Bolt/Sentinel
-  clusters, rpce Swift (0gi), or workflow Dependabot bumps.
+- Did not invent salvage from Stage 3 remainder, Palette/Bolt/Sentinel clusters,
+  rpce Swift (0gi), or workflow Dependabot bumps.
 
 ### Handoff
 
@@ -73,16 +72,15 @@ Full record: `tasks/pr-salvage-2026-08-25-1700.md`.
   `namespaceStatus=error` (unavailable)
 - Live: `stage2_work_items: []`; items with `current_owner: stage2` **0**;
   `STAGE2_QUEUED` / `STAGE2_ACTIVE` **0**; Stage 1 today queued **0**
-- Prior salvage remainder: ctrld-sync #1161 live-closed
-  `CLOSED_SUPERSEDED` at 2026-08-24T15:15:35Z (head still
-  `1b7811646f19f71a4304f8d51091cf6c28a46cf6`); do not recreate `display.py`
-  (0gm)
+- Prior salvage remainder: ctrld-sync #1161 live-closed `CLOSED_SUPERSEDED` at
+  2026-08-24T15:15:35Z (head still `1b7811646f19f71a4304f8d51091cf6c28a46cf6`);
+  do not recreate `display.py` (0gm)
 
 ### Outcomes
 
-| Repo       | Old PR | Disposition                         | New PR | Notes                                                                 |
-| ---------- | -----: | ----------------------------------- | ------ | --------------------------------------------------------------------- |
-| (none)     |      — | EMPTY_INTAKE (structured no-recovery) | —    | No complete unexpired Stage-2-owned work item; no fourth-queue invent |
+| Repo   | Old PR | Disposition                           | New PR | Notes                                                                 |
+| ------ | -----: | ------------------------------------- | ------ | --------------------------------------------------------------------- |
+| (none) |      — | EMPTY_INTAKE (structured no-recovery) | —      | No complete unexpired Stage-2-owned work item; no fourth-queue invent |
 
 - Salvage drafts opened: **0**
 - Infra-fix drafts: **0**
@@ -95,17 +93,16 @@ Full record: `tasks/pr-salvage-2026-08-25-1700.md`.
 
 ### Verification
 
-- Ledger-only `validate_schema` + `validate_runtime_records` **PASS** on rev
-  16. Full wrap validator still fails on `main` export/prompt mismatch
+- Ledger-only `validate_schema` + `validate_runtime_records` **PASS** on rev 16.
+  Full wrap validator still fails on `main` export/prompt mismatch
   (pre-existing; Stage 2 did not edit policy exports).
-- Calibration: `REPORT_ONLY` count **4** / `pr-lifecycle-v1.4` (no stale
-  reset).
+- Calibration: `REPORT_ONLY` count **4** / `pr-lifecycle-v1.4` (no stale reset).
 - Live GitHub: ctrld #1161 `state=closed` `merged=false`
   `closed_at=2026-08-24T15:15:35Z`. Docs lineage
   [#2084](https://github.com/abhimehro/personal-config/pull/2084) open on
   `pr-lifecycle-docs-20260824` head `092b4735`.
-- Did not invent salvage from Stage 3 remainder, Palette/Bolt/Sentinel
-  clusters, rpce Swift (0gi), or workflow Dependabot bumps.
+- Did not invent salvage from Stage 3 remainder, Palette/Bolt/Sentinel clusters,
+  rpce Swift (0gi), or workflow Dependabot bumps.
 
 ### Handoff
 
@@ -131,9 +128,9 @@ Full record: `tasks/pr-salvage-2026-08-24-1700.md`.
 
 ### Outcomes
 
-| Repo                    | Old PR | Disposition                                            | New PR                                                                      | Notes                                                                                          |
-| ----------------------- | -----: | ------------------------------------------------------ | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| email-security-pipeline |   1514 | SALVAGE (opened draft; converted back after 0gd ready) | [#1515](https://github.com/abhimehro/email-security-pipeline/pull/1515)     | Top-level `from pathlib import Path`; `python3 -m pytest` 754 passed; original left OPEN       |
+| Repo                    | Old PR | Disposition                                            | New PR                                                                  | Notes                                                                                    |
+| ----------------------- | -----: | ------------------------------------------------------ | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| email-security-pipeline |   1514 | SALVAGE (opened draft; converted back after 0gd ready) | [#1515](https://github.com/abhimehro/email-security-pipeline/pull/1515) | Top-level `from pathlib import Path`; `python3 -m pytest` 754 passed; original left OPEN |
 
 - Salvage drafts opened: **1** (#1515)
 - Infra-fix drafts: **0**

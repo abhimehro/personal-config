@@ -673,9 +673,9 @@ symlink destinations are never followed. To target one hash directory:
   Bounded completion is on. Disable the calibration Dashboard automation and
   enable the completion variant after pasting the updated prompts. Resetting
   stale calibration to `REPORT_ONLY` / count 0 is not a successful run.
-- Grok Bot **PR Desk** (`docs/grok-bot/`) is a human-facing filter, not a
-  fourth lifecycle stage. It must not merge, approve, close, comment, create
-  GitHub issues, CAS-write the ledger, launch Cloud Agents, or write
+- Grok Bot **PR Desk** (`docs/grok-bot/`) is a human-facing filter, not a fourth
+  lifecycle stage. It must not merge, approve, close, comment, create GitHub
+  issues, CAS-write the ledger, launch Cloud Agents, or write
   `tasks/*-session-reports.md`. Digests cap at five human items.
 
 ## Learned Workspace Facts
@@ -700,8 +700,8 @@ symlink destinations are never followed. To target one hash directory:
   Stage-1-executable (MERGEABLE green BOT, canonical-pick clusters, elapsed
   close-candidates, Stage 3 bounce-backs). Unchanged SHA with an unexpired
   non-executable next_action is skipped. A changed base/head SHA invalidates
-  prior evidence and returns the item to Stage 1. Stage 2 completes at most
-  five work items per run; empty intake is a short record and stop.
+  prior evidence and returns the item to Stage 1. Stage 2 completes at most five
+  work items per run; empty intake is a short record and stop.
 - Stage 2 work-item IDs use `s2-YYYYMMDD-...`; Stage 3 ledger events use
   `evt-s3-YYYYMMDD-...` (`ACKNOWLEDGEMENT`, `HANDOFF`, `CALIBRATION`).
 - RepoPrompt CE salvage that needs Swift or `make guardrails` cannot complete on

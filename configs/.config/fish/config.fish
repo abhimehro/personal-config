@@ -312,3 +312,7 @@ source /Users/speedybee/.config/op/op-plugin-loader.fish
 
 # Added by Devin - Next
 fish_add_path /Users/speedybee/.codeium/windsurf/bin
+
+
+# Added by Antigravity CLI installer
+set -gx PATH "/Users/speedybee/.local/bin" $PATH

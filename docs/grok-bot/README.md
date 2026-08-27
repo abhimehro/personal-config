@@ -10,20 +10,20 @@ The pain this Bot is allowed to solve: a solo maintainer cannot absorb
 volume. The Bot compresses that into **at most five human decisions** and a
 throughput line.
 
-Official role analog: [Chief of Staff](https://docs.x.ai/grok-bot/use-cases)
-on [Grok Bot](https://docs.x.ai/grok-bot/overview). Grok Bot is a persistent
+Official role analog: [Chief of Staff](https://docs.x.ai/grok-bot/use-cases) on
+[Grok Bot](https://docs.x.ai/grok-bot/overview). Grok Bot is a persistent
 teammate with its own computer
-([overview](https://docs.x.ai/grok-bot/overview)); it is **not** a Cursor
-Cloud Agent run and **not** a Dashboard Automation.
+([overview](https://docs.x.ai/grok-bot/overview)); it is **not** a Cursor Cloud
+Agent run and **not** a Dashboard Automation.
 
 ## Architecture
 
-| Layer | Owns | Must not |
-| ----- | ---- | -------- |
-| Stage 1/2/3 Automations | Merge/close/draft/CAS ledger | Human inbox, extra docs PRs |
-| Runtime ledger | Current owner of every PR | Being rewritten from Grok Bot |
-| Notion packets | Irreducible Stage 3 questions | Session-report dumps |
-| **Grok Bot PR Desk** | Digest, stall flags, one recommended next step | GitHub mutations, Cloud Agent launches, new issues |
+| Layer                   | Owns                                           | Must not                                           |
+| ----------------------- | ---------------------------------------------- | -------------------------------------------------- |
+| Stage 1/2/3 Automations | Merge/close/draft/CAS ledger                   | Human inbox, extra docs PRs                        |
+| Runtime ledger          | Current owner of every PR                      | Being rewritten from Grok Bot                      |
+| Notion packets          | Irreducible Stage 3 questions                  | Session-report dumps                               |
+| **Grok Bot PR Desk**    | Digest, stall flags, one recommended next step | GitHub mutations, Cloud Agent launches, new issues |
 
 ```text
 15:00 Stage 1  →  17:00 Stage 2  →  19:00 Stage 3
@@ -51,32 +51,32 @@ Cloud Agent run and **not** a Dashboard Automation.
 6. Notifications on. Do **not** subscribe to every GitHub notification.
 
 Promotion path matches the product
-([use cases](https://docs.x.ai/grok-bot/use-cases)): description → one real
-task → correct → skill → second input → routine. Keep external writes behind
-approval ([approvals](https://docs.x.ai/grok-bot/approvals-security-and-privacy)).
+([use cases](https://docs.x.ai/grok-bot/use-cases)): description → one real task
+→ correct → skill → second input → routine. Keep external writes behind approval
+([approvals](https://docs.x.ai/grok-bot/approvals-security-and-privacy)).
 
 ## What “assign work” means
 
 Do not file GitHub issues (that is how the backlog grew). Do not launch Cursor
 Cloud Agents (that duplicates Automations and spends a second meter).
 
-Assigning work here means: name the existing owner (Stage 1, Stage 2, you),
-cite the ledger `next_action`, and if a one-off Cloud Agent is truly needed,
+Assigning work here means: name the existing owner (Stage 1, Stage 2, you), cite
+the ledger `next_action`, and if a one-off Cloud Agent is truly needed,
 **draft** the prompt in-thread and wait for approval.
 
 ## Cost and failure modes
 
 - Grok Bot usage is a **weekly Cursor-account meter**, separate from Automations
-  ([plans](https://cursor.com/help/grok-bot/plans)). A broad event listener
-  will burn it.
+  ([plans](https://cursor.com/help/grok-bot/plans)). A broad event listener will
+  burn it.
 - Grok Bot requires cloud storage; Legacy Privacy Mode is unsupported
   ([FAQ](https://docs.x.ai/grok-bot/faq)).
 - Bots share one computer; they are not a security boundary
   ([overview](https://docs.x.ai/grok-bot/overview)).
 - Routines may pause after a long absence
   ([routines](https://docs.x.ai/grok-bot/skills-routines-and-automations)).
-- If the digest is longer than one screen, the Bot failed. Tighten the skill;
-  do not add a second Bot.
+- If the digest is longer than one screen, the Bot failed. Tighten the skill; do
+  not add a second Bot.
 
 ## Later (only if v1 stays short)
 

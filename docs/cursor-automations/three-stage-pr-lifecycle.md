@@ -104,7 +104,8 @@ for routine BOT work. `HOLD_PLATFORM` is salvage-only: GitHub-green BOT PRs
 merge at Stage 1.
 
 Stage 2 sends every draft (with a replacement ledger item) to Stage 1 when
-routine, else Stage 3. Empty intake: short record and stop. Stage 2 never merges.
+routine, else Stage 3. Empty intake: short record and stop. Stage 2 never
+merges.
 
 Stage 3 **bounces** executable BOT clusters, elapsed close-candidates, and
 GitHub-green BOT `HOLD_PLATFORM` items back to Stage 1. During `REPORT_ONLY` it

@@ -65,8 +65,8 @@ not proceed to inventory, merge, or close.
    overlap group; close the others with a linked explanation (`CLOSED_DUPLICATE`
    or `CLOSED_SUPERSEDED`) in this Stage 1 run. Prefer the newest MERGEABLE
    member whose required checks are green and readable; if none are MERGEABLE,
-   keep the member that has tests. Do **not** hand every cluster to Stage 3.
-   If **every** member is sticky-security or HUMAN, one Stage 3 cluster handoff
+   keep the member that has tests. Do **not** hand every cluster to Stage 3. If
+   **every** member is sticky-security or HUMAN, one Stage 3 cluster handoff
    (not N packets). A `.jules/` journal collision alone is lesson **0cs**, not
    sticky `generated_output`.
 
@@ -101,16 +101,16 @@ security failures, or architectural changes.
 
 Assign each PR one disposition:
 
-| Disposition        | Criteria                                       | Action                           |
-| ------------------ | ---------------------------------------------- | -------------------------------- |
-| MERGE              | All gates pass, CI green, no conflicts         | Squash-merge, delete branch      |
-| MERGE-AFTER-FIX    | Minor issues auto-fixed                        | Push fix, re-run CI, then merge  |
-| REQUEST-CHANGES    | Issues beyond auto-fix                         | Post review, assign to human     |
-| ESCALATE           | Security gate failure or architectural concern | Tag human, block merge           |
-| CLOSE-DUPLICATE    | Duplicate or superseded                        | Close with linked explanation    |
-| CLOSE-STALE        | Stale per config threshold                     | Close with reopen instructions   |
-| CONSOLIDATE        | Multiple small PRs should be one               | See consolidation protocol below |
-| HANDOFF-SALVAGE    | One bounded mechanical recovery is required    | Create a Stage 2 ledger handoff  |
+| Disposition        | Criteria                                                       | Action                                                              |
+| ------------------ | -------------------------------------------------------------- | ------------------------------------------------------------------- |
+| MERGE              | All gates pass, CI green, no conflicts                         | Squash-merge, delete branch                                         |
+| MERGE-AFTER-FIX    | Minor issues auto-fixed                                        | Push fix, re-run CI, then merge                                     |
+| REQUEST-CHANGES    | Issues beyond auto-fix                                         | Post review, assign to human                                        |
+| ESCALATE           | Security gate failure or architectural concern                 | Tag human, block merge                                              |
+| CLOSE-DUPLICATE    | Duplicate or superseded                                        | Close with linked explanation                                       |
+| CLOSE-STALE        | Stale per config threshold                                     | Close with reopen instructions                                      |
+| CONSOLIDATE        | Multiple small PRs should be one                               | See consolidation protocol below                                    |
+| HANDOFF-SALVAGE    | One bounded mechanical recovery is required                    | Create a Stage 2 ledger handoff                                     |
 | HANDOFF-COMPLETION | Sticky security, HUMAN, `HOLD_CONTRACT`, or irreducible policy | Create a Stage 3 ledger handoff. Not for BOT file-overlap clusters. |
 
 **Consolidation:** Create branch `chore/consolidated-[category]-updates` from
