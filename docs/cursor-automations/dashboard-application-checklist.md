@@ -34,7 +34,9 @@ enforcement primitive.
 
 Agent-facing session docs share one `pr-lifecycle-docs-YYYYMMDD` PR per UTC day
 (lifecycle contract). Stage 3 still uses Notion only for one-question packets;
-do not paste run records into Notion as git continuity.
+do not paste run records into Notion as git continuity. Grok Bot is not a
+Dashboard automation; human-facing digest setup is
+[`docs/grok-bot/README.md`](../grok-bot/README.md).
 
 The two Stage 3 exports share `0 19 * * *` and are **mutually exclusive**.
 Before enabling completion, disable or delete the calibration automation, verify

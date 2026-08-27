@@ -28,6 +28,10 @@ setting, the stage prompt must state that a second run may not begin while a
 prior same-stage run is in progress. In America/Chicago, dashboard-local display
 shifts with daylight-saving time; the cron source remains UTC.
 
+A Grok Bot **PR Desk** may digest the human inbox after Stage 3. It is not a
+fourth Automation and must not mutate GitHub or the ledger. See
+[`docs/grok-bot/README.md`](../grok-bot/README.md).
+
 ## Paste-ready source artifacts
 
 | Stage               | Prompt                                                                                     | Export                                                                                         | Approval action                     | Memory                   |
