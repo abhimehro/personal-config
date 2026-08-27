@@ -2642,3 +2642,30 @@ alone. Enrich body/commenter/email first. `automated` ≠ `automation`.
 
 **Detection cost:** Low — `scripts/pr_identity.py` after enrich shows
 `independent_signal_count` and `author_type`.
+
+## Lesson 0gu: SHA_MATCH skip must not park executable BOT work (2026-08-26)
+
+**Pattern:** After Stage 3 landed, Stage 1 treated unchanged SHA as
+idempotent skip. On 2026-08-26 it skipped **180/198** open PRs, inventoried
+only 18 NEW twins (mostly Jules/Bolt/Palette/Sentinel overlap), handed those
+to Stage 3 as `HOLD_CANONICAL` / `REVIEW_SECURITY`, and spent unused mutation
+slots on docs-lineage Trunk plus zero-diff closes. Open PRs grew 126 → 200
+while ~128 MERGEABLE BOT PRs sat idle. Stage 3 `REPORT_ONLY` could not merge
+them. `HOLD_PLATFORM` was applied to GitHub-green `repoprompt-ce` BOT PRs
+because Linux cannot salvage Swift (lesson **0gi**), so Stage 1 never
+squash-merged checks-green work. `.jules/` journal overlap was treated as
+sticky `generated_output`. Stage 2 burned a session on empty intake.
+
+**Rule:** SHA_MATCH skip only if the next action is unexpired **and not**
+Stage-1-executable. Reselect MERGEABLE green BOT, canonical-pick clusters,
+elapsed close-candidates, and Stage 3 bounce-backs into the 50 inventory.
+Canonical-pick BOT non-sensitive overlap in Stage 1 (keep one, close the
+rest). `HOLD_PLATFORM` is salvage-only. `.jules/` journal alone is lesson
+**0cs**, not sticky. Ledger CAS and docs lineage do not consume the product
+mutation cap. Throughput is **FAIL** if net open BOT PRs grew and unused
+product-mutation slots remained. Stage 3 bounces executable clusters back to
+Stage 1 and packets only irreducible sticky/HUMAN/real platform. Empty Stage 2
+intake is a short record and stop.
+
+**Detection cost:** Low — Stage 1 run record `SHA_MATCH skip` vs
+`MERGEABLE` open BOT count; throughput PASS while open PRs increased.

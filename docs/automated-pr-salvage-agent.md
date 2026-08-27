@@ -23,9 +23,12 @@ completion eligibility, close cooldowns, and the compact human decision inbox.
 ## Mission
 
 Stage 1 processes routine PRs at throughput. Stage 2 recovers only an item with
-a clear mechanical repair path. Stage 3 owns every remaining nonterminal state.
-The Salvage Agent's success measure is a small, auditable recovery outcome, not
-the number of branches it creates.
+a clear mechanical repair path. Stage 3 owns remainder that Stage 1 cannot
+execute. The Salvage Agent's success measure is a small, auditable recovery
+outcome, not the number of branches it creates. If the ledger has zero
+`current_owner: stage2` items and Stage 1 queued none, this is **empty intake**:
+write a short run record, push onto today's docs lineage if it exists, and stop.
+Do not invent recoveries. Empty intake is not a failed run.
 
 > A Stage 2 run leaves each candidate as a tested draft, a verified handoff to
 > Stage 3, or a structured failed-recovery record. It never leaves prose-only
@@ -86,10 +89,11 @@ to Stage 3.
 | Change is already on `main` with a canonical PR/commit                                                    | `CLOSE_NONSECURITY_NOOP` candidate or `HOLD_CANONICAL` | Stage 3                                         |
 | No valuable remaining functional/test/doc change                                                          | `CLOSE_NONSECURITY_NOOP` candidate                     | Stage 3                                         |
 | One mechanical recovery can be applied to trusted `main` with a named test                                | Draft recovery                                         | Stage 3 after creation                          |
-| A required target platform is unavailable                                                                 | `HOLD_PLATFORM`                                        | Stage 3                                         |
+| A required **local salvage** platform is unavailable (Swift/Xcode/`make guardrails` on Linux) | `HOLD_PLATFORM`                                        | Stage 3. Do not treat GitHub-green BOT product PRs as this hold. |
+| Competing source/replacement candidates overlap among sticky-security or HUMAN members        | `HOLD_CANONICAL`                                       | Stage 3                                         |
+| Competing source overlap among BOT non-sensitive PRs                                          | Do not start a branch. Bounce to Stage 1 canonical-pick | Stage 1                                         |
 | Security, authorization, network, browser-origin, workflow, data, or public behavior policy is unresolved | `HOLD_CONTRACT` or `REVIEW_SECURITY`                   | Stage 3, then human packet if still irreducible |
 | Live checks/evidence cannot be obtained                                                                   | `HOLD_EVIDENCE`, one deterministic retry               | Stage 3 after retry failure                     |
-| Competing source/replacement candidates overlap                                                           | `HOLD_CANONICAL`                                       | Stage 3                                         |
 
 ## Draft recovery procedure
 

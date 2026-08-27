@@ -35,11 +35,24 @@ report-only for approve/merge/close/comment/branch mutations. Process at most 20
 reconciliations and five decision packets. Never approve, merge, submit to a
 queue, close, comment, request reviewers, mark ready, force-push, create a
 recovery branch, rewrite a branch, delete a branch, alter rulesets, alter
-workflow permissions, or execute PR-head code. Calibration still requires ledger
-progress: live-reconcile Stage-3 items, create complete Stage 2 work items for
-mechanical repairs, record close-candidates with evidence, and write
-one-question packets only for irreducible security, policy, platform, or
-canonical judgment.
+workflow permissions, or execute PR-head code. If the runtime ledger
+`calibration.status` is already `APPROVED` for `pr-lifecycle-v1.4`, do not keep
+parking work: bounce executable items to Stage 1 and stop incrementing
+calibration. The live Dashboard must then run the **completion** variant, not
+this one.
+
+During REPORT_ONLY you are a **router**, not a parking lot. Bounce BOT
+`HOLD_CANONICAL` clusters that Stage 1 can canonical-pick, elapsed
+close-candidates, and GitHub-green BOT `HOLD_PLATFORM` items (required checks
+already passing; Linux Swift salvage is irrelevant to merge) **back to Stage 1**
+with an executable `next_action`. Packets only for irreducible sticky security,
+HUMAN, or real platform spend. Do not packet Jules/Bolt/Palette file-collision
+clusters.
+
+Calibration still requires ledger progress: live-reconcile Stage-3 items, create
+complete Stage 2 work items for mechanical repairs, record close-candidates with
+evidence, bounce executable clusters to Stage 1, and write one-question packets
+only for irreducible security, policy, or real platform judgment.
 
 For every item, reconcile observed versus ledger anchors, identity from the
 versioned GitHub API policy, author type, classification, sticky sensitive
@@ -59,10 +72,12 @@ live-reconciled and no complete work item or close-candidate could be created
 from live evidence. Increment calibration only through a revision-checked
 calibration event.
 
-Do not create a packet for routine remainder work. Route a bounded repair
-through a complete Stage 2 work item. Create a human packet only for irreducible
-security, policy, platform, or canonical judgment. Keep any stale or unavailable
-evidence at `HOLD_EVIDENCE` or `ANALYSIS_ERROR` with the safe default. If a
+Do not create a packet for routine remainder work or for BOT non-sensitive
+file-overlap clusters. Route a bounded repair through a complete Stage 2 work
+item. Bounce Stage-1-executable clusters to Stage 1. Create a human packet only
+for irreducible security, policy, or real platform judgment. Keep any stale or
+unavailable evidence at `HOLD_EVIDENCE` or `ANALYSIS_ERROR` with the safe
+default. If a
 salvage draft is open in GitHub but missing from the ledger, ingest it as an
 item; do not leave extras. Read today's `pr-lifecycle-docs-YYYYMMDD` head, then
 yesterday's lineage if open, then `main` session reports. Push the Stage 3 run

@@ -38,12 +38,20 @@ do not paste run records into Notion as git continuity. Grok Bot is not a
 Dashboard automation; human-facing digest setup is
 [`docs/grok-bot/README.md`](../grok-bot/README.md).
 
+**HITL after this throughput PR lands (required or cron keeps the old prompts):**
+
+1. Paste `prompts/daily-pr-review.md` into Stage 1 automation
+   `77c168e0-7f6b-42de-bad6-da4e4e640b79`.
+2. Paste `prompts/daily-pr-salvage.md` into Stage 2 automation
+   `3e537981-04a6-456f-89a3-272d9d5fddd7`.
+3. **Disable** Stage 3 calibration automation
+   `d9d2c058-9c42-11f1-ba66-0e7d0216e441` (do not leave it enabled).
+4. Paste `prompts/daily-pr-completion.md` into the Stage 3 **completion**
+   export and **enable** that automation on `0 19 * * *`. Confirm calibration
+   cannot fire again.
+5. Record the new dashboard fingerprints in the next runtime-ledger event.
+
 The two Stage 3 exports share `0 19 * * *` and are **mutually exclusive**.
-Before enabling completion, disable or delete the calibration automation, verify
-it cannot run again, and record its dashboard fingerprint, disable/delete time,
-and the new completion fingerprint in the runtime ledger. Only then may the
-human-approved completion export be enabled. The inverse rollback is equally
-strict: disable completion first, set calibration to `REVOKED` through the
-runtime ledger, record the reason and fingerprint, then create or re-enable the
-report-only calibration variant. Never leave both variants enabled. Both Stage 3
-variants are currently disabled for the maintainer's controlled manual test.
+Never leave both variants enabled. Calibration reached 7/7 on 2026-08-26; the
+maintainer approved bounded completion. Completion is the live Stage 3 variant
+once the ledger `calibration.status` is `APPROVED` and this paste is done.

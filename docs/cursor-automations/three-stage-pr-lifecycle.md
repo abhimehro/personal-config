@@ -95,21 +95,23 @@ Dashboard remains the evidence source for the connected MCP inventory.
 
 ## Stage handoffs
 
-Stage 1 sends one bounded mechanical repair to Stage 2. It sends every other
-nonterminal item to Stage 3. Stage 1 also **re-ingests** Stage 2 replacement PRs
-that have a ledger `item_key` (or salvage/provenance labels) and remains the
-only pre-calibration autonomous merger for routine BOT work.
+Stage 1 sends one bounded mechanical repair to Stage 2. It **canonical-picks**
+BOT non-sensitive overlap clusters itself. It sends sticky security, HUMAN,
+`HOLD_CONTRACT`, or irreducible policy to Stage 3. Stage 1 **reselects**
+SHA_MATCH items that are still executable (merge, close, canonical-pick) and
+**re-ingests** Stage 2 replacement PRs. It remains the primary autonomous merger
+for routine BOT work. `HOLD_PLATFORM` is salvage-only: GitHub-green BOT PRs
+merge at Stage 1.
 
-Stage 2 sends every draft (with a replacement ledger item), failed recovery,
-policy gap, platform gap, canonical conflict, or unreconciled original to Stage
-1 (routine replacements) or Stage 3 (everything else). Stage 2 never merges.
+Stage 2 sends every draft (with a replacement ledger item) to Stage 1 when
+routine, else Stage 3. Empty intake: short record and stop. Stage 2 never merges.
 
-Stage 3 sends stale anchors to Stage 1 and mechanical code work to Stage 2.
-During `REPORT_ONLY` it ingests missing salvage drafts and does not merge. After
-`APPROVED` it may merge salvage drafts only after an independent predicate
-re-read. Human review is reserved for a one-question Stage 3 packet only when
-policy or security judgment is irreducible; humans also merge salvage drafts
-that are not Stage-1-routine while calibration is open.
+Stage 3 **bounces** executable BOT clusters, elapsed close-candidates, and
+GitHub-green BOT `HOLD_PLATFORM` items back to Stage 1. During `REPORT_ONLY` it
+does not merge. After `APPROVED` it may complete qualified non-security work
+under a five-action cap. Human packets are reserved for irreducible sticky
+security, HUMAN, or real platform judgment. Jules/Bolt/Palette file-collision
+clusters are not packets.
 
 Agent-facing session docs share one `pr-lifecycle-docs-YYYYMMDD` PR per UTC day
 (see `docs/automated-pr-lifecycle.md`). Stage 1 creates that PR and later
@@ -119,14 +121,14 @@ packets and maintainer notes, not a second git log.
 
 ## Calibration and rollback
 
-Run Stage 3 report-only for seven successful daily runs as defined by the
-validated ledger. Review packet correctness, sensitive/human-item routing,
-anchor freshness, duplicate-work suppression, required-check-source readability,
-audit completeness, and decision-card volume before enabling bounded completion.
-Enable the completion export only after a dated human calibration approval names
-the current scope, policy revision, evidence, and rollback conditions. Disable
-the completion variant immediately and record `REVOKED` if a security-sensitive
-or ordinary human PR reaches a routine action, an item is acted on with stale
-anchors, a required-check source cannot be read, a state change lacks an audit
-record, or an identity/taxonomy/prompt/action/merge-method change invalidates
-calibration.
+Seven successful daily Stage 3 calibration runs for `pr-lifecycle-v1.4`
+completed on 2026-08-26 (`evt-s3-20260820-calibration` through
+`evt-s3-20260826-calibration`). The maintainer approved bounded completion the
+same day (`approved_by: abhimehro` in the runtime ledger). **Disable** the
+calibration Dashboard automation and **enable** the completion export. Paste the
+updated Stage 1/2/3 prompts from this directory. Do not bump `policy_revision`.
+Disable the completion variant immediately and record `REVOKED` if a
+security-sensitive or ordinary human PR reaches a routine action, an item is
+acted on with stale anchors, a required-check source cannot be read, a state
+change lacks an audit record, or an identity/taxonomy/prompt/action/merge-method
+change invalidates calibration.

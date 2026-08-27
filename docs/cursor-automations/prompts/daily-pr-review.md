@@ -70,28 +70,57 @@ canonical conflict; documented routine class; and the registered merge method is
 known. For `abhimehro/personal-config`, use the Trunk queue method, not a raw
 GitHub squash assumption. You may also close a bot-authored non-security
 duplicate, superseded, zero-diff, or stale PR when deterministic evidence and
-the required cooldown are complete. Do not wait for Stage 3 calibration to
-execute those closes. Count every approval, merge submission, close, comment,
-branch action, failed mutation, and retry toward the 20-action cap.
+the required cooldown are complete. Do not wait for Stage 3 to execute those
+closes.
+
+**SHA_MATCH skip only** when the next action is unexpired **and not
+Stage-1-executable**. Reselect into the 50 inventory, in order: Stage 3
+bounce-backs whose `next_action` is merge/close/canonical-pick; `STAGE1_INTAKE`
+close-candidates whose cooldown elapsed; BOT MERGEABLE PRs with readable
+passing required checks and no sticky sensitive path; BOT non-sensitive
+`HOLD_CANONICAL` clusters for **canonical-pick**. Fill remaining slots from
+SHA_MATCH executable remainder, not only NEW twins.
+
+**Canonical-pick:** for BOT non-sensitive PRs with overlapping paths, keep the
+newest MERGEABLE member with passing required checks (else the one with tests);
+close the rest as `CLOSED_DUPLICATE` / `CLOSED_SUPERSEDED` with a link. If
+**every** member is sticky-security or HUMAN, one Stage 3 cluster handoff — not
+N packets. Aligns with keep-one-per-group.
+
+**HOLD_PLATFORM is salvage-only.** A BOT PR whose required GitHub checks are
+already green and readable is Stage 1 merge eligible. Linux cannot run Swift /
+`make guardrails` locally; that blocks Stage 2 salvage, not Stage 1 merge.
+A `.jules/` / `.Jules/` journal path **alone** is not sticky `generated_output`
+(lesson 0cs).
+
+The 20-action cap is **product mutations** (approve/merge/close/comment on
+in-scope PRs, plus failed product mutations). Ledger CAS and the daily
+docs-lineage PR (create, push, Trunk-merge) are bookkeeping and do **not**
+consume that cap. Spend product merges and closes **first**. Aim to use remaining
+slots (~15 product mutations) on product PRs.
+
+Throughput self-grade is **FAIL** if net open BOT PRs grew **and** unused
+product-mutation slots remained. Do not mark PASS for one docs Trunk merge.
 
 If a routine merge predicate is false because the change is a bounded mechanical
-repair, create exactly one complete Stage 2 work item. Route evidence, policy,
-security, platform, canonical, or merge-method holds to Stage 3. Re-ingest Stage
-2 salvage replacement PRs (ledger item or salvage/provenance labels) as
+repair, create exactly one complete Stage 2 work item. Route sticky security,
+HUMAN, `HOLD_CONTRACT`, unreadable merge-method, or irreducible policy to Stage
+3. Do **not** dump BOT file-overlap clusters on Stage 3. Re-ingest Stage 2
+salvage replacement PRs (ledger item or salvage/provenance labels) as
 inventory; you may routine-merge them when every routine predicate passes. Draft
 status is not a shortcut around a failed predicate and is not a reason to skip a
-salvage replacement. Close `STAGE1_INTAKE` cooldown-elapsed zero-diff or
-superseded BOT items when the head SHA still matches. Record in-scope BOT PRs
-skipped only because the inventory cap filled as overflow, not as unowned. Stage
-1 never auto-acts on security-sensitive or ordinary human-authored work. A
-docs-only session with zero merges, closes, or complete Stage 2 work items is a
-failed run, not a successful intake. Agent run records use one personal-config
-lineage per UTC day: branch `pr-lifecycle-docs-YYYYMMDD`, title
+salvage replacement. Record in-scope BOT PRs skipped only because the inventory
+cap filled as overflow, not as unowned. Stage 1 never auto-acts on
+security-sensitive or ordinary human-authored work. A docs-only session with
+zero product merges, closes, or complete Stage 2 work items is a failed run, not
+a successful intake. Agent run records use one personal-config lineage per UTC
+day: branch `pr-lifecycle-docs-YYYYMMDD`, title
 `docs(pr-lifecycle): YYYY-MM-DD run records`. Locate it by branch name. Create
 that PR from `main` if missing; append only Stage 1 files
 (`tasks/review-session-reports.md`, optional `tasks/pr-review-YYYY-MM-DD*.md`,
 EOF `tasks/lessons.md`). Do not edit `AGENTS.md`, `tasks/todo.md`, or another
 stage's report. Push later stages onto this branch instead of opening siblings.
 `/trunk merge` an older green `pr-lifecycle-docs` PR when routine predicates
-pass. Continuity read is today's lineage head, then yesterday's if open, then
-`main`. Notion is the human plane (packets); do not duplicate run records there.
+pass, **after** product mutations. Continuity read is today's lineage head, then
+yesterday's if open, then `main`. Notion is the human plane (packets); do not
+duplicate run records there.

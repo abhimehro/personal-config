@@ -22,9 +22,9 @@ item to Stage 1 intake.
 
 | Stage | Name       | Owns                                                      | May do                                                                                                                                                                                                         | Must hand off                                                                                                                                                  |
 | ----- | ---------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | Review     | New, invalidated, and salvage-replacement inventory items | Routine approve, squash-merge, close, and narrowly mechanical repair when every routine predicate passes. Re-ingest Stage 2 replacement PRs as inventory.                                                      | Mechanical recovery to Stage 2; security, policy, platform, canonical, or evidence holds to Stage 3                                                            |
-| 2     | Salvage    | Bounded mechanical recovery                               | Open or update a focused **draft** replacement with required tests and provenance. CAS-write a **new ledger item** for that replacement PR. Never approve, merge, or close.                                    | Draft completion (with replacement `item_key`) to Stage 1 if routine, else Stage 3; rejected recovery, unavailable platform, or unresolved decision to Stage 3 |
-| 3     | Completion | All remaining nonterminal entries                         | Reconcile live state, ingest salvage drafts missing from the ledger, prevent duplication, create decision packets, and, only after approved calibration, complete qualified non-security work under a hard cap | SHA drift to Stage 1; mechanical recovery to Stage 2; irreducible policy/security decision to the human inbox                                                  |
+| 1     | Review     | New, invalidated, SHA_MATCH-executable, bounce-back, and salvage-replacement inventory | Routine approve, squash-merge, close, and **canonical-pick** (keep one BOT non-sensitive overlap cluster; close the rest). Re-ingest Stage 2 replacement PRs. Reselect SHA-unchanged items that are still executable. | Mechanical recovery to Stage 2; sticky security, HUMAN, `HOLD_CONTRACT`, or irreducible policy to Stage 3. Do **not** dump BOT file-overlap clusters on Stage 3. |
+| 2     | Salvage    | Bounded mechanical recovery                               | Open or update a focused **draft** replacement with required tests and provenance. CAS-write a **new ledger item** for that replacement PR. Never approve, merge, or close. Empty intake: short record and stop. | Draft completion (with replacement `item_key`) to Stage 1 if routine, else Stage 3; rejected recovery, unavailable **salvage** platform, or unresolved decision to Stage 3 |
+| 3     | Completion | Remainder that Stage 1 cannot execute                     | Reconcile live state; **bounce** executable BOT clusters, elapsed close-candidates, and GitHub-green BOT `HOLD_PLATFORM` items **back to Stage 1**; packets only for irreducible sticky/HUMAN/real platform; after `APPROVED`, complete qualified non-security work under a hard cap | Executable bounce-backs and SHA drift to Stage 1; mechanical recovery to Stage 2; irreducible policy/security to the human inbox |
 
 Automated routine approval is a policy-authorized throughput control, not an
 independent human security review. Security-sensitive and ordinary
@@ -97,8 +97,9 @@ append. Lessons are EOF appends only; never rewrite earlier entries.
 The next Stage 1 run treats an older `pr-lifecycle-docs` PR as routine docs-only
 BOT work when every existing routine predicate passes (readable required checks,
 MERGEABLE, no sticky sensitive paths, no unresolved hold). It submits
-`/trunk merge` (counts toward the 20-action cap). Stage 2 and Stage 3 never
-merge this PR. During `REPORT_ONLY`, Stage 3 still only appends. If Trunk cannot
+`/trunk merge` **after** product merges and closes; docs-lineage Trunk is
+bookkeeping and does not consume the product-mutation cap. Stage 2 and Stage 3
+never merge this PR. During `REPORT_ONLY`, Stage 3 still only appends. If Trunk cannot
 prepare a test branch (GitHub App or ruleset), record `HOLD_PLATFORM` and do not
 fall back to raw GitHub squash.
 
@@ -202,8 +203,8 @@ Use the exact outcome values below in ledger events and run records.
 | `REVIEW_SECURITY`        | A security result needs an explicit human decision       | Human inbox                              |
 | `HOLD_CONTRACT`          | A policy, behavior, or security contract is undefined    | Stage 3, then human inbox                |
 | `HOLD_EVIDENCE`          | Checks, tests, overlap, or artifacts are insufficient    | Stage 3 reconciliation                   |
-| `HOLD_PLATFORM`          | Target platform proof is unavailable                     | Stage 3 reconciliation                   |
-| `HOLD_CANONICAL`         | Competing candidate or source overlap is unresolved      | Stage 3 reconciliation                   |
+| `HOLD_PLATFORM`          | Salvage cannot prove a required **local** platform (Swift/Xcode/`make guardrails` on Linux) | Stage 2/3 for salvage only. **Not** a Stage 1 merge block when required GitHub checks are already green and readable |
+| `HOLD_CANONICAL`         | Competing candidate or source overlap is unresolved      | **Stage 1 canonical-pick** for BOT non-sensitive clusters. Stage 3 only if every member is sticky-security or HUMAN |
 | `CLOSE_NONSECURITY_NOOP` | A non-security close candidate has evidence and cooldown | Stage 1 now; Stage 3 after calibration   |
 | `ANALYSIS_ERROR`         | The agent could not obtain reliable evidence             | Stage 3 with one retry, then human inbox |
 | `NOT_RUN`                | The item has not received the required stage             | Stage 1                                  |
@@ -231,13 +232,20 @@ treated as `HUMAN` for every autonomous mutation. Sticky sensitive-path
 classification still blocks autonomous merge and close even when identity is
 `BOT`.
 
+A `.jules/` or `.Jules/` journal path **alone** is not sticky `generated_output`.
+Sibling Bolt/Jules PRs that collide only on that journal follow lesson **0cs**
+(take `main`'s journal; keep the unique source change). Do not send the whole
+cluster to Stage 3 as `REVIEW_SECURITY` just because the journal is in the diff.
+
 The sensitive-path taxonomy includes workflows and permissions, secrets,
 authentication and authorization, deployment and infrastructure, lockfiles and
 major dependencies, security configuration, database migrations, network/browser
 origins, shell execution, file-read/write boundaries, generated output, public
 API contracts, and destructive data actions. A sensitive classification is
 sticky until a human records an explicit policy revision. A change to identity
-policy or taxonomy invalidates calibration.
+policy or taxonomy invalidates calibration. Do **not** bump
+`sensitive_path_taxonomy_revision` to encode the journal exception; the prompt
+and this contract already qualify it.
 
 ## Continuity and self-healing rules
 
@@ -247,10 +255,16 @@ approaches, changed assumptions, and one reusable lesson only when that lesson
 changes future routing, testing, or safety behavior.
 
 Runs are idempotent by `repository#pr@head_sha`. An unchanged item with an
-unexpired next action is not re-investigated. The system must detect PRs
-resolved outside the workflow, rejected salvage drafts, missing canonical
-candidates, or stale SHA anchors and update the ledger instead of reopening old
-work or repeating an unsuccessful approach.
+unexpired next action is not re-investigated **unless that next action is
+Stage-1-executable** (merge, close, or canonical-pick) **and product-mutation
+slots remain**. SHA_MATCH skip applies only to unexpired **non-executable**
+work (sticky security, HUMAN, `HOLD_CONTRACT`, waiting on cooldown, or an
+owned Stage 2 recovery). Filling the 50-item inventory with only NEW twins
+while 100+ MERGEABLE green BOT PRs sit at SHA_MATCH is a failed intake.
+
+The system must detect PRs resolved outside the workflow, rejected salvage
+drafts, missing canonical candidates, or stale SHA anchors and update the
+ledger instead of reopening old work or repeating an unsuccessful approach.
 
 Routine evidence expires after seven days. A deterministic retry is allowed
 once. Repeated unexplained failure, absent audit evidence, or an unexpected
@@ -272,7 +286,12 @@ policy revision and repository scope. It begins `REPORT_ONLY`, requires seven
 successful runs, records representative
 identity/risk/merge-method/required-check coverage, and may change to `APPROVED`
 only with a dated human approver, evidence URL, scope, policy revision, and
-rollback conditions. A successful calibration run has a valid ledger, complete
+rollback conditions. Seven successful `CALIBRATION` events for
+`pr-lifecycle-v1.4` exist (`evt-s3-20260820-calibration` through
+`evt-s3-20260826-calibration`). The maintainer approved bounded completion on
+2026-08-26 (runtime ledger `approved_by: abhimehro`; evidence is this policy PR
+plus the approving cloud-agent session). Do not wait for another seven-run
+cycle. Do not bump `policy_revision` to record that approval. A successful calibration run has a valid ledger, complete
 mandatory records for every processed item, fresh anchors and readable
 required-check sources for every candidate, no prohibited mutation attempt, no
 `ANALYSIS_ERROR`, and ledger progress: a complete Stage 2 work item, a
@@ -326,11 +345,23 @@ approval, merge authorization, or substitute for a defined policy.
 The standard daily order is Stage 1 at `0 15 * * *`, Stage 2 at `0 17 * * *`,
 and Stage 3 at `0 19 * * *`. Only one run per stage may execute at once. The
 default per-run caps match `tasks/pr-review-agent.config.yaml`: 50 Stage 1
-inventory items and 20 Stage 1 state-changing actions, five Stage 2 recovery
+inventory items and 20 Stage 1 **product** mutations, five Stage 2 recovery
 candidates, 20 Stage 3 reconciliations, five human decision cards, and, after
 explicit calibration approval, five Stage 3 completion or closure actions.
+Ledger CAS and the daily `pr-lifecycle-docs-YYYYMMDD` lineage (create, push,
+Trunk-merge) are bookkeeping and **do not** consume the Stage 1 product-mutation
+cap. Spend product merges and closes first.
+
+Stage 1 fills unused inventory slots from SHA_MATCH-executable remainder
+(elapsed `STAGE1_INTAKE` closes, MERGEABLE green BOT, canonical-pick clusters,
+Stage 3 bounce-backs) before treating the cap as full of NEW security twins.
 In-scope BOT PRs skipped only because the inventory cap filled must be recorded
 as overflow (`NOT_RUN` or an equivalent owned backlog), not left unowned.
+
+A Stage 1 throughput self-grade is **FAIL** when net open BOT PRs grew **and**
+unused product-mutation slots remained. One docs-lineage Trunk merge plus a
+handful of zero-diff closes is not a passing drain while MERGEABLE green BOT
+PRs sit skipped.
 
 ## Historical import procedure
 
@@ -358,3 +389,4 @@ terminal state, never resurrected.
 - [Automated PR Salvage & Recovery Agent](automated-pr-salvage-agent.md)
 - [Automated PR Completion Agent](automated-pr-completion-agent.md)
 - [First live-run retrospective (2026-08-20)](pr-lifecycle-pipeline-run-retro-2026-08-20.md)
+- [Throughput diagnosis and Stage 3 approval (2026-08-26)](pr-lifecycle-throughput-fix-2026-08-26.md)

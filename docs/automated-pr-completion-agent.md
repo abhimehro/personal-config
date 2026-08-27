@@ -8,10 +8,13 @@ salvage implementation.
 ## Mission
 
 The Completion Agent ensures that every unresolved item is moved to a safe
-terminal state or to exactly one next owner. It reconciles what actually
-happened after prior agent runs, suppresses duplicate work, completes qualified
-non-security dispositions, and gives the maintainer a compact decision packet
-only when policy or security judgment cannot be automated.
+terminal state or to exactly one next owner. It is a **router**, not a parking
+lot. It reconciles what actually happened after prior agent runs, **bounces
+executable BOT work back to Stage 1**, suppresses duplicate packets, completes
+qualified non-security dispositions after `APPROVED`, and gives the maintainer a
+compact decision packet only when sticky security, HUMAN, or real platform
+judgment cannot be automated. Jules/Bolt/Palette file-collision clusters are
+Stage 1 canonical-pick, not packets.
 
 > A successful completion run reduces the unowned backlog. It does not maximize
 > merges, repeat unchanged analysis, or convert uncertainty into an automated
@@ -65,12 +68,15 @@ For each owned entry, take one and only one route.
 | Observed condition                                                                            | Route                                                                                                                                   | Required record                                                                                           |
 | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | Base/head SHA changed                                                                         | Return to Stage 1                                                                                                                       | `STALE_ANCHOR`, prior anchors, current anchors, and reason                                                |
+| BOT non-sensitive overlap cluster (`HOLD_CANONICAL`) that Stage 1 can canonical-pick          | Bounce to Stage 1 with executable `next_action`                                                                                         | Cluster members, overlap paths, recommended canonical PR, expiry                                          |
+| Elapsed non-security close-candidate                                                          | Bounce to Stage 1 (calibration or APPROVED). Stage 1 closes.                                                                            | Canonical/no-op evidence, cooldown elapsed, head SHA still matches                                        |
+| GitHub-green BOT PR parked as `HOLD_PLATFORM` only because salvage would need Swift locally   | Bounce to Stage 1 merge                                                                                                                 | Required-check source, green evidence, why salvage platform does not block merge                          |
 | One mechanical code repair remains                                                            | Create a bounded Stage 2 work item                                                                                                      | Explicit repair scope, required regression test, and failure to avoid repeating                           |
 | A focused salvage draft is clean and non-security                                             | Ingest it as a ledger item if missing; hold for Stage 1 re-ingest, human merge during REPORT_ONLY, or bounded completion after APPROVED | Provenance, checks, anchor match, changed paths, replacement `item_key`, and completion predicate results |
-| The original is demonstrably duplicate, superseded, zero-diff, or stale                       | Record the close-candidate; Stage 1 may close during calibration                                                                        | Canonical evidence or no-op evidence, cooldown, and original/replacement relationship                     |
-| Security, policy, auth, network, browser-origin, workflow, data, or platform decision remains | Create one human decision packet                                                                                                        | One question, up to three options, recommended option, safe default, and expiry                           |
+| The original is demonstrably duplicate, superseded, zero-diff, or stale                       | Record the close-candidate; Stage 1 may close during calibration and after APPROVED                                                     | Canonical evidence or no-op evidence, cooldown, and original/replacement relationship                     |
+| Security, policy, auth, network, browser-origin, workflow, data, or **real** platform spend remains | Create one human decision packet                                                                                                  | One question, up to three options, recommended option, safe default, and expiry                           |
 | Checks or evidence are unavailable                                                            | Retry once, then `ANALYSIS_ERROR`                                                                                                       | Failed evidence source, retry time, and safe default                                                      |
-| Competing candidate exists                                                                    | `HOLD_CANONICAL`                                                                                                                        | Candidate comparison and the smallest decision needed                                                     |
+| Competing candidate exists and every member is sticky-security or HUMAN                       | `HOLD_CANONICAL` packet or WAITING_HUMAN                                                                                                | Candidate comparison and the smallest decision needed                                                     |
 
 Stage 3 is a coordinator for code recovery. It does not reimplement a salvage
 branch when Stage 2 can make a focused draft. It creates a Stage 2 work item
@@ -81,11 +87,13 @@ salvage run without adding manual workload.
 
 Stage 3 begins **report-only** and remains so until `calibration.status` in the
 validated ledger is `APPROVED` for the same configured-repository scope and
-policy revision. It may reconcile, create a complete Stage 2 work item, create a
-one-question decision packet, and record a candidate. It must not approve,
-merge, queue-submit, close, comment, force-push, mark ready, resolve comments,
-modify rulesets, alter workflow permissions, create a recovery branch, or delete
-a branch.
+policy revision. Seven successful calibration runs for `pr-lifecycle-v1.4`
+completed on 2026-08-26. The maintainer approved bounded completion the same
+day. During `REPORT_ONLY` it may reconcile, bounce executable items to Stage 1,
+create a complete Stage 2 work item, create a one-question decision packet, and
+record a candidate. It must not approve, merge, queue-submit, close, comment,
+force-push, mark ready, resolve comments, modify rulesets, alter workflow
+permissions, create a recovery branch, or delete a branch.
 
 A successful calibration run has all of the following: a validated ledger; every
 processed item live-reconciled with mandatory record fields; fresh anchors and
@@ -154,8 +162,9 @@ treats model output as human approval.
 
 ## Decision packets and human inbox
 
-Create a packet only for a decision that cannot be reduced to evidence or a
-Stage 2 work item. A packet must answer one question and include immutable
+Create a packet only for a decision that cannot be reduced to evidence, a
+Stage 1 canonical-pick, or a Stage 2 work item. Do not packet BOT non-sensitive
+file-overlap clusters. A packet must answer one question and include immutable
 anchors, the guardrail outcome, changed paths, check URLs, a factual blocking
 reason, up to three mutually exclusive options, a recommended option, a safe
 default, and an expiry.
