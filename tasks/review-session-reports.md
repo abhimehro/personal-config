@@ -1,3 +1,41 @@
+# Stage 1 — 2026-08-27 (cron 15:00 UTC)
+
+Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
+**APPROVED** count **7/7** (`pr-lifecycle-v1.4`, `approved_by: abhimehro`,
+`approved_at_utc: 2026-08-26T22:00:00Z`) — **not** incremented and **not**
+reset. Slim inventory (no `commits` / `statusCheckRollup`; lessons **0gl** /
+**0gn**). Open **211**; SHA_MATCH skip **169** overflow (185−16 acted
+reselects); NEW **24**; HEAD_DRIFT **2** (pc #2022 security salvage, pc #1969
+HUMAN workflow; no write). Ledger writes this run **40** (24 new keys + 16
+SHA_MATCH terminals). Product mutations **20/20** (1 failed self-approve on
+hydro #575, 2 squash-merges, 17 closes). Ledger CAS **23 → 24** (blob
+`df48b8e225feffcbad1da53f6a42a14a5b89e6af`, data-branch commit
+`b51db4b3b1086a5f2972a701f2d02e9707b4a419`). Stage 2 queued **0**. Stage 3
+**16** handoffs. Throughput **PASS** (open BOT PRs fell; product slots fully
+used). Docs lineage: `pr-lifecycle-docs-20260827` (this PR). Do **not**
+`/trunk merge` today's lineage in the opening run (**0gj**). Do **not**
+Trunk-merge conflicting draft sibling **#2097**. Full record:
+`tasks/pr-review-2026-08-27-1500.md`. Lesson **0gv**.
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (open PRs)      |   211 |
+| SHA_MATCH skipped (overflow)|   169 |
+| SHA_MATCH acted (reselect)  |    16 |
+| NEW                         |    24 |
+| HEAD_DRIFT (no write)       |     2 |
+| Ledger items this run       |    40 |
+| Merged                      |     2 |
+| Closed superseded           |    13 |
+| Closed no-op                |     4 |
+| Stage 2 queued (this run)   |     0 |
+| Stage 3 handoffs (this run) |    16 |
+| GitHub PR mutations         |    20 |
+| Ledger CAS writes           |     1 |
+
+Per-item table: see `tasks/pr-review-2026-08-27-1500.md` (mandatory Stage 1
+columns).
+
 # Stage 1 — 2026-08-26 (cron 15:00 UTC)
 
 Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
