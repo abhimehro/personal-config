@@ -2693,9 +2693,19 @@ consumed a product-mutation slot. Squash-merge without self-approve succeeded
 (`aa3e00694eb06755c559e31ca1c2ca92c7e2b626`).
 
 **Rule:** When the token login equals the PR author, skip `gh pr review
---approve` and complete the registered merge path if every other routine
-predicate is true. Count a failed self-approve as a product mutation. Do not
-retry approve. Do not treat the GraphQL error as a merge-state failure.
+--approve` **and** `gh pr review --request-changes` and complete the registered
+merge path if every other routine predicate is true. Count a failed self-review
+as a product mutation. Do not retry approve or REQUEST_CHANGES. Do not COMMENT
+in the same run after a failed self-review (that would consume another product
+slot). Do not treat the GraphQL error as a merge-state failure. personal-config
+still uses TRUNK_QUEUE, never GitHub-squash.
+
+**2026-08-28 Stage 1 (personal-config #2099):** `gh pr review --request-changes`
+failed with GraphQL *Review Can not request changes on your own pull request*
+(same token as the 2026-08-27 approve failure). Left HOLD_CONTRACT. Next run
+may COMMENT via an automation identity that is not the PR author, or re-read
+lesson **0ft**(2) (`div.empty-state` *is* allowed) then TRUNK_QUEUE if still
+CLEAN.
 
 **Detection cost:** Low — GraphQL error text plus `gh api user` login matching
 `author.login`.
