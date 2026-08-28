@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 26
+ledger_revision: 27
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -12353,16 +12353,16 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: PASS_ROUTINE
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: personal-config TRUNK_QUEUE only; never GitHub-squash.
-  next_action: 'Stage 1: /trunk merge posted on #2106 (comment 5454347883). Confirm MERGED then CAS TERMINAL
-    next event. Do not Trunk today''s lineage in the opening run (0gj). Expires 2026-09-04T15:30:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged docs lineage #2106.'
+  next_action: No further action; Trunk-merged to main at dd972eb83986fe0e67ab79efd9541ede369e0743.
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2106
   - https://github.com/abhimehro/personal-config/pull/2106#issuecomment-5454347883
+  - https://github.com/abhimehro/personal-config/commit/dd972eb83986fe0e67ab79efd9541ede369e0743
   changed_paths:
   - tasks/completion-session-reports.md
   - tasks/lessons.md
@@ -12372,12 +12372,13 @@ items:
   - tasks/review-session-reports.md
   - tasks/salvage-session-reports.md
   attempts:
-    evidence: 1
+    evidence: 2
     recovery: 0
-    mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-08-28T15:30:00Z'
+    mutations: 1
+  handoffs:
+  - evt-s1-20260828-personalconf-2106-t
+  revision: 1
+  updated_at_utc: '2026-08-28T15:32:00Z'
 - key: abhimehro/personal-config#2109@97b2d4f84cc477b805855878dfbcdb9d47a1e312
   repository: abhimehro/personal-config
   pr: 2109
@@ -23213,6 +23214,23 @@ events:
   created_at_utc: '2026-08-28T15:30:00Z'
   acknowledged_at_utc: null
   reason: HEAD_DRIFT HUMAN workflow/skill-index; Stage 1 never auto-acts on HUMAN or workflows.
+- event_id: evt-s1-20260828-personalconf-2106-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2106@ef730e9023c84beaacea3225c5bf4484f1d41643
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2106@ef730e9023c84beaacea3225c5bf4484f1d41643:evt-s1-20260828-personalconf-2106-t
+  status: PROJECTED
+  created_at_utc: '2026-08-28T15:32:00Z'
+  acknowledged_at_utc: null
+  reason: 'Docs lineage TRUNK_QUEUE after product mutations; /trunk merge on #2106.'
 stage2_work_items: []
 imports:
 - import_id: imp-bootstrap-contents-api-20260819
