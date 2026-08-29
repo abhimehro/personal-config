@@ -502,7 +502,7 @@ EOF
 		insights_content=$(cat "$insights_file" 2>/dev/null)
 		if [[ $insights_content == *"Insights not available"* ]] || [[ $insights_content != *"PERFORMANCE ASSESSMENT"* ]]; then
 			cat >>"$dashboard_file" <<EOF
-                <div class="empty-state">
+                <div class="empty-state" role="status">
                     <div class="icon" aria-hidden="true">&#x1F4DD;</div>
                     <p>No insights available for this period.</p>
                     <p style="margin-top: 10px; font-size: 0.9em;">Run <kbd>maintenance/bin/performance_optimizer.sh benchmark</kbd> to generate data.</p>
@@ -515,7 +515,7 @@ EOF
 		fi
 	else
 		cat >>"$dashboard_file" <<EOF
-                <div class="empty-state">
+                <div class="empty-state" role="status">
                     <div class="icon" aria-hidden="true">&#x1F4DD;</div>
                     <p>No insights available for this period.</p>
                     <p style="margin-top: 10px; font-size: 0.9em;">Run <kbd>maintenance/bin/performance_optimizer.sh benchmark</kbd> to generate data.</p>
