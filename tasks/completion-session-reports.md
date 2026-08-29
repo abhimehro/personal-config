@@ -1369,3 +1369,203 @@ to Stage 1 rather than `HOLD_PLATFORM` parking (0gu).
 - Calibration successful-run increment: **0** (`successful_run_count` remains 7
   of 7 `APPROVED`)
 
+
+## Stage Run Record — 2026-08-28
+
+## Identity
+
+- Stage: `stage3`
+- Trigger: `cron` (`0 19 * * *` fired 2026-08-28T19:14:08Z; loaded prompt is
+  Stage 3 Daily PR Completion, **bounded-completion variant**)
+- Configuration version and policy revision: lifecycle `1.4` /
+  `pr-lifecycle-v1.4`; identity `2026-08-20-hyphen`; sensitive taxonomy
+  `2026-08-19`; permission scope `cursor-export-v1.1`;
+  merge-method/required-check registry `registry-v1.2`
+- Start UTC: `2026-08-28T19:14:08Z`
+- End UTC: `2026-08-28T19:45:00Z` (ledger CAS commit)
+- Ledger revision read and resulting revision: **27 → 28** (precondition blob
+  `b0c924f4b4d869dacea48075ad66c4df9a965a6d` →
+  `9b7d821f7766a1ac74c20e06ccbb4360de4c9415`; CAS commit
+  `dcf2d1ebd0b3e4932f636cc94ef4c3e60c3c3131`; size 898997 → 928204; re-GET
+  `?ref=automation/pr-lifecycle-ledger` byte-match; ledger-only
+  `validate_schema` + `validate_runtime_records` PASS)
+- Selected write primitive: `github_contents_api` on
+  `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml`
+- Dashboard export fingerprint:
+  `sha256:ad21b007be3fd52f016d9121b84b1da4990529f77b0e5d4d05704c398f59cde9`
+  (`docs/cursor-automations/exports/daily-pr-completion.json`)
+- Memory mode: namespaced cache only (does not override ledger/anchors/stage
+  authority)
+- Calibration mode: `approved_completion` (ledger `APPROVED`, count **7/7**,
+  `approved_by: abhimehro`, `approved_at_utc: 2026-08-26T22:00:00Z`,
+  `policy_revision: pr-lifecycle-v1.4`)
+- Calibration increment this run: **none**. Not a stale-policy reset. Not a
+  successful calibration run.
+
+## Inputs and reconciliation
+
+Continuity sources read before acting:
+
+- `docs/automated-pr-lifecycle.md` v1.4
+- `docs/pr-lifecycle-runtime-ledger.md`
+- `docs/automated-pr-completion-agent.md`
+- `tasks/lessons.md` through **0gv**
+- Last Stage 3 records: 2026-08-27 bounded-completion (rev 24→25, Seatek #751
+  squash); 2026-08-26 on draft sibling
+  [#2097](https://github.com/abhimehro/personal-config/pull/2097); 2026-08-25
+  REPORT_ONLY
+- Last Stage 2: 2026-08-28 17:00 `EMPTY_INTAKE` on this lineage (HEAD
+  `7ec4eb4352399adfe6b997a53c3facb323b19c43`); 2026-08-27 and 2026-08-26 also
+  empty
+- Last Stage 1: 2026-08-28 15:00 (`tasks/pr-review-2026-08-28-1500.md`; ledger
+  25→26→27; 15 Stage 3 handoffs)
+- Runtime ledger GET revision 27, then CAS to 28; 15 ACK + 15 HANDOFF + 5
+  TERMINAL + 0 CALIBRATION; processed items
+  `updated_at_utc: 2026-08-28T19:20:00Z`
+- Today's docs lineage: open PR
+  [#2111](https://github.com/abhimehro/personal-config/pull/2111) branch
+  `pr-lifecycle-docs-20260828`, MERGEABLE/CLEAN, not draft. Run record appended
+  here. Did **not** open a sibling docs PR (0gj). Did **not** Trunk-merge this
+  lineage. Did **not** IMPORT or Trunk-merge conflicting draft sibling #2097.
+
+Items considered (cap 20 reconciliations / 5 packets / 5 product actions):
+**20 processed**.
+
+Stage 1 leftovers **not stolen** (`STAGE1_INTAKE`):
+
+- Seatek_Analysis #695 HOLD_CANONICAL styler
+- personal-config #2099 HOLD_CONTRACT (failed REQUEST_CHANGES, 0gv); TRUNK_QUEUE
+  only
+- repoprompt-ce #300 HOLD_EVIDENCE (`Build and Test (app shard 2)` FAILURE)
+- series_correction_project_updated #415 CLOSE_NONSECURITY_NOOP after
+  `2026-08-28T19:40:07Z`
+- Seatek_Analysis #755 overflow NOT_RUN
+- Hydrograph_Versus_Seatek_Sensors_Project #578 HOLD_CANONICAL validator.py
+
+Extra-draft scan: no salvage-titled drafts in the seven repos.
+personal-config #2097 remains yesterday's docs sibling (`draft=true`, DIRTY);
+not ingested as salvage (0gd / 0gj). Old keys
+`personal-config#2022@da1225e0…` and `personal-config#1969@d5c71c38…` left
+untouched (superseded by today's new-head keys).
+
+Items skipped as unchanged / unexpired packets (no repeat):
+
+- 2026-08-22 packets (CSPRNG, Palette, Sentinel, Seatek #708) still unexpired
+  through `2026-08-29T19:20:00Z`. No new Notion packets this run. Did not packet
+  Jules/Bolt/Palette file-collision clusters.
+
+Items invalidated by SHA drift: **0** among the 20 processed keys (live heads
+matched ledger keys). Base SHAs also matched stored `base_sha`.
+
+Items resolved outside the workflow: email-security-pipeline #1516/#1521/#1524
+GitHub-closed unmerged after Stage 1 merged #1531; repoprompt-ce #295/#285
+GitHub-closed unmerged after Stage 1 merged #304. Ledger projected
+`CLOSED_SUPERSEDED` only (no GitHub close this run).
+
+Merge-method registry: personal-config `TRUNK_QUEUE` / `TRUNK` verified-zero;
+ctrld-sync, email-security-pipeline, Seatek_Analysis,
+Hydrograph_Versus_Seatek_Sensors_Project, series_correction_project_updated
+`GITHUB_SQUASH` / `GITHUB_RULESETS` verified-zero; repoprompt-ce `GITHUB_SQUASH`
+/ `GITHUB_RULESETS` with named required checks
+(`CodeQL code scanning: errors/high_or_higher`, `code quality: errors`;
+`required_checks_verified_zero: false`). All `VERIFIED`.
+
+Caps used: reconciliations **20/20**; packets **0/5**; product GitHub mutations
+**0/5**. Ledger CAS and docs push do not consume the product cap. Nothing in
+the 20 was qualified non-security merge/close (REVIEW_SECURITY, HOLD_CONTRACT,
+HUMAN, draft, or already-closed).
+
+## Mandatory per-item evidence, action, and outcome record
+
+| Ledger key | Repository / PR | Observed vs ledger base/head SHA | Owner before → after | GitHub identity / author type | Classification / risk / sticky paths | Guardrail outcome | Changed paths | Evidence URLs | Proposed route / actual action | Mode / audit ID / action count | Retry or error | Final observed outcome / calibration correctness | Provenance or canonical relation |
+| ---------- | --------------- | -------------------------------- | -------------------- | ----------------------------- | ------------------------------------ | ----------------- | ------------- | ------------- | ------------------------------ | ------------------------------ | -------------- | ------------------------------------------------ | -------------------------------- |
+| `abhimehro/personal-config#2109@97b2d4f84cc477b805855878dfbcdb9d47a1e312` | pc #2109 | MATCH base `54a69db0df1c…` / head `97b2d4f84cc4…`. OPEN CLEAN MERGEABLE. | stage3 → human | BOT / token-authored; login `abhimehro` | CI_INFRA / SENSITIVE / `workflows_and_permissions`, `security_configuration` | `REVIEW_SECURITY` | `refactoring-agent.yml`, `security-scan.yml` | https://github.com/abhimehro/personal-config/pull/2109 | ACK + HANDOFF WAITING_HUMAN. Do not Trunk. | approved_completion / `evt-s3-20260828-personalconf-2109-a`+`h` / **0** | none | Correct: sticky workflow. rev 2 | Workflow consolidation |
+| `abhimehro/personal-config#2108@f45bf349482cf026ca6dcd174d37486c98fbf347` | pc #2108 | MATCH base `54a69db0df1c…` / head `f45bf349482c…`. OPEN CLEAN MERGEABLE. | stage3 → human | BOT / allowlist `app/dependabot`; live login `dependabot[bot]` | DEPENDENCY / SENSITIVE / `workflows_and_permissions` | `REVIEW_SECURITY` | `refactoring-agent.yml` | https://github.com/abhimehro/personal-config/pull/2108 | ACK + HANDOFF WAITING_HUMAN. Do not Trunk. | approved_completion / `evt-s3-20260828-personalconf-2108-a`+`h` / **0** | none | Correct: sticky workflow. rev 2 | Dependabot workflow |
+| `abhimehro/personal-config#2107@209aea00e8bc30a96afdbb1f38b0fbcef728edcb` | pc #2107 | MATCH base / head `209aea00e8bc…`. OPEN **draft** CLEAN MERGEABLE. | stage3 → human | BOT / allowlist `app/cursor`; live login `cursor[bot]` | CI_INFRA / ROUTINE / none | `HOLD_CONTRACT` | wrap exports + prompts | https://github.com/abhimehro/personal-config/pull/2107 | ACK + HANDOFF WAITING_HUMAN. Never mark ready (0gd). | approved_completion / `evt-s3-20260828-personalconf-2107-a`+`h` / **0** | none | Correct: draft wrap. rev 2 | Draft wrap-export |
+| `abhimehro/personal-config#2029@9f879d36123ab26b9bf4ddeeb08132d1b9254bdf` | pc #2029 | MATCH base `e11e0b9e649e…` / head `9f879d36123a…`. OPEN CLEAN MERGEABLE. | stage3 → human | BOT / token-authored; login `abhimehro` | PERFORMANCE / ROUTINE / none | `HOLD_CONTRACT` | `pr_reference.py`, `run_merges.py` | https://github.com/abhimehro/personal-config/pull/2029 | ACK latest Stage 1 re-HANDOFF (rev 3) + HANDOFF WAITING_HUMAN. Not a HOLD_CANONICAL bounce this run. | approved_completion / `evt-s3-20260828-personalconf-2029-a`+`h` / **0** | none | Correct: HOLD_CONTRACT vs #2030. rev 4 | Toolchain vs #2030 |
+| `abhimehro/email-security-pipeline#1537@b6ae5ea64a27e715e8e19491e5766471f5b20db4` | email #1537 | MATCH head `b6ae5ea64a27…`. OPEN CLEAN MERGEABLE. | stage3 → human | BOT / allowlist `app/dependabot`; live `dependabot[bot]` | DEPENDENCY / SENSITIVE / `workflows_and_permissions` | `REVIEW_SECURITY` | `agentics-maintenance.yml` | https://github.com/abhimehro/email-security-pipeline/pull/1537 | ACK + HANDOFF WAITING_HUMAN. Cluster with #1536. Do not squash. | approved_completion / `evt-s3-20260828-emailsecuri-1537-a`+`h` / **0** | none | Correct: sticky workflow cluster. rev 2 | Cluster #1536 |
+| `abhimehro/email-security-pipeline#1536@29f16ae70a8eb726ec6500799ad1402bad9c706d` | email #1536 | MATCH head `29f16ae70a8e…`. OPEN CLEAN MERGEABLE. | stage3 → human | BOT / allowlist `app/dependabot`; live `dependabot[bot]` | DEPENDENCY / SENSITIVE / `workflows_and_permissions` | `REVIEW_SECURITY` | `agentics-maintenance.yml` | https://github.com/abhimehro/email-security-pipeline/pull/1536 | ACK + HANDOFF WAITING_HUMAN. Cluster with #1537. Do not squash. | approved_completion / `evt-s3-20260828-emailsecuri-1536-a`+`h` / **0** | none | Correct: sticky workflow cluster. rev 2 | Cluster #1537 |
+| `abhimehro/Seatek_Analysis#760@1d454a675a5ee7ee45288c55709d6c6b5f7b8851` | Seatek #760 | MATCH head `1d454a675a5e…`. OPEN CLEAN MERGEABLE. | stage3 → human | BOT / token-authored; login `abhimehro` | SECURITY / SENSITIVE / `security_configuration` | `REVIEW_SECURITY` | `.jules/sentinel.md`, `code_health_scanner.py` | https://github.com/abhimehro/Seatek_Analysis/pull/760 | ACK + HANDOFF WAITING_HUMAN. Cluster with #757. Do not expand allowlist (0gq). | approved_completion / `evt-s3-20260828-seatekanalys-760-a`+`h` / **0** | none | Correct: Sentinel cluster. rev 2 | Cluster #757 |
+| `abhimehro/Seatek_Analysis#759@b6032c4c9ecb872d915bd5d04e375c48a86b5b53` | Seatek #759 | MATCH head `b6032c4c9ecb…`. OPEN CLEAN MERGEABLE. | stage3 → human | BOT / token-authored; login `abhimehro` | CI_INFRA / SENSITIVE / `workflows_and_permissions` | `HOLD_CONTRACT` | repository_automation scripts + tests | https://github.com/abhimehro/Seatek_Analysis/pull/759 | ACK + HANDOFF WAITING_HUMAN. Do not squash. | approved_completion / `evt-s3-20260828-seatekanalys-759-a`+`h` / **0** | none | Correct: HOLD_CONTRACT. rev 2 | Automation scripts |
+| `abhimehro/Seatek_Analysis#757@56034a2a1ec9f6646e20a5c746c28397f2016d30` | Seatek #757 | MATCH head `56034a2a1ec9…`. OPEN CLEAN MERGEABLE. | stage3 → human | BOT / token-authored; login `abhimehro` | SECURITY / SENSITIVE / `security_configuration` | `REVIEW_SECURITY` | `code_health_scanner.py`, `dummy_gh` | https://github.com/abhimehro/Seatek_Analysis/pull/757 | ACK + HANDOFF WAITING_HUMAN. Cluster with #760. | approved_completion / `evt-s3-20260828-seatekanalys-757-a`+`h` / **0** | none | Correct: Sentinel cluster. rev 2 | Cluster #760 |
+| `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#579@2dae636ee70de28d134a3291b807978b963bf9ef` | hydro #579 | MATCH head `2dae636ee70d…`. OPEN CLEAN MERGEABLE. | stage3 → human | BOT / token-authored; login `abhimehro` | SECURITY / SENSITIVE / `file_read_write_boundaries` | `REVIEW_SECURITY` | `.jules/sentinel.md`, `validate_data.py` | https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/579 | ACK + HANDOFF WAITING_HUMAN. Cluster with #577. Do not expand allowlist (0gq). | approved_completion / `evt-s3-20260828-hydrographve-579-a`+`h` / **0** | none | Correct: Sentinel hydro cluster. rev 2 | Cluster #577 |
+| `abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#577@4ed2abd2d6417945df2953c1fceeaf1db07a64fe` | hydro #577 | MATCH head `4ed2abd2d641…`. OPEN CLEAN MERGEABLE. | stage3 → human | BOT / token-authored; login `abhimehro` | SECURITY / SENSITIVE / `file_read_write_boundaries` | `REVIEW_SECURITY` | `validate_data.py` | https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/577 | ACK + HANDOFF WAITING_HUMAN. Cluster with #579. | approved_completion / `evt-s3-20260828-hydrographve-577-a`+`h` / **0** | none | Correct: Sentinel hydro cluster. rev 2 | Cluster #579 |
+| `abhimehro/series_correction_project_updated#416@9f313c5cca4156f0b54b259e136f249574080d44` | series #416 | MATCH head `9f313c5cca41…`. OPEN CLEAN MERGEABLE. | stage3 → human | BOT / allowlist `app/dependabot`; live `dependabot[bot]` | DEPENDENCY / SENSITIVE / `workflows_and_permissions` | `REVIEW_SECURITY` | `refactoring-agent.yml` | https://github.com/abhimehro/series_correction_project_updated/pull/416 | ACK + HANDOFF WAITING_HUMAN. Do not squash. | approved_completion / `evt-s3-20260828-seriescorrec-416-a`+`h` / **0** | none | Correct: sticky workflow. rev 2 | Dependabot workflow |
+| `abhimehro/repoprompt-ce#303@5d0484293225c0e8c9775774cf240d2fd91aecce` | rpce #303 | MATCH head `5d0484293225…`. OPEN UNSTABLE MERGEABLE. | stage3 → human | BOT / token-authored; login `abhimehro` | SECURITY / SENSITIVE / `file_read_write_boundaries` | `REVIEW_SECURITY` | Sentinel MCP TOCTOU Swift files | https://github.com/abhimehro/repoprompt-ce/pull/303 | ACK + HANDOFF WAITING_HUMAN. Cluster with #299. Do not salvage Swift on Linux (0gi). | approved_completion / `evt-s3-20260828-repopromptce-303-a`+`h` / **0** | none | Correct: REVIEW_SECURITY. rev 2 | Cluster #299 |
+| `abhimehro/personal-config#2022@a98319fbf1c057315d79c4ab2809b4a3a69fa21b` | pc #2022 | MATCH live head `a98319fbf1c0…` (new key). OPEN UNSTABLE MERGEABLE. Old key `da1225e0…` untouched. | stage3 → human | BOT / allowlist `app/cursor`; live `cursor[bot]` | SECURITY / SENSITIVE / `shell_execution` | `REVIEW_SECURITY` | `scripts/report-daemons-watchdog.sh` | https://github.com/abhimehro/personal-config/pull/2022 | ACK + HANDOFF WAITING_HUMAN. Do not Trunk. Keep original key (0gp) for old head. | approved_completion / `evt-s3-20260828-personalconf-2022-a`+`h` / **0** | none | Correct: HEAD_DRIFT new key. rev 2 | vs #2000/#1989 |
+| `abhimehro/personal-config#1969@57256c3f5745d8e609696f01e6784430576a13f7` | pc #1969 | MATCH live head `57256c3f5745…` (new key). OPEN UNSTABLE MERGEABLE. Old key `d5c71c38…` untouched. | stage3 → human | **HUMAN**; login `abhimehro`; branch `feat/skill-index-source-sync` | CI_INFRA / SENSITIVE / `workflows_and_permissions` | `REVIEW_SECURITY` | skill-index workflow + bundle | https://github.com/abhimehro/personal-config/pull/1969 | ACK + HANDOFF WAITING_HUMAN. Never auto-act on HUMAN. | approved_completion / `evt-s3-20260828-personalconf-1969-a`+`h` / **0** | none | Correct: HUMAN. rev 2 | Ordinary human PR |
+| `abhimehro/email-security-pipeline#1516@28b705746154fb9ea59703f282aa9e79959ba85e` | email #1516 | MATCH head `28b705746154…`. GitHub **closed unmerged** `2026-08-28T15:15:58Z`. | stage3 → none | BOT / token-authored; login `abhimehro` | UI / SENSITIVE / `generated_output` | `HOLD_CANONICAL` | `.Jules/palette.md`, `src/utils/ui.py` | https://github.com/abhimehro/email-security-pipeline/pull/1516 ; https://github.com/abhimehro/email-security-pipeline/pull/1531 | Skip duplicate ACK. TERMINAL `CLOSED_SUPERSEDED`. Ledger-only. | approved_completion / `evt-s3-20260828-emailsecuri-1516-t` / **0** | none | Correct: superseded by merged #1531. rev 2 | Canonical #1531 |
+| `abhimehro/email-security-pipeline#1521@29a2ce214a886c97d5df80bbcd955809014f4388` | email #1521 | MATCH head `29a2ce214a88…`. closed unmerged `2026-08-28T15:16:00Z`. | stage3 → none | BOT / token-authored; login `abhimehro` | UI / SENSITIVE / `generated_output` | `HOLD_CANONICAL` | `.Jules/palette.md`, `src/utils/ui.py` | https://github.com/abhimehro/email-security-pipeline/pull/1521 ; https://github.com/abhimehro/email-security-pipeline/pull/1531 | Skip duplicate ACK. TERMINAL `CLOSED_SUPERSEDED`. Ledger-only. | approved_completion / `evt-s3-20260828-emailsecuri-1521-t` / **0** | none | Correct: superseded by merged #1531. rev 2 | Canonical #1531 |
+| `abhimehro/email-security-pipeline#1524@fda9c13c7cf9de9e5bddd6387aacba7632b26e45` | email #1524 | MATCH head `fda9c13c7cf9…`. closed unmerged `2026-08-28T15:16:02Z`. | stage3 → none | BOT / token-authored; login `abhimehro` | UI / SENSITIVE / `generated_output` | `HOLD_CANONICAL` | `.Jules/palette.md`, `src/utils/ui.py` | https://github.com/abhimehro/email-security-pipeline/pull/1524 ; https://github.com/abhimehro/email-security-pipeline/pull/1531 | Skip duplicate ACK. TERMINAL `CLOSED_SUPERSEDED`. Ledger-only. | approved_completion / `evt-s3-20260828-emailsecuri-1524-t` / **0** | none | Correct: superseded by merged #1531. rev 2 | Canonical #1531 |
+| `abhimehro/repoprompt-ce#295@83b39d2dbe02b0519f4ca9ae7ebac7a7bca47ce3` | rpce #295 | MATCH head `83b39d2dbe02…`. closed unmerged `2026-08-28T15:16:25Z`. | stage3 → none | BOT / token-authored; login `abhimehro` | PERFORMANCE / SENSITIVE / `generated_output` | `HOLD_PLATFORM` | `.jules/bolt.md`, `Changelog.swift` | https://github.com/abhimehro/repoprompt-ce/pull/295 ; https://github.com/abhimehro/repoprompt-ce/pull/304 | Skip duplicate ACK. TERMINAL `CLOSED_SUPERSEDED`. Ledger-only. | approved_completion / `evt-s3-20260828-repopromptce-295-t` / **0** | none | Correct: superseded by merged #304. rev 2 | Canonical #304 |
+| `abhimehro/repoprompt-ce#285@a58603d756bf15305cb2133865e0a2d9333fe343` | rpce #285 | MATCH head `a58603d756bf…`. closed unmerged `2026-08-28T15:16:27Z`. | stage3 → none | BOT / token-authored; login `abhimehro` | PERFORMANCE / SENSITIVE / `generated_output` | `HOLD_EVIDENCE` | `.jules/bolt.md`, `Changelog.swift` | https://github.com/abhimehro/repoprompt-ce/pull/285 ; https://github.com/abhimehro/repoprompt-ce/pull/304 | Skip duplicate ACK. TERMINAL `CLOSED_SUPERSEDED`. Ledger-only. | approved_completion / `evt-s3-20260828-repopromptce-285-t` / **0** | none | Correct: superseded by merged #304. rev 2 | Canonical #304 |
+
+## Revision-checked handoffs and human decisions
+
+| Ledger key | Event ID / idempotency key | Expected → resulting revision | Next owner | One next action | Safe default | Expiry | Receiver acknowledgement |
+| ---------- | -------------------------- | ----------------------------- | ---------- | --------------- | ------------ | ------ | ------------------------ |
+| pc #2109 | `evt-s3-20260828-personalconf-2109-a` then `-h` | ACK 1→1; HANDOFF 1→2 | human | Decide workflow consolidation. Do not Trunk. | Do not Trunk-queue sticky workflow/security PRs. | `2026-09-04T19:20:00Z` | human inbox |
+| pc #2108 | `evt-s3-20260828-personalconf-2108-a` then `-h` | ACK 1→1; HANDOFF 1→2 | human | Decide Dependabot workflow bump. Do not Trunk. | Do not Trunk-queue sticky workflow PRs. | `2026-09-04T19:20:00Z` | human inbox |
+| pc #2107 | `evt-s3-20260828-personalconf-2107-a` then `-h` | ACK 1→1; HANDOFF 1→2 | human | Decide draft wrap-export. Do not mark ready. | Never mark ready, Trunk, or close wrap-export drafts (0gd). | `2026-09-04T19:20:00Z` | human inbox |
+| pc #2029 | `evt-s3-20260828-personalconf-2029-a` then `-h` | ACK 3→3; HANDOFF 3→4 | human | HOLD_CONTRACT vs #2030. Recover unique source on a focused draft excluding journals. | Do not Trunk-queue PR-automation toolchain PRs. | `2026-09-04T19:20:00Z` | human inbox |
+| email #1537 | `evt-s3-20260828-emailsecuri-1537-a` then `-h` | ACK 1→1; HANDOFF 1→2 | human | Sticky workflow cluster #1537/#1536. One decision, not N. | Do not squash sticky workflow dependency PRs. | `2026-09-04T19:20:00Z` | human inbox |
+| email #1536 | `evt-s3-20260828-emailsecuri-1536-a` then `-h` | ACK 1→1; HANDOFF 1→2 | human | Sticky workflow cluster #1536/#1537. One decision, not N. | Do not squash sticky workflow dependency PRs. | `2026-09-04T19:20:00Z` | human inbox |
+| Seatek #760 | `evt-s3-20260828-seatekanalys-760-a` then `-h` | ACK 1→1; HANDOFF 1→2 | human | Sentinel cluster #760/#757. One packet if both remain sticky. | Do not squash Sentinel security-scanner PRs. | `2026-09-04T19:20:00Z` | human inbox |
+| Seatek #759 | `evt-s3-20260828-seatekanalys-759-a` then `-h` | ACK 1→1; HANDOFF 1→2 | human | HOLD_CONTRACT automation scripts. | Do not squash automation-script contract PRs. | `2026-09-04T19:20:00Z` | human inbox |
+| Seatek #757 | `evt-s3-20260828-seatekanalys-757-a` then `-h` | ACK 1→1; HANDOFF 1→2 | human | Sentinel cluster #757/#760. One packet if both remain sticky. | Do not squash Sentinel security-scanner PRs. | `2026-09-04T19:20:00Z` | human inbox |
+| hydro #579 | `evt-s3-20260828-hydrographve-579-a` then `-h` | ACK 1→1; HANDOFF 1→2 | human | Sentinel hydro cluster #579/#577 (`validate_data.py`). One packet, not N. | Do not squash Sentinel path-traversal PRs. | `2026-09-04T19:20:00Z` | human inbox |
+| hydro #577 | `evt-s3-20260828-hydrographve-577-a` then `-h` | ACK 1→1; HANDOFF 1→2 | human | Sentinel hydro cluster #577/#579 (`validate_data.py`). One packet, not N. | Do not squash Sentinel path-traversal PRs. | `2026-09-04T19:20:00Z` | human inbox |
+| series #416 | `evt-s3-20260828-seriescorrec-416-a` then `-h` | ACK 1→1; HANDOFF 1→2 | human | Sticky workflow series #416. | Do not squash sticky workflow dependency PRs. | `2026-09-04T19:20:00Z` | human inbox |
+| rpce #303 | `evt-s3-20260828-repopromptce-303-a` then `-h` | ACK 1→1; HANDOFF 1→2 | human | Sentinel MCP cluster #303/#299. | Do not salvage Swift MCP/TOCTOU PRs on Linux. | `2026-09-04T19:20:00Z` | human inbox |
+| pc #2022 (new head) | `evt-s3-20260828-personalconf-2022-a` then `-h` | ACK 1→1; HANDOFF 1→2 | human | Reconcile salvage #2022 against #2000/#1989. | Do not Trunk-queue a sticky security salvage. | `2026-09-04T19:20:00Z` | human inbox |
+| pc #1969 (new head) | `evt-s3-20260828-personalconf-1969-a` then `-h` | ACK 1→1; HANDOFF 1→2 | human | HUMAN workflow #1969. Packet only if irreducible. | Do not approve, merge, or close ordinary human-authored PRs. | `2026-09-04T19:20:00Z` | human inbox |
+| email #1516 | `evt-s3-20260828-emailsecuri-1516-t` | TERMINAL 1→2 | none | Retain as an audit record. | No further automated action. | n/a (terminal) | n/a |
+| email #1521 | `evt-s3-20260828-emailsecuri-1521-t` | TERMINAL 1→2 | none | Retain as an audit record. | No further automated action. | n/a (terminal) | n/a |
+| email #1524 | `evt-s3-20260828-emailsecuri-1524-t` | TERMINAL 1→2 | none | Retain as an audit record. | No further automated action. | n/a (terminal) | n/a |
+| rpce #295 | `evt-s3-20260828-repopromptce-295-t` | TERMINAL 1→2 | none | Retain as an audit record. | No further automated action. | n/a (terminal) | n/a |
+| rpce #285 | `evt-s3-20260828-repopromptce-285-t` | TERMINAL 1→2 | none | Retain as an audit record. | No further automated action. | n/a (terminal) | n/a |
+
+Decision packets this run: **0 of 5**. Unexpired 2026-08-22 packets remain through
+`2026-08-29T19:20:00Z`. Notion stays the human packet plane; no new pages.
+
+Stage 2 work items created: **0**. No salvage implementation.
+
+Left for a later run (over cap): rpce #281 / #276 / #280 GitHub-closed, still
+Stage-3-owned.
+
+## Continuity
+
+- Successful pattern reused: ACK latest projected HANDOFF then revision-checked
+  HANDOFF/TERMINAL; skip duplicate receipts; Contents API CAS via `gh api
+  --input` with query-string `?ref=` GET; re-GET byte-match; keep original item
+  keys (0gp); new-head keys for SHA-changed PRs.
+- Failed approach not to repeat: do not GET Contents with `-f ref=`; do not
+  GitHub-squash personal-config (TRUNK_QUEUE only); do not self-approve
+  maintainer-login BOT (0gv); do not packet Jules/Bolt/Palette clusters; do not
+  park GitHub-green BOT as salvage `HOLD_PLATFORM` (0gi/0gu); do not steal
+  Stage 1 leftovers; do not open a sibling docs PR (0gj); do not merge drafts
+  (0gd); do not increment calibration after `APPROVED` 7/7; do not Trunk-merge
+  this docs lineage in the Stage 3 run that appends to it.
+- New lesson candidate: none. No new routing rule.
+- Configuration or policy gap: full wrap validator still fails on `main`
+  export/prompt mismatch; Stage 3 continues ledger-only validation. rpce named
+  required checks still omitted from last-20 GraphQL contexts — Stage 1 must
+  re-read those two names before squash.
+- Historical-import sources or fingerprints processed: none
+
+## Metrics
+
+- Inventory / recovery / reconciliation count: 20 processed / 0 SHA-drift /
+  0 new packets / 0 Stage 2 work items / 6 Stage 1 leftovers not stolen
+- Merged: **0**
+- Closed: **0** GitHub closes this run (5 ledger `CLOSED_SUPERSEDED` projections
+  of already-closed PRs)
+- Drafts created: 0
+- Decision packets created: 0
+- Stage 2 work items created: 0
+- Close-candidates recorded: 0 (series #415 remains Stage 1)
+- Analysis errors: 0
+- State-changing product-PR actions, including failed attempts and retries:
+  **0**
+- Calibration successful-run increment: **0** (`successful_run_count` remains 7
+  of 7 `APPROVED`)
