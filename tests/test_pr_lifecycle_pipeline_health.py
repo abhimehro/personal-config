@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,6 +31,22 @@ def _item(**overrides: object) -> dict[str, object]:
             "Recover unique source only on a new focused draft that "
             "excludes .jules/journals/"
         ),
+    }
+    base.update(overrides)
+    return base
+
+
+NOW = datetime(2026, 8, 30, 12, 0, tzinfo=timezone.utc)
+
+
+def _work_item(**overrides: object) -> dict[str, object]:
+    base: dict[str, object] = {
+        "work_item_id": "s2-20260830-demo",
+        "source_item_key": "abhimehro/demo#1@abc",
+        "allowed_paths": ["src/demo.py"],
+        "required_test_command": "python3 -m unittest",
+        "expiry_utc": "2026-08-31T12:00:00Z",
+        "current_owner": "stage2",
     }
     base.update(overrides)
     return base
@@ -77,6 +94,65 @@ class TestSalvageEligibleClassifier(unittest.TestCase):
             )
         )
 
+    def test_unrecognized_sticky_label_is_not_eligible(self) -> None:
+        self.assertFalse(
+            health.is_salvage_eligible(
+                _item(sensitive_paths=["network_browser_origins"])
+            )
+        )
+
+    def test_lint_repair_is_eligible(self) -> None:
+        self.assertTrue(
+            health.is_salvage_eligible(_item(next_action="Fix ruff lint on src/foo.py"))
+        )
+
+    def test_import_repair_is_eligible(self) -> None:
+        self.assertTrue(
+            health.is_salvage_eligible(
+                _item(next_action="Add TYPE_CHECKING import for Foo")
+            )
+        )
+
+    def test_wrap_repair_is_eligible(self) -> None:
+        self.assertTrue(
+            health.is_salvage_eligible(_item(next_action="wrap export to 88 columns"))
+        )
+
+    def test_non_major_pin_is_eligible(self) -> None:
+        self.assertTrue(
+            health.is_salvage_eligible(
+                _item(next_action="non-major pin patch for requests")
+            )
+        )
+
+    def test_missing_test_is_eligible(self) -> None:
+        self.assertTrue(
+            health.is_salvage_eligible(
+                _item(next_action="Add the missing test named in the work item")
+            )
+        )
+
+    def test_conflict_marker_is_eligible(self) -> None:
+        self.assertTrue(
+            health.is_salvage_eligible(
+                _item(next_action="Remove conflict markers in src/foo.py")
+            )
+        )
+
+    def test_dirty_unique_remaining_is_eligible(self) -> None:
+        self.assertTrue(
+            health.is_salvage_eligible(
+                _item(next_action="DIRTY unique remaining source after 0cs journal")
+            )
+        )
+
+    def test_do_not_import_is_not_eligible(self) -> None:
+        self.assertFalse(
+            health.is_salvage_eligible(
+                _item(next_action="HOLD_CONTRACT: do not import optional ML deps")
+            )
+        )
+
 
 class TestPipelineHealthSummarize(unittest.TestCase):
     def test_starvation_when_eligible_and_empty_stage2(self) -> None:
@@ -111,8 +187,44 @@ class TestPipelineHealthSummarize(unittest.TestCase):
             {
                 "ledger_revision": 2,
                 "items": [_item()],
-                "stage2_work_items": [{"work_item_id": "s2-20260830-demo"}],
-            }
+                "stage2_work_items": [_work_item()],
+            },
+            now=NOW,
+        )
+        self.assertFalse(report.starvation)
+        self.assertEqual(report.stage2_work_item_count, 1)
+
+    def test_expired_work_item_does_not_hide_starvation(self) -> None:
+        report = health.summarize(
+            {
+                "ledger_revision": 3,
+                "items": [_item()],
+                "stage2_work_items": [_work_item(expiry_utc="2026-08-29T12:00:00Z")],
+            },
+            now=NOW,
+        )
+        self.assertTrue(report.starvation)
+        self.assertEqual(report.stage2_work_item_count, 0)
+
+    def test_malformed_expiry_does_not_hide_starvation(self) -> None:
+        report = health.summarize(
+            {
+                "ledger_revision": 4,
+                "items": [_item()],
+                "stage2_work_items": [_work_item(expiry_utc="not-a-timestamp")],
+            },
+            now=NOW,
+        )
+        self.assertTrue(report.starvation)
+
+    def test_future_work_item_clears_starvation(self) -> None:
+        report = health.summarize(
+            {
+                "ledger_revision": 5,
+                "items": [_item()],
+                "stage2_work_items": [_work_item(expiry_utc="2026-09-01T00:00:00Z")],
+            },
+            now=NOW,
         )
         self.assertFalse(report.starvation)
 
