@@ -90,7 +90,7 @@ def is_salvage_eligible(item: dict[str, Any]) -> bool:
     if outcome in NON_SALVAGE_OUTCOMES:
         return False
     sticky = set(item.get("sensitive_paths") or []) - {"generated_output"}
-    if sticky & STICKY_SENSITIVE_PATHS:
+    if sticky:
         return False
     next_action = item.get("next_action") or ""
     if MAJOR_DEP_BLOCK.search(next_action) and "Recover unique source" not in (
