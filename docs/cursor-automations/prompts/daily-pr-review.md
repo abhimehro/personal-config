@@ -82,8 +82,9 @@ required checks and no sticky sensitive path; BOT non-sensitive `HOLD_CANONICAL`
 clusters for **canonical-pick**; then **salvage-eligible** BOT
 CONFLICTING/DIRTY/red-CI items to create complete Stage 2 work items (do not
 merge dirty PRs). Canonical-pick a cluster before queuing salvage: at most one
-work item for the keeper. Fill remaining slots from SHA_MATCH executable
-remainder, not only NEW twins.
+work item for the keeper. **Hold five inventory slots** for those salvage
+keepers so a full MERGEABLE/canonical backlog cannot exclude them. Fill remaining
+slots from SHA_MATCH executable remainder, not only NEW twins.
 
 **Canonical-pick:** for BOT non-sensitive PRs with overlapping paths, keep the
 newest MERGEABLE member with passing required checks (else the one with tests);
@@ -101,10 +102,12 @@ The 40-action cap is **product mutations** (approve/merge/close/comment on
 in-scope PRs, plus failed product mutations). Ledger CAS, queuing a complete
 Stage 2 work item, and the daily docs-lineage PR (create, push, Trunk-merge) are
 bookkeeping and do **not** consume that cap. Spend product merges and closes
-**first**. Then queue up to five salvage-eligible Stage 2 work items in the same
-run. Aim to use remaining product slots on product PRs. Overflow MERGEABLE green
-BOT that do not fit in 40 stay owned overflow for Stage 3 completion, not a
-bounce that waits until tomorrow's Stage 1.
+**first**. Then queue up to five salvage-eligible Stage 2 work items from the
+fetched ledger, even when MERGEABLE/canonical candidates filled all 80 inventory
+slots. Salvage feed is not inventory-capped. Aim to use remaining product slots
+on product PRs. Overflow MERGEABLE green BOT that do not fit in 40 stay owned
+overflow for Stage 3 completion, not a bounce that waits until tomorrow's Stage
+1.
 
 Throughput self-grade is **FAIL** if net open BOT PRs grew **and** unused
 product-mutation slots remained. It is also **FAIL** if salvage-eligible BOT

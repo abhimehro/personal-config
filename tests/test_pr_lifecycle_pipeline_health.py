@@ -92,6 +92,11 @@ CLASSIFIER_CASES: tuple[tuple[str, dict[str, Any], bool], ...] = (
         {"next_action": "HOLD_CONTRACT: do not import optional ML deps"},
         False,
     ),
+    (
+        "NOT_RUN mechanical overflow",
+        {"guardrail_outcome": "NOT_RUN"},
+        True,
+    ),
 )
 
 
@@ -211,12 +216,24 @@ class TestPipelineHealthCli(unittest.TestCase):
         payload = json.loads(proc.stdout)
         self.assertFalse(payload["starvation"])
 
-    def test_cli_refuses_main_branch_pointer(self) -> None:
-        pointer = ROOT / "tasks" / "pr-lifecycle-ledger.yaml"
-        self.assertTrue(pointer.is_file())
-        proc = _run_cli(str(pointer))
+    def test_cli_refuses_pointer_copies_and_non_ledger(self) -> None:
+        path_pointer = ROOT / "tasks" / "pr-lifecycle-ledger.yaml"
+        self.assertTrue(path_pointer.is_file())
+        proc = _run_cli(str(path_pointer))
         self.assertEqual(proc.returncode, 1)
         self.assertIn("refusing main-branch pointer", proc.stderr)
+
+        pointer = yaml.safe_load(path_pointer.read_text(encoding="utf-8"))
+        cases = (
+            ("copied pointer", pointer, "refusing main-branch pointer"),
+            ("arbitrary mapping", {"foo": "bar"}, "not a runtime ledger mapping"),
+        )
+        for label, document, needle in cases:
+            with self.subTest(label):
+                copied = self._write(document)
+                result = _run_cli(str(copied))
+                self.assertEqual(result.returncode, 1)
+                self.assertIn(needle, result.stderr)
 
 
 class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
@@ -231,6 +248,8 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("salvage-eligible", review)
         self.assertIn("bookkeeping", review)
         self.assertIn("empty-intake", review)
+        self.assertIn("not inventory-capped", review)
+        self.assertIn("Hold five inventory slots", review)
 
     def test_salvage_prompt_starvation_label_without_inventing(self) -> None:
         salvage = self._prompt("daily-pr-salvage.md")

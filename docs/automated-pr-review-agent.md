@@ -53,7 +53,9 @@ not proceed to inventory, merge, or close.
    executable remainder (elapsed close-candidates, MERGEABLE green BOT,
    canonical-pick clusters, Stage 3 bounce-backs, salvage-eligible
    CONFLICTING/DIRTY BOT) before spending the 80-item
-   cap on NEW security twins.
+   cap on NEW security twins. Hold five of those 80 slots for salvage keepers.
+   Queue up to five Stage 2 work items from the fetched ledger even when
+   MERGEABLE/canonical candidates filled the rest of the inventory.
 3. **Output:** Write full inventory to `tasks/pr-inventory.md` (table: Repo, PR
    #, Author, Category, CI, Conflicts, Age, Status).
 4. **Classification:** Assign each PR exactly one category: `SECURITY`,
@@ -327,7 +329,8 @@ mutation cap (see `lifecycle.stage_caps`). Ledger CAS, Stage 2 work-item
 queueing, and the daily docs lineage
 do not consume that cap. A throughput self-grade is **FAIL** when net open BOT
 PRs grew and unused product-mutation slots remained, or when salvage-eligible
-BOT items exist and zero Stage 2 work items were queued. It is followed by Stage 2
+BOT items exist and zero Stage 2 work items were queued. Salvage feed is not
+inventory-capped. It is followed by Stage 2
 at `0 17 * * *` and Stage 3 at `0 19 * * *`. See
 [Three-Stage PR Lifecycle in Cursor Automations](cursor-automations/three-stage-pr-lifecycle.md)
 for the common prompt preamble, role-based MCP/skill lists, and calibration

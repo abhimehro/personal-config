@@ -101,7 +101,9 @@ BOT non-sensitive overlap clusters itself. It sends sticky security, HUMAN,
 sticky `HOLD_CONTRACT`, or irreducible policy to Stage 3. Stage 1 **reselects**
 SHA_MATCH items that are still executable (merge, close, canonical-pick) and
 salvage-eligible CONFLICTING/DIRTY BOT, and **re-ingests** Stage 2 replacement
-PRs. Caps are **80 inventory / 40 product mutations** so daily drain exceeds
+PRs. Hold five inventory slots for salvage keepers and queue those work items
+from the fetched ledger even when MERGEABLE/canonical candidates fill the rest
+of the 80. Caps are **80 inventory / 40 product mutations** so daily drain exceeds
 arrivals (~14–20). It remains the primary autonomous merger for routine BOT
 work. `HOLD_PLATFORM` is salvage-only: GitHub-green BOT PRs merge at Stage 1.
 

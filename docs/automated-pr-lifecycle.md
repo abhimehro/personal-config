@@ -216,7 +216,9 @@ necessary Stage 2 work, not utilization theater.
 
 1. `author_type` is BOT, not HUMAN or UNKNOWN.
 2. The item is not `TERMINAL`.
-3. `guardrail_outcome` is not `REVIEW_SECURITY`.
+3. `guardrail_outcome` is not `REVIEW_SECURITY`. `NOT_RUN` overflow with a
+   mechanical `next_action` is salvage-eligible; it is not a reason to skip the
+   Stage 2 feed.
 4. Sticky `sensitive_paths` are empty or only `generated_output`. Lockfiles,
    workflows, secrets, auth, schema, public API, shell execution, and similar
    taxonomy classes stay Stage 3 / human.
@@ -383,10 +385,12 @@ explicit calibration approval, five Stage 3 completion or closure actions.
 Ledger CAS, queuing a complete Stage 2 work item, and the daily
 `pr-lifecycle-docs-YYYYMMDD` lineage (create, push, Trunk-merge) are bookkeeping
 and **do not** consume the Stage 1 product-mutation cap. Spend product merges
-and closes first, then queue up to five salvage-eligible work items in the same
-run. Raising 50/20 to 80/40 is a volume change of already-authorized routine
-merge/close. It is not a new action type and must not reset `calibration` to
-`REPORT_ONLY`.
+and closes first, then queue up to five salvage-eligible work items from the
+fetched ledger in the same run, even when the 80-item inventory is full of
+MERGEABLE/canonical candidates. Hold five inventory slots for salvage keepers.
+Salvage feed is not inventory-capped. Raising 50/20 to 80/40 is a volume change
+of already-authorized routine merge/close. It is not a new action type and must
+not reset `calibration` to `REPORT_ONLY`.
 
 Stage 1 fills unused inventory slots from SHA_MATCH-executable remainder
 (elapsed `STAGE1_INTAKE` closes, MERGEABLE green BOT, canonical-pick clusters,

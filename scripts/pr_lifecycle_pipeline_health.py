@@ -41,7 +41,7 @@ NON_SALVAGE_OUTCOMES = frozenset(
         "ANALYSIS_ERROR",
     }
 )
-SALVAGE_OUTCOMES = frozenset({"HOLD_CONTRACT", "HOLD_EVIDENCE"})
+SALVAGE_OUTCOMES = frozenset({"HOLD_CONTRACT", "HOLD_EVIDENCE", "NOT_RUN"})
 STAGE2_OWNED_STATES = frozenset({"STAGE2_QUEUED", "STAGE2_ACTIVE"})
 REQUIRED_WORK_ITEM_FIELDS = (
     "work_item_id",
@@ -263,15 +263,56 @@ def _print_report(report: PipelineHealth, as_json: bool) -> None:
         print(f"eligible_key={key}")
 
 
-def _refuse_if_bootstrap_pointer(pointer: Path) -> int | None:
-    if pointer.name == "pr-lifecycle-ledger.yaml" and "tasks" in pointer.parts:
+def _print_pointer_refusal() -> int:
+    print(
+        "PR_LIFECYCLE_HEALTH: refusing main-branch pointer "
+        "(fetch automation/pr-lifecycle-ledger)",
+        file=sys.stderr,
+    )
+    return 1
+
+
+def _path_is_bootstrap_pointer(pointer: Path) -> bool:
+    return pointer.name == "pr-lifecycle-ledger.yaml" and "tasks" in pointer.parts
+
+
+def _is_bootstrap_pointer_document(data: dict[str, Any]) -> bool:
+    if data.get("pointer_kind") == "runtime_lifecycle_ledger":
+        return True
+    runtime = data.get("runtime_ledger")
+    return isinstance(runtime, dict) and "items" not in data
+
+
+def _is_list_or_missing(value: Any) -> bool:
+    return value is None or isinstance(value, list)
+
+
+def _has_runtime_ledger_shape(data: dict[str, Any]) -> bool:
+    if "items" not in data:
+        return False
+    items_ok = _is_list_or_missing(data.get("items"))
+    work_ok = _is_list_or_missing(data.get("stage2_work_items"))
+    return items_ok and work_ok
+
+
+def _load_runtime_ledger(path: Path) -> tuple[dict[str, Any] | None, int]:
+    if _path_is_bootstrap_pointer(path.resolve()):
+        return None, _print_pointer_refusal()
+    try:
+        ledger = load_yaml(path)
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"PR_LIFECYCLE_HEALTH_ERROR: {exc}", file=sys.stderr)
+        return None, 1
+    if _is_bootstrap_pointer_document(ledger):
+        return None, _print_pointer_refusal()
+    if not _has_runtime_ledger_shape(ledger):
         print(
-            "PR_LIFECYCLE_HEALTH: refusing main-branch pointer "
-            "(fetch automation/pr-lifecycle-ledger)",
+            "PR_LIFECYCLE_HEALTH: not a runtime ledger mapping "
+            "(expected items list)",
             file=sys.stderr,
         )
-        return 1
-    return None
+        return None, 1
+    return ledger, 0
 
 
 def main() -> int:
@@ -287,14 +328,9 @@ def main() -> int:
         help="print the health report as JSON",
     )
     args = parser.parse_args()
-    refused = _refuse_if_bootstrap_pointer(args.runtime_ledger.resolve())
-    if refused is not None:
-        return refused
-    try:
-        ledger = load_yaml(args.runtime_ledger)
-    except (OSError, ValueError, KeyError) as exc:
-        print(f"PR_LIFECYCLE_HEALTH_ERROR: {exc}", file=sys.stderr)
-        return 1
+    ledger, status = _load_runtime_ledger(args.runtime_ledger)
+    if ledger is None:
+        return status
     report = summarize(ledger)
     _print_report(report, args.json)
     if report.starvation:
