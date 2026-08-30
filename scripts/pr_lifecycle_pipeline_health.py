@@ -53,8 +53,7 @@ REQUIRED_WORK_ITEM_FIELDS = (
     "current_owner",
 )
 PROHIBITED_NEXT_ACTION = re.compile(
-    r"\bdo not (import|lint|wrap|pin|test)\b|"
-    r"\bdon't (import|lint|wrap|pin|test)\b",
+    r"\bdo not (import|lint|wrap|pin|test)\b|" r"\bdon't (import|lint|wrap|pin|test)\b",
     re.IGNORECASE,
 )
 MECHANICAL_PATTERNS = (
@@ -85,6 +84,30 @@ class PipelineHealth:
     salvage_eligible_keys: tuple[str, ...]
     starvation: bool
     reason: str
+
+
+def _clock(now: datetime | None) -> datetime:
+    if now is not None:
+        return now
+    return datetime.now(timezone.utc)
+
+
+def _as_item_list(raw: Any) -> list[dict[str, Any]]:
+    if not isinstance(raw, list):
+        return []
+    items: list[dict[str, Any]] = []
+    for entry in raw:
+        if isinstance(entry, dict):
+            items.append(entry)
+    return items
+
+
+def _ledger_items(ledger: dict[str, Any]) -> list[dict[str, Any]]:
+    return _as_item_list(ledger.get("items"))
+
+
+def _raw_work_items(ledger: dict[str, Any]) -> list[dict[str, Any]]:
+    return _as_item_list(ledger.get("stage2_work_items"))
 
 
 def _has_blocking_sticky(item: dict[str, Any]) -> bool:
@@ -134,11 +157,9 @@ def parse_expiry_utc(value: object) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
-def work_item_is_usable(
-    item: dict[str, Any], now: datetime | None = None
-) -> bool:
+def work_item_is_usable(item: dict[str, Any], now: datetime | None = None) -> bool:
     """Return True for a complete work item whose expiry_utc is still in the future."""
-    clock = now or datetime.now(timezone.utc)
+    clock = _clock(now)
     if item.get("current_owner") != "stage2":
         return False
     if not all(item.get(field) for field in REQUIRED_WORK_ITEM_FIELDS):
@@ -159,41 +180,99 @@ def _stage2_owned(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return owned
 
 
+def _usable_work_items(ledger: dict[str, Any], clock: datetime) -> list[dict[str, Any]]:
+    usable: list[dict[str, Any]] = []
+    for item in _raw_work_items(ledger):
+        if work_item_is_usable(item, clock):
+            usable.append(item)
+    return usable
+
+
+def _eligible_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    eligible: list[dict[str, Any]] = []
+    for item in items:
+        if is_salvage_eligible(item):
+            eligible.append(item)
+    return eligible
+
+
+def _eligible_keys(eligible: list[dict[str, Any]]) -> tuple[str, ...]:
+    keys: list[str] = []
+    for item in eligible:
+        keys.append(str(item.get("key") or ""))
+    return tuple(keys)
+
+
+def _ledger_revision(ledger: dict[str, Any]) -> int:
+    return int(ledger.get("ledger_revision") or 0)
+
+
+def _is_starved(queued: int, eligible_count: int) -> bool:
+    return queued == 0 and eligible_count > 0
+
+
 def _starvation_reason(starvation: bool, queued: int, eligible: int) -> str:
     if starvation:
-        return (
-            "Stage 2 EMPTY_INTAKE while salvage-eligible > 0 "
-            f"({eligible} items)"
-        )
+        return "Stage 2 EMPTY_INTAKE while salvage-eligible > 0 " f"({eligible} items)"
     if queued == 0:
         return "Stage 2 empty intake with zero salvage-eligible remainder"
     return "Stage 2 has queued work"
 
 
-def summarize(
-    ledger: dict[str, Any], now: datetime | None = None
+def _health_report(
+    ledger: dict[str, Any],
+    usable: list[dict[str, Any]],
+    owned: list[dict[str, Any]],
+    eligible: list[dict[str, Any]],
 ) -> PipelineHealth:
-    """Build a starvation report from a validated-shape runtime ledger dict."""
-    clock = now or datetime.now(timezone.utc)
-    items = list(ledger.get("items") or [])
-    usable_work_items = [
-        item
-        for item in list(ledger.get("stage2_work_items") or [])
-        if work_item_is_usable(item, clock)
-    ]
-    owned = _stage2_owned(items)
-    eligible = [item for item in items if is_salvage_eligible(item)]
-    queued = len(usable_work_items) + len(owned)
-    starvation = queued == 0 and len(eligible) > 0
+    queued = len(usable) + len(owned)
+    eligible_count = len(eligible)
+    starvation = _is_starved(queued, eligible_count)
     return PipelineHealth(
-        ledger_revision=int(ledger.get("ledger_revision") or 0),
-        stage2_work_item_count=len(usable_work_items),
+        ledger_revision=_ledger_revision(ledger),
+        stage2_work_item_count=len(usable),
         stage2_owned_item_count=len(owned),
-        salvage_eligible_count=len(eligible),
-        salvage_eligible_keys=tuple(str(item.get("key") or "") for item in eligible),
+        salvage_eligible_count=eligible_count,
+        salvage_eligible_keys=_eligible_keys(eligible),
         starvation=starvation,
-        reason=_starvation_reason(starvation, queued, len(eligible)),
+        reason=_starvation_reason(starvation, queued, eligible_count),
     )
+
+
+def summarize(ledger: dict[str, Any], now: datetime | None = None) -> PipelineHealth:
+    """Build a starvation report from a validated-shape runtime ledger dict."""
+    clock = _clock(now)
+    items = _ledger_items(ledger)
+    usable = _usable_work_items(ledger, clock)
+    owned = _stage2_owned(items)
+    eligible = _eligible_items(items)
+    return _health_report(ledger, usable, owned, eligible)
+
+
+def _print_report(report: PipelineHealth, as_json: bool) -> None:
+    payload = asdict(report)
+    if as_json:
+        print(json.dumps(payload, indent=2))
+        return
+    print(f"ledger_revision={report.ledger_revision}")
+    print(f"stage2_work_items={report.stage2_work_item_count}")
+    print(f"stage2_owned_items={report.stage2_owned_item_count}")
+    print(f"salvage_eligible={report.salvage_eligible_count}")
+    print(f"starvation={str(report.starvation).lower()}")
+    print(f"reason={report.reason}")
+    for key in report.salvage_eligible_keys:
+        print(f"eligible_key={key}")
+
+
+def _refuse_if_bootstrap_pointer(pointer: Path) -> int | None:
+    if pointer.name == "pr-lifecycle-ledger.yaml" and "tasks" in pointer.parts:
+        print(
+            "PR_LIFECYCLE_HEALTH: refusing main-branch pointer "
+            "(fetch automation/pr-lifecycle-ledger)",
+            file=sys.stderr,
+        )
+        return 1
+    return None
 
 
 def main() -> int:
@@ -209,33 +288,19 @@ def main() -> int:
         help="print the health report as JSON",
     )
     args = parser.parse_args()
-    pointer = args.runtime_ledger.resolve()
-    if pointer.name == "pr-lifecycle-ledger.yaml" and "tasks" in pointer.parts:
-        print(
-            "PR_LIFECYCLE_HEALTH: refusing main-branch pointer "
-            "(fetch automation/pr-lifecycle-ledger)",
-            file=sys.stderr,
-        )
-        return 1
+    refused = _refuse_if_bootstrap_pointer(args.runtime_ledger.resolve())
+    if refused is not None:
+        return refused
     try:
         ledger = load_yaml(args.runtime_ledger)
     except (OSError, ValueError, KeyError) as exc:
         print(f"PR_LIFECYCLE_HEALTH_ERROR: {exc}", file=sys.stderr)
         return 1
     report = summarize(ledger)
-    payload = asdict(report)
-    if args.json:
-        print(json.dumps(payload, indent=2))
-    else:
-        print(f"ledger_revision={report.ledger_revision}")
-        print(f"stage2_work_items={report.stage2_work_item_count}")
-        print(f"stage2_owned_items={report.stage2_owned_item_count}")
-        print(f"salvage_eligible={report.salvage_eligible_count}")
-        print(f"starvation={str(report.starvation).lower()}")
-        print(f"reason={report.reason}")
-        for key in report.salvage_eligible_keys:
-            print(f"eligible_key={key}")
-    return 2 if report.starvation else 0
+    _print_report(report, args.json)
+    if report.starvation:
+        return 2
+    return 0
 
 
 if __name__ == "__main__":
