@@ -18,7 +18,7 @@ visibly available.
 
 | Cursor automation   | Repository specification                |     Schedule | Concurrency |                                                   Run cap | Write authority                                                                                   |
 | ------------------- | --------------------------------------- | -----------: | ----------: | --------------------------------------------------------: | ------------------------------------------------------------------------------------------------- |
-| Daily PR Review     | `docs/automated-pr-review-agent.md`     | `0 15 * * *` |           1 |                           50 inventory items / 20 actions | Routine approve, squash merge, close, and mechanical repair only when all routine predicates pass |
+| Daily PR Review     | `docs/automated-pr-review-agent.md`     | `0 15 * * *` |           1 |                           80 inventory items / 40 product mutations | Routine approve, squash merge, close, and queue salvage work items when predicates pass |
 | Daily PR Salvage    | `docs/automated-pr-salvage-agent.md`    | `0 17 * * *` |           1 |                                     5 recovery candidates | Focused draft recovery only; no approval, merge, or original-security closure                     |
 | Daily PR Completion | `docs/automated-pr-completion-agent.md` | `0 19 * * *` |           1 | 20 reconciliations, 5 packets, 5 post-calibration actions | Report-only until calibration approval; then bounded non-security completion or closure           |
 
@@ -95,24 +95,32 @@ Dashboard remains the evidence source for the connected MCP inventory.
 
 ## Stage handoffs
 
-Stage 1 sends one bounded mechanical repair to Stage 2. It **canonical-picks**
+Stage 1 sends salvage-eligible mechanical repair to Stage 2 as a **complete
+work item** (ledger bookkeeping, not a product mutation). It **canonical-picks**
 BOT non-sensitive overlap clusters itself. It sends sticky security, HUMAN,
-`HOLD_CONTRACT`, or irreducible policy to Stage 3. Stage 1 **reselects**
+sticky `HOLD_CONTRACT`, or irreducible policy to Stage 3. Stage 1 **reselects**
 SHA_MATCH items that are still executable (merge, close, canonical-pick) and
-**re-ingests** Stage 2 replacement PRs. It remains the primary autonomous merger
-for routine BOT work. `HOLD_PLATFORM` is salvage-only: GitHub-green BOT PRs
-merge at Stage 1.
+salvage-eligible CONFLICTING/DIRTY BOT, and **re-ingests** Stage 2 replacement
+PRs. Caps are **80 inventory / 40 product mutations** so daily drain exceeds
+arrivals (~14–20). It remains the primary autonomous merger for routine BOT
+work. `HOLD_PLATFORM` is salvage-only: GitHub-green BOT PRs merge at Stage 1.
 
 Stage 2 sends every draft (with a replacement ledger item) to Stage 1 when
-routine, else Stage 3. Empty intake: short record and stop. Stage 2 never
-merges.
+routine, else Stage 3. Empty intake: short record and stop. If salvage-eligible
+items exist, label `EMPTY_INTAKE_STARVATION` and still do not invent recoveries.
+Stage 2 never merges.
 
-Stage 3 **bounces** executable BOT clusters, elapsed close-candidates, and
-GitHub-green BOT `HOLD_PLATFORM` items back to Stage 1. During `REPORT_ONLY` it
-does not merge. After `APPROVED` it may complete qualified non-security work
-under a five-action cap. Human packets are reserved for irreducible sticky
-security, HUMAN, or real platform judgment. Jules/Bolt/Palette file-collision
-clusters are not packets.
+Stage 3 **completes** MERGEABLE green BOT that Stage 1 overflowed (do not bounce
+that overflow). It **bounces** canonical-pick clusters back to Stage 1. It
+**creates Stage 2 work items** for mechanical `HOLD_CONTRACT` / `HOLD_EVIDENCE`.
+During `REPORT_ONLY` it does not merge. After `APPROVED` it may complete
+qualified non-security work under a five-action cap. Human packets are reserved
+for irreducible sticky security, HUMAN, or real platform judgment.
+Jules/Bolt/Palette file-collision clusters are not packets.
+
+Grok Bot **PR Desk** digests after Stage 3. It is read-only: observe, verify,
+compress. It is not a fourth stage and must not mutate GitHub, the ledger, or
+stage routing. Health must flag Stage 2 starvation and unused Stage 1 slots.
 
 Agent-facing session docs share one `pr-lifecycle-docs-YYYYMMDD` PR per UTC day
 (see `docs/automated-pr-lifecycle.md`). Stage 1 creates that PR and later

@@ -23,8 +23,9 @@ format, and what needs approval
    lineage if still open; else skip docs (do not invent a run).
 4. Compare open-PR count to the previous digest in this thread.
 5. Flag pipeline stalls only: unused Stage 1 product slots + rising open PRs,
-   SHA_MATCH skip of executable work, Stage 3 calibration still enabled, empty
-   Stage 2 theater, both Stage 3 variants enabled.
+   SHA_MATCH skip of executable work, Stage 3 calibration still enabled, Stage 2
+   EMPTY_INTAKE while salvage-eligible > 0, unused Stage 1 slots while MERGEABLE
+   green BOT remain, both Stage 3 variants enabled.
 6. Collect at most five `WAITING_HUMAN` / irreducible `REVIEW_SECURITY` items
    that already have a packet or a one-sentence question. Skip overlap clusters.
 7. Post the Output block in this conversation. Do not post to Slack/GitHub.

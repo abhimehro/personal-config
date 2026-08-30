@@ -22,9 +22,9 @@ item to Stage 1 intake.
 
 | Stage | Name       | Owns                                                                                   | May do                                                                                                                                                                                                                                                                               | Must hand off                                                                                                                                                              |
 | ----- | ---------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | Review     | New, invalidated, SHA_MATCH-executable, bounce-back, and salvage-replacement inventory | Routine approve, squash-merge, close, and **canonical-pick** (keep one BOT non-sensitive overlap cluster; close the rest). Re-ingest Stage 2 replacement PRs. Reselect SHA-unchanged items that are still executable.                                                                | Mechanical recovery to Stage 2; sticky security, HUMAN, `HOLD_CONTRACT`, or irreducible policy to Stage 3. Do **not** dump BOT file-overlap clusters on Stage 3.           |
+| 1     | Review     | New, invalidated, SHA_MATCH-executable, bounce-back, salvage-eligible, and salvage-replacement inventory | Routine approve, squash-merge, close, and **canonical-pick** (keep one BOT non-sensitive overlap cluster; close the rest). Re-ingest Stage 2 replacement PRs. Reselect SHA-unchanged items that are still executable. Queue up to five complete Stage 2 work items as ledger bookkeeping. | Salvage-eligible mechanical recovery to Stage 2; sticky security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible policy to Stage 3. Do **not** dump BOT file-overlap clusters on Stage 3.           |
 | 2     | Salvage    | Bounded mechanical recovery                                                            | Open or update a focused **draft** replacement with required tests and provenance. CAS-write a **new ledger item** for that replacement PR. Never approve, merge, or close. Empty intake: short record and stop.                                                                     | Draft completion (with replacement `item_key`) to Stage 1 if routine, else Stage 3; rejected recovery, unavailable **salvage** platform, or unresolved decision to Stage 3 |
-| 3     | Completion | Remainder that Stage 1 cannot execute                                                  | Reconcile live state; **bounce** executable BOT clusters, elapsed close-candidates, and GitHub-green BOT `HOLD_PLATFORM` items **back to Stage 1**; packets only for irreducible sticky/HUMAN/real platform; after `APPROVED`, complete qualified non-security work under a hard cap | Executable bounce-backs and SHA drift to Stage 1; mechanical recovery to Stage 2; irreducible policy/security to the human inbox                                           |
+| 3     | Completion | Remainder that Stage 1 cannot execute this run                                         | Reconcile live state; **complete** MERGEABLE green BOT that Stage 1 overflowed (do not bounce that overflow); **bounce** canonical-pick clusters **back to Stage 1**; packets only for irreducible sticky/HUMAN/real platform; after `APPROVED`, complete qualified non-security work under a hard cap | Overflow completions and SHA drift; mechanical recovery to Stage 2 via a complete work item; irreducible policy/security to the human inbox                                           |
 
 Automated routine approval is a policy-authorized throughput control, not an
 independent human security review. Security-sensitive and ordinary
@@ -201,13 +201,42 @@ Use the exact outcome values below in ledger events and run records.
 | ------------------------ | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `PASS_ROUTINE`           | All routine execution predicates are complete                                               | Stage 1 or approved Stage 3 completion                                                                               |
 | `REVIEW_SECURITY`        | A security result needs an explicit human decision                                          | Human inbox                                                                                                          |
-| `HOLD_CONTRACT`          | A policy, behavior, or security contract is undefined                                       | Stage 3, then human inbox                                                                                            |
+| `HOLD_CONTRACT`          | A policy, behavior, or security contract is undefined                                       | **Sticky** (lockfile/major dep, workflow permissions, auth, secrets, schema, public API): Stage 3, then human inbox. **Mechanical** (generated_output wrap, lint, import, conflict markers, unique-source rebase excluding journals): complete Stage 2 work item, not WAITING_HUMAN without a WI |
 | `HOLD_EVIDENCE`          | Checks, tests, overlap, or artifacts are insufficient                                       | Stage 3 reconciliation                                                                                               |
 | `HOLD_PLATFORM`          | Salvage cannot prove a required **local** platform (Swift/Xcode/`make guardrails` on Linux) | Stage 2/3 for salvage only. **Not** a Stage 1 merge block when required GitHub checks are already green and readable |
 | `HOLD_CANONICAL`         | Competing candidate or source overlap is unresolved                                         | **Stage 1 canonical-pick** for BOT non-sensitive clusters. Stage 3 only if every member is sticky-security or HUMAN  |
 | `CLOSE_NONSECURITY_NOOP` | A non-security close candidate has evidence and cooldown                                    | Stage 1 now; Stage 3 after calibration                                                                               |
 | `ANALYSIS_ERROR`         | The agent could not obtain reliable evidence                                                | Stage 3 with one retry, then human inbox                                                                             |
 | `NOT_RUN`                | The item has not received the required stage                                                | Stage 1                                                                                                              |
+
+## Bounded mechanical repair (Stage 2 eligibility)
+
+A BOT item is **salvage-eligible** when all of the following are true. This is
+necessary Stage 2 work, not utilization theater.
+
+1. `author_type` is BOT, not HUMAN or UNKNOWN.
+2. The item is not `TERMINAL`.
+3. `guardrail_outcome` is not `REVIEW_SECURITY`.
+4. Sticky `sensitive_paths` are empty or only `generated_output`. Lockfiles,
+   workflows, secrets, auth, schema, public API, shell execution, and similar
+   taxonomy classes stay Stage 3 / human.
+5. Linux Swift / Xcode / `make guardrails` `HOLD_PLATFORM` is **not**
+   salvage-eligible (lesson 0gi). Do not queue a work item that will fail the
+   same way.
+6. Live evidence is CONFLICTING/DIRTY unique remaining source after excluding
+   `.jules/` journals (lesson 0cs), a named lint/import/non-major pin/missing
+   test/conflict-marker repair, or a `next_action` that already instructs a
+   focused unique-source draft.
+7. Canonical-pick the overlap cluster first. Queue at most one work item for
+   the keeper. Non-keepers are Stage 1 closes, not five salvage drafts.
+
+Queuing that work item is ledger CAS **bookkeeping**. It does not consume the
+Stage 1 product-mutation cap. Stage 2 still must not invent recoveries when no
+complete work item exists.
+
+Monitor: `scripts/pr_lifecycle_pipeline_health.py` on a fetched runtime ledger
+exits 2 when Stage 2 would empty-intake while salvage-eligible items remain.
+PR Desk reports that as `Stage 2 EMPTY_INTAKE while salvage-eligible > 0`.
 
 ## Identity and sticky sensitivity rules
 
@@ -259,9 +288,11 @@ Runs are idempotent by `repository#pr@head_sha`. An unchanged item with an
 unexpired next action is not re-investigated **unless that next action is
 Stage-1-executable** (merge, close, or canonical-pick) **and product-mutation
 slots remain**. SHA_MATCH skip applies only to unexpired **non-executable** work
-(sticky security, HUMAN, `HOLD_CONTRACT`, waiting on cooldown, or an owned Stage
-2 recovery). Filling the 50-item inventory with only NEW twins while 100+
-MERGEABLE green BOT PRs sit at SHA_MATCH is a failed intake.
+(sticky security, HUMAN, sticky `HOLD_CONTRACT`, waiting on cooldown, or an owned Stage
+2 recovery). Filling the 80-item inventory with only NEW twins while 100+
+MERGEABLE green BOT PRs sit at SHA_MATCH is a failed intake. Salvage-eligible
+CONFLICTING/DIRTY BOT must be reselected to create Stage 2 work items after
+merge/close/canonical-pick, not skipped as SHA_MATCH.
 
 The system must detect PRs resolved outside the workflow, rejected salvage
 drafts, missing canonical candidates, or stale SHA anchors and update the ledger
@@ -345,24 +376,34 @@ approval, merge authorization, or substitute for a defined policy.
 
 The standard daily order is Stage 1 at `0 15 * * *`, Stage 2 at `0 17 * * *`,
 and Stage 3 at `0 19 * * *`. Only one run per stage may execute at once. The
-default per-run caps match `tasks/pr-review-agent.config.yaml`: 50 Stage 1
-inventory items and 20 Stage 1 **product** mutations, five Stage 2 recovery
+default per-run caps match `tasks/pr-review-agent.config.yaml`: 80 Stage 1
+inventory items and 40 Stage 1 **product** mutations, five Stage 2 recovery
 candidates, 20 Stage 3 reconciliations, five human decision cards, and, after
 explicit calibration approval, five Stage 3 completion or closure actions.
-Ledger CAS and the daily `pr-lifecycle-docs-YYYYMMDD` lineage (create, push,
-Trunk-merge) are bookkeeping and **do not** consume the Stage 1 product-mutation
-cap. Spend product merges and closes first.
+Ledger CAS, queuing a complete Stage 2 work item, and the daily
+`pr-lifecycle-docs-YYYYMMDD` lineage (create, push, Trunk-merge) are bookkeeping
+and **do not** consume the Stage 1 product-mutation cap. Spend product merges
+and closes first, then queue up to five salvage-eligible work items in the same
+run. Raising 50/20 to 80/40 is a volume change of already-authorized routine
+merge/close. It is not a new action type and must not reset `calibration` to
+`REPORT_ONLY`.
 
 Stage 1 fills unused inventory slots from SHA_MATCH-executable remainder
 (elapsed `STAGE1_INTAKE` closes, MERGEABLE green BOT, canonical-pick clusters,
-Stage 3 bounce-backs) before treating the cap as full of NEW security twins.
+Stage 3 bounce-backs, salvage-eligible CONFLICTING/DIRTY BOT) before treating
+the cap as full of NEW security twins.
 In-scope BOT PRs skipped only because the inventory cap filled must be recorded
 as overflow (`NOT_RUN` or an equivalent owned backlog), not left unowned.
 
 A Stage 1 throughput self-grade is **FAIL** when net open BOT PRs grew **and**
-unused product-mutation slots remained. One docs-lineage Trunk merge plus a
-handful of zero-diff closes is not a passing drain while MERGEABLE green BOT PRs
-sit skipped.
+unused product-mutation slots remained. It is also **FAIL** when salvage-eligible
+BOT items exist and the run queued zero Stage 2 work items while Stage 2 would
+empty-intake. One docs-lineage Trunk merge plus a handful of zero-diff closes is
+not a passing drain while MERGEABLE green BOT PRs sit skipped. A 40/40 PASS that
+leaves salvage-eligible CONFLICTING stock with no work items is a failed feed.
+
+Stage 3 must spend its five completion actions on MERGEABLE green BOT that Stage
+1 overflowed. Do not bounce that overflow back to a full Stage 1 cap.
 
 ## Historical import procedure
 
@@ -391,3 +432,4 @@ terminal state, never resurrected.
 - [Automated PR Completion Agent](automated-pr-completion-agent.md)
 - [First live-run retrospective (2026-08-20)](pr-lifecycle-pipeline-run-retro-2026-08-20.md)
 - [Throughput diagnosis and Stage 3 approval (2026-08-26)](pr-lifecycle-throughput-fix-2026-08-26.md)
+- [Burndown and Stage 2 starvation (2026-08-30)](pr-lifecycle-stage2-starvation-2026-08-30.md)
