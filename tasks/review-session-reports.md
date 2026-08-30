@@ -1,3 +1,46 @@
+# Stage 1 — 2026-08-30 (cron 15:00 UTC)
+
+Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
+**APPROVED** count **7/7** (`pr-lifecycle-v1.4`, `approved_by: abhimehro`,
+`approved_at_utc: 2026-08-26T22:00:00Z`) — **not** incremented and **not**
+reset. Slim inventory (no `commits` / `statusCheckRollup`; lessons **0gl** /
+**0gn**). Open **207**; SHA_MATCH **177** (165 overflow + 12 Stage-1
+reselects); NEW **30**; HEAD_DRIFT **0**. Product mutations **12/20** (3
+Stage-1 squash, 1 Stage-3-owned squash not CAS-rewritten, 5 closes, 3 product
+`/trunk merge` comments). Ledger CAS **30 → 31** (blob
+`a6845f08de77f342eb71e77277c7f2861be9048d`, data-branch commit
+`42355b8d2e4c0be2cb67e2ad61a91c353608a4ad`). Bookkeeping `/trunk merge` on
+yesterday docs **#2117** — Trunk Merge Queue **FAILURE**; left HOLD_EVIDENCE
+(do not retry this run). Stage 2 queued **0**. Stage 3 **29** handoffs (one
+cluster per sticky Sentinel/workflow/draft group, not N packets; HUMAN #2123
+routed STAGE1→STAGE3, not WAITING_HUMAN). Throughput **PASS** (open BOT PRs
+fell; unused product slots were not filled with sticky/HUMAN/draft/red-check
+work). Docs lineage: `pr-lifecycle-docs-20260830` (this PR). Do **not**
+`/trunk merge` today's lineage in the opening run (**0gj**). Do **not**
+Trunk-merge conflicting draft sibling **#2097**. Full record:
+`tasks/pr-review-2026-08-30-1500.md`.
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (open PRs)      |   207 |
+| SHA_MATCH skipped (overflow)|   165 |
+| SHA_MATCH acted (reselect)  |    12 |
+| NEW                         |    30 |
+| HEAD_DRIFT                  |     0 |
+| Ledger items this run       |    39 |
+| Merged (GitHub squash)      |     4 |
+| Closed superseded           |     2 |
+| Closed no-op                |     3 |
+| Product Trunk comments      |     3 |
+| Failed product mutation     |     1 |
+| Stage 2 queued (this run)   |     0 |
+| Stage 3 handoffs (this run) |    29 |
+| GitHub PR mutations         |    12 |
+| Ledger CAS writes           |     1 |
+
+Per-item table: see `tasks/pr-review-2026-08-30-1500.md` (mandatory Stage 1
+columns).
+
 # Stage 1 — 2026-08-28 (cron 15:00 UTC)
 
 Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
