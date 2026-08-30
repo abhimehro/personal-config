@@ -39,7 +39,6 @@ NON_SALVAGE_OUTCOMES = frozenset(
         "PASS_ROUTINE",
         "CLOSE_NONSECURITY_NOOP",
         "ANALYSIS_ERROR",
-        "NOT_RUN",
     }
 )
 SALVAGE_OUTCOMES = frozenset({"HOLD_CONTRACT", "HOLD_EVIDENCE"})
