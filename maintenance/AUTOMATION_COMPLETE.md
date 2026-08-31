@@ -100,11 +100,11 @@
 
 ### Updated Launch Agents
 
-- `maintenance/launchd/com.abhimehrotra.maintenance.healthcheck.plist` (daily
+- `maintenance/launchd/com.abhimehrotra.maint.healthcheck.plist` (daily
   8:30 AM)
-- `maintenance/launchd/com.abhimehrotra.maintenance.systemcleanup.plist` (daily
+- `maintenance/launchd/com.abhimehrotra.maint.systemcleanup.plist` (daily
   9:00 AM)
-- `maintenance/launchd/com.abhimehrotra.maintenance.brew.plist` (daily 10:00 AM)
+- `maintenance/launchd/com.abhimehrotra.maint.brew.plist` (daily 10:00 AM)
 - `maintenance/launchd/com.abhimehrotra.maint.weekly.plist` (Monday 9:00 AM)
 - `maintenance/launchd/com.abhimehrotra.maint.monthly.plist` (1st of month 6:00
   AM)

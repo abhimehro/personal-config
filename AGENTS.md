@@ -355,8 +355,8 @@ The `github/gh-stack` `gh` extension is installed via
 `.agents/skills/gh-stack/SKILL.md` (mirrored to `.claude/skills` and
 `.windsurf/skills`). Load it before doing any of the below.
 
-`/purge-anthropies` is vendored at `.agents/skills/purge-anthropies/`
-(mirrored into `.claude/skills`, `.cursor/skills`, `.windsurf/skills`, and
+`/purge-anthropies` is vendored at `.agents/skills/purge-anthropies/` (mirrored
+into `.claude/skills`, `.cursor/skills`, `.windsurf/skills`, and
 `.devin/skills`). Local CLI: `pipx install -e ~/dev/anthropies` then
 `anthropies clean|humanize|inspect`. Claude/Gemini hosts must clean and
 print-prompt only; do not rewrite with those models.
@@ -394,7 +394,14 @@ Agent-specific rules:
   instead of independent branches off `main`, then `gh stack submit --auto` to
   open them all as **draft** PRs. This preserves the "never merge autonomously"
   boundary (S1) while eliminating the need for each salvage branch to re-resolve
-  conflicts introduced by its siblings.
+  conflicts introduced by its siblings. Stage 2 still must not merge those
+  drafts. After create, re-read `isDraft` (lesson **0gd**), CAS-write a ledger
+  item for each replacement PR, and leave merge to Stage 1 routine re-ingest,
+  Stage 3 after approved calibration, or a human. See
+  `docs/automated-pr-lifecycle.md` (Merge authority for Stage 2 outputs) and
+  `docs/pr-lifecycle-pipeline-run-retro-2026-08-20.md`. Cron session reports
+  belong on the shared `pr-lifecycle-docs-YYYYMMDD` lineage (Stage 1 lands it);
+  do not open a third overlapping `tasks/*` docs PR. Notion stays human packets.
 - Always run `gh stack rebase --no-trunk` immediately before
   `gh stack submit`/`merge`; `gh stack init` with multiple branch names creates
   them off trunk in parallel, not chained, until the first rebase.
@@ -592,8 +599,8 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
 | Shell tests only           | `make test`                                      | Fastest full suite; 47 `tests/test_*.sh`, 3 expected macOS-only skips (fish, BSD sed, 1Password socket)                                                                                                          |
 | Smoke tests (pre-commit)   | `make test-quick`                                | 3 fast cross-platform tests; ~5s; defined in Makefile `test-quick` target                                                                                                                                        |
 | All tests (shell + Python) | `make test-all`                                  | Runs shell tests in parallel, then Python tests. Platform-specific shell tests emit `SKIP:` and exit 77 on Linux/CI.                                                                                             |
-| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install -r requirements.txt` (`pyyaml==6.0.3`)                                                                                 |
-| Python tests only          | `make test-python`                               | Mostly stdlib; install via `python3 -m pip install -r requirements.txt` (`pyyaml==6.0.3`) for the full suite                                                                                                     |
+| Single Python module       | `python3 -m unittest tests.test_path_validation` | Mostly stdlib; some tests (e.g. `test_repository_automation_common.py`) need `pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`)                                                 |
+| Python tests only          | `make test-python`                               | Mostly stdlib; install via `python3 -m pip install -r requirements.txt` (`pyyaml==6.0.3`, `jsonschema==4.26.0`) for the full suite                                                                     |
 | Lint (all)                 | `make lint`                                      | Trunk downloads its own tool versions on first run                                                                                                                                                               |
 | Lint (correctness gate)    | `make lint-errors`                               | SC2155/SC2145 only; exits non-zero on violations. Fast regression gate.                                                                                                                                          |
 | Format                     | `make lint-fix`                                  | Auto-fixes where supported                                                                                                                                                                                       |
@@ -608,8 +615,8 @@ databases to start. The dev workflow is: edit scripts, lint, and run tests.
   downloads shellcheck, shfmt, ruff, black, prettier, etc. into `.trunk/`.
   Subsequent runs are fast. The update script installs the Trunk launcher, but
   tool downloads happen lazily.
-- **`requirements.txt`**: The root `requirements.txt` pins `pyyaml==6.0.3`,
-  which is needed by the full test suite (e.g.,
+- **`requirements.txt`**: The root `requirements.txt` pins `pyyaml==6.0.3`
+  and `jsonschema==4.26.0`, which are needed by the full test suite (e.g.,
   `tests/test_repository_automation_common.py` exercises
   `.github/scripts/repository_automation_common.py`). The Devin environment
   blueprint installs this dependency automatically; otherwise run
@@ -647,10 +654,30 @@ symlink destinations are never followed. To target one hash directory:
 
 ## Learned User Preferences
 
-- Phase 2 PR salvage must never autonomously merge; open draft salvage or
-  infra-fix PRs and leave merge decisions to a human.
+- Stage 1/2/3 names the daily PR-lifecycle cron. In the gh-stack section, Phase
+  1/Phase 2 are Review/Salvage _sessions_, and boundary S1 means those session
+  agents do not merge a stack unattended. S1 does not revoke Stage 1's routine
+  merge/close of bot-authored non-sensitive PRs.
+- Stage 2 PR salvage must never autonomously merge, approve, close, or request
+  review; open draft salvage or infra-fix PRs and leave merge decisions to a
+  human. Stage 1 holds routine merge and close authority for bot-authored
+  non-sensitive work.
 - Security, auth, secrets, and trust-boundary PRs stay escalated for human
   review even when CI is green.
+- Ordinary human-authored PRs stay untouched by the three-stage pipeline. Stage
+  3 files a one-question packet only when sticky security, HUMAN, or real
+  platform judgment is irreducible. Jules/Bolt/Palette file-overlap clusters are
+  Stage 1 canonical-pick, not packets.
+- Stage 3 calibration reached seven successful runs on 2026-08-26. Human
+  `APPROVED` is recorded in the runtime ledger (`approved_by: abhimehro`).
+  Bounded completion is on. Disable the calibration Dashboard automation and
+  enable the completion variant after pasting the updated prompts. Resetting
+  stale calibration to `REPORT_ONLY` / count 0 is not a successful run.
+- Grok Bot **PR Desk** (`docs/grok-bot/`) is a human-facing filter, not a fourth
+  lifecycle stage. It must not merge, approve, close, comment, create GitHub
+  issues, CAS-write the ledger, launch Cloud Agents, or write
+  `tasks/*-session-reports.md`. Digests cap at five human items. Health must
+  flag Stage 2 EMPTY_INTAKE while salvage-eligible work remains.
 
 ## Learned Workspace Facts
 
@@ -661,6 +688,32 @@ symlink destinations are never followed. To target one hash directory:
   `seatek_series_correction.egg-info/` files under
   `series_correction_project_updated` after editable installs; restore or
   discard those changes and do not commit them.
+- Runtime PR-lifecycle state is
+  `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml`, written with
+  `github_contents_api` CAS (blob-SHA precondition).
+  `tasks/pr-lifecycle-ledger.yaml` is a bootstrap pointer only; docs PRs on
+  `main` must not rewrite the ledger.
+- The three-stage pipeline covers seven repos (`personal-config`, `ctrld-sync`,
+  `email-security-pipeline`, `Seatek_Analysis`,
+  `Hydrograph_Versus_Seatek_Sensors_Project`,
+  `series_correction_project_updated`, `repoprompt-ce`). Stage 1 inventories at
+  most 80 items and **reselects** SHA-unchanged items that are still
+  Stage-1-executable (MERGEABLE green BOT, canonical-pick clusters, elapsed
+  close-candidates, Stage 3 bounce-backs, salvage-eligible CONFLICTING/DIRTY
+  BOT). Product-mutation cap is 40 so daily drain exceeds arrivals. Queuing a
+  Stage 2 work item is ledger bookkeeping. Unchanged SHA with an unexpired
+  non-executable next_action is skipped. A changed base/head SHA invalidates
+  prior evidence and returns the item to Stage 1. Stage 2 completes at most five
+  work items per run; empty intake is a short record and stop unless
+  salvage-eligible remainder exists (`EMPTY_INTAKE_STARVATION`, still no
+  invented recoveries).
+- Stage 2 work-item IDs use `s2-YYYYMMDD-...`; Stage 3 ledger events use
+  `evt-s3-YYYYMMDD-...` (`ACKNOWLEDGEMENT`, `HANDOFF`, `CALIBRATION`).
+- RepoPrompt CE salvage that needs Swift or `make guardrails` cannot complete on
+  Linux cloud agents; leave `HOLD_PLATFORM` rather than retrying on Linux.
+  `HOLD_PLATFORM` does **not** block Stage 1 from squash-merging a BOT PR whose
+  required GitHub checks are already green.
+- `personal-config` routine merges use the Trunk queue, not a raw GitHub squash.
 
 ## Agent shell (POSIX for coding agents)
 

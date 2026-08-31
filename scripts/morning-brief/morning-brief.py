@@ -1,4 +1,4 @@
-#!/Users/speedybee/dev/personal-config/scripts/morning-brief/venv/bin/python3.15
+#!/usr/bin/env python3
 """
 Morning Brief Generator for Raycast.
 
@@ -7,8 +7,8 @@ Google Calendar events, Louisiana RSS feeds, and podcast episodes,
 then saves it to Readwise Reader.
 
 Usage:
-    python3.15 morning-brief.py              # Normal run → saves to Readwise
-    python3.15 morning-brief.py --dry-run    # Writes HTML to stdout / temp file
+    python3 morning-brief.py              # Normal run → saves to Readwise
+    python3 morning-brief.py --dry-run    # Writes HTML to stdout / temp file
 
 Required env vars:
     READWISE_TOKEN

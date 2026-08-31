@@ -2,7 +2,7 @@
 # Session: cron Phase 1 2026-07-21 (review-and-merge)
 
 mode: review-and-merge
-schedule: "0 13 * * *"
+schedule: "0 15 * * *"
 
 repos:
   - abhimehro/personal-config
@@ -21,10 +21,115 @@ bot_authors:
   - devin[bot]
   - copilot[bot]
   - app/copilot-swe-agent
-  # Expanded: human-authored PRs when branch/title/body/comments indicate automation — see tasks/pr-inventory.md
+
+identity_classification:
+  source: github_api_with_token_authored_provenance
+  ambiguous_identity: HUMAN
+  title_branch_body_comment_inference: token_authored_provenance_only
+  revision: "2026-08-20-hyphen"
+  required_independent_signals: 2
+  maintainer_token_logins:
+    - abhimehro
+  # Slash and hyphen forms: Jules/Bolt/Palette/Sentinel often omit the slash
+  # (lesson 0gb). Matching is startswith. daily-qa already matches daily-qa-*.
+  # Ordinary feat/ and fix/ are not bot prefixes.
+  branch_prefixes:
+    - jules/
+    - jules-
+    - sentinel/
+    - sentinel-
+    - bolt/
+    - bolt-
+    - palette/
+    - palette-
+    - automation-
+    - daily-qa
+    - chore/jules
+    - cursor-agent/
+    - renovate/
+    - dependabot/
+    - copilot
+  title_keywords:
+    - jules
+    - sentinel
+    - dependabot
+    - renovate
+    - autofix
+    - bolt
+    - palette
+    - automation
+  body_markers:
+    - jules.google.com
+    - created automatically by jules
+    - pull request was automatically
+    - signed-off-by: dependabot
+  bot_commit_email_suffixes:
+    - "[bot]@users.noreply.github.com"
+    - "@dependabot.com"
+
+sensitive_path_taxonomy:
+  revision: "2026-08-19"
+  sticky_until_human_policy_revision: true
+  classes:
+    - workflows_and_permissions
+    - secrets
+    - authentication_and_authorization
+    - deployment_and_infrastructure
+    - lockfiles_and_major_dependencies
+    - security_configuration
+    - database_migrations
+    - network_and_browser_origins
+    - shell_execution
+    - file_read_write_boundaries
+    - generated_output
+    - public_api_contracts
+    - destructive_data_actions
 
 stale_threshold_days: 30
-merge_strategy: squash
-auto_fix_enabled: true
-human_escalation_channel: github-review-request
 
+lifecycle:
+  version: "1.4"
+  source_of_truth: "docs/automated-pr-lifecycle.md and the runtime ledger data branch"
+  schema: schemas/pr-lifecycle-ledger.schema.json
+  validation_command: 'python3 scripts/validate_pr_lifecycle_artifacts.py "$RUNTIME_LEDGER_PATH"'
+  cursor_dashboard_runtime: canonical-live-dashboard-reconciled-2026-08-19
+  policy_revision: "pr-lifecycle-v1.4"
+  policy_inputs:
+    identity_classification_revision: "2026-08-20-hyphen"
+    sensitive_path_taxonomy_revision: "2026-08-19"
+    permission_scope_revision: "cursor-export-v1.1"
+    required_check_source_revision: "registry-v1.2"
+    merge_method_revision: "registry-v1.2"
+    prompt_revision: "pr-lifecycle-v1.4"
+  runtime_ledger:
+    data_branch: automation/pr-lifecycle-ledger
+    data_path: pr-lifecycle-ledger.yaml
+    main_branch_pointer: tasks/pr-lifecycle-ledger.yaml
+    bootstrap_state: ACTIVE
+    selected_write_primitive: github_contents_api
+    allowed_write_primitives:
+      - git_fast_forward
+      - github_contents_api
+  routine_evidence_expiry_days: 7
+  no_op_or_supersession_cooldown_hours: 24
+  stale_close_cooldown_hours: 72
+  stage_caps:
+    stage1_inventory: 80
+    stage1_actions: 40
+    stage2_salvage_candidates: 5
+    stage3_reconciliation: 20
+    stage3_decision_packets: 5
+    stage3_completion_actions: 5
+  stages:
+    stage1_review:
+      schedule: "0 15 * * *"
+      concurrency: 1
+      authority: routine-approve-squash-merge-close
+    stage2_salvage:
+      schedule: "0 17 * * *"
+      concurrency: 1
+      authority: draft-only-recovery
+    stage3_completion:
+      schedule: "0 19 * * *"
+      concurrency: 1
+      authority: report-only-until-calibration-approved-then-bounded-nonsecurity-completion
