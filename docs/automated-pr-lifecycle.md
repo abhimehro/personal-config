@@ -215,10 +215,13 @@ A BOT item is **salvage-eligible** when all of the following are true. This is
 necessary Stage 2 work, not utilization theater.
 
 1. `author_type` is BOT, not HUMAN or UNKNOWN.
-2. The item is not `TERMINAL`.
+2. The item is not `TERMINAL`. `current_owner` is `stage1` or `stage3`
+   (allowlist). `human`, `stage2`, `none`, and unknown owners are not
+   salvage-eligible: Stage 2 already owns its queue, and WAITING_HUMAN stays
+   in the human inbox.
 3. `guardrail_outcome` is not `REVIEW_SECURITY`. `NOT_RUN` overflow with a
    mechanical `next_action` is salvage-eligible; it is not a reason to skip the
-   Stage 2 feed.
+   Stage 2 feed. Expired mechanical `next_action` still counts.
 4. Sticky `sensitive_paths` are empty or only `generated_output`. Lockfiles,
    workflows, secrets, auth, schema, public API, shell execution, and similar
    taxonomy classes stay Stage 3 / human.
@@ -237,8 +240,11 @@ Stage 1 product-mutation cap. Stage 2 still must not invent recoveries when no
 complete work item exists.
 
 Monitor: `scripts/pr_lifecycle_pipeline_health.py` on a fetched runtime ledger
+validates JSON Schema and runtime-record invariants (not Cursor exports) and
 exits 2 when Stage 2 would empty-intake while salvage-eligible items remain.
-PR Desk reports that as `Stage 2 EMPTY_INTAKE while salvage-eligible > 0`.
+`stage2_work_item_count` is complete unexpired work items, not the raw array
+length. PR Desk reports starvation as
+`Stage 2 EMPTY_INTAKE while salvage-eligible > 0`.
 
 ## Identity and sticky sensitivity rules
 

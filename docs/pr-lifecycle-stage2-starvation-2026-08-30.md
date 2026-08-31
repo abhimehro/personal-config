@@ -160,8 +160,11 @@ reset calibration to `REPORT_ONLY`.
 4. **Operational definition of salvage-eligible** (contract). Mechanical
    `HOLD_CONTRACT` / `HOLD_EVIDENCE` (unique-source rebase, wrap, lint, import,
    conflict markers; `generated_output` only or empty sticky paths) → Stage 2
-   WI. Sticky lockfile/workflow/auth/secrets → Stage 3 / human. Linux Swift
-   `HOLD_PLATFORM` stays not queued.
+   WI when `current_owner` is `stage1` or `stage3`. Sticky
+   lockfile/workflow/auth/secrets → Stage 3 / human. Linux Swift
+   `HOLD_PLATFORM` and WAITING_HUMAN stay not queued. Classifier expansion
+   (`NOT_RUN` + more mechanical patterns) can raise the eligible count on the
+   same ledger revision; that is expected, not a monitor bug.
 5. **Stage 1 FAIL** if salvage-eligible BOT items exist and this run queued
    zero Stage 2 WIs while Stage 2 would empty-intake. Keep the existing FAIL
    (net open BOT grew **and** unused product slots).

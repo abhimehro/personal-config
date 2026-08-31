@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import subprocess
 import sys
@@ -17,10 +18,12 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import pr_lifecycle_pipeline_health as health  # noqa: E402
+import pr_lifecycle_validation as validator  # noqa: E402
 import yaml  # noqa: E402
 
 NOW = datetime(2026, 8, 30, 12, 0, tzinfo=timezone.utc)
 HEALTH_SCRIPT = SCRIPTS / "pr_lifecycle_pipeline_health.py"
+EXAMPLE_LEDGER = ROOT / "tasks/pr-lifecycle-ledger.example.yaml"
 
 # (label, item overrides, expected eligible)
 CLASSIFIER_CASES: tuple[tuple[str, dict[str, Any], bool], ...] = (
@@ -97,6 +100,32 @@ CLASSIFIER_CASES: tuple[tuple[str, dict[str, Any], bool], ...] = (
         {"guardrail_outcome": "NOT_RUN"},
         True,
     ),
+    (
+        "human owner WAITING_HUMAN",
+        {
+            "current_owner": "human",
+            "lifecycle_state": "WAITING_HUMAN",
+        },
+        False,
+    ),
+    (
+        "stage2 owner",
+        {
+            "current_owner": "stage2",
+            "lifecycle_state": "STAGE2_QUEUED",
+        },
+        False,
+    ),
+    ("unknown owner", {"current_owner": "desk"}, False),
+    ("none owner", {"current_owner": "none"}, False),
+    (
+        "stage1 owner",
+        {
+            "current_owner": "stage1",
+            "lifecycle_state": "STAGE1_INTAKE",
+        },
+        True,
+    ),
 )
 
 
@@ -140,6 +169,32 @@ def _ledger(
         "items": items,
         "stage2_work_items": work_items,
     }
+
+
+def _schema_valid_starved_ledger() -> dict[str, Any]:
+    ledger = copy.deepcopy(yaml.safe_load(EXAMPLE_LEDGER.read_text(encoding="utf-8")))
+    keeper = ledger["items"][0]
+    keeper["lifecycle_state"] = "STAGE3_RECONCILIATION"
+    keeper["current_owner"] = "stage3"
+    keeper["next_owner"] = "stage3"
+    keeper["next_action"] = (
+        "Recover unique source only on a new focused draft that "
+        "excludes .jules/journals/"
+    )
+    ledger["stage2_work_items"] = []
+    events = []
+    for event in ledger["events"]:
+        if event["event_id"] == "evt-2026-stage2-ack-001":
+            continue
+        if event["event_id"] == "evt-2026-stage1-stage2-001":
+            event = dict(event)
+            event["to_owner"] = "stage3"
+            event["to_state"] = "STAGE3_RECONCILIATION"
+            event["next_owner"] = "stage3"
+            event["reason"] = "Stage 1 overflowed salvage-eligible remainder."
+        events.append(event)
+    ledger["events"] = events
+    return ledger
 
 
 def _run_cli(*cli_args: str) -> subprocess.CompletedProcess[str]:
@@ -190,6 +245,32 @@ class TestPipelineHealthSummarize(unittest.TestCase):
                 self.assertEqual(report.starvation, starved)
                 self.assertEqual(report.stage2_work_item_count, wi_count)
 
+    def test_owned_item_suppresses_starvation_without_usable_wi(self) -> None:
+        owned = _item(
+            current_owner="stage2",
+            lifecycle_state="STAGE2_QUEUED",
+        )
+        remainder = _item(key="abhimehro/demo#2@def")
+        report = health.summarize(_ledger([owned, remainder], []))
+        self.assertFalse(report.starvation)
+        self.assertEqual(report.stage2_work_item_count, 0)
+        self.assertEqual(report.stage2_owned_item_count, 1)
+        self.assertEqual(report.salvage_eligible_count, 1)
+
+    def test_handoff_owned_and_usable_wi_is_not_starved(self) -> None:
+        owned = _item(
+            current_owner="stage2",
+            lifecycle_state="STAGE2_QUEUED",
+        )
+        remainder = _item(key="abhimehro/demo#2@def")
+        report = health.summarize(
+            _ledger([owned, remainder], [_work_item()]),
+            now=NOW,
+        )
+        self.assertFalse(report.starvation)
+        self.assertEqual(report.stage2_work_item_count, 1)
+        self.assertEqual(report.stage2_owned_item_count, 1)
+
 
 class TestPipelineHealthCli(unittest.TestCase):
     def _write(self, ledger: dict[str, object]) -> Path:
@@ -200,21 +281,24 @@ class TestPipelineHealthCli(unittest.TestCase):
         return path
 
     def test_cli_exit_2_on_starvation(self) -> None:
-        path = self._write(_ledger([_item()], [], revision=30))
+        path = self._write(_schema_valid_starved_ledger())
         proc = _run_cli(str(path))
-        self.assertEqual(proc.returncode, 2)
+        self.assertEqual(proc.returncode, 2, proc.stderr)
         self.assertIn("starvation=true", proc.stdout)
 
     def test_cli_json_and_exit_0_when_clear(self) -> None:
-        blocked = _item(
-            guardrail_outcome="REVIEW_SECURITY",
-            next_action="Human packet",
-        )
-        path = self._write(_ledger([blocked], []))
-        proc = _run_cli("--json", str(path))
-        self.assertEqual(proc.returncode, 0)
+        proc = _run_cli("--json", str(EXAMPLE_LEDGER))
+        self.assertEqual(proc.returncode, 0, proc.stderr)
         payload = json.loads(proc.stdout)
         self.assertFalse(payload["starvation"])
+        self.assertEqual(payload["stage2_work_item_count"], 0)
+        self.assertGreaterEqual(payload["stage2_owned_item_count"], 1)
+
+    def test_cli_exit_1_on_schema_invalid_items_mapping(self) -> None:
+        path = self._write({"items": [], "stage2_work_items": []})
+        proc = _run_cli(str(path))
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("PR_LIFECYCLE_HEALTH_ERROR", proc.stderr)
 
     def test_cli_refuses_pointer_copies_and_non_ledger(self) -> None:
         path_pointer = ROOT / "tasks" / "pr-lifecycle-ledger.yaml"
@@ -269,8 +353,6 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         self.assertIn("Write Nothing", profile)
 
     def test_stage_caps_are_80_and_40(self) -> None:
-        import pr_lifecycle_validation as validator
-
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")
         self.assertEqual(config["lifecycle"]["stage_caps"]["stage1_inventory"], 80)
         self.assertEqual(config["lifecycle"]["stage_caps"]["stage1_actions"], 40)

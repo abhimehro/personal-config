@@ -6,12 +6,23 @@ Stage 2 would empty-intake while salvage-eligible BOT items remain. This is
 observability for PR Desk and CI; it does not CAS-write, launch stages, or
 merge PRs.
 
-Salvage-eligible matches the lifecycle contract: BOT, nonterminal, not
-REVIEW_SECURITY, sticky paths empty or only generated_output, not
-HOLD_PLATFORM / HOLD_CANONICAL / PASS_ROUTINE / CLOSE_NONSECURITY_NOOP, and a
-mechanical next_action (unique-source draft, wrap, lint, import, non-major
-pin, missing tests, conflict markers, DIRTY unique remaining). Lockfile,
-workflow, auth, secrets, and any other remaining sticky label stay out.
+CLI validates JSON Schema and runtime-record invariants on the fetched ledger.
+It does not validate Cursor exports or prompts. `summarize()` still accepts
+minimal mappings so unit tests can classify without a full schema document.
+
+Salvage-eligible matches the lifecycle contract: BOT, nonterminal,
+`current_owner` in {stage1, stage3}, not REVIEW_SECURITY, sticky paths empty
+or only generated_output, not HOLD_PLATFORM / HOLD_CANONICAL / PASS_ROUTINE /
+CLOSE_NONSECURITY_NOOP, and a mechanical next_action (unique-source draft,
+wrap, lint, import, non-major pin, missing tests, conflict markers, DIRTY
+unique remaining). Lockfile, workflow, auth, secrets, WAITING_HUMAN, Stage 2
+owned stock, and any other remaining sticky label stay out. Expired mechanical
+`next_action` still counts; SHA_MATCH skip applies only to unexpired
+non-executable work.
+
+`PipelineHealth.stage2_work_item_count` is complete unexpired work items, not
+`len(stage2_work_items)`. Expired or malformed records do not suppress
+starvation.
 """
 
 from __future__ import annotations
@@ -29,6 +40,10 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+from pr_lifecycle_config import validate_config  # noqa: E402
+from pr_lifecycle_ledger import validate_runtime_records  # noqa: E402
+from pr_lifecycle_schema import validate_schema  # noqa: E402
+from pr_lifecycle_support import ROOT  # noqa: E402
 from pr_lifecycle_yaml import load_yaml  # noqa: E402
 
 NON_SALVAGE_OUTCOMES = frozenset(
@@ -42,6 +57,8 @@ NON_SALVAGE_OUTCOMES = frozenset(
     }
 )
 SALVAGE_OUTCOMES = frozenset({"HOLD_CONTRACT", "HOLD_EVIDENCE", "NOT_RUN"})
+# Allowlist: unknown owners fail closed. Stage 2 already owns its queue.
+AUTOMATED_SALVAGE_OWNERS = frozenset({"stage1", "stage3"})
 STAGE2_OWNED_STATES = frozenset({"STAGE2_QUEUED", "STAGE2_ACTIVE"})
 REQUIRED_WORK_ITEM_FIELDS = (
     "work_item_id",
@@ -72,10 +89,13 @@ MAJOR_DEP_BLOCK = re.compile(
     r"major-?dep|lockfile|pandas 3|opencv|workflow pin|uv\.lock",
     re.IGNORECASE,
 )
+CONFIG_PATH = ROOT / "tasks/pr-review-agent.config.yaml"
 
 
 @dataclass(frozen=True)
 class PipelineHealth:
+    """Starvation report. stage2_work_item_count is complete unexpired WIs."""
+
     ledger_revision: int
     stage2_work_item_count: int
     stage2_owned_item_count: int
@@ -118,7 +138,7 @@ def _identity_blocks_salvage(item: dict[str, Any]) -> bool:
     return (
         item.get("author_type") != "BOT"
         or item.get("lifecycle_state") == "TERMINAL"
-        or item.get("current_owner") == "stage2"
+        or item.get("current_owner") not in AUTOMATED_SALVAGE_OWNERS
     )
 
 
@@ -206,14 +226,16 @@ def _ledger_revision(ledger: dict[str, Any]) -> int:
     return int(ledger.get("ledger_revision") or 0)
 
 
-def _is_starved(queued: int, eligible_count: int) -> bool:
-    return queued == 0 and eligible_count > 0
+def _is_starved(usable_count: int, owned_count: int, eligible_count: int) -> bool:
+    return usable_count == 0 and owned_count == 0 and eligible_count > 0
 
 
-def _starvation_reason(starvation: bool, queued: int, eligible: int) -> str:
+def _starvation_reason(
+    starvation: bool, usable_count: int, owned_count: int, eligible: int
+) -> str:
     if starvation:
-        return "Stage 2 EMPTY_INTAKE while salvage-eligible > 0 " f"({eligible} items)"
-    if queued == 0:
+        return f"Stage 2 EMPTY_INTAKE while salvage-eligible > 0 ({eligible} items)"
+    if usable_count == 0 and owned_count == 0:
         return "Stage 2 empty intake with zero salvage-eligible remainder"
     return "Stage 2 has queued work"
 
@@ -224,22 +246,25 @@ def _health_report(
     owned: list[dict[str, Any]],
     eligible: list[dict[str, Any]],
 ) -> PipelineHealth:
-    queued = len(usable) + len(owned)
+    usable_count = len(usable)
+    owned_count = len(owned)
     eligible_count = len(eligible)
-    starvation = _is_starved(queued, eligible_count)
+    starvation = _is_starved(usable_count, owned_count, eligible_count)
     return PipelineHealth(
         ledger_revision=_ledger_revision(ledger),
-        stage2_work_item_count=len(usable),
-        stage2_owned_item_count=len(owned),
+        stage2_work_item_count=usable_count,
+        stage2_owned_item_count=owned_count,
         salvage_eligible_count=eligible_count,
         salvage_eligible_keys=_eligible_keys(eligible),
         starvation=starvation,
-        reason=_starvation_reason(starvation, queued, eligible_count),
+        reason=_starvation_reason(
+            starvation, usable_count, owned_count, eligible_count
+        ),
     )
 
 
 def summarize(ledger: dict[str, Any], now: datetime | None = None) -> PipelineHealth:
-    """Build a starvation report from a validated-shape runtime ledger dict."""
+    """Build a starvation report from a runtime ledger dict."""
     clock = _clock(now)
     items = _ledger_items(ledger)
     usable = _usable_work_items(ledger, clock)
@@ -272,6 +297,11 @@ def _print_pointer_refusal() -> int:
     return 1
 
 
+def _print_health_error(exc: BaseException) -> int:
+    print(f"PR_LIFECYCLE_HEALTH_ERROR: {exc}", file=sys.stderr)
+    return 1
+
+
 def _path_is_bootstrap_pointer(pointer: Path) -> bool:
     return pointer.name == "pr-lifecycle-ledger.yaml" and "tasks" in pointer.parts
 
@@ -295,14 +325,21 @@ def _has_runtime_ledger_shape(data: dict[str, Any]) -> bool:
     return items_ok and work_ok
 
 
-def _load_runtime_ledger(path: Path) -> tuple[dict[str, Any] | None, int]:
-    if _path_is_bootstrap_pointer(path.resolve()):
-        return None, _print_pointer_refusal()
+def _require_valid_runtime_ledger(ledger: dict[str, Any]) -> None:
+    validate_schema(ledger)
+    config = load_yaml(CONFIG_PATH)
+    validate_config(config)
+    validate_runtime_records(ledger, config)
+
+
+def _parse_ledger_file(path: Path) -> tuple[dict[str, Any] | None, int]:
     try:
-        ledger = load_yaml(path)
+        return load_yaml(path), 0
     except (OSError, ValueError, KeyError) as exc:
-        print(f"PR_LIFECYCLE_HEALTH_ERROR: {exc}", file=sys.stderr)
-        return None, 1
+        return None, _print_health_error(exc)
+
+
+def _accept_runtime_ledger(ledger: dict[str, Any]) -> tuple[dict[str, Any] | None, int]:
     if _is_bootstrap_pointer_document(ledger):
         return None, _print_pointer_refusal()
     if not _has_runtime_ledger_shape(ledger):
@@ -312,7 +349,20 @@ def _load_runtime_ledger(path: Path) -> tuple[dict[str, Any] | None, int]:
             file=sys.stderr,
         )
         return None, 1
+    try:
+        _require_valid_runtime_ledger(ledger)
+    except (OSError, ValueError, KeyError) as exc:
+        return None, _print_health_error(exc)
     return ledger, 0
+
+
+def _load_runtime_ledger(path: Path) -> tuple[dict[str, Any] | None, int]:
+    if _path_is_bootstrap_pointer(path.resolve()):
+        return None, _print_pointer_refusal()
+    ledger, status = _parse_ledger_file(path)
+    if ledger is None:
+        return None, status
+    return _accept_runtime_ledger(ledger)
 
 
 def main() -> int:

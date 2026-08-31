@@ -2722,11 +2722,15 @@ MERGEABLE overflow to Stage 1 instead of spending its five completion actions
 
 **Rule:** Stage 1 inventory/actions are 80/40. Queuing a Stage 2 work item is
 bookkeeping. FAIL if salvage-eligible BOT remain and zero WIs were queued.
-Stage 3 completes Stage 1 MERGEABLE overflow; do not bounce it. Mechanical
-HOLD_CONTRACT → complete WI, not WAITING_HUMAN. Stage 2 still does not invent
-recoveries. PR Desk Health flags `EMPTY_INTAKE while salvage-eligible > 0`.
-Monitor: `scripts/pr_lifecycle_pipeline_health.py`. Do not reset calibration for
-this volume change. Do not auto-merge HUMAN or REVIEW_SECURITY.
+Salvage-eligible allowlists `current_owner` to `stage1`/`stage3` so
+WAITING_HUMAN never trips EMPTY_INTAKE_STARVATION. Stage 3 completes Stage 1
+MERGEABLE overflow; do not bounce it. Mechanical HOLD_CONTRACT → complete WI,
+not WAITING_HUMAN. Stage 2 still does not invent recoveries. PR Desk Health
+flags `EMPTY_INTAKE while salvage-eligible > 0`. Monitor:
+`scripts/pr_lifecycle_pipeline_health.py` (schema + runtime records on the
+fetched ledger; `stage2_work_item_count` is complete unexpired WIs). Do not
+reset calibration for this volume change. Do not auto-merge HUMAN or
+REVIEW_SECURITY.
 
 **Detection cost:** Low — Stage 1 `20/20` + open PRs still ~200; Stage 2
 EMPTY_INTAKE; `python3 scripts/pr_lifecycle_pipeline_health.py` exit 2.
