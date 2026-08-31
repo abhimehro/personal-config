@@ -913,6 +913,11 @@ unnecessary disk I/O overhead and reduces script speed, especially as the number
 of elements grows. **Action:** Always buffer string components into a list in
 memory (e.g. using `append` or `extend`) and write to disk in a single operation
 using `"\n".join(out) + "\n"` to minimize I/O overhead.
+
 ## 2026-08-19 - partition() is surprisingly faster than split()
-**Learning:** In Python, unpacking the results of `str.partition("/")` is ~20% faster than `str.split("/", 1)` when splitting string literals on a single known delimiter because it is implemented efficiently at the C-level.
-**Action:** When separating a string into two parts around a single, known separator, prefer `owner, _, name = s.partition("/")` over `.split("/", 1)`.
+
+**Learning:** In Python, unpacking the results of `str.partition("/")` is ~20%
+faster than `str.split("/", 1)` when splitting string literals on a single known
+delimiter because it is implemented efficiently at the C-level. **Action:** When
+separating a string into two parts around a single, known separator, prefer
+`owner, _, name = s.partition("/")` over `.split("/", 1)`.
