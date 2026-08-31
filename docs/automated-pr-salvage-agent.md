@@ -86,9 +86,9 @@ to Stage 3.
 
 | Live evidence                                                                                             | Outcome                                                 | Next owner                                                       |
 | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------- |
-| Change is already on `main` with a canonical PR/commit                                                    | `CLOSE_NONSECURITY_NOOP` candidate or `HOLD_CANONICAL`  | Stage 3                                                          |
-| No valuable remaining functional/test/doc change                                                          | `CLOSE_NONSECURITY_NOOP` candidate                      | Stage 3                                                          |
-| One mechanical recovery can be applied to trusted `main` with a named test                                | Draft recovery                                          | Stage 3 after creation                                           |
+| Change is already on `main` with a canonical PR/commit                                                    | `CLOSE_NONSECURITY_NOOP` candidate or `HOLD_CANONICAL`  | Stage 1 `CLOSE_NONSECURITY_NOOP` now; Stage 1 canonical-pick if overlap |
+| No valuable remaining functional/test/doc change                                                          | `CLOSE_NONSECURITY_NOOP` candidate                      | Stage 1                                                          |
+| One mechanical recovery can be applied to trusted `main` with a named test                                | Draft recovery                                          | Stage 1 re-ingest if routine, else Stage 3 after creation        |
 | A required **local salvage** platform is unavailable (Swift/Xcode/`make guardrails` on Linux)             | `HOLD_PLATFORM`                                         | Stage 3. Do not treat GitHub-green BOT product PRs as this hold. |
 | Competing source/replacement candidates overlap among sticky-security or HUMAN members                    | `HOLD_CANONICAL`                                        | Stage 3                                                          |
 | Competing source overlap among BOT non-sensitive PRs                                                      | Do not start a branch. Bounce to Stage 1 canonical-pick | Stage 1                                                          |
@@ -137,7 +137,10 @@ item’s `changed_paths`, `next_action`, and live GitHub evidence, then recover.
 Historical reports are hints requiring live verify; no prose `DEFER`, `DIRTY`,
 or `ESCALATE` record is a work item by itself. A docs-only session with zero
 drafts and zero structured failed-recovery records is a failed run when
-salvageable bot work existed. A PR already merged, closed, deleted, or changed
+salvageable bot work existed. True empty intake (zero Stage-2-owned items, zero
+queued work items, and zero salvage-eligible remainder) is a short record and
+stop. If salvage-eligible items exist, label `EMPTY_INTAKE_STARVATION` and still
+do not invent recoveries. A PR already merged, closed, deleted, or changed
 since its immutable anchors becomes a structured Stage 3 reconciliation handoff,
 not a recovery branch.
 
