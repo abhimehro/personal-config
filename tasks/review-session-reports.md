@@ -1,3 +1,41 @@
+# Stage 1 — 2026-08-29 (cron 15:00 UTC)
+
+Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
+**APPROVED** count **7/7** (`pr-lifecycle-v1.4`, `approved_by: abhimehro`,
+`approved_at_utc: 2026-08-26T22:00:00Z`) — **not** incremented and **not**
+reset. Slim inventory (no `commits` / `statusCheckRollup`; lessons **0gl** /
+**0gn**). Open **211**; SHA_MATCH **187** (161 overflow + 26 reselects in the
+50); NEW **24**; HEAD_DRIFT **0**. Product mutations **20/20** (9 squash, 11
+close). Ledger CAS **28 → 29** (blob
+`d6d073e64ccf274d7d17265f0eaa2dfdee6a10e9`, data-branch commit
+`30e2b3a1b481071015cbf28b4d164ff569027a1a`). `/trunk merge` **1**
+(personal-config #2111 `24b694d1` at `2026-08-29T15:29:37Z`) — bookkeeping.
+Stage 2 queued **0**. Stage 3 **2** handoffs (pc #2099 HOLD_CONTRACT, pc
+#2114 sticky workflows). Throughput **PASS** (open PRs 211 → 191; product
+slots fully used). Docs lineage: `pr-lifecycle-docs-20260829` (this PR). Do
+**not** `/trunk merge` today's lineage in the opening run (**0gj**). Do
+**not** Trunk-merge conflicting draft sibling **#2097**. Full record:
+`tasks/pr-review-2026-08-29-1500.md`.
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (open PRs)      |   211 |
+| SHA_MATCH skipped (overflow)|   161 |
+| SHA_MATCH acted (reselect)  |    26 |
+| NEW                         |    24 |
+| HEAD_DRIFT                  |     0 |
+| Ledger items this run       |    12 |
+| Merged                      |     9 |
+| Closed superseded           |     9 |
+| Closed no-op                |     2 |
+| Stage 2 queued (this run)   |     0 |
+| Stage 3 handoffs (this run) |     2 |
+| GitHub PR mutations         |    20 |
+| Ledger CAS writes           |     1 |
+
+Per-item table: see `tasks/pr-review-2026-08-29-1500.md` (mandatory Stage 1
+columns).
+
 # Stage 1 — 2026-08-28 (cron 15:00 UTC)
 
 Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
