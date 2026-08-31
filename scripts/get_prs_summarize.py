@@ -13,6 +13,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from gh_token_env import load_gh_token_env
+from spreadsheet_safety import escape_spreadsheet_formula
 
 FAIL_CONCLUSIONS = frozenset(
     {
@@ -207,7 +208,7 @@ def _fetch_task_wrapper(args: tuple[str, dict]) -> tuple[int, str] | None:
 
 def _format_pr_row(pr: dict) -> str:
     author = pr.get("author")
-    login = (author.get("login") if author else None) or "?"
+    login = escape_spreadsheet_formula((author.get("login") if author else None) or "?")
     draft = "yes" if pr.get("isDraft") else "no"
     checks = check_summary(pr.get("statusCheckRollup") or ())
     merge = f"{pr.get('mergeable') or '?'}"
@@ -218,9 +219,9 @@ def _format_pr_row(pr: dict) -> str:
     row_parts = [
         str(pr.get("number")),
         draft,
-        esc_cell(pr.get("title") or "", 40),
+        esc_cell(escape_spreadsheet_formula(pr.get("title") or ""), 40),
         esc_cell(login, 18),
-        esc_cell(pr.get("headRefName") or "", 28),
+        esc_cell(escape_spreadsheet_formula(pr.get("headRefName") or ""), 28),
         esc_cell(merge, 24),
         checks,
         esc_cell(automation_hints(pr), 56),

@@ -64,7 +64,7 @@ if [[ -d "$HOME/Library/Caches" ]]; then
 						log_warn "Could not clean some files in ${cache_dir##*/} (permission denied)"
 					fi
 				else
-					if find "$cache_dir" -type f -mtime +${CLEANUP_CACHE_DAYS:-30} -delete 2>/dev/null; then
+					if find "$cache_dir" -type f -mtime +"${CLEANUP_CACHE_DAYS:-30}" -delete 2>/dev/null; then
 						((CLEANED++))
 					else
 						log_warn "Could not clean some files in ${cache_dir##*/} (permission denied)"
