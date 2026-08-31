@@ -2709,3 +2709,28 @@ CLEAN.
 
 **Detection cost:** Low — GraphQL error text plus `gh api user` login matching
 `author.login`.
+
+## Lesson 0gw: 20 mutations/day equals arrivals; Stage 2 empty-intake is starvation (2026-08-30)
+
+**Pattern:** After #2098, Stage 1 spent 20/20 every day and graded PASS. Open
+PRs stayed near 200 because arrivals are ~14–20/day (08-29 in-run 211→191, then
+08-30 live 205). Stage 2 EMPTY_INTAKE 08-24 through 08-29 with
+`stage2_work_items: []`. Twelve mechanical HOLD_CONTRACT items already said
+“Recover unique source on a focused draft” and had no work item. Stage 3 bounced
+MERGEABLE overflow to Stage 1 instead of spending its five completion actions
+(08-28: 0/5). Cap-equals-arrivals plus starved salvage cannot dent the backlog.
+
+**Rule:** Stage 1 inventory/actions are 80/40. Queuing a Stage 2 work item is
+bookkeeping. FAIL if salvage-eligible BOT remain and zero WIs were queued.
+Salvage-eligible allowlists `current_owner` to `stage1`/`stage3` so
+WAITING_HUMAN never trips EMPTY_INTAKE_STARVATION. Stage 3 completes Stage 1
+MERGEABLE overflow; do not bounce it. Mechanical HOLD_CONTRACT → complete WI,
+not WAITING_HUMAN. Stage 2 still does not invent recoveries. PR Desk Health
+flags `EMPTY_INTAKE while salvage-eligible > 0`. Monitor:
+`scripts/pr_lifecycle_pipeline_health.py` (schema + runtime records on the
+fetched ledger; `stage2_work_item_count` is complete unexpired WIs). Owned
+ledger items without a usable WI do not suppress EMPTY_INTAKE. Do not reset
+calibration for this volume change. Do not auto-merge HUMAN or REVIEW_SECURITY.
+
+**Detection cost:** Low — Stage 1 `20/20` + open PRs still ~200; Stage 2
+EMPTY_INTAKE; `python3 scripts/pr_lifecycle_pipeline_health.py` exit 2.

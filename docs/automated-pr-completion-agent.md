@@ -81,7 +81,14 @@ For each owned entry, take one and only one route.
 Stage 3 is a coordinator for code recovery. It does not reimplement a salvage
 branch when Stage 2 can make a focused draft. It creates a Stage 2 work item
 rather than a prose reminder, so the repair is automatically queued for the next
-salvage run without adding manual workload.
+salvage run without adding manual workload. Mechanical `HOLD_CONTRACT` /
+`HOLD_EVIDENCE` (unique-source rebase, wrap, lint, import, conflict markers)
+must become a complete work item. Do not send “recover via Stage 2 draft” to a
+human inbox without queuing that work item.
+
+After `APPROVED`, spend the five completion actions on MERGEABLE green BOT that
+Stage 1 overflowed. Do not bounce that overflow back to Stage 1. Bounce remains
+for BOT `HOLD_CANONICAL` clusters that Stage 1 should canonical-pick.
 
 ## Calibration mode
 
@@ -154,9 +161,10 @@ canonical replacement is accepted by the governing policy.
 ### Absolute prohibitions
 
 The Completion Agent never automatically merges or closes a security-sensitive
-PR, an ordinary human-authored PR, an item with `REVIEW_SECURITY`,
+PR, an ordinary human-authored PR, an item with `REVIEW_SECURITY`, sticky
 `HOLD_CONTRACT`, `HOLD_PLATFORM`, or `HOLD_CANONICAL`, or an item whose audit
-record is incomplete. It never bypasses branch protection, force-pushes, deletes
+record is incomplete. Mechanical `HOLD_CONTRACT` is a Stage 2 work item, not a
+merge. It never bypasses branch protection, force-pushes, deletes
 unrelated branches, executes untrusted PR-head code in a privileged context, or
 treats model output as human approval.
 
