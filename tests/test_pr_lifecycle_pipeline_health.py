@@ -262,28 +262,32 @@ class TestPipelineHealthSummarize(unittest.TestCase):
                 self.assertEqual(report.starvation, starved)
                 self.assertEqual(report.stage2_work_item_count, wi_count)
 
-    def test_owned_item_without_usable_wi_does_not_hide_starvation(self) -> None:
+    def test_owned_item_starvation_matrix(self) -> None:
         owned = _item(
             current_owner="stage2",
             lifecycle_state="STAGE2_QUEUED",
         )
         remainder = _item(key="abhimehro/demo#2@def")
-        report = health.summarize(_ledger([owned, remainder], []))
-        self.assertTrue(report.starvation)
-        self.assertEqual(report.stage2_work_item_count, 0)
-        self.assertEqual(report.stage2_owned_item_count, 1)
-        self.assertEqual(report.salvage_eligible_count, 1)
-
-    def test_owned_item_without_wi_and_no_eligible_is_not_starved(self) -> None:
-        owned = _item(
-            current_owner="stage2",
-            lifecycle_state="STAGE2_QUEUED",
+        cases = (
+            ("owned no WI plus remainder", [owned, remainder], [], True, 0, 1, 1),
+            ("owned no WI no remainder", [owned], [], False, 0, 1, 0),
+            (
+                "owned plus usable WI plus remainder",
+                [owned, remainder],
+                [_work_item()],
+                False,
+                1,
+                1,
+                1,
+            ),
         )
-        report = health.summarize(_ledger([owned], []))
-        self.assertFalse(report.starvation)
-        self.assertEqual(report.stage2_work_item_count, 0)
-        self.assertEqual(report.stage2_owned_item_count, 1)
-        self.assertEqual(report.salvage_eligible_count, 0)
+        for label, items, wis, starved, wi_count, owned_count, eligible in cases:
+            with self.subTest(label):
+                report = health.summarize(_ledger(items, wis), now=NOW)
+                self.assertEqual(report.starvation, starved)
+                self.assertEqual(report.stage2_work_item_count, wi_count)
+                self.assertEqual(report.stage2_owned_item_count, owned_count)
+                self.assertEqual(report.salvage_eligible_count, eligible)
 
     def test_attempt_count_zero_and_empty_optional_lists_are_usable(self) -> None:
         report = health.summarize(
@@ -308,20 +312,6 @@ class TestPipelineHealthSummarize(unittest.TestCase):
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         expected = tuple(schema["$defs"]["stage2WorkItem"]["required"])
         self.assertEqual(health.REQUIRED_WORK_ITEM_FIELDS, expected)
-
-    def test_handoff_owned_and_usable_wi_is_not_starved(self) -> None:
-        owned = _item(
-            current_owner="stage2",
-            lifecycle_state="STAGE2_QUEUED",
-        )
-        remainder = _item(key="abhimehro/demo#2@def")
-        report = health.summarize(
-            _ledger([owned, remainder], [_work_item()]),
-            now=NOW,
-        )
-        self.assertFalse(report.starvation)
-        self.assertEqual(report.stage2_work_item_count, 1)
-        self.assertEqual(report.stage2_owned_item_count, 1)
 
 
 class TestPipelineHealthCli(unittest.TestCase):
