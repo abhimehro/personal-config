@@ -2734,3 +2734,23 @@ calibration for this volume change. Do not auto-merge HUMAN or REVIEW_SECURITY.
 
 **Detection cost:** Low — Stage 1 `20/20` + open PRs still ~200; Stage 2
 EMPTY_INTAKE; `python3 scripts/pr_lifecycle_pipeline_health.py` exit 2.
+
+## Lesson 0gx: Re-poll live head SHA immediately before salvage WI CAS (2026-08-31)
+
+**Pattern:** A planned Stage 2 work item for email-security-pipeline #1500 used
+ledger key `@28cbc110…`. Between inventory and CAS the live head moved to
+`2c041dd38ce16adb5efedbc0cd186ed7eea74b89`. A work item pinned to a stale
+anchor is not salvage intake: Stage 2 would copy from the wrong commit, and
+the changed-anchor rule already returns that PR to Stage 1. The same run
+dropped Seatek #721 as a non-keeper after canonical-pick of #698.
+
+**Rule:** Re-poll `head.sha` for every salvage candidate immediately before
+building the work item and again immediately before Contents-API CAS. If the
+live head does not equal the ledger item key, do not queue that WI. Leave the
+old Stage-3 key untouched (HEAD_DRIFT). Fill the slot from another
+SHA-matching salvage-eligible keeper. Canonical-pick the overlap cluster
+before queuing: at most one WI for the keeper; close non-keepers instead of
+five salvage drafts.
+
+**Detection cost:** Low — `gh api repos/{owner}/{repo}/pulls/{n} --jq .head.sha`
+versus `item.key` suffix.
