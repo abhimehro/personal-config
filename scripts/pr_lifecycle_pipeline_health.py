@@ -22,7 +22,8 @@ non-executable work.
 
 `PipelineHealth.stage2_work_item_count` is complete unexpired work items, not
 `len(stage2_work_items)`. Expired or malformed records do not suppress
-starvation.
+starvation. `stage2_owned_item_count` is observational: a Stage 2-owned ledger
+item without a usable work item does not hide EMPTY_INTAKE.
 """
 
 from __future__ import annotations
@@ -60,14 +61,8 @@ SALVAGE_OUTCOMES = frozenset({"HOLD_CONTRACT", "HOLD_EVIDENCE", "NOT_RUN"})
 # Allowlist: unknown owners fail closed. Stage 2 already owns its queue.
 AUTOMATED_SALVAGE_OWNERS = frozenset({"stage1", "stage3"})
 STAGE2_OWNED_STATES = frozenset({"STAGE2_QUEUED", "STAGE2_ACTIVE"})
-REQUIRED_WORK_ITEM_FIELDS = (
-    "work_item_id",
-    "source_item_key",
-    "allowed_paths",
-    "required_test_command",
-    "expiry_utc",
-    "current_owner",
-)
+NONEMPTY_WORK_ITEM_LISTS = ("allowed_paths", "acceptance_criteria", "provenance_urls")
+SCHEMA_PATH = ROOT / "schemas/pr-lifecycle-ledger.schema.json"
 PROHIBITED_NEXT_ACTION = re.compile(
     r"\bdo not (import|lint|wrap|pin|test)\b|" r"\bdon't (import|lint|wrap|pin|test)\b",
     re.IGNORECASE,
@@ -103,6 +98,15 @@ class PipelineHealth:
     salvage_eligible_keys: tuple[str, ...]
     starvation: bool
     reason: str
+
+
+def _load_required_work_item_fields() -> tuple[str, ...]:
+    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    required = schema["$defs"]["stage2WorkItem"]["required"]
+    return tuple(required)
+
+
+REQUIRED_WORK_ITEM_FIELDS = _load_required_work_item_fields()
 
 
 def _clock(now: datetime | None) -> datetime:
@@ -176,12 +180,26 @@ def parse_expiry_utc(value: object) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
+def _has_required_work_item_fields(item: dict[str, Any]) -> bool:
+    return all(item.get(field) is not None for field in REQUIRED_WORK_ITEM_FIELDS)
+
+
+def _has_required_work_item_lists(item: dict[str, Any]) -> bool:
+    for field in NONEMPTY_WORK_ITEM_LISTS:
+        value = item.get(field)
+        if not isinstance(value, list) or len(value) < 1:
+            return False
+    return True
+
+
 def work_item_is_usable(item: dict[str, Any], now: datetime | None = None) -> bool:
     """Return True for a complete work item whose expiry_utc is still in the future."""
     clock = _clock(now)
     if item.get("current_owner") != "stage2":
         return False
-    if not all(item.get(field) for field in REQUIRED_WORK_ITEM_FIELDS):
+    if not _has_required_work_item_fields(item):
+        return False
+    if not _has_required_work_item_lists(item):
         return False
     expiry = parse_expiry_utc(item.get("expiry_utc"))
     if expiry is None:
@@ -226,16 +244,14 @@ def _ledger_revision(ledger: dict[str, Any]) -> int:
     return int(ledger.get("ledger_revision") or 0)
 
 
-def _is_starved(usable_count: int, owned_count: int, eligible_count: int) -> bool:
-    return usable_count == 0 and owned_count == 0 and eligible_count > 0
+def _is_starved(usable_count: int, eligible_count: int) -> bool:
+    return usable_count == 0 and eligible_count > 0
 
 
-def _starvation_reason(
-    starvation: bool, usable_count: int, owned_count: int, eligible: int
-) -> str:
+def _starvation_reason(starvation: bool, usable_count: int, eligible: int) -> str:
     if starvation:
         return f"Stage 2 EMPTY_INTAKE while salvage-eligible > 0 ({eligible} items)"
-    if usable_count == 0 and owned_count == 0:
+    if usable_count == 0:
         return "Stage 2 empty intake with zero salvage-eligible remainder"
     return "Stage 2 has queued work"
 
@@ -249,7 +265,7 @@ def _health_report(
     usable_count = len(usable)
     owned_count = len(owned)
     eligible_count = len(eligible)
-    starvation = _is_starved(usable_count, owned_count, eligible_count)
+    starvation = _is_starved(usable_count, eligible_count)
     return PipelineHealth(
         ledger_revision=_ledger_revision(ledger),
         stage2_work_item_count=usable_count,
@@ -257,9 +273,7 @@ def _health_report(
         salvage_eligible_count=eligible_count,
         salvage_eligible_keys=_eligible_keys(eligible),
         starvation=starvation,
-        reason=_starvation_reason(
-            starvation, usable_count, owned_count, eligible_count
-        ),
+        reason=_starvation_reason(starvation, usable_count, eligible_count),
     )
 
 

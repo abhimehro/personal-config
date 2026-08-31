@@ -56,7 +56,8 @@ prompts and the 20-slot cap):**
 
 Monitor: `python3 scripts/pr_lifecycle_pipeline_health.py <fetched-ledger>`
 (schema + runtime records; `stage2_work_item_count` is complete unexpired WIs;
-exit 2 = starvation). PR Desk Health must surface that line.
+owned items without a usable WI do not suppress starvation; exit 2 =
+starvation). PR Desk Health must surface that line.
 
 The two Stage 3 exports share `0 19 * * *` and are **mutually exclusive**. Never
 leave both variants enabled. Calibration reached 7/7 on 2026-08-26; the

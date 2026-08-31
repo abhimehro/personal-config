@@ -243,8 +243,9 @@ Monitor: `scripts/pr_lifecycle_pipeline_health.py` on a fetched runtime ledger
 validates JSON Schema and runtime-record invariants (not Cursor exports) and
 exits 2 when Stage 2 would empty-intake while salvage-eligible items remain.
 `stage2_work_item_count` is complete unexpired work items, not the raw array
-length. PR Desk reports starvation as
-`Stage 2 EMPTY_INTAKE while salvage-eligible > 0`.
+length. `stage2_owned_item_count` is observational; a Stage 2-owned ledger item
+without a usable work item does not suppress starvation. PR Desk reports
+starvation as `Stage 2 EMPTY_INTAKE while salvage-eligible > 0`.
 
 ## Identity and sticky sensitivity rules
 

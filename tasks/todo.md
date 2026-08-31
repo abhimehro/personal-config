@@ -9,6 +9,7 @@ T5 — Orchestrate. 20 mutations/day equals arrivals; Stage 2 is idle. Do not bu
 - [x] Stage 2 EMPTY_INTAKE_STARVATION label; still no invented recoveries
 - [x] Stage 3 complete MERGEABLE overflow; mechanical HOLD_CONTRACT → WI
 - [x] Monitor `scripts/pr_lifecycle_pipeline_health.py`; PR Desk health line
+- [x] Owned-without-WI does not hide starvation; WI completeness from schema
 - [x] Tests + `sync_cursor_export_prompts.py --write/--check`
 - [x] Commit, push, open PR (not Trunk-merged unless asked)
 - [ ] HITL: paste Stage 1/2/3 completion prompts; keep calibration disabled

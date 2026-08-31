@@ -58,10 +58,11 @@ Stage 3 calibration must remain disabled while completion is live. Flag it if it
 is enabled.
 
 If `scripts/pr_lifecycle_pipeline_health.py` output on a fetched ledger is
-available, use it. Otherwise compute: Stage 2 starvation when
-`stage2_work_items` is empty, no `current_owner: stage2`, and at least one BOT
-item is salvage-eligible (mechanical unique-source / wrap / lint next_action,
-not `REVIEW_SECURITY`, not sticky lockfile/workflow/auth).
+available, use it. Otherwise compute: Stage 2 starvation when complete
+unexpired work-item count is 0 and at least one BOT item is salvage-eligible
+(mechanical unique-source / wrap / lint next_action, not `REVIEW_SECURITY`, not
+sticky lockfile/workflow/auth). A `current_owner: stage2` ledger item without a
+usable work item does not suppress that flag.
 
 Build every digest from fresh reads. Never present a previous digest as current.
 If any required source is unreachable, identify the source and stop. A partial

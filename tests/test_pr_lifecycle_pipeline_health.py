@@ -1,4 +1,8 @@
-"""Pipeline health: Stage 2 starvation and salvage-eligible classification."""
+"""Pipeline health: Stage 2 starvation and salvage-eligible classification.
+
+Install pinned `requirements.txt` (`jsonschema==4.26.0`) before running this
+module; Ubuntu system jsonschema is not sufficient.
+"""
 
 from __future__ import annotations
 
@@ -147,13 +151,26 @@ def _item(**overrides: object) -> dict[str, object]:
 
 
 def _work_item(**overrides: object) -> dict[str, object]:
+    sha = "0123456789abcdef0123456789abcdef01234567"
     base: dict[str, object] = {
         "work_item_id": "s2-20260830-demo",
-        "source_item_key": "abhimehro/demo#1@abc",
+        "source_item_key": f"abhimehro/demo#1@{sha}",
+        "repository": "abhimehro/demo",
+        "pr": 1,
+        "base_sha": sha,
+        "head_sha": sha,
         "allowed_paths": ["src/demo.py"],
+        "prohibited_paths": [],
+        "repair_description": "Repair the demo path.",
         "required_test_command": "python3 -m unittest",
+        "expected_test_result": "ok",
+        "acceptance_criteria": ["Allowed path changes only."],
+        "provenance_urls": ["https://github.com/abhimehro/demo/pull/1"],
         "expiry_utc": "2026-08-31T12:00:00Z",
+        "attempt_count": 0,
         "current_owner": "stage2",
+        "creation_event_id": "evt-20260830-demo",
+        "history": [],
     }
     base.update(overrides)
     return base
@@ -245,17 +262,52 @@ class TestPipelineHealthSummarize(unittest.TestCase):
                 self.assertEqual(report.starvation, starved)
                 self.assertEqual(report.stage2_work_item_count, wi_count)
 
-    def test_owned_item_suppresses_starvation_without_usable_wi(self) -> None:
+    def test_owned_item_without_usable_wi_does_not_hide_starvation(self) -> None:
         owned = _item(
             current_owner="stage2",
             lifecycle_state="STAGE2_QUEUED",
         )
         remainder = _item(key="abhimehro/demo#2@def")
         report = health.summarize(_ledger([owned, remainder], []))
-        self.assertFalse(report.starvation)
+        self.assertTrue(report.starvation)
         self.assertEqual(report.stage2_work_item_count, 0)
         self.assertEqual(report.stage2_owned_item_count, 1)
         self.assertEqual(report.salvage_eligible_count, 1)
+
+    def test_owned_item_without_wi_and_no_eligible_is_not_starved(self) -> None:
+        owned = _item(
+            current_owner="stage2",
+            lifecycle_state="STAGE2_QUEUED",
+        )
+        report = health.summarize(_ledger([owned], []))
+        self.assertFalse(report.starvation)
+        self.assertEqual(report.stage2_work_item_count, 0)
+        self.assertEqual(report.stage2_owned_item_count, 1)
+        self.assertEqual(report.salvage_eligible_count, 0)
+
+    def test_attempt_count_zero_and_empty_optional_lists_are_usable(self) -> None:
+        report = health.summarize(
+            _ledger(
+                [_item()],
+                [_work_item(attempt_count=0, prohibited_paths=[], history=[])],
+            ),
+            now=NOW,
+        )
+        self.assertFalse(report.starvation)
+        self.assertEqual(report.stage2_work_item_count, 1)
+
+    def test_incomplete_work_item_does_not_suppress_starvation(self) -> None:
+        incomplete = _work_item()
+        del incomplete["repository"]
+        report = health.summarize(_ledger([_item()], [incomplete]), now=NOW)
+        self.assertTrue(report.starvation)
+        self.assertEqual(report.stage2_work_item_count, 0)
+
+    def test_required_work_item_fields_match_schema(self) -> None:
+        schema_path = ROOT / "schemas/pr-lifecycle-ledger.schema.json"
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        expected = tuple(schema["$defs"]["stage2WorkItem"]["required"])
+        self.assertEqual(health.REQUIRED_WORK_ITEM_FIELDS, expected)
 
     def test_handoff_owned_and_usable_wi_is_not_starved(self) -> None:
         owned = _item(
