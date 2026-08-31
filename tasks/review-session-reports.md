@@ -1,3 +1,40 @@
+# Stage 1 — 2026-08-31 (cron 15:00 UTC)
+
+Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
+**APPROVED** count **7/7** (`pr-lifecycle-v1.4`, `approved_by: abhimehro`,
+`approved_at_utc: 2026-08-26T22:00:00Z`) — **not** incremented and **not**
+reset. Slim inventory (no `commits` / `statusCheckRollup`; lessons **0gl** /
+**0gn**). Open **207**; BOT **174**. Product mutations **14/40** combined
+UTC-day (earlier actor 5 + this agent 9): 5 GitHub squashes, 1 `/trunk merge`
+comment (pc #2030 still OPEN), 1 CodeScene command, 1 CLOSED_NOOP, 5
+CLOSED_SUPERSEDED vs keeper Seatek #698. Ledger CAS **32 → 33** (blob
+`fe5fabe073accd21ed7d06f8f12c2ee837af37ec`, data-branch commit
+`66f4fa66282689e94e4c632cbf3d9d7ef57227c3`). Stage 2 queued **5** complete
+unexpired WIs (starvation=false). Stage 3 **12** NEW overflow handoffs; did
+not rewrite Stage-3 GitHub mutations. Throughput **PASS** (BOT stock did not
+grow; unused slots were sticky/HUMAN/red-check/draft; salvage feed CAS-landed).
+Docs lineage: `pr-lifecycle-docs-20260831` (this PR). Do **not** `/trunk
+merge` today's lineage in the opening run (**0gj**). Do **not** Trunk-merge
+conflicting draft sibling **#2097**. Full record:
+`tasks/pr-review-2026-08-31.md`. Lesson **0gx**.
+
+| Metric                      | Count |
+| --------------------------- | ----: |
+| Inventoried (open PRs)      |   207 |
+| Product mutations           |    14 |
+| Merged (GitHub squash)      |     5 |
+| Closed superseded           |     5 |
+| Closed no-op                |     1 |
+| Product Trunk comments      |     1 |
+| CodeScene commands          |     1 |
+| Stage 2 queued (this run)   |     5 |
+| Stage 3 handoffs (this run) |    12 |
+| GitHub PR mutations         |    14 |
+| Ledger CAS writes           |     1 |
+
+Per-item table: see `tasks/pr-review-2026-08-31.md` (mandatory Stage 1
+columns).
+
 # Stage 1 — 2026-08-28 (cron 15:00 UTC)
 
 Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
