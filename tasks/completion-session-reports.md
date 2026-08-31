@@ -1569,3 +1569,200 @@ Stage-3-owned.
   **0**
 - Calibration successful-run increment: **0** (`successful_run_count` remains 7
   of 7 `APPROVED`)
+
+## Stage Run Record — 2026-08-30
+
+- Date: 2026-08-30
+- Agent: Stage 3 Daily PR Completion (bounded-completion variant)
+- Operator: `abhimehro` (GitHub REST `GET /user` login; Cursor Cloud automation
+  `cursor-agent@cursor.com` is **not** in the bot suffix set — lesson **0gk**)
+- Trigger: cron `0 19 * * *` at `2026-08-30T19:01:27Z` (automation
+  `66a8e7a8-9c42-11f1-ba66-0e7d0216e441`)
+- Prompt: `docs/cursor-automations/exports/daily-pr-completion.json`
+  sha256 `ad21b007be3fd52f016d9121b84b1da4990529f77b0e5d4d05704c398f59cde9`
+- Mode: **approved_completion** (`pr-lifecycle-v1.4`, `approved_by: abhimehro`,
+  `approved_at: 2026-08-26T22:00:00Z`, `successful_run_count` **7 of 7** —
+  not incremented)
+- Caps: 20 reconciliations / 5 decision packets / 5 product GitHub mutations
+- Continuity: today's lineage
+  [`#2124`](https://github.com/abhimehro/personal-config/pull/2124)
+  (`pr-lifecycle-docs-20260830`); yesterday
+  [`#2117`](https://github.com/abhimehro/personal-config/pull/2117) still open
+  (Trunk FAILURE — no retry this run); `main` not used as write target
+- Prior Stage 3: 2026-08-29 (rev 29→30, 0 product), 2026-08-28 (rev 27→28),
+  2026-08-27 (Seatek #751 squash)
+- Prior Stage 1 today: 15:00 UTC on #2124, ledger 30→31, 12 product mutations,
+  29 STAGE3 handoffs
+- Prior Stage 2 today: 17:00 UTC EMPTY_INTAKE on #2124, no CAS (rev stayed 31)
+- Memory: namespaced cache only; ledger/anchors win
+- Runtime ledger: `automation/pr-lifecycle-ledger:pr-lifecycle-ledger.yaml`
+- Write primitive: `github_contents_api` (`GET`/`PUT` with `?ref=` query
+  string; `PUT` via `gh api --input` JSON; blob SHA precondition)
+- Schema: `docs/pr-lifecycle-ledger.schema.json` (wrap-on-main still fails
+  pre-existing `tasks/todo.md` / `automation_state.yaml`; ledger-only
+  `validate_schema` + `validate_runtime_records` used)
+- GitHub identity policy: `pr-lifecycle-v1.4` (REST `GET /repos/.../pulls/{n}`
+  + `user.login` + `author_association` + allowlist
+  `dependabot[bot]` / `renovate[bot]` / `google-labs-jules[bot]` / `devin[bot]`
+  / `copilot[bot]` / `cursor[bot]` / token-authored `abhimehro` with bot
+  branch/title/review-history)
+- Merge-method registry (live re-read, VERIFIED, verified-zero except rpce
+  named required checks `CodeQL code scanning: errors/high_or_higher` +
+  `code quality: errors`): personal-config `TRUNK_QUEUE`/`TRUNK`; others
+  `GITHUB_SQUASH`/`GITHUB_RULESETS`
+- Required-check source: GitHub rulesets (verified-zero) + rpce named required
+  checks. Missing configuration → hold, never act.
+- Forbidden this run: salvage implementation, Stage 2 create (no salvage
+  intake), Jules/Bolt/Palette packets, HUMAN `personal-config#2123`, drafts
+  #2118/#2112 (lesson **0gd**), Trunk on #2117/#2054/#2020/#2046/#2124,
+  `request_reviewers`, mark-ready, force-push, self-approve (lesson **0gv**),
+  Gmail/Agentmail/Browser/Render/Prisma/Cloudflare/LaunchDarkly/Publora/particle
+- Notion: human packet plane (4 pages created)
+- Linear: unused (packets live in Notion)
+
+### Ledger CAS
+
+| Field | Value |
+| ----- | ----- |
+| Read revision | 31 |
+| Result revision | 32 |
+| Precondition blob | `a6845f08de77f342eb71e77277c7f2861be9048d` |
+| Result blob | `9115d9bd1d6ca78bfef3b590f824e53cb811534a` |
+| CAS commit | `8a3b5827a711eb1a2297460ef794da8e14883abd` |
+| Parent data-branch commit | `42355b8d2e4c0be2cb67e2ad61a91c353608a4ad` |
+| Re-GET | Contents API omits body (`size` 1,073,784 >1MB); byte-match via `GET /git/blobs/9115d9bd…` → True |
+| Events this run | 20 ACK + 18 HANDOFF + 1 TERMINAL + 0 CALIBRATION |
+| Calibration after write | `APPROVED` / count 7 / `pr-lifecycle-v1.4` unchanged |
+
+### Extra-draft / overflow scan (not in the 20)
+
+- Salvage-titled drafts: none
+- `personal-config#2112` already in ledger (draft, lesson **0gd**)
+- Stage 1 leftovers not stolen: `repoprompt-ce#300`/`#309`/`#312`
+  HOLD_EVIDENCE; `personal-config#2116` HOLD_EVIDENCE; `Seatek_Analysis#772`
+  CLOSE_NONSECURITY_NOOP after `2026-08-30T20:14:20Z` (cooldown)
+- Overflow not in 20: HUMAN `personal-config#2123`; drafts #2118/#2112;
+  Dependabot workflow pins hydro#582 / seatek#763 / ctrld#1218 / email#1541;
+  lockfiles ctrld#1221/#1220; pc#2120/#2119
+
+### Per-item mandatory completion records
+
+Live re-read immediately before each ledger write. Product GitHub mutation
+count for every row: **0**. Audit IDs are the Stage 3 event IDs. Identity
+source for all rows: GitHub REST pull + user.login + allowlist.
+`identity_policy_version`: `pr-lifecycle-v1.4`. Classification/risk from
+live files + `.github/CODEOWNERS` + CODEOWNERS-adjacent paths. Sticky paths
+listed when they drove SENSITIVE.
+
+| # | Item / PR / SHA | Live vs ledger | Identity / class / risk | Proposed → final | Next owner / action / expiry | Audit |
+| - | --------------- | -------------- | ------------------------ | ---------------- | ----------------------------- | ----- |
+| 1 | `ctrld-sync#1203` `@47b80f3d…` | **MERGED** 15:16:30Z, head MATCH | BOT `cursor[bot]` / CI_INFRA / ROUTINE | TERMINAL `MERGED_ROUTINE` | none / none | `evt-s3-20260830-ctrldsync-1203-a` / `-t` |
+| 2 | `personal-config#2054` `@dc6f2dfb…` | OPEN UNSTABLE; live head `eba7c04619ac59e0a63ac277d2d39ffd55565573` | BOT token-`abhimehro` / PERFORMANCE / ROUTINE (`detect_duplicates.py`) | STALE_ANCHOR → STAGE1 | STAGE1 / `STAGE1_REINGEST` / 2026-08-31T19:20:00Z | `…-personalconf-2054-a` / `-h` |
+| 3 | `personal-config#2020` `@23577be3…` | OPEN UNSTABLE; live head `938b98783b9f55533b01e81f4ebb6505a393b0ad` | BOT token-`abhimehro` / PERFORMANCE / SENSITIVE (`.jules/bolt.md`, `scratch_inventory.py`) | STALE_ANCHOR → STAGE1 | STAGE1 / `STAGE1_REINGEST` / 2026-08-31T19:20:00Z | `…-2020-a` / `-h` |
+| 4 | `personal-config#2046` `@eb9db60a…` rev 3 | OPEN UNSTABLE; live head `e9c2f8cbb8d8826b7ad5aea4809ebb6e1cc15fac` | BOT token-`abhimehro` / UI / SENSITIVE (`generated_output`) | STALE_ANCHOR → STAGE1; do not re-queue Trunk | STAGE1 / `STAGE1_REINGEST` / 2026-08-31T19:20:00Z | ACK `evt-s1-20260830-personalconf-2046-h` then `…-2046-a` / `-h` |
+| 5 | `personal-config#2117` `@94be3547…` | OPEN UNSTABLE, **head MATCH**, Trunk FAILURE | BOT `cursor[bot]` / CI_INFRA / ROUTINE (docs lineage) | ACK only; stay HOLD_EVIDENCE | STAGE3 / `HOLD_EVIDENCE` / 2026-08-31T19:20:00Z | `evt-s3-20260830-personalconf-2117-a` (rev stays 1) |
+| 6 | `repoprompt-ce#266` rev 3 | OPEN CONFLICTING, head MATCH | BOT token-`abhimehro` / UI / SENSITIVE | Bounce HOLD_CANONICAL; **not a packet** | STAGE1 / `CANONICAL_PICK` / 2026-08-31T19:20:00Z | `…-repopromptce-266-a` / `-h` |
+| 7 | `repoprompt-ce#263` rev 3 | OPEN CONFLICTING, head MATCH | BOT token-`abhimehro` / UI / SENSITIVE | Bounce HOLD_CANONICAL; **not a packet** | STAGE1 / `CANONICAL_PICK` / 2026-08-31T19:20:00Z | `…-263-a` / `-h` |
+| 8 | `Seatek_Analysis#739` rev 3 | OPEN CONFLICTING, head MATCH | BOT token-`abhimehro` / PERFORMANCE / SENSITIVE (Bolt R) | Bounce HOLD_CANONICAL; **not a packet** | STAGE1 / `CANONICAL_PICK` / 2026-08-31T19:20:00Z | `…-seatekanalys-739-a` / `-h` |
+| 9 | hydro `#588` | OPEN MERGEABLE CLEAN, head MATCH, base `1110fa32…` | BOT token-`abhimehro` / SECURITY / SENSITIVE (`validate_data.py`) | WAITING_HUMAN packet 1 | HUMAN / `LEAVE_OPEN` / 2026-09-06T19:20:00Z | `…-hydrographv-588-a` / `-h` |
+| 10 | hydro `#587` | OPEN MERGEABLE CLEAN, head MATCH, base `1110fa32…` | same cluster | same packet 1 | HUMAN / `LEAVE_OPEN` / 2026-09-06T19:20:00Z | `…-587-a` / `-h` |
+| 11 | hydro `#585` | OPEN MERGEABLE CLEAN, head MATCH, base `0987c1704c99240bcedd8885f31ba9e47e68ff27` | same cluster | same packet 1 | HUMAN / `LEAVE_OPEN` / 2026-09-06T19:20:00Z | `…-585-a` / `-h` |
+| 12 | hydro `#581` | OPEN MERGEABLE CLEAN, head MATCH, base `0987c170…cedd8885…` | same cluster | same packet 1 | HUMAN / `LEAVE_OPEN` / 2026-09-06T19:20:00Z | `…-581-a` / `-h` |
+| 13 | `Seatek_Analysis#774` | OPEN UNSTABLE, head MATCH | BOT token-`abhimehro` / SECURITY / SENSITIVE (`code_health_scanner.py`) | WAITING_HUMAN packet 2 | HUMAN / `LEAVE_OPEN` / 2026-09-06T19:20:00Z | `…-seatekanalys-774-a` / `-h` |
+| 14 | seatek `#770` | OPEN CLEAN, head MATCH | same cluster | same packet 2 | HUMAN / `LEAVE_OPEN` / 2026-09-06T19:20:00Z | `…-770-a` / `-h` |
+| 15 | seatek `#767` | OPEN CLEAN, head MATCH | same cluster | same packet 2 | HUMAN / `LEAVE_OPEN` / 2026-09-06T19:20:00Z | `…-767-a` / `-h` |
+| 16 | seatek `#762` | OPEN CLEAN, head MATCH | same cluster | same packet 2 | HUMAN / `LEAVE_OPEN` / 2026-09-06T19:20:00Z | `…-762-a` / `-h` |
+| 17 | `repoprompt-ce#310` | OPEN UNSTABLE, head MATCH | BOT token-`abhimehro` / SECURITY / SENSITIVE (MCP TOCTOU) | WAITING_HUMAN packet 3; no Linux salvage (**0gi**) | HUMAN / `LEAVE_OPEN` / 2026-09-06T19:20:00Z | `…-repopromptce-310-a` / `-h` |
+| 18 | rpce `#305` | OPEN CLEAN, head MATCH | same cluster | same packet 3 | HUMAN / `LEAVE_OPEN` / 2026-09-06T19:20:00Z | `…-305-a` / `-h` |
+| 19 | series `#421` | OPEN UNSTABLE, head MATCH | BOT token-`abhimehro` / SECURITY / SENSITIVE (`run_analysis.py`) | WAITING_HUMAN packet 4 | HUMAN / `LEAVE_OPEN` / 2026-09-06T19:20:00Z | `…-seriescorre-421-a` / `-h` |
+| 20 | series `#418` | OPEN UNSTABLE, head MATCH | same cluster | same packet 4 | HUMAN / `LEAVE_OPEN` / 2026-09-06T19:20:00Z | `…-418-a` / `-h` |
+
+Provenance: Stage 1 2026-08-30 15:00 handoffs (except #1203 Stage 1 2026-08-20
+HANDOFF `evt-s1-20260820b-ctrldsync-1203-h`; #2117 prior Stage 3 HOLD_EVIDENCE).
+Canonical relation: #266/#263 and #739 are Stage-1-executable HOLD_CANONICAL
+clusters (not packets). Hydro/Seatek/rpce/series clusters are sticky SECURITY
+SENTINEL — recommended option **leave open**, safe default do not squash.
+
+### Decision packets (4 of 5)
+
+| Packet | Items | Notion | Recommended | Safe default | Expiry |
+| ------ | ----- | ------ | ---------- | ------------ | ------ |
+| 1 Hydro Sentinel `validate_data.py` | #588/#587/#585/#581 | https://www.notion.so/3cc7419416de81c1bd95c2d159a0eb80 | leave open | do not squash | 2026-09-06T19:20:00Z |
+| 2 Seatek Sentinel `code_health_scanner.py` | #774/#770/#767/#762 | https://www.notion.so/3cc7419416de81b68b43eff49647da20 | leave open | do not squash | 2026-09-06T19:20:00Z |
+| 3 rpce MCP TOCTOU | #310/#305 | https://www.notion.so/3cc7419416de8119b4b4f282829f8dcc | leave open | do not squash; no Linux salvage | 2026-09-06T19:20:00Z |
+| 4 series `run_analysis.py` | #421/#418 | https://www.notion.so/3cc7419416de8123bf27f29f6afbaf7d | leave open | do not squash | 2026-09-06T19:20:00Z |
+
+Packet 5 unused. Linear unused. Hydro packet SHA typo `cedd8888`→`cedd8885`
+corrected via Notion update before ledger write.
+
+### Stage 2 work items
+
+None. No salvage draft qualified. No recovery implementation. Cap not used.
+
+### Handoff table (nonterminal after this run)
+
+| Item | Next owner | Safe default | Next action | Evidence | Expiry |
+| ---- | ---------- | ------------ | ----------- | -------- | ------ |
+| pc #2054 / #2020 / #2046 | STAGE1 | do not Trunk | STAGE1_REINGEST (STALE_ANCHOR) | live head SHAs above | 2026-08-31T19:20:00Z |
+| pc #2117 | STAGE3 | do not Trunk | HOLD_EVIDENCE | Trunk FAILURE; head MATCH | 2026-08-31T19:20:00Z |
+| rpce #266 / #263 | STAGE1 | do not squash | CANONICAL_PICK | CONFLICTING | 2026-08-31T19:20:00Z |
+| Seatek #739 | STAGE1 | do not squash | CANONICAL_PICK | CONFLICTING | 2026-08-31T19:20:00Z |
+| hydro #588/#587/#585/#581 | HUMAN | do not squash | LEAVE_OPEN | Notion packet 1 | 2026-09-06T19:20:00Z |
+| Seatek #774/#770/#767/#762 | HUMAN | do not squash | LEAVE_OPEN | Notion packet 2 | 2026-09-06T19:20:00Z |
+| rpce #310/#305 | HUMAN | do not squash | LEAVE_OPEN | Notion packet 3 | 2026-09-06T19:20:00Z |
+| series #421/#418 | HUMAN | do not squash | LEAVE_OPEN | Notion packet 4 | 2026-09-06T19:20:00Z |
+| ctrld-sync #1203 | none | n/a | TERMINAL MERGED_ROUTINE | merged 15:16:30Z | n/a |
+
+### Failures / retries / correctness
+
+- Product mutations: **0** (nothing in the 20 was qualified non-security complete)
+- Failed mutations: 0
+- Retries: 0
+- Analysis errors: 0
+- Calibration increment: **0**
+- New lessons: none (STALE_ANCHOR, 0gu bounce, 0gi HOLD_PLATFORM, 0gj lineage,
+  0gv no self-review already recorded)
+- Correctness: all 20 had live identity + merge-method + required-check source
+  + immutable anchors immediately before ledger write; no action on HUMAN /
+  unknown / REVIEW_SECURITY / HOLD_CONTRACT / HOLD_PLATFORM / incomplete-audit;
+  HOLD_CANONICAL bounced to Stage 1 rather than packed; #2117 ACK-only
+
+### Continuity
+
+- Successful pattern reused: ACK latest projected HANDOFF then revision-checked
+  HANDOFF/TERMINAL; skip duplicate receipts; Contents API CAS via `gh api
+  --input` with query-string `?ref=` GET; re-GET byte-match via git blobs when
+  Contents omits body (>1MB); keep original item keys (0gp); bounce executable
+  BOT HOLD_CANONICAL / STALE_ANCHOR to Stage 1 (0gu); packet sticky SECURITY
+  SENTINEL only.
+- Failed approach not to repeat: do not GET Contents with `-f ref=`; do not
+  GitHub-squash personal-config (TRUNK_QUEUE only); do not self-approve
+  maintainer-login BOT (0gv); do not packet Jules/Bolt/Palette clusters; do not
+  park GitHub-green BOT as salvage `HOLD_PLATFORM` (0gi/0gu); do not steal
+  Stage 1 leftovers; do not open a sibling docs PR (0gj); do not merge drafts
+  (0gd); do not increment calibration after `APPROVED` 7/7; do not Trunk-merge
+  this docs lineage in the Stage 3 run that appends to it; do not retry Trunk
+  on #2117 this run.
+- New lesson candidate: none. No new routing rule.
+- Configuration or policy gap: full wrap validator still fails on `main`
+  export/prompt mismatch; Stage 3 continues ledger-only validation. Contents
+  GET omits body once ledger exceeds 1MB — use git blobs for byte-match.
+- Historical-import sources or fingerprints processed: none
+
+### Metrics
+
+- Inventory / recovery / reconciliation count: **20** processed / 3 SHA-drift
+  (pc #2054/#2020/#2046) / 4 new packets / 0 Stage 2 work items / 5 Stage 1
+  leftovers not stolen
+- Merged this run: **0** (ctrld-sync #1203 already merged by Stage 1; TERMINAL only)
+- Closed: **0**
+- Drafts created: 0
+- Decision packets created: **4**
+- Stage 2 work items created: 0
+- Close-candidates recorded: 0 (Seatek #772 cooldown remains Stage 1)
+- Analysis errors: 0
+- State-changing product-PR actions, including failed attempts and retries:
+  **0**
+- Calibration successful-run increment: **0** (`successful_run_count` remains 7
+  of 7 `APPROVED`)
+- Caps consumed: 20/20 reconciliations, 4/5 packets, 0/5 product mutations

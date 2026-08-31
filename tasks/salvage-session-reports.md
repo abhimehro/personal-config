@@ -6,6 +6,83 @@
 
 ## Entry template
 
+## Run — 2026-08-30 17:00
+
+### Input tail
+
+- Source: Stage 1 15:00 ledger rev **31** (`github_contents_api`); blob
+  `a6845f08de77f342eb71e77277c7f2861be9048d`; data-branch commit
+  `42355b8d2e4c0be2cb67e2ad61a91c353608a4ad`
+- Preflight: `make cursor-cloud-hooks`; PAT as `abhimehro`; CodeScene MCP
+  `namespaceStatus=error` (unavailable; unused — no salvage disposition)
+- Live: `stage2_work_items: []`; items with `current_owner: stage2` **0**;
+  `STAGE2_QUEUED` / `STAGE2_ACTIVE` **0**; Stage 1 today queued **0**
+- Prior remainder live-verify: seatek #764 `CLOSED_NOOP` at
+  2026-08-30T15:11:20Z head `b2093939b684…`; rpce #306 `CLOSED_NOOP` at
+  2026-08-30T15:11:22Z head `817925bd38e8…`; series #419 `CLOSED_NOOP` at
+  2026-08-30T15:11:24Z head `da17ff7fd605…`; series #422 `MERGED_ROUTINE` at
+  2026-08-30T15:11:28Z head `fda8b27d4134…`; rpce #311 `MERGED_ROUTINE` at
+  2026-08-30T15:11:33Z head `d80669ff2ad1…`; esp #1546 `MERGED_ROUTINE` at
+  2026-08-30T15:11:37Z head `861c31ed9c9c…`. Do not recreate `display.py`
+  (0gm). Do not Trunk-merge draft sibling #2097 (0gu / HOLD_EVIDENCE)
+
+### Outcomes
+
+| Repo   | Old PR | Disposition                           | New PR | Notes                                                                 |
+| ------ | -----: | ------------------------------------- | ------ | --------------------------------------------------------------------- |
+| (none) |      — | EMPTY_INTAKE (structured no-recovery) | —      | No complete unexpired Stage-2-owned work item; no fourth-queue invent |
+
+- Salvage drafts opened: **0**
+- Infra-fix drafts: **0**
+- Closed via API: **0**
+- Autonomous merges: **0** (S1)
+- New lessons: **0**
+- `request_reviewers`: skipped
+- Ledger CAS: **none** (no Stage-2-owned item to project; rev stays **31**)
+- Cap 5; completed **0** eligible items. Remaining `stage2_work_items`: **[]**.
+
+### Verification
+
+- Ledger-only `validate_schema` + `validate_runtime_records` **PASS** on rev
+  31. Full wrap validator still fails on `main` export/prompt mismatch
+  (pre-existing; Stage 2 did not edit policy exports).
+- Calibration: `APPROVED` count **7/7** / `pr-lifecycle-v1.4` (no stale reset;
+  this run is **not** a successful calibration run).
+- Live GitHub: seatek #764 `state=CLOSED` `merged=false`
+  `closed_at=2026-08-30T15:11:20Z` head `b2093939b684…`; rpce #306 `CLOSED`
+  `merged=false` `2026-08-30T15:11:22Z` head `817925bd38e8…`; series #419
+  `CLOSED` `merged=false` `2026-08-30T15:11:24Z` head `da17ff7fd605…`; series
+  #422 `CLOSED` `merged=true` `2026-08-30T15:11:28Z` head `fda8b27d4134…`;
+  rpce #311 `CLOSED` `merged=true` `2026-08-30T15:11:33Z` head `d80669ff2ad1…`;
+  esp #1546 `CLOSED` `merged=true` `2026-08-30T15:11:37Z` head `861c31ed9c9c…`.
+  Docs lineage [#2124](https://github.com/abhimehro/personal-config/pull/2124)
+  open on `pr-lifecycle-docs-20260830` head `fc58f86a` at intake. Yesterday's
+  lineage [#2117](https://github.com/abhimehro/personal-config/pull/2117)
+  still OPEN (Trunk queue FAILURE). Draft sibling
+  [#2097](https://github.com/abhimehro/personal-config/pull/2097)
+  `draft=true` `mergeable=CONFLICTING`.
+- Last three Stage 2 records: 2026-08-29 17:00 EMPTY_INTAKE (on still-open
+  #2117), 2026-08-28 17:00 EMPTY_INTAKE (merged #2111), 2026-08-27 17:00
+  EMPTY_INTAKE (merged #2106). Did **not** copy #2117's 08-29 files onto
+  today's lineage (0fk / 0gu).
+- Did not invent salvage from Stage 3 remainder, Palette/Bolt/Sentinel
+  clusters, rpce Swift (0gi), workflow Dependabot bumps, or HEAD_DRIFT pc
+  #2022 / #1969.
+
+### Handoff
+
+1. Stage 3: ACK today's 29 Stage 1 handoffs; project TERMINAL on Stage-3-owned
+   GitHub mutations (ctrld #1203 merged, pc #2054/#2020 still open/red);
+   seatek #772 close-candidate after `2026-08-30T20:14:20Z`; never merge
+   salvage drafts (0gd); do not Trunk-merge #2097; do not retry Trunk on
+   #2117 after queue FAILURE
+2. Stage 1 later: `/trunk merge` this docs lineage when routine predicates
+   pass; do not GitHub-squash personal-config; leftover STAGE1_INTAKE seatek
+   #772, rpce #300/#309/#312, pc #2116 stay Stage 1
+3. Do not recreate ctrld `display.py`; do not salvage rpce Swift on Linux
+
+Full record: `tasks/pr-salvage-2026-08-30-1700.md`.
+
 ## Run — 2026-08-28 17:00
 
 ### Input tail
