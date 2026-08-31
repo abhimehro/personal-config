@@ -2709,3 +2709,48 @@ CLEAN.
 
 **Detection cost:** Low — GraphQL error text plus `gh api user` login matching
 `author.login`.
+
+## Lesson 0gw: 20 mutations/day equals arrivals; Stage 2 empty-intake is starvation (2026-08-30)
+
+**Pattern:** After #2098, Stage 1 spent 20/20 every day and graded PASS. Open
+PRs stayed near 200 because arrivals are ~14–20/day (08-29 in-run 211→191, then
+08-30 live 205). Stage 2 EMPTY_INTAKE 08-24 through 08-29 with
+`stage2_work_items: []`. Twelve mechanical HOLD_CONTRACT items already said
+“Recover unique source on a focused draft” and had no work item. Stage 3 bounced
+MERGEABLE overflow to Stage 1 instead of spending its five completion actions
+(08-28: 0/5). Cap-equals-arrivals plus starved salvage cannot dent the backlog.
+
+**Rule:** Stage 1 inventory/actions are 80/40. Queuing a Stage 2 work item is
+bookkeeping. FAIL if salvage-eligible BOT remain and zero WIs were queued.
+Salvage-eligible allowlists `current_owner` to `stage1`/`stage3` so
+WAITING_HUMAN never trips EMPTY_INTAKE_STARVATION. Stage 3 completes Stage 1
+MERGEABLE overflow; do not bounce it. Mechanical HOLD_CONTRACT → complete WI,
+not WAITING_HUMAN. Stage 2 still does not invent recoveries. PR Desk Health
+flags `EMPTY_INTAKE while salvage-eligible > 0`. Monitor:
+`scripts/pr_lifecycle_pipeline_health.py` (schema + runtime records on the
+fetched ledger; `stage2_work_item_count` is complete unexpired WIs). Owned
+ledger items without a usable WI do not suppress EMPTY_INTAKE. Do not reset
+calibration for this volume change. Do not auto-merge HUMAN or REVIEW_SECURITY.
+
+**Detection cost:** Low — Stage 1 `20/20` + open PRs still ~200; Stage 2
+EMPTY_INTAKE; `python3 scripts/pr_lifecycle_pipeline_health.py` exit 2.
+
+## Lesson 0gx: Re-poll live head SHA immediately before salvage WI CAS (2026-08-31)
+
+**Pattern:** A planned Stage 2 work item for email-security-pipeline #1500 used
+ledger key `@28cbc110…`. Between inventory and CAS the live head moved to
+`2c041dd38ce16adb5efedbc0cd186ed7eea74b89`. A work item pinned to a stale
+anchor is not salvage intake: Stage 2 would copy from the wrong commit, and
+the changed-anchor rule already returns that PR to Stage 1. The same run
+dropped Seatek #721 as a non-keeper after canonical-pick of #698.
+
+**Rule:** Re-poll `head.sha` for every salvage candidate immediately before
+building the work item and again immediately before Contents-API CAS. If the
+live head does not equal the ledger item key, do not queue that WI. Leave the
+old Stage-3 key untouched (HEAD_DRIFT). Fill the slot from another
+SHA-matching salvage-eligible keeper. Canonical-pick the overlap cluster
+before queuing: at most one WI for the keeper; close non-keepers instead of
+five salvage drafts.
+
+**Detection cost:** Low — `gh api repos/{owner}/{repo}/pulls/{n} --jq .head.sha`
+versus `item.key` suffix.
