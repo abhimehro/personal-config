@@ -21,9 +21,9 @@ owned stock, and any other remaining sticky label stay out. Expired mechanical
 non-executable work.
 
 `PipelineHealth.stage2_work_item_count` is complete unexpired work items, not
-`len(stage2_work_items)`. Expired or malformed records do not suppress
-starvation. `stage2_owned_item_count` is observational: a Stage 2-owned ledger
-item without a usable work item does not hide EMPTY_INTAKE.
+`len(stage2_work_items)`. Expired, malformed, or empty-required-string records
+do not suppress starvation. `stage2_owned_item_count` is observational: a
+Stage 2-owned ledger item without a usable work item does not hide EMPTY_INTAKE.
 """
 
 from __future__ import annotations
@@ -181,7 +181,15 @@ def parse_expiry_utc(value: object) -> datetime | None:
 
 
 def _has_required_work_item_fields(item: dict[str, Any]) -> bool:
-    return all(item.get(field) is not None for field in REQUIRED_WORK_ITEM_FIELDS)
+    # SECURITY: empty required strings are not usable intake. Do not use
+    # truthiness on non-strings: attempt_count 0 and empty optional lists
+    # remain complete.
+    return all(
+        field in item
+        and item[field] is not None
+        and not (isinstance(item[field], str) and item[field] == "")
+        for field in REQUIRED_WORK_ITEM_FIELDS
+    )
 
 
 def _has_required_work_item_lists(item: dict[str, Any]) -> bool:

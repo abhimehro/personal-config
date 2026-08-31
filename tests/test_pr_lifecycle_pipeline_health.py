@@ -307,6 +307,21 @@ class TestPipelineHealthSummarize(unittest.TestCase):
         self.assertTrue(report.starvation)
         self.assertEqual(report.stage2_work_item_count, 0)
 
+    def test_empty_required_strings_do_not_suppress_starvation(self) -> None:
+        cases = (
+            ("empty repair_description", {"repair_description": ""}),
+            ("empty work_item_id", {"work_item_id": ""}),
+            ("empty required_test_command", {"required_test_command": ""}),
+        )
+        for label, overrides in cases:
+            with self.subTest(label):
+                report = health.summarize(
+                    _ledger([_item()], [_work_item(**overrides)]),
+                    now=NOW,
+                )
+                self.assertTrue(report.starvation)
+                self.assertEqual(report.stage2_work_item_count, 0)
+
     def test_required_work_item_fields_match_schema(self) -> None:
         schema_path = ROOT / "schemas/pr-lifecycle-ledger.schema.json"
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
