@@ -408,6 +408,8 @@ class TestStage1BurndownAndSalvagePrompts(unittest.TestCase):
         )
         self.assertIn("salvage-eligible", profile)
         self.assertIn("Write Nothing", profile)
+        self.assertIn("66a8e7a8-9c42-11f1-ba66-0e7d0216e441", profile)
+        self.assertIn("d9d2c058-9c42-11f1-ba66-0e7d0216e441", profile)
 
     def test_stage_caps_are_80_and_40(self) -> None:
         config = validator.load_yaml(ROOT / "tasks/pr-review-agent.config.yaml")

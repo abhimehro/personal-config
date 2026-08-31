@@ -38,19 +38,27 @@ do not paste run records into Notion as git continuity. Grok Bot is not a
 Dashboard automation; human-facing digest setup is
 [`docs/grok-bot/README.md`](../grok-bot/README.md).
 
+Live Dashboard IDs (confirmed 2026-08-31; Grok Bot retrieved the completion
+UUID). Enablement is already correct; do not toggle it as part of paste.
+
+| Stage               | Automation ID                            | Enablement | Schedule                          |
+| ------------------- | ---------------------------------------- | ---------- | --------------------------------- |
+| Stage 1             | `77c168e0-7f6b-42de-bad6-da4e4e640b79`   | enabled    | `0 15 * * *` UTC                  |
+| Stage 2             | `3e537981-04a6-456f-89a3-272d9d5fddd7`   | enabled    | `0 17 * * *` UTC                  |
+| Stage 3 calibration | `d9d2c058-9c42-11f1-ba66-0e7d0216e441`   | disabled   | do not enable                     |
+| Stage 3 completion  | `66a8e7a8-9c42-11f1-ba66-0e7d0216e441`   | enabled    | `0 19 * * *` UTC / 12:00 PDT      |
+
 **HITL after this burndown PR lands (required or cron keeps the old
 prompts and the 20-slot cap):**
 
-1. Paste `prompts/daily-pr-review.md` into Stage 1 automation
+1. Paste `prompts/daily-pr-review.md` into Stage 1
    `77c168e0-7f6b-42de-bad6-da4e4e640b79` (80 inventory / 40 product mutations).
-2. Paste `prompts/daily-pr-salvage.md` into Stage 2 automation
+2. Paste `prompts/daily-pr-salvage.md` into Stage 2
    `3e537981-04a6-456f-89a3-272d9d5fddd7`.
-3. **Disable** Stage 3 calibration automation
-   `d9d2c058-9c42-11f1-ba66-0e7d0216e441` (do not leave it enabled).
-4. Paste `prompts/daily-pr-completion.md` into the Stage 3 **completion**
-   automation and **enable** that automation on `0 19 * * *`. Confirm
-   calibration cannot fire again. Record the completion automation UUID in the
-   next ledger event if it is still missing from docs.
+3. Leave calibration `d9d2c058-9c42-11f1-ba66-0e7d0216e441` **disabled**.
+4. Paste `prompts/daily-pr-completion.md` into Stage 3 completion
+   `66a8e7a8-9c42-11f1-ba66-0e7d0216e441`. It is already enabled on
+   `0 19 * * *` (12:00 PDT). Do not create a second completion automation.
 5. Record the new dashboard fingerprints in the next runtime-ledger event.
    Do **not** reset calibration to `REPORT_ONLY` for this volume change.
 

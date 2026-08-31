@@ -136,8 +136,11 @@ Seven successful daily Stage 3 calibration runs for `pr-lifecycle-v1.4`
 completed on 2026-08-26 (`evt-s3-20260820-calibration` through
 `evt-s3-20260826-calibration`). The maintainer approved bounded completion the
 same day (`approved_by: abhimehro` in the runtime ledger). **Disable** the
-calibration Dashboard automation and **enable** the completion export. Paste the
-updated Stage 1/2/3 prompts from this directory. Do not bump `policy_revision`.
+calibration Dashboard automation (`d9d2c058-9c42-11f1-ba66-0e7d0216e441`) and
+**enable** the completion automation
+(`66a8e7a8-9c42-11f1-ba66-0e7d0216e441`, already Active as of 2026-08-31).
+Paste the updated Stage 1/2/3 prompts from this directory into those existing
+automations. Do not bump `policy_revision`.
 Disable the completion variant immediately and record `REVOKED` if a
 security-sensitive or ordinary human PR reaches a routine action, an item is
 acted on with stale anchors, a required-check source cannot be read, a state

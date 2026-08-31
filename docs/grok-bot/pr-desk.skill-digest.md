@@ -23,7 +23,8 @@ format, and what needs approval
    lineage if still open; else skip docs (do not invent a run).
 4. Compare open-PR count to the previous digest in this thread.
 5. Flag pipeline stalls only: unused Stage 1 product slots + rising open PRs,
-   SHA_MATCH skip of executable work, Stage 3 calibration still enabled, Stage 2
+   SHA_MATCH skip of executable work, Stage 3 calibration still enabled, Stage 3
+   completion `66a8e7a8-9c42-11f1-ba66-0e7d0216e441` disabled, Stage 2
    EMPTY_INTAKE while salvage-eligible > 0, unused Stage 1 slots while MERGEABLE
    green BOT remain, both Stage 3 variants enabled.
 6. Collect at most five `WAITING_HUMAN` / irreducible `REVIEW_SECURITY` items

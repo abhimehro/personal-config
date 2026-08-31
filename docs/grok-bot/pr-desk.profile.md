@@ -52,10 +52,13 @@ claim:
 5. **Automation status:**
    * Stage 1: `77c168e0-7f6b-42de-bad6-da4e4e640b79`
    * Stage 2: `3e537981-04a6-456f-89a3-272d9d5fddd7`
+   * Stage 3 completion: `66a8e7a8-9c42-11f1-ba66-0e7d0216e441`
    * Stage 3 calibration: `d9d2c058-9c42-11f1-ba66-0e7d0216e441`
 
-Stage 3 calibration must remain disabled while completion is live. Flag it if it
-is enabled.
+Stage 3 completion must remain enabled on `0 19 * * *` (12:00 PDT). Flag it if
+it is disabled. Stage 3 calibration must remain disabled while completion is
+live. Flag it if calibration is enabled. Never leave both Stage 3 variants
+enabled.
 
 If `scripts/pr_lifecycle_pipeline_health.py` output on a fetched ledger is
 available, use it. Otherwise compute: Stage 2 starvation when complete
@@ -73,7 +76,7 @@ digest is worse than no digest.
 ```text
 Throughput: open PRs N (Δ vs last digest) · MERGEABLE-BOT ≈ M
 Pipeline: Stage 1 merge/close/skip · Stage 2 drafts · Stage 3 packets/actions
-Health: one line, for example: calibration still enabled / SHA_MATCH skip / FAIL / Stage 2 EMPTY_INTAKE while salvage-eligible > 0 / unused Stage 1 slots while MERGEABLE green BOT remain
+Health: one line, for example: calibration still enabled / completion disabled / SHA_MATCH skip / FAIL / Stage 2 EMPTY_INTAKE while salvage-eligible > 0 / unused Stage 1 slots while MERGEABLE green BOT remain
 Needs you (≤5):
 1. Decision · one-sentence reason · recommended option · link · safe default if ignored
 Nothing else for you: K items remain agent-owned.

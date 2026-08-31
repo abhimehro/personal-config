@@ -103,10 +103,11 @@ exit **2**. That is a handoff failure, not a lack of salvage work. The extra
 `HOLD_EVIDENCE` next_actions (wrap, lint/import, conflict markers, DIRTY
 unique remaining).
 
-Dashboard 2026-08-30 (DIRECT `cursor-cloud-get-automation`): Stage 1
-`77c168e0-…` **enabled**, Stage 2 `3e537981-…` **enabled**, Stage 3 calibration
-`d9d2c058-…` **disabled**. Completion UUID is still **not** recorded in-repo
-(INSUFFICIENT: inferred live from 08-27/28/29 bounded-completion records).
+Dashboard 2026-08-31 (DIRECT `cursor-cloud-get-automation`, Grok Bot retrieved
+the completion UUID): Stage 1 `77c168e0-…` **enabled**, Stage 2 `3e537981-…`
+**enabled**, Stage 3 completion `66a8e7a8-9c42-11f1-ba66-0e7d0216e441`
+**enabled** (12:00 PDT / `0 19 * * *` UTC), Stage 3 calibration `d9d2c058-…`
+**disabled**.
 
 ## Why 20/day cannot dent 200
 
@@ -217,8 +218,9 @@ classifier. Three cron days after paste are the remaining proof.
 - Arrivals stay ~14–20 BOT PRs/day (observed 08-27–30). If arrivals jump to 40,
   even a 40-cap only keeps pace; re-measure before raising again.
 - Dashboard paste happens after merge. Git-only prompt changes do not move
-  cron.
-- Completion automation UUID remains unrecorded (INSUFFICIENT).
+  cron. Enablement is already correct; paste the new prompts into the existing
+  Stage 1 / Stage 2 / Stage 3 completion automations.
+- Completion automation UUID is `66a8e7a8-9c42-11f1-ba66-0e7d0216e441`.
 - How many of the 37 CONFLICTING mechanical-ish PRs survive canonical-pick as
   keepers is INFERRED until Stage 1 runs the new reselect. The 12
   recover-unique `next_action` items are DIRECT salvage-eligible.
