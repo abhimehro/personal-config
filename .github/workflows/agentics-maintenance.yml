@@ -54,7 +54,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw/actions/setup@48e5fa3ff52294d91d97715017a9f8693a48387f # v0.86.2
+        uses: github/gh-aw/actions/setup@ff62cdbec36230acbae869ddb28806e8eca01ea1 # v0.87.10
         with:
           destination: /opt/gh-aw/actions
 
@@ -99,7 +99,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Scripts
-        uses: github/gh-aw/actions/setup@48e5fa3ff52294d91d97715017a9f8693a48387f # v0.86.2
+        uses: github/gh-aw/actions/setup@ff62cdbec36230acbae869ddb28806e8eca01ea1 # v0.87.10
         with:
           destination: /opt/gh-aw/actions
 
@@ -114,7 +114,7 @@ jobs:
             await main();
 
       - name: Install gh-aw
-        uses: github/gh-aw/actions/setup-cli@48e5fa3ff52294d91d97715017a9f8693a48387f # v0.86.2
+        uses: github/gh-aw/actions/setup-cli@ff62cdbec36230acbae869ddb28806e8eca01ea1 # v0.87.10
         with:
           version: v0.55.0
 
