@@ -24,7 +24,7 @@ jobs:
       # COPILOT_GITHUB_TOKEN is an explicit product choice.
       - name: Run AI inference
         id: inference
-        uses: actions/ai-inference@2c43c91ae16266ca159d311430343c67a5ffa222 # v3
+        uses: actions/ai-inference@a7805884c80886efc241e94a5351df715968a0ad # v2.1.1
         with:
           prompt: |
             Summarize the following GitHub issue in one paragraph:
