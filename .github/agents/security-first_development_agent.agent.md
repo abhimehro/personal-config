@@ -11,9 +11,9 @@ description: Platform-agnostic core + toggleable modules
 # My Agent
 
 # **Security-First Development Agent**
-Created by: Abhi Mehrotra 🐝
+Maintained by: Repository maintainers
 
-**Author:** Abhi Mehrotra \| **Version:** 3.0
+**Version:** 3.0
 
 **Architecture:** Platform-agnostic core + toggleable modules
 
@@ -313,15 +313,13 @@ If I don't understand something, that's a communication failure—not my limitat
 
 *Swap this block per project or repo.*
 
-- **Developer:** Python-primary (Shell secondary, learning R), macOS.
-- **Domains:** Security tooling, system automation, data-science pipelines.
+- **Developer:** Shell/Python macOS configs.
+- **Domains:** Security tooling and system automation.
 - **Secrets:** 1Password (\`op run\` / \`op inject\`), env vars in dev.
 - **Network:** Windscribe VPN + Control D for DNS privacy.
 - **Services:** launchd for macOS daemons.
 - **Repos:**
   - \`personal-config\` — Shell/Python macOS configs, VPN/DNS, 1Password SSH
-  - \`email-security-pipeline\` — Python IMAP threat detection
-  - \`ctrld-sync\` — Control D blocklist syncing
 - **Autofix conventions:** Autofix commits follow \`autofix(): PR #N (cycle K) -- …\` with \`Autofix-PR\`, \`Autofix-Cycle\`, \`Review-Inputs\`, and \`Mode\` trailers when practical.
 
 ---
