@@ -10,13 +10,14 @@ comment (pc #2030 still OPEN), 1 CodeScene command, 1 CLOSED_NOOP, 5
 CLOSED_SUPERSEDED vs keeper Seatek #698. Ledger CAS **32 → 33** (blob
 `fe5fabe073accd21ed7d06f8f12c2ee837af37ec`, data-branch commit
 `66f4fa66282689e94e4c632cbf3d9d7ef57227c3`). Stage 2 queued **5** complete
-unexpired WIs (starvation=false). Stage 3 **12** NEW overflow handoffs; did
-not rewrite Stage-3 GitHub mutations. Throughput **PASS** (BOT stock did not
-grow; unused slots were sticky/HUMAN/red-check/draft; salvage feed CAS-landed).
-Docs lineage: `pr-lifecycle-docs-20260831` (this PR). Do **not** `/trunk
-merge` today's lineage in the opening run (**0gj**). Do **not** Trunk-merge
-conflicting draft sibling **#2097**. Full record:
-`tasks/pr-review-2026-08-31.md`. Lesson **0gx**.
+unexpired WIs (starvation=false). Stage 3 **12** NEW overflow handoffs; did not
+rewrite Stage-3 GitHub mutations. Throughput **PASS** (BOT stock did not grow;
+unused slots were sticky/HUMAN/red-check/draft; salvage feed CAS-landed). Docs
+lineage: `pr-lifecycle-docs-20260831` (this PR). Do **not** `/trunk
+merge`
+today's lineage in the opening run (**0gj**). Do **not** Trunk-merge conflicting
+draft sibling **#2097**. Full record: `tasks/pr-review-2026-08-31.md`. Lesson
+**0gx**.
 
 | Metric                      | Count |
 | --------------------------- | ----: |
@@ -32,8 +33,7 @@ conflicting draft sibling **#2097**. Full record:
 | GitHub PR mutations         |    14 |
 | Ledger CAS writes           |     1 |
 
-Per-item table: see `tasks/pr-review-2026-08-31.md` (mandatory Stage 1
-columns).
+Per-item table: see `tasks/pr-review-2026-08-31.md` (mandatory Stage 1 columns).
 
 # Stage 1 — 2026-08-28 (cron 15:00 UTC)
 
@@ -43,8 +43,8 @@ Preflight PASS. Runtime ledger **ACTIVE** (`github_contents_api`). Calibration
 reset. Slim inventory (no `commits` / `statusCheckRollup`; lessons **0gl** /
 **0gn**). Open **208**; SHA_MATCH **186** (158 overflow + 28 reselects in the
 50); NEW **20**; HEAD_DRIFT **2** (pc #2022 security salvage, pc #1969 HUMAN
-workflow; new keys, Stage 3). Product mutations **20/20** (7 squash, 12 close,
-1 failed REQUEST_CHANGES on pc #2099). Ledger CAS **25 → 26** (product, blob
+workflow; new keys, Stage 3). Product mutations **20/20** (7 squash, 12 close, 1
+failed REQUEST_CHANGES on pc #2099). Ledger CAS **25 → 26** (product, blob
 `8bae2bb5a9e3edda89cc60d984a1351c2321fcd9`, commit
 `869306a68522095a422e3f89a8f32cb4e86ef2ad`) then **26 → 27** (docs #2106
 TERMINAL, blob `b0c924f4b4d869dacea48075ad66c4df9a965a6d`, commit
@@ -53,27 +53,27 @@ TERMINAL, blob `b0c924f4b4d869dacea48075ad66c4df9a965a6d`, commit
 `2026-08-28T15:21:45Z`) — bookkeeping. Stage 2 queued **0**. Stage 3 **15**
 handoffs. Throughput **PASS** (open BOT PRs fell; product slots fully used).
 Docs lineage: `pr-lifecycle-docs-20260828` (this PR). Do **not** `/trunk merge`
-today's lineage in the opening run (**0gj**). Do **not** Trunk-merge
-conflicting draft sibling **#2097**. Full record:
-`tasks/pr-review-2026-08-28-1500.md`. Lesson **0gv** extended (REQUEST_CHANGES
-on own PR is the same self-review rule).
+today's lineage in the opening run (**0gj**). Do **not** Trunk-merge conflicting
+draft sibling **#2097**. Full record: `tasks/pr-review-2026-08-28-1500.md`.
+Lesson **0gv** extended (REQUEST_CHANGES on own PR is the same self-review
+rule).
 
-| Metric                      | Count |
-| --------------------------- | ----: |
-| Inventoried (open PRs)      |   208 |
-| SHA_MATCH skipped (overflow)|   158 |
-| SHA_MATCH acted (reselect)  |    28 |
-| NEW                         |    20 |
-| HEAD_DRIFT                  |     2 |
-| Ledger items this run       |    22 |
-| Merged                      |     7 |
-| Closed superseded           |    11 |
-| Closed no-op                |     1 |
-| Failed product mutation     |     1 |
-| Stage 2 queued (this run)   |     0 |
-| Stage 3 handoffs (this run) |    15 |
-| GitHub PR mutations         |    20 |
-| Ledger CAS writes           |     2 |
+| Metric                       | Count |
+| ---------------------------- | ----: |
+| Inventoried (open PRs)       |   208 |
+| SHA_MATCH skipped (overflow) |   158 |
+| SHA_MATCH acted (reselect)   |    28 |
+| NEW                          |    20 |
+| HEAD_DRIFT                   |     2 |
+| Ledger items this run        |    22 |
+| Merged                       |     7 |
+| Closed superseded            |    11 |
+| Closed no-op                 |     1 |
+| Failed product mutation      |     1 |
+| Stage 2 queued (this run)    |     0 |
+| Stage 3 handoffs (this run)  |    15 |
+| GitHub PR mutations          |    20 |
+| Ledger CAS writes            |     2 |
 
 Per-item table: see `tasks/pr-review-2026-08-28-1500.md` (mandatory Stage 1
 columns).
@@ -97,21 +97,21 @@ used). Docs lineage: `pr-lifecycle-docs-20260827` (this PR). Do **not**
 Trunk-merge conflicting draft sibling **#2097**. Full record:
 `tasks/pr-review-2026-08-27-1500.md`. Lesson **0gv**.
 
-| Metric                      | Count |
-| --------------------------- | ----: |
-| Inventoried (open PRs)      |   211 |
-| SHA_MATCH skipped (overflow)|   169 |
-| SHA_MATCH acted (reselect)  |    16 |
-| NEW                         |    24 |
-| HEAD_DRIFT (no write)       |     2 |
-| Ledger items this run       |    40 |
-| Merged                      |     2 |
-| Closed superseded           |    13 |
-| Closed no-op                |     4 |
-| Stage 2 queued (this run)   |     0 |
-| Stage 3 handoffs (this run) |    16 |
-| GitHub PR mutations         |    20 |
-| Ledger CAS writes           |     1 |
+| Metric                       | Count |
+| ---------------------------- | ----: |
+| Inventoried (open PRs)       |   211 |
+| SHA_MATCH skipped (overflow) |   169 |
+| SHA_MATCH acted (reselect)   |    16 |
+| NEW                          |    24 |
+| HEAD_DRIFT (no write)        |     2 |
+| Ledger items this run        |    40 |
+| Merged                       |     2 |
+| Closed superseded            |    13 |
+| Closed no-op                 |     4 |
+| Stage 2 queued (this run)    |     0 |
+| Stage 3 handoffs (this run)  |    16 |
+| GitHub PR mutations          |    20 |
+| Ledger CAS writes            |     1 |
 
 Per-item table: see `tasks/pr-review-2026-08-27-1500.md` (mandatory Stage 1
 columns).

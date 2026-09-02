@@ -25,12 +25,13 @@ const [
 
 const TOKEN = process.env.BROWSERLESS_API_KEY;
 const INTEGRATION_ID = process.env.BROWSERLESS_INTEGRATION_ID;
-const ENDPOINT = process.env.BROWSERLESS_ENDPOINT ?? "production-sfo.browserless.io";
+const ENDPOINT = process.env.BROWSERLESS_ENDPOINT ??
+  "production-sfo.browserless.io";
 
 if (!TOKEN || !INTEGRATION_ID) {
   console.error(
     "Usage: BROWSERLESS_API_KEY=... BROWSERLESS_INTEGRATION_ID=op_int_... node browserless-1password-login.mjs " +
-      "<login-url> <username-selector> <password-selector> <submit-selector> <op-username-ref> <op-password-ref>"
+      "<login-url> <username-selector> <password-selector> <submit-selector> <op-username-ref> <op-password-ref>",
   );
   process.exit(1);
 }
@@ -40,16 +41,19 @@ if (!loginUrl || !opUsernameRef || !opPasswordRef) {
 }
 
 function combineUsage() {
-  console.error("Missing required positional args (login-url, selectors, op refs).");
+  console.error(
+    "Missing required positional args (login-url, selectors, op refs).",
+  );
   process.exit(1);
 }
 
 const browser = await chromium.connectOverCDP(
-  `wss://${ENDPOINT}/chromium?token=${TOKEN}&integrationId=${INTEGRATION_ID}`
+  `wss://${ENDPOINT}/chromium?token=${TOKEN}&integrationId=${INTEGRATION_ID}`,
 );
 
 try {
-  const page = browser.contexts()[0].pages()[0] ?? (await browser.contexts()[0].newPage());
+  const page = browser.contexts()[0].pages()[0] ??
+    (await browser.contexts()[0].newPage());
   await page.goto(loginUrl);
 
   const cdp = await page.context().newCDPSession(page);

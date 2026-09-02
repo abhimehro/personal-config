@@ -16,11 +16,11 @@ visibly available.
 
 ## Automation order
 
-| Cursor automation   | Repository specification                |     Schedule | Concurrency |                                                   Run cap | Write authority                                                                                   |
-| ------------------- | --------------------------------------- | -----------: | ----------: | --------------------------------------------------------: | ------------------------------------------------------------------------------------------------- |
-| Daily PR Review     | `docs/automated-pr-review-agent.md`     | `0 15 * * *` |           1 |                           80 inventory items / 40 product mutations | Routine approve, squash merge, close, and queue salvage work items when predicates pass |
-| Daily PR Salvage    | `docs/automated-pr-salvage-agent.md`    | `0 17 * * *` |           1 |                                     5 recovery candidates | Focused draft recovery only; no approval, merge, or original-security closure                     |
-| Daily PR Completion | `docs/automated-pr-completion-agent.md` | `0 19 * * *` |           1 | 20 reconciliations, 5 packets, 5 post-calibration actions | Report-only until calibration approval; then bounded non-security completion or closure           |
+| Cursor automation   | Repository specification                |     Schedule | Concurrency |                                                   Run cap | Write authority                                                                         |
+| ------------------- | --------------------------------------- | -----------: | ----------: | --------------------------------------------------------: | --------------------------------------------------------------------------------------- |
+| Daily PR Review     | `docs/automated-pr-review-agent.md`     | `0 15 * * *` |           1 |                 80 inventory items / 40 product mutations | Routine approve, squash merge, close, and queue salvage work items when predicates pass |
+| Daily PR Salvage    | `docs/automated-pr-salvage-agent.md`    | `0 17 * * *` |           1 |                                     5 recovery candidates | Focused draft recovery only; no approval, merge, or original-security closure           |
+| Daily PR Completion | `docs/automated-pr-completion-agent.md` | `0 19 * * *` |           1 | 20 reconciliations, 5 packets, 5 post-calibration actions | Report-only until calibration approval; then bounded non-security completion or closure |
 
 The schedules are UTC. Each stage must finish or record `ANALYSIS_ERROR` before
 the next one starts. If the Cursor dashboard offers no explicit concurrency
@@ -95,17 +95,18 @@ Dashboard remains the evidence source for the connected MCP inventory.
 
 ## Stage handoffs
 
-Stage 1 sends salvage-eligible mechanical repair to Stage 2 as a **complete
-work item** (ledger bookkeeping, not a product mutation). It **canonical-picks**
-BOT non-sensitive overlap clusters itself. It sends sticky security, HUMAN,
-sticky `HOLD_CONTRACT`, or irreducible policy to Stage 3. Stage 1 **reselects**
+Stage 1 sends salvage-eligible mechanical repair to Stage 2 as a **complete work
+item** (ledger bookkeeping, not a product mutation). It **canonical-picks** BOT
+non-sensitive overlap clusters itself. It sends sticky security, HUMAN, sticky
+`HOLD_CONTRACT`, or irreducible policy to Stage 3. Stage 1 **reselects**
 SHA_MATCH items that are still executable (merge, close, canonical-pick) and
 salvage-eligible CONFLICTING/DIRTY BOT, and **re-ingests** Stage 2 replacement
 PRs. Hold five inventory slots for salvage keepers and queue those work items
 from the fetched ledger even when MERGEABLE/canonical candidates fill the rest
-of the 80. Caps are **80 inventory / 40 product mutations** so daily drain exceeds
-arrivals (~14–20). It remains the primary autonomous merger for routine BOT
-work. `HOLD_PLATFORM` is salvage-only: GitHub-green BOT PRs merge at Stage 1.
+of the 80. Caps are **80 inventory / 40 product mutations** so daily drain
+exceeds arrivals (~14–20). It remains the primary autonomous merger for routine
+BOT work. `HOLD_PLATFORM` is salvage-only: GitHub-green BOT PRs merge at
+Stage 1.
 
 Stage 2 sends every draft (with a replacement ledger item) to Stage 1 when
 routine, else Stage 3. Empty intake: short record and stop. If salvage-eligible
@@ -137,10 +138,9 @@ completed on 2026-08-26 (`evt-s3-20260820-calibration` through
 `evt-s3-20260826-calibration`). The maintainer approved bounded completion the
 same day (`approved_by: abhimehro` in the runtime ledger). **Disable** the
 calibration Dashboard automation (`d9d2c058-9c42-11f1-ba66-0e7d0216e441`) and
-**enable** the completion automation
-(`66a8e7a8-9c42-11f1-ba66-0e7d0216e441`, already Active as of 2026-08-31).
-Paste the updated Stage 1/2/3 prompts from this directory into those existing
-automations. Do not bump `policy_revision`.
+**enable** the completion automation (`66a8e7a8-9c42-11f1-ba66-0e7d0216e441`,
+already Active as of 2026-08-31). Paste the updated Stage 1/2/3 prompts from
+this directory into those existing automations. Do not bump `policy_revision`.
 Disable the completion variant immediately and record `REVOKED` if a
 security-sensitive or ordinary human PR reaches a routine action, an item is
 acted on with stale anchors, a required-check source cannot be read, a state

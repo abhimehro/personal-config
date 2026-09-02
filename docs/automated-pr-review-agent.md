@@ -52,10 +52,10 @@ not proceed to inventory, merge, or close.
    Stage 1 can execute now. Fill remaining inventory slots from SHA_MATCH
    executable remainder (elapsed close-candidates, MERGEABLE green BOT,
    canonical-pick clusters, Stage 3 bounce-backs, salvage-eligible
-   CONFLICTING/DIRTY BOT) before spending the 80-item
-   cap on NEW security twins. Hold five of those 80 slots for salvage keepers.
-   Queue up to five Stage 2 work items from the fetched ledger even when
-   MERGEABLE/canonical candidates filled the rest of the inventory.
+   CONFLICTING/DIRTY BOT) before spending the 80-item cap on NEW security twins.
+   Hold five of those 80 slots for salvage keepers. Queue up to five Stage 2
+   work items from the fetched ledger even when MERGEABLE/canonical candidates
+   filled the rest of the inventory.
 3. **Output:** Write full inventory to `tasks/pr-inventory.md` (table: Repo, PR
    #, Author, Category, CI, Conflicts, Age, Status).
 4. **Classification:** Assign each PR exactly one category: `SECURITY`,
@@ -104,17 +104,17 @@ security failures, or architectural changes.
 
 Assign each PR one disposition:
 
-| Disposition        | Criteria                                                       | Action                                                              |
-| ------------------ | -------------------------------------------------------------- | ------------------------------------------------------------------- |
-| MERGE              | All gates pass, CI green, no conflicts                         | Squash-merge, delete branch                                         |
-| MERGE-AFTER-FIX    | Minor issues auto-fixed                                        | Push fix, re-run CI, then merge                                     |
-| REQUEST-CHANGES    | Issues beyond auto-fix                                         | Post review, assign to human                                        |
-| ESCALATE           | Security gate failure or architectural concern                 | Tag human, block merge                                              |
-| CLOSE-DUPLICATE    | Duplicate or superseded                                        | Close with linked explanation                                       |
-| CLOSE-STALE        | Stale per config threshold                                     | Close with reopen instructions                                      |
-| CONSOLIDATE        | Multiple small PRs should be one                               | Do not implement recovery here. Create one complete Stage 2 work item when the rebase is salvage-eligible; otherwise Stage 3. |
-| HANDOFF-SALVAGE    | One bounded mechanical recovery is required                    | Create a Stage 2 ledger handoff with a complete work item                                     |
-| HANDOFF-COMPLETION | Sticky security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible policy | Create a Stage 3 ledger handoff. Not for BOT file-overlap clusters. Mechanical `HOLD_CONTRACT` is HANDOFF-SALVAGE. |
+| Disposition        | Criteria                                                              | Action                                                                                                                        |
+| ------------------ | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| MERGE              | All gates pass, CI green, no conflicts                                | Squash-merge, delete branch                                                                                                   |
+| MERGE-AFTER-FIX    | Minor issues auto-fixed                                               | Push fix, re-run CI, then merge                                                                                               |
+| REQUEST-CHANGES    | Issues beyond auto-fix                                                | Post review, assign to human                                                                                                  |
+| ESCALATE           | Security gate failure or architectural concern                        | Tag human, block merge                                                                                                        |
+| CLOSE-DUPLICATE    | Duplicate or superseded                                               | Close with linked explanation                                                                                                 |
+| CLOSE-STALE        | Stale per config threshold                                            | Close with reopen instructions                                                                                                |
+| CONSOLIDATE        | Multiple small PRs should be one                                      | Do not implement recovery here. Create one complete Stage 2 work item when the rebase is salvage-eligible; otherwise Stage 3. |
+| HANDOFF-SALVAGE    | One bounded mechanical recovery is required                           | Create a Stage 2 ledger handoff with a complete work item                                                                     |
+| HANDOFF-COMPLETION | Sticky security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible policy | Create a Stage 3 ledger handoff. Not for BOT file-overlap clusters. Mechanical `HOLD_CONTRACT` is HANDOFF-SALVAGE.            |
 
 **Consolidation:** Stage 1 does not implement recovery. If several BOT
 non-sensitive PRs should become one rebase, create one complete Stage 2 work
@@ -134,7 +134,7 @@ After each completion, re-check remaining PRs for new conflicts.
   Append to `tasks/review-session-reports.md` (repos processed, actions taken,
   escalations, consolidations, patterns, metrics). Prefer a point-in-time
   snapshot as `tasks/pr-review-YYYY-MM-DD.md` (or `…-HHMM.md`) for bulky
-  inventory. Also   `/trunk merge` an older green `pr-lifecycle-docs` PR when
+  inventory. Also `/trunk merge` an older green `pr-lifecycle-docs` PR when
   routine predicates pass (bookkeeping; does **not** count toward the 40-action
   product-mutation cap).
 - Update the lifecycle ledger for every item currently owned by Stage 1, using
@@ -164,20 +164,21 @@ Phase 1 is throughput-optimized: it merges what is clean, closes what is
 redundant, canonical-picks BOT overlap clusters, and gives every remaining item
 one next owner. It must not leave a prose-only deferred tail. Use the
 [Automated PR Lifecycle Contract](automated-pr-lifecycle.md) to route a bounded
-mechanical recovery to Stage 2 and sticky security, HUMAN, sticky `HOLD_CONTRACT`, or
-irreducible policy to Stage 3. `HOLD_PLATFORM` is **salvage-only**: a BOT PR
-whose required GitHub checks are already green and readable is Stage 1 merge
-eligible even when the Linux runner cannot execute Swift/`make guardrails`
-locally. Canonical file-overlap among BOT non-sensitive PRs is canonical-pick
-here, not a Stage 3 parking lot.
+mechanical recovery to Stage 2 and sticky security, HUMAN, sticky
+`HOLD_CONTRACT`, or irreducible policy to Stage 3. `HOLD_PLATFORM` is
+**salvage-only**: a BOT PR whose required GitHub checks are already green and
+readable is Stage 1 merge eligible even when the Linux runner cannot execute
+Swift/`make guardrails` locally. Canonical file-overlap among BOT non-sensitive
+PRs is canonical-pick here, not a Stage 3 parking lot.
 
 When this skill finishes, append a Stage 1 run record and a ledger handoff. Each
 handoff must include repository, PR, base/head SHA, author type, classification,
 risk class, guardrail outcome, evidence, safe default, next action, and expiry.
-Trigger Stage 2 only for one bounded repair with a complete work item. Trigger Stage 3 for sticky
-security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible policy. Do not trigger Stage 3
-for BOT non-sensitive canonical clusters or for GitHub-green BOT PRs that only
-look like a platform hold because salvage would need Swift locally.
+Trigger Stage 2 only for one bounded repair with a complete work item. Trigger
+Stage 3 for sticky security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible
+policy. Do not trigger Stage 3 for BOT non-sensitive canonical clusters or for
+GitHub-green BOT PRs that only look like a platform hold because salvage would
+need Swift locally.
 
 Stage 2 produces one or more **draft** salvage / infra-fix PRs; it does not
 close a security original merely because a replacement draft exists. Stage 1
@@ -260,8 +261,8 @@ Apply these during classification and review (see also `tasks/lessons.md`):
 - **Post-merge conflict cascade (Lesson 0):** Re-check mergeable state after
   each merge before proceeding. PRs touching the same hot file (`main.py`,
   `payload.json`, etc.) frequently flip to DIRTY after a sibling merge — create
-  a complete Stage 2 work item when salvage-eligible, else record overflow. Never
-  force-push.
+  a complete Stage 2 work item when salvage-eligible, else record overflow.
+  Never force-push.
 - **Stacked sibling PRs (`gh-stack`, Lesson 0ez):** When 2+ open PRs in the same
   repo collide on the same file(s) and all pass their gates, link them into a
   stack with `gh stack link <bottom> <middle> <top>` (bottom = the one that
@@ -326,12 +327,11 @@ Apply these during classification and review (see also `tasks/lessons.md`):
 The Review Agent is Stage 1 of the scheduled lifecycle. It runs at `0 15 * * *`
 UTC with one concurrent run, an 80-item inventory cap, and a 40 **product**
 mutation cap (see `lifecycle.stage_caps`). Ledger CAS, Stage 2 work-item
-queueing, and the daily docs lineage
-do not consume that cap. A throughput self-grade is **FAIL** when net open BOT
-PRs grew and unused product-mutation slots remained, or when salvage-eligible
-BOT items exist and zero Stage 2 work items were queued. Salvage feed is not
-inventory-capped. It is followed by Stage 2
-at `0 17 * * *` and Stage 3 at `0 19 * * *`. See
+queueing, and the daily docs lineage do not consume that cap. A throughput
+self-grade is **FAIL** when net open BOT PRs grew and unused product-mutation
+slots remained, or when salvage-eligible BOT items exist and zero Stage 2 work
+items were queued. Salvage feed is not inventory-capped. It is followed by Stage
+2 at `0 17 * * *` and Stage 3 at `0 19 * * *`. See
 [Three-Stage PR Lifecycle in Cursor Automations](cursor-automations/three-stage-pr-lifecycle.md)
 for the common prompt preamble, role-based MCP/skill lists, and calibration
 relationship.

@@ -22,6 +22,6 @@ export BROWSERLESS_API_KEY OP_SERVICE_ACCOUNTS_TOKEN
 
 # Print only when executed directly (not sourced)
 if [ "${BASH_SOURCE[0]:-$0}" = "$0" ]; then
-  printf "export BROWSERLESS_API_KEY=%q\n" "$BROWSERLESS_API_KEY"
-  printf "export OP_SERVICE_ACCOUNTS_TOKEN=%q\n" "$OP_SERVICE_ACCOUNTS_TOKEN"
+	printf "export BROWSERLESS_API_KEY=%q\n" "$BROWSERLESS_API_KEY"
+	printf "export OP_SERVICE_ACCOUNTS_TOKEN=%q\n" "$OP_SERVICE_ACCOUNTS_TOKEN"
 fi

@@ -164,9 +164,9 @@ The Completion Agent never automatically merges or closes a security-sensitive
 PR, an ordinary human-authored PR, an item with `REVIEW_SECURITY`, sticky
 `HOLD_CONTRACT`, `HOLD_PLATFORM`, or `HOLD_CANONICAL`, or an item whose audit
 record is incomplete. Mechanical `HOLD_CONTRACT` is a Stage 2 work item, not a
-merge. It never bypasses branch protection, force-pushes, deletes
-unrelated branches, executes untrusted PR-head code in a privileged context, or
-treats model output as human approval.
+merge. It never bypasses branch protection, force-pushes, deletes unrelated
+branches, executes untrusted PR-head code in a privileged context, or treats
+model output as human approval.
 
 ## Decision packets and human inbox
 

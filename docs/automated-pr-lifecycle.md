@@ -20,11 +20,11 @@ class, one guardrail outcome, a safe default, the next owner, and a bounded next
 action. A base or head SHA change invalidates prior evidence and returns the
 item to Stage 1 intake.
 
-| Stage | Name       | Owns                                                                                   | May do                                                                                                                                                                                                                                                                               | Must hand off                                                                                                                                                              |
-| ----- | ---------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | Review     | New, invalidated, SHA_MATCH-executable, bounce-back, salvage-eligible, and salvage-replacement inventory | Routine approve, squash-merge, close, and **canonical-pick** (keep one BOT non-sensitive overlap cluster; close the rest). Re-ingest Stage 2 replacement PRs. Reselect SHA-unchanged items that are still executable. Queue up to five complete Stage 2 work items as ledger bookkeeping. | Salvage-eligible mechanical recovery to Stage 2; sticky security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible policy to Stage 3. Do **not** dump BOT file-overlap clusters on Stage 3.           |
-| 2     | Salvage    | Bounded mechanical recovery                                                            | Open or update a focused **draft** replacement with required tests and provenance. CAS-write a **new ledger item** for that replacement PR. Never approve, merge, or close. Empty intake: short record and stop.                                                                     | Draft completion (with replacement `item_key`) to Stage 1 if routine, else Stage 3; rejected recovery, unavailable **salvage** platform, or unresolved decision to Stage 3 |
-| 3     | Completion | Remainder that Stage 1 cannot execute this run                                         | Reconcile live state; **complete** MERGEABLE green BOT that Stage 1 overflowed (do not bounce that overflow); **bounce** canonical-pick clusters **back to Stage 1**; packets only for irreducible sticky/HUMAN/real platform; after `APPROVED`, complete qualified non-security work under a hard cap | Overflow completions and SHA drift; mechanical recovery to Stage 2 via a complete work item; irreducible policy/security to the human inbox                                           |
+| Stage | Name       | Owns                                                                                                     | May do                                                                                                                                                                                                                                                                                                 | Must hand off                                                                                                                                                                            |
+| ----- | ---------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Review     | New, invalidated, SHA_MATCH-executable, bounce-back, salvage-eligible, and salvage-replacement inventory | Routine approve, squash-merge, close, and **canonical-pick** (keep one BOT non-sensitive overlap cluster; close the rest). Re-ingest Stage 2 replacement PRs. Reselect SHA-unchanged items that are still executable. Queue up to five complete Stage 2 work items as ledger bookkeeping.              | Salvage-eligible mechanical recovery to Stage 2; sticky security, HUMAN, sticky `HOLD_CONTRACT`, or irreducible policy to Stage 3. Do **not** dump BOT file-overlap clusters on Stage 3. |
+| 2     | Salvage    | Bounded mechanical recovery                                                                              | Open or update a focused **draft** replacement with required tests and provenance. CAS-write a **new ledger item** for that replacement PR. Never approve, merge, or close. Empty intake: short record and stop.                                                                                       | Draft completion (with replacement `item_key`) to Stage 1 if routine, else Stage 3; rejected recovery, unavailable **salvage** platform, or unresolved decision to Stage 3               |
+| 3     | Completion | Remainder that Stage 1 cannot execute this run                                                           | Reconcile live state; **complete** MERGEABLE green BOT that Stage 1 overflowed (do not bounce that overflow); **bounce** canonical-pick clusters **back to Stage 1**; packets only for irreducible sticky/HUMAN/real platform; after `APPROVED`, complete qualified non-security work under a hard cap | Overflow completions and SHA drift; mechanical recovery to Stage 2 via a complete work item; irreducible policy/security to the human inbox                                              |
 
 Automated routine approval is a policy-authorized throughput control, not an
 independent human security review. Security-sensitive and ordinary
@@ -197,17 +197,17 @@ silently accepted.
 
 Use the exact outcome values below in ledger events and run records.
 
-| Outcome                  | Meaning                                                                                     | Default owner                                                                                                        |
-| ------------------------ | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `PASS_ROUTINE`           | All routine execution predicates are complete                                               | Stage 1 or approved Stage 3 completion                                                                               |
-| `REVIEW_SECURITY`        | A security result needs an explicit human decision                                          | Human inbox                                                                                                          |
+| Outcome                  | Meaning                                                                                     | Default owner                                                                                                                                                                                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `PASS_ROUTINE`           | All routine execution predicates are complete                                               | Stage 1 or approved Stage 3 completion                                                                                                                                                                                                                                                           |
+| `REVIEW_SECURITY`        | A security result needs an explicit human decision                                          | Human inbox                                                                                                                                                                                                                                                                                      |
 | `HOLD_CONTRACT`          | A policy, behavior, or security contract is undefined                                       | **Sticky** (lockfile/major dep, workflow permissions, auth, secrets, schema, public API): Stage 3, then human inbox. **Mechanical** (generated_output wrap, lint, import, conflict markers, unique-source rebase excluding journals): complete Stage 2 work item, not WAITING_HUMAN without a WI |
-| `HOLD_EVIDENCE`          | Checks, tests, overlap, or artifacts are insufficient                                       | Stage 3 reconciliation                                                                                               |
-| `HOLD_PLATFORM`          | Salvage cannot prove a required **local** platform (Swift/Xcode/`make guardrails` on Linux) | Stage 2/3 for salvage only. **Not** a Stage 1 merge block when required GitHub checks are already green and readable |
-| `HOLD_CANONICAL`         | Competing candidate or source overlap is unresolved                                         | **Stage 1 canonical-pick** for BOT non-sensitive clusters. Stage 3 only if every member is sticky-security or HUMAN  |
-| `CLOSE_NONSECURITY_NOOP` | A non-security close candidate has evidence and cooldown                                    | Stage 1 now; Stage 3 after calibration                                                                               |
-| `ANALYSIS_ERROR`         | The agent could not obtain reliable evidence                                                | Stage 3 with one retry, then human inbox                                                                             |
-| `NOT_RUN`                | The item has not received the required stage                                                | Stage 1                                                                                                              |
+| `HOLD_EVIDENCE`          | Checks, tests, overlap, or artifacts are insufficient                                       | Stage 3 reconciliation                                                                                                                                                                                                                                                                           |
+| `HOLD_PLATFORM`          | Salvage cannot prove a required **local** platform (Swift/Xcode/`make guardrails` on Linux) | Stage 2/3 for salvage only. **Not** a Stage 1 merge block when required GitHub checks are already green and readable                                                                                                                                                                             |
+| `HOLD_CANONICAL`         | Competing candidate or source overlap is unresolved                                         | **Stage 1 canonical-pick** for BOT non-sensitive clusters. Stage 3 only if every member is sticky-security or HUMAN                                                                                                                                                                              |
+| `CLOSE_NONSECURITY_NOOP` | A non-security close candidate has evidence and cooldown                                    | Stage 1 now; Stage 3 after calibration                                                                                                                                                                                                                                                           |
+| `ANALYSIS_ERROR`         | The agent could not obtain reliable evidence                                                | Stage 3 with one retry, then human inbox                                                                                                                                                                                                                                                         |
+| `NOT_RUN`                | The item has not received the required stage                                                | Stage 1                                                                                                                                                                                                                                                                                          |
 
 ## Bounded mechanical repair (Stage 2 eligibility)
 
@@ -217,8 +217,8 @@ necessary Stage 2 work, not utilization theater.
 1. `author_type` is BOT, not HUMAN or UNKNOWN.
 2. The item is not `TERMINAL`. `current_owner` is `stage1` or `stage3`
    (allowlist). `human`, `stage2`, `none`, and unknown owners are not
-   salvage-eligible: Stage 2 already owns its queue, and WAITING_HUMAN stays
-   in the human inbox.
+   salvage-eligible: Stage 2 already owns its queue, and WAITING_HUMAN stays in
+   the human inbox.
 3. `guardrail_outcome` is not `REVIEW_SECURITY`. `NOT_RUN` overflow with a
    mechanical `next_action` is salvage-eligible; it is not a reason to skip the
    Stage 2 feed. Expired mechanical `next_action` still counts.
@@ -232,8 +232,8 @@ necessary Stage 2 work, not utilization theater.
    `.jules/` journals (lesson 0cs), a named lint/import/non-major pin/missing
    test/conflict-marker repair, or a `next_action` that already instructs a
    focused unique-source draft.
-7. Canonical-pick the overlap cluster first. Queue at most one work item for
-   the keeper. Non-keepers are Stage 1 closes, not five salvage drafts.
+7. Canonical-pick the overlap cluster first. Queue at most one work item for the
+   keeper. Non-keepers are Stage 1 closes, not five salvage drafts.
 
 Queuing that work item is ledger CAS **bookkeeping**. It does not consume the
 Stage 1 product-mutation cap. Stage 2 still must not invent recoveries when no
@@ -297,11 +297,11 @@ Runs are idempotent by `repository#pr@head_sha`. An unchanged item with an
 unexpired next action is not re-investigated **unless that next action is
 Stage-1-executable** (merge, close, or canonical-pick) **and product-mutation
 slots remain**. SHA_MATCH skip applies only to unexpired **non-executable** work
-(sticky security, HUMAN, sticky `HOLD_CONTRACT`, waiting on cooldown, or an owned Stage
-2 recovery). Filling the 80-item inventory with only NEW twins while 100+
-MERGEABLE green BOT PRs sit at SHA_MATCH is a failed intake. Salvage-eligible
-CONFLICTING/DIRTY BOT must be reselected to create Stage 2 work items after
-merge/close/canonical-pick, not skipped as SHA_MATCH.
+(sticky security, HUMAN, sticky `HOLD_CONTRACT`, waiting on cooldown, or an
+owned Stage 2 recovery). Filling the 80-item inventory with only NEW twins while
+100+ MERGEABLE green BOT PRs sit at SHA_MATCH is a failed intake.
+Salvage-eligible CONFLICTING/DIRTY BOT must be reselected to create Stage 2 work
+items after merge/close/canonical-pick, not skipped as SHA_MATCH.
 
 The system must detect PRs resolved outside the workflow, rejected salvage
 drafts, missing canonical candidates, or stale SHA anchors and update the ledger
@@ -402,16 +402,17 @@ not reset `calibration` to `REPORT_ONLY`.
 Stage 1 fills unused inventory slots from SHA_MATCH-executable remainder
 (elapsed `STAGE1_INTAKE` closes, MERGEABLE green BOT, canonical-pick clusters,
 Stage 3 bounce-backs, salvage-eligible CONFLICTING/DIRTY BOT) before treating
-the cap as full of NEW security twins.
-In-scope BOT PRs skipped only because the inventory cap filled must be recorded
-as overflow (`NOT_RUN` or an equivalent owned backlog), not left unowned.
+the cap as full of NEW security twins. In-scope BOT PRs skipped only because the
+inventory cap filled must be recorded as overflow (`NOT_RUN` or an equivalent
+owned backlog), not left unowned.
 
 A Stage 1 throughput self-grade is **FAIL** when net open BOT PRs grew **and**
-unused product-mutation slots remained. It is also **FAIL** when salvage-eligible
-BOT items exist and the run queued zero Stage 2 work items while Stage 2 would
-empty-intake. One docs-lineage Trunk merge plus a handful of zero-diff closes is
-not a passing drain while MERGEABLE green BOT PRs sit skipped. A 40/40 PASS that
-leaves salvage-eligible CONFLICTING stock with no work items is a failed feed.
+unused product-mutation slots remained. It is also **FAIL** when
+salvage-eligible BOT items exist and the run queued zero Stage 2 work items
+while Stage 2 would empty-intake. One docs-lineage Trunk merge plus a handful of
+zero-diff closes is not a passing drain while MERGEABLE green BOT PRs sit
+skipped. A 40/40 PASS that leaves salvage-eligible CONFLICTING stock with no
+work items is a failed feed.
 
 Stage 3 must spend its five completion actions on MERGEABLE green BOT that Stage
 1 overflowed. Do not bounce that overflow back to a full Stage 1 cap.
