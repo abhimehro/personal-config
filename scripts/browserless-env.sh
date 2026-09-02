@@ -14,7 +14,7 @@
 set -euo pipefail
 
 OP_REF_API_KEY="op://Personal/fbbrvhjsd3x7vetbz544uyvjoe/credential"
-OP_REF_SA_TOKEN="op://Personal/57z7qligy4voo7bjkk444jvfru/credential"
+OP_REF_SA_TOKEN="op://Personal/fbbrvhjsd3x7vetbz544uyvjoe/key"
 
 BROWSERLESS_API_KEY="$(op read "$OP_REF_API_KEY")"
 OP_SERVICE_ACCOUNTS_TOKEN="$(op read "$OP_REF_SA_TOKEN")"

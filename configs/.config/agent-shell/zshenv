@@ -62,7 +62,7 @@ esac
 #   browserless-env            # exports BROWSERLESS_API_KEY + SA token
 #   op read "$BROWSERLESS_API_KEY_REF"
 export BROWSERLESS_API_KEY_REF="op://Personal/fbbrvhjsd3x7vetbz544uyvjoe/credential"
-export BROWSERLESS_SA_TOKEN_REF="op://Personal/57z7qligy4voo7bjkk444jvfru/credential"
+export BROWSERLESS_SA_TOKEN_REF="op://Personal/fbbrvhjsd3x7vetbz544uyvjoe/key"
 
 # On-demand resolver: exports live secrets into the current shell.
 # Fails softly if 1Password is locked (agents should retry after unlock).

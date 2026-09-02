@@ -18,10 +18,12 @@ secret values never reach automation code, environment variables, or logs.
 | Item | UUID | Field | Purpose |
 | --- | --- | --- | --- |
 | `BROWSERLESS_API_KEY` | `fbbrvhjsd3x7vetbz544uyvjoe` | `credential` | Browserless API key |
-| `Service Account Auth Token: browserless_service_account` | `57z7qligy4voo7bjkk444jvfru` | `credential` | 1Password service account token (ops_...) registered with Browserless |
+| `BROWSERLESS_API_KEY` | `fbbrvhjsd3x7vetbz544uyvjoe` | `key` | 1Password service account token (ops_...) registered with Browserless |
 
-> Note: `op://` refs use `vault/item/field`, so the item UUID is used in refs
-> (the SA-token item title contains a colon, which is invalid in `op://` paths).
+> Note: both secrets live in the single `BROWSERLESS_API_KEY` item (fields
+> `credential` and `key`). The old standalone SA-token item
+> (`57z7qligy4voo7bjkk444jvfru`) is deprecated; archive it in 1Password when
+> convenient.
 
 ## Setup
 
