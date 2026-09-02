@@ -1,0 +1,9 @@
+{
+  "name": "browserless-1password-automation",
+  "private": true,
+  "type": "module",
+  "description": "Playwright CDP templates for Browserless with 1Password server-side secret fills",
+  "dependencies": {
+    "playwright-core": "^1.40.0"
+  }
+}
