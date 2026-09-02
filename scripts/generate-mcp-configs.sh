@@ -14,11 +14,18 @@
 #   - Proton Pass: `pass-cli inject` (parallel path; see --backend proton)
 #
 # Usage:
-#   ./generate-mcp-configs.sh                 # all targets, 1Password backend
+#   ./generate-mcp-configs.sh                 # all JSON targets, 1Password backend
 #   ./generate-mcp-configs.sh --backend proton
 #   ./generate-mcp-configs.sh ara cursor      # only specific targets
+#   ./generate-mcp-configs.sh --dry-run vibe  # Vibe TOML fragment (no live overwrite)
+#   ./generate-mcp-configs.sh --profile research vibe
 #
-# Targets: ara | cursor | windsurf | windsurf-next | raycast | antigravity | all (default)
+# Targets: ara | cursor | windsurf | windsurf-next | raycast | antigravity | vibe | all
+# `all` is JSON clients only. Vibe is opt-in: official MCP is [[mcp_servers]] in
+# config.toml. This script writes ~/.vibe/mcp.fragment.toml and never overwrites
+# ~/.vibe/config.toml.
+# Profiles (ai/inventory/mcp-capabilities.json): core-safe (default for vibe) |
+# research | browser | productivity | macos-automation | cloud | full
 # -----------------------------------------------------------------------------
 set -euo pipefail
 
@@ -26,6 +33,9 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEMPLATE="${REPO_DIR}/mcp-configs/mcp-servers.template.json"
 AG_TEMPLATE="${REPO_DIR}/mcp-configs/antigravity-mcp-servers.template.json"
 BACKEND="op" # op | proton
+DRY_RUN=0
+PROFILE="core-safe"
+VIBE_TOML="${REPO_DIR}/scripts/mcp_vibe_toml.py"
 
 # Raycast does NOT read ~/.config/raycast — its MCP store lives inside the
 # extension's data dir. This is the real, app-read path (confirmed live).
@@ -47,7 +57,19 @@ while [[ $# -gt 0 ]]; do
 		BACKEND="${1#*=}"
 		shift
 		;;
-	ara | cursor | windsurf | windsurf-next | raycast | antigravity | all)
+	--dry-run)
+		DRY_RUN=1
+		shift
+		;;
+	--profile)
+		PROFILE="$2"
+		shift 2
+		;;
+	--profile=*)
+		PROFILE="${1#*=}"
+		shift
+		;;
+	ara | cursor | windsurf | windsurf-next | raycast | antigravity | vibe | all)
 		TARGETS+=("$1")
 		shift
 		;;
@@ -62,6 +84,7 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 [[ ${#TARGETS[@]} -eq 0 ]] && TARGETS=("all")
+# `all` stays JSON clients. Vibe is opt-in so we never clobber config.toml.
 [[ " ${TARGETS[*]} " == *" all "* ]] && TARGETS=(ara cursor windsurf windsurf-next raycast antigravity)
 
 [[ -f $TEMPLATE ]] || {
@@ -137,6 +160,10 @@ assert_not_tracked() {
 # Generic writer: resolves $TEMPLATE, transforms, writes 0600 to $dest.
 write_config() {
 	local label="$1" dest="$2" wrapper="$3" urlkey="$4" tmpl="${5:-$TEMPLATE}"
+	if [[ $DRY_RUN -eq 1 ]]; then
+		echo "  · ${label}: dry-run (would write ${dest})"
+		return 0
+	fi
 	mkdir -p "$(dirname "$dest")"
 	assert_not_tracked "$label" "$dest" || return 0
 	backup_file "$dest"
@@ -153,6 +180,11 @@ write_windsurf_symlinked() {
 	local live="${REPO_DIR}/.codeium/${variant}/mcp_config.json"
 	local template_file="${REPO_DIR}/.codeium/${variant}/mcp_config.json.template"
 	local app_path="$HOME/.codeium/${variant}/mcp_config.json"
+
+	if [[ $DRY_RUN -eq 1 ]]; then
+		echo "  · ${label}: dry-run (would write ${live} and symlink ${app_path})"
+		return 0
+	fi
 
 	mkdir -p "${REPO_DIR}/.codeium/${variant}" "$HOME/.codeium/${variant}"
 
@@ -184,7 +216,30 @@ write_windsurf_symlinked() {
 	echo "  ✓ ${label}: $app_path -> $live (gitignored live; template committed)"
 }
 
-echo "Generating MCP configs (backend: ${BACKEND})..."
+# Vibe: official MCP is [[mcp_servers]] in config.toml. Never overwrite that file.
+# Emit a secret-free fragment (op:// refs intact) for manual merge.
+write_vibe_fragment() {
+	local dest="$HOME/.vibe/mcp.fragment.toml"
+	local PY=/usr/bin/python3
+	[[ -x $PY ]] || PY=python3
+	[[ -f $VIBE_TOML ]] || {
+		echo "Vibe TOML adapter not found: $VIBE_TOML" >&2
+		exit 1
+	}
+	if [[ $DRY_RUN -eq 1 ]]; then
+		echo "  · Vibe: dry-run fragment (profile=${PROFILE}, would write ${dest})"
+		env -u PYTHONPATH -u PYTHONSTARTUP "$PY" -S "$VIBE_TOML" "$PROFILE" <"$TEMPLATE"
+		return 0
+	fi
+	mkdir -p "$(dirname "$dest")"
+	assert_not_tracked "Vibe" "$dest" || return 0
+	backup_file "$dest"
+	env -u PYTHONPATH -u PYTHONSTARTUP "$PY" -S "$VIBE_TOML" "$PROFILE" <"$TEMPLATE" >"$dest"
+	chmod 600 "$dest"
+	echo "  ✓ Vibe fragment: ${dest} (merge into ~/.vibe/config.toml; config.toml not modified)"
+}
+
+echo "Generating MCP configs (backend: ${BACKEND}, dry-run=${DRY_RUN}, profile=${PROFILE})..."
 for t in "${TARGETS[@]}"; do
 	case "$t" in
 	ara) write_config "Ara" "$HOME/.ara/mcp-servers.json" flat url ;;
@@ -193,11 +248,17 @@ for t in "${TARGETS[@]}"; do
 	windsurf-next) write_windsurf_symlinked "Windsurf Next" windsurf-next ;;
 	raycast) write_config "Raycast" "$RAYCAST_DEST" mcpServers url ;;
 	antigravity) write_config "Antigravity" "$ANTIGRAVITY_DEST" mcpServers url "$AG_TEMPLATE" ;;
+	vibe) write_vibe_fragment ;;
 	esac
 done
 
-echo "Done. Generated files contain LIVE secrets and are 0600, outside the repo"
-echo "(or gitignored inside it for the Windsurf symlink-mirror)."
+if [[ $DRY_RUN -eq 1 ]]; then
+	echo "Dry-run complete. No live secret files written."
+else
+	echo "Done. JSON client files contain LIVE secrets and are 0600, outside the repo"
+	echo "(or gitignored inside it for the Windsurf symlink-mirror)."
+	echo "Vibe writes a secret-free fragment only and never overwrites ~/.vibe/config.toml."
+fi
 if [[ ${#SKIPPED[@]} -gt 0 ]]; then
 	echo "Skipped (git-tracked, would leak): ${SKIPPED[*]}" >&2
 fi

@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "goal": "Use included quotas and local/small models first. One paid research path. Validate IDs against the installed CLI before changing active_model.",
+  "installed": {
+    "agy": "1.1.22",
+    "cursor-agent": "2026.06.29-71f0784",
+    "vibe": "2.16.1",
+    "devin": "3000.6.2"
+  },
+  "routing": {
+    "daily-coding": {
+      "cursor": "included Auto / composer only if already entitled",
+      "vibe": "mistral-small-latest or local llamacpp devstral if the server is up",
+      "devin": "adaptive / included quota",
+      "antigravity": "Gemini Flash class already selected locally; do not jump to Pro by default"
+    },
+    "planning": {
+      "vibe": "plan agent (read-only) plus small/medium model",
+      "devin": "smart mode, no dangerous"
+    },
+    "research": {
+      "provider": "firecrawl-mcp XOR native web tools XOR Perplexity",
+      "rule": "never enable Brave+Exa+Tavily+Perplexity together"
+    },
+    "local-only": {
+      "vibe_provider": "llamacpp",
+      "endpoint": "http://127.0.0.1:8080/v1",
+      "alias": "local"
+    }
+  },
+  "vibe_candidate_ids": [
+    "mistral-medium-latest",
+    "mistral-small-latest",
+    "codestral-latest",
+    "devstral-small-latest",
+    "mistral-large-latest",
+    "ministral-14b-latest",
+    "ministral-8b-latest",
+    "ministral-3b-latest"
+  ],
+  "validation": "Run `vibe --help` / model list and `agy models` before editing active_model. Live Vibe currently uses mistral-medium-3.5; do not change it in this commit.",
+  "do_not": [
+    "Duplicate paid search APIs",
+    "Set Vibe auto-approve as default",
+    "Point portable configs at machine-only cache model slugs from Cursor cli-config.json"
+  ]
+}

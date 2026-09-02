@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "principle": "Ask for writes, network, MCP, and destructive shell. Deny secrets and high-impact tools. Do not ship unrestricted/auto-approve as portable defaults.",
+  "deny_globs": [
+    ".env",
+    ".env.*",
+    "**/.env",
+    "**/.env.*",
+    "**/credentials*",
+    "**/*secret*",
+    "**/*token*",
+    "**/id_rsa",
+    "**/id_ed25519",
+    "**/.ssh/hosts.yml",
+    "**/hosts.yml"
+  ],
+  "destructive_shell": [
+    "rm",
+    "rmdir",
+    "dd",
+    "mkfs",
+    "diskutil",
+    "shutdown",
+    "reboot",
+    "launchctl unload",
+    "git reset --hard",
+    "git clean",
+    "git push --force",
+    "git push -f"
+  ],
+  "cursor": {
+    "approvalMode": "allowlist",
+    "sandbox": "enabled",
+    "networkAccess": "user_config_with_defaults",
+    "allow": [
+      "Shell(ls)",
+      "Shell(pwd)",
+      "Shell(git status)",
+      "Shell(git diff)",
+      "Shell(git log)",
+      "Shell(git branch)",
+      "Read(**/*)"
+    ],
+    "deny": [
+      "Read(.env*)",
+      "Read(**/.env*)",
+      "Write(.env*)",
+      "Shell(rm)",
+      "Shell(git reset)",
+      "Shell(git clean)",
+      "Shell(git push --force)"
+    ],
+    "prompt": [
+      "Write(**/*)",
+      "Shell(*)",
+      "WebFetch(*)",
+      "Mcp(*)"
+    ],
+    "do_not_copy_from_live": [
+      "approvalMode=unrestricted",
+      "sandbox=disabled",
+      "empty deny list"
+    ]
+  },
+  "vibe": {
+    "bypass_tool_permissions": false,
+    "default_agent": "default",
+    "disabled_agents": ["auto-approve"],
+    "tools": {
+      "bash": "ask",
+      "grep": "always",
+      "read_file": "always",
+      "write_file": "ask",
+      "task": "ask",
+      "skill": "always",
+      "exit_plan_mode": "always"
+    },
+    "do_not_copy_from_live": [
+      "bypass_tool_permissions=true",
+      "default_agent=auto-approve"
+    ]
+  },
+  "devin": {
+    "permission_mode": "smart",
+    "skip_workspace_trust": false,
+    "sandbox": "enabled-when-compatible",
+    "mcp_patterns": {
+      "prompt": ["mcp__*"],
+      "deny_examples": [
+        "mcp__filesystem__write_file",
+        "mcp__applescript_execute__*"
+      ]
+    },
+    "do_not_copy_from_live": [
+      "skip_workspace_trust=true",
+      "permission_mode=dangerous"
+    ]
+  },
+  "antigravity": {
+    "toolPermission": "request-review",
+    "artifactReviewPolicy": "asks-for-review",
+    "allowNonWorkspaceAccess": false,
+    "enableTerminalSandbox": true,
+    "enableTelemetry": false,
+    "mcp_default": "ask",
+    "do_not_copy_from_live": [
+      "toolPermission=always-proceed",
+      "allowNonWorkspaceAccess=true"
+    ]
+  },
+  "gh": {
+    "git_protocol": "ssh",
+    "telemetry": "disabled",
+    "never_commit": ["hosts.yml", "oauth tokens", "PATs"]
+  }
+}
