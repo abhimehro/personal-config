@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 50
+ledger_revision: 51
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -7899,15 +7899,16 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition:
-  current_owner: human
-  next_owner: human
-  safe_default: Do not approve, merge, queue, or close ordinary HUMAN-authored PRs.
-  next_action: 'Human: review https://github.com/abhimehro/Seatek_Analysis/pull/689. HUMAN
-    ≠ ROUTINE. No GitHub mutation by Stage 3. Expiry 2026-08-29T19:20:00Z.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded #689; unique remainder is merged #801.'
+  next_action: 'None. Closed as superseded by squash-merged #801 at 5a4fd1f9b907d7edb056582ec73b5c227d0f3f09. Desk Batch 8.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/689
+  - https://github.com/abhimehro/Seatek_Analysis/pull/801
+  - https://github.com/abhimehro/Seatek_Analysis/pull/689#issuecomment-5533400965
   - https://api.github.com/repos/abhimehro/Seatek_Analysis/rulesets/13305024
   changed_paths:
   - .github/scripts/repository_automation_tasks.py
@@ -7915,12 +7916,15 @@ items:
   attempts:
     evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260822b-seatekanalys-689-h
   - evt-s3-20260822-seatekanalys-689-h
-  revision: 2
-  updated_at_utc: '2026-08-22T19:20:00Z'
+  - evt-s3-20260903-seatekanalys-689-a
+  - evt-s3-20260903-seatekanalys-689-t
+  revision: 3
+  updated_at_utc: '2026-09-03T23:23:00Z'
+
 - key: 
     abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#532@c27736512a03095b69e6f4e4fdc0885fc2394e06
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
@@ -16221,18 +16225,16 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition:
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: 'Draft-only salvage of HUMAN #689. Do not merge/close from Stage 2. Wait for
-    Desk Stage 3 security exception.'
-  next_action: 'Stage 3: after Desk Batch with Jules/security exception, squash-merge salvage
-    draft #801 (NUL + isfile-before-open + FIFO/ValueError hotspot coverage). Original #689
-    stays open until then. Expires 2026-09-10T23:14:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged salvage #801 or superseded #689.'
+  next_action: 'None. Squash-merged to main at 5a4fd1f9b907d7edb056582ec73b5c227d0f3f09. Desk REVIEW_SECURITY salvage exception Batch 8; not a standing merge rule. Closed original #689 as superseded.'
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/801
   - https://github.com/abhimehro/Seatek_Analysis/pull/689
+  - https://github.com/abhimehro/Seatek_Analysis/commit/5a4fd1f9b907d7edb056582ec73b5c227d0f3f09
   - https://api.github.com/repos/abhimehro/Seatek_Analysis/rulesets/13305024
   changed_paths:
   - .github/scripts/repository_automation_tasks.py
@@ -16240,11 +16242,14 @@ items:
   attempts:
     evidence: 1
     recovery: 1
-    mutations: 1
+    mutations: 3
   handoffs:
   - evt-s2-20260903-seatekanalys-801-h
-  revision: 1
-  updated_at_utc: '2026-09-03T23:14:00Z'
+  - evt-s3-20260903-seatekanalys-801-a
+  - evt-s3-20260903-seatekanalys-801-t
+  revision: 2
+  updated_at_utc: '2026-09-03T23:23:00Z'
+
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -32628,6 +32633,74 @@ events:
   reason: 'Stage 2 Desk-assigned salvage draft #801 from HUMAN #689 (NUL + isfile-before-open
     + FIFO/ValueError only; no Bolt formatting). Original left open; Stage 3 merge waits on
     Desk security exception.'
+- event_id: evt-s3-20260903-seatekanalys-801-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Seatek_Analysis#801@8a2185bdb483a43edbc4fe45a31dead5147608cf
+  from_owner: stage3
+  to_owner: stage3
+  from_state: STAGE3_RECONCILIATION
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: evt-s2-20260903-seatekanalys-801-h
+  expected_item_revision: 1
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#801@8a2185bdb483a43edbc4fe45a31dead5147608cf:evt-s3-20260903-seatekanalys-801-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-03T23:23:00Z'
+  acknowledged_at_utc: '2026-09-03T23:23:00Z'
+  reason: Stage 3 accepted Stage 2 salvage handoff of #801 before Desk-authorized bounded completion.
+- event_id: evt-s3-20260903-seatekanalys-801-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#801@8a2185bdb483a43edbc4fe45a31dead5147608cf
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#801@8a2185bdb483a43edbc4fe45a31dead5147608cf:evt-s3-20260903-seatekanalys-801-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T23:23:00Z'
+  acknowledged_at_utc: null
+  reason: Desk REVIEW_SECURITY salvage exception Batch 8; squash-merged GITHUB_SQUASH to main at 5a4fd1f9b907d7edb056582ec73b5c227d0f3f09 after mark-ready. Not a standing merge rule.
+- event_id: evt-s3-20260903-seatekanalys-689-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Seatek_Analysis#689@a5828632cb32f39783ec38282475739f3619b428
+  from_owner: human
+  to_owner: human
+  from_state: WAITING_HUMAN
+  to_state: WAITING_HUMAN
+  next_owner: human
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260822-seatekanalys-689-h
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#689@a5828632cb32f39783ec38282475739f3619b428:evt-s3-20260903-seatekanalys-689-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-03T23:23:00Z'
+  acknowledged_at_utc: '2026-09-03T23:23:00Z'
+  reason: Stage 3 accepted projected WAITING_HUMAN handoff before Desk-authorized close of superseded #689.
+- event_id: evt-s3-20260903-seatekanalys-689-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#689@a5828632cb32f39783ec38282475739f3619b428
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#689@a5828632cb32f39783ec38282475739f3619b428:evt-s3-20260903-seatekanalys-689-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T23:23:00Z'
+  acknowledged_at_utc: null
+  reason: Closed as superseded by squash-merged salvage #801 at 5a4fd1f9b907d7edb056582ec73b5c227d0f3f09. Desk Batch 8.
 stage2_work_items:
 - work_item_id: s2-20260831-series-390-spreadsheet-safety
   source_item_key: 
