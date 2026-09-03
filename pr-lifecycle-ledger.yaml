@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 36
+ledger_revision: 37
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -15522,14 +15522,15 @@ items:
   risk_class: ROUTINE
   sensitive_paths: []
   guardrail_outcome: HOLD_CONTRACT
-  lifecycle_state: STAGE1_INTAKE
-  terminal_disposition: null
-  current_owner: stage1
-  next_owner: stage1
-  safe_default: 'Leave draft #2141. Do not mark ready or Trunk this batch. Canonical keeper of continuity/export cluster.'
-  next_action: 'Later batch: re-ingest MERGEABLE-green draft #2141 (cursor[bot] export/prompt resync, behind=0). TRUNK_QUEUE only after ready+predicates. Do not open a new PR. Expires 2026-09-10T22:00:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged #2141.'
+  next_action: None. Trunk-merged to main at eebe7385a13910e2919a97d25edc0c5442299e2b.
   evidence_urls:
   - https://github.com/abhimehro/personal-config/pull/2141
+  - https://github.com/abhimehro/personal-config/commit/eebe7385a13910e2919a97d25edc0c5442299e2b
   changed_paths:
   - docs/cursor-automations/exports/daily-pr-completion.json
   - docs/cursor-automations/exports/daily-pr-review.json
@@ -15541,10 +15542,11 @@ items:
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
-  handoffs: []
-  revision: 0
-  updated_at_utc: '2026-09-03T22:00:00Z'
+    mutations: 1
+  handoffs:
+  - evt-s1-20260903-personalconf-2141-t
+  revision: 1
+  updated_at_utc: '2026-09-03T22:06:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -29024,6 +29026,23 @@ events:
   created_at_utc: '2026-09-03T22:00:00Z'
   acknowledged_at_utc: null
   reason: 'Canonical-pick loser in continuity/export draft cluster. Keeper #2141.'
+- event_id: evt-s1-20260903-personalconf-2141-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2141@aec416aa82ad68859f98710bc2ae4ef1bbf03a94
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2141@aec416aa82ad68859f98710bc2ae4ef1bbf03a94:evt-s1-20260903-personalconf-2141-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:06:00Z'
+  acknowledged_at_utc: null
+  reason: 'Trunk-merged continuity/export keeper #2141 after ready + update-branch (no new base commits) + /trunk merge. Merge commit eebe7385a13910e2919a97d25edc0c5442299e2b.'
 stage2_work_items:
 - work_item_id: s2-20260831-series-390-spreadsheet-safety
   source_item_key: abhimehro/series_correction_project_updated#390@0b132998f952c8aff357f2d709dbae79a9661679
