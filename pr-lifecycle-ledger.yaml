@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 40
+ledger_revision: 41
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -7757,8 +7757,8 @@ items:
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 532
   url: https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/532
-  base_sha: a94d902c26131d2783acdc178a048008f42076be
-  head_sha: c27736512a03095b69e6f4e4fdc0885fc2394e06
+  base_sha: a9cd1279ffdad5ad248d4043970456eb24e3c194
+  head_sha: 1354d2989161b032d9ce644e5de37079d9a8da9b
   author:
     login: abhimehro
     identity_source: github_api
@@ -7769,27 +7769,30 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: 'Do not merge sticky path-traversal #532 from Stage 1. HUMAN + REVIEW_SECURITY. Canonical keeper of the Sentinel cluster.'
-  next_action: 'Human/Stage 3: decide MERGEABLE-green path-traversal keeper #532 (tests + write through validated output_path). Do not squash from Stage 1. Losers closed. Expires 2026-09-10T22:16:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged #532.'
+  next_action: 'None. Squash-merged to main at e59e3cbdab16c2bb5a2102bbd2108a2418ccf39e. Abhi override Batch 4; not a standing HUMAN merge rule.'
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/532
+  - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/commit/e59e3cbdab16c2bb5a2102bbd2108a2418ccf39e
   - https://api.github.com/repos/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/rulesets/4178077
   changed_paths:
   - tests/test_validate_data_cli.py
   - validate_data.py
   attempts:
-    evidence: 2
+    evidence: 3
     recovery: 0
-    mutations: 0
+    mutations: 2
   handoffs:
   - evt-s1-20260822b-hydrographve-532-h
   - evt-s3-20260822-hydrographve-532-h
-  revision: 2
-  updated_at_utc: '2026-09-03T22:16:00Z'
+  - evt-s3-20260903-hydrographve-532-a
+  - evt-s3-20260903-hydrographve-532-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:21:00Z'
 - key: abhimehro/personal-config#2077@7988aa8b89f9af7ae9c7ccf47bc99df98202d7e6
   repository: abhimehro/personal-config
   pr: 2077
@@ -30148,6 +30151,40 @@ events:
   created_at_utc: '2026-09-03T22:20:00Z'
   acknowledged_at_utc: null
   reason: 'Canonical keeper of pathlib/null-byte DoS cluster. MERGEABLE unique remainder + test. REVIEW_SECURITY: do not Stage 1 merge.'
+- event_id: evt-s3-20260903-hydrographve-532-a
+  kind: ACKNOWLEDGEMENT
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#532@c27736512a03095b69e6f4e4fdc0885fc2394e06
+  from_owner: human
+  to_owner: human
+  from_state: WAITING_HUMAN
+  to_state: WAITING_HUMAN
+  next_owner: human
+  terminal_disposition: null
+  parent_event_id: evt-s3-20260822-hydrographve-532-h
+  expected_item_revision: 2
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#532@c27736512a03095b69e6f4e4fdc0885fc2394e06:evt-s3-20260903-hydrographve-532-a
+  status: ACKNOWLEDGED
+  created_at_utc: '2026-09-03T22:21:00Z'
+  acknowledged_at_utc: '2026-09-03T22:21:00Z'
+  reason: Stage 3 accepted projected WAITING_HUMAN handoff before Abhi-authorized bounded completion of #532.
+- event_id: evt-s3-20260903-hydrographve-532-t
+  kind: TERMINAL
+  item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#532@c27736512a03095b69e6f4e4fdc0885fc2394e06
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_BOUNDED_COMPLETION
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#532@c27736512a03095b69e6f4e4fdc0885fc2394e06:evt-s3-20260903-hydrographve-532-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:21:00Z'
+  acknowledged_at_utc: null
+  reason: Abhi override Batch 4; squash-merged GITHUB_SQUASH to main at e59e3cbdab16c2bb5a2102bbd2108a2418ccf39e. Not a standing HUMAN merge rule. Did not merge #543 #565 #596.
 stage2_work_items:
 - work_item_id: s2-20260831-series-390-spreadsheet-safety
   source_item_key: abhimehro/series_correction_project_updated#390@0b132998f952c8aff357f2d709dbae79a9661679
