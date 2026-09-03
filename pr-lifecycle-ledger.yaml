@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 48
+ledger_revision: 49
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -15844,6 +15844,46 @@ items:
   - evt-s1-20260903-personalconf-2148-t
   revision: 2
   updated_at_utc: '2026-09-03T22:00:00Z'
+- key: abhimehro/personal-config#2144@6c2606870c415b20282834975bae2939251e5abd
+  repository: abhimehro/personal-config
+  pr: 2144
+  url: https://github.com/abhimehro/personal-config/pull/2144
+  base_sha: af2f5a5cf95e1023af383bf48917c3d7ccf91c58
+  head_sha: 6c2606870c415b20282834975bae2939251e5abd
+  author:
+    login: cursor[bot]
+    identity_source: github_api
+    app_slug: cursor
+    identity_provenance:
+      method: allowlist_login
+      signals:
+      - allowlist_login
+  author_type: BOT
+  classification: CI_INFRA
+  risk_class: ROUTINE
+  sensitive_paths: []
+  guardrail_outcome: PASS_ROUTINE
+  lifecycle_state: TERMINAL
+  terminal_disposition: MERGED_ROUTINE
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen merged docs SSH-link PR #2144.'
+  next_action: None. Trunk-merged to main at 26fcf82284b712dd360e3c1385fd9e29b2a1e9e6.
+  evidence_urls:
+  - https://github.com/abhimehro/personal-config/pull/2144
+  - https://github.com/abhimehro/personal-config/commit/26fcf82284b712dd360e3c1385fd9e29b2a1e9e6
+  changed_paths:
+  - docs/ssh/ssh_configuration_guide.md
+  - docs/ssh/ssh_readme.md
+  - scripts/install_ssh_config.sh
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 1
+  handoffs:
+  - evt-s1-20260903-personalconf-2144-t
+  revision: 1
+  updated_at_utc: '2026-09-03T22:00:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -30428,6 +30468,23 @@ events:
   created_at_utc: '2026-09-03T22:59:30Z'
   acknowledged_at_utc: null
   reason: 'Abhi salvage exception: marked ready, update-branch 422 (no new base commits), /trunk merge. Trunk-merged #2148. GHAS failed, not required (required check is dependency-review). Merge af2f5a5cf95e1023af383bf48917c3d7ccf91c58. Closed #2146 superseded.'
+- event_id: evt-s1-20260903-personalconf-2144-t
+  kind: TERMINAL
+  item_key: abhimehro/personal-config#2144@6c2606870c415b20282834975bae2939251e5abd
+  from_owner: stage1
+  to_owner: none
+  from_state: STAGE1_INTAKE
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: MERGED_ROUTINE
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/personal-config#2144@6c2606870c415b20282834975bae2939251e5abd:evt-s1-20260903-personalconf-2144-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T23:07:00Z'
+  acknowledged_at_utc: null
+  reason: 'Marked ready, update-branch succeeded (picked up #2148 on main), /trunk merge. MERGEABLE. Required check dependency-review green. Merge 26fcf82284b712dd360e3c1385fd9e29b2a1e9e6.'
 stage2_work_items:
 - work_item_id: s2-20260831-series-390-spreadsheet-safety
   source_item_key: abhimehro/series_correction_project_updated#390@0b132998f952c8aff357f2d709dbae79a9661679
