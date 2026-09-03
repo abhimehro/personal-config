@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 41
+ledger_revision: 42
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -891,25 +891,27 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge Sentinel file-read DoS patches without human review.
-  next_action: Reconcile overlapping Sentinel cluster on repository_automation_tasks.py (#676/#665).
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel hotspot sibling. Keeper is #689 (HUMAN).'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/680
+  - https://github.com/abhimehro/Seatek_Analysis/pull/689
   changed_paths:
   - .github/scripts/repository_automation_tasks.py
   - .jules/sentinel.md
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260820-seatekanalys-680-h
-  revision: 1
-  updated_at_utc: '2026-08-20T03:30:00Z'
+  - evt-s1-20260903-seatekanalys-680-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#679@f5f59024577b6d6d6c1d42372b8a68fe51334157
   repository: abhimehro/Seatek_Analysis
   pr: 679
@@ -972,14 +974,15 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge overlapping Sentinel DoS rewrites on repository_automation_tasks.py.
-  next_action: Pick one canonical Sentinel after human review; do not stack DIRTY siblings.
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel hotspot sibling. Keeper is #689 (HUMAN).'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/676
+  - https://github.com/abhimehro/Seatek_Analysis/pull/689
   changed_paths:
   - .github/scripts/repository_automation_tasks.py
   - .jules/sentinel.md
@@ -987,11 +990,12 @@ items:
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260820-seatekanalys-676-h
-  revision: 1
-  updated_at_utc: '2026-08-20T03:30:00Z'
+  - evt-s1-20260903-seatekanalys-676-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#673@e2da9d736fd3f4e54bf035d00ecf8d95fc0e1f11
   repository: abhimehro/Seatek_Analysis
   pr: 673
@@ -1097,25 +1101,27 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not merge hotspot file-read DoS patches without human review.
-  next_action: 'Reconcile vs #680/#676 on the same tasks module.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel hotspot sibling. Keeper is #689 (HUMAN).'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/665
+  - https://github.com/abhimehro/Seatek_Analysis/pull/689
   changed_paths:
   - .github/scripts/repository_automation_tasks.py
   - .jules/sentinel.md
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260820-seatekanalys-665-h
-  revision: 1
-  updated_at_utc: '2026-08-20T03:30:00Z'
+  - evt-s1-20260903-seatekanalys-665-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#537@30197630b9f647bf98f8d061501d24ed95d3cc7a
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 537
@@ -3072,25 +3078,27 @@ items:
   - file_read_write_boundaries
   - generated_output
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not approve, merge, or close a sticky security classification.
-  next_action: Keep WAITING_HUMAN / Stage 3; do not salvage security-sensitive paths from Stage 1.
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel hotspot sibling. Keeper is #689 (HUMAN).'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/694
+  - https://github.com/abhimehro/Seatek_Analysis/pull/689
   changed_paths:
   - .github/scripts/repository_automation_tasks.py
   - .jules/sentinel.md
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260820b-seatekanalys-694-h
-  revision: 1
-  updated_at_utc: '2026-08-20T15:30:00Z'
+  - evt-s1-20260903-seatekanalys-694-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#662@ddeb06db459b87acf0847f097bfb54a3534a1835
   repository: abhimehro/Seatek_Analysis
   pr: 662
@@ -3541,14 +3549,15 @@ items:
   - file_read_write_boundaries
   - generated_output
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not approve, merge, or close a sticky security classification.
-  next_action: Keep WAITING_HUMAN / Stage 3; do not salvage security-sensitive paths from Stage 1.
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel hotspot sibling. Keeper is #689 (HUMAN).'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/688
+  - https://github.com/abhimehro/Seatek_Analysis/pull/689
   changed_paths:
   - .github/scripts/repository_automation_common.py
   - .github/scripts/repository_automation_tasks.py
@@ -3559,11 +3568,12 @@ items:
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260820b-seatekanalys-688-h
-  revision: 1
-  updated_at_utc: '2026-08-20T15:30:00Z'
+  - evt-s1-20260903-seatekanalys-688-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/personal-config#1907@76e20d56ab62c12e50d774ab81f3624c5fa5902e
   repository: abhimehro/personal-config
   pr: 1907
@@ -7774,7 +7784,7 @@ items:
   current_owner: none
   next_owner: none
   safe_default: 'Do not reopen merged #532.'
-  next_action: 'None. Squash-merged to main at e59e3cbdab16c2bb5a2102bbd2108a2418ccf39e. Abhi override Batch 4; not a standing HUMAN merge rule.'
+  next_action: None. Squash-merged to main at e59e3cbdab16c2bb5a2102bbd2108a2418ccf39e. Abhi override Batch 4; not a standing HUMAN merge rule.
   evidence_urls:
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/pull/532
   - https://github.com/abhimehro/Hydrograph_Versus_Seatek_Sensors_Project/commit/e59e3cbdab16c2bb5a2102bbd2108a2418ccf39e
@@ -30167,7 +30177,7 @@ events:
   status: ACKNOWLEDGED
   created_at_utc: '2026-09-03T22:21:00Z'
   acknowledged_at_utc: '2026-09-03T22:21:00Z'
-  reason: Stage 3 accepted projected WAITING_HUMAN handoff before Abhi-authorized bounded completion of #532.
+  reason: Stage 3 accepted projected WAITING_HUMAN handoff before Abhi-authorized bounded completion of
 - event_id: evt-s3-20260903-hydrographve-532-t
   kind: TERMINAL
   item_key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#532@c27736512a03095b69e6f4e4fdc0885fc2394e06
@@ -30184,7 +30194,7 @@ events:
   status: PROJECTED
   created_at_utc: '2026-09-03T22:21:00Z'
   acknowledged_at_utc: null
-  reason: Abhi override Batch 4; squash-merged GITHUB_SQUASH to main at e59e3cbdab16c2bb5a2102bbd2108a2418ccf39e. Not a standing HUMAN merge rule. Did not merge #543 #565 #596.
+  reason: Abhi override Batch 4; squash-merged GITHUB_SQUASH to main at e59e3cbdab16c2bb5a2102bbd2108a2418ccf39e. Not a standing HUMAN merge rule. Did not merge
 stage2_work_items:
 - work_item_id: s2-20260831-series-390-spreadsheet-safety
   source_item_key: abhimehro/series_correction_project_updated#390@0b132998f952c8aff357f2d709dbae79a9661679
