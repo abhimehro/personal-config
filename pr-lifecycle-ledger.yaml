@@ -1,6 +1,6 @@
 schema_version: '1.2'
 schema_path: schemas/pr-lifecycle-ledger.schema.json
-ledger_revision: 39
+ledger_revision: 40
 calibration:
   status: APPROVED
   successful_run_count: 7
@@ -4578,26 +4578,28 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not squash-merge Sentinel/security PRs without human review.
-  next_action: 'Stage 3: human-review Sentinel cluster; do not squash-merge overlapping security patches.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/719
   - https://api.github.com/repos/abhimehro/Seatek_Analysis/rulesets/13305024
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - code_health_scanner.py
   - tests/test_code_health_scanner.py
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260822-seatekanalys-719-h
-  revision: 1
-  updated_at_utc: '2026-08-22T08:10:00Z'
+  - evt-s1-20260903-seatekanalys-719-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#718@7ac8bd605af2cb4a9658ddf9d65dcb87b19a062e
   repository: abhimehro/Seatek_Analysis
   pr: 718
@@ -4659,25 +4661,27 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not squash-merge Sentinel/security PRs without human review.
-  next_action: 'Stage 3: human-review Sentinel cluster; do not squash-merge overlapping security patches.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/716
   - https://api.github.com/repos/abhimehro/Seatek_Analysis/rulesets/13305024
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - code_health_scanner.py
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260822-seatekanalys-716-h
-  revision: 1
-  updated_at_utc: '2026-08-22T08:10:00Z'
+  - evt-s1-20260903-seatekanalys-716-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#715@53b59cc123340ca643a8a0e248ac348cbe64e256
   repository: abhimehro/Seatek_Analysis
   pr: 715
@@ -4779,15 +4783,16 @@ items:
   - file_read_write_boundaries
   - generated_output
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  terminal_disposition: null
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not squash-merge Sentinel/security PRs without human review.
-  next_action: 'Stage 3: human-review Sentinel cluster; do not squash-merge overlapping security patches.'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/712
   - https://api.github.com/repos/abhimehro/Seatek_Analysis/rulesets/13305024
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - .github/scripts/repository_automation_tasks.py
   - .jules/sentinel.md
@@ -4798,11 +4803,12 @@ items:
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260822-seatekanalys-712-h
-  revision: 1
-  updated_at_utc: '2026-08-22T08:10:00Z'
+  - evt-s1-20260903-seatekanalys-712-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#710@63fd183db33f9f3c9a7d074efc137357e123bad7
   repository: abhimehro/Seatek_Analysis
   pr: 710
@@ -8328,27 +8334,29 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not squash Sentinel path-null exception patches without human review.
-  next_action: 'Human: Sentinel path-null exception cluster. Do not squash overlapping security patches. Safe default: leave open. Expires 2026-08-30T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/723
   - https://api.github.com/repos/abhimehro/Seatek_Analysis/rulesets/13305024
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - code_health_scanner.py
   - tests/test_code_health_scanner.py
   attempts:
     evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260823-seatekanalys-723-h
   - evt-s3-20260823-seatekanalys-723-h
-  revision: 2
-  updated_at_utc: '2026-08-23T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-723-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#553@7881f347c8603095a047c5303361afb775b78d4e
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 553
@@ -8976,25 +8984,27 @@ items:
   risk_class: SENSITIVE
   sensitive_paths: []
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not squash-merge Sentinel security claims without human review.
-  next_action: 'Human: review Sentinel scanner DoS twin of #728. Safe default: leave open; do not squash overlapping security patches. Expires 2026-08-31T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/732
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - code_health_scanner.py
   attempts:
     evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260824-seatekanalys-732-h
   - evt-s3-20260824-seatekanalys-732-h
-  revision: 2
-  updated_at_utc: '2026-08-24T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-732-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#730@981c28e944b9b72be25355c5d99ff51442958287
   repository: abhimehro/Seatek_Analysis
   pr: 730
@@ -9038,25 +9048,27 @@ items:
   risk_class: SENSITIVE
   sensitive_paths: []
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not squash-merge Sentinel security claims without human review.
-  next_action: 'Human: review Sentinel scanner twin of #732. Safe default: leave open; do not squash overlapping security patches. Expires 2026-08-31T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/728
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - code_health_scanner.py
   attempts:
     evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260824-seatekanalys-728-h
   - evt-s3-20260824-seatekanalys-728-h
-  revision: 2
-  updated_at_utc: '2026-08-24T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-728-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#558@3d25583c91bc5ffd2423e7ade360621f5efdd10b
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 558
@@ -9891,26 +9903,28 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not squash-merge Sentinel clusters without human review.
-  next_action: 'Human: review Sentinel cluster vs #734. Safe default: leave open. Do not squash overlapping security patches. Expires 2026-09-01T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/738
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - code_health_scanner.py
   - tests/test_code_health_scanner.py
   attempts:
     evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260825-seatekanalys-738-h
   - evt-s3-20260825-seatekanalys-738-h
-  revision: 2
-  updated_at_utc: '2026-08-25T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-738-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#737@5e8d4db6111896dff4f474f7631338e1dc042971
   repository: abhimehro/Seatek_Analysis
   pr: 737
@@ -10011,25 +10025,27 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not squash-merge Sentinel clusters without human review.
-  next_action: 'Human: review Sentinel twin of #738. Do not squash overlapping security patches. Expires 2026-09-02T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/734
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - code_health_scanner.py
   attempts:
     evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260825-seatekanalys-734-h
   - evt-s3-20260826-seatekanalys-734-h
-  revision: 2
-  updated_at_utc: '2026-08-26T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-734-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#564@985483bc3d4811730195ccb892a816a952d54628
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 564
@@ -10719,26 +10735,28 @@ items:
   - generated_output
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not squash-merge Sentinel path-validation patches without human review.
-  next_action: 'Human: review Sentinel vs #742/#734. Do not squash overlapping security patches. Expires 2026-09-02T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/746
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - .jules/sentinel.md
   - code_health_scanner.py
   attempts:
     evidence: 3
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260826-seatekanalys-746-h
   - evt-s3-20260826-seatekanalys-746-h
-  revision: 2
-  updated_at_utc: '2026-08-26T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-746-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#744@ed3f42422472401571fd782f20348f4f08be6b02
   repository: abhimehro/Seatek_Analysis
   pr: 744
@@ -10848,14 +10866,15 @@ items:
   - generated_output
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not squash-merge Sentinel exception-handling patches without human review.
-  next_action: 'Human: review Sentinel vs #746/#734. Do not squash overlapping security patches. Expires 2026-09-02T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/742
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - .jules/sentinel.md
   - code_health_scanner.py
@@ -10863,12 +10882,13 @@ items:
   attempts:
     evidence: 3
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260826-seatekanalys-742-h
   - evt-s3-20260826-seatekanalys-742-h
-  revision: 2
-  updated_at_utc: '2026-08-26T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-742-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#741@b319aaaba97128f2425b712addcdd87d415bdf6d
   repository: abhimehro/Seatek_Analysis
   pr: 741
@@ -11430,26 +11450,28 @@ items:
   - file_read_write_boundaries
   - generated_output
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not squash-merge REVIEW_SECURITY items.
-  next_action: 'Human: review Seatek #753 security path. Do not squash. Expires 2026-09-03T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/753
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - .jules/sentinel.md
   - code_health_scanner.py
   attempts:
     evidence: 3
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260827-seatekanalys-753-h
   - evt-s3-20260827-seatekanalys-753-h
-  revision: 2
-  updated_at_utc: '2026-08-27T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-753-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#752@90f81f8be276beb6c1a39cca6f8cb8334f1791e1
   repository: abhimehro/Seatek_Analysis
   pr: 752
@@ -11553,26 +11575,28 @@ items:
   - file_read_write_boundaries
   - generated_output
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not squash-merge REVIEW_SECURITY items.
-  next_action: 'Human: review Seatek #750 security path. Do not squash. Expires 2026-09-03T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/750
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - .jules/sentinel.md
   - code_health_scanner.py
   attempts:
     evidence: 3
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260827-seatekanalys-750-h
   - evt-s3-20260827-seatekanalys-750-h
-  revision: 2
-  updated_at_utc: '2026-08-27T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-750-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#749@a38d4acce6628228af5df4fb0d18a3b1cfaf7883
   repository: abhimehro/Seatek_Analysis
   pr: 749
@@ -12615,26 +12639,28 @@ items:
   sensitive_paths:
   - security_configuration
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not approve, merge, or close Sentinel security-scanner PRs.
-  next_action: 'Human: Sentinel cluster #760/#757. One packet if both remain sticky. Safe default hold. Expires 2026-09-04T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/760
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - .jules/sentinel.md
   - code_health_scanner.py
   attempts:
     evidence: 3
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260828-seatekanalys-760-h
   - evt-s3-20260828-seatekanalys-760-h
-  revision: 2
-  updated_at_utc: '2026-08-28T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-760-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#759@b6032c4c9ecb872d915bd5d04e375c48a86b5b53
   repository: abhimehro/Seatek_Analysis
   pr: 759
@@ -12703,26 +12729,28 @@ items:
   sensitive_paths:
   - security_configuration
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not approve, merge, or close Sentinel security-scanner PRs.
-  next_action: 'Human: Sentinel cluster #757/#760. One packet if both remain sticky. Safe default hold. Expires 2026-09-04T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/757
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - code_health_scanner.py
   - dummy_gh
   attempts:
     evidence: 3
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260828-seatekanalys-757-h
   - evt-s3-20260828-seatekanalys-757-h
-  revision: 2
-  updated_at_utc: '2026-08-28T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-757-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project#579@2dae636ee70de28d134a3291b807978b963bf9ef
   repository: abhimehro/Hydrograph_Versus_Seatek_Sensors_Project
   pr: 579
@@ -13914,15 +13942,16 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not squash-merge Sentinel scanner PRs.
-  next_action: 'Human: one packet for Seatek code_health_scanner.py cluster #774/#770/#767/#762. Recommended: leave open. https://www.notion.so/3cc7419416de81b68b43eff49647da20 Expires 2026-09-06T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/774
   - https://www.notion.so/3cc7419416de81b68b43eff49647da20
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - .jules/sentinel.md
   - code_health_scanner.py
@@ -13930,12 +13959,13 @@ items:
   attempts:
     evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260830-seatekanalys-774-h
   - evt-s3-20260830-seatekanalys-774-h
-  revision: 2
-  updated_at_utc: '2026-08-30T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-774-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#770@5c37478598b5f5cb842850633771eae656c34d07
   repository: abhimehro/Seatek_Analysis
   pr: 770
@@ -13957,15 +13987,16 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not squash-merge Sentinel scanner PRs.
-  next_action: 'Human: one packet for Seatek code_health_scanner.py cluster #774/#770/#767/#762. Recommended: leave open. https://www.notion.so/3cc7419416de81b68b43eff49647da20 Expires 2026-09-06T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/770
   - https://www.notion.so/3cc7419416de81b68b43eff49647da20
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - .jules/sentinel.md
   - code_health_scanner.py
@@ -13973,12 +14004,13 @@ items:
   attempts:
     evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260830-seatekanalys-770-h
   - evt-s3-20260830-seatekanalys-770-h
-  revision: 2
-  updated_at_utc: '2026-08-30T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-770-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#767@f79f6de0d914d30c705276827f5214d7e38e1b77
   repository: abhimehro/Seatek_Analysis
   pr: 767
@@ -14000,27 +14032,29 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not squash-merge Sentinel scanner PRs.
-  next_action: 'Human: one packet for Seatek code_health_scanner.py cluster #774/#770/#767/#762. Recommended: leave open. https://www.notion.so/3cc7419416de81b68b43eff49647da20 Expires 2026-09-06T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/767
   - https://www.notion.so/3cc7419416de81b68b43eff49647da20
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - .jules/sentinel.md
   - code_health_scanner.py
   attempts:
     evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260830-seatekanalys-767-h
   - evt-s3-20260830-seatekanalys-767-h
-  revision: 2
-  updated_at_utc: '2026-08-30T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-767-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#762@19c6adfb77b6b031e4701f0903de7437178e2233
   repository: abhimehro/Seatek_Analysis
   pr: 762
@@ -14042,27 +14076,29 @@ items:
   sensitive_paths:
   - file_read_write_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: WAITING_HUMAN
-  terminal_disposition: null
-  current_owner: human
-  next_owner: human
-  safe_default: Do not squash-merge Sentinel scanner PRs.
-  next_action: 'Human: one packet for Seatek code_health_scanner.py cluster #774/#770/#767/#762. Recommended: leave open. https://www.notion.so/3cc7419416de81b68b43eff49647da20 Expires 2026-09-06T19:20:00Z'
+  lifecycle_state: TERMINAL
+  terminal_disposition: CLOSED_SUPERSEDED
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/762
   - https://www.notion.so/3cc7419416de81b68b43eff49647da20
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - code_health_scanner.py
   - tests/test_code_health_scanner.py
   attempts:
     evidence: 2
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260830-seatekanalys-762-h
   - evt-s3-20260830-seatekanalys-762-h
-  revision: 2
-  updated_at_utc: '2026-08-30T19:20:00Z'
+  - evt-s1-20260903-seatekanalys-762-t
+  revision: 3
+  updated_at_utc: '2026-09-03T22:00:00Z'
 - key: abhimehro/Seatek_Analysis#773@daa47193f277b1c7261169bc0a9b3031a75755d9
   repository: abhimehro/Seatek_Analysis
   pr: 773
@@ -15231,15 +15267,16 @@ items:
   changed_paths:
   - .jules/sentinel.md
   - validate_data.py
-- terminal_disposition: null
+- terminal_disposition: CLOSED_SUPERSEDED
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260831-seatekanalys-780-h
-  revision: 1
-  updated_at_utc: '2026-08-31T05:20:00Z'
+  - evt-s1-20260903-seatekanalys-780-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
   key: abhimehro/Seatek_Analysis#780@f7b7505b141d7e4ec301e3c29c0ab4043d512adb
   repository: abhimehro/Seatek_Analysis
   pr: 780
@@ -15261,25 +15298,27 @@ items:
   sensitive_paths:
   - file_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not approve, merge, or close until Stage 3 or a human clears sticky risk.
-  next_action: 'Stage 3: Sentinel file-read handling. Human security review. Do not merge. Expires 2026-09-07T05:20:00Z'
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/780
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - code_health_scanner.py
   - tests/test_code_health_scanner.py
-- terminal_disposition: null
+- terminal_disposition: CLOSED_SUPERSEDED
   attempts:
     evidence: 1
     recovery: 0
-    mutations: 0
+    mutations: 1
   handoffs:
   - evt-s1-20260831-seatekanalys-776-h
-  revision: 1
-  updated_at_utc: '2026-08-31T05:20:00Z'
+  - evt-s1-20260903-seatekanalys-776-t
+  revision: 2
+  updated_at_utc: '2026-09-03T22:00:00Z'
   key: abhimehro/Seatek_Analysis#776@f06a6e4b30b2bdc4473dfa33ba9751793536cd5b
   repository: abhimehro/Seatek_Analysis
   pr: 776
@@ -15301,13 +15340,14 @@ items:
   sensitive_paths:
   - file_boundaries
   guardrail_outcome: REVIEW_SECURITY
-  lifecycle_state: STAGE3_RECONCILIATION
-  current_owner: stage3
-  next_owner: stage3
-  safe_default: Do not approve, merge, or close until Stage 3 or a human clears sticky risk.
-  next_action: 'Stage 3: Sentinel exception handling. Human security review. Do not merge. Expires 2026-09-07T05:20:00Z'
+  lifecycle_state: TERMINAL
+  current_owner: none
+  next_owner: none
+  safe_default: 'Do not reopen superseded Sentinel DoS sibling. Keeper is #788.'
+  next_action: None. Closed on GitHub; do not reopen.
   evidence_urls:
   - https://github.com/abhimehro/Seatek_Analysis/pull/776
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
   changed_paths:
   - .jules/sentinel.md
   - code_health_scanner.py
@@ -15654,6 +15694,46 @@ items:
   - evt-s1-20260903-seatekanalys-799-t
   revision: 2
   updated_at_utc: '2026-09-03T22:00:00Z'
+- key: abhimehro/Seatek_Analysis#788@7f884c370ad8e882d34926a67e2fcc41634864d9
+  repository: abhimehro/Seatek_Analysis
+  pr: 788
+  url: https://github.com/abhimehro/Seatek_Analysis/pull/788
+  base_sha: aff46b870beba07064cc00963ad265fdc24d7503
+  head_sha: 7f884c370ad8e882d34926a67e2fcc41634864d9
+  author:
+    login: abhimehro
+    identity_source: github_api
+    app_slug: null
+    identity_provenance:
+      method: token_authored_signals
+      signals:
+      - branch
+      - title
+  author_type: BOT
+  classification: SECURITY
+  risk_class: SENSITIVE
+  sensitive_paths:
+  - file_read_write_boundaries
+  guardrail_outcome: REVIEW_SECURITY
+  lifecycle_state: STAGE3_RECONCILIATION
+  terminal_disposition: null
+  current_owner: stage3
+  next_owner: stage3
+  safe_default: 'Do not squash-merge sticky pathlib DoS #788 from Stage 1. Canonical keeper; leave open for Stage 3/human.'
+  next_action: 'Stage 3: reconcile MERGEABLE-green keeper #788 (str(filepath) null-byte check + pathlib test). Do not close losers already closed. Expires 2026-09-10T22:20:00Z'
+  evidence_urls:
+  - https://github.com/abhimehro/Seatek_Analysis/pull/788
+  changed_paths:
+  - code_health_scanner.py
+  - tests/test_code_health_scanner.py
+  attempts:
+    evidence: 1
+    recovery: 0
+    mutations: 0
+  handoffs:
+  - evt-s1-20260903-seatekanalys-788-h
+  revision: 1
+  updated_at_utc: '2026-09-03T22:20:00Z'
 events:
 - event_id: evt-s1-20260819-personal-con-2022-h
   kind: HANDOFF
@@ -29711,6 +29791,363 @@ events:
   created_at_utc: '2026-09-03T22:16:00Z'
   acknowledged_at_utc: null
   reason: 'Canonical-pick loser in path-traversal cluster. Keeper #532. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-719-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#719@d58bb5f970424fec8ff88a70242581bb6b8eb2f4
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#719@d58bb5f970424fec8ff88a70242581bb6b8eb2f4:evt-s1-20260903-seatekanalys-719-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-716-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#716@861b93185e7f6e4854a8fe88482f276abc636e3f
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#716@861b93185e7f6e4854a8fe88482f276abc636e3f:evt-s1-20260903-seatekanalys-716-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-712-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#712@261f5a1fef657b4d9b07f3518f8068b164000baf
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#712@261f5a1fef657b4d9b07f3518f8068b164000baf:evt-s1-20260903-seatekanalys-712-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-723-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#723@88d8f0d37a231799181505e3f50b82c0c1431f3c
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#723@88d8f0d37a231799181505e3f50b82c0c1431f3c:evt-s1-20260903-seatekanalys-723-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-732-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#732@8ab0a319e00c0aa9d32a82cb838a2d40237f7403
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#732@8ab0a319e00c0aa9d32a82cb838a2d40237f7403:evt-s1-20260903-seatekanalys-732-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-728-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#728@f6cee73f5dafc99a187b4550d5d2a08c77f3dfe4
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#728@f6cee73f5dafc99a187b4550d5d2a08c77f3dfe4:evt-s1-20260903-seatekanalys-728-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-738-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#738@4cf5ee863a6018026df5edf258b1dc5e7d096488
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#738@4cf5ee863a6018026df5edf258b1dc5e7d096488:evt-s1-20260903-seatekanalys-738-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-734-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#734@28d5def7c2452a1db383bcef1abcc78c748440d5
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#734@28d5def7c2452a1db383bcef1abcc78c748440d5:evt-s1-20260903-seatekanalys-734-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-746-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#746@048a57a8b72f0280fba3b2a6413c6b7b0654f5a0
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#746@048a57a8b72f0280fba3b2a6413c6b7b0654f5a0:evt-s1-20260903-seatekanalys-746-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-742-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#742@b6a6a12af7fd8357be7ce83b38f43d16bec6049b
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#742@b6a6a12af7fd8357be7ce83b38f43d16bec6049b:evt-s1-20260903-seatekanalys-742-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-753-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#753@03ed15c03686d872f3188b3145aaf189abac3c8e
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#753@03ed15c03686d872f3188b3145aaf189abac3c8e:evt-s1-20260903-seatekanalys-753-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-750-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#750@90663e5d32733a350938050e212d9a0edd090839
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#750@90663e5d32733a350938050e212d9a0edd090839:evt-s1-20260903-seatekanalys-750-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-760-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#760@1d454a675a5ee7ee45288c55709d6c6b5f7b8851
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#760@1d454a675a5ee7ee45288c55709d6c6b5f7b8851:evt-s1-20260903-seatekanalys-760-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-757-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#757@56034a2a1ec9f6646e20a5c746c28397f2016d30
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#757@56034a2a1ec9f6646e20a5c746c28397f2016d30:evt-s1-20260903-seatekanalys-757-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-774-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#774@29066a9f08041b77fda91e54a9eb8ceba3b6b2a1
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#774@29066a9f08041b77fda91e54a9eb8ceba3b6b2a1:evt-s1-20260903-seatekanalys-774-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-770-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#770@5c37478598b5f5cb842850633771eae656c34d07
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#770@5c37478598b5f5cb842850633771eae656c34d07:evt-s1-20260903-seatekanalys-770-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-767-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#767@f79f6de0d914d30c705276827f5214d7e38e1b77
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#767@f79f6de0d914d30c705276827f5214d7e38e1b77:evt-s1-20260903-seatekanalys-767-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-762-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#762@19c6adfb77b6b031e4701f0903de7437178e2233
+  from_owner: human
+  to_owner: none
+  from_state: WAITING_HUMAN
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 2
+  resulting_item_revision: 3
+  idempotency_key: abhimehro/Seatek_Analysis#762@19c6adfb77b6b031e4701f0903de7437178e2233:evt-s1-20260903-seatekanalys-762-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-780-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#780@f7b7505b141d7e4ec301e3c29c0ab4043d512adb
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#780@f7b7505b141d7e4ec301e3c29c0ab4043d512adb:evt-s1-20260903-seatekanalys-780-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-776-t
+  kind: TERMINAL
+  item_key: abhimehro/Seatek_Analysis#776@f06a6e4b30b2bdc4473dfa33ba9751793536cd5b
+  from_owner: stage3
+  to_owner: none
+  from_state: STAGE3_RECONCILIATION
+  to_state: TERMINAL
+  next_owner: none
+  terminal_disposition: CLOSED_SUPERSEDED
+  parent_event_id: null
+  expected_item_revision: 1
+  resulting_item_revision: 2
+  idempotency_key: abhimehro/Seatek_Analysis#776@f06a6e4b30b2bdc4473dfa33ba9751793536cd5b:evt-s1-20260903-seatekanalys-776-t
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical-pick loser in pathlib/null-byte DoS cluster. Keeper #788. Closed on GitHub.'
+- event_id: evt-s1-20260903-seatekanalys-788-h
+  kind: HANDOFF
+  item_key: abhimehro/Seatek_Analysis#788@7f884c370ad8e882d34926a67e2fcc41634864d9
+  from_owner: stage1
+  to_owner: stage3
+  from_state: STAGE1_INTAKE
+  to_state: STAGE3_RECONCILIATION
+  next_owner: stage3
+  terminal_disposition: null
+  parent_event_id: null
+  expected_item_revision: 0
+  resulting_item_revision: 1
+  idempotency_key: abhimehro/Seatek_Analysis#788@7f884c370ad8e882d34926a67e2fcc41634864d9:evt-s1-20260903-seatekanalys-788-h
+  status: PROJECTED
+  created_at_utc: '2026-09-03T22:20:00Z'
+  acknowledged_at_utc: null
+  reason: 'Canonical keeper of pathlib/null-byte DoS cluster. MERGEABLE unique remainder + test. REVIEW_SECURITY: do not Stage 1 merge.'
 stage2_work_items:
 - work_item_id: s2-20260831-series-390-spreadsheet-safety
   source_item_key: abhimehro/series_correction_project_updated#390@0b132998f952c8aff357f2d709dbae79a9661679
